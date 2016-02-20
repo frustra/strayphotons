@@ -1,0 +1,21 @@
+[submodule "ext/glfw"]
+	path = ext/glfw
+	url = git://github.com/glfw/glfw.git
+[submodule "ext/glm"]
+	path = ext/glm
+	url = git://github.com/g-truc/glm.git
+[submodule "ext/luabridge"]
+	path = ext/luabridge
+	url = git://github.com/frustra/LuaBridge.git
+[submodule "ext/luajit"]
+	path = ext/luajit
+	url = git://github.com/frustra/luajit-2.0.git
+[submodule "ext/freetype2"]
+	path = ext/freetype2
+	url = git://git.sv.nongnu.org/freetype/freetype2.git
+[submodule "ext/oiio"]
+	path = ext/oiio
+	url = https://github.com/OpenImageIO/oiio.git
+[submodule "ext/Vulkan-LoaderAndValidationLayers"]
+	path = ext/Vulkan-LoaderAndValidationLayers
+	url = git@github.com:KhronosGroup/Vulkan-LoaderAndValidationLayers.git
