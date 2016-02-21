@@ -25,9 +25,9 @@ namespace sp
 				if (!Frame()) break;
 			}
 		}
-		catch (char const *c)
+		catch (char const *err)
 		{
-			logging::Error(c);
+			Errorf(err);
 		}
 	}
 }

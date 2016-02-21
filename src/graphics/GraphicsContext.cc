@@ -33,7 +33,7 @@ namespace sp
 		int major = VK_API_VERSION >> 22;
 		int minor = (VK_API_VERSION >> 12) & 0x3ff;
 		int patch = VK_API_VERSION & 0xfff;
-		logging::Log("Created context using Vulkan API %d.%d.%d", major, minor, patch);
+		Logf("Created context using Vulkan API %d.%d.%d", major, minor, patch);
 
 		glfwSwapInterval(1);
 	}

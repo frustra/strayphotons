@@ -9,12 +9,12 @@ namespace sp
 {
 	static void glfwErrorCallback(int error, const char *message)
 	{
-		logging::Error("GLFW returned %d: %s", error, message);
+		Errorf("GLFW returned %d: %s", error, message);
 	}
 
 	GraphicsManager::GraphicsManager() : context(NULL)
 	{
-		logging::Log("Graphics starting up");
+		Logf("Graphics starting up");
 
 		glfwSetErrorCallback(glfwErrorCallback);
 

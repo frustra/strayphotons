@@ -4,6 +4,7 @@
 using namespace std;
 
 #include "StrayPhotons.hh"
+#include "core/Logging.hh"
 
 int main()
 {
@@ -15,7 +16,7 @@ int main()
 	}
 	catch (const char *err)
 	{
-		std::cerr << err << std::endl;
+		Errorf(err);
 	}
 	return -1;
 }
