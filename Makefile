@@ -7,9 +7,9 @@ linux: unix
 unix: build
 	cd build; cmake -G "Unix Makefiles" ..
 
-windows: vs10
-vs10: build
-	cd build; cmake -G "Visual Studio 10" ..
+windows: vs14
+vs14: build
+	cd build; cmake -G "Visual Studio 14" ..
 
 clean:
 	rm -rf build bin

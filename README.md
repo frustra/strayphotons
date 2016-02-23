@@ -20,13 +20,13 @@ Build setup
 - Linux: `cmake build-essential xorg-dev libxrandr-dev astyle mesa-common-dev` (or equivalent for your distro).
 There might be some missing dependencies in this list, add any you find.
 
-- Windows: cmake, Visual Studio (version TBD), and more.
+- Windows: cmake, Visual Studio 14 (2015).
 We'll set something up with git bash to be able to run our scripts.
 
-All: `make dependencies`
+- All: `make dependencies`
 
 ### Build
 
-Linux: `make`
+- Linux: `make`, and run `./bin/Debug/sp`
 
-Windows: `make windows`, open generated sln and build in Visual Studio
+- Windows: `make windows`, open build/sp.sln and build in Visual Studio. To launch the binary from VS, you need to set the startup project to sp

@@ -27,7 +27,7 @@ namespace sp
 
 	private:
 		char *buffer;
-		int size;
+		size_t size;
 
 		Asset(const Asset &other);
 		Asset &operator= (const Asset &other);

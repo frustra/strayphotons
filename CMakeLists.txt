@@ -48,15 +48,18 @@ add_subdirectory(${EXT_PATH}/glfw)
 
 add_subdirectory(${EXT_PATH}/freetype2)
 
-find_package(Boost 1.54 COMPONENTS locale REQUIRED)
-
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${EXT_PATH}/glfw/include
 	${EXT_PATH}/glm
 	${EXT_PATH}/freetype2/include
-	${Boost_INCLUDE_DIR}
 )
+
+if (WIN32)
+include_directories(
+	$ENV{VK_SDK_PATH}/Include
+)
+endif()
 
 file(GLOB_RECURSE all_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
 list(REMOVE_DUPLICATES all_sources)
