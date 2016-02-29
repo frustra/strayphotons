@@ -3,8 +3,7 @@
 #ifndef SP_GRAPHICSCONTEXT_H
 #define SP_GRAPHICSCONTEXT_H
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include "graphics/Graphics.hh"
 
 namespace sp
 {
@@ -23,6 +22,10 @@ namespace sp
 	private:
 		GLFWwindow *window;
 		GLFWmonitor *monitor;
+
+		vk::Instance vkinstance;
+		vk::SurfaceKHR vksurface;
+		vk::AllocationCallbacks *allocator = NULL;
 	};
 }
 

@@ -53,11 +53,12 @@ include_directories(
 	${EXT_PATH}/glfw/include
 	${EXT_PATH}/glm
 	${EXT_PATH}/freetype2/include
+	${EXT_PATH}/vkcpp
 )
 
 if (WIN32)
 include_directories(
-	$ENV{VK_SDK_PATH}/Include
+	${VULKAN_INCLUDE_DIR}
 )
 endif()
 
@@ -78,4 +79,4 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 
-target_link_libraries(sp glfw ${GLFW_LIBRARIES} freetype)
+target_link_libraries(sp glfw ${GLFW_LIBRARIES} ${VULKAN_LIBRARY} freetype)
