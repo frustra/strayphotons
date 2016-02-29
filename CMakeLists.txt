@@ -41,9 +41,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
 
 set(EXT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext)
 
+# GLFW builds these things by default, we don't want them
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build the GLFW example programs")
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "Build the GLFW test programs")
 set(GLFW_INSTALL OFF CACHE BOOL "Generate installation target")
+
 add_subdirectory(${EXT_PATH}/glfw)
 
 add_subdirectory(${EXT_PATH}/freetype2)
@@ -54,19 +56,15 @@ include_directories(
 	${EXT_PATH}/glm
 	${EXT_PATH}/freetype2/include
 	${EXT_PATH}/vkcpp
-)
-
-if (WIN32)
-include_directories(
 	${VULKAN_INCLUDE_DIR}
 )
-endif()
 
 file(GLOB_RECURSE all_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
 list(REMOVE_DUPLICATES all_sources)
 
 file(GLOB_RECURSE all_headers ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hh)
 list(REMOVE_DUPLICATES all_headers)
+
 
 add_executable(sp ${all_sources} ${all_headers})
 
@@ -78,5 +76,6 @@ set_target_properties(sp PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUT
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
+
 
 target_link_libraries(sp glfw ${GLFW_LIBRARIES} ${VULKAN_LIBRARY} freetype)

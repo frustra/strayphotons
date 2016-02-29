@@ -17,7 +17,7 @@ Build setup
 
 ### Install build dependencies
 
-- Linux: `cmake build-essential xorg-dev libxrandr-dev astyle mesa-common-dev` (or equivalent for your distro).
+- Linux: `cmake build-essential xorg-dev libxrandr-dev astyle mesa-common-dev astyle` (or equivalent for your distro).
 There might be some missing dependencies in this list, add any you find.
 
 - Windows: cmake, Visual Studio 14 (2015).
@@ -29,4 +29,10 @@ We'll set something up with git bash to be able to run our scripts.
 
 - Linux: `make`, and run `./bin/Debug/sp`
 
-- Windows: `make windows`, open build/sp.sln and build in Visual Studio. To launch the binary from VS, you need to set the startup project to sp
+- Windows: `./windows_cmake.sh`, open build/sp.sln and build in Visual Studio. To launch the binary from VS, you need to set the startup project to `sp`
+
+
+Developing
+----------
+
+Try to remember to run astyle before committing. On Linux, `make astyle`.
