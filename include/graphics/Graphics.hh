@@ -25,6 +25,13 @@ namespace vk
 	{
 		Assert(vk::Result(result), msg);
 	}
+
+	static void APIVersion(uint32_t version, int &major, int &minor, int &patch)
+	{
+		major = version >> 22;
+		minor = (version >> 12) & 0x3ff;
+		patch = version & 0xfff;
+	}
 }
 
 #endif

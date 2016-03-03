@@ -20,11 +20,12 @@ namespace sp
 		//Viewport view;
 
 	private:
-		GLFWwindow *window;
-		GLFWmonitor *monitor;
+		GLFWwindow *window = NULL;
+		GLFWmonitor *monitor = NULL;
 
 		vk::Instance vkinstance;
 		vk::SurfaceKHR vksurface;
+		vk::Device vkdevice;
 		vk::AllocationCallbacks *allocator = NULL;
 	};
 }
