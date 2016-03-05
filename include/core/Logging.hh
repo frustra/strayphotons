@@ -3,7 +3,7 @@
 #ifndef SP_LOGGING_H
 #define SP_LOGGING_H
 
-#define SP_VERBOSE_LOGGING
+//#define SP_VERBOSE_LOGGING
 
 #include <string>
 #include <cstdarg>
@@ -55,17 +55,17 @@ namespace sp
 
 		template <typename... T> static void Log(const char *file, int line, const std::string &fmt, T... t)
 		{
-			writeLog(file, line, "\x1b[34;1m[log]\x1b[0m " + fmt, t...);
+			writeLog(file, line, "[log] " + fmt, t...);
 		}
 
 		template <typename... T> static void Debug(const char *file, int line, const std::string &fmt, T... t)
 		{
-			writeLog(file, line, "\x1b[33;1m[dbg]\x1b[0m " + fmt, t...);
+			writeLog(file, line, "[dbg] " + fmt, t...);
 		}
 
 		template <typename... T> static void Error(const char *file, int line, const std::string &fmt, T... t)
 		{
-			writeLog(file, line, "\x1b[31;1m[err]\x1b[0m " + fmt, t...);
+			writeLog(file, line, "[err] " + fmt, t...);
 		}
 	}
 }

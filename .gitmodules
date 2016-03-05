@@ -21,4 +21,4 @@
 	url = git@github.com:KhronosGroup/Vulkan-LoaderAndValidationLayers.git
 [submodule "ext/vkcpp"]
 	path = ext/vkcpp
-	url = git://github.com/nvpro-pipeline/vkcpp
+	url = git://github.com/pushrax/vkcpp

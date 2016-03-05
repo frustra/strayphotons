@@ -12,6 +12,13 @@ namespace sp
 		Errorf("GLFW returned %d: %s", error, message);
 	}
 
+	static void handleVulkanError(vk::Exception &err)
+	{
+		auto str = vk::getString(err.result());
+		Errorf("Vulkan error %s (%d) %s", str.c_str(), err.result(), err.what());
+		throw "Vulkan exception";
+	}
+
 	GraphicsManager::GraphicsManager() : context(NULL)
 	{
 		Logf("Graphics starting up");
@@ -38,14 +45,30 @@ namespace sp
 	void GraphicsManager::CreateContext()
 	{
 		if (context) throw "already an active context";
-		context = new GraphicsContext();
-		context->CreateWindow();
+
+		try
+		{
+			context = new GraphicsContext();
+			context->CreateWindow();
+		}
+		catch (vk::Exception &err)
+		{
+			handleVulkanError(err);
+		}
 	}
 
 	void GraphicsManager::ReleaseContext()
 	{
 		if (!context) throw "no active context";
-		delete context;
+
+		try
+		{
+			delete context;
+		}
+		catch (vk::Exception &err)
+		{
+			handleVulkanError(err);
+		}
 	}
 
 	void GraphicsManager::ReloadContext()
@@ -62,7 +85,16 @@ namespace sp
 	{
 		if (!context) throw "missing context";
 		if (!HasActiveContext()) return false;
-		context->RenderFrame();
+
+		try
+		{
+			context->RenderFrame();
+		}
+		catch (vk::Exception &err)
+		{
+			handleVulkanError(err);
+		}
+
 		glfwPollEvents();
 		return true;
 	}
