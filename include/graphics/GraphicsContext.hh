@@ -18,7 +18,6 @@ namespace sp
 		void RenderFrame();
 		void ResetSwapchain(uint32 &width, uint32 &height);
 		bool getMemoryType(uint32 typeBits, vk::MemoryPropertyFlags properties, uint32 &typeIndex);
-		void InitDepthBuffer();
 
 		//Viewport view;
 
@@ -38,12 +37,15 @@ namespace sp
 		vk::CommandPool cmdPool;
 		vk::CommandBuffer setupCmdBuffer, prePresentCmdBuffer, postPresentCmdBuffer;
 		vector<vk::CommandBuffer> drawCmdBuffers;
+		vk::RenderPass renderPass;
+		vk::PipelineCache pipelineCache;
 
 		vk::SurfaceKHR vksurface;
 		vk::SwapchainKHR vkswapchain;
+		vector<vk::Framebuffer> framebuffers;
 
-		vk::Format surfaceColorFormat;
-		vk::ColorSpaceKHR surfaceColorSpace;
+		vk::Format colorFormat, depthFormat = vk::Format::eD24UnormS8Uint;
+		vk::ColorSpaceKHR colorSpace;
 
 		struct
 		{

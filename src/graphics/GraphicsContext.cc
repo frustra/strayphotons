@@ -55,6 +55,15 @@ namespace sp
 
 	GraphicsContext::~GraphicsContext()
 	{
+		if (pipelineCache)
+			vkdevice.destroyPipelineCache(pipelineCache, alloc);
+
+		for (auto buf : framebuffers)
+			vkdevice.destroyFramebuffer(buf, alloc);
+
+		if (renderPass)
+			vkdevice.destroyRenderPass(renderPass, alloc);
+
 		if (depthBuffer.view)
 			vkdevice.destroyImageView(depthBuffer.view, alloc);
 
@@ -63,6 +72,12 @@ namespace sp
 
 		if (depthBuffer.mem)
 			vkdevice.freeMemory(depthBuffer.mem, alloc);
+
+		if (prePresentCmdBuffer || postPresentCmdBuffer)
+			vkdevice.freeCommandBuffers(cmdPool, { prePresentCmdBuffer, postPresentCmdBuffer });
+
+		if (!drawCmdBuffers.empty())
+			vkdevice.freeCommandBuffers(cmdPool, drawCmdBuffers);
 
 		for (auto view : swapchainViews)
 			vkdevice.destroyImageView(view, alloc);
@@ -248,12 +263,12 @@ namespace sp
 		}
 
 		// TODO(pushrax): select sRGB
-		surfaceColorFormat = surfaceFormats[0].format();
-		surfaceColorSpace = surfaceFormats[0].colorSpace();
+		colorFormat = surfaceFormats[0].format();
+		colorSpace = surfaceFormats[0].colorSpace();
 
 		if (surfaceFormats.size() == 1 && surfaceFormats[0].format() == vk::Format::eUndefined)
 		{
-			surfaceColorFormat = vk::Format::eB8G8R8A8Unorm;
+			colorFormat = vk::Format::eB8G8R8A8Unorm;
 		}
 
 
@@ -285,7 +300,7 @@ namespace sp
 		// Create depth buffer (depth + stencil)
 		vk::ImageCreateInfo depthInfo;
 		depthInfo.imageType(vk::ImageType::e2D);
-		depthInfo.format(vk::Format::eD24UnormS8Uint);
+		depthInfo.format(depthFormat);
 		depthInfo.extent({ width, height, 1 });
 		depthInfo.mipLevels(1);
 		depthInfo.arrayLayers(1);
@@ -298,7 +313,7 @@ namespace sp
 
 		vk::ImageViewCreateInfo depthStencilInfo;
 		depthStencilInfo.viewType(vk::ImageViewType::e2D);
-		depthStencilInfo.format(vk::Format::eD24UnormS8Uint);
+		depthStencilInfo.format(depthFormat);
 		depthStencilInfo.subresourceRange().aspectMask(vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil);
 		depthStencilInfo.subresourceRange().baseMipLevel(0);
 		depthStencilInfo.subresourceRange().levelCount(1);
@@ -312,6 +327,71 @@ namespace sp
 		vk::setImageLayout(setupCmdBuffer, depthBuffer.image, vk::ImageAspectFlagBits::eDepth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 		depthStencilInfo.image(depthBuffer.image);
 		depthBuffer.view = vkdevice.createImageView(depthStencilInfo, alloc);
+
+
+		// Create render pass
+		vk::AttachmentDescription colorAttachment, depthAttachment;
+
+		colorAttachment.format(colorFormat);
+		colorAttachment.samples(vk::SampleCountFlagBits::e1);
+		colorAttachment.loadOp(vk::AttachmentLoadOp::eClear);
+		colorAttachment.storeOp(vk::AttachmentStoreOp::eStore);
+		colorAttachment.stencilLoadOp(vk::AttachmentLoadOp::eDontCare);
+		colorAttachment.stencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+		colorAttachment.initialLayout(vk::ImageLayout::eColorAttachmentOptimal);
+		colorAttachment.finalLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+		depthAttachment.format(depthFormat);
+		depthAttachment.samples(vk::SampleCountFlagBits::e1);
+		depthAttachment.loadOp(vk::AttachmentLoadOp::eClear);
+		depthAttachment.storeOp(vk::AttachmentStoreOp::eStore);
+		depthAttachment.stencilLoadOp(vk::AttachmentLoadOp::eDontCare);
+		depthAttachment.stencilStoreOp(vk::AttachmentStoreOp::eDontCare);
+		depthAttachment.initialLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+		depthAttachment.finalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+		vk::AttachmentReference colorReference(0, vk::ImageLayout::eColorAttachmentOptimal);
+		vk::AttachmentReference depthReference(1, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+		vk::SubpassDescription subpass;
+		subpass.pipelineBindPoint(vk::PipelineBindPoint::eGraphics);
+		subpass.colorAttachmentCount(1);
+		subpass.pColorAttachments(&colorReference);
+		subpass.pDepthStencilAttachment(&depthReference);
+
+		vk::AttachmentDescription attachmentDescs[] = { colorAttachment, depthAttachment };
+
+		vk::RenderPassCreateInfo renderPassInfo;
+		renderPassInfo.attachmentCount(2);
+		renderPassInfo.pAttachments(attachmentDescs);
+		renderPassInfo.subpassCount(1);
+		renderPassInfo.pSubpasses(&subpass);
+
+		renderPass = vkdevice.createRenderPass(renderPassInfo, alloc);
+
+
+		// Set up framebuffer
+		vk::ImageView attachments[2];
+		attachments[1] = depthBuffer.view;
+
+		vk::FramebufferCreateInfo framebufferInfo;
+		framebufferInfo.renderPass(renderPass);
+		framebufferInfo.attachmentCount(2);
+		framebufferInfo.pAttachments(attachments);
+		framebufferInfo.width(width);
+		framebufferInfo.height(height);
+		framebufferInfo.layers(1);
+
+		for (size_t i = 0; i < swapchainImages.size(); i++)
+		{
+			attachments[0] = swapchainViews[i];
+			framebuffers.push_back(vkdevice.createFramebuffer(framebufferInfo, alloc));
+		}
+
+
+		// Create pipeline cache
+		vk::PipelineCacheCreateInfo pipelineCacheInfo;
+		pipelineCache = vkdevice.createPipelineCache(pipelineCacheInfo, alloc);
 
 
 		// Submit setup queue
@@ -408,8 +488,8 @@ namespace sp
 		vk::SwapchainCreateInfoKHR createInfo;
 		createInfo.surface(vksurface);
 		createInfo.minImageCount(desiredImageCount);
-		createInfo.imageFormat(surfaceColorFormat);
-		createInfo.imageColorSpace(surfaceColorSpace);
+		createInfo.imageFormat(colorFormat);
+		createInfo.imageColorSpace(colorSpace);
 		createInfo.imageExtent(swapchainExtent);
 		createInfo.imageUsage(vk::ImageUsageFlagBits::eColorAttachment);
 		createInfo.preTransform(preTransform);
@@ -434,7 +514,7 @@ namespace sp
 		for (size_t i = 0; i < swapchainImages.size(); i++)
 		{
 			vk::ImageViewCreateInfo viewCreateInfo;
-			viewCreateInfo.format(surfaceColorFormat);
+			viewCreateInfo.format(colorFormat);
 			viewCreateInfo.components(vk::ComponentMapping(vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA));
 			viewCreateInfo.viewType(vk::ImageViewType::e2D);
 
@@ -452,11 +532,6 @@ namespace sp
 			auto view = vkdevice.createImageView(viewCreateInfo, alloc);
 			swapchainViews[i] = view;
 		}
-	}
-
-	void GraphicsContext::InitDepthBuffer()
-	{
-
 	}
 
 	bool GraphicsContext::ShouldClose()
