@@ -3,6 +3,7 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "graphics/GraphicsContext.hh"
+#include "graphics/VulkanHelpers.hh"
 
 #include <string>
 #include <iostream>
@@ -54,28 +55,35 @@ namespace sp
 
 	GraphicsContext::~GraphicsContext()
 	{
+		if (depthBuffer.view)
+			vkdevice.destroyImageView(depthBuffer.view, alloc);
+
+		if (depthBuffer.image)
+			vkdevice.destroyImage(depthBuffer.image, alloc);
+
+		if (depthBuffer.mem)
+			vkdevice.freeMemory(depthBuffer.mem, alloc);
+
 		for (auto view : swapchainViews)
-		{
-			vkdevice.destroyImageView(view, allocator);
-		}
+			vkdevice.destroyImageView(view, alloc);
 
 		if (vkswapchain)
-			vkdevice.destroySwapchainKHR(vkswapchain, allocator);
+			vkdevice.destroySwapchainKHR(vkswapchain, alloc);
 
 		if (cmdPool)
-			vkdevice.destroyCommandPool(cmdPool, allocator);
+			vkdevice.destroyCommandPool(cmdPool, alloc);
 
 		if (vkdevice)
-			vkdevice.destroy(allocator);
+			vkdevice.destroy(alloc);
 
 		if (vksurface)
-			vkinstance.destroySurfaceKHR(vksurface, allocator);
+			vkinstance.destroySurfaceKHR(vksurface, alloc);
 
 		if (enableValidation && debugReportCallback)
-			fpDestroyDebugReportCallback((VkInstance) vkinstance, debugReportCallback, (VkAllocationCallbacks *) &allocator);
+			fpDestroyDebugReportCallback((VkInstance) vkinstance, debugReportCallback, (VkAllocationCallbacks *) &alloc);
 
 		if (vkinstance)
-			vkinstance.destroy(allocator);
+			vkinstance.destroy(alloc);
 
 		if (window)
 			glfwDestroyWindow(window);
@@ -112,7 +120,7 @@ namespace sp
 		info.enabledExtensionCount(instExts.size());
 		info.ppEnabledExtensionNames(instExts.data());
 
-		vk::Assert(vk::createInstance(&info, &allocator, &vkinstance), "creating Vulkan instance");
+		vk::Assert(vk::createInstance(&info, &alloc, &vkinstance), "creating Vulkan instance");
 
 		int major, minor, patch;
 		vk::APIVersion(VK_API_VERSION, major, minor, patch);
@@ -139,7 +147,7 @@ namespace sp
 			dbgInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
 			dbgInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT | VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
 			dbgInfo.pfnCallback = (PFN_vkDebugReportCallbackEXT)&vulkanCallback;
-			auto err = fpCreateDebugReportCallback((VkInstance) vkinstance, &dbgInfo, (VkAllocationCallbacks *) &allocator, &debugReportCallback);
+			auto err = fpCreateDebugReportCallback((VkInstance) vkinstance, &dbgInfo, (VkAllocationCallbacks *) &alloc, &debugReportCallback);
 			vk::Assert(err, "creating debug report callback");
 		}
 
@@ -163,6 +171,7 @@ namespace sp
 
 		auto devProps = vkpdevice.getProperties();
 		Logf("Using device %x:%x", devProps.vendorID(), devProps.deviceID());
+		deviceMemoryProps = vkpdevice.getMemoryProperties();
 
 
 		// Create window and surface
@@ -171,7 +180,7 @@ namespace sp
 			throw "glfw window creation failed";
 		}
 
-		auto result = glfwCreateWindowSurface((VkInstance)vkinstance, window, (VkAllocationCallbacks *) &allocator, (VkSurfaceKHR *) &vksurface);
+		auto result = glfwCreateWindowSurface((VkInstance)vkinstance, window, (VkAllocationCallbacks *) &alloc, (VkSurfaceKHR *) &vksurface);
 		vk::Assert(result, "creating window surface");
 
 
@@ -225,7 +234,7 @@ namespace sp
 		devInfo.enabledExtensionCount(deviceExts.size());
 		devInfo.ppEnabledExtensionNames(deviceExts.data());
 
-		vkdevice = vkpdevice.createDevice(devInfo, allocator);
+		vkdevice = vkpdevice.createDevice(devInfo, alloc);
 		auto queue = vkdevice.getQueue(primaryQueueIndex, 0);
 
 
@@ -250,7 +259,7 @@ namespace sp
 
 		// Create command pool
 		vk::CommandPoolCreateInfo poolInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, primaryQueueIndex);
-		cmdPool = vkdevice.createCommandPool(poolInfo, allocator);
+		cmdPool = vkdevice.createCommandPool(poolInfo, alloc);
 
 		vk::CommandBufferAllocateInfo setupCmdInfo(cmdPool, vk::CommandBufferLevel::ePrimary, 1);
 		auto buffers = vkdevice.allocateCommandBuffers(setupCmdInfo);
@@ -261,6 +270,48 @@ namespace sp
 		// Initialize swapchain
 		uint32 width = 720, height = 480;
 		ResetSwapchain(width, height);
+
+
+		// Create command buffers
+		vk::CommandBufferAllocateInfo drawCmdInfo(cmdPool, vk::CommandBufferLevel::ePrimary, swapchainImages.size());
+		drawCmdBuffers = vkdevice.allocateCommandBuffers(setupCmdInfo);
+
+		vk::CommandBufferAllocateInfo presentCmdInfo(cmdPool, vk::CommandBufferLevel::ePrimary, 2);
+		buffers = vkdevice.allocateCommandBuffers(presentCmdInfo);
+		prePresentCmdBuffer = buffers[0];
+		postPresentCmdBuffer = buffers[1];
+
+
+		// Create depth buffer (depth + stencil)
+		vk::ImageCreateInfo depthInfo;
+		depthInfo.imageType(vk::ImageType::e2D);
+		depthInfo.format(vk::Format::eD24UnormS8Uint);
+		depthInfo.extent({ width, height, 1 });
+		depthInfo.mipLevels(1);
+		depthInfo.arrayLayers(1);
+		depthInfo.samples(vk::SampleCountFlagBits::e1);
+		depthInfo.tiling(vk::ImageTiling::eOptimal);
+		depthInfo.usage(vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc);
+
+		depthBuffer.image = vkdevice.createImage(depthInfo, alloc);
+		auto depthMemReqs = vkdevice.getImageMemoryRequirements(depthBuffer.image);
+
+		vk::ImageViewCreateInfo depthStencilInfo;
+		depthStencilInfo.viewType(vk::ImageViewType::e2D);
+		depthStencilInfo.format(vk::Format::eD24UnormS8Uint);
+		depthStencilInfo.subresourceRange().aspectMask(vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil);
+		depthStencilInfo.subresourceRange().baseMipLevel(0);
+		depthStencilInfo.subresourceRange().levelCount(1);
+		depthStencilInfo.subresourceRange().baseArrayLayer(0);
+		depthStencilInfo.subresourceRange().layerCount(1);
+
+		vk::MemoryAllocateInfo depthAllocInfo(depthMemReqs.size(), 0);
+		getMemoryType(depthMemReqs.memoryTypeBits(), vk::MemoryPropertyFlagBits::eDeviceLocal, depthAllocInfo.memoryTypeIndex());
+		depthBuffer.mem = vkdevice.allocateMemory(depthAllocInfo, alloc);
+		vkdevice.bindImageMemory(depthBuffer.image, depthBuffer.mem, 0);
+		vk::setImageLayout(setupCmdBuffer, depthBuffer.image, vk::ImageAspectFlagBits::eDepth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+		depthStencilInfo.image(depthBuffer.image);
+		depthBuffer.view = vkdevice.createImageView(depthStencilInfo, alloc);
 
 
 		// Submit setup queue
@@ -275,67 +326,26 @@ namespace sp
 		vkdevice.freeCommandBuffers(cmdPool, { setupCmdBuffer });
 	}
 
-	// TODO(pushrax): move this somewhere
-	static void setImageLayout(vk::CommandBuffer cmdBuffer, vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldImageLayout, vk::ImageLayout newImageLayout)
+	/*
+	 * Find index of memory type given valid indexes and required properties.
+	 */
+	bool GraphicsContext::getMemoryType(uint32 typeBits, vk::MemoryPropertyFlags properties, uint32 &typeIndex)
 	{
-		vk::ImageMemoryBarrier barrier;
-		barrier.srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
-		barrier.dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+		auto types = deviceMemoryProps.memoryTypes();
 
-		barrier.oldLayout(oldImageLayout);
-		barrier.newLayout(newImageLayout);
-		barrier.image(image);
-
-		barrier.subresourceRange().aspectMask(aspectMask);
-		barrier.subresourceRange().baseMipLevel(0);
-		barrier.subresourceRange().levelCount(1);
-		barrier.subresourceRange().layerCount(1);
-
-		// Source layouts
-
-		//if (oldImageLayout == vk::ImageLayout::eUndefined)
-		//	barrier.srcAccessMask(vk::AccessFlagBits::eHostWrite | vk::AccessFlagBits::eTransferWrite);
-
-		if (oldImageLayout == vk::ImageLayout::eColorAttachmentOptimal)
-			barrier.srcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
-
-		if (oldImageLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
-			barrier.srcAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite);
-
-		if (oldImageLayout == vk::ImageLayout::eTransferSrcOptimal)
-			barrier.srcAccessMask(vk::AccessFlagBits::eTransferRead);
-
-		if (oldImageLayout == vk::ImageLayout::eShaderReadOnlyOptimal)
-			barrier.srcAccessMask(vk::AccessFlagBits::eShaderRead);
-
-		// Target layouts
-
-		if (newImageLayout == vk::ImageLayout::eTransferDstOptimal)
-			barrier.dstAccessMask(vk::AccessFlagBits::eTransferWrite);
-
-		if (newImageLayout == vk::ImageLayout::eTransferSrcOptimal)
+		for (uint32 i = 0; i < deviceMemoryProps.memoryTypeCount(); i++)
 		{
-			barrier.srcAccessMask() |= vk::AccessFlagBits::eTransferRead;
-			barrier.dstAccessMask(vk::AccessFlagBits::eTransferRead);
+			if ((typeBits & 1) == 1)
+			{
+				if ((types[i].propertyFlags() & properties) == properties)
+				{
+					typeIndex = i;
+					return true;
+				}
+			}
+			typeBits >>= 1;
 		}
-
-		if (newImageLayout == vk::ImageLayout::eColorAttachmentOptimal)
-		{
-			barrier.srcAccessMask(vk::AccessFlagBits::eTransferRead);
-			barrier.dstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
-		}
-
-		if (newImageLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
-			barrier.dstAccessMask() |= vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-
-		if (newImageLayout == vk::ImageLayout::eShaderReadOnlyOptimal)
-		{
-			barrier.srcAccessMask(vk::AccessFlagBits::eHostWrite | vk::AccessFlagBits::eTransferWrite);
-			barrier.dstAccessMask(vk::AccessFlagBits::eShaderRead);
-		}
-
-		auto stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
-		cmdBuffer.pipelineBarrier(stageMask, stageMask, vk::DependencyFlags(), {}, {}, { barrier });
+		return false;
 	}
 
 	void GraphicsContext::ResetSwapchain(uint32 &width, uint32 &height)
@@ -344,7 +354,7 @@ namespace sp
 
 		for (auto view : swapchainViews)
 		{
-			vkdevice.destroyImageView(view, allocator);
+			vkdevice.destroyImageView(view, alloc);
 		}
 
 		vk::SurfaceCapabilitiesKHR surfCap;
@@ -410,11 +420,11 @@ namespace sp
 		createInfo.clipped(true);
 		createInfo.compositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
 
-		vkswapchain = vkdevice.createSwapchainKHR(createInfo, allocator);
+		vkswapchain = vkdevice.createSwapchainKHR(createInfo, alloc);
 
 		if (oldSwapchain)
 		{
-			vkdevice.destroySwapchainKHR(oldSwapchain, allocator);
+			vkdevice.destroySwapchainKHR(oldSwapchain, alloc);
 		}
 
 		vkdevice.getSwapchainImagesKHR(vkswapchain, swapchainImages);
@@ -439,9 +449,14 @@ namespace sp
 			setImageLayout(setupCmdBuffer, image, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 
 			viewCreateInfo.image(image);
-			auto view = vkdevice.createImageView(viewCreateInfo, allocator);
+			auto view = vkdevice.createImageView(viewCreateInfo, alloc);
 			swapchainViews[i] = view;
 		}
+	}
+
+	void GraphicsContext::InitDepthBuffer()
+	{
+
 	}
 
 	bool GraphicsContext::ShouldClose()
