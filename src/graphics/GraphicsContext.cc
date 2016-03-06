@@ -167,7 +167,7 @@ namespace sp
 			dbgInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
 			dbgInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
 			dbgInfo.flags |= VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-			dbgInfo.flags |= VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
+			//dbgInfo.flags |= VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
 
 			dbgInfo.pfnCallback = (PFN_vkDebugReportCallbackEXT)&vulkanCallback;
 			auto err = fpCreateDebugReportCallback((VkInstance) vkinstance, &dbgInfo, (VkAllocationCallbacks *) &alloc, &debugReportCallback);
