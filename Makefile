@@ -21,5 +21,6 @@ astyle:
 	astyle --options="extra/astyle.config" "include/*.hh" "src/*.cc"
 
 dependencies:
+	git submodule sync
 	git submodule update --init --recursive
 
