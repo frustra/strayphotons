@@ -2,6 +2,7 @@
 
 #include "core/Logging.hh"
 #include "graphics/GraphicsManager.hh"
+#include "graphics/Renderer.hh"
 
 #include <iostream>
 
@@ -48,7 +49,7 @@ namespace sp
 
 		try
 		{
-			context = new GraphicsContext();
+			context = new Renderer();
 			context->CreateWindow();
 		}
 		catch (vk::Exception &err)

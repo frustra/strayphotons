@@ -7,6 +7,7 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
 
 PFN_vkCreateDebugReportCallbackEXT fpCreateDebugReportCallback;
 PFN_vkDestroyDebugReportCallbackEXT fpDestroyDebugReportCallback;
@@ -20,7 +21,7 @@ namespace sp
 
 		feat.depthClamp(true);
 		feat.samplerAnisotropy(true);
-		feat.tessellationShader(true);
+		//feat.tessellationShader(true);
 		feat.robustBufferAccess(true);
 		feat.fullDrawIndexUint32(true);
 
@@ -50,46 +51,48 @@ namespace sp
 	{
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-		//glfwWindowHint(GLFW_DEPTH_BITS, 24);
 	}
 
 	GraphicsContext::~GraphicsContext()
 	{
+		for (auto module : shaderModules)
+			vkdev.destroyShaderModule(module, alloc);
+
 		if (pipelineCache)
-			vkdevice.destroyPipelineCache(pipelineCache, alloc);
+			vkdev.destroyPipelineCache(pipelineCache, alloc);
 
 		for (auto buf : framebuffers)
-			vkdevice.destroyFramebuffer(buf, alloc);
+			vkdev.destroyFramebuffer(buf, alloc);
 
 		if (renderPass)
-			vkdevice.destroyRenderPass(renderPass, alloc);
+			vkdev.destroyRenderPass(renderPass, alloc);
 
-		if (depthBuffer.view)
-			vkdevice.destroyImageView(depthBuffer.view, alloc);
+		if (depthStencil.view)
+			vkdev.destroyImageView(depthStencil.view, alloc);
 
-		if (depthBuffer.image)
-			vkdevice.destroyImage(depthBuffer.image, alloc);
+		if (depthStencil.image)
+			vkdev.destroyImage(depthStencil.image, alloc);
 
-		if (depthBuffer.mem)
-			vkdevice.freeMemory(depthBuffer.mem, alloc);
+		if (depthStencil.mem)
+			vkdev.freeMemory(depthStencil.mem, alloc);
 
 		if (prePresentCmdBuffer || postPresentCmdBuffer)
-			vkdevice.freeCommandBuffers(cmdPool, { prePresentCmdBuffer, postPresentCmdBuffer });
+			vkdev.freeCommandBuffers(cmdPool, { prePresentCmdBuffer, postPresentCmdBuffer });
 
 		if (!drawCmdBuffers.empty())
-			vkdevice.freeCommandBuffers(cmdPool, drawCmdBuffers);
+			vkdev.freeCommandBuffers(cmdPool, drawCmdBuffers);
 
 		for (auto view : swapchainViews)
-			vkdevice.destroyImageView(view, alloc);
+			vkdev.destroyImageView(view, alloc);
 
 		if (vkswapchain)
-			vkdevice.destroySwapchainKHR(vkswapchain, alloc);
+			vkdev.destroySwapchainKHR(vkswapchain, alloc);
 
 		if (cmdPool)
-			vkdevice.destroyCommandPool(cmdPool, alloc);
+			vkdev.destroyCommandPool(cmdPool, alloc);
 
-		if (vkdevice)
-			vkdevice.destroy(alloc);
+		if (vkdev)
+			vkdev.destroy(alloc);
 
 		if (vksurface)
 			vkinstance.destroySurfaceKHR(vksurface, alloc);
@@ -109,20 +112,22 @@ namespace sp
 		int nGlfwExts;
 		const char **glfwExts = glfwGetRequiredInstanceExtensions(&nGlfwExts);
 
-		vector<const char *> layers =
-		{
-			"VK_LAYER_LUNARG_standard_validation",
-		};
-
 		vector<const char *> instExts(glfwExts, glfwExts + nGlfwExts);
 
 		if (enableValidation)
 			instExts.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 
+
 		vector<const char *> deviceExts =
 		{
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		};
+
+
+		vector<const char *> layers;
+
+		if (enableValidation)
+			layers.push_back("VK_LAYER_LUNARG_standard_validation");
 
 
 		// Initialize Vulkan
@@ -160,7 +165,10 @@ namespace sp
 			VkDebugReportCallbackCreateInfoEXT dbgInfo = {};
 			dbgInfo.pNext = NULL;
 			dbgInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-			dbgInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT | VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
+			dbgInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
+			dbgInfo.flags |= VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+			dbgInfo.flags |= VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
+
 			dbgInfo.pfnCallback = (PFN_vkDebugReportCallbackEXT)&vulkanCallback;
 			auto err = fpCreateDebugReportCallback((VkInstance) vkinstance, &dbgInfo, (VkAllocationCallbacks *) &alloc, &debugReportCallback);
 			vk::Assert(err, "creating debug report callback");
@@ -190,7 +198,7 @@ namespace sp
 
 
 		// Create window and surface
-		if (!(window = glfwCreateWindow(720, 480, "Stray Photons", monitor, NULL)))
+		if (!(window = glfwCreateWindow(1280, 720, "Stray Photons", monitor, NULL)))
 		{
 			throw "glfw window creation failed";
 		}
@@ -249,8 +257,8 @@ namespace sp
 		devInfo.enabledExtensionCount(deviceExts.size());
 		devInfo.ppEnabledExtensionNames(deviceExts.data());
 
-		vkdevice = vkpdevice.createDevice(devInfo, alloc);
-		auto queue = vkdevice.getQueue(primaryQueueIndex, 0);
+		vkdev = vkpdevice.createDevice(devInfo, alloc);
+		vkqueue = vkdev.getQueue(primaryQueueIndex, 0);
 
 
 		// Select surface format
@@ -274,25 +282,25 @@ namespace sp
 
 		// Create command pool
 		vk::CommandPoolCreateInfo poolInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, primaryQueueIndex);
-		cmdPool = vkdevice.createCommandPool(poolInfo, alloc);
+		cmdPool = vkdev.createCommandPool(poolInfo, alloc);
 
 		vk::CommandBufferAllocateInfo setupCmdInfo(cmdPool, vk::CommandBufferLevel::ePrimary, 1);
-		auto buffers = vkdevice.allocateCommandBuffers(setupCmdInfo);
+		auto buffers = vkdev.allocateCommandBuffers(setupCmdInfo);
 		setupCmdBuffer = buffers[0];
 		setupCmdBuffer.begin({});
 
 
 		// Initialize swapchain
-		uint32 width = 720, height = 480;
+		uint32 width = 1280, height = 720;
 		ResetSwapchain(width, height);
 
 
 		// Create command buffers
 		vk::CommandBufferAllocateInfo drawCmdInfo(cmdPool, vk::CommandBufferLevel::ePrimary, swapchainImages.size());
-		drawCmdBuffers = vkdevice.allocateCommandBuffers(setupCmdInfo);
+		drawCmdBuffers = vkdev.allocateCommandBuffers(drawCmdInfo);
 
 		vk::CommandBufferAllocateInfo presentCmdInfo(cmdPool, vk::CommandBufferLevel::ePrimary, 2);
-		buffers = vkdevice.allocateCommandBuffers(presentCmdInfo);
+		buffers = vkdev.allocateCommandBuffers(presentCmdInfo);
 		prePresentCmdBuffer = buffers[0];
 		postPresentCmdBuffer = buffers[1];
 
@@ -308,8 +316,8 @@ namespace sp
 		depthInfo.tiling(vk::ImageTiling::eOptimal);
 		depthInfo.usage(vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc);
 
-		depthBuffer.image = vkdevice.createImage(depthInfo, alloc);
-		auto depthMemReqs = vkdevice.getImageMemoryRequirements(depthBuffer.image);
+		depthStencil.image = vkdev.createImage(depthInfo, alloc);
+		auto depthMemReqs = vkdev.getImageMemoryRequirements(depthStencil.image);
 
 		vk::ImageViewCreateInfo depthStencilInfo;
 		depthStencilInfo.viewType(vk::ImageViewType::e2D);
@@ -321,12 +329,12 @@ namespace sp
 		depthStencilInfo.subresourceRange().layerCount(1);
 
 		vk::MemoryAllocateInfo depthAllocInfo(depthMemReqs.size(), 0);
-		getMemoryType(depthMemReqs.memoryTypeBits(), vk::MemoryPropertyFlagBits::eDeviceLocal, depthAllocInfo.memoryTypeIndex());
-		depthBuffer.mem = vkdevice.allocateMemory(depthAllocInfo, alloc);
-		vkdevice.bindImageMemory(depthBuffer.image, depthBuffer.mem, 0);
-		vk::setImageLayout(setupCmdBuffer, depthBuffer.image, vk::ImageAspectFlagBits::eDepth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
-		depthStencilInfo.image(depthBuffer.image);
-		depthBuffer.view = vkdevice.createImageView(depthStencilInfo, alloc);
+		GetMemoryType(depthMemReqs.memoryTypeBits(), vk::MemoryPropertyFlagBits::eDeviceLocal, depthAllocInfo.memoryTypeIndex());
+		depthStencil.mem = vkdev.allocateMemory(depthAllocInfo, alloc);
+		vkdev.bindImageMemory(depthStencil.image, depthStencil.mem, 0);
+		vk::setImageLayout(setupCmdBuffer, depthStencil.image, vk::ImageAspectFlagBits::eDepth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+		depthStencilInfo.image(depthStencil.image);
+		depthStencil.view = vkdev.createImageView(depthStencilInfo, alloc);
 
 
 		// Create render pass
@@ -367,12 +375,12 @@ namespace sp
 		renderPassInfo.subpassCount(1);
 		renderPassInfo.pSubpasses(&subpass);
 
-		renderPass = vkdevice.createRenderPass(renderPassInfo, alloc);
+		renderPass = vkdev.createRenderPass(renderPassInfo, alloc);
 
 
 		// Set up framebuffer
 		vk::ImageView attachments[2];
-		attachments[1] = depthBuffer.view;
+		attachments[1] = depthStencil.view;
 
 		vk::FramebufferCreateInfo framebufferInfo;
 		framebufferInfo.renderPass(renderPass);
@@ -385,13 +393,13 @@ namespace sp
 		for (size_t i = 0; i < swapchainImages.size(); i++)
 		{
 			attachments[0] = swapchainViews[i];
-			framebuffers.push_back(vkdevice.createFramebuffer(framebufferInfo, alloc));
+			framebuffers.push_back(vkdev.createFramebuffer(framebufferInfo, alloc));
 		}
 
 
 		// Create pipeline cache
 		vk::PipelineCacheCreateInfo pipelineCacheInfo;
-		pipelineCache = vkdevice.createPipelineCache(pipelineCacheInfo, alloc);
+		pipelineCache = vkdev.createPipelineCache(pipelineCacheInfo, alloc);
 
 
 		// Submit setup queue
@@ -400,16 +408,18 @@ namespace sp
 		vk::SubmitInfo submitInfo;
 		submitInfo.commandBufferCount(1);
 		submitInfo.pCommandBuffers(&setupCmdBuffer);
-		queue.submit({ submitInfo }, vk::Fence());
+		vkqueue.submit({ submitInfo }, vk::Fence());
 
-		queue.waitIdle();
-		vkdevice.freeCommandBuffers(cmdPool, { setupCmdBuffer });
+		vkqueue.waitIdle();
+		vkdev.freeCommandBuffers(cmdPool, { setupCmdBuffer });
+
+		Prepare();
 	}
 
 	/*
 	 * Find index of memory type given valid indexes and required properties.
 	 */
-	bool GraphicsContext::getMemoryType(uint32 typeBits, vk::MemoryPropertyFlags properties, uint32 &typeIndex)
+	bool GraphicsContext::GetMemoryType(uint32 typeBits, vk::MemoryPropertyFlags properties, uint32 &typeIndex)
 	{
 		auto types = deviceMemoryProps.memoryTypes();
 
@@ -434,7 +444,7 @@ namespace sp
 
 		for (auto view : swapchainViews)
 		{
-			vkdevice.destroyImageView(view, alloc);
+			vkdev.destroyImageView(view, alloc);
 		}
 
 		vk::SurfaceCapabilitiesKHR surfCap;
@@ -500,14 +510,14 @@ namespace sp
 		createInfo.clipped(true);
 		createInfo.compositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
 
-		vkswapchain = vkdevice.createSwapchainKHR(createInfo, alloc);
+		vkswapchain = vkdev.createSwapchainKHR(createInfo, alloc);
 
 		if (oldSwapchain)
 		{
-			vkdevice.destroySwapchainKHR(oldSwapchain, alloc);
+			vkdev.destroySwapchainKHR(oldSwapchain, alloc);
 		}
 
-		vkdevice.getSwapchainImagesKHR(vkswapchain, swapchainImages);
+		vkdev.getSwapchainImagesKHR(vkswapchain, swapchainImages);
 
 		swapchainViews.resize(swapchainImages.size());
 
@@ -529,7 +539,7 @@ namespace sp
 			setImageLayout(setupCmdBuffer, image, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 
 			viewCreateInfo.image(image);
-			auto view = vkdevice.createImageView(viewCreateInfo, alloc);
+			auto view = vkdev.createImageView(viewCreateInfo, alloc);
 			swapchainViews[i] = view;
 		}
 	}
@@ -539,9 +549,34 @@ namespace sp
 		return !!glfwWindowShouldClose(window);
 	}
 
-	void GraphicsContext::RenderFrame()
+	vk::ShaderModule GraphicsContext::CreateShaderModule(std::string filename, vk::ShaderStageFlagBits stage)
 	{
-		/* glfwSwapBuffers(window); */
+		std::ifstream fin(filename, std::ios::binary);
+		if (!fin.good())
+		{
+			Errorf("Shader file %s could not be read", filename.c_str());
+			throw "missing shader";
+		}
+
+		vector<char> buffer((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+
+		vk::ShaderModuleCreateInfo moduleInfo;
+		moduleInfo.codeSize(buffer.size());
+		moduleInfo.pCode((uint32 *) buffer.data());
+
+		return vkdev.createShaderModule(moduleInfo, alloc);
+	}
+
+	vk::PipelineShaderStageCreateInfo GraphicsContext::LoadShader(std::string filename, vk::ShaderStageFlagBits stage)
+	{
+		auto module = CreateShaderModule(filename, stage);
+		shaderModules.push_back(module);
+
+		vk::PipelineShaderStageCreateInfo stageInfo;
+		stageInfo.stage(stage);
+		stageInfo.module(module);
+		stageInfo.pName("main");
+		return stageInfo;
 	}
 }
 

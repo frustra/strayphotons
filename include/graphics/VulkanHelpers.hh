@@ -3,6 +3,8 @@
 #ifndef SP_VULKAN_HELPERS_H
 #define SP_VULKAN_HELPERS_H
 
+#include <string>
+
 #include "graphics/Graphics.hh"
 #include "core/Logging.hh"
 

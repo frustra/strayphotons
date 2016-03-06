@@ -5,7 +5,9 @@
 #define VKCPP_ENHANCED_MODE
 
 #include <GLFW/glfw3.h>
-#include "vulkan/vk_cpp.h"
+#include <vulkan/vk_cpp.h>
+
+#include <glm/glm.hpp>
 
 #include "Shared.hh"
 
