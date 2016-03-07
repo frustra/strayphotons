@@ -66,8 +66,7 @@ namespace sp
 		vertexBufInfo.usage(vk::BufferUsageFlagBits::eVertexBuffer);
 
 		vertices.buf = vkdev.createBuffer(vertexBufInfo, alloc);
-		auto vertexMemReq = vkdev.getBufferMemoryRequirements(vertices.buf);
-		vertices.mem = devmem->AllocHostVisible(vertexMemReq);
+		vertices.mem = devmem->AllocHostVisible(vkdev.getBufferMemoryRequirements(vertices.buf));
 
 		// Upload to VRAM
 		void *data = vertices.mem.Map();
@@ -82,8 +81,7 @@ namespace sp
 		indexBufInfo.usage(vk::BufferUsageFlagBits::eIndexBuffer);
 
 		indices.buf = vkdev.createBuffer(indexBufInfo, alloc);
-		auto indexMemReq = vkdev.getBufferMemoryRequirements(indices.buf);
-		indices.mem = devmem->AllocHostVisible(indexMemReq);
+		indices.mem = devmem->AllocHostVisible(vkdev.getBufferMemoryRequirements(indices.buf));
 
 		// Upload to VRAM
 		data = indices.mem.Map();
@@ -124,9 +122,7 @@ namespace sp
 		uboInfo.usage(vk::BufferUsageFlagBits::eUniformBuffer);
 
 		uniformDataVS.buf = vkdev.createBuffer(uboInfo, alloc);
-		auto uboMemReq = vkdev.getBufferMemoryRequirements(uniformDataVS.buf);
-		uniformDataVS.mem = devmem->AllocHostVisible(uboMemReq);
-
+		uniformDataVS.mem = devmem->AllocHostVisible(vkdev.getBufferMemoryRequirements(uniformDataVS.buf));
 		uniformDataVS.mem.BindBuffer(uniformDataVS.buf);
 
 		uniformDataVS.desc.buffer(uniformDataVS.buf);
@@ -212,8 +208,8 @@ namespace sp
 
 		vk::PipelineShaderStageCreateInfo shaderStages[] =
 		{
-			LoadShader("../assets/shaders/triangle.vert.spv", vk::ShaderStageFlagBits::eVertex),
-			LoadShader("../assets/shaders/triangle.frag.spv", vk::ShaderStageFlagBits::eFragment),
+			LoadShader("./assets/shaders/triangle.vert.spv", vk::ShaderStageFlagBits::eVertex),
+			LoadShader("./assets/shaders/triangle.frag.spv", vk::ShaderStageFlagBits::eFragment),
 		};
 
 		pipelineInfo.stageCount(2);

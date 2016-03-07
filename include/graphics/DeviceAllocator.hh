@@ -23,6 +23,7 @@ namespace sp
 		uint64 size;
 
 		void *Map();
+		void *MapRange(uint64 start, uint64 len);
 		void Unmap();
 		void BindBuffer(vk::Buffer buf);
 		void BindImage(vk::Image image);

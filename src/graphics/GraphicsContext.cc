@@ -333,8 +333,7 @@ namespace sp
 		depthStencilInfo.subresourceRange().baseArrayLayer(0);
 		depthStencilInfo.subresourceRange().layerCount(1);
 
-		auto depthMemReqs = vkdev.getImageMemoryRequirements(depthStencil.image);
-		depthStencil.mem = devmem->AllocDeviceLocal(depthMemReqs);
+		depthStencil.mem = devmem->AllocDeviceLocal(vkdev.getImageMemoryRequirements(depthStencil.image));
 		depthStencil.mem.BindImage(depthStencil.image);
 
 		vk::setImageLayout(setupCmdBuffer, depthStencil.image, vk::ImageAspectFlagBits::eDepth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);

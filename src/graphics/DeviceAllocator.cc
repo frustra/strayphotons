@@ -72,6 +72,14 @@ namespace sp
 		return allocator->vkdev.mapMemory(mem, offset, size, {});
 	}
 
+	void *DeviceAllocation::MapRange(uint64 start, uint64 len)
+	{
+		if (start + len > size)
+			throw "DeviceAllocation::MapRange: out of bounds";
+
+		return allocator->vkdev.mapMemory(mem, offset + start, len, {});
+	}
+
 	void DeviceAllocation::Unmap()
 	{
 		allocator->vkdev.unmapMemory(mem);
