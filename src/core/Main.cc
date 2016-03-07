@@ -6,6 +6,8 @@ using namespace std;
 #include "StrayPhotons.hh"
 #include "core/Logging.hh"
 
+#include <cstdio>
+
 #ifdef _WIN32
 #include <direct.h>
 #define os_getcwd _getcwd
@@ -16,8 +18,8 @@ using namespace std;
 
 int main()
 {
-	char cwd[128];
-	os_getcwd(cwd, 128);
+	char cwd[FILENAME_MAX];
+	os_getcwd(cwd, FILENAME_MAX);
 	Logf("Starting in directory: %s", cwd);
 
 	try

@@ -3,14 +3,15 @@
 #include "graphics/Renderer.hh"
 #include "core/Logging.hh"
 
-#include <glm/gtc/matrix_transform.hpp>
-
 namespace sp
 {
 	Renderer::~Renderer()
 	{
-		if (presentCompleteSem)
-			vkdev.destroySemaphore(presentCompleteSem, alloc);
+		if (semaphores.presentComplete)
+			vkdev.destroySemaphore(semaphores.presentComplete, alloc);
+
+		if (semaphores.renderComplete)
+			vkdev.destroySemaphore(semaphores.renderComplete, alloc);
 
 		if (descriptorPool)
 			vkdev.destroyDescriptorPool(descriptorPool, alloc);
@@ -28,19 +29,19 @@ namespace sp
 			vkdev.destroyBuffer(vertices.buf, alloc);
 
 		if (vertices.mem)
-			vkdev.freeMemory(vertices.mem, alloc);
+			devmem->Free(vertices.mem);
 
 		if (indices.buf)
 			vkdev.destroyBuffer(indices.buf, alloc);
 
 		if (indices.mem)
-			vkdev.freeMemory(indices.mem, alloc);
+			devmem->Free(indices.mem);
 
 		if (uniformDataVS.buf)
 			vkdev.destroyBuffer(uniformDataVS.buf, alloc);
 
 		if (uniformDataVS.mem)
-			vkdev.freeMemory(uniformDataVS.mem, alloc);
+			devmem->Free(uniformDataVS.mem);
 	}
 
 	void Renderer::Prepare()
@@ -66,17 +67,14 @@ namespace sp
 
 		vertices.buf = vkdev.createBuffer(vertexBufInfo, alloc);
 		auto vertexMemReq = vkdev.getBufferMemoryRequirements(vertices.buf);
-
-		vk::MemoryAllocateInfo vertexMemInfo(vertexMemReq.size(), 0);
-		GetMemoryType(vertexMemReq.memoryTypeBits(), vk::MemoryPropertyFlagBits::eHostVisible, vertexMemInfo.memoryTypeIndex());
-		vertices.mem = vkdev.allocateMemory(vertexMemInfo, alloc);
+		vertices.mem = devmem->AllocHostVisible(vertexMemReq);
 
 		// Upload to VRAM
-		void *data = vkdev.mapMemory(vertices.mem, 0, vertexMemInfo.allocationSize(), vk::MemoryMapFlags());
+		void *data = vertices.mem.Map();
 		memcpy(data, vertexBuf, sizeof(vertexBuf));
-		vkdev.unmapMemory(vertices.mem);
+		vertices.mem.Unmap();
 
-		vkdev.bindBufferMemory(vertices.buf, vertices.mem, 0);
+		vertices.mem.BindBuffer(vertices.buf);
 
 		// Create index buffer
 		vk::BufferCreateInfo indexBufInfo;
@@ -85,17 +83,14 @@ namespace sp
 
 		indices.buf = vkdev.createBuffer(indexBufInfo, alloc);
 		auto indexMemReq = vkdev.getBufferMemoryRequirements(indices.buf);
-
-		vk::MemoryAllocateInfo indexMemInfo(indexMemReq.size(), 0);
-		GetMemoryType(indexMemReq.memoryTypeBits(), vk::MemoryPropertyFlagBits::eHostVisible, indexMemInfo.memoryTypeIndex());
-		indices.mem = vkdev.allocateMemory(indexMemInfo, alloc);
+		indices.mem = devmem->AllocHostVisible(indexMemReq);
 
 		// Upload to VRAM
-		data = vkdev.mapMemory(indices.mem, 0, indexMemInfo.allocationSize(), vk::MemoryMapFlags());
+		data = indices.mem.Map();
 		memcpy(data, indexBuf, sizeof(indexBuf));
-		vkdev.unmapMemory(indices.mem);
+		indices.mem.Unmap();
 
-		vkdev.bindBufferMemory(indices.buf, indices.mem, 0);
+		indices.mem.BindBuffer(indices.buf);
 		indices.count = sizeof(indices) / sizeof(uint32);
 
 		// Vertex binding description
@@ -130,12 +125,9 @@ namespace sp
 
 		uniformDataVS.buf = vkdev.createBuffer(uboInfo, alloc);
 		auto uboMemReq = vkdev.getBufferMemoryRequirements(uniformDataVS.buf);
+		uniformDataVS.mem = devmem->AllocHostVisible(uboMemReq);
 
-		vk::MemoryAllocateInfo uboMemInfo(uboMemReq.size(), 0);
-		GetMemoryType(uboMemReq.memoryTypeBits(), vk::MemoryPropertyFlagBits::eHostVisible, uboMemInfo.memoryTypeIndex());
-		uniformDataVS.mem = vkdev.allocateMemory(uboMemInfo, alloc);
-
-		vkdev.bindBufferMemory(uniformDataVS.buf, uniformDataVS.mem, 0);
+		uniformDataVS.mem.BindBuffer(uniformDataVS.buf);
 
 		uniformDataVS.desc.buffer(uniformDataVS.buf);
 		uniformDataVS.desc.offset(0);
@@ -143,13 +135,13 @@ namespace sp
 
 
 		// Update uniforms
-		uboVS.projection = glm::perspective(1.05f, 1.778f, 0.1f, 256.0f);
+		uboVS.projection = glm::perspective(glm::radians(60.0f), 1.778f, 0.1f, 256.0f);
 		uboVS.view = glm::translate(glm::mat4(), glm::vec3(0.0f, 0.0f, -2.5f));
 		uboVS.model = glm::mat4();
 
-		data = vkdev.mapMemory(uniformDataVS.mem, 0, sizeof(uboVS), vk::MemoryMapFlags());
+		data = uniformDataVS.mem.Map();
 		memcpy(data, &uboVS, sizeof(uboVS));
-		vkdev.unmapMemory(uniformDataVS.mem);
+		uniformDataVS.mem.Unmap();
 
 
 		// Set descriptor layout
@@ -314,7 +306,7 @@ namespace sp
 
 			vk::ImageMemoryBarrier prePresentBarrier;
 			prePresentBarrier.srcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
-			prePresentBarrier.dstAccessMask(vk::AccessFlags());
+			prePresentBarrier.dstAccessMask({});
 			prePresentBarrier.oldLayout(vk::ImageLayout::eColorAttachmentOptimal);
 			prePresentBarrier.newLayout(vk::ImageLayout::ePresentSrcKHR);
 			prePresentBarrier.subresourceRange({ vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 });
@@ -323,36 +315,40 @@ namespace sp
 			cmdbuf.pipelineBarrier(
 				vk::PipelineStageFlagBits::eAllCommands,
 				vk::PipelineStageFlagBits::eTopOfPipe,
-				vk::DependencyFlags(), {}, {}, { prePresentBarrier }
+				{}, {}, {}, { prePresentBarrier }
 			);
 
 			cmdbuf.end();
 		}
 
-		vk::SemaphoreCreateInfo presentSemInfo;
-		presentCompleteSem = vkdev.createSemaphore(presentSemInfo, alloc);
+		semaphores.presentComplete = vkdev.createSemaphore({}, alloc);
+		semaphores.renderComplete = vkdev.createSemaphore({}, alloc);
 	}
 
 	void Renderer::RenderFrame()
 	{
 		vkdev.waitIdle();
-		vkdev.acquireNextImageKHR(vkswapchain, UINT64_MAX, presentCompleteSem, {}, currentBuffer);
+		vkdev.acquireNextImageKHR(vkswapchain, UINT64_MAX, semaphores.presentComplete, {}, currentBuffer);
 
 		vk::SubmitInfo submitInfo;
 		submitInfo.waitSemaphoreCount(1);
-		submitInfo.pWaitSemaphores(&presentCompleteSem);
+		submitInfo.pWaitSemaphores(&semaphores.presentComplete);
+		submitInfo.signalSemaphoreCount(1);
+		submitInfo.pSignalSemaphores(&semaphores.renderComplete);
 		submitInfo.commandBufferCount(1);
 		submitInfo.pCommandBuffers(&drawCmdBuffers[currentBuffer]);
 		vkqueue.submit({ submitInfo }, {});
 
 		vk::PresentInfoKHR presentInfo;
+		presentInfo.waitSemaphoreCount(1);
+		presentInfo.pWaitSemaphores(&semaphores.renderComplete);
 		presentInfo.swapchainCount(1);
 		presentInfo.pSwapchains(&vkswapchain);
 		presentInfo.pImageIndices(&currentBuffer);
 		vkqueue.presentKHR(presentInfo);
 
 		vk::ImageMemoryBarrier postPresentBarrier;
-		postPresentBarrier.srcAccessMask(vk::AccessFlags());
+		postPresentBarrier.srcAccessMask({});
 		postPresentBarrier.dstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
 		postPresentBarrier.oldLayout(vk::ImageLayout::ePresentSrcKHR);
 		postPresentBarrier.newLayout(vk::ImageLayout::eColorAttachmentOptimal);
@@ -363,7 +359,7 @@ namespace sp
 		postPresentCmdBuffer.pipelineBarrier(
 			vk::PipelineStageFlagBits::eAllCommands,
 			vk::PipelineStageFlagBits::eTopOfPipe,
-			vk::DependencyFlags(), {}, {}, { postPresentBarrier }
+			{}, {}, {}, { postPresentBarrier }
 		);
 		postPresentCmdBuffer.end();
 

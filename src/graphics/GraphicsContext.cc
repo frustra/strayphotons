@@ -4,6 +4,7 @@
 #include "core/Logging.hh"
 #include "graphics/GraphicsContext.hh"
 #include "graphics/VulkanHelpers.hh"
+#include "graphics/DeviceAllocator.hh"
 
 #include <string>
 #include <iostream>
@@ -74,7 +75,7 @@ namespace sp
 			vkdev.destroyImage(depthStencil.image, alloc);
 
 		if (depthStencil.mem)
-			vkdev.freeMemory(depthStencil.mem, alloc);
+			devmem->Free(depthStencil.mem);
 
 		if (prePresentCmdBuffer || postPresentCmdBuffer)
 			vkdev.freeCommandBuffers(cmdPool, { prePresentCmdBuffer, postPresentCmdBuffer });
@@ -90,6 +91,9 @@ namespace sp
 
 		if (cmdPool)
 			vkdev.destroyCommandPool(cmdPool, alloc);
+
+		if (devmem)
+			delete devmem;
 
 		if (vkdev)
 			vkdev.destroy(alloc);
@@ -194,7 +198,6 @@ namespace sp
 
 		auto devProps = vkpdevice.getProperties();
 		Logf("Using device %x:%x", devProps.vendorID(), devProps.deviceID());
-		deviceMemoryProps = vkpdevice.getMemoryProperties();
 
 
 		// Create window and surface
@@ -203,7 +206,7 @@ namespace sp
 			throw "glfw window creation failed";
 		}
 
-		auto result = glfwCreateWindowSurface((VkInstance)vkinstance, window, (VkAllocationCallbacks *) &alloc, (VkSurfaceKHR *) &vksurface);
+		auto result = glfwCreateWindowSurface((VkInstance) vkinstance, window, (VkAllocationCallbacks *) &alloc, (VkSurfaceKHR *) &vksurface);
 		vk::Assert(result, "creating window surface");
 
 
@@ -227,7 +230,8 @@ namespace sp
 				}
 			}
 
-			Logf("Queue fam %d - flags: 0x%x, count: %d, timestamp valid bits: %d", i, flags, props.queueCount(), props.timestampValidBits());
+			auto flagStr = vk::getString(flags);
+			Logf("Queue fam %d - %s (0x%x), count: %d, timestamp valid bits: %d", i, flagStr.c_str(), flags, props.queueCount(), props.timestampValidBits());
 		}
 
 		if (primaryQueueIndex < 0)
@@ -259,6 +263,8 @@ namespace sp
 
 		vkdev = vkpdevice.createDevice(devInfo, alloc);
 		vkqueue = vkdev.getQueue(primaryQueueIndex, 0);
+
+		devmem = new DeviceAllocator(vkdev, vkpdevice, alloc);
 
 
 		// Select surface format
@@ -317,7 +323,6 @@ namespace sp
 		depthInfo.usage(vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc);
 
 		depthStencil.image = vkdev.createImage(depthInfo, alloc);
-		auto depthMemReqs = vkdev.getImageMemoryRequirements(depthStencil.image);
 
 		vk::ImageViewCreateInfo depthStencilInfo;
 		depthStencilInfo.viewType(vk::ImageViewType::e2D);
@@ -328,10 +333,10 @@ namespace sp
 		depthStencilInfo.subresourceRange().baseArrayLayer(0);
 		depthStencilInfo.subresourceRange().layerCount(1);
 
-		vk::MemoryAllocateInfo depthAllocInfo(depthMemReqs.size(), 0);
-		GetMemoryType(depthMemReqs.memoryTypeBits(), vk::MemoryPropertyFlagBits::eDeviceLocal, depthAllocInfo.memoryTypeIndex());
-		depthStencil.mem = vkdev.allocateMemory(depthAllocInfo, alloc);
-		vkdev.bindImageMemory(depthStencil.image, depthStencil.mem, 0);
+		auto depthMemReqs = vkdev.getImageMemoryRequirements(depthStencil.image);
+		depthStencil.mem = devmem->AllocDeviceLocal(depthMemReqs);
+		depthStencil.mem.BindImage(depthStencil.image);
+
 		vk::setImageLayout(setupCmdBuffer, depthStencil.image, vk::ImageAspectFlagBits::eDepth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 		depthStencilInfo.image(depthStencil.image);
 		depthStencil.view = vkdev.createImageView(depthStencilInfo, alloc);
@@ -414,28 +419,6 @@ namespace sp
 		vkdev.freeCommandBuffers(cmdPool, { setupCmdBuffer });
 
 		Prepare();
-	}
-
-	/*
-	 * Find index of memory type given valid indexes and required properties.
-	 */
-	bool GraphicsContext::GetMemoryType(uint32 typeBits, vk::MemoryPropertyFlags properties, uint32 &typeIndex)
-	{
-		auto types = deviceMemoryProps.memoryTypes();
-
-		for (uint32 i = 0; i < deviceMemoryProps.memoryTypeCount(); i++)
-		{
-			if ((typeBits & 1) == 1)
-			{
-				if ((types[i].propertyFlags() & properties) == properties)
-				{
-					typeIndex = i;
-					return true;
-				}
-			}
-			typeBits >>= 1;
-		}
-		return false;
 	}
 
 	void GraphicsContext::ResetSwapchain(uint32 &width, uint32 &height)

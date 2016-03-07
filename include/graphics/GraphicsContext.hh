@@ -6,9 +6,12 @@
 #include <string>
 
 #include "graphics/Graphics.hh"
+#include "graphics/DeviceAllocator.hh"
 
 namespace sp
 {
+	class DeviceAllocator;
+
 	class GraphicsContext
 	{
 	public:
@@ -18,7 +21,6 @@ namespace sp
 		void CreateWindow();
 		bool ShouldClose();
 		void ResetSwapchain(uint32 &width, uint32 &height);
-		bool GetMemoryType(uint32 typeBits, vk::MemoryPropertyFlags properties, uint32 &typeIndex);
 
 		virtual void Prepare() = 0;
 		virtual void RenderFrame() = 0;
@@ -27,8 +29,8 @@ namespace sp
 		vk::PipelineShaderStageCreateInfo LoadShader(std::string filename, vk::ShaderStageFlagBits stage);
 
 	private:
-		GLFWwindow *window = NULL;
-		GLFWmonitor *monitor = NULL;
+		GLFWwindow *window = nullptr;
+		GLFWmonitor *monitor = nullptr;
 
 		bool enableValidation = true;
 
@@ -39,8 +41,9 @@ namespace sp
 		vk::Instance vkinstance;
 		vk::PhysicalDevice vkpdevice;
 		vk::Device vkdev;
-		vk::PhysicalDeviceMemoryProperties deviceMemoryProps;
 		vk::AllocationCallbacks &alloc = vk::AllocationCallbacks::null();
+
+		DeviceAllocator *devmem = nullptr;
 
 		vk::Queue vkqueue;
 		vk::CommandPool cmdPool;
@@ -59,7 +62,7 @@ namespace sp
 		struct
 		{
 			vk::Image image;
-			vk::DeviceMemory mem;
+			DeviceAllocation mem;
 			vk::ImageView view;
 		} depthStencil;
 

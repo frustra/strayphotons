@@ -19,7 +19,7 @@ namespace sp
 		struct
 		{
 			vk::Buffer buf;
-			vk::DeviceMemory mem;
+			DeviceAllocation mem;
 			vector<vk::VertexInputBindingDescription> bindingDescs;
 			vector<vk::VertexInputAttributeDescription> attribDescs;
 			vk::PipelineVertexInputStateCreateInfo inputInfo;
@@ -28,14 +28,14 @@ namespace sp
 		struct
 		{
 			vk::Buffer buf;
-			vk::DeviceMemory mem;
+			DeviceAllocation mem;
 			uint32 count;
 		} indices;
 
 		struct
 		{
 			vk::Buffer buf;
-			vk::DeviceMemory mem;
+			DeviceAllocation mem;
 			vk::DescriptorBufferInfo desc;
 		} uniformDataVS;
 
@@ -51,7 +51,15 @@ namespace sp
 		vk::DescriptorSet descriptorSet;
 		vk::DescriptorSetLayout descriptorSetLayout;
 		vk::DescriptorPool descriptorPool;
-		vk::Semaphore presentCompleteSem;
+
+		struct
+		{
+			// Ensures last image is presented before the next frame is submitted
+			vk::Semaphore presentComplete;
+
+			// Ensures current frame is submitted before image is presented
+			vk::Semaphore renderComplete;
+		} semaphores;
 
 		uint32 currentBuffer = 0;
 	};
