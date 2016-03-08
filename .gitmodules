@@ -22,3 +22,6 @@
 [submodule "ext/vkcpp"]
 	path = ext/vkcpp
 	url = git://github.com/pushrax/vkcpp
+[submodule "ext/SPIRV-Tools"]
+	path = ext/SPIRV-Tools
+	url = https://github.com/KhronosGroup/SPIRV-Tools

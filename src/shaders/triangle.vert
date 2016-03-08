@@ -17,4 +17,3 @@ void main()
 	outColor = inColor;
 	gl_Position = ubo.projMatrix * ubo.viewMatrix * ubo.modelMatrix * vec4(inPos, 1.0);
 }
-

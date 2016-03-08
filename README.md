@@ -17,10 +17,10 @@ Build setup
 
 ### Install build dependencies
 
-- Linux: `cmake build-essential xorg-dev libxrandr-dev astyle mesa-common-dev astyle` (or equivalent for your distro).
+- Linux: `cmake build-essential python xorg-dev libxrandr-dev astyle mesa-common-dev astyle` (or equivalent for your distro).
 There might be some missing dependencies in this list, add any you find.
 
-- Windows: cmake, Visual Studio 14 (2015).
+- Windows: cmake, Visual Studio 14 (2015), python.
 We'll set something up with git bash to be able to run our scripts.
 
 - All: `make dependencies`

@@ -45,10 +45,13 @@ set(EXT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build the GLFW example programs")
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "Build the GLFW test programs")
 set(GLFW_INSTALL OFF CACHE BOOL "Generate installation target")
-
 add_subdirectory(${EXT_PATH}/glfw)
 
 add_subdirectory(${EXT_PATH}/freetype2)
+
+set(SPIRV_SKIP_EXECUTABLES ON CACHE INTERNAL "Skip SPIRV executables")
+add_subdirectory(${EXT_PATH}/SPIRV-Tools)
+
 
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -56,6 +59,7 @@ include_directories(
 	${EXT_PATH}/glm
 	${EXT_PATH}/freetype2/include
 	${EXT_PATH}/vkcpp
+	${EXT_PATH}/SPIRV-Tools/include
 	${VULKAN_INCLUDE_DIR}
 )
 
@@ -65,6 +69,24 @@ list(REMOVE_DUPLICATES all_sources)
 file(GLOB_RECURSE all_headers ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hh)
 list(REMOVE_DUPLICATES all_headers)
 
+file(GLOB_RECURSE all_shaders
+	${CMAKE_CURRENT_SOURCE_DIR}/src/*.vert
+	${CMAKE_CURRENT_SOURCE_DIR}/src/*.tesc
+	${CMAKE_CURRENT_SOURCE_DIR}/src/*.tese
+	${CMAKE_CURRENT_SOURCE_DIR}/src/*.geom
+	${CMAKE_CURRENT_SOURCE_DIR}/src/*.frag
+	${CMAKE_CURRENT_SOURCE_DIR}/src/*.comp)
+list(REMOVE_DUPLICATES all_shaders)
+
+
+find_host_package(PythonInterp)
+
+add_custom_target(sp-shaders
+	${PYTHON_EXECUTABLE}
+	${CMAKE_CURRENT_SOURCE_DIR}/compile_shaders.py
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	COMMENT "Compile shaders"
+	SOURCES ${all_shaders})
 
 add_executable(sp ${all_sources} ${all_headers})
 
@@ -78,4 +100,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 
 
-target_link_libraries(sp glfw ${GLFW_LIBRARIES} ${VULKAN_LIBRARY} freetype)
+add_dependencies(sp sp-shaders)
+
+target_link_libraries(sp glfw ${GLFW_LIBRARIES} ${VULKAN_LIBRARY} freetype SPIRV-Tools)
