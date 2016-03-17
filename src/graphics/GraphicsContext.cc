@@ -231,7 +231,7 @@ namespace sp
 			}
 
 			auto flagStr = vk::getString(flags);
-			Logf("Queue fam %d - %s (0x%x), count: %d, timestamp valid bits: %d", i, flagStr.c_str(), flags, props.queueCount(), props.timestampValidBits());
+			Logf("Queue fam %d - %s (0x%x), count: %d, timestamp valid bits: %d", i, flagStr.c_str(), (uint32_t)flags, props.queueCount(), props.timestampValidBits());
 		}
 
 		if (primaryQueueIndex < 0)
@@ -561,4 +561,3 @@ namespace sp
 		return stageInfo;
 	}
 }
-
