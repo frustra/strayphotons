@@ -61,6 +61,7 @@ include_directories(
 	${EXT_PATH}/vkcpp
 	${EXT_PATH}/SPIRV-Tools/include
 	${VULKAN_INCLUDE_DIR}
+	${EXT_PATH}
 )
 
 file(GLOB_RECURSE all_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)

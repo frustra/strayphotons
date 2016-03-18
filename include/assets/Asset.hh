@@ -3,7 +3,7 @@
 #ifndef SP_ASSET_H
 #define SP_ASSET_H
 
-#include <string>
+#include "Shared.hh"
 
 namespace sp
 {
@@ -12,18 +12,18 @@ namespace sp
 	class Asset
 	{
 	public:
-		Asset(AssetManager *manager, const std::string &path);
+		Asset(AssetManager *manager, const string &path);
 		~Asset();
 
 		void Load();
 
-		const std::string String();
+		const string String();
 		const char *Buffer();
 		int Size();
 
 		AssetManager *manager;
 
-		const std::string path;
+		const string path;
 
 	private:
 		char *buffer;

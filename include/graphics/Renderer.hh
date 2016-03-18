@@ -4,6 +4,7 @@
 #define SP_RENDERER_H
 
 #include "graphics/GraphicsContext.hh"
+#include "graphics/ShaderManager.hh"
 
 namespace sp
 {
@@ -32,20 +33,6 @@ namespace sp
 			uint32 count;
 		} indices;
 
-		struct
-		{
-			vk::Buffer buf;
-			DeviceAllocation mem;
-			vk::DescriptorBufferInfo desc;
-		} uniformDataVS;
-
-		struct
-		{
-			glm::mat4 projection;
-			glm::mat4 model;
-			glm::mat4 view;
-		} uboVS;
-
 		vk::Pipeline pipeline;
 		vk::PipelineLayout pipelineLayout;
 		vk::DescriptorSet descriptorSet;
@@ -62,6 +49,8 @@ namespace sp
 		} semaphores;
 
 		uint32 currentBuffer = 0;
+
+		ShaderManager *shaderManager = nullptr;
 	};
 }
 

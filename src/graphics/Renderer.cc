@@ -2,50 +2,82 @@
 
 #include "graphics/Renderer.hh"
 #include "core/Logging.hh"
+#include "graphics/Shader.hh"
 
 namespace sp
 {
+	class TriangleVS : public Shader
+	{
+		SHADER_TYPE(TriangleVS)
+
+		TriangleVS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+		{
+			Bind(transform, "ubo");
+		}
+
+		struct
+		{
+			glm::mat4 projection;
+			glm::mat4 model;
+			glm::mat4 view;
+		} transform;
+	};
+
+	class TriangleFS : public Shader
+	{
+		SHADER_TYPE(TriangleFS)
+		using Shader::Shader;
+	};
+
+	IMPLEMENT_SHADER_TYPE(TriangleVS, "triangle.vert", Vertex);
+	IMPLEMENT_SHADER_TYPE(TriangleFS, "triangle.frag", Fragment);
+
 	Renderer::~Renderer()
 	{
 		if (semaphores.presentComplete)
-			vkdev.destroySemaphore(semaphores.presentComplete, alloc);
+			vkdev.destroySemaphore(semaphores.presentComplete, nalloc);
 
 		if (semaphores.renderComplete)
-			vkdev.destroySemaphore(semaphores.renderComplete, alloc);
+			vkdev.destroySemaphore(semaphores.renderComplete, nalloc);
 
 		if (descriptorPool)
-			vkdev.destroyDescriptorPool(descriptorPool, alloc);
+			vkdev.destroyDescriptorPool(descriptorPool, nalloc);
 
 		if (pipeline)
-			vkdev.destroyPipeline(pipeline, alloc);
+			vkdev.destroyPipeline(pipeline, nalloc);
 
 		if (pipelineLayout)
-			vkdev.destroyPipelineLayout(pipelineLayout, alloc);
+			vkdev.destroyPipelineLayout(pipelineLayout, nalloc);
 
 		if (descriptorSetLayout)
-			vkdev.destroyDescriptorSetLayout(descriptorSetLayout, alloc);
+			vkdev.destroyDescriptorSetLayout(descriptorSetLayout, nalloc);
 
 		if (vertices.buf)
-			vkdev.destroyBuffer(vertices.buf, alloc);
+			vkdev.destroyBuffer(vertices.buf, nalloc);
 
 		if (vertices.mem)
 			devmem->Free(vertices.mem);
 
 		if (indices.buf)
-			vkdev.destroyBuffer(indices.buf, alloc);
+			vkdev.destroyBuffer(indices.buf, nalloc);
 
 		if (indices.mem)
 			devmem->Free(indices.mem);
 
-		if (uniformDataVS.buf)
-			vkdev.destroyBuffer(uniformDataVS.buf, alloc);
-
-		if (uniformDataVS.mem)
-			devmem->Free(uniformDataVS.mem);
+		if (shaderManager)
+			delete shaderManager;
 	}
 
 	void Renderer::Prepare()
 	{
+		shaderManager = new ShaderManager(*this);
+		shaderManager->CompileAll(*shaderSet);
+
+		auto triangleVS = shaderSet->Get<TriangleVS>();
+		triangleVS->transform.projection = glm::perspective(glm::radians(60.0f), 1.778f, 0.1f, 256.0f);
+		triangleVS->transform.view = glm::translate(glm::mat4(), glm::vec3(0.0f, 0.0f, -2.5f));
+		triangleVS->transform.model = glm::mat4();
+
 		struct Vertex
 		{
 			float pos[3], color[3];
@@ -65,30 +97,26 @@ namespace sp
 		vertexBufInfo.size(sizeof(vertexBuf));
 		vertexBufInfo.usage(vk::BufferUsageFlagBits::eVertexBuffer);
 
-		vertices.buf = vkdev.createBuffer(vertexBufInfo, alloc);
-		vertices.mem = devmem->AllocHostVisible(vkdev.getBufferMemoryRequirements(vertices.buf));
+		vertices.buf = vkdev.createBuffer(vertexBufInfo, nalloc);
+		vertices.mem = devmem->AllocHostVisible(vertices.buf).BindBuffer(vertices.buf);
 
 		// Upload to VRAM
 		void *data = vertices.mem.Map();
 		memcpy(data, vertexBuf, sizeof(vertexBuf));
 		vertices.mem.Unmap();
 
-		vertices.mem.BindBuffer(vertices.buf);
-
 		// Create index buffer
 		vk::BufferCreateInfo indexBufInfo;
 		indexBufInfo.size(sizeof(indexBuf));
 		indexBufInfo.usage(vk::BufferUsageFlagBits::eIndexBuffer);
 
-		indices.buf = vkdev.createBuffer(indexBufInfo, alloc);
-		indices.mem = devmem->AllocHostVisible(vkdev.getBufferMemoryRequirements(indices.buf));
+		indices.buf = vkdev.createBuffer(indexBufInfo, nalloc);
+		indices.mem = devmem->AllocHostVisible(indices.buf).BindBuffer(indices.buf);
 
 		// Upload to VRAM
 		data = indices.mem.Map();
 		memcpy(data, indexBuf, sizeof(indexBuf));
 		indices.mem.Unmap();
-
-		indices.mem.BindBuffer(indices.buf);
 		indices.count = sizeof(indices) / sizeof(uint32);
 
 		// Vertex binding description
@@ -116,30 +144,6 @@ namespace sp
 		vertices.inputInfo.pVertexAttributeDescriptions(vertices.attribDescs.data());
 
 
-		// Prepare uniform buffers
-		vk::BufferCreateInfo uboInfo;
-		uboInfo.size(sizeof(uboVS));
-		uboInfo.usage(vk::BufferUsageFlagBits::eUniformBuffer);
-
-		uniformDataVS.buf = vkdev.createBuffer(uboInfo, alloc);
-		uniformDataVS.mem = devmem->AllocHostVisible(vkdev.getBufferMemoryRequirements(uniformDataVS.buf));
-		uniformDataVS.mem.BindBuffer(uniformDataVS.buf);
-
-		uniformDataVS.desc.buffer(uniformDataVS.buf);
-		uniformDataVS.desc.offset(0);
-		uniformDataVS.desc.range(sizeof(uboVS));
-
-
-		// Update uniforms
-		uboVS.projection = glm::perspective(glm::radians(60.0f), 1.778f, 0.1f, 256.0f);
-		uboVS.view = glm::translate(glm::mat4(), glm::vec3(0.0f, 0.0f, -2.5f));
-		uboVS.model = glm::mat4();
-
-		data = uniformDataVS.mem.Map();
-		memcpy(data, &uboVS, sizeof(uboVS));
-		uniformDataVS.mem.Unmap();
-
-
 		// Set descriptor layout
 		vk::DescriptorSetLayoutBinding layoutBinding;
 		layoutBinding.binding(0);
@@ -151,13 +155,13 @@ namespace sp
 		descriptorLayoutInfo.bindingCount(1);
 		descriptorLayoutInfo.pBindings(&layoutBinding);
 
-		descriptorSetLayout = vkdev.createDescriptorSetLayout(descriptorLayoutInfo, alloc);
+		descriptorSetLayout = vkdev.createDescriptorSetLayout(descriptorLayoutInfo, nalloc);
 
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
 		pipelineLayoutInfo.setLayoutCount(1);
 		pipelineLayoutInfo.pSetLayouts(&descriptorSetLayout);
 
-		pipelineLayout = vkdev.createPipelineLayout(pipelineLayoutInfo, alloc);
+		pipelineLayout = vkdev.createPipelineLayout(pipelineLayoutInfo, nalloc);
 
 
 		// Prepare pipeline state
@@ -208,8 +212,8 @@ namespace sp
 
 		vk::PipelineShaderStageCreateInfo shaderStages[] =
 		{
-			LoadShader("./assets/shaders/triangle.vert.spv", vk::ShaderStageFlagBits::eVertex),
-			LoadShader("./assets/shaders/triangle.frag.spv", vk::ShaderStageFlagBits::eFragment),
+			shaderSet->Get<TriangleVS>()->StageCreateInfo(),
+			shaderSet->Get<TriangleFS>()->StageCreateInfo(),
 		};
 
 		pipelineInfo.stageCount(2);
@@ -224,7 +228,7 @@ namespace sp
 		pipelineInfo.renderPass(renderPass);
 		pipelineInfo.pDynamicState(&dynamicState);
 
-		auto pipelines = vkdev.createGraphicsPipelines(pipelineCache, { pipelineInfo }, alloc);
+		auto pipelines = vkdev.createGraphicsPipelines(pipelineCache, { pipelineInfo }, nalloc);
 		pipeline = pipelines[0];
 
 
@@ -236,7 +240,7 @@ namespace sp
 		descriptorPoolInfo.pPoolSizes(&descriptorPoolSize);
 		descriptorPoolInfo.maxSets(1);
 
-		descriptorPool = vkdev.createDescriptorPool(descriptorPoolInfo, alloc);
+		descriptorPool = vkdev.createDescriptorPool(descriptorPoolInfo, nalloc);
 
 		// Update descriptor sets with binding points
 		vk::DescriptorSetAllocateInfo descSetInfo;
@@ -252,7 +256,8 @@ namespace sp
 		writeDescSet.dstSet(descriptorSet);
 		writeDescSet.descriptorCount(1);
 		writeDescSet.descriptorType(vk::DescriptorType::eUniformBuffer);
-		writeDescSet.pBufferInfo(&uniformDataVS.desc);
+		auto &unifs = shaderSet->Get<TriangleVS>()->uniforms;
+		writeDescSet.pBufferInfo(&unifs["ubo"].desc);
 		writeDescSet.dstBinding(0);
 
 		vkdev.updateDescriptorSets({ writeDescSet }, {});
@@ -317,12 +322,24 @@ namespace sp
 			cmdbuf.end();
 		}
 
-		semaphores.presentComplete = vkdev.createSemaphore({}, alloc);
-		semaphores.renderComplete = vkdev.createSemaphore({}, alloc);
+		semaphores.presentComplete = vkdev.createSemaphore({}, nalloc);
+		semaphores.renderComplete = vkdev.createSemaphore({}, nalloc);
 	}
 
 	void Renderer::RenderFrame()
 	{
+		auto triangleVS = shaderSet->Get<TriangleVS>();
+
+		static float rot = 0;
+		triangleVS->transform.view = glm::rotate(glm::mat4(), rot, glm::vec3(0.f, 0.f, 1.f)) * glm::translate(glm::mat4(), glm::vec3(0.0f, 0.0f, -2.5f));
+		rot += 0.001;
+
+		for (auto &entry : shaderSet->Map())
+		{
+			auto shader = entry.second;
+			shader->UploadUniforms();
+		}
+
 		vkdev.waitIdle();
 		vkdev.acquireNextImageKHR(vkswapchain, UINT64_MAX, semaphores.presentComplete, {}, currentBuffer);
 

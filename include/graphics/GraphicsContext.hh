@@ -11,6 +11,9 @@
 namespace sp
 {
 	class DeviceAllocator;
+	class ShaderSet;
+
+	static vk::AllocationCallbacks &nalloc = vk::AllocationCallbacks::null();
 
 	class GraphicsContext
 	{
@@ -25,8 +28,10 @@ namespace sp
 		virtual void Prepare() = 0;
 		virtual void RenderFrame() = 0;
 
-		vk::ShaderModule CreateShaderModule(std::string filename, vk::ShaderStageFlagBits stage);
-		vk::PipelineShaderStageCreateInfo LoadShader(std::string filename, vk::ShaderStageFlagBits stage);
+		vk::PhysicalDevice vkpdevice;
+		vk::Device vkdev;
+		DeviceAllocator *devmem = nullptr;
+		shared_ptr<ShaderSet> shaderSet;
 
 	private:
 		GLFWwindow *window = nullptr;
@@ -35,15 +40,10 @@ namespace sp
 		bool enableValidation = true;
 
 		VkDebugReportCallbackEXT debugReportCallback = 0;
-		vector<vk::ShaderModule> shaderModules;
 
 	protected:
 		vk::Instance vkinstance;
-		vk::PhysicalDevice vkpdevice;
-		vk::Device vkdev;
-		vk::AllocationCallbacks &alloc = vk::AllocationCallbacks::null();
-
-		DeviceAllocator *devmem = nullptr;
+		vk::AllocationCallbacks &vkalloc = vk::AllocationCallbacks::null();
 
 		vk::Queue vkqueue;
 		vk::CommandPool cmdPool;

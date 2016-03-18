@@ -5,10 +5,10 @@
 #include "graphics/GraphicsContext.hh"
 #include "graphics/VulkanHelpers.hh"
 #include "graphics/DeviceAllocator.hh"
+#include "graphics/Shader.hh"
 
 #include <string>
 #include <iostream>
-#include <fstream>
 
 PFN_vkCreateDebugReportCallbackEXT fpCreateDebugReportCallback;
 PFN_vkDestroyDebugReportCallbackEXT fpDestroyDebugReportCallback;
@@ -52,27 +52,26 @@ namespace sp
 	{
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+		shaderSet = make_shared<ShaderSet>();
 	}
 
 	GraphicsContext::~GraphicsContext()
 	{
-		for (auto module : shaderModules)
-			vkdev.destroyShaderModule(module, alloc);
-
 		if (pipelineCache)
-			vkdev.destroyPipelineCache(pipelineCache, alloc);
+			vkdev.destroyPipelineCache(pipelineCache, nalloc);
 
 		for (auto buf : framebuffers)
-			vkdev.destroyFramebuffer(buf, alloc);
+			vkdev.destroyFramebuffer(buf, nalloc);
 
 		if (renderPass)
-			vkdev.destroyRenderPass(renderPass, alloc);
+			vkdev.destroyRenderPass(renderPass, nalloc);
 
 		if (depthStencil.view)
-			vkdev.destroyImageView(depthStencil.view, alloc);
+			vkdev.destroyImageView(depthStencil.view, nalloc);
 
 		if (depthStencil.image)
-			vkdev.destroyImage(depthStencil.image, alloc);
+			vkdev.destroyImage(depthStencil.image, nalloc);
 
 		if (depthStencil.mem)
 			devmem->Free(depthStencil.mem);
@@ -84,28 +83,28 @@ namespace sp
 			vkdev.freeCommandBuffers(cmdPool, drawCmdBuffers);
 
 		for (auto view : swapchainViews)
-			vkdev.destroyImageView(view, alloc);
+			vkdev.destroyImageView(view, nalloc);
 
 		if (vkswapchain)
-			vkdev.destroySwapchainKHR(vkswapchain, alloc);
+			vkdev.destroySwapchainKHR(vkswapchain, nalloc);
 
 		if (cmdPool)
-			vkdev.destroyCommandPool(cmdPool, alloc);
+			vkdev.destroyCommandPool(cmdPool, nalloc);
 
 		if (devmem)
 			delete devmem;
 
 		if (vkdev)
-			vkdev.destroy(alloc);
+			vkdev.destroy(nalloc);
 
 		if (vksurface)
-			vkinstance.destroySurfaceKHR(vksurface, alloc);
+			vkinstance.destroySurfaceKHR(vksurface, nalloc);
 
 		if (enableValidation && debugReportCallback)
-			fpDestroyDebugReportCallback((VkInstance) vkinstance, debugReportCallback, (VkAllocationCallbacks *) &alloc);
+			fpDestroyDebugReportCallback((VkInstance) vkinstance, debugReportCallback, (VkAllocationCallbacks *) &nalloc);
 
 		if (vkinstance)
-			vkinstance.destroy(alloc);
+			vkinstance.destroy(vkalloc);
 
 		if (window)
 			glfwDestroyWindow(window);
@@ -144,7 +143,7 @@ namespace sp
 		info.enabledExtensionCount(instExts.size());
 		info.ppEnabledExtensionNames(instExts.data());
 
-		vk::Assert(vk::createInstance(&info, &alloc, &vkinstance), "creating Vulkan instance");
+		vk::Assert(vk::createInstance(&info, &vkalloc, &vkinstance), "creating Vulkan instance");
 
 		int major, minor, patch;
 		vk::APIVersion(VK_API_VERSION, major, minor, patch);
@@ -174,7 +173,7 @@ namespace sp
 			//dbgInfo.flags |= VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
 
 			dbgInfo.pfnCallback = (PFN_vkDebugReportCallbackEXT)&vulkanCallback;
-			auto err = fpCreateDebugReportCallback((VkInstance) vkinstance, &dbgInfo, (VkAllocationCallbacks *) &alloc, &debugReportCallback);
+			auto err = fpCreateDebugReportCallback((VkInstance) vkinstance, &dbgInfo, (VkAllocationCallbacks *) &nalloc, &debugReportCallback);
 			vk::Assert(err, "creating debug report callback");
 		}
 
@@ -206,7 +205,7 @@ namespace sp
 			throw "glfw window creation failed";
 		}
 
-		auto result = glfwCreateWindowSurface((VkInstance) vkinstance, window, (VkAllocationCallbacks *) &alloc, (VkSurfaceKHR *) &vksurface);
+		auto result = glfwCreateWindowSurface((VkInstance) vkinstance, window, (VkAllocationCallbacks *) &nalloc, (VkSurfaceKHR *) &vksurface);
 		vk::Assert(result, "creating window surface");
 
 
@@ -261,10 +260,10 @@ namespace sp
 		devInfo.enabledExtensionCount(deviceExts.size());
 		devInfo.ppEnabledExtensionNames(deviceExts.data());
 
-		vkdev = vkpdevice.createDevice(devInfo, alloc);
+		vkdev = vkpdevice.createDevice(devInfo, nalloc);
 		vkqueue = vkdev.getQueue(primaryQueueIndex, 0);
 
-		devmem = new DeviceAllocator(vkdev, vkpdevice, alloc);
+		devmem = new DeviceAllocator(vkdev, vkpdevice, nalloc);
 
 
 		// Select surface format
@@ -288,7 +287,7 @@ namespace sp
 
 		// Create command pool
 		vk::CommandPoolCreateInfo poolInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, primaryQueueIndex);
-		cmdPool = vkdev.createCommandPool(poolInfo, alloc);
+		cmdPool = vkdev.createCommandPool(poolInfo, nalloc);
 
 		vk::CommandBufferAllocateInfo setupCmdInfo(cmdPool, vk::CommandBufferLevel::ePrimary, 1);
 		auto buffers = vkdev.allocateCommandBuffers(setupCmdInfo);
@@ -322,7 +321,7 @@ namespace sp
 		depthInfo.tiling(vk::ImageTiling::eOptimal);
 		depthInfo.usage(vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc);
 
-		depthStencil.image = vkdev.createImage(depthInfo, alloc);
+		depthStencil.image = vkdev.createImage(depthInfo, nalloc);
 
 		vk::ImageViewCreateInfo depthStencilInfo;
 		depthStencilInfo.viewType(vk::ImageViewType::e2D);
@@ -338,7 +337,7 @@ namespace sp
 
 		vk::setImageLayout(setupCmdBuffer, depthStencil.image, vk::ImageAspectFlagBits::eDepth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 		depthStencilInfo.image(depthStencil.image);
-		depthStencil.view = vkdev.createImageView(depthStencilInfo, alloc);
+		depthStencil.view = vkdev.createImageView(depthStencilInfo, nalloc);
 
 
 		// Create render pass
@@ -379,7 +378,7 @@ namespace sp
 		renderPassInfo.subpassCount(1);
 		renderPassInfo.pSubpasses(&subpass);
 
-		renderPass = vkdev.createRenderPass(renderPassInfo, alloc);
+		renderPass = vkdev.createRenderPass(renderPassInfo, nalloc);
 
 
 		// Set up framebuffer
@@ -397,13 +396,13 @@ namespace sp
 		for (size_t i = 0; i < swapchainImages.size(); i++)
 		{
 			attachments[0] = swapchainViews[i];
-			framebuffers.push_back(vkdev.createFramebuffer(framebufferInfo, alloc));
+			framebuffers.push_back(vkdev.createFramebuffer(framebufferInfo, nalloc));
 		}
 
 
 		// Create pipeline cache
 		vk::PipelineCacheCreateInfo pipelineCacheInfo;
-		pipelineCache = vkdev.createPipelineCache(pipelineCacheInfo, alloc);
+		pipelineCache = vkdev.createPipelineCache(pipelineCacheInfo, nalloc);
 
 
 		// Submit setup queue
@@ -426,7 +425,7 @@ namespace sp
 
 		for (auto view : swapchainViews)
 		{
-			vkdev.destroyImageView(view, alloc);
+			vkdev.destroyImageView(view, nalloc);
 		}
 
 		vk::SurfaceCapabilitiesKHR surfCap;
@@ -492,11 +491,11 @@ namespace sp
 		createInfo.clipped(true);
 		createInfo.compositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
 
-		vkswapchain = vkdev.createSwapchainKHR(createInfo, alloc);
+		vkswapchain = vkdev.createSwapchainKHR(createInfo, nalloc);
 
 		if (oldSwapchain)
 		{
-			vkdev.destroySwapchainKHR(oldSwapchain, alloc);
+			vkdev.destroySwapchainKHR(oldSwapchain, nalloc);
 		}
 
 		vkdev.getSwapchainImagesKHR(vkswapchain, swapchainImages);
@@ -521,7 +520,7 @@ namespace sp
 			setImageLayout(setupCmdBuffer, image, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 
 			viewCreateInfo.image(image);
-			auto view = vkdev.createImageView(viewCreateInfo, alloc);
+			auto view = vkdev.createImageView(viewCreateInfo, nalloc);
 			swapchainViews[i] = view;
 		}
 	}
@@ -529,35 +528,5 @@ namespace sp
 	bool GraphicsContext::ShouldClose()
 	{
 		return !!glfwWindowShouldClose(window);
-	}
-
-	vk::ShaderModule GraphicsContext::CreateShaderModule(std::string filename, vk::ShaderStageFlagBits stage)
-	{
-		std::ifstream fin(filename, std::ios::binary);
-		if (!fin.good())
-		{
-			Errorf("Shader file %s could not be read", filename.c_str());
-			throw "missing shader";
-		}
-
-		vector<char> buffer((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
-
-		vk::ShaderModuleCreateInfo moduleInfo;
-		moduleInfo.codeSize(buffer.size());
-		moduleInfo.pCode((uint32 *) buffer.data());
-
-		return vkdev.createShaderModule(moduleInfo, alloc);
-	}
-
-	vk::PipelineShaderStageCreateInfo GraphicsContext::LoadShader(std::string filename, vk::ShaderStageFlagBits stage)
-	{
-		auto module = CreateShaderModule(filename, stage);
-		shaderModules.push_back(module);
-
-		vk::PipelineShaderStageCreateInfo stageInfo;
-		stageInfo.stage(stage);
-		stageInfo.module(module);
-		stageInfo.pName("main");
-		return stageInfo;
 	}
 }

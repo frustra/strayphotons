@@ -85,13 +85,15 @@ namespace sp
 		allocator->vkdev.unmapMemory(mem);
 	}
 
-	void DeviceAllocation::BindBuffer(vk::Buffer buf)
+	DeviceAllocation DeviceAllocation::BindBuffer(vk::Buffer buf)
 	{
 		allocator->vkdev.bindBufferMemory(buf, mem, offset);
+		return *this;
 	}
 
-	void DeviceAllocation::BindImage(vk::Image image)
+	DeviceAllocation DeviceAllocation::BindImage(vk::Image image)
 	{
 		allocator->vkdev.bindImageMemory(image, mem, offset);
+		return *this;
 	}
 }
