@@ -1,18 +1,20 @@
 //=== Copyright Frustra Software, all rights reserved ===//
 
 #include "graphics/DeviceAllocator.hh"
+#include "graphics/Device.hh"
 #include "core/Logging.hh"
 
 namespace sp
 {
-	DeviceAllocator::DeviceAllocator(vk::Device &dev, vk::PhysicalDevice physicalDev, vk::AllocationCallbacks &hostAlloc)
-		: vkdev(dev), hostAlloc(hostAlloc)
-	{
-		memoryProps = physicalDev.getMemoryProperties();
-	}
-
 	DeviceAllocator::~DeviceAllocator()
 	{
+	}
+
+	void DeviceAllocator::SetDevice(vk::PhysicalDevice physical, vk::Device dev)
+	{
+		physicalDevice = physical;
+		device = dev;
+		memoryProps = physical.getMemoryProperties();
 	}
 
 	DeviceAllocation DeviceAllocator::Alloc(uint32 typeBits, vk::MemoryPropertyFlags props, uint64 size)
@@ -23,7 +25,7 @@ namespace sp
 		// TODO(pushrax): suballocate from large blocks for performance
 
 		DeviceAllocation allocation;
-		allocation.mem = vkdev.allocateMemory(depthAllocInfo, hostAlloc);
+		allocation.mem = device.allocateMemory(depthAllocInfo, nalloc);
 		allocation.offset = 0;
 		allocation.size = size;
 		allocation.allocator = this;
@@ -35,9 +37,19 @@ namespace sp
 		return Alloc(memReqs.memoryTypeBits(), props, memReqs.size());
 	}
 
+	DeviceAllocation DeviceAllocator::Alloc(vk::Buffer buf, vk::MemoryPropertyFlags props)
+	{
+		return Alloc(device.getBufferMemoryRequirements(buf), props);
+	}
+
+	DeviceAllocation DeviceAllocator::Alloc(vk::Image img, vk::MemoryPropertyFlags props)
+	{
+		return Alloc(device.getImageMemoryRequirements(img), props);
+	}
+
 	void DeviceAllocator::Free(DeviceAllocation &alloc)
 	{
-		vkdev.freeMemory(alloc.mem, hostAlloc);
+		device.freeMemory(alloc.mem, nalloc);
 		alloc.mem = {};
 	}
 
@@ -69,7 +81,7 @@ namespace sp
 
 	void *DeviceAllocation::Map()
 	{
-		return allocator->vkdev.mapMemory(mem, offset, size, {});
+		return allocator->device.mapMemory(mem, offset, size, {});
 	}
 
 	void *DeviceAllocation::MapRange(uint64 start, uint64 len)
@@ -77,23 +89,23 @@ namespace sp
 		if (start + len > size)
 			throw "DeviceAllocation::MapRange: out of bounds";
 
-		return allocator->vkdev.mapMemory(mem, offset + start, len, {});
+		return allocator->device.mapMemory(mem, offset + start, len, {});
 	}
 
 	void DeviceAllocation::Unmap()
 	{
-		allocator->vkdev.unmapMemory(mem);
+		allocator->device.unmapMemory(mem);
 	}
 
 	DeviceAllocation DeviceAllocation::BindBuffer(vk::Buffer buf)
 	{
-		allocator->vkdev.bindBufferMemory(buf, mem, offset);
+		allocator->device.bindBufferMemory(buf, mem, offset);
 		return *this;
 	}
 
 	DeviceAllocation DeviceAllocation::BindImage(vk::Image image)
 	{
-		allocator->vkdev.bindImageMemory(image, mem, offset);
+		allocator->device.bindImageMemory(image, mem, offset);
 		return *this;
 	}
 }

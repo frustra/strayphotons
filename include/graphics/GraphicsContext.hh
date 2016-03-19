@@ -6,14 +6,13 @@
 #include <string>
 
 #include "graphics/Graphics.hh"
-#include "graphics/DeviceAllocator.hh"
+#include "graphics/Device.hh"
+#include "Shared.hh"
 
 namespace sp
 {
-	class DeviceAllocator;
+	class Device;
 	class ShaderSet;
-
-	static vk::AllocationCallbacks &nalloc = vk::AllocationCallbacks::null();
 
 	class GraphicsContext
 	{
@@ -28,29 +27,24 @@ namespace sp
 		virtual void Prepare() = 0;
 		virtual void RenderFrame() = 0;
 
-		vk::PhysicalDevice vkpdevice;
-		vk::Device vkdev;
-		DeviceAllocator *devmem = nullptr;
 		shared_ptr<ShaderSet> shaderSet;
+		Device device;
 
 	private:
 		GLFWwindow *window = nullptr;
 		GLFWmonitor *monitor = nullptr;
 
-		bool enableValidation = true;
-
+#ifdef VULKAN_ENABLE_VALIDATION
 		VkDebugReportCallbackEXT debugReportCallback = 0;
+#endif
 
 	protected:
 		vk::Instance vkinstance;
-		vk::AllocationCallbacks &vkalloc = vk::AllocationCallbacks::null();
 
-		vk::Queue vkqueue;
 		vk::CommandPool cmdPool;
 		vk::CommandBuffer setupCmdBuffer, prePresentCmdBuffer, postPresentCmdBuffer;
 		vector<vk::CommandBuffer> drawCmdBuffers;
 		vk::RenderPass renderPass;
-		vk::PipelineCache pipelineCache;
 
 		vk::SurfaceKHR vksurface;
 		vk::SwapchainKHR vkswapchain;

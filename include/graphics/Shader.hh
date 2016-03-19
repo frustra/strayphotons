@@ -5,7 +5,7 @@
 
 #include "Shared.hh"
 #include "graphics/DeviceAllocator.hh"
-#include "graphics/GraphicsContext.hh"
+#include "graphics/Device.hh"
 #include <vulkan/vk_cpp.h>
 #include <unordered_map>
 
@@ -50,7 +50,7 @@ namespace sp
 	{
 	public:
 		vk::ShaderModule module;
-		GraphicsContext *graphics; // TODO(pushrax): HACK
+		Device *device;
 		ShaderMeta *shaderType;
 
 	private:
@@ -93,7 +93,7 @@ namespace sp
 	private:
 		ShaderMeta *type;
 		shared_ptr<ShaderCompileOutput> compileOutput;
-		GraphicsContext &graphics;
+		Device &device;
 	};
 
 	class ShaderSet

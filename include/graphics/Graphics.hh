@@ -1,6 +1,8 @@
 #ifndef SP_GRAPHICS_H
 #define SP_GRAPHICS_H
 
+#define VULKAN_ENABLE_VALIDATION
+
 #define GLFW_INCLUDE_VULKAN
 #define VKCPP_ENHANCED_MODE
 
@@ -11,6 +13,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "Shared.hh"
+static vk::AllocationCallbacks &nalloc = vk::AllocationCallbacks::null();
 
 #endif

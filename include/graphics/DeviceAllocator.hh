@@ -13,6 +13,7 @@
 
 namespace sp
 {
+	class Device;
 	class DeviceAllocator;
 
 	class DeviceAllocation
@@ -45,23 +46,12 @@ namespace sp
 	class DeviceAllocator
 	{
 	public:
-		DeviceAllocator(vk::Device &dev, vk::PhysicalDevice physicalDev, vk::AllocationCallbacks &hostAlloc);
 		~DeviceAllocator();
 
 		DeviceAllocation Alloc(uint32 typeBits, vk::MemoryPropertyFlags props, uint64 size);
 		DeviceAllocation Alloc(vk::MemoryRequirements memReqs, vk::MemoryPropertyFlags props);
-
-		void Free(DeviceAllocation &alloc);
-
-		DeviceAllocation Alloc(vk::Buffer buf, vk::MemoryPropertyFlags props)
-		{
-			return Alloc(vkdev.getBufferMemoryRequirements(buf), props);
-		}
-
-		DeviceAllocation Alloc(vk::Image img, vk::MemoryPropertyFlags props)
-		{
-			return Alloc(vkdev.getImageMemoryRequirements(img), props);
-		}
+		DeviceAllocation Alloc(vk::Buffer buf, vk::MemoryPropertyFlags props);
+		DeviceAllocation Alloc(vk::Image img, vk::MemoryPropertyFlags props);
 
 		template <typename T>
 		DeviceAllocation AllocHostVisible(T description)
@@ -75,14 +65,17 @@ namespace sp
 			return Alloc(description, vk::MemoryPropertyFlagBits::eDeviceLocal);
 		}
 
+		void Free(DeviceAllocation &alloc);
+
 		uint32 MemoryTypeIndex(uint32 typeBits, vk::MemoryPropertyFlags props);
+		void SetDevice(vk::PhysicalDevice physical, vk::Device dev);
 
 	private:
 		friend class DeviceAllocation;
 
-		vk::Device &vkdev;
+		vk::Device device;
+		vk::PhysicalDevice physicalDevice;
 		vk::PhysicalDeviceMemoryProperties memoryProps;
-		vk::AllocationCallbacks &hostAlloc;
 	};
 }
 

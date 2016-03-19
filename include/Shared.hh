@@ -22,6 +22,7 @@ typedef int64_t int64;
 namespace sp
 {
 	void Assert(bool condition);
+	void Assert(bool condition, string message);
 }
 
 #endif

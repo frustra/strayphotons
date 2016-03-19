@@ -4,31 +4,21 @@
 #include "core/Logging.hh"
 #include "graphics/GraphicsContext.hh"
 #include "graphics/VulkanHelpers.hh"
-#include "graphics/DeviceAllocator.hh"
 #include "graphics/Shader.hh"
+#include "graphics/Device.hh"
 
 #include <string>
 #include <iostream>
 
+#ifdef VULKAN_ENABLE_VALIDATION
 PFN_vkCreateDebugReportCallbackEXT fpCreateDebugReportCallback;
 PFN_vkDestroyDebugReportCallbackEXT fpDestroyDebugReportCallback;
 PFN_vkDebugReportMessageEXT fpDebugReportMessage;
+#endif
 
 namespace sp
 {
-	static vk::PhysicalDeviceFeatures applicationFeatures()
-	{
-		vk::PhysicalDeviceFeatures feat;
-
-		feat.depthClamp(true);
-		feat.samplerAnisotropy(true);
-		//feat.tessellationShader(true);
-		feat.robustBufferAccess(true);
-		feat.fullDrawIndexUint32(true);
-
-		return feat;
-	}
-
+#ifdef VULKAN_ENABLE_VALIDATION
 	static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanCallback(
 		VkDebugReportFlagsEXT flags,
 		VkDebugReportObjectTypeEXT objectType,
@@ -47,6 +37,7 @@ namespace sp
 			Debugf("Vk [%s] (%d): %s", layerPrefix, messageCode, message);
 		return false;
 	}
+#endif
 
 	GraphicsContext::GraphicsContext()
 	{
@@ -58,53 +49,49 @@ namespace sp
 
 	GraphicsContext::~GraphicsContext()
 	{
-		if (pipelineCache)
-			vkdev.destroyPipelineCache(pipelineCache, nalloc);
-
 		for (auto buf : framebuffers)
-			vkdev.destroyFramebuffer(buf, nalloc);
+			device->destroyFramebuffer(buf, nalloc);
 
 		if (renderPass)
-			vkdev.destroyRenderPass(renderPass, nalloc);
+			device->destroyRenderPass(renderPass, nalloc);
 
 		if (depthStencil.view)
-			vkdev.destroyImageView(depthStencil.view, nalloc);
+			device->destroyImageView(depthStencil.view, nalloc);
 
 		if (depthStencil.image)
-			vkdev.destroyImage(depthStencil.image, nalloc);
+			device->destroyImage(depthStencil.image, nalloc);
 
 		if (depthStencil.mem)
-			devmem->Free(depthStencil.mem);
+			device.Memory().Free(depthStencil.mem);
 
 		if (prePresentCmdBuffer || postPresentCmdBuffer)
-			vkdev.freeCommandBuffers(cmdPool, { prePresentCmdBuffer, postPresentCmdBuffer });
+			device->freeCommandBuffers(cmdPool, { prePresentCmdBuffer, postPresentCmdBuffer });
 
 		if (!drawCmdBuffers.empty())
-			vkdev.freeCommandBuffers(cmdPool, drawCmdBuffers);
+			device->freeCommandBuffers(cmdPool, drawCmdBuffers);
 
 		for (auto view : swapchainViews)
-			vkdev.destroyImageView(view, nalloc);
+			device->destroyImageView(view, nalloc);
 
 		if (vkswapchain)
-			vkdev.destroySwapchainKHR(vkswapchain, nalloc);
+			device->destroySwapchainKHR(vkswapchain, nalloc);
 
 		if (cmdPool)
-			vkdev.destroyCommandPool(cmdPool, nalloc);
+			device->destroyCommandPool(cmdPool, nalloc);
 
-		if (devmem)
-			delete devmem;
-
-		if (vkdev)
-			vkdev.destroy(nalloc);
+		if (device)
+			device.Destroy();
 
 		if (vksurface)
 			vkinstance.destroySurfaceKHR(vksurface, nalloc);
 
-		if (enableValidation && debugReportCallback)
+#ifdef VULKAN_ENABLE_VALIDATION
+		if (debugReportCallback)
 			fpDestroyDebugReportCallback((VkInstance) vkinstance, debugReportCallback, (VkAllocationCallbacks *) &nalloc);
+#endif
 
 		if (vkinstance)
-			vkinstance.destroy(vkalloc);
+			vkinstance.destroy(nalloc);
 
 		if (window)
 			glfwDestroyWindow(window);
@@ -117,20 +104,15 @@ namespace sp
 
 		vector<const char *> instExts(glfwExts, glfwExts + nGlfwExts);
 
-		if (enableValidation)
-			instExts.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-
-
-		vector<const char *> deviceExts =
-		{
-			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-		};
-
+#ifdef VULKAN_ENABLE_VALIDATION
+		instExts.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+#endif
 
 		vector<const char *> layers;
 
-		if (enableValidation)
-			layers.push_back("VK_LAYER_LUNARG_standard_validation");
+#ifdef VULKAN_ENABLE_VALIDATION
+		layers.push_back("VK_LAYER_LUNARG_standard_validation");
+#endif
 
 
 		// Initialize Vulkan
@@ -143,7 +125,7 @@ namespace sp
 		info.enabledExtensionCount(instExts.size());
 		info.ppEnabledExtensionNames(instExts.data());
 
-		vk::Assert(vk::createInstance(&info, &vkalloc, &vkinstance), "creating Vulkan instance");
+		vk::Assert(vk::createInstance(&info, &nalloc, &vkinstance), "creating Vulkan instance");
 
 		int major, minor, patch;
 		vk::APIVersion(VK_API_VERSION, major, minor, patch);
@@ -158,25 +140,24 @@ namespace sp
 		}
 
 
-		// Set up validation/debugging
-		if (enableValidation)
-		{
-			fpCreateDebugReportCallback = (PFN_vkCreateDebugReportCallbackEXT) vkinstance.getProcAddr("vkCreateDebugReportCallbackEXT");
-			fpDestroyDebugReportCallback = (PFN_vkDestroyDebugReportCallbackEXT) vkinstance.getProcAddr("vkDestroyDebugReportCallbackEXT");
-			fpDebugReportMessage = (PFN_vkDebugReportMessageEXT) vkinstance.getProcAddr("vkDebugReportMessageEXT");
+#ifdef VULKAN_ENABLE_VALIDATION
+		fpCreateDebugReportCallback = (PFN_vkCreateDebugReportCallbackEXT) vkinstance.getProcAddr("vkCreateDebugReportCallbackEXT");
+		fpDestroyDebugReportCallback = (PFN_vkDestroyDebugReportCallbackEXT) vkinstance.getProcAddr("vkDestroyDebugReportCallbackEXT");
+		fpDebugReportMessage = (PFN_vkDebugReportMessageEXT) vkinstance.getProcAddr("vkDebugReportMessageEXT");
 
-			VkDebugReportCallbackCreateInfoEXT dbgInfo = {};
-			dbgInfo.pNext = NULL;
-			dbgInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-			dbgInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
-			dbgInfo.flags |= VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-			//dbgInfo.flags |= VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
+		VkDebugReportCallbackCreateInfoEXT dbgInfo = {};
+		dbgInfo.pNext = NULL;
+		dbgInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
+		dbgInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
+		dbgInfo.flags |= VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+		//dbgInfo.flags |= VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
 
-			dbgInfo.pfnCallback = (PFN_vkDebugReportCallbackEXT)&vulkanCallback;
-			auto err = fpCreateDebugReportCallback((VkInstance) vkinstance, &dbgInfo, (VkAllocationCallbacks *) &nalloc, &debugReportCallback);
-			vk::Assert(err, "creating debug report callback");
-		}
+		dbgInfo.pfnCallback = (PFN_vkDebugReportCallbackEXT)&vulkanCallback;
+		auto err = fpCreateDebugReportCallback((VkInstance) vkinstance, &dbgInfo, (VkAllocationCallbacks *) &nalloc, &debugReportCallback);
+		vk::Assert(err, "creating debug report callback");
+#endif
 
+		vk::PhysicalDevice physicalDevice;
 
 		// Find compatible device
 		for (auto curr : devices)
@@ -185,18 +166,20 @@ namespace sp
 			vk::APIVersion(props.apiVersion(), major, minor, patch);
 			Logf("Available Vulkan device: %s (%x:%x), v%d.%d.%d", props.deviceName(), props.vendorID(), props.deviceID(), major, minor, patch);
 
-			if (vkpdevice) continue;
+			if (physicalDevice) continue;
 			auto devType = props.deviceType();
 
 			if (devType == vk::PhysicalDeviceType::eDiscreteGpu)
 			{
 				// TODO(pushrax): choose first integrated GPU if discrete is not present
-				vkpdevice = curr;
+				physicalDevice = curr;
 			}
 		}
 
-		auto devProps = vkpdevice.getProperties();
+		auto devProps = physicalDevice.getProperties();
 		Logf("Using device %x:%x", devProps.vendorID(), devProps.deviceID());
+
+		device.Initialize(physicalDevice);
 
 
 		// Create window and surface
@@ -209,66 +192,10 @@ namespace sp
 		vk::Assert(result, "creating window surface");
 
 
-		// Find and configure queues
-		auto queueFamilyProps = vkpdevice.getQueueFamilyProperties();
-
-		int primaryQueueIndex = -1;
-
-		for (size_t i = 0; i < queueFamilyProps.size(); i++)
-		{
-			auto props = queueFamilyProps[i];
-			auto flags = props.queueFlags();
-			auto supportsPresent = vkpdevice.getSurfaceSupportKHR(i, vksurface);
-
-			// Vulkan sec.4.1: if graphics is supported, at least one family must support both
-			if (flags & vk::QueueFlagBits::eGraphics && flags & vk::QueueFlagBits::eCompute)
-			{
-				if (supportsPresent)
-				{
-					primaryQueueIndex = (int)i;
-				}
-			}
-
-			auto flagStr = vk::getString(flags);
-			Logf("Queue fam %d - %s (0x%x), count: %d, timestamp valid bits: %d", i, flagStr.c_str(), (uint32_t)flags, props.queueCount(), props.timestampValidBits());
-		}
-
-		if (primaryQueueIndex < 0)
-		{
-			// TODO(pushrax): maybe support separate presentation and graphics queues
-			Errorf("No queue families support presentation, graphics, and compute");
-			throw "no valid queues";
-		}
-
-		float maxPriority = 1.0f;
-		vk::DeviceQueueCreateInfo queueInfo;
-		queueInfo.queueFamilyIndex((unsigned) primaryQueueIndex);
-		queueInfo.queueCount(1);
-		queueInfo.pQueuePriorities(&maxPriority);
-
-		vk::DeviceQueueCreateInfo queueInfos[] = { queueInfo };
-
-
-		// Create device
-		auto features = applicationFeatures();
-		vk::DeviceCreateInfo devInfo;
-		devInfo.queueCreateInfoCount(sizeof(queueInfos) / sizeof(*queueInfos));
-		devInfo.pQueueCreateInfos(queueInfos);
-		devInfo.pEnabledFeatures(&features);
-		devInfo.enabledLayerCount(layers.size());
-		devInfo.ppEnabledLayerNames(layers.data());
-		devInfo.enabledExtensionCount(deviceExts.size());
-		devInfo.ppEnabledExtensionNames(deviceExts.data());
-
-		vkdev = vkpdevice.createDevice(devInfo, nalloc);
-		vkqueue = vkdev.getQueue(primaryQueueIndex, 0);
-
-		devmem = new DeviceAllocator(vkdev, vkpdevice, nalloc);
-
 
 		// Select surface format
 		vector<vk::SurfaceFormatKHR> surfaceFormats;
-		vkpdevice.getSurfaceFormatsKHR(vksurface, surfaceFormats);
+		physicalDevice.getSurfaceFormatsKHR(vksurface, surfaceFormats);
 
 		if (surfaceFormats.size() == 0)
 		{
@@ -286,11 +213,11 @@ namespace sp
 
 
 		// Create command pool
-		vk::CommandPoolCreateInfo poolInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, primaryQueueIndex);
-		cmdPool = vkdev.createCommandPool(poolInfo, nalloc);
+		vk::CommandPoolCreateInfo poolInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, 0 /* TODOASAP queue family index */);
+		cmdPool = device->createCommandPool(poolInfo, nalloc);
 
 		vk::CommandBufferAllocateInfo setupCmdInfo(cmdPool, vk::CommandBufferLevel::ePrimary, 1);
-		auto buffers = vkdev.allocateCommandBuffers(setupCmdInfo);
+		auto buffers = device->allocateCommandBuffers(setupCmdInfo);
 		setupCmdBuffer = buffers[0];
 		setupCmdBuffer.begin({});
 
@@ -302,10 +229,10 @@ namespace sp
 
 		// Create command buffers
 		vk::CommandBufferAllocateInfo drawCmdInfo(cmdPool, vk::CommandBufferLevel::ePrimary, swapchainImages.size());
-		drawCmdBuffers = vkdev.allocateCommandBuffers(drawCmdInfo);
+		drawCmdBuffers = device->allocateCommandBuffers(drawCmdInfo);
 
 		vk::CommandBufferAllocateInfo presentCmdInfo(cmdPool, vk::CommandBufferLevel::ePrimary, 2);
-		buffers = vkdev.allocateCommandBuffers(presentCmdInfo);
+		buffers = device->allocateCommandBuffers(presentCmdInfo);
 		prePresentCmdBuffer = buffers[0];
 		postPresentCmdBuffer = buffers[1];
 
@@ -321,7 +248,7 @@ namespace sp
 		depthInfo.tiling(vk::ImageTiling::eOptimal);
 		depthInfo.usage(vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc);
 
-		depthStencil.image = vkdev.createImage(depthInfo, nalloc);
+		depthStencil.image = device->createImage(depthInfo, nalloc);
 
 		vk::ImageViewCreateInfo depthStencilInfo;
 		depthStencilInfo.viewType(vk::ImageViewType::e2D);
@@ -332,12 +259,12 @@ namespace sp
 		depthStencilInfo.subresourceRange().baseArrayLayer(0);
 		depthStencilInfo.subresourceRange().layerCount(1);
 
-		depthStencil.mem = devmem->AllocDeviceLocal(vkdev.getImageMemoryRequirements(depthStencil.image));
+		depthStencil.mem = device.Memory().AllocDeviceLocal(depthStencil.image);
 		depthStencil.mem.BindImage(depthStencil.image);
 
 		vk::setImageLayout(setupCmdBuffer, depthStencil.image, vk::ImageAspectFlagBits::eDepth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 		depthStencilInfo.image(depthStencil.image);
-		depthStencil.view = vkdev.createImageView(depthStencilInfo, nalloc);
+		depthStencil.view = device->createImageView(depthStencilInfo, nalloc);
 
 
 		// Create render pass
@@ -378,7 +305,7 @@ namespace sp
 		renderPassInfo.subpassCount(1);
 		renderPassInfo.pSubpasses(&subpass);
 
-		renderPass = vkdev.createRenderPass(renderPassInfo, nalloc);
+		renderPass = device->createRenderPass(renderPassInfo, nalloc);
 
 
 		// Set up framebuffer
@@ -396,13 +323,8 @@ namespace sp
 		for (size_t i = 0; i < swapchainImages.size(); i++)
 		{
 			attachments[0] = swapchainViews[i];
-			framebuffers.push_back(vkdev.createFramebuffer(framebufferInfo, nalloc));
+			framebuffers.push_back(device->createFramebuffer(framebufferInfo, nalloc));
 		}
-
-
-		// Create pipeline cache
-		vk::PipelineCacheCreateInfo pipelineCacheInfo;
-		pipelineCache = vkdev.createPipelineCache(pipelineCacheInfo, nalloc);
 
 
 		// Submit setup queue
@@ -411,10 +333,10 @@ namespace sp
 		vk::SubmitInfo submitInfo;
 		submitInfo.commandBufferCount(1);
 		submitInfo.pCommandBuffers(&setupCmdBuffer);
-		vkqueue.submit({ submitInfo }, vk::Fence());
+		device.PrimaryQueue().submit({ submitInfo }, vk::Fence());
 
-		vkqueue.waitIdle();
-		vkdev.freeCommandBuffers(cmdPool, { setupCmdBuffer });
+		device.PrimaryQueue().waitIdle();
+		device->freeCommandBuffers(cmdPool, { setupCmdBuffer });
 
 		Prepare();
 	}
@@ -425,14 +347,14 @@ namespace sp
 
 		for (auto view : swapchainViews)
 		{
-			vkdev.destroyImageView(view, nalloc);
+			device->destroyImageView(view, nalloc);
 		}
 
 		vk::SurfaceCapabilitiesKHR surfCap;
-		vkpdevice.getSurfaceCapabilitiesKHR(vksurface, surfCap);
+		device.Physical().getSurfaceCapabilitiesKHR(vksurface, surfCap);
 
 		vector<vk::PresentModeKHR> presentModes;
-		vkpdevice.getSurfacePresentModesKHR(vksurface, presentModes);
+		device.Physical().getSurfacePresentModesKHR(vksurface, presentModes);
 
 		vk::Extent2D swapchainExtent;
 		if (surfCap.currentExtent().width() == -1)
@@ -491,14 +413,14 @@ namespace sp
 		createInfo.clipped(true);
 		createInfo.compositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
 
-		vkswapchain = vkdev.createSwapchainKHR(createInfo, nalloc);
+		vkswapchain = device->createSwapchainKHR(createInfo, nalloc);
 
 		if (oldSwapchain)
 		{
-			vkdev.destroySwapchainKHR(oldSwapchain, nalloc);
+			device->destroySwapchainKHR(oldSwapchain, nalloc);
 		}
 
-		vkdev.getSwapchainImagesKHR(vkswapchain, swapchainImages);
+		device->getSwapchainImagesKHR(vkswapchain, swapchainImages);
 
 		swapchainViews.resize(swapchainImages.size());
 
@@ -520,7 +442,7 @@ namespace sp
 			setImageLayout(setupCmdBuffer, image, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 
 			viewCreateInfo.image(image);
-			auto view = vkdev.createImageView(viewCreateInfo, nalloc);
+			auto view = device->createImageView(viewCreateInfo, nalloc);
 			swapchainViews[i] = view;
 		}
 	}

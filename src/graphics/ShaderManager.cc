@@ -24,7 +24,7 @@ namespace sp
 	{
 		// TODO(pushrax)
 		//for (auto module : shaderModules)
-		//	graphics.vkdev.destroyShaderModule(module, nalloc);
+		//	device->destroyShaderModule(module, nalloc);
 	}
 
 	void ShaderManager::CompileAll(ShaderSet &shaders)
@@ -33,7 +33,7 @@ namespace sp
 		{
 			auto input = LoadShader(shaderType);
 			auto output = CompileShader(input);
-			output->graphics = &graphics;
+			output->device = &device;
 			output->shaderType = shaderType;
 			auto shader = shaderType->newInstance(output);
 			shared_ptr<Shader> shaderPtr(shader);
@@ -49,7 +49,7 @@ namespace sp
 		moduleInfo.pCode(reinterpret_cast<const uint32 *>(input.source.data()));
 
 		auto output = make_shared<ShaderCompileOutput>();
-		output->module = graphics.vkdev.createShaderModule(moduleInfo, nalloc);
+		output->module = device->createShaderModule(moduleInfo, nalloc);
 
 		return output;
 	}

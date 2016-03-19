@@ -13,7 +13,7 @@ namespace sp
 	}
 
 	Shader::Shader(shared_ptr<ShaderCompileOutput> compileOutput)
-		: type(compileOutput->shaderType), compileOutput(compileOutput), graphics(*compileOutput->graphics)
+		: type(compileOutput->shaderType), compileOutput(compileOutput), device(*compileOutput->device)
 	{
 
 	}
@@ -25,8 +25,8 @@ namespace sp
 		uboInfo.usage(vk::BufferUsageFlagBits::eUniformBuffer);
 
 		auto &unif = uniforms[name];
-		unif.buf = graphics.vkdev.createBuffer(uboInfo, nalloc);
-		unif.mem = graphics.devmem->AllocHostVisible(unif.buf).BindBuffer(unif.buf);
+		unif.buf = device->createBuffer(uboInfo, nalloc);
+		unif.mem = device.Memory().AllocHostVisible(unif.buf).BindBuffer(unif.buf);
 
 		unif.desc.buffer(unif.buf);
 		unif.desc.offset(0);
@@ -83,10 +83,3 @@ namespace sp
 		Debugf("%s has location %d", name.c_str(), location);
 	}
 }
-
-// NEXT
-/*
-shader manager with static list of ShaderMeta instances
-ShaderCompileOutput type with descriptor info etc
-eagerly compile shaders, but not shader instances
-*/

@@ -4,7 +4,7 @@
 #define SP_SHADER_MANAGER_H
 
 #include "graphics/Shader.hh"
-#include "graphics/GraphicsContext.hh"
+#include "graphics/Device.hh"
 
 namespace sp
 {
@@ -14,7 +14,7 @@ namespace sp
 		static void RegisterShaderType(ShaderMeta *metaType);
 		static vector<ShaderMeta *> &ShaderTypes();
 
-		ShaderManager(GraphicsContext &graphics) : graphics(graphics) { }
+		ShaderManager(Device &device) : device(device) { }
 		~ShaderManager();
 		void CompileAll(ShaderSet &shaders);
 
@@ -23,7 +23,7 @@ namespace sp
 		shared_ptr<ShaderCompileOutput> CompileShader(ShaderCompileInput &input);
 		void ParseShader(ShaderCompileInput &input, ShaderCompileOutput *output);
 
-		GraphicsContext &graphics;
+		Device &device;
 	};
 }
 #endif

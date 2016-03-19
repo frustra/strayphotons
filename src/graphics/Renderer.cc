@@ -35,34 +35,34 @@ namespace sp
 	Renderer::~Renderer()
 	{
 		if (semaphores.presentComplete)
-			vkdev.destroySemaphore(semaphores.presentComplete, nalloc);
+			device->destroySemaphore(semaphores.presentComplete, nalloc);
 
 		if (semaphores.renderComplete)
-			vkdev.destroySemaphore(semaphores.renderComplete, nalloc);
+			device->destroySemaphore(semaphores.renderComplete, nalloc);
 
 		if (descriptorPool)
-			vkdev.destroyDescriptorPool(descriptorPool, nalloc);
+			device->destroyDescriptorPool(descriptorPool, nalloc);
 
 		if (pipeline)
-			vkdev.destroyPipeline(pipeline, nalloc);
+			device->destroyPipeline(pipeline, nalloc);
 
 		if (pipelineLayout)
-			vkdev.destroyPipelineLayout(pipelineLayout, nalloc);
+			device->destroyPipelineLayout(pipelineLayout, nalloc);
 
 		if (descriptorSetLayout)
-			vkdev.destroyDescriptorSetLayout(descriptorSetLayout, nalloc);
+			device->destroyDescriptorSetLayout(descriptorSetLayout, nalloc);
 
 		if (vertices.buf)
-			vkdev.destroyBuffer(vertices.buf, nalloc);
+			device->destroyBuffer(vertices.buf, nalloc);
 
 		if (vertices.mem)
-			devmem->Free(vertices.mem);
+			device.Memory().Free(vertices.mem);
 
 		if (indices.buf)
-			vkdev.destroyBuffer(indices.buf, nalloc);
+			device->destroyBuffer(indices.buf, nalloc);
 
 		if (indices.mem)
-			devmem->Free(indices.mem);
+			device.Memory().Free(indices.mem);
 
 		if (shaderManager)
 			delete shaderManager;
@@ -70,7 +70,7 @@ namespace sp
 
 	void Renderer::Prepare()
 	{
-		shaderManager = new ShaderManager(*this);
+		shaderManager = new ShaderManager(device);
 		shaderManager->CompileAll(*shaderSet);
 
 		auto triangleVS = shaderSet->Get<TriangleVS>();
@@ -97,8 +97,8 @@ namespace sp
 		vertexBufInfo.size(sizeof(vertexBuf));
 		vertexBufInfo.usage(vk::BufferUsageFlagBits::eVertexBuffer);
 
-		vertices.buf = vkdev.createBuffer(vertexBufInfo, nalloc);
-		vertices.mem = devmem->AllocHostVisible(vertices.buf).BindBuffer(vertices.buf);
+		vertices.buf = device->createBuffer(vertexBufInfo, nalloc);
+		vertices.mem = device.Memory().AllocHostVisible(vertices.buf).BindBuffer(vertices.buf);
 
 		// Upload to VRAM
 		void *data = vertices.mem.Map();
@@ -110,8 +110,8 @@ namespace sp
 		indexBufInfo.size(sizeof(indexBuf));
 		indexBufInfo.usage(vk::BufferUsageFlagBits::eIndexBuffer);
 
-		indices.buf = vkdev.createBuffer(indexBufInfo, nalloc);
-		indices.mem = devmem->AllocHostVisible(indices.buf).BindBuffer(indices.buf);
+		indices.buf = device->createBuffer(indexBufInfo, nalloc);
+		indices.mem = device.Memory().AllocHostVisible(indices.buf).BindBuffer(indices.buf);
 
 		// Upload to VRAM
 		data = indices.mem.Map();
@@ -155,13 +155,13 @@ namespace sp
 		descriptorLayoutInfo.bindingCount(1);
 		descriptorLayoutInfo.pBindings(&layoutBinding);
 
-		descriptorSetLayout = vkdev.createDescriptorSetLayout(descriptorLayoutInfo, nalloc);
+		descriptorSetLayout = device->createDescriptorSetLayout(descriptorLayoutInfo, nalloc);
 
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
 		pipelineLayoutInfo.setLayoutCount(1);
 		pipelineLayoutInfo.pSetLayouts(&descriptorSetLayout);
 
-		pipelineLayout = vkdev.createPipelineLayout(pipelineLayoutInfo, nalloc);
+		pipelineLayout = device->createPipelineLayout(pipelineLayoutInfo, nalloc);
 
 
 		// Prepare pipeline state
@@ -228,7 +228,7 @@ namespace sp
 		pipelineInfo.renderPass(renderPass);
 		pipelineInfo.pDynamicState(&dynamicState);
 
-		auto pipelines = vkdev.createGraphicsPipelines(pipelineCache, { pipelineInfo }, nalloc);
+		auto pipelines = device->createGraphicsPipelines(device.PipelineCache(), { pipelineInfo }, nalloc);
 		pipeline = pipelines[0];
 
 
@@ -240,7 +240,7 @@ namespace sp
 		descriptorPoolInfo.pPoolSizes(&descriptorPoolSize);
 		descriptorPoolInfo.maxSets(1);
 
-		descriptorPool = vkdev.createDescriptorPool(descriptorPoolInfo, nalloc);
+		descriptorPool = device->createDescriptorPool(descriptorPoolInfo, nalloc);
 
 		// Update descriptor sets with binding points
 		vk::DescriptorSetAllocateInfo descSetInfo;
@@ -248,7 +248,7 @@ namespace sp
 		descSetInfo.descriptorSetCount(1);
 		descSetInfo.pSetLayouts(&descriptorSetLayout);
 
-		auto descriptorSets = vkdev.allocateDescriptorSets(descSetInfo);
+		auto descriptorSets = device->allocateDescriptorSets(descSetInfo);
 		descriptorSet = descriptorSets[0];
 
 		// Uniform buffer at binding 0
@@ -260,7 +260,7 @@ namespace sp
 		writeDescSet.pBufferInfo(&unifs["ubo"].desc);
 		writeDescSet.dstBinding(0);
 
-		vkdev.updateDescriptorSets({ writeDescSet }, {});
+		device->updateDescriptorSets({ writeDescSet }, {});
 
 
 		// Build command buffers, finally
@@ -322,8 +322,8 @@ namespace sp
 			cmdbuf.end();
 		}
 
-		semaphores.presentComplete = vkdev.createSemaphore({}, nalloc);
-		semaphores.renderComplete = vkdev.createSemaphore({}, nalloc);
+		semaphores.presentComplete = device->createSemaphore({}, nalloc);
+		semaphores.renderComplete = device->createSemaphore({}, nalloc);
 	}
 
 	void Renderer::RenderFrame()
@@ -340,8 +340,8 @@ namespace sp
 			shader->UploadUniforms();
 		}
 
-		vkdev.waitIdle();
-		vkdev.acquireNextImageKHR(vkswapchain, UINT64_MAX, semaphores.presentComplete, {}, currentBuffer);
+		device->waitIdle();
+		device->acquireNextImageKHR(vkswapchain, UINT64_MAX, semaphores.presentComplete, {}, currentBuffer);
 
 		vk::SubmitInfo submitInfo;
 		submitInfo.waitSemaphoreCount(1);
@@ -350,7 +350,7 @@ namespace sp
 		submitInfo.pSignalSemaphores(&semaphores.renderComplete);
 		submitInfo.commandBufferCount(1);
 		submitInfo.pCommandBuffers(&drawCmdBuffers[currentBuffer]);
-		vkqueue.submit({ submitInfo }, {});
+		device.PrimaryQueue().submit({ submitInfo }, {});
 
 		vk::PresentInfoKHR presentInfo;
 		presentInfo.waitSemaphoreCount(1);
@@ -358,7 +358,7 @@ namespace sp
 		presentInfo.swapchainCount(1);
 		presentInfo.pSwapchains(&vkswapchain);
 		presentInfo.pImageIndices(&currentBuffer);
-		vkqueue.presentKHR(presentInfo);
+		device.PrimaryQueue().presentKHR(presentInfo);
 
 		vk::ImageMemoryBarrier postPresentBarrier;
 		postPresentBarrier.srcAccessMask({});
@@ -379,8 +379,8 @@ namespace sp
 		vk::SubmitInfo postSubmitInfo;
 		postSubmitInfo.commandBufferCount(1);
 		postSubmitInfo.pCommandBuffers(&postPresentCmdBuffer);
-		vkqueue.submit({ postSubmitInfo }, {});
+		device.PrimaryQueue().submit({ postSubmitInfo }, {});
 
-		vkdev.waitIdle();
+		device->waitIdle();
 	}
 }
