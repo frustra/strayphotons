@@ -1,5 +1,3 @@
-//=== Copyright Frustra Software, all rights reserved ===//
-
 #include "graphics/VulkanHelpers.hh"
 
 namespace vk

@@ -1,5 +1,3 @@
-//=== Copyright Frustra Software, all rights reserved ===//
-
 #ifndef SP_ASSET_H
 #define SP_ASSET_H
 

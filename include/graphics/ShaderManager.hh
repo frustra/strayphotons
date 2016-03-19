@@ -1,5 +1,3 @@
-//=== Copyright Frustra Software, all rights reserved ===//
-
 #ifndef SP_SHADER_MANAGER_H
 #define SP_SHADER_MANAGER_H
 

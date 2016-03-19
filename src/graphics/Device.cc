@@ -1,5 +1,3 @@
-//=== Copyright Frustra Software, all rights reserved ===//
-
 #include "graphics/Device.hh"
 #include "core/Logging.hh"
 

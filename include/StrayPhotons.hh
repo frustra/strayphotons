@@ -1,5 +1,3 @@
-//=== Copyright Frustra Software, all rights reserved ===//
-
 #ifndef STRAY_PHOTONS_H
 #define STRAY_PHOTONS_H
 

@@ -1,5 +1,3 @@
-#ifndef SP_GRAPHICS_H
-#define SP_GRAPHICS_H
 
 #define VULKAN_ENABLE_VALIDATION
 

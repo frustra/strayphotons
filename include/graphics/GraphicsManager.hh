@@ -1,5 +1,3 @@
-//=== Copyright Frustra Software, all rights reserved ===//
-
 #ifndef SP_GRAPHICSMANAGER_H
 #define SP_GRAPHICSMANAGER_H
 

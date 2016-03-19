@@ -1,5 +1,3 @@
-//=== Copyright Frustra Software, all rights reserved ===//
-
 #ifndef SP_LOGGING_H
 #define SP_LOGGING_H
 

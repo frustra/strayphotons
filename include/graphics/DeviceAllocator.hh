@@ -1,5 +1,3 @@
-//=== Copyright Frustra Software, all rights reserved ===//
-
 /*
  * DeviceAllocator is used to manage Vulkan memory allocations,
  * and suballocate from large device memory blocks.

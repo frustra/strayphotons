@@ -1,5 +1,3 @@
-//=== Copyright Frustra Software, all rights reserved ===//
-
 #include "assets/AssetManager.hh"
 #include "assets/Asset.hh"
 

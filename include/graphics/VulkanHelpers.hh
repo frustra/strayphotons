@@ -1,5 +1,3 @@
-//=== Copyright Frustra Software, all rights reserved ===//
-
 #ifndef SP_VULKAN_HELPERS_H
 #define SP_VULKAN_HELPERS_H
 

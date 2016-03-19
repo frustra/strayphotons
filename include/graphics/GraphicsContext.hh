@@ -1,5 +1,3 @@
-//=== Copyright Frustra Software, all rights reserved ===//
-
 #ifndef SP_GRAPHICSCONTEXT_H
 #define SP_GRAPHICSCONTEXT_H
 

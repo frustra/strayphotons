@@ -1,5 +1,3 @@
-//=== Copyright Frustra Software, all rights reserved ===//
-
 #include "StrayPhotons.hh"
 
 StrayPhotons::StrayPhotons()

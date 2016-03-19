@@ -1,5 +1,3 @@
-//=== Copyright Frustra Software, all rights reserved ===//
-
 #include "core/Logging.hh"
 #include "graphics/GraphicsManager.hh"
 #include "graphics/Renderer.hh"
