@@ -1,4 +1,5 @@
 #include "Shared.hh"
+#include "core/Logging.hh"
 
 #ifdef _WIN32
 #include <intrin.h>
@@ -14,6 +15,7 @@ namespace sp
 #ifndef NDEBUG
 		if (!condition)
 		{
+			Errorf("assertion failed: %s", message.c_str());
 			os_break();
 			throw std::runtime_error(message);
 		}

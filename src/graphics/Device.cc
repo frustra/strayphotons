@@ -9,7 +9,7 @@ namespace sp
 
 		feat.depthClamp(true);
 		feat.samplerAnisotropy(true);
-		//feat.tessellationShader(true);
+		feat.tessellationShader(true);
 		feat.robustBufferAccess(true);
 		feat.fullDrawIndexUint32(true);
 
