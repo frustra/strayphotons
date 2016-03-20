@@ -144,7 +144,7 @@ namespace sp
 		fpDebugReportMessage = (PFN_vkDebugReportMessageEXT) vkinstance.getProcAddr("vkDebugReportMessageEXT");
 
 		VkDebugReportCallbackCreateInfoEXT dbgInfo = {};
-		dbgInfo.pNext = NULL;
+		dbgInfo.pNext = nullptr;
 		dbgInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
 		dbgInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
 		dbgInfo.flags |= VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
@@ -181,7 +181,7 @@ namespace sp
 
 
 		// Create window and surface
-		if (!(window = glfwCreateWindow(1280, 720, "Stray Photons", monitor, NULL)))
+		if (!(window = glfwCreateWindow(1280, 720, "Stray Photons", monitor, nullptr)))
 		{
 			throw "glfw window creation failed";
 		}

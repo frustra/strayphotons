@@ -24,8 +24,8 @@ namespace sp
 		const string path;
 
 	private:
-		char *buffer;
-		size_t size;
+		char *buffer = nullptr;
+		size_t size = 0;
 
 		Asset(const Asset &other);
 		Asset &operator= (const Asset &other);

@@ -18,7 +18,7 @@ namespace sp
 		throw "Vulkan exception";
 	}
 
-	GraphicsManager::GraphicsManager() : context(NULL)
+	GraphicsManager::GraphicsManager() : context(nullptr)
 	{
 		Logf("Graphics starting up");
 

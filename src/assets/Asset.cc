@@ -6,7 +6,7 @@
 
 namespace sp
 {
-	Asset::Asset(AssetManager *manager, const std::string &path) : manager(manager), path(path), buffer(NULL)
+	Asset::Asset(AssetManager *manager, const std::string &path) : manager(manager), path(path)
 	{
 	}
 
