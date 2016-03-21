@@ -16,6 +16,18 @@ namespace sp
 
 	}
 
+	Shader::~Shader()
+	{
+		for (auto &entry : uniforms)
+		{
+			auto &unif = entry.second;
+			device->destroyBuffer(unif.buf, nalloc);
+			device.Memory().Free(unif.mem);
+		}
+
+		device->destroyShaderModule(compileOutput->module, nalloc);
+	}
+
 	void Shader::Bind(void *ptr, size_t size, string name)
 	{
 		vk::BufferCreateInfo uboInfo;

@@ -74,6 +74,7 @@ namespace sp
 	{
 	public:
 		Shader(shared_ptr<ShaderCompileOutput> compileOutput);
+		virtual ~Shader();
 
 		void UploadUniforms();
 		vk::PipelineShaderStageCreateInfo StageCreateInfo();

@@ -20,9 +20,6 @@ namespace sp
 
 	ShaderManager::~ShaderManager()
 	{
-		// TODO(pushrax)
-		//for (auto module : shaderModules)
-		//	device->destroyShaderModule(module, nalloc);
 	}
 
 	void ShaderManager::CompileAll(ShaderSet &shaders)

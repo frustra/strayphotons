@@ -25,7 +25,7 @@ namespace sp
 		virtual void Prepare() = 0;
 		virtual void RenderFrame() = 0;
 
-		shared_ptr<ShaderSet> shaderSet;
+		ShaderSet *shaderSet;
 		Device device;
 
 	private:

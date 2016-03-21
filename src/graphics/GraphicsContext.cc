@@ -43,11 +43,13 @@ namespace sp
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-		shaderSet = make_shared<ShaderSet>();
+		shaderSet = new ShaderSet();
 	}
 
 	GraphicsContext::~GraphicsContext()
 	{
+		delete shaderSet;
+
 		for (auto buf : framebuffers)
 			device->destroyFramebuffer(buf, nalloc);
 
