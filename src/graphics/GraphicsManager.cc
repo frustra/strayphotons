@@ -33,6 +33,8 @@ namespace sp
 		{
 			throw "no compatible Vulkan ICD found";
 		}
+
+		lastFrameEnd = std::chrono::high_resolution_clock::now();
 	}
 
 	GraphicsManager::~GraphicsManager()
@@ -94,8 +96,18 @@ namespace sp
 			handleVulkanError(err);
 		}
 
+		auto frameEnd = std::chrono::high_resolution_clock::now();
+		fpsTimer += std::chrono::duration<double, std::milli>(frameEnd - lastFrameEnd).count();
+		frameCounter++;
+
+		if (fpsTimer > 1000) {
+			context->SetTitle("STRAY PHOTONS (" + std::to_string(frameCounter) + " FPS)");
+			frameCounter = 0;
+			fpsTimer = 0;
+		}
+
+		lastFrameEnd = frameEnd;
 		glfwPollEvents();
 		return true;
 	}
 }
-

@@ -20,6 +20,7 @@ namespace sp
 
 		void CreateWindow();
 		bool ShouldClose();
+		void SetTitle(string title);
 		void ResetSwapchain(uint32 &width, uint32 &height);
 
 		virtual void Prepare() = 0;
@@ -27,6 +28,7 @@ namespace sp
 
 		ShaderSet *shaderSet;
 		Device device;
+
 
 	private:
 		GLFWwindow *window = nullptr;

@@ -1,7 +1,9 @@
 #ifndef SP_GAME_H
 #define SP_GAME_H
 
-#include <string>
+#include "graphics/GraphicsManager.hh"
+#include "assets/AssetManager.hh"
+#include "Shared.hh"
 
 namespace sp
 {
@@ -9,11 +11,14 @@ namespace sp
 	{
 	public:
 		Game();
-		virtual ~Game();
+		~Game();
 
-		virtual void Start();
-		virtual bool Frame() = 0;
-		virtual bool ShouldStop() = 0;
+		void Start();
+		bool Frame();
+		bool ShouldStop();
+
+		sp::AssetManager assets;
+		sp::GraphicsManager graphics;
 	};
 }
 

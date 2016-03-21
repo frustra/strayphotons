@@ -7,6 +7,7 @@ namespace sp
 {
 	Game::Game()
 	{
+		graphics.CreateContext();
 	}
 
 	Game::~Game()
@@ -27,6 +28,18 @@ namespace sp
 		{
 			Errorf(err);
 		}
+	}
+
+	bool Game::Frame()
+	{
+		if (!graphics.Frame()) return false;
+
+		return true;
+	}
+
+	bool Game::ShouldStop()
+	{
+		return !graphics.HasActiveContext();
 	}
 }
 

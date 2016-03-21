@@ -1,7 +1,7 @@
 #include <iostream>
 using namespace std;
 
-#include "StrayPhotons.hh"
+#include "core/Game.hh"
 #include "core/Logging.hh"
 
 #include <cstdio>
@@ -22,7 +22,7 @@ int main()
 
 	try
 	{
-		StrayPhotons game;
+		sp::Game game;
 		game.Start();
 		return 0;
 	}

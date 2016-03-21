@@ -184,7 +184,7 @@ namespace sp
 
 
 		// Create window and surface
-		if (!(window = glfwCreateWindow(1280, 720, "Stray Photons", monitor, nullptr)))
+		if (!(window = glfwCreateWindow(1280, 720, "STRAY PHOTONS", monitor, nullptr)))
 		{
 			throw "glfw window creation failed";
 		}
@@ -341,6 +341,11 @@ namespace sp
 		device->freeCommandBuffers(cmdPool, { setupCmdBuffer });
 
 		Prepare();
+	}
+
+	void GraphicsContext::SetTitle(string title)
+	{
+		glfwSetWindowTitle(window, title.c_str());
 	}
 
 	void GraphicsContext::ResetSwapchain(uint32 &width, uint32 &height)
