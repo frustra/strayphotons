@@ -1,4 +1,5 @@
 #include "graphics/Device.hh"
+#include "graphics/GraphicsQueue.hh"
 #include "core/Logging.hh"
 
 namespace sp
@@ -24,6 +25,9 @@ namespace sp
 	void Device::Destroy()
 	{
 		if (!device) return;
+
+		if (primaryQueue)
+			delete primaryQueue;
 
 		if (pipelineCache)
 			device.destroyPipelineCache(pipelineCache, nalloc);
@@ -97,7 +101,8 @@ namespace sp
 		devInfo.ppEnabledExtensionNames(deviceExts.data());
 
 		device = physicalDevice.createDevice(devInfo, nalloc);
-		primaryQueue = device.getQueue(primaryQueueIndex, 0);
+
+		primaryQueue = new GraphicsQueue(*this, primaryQueueIndex);
 
 
 		// Create pipeline cache

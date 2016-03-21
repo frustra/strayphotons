@@ -8,6 +8,8 @@
 
 namespace sp
 {
+	class GraphicsQueue;
+
 	class Device
 	{
 	public:
@@ -16,7 +18,7 @@ namespace sp
 		void Initialize(vk::PhysicalDevice physicalDevice);
 		void Destroy();
 
-		inline vk::Device Instance()
+		inline vk::Device Handle()
 		{
 			return device;
 		}
@@ -31,7 +33,7 @@ namespace sp
 			return memoryManager;
 		}
 
-		inline vk::Queue PrimaryQueue()
+		inline GraphicsQueue *PrimaryQueue()
 		{
 			return primaryQueue;
 		}
@@ -62,7 +64,7 @@ namespace sp
 
 		DeviceAllocator memoryManager;
 
-		vk::Queue primaryQueue;
+		GraphicsQueue *primaryQueue;
 		vk::PipelineCache pipelineCache;
 	};
 }

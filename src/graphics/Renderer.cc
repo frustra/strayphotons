@@ -1,6 +1,7 @@
 #include "graphics/Renderer.hh"
-#include "core/Logging.hh"
 #include "graphics/Shader.hh"
+#include "graphics/GraphicsQueue.hh"
+#include "core/Logging.hh"
 
 namespace sp
 {
@@ -348,7 +349,7 @@ namespace sp
 		submitInfo.pSignalSemaphores(&semaphores.renderComplete);
 		submitInfo.commandBufferCount(1);
 		submitInfo.pCommandBuffers(&drawCmdBuffers[currentBuffer]);
-		device.PrimaryQueue().submit({ submitInfo }, {});
+		device.PrimaryQueue()->Handle().submit({ submitInfo }, {});
 
 		vk::PresentInfoKHR presentInfo;
 		presentInfo.waitSemaphoreCount(1);
@@ -356,7 +357,7 @@ namespace sp
 		presentInfo.swapchainCount(1);
 		presentInfo.pSwapchains(&vkswapchain);
 		presentInfo.pImageIndices(&currentBuffer);
-		device.PrimaryQueue().presentKHR(presentInfo);
+		device.PrimaryQueue()->Handle().presentKHR(presentInfo);
 
 		vk::ImageMemoryBarrier postPresentBarrier;
 		postPresentBarrier.srcAccessMask({});
@@ -377,7 +378,7 @@ namespace sp
 		vk::SubmitInfo postSubmitInfo;
 		postSubmitInfo.commandBufferCount(1);
 		postSubmitInfo.pCommandBuffers(&postPresentCmdBuffer);
-		device.PrimaryQueue().submit({ postSubmitInfo }, {});
+		device.PrimaryQueue()->Handle().submit({ postSubmitInfo }, {});
 
 		device->waitIdle();
 	}

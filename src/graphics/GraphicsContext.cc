@@ -4,6 +4,7 @@
 #include "graphics/VulkanHelpers.hh"
 #include "graphics/Shader.hh"
 #include "graphics/Device.hh"
+#include "graphics/GraphicsQueue.hh"
 
 #include <string>
 #include <iostream>
@@ -211,7 +212,7 @@ namespace sp
 
 
 		// Create command pool
-		vk::CommandPoolCreateInfo poolInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, 0 /* TODOASAP queue family index */);
+		vk::CommandPoolCreateInfo poolInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, device.PrimaryQueue()->FamilyIndex());
 		cmdPool = device->createCommandPool(poolInfo, nalloc);
 
 		vk::CommandBufferAllocateInfo setupCmdInfo(cmdPool, vk::CommandBufferLevel::ePrimary, 1);
@@ -221,6 +222,7 @@ namespace sp
 
 
 		// Initialize swapchain
+		Assert(device.Physical().getSurfaceSupportKHR(device.PrimaryQueue()->FamilyIndex(), vksurface), "primary queue does not support present");
 		uint32 width = 1280, height = 720;
 		ResetSwapchain(width, height);
 
@@ -331,9 +333,9 @@ namespace sp
 		vk::SubmitInfo submitInfo;
 		submitInfo.commandBufferCount(1);
 		submitInfo.pCommandBuffers(&setupCmdBuffer);
-		device.PrimaryQueue().submit({ submitInfo }, vk::Fence());
+		device.PrimaryQueue()->Handle().submit({ submitInfo }, vk::Fence());
 
-		device.PrimaryQueue().waitIdle();
+		device.PrimaryQueue()->Handle().waitIdle();
 		device->freeCommandBuffers(cmdPool, { setupCmdBuffer });
 
 		Prepare();
