@@ -1,9 +1,17 @@
-#include "ComponentStorage.hh"
+#include <stdexcept>
+#include "ecs/ComponentStorage.hh"
+
 
 namespace sp
 {
 	template <typename CompType>
-	CompType *ComponentPool::NewComponent(Entity e)
+	ComponentPool<CompType>::ComponentPool()
+	{
+		lastCompIndex = reinterpret_cast<uint64>(-1);
+	}
+
+	template <typename CompType>
+	CompType* ComponentPool<CompType>::NewComponent(Entity e)
 	{
 		int newCompIndex;
 
@@ -25,23 +33,23 @@ namespace sp
 	}
 
 	template <typename CompType>
-	CompType *ComponentPool::Get(Entity e)
+	CompType* ComponentPool<CompType>::Get(Entity e)
 	{
 		if (!HasComponent(e))
 		{
 			return nullptr;
 		}
 
-		compIndex = entIndexToCompIndex.at(e.Index());
-		return comonents.at(compIndex);
+		uint64 compIndex = entIndexToCompIndex.at(e.Index());
+		return components.at(compIndex);
 	}
 
 	template <typename CompType>
-	void ComponentPool::Remove(Entity e)
+	void ComponentPool<CompType>::Remove(Entity e)
 	{
 		if (!HasComponent(e))
 		{
-			throw runtime_error("cannot remove component because the entity does not have one");
+			throw std::runtime_error("cannot remove component because the entity does not have one");
 		}
 
 		// Swap this component to the end and decrement the container last index
@@ -51,20 +59,20 @@ namespace sp
 		// make removing a component quicker (avoids two copy operations)
 		CompType temp = components.at(lastCompIndex);
 
-		removeIndex = entIndexToCompIndex.at(e.Index());
+		uint64 removeIndex = entIndexToCompIndex.at(e.Index());
 		components.at(lastCompIndex) = components.at(removeIndex);
-		components.at(removingIndex) = temp;
+		components.at(removeIndex) = temp;
 
 		entIndexToCompIndex.at(compIndexToEntIndex.at(lastCompIndex)) = removeIndex;
-		entIndexToCompIndex.at(e.Index()) = INVALID_COMP_INDEX;
+		entIndexToCompIndex.at(e.Index()) = ComponentPool<CompType>::INVALID_COMP_INDEX;
 		lastCompIndex--;
 	}
 
 	template <typename CompType>
-	bool ComponentPool::HasComponent(Entity e)
+	bool ComponentPool<CompType>::HasComponent(Entity e) const
 	{
 		auto compIndex = entIndexToCompIndex.find(e.Index());
-		return (compIndex != entIndexToCompIndex.end()) && compIndex->second != INVALID_COMP_INDEX);
+		return compIndex != entIndexToCompIndex.end() && compIndex->second != ComponentPool<CompType>::INVALID_COMP_INDEX;
 	}
 }
 

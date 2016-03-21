@@ -1,30 +1,34 @@
-#include "ComponentManager.hh"
+#include "ecs/ComponentManager.hh"
 
-template <typename CompType>
-virtual CompType *Assign(Entity e, CompType comp)
+namespace sp
 {
+	template <typename CompType, typename ...T>
+	CompType *Assign(Entity e, T... args)
+	{
 
+	}
+
+	template <typename CompType>
+	void Remove(Entity e)
+	{
+
+	}
+
+	void RemoveAll(Entity e)
+	{
+
+	}
+
+	template <typename CompType>
+	bool Has(Entity e) const
+	{
+
+	}
+
+	template <typename CompType>
+	CompType *Get(Entity e)
+	{
+
+	}
 }
 
-template <typename CompType>
-virtual void Remove<CompType>(Entity e)
-{
-
-}
-
-virtual void RemoveAll(Entity e)
-{
-
-}
-
-template <typename CompType>
-virtual bool Has<CompType>(Entity e)
-{
-
-}
-
-template <typename CompType>
-CompType *Get<CompType>(Entity e)
-{
-
-}
