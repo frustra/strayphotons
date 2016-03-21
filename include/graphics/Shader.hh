@@ -1,7 +1,7 @@
 #ifndef SP_SHADER_H
 #define SP_SHADER_H
 
-#include "Shared.hh"
+#include "Common.hh"
 #include "graphics/DeviceAllocator.hh"
 #include "graphics/Device.hh"
 #include <vulkan/vk_cpp.h>

@@ -6,7 +6,7 @@
 #ifndef SP_DEVICE_ALLOCATOR_H
 #define SP_DEVICE_ALLOCATOR_H
 
-#include "Shared.hh"
+#include "Common.hh"
 #include "graphics/Graphics.hh"
 
 namespace sp

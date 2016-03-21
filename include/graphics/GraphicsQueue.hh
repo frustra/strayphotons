@@ -1,7 +1,7 @@
 #ifndef SP_GRAPHICS_QUEUE_H
 #define SP_GRAPHICS_QUEUE_H
 
-#include "Shared.hh"
+#include "Common.hh"
 #include "graphics/Graphics.hh"
 
 namespace sp

@@ -1,7 +1,7 @@
 #ifndef SP_ASSETMANAGER_H
 #define SP_ASSETMANAGER_H
 
-#include "Shared.hh"
+#include "Common.hh"
 
 #include <unordered_map>
 #include <string>

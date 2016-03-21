@@ -3,7 +3,7 @@
 
 #include "graphics/GraphicsManager.hh"
 #include "assets/AssetManager.hh"
-#include "Shared.hh"
+#include "Common.hh"
 
 namespace sp
 {

@@ -1,7 +1,7 @@
 #ifndef SP_ASSET_H
 #define SP_ASSET_H
 
-#include "Shared.hh"
+#include "Common.hh"
 
 namespace sp
 {

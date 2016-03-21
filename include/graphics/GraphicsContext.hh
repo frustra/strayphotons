@@ -5,7 +5,7 @@
 
 #include "graphics/Graphics.hh"
 #include "graphics/Device.hh"
-#include "Shared.hh"
+#include "Common.hh"
 
 namespace sp
 {
