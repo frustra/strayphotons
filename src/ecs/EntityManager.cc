@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <sstream>
 #include "ecs/EntityManager.hh"
 
 namespace sp
@@ -6,7 +7,7 @@ namespace sp
 	EntityManager::EntityManager()
 	{
 		nextEntityIndex = 1;
-		compMgr = make_unique<ComponentManager>();
+		compMgr = unique_ptr<ComponentManager>(new ComponentManager());
 	}
 
 	Entity EntityManager::NewEntity()
@@ -15,7 +16,8 @@ namespace sp
 		uint16 gen;
 		if (freeEntityIndexes.size() >= RECYCLE_ENTITY_COUNT)
 		{
-			i = freeEntityIndexes.pop_front();
+			i = freeEntityIndexes.front();
+			freeEntityIndexes.pop();
 			gen = entIndexToGen.at(i);  // incremented at Entity destruction
 		}
 		else
@@ -33,10 +35,13 @@ namespace sp
 		if (!Valid(e))
 		{
 			std::stringstream ss;
-			ss << "entity " << e << " is not valid; it may have already been destroyed."
-			throw std::invalid_argument(ss.c_str());
+			ss << "entity " << e << " is not valid; it may have already been destroyed.";
+			throw std::invalid_argument(ss.str());
 		}
+
+		RemoveAllComponents(e);
 		entIndexToGen.at(e.Index())++;
+		freeEntityIndexes.push(e.Index());
 	}
 
 	bool EntityManager::Valid(Entity e) const
@@ -44,14 +49,14 @@ namespace sp
 		return e.Generation() == entIndexToGen.at(e.Index());
 	}
 
-	template <typename CompType, T...>
-	virtual CompType* EntityManager::Assign<CompType>(Entity e, T... args)
+	template <typename CompType, typename ...T>
+	CompType* EntityManager::Assign(Entity e, T... args)
 	{
 		return compMgr->Assign<CompType>(e, args...);
 	}
 
 	template <typename CompType>
-	void EntityManager::Destroy<CompType>(Entity e)
+	void EntityManager::Remove(Entity e)
 	{
 		compMgr->Remove<CompType>(e);
 	}
@@ -62,19 +67,19 @@ namespace sp
 	}
 
 	template <typename CompType>
-	bool EntityManager::Has<CompType>(Entity e) const
+	bool EntityManager::Has(Entity e) const
 	{
 		return compMgr->Has<CompType>(e);
 	}
 
 	template <typename CompType>
-	CompType* EntityManager::Get<CompType>(Entity e)
+	CompType* EntityManager::Get(Entity e)
 	{
 		return compMgr->Get<CompType>(e);
 	}
 
-	template <typename CompType...>
-	Entity EntityManager::EachWith(CompType comp...)
+	template <typename ...CompType>
+	Entity EntityManager::EachWith(CompType*... comp)
 	{
 
 	}

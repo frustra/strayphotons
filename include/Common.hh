@@ -3,6 +3,7 @@
 
 #include <memory>
 using std::make_shared;
+using std::unique_ptr;
 using std::shared_ptr;
 using std::weak_ptr;
 

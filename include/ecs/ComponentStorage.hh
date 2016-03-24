@@ -33,9 +33,6 @@ namespace sp
 		bool HasComponent(Entity e) const;
 
 	private:
-
-		static const uint64 INVALID_COMP_INDEX = -1;
-
 		vector<CompType> components;
 		uint64 lastCompIndex;
 		std::unordered_map<uint64, uint64> entIndexToCompIndex;

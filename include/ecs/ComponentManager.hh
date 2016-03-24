@@ -1,6 +1,9 @@
 #ifndef COMPONENT_MANAGER_H
 #define COMPONENT_MANAGER_H
 
+#include <typeindex>
+#include <unordered_map>
+
 #include "Shared.hh"
 #include "ecs/Entity.hh"
 #include "ecs/ComponentStorage.hh"
@@ -28,7 +31,11 @@ namespace sp
 		CompType *Get(Entity e);
 
 	private:
-		vector<ComponentPool> componentPools;
+		// it is REALLY a vector of ComponentPool<T>* where each pool is the storage
+		// for a different type of component.  I'm not sure of a type-safe way to store
+		// this while still allowing dynamic addition of new component types.
+		vector<void*> componentPools;
+		std::unordered_map<std::type_index, uint32> compTypeToPoolIndex;
 	};
 }
 
