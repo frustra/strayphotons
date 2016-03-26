@@ -23,7 +23,7 @@ namespace sp
 		// TODO(pushrax): suballocate from large blocks for performance
 
 		DeviceAllocation allocation;
-		allocation.mem = device.allocateMemory(depthAllocInfo, nalloc);
+		allocation.mem = device.allocateMemory(depthAllocInfo, nullptr);
 		allocation.offset = 0;
 		allocation.size = size;
 		allocation.allocator = this;
@@ -47,7 +47,7 @@ namespace sp
 
 	void DeviceAllocator::Free(DeviceAllocation &alloc)
 	{
-		device.freeMemory(alloc.mem, nalloc);
+		device.freeMemory(alloc.mem, nullptr);
 		alloc.mem = {};
 	}
 
@@ -74,7 +74,7 @@ namespace sp
 			typeBits >>= 1;
 		}
 
-		throw vk::Exception({}, "DeviceAllocator::MemoryTypeIndex: could not locate required memory type");
+		throw std::runtime_error("DeviceAllocator::MemoryTypeIndex: could not locate required memory type");
 	}
 
 	void *DeviceAllocation::Map()

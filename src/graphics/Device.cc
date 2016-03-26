@@ -30,9 +30,9 @@ namespace sp
 			delete primaryQueue;
 
 		if (pipelineCache)
-			device.destroyPipelineCache(pipelineCache, nalloc);
+			device.destroyPipelineCache(pipelineCache, nullptr);
 
-		device.destroy(nalloc);
+		device.destroy(nullptr);
 		device = {};
 	}
 
@@ -69,7 +69,7 @@ namespace sp
 				primaryQueueIndex = (int)i;
 			}
 
-			auto flagStr = vk::getString(flags);
+			auto flagStr = to_string(flags);
 			Logf("Queue fam %d - %s (0x%x), count: %d, timestamp valid bits: %d", i, flagStr.c_str(), (uint32_t)flags, props.queueCount(), props.timestampValidBits());
 		}
 
@@ -100,14 +100,14 @@ namespace sp
 		devInfo.enabledExtensionCount(deviceExts.size());
 		devInfo.ppEnabledExtensionNames(deviceExts.data());
 
-		device = physicalDevice.createDevice(devInfo, nalloc);
+		device = physicalDevice.createDevice(devInfo, nullptr);
 
 		primaryQueue = new GraphicsQueue(*this, primaryQueueIndex);
 
 
 		// Create pipeline cache
 		vk::PipelineCacheCreateInfo pipelineCacheInfo;
-		pipelineCache = device.createPipelineCache(pipelineCacheInfo, nalloc);
+		pipelineCache = device.createPipelineCache(pipelineCacheInfo, nullptr);
 
 		memoryManager.SetDevice(physicalDevice, device);
 	}

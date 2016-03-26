@@ -21,11 +21,11 @@ namespace sp
 		for (auto &entry : uniforms)
 		{
 			auto &unif = entry.second;
-			device->destroyBuffer(unif.buf, nalloc);
+			device->destroyBuffer(unif.buf, nullptr);
 			device.Memory().Free(unif.mem);
 		}
 
-		device->destroyShaderModule(compileOutput->module, nalloc);
+		device->destroyShaderModule(compileOutput->module, nullptr);
 	}
 
 	void Shader::Bind(void *ptr, size_t size, string name)
@@ -35,7 +35,7 @@ namespace sp
 		uboInfo.usage(vk::BufferUsageFlagBits::eUniformBuffer);
 
 		auto &unif = uniforms[name];
-		unif.buf = device->createBuffer(uboInfo, nalloc);
+		unif.buf = device->createBuffer(uboInfo, nullptr);
 		unif.mem = device.Memory().AllocHostVisible(unif.buf).BindBuffer(unif.buf);
 
 		unif.desc.buffer(unif.buf);

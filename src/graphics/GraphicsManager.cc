@@ -11,10 +11,10 @@ namespace sp
 		Errorf("GLFW returned %d: %s", error, message);
 	}
 
-	static void handleVulkanError(vk::Exception &err)
+	static void handleVulkanError(std::runtime_error &err)
 	{
-		auto str = vk::getString(err.result());
-		Errorf("Vulkan error %s (%d) %s", str.c_str(), err.result(), err.what());
+		//auto str = vk::getString(err.result());
+		//Errorf("Vulkan error %s (%d) %s", str.c_str(), err.result(), err.what());
 		throw "Vulkan exception";
 	}
 
@@ -52,7 +52,7 @@ namespace sp
 			context = new Renderer();
 			context->CreateWindow();
 		}
-		catch (vk::Exception &err)
+		catch (std::runtime_error &err)
 		{
 			handleVulkanError(err);
 		}
@@ -66,7 +66,7 @@ namespace sp
 		{
 			delete context;
 		}
-		catch (vk::Exception &err)
+		catch (std::runtime_error &err)
 		{
 			handleVulkanError(err);
 		}
@@ -91,7 +91,7 @@ namespace sp
 		{
 			context->RenderFrame();
 		}
-		catch (vk::Exception &err)
+		catch (std::runtime_error &err)
 		{
 			handleVulkanError(err);
 		}
@@ -100,7 +100,8 @@ namespace sp
 		fpsTimer += std::chrono::duration<double, std::milli>(frameEnd - lastFrameEnd).count();
 		frameCounter++;
 
-		if (fpsTimer > 1000) {
+		if (fpsTimer > 1000)
+		{
 			context->SetTitle("STRAY PHOTONS (" + std::to_string(frameCounter) + " FPS)");
 			frameCounter = 0;
 			fpsTimer = 0;

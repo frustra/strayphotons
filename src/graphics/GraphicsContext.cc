@@ -51,16 +51,16 @@ namespace sp
 		delete shaderSet;
 
 		for (auto buf : framebuffers)
-			device->destroyFramebuffer(buf, nalloc);
+			device->destroyFramebuffer(buf, nullptr);
 
 		if (renderPass)
-			device->destroyRenderPass(renderPass, nalloc);
+			device->destroyRenderPass(renderPass, nullptr);
 
 		if (depthStencil.view)
-			device->destroyImageView(depthStencil.view, nalloc);
+			device->destroyImageView(depthStencil.view, nullptr);
 
 		if (depthStencil.image)
-			device->destroyImage(depthStencil.image, nalloc);
+			device->destroyImage(depthStencil.image, nullptr);
 
 		if (depthStencil.mem)
 			device.Memory().Free(depthStencil.mem);
@@ -72,27 +72,27 @@ namespace sp
 			device->freeCommandBuffers(cmdPool, drawCmdBuffers);
 
 		for (auto view : swapchainViews)
-			device->destroyImageView(view, nalloc);
+			device->destroyImageView(view, nullptr);
 
 		if (vkswapchain)
-			device->destroySwapchainKHR(vkswapchain, nalloc);
+			device->destroySwapchainKHR(vkswapchain, nullptr);
 
 		if (cmdPool)
-			device->destroyCommandPool(cmdPool, nalloc);
+			device->destroyCommandPool(cmdPool, nullptr);
 
 		if (device)
 			device.Destroy();
 
 		if (vksurface)
-			vkinstance.destroySurfaceKHR(vksurface, nalloc);
+			vkinstance.destroySurfaceKHR(vksurface, nullptr);
 
 #ifdef VULKAN_ENABLE_VALIDATION
 		if (debugReportCallback)
-			fpDestroyDebugReportCallback((VkInstance) vkinstance, debugReportCallback, (VkAllocationCallbacks *) &nalloc);
+			fpDestroyDebugReportCallback((VkInstance) vkinstance, debugReportCallback, nullptr);
 #endif
 
 		if (vkinstance)
-			vkinstance.destroy(nalloc);
+			vkinstance.destroy(nullptr);
 
 		if (window)
 			glfwDestroyWindow(window);
@@ -100,7 +100,7 @@ namespace sp
 
 	void GraphicsContext::CreateWindow()
 	{
-		int nGlfwExts;
+		unsigned int nGlfwExts;
 		const char **glfwExts = glfwGetRequiredInstanceExtensions(&nGlfwExts);
 
 		vector<const char *> instExts(glfwExts, glfwExts + nGlfwExts);
@@ -117,7 +117,7 @@ namespace sp
 
 
 		// Initialize Vulkan
-		vk::ApplicationInfo appInfo("Stray Photons", 1, "SP ENGINE", 1, VK_API_VERSION);
+		vk::ApplicationInfo appInfo("Stray Photons", 1, "SP ENGINE", 1, VK_MAKE_VERSION(1, 0, 0));
 
 		vk::InstanceCreateInfo info;
 		info.pApplicationInfo(&appInfo);
@@ -126,13 +126,14 @@ namespace sp
 		info.enabledExtensionCount(instExts.size());
 		info.ppEnabledExtensionNames(instExts.data());
 
-		vk::Assert(vk::createInstance(&info, &nalloc, &vkinstance), "creating Vulkan instance");
+		vk::Assert(vk::createInstance(&info, nullptr, &vkinstance), "creating Vulkan instance");
 
 		int major, minor, patch;
 		vk::APIVersion(VK_API_VERSION, major, minor, patch);
 		Logf("Created Vulkan instance with API v%d.%d.%d", major, minor, patch);
 
-		auto devices = vkinstance.enumeratePhysicalDevices();
+		vector<vk::PhysicalDevice> devices;
+		vkinstance.enumeratePhysicalDevices(devices);
 
 		if (devices.size() == 0)
 		{
@@ -154,7 +155,7 @@ namespace sp
 		//dbgInfo.flags |= VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
 
 		dbgInfo.pfnCallback = (PFN_vkDebugReportCallbackEXT)&vulkanCallback;
-		auto err = fpCreateDebugReportCallback((VkInstance) vkinstance, &dbgInfo, (VkAllocationCallbacks *) &nalloc, &debugReportCallback);
+		auto err = fpCreateDebugReportCallback((VkInstance) vkinstance, &dbgInfo, nullptr, &debugReportCallback);
 		vk::Assert(err, "creating debug report callback");
 #endif
 
@@ -189,7 +190,7 @@ namespace sp
 			throw "glfw window creation failed";
 		}
 
-		auto result = glfwCreateWindowSurface((VkInstance) vkinstance, window, (VkAllocationCallbacks *) &nalloc, (VkSurfaceKHR *) &vksurface);
+		auto result = glfwCreateWindowSurface((VkInstance) vkinstance, window, nullptr, (VkSurfaceKHR *) &vksurface);
 		vk::Assert(result, "creating window surface");
 
 
@@ -215,12 +216,12 @@ namespace sp
 
 		// Create command pool
 		vk::CommandPoolCreateInfo poolInfo(vk::CommandPoolCreateFlagBits::eResetCommandBuffer, device.PrimaryQueue()->FamilyIndex());
-		cmdPool = device->createCommandPool(poolInfo, nalloc);
+		cmdPool = device->createCommandPool(poolInfo, nullptr);
 
 		vk::CommandBufferAllocateInfo setupCmdInfo(cmdPool, vk::CommandBufferLevel::ePrimary, 1);
 		auto buffers = device->allocateCommandBuffers(setupCmdInfo);
 		setupCmdBuffer = buffers[0];
-		setupCmdBuffer.begin({});
+		setupCmdBuffer.begin(vk::CommandBufferBeginInfo());
 
 
 		// Initialize swapchain
@@ -250,7 +251,7 @@ namespace sp
 		depthInfo.tiling(vk::ImageTiling::eOptimal);
 		depthInfo.usage(vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferSrc);
 
-		depthStencil.image = device->createImage(depthInfo, nalloc);
+		depthStencil.image = device->createImage(depthInfo, nullptr);
 
 		vk::ImageViewCreateInfo depthStencilInfo;
 		depthStencilInfo.viewType(vk::ImageViewType::e2D);
@@ -266,7 +267,7 @@ namespace sp
 
 		vk::setImageLayout(setupCmdBuffer, depthStencil.image, vk::ImageAspectFlagBits::eDepth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
 		depthStencilInfo.image(depthStencil.image);
-		depthStencil.view = device->createImageView(depthStencilInfo, nalloc);
+		depthStencil.view = device->createImageView(depthStencilInfo, nullptr);
 
 
 		// Create render pass
@@ -307,7 +308,7 @@ namespace sp
 		renderPassInfo.subpassCount(1);
 		renderPassInfo.pSubpasses(&subpass);
 
-		renderPass = device->createRenderPass(renderPassInfo, nalloc);
+		renderPass = device->createRenderPass(renderPassInfo, nullptr);
 
 
 		// Set up framebuffer
@@ -325,7 +326,7 @@ namespace sp
 		for (size_t i = 0; i < swapchainImages.size(); i++)
 		{
 			attachments[0] = swapchainViews[i];
-			framebuffers.push_back(device->createFramebuffer(framebufferInfo, nalloc));
+			framebuffers.push_back(device->createFramebuffer(framebufferInfo, nullptr));
 		}
 
 
@@ -354,7 +355,7 @@ namespace sp
 
 		for (auto view : swapchainViews)
 		{
-			device->destroyImageView(view, nalloc);
+			device->destroyImageView(view, nullptr);
 		}
 
 		vk::SurfaceCapabilitiesKHR surfCap;
@@ -420,11 +421,11 @@ namespace sp
 		createInfo.clipped(true);
 		createInfo.compositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
 
-		vkswapchain = device->createSwapchainKHR(createInfo, nalloc);
+		vkswapchain = device->createSwapchainKHR(createInfo, nullptr);
 
 		if (oldSwapchain)
 		{
-			device->destroySwapchainKHR(oldSwapchain, nalloc);
+			device->destroySwapchainKHR(oldSwapchain, nullptr);
 		}
 
 		device->getSwapchainImagesKHR(vkswapchain, swapchainImages);
@@ -449,7 +450,7 @@ namespace sp
 			setImageLayout(setupCmdBuffer, image, vk::ImageAspectFlagBits::eColor, vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR);
 
 			viewCreateInfo.image(image);
-			auto view = device->createImageView(viewCreateInfo, nalloc);
+			auto view = device->createImageView(viewCreateInfo, nullptr);
 			swapchainViews[i] = view;
 		}
 	}

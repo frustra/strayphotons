@@ -34,31 +34,31 @@ namespace sp
 	Renderer::~Renderer()
 	{
 		if (semaphores.presentComplete)
-			device->destroySemaphore(semaphores.presentComplete, nalloc);
+			device->destroySemaphore(semaphores.presentComplete, nullptr);
 
 		if (semaphores.renderComplete)
-			device->destroySemaphore(semaphores.renderComplete, nalloc);
+			device->destroySemaphore(semaphores.renderComplete, nullptr);
 
 		if (descriptorPool)
-			device->destroyDescriptorPool(descriptorPool, nalloc);
+			device->destroyDescriptorPool(descriptorPool, nullptr);
 
 		if (pipeline)
-			device->destroyPipeline(pipeline, nalloc);
+			device->destroyPipeline(pipeline, nullptr);
 
 		if (pipelineLayout)
-			device->destroyPipelineLayout(pipelineLayout, nalloc);
+			device->destroyPipelineLayout(pipelineLayout, nullptr);
 
 		if (descriptorSetLayout)
-			device->destroyDescriptorSetLayout(descriptorSetLayout, nalloc);
+			device->destroyDescriptorSetLayout(descriptorSetLayout, nullptr);
 
 		if (vertices.buf)
-			device->destroyBuffer(vertices.buf, nalloc);
+			device->destroyBuffer(vertices.buf, nullptr);
 
 		if (vertices.mem)
 			device.Memory().Free(vertices.mem);
 
 		if (indices.buf)
-			device->destroyBuffer(indices.buf, nalloc);
+			device->destroyBuffer(indices.buf, nullptr);
 
 		if (indices.mem)
 			device.Memory().Free(indices.mem);
@@ -96,7 +96,7 @@ namespace sp
 		vertexBufInfo.size(sizeof(vertexBuf));
 		vertexBufInfo.usage(vk::BufferUsageFlagBits::eVertexBuffer);
 
-		vertices.buf = device->createBuffer(vertexBufInfo, nalloc);
+		vertices.buf = device->createBuffer(vertexBufInfo, nullptr);
 		vertices.mem = device.Memory().AllocHostVisible(vertices.buf).BindBuffer(vertices.buf);
 
 		// Upload to VRAM
@@ -109,7 +109,7 @@ namespace sp
 		indexBufInfo.size(sizeof(indexBuf));
 		indexBufInfo.usage(vk::BufferUsageFlagBits::eIndexBuffer);
 
-		indices.buf = device->createBuffer(indexBufInfo, nalloc);
+		indices.buf = device->createBuffer(indexBufInfo, nullptr);
 		indices.mem = device.Memory().AllocHostVisible(indices.buf).BindBuffer(indices.buf);
 
 		// Upload to VRAM
@@ -154,13 +154,13 @@ namespace sp
 		descriptorLayoutInfo.bindingCount(1);
 		descriptorLayoutInfo.pBindings(&layoutBinding);
 
-		descriptorSetLayout = device->createDescriptorSetLayout(descriptorLayoutInfo, nalloc);
+		descriptorSetLayout = device->createDescriptorSetLayout(descriptorLayoutInfo, nullptr);
 
 		vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
 		pipelineLayoutInfo.setLayoutCount(1);
 		pipelineLayoutInfo.pSetLayouts(&descriptorSetLayout);
 
-		pipelineLayout = device->createPipelineLayout(pipelineLayoutInfo, nalloc);
+		pipelineLayout = device->createPipelineLayout(pipelineLayoutInfo, nullptr);
 
 
 		// Prepare pipeline state
@@ -227,7 +227,7 @@ namespace sp
 		pipelineInfo.renderPass(renderPass);
 		pipelineInfo.pDynamicState(&dynamicState);
 
-		auto pipelines = device->createGraphicsPipelines(device.PipelineCache(), { pipelineInfo }, nalloc);
+		auto pipelines = device->createGraphicsPipelines(device.PipelineCache(), { pipelineInfo }, nullptr);
 		pipeline = pipelines[0];
 
 
@@ -239,7 +239,7 @@ namespace sp
 		descriptorPoolInfo.pPoolSizes(&descriptorPoolSize);
 		descriptorPoolInfo.maxSets(1);
 
-		descriptorPool = device->createDescriptorPool(descriptorPoolInfo, nalloc);
+		descriptorPool = device->createDescriptorPool(descriptorPoolInfo, nullptr);
 
 		// Update descriptor sets with binding points
 		vk::DescriptorSetAllocateInfo descSetInfo;
@@ -321,8 +321,8 @@ namespace sp
 			cmdbuf.end();
 		}
 
-		semaphores.presentComplete = device->createSemaphore({}, nalloc);
-		semaphores.renderComplete = device->createSemaphore({}, nalloc);
+		semaphores.presentComplete = device->createSemaphore({}, nullptr);
+		semaphores.renderComplete = device->createSemaphore({}, nullptr);
 	}
 
 	void Renderer::RenderFrame()
@@ -342,9 +342,12 @@ namespace sp
 		device->waitIdle();
 		device->acquireNextImageKHR(vkswapchain, UINT64_MAX, semaphores.presentComplete, {}, currentBuffer);
 
+		vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eBottomOfPipe;
+
 		vk::SubmitInfo submitInfo;
 		submitInfo.waitSemaphoreCount(1);
 		submitInfo.pWaitSemaphores(&semaphores.presentComplete);
+		submitInfo.pWaitDstStageMask(&waitStage);
 		submitInfo.signalSemaphoreCount(1);
 		submitInfo.pSignalSemaphores(&semaphores.renderComplete);
 		submitInfo.commandBufferCount(1);
@@ -367,7 +370,7 @@ namespace sp
 		postPresentBarrier.subresourceRange({ vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 });
 		postPresentBarrier.image(swapchainImages[currentBuffer]);
 
-		postPresentCmdBuffer.begin({});
+		postPresentCmdBuffer.begin(vk::CommandBufferBeginInfo());
 		postPresentCmdBuffer.pipelineBarrier(
 			vk::PipelineStageFlagBits::eAllCommands,
 			vk::PipelineStageFlagBits::eTopOfPipe,

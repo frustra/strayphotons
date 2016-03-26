@@ -13,6 +13,4 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-static vk::AllocationCallbacks &nalloc = vk::AllocationCallbacks::null();
-
 #endif

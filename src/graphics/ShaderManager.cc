@@ -44,7 +44,7 @@ namespace sp
 		moduleInfo.pCode(reinterpret_cast<const uint32 *>(input.source.data()));
 
 		auto output = make_shared<ShaderCompileOutput>();
-		output->module = device->createShaderModule(moduleInfo, nalloc);
+		output->module = device->createShaderModule(moduleInfo, nullptr);
 
 		return output;
 	}

@@ -12,7 +12,7 @@ namespace vk
 	{
 		if (result == vk::Result::eSuccess) return;
 
-		auto str = vk::getString(result);
+		auto str = to_string(result);
 		Errorf("VkResult %s (%d) %s", str.c_str(), result, msg);
 		throw msg;
 	}
