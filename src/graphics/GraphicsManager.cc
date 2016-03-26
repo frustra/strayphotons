@@ -11,10 +11,13 @@ namespace sp
 		Errorf("GLFW returned %d: %s", error, message);
 	}
 
-	static void handleVulkanError(std::runtime_error &err)
+	static void handleVulkanError(std::system_error &err)
 	{
-		//auto str = vk::getString(err.result());
-		//Errorf("Vulkan error %s (%d) %s", str.c_str(), err.result(), err.what());
+		auto code = err.code();
+		if (code.category() != vk::errorCategory()) return;
+
+		auto str = to_string(vk::Result(code.value()));
+		Errorf("Vulkan error %s (%d) %s", str.c_str(), code.value(), err.what());
 		throw "Vulkan exception";
 	}
 
@@ -52,7 +55,7 @@ namespace sp
 			context = new Renderer();
 			context->CreateWindow();
 		}
-		catch (std::runtime_error &err)
+		catch (std::system_error &err)
 		{
 			handleVulkanError(err);
 		}
@@ -66,7 +69,7 @@ namespace sp
 		{
 			delete context;
 		}
-		catch (std::runtime_error &err)
+		catch (std::system_error &err)
 		{
 			handleVulkanError(err);
 		}
@@ -91,7 +94,7 @@ namespace sp
 		{
 			context->RenderFrame();
 		}
-		catch (std::runtime_error &err)
+		catch (std::system_error &err)
 		{
 			handleVulkanError(err);
 		}
