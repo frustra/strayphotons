@@ -37,7 +37,7 @@ namespace sp
 			throw "no compatible Vulkan ICD found";
 		}
 
-		lastFrameEnd = std::chrono::high_resolution_clock::now();
+		lastFrameEnd = std::chrono::steady_clock::now();
 	}
 
 	GraphicsManager::~GraphicsManager()
@@ -99,7 +99,7 @@ namespace sp
 			handleVulkanError(err);
 		}
 
-		auto frameEnd = std::chrono::high_resolution_clock::now();
+		auto frameEnd = std::chrono::steady_clock::now();
 		fpsTimer += std::chrono::duration<double, std::milli>(frameEnd - lastFrameEnd).count();
 		frameCounter++;
 
