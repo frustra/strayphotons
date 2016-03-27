@@ -306,7 +306,7 @@ namespace sp
 
 			vk::ImageMemoryBarrier prePresentBarrier;
 			prePresentBarrier.srcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
-			prePresentBarrier.dstAccessMask({});
+			prePresentBarrier.dstAccessMask(vk::AccessFlagBits::eMemoryRead);
 			prePresentBarrier.oldLayout(vk::ImageLayout::eColorAttachmentOptimal);
 			prePresentBarrier.newLayout(vk::ImageLayout::ePresentSrcKHR);
 			prePresentBarrier.subresourceRange({ vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 });
@@ -314,15 +314,15 @@ namespace sp
 
 			cmdbuf.pipelineBarrier(
 				vk::PipelineStageFlagBits::eAllCommands,
-				vk::PipelineStageFlagBits::eTopOfPipe,
+				vk::PipelineStageFlagBits::eBottomOfPipe,
 				{}, {}, {}, { prePresentBarrier }
 			);
 
 			cmdbuf.end();
 		}
 
-		semaphores.presentComplete = device->createSemaphore({}, nullptr);
-		semaphores.renderComplete = device->createSemaphore({}, nullptr);
+		semaphores.presentComplete = device->createSemaphore(vk::SemaphoreCreateInfo(), nullptr);
+		semaphores.renderComplete = device->createSemaphore(vk::SemaphoreCreateInfo(), nullptr);
 	}
 
 	void Renderer::RenderFrame()
@@ -339,28 +339,7 @@ namespace sp
 			shader->UploadUniforms();
 		}
 
-		device->waitIdle();
 		device->acquireNextImageKHR(vkswapchain, UINT64_MAX, semaphores.presentComplete, {}, currentBuffer);
-
-		vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eBottomOfPipe;
-
-		vk::SubmitInfo submitInfo;
-		submitInfo.waitSemaphoreCount(1);
-		submitInfo.pWaitSemaphores(&semaphores.presentComplete);
-		submitInfo.pWaitDstStageMask(&waitStage);
-		submitInfo.signalSemaphoreCount(1);
-		submitInfo.pSignalSemaphores(&semaphores.renderComplete);
-		submitInfo.commandBufferCount(1);
-		submitInfo.pCommandBuffers(&drawCmdBuffers[currentBuffer]);
-		device.PrimaryQueue()->Handle().submit({ submitInfo }, {});
-
-		vk::PresentInfoKHR presentInfo;
-		presentInfo.waitSemaphoreCount(1);
-		presentInfo.pWaitSemaphores(&semaphores.renderComplete);
-		presentInfo.swapchainCount(1);
-		presentInfo.pSwapchains(&vkswapchain);
-		presentInfo.pImageIndices(&currentBuffer);
-		device.PrimaryQueue()->Handle().presentKHR(presentInfo);
 
 		vk::ImageMemoryBarrier postPresentBarrier;
 		postPresentBarrier.srcAccessMask({});
@@ -382,6 +361,28 @@ namespace sp
 		postSubmitInfo.commandBufferCount(1);
 		postSubmitInfo.pCommandBuffers(&postPresentCmdBuffer);
 		device.PrimaryQueue()->Handle().submit({ postSubmitInfo }, {});
+
+		device->waitIdle();
+
+		vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eBottomOfPipe;
+
+		vk::SubmitInfo submitInfo;
+		submitInfo.waitSemaphoreCount(1);
+		submitInfo.pWaitSemaphores(&semaphores.presentComplete);
+		submitInfo.pWaitDstStageMask(&waitStage);
+		submitInfo.signalSemaphoreCount(1);
+		submitInfo.pSignalSemaphores(&semaphores.renderComplete);
+		submitInfo.commandBufferCount(1);
+		submitInfo.pCommandBuffers(&drawCmdBuffers[currentBuffer]);
+		device.PrimaryQueue()->Handle().submit({ submitInfo }, {});
+
+		vk::PresentInfoKHR presentInfo;
+		presentInfo.waitSemaphoreCount(1);
+		presentInfo.pWaitSemaphores(&semaphores.renderComplete);
+		presentInfo.swapchainCount(1);
+		presentInfo.pSwapchains(&vkswapchain);
+		presentInfo.pImageIndices(&currentBuffer);
+		device.PrimaryQueue()->Handle().presentKHR(presentInfo);
 
 		device->waitIdle();
 	}
