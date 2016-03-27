@@ -6,6 +6,8 @@ set(SP_VERSION_MAJOR "0")
 set(SP_VERSION_MINOR "1")
 set(SP_VERSION "${SP_VERSION_MAJOR}.${SP_VERSION_MINOR}")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
 if (UNIX)
 	add_definitions(-Wall)
 endif()
