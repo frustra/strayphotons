@@ -61,7 +61,7 @@ namespace sp
 		}
 
 		vector<char> buffer((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
-		return ShaderCompileInput{shaderType, buffer};
+		return ShaderCompileInput {shaderType, buffer};
 	}
 
 	static spv_result_t visitHeader(void *userData, spv_endianness_t endian, uint32, uint32 version, uint32 gen, uint32 id, uint32 schema)
@@ -121,6 +121,9 @@ namespace sp
 				output->addIdentifier(id, reinterpret_cast<const char *>(name));
 				break;
 			}
+
+			default:
+				break;
 		}
 		return SPV_SUCCESS;
 	}

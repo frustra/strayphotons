@@ -265,7 +265,13 @@ namespace sp
 		depthStencil.mem = device.Memory().AllocDeviceLocal(depthStencil.image);
 		depthStencil.mem.BindImage(depthStencil.image);
 
-		vk::setImageLayout(setupCmdBuffer, depthStencil.image, vk::ImageAspectFlagBits::eDepth, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+		vk::setImageLayout(
+			setupCmdBuffer, depthStencil.image,
+			vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil,
+			vk::ImageLayout::eUndefined,
+			vk::ImageLayout::eDepthStencilAttachmentOptimal
+		);
+
 		depthStencilInfo.image(depthStencil.image);
 		depthStencil.view = device->createImageView(depthStencilInfo, nullptr);
 
