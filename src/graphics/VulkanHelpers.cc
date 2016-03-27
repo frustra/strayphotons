@@ -9,6 +9,10 @@ namespace vk
 		patch = version & 0xfff;
 	}
 
+	/*
+	 * Transitions a vk::Image between layouts, inserting an appropriate barrier
+	 * to prevent access violations.
+	 */
 	void setImageLayout(vk::CommandBuffer cmdBuffer, vk::Image image, vk::ImageAspectFlags aspectMask, vk::ImageLayout oldImageLayout, vk::ImageLayout newImageLayout)
 	{
 		vk::ImageMemoryBarrier barrier;
@@ -26,8 +30,8 @@ namespace vk
 
 		// Source layouts
 
-		//if (oldImageLayout == vk::ImageLayout::eUndefined)
-		//	barrier.srcAccessMask(vk::AccessFlagBits::eHostWrite | vk::AccessFlagBits::eTransferWrite);
+		if (oldImageLayout == vk::ImageLayout::ePreinitialized)
+			barrier.srcAccessMask(vk::AccessFlagBits::eHostWrite | vk::AccessFlagBits::eTransferWrite);
 
 		if (oldImageLayout == vk::ImageLayout::eColorAttachmentOptimal)
 			barrier.srcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);

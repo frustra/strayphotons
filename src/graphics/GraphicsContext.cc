@@ -166,7 +166,7 @@ namespace sp
 		{
 			auto props = curr.getProperties();
 			vk::APIVersion(props.apiVersion(), major, minor, patch);
-			Logf("Available Vulkan device: %s (%x:%x), v%d.%d.%d", props.deviceName(), props.vendorID(), props.deviceID(), major, minor, patch);
+			Logf("Available Vulkan device: %s (%04x:%04x), ICD v%d.%d.%d", props.deviceName(), props.vendorID(), props.deviceID(), major, minor, patch);
 
 			if (physicalDevice) continue;
 			auto devType = props.deviceType();
@@ -179,7 +179,7 @@ namespace sp
 		}
 
 		auto devProps = physicalDevice.getProperties();
-		Logf("Using device %x:%x", devProps.vendorID(), devProps.deviceID());
+		Logf("Using device %04x:%04x", devProps.vendorID(), devProps.deviceID());
 
 		device.Initialize(physicalDevice);
 
@@ -371,9 +371,9 @@ namespace sp
 		device.Physical().getSurfacePresentModesKHR(vksurface, presentModes);
 
 		vk::Extent2D swapchainExtent;
-		if (surfCap.currentExtent().width() == -1)
+		if (surfCap.currentExtent().width() == 0xffffffff)
 		{
-			// width/height are both -1
+			// "surface size will be determined by the extent of the swapchain targeting the surface" - spec
 			swapchainExtent.width(width);
 			swapchainExtent.height(height);
 		}
