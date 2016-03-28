@@ -13,6 +13,10 @@ using std::vector;
 #include <string>
 using std::string;
 
+#include <stdexcept>
+using std::runtime_error;
+using std::invalid_argument;
+
 typedef uint16_t uint16;
 typedef int16_t int16;
 typedef uint32_t uint32;

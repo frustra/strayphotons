@@ -35,8 +35,9 @@ namespace sp
 		template <typename CompType>
 		CompType *Get(Entity e);
 
-		template <typename ...CompType>
-		Entity EachWith(CompType*... comp);
+		// Fn must be a function that accepts ...CompType args
+		template <typename Fn, typename ...CompType>
+		Entity EachWith(Fn fn, CompType*... comp);
 
 	private:
 

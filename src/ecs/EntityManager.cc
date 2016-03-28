@@ -19,9 +19,9 @@ namespace sp
 			i = freeEntityIndexes.front();
 			freeEntityIndexes.pop();
 			gen = entIndexToGen.at(i);  // incremented at Entity destruction
-			Assert(compMgr->entCompMasks[i] == std::bitset<MAX_COMPONENT_TYPES>(),
+			Assert(compMgr->entCompMasks[i] == ComponentMask(),
 				"expected ent comp mask to be reset at destruction but it wasn't");
-			compMgr->entCompMasks[i] = std::bitset<MAX_COMPONENT_TYPES>();
+			compMgr->entCompMasks[i] = ComponentMask();
 		}
 		else
 		{
@@ -87,9 +87,15 @@ namespace sp
 		return compMgr->Get<CompType>(e);
 	}
 
-	template <typename ...CompType>
-	Entity EntityManager::EachWith(CompType*... comp)
+	template <typename Fn, typename ...CompTypes>
+	Entity EntityManager::EachWith(Fn fn)
 	{
+		// create mask for identifying an entity with all of these components
+		ComponentMask compMask = compMgr->createMask<CompTypes...>();
 
+		// identify the component type which has the least number of entities to iterate over
+
+		// iterate and call the function when an entity has all the components
+		fn(it, *(it.template static_cast<ComponentPool<CompType>*>(componentPools.at(i)).get())...);
 	}
 }

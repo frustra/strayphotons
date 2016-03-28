@@ -10,6 +10,13 @@
 
 namespace sp
 {
+	class BaseComponentPool
+	{
+	public:
+		virtual ~BaseComponentPool() {}
+		virtual void Remove(Entity e) = 0;
+	};
+
 	/**
 	 * ComponentPool is a storage container for Entity components.
 	 * It stores all components with a vector and so it only grows when new components are added.
@@ -21,7 +28,7 @@ namespace sp
 	 * components is very large; this should be implemeted.
 	 */
 	template <typename CompType>
-	class ComponentPool
+	class ComponentPool : public BaseComponentPool
 	{
 	public:
 		ComponentPool();
@@ -31,7 +38,7 @@ namespace sp
 
 		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		CompType *Get(Entity e);
-		void Remove(Entity e);
+		void Remove(Entity e) override;
 		bool HasComponent(Entity e) const;
 
 	private:

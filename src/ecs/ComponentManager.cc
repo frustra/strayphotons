@@ -51,22 +51,19 @@ namespace sp
 
 	void ComponentManager::RemoveAll(Entity e)
 	{
-		std::type_index tIndex = typeid(CompType);
-		uint32 compIndex = compTypeToCompIndex.at(tIndex);
-
 		Assert(entCompMasks.size() > e.Index(), "entity does not have a component mask");
 
 		auto &compMask = entCompMasks.at(e.Index());
-		for (int i = 0; i < componentPools.size(); ++i)
+		for (uint i = 0; i < componentPools.size(); ++i)
 		{
 			if (compMask[i])
 			{
-				static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex))->Remove(e);
+				static_cast<BaseComponentPool*>(componentPools.at(i))->Remove(e);
 				compMask.reset(i);
 			}
 		}
 
-		Assert(compMask == std::bitset<MAX_COMPONENT_TYPES>(),
+		Assert(compMask == ComponentMask(),
 			"component mask not blank after removing all components");
 	}
 
@@ -94,6 +91,28 @@ namespace sp
 		}
 
 		return static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex))->Get(e);
+	}
+
+	template <typename ...CompTypes>
+	ComponentMask createMask() const
+	{
+		ComponentMask mask;
+		return setMask<CompTypes...>(mask);
+	}
+
+	template <typnename FirstComp, typename ...OtherComps>
+	ComponentMask setMask(ComponentMask &mask)
+	{
+		setMask<FirstComp>(mask);
+		return setMask<OtherComps...>(mask);
+	}
+
+	template <typename CompType>
+	ComponentMask setMask(ComponentMask &mask)
+	{
+		auto compIndex = compTypeToCompIndex.at(typeid(CompType));
+		mask.set(compIndex);
+		return mask;
 	}
 }
 

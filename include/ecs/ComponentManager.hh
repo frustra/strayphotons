@@ -35,6 +35,17 @@ namespace sp
 		CompType *Get(Entity e);
 
 	private:
+		typedef ComponentMask std::bitset<MAX_COMPONENT_TYPES>;
+
+		template <typename ...CompTypes>
+		ComponentMask createMask() const;
+
+		template <typnename FirstComp, typename ...OtherComps>
+		ComponentMask setMask(ComponentMask &mask);
+
+		template <typename CompType>
+		ComponentMask setMask(ComponentMask &mask);
+
 		// it is REALLY a vector of ComponentPool<T>* where each pool is the storage
 		// for a different type of component.  I'm not sure of a type-safe way to store
 		// this while still allowing dynamic addition of new component types.
@@ -47,7 +58,8 @@ namespace sp
 
 		// An entity's index gives a bitmask for the components that it has. If bitset[i] is set
 		// then it means this entity has the component with component index i
-		vector<std::bitset<MAX_COMPONENT_TYPES>> entCompMasks;
+		vector<CompMask> entCompMasks;
+
 	};
 }
 
