@@ -3,16 +3,20 @@
 
 #include <typeindex>
 #include <unordered_map>
+#include <bitset>
 
-#include "Shared.hh"
+#include "Common.hh"
 #include "ecs/Entity.hh"
 #include "ecs/ComponentStorage.hh"
 
+#define MAX_COMPONENT_TYPES 64
 
 namespace sp
 {
 	class ComponentManager
 	{
+		// TODO-cs: should probably just merge these two classes
+		friend class EntityManager;
 	public:
 		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		template <typename CompType, typename ...T>
@@ -35,7 +39,15 @@ namespace sp
 		// for a different type of component.  I'm not sure of a type-safe way to store
 		// this while still allowing dynamic addition of new component types.
 		vector<void*> componentPools;
-		std::unordered_map<std::type_index, uint32> compTypeToPoolIndex;
+
+		// map the typeid(T) of a component type, T, to the "index" of that
+		// component type. Any time each component type stores info in a vector, this index
+		// will identify which component type it corresponds to
+		std::unordered_map<std::type_index, uint32> compTypeToCompIndex;
+
+		// An entity's index gives a bitmask for the components that it has. If bitset[i] is set
+		// then it means this entity has the component with component index i
+		vector<std::bitset<MAX_COMPONENT_TYPES>> entCompMasks;
 	};
 }
 

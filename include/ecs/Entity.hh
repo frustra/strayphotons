@@ -1,7 +1,6 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
-#include <cassert>
 #include <ostream>
 
 namespace sp
@@ -47,8 +46,8 @@ namespace sp
 	private:
 		Entity(uint64 index, uint16 generation)
 		{
-			assert((index & INDEX_BITS) == index);
-			assert((generation & GENERATION_BITS) == generation);
+			Assert((index & INDEX_BITS) == index);
+			Assert((generation & GENERATION_BITS) == generation);
 			id = (static_cast<uint64>(generation) << INDEX_BITS) + index;
 		}
 

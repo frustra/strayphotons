@@ -5,43 +5,95 @@ namespace sp
 	template <typename CompType, typename ...T>
 	CompType* ComponentManager::Assign(Entity e, T... args)
 	{
-		std::type_index typeIndex = typeid(CompType);
+		std::type_index compType = typeid(CompType);
 
-		uint32 poolIndex;
+		uint32 compIndex;
+
 		try {
-			poolIndex = compTypeToPoolIndex.at(typeIndex);
+			compIndex = compTypeToCompIndex.at(compType);
 		}
+		// component never seen before, add it to the collection
 		catch (const std::out_of_range &e)
 		{
-			poolIndex = componentPools.size();
-			compTypeToPoolIndex[typeIndex] = poolIndex;
+			compIndex = componentPools.size();
+			compTypeToCompIndex[compType] = compIndex;
 			componentPools.push_back(new ComponentPool<CompType>());
 		}
 
-		return static_cast<ComponentPool<CompType>*>(componentPools.at(poolIndex))->NewComponent(e);
+		Assert(entCompMasks.size() > e.Index(), "entity does not have a component mask");
+
+		auto &compMask = entCompMasks.at(e.Index());
+		compMask.set(compIndex);
+
+		return static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex))->NewComponent(e);
 	}
 
 	template <typename CompType>
 	void ComponentManager::Remove(Entity e)
 	{
+		std::type_index tIndex = typeid(CompType);
+		if (compTypeToCompIndex.count(tIndex) == 0)
+		{
+			throw invalid_argument("template is not a component type; it has never been added to the system");
+		}
 
+		uint32 compIndex = compTypeToCompIndex.at(tIndex);
+
+		auto &compMask = entCompMasks.at(e.Index());
+		if (compMask[compIndex] == false)
+		{
+			throw runtime_error("entity does not have this type of component");
+		}
+
+		static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex))->Remove(e);
+		compMask.reset(compIndex);
 	}
 
 	void ComponentManager::RemoveAll(Entity e)
 	{
+		std::type_index tIndex = typeid(CompType);
+		uint32 compIndex = compTypeToCompIndex.at(tIndex);
 
+		Assert(entCompMasks.size() > e.Index(), "entity does not have a component mask");
+
+		auto &compMask = entCompMasks.at(e.Index());
+		for (int i = 0; i < componentPools.size(); ++i)
+		{
+			if (compMask[i])
+			{
+				static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex))->Remove(e);
+				compMask.reset(i);
+			}
+		}
+
+		Assert(compMask == std::bitset<MAX_COMPONENT_TYPES>(),
+			"component mask not blank after removing all components");
 	}
 
 	template <typename CompType>
 	bool ComponentManager::Has(Entity e) const
 	{
+		std::type_index compType = typeid(CompType);
+		if (compTypeToCompIndex.count(compType) == 0)
+		{
+			throw invalid_argument("template is not a component type; it has never been added to the system");
+		}
 
+		auto compIndex = compTypeToCompIndex.at(compType);
+		return entCompMasks.at(e.Index())[compIndex];
 	}
 
 	template <typename CompType>
 	CompType* ComponentManager::Get(Entity e)
 	{
+		uint32 compIndex = compTypeToCompIndex.at(typeid(CompType));
+		const auto &entCompMask = entCompMasks.at(e.Index());
+		if (entCompMask[compIndex] == false)
+		{
+			throw runtime_error("entity does not have this type of component");
+		}
 
+		return static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex))->Get(e);
 	}
 }
 

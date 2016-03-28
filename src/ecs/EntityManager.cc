@@ -19,12 +19,21 @@ namespace sp
 			i = freeEntityIndexes.front();
 			freeEntityIndexes.pop();
 			gen = entIndexToGen.at(i);  // incremented at Entity destruction
+			Assert(compMgr->entCompMasks[i] == std::bitset<MAX_COMPONENT_TYPES>(),
+				"expected ent comp mask to be reset at destruction but it wasn't");
+			compMgr->entCompMasks[i] = std::bitset<MAX_COMPONENT_TYPES>();
 		}
 		else
 		{
 			i = nextEntityIndex++;
 			gen = 0;
 			entIndexToGen.push_back(gen);
+
+			// add a blank comp mask without copying one in
+			compMgr->entCompMasks.resize(compMgr->entCompMasks.size() + 1);
+
+			Assert(entIndexToGen.size() == nextEntityIndex);
+			Assert(compMgr->entCompMasks.size() == nextEntityIndex);
 		}
 
 		return Entity(i, gen);

@@ -3,7 +3,7 @@
 
 #include <queue>
 #include <iostream>
-#include "Shared.hh"
+#include "Common.hh"
 #include "ecs/ComponentManager.hh"
 #include "ecs/Entity.hh"
 

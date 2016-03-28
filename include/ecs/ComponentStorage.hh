@@ -2,9 +2,11 @@
 #define COMPONENT_STORAGE_H
 
 #include <unordered_map>
-#include "Shared.hh"
+#include <bitset>
+#include "Common.hh"
 #include "ecs/Entity.hh"
 
+#define MAX_COMPONENTS 64
 
 namespace sp
 {
@@ -15,8 +17,8 @@ namespace sp
 	 * but does not guarantee the internal ordering of components based on insertion or Entity index.
 	 * It allows efficient iteration since there are no holes in its component storage.
 	 *
-	 * TODO-cs: an incremental allocator instead of a vector will be better when there are lots of
-	 * components being added; this should be implemeted.
+	 * TODO-cs: an incremental allocator instead of a vector will be better once the number
+	 * components is very large; this should be implemeted.
 	 */
 	template <typename CompType>
 	class ComponentPool
