@@ -7,7 +7,6 @@ namespace sp
 	EntityManager::EntityManager()
 	{
 		nextEntityIndex = 1;
-		compMgr = unique_ptr<ComponentManager>(new ComponentManager());
 	}
 
 	Entity EntityManager::NewEntity()
@@ -19,9 +18,9 @@ namespace sp
 			i = freeEntityIndexes.front();
 			freeEntityIndexes.pop();
 			gen = entIndexToGen.at(i);  // incremented at Entity destruction
-			Assert(compMgr->entCompMasks[i] == ComponentMask(),
+			Assert(compMgr.entCompMasks[i] == ComponentManager::ComponentMask(),
 				"expected ent comp mask to be reset at destruction but it wasn't");
-			compMgr->entCompMasks[i] = ComponentMask();
+			compMgr.entCompMasks[i] = ComponentManager::ComponentMask();
 		}
 		else
 		{
@@ -30,10 +29,10 @@ namespace sp
 			entIndexToGen.push_back(gen);
 
 			// add a blank comp mask without copying one in
-			compMgr->entCompMasks.resize(compMgr->entCompMasks.size() + 1);
+			compMgr.entCompMasks.resize(compMgr.entCompMasks.size() + 1);
 
 			Assert(entIndexToGen.size() == nextEntityIndex);
-			Assert(compMgr->entCompMasks.size() == nextEntityIndex);
+			Assert(compMgr.entCompMasks.size() == nextEntityIndex);
 		}
 
 		return Entity(i, gen);
@@ -61,41 +60,70 @@ namespace sp
 	template <typename CompType, typename ...T>
 	CompType* EntityManager::Assign(Entity e, T... args)
 	{
-		return compMgr->Assign<CompType>(e, args...);
+		return compMgr.Assign<CompType>(e, args...);
 	}
 
 	template <typename CompType>
 	void EntityManager::Remove(Entity e)
 	{
-		compMgr->Remove<CompType>(e);
+		compMgr.Remove<CompType>(e);
 	}
 
 	void EntityManager::RemoveAllComponents(Entity e)
 	{
-		compMgr->RemoveAll(e);
+		compMgr.RemoveAll(e);
 	}
 
 	template <typename CompType>
 	bool EntityManager::Has(Entity e) const
 	{
-		return compMgr->Has<CompType>(e);
+		return compMgr.Has<CompType>(e);
 	}
 
 	template <typename CompType>
 	CompType* EntityManager::Get(Entity e)
 	{
-		return compMgr->Get<CompType>(e);
+		return compMgr.Get<CompType>(e);
 	}
 
-	template <typename Fn, typename ...CompTypes>
-	Entity EntityManager::EachWith(Fn fn)
+	template <typename ReturnT, typename ...CompTypes>
+	Entity EntityManager::EachWith(std::function<ReturnT(Entity, CompTypes*...)> callback)
 	{
-		// create mask for identifying an entity with all of these components
-		ComponentMask compMask = compMgr->createMask<CompTypes...>();
+		if (sizeof...(CompTypes) == 0)
+		{
+			throw invalid_argument("EachWith must be called with at least one component type specified");
+		}
+
+		auto compMask = compMgr.createMask<CompTypes...>();
 
 		// identify the component type which has the least number of entities to iterate over
+		size_t minSize = -1;
+		int minSizeCompIndex = -1;
 
-		// iterate and call the function when an entity has all the components
-		fn(it, *(it.template static_cast<ComponentPool<CompType>*>(componentPools.at(i)).get())...);
+		for (size_t i = 0; i < compMgr.ComponentTypeCount(); ++i)
+		{
+			if (!compMask.test(i))
+			{
+				continue;
+			}
+
+			size_t compSize = static_cast<BaseComponentPool*>(compMgr.componentPools.at(i))->Size();
+
+			if ((int)compSize < minSize || minSizeCompIndex == -1)
+			{
+				minSize = compSize;
+				minSizeCompIndex = i;
+			}
+		}
+
+		// For every entity in the smallest common pool, callback if the entity has all the components
+		BaseComponentPool *smallestCompPool = compMgr.componentPools.at(minSizeCompIndex);
+		for (Entity e : smallestCompPool->Entities())
+		{
+			if (compMgr.entCompMasks.at(e.Index()) & compMask == compMask)
+			{
+				callback(e, (compMgr.Get<CompTypes>(e))...);
+			}
+		}
 	}
 }

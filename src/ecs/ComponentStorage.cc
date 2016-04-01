@@ -13,21 +13,17 @@ namespace sp
 	template <typename CompType>
 	CompType* ComponentPool<CompType>::NewComponent(Entity e)
 	{
-		int newCompIndex;
+		int newCompIndex = lastCompIndex + 1;
+		lastCompIndex = newCompIndex;
 
-		if (components.size() == lastCompIndex + 1)
+		if (components.size() == newCompIndex)
 		{
-			// resize instead of push_back(CompType()) to avoid an extra construction of CompType
-			newCompIndex = components.size();
+			// resize instead of push_back() to avoid an extra construction of CompType
 			components.resize(components.size() + 1);
 		}
-		else
-		{
-			newCompIndex = lastCompIndex;
-		}
 
+		components.at(newCompIndex).first = e;
 		entIndexToCompIndex[e.Index()] = newCompIndex;
-		lastCompIndex = newCompIndex;
 
 		return &components.at(newCompIndex);
 	}
@@ -63,7 +59,6 @@ namespace sp
 		components.at(lastCompIndex) = components.at(removeIndex);
 		components.at(removeIndex) = temp;
 
-		entIndexToCompIndex.at(compIndexToEntIndex.at(lastCompIndex)) = removeIndex;
 		entIndexToCompIndex.at(e.Index()) = ComponentPool<CompType>::INVALID_COMP_INDEX;
 		lastCompIndex--;
 	}
@@ -73,6 +68,12 @@ namespace sp
 	{
 		auto compIndex = entIndexToCompIndex.find(e.Index());
 		return compIndex != entIndexToCompIndex.end() && compIndex->second != ComponentPool<CompType>::INVALID_COMP_INDEX;
+	}
+
+	template <typename CompType>
+	size_t ComponentPool<CompType>::Size() const
+	{
+		return lastCompIndex + 1;
 	}
 }
 

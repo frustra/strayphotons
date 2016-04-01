@@ -34,13 +34,15 @@ namespace sp
 		template <typename CompType>
 		CompType *Get(Entity e);
 
+		size_t ComponentTypeCount() const;
+
 	private:
-		typedef ComponentMask std::bitset<MAX_COMPONENT_TYPES>;
+		typedef std::bitset<MAX_COMPONENT_TYPES> ComponentMask;
 
 		template <typename ...CompTypes>
 		ComponentMask createMask() const;
 
-		template <typnename FirstComp, typename ...OtherComps>
+		template <typename FirstComp, typename ...OtherComps>
 		ComponentMask setMask(ComponentMask &mask);
 
 		template <typename CompType>
@@ -58,7 +60,7 @@ namespace sp
 
 		// An entity's index gives a bitmask for the components that it has. If bitset[i] is set
 		// then it means this entity has the component with component index i
-		vector<CompMask> entCompMasks;
+		vector<ComponentMask> entCompMasks;
 
 	};
 }

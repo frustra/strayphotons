@@ -94,25 +94,30 @@ namespace sp
 	}
 
 	template <typename ...CompTypes>
-	ComponentMask createMask() const
+	ComponentManager::ComponentMask ComponentManager::createMask() const
 	{
-		ComponentMask mask;
+		ComponentManager::ComponentMask mask;
 		return setMask<CompTypes...>(mask);
 	}
 
-	template <typnename FirstComp, typename ...OtherComps>
-	ComponentMask setMask(ComponentMask &mask)
+	template <typename FirstComp, typename ...OtherComps>
+	ComponentManager::ComponentMask ComponentManager::setMask(ComponentManager::ComponentMask &mask)
 	{
 		setMask<FirstComp>(mask);
 		return setMask<OtherComps...>(mask);
 	}
 
 	template <typename CompType>
-	ComponentMask setMask(ComponentMask &mask)
+	ComponentManager::ComponentMask ComponentManager::setMask(ComponentManager::ComponentMask &mask)
 	{
 		auto compIndex = compTypeToCompIndex.at(typeid(CompType));
 		mask.set(compIndex);
 		return mask;
+	}
+
+	size_t ComponentManager::ComponentTypeCount() const
+	{
+		return componentPools.size();
 	}
 }
 
