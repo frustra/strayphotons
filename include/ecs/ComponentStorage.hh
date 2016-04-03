@@ -24,7 +24,7 @@ namespace sp
 		{
 		public:
 			Iterator(BaseComponentPool &pool, uint64 compIndex);
-			Iterator& operator++();
+			Iterator &operator++();
 			Entity operator*();
 		private:
 			BaseComponentPool &pool;
@@ -55,7 +55,7 @@ namespace sp
 		public:
 			~IterateLock();
 		private:
-			IterateLock(BaseComponentPool& pool);
+			IterateLock(BaseComponentPool &pool);
 
 			BaseComponentPool &pool;
 		};
@@ -66,7 +66,7 @@ namespace sp
 		virtual void Remove(Entity e) = 0;
 		virtual bool HasComponent(Entity e) const = 0;
 		virtual size_t Size() const = 0;
-		virtual ComponentPoolEntityCollection&& Entities() = 0;
+		virtual ComponentPoolEntityCollection &&Entities() = 0;
 
 		// as long as the resultant lock is not destroyed, the order that iteration occurs
 		// over the components must stay the same.
@@ -109,9 +109,9 @@ namespace sp
 		void Remove(Entity e) override;
 		bool HasComponent(Entity e) const override;
 		size_t Size() const override;
-		ComponentPoolEntityCollection&& Entities() override;
+		ComponentPoolEntityCollection &&Entities() override;
 
-		BaseComponentPool::IterateLock&& CreateIterateLock() override;
+		BaseComponentPool::IterateLock &&CreateIterateLock() override;
 
 	private:
 		vector<std::pair<Entity, CompType> > components;

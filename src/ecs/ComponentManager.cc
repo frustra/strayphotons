@@ -3,13 +3,14 @@
 namespace sp
 {
 	template <typename CompType, typename ...T>
-	CompType* ComponentManager::Assign(Entity e, T... args)
+	CompType *ComponentManager::Assign(Entity e, T... args)
 	{
 		std::type_index compType = typeid(CompType);
 
 		uint32 compIndex;
 
-		try {
+		try
+		{
 			compIndex = compTypeToCompIndex.at(compType);
 		}
 		// component never seen before, add it to the collection
@@ -58,13 +59,13 @@ namespace sp
 		{
 			if (compMask[i])
 			{
-				static_cast<BaseComponentPool*>(componentPools.at(i))->Remove(e);
+				static_cast<BaseComponentPool *>(componentPools.at(i))->Remove(e);
 				compMask.reset(i);
 			}
 		}
 
 		Assert(compMask == ComponentMask(),
-			"component mask not blank after removing all components");
+			   "component mask not blank after removing all components");
 	}
 
 	template <typename CompType>
@@ -81,7 +82,7 @@ namespace sp
 	}
 
 	template <typename CompType>
-	CompType* ComponentManager::Get(Entity e)
+	CompType *ComponentManager::Get(Entity e)
 	{
 		uint32 compIndex = compTypeToCompIndex.at(typeid(CompType));
 		const auto &entCompMask = entCompMasks.at(e.Index());

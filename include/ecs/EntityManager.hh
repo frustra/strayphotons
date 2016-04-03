@@ -22,7 +22,7 @@ namespace sp
 
 		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		template <typename CompType, typename ...T>
-		CompType* Assign(Entity e, T... args);
+		CompType *Assign(Entity e, T... args);
 
 		template <typename CompType>
 		void Remove(Entity e);
@@ -61,7 +61,7 @@ namespace sp
 		 *     })
 		 */
 		template <typename ReturnT, typename ...CompTypes>
-		Entity EachWith(std::function<ReturnT(Entity, CompTypes*...)> callback);
+		Entity EachWith(std::function<ReturnT(Entity, CompTypes *...)> callback);
 
 	private:
 

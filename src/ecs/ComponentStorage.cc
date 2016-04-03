@@ -13,7 +13,7 @@ namespace sp
 	}
 
 	template <typename CompType>
-	CompType* ComponentPool<CompType>::NewComponent(Entity e)
+	CompType *ComponentPool<CompType>::NewComponent(Entity e)
 	{
 		int newCompIndex = lastCompIndex + 1;
 		lastCompIndex = newCompIndex;
@@ -31,7 +31,7 @@ namespace sp
 	}
 
 	template <typename CompType>
-	CompType* ComponentPool<CompType>::Get(Entity e)
+	CompType *ComponentPool<CompType>::Get(Entity e)
 	{
 		if (!HasComponent(e))
 		{
@@ -151,7 +151,7 @@ namespace sp
 	}
 
 	ComponentPoolEntityCollection::ComponentPoolEntityCollection(BaseComponentPool &pool)
-	: pool(pool)
+		: pool(pool)
 	{
 		// keep track of the last component at creation time.  This way, if new components
 		// are created during iteration they will be added at the end and we will not iterate over them
@@ -169,10 +169,10 @@ namespace sp
 	}
 
 	ComponentPoolEntityCollection::Iterator::Iterator(BaseComponentPool &pool, uint64 compIndex)
-	: pool(pool), compIndex(compIndex)
+		: pool(pool), compIndex(compIndex)
 	{}
 
-	ComponentPoolEntityCollection::Iterator& ComponentPoolEntityCollection::Iterator::operator++()
+	ComponentPoolEntityCollection::Iterator &ComponentPoolEntityCollection::Iterator::operator++()
 	{
 		compIndex++;
 		return *this;
@@ -185,7 +185,7 @@ namespace sp
 	}
 
 	template <typename CompType>
-	ComponentPoolEntityCollection&& ComponentPool<CompType>::Entities()
+	ComponentPoolEntityCollection &&ComponentPool<CompType>::Entities()
 	{
 		return std::move(ComponentPoolEntityCollection(this));
 	}

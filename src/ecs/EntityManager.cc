@@ -24,7 +24,7 @@ namespace sp
 			freeEntityIndexes.pop();
 			gen = entIndexToGen.at(i);  // incremented at Entity destruction
 			Assert(compMgr.entCompMasks[i] == ComponentManager::ComponentMask(),
-				"expected ent comp mask to be reset at destruction but it wasn't");
+				   "expected ent comp mask to be reset at destruction but it wasn't");
 			compMgr.entCompMasks[i] = ComponentManager::ComponentMask();
 		}
 		else
@@ -63,7 +63,7 @@ namespace sp
 	}
 
 	template <typename CompType, typename ...T>
-	CompType* EntityManager::Assign(Entity e, T... args)
+	CompType *EntityManager::Assign(Entity e, T... args)
 	{
 		return compMgr.Assign<CompType>(e, args...);
 	}
@@ -86,13 +86,13 @@ namespace sp
 	}
 
 	template <typename CompType>
-	CompType* EntityManager::Get(Entity e)
+	CompType *EntityManager::Get(Entity e)
 	{
 		return compMgr.Get<CompType>(e);
 	}
 
 	template <typename ReturnT, typename ...CompTypes>
-	Entity EntityManager::EachWith(std::function<ReturnT(Entity, CompTypes*...)> callback)
+	Entity EntityManager::EachWith(std::function<ReturnT(Entity, CompTypes *...)> callback)
 	{
 		if (sizeof...(CompTypes) == 0)
 		{
@@ -112,7 +112,7 @@ namespace sp
 				continue;
 			}
 
-			size_t compSize = static_cast<BaseComponentPool*>(compMgr.componentPools.at(i))->Size();
+			size_t compSize = static_cast<BaseComponentPool *>(compMgr.componentPools.at(i))->Size();
 
 			if ((int)compSize < minSize || minSizeCompIndex == -1)
 			{

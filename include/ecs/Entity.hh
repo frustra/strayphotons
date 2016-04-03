@@ -37,7 +37,7 @@ namespace sp
 			return !(*this == other);
 		}
 
-		friend std::ostream& operator<<(std::ostream& os, const Entity e)
+		friend std::ostream &operator<<(std::ostream &os, const Entity e)
 		{
 			os << "(Index: " << e.Index() << ", Gen: " << e.Generation() + ")";
 			return os;
