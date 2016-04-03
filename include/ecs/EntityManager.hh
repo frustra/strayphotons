@@ -50,11 +50,8 @@ namespace sp
 		 *
 		 * If you will be removing components from the same set of entities that are being
 		 * iterated over then you **CANNOT** depend on how many of these components will actually
-		 * be iterated over before starting iteration.  The reason why is as follows:
-		 * during iteration, if any entity that **WOULD** have caused a callback is disqualified
-		 * for that callback (because an earlier callback removed one of its components) then
-		 * it will **NOT** trigger a callback.  The number of entities iterated over could change
-		 * depending on the internal ordering of the components at the start of iteration.
+		 * be iterated over before starting iteration; if A deletes B and A is iterated to first then
+		 * B will not trigger a callback but if B is iterated to before A then both will trigger callbacks.
 		 *
 		 * Ex: the following snippet shows how to call a lambda function for each entity
 		 *     that has "Comp1" and "Comp5" components:
@@ -63,12 +60,6 @@ namespace sp
 		 *         cout << "Entity " << e << " has C1 x " << c1->x << " and C5 y " << c5->y;
 		 *     })
 		 */
-		blah compile failure for attention:
-		// TODO-cs: implement "soft delete" of components when a component pool is being iterated over
-		// by adding their indices to a "delete later" queue instead of swapping the components to the back.
-		// this prevents iteration from missing some valid components that were swapped from the back when
-		// deletions ocurred.  After iteration, this "delete later" queue is drained by performing an actual
-		// "swap delete" on the components.  Toggling this mode must be done from within the EachWith function
 		template <typename ReturnT, typename ...CompTypes>
 		Entity EachWith(std::function<ReturnT(Entity, CompTypes*...)> callback);
 

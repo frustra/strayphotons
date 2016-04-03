@@ -6,7 +6,12 @@ namespace sp
 {
 	EntityManager::EntityManager()
 	{
+		// entity 0 is reserved for the NULL Entity
 		nextEntityIndex = 1;
+
+		// create a blank mask for the NULL Entity
+		// TODO-cs: EntityManager and ComponentManager really should just be one class...
+		compMgr.entCompMasks.resize(1);
 	}
 
 	Entity EntityManager::NewEntity()
@@ -116,8 +121,13 @@ namespace sp
 			}
 		}
 
-		// For every entity in the smallest common pool, callback if the entity has all the components
+		// when iterating over this pool we must enable "soft deletes" so that
+		// if any components are deleted they do not affect the ordering of any of the other
+		// components in this pool (normally deletions are a swap-to-back operation)
 		BaseComponentPool *smallestCompPool = compMgr.componentPools.at(minSizeCompIndex);
+		smallestCompPool->toggleSoftRemove(true);
+
+		// For every entity in the smallest common pool, callback if the entity has all the components
 		for (Entity e : smallestCompPool->Entities())
 		{
 			if (compMgr.entCompMasks.at(e.Index()) & compMask == compMask)
@@ -125,5 +135,7 @@ namespace sp
 				callback(e, (compMgr.Get<CompTypes>(e))...);
 			}
 		}
+
+
 	}
 }

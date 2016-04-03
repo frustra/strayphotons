@@ -43,6 +43,11 @@ namespace sp
 			return os;
 		}
 
+		static Entity Null()
+		{
+			return Entity(NULL_ID);
+		}
+
 	private:
 		Entity(uint64 index, uint16 generation)
 		{
