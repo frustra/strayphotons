@@ -9,9 +9,10 @@ namespace sp
 		// entity 0 is reserved for the NULL Entity
 		nextEntityIndex = 1;
 
-		// create a blank mask for the NULL Entity
+		// update data structures for the NULL Entity
 		// TODO-cs: EntityManager and ComponentManager really should just be one class...
 		compMgr.entCompMasks.resize(1);
+		entIndexToGen.push_back(0);
 	}
 
 	Entity EntityManager::NewEntity()

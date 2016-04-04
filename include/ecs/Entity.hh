@@ -12,20 +12,18 @@ namespace sp
 		friend class EntityManager;
 	public:
 
+		// the rest of the bits are for the generation
 		static const uint32 INDEX_BITS = 48;
 		static const uint64 INDEX_MASK = ((uint64)1 << INDEX_BITS) - 1;
-
-		static const uint32 GENERATION_BITS = 16;
-		static const uint64 GENERATION_MASK = ((uint64)1 << GENERATION_BITS) - 1;
 
 		uint64 Index() const
 		{
 			return id & INDEX_MASK;
 		}
 
-		uint16 Generation() const
+		uint64 Generation() const
 		{
-			return (id >> INDEX_BITS) & GENERATION_MASK;
+			return (id >> INDEX_BITS);
 		}
 
 		bool operator==(const Entity &other)
@@ -39,7 +37,7 @@ namespace sp
 
 		friend std::ostream &operator<<(std::ostream &os, const Entity e)
 		{
-			os << "(Index: " << e.Index() << ", Gen: " << e.Generation() + ")";
+			os << "(Index: " << e.Index() << ", Gen: " << e.Generation() << ")";
 			return os;
 		}
 
@@ -51,9 +49,8 @@ namespace sp
 	private:
 		Entity(uint64 index, uint16 generation)
 		{
-			Assert((index & INDEX_BITS) == index);
-			Assert((generation & GENERATION_BITS) == generation);
 			id = (static_cast<uint64>(generation) << INDEX_BITS) + index;
+			Assert((id & INDEX_MASK) == index);
 		}
 
 		Entity(uint64 id): id(id) {}

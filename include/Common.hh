@@ -29,8 +29,9 @@ namespace sp
 	void Assert(bool condition);
 	void Assert(bool condition, string message);
 
-	struct NonCopyable
+	class NonCopyable
 	{
+	public:
 		NonCopyable &operator=(const NonCopyable &) = delete;
 		NonCopyable(const NonCopyable &) = delete;
 		NonCopyable() = default;
