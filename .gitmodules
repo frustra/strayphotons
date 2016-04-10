@@ -25,3 +25,6 @@
 [submodule "ext/SPIRV-Tools"]
 	path = ext/SPIRV-Tools
 	url = https://github.com/KhronosGroup/SPIRV-Tools
+[submodule "ext/googletest"]
+	path = ext/googletest
+	url = https://github.com/google/googletest.git
