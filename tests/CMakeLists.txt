@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION ${CMAKE_MIN_VERSION} FATAL_ERROR)
-
-set(PROJECT_TEST sp-test)
-set(UNIT_TEST_EXE sp-unit-tests)
-project(${PROJECT_TEST})
+project(sp-test)
 
 ################################
 # Test Configuration
@@ -10,29 +7,35 @@ project(${PROJECT_TEST})
 
 include_directories(${project_include_dirs} ${GOOGLETEST_DIR}/include)
 
-file(GLOB_RECURSE test_sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
-list(APPEND test_sources ${GOOGLETEST_DIR}/src/gtest_main.cc)
-list(REMOVE_DUPLICATES test_sources)
-
-file(GLOB_RECURSE test_headers ${CMAKE_CURRENT_SOURCE_DIR}/*.hh)
-list(REMOVE_DUPLICATES test_headers)
-
 ################################
-# Unit Tests
+# Test targets
 ################################
-add_executable(${UNIT_TEST_EXE} ${test_sources} ${test_headers})
-target_link_libraries(${UNIT_TEST_EXE} ${PROJECT_LIB} gtest gtest_main)
 
-# C++11
-target_compile_features(${UNIT_TEST_EXE} PRIVATE cxx_range_for)
-# Output location
-set_target_properties(${UNIT_TEST_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
-set_target_properties(${UNIT_TEST_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
-set_target_properties(${UNIT_TEST_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
+foreach(test_type unit integration)
+	set(test_exe sp-${test_type}-tests)
 
-# target to run the unit tests
-add_custom_target(
-	unit-tests
-	COMMAND ${UNIT_TEST_EXE}
-	DEPENDS ${UNIT_TEST_EXE}
-	COMMENT "Run unit tests")
+	file(GLOB_RECURSE test_sources ${CMAKE_CURRENT_SOURCE_DIR}/${test_type}/*.cc)
+	list(APPEND test_sources ${GOOGLETEST_DIR}/src/gtest_main.cc)
+	list(REMOVE_DUPLICATES test_sources)
+
+	file(GLOB_RECURSE test_headers ${CMAKE_CURRENT_SOURCE_DIR}/${test_type}/*.hh)
+	list(REMOVE_DUPLICATES test_headers)
+
+	add_executable(${test_exe} ${test_sources} ${test_headers})
+	target_link_libraries(${test_exe} ${PROJECT_LIB} gtest gtest_main)
+
+	# C++11
+	target_compile_features(${test_exe} PRIVATE cxx_range_for)
+	# Output location
+	set_target_properties(${test_exe} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
+	set_target_properties(${test_exe} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
+	set_target_properties(${test_exe} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
+
+	# target to run the tests
+	add_custom_target(
+		${test_type}-tests
+		COMMAND ${test_exe}
+		DEPENDS ${test_exe}
+	COMMENT "Run ${test_type} tests")
+
+endforeach(test_type)
