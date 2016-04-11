@@ -11,10 +11,13 @@ namespace sp
 	{
 		friend class EntityManager;
 	public:
-
 		// the rest of the bits are for the generation
 		static const uint32 INDEX_BITS = 48;
 		static const uint64 INDEX_MASK = ((uint64)1 << INDEX_BITS) - 1;
+
+		Entity() : Entity(NULL_ID) {};
+		Entity(const Entity &) = default;
+		Entity &operator=(const Entity &) & = default;
 
 		uint64 Index() const
 		{
@@ -41,10 +44,6 @@ namespace sp
 			return os;
 		}
 
-		static Entity Null()
-		{
-			return Entity(NULL_ID);
-		}
 
 	private:
 		Entity(uint64 index, uint16 generation)
