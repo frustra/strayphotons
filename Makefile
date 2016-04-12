@@ -1,3 +1,6 @@
+.PHONY: auto compile linux unix windowws vs14 clean unit-tests \
+	integration-tests tests astyle dependencies
+
 auto: build unix compile
 
 compile:
@@ -16,6 +19,14 @@ clean:
 
 build:
 	mkdir -p build
+
+unit-tests: build unix
+	cd build; make unit-tests
+
+integration-tests: build unix
+	cd build; make integration-tests
+
+tests: unit-tests integration-tests
 
 astyle:
 	astyle --options="extra/astyle.config" "include/*.hh" "src/*.cc"
