@@ -40,13 +40,13 @@ namespace sp
 		typedef std::bitset<MAX_COMPONENT_TYPES> ComponentMask;
 
 		template <typename ...CompTypes>
-		ComponentMask createMask() const;
+		ComponentMask createMask();
 
-		template <typename FirstComp, typename ...OtherComps>
-		ComponentMask setMask(ComponentMask &mask);
+		template <typename TypeId>
+		ComponentMask &setMask(ComponentManager::ComponentMask &mask, const TypeId &stdTypeId);
 
-		template <typename CompType>
-		ComponentMask setMask(ComponentMask &mask);
+		template <typename TypeId, typename ...OtherTypeIds>
+		ComponentMask &setMask(ComponentManager::ComponentMask &mask, const TypeId &stdTypeId, const OtherTypeIds &... stdTypeIds);
 
 		// it is REALLY a vector of ComponentPool<T>* where each pool is the storage
 		// for a different type of component.  I'm not sure of a type-safe way to store
@@ -88,7 +88,7 @@ namespace sp
 		auto &compMask = entCompMasks.at(e.Index());
 		compMask.set(compIndex);
 
-		return static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex))->NewComponent(e);
+		return static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex))->NewComponent(e, args...);
 	}
 
 	template <typename CompType>
@@ -157,25 +157,26 @@ namespace sp
 	}
 
 	template <typename ...CompTypes>
-	ComponentManager::ComponentMask ComponentManager::createMask() const
+	ComponentManager::ComponentMask ComponentManager::createMask()
 	{
 		ComponentManager::ComponentMask mask;
-		return setMask<CompTypes...>(mask);
+		return setMask(mask, typeid(CompTypes)...);
 	}
 
-	template <typename FirstComp, typename ...OtherComps>
-	ComponentManager::ComponentMask ComponentManager::setMask(ComponentManager::ComponentMask &mask)
+	template <typename TypeId>
+	ComponentManager::ComponentMask &ComponentManager::setMask(ComponentManager::ComponentMask &mask, const TypeId &stdTypeId)
 	{
-		setMask<FirstComp>(mask);
-		return setMask<OtherComps...>(mask);
-	}
-
-	template <typename CompType>
-	ComponentManager::ComponentMask ComponentManager::setMask(ComponentManager::ComponentMask &mask)
-	{
-		auto compIndex = compTypeToCompIndex.at(typeid(CompType));
+		auto compIndex = compTypeToCompIndex.at(stdTypeId);
 		mask.set(compIndex);
 		return mask;
+	}
+
+	template <typename TypeId, typename ...OtherTypeIds>
+	ComponentManager::ComponentMask &ComponentManager::setMask(ComponentManager::ComponentMask &mask,
+			const TypeId &stdTypeId, const OtherTypeIds &... stdTypeIds)
+	{
+		setMask(mask, stdTypeId);
+		return setMask(mask, stdTypeIds...);
 	}
 
 	size_t ComponentManager::ComponentTypeCount() const

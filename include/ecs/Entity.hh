@@ -11,6 +11,8 @@ namespace sp
 	{
 		friend class EntityManager;
 	public:
+		friend struct std::hash<Entity>;
+
 		// the rest of the bits are for the generation
 		static const uint32 INDEX_BITS = 48;
 		static const uint64 INDEX_MASK = ((uint64)1 << INDEX_BITS) - 1;
@@ -29,13 +31,17 @@ namespace sp
 			return (id >> INDEX_BITS);
 		}
 
-		bool operator==(const Entity &other)
+		bool operator==(const Entity &other) const
 		{
 			return id == other.id;
 		}
-		bool operator!=(const Entity &other)
+		bool operator!=(const Entity &other) const
 		{
 			return !(*this == other);
+		}
+		bool operator<(const Entity &other) const
+		{
+			return this->id < other.id;
 		}
 
 		friend std::ostream &operator<<(std::ostream &os, const Entity e)
@@ -59,5 +65,18 @@ namespace sp
 		uint64 id;
 	};
 
+}
+
+namespace std
+{
+	template <>
+	class hash<sp::Entity>
+	{
+	public:
+		size_t operator()(const sp::Entity &e) const
+		{
+			return hash<uint64>()(e.id);
+		}
+	};
 }
 #endif

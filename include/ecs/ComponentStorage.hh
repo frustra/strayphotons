@@ -26,6 +26,14 @@ namespace sp
 		public:
 			Iterator(BaseComponentPool &pool, uint64 compIndex);
 			Iterator &operator++();
+			bool operator==(Iterator &other)
+			{
+				return compIndex == other.compIndex;
+			};
+			bool operator!=(Iterator &other)
+			{
+				return compIndex != other.compIndex;
+			};
 			Entity operator*();
 		private:
 			BaseComponentPool &pool;
@@ -65,11 +73,11 @@ namespace sp
 		virtual void Remove(Entity e) = 0;
 		virtual bool HasComponent(Entity e) const = 0;
 		virtual size_t Size() const = 0;
-		virtual ComponentPoolEntityCollection &&Entities() = 0;
+		virtual ComponentPoolEntityCollection Entities() = 0;
 
 		// as long as the resultant lock is not destroyed, the order that iteration occurs
 		// over the components must stay the same.
-		virtual IterateLock &&CreateIterateLock() = 0;
+		virtual unique_ptr<IterateLock> CreateIterateLock() = 0;
 
 	private:
 		// when toggleSoftRemove(true) is called then any Remove(e) calls
@@ -101,16 +109,17 @@ namespace sp
 		ComponentPool();
 
 		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
-		CompType *NewComponent(Entity e);
+		template <typename ...T>
+		CompType *NewComponent(Entity e, T... args);
 
 		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		CompType *Get(Entity e);
 		void Remove(Entity e) override;
 		bool HasComponent(Entity e) const override;
 		size_t Size() const override;
-		ComponentPoolEntityCollection &&Entities() override;
+		ComponentPoolEntityCollection Entities() override;
 
-		BaseComponentPool::IterateLock &&CreateIterateLock() override;
+		unique_ptr<BaseComponentPool::IterateLock> CreateIterateLock() override;
 
 	private:
 		static const uint64 INVALID_COMP_INDEX = static_cast<uint64>(-1);
@@ -137,21 +146,21 @@ namespace sp
 	}
 
 	template <typename CompType>
-	BaseComponentPool::IterateLock &&ComponentPool<CompType>::CreateIterateLock()
+	unique_ptr<BaseComponentPool::IterateLock> ComponentPool<CompType>::CreateIterateLock()
 	{
-		return BaseComponentPool::IterateLock(*static_cast<BaseComponentPool*>(this));
+		return unique_ptr<BaseComponentPool::IterateLock>(new BaseComponentPool::IterateLock(*static_cast<BaseComponentPool *>(this)));
 	}
 
 	template <typename CompType>
-	CompType *ComponentPool<CompType>::NewComponent(Entity e)
+	template <typename ...T>
+	CompType *ComponentPool<CompType>::NewComponent(Entity e, T... args)
 	{
-		int newCompIndex = lastCompIndex + 1;
+		uint64 newCompIndex = lastCompIndex + 1;
 		lastCompIndex = newCompIndex;
 
 		if (components.size() == newCompIndex)
 		{
-			// resize instead of push_back() to avoid an extra construction of CompType
-			components.resize(components.size() + 1);
+			components.push_back(std::pair<Entity, CompType>(e, CompType(args...)));
 		}
 
 		components.at(newCompIndex).first = e;
@@ -169,7 +178,7 @@ namespace sp
 		}
 
 		uint64 compIndex = entIndexToCompIndex.at(e.Index());
-		return components.at(compIndex).second;
+		return &components.at(compIndex).second;
 	}
 
 	template <typename CompType>
@@ -180,9 +189,8 @@ namespace sp
 			throw std::runtime_error("cannot remove component because the entity does not have one");
 		}
 
-		entIndexToCompIndex.at(e.Index()) = ComponentPool<CompType>::INVALID_COMP_INDEX;
-
 		uint64 removeIndex = entIndexToCompIndex.at(e.Index());
+		entIndexToCompIndex.at(e.Index()) = ComponentPool<CompType>::INVALID_COMP_INDEX;
 
 		if (softRemoveMode)
 		{
@@ -315,9 +323,9 @@ namespace sp
 	}
 
 	template <typename CompType>
-	ComponentPoolEntityCollection &&ComponentPool<CompType>::Entities()
+	ComponentPoolEntityCollection ComponentPool<CompType>::Entities()
 	{
-		return std::move(ComponentPoolEntityCollection(*this));
+		return ComponentPoolEntityCollection(*this);
 	}
 }
 

@@ -13,6 +13,11 @@
 
 namespace sp
 {
+	template <typename T> struct identity
+	{
+		typedef T type;
+	};
+
 	class EntityManager
 	{
 	public:
@@ -62,8 +67,32 @@ namespace sp
 		 *         cout << "Entity " << e << " has C1 x " << c1->x << " and C5 y " << c5->y;
 		 *     })
 		 */
-		template <typename ReturnT, typename ...CompTypes>
-		Entity EachWith(std::function<ReturnT(Entity, CompTypes *...)> callback);
+		template <typename ...CompTypes>
+		Entity EachWith(typename identity<std::function<void(Entity entity, CompTypes *...)>>::type callback);
+
+		// class EntityCollection
+		// {
+		// public:
+		// 	class Iterator : public std::iterator<std::input_iterator_tag, Entity>
+		// 	{
+		// 	public:
+		// 		Iterator(ComponentManager &cm);
+		// 		Iterator &operator++();
+		// 		bool operator==(Iterator &other) {return compIndex == other.compIndex;};
+		// 		bool operator!=(Iterator &other) {return compIndex != other.compIndex;};
+		// 		Entity operator*();
+		// 	private:
+		// 		BaseComponentPool &pool;
+		// 		uint64 compIndex;
+		// 	};
+		//
+		// 	ComponentPoolEntityCollection(BaseComponentPool &pool);
+		// 	Iterator begin();
+		// 	Iterator end();
+		// private:
+		// 	BaseComponentPool &pool;
+		// 	uint64 lastCompIndex;
+		// };
 
 	private:
 
@@ -165,8 +194,8 @@ namespace sp
 		return compMgr.Get<CompType>(e);
 	}
 
-	template <typename ReturnT, typename ...CompTypes>
-	Entity EntityManager::EachWith(std::function<ReturnT(Entity, CompTypes *...)> callback)
+	template <typename ...CompTypes>
+	Entity EntityManager::EachWith(typename sp::identity<std::function<void(Entity entity, CompTypes *...)>>::type callback)
 	{
 		if (sizeof...(CompTypes) == 0)
 		{
@@ -199,13 +228,15 @@ namespace sp
 		// if any components are deleted they do not affect the ordering of any of the other
 		// components in this pool (normally deletions are a swap-to-back operation)
 		// this lock releases on destructions so it's okay if Exceptions are raised in this loop
-		BaseComponentPool *smallestCompPool = compMgr.componentPools.at(minSizeCompIndex);
-		BaseComponentPool::IterateLock iLock = smallestCompPool->CreateIterateLock();
+		BaseComponentPool *smallestCompPool = static_cast<BaseComponentPool *>(compMgr.componentPools.at(minSizeCompIndex));
+		auto iLock = smallestCompPool->CreateIterateLock();
 
 		// For every entity in the smallest common pool, callback if the entity has all the components
 		for (Entity e : smallestCompPool->Entities())
 		{
-			if (compMgr.entCompMasks.at(e.Index()) & compMask == compMask)
+			auto tmpMask = ComponentManager::ComponentMask(compMgr.entCompMasks.at(e.Index()));
+			tmpMask &= compMask;
+			if (tmpMask == compMask)
 			{
 				callback(e, (compMgr.Get<CompTypes>(e))...);
 			}
