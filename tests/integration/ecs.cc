@@ -23,7 +23,48 @@ namespace test
 	    uint thingsEaten;
 	} Eater;
 
-	class ecs : public ::testing::Test
+	class EcsBasicIterateWithComponents : public ::testing::Test
+	{
+	protected:
+		std::unordered_map<sp::Entity, bool> entsFound;
+
+	    sp::EntityManager em;
+		sp::Entity ePos1;
+		sp::Entity ePos2;
+		sp::Entity ePosEat;
+		sp::Entity eEat;
+		sp::Entity eNoComps;
+
+	    virtual void SetUp()
+	    {
+			ePos1 = em.NewEntity();
+			ePos2 = em.NewEntity();
+			ePosEat = em.NewEntity();
+			eEat = em.NewEntity();
+			eNoComps = em.NewEntity();
+
+			em.Assign<Position>(ePos1);
+			em.Assign<Position>(ePos2);
+			em.Assign<Position>(ePosEat);
+
+			em.Assign<Eater>(ePosEat);
+			em.Assign<Eater>(eEat);
+	    }
+
+		void ExpectEntitiesFound()
+		{
+			// found entities with the component
+			EXPECT_TRUE(entsFound.count(ePos1) == 1 && entsFound[ePos1] == true);
+			EXPECT_TRUE(entsFound.count(ePos2) == 1 && entsFound[ePos2] == true);
+			EXPECT_TRUE(entsFound.count(ePosEat) == 1 && entsFound[ePosEat] == true);
+
+			// did not find entities without the component
+			EXPECT_FALSE(entsFound.count(eEat) == 1 && entsFound[eEat] == true);
+			EXPECT_FALSE(entsFound.count(eNoComps) == 1 && entsFound[eNoComps] == true);
+		}
+	};
+
+	class EcsBasic : public ::testing::Test
 	{
 	protected:
 	    sp::EntityManager em;
@@ -35,7 +76,8 @@ namespace test
 	    }
 	};
 
-	TEST_F(ecs, CreateDestroyEntity)
+
+	TEST_F(EcsBasic, CreateDestroyEntity)
 	{
 	    EXPECT_TRUE(em.Valid(e));
 	    em.Destroy(e);
@@ -43,7 +85,7 @@ namespace test
 	    EXPECT_FALSE(em.Valid(e));
 	}
 
-	TEST_F(ecs, AddRemoveComponent)
+	TEST_F(EcsBasic, AddRemoveComponent)
 	{
 		em.Assign<Position>(e);
 
@@ -55,7 +97,7 @@ namespace test
 	    ASSERT_ANY_THROW(em.Get<Position>(e));
 	}
 
-	TEST_F(ecs, ConstructComponent)
+	TEST_F(EcsBasic, ConstructComponent)
 	{
 	    em.Assign<Position>(e, 1, 2);
 	    Position *pos = em.Get<Position>(e);
@@ -65,7 +107,7 @@ namespace test
 	    ASSERT_EQ(pos->y, 2);
 	}
 
-	TEST_F(ecs, RemoveAllComponents)
+	TEST_F(EcsBasic, RemoveAllComponents)
 	{
 	    em.Assign<Position>(e);
 	    em.Assign<Eater>(e);
@@ -79,40 +121,24 @@ namespace test
 	    ASSERT_FALSE(em.Has<Eater>(e));
 	}
 
-	TEST_F(ecs, IterateOverEntitiesWithComponents)
+	TEST_F(EcsBasicIterateWithComponents, TemplateIteration)
 	{
-		sp::Entity ePos1 = em.NewEntity();
-		sp::Entity ePos2 = em.NewEntity();
-		sp::Entity ePosEat = em.NewEntity();
-		sp::Entity eEat = em.NewEntity();
-		sp::Entity eNoComps = em.NewEntity();
-
-		em.Assign<Position>(ePos1);
-		em.Assign<Position>(ePos2);
-		em.Assign<Position>(ePosEat);
-
-		em.Assign<Eater>(ePosEat);
-		em.Assign<Eater>(eEat);
-
-		std::unordered_map<sp::Entity, bool> entsFound;
-
-		// em.EachWith<Position>([&entsFound](sp::Entity _e, Position *pos)
-		// {
-		// 	entsFound[_e] = true;
-		// });
-
 		for (sp::Entity ent : em.EntitiesWith<Position>())
 		{
 			entsFound[ent] = true;
 		}
 
-		// found entities with the component
-		EXPECT_TRUE(entsFound.count(ePos1) == 1 && entsFound[ePos1] == true);
-		EXPECT_TRUE(entsFound.count(ePos2) == 1 && entsFound[ePos2] == true);
-		EXPECT_TRUE(entsFound.count(ePosEat) == 1 && entsFound[ePosEat] == true);
+		ExpectEntitiesFound();
+	}
 
-		// did not find entities without the component
-		EXPECT_FALSE(entsFound.count(eEat) == 1 && entsFound[eEat] == true);
-		EXPECT_FALSE(entsFound.count(eNoComps) == 1 && entsFound[eNoComps] == true);
+	TEST_F(EcsBasicIterateWithComponents, MaskIteration)
+	{
+		auto compMask = em.CreateComponentMask<Position>();
+		for (sp::Entity ent : em.EntitiesWith(compMask))
+		{
+			entsFound[ent] = true;
+		}
+
+		ExpectEntitiesFound();
 	}
 }

@@ -38,11 +38,13 @@ namespace sp
 
 		size_t ComponentTypeCount() const;
 
-	private:
+		template <typename ...CompTypes>
+		ComponentMask &SetMask(ComponentMask &mask);
 
 		template <typename ...CompTypes>
-		ComponentMask createMask();
+		ComponentMask CreateMask();
 
+	private:
 		template <typename TypeId>
 		ComponentMask &setMask(ComponentManager::ComponentMask &mask, const TypeId &stdTypeId);
 
@@ -158,9 +160,19 @@ namespace sp
 	}
 
 	template <typename ...CompTypes>
-	ComponentManager::ComponentMask ComponentManager::createMask()
+	ComponentManager::ComponentMask ComponentManager::CreateMask()
 	{
 		ComponentManager::ComponentMask mask;
+		if (sizeof...(CompTypes) == 0)
+		{
+			return mask;
+		}
+		return SetMask<CompTypes...>(mask);
+	}
+
+	template <typename ...CompTypes>
+	ComponentManager::ComponentMask &ComponentManager::SetMask(ComponentMask &mask)
+	{
 		return setMask(mask, typeid(CompTypes)...);
 	}
 

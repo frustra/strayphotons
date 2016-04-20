@@ -28,7 +28,7 @@ namespace sp
 			{
 			public:
 				Iterator(ComponentManager &cm, const ComponentManager::ComponentMask &compMask,
-				         ComponentPoolEntityCollection *compEntColl, ComponentPoolEntityCollection::Iterator compIt);
+						 ComponentPoolEntityCollection *compEntColl, ComponentPoolEntityCollection::Iterator compIt);
 				Iterator &operator++();
 				bool operator==(Iterator &other);
 				bool operator!=(Iterator &other);
@@ -36,7 +36,7 @@ namespace sp
 			private:
 				ComponentManager &cm;
 				const ComponentManager::ComponentMask &compMask;
-				ComponentPoolEntityCollection* compEntColl;
+				ComponentPoolEntityCollection *compEntColl;
 				ComponentPoolEntityCollection::Iterator compIt;
 			};
 
@@ -45,8 +45,8 @@ namespace sp
 			// components in this pool (normally deletions are a swap-to-back operation)
 			// this lock releases on destructions so it's okay if Exceptions are raised when iterating
 			EntityCollection(ComponentManager &cm, const ComponentManager::ComponentMask &compMask,
-			                 ComponentPoolEntityCollection compEntColl,
-			                 unique_ptr<BaseComponentPool::IterateLock> &&iLock);
+							 ComponentPoolEntityCollection compEntColl,
+							 unique_ptr<BaseComponentPool::IterateLock> &&iLock);
 			Iterator begin();
 			Iterator end();
 		private:
@@ -78,37 +78,46 @@ namespace sp
 		template <typename CompType>
 		CompType *Get(Entity e);
 
+		/**
+		 * Create a component mask for the given types
+		 */
 		template <typename ...CompTypes>
-		EntityCollection EntitiesWith();
-		EntityCollection EntitiesWith(ComponentManager::ComponentMask compMask);
+		ComponentManager::ComponentMask CreateComponentMask();
 
 		/**
-		 * Call a callback function for each entity that has the given components.
-		 * The component ptrs will be populated with the entity's components when
-		 * the callback occurs.
+		 * Set the flags for the given component types on the given mask
+		 */
+		template <typename ...CompTypes>
+		ComponentManager::ComponentMask &SetComponentMask(ComponentManager::ComponentMask &mask);
+
+		/**
+		 * Used to iterate over all entities that have the given components.
 		 *
-		 * The types of the args in the given callback function specify that only entities
-		 * which have all of these components should trigger a callback.
-		 *
-		 * During iteration, if any new entities qualify to have the callback called on them
-		 * (because an earlier callback caused them to gain the right component types) they
-		 * will not be iterated over in the same pass.
+		 * Ex Usage:
+		 * ```
+		 * for (Entity e : entMgr.EntitiesWith<CompType1, CompType8>())
+		 * {
+		 *      // use e
+		 * }
+		 * ```
+		 * The entities iterated over are a snapshot of what was in the system when this
+		 * method was called; if you create new entities that would qualify for iterating over
+		 * after calling this method (during iteration) then this will not be iterated over.
 		 *
 		 * If you will be removing components from the same set of entities that are being
 		 * iterated over then you **CANNOT** depend on how many of these components will actually
 		 * be iterated over before starting iteration; if A deletes B and A is iterated to first then
 		 * B will not trigger a callback but if B is iterated to before A then both will trigger callbacks.
-		 *
-		 * Ex: the following snippet shows how to call a lambda function for each entity
-		 *     that has "Comp1" and "Comp5" components:
-		 *
-		 *     EachWith([](Entity e, Comp1 *c1, Comp5 *c5) {
-		 *         cout << "Entity " << e << " has C1 x " << c1->x << " and C5 y " << c5->y;
-		 *     })
 		 */
 		template <typename ...CompTypes>
-		Entity EachWith(typename identity<std::function<void(Entity entity, CompTypes *...)>>::type callback);
+		EntityCollection EntitiesWith();
 
+		/**
+		 * Same as the template form of this function except that the components
+		 * are speicified with the given ComponentMask.  This is usually created with
+		 * "CreateComponentMask" and possibly "SetComponentMask" methods
+		 */
+		EntityCollection EntitiesWith(ComponentManager::ComponentMask compMask);
 
 	private:
 
@@ -235,20 +244,20 @@ namespace sp
 		auto smallestCompPool = static_cast<BaseComponentPool *>(compMgr.componentPools.at(minSizeCompIndex));
 
 		return EntityManager::EntityCollection(compMgr, compMask, smallestCompPool->Entities(),
-		                                       smallestCompPool->CreateIterateLock());
+											   smallestCompPool->CreateIterateLock());
 	}
 
 	template <typename ...CompTypes>
 	EntityManager::EntityCollection EntityManager::EntitiesWith()
 	{
-		return EntitiesWith(compMgr.createMask<CompTypes...>());
+		return EntitiesWith(compMgr.CreateMask<CompTypes...>());
 	}
 
 	EntityManager::EntityCollection::Iterator::Iterator(ComponentManager &cm,
-	                                                    const ComponentManager::ComponentMask &compMask,
-	                                                    ComponentPoolEntityCollection *compEntColl,
-	                                                    ComponentPoolEntityCollection::Iterator compIt)
-	: cm(cm), compMask(compMask), compEntColl(compEntColl), compIt(compIt)
+			const ComponentManager::ComponentMask &compMask,
+			ComponentPoolEntityCollection *compEntColl,
+			ComponentPoolEntityCollection::Iterator compIt)
+		: cm(cm), compMask(compMask), compEntColl(compEntColl), compIt(compIt)
 	{}
 
 	EntityManager::EntityCollection::Iterator &EntityManager::EntityCollection::Iterator::operator++()
@@ -280,10 +289,10 @@ namespace sp
 	}
 
 	EntityManager::EntityCollection::EntityCollection(ComponentManager &cm,
-	                                                  const ComponentManager::ComponentMask &compMask,
-	                                                  ComponentPoolEntityCollection compEntColl,
-	                                                  unique_ptr<BaseComponentPool::IterateLock> &&iLock)
-	: cm(cm), compMask(compMask), compEntColl(compEntColl), iLock(std::move(iLock))
+			const ComponentManager::ComponentMask &compMask,
+			ComponentPoolEntityCollection compEntColl,
+			unique_ptr<BaseComponentPool::IterateLock> &&iLock)
+		: cm(cm), compMask(compMask), compEntColl(compEntColl), iLock(std::move(iLock))
 	{}
 
 	EntityManager::EntityCollection::Iterator EntityManager::EntityCollection::begin()
@@ -296,13 +305,17 @@ namespace sp
 		return EntityManager::EntityCollection::Iterator(cm, compMask, &compEntColl, compEntColl.end());
 	}
 
+	template <typename ...CompTypes>
+	ComponentManager::ComponentMask EntityManager::CreateComponentMask()
+	{
+		return compMgr.CreateMask<CompTypes...>();
+	}
 
-// private:
-// 	ComponentManager &cm;
-// 	ComponentManager::ComponentMask compMask;
-// 	BaseComponentPool *pool;
-// 	uint64 lastCompIndex;
-// 	unique_ptr<BaseComponentPool::IterateLock> iLock;
+	template <typename ...CompTypes>
+	ComponentManager::ComponentMask &EntityManager::SetComponentMask(ComponentManager::ComponentMask &mask)
+	{
+		return compMgr.SetMask<CompTypes...>(mask);
+	}
 }
 
 #endif
