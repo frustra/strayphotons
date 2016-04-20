@@ -18,6 +18,8 @@ namespace sp
 		// TODO-cs: should probably just merge these two classes
 		friend class EntityManager;
 	public:
+		typedef std::bitset<MAX_COMPONENT_TYPES> ComponentMask;
+
 		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		template <typename CompType, typename ...T>
 		CompType *Assign(Entity e, T... args);
@@ -37,7 +39,6 @@ namespace sp
 		size_t ComponentTypeCount() const;
 
 	private:
-		typedef std::bitset<MAX_COMPONENT_TYPES> ComponentMask;
 
 		template <typename ...CompTypes>
 		ComponentMask createMask();

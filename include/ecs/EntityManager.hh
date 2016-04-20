@@ -21,6 +21,41 @@ namespace sp
 	class EntityManager
 	{
 	public:
+		class EntityCollection
+		{
+		public:
+			class Iterator : public std::iterator<std::input_iterator_tag, Entity>
+			{
+			public:
+				Iterator(ComponentManager &cm, const ComponentManager::ComponentMask &compMask,
+				         ComponentPoolEntityCollection *compEntColl, ComponentPoolEntityCollection::Iterator compIt);
+				Iterator &operator++();
+				bool operator==(Iterator &other);
+				bool operator!=(Iterator &other);
+				Entity operator*();
+			private:
+				ComponentManager &cm;
+				const ComponentManager::ComponentMask &compMask;
+				ComponentPoolEntityCollection* compEntColl;
+				ComponentPoolEntityCollection::Iterator compIt;
+			};
+
+			// An IterateLock on compEntColl's component pool is needed so that
+			// if any components are deleted they do not affect the ordering of any of the other
+			// components in this pool (normally deletions are a swap-to-back operation)
+			// this lock releases on destructions so it's okay if Exceptions are raised when iterating
+			EntityCollection(ComponentManager &cm, const ComponentManager::ComponentMask &compMask,
+			                 ComponentPoolEntityCollection compEntColl,
+			                 unique_ptr<BaseComponentPool::IterateLock> &&iLock);
+			Iterator begin();
+			Iterator end();
+		private:
+			ComponentManager &cm;
+			ComponentManager::ComponentMask compMask;
+			ComponentPoolEntityCollection compEntColl;
+			unique_ptr<BaseComponentPool::IterateLock> iLock;
+		};
+
 		EntityManager();
 
 		Entity NewEntity();
@@ -42,6 +77,10 @@ namespace sp
 		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		template <typename CompType>
 		CompType *Get(Entity e);
+
+		template <typename ...CompTypes>
+		EntityCollection EntitiesWith();
+		EntityCollection EntitiesWith(ComponentManager::ComponentMask compMask);
 
 		/**
 		 * Call a callback function for each entity that has the given components.
@@ -70,29 +109,6 @@ namespace sp
 		template <typename ...CompTypes>
 		Entity EachWith(typename identity<std::function<void(Entity entity, CompTypes *...)>>::type callback);
 
-		// class EntityCollection
-		// {
-		// public:
-		// 	class Iterator : public std::iterator<std::input_iterator_tag, Entity>
-		// 	{
-		// 	public:
-		// 		Iterator(ComponentManager &cm);
-		// 		Iterator &operator++();
-		// 		bool operator==(Iterator &other) {return compIndex == other.compIndex;};
-		// 		bool operator!=(Iterator &other) {return compIndex != other.compIndex;};
-		// 		Entity operator*();
-		// 	private:
-		// 		BaseComponentPool &pool;
-		// 		uint64 compIndex;
-		// 	};
-		//
-		// 	ComponentPoolEntityCollection(BaseComponentPool &pool);
-		// 	Iterator begin();
-		// 	Iterator end();
-		// private:
-		// 	BaseComponentPool &pool;
-		// 	uint64 lastCompIndex;
-		// };
 
 	private:
 
@@ -194,18 +210,10 @@ namespace sp
 		return compMgr.Get<CompType>(e);
 	}
 
-	template <typename ...CompTypes>
-	Entity EntityManager::EachWith(typename sp::identity<std::function<void(Entity entity, CompTypes *...)>>::type callback)
+	EntityManager::EntityCollection EntityManager::EntitiesWith(ComponentManager::ComponentMask compMask)
 	{
-		if (sizeof...(CompTypes) == 0)
-		{
-			throw invalid_argument("EachWith must be called with at least one component type specified");
-		}
-
-		auto compMask = compMgr.createMask<CompTypes...>();
-
-		// identify the component type which has the least number of entities to iterate over
-		size_t minSize = -1;
+		// find the smallest size component pool to iterate over
+		size_t minSize;
 		int minSizeCompIndex = -1;
 
 		for (size_t i = 0; i < compMgr.ComponentTypeCount(); ++i)
@@ -217,31 +225,84 @@ namespace sp
 
 			size_t compSize = static_cast<BaseComponentPool *>(compMgr.componentPools.at(i))->Size();
 
-			if ((int)compSize < minSize || minSizeCompIndex == -1)
+			if (compSize < minSize || minSizeCompIndex == -1)
 			{
 				minSize = compSize;
 				minSizeCompIndex = i;
 			}
 		}
 
-		// when iterating over this pool we must grab an IterateLock so that
-		// if any components are deleted they do not affect the ordering of any of the other
-		// components in this pool (normally deletions are a swap-to-back operation)
-		// this lock releases on destructions so it's okay if Exceptions are raised in this loop
-		BaseComponentPool *smallestCompPool = static_cast<BaseComponentPool *>(compMgr.componentPools.at(minSizeCompIndex));
-		auto iLock = smallestCompPool->CreateIterateLock();
+		auto smallestCompPool = static_cast<BaseComponentPool *>(compMgr.componentPools.at(minSizeCompIndex));
 
-		// For every entity in the smallest common pool, callback if the entity has all the components
-		for (Entity e : smallestCompPool->Entities())
+		return EntityManager::EntityCollection(compMgr, compMask, smallestCompPool->Entities(),
+		                                       smallestCompPool->CreateIterateLock());
+	}
+
+	template <typename ...CompTypes>
+	EntityManager::EntityCollection EntityManager::EntitiesWith()
+	{
+		return EntitiesWith(compMgr.createMask<CompTypes...>());
+	}
+
+	EntityManager::EntityCollection::Iterator::Iterator(ComponentManager &cm,
+	                                                    const ComponentManager::ComponentMask &compMask,
+	                                                    ComponentPoolEntityCollection *compEntColl,
+	                                                    ComponentPoolEntityCollection::Iterator compIt)
+	: cm(cm), compMask(compMask), compEntColl(compEntColl), compIt(compIt)
+	{}
+
+	EntityManager::EntityCollection::Iterator &EntityManager::EntityCollection::Iterator::operator++()
+	{
+		while (++compIt != compEntColl->end())
 		{
-			auto tmpMask = ComponentManager::ComponentMask(compMgr.entCompMasks.at(e.Index()));
-			tmpMask &= compMask;
-			if (tmpMask == compMask)
+			Entity e = *compIt;
+			auto entCompMask = cm.entCompMasks.at(e.Index());
+			if ((entCompMask & compMask).any())
 			{
-				callback(e, (compMgr.Get<CompTypes>(e))...);
+				break;
 			}
 		}
+		return *this;
 	}
+
+	bool EntityManager::EntityCollection::Iterator::operator==(Iterator &other)
+	{
+		return compMask == other.compMask && compIt == other.compIt;
+	}
+	bool EntityManager::EntityCollection::Iterator::operator!=(Iterator &other)
+	{
+		return !(*this == other);
+	}
+
+	Entity EntityManager::EntityCollection::Iterator::operator*()
+	{
+		return *compIt;
+	}
+
+	EntityManager::EntityCollection::EntityCollection(ComponentManager &cm,
+	                                                  const ComponentManager::ComponentMask &compMask,
+	                                                  ComponentPoolEntityCollection compEntColl,
+	                                                  unique_ptr<BaseComponentPool::IterateLock> &&iLock)
+	: cm(cm), compMask(compMask), compEntColl(compEntColl), iLock(std::move(iLock))
+	{}
+
+	EntityManager::EntityCollection::Iterator EntityManager::EntityCollection::begin()
+	{
+		return EntityManager::EntityCollection::Iterator(cm, compMask, &compEntColl, compEntColl.begin());
+	}
+
+	EntityManager::EntityCollection::Iterator EntityManager::EntityCollection::end()
+	{
+		return EntityManager::EntityCollection::Iterator(cm, compMask, &compEntColl, compEntColl.end());
+	}
+
+
+// private:
+// 	ComponentManager &cm;
+// 	ComponentManager::ComponentMask compMask;
+// 	BaseComponentPool *pool;
+// 	uint64 lastCompIndex;
+// 	unique_ptr<BaseComponentPool::IterateLock> iLock;
 }
 
 #endif

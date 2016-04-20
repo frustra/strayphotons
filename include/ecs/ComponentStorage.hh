@@ -26,11 +26,11 @@ namespace sp
 		public:
 			Iterator(BaseComponentPool &pool, uint64 compIndex);
 			Iterator &operator++();
-			bool operator==(Iterator &other)
+			bool operator==(const Iterator &other)
 			{
 				return compIndex == other.compIndex;
 			};
-			bool operator!=(Iterator &other)
+			bool operator!=(const Iterator &other)
 			{
 				return compIndex != other.compIndex;
 			};
