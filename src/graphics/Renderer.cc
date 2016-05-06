@@ -101,7 +101,6 @@ namespace sp
 
 		shaderManager->BindPipeline<TriangleVS, TriangleFS>(*shaderSet);
 
-		glBindBuffer(GL_ARRAY_BUFFER, vertices);
 		glBindVertexArray(vertexAttribs);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
