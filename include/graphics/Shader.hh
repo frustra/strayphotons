@@ -2,9 +2,7 @@
 #define SP_SHADER_H
 
 #include "Common.hh"
-#include "graphics/DeviceAllocator.hh"
-#include "graphics/Device.hh"
-#include <vulkan/vk_cpp.h>
+#include "Graphics.hh"
 #include <unordered_map>
 
 #define SHADER_TYPE(ClassName) \
@@ -14,14 +12,21 @@
 	{ return new ClassName(compileOutput); }
 
 #define IMPLEMENT_SHADER_TYPE(cls, file, stage) \
-	ShaderMeta cls::MetaType{#cls, file, ShaderStage::e##stage, cls::NewInstance}
+	ShaderMeta cls::MetaType{#cls, file, ShaderStage::##stage, cls::NewInstance}
 
 namespace sp
 {
 	class Shader;
 	class ShaderCompileOutput;
 
-	typedef vk::ShaderStageFlagBits ShaderStage;
+	enum class ShaderStage
+	{
+		Vertex = GL_VERTEX_SHADER,
+		Fragment = GL_FRAGMENT_SHADER,
+		Compute = GL_COMPUTE_SHADER,
+		TessControl = GL_TESS_CONTROL_SHADER,
+		TessEval = GL_TESS_EVALUATION_SHADER,
+	};
 
 	class ShaderMeta
 	{
@@ -34,6 +39,30 @@ namespace sp
 		const string filename;
 		const ShaderStage stage;
 
+		const GLbitfield GLStageBits()
+		{
+			switch (stage)
+			{
+				case ShaderStage::Vertex:
+					return GL_VERTEX_SHADER_BIT;
+				case ShaderStage::Fragment:
+					return GL_FRAGMENT_SHADER_BIT;
+				case ShaderStage::Compute:
+					return GL_COMPUTE_SHADER_BIT;
+				case ShaderStage::TessControl:
+					return GL_TESS_CONTROL_SHADER_BIT;
+				case ShaderStage::TessEval:
+					return GL_TESS_EVALUATION_SHADER_BIT;
+				default:
+					return 0;
+			}
+		}
+
+		const GLenum GLStage()
+		{
+			return (GLenum)stage;
+		}
+
 		Constructor newInstance;
 	};
 
@@ -41,33 +70,22 @@ namespace sp
 	{
 	public:
 		ShaderMeta *shaderType;
-		vector<char> source;
+		string source;
 	};
 
 	class ShaderCompileOutput
 	{
 	public:
-		vk::ShaderModule module;
-		Device *device;
 		ShaderMeta *shaderType;
+		GLuint program;
 
 	private:
-		std::unordered_map<uint32, string> identifiers;
-		std::unordered_map<string, uint32> descriptorSets, bindings, locations;
-
-	public:
-		void addIdentifier(uint32 id, const char *name);
-		void addDescriptorSet(uint32 id, uint32 set);
-		void addBinding(uint32 id, uint32 binding);
-		void addLocation(uint32 id, uint32 location);
 	};
 
-	struct UniformData
+	struct Uniform
 	{
-		vk::Buffer buf;
-		DeviceAllocation mem;
-		vk::DescriptorBufferInfo desc;
-		void *source;
+		string name;
+		GLint location;
 	};
 
 	class Shader
@@ -76,23 +94,75 @@ namespace sp
 		Shader(shared_ptr<ShaderCompileOutput> compileOutput);
 		virtual ~Shader();
 
-		void UploadUniforms();
-		vk::PipelineShaderStageCreateInfo StageCreateInfo();
+		std::unordered_map<string, Uniform> uniforms;
 
-		std::unordered_map<string, UniformData> uniforms;
-	protected:
-		void Bind(void *ptr, size_t size, string name);
-
-		template <typename BufferType>
-		void Bind(BufferType &ref, string name)
+		const GLuint GLProgram()
 		{
-			Bind(&ref, sizeof(BufferType), name);
+			return compileOutput->program;
 		}
+
+	protected:
+		void Bind(Uniform &u, string name);
+
+		// Methods for setting uniform values.
+
+		template <typename ValueType>
+		void Set(Uniform u, const ValueType &v)
+		{
+			Assert(false, "unimplemented uniform type");
+		}
+
+		template <typename ValueType>
+		void Set(Uniform u, const ValueType &v, GLsizei count)
+		{
+			Assert(false, "unimplemented uniform type");
+		}
+
+#define DECLARE_SET_SCALAR(UniformSuffix, ValueType) \
+	template <> void Set<ValueType>(Uniform u, const ValueType &v) { \
+		glProgramUniform##UniformSuffix(program, u.location, v); \
+	}
+
+#define DECLARE_SET_GLM(UniformSuffix, ValueType) \
+	template <> void Set<ValueType>(Uniform u, const ValueType &v) { \
+		glProgramUniform##UniformSuffix(program, u.location, 1, glm::value_ptr(v)); \
+	} \
+	template <> void Set<ValueType>(Uniform u, const ValueType &v, GLsizei count) { \
+		glProgramUniform##UniformSuffix(program, u.location, count, glm::value_ptr(v)); \
+	}
+
+#define DECLARE_SET_GLM_MAT(UniformSuffix, ValueType) \
+	template <> void Set<ValueType>(Uniform u, const ValueType &v) { \
+		glProgramUniformMatrix##UniformSuffix(program, u.location, 1, 0, glm::value_ptr(v)); \
+	} \
+	template <> void Set<ValueType>(Uniform u, const ValueType &v, GLsizei count) { \
+		glProgramUniformMatrix##UniformSuffix(program, u.location, count, 0, glm::value_ptr(v)); \
+	}
+
+		DECLARE_SET_SCALAR(1f, float)
+		DECLARE_SET_SCALAR(1i, int32)
+		DECLARE_SET_SCALAR(1ui, uint32)
+		DECLARE_SET_GLM(2fv, glm::vec2)
+		DECLARE_SET_GLM(3fv, glm::vec3)
+		DECLARE_SET_GLM(4fv, glm::vec4)
+		DECLARE_SET_GLM(2iv, glm::i32vec2)
+		DECLARE_SET_GLM(3iv, glm::i32vec3)
+		DECLARE_SET_GLM(4iv, glm::i32vec4)
+		DECLARE_SET_GLM(2uiv, glm::u32vec2)
+		DECLARE_SET_GLM(3uiv, glm::u32vec3)
+		DECLARE_SET_GLM(4uiv, glm::u32vec4)
+		DECLARE_SET_GLM_MAT(2fv, glm::mat2)
+		DECLARE_SET_GLM_MAT(3fv, glm::mat3)
+		DECLARE_SET_GLM_MAT(4fv, glm::mat4)
+
+#undef DECLARE_SET_SCALAR
+#undef DECLARE_SET_GLM
+#undef DECLARE_SET_GLM_MAT
 
 	private:
 		ShaderMeta *type;
+		GLuint program;
 		shared_ptr<ShaderCompileOutput> compileOutput;
-		Device &device;
 	};
 
 	class ShaderSet

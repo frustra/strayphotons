@@ -11,16 +11,6 @@ namespace sp
 		Errorf("GLFW returned %d: %s", error, message);
 	}
 
-	static void handleVulkanError(std::system_error &err)
-	{
-		auto code = err.code();
-		if (code.category() != vk::errorCategory()) return;
-
-		auto str = to_string(vk::Result(code.value()));
-		Errorf("Vulkan error %s (%d) %s", str.c_str(), code.value(), err.what());
-		throw "Vulkan exception";
-	}
-
 	GraphicsManager::GraphicsManager() : context(nullptr)
 	{
 		Logf("Graphics starting up");
@@ -30,11 +20,6 @@ namespace sp
 		if (!glfwInit())
 		{
 			throw "glfw failed";
-		}
-
-		if (!glfwVulkanSupported())
-		{
-			throw "no compatible Vulkan ICD found";
 		}
 
 		lastFrameEnd = std::chrono::steady_clock::now();
@@ -57,7 +42,7 @@ namespace sp
 		}
 		catch (std::system_error &err)
 		{
-			handleVulkanError(err);
+			Assert(false);
 		}
 	}
 
@@ -71,7 +56,7 @@ namespace sp
 		}
 		catch (std::system_error &err)
 		{
-			handleVulkanError(err);
+			Assert(false);
 		}
 	}
 
@@ -96,7 +81,7 @@ namespace sp
 		}
 		catch (std::system_error &err)
 		{
-			handleVulkanError(err);
+			Assert(false);
 		}
 
 		auto frameEnd = std::chrono::steady_clock::now();

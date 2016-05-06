@@ -2,7 +2,7 @@
 #define SP_SHADER_MANAGER_H
 
 #include "graphics/Shader.hh"
-#include "graphics/Device.hh"
+#include <unordered_map>
 
 namespace sp
 {
@@ -12,16 +12,23 @@ namespace sp
 		static void RegisterShaderType(ShaderMeta *metaType);
 		static vector<ShaderMeta *> &ShaderTypes();
 
-		ShaderManager(Device &device) : device(device) { }
+		ShaderManager() { }
 		~ShaderManager();
 		void CompileAll(ShaderSet &shaders);
+
+		void BindPipeline(ShaderSet &shaders, vector<ShaderMeta *> shaderMetaTypes);
+
+		template <typename ...ShaderTypes>
+		void BindPipeline(ShaderSet &shaders)
+		{
+			BindPipeline(shaders, { &ShaderTypes::MetaType... });
+		}
 
 	private:
 		ShaderCompileInput LoadShader(ShaderMeta *shaderType);
 		shared_ptr<ShaderCompileOutput> CompileShader(ShaderCompileInput &input);
-		void ParseShader(ShaderCompileInput &input, ShaderCompileOutput *output);
 
-		Device &device;
+		std::unordered_map<size_t, GLuint> pipelineCache;
 	};
 }
 #endif

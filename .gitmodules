@@ -25,3 +25,6 @@
 [submodule "ext/SPIRV-Tools"]
 	path = ext/SPIRV-Tools
 	url = https://github.com/KhronosGroup/SPIRV-Tools
+[submodule "ext/boostconfig"]
+	path = ext/boostconfig
+	url = https://github.com/boostorg/config
