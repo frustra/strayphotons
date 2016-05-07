@@ -21,8 +21,6 @@ namespace sp
 		{
 			throw "glfw failed";
 		}
-
-		lastFrameEnd = std::chrono::steady_clock::now();
 	}
 
 	GraphicsManager::~GraphicsManager()
@@ -84,11 +82,11 @@ namespace sp
 			Assert(false);
 		}
 
-		auto frameEnd = std::chrono::steady_clock::now();
-		fpsTimer += std::chrono::duration<double, std::milli>(frameEnd - lastFrameEnd).count();
+		double frameEnd = glfwGetTime();
+		fpsTimer += frameEnd - lastFrameEnd;
 		frameCounter++;
 
-		if (fpsTimer > 1000)
+		if (fpsTimer > 1.0)
 		{
 			context->SetTitle("STRAY PHOTONS (" + std::to_string(frameCounter) + " FPS)");
 			frameCounter = 0;

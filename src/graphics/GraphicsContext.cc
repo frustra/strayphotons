@@ -8,6 +8,11 @@
 
 namespace sp
 {
+	static void GLAPIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *user)
+	{
+		Debugf("[GL 0x%X] 0x%X: %s", id, type, message);
+	}
+
 	GraphicsContext::GraphicsContext()
 	{
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -15,6 +20,7 @@ namespace sp
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 		glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
+		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 		shaderSet = new ShaderSet();
 	}
@@ -39,9 +45,13 @@ namespace sp
 		Assert(glewInit() == GLEW_OK, "glewInit failed");
 		glGetError();
 
+		glDebugMessageCallback(DebugCallback, nullptr);
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+
 		float maxAnisotropy;
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
 		Debugf("maximum anisotropy: %f", maxAnisotropy);
+
 
 		Prepare();
 	}

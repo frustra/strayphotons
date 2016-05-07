@@ -3,8 +3,6 @@
 
 #include "graphics/GraphicsContext.hh"
 
-#include <chrono>
-
 namespace sp
 {
 	class GraphicsManager
@@ -24,8 +22,7 @@ namespace sp
 	private:
 		GraphicsContext *context;
 
-		std::chrono::time_point<std::chrono::steady_clock> lastFrameEnd;
-		double fpsTimer = 0;
+		double lastFrameEnd = 0, fpsTimer = 0;
 		int frameCounter = 0;
 	};
 }
