@@ -42,29 +42,20 @@ else()
 	set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-<<<<<<< HEAD
-################################################
-# Build external projects
-################################################
-=======
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
->>>>>>> master
 
 set(EXT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext)
 
 find_package(OpenGL REQUIRED)
-
 
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "")
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "")
 set(GLFW_INSTALL OFF CACHE BOOL "")
 add_subdirectory(${EXT_PATH}/glfw)
 
-
 add_subdirectory(${EXT_PATH}/freetype2)
-
 
 add_definitions(-DOGLPLUS_LOW_PROFILE=1)
 add_definitions(-DOGLPLUS_USE_GLEW=1)
@@ -84,17 +75,17 @@ include_directories(
 	${EXT_PATH}
 )
 
-
 add_definitions(-DGLEW_STATIC=1)
 add_library(GLEW STATIC ${EXT_PATH}/glew/src/glew.c)
 
+# split into lib and exe so tests can link against lib
+set(PROJECT_LIB strayphotons)
+set(PROJECT_EXE sp)
+set(PROJECT_MAIN_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/core/Main.cc)
 
 file(GLOB_RECURSE all_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
 list(REMOVE_DUPLICATES all_sources)
-
-################################################
-# build shaders
-################################################
+list(REMOVE_ITEM all_sources ${PROJECT_MAIN_CC})
 
 file(GLOB_RECURSE all_shaders
 	${CMAKE_CURRENT_SOURCE_DIR}/src/*.vert
@@ -105,38 +96,9 @@ file(GLOB_RECURSE all_shaders
 	${CMAKE_CURRENT_SOURCE_DIR}/src/*.comp)
 list(REMOVE_DUPLICATES all_shaders)
 
-add_executable(sp ${all_sources} ${all_headers} ${all_shaders})
-
-################################################
-# build project
-################################################
-
-set(PROJECT_LIB strayphotons)
-set(PROJECT_EXE sp)
-
-set(PROJECT_MAIN_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/core/Main.cc)
-
-set(project_include_dirs
-	${CMAKE_CURRENT_SOURCE_DIR}/include
-	${EXT_PATH}/glfw/include
-	${EXT_PATH}/glm
-	${EXT_PATH}/freetype2/include
-	${EXT_PATH}/vkcpp
-	${EXT_PATH}/SPIRV-Tools/include
-	${VULKAN_INCLUDE_DIR}
-	${EXT_PATH}
-)
-include_directories(${project_include_dirs})
-
-file(GLOB_RECURSE lib_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
-list(REMOVE_DUPLICATES lib_sources)
-list(REMOVE_ITEM lib_sources ${PROJECT_MAIN_CC})
-
-file(GLOB_RECURSE all_headers ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hh)
-list(REMOVE_DUPLICATES all_headers)
-
-add_library(${PROJECT_LIB} ${lib_sources} ${all_headers})
+add_library(${PROJECT_LIB} ${all_sources} ${all_headers} ${all_shaders})
 add_executable(${PROJECT_EXE} ${PROJECT_MAIN_CC})
+target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
 
 # C++11
 target_compile_features(${PROJECT_LIB} PRIVATE cxx_range_for)
@@ -146,9 +108,7 @@ set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJE
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
 
-add_dependencies(${PROJECT_LIB} sp-shaders)
-
-target_link_libraries(${PROJECT_LIB} glfw ${GLFW_LIBRARIES} ${VULKAN_LIBRARY} freetype SPIRV-Tools)
+target_link_libraries(${PROJECT_LIB} glfw ${GLFW_LIBRARIES} freetype)
 target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
 target_link_libraries(sp ${OPENGL_LIBRARIES} GLEW glfw ${GLFW_LIBRARIES} freetype)
 
