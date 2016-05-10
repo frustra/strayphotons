@@ -3,8 +3,7 @@
 
 #include "gtest/gtest.h"
 
-#include "ecs/EntityManager.hh"
-#include "ecs/Entity.hh"
+#include "ecs/Ecs.hh"
 
 namespace test
 {
@@ -43,12 +42,12 @@ namespace test
 			eEat = em.NewEntity();
 			eNoComps = em.NewEntity();
 
-			em.Assign<Position>(ePos1);
-			em.Assign<Position>(ePos2);
-			em.Assign<Position>(ePosEat);
+			ePos1.Assign<Position>();
+			ePos2.Assign<Position>();
+			ePosEat.Assign<Position>();
 
-			em.Assign<Eater>(ePosEat);
-			em.Assign<Eater>(eEat);
+			ePosEat.Assign<Eater>();
+			eEat.Assign<Eater>();
 	    }
 
 		void ExpectEntitiesFound()
@@ -79,28 +78,28 @@ namespace test
 
 	TEST_F(EcsBasic, CreateDestroyEntity)
 	{
-	    EXPECT_TRUE(em.Valid(e));
-	    em.Destroy(e);
+	    EXPECT_TRUE(e.Valid());
+	    e.Destroy();
 
-	    EXPECT_FALSE(em.Valid(e));
+	    EXPECT_FALSE(e.Valid());
 	}
 
 	TEST_F(EcsBasic, AddRemoveComponent)
 	{
-		em.Assign<Position>(e);
+		e.Assign<Position>();
 
-		ASSERT_TRUE(em.Has<Position>(e));
+		ASSERT_TRUE(e.Has<Position>());
 
-		em.Remove<Position>(e);
+		e.Remove<Position>();
 
-		ASSERT_FALSE(em.Has<Position>(e));
-	    ASSERT_ANY_THROW(em.Get<Position>(e));
+		ASSERT_FALSE(e.Has<Position>());
+	    ASSERT_ANY_THROW(e.Get<Position>());
 	}
 
 	TEST_F(EcsBasic, ConstructComponent)
 	{
-	    em.Assign<Position>(e, 1, 2);
-	    Position *pos = em.Get<Position>(e);
+	    e.Assign<Position>(1, 2);
+	    Position *pos = e.Get<Position>();
 
 	    ASSERT_NE(pos, nullptr);
 	    ASSERT_EQ(pos->x, 1);
@@ -109,16 +108,16 @@ namespace test
 
 	TEST_F(EcsBasic, RemoveAllComponents)
 	{
-	    em.Assign<Position>(e);
-	    em.Assign<Eater>(e);
+	    e.Assign<Position>();
+	    e.Assign<Eater>();
 
-	    ASSERT_TRUE(em.Has<Position>(e));
-	    ASSERT_TRUE(em.Has<Eater>(e));
+	    ASSERT_TRUE(e.Has<Position>());
+	    ASSERT_TRUE(e.Has<Eater>());
 
-	    em.RemoveAllComponents(e);
+	    e.RemoveAllComponents();
 
-	    ASSERT_FALSE(em.Has<Position>(e));
-	    ASSERT_FALSE(em.Has<Eater>(e));
+	    ASSERT_FALSE(e.Has<Position>());
+	    ASSERT_FALSE(e.Has<Eater>());
 	}
 
 	TEST_F(EcsBasicIterateWithComponents, TemplateIteration)

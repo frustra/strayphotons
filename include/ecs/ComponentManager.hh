@@ -22,19 +22,19 @@ namespace sp
 
 		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		template <typename CompType, typename ...T>
-		CompType *Assign(Entity e, T... args);
+		CompType *Assign(Entity::Id e, T... args);
 
 		template <typename CompType>
-		void Remove(Entity e);
+		void Remove(Entity::Id e);
 
-		void RemoveAll(Entity e);
+		void RemoveAll(Entity::Id e);
 
 		template <typename CompType>
-		bool Has(Entity e) const;
+		bool Has(Entity::Id e) const;
 
 		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		template <typename CompType>
-		CompType *Get(Entity e);
+		CompType *Get(Entity::Id e);
 
 		size_t ComponentTypeCount() const;
 
@@ -68,7 +68,7 @@ namespace sp
 	};
 
 	template <typename CompType, typename ...T>
-	CompType *ComponentManager::Assign(Entity e, T... args)
+	CompType *ComponentManager::Assign(Entity::Id e, T... args)
 	{
 		std::type_index compType = typeid(CompType);
 
@@ -95,7 +95,7 @@ namespace sp
 	}
 
 	template <typename CompType>
-	void ComponentManager::Remove(Entity e)
+	void ComponentManager::Remove(Entity::Id e)
 	{
 		std::type_index tIndex = typeid(CompType);
 		if (compTypeToCompIndex.count(tIndex) == 0)
@@ -115,7 +115,7 @@ namespace sp
 		compMask.reset(compIndex);
 	}
 
-	void ComponentManager::RemoveAll(Entity e)
+	void ComponentManager::RemoveAll(Entity::Id e)
 	{
 		Assert(entCompMasks.size() > e.Index(), "entity does not have a component mask");
 
@@ -134,7 +134,7 @@ namespace sp
 	}
 
 	template <typename CompType>
-	bool ComponentManager::Has(Entity e) const
+	bool ComponentManager::Has(Entity::Id e) const
 	{
 		std::type_index compType = typeid(CompType);
 		if (compTypeToCompIndex.count(compType) == 0)
@@ -147,7 +147,7 @@ namespace sp
 	}
 
 	template <typename CompType>
-	CompType *ComponentManager::Get(Entity e)
+	CompType *ComponentManager::Get(Entity::Id e)
 	{
 		uint32 compIndex = compTypeToCompIndex.at(typeid(CompType));
 		const auto &entCompMask = entCompMasks.at(e.Index());

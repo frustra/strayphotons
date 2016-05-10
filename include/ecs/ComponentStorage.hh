@@ -8,20 +8,20 @@
 #include <stdexcept>
 #include "Common.hh"
 #include "ecs/Entity.hh"
+
 #define MAX_COMPONENTS 64
 
 
 namespace sp
 {
 	class BaseComponentPool;
-	// class BaseComponentPool::IterateLock;
 
 	// Object to capture the state of entities at a given time.  Used for iterating over a
 	// ComponentPool's Entities
 	class ComponentPoolEntityCollection
 	{
 	public:
-		class Iterator : public std::iterator<std::input_iterator_tag, Entity>
+		class Iterator : public std::iterator<std::input_iterator_tag, Entity::Id>
 		{
 		public:
 			Iterator(BaseComponentPool &pool, uint64 compIndex);
@@ -34,7 +34,7 @@ namespace sp
 			{
 				return compIndex != other.compIndex;
 			};
-			Entity operator*();
+			Entity::Id operator*();
 		private:
 			BaseComponentPool &pool;
 			uint64 compIndex;
@@ -70,8 +70,8 @@ namespace sp
 
 		virtual ~BaseComponentPool() {}
 
-		virtual void Remove(Entity e) = 0;
-		virtual bool HasComponent(Entity e) const = 0;
+		virtual void Remove(Entity::Id e) = 0;
+		virtual bool HasComponent(Entity::Id e) const = 0;
 		virtual size_t Size() const = 0;
 		virtual ComponentPoolEntityCollection Entities() = 0;
 
@@ -87,7 +87,7 @@ namespace sp
 		virtual void toggleSoftRemove(bool enabled) = 0;
 
 		// method used by ComponentPoolEntityCollection::Iterator to find the next Entity
-		virtual Entity entityAt(uint64 compIndex) = 0;
+		virtual Entity::Id entityAt(uint64 compIndex) = 0;
 
 	};
 
@@ -110,12 +110,12 @@ namespace sp
 
 		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		template <typename ...T>
-		CompType *NewComponent(Entity e, T... args);
+		CompType *NewComponent(Entity::Id e, T... args);
 
 		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
-		CompType *Get(Entity e);
-		void Remove(Entity e) override;
-		bool HasComponent(Entity e) const override;
+		CompType *Get(Entity::Id e);
+		void Remove(Entity::Id e) override;
+		bool HasComponent(Entity::Id e) const override;
 		size_t Size() const override;
 		ComponentPoolEntityCollection Entities() override;
 
@@ -124,7 +124,7 @@ namespace sp
 	private:
 		static const uint64 INVALID_COMP_INDEX = static_cast<uint64>(-1);
 
-		vector<std::pair<Entity, CompType> > components;
+		vector<std::pair<Entity::Id, CompType> > components;
 		uint64 lastCompIndex;
 		std::unordered_map<uint64, uint64> entIndexToCompIndex;
 		bool softRemoveMode;
@@ -135,7 +135,7 @@ namespace sp
 		void softRemove(uint64 compIndex);
 		void remove(uint64 compIndex);
 
-		Entity entityAt(uint64 compIndex) override;
+		Entity::Id entityAt(uint64 compIndex) override;
 	};
 
 	template <typename CompType>
@@ -153,14 +153,14 @@ namespace sp
 
 	template <typename CompType>
 	template <typename ...T>
-	CompType *ComponentPool<CompType>::NewComponent(Entity e, T... args)
+	CompType *ComponentPool<CompType>::NewComponent(Entity::Id e, T... args)
 	{
 		uint64 newCompIndex = lastCompIndex + 1;
 		lastCompIndex = newCompIndex;
 
 		if (components.size() == newCompIndex)
 		{
-			components.push_back(std::pair<Entity, CompType>(e, CompType(args...)));
+			components.push_back(std::pair<Entity::Id, CompType>(e, CompType(args...)));
 		}
 
 		components.at(newCompIndex).first = e;
@@ -170,7 +170,7 @@ namespace sp
 	}
 
 	template <typename CompType>
-	CompType *ComponentPool<CompType>::Get(Entity e)
+	CompType *ComponentPool<CompType>::Get(Entity::Id e)
 	{
 		if (!HasComponent(e))
 		{
@@ -182,7 +182,7 @@ namespace sp
 	}
 
 	template <typename CompType>
-	void ComponentPool<CompType>::Remove(Entity e)
+	void ComponentPool<CompType>::Remove(Entity::Id e)
 	{
 		if (!HasComponent(e))
 		{
@@ -225,12 +225,12 @@ namespace sp
 		// "Null" Entities will never be iterated over
 		Assert(compIndex < components.size());
 
-		components[compIndex].first = Entity::Entity();
+		components[compIndex].first = Entity::Id();
 		softRemoveCompIndexes.push(compIndex);
 	}
 
 	template <typename CompType>
-	bool ComponentPool<CompType>::HasComponent(Entity e) const
+	bool ComponentPool<CompType>::HasComponent(Entity::Id e) const
 	{
 		auto compIndex = entIndexToCompIndex.find(e.Index());
 		return compIndex != entIndexToCompIndex.end() && compIndex->second != ComponentPool<CompType>::INVALID_COMP_INDEX;
@@ -272,7 +272,7 @@ namespace sp
 	}
 
 	template <typename CompType>
-	Entity ComponentPool<CompType>::entityAt(uint64 compIndex)
+	Entity::Id ComponentPool<CompType>::entityAt(uint64 compIndex)
 	{
 		Assert(compIndex < components.size());
 		return components[compIndex].first;
@@ -316,7 +316,7 @@ namespace sp
 		return *this;
 	}
 
-	Entity ComponentPoolEntityCollection::Iterator::operator*()
+	Entity::Id ComponentPoolEntityCollection::Iterator::operator*()
 	{
 		Assert(compIndex < pool.Size());
 		return pool.entityAt(compIndex);
