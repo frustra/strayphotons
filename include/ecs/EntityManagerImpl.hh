@@ -118,7 +118,7 @@ namespace sp
 		auto smallestCompPool = static_cast<BaseComponentPool *>(compMgr.componentPools.at(minSizeCompIndex));
 
 		return EntityManager::EntityCollection(*this, compMask, smallestCompPool->Entities(),
-		                                       smallestCompPool->CreateIterateLock());
+											   smallestCompPool->CreateIterateLock());
 	}
 
 	template <typename ...CompTypes>

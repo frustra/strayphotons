@@ -40,7 +40,7 @@ namespace sp
 	}
 
 	template <typename CompType>
-	CompType * Entity::Get()
+	CompType *Entity::Get()
 	{
 		return em->Get<CompType>(this->eid);
 	}

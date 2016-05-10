@@ -101,7 +101,10 @@ namespace sp
 		Entity(EntityManager *em, Entity::Id eid) : em(em), eid(eid) {}
 
 		// retrieves the unique identifier for this entity
-		uint64 Index() const { return eid.Index(); }
+		uint64 Index() const
+		{
+			return eid.Index();
+		}
 
 		// Wrappers for EntityManager functions
 		void Destroy();
