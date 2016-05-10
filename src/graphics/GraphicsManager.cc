@@ -3,6 +3,7 @@
 #include "graphics/Renderer.hh"
 
 #include <iostream>
+#include <system_error>
 
 namespace sp
 {
