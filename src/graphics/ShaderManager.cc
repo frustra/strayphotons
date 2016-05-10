@@ -2,8 +2,6 @@
 #include "core/Logging.hh"
 
 #include <fstream>
-#include <spirv/spirv.h>
-#include <spirv-tools/libspirv.h>
 
 namespace sp
 {
@@ -20,6 +18,8 @@ namespace sp
 
 	ShaderManager::~ShaderManager()
 	{
+		for (auto cached : pipelineCache)
+			glDeleteProgramPipelines(1, &cached.second);
 	}
 
 	void ShaderManager::CompileAll(ShaderSet &shaders)
@@ -28,7 +28,8 @@ namespace sp
 		{
 			auto input = LoadShader(shaderType);
 			auto output = CompileShader(input);
-			output->device = &device;
+			if (!output) continue;
+
 			output->shaderType = shaderType;
 			auto shader = shaderType->newInstance(output);
 			shared_ptr<Shader> shaderPtr(shader);
@@ -38,20 +39,30 @@ namespace sp
 
 	shared_ptr<ShaderCompileOutput> ShaderManager::CompileShader(ShaderCompileInput &input)
 	{
+		auto sourceStr = input.source.c_str();
+		GLuint program = glCreateShaderProgramv(input.shaderType->GLStage(), 1, &sourceStr);
+		Assert(program, "failed to create shader program");
+		AssertGLOK("glCreateShaderProgramv");
 
-		vk::ShaderModuleCreateInfo moduleInfo;
-		moduleInfo.codeSize(input.source.size());
-		moduleInfo.pCode(reinterpret_cast<const uint32 *>(input.source.data()));
+		char infoLog[2048];
+		glGetProgramInfoLog(program, 2048, NULL, infoLog);
+
+		if (*infoLog)
+		{
+			Errorf("Failed to compile or link shader %s\n%s", input.shaderType->name.c_str(), infoLog);
+			Assert(false, "shader build failed");
+			return nullptr;
+		}
 
 		auto output = make_shared<ShaderCompileOutput>();
-		output->module = device->createShaderModule(moduleInfo, nullptr);
-
+		output->shaderType = input.shaderType;
+		output->program = program;
 		return output;
 	}
 
 	ShaderCompileInput ShaderManager::LoadShader(ShaderMeta *shaderType)
 	{
-		string filename = "./assets/shaders/" + shaderType->filename + ".spv";
+		string filename = "../src/shaders/" + shaderType->filename;
 
 		std::ifstream fin(filename, std::ios::binary);
 		if (!fin.good())
@@ -60,87 +71,44 @@ namespace sp
 			throw std::runtime_error("missing shader: " + shaderType->filename);
 		}
 
-		vector<char> buffer((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+		string buffer((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
 		return ShaderCompileInput {shaderType, buffer};
 	}
 
-	static spv_result_t visitHeader(void *userData, spv_endianness_t endian, uint32, uint32 version, uint32 gen, uint32 id, uint32 schema)
+	template <class T>
+	inline void hash_combine(size_t &seed, const T &v)
 	{
-		return SPV_SUCCESS;
+		std::hash<T> hasher;
+		seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 	}
 
-	static spv_result_t visitInstruction(void *userData, const spv_parsed_instruction_t *inst)
+	void ShaderManager::BindPipeline(ShaderSet &shaders, vector<ShaderMeta *> shaderMetaTypes)
 	{
-		auto output = static_cast<ShaderCompileOutput *>(userData);
-		auto num_operands = inst->num_operands;
-		auto operands = inst->operands;
+		size_t hash = 0;
 
-		switch (inst->opcode)
+		for (auto shaderMeta : shaderMetaTypes)
 		{
-			case SpvOpDecorate:
-			{
-				Assert(num_operands >= 2);
-				Assert(operands[0].type == SPV_OPERAND_TYPE_ID);
-				Assert(operands[1].type == SPV_OPERAND_TYPE_DECORATION);
-
-				auto id = inst->words[operands[0].offset];
-				auto decoration = inst->words[operands[1].offset];
-
-				if (decoration == SpvDecorationDescriptorSet)
-				{
-					Assert(num_operands == 3);
-					Assert(operands[2].type == SPV_OPERAND_TYPE_LITERAL_INTEGER);
-					auto set = inst->words[operands[2].offset];
-					output->addDescriptorSet(id, set);
-				}
-				else if (decoration == SpvDecorationBinding)
-				{
-					Assert(num_operands == 3);
-					Assert(operands[2].type == SPV_OPERAND_TYPE_LITERAL_INTEGER);
-					auto binding = inst->words[operands[2].offset];
-					output->addBinding(id, binding);
-				}
-				else if (decoration == SpvDecorationLocation)
-				{
-					Assert(num_operands == 3);
-					Assert(operands[2].type == SPV_OPERAND_TYPE_LITERAL_INTEGER);
-					auto location = inst->words[operands[2].offset];
-					output->addLocation(id, location);
-				}
-				break;
-			}
-
-			case SpvOpName:
-			{
-				Assert(num_operands == 2);
-				Assert(operands[0].type == SPV_OPERAND_TYPE_ID);
-				Assert(operands[1].type == SPV_OPERAND_TYPE_LITERAL_STRING);
-
-				auto id = inst->words[operands[0].offset];
-				auto name = inst->words + operands[1].offset;
-				output->addIdentifier(id, reinterpret_cast<const char *>(name));
-				break;
-			}
-
-			default:
-				break;
+			auto shader = shaders.Get(shaderMeta);
+			hash_combine(hash, shader->GLProgram());
 		}
-		return SPV_SUCCESS;
-	}
 
-	void ShaderManager::ParseShader(ShaderCompileInput &input, ShaderCompileOutput *output)
-	{
-		spv_context ctx = spvContextCreate();
-		spv_diagnostic diagnostic = nullptr;
-		const uint32 *binary = reinterpret_cast<const uint32 *>(input.source.data());
-		auto err = spvBinaryParse(ctx, &output, binary, input.source.size() / sizeof(*binary), visitHeader, visitInstruction, &diagnostic);
-		spvContextDestroy(ctx);
-
-		if (err)
+		auto cached = pipelineCache.find(hash);
+		if (cached != pipelineCache.end())
 		{
-			spvDiagnosticPrint(diagnostic);
-			spvDiagnosticDestroy(diagnostic);
-			throw std::runtime_error("error parsing spirv for " + input.shaderType->filename);
+			glBindProgramPipeline(cached->second);
+			return;
 		}
+
+		GLuint pipeline;
+		glGenProgramPipelines(1, &pipeline);
+
+		for (auto shaderMeta : shaderMetaTypes)
+		{
+			auto shader = shaders.Get(shaderMeta);
+			glUseProgramStages(pipeline, shaderMeta->GLStageBits(), shader->GLProgram());
+		}
+
+		glBindProgramPipeline(pipeline);
+		pipelineCache[hash] = pipeline;
 	}
 }

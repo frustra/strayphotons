@@ -3,22 +3,13 @@
 #include "graphics/Renderer.hh"
 
 #include <iostream>
+#include <system_error>
 
 namespace sp
 {
 	static void glfwErrorCallback(int error, const char *message)
 	{
 		Errorf("GLFW returned %d: %s", error, message);
-	}
-
-	static void handleVulkanError(std::system_error &err)
-	{
-		auto code = err.code();
-		if (code.category() != vk::errorCategory()) return;
-
-		auto str = to_string(vk::Result(code.value()));
-		Errorf("Vulkan error %s (%d) %s", str.c_str(), code.value(), err.what());
-		throw "Vulkan exception";
 	}
 
 	GraphicsManager::GraphicsManager() : context(nullptr)
@@ -31,13 +22,6 @@ namespace sp
 		{
 			throw "glfw failed";
 		}
-
-		if (!glfwVulkanSupported())
-		{
-			throw "no compatible Vulkan ICD found";
-		}
-
-		lastFrameEnd = std::chrono::steady_clock::now();
 	}
 
 	GraphicsManager::~GraphicsManager()
@@ -57,7 +41,7 @@ namespace sp
 		}
 		catch (std::system_error &err)
 		{
-			handleVulkanError(err);
+			Assert(false);
 		}
 	}
 
@@ -71,7 +55,7 @@ namespace sp
 		}
 		catch (std::system_error &err)
 		{
-			handleVulkanError(err);
+			Assert(false);
 		}
 	}
 
@@ -96,14 +80,14 @@ namespace sp
 		}
 		catch (std::system_error &err)
 		{
-			handleVulkanError(err);
+			Assert(false);
 		}
 
-		auto frameEnd = std::chrono::steady_clock::now();
-		fpsTimer += std::chrono::duration<double, std::milli>(frameEnd - lastFrameEnd).count();
+		double frameEnd = glfwGetTime();
+		fpsTimer += frameEnd - lastFrameEnd;
 		frameCounter++;
 
-		if (fpsTimer > 1000)
+		if (fpsTimer > 1.0)
 		{
 			context->SetTitle("STRAY PHOTONS (" + std::to_string(frameCounter) + " FPS)");
 			frameCounter = 0;

@@ -28,3 +28,6 @@
 [submodule "ext/googletest"]
 	path = ext/googletest
 	url = https://github.com/google/googletest.git
+[submodule "ext/boostconfig"]
+	path = ext/boostconfig
+	url = https://github.com/boostorg/config

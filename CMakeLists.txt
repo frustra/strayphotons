@@ -42,26 +42,55 @@ else()
 	set(CMAKE_BUILD_TYPE Debug)
 endif()
 
+<<<<<<< HEAD
 ################################################
 # Build external projects
 ################################################
+=======
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
+>>>>>>> master
 
 set(EXT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext)
 
-# GLFW builds these things by default, we don't want them
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build the GLFW example programs")
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "Build the GLFW test programs")
-set(GLFW_INSTALL OFF CACHE BOOL "Generate installation target")
+find_package(OpenGL REQUIRED)
+
+
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "")
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "")
+set(GLFW_INSTALL OFF CACHE BOOL "")
 add_subdirectory(${EXT_PATH}/glfw)
+
 
 add_subdirectory(${EXT_PATH}/freetype2)
 
-set(SPIRV_SKIP_EXECUTABLES ON CACHE INTERNAL "Skip SPIRV executables")
-add_subdirectory(${EXT_PATH}/SPIRV-Tools)
+
+add_definitions(-DOGLPLUS_LOW_PROFILE=1)
+add_definitions(-DOGLPLUS_USE_GLEW=1)
+add_definitions(-DOGLPLUS_USE_BOOST_CONFIG=1)
+add_definitions(-DOGLPLUS_NO_SITE_CONFIG=1)
 
 set(GOOGLETEST_DIR ${EXT_PATH}/googletest/googletest)
 add_subdirectory(${EXT_PATH}/googletest)
 
+include_directories(
+	${CMAKE_CURRENT_SOURCE_DIR}/include
+	${EXT_PATH}/glfw/include
+	${EXT_PATH}/glew/include
+	${EXT_PATH}/boostconfig/include
+	${EXT_PATH}/glm
+	${EXT_PATH}/freetype2/include
+	${EXT_PATH}
+)
+
+
+add_definitions(-DGLEW_STATIC=1)
+add_library(GLEW STATIC ${EXT_PATH}/glew/src/glew.c)
+
+
+file(GLOB_RECURSE all_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
+list(REMOVE_DUPLICATES all_sources)
 
 ################################################
 # build shaders
@@ -76,15 +105,7 @@ file(GLOB_RECURSE all_shaders
 	${CMAKE_CURRENT_SOURCE_DIR}/src/*.comp)
 list(REMOVE_DUPLICATES all_shaders)
 
-find_host_package(PythonInterp)
-
-add_custom_target(sp-shaders
-	${PYTHON_EXECUTABLE}
-	${CMAKE_CURRENT_SOURCE_DIR}/compile_shaders.py
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	COMMENT "Compile shaders"
-	SOURCES ${all_shaders})
-
+add_executable(sp ${all_sources} ${all_headers} ${all_shaders})
 
 ################################################
 # build project
@@ -129,7 +150,7 @@ add_dependencies(${PROJECT_LIB} sp-shaders)
 
 target_link_libraries(${PROJECT_LIB} glfw ${GLFW_LIBRARIES} ${VULKAN_LIBRARY} freetype SPIRV-Tools)
 target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
-
+target_link_libraries(sp ${OPENGL_LIBRARIES} GLEW glfw ${GLFW_LIBRARIES} freetype)
 
 ################################################
 # Build tests
