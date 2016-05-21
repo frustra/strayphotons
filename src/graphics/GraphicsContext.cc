@@ -16,7 +16,7 @@ namespace sp
 	GraphicsContext::GraphicsContext()
 	{
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 		glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
@@ -44,6 +44,9 @@ namespace sp
 		glewExperimental = GL_TRUE;
 		Assert(glewInit() == GLEW_OK, "glewInit failed");
 		glGetError();
+
+		Assert(GLEW_ARB_compute_shader, "ARB_compute_shader required");
+		Assert(GLEW_ARB_direct_state_access, "ARB_direct_state_access required");
 
 		glDebugMessageCallback(DebugCallback, nullptr);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
