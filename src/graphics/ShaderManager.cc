@@ -56,7 +56,7 @@ namespace sp
 			glGetProgramInfoLog(program, infoLogLength + 1, nullptr, infoLog);
 
 			auto err = ProcessError(input, string(infoLog));
-			Errorf("%s", err.c_str());
+			Errorf("%s", err);
 			throw std::runtime_error(err);
 		}
 
@@ -74,7 +74,7 @@ namespace sp
 		std::ifstream fin(filename, std::ios::binary);
 		if (!fin.good())
 		{
-			Errorf("Shader file %s could not be read", path.c_str());
+			Errorf("Shader file %s could not be read", path);
 			throw std::runtime_error("missing shader: " + path);
 		}
 
