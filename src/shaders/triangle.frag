@@ -1,5 +1,7 @@
 #version 430
 
+##import lib/util
+
 layout (location = 0) in vec3 inColor;
 
 layout (location = 0) out vec4 outFragColor;

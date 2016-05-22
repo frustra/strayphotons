@@ -28,6 +28,10 @@ namespace sp
 		ShaderCompileInput LoadShader(ShaderMeta *shaderType);
 		shared_ptr<ShaderCompileOutput> CompileShader(ShaderCompileInput &input);
 
+		string LoadShader(ShaderCompileInput &input, string name);
+		string ProcessShaderSource(ShaderCompileInput &input, string src);
+		string ProcessError(ShaderCompileInput &input, string err);
+
 		std::unordered_map<size_t, GLuint> pipelineCache;
 	};
 }

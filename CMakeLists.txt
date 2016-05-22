@@ -57,11 +57,6 @@ add_subdirectory(${EXT_PATH}/glfw)
 
 add_subdirectory(${EXT_PATH}/freetype2)
 
-add_definitions(-DOGLPLUS_LOW_PROFILE=1)
-add_definitions(-DOGLPLUS_USE_GLEW=1)
-add_definitions(-DOGLPLUS_USE_BOOST_CONFIG=1)
-add_definitions(-DOGLPLUS_NO_SITE_CONFIG=1)
-
 set(GOOGLETEST_DIR ${EXT_PATH}/googletest/googletest)
 add_subdirectory(${EXT_PATH}/googletest)
 
@@ -87,7 +82,11 @@ file(GLOB_RECURSE all_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
 list(REMOVE_DUPLICATES all_sources)
 list(REMOVE_ITEM all_sources ${PROJECT_MAIN_CC})
 
+file(GLOB_RECURSE all_headers ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hh)
+list(REMOVE_DUPLICATES all_headers)
+
 file(GLOB_RECURSE all_shaders
+	${CMAKE_CURRENT_SOURCE_DIR}/src/*.glsl
 	${CMAKE_CURRENT_SOURCE_DIR}/src/*.vert
 	${CMAKE_CURRENT_SOURCE_DIR}/src/*.tesc
 	${CMAKE_CURRENT_SOURCE_DIR}/src/*.tese

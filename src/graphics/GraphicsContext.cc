@@ -10,6 +10,7 @@ namespace sp
 {
 	static void GLAPIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *user)
 	{
+		if (type == GL_DEBUG_TYPE_OTHER) return;
 		Debugf("[GL 0x%X] 0x%X: %s", id, type, message);
 	}
 

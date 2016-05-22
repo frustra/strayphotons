@@ -2,6 +2,9 @@
 #include "core/Logging.hh"
 
 #include <fstream>
+#include <sstream>
+#include <boost/algorithm/string.hpp>
+#include <boost/format.hpp>
 
 namespace sp
 {
@@ -44,14 +47,17 @@ namespace sp
 		Assert(program, "failed to create shader program");
 		AssertGLOK("glCreateShaderProgramv");
 
-		char infoLog[2048];
-		glGetProgramInfoLog(program, 2048, NULL, infoLog);
+		int infoLogLength;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
 
-		if (*infoLog)
+		if (infoLogLength)
 		{
-			Errorf("Failed to compile or link shader %s\n%s", input.shaderType->name.c_str(), infoLog);
-			Assert(false, "shader build failed");
-			return nullptr;
+			char *infoLog = new char[infoLogLength + 1];
+			glGetProgramInfoLog(program, infoLogLength + 1, nullptr, infoLog);
+
+			auto err = ProcessError(input, string(infoLog));
+			Errorf("%s", err.c_str());
+			throw std::runtime_error(err);
 		}
 
 		auto output = make_shared<ShaderCompileOutput>();
@@ -60,19 +66,126 @@ namespace sp
 		return output;
 	}
 
-	ShaderCompileInput ShaderManager::LoadShader(ShaderMeta *shaderType)
+	// TODO(pushrax): use asset manager
+	string loadFile(string path)
 	{
-		string filename = "../src/shaders/" + shaderType->filename;
+		string filename = "../src/shaders/" + path;
 
 		std::ifstream fin(filename, std::ios::binary);
 		if (!fin.good())
 		{
-			Errorf("Shader file %s could not be read", filename.c_str());
-			throw std::runtime_error("missing shader: " + shaderType->filename);
+			Errorf("Shader file %s could not be read", path.c_str());
+			throw std::runtime_error("missing shader: " + path);
 		}
 
-		string buffer((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
-		return ShaderCompileInput {shaderType, buffer};
+		return string((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+	}
+
+	string formatError(string err, string unit, string root, int line)
+	{
+		if (root == unit || root == "")
+			return boost::str(boost::format("failed to load %s (at %d): %s") % unit % line % err);
+		else
+			return boost::str(boost::format("failed to load %s (at %d) (via %s): %s") % unit % line % root % err);
+	}
+
+	ShaderCompileInput ShaderManager::LoadShader(ShaderMeta *shaderType)
+	{
+		auto input = ShaderCompileInput {shaderType};
+		input.source = LoadShader(input, shaderType->filename);
+		return input;
+	}
+
+	string ShaderManager::LoadShader(ShaderCompileInput &input, string name)
+	{
+		string src = loadFile(name);
+		input.units.push_back(name);
+		return ProcessShaderSource(input, src);
+	}
+
+	string ShaderManager::ProcessShaderSource(ShaderCompileInput &input, string src)
+	{
+		std::istringstream lines(src);
+		string line;
+		vector<string> output;
+		int linesProcessed = 0, currUnit = input.units.size() - 1;
+
+		while (std::getline(lines, line))
+		{
+			linesProcessed++;
+
+			if (line[0] != '#' || line[1] != '#')
+			{
+				output.push_back(line);
+				continue;
+			}
+
+			std::istringstream tokens(line.substr(2));
+			string command;
+			tokens >> command;
+
+			if (command == "import")
+			{
+				int nextUnit = input.units.size();
+
+				string importPath;
+				std::getline(tokens, importPath);
+				boost::algorithm::trim(importPath);
+				importPath += ".glsl";
+
+				string importSrc = LoadShader(input, importPath);
+
+				output.push_back("//start " + line);
+				output.push_back(boost::str(boost::format("#line 1 %d") % nextUnit));
+				output.push_back(importSrc);
+				output.push_back("//end " + line);
+				output.push_back(boost::str(boost::format("#line %d %d") % (linesProcessed + 1) % currUnit));
+			}
+			else
+			{
+				throw runtime_error("invalid shader command " + command + " (line TODO) " + input.units.back());
+			}
+		}
+
+		return boost::algorithm::join(output, "\n");
+	}
+
+	string ShaderManager::ProcessError(ShaderCompileInput &input, string err)
+	{
+		boost::trim(err);
+
+		int line = -1;
+		string unitName = input.units[0];
+
+		vector<string> integers;
+		string lastInteger;
+
+		for (size_t i = 0; i <= err.length(); i++)
+		{
+			if (i < err.length() && isdigit(err[i]))
+			{
+				lastInteger += err[i];
+			}
+			else if (lastInteger.length())
+			{
+				integers.push_back(lastInteger);
+				lastInteger = "";
+			}
+		}
+
+		// Assume first two integers are the unit# and line#
+		if (integers.size() >= 2)
+		{
+			uint32 unit = std::stoul(integers[0]);
+			line = std::stoi(integers[1]);
+
+			if (unit < input.units.size())
+			{
+				unitName = input.units[unit];
+			}
+		}
+
+		return formatError(err, unitName, input.units[0], line);
 	}
 
 	template <class T>

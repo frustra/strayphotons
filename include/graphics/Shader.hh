@@ -71,6 +71,7 @@ namespace sp
 	public:
 		ShaderMeta *shaderType;
 		string source;
+		vector<string> units;
 	};
 
 	class ShaderCompileOutput
