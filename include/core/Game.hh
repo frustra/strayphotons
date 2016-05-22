@@ -17,8 +17,9 @@ namespace sp
 		bool Frame();
 		bool ShouldStop();
 
-		sp::AssetManager assets;
-		sp::GraphicsManager graphics;
+		AssetManager assets;
+		GraphicsManager graphics;
+		shared_ptr<Model> duck;
 	};
 }
 

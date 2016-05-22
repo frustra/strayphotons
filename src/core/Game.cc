@@ -1,13 +1,14 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 
-#include <iostream>
+#include "assets/Model.hh"
 
 namespace sp
 {
-	Game::Game()
+	Game::Game() : graphics(this)
 	{
 		graphics.CreateContext();
+		duck = assets.LoadModel("duck");
 	}
 
 	Game::~Game()

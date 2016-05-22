@@ -31,3 +31,6 @@
 [submodule "ext/boostconfig"]
 	path = ext/boostconfig
 	url = https://github.com/boostorg/config
+[submodule "ext/tinygltfloader"]
+	path = ext/tinygltfloader
+	url = git@github.com:syoyo/tinygltfloader.git

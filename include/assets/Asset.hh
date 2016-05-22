@@ -7,13 +7,11 @@ namespace sp
 {
 	class AssetManager;
 
-	class Asset
+	class Asset : public NonCopyable
 	{
 	public:
-		Asset(AssetManager *manager, const string &path);
+		Asset(AssetManager *manager, const string &path, char *buffer, size_t size);
 		~Asset();
-
-		void Load();
 
 		const string String();
 		const char *Buffer();
@@ -26,9 +24,6 @@ namespace sp
 	private:
 		char *buffer = nullptr;
 		size_t size = 0;
-
-		Asset(const Asset &other);
-		Asset &operator= (const Asset &other);
 	};
 }
 

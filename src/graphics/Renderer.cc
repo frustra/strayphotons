@@ -70,8 +70,6 @@ namespace sp
 			{ { 0, -1, 0 }, { 0, 0, 1 }},
 		};
 
-		uint32 indexBuf[] = { 0, 1, 2 };
-
 		// Create vertex buffer
 		glCreateBuffers(1, &vertices);
 		glNamedBufferData(vertices, sizeof(vertexBuf), vertexBuf, GL_STATIC_DRAW);

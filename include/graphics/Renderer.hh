@@ -9,7 +9,7 @@ namespace sp
 	class Renderer : public GraphicsContext
 	{
 	public:
-		Renderer()
+		Renderer(Game *game) : GraphicsContext(game)
 		{
 		}
 		~Renderer();

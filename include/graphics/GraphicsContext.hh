@@ -10,11 +10,12 @@ namespace sp
 {
 	class Device;
 	class ShaderSet;
+	class Game;
 
 	class GraphicsContext
 	{
 	public:
-		GraphicsContext();
+		GraphicsContext(Game *game);
 		virtual ~GraphicsContext();
 
 		void CreateWindow();
@@ -31,6 +32,7 @@ namespace sp
 
 	protected:
 		GLFWwindow *window = nullptr;
+		Game *game;
 	};
 }
 
