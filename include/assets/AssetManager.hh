@@ -2,7 +2,7 @@
 #define SP_ASSETMANAGER_H
 
 #include "Common.hh"
-#include "tiny_gltf_loader.h"
+#include <tiny_gltf_loader.h>
 
 #include <unordered_map>
 #include <string>

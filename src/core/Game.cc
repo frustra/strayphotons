@@ -9,6 +9,11 @@ namespace sp
 	{
 		graphics.CreateContext();
 		duck = assets.LoadModel("duck");
+
+		for (auto node : duck->list_nodes())
+		{
+			Debugf("Node: %s with %d meshes", node.node->name, node.node->meshes.size());
+		}
 	}
 
 	Game::~Game()
