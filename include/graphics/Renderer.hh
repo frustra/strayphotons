@@ -3,13 +3,15 @@
 
 #include "graphics/GraphicsContext.hh"
 #include "graphics/ShaderManager.hh"
+#include "core/Game.hh"
+#include "assets/Model.hh"
 
 namespace sp
 {
 	class Renderer : public GraphicsContext
 	{
 	public:
-		Renderer()
+		Renderer(Game *game) : GraphicsContext(game)
 		{
 		}
 		~Renderer();
@@ -18,7 +20,8 @@ namespace sp
 		void RenderFrame();
 
 	private:
-		GLuint vertices, vertexAttribs, indexBuffer;
+		GLuint vertices, vertexAttribs, indexBuffer, texHandle;
+		size_t numElems;
 
 		ShaderManager *shaderManager = nullptr;
 	};

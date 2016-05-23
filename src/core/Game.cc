@@ -1,12 +1,18 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 
-#include <iostream>
+#include "assets/Model.hh"
 
 namespace sp
 {
-	Game::Game()
+	Game::Game() : graphics(this)
 	{
+		duck = assets.LoadModel("duck");
+		for (auto node : duck->list_nodes())
+		{
+			Debugf("Node: %s with %d meshes", node.node->name, node.node->meshes.size());
+		}
+
 		graphics.CreateContext();
 	}
 

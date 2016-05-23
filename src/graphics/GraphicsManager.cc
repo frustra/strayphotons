@@ -12,7 +12,7 @@ namespace sp
 		Errorf("GLFW returned %d: %s", error, message);
 	}
 
-	GraphicsManager::GraphicsManager() : context(nullptr)
+	GraphicsManager::GraphicsManager(Game *game) : context(nullptr), game(game)
 	{
 		Logf("Graphics starting up");
 
@@ -36,7 +36,7 @@ namespace sp
 
 		try
 		{
-			context = new Renderer();
+			context = new Renderer(game);
 			context->CreateWindow();
 		}
 		catch (std::system_error &err)

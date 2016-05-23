@@ -5,10 +5,12 @@
 
 namespace sp
 {
+	class Game;
+
 	class GraphicsManager
 	{
 	public:
-		GraphicsManager();
+		GraphicsManager(Game *game);
 		~GraphicsManager();
 
 		void CreateContext();
@@ -21,6 +23,7 @@ namespace sp
 
 	private:
 		GraphicsContext *context;
+		Game *game;
 
 		double lastFrameEnd = 0, fpsTimer = 0;
 		int frameCounter = 0;

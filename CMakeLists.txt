@@ -67,6 +67,7 @@ include_directories(
 	${EXT_PATH}/boostconfig/include
 	${EXT_PATH}/glm
 	${EXT_PATH}/freetype2/include
+	${EXT_PATH}/tinygltfloader
 	${EXT_PATH}
 )
 

@@ -14,7 +14,7 @@ namespace sp
 		Debugf("[GL 0x%X] 0x%X: %s", id, type, message);
 	}
 
-	GraphicsContext::GraphicsContext()
+	GraphicsContext::GraphicsContext(Game *game) : game(game)
 	{
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
