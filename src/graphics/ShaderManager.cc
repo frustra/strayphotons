@@ -47,11 +47,14 @@ namespace sp
 		Assert(program, "failed to create shader program");
 		AssertGLOK("glCreateShaderProgramv");
 
-		int infoLogLength;
-		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
+		int linked;
+		glGetProgramiv(program, GL_LINK_STATUS, &linked);
 
-		if (infoLogLength)
+		if (!linked)
 		{
+			int infoLogLength;
+			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
+
 			char *infoLog = new char[infoLogLength + 1];
 			glGetProgramInfoLog(program, infoLogLength + 1, nullptr, infoLog);
 

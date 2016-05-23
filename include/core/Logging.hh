@@ -4,6 +4,7 @@
 //#define SP_VERBOSE_LOGGING
 
 #include <string>
+#include <cstring>
 #include <iostream>
 #include <boost/format.hpp>
 
@@ -28,7 +29,8 @@ namespace sp
 			std::cerr << fmter;
 		}
 
-		template <typename T1, typename... T> inline static void writeFormatter(boost::format &fmter, T1 t1, T... t)
+		template <typename T1, typename... T>
+		inline static void writeFormatter(boost::format &fmter, T1 t1, T... t)
 		{
 			fmter % t1;
 			writeFormatter(fmter, t...);
@@ -45,7 +47,8 @@ namespace sp
 #endif
 		}
 
-		template <typename... T> inline static void writeLog(const char *file, int line, const std::string &fmt, T... t)
+		template <typename... T>
+		inline static void writeLog(const char *file, int line, const std::string &fmt, T... t)
 		{
 #ifdef SP_VERBOSE_LOGGING
 			boost::format fmter(fmt + "  (%s:%d)\n");
@@ -56,17 +59,20 @@ namespace sp
 #endif
 		}
 
-		template <typename... T> static void Log(const char *file, int line, const std::string &fmt, T... t)
+		template <typename... T>
+		static void Log(const char *file, int line, const std::string &fmt, T... t)
 		{
 			writeLog(file, line, "[log] " + fmt, t...);
 		}
 
-		template <typename... T> static void Debug(const char *file, int line, const std::string &fmt, T... t)
+		template <typename... T>
+		static void Debug(const char *file, int line, const std::string &fmt, T... t)
 		{
 			writeLog(file, line, "[dbg] " + fmt, t...);
 		}
 
-		template <typename... T> static void Error(const char *file, int line, const std::string &fmt, T... t)
+		template <typename... T>
+		static void Error(const char *file, int line, const std::string &fmt, T... t)
 		{
 			writeLog(file, line, "[err] " + fmt, t...);
 		}

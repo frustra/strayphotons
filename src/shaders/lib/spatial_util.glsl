@@ -8,7 +8,7 @@ float LinearDepth(float depth, vec2 clip) {
 	return 2 * clip.x / (clip.y + clip.x - depth * (clip.y - clip.x));
 }
 
-// Projects v onto a **normalized** vector u.
+// Projects v onto a normalized vector u.
 vec3 ProjectVec3(vec3 v, vec3 u) {
 	return u * dot(v, u);
 }
