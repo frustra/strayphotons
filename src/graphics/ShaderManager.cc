@@ -87,9 +87,9 @@ namespace sp
 	string formatError(string err, string unit, string root, int line)
 	{
 		if (root == unit || root == "")
-			return boost::str(boost::format("failed to load %s (at %d): %s") % unit % line % err);
+			return boost::str(boost::format("%s:%d %s") % unit % line % err);
 		else
-			return boost::str(boost::format("failed to load %s (at %d) (via %s): %s") % unit % line % root % err);
+			return boost::str(boost::format("%s:%d (via %s) %s") % unit % line % root % err);
 	}
 
 	ShaderCompileInput ShaderManager::LoadShader(ShaderMeta *shaderType)
@@ -155,40 +155,49 @@ namespace sp
 
 	string ShaderManager::ProcessError(ShaderCompileInput &input, string err)
 	{
-		boost::trim(err);
+		std::istringstream lines(err);
+		string line;
+		vector<string> output;
 
-		int line = -1;
-		string unitName = input.units[0];
-
-		vector<string> integers;
-		string lastInteger;
-
-		for (size_t i = 0; i <= err.length(); i++)
+		while (std::getline(lines, line))
 		{
-			if (i < err.length() && isdigit(err[i]))
+			boost::trim(line);
+
+			int lineNumber = -1;
+			string unitName = input.units[0];
+
+			vector<string> integers;
+			string lastInteger;
+
+			for (size_t i = 0; i <= line.length(); i++)
 			{
-				lastInteger += err[i];
+				if (i < line.length() && isdigit(line[i]))
+				{
+					lastInteger += line[i];
+				}
+				else if (lastInteger.length())
+				{
+					integers.push_back(lastInteger);
+					lastInteger = "";
+				}
 			}
-			else if (lastInteger.length())
+
+			// Assume first two integers are the unit# and line#
+			if (integers.size() >= 2)
 			{
-				integers.push_back(lastInteger);
-				lastInteger = "";
+				uint32 unit = std::stoul(integers[0]);
+				lineNumber = std::stoi(integers[1]);
+
+				if (unit < input.units.size())
+				{
+					unitName = input.units[unit];
+				}
 			}
+
+			output.push_back(formatError(line, unitName, input.units[0], lineNumber));
 		}
 
-		// Assume first two integers are the unit# and line#
-		if (integers.size() >= 2)
-		{
-			uint32 unit = std::stoul(integers[0]);
-			line = std::stoi(integers[1]);
-
-			if (unit < input.units.size())
-			{
-				unitName = input.units[unit];
-			}
-		}
-
-		return formatError(err, unitName, input.units[0], line);
+		return boost::algorithm::join(output, "\n");
 	}
 
 	template <class T>
