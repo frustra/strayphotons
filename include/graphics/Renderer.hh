@@ -3,6 +3,8 @@
 
 #include "graphics/GraphicsContext.hh"
 #include "graphics/ShaderManager.hh"
+#include "core/Game.hh"
+#include "assets/Model.hh"
 
 namespace sp
 {
@@ -18,7 +20,8 @@ namespace sp
 		void RenderFrame();
 
 	private:
-		GLuint vertices, vertexAttribs, indexBuffer;
+		GLuint vertices, vertexAttribs, indexBuffer, texHandle;
+		size_t numElems;
 
 		ShaderManager *shaderManager = nullptr;
 	};

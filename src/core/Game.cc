@@ -7,13 +7,13 @@ namespace sp
 {
 	Game::Game() : graphics(this)
 	{
-		graphics.CreateContext();
 		duck = assets.LoadModel("duck");
-
 		for (auto node : duck->list_nodes())
 		{
 			Debugf("Node: %s with %d meshes", node.node->name, node.node->meshes.size());
 		}
+
+		graphics.CreateContext();
 	}
 
 	Game::~Game()
