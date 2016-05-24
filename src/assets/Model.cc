@@ -22,9 +22,10 @@ namespace sp
 
 	glm::mat4 get_node_matrix(tinygltf::Node *node)
 	{
-		float arr[node->matrix.size()];
+		glm::mat4 out;
+		float *arr = reinterpret_cast<float *>(&out);
 		std::copy(node->matrix.begin(), node->matrix.end(), arr);
-		return glm::make_mat4(arr);
+		return out;
 	}
 
 	Model::node_iterator::node_iterator(tinygltf::Scene *s) : scene(s)

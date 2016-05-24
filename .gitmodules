@@ -33,4 +33,4 @@
 	url = https://github.com/boostorg/config
 [submodule "ext/tinygltfloader"]
 	path = ext/tinygltfloader
-	url = git@github.com:syoyo/tinygltfloader.git
+	url = https://github.com/syoyo/tinygltfloader.git
