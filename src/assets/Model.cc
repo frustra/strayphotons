@@ -23,8 +23,7 @@ namespace sp
 	glm::mat4 get_node_matrix(tinygltf::Node *node)
 	{
 		glm::mat4 out;
-		float *arr = reinterpret_cast<float *>(&out);
-		std::copy(node->matrix.begin(), node->matrix.end(), arr);
+		std::copy(node->matrix.begin(), node->matrix.end(), glm::value_ptr(out));
 		return out;
 	}
 
