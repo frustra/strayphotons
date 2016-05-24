@@ -24,6 +24,22 @@ namespace sp
 			tinygltf::Node *node;
 		};
 
+		struct Attribute
+		{
+			size_t byteOffset, byteStride;
+			int componentType, componentCount;
+			string bufferName;
+		};
+
+		struct Primitive
+		{
+			Node node;
+			size_t elementCount;
+			string indexBuffer;
+			size_t indexOffset;
+			Attribute position, normal, texCoord;
+		};
+
 		class node_iterator
 		{
 		private:
@@ -72,7 +88,57 @@ namespace sp
 			}
 		};
 
-		node_iterator list_nodes();
+		class primitive_iterator
+		{
+		private:
+			primitive_iterator(primitive_iterator *copy, vector<Primitive>::iterator pos) : primitives(copy->primitives), p_iter(pos), scene(copy->scene), node(copy->node) {}
+
+			void increment();
+
+			vector<Primitive> primitives;
+			vector<Primitive>::iterator p_iter;
+			tinygltf::Scene *scene;
+			Node *node;
+
+		public:
+			primitive_iterator(tinygltf::Scene *scene, Node *node);
+
+			primitive_iterator begin();
+			primitive_iterator end();
+
+			primitive_iterator operator++()
+			{
+				primitive_iterator i = *this;
+				p_iter++;
+				return i;
+			}
+			primitive_iterator operator++(int i)
+			{
+				p_iter++;
+				return *this;
+			}
+
+			bool operator==(primitive_iterator const &other) const
+			{
+				return this->p_iter == other.p_iter;
+			}
+			bool operator!=(primitive_iterator const &other) const
+			{
+				return this->p_iter != other.p_iter;
+			}
+
+			Primitive const &operator*() const
+			{
+				return *p_iter;
+			}
+			Primitive const *operator->() const
+			{
+				return &(*p_iter);
+			}
+		};
+
+		node_iterator ListNodes();
+		primitive_iterator ListPrimitives(Node *node);
 	private:
 		shared_ptr<Asset> asset;
 	};

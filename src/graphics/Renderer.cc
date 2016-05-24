@@ -96,35 +96,23 @@ namespace sp
 			texHandle = handle;
 		}
 
-		for (auto node : game->duck->list_nodes())
+		for (auto node : game->duck->ListNodes())
 		{
-			for (auto mesh : node.node->meshes)
+			for (auto primitive : game->duck->ListPrimitives(&node))
 			{
-				for (auto primitive : game->duck->scene.meshes[mesh].primitives)
-				{
-					tinygltf::Accessor iAcc = game->duck->scene.accessors[primitive.indices];
-					tinygltf::Accessor pAcc = game->duck->scene.accessors[primitive.attributes["POSITION"]];
-					tinygltf::Accessor nAcc = game->duck->scene.accessors[primitive.attributes["NORMAL"]];
-					tinygltf::Accessor tAcc = game->duck->scene.accessors[primitive.attributes["TEXCOORD_0"]];
-					tinygltf::BufferView iBufView = game->duck->scene.bufferViews[iAcc.bufferView];
-					tinygltf::BufferView pBufView = game->duck->scene.bufferViews[pAcc.bufferView];
-					tinygltf::BufferView nBufView = game->duck->scene.bufferViews[nAcc.bufferView];
-					tinygltf::BufferView tBufView = game->duck->scene.bufferViews[tAcc.bufferView];
+				indexBuffer = bufs[primitive.indexBuffer];
+				numElems = primitive.elementCount;
 
-					indexBuffer = bufs[iBufView.buffer];
-					numElems = iAcc.count;
-
-					glCreateVertexArrays(1, &vertexAttribs);
-					glEnableVertexArrayAttrib(vertexAttribs, 0);
-					glVertexArrayAttribFormat(vertexAttribs, 0, 3, pAcc.componentType, GL_FALSE, 0);
-					glVertexArrayVertexBuffer(vertexAttribs, 0, bufs[pBufView.buffer], pAcc.byteOffset + pBufView.byteOffset, pAcc.byteStride);
-					glEnableVertexArrayAttrib(vertexAttribs, 1);
-					glVertexArrayAttribFormat(vertexAttribs, 1, 3, nAcc.componentType, GL_FALSE, 0);
-					glVertexArrayVertexBuffer(vertexAttribs, 1, bufs[nBufView.buffer], nAcc.byteOffset + nBufView.byteOffset, nAcc.byteStride);
-					glEnableVertexArrayAttrib(vertexAttribs, 2);
-					glVertexArrayAttribFormat(vertexAttribs, 2, 2, tAcc.componentType, GL_FALSE, 0);
-					glVertexArrayVertexBuffer(vertexAttribs, 2, bufs[tBufView.buffer], tAcc.byteOffset + tBufView.byteOffset, tAcc.byteStride);
-				}
+				glCreateVertexArrays(1, &vertexAttribs);
+				glEnableVertexArrayAttrib(vertexAttribs, 0);
+				glVertexArrayAttribFormat(vertexAttribs, 0, primitive.position.componentCount, primitive.position.componentType, GL_FALSE, 0);
+				glVertexArrayVertexBuffer(vertexAttribs, 0, bufs[primitive.position.bufferName], primitive.position.byteOffset, primitive.position.byteStride);
+				glEnableVertexArrayAttrib(vertexAttribs, 1);
+				glVertexArrayAttribFormat(vertexAttribs, 1, primitive.normal.componentCount, primitive.normal.componentType, GL_FALSE, 0);
+				glVertexArrayVertexBuffer(vertexAttribs, 1, bufs[primitive.normal.bufferName], primitive.normal.byteOffset, primitive.normal.byteStride);
+				glEnableVertexArrayAttrib(vertexAttribs, 2);
+				glVertexArrayAttribFormat(vertexAttribs, 2, primitive.texCoord.componentCount, primitive.texCoord.componentType, GL_FALSE, 0);
+				glVertexArrayVertexBuffer(vertexAttribs, 2, bufs[primitive.texCoord.bufferName], primitive.texCoord.byteOffset, primitive.texCoord.byteStride);
 			}
 		}
 

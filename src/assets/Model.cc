@@ -1,5 +1,6 @@
 #include "assets/AssetManager.hh"
 #include "assets/Model.hh"
+#include "core/Logging.hh"
 
 #include <iostream>
 #include <fstream>
@@ -15,16 +16,35 @@ namespace sp
 	{
 	}
 
-	Model::node_iterator Model::list_nodes()
+	Model::node_iterator Model::ListNodes()
 	{
 		return Model::node_iterator(&scene);
 	}
 
-	glm::mat4 get_node_matrix(tinygltf::Node *node)
+	Model::primitive_iterator Model::ListPrimitives(Node *node)
+	{
+		return Model::primitive_iterator(&scene, node);
+	}
+
+	glm::mat4 GetNodeMatrix(tinygltf::Node *node)
 	{
 		glm::mat4 out;
 		std::copy(node->matrix.begin(), node->matrix.end(), glm::value_ptr(out));
 		return out;
+	}
+
+	Model::Attribute GetPrimitiveAttribute(tinygltf::Scene *scene, tinygltf::Primitive *p, string attribute)
+	{
+		auto accessor = scene->accessors[p->attributes[attribute]];
+		auto bufView = scene->bufferViews[accessor.bufferView];
+
+		return Model::Attribute{
+			accessor.byteOffset + bufView.byteOffset,
+			accessor.byteStride,
+			accessor.componentType,
+			accessor.type,
+			bufView.buffer
+		};
 	}
 
 	Model::node_iterator::node_iterator(tinygltf::Scene *s) : scene(s)
@@ -32,7 +52,7 @@ namespace sp
 		for (auto node_name : scene->scenes[scene->defaultScene])
 		{
 			tinygltf::Node *node = &scene->nodes[node_name];
-			nodes.push_back(Node{get_node_matrix(node), node});
+			nodes.push_back(Node{GetNodeMatrix(node), node});
 		}
 		n_iter = nodes.begin();
 	}
@@ -54,9 +74,42 @@ namespace sp
 			for (auto node_name : n_iter->node->children)
 			{
 				tinygltf::Node *node = &scene->nodes[node_name];
-				nodes.push_back(Node{n_iter->matrix * get_node_matrix(node), node});
+				nodes.push_back(Node{n_iter->matrix * GetNodeMatrix(node), node});
 			}
 		}
 		n_iter++;
+	}
+
+	Model::primitive_iterator::primitive_iterator(tinygltf::Scene *scene, Node *node) : scene(scene), node(node)
+	{
+		for (auto mesh : node->node->meshes)
+		{
+			for (auto primitive : scene->meshes[mesh].primitives)
+			{
+				auto iAcc = scene->accessors[primitive.indices];
+				auto iBufView = scene->bufferViews[iAcc.bufferView];
+
+				primitives.push_back(Primitive{
+					*node,
+					iAcc.count,
+					iBufView.buffer,
+					iAcc.byteOffset + iBufView.byteOffset,
+					GetPrimitiveAttribute(scene, &primitive, "POSITION"),
+					GetPrimitiveAttribute(scene, &primitive, "NORMAL"),
+					GetPrimitiveAttribute(scene, &primitive, "TEXCOORD_0")
+				});
+			}
+		}
+		p_iter = primitives.begin();
+	}
+
+	Model::primitive_iterator Model::primitive_iterator::begin()
+	{
+		return primitive_iterator(this, primitives.begin());
+	}
+
+	Model::primitive_iterator Model::primitive_iterator::end()
+	{
+		return primitive_iterator(this, primitives.end());
 	}
 }

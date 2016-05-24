@@ -8,7 +8,7 @@ namespace sp
 	Game::Game() : graphics(this)
 	{
 		duck = assets.LoadModel("duck");
-		for (auto node : duck->list_nodes())
+		for (auto node : duck->ListNodes())
 		{
 			Debugf("Node: %s with %d meshes", node.node->name, node.node->meshes.size());
 		}
