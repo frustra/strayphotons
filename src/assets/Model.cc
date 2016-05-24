@@ -94,9 +94,11 @@ namespace sp
 					iAcc.count,
 					iBufView.buffer,
 					iAcc.byteOffset + iBufView.byteOffset,
-					GetPrimitiveAttribute(scene, &primitive, "POSITION"),
-					GetPrimitiveAttribute(scene, &primitive, "NORMAL"),
-					GetPrimitiveAttribute(scene, &primitive, "TEXCOORD_0")
+					{
+						GetPrimitiveAttribute(scene, &primitive, "POSITION"),
+						GetPrimitiveAttribute(scene, &primitive, "NORMAL"),
+						GetPrimitiveAttribute(scene, &primitive, "TEXCOORD_0")
+					}
 				});
 			}
 		}

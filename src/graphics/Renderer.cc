@@ -63,18 +63,6 @@ namespace sp
 		auto triangleVS = shaderSet->Get<TriangleVS>();
 		triangleVS->SetParameters(projection, view, model);
 
-		struct Vertex
-		{
-			float pos[3], color[3];
-		};
-
-		// Vertex vertexBuf[] =
-		// {
-		// 	{ { 1, 1, 0 }, { 1, 0, 0 }},
-		// 	{ { -1, 1, 0 }, { 0, 1, 0 }},
-		// 	{ { 0, -1, 0 }, { 0, 0, 1 }},
-		// };
-
 		std::map<string, GLuint> bufs;
 		std::map<string, GLuint> texs;
 		for (auto buffer : game->duck->scene.buffers)
@@ -104,32 +92,15 @@ namespace sp
 				numElems = primitive.elementCount;
 
 				glCreateVertexArrays(1, &vertexAttribs);
-				glEnableVertexArrayAttrib(vertexAttribs, 0);
-				glVertexArrayAttribFormat(vertexAttribs, 0, primitive.position.componentCount, primitive.position.componentType, GL_FALSE, 0);
-				glVertexArrayVertexBuffer(vertexAttribs, 0, bufs[primitive.position.bufferName], primitive.position.byteOffset, primitive.position.byteStride);
-				glEnableVertexArrayAttrib(vertexAttribs, 1);
-				glVertexArrayAttribFormat(vertexAttribs, 1, primitive.normal.componentCount, primitive.normal.componentType, GL_FALSE, 0);
-				glVertexArrayVertexBuffer(vertexAttribs, 1, bufs[primitive.normal.bufferName], primitive.normal.byteOffset, primitive.normal.byteStride);
-				glEnableVertexArrayAttrib(vertexAttribs, 2);
-				glVertexArrayAttribFormat(vertexAttribs, 2, primitive.texCoord.componentCount, primitive.texCoord.componentType, GL_FALSE, 0);
-				glVertexArrayVertexBuffer(vertexAttribs, 2, bufs[primitive.texCoord.bufferName], primitive.texCoord.byteOffset, primitive.texCoord.byteStride);
+				for (int i = 0; i < 3; i++)
+				{
+					auto *attr = &primitive.attributes[i];
+					glEnableVertexArrayAttrib(vertexAttribs, i);
+					glVertexArrayAttribFormat(vertexAttribs, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
+					glVertexArrayVertexBuffer(vertexAttribs, i, bufs[attr->bufferName], attr->byteOffset, attr->byteStride);
+				}
 			}
 		}
-
-		// Create vertex buffer
-		// glCreateBuffers(1, &vertices);
-		// glNamedBufferData(vertices, sizeof(vertexBuf), vertexBuf, GL_STATIC_DRAW);
-
-		// glCreateBuffers(1, &indexBuffer);
-		// glNamedBufferData(indexBuffer, sizeof(indexBuf), indexBuf, GL_STATIC_DRAW);
-
-		// glCreateVertexArrays(1, &vertexAttribs);
-		// glEnableVertexArrayAttrib(vertexAttribs, 0);
-		// glVertexArrayAttribFormat(vertexAttribs, 0, 3, GL_FLOAT, GL_FALSE, 0);
-		// glVertexArrayVertexBuffer(vertexAttribs, 0, vertices, 0, sizeof(Vertex));
-		// glEnableVertexArrayAttrib(vertexAttribs, 1);
-		// glVertexArrayAttribFormat(vertexAttribs, 1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float));
-		// glVertexArrayVertexBuffer(vertexAttribs, 1, vertices, 0, sizeof(Vertex));
 
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);

@@ -37,7 +37,7 @@ namespace sp
 			size_t elementCount;
 			string indexBuffer;
 			size_t indexOffset;
-			Attribute position, normal, texCoord;
+			Attribute attributes[3];
 		};
 
 		class node_iterator
