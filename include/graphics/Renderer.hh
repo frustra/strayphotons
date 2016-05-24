@@ -18,7 +18,7 @@ namespace sp
 		void RenderFrame();
 
 	private:
-		GLuint vertices, vertexAttribs;
+		GLuint vertices, vertexAttribs, indexBuffer;
 
 		ShaderManager *shaderManager = nullptr;
 	};

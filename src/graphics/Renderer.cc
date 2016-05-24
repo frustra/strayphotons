@@ -76,6 +76,9 @@ namespace sp
 		glCreateBuffers(1, &vertices);
 		glNamedBufferData(vertices, sizeof(vertexBuf), vertexBuf, GL_STATIC_DRAW);
 
+		glCreateBuffers(1, &indexBuffer);
+		glNamedBufferData(indexBuffer, sizeof(indexBuf), indexBuf, GL_STATIC_DRAW);
+
 		glCreateVertexArrays(1, &vertexAttribs);
 		glEnableVertexArrayAttrib(vertexAttribs, 0);
 		glVertexArrayAttribFormat(vertexAttribs, 0, 3, GL_FLOAT, GL_FALSE, 0);
@@ -102,7 +105,8 @@ namespace sp
 		shaderManager->BindPipeline<TriangleVS, TriangleFS>(*shaderSet);
 
 		glBindVertexArray(vertexAttribs);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
 
 		glfwSwapBuffers(window);
 		AssertGLOK("Renderer::RenderFrame");
