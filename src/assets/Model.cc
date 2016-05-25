@@ -38,11 +38,30 @@ namespace sp
 		auto accessor = scene->accessors[p->attributes[attribute]];
 		auto bufView = scene->bufferViews[accessor.bufferView];
 
-		return Model::Attribute{
+		int componentCount = 1;
+		if (accessor.type == TINYGLTF_TYPE_SCALAR)
+		{
+			componentCount = 1;
+		}
+		else if (accessor.type == TINYGLTF_TYPE_VEC2)
+		{
+			componentCount = 2;
+		}
+		else if (accessor.type == TINYGLTF_TYPE_VEC3)
+		{
+			componentCount = 3;
+		}
+		else if (accessor.type == TINYGLTF_TYPE_VEC4)
+		{
+			componentCount = 4;
+		}
+
+		return Model::Attribute
+		{
 			accessor.byteOffset + bufView.byteOffset,
 			accessor.byteStride,
 			accessor.componentType,
-			accessor.type,
+			componentCount,
 			bufView.buffer
 		};
 	}
@@ -89,7 +108,8 @@ namespace sp
 				auto iAcc = scene->accessors[primitive.indices];
 				auto iBufView = scene->bufferViews[iAcc.bufferView];
 
-				primitives.push_back(Primitive{
+				primitives.push_back(Primitive
+				{
 					*node,
 					iAcc.count,
 					iBufView.buffer,

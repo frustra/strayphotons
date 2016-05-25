@@ -6,16 +6,6 @@
 
 namespace sp
 {
-	void Entity::Destroy()
-	{
-		em->Destroy(this->eid);
-	}
-
-	bool Entity::Valid() const
-	{
-		return em->Valid(this->eid);
-	}
-
 	template <typename CompType, typename ...T>
 	CompType *Entity::Assign(T... args)
 	{
@@ -26,11 +16,6 @@ namespace sp
 	void Entity::Remove()
 	{
 		em->Remove<CompType>(this->eid);
-	}
-
-	void Entity::RemoveAllComponents()
-	{
-		em->RemoveAllComponents(this->eid);
 	}
 
 	template <typename CompType>

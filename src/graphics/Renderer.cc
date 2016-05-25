@@ -1,6 +1,7 @@
 #include "graphics/Renderer.hh"
 #include "graphics/Shader.hh"
 #include "core/Logging.hh"
+#include "ecs/components/Renderable.hh"
 
 namespace sp
 {
@@ -63,41 +64,46 @@ namespace sp
 		auto triangleVS = shaderSet->Get<TriangleVS>();
 		triangleVS->SetParameters(projection, view, model);
 
-		std::map<string, GLuint> bufs;
-		std::map<string, GLuint> texs;
-		for (auto buffer : game->duck->scene.buffers)
+		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
 		{
-			GLuint handle;
-			glCreateBuffers(1, &handle);
-			glNamedBufferData(handle, buffer.second.data.size(), buffer.second.data.data(), GL_STATIC_DRAW);
-			bufs[buffer.first] = handle;
-		}
+			auto comp = ent.Get<ECS::Renderable>();
 
-		for (auto texture : game->duck->scene.textures)
-		{
-			GLuint handle;
-			glCreateTextures(GL_TEXTURE_2D, 1, &handle);
-			auto img = game->duck->scene.images[texture.second.source];
-			glTextureStorage2D(handle, 1, GL_RGBA8, img.width, img.height);
-			glTextureSubImage2D(handle, 0, 0, 0, img.width, img.height, GL_RGB, texture.second.type, img.image.data());
-			texs[texture.first] = handle;
-			texHandle = handle;
-		}
-
-		for (auto node : game->duck->ListNodes())
-		{
-			for (auto primitive : game->duck->ListPrimitives(&node))
+			std::map<string, GLuint> bufs;
+			std::map<string, GLuint> texs;
+			for (auto buffer : comp->model->scene.buffers)
 			{
-				indexBuffer = bufs[primitive.indexBuffer];
-				numElems = primitive.elementCount;
+				GLuint handle;
+				glCreateBuffers(1, &handle);
+				glNamedBufferData(handle, buffer.second.data.size(), buffer.second.data.data(), GL_STATIC_DRAW);
+				bufs[buffer.first] = handle;
+			}
 
-				glCreateVertexArrays(1, &vertexAttribs);
-				for (int i = 0; i < 3; i++)
+			for (auto texture : comp->model->scene.textures)
+			{
+				GLuint handle;
+				glCreateTextures(GL_TEXTURE_2D, 1, &handle);
+				auto img = comp->model->scene.images[texture.second.source];
+				glTextureStorage2D(handle, 1, GL_RGBA8, img.width, img.height);
+				glTextureSubImage2D(handle, 0, 0, 0, img.width, img.height, GL_RGB, texture.second.type, img.image.data());
+				texs[texture.first] = handle;
+				texHandle = handle;
+			}
+
+			for (auto node : comp->model->ListNodes())
+			{
+				for (auto primitive : comp->model->ListPrimitives(&node))
 				{
-					auto *attr = &primitive.attributes[i];
-					glEnableVertexArrayAttrib(vertexAttribs, i);
-					glVertexArrayAttribFormat(vertexAttribs, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
-					glVertexArrayVertexBuffer(vertexAttribs, i, bufs[attr->bufferName], attr->byteOffset, attr->byteStride);
+					indexBuffer = bufs[primitive.indexBuffer];
+					numElems = primitive.elementCount;
+
+					glCreateVertexArrays(1, &vertexAttribs);
+					for (int i = 0; i < 3; i++)
+					{
+						auto *attr = &primitive.attributes[i];
+						glEnableVertexArrayAttrib(vertexAttribs, i);
+						glVertexArrayAttribFormat(vertexAttribs, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
+						glVertexArrayVertexBuffer(vertexAttribs, i, bufs[attr->bufferName], attr->byteOffset, attr->byteStride);
+					}
 				}
 			}
 		}

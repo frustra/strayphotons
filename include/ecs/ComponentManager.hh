@@ -36,7 +36,10 @@ namespace sp
 		template <typename CompType>
 		CompType *Get(Entity::Id e);
 
-		size_t ComponentTypeCount() const;
+		size_t ComponentTypeCount() const
+		{
+			return componentPools.size();
+		}
 
 		template <typename ...CompTypes>
 		ComponentMask &SetMask(ComponentMask &mask);
@@ -115,24 +118,6 @@ namespace sp
 		compMask.reset(compIndex);
 	}
 
-	void ComponentManager::RemoveAll(Entity::Id e)
-	{
-		Assert(entCompMasks.size() > e.Index(), "entity does not have a component mask");
-
-		auto &compMask = entCompMasks.at(e.Index());
-		for (uint i = 0; i < componentPools.size(); ++i)
-		{
-			if (compMask[i])
-			{
-				static_cast<BaseComponentPool *>(componentPools.at(i))->Remove(e);
-				compMask.reset(i);
-			}
-		}
-
-		Assert(compMask == ComponentMask(),
-			   "component mask not blank after removing all components");
-	}
-
 	template <typename CompType>
 	bool ComponentManager::Has(Entity::Id e) const
 	{
@@ -190,11 +175,6 @@ namespace sp
 	{
 		setMask(mask, stdTypeId);
 		return setMask(mask, stdTypeIds...);
-	}
-
-	size_t ComponentManager::ComponentTypeCount() const
-	{
-		return componentPools.size();
 	}
 }
 

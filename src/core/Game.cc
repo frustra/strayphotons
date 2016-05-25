@@ -2,12 +2,16 @@
 #include "core/Logging.hh"
 
 #include "assets/Model.hh"
+#include "ecs/components/Renderable.hh"
 
 namespace sp
 {
 	Game::Game() : graphics(this)
 	{
-		duck = assets.LoadModel("duck");
+	    duck = entityManager.NewEntity();
+		auto duckModel = assets.LoadModel("duck");
+
+	    duck.Assign<ECS::Renderable>(duckModel);
 		graphics.CreateContext();
 	}
 

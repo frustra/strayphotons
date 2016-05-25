@@ -4,6 +4,7 @@
 #include "graphics/GraphicsManager.hh"
 #include "assets/AssetManager.hh"
 #include "Common.hh"
+#include "ecs/Ecs.hh"
 
 namespace sp
 {
@@ -19,7 +20,8 @@ namespace sp
 
 		AssetManager assets;
 		GraphicsManager graphics;
-		shared_ptr<Model> duck;
+		Entity duck;
+		EntityManager entityManager;
 	};
 }
 
