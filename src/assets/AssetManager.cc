@@ -59,10 +59,10 @@ namespace sp
 		if (it == loadedModels.end())
 		{
 			shared_ptr<Asset> asset = Load("models/" + name + "/" + name + ".gltf");
-			model = make_shared<Model>(name, asset);
+			tinygltf::Scene *scene = new tinygltf::Scene();
 			std::string err;
 
-			bool ret = gltfLoader.LoadASCIIFromString(&model->scene, &err, asset->Buffer(), asset->Size(), ASSETS_DIR + "models/" + name);
+			bool ret = gltfLoader.LoadASCIIFromString(scene, &err, asset->Buffer(), asset->Size(), ASSETS_DIR + "models/" + name);
 			if (!err.empty())
 			{
 				throw err.c_str();
@@ -72,6 +72,7 @@ namespace sp
 				throw "Failed to parse glTF";
 			}
 
+			model = make_shared<Model>(name, asset, scene);
 			loadedModels[name] = weak_ptr<Model>(model);
 		}
 		else

@@ -70,7 +70,7 @@ namespace sp
 
 			std::map<string, GLuint> bufs;
 			std::map<string, GLuint> texs;
-			for (auto buffer : comp->model->scene.buffers)
+			for (auto buffer : comp->model->scene->buffers)
 			{
 				GLuint handle;
 				glCreateBuffers(1, &handle);
@@ -78,32 +78,29 @@ namespace sp
 				bufs[buffer.first] = handle;
 			}
 
-			for (auto texture : comp->model->scene.textures)
+			for (auto texture : comp->model->scene->textures)
 			{
 				GLuint handle;
 				glCreateTextures(GL_TEXTURE_2D, 1, &handle);
-				auto img = comp->model->scene.images[texture.second.source];
+				auto img = comp->model->scene->images[texture.second.source];
 				glTextureStorage2D(handle, 1, GL_RGBA8, img.width, img.height);
 				glTextureSubImage2D(handle, 0, 0, 0, img.width, img.height, GL_RGB, texture.second.type, img.image.data());
 				texs[texture.first] = handle;
 				texHandle = handle;
 			}
 
-			for (auto node : comp->model->ListNodes())
+			for (auto primitive : comp->model->primitives)
 			{
-				for (auto primitive : comp->model->ListPrimitives(&node))
-				{
-					indexBuffer = bufs[primitive.indexBuffer];
-					numElems = primitive.elementCount;
+				indexBuffer = bufs[primitive.indexBuffer];
+				numElems = primitive.elementCount;
 
-					glCreateVertexArrays(1, &vertexAttribs);
-					for (int i = 0; i < 3; i++)
-					{
-						auto *attr = &primitive.attributes[i];
-						glEnableVertexArrayAttrib(vertexAttribs, i);
-						glVertexArrayAttribFormat(vertexAttribs, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
-						glVertexArrayVertexBuffer(vertexAttribs, i, bufs[attr->bufferName], attr->byteOffset, attr->byteStride);
-					}
+				glCreateVertexArrays(1, &vertexAttribs);
+				for (int i = 0; i < 3; i++)
+				{
+					auto *attr = &primitive.attributes[i];
+					glEnableVertexArrayAttrib(vertexAttribs, i);
+					glVertexArrayAttribFormat(vertexAttribs, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
+					glVertexArrayVertexBuffer(vertexAttribs, i, bufs[attr->bufferName], attr->byteOffset, attr->byteStride);
 				}
 			}
 		}
