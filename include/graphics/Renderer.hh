@@ -20,9 +20,6 @@ namespace sp
 		void RenderFrame();
 
 	private:
-		GLuint vertices, vertexAttribs, indexBuffer, texHandle;
-		size_t numElems;
-
 		ShaderManager *shaderManager = nullptr;
 	};
 }

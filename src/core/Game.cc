@@ -8,10 +8,10 @@ namespace sp
 {
 	Game::Game() : graphics(this)
 	{
-	    duck = entityManager.NewEntity();
+		duck = entityManager.NewEntity();
 		auto duckModel = assets.LoadModel("duck");
 
-	    duck.Assign<ECS::Renderable>(duckModel);
+		duck.Assign<ECS::Renderable>(duckModel);
 		graphics.CreateContext();
 	}
 
