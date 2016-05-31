@@ -54,30 +54,10 @@ namespace sp
 
 	void PrepareRenderable(ECS::Renderable *comp)
 	{
-		std::map<string, GLuint> bufs;
-		std::map<string, GLuint> texs;
-		for (auto buffer : comp->model->scene->buffers)
-		{
-			GLuint handle;
-			glCreateBuffers(1, &handle);
-			glNamedBufferData(handle, buffer.second.data.size(), buffer.second.data.data(), GL_STATIC_DRAW);
-			bufs[buffer.first] = handle;
-		}
-
-		for (auto texture : comp->model->scene->textures)
-		{
-			GLuint handle;
-			glCreateTextures(GL_TEXTURE_2D, 1, &handle);
-			auto img = comp->model->scene->images[texture.second.source];
-			glTextureStorage2D(handle, 1, GL_RGBA8, img.width, img.height);
-			glTextureSubImage2D(handle, 0, 0, 0, img.width, img.height, GL_RGB, texture.second.type, img.image.data());
-			texs[texture.first] = handle;
-		}
-
 		for (auto primitive : comp->model->primitives)
 		{
-			primitive->indexBufferHandle = bufs[primitive->indexBuffer.bufferName];
-			primitive->textureHandle = texs[primitive->textureName];
+			primitive->indexBufferHandle = comp->model->LoadBuffer(primitive->indexBuffer.bufferName);
+			primitive->textureHandle = comp->model->LoadTexture(primitive->textureName);
 
 			glCreateVertexArrays(1, &primitive->vertexBufferHandle);
 			for (int i = 0; i < 3; i++)
@@ -85,8 +65,24 @@ namespace sp
 				auto *attr = &primitive->attributes[i];
 				glEnableVertexArrayAttrib(primitive->vertexBufferHandle, i);
 				glVertexArrayAttribFormat(primitive->vertexBufferHandle, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
-				glVertexArrayVertexBuffer(primitive->vertexBufferHandle, i, bufs[attr->bufferName], attr->byteOffset, attr->byteStride);
+				glVertexArrayVertexBuffer(primitive->vertexBufferHandle, i, comp->model->LoadBuffer(attr->bufferName), attr->byteOffset, attr->byteStride);
 			}
+		}
+	}
+
+	void DrawRenderable(ECS::Renderable *comp)
+	{
+		for (auto primitive : comp->model->primitives)
+		{
+			glBindVertexArray(primitive->vertexBufferHandle);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive->indexBufferHandle);
+			glBindTextures(0, 1, &primitive->textureHandle);
+			glDrawElements(
+				primitive->drawMode,
+				primitive->indexBuffer.componentCount,
+				primitive->indexBuffer.componentType,
+				(char *) primitive->indexBuffer.byteOffset
+			);
 		}
 	}
 
@@ -130,19 +126,7 @@ namespace sp
 		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
 		{
 			auto comp = ent.Get<ECS::Renderable>();
-
-			for (auto primitive : comp->model->primitives)
-			{
-				glBindVertexArray(primitive->vertexBufferHandle);
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive->indexBufferHandle);
-				glBindTextures(0, 1, &primitive->textureHandle);
-				glDrawElements(
-					primitive->drawMode,
-					primitive->indexBuffer.componentCount,
-					primitive->indexBuffer.componentType,
-					(char *) primitive->indexBuffer.byteOffset
-				);
-			}
+			DrawRenderable(comp);
 		}
 
 		glfwSwapBuffers(window);

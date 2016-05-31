@@ -40,6 +40,11 @@ namespace sp
 		const string name;
 		tinygltf::Scene *scene;
 		vector<Primitive *> primitives;
+		std::map<string, GLuint> buffers;
+		std::map<string, GLuint> textures;
+
+		GLuint LoadBuffer(string name);
+		GLuint LoadTexture(string name);
 	private:
 		void AddNode(string nodeName, glm::mat4 parentMatrix);
 

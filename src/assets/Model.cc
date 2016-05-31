@@ -56,6 +56,32 @@ namespace sp
 		}
 	}
 
+	GLuint Model::LoadBuffer(string name)
+	{
+		if (buffers.count(name)) return buffers[name];
+
+		auto buffer = scene->buffers[name];
+		GLuint handle;
+		glCreateBuffers(1, &handle);
+		glNamedBufferData(handle, buffer.data.size(), buffer.data.data(), GL_STATIC_DRAW);
+		buffers[name] = handle;
+		return handle;
+	}
+
+	GLuint Model::LoadTexture(string name)
+	{
+		if (textures.count(name)) return textures[name];
+
+		auto texture = scene->textures[name];
+		GLuint handle;
+		glCreateTextures(GL_TEXTURE_2D, 1, &handle);
+		auto img = scene->images[texture.source];
+		glTextureStorage2D(handle, 1, GL_RGBA8, img.width, img.height);
+		glTextureSubImage2D(handle, 0, 0, 0, img.width, img.height, GL_RGB, texture.type, img.image.data());
+		textures[name] = handle;
+		return handle;
+	}
+
 	void Model::AddNode(string nodeName, glm::mat4 parentMatrix)
 	{
 		glm::mat4 matrix = parentMatrix * GetNodeMatrix(&scene->nodes[nodeName]);
