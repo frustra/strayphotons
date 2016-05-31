@@ -52,6 +52,7 @@ namespace sp
 			delete shaderManager;
 	}
 
+	// TODO Clean up Renderable when unloaded.
 	void PrepareRenderable(ECS::Renderable *comp)
 	{
 		for (auto primitive : comp->model->primitives)

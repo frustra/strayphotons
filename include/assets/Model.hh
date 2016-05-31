@@ -38,7 +38,6 @@ namespace sp
 		};
 
 		const string name;
-		tinygltf::Scene *scene;
 		vector<Primitive *> primitives;
 		std::map<string, GLuint> buffers;
 		std::map<string, GLuint> textures;
@@ -48,9 +47,8 @@ namespace sp
 	private:
 		void AddNode(string nodeName, glm::mat4 parentMatrix);
 
+		tinygltf::Scene *scene;
 		shared_ptr<Asset> asset;
-
-		bool glLoaded;
 	};
 }
 
