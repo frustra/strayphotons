@@ -19,12 +19,6 @@
 [submodule "ext/Vulkan-LoaderAndValidationLayers"]
 	path = ext/Vulkan-LoaderAndValidationLayers
 	url = git@github.com:KhronosGroup/Vulkan-LoaderAndValidationLayers.git
-[submodule "ext/vkcpp"]
-	path = ext/vkcpp
-	url = git://github.com/pushrax/vkcpp
-[submodule "ext/SPIRV-Tools"]
-	path = ext/SPIRV-Tools
-	url = https://github.com/KhronosGroup/SPIRV-Tools
 [submodule "ext/googletest"]
 	path = ext/googletest
 	url = https://github.com/google/googletest.git
