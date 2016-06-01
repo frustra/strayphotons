@@ -7,7 +7,7 @@ namespace sp
 		Assert(entCompMasks.size() > e.Index(), "entity does not have a component mask");
 
 		auto &compMask = entCompMasks.at(e.Index());
-		for (uint i = 0; i < componentPools.size(); ++i)
+		for (uint64 i = 0; i < componentPools.size(); ++i)
 		{
 			if (compMask[i])
 			{
