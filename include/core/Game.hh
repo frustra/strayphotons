@@ -20,7 +20,6 @@ namespace sp
 
 		AssetManager assets;
 		GraphicsManager graphics;
-		Entity duck;
 		EntityManager entityManager;
 	};
 }

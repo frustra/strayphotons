@@ -58,7 +58,7 @@ namespace sp
 		for (auto primitive : comp->model->primitives)
 		{
 			primitive->indexBufferHandle = comp->model->LoadBuffer(primitive->indexBuffer.bufferName);
-			primitive->textureHandle = comp->model->LoadTexture(primitive->textureName);
+			if (primitive->textureName[0]) primitive->textureHandle = comp->model->LoadTexture(primitive->textureName);
 
 			glCreateVertexArrays(1, &primitive->vertexBufferHandle);
 			for (int i = 0; i < 3; i++)
@@ -77,7 +77,7 @@ namespace sp
 		{
 			glBindVertexArray(primitive->vertexBufferHandle);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive->indexBufferHandle);
-			glBindTextures(0, 1, &primitive->textureHandle);
+			if (primitive->textureHandle) glBindTextures(0, 1, &primitive->textureHandle);
 			glDrawElements(
 				primitive->drawMode,
 				primitive->indexBuffer.componentCount,
