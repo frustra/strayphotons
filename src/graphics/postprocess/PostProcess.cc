@@ -2,7 +2,8 @@
 
 #include "graphics/postprocess/SSAO.hh"
 
-namespace sp {
+namespace sp
+{
 	ProcessPassOutput *ProcessPassOutputRef::GetOutput()
 	{
 		return pass->GetOutput(outputIndex);

@@ -38,7 +38,8 @@ namespace sp
 	class PostProcessPass : public PostProcessPassInterface
 	{
 	public:
-		PostProcessPass() {
+		PostProcessPass()
+		{
 		}
 
 		ProcessPassOutput *GetOutput(uint32 id)
@@ -58,7 +59,8 @@ namespace sp
 		ProcessPassOutput outputs[outputCount];
 	};
 
-	namespace PostProcessing {
+	namespace PostProcessing
+	{
 		void Process();
 	}
 }

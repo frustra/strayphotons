@@ -5,6 +5,7 @@
 #include "graphics/ShaderManager.hh"
 #include "core/Game.hh"
 #include "assets/Model.hh"
+#include "graphics/Texture.hh"
 
 namespace sp
 {
@@ -21,6 +22,11 @@ namespace sp
 
 	private:
 		ShaderManager *shaderManager = nullptr;
+
+		GLuint fb;
+		Texture fbcolor, fbdepth;
+
+		GLuint screenCoverVAO, screenCoverVBO;
 	};
 }
 

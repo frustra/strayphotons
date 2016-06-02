@@ -46,6 +46,28 @@ namespace sp
 	IMPLEMENT_SHADER_TYPE(TriangleVS, "triangle.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(TriangleFS, "triangle.frag", Fragment);
 
+	class BasicPostVS : public Shader
+	{
+		SHADER_TYPE(BasicPostVS)
+		using Shader::Shader;
+	};
+
+	class ScreenCoverFS : public Shader
+	{
+		SHADER_TYPE(ScreenCoverFS)
+		using Shader::Shader;
+	};
+
+	IMPLEMENT_SHADER_TYPE(BasicPostVS, "basic_post.vert", Vertex);
+	IMPLEMENT_SHADER_TYPE(ScreenCoverFS, "screen_cover.frag", Fragment);
+
+	const float screenCoverElements[][5] =
+	{
+		{ -2, -1, 0, -0.5, 0},
+		{2, -1, 0, 1.5, 0},
+		{0, 3, 0, 0.5, 2},
+	};
+
 	Renderer::~Renderer()
 	{
 		if (shaderManager)
@@ -105,8 +127,23 @@ namespace sp
 			PrepareRenderable(comp);
 		}
 
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
+		// TODO(pushrax) remove
+		glCreateBuffers(1, &screenCoverVBO);
+		glNamedBufferData(screenCoverVBO, sizeof(screenCoverElements), screenCoverElements, GL_STATIC_DRAW);
+		glCreateVertexArrays(1, &screenCoverVAO);
+		glEnableVertexArrayAttrib(screenCoverVAO, 0);
+		glVertexArrayAttribFormat(screenCoverVAO, 0, 3, GL_FLOAT, false, 0);
+		glVertexArrayVertexBuffer(screenCoverVAO, 0, screenCoverVBO, 0, 5 * sizeof(float));
+		glEnableVertexArrayAttrib(screenCoverVAO, 2);
+		glVertexArrayAttribFormat(screenCoverVAO, 2, 2, GL_FLOAT, false, 3 * sizeof(float));
+		glVertexArrayVertexBuffer(screenCoverVAO, 2, screenCoverVBO, 0, 5 * sizeof(float));
+
+		fbcolor = NewTexture(GL_TEXTURE_2D, GL_NEAREST, GL_NEAREST).Size(1280, 720).Storage2D(PF_RGBA8);
+		fbdepth = NewTexture(GL_TEXTURE_2D, GL_NEAREST, GL_NEAREST).Size(1280, 720).Storage2D(PF_DEPTH_COMPONENT16);
+
+		glCreateFramebuffers(1, &fb);
+		glNamedFramebufferTexture(fb, GL_COLOR_ATTACHMENT0, fbcolor.handle, 0);
+		glNamedFramebufferTexture(fb, GL_DEPTH_ATTACHMENT, fbdepth.handle, 0);
 
 		AssertGLOK("Renderer::Prepare");
 	}
@@ -120,15 +157,30 @@ namespace sp
 		triangleVS->SetModel(rotMat);
 		rot += 0.01;
 
+		glBindFramebuffer(GL_FRAMEBUFFER, fb);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		shaderManager->BindPipeline<TriangleVS, TriangleFS>(*shaderSet);
+
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_CULL_FACE);
 
 		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
 		{
 			auto comp = ent.Get<ECS::Renderable>();
 			DrawRenderable(comp);
 		}
+
+		// Draw framebuffer
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		shaderManager->BindPipeline<BasicPostVS, ScreenCoverFS>(*shaderSet);
+
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_CULL_FACE);
+
+		fbcolor.Bind(0);
+		fbdepth.Bind(1);
+		glBindVertexArray(screenCoverVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		glfwSwapBuffers(window);
 		AssertGLOK("Renderer::RenderFrame");
