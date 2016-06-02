@@ -5,11 +5,11 @@
 
 namespace sp
 {
-	class TriangleVS : public Shader
+	class SceneVS : public Shader
 	{
-		SHADER_TYPE(TriangleVS)
+		SHADER_TYPE(SceneVS)
 
-		TriangleVS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+		SceneVS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			Bind(projection, "projMatrix");
 			Bind(model, "modelMatrix");
@@ -37,14 +37,14 @@ namespace sp
 		Uniform projection, model, view;
 	};
 
-	class TriangleFS : public Shader
+	class SceneFS : public Shader
 	{
-		SHADER_TYPE(TriangleFS)
+		SHADER_TYPE(SceneFS)
 		using Shader::Shader;
 	};
 
-	IMPLEMENT_SHADER_TYPE(TriangleVS, "triangle.vert", Vertex);
-	IMPLEMENT_SHADER_TYPE(TriangleFS, "triangle.frag", Fragment);
+	IMPLEMENT_SHADER_TYPE(SceneVS, "scene.vert", Vertex);
+	IMPLEMENT_SHADER_TYPE(SceneFS, "scene.frag", Fragment);
 
 	class BasicPostVS : public Shader
 	{
@@ -118,8 +118,8 @@ namespace sp
 		auto view = glm::translate(glm::mat4(), glm::vec3(0.0f, -1.0f, -2.5f));
 		auto model = glm::mat4();
 
-		auto triangleVS = shaderSet->Get<TriangleVS>();
-		triangleVS->SetParameters(projection, view, model);
+		auto sceneVS = shaderSet->Get<SceneVS>();
+		sceneVS->SetParameters(projection, view, model);
 
 		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
 		{
@@ -138,8 +138,8 @@ namespace sp
 		glVertexArrayAttribFormat(screenCoverVAO, 2, 2, GL_FLOAT, false, 3 * sizeof(float));
 		glVertexArrayVertexBuffer(screenCoverVAO, 2, screenCoverVBO, 0, 5 * sizeof(float));
 
-		fbcolor = NewTexture(GL_TEXTURE_2D, GL_NEAREST, GL_NEAREST).Size(1280, 720).Storage2D(PF_RGBA8);
-		fbdepth = NewTexture(GL_TEXTURE_2D, GL_NEAREST, GL_NEAREST).Size(1280, 720).Storage2D(PF_DEPTH_COMPONENT16);
+		fbcolor.Create().Filter(GL_NEAREST, GL_NEAREST).Size(1280, 720).Storage2D(PF_RGBA8);
+		fbdepth.Create().Filter(GL_NEAREST, GL_NEAREST).Size(1280, 720).Storage2D(PF_DEPTH_COMPONENT16);
 
 		glCreateFramebuffers(1, &fb);
 		glNamedFramebufferTexture(fb, GL_COLOR_ATTACHMENT0, fbcolor.handle, 0);
@@ -150,16 +150,16 @@ namespace sp
 
 	void Renderer::RenderFrame()
 	{
-		auto triangleVS = shaderSet->Get<TriangleVS>();
+		auto sceneVS = shaderSet->Get<SceneVS>();
 
 		static float rot = 0;
 		auto rotMat = glm::rotate(glm::mat4(), rot, glm::vec3(0.f, 1.f, 0.f));
-		triangleVS->SetModel(rotMat);
+		sceneVS->SetModel(rotMat);
 		rot += 0.01;
 
 		glBindFramebuffer(GL_FRAMEBUFFER, fb);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		shaderManager->BindPipeline<TriangleVS, TriangleFS>(*shaderSet);
+		shaderManager->BindPipeline<SceneVS, SceneFS>(*shaderSet);
 
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);

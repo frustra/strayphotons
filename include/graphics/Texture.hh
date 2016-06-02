@@ -11,14 +11,40 @@ namespace sp
 		PixelFormat format = PF_INVALID;
 		GLsizei width = 0, height = 0;
 
+		Texture Create(GLenum target = GL_TEXTURE_2D)
+		{
+			Assert(!handle);
+			glCreateTextures(target, 1, &handle);
+			return Filter().Wrap();
+		}
+
 		void Delete()
 		{
-			glDeleteTextures(1, &handle);
+			if (handle)
+				glDeleteTextures(1, &handle);
+			handle = 0;
 		}
 
 		void Bind(GLuint binding)
 		{
+			Assert(handle);
 			glBindTextures(binding, 1, &handle);
+		}
+
+		Texture Filter(GLenum minFilter = GL_LINEAR, GLenum magFilter = GL_LINEAR)
+		{
+			Assert(handle);
+			glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, minFilter);
+			glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, magFilter);
+			return *this;
+		}
+
+		Texture Wrap(GLenum wrapS = GL_CLAMP_TO_EDGE, GLenum wrapT = GL_CLAMP_TO_EDGE)
+		{
+			Assert(handle);
+			glTextureParameteri(handle, GL_TEXTURE_WRAP_S, wrapS);
+			glTextureParameteri(handle, GL_TEXTURE_WRAP_T, wrapT);
+			return *this;
 		}
 
 		Texture Size(GLsizei width, GLsizei height)
@@ -30,6 +56,7 @@ namespace sp
 
 		Texture Storage2D(PixelFormat format)
 		{
+			Assert(handle);
 			Assert(width && height);
 			this->format = format;
 			glTextureStorage2D(handle, 1, GLFormat().internalFormat, width, height);
@@ -38,6 +65,7 @@ namespace sp
 
 		Texture Image2D(const void *pixels, GLsizei subWidth = 0, GLsizei subHeight = 0, GLsizei xoffset = 0, GLsizei yoffset = 0, GLint level = 0)
 		{
+			Assert(handle);
 			Assert(pixels);
 			Assert(width && height);
 			Assert(format != PF_INVALID);
@@ -54,21 +82,4 @@ namespace sp
 			return GLPixelFormat::PixelFormatMapping(format);
 		}
 	};
-
-	// TODO(pushrax): stop being lazy
-	static Texture NewTexture(
-		GLenum target = GL_TEXTURE_2D,
-		GLenum minFilter = GL_LINEAR,
-		GLenum magFilter = GL_LINEAR,
-		GLenum wrapS = GL_CLAMP_TO_EDGE,
-		GLenum wrapT = GL_CLAMP_TO_EDGE)
-	{
-		Texture tex;
-		glCreateTextures(target, 1, &tex.handle);
-		glTextureParameteri(tex.handle, GL_TEXTURE_MIN_FILTER, minFilter);
-		glTextureParameteri(tex.handle, GL_TEXTURE_MAG_FILTER, magFilter);
-		glTextureParameteri(tex.handle, GL_TEXTURE_WRAP_S, wrapS);
-		glTextureParameteri(tex.handle, GL_TEXTURE_WRAP_T, wrapT);
-		return tex;
-	}
 }
