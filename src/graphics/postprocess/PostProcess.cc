@@ -9,7 +9,7 @@ namespace sp
 		return pass->GetOutput(outputIndex);
 	}
 
-	void PostProcessing::Process()
+	void PostProcessing::Process(const PostProcessingContext &context)
 	{
 		//RenderTarget::Ref lastOutput;
 		ProcessPassOutputRef lastOutput;

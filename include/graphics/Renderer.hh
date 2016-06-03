@@ -1,33 +1,31 @@
-#ifndef SP_RENDERER_H
-#define SP_RENDERER_H
+#pragma once
 
 #include "graphics/GraphicsContext.hh"
-#include "graphics/ShaderManager.hh"
-#include "core/Game.hh"
-#include "assets/Model.hh"
-#include "graphics/Texture.hh"
 
 namespace sp
 {
+	class Game;
+	class RenderTargetPool;
+	class ShaderManager;
+	struct Texture;
+
 	class Renderer : public GraphicsContext
 	{
 	public:
-		Renderer(Game *game) : GraphicsContext(game)
-		{
-		}
+		Renderer(Game *game);
 		~Renderer();
 
 		void Prepare();
 		void RenderFrame();
 
+		void SetRenderTarget(const Texture *attachment0, const Texture *depth);
+		void SetDefaultRenderTarget();
+
 	private:
 		ShaderManager *shaderManager = nullptr;
+		RenderTargetPool *rtPool = nullptr;
 
 		GLuint fb;
-		Texture fbcolor, fbdepth;
-
 		GLuint screenCoverVAO, screenCoverVBO;
 	};
 }
-
-#endif

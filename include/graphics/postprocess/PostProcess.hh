@@ -59,8 +59,14 @@ namespace sp
 		ProcessPassOutput outputs[outputCount];
 	};
 
+	struct PostProcessingContext
+	{
+		RenderTarget::Ref GBuffer0, GBuffer1, GBuffer2;
+		RenderTarget::Ref DepthStencil;
+	};
+
 	namespace PostProcessing
 	{
-		void Process();
+		void Process(const PostProcessingContext &context);
 	}
 }

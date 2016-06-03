@@ -25,7 +25,7 @@ namespace sp
 			handle = 0;
 		}
 
-		void Bind(GLuint binding)
+		void Bind(GLuint binding) const
 		{
 			Assert(handle);
 			glBindTextures(binding, 1, &handle);
@@ -54,16 +54,16 @@ namespace sp
 			return *this;
 		}
 
-		Texture Storage2D(PixelFormat format)
+		Texture Storage2D(PixelFormat format, GLsizei levels = 1)
 		{
 			Assert(handle);
 			Assert(width && height);
 			this->format = format;
-			glTextureStorage2D(handle, 1, GLFormat().internalFormat, width, height);
+			glTextureStorage2D(handle, levels, GLFormat().internalFormat, width, height);
 			return *this;
 		}
 
-		Texture Image2D(const void *pixels, GLsizei subWidth = 0, GLsizei subHeight = 0, GLsizei xoffset = 0, GLsizei yoffset = 0, GLint level = 0)
+		Texture Image2D(const void *pixels, GLint level = 0, GLsizei subWidth = 0, GLsizei subHeight = 0, GLsizei xoffset = 0, GLsizei yoffset = 0)
 		{
 			Assert(handle);
 			Assert(pixels);
@@ -80,6 +80,16 @@ namespace sp
 		GLPixelFormat GLFormat()
 		{
 			return GLPixelFormat::PixelFormatMapping(format);
+		}
+
+		bool operator==(const Texture &other) const
+		{
+			return other.handle == handle;
+		}
+
+		bool operator!=(const Texture &other) const
+		{
+			return !(*this == other);
 		}
 	};
 }

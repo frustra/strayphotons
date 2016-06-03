@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <boost/functional/hash.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 
@@ -146,7 +147,7 @@ namespace sp
 			}
 			else
 			{
-				throw runtime_error("invalid shader command " + command + " (line TODO) " + input.units.back());
+				throw runtime_error("invalid shader command " + command + " #" + input.units.back());
 			}
 		}
 
@@ -200,13 +201,6 @@ namespace sp
 		return boost::algorithm::join(output, "\n");
 	}
 
-	template <class T>
-	inline void hash_combine(size_t &seed, const T &v)
-	{
-		std::hash<T> hasher;
-		seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-	}
-
 	void ShaderManager::BindPipeline(ShaderSet &shaders, vector<ShaderMeta *> shaderMetaTypes)
 	{
 		size_t hash = 0;
@@ -214,7 +208,7 @@ namespace sp
 		for (auto shaderMeta : shaderMetaTypes)
 		{
 			auto shader = shaders.Get(shaderMeta);
-			hash_combine(hash, shader->GLProgram());
+			boost::hash_combine(hash, shader->GLProgram());
 		}
 
 		auto cached = pipelineCache.find(hash);

@@ -1,35 +1,87 @@
 #pragma once
 
 #include "Common.hh"
-#include "Graphics.hh"
-#include "Texture.hh"
-#include <glm/glm.hpp>
+#include "core/Logging.hh"
+#include "RenderTarget.hh"
+
+#include <unordered_map>
+#include <boost/functional/hash.hpp>
 
 namespace sp
 {
-	struct RenderTargetDesc
+	enum { MaxFramebufferAttachments = 4 };
+
+	struct FramebufferState
 	{
-		RenderTargetDesc() {};
+		uint32 numAttachments;
+		Texture attachments[MaxFramebufferAttachments];
+		Texture depthStencilAttachment;
 
-		glm::ivec2 extent = { 0, 0 };
-		PixelFormat format;
+		FramebufferState(uint32 numAttachments, const Texture *attachments, Texture depthStencilAttachment)
+			: numAttachments(numAttachments)
+		{
+			for (uint32 i = 0; i < numAttachments; i++)
+			{
+				this->attachments[i] = attachments[i];
+			}
+
+			this->depthStencilAttachment = depthStencilAttachment;
+		}
+
+		bool operator==(const FramebufferState &other) const
+		{
+			if (numAttachments != other.numAttachments)
+				return false;
+
+			if (depthStencilAttachment != other.depthStencilAttachment)
+				return false;
+
+			for (size_t i = 0; i < numAttachments; i++)
+				if (attachments[i] != other.attachments[i])
+					return false;
+
+			return true;
+		}
 	};
+}
 
-	class RenderTarget
+namespace std
+{
+	using sp::FramebufferState;
+
+	template<>
+	struct hash<FramebufferState>
 	{
-	public:
-		typedef shared_ptr<RenderTarget> Ref;
+		size_t operator()(const FramebufferState &key) const
+		{
+			size_t hash = 0;
 
-	private:
-		Texture tex;
+			boost::hash_combine(hash, key.numAttachments);
+			boost::hash_combine(hash, key.depthStencilAttachment.handle);
+
+			for (size_t i = 0; i < key.numAttachments; i++)
+				boost::hash_combine(hash, key.attachments[i].handle);
+
+			return hash;
+		}
 	};
+}
 
+namespace sp
+{
 	class RenderTargetPool
 	{
 	public:
-		bool Get(const RenderTargetDesc &desc);
+		RenderTarget::Ref Get(const RenderTargetDesc &desc);
+		void TickFrame();
+
+		GLuint GetFramebuffer(uint32 numAttachments, const Texture *attachments, Texture depthStencilAttachment);
+		void FreeFramebuffersWithAttachment(Texture attachment);
 
 	private:
 		vector<RenderTarget::Ref> pool;
+		int64 nextRenderTargetID = 0;
+
+		std::unordered_map<FramebufferState, GLuint> framebufferCache;
 	};
 }

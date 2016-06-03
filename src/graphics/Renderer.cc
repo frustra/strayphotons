@@ -1,5 +1,8 @@
 #include "graphics/Renderer.hh"
+#include "graphics/RenderTargetPool.hh"
 #include "graphics/Shader.hh"
+#include "graphics/ShaderManager.hh"
+#include "core/Game.hh"
 #include "core/Logging.hh"
 #include "ecs/components/Renderable.hh"
 
@@ -68,6 +71,10 @@ namespace sp
 		{0, 3, 0, 0.5, 2},
 	};
 
+	Renderer::Renderer(Game *game) : GraphicsContext(game)
+	{
+	}
+
 	Renderer::~Renderer()
 	{
 		if (shaderManager)
@@ -111,6 +118,10 @@ namespace sp
 
 	void Renderer::Prepare()
 	{
+		glEnable(GL_FRAMEBUFFER_SRGB);
+
+		rtPool = new RenderTargetPool();
+
 		shaderManager = new ShaderManager();
 		shaderManager->CompileAll(*shaderSet);
 
@@ -138,18 +149,13 @@ namespace sp
 		glVertexArrayAttribFormat(screenCoverVAO, 2, 2, GL_FLOAT, false, 3 * sizeof(float));
 		glVertexArrayVertexBuffer(screenCoverVAO, 2, screenCoverVBO, 0, 5 * sizeof(float));
 
-		fbcolor.Create().Filter(GL_NEAREST, GL_NEAREST).Size(1280, 720).Storage2D(PF_RGBA8);
-		fbdepth.Create().Filter(GL_NEAREST, GL_NEAREST).Size(1280, 720).Storage2D(PF_DEPTH_COMPONENT16);
-
-		glCreateFramebuffers(1, &fb);
-		glNamedFramebufferTexture(fb, GL_COLOR_ATTACHMENT0, fbcolor.handle, 0);
-		glNamedFramebufferTexture(fb, GL_DEPTH_ATTACHMENT, fbdepth.handle, 0);
-
 		AssertGLOK("Renderer::Prepare");
 	}
 
 	void Renderer::RenderFrame()
 	{
+		rtPool->TickFrame();
+
 		auto sceneVS = shaderSet->Get<SceneVS>();
 
 		static float rot = 0;
@@ -157,7 +163,11 @@ namespace sp
 		sceneVS->SetModel(rotMat);
 		rot += 0.01;
 
-		glBindFramebuffer(GL_FRAMEBUFFER, fb);
+		auto fbcolor = rtPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
+		auto fbdepth = rtPool->Get(RenderTargetDesc(PF_DEPTH_COMPONENT16, { 1280, 720 }));
+
+		SetRenderTarget(&fbcolor->Target(), &fbdepth->Target());
+
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		shaderManager->BindPipeline<SceneVS, SceneFS>(*shaderSet);
 
@@ -171,18 +181,29 @@ namespace sp
 		}
 
 		// Draw framebuffer
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		SetDefaultRenderTarget();
 		shaderManager->BindPipeline<BasicPostVS, ScreenCoverFS>(*shaderSet);
 
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
 
-		fbcolor.Bind(0);
-		fbdepth.Bind(1);
+		fbcolor->Target().Bind(0);
+		fbdepth->Target().Bind(1);
 		glBindVertexArray(screenCoverVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		glfwSwapBuffers(window);
 		AssertGLOK("Renderer::RenderFrame");
+	}
+
+	void Renderer::SetRenderTarget(const Texture *attachment0, const Texture *depth)
+	{
+		GLuint fb = rtPool->GetFramebuffer(1, attachment0, *depth);
+		glBindFramebuffer(GL_FRAMEBUFFER, fb);
+	}
+
+	void Renderer::SetDefaultRenderTarget()
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 }
