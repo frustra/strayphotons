@@ -47,12 +47,10 @@ namespace sp
 
 namespace std
 {
-	using sp::FramebufferState;
-
 	template<>
-	struct hash<FramebufferState>
+	struct hash<sp::FramebufferState>
 	{
-		size_t operator()(const FramebufferState &key) const
+		size_t operator()(const sp::FramebufferState &key) const
 		{
 			size_t hash = 0;
 

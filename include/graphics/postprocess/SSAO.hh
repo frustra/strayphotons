@@ -11,6 +11,13 @@ namespace sp
 		void Process()
 		{
 			Debugf("yo");
+			//SetRenderTarget(outputs[0].renderTarget->GetTexture());
+			SetOutputTarget(0, GetInput(0).GetOutput()->renderTarget);
+		}
+
+		RenderTargetDesc GetOutputDesc(uint32 id)
+		{
+			return GetInput(id).GetOutput()->renderTargetDesc;
 		}
 	};
 }

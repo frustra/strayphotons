@@ -1,4 +1,5 @@
 #include "graphics/postprocess/PostProcess.hh"
+#include "graphics/postprocess/Helpers.hh"
 
 #include "graphics/postprocess/SSAO.hh"
 
@@ -9,11 +10,14 @@ namespace sp
 		return pass->GetOutput(outputIndex);
 	}
 
-	void PostProcessing::Process(const PostProcessingContext &context)
+	void PostProcessing::Process(const EngineRenderTargets &targets)
 	{
-		//RenderTarget::Ref lastOutput;
-		ProcessPassOutputRef lastOutput;
+		PostProcessingContext context;
+
+		ProxyProcessPass gbuffer0(targets.GBuffer0);
+		context.LastOutput = ProcessPassOutputRef(&gbuffer0);
+
 		SSAO ssao;
-		ssao.SetInput(0, lastOutput);
+		ssao.SetInput(0, context.LastOutput);
 	}
 }

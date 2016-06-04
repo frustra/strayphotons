@@ -17,7 +17,7 @@ namespace sp
 	{
 		ProcessPassOutputRef() : pass(nullptr), outputIndex(0) { }
 
-		ProcessPassOutputRef(PostProcessPassInterface *pass, uint32 outputIndex) :
+		ProcessPassOutputRef(PostProcessPassInterface *pass, uint32 outputIndex = 0) :
 			pass(pass), outputIndex(outputIndex) { }
 
 		ProcessPassOutput *GetOutput();
@@ -32,6 +32,7 @@ namespace sp
 		virtual ProcessPassOutput *GetOutput(uint32 id) = 0;
 		virtual void SetInput(uint32 id, ProcessPassOutputRef input) = 0;
 		virtual void Process() = 0;
+		virtual RenderTargetDesc GetOutputDesc(uint32 id) = 0;
 	};
 
 	template <uint32 inputCount, uint32 outputCount>
@@ -54,19 +55,37 @@ namespace sp
 			inputs[id] = input;
 		}
 
+		ProcessPassOutputRef GetInput(uint32 id)
+		{
+			return inputs[id];
+		}
+
+	protected:
+		void SetOutputTarget(uint32 id, RenderTarget::Ref target)
+		{
+			outputs[id].renderTarget = target;
+		}
+
 	private:
-		ProcessPassOutputRef inputs[inputCount];
+		ProcessPassOutputRef inputs[inputCount ? inputCount : 1];
+
+	protected:
 		ProcessPassOutput outputs[outputCount];
 	};
 
-	struct PostProcessingContext
+	struct EngineRenderTargets
 	{
 		RenderTarget::Ref GBuffer0, GBuffer1, GBuffer2;
 		RenderTarget::Ref DepthStencil;
 	};
 
+	struct PostProcessingContext
+	{
+		ProcessPassOutputRef LastOutput;
+	};
+
 	namespace PostProcessing
 	{
-		void Process(const PostProcessingContext &context);
+		void Process(const EngineRenderTargets &context);
 	}
 }

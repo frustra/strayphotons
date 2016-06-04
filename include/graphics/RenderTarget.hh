@@ -43,9 +43,14 @@ namespace sp
 			return id;
 		}
 
-		const Texture &Target()
+		const Texture &GetTexture()
 		{
 			return tex;
+		}
+
+		RenderTargetDesc GetDesc()
+		{
+			return desc;
 		}
 
 	private:

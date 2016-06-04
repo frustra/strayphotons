@@ -26,6 +26,5 @@ namespace sp
 		RenderTargetPool *rtPool = nullptr;
 
 		GLuint fb;
-		GLuint screenCoverVAO, screenCoverVBO;
 	};
 }

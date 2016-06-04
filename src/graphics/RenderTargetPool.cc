@@ -75,6 +75,8 @@ namespace sp
 			return cached->second;
 		}
 
+		Debugf("Creating new framebuffer");
+
 		GLuint newFB;
 		glCreateFramebuffers(1, &newFB);
 

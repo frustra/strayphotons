@@ -2,6 +2,7 @@
 #include "graphics/RenderTargetPool.hh"
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
+#include "graphics/Util.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "ecs/components/Renderable.hh"
@@ -63,13 +64,6 @@ namespace sp
 
 	IMPLEMENT_SHADER_TYPE(BasicPostVS, "basic_post.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(ScreenCoverFS, "screen_cover.frag", Fragment);
-
-	const float screenCoverElements[][5] =
-	{
-		{ -2, -1, 0, -0.5, 0},
-		{2, -1, 0, 1.5, 0},
-		{0, 3, 0, 0.5, 2},
-	};
 
 	Renderer::Renderer(Game *game) : GraphicsContext(game)
 	{
@@ -138,17 +132,6 @@ namespace sp
 			PrepareRenderable(comp);
 		}
 
-		// TODO(pushrax) remove
-		glCreateBuffers(1, &screenCoverVBO);
-		glNamedBufferData(screenCoverVBO, sizeof(screenCoverElements), screenCoverElements, GL_STATIC_DRAW);
-		glCreateVertexArrays(1, &screenCoverVAO);
-		glEnableVertexArrayAttrib(screenCoverVAO, 0);
-		glVertexArrayAttribFormat(screenCoverVAO, 0, 3, GL_FLOAT, false, 0);
-		glVertexArrayVertexBuffer(screenCoverVAO, 0, screenCoverVBO, 0, 5 * sizeof(float));
-		glEnableVertexArrayAttrib(screenCoverVAO, 2);
-		glVertexArrayAttribFormat(screenCoverVAO, 2, 2, GL_FLOAT, false, 3 * sizeof(float));
-		glVertexArrayVertexBuffer(screenCoverVAO, 2, screenCoverVBO, 0, 5 * sizeof(float));
-
 		AssertGLOK("Renderer::Prepare");
 	}
 
@@ -166,7 +149,7 @@ namespace sp
 		auto fbcolor = rtPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
 		auto fbdepth = rtPool->Get(RenderTargetDesc(PF_DEPTH_COMPONENT16, { 1280, 720 }));
 
-		SetRenderTarget(&fbcolor->Target(), &fbdepth->Target());
+		SetRenderTarget(&fbcolor->GetTexture(), &fbdepth->GetTexture());
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		shaderManager->BindPipeline<SceneVS, SceneFS>(*shaderSet);
@@ -187,10 +170,9 @@ namespace sp
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
 
-		fbcolor->Target().Bind(0);
-		fbdepth->Target().Bind(1);
-		glBindVertexArray(screenCoverVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		fbcolor->GetTexture().Bind(0);
+		fbdepth->GetTexture().Bind(1);
+		DrawScreenCover();
 
 		glfwSwapBuffers(window);
 		AssertGLOK("Renderer::RenderFrame");
