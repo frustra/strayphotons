@@ -165,7 +165,7 @@ namespace sp
 
 		PostProcessing::Process(this, targets);
 
-		AssertGLOK("Renderer::RenderFrame");
+		//AssertGLOK("Renderer::RenderFrame");
 		glfwSwapBuffers(window);
 	}
 

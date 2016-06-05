@@ -70,5 +70,5 @@ void main()
 	occlusion = 1 - (occlusion / float(kernelSize));
 	occlusion = pow(occlusion, power);
 
-	outFragColor = vec4(vec3(occlusion), 1.0);
+	outFragColor = vec4(vec3(occlusion), 1.0) * texture(gBuffer0, inTexCoord);
 }
