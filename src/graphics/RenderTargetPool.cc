@@ -65,7 +65,7 @@ namespace sp
 		}
 	}
 
-	GLuint RenderTargetPool::GetFramebuffer(uint32 numAttachments, const Texture *attachments, Texture depthStencilAttachment)
+	GLuint RenderTargetPool::GetFramebuffer(uint32 numAttachments, const Texture *attachments, const Texture *depthStencilAttachment)
 	{
 		FramebufferState key(numAttachments, attachments, depthStencilAttachment);
 
@@ -85,7 +85,10 @@ namespace sp
 			glNamedFramebufferTexture(newFB, GL_COLOR_ATTACHMENT0 + i, attachments[i].handle, 0);
 		}
 
-		glNamedFramebufferTexture(newFB, GL_DEPTH_ATTACHMENT, depthStencilAttachment.handle, 0);
+		if (depthStencilAttachment)
+		{
+			glNamedFramebufferTexture(newFB, GL_DEPTH_ATTACHMENT, depthStencilAttachment->handle, 0);
+		}
 
 		framebufferCache[key] = newFB;
 		return newFB;
@@ -98,14 +101,14 @@ namespace sp
 			bool found = false;
 			auto &key = it->first;
 
-			if (key.depthStencilAttachment == attachment)
+			if (key.DepthStencilAttachment && *key.DepthStencilAttachment == attachment)
 			{
 				found = true;
 			}
 
-			for (uint32 i = 0; i < key.numAttachments; i++)
+			for (uint32 i = 0; i < key.NumAttachments; i++)
 			{
-				if (key.attachments[i] == attachment) found = true;
+				if (key.Attachments[i] == attachment) found = true;
 			}
 
 			if (found)

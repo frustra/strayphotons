@@ -13,9 +13,8 @@ namespace sp
 			Assert(input != nullptr);
 		}
 
-		void Process()
+		void Process(const PostProcessingContext *context)
 		{
-			Debugf("yo");
 			SetOutputTarget(0, input);
 		}
 

@@ -2,7 +2,7 @@
 #include "graphics/RenderTargetPool.hh"
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
-#include "graphics/Util.hh"
+#include "graphics/postprocess/PostProcess.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "ecs/components/Renderable.hh"
@@ -50,29 +50,14 @@ namespace sp
 	IMPLEMENT_SHADER_TYPE(SceneVS, "scene.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(SceneFS, "scene.frag", Fragment);
 
-	class BasicPostVS : public Shader
-	{
-		SHADER_TYPE(BasicPostVS)
-		using Shader::Shader;
-	};
-
-	class ScreenCoverFS : public Shader
-	{
-		SHADER_TYPE(ScreenCoverFS)
-		using Shader::Shader;
-	};
-
-	IMPLEMENT_SHADER_TYPE(BasicPostVS, "basic_post.vert", Vertex);
-	IMPLEMENT_SHADER_TYPE(ScreenCoverFS, "screen_cover.frag", Fragment);
-
 	Renderer::Renderer(Game *game) : GraphicsContext(game)
 	{
 	}
 
 	Renderer::~Renderer()
 	{
-		if (shaderManager)
-			delete shaderManager;
+		if (ShaderManager)
+			delete ShaderManager;
 	}
 
 	// TODO Clean up Renderable when unloaded.
@@ -114,16 +99,16 @@ namespace sp
 	{
 		glEnable(GL_FRAMEBUFFER_SRGB);
 
-		rtPool = new RenderTargetPool();
+		RTPool = new RenderTargetPool();
 
-		shaderManager = new ShaderManager();
-		shaderManager->CompileAll(*shaderSet);
+		ShaderManager = new sp::ShaderManager();
+		ShaderManager->CompileAll(*ShaderSet);
 
 		auto projection = glm::perspective(glm::radians(60.0f), 1.778f, 0.1f, 256.0f);
 		auto view = glm::translate(glm::mat4(), glm::vec3(0.0f, -1.0f, -2.5f));
 		auto model = glm::mat4();
 
-		auto sceneVS = shaderSet->Get<SceneVS>();
+		auto sceneVS = ShaderSet->Get<SceneVS>();
 		sceneVS->SetParameters(projection, view, model);
 
 		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
@@ -137,25 +122,26 @@ namespace sp
 
 	void Renderer::RenderFrame()
 	{
-		rtPool->TickFrame();
+		RTPool->TickFrame();
 
-		auto sceneVS = shaderSet->Get<SceneVS>();
+		auto sceneVS = ShaderSet->Get<SceneVS>();
 
 		static float rot = 0;
 		auto rotMat = glm::rotate(glm::mat4(), rot, glm::vec3(0.f, 1.f, 0.f));
 		sceneVS->SetModel(rotMat);
 		rot += 0.01;
 
-		auto fbcolor = rtPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
-		auto fbdepth = rtPool->Get(RenderTargetDesc(PF_DEPTH_COMPONENT16, { 1280, 720 }));
+		auto fbcolor = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
+		auto fbdepth = RTPool->Get(RenderTargetDesc(PF_DEPTH_COMPONENT16, { 1280, 720 }));
+
+		glEnable(GL_CULL_FACE);
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
 
 		SetRenderTarget(&fbcolor->GetTexture(), &fbdepth->GetTexture());
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		shaderManager->BindPipeline<SceneVS, SceneFS>(*shaderSet);
-
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
+		ShaderManager->BindPipeline<SceneVS, SceneFS>(*ShaderSet);
 
 		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
 		{
@@ -163,24 +149,23 @@ namespace sp
 			DrawRenderable(comp);
 		}
 
-		// Draw framebuffer
-		SetDefaultRenderTarget();
-		shaderManager->BindPipeline<BasicPostVS, ScreenCoverFS>(*shaderSet);
-
+		// Run postprocessing.
 		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_CULL_FACE);
+		glDepthMask(GL_FALSE);
 
-		fbcolor->GetTexture().Bind(0);
-		fbdepth->GetTexture().Bind(1);
-		DrawScreenCover();
+		EngineRenderTargets targets;
+		targets.GBuffer0 = fbcolor;
+		targets.DepthStencil = fbdepth;
 
-		glfwSwapBuffers(window);
+		PostProcessing::Process(this, targets);
+
 		AssertGLOK("Renderer::RenderFrame");
+		glfwSwapBuffers(window);
 	}
 
 	void Renderer::SetRenderTarget(const Texture *attachment0, const Texture *depth)
 	{
-		GLuint fb = rtPool->GetFramebuffer(1, attachment0, *depth);
+		GLuint fb = RTPool->GetFramebuffer(1, attachment0, depth);
 		glBindFramebuffer(GL_FRAMEBUFFER, fb);
 	}
 

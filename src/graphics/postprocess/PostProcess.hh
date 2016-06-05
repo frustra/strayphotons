@@ -5,65 +5,89 @@
 
 namespace sp
 {
-	class PostProcessPassInterface;
+	class Renderer;
+	class PostProcessPassBase;
+	class PostProcessingContext;
 
-	struct ProcessPassOutput
+	class ProcessPassOutput
 	{
-		RenderTargetDesc renderTargetDesc;
-		RenderTarget::Ref renderTarget;
+	public:
+		RenderTargetDesc RenderTargetDesc;
+		RenderTarget::Ref RenderTarget;
+
+		void AddDependency()
+		{
+			dependencies++;
+		}
+
+		void ReleaseDependency()
+		{
+			if (--dependencies == 0)
+			{
+				RenderTarget.reset();
+			}
+		}
+
+		RenderTarget::Ref AllocateTarget(const PostProcessingContext *context);
+
+	private:
+		size_t dependencies = 0;
 	};
 
 	struct ProcessPassOutputRef
 	{
 		ProcessPassOutputRef() : pass(nullptr), outputIndex(0) { }
 
-		ProcessPassOutputRef(PostProcessPassInterface *pass, uint32 outputIndex = 0) :
+		ProcessPassOutputRef(PostProcessPassBase *pass, uint32 outputIndex = 0) :
 			pass(pass), outputIndex(outputIndex) { }
 
 		ProcessPassOutput *GetOutput();
 
-		PostProcessPassInterface *pass;
+		PostProcessPassBase *pass;
 		uint32 outputIndex;
 	};
 
-	class PostProcessPassInterface
+	class PostProcessPassBase
 	{
 	public:
+		virtual void Process(const PostProcessingContext *context) = 0;
+		virtual RenderTargetDesc GetOutputDesc(uint32 id) = 0;
+
 		virtual ProcessPassOutput *GetOutput(uint32 id) = 0;
 		virtual void SetInput(uint32 id, ProcessPassOutputRef input) = 0;
-		virtual void Process() = 0;
-		virtual RenderTargetDesc GetOutputDesc(uint32 id) = 0;
+		virtual ProcessPassOutputRef *GetInput(uint32 id) = 0;
 	};
 
 	template <uint32 inputCount, uint32 outputCount>
-	class PostProcessPass : public PostProcessPassInterface
+	class PostProcessPass : public PostProcessPassBase
 	{
 	public:
 		PostProcessPass()
 		{
 		}
 
-		ProcessPassOutput *GetOutput(uint32 id)
+		virtual ProcessPassOutput *GetOutput(uint32 id)
 		{
-			Assert(id < outputCount);
+			if (id >= outputCount) return nullptr;
 			return &outputs[id];
 		}
 
-		void SetInput(uint32 id, ProcessPassOutputRef input)
+		virtual void SetInput(uint32 id, ProcessPassOutputRef input)
 		{
 			Assert(id < inputCount);
 			inputs[id] = input;
 		}
 
-		ProcessPassOutputRef GetInput(uint32 id)
+		virtual ProcessPassOutputRef *GetInput(uint32 id)
 		{
-			return inputs[id];
+			if (id >= inputCount) return nullptr;
+			return &inputs[id];
 		}
 
 	protected:
 		void SetOutputTarget(uint32 id, RenderTarget::Ref target)
 		{
-			outputs[id].renderTarget = target;
+			outputs[id].RenderTarget = target;
 		}
 
 	private:
@@ -79,13 +103,26 @@ namespace sp
 		RenderTarget::Ref DepthStencil;
 	};
 
-	struct PostProcessingContext
+	class PostProcessingContext
 	{
+	public:
+		void ProcessAllPasses();
+
+		PostProcessPassBase *AddPass(PostProcessPassBase *pass)
+		{
+			passes.push_back(pass);
+			return pass;
+		}
+
 		ProcessPassOutputRef LastOutput;
+		Renderer *Renderer;
+
+	private:
+		vector<PostProcessPassBase *> passes;
 	};
 
 	namespace PostProcessing
 	{
-		void Process(const EngineRenderTargets &context);
+		void Process(Renderer *renderer, const EngineRenderTargets &context);
 	}
 }

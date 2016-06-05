@@ -13,31 +13,34 @@ namespace sp
 
 	struct FramebufferState
 	{
-		uint32 numAttachments;
-		Texture attachments[MaxFramebufferAttachments];
-		Texture depthStencilAttachment;
+		uint32 NumAttachments;
+		Texture Attachments[MaxFramebufferAttachments];
+		const Texture *DepthStencilAttachment;
 
-		FramebufferState(uint32 numAttachments, const Texture *attachments, Texture depthStencilAttachment)
-			: numAttachments(numAttachments)
+		FramebufferState(uint32 numAttachments, const Texture *attachments, const Texture *depthStencilAttachment)
+			: NumAttachments(numAttachments)
 		{
 			for (uint32 i = 0; i < numAttachments; i++)
 			{
-				this->attachments[i] = attachments[i];
+				this->Attachments[i] = attachments[i];
 			}
 
-			this->depthStencilAttachment = depthStencilAttachment;
+			this->DepthStencilAttachment = depthStencilAttachment;
 		}
 
 		bool operator==(const FramebufferState &other) const
 		{
-			if (numAttachments != other.numAttachments)
+			if (NumAttachments != other.NumAttachments)
 				return false;
 
-			if (depthStencilAttachment != other.depthStencilAttachment)
+			if (!DepthStencilAttachment != !other.DepthStencilAttachment)
 				return false;
 
-			for (size_t i = 0; i < numAttachments; i++)
-				if (attachments[i] != other.attachments[i])
+			if (DepthStencilAttachment && *DepthStencilAttachment != *other.DepthStencilAttachment)
+				return false;
+
+			for (size_t i = 0; i < NumAttachments; i++)
+				if (Attachments[i] != other.Attachments[i])
 					return false;
 
 			return true;
@@ -54,11 +57,13 @@ namespace std
 		{
 			size_t hash = 0;
 
-			boost::hash_combine(hash, key.numAttachments);
-			boost::hash_combine(hash, key.depthStencilAttachment.handle);
+			boost::hash_combine(hash, key.NumAttachments);
 
-			for (size_t i = 0; i < key.numAttachments; i++)
-				boost::hash_combine(hash, key.attachments[i].handle);
+			if (key.DepthStencilAttachment)
+				boost::hash_combine(hash, key.DepthStencilAttachment->handle);
+
+			for (size_t i = 0; i < key.NumAttachments; i++)
+				boost::hash_combine(hash, key.Attachments[i].handle);
 
 			return hash;
 		}
@@ -73,7 +78,7 @@ namespace sp
 		RenderTarget::Ref Get(const RenderTargetDesc &desc);
 		void TickFrame();
 
-		GLuint GetFramebuffer(uint32 numAttachments, const Texture *attachments, Texture depthStencilAttachment);
+		GLuint GetFramebuffer(uint32 numAttachments, const Texture *attachments, const Texture *depthStencilAttachment);
 		void FreeFramebuffersWithAttachment(Texture attachment);
 
 	private:

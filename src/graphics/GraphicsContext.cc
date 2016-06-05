@@ -23,12 +23,12 @@ namespace sp
 		glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
-		shaderSet = new ShaderSet();
+		ShaderSet = new sp::ShaderSet();
 	}
 
 	GraphicsContext::~GraphicsContext()
 	{
-		delete shaderSet;
+		delete ShaderSet;
 
 		if (window)
 			glfwDestroyWindow(window);

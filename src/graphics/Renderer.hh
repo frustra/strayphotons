@@ -21,8 +21,7 @@ namespace sp
 		void SetRenderTarget(const Texture *attachment0, const Texture *depth);
 		void SetDefaultRenderTarget();
 
-	private:
-		ShaderManager *shaderManager = nullptr;
-		RenderTargetPool *rtPool = nullptr;
+		ShaderManager *ShaderManager = nullptr;
+		RenderTargetPool *RTPool = nullptr;
 	};
 }
