@@ -22,20 +22,24 @@ namespace sp
 		context.Renderer = renderer;
 
 		ProxyProcessPass gbuffer0(targets.GBuffer0);
-		context.AddPass(&gbuffer0);
+		ProxyProcessPass gbuffer1(targets.GBuffer1);
 		ProxyProcessPass depth(targets.DepthStencil);
+		context.AddPass(&gbuffer0);
+		context.AddPass(&gbuffer1);
 		context.AddPass(&depth);
 
 		context.LastOutput = ProcessPassOutputRef(&gbuffer0);
 
 		SSAO ssao;
 		ssao.SetInput(0, context.LastOutput);
-		ssao.SetInput(1, ProcessPassOutputRef(&depth));
+		ssao.SetInput(1, ProcessPassOutputRef(&gbuffer1));
+		ssao.SetInput(2, ProcessPassOutputRef(&depth));
 		context.AddPass(&ssao);
+		context.LastOutput = ProcessPassOutputRef(&ssao, 0);
 
 		context.ProcessAllPasses();
 
-		// TODO(pushrax): render last output to the view target
+		context.LastOutput.GetOutput()->RenderTarget->GetTexture().Bind(0);
 		renderer->SetDefaultRenderTarget();
 		renderer->ShaderManager->BindPipeline<BasicPostVS, ScreenCoverFS>(*renderer->ShaderSet);
 		DrawScreenCover();

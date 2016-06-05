@@ -90,6 +90,13 @@ namespace sp
 			glNamedFramebufferTexture(newFB, GL_DEPTH_ATTACHMENT, depthStencilAttachment->handle, 0);
 		}
 
+		static const GLenum availableAttachments[] =
+		{
+			GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5
+		};
+
+		glNamedFramebufferDrawBuffers(newFB, numAttachments, availableAttachments);
+
 		framebufferCache[key] = newFB;
 		return newFB;
 	}

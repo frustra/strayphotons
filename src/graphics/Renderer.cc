@@ -131,14 +131,22 @@ namespace sp
 		sceneVS->SetModel(rotMat);
 		rot += 0.01;
 
-		auto fbcolor = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
-		auto fbdepth = RTPool->Get(RenderTargetDesc(PF_DEPTH_COMPONENT16, { 1280, 720 }));
+		EngineRenderTargets targets;
+		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
+		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
+		targets.DepthStencil = RTPool->Get(RenderTargetDesc(PF_DEPTH_COMPONENT24, { 1280, 720 }));
 
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
 
-		SetRenderTarget(&fbcolor->GetTexture(), &fbdepth->GetTexture());
+		Texture attachments[] =
+		{
+			targets.GBuffer0->GetTexture(),
+			targets.GBuffer1->GetTexture(),
+		};
+
+		SetRenderTargets(2, attachments, &targets.DepthStencil->GetTexture());
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		ShaderManager->BindPipeline<SceneVS, SceneFS>(*ShaderSet);
@@ -153,20 +161,21 @@ namespace sp
 		glDisable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
 
-		EngineRenderTargets targets;
-		targets.GBuffer0 = fbcolor;
-		targets.DepthStencil = fbdepth;
-
 		PostProcessing::Process(this, targets);
 
 		AssertGLOK("Renderer::RenderFrame");
 		glfwSwapBuffers(window);
 	}
 
+	void Renderer::SetRenderTargets(size_t attachmentCount, const Texture *attachments, const Texture *depth)
+	{
+		GLuint fb = RTPool->GetFramebuffer(attachmentCount, attachments, depth);
+		glBindFramebuffer(GL_FRAMEBUFFER, fb);
+	}
+
 	void Renderer::SetRenderTarget(const Texture *attachment0, const Texture *depth)
 	{
-		GLuint fb = RTPool->GetFramebuffer(1, attachment0, depth);
-		glBindFramebuffer(GL_FRAMEBUFFER, fb);
+		SetRenderTargets(1, attachment0, depth);
 	}
 
 	void Renderer::SetDefaultRenderTarget()

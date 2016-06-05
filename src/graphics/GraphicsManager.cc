@@ -34,29 +34,15 @@ namespace sp
 	{
 		if (context) throw "already an active context";
 
-		try
-		{
-			context = new Renderer(game);
-			context->CreateWindow();
-		}
-		catch (std::system_error &err)
-		{
-			Assert(false);
-		}
+		context = new Renderer(game);
+		context->CreateWindow();
 	}
 
 	void GraphicsManager::ReleaseContext()
 	{
 		if (!context) throw "no active context";
 
-		try
-		{
-			delete context;
-		}
-		catch (std::system_error &err)
-		{
-			Assert(false);
-		}
+		delete context;
 	}
 
 	void GraphicsManager::ReloadContext()
@@ -74,14 +60,7 @@ namespace sp
 		if (!context) throw "missing context";
 		if (!HasActiveContext()) return false;
 
-		try
-		{
-			context->RenderFrame();
-		}
-		catch (std::system_error &err)
-		{
-			Assert(false);
-		}
+		context->RenderFrame();
 
 		double frameEnd = glfwGetTime();
 		fpsTimer += frameEnd - lastFrameEnd;
