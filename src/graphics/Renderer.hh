@@ -24,7 +24,5 @@ namespace sp
 	private:
 		ShaderManager *shaderManager = nullptr;
 		RenderTargetPool *rtPool = nullptr;
-
-		GLuint fb;
 	};
 }

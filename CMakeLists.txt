@@ -61,7 +61,7 @@ set(GOOGLETEST_DIR ${EXT_PATH}/googletest/googletest)
 add_subdirectory(${EXT_PATH}/googletest)
 
 include_directories(
-	${CMAKE_CURRENT_SOURCE_DIR}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/src
 	${EXT_PATH}/glfw/include
 	${EXT_PATH}/glew/include
 	${EXT_PATH}/boostconfig/include
@@ -83,7 +83,7 @@ file(GLOB_RECURSE all_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
 list(REMOVE_DUPLICATES all_sources)
 list(REMOVE_ITEM all_sources ${PROJECT_MAIN_CC})
 
-file(GLOB_RECURSE all_headers ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hh)
+file(GLOB_RECURSE all_headers ${CMAKE_CURRENT_SOURCE_DIR}/src/*.hh)
 list(REMOVE_DUPLICATES all_headers)
 
 file(GLOB_RECURSE all_shaders

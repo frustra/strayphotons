@@ -34,7 +34,7 @@ namespace sp
 namespace std
 {
 	template <>
-	class hash<sp::Entity>
+	struct hash<sp::Entity>
 	{
 	public:
 		size_t operator()(const sp::Entity &e) const
