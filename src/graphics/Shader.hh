@@ -1,5 +1,4 @@
-#ifndef SP_SHADER_H
-#define SP_SHADER_H
+#pragma once
 
 #include "Common.hh"
 #include "Graphics.hh"
@@ -198,5 +197,3 @@ namespace sp
 #undef DECLARE_SET_GLM
 #undef DECLARE_SET_GLM_MAT
 }
-
-#endif

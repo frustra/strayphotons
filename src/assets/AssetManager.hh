@@ -1,5 +1,4 @@
-#ifndef SP_ASSETMANAGER_H
-#define SP_ASSETMANAGER_H
+#pragma once
 
 #include "Common.hh"
 #include <tiny_gltf_loader.h>
@@ -32,6 +31,3 @@ namespace sp
 		tinygltf::TinyGLTFLoader gltfLoader;
 	};
 }
-
-#endif
-

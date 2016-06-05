@@ -1,5 +1,4 @@
-#ifndef SP_ASSET_H
-#define SP_ASSET_H
+#pragma once
 
 #include "Common.hh"
 
@@ -26,6 +25,3 @@ namespace sp
 		size_t size = 0;
 	};
 }
-
-#endif
-

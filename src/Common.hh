@@ -1,5 +1,4 @@
-#ifndef SP_SHARED_H
-#define SP_SHARED_H
+#pragma once
 
 #include <memory>
 using std::make_shared;
@@ -37,5 +36,3 @@ namespace sp
 		NonCopyable() = default;
 	};
 }
-
-#endif

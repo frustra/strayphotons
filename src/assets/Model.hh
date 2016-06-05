@@ -1,5 +1,4 @@
-#ifndef SP_MODEL_H
-#define SP_MODEL_H
+#pragma once
 
 #include "Common.hh"
 #include "graphics/Graphics.hh"
@@ -51,5 +50,3 @@ namespace sp
 		shared_ptr<Asset> asset;
 	};
 }
-
-#endif

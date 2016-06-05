@@ -1,5 +1,4 @@
-#ifndef COMPONENT_STORAGE_H
-#define COMPONENT_STORAGE_H
+#pragma once
 
 #include <unordered_map>
 #include <bitset>
@@ -284,5 +283,3 @@ namespace sp
 		return ComponentPoolEntityCollection(*this);
 	}
 }
-
-#endif

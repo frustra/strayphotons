@@ -1,5 +1,4 @@
-#ifndef SP_GAME_H
-#define SP_GAME_H
+#pragma once
 
 #include "graphics/GraphicsManager.hh"
 #include "assets/AssetManager.hh"
@@ -23,6 +22,3 @@ namespace sp
 		EntityManager entityManager;
 	};
 }
-
-#endif
-

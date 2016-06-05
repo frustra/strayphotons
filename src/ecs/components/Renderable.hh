@@ -1,5 +1,4 @@
-#ifndef ECS_RENDERABLE_H
-#define ECS_RENDERABLE_H
+#pragma once
 
 #include "assets/Model.hh"
 
@@ -12,5 +11,3 @@ namespace ECS
 		shared_ptr<sp::Model> model;
 	};
 }
-
-#endif

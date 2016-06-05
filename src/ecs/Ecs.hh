@@ -1,5 +1,4 @@
-#ifndef ECS_H
-#define ECS_H
+#pragma once
 
 // This is the only file needed to be included to use the ECS.
 // Impl is needed to be included since many functions are templated
@@ -10,5 +9,3 @@
 
 #include "ecs/EntityImpl.hh"
 #include "ecs/EntityManagerImpl.hh"
-
-#endif

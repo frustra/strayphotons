@@ -1,5 +1,4 @@
-#ifndef SP_GRAPHICS_H
-#define SP_GRAPHICS_H
+#pragma once
 
 #include "Common.hh"
 
@@ -17,5 +16,3 @@ namespace sp
 {
 	void AssertGLOK(string message);
 }
-
-#endif

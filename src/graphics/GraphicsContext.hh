@@ -1,5 +1,4 @@
-#ifndef SP_GRAPHICSCONTEXT_H
-#define SP_GRAPHICSCONTEXT_H
+#pragma once
 
 #include <string>
 
@@ -35,6 +34,3 @@ namespace sp
 		Game *game;
 	};
 }
-
-#endif
-

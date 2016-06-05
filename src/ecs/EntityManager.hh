@@ -1,5 +1,4 @@
-#ifndef ENTITY_MANAGER_H
-#define ENTITY_MANAGER_H
+#pragma once
 
 #include <queue>
 #include <iostream>
@@ -125,5 +124,3 @@ namespace sp
 		ComponentManager compMgr;
 	};
 };
-
-#endif

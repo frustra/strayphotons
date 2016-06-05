@@ -1,5 +1,4 @@
-#ifndef COMPONENT_MANAGER_H
-#define COMPONENT_MANAGER_H
+#pragma once
 
 #include <typeindex>
 #include <unordered_map>
@@ -177,5 +176,3 @@ namespace sp
 		return setMask(mask, stdTypeIds...);
 	}
 }
-
-#endif

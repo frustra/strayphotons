@@ -1,7 +1,4 @@
-#ifndef ENTITY_H
-#define ENTITY_H
-
-// #include "ecs/EntityManager.hh"
+#pragma once
 
 #include <ostream>
 #include "Common.hh"
@@ -131,5 +128,3 @@ namespace sp
 		Entity::Id eid;
 	};
 }
-
-#endif

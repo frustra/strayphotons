@@ -1,5 +1,4 @@
-#ifndef SP_GRAPHICSMANAGER_H
-#define SP_GRAPHICSMANAGER_H
+#pragma once
 
 #include "graphics/GraphicsContext.hh"
 
@@ -29,5 +28,3 @@ namespace sp
 		int frameCounter = 0;
 	};
 }
-
-#endif

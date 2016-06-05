@@ -1,5 +1,4 @@
-#ifndef SP_LOGGING_H
-#define SP_LOGGING_H
+#pragma once
 
 //#define SP_VERBOSE_LOGGING
 
@@ -78,6 +77,3 @@ namespace sp
 		}
 	}
 }
-
-#endif
-

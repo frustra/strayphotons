@@ -1,5 +1,4 @@
-#ifndef ENTITY_IMPL_H
-#define ENTITY_IMPL_H
+#pragma once
 
 #include "ecs/Entity.hh"
 #include "ecs/EntityManager.hh"
@@ -43,5 +42,3 @@ namespace std
 		}
 	};
 }
-
-#endif

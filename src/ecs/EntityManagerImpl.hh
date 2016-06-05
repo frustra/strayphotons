@@ -1,5 +1,4 @@
-#ifndef ENTITY_MANAGER_IMPL_H
-#define ENTITY_MANAGER_IMPL_H
+#pragma once
 
 #include "ecs/EntityManager.hh"
 #include "ecs/Entity.hh"
@@ -48,5 +47,3 @@ namespace sp
 		return compMgr.SetMask<CompTypes...>(mask);
 	}
 }
-
-#endif

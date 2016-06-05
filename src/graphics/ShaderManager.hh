@@ -1,5 +1,4 @@
-#ifndef SP_SHADER_MANAGER_H
-#define SP_SHADER_MANAGER_H
+#pragma once
 
 #include "graphics/Shader.hh"
 #include <unordered_map>
@@ -35,4 +34,3 @@ namespace sp
 		std::unordered_map<size_t, GLuint> pipelineCache;
 	};
 }
-#endif
