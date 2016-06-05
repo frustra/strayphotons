@@ -11,7 +11,7 @@ namespace sp
 
 		RenderTargetDesc GetOutputDesc(uint32 id)
 		{
-			return GetInput(0)->GetOutput()->RenderTargetDesc;
+			return GetInput(0)->GetOutput()->TargetDesc;
 		}
 	};
 }

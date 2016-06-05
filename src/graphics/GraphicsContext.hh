@@ -25,7 +25,7 @@ namespace sp
 		virtual void Prepare() = 0;
 		virtual void RenderFrame() = 0;
 
-		ShaderSet *ShaderSet;
+		ShaderSet *GlobalShaders;
 
 	private:
 

@@ -22,7 +22,7 @@ namespace sp
 		void SetRenderTargets(size_t attachmentCount, const Texture *attachments, const Texture *depth);
 		void SetDefaultRenderTarget();
 
-		ShaderManager *ShaderManager = nullptr;
+		ShaderManager *ShaderControl = nullptr;
 		RenderTargetPool *RTPool = nullptr;
 
 		glm::mat4 Projection;

@@ -56,8 +56,8 @@ namespace sp
 
 	Renderer::~Renderer()
 	{
-		if (ShaderManager)
-			delete ShaderManager;
+		if (ShaderControl)
+			delete ShaderControl;
 	}
 
 	// TODO Clean up Renderable when unloaded.
@@ -101,14 +101,14 @@ namespace sp
 
 		RTPool = new RenderTargetPool();
 
-		ShaderManager = new sp::ShaderManager();
-		ShaderManager->CompileAll(*ShaderSet);
+		ShaderControl = new ShaderManager();
+		ShaderControl->CompileAll(GlobalShaders);
 
 		auto projection = glm::perspective(glm::radians(60.0f), 1.778f, 0.1f, 24.0f);
 		auto view = glm::translate(glm::mat4(), glm::vec3(0.0f, -1.0f, -2.5f));
 		auto model = glm::mat4();
 
-		auto sceneVS = ShaderSet->Get<SceneVS>();
+		auto sceneVS = GlobalShaders->Get<SceneVS>();
 		sceneVS->SetParameters(projection, view, model);
 
 		Projection = projection;
@@ -126,7 +126,7 @@ namespace sp
 	{
 		RTPool->TickFrame();
 
-		auto sceneVS = ShaderSet->Get<SceneVS>();
+		auto sceneVS = GlobalShaders->Get<SceneVS>();
 
 		static float rot = 0;
 		auto rotMat = glm::rotate(glm::mat4(), rot, glm::vec3(0.f, 1.f, 0.f));
@@ -151,7 +151,7 @@ namespace sp
 		SetRenderTargets(2, attachments, &targets.DepthStencil->GetTexture());
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		ShaderManager->BindPipeline<SceneVS, SceneFS>(*ShaderSet);
+		ShaderControl->BindPipeline<SceneVS, SceneFS>(GlobalShaders);
 
 		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
 		{

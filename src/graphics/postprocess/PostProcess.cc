@@ -19,7 +19,7 @@ namespace sp
 	void PostProcessing::Process(Renderer *renderer, const EngineRenderTargets &targets)
 	{
 		PostProcessingContext context;
-		context.Renderer = renderer;
+		context.renderer = renderer;
 
 		ProxyProcessPass gbuffer0(targets.GBuffer0);
 		ProxyProcessPass gbuffer1(targets.GBuffer1);
@@ -39,9 +39,9 @@ namespace sp
 
 		context.ProcessAllPasses();
 
-		context.LastOutput.GetOutput()->RenderTarget->GetTexture().Bind(0);
+		context.LastOutput.GetOutput()->TargetRef->GetTexture().Bind(0);
 		renderer->SetDefaultRenderTarget();
-		renderer->ShaderManager->BindPipeline<BasicPostVS, ScreenCoverFS>(*renderer->ShaderSet);
+		renderer->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(renderer->GlobalShaders);
 		DrawScreenCover();
 	}
 
@@ -64,7 +64,7 @@ namespace sp
 				ProcessPassOutput *output = pass->GetOutput(id);
 				if (!output) break;
 
-				output->RenderTargetDesc = pass->GetOutputDesc(id);
+				output->TargetDesc = pass->GetOutputDesc(id);
 			}
 		}
 
@@ -77,7 +77,7 @@ namespace sp
 				ProcessPassOutputRef *input = pass->GetInput(id);
 				if (!input) break;
 
-				input->GetOutput()->RenderTarget->GetTexture().Bind(id);
+				input->GetOutput()->TargetRef->GetTexture().Bind(id);
 			}
 
 			pass->Process(this);
@@ -95,10 +95,10 @@ namespace sp
 
 	RenderTarget::Ref ProcessPassOutput::AllocateTarget(const PostProcessingContext *context)
 	{
-		if (RenderTarget == nullptr)
+		if (TargetRef == nullptr)
 		{
-			RenderTarget = context->Renderer->RTPool->Get(RenderTargetDesc);
+			TargetRef = context->renderer->RTPool->Get(TargetDesc);
 		}
-		return RenderTarget;
+		return TargetRef;
 	}
 }

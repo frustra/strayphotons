@@ -89,13 +89,13 @@ namespace sp
 	{
 		static SSAONoiseTexture noiseTex(4);
 
-		auto r = context->Renderer;
+		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
-		r->ShaderSet->Get<SSAOPass0FS>()->SetProjection(r->Projection);
+		r->GlobalShaders->Get<SSAOPass0FS>()->SetProjection(r->Projection);
 
 		r->SetRenderTarget(&dest, nullptr);
-		r->ShaderManager->BindPipeline<SSAOPass0VS, SSAOPass0FS>(*r->ShaderSet);
+		r->ShaderControl->BindPipeline<SSAOPass0VS, SSAOPass0FS>(r->GlobalShaders);
 
 		noiseTex.tex.Bind(3);
 

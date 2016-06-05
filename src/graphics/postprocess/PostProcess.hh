@@ -12,8 +12,8 @@ namespace sp
 	class ProcessPassOutput
 	{
 	public:
-		RenderTargetDesc RenderTargetDesc;
-		RenderTarget::Ref RenderTarget;
+		RenderTargetDesc TargetDesc;
+		RenderTarget::Ref TargetRef;
 
 		void AddDependency()
 		{
@@ -24,7 +24,7 @@ namespace sp
 		{
 			if (--dependencies == 0)
 			{
-				RenderTarget.reset();
+				TargetRef.reset();
 			}
 		}
 
@@ -87,7 +87,7 @@ namespace sp
 	protected:
 		void SetOutputTarget(uint32 id, RenderTarget::Ref target)
 		{
-			outputs[id].RenderTarget = target;
+			outputs[id].TargetRef = target;
 		}
 
 	private:
@@ -115,7 +115,7 @@ namespace sp
 		}
 
 		ProcessPassOutputRef LastOutput;
-		Renderer *Renderer;
+		Renderer *renderer;
 
 	private:
 		vector<PostProcessPassBase *> passes;

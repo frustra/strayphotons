@@ -13,12 +13,12 @@ namespace sp
 
 		ShaderManager() { }
 		~ShaderManager();
-		void CompileAll(ShaderSet &shaders);
+		void CompileAll(ShaderSet *shaders);
 
-		void BindPipeline(ShaderSet &shaders, vector<ShaderMeta *> shaderMetaTypes);
+		void BindPipeline(ShaderSet *shaders, vector<ShaderMeta *> shaderMetaTypes);
 
 		template <typename ...ShaderTypes>
-		void BindPipeline(ShaderSet &shaders)
+		void BindPipeline(ShaderSet *shaders)
 		{
 			BindPipeline(shaders, { &ShaderTypes::MetaType... });
 		}

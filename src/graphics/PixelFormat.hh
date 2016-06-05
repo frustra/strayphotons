@@ -24,6 +24,7 @@ namespace sp
 
 	struct GLPixelFormat
 	{
+		GLPixelFormat() {}
 		GLPixelFormat(GLenum i, GLenum f, GLenum t) : internalFormat(i), format(f), type(t) { }
 
 		GLenum internalFormat = GL_NONE;
