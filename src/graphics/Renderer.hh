@@ -24,5 +24,7 @@ namespace sp
 
 		ShaderManager *ShaderManager = nullptr;
 		RenderTargetPool *RTPool = nullptr;
+
+		glm::mat4 Projection;
 	};
 }

@@ -104,12 +104,14 @@ namespace sp
 		ShaderManager = new sp::ShaderManager();
 		ShaderManager->CompileAll(*ShaderSet);
 
-		auto projection = glm::perspective(glm::radians(60.0f), 1.778f, 0.1f, 256.0f);
+		auto projection = glm::perspective(glm::radians(60.0f), 1.778f, 0.1f, 24.0f);
 		auto view = glm::translate(glm::mat4(), glm::vec3(0.0f, -1.0f, -2.5f));
 		auto model = glm::mat4();
 
 		auto sceneVS = ShaderSet->Get<SceneVS>();
 		sceneVS->SetParameters(projection, view, model);
+
+		Projection = projection;
 
 		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
 		{
@@ -133,8 +135,8 @@ namespace sp
 
 		EngineRenderTargets targets;
 		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
-		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
-		targets.DepthStencil = RTPool->Get(RenderTargetDesc(PF_DEPTH_COMPONENT24, { 1280, 720 }));
+		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, { 1280, 720 }));
+		targets.DepthStencil = RTPool->Get(RenderTargetDesc(PF_DEPTH_COMPONENT32F, { 1280, 720 }));
 
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);

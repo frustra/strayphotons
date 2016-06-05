@@ -113,7 +113,7 @@ namespace sp
 		}
 
 		template <typename ValueType>
-		void Set(Uniform u, const ValueType &v, GLsizei count)
+		void Set(Uniform u, const ValueType v[], GLsizei count)
 		{
 			Assert(false, "unimplemented uniform type");
 		}
@@ -161,37 +161,37 @@ namespace sp
 		glProgramUniform##UniformSuffix(program, u.location, v); \
 	}
 
-#define DECLARE_SET_GLM(UniformSuffix, ValueType) \
+#define DECLARE_SET_GLM(UniformSuffix, ValueType, GLType) \
 	template <> inline void Shader::Set<ValueType>(Uniform u, const ValueType &v) { \
 		glProgramUniform##UniformSuffix(program, u.location, 1, glm::value_ptr(v)); \
 	} \
-	template <> inline void Shader::Set<ValueType>(Uniform u, const ValueType &v, GLsizei count) { \
-		glProgramUniform##UniformSuffix(program, u.location, count, glm::value_ptr(v)); \
+	template <> inline void Shader::Set<ValueType>(Uniform u, const ValueType v[], GLsizei count) { \
+		glProgramUniform##UniformSuffix(program, u.location, count, (const GLType *) v); \
 	}
 
-#define DECLARE_SET_GLM_MAT(UniformSuffix, ValueType) \
+#define DECLARE_SET_GLM_MAT(UniformSuffix, ValueType, GLType) \
 	template <> inline void Shader::Set<ValueType>(Uniform u, const ValueType &v) { \
 		glProgramUniformMatrix##UniformSuffix(program, u.location, 1, 0, glm::value_ptr(v)); \
 	} \
-	template <> inline void Shader::Set<ValueType>(Uniform u, const ValueType &v, GLsizei count) { \
-		glProgramUniformMatrix##UniformSuffix(program, u.location, count, 0, glm::value_ptr(v)); \
+	template <> inline void Shader::Set<ValueType>(Uniform u, const ValueType v[], GLsizei count) { \
+		glProgramUniformMatrix##UniformSuffix(program, u.location, count, 0, (const GLType *) v); \
 	}
 
 	DECLARE_SET_SCALAR(1f, float)
 	DECLARE_SET_SCALAR(1i, int32)
 	DECLARE_SET_SCALAR(1ui, uint32)
-	DECLARE_SET_GLM(2fv, glm::vec2)
-	DECLARE_SET_GLM(3fv, glm::vec3)
-	DECLARE_SET_GLM(4fv, glm::vec4)
-	DECLARE_SET_GLM(2iv, glm::i32vec2)
-	DECLARE_SET_GLM(3iv, glm::i32vec3)
-	DECLARE_SET_GLM(4iv, glm::i32vec4)
-	DECLARE_SET_GLM(2uiv, glm::u32vec2)
-	DECLARE_SET_GLM(3uiv, glm::u32vec3)
-	DECLARE_SET_GLM(4uiv, glm::u32vec4)
-	DECLARE_SET_GLM_MAT(2fv, glm::mat2)
-	DECLARE_SET_GLM_MAT(3fv, glm::mat3)
-	DECLARE_SET_GLM_MAT(4fv, glm::mat4)
+	DECLARE_SET_GLM(2fv, glm::vec2, GLfloat)
+	DECLARE_SET_GLM(3fv, glm::vec3, GLfloat)
+	DECLARE_SET_GLM(4fv, glm::vec4, GLfloat)
+	DECLARE_SET_GLM(2iv, glm::i32vec2, GLint)
+	DECLARE_SET_GLM(3iv, glm::i32vec3, GLint)
+	DECLARE_SET_GLM(4iv, glm::i32vec4, GLint)
+	DECLARE_SET_GLM(2uiv, glm::u32vec2, GLuint)
+	DECLARE_SET_GLM(3uiv, glm::u32vec3, GLuint)
+	DECLARE_SET_GLM(4uiv, glm::u32vec4, GLuint)
+	DECLARE_SET_GLM_MAT(2fv, glm::mat2, GLfloat)
+	DECLARE_SET_GLM_MAT(3fv, glm::mat3, GLfloat)
+	DECLARE_SET_GLM_MAT(4fv, glm::mat4, GLfloat)
 
 #undef DECLARE_SET_SCALAR
 #undef DECLARE_SET_GLM

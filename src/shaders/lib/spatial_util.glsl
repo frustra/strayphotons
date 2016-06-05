@@ -1,6 +1,8 @@
 #ifndef SPATIAL_UTIL_GLSL_INCLUDED
 #define SPATIAL_UTIL_GLSL_INCLUDED
 
+const vec2 ClippingPlane = vec2(0.1, 24.0);
+
 // Inverse perspective divide to produce linear depth in (0, 1) relative to the
 // camera and far plane.
 float LinearDepth(float depth, vec2 clip) {
@@ -11,6 +13,17 @@ float LinearDepth(float depth, vec2 clip) {
 // Projects v onto a normalized vector u.
 vec3 ProjectVec3(vec3 v, vec3 u) {
 	return u * dot(v, u);
+}
+
+const float tan_half_fov = 0.577350269, aspect_ratio = 16/9;
+
+// Returns a ray from the camera to the far plane.
+vec3 FarPlaneRay(vec2 viewSpacePosition) {
+	return vec3(
+		viewSpacePosition.x * tan_half_fov * aspect_ratio,
+		viewSpacePosition.y * tan_half_fov,
+		1.0
+	);
 }
 
 // Gradient noise in [-1, 1] as in [Jimenez 2014]
