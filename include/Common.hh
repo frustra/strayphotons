@@ -1,6 +1,8 @@
 #ifndef SP_SHARED_H
 #define SP_SHARED_H
 
+#define _DEBUG
+
 #include <memory>
 using std::make_shared;
 using std::unique_ptr;

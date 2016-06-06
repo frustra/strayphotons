@@ -6,7 +6,7 @@
 
 namespace sp
 {
-	Game::Game() : graphics(this)
+	Game::Game() : graphics(this), physics()
 	{
 	    duck = entityManager.NewEntity();
 		auto duckModel = assets.LoadModel("duck");

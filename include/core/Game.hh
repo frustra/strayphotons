@@ -2,6 +2,7 @@
 #define SP_GAME_H
 
 #include "graphics/GraphicsManager.hh"
+#include "physx/PhysxManager.hh"
 #include "assets/AssetManager.hh"
 #include "Common.hh"
 #include "ecs/Ecs.hh"
@@ -21,7 +22,8 @@ namespace sp
 		AssetManager assets;
 		GraphicsManager graphics;
 		Entity duck;
-		EntityManager entityManager;
+		EntityManager entityManager;=
+		PhysxManager physics;=
 	};
 }
 
