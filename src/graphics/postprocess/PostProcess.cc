@@ -30,12 +30,27 @@ namespace sp
 
 		context.LastOutput = ProcessPassOutputRef(&gbuffer0);
 
-		SSAO ssao;
-		ssao.SetInput(0, context.LastOutput);
-		ssao.SetInput(1, ProcessPassOutputRef(&gbuffer1));
-		ssao.SetInput(2, ProcessPassOutputRef(&depth));
-		context.AddPass(&ssao);
-		context.LastOutput = ProcessPassOutputRef(&ssao, 0);
+		SSAOPass0 ssaoPass0;
+		ssaoPass0.SetInput(0, context.LastOutput);
+		ssaoPass0.SetInput(1, ProcessPassOutputRef(&gbuffer1));
+		ssaoPass0.SetInput(2, ProcessPassOutputRef(&depth));
+		context.AddPass(&ssaoPass0);
+
+		SSAOBlur ssaoBlurX(true);
+		ssaoBlurX.SetInput(0, ProcessPassOutputRef(&ssaoPass0));
+		ssaoBlurX.SetInput(1, ProcessPassOutputRef(&gbuffer1));
+		ssaoBlurX.SetInput(2, ProcessPassOutputRef(&depth));
+		ssaoBlurX.SetInput(3, ProcessPassOutputRef(&gbuffer0));
+		context.AddPass(&ssaoBlurX);
+
+		SSAOBlur ssaoBlurY(false);
+		ssaoBlurY.SetInput(0, ProcessPassOutputRef(&ssaoBlurX));
+		ssaoBlurY.SetInput(1, ProcessPassOutputRef(&gbuffer1));
+		ssaoBlurY.SetInput(2, ProcessPassOutputRef(&depth));
+		ssaoBlurY.SetInput(3, ProcessPassOutputRef(&gbuffer0));
+		context.AddPass(&ssaoBlurY);
+
+		context.LastOutput = ProcessPassOutputRef(&ssaoBlurY);
 
 		context.ProcessAllPasses();
 
@@ -80,6 +95,7 @@ namespace sp
 				input->GetOutput()->TargetRef->GetTexture().Bind(id);
 			}
 
+			//Debugf("Process %s", pass->Name());
 			pass->Process(this);
 
 			// Release dependencies.
@@ -98,6 +114,7 @@ namespace sp
 		if (TargetRef == nullptr)
 		{
 			TargetRef = context->renderer->RTPool->Get(TargetDesc);
+			//Debugf("Reserve target %d", TargetRef->GetID());
 		}
 		return TargetRef;
 	}

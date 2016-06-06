@@ -177,6 +177,7 @@ namespace sp
 		glProgramUniformMatrix##UniformSuffix(program, u.location, count, 0, (const GLType *) v); \
 	}
 
+	DECLARE_SET_SCALAR(1i, bool)
 	DECLARE_SET_SCALAR(1f, float)
 	DECLARE_SET_SCALAR(1i, int32)
 	DECLARE_SET_SCALAR(1ui, uint32)

@@ -23,6 +23,11 @@ namespace sp
 			return input->GetDesc();
 		}
 
+		string Name()
+		{
+			return "ProxyTarget";
+		}
+
 	private:
 		RenderTarget::Ref input;
 	};

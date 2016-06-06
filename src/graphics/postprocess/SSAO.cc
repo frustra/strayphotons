@@ -62,6 +62,28 @@ namespace sp
 	IMPLEMENT_SHADER_TYPE(SSAOPass0VS, "ssao_pass0.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(SSAOPass0FS, "ssao_pass0.frag", Fragment);
 
+	class SSAOBlurFS : public Shader
+	{
+		SHADER_TYPE(SSAOBlurFS)
+
+		SSAOBlurFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+		{
+			Bind(samplePattern, "samplePattern");
+			Bind(combineOutput, "combineOutput");
+		}
+
+		void SetSamplePattern(glm::vec2 pattern, bool combine)
+		{
+			Set(samplePattern, pattern);
+			Set(combineOutput, combine);
+		}
+
+	private:
+		Uniform samplePattern, combineOutput;
+	};
+
+	IMPLEMENT_SHADER_TYPE(SSAOBlurFS, "ssao_blur.frag", Fragment);
+
 	struct SSAONoiseTexture
 	{
 		Texture tex;
@@ -85,7 +107,7 @@ namespace sp
 		}
 	};
 
-	void SSAO::Process(const PostProcessingContext *context)
+	void SSAOPass0::Process(const PostProcessingContext *context)
 	{
 		static SSAONoiseTexture noiseTex(4);
 
@@ -98,6 +120,27 @@ namespace sp
 		r->ShaderControl->BindPipeline<SSAOPass0VS, SSAOPass0FS>(r->GlobalShaders);
 
 		noiseTex.tex.Bind(3);
+
+		DrawScreenCover();
+	}
+
+	void SSAOBlur::Process(const PostProcessingContext *context)
+	{
+		auto r = context->renderer;
+		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto extent = GetInput(0)->GetOutput()->TargetDesc.extent;
+
+		glm::vec2 samplePattern;
+
+		if (horizontal)
+			samplePattern.x = 1.0f / (float) extent.x;
+		else
+			samplePattern.y = 1.0f / (float) extent.y;
+
+		r->GlobalShaders->Get<SSAOBlurFS>()->SetSamplePattern(samplePattern, !horizontal);
+
+		r->SetRenderTarget(&dest, nullptr);
+		r->ShaderControl->BindPipeline<BasicPostVS, SSAOBlurFS>(r->GlobalShaders);
 
 		DrawScreenCover();
 	}

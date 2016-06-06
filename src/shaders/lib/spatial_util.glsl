@@ -1,7 +1,7 @@
 #ifndef SPATIAL_UTIL_GLSL_INCLUDED
 #define SPATIAL_UTIL_GLSL_INCLUDED
 
-const vec2 ClippingPlane = vec2(0.1, 24.0);
+const vec2 ClippingPlane = vec2(0.1, 256.0);
 
 // Inverse perspective divide to produce linear depth in (0, 1) relative to the
 // camera and far plane.

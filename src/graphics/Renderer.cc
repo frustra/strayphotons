@@ -104,7 +104,7 @@ namespace sp
 		ShaderControl = new ShaderManager();
 		ShaderControl->CompileAll(GlobalShaders);
 
-		auto projection = glm::perspective(glm::radians(60.0f), 1.778f, 0.1f, 24.0f);
+		auto projection = glm::perspective(glm::radians(60.0f), 1.778f, 0.1f, 256.0f);
 		auto view = glm::translate(glm::mat4(), glm::vec3(0.0f, -1.0f, -2.5f));
 		auto model = glm::mat4();
 

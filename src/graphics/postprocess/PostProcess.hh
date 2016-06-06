@@ -24,6 +24,7 @@ namespace sp
 		{
 			if (--dependencies == 0)
 			{
+				//Debugf("Release target %d", TargetRef->GetID());
 				TargetRef.reset();
 			}
 		}
@@ -56,6 +57,7 @@ namespace sp
 		virtual ProcessPassOutput *GetOutput(uint32 id) = 0;
 		virtual void SetInput(uint32 id, ProcessPassOutputRef input) = 0;
 		virtual ProcessPassOutputRef *GetInput(uint32 id) = 0;
+		virtual string Name() = 0;
 	};
 
 	template <uint32 inputCount, uint32 outputCount>

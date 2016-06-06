@@ -23,7 +23,7 @@ namespace sp
 
 		ptr->tex
 		.Create(GL_TEXTURE_2D)
-		.Filter(GL_NEAREST, GL_NEAREST)
+		.Filter(GL_LINEAR, GL_LINEAR)
 		.Size(desc.extent.x, desc.extent.y)
 		.Storage2D(desc.format, desc.levels);
 
