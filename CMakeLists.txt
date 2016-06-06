@@ -97,9 +97,6 @@ file(GLOB_RECURSE all_shaders
 	${CMAKE_CURRENT_SOURCE_DIR}/src/*.comp)
 list(REMOVE_DUPLICATES all_shaders)
 
-file(GLOB_RECURSE all_libraries ${EXT_PATH}/*/*.lib)
-list(REMOVE_DUPLICATES all_libraries)
-
 add_library(${PROJECT_LIB} ${all_sources} ${all_headers} ${all_shaders})
 
 add_executable(${PROJECT_EXE} ${PROJECT_MAIN_CC})
