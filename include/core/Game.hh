@@ -2,6 +2,7 @@
 #define SP_GAME_H
 
 #include "graphics/GraphicsManager.hh"
+#include "physx/PhysxManager.hh"
 #include "assets/AssetManager.hh"
 #include "Common.hh"
 
@@ -19,6 +20,7 @@ namespace sp
 
 		AssetManager assets;
 		GraphicsManager graphics;
+		PhysxManager physics;
 		shared_ptr<Model> duck;
 	};
 }

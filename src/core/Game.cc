@@ -5,7 +5,7 @@
 
 namespace sp
 {
-	Game::Game() : graphics(this)
+	Game::Game() : graphics(this), physics()
 	{
 		duck = assets.LoadModel("duck");
 		graphics.CreateContext();

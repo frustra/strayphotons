@@ -68,6 +68,7 @@ include_directories(
 	${EXT_PATH}/glm
 	${EXT_PATH}/freetype2/include
 	${EXT_PATH}/tinygltfloader
+	${EXT_PATH}/physx/include
 	${EXT_PATH}
 )
 
@@ -96,9 +97,14 @@ file(GLOB_RECURSE all_shaders
 	${CMAKE_CURRENT_SOURCE_DIR}/src/*.comp)
 list(REMOVE_DUPLICATES all_shaders)
 
+file(GLOB_RECURSE all_libraries ${EXT_PATH}/*/*.lib)
+list(REMOVE_DUPLICATES all_libraries)
+
 add_library(${PROJECT_LIB} ${all_sources} ${all_headers} ${all_shaders})
+
 add_executable(${PROJECT_EXE} ${PROJECT_MAIN_CC})
 target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
+
 
 # C++11
 target_compile_features(${PROJECT_LIB} PRIVATE cxx_range_for)
