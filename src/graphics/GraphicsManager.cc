@@ -1,5 +1,5 @@
-#include "core/Logging.hh"
 #include "graphics/GraphicsManager.hh"
+#include "core/Logging.hh"
 #include "graphics/Renderer.hh"
 
 #include <iostream>

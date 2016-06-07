@@ -2,7 +2,7 @@
 #define SP_ACTOR_H
 
 #include "Common.hh"
-#include <physx/include/PxActor.h>
+#include <PxActor.h>
 #include <glm/glm.hpp>
 
 namespace sp

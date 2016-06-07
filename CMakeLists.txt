@@ -62,13 +62,13 @@ add_subdirectory(${EXT_PATH}/googletest)
 
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/include
+	${EXT_PATH}/physx/PhysXSDK/Include
 	${EXT_PATH}/glfw/include
 	${EXT_PATH}/glew/include
 	${EXT_PATH}/boostconfig/include
 	${EXT_PATH}/glm
 	${EXT_PATH}/freetype2/include
 	${EXT_PATH}/tinygltfloader
-	${EXT_PATH}/physx/include
 	${EXT_PATH}
 )
 
@@ -99,9 +99,14 @@ list(REMOVE_DUPLICATES all_shaders)
 
 add_library(${PROJECT_LIB} ${all_sources} ${all_headers} ${all_shaders})
 
+find_library(PHYSX_LIBRARY
+	NAMES PhysX3ExtensionsDEBUG PhysXProfileSDKDEBUG PhysX3CommonDEBUG_x64 PhysX3DEBUG_x64 
+    PATHS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/lib/physx
+)
+
 add_executable(${PROJECT_EXE} ${PROJECT_MAIN_CC})
 target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
-
+target_link_libraries(${PROJECT_LIB} ${PHYSX_LIBRARY})
 
 # C++11
 target_compile_features(${PROJECT_LIB} PRIVATE cxx_range_for)
