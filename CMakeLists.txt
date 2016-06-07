@@ -99,14 +99,20 @@ list(REMOVE_DUPLICATES all_shaders)
 
 add_library(${PROJECT_LIB} ${all_sources} ${all_headers} ${all_shaders})
 
-find_library(PHYSX_LIBRARY
-	NAMES PhysX3ExtensionsDEBUG PhysXProfileSDKDEBUG PhysX3CommonDEBUG_x64 PhysX3DEBUG_x64 
-    PATHS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/lib/physx
-)
+set (PHYSX_ENV DEBUG)
+set (PHYSX_LOADS "PhysX3CommonDEBUG_x64" "PhysX3ExtensionsDEBUG" "PhysX3DEBUG_x64")
+foreach (PHYSX_LIB ${PHYSX_LOADS})
+	message(STATUS ${PHYSX_LIB})
+	find_library(FOUND_LIB_${PHYSX_LIB}
+		NAMES ${PHYSX_LIB}
+	    PATHS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/lib/physx
+	)
+	LIST(APPEND PHYSX_LIBRARIES ${FOUND_LIB_${PHYSX_LIB}})
+endforeach (PHYSX_LIB)
 
 add_executable(${PROJECT_EXE} ${PROJECT_MAIN_CC})
 target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
-target_link_libraries(${PROJECT_LIB} ${PHYSX_LIBRARY})
+target_link_libraries(${PROJECT_LIB} ${PHYSX_LIBRARIES})
 
 # C++11
 target_compile_features(${PROJECT_LIB} PRIVATE cxx_range_for)
