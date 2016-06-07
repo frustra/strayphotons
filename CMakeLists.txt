@@ -13,7 +13,7 @@ if (UNIX)
 endif()
 
 if (MSVC)
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS /wd4800)
 endif()
 
 set(PROJECT_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
@@ -63,6 +63,7 @@ add_subdirectory(${EXT_PATH}/googletest)
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${EXT_PATH}/physx/PhysXSDK/Include
+	${CMAKE_CURRENT_SOURCE_DIR}/src
 	${EXT_PATH}/glfw/include
 	${EXT_PATH}/glew/include
 	${EXT_PATH}/boostconfig/include
@@ -84,7 +85,7 @@ file(GLOB_RECURSE all_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
 list(REMOVE_DUPLICATES all_sources)
 list(REMOVE_ITEM all_sources ${PROJECT_MAIN_CC})
 
-file(GLOB_RECURSE all_headers ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hh)
+file(GLOB_RECURSE all_headers ${CMAKE_CURRENT_SOURCE_DIR}/src/*.hh)
 list(REMOVE_DUPLICATES all_headers)
 
 file(GLOB_RECURSE all_shaders

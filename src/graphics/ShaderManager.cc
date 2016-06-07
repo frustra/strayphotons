@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <boost/functional/hash.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 
@@ -25,7 +26,7 @@ namespace sp
 			glDeleteProgramPipelines(1, &cached.second);
 	}
 
-	void ShaderManager::CompileAll(ShaderSet &shaders)
+	void ShaderManager::CompileAll(ShaderSet *shaders)
 	{
 		for (auto shaderType : ShaderTypes())
 		{
@@ -36,7 +37,7 @@ namespace sp
 			output->shaderType = shaderType;
 			auto shader = shaderType->newInstance(output);
 			shared_ptr<Shader> shaderPtr(shader);
-			shaders.shaders[shaderType] = shaderPtr;
+			shaders->shaders[shaderType] = shaderPtr;
 		}
 	}
 
@@ -146,7 +147,7 @@ namespace sp
 			}
 			else
 			{
-				throw runtime_error("invalid shader command " + command + " (line TODO) " + input.units.back());
+				throw runtime_error("invalid shader command " + command + " #" + input.units.back());
 			}
 		}
 
@@ -200,21 +201,14 @@ namespace sp
 		return boost::algorithm::join(output, "\n");
 	}
 
-	template <class T>
-	inline void hash_combine(size_t &seed, const T &v)
-	{
-		std::hash<T> hasher;
-		seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-	}
-
-	void ShaderManager::BindPipeline(ShaderSet &shaders, vector<ShaderMeta *> shaderMetaTypes)
+	void ShaderManager::BindPipeline(ShaderSet *shaders, vector<ShaderMeta *> shaderMetaTypes)
 	{
 		size_t hash = 0;
 
 		for (auto shaderMeta : shaderMetaTypes)
 		{
-			auto shader = shaders.Get(shaderMeta);
-			hash_combine(hash, shader->GLProgram());
+			auto shader = shaders->Get(shaderMeta);
+			boost::hash_combine(hash, shader->GLProgram());
 		}
 
 		auto cached = pipelineCache.find(hash);
@@ -229,7 +223,7 @@ namespace sp
 
 		for (auto shaderMeta : shaderMetaTypes)
 		{
-			auto shader = shaders.Get(shaderMeta);
+			auto shader = shaders->Get(shaderMeta);
 			glUseProgramStages(pipeline, shaderMeta->GLStageBits(), shader->GLProgram());
 		}
 

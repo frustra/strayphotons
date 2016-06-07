@@ -29,7 +29,7 @@ integration-tests: build unix
 tests: unit-tests integration-tests
 
 astyle:
-	astyle --options="extra/astyle.config" "include/*.hh" "src/*.cc"
+	astyle --options="extra/astyle.config" "src/*.hh" "src/*.cc"
 
 dependencies:
 	git submodule sync

@@ -81,7 +81,7 @@ namespace sp
 
 			size_t compSize = static_cast<BaseComponentPool *>(compMgr.componentPools.at(i))->Size();
 
-			if (compSize < minSize || minSizeCompIndex == -1)
+			if (minSizeCompIndex == -1 || compSize < minSize)
 			{
 				minSize = compSize;
 				minSizeCompIndex = i;

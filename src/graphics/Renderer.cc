@@ -1,15 +1,21 @@
 #include "graphics/Renderer.hh"
+#include "graphics/RenderTargetPool.hh"
 #include "graphics/Shader.hh"
+#include "graphics/ShaderManager.hh"
+#include "graphics/Util.hh"
+#include "graphics/GenericShaders.hh"
+#include "graphics/postprocess/PostProcess.hh"
+#include "core/Game.hh"
 #include "core/Logging.hh"
 #include "ecs/components/Renderable.hh"
 
 namespace sp
 {
-	class TriangleVS : public Shader
+	class SceneVS : public Shader
 	{
-		SHADER_TYPE(TriangleVS)
+		SHADER_TYPE(SceneVS)
 
-		TriangleVS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+		SceneVS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			Bind(projection, "projMatrix");
 			Bind(model, "modelMatrix");
@@ -37,99 +43,170 @@ namespace sp
 		Uniform projection, model, view;
 	};
 
-	class TriangleFS : public Shader
+	class SceneFS : public Shader
 	{
-		SHADER_TYPE(TriangleFS)
+		SHADER_TYPE(SceneFS)
 		using Shader::Shader;
 	};
 
-	IMPLEMENT_SHADER_TYPE(TriangleVS, "triangle.vert", Vertex);
-	IMPLEMENT_SHADER_TYPE(TriangleFS, "triangle.frag", Fragment);
+	IMPLEMENT_SHADER_TYPE(SceneVS, "scene.vert", Vertex);
+	IMPLEMENT_SHADER_TYPE(SceneFS, "scene.frag", Fragment);
+
+	class ExampleCS : public Shader
+	{
+		SHADER_TYPE(ExampleCS)
+		using Shader::Shader;
+	};
+
+	IMPLEMENT_SHADER_TYPE(ExampleCS, "compute_example.glsl", Compute);
+
+	Renderer::Renderer(Game *game) : GraphicsContext(game)
+	{
+	}
 
 	Renderer::~Renderer()
 	{
-		if (shaderManager)
-			delete shaderManager;
+		if (ShaderControl)
+			delete ShaderControl;
+	}
+
+	// TODO Clean up Renderable when unloaded.
+	void PrepareRenderable(ECS::Renderable *comp)
+	{
+		for (auto primitive : comp->model->primitives)
+		{
+			primitive->indexBufferHandle = comp->model->LoadBuffer(primitive->indexBuffer.bufferName);
+			if (primitive->textureName[0]) primitive->textureHandle = comp->model->LoadTexture(primitive->textureName);
+
+			glCreateVertexArrays(1, &primitive->vertexBufferHandle);
+			for (int i = 0; i < 3; i++)
+			{
+				auto *attr = &primitive->attributes[i];
+				glEnableVertexArrayAttrib(primitive->vertexBufferHandle, i);
+				glVertexArrayAttribFormat(primitive->vertexBufferHandle, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
+				glVertexArrayVertexBuffer(primitive->vertexBufferHandle, i, comp->model->LoadBuffer(attr->bufferName), attr->byteOffset, attr->byteStride);
+			}
+		}
+	}
+
+	void DrawRenderable(ECS::Renderable *comp)
+	{
+		for (auto primitive : comp->model->primitives)
+		{
+			glBindVertexArray(primitive->vertexBufferHandle);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive->indexBufferHandle);
+			if (primitive->textureHandle) glBindTextures(0, 1, &primitive->textureHandle);
+			glDrawElements(
+				primitive->drawMode,
+				primitive->indexBuffer.componentCount,
+				primitive->indexBuffer.componentType,
+				(char *) primitive->indexBuffer.byteOffset
+			);
+		}
 	}
 
 	void Renderer::Prepare()
 	{
-		shaderManager = new ShaderManager();
-		shaderManager->CompileAll(*shaderSet);
+		glEnable(GL_FRAMEBUFFER_SRGB);
+
+		RTPool = new RenderTargetPool();
+
+		ShaderControl = new ShaderManager();
+		ShaderControl->CompileAll(GlobalShaders);
 
 		auto projection = glm::perspective(glm::radians(60.0f), 1.778f, 0.1f, 256.0f);
 		auto view = glm::translate(glm::mat4(), glm::vec3(0.0f, -1.0f, -2.5f));
 		auto model = glm::mat4();
 
-		auto triangleVS = shaderSet->Get<TriangleVS>();
-		triangleVS->SetParameters(projection, view, model);
+		auto sceneVS = GlobalShaders->Get<SceneVS>();
+		sceneVS->SetParameters(projection, view, model);
+
+		Projection = projection;
 
 		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
 		{
 			auto comp = ent.Get<ECS::Renderable>();
-
-			std::map<string, GLuint> bufs;
-			std::map<string, GLuint> texs;
-			for (auto buffer : comp->model->scene->buffers)
-			{
-				GLuint handle;
-				glCreateBuffers(1, &handle);
-				glNamedBufferData(handle, buffer.second.data.size(), buffer.second.data.data(), GL_STATIC_DRAW);
-				bufs[buffer.first] = handle;
-			}
-
-			for (auto texture : comp->model->scene->textures)
-			{
-				GLuint handle;
-				glCreateTextures(GL_TEXTURE_2D, 1, &handle);
-				auto img = comp->model->scene->images[texture.second.source];
-				glTextureStorage2D(handle, 1, GL_RGBA8, img.width, img.height);
-				glTextureSubImage2D(handle, 0, 0, 0, img.width, img.height, GL_RGB, texture.second.type, img.image.data());
-				texs[texture.first] = handle;
-				texHandle = handle;
-			}
-
-			for (auto primitive : comp->model->primitives)
-			{
-				indexBuffer = bufs[primitive.indexBuffer];
-				numElems = primitive.elementCount;
-
-				glCreateVertexArrays(1, &vertexAttribs);
-				for (int i = 0; i < 3; i++)
-				{
-					auto *attr = &primitive.attributes[i];
-					glEnableVertexArrayAttrib(vertexAttribs, i);
-					glVertexArrayAttribFormat(vertexAttribs, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
-					glVertexArrayVertexBuffer(vertexAttribs, i, bufs[attr->bufferName], attr->byteOffset, attr->byteStride);
-				}
-			}
+			PrepareRenderable(comp);
 		}
-
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
 
 		AssertGLOK("Renderer::Prepare");
 	}
 
 	void Renderer::RenderFrame()
 	{
-		auto triangleVS = shaderSet->Get<TriangleVS>();
+		RTPool->TickFrame();
+
+		auto sceneVS = GlobalShaders->Get<SceneVS>();
 
 		static float rot = 0;
 		auto rotMat = glm::rotate(glm::mat4(), rot, glm::vec3(0.f, 1.f, 0.f));
-		triangleVS->SetModel(rotMat);
+		sceneVS->SetModel(rotMat);
 		rot += 0.01;
 
+		EngineRenderTargets targets;
+		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
+		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, { 1280, 720 }));
+		targets.DepthStencil = RTPool->Get(RenderTargetDesc(PF_DEPTH_COMPONENT32F, { 1280, 720 }));
+
+		glEnable(GL_CULL_FACE);
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+
+		Texture attachments[] =
+		{
+			targets.GBuffer0->GetTexture(),
+			targets.GBuffer1->GetTexture(),
+		};
+
+		SetRenderTargets(2, attachments, &targets.DepthStencil->GetTexture());
+
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		ShaderControl->BindPipeline<SceneVS, SceneFS>(GlobalShaders);
 
-		shaderManager->BindPipeline<TriangleVS, TriangleFS>(*shaderSet);
+		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
+		{
+			auto comp = ent.Get<ECS::Renderable>();
+			DrawRenderable(comp);
+		}
 
-		glBindVertexArray(vertexAttribs);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-		glBindTextures(0, 1, &texHandle);
-		glDrawElements(GL_TRIANGLES, numElems, GL_UNSIGNED_SHORT, nullptr);
+		// Run postprocessing.
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
 
+		PostProcessing::Process(this, targets);
+
+		// TODO(pushrax) remove
+		// Begin compute example.
+		auto exampleRT = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 256, 256 }));
+		exampleRT->GetTexture().BindImage(0, GL_WRITE_ONLY);
+		ShaderControl->BindPipeline<ExampleCS>(GlobalShaders);
+		glDispatchCompute(256 / 16, 256 / 16, 1);
+
+		// Draw resulting texture from compute example.
+		exampleRT->GetTexture().Bind(0);
+		ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(GlobalShaders);
+		glViewport(0, 0, 256, 256);
+		DrawScreenCover();
+		glViewport(0, 0, 1280, 720);
+		// End compute example.
+
+		//AssertGLOK("Renderer::RenderFrame");
 		glfwSwapBuffers(window);
-		AssertGLOK("Renderer::RenderFrame");
+	}
+
+	void Renderer::SetRenderTargets(size_t attachmentCount, const Texture *attachments, const Texture *depth)
+	{
+		GLuint fb = RTPool->GetFramebuffer(attachmentCount, attachments, depth);
+		glBindFramebuffer(GL_FRAMEBUFFER, fb);
+	}
+
+	void Renderer::SetRenderTarget(const Texture *attachment0, const Texture *depth)
+	{
+		SetRenderTargets(1, attachment0, depth);
+	}
+
+	void Renderer::SetDefaultRenderTarget()
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 }

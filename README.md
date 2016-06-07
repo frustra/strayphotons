@@ -6,7 +6,8 @@ Build setup
 
 ### Install latest graphics drivers
 
-- OpenGL 4.5 is required
+- OpenGL >= 4.3 is required, with certain 4.4/4.5 extensions (notably ARB_direct_state_access).
+Try to get the latest drivers for your hardware.
 
 ### Install build dependencies
 

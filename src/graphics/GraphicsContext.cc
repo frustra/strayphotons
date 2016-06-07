@@ -23,12 +23,12 @@ namespace sp
 		glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
-		shaderSet = new ShaderSet();
+		GlobalShaders = new ShaderSet();
 	}
 
 	GraphicsContext::~GraphicsContext()
 	{
-		delete shaderSet;
+		delete GlobalShaders;
 
 		if (window)
 			glfwDestroyWindow(window);
@@ -48,6 +48,7 @@ namespace sp
 
 		Assert(GLEW_ARB_compute_shader, "ARB_compute_shader required");
 		Assert(GLEW_ARB_direct_state_access, "ARB_direct_state_access required");
+		Assert(GLEW_ARB_multi_bind, "ARB_multi_bind required");
 
 		glDebugMessageCallback(DebugCallback, nullptr);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
