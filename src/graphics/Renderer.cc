@@ -2,6 +2,8 @@
 #include "graphics/RenderTargetPool.hh"
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
+#include "graphics/Util.hh"
+#include "graphics/GenericShaders.hh"
 #include "graphics/postprocess/PostProcess.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
@@ -49,6 +51,14 @@ namespace sp
 
 	IMPLEMENT_SHADER_TYPE(SceneVS, "scene.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(SceneFS, "scene.frag", Fragment);
+
+	class ExampleCS : public Shader
+	{
+		SHADER_TYPE(ExampleCS)
+		using Shader::Shader;
+	};
+
+	IMPLEMENT_SHADER_TYPE(ExampleCS, "compute_example.glsl", Compute);
 
 	Renderer::Renderer(Game *game) : GraphicsContext(game)
 	{
@@ -164,6 +174,21 @@ namespace sp
 		glDepthMask(GL_FALSE);
 
 		PostProcessing::Process(this, targets);
+
+		// TODO(pushrax) remove
+		// Begin compute example.
+		auto exampleRT = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 256, 256 }));
+		exampleRT->GetTexture().BindImage(0, GL_WRITE_ONLY);
+		ShaderControl->BindPipeline<ExampleCS>(GlobalShaders);
+		glDispatchCompute(256 / 16, 256 / 16, 1);
+
+		// Draw resulting texture from compute example.
+		exampleRT->GetTexture().Bind(0);
+		ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(GlobalShaders);
+		glViewport(0, 0, 256, 256);
+		DrawScreenCover();
+		glViewport(0, 0, 1280, 720);
+		// End compute example.
 
 		//AssertGLOK("Renderer::RenderFrame");
 		glfwSwapBuffers(window);

@@ -11,7 +11,7 @@ namespace sp
 		PixelFormat format = PF_INVALID;
 		GLsizei width = 0, height = 0;
 
-		Texture Create(GLenum target = GL_TEXTURE_2D)
+		Texture &Create(GLenum target = GL_TEXTURE_2D)
 		{
 			Assert(!handle);
 			glCreateTextures(target, 1, &handle);
@@ -31,7 +31,12 @@ namespace sp
 			glBindTextures(binding, 1, &handle);
 		}
 
-		Texture Filter(GLenum minFilter = GL_LINEAR, GLenum magFilter = GL_LINEAR)
+		void BindImage(GLuint binding, GLenum access, GLint level = 0, GLboolean layered = false, GLint layer = 0) const
+		{
+			glBindImageTexture(binding, handle, level, layered, layer, access, GLFormat().internalFormat);
+		}
+
+		Texture &Filter(GLenum minFilter = GL_LINEAR, GLenum magFilter = GL_LINEAR)
 		{
 			Assert(handle);
 			glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, minFilter);
@@ -39,7 +44,7 @@ namespace sp
 			return *this;
 		}
 
-		Texture Wrap(GLenum wrapS = GL_CLAMP_TO_EDGE, GLenum wrapT = GL_CLAMP_TO_EDGE)
+		Texture &Wrap(GLenum wrapS = GL_CLAMP_TO_EDGE, GLenum wrapT = GL_CLAMP_TO_EDGE)
 		{
 			Assert(handle);
 			glTextureParameteri(handle, GL_TEXTURE_WRAP_S, wrapS);
@@ -47,14 +52,14 @@ namespace sp
 			return *this;
 		}
 
-		Texture Size(GLsizei width, GLsizei height)
+		Texture &Size(GLsizei width, GLsizei height)
 		{
 			this->width = width;
 			this->height = height;
 			return *this;
 		}
 
-		Texture Storage2D(PixelFormat format, GLsizei levels = 1)
+		Texture &Storage2D(PixelFormat format, GLsizei levels = 1)
 		{
 			Assert(handle);
 			Assert(width && height);
@@ -63,7 +68,7 @@ namespace sp
 			return *this;
 		}
 
-		Texture Image2D(const void *pixels, GLint level = 0, GLsizei subWidth = 0, GLsizei subHeight = 0, GLsizei xoffset = 0, GLsizei yoffset = 0)
+		Texture &Image2D(const void *pixels, GLint level = 0, GLsizei subWidth = 0, GLsizei subHeight = 0, GLsizei xoffset = 0, GLsizei yoffset = 0)
 		{
 			Assert(handle);
 			Assert(pixels);
@@ -77,7 +82,7 @@ namespace sp
 			return *this;
 		}
 
-		GLPixelFormat GLFormat()
+		GLPixelFormat GLFormat() const
 		{
 			return GLPixelFormat::PixelFormatMapping(format);
 		}

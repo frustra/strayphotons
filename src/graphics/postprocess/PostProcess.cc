@@ -32,22 +32,22 @@ namespace sp
 
 		SSAOPass0 ssaoPass0;
 		ssaoPass0.SetInput(0, context.LastOutput);
-		ssaoPass0.SetInput(1, ProcessPassOutputRef(&gbuffer1));
-		ssaoPass0.SetInput(2, ProcessPassOutputRef(&depth));
+		ssaoPass0.SetInput(1, { &gbuffer1 });
+		ssaoPass0.SetInput(2, { &depth });
 		context.AddPass(&ssaoPass0);
 
 		SSAOBlur ssaoBlurX(true);
-		ssaoBlurX.SetInput(0, ProcessPassOutputRef(&ssaoPass0));
-		ssaoBlurX.SetInput(1, ProcessPassOutputRef(&gbuffer1));
-		ssaoBlurX.SetInput(2, ProcessPassOutputRef(&depth));
-		ssaoBlurX.SetInput(3, ProcessPassOutputRef(&gbuffer0));
+		ssaoBlurX.SetInput(0, { &ssaoPass0 });
+		ssaoBlurX.SetInput(1, { &gbuffer1 });
+		ssaoBlurX.SetInput(2, { &depth });
+		ssaoBlurX.SetInput(3, { &gbuffer0 });
 		context.AddPass(&ssaoBlurX);
 
 		SSAOBlur ssaoBlurY(false);
-		ssaoBlurY.SetInput(0, ProcessPassOutputRef(&ssaoBlurX));
-		ssaoBlurY.SetInput(1, ProcessPassOutputRef(&gbuffer1));
-		ssaoBlurY.SetInput(2, ProcessPassOutputRef(&depth));
-		ssaoBlurY.SetInput(3, ProcessPassOutputRef(&gbuffer0));
+		ssaoBlurY.SetInput(0, { &ssaoBlurX });
+		ssaoBlurY.SetInput(1, { &gbuffer1 });
+		ssaoBlurY.SetInput(2, { &depth });
+		ssaoBlurY.SetInput(3, { &gbuffer0 });
 		context.AddPass(&ssaoBlurY);
 
 		context.LastOutput = ProcessPassOutputRef(&ssaoBlurY);
