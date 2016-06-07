@@ -13,16 +13,20 @@ namespace sp
 	public:
 		PhysxManager ();
 		~PhysxManager () {};
+		physx::PxActor* CreateActor ();
+		void Frame();
 	private:
 		void CreatePhysxScene ();
 		void DestroyPhysxScene ();
 
 		physx::PxFoundation* pxFoundation;
-		physx::PxPhysics* pxSDK;
+		physx::PxPhysics* physics;
 		physx::PxDefaultErrorCallback defaultErrorCallback;
 		physx::PxDefaultAllocator defaultAllocatorCallback;
 
 		physx::PxScene* scene;
+
+		const float timeStep = 1/60.f;
 	};
 }
 
