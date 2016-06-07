@@ -43,6 +43,14 @@ namespace sp
 		if (!graphics.Frame()) return false;
 		physics.Frame();
 
+
+		for (Entity ent : entityManager.EntitiesWith<ECS::Physics>())
+		{
+			auto comp = ent.Get<ECS::Physics>();
+			physx::PxVec3 p = comp->actor->getGlobalPose().p;
+			Debugf("(" + std::to_string(p.x) + ", " + std::to_string(p.y) + ", " + std::to_string(p.z) + ")");
+		}
+
 		return true;
 	}
 

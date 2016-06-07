@@ -13,7 +13,7 @@ namespace sp
 	public:
 		PhysxManager ();
 		~PhysxManager () {};
-		physx::PxActor* CreateActor ();
+		physx::PxRigidActor* CreateActor ();
 		void Frame();
 	private:
 		void CreatePhysxScene ();

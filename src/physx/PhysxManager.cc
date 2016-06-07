@@ -18,7 +18,7 @@ namespace sp
 		scene->simulate(timeStep);
 
 	   	while(!scene->fetchResults() ) {
-	   		
+
 	   	}  
 	}
 
@@ -53,8 +53,8 @@ namespace sp
 		scene->addActor(*plane);
 	}
 
-	physx::PxActor* PhysxManager::CreateActor () {
-		physx::PxTransform position (0,0,0);
+	physx::PxRigidActor* PhysxManager::CreateActor () {
+		physx::PxTransform position (0,100,0);
 		physx::PxRigidActor* capsule = physics->createRigidDynamic(position);
 		scene->addActor(*capsule);
 		return capsule;

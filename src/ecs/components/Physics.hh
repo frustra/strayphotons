@@ -7,7 +7,7 @@ namespace ECS
 	struct Physics
 	{
 		Physics() {}
-		Physics(physx::PxActor* actor) : actor(actor) {}
-		physx::PxActor* actor;
+		Physics(physx::PxRigidActor* actor) : actor(actor) {}
+		physx::PxRigidActor* actor;
 	};
 }
