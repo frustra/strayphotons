@@ -22,8 +22,8 @@ namespace sp
 		AssetManager assets;
 		GraphicsManager graphics;
 		Entity duck;
-		EntityManager entityManager;=
-		PhysxManager physics;=
+		EntityManager entityManager;
+		PhysxManager physics;
 	};
 }
 
