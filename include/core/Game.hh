@@ -1,8 +1,8 @@
 #ifndef SP_GAME_H
 #define SP_GAME_H
 
-#include "graphics/GraphicsManager.hh"
 #include "physx/PhysxManager.hh"
+#include "graphics/GraphicsManager.hh"
 #include "assets/AssetManager.hh"
 #include "Common.hh"
 
