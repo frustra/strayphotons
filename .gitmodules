@@ -30,4 +30,4 @@
 	url = https://github.com/syoyo/tinygltfloader.git
 [submodule "ext/physx"]
 	path = ext/physx
-	url = https://github.com/NVIDIAGameWorks/PhysX-3.3.git
+	url = https://github.com/frustra/PhysX-3.3.git
