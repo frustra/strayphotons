@@ -198,7 +198,7 @@ namespace sp
 	{
 		if (compTypeToCompIndex.count(stdTypeId) == 0)
 		{
-			throw runtime_error("invalid component type given, it is unknown to the system.");
+			throw invalid_argument("invalid component type given, it is unknown to the system.");
 		}
 		auto compIndex = compTypeToCompIndex.at(stdTypeId);
 		mask.set(compIndex);
