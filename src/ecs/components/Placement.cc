@@ -6,7 +6,7 @@
 
 namespace ECS
 {
-	glm::mat4 Placement::GetModelTransform(sp::EntityManager& manager)
+	glm::mat4 Placement::GetModelTransform(sp::EntityManager &manager)
 	{
 		glm::mat4 model;
 

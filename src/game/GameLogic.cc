@@ -19,7 +19,7 @@ namespace sp
 	{
 		this->duck = game->entityManager.NewEntity();
 		this->duck.Assign<ECS::Renderable>(game->assets.LoadModel("duck"));
-		ECS::Placement* duckPlacement = this->duck.Assign<ECS::Placement>();
+		ECS::Placement *duckPlacement = this->duck.Assign<ECS::Placement>();
 		duckPlacement->Translate(glm::vec3(0, 0, -4));
 		duckPlacement->Rotate(glm::radians(-30.0f), glm::vec3(0, 0, 1));
 
@@ -37,7 +37,7 @@ namespace sp
 	bool GameLogic::Frame(double dtSinceLastFrame)
 	{
 		ECS::Placement *boxPlacement = this->box.Get<ECS::Placement>();
-		boxPlacement->Rotate(3*dtSinceLastFrame, glm::vec3(0, 1, 0));
+		boxPlacement->Rotate(3 * dtSinceLastFrame, glm::vec3(0, 1, 0));
 
 		auto *duckPlacement = this->duck.Get<ECS::Placement>();
 		duckPlacement->Rotate(dtSinceLastFrame, glm::vec3(1, 0, 0));

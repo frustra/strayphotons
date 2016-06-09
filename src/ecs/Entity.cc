@@ -18,7 +18,7 @@ namespace sp
 		em->RemoveAllComponents(this->eid);
 	}
 
-	EntityManager * Entity::GetManager()
+	EntityManager *Entity::GetManager()
 	{
 		return this->em;
 	}

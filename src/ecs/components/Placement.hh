@@ -17,7 +17,7 @@ namespace ECS
 		 * This involves computing the incremental model transforms for any entities
 		 * that this placement is relative to.
 		 */
-		glm::mat4 GetModelTransform(sp::EntityManager& manager);
+		glm::mat4 GetModelTransform(sp::EntityManager &manager);
 
 		/**
 		 * Change the local rotation by "radians" amount about the local "axis"
