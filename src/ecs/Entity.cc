@@ -17,4 +17,14 @@ namespace sp
 	{
 		em->RemoveAllComponents(this->eid);
 	}
+
+	EntityManager * Entity::GetManager()
+	{
+		return this->em;
+	}
+
+	Entity::Id Entity::GetId() const
+	{
+		return this->eid;
+	}
 }
