@@ -8,7 +8,7 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "ecs/components/Renderable.hh"
-#include "ecs/components/Placement.hh"
+#include "ecs/components/Transform.hh"
 
 namespace sp
 {
@@ -160,10 +160,10 @@ namespace sp
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		ShaderControl->BindPipeline<SceneVS, SceneFS>(GlobalShaders);
 
-		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable, ECS::Placement>())
+		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable, ECS::Transform>())
 		{
 			auto comp = ent.Get<ECS::Renderable>();
-			sceneVS->SetModel(ent.Get<ECS::Placement>()->GetModelTransform(*ent.GetManager()));
+			sceneVS->SetModel(ent.Get<ECS::Transform>()->GetModelTransform(*ent.GetManager()));
 			DrawRenderable(comp);
 		}
 

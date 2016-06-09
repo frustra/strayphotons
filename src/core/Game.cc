@@ -3,7 +3,7 @@
 
 #include "assets/Model.hh"
 #include "ecs/components/Renderable.hh"
-#include "ecs/components/Placement.hh"
+#include "ecs/components/Transform.hh"
 
 #include <glm/glm.hpp>
 
@@ -14,7 +14,7 @@ namespace sp
 		// pre-register all of our component types so that errors do not arrise if they
 		// are queried for before an instance is ever created
 		entityManager.RegisterComponentType<ECS::Renderable>();
-		entityManager.RegisterComponentType<ECS::Placement>();
+		entityManager.RegisterComponentType<ECS::Transform>();
 	}
 
 	Game::~Game()

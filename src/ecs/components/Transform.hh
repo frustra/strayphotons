@@ -6,10 +6,10 @@
 
 namespace ECS
 {
-	class Placement
+	class Transform
 	{
 	public:
-		Placement() {}
+		Transform() {}
 		void SetRelativeTo(sp::Entity);
 
 		/**
@@ -31,7 +31,7 @@ namespace ECS
 
 		/**
 		 * Change the local scale by an amount in the local x, y, z planes.
-		 * This will propagate to Placements that are relative to this one.
+		 * This will propagate to Transforms that are relative to this one.
 		 */
 		void Scale(glm::vec3 xyz);
 

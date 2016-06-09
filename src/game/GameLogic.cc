@@ -4,7 +4,7 @@
 #include "game/GameLogic.hh"
 #include "assets/Model.hh"
 #include "ecs/components/Renderable.hh"
-#include "ecs/components/Placement.hh"
+#include "ecs/components/Transform.hh"
 
 #include <glm/glm.hpp>
 #include <cmath>
@@ -19,22 +19,22 @@ namespace sp
 	{
 		this->duck = game->entityManager.NewEntity();
 		this->duck.Assign<ECS::Renderable>(game->assets.LoadModel("duck"));
-		ECS::Placement *duckPlacement = this->duck.Assign<ECS::Placement>();
-		duckPlacement->Translate(glm::vec3(0, 0, -4));
-		duckPlacement->Rotate(glm::radians(-30.0f), glm::vec3(0, 0, 1));
+		ECS::Transform *duckTransform = this->duck.Assign<ECS::Transform>();
+		duckTransform->Translate(glm::vec3(0, 0, -4));
+		duckTransform->Rotate(glm::radians(-30.0f), glm::vec3(0, 0, 1));
 
 		this->box = game->entityManager.NewEntity();
 		this->box.Assign<ECS::Renderable>(game->assets.LoadModel("box"));
-		ECS::Placement *boxPlacement = this->box.Assign<ECS::Placement>();
-		boxPlacement->SetRelativeTo(duck);
-		boxPlacement->Translate(glm::vec3(0, 2, 0));
+		ECS::Transform *boxTransform = this->box.Assign<ECS::Transform>();
+		boxTransform->SetRelativeTo(duck);
+		boxTransform->Translate(glm::vec3(0, 2, 0));
 
 		this->sponza = game->entityManager.NewEntity();
 		this->sponza.Assign<ECS::Renderable>(game->assets.LoadModel("sponza"));
-		ECS::Placement *mapPlacement = this->sponza.Assign<ECS::Placement>();
-		mapPlacement->Scale(glm::vec3(1.0f) / 100.0f);
-		mapPlacement->Translate(glm::vec3(0, -1, 0));
-		mapPlacement->Rotate(glm::radians(-90.0f), glm::vec3(0, 1, 0));
+		ECS::Transform *mapTransform = this->sponza.Assign<ECS::Transform>();
+		mapTransform->Scale(glm::vec3(1.0f) / 100.0f);
+		mapTransform->Translate(glm::vec3(0, -1, 0));
+		mapTransform->Rotate(glm::radians(-90.0f), glm::vec3(0, 1, 0));
 	}
 
 	GameLogic::~GameLogic()
@@ -43,11 +43,11 @@ namespace sp
 
 	bool GameLogic::Frame(double dtSinceLastFrame)
 	{
-		ECS::Placement *boxPlacement = this->box.Get<ECS::Placement>();
-		boxPlacement->Rotate(3 * dtSinceLastFrame, glm::vec3(0, 1, 0));
+		ECS::Transform *boxTransform = this->box.Get<ECS::Transform>();
+		boxTransform->Rotate(3 * dtSinceLastFrame, glm::vec3(0, 1, 0));
 
-		auto *duckPlacement = this->duck.Get<ECS::Placement>();
-		duckPlacement->Rotate(dtSinceLastFrame, glm::vec3(1, 0, 0));
+		auto *duckTransform = this->duck.Get<ECS::Transform>();
+		duckTransform->Rotate(dtSinceLastFrame, glm::vec3(1, 0, 0));
 
 		return true;
 	}
