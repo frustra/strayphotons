@@ -3,15 +3,18 @@
 
 #include "assets/Model.hh"
 #include "ecs/components/Renderable.hh"
+#include "ecs/components/Placement.hh"
+
+#include <glm/glm.hpp>
 
 namespace sp
 {
-	Game::Game() : graphics(this)
+	Game::Game() : graphics(this), logic(this)
 	{
-		entityManager.NewEntity().Assign<ECS::Renderable>(assets.LoadModel("duck"));
-		entityManager.NewEntity().Assign<ECS::Renderable>(assets.LoadModel("box"));
-
-		graphics.CreateContext();
+		// pre-register all of our component types so that errors do not arrise if they
+		// are queried for before an instance is ever created
+		entityManager.RegisterComponentType<ECS::Renderable>();
+		entityManager.RegisterComponentType<ECS::Placement>();
 	}
 
 	Game::~Game()
@@ -22,6 +25,10 @@ namespace sp
 	{
 		try
 		{
+			logic.Init();
+			graphics.CreateContext();
+			this->lastFrameTime = glfwGetTime();
+
 			while (true)
 			{
 				if (ShouldStop()) break;
@@ -36,8 +43,13 @@ namespace sp
 
 	bool Game::Frame()
 	{
+		double frameTime = glfwGetTime();
+		double dt = this->lastFrameTime - frameTime;
+
+		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;
 
+		this->lastFrameTime = frameTime;
 		return true;
 	}
 

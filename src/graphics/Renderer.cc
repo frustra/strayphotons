@@ -8,6 +8,7 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "ecs/components/Renderable.hh"
+#include "ecs/components/Placement.hh"
 
 namespace sp
 {
@@ -138,11 +139,6 @@ namespace sp
 
 		auto sceneVS = GlobalShaders->Get<SceneVS>();
 
-		static float rot = 0;
-		auto rotMat = glm::rotate(glm::mat4(), rot, glm::vec3(0.f, 1.f, 0.f));
-		sceneVS->SetModel(rotMat);
-		rot += 0.01;
-
 		EngineRenderTargets targets;
 		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
 		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, { 1280, 720 }));
@@ -163,9 +159,10 @@ namespace sp
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		ShaderControl->BindPipeline<SceneVS, SceneFS>(GlobalShaders);
 
-		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
+		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable, ECS::Placement>())
 		{
 			auto comp = ent.Get<ECS::Renderable>();
+			sceneVS->SetModel(ent.Get<ECS::Placement>()->GetModelTransform(*ent.GetManager()));
 			DrawRenderable(comp);
 		}
 

@@ -97,6 +97,9 @@ namespace sp
 		Entity() : em(nullptr), eid() {}
 		Entity(EntityManager *em, Entity::Id eid) : em(em), eid(eid) {}
 
+		EntityManager * GetManager();
+		Id GetId() const;
+
 		// retrieves the unique identifier for this entity
 		uint64 Index() const
 		{
