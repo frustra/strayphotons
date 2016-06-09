@@ -2,6 +2,7 @@
 
 #include "Common.hh"
 #include "graphics/Graphics.hh"
+#include "graphics/Texture.hh"
 
 #include <tiny_gltf_loader.h>
 
@@ -39,10 +40,10 @@ namespace sp
 		const string name;
 		vector<Primitive *> primitives;
 		std::map<string, GLuint> buffers;
-		std::map<string, GLuint> textures;
+		std::map<string, Texture> textures;
 
 		GLuint LoadBuffer(string name);
-		GLuint LoadTexture(string name);
+		Texture *LoadTexture(string name);
 	private:
 		void AddNode(string nodeName, glm::mat4 parentMatrix);
 

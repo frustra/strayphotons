@@ -77,7 +77,7 @@ namespace sp
 		for (auto primitive : comp->model->primitives)
 		{
 			primitive->indexBufferHandle = comp->model->LoadBuffer(primitive->indexBuffer.bufferName);
-			if (primitive->textureName[0]) primitive->textureHandle = comp->model->LoadTexture(primitive->textureName);
+			if (primitive->textureName[0]) primitive->textureHandle = comp->model->LoadTexture(primitive->textureName)->handle;
 
 			glCreateVertexArrays(1, &primitive->vertexBufferHandle);
 			for (int i = 0; i < 3; i++)
@@ -115,6 +115,7 @@ namespace sp
 		ShaderControl = new ShaderManager();
 		ShaderControl->CompileAll(GlobalShaders);
 
+		// TODO(cory): Fix hardcoded values
 		auto projection = glm::perspective(glm::radians(60.0f), 1.778f, 0.1f, 256.0f);
 		auto view = glm::translate(glm::mat4(), glm::vec3(0.0f, -1.0f, -2.5f));
 		auto model = glm::mat4();

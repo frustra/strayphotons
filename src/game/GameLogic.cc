@@ -28,6 +28,13 @@ namespace sp
 		ECS::Placement *boxPlacement = this->box.Assign<ECS::Placement>();
 		boxPlacement->SetRelativeTo(duck);
 		boxPlacement->Translate(glm::vec3(0, 2, 0));
+
+		this->sponza = game->entityManager.NewEntity();
+		this->sponza.Assign<ECS::Renderable>(game->assets.LoadModel("sponza"));
+		ECS::Placement *mapPlacement = this->sponza.Assign<ECS::Placement>();
+		mapPlacement->Scale(glm::vec3(1.0f) / 100.0f);
+		mapPlacement->Translate(glm::vec3(0, -1, 0));
+		mapPlacement->Rotate(glm::radians(-90.0f), glm::vec3(0, 1, 0));
 	}
 
 	GameLogic::~GameLogic()

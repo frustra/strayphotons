@@ -17,5 +17,5 @@ void main()
 {
 	gl_Position = projMatrix * viewMatrix * modelMatrix * vec4(inPos, 1.0);
 	outNormal = mat3(viewMatrix * modelMatrix) * inNormal;
-	outTexCoord = inTexCoord;
+	outTexCoord = vec2(inTexCoord.x, 1-inTexCoord.y);
 }

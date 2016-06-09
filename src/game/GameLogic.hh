@@ -18,5 +18,6 @@ namespace sp
 		Game *game;
 		Entity duck;
 		Entity box;
+		Entity sponza;
 	};
 }
