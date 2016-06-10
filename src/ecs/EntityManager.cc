@@ -90,8 +90,12 @@ namespace sp
 
 		auto smallestCompPool = static_cast<BaseComponentPool *>(compMgr.componentPools.at(minSizeCompIndex));
 
-		return EntityManager::EntityCollection(*this, compMask, smallestCompPool->Entities(),
-											   smallestCompPool->CreateIterateLock());
+		return EntityManager::EntityCollection(
+			*this,
+			compMask,
+			smallestCompPool->Entities(),
+			smallestCompPool->CreateIterateLock()
+		);
 	}
 
 	EntityManager::EntityCollection::Iterator::Iterator(EntityManager &em,
@@ -103,11 +107,12 @@ namespace sp
 
 	EntityManager::EntityCollection::Iterator &EntityManager::EntityCollection::Iterator::operator++()
 	{
+		// find the next entity that has all the components specified by this->compMask
 		while (++compIt != compEntColl->end())
 		{
 			Entity::Id e = *compIt;
 			auto entCompMask = em.compMgr.entCompMasks.at(e.Index());
-			if ((entCompMask & compMask).any())
+			if ((entCompMask & compMask) == compMask)
 			{
 				break;
 			}

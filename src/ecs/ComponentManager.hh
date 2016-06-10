@@ -8,6 +8,7 @@
 #include "Common.hh"
 #include "ecs/Entity.hh"
 #include "ecs/ComponentStorage.hh"
+#include "ecs/UnrecognizedComponentType.hh"
 
 #define MAX_COMPONENT_TYPES 64
 
@@ -117,7 +118,7 @@ namespace sp
 		std::type_index tIndex = typeid(CompType);
 		if (compTypeToCompIndex.count(tIndex) == 0)
 		{
-			throw invalid_argument("template is not a component type; it has never been added to the system");
+			throw UnrecognizedComponentType(tIndex);
 		}
 
 		uint32 compIndex = compTypeToCompIndex.at(tIndex);
@@ -138,8 +139,7 @@ namespace sp
 		std::type_index compType = typeid(CompType);
 		if (compTypeToCompIndex.count(compType) == 0)
 		{
-			throw invalid_argument("template is not a component type; it has never been added to the system");
-
+			throw UnrecognizedComponentType(compType);
 		}
 
 		auto compIndex = compTypeToCompIndex.at(compType);
@@ -190,7 +190,7 @@ namespace sp
 	template <typename ...CompTypes>
 	ComponentManager::ComponentMask &ComponentManager::SetMask(ComponentMask &mask)
 	{
-		return setMask(mask, typeid(CompTypes)...);
+		return setMask(mask, std::type_index(typeid(CompTypes))...);
 	}
 
 	template <typename TypeId>

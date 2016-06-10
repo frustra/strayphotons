@@ -35,8 +35,8 @@ namespace test
 		sp::Entity eEat;
 		sp::Entity eNoComps;
 
-	    virtual void SetUp()
-	    {
+		virtual void SetUp()
+		{
 			ePos1 = em.NewEntity();
 			ePos2 = em.NewEntity();
 			ePosEat = em.NewEntity();
@@ -49,9 +49,9 @@ namespace test
 
 			ePosEat.Assign<Eater>();
 			eEat.Assign<Eater>();
-	    }
+		}
 
-		void ExpectEntitiesFound()
+		void ExpectPositionEntitiesFound()
 		{
 			// found entities with the component
 			EXPECT_TRUE(entsFound.count(ePos1) == 1 && entsFound[ePos1] == true);
@@ -120,6 +120,17 @@ namespace test
 	    ASSERT_FALSE(e.Has<Eater>());
 	}
 
+	TEST_F(EcsBasicIterateWithComponents, MultiComponentTemplateIteration)
+	{
+		for (sp::Entity ent : em.EntitiesWith<Eater, Position>())
+		{
+			entsFound[ent] = true;
+		}
+
+		EXPECT_TRUE(entsFound.count(ePosEat) == 1 && entsFound[ePosEat] == true);
+		EXPECT_EQ(1, entsFound.size()) << "should have only found one entity";
+	}
+
 	TEST_F(EcsBasicIterateWithComponents, TemplateIteration)
 	{
 		for (sp::Entity ent : em.EntitiesWith<Position>())
@@ -127,7 +138,7 @@ namespace test
 			entsFound[ent] = true;
 		}
 
-		ExpectEntitiesFound();
+		ExpectPositionEntitiesFound();
 	}
 
 	TEST_F(EcsBasicIterateWithComponents, MaskIteration)
@@ -138,7 +149,7 @@ namespace test
 			entsFound[ent] = true;
 		}
 
-		ExpectEntitiesFound();
+		ExpectPositionEntitiesFound();
 	}
 
 	TEST(EcsBasic, AddEntitiesWhileIterating)
