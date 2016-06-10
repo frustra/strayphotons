@@ -59,6 +59,17 @@ namespace sp
 		string varName, value;
 		stream >> varName >> value;
 
+		if (varName == "list")
+		{
+			for (auto &kv : cvars)
+			{
+				auto cvar = kv.second;
+				std::cout << " > " << cvar->GetName() << " " << cvar->StringValue() << std::endl;
+				std::cout << " >   " << cvar->GetDescription() << std::endl;
+			}
+			return;
+		}
+
 		auto cvar = cvars[boost::algorithm::to_lower_copy(varName)];
 		if (cvar)
 		{
@@ -67,11 +78,11 @@ namespace sp
 				cvar->SetFromString(value);
 			}
 
-			std::cout << " > " << cvar->GetName() << " = " << cvar->StringValue() << std::endl;
+			std::cout << " > " << cvar->GetName() << " " << cvar->StringValue() << std::endl;
 
 			if (value.length() == 0)
 			{
-				std::cout << " > " << cvar->GetDescription() << std::endl;
+				std::cout << " >   " << cvar->GetDescription() << std::endl;
 			}
 		}
 		else
