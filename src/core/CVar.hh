@@ -32,7 +32,7 @@ namespace sp
 	{
 	public:
 		CVar(const string &name, const VarType &initial, const string &description)
-			: value(initial), CVarBase(name, description)
+			: CVarBase(name, description), value(initial)
 		{
 		}
 

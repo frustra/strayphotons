@@ -17,6 +17,7 @@ namespace sp
 	ConsoleManager::ConsoleManager()
 	{
 		inputThread = std::thread([&] { this->InputLoop(); });
+		inputThread.detach();
 	}
 
 	void ConsoleManager::AddCVar(CVarBase *cvar)
