@@ -98,7 +98,7 @@ namespace sp
 
 			for (int i = 0; i < samples; i++)
 			{
-				noise.push_back(normalize(glm::vec3{ dist(rng), dist(rng), 0.0f }));
+				noise.push_back(normalize(glm::vec3 { dist(rng), dist(rng), 0.0f }));
 			}
 
 			tex.Create()

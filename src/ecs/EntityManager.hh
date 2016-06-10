@@ -73,6 +73,19 @@ namespace sp
 		CompType *Get(Entity::Id e);
 
 		/**
+		 * Register the given type as a valid "Component type" in the system.
+		 * This means that operations to search for entities with this component
+		 * as well as checking if an entity has that component will not fail with
+		 * an exception.
+		 *
+		 * It is good practice to do this with all intended component types during
+		 * program initialization to prevent errors when checking for component types
+		 * that have yet to be assigned to an entity.
+		 */
+		template<typename CompType>
+		void RegisterComponentType();
+
+		/**
 		 * Create a component mask for the given types
 		 */
 		template <typename ...CompTypes>

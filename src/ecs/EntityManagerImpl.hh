@@ -35,6 +35,12 @@ namespace sp
 		return EntitiesWith(compMgr.CreateMask<CompTypes...>());
 	}
 
+	template<typename CompType>
+	void EntityManager::RegisterComponentType()
+	{
+		compMgr.RegisterComponentType<CompType>();
+	}
+
 	template <typename ...CompTypes>
 	ComponentManager::ComponentMask EntityManager::CreateComponentMask()
 	{

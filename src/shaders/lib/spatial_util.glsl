@@ -15,7 +15,7 @@ vec3 ProjectVec3(vec3 v, vec3 u) {
 	return u * dot(v, u);
 }
 
-const float tan_half_fov = 0.577350269, aspect_ratio = 16/9;
+const float tan_half_fov = 0.577350269, aspect_ratio = 16.0/9.0;
 
 // Returns a ray from the camera to the far plane.
 vec3 FarPlaneRay(vec2 viewSpacePosition) {

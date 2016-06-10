@@ -11,7 +11,7 @@ namespace sp
 				PF_DEFINITIONS
 		}
 		Assert(false, "invalid PixelFormat");
-		return GLPixelFormat{};
+		return GLPixelFormat {};
 	};
 
 #undef PF_DEF

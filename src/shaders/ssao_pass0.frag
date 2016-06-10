@@ -12,7 +12,7 @@ layout (location = 1) noperspective in vec3 inViewRay;
 layout (location = 0) out vec4 outFragColor;
 
 const int kernelSize = 24;
-const float radius = 8.0;
+const float radius = 0.05;
 const float power = 2.6;
 
 uniform vec3 kernel[kernelSize];
@@ -70,5 +70,5 @@ void main()
 	occlusion = 1 - (occlusion / float(kernelSize));
 	occlusion = pow(occlusion, power);
 
-	outFragColor = vec4(vec3(occlusion), 1.0) * texture(gBuffer0, inTexCoord);
+	outFragColor = vec4(vec3(occlusion), 1.0);
 }

@@ -5,6 +5,7 @@
 #include "assets/AssetManager.hh"
 #include "Common.hh"
 #include "ecs/Ecs.hh"
+#include "game/GameLogic.hh"
 
 namespace sp
 {
@@ -18,9 +19,13 @@ namespace sp
 		bool Frame();
 		bool ShouldStop();
 
-		AssetManager assets;
 		GraphicsManager graphics;
+		GameLogic logic;
+		AssetManager assets;
 		EntityManager entityManager;
 		PhysxManager physics;
+
+	private:
+		double lastFrameTime;
 	};
 }

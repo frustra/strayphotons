@@ -25,11 +25,20 @@ namespace sp
 	struct GLPixelFormat
 	{
 		GLPixelFormat() {}
-		GLPixelFormat(GLenum i, GLenum f, GLenum t) : internalFormat(i), format(f), type(t) { }
+		GLPixelFormat(GLenum i, GLenum f, GLenum t) : internalFormat(i), format(f), type(t)
+		{
+			if (i == GL_RGBA) internalFormat = GL_RGBA8;
+			else if (i == GL_RGB) internalFormat = GL_RGB8;
+		}
 
 		GLenum internalFormat = GL_NONE;
 		GLenum format = GL_NONE;
 		GLenum type = GL_NONE;
+
+		bool Valid() const
+		{
+			return internalFormat != GL_NONE && format != GL_NONE && type != GL_NONE;
+		}
 
 		static const GLPixelFormat PixelFormatMapping(PixelFormat in);
 	};

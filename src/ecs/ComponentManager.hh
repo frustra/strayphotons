@@ -3,6 +3,7 @@
 #include <typeindex>
 #include <unordered_map>
 #include <bitset>
+#include <sstream>
 
 #include "Common.hh"
 #include "ecs/Entity.hh"
@@ -46,6 +47,21 @@ namespace sp
 		template <typename ...CompTypes>
 		ComponentMask CreateMask();
 
+		/**
+		 * Register the given type as a valid "Component type" in the system.
+		 * This means that operations to search for entities with this component
+		 * as well as checking if an entity has that component will not fail with
+		 * an exception.
+		 *
+		 * It is good practice to do this with all intended component types during
+		 * program initialization to prevent errors when checking for component types
+		 * that have yet to be assigned to an entity.
+		 *
+		 * This will throw an std::runtime_error if any of the types are already registered.
+		 */
+		template<typename CompType>
+		void RegisterComponentType();
+
 	private:
 		template <typename TypeId>
 		ComponentMask &setMask(ComponentManager::ComponentMask &mask, const TypeId &stdTypeId);
@@ -83,9 +99,8 @@ namespace sp
 		// component never seen before, add it to the collection
 		catch (const std::out_of_range &e)
 		{
-			compIndex = componentPools.size();
-			compTypeToCompIndex[compType] = compIndex;
-			componentPools.push_back(new ComponentPool<CompType>());
+			RegisterComponentType<CompType>();
+			compIndex = compTypeToCompIndex.at(compType);
 		}
 
 		Assert(entCompMasks.size() > e.Index(), "entity does not have a component mask");
@@ -124,6 +139,7 @@ namespace sp
 		if (compTypeToCompIndex.count(compType) == 0)
 		{
 			throw invalid_argument("template is not a component type; it has never been added to the system");
+
 		}
 
 		auto compIndex = compTypeToCompIndex.at(compType);
@@ -141,6 +157,23 @@ namespace sp
 		}
 
 		return static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex))->Get(e);
+	}
+
+	template <typename CompType>
+	void ComponentManager::RegisterComponentType()
+	{
+		std::type_index compType = typeid(CompType);
+
+		if (compTypeToCompIndex.count(compType) != 0)
+		{
+			std::stringstream ss;
+			ss << "component type " << string(compType.name()) << " is already registered";
+			throw std::runtime_error(ss.str());
+		}
+
+		uint32 compIndex = componentPools.size();
+		compTypeToCompIndex[compType] = compIndex;
+		componentPools.push_back(new ComponentPool<CompType>());
 	}
 
 	template <typename ...CompTypes>
@@ -161,8 +194,12 @@ namespace sp
 	}
 
 	template <typename TypeId>
-	ComponentManager::ComponentMask &ComponentManager::setMask(ComponentManager::ComponentMask &mask, const TypeId &stdTypeId)
+	ComponentManager::ComponentMask &ComponentManager::setMask(ComponentMask &mask, const TypeId &stdTypeId)
 	{
+		if (compTypeToCompIndex.count(stdTypeId) == 0)
+		{
+			throw invalid_argument("invalid component type given, it is unknown to the system.");
+		}
 		auto compIndex = compTypeToCompIndex.at(stdTypeId);
 		mask.set(compIndex);
 		return mask;

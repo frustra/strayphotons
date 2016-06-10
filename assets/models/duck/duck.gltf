@@ -351,8 +351,8 @@
     },
     "textures": {
         "texture_file2": {
-            "format": 6408,
-            "internalFormat": 6408,
+            "format": 6407,
+            "internalFormat": 6407,
             "sampler": "sampler_0",
             "source": "file2",
             "target": 3553,

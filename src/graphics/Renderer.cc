@@ -8,6 +8,7 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "ecs/components/Renderable.hh"
+#include "ecs/components/Transform.hh"
 
 namespace sp
 {
@@ -76,7 +77,7 @@ namespace sp
 		for (auto primitive : comp->model->primitives)
 		{
 			primitive->indexBufferHandle = comp->model->LoadBuffer(primitive->indexBuffer.bufferName);
-			if (primitive->textureName[0]) primitive->textureHandle = comp->model->LoadTexture(primitive->textureName);
+			if (primitive->textureName[0]) primitive->textureHandle = comp->model->LoadTexture(primitive->textureName)->handle;
 
 			glCreateVertexArrays(1, &primitive->vertexBufferHandle);
 			for (int i = 0; i < 3; i++)
@@ -114,6 +115,7 @@ namespace sp
 		ShaderControl = new ShaderManager();
 		ShaderControl->CompileAll(GlobalShaders);
 
+		// TODO(cory): Fix hardcoded values
 		auto projection = glm::perspective(glm::radians(60.0f), 1.778f, 0.1f, 256.0f);
 		auto view = glm::translate(glm::mat4(), glm::vec3(0.0f, -1.0f, -2.5f));
 		auto model = glm::mat4();
@@ -138,11 +140,6 @@ namespace sp
 
 		auto sceneVS = GlobalShaders->Get<SceneVS>();
 
-		static float rot = 0;
-		auto rotMat = glm::rotate(glm::mat4(), rot, glm::vec3(0.f, 1.f, 0.f));
-		sceneVS->SetModel(rotMat);
-		rot += 0.01;
-
 		EngineRenderTargets targets;
 		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
 		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, { 1280, 720 }));
@@ -163,9 +160,10 @@ namespace sp
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		ShaderControl->BindPipeline<SceneVS, SceneFS>(GlobalShaders);
 
-		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
+		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable, ECS::Transform>())
 		{
 			auto comp = ent.Get<ECS::Renderable>();
+			sceneVS->SetModel(ent.Get<ECS::Transform>()->GetModelTransform(*ent.GetManager()));
 			DrawRenderable(comp);
 		}
 

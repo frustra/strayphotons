@@ -13,6 +13,7 @@ layout (location = 1) out vec4 gBuffer1;
 void main()
 {
 	vec4 baseColor = texture(baseColorTex, inTexCoord);
+	if (baseColor.a < 0.5) discard;
 	vec3 viewNormal = normalize(inNormal);
 
 	gBuffer0.rgb = baseColor.rgb;

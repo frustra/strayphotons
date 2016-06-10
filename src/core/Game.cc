@@ -5,17 +5,19 @@
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Physics.hh"
 
+#include "ecs/components/Transform.hh"
+
+#include <glm/glm.hpp>
+
 namespace sp
 {
-	Game::Game() : graphics(this), physics()
+	Game::Game() : graphics(this), logic(this), physics()
 	{
-		Entity duck = entityManager.NewEntity();
-		duck.Assign<ECS::Renderable>(assets.LoadModel("duck"));
-		duck.Assign<ECS::Physics>(physics.CreateActor());
-
-		entityManager.NewEntity().Assign<ECS::Renderable>(assets.LoadModel("box"));
-
-		graphics.CreateContext();
+		// pre-register all of our component types so that errors do not arrise if they
+		// are queried for before an instance is ever created
+		entityManager.RegisterComponentType<ECS::Renderable>();
+		entityManager.RegisterComponentType<ECS::Transform>();
+		entityManager.RegisterComponentType<ECS::Physics>();
 	}
 
 	Game::~Game()
@@ -26,6 +28,10 @@ namespace sp
 	{
 		try
 		{
+			logic.Init();
+			graphics.CreateContext();
+			this->lastFrameTime = glfwGetTime();
+
 			while (true)
 			{
 				if (ShouldStop()) break;
@@ -40,17 +46,33 @@ namespace sp
 
 	bool Game::Frame()
 	{
+		double frameTime = glfwGetTime();
+		double dt = this->lastFrameTime - frameTime;
+
+		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;
-		physics.Frame();
+		physics.Frame(-dt);
 
 
 		for (Entity ent : entityManager.EntitiesWith<ECS::Physics>())
 		{
-			auto comp = ent.Get<ECS::Physics>();
-			physx::PxVec3 p = comp->actor->getGlobalPose().p;
-			Debugf("(" + std::to_string(p.x) + ", " + std::to_string(p.y) + ", " + std::to_string(p.z) + ")");
+			auto physics = ent.Get<ECS::Physics>();
+			physx::PxTransform pxT = physics->actor->getGlobalPose();
+			physx::PxVec3 p = pxT.p;
+			physx::PxQuat q = pxT.q;
+			auto transform = ent.Get<ECS::Transform>();
+
+			glm::vec3 glmV;
+			glmV.x = p.x;
+			glmV.y = p.y;
+			glmV.z = p.z;
+
+			transform->SetTransform(glmV);
+			//TODO: Speak to Cory about getting transform to take in a quat
+			//transform->Rotate((glm::quat) q);
 		}
 
+		this->lastFrameTime = frameTime;
 		return true;
 	}
 

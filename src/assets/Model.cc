@@ -68,18 +68,23 @@ namespace sp
 		return handle;
 	}
 
-	GLuint Model::LoadTexture(string name)
+	Texture *Model::LoadTexture(string name)
 	{
-		if (textures.count(name)) return textures[name];
+		if (textures.count(name)) return &textures[name];
 
 		auto texture = scene->textures[name];
-		GLuint handle;
-		glCreateTextures(GL_TEXTURE_2D, 1, &handle);
 		auto img = scene->images[texture.source];
-		glTextureStorage2D(handle, 1, GL_RGBA8, img.width, img.height);
-		glTextureSubImage2D(handle, 0, 0, 0, img.width, img.height, GL_RGB, texture.type, img.image.data());
-		textures[name] = handle;
-		return handle;
+		textures[name].Create(texture.target)
+		.Filter(GL_LINEAR_MIPMAP_LINEAR)
+		.Wrap(GL_REPEAT, GL_REPEAT)
+		.Size(img.width, img.height)
+		.Storage2D(texture.internalFormat, texture.format, texture.type, 4)
+		.Image2D(img.image.data());
+
+		// TODO(pushrax) clean this up
+		glTextureParameterf(textures[name].handle, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.0);
+		glGenerateTextureMipmap(textures[name].handle);
+		return &textures[name];
 	}
 
 	void Model::AddNode(string nodeName, glm::mat4 parentMatrix)

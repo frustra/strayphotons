@@ -1,5 +1,6 @@
 #include <iostream>
 #include <unordered_map>
+#include <stdexcept>
 
 #include "gtest/gtest.h"
 
@@ -62,19 +63,6 @@ namespace test
 			EXPECT_FALSE(entsFound.count(eNoComps) == 1 && entsFound[eNoComps] == true);
 		}
 	};
-
-	// class EcsBasic : public ::testing::Test
-	// {
-	// protected:
-	//     sp::EntityManager em;
-	//     sp::Entity e;
-	//
-	//     virtual void SetUp()
-	//     {
-	//         e = em.NewEntity();
-	//     }
-	// };
-
 
 	TEST(EcsBasic, CreateDestroyEntity)
 	{
@@ -232,5 +220,22 @@ namespace test
 		ASSERT_EQ(1, entitiesFound) <<
 			"Should have only found one entity because the other's component was removed before"
 			" we got to it during iteration";
+	}
+
+	TEST(EcsBasic, RegisterComponentPreventsExceptions)
+	{
+		sp::EntityManager em;
+
+		sp::Entity e = em.NewEntity();
+
+		// assert that exceptions are raised before registering
+		ASSERT_THROW(e.Has<Position>(), std::invalid_argument);
+		ASSERT_THROW(for (auto e : em.EntitiesWith<Position>()) {}, std::invalid_argument);
+
+		em.RegisterComponentType<Position>();
+
+		// assert that exceptions no longer occur
+		ASSERT_NO_THROW(e.Has<Position>());
+		ASSERT_NO_THROW(for (auto e : em.EntitiesWith<Position>()) {});
 	}
 }

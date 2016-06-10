@@ -14,7 +14,7 @@ namespace sp
 		PhysxManager ();
 		~PhysxManager () {};
 		physx::PxRigidActor* CreateActor ();
-		void Frame();
+		void Frame(double timeStep);
 	private:
 		void CreatePhysxScene ();
 		void DestroyPhysxScene ();
@@ -25,8 +25,6 @@ namespace sp
 		physx::PxDefaultAllocator defaultAllocatorCallback;
 
 		physx::PxScene* scene;
-
-		const float timeStep = 1/60.f;
 	};
 }
 

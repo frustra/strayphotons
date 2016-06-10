@@ -8,7 +8,7 @@ namespace sp
 	struct Texture
 	{
 		GLuint handle = 0;
-		PixelFormat format = PF_INVALID;
+		GLPixelFormat format;
 		GLsizei width = 0, height = 0;
 
 		Texture &Create(GLenum target = GL_TEXTURE_2D)
@@ -33,7 +33,9 @@ namespace sp
 
 		void BindImage(GLuint binding, GLenum access, GLint level = 0, GLboolean layered = false, GLint layer = 0) const
 		{
-			glBindImageTexture(binding, handle, level, layered, layer, access, GLFormat().internalFormat);
+			Assert(handle);
+			Assert(format.Valid());
+			glBindImageTexture(binding, handle, level, layered, layer, access, format.internalFormat);
 		}
 
 		Texture &Filter(GLenum minFilter = GL_LINEAR, GLenum magFilter = GL_LINEAR)
@@ -63,8 +65,17 @@ namespace sp
 		{
 			Assert(handle);
 			Assert(width && height);
-			this->format = format;
-			glTextureStorage2D(handle, levels, GLFormat().internalFormat, width, height);
+			this->format = GLPixelFormat::PixelFormatMapping(format);
+			glTextureStorage2D(handle, levels, this->format.internalFormat, width, height);
+			return *this;
+		}
+
+		Texture &Storage2D(GLenum internalFormat, GLenum format, GLenum type, GLsizei levels = 1)
+		{
+			Assert(handle);
+			Assert(width && height);
+			this->format = GLPixelFormat(internalFormat, format, type);
+			glTextureStorage2D(handle, levels, this->format.internalFormat, width, height);
 			return *this;
 		}
 
@@ -73,18 +84,13 @@ namespace sp
 			Assert(handle);
 			Assert(pixels);
 			Assert(width && height);
-			Assert(format != PF_INVALID);
+			Assert(format.Valid());
 
 			if (subWidth == 0) subWidth = width;
 			if (subHeight == 0) subHeight = height;
 
-			glTextureSubImage2D(handle, level, xoffset, yoffset, subWidth, subHeight, GLFormat().format, GLFormat().type, pixels);
+			glTextureSubImage2D(handle, level, xoffset, yoffset, subWidth, subHeight, format.format, format.type, pixels);
 			return *this;
-		}
-
-		GLPixelFormat GLFormat() const
-		{
-			return GLPixelFormat::PixelFormatMapping(format);
 		}
 
 		bool operator==(const Texture &other) const
