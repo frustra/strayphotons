@@ -12,7 +12,7 @@ layout (location = 1) noperspective in vec3 inViewRay;
 layout (location = 0) out vec4 outFragColor;
 
 const int kernelSize = 24;
-const float radius = 0.05;
+const float radius = 0.3;
 const float power = 2.6;
 
 uniform vec3 kernel[kernelSize];

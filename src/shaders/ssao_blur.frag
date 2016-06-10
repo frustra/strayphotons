@@ -16,13 +16,13 @@ const int radius = 4;
 void main() {
 	float fragDepth = texture(depthStencil, inTexCoord).r;
 	fragDepth = LinearDepth(fragDepth, ClippingPlane) * ClippingPlane.y;
-	vec3 fragNormal = texture(gBuffer1, inTexCoord).rgb;
+	/*vec3 fragNormal = texture(gBuffer1, inTexCoord).rgb;
 
 	if (length(fragNormal) < 0.5) {
 		// Normal not defined.
 		outFragColor = vec4(1);
 		return;
-	}
+	}*/
 
 	// Sum of samples.
 	float accum = 0.0;
@@ -35,14 +35,14 @@ void main() {
 		vec2 relativeCoord = vec2(offset + float(index));
 
 		vec2 sampleCoord = relativeCoord * samplePattern + inTexCoord;
-		vec3 sampleNormal = texture(gBuffer1, sampleCoord).rgb;
+		//vec3 sampleNormal = texture(gBuffer1, sampleCoord).rgb;
 
 		float sampleDepth = texture(depthStencil, sampleCoord).r;
 		sampleDepth = LinearDepth(sampleDepth, ClippingPlane) * ClippingPlane.y;
 
 		float depthRatio = fragDepth/sampleDepth;
 
-		if (depthRatio < 2 && depthRatio > 0.5 && dot(fragNormal, sampleNormal) > 0.5) {
+		if (depthRatio < 2 && depthRatio > 0.5 /*&& dot(fragNormal, sampleNormal) > 0.5*/) {
 			float occlusion = texture(occlusionTex, sampleCoord).r;
 			accum += occlusion;
 			samples += 1;
