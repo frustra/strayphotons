@@ -3,7 +3,7 @@
 namespace ECS
 {
 
-	struct Camera
+	struct View
 	{
 		float fov;
 	};

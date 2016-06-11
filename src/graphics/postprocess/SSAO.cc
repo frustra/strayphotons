@@ -114,7 +114,7 @@ namespace sp
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
-		r->GlobalShaders->Get<SSAOPass0FS>()->SetProjection(r->Projection);
+		r->GlobalShaders->Get<SSAOPass0FS>()->SetProjection(r->GetProjection());
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, SSAOPass0FS>(r->GlobalShaders);

@@ -5,6 +5,7 @@
 #include "assets/Model.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
+#include "ecs/components/View.hh"
 
 #include <glm/glm.hpp>
 #include <cmath>
@@ -39,11 +40,11 @@ namespace sp
 		Entity player = game->entityManager.NewEntity();
 		auto *playerTransform = player.Assign<ECS::Transform>();
 		playerTransform->Translate(glm::vec3(0.0f, 1.0f, 0.0f));
-		auto *playerCamera = player.Assign<ECS::Camera>();
-		playerCamera->fov = glm::radians(90.0f);
+		auto *playerView = player.Assign<ECS::View>();
+		playerView->fov = glm::radians(60.0f);
 		humanControlSystem.AssignController(player);
 
-		game->cameraSystem.SetActiveCamera(player);
+		game->graphics.SetPlayerView(player);
 	}
 
 	GameLogic::~GameLogic()

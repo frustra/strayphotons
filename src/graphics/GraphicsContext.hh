@@ -3,6 +3,7 @@
 #include <string>
 
 #include "graphics/Graphics.hh"
+#include "graphics/RenderArgs.hh"
 #include "game/InputManager.hh"
 #include "Common.hh"
 
@@ -25,7 +26,7 @@ namespace sp
 		void BindInputCallbacks(InputManager &inputManager);
 
 		virtual void Prepare() = 0;
-		virtual void RenderFrame() = 0;
+		virtual void RenderFrame(RenderArgs args) = 0;
 
 		ShaderSet *GlobalShaders;
 

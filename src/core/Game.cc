@@ -6,20 +6,20 @@
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/Controller.hh"
-#include "ecs/components/Camera.hh"
+#include "ecs/components/View.hh"
 
 #include <glm/glm.hpp>
 
 namespace sp
 {
-	Game::Game() : graphics(this), logic(this), cameraSystem(this)
+	Game::Game() : graphics(this), logic(this)
 	{
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
 		entityManager.RegisterComponentType<ECS::Renderable>();
 		entityManager.RegisterComponentType<ECS::Transform>();
 		entityManager.RegisterComponentType<ECS::HumanController>();
-		entityManager.RegisterComponentType<ECS::Camera>();
+		entityManager.RegisterComponentType<ECS::View>();
 	}
 
 	Game::~Game()

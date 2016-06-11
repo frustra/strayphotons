@@ -36,7 +36,10 @@ namespace sp
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
-		r->GlobalShaders->Get<DeferredLightingFS>()->SetParameters(r->Projection, r->View);
+		r->GlobalShaders->Get<DeferredLightingFS>()->SetParameters(
+			r->GetProjection(),
+			r->GetView()
+		);
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, DeferredLightingFS>(r->GlobalShaders);

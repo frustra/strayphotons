@@ -129,16 +129,15 @@ namespace sp
 		AssertGLOK("Renderer::Prepare");
 	}
 
-	void Renderer::RenderFrame()
+	void Renderer::RenderFrame(RenderArgs args)
 	{
 		RTPool->TickFrame();
 
-		Projection = game->cameraSystem.GetActiveProjectTransform();
-		auto view = game->cameraSystem.GetActiveViewTransform();
+		renderArgs = args;
 
 		auto sceneVS = GlobalShaders->Get<SceneVS>();
-		sceneVS->SetView(view);
-		sceneVS->SetProjection(Projection);
+		sceneVS->SetView(renderArgs.view);
+		sceneVS->SetProjection(renderArgs.projection);
 
 		EngineRenderTargets targets;
 		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
@@ -190,6 +189,16 @@ namespace sp
 
 		//AssertGLOK("Renderer::RenderFrame");
 		glfwSwapBuffers(window);
+	}
+
+	glm::mat4 Renderer::GetView() const
+	{
+		return renderArgs.view;
+	}
+
+	glm::mat4 Renderer::GetProjection() const
+	{
+		return renderArgs.projection;
 	}
 
 	void Renderer::SetRenderTargets(size_t attachmentCount, const Texture *attachments, const Texture *depth)
