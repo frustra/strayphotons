@@ -124,6 +124,7 @@ namespace sp
 		sceneVS->SetParameters(projection, view, model);
 
 		Projection = projection;
+		View = view;
 
 		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
 		{
