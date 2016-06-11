@@ -141,7 +141,9 @@ namespace sp
 				samplePattern.y = 1.0f / (float)extent.y;
 
 			bool combine = !horizontal && CVarDebugSSAO.Get() == 0;
-			r->GlobalShaders->Get<SSAOBlurFS>()->SetParameters(samplePattern, combine, r->Projection);
+			r->GlobalShaders->Get<SSAOBlurFS>()->SetParameters(
+				samplePattern, combine, r->GetProjection()
+			);
 
 			r->ShaderControl->BindPipeline<BasicPostVS, SSAOBlurFS>(r->GlobalShaders);
 		}
