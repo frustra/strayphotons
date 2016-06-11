@@ -178,7 +178,7 @@ namespace sp
 		EngineRenderTargets targets;
 		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
 		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, { 1280, 720 }));
-		targets.DepthStencil = RTPool->Get(RenderTargetDesc(PF_DEPTH_COMPONENT32F, { 1280, 720 }));
+		targets.DepthStencil = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, { 1280, 720 }));
 
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);

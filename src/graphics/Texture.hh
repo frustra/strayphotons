@@ -70,11 +70,11 @@ namespace sp
 			return *this;
 		}
 
-		Texture &Storage2D(GLenum internalFormat, GLenum format, GLenum type, GLsizei levels = 1)
+		Texture &Storage2D(GLenum internalFormat, GLenum format, GLenum type, GLsizei levels = 1, bool preferSRGB = false)
 		{
 			Assert(handle);
 			Assert(width && height);
-			this->format = GLPixelFormat(internalFormat, format, type);
+			this->format = GLPixelFormat(internalFormat, format, type, preferSRGB);
 			glTextureStorage2D(handle, levels, this->format.internalFormat, width, height);
 			return *this;
 		}

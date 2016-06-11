@@ -78,7 +78,7 @@ namespace sp
 		.Filter(GL_LINEAR_MIPMAP_LINEAR)
 		.Wrap(GL_REPEAT, GL_REPEAT)
 		.Size(img.width, img.height)
-		.Storage2D(texture.internalFormat, texture.format, texture.type, 4)
+		.Storage2D(texture.internalFormat, texture.format, texture.type, 4, true)
 		.Image2D(img.image.data());
 
 		// TODO(pushrax) clean this up

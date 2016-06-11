@@ -5,15 +5,17 @@
 namespace sp
 {
 #define PF_DEFINITIONS \
-	PF_DEF(PF_INVALID,            GL_NONE,               GL_NONE,            GL_NONE) \
-	PF_DEF(PF_RGB8,               GL_RGB8,               GL_RGB,             GL_UNSIGNED_BYTE) \
-	PF_DEF(PF_RGB8F,              GL_RGB8,               GL_RGB,             GL_FLOAT) \
-	PF_DEF(PF_RGBA8,              GL_RGBA8,              GL_RGBA,            GL_UNSIGNED_BYTE) \
-	PF_DEF(PF_RGBA16F,            GL_RGBA16F,            GL_RGBA,            GL_FLOAT) \
-	PF_DEF(PF_RGBA32F,            GL_RGBA32F,            GL_RGBA,            GL_FLOAT) \
-	PF_DEF(PF_DEPTH_COMPONENT16,  GL_DEPTH_COMPONENT16,  GL_DEPTH_COMPONENT, GL_UNSIGNED_INT) \
-	PF_DEF(PF_DEPTH_COMPONENT24,  GL_DEPTH_COMPONENT24,  GL_DEPTH_COMPONENT, GL_UNSIGNED_INT) \
-	PF_DEF(PF_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT)
+	PF_DEF(PF_INVALID,    GL_NONE,               GL_NONE,            GL_NONE) \
+	PF_DEF(PF_RGB8,       GL_RGB8,               GL_RGB,             GL_UNSIGNED_BYTE) \
+	PF_DEF(PF_SRGB8,      GL_SRGB8,              GL_RGB,             GL_UNSIGNED_BYTE) \
+	PF_DEF(PF_RGB8F,      GL_RGB8,               GL_RGB,             GL_FLOAT) \
+	PF_DEF(PF_RGBA8,      GL_RGBA8,              GL_RGBA,            GL_UNSIGNED_BYTE) \
+	PF_DEF(PF_SRGB8_A8,   GL_SRGB8_ALPHA8,       GL_RGBA,            GL_UNSIGNED_BYTE) \
+	PF_DEF(PF_RGBA16F,    GL_RGBA16F,            GL_RGBA,            GL_FLOAT) \
+	PF_DEF(PF_RGBA32F,    GL_RGBA32F,            GL_RGBA,            GL_FLOAT) \
+	PF_DEF(PF_DEPTH16,    GL_DEPTH_COMPONENT16,  GL_DEPTH_COMPONENT, GL_UNSIGNED_INT) \
+	PF_DEF(PF_DEPTH24,    GL_DEPTH_COMPONENT24,  GL_DEPTH_COMPONENT, GL_UNSIGNED_INT) \
+	PF_DEF(PF_DEPTH32F,   GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT)
 
 #define PF_DEF(name, format, layout, type) name,
 
@@ -25,10 +27,18 @@ namespace sp
 	struct GLPixelFormat
 	{
 		GLPixelFormat() {}
-		GLPixelFormat(GLenum i, GLenum f, GLenum t) : internalFormat(i), format(f), type(t)
+		GLPixelFormat(GLenum i, GLenum f, GLenum t, bool preferSRGB = false)
+			: internalFormat(i), format(f), type(t)
 		{
-			if (i == GL_RGBA) internalFormat = GL_RGBA8;
-			else if (i == GL_RGB) internalFormat = GL_RGB8;
+			switch (i)
+			{
+				case GL_RGBA:
+					internalFormat = preferSRGB ? GL_SRGB8_ALPHA8 : GL_RGBA8;
+					break;
+				case GL_RGB:
+					internalFormat = preferSRGB ? GL_SRGB8 : GL_RGB8;
+					break;
+			}
 		}
 
 		GLenum internalFormat = GL_NONE;
