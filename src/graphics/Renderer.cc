@@ -82,8 +82,8 @@ namespace sp
 
 		DefaultMaterial()
 		{
-			char baseColor[4] = { 255, 255, 255, 255 };
-			char roughness[4] = { 200, 200, 200, 255 };
+			unsigned char baseColor[4] = { 255, 255, 255, 255 };
+			unsigned char roughness[4] = { 200, 200, 200, 255 };
 
 			baseColorTex.Create()
 			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
