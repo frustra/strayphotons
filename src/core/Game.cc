@@ -1,5 +1,6 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
+#include "core/Console.hh"
 
 #include "assets/Model.hh"
 #include "ecs/components/Renderable.hh"
@@ -11,7 +12,7 @@ namespace sp
 {
 	Game::Game() : graphics(this), logic(this)
 	{
-		// pre-register all of our component types so that errors do not arrise if they
+		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
 		entityManager.RegisterComponentType<ECS::Renderable>();
 		entityManager.RegisterComponentType<ECS::Transform>();
@@ -45,6 +46,8 @@ namespace sp
 	{
 		double frameTime = glfwGetTime();
 		double dt = this->lastFrameTime - frameTime;
+
+		GConsoleManager.Update();
 
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;

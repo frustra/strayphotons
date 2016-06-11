@@ -9,8 +9,13 @@
 
 #include "graphics/postprocess/SSAO.hh"
 
+#include "core/CVar.hh"
+
 namespace sp
 {
+	static CVar<bool> CVarSSAOEnabled("r.SSAOEnabled", true, "Enable Screen Space Ambient Occlusion");
+	static CVar<bool> CVarDebugSSAO("r.DebugSSAO", false, "Show unprocessed SSAO output");
+
 	ProcessPassOutput *ProcessPassOutputRef::GetOutput()
 	{
 		return pass->GetOutput(outputIndex);
@@ -21,36 +26,40 @@ namespace sp
 		PostProcessingContext context;
 		context.renderer = renderer;
 
-		ProxyProcessPass gbuffer0(targets.GBuffer0);
-		ProxyProcessPass gbuffer1(targets.GBuffer1);
-		ProxyProcessPass depth(targets.DepthStencil);
-		context.AddPass(&gbuffer0);
-		context.AddPass(&gbuffer1);
-		context.AddPass(&depth);
+		auto gbuffer0 = context.AddPass<ProxyProcessPass>(targets.GBuffer0);
+		auto gbuffer1 = context.AddPass<ProxyProcessPass>(targets.GBuffer1);
+		auto depth = context.AddPass<ProxyProcessPass>(targets.DepthStencil);
 
-		context.LastOutput = ProcessPassOutputRef(&gbuffer0);
+		context.LastOutput = ProcessPassOutputRef(gbuffer0);
 
-		SSAOPass0 ssaoPass0;
-		ssaoPass0.SetInput(0, context.LastOutput);
-		ssaoPass0.SetInput(1, { &gbuffer1 });
-		ssaoPass0.SetInput(2, { &depth });
-		context.AddPass(&ssaoPass0);
+		if (CVarSSAOEnabled.Get())
+		{
+			auto ssaoPass0 = context.AddPass<SSAOPass0>();
+			ssaoPass0->SetInput(0, context.LastOutput);
+			ssaoPass0->SetInput(1, { gbuffer1 });
+			ssaoPass0->SetInput(2, { depth });
 
-		SSAOBlur ssaoBlurX(true);
-		ssaoBlurX.SetInput(0, { &ssaoPass0 });
-		ssaoBlurX.SetInput(1, { &gbuffer1 });
-		ssaoBlurX.SetInput(2, { &depth });
-		ssaoBlurX.SetInput(3, { &gbuffer0 });
-		context.AddPass(&ssaoBlurX);
+			if (CVarDebugSSAO.Get())
+			{
+				context.LastOutput = ProcessPassOutputRef(ssaoPass0);
+			}
+			else
+			{
+				auto ssaoBlurX = context.AddPass<SSAOBlur>(true);
+				ssaoBlurX->SetInput(0, { ssaoPass0 });
+				ssaoBlurX->SetInput(1, { gbuffer1 });
+				ssaoBlurX->SetInput(2, { depth });
+				ssaoBlurX->SetInput(3, { gbuffer0 });
 
-		SSAOBlur ssaoBlurY(false);
-		ssaoBlurY.SetInput(0, { &ssaoBlurX });
-		ssaoBlurY.SetInput(1, { &gbuffer1 });
-		ssaoBlurY.SetInput(2, { &depth });
-		ssaoBlurY.SetInput(3, { &gbuffer0 });
-		context.AddPass(&ssaoBlurY);
+				auto ssaoBlurY = context.AddPass<SSAOBlur>(false);
+				ssaoBlurY->SetInput(0, { ssaoBlurX });
+				ssaoBlurY->SetInput(1, { gbuffer1 });
+				ssaoBlurY->SetInput(2, { depth });
+				ssaoBlurY->SetInput(3, { gbuffer0 });
 
-		context.LastOutput = ProcessPassOutputRef(&ssaoBlurY);
+				context.LastOutput = ProcessPassOutputRef(ssaoBlurY);
+			}
+		}
 
 		context.ProcessAllPasses();
 

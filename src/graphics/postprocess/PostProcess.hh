@@ -51,6 +51,8 @@ namespace sp
 	class PostProcessPassBase
 	{
 	public:
+		virtual ~PostProcessPassBase() {}
+
 		virtual void Process(const PostProcessingContext *context) = 0;
 		virtual RenderTargetDesc GetOutputDesc(uint32 id) = 0;
 
@@ -64,9 +66,7 @@ namespace sp
 	class PostProcessPass : public PostProcessPassBase
 	{
 	public:
-		PostProcessPass()
-		{
-		}
+		PostProcessPass() {}
 
 		virtual ProcessPassOutput *GetOutput(uint32 id)
 		{
@@ -110,10 +110,19 @@ namespace sp
 	public:
 		void ProcessAllPasses();
 
-		PostProcessPassBase *AddPass(PostProcessPassBase *pass)
+		template<typename PassType, typename ...ArgTypes>
+		PassType *AddPass(ArgTypes... args)
 		{
+			// TODO(pushrax): don't use the heap
+			PassType *pass = new PassType(args...);
 			passes.push_back(pass);
 			return pass;
+		}
+
+		~PostProcessingContext()
+		{
+			for (auto pass : passes)
+				delete pass;
 		}
 
 		ProcessPassOutputRef LastOutput;
