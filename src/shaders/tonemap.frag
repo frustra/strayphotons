@@ -1,0 +1,26 @@
+#version 430
+
+// #define DEBUG_OVEREXPOSED
+
+##import lib/util
+##import lib/lighting_util
+
+layout (binding = 0) uniform sampler2D luminanceTex;
+
+layout (location = 0) in vec2 inTexCoord;
+layout (location = 0) out vec4 outFragColor;
+
+void main() {
+	vec4 luminosity = texture(luminanceTex, inTexCoord); // pre-exposed
+
+	vec3 toneMapped = HDRTonemap(luminosity.rgb) / HDRTonemap(vec3(1.0));
+
+#ifdef DEBUG_OVEREXPOSED
+	if (toneMapped.r > 1 || toneMapped.g > 1 || toneMapped.b > 1) {
+		// Highlight overexposed/blown out areas.
+		toneMapped = vec3(1, 0, 0);
+	}
+#endif
+
+	outFragColor = vec4(toneMapped, luminosity.a);
+}

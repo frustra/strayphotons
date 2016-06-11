@@ -46,4 +46,26 @@ namespace sp
 
 		DrawScreenCover();
 	}
+
+	class TonemapFS : public Shader
+	{
+		SHADER_TYPE(TonemapFS)
+
+		TonemapFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+		{
+		}
+	};
+
+	IMPLEMENT_SHADER_TYPE(TonemapFS, "tonemap.frag", Fragment);
+
+	void Tonemap::Process(const PostProcessingContext *context)
+	{
+		auto r = context->renderer;
+		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+
+		r->SetRenderTarget(&dest, nullptr);
+		r->ShaderControl->BindPipeline<BasicPostVS, TonemapFS>(r->GlobalShaders);
+
+		DrawScreenCover();
+	}
 }

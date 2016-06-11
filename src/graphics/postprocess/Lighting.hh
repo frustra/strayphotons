@@ -21,4 +21,22 @@ namespace sp
 			return "DeferredLighting";
 		}
 	};
+
+	class Tonemap : public PostProcessPass<1, 1>
+	{
+	public:
+		void Process(const PostProcessingContext *context);
+
+		RenderTargetDesc GetOutputDesc(uint32 id)
+		{
+			auto desc = GetInput(0)->GetOutput()->TargetDesc;
+			desc.format = PF_RGBA8;
+			return desc;
+		}
+
+		string Name()
+		{
+			return "Tonemap";
+		}
+	};
 }
