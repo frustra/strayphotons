@@ -47,20 +47,18 @@ void main() {
 	vec3 normal = gb1.rgb;
 	float roughness = 0.1;
 
-	// Unproject depth to reconstruct position in view-space.
-	vec3 position = ScreenPosToViewPos(inTexCoord, depth, invProjMat);
+	// Unproject depth to reconstruct viewPosition in view-space.
+	vec3 viewPosition = ScreenPosToViewPos(inTexCoord, depth, invProjMat);
+	vec3 worldPosition = (invViewMat * vec4(viewPosition, 1.0)).xyz;
 
-	vec4 hpos = invViewMat * vec4(position, 1.0); // Homogeneous position in world-space.
-	vec3 worldSpacePosition = hpos.xyz / hpos.w;
-
-	vec3 directionToView = normalize(-position);
+	vec3 directionToView = normalize(-viewPosition);
 
 	vec3 pixelLuminance = vec3(0);
 
 	for (int i = 0; i < 1; i++) {
 		vec3 lightPosition = vec3(0, 12, 0);
 		vec4 currLightPos = viewMat * vec4(lightPosition, 1);
-		vec3 sampleToLightRay = currLightPos.xyz / currLightPos.w - position;
+		vec3 sampleToLightRay = currLightPos.xyz / currLightPos.w - viewPosition;
 		vec3 incidence = normalize(sampleToLightRay);
 		vec3 currLightDir = normalize(mat3(viewMat) * vec3(0, -1, 0));
 		float falloff = 1;
@@ -70,7 +68,7 @@ void main() {
 
 		if (illuminance == 0) {
 			// Determine physically-based distance attenuation.
-			float lightDistance = length(abs(lightPosition - worldSpacePosition));
+			float lightDistance = length(abs(lightPosition - worldPosition));
 			float lightDistanceSq = lightDistance * lightDistance;
 			falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
 

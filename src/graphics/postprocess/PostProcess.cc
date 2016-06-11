@@ -8,6 +8,7 @@
 #include "graphics/Util.hh"
 
 #include "graphics/postprocess/Lighting.hh"
+#include "graphics/postprocess/ViewGBuffer.hh"
 #include "graphics/postprocess/SSAO.hh"
 
 #include "core/CVar.hh"
@@ -16,6 +17,7 @@ namespace sp
 {
 	static CVar<bool> CVarLightingEnabled("r.Lighting", true, "Enable lighting");
 	static CVar<bool> CVarSSAOEnabled("r.SSAO", true, "Enable Screen Space Ambient Occlusion");
+	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth)");
 
 	static void AddSSAO(PostProcessingContext &context)
 	{
@@ -66,12 +68,27 @@ namespace sp
 			AddSSAO(context);
 		}
 
+		if (CVarViewGBuffer.Get() > 0)
+		{
+			auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get());
+			viewGBuf->SetInput(0, context.GBuffer0);
+			viewGBuf->SetInput(1, context.GBuffer1);
+			viewGBuf->SetInput(2, context.Depth);
+			context.LastOutput = viewGBuf;
+		}
+
+		auto lastOutput = context.LastOutput.GetOutput();
+		lastOutput->AddDependency();
+
 		context.ProcessAllPasses();
 
-		context.LastOutput.GetOutput()->TargetRef->GetTexture().Bind(0);
 		renderer->SetDefaultRenderTarget();
 		renderer->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(renderer->GlobalShaders);
+
+		lastOutput->TargetRef->GetTexture().Bind(0);
 		DrawScreenCover();
+
+		lastOutput->ReleaseDependency();
 	}
 
 	ProcessPassOutput *ProcessPassOutputRef::GetOutput()

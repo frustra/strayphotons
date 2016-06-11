@@ -22,10 +22,21 @@ vec3 FarPlaneRay(vec2 viewSpacePosition, float tanHalfFov, float aspectRatio) {
 	);
 }
 
+// Returns the homogeneous view-space position of clip-space position.
+vec4 ClipPosToHViewPos(vec3 clipPos, mat4 invProj) {
+	return invProj * vec4(clipPos, 1.0);
+}
+
 // Returns the view-space position of clip-space position.
 vec3 ClipPosToViewPos(vec3 clipPos, mat4 invProj) {
-	vec4 hpos = invProj * vec4(clipPos, 1.0); // Homogeneous position in view-space.
+	vec4 hpos = ClipPosToHViewPos(clipPos, invProj);
 	return hpos.xyz / hpos.w; // Inverse perspective divide.
+}
+
+// Returns the homogenous view-space position of a screen-space texcoord and depth.
+vec4 ScreenPosToHViewPos(vec2 texCoord, float depth, mat4 invProj) {
+	vec3 clip = vec3(texCoord, depth) * 2.0 - 1.0;
+	return ClipPosToHViewPos(clip, invProj);
 }
 
 // Returns the view-space position of a screen-space texcoord and depth.
