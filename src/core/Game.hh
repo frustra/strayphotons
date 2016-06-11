@@ -5,6 +5,8 @@
 #include "Common.hh"
 #include "ecs/Ecs.hh"
 #include "game/GameLogic.hh"
+#include "game/InputManager.hh"
+#include "ecs/systems/CameraSystem.hh"
 
 namespace sp
 {
@@ -20,8 +22,10 @@ namespace sp
 
 		GraphicsManager graphics;
 		GameLogic logic;
+		InputManager input;
 		AssetManager assets;
 		EntityManager entityManager;
+		ECS::CameraSystem cameraSystem;
 
 	private:
 		double lastFrameTime;

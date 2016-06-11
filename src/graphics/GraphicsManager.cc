@@ -55,6 +55,11 @@ namespace sp
 		return context && !context->ShouldClose();
 	}
 
+	void GraphicsManager::BindContextInputCallbacks(InputManager &inputManager)
+	{
+		context->BindInputCallbacks(inputManager);
+	}
+
 	bool GraphicsManager::Frame()
 	{
 		if (!context) throw "missing context";

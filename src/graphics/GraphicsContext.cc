@@ -57,6 +57,7 @@ namespace sp
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
 		Debugf("maximum anisotropy: %f", maxAnisotropy);
 
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 		Prepare();
 	}
@@ -69,6 +70,11 @@ namespace sp
 	void GraphicsContext::ResetSwapchain(uint32 &width, uint32 &height)
 	{
 
+	}
+
+	void GraphicsContext::BindInputCallbacks(InputManager &inputManager)
+	{
+		inputManager.BindCallbacks(window);
 	}
 
 	bool GraphicsContext::ShouldClose()

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ecs/systems/HumanControlSystem.hh"
 #include "Common.hh"
 
 namespace sp
@@ -16,6 +17,8 @@ namespace sp
 		bool Frame(double dtSinceLastFrame);
 	private:
 		Game *game;
+		ECS::HumanControlSystem humanControlSystem;
+
 		Entity duck;
 		Entity box;
 		Entity sponza;

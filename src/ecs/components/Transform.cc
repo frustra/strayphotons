@@ -20,7 +20,7 @@ namespace ECS
 			model = manager.Get<Transform>(this->relativeTo)->GetModelTransform(manager);
 		}
 
-		return model * this->position * this->rotate * this->scale;
+		return model * this->translate * GetRotateMatrix() * this->scale;
 	}
 
 	void Transform::SetRelativeTo(sp::Entity ent)
@@ -43,11 +43,16 @@ namespace ECS
 
 	void Transform::Translate(glm::vec3 xyz)
 	{
-		this->position = glm::translate(this->position, xyz);
+		this->translate = glm::translate(this->translate, xyz);
 	}
 
 	void Transform::Scale(glm::vec3 xyz)
 	{
 		this->scale = glm::scale(this->scale, xyz);
+	}
+
+	glm::mat4 Transform::GetRotateMatrix()
+	{
+		return glm::mat4_cast(rotate);
 	}
 }

@@ -3,6 +3,7 @@
 #include <string>
 
 #include "graphics/Graphics.hh"
+#include "game/InputManager.hh"
 #include "Common.hh"
 
 namespace sp
@@ -21,6 +22,7 @@ namespace sp
 		bool ShouldClose();
 		void SetTitle(string title);
 		void ResetSwapchain(uint32 &width, uint32 &height);
+		void BindInputCallbacks(InputManager &inputManager);
 
 		virtual void Prepare() = 0;
 		virtual void RenderFrame() = 0;

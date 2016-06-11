@@ -35,4 +35,17 @@ namespace sp
 		NonCopyable(const NonCopyable &) = delete;
 		NonCopyable() = default;
 	};
+
+	/**
+	 * Functor that can be instantiated as a hash function for an enum class.
+	 * Useful for when you want to use an enum class as an unordered_map key
+	 */
+	struct EnumHash
+	{
+		template <typename T>
+		std::size_t operator()(T t) const
+		{
+			return static_cast<std::size_t>(t);
+		}
+	};
 }

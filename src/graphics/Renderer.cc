@@ -40,6 +40,11 @@ namespace sp
 			Set(model, newModel);
 		}
 
+		void SetProjection(glm::mat4 newProjection)
+		{
+			Set(projection, newProjection);
+		}
+
 	private:
 		Uniform projection, model, view;
 	};
@@ -115,17 +120,6 @@ namespace sp
 		ShaderControl = new ShaderManager();
 		ShaderControl->CompileAll(GlobalShaders);
 
-		// TODO(cory): Fix hardcoded values
-		auto projection = glm::perspective(glm::radians(60.0f), 1.778f, 0.1f, 256.0f);
-		auto view = glm::translate(glm::mat4(), glm::vec3(0.0f, -1.0f, -2.5f));
-		auto model = glm::mat4();
-
-		auto sceneVS = GlobalShaders->Get<SceneVS>();
-		sceneVS->SetParameters(projection, view, model);
-
-		Projection = projection;
-		View = view;
-
 		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
 		{
 			auto comp = ent.Get<ECS::Renderable>();
@@ -139,7 +133,12 @@ namespace sp
 	{
 		RTPool->TickFrame();
 
+		Projection = game->cameraSystem.GetActiveProjectTransform();
+		auto view = game->cameraSystem.GetActiveViewTransform();
+
 		auto sceneVS = GlobalShaders->Get<SceneVS>();
+		sceneVS->SetView(view);
+		sceneVS->SetProjection(Projection);
 
 		EngineRenderTargets targets;
 		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));

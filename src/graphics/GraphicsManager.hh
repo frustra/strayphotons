@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/GraphicsContext.hh"
+#include "game/InputManager.hh"
 
 namespace sp
 {
@@ -16,6 +17,8 @@ namespace sp
 		void ReleaseContext();
 		void ReloadContext();
 		bool HasActiveContext();
+
+		void BindContextInputCallbacks(InputManager &inputManager);
 
 		bool Loop();
 		bool Frame();

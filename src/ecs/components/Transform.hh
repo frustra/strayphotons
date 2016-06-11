@@ -1,6 +1,8 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+// #include <glm/gtx/quaternion.hpp>
 
 #include "ecs/Ecs.hh"
 
@@ -35,10 +37,13 @@ namespace ECS
 		 */
 		void Scale(glm::vec3 xyz);
 
-	private:
-		glm::mat4 position;
+		glm::mat4 GetRotateMatrix();
+
+		glm::mat4 translate;
 		glm::mat4 scale;
-		glm::mat4 rotate;
+		glm::quat rotate;
+
+	private:
 		sp::Entity::Id relativeTo;
 	};
 }
