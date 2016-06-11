@@ -33,17 +33,17 @@ namespace ECS
 
 			glm::vec2 dCursor = input->CursorDiff();
 
-			controller->yaw   -= dCursor.x*CURSOR_SENSITIVITY.x;
-			if (controller->yaw > 2*M_PI)
+			controller->yaw   -= dCursor.x * CURSOR_SENSITIVITY.x;
+			if (controller->yaw > 2 * M_PI)
 			{
-				controller->yaw -= 2*M_PI;
+				controller->yaw -= 2 * M_PI;
 			}
 			if (controller->yaw < 0)
 			{
-				controller->yaw += 2*M_PI;
+				controller->yaw += 2 * M_PI;
 			}
 
-			controller->pitch -= dCursor.y*CURSOR_SENSITIVITY.y;
+			controller->pitch -= dCursor.y * CURSOR_SENSITIVITY.y;
 
 			const float feps = std::numeric_limits<float>::epsilon();
 			controller->pitch = std::max(-((float)M_PI_2 - feps), std::min(controller->pitch, (float)M_PI_2 - feps));
@@ -51,7 +51,7 @@ namespace ECS
 			transform->rotate = glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll));
 
 			// keyboard controls
-			for (auto const &actionKeysPair : entity.Get<ECS::HumanController>()->inputMap)
+			for (auto const & actionKeysPair : entity.Get<ECS::HumanController>()->inputMap)
 			{
 				ControlAction action = actionKeysPair.first;
 				const vector<int> &keys = actionKeysPair.second;
@@ -63,29 +63,29 @@ namespace ECS
 
 				switch (action)
 				{
-				case ControlAction::MOVE_FORWARD:
-					move(entity, dtSinceLastFrame, glm::vec3(0, 0, -1));
-					break;
-				case ControlAction::MOVE_BACKWARD:
-					move(entity, dtSinceLastFrame, glm::vec3(0, 0, 1));
-					break;
-				case ControlAction::MOVE_LEFT:
-					move(entity, dtSinceLastFrame, glm::vec3(-1, 0, 0));
-					break;
-				case ControlAction::MOVE_RIGHT:
-					move(entity, dtSinceLastFrame, glm::vec3(1, 0, 0));
-					break;
-				case ControlAction::MOVE_UP:
-					move(entity, dtSinceLastFrame, glm::vec3(0, 1, 0));
-					break;
-				case ControlAction::MOVE_DOWN:
-					move(entity, dtSinceLastFrame, glm::vec3(0, -1, 0));
-					break;
-				default:
-					std::stringstream ss;
-					ss << "Unknown ControlAction: "
-					   << static_cast<std::underlying_type<ControlAction>::type>(action);
-					throw std::invalid_argument(ss.str());
+					case ControlAction::MOVE_FORWARD:
+						move(entity, dtSinceLastFrame, glm::vec3(0, 0, -1));
+						break;
+					case ControlAction::MOVE_BACKWARD:
+						move(entity, dtSinceLastFrame, glm::vec3(0, 0, 1));
+						break;
+					case ControlAction::MOVE_LEFT:
+						move(entity, dtSinceLastFrame, glm::vec3(-1, 0, 0));
+						break;
+					case ControlAction::MOVE_RIGHT:
+						move(entity, dtSinceLastFrame, glm::vec3(1, 0, 0));
+						break;
+					case ControlAction::MOVE_UP:
+						move(entity, dtSinceLastFrame, glm::vec3(0, 1, 0));
+						break;
+					case ControlAction::MOVE_DOWN:
+						move(entity, dtSinceLastFrame, glm::vec3(0, -1, 0));
+						break;
+					default:
+						std::stringstream ss;
+						ss << "Unknown ControlAction: "
+						   << static_cast<std::underlying_type<ControlAction>::type>(action);
+						throw std::invalid_argument(ss.str());
 				}
 			}
 		}
@@ -106,7 +106,8 @@ namespace ECS
 		controller->pitch = 0;
 		controller->yaw = 0;
 		controller->roll = 0;
-		controller->inputMap = {
+		controller->inputMap =
+		{
 			{
 				ControlAction::MOVE_FORWARD, {GLFW_KEY_W}
 			},

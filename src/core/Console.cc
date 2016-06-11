@@ -61,7 +61,7 @@ namespace sp
 
 		if (varName == "list")
 		{
-			for (auto &kv : cvars)
+			for (auto & kv : cvars)
 			{
 				auto cvar = kv.second;
 				std::cout << " > " << cvar->GetName() << " " << cvar->StringValue() << std::endl;

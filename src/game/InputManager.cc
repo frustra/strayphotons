@@ -18,7 +18,7 @@ namespace sp
 		this->firstCursorAction = true;
 	}
 
-	InputManager::~InputManager(){}
+	InputManager::~InputManager() {}
 
 	bool InputManager::IsDown(int key) const
 	{
@@ -37,21 +37,24 @@ namespace sp
 
 	bool InputManager::IsAnyDown(vector<int> keys) const
 	{
-		return std::any_of(keys.begin(), keys.end(), [this](int key){
+		return std::any_of(keys.begin(), keys.end(), [this](int key)
+		{
 			return IsDown(key);
 		});
 	}
 
 	bool InputManager::IsAnyPressed(vector<int> keys) const
 	{
-		return std::any_of(keys.begin(), keys.end(), [this](int key){
+		return std::any_of(keys.begin(), keys.end(), [this](int key)
+		{
 			return IsPressed(key);
 		});
 	}
 
 	bool InputManager::IsAnyReleased(vector<int> keys) const
 	{
-		return std::any_of(keys.begin(), keys.end(), [this](int key){
+		return std::any_of(keys.begin(), keys.end(), [this](int key)
+		{
 			return IsReleased(key);
 		});
 	}
@@ -100,62 +103,63 @@ namespace sp
 	}
 
 	void InputManager::KeyInputCallback(
-		GLFWwindow * window,
+		GLFWwindow *window,
 		int key,
 		int scancode,
 		int action,
 		int mods)
 	{
-		auto im = static_cast<InputManager*>(glfwGetWindowUserPointer(window));
+		auto im = static_cast<InputManager *>(glfwGetWindowUserPointer(window));
 		im->keyChange(key, action);
 	}
 
 	void InputManager::keyChange(int key, int action)
 	{
-		switch (action) {
-		case GLFW_PRESS:
-			this->keysDown[key] = true;
-			this->keysPressed[key] = true;
-			break;
-		case GLFW_RELEASE:
-			this->keysDown[key] = false;
-			this->keysReleased[key] = true;
-			break;
+		switch (action)
+		{
+			case GLFW_PRESS:
+				this->keysDown[key] = true;
+				this->keysPressed[key] = true;
+				break;
+			case GLFW_RELEASE:
+				this->keysDown[key] = false;
+				this->keysReleased[key] = true;
+				break;
 		}
 	}
 
 	void InputManager::MouseMoveCallback(
-		GLFWwindow * window,
+		GLFWwindow *window,
 		double xPos,
 		double yPos)
 	{
-		auto im = static_cast<InputManager*>(glfwGetWindowUserPointer(window));
+		auto im = static_cast<InputManager *>(glfwGetWindowUserPointer(window));
 
 		im->cursor.x = xPos;
 		im->cursor.y = yPos;
 	}
 
 	void InputManager::MouseButtonCallback(
-		GLFWwindow * window,
+		GLFWwindow *window,
 		int button,
 		int action,
 		int mods)
 	{
-		auto im = static_cast<InputManager*>(glfwGetWindowUserPointer(window));
+		auto im = static_cast<InputManager *>(glfwGetWindowUserPointer(window));
 
 		int key = MouseButtonToKey(button);
 		im->keyChange(key, action);
 	}
 
-	void InputManager::MouseScrollCallback(GLFWwindow * window, double xOffset, double yOffset)
+	void InputManager::MouseScrollCallback(GLFWwindow *window, double xOffset, double yOffset)
 	{
-		auto im = static_cast<InputManager*>(glfwGetWindowUserPointer(window));
+		auto im = static_cast<InputManager *>(glfwGetWindowUserPointer(window));
 
 		im->scrollOffset.x += xOffset;
 		im->scrollOffset.y += yOffset;
 	}
 
-	void InputManager::BindCallbacks(GLFWwindow * window)
+	void InputManager::BindCallbacks(GLFWwindow *window)
 	{
 		// store a pointer to this InputManager since we must provide static functions
 		glfwSetWindowUserPointer(window, this);

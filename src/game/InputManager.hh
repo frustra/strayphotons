@@ -75,7 +75,7 @@ namespace sp
 		glm::vec2 ScrollOffset() const;
 
 		static void KeyInputCallback(
-			GLFWwindow * window,
+			GLFWwindow *window,
 			int key,
 			int scancode,
 			int action,
@@ -83,24 +83,24 @@ namespace sp
 		);
 
 		static void MouseMoveCallback(
-			GLFWwindow * window,
+			GLFWwindow *window,
 			double xPos,
 			double yPos
 		);
 
 		static void MouseButtonCallback(
-			GLFWwindow * window,
+			GLFWwindow *window,
 			int button,
 			int actions,
 			int mods
 		);
 
-		static void MouseScrollCallback(GLFWwindow * window, double xOffset, double yOffset);
+		static void MouseScrollCallback(GLFWwindow *window, double xOffset, double yOffset);
 
 		/**
 		 * Bind input callbacks from the given window to this object's callback functions
 		 */
-		void BindCallbacks(GLFWwindow * window);
+		void BindCallbacks(GLFWwindow *window);
 
 	private:
 		void keyChange(int key, int action);
