@@ -125,8 +125,12 @@ namespace sp
 				delete pass;
 		}
 
-		ProcessPassOutputRef LastOutput;
 		Renderer *renderer;
+
+		ProcessPassOutputRef LastOutput;
+		ProcessPassOutputRef GBuffer0;
+		ProcessPassOutputRef GBuffer1;
+		ProcessPassOutputRef Depth;
 
 	private:
 		vector<PostProcessPassBase *> passes;

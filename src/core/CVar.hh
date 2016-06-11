@@ -36,7 +36,7 @@ namespace sp
 		{
 		}
 
-		VarType Get()
+		inline VarType Get() const
 		{
 			return value;
 		}
