@@ -33,7 +33,7 @@ namespace sp
 			logic.Init();
 			graphics.CreateContext();
 			graphics.BindContextInputCallbacks(input);
-			this->lastFrameTime = glfwGetTime();
+			lastFrameTime = glfwGetTime();
 
 			while (true)
 			{
@@ -50,7 +50,7 @@ namespace sp
 	bool Game::Frame()
 	{
 		double frameTime = glfwGetTime();
-		double dt = frameTime - this->lastFrameTime;
+		double dt = frameTime - lastFrameTime;
 
 		input.Checkpoint();
 		if (input.IsDown(GLFW_KEY_ESCAPE))
@@ -63,7 +63,7 @@ namespace sp
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;
 
-		this->lastFrameTime = frameTime;
+		lastFrameTime = frameTime;
 		return true;
 	}
 

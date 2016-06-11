@@ -18,7 +18,7 @@ namespace sp
 
 	Shader::~Shader()
 	{
-		for (auto & entry : uniforms)
+		for (auto &entry : uniforms)
 		{
 			auto &unif = entry.second;
 		}

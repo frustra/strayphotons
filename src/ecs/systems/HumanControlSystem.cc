@@ -1,3 +1,6 @@
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include "ecs/systems/HumanControlSystem.hh"
 #include "ecs/components/Transform.hh"
 
@@ -11,7 +14,7 @@
 namespace ECS
 {
 	const float HumanControlSystem::MOVE_SPEED = 6.0f;
-	const glm::vec2 HumanControlSystem::CURSOR_SENSITIVITY = glm::vec2(0.007f, 0.007f);
+	const glm::vec2 HumanControlSystem::CURSOR_SENSITIVITY = glm::vec2(0.001f, 0.001f);
 
 	HumanControlSystem::HumanControlSystem(sp::EntityManager *entities, sp::InputManager *input)
 		: entities(entities), input(input)
@@ -51,7 +54,7 @@ namespace ECS
 			transform->rotate = glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll));
 
 			// keyboard controls
-			for (auto const & actionKeysPair : entity.Get<ECS::HumanController>()->inputMap)
+			for (auto const &actionKeysPair : entity.Get<ECS::HumanController>()->inputMap)
 			{
 				ControlAction action = actionKeysPair.first;
 				const vector<int> &keys = actionKeysPair.second;

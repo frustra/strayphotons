@@ -17,7 +17,7 @@ void main()
 	if (mode == 1) {
 		outFragColor = texture(gBuffer0, inTexCoord);
 	} else if (mode == 2) {
-		outFragColor = texture(gBuffer1, inTexCoord);
+		outFragColor.rgb = texture(gBuffer1, inTexCoord).rgb * vec3(0.5, 0.5, 1.0) + vec3(0.5, 0.5, 0.0);
 	} else if (mode == 3) {
 		float depth = texture(depthStencil, inTexCoord).r;
 		vec3 position = ScreenPosToViewPos(inTexCoord, depth, invProjMat);

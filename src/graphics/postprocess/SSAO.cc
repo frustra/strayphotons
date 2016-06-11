@@ -36,7 +36,7 @@ namespace sp
 			for (int i = 0; i < 24; i++)
 			{
 				float distance = float(i) / float(samples);
-				distance = (distance * distance) * 0.9 + 0.1;
+				distance = (distance * distance) * 0.9f + 0.1f;
 
 				offsets[i].x = dist(rng);
 				offsets[i].y = dist(rng);

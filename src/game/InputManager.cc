@@ -10,29 +10,27 @@ namespace sp
 {
 	InputManager::InputManager()
 	{
-		for (uint32 i = 0; i < InputManager::MAX_KEYS; ++i)
-		{
-			this->keysPressed[i] = false;
-		}
-
-		this->firstCursorAction = true;
+		keysDown.fill(false);
+		keysPressed.fill(false);
+		keysReleased.fill(false);
+		firstCursorAction = true;
 	}
 
 	InputManager::~InputManager() {}
 
 	bool InputManager::IsDown(int key) const
 	{
-		return this->checkpointKeysDown.at(key);
+		return checkpointKeysDown.at(key);
 	}
 
 	bool InputManager::IsPressed(int key) const
 	{
-		return this->checkpointKeysPressed.at(key);
+		return checkpointKeysPressed.at(key);
 	}
 
 	bool InputManager::IsReleased(int key) const
 	{
-		return this->checkpointKeysReleased.at(key);
+		return checkpointKeysReleased.at(key);
 	}
 
 	bool InputManager::IsAnyDown(vector<int> keys) const
@@ -65,41 +63,41 @@ namespace sp
 	void InputManager::Checkpoint()
 	{
 		// initialize previous cursor value to the current one first time around
-		if (this->firstCursorAction)
+		if (firstCursorAction)
 		{
-			this->firstCursorAction = false;
+			firstCursorAction = false;
 			Checkpoint();
 		}
 
-		this->checkpointCursorDiff = this->cursor - this->checkpointCursor;
-		this->checkpointCursor = this->cursor;
+		checkpointCursorDiff = cursor - checkpointCursor;
+		checkpointCursor = cursor;
 
-		this->checkpointScrollOffset = this->scrollOffset;
-		this->scrollOffset = glm::vec2(0, 0);
+		checkpointScrollOffset = scrollOffset;
+		scrollOffset = glm::vec2(0, 0);
 
 		// checkpoint the key states
-		this->checkpointKeysPressed = this->keysPressed;
-		this->checkpointKeysReleased = this->keysReleased;
-		this->checkpointKeysDown = this->keysDown;
+		checkpointKeysPressed = keysPressed;
+		checkpointKeysReleased = keysReleased;
+		checkpointKeysDown = keysDown;
 
 		// reset the pressed/unpressed states since these do not normally reset
-		this->keysPressed.fill(false);
-		this->keysReleased.fill(false);
+		keysPressed.fill(false);
+		keysReleased.fill(false);
 	}
 
 	glm::vec2 InputManager::CursorDiff() const
 	{
-		return this->checkpointCursorDiff;
+		return checkpointCursorDiff;
 	}
 
 	glm::vec2 InputManager::Cursor() const
 	{
-		return this->checkpointCursor;
+		return checkpointCursor;
 	}
 
 	glm::vec2 InputManager::ScrollOffset() const
 	{
-		return this->checkpointScrollOffset;
+		return checkpointScrollOffset;
 	}
 
 	void InputManager::KeyInputCallback(
@@ -118,12 +116,12 @@ namespace sp
 		switch (action)
 		{
 			case GLFW_PRESS:
-				this->keysDown[key] = true;
-				this->keysPressed[key] = true;
+				keysDown[key] = true;
+				keysPressed[key] = true;
 				break;
 			case GLFW_RELEASE:
-				this->keysDown[key] = false;
-				this->keysReleased[key] = true;
+				keysDown[key] = false;
+				keysReleased[key] = true;
 				break;
 		}
 	}
