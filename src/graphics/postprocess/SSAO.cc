@@ -1,5 +1,6 @@
 #include "SSAO.hh"
 #include "core/Logging.hh"
+#include "core/CVar.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/GenericShaders.hh"
@@ -9,11 +10,7 @@
 
 namespace sp
 {
-	class SSAOPass0VS : public Shader
-	{
-		SHADER_TYPE(SSAOPass0VS)
-		using Shader::Shader;
-	};
+	static CVar<int> CVarDebugSSAO("r.DebugSSAO", 0, "Show unprocessed SSAO output (1: no blending, 2: no blur)");
 
 	class SSAOPass0FS : public Shader
 	{
@@ -21,7 +18,8 @@ namespace sp
 
 		SSAOPass0FS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
-			Bind(projection, "projMatrix");
+			Bind(proj, "projMat");
+			Bind(invProj, "invProjMat");
 			Bind(kernel, "kernel");
 
 			GenerateKernel();
@@ -50,16 +48,16 @@ namespace sp
 			Set(kernel, offsets, samples);
 		}
 
-		void SetProjection(glm::mat4 proj)
+		void SetProjection(glm::mat4 newProj)
 		{
-			Set(projection, proj);
+			Set(proj, newProj);
+			Set(invProj, glm::inverse(newProj));
 		}
 
 	private:
-		Uniform projection, kernel;
+		Uniform proj, invProj, kernel;
 	};
 
-	IMPLEMENT_SHADER_TYPE(SSAOPass0VS, "ssao_pass0.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(SSAOPass0FS, "ssao_pass0.frag", Fragment);
 
 	class SSAOBlurFS : public Shader
@@ -70,16 +68,18 @@ namespace sp
 		{
 			Bind(samplePattern, "samplePattern");
 			Bind(combineOutput, "combineOutput");
+			Bind(invProj, "invProjMat");
 		}
 
-		void SetSamplePattern(glm::vec2 pattern, bool combine)
+		void SetParameters(glm::vec2 pattern, bool combine, glm::mat4 newProj)
 		{
 			Set(samplePattern, pattern);
 			Set(combineOutput, combine);
+			Set(invProj, glm::inverse(newProj));
 		}
 
 	private:
-		Uniform samplePattern, combineOutput;
+		Uniform invProj, samplePattern, combineOutput;
 	};
 
 	IMPLEMENT_SHADER_TYPE(SSAOBlurFS, "ssao_blur.frag", Fragment);
@@ -109,7 +109,7 @@ namespace sp
 
 	void SSAOPass0::Process(const PostProcessingContext *context)
 	{
-		static SSAONoiseTexture noiseTex(4);
+		static SSAONoiseTexture noiseTex(5);
 
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
@@ -117,7 +117,7 @@ namespace sp
 		r->GlobalShaders->Get<SSAOPass0FS>()->SetProjection(r->Projection);
 
 		r->SetRenderTarget(&dest, nullptr);
-		r->ShaderControl->BindPipeline<SSAOPass0VS, SSAOPass0FS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<BasicPostVS, SSAOPass0FS>(r->GlobalShaders);
 
 		noiseTex.tex.Bind(3);
 
@@ -128,20 +128,29 @@ namespace sp
 	{
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
-		auto extent = GetInput(0)->GetOutput()->TargetDesc.extent;
 
-		glm::vec2 samplePattern;
+		if (CVarDebugSSAO.Get() != 2)
+		{
+			auto extent = GetInput(0)->GetOutput()->TargetDesc.extent;
 
-		if (horizontal)
-			samplePattern.x = 1.0f / (float) extent.x;
+			glm::vec2 samplePattern;
+
+			if (horizontal)
+				samplePattern.x = 1.0f / (float)extent.x;
+			else
+				samplePattern.y = 1.0f / (float)extent.y;
+
+			bool combine = !horizontal && CVarDebugSSAO.Get() == 0;
+			r->GlobalShaders->Get<SSAOBlurFS>()->SetParameters(samplePattern, combine, r->Projection);
+
+			r->ShaderControl->BindPipeline<BasicPostVS, SSAOBlurFS>(r->GlobalShaders);
+		}
 		else
-			samplePattern.y = 1.0f / (float) extent.y;
-
-		r->GlobalShaders->Get<SSAOBlurFS>()->SetSamplePattern(samplePattern, !horizontal);
+		{
+			r->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(r->GlobalShaders);
+		}
 
 		r->SetRenderTarget(&dest, nullptr);
-		r->ShaderControl->BindPipeline<BasicPostVS, SSAOBlurFS>(r->GlobalShaders);
-
 		DrawScreenCover();
 	}
 }

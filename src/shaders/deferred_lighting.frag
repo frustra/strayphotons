@@ -10,9 +10,9 @@ layout (binding = 2) uniform sampler2D depthStencil;
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
-uniform mat4 viewMatrix;
-uniform mat4 inverseViewMatrix;
-uniform mat4 inverseProjMatrix;
+uniform mat4 viewMat;
+uniform mat4 invViewMat;
+uniform mat4 invProjMat;
 
 const float punctualLightSizeSq = 0.01 * 0.01; // 1cm punctual lights
 
@@ -48,16 +48,10 @@ void main() {
 	float roughness = 0.1;
 
 	// Unproject depth to reconstruct position in view-space.
-	vec4 clipPos;
-	clipPos.xy = inTexCoord * 2 - 1;
-	clipPos.z = depth * 2 - 1;
-	clipPos.w = 1;
+	vec3 position = ScreenPosToViewPos(inTexCoord, depth, invProjMat);
 
-	vec4 hpos = inverseProjMatrix * clipPos; // Homogeneous position in view-space.
-	vec3 position = hpos.xyz / hpos.w;
-
-	hpos = inverseViewMatrix * hpos; // Homogeneous position in world-space.
-	vec4 modelSpacePosition = hpos / hpos.w;
+	vec4 hpos = invViewMat * vec4(position, 1.0); // Homogeneous position in world-space.
+	vec3 worldSpacePosition = hpos.xyz / hpos.w;
 
 	vec3 directionToView = normalize(-position);
 
@@ -65,10 +59,10 @@ void main() {
 
 	for (int i = 0; i < 1; i++) {
 		vec3 lightPosition = vec3(0, 12, 0);
-		vec4 currLightPos = viewMatrix * vec4(lightPosition, 1);
+		vec4 currLightPos = viewMat * vec4(lightPosition, 1);
 		vec3 sampleToLightRay = currLightPos.xyz / currLightPos.w - position;
 		vec3 incidence = normalize(sampleToLightRay);
-		vec3 currLightDir = normalize(mat3(viewMatrix) * vec3(0, -1, 0));
+		vec3 currLightDir = normalize(mat3(viewMat) * vec3(0, -1, 0));
 		float falloff = 1;
 
 		float illuminance = 0;
@@ -76,7 +70,7 @@ void main() {
 
 		if (illuminance == 0) {
 			// Determine physically-based distance attenuation.
-			float lightDistance = length(abs(lightPosition - modelSpacePosition.xyz));
+			float lightDistance = length(abs(lightPosition - worldSpacePosition));
 			float lightDistanceSq = lightDistance * lightDistance;
 			falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
 

@@ -13,9 +13,9 @@ namespace sp
 
 		DeferredLightingFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
-			Bind(view, "viewMatrix");
-			Bind(invView, "inverseViewMatrix");
-			Bind(invProj, "inverseProjMatrix");
+			Bind(view, "viewMat");
+			Bind(invView, "invViewMat");
+			Bind(invProj, "invProjMat");
 		}
 
 		void SetParameters(glm::mat4 newProj, glm::mat4 newView)

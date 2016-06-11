@@ -16,7 +16,6 @@ namespace sp
 {
 	static CVar<bool> CVarLightingEnabled("r.Lighting", true, "Enable lighting");
 	static CVar<bool> CVarSSAOEnabled("r.SSAO", true, "Enable Screen Space Ambient Occlusion");
-	static CVar<bool> CVarDebugSSAO("r.DebugSSAO", false, "Show unprocessed SSAO output");
 
 	static void AddSSAO(PostProcessingContext &context)
 	{
@@ -25,26 +24,16 @@ namespace sp
 		ssaoPass0->SetInput(1, context.GBuffer1);
 		ssaoPass0->SetInput(2, context.Depth);
 
-		if (CVarDebugSSAO.Get())
-		{
-			context.LastOutput = ssaoPass0;
-		}
-		else
-		{
-			auto ssaoBlurX = context.AddPass<SSAOBlur>(true);
-			ssaoBlurX->SetInput(0, ssaoPass0);
-			ssaoBlurX->SetInput(1, context.GBuffer1);
-			ssaoBlurX->SetInput(2, context.Depth);
-			ssaoBlurX->SetInput(3, context.LastOutput);
+		auto ssaoBlurX = context.AddPass<SSAOBlur>(true);
+		ssaoBlurX->SetInput(0, ssaoPass0);
+		ssaoBlurX->SetInput(1, context.Depth);
 
-			auto ssaoBlurY = context.AddPass<SSAOBlur>(false);
-			ssaoBlurY->SetInput(0, ssaoBlurX);
-			ssaoBlurY->SetInput(1, context.GBuffer1);
-			ssaoBlurY->SetInput(2, context.Depth);
-			ssaoBlurY->SetInput(3, context.LastOutput);
+		auto ssaoBlurY = context.AddPass<SSAOBlur>(false);
+		ssaoBlurY->SetInput(0, ssaoBlurX);
+		ssaoBlurY->SetInput(1, context.Depth);
+		ssaoBlurY->SetInput(2, context.LastOutput);
 
-			context.LastOutput = ssaoBlurY;
-		}
+		context.LastOutput = ssaoBlurY;
 	}
 
 	static void AddLighting(PostProcessingContext &context)
@@ -141,7 +130,10 @@ namespace sp
 				ProcessPassOutputRef *input = pass->GetInput(id);
 				if (!input) break;
 
-				input->GetOutput()->ReleaseDependency();
+				auto inputOutput = input->GetOutput();
+
+				if (inputOutput)
+					inputOutput->ReleaseDependency();
 			}
 		}
 	}
