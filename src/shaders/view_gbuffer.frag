@@ -15,12 +15,14 @@ uniform mat4 invProjMat;
 void main()
 {
 	if (mode == 1) {
-		outFragColor = texture(gBuffer0, inTexCoord);
+		outFragColor.rgb = texture(gBuffer0, inTexCoord).rgb;
 	} else if (mode == 2) {
 		outFragColor.rgb = texture(gBuffer1, inTexCoord).rgb * vec3(0.5, 0.5, 1.0) + vec3(0.5, 0.5, 0.0);
 	} else if (mode == 3) {
 		float depth = texture(depthStencil, inTexCoord).r;
 		vec3 position = ScreenPosToViewPos(inTexCoord, depth, invProjMat);
 		outFragColor.rgb = vec3(-position.z / 32.0);
+	} else if (mode == 4) {
+		outFragColor.rgb = vec3(texture(gBuffer0, inTexCoord).a);
 	}
 }

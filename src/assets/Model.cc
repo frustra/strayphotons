@@ -124,6 +124,8 @@ namespace sp
 					mode = GL_LINE_LOOP;
 				};
 
+				auto &material = scene->materials[primitive.material];
+
 				primitives.push_back(new Primitive
 				{
 					matrix,
@@ -135,13 +137,14 @@ namespace sp
 						iAcc.count,
 						iBufView.buffer
 					},
-					scene->materials[primitive.material].values["diffuse"].string_value,
+					material.values["diffuse"].string_value,
+					material.values["specular"].string_value,
 					{
 						GetPrimitiveAttribute(scene, &primitive, "POSITION"),
 						GetPrimitiveAttribute(scene, &primitive, "NORMAL"),
 						GetPrimitiveAttribute(scene, &primitive, "TEXCOORD_0")
 					},
-					0, 0, 0
+					0, 0, nullptr, nullptr
 				});
 			}
 		}

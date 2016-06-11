@@ -17,7 +17,7 @@ namespace sp
 {
 	static CVar<bool> CVarLightingEnabled("r.Lighting", true, "Enable lighting");
 	static CVar<bool> CVarSSAOEnabled("r.SSAO", true, "Enable Screen Space Ambient Occlusion");
-	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth)");
+	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth, 4: roughness)");
 
 	static void AddSSAO(PostProcessingContext &context)
 	{

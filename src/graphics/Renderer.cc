@@ -76,13 +76,43 @@ namespace sp
 			delete ShaderControl;
 	}
 
+	struct DefaultMaterial
+	{
+		Texture baseColorTex, roughnessTex;
+
+		DefaultMaterial()
+		{
+			char baseColor[4] = { 255, 255, 255, 255 };
+			char roughness[4] = { 200, 200, 200, 255 };
+
+			baseColorTex.Create()
+			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+			.Size(1, 1).Storage2D(PF_RGB8).Image2D(baseColor);
+
+			roughnessTex.Create()
+			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+			.Size(1, 1).Storage2D(PF_RGB8).Image2D(roughness);
+		}
+	};
+
 	// TODO Clean up Renderable when unloaded.
 	void PrepareRenderable(ECS::Renderable *comp)
 	{
+		static DefaultMaterial defaultMat;
+
 		for (auto primitive : comp->model->primitives)
 		{
 			primitive->indexBufferHandle = comp->model->LoadBuffer(primitive->indexBuffer.bufferName);
-			if (primitive->textureName[0]) primitive->textureHandle = comp->model->LoadTexture(primitive->textureName)->handle;
+
+			if (primitive->baseColorName.length() > 0)
+				primitive->baseColorTex = comp->model->LoadTexture(primitive->baseColorName);
+			else
+				primitive->baseColorTex = &defaultMat.baseColorTex;
+
+			if (primitive->roughnessName.length() > 0)
+				primitive->roughnessTex = comp->model->LoadTexture(primitive->roughnessName);
+			else
+				primitive->roughnessTex = &defaultMat.roughnessTex;
 
 			glCreateVertexArrays(1, &primitive->vertexBufferHandle);
 			for (int i = 0; i < 3; i++)
@@ -101,7 +131,13 @@ namespace sp
 		{
 			glBindVertexArray(primitive->vertexBufferHandle);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive->indexBufferHandle);
-			if (primitive->textureHandle) glBindTextures(0, 1, &primitive->textureHandle);
+
+			if (primitive->baseColorTex)
+				primitive->baseColorTex->Bind(0);
+
+			if (primitive->roughnessTex)
+				primitive->roughnessTex->Bind(1);
+
 			glDrawElements(
 				primitive->drawMode,
 				primitive->indexBuffer.componentCount,
