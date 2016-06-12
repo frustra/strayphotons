@@ -121,6 +121,6 @@ namespace sp
 			return input;
 
 		auto cvar = it->second;
-		return cvar->GetName();
+		return cvar->GetName() + " ";
 	}
 }
