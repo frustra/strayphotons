@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CVar.hh"
+#include "Logging.hh"
+
 #include <map>
 #include <mutex>
 #include <queue>
@@ -8,6 +10,12 @@
 
 namespace sp
 {
+	struct ConsoleLine
+	{
+		logging::Level level;
+		string text;
+	};
+
 	class ConsoleManager
 	{
 	public:
@@ -16,6 +24,13 @@ namespace sp
 		void Update();
 		void InputLoop();
 
+		void AddLog(logging::Level lvl, const string &line);
+
+		const vector<ConsoleLine> Lines()
+		{
+			return outputLines;
+		}
+
 	private:
 		void ParseAndExecute(const string &line);
 
@@ -23,6 +38,8 @@ namespace sp
 		std::queue<string> inputLines;
 		std::mutex inputLock;
 		std::thread inputThread;
+
+		vector<ConsoleLine> outputLines;
 	};
 
 	extern ConsoleManager GConsoleManager;

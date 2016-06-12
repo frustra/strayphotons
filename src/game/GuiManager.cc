@@ -2,31 +2,21 @@
 #include "InputManager.hh"
 
 #include <imgui/imgui.h>
+#include "gui/ConsoleGui.hh"
 
 namespace sp
 {
 	void GuiManager::DefineWindows()
 	{
-		ImGuiIO &io = ImGui::GetIO();
+		ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0.0f, 0.0f, 0.0f, 0.8f));
+		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.95f, 0.95f, 0.95f, 1.0f));
 
-		if (consoleOpen)
-		{
-			ImGuiWindowFlags flags =
-				ImGuiWindowFlags_NoCollapse |
-				ImGuiWindowFlags_NoResize |
-				ImGuiWindowFlags_NoTitleBar;
+		static ConsoleGui console;
+		if (consoleOpen) console.Add();
 
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-			ImGui::SetNextWindowPos(ImVec2(0, 0));
-
-			ImGui::Begin("Console", nullptr, ImVec2(io.DisplaySize.x, 400.0f), 0.7f, flags);
-			{
-				ImGui::Text("hello world");
-			}
-			ImGui::End();
-
-			ImGui::PopStyleVar();
-		}
+		ImGui::PopStyleColor(4);
 	}
 
 	GuiManager::GuiManager()

@@ -1,4 +1,5 @@
 #include "Console.hh"
+#include "Logging.hh"
 
 #include <iostream>
 #include <sstream>
@@ -7,6 +8,14 @@
 namespace sp
 {
 	ConsoleManager GConsoleManager;
+
+	namespace logging
+	{
+		void GlobalLogOutput(Level lvl, const string &line)
+		{
+			GConsoleManager.AddLog(lvl, line);
+		}
+	}
 
 	CVarBase::CVarBase(const string &name, const string &description)
 		: name(name), description(description)
@@ -35,6 +44,15 @@ namespace sp
 			inputLines.push(line);
 			inputLock.unlock();
 		}
+	}
+
+	void ConsoleManager::AddLog(logging::Level lvl, const string &line)
+	{
+		outputLines.push_back(
+		{
+			lvl,
+			line
+		});
 	}
 
 	void ConsoleManager::Update()
