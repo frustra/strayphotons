@@ -74,6 +74,9 @@ include_directories(
 add_definitions(-DGLEW_STATIC=1)
 add_library(GLEW STATIC ${EXT_PATH}/glew/src/glew.c)
 
+add_library(ImGui STATIC ${EXT_PATH}/imgui/imgui.cpp ${EXT_PATH}/imgui/imgui_draw.cpp ${EXT_PATH}/imgui/imgui_demo.cpp)
+
+
 # split into lib and exe so tests can link against lib
 set(PROJECT_LIB strayphotons)
 set(PROJECT_EXE sp)
@@ -110,7 +113,7 @@ set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG $
 
 target_link_libraries(${PROJECT_LIB} glfw ${GLFW_LIBRARIES} freetype)
 target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
-target_link_libraries(sp ${OPENGL_LIBRARIES} GLEW glfw ${GLFW_LIBRARIES} freetype)
+target_link_libraries(sp ${OPENGL_LIBRARIES} GLEW glfw ${GLFW_LIBRARIES} freetype ImGui)
 
 ################################################
 # Build tests

@@ -30,6 +30,11 @@ namespace sp
 
 		ShaderSet *GlobalShaders;
 
+		GLFWwindow *GetWindow()
+		{
+			return window;
+		}
+
 	private:
 
 	protected:

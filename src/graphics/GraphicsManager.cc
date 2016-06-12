@@ -36,8 +36,11 @@ namespace sp
 	{
 		if (context) throw "already an active context";
 
-		context = new Renderer(game);
+		auto renderer = new Renderer(game);
+		context = renderer;
 		context->CreateWindow();
+
+		guiRenderer = new GuiRenderer(renderer);
 	}
 
 	void GraphicsManager::ReleaseContext()
@@ -69,6 +72,7 @@ namespace sp
 
 		auto view = updateViewCaches(playerView);
 		context->RenderPass(view);
+		guiRenderer->Render(view);
 
 		double frameEnd = glfwGetTime();
 		fpsTimer += frameEnd - lastFrameEnd;

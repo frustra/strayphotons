@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/GraphicsContext.hh"
+#include "graphics/GuiRenderer.hh"
 #include "game/InputManager.hh"
 #include "ecs/Ecs.hh"
 
@@ -30,6 +31,7 @@ namespace sp
 
 		GraphicsContext *context;
 		Game *game;
+		GuiRenderer *guiRenderer;
 
 		Entity playerView;
 

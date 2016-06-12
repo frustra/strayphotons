@@ -49,7 +49,7 @@ namespace sp
 		context.LastOutput = lighting;
 	}
 
-	void PostProcessing::Process(Renderer *renderer, const ECS::View &view, const EngineRenderTargets &targets)
+	void PostProcessing::Process(Renderer *renderer, ECS::View view, const EngineRenderTargets &targets)
 	{
 		PostProcessingContext context;
 		context.renderer = renderer;

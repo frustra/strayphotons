@@ -140,6 +140,6 @@ namespace sp
 
 	namespace PostProcessing
 	{
-		void Process(Renderer *renderer, const ECS::View &view, const EngineRenderTargets &targets);
+		void Process(Renderer *renderer, ECS::View view, const EngineRenderTargets &targets);
 	}
 }

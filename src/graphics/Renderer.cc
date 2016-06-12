@@ -158,6 +158,8 @@ namespace sp
 
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_SCISSOR_TEST);
+		glDisable(GL_BLEND);
 		glDepthMask(GL_TRUE);
 
 		Texture attachments[] =
