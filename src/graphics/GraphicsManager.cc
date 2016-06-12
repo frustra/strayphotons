@@ -67,10 +67,8 @@ namespace sp
 		if (!context) throw "missing context";
 		if (!HasActiveContext()) return false;
 
-		RenderArgs renderArgs;
-		renderArgs.view = getPlayerViewTransform();
-		renderArgs.projection = getPlayerProjectTransform();
-		context->RenderFrame(renderArgs);
+		auto view = updateViewCaches(playerView);
+		context->RenderPass(view);
 
 		double frameEnd = glfwGetTime();
 		fpsTimer += frameEnd - lastFrameEnd;
@@ -83,6 +81,7 @@ namespace sp
 			fpsTimer = 0;
 		}
 
+		context->EndFrame();
 		lastFrameEnd = frameEnd;
 		glfwPollEvents();
 		return true;
@@ -91,26 +90,27 @@ namespace sp
 	/**
 	* This View will be used when rendering from the player's viewpoint
 	*/
-	void GraphicsManager::SetPlayerView(sp::Entity entity)
+	void GraphicsManager::SetPlayerView(Entity entity)
 	{
 		validateView(entity);
 		playerView = entity;
 	}
 
-	glm::mat4 GraphicsManager::getPlayerViewTransform()
+	ECS::View &GraphicsManager::updateViewCaches(Entity entity)
 	{
-		validateView(playerView);
-
-		auto *transform = playerView.Get<ECS::Transform>();
-		return glm::inverse(transform->GetModelTransform(*playerView.GetManager()));
-	}
-
-	glm::mat4 GraphicsManager::getPlayerProjectTransform()
-	{
-		validateView(playerView);
+		validateView(entity);
 
 		auto *view = playerView.Get<ECS::View>();
-		return glm::perspective(view->fov, 1.778f, 0.1f, 256.0f);
+
+		view->aspect = (float)view->extents.x / (float)view->extents.y;
+		view->projMat = glm::perspective(view->fov, view->aspect, view->clip[0], view->clip[1]);
+		view->invProjMat = glm::inverse(view->projMat);
+
+		auto *transform = playerView.Get<ECS::Transform>();
+		view->invViewMat = transform->GetModelTransform(*playerView.GetManager());
+		view->viewMat = glm::inverse(view->invViewMat);
+
+		return *view;
 	}
 
 	void GraphicsManager::validateView(Entity viewEntity)

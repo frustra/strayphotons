@@ -18,8 +18,8 @@ namespace sp
 
 		SSAOPass0FS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
-			Bind(proj, "projMat");
-			Bind(invProj, "invProjMat");
+			Bind(projMat, "projMat");
+			Bind(invProjMat, "invProjMat");
 			Bind(kernel, "kernel");
 
 			GenerateKernel();
@@ -48,14 +48,14 @@ namespace sp
 			Set(kernel, offsets, samples);
 		}
 
-		void SetProjection(glm::mat4 newProj)
+		void SetViewParams(const ECS::View &view)
 		{
-			Set(proj, newProj);
-			Set(invProj, glm::inverse(newProj));
+			Set(projMat, view.projMat);
+			Set(invProjMat, view.invProjMat);
 		}
 
 	private:
-		Uniform proj, invProj, kernel;
+		Uniform projMat, invProjMat, kernel;
 	};
 
 	IMPLEMENT_SHADER_TYPE(SSAOPass0FS, "ssao_pass0.frag", Fragment);
@@ -68,18 +68,18 @@ namespace sp
 		{
 			Bind(samplePattern, "samplePattern");
 			Bind(combineOutput, "combineOutput");
-			Bind(invProj, "invProjMat");
+			Bind(invProjMat, "invProjMat");
 		}
 
-		void SetParameters(glm::vec2 pattern, bool combine, glm::mat4 newProj)
+		void SetParameters(glm::vec2 pattern, bool combine, const ECS::View &view)
 		{
 			Set(samplePattern, pattern);
 			Set(combineOutput, combine);
-			Set(invProj, glm::inverse(newProj));
+			Set(invProjMat, view.invProjMat);
 		}
 
 	private:
-		Uniform invProj, samplePattern, combineOutput;
+		Uniform invProjMat, samplePattern, combineOutput;
 	};
 
 	IMPLEMENT_SHADER_TYPE(SSAOBlurFS, "ssao_blur.frag", Fragment);
@@ -114,7 +114,7 @@ namespace sp
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
-		r->GlobalShaders->Get<SSAOPass0FS>()->SetProjection(r->GetProjection());
+		r->GlobalShaders->Get<SSAOPass0FS>()->SetViewParams(r->GetView());
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, SSAOPass0FS>(r->GlobalShaders);
@@ -141,9 +141,8 @@ namespace sp
 				samplePattern.y = 1.0f / (float)extent.y;
 
 			bool combine = !horizontal && CVarDebugSSAO.Get() == 0;
-			r->GlobalShaders->Get<SSAOBlurFS>()->SetParameters(
-				samplePattern, combine, r->GetProjection()
-			);
+
+			r->GlobalShaders->Get<SSAOBlurFS>()->SetParameters(samplePattern, combine, r->GetView());
 
 			r->ShaderControl->BindPipeline<BasicPostVS, SSAOBlurFS>(r->GlobalShaders);
 		}

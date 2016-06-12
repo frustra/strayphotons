@@ -40,8 +40,12 @@ namespace sp
 		Entity player = game->entityManager.NewEntity();
 		auto *playerTransform = player.Assign<ECS::Transform>();
 		playerTransform->Translate(glm::vec3(0.0f, 1.0f, 0.0f));
+
 		auto *playerView = player.Assign<ECS::View>();
+		playerView->extents = { 1280, 720 };
+		playerView->clip = { 0.1f, 256.0f };
 		playerView->fov = glm::radians(60.0f);
+
 		humanControlSystem.AssignController(player);
 
 		game->graphics.SetPlayerView(player);

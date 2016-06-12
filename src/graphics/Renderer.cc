@@ -9,6 +9,7 @@
 #include "core/Logging.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
+#include "ecs/components/View.hh"
 
 namespace sp
 {
@@ -165,20 +166,19 @@ namespace sp
 		AssertGLOK("Renderer::Prepare");
 	}
 
-	void Renderer::RenderFrame(RenderArgs args)
+	void Renderer::RenderPass(ECS::View &view)
 	{
+		currentView = &view;
 		RTPool->TickFrame();
 
-		renderArgs = args;
-
 		auto sceneVS = GlobalShaders->Get<SceneVS>();
-		sceneVS->SetView(renderArgs.view);
-		sceneVS->SetProjection(renderArgs.projection);
+		sceneVS->SetView(view.viewMat);
+		sceneVS->SetProjection(view.projMat);
 
 		EngineRenderTargets targets;
-		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
-		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, { 1280, 720 }));
-		targets.DepthStencil = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, { 1280, 720 }));
+		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, view.extents));
+		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, view.extents));
+		targets.DepthStencil = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, view.extents));
 
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
@@ -192,7 +192,9 @@ namespace sp
 
 		SetRenderTargets(2, attachments, &targets.DepthStencil->GetTexture());
 
+		glViewport(0, 0, view.extents.x, view.extents.y);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		ShaderControl->BindPipeline<SceneVS, SceneFS>(GlobalShaders);
 
 		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable, ECS::Transform>())
@@ -220,21 +222,20 @@ namespace sp
 		ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(GlobalShaders);
 		glViewport(0, 0, 256, 256);
 		DrawScreenCover();
-		glViewport(0, 0, 1280, 720);
 		// End compute example.
 
 		//AssertGLOK("Renderer::RenderFrame");
+	}
+
+	void Renderer::EndFrame()
+	{
 		glfwSwapBuffers(window);
 	}
 
-	glm::mat4 Renderer::GetView() const
+	const ECS::View &Renderer::GetView() const
 	{
-		return renderArgs.view;
-	}
-
-	glm::mat4 Renderer::GetProjection() const
-	{
-		return renderArgs.projection;
+		Assert(currentView);
+		return *currentView;
 	}
 
 	void Renderer::SetRenderTargets(size_t attachmentCount, const Texture *attachments, const Texture *depth)

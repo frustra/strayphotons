@@ -3,8 +3,7 @@
 #include <string>
 
 #include "graphics/Graphics.hh"
-#include "graphics/RenderArgs.hh"
-#include "game/InputManager.hh"
+#include "ecs/components/View.hh"
 #include "Common.hh"
 
 namespace sp
@@ -12,6 +11,7 @@ namespace sp
 	class Device;
 	class ShaderSet;
 	class Game;
+	class InputManager;
 
 	class GraphicsContext
 	{
@@ -22,11 +22,11 @@ namespace sp
 		void CreateWindow();
 		bool ShouldClose();
 		void SetTitle(string title);
-		void ResetSwapchain(uint32 &width, uint32 &height);
 		void BindInputCallbacks(InputManager &inputManager);
 
 		virtual void Prepare() = 0;
-		virtual void RenderFrame(RenderArgs args) = 0;
+		virtual void RenderPass(ECS::View &view) = 0;
+		virtual void EndFrame() = 0;
 
 		ShaderSet *GlobalShaders;
 

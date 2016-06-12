@@ -4,6 +4,7 @@
 #include "graphics/ShaderManager.hh"
 #include "graphics/GenericShaders.hh"
 #include "graphics/Util.hh"
+#include "ecs/components/View.hh"
 
 namespace sp
 {
@@ -13,20 +14,20 @@ namespace sp
 
 		DeferredLightingFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
-			Bind(view, "viewMat");
-			Bind(invView, "invViewMat");
-			Bind(invProj, "invProjMat");
+			Bind(viewMat, "viewMat");
+			Bind(invViewMat, "invViewMat");
+			Bind(invProjMat, "invProjMat");
 		}
 
-		void SetParameters(glm::mat4 newProj, glm::mat4 newView)
+		void SetViewParams(const ECS::View &view)
 		{
-			Set(view, newView);
-			Set(invView, glm::inverse(newView));
-			Set(invProj, glm::inverse(newProj));
+			Set(viewMat, view.viewMat);
+			Set(invViewMat, view.invViewMat);
+			Set(invProjMat, view.invProjMat);
 		}
 
 	private:
-		Uniform view, invView, invProj;
+		Uniform viewMat, invViewMat, invProjMat;
 	};
 
 	IMPLEMENT_SHADER_TYPE(DeferredLightingFS, "deferred_lighting.frag", Fragment);
@@ -36,10 +37,7 @@ namespace sp
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
-		r->GlobalShaders->Get<DeferredLightingFS>()->SetParameters(
-			r->GetProjection(),
-			r->GetView()
-		);
+		r->GlobalShaders->Get<DeferredLightingFS>()->SetViewParams(r->GetView());
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, DeferredLightingFS>(r->GlobalShaders);

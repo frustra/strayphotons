@@ -20,14 +20,12 @@ namespace sp
 		bool HasActiveContext();
 
 		void BindContextInputCallbacks(InputManager &inputManager);
-		void SetPlayerView(sp::Entity entity);
+		void SetPlayerView(Entity entity);
 
-		bool Loop();
 		bool Frame();
 
 	private:
-		glm::mat4 getPlayerViewTransform();
-		glm::mat4 getPlayerProjectTransform();
+		ECS::View &updateViewCaches(Entity entity);
 		void validateView(Entity viewEntity);
 
 		GraphicsContext *context;

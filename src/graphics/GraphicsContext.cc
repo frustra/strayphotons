@@ -67,11 +67,6 @@ namespace sp
 		glfwSetWindowTitle(window, title.c_str());
 	}
 
-	void GraphicsContext::ResetSwapchain(uint32 &width, uint32 &height)
-	{
-
-	}
-
 	void GraphicsContext::BindInputCallbacks(InputManager &inputManager)
 	{
 		inputManager.BindCallbacks(window);
