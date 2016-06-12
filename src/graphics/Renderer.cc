@@ -19,35 +19,18 @@ namespace sp
 
 		SceneVS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
-			Bind(projection, "projMatrix");
-			Bind(model, "modelMatrix");
-			Bind(view, "viewMatrix");
+			Bind(mvpMat, "mvpMat");
+			Bind(normalMat, "normalMat");
 		}
 
-		void SetParameters(glm::mat4 newProj, glm::mat4 newView, glm::mat4 newModel)
+		void SetParams(const ECS::View &view, glm::mat4 modelMat)
 		{
-			Set(projection, newProj);
-			Set(view, newView);
-			Set(model, newModel);
-		}
-
-		void SetView(glm::mat4 newView)
-		{
-			Set(view, newView);
-		}
-
-		void SetModel(glm::mat4 newModel)
-		{
-			Set(model, newModel);
-		}
-
-		void SetProjection(glm::mat4 newProjection)
-		{
-			Set(projection, newProjection);
+			Set(mvpMat, view.projMat * view.viewMat * modelMat);
+			Set(normalMat, glm::mat3(view.viewMat * modelMat));
 		}
 
 	private:
-		Uniform projection, model, view;
+		Uniform mvpMat, normalMat;
 	};
 
 	class SceneFS : public Shader
@@ -171,10 +154,6 @@ namespace sp
 		currentView = &view;
 		RTPool->TickFrame();
 
-		auto sceneVS = GlobalShaders->Get<SceneVS>();
-		sceneVS->SetView(view.viewMat);
-		sceneVS->SetProjection(view.projMat);
-
 		EngineRenderTargets targets;
 		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, view.extents));
 		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, view.extents));
@@ -197,10 +176,13 @@ namespace sp
 
 		ShaderControl->BindPipeline<SceneVS, SceneFS>(GlobalShaders);
 
+		auto sceneVS = GlobalShaders->Get<SceneVS>();
+
 		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable, ECS::Transform>())
 		{
 			auto comp = ent.Get<ECS::Renderable>();
-			sceneVS->SetModel(ent.Get<ECS::Transform>()->GetModelTransform(*ent.GetManager()));
+			auto modelMat = ent.Get<ECS::Transform>()->GetModelTransform(*ent.GetManager());
+			sceneVS->SetParams(view, modelMat);
 			DrawRenderable(comp);
 		}
 
