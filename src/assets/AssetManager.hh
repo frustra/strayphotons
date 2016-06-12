@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.hh"
+#include "ecs/Ecs.hh"
 #include <tiny_gltf_loader.h>
 
 #include <unordered_map>
@@ -20,6 +21,7 @@ namespace sp
 	public:
 		shared_ptr<Asset> Load(const std::string &path);
 		shared_ptr<Model> LoadModel(const std::string &name);
+		vector<Entity> LoadScene(const std::string &name, EntityManager *em);
 
 		void Unregister(const Asset &asset);
 

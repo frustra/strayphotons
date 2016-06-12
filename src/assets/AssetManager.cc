@@ -8,6 +8,11 @@
 
 #include "core/Logging.hh"
 
+#include "ecs/Ecs.hh"
+#include "ecs/components/Renderable.hh"
+#include "ecs/components/Transform.hh"
+#include "ecs/components/View.hh"
+
 #include <iostream>
 #include <fstream>
 
@@ -81,6 +86,92 @@ namespace sp
 		}
 
 		return model;
+	}
+
+	vector<Entity> AssetManager::LoadScene(const std::string &name, EntityManager *em)
+	{
+		Debugf("Loading scene: %s", name.c_str());
+
+		shared_ptr<Asset> asset = Load("scenes/" + name + ".json");
+		picojson::value root;
+		std::string err = picojson::parse(root, asset->Buffer());
+		if (!err.empty())
+		{
+			Errorf(err);
+			return vector<Entity>();
+		}
+
+		vector<Entity> entities;
+		std::map<std::string, Entity> namedEntities;
+
+		auto entityList = root.get<picojson::object>()["entities"];
+		for (auto value : entityList.get<picojson::array>())
+		{
+			Entity entity = em->NewEntity();
+			auto ent = value.get<picojson::object>();
+			for (auto comp : ent)
+			{
+				if (comp.first[0] == '_') continue;
+
+				if (comp.first == "renderable")
+				{
+					auto model = LoadModel(comp.second.get<string>());
+					entity.Assign<ECS::Renderable>(model);
+				}
+				else if (comp.first == "transform")
+				{
+					ECS::Transform *transform = entity.Assign<ECS::Transform>();
+					for (auto subTransform : comp.second.get<picojson::object>()) {
+						if (subTransform.first == "relativeTo") {
+							transform->SetRelativeTo(namedEntities[subTransform.second.get<string>()]);
+						} else {
+							auto values = subTransform.second.get<picojson::array>();
+							double numbers[values.size()];
+							for (size_t i = 0; i < values.size(); i++) {
+								numbers[i] = values[i].get<double>();
+							}
+
+							if (subTransform.first == "scale") {
+								transform->Scale(glm::make_vec3(numbers));
+							} else if (subTransform.first == "rotate") {
+								transform->Rotate(glm::radians(numbers[0]), glm::make_vec3(numbers+1));
+							} else if (subTransform.first == "translate") {
+								transform->Translate(glm::make_vec3(numbers));
+							}
+						}
+					}
+				}
+				else if (comp.first == "view")
+				{
+					ECS::View *view = entity.Assign<ECS::View>();
+					for (auto param : comp.second.get<picojson::object>()) {
+						if (param.first == "fov") {
+							view->fov = glm::radians(param.second.get<double>());
+						} else {
+							auto values = param.second.get<picojson::array>();
+							double numbers[values.size()];
+							for (size_t i = 0; i < values.size(); i++) {
+								numbers[i] = values[i].get<double>();
+							}
+
+							if (param.first == "extents") {
+								view->extents = glm::make_vec2(numbers);
+							} else if (param.first == "clip") {
+								view->clip = glm::make_vec2(numbers);
+							} else if (param.first == "offset") {
+								view->offset = glm::make_vec2(numbers);
+							}
+						}
+					}
+				}
+			}
+			if (ent.count("_name"))
+			{
+				namedEntities[ent["_name"].get<string>()] = entity;
+			}
+			entities.push_back(entity);
+		}
+		return entities;
 	}
 
 	void AssetManager::Unregister(const Asset &asset)
