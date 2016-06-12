@@ -37,7 +37,7 @@ namespace sp
 					ImGui::PopStyleColor();
 				}
 
-				if (ImGui::GetScrollY() >= lastScrollMaxY - 0.1f)
+				if (ImGui::GetScrollY() >= lastScrollMaxY - 0.001f && io.MouseWheel == 0.0f)
 				{
 					ImGui::SetScrollHere();
 				}
@@ -104,7 +104,7 @@ namespace sp
 						}
 
 						auto hist = GConsoleManager.History();
-						if (pos <= hist.size())
+						if ((size_t) pos <= hist.size())
 						{
 							auto &line = hist[hist.size() - pos];
 							int newLength = snprintf(data->Buf, (size_t)data->BufSize, "%s", line.c_str());

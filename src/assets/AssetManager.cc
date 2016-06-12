@@ -23,7 +23,7 @@ namespace sp
 
 	shared_ptr<Asset> AssetManager::Load(const std::string &path)
 	{
-		Debugf("Loading asset: %s", path.c_str());
+		Logf("Loading asset: %s", path.c_str());
 		AssetMap::iterator it = loadedAssets.find(path);
 		shared_ptr<Asset> asset;
 
@@ -58,7 +58,7 @@ namespace sp
 
 	shared_ptr<Model> AssetManager::LoadModel(const std::string &name)
 	{
-		Debugf("Loading model: %s", name.c_str());
+		Logf("Loading model: %s", name.c_str());
 		ModelMap::iterator it = loadedModels.find(name);
 		shared_ptr<Model> model;
 
@@ -91,7 +91,7 @@ namespace sp
 
 	shared_ptr<Scene> AssetManager::LoadScene(const std::string &name, EntityManager *em)
 	{
-		Debugf("Loading scene: %s", name.c_str());
+		Logf("Loading scene: %s", name.c_str());
 
 		shared_ptr<Asset> asset = Load("scenes/" + name + ".json");
 		picojson::value root;
