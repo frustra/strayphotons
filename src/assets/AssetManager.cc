@@ -103,6 +103,7 @@ namespace sp
 		}
 
 		shared_ptr<Scene> scene = make_shared<Scene>(name, asset);
+		vector<double> numbers;
 
 		auto entityList = root.get<picojson::object>()["entities"];
 		for (auto value : entityList.get<picojson::array>())
@@ -121,22 +122,32 @@ namespace sp
 				else if (comp.first == "transform")
 				{
 					ECS::Transform *transform = entity.Assign<ECS::Transform>();
-					for (auto subTransform : comp.second.get<picojson::object>()) {
-						if (subTransform.first == "relativeTo") {
+					for (auto subTransform : comp.second.get<picojson::object>())
+					{
+						if (subTransform.first == "relativeTo")
+						{
 							transform->SetRelativeTo(scene->FindEntity(subTransform.second.get<string>()));
-						} else {
+						}
+						else
+						{
 							auto values = subTransform.second.get<picojson::array>();
-							double numbers[values.size()];
-							for (size_t i = 0; i < values.size(); i++) {
+							numbers.resize(values.size());
+							for (size_t i = 0; i < values.size(); i++)
+							{
 								numbers[i] = values[i].get<double>();
 							}
 
-							if (subTransform.first == "scale") {
-								transform->Scale(glm::make_vec3(numbers));
-							} else if (subTransform.first == "rotate") {
-								transform->Rotate(glm::radians(numbers[0]), glm::make_vec3(numbers+1));
-							} else if (subTransform.first == "translate") {
-								transform->Translate(glm::make_vec3(numbers));
+							if (subTransform.first == "scale")
+							{
+								transform->Scale(glm::make_vec3(&numbers[0]));
+							}
+							else if (subTransform.first == "rotate")
+							{
+								transform->Rotate(glm::radians(numbers[0]), glm::make_vec3(&numbers[1]));
+							}
+							else if (subTransform.first == "translate")
+							{
+								transform->Translate(glm::make_vec3(&numbers[0]));
 							}
 						}
 					}
@@ -144,22 +155,32 @@ namespace sp
 				else if (comp.first == "view")
 				{
 					ECS::View *view = entity.Assign<ECS::View>();
-					for (auto param : comp.second.get<picojson::object>()) {
-						if (param.first == "fov") {
+					for (auto param : comp.second.get<picojson::object>())
+					{
+						if (param.first == "fov")
+						{
 							view->fov = glm::radians(param.second.get<double>());
-						} else {
+						}
+						else
+						{
 							auto values = param.second.get<picojson::array>();
-							double numbers[values.size()];
-							for (size_t i = 0; i < values.size(); i++) {
+							numbers.resize(values.size());
+							for (size_t i = 0; i < values.size(); i++)
+							{
 								numbers[i] = values[i].get<double>();
 							}
 
-							if (param.first == "extents") {
-								view->extents = glm::make_vec2(numbers);
-							} else if (param.first == "clip") {
-								view->clip = glm::make_vec2(numbers);
-							} else if (param.first == "offset") {
-								view->offset = glm::make_vec2(numbers);
+							if (param.first == "extents")
+							{
+								view->extents = glm::make_vec2(&numbers[0]);
+							}
+							else if (param.first == "clip")
+							{
+								view->clip = glm::make_vec2(&numbers[0]);
+							}
+							else if (param.first == "offset")
+							{
+								view->offset = glm::make_vec2(&numbers[0]);
 							}
 						}
 					}
