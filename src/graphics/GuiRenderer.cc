@@ -2,6 +2,8 @@
 #include "Renderer.hh"
 #include "GenericShaders.hh"
 #include "ShaderManager.hh"
+#include "game/InputManager.hh"
+#include "game/GuiManager.hh"
 
 #include <imgui/imgui.h>
 
@@ -12,18 +14,13 @@
 
 namespace sp
 {
-	void GuiRenderer::DefineWindows()
-	{
-		//ImGui::ShowTestWindow();
-	}
-
-	GuiRenderer::GuiRenderer(Renderer *renderer)
-		: parent(renderer)
+	GuiRenderer::GuiRenderer(Renderer &renderer, GuiManager &manager)
+		: parent(renderer), manager(manager)
 	{
 		ImGuiIO &io = ImGui::GetIO();
 
 #ifdef _WIN32
-		io.ImeWindowHandle = glfwGetWin32Window(renderer->GetWindow());
+		io.ImeWindowHandle = glfwGetWin32Window(renderer.GetWindow());
 #endif
 
 #define OFFSET(typ, field) ((size_t) &(((typ *) nullptr)->field))
@@ -59,23 +56,9 @@ namespace sp
 		io.DeltaTime = lastTime > 0.0 ? (float)(currTime - lastTime) : 1.0f / 60.0f;
 		lastTime = currTime;
 
-		if (glfwGetWindowAttrib(parent->GetWindow(), GLFW_FOCUSED))
-		{
-			double mouseX, mouseY;
-			glfwGetCursorPos(parent->GetWindow(), &mouseX, &mouseY);
-			io.MousePos = ImVec2((float)mouseX, (float) mouseY);
-		}
-		else
-		{
-			io.MousePos = ImVec2(-1.0f, -1.0f);
-		}
-
-		io.MouseDown[0] = glfwGetMouseButton(parent->GetWindow(), 0) != 0;
-
-		//io.MouseDrawCursor = true;
-
+		manager.BeforeFrame();
 		ImGui::NewFrame();
-		DefineWindows();
+		manager.DefineWindows();
 		ImGui::Render();
 
 		auto drawData = ImGui::GetDrawData();
@@ -84,8 +67,8 @@ namespace sp
 
 		glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
 
-		parent->GlobalShaders->Get<BasicOrthoVS>()->SetViewport(view.extents.x, view.extents.y);
-		parent->ShaderControl->BindPipeline<BasicOrthoVS, BasicOrthoFS>(parent->GlobalShaders);
+		parent.GlobalShaders->Get<BasicOrthoVS>()->SetViewport(view.extents.x, view.extents.y);
+		parent.ShaderControl->BindPipeline<BasicOrthoVS, BasicOrthoFS>(parent.GlobalShaders);
 
 		glEnable(GL_BLEND);
 		glBlendEquation(GL_FUNC_ADD);

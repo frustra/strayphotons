@@ -33,6 +33,7 @@ namespace sp
 			logic.Init();
 			graphics.CreateContext();
 			graphics.BindContextInputCallbacks(input);
+			gui.BindInput(input);
 			lastFrameTime = glfwGetTime();
 
 			while (true)

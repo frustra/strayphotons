@@ -7,20 +7,20 @@
 namespace sp
 {
 	class Renderer;
+	class GuiManager;
 
 	class GuiRenderer
 	{
 	public:
-		GuiRenderer(Renderer *renderer);
+		GuiRenderer(Renderer &renderer, GuiManager &manager);
 		void Render(ECS::View view);
 
 	private:
-		void DefineWindows();
-
 		VertexBuffer vertices, indices;
 		Texture fontTex;
 		double lastTime = 0.0;
 
-		Renderer *parent;
+		Renderer &parent;
+		GuiManager &manager;
 	};
 }

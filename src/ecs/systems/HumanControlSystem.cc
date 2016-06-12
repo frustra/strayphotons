@@ -27,6 +27,9 @@ namespace ECS
 
 	bool HumanControlSystem::Frame(double dtSinceLastFrame)
 	{
+		if (input->FocusLocked())
+			return true;
+
 		for (sp::Entity entity : entities->EntitiesWith<ECS::Transform, ECS::HumanController>())
 		{
 			// control orientation with the mouse
@@ -37,13 +40,13 @@ namespace ECS
 			glm::vec2 dCursor = input->CursorDiff();
 
 			controller->yaw   -= dCursor.x * CURSOR_SENSITIVITY.x;
-			if (controller->yaw > 2 * M_PI)
+			if (controller->yaw > 2.0f * M_PI)
 			{
-				controller->yaw -= 2 * M_PI;
+				controller->yaw -= 2.0f * M_PI;
 			}
 			if (controller->yaw < 0)
 			{
-				controller->yaw += 2 * M_PI;
+				controller->yaw += 2.0f * M_PI;
 			}
 
 			controller->pitch -= dCursor.y * CURSOR_SENSITIVITY.y;

@@ -74,7 +74,8 @@ include_directories(
 add_definitions(-DGLEW_STATIC=1)
 add_library(GLEW STATIC ${EXT_PATH}/glew/src/glew.c)
 
-add_library(ImGui STATIC ${EXT_PATH}/imgui/imgui.cpp ${EXT_PATH}/imgui/imgui_draw.cpp ${EXT_PATH}/imgui/imgui_demo.cpp)
+file(GLOB ImGui_sources ${EXT_PATH}/imgui/*.cpp)
+add_library(ImGui STATIC ${ImGui_sources})
 
 
 # split into lib and exe so tests can link against lib

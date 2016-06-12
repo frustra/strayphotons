@@ -25,11 +25,11 @@ namespace sp
 			Bind(projMat, "projMat");
 		}
 
-		void SetViewport(float width, float height)
+		void SetViewport(int width, int height)
 		{
 			glm::mat4 proj;
-			proj[0][0] = 2.0f / width;
-			proj[1][1] = 2.0f / -height;
+			proj[0][0] = 2.0f / (float) width;
+			proj[1][1] = 2.0f / (float) - height;
 			proj[2][2] = -1.0f;
 			proj[3][0] = -1.0f;
 			proj[3][1] = 1.0f;

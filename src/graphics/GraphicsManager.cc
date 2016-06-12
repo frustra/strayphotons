@@ -1,8 +1,10 @@
 #include "core/Logging.hh"
 #include "graphics/GraphicsManager.hh"
 #include "graphics/Renderer.hh"
+#include "graphics/GuiRenderer.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Transform.hh"
+#include "core/Game.hh"
 
 #include <iostream>
 #include <system_error>
@@ -40,7 +42,7 @@ namespace sp
 		context = renderer;
 		context->CreateWindow();
 
-		guiRenderer = new GuiRenderer(renderer);
+		guiRenderer = new GuiRenderer(*renderer, game->gui);
 	}
 
 	void GraphicsManager::ReleaseContext()

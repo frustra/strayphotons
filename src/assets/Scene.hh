@@ -3,7 +3,7 @@
 #include "Common.hh"
 #include "ecs/Ecs.hh"
 
-#include <map>
+#include <unordered_map>
 
 namespace sp
 {
@@ -17,7 +17,7 @@ namespace sp
 
 		const string name;
 		vector<Entity> entities;
-		std::map<string, Entity> namedEntities;
+		std::unordered_map<string, Entity> namedEntities;
 
 		Entity FindEntity(const std::string name);
 	private:

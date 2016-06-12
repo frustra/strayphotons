@@ -1,13 +1,14 @@
 #pragma once
 
 #include "graphics/GraphicsContext.hh"
-#include "graphics/GuiRenderer.hh"
 #include "game/InputManager.hh"
 #include "ecs/Ecs.hh"
 
 namespace sp
 {
 	class Game;
+	class GuiManager;
+	class GuiRenderer;
 
 	class GraphicsManager
 	{

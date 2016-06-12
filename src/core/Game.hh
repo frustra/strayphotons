@@ -6,6 +6,7 @@
 #include "ecs/Ecs.hh"
 #include "game/GameLogic.hh"
 #include "game/InputManager.hh"
+#include "game/GuiManager.hh"
 
 namespace sp
 {
@@ -19,11 +20,13 @@ namespace sp
 		bool Frame();
 		bool ShouldStop();
 
-		GraphicsManager graphics;
-		GameLogic logic;
-		InputManager input;
+		// Order is important.
 		AssetManager assets;
+		GuiManager gui;
+		GraphicsManager graphics;
+		InputManager input;
 		EntityManager entityManager;
+		GameLogic logic;
 
 	private:
 		double lastFrameTime;

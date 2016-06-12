@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <unordered_map>
 #include <array>
+#include <functional>
 #include "Common.hh"
 
 namespace sp
@@ -69,10 +70,31 @@ namespace sp
 		glm::vec2 Cursor() const;
 
 		/**
+		 * Returns the x,y position of the current cursor.
+		 */
+		glm::vec2 ImmediateCursor() const;
+
+		/**
 		 * Returns the difference between the previous and most recent checkpointed scroll
 		 *     xy values.
 		 */
 		glm::vec2 ScrollOffset() const;
+
+		/**
+		 * Sets the virtual cursor position, relative to top left.
+		 */
+		void SetCursorPosition(glm::vec2 pos);
+
+		/**
+		 * Returns true if input is currently consumed by a foreground system.
+		 */
+		bool FocusLocked() const;
+
+		/**
+		 * Enables or disables the focus lock.
+		 * Returns false if the lock is already held.
+		 */
+		bool LockFocus(bool locked);
 
 		static void KeyInputCallback(
 			GLFWwindow *window,
@@ -80,6 +102,11 @@ namespace sp
 			int scancode,
 			int action,
 			int mods
+		);
+
+		static void CharInputCallback(
+			GLFWwindow *window,
+			unsigned int ch
 		);
 
 		static void MouseMoveCallback(
@@ -102,11 +129,33 @@ namespace sp
 		 */
 		void BindCallbacks(GLFWwindow *window);
 
+		typedef std::function<void(int, int)> KeyEventCallback;
+		typedef std::function<void(uint32)> CharEventCallback;
+
+		/**
+		 * Register a function to be called when a key state changes.
+		 */
+		void AddKeyInputCallback(KeyEventCallback cb)
+		{
+			keyEventCallbacks.push_back(cb);
+		}
+
+		/**
+		 * Register a function to be called when an input character is received.
+		 */
+		void AddCharInputCallback(CharEventCallback cb)
+		{
+			charEventCallbacks.push_back(cb);
+		}
+
 	private:
 		void keyChange(int key, int action);
+		void charInput(uint32 ch);
 
 	private:
 		static const uint32 MAX_KEYS = GLFW_KEY_LAST + 1 + GLFW_MOUSE_BUTTON_LAST;
+
+		GLFWwindow *window = nullptr;
 
 		// keys that received a "press" event
 		std::array<bool, MAX_KEYS> keysPressed;
@@ -128,6 +177,11 @@ namespace sp
 
 		glm::vec2 scrollOffset;
 		glm::vec2 checkpointScrollOffset;
+
+		vector<KeyEventCallback> keyEventCallbacks;
+		vector<CharEventCallback> charEventCallbacks;
+
+		bool focusLocked = false;
 	};
 
 	int MouseButtonToKey(int button);

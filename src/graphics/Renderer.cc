@@ -198,7 +198,7 @@ namespace sp
 	{
 		// TODO(pushrax) remove
 		// Begin compute example.
-		auto exampleRT = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 256, 256 }));
+		/*auto exampleRT = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 256, 256 }));
 		exampleRT->GetTexture().BindImage(0, GL_WRITE_ONLY);
 		ShaderControl->BindPipeline<ExampleCS>(GlobalShaders);
 		glDispatchCompute(256 / 16, 256 / 16, 1);
@@ -207,7 +207,7 @@ namespace sp
 		exampleRT->GetTexture().Bind(0);
 		ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(GlobalShaders);
 		glViewport(0, 0, 256, 256);
-		DrawScreenCover();
+		DrawScreenCover();*/
 		// End compute example.
 
 		RTPool->TickFrame();

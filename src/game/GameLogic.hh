@@ -6,6 +6,7 @@
 namespace sp
 {
 	class Game;
+	class Scene;
 
 	class GameLogic
 	{
@@ -18,9 +19,6 @@ namespace sp
 	private:
 		Game *game;
 		ECS::HumanControlSystem humanControlSystem;
-
-		Entity duck;
-		Entity box;
-		Entity sponza;
+		shared_ptr<Scene> scene;
 	};
 }

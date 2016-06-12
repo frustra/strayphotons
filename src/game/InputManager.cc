@@ -95,9 +95,42 @@ namespace sp
 		return checkpointCursor;
 	}
 
+	glm::vec2 InputManager::ImmediateCursor() const
+	{
+		if (glfwGetWindowAttrib(window, GLFW_FOCUSED))
+		{
+			double mouseX, mouseY;
+			glfwGetCursorPos(window, &mouseX, &mouseY);
+			return glm::vec2((float) mouseX, (float) mouseY);
+		}
+		else
+		{
+			return glm::vec2(-1.0f, -1.0f);
+		}
+	}
+
 	glm::vec2 InputManager::ScrollOffset() const
 	{
 		return checkpointScrollOffset;
+	}
+
+	void InputManager::SetCursorPosition(glm::vec2 pos)
+	{
+		glfwSetCursorPos(window, pos.x, pos.y);
+	}
+
+	bool InputManager::FocusLocked() const
+	{
+		return focusLocked;
+	}
+
+	bool InputManager::LockFocus(bool locked)
+	{
+		if (locked && focusLocked)
+			return false;
+
+		focusLocked = locked;
+		return true;
 	}
 
 	void InputManager::KeyInputCallback(
@@ -109,6 +142,14 @@ namespace sp
 	{
 		auto im = static_cast<InputManager *>(glfwGetWindowUserPointer(window));
 		im->keyChange(key, action);
+	}
+
+	void InputManager::CharInputCallback(
+		GLFWwindow *window,
+		unsigned int ch)
+	{
+		auto im = static_cast<InputManager *>(glfwGetWindowUserPointer(window));
+		im->charInput(ch);
 	}
 
 	void InputManager::keyChange(int key, int action)
@@ -124,6 +165,19 @@ namespace sp
 				keysReleased[key] = true;
 				break;
 		}
+
+		for (auto &cb : keyEventCallbacks)
+		{
+			cb(key, action);
+		}
+	}
+
+	void InputManager::charInput(uint32 ch)
+	{
+		for (auto &cb : charEventCallbacks)
+		{
+			cb(ch);
+		}
 	}
 
 	void InputManager::MouseMoveCallback(
@@ -133,8 +187,8 @@ namespace sp
 	{
 		auto im = static_cast<InputManager *>(glfwGetWindowUserPointer(window));
 
-		im->cursor.x = xPos;
-		im->cursor.y = yPos;
+		im->cursor.x = (float) xPos;
+		im->cursor.y = (float) yPos;
 	}
 
 	void InputManager::MouseButtonCallback(
@@ -153,16 +207,21 @@ namespace sp
 	{
 		auto im = static_cast<InputManager *>(glfwGetWindowUserPointer(window));
 
-		im->scrollOffset.x += xOffset;
-		im->scrollOffset.y += yOffset;
+		im->scrollOffset.x += (float) xOffset;
+		im->scrollOffset.y += (float) yOffset;
 	}
 
 	void InputManager::BindCallbacks(GLFWwindow *window)
 	{
+		this->window = window;
+
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 		// store a pointer to this InputManager since we must provide static functions
 		glfwSetWindowUserPointer(window, this);
 
 		glfwSetKeyCallback(window, KeyInputCallback);
+		glfwSetCharCallback(window, CharInputCallback);
 		glfwSetScrollCallback(window, MouseScrollCallback);
 		glfwSetMouseButtonCallback(window, MouseButtonCallback);
 		glfwSetCursorPosCallback(window, MouseMoveCallback);

@@ -19,9 +19,7 @@ namespace sp
 
 	void GameLogic::Init()
 	{
-		auto scene = game->assets.LoadScene("sponza", &game->entityManager);
-		duck = scene->FindEntity("duck");
-		box = scene->FindEntity("box");
+		scene = game->assets.LoadScene("sponza", &game->entityManager);
 
 		Entity player = scene->FindEntity("player");
 		humanControlSystem.AssignController(player);
@@ -35,10 +33,11 @@ namespace sp
 
 	bool GameLogic::Frame(double dtSinceLastFrame)
 	{
-		ECS::Transform *boxTransform = this->box.Get<ECS::Transform>();
-		boxTransform->Rotate(3 * dtSinceLastFrame, glm::vec3(0, 1, 0));
 
-		auto *duckTransform = this->duck.Get<ECS::Transform>();
+		ECS::Transform *boxTransform = scene->FindEntity("box").Get<ECS::Transform>();
+		boxTransform->Rotate(3.0f * dtSinceLastFrame, glm::vec3(0, 1, 0));
+
+		auto *duckTransform = scene->FindEntity("duck").Get<ECS::Transform>();
 		duckTransform->Rotate(dtSinceLastFrame, glm::vec3(1, 0, 0));
 
 		if (!humanControlSystem.Frame(dtSinceLastFrame))

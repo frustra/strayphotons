@@ -9,7 +9,6 @@ namespace sp
 
 	Entity Scene::FindEntity(const std::string name)
 	{
-		if (namedEntities.count(name)) return namedEntities[name];
-		return Entity();
+		return namedEntities[name];
 	}
 }
