@@ -31,15 +31,22 @@ namespace sp
 			return outputLines;
 		}
 
-	private:
-		void ParseAndExecute(const string &line);
+		const vector<string> History()
+		{
+			return history;
+		}
 
+		void ParseAndExecute(const string &line);
+		string AutoComplete(const string &input);
+
+	private:
 		std::map<string, CVarBase *> cvars;
 		std::queue<string> inputLines;
 		std::mutex inputLock;
 		std::thread inputThread;
 
 		vector<ConsoleLine> outputLines;
+		vector<string> history;
 	};
 
 	extern ConsoleManager GConsoleManager;

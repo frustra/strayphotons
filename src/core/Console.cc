@@ -73,6 +73,9 @@ namespace sp
 
 	void ConsoleManager::ParseAndExecute(const string &line)
 	{
+		if (history.size() == 0 || history[history.size() - 1] != line)
+			history.push_back(line);
+
 		std::stringstream stream(line);
 		string varName, value;
 		stream >> varName >> value;
@@ -82,30 +85,42 @@ namespace sp
 			for (auto &kv : cvars)
 			{
 				auto cvar = kv.second;
-				std::cout << " > " << cvar->GetName() << " " << cvar->StringValue() << std::endl;
-				std::cout << " >   " << cvar->GetDescription() << std::endl;
+				logging::ConsoleWrite(logging::Level::Log, " > %s = %s", cvar->GetName(), cvar->StringValue());
+				logging::ConsoleWrite(logging::Level::Log, " >   %s", cvar->GetDescription());
 			}
 			return;
 		}
 
-		auto cvar = cvars[boost::algorithm::to_lower_copy(varName)];
-		if (cvar)
+		auto cvarit = cvars.find(boost::algorithm::to_lower_copy(varName));
+		if (cvarit != cvars.end())
 		{
+			auto cvar = cvarit->second;
+
 			if (value.length() > 0)
 			{
 				cvar->SetFromString(value);
 			}
 
-			std::cout << " > " << cvar->GetName() << " " << cvar->StringValue() << std::endl;
+			logging::ConsoleWrite(logging::Level::Log, " > %s = %s", cvar->GetName(), cvar->StringValue());
 
 			if (value.length() == 0)
 			{
-				std::cout << " >   " << cvar->GetDescription() << std::endl;
+				logging::ConsoleWrite(logging::Level::Log, " >   %s", cvar->GetDescription());
 			}
 		}
 		else
 		{
-			std::cout << " > " << "CVar '" << varName << "' undefined" << std::endl;
+			logging::ConsoleWrite(logging::Level::Log, " > '%s' undefined", varName);
 		}
+	}
+
+	string ConsoleManager::AutoComplete(const string &input)
+	{
+		auto it = cvars.upper_bound(boost::algorithm::to_lower_copy(input));
+		if (it == cvars.end())
+			return input;
+
+		auto cvar = it->second;
+		return cvar->GetName();
 	}
 }

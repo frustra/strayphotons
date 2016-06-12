@@ -70,6 +70,13 @@ namespace sp
 		}
 
 		template <typename... T>
+		static void ConsoleWrite(Level lvl, const std::string &fmt, T... t)
+		{
+			boost::format fmter(fmt + "\n");
+			writeFormatter(lvl, fmter, t...);
+		}
+
+		template <typename... T>
 		static void Log(const char *file, int line, const std::string &fmt, T... t)
 		{
 			writeLog(Level::Log, file, line, "[log] " + fmt, t...);
