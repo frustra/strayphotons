@@ -30,7 +30,7 @@ namespace sp
 		RenderTargetDesc GetOutputDesc(uint32 id)
 		{
 			auto desc = GetInput(0)->GetOutput()->TargetDesc;
-			desc.format = PF_RGBA8;
+			desc.format = PF_SRGB8_A8;
 			return desc;
 		}
 

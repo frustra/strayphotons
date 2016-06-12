@@ -71,11 +71,10 @@ namespace sp
 
 		input.AddCharInputCallback([&](uint32 ch)
 		{
-			if (ch > 0 && ch < 0x10000)
-				io.AddInputCharacter(ch);
-
 			if (ch == '`')
 				ToggleConsole();
+			else if (ch > 0 && ch < 0x10000)
+				io.AddInputCharacter(ch);
 		});
 
 		input.AddKeyInputCallback([&](int key, int state)
