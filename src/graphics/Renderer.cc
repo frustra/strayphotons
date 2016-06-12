@@ -151,9 +151,6 @@ namespace sp
 
 	void Renderer::RenderPass(ECS::View &view)
 	{
-		currentView = &view;
-		RTPool->TickFrame();
-
 		EngineRenderTargets targets;
 		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, view.extents));
 		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, view.extents));
@@ -190,8 +187,13 @@ namespace sp
 		glDisable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
 
-		PostProcessing::Process(this, targets);
+		PostProcessing::Process(this, view, targets);
 
+		//AssertGLOK("Renderer::RenderFrame");
+	}
+
+	void Renderer::EndFrame()
+	{
 		// TODO(pushrax) remove
 		// Begin compute example.
 		auto exampleRT = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 256, 256 }));
@@ -206,18 +208,8 @@ namespace sp
 		DrawScreenCover();
 		// End compute example.
 
-		//AssertGLOK("Renderer::RenderFrame");
-	}
-
-	void Renderer::EndFrame()
-	{
+		RTPool->TickFrame();
 		glfwSwapBuffers(window);
-	}
-
-	const ECS::View &Renderer::GetView() const
-	{
-		Assert(currentView);
-		return *currentView;
 	}
 
 	void Renderer::SetRenderTargets(size_t attachmentCount, const Texture *attachments, const Texture *depth)

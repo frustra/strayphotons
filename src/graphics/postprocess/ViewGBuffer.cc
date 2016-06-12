@@ -33,7 +33,7 @@ namespace sp
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
-		r->GlobalShaders->Get<ViewGBufferFS>()->SetParameters(mode, r->GetView());
+		r->GlobalShaders->Get<ViewGBufferFS>()->SetParameters(mode, context->view);
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, ViewGBufferFS>(r->GlobalShaders);

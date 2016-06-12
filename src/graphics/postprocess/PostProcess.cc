@@ -49,10 +49,11 @@ namespace sp
 		context.LastOutput = lighting;
 	}
 
-	void PostProcessing::Process(Renderer *renderer, const EngineRenderTargets &targets)
+	void PostProcessing::Process(Renderer *renderer, const ECS::View &view, const EngineRenderTargets &targets)
 	{
 		PostProcessingContext context;
 		context.renderer = renderer;
+		context.view = view;
 
 		context.GBuffer0 = context.AddPass<ProxyProcessPass>(targets.GBuffer0);
 		context.GBuffer1 = context.AddPass<ProxyProcessPass>(targets.GBuffer1);
@@ -92,6 +93,8 @@ namespace sp
 
 		renderer->SetDefaultRenderTarget();
 		renderer->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(renderer->GlobalShaders);
+
+		glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
 
 		lastOutput->TargetRef->GetTexture().Bind(0);
 		DrawScreenCover();

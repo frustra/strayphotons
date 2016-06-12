@@ -25,12 +25,7 @@ namespace sp
 		void SetRenderTargets(size_t attachmentCount, const Texture *attachments, const Texture *depth);
 		void SetDefaultRenderTarget();
 
-		const ECS::View &GetView() const;
-
 		ShaderManager *ShaderControl = nullptr;
 		RenderTargetPool *RTPool = nullptr;
-
-	private:
-		ECS::View *currentView = nullptr;
 	};
 }

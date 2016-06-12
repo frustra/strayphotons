@@ -114,7 +114,7 @@ namespace sp
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
-		r->GlobalShaders->Get<SSAOPass0FS>()->SetViewParams(r->GetView());
+		r->GlobalShaders->Get<SSAOPass0FS>()->SetViewParams(context->view);
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, SSAOPass0FS>(r->GlobalShaders);
@@ -142,7 +142,7 @@ namespace sp
 
 			bool combine = !horizontal && CVarDebugSSAO.Get() == 0;
 
-			r->GlobalShaders->Get<SSAOBlurFS>()->SetParameters(samplePattern, combine, r->GetView());
+			r->GlobalShaders->Get<SSAOBlurFS>()->SetParameters(samplePattern, combine, context->view);
 
 			r->ShaderControl->BindPipeline<BasicPostVS, SSAOBlurFS>(r->GlobalShaders);
 		}
