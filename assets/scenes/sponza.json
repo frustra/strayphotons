@@ -17,6 +17,7 @@
 			}
 		},
 		{
+			"_name": "box",
 			"renderable": "box",
 			"transform": {
 				"relativeTo": "duck",
@@ -24,6 +25,7 @@
 			}
 		},
 		{
+			"_name": "player",
 			"view": {
 				"extents": [1280, 720],
 				"clip": [0.1, 256],

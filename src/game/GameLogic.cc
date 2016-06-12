@@ -2,7 +2,7 @@
 #include "core/Logging.hh"
 
 #include "game/GameLogic.hh"
-#include "assets/Model.hh"
+#include "assets/Scene.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/View.hh"
@@ -19,12 +19,11 @@ namespace sp
 
 	void GameLogic::Init()
 	{
-		auto entities = game->assets.LoadScene("sponza", &game->entityManager);
-		// TODO(xthexder): Make a proper lookup function
-		duck = entities[1];
-		box = entities[2];
+		auto scene = game->assets.LoadScene("sponza", &game->entityManager);
+		duck = scene->FindEntity("duck");
+		box = scene->FindEntity("box");
 
-		Entity player = entities[3];
+		Entity player = scene->FindEntity("player");
 		humanControlSystem.AssignController(player);
 
 		game->graphics.SetPlayerView(player);

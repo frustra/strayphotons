@@ -5,6 +5,7 @@
 #include "assets/AssetManager.hh"
 #include "assets/Asset.hh"
 #include "assets/Model.hh"
+#include "assets/Scene.hh"
 
 #include "core/Logging.hh"
 
@@ -88,7 +89,7 @@ namespace sp
 		return model;
 	}
 
-	vector<Entity> AssetManager::LoadScene(const std::string &name, EntityManager *em)
+	shared_ptr<Scene> AssetManager::LoadScene(const std::string &name, EntityManager *em)
 	{
 		Debugf("Loading scene: %s", name.c_str());
 
@@ -98,11 +99,10 @@ namespace sp
 		if (!err.empty())
 		{
 			Errorf(err);
-			return vector<Entity>();
+			return NULL;
 		}
 
-		vector<Entity> entities;
-		std::map<std::string, Entity> namedEntities;
+		shared_ptr<Scene> scene = make_shared<Scene>(name, asset);
 
 		auto entityList = root.get<picojson::object>()["entities"];
 		for (auto value : entityList.get<picojson::array>())
@@ -123,7 +123,7 @@ namespace sp
 					ECS::Transform *transform = entity.Assign<ECS::Transform>();
 					for (auto subTransform : comp.second.get<picojson::object>()) {
 						if (subTransform.first == "relativeTo") {
-							transform->SetRelativeTo(namedEntities[subTransform.second.get<string>()]);
+							transform->SetRelativeTo(scene->FindEntity(subTransform.second.get<string>()));
 						} else {
 							auto values = subTransform.second.get<picojson::array>();
 							double numbers[values.size()];
@@ -167,11 +167,11 @@ namespace sp
 			}
 			if (ent.count("_name"))
 			{
-				namedEntities[ent["_name"].get<string>()] = entity;
+				scene->namedEntities[ent["_name"].get<string>()] = entity;
 			}
-			entities.push_back(entity);
+			scene->entities.push_back(entity);
 		}
-		return entities;
+		return scene;
 	}
 
 	void AssetManager::Unregister(const Asset &asset)

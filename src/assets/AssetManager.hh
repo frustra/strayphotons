@@ -12,6 +12,7 @@ namespace sp
 {
 	class Asset;
 	class Model;
+	class Scene;
 
 	typedef std::unordered_map<std::string, weak_ptr<Asset> > AssetMap;
 	typedef std::unordered_map<std::string, weak_ptr<Model> > ModelMap;
@@ -21,7 +22,7 @@ namespace sp
 	public:
 		shared_ptr<Asset> Load(const std::string &path);
 		shared_ptr<Model> LoadModel(const std::string &name);
-		vector<Entity> LoadScene(const std::string &name, EntityManager *em);
+		shared_ptr<Scene> LoadScene(const std::string &name, EntityManager *em);
 
 		void Unregister(const Asset &asset);
 
