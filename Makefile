@@ -4,7 +4,7 @@
 auto: build unix compile
 
 compile:
-	cd build; make -j4
+	cd build; make -j5
 
 linux: unix
 unix: build
