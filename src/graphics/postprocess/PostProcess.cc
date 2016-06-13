@@ -70,10 +70,11 @@ namespace sp
 		context.LastOutput = blending;
 	}
 
-	void PostProcessing::Process(Renderer *renderer, ECS::View view, const EngineRenderTargets &targets)
+	void PostProcessing::Process(Renderer *renderer, sp::Game *game, ECS::View view, const EngineRenderTargets &targets)
 	{
 		PostProcessingContext context;
 		context.renderer = renderer;
+		context.game = game;
 		context.view = view;
 
 		context.GBuffer0 = context.AddPass<ProxyProcessPass>(targets.GBuffer0);

@@ -34,6 +34,35 @@
 			"transform": {
 				"translate": [0, 1, 0]
 			}
+		},
+		{
+			"view": {
+				"extents": [512, 512],
+				"clip": [0.1, 256],
+				"fov": 60
+			},
+			"light": {
+				"tint": [1, 1, 1],
+				"illuminance": 10
+			},
+			"transform": {
+				"relativeTo": "player"
+			}
+		},
+		{
+			"view": {
+				"extents": [512, 512],
+				"clip": [0.1, 256],
+				"fov": 60
+			},
+			"light": {
+				"tint": [1, 0, 0],
+				"illuminance": 100
+			},
+			"transform": {
+				"translate": [0, 12, 0],
+				"rotate": [-90, 1, 0, 0]
+			}
 		}
 	]
 }

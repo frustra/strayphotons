@@ -3,6 +3,7 @@
 #include "Common.hh"
 #include "graphics/RenderTargetPool.hh"
 #include "ecs/components/View.hh"
+#include "core/Game.hh"
 
 namespace sp
 {
@@ -127,6 +128,7 @@ namespace sp
 		}
 
 		Renderer *renderer;
+		sp::Game *game;
 		ECS::View view;
 
 		ProcessPassOutputRef LastOutput;
@@ -140,6 +142,6 @@ namespace sp
 
 	namespace PostProcessing
 	{
-		void Process(Renderer *renderer, ECS::View view, const EngineRenderTargets &targets);
+		void Process(Renderer *renderer, sp::Game *game, ECS::View view, const EngineRenderTargets &targets);
 	}
 }

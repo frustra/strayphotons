@@ -6,6 +6,7 @@
 #include "ecs/components/Transform.hh"
 #include "ecs/components/Controller.hh"
 #include "ecs/components/View.hh"
+#include "ecs/components/Light.hh"
 
 #include <glm/glm.hpp>
 
@@ -19,6 +20,7 @@ namespace sp
 		entityManager.RegisterComponentType<ECS::Transform>();
 		entityManager.RegisterComponentType<ECS::HumanController>();
 		entityManager.RegisterComponentType<ECS::View>();
+		entityManager.RegisterComponentType<ECS::Light>();
 	}
 
 	Game::~Game()

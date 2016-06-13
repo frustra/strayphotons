@@ -10,6 +10,13 @@ layout (binding = 2) uniform sampler2D depthStencil;
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
+const uint maxLights = 16;
+
+uniform int lightCount;
+uniform vec3[maxLights] lightPosition;
+uniform vec3[maxLights] lightTint;
+uniform vec3[maxLights] lightDirection;
+
 uniform mat4 viewMat;
 uniform mat4 invViewMat;
 uniform mat4 invProjMat;
@@ -55,20 +62,19 @@ void main() {
 
 	vec3 pixelLuminance = vec3(0);
 
-	for (int i = 0; i < 1; i++) {
-		vec3 lightPosition = vec3(0, 12, 0);
-		vec4 currLightPos = viewMat * vec4(lightPosition, 1);
+	for (int i = 0; i < lightCount; i++) {
+		vec4 currLightPos = viewMat * vec4(lightPosition[i], 1);
 		vec3 sampleToLightRay = currLightPos.xyz / currLightPos.w - viewPosition;
 		vec3 incidence = normalize(sampleToLightRay);
-		vec3 currLightDir = normalize(mat3(viewMat) * vec3(0, -1, 0));
+		vec3 currLightDir = normalize(mat3(viewMat) * lightDirection[i]);
 		float falloff = 1;
 
 		float illuminance = 0;
-		vec3 currLightColor = vec3(1.0);
+		vec3 currLightColor = lightTint[i];
 
 		if (illuminance == 0) {
 			// Determine physically-based distance attenuation.
-			float lightDistance = length(abs(lightPosition - worldPosition));
+			float lightDistance = length(abs(lightPosition[i] - worldPosition));
 			float lightDistanceSq = lightDistance * lightDistance;
 			falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
 

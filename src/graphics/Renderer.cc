@@ -190,7 +190,7 @@ namespace sp
 		glDisable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
 
-		PostProcessing::Process(this, view, targets);
+		PostProcessing::Process(this, game, view, targets);
 
 		//AssertGLOK("Renderer::RenderFrame");
 	}

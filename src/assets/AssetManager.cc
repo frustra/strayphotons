@@ -13,6 +13,7 @@
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/View.hh"
+#include "ecs/components/Light.hh"
 
 #include <iostream>
 #include <fstream>
@@ -133,7 +134,12 @@ namespace sp
 					{
 						if (subTransform.first == "relativeTo")
 						{
-							transform->SetRelativeTo(scene->FindEntity(subTransform.second.get<string>()));
+							Entity parent = scene->FindEntity(subTransform.second.get<string>());
+							if (!parent.Valid())
+							{
+								throw std::runtime_error("Entity relative to non-existent parent");
+							}
+							transform->SetRelativeTo(parent);
 						}
 						else
 						{
@@ -189,6 +195,28 @@ namespace sp
 							{
 								view->offset = glm::make_vec2(&numbers[0]);
 							}
+						}
+					}
+				}
+				else if (comp.first == "light")
+				{
+					ECS::Light *light = entity.Assign<ECS::Light>();
+					for (auto param : comp.second.get<picojson::object>())
+					{
+						if (param.first == "illuminance")
+						{
+							light->illuminance = glm::radians(param.second.get<double>());
+						}
+						else if (param.first == "tint")
+						{
+							auto values = param.second.get<picojson::array>();
+							numbers.resize(values.size());
+							for (size_t i = 0; i < values.size(); i++)
+							{
+								numbers[i] = values[i].get<double>();
+							}
+
+							light->tint = glm::make_vec3(&numbers[0]);
 						}
 					}
 				}

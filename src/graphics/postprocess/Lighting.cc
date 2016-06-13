@@ -5,6 +5,8 @@
 #include "graphics/GenericShaders.hh"
 #include "graphics/Util.hh"
 #include "ecs/components/View.hh"
+#include "ecs/components/Light.hh"
+#include "ecs/components/Transform.hh"
 
 namespace sp
 {
@@ -12,8 +14,15 @@ namespace sp
 	{
 		SHADER_TYPE(DeferredLightingFS)
 
+		static const int maxLights = 16;
+
 		DeferredLightingFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
+			Bind(lightCount, "lightCount");
+			Bind(lightPosition, "lightPosition");
+			Bind(lightTint, "lightTint");
+			Bind(lightDirection, "lightDirection");
+
 			Bind(viewMat, "viewMat");
 			Bind(invViewMat, "invViewMat");
 			Bind(invProjMat, "invProjMat");
@@ -26,7 +35,31 @@ namespace sp
 			Set(invProjMat, view.invProjMat);
 		}
 
+		void SetLights(EntityManager &manager, EntityManager::EntityCollection &lightCollection)
+		{
+			glm::vec3 lightPositions[maxLights];
+			glm::vec3 lightTints[maxLights];
+			glm::vec3 lightDirections[maxLights];
+			int lightNum = 0;
+			for (auto entity : lightCollection)
+			{
+				auto light = entity.Get<ECS::Light>();
+				//auto view = entity.Get<ECS::View>();
+				auto transform = entity.Get<ECS::Transform>();
+				lightPositions[lightNum] = transform->GetModelTransform(manager) * glm::vec4(0, 0, 0, 1);
+				lightTints[lightNum] = light->tint;
+				lightDirections[lightNum] = glm::mat3(transform->GetModelTransform(manager)) * glm::vec3(0, 0, -1);
+				lightNum++;
+			}
+
+			Set(lightCount, lightNum);
+			Set(lightPosition, &lightPositions[0], lightNum);
+			Set(lightTint, &lightTints[0], lightNum);
+			Set(lightDirection, &lightDirections[0], lightNum);
+		}
+
 	private:
+		Uniform lightCount, lightPosition, lightTint, lightDirection;
 		Uniform viewMat, invViewMat, invProjMat;
 	};
 
@@ -37,6 +70,8 @@ namespace sp
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
+		auto lights = context->game->entityManager.EntitiesWith<ECS::Light>();
+		r->GlobalShaders->Get<DeferredLightingFS>()->SetLights(context->game->entityManager, lights);
 		r->GlobalShaders->Get<DeferredLightingFS>()->SetViewParams(context->view);
 
 		r->SetRenderTarget(&dest, nullptr);
