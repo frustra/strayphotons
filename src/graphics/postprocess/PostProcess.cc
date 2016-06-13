@@ -11,6 +11,7 @@
 #include "graphics/postprocess/ViewGBuffer.hh"
 #include "graphics/postprocess/SSAO.hh"
 #include "graphics/postprocess/SMAA.hh"
+#include "graphics/postprocess/GammaCorrect.hh"
 
 #include "core/CVar.hh"
 
@@ -53,8 +54,11 @@ namespace sp
 
 	static void AddSMAA(PostProcessingContext &context, ProcessPassOutputRef linearLuminosity)
 	{
+		auto gammaCorrect = context.AddPass<GammaCorrect>();
+		gammaCorrect->SetInput(0, linearLuminosity);
+
 		auto edgeDetect = context.AddPass<SMAAEdgeDetection>();
-		edgeDetect->SetInput(0, linearLuminosity);
+		edgeDetect->SetInput(0, gammaCorrect);
 
 		auto blendingWeights = context.AddPass<SMAABlendingWeights>();
 		blendingWeights->SetInput(0, edgeDetect);

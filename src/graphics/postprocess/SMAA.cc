@@ -6,8 +6,6 @@
 #include "graphics/GenericShaders.hh"
 #include "graphics/Util.hh"
 
-#include <random>
-
 namespace sp
 {
 	static CVar<int> CVarSMAADebug("r.SMAADebug", 0, "Show SMAA intermediates (1: weights, 2: edges)");
