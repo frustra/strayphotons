@@ -1,7 +1,6 @@
 #pragma once
 
 #include "graphics/GraphicsManager.hh"
-#include "assets/AssetManager.hh"
 #include "Common.hh"
 #include "ecs/Ecs.hh"
 #include "game/GameLogic.hh"
@@ -21,7 +20,6 @@ namespace sp
 		bool ShouldStop();
 
 		// Order is important.
-		AssetManager assets;
 		GuiManager gui;
 		GraphicsManager graphics;
 		InputManager input;

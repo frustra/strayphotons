@@ -19,6 +19,8 @@
 
 namespace sp
 {
+	AssetManager GAssets;
+
 	const std::string ASSETS_DIR = "../assets/";
 
 	shared_ptr<Asset> AssetManager::Load(const std::string &path)
@@ -35,9 +37,9 @@ namespace sp
 			{
 				in.seekg(0, std::ios::end);
 				size_t size = in.tellg();
-				char *buffer = new char[size];
+				uint8 *buffer = new uint8[size];
 				in.seekg(0, std::ios::beg);
-				in.read(buffer, size);
+				in.read((char *) buffer, size);
 				in.close();
 
 				asset = make_shared<Asset>(this, path, buffer, size);
@@ -56,6 +58,11 @@ namespace sp
 		return asset;
 	}
 
+	Texture AssetManager::LoadTexture(const std::string &path)
+	{
+		return Texture().Create().LoadFromAsset(Load(path));
+	}
+
 	shared_ptr<Model> AssetManager::LoadModel(const std::string &name)
 	{
 		Logf("Loading model: %s", name.c_str());
@@ -68,7 +75,7 @@ namespace sp
 			tinygltf::Scene *scene = new tinygltf::Scene();
 			std::string err;
 
-			bool ret = gltfLoader.LoadASCIIFromString(scene, &err, asset->Buffer(), asset->Size(), ASSETS_DIR + "models/" + name);
+			bool ret = gltfLoader.LoadASCIIFromString(scene, &err, asset->CharBuffer(), asset->Size(), ASSETS_DIR + "models/" + name);
 			if (!err.empty())
 			{
 				throw err.c_str();
@@ -95,11 +102,11 @@ namespace sp
 
 		shared_ptr<Asset> asset = Load("scenes/" + name + ".json");
 		picojson::value root;
-		std::string err = picojson::parse(root, asset->Buffer());
+		string err = picojson::parse(root, asset->String());
 		if (!err.empty())
 		{
 			Errorf(err);
-			return NULL;
+			return nullptr;
 		}
 
 		shared_ptr<Scene> scene = make_shared<Scene>(name, asset);

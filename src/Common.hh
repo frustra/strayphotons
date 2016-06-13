@@ -16,6 +16,8 @@ using std::string;
 using std::runtime_error;
 using std::invalid_argument;
 
+typedef unsigned char uint8;
+typedef signed char int8;
 typedef uint16_t uint16;
 typedef int16_t int16;
 typedef uint32_t uint32;
@@ -27,6 +29,9 @@ namespace sp
 {
 	void Assert(bool condition);
 	void Assert(bool condition, string message);
+
+	uint32 CeilToPowerOfTwo(uint32 v);
+	uint32 Uint32Log2(uint32 v);
 
 	class NonCopyable
 	{

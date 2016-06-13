@@ -2,7 +2,6 @@
 #include "core/Logging.hh"
 #include "core/Console.hh"
 
-#include "assets/Model.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/Controller.hh"

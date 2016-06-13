@@ -3,6 +3,7 @@
 
 #include "game/GameLogic.hh"
 #include "assets/Scene.hh"
+#include "assets/AssetManager.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/View.hh"
@@ -19,7 +20,7 @@ namespace sp
 
 	void GameLogic::Init()
 	{
-		scene = game->assets.LoadScene("sponza", &game->entityManager);
+		scene = GAssets.LoadScene("sponza", &game->entityManager);
 
 		Entity player = scene->FindEntity("player");
 		humanControlSystem.AssignController(player);

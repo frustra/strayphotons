@@ -171,6 +171,7 @@ namespace sp
 		SetRenderTargets(2, attachments, &targets.DepthStencil->GetTexture());
 
 		glViewport(0, 0, view.extents.x, view.extents.y);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		ShaderControl->BindPipeline<SceneVS, SceneFS>(GlobalShaders);

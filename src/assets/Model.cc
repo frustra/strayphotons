@@ -74,17 +74,13 @@ namespace sp
 
 		auto texture = scene->textures[name];
 		auto img = scene->images[texture.source];
-		textures[name].Create(texture.target)
-		.Filter(GL_LINEAR_MIPMAP_LINEAR)
-		.Wrap(GL_REPEAT, GL_REPEAT)
-		.Size(img.width, img.height)
-		.Storage2D(texture.internalFormat, texture.format, texture.type, 4, true)
-		.Image2D(img.image.data());
 
-		// TODO(pushrax) clean this up
-		glTextureParameterf(textures[name].handle, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.0);
-		glGenerateTextureMipmap(textures[name].handle);
-		return &textures[name];
+		return &textures[name].Create(texture.target)
+			   .Filter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, 4.0)
+			   .Wrap(GL_REPEAT, GL_REPEAT)
+			   .Size(img.width, img.height)
+			   .Storage2D(texture.internalFormat, texture.format, texture.type, Texture::FullyMipmap, true)
+			   .Image2D(img.image.data());
 	}
 
 	void Model::AddNode(string nodeName, glm::mat4 parentMatrix)

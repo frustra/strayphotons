@@ -26,4 +26,23 @@ namespace sp
 	{
 		return Assert(condition, "assertion failed");
 	}
+
+	uint32 CeilToPowerOfTwo(uint32 v)
+	{
+		v--;
+		v |= v >> 1;
+		v |= v >> 2;
+		v |= v >> 4;
+		v |= v >> 8;
+		v |= v >> 16;
+		v++;
+		return v;
+	}
+
+	uint32 Uint32Log2(uint32 v)
+	{
+		uint32 r = 0;
+		while (v >>= 1) r++;
+		return r;
+	}
 }

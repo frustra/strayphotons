@@ -10,6 +10,7 @@
 #include "graphics/postprocess/Lighting.hh"
 #include "graphics/postprocess/ViewGBuffer.hh"
 #include "graphics/postprocess/SSAO.hh"
+#include "graphics/postprocess/SMAA.hh"
 
 #include "core/CVar.hh"
 
@@ -19,6 +20,7 @@ namespace sp
 	static CVar<bool> CVarTonemapEnabled("r.Tonemap", true, "Enable HDR tonemapping");
 	static CVar<bool> CVarSSAOEnabled("r.SSAO", true, "Enable Screen Space Ambient Occlusion");
 	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth, 4: roughness)");
+	static CVar<int> CVarAntiAlias("r.AntiAlias", 1, "Anti-aliasing mode (0: none, 1: SMAA 1x)");
 
 	static void AddSSAO(PostProcessingContext &context)
 	{
@@ -49,6 +51,21 @@ namespace sp
 		context.LastOutput = lighting;
 	}
 
+	static void AddSMAA(PostProcessingContext &context, ProcessPassOutputRef linearLuminosity)
+	{
+		auto edgeDetect = context.AddPass<SMAAEdgeDetection>();
+		edgeDetect->SetInput(0, linearLuminosity);
+
+		auto blendingWeights = context.AddPass<SMAABlendingWeights>();
+		blendingWeights->SetInput(0, edgeDetect);
+
+		auto blending = context.AddPass<SMAABlending>();
+		blending->SetInput(0, context.LastOutput);
+		blending->SetInput(1, blendingWeights);
+
+		context.LastOutput = blending;
+	}
+
 	void PostProcessing::Process(Renderer *renderer, ECS::View view, const EngineRenderTargets &targets)
 	{
 		PostProcessingContext context;
@@ -65,6 +82,8 @@ namespace sp
 			AddLighting(context);
 		}
 
+		auto linearLuminosity = context.LastOutput;
+
 		if (CVarSSAOEnabled.Get())
 		{
 			AddSSAO(context);
@@ -75,6 +94,11 @@ namespace sp
 			auto tonemap = context.AddPass<Tonemap>();
 			tonemap->SetInput(0, context.LastOutput);
 			context.LastOutput = tonemap;
+		}
+
+		if (CVarAntiAlias.Get() == 1)
+		{
+			AddSMAA(context, linearLuminosity);
 		}
 
 		if (CVarViewGBuffer.Get() > 0)

@@ -3,7 +3,7 @@
 
 namespace sp
 {
-	Asset::Asset(AssetManager *manager, const std::string &path, char *buffer, size_t size) : manager(manager), path(path), buffer(buffer), size(size)
+	Asset::Asset(AssetManager *manager, const std::string &path, uint8 *buffer, size_t size) : manager(manager), path(path), buffer(buffer), size(size)
 	{
 	}
 
@@ -14,12 +14,17 @@ namespace sp
 
 	const std::string Asset::String()
 	{
-		return std::string(buffer);
+		return std::string((char *) buffer);
 	}
 
-	const char *Asset::Buffer()
+	const uint8 *Asset::Buffer()
 	{
 		return buffer;
+	}
+
+	const char *Asset::CharBuffer()
+	{
+		return (char *) buffer;
 	}
 
 	int Asset::Size()

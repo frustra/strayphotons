@@ -10,7 +10,7 @@
 
 namespace sp
 {
-	static CVar<int> CVarDebugSSAO("r.DebugSSAO", 0, "Show unprocessed SSAO output (1: no blending, 2: no blur)");
+	static CVar<int> CVarSSAODebug("r.SSAODebug", 0, "Show unprocessed SSAO output (1: no blending, 2: no blur)");
 
 	class SSAOPass0FS : public Shader
 	{
@@ -129,7 +129,7 @@ namespace sp
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
-		if (CVarDebugSSAO.Get() != 2)
+		if (CVarSSAODebug.Get() != 2)
 		{
 			auto extent = GetInput(0)->GetOutput()->TargetDesc.extent;
 
@@ -140,7 +140,7 @@ namespace sp
 			else
 				samplePattern.y = 1.0f / (float)extent.y;
 
-			bool combine = !horizontal && CVarDebugSSAO.Get() == 0;
+			bool combine = !horizontal && CVarSSAODebug.Get() == 0;
 
 			r->GlobalShaders->Get<SSAOBlurFS>()->SetParameters(samplePattern, combine, context->view);
 
