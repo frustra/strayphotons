@@ -76,16 +76,25 @@ namespace sp
 	{
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto stencil = outputs[1].AllocateTarget(context)->GetTexture();
 
 		r->GlobalShaders->Get<SMAAEdgeDetectionVS>()->SetViewParams(context->view);
 		r->GlobalShaders->Get<SMAAEdgeDetectionFS>()->SetViewParams(context->view);
 
-		r->SetRenderTarget(&dest, nullptr);
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		r->SetRenderTarget(&dest, &stencil);
 		r->ShaderControl->BindPipeline<SMAAEdgeDetectionVS, SMAAEdgeDetectionFS>(r->GlobalShaders);
 
+		glEnable(GL_STENCIL_TEST);
+		glStencilFunc(GL_ALWAYS, 1, 0xff);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		glStencilMask(0xff);
+
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
 		DrawScreenCover();
+
+		glDisable(GL_STENCIL_TEST);
 	}
 
 	void SMAABlendingWeights::Process(const PostProcessingContext *context)
@@ -101,19 +110,28 @@ namespace sp
 
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto stencil = dependencies[0].GetOutput()->TargetRef->GetTexture();
 
 		r->GlobalShaders->Get<SMAABlendingWeightsVS>()->SetViewParams(context->view);
 		r->GlobalShaders->Get<SMAABlendingWeightsFS>()->SetViewParams(context->view);
 
-		r->SetRenderTarget(&dest, nullptr);
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		r->SetRenderTarget(&dest, &stencil);
 		r->ShaderControl->BindPipeline<SMAABlendingWeightsVS, SMAABlendingWeightsFS>(r->GlobalShaders);
 
 		areaTex.Bind(1);
 		searchTex.Bind(2);
 
+		glEnable(GL_STENCIL_TEST);
+		glStencilFunc(GL_EQUAL, 1, 0xff);
+		glStencilOp(GL_ZERO, GL_KEEP, GL_REPLACE);
+		glStencilMask(0x00);
+
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
 		DrawScreenCover();
+
+		glDisable(GL_STENCIL_TEST);
 	}
 
 	void SMAABlending::Process(const PostProcessingContext *context)

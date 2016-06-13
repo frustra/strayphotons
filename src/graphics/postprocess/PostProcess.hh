@@ -60,32 +60,54 @@ namespace sp
 
 		virtual ProcessPassOutput *GetOutput(uint32 id) = 0;
 		virtual void SetInput(uint32 id, ProcessPassOutputRef input) = 0;
+		virtual void SetDependency(uint32 id, ProcessPassOutputRef depend) = 0;
 		virtual ProcessPassOutputRef *GetInput(uint32 id) = 0;
+		virtual ProcessPassOutputRef *GetDependency(uint32 id) = 0;
+		virtual ProcessPassOutputRef *GetAllDependencies(uint32 id) = 0;
 		virtual string Name() = 0;
 	};
 
-	template <uint32 inputCount, uint32 outputCount>
+	template <uint32 inputCount, uint32 outputCount, uint32 dependencyCount = 0>
 	class PostProcessPass : public PostProcessPassBase
 	{
 	public:
 		PostProcessPass() {}
 
-		virtual ProcessPassOutput *GetOutput(uint32 id)
+		ProcessPassOutput *GetOutput(uint32 id)
 		{
 			if (id >= outputCount) return nullptr;
 			return &outputs[id];
 		}
 
-		virtual void SetInput(uint32 id, ProcessPassOutputRef input)
+		void SetInput(uint32 id, ProcessPassOutputRef input)
 		{
 			Assert(id < inputCount);
 			inputs[id] = input;
 		}
 
-		virtual ProcessPassOutputRef *GetInput(uint32 id)
+		void SetDependency(uint32 id, ProcessPassOutputRef depend)
+		{
+			Assert(id < dependencyCount);
+			dependencies[id] = depend;
+		}
+
+		ProcessPassOutputRef *GetInput(uint32 id)
 		{
 			if (id >= inputCount) return nullptr;
 			return &inputs[id];
+		}
+
+		ProcessPassOutputRef *GetDependency(uint32 id)
+		{
+			if (id >= dependencyCount) return nullptr;
+			return &dependencies[id];
+		}
+
+		ProcessPassOutputRef *GetAllDependencies(uint32 id)
+		{
+			auto ref = GetInput(id);
+			if (ref) return ref;
+			return GetDependency(id - inputCount);
 		}
 
 	protected:
@@ -99,12 +121,13 @@ namespace sp
 
 	protected:
 		ProcessPassOutput outputs[outputCount];
+		ProcessPassOutputRef dependencies[dependencyCount ? dependencyCount : 1];
 	};
 
 	struct EngineRenderTargets
 	{
 		RenderTarget::Ref GBuffer0, GBuffer1, GBuffer2;
-		RenderTarget::Ref DepthStencil;
+		RenderTarget::Ref Depth;
 	};
 
 	class PostProcessingContext

@@ -17,6 +17,9 @@ namespace sp
 		GLPixelFormat format;
 		GLsizei width = 0, height = 0, levels = 0;
 
+		// For color attachments, must be GL_COLOR_ATTACHMENT0.
+		GLenum attachment;
+
 		Texture &Create(GLenum target = GL_TEXTURE_2D);
 		Texture &Delete();
 
@@ -31,6 +34,7 @@ namespace sp
 		Texture &Storage2D(GLenum internalFormat, GLenum format, GLenum type, GLsizei levels = 1, bool preferSRGB = false);
 		Texture &Image2D(const void *pixels, GLint level = 0, GLsizei subWidth = 0, GLsizei subHeight = 0, GLsizei xoffset = 0, GLsizei yoffset = 0);
 		Texture &LoadFromAsset(shared_ptr<Asset> asset, GLsizei levels = FullyMipmap);
+		Texture &Attachment(GLenum attachment);
 
 		bool operator==(const Texture &other) const
 		{

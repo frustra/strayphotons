@@ -61,7 +61,8 @@ namespace sp
 		edgeDetect->SetInput(0, gammaCorrect);
 
 		auto blendingWeights = context.AddPass<SMAABlendingWeights>();
-		blendingWeights->SetInput(0, edgeDetect);
+		blendingWeights->SetInput(0, { edgeDetect, 0 });
+		blendingWeights->SetDependency(0, { edgeDetect, 1 });
 
 		auto blending = context.AddPass<SMAABlending>();
 		blending->SetInput(0, context.LastOutput);
@@ -79,7 +80,7 @@ namespace sp
 
 		context.GBuffer0 = context.AddPass<ProxyProcessPass>(targets.GBuffer0);
 		context.GBuffer1 = context.AddPass<ProxyProcessPass>(targets.GBuffer1);
-		context.Depth = context.AddPass<ProxyProcessPass>(targets.DepthStencil);
+		context.Depth = context.AddPass<ProxyProcessPass>(targets.Depth);
 		context.LastOutput = context.GBuffer0;
 
 		if (CVarLightingEnabled.Get())
@@ -144,13 +145,13 @@ namespace sp
 			// Propagate dependencies.
 			for (uint32 id = 0;; id++)
 			{
-				ProcessPassOutputRef *input = pass->GetInput(id);
-				if (!input) break;
+				ProcessPassOutputRef *depend = pass->GetAllDependencies(id);
+				if (!depend) break;
 
-				auto inputOutput = input->GetOutput();
+				auto dependOutput = depend->GetOutput();
 
-				if (inputOutput)
-					inputOutput->AddDependency();
+				if (dependOutput)
+					dependOutput->AddDependency();
 			}
 
 			// Calculate render target descriptions.
@@ -184,13 +185,13 @@ namespace sp
 			// Release dependencies.
 			for (uint32 id = 0;; id++)
 			{
-				ProcessPassOutputRef *input = pass->GetInput(id);
-				if (!input) break;
+				ProcessPassOutputRef *depend = pass->GetAllDependencies(id);
+				if (!depend) break;
 
-				auto inputOutput = input->GetOutput();
+				auto dependOutput = depend->GetOutput();
 
-				if (inputOutput)
-					inputOutput->ReleaseDependency();
+				if (dependOutput)
+					dependOutput->ReleaseDependency();
 			}
 		}
 	}

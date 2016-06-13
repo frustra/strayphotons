@@ -4,7 +4,7 @@
 
 namespace sp
 {
-	class SMAAEdgeDetection : public PostProcessPass<1, 1>
+	class SMAAEdgeDetection : public PostProcessPass<1, 2>
 	{
 	public:
 		void Process(const PostProcessingContext *context);
@@ -12,7 +12,16 @@ namespace sp
 		RenderTargetDesc GetOutputDesc(uint32 id)
 		{
 			auto desc = GetInput(0)->GetOutput()->TargetDesc;
-			desc.format = PF_RGBA8;
+			if (id == 1)
+			{
+				// Mask for avoiding unnecessary blending weight calculation.
+				desc.format = PF_DEPTH24_STENCIL8;
+				desc.attachment = GL_STENCIL_ATTACHMENT;
+			}
+			else
+			{
+				desc.format = PF_RGBA8;
+			}
 			return desc;
 		}
 
@@ -22,7 +31,7 @@ namespace sp
 		}
 	};
 
-	class SMAABlendingWeights : public PostProcessPass<1, 1>
+	class SMAABlendingWeights : public PostProcessPass<1, 1, 1>
 	{
 	public:
 		void Process(const PostProcessingContext *context);

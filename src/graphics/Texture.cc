@@ -126,4 +126,10 @@ namespace sp
 
 		return *this;
 	}
+
+	Texture &Texture::Attachment(GLenum attachment)
+	{
+		this->attachment = attachment;
+		return *this;
+	}
 }

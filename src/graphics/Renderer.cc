@@ -154,12 +154,13 @@ namespace sp
 		EngineRenderTargets targets;
 		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, view.extents));
 		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, view.extents));
-		targets.DepthStencil = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, view.extents));
+		targets.Depth = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, view.extents));
 
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_BLEND);
+		glDisable(GL_STENCIL_TEST);
 		glDepthMask(GL_TRUE);
 
 		Texture attachments[] =
@@ -168,7 +169,7 @@ namespace sp
 			targets.GBuffer1->GetTexture(),
 		};
 
-		SetRenderTargets(2, attachments, &targets.DepthStencil->GetTexture());
+		SetRenderTargets(2, attachments, &targets.Depth->GetTexture());
 
 		glViewport(0, 0, view.extents.x, view.extents.y);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
