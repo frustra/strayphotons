@@ -6,7 +6,7 @@ namespace ECS
 {
 	struct Light
 	{
+		float spotAngle, intensity, illuminance;
 		glm::vec3 tint;
-		float illuminance;
 	};
 }

@@ -16,6 +16,10 @@ uniform int lightCount;
 uniform vec3[maxLights] lightPosition;
 uniform vec3[maxLights] lightTint;
 uniform vec3[maxLights] lightDirection;
+uniform float[maxLights] lightSpotAngleCutoff;
+
+uniform float[maxLights] lightIntensity;
+uniform float[maxLights] lightIlluminance;
 
 uniform mat4 viewMat;
 uniform mat4 invViewMat;
@@ -69,7 +73,7 @@ void main() {
 		vec3 currLightDir = normalize(mat3(viewMat) * lightDirection[i]);
 		float falloff = 1;
 
-		float illuminance = 0;
+		float illuminance = lightIlluminance[i];
 		vec3 currLightColor = lightTint[i];
 
 		if (illuminance == 0) {
@@ -79,7 +83,7 @@ void main() {
 			falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
 
 			// Calculate illuminance from intensity with E = L * n dot l.
-			illuminance = max(dot(normal, incidence), 0) * 3000 * falloff;
+			illuminance = max(dot(normal, incidence), 0) * lightIntensity[i] * falloff;
 		} else {
 			// Given value is the orthogonal case, need to project to l.
 			illuminance *= max(dot(normal, incidence), 0);
@@ -90,7 +94,7 @@ void main() {
 		vec3 luminance = brdf * illuminance * currLightColor;
 
 		// Spotlight attenuation.
-		float cosSpotAngle = 0.5;
+		float cosSpotAngle = lightSpotAngleCutoff[i];
 		float spotTerm = dot(incidence, -currLightDir);
 		float spotFalloff = smoothstep(cosSpotAngle, 1, spotTerm) * step(-1, cosSpotAngle) + step(cosSpotAngle, -1);
 

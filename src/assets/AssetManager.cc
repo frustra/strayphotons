@@ -203,9 +203,17 @@ namespace sp
 					ECS::Light *light = entity.Assign<ECS::Light>();
 					for (auto param : comp.second.get<picojson::object>())
 					{
-						if (param.first == "illuminance")
+						if (param.first == "intensity")
 						{
-							light->illuminance = glm::radians(param.second.get<double>());
+							light->intensity = param.second.get<double>();
+						}
+						else if (param.first == "illuminance")
+						{
+							light->illuminance = param.second.get<double>();
+						}
+						else if (param.first == "spotAngle")
+						{
+							light->spotAngle = cos(glm::radians(param.second.get<double>()));
 						}
 						else if (param.first == "tint")
 						{

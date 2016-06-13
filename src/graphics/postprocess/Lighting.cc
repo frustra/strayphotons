@@ -22,6 +22,13 @@ namespace sp
 			Bind(lightPosition, "lightPosition");
 			Bind(lightTint, "lightTint");
 			Bind(lightDirection, "lightDirection");
+			Bind(lightSpotAngle, "lightSpotAngleCutoff");
+			Bind(lightProj, "lightProj");
+			Bind(lightView, "lightView");
+			Bind(lightNearZ, "lightNearZ");
+			Bind(lightMapIndex, "lightMapIndex");
+			Bind(lightIntensity, "lightIntensity");
+			Bind(lightIlluminance, "lightIlluminance");
 
 			Bind(viewMat, "viewMat");
 			Bind(invViewMat, "invViewMat");
@@ -40,26 +47,49 @@ namespace sp
 			glm::vec3 lightPositions[maxLights];
 			glm::vec3 lightTints[maxLights];
 			glm::vec3 lightDirections[maxLights];
+			float lightSpotAngles[maxLights];
+			glm::mat4 lightProjs[maxLights];
+			glm::mat4 lightViews[maxLights];
+			float lightNearZs[maxLights];
+			int lightMapIndexes[maxLights];
+			float lightIntensities[maxLights];
+			float lightIlluminances[maxLights];
+
 			int lightNum = 0;
 			for (auto entity : lightCollection)
 			{
 				auto light = entity.Get<ECS::Light>();
-				//auto view = entity.Get<ECS::View>();
+				auto view = entity.Get<ECS::View>();
 				auto transform = entity.Get<ECS::Transform>();
 				lightPositions[lightNum] = transform->GetModelTransform(manager) * glm::vec4(0, 0, 0, 1);
 				lightTints[lightNum] = light->tint;
 				lightDirections[lightNum] = glm::mat3(transform->GetModelTransform(manager)) * glm::vec3(0, 0, -1);
+				lightSpotAngles[lightNum] = light->spotAngle;
+				lightProjs[lightNum] = view->projMat;
+				lightViews[lightNum] = view->viewMat;
+				lightNearZs[lightNum] = view->clip.x;
+				lightMapIndexes[lightNum] = 0;
+				lightIntensities[lightNum] = light->intensity;
+				lightIlluminances[lightNum] = light->illuminance;
 				lightNum++;
 			}
 
 			Set(lightCount, lightNum);
-			Set(lightPosition, &lightPositions[0], lightNum);
-			Set(lightTint, &lightTints[0], lightNum);
-			Set(lightDirection, &lightDirections[0], lightNum);
+			Set(lightPosition, lightPositions, lightNum);
+			Set(lightTint, lightTints, lightNum);
+			Set(lightDirection, lightDirections, lightNum);
+			Set(lightSpotAngle, lightSpotAngles, lightNum);
+			Set(lightProj, lightProjs, lightNum);
+			Set(lightView, lightViews, lightNum);
+			Set(lightNearZ, lightNearZs, lightNum);
+			Set(lightMapIndex, lightMapIndexes, lightNum);
+			Set(lightIntensity, lightIntensities, lightNum);
+			Set(lightIlluminance, lightIlluminances, lightNum);
 		}
 
 	private:
-		Uniform lightCount, lightPosition, lightTint, lightDirection;
+		Uniform lightCount, lightPosition, lightTint, lightDirection, lightSpotAngle;
+		Uniform lightProj, lightView, lightNearZ, lightMapIndex, lightIntensity, lightIlluminance;
 		Uniform viewMat, invViewMat, invProjMat;
 	};
 
