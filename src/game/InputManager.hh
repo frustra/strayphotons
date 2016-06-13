@@ -96,6 +96,9 @@ namespace sp
 		 */
 		bool LockFocus(bool locked);
 
+		void DisableCursor();
+		void EnableCursor();
+
 		static void KeyInputCallback(
 			GLFWwindow *window,
 			int key,

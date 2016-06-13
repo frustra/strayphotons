@@ -215,7 +215,7 @@ namespace sp
 	{
 		this->window = window;
 
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		DisableCursor();
 
 		// store a pointer to this InputManager since we must provide static functions
 		glfwSetWindowUserPointer(window, this);
@@ -225,6 +225,16 @@ namespace sp
 		glfwSetScrollCallback(window, MouseScrollCallback);
 		glfwSetMouseButtonCallback(window, MouseButtonCallback);
 		glfwSetCursorPosCallback(window, MouseMoveCallback);
+	}
+
+	void InputManager::DisableCursor()
+	{
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	}
+
+	void InputManager::EnableCursor()
+	{
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	}
 
 	int MouseButtonToKey(int button)

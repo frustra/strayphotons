@@ -156,8 +156,9 @@ namespace sp
 		friend class ShaderManager;
 	};
 
-	template <> inline void Shader::Set<bool>(Uniform u, const bool &v) {
-			glProgramUniform1i(program, u.location, v);
+	template <> inline void Shader::Set<bool>(Uniform u, const bool &v)
+	{
+		glProgramUniform1i(program, u.location, v);
 	}
 
 #define DECLARE_SET_SCALAR(UniformSuffix, ValueType, GLType) \

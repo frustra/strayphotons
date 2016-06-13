@@ -46,7 +46,7 @@ namespace sp
 	void GuiManager::BeforeFrame()
 	{
 		ImGuiIO &io = ImGui::GetIO();
-		io.MouseDrawCursor = Focused();
+		io.MouseDrawCursor = false;
 
 		if (inputManager && Focused())
 		{
@@ -96,7 +96,7 @@ namespace sp
 		if (!Focused())
 		{
 			inputManager->LockFocus(true);
-			inputManager->SetCursorPosition(guiCursorPos);
+			inputManager->EnableCursor();
 		}
 	}
 
@@ -104,6 +104,7 @@ namespace sp
 	{
 		if (!Focused())
 		{
+			inputManager->DisableCursor();
 			inputManager->LockFocus(false);
 		}
 	}
