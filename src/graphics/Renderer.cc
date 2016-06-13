@@ -102,6 +102,7 @@ namespace sp
 			for (int i = 0; i < 3; i++)
 			{
 				auto *attr = &primitive->attributes[i];
+				if (attr->componentCount == 0) continue;
 				glEnableVertexArrayAttrib(primitive->vertexBufferHandle, i);
 				glVertexArrayAttribFormat(primitive->vertexBufferHandle, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
 				glVertexArrayVertexBuffer(primitive->vertexBufferHandle, i, comp->model->LoadBuffer(attr->bufferName), attr->byteOffset, attr->byteStride);

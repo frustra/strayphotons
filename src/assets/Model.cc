@@ -17,6 +17,7 @@ namespace sp
 
 	Model::Attribute GetPrimitiveAttribute(tinygltf::Scene *scene, tinygltf::Primitive *p, string attribute)
 	{
+		if (!p->attributes.count(attribute)) return Model::Attribute();
 		auto accessor = scene->accessors[p->attributes[attribute]];
 		auto bufView = scene->bufferViews[accessor.bufferView];
 
