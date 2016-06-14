@@ -9,6 +9,7 @@ namespace sp
 	class Game;
 	class RenderTargetPool;
 	class ShaderManager;
+	class GPUTimer;
 	struct Texture;
 
 	class Renderer : public GraphicsContext
@@ -27,5 +28,6 @@ namespace sp
 
 		ShaderManager *ShaderControl = nullptr;
 		RenderTargetPool *RTPool = nullptr;
+		GPUTimer *timer = nullptr;
 	};
 }

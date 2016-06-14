@@ -1,14 +1,16 @@
 #pragma once
 
-#include "graphics/GraphicsContext.hh"
-#include "game/InputManager.hh"
-#include "ecs/Ecs.hh"
+#include "graphics/Graphics.hh"
+#include "ecs/Entity.hh"
+#include "ecs/components/View.hh"
 
 namespace sp
 {
 	class Game;
 	class GuiManager;
 	class GuiRenderer;
+	class Renderer;
+	class InputManager;
 
 	class GraphicsManager
 	{
@@ -30,9 +32,9 @@ namespace sp
 		ECS::View &updateViewCaches(Entity entity);
 		void validateView(Entity viewEntity);
 
-		GraphicsContext *context;
-		Game *game;
-		GuiRenderer *guiRenderer;
+		Renderer *renderer = nullptr;
+		Game *game = nullptr;
+		GuiRenderer *guiRenderer = nullptr;
 
 		Entity playerView;
 

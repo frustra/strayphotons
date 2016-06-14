@@ -5,6 +5,7 @@
 #include "graphics/ShaderManager.hh"
 #include "graphics/RenderTargetPool.hh"
 #include "graphics/GenericShaders.hh"
+#include "graphics/GPUTimer.hh"
 #include "graphics/Util.hh"
 
 #include "graphics/postprocess/Lighting.hh"
@@ -73,6 +74,8 @@ namespace sp
 
 	void PostProcessing::Process(Renderer *renderer, sp::Game *game, ECS::View view, const EngineRenderTargets &targets)
 	{
+		RenderPhase phase("PostProcessing", renderer->timer);
+
 		PostProcessingContext context;
 		context.renderer = renderer;
 		context.game = game;
@@ -167,6 +170,8 @@ namespace sp
 		// Process in order.
 		for (auto pass : passes)
 		{
+			RenderPhase phase(pass->Name(), renderer->timer);
+
 			// Set up inputs.
 			for (uint32 id = 0;; id++)
 			{

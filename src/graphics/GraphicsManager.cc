@@ -2,6 +2,7 @@
 #include "graphics/GraphicsManager.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/GuiRenderer.hh"
+#include "graphics/GPUTimer.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Transform.hh"
 #include "core/Game.hh"
@@ -16,7 +17,7 @@ namespace sp
 		Errorf("GLFW returned %d: %s", error, message);
 	}
 
-	GraphicsManager::GraphicsManager(Game *game) : context(nullptr), game(game)
+	GraphicsManager::GraphicsManager(Game *game) : game(game)
 	{
 		Logf("Graphics starting up");
 
@@ -30,26 +31,25 @@ namespace sp
 
 	GraphicsManager::~GraphicsManager()
 	{
-		if (context) ReleaseContext();
+		if (renderer) ReleaseContext();
 		glfwTerminate();
 	}
 
 	void GraphicsManager::CreateContext()
 	{
-		if (context) throw "already an active context";
+		if (renderer) throw "already an active context";
 
-		auto renderer = new Renderer(game);
-		context = renderer;
-		context->CreateWindow();
+		renderer = new Renderer(game);
+		renderer->CreateWindow();
 
 		guiRenderer = new GuiRenderer(*renderer, game->gui);
 	}
 
 	void GraphicsManager::ReleaseContext()
 	{
-		if (!context) throw "no active context";
+		if (!renderer) throw "no active context";
 
-		delete context;
+		delete renderer;
 	}
 
 	void GraphicsManager::ReloadContext()
@@ -59,21 +59,23 @@ namespace sp
 
 	bool GraphicsManager::HasActiveContext()
 	{
-		return context && !context->ShouldClose();
+		return renderer && !renderer->ShouldClose();
 	}
 
 	void GraphicsManager::BindContextInputCallbacks(InputManager &inputManager)
 	{
-		context->BindInputCallbacks(inputManager);
+		renderer->BindInputCallbacks(inputManager);
 	}
 
 	bool GraphicsManager::Frame()
 	{
-		if (!context) throw "missing context";
+		if (!renderer) throw "missing renderer";
 		if (!HasActiveContext()) return false;
 
+		renderer->timer->StartFrame();
+
 		auto view = updateViewCaches(playerView);
-		context->RenderPass(view);
+		renderer->RenderPass(view);
 		guiRenderer->Render(view);
 
 		double frameEnd = glfwGetTime();
@@ -82,12 +84,14 @@ namespace sp
 
 		if (fpsTimer > 1.0)
 		{
-			context->SetTitle("STRAY PHOTONS (" + std::to_string(frameCounter) + " FPS)");
+			renderer->SetTitle("STRAY PHOTONS (" + std::to_string(frameCounter) + " FPS)");
 			frameCounter = 0;
 			fpsTimer = 0;
 		}
 
-		context->EndFrame();
+		renderer->timer->EndFrame();
+		renderer->EndFrame();
+
 		lastFrameEnd = frameEnd;
 		glfwPollEvents();
 		return true;

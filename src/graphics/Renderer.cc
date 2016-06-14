@@ -4,6 +4,7 @@
 #include "graphics/ShaderManager.hh"
 #include "graphics/Util.hh"
 #include "graphics/GenericShaders.hh"
+#include "graphics/GPUTimer.hh"
 #include "graphics/postprocess/PostProcess.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
@@ -140,6 +141,8 @@ namespace sp
 
 		ShaderControl = new ShaderManager();
 		ShaderControl->CompileAll(GlobalShaders);
+
+		timer = new GPUTimer();
 
 		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
 		{
