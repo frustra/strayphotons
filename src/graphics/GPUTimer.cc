@@ -1,10 +1,9 @@
 #include "GPUTimer.hh"
 #include "core/Logging.hh"
-#include "core/CVar.hh"
 
 namespace sp
 {
-	static CVar<bool> CVarProfileGPU("r.ProfileGPU", false, "Display GPU render timing");
+	CVar<bool> CVarProfileGPU("r.ProfileGPU", false, "Display GPU render timing");
 
 	RenderPhase::RenderPhase(const string &name, GPUTimer *timer)
 		: name(name)
@@ -48,7 +47,7 @@ namespace sp
 
 		GPUTimeResult result;
 		result.name = phase.name;
-		result.depth = stack.size();
+		result.depth = stack.size() + 1;
 		currentFrame->results.push_back(result);
 
 		if (queryPool.size() < 2)

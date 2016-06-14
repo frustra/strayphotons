@@ -21,7 +21,6 @@ namespace sp
 				ImGuiWindowFlags_NoResize |
 				ImGuiWindowFlags_NoTitleBar;
 
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 			ImGui::SetNextWindowPos(ImVec2(0, 0));
 
 			ImGui::Begin("Console", nullptr, ImVec2(io.DisplaySize.x, 400.0f), 0.7f, flags);
@@ -58,14 +57,13 @@ namespace sp
 					GConsoleManager.ParseAndExecute(line);
 					inputBuf[0] = '\0';
 					historyOffset = 0;
+					ImGui::SetKeyboardFocusHere(-1);
 				}
 
 				if (ImGui::IsItemHovered() || (ImGui::IsRootWindowOrAnyChildFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0)))
 					ImGui::SetKeyboardFocusHere(-1);
 			}
 			ImGui::End();
-
-			ImGui::PopStyleVar();
 		}
 
 		static int CommandEditStub(ImGuiTextEditCallbackData *data)

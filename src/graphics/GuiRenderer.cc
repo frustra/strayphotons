@@ -2,6 +2,7 @@
 #include "Renderer.hh"
 #include "GenericShaders.hh"
 #include "ShaderManager.hh"
+#include "GPUTimer.hh"
 #include "game/InputManager.hh"
 #include "game/GuiManager.hh"
 
@@ -48,6 +49,8 @@ namespace sp
 
 	void GuiRenderer::Render(ECS::View view)
 	{
+		RenderPhase phase("GuiRender", parent.timer);
+
 		ImGuiIO &io = ImGui::GetIO();
 
 		io.DisplaySize = ImVec2((float)view.extents.x, (float)view.extents.y);

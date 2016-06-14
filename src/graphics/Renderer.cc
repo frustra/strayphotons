@@ -155,6 +155,8 @@ namespace sp
 
 	void Renderer::RenderPass(ECS::View &view)
 	{
+		RenderPhase phase("RenderPass", timer);
+
 		EngineRenderTargets targets;
 		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, view.extents));
 		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, view.extents));
@@ -175,6 +177,21 @@ namespace sp
 
 		SetRenderTargets(2, attachments, &targets.Depth->GetTexture());
 
+		ForwardPass(view);
+
+		// Run postprocessing.
+		glDisable(GL_DEPTH_TEST);
+		glDepthMask(GL_FALSE);
+
+		PostProcessing::Process(this, game, view, targets);
+
+		//AssertGLOK("Renderer::RenderFrame");
+	}
+
+	void Renderer::ForwardPass(ECS::View &view)
+	{
+		RenderPhase phase("ForwardPass", timer);
+
 		glViewport(0, 0, view.extents.x, view.extents.y);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -190,14 +207,6 @@ namespace sp
 			sceneVS->SetParams(view, modelMat);
 			DrawRenderable(comp);
 		}
-
-		// Run postprocessing.
-		glDisable(GL_DEPTH_TEST);
-		glDepthMask(GL_FALSE);
-
-		PostProcessing::Process(this, game, view, targets);
-
-		//AssertGLOK("Renderer::RenderFrame");
 	}
 
 	void Renderer::EndFrame()

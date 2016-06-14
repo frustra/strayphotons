@@ -20,6 +20,7 @@ namespace sp
 
 		void Prepare();
 		void RenderPass(ECS::View &view);
+		void ForwardPass(ECS::View &view);
 		void EndFrame();
 
 		void SetRenderTarget(const Texture *attachment0, const Texture *depth);

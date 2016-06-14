@@ -6,6 +6,7 @@
 #include "ecs/components/View.hh"
 #include "ecs/components/Transform.hh"
 #include "core/Game.hh"
+#include "game/gui/ProfilerGui.hh"
 
 #include <iostream>
 #include <system_error>
@@ -43,6 +44,8 @@ namespace sp
 		renderer->CreateWindow();
 
 		guiRenderer = new GuiRenderer(*renderer, game->gui);
+
+		game->gui.Attach(new ProfilerGui(renderer->timer));
 	}
 
 	void GraphicsManager::ReleaseContext()

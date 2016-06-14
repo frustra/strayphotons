@@ -12,10 +12,17 @@ namespace sp
 		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.95f, 0.95f, 0.95f, 1.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 
 		static ConsoleGui console;
 		if (consoleOpen) console.Add();
 
+		for (auto component : components)
+		{
+			component->Add();
+		}
+
+		ImGui::PopStyleVar();
 		ImGui::PopStyleColor(4);
 	}
 
@@ -107,6 +114,11 @@ namespace sp
 			inputManager->DisableCursor();
 			inputManager->LockFocus(false);
 		}
+	}
+
+	void GuiManager::Attach(GuiRenderable *component)
+	{
+		components.push_back(component);
 	}
 
 	void GuiManager::ToggleConsole()

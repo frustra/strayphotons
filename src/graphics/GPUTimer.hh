@@ -2,6 +2,7 @@
 
 #include "Common.hh"
 #include "Graphics.hh"
+#include "core/CVar.hh"
 
 #include <stack>
 #include <queue>
@@ -9,6 +10,7 @@
 namespace sp
 {
 	class GPUTimer;
+	extern CVar<bool> CVarProfileGPU;
 
 	struct GPUTimeResult
 	{
