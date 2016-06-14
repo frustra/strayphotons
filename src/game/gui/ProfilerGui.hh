@@ -11,7 +11,12 @@ namespace sp
 	class ProfilerGui : public GuiRenderable
 	{
 	public:
-		ProfilerGui(GPUTimer *timer) : timer(timer) { }
+		static const uint64 numFrameTimes = 32, sampleFrameTimeEvery = 10;
+
+		ProfilerGui(GPUTimer *timer) : timer(timer)
+		{
+			memset(frameTimes, 0, sizeof(*frameTimes) * numFrameTimes);
+		}
 
 		void Add()
 		{
@@ -19,9 +24,22 @@ namespace sp
 				return;
 
 			ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize;
+			frameCount++;
 
 			ImGui::Begin("Profiler", nullptr, flags);
-			AddResults(timer->lastCompleteFrame.results);
+			{
+				if (frameCount % sampleFrameTimeEvery == 1)
+				{
+					auto root = timer->lastCompleteFrame.results[0];
+					double elapsed = (double)root.elapsed / 1000000.0;
+
+					memcpy(frameTimes, frameTimes + 1, (numFrameTimes - 1) * sizeof(*frameTimes));
+					frameTimes[numFrameTimes - 1] = (float)elapsed;
+				}
+
+				ImGui::PlotLines("##frameTimes", frameTimes, numFrameTimes);
+				AddResults(timer->lastCompleteFrame.results);
+			}
 			ImGui::End();
 		}
 
@@ -55,5 +73,7 @@ namespace sp
 		}
 
 		GPUTimer *timer;
+		float frameTimes[numFrameTimes];
+		uint64 frameCount = 0;
 	};
 }
