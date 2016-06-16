@@ -204,14 +204,16 @@ namespace ECS
 	template <typename CompType>
 	void ComponentPool<CompType>::remove(uint64 compIndex)
 	{
-		// Swap this component to the end and decrement the container last index
+		if (compIndex != lastCompIndex)
+		{
+			// Swap this component to the end
+			auto validComponentPair = components.at(lastCompIndex);
+			components.at(lastCompIndex) = components.at(compIndex);
+			components.at(compIndex) = validComponentPair;
 
-		// TODO-cs: swap is done via copy instead of via move.  Investigate performance difference
-		// if this is changed.  My guess is that caching won't work as well if move is used but it will
-		// make removing a component quicker (avoids two copy operations)
-		auto temp = components.at(lastCompIndex);
-		components.at(lastCompIndex) = components.at(compIndex);
-		components.at(compIndex) = temp;
+			// update the entity -> component index mapping of swapped component
+			entIndexToCompIndex.at(validComponentPair.first.Index()) = compIndex;
+		}
 
 		lastCompIndex--;
 	}

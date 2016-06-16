@@ -13,6 +13,7 @@ namespace test
 	{
 		Position() {}
 		Position(int x, int y) : x(x), y(y) {}
+		bool operator==(const Position & other) const { return x == other.x && y == other.y; }
 		int x;
 		int y;
 	} Position;
@@ -258,5 +259,23 @@ namespace test
 				e.Valid();
 			}
 		);
+	}
+
+	TEST(EcsBasic, DeleteComponentDoesNotInvalidateOtherComponents)
+	{
+		ECS::EntityManager em;
+		auto e1 = em.NewEntity();
+		auto e2 = em.NewEntity();
+
+		e1.Assign<Position>(1, 1);
+		e2.Assign<Position>(2, 2);
+
+		ECS::Handle<Position> p2Handle = e2.Get<Position>();
+
+		Position p2before = *p2Handle;
+		e1.Remove<Position>();
+		Position p2now = *p2Handle;
+
+		ASSERT_EQ(p2before, p2now);
 	}
 }
