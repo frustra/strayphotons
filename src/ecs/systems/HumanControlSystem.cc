@@ -11,12 +11,12 @@
 
 #include <sstream>
 
-namespace ECS
+namespace ecs
 {
 	const float HumanControlSystem::MOVE_SPEED = 6.0f;
 	const glm::vec2 HumanControlSystem::CURSOR_SENSITIVITY = glm::vec2(0.001f, 0.001f);
 
-	HumanControlSystem::HumanControlSystem(ECS::EntityManager *entities, sp::InputManager *input)
+	HumanControlSystem::HumanControlSystem(ecs::EntityManager *entities, sp::InputManager *input)
 		: entities(entities), input(input)
 	{
 	}
@@ -30,11 +30,11 @@ namespace ECS
 		if (input->FocusLocked())
 			return true;
 
-		for (ECS::Entity entity : entities->EntitiesWith<ECS::Transform, ECS::HumanController>())
+		for (ecs::Entity entity : entities->EntitiesWith<ecs::Transform, ecs::HumanController>())
 		{
 			// control orientation with the mouse
-			auto transform = entity.Get<ECS::Transform>();
-			auto controller = entity.Get<ECS::HumanController>();
+			auto transform = entity.Get<ecs::Transform>();
+			auto controller = entity.Get<ecs::HumanController>();
 
 
 			glm::vec2 dCursor = input->CursorDiff();
@@ -57,7 +57,7 @@ namespace ECS
 			transform->rotate = glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll));
 
 			// keyboard controls
-			for (auto const &actionKeysPair : entity.Get<ECS::HumanController>()->inputMap)
+			for (auto const &actionKeysPair : entity.Get<ecs::HumanController>()->inputMap)
 			{
 				ControlAction action = actionKeysPair.first;
 				const vector<int> &keys = actionKeysPair.second;
@@ -99,7 +99,7 @@ namespace ECS
 		return true;
 	}
 
-	ECS::Handle<HumanController> HumanControlSystem::AssignController(ECS::Entity entity)
+	ecs::Handle<HumanController> HumanControlSystem::AssignController(ecs::Entity entity)
 	{
 		if (entity.Has<HumanController>())
 		{
@@ -137,14 +137,14 @@ namespace ECS
 		return controller;
 	}
 
-	void HumanControlSystem::move(ECS::Entity entity, double dt, glm::vec3 normalizedDirection)
+	void HumanControlSystem::move(ecs::Entity entity, double dt, glm::vec3 normalizedDirection)
 	{
-		if (!entity.Has<ECS::Transform>())
+		if (!entity.Has<ecs::Transform>())
 		{
 			throw std::invalid_argument("entity must have a Transform component");
 		}
 
-		auto transform = entity.Get<ECS::Transform>();
+		auto transform = entity.Get<ecs::Transform>();
 		float movement = HumanControlSystem::MOVE_SPEED * (float)dt;
 		glm::vec4 translation(movement * normalizedDirection, 0);
 

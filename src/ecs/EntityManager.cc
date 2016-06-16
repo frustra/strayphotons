@@ -1,7 +1,7 @@
 #include "ecs/EntityManager.hh"
 #include "ecs/Entity.hh"
 
-namespace ECS
+namespace ecs
 {
 	EntityManager::EntityManager()
 	{

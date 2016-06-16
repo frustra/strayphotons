@@ -97,7 +97,7 @@ namespace sp
 		return model;
 	}
 
-	shared_ptr<Scene> AssetManager::LoadScene(const std::string &name, ECS::EntityManager *em)
+	shared_ptr<Scene> AssetManager::LoadScene(const std::string &name, ecs::EntityManager *em)
 	{
 		Logf("Loading scene: %s", name.c_str());
 
@@ -116,7 +116,7 @@ namespace sp
 		auto entityList = root.get<picojson::object>()["entities"];
 		for (auto value : entityList.get<picojson::array>())
 		{
-			ECS::Entity entity = em->NewEntity();
+			ecs::Entity entity = em->NewEntity();
 			auto ent = value.get<picojson::object>();
 			for (auto comp : ent)
 			{
@@ -125,16 +125,16 @@ namespace sp
 				if (comp.first == "renderable")
 				{
 					auto model = LoadModel(comp.second.get<string>());
-					entity.Assign<ECS::Renderable>(model);
+					entity.Assign<ecs::Renderable>(model);
 				}
 				else if (comp.first == "transform")
 				{
-					auto transform = entity.Assign<ECS::Transform>();
+					auto transform = entity.Assign<ecs::Transform>();
 					for (auto subTransform : comp.second.get<picojson::object>())
 					{
 						if (subTransform.first == "relativeTo")
 						{
-							ECS::Entity parent = scene->FindEntity(subTransform.second.get<string>());
+							ecs::Entity parent = scene->FindEntity(subTransform.second.get<string>());
 							if (!parent.Valid())
 							{
 								throw std::runtime_error("Entity relative to non-existent parent");
@@ -167,7 +167,7 @@ namespace sp
 				}
 				else if (comp.first == "view")
 				{
-					auto view = entity.Assign<ECS::View>();
+					auto view = entity.Assign<ecs::View>();
 					for (auto param : comp.second.get<picojson::object>())
 					{
 						if (param.first == "fov")
@@ -200,7 +200,7 @@ namespace sp
 				}
 				else if (comp.first == "light")
 				{
-					auto light = entity.Assign<ECS::Light>();
+					auto light = entity.Assign<ecs::Light>();
 					for (auto param : comp.second.get<picojson::object>())
 					{
 						if (param.first == "intensity")

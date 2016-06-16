@@ -3,7 +3,7 @@
 #include "ecs/ComponentStorage.hh"
 #include "ecs/Entity.hh"
 
-namespace ECS
+namespace ecs
 {
 	/**
 	 * Handles are meant as a substitute for component pointers/references

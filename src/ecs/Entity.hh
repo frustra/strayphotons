@@ -3,7 +3,7 @@
 #include <ostream>
 #include "Common.hh"
 
-namespace ECS
+namespace ecs
 {
 	class EntityManager;
 

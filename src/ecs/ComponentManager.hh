@@ -13,7 +13,7 @@
 
 #define MAX_COMPONENT_TYPES 64
 
-namespace ECS
+namespace ecs
 {
 	class ComponentManager
 	{

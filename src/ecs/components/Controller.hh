@@ -6,7 +6,7 @@
 #include <vector>
 #include <functional>
 
-namespace ECS
+namespace ecs
 {
 	enum class ControlAction
 	{
@@ -24,7 +24,7 @@ namespace ECS
 		// (see InputManager.hh for converting a mouse button to one of these ints)
 		std::unordered_map<ControlAction, std::vector<int>, sp::EnumHash> inputMap;
 
-		// overrides ECS::Placement::rotate for an FPS-style orientation
+		// overrides ecs::Placement::rotate for an FPS-style orientation
 		// until I figure out how to actually use quaternions
 		float pitch;
 		float yaw;

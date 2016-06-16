@@ -13,7 +13,7 @@ namespace sp
 	{
 	public:
 		GuiRenderer(Renderer &renderer, GuiManager &manager);
-		void Render(ECS::View view);
+		void Render(ecs::View view);
 
 	private:
 		VertexBuffer vertices, indices;

@@ -18,7 +18,7 @@ namespace sp
 		bool Frame(double dtSinceLastFrame);
 	private:
 		Game *game;
-		ECS::HumanControlSystem humanControlSystem;
+		ecs::HumanControlSystem humanControlSystem;
 		shared_ptr<Scene> scene;
 	};
 }

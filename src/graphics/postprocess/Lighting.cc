@@ -35,14 +35,14 @@ namespace sp
 			Bind(invProjMat, "invProjMat");
 		}
 
-		void SetViewParams(const ECS::View &view)
+		void SetViewParams(const ecs::View &view)
 		{
 			Set(viewMat, view.viewMat);
 			Set(invViewMat, view.invViewMat);
 			Set(invProjMat, view.invProjMat);
 		}
 
-		void SetLights(ECS::EntityManager &manager, ECS::EntityManager::EntityCollection &lightCollection)
+		void SetLights(ecs::EntityManager &manager, ecs::EntityManager::EntityCollection &lightCollection)
 		{
 			glm::vec3 lightPositions[maxLights];
 			glm::vec3 lightTints[maxLights];
@@ -58,9 +58,9 @@ namespace sp
 			int lightNum = 0;
 			for (auto entity : lightCollection)
 			{
-				auto light = entity.Get<ECS::Light>();
-				auto view = entity.Get<ECS::View>();
-				auto transform = entity.Get<ECS::Transform>();
+				auto light = entity.Get<ecs::Light>();
+				auto view = entity.Get<ecs::View>();
+				auto transform = entity.Get<ecs::Transform>();
 				lightPositions[lightNum] = transform->GetModelTransform(manager) * glm::vec4(0, 0, 0, 1);
 				lightTints[lightNum] = light->tint;
 				lightDirections[lightNum] = glm::mat3(transform->GetModelTransform(manager)) * glm::vec3(0, 0, -1);
@@ -100,7 +100,7 @@ namespace sp
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
-		auto lights = context->game->entityManager.EntitiesWith<ECS::Light>();
+		auto lights = context->game->entityManager.EntitiesWith<ecs::Light>();
 		r->GlobalShaders->Get<DeferredLightingFS>()->SetLights(context->game->entityManager, lights);
 		r->GlobalShaders->Get<DeferredLightingFS>()->SetViewParams(context->view);
 

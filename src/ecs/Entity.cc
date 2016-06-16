@@ -1,7 +1,7 @@
 #include "ecs/Entity.hh"
 #include "ecs/EntityManager.hh"
 
-namespace ECS
+namespace ecs
 {
 	void Entity::Destroy()
 	{

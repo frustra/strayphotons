@@ -4,13 +4,13 @@
 #include "ecs/Ecs.hh"
 #include "ecs/components/Transform.hh"
 
-namespace ECS
+namespace ecs
 {
-	glm::mat4 Transform::GetModelTransform(ECS::EntityManager &manager)
+	glm::mat4 Transform::GetModelTransform(ecs::EntityManager &manager)
 	{
 		glm::mat4 model;
 
-		if (this->relativeTo != ECS::Entity::Id())
+		if (this->relativeTo != ecs::Entity::Id())
 		{
 			sp::Assert(
 				manager.Has<Transform>(this->relativeTo),
@@ -23,7 +23,7 @@ namespace ECS
 		return model * this->translate * GetRotateMatrix() * this->scale;
 	}
 
-	void Transform::SetRelativeTo(ECS::Entity ent)
+	void Transform::SetRelativeTo(ecs::Entity ent)
 	{
 		if (!ent.Has<Transform>())
 		{

@@ -47,7 +47,7 @@ namespace sp
 		io.Fonts->TexID = (void *)(intptr_t) fontTex.handle;
 	}
 
-	void GuiRenderer::Render(ECS::View view)
+	void GuiRenderer::Render(ecs::View view)
 	{
 		RenderPhase phase("GuiRender", parent.timer);
 

@@ -11,7 +11,7 @@
 #define MAX_COMPONENTS 64
 
 
-namespace ECS
+namespace ecs
 {
 	class BaseComponentPool;
 

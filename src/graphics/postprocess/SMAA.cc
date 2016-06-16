@@ -18,7 +18,7 @@ namespace sp
 			Bind(rtMetrics, "smaaRTMetrics");
 		}
 
-		void SetViewParams(const ECS::View &view)
+		void SetViewParams(const ecs::View &view)
 		{
 			auto extents = glm::vec2(view.extents);
 			glm::vec4 metrics(1.0f / extents, extents);

@@ -48,7 +48,7 @@ namespace sp
 			Set(kernel, offsets, samples);
 		}
 
-		void SetViewParams(const ECS::View &view)
+		void SetViewParams(const ecs::View &view)
 		{
 			Set(projMat, view.projMat);
 			Set(invProjMat, view.invProjMat);
@@ -71,7 +71,7 @@ namespace sp
 			Bind(invProjMat, "invProjMat");
 		}
 
-		void SetParameters(glm::vec2 pattern, bool combine, const ECS::View &view)
+		void SetParameters(glm::vec2 pattern, bool combine, const ecs::View &view)
 		{
 			Set(samplePattern, pattern);
 			Set(combineOutput, combine);

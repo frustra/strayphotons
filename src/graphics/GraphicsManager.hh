@@ -24,19 +24,19 @@ namespace sp
 		bool HasActiveContext();
 
 		void BindContextInputCallbacks(InputManager &inputManager);
-		void SetPlayerView(ECS::Entity entity);
+		void SetPlayerView(ecs::Entity entity);
 
 		bool Frame();
 
 	private:
-		ECS::View &updateViewCaches(ECS::Entity entity);
-		void validateView(ECS::Entity viewEntity);
+		ecs::View &updateViewCaches(ecs::Entity entity);
+		void validateView(ecs::Entity viewEntity);
 
 		Renderer *renderer = nullptr;
 		Game *game = nullptr;
 		GuiRenderer *guiRenderer = nullptr;
 
-		ECS::Entity playerView;
+		ecs::Entity playerView;
 
 		double lastFrameEnd = 0, fpsTimer = 0;
 		int frameCounter = 0;

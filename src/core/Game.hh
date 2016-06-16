@@ -23,7 +23,7 @@ namespace sp
 		GuiManager gui;
 		GraphicsManager graphics;
 		InputManager input;
-		ECS::EntityManager entityManager;
+		ecs::EntityManager entityManager;
 		GameLogic logic;
 
 	private:

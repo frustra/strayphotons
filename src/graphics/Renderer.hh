@@ -19,8 +19,8 @@ namespace sp
 		~Renderer();
 
 		void Prepare();
-		void RenderPass(ECS::View &view);
-		void ForwardPass(ECS::View &view);
+		void RenderPass(ecs::View &view);
+		void ForwardPass(ecs::View &view);
 		void EndFrame();
 
 		void SetRenderTarget(const Texture *attachment0, const Texture *depth);

@@ -5,20 +5,20 @@
 
 #include "ecs/Ecs.hh"
 
-namespace ECS
+namespace ecs
 {
 	class Transform
 	{
 	public:
 		Transform() {}
-		void SetRelativeTo(ECS::Entity);
+		void SetRelativeTo(ecs::Entity);
 
 		/**
 		 * Return the matrix for specifying the placement of the entity in the world.
 		 * This involves computing the incremental model transforms for any entities
 		 * that this placement is relative to.
 		 */
-		glm::mat4 GetModelTransform(ECS::EntityManager &manager);
+		glm::mat4 GetModelTransform(ecs::EntityManager &manager);
 
 		/**
 		 * Change the local rotation by "radians" amount about the local "axis"
@@ -43,6 +43,6 @@ namespace ECS
 		glm::quat rotate;
 
 	private:
-		ECS::Entity::Id relativeTo;
+		ecs::Entity::Id relativeTo;
 	};
 }

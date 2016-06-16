@@ -27,14 +27,14 @@ namespace test
 	class EcsBasicIterateWithComponents : public ::testing::Test
 	{
 	protected:
-		std::unordered_map<ECS::Entity, bool> entsFound;
+		std::unordered_map<ecs::Entity, bool> entsFound;
 
-		ECS::EntityManager em;
-		ECS::Entity ePos1;
-		ECS::Entity ePos2;
-		ECS::Entity ePosEat;
-		ECS::Entity eEat;
-		ECS::Entity eNoComps;
+		ecs::EntityManager em;
+		ecs::Entity ePos1;
+		ecs::Entity ePos2;
+		ecs::Entity ePosEat;
+		ecs::Entity eEat;
+		ecs::Entity eNoComps;
 
 		virtual void SetUp()
 		{
@@ -67,8 +67,8 @@ namespace test
 
 	TEST(EcsBasic, CreateDestroyEntity)
 	{
-		ECS::EntityManager em;
-		ECS::Entity e = em.NewEntity();
+		ecs::EntityManager em;
+		ecs::Entity e = em.NewEntity();
 
 		EXPECT_TRUE(e.Valid());
 		e.Destroy();
@@ -78,8 +78,8 @@ namespace test
 
 	TEST(EcsBasic, AddRemoveComponent)
 	{
-		ECS::EntityManager em;
-		ECS::Entity e = em.NewEntity();
+		ecs::EntityManager em;
+		ecs::Entity e = em.NewEntity();
 
 		e.Assign<Position>();
 
@@ -93,11 +93,11 @@ namespace test
 
 	TEST(EcsBasic, ConstructComponent)
 	{
-		ECS::EntityManager em;
-		ECS::Entity e = em.NewEntity();
+		ecs::EntityManager em;
+		ecs::Entity e = em.NewEntity();
 
 		e.Assign<Position>(1, 2);
-		ECS::Handle<Position> pos = e.Get<Position>();
+		ecs::Handle<Position> pos = e.Get<Position>();
 
 		ASSERT_EQ(pos->x, 1);
 		ASSERT_EQ(pos->y, 2);
@@ -105,8 +105,8 @@ namespace test
 
 	TEST(EcsBasic, RemoveAllComponents)
 	{
-		ECS::EntityManager em;
-		ECS::Entity e = em.NewEntity();
+		ecs::EntityManager em;
+		ecs::Entity e = em.NewEntity();
 
 		e.Assign<Position>();
 		e.Assign<Eater>();
@@ -122,7 +122,7 @@ namespace test
 
 	TEST_F(EcsBasicIterateWithComponents, MultiComponentTemplateIteration)
 	{
-		for (ECS::Entity ent : em.EntitiesWith<Eater, Position>())
+		for (ecs::Entity ent : em.EntitiesWith<Eater, Position>())
 		{
 			entsFound[ent] = true;
 		}
@@ -133,7 +133,7 @@ namespace test
 
 	TEST_F(EcsBasicIterateWithComponents, TemplateIteration)
 	{
-		for (ECS::Entity ent : em.EntitiesWith<Position>())
+		for (ecs::Entity ent : em.EntitiesWith<Position>())
 		{
 			entsFound[ent] = true;
 		}
@@ -144,7 +144,7 @@ namespace test
 	TEST_F(EcsBasicIterateWithComponents, MaskIteration)
 	{
 		auto compMask = em.CreateComponentMask<Position>();
-		for (ECS::Entity ent : em.EntitiesWith(compMask))
+		for (ecs::Entity ent : em.EntitiesWith(compMask))
 		{
 			entsFound[ent] = true;
 		}
@@ -154,18 +154,18 @@ namespace test
 
 	TEST(EcsBasic, AddEntitiesWhileIterating)
 	{
-		ECS::EntityManager em;
-		ECS::Entity e1 = em.NewEntity();
+		ecs::EntityManager em;
+		ecs::Entity e1 = em.NewEntity();
 		e1.Assign<Position>();
 
 		int entitiesFound = 0;
-		for (ECS::Entity ent : em.EntitiesWith<Position>())
+		for (ecs::Entity ent : em.EntitiesWith<Position>())
 		{
 			ent.Valid(); // prevent -Wunused-but-set-variable
 			entitiesFound++;
 			if (entitiesFound == 1)
 			{
-				ECS::Entity e2 = em.NewEntity();
+				ecs::Entity e2 = em.NewEntity();
 				e2.Assign<Position>();
 			}
 		}
@@ -177,16 +177,16 @@ namespace test
 	// before we get to it during iteration
 	TEST(EcsBasic, RemoveEntityWhileIterating)
 	{
-		ECS::EntityManager em;
+		ecs::EntityManager em;
 
-		ECS::Entity e1 = em.NewEntity();
+		ecs::Entity e1 = em.NewEntity();
 		e1.Assign<Position>();
 
-		ECS::Entity e2 = em.NewEntity();
+		ecs::Entity e2 = em.NewEntity();
 		e2.Assign<Position>();
 
 		int entitiesFound = 0;
-		for (ECS::Entity ent : em.EntitiesWith<Position>())
+		for (ecs::Entity ent : em.EntitiesWith<Position>())
 		{
 			entitiesFound++;
 			if (ent == e1)
@@ -207,16 +207,16 @@ namespace test
 	// is removed before we get to it during iteration
 	TEST(EcsBasic, RemoveComponentWhileIterating)
 	{
-		ECS::EntityManager em;
+		ecs::EntityManager em;
 
-		ECS::Entity e1 = em.NewEntity();
+		ecs::Entity e1 = em.NewEntity();
 		e1.Assign<Position>();
 
-		ECS::Entity e2 = em.NewEntity();
+		ecs::Entity e2 = em.NewEntity();
 		e2.Assign<Position>();
 
 		int entitiesFound = 0;
-		for (ECS::Entity ent : em.EntitiesWith<Position>())
+		for (ecs::Entity ent : em.EntitiesWith<Position>())
 		{
 			entitiesFound++;
 			if (ent == e1)
@@ -236,9 +236,9 @@ namespace test
 
 	TEST(EcsBasic, RegisterComponentPreventsExceptions)
 	{
-		ECS::EntityManager em;
+		ecs::EntityManager em;
 
-		ECS::Entity e = em.NewEntity();
+		ecs::Entity e = em.NewEntity();
 
 		// assert that exceptions are raised before registering
 		ASSERT_THROW(e.Has<Position>(), std::invalid_argument);
@@ -263,14 +263,14 @@ namespace test
 
 	TEST(EcsBasic, DeleteComponentDoesNotInvalidateOtherComponents)
 	{
-		ECS::EntityManager em;
+		ecs::EntityManager em;
 		auto e1 = em.NewEntity();
 		auto e2 = em.NewEntity();
 
 		e1.Assign<Position>(1, 1);
 		e2.Assign<Position>(2, 2);
 
-		ECS::Handle<Position> p2Handle = e2.Get<Position>();
+		ecs::Handle<Position> p2Handle = e2.Get<Position>();
 
 		Position p2before = *p2Handle;
 		e1.Remove<Position>();

@@ -11,7 +11,7 @@
 #include "ecs/Handle.hh"
 
 
-namespace ECS
+namespace ecs
 {
 	class EntityManager
 	{

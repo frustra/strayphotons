@@ -7,7 +7,7 @@ namespace sp
 	{
 	}
 
-	ECS::Entity Scene::FindEntity(const std::string name)
+	ecs::Entity Scene::FindEntity(const std::string name)
 	{
 		return namedEntities[name];
 	}

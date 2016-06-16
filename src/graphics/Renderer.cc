@@ -24,7 +24,7 @@ namespace sp
 			Bind(normalMat, "normalMat");
 		}
 
-		void SetParams(const ECS::View &view, glm::mat4 modelMat)
+		void SetParams(const ecs::View &view, glm::mat4 modelMat)
 		{
 			Set(mvpMat, view.projMat * view.viewMat * modelMat);
 			Set(normalMat, glm::mat3(view.viewMat * modelMat));
@@ -81,7 +81,7 @@ namespace sp
 	};
 
 	// TODO Clean up Renderable when unloaded.
-	void PrepareRenderable(ECS::Handle<ECS::Renderable> comp)
+	void PrepareRenderable(ecs::Handle<ecs::Renderable> comp)
 	{
 		static DefaultMaterial defaultMat;
 
@@ -111,7 +111,7 @@ namespace sp
 		}
 	}
 
-	void DrawRenderable(ECS::Handle<ECS::Renderable> comp)
+	void DrawRenderable(ecs::Handle<ecs::Renderable> comp)
 	{
 		for (auto primitive : comp->model->primitives)
 		{
@@ -144,16 +144,16 @@ namespace sp
 
 		timer = new GPUTimer();
 
-		for (ECS::Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
+		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable>())
 		{
-			auto comp = ent.Get<ECS::Renderable>();
+			auto comp = ent.Get<ecs::Renderable>();
 			PrepareRenderable(comp);
 		}
 
 		AssertGLOK("Renderer::Prepare");
 	}
 
-	void Renderer::RenderPass(ECS::View &view)
+	void Renderer::RenderPass(ecs::View &view)
 	{
 		RenderPhase phase("RenderPass", timer);
 
@@ -188,7 +188,7 @@ namespace sp
 		//AssertGLOK("Renderer::RenderFrame");
 	}
 
-	void Renderer::ForwardPass(ECS::View &view)
+	void Renderer::ForwardPass(ecs::View &view)
 	{
 		RenderPhase phase("ForwardPass", timer);
 
@@ -200,10 +200,10 @@ namespace sp
 
 		auto sceneVS = GlobalShaders->Get<SceneVS>();
 
-		for (ECS::Entity ent : game->entityManager.EntitiesWith<ECS::Renderable, ECS::Transform>())
+		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>())
 		{
-			auto comp = ent.Get<ECS::Renderable>();
-			auto modelMat = ent.Get<ECS::Transform>()->GetModelTransform(*ent.GetManager());
+			auto comp = ent.Get<ecs::Renderable>();
+			auto modelMat = ent.Get<ecs::Transform>()->GetModelTransform(*ent.GetManager());
 			sceneVS->SetParams(view, modelMat);
 			DrawRenderable(comp);
 		}

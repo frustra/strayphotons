@@ -72,7 +72,7 @@ namespace sp
 		context.LastOutput = blending;
 	}
 
-	void PostProcessing::Process(Renderer *renderer, sp::Game *game, ECS::View view, const EngineRenderTargets &targets)
+	void PostProcessing::Process(Renderer *renderer, sp::Game *game, ecs::View view, const EngineRenderTargets &targets)
 	{
 		RenderPhase phase("PostProcessing", renderer->timer);
 

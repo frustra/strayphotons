@@ -1,6 +1,6 @@
 #include "ecs/ComponentStorage.hh"
 
-namespace ECS
+namespace ecs
 {
 	BaseComponentPool::IterateLock::IterateLock(BaseComponentPool &pool): pool(pool)
 	{

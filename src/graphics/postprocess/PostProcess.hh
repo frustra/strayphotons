@@ -152,7 +152,7 @@ namespace sp
 
 		Renderer *renderer;
 		sp::Game *game;
-		ECS::View view;
+		ecs::View view;
 
 		ProcessPassOutputRef LastOutput;
 		ProcessPassOutputRef GBuffer0;
@@ -165,6 +165,6 @@ namespace sp
 
 	namespace PostProcessing
 	{
-		void Process(Renderer *renderer, sp::Game *game, ECS::View view, const EngineRenderTargets &targets);
+		void Process(Renderer *renderer, sp::Game *game, ecs::View view, const EngineRenderTargets &targets);
 	}
 }

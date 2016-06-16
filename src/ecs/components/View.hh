@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-namespace ECS
+namespace ecs
 {
 	struct View
 	{

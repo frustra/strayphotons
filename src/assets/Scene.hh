@@ -16,10 +16,10 @@ namespace sp
 		~Scene() {}
 
 		const string name;
-		vector<ECS::Entity> entities;
-		std::unordered_map<string, ECS::Entity> namedEntities;
+		vector<ecs::Entity> entities;
+		std::unordered_map<string, ecs::Entity> namedEntities;
 
-		ECS::Entity FindEntity(const std::string name);
+		ecs::Entity FindEntity(const std::string name);
 	private:
 		shared_ptr<Asset> asset;
 	};

@@ -16,7 +16,7 @@ namespace sp
 			Bind(invProj, "invProjMat");
 		}
 
-		void SetParameters(int newMode, const ECS::View &view)
+		void SetParameters(int newMode, const ecs::View &view)
 		{
 			Set(mode, newMode);
 			Set(invProj, view.invProjMat);

@@ -1,6 +1,6 @@
 #include "ecs/ComponentManager.hh"
 
-namespace ECS
+namespace ecs
 {
 	void ComponentManager::RemoveAll(Entity::Id e)
 	{

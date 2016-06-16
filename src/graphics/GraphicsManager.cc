@@ -103,40 +103,40 @@ namespace sp
 	/**
 	* This View will be used when rendering from the player's viewpoint
 	*/
-	void GraphicsManager::SetPlayerView(ECS::Entity entity)
+	void GraphicsManager::SetPlayerView(ecs::Entity entity)
 	{
 		validateView(entity);
 		playerView = entity;
 	}
 
-	ECS::View &GraphicsManager::updateViewCaches(ECS::Entity entity)
+	ecs::View &GraphicsManager::updateViewCaches(ecs::Entity entity)
 	{
 		validateView(entity);
 
-		auto view = playerView.Get<ECS::View>();
+		auto view = playerView.Get<ecs::View>();
 
 		view->aspect = (float)view->extents.x / (float)view->extents.y;
 		view->projMat = glm::perspective(view->fov, view->aspect, view->clip[0], view->clip[1]);
 		view->invProjMat = glm::inverse(view->projMat);
 
-		auto transform = playerView.Get<ECS::Transform>();
+		auto transform = playerView.Get<ecs::Transform>();
 		view->invViewMat = transform->GetModelTransform(*playerView.GetManager());
 		view->viewMat = glm::inverse(view->invViewMat);
 
 		return *view;
 	}
 
-	void GraphicsManager::validateView(ECS::Entity viewEntity)
+	void GraphicsManager::validateView(ecs::Entity viewEntity)
 	{
 		if (!viewEntity.Valid())
 		{
 			throw std::runtime_error("view entity is not valid because the entity has been deleted");
 		}
-		if (!viewEntity.Has<ECS::View>())
+		if (!viewEntity.Has<ecs::View>())
 		{
 			throw std::runtime_error("view entity is not valid because it has no View component");
 		}
-		if (!viewEntity.Has<ECS::Transform>())
+		if (!viewEntity.Has<ecs::Transform>())
 		{
 			throw std::runtime_error("view entity is not valid because it has no Transform component");
 		}

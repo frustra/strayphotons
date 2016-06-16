@@ -25,7 +25,7 @@ namespace sp
 		void BindInputCallbacks(InputManager &inputManager);
 
 		virtual void Prepare() = 0;
-		virtual void RenderPass(ECS::View &view) = 0;
+		virtual void RenderPass(ecs::View &view) = 0;
 		virtual void EndFrame() = 0;
 
 		ShaderSet *GlobalShaders;
