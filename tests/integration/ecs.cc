@@ -160,6 +160,7 @@ namespace test
 		int entitiesFound = 0;
 		for (sp::Entity ent : em.EntitiesWith<Position>())
 		{
+			ent.Valid(); // prevent -Wunused-but-set-variable
 			entitiesFound++;
 			if (entitiesFound == 1)
 			{
@@ -240,12 +241,22 @@ namespace test
 
 		// assert that exceptions are raised before registering
 		ASSERT_THROW(e.Has<Position>(), std::invalid_argument);
-		ASSERT_THROW(for (auto e : em.EntitiesWith<Position>()) {}, std::invalid_argument);
+		ASSERT_THROW(
+			for (auto e : em.EntitiesWith<Position>()) {
+				e.Valid();
+			},
+			std::invalid_argument
+		);
 
 		em.RegisterComponentType<Position>();
 
 		// assert that exceptions no longer occur
 		ASSERT_NO_THROW(e.Has<Position>());
-		ASSERT_NO_THROW(for (auto e : em.EntitiesWith<Position>()) {});
+
+		ASSERT_NO_THROW(
+			for (auto e : em.EntitiesWith<Position>()) {
+				e.Valid();
+			}
+		);
 	}
 }
