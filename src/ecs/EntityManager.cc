@@ -1,7 +1,7 @@
 #include "ecs/EntityManager.hh"
 #include "ecs/Entity.hh"
 
-namespace sp
+namespace ECS
 {
 	EntityManager::EntityManager()
 	{
@@ -22,7 +22,7 @@ namespace sp
 			i = freeEntityIndexes.front();
 			freeEntityIndexes.pop();
 			gen = entIndexToGen.at(i);  // incremented at Entity destruction
-			Assert(compMgr.entCompMasks[i] == ComponentManager::ComponentMask(),
+			sp::Assert(compMgr.entCompMasks[i] == ComponentManager::ComponentMask(),
 				   "expected ent comp mask to be reset at destruction but it wasn't");
 			compMgr.entCompMasks[i] = ComponentManager::ComponentMask();
 		}
@@ -35,8 +35,8 @@ namespace sp
 			// add a blank comp mask without copying one in
 			compMgr.entCompMasks.resize(compMgr.entCompMasks.size() + 1);
 
-			Assert(entIndexToGen.size() == nextEntityIndex);
-			Assert(compMgr.entCompMasks.size() == nextEntityIndex);
+			sp::Assert(entIndexToGen.size() == nextEntityIndex);
+			sp::Assert(compMgr.entCompMasks.size() == nextEntityIndex);
 		}
 
 		return Entity(this, Entity::Id(i, gen));

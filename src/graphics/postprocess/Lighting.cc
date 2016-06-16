@@ -42,7 +42,7 @@ namespace sp
 			Set(invProjMat, view.invProjMat);
 		}
 
-		void SetLights(EntityManager &manager, EntityManager::EntityCollection &lightCollection)
+		void SetLights(ECS::EntityManager &manager, ECS::EntityManager::EntityCollection &lightCollection)
 		{
 			glm::vec3 lightPositions[maxLights];
 			glm::vec3 lightTints[maxLights];

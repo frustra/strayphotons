@@ -6,11 +6,11 @@
 
 namespace ECS
 {
-	glm::mat4 Transform::GetModelTransform(sp::EntityManager &manager)
+	glm::mat4 Transform::GetModelTransform(ECS::EntityManager &manager)
 	{
 		glm::mat4 model;
 
-		if (this->relativeTo != sp::Entity::Id())
+		if (this->relativeTo != ECS::Entity::Id())
 		{
 			sp::Assert(
 				manager.Has<Transform>(this->relativeTo),
@@ -23,7 +23,7 @@ namespace ECS
 		return model * this->translate * GetRotateMatrix() * this->scale;
 	}
 
-	void Transform::SetRelativeTo(sp::Entity ent)
+	void Transform::SetRelativeTo(ECS::Entity ent)
 	{
 		if (!ent.Has<Transform>())
 		{

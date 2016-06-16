@@ -81,7 +81,7 @@ namespace sp
 	};
 
 	// TODO Clean up Renderable when unloaded.
-	void PrepareRenderable(Handle<ECS::Renderable> comp)
+	void PrepareRenderable(ECS::Handle<ECS::Renderable> comp)
 	{
 		static DefaultMaterial defaultMat;
 
@@ -111,7 +111,7 @@ namespace sp
 		}
 	}
 
-	void DrawRenderable(Handle<ECS::Renderable> comp)
+	void DrawRenderable(ECS::Handle<ECS::Renderable> comp)
 	{
 		for (auto primitive : comp->model->primitives)
 		{
@@ -144,7 +144,7 @@ namespace sp
 
 		timer = new GPUTimer();
 
-		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
+		for (ECS::Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
 		{
 			auto comp = ent.Get<ECS::Renderable>();
 			PrepareRenderable(comp);
@@ -200,7 +200,7 @@ namespace sp
 
 		auto sceneVS = GlobalShaders->Get<SceneVS>();
 
-		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable, ECS::Transform>())
+		for (ECS::Entity ent : game->entityManager.EntitiesWith<ECS::Renderable, ECS::Transform>())
 		{
 			auto comp = ent.Get<ECS::Renderable>();
 			auto modelMat = ent.Get<ECS::Transform>()->GetModelTransform(*ent.GetManager());

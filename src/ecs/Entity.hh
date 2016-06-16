@@ -3,7 +3,7 @@
 #include <ostream>
 #include "Common.hh"
 
-namespace sp
+namespace ECS
 {
 	class EntityManager;
 
@@ -65,7 +65,7 @@ namespace sp
 			Id(uint64 index, uint16 generation)
 			{
 				id = (static_cast<uint64>(generation) << INDEX_BITS) + index;
-				Assert((id & INDEX_MASK) == index);
+				sp::Assert((id & INDEX_MASK) == index);
 			}
 
 			Id(uint64 id): id(id) {}

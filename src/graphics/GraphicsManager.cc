@@ -103,13 +103,13 @@ namespace sp
 	/**
 	* This View will be used when rendering from the player's viewpoint
 	*/
-	void GraphicsManager::SetPlayerView(Entity entity)
+	void GraphicsManager::SetPlayerView(ECS::Entity entity)
 	{
 		validateView(entity);
 		playerView = entity;
 	}
 
-	ECS::View &GraphicsManager::updateViewCaches(Entity entity)
+	ECS::View &GraphicsManager::updateViewCaches(ECS::Entity entity)
 	{
 		validateView(entity);
 
@@ -126,7 +126,7 @@ namespace sp
 		return *view;
 	}
 
-	void GraphicsManager::validateView(Entity viewEntity)
+	void GraphicsManager::validateView(ECS::Entity viewEntity)
 	{
 		if (!viewEntity.Valid())
 		{

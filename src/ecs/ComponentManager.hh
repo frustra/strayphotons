@@ -13,7 +13,7 @@
 
 #define MAX_COMPONENT_TYPES 64
 
-namespace sp
+namespace ECS
 {
 	class ComponentManager
 	{
@@ -103,7 +103,7 @@ namespace sp
 			compIndex = compTypeToCompIndex.at(compType);
 		}
 
-		Assert(entCompMasks.size() > e.Index(), "entity does not have a component mask");
+		sp::Assert(entCompMasks.size() > e.Index(), "entity does not have a component mask");
 
 		auto &compMask = entCompMasks.at(e.Index());
 		compMask.set(compIndex);

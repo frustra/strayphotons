@@ -97,7 +97,7 @@ namespace sp
 		return model;
 	}
 
-	shared_ptr<Scene> AssetManager::LoadScene(const std::string &name, EntityManager *em)
+	shared_ptr<Scene> AssetManager::LoadScene(const std::string &name, ECS::EntityManager *em)
 	{
 		Logf("Loading scene: %s", name.c_str());
 
@@ -116,7 +116,7 @@ namespace sp
 		auto entityList = root.get<picojson::object>()["entities"];
 		for (auto value : entityList.get<picojson::array>())
 		{
-			Entity entity = em->NewEntity();
+			ECS::Entity entity = em->NewEntity();
 			auto ent = value.get<picojson::object>();
 			for (auto comp : ent)
 			{
@@ -134,7 +134,7 @@ namespace sp
 					{
 						if (subTransform.first == "relativeTo")
 						{
-							Entity parent = scene->FindEntity(subTransform.second.get<string>());
+							ECS::Entity parent = scene->FindEntity(subTransform.second.get<string>());
 							if (!parent.Valid())
 							{
 								throw std::runtime_error("Entity relative to non-existent parent");

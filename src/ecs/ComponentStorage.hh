@@ -11,7 +11,7 @@
 #define MAX_COMPONENTS 64
 
 
-namespace sp
+namespace ECS
 {
 	class BaseComponentPool;
 
@@ -57,7 +57,7 @@ namespace sp
 		* Creating this lock will enable "soft remove" mode on the given ComponentPool.
 		* The destruction of this lock will re-enable normal deletion mode.
 		*/
-		class IterateLock : public NonCopyable
+		class IterateLock : public sp::NonCopyable
 		{
 		public:
 			IterateLock(BaseComponentPool &pool);
@@ -222,7 +222,7 @@ namespace sp
 		// mark the component as the "Null" Entity and add this component index to queue of
 		// components to be deleted when "soft remove" mode is disabled.
 		// "Null" Entities will never be iterated over
-		Assert(compIndex < components.size());
+		sp::Assert(compIndex < components.size());
 
 		components[compIndex].first = Entity::Id();
 		softRemoveCompIndexes.push(compIndex);
@@ -273,7 +273,7 @@ namespace sp
 	template <typename CompType>
 	Entity::Id ComponentPool<CompType>::entityAt(uint64 compIndex)
 	{
-		Assert(compIndex < components.size());
+		sp::Assert(compIndex < components.size());
 		return components[compIndex].first;
 	}
 

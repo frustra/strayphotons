@@ -11,14 +11,14 @@ namespace ECS
 	{
 	public:
 		Transform() {}
-		void SetRelativeTo(sp::Entity);
+		void SetRelativeTo(ECS::Entity);
 
 		/**
 		 * Return the matrix for specifying the placement of the entity in the world.
 		 * This involves computing the incremental model transforms for any entities
 		 * that this placement is relative to.
 		 */
-		glm::mat4 GetModelTransform(sp::EntityManager &manager);
+		glm::mat4 GetModelTransform(ECS::EntityManager &manager);
 
 		/**
 		 * Change the local rotation by "radians" amount about the local "axis"
@@ -43,6 +43,6 @@ namespace ECS
 		glm::quat rotate;
 
 	private:
-		sp::Entity::Id relativeTo;
+		ECS::Entity::Id relativeTo;
 	};
 }

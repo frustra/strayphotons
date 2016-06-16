@@ -4,7 +4,7 @@
 #include "ecs/EntityManager.hh"
 #include "ecs/Handle.hh"
 
-namespace sp
+namespace ECS
 {
 	template <typename CompType, typename ...T>
 	Handle<CompType> Entity::Assign(T... args)
@@ -35,10 +35,10 @@ namespace std
 {
 	// allow Entity class to be used in hashed data structures
 	template <>
-	struct hash<sp::Entity>
+	struct hash<ECS::Entity>
 	{
 	public:
-		size_t operator()(const sp::Entity &e) const
+		size_t operator()(const ECS::Entity &e) const
 		{
 			return hash<uint64>()(e.eid.id);
 		}

@@ -1,6 +1,6 @@
 #include "ecs/ComponentStorage.hh"
 
-namespace sp
+namespace ECS
 {
 	BaseComponentPool::IterateLock::IterateLock(BaseComponentPool &pool): pool(pool)
 	{
@@ -42,7 +42,7 @@ namespace sp
 
 	Entity::Id ComponentPoolEntityCollection::Iterator::operator*()
 	{
-		Assert(compIndex < pool.Size());
+		sp::Assert(compIndex < pool.Size());
 		return pool.entityAt(compIndex);
 	}
 }

@@ -16,7 +16,7 @@ namespace ECS
 	const float HumanControlSystem::MOVE_SPEED = 6.0f;
 	const glm::vec2 HumanControlSystem::CURSOR_SENSITIVITY = glm::vec2(0.001f, 0.001f);
 
-	HumanControlSystem::HumanControlSystem(sp::EntityManager *entities, sp::InputManager *input)
+	HumanControlSystem::HumanControlSystem(ECS::EntityManager *entities, sp::InputManager *input)
 		: entities(entities), input(input)
 	{
 	}
@@ -30,7 +30,7 @@ namespace ECS
 		if (input->FocusLocked())
 			return true;
 
-		for (sp::Entity entity : entities->EntitiesWith<ECS::Transform, ECS::HumanController>())
+		for (ECS::Entity entity : entities->EntitiesWith<ECS::Transform, ECS::HumanController>())
 		{
 			// control orientation with the mouse
 			auto transform = entity.Get<ECS::Transform>();
@@ -99,7 +99,7 @@ namespace ECS
 		return true;
 	}
 
-	sp::Handle<HumanController> HumanControlSystem::AssignController(sp::Entity entity)
+	ECS::Handle<HumanController> HumanControlSystem::AssignController(ECS::Entity entity)
 	{
 		if (entity.Has<HumanController>())
 		{
@@ -137,7 +137,7 @@ namespace ECS
 		return controller;
 	}
 
-	void HumanControlSystem::move(sp::Entity entity, double dt, glm::vec3 normalizedDirection)
+	void HumanControlSystem::move(ECS::Entity entity, double dt, glm::vec3 normalizedDirection)
 	{
 		if (!entity.Has<ECS::Transform>())
 		{

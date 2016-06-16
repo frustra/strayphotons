@@ -22,7 +22,7 @@ namespace sp
 	{
 		scene = GAssets.LoadScene("sponza", &game->entityManager);
 
-		Entity player = scene->FindEntity("player");
+		ECS::Entity player = scene->FindEntity("player");
 		humanControlSystem.AssignController(player);
 
 		game->graphics.SetPlayerView(player);

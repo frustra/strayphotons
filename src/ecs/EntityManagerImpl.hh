@@ -4,7 +4,7 @@
 #include "ecs/Entity.hh"
 #include "ecs/Handle.hh"
 
-namespace sp
+namespace ECS
 {
 	template <typename CompType, typename ...T>
 	Handle<CompType> EntityManager::Assign(Entity::Id e, T... args)
