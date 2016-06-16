@@ -7,6 +7,9 @@ namespace sp
 {
 	class EntityManager;
 
+	template<typename CompType>
+	class Handle;
+
 	/**
 	 * Convenience class for operations on entities instead of
 	 * going through the EntityManager
@@ -110,9 +113,8 @@ namespace sp
 		void Destroy();
 		bool Valid() const;
 
-		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		template <typename CompType, typename ...T>
-		CompType *Assign(T... args);
+		Handle<CompType> Assign(T... args);
 
 		template <typename CompType>
 		void Remove();
@@ -122,9 +124,8 @@ namespace sp
 		template <typename CompType>
 		bool Has() const;
 
-		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		template <typename CompType>
-		CompType *Get();
+		Handle<CompType> Get();
 
 	private:
 		EntityManager *em;

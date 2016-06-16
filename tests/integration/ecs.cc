@@ -19,8 +19,8 @@ namespace test
 
 	typedef struct Eater
 	{
-	    bool hungry;
-	    uint thingsEaten;
+		bool hungry;
+		uint thingsEaten;
 	} Eater;
 
 	class EcsBasicIterateWithComponents : public ::testing::Test
@@ -28,7 +28,7 @@ namespace test
 	protected:
 		std::unordered_map<sp::Entity, bool> entsFound;
 
-	    sp::EntityManager em;
+		sp::EntityManager em;
 		sp::Entity ePos1;
 		sp::Entity ePos2;
 		sp::Entity ePosEat;
@@ -67,18 +67,18 @@ namespace test
 	TEST(EcsBasic, CreateDestroyEntity)
 	{
 		sp::EntityManager em;
-	    sp::Entity e = em.NewEntity();
+		sp::Entity e = em.NewEntity();
 
-	    EXPECT_TRUE(e.Valid());
-	    e.Destroy();
+		EXPECT_TRUE(e.Valid());
+		e.Destroy();
 
-	    EXPECT_FALSE(e.Valid());
+		EXPECT_FALSE(e.Valid());
 	}
 
 	TEST(EcsBasic, AddRemoveComponent)
 	{
 		sp::EntityManager em;
-	    sp::Entity e = em.NewEntity();
+		sp::Entity e = em.NewEntity();
 
 		e.Assign<Position>();
 
@@ -87,37 +87,36 @@ namespace test
 		e.Remove<Position>();
 
 		ASSERT_FALSE(e.Has<Position>());
-	    ASSERT_ANY_THROW(e.Get<Position>());
+		ASSERT_ANY_THROW(e.Get<Position>());
 	}
 
 	TEST(EcsBasic, ConstructComponent)
 	{
 		sp::EntityManager em;
-	    sp::Entity e = em.NewEntity();
+		sp::Entity e = em.NewEntity();
 
-	    e.Assign<Position>(1, 2);
-	    Position *pos = e.Get<Position>();
+		e.Assign<Position>(1, 2);
+		sp::Handle<Position> pos = e.Get<Position>();
 
-	    ASSERT_NE(pos, nullptr);
-	    ASSERT_EQ(pos->x, 1);
-	    ASSERT_EQ(pos->y, 2);
+		ASSERT_EQ(pos->x, 1);
+		ASSERT_EQ(pos->y, 2);
 	}
 
 	TEST(EcsBasic, RemoveAllComponents)
 	{
 		sp::EntityManager em;
-	    sp::Entity e = em.NewEntity();
+		sp::Entity e = em.NewEntity();
 
-	    e.Assign<Position>();
-	    e.Assign<Eater>();
+		e.Assign<Position>();
+		e.Assign<Eater>();
 
-	    ASSERT_TRUE(e.Has<Position>());
-	    ASSERT_TRUE(e.Has<Eater>());
+		ASSERT_TRUE(e.Has<Position>());
+		ASSERT_TRUE(e.Has<Eater>());
 
-	    e.RemoveAllComponents();
+		e.RemoveAllComponents();
 
-	    ASSERT_FALSE(e.Has<Position>());
-	    ASSERT_FALSE(e.Has<Eater>());
+		ASSERT_FALSE(e.Has<Position>());
+		ASSERT_FALSE(e.Has<Eater>());
 	}
 
 	TEST_F(EcsBasicIterateWithComponents, MultiComponentTemplateIteration)

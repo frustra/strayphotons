@@ -113,13 +113,13 @@ namespace sp
 	{
 		validateView(entity);
 
-		auto *view = playerView.Get<ECS::View>();
+		auto view = playerView.Get<ECS::View>();
 
 		view->aspect = (float)view->extents.x / (float)view->extents.y;
 		view->projMat = glm::perspective(view->fov, view->aspect, view->clip[0], view->clip[1]);
 		view->invProjMat = glm::inverse(view->projMat);
 
-		auto *transform = playerView.Get<ECS::Transform>();
+		auto transform = playerView.Get<ECS::Transform>();
 		view->invViewMat = transform->GetModelTransform(*playerView.GetManager());
 		view->viewMat = glm::inverse(view->invViewMat);
 

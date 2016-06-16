@@ -129,7 +129,7 @@ namespace sp
 				}
 				else if (comp.first == "transform")
 				{
-					ECS::Transform *transform = entity.Assign<ECS::Transform>();
+					auto transform = entity.Assign<ECS::Transform>();
 					for (auto subTransform : comp.second.get<picojson::object>())
 					{
 						if (subTransform.first == "relativeTo")
@@ -167,7 +167,7 @@ namespace sp
 				}
 				else if (comp.first == "view")
 				{
-					ECS::View *view = entity.Assign<ECS::View>();
+					auto view = entity.Assign<ECS::View>();
 					for (auto param : comp.second.get<picojson::object>())
 					{
 						if (param.first == "fov")
@@ -200,7 +200,7 @@ namespace sp
 				}
 				else if (comp.first == "light")
 				{
-					ECS::Light *light = entity.Assign<ECS::Light>();
+					auto light = entity.Assign<ECS::Light>();
 					for (auto param : comp.second.get<picojson::object>())
 					{
 						if (param.first == "intensity")

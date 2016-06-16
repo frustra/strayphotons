@@ -2,11 +2,12 @@
 
 #include "ecs/EntityManager.hh"
 #include "ecs/Entity.hh"
+#include "ecs/Handle.hh"
 
 namespace sp
 {
 	template <typename CompType, typename ...T>
-	CompType *EntityManager::Assign(Entity::Id e, T... args)
+	Handle<CompType> EntityManager::Assign(Entity::Id e, T... args)
 	{
 		return compMgr.Assign<CompType>(e, args...);
 	}
@@ -24,7 +25,7 @@ namespace sp
 	}
 
 	template <typename CompType>
-	CompType *EntityManager::Get(Entity::Id e)
+	Handle<CompType> EntityManager::Get(Entity::Id e)
 	{
 		return compMgr.Get<CompType>(e);
 	}

@@ -33,8 +33,8 @@ namespace ECS
 		for (sp::Entity entity : entities->EntitiesWith<ECS::Transform, ECS::HumanController>())
 		{
 			// control orientation with the mouse
-			auto *transform = entity.Get<ECS::Transform>();
-			auto *controller = entity.Get<ECS::HumanController>();
+			auto transform = entity.Get<ECS::Transform>();
+			auto controller = entity.Get<ECS::HumanController>();
 
 
 			glm::vec2 dCursor = input->CursorDiff();
@@ -99,7 +99,7 @@ namespace ECS
 		return true;
 	}
 
-	HumanController *HumanControlSystem::AssignController(sp::Entity entity)
+	sp::Handle<HumanController> HumanControlSystem::AssignController(sp::Entity entity)
 	{
 		if (entity.Has<HumanController>())
 		{
@@ -108,7 +108,7 @@ namespace ECS
 			   << " cannot be assigned a new HumanController because it already has one.";
 			throw std::invalid_argument(ss.str());
 		}
-		auto *controller = entity.Assign<HumanController>();
+		auto controller = entity.Assign<HumanController>();
 		controller->pitch = 0;
 		controller->yaw = 0;
 		controller->roll = 0;
@@ -144,7 +144,7 @@ namespace ECS
 			throw std::invalid_argument("entity must have a Transform component");
 		}
 
-		auto *transform = entity.Get<ECS::Transform>();
+		auto transform = entity.Get<ECS::Transform>();
 		float movement = HumanControlSystem::MOVE_SPEED * (float)dt;
 		glm::vec4 translation(movement * normalizedDirection, 0);
 

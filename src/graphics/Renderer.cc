@@ -81,7 +81,7 @@ namespace sp
 	};
 
 	// TODO Clean up Renderable when unloaded.
-	void PrepareRenderable(ECS::Renderable *comp)
+	void PrepareRenderable(Handle<ECS::Renderable> comp)
 	{
 		static DefaultMaterial defaultMat;
 
@@ -111,7 +111,7 @@ namespace sp
 		}
 	}
 
-	void DrawRenderable(ECS::Renderable *comp)
+	void DrawRenderable(Handle<ECS::Renderable> comp)
 	{
 		for (auto primitive : comp->model->primitives)
 		{

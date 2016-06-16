@@ -22,7 +22,7 @@ namespace ECS
 		/**
 		 * Assigns a default HumanController to the given entity.
 		 */
-		HumanController *AssignController(sp::Entity entity);
+		sp::Handle<HumanController> AssignController(sp::Entity entity);
 
 	private:
 
