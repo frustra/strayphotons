@@ -4,7 +4,7 @@
 
 namespace sp
 {
-	class DeferredLighting : public PostProcessPass<3, 1>
+	class DeferredLighting : public PostProcessPass<4, 1>
 	{
 	public:
 		void Process(const PostProcessingContext *context);

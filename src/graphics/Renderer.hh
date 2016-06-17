@@ -7,6 +7,7 @@
 namespace sp
 {
 	class Game;
+	class RenderTarget;
 	class RenderTargetPool;
 	class ShaderManager;
 	class GPUTimer;
@@ -19,7 +20,8 @@ namespace sp
 		~Renderer();
 
 		void Prepare();
-		void RenderPass(ECS::View &view);
+		shared_ptr<RenderTarget> RenderShadowMaps();
+		void RenderPass(ECS::View &view, shared_ptr<RenderTarget> shadowMap);
 		void ForwardPass(ECS::View &view);
 		void EndFrame();
 

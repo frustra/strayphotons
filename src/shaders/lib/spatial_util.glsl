@@ -45,6 +45,12 @@ vec3 ScreenPosToViewPos(vec2 texCoord, float depth, mat4 invProj) {
 	return ClipPosToViewPos(clip, invProj);
 }
 
+// Returns the screen-space texcoord of a view-space position.
+vec3 ViewPosToScreenPos(vec3 viewPos, mat4 projMat) {
+	vec4 clip = projMat * vec4(viewPos, 1.0);
+	return clip.xyz / clip.w * vec3(0.5) + vec3(0.5);
+}
+
 // Gradient noise in [-1, 1] as in [Jimenez 2014]
 float InterleavedGradientNoise(vec2 position) {
 	const vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);

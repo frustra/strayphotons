@@ -77,8 +77,10 @@ namespace sp
 
 		renderer->timer->StartFrame();
 
+		auto shadowMap = renderer->RenderShadowMaps();
+
 		auto view = updateViewCaches(playerView);
-		renderer->RenderPass(view);
+		renderer->RenderPass(view, shadowMap);
 		guiRenderer->Render(view);
 
 		double frameEnd = glfwGetTime();
@@ -113,14 +115,14 @@ namespace sp
 	{
 		validateView(entity);
 
-		auto *view = playerView.Get<ECS::View>();
+		auto *view = entity.Get<ECS::View>();
 
 		view->aspect = (float)view->extents.x / (float)view->extents.y;
 		view->projMat = glm::perspective(view->fov, view->aspect, view->clip[0], view->clip[1]);
 		view->invProjMat = glm::inverse(view->projMat);
 
-		auto *transform = playerView.Get<ECS::Transform>();
-		view->invViewMat = transform->GetModelTransform(*playerView.GetManager());
+		auto *transform = entity.Get<ECS::Transform>();
+		view->invViewMat = transform->GetModelTransform(*entity.GetManager());
 		view->viewMat = glm::inverse(view->invViewMat);
 
 		return *view;

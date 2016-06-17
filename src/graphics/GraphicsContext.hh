@@ -12,6 +12,7 @@ namespace sp
 	class ShaderSet;
 	class Game;
 	class InputManager;
+	class RenderTarget;
 
 	class GraphicsContext
 	{
@@ -25,7 +26,7 @@ namespace sp
 		void BindInputCallbacks(InputManager &inputManager);
 
 		virtual void Prepare() = 0;
-		virtual void RenderPass(ECS::View &view) = 0;
+		virtual void RenderPass(ECS::View &view, shared_ptr<RenderTarget> shadowMap) = 0;
 		virtual void EndFrame() = 0;
 
 		ShaderSet *GlobalShaders;

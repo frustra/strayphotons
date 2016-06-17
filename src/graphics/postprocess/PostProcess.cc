@@ -49,6 +49,7 @@ namespace sp
 		lighting->SetInput(0, context.LastOutput);
 		lighting->SetInput(1, context.GBuffer1);
 		lighting->SetInput(2, context.Depth);
+		lighting->SetInput(3, context.ShadowMap);
 
 		context.LastOutput = lighting;
 	}
@@ -84,6 +85,7 @@ namespace sp
 		context.GBuffer0 = context.AddPass<ProxyProcessPass>(targets.GBuffer0);
 		context.GBuffer1 = context.AddPass<ProxyProcessPass>(targets.GBuffer1);
 		context.Depth = context.AddPass<ProxyProcessPass>(targets.Depth);
+		context.ShadowMap = context.AddPass<ProxyProcessPass>(targets.ShadowMap);
 		context.LastOutput = context.GBuffer0;
 
 		if (CVarLightingEnabled.Get())
