@@ -8,9 +8,11 @@
 #include "graphics/postprocess/PostProcess.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
+#include "core/CVar.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/View.hh"
+#include "ecs/components/Light.hh"
 
 namespace sp
 {
@@ -79,6 +81,8 @@ namespace sp
 			.Size(1, 1).Storage2D(PF_RGB8).Image2D(roughness);
 		}
 	};
+
+	static CVar<float> FlashlightIntensity("r.Flashlight", 2000, "Flashlight intensity");
 
 	// TODO Clean up Renderable when unloaded.
 	void PrepareRenderable(ecs::Handle<ecs::Renderable> comp)
@@ -153,7 +157,65 @@ namespace sp
 		AssertGLOK("Renderer::Prepare");
 	}
 
-	void Renderer::RenderPass(ecs::View &view)
+	ecs::Handle<ecs::View> updateLightCaches(ecs::Entity entity, ecs::Handle<ecs::Light> light)
+	{
+		auto view = entity.Get<ecs::View>();
+
+		view->aspect = (float)view->extents.x / (float)view->extents.y;
+		view->projMat = glm::perspective(light->spotAngle * 2.0f, view->aspect, view->clip[0], view->clip[1]);
+		view->invProjMat = glm::inverse(view->projMat);
+
+		auto transform = entity.Get<ecs::Transform>();
+		view->invViewMat = transform->GetModelTransform(*entity.GetManager());
+		view->viewMat = glm::inverse(view->invViewMat);
+
+		return view;
+	}
+
+	shared_ptr<RenderTarget> Renderer::RenderShadowMaps()
+	{
+		// TODO(xthexder): Handle lights without shadowmaps
+		glm::ivec2 renderTargetSize;
+		bool first = true;
+		for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
+		{
+			auto light = entity.Get<ecs::Light>();
+			if (first)
+			{
+				light->intensity = FlashlightIntensity.Get();
+				first = false;
+			}
+			if (entity.Has<ecs::View>())
+			{
+				auto view = updateLightCaches(entity, light);
+				light->mapOffset = glm::vec4(renderTargetSize.x, 0, view->extents.x, view->extents.y);
+				view->offset = glm::ivec2(light->mapOffset);
+
+				renderTargetSize.x += view->extents.x;
+				if (view->extents.y > renderTargetSize.y)
+					renderTargetSize.y = view->extents.y;
+			}
+		}
+
+		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, renderTargetSize));
+		SetRenderTargets(0, nullptr, &renderTarget->GetTexture());
+
+		for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
+		{
+			auto light = entity.Get<ecs::Light>();
+			if (entity.Has<ecs::View>())
+			{
+				light->mapOffset /= glm::vec4(renderTargetSize, renderTargetSize);
+
+				ecs::Handle<ecs::View> view = entity.Get<ecs::View>();
+				ForwardPass(*view);
+			}
+		}
+
+		return renderTarget;
+	}
+
+	void Renderer::RenderPass(ecs::View &view, shared_ptr<RenderTarget> shadowMap)
 	{
 		RenderPhase phase("RenderPass", timer);
 
@@ -161,13 +223,7 @@ namespace sp
 		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, view.extents));
 		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, view.extents));
 		targets.Depth = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, view.extents));
-
-		glEnable(GL_CULL_FACE);
-		glEnable(GL_DEPTH_TEST);
-		glDisable(GL_SCISSOR_TEST);
-		glDisable(GL_BLEND);
-		glDisable(GL_STENCIL_TEST);
-		glDepthMask(GL_TRUE);
+		targets.ShadowMap = shadowMap;
 
 		Texture attachments[] =
 		{
@@ -177,9 +233,12 @@ namespace sp
 
 		SetRenderTargets(2, attachments, &targets.Depth->GetTexture());
 
-		ForwardPass(view);
+		ecs::View forwardPassView = view;
+		forwardPassView.offset = glm::ivec2();
+		ForwardPass(forwardPassView);
 
 		// Run postprocessing.
+		glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
 
@@ -192,7 +251,15 @@ namespace sp
 	{
 		RenderPhase phase("ForwardPass", timer);
 
-		glViewport(0, 0, view.extents.x, view.extents.y);
+		glEnable(GL_CULL_FACE);
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_SCISSOR_TEST);
+		glDisable(GL_BLEND);
+		glDisable(GL_STENCIL_TEST);
+		glDepthMask(GL_TRUE);
+
+		glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
+		glScissor(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

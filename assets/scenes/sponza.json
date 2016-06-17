@@ -43,10 +43,11 @@
 			},
 			"view": {
 				"extents": [512, 512],
-				"clip": [1, 256]
+				"clip": [0.1, 256]
 			},
 			"transform": {
-				"relativeTo": "player"
+				"relativeTo": "player",
+				"translate": [0, -0.3, 0]
 			}
 		},
 		{
@@ -57,7 +58,7 @@
 			},
 			"view": {
 				"extents": [512, 512],
-				"clip": [1, 256]
+				"clip": [0.1, 256]
 			},
 			"transform": {
 				"translate": [0, 12, 0],

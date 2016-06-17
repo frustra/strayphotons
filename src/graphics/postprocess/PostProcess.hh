@@ -128,6 +128,7 @@ namespace sp
 	{
 		RenderTarget::Ref GBuffer0, GBuffer1, GBuffer2;
 		RenderTarget::Ref Depth;
+		RenderTarget::Ref ShadowMap;
 	};
 
 	class PostProcessingContext
@@ -158,6 +159,7 @@ namespace sp
 		ProcessPassOutputRef GBuffer0;
 		ProcessPassOutputRef GBuffer1;
 		ProcessPassOutputRef Depth;
+		ProcessPassOutputRef ShadowMap;
 
 	private:
 		vector<PostProcessPassBase *> passes;

@@ -213,7 +213,7 @@ namespace sp
 						}
 						else if (param.first == "spotAngle")
 						{
-							light->spotAngle = cos(glm::radians(param.second.get<double>()));
+							light->spotAngle = glm::radians(param.second.get<double>());
 						}
 						else if (param.first == "tint")
 						{
