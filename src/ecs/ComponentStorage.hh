@@ -226,7 +226,7 @@ namespace ecs
 		// "Null" Entities will never be iterated over
 		sp::Assert(compIndex < components.size());
 
-		components[compIndex].first = Entity::Id();
+		components.at(compIndex).first = Entity::Id();
 		softRemoveCompIndexes.push(compIndex);
 	}
 

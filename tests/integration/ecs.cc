@@ -261,7 +261,7 @@ namespace test
 		);
 	}
 
-	TEST(EcsBasic, DeleteComponentDoesNotInvalidateOtherComponents)
+	TEST(EcsBasic, DeleteComponentDoesNotInvalidateOtherComponentHandles)
 	{
 		ecs::EntityManager em;
 		auto e1 = em.NewEntity();
@@ -277,5 +277,25 @@ namespace test
 		Position p2now = *p2Handle;
 
 		ASSERT_EQ(p2before, p2now);
+	}
+
+	TEST(EcsBasic, AddComponentsDoesNotInvalidateOtherComponentHandles)
+	{
+		ecs::EntityManager em;
+		auto e1 = em.NewEntity();
+		e1.Assign<Position>(1, 1);
+
+		ecs::Handle<Position> p2Handle = e1.Get<Position>();
+		Position positionBefore = *p2Handle;
+
+		for (int i = 0; i < 1000; ++i)
+		{
+			auto e = em.NewEntity();
+			e.Assign<Position>(2, 2);
+		}
+
+		Position positionAfter = *p2Handle;
+
+		ASSERT_EQ(positionBefore, positionAfter);
 	}
 }
