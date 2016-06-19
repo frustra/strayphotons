@@ -19,8 +19,8 @@ namespace ecs
 		Handle(Entity::Id entityId, ComponentPool<CompType> *componentPool);
 		~Handle();
 
-		CompType & operator*() const;
-		CompType * operator->() const;
+		CompType &operator*() const;
+		CompType *operator->() const;
 
 	private:
 		Entity::Id eId;
@@ -39,13 +39,13 @@ namespace ecs
 	}
 
 	template <typename CompType>
-	CompType & Handle<CompType>::operator*() const
+	CompType &Handle<CompType>::operator*() const
 	{
 		return *compPool->Get(eId);
 	}
 
 	template <typename CompType>
-	CompType * Handle<CompType>::operator->() const
+	CompType *Handle<CompType>::operator->() const
 	{
 		return compPool->Get(eId);
 	}

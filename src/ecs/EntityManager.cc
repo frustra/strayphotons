@@ -23,7 +23,7 @@ namespace ecs
 			freeEntityIndexes.pop();
 			gen = entIndexToGen.at(i);  // incremented at Entity destruction
 			sp::Assert(compMgr.entCompMasks[i] == ComponentManager::ComponentMask(),
-				   "expected ent comp mask to be reset at destruction but it wasn't");
+					   "expected ent comp mask to be reset at destruction but it wasn't");
 			compMgr.entCompMasks[i] = ComponentManager::ComponentMask();
 		}
 		else

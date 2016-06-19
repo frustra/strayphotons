@@ -82,7 +82,8 @@ namespace sp
 		}
 	};
 
-	static CVar<float> FlashlightIntensity("r.Flashlight", 2000, "Flashlight intensity");
+	static CVar<float> CVarFlashlightIntensity("r.Flashlight", 2000, "Flashlight intensity");
+	static CVar<bool> CVarRenderWireframe("r.Wireframe", false, "Render wireframes");
 
 	// TODO Clean up Renderable when unloaded.
 	void PrepareRenderable(ecs::Handle<ecs::Renderable> comp)
@@ -182,7 +183,7 @@ namespace sp
 			auto light = entity.Get<ecs::Light>();
 			if (first)
 			{
-				light->intensity = FlashlightIntensity.Get();
+				light->intensity = CVarFlashlightIntensity.Get();
 				first = false;
 			}
 			if (entity.Has<ecs::View>())
@@ -263,6 +264,9 @@ namespace sp
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		if (CVarRenderWireframe.Get())
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 		ShaderControl->BindPipeline<SceneVS, SceneFS>(GlobalShaders);
 
 		auto sceneVS = GlobalShaders->Get<SceneVS>();
@@ -274,6 +278,9 @@ namespace sp
 			sceneVS->SetParams(view, modelMat);
 			DrawRenderable(comp);
 		}
+
+		if (CVarRenderWireframe.Get())
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 
 	void Renderer::EndFrame()
