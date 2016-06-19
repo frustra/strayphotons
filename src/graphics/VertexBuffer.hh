@@ -114,7 +114,7 @@ namespace sp
 		}
 
 	private:
-		GLuint vbo = 0, vao = 0, ibo = 0;
+		GLuint vbo = 0, vao = 0;
 		size_t elements = 0;
 	};
 }
