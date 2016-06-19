@@ -141,4 +141,30 @@ namespace sp
 
 		DrawScreenCover();
 	}
+
+	class LumiHistogramCS : public Shader
+	{
+		SHADER_TYPE(LumiHistogramCS)
+
+		LumiHistogramCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+		{
+		}
+	};
+
+	IMPLEMENT_SHADER_TYPE(LumiHistogramCS, "lumi_histogram.comp", Compute);
+
+	void HDRTest::Process(const PostProcessingContext *context)
+	{
+		const int wgsize = 8;
+		auto r = context->renderer;
+		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+
+		r->ShaderControl->BindPipeline<LumiHistogramCS>(r->GlobalShaders);
+
+		dest.BindImage(0, GL_WRITE_ONLY);
+
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		glDispatchCompute((dest.width + wgsize - 1) / wgsize, (dest.height + wgsize - 1) / wgsize, 1);
+		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+	}
 }

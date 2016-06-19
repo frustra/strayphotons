@@ -78,7 +78,8 @@ namespace sp
 
 		std::stringstream stream(line);
 		string varName, value;
-		stream >> varName >> value;
+		stream >> varName;
+		getline(stream, value);
 
 		if (varName == "list")
 		{

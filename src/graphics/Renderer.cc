@@ -285,22 +285,32 @@ namespace sp
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 
+	void Renderer::BeginFrame(ecs::View &view, int fullscreen)
+	{
+		if (prevFullscreen != fullscreen)
+		{
+			if (fullscreen == 0)
+			{
+				glfwSetWindowMonitor(window, nullptr, prevWindowPos.x, prevWindowPos.y, view.extents.x, view.extents.y, 0);
+			}
+			else if (fullscreen == 1)
+			{
+				glfwGetWindowPos(window, &prevWindowPos.x, &prevWindowPos.y);
+				glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, view.extents.x, view.extents.y, 60);
+			}
+		}
+
+		if (prevWindowSize != view.extents)
+		{
+			glfwSetWindowSize(window, view.extents.x, view.extents.y);
+		}
+
+		prevFullscreen = fullscreen;
+		prevWindowSize = view.extents;
+	}
+
 	void Renderer::EndFrame()
 	{
-		// TODO(pushrax) remove
-		// Begin compute example.
-		/*auto exampleRT = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 256, 256 }));
-		exampleRT->GetTexture().BindImage(0, GL_WRITE_ONLY);
-		ShaderControl->BindPipeline<ExampleCS>(GlobalShaders);
-		glDispatchCompute(256 / 16, 256 / 16, 1);
-
-		// Draw resulting texture from compute example.
-		exampleRT->GetTexture().Bind(0);
-		ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(GlobalShaders);
-		glViewport(0, 0, 256, 256);
-		DrawScreenCover();*/
-		// End compute example.
-
 		RTPool->TickFrame();
 		glfwSwapBuffers(window);
 	}

@@ -27,7 +27,7 @@
 		{
 			"_name": "player",
 			"view": {
-				"extents": [1280, 720],
+				"extents": [1600, 900],
 				"clip": [0.1, 256],
 				"fov": 60
 			},

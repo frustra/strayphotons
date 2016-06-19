@@ -102,6 +102,10 @@ namespace sp
 
 		if (CVarTonemapEnabled.Get())
 		{
+			//auto hdrtest = context.AddPass<HDRTest>();
+			//hdrtest->SetInput(0, context.LastOutput);
+			//context.LastOutput = hdrtest;
+
 			auto tonemap = context.AddPass<Tonemap>();
 			tonemap->SetInput(0, context.LastOutput);
 			context.LastOutput = tonemap;

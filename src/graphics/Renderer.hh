@@ -21,6 +21,7 @@ namespace sp
 
 		void Prepare();
 		shared_ptr<RenderTarget> RenderShadowMaps();
+		void BeginFrame(ecs::View &fbView, int fullscreen);
 		void RenderPass(ecs::View &view, shared_ptr<RenderTarget> shadowMap);
 		void ForwardPass(ecs::View &view);
 		void EndFrame();
@@ -32,5 +33,9 @@ namespace sp
 		ShaderManager *ShaderControl = nullptr;
 		RenderTargetPool *RTPool = nullptr;
 		GPUTimer *timer = nullptr;
+
+	private:
+		glm::ivec2 prevWindowSize, prevWindowPos;
+		int prevFullscreen = 0;
 	};
 }

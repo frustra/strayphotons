@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.hh"
+#include "StreamOverloads.hh"
 #include <sstream>
 
 namespace sp

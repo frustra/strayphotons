@@ -6,6 +6,7 @@
 #include "ecs/components/View.hh"
 #include "ecs/components/Transform.hh"
 #include "core/Game.hh"
+#include "core/CVar.hh"
 #include "game/gui/ProfilerGui.hh"
 
 #include <iostream>
@@ -13,6 +14,9 @@
 
 namespace sp
 {
+	static CVar<glm::ivec2> CVarWindowSize("r.Size", { 0, 0 }, "Window height");
+	static CVar<int> CVarWindowFullscreen("r.Fullscreen", false, "Fullscreen window (0: window, 1: fullscreen)");
+
 	static void glfwErrorCallback(int error, const char *message)
 	{
 		Errorf("GLFW returned %d: %s", error, message);
@@ -40,8 +44,10 @@ namespace sp
 	{
 		if (renderer) throw "already an active context";
 
+		auto primaryView = updateViewCaches(playerView);
+
 		renderer = new Renderer(game);
-		renderer->CreateWindow();
+		renderer->CreateWindow(primaryView.extents);
 
 		guiRenderer = new GuiRenderer(*renderer, game->gui);
 
@@ -75,6 +81,23 @@ namespace sp
 		if (!renderer) throw "missing renderer";
 		if (!HasActiveContext()) return false;
 
+		auto primaryView = updateViewCaches(playerView);
+
+		{
+			auto newSize = CVarWindowSize.Get();
+
+			if (newSize.x == 0 || newSize.y == 0)
+			{
+				CVarWindowSize.Set(primaryView.extents);
+			}
+			else if (newSize != primaryView.extents)
+			{
+				playerView.Get<ecs::View>()->extents = newSize;
+				primaryView = updateViewCaches(playerView);
+			}
+		}
+
+		renderer->BeginFrame(primaryView, CVarWindowFullscreen.Get());
 		renderer->timer->StartFrame();
 
 		{
@@ -82,9 +105,8 @@ namespace sp
 
 			auto shadowMap = renderer->RenderShadowMaps();
 
-			auto view = updateViewCaches(playerView);
-			renderer->RenderPass(view, shadowMap);
-			guiRenderer->Render(view);
+			renderer->RenderPass(primaryView, shadowMap);
+			guiRenderer->Render(primaryView);
 		}
 
 		renderer->timer->EndFrame();

@@ -20,12 +20,13 @@ namespace sp
 		GraphicsContext(Game *game);
 		virtual ~GraphicsContext();
 
-		void CreateWindow();
+		void CreateWindow(glm::ivec2 initialSize = { 640, 480 });
 		bool ShouldClose();
 		void SetTitle(string title);
 		void BindInputCallbacks(InputManager &inputManager);
 
 		virtual void Prepare() = 0;
+		virtual void BeginFrame(ecs::View &fbView, int fullscreen) = 0;
 		virtual void RenderPass(ecs::View &view, shared_ptr<RenderTarget> shadowMap) = 0;
 		virtual void EndFrame() = 0;
 

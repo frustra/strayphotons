@@ -34,10 +34,10 @@ namespace sp
 			glfwDestroyWindow(window);
 	}
 
-	void GraphicsContext::CreateWindow()
+	void GraphicsContext::CreateWindow(glm::ivec2 initialSize)
 	{
 		// Create window and surface
-		window = glfwCreateWindow(1280, 720, "STRAY PHOTONS", nullptr, nullptr);
+		window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
 		Assert(window, "glfw window creation failed");
 
 		glfwMakeContextCurrent(window);
