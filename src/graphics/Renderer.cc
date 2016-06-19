@@ -175,6 +175,8 @@ namespace sp
 
 	shared_ptr<RenderTarget> Renderer::RenderShadowMaps()
 	{
+		RenderPhase phase("ShadowMaps", timer);
+
 		// TODO(xthexder): Handle lights without shadowmaps
 		glm::ivec2 renderTargetSize;
 		bool first = true;

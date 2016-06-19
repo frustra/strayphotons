@@ -77,11 +77,18 @@ namespace sp
 
 		renderer->timer->StartFrame();
 
-		auto shadowMap = renderer->RenderShadowMaps();
+		{
+			RenderPhase phase("Frame", renderer->timer);
 
-		auto view = updateViewCaches(playerView);
-		renderer->RenderPass(view, shadowMap);
-		guiRenderer->Render(view);
+			auto shadowMap = renderer->RenderShadowMaps();
+
+			auto view = updateViewCaches(playerView);
+			renderer->RenderPass(view, shadowMap);
+			guiRenderer->Render(view);
+		}
+
+		renderer->timer->EndFrame();
+		renderer->EndFrame();
 
 		double frameEnd = glfwGetTime();
 		fpsTimer += frameEnd - lastFrameEnd;
@@ -93,9 +100,6 @@ namespace sp
 			frameCounter = 0;
 			fpsTimer = 0;
 		}
-
-		renderer->timer->EndFrame();
-		renderer->EndFrame();
 
 		lastFrameEnd = frameEnd;
 		glfwPollEvents();
