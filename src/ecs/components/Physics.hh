@@ -2,7 +2,7 @@
 
 #include <PxActor.h>	
 
-namespace ECS
+namespace ecs
 {
 	struct Physics
 	{

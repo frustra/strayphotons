@@ -6,11 +6,8 @@
 #include "assets/AssetManager.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
-<<<<<<< HEAD
 #include "ecs/components/Physics.hh"
-=======
 #include "ecs/components/View.hh"
->>>>>>> master
 
 #include <glm/glm.hpp>
 #include <cmath>

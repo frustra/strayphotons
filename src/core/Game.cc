@@ -4,11 +4,12 @@
 
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Physics.hh"
-
 #include "ecs/components/Transform.hh"
 #include "ecs/components/Controller.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
+
+#include "ecs/Entity.hh"
 
 #include <glm/glm.hpp>
 
@@ -18,9 +19,9 @@ namespace sp
 	{
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
-		entityManager.RegisterComponentType<ECS::Renderable>();
-		entityManager.RegisterComponentType<ECS::Transform>();
-		entityManager.RegisterComponentType<ECS::Physics>();
+		entityManager.RegisterComponentType<ecs::Renderable>();
+		entityManager.RegisterComponentType<ecs::Transform>();
+		entityManager.RegisterComponentType<ecs::Physics>();
 		entityManager.RegisterComponentType<ecs::HumanController>();
 		entityManager.RegisterComponentType<ecs::View>();
 		entityManager.RegisterComponentType<ecs::Light>();
@@ -70,13 +71,13 @@ namespace sp
 		physics.Frame(-dt);
 
 
-		for (Entity ent : entityManager.EntitiesWith<ECS::Physics>())
+		for (ecs::Entity ent : entityManager.EntitiesWith<ecs::Physics>())
 		{
-			auto physics = ent.Get<ECS::Physics>();
+			auto physics = ent.Get<ecs::Physics>();
 			physx::PxTransform pxT = physics->actor->getGlobalPose();
 			physx::PxVec3 p = pxT.p;
 			physx::PxQuat q = pxT.q;
-			auto transform = ent.Get<ECS::Transform>();
+			auto transform = ent.Get<ecs::Transform>();
 
 			glm::vec3 glmV;
 			glmV.x = p.x;

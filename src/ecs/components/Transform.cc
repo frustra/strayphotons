@@ -48,9 +48,9 @@ namespace ecs
 
 	void Transform::SetTransform(glm::vec3 xyz)
 	{
-		this->position[0][3] = xyz.x;
-		this->position[1][3] = xyz.y;
-		this->position[2][3] = xyz.z;
+		this->translate[0][3] = xyz.x;
+		this->translate[1][3] = xyz.y;
+		this->translate[2][3] = xyz.z;
 	}
 
 	void Transform::Scale(glm::vec3 xyz)
