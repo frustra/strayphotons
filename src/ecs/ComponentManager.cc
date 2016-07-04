@@ -1,10 +1,10 @@
 #include "ecs/ComponentManager.hh"
 
-namespace sp
+namespace ecs
 {
 	void ComponentManager::RemoveAll(Entity::Id e)
 	{
-		Assert(entCompMasks.size() > e.Index(), "entity does not have a component mask");
+		sp::Assert(entCompMasks.size() > e.Index(), "entity does not have a component mask");
 
 		auto &compMask = entCompMasks.at(e.Index());
 		for (uint64 i = 0; i < componentPools.size(); ++i)
@@ -16,7 +16,7 @@ namespace sp
 			}
 		}
 
-		Assert(compMask == ComponentMask(),
-			   "component mask not blank after removing all components");
+		sp::Assert(compMask == ComponentMask(),
+				   "component mask not blank after removing all components");
 	}
 }

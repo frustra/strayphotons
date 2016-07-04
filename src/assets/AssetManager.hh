@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Common.hh"
+#include "ecs/Ecs.hh"
+#include "graphics/Texture.hh"
 #include <tiny_gltf_loader.h>
 
 #include <unordered_map>
@@ -11,6 +13,7 @@ namespace sp
 {
 	class Asset;
 	class Model;
+	class Scene;
 
 	typedef std::unordered_map<std::string, weak_ptr<Asset> > AssetMap;
 	typedef std::unordered_map<std::string, weak_ptr<Model> > ModelMap;
@@ -19,7 +22,9 @@ namespace sp
 	{
 	public:
 		shared_ptr<Asset> Load(const std::string &path);
+		Texture LoadTexture(const std::string &path);
 		shared_ptr<Model> LoadModel(const std::string &name);
+		shared_ptr<Scene> LoadScene(const std::string &name, ecs::EntityManager *em);
 
 		void Unregister(const Asset &asset);
 
@@ -30,4 +35,6 @@ namespace sp
 
 		tinygltf::TinyGLTFLoader gltfLoader;
 	};
+
+	extern AssetManager GAssets;
 }

@@ -34,10 +34,10 @@ namespace sp
 			glfwDestroyWindow(window);
 	}
 
-	void GraphicsContext::CreateWindow()
+	void GraphicsContext::CreateWindow(glm::ivec2 initialSize)
 	{
 		// Create window and surface
-		window = glfwCreateWindow(1280, 720, "STRAY PHOTONS", nullptr, nullptr);
+		window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
 		Assert(window, "glfw window creation failed");
 
 		glfwMakeContextCurrent(window);
@@ -57,7 +57,6 @@ namespace sp
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
 		Debugf("maximum anisotropy: %f", maxAnisotropy);
 
-
 		Prepare();
 	}
 
@@ -66,9 +65,9 @@ namespace sp
 		glfwSetWindowTitle(window, title.c_str());
 	}
 
-	void GraphicsContext::ResetSwapchain(uint32 &width, uint32 &height)
+	void GraphicsContext::BindInputCallbacks(InputManager &inputManager)
 	{
-
+		inputManager.BindCallbacks(window);
 	}
 
 	bool GraphicsContext::ShouldClose()

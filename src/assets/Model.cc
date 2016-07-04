@@ -17,6 +17,7 @@ namespace sp
 
 	Model::Attribute GetPrimitiveAttribute(tinygltf::Scene *scene, tinygltf::Primitive *p, string attribute)
 	{
+		if (!p->attributes.count(attribute)) return Model::Attribute();
 		auto accessor = scene->accessors[p->attributes[attribute]];
 		auto bufView = scene->bufferViews[accessor.bufferView];
 
@@ -74,17 +75,13 @@ namespace sp
 
 		auto texture = scene->textures[name];
 		auto img = scene->images[texture.source];
-		textures[name].Create(texture.target)
-		.Filter(GL_LINEAR_MIPMAP_LINEAR)
-		.Wrap(GL_REPEAT, GL_REPEAT)
-		.Size(img.width, img.height)
-		.Storage2D(texture.internalFormat, texture.format, texture.type, 4)
-		.Image2D(img.image.data());
 
-		// TODO(pushrax) clean this up
-		glTextureParameterf(textures[name].handle, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.0);
-		glGenerateTextureMipmap(textures[name].handle);
-		return &textures[name];
+		return &textures[name].Create(texture.target)
+			   .Filter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, 4.0)
+			   .Wrap(GL_REPEAT, GL_REPEAT)
+			   .Size(img.width, img.height)
+			   .Storage2D(texture.internalFormat, texture.format, texture.type, Texture::FullyMipmap, true)
+			   .Image2D(img.image.data());
 	}
 
 	void Model::AddNode(string nodeName, glm::mat4 parentMatrix)
@@ -124,6 +121,8 @@ namespace sp
 					mode = GL_LINE_LOOP;
 				};
 
+				auto &material = scene->materials[primitive.material];
+
 				primitives.push_back(new Primitive
 				{
 					matrix,
@@ -135,13 +134,14 @@ namespace sp
 						iAcc.count,
 						iBufView.buffer
 					},
-					scene->materials[primitive.material].values["diffuse"].string_value,
+					material.values["diffuse"].string_value,
+					material.values["specular"].string_value,
 					{
 						GetPrimitiveAttribute(scene, &primitive, "POSITION"),
 						GetPrimitiveAttribute(scene, &primitive, "NORMAL"),
 						GetPrimitiveAttribute(scene, &primitive, "TEXCOORD_0")
 					},
-					0, 0, 0
+					0, 0, nullptr, nullptr
 				});
 			}
 		}

@@ -4,7 +4,7 @@
 #include "core/Logging.hh"
 #include "RenderTarget.hh"
 
-#include <unordered_map>
+#include <boost/unordered_map.hpp>
 #include <boost/functional/hash.hpp>
 
 namespace sp
@@ -46,14 +46,10 @@ namespace sp
 			return true;
 		}
 	};
-}
 
-namespace std
-{
-	template<>
-	struct hash<sp::FramebufferState>
+	struct FramebufferStateHasher
 	{
-		size_t operator()(const sp::FramebufferState &key) const
+		size_t operator()(const FramebufferState &key) const
 		{
 			size_t hash = 0;
 
@@ -68,10 +64,7 @@ namespace std
 			return hash;
 		}
 	};
-}
 
-namespace sp
-{
 	class RenderTargetPool
 	{
 	public:
@@ -85,6 +78,6 @@ namespace sp
 		vector<RenderTarget::Ref> pool;
 		int64 nextRenderTargetID = 0;
 
-		std::unordered_map<FramebufferState, GLuint> framebufferCache;
+		boost::unordered_map<FramebufferState, GLuint, FramebufferStateHasher> framebufferCache;
 	};
 }

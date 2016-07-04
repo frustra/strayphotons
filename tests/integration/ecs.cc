@@ -13,30 +13,31 @@ namespace test
 	{
 		Position() {}
 		Position(int x, int y) : x(x), y(y) {}
+		bool operator==(const Position & other) const { return x == other.x && y == other.y; }
 		int x;
 		int y;
 	} Position;
 
 	typedef struct Eater
 	{
-	    bool hungry;
-	    uint thingsEaten;
+		bool hungry;
+		uint thingsEaten;
 	} Eater;
 
 	class EcsBasicIterateWithComponents : public ::testing::Test
 	{
 	protected:
-		std::unordered_map<sp::Entity, bool> entsFound;
+		std::unordered_map<ecs::Entity, bool> entsFound;
 
-	    sp::EntityManager em;
-		sp::Entity ePos1;
-		sp::Entity ePos2;
-		sp::Entity ePosEat;
-		sp::Entity eEat;
-		sp::Entity eNoComps;
+		ecs::EntityManager em;
+		ecs::Entity ePos1;
+		ecs::Entity ePos2;
+		ecs::Entity ePosEat;
+		ecs::Entity eEat;
+		ecs::Entity eNoComps;
 
-	    virtual void SetUp()
-	    {
+		virtual void SetUp()
+		{
 			ePos1 = em.NewEntity();
 			ePos2 = em.NewEntity();
 			ePosEat = em.NewEntity();
@@ -49,9 +50,9 @@ namespace test
 
 			ePosEat.Assign<Eater>();
 			eEat.Assign<Eater>();
-	    }
+		}
 
-		void ExpectEntitiesFound()
+		void ExpectPositionEntitiesFound()
 		{
 			// found entities with the component
 			EXPECT_TRUE(entsFound.count(ePos1) == 1 && entsFound[ePos1] == true);
@@ -66,19 +67,19 @@ namespace test
 
 	TEST(EcsBasic, CreateDestroyEntity)
 	{
-		sp::EntityManager em;
-	    sp::Entity e = em.NewEntity();
+		ecs::EntityManager em;
+		ecs::Entity e = em.NewEntity();
 
-	    EXPECT_TRUE(e.Valid());
-	    e.Destroy();
+		EXPECT_TRUE(e.Valid());
+		e.Destroy();
 
-	    EXPECT_FALSE(e.Valid());
+		EXPECT_FALSE(e.Valid());
 	}
 
 	TEST(EcsBasic, AddRemoveComponent)
 	{
-		sp::EntityManager em;
-	    sp::Entity e = em.NewEntity();
+		ecs::EntityManager em;
+		ecs::Entity e = em.NewEntity();
 
 		e.Assign<Position>();
 
@@ -87,73 +88,84 @@ namespace test
 		e.Remove<Position>();
 
 		ASSERT_FALSE(e.Has<Position>());
-	    ASSERT_ANY_THROW(e.Get<Position>());
+		ASSERT_ANY_THROW(e.Get<Position>());
 	}
 
 	TEST(EcsBasic, ConstructComponent)
 	{
-		sp::EntityManager em;
-	    sp::Entity e = em.NewEntity();
+		ecs::EntityManager em;
+		ecs::Entity e = em.NewEntity();
 
-	    e.Assign<Position>(1, 2);
-	    Position *pos = e.Get<Position>();
+		e.Assign<Position>(1, 2);
+		ecs::Handle<Position> pos = e.Get<Position>();
 
-	    ASSERT_NE(pos, nullptr);
-	    ASSERT_EQ(pos->x, 1);
-	    ASSERT_EQ(pos->y, 2);
+		ASSERT_EQ(pos->x, 1);
+		ASSERT_EQ(pos->y, 2);
 	}
 
 	TEST(EcsBasic, RemoveAllComponents)
 	{
-		sp::EntityManager em;
-	    sp::Entity e = em.NewEntity();
+		ecs::EntityManager em;
+		ecs::Entity e = em.NewEntity();
 
-	    e.Assign<Position>();
-	    e.Assign<Eater>();
+		e.Assign<Position>();
+		e.Assign<Eater>();
 
-	    ASSERT_TRUE(e.Has<Position>());
-	    ASSERT_TRUE(e.Has<Eater>());
+		ASSERT_TRUE(e.Has<Position>());
+		ASSERT_TRUE(e.Has<Eater>());
 
-	    e.RemoveAllComponents();
+		e.RemoveAllComponents();
 
-	    ASSERT_FALSE(e.Has<Position>());
-	    ASSERT_FALSE(e.Has<Eater>());
+		ASSERT_FALSE(e.Has<Position>());
+		ASSERT_FALSE(e.Has<Eater>());
 	}
 
-	TEST_F(EcsBasicIterateWithComponents, TemplateIteration)
+	TEST_F(EcsBasicIterateWithComponents, MultiComponentTemplateIteration)
 	{
-		for (sp::Entity ent : em.EntitiesWith<Position>())
+		for (ecs::Entity ent : em.EntitiesWith<Eater, Position>())
 		{
 			entsFound[ent] = true;
 		}
 
-		ExpectEntitiesFound();
+		EXPECT_TRUE(entsFound.count(ePosEat) == 1 && entsFound[ePosEat] == true);
+		EXPECT_EQ(1, entsFound.size()) << "should have only found one entity";
+	}
+
+	TEST_F(EcsBasicIterateWithComponents, TemplateIteration)
+	{
+		for (ecs::Entity ent : em.EntitiesWith<Position>())
+		{
+			entsFound[ent] = true;
+		}
+
+		ExpectPositionEntitiesFound();
 	}
 
 	TEST_F(EcsBasicIterateWithComponents, MaskIteration)
 	{
 		auto compMask = em.CreateComponentMask<Position>();
-		for (sp::Entity ent : em.EntitiesWith(compMask))
+		for (ecs::Entity ent : em.EntitiesWith(compMask))
 		{
 			entsFound[ent] = true;
 		}
 
-		ExpectEntitiesFound();
+		ExpectPositionEntitiesFound();
 	}
 
 	TEST(EcsBasic, AddEntitiesWhileIterating)
 	{
-		sp::EntityManager em;
-		sp::Entity e1 = em.NewEntity();
+		ecs::EntityManager em;
+		ecs::Entity e1 = em.NewEntity();
 		e1.Assign<Position>();
 
 		int entitiesFound = 0;
-		for (sp::Entity ent : em.EntitiesWith<Position>())
+		for (ecs::Entity ent : em.EntitiesWith<Position>())
 		{
+			ent.Valid(); // prevent -Wunused-but-set-variable
 			entitiesFound++;
 			if (entitiesFound == 1)
 			{
-				sp::Entity e2 = em.NewEntity();
+				ecs::Entity e2 = em.NewEntity();
 				e2.Assign<Position>();
 			}
 		}
@@ -165,16 +177,16 @@ namespace test
 	// before we get to it during iteration
 	TEST(EcsBasic, RemoveEntityWhileIterating)
 	{
-		sp::EntityManager em;
+		ecs::EntityManager em;
 
-		sp::Entity e1 = em.NewEntity();
+		ecs::Entity e1 = em.NewEntity();
 		e1.Assign<Position>();
 
-		sp::Entity e2 = em.NewEntity();
+		ecs::Entity e2 = em.NewEntity();
 		e2.Assign<Position>();
 
 		int entitiesFound = 0;
-		for (sp::Entity ent : em.EntitiesWith<Position>())
+		for (ecs::Entity ent : em.EntitiesWith<Position>())
 		{
 			entitiesFound++;
 			if (ent == e1)
@@ -195,16 +207,16 @@ namespace test
 	// is removed before we get to it during iteration
 	TEST(EcsBasic, RemoveComponentWhileIterating)
 	{
-		sp::EntityManager em;
+		ecs::EntityManager em;
 
-		sp::Entity e1 = em.NewEntity();
+		ecs::Entity e1 = em.NewEntity();
 		e1.Assign<Position>();
 
-		sp::Entity e2 = em.NewEntity();
+		ecs::Entity e2 = em.NewEntity();
 		e2.Assign<Position>();
 
 		int entitiesFound = 0;
-		for (sp::Entity ent : em.EntitiesWith<Position>())
+		for (ecs::Entity ent : em.EntitiesWith<Position>())
 		{
 			entitiesFound++;
 			if (ent == e1)
@@ -224,18 +236,66 @@ namespace test
 
 	TEST(EcsBasic, RegisterComponentPreventsExceptions)
 	{
-		sp::EntityManager em;
+		ecs::EntityManager em;
 
-		sp::Entity e = em.NewEntity();
+		ecs::Entity e = em.NewEntity();
 
 		// assert that exceptions are raised before registering
 		ASSERT_THROW(e.Has<Position>(), std::invalid_argument);
-		ASSERT_THROW(for (auto e : em.EntitiesWith<Position>()) {}, std::invalid_argument);
+		ASSERT_THROW(
+			for (auto e : em.EntitiesWith<Position>()) {
+				e.Valid();
+			},
+			std::invalid_argument
+		);
 
 		em.RegisterComponentType<Position>();
 
 		// assert that exceptions no longer occur
 		ASSERT_NO_THROW(e.Has<Position>());
-		ASSERT_NO_THROW(for (auto e : em.EntitiesWith<Position>()) {});
+
+		ASSERT_NO_THROW(
+			for (auto e : em.EntitiesWith<Position>()) {
+				e.Valid();
+			}
+		);
+	}
+
+	TEST(EcsBasic, DeleteComponentDoesNotInvalidateOtherComponentHandles)
+	{
+		ecs::EntityManager em;
+		auto e1 = em.NewEntity();
+		auto e2 = em.NewEntity();
+
+		e1.Assign<Position>(1, 1);
+		e2.Assign<Position>(2, 2);
+
+		ecs::Handle<Position> p2Handle = e2.Get<Position>();
+
+		Position p2before = *p2Handle;
+		e1.Remove<Position>();
+		Position p2now = *p2Handle;
+
+		ASSERT_EQ(p2before, p2now);
+	}
+
+	TEST(EcsBasic, AddComponentsDoesNotInvalidateOtherComponentHandles)
+	{
+		ecs::EntityManager em;
+		auto e1 = em.NewEntity();
+		e1.Assign<Position>(1, 1);
+
+		ecs::Handle<Position> p2Handle = e1.Get<Position>();
+		Position positionBefore = *p2Handle;
+
+		for (int i = 0; i < 1000; ++i)
+		{
+			auto e = em.NewEntity();
+			e.Assign<Position>(2, 2);
+		}
+
+		Position positionAfter = *p2Handle;
+
+		ASSERT_EQ(positionBefore, positionAfter);
 	}
 }

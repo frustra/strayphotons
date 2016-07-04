@@ -3,9 +3,12 @@
 #include <ostream>
 #include "Common.hh"
 
-namespace sp
+namespace ecs
 {
 	class EntityManager;
+
+	template<typename CompType>
+	class Handle;
 
 	/**
 	 * Convenience class for operations on entities instead of
@@ -62,7 +65,7 @@ namespace sp
 			Id(uint64 index, uint16 generation)
 			{
 				id = (static_cast<uint64>(generation) << INDEX_BITS) + index;
-				Assert((id & INDEX_MASK) == index);
+				sp::Assert((id & INDEX_MASK) == index);
 			}
 
 			Id(uint64 id): id(id) {}
@@ -110,9 +113,8 @@ namespace sp
 		void Destroy();
 		bool Valid() const;
 
-		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		template <typename CompType, typename ...T>
-		CompType *Assign(T... args);
+		Handle<CompType> Assign(T... args);
 
 		template <typename CompType>
 		void Remove();
@@ -122,9 +124,8 @@ namespace sp
 		template <typename CompType>
 		bool Has() const;
 
-		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		template <typename CompType>
-		CompType *Get();
+		Handle<CompType> Get();
 
 	private:
 		EntityManager *em;

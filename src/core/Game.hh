@@ -2,10 +2,11 @@
 
 #include "physx/PhysxManager.hh"
 #include "graphics/GraphicsManager.hh"
-#include "assets/AssetManager.hh"
 #include "Common.hh"
 #include "ecs/Ecs.hh"
 #include "game/GameLogic.hh"
+#include "game/InputManager.hh"
+#include "game/GuiManager.hh"
 
 namespace sp
 {
@@ -19,10 +20,12 @@ namespace sp
 		bool Frame();
 		bool ShouldStop();
 
+		// Order is important.
+		GuiManager gui;
 		GraphicsManager graphics;
+		InputManager input;
+		ecs::EntityManager entityManager;
 		GameLogic logic;
-		AssetManager assets;
-		EntityManager entityManager;
 		PhysxManager physics;
 
 	private:

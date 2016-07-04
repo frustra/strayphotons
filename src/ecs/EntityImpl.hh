@@ -2,11 +2,12 @@
 
 #include "ecs/Entity.hh"
 #include "ecs/EntityManager.hh"
+#include "ecs/Handle.hh"
 
-namespace sp
+namespace ecs
 {
 	template <typename CompType, typename ...T>
-	CompType *Entity::Assign(T... args)
+	Handle<CompType> Entity::Assign(T... args)
 	{
 		return em->Assign<CompType>(this->eid, args...);
 	}
@@ -24,7 +25,7 @@ namespace sp
 	}
 
 	template <typename CompType>
-	CompType *Entity::Get()
+	Handle<CompType> Entity::Get()
 	{
 		return em->Get<CompType>(this->eid);
 	}
@@ -32,11 +33,12 @@ namespace sp
 
 namespace std
 {
+	// allow Entity class to be used in hashed data structures
 	template <>
-	struct hash<sp::Entity>
+	struct hash<ecs::Entity>
 	{
 	public:
-		size_t operator()(const sp::Entity &e) const
+		size_t operator()(const ecs::Entity &e) const
 		{
 			return hash<uint64>()(e.eid.id);
 		}

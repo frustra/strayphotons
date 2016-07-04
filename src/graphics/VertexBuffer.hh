@@ -32,20 +32,29 @@ namespace sp
 	public:
 		VertexBuffer() { }
 
-		VertexBuffer Create()
+		VertexBuffer &Create()
 		{
 			glCreateBuffers(1, &vbo);
 			return *this;
 		}
 
-		VertexBuffer CreateVAO()
+		VertexBuffer &CreateVAO()
 		{
 			glCreateVertexArrays(1, &vao);
 			return *this;
 		}
 
 		template <typename T>
-		VertexBuffer SetElementsVAO(size_t n, T *buffer, GLenum usage = GL_STATIC_DRAW)
+		VertexBuffer &SetElements(size_t n, T *buffer, GLenum usage = GL_STATIC_DRAW)
+		{
+			elements = n;
+			int s = sizeof(T);
+			glNamedBufferData(vbo, n * sizeof(T), buffer, usage);
+			return *this;
+		}
+
+		template <typename T>
+		VertexBuffer &SetElementsVAO(size_t n, T *buffer, GLenum usage = GL_STATIC_DRAW)
 		{
 			elements = n;
 
@@ -60,18 +69,39 @@ namespace sp
 
 				for (auto attrib : T::Attributes())
 				{
-					glEnableVertexArrayAttrib(vao, attrib.index);
-					glVertexArrayAttribFormat(vao, attrib.index, attrib.elements, attrib.type, false, attrib.offset);
-					glVertexArrayVertexBuffer(vao, attrib.index, vbo, 0, sizeof(T));
+					EnableAttrib(attrib.index, attrib.elements, attrib.type, false, attrib.offset, sizeof(T));
 				}
 			}
 
 			return *this;
 		}
 
+		VertexBuffer &EnableAttrib(GLuint index, GLint size, GLenum type, bool normalized = false, GLuint offset = 0, GLsizei stride = 0)
+		{
+			glEnableVertexArrayAttrib(vao, index);
+			glVertexArrayAttribFormat(vao, index, size, type, normalized, offset);
+
+			if (stride > 0)
+			{
+				SetAttribBuffer(index, stride);
+			}
+			return *this;
+		}
+
+		VertexBuffer &SetAttribBuffer(GLuint index, GLsizei stride, GLintptr offset = 0)
+		{
+			glVertexArrayVertexBuffer(vao, index, vbo, offset, stride);
+			return *this;
+		}
+
 		void BindVAO() const
 		{
 			glBindVertexArray(vao);
+		}
+
+		void BindElementArray() const
+		{
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo);
 		}
 
 		bool Initialized() const

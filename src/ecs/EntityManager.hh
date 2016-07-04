@@ -8,9 +8,10 @@
 #include "Common.hh"
 #include "ecs/ComponentManager.hh"
 #include "ecs/Entity.hh"
+#include "ecs/Handle.hh"
 
 
-namespace sp
+namespace ecs
 {
 	class EntityManager
 	{
@@ -52,25 +53,57 @@ namespace sp
 
 		EntityManager();
 
+		/**
+		 * Add a new entity to the ECS.
+		 */
 		Entity NewEntity();
+
+		/**
+		 * Remove the given entity from the ECS.
+		 * THIS MAKES NO GUARENTEE to call destructors on components that were assigned
+		 * to this entity.
+		 */
 		void Destroy(Entity::Id e);
+
+		/**
+		 * Check if the given entity is still valid in the system.
+		 * An entity is invalid if it is not currently present in the system.
+		 * Since Entity::Id and Entity objects are often passed by value it is useful
+		 * to check if the underlying entity they represent is still valid before operating on them.
+		 */
 		bool Valid(Entity::Id e) const;
 
-		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
+		/**
+		 * Construct a new component of type "CompType" with the given arguments
+		 * and attach it to the given entity.
+		 *
+		 * Returns a handle to the created component.
+		 */
 		template <typename CompType, typename ...T>
-		CompType *Assign(Entity::Id e, T... args);
+		Handle<CompType> Assign(Entity::Id e, T... args);
 
+		/**
+		 * Remove the component of type "CompType" from the given entity
+		 */
 		template <typename CompType>
 		void Remove(Entity::Id e);
 
+		/**
+		 * Remove all components that the given entity has
+		 */
 		void RemoveAllComponents(Entity::Id e);
 
+		/**
+		 * Check if an entity has a given type of component
+		 */
 		template <typename CompType>
 		bool Has(Entity::Id e) const;
 
-		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
+		/**
+		 * Get a handle to an entity's component of type "CompType"
+		 */
 		template <typename CompType>
-		CompType *Get(Entity::Id e);
+		Handle<CompType> Get(Entity::Id e);
 
 		/**
 		 * Register the given type as a valid "Component type" in the system.

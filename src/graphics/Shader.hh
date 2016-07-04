@@ -156,9 +156,17 @@ namespace sp
 		friend class ShaderManager;
 	};
 
-#define DECLARE_SET_SCALAR(UniformSuffix, ValueType) \
+	template <> inline void Shader::Set<bool>(Uniform u, const bool &v)
+	{
+		glProgramUniform1i(program, u.location, v);
+	}
+
+#define DECLARE_SET_SCALAR(UniformSuffix, ValueType, GLType) \
 	template <> inline void Shader::Set<ValueType>(Uniform u, const ValueType &v) { \
-		glProgramUniform##UniformSuffix(program, u.location, v); \
+		glProgramUniform##UniformSuffix(program, u.location, 1, &v); \
+	} \
+	template <> inline void Shader::Set<ValueType>(Uniform u, const ValueType v[], GLsizei count) { \
+		glProgramUniform##UniformSuffix(program, u.location, count, (const GLType *) v); \
 	}
 
 #define DECLARE_SET_GLM(UniformSuffix, ValueType, GLType) \
@@ -177,10 +185,9 @@ namespace sp
 		glProgramUniformMatrix##UniformSuffix(program, u.location, count, 0, (const GLType *) v); \
 	}
 
-	DECLARE_SET_SCALAR(1i, bool)
-	DECLARE_SET_SCALAR(1f, float)
-	DECLARE_SET_SCALAR(1i, int32)
-	DECLARE_SET_SCALAR(1ui, uint32)
+	DECLARE_SET_SCALAR(1fv, float, GLfloat)
+	DECLARE_SET_SCALAR(1iv, int32, GLint)
+	DECLARE_SET_SCALAR(1uiv, uint32, GLuint)
 	DECLARE_SET_GLM(2fv, glm::vec2, GLfloat)
 	DECLARE_SET_GLM(3fv, glm::vec3, GLfloat)
 	DECLARE_SET_GLM(4fv, glm::vec4, GLfloat)

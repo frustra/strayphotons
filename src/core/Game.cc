@@ -1,11 +1,14 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
+#include "core/Console.hh"
 
-#include "assets/Model.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Physics.hh"
 
 #include "ecs/components/Transform.hh"
+#include "ecs/components/Controller.hh"
+#include "ecs/components/View.hh"
+#include "ecs/components/Light.hh"
 
 #include <glm/glm.hpp>
 
@@ -13,11 +16,14 @@ namespace sp
 {
 	Game::Game() : graphics(this), logic(this), physics()
 	{
-		// pre-register all of our component types so that errors do not arrise if they
+		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
 		entityManager.RegisterComponentType<ECS::Renderable>();
 		entityManager.RegisterComponentType<ECS::Transform>();
 		entityManager.RegisterComponentType<ECS::Physics>();
+		entityManager.RegisterComponentType<ecs::HumanController>();
+		entityManager.RegisterComponentType<ecs::View>();
+		entityManager.RegisterComponentType<ecs::Light>();
 	}
 
 	Game::~Game()
@@ -30,7 +36,9 @@ namespace sp
 		{
 			logic.Init();
 			graphics.CreateContext();
-			this->lastFrameTime = glfwGetTime();
+			graphics.BindContextInputCallbacks(input);
+			gui.BindInput(input);
+			lastFrameTime = glfwGetTime();
 
 			while (true)
 			{
@@ -47,7 +55,15 @@ namespace sp
 	bool Game::Frame()
 	{
 		double frameTime = glfwGetTime();
-		double dt = this->lastFrameTime - frameTime;
+		double dt = frameTime - lastFrameTime;
+
+		input.Checkpoint();
+		if (input.IsDown(GLFW_KEY_ESCAPE))
+		{
+			return false;
+		}
+
+		GConsoleManager.Update();
 
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;
@@ -72,7 +88,7 @@ namespace sp
 			//transform->Rotate((glm::quat) q);
 		}
 
-		this->lastFrameTime = frameTime;
+		lastFrameTime = frameTime;
 		return true;
 	}
 

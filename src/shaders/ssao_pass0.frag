@@ -8,15 +8,15 @@ layout (binding = 2) uniform sampler2D depthStencil;
 layout (binding = 3) uniform sampler2D noiseTexture;
 
 layout (location = 0) in vec2 inTexCoord;
-layout (location = 1) noperspective in vec3 inViewRay;
 layout (location = 0) out vec4 outFragColor;
 
 const int kernelSize = 24;
-const float radius = 0.05;
+const float radius = 0.4;
 const float power = 2.6;
 
 uniform vec3 kernel[kernelSize];
-uniform mat4 projMatrix;
+uniform mat4 projMat;
+uniform mat4 invProjMat;
 
 void main()
 {
@@ -29,11 +29,11 @@ void main()
 
 	// Determine view space coordinates of fragment.
 	float depth = texture(depthStencil, inTexCoord).r;
-	depth = LinearDepth(depth, ClippingPlane) * ClippingPlane.y;
-	vec3 position = inViewRay * depth;
+	vec3 position = ScreenPosToViewPos(inTexCoord, depth, invProjMat);
 
 	// Load screen space normal in range [-1, 1].
-	vec3 normal = mat3(projMatrix) * normalSample;
+	vec3 normal = mat3(projMat) * normalSample;
+	normal.z *= -1;
 
 	// Calculate kernel rotation.
 	vec2 noiseTextureScale = vec2(textureSize(depthStencil, 0)) / vec2(textureSize(noiseTexture, 0));
@@ -51,23 +51,23 @@ void main()
 		vec3 sampleViewSpacePos = basis * kernel[i] + position;
 
 		// Project sample into screen space.
-		vec4 sampleScreenSpacePos = projMatrix * vec4(sampleViewSpacePos, 1);
+		vec4 sampleScreenSpacePos = projMat * vec4(sampleViewSpacePos, 1);
 		vec2 sampleTexCoord = (sampleScreenSpacePos.xy / sampleScreenSpacePos.w) * 0.5 + 0.5;
 
 		// Read screen space depth of sample.
-		float sampleScreenSpaceZ = texture(depthStencil, 1-sampleTexCoord).r;
-		sampleScreenSpaceZ = LinearDepth(sampleScreenSpaceZ, ClippingPlane) * ClippingPlane.y;
+		float sampleScreenSpaceZ = texture(depthStencil, sampleTexCoord).r;
+		vec3 samplePosition = ScreenPosToViewPos(inTexCoord, sampleScreenSpaceZ, invProjMat);
 
 		// Attenuate occlusion as the sample depth diverges from the current fragment's depth.
-		float distanceFalloff = smoothstep(0.0, 1.0, radius / abs(sampleScreenSpaceZ - position.z));
+		float distanceFalloff = smoothstep(0.0, 1.0, radius / abs(samplePosition.z - position.z));
 
 		// Compare with theoretical depth of sample, if the screen space depth
 		// is closer then there must be an occluder.
-		float occluded = step(sampleScreenSpaceZ, sampleViewSpacePos.z);
+		float occluded = step(sampleViewSpacePos.z, samplePosition.z);
 		occlusion += distanceFalloff * occluded;
 	}
 
-	occlusion = 1 - (occlusion / float(kernelSize));
+	occlusion = 1.000001 - (occlusion / float(kernelSize));
 	occlusion = pow(occlusion, power);
 
 	outFragColor = vec4(vec3(occlusion), 1.0);

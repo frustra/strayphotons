@@ -1,23 +1,24 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include "ecs/Ecs.hh"
 
-namespace ECS
+namespace ecs
 {
 	class Transform
 	{
 	public:
 		Transform() {}
-		void SetRelativeTo(sp::Entity);
+		void SetRelativeTo(ecs::Entity);
 
 		/**
 		 * Return the matrix for specifying the placement of the entity in the world.
 		 * This involves computing the incremental model transforms for any entities
 		 * that this placement is relative to.
 		 */
-		glm::mat4 GetModelTransform(sp::EntityManager &manager);
+		glm::mat4 GetModelTransform(ecs::EntityManager &manager);
 
 		/**
 		 * Change the local rotation by "radians" amount about the local "axis"
@@ -40,10 +41,13 @@ namespace ECS
 		 */
 		void Scale(glm::vec3 xyz);
 
-	private:
-		glm::mat4 position;
+		glm::mat4 GetRotateMatrix();
+
+		glm::mat4 translate;
 		glm::mat4 scale;
-		glm::mat4 rotate;
-		sp::Entity::Id relativeTo;
+		glm::quat rotate;
+
+	private:
+		ecs::Entity::Id relativeTo;
 	};
 }

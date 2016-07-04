@@ -1,0 +1,69 @@
+{
+	"entities": [
+		{
+			"renderable": "sponza",
+			"transform": {
+				"scale": [0.01, 0.01, 0.01],
+				"rotate": [-90, 0, 1, 0],
+				"translate": [0, -1, 0]
+			}
+		},
+		{
+			"_name": "duck",
+			"renderable": "duck",
+			"transform": {
+				"rotate": [-30, 0, 0, 1],
+				"translate": [0, 0, -4]
+			}
+		},
+		{
+			"_name": "box",
+			"renderable": "box",
+			"transform": {
+				"relativeTo": "duck",
+				"translate": [0, 2, 0]
+			}
+		},
+		{
+			"_name": "player",
+			"view": {
+				"extents": [1600, 900],
+				"clip": [0.1, 256],
+				"fov": 60
+			},
+			"transform": {
+				"translate": [0, 1, 0]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 1, 1],
+				"intensity": 1000,
+				"spotAngle": 30
+			},
+			"view": {
+				"extents": [512, 512],
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"relativeTo": "player",
+				"translate": [0, -0.3, 0]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 0, 0],
+				"intensity": 3000,
+				"spotAngle": 50
+			},
+			"view": {
+				"extents": [512, 512],
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"translate": [0, 12, 0],
+				"rotate": [-90, 1, 0, 0]
+			}
+		}
+	]
+}

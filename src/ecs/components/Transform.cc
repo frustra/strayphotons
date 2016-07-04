@@ -4,13 +4,13 @@
 #include "ecs/Ecs.hh"
 #include "ecs/components/Transform.hh"
 
-namespace ECS
+namespace ecs
 {
-	glm::mat4 Transform::GetModelTransform(sp::EntityManager &manager)
+	glm::mat4 Transform::GetModelTransform(ecs::EntityManager &manager)
 	{
 		glm::mat4 model;
 
-		if (this->relativeTo != sp::Entity::Id())
+		if (this->relativeTo != ecs::Entity::Id())
 		{
 			sp::Assert(
 				manager.Has<Transform>(this->relativeTo),
@@ -20,10 +20,10 @@ namespace ECS
 			model = manager.Get<Transform>(this->relativeTo)->GetModelTransform(manager);
 		}
 
-		return model * this->position * this->rotate * this->scale;
+		return model * this->translate * GetRotateMatrix() * this->scale;
 	}
 
-	void Transform::SetRelativeTo(sp::Entity ent)
+	void Transform::SetRelativeTo(ecs::Entity ent)
 	{
 		if (!ent.Has<Transform>())
 		{
@@ -43,7 +43,7 @@ namespace ECS
 
 	void Transform::Translate(glm::vec3 xyz)
 	{
-		this->position = glm::translate(this->position, xyz);
+		this->translate = glm::translate(this->translate, xyz);
 	}
 
 	void Transform::SetTransform(glm::vec3 xyz)
@@ -56,5 +56,10 @@ namespace ECS
 	void Transform::Scale(glm::vec3 xyz)
 	{
 		this->scale = glm::scale(this->scale, xyz);
+	}
+
+	glm::mat4 Transform::GetRotateMatrix()
+	{
+		return glm::mat4_cast(rotate);
 	}
 }

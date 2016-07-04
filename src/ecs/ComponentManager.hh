@@ -8,10 +8,12 @@
 #include "Common.hh"
 #include "ecs/Entity.hh"
 #include "ecs/ComponentStorage.hh"
+#include "ecs/UnrecognizedComponentType.hh"
+#include "ecs/Handle.hh"
 
 #define MAX_COMPONENT_TYPES 64
 
-namespace sp
+namespace ecs
 {
 	class ComponentManager
 	{
@@ -20,9 +22,8 @@ namespace sp
 	public:
 		typedef std::bitset<MAX_COMPONENT_TYPES> ComponentMask;
 
-		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		template <typename CompType, typename ...T>
-		CompType *Assign(Entity::Id e, T... args);
+		Handle<CompType> Assign(Entity::Id e, T... args);
 
 		template <typename CompType>
 		void Remove(Entity::Id e);
@@ -32,9 +33,8 @@ namespace sp
 		template <typename CompType>
 		bool Has(Entity::Id e) const;
 
-		// DO NOT CACHE THIS POINTER, a component's pointer may change over time
 		template <typename CompType>
-		CompType *Get(Entity::Id e);
+		Handle<CompType> Get(Entity::Id e);
 
 		size_t ComponentTypeCount() const
 		{
@@ -86,7 +86,7 @@ namespace sp
 	};
 
 	template <typename CompType, typename ...T>
-	CompType *ComponentManager::Assign(Entity::Id e, T... args)
+	Handle<CompType> ComponentManager::Assign(Entity::Id e, T... args)
 	{
 		std::type_index compType = typeid(CompType);
 
@@ -103,12 +103,14 @@ namespace sp
 			compIndex = compTypeToCompIndex.at(compType);
 		}
 
-		Assert(entCompMasks.size() > e.Index(), "entity does not have a component mask");
+		sp::Assert(entCompMasks.size() > e.Index(), "entity does not have a component mask");
 
 		auto &compMask = entCompMasks.at(e.Index());
 		compMask.set(compIndex);
 
-		return static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex))->NewComponent(e, args...);
+		auto componentPool = static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex));
+		componentPool->NewComponent(e, args...);
+		return Handle<CompType>(e, componentPool);
 	}
 
 	template <typename CompType>
@@ -117,7 +119,7 @@ namespace sp
 		std::type_index tIndex = typeid(CompType);
 		if (compTypeToCompIndex.count(tIndex) == 0)
 		{
-			throw invalid_argument("template is not a component type; it has never been added to the system");
+			throw UnrecognizedComponentType(tIndex);
 		}
 
 		uint32 compIndex = compTypeToCompIndex.at(tIndex);
@@ -138,8 +140,7 @@ namespace sp
 		std::type_index compType = typeid(CompType);
 		if (compTypeToCompIndex.count(compType) == 0)
 		{
-			throw invalid_argument("template is not a component type; it has never been added to the system");
-
+			throw UnrecognizedComponentType(compType);
 		}
 
 		auto compIndex = compTypeToCompIndex.at(compType);
@@ -147,16 +148,16 @@ namespace sp
 	}
 
 	template <typename CompType>
-	CompType *ComponentManager::Get(Entity::Id e)
+	Handle<CompType> ComponentManager::Get(Entity::Id e)
 	{
-		uint32 compIndex = compTypeToCompIndex.at(typeid(CompType));
-		const auto &entCompMask = entCompMasks.at(e.Index());
-		if (entCompMask[compIndex] == false)
+		if (!Has<CompType>(e))
 		{
 			throw runtime_error("entity does not have this type of component");
 		}
 
-		return static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex))->Get(e);
+		auto compIndex = compTypeToCompIndex.at(typeid(CompType));
+		auto *compPool = static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex));
+		return Handle<CompType>(e, compPool);
 	}
 
 	template <typename CompType>
@@ -190,7 +191,7 @@ namespace sp
 	template <typename ...CompTypes>
 	ComponentManager::ComponentMask &ComponentManager::SetMask(ComponentMask &mask)
 	{
-		return setMask(mask, typeid(CompTypes)...);
+		return setMask(mask, std::type_index(typeid(CompTypes))...);
 	}
 
 	template <typename TypeId>

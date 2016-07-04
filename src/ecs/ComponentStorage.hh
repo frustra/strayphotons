@@ -11,7 +11,7 @@
 #define MAX_COMPONENTS 64
 
 
-namespace sp
+namespace ecs
 {
 	class BaseComponentPool;
 
@@ -57,7 +57,7 @@ namespace sp
 		* Creating this lock will enable "soft remove" mode on the given ComponentPool.
 		* The destruction of this lock will re-enable normal deletion mode.
 		*/
-		class IterateLock : public NonCopyable
+		class IterateLock : public sp::NonCopyable
 		{
 		public:
 			IterateLock(BaseComponentPool &pool);
@@ -204,14 +204,16 @@ namespace sp
 	template <typename CompType>
 	void ComponentPool<CompType>::remove(uint64 compIndex)
 	{
-		// Swap this component to the end and decrement the container last index
+		if (compIndex != lastCompIndex)
+		{
+			// Swap this component to the end
+			auto validComponentPair = components.at(lastCompIndex);
+			components.at(lastCompIndex) = components.at(compIndex);
+			components.at(compIndex) = validComponentPair;
 
-		// TODO-cs: swap is done via copy instead of via move.  Investigate performance difference
-		// if this is changed.  My guess is that caching won't work as well if move is used but it will
-		// make removing a component quicker (avoids two copy operations)
-		auto temp = components.at(lastCompIndex);
-		components.at(lastCompIndex) = components.at(compIndex);
-		components.at(compIndex) = temp;
+			// update the entity -> component index mapping of swapped component
+			entIndexToCompIndex.at(validComponentPair.first.Index()) = compIndex;
+		}
 
 		lastCompIndex--;
 	}
@@ -222,9 +224,9 @@ namespace sp
 		// mark the component as the "Null" Entity and add this component index to queue of
 		// components to be deleted when "soft remove" mode is disabled.
 		// "Null" Entities will never be iterated over
-		Assert(compIndex < components.size());
+		sp::Assert(compIndex < components.size());
 
-		components[compIndex].first = Entity::Id();
+		components.at(compIndex).first = Entity::Id();
 		softRemoveCompIndexes.push(compIndex);
 	}
 
@@ -273,7 +275,7 @@ namespace sp
 	template <typename CompType>
 	Entity::Id ComponentPool<CompType>::entityAt(uint64 compIndex)
 	{
-		Assert(compIndex < components.size());
+		sp::Assert(compIndex < components.size());
 		return components[compIndex].first;
 	}
 

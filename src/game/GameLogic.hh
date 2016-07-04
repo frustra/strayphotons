@@ -1,10 +1,12 @@
 #pragma once
 
+#include "ecs/systems/HumanControlSystem.hh"
 #include "Common.hh"
 
 namespace sp
 {
 	class Game;
+	class Scene;
 
 	class GameLogic
 	{
@@ -16,8 +18,7 @@ namespace sp
 		bool Frame(double dtSinceLastFrame);
 	private:
 		Game *game;
-		Entity duck;
-		Entity box;
-		Entity sponza;
+		ecs::HumanControlSystem humanControlSystem;
+		shared_ptr<Scene> scene;
 	};
 }

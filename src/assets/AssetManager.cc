@@ -5,19 +5,28 @@
 #include "assets/AssetManager.hh"
 #include "assets/Asset.hh"
 #include "assets/Model.hh"
+#include "assets/Scene.hh"
 
 #include "core/Logging.hh"
+
+#include "ecs/Ecs.hh"
+#include "ecs/components/Renderable.hh"
+#include "ecs/components/Transform.hh"
+#include "ecs/components/View.hh"
+#include "ecs/components/Light.hh"
 
 #include <iostream>
 #include <fstream>
 
 namespace sp
 {
+	AssetManager GAssets;
+
 	const std::string ASSETS_DIR = "../assets/";
 
 	shared_ptr<Asset> AssetManager::Load(const std::string &path)
 	{
-		Debugf("Loading asset: %s", path.c_str());
+		Logf("Loading asset: %s", path.c_str());
 		AssetMap::iterator it = loadedAssets.find(path);
 		shared_ptr<Asset> asset;
 
@@ -29,9 +38,9 @@ namespace sp
 			{
 				in.seekg(0, std::ios::end);
 				size_t size = in.tellg();
-				char *buffer = new char[size];
+				uint8 *buffer = new uint8[size];
 				in.seekg(0, std::ios::beg);
-				in.read(buffer, size);
+				in.read((char *) buffer, size);
 				in.close();
 
 				asset = make_shared<Asset>(this, path, buffer, size);
@@ -50,9 +59,14 @@ namespace sp
 		return asset;
 	}
 
+	Texture AssetManager::LoadTexture(const std::string &path)
+	{
+		return Texture().Create().LoadFromAsset(Load(path));
+	}
+
 	shared_ptr<Model> AssetManager::LoadModel(const std::string &name)
 	{
-		Debugf("Loading model: %s", name.c_str());
+		Logf("Loading model: %s", name.c_str());
 		ModelMap::iterator it = loadedModels.find(name);
 		shared_ptr<Model> model;
 
@@ -62,7 +76,7 @@ namespace sp
 			tinygltf::Scene *scene = new tinygltf::Scene();
 			std::string err;
 
-			bool ret = gltfLoader.LoadASCIIFromString(scene, &err, asset->Buffer(), asset->Size(), ASSETS_DIR + "models/" + name);
+			bool ret = gltfLoader.LoadASCIIFromString(scene, &err, asset->CharBuffer(), asset->Size(), ASSETS_DIR + "models/" + name);
 			if (!err.empty())
 			{
 				throw err.c_str();
@@ -81,6 +95,147 @@ namespace sp
 		}
 
 		return model;
+	}
+
+	shared_ptr<Scene> AssetManager::LoadScene(const std::string &name, ecs::EntityManager *em)
+	{
+		Logf("Loading scene: %s", name.c_str());
+
+		shared_ptr<Asset> asset = Load("scenes/" + name + ".json");
+		picojson::value root;
+		string err = picojson::parse(root, asset->String());
+		if (!err.empty())
+		{
+			Errorf(err);
+			return nullptr;
+		}
+
+		shared_ptr<Scene> scene = make_shared<Scene>(name, asset);
+		vector<double> numbers;
+
+		auto entityList = root.get<picojson::object>()["entities"];
+		for (auto value : entityList.get<picojson::array>())
+		{
+			ecs::Entity entity = em->NewEntity();
+			auto ent = value.get<picojson::object>();
+			for (auto comp : ent)
+			{
+				if (comp.first[0] == '_') continue;
+
+				if (comp.first == "renderable")
+				{
+					auto model = LoadModel(comp.second.get<string>());
+					entity.Assign<ecs::Renderable>(model);
+				}
+				else if (comp.first == "transform")
+				{
+					auto transform = entity.Assign<ecs::Transform>();
+					for (auto subTransform : comp.second.get<picojson::object>())
+					{
+						if (subTransform.first == "relativeTo")
+						{
+							ecs::Entity parent = scene->FindEntity(subTransform.second.get<string>());
+							if (!parent.Valid())
+							{
+								throw std::runtime_error("Entity relative to non-existent parent");
+							}
+							transform->SetRelativeTo(parent);
+						}
+						else
+						{
+							auto values = subTransform.second.get<picojson::array>();
+							numbers.resize(values.size());
+							for (size_t i = 0; i < values.size(); i++)
+							{
+								numbers[i] = values[i].get<double>();
+							}
+
+							if (subTransform.first == "scale")
+							{
+								transform->Scale(glm::make_vec3(&numbers[0]));
+							}
+							else if (subTransform.first == "rotate")
+							{
+								transform->Rotate(glm::radians(numbers[0]), glm::make_vec3(&numbers[1]));
+							}
+							else if (subTransform.first == "translate")
+							{
+								transform->Translate(glm::make_vec3(&numbers[0]));
+							}
+						}
+					}
+				}
+				else if (comp.first == "view")
+				{
+					auto view = entity.Assign<ecs::View>();
+					for (auto param : comp.second.get<picojson::object>())
+					{
+						if (param.first == "fov")
+						{
+							view->fov = glm::radians(param.second.get<double>());
+						}
+						else
+						{
+							auto values = param.second.get<picojson::array>();
+							numbers.resize(values.size());
+							for (size_t i = 0; i < values.size(); i++)
+							{
+								numbers[i] = values[i].get<double>();
+							}
+
+							if (param.first == "extents")
+							{
+								view->extents = glm::make_vec2(&numbers[0]);
+							}
+							else if (param.first == "clip")
+							{
+								view->clip = glm::make_vec2(&numbers[0]);
+							}
+							else if (param.first == "offset")
+							{
+								view->offset = glm::make_vec2(&numbers[0]);
+							}
+						}
+					}
+				}
+				else if (comp.first == "light")
+				{
+					auto light = entity.Assign<ecs::Light>();
+					for (auto param : comp.second.get<picojson::object>())
+					{
+						if (param.first == "intensity")
+						{
+							light->intensity = param.second.get<double>();
+						}
+						else if (param.first == "illuminance")
+						{
+							light->illuminance = param.second.get<double>();
+						}
+						else if (param.first == "spotAngle")
+						{
+							light->spotAngle = glm::radians(param.second.get<double>());
+						}
+						else if (param.first == "tint")
+						{
+							auto values = param.second.get<picojson::array>();
+							numbers.resize(values.size());
+							for (size_t i = 0; i < values.size(); i++)
+							{
+								numbers[i] = values[i].get<double>();
+							}
+
+							light->tint = glm::make_vec3(&numbers[0]);
+						}
+					}
+				}
+			}
+			if (ent.count("_name"))
+			{
+				scene->namedEntities[ent["_name"].get<string>()] = entity;
+			}
+			scene->entities.push_back(entity);
+		}
+		return scene;
 	}
 
 	void AssetManager::Unregister(const Asset &asset)

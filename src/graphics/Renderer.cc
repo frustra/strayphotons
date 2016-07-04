@@ -4,11 +4,15 @@
 #include "graphics/ShaderManager.hh"
 #include "graphics/Util.hh"
 #include "graphics/GenericShaders.hh"
+#include "graphics/GPUTimer.hh"
 #include "graphics/postprocess/PostProcess.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
+#include "core/CVar.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
+#include "ecs/components/View.hh"
+#include "ecs/components/Light.hh"
 
 namespace sp
 {
@@ -18,30 +22,18 @@ namespace sp
 
 		SceneVS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
-			Bind(projection, "projMatrix");
-			Bind(model, "modelMatrix");
-			Bind(view, "viewMatrix");
+			Bind(mvpMat, "mvpMat");
+			Bind(normalMat, "normalMat");
 		}
 
-		void SetParameters(glm::mat4 newProj, glm::mat4 newView, glm::mat4 newModel)
+		void SetParams(const ecs::View &view, glm::mat4 modelMat)
 		{
-			Set(projection, newProj);
-			Set(view, newView);
-			Set(model, newModel);
-		}
-
-		void SetView(glm::mat4 newView)
-		{
-			Set(view, newView);
-		}
-
-		void SetModel(glm::mat4 newModel)
-		{
-			Set(model, newModel);
+			Set(mvpMat, view.projMat * view.viewMat * modelMat);
+			Set(normalMat, glm::mat3(view.viewMat * modelMat));
 		}
 
 	private:
-		Uniform projection, model, view;
+		Uniform mvpMat, normalMat;
 	};
 
 	class SceneFS : public Shader
@@ -71,18 +63,52 @@ namespace sp
 			delete ShaderControl;
 	}
 
-	// TODO Clean up Renderable when unloaded.
-	void PrepareRenderable(ECS::Renderable *comp)
+	struct DefaultMaterial
 	{
+		Texture baseColorTex, roughnessTex;
+
+		DefaultMaterial()
+		{
+			unsigned char baseColor[4] = { 255, 255, 255, 255 };
+			unsigned char roughness[4] = { 200, 200, 200, 255 };
+
+			baseColorTex.Create()
+			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+			.Size(1, 1).Storage2D(PF_RGB8).Image2D(baseColor);
+
+			roughnessTex.Create()
+			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+			.Size(1, 1).Storage2D(PF_RGB8).Image2D(roughness);
+		}
+	};
+
+	static CVar<float> CVarFlashlightIntensity("r.Flashlight", 2000, "Flashlight intensity");
+	static CVar<bool> CVarRenderWireframe("r.Wireframe", false, "Render wireframes");
+
+	// TODO Clean up Renderable when unloaded.
+	void PrepareRenderable(ecs::Handle<ecs::Renderable> comp)
+	{
+		static DefaultMaterial defaultMat;
+
 		for (auto primitive : comp->model->primitives)
 		{
 			primitive->indexBufferHandle = comp->model->LoadBuffer(primitive->indexBuffer.bufferName);
-			if (primitive->textureName[0]) primitive->textureHandle = comp->model->LoadTexture(primitive->textureName)->handle;
+
+			if (primitive->baseColorName.length() > 0)
+				primitive->baseColorTex = comp->model->LoadTexture(primitive->baseColorName);
+			else
+				primitive->baseColorTex = &defaultMat.baseColorTex;
+
+			if (primitive->roughnessName.length() > 0)
+				primitive->roughnessTex = comp->model->LoadTexture(primitive->roughnessName);
+			else
+				primitive->roughnessTex = &defaultMat.roughnessTex;
 
 			glCreateVertexArrays(1, &primitive->vertexBufferHandle);
 			for (int i = 0; i < 3; i++)
 			{
 				auto *attr = &primitive->attributes[i];
+				if (attr->componentCount == 0) continue;
 				glEnableVertexArrayAttrib(primitive->vertexBufferHandle, i);
 				glVertexArrayAttribFormat(primitive->vertexBufferHandle, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
 				glVertexArrayVertexBuffer(primitive->vertexBufferHandle, i, comp->model->LoadBuffer(attr->bufferName), attr->byteOffset, attr->byteStride);
@@ -90,13 +116,19 @@ namespace sp
 		}
 	}
 
-	void DrawRenderable(ECS::Renderable *comp)
+	void DrawRenderable(ecs::Handle<ecs::Renderable> comp)
 	{
 		for (auto primitive : comp->model->primitives)
 		{
 			glBindVertexArray(primitive->vertexBufferHandle);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive->indexBufferHandle);
-			if (primitive->textureHandle) glBindTextures(0, 1, &primitive->textureHandle);
+
+			if (primitive->baseColorTex)
+				primitive->baseColorTex->Bind(0);
+
+			if (primitive->roughnessTex)
+				primitive->roughnessTex->Bind(1);
+
 			glDrawElements(
 				primitive->drawMode,
 				primitive->indexBuffer.componentCount,
@@ -115,39 +147,86 @@ namespace sp
 		ShaderControl = new ShaderManager();
 		ShaderControl->CompileAll(GlobalShaders);
 
-		// TODO(cory): Fix hardcoded values
-		auto projection = glm::perspective(glm::radians(60.0f), 1.778f, 0.1f, 256.0f);
-		auto view = glm::translate(glm::mat4(), glm::vec3(0.0f, -1.0f, -2.5f));
-		auto model = glm::mat4();
+		timer = new GPUTimer();
 
-		auto sceneVS = GlobalShaders->Get<SceneVS>();
-		sceneVS->SetParameters(projection, view, model);
-
-		Projection = projection;
-
-		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable>())
+		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable>())
 		{
-			auto comp = ent.Get<ECS::Renderable>();
+			auto comp = ent.Get<ecs::Renderable>();
 			PrepareRenderable(comp);
 		}
 
 		AssertGLOK("Renderer::Prepare");
 	}
 
-	void Renderer::RenderFrame()
+	ecs::Handle<ecs::View> updateLightCaches(ecs::Entity entity, ecs::Handle<ecs::Light> light)
 	{
-		RTPool->TickFrame();
+		auto view = entity.Get<ecs::View>();
 
-		auto sceneVS = GlobalShaders->Get<SceneVS>();
+		view->aspect = (float)view->extents.x / (float)view->extents.y;
+		view->projMat = glm::perspective(light->spotAngle * 2.0f, view->aspect, view->clip[0], view->clip[1]);
+		view->invProjMat = glm::inverse(view->projMat);
+
+		auto transform = entity.Get<ecs::Transform>();
+		view->invViewMat = transform->GetModelTransform(*entity.GetManager());
+		view->viewMat = glm::inverse(view->invViewMat);
+
+		return view;
+	}
+
+	shared_ptr<RenderTarget> Renderer::RenderShadowMaps()
+	{
+		RenderPhase phase("ShadowMaps", timer);
+
+		// TODO(xthexder): Handle lights without shadowmaps
+		glm::ivec2 renderTargetSize;
+		bool first = true;
+		for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
+		{
+			auto light = entity.Get<ecs::Light>();
+			if (first)
+			{
+				light->intensity = CVarFlashlightIntensity.Get();
+				first = false;
+			}
+			if (entity.Has<ecs::View>())
+			{
+				auto view = updateLightCaches(entity, light);
+				light->mapOffset = glm::vec4(renderTargetSize.x, 0, view->extents.x, view->extents.y);
+				view->offset = glm::ivec2(light->mapOffset);
+
+				renderTargetSize.x += view->extents.x;
+				if (view->extents.y > renderTargetSize.y)
+					renderTargetSize.y = view->extents.y;
+			}
+		}
+
+		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, renderTargetSize));
+		SetRenderTargets(0, nullptr, &renderTarget->GetTexture());
+
+		for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
+		{
+			auto light = entity.Get<ecs::Light>();
+			if (entity.Has<ecs::View>())
+			{
+				light->mapOffset /= glm::vec4(renderTargetSize, renderTargetSize);
+
+				ecs::Handle<ecs::View> view = entity.Get<ecs::View>();
+				ForwardPass(*view);
+			}
+		}
+
+		return renderTarget;
+	}
+
+	void Renderer::RenderPass(ecs::View &view, shared_ptr<RenderTarget> shadowMap)
+	{
+		RenderPhase phase("RenderPass", timer);
 
 		EngineRenderTargets targets;
-		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 1280, 720 }));
-		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, { 1280, 720 }));
-		targets.DepthStencil = RTPool->Get(RenderTargetDesc(PF_DEPTH_COMPONENT32F, { 1280, 720 }));
-
-		glEnable(GL_CULL_FACE);
-		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_TRUE);
+		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, view.extents));
+		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, view.extents));
+		targets.Depth = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, view.extents));
+		targets.ShadowMap = shadowMap;
 
 		Texture attachments[] =
 		{
@@ -155,40 +234,84 @@ namespace sp
 			targets.GBuffer1->GetTexture(),
 		};
 
-		SetRenderTargets(2, attachments, &targets.DepthStencil->GetTexture());
+		SetRenderTargets(2, attachments, &targets.Depth->GetTexture());
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		ShaderControl->BindPipeline<SceneVS, SceneFS>(GlobalShaders);
-
-		for (Entity ent : game->entityManager.EntitiesWith<ECS::Renderable, ECS::Transform>())
-		{
-			auto comp = ent.Get<ECS::Renderable>();
-			sceneVS->SetModel(ent.Get<ECS::Transform>()->GetModelTransform(*ent.GetManager()));
-			DrawRenderable(comp);
-		}
+		ecs::View forwardPassView = view;
+		forwardPassView.offset = glm::ivec2();
+		ForwardPass(forwardPassView);
 
 		// Run postprocessing.
+		glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_DEPTH_TEST);
 		glDepthMask(GL_FALSE);
 
-		PostProcessing::Process(this, targets);
-
-		// TODO(pushrax) remove
-		// Begin compute example.
-		auto exampleRT = RTPool->Get(RenderTargetDesc(PF_RGBA8, { 256, 256 }));
-		exampleRT->GetTexture().BindImage(0, GL_WRITE_ONLY);
-		ShaderControl->BindPipeline<ExampleCS>(GlobalShaders);
-		glDispatchCompute(256 / 16, 256 / 16, 1);
-
-		// Draw resulting texture from compute example.
-		exampleRT->GetTexture().Bind(0);
-		ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(GlobalShaders);
-		glViewport(0, 0, 256, 256);
-		DrawScreenCover();
-		glViewport(0, 0, 1280, 720);
-		// End compute example.
+		PostProcessing::Process(this, game, view, targets);
 
 		//AssertGLOK("Renderer::RenderFrame");
+	}
+
+	void Renderer::ForwardPass(ecs::View &view)
+	{
+		RenderPhase phase("ForwardPass", timer);
+
+		glEnable(GL_CULL_FACE);
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_SCISSOR_TEST);
+		glDisable(GL_BLEND);
+		glDisable(GL_STENCIL_TEST);
+		glDepthMask(GL_TRUE);
+
+		glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
+		glScissor(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		if (CVarRenderWireframe.Get())
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+		ShaderControl->BindPipeline<SceneVS, SceneFS>(GlobalShaders);
+
+		auto sceneVS = GlobalShaders->Get<SceneVS>();
+
+		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>())
+		{
+			auto comp = ent.Get<ecs::Renderable>();
+			auto modelMat = ent.Get<ecs::Transform>()->GetModelTransform(*ent.GetManager());
+			sceneVS->SetParams(view, modelMat);
+			DrawRenderable(comp);
+		}
+
+		if (CVarRenderWireframe.Get())
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
+
+	void Renderer::BeginFrame(ecs::View &view, int fullscreen)
+	{
+		if (prevFullscreen != fullscreen)
+		{
+			if (fullscreen == 0)
+			{
+				glfwSetWindowMonitor(window, nullptr, prevWindowPos.x, prevWindowPos.y, view.extents.x, view.extents.y, 0);
+			}
+			else if (fullscreen == 1)
+			{
+				glfwGetWindowPos(window, &prevWindowPos.x, &prevWindowPos.y);
+				glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, view.extents.x, view.extents.y, 60);
+			}
+		}
+
+		if (prevWindowSize != view.extents)
+		{
+			glfwSetWindowSize(window, view.extents.x, view.extents.y);
+		}
+
+		prevFullscreen = fullscreen;
+		prevWindowSize = view.extents;
+	}
+
+	void Renderer::EndFrame()
+	{
+		RTPool->TickFrame();
 		glfwSwapBuffers(window);
 	}
 

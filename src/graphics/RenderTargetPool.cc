@@ -25,7 +25,8 @@ namespace sp
 		.Create(GL_TEXTURE_2D)
 		.Filter(GL_LINEAR, GL_LINEAR)
 		.Size(desc.extent.x, desc.extent.y)
-		.Storage2D(desc.format, desc.levels);
+		.Storage2D(desc.format, desc.levels)
+		.Attachment(desc.attachment);
 
 		pool.push_back(ptr);
 		return ptr;
@@ -82,12 +83,15 @@ namespace sp
 
 		for (uint32 i = 0; i < numAttachments; i++)
 		{
+			Assert(attachments[i].attachment == GL_COLOR_ATTACHMENT0);
 			glNamedFramebufferTexture(newFB, GL_COLOR_ATTACHMENT0 + i, attachments[i].handle, 0);
 		}
 
 		if (depthStencilAttachment)
 		{
-			glNamedFramebufferTexture(newFB, GL_DEPTH_ATTACHMENT, depthStencilAttachment->handle, 0);
+			auto atc = depthStencilAttachment->attachment;
+			Assert(atc == GL_DEPTH_ATTACHMENT || atc == GL_STENCIL_ATTACHMENT || atc == GL_DEPTH_STENCIL_ATTACHMENT);
+			glNamedFramebufferTexture(newFB, atc, depthStencilAttachment->handle, 0);
 		}
 
 		static const GLenum availableAttachments[] =

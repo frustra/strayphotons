@@ -13,7 +13,7 @@ if (UNIX)
 endif()
 
 if (MSVC)
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS /wd4800)
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS /wd4800 /MP)
 endif()
 
 set(PROJECT_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
@@ -76,6 +76,10 @@ include_directories(
 add_definitions(-DGLEW_STATIC=1)
 add_library(GLEW STATIC ${EXT_PATH}/glew/src/glew.c)
 
+file(GLOB ImGui_sources ${EXT_PATH}/imgui/*.cpp)
+add_library(ImGui STATIC ${ImGui_sources})
+
+
 # split into lib and exe so tests can link against lib
 set(PROJECT_LIB strayphotons)
 set(PROJECT_EXE sp)
@@ -125,7 +129,7 @@ set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG $
 
 target_link_libraries(${PROJECT_LIB} glfw ${GLFW_LIBRARIES} freetype)
 target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
-target_link_libraries(sp ${OPENGL_LIBRARIES} GLEW glfw ${GLFW_LIBRARIES} freetype)
+target_link_libraries(sp ${OPENGL_LIBRARIES} GLEW glfw ${GLFW_LIBRARIES} freetype ImGui)
 
 ################################################
 # Build tests

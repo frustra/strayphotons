@@ -1,7 +1,7 @@
 #include "ecs/EntityManager.hh"
 #include "ecs/Entity.hh"
 
-namespace sp
+namespace ecs
 {
 	EntityManager::EntityManager()
 	{
@@ -22,8 +22,8 @@ namespace sp
 			i = freeEntityIndexes.front();
 			freeEntityIndexes.pop();
 			gen = entIndexToGen.at(i);  // incremented at Entity destruction
-			Assert(compMgr.entCompMasks[i] == ComponentManager::ComponentMask(),
-				   "expected ent comp mask to be reset at destruction but it wasn't");
+			sp::Assert(compMgr.entCompMasks[i] == ComponentManager::ComponentMask(),
+					   "expected ent comp mask to be reset at destruction but it wasn't");
 			compMgr.entCompMasks[i] = ComponentManager::ComponentMask();
 		}
 		else
@@ -35,8 +35,8 @@ namespace sp
 			// add a blank comp mask without copying one in
 			compMgr.entCompMasks.resize(compMgr.entCompMasks.size() + 1);
 
-			Assert(entIndexToGen.size() == nextEntityIndex);
-			Assert(compMgr.entCompMasks.size() == nextEntityIndex);
+			sp::Assert(entIndexToGen.size() == nextEntityIndex);
+			sp::Assert(compMgr.entCompMasks.size() == nextEntityIndex);
 		}
 
 		return Entity(this, Entity::Id(i, gen));
@@ -90,8 +90,12 @@ namespace sp
 
 		auto smallestCompPool = static_cast<BaseComponentPool *>(compMgr.componentPools.at(minSizeCompIndex));
 
-		return EntityManager::EntityCollection(*this, compMask, smallestCompPool->Entities(),
-											   smallestCompPool->CreateIterateLock());
+		return EntityManager::EntityCollection(
+				   *this,
+				   compMask,
+				   smallestCompPool->Entities(),
+				   smallestCompPool->CreateIterateLock()
+			   );
 	}
 
 	EntityManager::EntityCollection::Iterator::Iterator(EntityManager &em,
@@ -103,11 +107,12 @@ namespace sp
 
 	EntityManager::EntityCollection::Iterator &EntityManager::EntityCollection::Iterator::operator++()
 	{
+		// find the next entity that has all the components specified by this->compMask
 		while (++compIt != compEntColl->end())
 		{
 			Entity::Id e = *compIt;
 			auto entCompMask = em.compMgr.entCompMasks.at(e.Index());
-			if ((entCompMask & compMask).any())
+			if ((entCompMask & compMask) == compMask)
 			{
 				break;
 			}

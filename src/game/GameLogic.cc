@@ -2,41 +2,34 @@
 #include "core/Logging.hh"
 
 #include "game/GameLogic.hh"
-#include "assets/Model.hh"
+#include "assets/Scene.hh"
+#include "assets/AssetManager.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
+<<<<<<< HEAD
 #include "ecs/components/Physics.hh"
+=======
+#include "ecs/components/View.hh"
+>>>>>>> master
 
 #include <glm/glm.hpp>
 #include <cmath>
 
 namespace sp
 {
-	GameLogic::GameLogic(Game *game) : game(game)
+	GameLogic::GameLogic(Game *game)
+		: game(game), humanControlSystem(&game->entityManager, &game->input)
 	{
 	}
 
 	void GameLogic::Init()
 	{
-		this->duck = game->entityManager.NewEntity();
-		this->duck.Assign<ECS::Renderable>(game->assets.LoadModel("duck"));
-		this->duck.Assign<ECS::Physics>(game->physics.CreateActor());
-		ECS::Transform *duckTransform = this->duck.Assign<ECS::Transform>();
-		duckTransform->Translate(glm::vec3(0, 0, -4));
-		duckTransform->Rotate(glm::radians(-90.0f), glm::vec3(0, 1, 0));
+		scene = GAssets.LoadScene("sponza", &game->entityManager);
 
+		ecs::Entity player = scene->FindEntity("player");
+		humanControlSystem.AssignController(player);
 
-		this->box = game->entityManager.NewEntity();
-		this->box.Assign<ECS::Renderable>(game->assets.LoadModel("box"));
-		ECS::Transform *boxTransform = this->box.Assign<ECS::Transform>();
-		boxTransform->Translate(glm::vec3(0, 2, 0));
-
-		this->sponza = game->entityManager.NewEntity();
-		this->sponza.Assign<ECS::Renderable>(game->assets.LoadModel("sponza"));
-		ECS::Transform *mapTransform = this->sponza.Assign<ECS::Transform>();
-		mapTransform->Scale(glm::vec3(1.0f) / 100.0f);
-		mapTransform->Translate(glm::vec3(0, -1, 0));
-		mapTransform->Rotate(glm::radians(-90.0f), glm::vec3(0, 1, 0));
+		game->graphics.SetPlayerView(player);
 	}
 
 	GameLogic::~GameLogic()
@@ -45,9 +38,17 @@ namespace sp
 
 	bool GameLogic::Frame(double dtSinceLastFrame)
 	{
-		ECS::Transform *boxTransform = this->box.Get<ECS::Transform>();
-		boxTransform->Rotate(3 * dtSinceLastFrame, glm::vec3(0, 1, 0));
 
+		auto boxTransform = scene->FindEntity("box").Get<ecs::Transform>();
+		boxTransform->Rotate(3.0f * dtSinceLastFrame, glm::vec3(0, 1, 0));
+
+		auto duckTransform = scene->FindEntity("duck").Get<ecs::Transform>();
+		duckTransform->Rotate(dtSinceLastFrame, glm::vec3(1, 0, 0));
+
+		if (!humanControlSystem.Frame(dtSinceLastFrame))
+		{
+			return false;
+		}
 		return true;
 	}
 }
