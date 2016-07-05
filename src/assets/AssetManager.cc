@@ -14,6 +14,7 @@
 #include "ecs/components/Transform.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
+#include "ecs/components/Physics.hh"
 
 #include <iostream>
 #include <fstream>
@@ -97,7 +98,7 @@ namespace sp
 		return model;
 	}
 
-	shared_ptr<Scene> AssetManager::LoadScene(const std::string &name, ecs::EntityManager *em)
+	shared_ptr<Scene> AssetManager::LoadScene(const std::string &name, ecs::EntityManager *em, PhysxManager& px)
 	{
 		Logf("Loading scene: %s", name.c_str());
 
@@ -227,6 +228,10 @@ namespace sp
 							light->tint = glm::make_vec3(&numbers[0]);
 						}
 					}
+				}
+				else if (comp.first == "physics")
+				{
+					auto physics = entity.Assign<ecs::Physics>(px.CreateActor());
 				}
 			}
 			if (ent.count("_name"))

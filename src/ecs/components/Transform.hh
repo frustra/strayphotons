@@ -33,7 +33,7 @@ namespace ecs
 		/**
 		 * Change the local position to xyz
 		 */
-		void SetTransform(glm::vec3 xyz);
+		void SetTransform(glm::mat4 mat);
 
 		/**
 		 * Change the local scale by an amount in the local x, y, z planes.

@@ -21,7 +21,7 @@ namespace sp
 
 	void GameLogic::Init()
 	{
-		scene = GAssets.LoadScene("sponza", &game->entityManager);
+		scene = GAssets.LoadScene("sponza", &game->entityManager, game->physics);
 
 		ecs::Entity player = scene->FindEntity("player");
 		humanControlSystem.AssignController(player);
@@ -35,13 +35,6 @@ namespace sp
 
 	bool GameLogic::Frame(double dtSinceLastFrame)
 	{
-
-		auto boxTransform = scene->FindEntity("box").Get<ecs::Transform>();
-		boxTransform->Rotate(3.0f * dtSinceLastFrame, glm::vec3(0, 1, 0));
-
-		auto duckTransform = scene->FindEntity("duck").Get<ecs::Transform>();
-		duckTransform->Rotate(dtSinceLastFrame, glm::vec3(1, 0, 0));
-
 		if (!humanControlSystem.Frame(dtSinceLastFrame))
 		{
 			return false;

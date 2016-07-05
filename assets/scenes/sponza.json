@@ -14,7 +14,8 @@
 			"transform": {
 				"rotate": [-30, 0, 0, 1],
 				"translate": [0, 0, -4]
-			}
+			},
+			"physics": {}
 		},
 		{
 			"_name": "box",
@@ -22,7 +23,8 @@
 			"transform": {
 				"relativeTo": "duck",
 				"translate": [0, 2, 0]
-			}
+			},
+			"physics": {}
 		},
 		{
 			"_name": "player",

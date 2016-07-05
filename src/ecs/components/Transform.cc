@@ -46,11 +46,9 @@ namespace ecs
 		this->translate = glm::translate(this->translate, xyz);
 	}
 
-	void Transform::SetTransform(glm::vec3 xyz)
+	void Transform::SetTransform(glm::mat4 mat)
 	{
-		this->translate[0][3] = xyz.x;
-		this->translate[1][3] = xyz.y;
-		this->translate[2][3] = xyz.z;
+		this->translate = mat;
 	}
 
 	void Transform::Scale(glm::vec3 xyz)
