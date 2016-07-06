@@ -98,7 +98,7 @@ namespace sp
 		return model;
 	}
 
-	shared_ptr<Scene> AssetManager::LoadScene(const std::string &name, ecs::EntityManager *em, PhysxManager& px)
+	shared_ptr<Scene> AssetManager::LoadScene(const std::string &name, ecs::EntityManager *em, PhysxManager &px)
 	{
 		Logf("Loading scene: %s", name.c_str());
 

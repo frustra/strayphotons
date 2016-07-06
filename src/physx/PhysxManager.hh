@@ -11,20 +11,20 @@ namespace sp
 	class PhysxManager
 	{
 	public:
-		PhysxManager ();
-		~PhysxManager () {};
-		physx::PxRigidActor* CreateActor ();
+		PhysxManager();
+		~PhysxManager() {};
+		physx::PxRigidActor *CreateActor();
 		void Frame(double timeStep);
 	private:
-		void CreatePhysxScene ();
-		void DestroyPhysxScene ();
+		void CreatePhysxScene();
+		void DestroyPhysxScene();
 
-		physx::PxFoundation* pxFoundation;
-		physx::PxPhysics* physics;
+		physx::PxFoundation *pxFoundation;
+		physx::PxPhysics *physics;
 		physx::PxDefaultErrorCallback defaultErrorCallback;
 		physx::PxDefaultAllocator defaultAllocatorCallback;
 
-		physx::PxScene* scene;
+		physx::PxScene *scene;
 	};
 }
 

@@ -3,44 +3,44 @@
 
 namespace sp
 {
-	PhysxManager::PhysxManager ()
+	PhysxManager::PhysxManager()
 	{
 		Logf("PhysX starting up");
 		pxFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, defaultAllocatorCallback, defaultErrorCallback);
 		physics = PxCreatePhysics(PX_PHYSICS_VERSION, *pxFoundation, physx::PxTolerancesScale() );
-		if(physics == NULL) {
+		if (physics == NULL)
+		{
 			Errorf("Error creating PhysX device.");
 		}
 		CreatePhysxScene();
 	}
 
-	void PhysxManager::Frame ( double timeStep ) {
+	void PhysxManager::Frame(double timeStep)
+	{
 		scene->simulate(timeStep);
-
-	   	while(!scene->fetchResults() ) {
-	   	}  
+		scene->fetchResults(true);
 	}
 
-	void PhysxManager::CreatePhysxScene () {
-  		physx::PxSceneDesc sceneDesc(physics->getTolerancesScale());
+	void PhysxManager::CreatePhysxScene()
+	{
+		physx::PxSceneDesc sceneDesc(physics->getTolerancesScale());
 
-  		sceneDesc.gravity = physx::PxVec3(0, -1, 0);
-	    if(!sceneDesc.filterShader) {
-	        sceneDesc.filterShader  = physx::PxDefaultSimulationFilterShader;
-	    }
+		sceneDesc.gravity = physx::PxVec3(0, -1, 0);
 
-    	physx::PxDefaultCpuDispatcher* mCpuDispatcher = physx::PxDefaultCpuDispatcherCreate(1);
-        sceneDesc.cpuDispatcher = mCpuDispatcher;
+		if (!sceneDesc.filterShader)
+			sceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
+
+		physx::PxDefaultCpuDispatcher *mCpuDispatcher = physx::PxDefaultCpuDispatcherCreate(1);
+		sceneDesc.cpuDispatcher = mCpuDispatcher;
 
 		scene = physics->createScene(sceneDesc);
-		if (!scene) {
-			Errorf("Error creating PhysX Scene");
-		}
+		Assert(scene, "creating PhysX scene");
 	}
 
-	physx::PxRigidActor* PhysxManager::CreateActor () {
-		physx::PxTransform position (0,0,-4);
-		physx::PxRigidActor* capsule = physics->createRigidDynamic(position);
+	physx::PxRigidActor *PhysxManager::CreateActor()
+	{
+		physx::PxTransform position (0, 0, -4);
+		physx::PxRigidActor *capsule = physics->createRigidDynamic(position);
 		scene->addActor(*capsule);
 		return capsule;
 	}
