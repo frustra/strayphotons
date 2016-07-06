@@ -74,19 +74,10 @@ namespace sp
 		for (ecs::Entity ent : entityManager.EntitiesWith<ecs::Physics>())
 		{
 			auto physics = ent.Get<ecs::Physics>();
-			physx::PxMat44 pxT = (physx::PxMat44)(physics->actor->getGlobalPose());
+			auto pxT = (physx::PxMat44)(physics->actor->getGlobalPose());
+			auto mat = *((glm::mat4 *) pxT.front());
+
 			auto transform = ent.Get<ecs::Transform>();
-
-			glm::mat4 mat;
-
-			for (int i = 0; i < 4; i++)
-			{
-				for (int j = 0; j < 4; j++)
-				{
-					mat[i][j] = pxT[i][j];
-				}
-			}
-
 			transform->SetTransform(mat);
 			//TODO: Speak to Cory about getting transform to take in a quat
 			//transform->Rotate((glm::quat) q);
