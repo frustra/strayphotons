@@ -1,7 +1,5 @@
 #pragma once
 
-#define _DEBUG
-
 #include <memory>
 using std::make_shared;
 using std::unique_ptr;

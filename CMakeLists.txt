@@ -10,6 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 if (UNIX)
 	add_definitions(-Wall)
+	add_definitions(-D_DEBUG)
 endif()
 
 if (MSVC)
@@ -104,16 +105,25 @@ list(REMOVE_DUPLICATES all_shaders)
 
 add_library(${PROJECT_LIB} ${all_sources} ${all_headers} ${all_shaders})
 
+
+# load PhysX
 set (PHYSX_ENV DEBUG)
-set (PHYSX_LOADS "PhysX3CommonDEBUG_x64" "PhysX3ExtensionsDEBUG" "PhysX3DEBUG_x64")
+
+if (WIN32)
+	set (PHYSX_LOADS "PhysX3CommonDEBUG_x86" "PhysX3ExtensionsDEBUG" "PhysX3DEBUG_x86")
+else()
+	set (PHYSX_LOADS "PhysX3CommonDEBUG_x64" "PhysX3ExtensionsDEBUG" "PhysX3DEBUG_x64")
+endif()
+
 foreach (PHYSX_LIB ${PHYSX_LOADS})
 	message(STATUS ${PHYSX_LIB})
 	find_library(FOUND_LIB_${PHYSX_LIB}
 		NAMES ${PHYSX_LIB}
-	    PATHS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/lib/physx
+		PATHS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/lib/physx
 	)
 	LIST(APPEND PHYSX_LIBRARIES ${FOUND_LIB_${PHYSX_LIB}})
 endforeach (PHYSX_LIB)
+
 
 add_executable(${PROJECT_EXE} ${PROJECT_MAIN_CC})
 target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
