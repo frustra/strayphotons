@@ -12,7 +12,7 @@ namespace sp
 	{
 	public:
 		PhysxManager();
-		~PhysxManager() {};
+		~PhysxManager();
 		physx::PxRigidActor *CreateActor();
 		void Frame(double timeStep);
 	private:
@@ -21,6 +21,7 @@ namespace sp
 
 		physx::PxFoundation *pxFoundation;
 		physx::PxPhysics *physics;
+		physx::PxDefaultCpuDispatcher *dispatcher;
 		physx::PxDefaultErrorCallback defaultErrorCallback;
 		physx::PxDefaultAllocator defaultAllocatorCallback;
 
