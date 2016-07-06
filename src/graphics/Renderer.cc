@@ -193,6 +193,7 @@ namespace sp
 				auto view = updateLightCaches(entity, light);
 				light->mapOffset = glm::vec4(renderTargetSize.x, 0, view->extents.x, view->extents.y);
 				view->offset = glm::ivec2(light->mapOffset);
+				view->clearMode = 0;
 
 				renderTargetSize.x += view->extents.x;
 				if (view->extents.y > renderTargetSize.y)
@@ -202,6 +203,11 @@ namespace sp
 
 		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, renderTargetSize));
 		SetRenderTargets(0, nullptr, &renderTarget->GetTexture());
+
+		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
+		glDisable(GL_SCISSOR_TEST);
+		glDepthMask(GL_TRUE);
+		glClear(GL_DEPTH_BUFFER_BIT);
 
 		for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
 		{
@@ -256,15 +262,18 @@ namespace sp
 
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_SCISSOR_TEST);
 		glDisable(GL_BLEND);
 		glDisable(GL_STENCIL_TEST);
 		glDepthMask(GL_TRUE);
 
 		glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
 		glScissor(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		if (view.clearMode != 0)
+		{
+			glClearColor(view.clearColor.r, view.clearColor.g, view.clearColor.b, view.clearColor.a);
+			glClear(view.clearMode);
+		}
 
 		if (CVarRenderWireframe.Get())
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
