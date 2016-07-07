@@ -1,4 +1,5 @@
 #include "assets/AssetManager.hh"
+#include "assets/Asset.hh"
 #include "assets/Model.hh"
 #include "core/Logging.hh"
 
@@ -45,6 +46,7 @@ namespace sp
 			accessor.byteStride,
 			accessor.componentType,
 			componentCount,
+			accessor.count,
 			bufView.buffer
 		};
 	}
@@ -55,6 +57,11 @@ namespace sp
 		{
 			AddNode(node, glm::mat4());
 		}
+	}
+
+	Model::~Model()
+	{
+		asset->manager->UnregisterModel(*this);
 	}
 
 	GLuint Model::LoadBuffer(string name)
@@ -121,6 +128,8 @@ namespace sp
 					mode = GL_LINE_LOOP;
 				};
 
+				Assert(iAcc.type == TINYGLTF_TYPE_SCALAR);
+
 				auto &material = scene->materials[primitive.material];
 
 				primitives.push_back(new Primitive
@@ -131,6 +140,7 @@ namespace sp
 						iAcc.byteOffset + iBufView.byteOffset,
 						iAcc.byteStride,
 						iAcc.componentType,
+						1,
 						iAcc.count,
 						iBufView.buffer
 					},

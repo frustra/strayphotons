@@ -82,6 +82,7 @@ namespace sp
 		if (!HasActiveContext()) return false;
 
 		auto primaryView = updateViewCaches(playerView);
+		primaryView.clearMode |= GL_COLOR_BUFFER_BIT;
 
 		{
 			auto newSize = CVarWindowSize.Get();

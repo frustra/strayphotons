@@ -28,6 +28,7 @@ namespace sp
 		shared_ptr<Scene> LoadScene(const std::string &name, ecs::EntityManager *em, PhysxManager &px);
 
 		void Unregister(const Asset &asset);
+		void UnregisterModel(const Model &model);
 
 	private:
 		std::string base;

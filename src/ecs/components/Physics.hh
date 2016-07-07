@@ -8,6 +8,8 @@ namespace ecs
 	{
 		Physics() {}
 		Physics(physx::PxRigidActor *actor) : actor(actor) {}
-		physx::PxRigidActor *actor;
+
+		physx::PxRigidActor *actor = nullptr;
+		bool needsTransformSync = true;
 	};
 }

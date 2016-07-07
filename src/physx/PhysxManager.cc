@@ -1,5 +1,6 @@
 #include "physx/PhysxManager.hh"
 #include "core/Logging.hh"
+#include "assets/Model.hh"
 
 namespace sp
 {
@@ -52,7 +53,7 @@ namespace sp
 		Assert(scene, "creating PhysX scene");
 
 		PxMaterial *groundMat = physics->createMaterial(0.6f, 0.5f, 0.0f);
-		PxRigidStatic *groundPlane = PxCreatePlane(*physics, PxPlane(0.f, 1.f, 0.f, 0.f), *groundMat);
+		PxRigidStatic *groundPlane = PxCreatePlane(*physics, PxPlane(0.f, 1.f, 0.f, 1.03f), *groundMat);
 		scene->addActor(*groundPlane);
 	}
 
@@ -62,14 +63,44 @@ namespace sp
 		dispatcher->release();
 	}
 
-	PxRigidActor *PhysxManager::CreateActor()
+	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model)
 	{
-		PxTransform position (0, 6, -4);
-		PxRigidDynamic *capsule = physics->createRigidDynamic(position);
+		PxTransform position(0, 0, 0);
+		PxRigidDynamic *actor = physics->createRigidDynamic(position);
 		PxMaterial *mat = physics->createMaterial(0.6f, 0.5f, 0.0f);
-		capsule->createShape(PxCapsuleGeometry(0.5f, 0.5f), *mat)->setLocalPose({ 0, 1.0f, 0 });
-		PxRigidBodyExt::updateMassAndInertia(*capsule, 1.0f);
-		scene->addActor(*capsule);
-		return capsule;
+
+		for (auto prim : model->primitives)
+		{
+			auto posAttrib = prim->attributes[0];
+			Assert(posAttrib.componentCount == 3);
+			Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+
+			// Build convex hull
+			auto buffer = model->GetScene()->buffers[posAttrib.bufferName];
+
+			PxConvexMeshDesc convexDesc;
+			convexDesc.points.count = posAttrib.components;
+			convexDesc.points.stride = posAttrib.byteStride;
+			convexDesc.points.data = (PxVec3 *)(buffer.data.data() + posAttrib.byteOffset);
+			convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+
+			PxDefaultMemoryOutputStream buf;
+			PxConvexMeshCookingResult::Enum result;
+
+			if (!pxCooking->cookConvexMesh(convexDesc, buf, &result))
+			{
+				Errorf("Failed to cook PhysX hull for %s", model->name);
+				return nullptr;
+			}
+
+			PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+			PxConvexMesh *hull = physics->createConvexMesh(input);
+
+			actor->createShape(PxConvexMeshGeometry(hull), *mat);
+		}
+
+		PxRigidBodyExt::updateMassAndInertia(*actor, 1.0f);
+		scene->addActor(*actor);
+		return actor;
 	}
 }

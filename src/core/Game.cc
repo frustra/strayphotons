@@ -69,18 +69,32 @@ namespace sp
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;
 
+		for (ecs::Entity ent : entityManager.EntitiesWith<ecs::Physics>())
+		{
+			auto physics = ent.Get<ecs::Physics>();
+
+			if (physics->needsTransformSync)
+			{
+				auto transform = ent.Get<ecs::Transform>();
+				auto mat = transform->GetModelTransform(entityManager);
+				auto pxMat = *(physx::PxMat44 *)(glm::value_ptr(mat));
+
+				physx::PxTransform newPose(pxMat);
+				physics->actor->setGlobalPose(newPose);
+				physics->needsTransformSync = false;
+			}
+		}
+
 		physics.Frame(dt);
 
 		for (ecs::Entity ent : entityManager.EntitiesWith<ecs::Physics>())
 		{
 			auto physics = ent.Get<ecs::Physics>();
-			auto pxT = (physx::PxMat44)(physics->actor->getGlobalPose());
-			auto mat = *((glm::mat4 *) pxT.front());
+			auto pxMat = (physx::PxMat44)(physics->actor->getGlobalPose());
+			auto mat = *((glm::mat4 *) pxMat.front());
 
 			auto transform = ent.Get<ecs::Transform>();
 			transform->SetTransform(mat);
-			//TODO: Speak to Cory about getting transform to take in a quat
-			//transform->Rotate((glm::quat) q);
 		}
 		lastFrameTime = frameTime;
 		return true;

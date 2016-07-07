@@ -14,13 +14,14 @@ namespace sp
 	{
 	public:
 		Model(const string &name, shared_ptr<Asset> asset, tinygltf::Scene *scene);
-		~Model() {}
+		~Model();
 
 		struct Attribute
 		{
 			size_t byteOffset, byteStride;
 			int componentType;
 			size_t componentCount;
+			size_t components;
 			string bufferName;
 		};
 
@@ -44,6 +45,11 @@ namespace sp
 
 		GLuint LoadBuffer(string name);
 		Texture *LoadTexture(string name);
+
+		tinygltf::Scene *GetScene()
+		{
+			return scene;
+		}
 	private:
 		void AddNode(string nodeName, glm::mat4 parentMatrix);
 

@@ -8,12 +8,14 @@
 
 namespace sp
 {
+	class Model;
+
 	class PhysxManager
 	{
 	public:
 		PhysxManager();
 		~PhysxManager();
-		physx::PxRigidActor *CreateActor();
+		physx::PxRigidActor *CreateActor(shared_ptr<Model> model);
 		void Frame(double timeStep);
 	private:
 		void CreatePhysxScene();

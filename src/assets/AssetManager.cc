@@ -27,12 +27,12 @@ namespace sp
 
 	shared_ptr<Asset> AssetManager::Load(const std::string &path)
 	{
-		Logf("Loading asset: %s", path.c_str());
 		AssetMap::iterator it = loadedAssets.find(path);
 		shared_ptr<Asset> asset;
 
 		if (it == loadedAssets.end())
 		{
+			Logf("Loading asset: %s", path.c_str());
 			std::ifstream in(ASSETS_DIR + path, std::ios::in | std::ios::binary);
 
 			if (in)
@@ -67,12 +67,12 @@ namespace sp
 
 	shared_ptr<Model> AssetManager::LoadModel(const std::string &name)
 	{
-		Logf("Loading model: %s", name.c_str());
 		ModelMap::iterator it = loadedModels.find(name);
 		shared_ptr<Model> model;
 
 		if (it == loadedModels.end())
 		{
+			Logf("Loading model: %s", name.c_str());
 			shared_ptr<Asset> asset = Load("models/" + name + "/" + name + ".gltf");
 			tinygltf::Scene *scene = new tinygltf::Scene();
 			std::string err;
@@ -231,7 +231,21 @@ namespace sp
 				}
 				else if (comp.first == "physics")
 				{
-					auto physics = entity.Assign<ecs::Physics>(px.CreateActor());
+					physx::PxRigidActor *actor = nullptr;
+
+					for (auto param : comp.second.get<picojson::object>())
+					{
+						if (param.first == "model")
+						{
+							auto model = LoadModel(param.second.get<string>());
+							actor = px.CreateActor(model);
+						}
+					}
+
+					if (actor)
+					{
+						auto physics = entity.Assign<ecs::Physics>(actor);
+					}
 				}
 			}
 			if (ent.count("_name"))
@@ -246,6 +260,11 @@ namespace sp
 	void AssetManager::Unregister(const Asset &asset)
 	{
 		loadedAssets.erase(asset.path);
+	}
+
+	void AssetManager::UnregisterModel(const Model &model)
+	{
+		loadedModels.erase(model.name);
 	}
 }
 
