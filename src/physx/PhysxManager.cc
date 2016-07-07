@@ -9,9 +9,14 @@ namespace sp
 	{
 		Logf("PhysX %d.%d.%d starting up", PX_PHYSICS_VERSION_MAJOR, PX_PHYSICS_VERSION_MINOR, PX_PHYSICS_VERSION_BUGFIX);
 
+		PxTolerancesScale scale;
+
 		pxFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, defaultAllocatorCallback, defaultErrorCallback);
-		physics = PxCreatePhysics(PX_PHYSICS_VERSION, *pxFoundation, PxTolerancesScale());
-		Assert(physics != nullptr, "creating PhysX context");
+		physics = PxCreatePhysics(PX_PHYSICS_VERSION, *pxFoundation, scale);
+		Assert(physics, "PxCreatePhysics");
+
+		pxCooking = PxCreateCooking(PX_PHYSICS_VERSION, *pxFoundation, PxCookingParams(scale));
+		Assert(pxCooking, "PxCreateCooking");
 
 		CreatePhysxScene();
 	}
@@ -20,6 +25,7 @@ namespace sp
 	{
 		DestroyPhysxScene();
 
+		pxCooking->release();
 		physics->release();
 		pxFoundation->release();
 	}

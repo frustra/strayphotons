@@ -110,10 +110,17 @@ add_library(${PROJECT_LIB} ${all_sources} ${all_headers} ${all_shaders})
 set (PHYSX_ENV DEBUG)
 
 if (WIN32)
-	set (PHYSX_LOADS "PhysX3CommonDEBUG_x86" "PhysX3ExtensionsDEBUG" "PhysX3DEBUG_x86")
+	set (PHYSX_ARCH x86)
 else()
-	set (PHYSX_LOADS "PhysX3CommonDEBUG_x64" "PhysX3ExtensionsDEBUG" "PhysX3DEBUG_x64")
+	set (PHYSX_ARCH x64)
 endif()
+
+set (PHYSX_LOADS
+	"PhysX3Common${PHYSX_ENV}_${PHYSX_ARCH}"
+	"PhysX3Cooking${PHYSX_ENV}_${PHYSX_ARCH}"
+	"PhysX3Extensions${PHYSX_ENV}"
+	"PhysX3${PHYSX_ENV}_${PHYSX_ARCH}"
+)
 
 foreach (PHYSX_LIB ${PHYSX_LOADS})
 	message(STATUS ${PHYSX_LIB})

@@ -24,6 +24,7 @@ namespace sp
 		physx::PxDefaultCpuDispatcher *dispatcher;
 		physx::PxDefaultErrorCallback defaultErrorCallback;
 		physx::PxDefaultAllocator defaultAllocatorCallback;
+		physx::PxCooking *pxCooking;
 
 		physx::PxScene *scene;
 	};
