@@ -127,7 +127,8 @@ namespace ecs
 		auto &compMask = entCompMasks.at(e.Index());
 		if (compMask[compIndex] == false)
 		{
-			throw runtime_error("entity does not have this type of component");
+			throw runtime_error("entity does not have a component of type "
+				+ string(tIndex.name()));
 		}
 
 		static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex))->Remove(e);
@@ -152,7 +153,8 @@ namespace ecs
 	{
 		if (!Has<CompType>(e))
 		{
-			throw runtime_error("entity does not have this type of component");
+			throw runtime_error("entity does not have a component of type "
+				+ string(typeid(CompType).name()));
 		}
 
 		auto compIndex = compTypeToCompIndex.at(typeid(CompType));
@@ -199,7 +201,7 @@ namespace ecs
 	{
 		if (compTypeToCompIndex.count(stdTypeId) == 0)
 		{
-			throw invalid_argument("invalid component type given, it is unknown to the system.");
+			throw invalid_argument(string(stdTypeId.name()) + " is an invalid component type, it is unknown to the system.");
 		}
 		auto compIndex = compTypeToCompIndex.at(stdTypeId);
 		mask.set(compIndex);

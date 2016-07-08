@@ -91,11 +91,11 @@ namespace ecs
 		auto smallestCompPool = static_cast<BaseComponentPool *>(compMgr.componentPools.at(minSizeCompIndex));
 
 		return EntityManager::EntityCollection(
-				   *this,
-				   compMask,
-				   smallestCompPool->Entities(),
-				   smallestCompPool->CreateIterateLock()
-			   );
+			*this,
+			compMask,
+			smallestCompPool->Entities(),
+			smallestCompPool->CreateIterateLock()
+		);
 	}
 
 	EntityManager::EntityCollection::Iterator::Iterator(EntityManager &em,
@@ -103,7 +103,19 @@ namespace ecs
 			ComponentPoolEntityCollection *compEntColl,
 			ComponentPoolEntityCollection::Iterator compIt)
 		: em(em), compMask(compMask), compEntColl(compEntColl), compIt(compIt)
-	{}
+	{
+		// might need to advance this iterator to the first entity that satisfies the mask
+		// since *compIt is not guarenteed to satisfy the mask right now
+		if (compIt != compEntColl->end())
+		{
+			Entity::Id e = *compIt;
+			auto entCompMask = em.compMgr.entCompMasks.at(e.Index());
+			if ((entCompMask & compMask) != compMask)
+			{
+				this->operator++();
+			}
+		}
+	}
 
 	EntityManager::EntityCollection::Iterator &EntityManager::EntityCollection::Iterator::operator++()
 	{

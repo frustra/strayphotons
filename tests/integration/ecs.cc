@@ -124,6 +124,10 @@ namespace test
 	{
 		for (ecs::Entity ent : em.EntitiesWith<Eater, Position>())
 		{
+			// ensure we can retrieve these components
+			auto eater = ent.Get<Eater>();
+			auto position = ent.Get<Position>();
+
 			entsFound[ent] = true;
 		}
 
@@ -150,6 +154,46 @@ namespace test
 		}
 
 		ExpectPositionEntitiesFound();
+	}
+
+	/**
+	 * This is a test for a bugfix.
+	 * The bug was that when iterating over multiple component types the
+	 * "begin" iterator under the hood would start at the beginning of a component
+	 * pool instead of advancing to the first component that belonged to an entity
+	 * that had all the components being queried for.
+	 */
+	TEST(EcsBugFix, IterateOverComponentsSkipsFirstInvalidComponents)
+	{
+		ecs::EntityManager em;
+		ecs::Entity ePos1 = em.NewEntity();
+		ecs::Entity ePos2 = em.NewEntity();
+		ecs::Entity ePosEater = em.NewEntity();
+		ecs::Entity eEater1 = em.NewEntity();
+		ecs::Entity eEater2 = em.NewEntity();
+		ecs::Entity eEater3 = em.NewEntity();
+
+		// ensure that first 2 components in the Position pool don't have Eater components
+		ePos1.Assign<Position>();
+		ePos2.Assign<Position>();
+
+		// create the combination entity we will query for
+		ePosEater.Assign<Position>();
+		ePosEater.Assign<Eater>();
+
+		// create more Eater components than Position components so that
+		// when we iterate over Position, Eater, we will iterate through
+		// the Position pool instead of the Eater pool
+		eEater1.Assign<Eater>();
+		eEater2.Assign<Eater>();
+		eEater3.Assign<Eater>();
+
+		for (auto e : em.EntitiesWith<Position, Eater>())
+		{
+			// without bugfix, the Eater assertion will fail
+			ASSERT_TRUE(e.Has<Eater>()) << " bug has regressed";
+			ASSERT_TRUE(e.Has<Position>());
+		}
 	}
 
 	TEST(EcsBasic, AddEntitiesWhileIterating)
@@ -297,5 +341,36 @@ namespace test
 		Position positionAfter = *p2Handle;
 
 		ASSERT_EQ(positionBefore, positionAfter);
+	}
+
+	TEST(EcsBasic, IterateOverComponentTypeWithNoEntitiesDoesNothing)
+	{
+		ecs::EntityManager em;
+		em.RegisterComponentType<Position>();
+		em.RegisterComponentType<Eater>();
+
+		auto e1 = em.NewEntity();
+		auto e2 = em.NewEntity();
+
+		for (auto e : em.EntitiesWith<Position>())
+		{
+			ASSERT_TRUE(false) << "should not have found anything";
+		}
+
+		e1.Assign<Position>(1, 1);
+		e1.Assign<Eater>();
+		e1.Remove<Position>();
+
+		e2.Assign<Eater>();
+
+		for (auto e : em.EntitiesWith<Position>())
+		{
+			ASSERT_TRUE(false) << "should not have found anything";
+		}
+
+		for (auto e : em.EntitiesWith<Position, Eater>())
+		{
+			ASSERT_TRUE(false) << "should not have found anything";
+		}
 	}
 }
