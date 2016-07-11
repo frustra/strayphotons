@@ -31,6 +31,11 @@ namespace ecs
 		void Translate(glm::vec3 xyz);
 
 		/**
+		 * Change the local position to xyz
+		 */
+		void SetTransform(glm::mat4 mat);
+
+		/**
 		 * Change the local scale by an amount in the local x, y, z planes.
 		 * This will propagate to Transforms that are relative to this one.
 		 */

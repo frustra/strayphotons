@@ -1,5 +1,5 @@
-#include "core/Logging.hh"
 #include "graphics/GraphicsManager.hh"
+#include "core/Logging.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/GuiRenderer.hh"
 #include "graphics/GPUTimer.hh"
@@ -82,6 +82,7 @@ namespace sp
 		if (!HasActiveContext()) return false;
 
 		auto primaryView = updateViewCaches(playerView);
+		primaryView.clearMode |= GL_COLOR_BUFFER_BIT;
 
 		{
 			auto newSize = CVarWindowSize.Get();

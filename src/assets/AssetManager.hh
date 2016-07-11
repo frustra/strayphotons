@@ -2,6 +2,7 @@
 
 #include "Common.hh"
 #include "ecs/Ecs.hh"
+#include "physx/PhysxManager.hh"
 #include "graphics/Texture.hh"
 #include <tiny_gltf_loader.h>
 
@@ -24,9 +25,10 @@ namespace sp
 		shared_ptr<Asset> Load(const std::string &path);
 		Texture LoadTexture(const std::string &path);
 		shared_ptr<Model> LoadModel(const std::string &name);
-		shared_ptr<Scene> LoadScene(const std::string &name, ecs::EntityManager *em);
+		shared_ptr<Scene> LoadScene(const std::string &name, ecs::EntityManager *em, PhysxManager &px);
 
 		void Unregister(const Asset &asset);
+		void UnregisterModel(const Model &model);
 
 	private:
 		std::string base;

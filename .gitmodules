@@ -28,6 +28,9 @@
 [submodule "ext/tinygltfloader"]
 	path = ext/tinygltfloader
 	url = https://github.com/syoyo/tinygltfloader.git
+[submodule "ext/physx"]
+	path = ext/physx
+	url = git@github.com:frustra/PhysX-3.3.git
 [submodule "ext/imgui"]
 	path = ext/imgui
 	url = https://github.com/ocornut/imgui.git

@@ -12,16 +12,35 @@
 			"_name": "duck",
 			"renderable": "duck",
 			"transform": {
-				"rotate": [-30, 0, 0, 1],
-				"translate": [0, 0, -4]
+				"translate": [0, 0, -7]
 			}
 		},
 		{
 			"_name": "box",
 			"renderable": "box",
 			"transform": {
-				"relativeTo": "duck",
-				"translate": [0, 2, 0]
+				"translate": [-0.2, 3, -4.5]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"translate": [0, 1, -4]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"translate": [0.5, 5, -4.5]
+			},
+			"physics": {
+				"model": "box"
 			}
 		},
 		{

@@ -35,3 +35,9 @@ dependencies:
 	git submodule sync
 	git submodule update --init --recursive
 
+physx:
+	cd ext/physx/PhysXSDK/Source/compiler/linux64 && make -j 16
+	rm -rf vendor/lib/physx
+	mkdir -p vendor/lib/physx
+	cp ext/physx/PhysXSDK/Lib/linux64/lib* vendor/lib/physx
+	cp ext/physx/PhysXSDK/Bin/linux64/lib* vendor/lib/physx

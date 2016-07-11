@@ -1,5 +1,6 @@
 #pragma once
 
+#include "physx/PhysxManager.hh"
 #include "graphics/GraphicsManager.hh"
 #include "Common.hh"
 #include "ecs/Ecs.hh"
@@ -25,6 +26,7 @@ namespace sp
 		InputManager input;
 		ecs::EntityManager entityManager;
 		GameLogic logic;
+		PhysxManager physics;
 
 	private:
 		double lastFrameTime;

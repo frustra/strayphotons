@@ -131,7 +131,7 @@ namespace sp
 
 			glDrawElements(
 				primitive->drawMode,
-				primitive->indexBuffer.componentCount,
+				primitive->indexBuffer.components,
 				primitive->indexBuffer.componentType,
 				(char *) primitive->indexBuffer.byteOffset
 			);

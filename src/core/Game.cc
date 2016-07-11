@@ -3,21 +3,25 @@
 #include "core/Console.hh"
 
 #include "ecs/components/Renderable.hh"
+#include "ecs/components/Physics.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/Controller.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
 
+#include "ecs/Entity.hh"
+
 #include <glm/glm.hpp>
 
 namespace sp
 {
-	Game::Game() : graphics(this), logic(this)
+	Game::Game() : graphics(this), logic(this), physics()
 	{
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
 		entityManager.RegisterComponentType<ecs::Renderable>();
 		entityManager.RegisterComponentType<ecs::Transform>();
+		entityManager.RegisterComponentType<ecs::Physics>();
 		entityManager.RegisterComponentType<ecs::HumanController>();
 		entityManager.RegisterComponentType<ecs::View>();
 		entityManager.RegisterComponentType<ecs::Light>();
@@ -65,6 +69,33 @@ namespace sp
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;
 
+		for (ecs::Entity ent : entityManager.EntitiesWith<ecs::Physics>())
+		{
+			auto physics = ent.Get<ecs::Physics>();
+
+			if (physics->needsTransformSync)
+			{
+				auto transform = ent.Get<ecs::Transform>();
+				auto mat = transform->GetModelTransform(entityManager);
+				auto pxMat = *(physx::PxMat44 *)(glm::value_ptr(mat));
+
+				physx::PxTransform newPose(pxMat);
+				physics->actor->setGlobalPose(newPose);
+				physics->needsTransformSync = false;
+			}
+		}
+
+		physics.Frame(dt);
+
+		for (ecs::Entity ent : entityManager.EntitiesWith<ecs::Physics>())
+		{
+			auto physics = ent.Get<ecs::Physics>();
+			auto pxMat = (physx::PxMat44)(physics->actor->getGlobalPose());
+			auto mat = *((glm::mat4 *) pxMat.front());
+
+			auto transform = ent.Get<ecs::Transform>();
+			transform->SetTransform(mat);
+		}
 		lastFrameTime = frameTime;
 		return true;
 	}
