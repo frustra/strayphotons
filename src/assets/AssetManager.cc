@@ -233,14 +233,35 @@ namespace sp
 				{
 					physx::PxRigidActor *actor = nullptr;
 
+					shared_ptr<Model> model;
+					auto translate = physx::PxVec3 (0, 0, 0);
+					//auto rotate = physx::PxQuat (0);
 					for (auto param : comp.second.get<picojson::object>())
 					{
 						if (param.first == "model")
 						{
-							auto model = LoadModel(param.second.get<string>());
-							actor = px.CreateActor(model);
+							model = LoadModel(param.second.get<string>());
+						}
+						if (param.first == "pxTranslate")
+						{
+							auto values = param.second.get<picojson::array>();
+							numbers.resize(values.size());
+
+							for (size_t i = 0; i < values.size(); i++)
+							{
+								numbers[i] = values[i].get<double>();
+							}
+
+							glm::vec3 gVec = glm::make_vec3(&numbers[0]);
+							translate = physx::PxVec3 (physx::PxReal(gVec.x), physx::PxReal(gVec.y), physx::PxReal(gVec.z));
+						}
+						if (param.first == "pxRotate")
+						{
+							//rotate = glm::make_vec3(&numbers[0]);
 						}
 					}
+					physx::PxTransform transform (translate);
+					actor = px.CreateActor(model, transform);
 
 					if (actor)
 					{

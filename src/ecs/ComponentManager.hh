@@ -128,7 +128,7 @@ namespace ecs
 		if (compMask[compIndex] == false)
 		{
 			throw runtime_error("entity does not have a component of type "
-				+ string(tIndex.name()));
+								+ string(tIndex.name()));
 		}
 
 		static_cast<ComponentPool<CompType>*>(componentPools.at(compIndex))->Remove(e);
@@ -154,7 +154,7 @@ namespace ecs
 		if (!Has<CompType>(e))
 		{
 			throw runtime_error("entity does not have a component of type "
-				+ string(typeid(CompType).name()));
+								+ string(typeid(CompType).name()));
 		}
 
 		auto compIndex = compTypeToCompIndex.at(typeid(CompType));

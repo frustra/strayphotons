@@ -63,10 +63,11 @@ namespace sp
 		dispatcher->release();
 	}
 
-	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model)
+	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PxTransform transform)
 	{
-		PxTransform position(0, 0, 0);
-		PxRigidDynamic *actor = physics->createRigidDynamic(position);
+		Logf("%d, %d, %d", transform.p.x, transform.p.y, transform.p.z);
+		Logf("%d, %d, %d", transform.p.x, transform.p.y, transform.p.z);
+		PxRigidDynamic *actor = physics->createRigidDynamic(transform);
 		PxMaterial *mat = physics->createMaterial(0.6f, 0.5f, 0.0f);
 
 		for (auto prim : model->primitives)

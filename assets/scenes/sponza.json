@@ -22,7 +22,8 @@
 				"translate": [-0.2, 3, -4.5]
 			},
 			"physics": {
-				"model": "box"
+				"model": "box",
+				"pxTranslate": [-0.2, 3, -4.5]
 			}
 		},
 		{
@@ -31,7 +32,8 @@
 				"translate": [0, 1, -4]
 			},
 			"physics": {
-				"model": "box"
+				"model": "box",
+				"pxTranslate" : [0, 1, -4]
 			}
 		},
 		{
@@ -40,7 +42,8 @@
 				"translate": [0.5, 5, -4.5]
 			},
 			"physics": {
-				"model": "box"
+				"model": "box",
+				"pxTranslate" : [0.5, 5, -4.5]
 			}
 		},
 		{
