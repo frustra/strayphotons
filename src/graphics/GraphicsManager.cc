@@ -1,6 +1,7 @@
 #include "graphics/GraphicsManager.hh"
 #include "core/Logging.hh"
 #include "graphics/Renderer.hh"
+#include "graphics/raytrace/RaytracedRenderer.hh"
 #include "graphics/GuiRenderer.hh"
 #include "graphics/GPUTimer.hh"
 #include "ecs/components/View.hh"
@@ -16,6 +17,7 @@ namespace sp
 {
 	static CVar<glm::ivec2> CVarWindowSize("r.Size", { 0, 0 }, "Window height");
 	static CVar<int> CVarWindowFullscreen("r.Fullscreen", false, "Fullscreen window (0: window, 1: fullscreen)");
+	static CVar<int> CVarRayTrace("r.RayTrace", false, "Run reference raytracer");
 
 	static void glfwErrorCallback(int error, const char *message)
 	{
@@ -50,6 +52,7 @@ namespace sp
 		renderer->CreateWindow(primaryView.extents);
 
 		guiRenderer = new GuiRenderer(*renderer, game->gui);
+		rayTracer = new raytrace::RaytracedRenderer(game, renderer);
 
 		game->gui.Attach(new ProfilerGui(renderer->timer));
 	}
@@ -58,6 +61,8 @@ namespace sp
 	{
 		if (!renderer) throw "no active context";
 
+		delete guiRenderer;
+		delete rayTracer;
 		delete renderer;
 	}
 
@@ -103,10 +108,27 @@ namespace sp
 
 		{
 			RenderPhase phase("Frame", renderer->timer);
+			bool primaryRender = true;
 
-			auto shadowMap = renderer->RenderShadowMaps();
+			if (CVarRayTrace.Get())
+			{
+				if (rayTracer->Enable(primaryView))
+				{
+					rayTracer->Render();
+					primaryRender = false;
+				}
+			}
+			else
+			{
+				rayTracer->Disable();
+			}
 
-			renderer->RenderPass(primaryView, shadowMap);
+			if (primaryRender)
+			{
+				auto shadowMap = renderer->RenderShadowMaps();
+				renderer->RenderPass(primaryView, shadowMap);
+			}
+
 			guiRenderer->Render(primaryView);
 		}
 

@@ -12,6 +12,11 @@ namespace sp
 	class Renderer;
 	class InputManager;
 
+	namespace raytrace
+	{
+		class RaytracedRenderer;
+	}
+
 	class GraphicsManager
 	{
 	public:
@@ -35,6 +40,7 @@ namespace sp
 		Renderer *renderer = nullptr;
 		Game *game = nullptr;
 		GuiRenderer *guiRenderer = nullptr;
+		raytrace::RaytracedRenderer *rayTracer = nullptr;
 
 		ecs::Entity playerView;
 
