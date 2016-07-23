@@ -172,7 +172,7 @@ namespace sp
 
 			for (size_t i = 0; i <= line.length(); i++)
 			{
-				if (i < line.length() && isdigit(line[i]))
+				if (i < line.length() && line[i] > 0 && isdigit(line[i]))
 				{
 					lastInteger += line[i];
 				}
@@ -209,6 +209,7 @@ namespace sp
 		{
 			auto shader = shaders->Get(shaderMeta);
 			boost::hash_combine(hash, shader->GLProgram());
+			shader->BindBuffers();
 		}
 
 		auto cached = pipelineCache.find(hash);

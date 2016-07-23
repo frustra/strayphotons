@@ -8,6 +8,7 @@ namespace sp
 	Texture &Texture::Create(GLenum target)
 	{
 		Assert(!handle);
+		this->target = target;
 		glCreateTextures(target, 1, &handle);
 		return Filter().Wrap();
 	}
@@ -17,6 +18,7 @@ namespace sp
 		if (handle)
 			glDeleteTextures(1, &handle);
 		handle = 0;
+		target = 0;
 		return *this;
 	}
 
@@ -53,14 +55,15 @@ namespace sp
 		return *this;
 	}
 
-	Texture &Texture::Size(GLsizei width, GLsizei height)
+	Texture &Texture::Size(GLsizei width, GLsizei height, GLsizei depth)
 	{
 		this->width = width;
 		this->height = height;
+		this->depth = depth;
 		return *this;
 	}
 
-	Texture &Texture::Storage2D(GLPixelFormat format, GLsizei levels)
+	Texture &Texture::Storage(GLPixelFormat format, GLsizei levels)
 	{
 		Assert(handle);
 		Assert(width && height);
@@ -73,21 +76,32 @@ namespace sp
 
 		this->format = format;
 		this->levels = levels;
-		glTextureStorage2D(handle, levels, this->format.internalFormat, width, height);
+
+		switch (target)
+		{
+			case GL_TEXTURE_1D_ARRAY:
+			case GL_TEXTURE_2D_ARRAY:
+			case GL_TEXTURE_3D:
+				glTextureStorage3D(handle, levels, this->format.internalFormat, width, height, depth);
+				break;
+			default:
+				glTextureStorage2D(handle, levels, this->format.internalFormat, width, height);
+		}
+
 		return *this;
 	}
 
-	Texture &Texture::Storage2D(PixelFormat format, GLsizei levels)
+	Texture &Texture::Storage(PixelFormat format, GLsizei levels)
 	{
-		return Storage2D(GLPixelFormat::PixelFormatMapping(format), levels);
+		return Storage(GLPixelFormat::PixelFormatMapping(format), levels);
 	}
 
-	Texture &Texture::Storage2D(GLenum internalFormat, GLenum format, GLenum type, GLsizei levels, bool preferSRGB)
+	Texture &Texture::Storage(GLenum internalFormat, GLenum format, GLenum type, GLsizei levels, bool preferSRGB)
 	{
-		return Storage2D(GLPixelFormat(internalFormat, format, type, preferSRGB), levels);
+		return Storage(GLPixelFormat(internalFormat, format, type, preferSRGB), levels);
 	}
 
-	Texture &Texture::Image2D(const void *pixels, GLint level, GLsizei subWidth, GLsizei subHeight, GLsizei xoffset, GLsizei yoffset)
+	Texture &Texture::Image2D(const void *pixels, GLint level, GLsizei subWidth, GLsizei subHeight, GLsizei xoffset, GLsizei yoffset, bool genMipmap)
 	{
 		Assert(handle);
 		Assert(pixels);
@@ -100,9 +114,34 @@ namespace sp
 
 		glTextureSubImage2D(handle, level, xoffset, yoffset, subWidth, subHeight, format.format, format.type, pixels);
 
-		if (levels > 1 && level == 0)
-			glGenerateTextureMipmap(handle);
+		if (genMipmap && levels > 1 && level == 0)
+			GenMipmap();
 
+		return *this;
+	}
+
+	Texture &Texture::Image3D(const void *pixels, GLint level, GLsizei subWidth, GLsizei subHeight, GLsizei subDepth, GLsizei xoffset, GLsizei yoffset, GLsizei zoffset, bool genMipmap)
+	{
+		Assert(handle);
+		Assert(pixels);
+		Assert(width && height && depth);
+		Assert(level < levels);
+		Assert(format.Valid());
+
+		if (subWidth == 0) subWidth = width;
+		if (subHeight == 0) subHeight = height;
+
+		glTextureSubImage3D(handle, level, xoffset, yoffset, zoffset, subWidth, subHeight, subDepth, format.format, format.type, pixels);
+
+		if (genMipmap && levels > 1 && level == 0)
+			GenMipmap();
+
+		return *this;
+	}
+
+	Texture &Texture::GenMipmap()
+	{
+		glGenerateTextureMipmap(handle);
 		return *this;
 	}
 
@@ -120,7 +159,7 @@ namespace sp
 		Size(w, h);
 
 		PixelFormat fmt = comp == 1 ? PF_R8 : comp == 2 ? PF_RG8 : comp == 3 ? PF_RGB8 : comp == 4 ? PF_RGBA8 : PF_INVALID;
-		Storage2D(fmt, levels);
+		Storage(fmt, levels);
 		Image2D(data);
 		stbi_image_free(data);
 

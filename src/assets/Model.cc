@@ -87,7 +87,7 @@ namespace sp
 			   .Filter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, 4.0)
 			   .Wrap(GL_REPEAT, GL_REPEAT)
 			   .Size(img.width, img.height)
-			   .Storage2D(texture.internalFormat, texture.format, texture.type, Texture::FullyMipmap, true)
+			   .Storage(texture.internalFormat, texture.format, texture.type, Texture::FullyMipmap, true)
 			   .Image2D(img.image.data());
 	}
 
@@ -144,6 +144,7 @@ namespace sp
 						iAcc.count,
 						iBufView.buffer
 					},
+					primitive.material,
 					material.values["diffuse"].string_value,
 					material.values["specular"].string_value,
 					{

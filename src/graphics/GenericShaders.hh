@@ -16,6 +16,12 @@ namespace sp
 		using Shader::Shader;
 	};
 
+	class ScreenCoverNoAlphaFS : public Shader
+	{
+		SHADER_TYPE(ScreenCoverNoAlphaFS)
+		using Shader::Shader;
+	};
+
 	class BasicOrthoVS : public Shader
 	{
 		SHADER_TYPE(BasicOrthoVS)

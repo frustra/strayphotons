@@ -68,7 +68,7 @@ namespace sp
 	class RenderTargetPool
 	{
 	public:
-		RenderTarget::Ref Get(const RenderTargetDesc &desc);
+		RenderTarget::Ref Get(const RenderTargetDesc desc);
 		void TickFrame();
 
 		GLuint GetFramebuffer(uint32 numAttachments, const Texture *attachments, const Texture *depthStencilAttachment);

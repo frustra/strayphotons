@@ -74,11 +74,11 @@ namespace sp
 
 			baseColorTex.Create()
 			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage2D(PF_RGB8).Image2D(baseColor);
+			.Size(1, 1).Storage(PF_RGB8).Image2D(baseColor);
 
 			roughnessTex.Create()
 			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage2D(PF_RGB8).Image2D(roughness);
+			.Size(1, 1).Storage(PF_RGB8).Image2D(roughness);
 		}
 	};
 
@@ -201,7 +201,12 @@ namespace sp
 			}
 		}
 
-		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, renderTargetSize));
+		if (first)
+		{
+			return nullptr;
+		}
+
+		auto renderTarget = RTPool->Get({ PF_DEPTH32F, renderTargetSize });
 		SetRenderTargets(0, nullptr, &renderTarget->GetTexture());
 
 		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
@@ -229,9 +234,9 @@ namespace sp
 		RenderPhase phase("RenderPass", timer);
 
 		EngineRenderTargets targets;
-		targets.GBuffer0 = RTPool->Get(RenderTargetDesc(PF_RGBA8, view.extents));
-		targets.GBuffer1 = RTPool->Get(RenderTargetDesc(PF_RGBA16F, view.extents));
-		targets.Depth = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, view.extents));
+		targets.GBuffer0 = RTPool->Get({ PF_RGBA8, view.extents });
+		targets.GBuffer1 = RTPool->Get({ PF_RGBA16F, view.extents });
+		targets.Depth = RTPool->Get({ PF_DEPTH32F, view.extents });
 		targets.ShadowMap = shadowMap;
 
 		Texture attachments[] =
@@ -256,10 +261,8 @@ namespace sp
 		//AssertGLOK("Renderer::RenderFrame");
 	}
 
-	void Renderer::ForwardPass(ecs::View &view)
+	void Renderer::PrepareForView(ecs::View &view)
 	{
-		RenderPhase phase("ForwardPass", timer);
-
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_BLEND);
@@ -274,6 +277,12 @@ namespace sp
 			glClearColor(view.clearColor.r, view.clearColor.g, view.clearColor.b, view.clearColor.a);
 			glClear(view.clearMode);
 		}
+	}
+
+	void Renderer::ForwardPass(ecs::View &view)
+	{
+		RenderPhase phase("ForwardPass", timer);
+		PrepareForView(view);
 
 		if (CVarRenderWireframe.Get())
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

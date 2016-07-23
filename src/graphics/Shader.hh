@@ -82,27 +82,39 @@ namespace sp
 	private:
 	};
 
-	struct Uniform
-	{
-		string name;
-		GLint location;
-	};
-
 	class Shader
 	{
 	public:
 		Shader(shared_ptr<ShaderCompileOutput> compileOutput);
 		virtual ~Shader();
 
-		std::unordered_map<string, Uniform> uniforms;
+		struct Buffer
+		{
+			GLint index = -1;
+			size_t size;
+			GLuint handle = 0;
+			GLenum target, usage;
+		};
+
+		struct Uniform
+		{
+			string name;
+			GLint location = -1;
+		};
+
+		vector<Buffer *> buffers;
 
 		const GLuint GLProgram()
 		{
 			return compileOutput->program;
 		}
 
+		void BindBuffers();
+
 	protected:
 		void Bind(Uniform &u, string name);
+		void BindBuffer(Buffer &b, int index, GLenum target = GL_UNIFORM_BUFFER, GLenum usage = GL_STATIC_DRAW);
+		void BufferData(Buffer &b, GLsizei size, const void *data);
 
 		// Methods for setting uniform values.
 

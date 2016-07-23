@@ -41,7 +41,7 @@ namespace sp
 
 		fontTex.Create().Filter(GL_LINEAR, GL_LINEAR)
 		.Size(fontWidth, fontHeight)
-		.Storage2D(PF_RGBA8)
+		.Storage(PF_RGBA8)
 		.Image2D(fontData, 0, fontWidth, fontHeight);
 
 		io.Fonts->TexID = (void *)(intptr_t) fontTex.handle;

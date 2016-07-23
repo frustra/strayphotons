@@ -23,6 +23,7 @@ namespace sp
 		shared_ptr<RenderTarget> RenderShadowMaps();
 		void BeginFrame(ecs::View &fbView, int fullscreen);
 		void RenderPass(ecs::View &view, shared_ptr<RenderTarget> shadowMap);
+		void PrepareForView(ecs::View &view);
 		void ForwardPass(ecs::View &view);
 		void EndFrame();
 

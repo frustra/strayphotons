@@ -14,8 +14,9 @@ namespace sp
 		enum { FullyMipmap = -1 };
 
 		GLuint handle = 0;
+		GLenum target = 0;
 		GLPixelFormat format;
-		GLsizei width = 0, height = 0, levels = 0;
+		GLsizei width = 0, height = 0, depth = 0, levels = 0;
 
 		// For color attachments, must be GL_COLOR_ATTACHMENT0.
 		GLenum attachment;
@@ -28,11 +29,15 @@ namespace sp
 
 		Texture &Filter(GLenum minFilter = GL_LINEAR, GLenum magFilter = GL_LINEAR, float anisotropy = 0.0f);
 		Texture &Wrap(GLenum wrapS = GL_CLAMP_TO_EDGE, GLenum wrapT = GL_CLAMP_TO_EDGE);
-		Texture &Size(GLsizei width, GLsizei height);
-		Texture &Storage2D(GLPixelFormat format, GLsizei levels = 1);
-		Texture &Storage2D(PixelFormat format, GLsizei levels = 1);
-		Texture &Storage2D(GLenum internalFormat, GLenum format, GLenum type, GLsizei levels = 1, bool preferSRGB = false);
-		Texture &Image2D(const void *pixels, GLint level = 0, GLsizei subWidth = 0, GLsizei subHeight = 0, GLsizei xoffset = 0, GLsizei yoffset = 0);
+		Texture &Size(GLsizei width, GLsizei height, GLsizei depth = 1);
+
+		Texture &Storage(GLPixelFormat format, GLsizei levels = 1);
+		Texture &Storage(PixelFormat format, GLsizei levels = 1);
+		Texture &Storage(GLenum internalFormat, GLenum format, GLenum type, GLsizei levels = 1, bool preferSRGB = false);
+		Texture &Image2D(const void *pixels, GLint level = 0, GLsizei subWidth = 0, GLsizei subHeight = 0, GLsizei xoffset = 0, GLsizei yoffset = 0, bool genMipmap = true);
+		Texture &Image3D(const void *pixels, GLint level = 0, GLsizei subWidth = 0, GLsizei subHeight = 0, GLsizei subDepth = 0, GLsizei xoffset = 0, GLsizei yoffset = 0, GLsizei zoffset = 0, bool genMipmap = true);
+		Texture &GenMipmap();
+
 		Texture &LoadFromAsset(shared_ptr<Asset> asset, GLsizei levels = FullyMipmap);
 		Texture &Attachment(GLenum attachment);
 

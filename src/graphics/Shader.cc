@@ -1,6 +1,5 @@
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
-#include "core/Logging.hh"
 
 namespace sp
 {
@@ -18,11 +17,10 @@ namespace sp
 
 	Shader::~Shader()
 	{
-		for (auto &entry : uniforms)
+		for (auto b : buffers)
 		{
-			auto &unif = entry.second;
+			glDeleteBuffers(1, &b->handle);
 		}
-
 	}
 
 	void Shader::Bind(Uniform &u, string name)
@@ -30,5 +28,38 @@ namespace sp
 		u.name = name;
 		u.location = glGetUniformLocation(program, name.c_str());
 		AssertGLOK("glGetUniformLocation");
+	}
+
+	void Shader::BindBuffer(Buffer &b, int index, GLenum target, GLenum usage)
+	{
+		Assert(b.index == -1, "recreating shader buffer");
+
+		b.index = index;
+		b.target = target;
+		b.usage = usage;
+		b.size = 0;
+		glCreateBuffers(1, &b.handle);
+		AssertGLOK("glCreateBuffers");
+
+		buffers.push_back(&b);
+	}
+
+	void Shader::BufferData(Buffer &b, GLsizei size, const void *data)
+	{
+		Assert(b.index != -1, "buffer not created");
+
+		b.size = size;
+		glNamedBufferData(b.handle, size, data, b.usage);
+	}
+
+	void Shader::BindBuffers()
+	{
+		for (auto b : buffers)
+		{
+			if (b->index != -1 && b->size > 0)
+			{
+				glBindBufferRange(b->target, b->index, b->handle, 0, b->size);
+			}
+		}
 	}
 }

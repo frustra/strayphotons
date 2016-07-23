@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <boost/algorithm/string.hpp>
+#include <mutex>
 
 namespace sp
 {
@@ -13,7 +14,10 @@ namespace sp
 	{
 		void GlobalLogOutput(Level lvl, const string &line)
 		{
+			static std::mutex mut;
+			mut.lock();
 			GConsoleManager.AddLog(lvl, line);
+			mut.unlock();
 		}
 	}
 

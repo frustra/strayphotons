@@ -49,7 +49,7 @@ namespace sp
 			}
 			else
 			{
-				throw "Invalid asset path";
+				throw std::runtime_error("Invalid asset path");
 			}
 		}
 		else
@@ -80,11 +80,11 @@ namespace sp
 			bool ret = gltfLoader.LoadASCIIFromString(scene, &err, asset->CharBuffer(), asset->Size(), ASSETS_DIR + "models/" + name);
 			if (!err.empty())
 			{
-				throw err.c_str();
+				throw std::runtime_error(err);
 			}
 			else if (!ret)
 			{
-				throw "Failed to parse glTF";
+				throw std::runtime_error("Failed to parse glTF");
 			}
 
 			model = make_shared<Model>(name, asset, scene);

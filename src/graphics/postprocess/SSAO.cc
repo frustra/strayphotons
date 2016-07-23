@@ -103,7 +103,7 @@ namespace sp
 
 			tex.Create()
 			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(kernelWidth, kernelWidth).Storage2D(PF_RGB8F).Image2D(noise.data());
+			.Size(kernelWidth, kernelWidth).Storage(PF_RGB8F).Image2D(noise.data());
 		}
 	};
 

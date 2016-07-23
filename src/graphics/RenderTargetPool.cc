@@ -4,7 +4,7 @@
 
 namespace sp
 {
-	RenderTarget::Ref RenderTargetPool::Get(const RenderTargetDesc &desc)
+	RenderTarget::Ref RenderTargetPool::Get(const RenderTargetDesc desc)
 	{
 		for (size_t i = 0; i < pool.size(); i++)
 		{
@@ -25,7 +25,7 @@ namespace sp
 		.Create(GL_TEXTURE_2D)
 		.Filter(GL_LINEAR, GL_LINEAR)
 		.Size(desc.extent.x, desc.extent.y)
-		.Storage2D(desc.format, desc.levels)
+		.Storage(desc.format, desc.levels)
 		.Attachment(desc.attachment);
 
 		pool.push_back(ptr);
