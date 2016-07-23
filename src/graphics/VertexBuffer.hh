@@ -48,7 +48,6 @@ namespace sp
 		VertexBuffer &SetElements(size_t n, T *buffer, GLenum usage = GL_STATIC_DRAW)
 		{
 			elements = n;
-			int s = sizeof(T);
 			glNamedBufferData(vbo, n * sizeof(T), buffer, usage);
 			return *this;
 		}

@@ -77,7 +77,7 @@ include_directories(
 add_definitions(-DGLEW_STATIC=1)
 add_library(GLEW STATIC ${EXT_PATH}/glew/src/glew.c)
 
-file(GLOB ImGui_sources ${EXT_PATH}/imgui/*.cpp)
+file(GLOB ImGui_sources ${EXT_PATH}/imgui/imgui.cpp ${EXT_PATH}/imgui/imgui_draw.cpp)
 add_library(ImGui STATIC ${ImGui_sources})
 
 
@@ -139,6 +139,11 @@ target_link_libraries(${PROJECT_LIB} ${PHYSX_LIBRARIES})
 # C++11
 target_compile_features(${PROJECT_LIB} PRIVATE cxx_range_for)
 target_compile_features(${PROJECT_EXE} PRIVATE cxx_range_for)
+
+if (UNIX)
+	target_compile_options(${PROJECT_LIB} PRIVATE -Werror)
+	target_compile_options(${PROJECT_EXE} PRIVATE -Werror)
+endif()
 
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)

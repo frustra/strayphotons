@@ -77,7 +77,7 @@ namespace sp
 	void GPUTimer::Tick()
 	{
 		GLint available;
-		GLuint64 start, end, elapsed;
+		GLuint64 start, end;
 
 		while (pending.size() > 0)
 		{
