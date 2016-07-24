@@ -43,7 +43,7 @@ const float punctualLightSizeSq = 0.01 * 0.01; // 1cm punctual lights
 vec3 evaluateBRDF(vec3 diffuseColor, vec3 specularColor, float roughness, vec3 L, vec3 V, vec3 N) {
 	vec3 H = normalize(V + L);
 	float NdotV = abs(dot(N, V)) + 1e-5; // see [Lagarde/Rousiers 2014]
-	float NdotL = saturate(dot(N, L));
+	float NdotL = abs(dot(N, L)) + 1e-5;
 	float NdotH = saturate(dot(N, H));
 	float VdotH = saturate(dot(V, H));
 
@@ -58,7 +58,7 @@ vec3 evaluateBRDF(vec3 diffuseColor, vec3 specularColor, float roughness, vec3 L
 	vec3 diffuse = BRDF_Diffuse_Lambert(diffuseColor);
 	vec3 specular = D * Vis * F;
 
-	return diffuse + specular;
+	return specular + diffuse;
 }
 
 void main() {

@@ -4,6 +4,7 @@
 #include "graphics/ShaderManager.hh"
 #include "graphics/Util.hh"
 #include "graphics/GenericShaders.hh"
+#include "graphics/SceneShaders.hh"
 #include "graphics/GPUTimer.hh"
 #include "graphics/postprocess/PostProcess.hh"
 #include "core/Game.hh"
@@ -16,35 +17,6 @@
 
 namespace sp
 {
-	class SceneVS : public Shader
-	{
-		SHADER_TYPE(SceneVS)
-
-		SceneVS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
-			Bind(mvpMat, "mvpMat");
-			Bind(normalMat, "normalMat");
-		}
-
-		void SetParams(const ecs::View &view, glm::mat4 modelMat)
-		{
-			Set(mvpMat, view.projMat * view.viewMat * modelMat);
-			Set(normalMat, glm::mat3(view.viewMat * modelMat));
-		}
-
-	private:
-		Uniform mvpMat, normalMat;
-	};
-
-	class SceneFS : public Shader
-	{
-		SHADER_TYPE(SceneFS)
-		using Shader::Shader;
-	};
-
-	IMPLEMENT_SHADER_TYPE(SceneVS, "scene.vert", Vertex);
-	IMPLEMENT_SHADER_TYPE(SceneFS, "scene.frag", Fragment);
-
 	class ExampleCS : public Shader
 	{
 		SHADER_TYPE(ExampleCS)
@@ -65,12 +37,13 @@ namespace sp
 
 	struct DefaultMaterial
 	{
-		Texture baseColorTex, roughnessTex;
+		Texture baseColorTex, roughnessTex, bumpTex;
 
 		DefaultMaterial()
 		{
 			unsigned char baseColor[4] = { 255, 255, 255, 255 };
 			unsigned char roughness[4] = { 200, 200, 200, 255 };
+			unsigned char bump[4] = { 127, 127, 127, 255 };
 
 			baseColorTex.Create()
 			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
@@ -79,6 +52,10 @@ namespace sp
 			roughnessTex.Create()
 			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
 			.Size(1, 1).Storage(PF_RGB8).Image2D(roughness);
+
+			bumpTex.Create()
+			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+			.Size(1, 1).Storage(PF_RGB8).Image2D(bump);
 		}
 	};
 
@@ -104,6 +81,11 @@ namespace sp
 			else
 				primitive->roughnessTex = &defaultMat.roughnessTex;
 
+			if (primitive->bumpName.length() > 0)
+				primitive->bumpTex = comp->model->LoadTexture(primitive->bumpName);
+			else
+				primitive->bumpTex = &defaultMat.bumpTex;
+
 			glCreateVertexArrays(1, &primitive->vertexBufferHandle);
 			for (int i = 0; i < 3; i++)
 			{
@@ -128,6 +110,9 @@ namespace sp
 
 			if (primitive->roughnessTex)
 				primitive->roughnessTex->Bind(1);
+
+			if (primitive->bumpTex)
+				primitive->bumpTex->Bind(2);
 
 			glDrawElements(
 				primitive->drawMode,
@@ -206,8 +191,9 @@ namespace sp
 			return nullptr;
 		}
 
-		auto renderTarget = RTPool->Get({ PF_DEPTH32F, renderTargetSize });
-		SetRenderTargets(0, nullptr, &renderTarget->GetTexture());
+		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_R32F, renderTargetSize));
+		auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, renderTargetSize));
+		SetRenderTarget(&renderTarget->GetTexture(), &depthTarget->GetTexture());
 
 		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
 		glDisable(GL_SCISSOR_TEST);
@@ -222,7 +208,13 @@ namespace sp
 				light->mapOffset /= glm::vec4(renderTargetSize, renderTargetSize);
 
 				ecs::Handle<ecs::View> view = entity.Get<ecs::View>();
-				ForwardPass(*view);
+
+				ShaderControl->BindPipeline<ShadowMapVS, ShadowMapFS>(GlobalShaders);
+
+				auto shadowMapVS = GlobalShaders->Get<ShadowMapVS>();
+				auto shadowMapFS = GlobalShaders->Get<ShadowMapFS>();
+				shadowMapFS->SetClip(view->clip);
+				ForwardPass(*view, shadowMapVS);
 			}
 		}
 
@@ -249,7 +241,11 @@ namespace sp
 
 		ecs::View forwardPassView = view;
 		forwardPassView.offset = glm::ivec2();
-		ForwardPass(forwardPassView);
+
+		ShaderControl->BindPipeline<SceneVS, SceneGS, SceneFS>(GlobalShaders);
+
+		auto sceneVS = GlobalShaders->Get<SceneVS>();
+		ForwardPass(forwardPassView, sceneVS);
 
 		// Run postprocessing.
 		glDisable(GL_SCISSOR_TEST);
@@ -279,7 +275,7 @@ namespace sp
 		}
 	}
 
-	void Renderer::ForwardPass(ecs::View &view)
+	void Renderer::ForwardPass(ecs::View &view, SceneShader *shader)
 	{
 		RenderPhase phase("ForwardPass", timer);
 		PrepareForView(view);
@@ -287,15 +283,11 @@ namespace sp
 		if (CVarRenderWireframe.Get())
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-		ShaderControl->BindPipeline<SceneVS, SceneFS>(GlobalShaders);
-
-		auto sceneVS = GlobalShaders->Get<SceneVS>();
-
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>())
 		{
 			auto comp = ent.Get<ecs::Renderable>();
 			auto modelMat = ent.Get<ecs::Transform>()->GetModelTransform(*ent.GetManager());
-			sceneVS->SetParams(view, modelMat);
+			shader->SetParams(view, modelMat);
 			DrawRenderable(comp);
 		}
 

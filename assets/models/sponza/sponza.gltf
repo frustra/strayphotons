@@ -270,6 +270,9 @@
         "image_vase_round.tga": {
             "uri": "vase_round.tga"
         },
+        "image_vase_round_spec.tga": {
+            "uri": "vase_round_spec.tga"
+        },
         "image_background.tga": {
             "uri": "background.tga"
         },
@@ -377,6 +380,39 @@
         },
         "image_lion.tga": {
             "uri": "lion.tga"
+        },
+        "image_background_bump.png": {
+            "uri": "background_bump.png"
+        },
+        "image_chain_texture_bump.png": {
+            "uri": "chain_texture_bump.png"
+        },
+        "image_lion_bump.png": {
+            "uri": "lion_bump.png"
+        },
+        "image_spnza_bricks_a_bump.png": {
+            "uri": "spnza_bricks_a_bump.png"
+        },
+        "image_sponza_arch_bump.png": {
+            "uri": "sponza_arch_bump.png"
+        },
+        "image_sponza_column_a_bump.png": {
+            "uri": "sponza_column_a_bump.png"
+        },
+        "image_sponza_column_b_bump.png": {
+            "uri": "sponza_column_b_bump.png"
+        },
+        "image_sponza_column_c_bump.png": {
+            "uri": "sponza_column_c_bump.png"
+        },
+        "image_sponza_thorn_bump.png": {
+            "uri": "sponza_thorn_bump.png"
+        },
+        "image_vase_bump.png": {
+            "uri": "vase_bump.png"
+        },
+        "image_vase_round_bump.png": {
+            "uri": "vase_round_bump.png"
         }
     },
     "materials": {
@@ -386,6 +422,7 @@
             "values": {
                 "ambient": "texture_sponza_thorn_diff.tga",
                 "diffuse": "texture_sponza_thorn_diff.tga",
+                "bump": "texture_sponza_thorn_bump.png",
                 "emission": [
                     0,
                     0,
@@ -420,13 +457,14 @@
             "values": {
                 "ambient": "texture_vase_round.tga",
                 "diffuse": "texture_vase_round.tga",
+                "bump": "texture_vase_round_bump.png",
                 "emission": [
                     0,
                     0,
                     0,
                     1
                 ],
-                "specular": "texture_vase_round.tga",
+                "specular": "texture_vase_round_spec.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -437,6 +475,7 @@
             "values": {
                 "ambient": "texture_background.tga",
                 "diffuse": "texture_background.tga",
+                "bump": "texture_background_bump.png",
                 "emission": [
                     0,
                     0,
@@ -454,6 +493,7 @@
             "values": {
                 "ambient": "texture_spnza_bricks_a_diff.tga",
                 "diffuse": "texture_spnza_bricks_a_diff.tga",
+                "bump": "texture_spnza_bricks_a_bump.png",
                 "emission": [
                     0,
                     0,
@@ -471,6 +511,7 @@
             "values": {
                 "ambient": "texture_sponza_arch_diff.tga",
                 "diffuse": "texture_sponza_arch_diff.tga",
+                "bump": "texture_sponza_arch_bump.png",
                 "emission": [
                     0,
                     0,
@@ -505,6 +546,7 @@
             "values": {
                 "ambient": "texture_sponza_column_a_diff.tga",
                 "diffuse": "texture_sponza_column_a_diff.tga",
+                "bump": "texture_sponza_column_a_bump.png",
                 "emission": [
                     0,
                     0,
@@ -539,6 +581,7 @@
             "values": {
                 "ambient": "texture_sponza_column_c_diff.tga",
                 "diffuse": "texture_sponza_column_c_diff.tga",
+                "bump": "texture_sponza_column_c_bump.png",
                 "emission": [
                     0,
                     0,
@@ -573,6 +616,7 @@
             "values": {
                 "ambient": "texture_sponza_column_b_diff.tga",
                 "diffuse": "texture_sponza_column_b_diff.tga",
+                "bump": "texture_sponza_column_b_bump.png",
                 "emission": [
                     0,
                     0,
@@ -741,6 +785,7 @@
             "values": {
                 "ambient": "texture_chain_texture.tga",
                 "diffuse": "texture_chain_texture.tga",
+                "bump": "texture_chain_texture_bump.png",
                 "emission": [
                     0,
                     0,
@@ -775,6 +820,7 @@
             "values": {
                 "ambient": "texture_vase_dif.tga",
                 "diffuse": "texture_vase_dif.tga",
+                "bump": "texture_vase_bump.png",
                 "emission": [
                     0,
                     0,
@@ -797,6 +843,7 @@
             "values": {
                 "ambient": "texture_lion.tga",
                 "diffuse": "texture_lion.tga",
+                "bump": "texture_lion_bump.png",
                 "emission": [
                     0,
                     0,
@@ -1135,6 +1182,14 @@
             "target": 3553,
             "type": 5121
         },
+        "texture_vase_round_spec.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_vase_round_spec.tga",
+            "target": 3553,
+            "type": 5121
+        },
         "texture_background.tga": {
             "format": 6407,
             "internalFormat": 6407,
@@ -1420,6 +1475,94 @@
             "internalFormat": 6407,
             "sampler": "sampler_0",
             "source": "image_lion.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_background_bump.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_background_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_chain_texture_bump.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_chain_texture_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_lion_bump.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_lion_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_spnza_bricks_a_bump.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_spnza_bricks_a_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_arch_bump.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_sponza_arch_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_column_a_bump.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_sponza_column_a_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_column_b_bump.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_sponza_column_b_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_column_c_bump.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_sponza_column_c_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_thorn_bump.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_sponza_thorn_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_vase_bump.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_vase_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_vase_round_bump.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_vase_round_bump.png",
             "target": 3553,
             "type": 5121
         }

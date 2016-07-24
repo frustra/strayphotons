@@ -147,12 +147,13 @@ namespace sp
 					primitive.material,
 					material.values["diffuse"].string_value,
 					material.values["specular"].string_value,
+					material.values["bump"].string_value,
 					{
 						GetPrimitiveAttribute(scene, &primitive, "POSITION"),
 						GetPrimitiveAttribute(scene, &primitive, "NORMAL"),
 						GetPrimitiveAttribute(scene, &primitive, "TEXCOORD_0")
 					},
-					0, 0, nullptr, nullptr
+					0, 0, nullptr, nullptr, nullptr
 				});
 			}
 		}

@@ -1,8 +1,8 @@
 float sampleOcclusion(sampler2D map, int i, vec3 shadowMapPos, vec3 shadowMapTexCoord) {
 	float sampledDepth = texture(map, shadowMapTexCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy).r;
-	float fragmentDepth = shadowMapTexCoord.z;//(length(shadowMapPos) - lightClip[i].x) / (lightClip[i].y - lightClip[i].x);
+	float fragmentDepth = (length(shadowMapPos) - lightClip[i].x) / (lightClip[i].y - lightClip[i].x);
 
-	return step(0, -shadowMapPos.z) * smoothstep(fragmentDepth - 0.00010, fragmentDepth - 0.00005, sampledDepth);
+	return step(0, -shadowMapPos.z) * smoothstep(fragmentDepth - 0.0001, fragmentDepth - 0.00005, sampledDepth);
 }
 
 float directOcclusion(sampler2D map, int i, vec3 shadowMapPos, vec3 shadowMapTexCoord, mat2 rotation0) {

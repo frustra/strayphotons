@@ -7,6 +7,8 @@ namespace sp
 #define PF_DEFINITIONS \
 	PF_DEF(PF_INVALID,           GL_NONE,               GL_NONE,            GL_NONE) \
 	PF_DEF(PF_R8,                GL_R8,                 GL_RED,             GL_UNSIGNED_BYTE) \
+	PF_DEF(PF_R32UI,             GL_R32UI,              GL_RED,             GL_UNSIGNED_INT) \
+	PF_DEF(PF_R32F,              GL_R32F,               GL_RED,             GL_FLOAT) \
 	PF_DEF(PF_RG8,               GL_RG8,                GL_RG,              GL_UNSIGNED_BYTE) \
 	PF_DEF(PF_RGB8,              GL_RGB8,               GL_RGB,             GL_UNSIGNED_BYTE) \
 	PF_DEF(PF_SRGB8,             GL_SRGB8,              GL_RGB,             GL_UNSIGNED_BYTE) \
