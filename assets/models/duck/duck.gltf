@@ -113,7 +113,6 @@
     "materials": {
         "blinn3-fx": {
             "name": "blinn3",
-            "technique": "technique0",
             "values": {
                 "ambient": [
                     0,
@@ -227,17 +226,6 @@
             "name": "directionalLight1"
         }
     },
-    "programs": {
-        "program_0": {
-            "attributes": [
-                "a_normal",
-                "a_position",
-                "a_texcoord0"
-            ],
-            "fragmentShader": "duck0FS",
-            "vertexShader": "duck0VS"
-        }
-    },
     "samplers": {
         "sampler_0": {
             "magFilter": 9729,
@@ -256,99 +244,7 @@
             ]
         }
     },
-    "shaders": {
-        "duck0FS": {
-            "type": 35632,
-            "uri": "duck0FS.glsl"
-        },
-        "duck0VS": {
-            "type": 35633,
-            "uri": "duck0VS.glsl"
-        }
-    },
     "skins": {},
-    "techniques": {
-        "technique0": {
-            "attributes": {
-                "a_normal": "normal",
-                "a_position": "position",
-                "a_texcoord0": "texcoord0"
-            },
-            "parameters": {
-                "ambient": {
-                    "type": 35666
-                },
-                "diffuse": {
-                    "type": 35678
-                },
-                "emission": {
-                    "type": 35666
-                },
-                "light0Color": {
-                    "type": 35665,
-                    "value": [
-                        1,
-                        1,
-                        1
-                    ]
-                },
-                "light0Transform": {
-                    "node": "directionalLight1",
-                    "semantic": "MODELVIEW",
-                    "type": 35676
-                },
-                "modelViewMatrix": {
-                    "semantic": "MODELVIEW",
-                    "type": 35676
-                },
-                "normal": {
-                    "semantic": "NORMAL",
-                    "type": 35665
-                },
-                "normalMatrix": {
-                    "semantic": "MODELVIEWINVERSETRANSPOSE",
-                    "type": 35675
-                },
-                "position": {
-                    "semantic": "POSITION",
-                    "type": 35665
-                },
-                "projectionMatrix": {
-                    "semantic": "PROJECTION",
-                    "type": 35676
-                },
-                "shininess": {
-                    "type": 5126
-                },
-                "specular": {
-                    "type": 35666
-                },
-                "texcoord0": {
-                    "semantic": "TEXCOORD_0",
-                    "type": 35664
-                }
-            },
-            "program": "program_0",
-            "states": {
-                "enable": [
-                    2929,
-                    2884
-                ]
-            },
-            "uniforms": {
-                "u_ambient": "ambient",
-                "u_diffuse": "diffuse",
-                "u_emission": "emission",
-                "u_light0Color": "light0Color",
-                "u_light0Transform": "light0Transform",
-                "u_modelViewMatrix": "modelViewMatrix",
-                "u_normalMatrix": "normalMatrix",
-                "u_projectionMatrix": "projectionMatrix",
-                "u_shininess": "shininess",
-                "u_specular": "specular"
-            }
-        }
-    },
     "textures": {
         "texture_file2": {
             "format": 6407,
