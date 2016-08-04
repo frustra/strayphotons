@@ -1,10 +1,14 @@
+#include <PxScene.h>
 #include "physx/PhysxManager.hh"
-#include "core/Logging.hh"
+
 #include "assets/Model.hh"
+#include "core/Logging.hh"
+#include "core/CVar.hh"
 
 namespace sp
 {
 	using namespace physx;
+	static CVar<float> CVarGravity("g.Gravity", -9.81f, "Force of gravity");
 
 	PhysxManager::PhysxManager()
 	{
@@ -33,6 +37,30 @@ namespace sp
 
 	void PhysxManager::Frame(double timeStep)
 	{
+		if (CVarGravity.Changed())
+		{
+			scene->setGravity(PxVec3(0.f, CVarGravity.Get(true), 0.f));
+
+			vector<PxActor *> buffer(256, nullptr);
+			size_t startIndex = 0;
+
+			while (true)
+			{
+				size_t n = scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC, &buffer[0], buffer.size(), startIndex);
+
+				for (size_t i = 0; i < n; i++)
+				{
+					auto dynamicActor = static_cast<PxRigidDynamic *>(buffer[i]);
+					dynamicActor->wakeUp();
+				}
+
+				if (n < buffer.size())
+					break;
+
+				startIndex += n;
+			}
+		}
+
 		scene->simulate((PxReal) timeStep);
 		scene->fetchResults(true);
 	}
@@ -41,7 +69,7 @@ namespace sp
 	{
 		PxSceneDesc sceneDesc(physics->getTolerancesScale());
 
-		sceneDesc.gravity = PxVec3(0.f, -9.81f, 0.f);
+		sceneDesc.gravity = PxVec3(0.f, CVarGravity.Get(true), 0.f);
 
 		if (!sceneDesc.filterShader)
 			sceneDesc.filterShader = PxDefaultSimulationFilterShader;
