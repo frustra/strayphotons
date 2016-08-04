@@ -21,7 +21,7 @@ namespace sp
 
 	void GameLogic::Init()
 	{
-		scene = GAssets.LoadScene("sponza", &game->entityManager, game->physics);
+		scene = GAssets.LoadScene("test1", &game->entityManager, game->physics);
 
 		ecs::Entity player = scene->FindEntity("player");
 		humanControlSystem.AssignController(player);
@@ -30,7 +30,8 @@ namespace sp
 
 		input->AddCharInputCallback([&](uint32 ch)
 		{
-			if (ch == 'q') {
+			if (ch == 'q')
+			{
 				auto entity = game->entityManager.NewEntity();
 				auto model = GAssets.LoadModel("dodecahedron");
 				entity.Assign<ecs::Renderable>(model);
