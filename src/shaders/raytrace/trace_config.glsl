@@ -10,4 +10,4 @@ const int MAX_LIGHTS = 32;
 const int MAX_MATERIALS = 32;
 const int MAX_MESHES = 64;
 
-const vec3 SKY_LIGHT = vec3(000.0); // illuminance in lux
+const vec3 SKY_LIGHT = vec3(1000.0); // illuminance in lux

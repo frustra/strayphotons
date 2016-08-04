@@ -93,9 +93,6 @@ namespace sp
 
 	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PxTransform transform, PxMeshScale scale, bool dynamic)
 	{
-		Logf("%d, %d, %d", transform.p.x, transform.p.y, transform.p.z);
-		Logf("%d, %d, %d", transform.p.x, transform.p.y, transform.p.z);
-
 		PxRigidActor *actor;
 
 		if (dynamic)
