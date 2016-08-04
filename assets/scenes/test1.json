@@ -1,0 +1,173 @@
+{
+	"entities": [
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [0, -5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [0, -5, 0],
+				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [10, 5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [10, 5, 0],
+				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [0, 5, 10]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [0, 5, 10],
+				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [0, 5, -10]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [0, 5, -10],
+				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [-10, 5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [-10, 5, 0],
+				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "duck",
+			"renderable": "duck",
+			"transform": {
+				"translate": [0, 0, -2]
+			}
+		},
+		{
+			"_name": "box",
+			"renderable": "box",
+			"transform": {
+				"translate": [-0.2, 3, 0.5]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [-0.2, 3, 0.5]
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"translate": [0, 1, 1]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate" : [0, 1, 1]
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"translate": [0.5, 5, 0.5]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate" : [0.5, 5, 0.5]
+			}
+		},
+		{
+			"renderable": "dodecahedron",
+			"transform": {
+				"translate": [1, 10, -0.5]
+			},
+			"physics": {
+				"model": "dodecahedron",
+				"pxTranslate": [1, 10, -0.5]
+			}
+		},
+		{
+			"_name": "player",
+			"view": {
+				"extents": [1600, 900],
+				"clip": [0.1, 256],
+				"fov": 60
+			},
+			"transform": {
+				"translate": [0, 1, 0]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 1, 1],
+				"intensity": 1000,
+				"spotAngle": 30
+			},
+			"view": {
+				"extents": [512, 512],
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"relativeTo": "player",
+				"translate": [0, -0.3, 0]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"intensity": 3000,
+				"spotAngle": 50
+			},
+			"view": {
+				"extents": [2048, 2048],
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"translate": [7, 20, 7],
+				"rotate": [-50, 1, -1, 0]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 1, 1],
+				"intensity": 100,
+				"spotAngle": 50
+			},
+			"view": {
+				"extents": [2048, 2048],
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"translate": [-7, 20, -7],
+				"rotate": [-130, 1, 0, 0]
+			}
+		}
+	]
+}

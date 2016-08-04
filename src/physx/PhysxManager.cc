@@ -91,7 +91,7 @@ namespace sp
 		dispatcher->release();
 	}
 
-	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PxTransform transform, bool dynamic)
+	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PxTransform transform, PxMeshScale scale, bool dynamic)
 	{
 		Logf("%d, %d, %d", transform.p.x, transform.p.y, transform.p.z);
 		Logf("%d, %d, %d", transform.p.x, transform.p.y, transform.p.z);
@@ -132,7 +132,7 @@ namespace sp
 			PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
 			PxConvexMesh *hull = physics->createConvexMesh(input);
 
-			actor->createShape(PxConvexMeshGeometry(hull), *mat);
+			actor->createShape(PxConvexMeshGeometry(hull, scale), *mat);
 		}
 
 		if (dynamic)

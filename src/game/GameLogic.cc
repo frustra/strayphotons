@@ -15,7 +15,7 @@
 namespace sp
 {
 	GameLogic::GameLogic(Game *game)
-		: game(game), humanControlSystem(&game->entityManager, &game->input)
+		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input)
 	{
 	}
 
@@ -27,6 +27,24 @@ namespace sp
 		humanControlSystem.AssignController(player);
 
 		game->graphics.SetPlayerView(player);
+
+		input->AddCharInputCallback([&](uint32 ch)
+		{
+			if (ch == 'q') {
+				auto entity = game->entityManager.NewEntity();
+				auto model = GAssets.LoadModel("dodecahedron");
+				entity.Assign<ecs::Renderable>(model);
+				auto transform = entity.Assign<ecs::Transform>();
+				transform->Translate(glm::vec3(0, 5, 0));
+
+				auto actor = game->physics.CreateActor(model, physx::PxTransform(physx::PxVec3(0, 5, 0)));
+
+				if (actor)
+				{
+					auto physics = entity.Assign<ecs::Physics>(actor);
+				}
+			}
+		});
 	}
 
 	GameLogic::~GameLogic()

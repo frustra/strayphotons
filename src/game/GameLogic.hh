@@ -18,6 +18,7 @@ namespace sp
 		bool Frame(double dtSinceLastFrame);
 	private:
 		Game *game;
+		InputManager *input;
 		ecs::HumanControlSystem humanControlSystem;
 		shared_ptr<Scene> scene;
 	};

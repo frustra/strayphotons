@@ -29,8 +29,6 @@ void main()
 	vec2 dCoord = 1.0 / textureSize(bumpTex, 0);
 
 	mat3 tangentMat = mat3(normalize(inTangent), normalize(inBitangent), normalize(inNormal));
-	// Some model faces have undefined UV coordiantes, ignore them.
-	if (any(isnan(inTangent))) discard;
 
 	float a = texture(bumpTex, inTexCoord).r;
 	float dx;
@@ -43,6 +41,9 @@ void main()
 	float dy = a - texture(bumpTex, inTexCoord - vec2(0, dCoord.y)).r;
 
 	vec3 viewNormal = normalize(tangentMat * vec3(dx, dy, bumpDepth));
+
+	// Some model faces have undefined UV coordiantes, ignore bump map.
+	if (any(isnan(inTangent))) viewNormal = normalize(inNormal);
 #else
 	vec3 viewNormal = normalize(inNormal);
 #endif

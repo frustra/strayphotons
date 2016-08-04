@@ -235,6 +235,7 @@ namespace sp
 
 					shared_ptr<Model> model;
 					auto translate = physx::PxVec3 (0, 0, 0);
+					auto scale = physx::PxVec3 (1, 1, 1);
 					bool dynamic = true;
 
 					//auto rotate = physx::PxQuat (0);
@@ -257,17 +258,31 @@ namespace sp
 							glm::vec3 gVec = glm::make_vec3(&numbers[0]);
 							translate = physx::PxVec3 (physx::PxReal(gVec.x), physx::PxReal(gVec.y), physx::PxReal(gVec.z));
 						}
-						if (param.first == "pxRotate")
+						else if (param.first == "pxScale")
+						{
+							auto values = param.second.get<picojson::array>();
+							numbers.resize(values.size());
+
+							for (size_t i = 0; i < values.size(); i++)
+							{
+								numbers[i] = values[i].get<double>();
+							}
+
+							glm::vec3 gVec = glm::make_vec3(&numbers[0]);
+							scale = physx::PxVec3 (physx::PxReal(gVec.x), physx::PxReal(gVec.y), physx::PxReal(gVec.z));
+						}
+						else if (param.first == "pxRotate")
 						{
 							//rotate = glm::make_vec3(&numbers[0]);
 						}
-						if (param.first == "dynamic")
+						else if (param.first == "dynamic")
 						{
 							dynamic = param.second.get<bool>();
 						}
 					}
-					physx::PxTransform transform (translate);
-					actor = px.CreateActor(model, transform, dynamic);
+					physx::PxTransform transform(translate);
+					physx::PxMeshScale meshScale(scale, physx::PxQuat::createIdentity());
+					actor = px.CreateActor(model, transform, meshScale, dynamic);
 
 					if (actor)
 					{
