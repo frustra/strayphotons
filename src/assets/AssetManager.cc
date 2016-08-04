@@ -235,6 +235,8 @@ namespace sp
 
 					shared_ptr<Model> model;
 					auto translate = physx::PxVec3 (0, 0, 0);
+					bool dynamic = true;
+
 					//auto rotate = physx::PxQuat (0);
 					for (auto param : comp.second.get<picojson::object>())
 					{
@@ -259,9 +261,13 @@ namespace sp
 						{
 							//rotate = glm::make_vec3(&numbers[0]);
 						}
+						if (param.first == "dynamic")
+						{
+							dynamic = param.second.get<bool>();
+						}
 					}
 					physx::PxTransform transform (translate);
-					actor = px.CreateActor(model, transform);
+					actor = px.CreateActor(model, transform, dynamic);
 
 					if (actor)
 					{

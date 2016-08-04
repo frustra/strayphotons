@@ -63,11 +63,18 @@ namespace sp
 		dispatcher->release();
 	}
 
-	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PxTransform transform)
+	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PxTransform transform, bool dynamic)
 	{
 		Logf("%d, %d, %d", transform.p.x, transform.p.y, transform.p.z);
 		Logf("%d, %d, %d", transform.p.x, transform.p.y, transform.p.z);
-		PxRigidDynamic *actor = physics->createRigidDynamic(transform);
+
+		PxRigidActor *actor;
+
+		if (dynamic)
+			actor = physics->createRigidDynamic(transform);
+		else
+			actor = physics->createRigidStatic(transform);
+
 		PxMaterial *mat = physics->createMaterial(0.6f, 0.5f, 0.0f);
 
 		for (auto prim : model->primitives)
@@ -100,7 +107,9 @@ namespace sp
 			actor->createShape(PxConvexMeshGeometry(hull), *mat);
 		}
 
-		PxRigidBodyExt::updateMassAndInertia(*actor, 1.0f);
+		if (dynamic)
+			PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidDynamic *>(actor), 1.0f);
+
 		scene->addActor(*actor);
 		return actor;
 	}

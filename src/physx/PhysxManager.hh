@@ -15,7 +15,7 @@ namespace sp
 	public:
 		PhysxManager();
 		~PhysxManager();
-		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, physx::PxTransform transform = physx::PxTransform());
+		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, physx::PxTransform transform = physx::PxTransform(), bool dynamic = true);
 		void Frame(double timeStep);
 	private:
 		void CreatePhysxScene();
