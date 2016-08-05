@@ -61,6 +61,8 @@ add_subdirectory(${EXT_PATH}/freetype2)
 set(GOOGLETEST_DIR ${EXT_PATH}/googletest/googletest)
 add_subdirectory(${EXT_PATH}/googletest)
 
+add_subdirectory(${EXT_PATH}/glomerate)
+
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${EXT_PATH}/physx/PhysXSDK/Include
@@ -71,6 +73,7 @@ include_directories(
 	${EXT_PATH}/glm
 	${EXT_PATH}/freetype2/include
 	${EXT_PATH}/tinygltfloader
+	${EXT_PATH}/glomerate/include
 	${EXT_PATH}
 )
 
@@ -149,7 +152,7 @@ set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJE
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
 
-target_link_libraries(${PROJECT_LIB} glfw ${GLFW_LIBRARIES} freetype)
+target_link_libraries(${PROJECT_LIB} glfw ${GLFW_LIBRARIES} freetype glomerate)
 target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
 target_link_libraries(sp ${OPENGL_LIBRARIES} GLEW glfw ${GLFW_LIBRARIES} freetype ImGui)
 

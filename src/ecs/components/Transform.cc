@@ -1,7 +1,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "ecs/Ecs.hh"
+#include <Ecs.hh>
 #include "ecs/components/Transform.hh"
 
 namespace ecs

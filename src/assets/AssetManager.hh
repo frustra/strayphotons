@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.hh"
-#include "ecs/Ecs.hh"
+#include <Ecs.hh>
 #include "physx/PhysxManager.hh"
 #include "graphics/Texture.hh"
 #include <tiny_gltf_loader.h>

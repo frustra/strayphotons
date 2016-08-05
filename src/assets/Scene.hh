@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.hh"
-#include "ecs/Ecs.hh"
+#include <Ecs.hh>
 
 #include <unordered_map>
 

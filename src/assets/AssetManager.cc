@@ -9,7 +9,7 @@
 
 #include "core/Logging.hh"
 
-#include "ecs/Ecs.hh"
+#include <Ecs.hh>
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/View.hh"

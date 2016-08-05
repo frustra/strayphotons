@@ -3,10 +3,11 @@
 #include "physx/PhysxManager.hh"
 #include "graphics/GraphicsManager.hh"
 #include "Common.hh"
-#include "ecs/Ecs.hh"
 #include "game/GameLogic.hh"
 #include "game/InputManager.hh"
 #include "game/GuiManager.hh"
+
+#include <Ecs.hh>
 
 namespace sp
 {

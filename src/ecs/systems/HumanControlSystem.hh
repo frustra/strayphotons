@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ecs/Ecs.hh"
+#include <Ecs.hh>
 #include "ecs/components/Controller.hh"
 #include "game/InputManager.hh"
 
