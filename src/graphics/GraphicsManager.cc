@@ -13,11 +13,16 @@
 #include <iostream>
 #include <system_error>
 
+//#define SP_ENABLE_RAYTRACER
+
 namespace sp
 {
 	static CVar<glm::ivec2> CVarWindowSize("r.Size", { 0, 0 }, "Window height");
 	static CVar<int> CVarWindowFullscreen("r.Fullscreen", false, "Fullscreen window (0: window, 1: fullscreen)");
+
+#ifdef SP_ENABLE_RAYTRACER
 	static CVar<int> CVarRayTrace("r.RayTrace", false, "Run reference raytracer");
+#endif
 
 	static void glfwErrorCallback(int error, const char *message)
 	{
@@ -52,7 +57,10 @@ namespace sp
 		renderer->CreateWindow(primaryView.extents);
 
 		guiRenderer = new GuiRenderer(*renderer, game->gui);
+
+#ifdef SP_ENABLE_RAYTRACER
 		rayTracer = new raytrace::RaytracedRenderer(game, renderer);
+#endif
 
 		game->gui.Attach(new ProfilerGui(renderer->timer));
 	}
@@ -62,7 +70,11 @@ namespace sp
 		if (!renderer) throw "no active context";
 
 		delete guiRenderer;
+
+#ifdef SP_ENABLE_RAYTRACER
 		delete rayTracer;
+#endif
+
 		delete renderer;
 	}
 
@@ -110,6 +122,7 @@ namespace sp
 			RenderPhase phase("Frame", renderer->timer);
 			bool primaryRender = true;
 
+#ifdef SP_ENABLE_RAYTRACER
 			if (CVarRayTrace.Get())
 			{
 				if (rayTracer->Enable(primaryView))
@@ -122,6 +135,7 @@ namespace sp
 			{
 				rayTracer->Disable();
 			}
+#endif
 
 			if (primaryRender)
 			{
