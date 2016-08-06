@@ -15,8 +15,17 @@ namespace sp
 	public:
 		PhysxManager();
 		~PhysxManager();
-		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, physx::PxTransform transform = physx::PxTransform(), physx::PxMeshScale scale = physx::PxMeshScale(), bool dynamic = true);
+
 		void Frame(double timeStep);
+		void StartThread();
+		void StartSimulation();
+		void StopSimulation();
+		void Lock();
+		void Unlock();
+		void ReadLock();
+		void ReadUnlock();
+
+		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, physx::PxTransform transform = physx::PxTransform(), physx::PxMeshScale scale = physx::PxMeshScale(), bool dynamic = true);
 	private:
 		void CreatePhysxScene();
 		void DestroyPhysxScene();
@@ -29,6 +38,7 @@ namespace sp
 		physx::PxCooking *pxCooking;
 
 		physx::PxScene *scene;
+		bool simulate = false, resultsPending = false;
 	};
 }
 

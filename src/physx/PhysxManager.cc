@@ -5,6 +5,8 @@
 #include "core/Logging.hh"
 #include "core/CVar.hh"
 
+#include <thread>
+
 namespace sp
 {
 	using namespace physx;
@@ -24,10 +26,13 @@ namespace sp
 		Assert(pxCooking, "PxCreateCooking");
 
 		CreatePhysxScene();
+		StartThread();
+		StartSimulation();
 	}
 
 	PhysxManager::~PhysxManager()
 	{
+		StopSimulation();
 		DestroyPhysxScene();
 
 		pxCooking->release();
@@ -37,6 +42,25 @@ namespace sp
 
 	void PhysxManager::Frame(double timeStep)
 	{
+		while (resultsPending)
+		{
+			if (!simulate)
+			{
+				return;
+			}
+
+			Lock();
+			if (scene->fetchResults())
+			{
+				// Lock continues to be held.
+				resultsPending = false;
+				break;
+			}
+
+			Unlock();
+			std::this_thread::sleep_for(std::chrono::milliseconds(2));
+		}
+
 		if (CVarGravity.Changed())
 		{
 			scene->setGravity(PxVec3(0.f, CVarGravity.Get(true), 0.f));
@@ -62,7 +86,8 @@ namespace sp
 		}
 
 		scene->simulate((PxReal) timeStep);
-		scene->fetchResults(true);
+		resultsPending = true;
+		Unlock();
 	}
 
 	void PhysxManager::CreatePhysxScene()
@@ -80,19 +105,86 @@ namespace sp
 		scene = physics->createScene(sceneDesc);
 		Assert(scene, "creating PhysX scene");
 
+		Lock();
 		PxMaterial *groundMat = physics->createMaterial(0.6f, 0.5f, 0.0f);
 		PxRigidStatic *groundPlane = PxCreatePlane(*physics, PxPlane(0.f, 1.f, 0.f, 1.03f), *groundMat);
 		scene->addActor(*groundPlane);
+		Unlock();
 	}
 
 	void PhysxManager::DestroyPhysxScene()
 	{
+		Lock();
 		scene->release();
+		scene = nullptr;
 		dispatcher->release();
+		dispatcher = nullptr;
+	}
+
+	void PhysxManager::StartThread()
+	{
+		std::thread thread([&]
+		{
+			const double rate = 60.0; // frames/sec
+
+			while (true)
+			{
+				double frameStart = glfwGetTime();
+
+				if (simulate)
+					Frame(1.0 / rate);
+
+				double frameEnd = glfwGetTime();
+				double sleepFor = 1.0 / rate + frameStart - frameEnd;
+
+				std::this_thread::sleep_for(std::chrono::duration<double>(sleepFor));
+			}
+		});
+
+		thread.detach();
+	}
+
+	void PhysxManager::StartSimulation()
+	{
+		Lock();
+		simulate = true;
+		Unlock();
+	}
+
+	void PhysxManager::StopSimulation()
+	{
+		Lock();
+		simulate = false;
+		Unlock();
+	}
+
+	void PhysxManager::Lock()
+	{
+		Assert(scene);
+		scene->lockWrite();
+	}
+
+	void PhysxManager::Unlock()
+	{
+		Assert(scene);
+		scene->unlockWrite();
+	}
+
+	void PhysxManager::ReadLock()
+	{
+		Assert(scene);
+		scene->lockRead();
+	}
+
+	void PhysxManager::ReadUnlock()
+	{
+		Assert(scene);
+		scene->unlockRead();
 	}
 
 	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PxTransform transform, PxMeshScale scale, bool dynamic)
 	{
+		Lock();
 		PxRigidActor *actor;
 
 		if (dynamic)
@@ -136,6 +228,7 @@ namespace sp
 			PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidDynamic *>(actor), 1.0f);
 
 		scene->addActor(*actor);
+		Unlock();
 		return actor;
 	}
 }

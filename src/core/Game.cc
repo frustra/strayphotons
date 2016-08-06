@@ -69,33 +69,53 @@ namespace sp
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;
 
-		for (ecs::Entity ent : entityManager.EntitiesWith<ecs::Physics>())
 		{
-			auto physics = ent.Get<ecs::Physics>();
+			// Sync transforms to physx
+			bool gotLock = false;
 
-			if (physics->needsTransformSync)
+			for (ecs::Entity ent : entityManager.EntitiesWith<ecs::Physics>())
 			{
-				auto transform = ent.Get<ecs::Transform>();
-				auto mat = transform->GetModelTransform(entityManager);
-				auto pxMat = *(physx::PxMat44 *)(glm::value_ptr(mat));
+				auto ph = ent.Get<ecs::Physics>();
 
-				physx::PxTransform newPose(pxMat);
-				physics->actor->setGlobalPose(newPose);
-				physics->needsTransformSync = false;
+				if (ph->needsTransformSync)
+				{
+					if (!gotLock)
+					{
+						physics.Lock();
+						gotLock = true;
+					}
+
+					auto transform = ent.Get<ecs::Transform>();
+					auto mat = transform->GetModelTransform(entityManager);
+					auto pxMat = *(physx::PxMat44 *)(glm::value_ptr(mat));
+
+					physx::PxTransform newPose(pxMat);
+					ph->actor->setGlobalPose(newPose);
+					ph->needsTransformSync = false;
+				}
 			}
+
+			if (gotLock)
+				physics.Unlock();
 		}
 
-		physics.Frame(dt);
-
-		for (ecs::Entity ent : entityManager.EntitiesWith<ecs::Physics>())
 		{
-			auto physics = ent.Get<ecs::Physics>();
-			auto pxMat = (physx::PxMat44)(physics->actor->getGlobalPose());
-			auto mat = *((glm::mat4 *) pxMat.front());
+			// Sync transforms from physx
+			physics.ReadLock();
 
-			auto transform = ent.Get<ecs::Transform>();
-			transform->SetTransform(mat);
+			for (ecs::Entity ent : entityManager.EntitiesWith<ecs::Physics>())
+			{
+				auto physics = ent.Get<ecs::Physics>();
+				auto pxMat = (physx::PxMat44)(physics->actor->getGlobalPose());
+				auto mat = *((glm::mat4 *) pxMat.front());
+
+				auto transform = ent.Get<ecs::Transform>();
+				transform->SetTransform(mat);
+			}
+
+			physics.ReadUnlock();
 		}
+
 		lastFrameTime = frameTime;
 		return true;
 	}
