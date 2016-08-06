@@ -28,7 +28,7 @@ typedef int64_t int64;
 namespace sp
 {
 	void Assert(bool condition);
-	void Assert(bool condition, string message);
+	void Assert(bool condition, const string &message);
 
 	uint32 CeilToPowerOfTwo(uint32 v);
 	uint32 Uint32Log2(uint32 v);

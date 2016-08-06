@@ -2,7 +2,6 @@
 
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
-#include <unordered_map>
 #include <array>
 #include <functional>
 #include "Common.hh"

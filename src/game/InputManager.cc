@@ -1,7 +1,6 @@
 #include "InputManager.hh"
 #include "Common.hh"
 
-#include <unordered_map>
 #include <algorithm>
 #include <stdexcept>
 #include <GLFW/glfw3.h>

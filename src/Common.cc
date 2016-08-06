@@ -10,7 +10,7 @@
 
 namespace sp
 {
-	void Assert(bool condition, string message)
+	void Assert(bool condition, const string &message)
 	{
 #ifndef NDEBUG
 		if (!condition)
@@ -24,7 +24,8 @@ namespace sp
 
 	void Assert(bool condition)
 	{
-		return Assert(condition, "assertion failed");
+		static const string message = "assertion failed";
+		return Assert(condition, message);
 	}
 
 	uint32 CeilToPowerOfTwo(uint32 v)
