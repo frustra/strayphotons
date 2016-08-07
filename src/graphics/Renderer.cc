@@ -197,6 +197,8 @@ namespace sp
 
 		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
 		glDisable(GL_SCISSOR_TEST);
+		glEnable(GL_CULL_FACE);
+		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -223,14 +225,16 @@ namespace sp
 
 	const int VoxelGridSize = 256;
 
-	shared_ptr<RenderTarget> Renderer::RenderVoxelGrid()
+	VoxelColors Renderer::RenderVoxelGrid()
 	{
 		RenderPhase phase("VoxelGrid", timer);
 
 		glm::ivec3 renderTargetSize = glm::ivec3(VoxelGridSize);
 
-		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
-		renderTarget->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
+		auto renderTargetRG = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
+		auto renderTargetBA = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
+		renderTargetRG->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
+		renderTargetBA->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
 
 		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
 		glDisable(GL_SCISSOR_TEST);
@@ -264,10 +268,11 @@ namespace sp
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 
-		return renderTarget;
+		VoxelColors colors = {renderTargetRG, renderTargetBA};
+		return colors;
 	}
 
-	void Renderer::RenderPass(ecs::View &view, shared_ptr<RenderTarget> shadowMap, shared_ptr<RenderTarget> voxelGrid)
+	void Renderer::RenderPass(ecs::View &view, shared_ptr<RenderTarget> shadowMap, VoxelColors voxelGrid)
 	{
 		RenderPhase phase("RenderPass", timer);
 
@@ -284,6 +289,8 @@ namespace sp
 			targets.GBuffer1->GetTexture(),
 		};
 
+		glEnable(GL_CULL_FACE);
+		glEnable(GL_DEPTH_TEST);
 		SetRenderTargets(2, attachments, &targets.Depth->GetTexture());
 
 		ecs::View forwardPassView = view;
@@ -306,8 +313,6 @@ namespace sp
 
 	void Renderer::PrepareForView(ecs::View &view)
 	{
-		glEnable(GL_CULL_FACE);
-		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_BLEND);
 		glDisable(GL_STENCIL_TEST);
 		glDepthMask(GL_TRUE);

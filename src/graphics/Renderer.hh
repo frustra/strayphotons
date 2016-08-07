@@ -22,9 +22,9 @@ namespace sp
 
 		void Prepare();
 		shared_ptr<RenderTarget> RenderShadowMaps();
-		shared_ptr<RenderTarget> RenderVoxelGrid();
+		VoxelColors RenderVoxelGrid();
 		void BeginFrame(ecs::View &fbView, int fullscreen);
-		void RenderPass(ecs::View &view, shared_ptr<RenderTarget> shadowMap, shared_ptr<RenderTarget> voxelGrid);
+		void RenderPass(ecs::View &view, shared_ptr<RenderTarget> shadowMap, VoxelColors voxelGrid);
 		void PrepareForView(ecs::View &view);
 		void ForwardPass(ecs::View &view, SceneShader *shader);
 		void EndFrame();

@@ -5,7 +5,8 @@
 layout (binding = 0) uniform sampler2D gBuffer0;
 layout (binding = 1) uniform sampler2D gBuffer1;
 layout (binding = 2) uniform sampler2D depthStencil;
-layout (binding = 3) uniform usampler3D voxelGrid;
+layout (binding = 3) uniform usampler3D voxelColorRG;
+layout (binding = 4) uniform usampler3D voxelColorBA;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
@@ -26,6 +27,12 @@ void main()
 	} else if (mode == 4) {
 		outFragColor.rgb = vec3(texture(gBuffer0, inTexCoord).a);
 	} else if (mode == 5) {
-		outFragColor.rgb = vec3(texture(voxelGrid, vec3(inTexCoord, 0)).r) / 256;
+		uint data = texture(voxelColorRG, vec3(inTexCoord, 3.0/256)).r;
+		float red = float((data & 0xFFFF0000) >> 16) / 256.0;
+		float green = float(data & 0xFFFF) / 256.0;
+		data = texture(voxelColorBA, vec3(inTexCoord, 3.0/256)).r;
+		float blue = float((data & 0xFFFF0000) >> 16) / 256.0;
+		uint count = data & 0xFFFF;
+		outFragColor.rgb = vec3(red, green, blue) / float(count);
 	}
 }

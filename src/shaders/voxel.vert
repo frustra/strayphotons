@@ -16,9 +16,9 @@ layout (location = 2) out vec2 outTexCoord;
 
 void main()
 {
-	gl_Position = projection * view * model * vec4(inPos, 1.0);
-	mat4 normalMat = view * model;
-	outViewPos = vec3(normalMat * vec4(inPos, 1.0));
-	outNormal = mat3(normalMat) * inNormal;
+	vec4 tmp = view * model * vec4(inPos, 1.0);
+	outViewPos = tmp.xyz / tmp.w;
+	gl_Position = projection * tmp;
+	outNormal = mat3(view * model) * inNormal;
 	outTexCoord = inTexCoord;
 }

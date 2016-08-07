@@ -4,11 +4,13 @@
 
 uniform int depth;
 
-layout (location = 0, r32ui) uniform uimage3D voxelGrid;
+layout (binding = 0, r32ui) uniform uimage3D voxelColorRG;
+layout (binding = 1, r32ui) uniform uimage3D voxelColorBA;
 
 void main()
 {
 	for (int i = 0; i < depth; i++) {
-		imageStore(voxelGrid, ivec3(gl_FragCoord.xy, i), uvec4(0));
+		imageStore(voxelColorRG, ivec3(gl_FragCoord.xy, i), uvec4(0));
+		imageStore(voxelColorBA, ivec3(gl_FragCoord.xy, i), uvec4(0));
 	}
 }
