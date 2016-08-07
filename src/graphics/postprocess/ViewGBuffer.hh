@@ -4,7 +4,7 @@
 
 namespace sp
 {
-	class ViewGBuffer : public PostProcessPass<3, 1>
+	class ViewGBuffer : public PostProcessPass<4, 1>
 	{
 	public:
 		ViewGBuffer(int mode) : mode(mode) {}

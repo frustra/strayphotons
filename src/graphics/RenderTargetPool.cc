@@ -22,9 +22,9 @@ namespace sp
 		ptr->id = nextRenderTargetID++;
 
 		ptr->tex
-		.Create(GL_TEXTURE_2D)
+		.Create(desc.extent.z != 1 ? GL_TEXTURE_3D : GL_TEXTURE_2D)
 		.Filter(GL_LINEAR, GL_LINEAR)
-		.Size(desc.extent.x, desc.extent.y)
+		.Size(desc.extent.x, desc.extent.y, desc.extent.z)
 		.Storage(desc.format, desc.levels)
 		.Attachment(desc.attachment);
 

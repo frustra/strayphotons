@@ -26,10 +26,25 @@ namespace sp
 		Set(clip, newClip);
 	}
 
+	VoxelClearFS::VoxelClearFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+	{
+		Bind(depth, "depth");
+	}
+
+	void VoxelClearFS::SetDepth(int newDepth)
+	{
+		Set(depth, newDepth);
+	}
+
 	IMPLEMENT_SHADER_TYPE(SceneVS, "scene.vert", Vertex);
-	IMPLEMENT_SHADER_TYPE(SceneFS, "scene.frag", Fragment);
 	IMPLEMENT_SHADER_TYPE(SceneGS, "scene.geom", Geometry);
+	IMPLEMENT_SHADER_TYPE(SceneFS, "scene.frag", Fragment);
 
 	IMPLEMENT_SHADER_TYPE(ShadowMapVS, "shadow_map.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(ShadowMapFS, "shadow_map.frag", Fragment);
+
+	IMPLEMENT_SHADER_TYPE(VoxelVS, "voxel.vert", Vertex);
+	IMPLEMENT_SHADER_TYPE(VoxelGS, "voxel.geom", Geometry);
+	IMPLEMENT_SHADER_TYPE(VoxelFS, "voxel.frag", Fragment);
+	IMPLEMENT_SHADER_TYPE(VoxelClearFS, "voxel_clear.frag", Fragment);
 }

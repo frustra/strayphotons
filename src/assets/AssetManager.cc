@@ -281,7 +281,7 @@ namespace sp
 						}
 					}
 					physx::PxTransform transform(translate);
-					physx::PxMeshScale meshScale(scale, physx::PxQuat::createIdentity());
+					physx::PxMeshScale meshScale(scale, physx::PxQuat(physx::PxIdentity));
 					actor = px.CreateActor(model, transform, meshScale, dynamic);
 
 					if (actor)

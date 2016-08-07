@@ -10,7 +10,7 @@ namespace sp
 	{
 		RenderTargetDesc() {}
 
-		RenderTargetDesc(PixelFormat format, glm::ivec2 extent) :
+		RenderTargetDesc(PixelFormat format, glm::ivec3 extent) :
 			format(format), extent(extent), attachment(GL_COLOR_ATTACHMENT0)
 		{
 			auto glformat = GLPixelFormat::PixelFormatMapping(format).format;
@@ -31,11 +31,14 @@ namespace sp
 			}
 		}
 
+		RenderTargetDesc(PixelFormat format, glm::ivec2 extent) :
+			RenderTargetDesc(format, {extent.x, extent.y, 1}) {}
+
 		RenderTargetDesc(PixelFormat format, glm::ivec2 extent, GLenum attachment) :
-			format(format), extent(extent), attachment(attachment) {}
+			format(format), extent(extent.x, extent.y, 1), attachment(attachment) {}
 
 		PixelFormat format;
-		glm::ivec2 extent = { 0, 0 };
+		glm::ivec3 extent = { 0, 0, 0 };
 		uint32 levels = 1;
 		GLenum attachment;
 

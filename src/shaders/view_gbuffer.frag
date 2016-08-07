@@ -5,6 +5,7 @@
 layout (binding = 0) uniform sampler2D gBuffer0;
 layout (binding = 1) uniform sampler2D gBuffer1;
 layout (binding = 2) uniform sampler2D depthStencil;
+layout (binding = 3) uniform usampler3D voxelGrid;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
@@ -24,5 +25,7 @@ void main()
 		outFragColor.rgb = vec3(-position.z / 32.0);
 	} else if (mode == 4) {
 		outFragColor.rgb = vec3(texture(gBuffer0, inTexCoord).a);
+	} else if (mode == 5) {
+		outFragColor.rgb = vec3(texture(voxelGrid, vec3(inTexCoord, 0)).r) / 256;
 	}
 }

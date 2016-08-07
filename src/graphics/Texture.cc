@@ -71,6 +71,7 @@ namespace sp
 		if (levels == FullyMipmap)
 		{
 			int maxdim = width > height ? width : height;
+			maxdim = depth > maxdim ? depth : maxdim;
 			levels = Uint32Log2(CeilToPowerOfTwo(maxdim)) + 1;
 		}
 

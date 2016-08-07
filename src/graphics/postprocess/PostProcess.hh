@@ -81,13 +81,13 @@ namespace sp
 
 		void SetInput(uint32 id, ProcessPassOutputRef input)
 		{
-			Assert(id < inputCount);
+			Assert(id < inputCount, "post-process input overflow");
 			inputs[id] = input;
 		}
 
 		void SetDependency(uint32 id, ProcessPassOutputRef depend)
 		{
-			Assert(id < dependencyCount);
+			Assert(id < dependencyCount, "post-process dependency overflow");
 			dependencies[id] = depend;
 		}
 
@@ -128,7 +128,7 @@ namespace sp
 	{
 		RenderTarget::Ref GBuffer0, GBuffer1, GBuffer2;
 		RenderTarget::Ref Depth;
-		RenderTarget::Ref ShadowMap;
+		RenderTarget::Ref ShadowMap, VoxelGrid;
 	};
 
 	class PostProcessingContext
@@ -160,6 +160,7 @@ namespace sp
 		ProcessPassOutputRef GBuffer1;
 		ProcessPassOutputRef Depth;
 		ProcessPassOutputRef ShadowMap;
+		ProcessPassOutputRef VoxelGrid;
 
 	private:
 		vector<PostProcessPassBase *> passes;

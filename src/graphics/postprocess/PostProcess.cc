@@ -92,6 +92,11 @@ namespace sp
 			context.ShadowMap = context.AddPass<ProxyProcessPass>(targets.ShadowMap);
 		}
 
+		if (targets.VoxelGrid)
+		{
+			context.VoxelGrid = context.AddPass<ProxyProcessPass>(targets.VoxelGrid);
+		}
+
 		if (CVarLightingEnabled.Get() && targets.ShadowMap != nullptr)
 		{
 			AddLighting(context);
@@ -126,6 +131,7 @@ namespace sp
 			viewGBuf->SetInput(0, context.GBuffer0);
 			viewGBuf->SetInput(1, context.GBuffer1);
 			viewGBuf->SetInput(2, context.Depth);
+			viewGBuf->SetInput(3, context.VoxelGrid);
 			context.LastOutput = viewGBuf;
 		}
 

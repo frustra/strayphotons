@@ -140,7 +140,8 @@ namespace sp
 			if (primaryRender)
 			{
 				auto shadowMap = renderer->RenderShadowMaps();
-				renderer->RenderPass(primaryView, shadowMap);
+				auto voxelGrid = renderer->RenderVoxelGrid();
+				renderer->RenderPass(primaryView, shadowMap, voxelGrid);
 			}
 
 			guiRenderer->Render(primaryView);

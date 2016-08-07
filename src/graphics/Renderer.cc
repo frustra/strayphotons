@@ -221,7 +221,51 @@ namespace sp
 		return renderTarget;
 	}
 
-	void Renderer::RenderPass(ecs::View &view, shared_ptr<RenderTarget> shadowMap)
+	const int VoxelGridSize = 256;
+
+	shared_ptr<RenderTarget> Renderer::RenderVoxelGrid()
+	{
+		RenderPhase phase("VoxelGrid", timer);
+
+		glm::ivec3 renderTargetSize = glm::ivec3(VoxelGridSize);
+
+		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
+		renderTarget->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
+
+		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
+		glDisable(GL_SCISSOR_TEST);
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_CULL_FACE);
+
+		ShaderControl->BindPipeline<BasicPostVS, VoxelClearFS>(GlobalShaders);
+		auto voxelClearFS = GlobalShaders->Get<VoxelClearFS>();
+		voxelClearFS->SetDepth(VoxelGridSize);
+		DrawScreenCover();
+
+		ShaderControl->BindPipeline<VoxelVS, VoxelFS>(GlobalShaders);
+
+		ecs::View view;
+		for (auto entity : game->entityManager.EntitiesWith<ecs::View>())
+		{
+			auto tmp = entity.Get<ecs::View>();
+			view = *tmp;
+			break;
+		}
+		view.offset = glm::ivec2(0);
+		view.extents = glm::ivec2(VoxelGridSize);
+		view.clearMode = 0;
+
+		auto voxelVS = GlobalShaders->Get<VoxelVS>();
+		ForwardPass(view, voxelVS);
+
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_CULL_FACE);
+
+		return renderTarget;
+	}
+
+	void Renderer::RenderPass(ecs::View &view, shared_ptr<RenderTarget> shadowMap, shared_ptr<RenderTarget> voxelGrid)
 	{
 		RenderPhase phase("RenderPass", timer);
 
@@ -230,6 +274,7 @@ namespace sp
 		targets.GBuffer1 = RTPool->Get({ PF_RGBA16F, view.extents });
 		targets.Depth = RTPool->Get({ PF_DEPTH32F, view.extents });
 		targets.ShadowMap = shadowMap;
+		targets.VoxelGrid = voxelGrid;
 
 		Texture attachments[] =
 		{

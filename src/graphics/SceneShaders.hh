@@ -23,15 +23,15 @@ namespace sp
 		using SceneShader::SceneShader;
 	};
 
-	class SceneFS : public Shader
-	{
-		SHADER_TYPE(SceneFS)
-		using Shader::Shader;
-	};
-
 	class SceneGS : public Shader
 	{
 		SHADER_TYPE(SceneGS)
+		using Shader::Shader;
+	};
+
+	class SceneFS : public Shader
+	{
+		SHADER_TYPE(SceneFS)
 		using Shader::Shader;
 	};
 
@@ -51,5 +51,35 @@ namespace sp
 
 	private:
 		Uniform clip;
+	};
+
+	class VoxelVS : public SceneShader
+	{
+		SHADER_TYPE(VoxelVS)
+		using SceneShader::SceneShader;
+	};
+
+	class VoxelGS : public Shader
+	{
+		SHADER_TYPE(VoxelGS)
+		using Shader::Shader;
+	};
+
+	class VoxelFS : public Shader
+	{
+		SHADER_TYPE(VoxelFS)
+		using Shader::Shader;
+	};
+
+	class VoxelClearFS : public Shader
+	{
+		SHADER_TYPE(VoxelClearFS)
+
+		VoxelClearFS(shared_ptr<ShaderCompileOutput> compileOutput);
+
+		void SetDepth(int newDepth);
+
+	private:
+		Uniform depth;
 	};
 }
