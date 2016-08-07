@@ -234,15 +234,16 @@ namespace sp
 
 		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
 		glDisable(GL_SCISSOR_TEST);
-		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
 		ShaderControl->BindPipeline<BasicPostVS, VoxelClearFS>(GlobalShaders);
 		auto voxelClearFS = GlobalShaders->Get<VoxelClearFS>();
 		voxelClearFS->SetDepth(VoxelGridSize);
 		DrawScreenCover();
 
-		ShaderControl->BindPipeline<VoxelVS, VoxelFS>(GlobalShaders);
+		ShaderControl->BindPipeline<VoxelVS, VoxelGS, VoxelFS>(GlobalShaders);
 
 		ecs::View view;
 		for (auto entity : game->entityManager.EntitiesWith<ecs::View>())
@@ -258,6 +259,7 @@ namespace sp
 		auto voxelVS = GlobalShaders->Get<VoxelVS>();
 		ForwardPass(view, voxelVS);
 
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
