@@ -162,7 +162,7 @@ namespace sp
 		ProcessPassOutputRef GBuffer1;
 		ProcessPassOutputRef Depth;
 		ProcessPassOutputRef ShadowMap;
-		ProcessPassOutputRef VoxelColorRG, VoxelColorBA;
+		ProcessPassOutputRef VoxelColor;
 
 	private:
 		vector<PostProcessPassBase *> passes;

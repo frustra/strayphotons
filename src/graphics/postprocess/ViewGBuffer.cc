@@ -14,16 +14,18 @@ namespace sp
 		{
 			Bind(mode, "mode");
 			Bind(invProj, "invProjMat");
+			Bind(invView, "invViewMat");
 		}
 
 		void SetParameters(int newMode, const ecs::View &view)
 		{
 			Set(mode, newMode);
 			Set(invProj, view.invProjMat);
+			Set(invView, view.invViewMat);
 		}
 
 	private:
-		Uniform mode, invProj;
+		Uniform mode, invProj, invView;
 	};
 
 	IMPLEMENT_SHADER_TYPE(ViewGBufferFS, "view_gbuffer.frag", Fragment);

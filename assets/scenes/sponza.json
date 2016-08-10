@@ -47,6 +47,16 @@
 			}
 		},
 		{
+			"renderable": "dodecahedron",
+			"transform": {
+				"translate": [1, 10, -0.5]
+			},
+			"physics": {
+				"model": "dodecahedron",
+				"pxTranslate": [1, 10, -0.5]
+			}
+		},
+		{
 			"_name": "player",
 			"view": {
 				"extents": [1600, 900],

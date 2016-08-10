@@ -92,10 +92,9 @@ namespace sp
 			context.ShadowMap = context.AddPass<ProxyProcessPass>(targets.ShadowMap);
 		}
 
-		if (targets.VoxelGrid.ColorRG)
+		if (targets.VoxelGrid.Color)
 		{
-			context.VoxelColorRG = context.AddPass<ProxyProcessPass>(targets.VoxelGrid.ColorRG);
-			context.VoxelColorBA = context.AddPass<ProxyProcessPass>(targets.VoxelGrid.ColorBA);
+			context.VoxelColor = context.AddPass<ProxyProcessPass>(targets.VoxelGrid.Color);
 		}
 
 		if (CVarLightingEnabled.Get() && targets.ShadowMap != nullptr)
@@ -132,8 +131,7 @@ namespace sp
 			viewGBuf->SetInput(0, context.GBuffer0);
 			viewGBuf->SetInput(1, context.GBuffer1);
 			viewGBuf->SetInput(2, context.Depth);
-			viewGBuf->SetInput(3, context.VoxelColorRG);
-			viewGBuf->SetInput(4, context.VoxelColorBA);
+			viewGBuf->SetInput(3, context.VoxelColor);
 			context.LastOutput = viewGBuf;
 		}
 

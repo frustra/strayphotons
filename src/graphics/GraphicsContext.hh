@@ -15,7 +15,7 @@ namespace sp
 	class RenderTarget;
 
 	struct VoxelColors {
-		shared_ptr<RenderTarget> ColorRG, ColorBA;
+		shared_ptr<RenderTarget> Color;
 	};
 
 	class GraphicsContext

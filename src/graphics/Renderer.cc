@@ -224,17 +224,16 @@ namespace sp
 	}
 
 	const int VoxelGridSize = 256;
+	const float VoxelSize = 0.0453;
 
 	VoxelColors Renderer::RenderVoxelGrid()
 	{
 		RenderPhase phase("VoxelGrid", timer);
 
-		glm::ivec3 renderTargetSize = glm::ivec3(VoxelGridSize);
+		glm::ivec3 renderTargetSize = glm::ivec3(VoxelGridSize * 2, VoxelGridSize, VoxelGridSize);
 
-		auto renderTargetRG = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
-		auto renderTargetBA = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
-		renderTargetRG->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
-		renderTargetBA->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
+		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
+		renderTarget->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
 
 		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
 		glDisable(GL_SCISSOR_TEST);
@@ -247,15 +246,12 @@ namespace sp
 		voxelClearFS->SetDepth(VoxelGridSize);
 		DrawScreenCover();
 
+		glViewport(0, 0, VoxelGridSize, VoxelGridSize);
 		ShaderControl->BindPipeline<VoxelVS, VoxelGS, VoxelFS>(GlobalShaders);
 
 		ecs::View view;
-		for (auto entity : game->entityManager.EntitiesWith<ecs::View>())
-		{
-			auto tmp = entity.Get<ecs::View>();
-			view = *tmp;
-			break;
-		}
+		view.viewMat = glm::scale(glm::mat4(), glm::vec3(1.0/(VoxelGridSize * VoxelSize)));
+		view.projMat = glm::mat4();
 		view.offset = glm::ivec2(0);
 		view.extents = glm::ivec2(VoxelGridSize);
 		view.clearMode = 0;
@@ -268,7 +264,7 @@ namespace sp
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 
-		VoxelColors colors = {renderTargetRG, renderTargetBA};
+		VoxelColors colors = {renderTarget};
 		return colors;
 	}
 
