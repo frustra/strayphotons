@@ -42,6 +42,8 @@ namespace sp
 
 	void PhysxManager::Frame(double timeStep)
 	{
+		bool hadResults = false;
+
 		while (resultsPending)
 		{
 			if (!simulate)
@@ -49,7 +51,9 @@ namespace sp
 				return;
 			}
 
+			hadResults = true;
 			Lock();
+
 			if (scene->fetchResults())
 			{
 				// Lock continues to be held.
@@ -60,6 +64,9 @@ namespace sp
 			Unlock();
 			std::this_thread::sleep_for(std::chrono::milliseconds(2));
 		}
+
+		if (!hadResults)
+			Lock();
 
 		if (CVarGravity.Changed())
 		{
@@ -137,7 +144,7 @@ namespace sp
 				double frameEnd = glfwGetTime();
 				double sleepFor = 1.0 / rate + frameStart - frameEnd;
 
-				std::this_thread::sleep_for(std::chrono::duration<double>(sleepFor));
+				std::this_thread::sleep_for(std::chrono::nanoseconds((uint64) (sleepFor * 1e9)));
 			}
 		});
 
