@@ -233,30 +233,37 @@ namespace sp
 
 		glm::ivec3 renderTargetSize = glm::ivec3(VoxelGridSize * 2, VoxelGridSize, VoxelGridSize);
 
-		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
-		renderTarget->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
+		auto packedVoxels = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
+		auto unpackedVoxels = RTPool->Get(RenderTargetDesc(PF_RGBA8, renderTargetSize));
 
 		glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-		glClearTexImage(renderTarget->GetTexture().handle, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
+		glClearTexImage(packedVoxels->GetTexture().handle, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
+		glClearTexImage(unpackedVoxels->GetTexture().handle, 0, GL_RGBA, GL_UNSIGNED_INT, nullptr);
+
+		ecs::View ortho;
+		ortho.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * VoxelSize)));
+		ortho.viewMat = glm::translate(ortho.viewMat, -VoxelGridCenter);
+		ortho.projMat = glm::mat4();
+		ortho.offset = glm::ivec2(0);
+		ortho.extents = glm::ivec2(VoxelGridSize);
+		ortho.clearMode = 0;
 
 		{
 			glViewport(0, 0, VoxelGridSize, VoxelGridSize);
-			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
-
-			ecs::View view;
-			view.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * VoxelSize)));
-			view.viewMat = glm::translate(view.viewMat, -VoxelGridCenter);
-			view.projMat = glm::mat4();
-			view.offset = glm::ivec2(0);
-			view.extents = glm::ivec2(VoxelGridSize);
-			view.clearMode = 0;
-
 			auto voxelVS = GlobalShaders->Get<VoxelRasterVS>();
-			ForwardPass(view, voxelVS);
+
+			packedVoxels->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
+			unpackedVoxels->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
+
+			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
+			ForwardPass(ortho, voxelVS);
+
+			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelConvertFS>(GlobalShaders);
+			ForwardPass(ortho, voxelVS);
 		}
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -265,7 +272,7 @@ namespace sp
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 
-		VoxelColors colors = {renderTarget};
+		VoxelColors colors = {unpackedVoxels};
 		return colors;
 	}
 

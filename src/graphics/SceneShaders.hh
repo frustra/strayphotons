@@ -71,6 +71,12 @@ namespace sp
 		using Shader::Shader;
 	};
 
+	class VoxelConvertFS : public Shader
+	{
+		SHADER_TYPE(VoxelConvertFS)
+		using Shader::Shader;
+	};
+
 	class VoxelClearFS : public Shader
 	{
 		SHADER_TYPE(VoxelClearFS)

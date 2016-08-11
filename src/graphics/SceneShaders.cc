@@ -46,5 +46,6 @@ namespace sp
 	IMPLEMENT_SHADER_TYPE(VoxelRasterVS, "voxel.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(VoxelRasterGS, "voxel.geom", Geometry);
 	IMPLEMENT_SHADER_TYPE(VoxelRasterFS, "voxel.frag", Fragment);
+	IMPLEMENT_SHADER_TYPE(VoxelConvertFS, "voxel_convert.frag", Fragment);
 	IMPLEMENT_SHADER_TYPE(VoxelClearFS, "voxel_clear.frag", Fragment);
 }

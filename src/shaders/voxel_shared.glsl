@@ -19,26 +19,53 @@ const mat3[3] AxisSwapReverse = mat3[](
 	mat3(1.0)
 );
 
-bool UnpackVoxel(usampler3D voxels, ivec3 position, out vec3 hitColor)
+bool GetVoxel(sampler3D unpackedVoxelTex, ivec3 position, out vec3 color)
+{
+	vec4 data = texelFetch(unpackedVoxelTex, position, 0);
+	color = data.rgb;
+	return data.a > 0;
+}
+
+bool UnpackVoxel(usampler3D packedVoxelTex, ivec3 position, out vec3 color)
 {
 	ivec3 index = position * ivec3(2, 1, 1);
-	uint data = texelFetch(voxels, index, 0).r;
+	uint data = texelFetch(packedVoxelTex, index, 0).r;
 	uint count = data & 0xFFFF;
 
 	if (count > 0) {
 		float blue = float((data & 0xFFFF0000) >> 16) / 256.0;
 
-		data = texelFetch(voxels, index + ivec3(1, 0, 0), 0).r;
+		data = texelFetch(packedVoxelTex, index + ivec3(1, 0, 0), 0).r;
 		float red = float((data & 0xFFFF0000) >> 16) / 256.0;
 		float green = float(data & 0xFFFF) / 256.0;
-		hitColor = vec3(red, green, blue) / float(count);
+		color = vec3(red, green, blue) / float(count);
 		return true;
 	}
 
 	return false;
 }
 
-void TraceVoxelGrid(usampler3D voxels, vec3 rayPos, vec3 rayDir, out vec3 hitColor)
+bool UnpackVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, out vec3 color)
+{
+	ivec3 index = position * ivec3(2, 1, 1);
+	uint data = imageAtomicExchange(packedVoxelImg, index, uint(0));
+	uint count = data & 0xFFFF;
+
+	if (count > 0) {
+		float blue = float((data & 0xFFFF0000) >> 16) / 256.0;
+
+		data = imageAtomicExchange(packedVoxelImg, index + ivec3(1, 0, 0), uint(0));
+		float red = float((data & 0xFFFF0000) >> 16) / 256.0;
+		float green = float(data & 0xFFFF) / 256.0;
+
+		color = vec3(red, green, blue) / float(count);
+		return true;
+	}
+
+	return false;
+}
+
+void TraceVoxelGrid(sampler3D voxels, vec3 rayPos, vec3 rayDir, out vec3 hitColor)
 {
 	vec3 voxelVolumeMax = vec3(VoxelSize * VoxelGridSize * 0.5);
 	vec3 voxelVolumeMin = -voxelVolumeMax;
@@ -71,7 +98,7 @@ void TraceVoxelGrid(usampler3D voxels, vec3 rayPos, vec3 rayDir, out vec3 hitCol
 	for (int i = 0; i < VoxelGridSize*3; i++)
 	{
 		vec3 color;
-		if (UnpackVoxel(voxels, voxelIndex, color))
+		if (GetVoxel(voxels, voxelIndex, color))
 		{
 			hitColor = color;
 			return;
