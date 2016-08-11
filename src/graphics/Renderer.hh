@@ -16,7 +16,8 @@ namespace sp
 
 	struct VoxelData
 	{
-		shared_ptr<RenderTarget> packed;
+		shared_ptr<RenderTarget> fragmentList;
+		shared_ptr<RenderTarget> packedColor, packedNormal, packedRadiance;
 		shared_ptr<RenderTarget> color, normal, radiance;
 	};
 
@@ -28,6 +29,7 @@ namespace sp
 
 		void Prepare();
 		void RenderShadowMaps();
+		void PrepareVoxelTextures();
 		void RenderVoxelGrid();
 		void BeginFrame(ecs::View &fbView, int fullscreen);
 		void RenderPass(ecs::View &view);

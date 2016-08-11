@@ -152,6 +152,8 @@ namespace sp
 			viewGBuf->SetInput(1, context.GBuffer1);
 			viewGBuf->SetInput(2, context.Depth);
 			viewGBuf->SetInput(3, context.VoxelColor);
+			viewGBuf->SetInput(4, context.VoxelNormal);
+			viewGBuf->SetInput(5, context.VoxelRadiance);
 			context.LastOutput = viewGBuf;
 		}
 

@@ -49,7 +49,7 @@ void main()
 #endif
 
 	gBuffer0.rgb = baseColor.rgb;
-	gBuffer0.a = roughness;
+	gBuffer0.a = 1.0;
 	gBuffer1.rgb = viewNormal;
-	gBuffer1.a = 1.0;
+	gBuffer1.a = roughness;
 }

@@ -4,7 +4,7 @@
 ##import raytrace/intersection
 
 const float VoxelGridSize = 256;
-const float VoxelSize = 0.0453;
+const float VoxelSize = 0.08;
 const vec3 VoxelGridCenter = vec3(0, 5, 0);
 
 const mat4[3] AxisSwapForward = mat4[](
@@ -26,59 +26,94 @@ bool GetVoxel(sampler3D unpackedVoxelTex, ivec3 position, int level, out vec3 co
 	return data.a > 0;
 }
 
-bool UnpackVoxel(usampler3D packedVoxelTex, ivec3 position, out vec3 color)
+bool UnpackVoxel(usampler3D packedVoxelTex, ivec3 position, out vec4 color)
 {
 	ivec3 index = position * ivec3(2, 1, 1);
-	uint data = texelFetch(packedVoxelTex, index, 0).r;
+	uint data = texelFetch(packedVoxelTex, index + ivec3(1, 0, 0), 0).r;
 	uint count = data & 0xFFFF;
 
 	if (count > 0) {
 		float blue = float((data & 0xFFFF0000) >> 16) / 256.0;
 
-		data = texelFetch(packedVoxelTex, index + ivec3(1, 0, 0), 0).r;
+		data = texelFetch(packedVoxelTex, index, 0).r;
 		float red = float((data & 0xFFFF0000) >> 16) / 256.0;
 		float green = float(data & 0xFFFF) / 256.0;
-		color = vec3(red, green, blue) / float(count);
+		color.rgb = vec3(red, green, blue) / float(count);
+		color.a = float(count);
 		return true;
 	}
 
 	return false;
 }
 
-bool UnpackVoxel(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, out vec3 color)
+bool UnpackVoxel(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, out vec4 color)
 {
 	ivec3 index = position * ivec3(2, 1, 1);
+	uint data = imageLoad(packedVoxelImg, index + ivec3(1, 0, 0)).r;
+	uint count = data & 0xFFFF;
+
+	if (count > 0) {
+		float blue = float((data & 0xFFFF0000) >> 16) / 256.0;
+
+		data = imageLoad(packedVoxelImg, index).r;
+		float red = float((data & 0xFFFF0000) >> 16) / 256.0;
+		float green = float(data & 0xFFFF) / 256.0;
+
+		color.rgb = vec3(red, green, blue) / float(count);
+		color.a = float(count);
+		return true;
+	}
+
+	return false;
+}
+
+vec4 ReadVoxel(layout(r32ui) uimage3D packedVoxelImg, ivec3 position)
+{
+	ivec3 index = position * ivec3(2, 1, 1);
+
 	uint data = imageLoad(packedVoxelImg, index).r;
-	uint count = data & 0xFFFF;
+	float red = float((data & 0xFFFF0000) >> 16) / 256.0;
+	float green = float(data & 0xFFFF) / 256.0;
 
-	if (count > 0) {
-		float blue = float((data & 0xFFFF0000) >> 16) / 256.0;
+	data = imageLoad(packedVoxelImg, index + ivec3(1, 0, 0)).r;
 
-		data = imageLoad(packedVoxelImg, index + ivec3(1, 0, 0)).r;
-		float red = float((data & 0xFFFF0000) >> 16) / 256.0;
-		float green = float(data & 0xFFFF) / 256.0;
+	float blue = float((data & 0xFFFF0000) >> 16) / 256.0;
+	float alpha = float(data & 0xFFFF) / 256.0;
 
-		color = vec3(red, green, blue) / float(count);
-		return true;
-	}
-
-	return false;
+	return vec4(red, green, blue, alpha);
 }
 
-bool UnpackVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, out vec3 color)
+vec4 ReadVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position)
 {
 	ivec3 index = position * ivec3(2, 1, 1);
-	uint data = imageAtomicExchange(packedVoxelImg, index, uint(0));
+
+	uint data = imageAtomicExchange(packedVoxelImg, index, uint(0)).r;
+	float red = float((data & 0xFFFF0000) >> 16) / 256.0;
+	float green = float(data & 0xFFFF) / 256.0;
+
+	data = imageAtomicExchange(packedVoxelImg, index + ivec3(1, 0, 0), uint(0)).r;
+
+	float blue = float((data & 0xFFFF0000) >> 16) / 256.0;
+	float alpha = float(data & 0xFFFF) / 256.0;
+
+	return vec4(red, green, blue, alpha);
+}
+
+bool UnpackVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, out vec4 color)
+{
+	ivec3 index = position * ivec3(2, 1, 1);
+	uint data = imageAtomicExchange(packedVoxelImg, index + ivec3(1, 0, 0), uint(0));
 	uint count = data & 0xFFFF;
 
 	if (count > 0) {
 		float blue = float((data & 0xFFFF0000) >> 16) / 256.0;
 
-		data = imageAtomicExchange(packedVoxelImg, index + ivec3(1, 0, 0), uint(0));
+		data = imageAtomicExchange(packedVoxelImg, index, uint(0));
 		float red = float((data & 0xFFFF0000) >> 16) / 256.0;
 		float green = float(data & 0xFFFF) / 256.0;
 
-		color = vec3(red, green, blue) / float(count);
+		color.rgb = vec3(red, green, blue) / float(count);
+		color.a = float(count);
 		return true;
 	}
 

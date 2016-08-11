@@ -224,19 +224,31 @@ namespace sp
 
 	const int VoxelGridSize = 256;
 	const int VoxelMipLevels = 3;
-	const float VoxelSize = 0.0453;
+	const float VoxelSize = 0.08;
 	const glm::vec3 VoxelGridCenter = glm::vec3(0, 5, 0);
+	const int VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize / 8;
 
-	void Renderer::RenderVoxelGrid()
+	void Renderer::PrepareVoxelTextures()
 	{
-		RenderPhase phase("VoxelGrid", timer);
-
 		glm::ivec3 renderTargetSize = glm::ivec3(VoxelGridSize * 2, VoxelGridSize, VoxelGridSize);
 
-		if (!voxelData.packed || voxelData.packed->GetDesc().extent != renderTargetSize)
-		{
-			voxelData.packed = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
-			voxelData.packed->GetTexture().Clear(0);
+		if (!voxelData.fragmentList || voxelData.fragmentList->GetDesc().extent != glm::ivec3(VoxelListSize, 1, 1)) {
+			voxelData.fragmentList = RTPool->Get(RenderTargetDesc(PF_R32UI, glm::ivec3(VoxelListSize, 1, 1)));
+			uint32_t data = 0;
+			voxelData.fragmentList->GetTexture().Image2D(&data, 0, 1, 1);
+		}
+
+		if (!voxelData.packedColor || voxelData.packedColor->GetDesc().extent != renderTargetSize) {
+			voxelData.packedColor = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
+			voxelData.packedColor->GetTexture().Clear(0);
+		}
+		if (!voxelData.packedNormal || voxelData.packedNormal->GetDesc().extent != renderTargetSize) {
+			voxelData.packedNormal = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
+			voxelData.packedNormal->GetTexture().Clear(0);
+		}
+		if (!voxelData.packedRadiance || voxelData.packedRadiance->GetDesc().extent != renderTargetSize) {
+			voxelData.packedRadiance = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
+			voxelData.packedRadiance->GetTexture().Clear(0);
 		}
 
 		RenderTargetDesc unpackedDesc(PF_RGBA8, renderTargetSize);
@@ -268,6 +280,13 @@ namespace sp
 				voxelData.radiance->GetTexture().Clear(0, i);
 			}
 		}
+	}
+
+	void Renderer::RenderVoxelGrid()
+	{
+		RenderPhase phase("VoxelGrid", timer);
+
+		PrepareVoxelTextures();
 
 		glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_CULL_FACE);
@@ -285,9 +304,6 @@ namespace sp
 		auto voxelVS = GlobalShaders->Get<VoxelRasterVS>();
 		glViewport(0, 0, VoxelGridSize, VoxelGridSize);
 
-		voxelData.packed->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
-		voxelData.color->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
-
 		{
 			RenderPhase phase("Clear", timer);
 
@@ -302,6 +318,10 @@ namespace sp
 
 		{
 			RenderPhase phase("Accumulate", timer);
+			voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
+			voxelData.packedColor->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
+			voxelData.packedNormal->GetTexture().BindImage(2, GL_READ_WRITE, 0, GL_TRUE, 0);
+
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
 			ForwardPass(ortho, voxelVS);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -309,16 +329,18 @@ namespace sp
 
 		{
 			RenderPhase phase("Convert", timer);
+			voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
+			voxelData.packedColor->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
+			voxelData.packedNormal->GetTexture().BindImage(2, GL_READ_WRITE, 0, GL_TRUE, 0);
+
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelConvertFS>(GlobalShaders);
 			auto voxelConvertFS = GlobalShaders->Get<VoxelConvertFS>();
-			for (int i = unpackedDesc.levels - 1; i >= 0; i--)
-			{
-				voxelConvertFS->SetLevel(i);
-				voxelData.color->GetTexture().BindImage(1, GL_READ_WRITE, i, GL_TRUE, 0);
+			voxelConvertFS->SetLevel(0);
+			voxelData.color->GetTexture().BindImage(3, GL_READ_WRITE, 0, GL_TRUE, 0);
+			voxelData.normal->GetTexture().BindImage(4, GL_READ_WRITE, 0, GL_TRUE, 0);
 
-				ForwardPass(ortho, voxelVS);
-				glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
-			}
+			ForwardPass(ortho, voxelVS);
+			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 		}
 
 		{
