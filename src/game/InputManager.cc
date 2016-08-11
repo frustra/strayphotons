@@ -153,6 +153,11 @@ namespace sp
 
 	void InputManager::keyChange(int key, int action)
 	{
+		if (key < 0)
+		{
+			return;
+		}
+
 		switch (action)
 		{
 			case GLFW_PRESS:
