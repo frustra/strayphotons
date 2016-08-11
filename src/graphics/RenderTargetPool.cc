@@ -21,8 +21,13 @@ namespace sp
 
 		ptr->id = nextRenderTargetID++;
 
+		if (desc.multiSample > 1) {
+			Assert(desc.extent.z == 1, "Can't create multisampled 3D texture");
+			ptr->tex.Create(GL_TEXTURE_2D_MULTISAMPLE).Samples(desc.multiSample);
+		} else {
+			ptr->tex.Create(desc.extent.z != 1 ? GL_TEXTURE_3D : GL_TEXTURE_2D);
+		}
 		ptr->tex
-		.Create(desc.extent.z != 1 ? GL_TEXTURE_3D : GL_TEXTURE_2D)
 		.Filter(GL_LINEAR, GL_LINEAR)
 		.Size(desc.extent.x, desc.extent.y, desc.extent.z)
 		.Storage(desc.format, desc.levels)

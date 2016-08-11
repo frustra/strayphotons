@@ -19,9 +19,9 @@ const mat3[3] AxisSwapReverse = mat3[](
 	mat3(1.0)
 );
 
-bool GetVoxel(sampler3D unpackedVoxelTex, ivec3 position, out vec3 color)
+bool GetVoxel(sampler3D unpackedVoxelTex, ivec3 position, int level, out vec3 color)
 {
-	vec4 data = texelFetch(unpackedVoxelTex, position, 0);
+	vec4 data = texelFetch(unpackedVoxelTex, position >> level, level);
 	color = data.rgb;
 	return data.a > 0;
 }
@@ -38,6 +38,26 @@ bool UnpackVoxel(usampler3D packedVoxelTex, ivec3 position, out vec3 color)
 		data = texelFetch(packedVoxelTex, index + ivec3(1, 0, 0), 0).r;
 		float red = float((data & 0xFFFF0000) >> 16) / 256.0;
 		float green = float(data & 0xFFFF) / 256.0;
+		color = vec3(red, green, blue) / float(count);
+		return true;
+	}
+
+	return false;
+}
+
+bool UnpackVoxel(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, out vec3 color)
+{
+	ivec3 index = position * ivec3(2, 1, 1);
+	uint data = imageLoad(packedVoxelImg, index).r;
+	uint count = data & 0xFFFF;
+
+	if (count > 0) {
+		float blue = float((data & 0xFFFF0000) >> 16) / 256.0;
+
+		data = imageLoad(packedVoxelImg, index + ivec3(1, 0, 0)).r;
+		float red = float((data & 0xFFFF0000) >> 16) / 256.0;
+		float green = float(data & 0xFFFF) / 256.0;
+
 		color = vec3(red, green, blue) / float(count);
 		return true;
 	}
@@ -98,7 +118,7 @@ void TraceVoxelGrid(sampler3D voxels, vec3 rayPos, vec3 rayDir, out vec3 hitColo
 	for (int i = 0; i < VoxelGridSize*3; i++)
 	{
 		vec3 color;
-		if (GetVoxel(voxels, voxelIndex, color))
+		if (GetVoxel(voxels, voxelIndex, 0, color))
 		{
 			hitColor = color;
 			return;

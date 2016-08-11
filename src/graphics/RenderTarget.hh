@@ -40,6 +40,7 @@ namespace sp
 		PixelFormat format;
 		glm::ivec3 extent = { 0, 0, 0 };
 		uint32 levels = 1;
+		uint32 multiSample = 1;
 		GLenum attachment;
 
 		bool operator==(const RenderTargetDesc &other) const

@@ -9,7 +9,7 @@ namespace sp
 		if (err)
 		{
 			Errorf("OpenGL error %d", err);
-			Assert(false, "OpenGL error");
+			Assert(false, "OpenGL error at " + message);
 		}
 	}
 }

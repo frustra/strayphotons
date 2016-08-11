@@ -74,6 +74,11 @@ namespace sp
 	class VoxelConvertFS : public Shader
 	{
 		SHADER_TYPE(VoxelConvertFS)
-		using Shader::Shader;
+		VoxelConvertFS(shared_ptr<ShaderCompileOutput> compileOutput);
+
+		void SetLevel(int newLevel);
+
+	private:
+		Uniform level;
 	};
 }

@@ -14,11 +14,6 @@ namespace sp
 	class InputManager;
 	class RenderTarget;
 
-	struct VoxelColors
-	{
-		shared_ptr<RenderTarget> Color;
-	};
-
 	class GraphicsContext
 	{
 	public:
@@ -32,7 +27,7 @@ namespace sp
 
 		virtual void Prepare() = 0;
 		virtual void BeginFrame(ecs::View &fbView, int fullscreen) = 0;
-		virtual void RenderPass(ecs::View &view, shared_ptr<RenderTarget> shadowMap, VoxelColors voxelGrid) = 0;
+		virtual void RenderPass(ecs::View &view) = 0;
 		virtual void EndFrame() = 0;
 
 		ShaderSet *GlobalShaders;
