@@ -76,16 +76,4 @@ namespace sp
 		SHADER_TYPE(VoxelConvertFS)
 		using Shader::Shader;
 	};
-
-	class VoxelClearFS : public Shader
-	{
-		SHADER_TYPE(VoxelClearFS)
-
-		VoxelClearFS(shared_ptr<ShaderCompileOutput> compileOutput);
-
-		void SetDepth(int newDepth);
-
-	private:
-		Uniform depth;
-	};
 }
