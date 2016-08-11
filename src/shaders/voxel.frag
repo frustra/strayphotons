@@ -1,6 +1,7 @@
 #version 430
 
 ##import lib/util
+##import voxel_shared
 
 layout (binding = 0) uniform sampler2D baseColorTex;
 layout (binding = 1) uniform sampler2D roughnessTex;
@@ -13,14 +14,6 @@ layout (location = 2) in flat int inDirection;
 
 in vec4 gl_FragCoord;
 
-const mat3[3] axisRotation = mat3[](
-	mat3(0, 0, 1, 0, 1, 0, -1, 0, 0),
-	mat3(1, 0, 0, 0, 0, 1, 0, -1, 0),
-	mat3(1.0)
-);
-
-const float VoxelGridSize = 256;
-
 void main()
 {
 	vec4 diffuseColor = texture(baseColorTex, inTexCoord);
@@ -30,7 +23,7 @@ void main()
 	uint ba = (uint(diffuseColor.b * 0xFF) << 16) + 1;
 
 	vec3 position = vec3(gl_FragCoord.xy, gl_FragCoord.z * VoxelGridSize);
-	position = axisRotation[abs(inDirection)-1] * (position - VoxelGridSize / 2);
+	position = AxisSwapReverse[abs(inDirection)-1] * (position - VoxelGridSize / 2);
 	position += VoxelGridSize / 2;
 	imageAtomicAdd(voxelColor, ivec3(floor(position.x) * 2, position.yz), ba);
 	imageAtomicAdd(voxelColor, ivec3(floor(position.x) * 2 + 1, position.yz), rg);

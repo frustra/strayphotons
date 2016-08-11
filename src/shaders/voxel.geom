@@ -1,6 +1,7 @@
 #version 430
 
 ##import lib/vertex_base
+##import voxel_shared
 
 in gl_PerVertex
 {
@@ -18,12 +19,6 @@ layout (location = 1) in vec2 inTexCoord[];
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outTexCoord;
 layout (location = 2) out int outDirection;
-
-const mat4[3] axisRotation = mat4[](
-	mat4(mat3(0, 0, -1, 0, 1, 0, 1, 0, 0)),
-	mat4(mat3(1, 0, 0, 0, 0, -1, 0, 1, 0)),
-	mat4(1.0)
-);
 
 void main()
 {
@@ -43,7 +38,8 @@ void main()
 	} else {
 		outDirection = 3 * signNormal.z;
 	}
-	mat4 rotation = axisRotation[abs(outDirection)-1];
+
+	mat4 rotation = AxisSwapForward[abs(outDirection)-1];
 
 	for (int i = 0; i < 3; i++) {
 		outNormal = inNormal[i];
