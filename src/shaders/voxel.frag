@@ -16,7 +16,7 @@ in vec4 gl_FragCoord;
 
 void main()
 {
-	vec4 diffuseColor = texture(baseColorTex, inTexCoord);
+	vec4 diffuseColor = texture(baseColorTex, inTexCoord)/2 + vec4(inNormal, 1)/2;
 	if (diffuseColor.a < 0.5) discard;
 
 	uint rg = (uint(diffuseColor.r * 0xFF) << 16) + uint(diffuseColor.g * 0xFF);

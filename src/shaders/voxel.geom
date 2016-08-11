@@ -24,20 +24,12 @@ void main()
 {
 	vec3 edge1 = vec3(gl_in[1].gl_Position - gl_in[0].gl_Position);
 	vec3 edge2 = vec3(gl_in[2].gl_Position - gl_in[0].gl_Position);
+	vec3 edge3 = vec3(gl_in[2].gl_Position - gl_in[1].gl_Position);
 	vec3 realNormal = cross(edge1, edge2);
 	vec3 absNormal = abs(realNormal);
-	ivec3 signNormal = ivec3(sign(realNormal));
-	if (absNormal.x > absNormal.y) {
-		if (absNormal.x > absNormal.z) {
-			outDirection = 1 * signNormal.x;
-		} else {
-			outDirection = 3 * signNormal.z;
-		}
-	} else if (absNormal.y > absNormal.z) {
-		outDirection = 2 * signNormal.y;
-	} else {
-		outDirection = 3 * signNormal.z;
-	}
+
+	bvec3 mask = greaterThanEqual(absNormal.xyz, max(absNormal.yzx, absNormal.zxy));
+	outDirection = int(dot(vec3(mask) * sign(realNormal), vec3(1, 2, 3)));
 
 	mat4 rotation = AxisSwapForward[abs(outDirection)-1];
 
@@ -46,7 +38,7 @@ void main()
 		outTexCoord = inTexCoord[i];
 
 		gl_Position = rotation * gl_in[i].gl_Position;
-    	EmitVertex();
+		EmitVertex();
 	}
 
     EndPrimitive();

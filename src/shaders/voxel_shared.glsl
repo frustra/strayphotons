@@ -5,6 +5,7 @@
 
 const float VoxelGridSize = 256;
 const float VoxelSize = 0.0453;
+const vec3 VoxelGridCenter = vec3(0, 5, 0);
 
 const mat4[3] AxisSwapForward = mat4[](
 	mat4(mat3(0, 0, -1, 0, 1, 0, 1, 0, 0)),
@@ -39,7 +40,7 @@ bool UnpackVoxel(usampler3D voxels, ivec3 position, out vec3 hitColor)
 
 void TraceVoxelGrid(usampler3D voxels, vec3 rayPos, vec3 rayDir, out vec3 hitColor)
 {
-	vec3 voxelVolumeMax = vec3(VoxelSize * VoxelGridSize);
+	vec3 voxelVolumeMax = vec3(VoxelSize * VoxelGridSize * 0.5);
 	vec3 voxelVolumeMin = -voxelVolumeMax;
 
 	float tmin, tmax;
@@ -56,7 +57,7 @@ void TraceVoxelGrid(usampler3D voxels, vec3 rayPos, vec3 rayDir, out vec3 hitCol
 		rayPos += rayDir * tmin;
 	}
 
-	vec3 voxelPos = rayPos.xyz * 0.5 / VoxelSize + VoxelGridSize / 2;
+	vec3 voxelPos = rayPos.xyz / VoxelSize + VoxelGridSize / 2;
 	ivec3 voxelIndex = ivec3(voxelPos);
 
 	vec3 deltaDist = abs(vec3(1.0) / rayDir);
@@ -67,10 +68,9 @@ void TraceVoxelGrid(usampler3D voxels, vec3 rayPos, vec3 rayDir, out vec3 hitCol
 	vec3 sideDist = (raySign * (vec3(voxelIndex) - voxelPos) + (raySign * 0.5) + 0.5) * deltaDist;
 	bvec3 mask;
 
-	for (int i = 0; i < 512; i++)
+	for (int i = 0; i < VoxelGridSize*3; i++)
 	{
 		vec3 color;
-		voxelIndex.z %= int(VoxelGridSize);
 		if (UnpackVoxel(voxels, voxelIndex, color))
 		{
 			hitColor = color;

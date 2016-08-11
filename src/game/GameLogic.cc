@@ -21,7 +21,7 @@ namespace sp
 
 	void GameLogic::Init()
 	{
-		scene = GAssets.LoadScene("sponza", &game->entityManager, game->physics);
+		scene = GAssets.LoadScene("test1", &game->entityManager, game->physics);
 
 		ecs::Entity player = scene->FindEntity("player");
 		humanControlSystem.AssignController(player);

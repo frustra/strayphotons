@@ -225,6 +225,7 @@ namespace sp
 
 	const int VoxelGridSize = 256;
 	const float VoxelSize = 0.0453;
+	const glm::vec3 VoxelGridCenter = glm::vec3(0, 5, 0);
 
 	VoxelColors Renderer::RenderVoxelGrid()
 	{
@@ -240,20 +241,15 @@ namespace sp
 		glDisable(GL_DEPTH_TEST);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-		{
-			glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
-			ShaderControl->BindPipeline<BasicPostVS, VoxelClearFS>(GlobalShaders);
-			auto voxelClearFS = GlobalShaders->Get<VoxelClearFS>();
-			voxelClearFS->SetDepth(VoxelGridSize);
-			DrawScreenCover();
-		}
+		glClearTexImage(renderTarget->GetTexture().handle, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
 
 		{
 			glViewport(0, 0, VoxelGridSize, VoxelGridSize);
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
 
 			ecs::View view;
-			view.viewMat = glm::scale(glm::mat4(), glm::vec3(1.0 / (VoxelGridSize * VoxelSize)));
+			view.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * VoxelSize)));
+			view.viewMat = glm::translate(view.viewMat, -VoxelGridCenter);
 			view.projMat = glm::mat4();
 			view.offset = glm::ivec2(0);
 			view.extents = glm::ivec2(VoxelGridSize);
