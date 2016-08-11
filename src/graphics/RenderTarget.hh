@@ -70,7 +70,7 @@ namespace sp
 			return id;
 		}
 
-		const Texture &GetTexture()
+		Texture &GetTexture()
 		{
 			return tex;
 		}

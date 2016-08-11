@@ -234,15 +234,21 @@ namespace sp
 		glm::ivec3 renderTargetSize = glm::ivec3(VoxelGridSize * 2, VoxelGridSize, VoxelGridSize);
 
 		auto packedVoxels = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
-		auto unpackedVoxels = RTPool->Get(RenderTargetDesc(PF_RGBA8, renderTargetSize));
+
+		RenderTargetDesc unpackedDesc(PF_RGBA8, renderTargetSize);
+		unpackedDesc.levels = 3;
+		auto unpackedVoxels = RTPool->Get(unpackedDesc);
 
 		glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-		glClearTexImage(packedVoxels->GetTexture().handle, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
-		glClearTexImage(unpackedVoxels->GetTexture().handle, 0, GL_RGBA, GL_UNSIGNED_INT, nullptr);
+		{
+			RenderPhase phase("Clear", timer);
+			glClearTexImage(packedVoxels->GetTexture().handle, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
+			glClearTexImage(unpackedVoxels->GetTexture().handle, 0, GL_RGBA, GL_UNSIGNED_INT, nullptr);
+		}
 
 		ecs::View ortho;
 		ortho.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * VoxelSize)));
@@ -252,18 +258,29 @@ namespace sp
 		ortho.extents = glm::ivec2(VoxelGridSize);
 		ortho.clearMode = 0;
 
+		auto voxelVS = GlobalShaders->Get<VoxelRasterVS>();
+		glViewport(0, 0, VoxelGridSize, VoxelGridSize);
+
+		packedVoxels->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
+		unpackedVoxels->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
+
 		{
-			glViewport(0, 0, VoxelGridSize, VoxelGridSize);
-			auto voxelVS = GlobalShaders->Get<VoxelRasterVS>();
-
-			packedVoxels->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
-			unpackedVoxels->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
-
+			RenderPhase phase("Accumulate", timer);
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
 			ForwardPass(ortho, voxelVS);
+			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		}
 
+		{
+			RenderPhase phase("Convert", timer);
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelConvertFS>(GlobalShaders);
 			ForwardPass(ortho, voxelVS);
+			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+		}
+
+		{
+			//RenderPhase phase("Mipmap", timer);
+			//unpackedVoxels->GetTexture().GenMipmap();
 		}
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
