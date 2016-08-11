@@ -13,6 +13,7 @@
 #include "graphics/postprocess/SSAO.hh"
 #include "graphics/postprocess/SMAA.hh"
 #include "graphics/postprocess/GammaCorrect.hh"
+#include "graphics/postprocess/VoxelLighting.hh"
 
 #include "core/CVar.hh"
 
@@ -23,6 +24,7 @@ namespace sp
 	static CVar<bool> CVarSSAOEnabled("r.SSAO", true, "Enable Screen Space Ambient Occlusion");
 	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth, 4: roughness)");
 	static CVar<int> CVarAntiAlias("r.AntiAlias", 1, "Anti-aliasing mode (0: none, 1: SMAA 1x)");
+	static CVar<int> CVarVoxelLightingEnabled("r.VoxelLighting", 1, "Enable voxel lighting");
 
 	static void AddSSAO(PostProcessingContext &context)
 	{
@@ -52,6 +54,17 @@ namespace sp
 		lighting->SetInput(3, context.ShadowMap);
 
 		context.LastOutput = lighting;
+	}
+
+	static void AddVoxelLighting(PostProcessingContext &context)
+	{
+		auto voxel = context.AddPass<VoxelLighting>();
+		voxel->SetInput(0, context.LastOutput);
+		voxel->SetInput(1, context.GBuffer1);
+		voxel->SetInput(2, context.Depth);
+		voxel->SetInput(3, context.VoxelColor);
+
+		context.LastOutput = voxel;
 	}
 
 	static void AddSMAA(PostProcessingContext &context, ProcessPassOutputRef linearLuminosity)
@@ -100,6 +113,11 @@ namespace sp
 		if (CVarLightingEnabled.Get() && targets.ShadowMap != nullptr)
 		{
 			AddLighting(context);
+		}
+
+		if (CVarVoxelLightingEnabled.Get())
+		{
+			AddVoxelLighting(context);
 		}
 
 		auto linearLuminosity = context.LastOutput;
