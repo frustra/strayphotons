@@ -16,6 +16,7 @@ void aabbIntersectFull(vec3 P, vec3 R, vec3 invR, vec3 aabb1, vec3 aabb2, out fl
 	vec3 tmaxs = max(t1, t2);
 	tmax = min(min(tmaxs.x, tmaxs.y), tmaxs.z);
 
+	// TODO(pushrax): this can be done without branches
 	if (tmins.x > tmins.y && tmins.x > tmins.z) {
 		tmin = tmins.x;
 		normal = vec3(-sign(R.x), 0, 0);

@@ -43,8 +43,8 @@ namespace sp
 	IMPLEMENT_SHADER_TYPE(ShadowMapVS, "shadow_map.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(ShadowMapFS, "shadow_map.frag", Fragment);
 
-	IMPLEMENT_SHADER_TYPE(VoxelVS, "voxel.vert", Vertex);
-	IMPLEMENT_SHADER_TYPE(VoxelGS, "voxel.geom", Geometry);
-	IMPLEMENT_SHADER_TYPE(VoxelFS, "voxel.frag", Fragment);
+	IMPLEMENT_SHADER_TYPE(VoxelRasterVS, "voxel.vert", Vertex);
+	IMPLEMENT_SHADER_TYPE(VoxelRasterGS, "voxel.geom", Geometry);
+	IMPLEMENT_SHADER_TYPE(VoxelRasterFS, "voxel.frag", Fragment);
 	IMPLEMENT_SHADER_TYPE(VoxelClearFS, "voxel_clear.frag", Fragment);
 }

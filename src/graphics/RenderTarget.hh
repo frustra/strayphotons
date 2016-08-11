@@ -32,7 +32,7 @@ namespace sp
 		}
 
 		RenderTargetDesc(PixelFormat format, glm::ivec2 extent) :
-			RenderTargetDesc(format, {extent.x, extent.y, 1}) {}
+			RenderTargetDesc(format, glm::ivec3(extent.x, extent.y, 1)) {}
 
 		RenderTargetDesc(PixelFormat format, glm::ivec2 extent, GLenum attachment) :
 			format(format), extent(extent.x, extent.y, 1), attachment(attachment) {}

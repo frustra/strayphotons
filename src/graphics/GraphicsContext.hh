@@ -14,7 +14,8 @@ namespace sp
 	class InputManager;
 	class RenderTarget;
 
-	struct VoxelColors {
+	struct VoxelColors
+	{
 		shared_ptr<RenderTarget> Color;
 	};
 

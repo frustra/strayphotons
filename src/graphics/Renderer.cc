@@ -235,32 +235,37 @@ namespace sp
 		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
 		renderTarget->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
 
-		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
 		glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-		ShaderControl->BindPipeline<BasicPostVS, VoxelClearFS>(GlobalShaders);
-		auto voxelClearFS = GlobalShaders->Get<VoxelClearFS>();
-		voxelClearFS->SetDepth(VoxelGridSize);
-		DrawScreenCover();
+		{
+			glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
+			ShaderControl->BindPipeline<BasicPostVS, VoxelClearFS>(GlobalShaders);
+			auto voxelClearFS = GlobalShaders->Get<VoxelClearFS>();
+			voxelClearFS->SetDepth(VoxelGridSize);
+			DrawScreenCover();
+		}
 
-		glViewport(0, 0, VoxelGridSize, VoxelGridSize);
-		ShaderControl->BindPipeline<VoxelVS, VoxelGS, VoxelFS>(GlobalShaders);
+		{
+			glViewport(0, 0, VoxelGridSize, VoxelGridSize);
+			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
 
-		ecs::View view;
-		view.viewMat = glm::scale(glm::mat4(), glm::vec3(1.0/(VoxelGridSize * VoxelSize)));
-		view.projMat = glm::mat4();
-		view.offset = glm::ivec2(0);
-		view.extents = glm::ivec2(VoxelGridSize);
-		view.clearMode = 0;
+			ecs::View view;
+			view.viewMat = glm::scale(glm::mat4(), glm::vec3(1.0 / (VoxelGridSize * VoxelSize)));
+			view.projMat = glm::mat4();
+			view.offset = glm::ivec2(0);
+			view.extents = glm::ivec2(VoxelGridSize);
+			view.clearMode = 0;
 
-		auto voxelVS = GlobalShaders->Get<VoxelVS>();
-		ForwardPass(view, voxelVS);
+			auto voxelVS = GlobalShaders->Get<VoxelRasterVS>();
+			ForwardPass(view, voxelVS);
+		}
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 

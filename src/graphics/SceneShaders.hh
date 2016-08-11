@@ -53,21 +53,21 @@ namespace sp
 		Uniform clip;
 	};
 
-	class VoxelVS : public SceneShader
+	class VoxelRasterVS : public SceneShader
 	{
-		SHADER_TYPE(VoxelVS)
+		SHADER_TYPE(VoxelRasterVS)
 		using SceneShader::SceneShader;
 	};
 
-	class VoxelGS : public Shader
+	class VoxelRasterGS : public Shader
 	{
-		SHADER_TYPE(VoxelGS)
+		SHADER_TYPE(VoxelRasterGS)
 		using Shader::Shader;
 	};
 
-	class VoxelFS : public Shader
+	class VoxelRasterFS : public Shader
 	{
-		SHADER_TYPE(VoxelFS)
+		SHADER_TYPE(VoxelRasterFS)
 		using Shader::Shader;
 	};
 

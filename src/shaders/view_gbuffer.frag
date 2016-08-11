@@ -67,13 +67,12 @@ void TraceVoxelGrid(usampler3D voxels, vec3 rayPos, vec3 rayDir, out vec3 hitCol
 	vec3 sideDist = (raySign * (vec3(voxelIndex) - voxelPos) + (raySign * 0.5) + 0.5) * deltaDist;
 	bvec3 mask;
 
-	for (int i = 0; i < 1024; i++)
+	for (int i = 0; i < 512; i++)
 	{
 		vec3 color;
 		voxelIndex.z %= int(VoxelGridSize);
 		if (UnpackVoxel(voxels, voxelIndex, color))
 		{
-			hitColor = vec3(mask) * vec3(1.0);
 			hitColor = color;
 			return;
 		}
