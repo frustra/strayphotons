@@ -1,6 +1,7 @@
 #version 430
 
 ##import lib/util
+##import lib/lighting_util
 ##import voxel_shared
 
 layout (binding = 0) uniform sampler2D lastOutput;
@@ -50,13 +51,13 @@ void main()
 
 	vec3 indirectLight;
 
-	for (int i = 0; i < 1; i++) {
+	//for (int i = 0; i < 1; i++) {
 		vec3 sampleDir = rayReflectDir;
 		vec3 sampleColor;
-		TraceVoxelGrid(voxelColor, worldPosition - VoxelGridCenter, sampleDir, sampleColor);
+		TraceVoxelGrid(voxelColor, 0, worldPosition - VoxelGridCenter, sampleDir, sampleColor);
 
 		indirectLight += sampleColor;
-	}
+	//}
 
 	indirectLight /= 1.0;
 

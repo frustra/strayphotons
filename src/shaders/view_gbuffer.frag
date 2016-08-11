@@ -30,6 +30,6 @@ void main()
 	} else if (mode == 5) {
 		vec4 rayPos = invViewMat * vec4(ScreenPosToViewPos(inTexCoord, 0, invProjMat), 1);
 		vec4 rayDir = normalize(rayPos - (invViewMat * vec4(0, 0, 0, 1)));
-		TraceVoxelGrid(voxelColor, rayPos.xyz - VoxelGridCenter, rayDir.xyz, outFragColor.rgb);
+		TraceVoxelGrid(voxelColor, 0, rayPos.xyz - VoxelGridCenter, rayDir.xyz, outFragColor.rgb);
 	}
 }

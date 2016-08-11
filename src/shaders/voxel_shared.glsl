@@ -21,7 +21,7 @@ const mat3[3] AxisSwapReverse = mat3[](
 
 bool GetVoxel(sampler3D unpackedVoxelTex, ivec3 position, int level, out vec3 color)
 {
-	vec4 data = texelFetch(unpackedVoxelTex, position >> level, level);
+	vec4 data = texelFetch(unpackedVoxelTex, position, level);
 	color = data.rgb;
 	return data.a > 0;
 }
@@ -85,8 +85,11 @@ bool UnpackVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, 
 	return false;
 }
 
-void TraceVoxelGrid(sampler3D voxels, vec3 rayPos, vec3 rayDir, out vec3 hitColor)
+void TraceVoxelGrid(sampler3D voxels, int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor)
 {
+	float scale = float(1 << level);
+	float invScale = 1.0 / scale;
+
 	vec3 voxelVolumeMax = vec3(VoxelSize * VoxelGridSize * 0.5);
 	vec3 voxelVolumeMin = -voxelVolumeMax;
 
@@ -104,27 +107,28 @@ void TraceVoxelGrid(sampler3D voxels, vec3 rayPos, vec3 rayDir, out vec3 hitColo
 		rayPos += rayDir * tmin;
 	}
 
-	vec3 voxelPos = rayPos.xyz / VoxelSize + VoxelGridSize / 2;
+	vec3 voxelPos = (rayPos.xyz / VoxelSize + VoxelGridSize * 0.5) * invScale;
 	ivec3 voxelIndex = ivec3(voxelPos);
 
-	vec3 deltaDist = abs(vec3(1.0) / rayDir);
+	vec3 deltaDist = abs(vec3(scale) / rayDir);
 	vec3 raySign = sign(rayDir);
 	ivec3 rayStep = ivec3(raySign);
 
 	// Distance to next voxel in each axis
 	vec3 sideDist = (raySign * (vec3(voxelIndex) - voxelPos) + (raySign * 0.5) + 0.5) * deltaDist;
+	int maxIterations = int((VoxelGridSize * 3) * invScale);
 	bvec3 mask;
 
-	for (int i = 0; i < VoxelGridSize*3; i++)
+	for (int i = 0; i < maxIterations; i++)
 	{
 		vec3 color;
-		if (GetVoxel(voxels, voxelIndex, 0, color))
+		if (GetVoxel(voxels, voxelIndex, level, color))
 		{
 			hitColor = color;
 			return;
 		}
 
-		// Find axis with maximum distance
+		// Find axis with minimum distance
 		mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
 		sideDist += vec3(mask) * deltaDist;
 		voxelIndex += ivec3(mask) * rayStep;
