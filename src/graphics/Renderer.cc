@@ -188,7 +188,8 @@ namespace sp
 
 		if (first) return;
 
-		if (!shadowMap || glm::ivec2(shadowMap->GetDesc().extent) != renderTargetSize) {
+		if (!shadowMap || glm::ivec2(shadowMap->GetDesc().extent) != renderTargetSize)
+		{
 			shadowMap = RTPool->Get(RenderTargetDesc(PF_R32F, renderTargetSize));
 		}
 
@@ -232,31 +233,38 @@ namespace sp
 
 		glm::ivec3 renderTargetSize = glm::ivec3(VoxelGridSize * 2, VoxelGridSize, VoxelGridSize);
 
-		if (!voxelData.packed || voxelData.packed->GetDesc().extent != renderTargetSize) {
+		if (!voxelData.packed || voxelData.packed->GetDesc().extent != renderTargetSize)
+		{
 			voxelData.packed = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
 			voxelData.packed->GetTexture().Clear(0);
 		}
 
 		RenderTargetDesc unpackedDesc(PF_RGBA8, renderTargetSize);
 		unpackedDesc.levels = VoxelMipLevels;
-		if (!voxelData.color || voxelData.color->GetDesc() != unpackedDesc) {
+		if (!voxelData.color || voxelData.color->GetDesc() != unpackedDesc)
+		{
 			voxelData.color = RTPool->Get(unpackedDesc);
 
-			for (uint i = 0; i < VoxelMipLevels; i++) {
+			for (uint32 i = 0; i < VoxelMipLevels; i++)
+			{
 				voxelData.color->GetTexture().Clear(0, i);
 			}
 		}
-		if (!voxelData.normal || voxelData.normal->GetDesc() != unpackedDesc) {
+		if (!voxelData.normal || voxelData.normal->GetDesc() != unpackedDesc)
+		{
 			voxelData.normal = RTPool->Get(unpackedDesc);
 
-			for (uint i = 0; i < VoxelMipLevels; i++) {
+			for (uint32 i = 0; i < VoxelMipLevels; i++)
+			{
 				voxelData.normal->GetTexture().Clear(0, i);
 			}
 		}
-		if (!voxelData.radiance || voxelData.radiance->GetDesc() != unpackedDesc) {
+		if (!voxelData.radiance || voxelData.radiance->GetDesc() != unpackedDesc)
+		{
 			voxelData.radiance = RTPool->Get(unpackedDesc);
 
-			for (uint i = 0; i < VoxelMipLevels; i++) {
+			for (uint32 i = 0; i < VoxelMipLevels; i++)
+			{
 				voxelData.radiance->GetTexture().Clear(0, i);
 			}
 		}
@@ -284,7 +292,8 @@ namespace sp
 			RenderPhase phase("Clear", timer);
 
 			// TODO(xthexder): Remove me
-			for (uint i = 0; i < VoxelMipLevels; i++) {
+			for (uint32 i = 0; i < VoxelMipLevels; i++)
+			{
 				voxelData.color->GetTexture().Clear(0, i);
 				voxelData.normal->GetTexture().Clear(0, i);
 				voxelData.radiance->GetTexture().Clear(0, i);
@@ -302,7 +311,8 @@ namespace sp
 			RenderPhase phase("Convert", timer);
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelConvertFS>(GlobalShaders);
 			auto voxelConvertFS = GlobalShaders->Get<VoxelConvertFS>();
-			for (int i = unpackedDesc.levels - 1; i >= 0; i--) {
+			for (int i = unpackedDesc.levels - 1; i >= 0; i--)
+			{
 				voxelConvertFS->SetLevel(i);
 				voxelData.color->GetTexture().BindImage(1, GL_READ_WRITE, i, GL_TRUE, 0);
 
