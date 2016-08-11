@@ -95,22 +95,24 @@ namespace sp
 		context.game = game;
 		context.view = view;
 
-		context.GBuffer0 = context.AddPass<ProxyProcessPass>(targets.GBuffer0);
-		context.GBuffer1 = context.AddPass<ProxyProcessPass>(targets.GBuffer1);
-		context.Depth = context.AddPass<ProxyProcessPass>(targets.Depth);
+		context.GBuffer0 = context.AddPass<ProxyProcessPass>(targets.gBuffer0);
+		context.GBuffer1 = context.AddPass<ProxyProcessPass>(targets.gBuffer1);
+		context.Depth = context.AddPass<ProxyProcessPass>(targets.depth);
 		context.LastOutput = context.GBuffer0;
 
-		if (targets.ShadowMap)
+		if (targets.shadowMap)
 		{
-			context.ShadowMap = context.AddPass<ProxyProcessPass>(targets.ShadowMap);
+			context.ShadowMap = context.AddPass<ProxyProcessPass>(targets.shadowMap);
 		}
 
-		if (targets.VoxelGrid.Color)
+		if (targets.voxelData.color)
 		{
-			context.VoxelColor = context.AddPass<ProxyProcessPass>(targets.VoxelGrid.Color);
+			context.VoxelColor = context.AddPass<ProxyProcessPass>(targets.voxelData.color);
+			context.VoxelNormal = context.AddPass<ProxyProcessPass>(targets.voxelData.normal);
+			context.VoxelRadiance = context.AddPass<ProxyProcessPass>(targets.voxelData.radiance);
 		}
 
-		if (CVarLightingEnabled.Get() && targets.ShadowMap != nullptr)
+		if (CVarLightingEnabled.Get() && targets.shadowMap != nullptr)
 		{
 			AddLighting(context);
 		}

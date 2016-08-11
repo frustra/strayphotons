@@ -2,7 +2,7 @@
 
 #include "Common.hh"
 #include "graphics/RenderTargetPool.hh"
-#include "graphics/GraphicsContext.hh"
+#include "graphics/Renderer.hh"
 #include "ecs/components/View.hh"
 #include "core/Game.hh"
 
@@ -127,10 +127,10 @@ namespace sp
 
 	struct EngineRenderTargets
 	{
-		RenderTarget::Ref GBuffer0, GBuffer1, GBuffer2;
-		RenderTarget::Ref Depth;
-		RenderTarget::Ref ShadowMap;
-		VoxelColors VoxelGrid;
+		RenderTarget::Ref gBuffer0, gBuffer1, gBuffer2;
+		RenderTarget::Ref depth;
+		RenderTarget::Ref shadowMap;
+		VoxelData voxelData;
 	};
 
 	class PostProcessingContext
@@ -163,6 +163,8 @@ namespace sp
 		ProcessPassOutputRef Depth;
 		ProcessPassOutputRef ShadowMap;
 		ProcessPassOutputRef VoxelColor;
+		ProcessPassOutputRef VoxelNormal;
+		ProcessPassOutputRef VoxelRadiance;
 
 	private:
 		vector<PostProcessPassBase *> passes;

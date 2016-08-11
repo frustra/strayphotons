@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/GraphicsContext.hh"
+#include "graphics/Texture.hh"
 
 #include <glm/glm.hpp>
 
@@ -12,7 +13,12 @@ namespace sp
 	class ShaderManager;
 	class SceneShader;
 	class GPUTimer;
-	struct Texture;
+
+	struct VoxelData
+	{
+		shared_ptr<RenderTarget> packed;
+		shared_ptr<RenderTarget> color, normal, radiance;
+	};
 
 	class Renderer : public GraphicsContext
 	{
@@ -21,10 +27,10 @@ namespace sp
 		~Renderer();
 
 		void Prepare();
-		shared_ptr<RenderTarget> RenderShadowMaps();
-		VoxelColors RenderVoxelGrid();
+		void RenderShadowMaps();
+		void RenderVoxelGrid();
 		void BeginFrame(ecs::View &fbView, int fullscreen);
-		void RenderPass(ecs::View &view, shared_ptr<RenderTarget> shadowMap, VoxelColors voxelGrid);
+		void RenderPass(ecs::View &view);
 		void PrepareForView(ecs::View &view);
 		void ForwardPass(ecs::View &view, SceneShader *shader);
 		void EndFrame();
@@ -38,6 +44,9 @@ namespace sp
 		GPUTimer *timer = nullptr;
 
 	private:
+		shared_ptr<RenderTarget> shadowMap;
+		VoxelData voxelData;
+
 		glm::ivec2 prevWindowSize, prevWindowPos;
 		int prevFullscreen = 0;
 	};

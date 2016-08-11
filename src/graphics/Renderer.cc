@@ -158,7 +158,7 @@ namespace sp
 		return view;
 	}
 
-	shared_ptr<RenderTarget> Renderer::RenderShadowMaps()
+	void Renderer::RenderShadowMaps()
 	{
 		RenderPhase phase("ShadowMaps", timer);
 
@@ -186,14 +186,14 @@ namespace sp
 			}
 		}
 
-		if (first)
-		{
-			return nullptr;
+		if (first) return;
+
+		if (!shadowMap || glm::ivec2(shadowMap->GetDesc().extent) != renderTargetSize) {
+			shadowMap = RTPool->Get(RenderTargetDesc(PF_R32F, renderTargetSize));
 		}
 
-		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_R32F, renderTargetSize));
 		auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, renderTargetSize));
-		SetRenderTarget(&renderTarget->GetTexture(), &depthTarget->GetTexture());
+		SetRenderTarget(&shadowMap->GetTexture(), &depthTarget->GetTexture());
 
 		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
 		glDisable(GL_SCISSOR_TEST);
@@ -219,36 +219,52 @@ namespace sp
 				ForwardPass(*view, shadowMapVS);
 			}
 		}
-
-		return renderTarget;
 	}
 
 	const int VoxelGridSize = 256;
+	const int VoxelMipLevels = 3;
 	const float VoxelSize = 0.0453;
 	const glm::vec3 VoxelGridCenter = glm::vec3(0, 5, 0);
 
-	VoxelColors Renderer::RenderVoxelGrid()
+	void Renderer::RenderVoxelGrid()
 	{
 		RenderPhase phase("VoxelGrid", timer);
 
 		glm::ivec3 renderTargetSize = glm::ivec3(VoxelGridSize * 2, VoxelGridSize, VoxelGridSize);
 
-		auto packedVoxels = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
+		if (!voxelData.packed || voxelData.packed->GetDesc().extent != renderTargetSize) {
+			voxelData.packed = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
+			voxelData.packed->GetTexture().Clear(0);
+		}
 
 		RenderTargetDesc unpackedDesc(PF_RGBA8, renderTargetSize);
-		unpackedDesc.levels = 3;
-		auto unpackedVoxels = RTPool->Get(unpackedDesc);
+		unpackedDesc.levels = VoxelMipLevels;
+		if (!voxelData.color || voxelData.color->GetDesc() != unpackedDesc) {
+			voxelData.color = RTPool->Get(unpackedDesc);
+
+			for (uint i = 0; i < VoxelMipLevels; i++) {
+				voxelData.color->GetTexture().Clear(0, i);
+			}
+		}
+		if (!voxelData.normal || voxelData.normal->GetDesc() != unpackedDesc) {
+			voxelData.normal = RTPool->Get(unpackedDesc);
+
+			for (uint i = 0; i < VoxelMipLevels; i++) {
+				voxelData.normal->GetTexture().Clear(0, i);
+			}
+		}
+		if (!voxelData.radiance || voxelData.radiance->GetDesc() != unpackedDesc) {
+			voxelData.radiance = RTPool->Get(unpackedDesc);
+
+			for (uint i = 0; i < VoxelMipLevels; i++) {
+				voxelData.radiance->GetTexture().Clear(0, i);
+			}
+		}
 
 		glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
-		{
-			RenderPhase phase("Clear", timer);
-			glClearTexImage(packedVoxels->GetTexture().handle, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
-			glClearTexImage(unpackedVoxels->GetTexture().handle, 0, GL_RGBA, GL_UNSIGNED_INT, nullptr);
-		}
 
 		ecs::View ortho;
 		ortho.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * VoxelSize)));
@@ -261,8 +277,19 @@ namespace sp
 		auto voxelVS = GlobalShaders->Get<VoxelRasterVS>();
 		glViewport(0, 0, VoxelGridSize, VoxelGridSize);
 
-		packedVoxels->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
-		unpackedVoxels->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
+		voxelData.packed->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
+		voxelData.color->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
+
+		{
+			RenderPhase phase("Clear", timer);
+
+			// TODO(xthexder): Remove me
+			for (uint i = 0; i < VoxelMipLevels; i++) {
+				voxelData.color->GetTexture().Clear(0, i);
+				voxelData.normal->GetTexture().Clear(0, i);
+				voxelData.radiance->GetTexture().Clear(0, i);
+			}
+		}
 
 		{
 			RenderPhase phase("Accumulate", timer);
@@ -274,13 +301,19 @@ namespace sp
 		{
 			RenderPhase phase("Convert", timer);
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelConvertFS>(GlobalShaders);
-			ForwardPass(ortho, voxelVS);
-			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+			auto voxelConvertFS = GlobalShaders->Get<VoxelConvertFS>();
+			for (int i = unpackedDesc.levels - 1; i >= 0; i--) {
+				voxelConvertFS->SetLevel(i);
+				voxelData.color->GetTexture().BindImage(1, GL_READ_WRITE, i, GL_TRUE, 0);
+
+				ForwardPass(ortho, voxelVS);
+				glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+			}
 		}
 
 		{
-			//RenderPhase phase("Mipmap", timer);
-			//unpackedVoxels->GetTexture().GenMipmap();
+			// RenderPhase phase("Mipmap", timer);
+			// voxelData.color->GetTexture().GenMipmap();
 		}
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -288,31 +321,28 @@ namespace sp
 
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
-
-		VoxelColors colors = {unpackedVoxels};
-		return colors;
 	}
 
-	void Renderer::RenderPass(ecs::View &view, shared_ptr<RenderTarget> shadowMap, VoxelColors voxelGrid)
+	void Renderer::RenderPass(ecs::View &view)
 	{
 		RenderPhase phase("RenderPass", timer);
 
 		EngineRenderTargets targets;
-		targets.GBuffer0 = RTPool->Get({ PF_RGBA8, view.extents });
-		targets.GBuffer1 = RTPool->Get({ PF_RGBA16F, view.extents });
-		targets.Depth = RTPool->Get({ PF_DEPTH32F, view.extents });
-		targets.ShadowMap = shadowMap;
-		targets.VoxelGrid = voxelGrid;
+		targets.gBuffer0 = RTPool->Get({ PF_RGBA8, view.extents });
+		targets.gBuffer1 = RTPool->Get({ PF_RGBA16F, view.extents });
+		targets.depth = RTPool->Get({ PF_DEPTH32F, view.extents });
+		targets.shadowMap = shadowMap;
+		targets.voxelData = voxelData;
 
 		Texture attachments[] =
 		{
-			targets.GBuffer0->GetTexture(),
-			targets.GBuffer1->GetTexture(),
+			targets.gBuffer0->GetTexture(),
+			targets.gBuffer1->GetTexture(),
 		};
 
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
-		SetRenderTargets(2, attachments, &targets.Depth->GetTexture());
+		SetRenderTargets(2, attachments, &targets.depth->GetTexture());
 
 		ecs::View forwardPassView = view;
 		forwardPassView.offset = glm::ivec2();

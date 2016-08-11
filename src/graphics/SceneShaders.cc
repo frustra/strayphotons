@@ -26,6 +26,16 @@ namespace sp
 		Set(clip, newClip);
 	}
 
+	VoxelConvertFS::VoxelConvertFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+	{
+		Bind(level, "level");
+	}
+
+	void VoxelConvertFS::SetLevel(int newLevel)
+	{
+		Set(level, newLevel);
+	}
+
 	IMPLEMENT_SHADER_TYPE(SceneVS, "scene.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(SceneGS, "scene.geom", Geometry);
 	IMPLEMENT_SHADER_TYPE(SceneFS, "scene.frag", Fragment);
