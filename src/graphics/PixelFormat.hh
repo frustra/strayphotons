@@ -13,11 +13,12 @@ namespace sp
 	PF_DEF(PF_RGB8,              GL_RGB8,               GL_RGB,             GL_UNSIGNED_BYTE) \
 	PF_DEF(PF_SRGB8,             GL_SRGB8,              GL_RGB,             GL_UNSIGNED_BYTE) \
 	PF_DEF(PF_RGB8F,             GL_RGB8,               GL_RGB,             GL_FLOAT) \
+	PF_DEF(PF_RGB32UI,           GL_RGB32UI,            GL_RGB_INTEGER,     GL_UNSIGNED_INT) \
 	PF_DEF(PF_RGBA8,             GL_RGBA8,              GL_RGBA,            GL_UNSIGNED_BYTE) \
 	PF_DEF(PF_SRGB8_A8,          GL_SRGB8_ALPHA8,       GL_RGBA,            GL_UNSIGNED_BYTE) \
 	PF_DEF(PF_RGBA16F,           GL_RGBA16F,            GL_RGBA,            GL_FLOAT) \
 	PF_DEF(PF_RGBA32F,           GL_RGBA32F,            GL_RGBA,            GL_FLOAT) \
-	PF_DEF(PF_RGBA32UI,          GL_RGBA32UI,           GL_RGBA,            GL_UNSIGNED_INT) \
+	PF_DEF(PF_RGBA32UI,          GL_RGBA32UI,           GL_RGBA_INTEGER,    GL_UNSIGNED_INT) \
 	PF_DEF(PF_DEPTH16,           GL_DEPTH_COMPONENT16,  GL_DEPTH_COMPONENT, GL_UNSIGNED_INT) \
 	PF_DEF(PF_DEPTH24,           GL_DEPTH_COMPONENT24,  GL_DEPTH_COMPONENT, GL_UNSIGNED_INT) \
 	PF_DEF(PF_DEPTH32F,          GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT) \

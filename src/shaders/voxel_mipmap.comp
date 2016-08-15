@@ -1,0 +1,54 @@
+#version 430
+
+##import voxel_shared
+
+layout (local_size_x = 16, local_size_y = 16) in;
+
+layout (binding = 0, r32ui) readonly uniform uimage2D previousMipList;
+layout (binding = 1, r32ui) uniform uimage2D currentMipList;
+
+layout (binding = 2, rgba8) readonly uniform image3D previousVoxelColor;
+layout (binding = 3, rgba8) readonly uniform image3D previousVoxelNormal;
+layout (binding = 4, rgba8) uniform image3D currentVoxelColor;
+layout (binding = 5, rgba8) uniform image3D currentVoxelNormal;
+
+layout (binding = 0) uniform atomic_uint previousFragListSize;
+layout (binding = 0, offset = 16) uniform atomic_uint nextFragListSize;
+layout (binding = 0, offset = 20) uniform atomic_uint nextComputeSize;
+
+void main() {
+	uint index = gl_WorkGroupID.x * (gl_WorkGroupSize.x * gl_WorkGroupSize.y) + gl_LocalInvocationIndex;
+	uint size = atomicCounter(previousFragListSize);
+	if (index >= size) return;
+
+	uint packedPosition = imageLoad(previousMipList, ivec2(index & MaxFragListMask, index >> FragListWidthBits)).r;
+	ivec3 position = ivec3( // Position floored to next mip level
+		(packedPosition >> 20) & 0x3FE,
+		(packedPosition >> 10) & 0x3FE,
+		packedPosition & 0x3FE
+	);
+	ivec3 mipPosition = position >> 1;
+
+	if (imageLoad(currentVoxelColor, mipPosition).a > 0) return;
+
+	vec4 color = vec4(0);
+	vec4 normal = vec4(0);
+	for (int x = 0; x < 2; x++) {
+		for (int y = 0; y < 2; y++) {
+			for (int z = 0; z < 2; z++) {
+				color += imageLoad(previousVoxelColor, position + ivec3(x, y, z));
+				normal += imageLoad(previousVoxelNormal, position + ivec3(x, y, z));
+			}
+		}
+	}
+	imageStore(currentVoxelColor, mipPosition, color * vec4(vec3(1.0 / color.a), 0.125));
+	imageStore(currentVoxelNormal, mipPosition, normal * vec4(vec3(1.0 / normal.a), 0.125));
+
+	uint nextIndex = atomicCounterIncrement(nextFragListSize);
+	if (nextIndex % MipmapWorkGroupSize == 0) atomicCounterIncrement(nextComputeSize);
+
+	uint packedData = (uint(mipPosition.x) & 0x3FF) << 20;
+	packedData += (uint(mipPosition.y) & 0x3FF) << 10;
+	packedData += uint(mipPosition.z) & 0x3FF;
+	imageStore(currentMipList, ivec2(nextIndex & MaxFragListMask, nextIndex >> FragListWidthBits), uvec4(packedData));
+}

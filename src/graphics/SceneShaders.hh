@@ -71,14 +71,15 @@ namespace sp
 		using Shader::Shader;
 	};
 
-	class VoxelConvertFS : public Shader
+	class VoxelConvertCS : public Shader
 	{
-		SHADER_TYPE(VoxelConvertFS)
-		VoxelConvertFS(shared_ptr<ShaderCompileOutput> compileOutput);
+		SHADER_TYPE(VoxelConvertCS)
+		using Shader::Shader;
+	};
 
-		void SetLevel(int newLevel);
-
-	private:
-		Uniform level;
+	class VoxelMipmapCS : public Shader
+	{
+		SHADER_TYPE(VoxelMipmapCS)
+		using Shader::Shader;
 	};
 }

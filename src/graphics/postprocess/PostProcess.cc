@@ -63,6 +63,7 @@ namespace sp
 		voxel->SetInput(1, context.GBuffer1);
 		voxel->SetInput(2, context.Depth);
 		voxel->SetInput(3, context.VoxelColor);
+		voxel->SetInput(4, context.VoxelNormal);
 
 		context.LastOutput = voxel;
 	}

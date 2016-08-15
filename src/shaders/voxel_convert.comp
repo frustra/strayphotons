@@ -1,0 +1,35 @@
+#version 430
+
+##import lib/util
+##import voxel_shared
+
+layout (local_size_x = 16, local_size_y = 16) in;
+
+layout (binding = 0) uniform atomic_uint fragListSize;
+
+layout (binding = 0, r32ui) readonly uniform uimage2D voxelFragList;
+layout (binding = 1, r32ui) uniform uimage3D voxelPackedColor;
+layout (binding = 2, r32ui) uniform uimage3D voxelPackedNormal;
+layout (binding = 3, rgba8) writeonly uniform image3D voxelColor;
+layout (binding = 4, rgba8) writeonly uniform image3D voxelNormal;
+
+void main()
+{
+	uint index = gl_WorkGroupID.x * (gl_WorkGroupSize.x * gl_WorkGroupSize.y) + gl_LocalInvocationIndex;
+	uint size = atomicCounter(fragListSize);
+	if (index >= size) return;
+
+	uint packedPosition = imageLoad(voxelFragList, ivec2(index & MaxFragListMask, index >> FragListWidthBits)).r;
+	ivec3 position = ivec3(
+		(packedPosition >> 20) & 0x3FF,
+		(packedPosition >> 10) & 0x3FF,
+		packedPosition & 0x3FF
+	);
+
+	vec4 color = ReadVoxelAndClear(voxelPackedColor, position);
+	vec4 normal = ReadVoxelAndClear(voxelPackedNormal, position);
+	color.rgb /= color.a;
+	normal.rgb /= normal.a;
+	imageStore(voxelColor, position, vec4(color.rgb, 1.0));
+	imageStore(voxelNormal, position, vec4(normal.rgb, 1.0));
+}

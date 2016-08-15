@@ -16,7 +16,7 @@ namespace sp
 		GLuint handle = 0;
 		GLenum target = 0;
 		GLPixelFormat format;
-		GLsizei width = 0, height = 0, depth = 0, levels = 0, samples = 1;
+		GLsizei width = 0, height = 0, depth = 0, levels = 0;
 
 		// For color attachments, must be GL_COLOR_ATTACHMENT0.
 		GLenum attachment;
@@ -29,9 +29,8 @@ namespace sp
 		void Clear(const void *data, GLint level = 0) const;
 
 		Texture &Filter(GLenum minFilter = GL_LINEAR, GLenum magFilter = GL_LINEAR, float anisotropy = 0.0f);
-		Texture &Wrap(GLenum wrapS = GL_CLAMP_TO_EDGE, GLenum wrapT = GL_CLAMP_TO_EDGE);
+		Texture &Wrap(GLenum wrapS = GL_CLAMP_TO_EDGE, GLenum wrapT = GL_CLAMP_TO_EDGE, GLenum wrapR = GL_CLAMP_TO_EDGE);
 		Texture &Size(GLsizei width, GLsizei height, GLsizei depth = 1);
-		Texture &Samples(GLsizei samples);
 
 		Texture &Storage(GLPixelFormat format, GLsizei levels = 1);
 		Texture &Storage(PixelFormat format, GLsizei levels = 1);

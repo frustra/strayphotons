@@ -52,11 +52,12 @@ namespace sp
 		return *this;
 	}
 
-	Texture &Texture::Wrap(GLenum wrapS, GLenum wrapT)
+	Texture &Texture::Wrap(GLenum wrapS, GLenum wrapT, GLenum wrapR)
 	{
 		Assert(handle);
 		glTextureParameteri(handle, GL_TEXTURE_WRAP_S, wrapS);
 		glTextureParameteri(handle, GL_TEXTURE_WRAP_T, wrapT);
+		if (target == GL_TEXTURE_3D) glTextureParameteri(handle, GL_TEXTURE_WRAP_R, wrapR);
 		return *this;
 	}
 
@@ -65,12 +66,6 @@ namespace sp
 		this->width = width;
 		this->height = height;
 		this->depth = depth;
-		return *this;
-	}
-
-	Texture &Texture::Samples(GLsizei samples)
-	{
-		this->samples = samples;
 		return *this;
 	}
 
@@ -95,9 +90,6 @@ namespace sp
 			case GL_TEXTURE_2D_ARRAY:
 			case GL_TEXTURE_3D:
 				glTextureStorage3D(handle, levels, this->format.internalFormat, width, height, depth);
-				break;
-			case GL_TEXTURE_2D_MULTISAMPLE:
-				glTextureStorage2DMultisample(handle, this->samples, this->format.internalFormat, width, height, true);
 				break;
 			default:
 				glTextureStorage2D(handle, levels, this->format.internalFormat, width, height);

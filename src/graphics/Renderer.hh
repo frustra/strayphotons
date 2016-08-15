@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/GraphicsContext.hh"
+#include "graphics/Buffer.hh"
 #include "graphics/Texture.hh"
 
 #include <glm/glm.hpp>
@@ -47,6 +48,7 @@ namespace sp
 
 	private:
 		shared_ptr<RenderTarget> shadowMap;
+		Buffer computeIndirectBuffer;
 		VoxelData voxelData;
 
 		glm::ivec2 prevWindowSize, prevWindowPos;

@@ -10,12 +10,10 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-layout (location = 0) out vec3 outNormal;
-layout (location = 1) out vec2 outTexCoord;
+layout (location = 0) out vec2 outTexCoord;
 
 void main()
 {
 	gl_Position = view * model * vec4(inPos, 1.0);
-	outNormal = mat3(view * model) * inNormal;
 	outTexCoord = inTexCoord;
 }
