@@ -9,8 +9,6 @@
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
 
-#include "ecs/Entity.hh"
-
 #include <glm/glm.hpp>
 
 namespace sp

@@ -71,6 +71,7 @@ include_directories(
 	${EXT_PATH}/glm
 	${EXT_PATH}/freetype2/include
 	${EXT_PATH}/tinygltfloader
+	${EXT_PATH}/glomerate/include
 	${EXT_PATH}
 )
 

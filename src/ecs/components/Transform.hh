@@ -1,9 +1,11 @@
 #pragma once
 
+#include "Common.hh"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include "ecs/Ecs.hh"
+#include <Ecs.hh>
 
 namespace ecs
 {
