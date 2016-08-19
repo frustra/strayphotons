@@ -16,12 +16,14 @@ layout (binding = 0) uniform atomic_uint previousFragListSize;
 layout (binding = 0, offset = 16) uniform atomic_uint nextFragListSize;
 layout (binding = 0, offset = 20) uniform atomic_uint nextComputeSize;
 
+uniform int mipLevel = 1;
+
 void main() {
 	uint index = gl_WorkGroupID.x * (gl_WorkGroupSize.x * gl_WorkGroupSize.y) + gl_LocalInvocationIndex;
 	uint size = atomicCounter(previousFragListSize);
 	if (index >= size) return;
 
-	uint packedPosition = imageLoad(previousMipList, ivec2(index & MaxFragListMask, index >> FragListWidthBits)).r;
+	uint packedPosition = imageLoad(previousMipList, ivec2(index & MaxFragListMask[mipLevel - 1], index >> FragListWidthBits[mipLevel - 1])).r;
 	ivec3 position = ivec3( // Position floored to next mip level
 		(packedPosition >> 20) & 0x3FE,
 		(packedPosition >> 10) & 0x3FE,
@@ -50,5 +52,5 @@ void main() {
 	uint packedData = (uint(mipPosition.x) & 0x3FF) << 20;
 	packedData += (uint(mipPosition.y) & 0x3FF) << 10;
 	packedData += uint(mipPosition.z) & 0x3FF;
-	imageStore(currentMipList, ivec2(nextIndex & MaxFragListMask, nextIndex >> FragListWidthBits), uvec4(packedData));
+	imageStore(currentMipList, ivec2(nextIndex & MaxFragListMask[mipLevel], nextIndex >> FragListWidthBits[mipLevel]), uvec4(packedData));
 }

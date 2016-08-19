@@ -7,9 +7,10 @@ const float VoxelGridSize = 256;
 const float VoxelSize = 0.08;
 const vec3 VoxelGridCenter = vec3(0, 5, 0);
 
-const uint MaxFragListMask = 8191;
-const uint FragListWidthBits = 13;
 const uint MipmapWorkGroupSize = 256;
+
+const uint[13] MaxFragListMask = uint[](8191, 4095, 2047, 1023, 511, 255, 127, 63, 31, 15, 7, 3, 1);
+const uint[13] FragListWidthBits = uint[](13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1);
 
 const mat4[3] AxisSwapForward = mat4[](
 	mat4(mat3(0, 0, -1, 0, 1, 0, 1, 0, 0)),

@@ -80,6 +80,12 @@ namespace sp
 	class VoxelMipmapCS : public Shader
 	{
 		SHADER_TYPE(VoxelMipmapCS)
-		using Shader::Shader;
+
+		VoxelMipmapCS(shared_ptr<ShaderCompileOutput> compileOutput);
+
+		void SetLevel(int newLevel);
+
+	private:
+		Uniform level;
 	};
 }

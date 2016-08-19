@@ -9,7 +9,7 @@ layout (binding = 1) uniform sampler2D roughnessTex;
 layout (binding = 0) uniform atomic_uint fragListSize;
 layout (binding = 0, offset = 4) uniform atomic_uint nextComputeSize;
 
-layout (binding = 0, r32ui) uniform uimage2D voxelFragList;
+layout (binding = 0, r32ui) writeonly uniform uimage2D voxelFragList;
 layout (binding = 1, r32ui) uniform uimage3D voxelColor;
 layout (binding = 2, r32ui) uniform uimage3D voxelNormal;
 
@@ -48,6 +48,6 @@ void main()
 		uint packedData = (uint(position.x) & 0x3FF) << 20;
 		packedData += (uint(position.y) & 0x3FF) << 10;
 		packedData += uint(position.z) & 0x3FF;
-		imageStore(voxelFragList, ivec2(index & MaxFragListMask, index >> FragListWidthBits), uvec4(packedData));
+		imageStore(voxelFragList, ivec2(index & MaxFragListMask[0], index >> FragListWidthBits[0]), uvec4(packedData));
 	}
 }

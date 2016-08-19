@@ -218,7 +218,7 @@ namespace sp
 	const int VoxelMipLevels = 3;
 	const float VoxelSize = 0.08;
 	const glm::vec3 VoxelGridCenter = glm::vec3(0, 5, 0);
-	const int VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize / 8;
+	const int VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize / 4;
 
 	void Renderer::PrepareVoxelTextures()
 	{
@@ -230,7 +230,7 @@ namespace sp
 			.Data(sizeof(GLuint) * 4 * VoxelMipLevels, nullptr, GL_DYNAMIC_COPY);
 		}
 
-		RenderTargetDesc listDesc(PF_R32UI, glm::ivec3(8192, VoxelListSize / 8192.0 + 1, 1));
+		RenderTargetDesc listDesc(PF_R32UI, glm::ivec2(8192, ceil(VoxelListSize / 8192.0)));
 		listDesc.levels = VoxelMipLevels;
 		if (!voxelData.fragmentList || voxelData.fragmentList->GetDesc() != listDesc)
 		{
@@ -310,10 +310,8 @@ namespace sp
 			RenderPhase phase("Clear", timer);
 
 			// TODO(xthexder): Remove me
-			uint32_t data = 0;
 			for (uint32 i = 0; i < VoxelMipLevels; i++)
 			{
-				voxelData.fragmentList->GetTexture().Image2D(&data, i, 1, 1);
 				voxelData.color->GetTexture().Clear(0, i);
 				voxelData.normal->GetTexture().Clear(0, i);
 				voxelData.radiance->GetTexture().Clear(0, i);
@@ -325,13 +323,13 @@ namespace sp
 		{
 			RenderPhase phase("Accumulate", timer);
 			computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0);
-			voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
+			voxelData.fragmentList->GetTexture().BindImage(0, GL_WRITE_ONLY, 0);
 			voxelData.packedColor->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
 			voxelData.packedNormal->GetTexture().BindImage(2, GL_READ_WRITE, 0, GL_TRUE, 0);
 
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
 			ForwardPass(ortho, voxelVS);
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
 		}
 
 		computeIndirectBuffer.Bind(GL_DISPATCH_INDIRECT_BUFFER);
@@ -339,7 +337,7 @@ namespace sp
 		{
 			RenderPhase phase("Convert", timer);
 			computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0);
-			voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, 0, GL_TRUE, 0);
+			voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, 0);
 			voxelData.packedColor->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
 			voxelData.packedNormal->GetTexture().BindImage(2, GL_READ_WRITE, 0, GL_TRUE, 0);
 			voxelData.color->GetTexture().BindImage(3, GL_WRITE_ONLY, 0, GL_TRUE, 0);
@@ -347,7 +345,7 @@ namespace sp
 
 			ShaderControl->BindPipeline<VoxelConvertCS>(GlobalShaders);
 			glDispatchComputeIndirect(sizeof(GLuint));
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
 		}
 
 		{
@@ -355,23 +353,18 @@ namespace sp
 			for (uint32 i = 1; i < VoxelMipLevels; i++)
 			{
 				computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * (i - 1), sizeof(GLuint) * 8);
-				voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i - 1, GL_TRUE, 0);
-				voxelData.fragmentList->GetTexture().BindImage(1, GL_READ_WRITE, i, GL_TRUE, 0);
+				voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i - 1);
+				voxelData.fragmentList->GetTexture().BindImage(1, GL_READ_WRITE, i);
 				voxelData.color->GetTexture().BindImage(2, GL_READ_ONLY, i - 1, GL_TRUE, 0);
 				voxelData.normal->GetTexture().BindImage(3, GL_READ_ONLY, i - 1, GL_TRUE, 0);
 				voxelData.color->GetTexture().BindImage(4, GL_READ_WRITE, i, GL_TRUE, 0);
 				voxelData.normal->GetTexture().BindImage(5, GL_READ_WRITE, i, GL_TRUE, 0);
 
 				ShaderControl->BindPipeline<VoxelMipmapCS>(GlobalShaders);
+				GlobalShaders->Get<VoxelMipmapCS>()->SetLevel(i);
 				glDispatchComputeIndirect(sizeof(GLuint) * 4 * (i - 1) + sizeof(GLuint));
-				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
 			}
-		}
-		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
-
-		{
-			// RenderPhase phase("Mipmap", timer);
-			// voxelData.color->GetTexture().GenMipmap();
 		}
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);

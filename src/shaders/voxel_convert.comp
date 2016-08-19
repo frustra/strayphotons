@@ -19,7 +19,7 @@ void main()
 	uint size = atomicCounter(fragListSize);
 	if (index >= size) return;
 
-	uint packedPosition = imageLoad(voxelFragList, ivec2(index & MaxFragListMask, index >> FragListWidthBits)).r;
+	uint packedPosition = imageLoad(voxelFragList, ivec2(index & MaxFragListMask[0], index >> FragListWidthBits[0])).r;
 	ivec3 position = ivec3(
 		(packedPosition >> 20) & 0x3FF,
 		(packedPosition >> 10) & 0x3FF,
