@@ -48,7 +48,7 @@ void main() {
 	}
 	float scale = 1.0 / count;
 	imageStore(currentVoxelColor, mipPosition, color * vec4(vec3(scale), 0.125));
-	imageStore(currentVoxelNormal, mipPosition, normal * vec4(vec3(scale), 0.125));
+	imageStore(currentVoxelNormal, mipPosition, normal * vec4(vec3(scale), 0) + vec4(vec3(0), 1));
 
 	uint nextIndex = atomicCounterIncrement(nextFragListSize);
 	if (nextIndex % MipmapWorkGroupSize == 0) atomicCounterIncrement(nextComputeSize);

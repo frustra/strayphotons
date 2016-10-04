@@ -54,8 +54,8 @@ void main()
 
 	//for (int i = 0; i < 1; i++) {
 		vec3 sampleDir = rayReflectDir;
-		vec3 sampleColor;
-		TraceVoxelGrid(voxelColor, 0, worldPosition - VoxelGridCenter, sampleDir, sampleColor);
+		vec3 sampleColor, sampleNormal;
+		TraceVoxelGrid(voxelColor, voxelNormal, 0, worldPosition - VoxelGridCenter, sampleDir, sampleColor, sampleNormal);
 
 		indirectLight += sampleColor;
 	//}

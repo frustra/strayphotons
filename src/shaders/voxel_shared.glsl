@@ -24,11 +24,13 @@ const mat3[3] AxisSwapReverse = mat3[](
 	mat3(1.0)
 );
 
-bool GetVoxel(sampler3D unpackedVoxelTex, vec3 position, int level, out vec4 color)
+bool GetVoxel(sampler3D colors, sampler3D normals, vec3 position, int level, out vec4 color, out vec3 normal)
 {
-	vec4 data = textureLod(unpackedVoxelTex, position/vec3(int(VoxelGridSize)>>level), level);
-	color = vec4(data.rgb, data.a);
-	return data.a > 0;
+	vec4 colorData = textureLod(colors, position/vec3(int(VoxelGridSize)>>level), level);
+	vec4 normalData = textureLod(normals, position/vec3(int(VoxelGridSize)>>level), level);
+	color = vec4(colorData.rgb / normalData.a, colorData.a);
+	normal = normalData.rgb;
+	return colorData.a > 0;
 }
 
 bool UnpackVoxel(usampler3D packedVoxelTex, ivec3 position, out vec4 color)
@@ -125,7 +127,7 @@ bool UnpackVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, 
 	return false;
 }
 
-void TraceVoxelGrid(sampler3D voxels, int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor)
+void TraceVoxelGrid(sampler3D colors, sampler3D normals, int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out vec3 hitNormal)
 {
 	float scale = float(1 << level);
 	float invScale = 1.0 / scale;
@@ -162,9 +164,11 @@ void TraceVoxelGrid(sampler3D voxels, int level, vec3 rayPos, vec3 rayDir, out v
 	for (int i = 0; i < maxIterations; i++)
 	{
 		vec4 color;
-		if (GetVoxel(voxels, voxelPos, level, color))
+		vec3 normal;
+		if (GetVoxel(colors, normals, voxelPos, level, color, normal))
 		{
 			hitColor = color.rgb;
+			hitNormal = normal;
 			return;
 		}
 
