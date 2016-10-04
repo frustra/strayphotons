@@ -35,16 +35,18 @@ void main() {
 
 	vec4 color = vec4(0);
 	vec4 normal = vec4(0);
+	int count = 0;
 	for (int x = 0; x < 2; x++) {
 		for (int y = 0; y < 2; y++) {
 			for (int z = 0; z < 2; z++) {
 				color += imageLoad(previousVoxelColor, position + ivec3(x, y, z));
 				normal += imageLoad(previousVoxelNormal, position + ivec3(x, y, z));
+				count += int(color.a != 0);
 			}
 		}
 	}
-	imageStore(currentVoxelColor, mipPosition, color * vec4(vec3(1.0 / color.a), 0.125));
-	imageStore(currentVoxelNormal, mipPosition, normal * vec4(vec3(1.0 / normal.a), 0.125));
+	imageStore(currentVoxelColor, mipPosition, color * vec4(0.125));
+	imageStore(currentVoxelNormal, mipPosition, normal * vec4(0.125));//vec3(1.0 / count), 
 
 	uint nextIndex = atomicCounterIncrement(nextFragListSize);
 	if (nextIndex % MipmapWorkGroupSize == 0) atomicCounterIncrement(nextComputeSize);

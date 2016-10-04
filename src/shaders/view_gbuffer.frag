@@ -13,6 +13,7 @@ layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
 uniform int mode;
+uniform int mipLevel;
 uniform mat4 invProjMat;
 uniform mat4 invViewMat;
 
@@ -31,6 +32,6 @@ void main()
 	} else if (mode == 5) {
 		vec4 rayPos = invViewMat * vec4(ScreenPosToViewPos(inTexCoord, 0, invProjMat), 1);
 		vec4 rayDir = normalize(rayPos - (invViewMat * vec4(0, 0, 0, 1)));
-		TraceVoxelGrid(voxelColor, 2, rayPos.xyz - VoxelGridCenter, rayDir.xyz, outFragColor.rgb);
+		TraceVoxelGrid(voxelColor, mipLevel, rayPos.xyz - VoxelGridCenter, rayDir.xyz, outFragColor.rgb);
 	}
 }

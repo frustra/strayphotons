@@ -24,10 +24,11 @@ const mat3[3] AxisSwapReverse = mat3[](
 	mat3(1.0)
 );
 
-bool GetVoxel(sampler3D unpackedVoxelTex, ivec3 position, int level, out vec3 color)
+bool GetVoxel(sampler3D unpackedVoxelTex, ivec3 position, int level, out vec4 color)
 {
 	vec4 data = texelFetch(unpackedVoxelTex, position, level);
-	color = data.rgb;
+	// vec4 data = texture(unpackedVoxelTex, (vec3(position) + 0.5)/vec3(int(VoxelGridSize)>>level), level);
+	color = vec4(data.rgb / data.a, data.a);
 	return data.a > 0;
 }
 
@@ -161,10 +162,10 @@ void TraceVoxelGrid(sampler3D voxels, int level, vec3 rayPos, vec3 rayDir, out v
 
 	for (int i = 0; i < maxIterations; i++)
 	{
-		vec3 color;
+		vec4 color;
 		if (GetVoxel(voxels, voxelIndex, level, color))
 		{
-			hitColor = color;
+			hitColor = color.rgb;
 			return;
 		}
 

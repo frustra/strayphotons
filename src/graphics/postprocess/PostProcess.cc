@@ -23,6 +23,7 @@ namespace sp
 	static CVar<bool> CVarTonemapEnabled("r.Tonemap", true, "Enable HDR tonemapping");
 	static CVar<bool> CVarSSAOEnabled("r.SSAO", true, "Enable Screen Space Ambient Occlusion");
 	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth, 4: roughness)");
+	static CVar<int> CVarVoxelMip("r.VoxelMip", 0, "");
 	static CVar<int> CVarAntiAlias("r.AntiAlias", 1, "Anti-aliasing mode (0: none, 1: SMAA 1x)");
 	static CVar<int> CVarVoxelLightingEnabled("r.VoxelLighting", 1, "Enable voxel lighting");
 
@@ -148,7 +149,7 @@ namespace sp
 
 		if (CVarViewGBuffer.Get() > 0)
 		{
-			auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get());
+			auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(), CVarVoxelMip.Get());
 			viewGBuf->SetInput(0, context.GBuffer0);
 			viewGBuf->SetInput(1, context.GBuffer1);
 			viewGBuf->SetInput(2, context.Depth);

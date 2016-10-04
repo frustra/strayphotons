@@ -13,19 +13,21 @@ namespace sp
 		ViewGBufferFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			Bind(mode, "mode");
+			Bind(level, "mipLevel");
 			Bind(invProj, "invProjMat");
 			Bind(invView, "invViewMat");
 		}
 
-		void SetParameters(int newMode, const ecs::View &view)
+		void SetParameters(int newMode, int newLevel, const ecs::View &view)
 		{
 			Set(mode, newMode);
+			Set(level, newLevel);
 			Set(invProj, view.invProjMat);
 			Set(invView, view.invViewMat);
 		}
 
 	private:
-		Uniform mode, invProj, invView;
+		Uniform mode, level, invProj, invView;
 	};
 
 	IMPLEMENT_SHADER_TYPE(ViewGBufferFS, "view_gbuffer.frag", Fragment);
@@ -35,7 +37,7 @@ namespace sp
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
-		r->GlobalShaders->Get<ViewGBufferFS>()->SetParameters(mode, context->view);
+		r->GlobalShaders->Get<ViewGBufferFS>()->SetParameters(mode, level, context->view);
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, ViewGBufferFS>(r->GlobalShaders);

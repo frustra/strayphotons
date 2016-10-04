@@ -215,14 +215,15 @@ namespace sp
 	}
 
 	const int VoxelGridSize = 256;
-	const int VoxelMipLevels = 3;
+	const int VoxelMipLevels = 5;
 	const float VoxelSize = 0.08;
 	const glm::vec3 VoxelGridCenter = glm::vec3(0, 5, 0);
-	const int VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize / 4;
+	const int VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize;
 
 	void Renderer::PrepareVoxelTextures()
 	{
-		glm::ivec3 renderTargetSize = glm::ivec3(VoxelGridSize * 2, VoxelGridSize, VoxelGridSize);
+		glm::ivec3 packedSize = glm::ivec3(VoxelGridSize * 2, VoxelGridSize, VoxelGridSize);
+		glm::ivec3 unpackedSize = glm::ivec3(VoxelGridSize, VoxelGridSize, VoxelGridSize);
 
 		if (!computeIndirectBuffer)
 		{
@@ -237,23 +238,23 @@ namespace sp
 			voxelData.fragmentList = RTPool->Get(listDesc);
 		}
 
-		if (!voxelData.packedColor || voxelData.packedColor->GetDesc().extent != renderTargetSize)
+		if (!voxelData.packedColor || voxelData.packedColor->GetDesc().extent != packedSize)
 		{
-			voxelData.packedColor = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
+			voxelData.packedColor = RTPool->Get(RenderTargetDesc(PF_R32UI, packedSize));
 			voxelData.packedColor->GetTexture().Clear(0);
 		}
-		if (!voxelData.packedNormal || voxelData.packedNormal->GetDesc().extent != renderTargetSize)
+		if (!voxelData.packedNormal || voxelData.packedNormal->GetDesc().extent != packedSize)
 		{
-			voxelData.packedNormal = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
+			voxelData.packedNormal = RTPool->Get(RenderTargetDesc(PF_R32UI, packedSize));
 			voxelData.packedNormal->GetTexture().Clear(0);
 		}
-		if (!voxelData.packedRadiance || voxelData.packedRadiance->GetDesc().extent != renderTargetSize)
+		if (!voxelData.packedRadiance || voxelData.packedRadiance->GetDesc().extent != packedSize)
 		{
-			voxelData.packedRadiance = RTPool->Get(RenderTargetDesc(PF_R32UI, renderTargetSize));
+			voxelData.packedRadiance = RTPool->Get(RenderTargetDesc(PF_R32UI, packedSize));
 			voxelData.packedRadiance->GetTexture().Clear(0);
 		}
 
-		RenderTargetDesc unpackedDesc(PF_RGBA8, renderTargetSize);
+		RenderTargetDesc unpackedDesc(PF_RGBA8, unpackedSize);
 		unpackedDesc.levels = VoxelMipLevels;
 		if (!voxelData.color || voxelData.color->GetDesc() != unpackedDesc)
 		{
