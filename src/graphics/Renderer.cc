@@ -218,6 +218,7 @@ namespace sp
 	const int VoxelMipLevels = 5;
 	const float VoxelSize = 0.08;
 	const glm::vec3 VoxelGridCenter = glm::vec3(0, 5, 0);
+	// TODO(xthexder) this isn't actually big enough on all mipmap levels
 	const int VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize;
 
 	void Renderer::PrepareVoxelTextures()

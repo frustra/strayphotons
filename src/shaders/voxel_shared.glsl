@@ -24,11 +24,10 @@ const mat3[3] AxisSwapReverse = mat3[](
 	mat3(1.0)
 );
 
-bool GetVoxel(sampler3D unpackedVoxelTex, ivec3 position, int level, out vec4 color)
+bool GetVoxel(sampler3D unpackedVoxelTex, vec3 position, int level, out vec4 color)
 {
-	vec4 data = texelFetch(unpackedVoxelTex, position, level);
-	// vec4 data = texture(unpackedVoxelTex, (vec3(position) + 0.5)/vec3(int(VoxelGridSize)>>level), level);
-	color = vec4(data.rgb / data.a, data.a);
+	vec4 data = textureLod(unpackedVoxelTex, position/vec3(int(VoxelGridSize)>>level), level);
+	color = vec4(data.rgb, data.a);
 	return data.a > 0;
 }
 
@@ -163,7 +162,7 @@ void TraceVoxelGrid(sampler3D voxels, int level, vec3 rayPos, vec3 rayDir, out v
 	for (int i = 0; i < maxIterations; i++)
 	{
 		vec4 color;
-		if (GetVoxel(voxels, voxelIndex, level, color))
+		if (GetVoxel(voxels, voxelPos, level, color))
 		{
 			hitColor = color.rgb;
 			return;
@@ -171,8 +170,9 @@ void TraceVoxelGrid(sampler3D voxels, int level, vec3 rayPos, vec3 rayDir, out v
 
 		// Find axis with minimum distance
 		mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
-		sideDist += vec3(mask) * deltaDist;
+		voxelPos += rayDir * invScale * dot(vec3(mask), sideDist);
 		voxelIndex += ivec3(mask) * rayStep;
+		sideDist = (raySign * (vec3(voxelIndex) - voxelPos) + (raySign * 0.5) + 0.5) * deltaDist;
 	}
 
 	hitColor = vec3(0);
