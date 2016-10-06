@@ -1,4 +1,6 @@
 /build
 /bin
 /assets/shaders
+/assets/audio/.cache
+/assets/audio/.user
 /vendor/lib
