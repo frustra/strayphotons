@@ -20,6 +20,7 @@ namespace sp
 		shared_ptr<RenderTarget> fragmentList;
 		shared_ptr<RenderTarget> packedColor, packedNormal, packedRadiance;
 		shared_ptr<RenderTarget> color, normal, radiance;
+		bool mipmapsGenerated;
 	};
 
 	class Renderer : public GraphicsContext

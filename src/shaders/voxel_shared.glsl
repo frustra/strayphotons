@@ -174,7 +174,7 @@ void TraceVoxelGrid(sampler3D colors, sampler3D normals, int level, vec3 rayPos,
 
 		// Find axis with minimum distance
 		mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
-		voxelPos += rayDir * invScale * dot(vec3(mask), sideDist);
+		voxelPos += rayDir * invScale;// * dot(vec3(mask), sideDist);
 		voxelIndex += ivec3(mask) * rayStep;
 		sideDist = (raySign * (vec3(voxelIndex) - voxelPos) + (raySign * 0.5) + 0.5) * deltaDist;
 	}
