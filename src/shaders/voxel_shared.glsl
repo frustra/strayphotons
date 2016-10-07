@@ -33,6 +33,14 @@ bool GetVoxel(sampler3D colors, sampler3D normals, vec3 position, int level, out
 	return colorData.a > 0;
 }
 
+vec4 SampleVoxel(sampler3D colors, sampler3D normals, vec3 position, float size)
+{
+	float level = max(0, log2(size));
+	vec4 colorData = textureLod(colors, position/vec3(VoxelGridSize), level);
+	vec4 normalData = textureLod(normals, position/vec3(VoxelGridSize), level);
+	return vec4(colorData.rgb / normalData.a, colorData.a);
+}
+
 bool UnpackVoxel(usampler3D packedVoxelTex, ivec3 position, out vec4 color)
 {
 	ivec3 index = position * ivec3(2, 1, 1);
@@ -180,6 +188,28 @@ void TraceVoxelGrid(sampler3D colors, sampler3D normals, int level, vec3 rayPos,
 	}
 
 	hitColor = vec3(0);
+}
+
+vec4 ConeTraceGrid(sampler3D colors, sampler3D normals, float ratio, vec3 rayPos, vec3 rayDir)
+{
+	vec3 voxelPos = (rayPos.xyz / VoxelSize + VoxelGridSize * 0.5);
+	float dist = 1.0;
+	float maxDist = VoxelGridSize * 1.5;
+
+	vec4 result = vec4(0);
+
+	while (dist < maxDist && result.a < 0.999)
+	{
+		float size = max(1.0, ratio * dist);
+		vec4 value = SampleVoxel(colors, normals, voxelPos + rayDir * dist, size);
+		if (value.a > 0) {
+			result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a);
+		}
+
+		dist += size;
+	}
+
+	return vec4(result.rgb, result.a);
 }
 
 #endif
