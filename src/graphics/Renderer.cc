@@ -329,6 +329,10 @@ namespace sp
 				voxelData.packedColor->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
 				voxelData.packedNormal->GetTexture().BindImage(2, GL_READ_WRITE, 0, GL_TRUE, 0);
 
+				auto lights = game->entityManager.EntitiesWith<ecs::Light>();
+				GlobalShaders->Get<VoxelRasterFS>()->SetLights(game->entityManager, lights);
+				shadowMap->GetTexture().Bind(3);
+
 				ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
 				ForwardPass(ortho, voxelVS);
 				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);

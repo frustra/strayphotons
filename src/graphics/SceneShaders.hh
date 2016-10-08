@@ -2,6 +2,9 @@
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
 #include "ecs/components/View.hh"
+#include "ecs/components/Light.hh"
+#include "ecs/components/Transform.hh"
+#include <Ecs.hh>
 
 namespace sp
 {
@@ -68,7 +71,17 @@ namespace sp
 	class VoxelRasterFS : public Shader
 	{
 		SHADER_TYPE(VoxelRasterFS)
-		using Shader::Shader;
+
+		static const int maxLights = 16;
+
+		VoxelRasterFS(shared_ptr<ShaderCompileOutput> compileOutput);
+
+		void SetLights(ecs::EntityManager &manager, ecs::EntityManager::EntityCollection &lightCollection);
+
+	private:
+		Uniform lightCount, lightPosition, lightTint, lightDirection, lightSpotAngleCos;
+		Uniform lightProj, lightView, lightClip, lightMapOffset, lightIntensity, lightIlluminance;
+		Uniform exposure, targetSize, viewMat, invViewMat, invProjMat;
 	};
 
 	class VoxelConvertCS : public Shader
