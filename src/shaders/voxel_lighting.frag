@@ -23,6 +23,32 @@ uniform mat3 invViewRotMat;
 uniform mat4 projMat;
 uniform mat4 invProjMat;
 
+
+const int diffuseSamples = 6;
+
+// theta, phi
+const vec2[diffuseSamples] diffuseAngles = vec2[](
+	vec2(0, 0),
+	vec2(0.8, 0),
+	vec2(0.8, 1.26),
+	vec2(0.8, 2.51),
+	vec2(0.8, 3.77),
+	vec2(0.8, 5.03)
+);
+
+vec3 orientByNormal(float phi, float tht, vec3 normal)
+{
+	float sintht = sin(tht);
+	float xs = sintht * cos(phi);
+	float ys = cos(tht);
+	float zs = sintht * sin(phi);
+
+	vec3 up = abs(normal.y) < 0.999 ? vec3(0, 1, 0) : vec3(1, 0, 0);
+	vec3 tangent1 = normalize(up - normal * dot(up, normal));
+	vec3 tangent2 = normalize(cross(tangent1, normal));
+	return normalize(xs * tangent1 + ys * normal + zs * tangent2);
+}
+
 void main()
 {
 	// Determine normal of surface at this fragment.
@@ -53,16 +79,31 @@ void main()
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
 
-	vec3 indirectLight;
+	vec3 indirectSpecular;
+	vec4 indirectDiffuse;
+	vec3 voxelPosition = worldPosition - VoxelGridCenter;
 
-	//for (int i = 0; i < 1; i++) {
+	{
+		// specular
 		vec3 sampleDir = rayReflectDir;
-		vec4 sampleColor = ConeTraceGrid(voxelColor, voxelNormal, roughness, worldPosition - VoxelGridCenter, sampleDir);
+		vec4 sampleColor = ConeTraceGrid(voxelColor, voxelNormal, roughness, voxelPosition, sampleDir);
 
-		indirectLight += sampleColor.rgb;
-	//}
+		indirectSpecular = sampleColor.rgb;
+	}
 
-	indirectLight /= 1.0;
+	for (int i = 0; i < diffuseSamples; i++) {
+		// diffuse
+		vec2 angle = diffuseAngles[i];
+		vec3 sampleDir = orientByNormal(angle.y, angle.x, worldNormal);
+		vec4 sampleColor = ConeTraceGrid(voxelColor, voxelNormal, 0.5, voxelPosition, sampleDir);
+
+		indirectDiffuse += sampleColor;
+	}
+
+	indirectDiffuse /= float(diffuseSamples);
+	indirectDiffuse.rgb *= 1.0 - indirectDiffuse.a;
+
+	vec3 indirectLight = roughness * indirectDiffuse.rgb + (1.0 - roughness) * indirectSpecular;
 
 	vec4 directLight = texture(lastOutput, inTexCoord);
 	outFragColor = directLight + vec4(indirectLight, 0.0);
