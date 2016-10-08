@@ -5,10 +5,11 @@
 ##import voxel_shared
 
 layout (binding = 0) uniform sampler2D lastOutput;
-layout (binding = 1) uniform sampler2D gBuffer1;
-layout (binding = 2) uniform sampler2D depthStencil;
-layout (binding = 3) uniform sampler3D voxelColor;
-layout (binding = 4) uniform sampler3D voxelNormal;
+layout (binding = 1) uniform sampler2D gBuffer0;
+layout (binding = 2) uniform sampler2D gBuffer1;
+layout (binding = 3) uniform sampler2D depthStencil;
+layout (binding = 4) uniform sampler3D voxelColor;
+layout (binding = 5) uniform sampler3D voxelNormal;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
@@ -32,6 +33,8 @@ void main()
 		return;
 	}
 
+	float roughness = 1.0 - texture(gBuffer0, inTexCoord).a;
+
 	vec3 worldNormal = invViewRotMat * viewNormal;
 
 	// Determine coordinates of fragment.
@@ -54,7 +57,7 @@ void main()
 
 	//for (int i = 0; i < 1; i++) {
 		vec3 sampleDir = rayReflectDir;
-		vec4 sampleColor = ConeTraceGrid(voxelColor, voxelNormal, 0.1, worldPosition - VoxelGridCenter, sampleDir);
+		vec4 sampleColor = ConeTraceGrid(voxelColor, voxelNormal, roughness, worldPosition - VoxelGridCenter, sampleDir);
 
 		indirectLight += sampleColor.rgb;
 	//}

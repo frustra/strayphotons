@@ -51,7 +51,7 @@ namespace sp
 		}
 	};
 
-	static CVar<float> CVarFlashlightIntensity("r.Flashlight", 2000, "Flashlight intensity");
+	static CVar<float> CVarFlashlightIntensity("r.Flashlight", 0, "Flashlight intensity");
 	static CVar<bool> CVarRenderWireframe("r.Wireframe", false, "Render wireframes");
 
 	// TODO Clean up Renderable when unloaded.
@@ -219,7 +219,7 @@ namespace sp
 	const float VoxelSize = 0.08;
 	const glm::vec3 VoxelGridCenter = glm::vec3(0, 5, 0);
 	// TODO(xthexder) this isn't actually big enough on all mipmap levels
-	const int VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize;
+	const int VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize * 2;
 
 	void Renderer::PrepareVoxelTextures()
 	{

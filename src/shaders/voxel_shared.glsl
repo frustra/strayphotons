@@ -193,7 +193,7 @@ void TraceVoxelGrid(sampler3D colors, sampler3D normals, int level, vec3 rayPos,
 vec4 ConeTraceGrid(sampler3D colors, sampler3D normals, float ratio, vec3 rayPos, vec3 rayDir)
 {
 	vec3 voxelPos = (rayPos.xyz / VoxelSize + VoxelGridSize * 0.5);
-	float dist = 1.0;
+	float dist = 1;
 	float maxDist = VoxelGridSize * 1.5;
 
 	vec4 result = vec4(0);

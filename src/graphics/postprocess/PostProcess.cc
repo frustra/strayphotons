@@ -61,10 +61,11 @@ namespace sp
 	{
 		auto voxel = context.AddPass<VoxelLighting>();
 		voxel->SetInput(0, context.LastOutput);
-		voxel->SetInput(1, context.GBuffer1);
-		voxel->SetInput(2, context.Depth);
-		voxel->SetInput(3, context.VoxelColor);
-		voxel->SetInput(4, context.VoxelNormal);
+		voxel->SetInput(1, context.GBuffer0);
+		voxel->SetInput(2, context.GBuffer1);
+		voxel->SetInput(3, context.Depth);
+		voxel->SetInput(4, context.VoxelColor);
+		voxel->SetInput(5, context.VoxelNormal);
 
 		context.LastOutput = voxel;
 	}
