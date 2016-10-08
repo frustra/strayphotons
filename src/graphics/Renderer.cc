@@ -51,7 +51,7 @@ namespace sp
 		}
 	};
 
-	static CVar<float> CVarFlashlightIntensity("r.Flashlight", 0, "Flashlight intensity");
+	static CVar<float> CVarFlashlightIntensity("r.Flashlight", 2000, "Flashlight intensity");
 	static CVar<bool> CVarRenderWireframe("r.Wireframe", false, "Render wireframes");
 
 	// TODO Clean up Renderable when unloaded.
