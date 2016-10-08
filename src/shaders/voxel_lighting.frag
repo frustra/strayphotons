@@ -59,7 +59,8 @@ void main()
 		return;
 	}
 
-	float roughness = 1.0 - texture(gBuffer0, inTexCoord).a;
+	vec4 gb0 = texture(gBuffer0, inTexCoord);
+	float roughness = 1.0 - gb0.a;
 
 	vec3 worldNormal = invViewRotMat * viewNormal;
 
@@ -102,6 +103,7 @@ void main()
 
 	indirectDiffuse /= float(diffuseSamples);
 	indirectDiffuse.rgb *= 1.0 - indirectDiffuse.a;
+	indirectDiffuse.rgb *= gb0.rgb;
 
 	vec3 indirectLight = roughness * indirectDiffuse.rgb + (1.0 - roughness) * indirectSpecular;
 
