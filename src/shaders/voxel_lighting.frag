@@ -81,8 +81,8 @@ void main()
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
 
-	vec3 indirectSpecular;
-	vec4 indirectDiffuse;
+	vec3 indirectSpecular = vec3(0);
+	vec4 indirectDiffuse = vec4(0);
 	vec3 voxelPosition = worldPosition - VoxelGridCenter;
 
 	{

@@ -297,8 +297,8 @@ namespace sp
 		glDisable(GL_DEPTH_TEST);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-		if (voxelData.mipmapsGenerated) {
-			voxelData.mipmapsGenerated = false;
+		// if (voxelData.mipmapsGenerated) {
+		// 	voxelData.mipmapsGenerated = false;
 
 			ecs::View ortho;
 			ortho.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * VoxelSize)));
@@ -353,9 +353,9 @@ namespace sp
 				glDispatchComputeIndirect(sizeof(GLuint));
 				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
 			}
-		} else {
-			voxelData.mipmapsGenerated = true;
-
+		// } else {
+			// voxelData.mipmapsGenerated = true;
+		{
 			for (uint32 i = 1; i < VoxelMipLevels; i++)
 			{
 				// TODO(xthexder): Remove me

@@ -61,7 +61,7 @@ bool UnpackVoxel(usampler3D packedVoxelTex, ivec3 position, out vec4 color)
 	return false;
 }
 
-bool UnpackVoxel(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, out vec4 color)
+bool UnpackVoxel(uimage3D packedVoxelImg, ivec3 position, out vec4 color)
 {
 	ivec3 index = position * ivec3(2, 1, 1);
 	uint data = imageLoad(packedVoxelImg, index + ivec3(1, 0, 0)).r;
@@ -82,7 +82,7 @@ bool UnpackVoxel(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, out vec4
 	return false;
 }
 
-vec4 ReadVoxel(layout(r32ui) uimage3D packedVoxelImg, ivec3 position)
+vec4 ReadVoxel(uimage3D packedVoxelImg, ivec3 position)
 {
 	ivec3 index = position * ivec3(2, 1, 1);
 
@@ -98,7 +98,7 @@ vec4 ReadVoxel(layout(r32ui) uimage3D packedVoxelImg, ivec3 position)
 	return vec4(red, green, blue, alpha);
 }
 
-vec4 ReadVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position)
+vec4 ReadVoxelAndClear(uimage3D packedVoxelImg, ivec3 position)
 {
 	ivec3 index = position * ivec3(2, 1, 1);
 
@@ -114,7 +114,7 @@ vec4 ReadVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position)
 	return vec4(red, green, blue, alpha);
 }
 
-bool UnpackVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, out vec4 color)
+bool UnpackVoxelAndClear(uimage3D packedVoxelImg, ivec3 position, out vec4 color)
 {
 	ivec3 index = position * ivec3(2, 1, 1);
 	uint data = imageAtomicExchange(packedVoxelImg, index + ivec3(1, 0, 0), uint(0));

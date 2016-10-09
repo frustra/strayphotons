@@ -91,7 +91,11 @@ namespace sp
 			glGetQueryObjectui64v(front.queries[0], GL_QUERY_RESULT, &start);
 			glGetQueryObjectui64v(front.queries[1], GL_QUERY_RESULT, &end);
 
-			Assert(start <= end);
+			if (start > end) {
+				// Missed frame
+				pending.pop();
+				continue;
+			}
 			Assert(!pendingFrames.empty());
 
 			auto &frame = pendingFrames.front();
