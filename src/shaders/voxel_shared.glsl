@@ -4,7 +4,7 @@
 ##import raytrace/intersection
 
 const float VoxelGridSize = 256;
-const float VoxelSize = 0.08;
+const float VoxelSize = 0.12;
 const vec3 VoxelGridCenter = vec3(0, 5, 0);
 
 const uint MipmapWorkGroupSize = 256;

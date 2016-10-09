@@ -8,7 +8,7 @@
 
 namespace sp
 {
-	static CVar<int> CVarVoxelLightingDebug("r.VoxelLightingDebug", 0, "Show unprocessed Voxel lighting (1: diffuse, 2: specular, 3: AO)");
+	static CVar<int> CVarVoxelLightingDebug("r.VoxelLightingDebug", 0, "Show unprocessed Voxel lighting (1: combined, 2: diffuse, 3: specular, 4: AO)");
 
 	class VoxelLightingFS : public Shader
 	{
@@ -21,6 +21,7 @@ namespace sp
 			Bind(viewMat, "viewMat");
 			Bind(invViewMat, "invViewMat");
 			Bind(invViewRotMat, "invViewRotMat");
+			Bind(debug, "debug");
 		}
 
 		void SetViewParams(const ecs::View &view)
@@ -32,9 +33,15 @@ namespace sp
 			Set(invViewRotMat, glm::transpose(glm::mat3(view.viewMat)));
 		}
 
+		void SetDebug(int newDebug)
+		{
+			Set(debug, newDebug);
+		}
+
 	private:
 		Uniform projMat, invProjMat;
 		Uniform viewMat, invViewMat, invViewRotMat;
+		Uniform debug;
 	};
 
 	IMPLEMENT_SHADER_TYPE(VoxelLightingFS, "voxel_lighting.frag", Fragment);
@@ -45,6 +52,7 @@ namespace sp
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetViewParams(context->view);
+		r->GlobalShaders->Get<VoxelLightingFS>()->SetDebug(CVarVoxelLightingDebug.Get());
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingFS>(r->GlobalShaders);

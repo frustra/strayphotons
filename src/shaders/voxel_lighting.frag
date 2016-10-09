@@ -23,6 +23,7 @@ uniform mat3 invViewRotMat;
 uniform mat4 projMat;
 uniform mat4 invProjMat;
 
+uniform int debug = 0;
 
 const int diffuseSamples = 6;
 
@@ -103,10 +104,19 @@ void main()
 
 	indirectDiffuse /= float(diffuseSamples);
 	indirectDiffuse.rgb *= 1.0 - indirectDiffuse.a;
-	indirectDiffuse.rgb *= gb0.rgb;
 
-	vec3 indirectLight = roughness * indirectDiffuse.rgb + (1.0 - roughness) * indirectSpecular;
+	vec3 indirectLight = roughness * indirectDiffuse.rgb * gb0.rgb + (1.0 - roughness) * indirectSpecular;
 
 	vec4 directLight = texture(lastOutput, inTexCoord);
-	outFragColor = directLight + vec4(indirectLight, 0.0);
+	if (debug == 1) { // combined
+		outFragColor = vec4(indirectLight, 1.0);
+	} else if (debug == 2) { // diffuse
+		outFragColor = vec4(indirectDiffuse.rgb, 1.0);
+	} else if (debug == 3) { // specular
+		outFragColor = vec4(indirectSpecular, 1.0);
+	} else if (debug == 4) { // AO
+		outFragColor = vec4(vec3(1.0 - indirectDiffuse.a), 1.0);
+	} else {
+		outFragColor = directLight + vec4(indirectLight, 0.0);
+	}
 }
