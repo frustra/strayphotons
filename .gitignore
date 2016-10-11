@@ -1,6 +1,8 @@
 /build
 /bin
 /assets/shaders
+/assets/audio/Metadata
+/assets/audio/Plugins
 /assets/audio/.cache
 /assets/audio/.user
 /vendor/lib

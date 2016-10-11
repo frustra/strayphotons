@@ -72,6 +72,7 @@ include_directories(
 	${EXT_PATH}/freetype2/include
 	${EXT_PATH}/tinygltfloader
 	${EXT_PATH}/glomerate/include
+	${CMAKE_CURRENT_SOURCE_DIR}/vendor/include/fmodstudio
 	${EXT_PATH}
 )
 
@@ -132,10 +133,20 @@ foreach (PHYSX_LIB ${PHYSX_LOADS})
 	LIST(APPEND PHYSX_LIBRARIES ${FOUND_LIB_${PHYSX_LIB}})
 endforeach (PHYSX_LIB)
 
+set (FMOD_LOADS "fmod_vc" "fmodstudio_vc")
+foreach (FMOD_LIB ${FMOD_LOADS})
+	message(STATUS ${FMOD_LIB})
+
+	find_library(FOUND_LIB_${FMOD_LIB}
+		NAMES ${FMOD_LIB}
+		PATHS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/lib/fmod ${CMAKE_CURRENT_SOURCE_DIR}/vendor/lib/fmodstudio
+	)
+	LIST(APPEND FMOD_LIBRARIES ${FOUND_LIB_${FMOD_LIB}})
+endforeach (FMOD_LIB)
 
 add_executable(${PROJECT_EXE} ${PROJECT_MAIN_CC})
 target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
-target_link_libraries(${PROJECT_LIB} ${PHYSX_LIBRARIES})
+target_link_libraries(${PROJECT_LIB} ${PHYSX_LIBRARIES} ${FMOD_LIBRARIES})
 
 # C++11
 target_compile_features(${PROJECT_LIB} PRIVATE cxx_range_for)
