@@ -41,48 +41,7 @@ vec4 SampleVoxel(sampler3D colors, sampler3D normals, vec3 position, float size)
 	return vec4(colorData.rgb / normalData.a, colorData.a);
 }
 
-bool UnpackVoxel(usampler3D packedVoxelTex, ivec3 position, out vec4 color)
-{
-	ivec3 index = position * ivec3(2, 1, 1);
-	uint data = texelFetch(packedVoxelTex, index + ivec3(1, 0, 0), 0).r;
-	uint count = data & 0xFFFF;
-
-	if (count > 0) {
-		float blue = float((data & 0xFFFF0000) >> 16) / 255.0;
-
-		data = texelFetch(packedVoxelTex, index, 0).r;
-		float red = float((data & 0xFFFF0000) >> 16) / 255.0;
-		float green = float(data & 0xFFFF) / 255.0;
-		color.rgb = vec3(red, green, blue) / float(count);
-		color.a = float(count);
-		return true;
-	}
-
-	return false;
-}
-
-bool UnpackVoxel(uimage3D packedVoxelImg, ivec3 position, out vec4 color)
-{
-	ivec3 index = position * ivec3(2, 1, 1);
-	uint data = imageLoad(packedVoxelImg, index + ivec3(1, 0, 0)).r;
-	uint count = data & 0xFFFF;
-
-	if (count > 0) {
-		float blue = float((data & 0xFFFF0000) >> 16) / 255.0;
-
-		data = imageLoad(packedVoxelImg, index).r;
-		float red = float((data & 0xFFFF0000) >> 16) / 255.0;
-		float green = float(data & 0xFFFF) / 255.0;
-
-		color.rgb = vec3(red, green, blue) / float(count);
-		color.a = float(count);
-		return true;
-	}
-
-	return false;
-}
-
-vec4 ReadVoxel(uimage3D packedVoxelImg, ivec3 position)
+vec4 ReadVoxel(layout(r32ui) uimage3D packedVoxelImg, ivec3 position)
 {
 	ivec3 index = position * ivec3(2, 1, 1);
 
@@ -98,7 +57,7 @@ vec4 ReadVoxel(uimage3D packedVoxelImg, ivec3 position)
 	return vec4(red, green, blue, alpha);
 }
 
-vec4 ReadVoxelAndClear(uimage3D packedVoxelImg, ivec3 position)
+vec4 ReadVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position)
 {
 	ivec3 index = position * ivec3(2, 1, 1);
 
@@ -112,27 +71,6 @@ vec4 ReadVoxelAndClear(uimage3D packedVoxelImg, ivec3 position)
 	float alpha = float(data & 0xFFFF);
 
 	return vec4(red, green, blue, alpha);
-}
-
-bool UnpackVoxelAndClear(uimage3D packedVoxelImg, ivec3 position, out vec4 color)
-{
-	ivec3 index = position * ivec3(2, 1, 1);
-	uint data = imageAtomicExchange(packedVoxelImg, index + ivec3(1, 0, 0), uint(0));
-	uint count = data & 0xFFFF;
-
-	if (count > 0) {
-		float blue = float((data & 0xFFFF0000) >> 16) / 255.0;
-
-		data = imageAtomicExchange(packedVoxelImg, index, uint(0));
-		float red = float((data & 0xFFFF0000) >> 16) / 255.0;
-		float green = float(data & 0xFFFF) / 255.0;
-
-		color.rgb = vec3(red, green, blue) / float(count);
-		color.a = float(count);
-		return true;
-	}
-
-	return false;
 }
 
 void TraceVoxelGrid(sampler3D colors, sampler3D normals, int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out vec3 hitNormal)

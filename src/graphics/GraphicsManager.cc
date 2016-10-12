@@ -145,6 +145,11 @@ namespace sp
 			}
 
 			guiRenderer->Render(primaryView);
+
+			if (primaryRender)
+			{
+				renderer->ClearVoxelGrid();
+			}
 		}
 
 		renderer->timer->EndFrame();

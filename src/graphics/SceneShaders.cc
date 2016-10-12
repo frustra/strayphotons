@@ -36,6 +36,16 @@ namespace sp
 		Set(level, newLevel);
 	}
 
+	VoxelClearCS::VoxelClearCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+	{
+		Bind(level, "mipLevel");
+	}
+
+	void VoxelClearCS::SetLevel(int newLevel)
+	{
+		Set(level, newLevel);
+	}
+
 	VoxelRasterFS::VoxelRasterFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 	{
 		Bind(lightCount, "lightCount");
@@ -115,4 +125,5 @@ namespace sp
 	IMPLEMENT_SHADER_TYPE(VoxelRasterFS, "voxel.frag", Fragment);
 	IMPLEMENT_SHADER_TYPE(VoxelConvertCS, "voxel_convert.comp", Compute);
 	IMPLEMENT_SHADER_TYPE(VoxelMipmapCS, "voxel_mipmap.comp", Compute);
+	IMPLEMENT_SHADER_TYPE(VoxelClearCS, "voxel_clear.comp", Compute);
 }

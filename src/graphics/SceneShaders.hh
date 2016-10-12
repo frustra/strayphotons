@@ -101,4 +101,16 @@ namespace sp
 	private:
 		Uniform level;
 	};
+
+	class VoxelClearCS : public Shader
+	{
+		SHADER_TYPE(VoxelMipmapCS)
+
+		VoxelClearCS(shared_ptr<ShaderCompileOutput> compileOutput);
+
+		void SetLevel(int newLevel);
+
+	private:
+		Uniform level;
+	};
 }

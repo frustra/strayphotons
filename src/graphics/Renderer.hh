@@ -33,6 +33,7 @@ namespace sp
 		void RenderShadowMaps();
 		void PrepareVoxelTextures();
 		void RenderVoxelGrid();
+		void ClearVoxelGrid();
 		void BeginFrame(ecs::View &fbView, int fullscreen);
 		void RenderPass(ecs::View &view);
 		void PrepareForView(ecs::View &view);
