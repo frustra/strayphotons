@@ -73,10 +73,6 @@ void main()
 	vec3 worldPosition = (invViewMat * vec4(viewPosition, 1.0)).xyz;
 	vec3 worldFragPosition = (invViewMat * vec4(fragPosition, 1.0)).xyz;
 
-	// Offset to avoid self-intersection.
-	// TODO(pushrax): care about anisotropic voxels
-	worldPosition += worldNormal * VoxelSize * 1.74;
-
 	// Trace.
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
@@ -88,7 +84,7 @@ void main()
 	{
 		// specular
 		vec3 sampleDir = rayReflectDir;
-		vec4 sampleColor = ConeTraceGrid(voxelColor, voxelNormal, roughness, voxelPosition, sampleDir);
+		vec4 sampleColor = ConeTraceGrid(voxelColor, voxelNormal, roughness, voxelPosition, sampleDir, worldNormal);
 
 		indirectSpecular = sampleColor.rgb;
 	}
@@ -97,7 +93,7 @@ void main()
 		// diffuse
 		vec2 angle = diffuseAngles[i];
 		vec3 sampleDir = orientByNormal(angle.y, angle.x, worldNormal);
-		vec4 sampleColor = ConeTraceGrid(voxelColor, voxelNormal, 0.5, voxelPosition, sampleDir);
+		vec4 sampleColor = ConeTraceGrid(voxelColor, voxelNormal, 0.5, voxelPosition, sampleDir, worldNormal);
 
 		indirectDiffuse += sampleColor;
 	}

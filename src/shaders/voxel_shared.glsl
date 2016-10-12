@@ -38,7 +38,7 @@ vec4 SampleVoxel(sampler3D colors, sampler3D normals, vec3 position, float size)
 	float level = max(0, log2(size));
 	vec4 colorData = textureLod(colors, position/vec3(VoxelGridSize), level);
 	vec4 normalData = textureLod(normals, position/vec3(VoxelGridSize), level);
-	return vec4(colorData.rgb / normalData.a, colorData.a);
+	return vec4(colorData.rgb / (normalData.a + 0.00001), colorData.a);
 }
 
 vec4 ReadVoxel(layout(r32ui) uimage3D packedVoxelImg, ivec3 position)
@@ -128,10 +128,10 @@ void TraceVoxelGrid(sampler3D colors, sampler3D normals, int level, vec3 rayPos,
 	hitColor = vec3(0);
 }
 
-vec4 ConeTraceGrid(sampler3D colors, sampler3D normals, float ratio, vec3 rayPos, vec3 rayDir)
+vec4 ConeTraceGrid(sampler3D colors, sampler3D normals, float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 {
 	vec3 voxelPos = (rayPos.xyz / VoxelSize + VoxelGridSize * 0.5);
-	float dist = 1;
+	float dist = max(1.0, min(1.75 / dot(rayDir, surfaceNormal), VoxelGridSize / 2));
 	float maxDist = VoxelGridSize * 1.5;
 
 	vec4 result = vec4(0);
@@ -139,10 +139,11 @@ vec4 ConeTraceGrid(sampler3D colors, sampler3D normals, float ratio, vec3 rayPos
 	while (dist < maxDist && result.a < 0.999)
 	{
 		float size = max(1.0, ratio * dist);
-		vec4 value = SampleVoxel(colors, normals, voxelPos + rayDir * dist, size);
-		if (value.a > 0) {
-			result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a);
-		}
+		float planeDist = dot(surfaceNormal, rayDir * dist) - 1.75;
+		// If the sample intersects the surface, move it over
+		float offset = max(0, size - planeDist);
+		vec4 value = SampleVoxel(colors, normals, voxelPos + rayDir * dist + offset * surfaceNormal, size);
+		result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
 		dist += size;
 	}

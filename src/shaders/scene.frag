@@ -1,6 +1,6 @@
 #version 430
 
-#define USE_BUMP_MAP
+// #define USE_BUMP_MAP
 
 ##import lib/util
 
