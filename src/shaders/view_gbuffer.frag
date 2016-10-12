@@ -34,5 +34,7 @@ void main()
 		vec4 rayDir = normalize(rayPos - (invViewMat * vec4(0, 0, 0, 1)));
 		vec3 sampleNormal;
 		TraceVoxelGrid(voxelColor, voxelNormal, mipLevel, rayPos.xyz - VoxelGridCenter, rayDir.xyz, outFragColor.rgb, sampleNormal);
+
+		// outFragColor.rgb = ConeTraceGrid(voxelColor, voxelNormal, 0, rayPos.xyz - VoxelGridCenter, rayDir.xyz, rayDir.xyz).rgb;
 	}
 }

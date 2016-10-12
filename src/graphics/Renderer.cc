@@ -301,7 +301,7 @@ namespace sp
 		ortho.viewMat = glm::translate(ortho.viewMat, -VoxelGridCenter);
 		ortho.projMat = glm::mat4();
 		ortho.offset = glm::ivec2(0);
-		ortho.extents = glm::ivec2(VoxelGridSize);
+		ortho.extents = glm::ivec2(VoxelGridSize * 2);
 		ortho.clearMode = 0;
 
 		auto voxelVS = GlobalShaders->Get<VoxelRasterVS>();
