@@ -24,14 +24,13 @@ void main() {
 	if (index >= size) return;
 
 	uint packedPosition = imageLoad(previousMipList, ivec2(index & MaxFragListMask[mipLevel - 1], index >> FragListWidthBits[mipLevel - 1])).r;
-	ivec3 position = ivec3( // Position floored to next mip level
-		(packedPosition >> 20) & 0x3FE,
-		(packedPosition >> 10) & 0x3FE,
-		packedPosition & 0x3FE
+	ivec3 position = ivec3(
+		(packedPosition >> 20) & 0x3FF,
+		(packedPosition >> 10) & 0x3FF,
+		packedPosition & 0x3FF
 	);
 	ivec3 mipPosition = position >> 1;
-
-	if (imageLoad(currentVoxelColor, mipPosition).a > 0) return;
+	ivec3 floorPosition = mipPosition << 1;
 
 	vec4 color = vec4(0);
 	vec4 normal = vec4(0);
@@ -39,9 +38,12 @@ void main() {
 	for (int x = 0; x < 2; x++) {
 		for (int y = 0; y < 2; y++) {
 			for (int z = 0; z < 2; z++) {
-				vec4 prevColor = imageLoad(previousVoxelColor, position + ivec3(x, y, z));
+				// This invocation should only run if we're the first value in the group.
+				if (position == floorPosition + ivec3(x, y, z) && count > 0) return;
+
+				vec4 prevColor = imageLoad(previousVoxelColor, floorPosition + ivec3(x, y, z));
 				color += prevColor;
-				normal += imageLoad(previousVoxelNormal, position + ivec3(x, y, z));
+				normal += imageLoad(previousVoxelNormal, floorPosition + ivec3(x, y, z));
 				count += 1 - step(0, -prevColor.a);
 			}
 		}
