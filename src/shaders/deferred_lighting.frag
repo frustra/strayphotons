@@ -23,8 +23,6 @@ uniform mat4 viewMat;
 uniform mat4 invViewMat;
 uniform mat4 invProjMat;
 
-const float punctualLightSizeSq = 0.01 * 0.01; // 1cm punctual lights
-
 ##import lib/shadow_sample
 
 vec3 evaluateBRDF(vec3 diffuseColor, vec3 specularColor, float roughness, vec3 L, vec3 V, vec3 N) {

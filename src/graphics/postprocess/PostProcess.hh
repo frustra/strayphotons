@@ -163,7 +163,7 @@ namespace sp
 		ProcessPassOutputRef Depth;
 		ProcessPassOutputRef ShadowMap;
 		ProcessPassOutputRef VoxelColor;
-		ProcessPassOutputRef VoxelNormal;
+		ProcessPassOutputRef VoxelAlpha;
 		ProcessPassOutputRef VoxelRadiance;
 
 	private:

@@ -1,18 +1,21 @@
 #version 430
 
-##import lib/util
-##import lib/lighting_util
-##import voxel_shared
-
 layout (binding = 0) uniform sampler2D lastOutput;
 layout (binding = 1) uniform sampler2D gBuffer0;
 layout (binding = 2) uniform sampler2D gBuffer1;
 layout (binding = 3) uniform sampler2D depthStencil;
 layout (binding = 4) uniform sampler3D voxelColor;
-layout (binding = 5) uniform sampler3D voxelNormal;
+layout (binding = 5) uniform sampler3D voxelAlpha;
+layout (binding = 6) uniform sampler3D voxelRadiance;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
+
+#define INCLUDE_VOXEL_TRACE
+
+##import lib/util
+##import lib/lighting_util
+##import voxel_shared
 
 const float radius = 0.4;
 const float power = 2.6;
@@ -84,7 +87,7 @@ void main()
 	{
 		// specular
 		vec3 sampleDir = rayReflectDir;
-		vec4 sampleColor = ConeTraceGrid(voxelColor, voxelNormal, roughness, voxelPosition, sampleDir, worldNormal);
+		vec4 sampleColor = ConeTraceGrid(roughness, voxelPosition, sampleDir, worldNormal);
 
 		indirectSpecular = sampleColor.rgb;
 	}
@@ -93,13 +96,13 @@ void main()
 		// diffuse
 		vec2 angle = diffuseAngles[i];
 		vec3 sampleDir = orientByNormal(angle.y, angle.x, worldNormal);
-		vec4 sampleColor = ConeTraceGrid(voxelColor, voxelNormal, 0.5, voxelPosition, sampleDir, worldNormal);
+		vec4 sampleColor = ConeTraceGrid(0.5, voxelPosition, sampleDir, worldNormal);
 
 		indirectDiffuse += sampleColor;
 	}
 
 	indirectDiffuse /= float(diffuseSamples);
-	indirectDiffuse.rgb *= 1.0 - indirectDiffuse.a;
+	indirectDiffuse.rgb *= indirectDiffuse.a; // Include AO
 
 	vec3 indirectLight = roughness * indirectDiffuse.rgb * gb0.rgb + (1.0 - roughness) * indirectSpecular;
 
@@ -111,7 +114,7 @@ void main()
 	} else if (debug == 3) { // specular
 		outFragColor = vec4(indirectSpecular, 1.0);
 	} else if (debug == 4) { // AO
-		outFragColor = vec4(vec3(1.0 - indirectDiffuse.a), 1.0);
+		outFragColor = vec4(vec3(indirectDiffuse.a), 1.0);
 	} else {
 		outFragColor = directLight + vec4(indirectLight, 0.0);
 	}

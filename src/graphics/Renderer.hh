@@ -18,8 +18,8 @@ namespace sp
 	struct VoxelData
 	{
 		shared_ptr<RenderTarget> fragmentList;
-		shared_ptr<RenderTarget> packedColor, packedNormal, packedRadiance;
-		shared_ptr<RenderTarget> color, normal, radiance;
+		shared_ptr<RenderTarget> packedData;
+		shared_ptr<RenderTarget> color, alpha, radiance;
 		bool mipmapsGenerated;
 	};
 

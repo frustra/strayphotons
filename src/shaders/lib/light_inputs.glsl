@@ -1,5 +1,7 @@
 const uint maxLights = 16;
 
+const float punctualLightSizeSq = 0.01 * 0.01; // 1cm punctual lights
+
 uniform int lightCount;
 uniform vec3[maxLights] lightPosition;
 uniform vec3[maxLights] lightTint;

@@ -24,56 +24,51 @@ const mat3[3] AxisSwapReverse = mat3[](
 	mat3(1.0)
 );
 
-bool GetVoxel(sampler3D colors, sampler3D normals, vec3 position, int level, out vec4 color, out vec3 normal)
+float ReadVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, out vec3 outColor, out vec3 outRadiance)
 {
-	vec4 colorData = textureLod(colors, position/vec3(int(VoxelGridSize)>>level), level);
-	vec4 normalData = textureLod(normals, position/vec3(int(VoxelGridSize)>>level), level);
-	color = vec4(colorData.rgb / (normalData.a + 0.00001), colorData.a);
-	normal = normalData.rgb;
-	return colorData.a > 0;
-}
-
-vec4 SampleVoxel(sampler3D colors, sampler3D normals, vec3 position, float size)
-{
-	float level = max(0, log2(size));
-	vec4 colorData = textureLod(colors, position/vec3(VoxelGridSize), level);
-	vec4 normalData = textureLod(normals, position/vec3(VoxelGridSize), level);
-	return vec4(colorData.rgb / (normalData.a + 0.00001), colorData.a);
-}
-
-vec4 ReadVoxel(layout(r32ui) uimage3D packedVoxelImg, ivec3 position)
-{
-	ivec3 index = position * ivec3(2, 1, 1);
-
-	uint data = imageLoad(packedVoxelImg, index).r;
-	float red = float((data & 0xFFFF0000) >> 16) / 255.0;
-	float green = float(data & 0xFFFF) / 255.0;
-
-	data = imageLoad(packedVoxelImg, index + ivec3(1, 0, 0)).r;
-
-	float blue = float((data & 0xFFFF0000) >> 16) / 255.0;
-	float alpha = float(data & 0xFFFF);
-
-	return vec4(red, green, blue, alpha);
-}
-
-vec4 ReadVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position)
-{
-	ivec3 index = position * ivec3(2, 1, 1);
+	ivec3 index = position * ivec3(4, 1, 1);
 
 	uint data = imageAtomicExchange(packedVoxelImg, index, uint(0)).r;
-	float red = float((data & 0xFFFF0000) >> 16) / 255.0;
-	float green = float(data & 0xFFFF) / 255.0;
+	float colorRed = float((data & 0xFFFF0000) >> 16) / 255.0;
+	float colorGreen = float(data & 0xFFFF) / 255.0;
 
 	data = imageAtomicExchange(packedVoxelImg, index + ivec3(1, 0, 0), uint(0)).r;
 
-	float blue = float((data & 0xFFFF0000) >> 16) / 255.0;
-	float alpha = float(data & 0xFFFF);
+	float colorBlue = float((data & 0xFFFF0000) >> 16) / 255.0;
+	float radianceRed = float(data & 0xFFFF) / 255.0;
 
-	return vec4(red, green, blue, alpha);
+	data = imageAtomicExchange(packedVoxelImg, index + ivec3(2, 0, 0), uint(0)).r;
+
+	float radianceGreen = float((data & 0xFFFF0000) >> 16) / 255.0;
+	float radianceBlue = float(data & 0xFFFF) / 255.0;
+
+	outColor = vec3(colorRed, colorGreen, colorBlue);
+	outRadiance = vec3(radianceRed, radianceGreen, radianceBlue);
+	return float(imageAtomicExchange(packedVoxelImg, index + ivec3(3, 0, 0), uint(0)).r);
 }
 
-void TraceVoxelGrid(sampler3D colors, sampler3D normals, int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out vec3 hitNormal)
+#ifdef INCLUDE_VOXEL_TRACE
+
+vec3 GetVoxel(vec3 position, int level, out vec3 color, out vec3 radiance)
+{
+	vec4 colorData = textureLod(voxelColor, position/vec3(int(VoxelGridSize)>>level), 0);
+	vec4 radianceData = textureLod(voxelRadiance, position/vec3(int(VoxelGridSize)>>level), level);
+	vec4 alphaData = textureLod(voxelAlpha, position/vec3(int(VoxelGridSize)>>level), level);
+	color = colorData.rgb / (colorData.a + 0.00001);
+	radiance = radianceData.rgb / (radianceData.a + 0.00001);
+	return alphaData.xyz / (alphaData.a + 0.00001);
+}
+
+vec4 SampleVoxel(vec3 position, vec3 dir, float size)
+{
+	float level = max(0, log2(size));
+	vec4 radianceData = textureLod(voxelRadiance, position/vec3(VoxelGridSize), level);
+	vec4 alphaData = textureLod(voxelAlpha, position/vec3(VoxelGridSize), level);
+	float alpha = dot(alphaData.xyz, abs(dir)) / dot(vec3(1), abs(dir));
+	return vec4(radianceData.rgb / (radianceData.a + 0.00001), alpha);
+}
+
+float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out vec3 hitRadiance)
 {
 	float scale = float(1 << level);
 	float invScale = 1.0 / scale;
@@ -87,7 +82,8 @@ void TraceVoxelGrid(sampler3D colors, sampler3D normals, int level, vec3 rayPos,
 	if (tmin > tmax || tmax < 0)
 	{
 		hitColor = vec3(0);
-        return;
+		hitRadiance = vec3(0);
+        return 0;
 	}
 
 	if (tmin > 0)
@@ -109,13 +105,15 @@ void TraceVoxelGrid(sampler3D colors, sampler3D normals, int level, vec3 rayPos,
 
 	for (int i = 0; i < maxIterations; i++)
 	{
-		vec4 color;
-		vec3 normal;
-		if (GetVoxel(colors, normals, voxelPos, level, color, normal))
+		vec3 color;
+		vec3 radiance;
+		vec3 alpha = GetVoxel(voxelPos, level, color, radiance);
+		float dirAlpha = dot(alpha, abs(rayDir)) / dot(vec3(1), abs(rayDir));
+		if (dirAlpha > 0)
 		{
-			hitColor = color.rgb;
-			hitNormal = normal;
-			return;
+			hitColor = color;
+			hitRadiance = radiance;
+			return dirAlpha;
 		}
 
 		// Find axis with minimum distance
@@ -126,9 +124,11 @@ void TraceVoxelGrid(sampler3D colors, sampler3D normals, int level, vec3 rayPos,
 	}
 
 	hitColor = vec3(0);
+	hitRadiance = vec3(0);
+    return 0;
 }
 
-vec4 ConeTraceGrid(sampler3D colors, sampler3D normals, float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
+vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 {
 	vec3 voxelPos = (rayPos.xyz / VoxelSize + VoxelGridSize * 0.5);
 	float dist = max(1.75, min(1.75 / dot(rayDir, surfaceNormal), VoxelGridSize / 2));
@@ -142,13 +142,15 @@ vec4 ConeTraceGrid(sampler3D colors, sampler3D normals, float ratio, vec3 rayPos
 		float planeDist = dot(surfaceNormal, rayDir * dist) - 1.75;
 		// If the sample intersects the surface, move it over
 		float offset = max(0, size - planeDist);
-		vec4 value = SampleVoxel(colors, normals, voxelPos + rayDir * dist + offset * surfaceNormal, size);
+		vec4 value = SampleVoxel(voxelPos + rayDir * dist + offset * surfaceNormal, rayDir, size);
 		result += vec4(value.rgb * value.a, value.a) * (1.2 - result.a) * (1 - step(0, -value.a));
 
-		dist += size;
+		dist += size * 0.75;
 	}
 
-	return vec4(result.rgb, result.a);
+	// TOOD(xthexder) SEt AO distance via uniform
+	return vec4(result.rgb, smoothstep(0.0, 100.0, dist));
 }
 
+#endif
 #endif

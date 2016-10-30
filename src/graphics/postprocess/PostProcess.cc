@@ -65,7 +65,8 @@ namespace sp
 		voxel->SetInput(2, context.GBuffer1);
 		voxel->SetInput(3, context.Depth);
 		voxel->SetInput(4, context.VoxelColor);
-		voxel->SetInput(5, context.VoxelNormal);
+		voxel->SetInput(5, context.VoxelAlpha);
+		voxel->SetInput(6, context.VoxelRadiance);
 
 		context.LastOutput = voxel;
 	}
@@ -111,7 +112,7 @@ namespace sp
 		if (targets.voxelData.color)
 		{
 			context.VoxelColor = context.AddPass<ProxyProcessPass>(targets.voxelData.color);
-			context.VoxelNormal = context.AddPass<ProxyProcessPass>(targets.voxelData.normal);
+			context.VoxelAlpha = context.AddPass<ProxyProcessPass>(targets.voxelData.alpha);
 			context.VoxelRadiance = context.AddPass<ProxyProcessPass>(targets.voxelData.radiance);
 		}
 
@@ -155,7 +156,7 @@ namespace sp
 			viewGBuf->SetInput(1, context.GBuffer1);
 			viewGBuf->SetInput(2, context.Depth);
 			viewGBuf->SetInput(3, context.VoxelColor);
-			viewGBuf->SetInput(4, context.VoxelNormal);
+			viewGBuf->SetInput(4, context.VoxelAlpha);
 			viewGBuf->SetInput(5, context.VoxelRadiance);
 			context.LastOutput = viewGBuf;
 		}
