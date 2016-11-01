@@ -60,7 +60,7 @@ void main()
 		}
 
 		// Evaluate BRDF and calculate luminance.
-		vec3 diffuse = BRDF_Diffuse_Lambert(diffuseColor.rgb);
+		vec3 diffuse = BRDF_Diffuse_Lambert(diffuseColor.rgb * 0.1);
 		vec3 luminance = diffuse * illuminance * currLightColor;
 
 		// Spotlight attenuation.

@@ -131,7 +131,8 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out
 vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 {
 	vec3 voxelPos = (rayPos.xyz / VoxelSize + VoxelGridSize * 0.5);
-	float dist = max(1.75, min(1.75 / dot(rayDir, surfaceNormal), VoxelGridSize / 2));
+	float startDist = max(1.75, min(1.75 / dot(rayDir, surfaceNormal), VoxelGridSize / 2));
+	float dist = startDist;
 	float maxDist = VoxelGridSize * 1.5;
 
 	vec4 result = vec4(0);
@@ -148,8 +149,8 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 		dist += size * 0.75;
 	}
 
-	// TOOD(xthexder) SEt AO distance via uniform
-	return vec4(result.rgb, smoothstep(0.0, 100.0, dist));
+	// TOOD(xthexder) Set AO distance via uniform
+	return vec4(result.rgb, smoothstep(0.0, 100.0, dist - startDist));
 }
 
 #endif

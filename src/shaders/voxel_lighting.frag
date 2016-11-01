@@ -53,6 +53,10 @@ vec3 orientByNormal(float phi, float tht, vec3 normal)
 	return normalize(xs * tangent1 + ys * normal + zs * tangent2);
 }
 
+float rand(vec2 co){
+    return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
+}
+
 void main()
 {
 	// Determine normal of surface at this fragment.
@@ -95,18 +99,18 @@ void main()
 	for (int i = 0; i < diffuseSamples; i++) {
 		// diffuse
 		vec2 angle = diffuseAngles[i];
-		vec3 sampleDir = orientByNormal(angle.y, angle.x, worldNormal);
+		vec3 sampleDir = orientByNormal(angle.y + rand(inTexCoord.xy) * 1.26, angle.x, worldNormal);
 		vec4 sampleColor = ConeTraceGrid(0.5, voxelPosition, sampleDir, worldNormal);
 
 		indirectDiffuse += sampleColor;
 	}
 
 	indirectDiffuse /= float(diffuseSamples);
-	indirectDiffuse.rgb *= indirectDiffuse.a; // Include AO
 
 	vec3 indirectLight = roughness * indirectDiffuse.rgb * gb0.rgb + (1.0 - roughness) * indirectSpecular;
 
 	vec4 directLight = texture(lastOutput, inTexCoord);
+	directLight.rgb *= indirectDiffuse.a; // Include AO
 	if (debug == 1) { // combined
 		outFragColor = vec4(indirectLight, 1.0);
 	} else if (debug == 2) { // diffuse
