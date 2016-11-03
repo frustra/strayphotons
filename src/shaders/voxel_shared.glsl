@@ -68,6 +68,14 @@ vec4 SampleVoxel(vec3 position, vec3 dir, float size)
 	return vec4(radianceData.rgb / (radianceData.a + 0.00001), alpha);
 }
 
+vec4 SampleVoxelLod(vec3 position, vec3 dir, float level)
+{
+	vec4 radianceData = textureLod(voxelRadiance, position/vec3(VoxelGridSize), level);
+	vec4 alphaData = textureLod(voxelAlpha, position/vec3(VoxelGridSize), level);
+	float alpha = dot(alphaData.xyz, abs(dir)) / dot(vec3(1), abs(dir));
+	return vec4(radianceData.rgb / (radianceData.a + 0.00001), alpha);
+}
+
 float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out vec3 hitRadiance)
 {
 	float scale = float(1 << level);
@@ -139,18 +147,42 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 
 	while (dist < maxDist && result.a < 0.9999)
 	{
-		float size = max(0.5, ratio * dist);
+		float size = max(1.0, ratio * dist);
 		float planeDist = dot(surfaceNormal, rayDir * dist) - 1.75;
 		// If the sample intersects the surface, move it over
 		float offset = max(0, size - planeDist);
 		vec4 value = SampleVoxel(voxelPos + rayDir * dist + offset * surfaceNormal, rayDir, size);
-		result += vec4(value.rgb * value.a, value.a) * (1.2 - result.a) * (1 - step(0, -value.a));
+		result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
-		dist += size * 0.75;
+		dist += size * 0.5;
+	}
+
+	return result;
+}
+
+vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
+{
+	vec3 voxelPos = (rayPos.xyz / VoxelSize + VoxelGridSize * 0.5);
+	float startDist = max(1.75, min(1.75 / dot(rayDir, surfaceNormal), VoxelGridSize / 2));
+	float dist = startDist;
+	float maxDist = VoxelGridSize * 1.5;
+
+	vec4 result = vec4(0);
+	float level = 0;
+
+	while (dist < maxDist && result.a < 0.9999)
+	{
+		float planeDist = dot(surfaceNormal, rayDir * dist) - 1.75;
+		// If the sample intersects the surface, move it over
+		vec4 value = SampleVoxelLod(voxelPos + rayDir * dist, rayDir, level);
+		result += vec4(value.rgb * value.a, value.a) * (1.5 - result.a) * (1 - step(0, -value.a));
+
+		level += 1.0;
+		dist *= 2.0;
 	}
 
 	// TOOD(xthexder) Set AO distance via uniform
-	return vec4(result.rgb, smoothstep(0.0, 100.0, dist - startDist));
+	return vec4(result.rgb, smoothstep(startDist + 10, 100.0, dist));
 }
 
 #endif

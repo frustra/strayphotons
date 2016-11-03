@@ -33,11 +33,11 @@ const int diffuseSamples = 6;
 // theta, phi
 const vec2[diffuseSamples] diffuseAngles = vec2[](
 	vec2(0, 0),
-	vec2(0.8, 0),
-	vec2(0.8, 1.26),
-	vec2(0.8, 2.51),
-	vec2(0.8, 3.77),
-	vec2(0.8, 5.03)
+	vec2(0.5, 0),
+	vec2(0.5, 1.26),
+	vec2(0.5, 2.51),
+	vec2(0.5, 3.77),
+	vec2(0.5, 5.03)
 );
 
 vec3 orientByNormal(float phi, float tht, vec3 normal)
@@ -63,7 +63,7 @@ void main()
 	vec3 viewNormal = texture(gBuffer1, inTexCoord).rgb;
 	if (length(viewNormal) < 0.5) {
 		// Normal not defined.
-		outFragColor = vec4(1);
+		outFragColor = vec4(0);
 		return;
 	}
 
@@ -100,7 +100,7 @@ void main()
 		// diffuse
 		vec2 angle = diffuseAngles[i];
 		vec3 sampleDir = orientByNormal(angle.y + rand(inTexCoord.xy) * 1.26, angle.x, worldNormal);
-		vec4 sampleColor = ConeTraceGrid(0.5, voxelPosition, sampleDir, worldNormal);
+		vec4 sampleColor = ConeTraceGridDiffuse(voxelPosition, sampleDir, worldNormal);
 
 		indirectDiffuse += sampleColor;
 	}

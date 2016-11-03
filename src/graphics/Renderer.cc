@@ -34,7 +34,7 @@ namespace sp
 		DefaultMaterial()
 		{
 			unsigned char baseColor[4] = { 255, 255, 255, 255 };
-			unsigned char roughness[4] = { 0, 0, 0, 255 };
+			unsigned char roughness[4] = { 200, 200, 200, 255 };
 			unsigned char bump[4] = { 127, 127, 127, 255 };
 
 			baseColorTex.Create()
