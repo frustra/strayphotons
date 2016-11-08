@@ -43,10 +43,6 @@ else()
 	set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
-
 set(EXT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext)
 
 find_package(OpenGL REQUIRED)
@@ -61,6 +57,8 @@ add_subdirectory(${EXT_PATH}/freetype2)
 set(GOOGLETEST_DIR ${EXT_PATH}/googletest/googletest)
 add_subdirectory(${EXT_PATH}/googletest)
 
+add_subdirectory(${EXT_PATH}/boost)
+
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${EXT_PATH}/physx/PhysXSDK/Include
@@ -72,7 +70,9 @@ include_directories(
 	${EXT_PATH}/freetype2/include
 	${EXT_PATH}/tinygltfloader
 	${EXT_PATH}/glomerate/include
+	${EXT_PATH}/boost
 	${CMAKE_CURRENT_SOURCE_DIR}/vendor/include/fmodstudio
+	${CMAKE_CURRENT_SOURCE_DIR}/vendor/include/fmod
 	${EXT_PATH}
 )
 
@@ -139,7 +139,7 @@ foreach (FMOD_LIB ${FMOD_LOADS})
 
 	find_library(FOUND_LIB_${FMOD_LIB}
 		NAMES ${FMOD_LIB}
-		PATHS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/lib/fmod ${CMAKE_CURRENT_SOURCE_DIR}/vendor/lib/fmodstudio
+		PATHS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/lib/fmod
 	)
 	LIST(APPEND FMOD_LIBRARIES ${FOUND_LIB_${FMOD_LIB}})
 endforeach (FMOD_LIB)
@@ -161,7 +161,7 @@ set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJE
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
 
-target_link_libraries(${PROJECT_LIB} glfw ${GLFW_LIBRARIES} freetype)
+target_link_libraries(${PROJECT_LIB} glfw ${GLFW_LIBRARIES} freetype boost_filesystem)
 target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
 target_link_libraries(sp ${OPENGL_LIBRARIES} GLEW glfw ${GLFW_LIBRARIES} freetype ImGui)
 
