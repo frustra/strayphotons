@@ -7,7 +7,7 @@ layout (binding = 0) uniform atomic_uint fragListSize;
 layout (binding = 0, r32ui) readonly uniform uimage2D voxelFragList;
 layout (binding = 1, rgba8) writeonly uniform image3D voxelColor;
 layout (binding = 2, rgba8) writeonly uniform image3D voxelAlpha;
-layout (binding = 3, rgba8) writeonly uniform image3D voxelRadiance;
+layout (binding = 3, rgba16) writeonly uniform image3D voxelRadiance;
 
 uniform int mipLevel = 0;
 

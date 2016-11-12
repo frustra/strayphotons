@@ -34,7 +34,7 @@ namespace sp
 		DefaultMaterial()
 		{
 			unsigned char baseColor[4] = { 255, 255, 255, 255 };
-			unsigned char roughness[4] = { 200, 200, 200, 255 };
+			unsigned char roughness[4] = { 200, 200, 200, 200 };
 			unsigned char bump[4] = { 127, 127, 127, 255 };
 
 			baseColorTex.Create()
@@ -216,7 +216,7 @@ namespace sp
 
 	const int VoxelGridSize = 256;
 	const int VoxelMipLevels = 5;
-	const float VoxelSize = 0.12;
+	const float VoxelSize = 0.04;
 	const glm::vec3 VoxelGridCenter = glm::vec3(0, 5, 0);
 	const int VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize / 4;
 
@@ -249,20 +249,22 @@ namespace sp
 			voxelData.color->GetTexture().Clear(0);
 		}
 
-		RenderTargetDesc unpackedDesc(PF_RGBA8, unpackedSize);
-		unpackedDesc.levels = VoxelMipLevels;
-		if (!voxelData.alpha || voxelData.alpha->GetDesc() != unpackedDesc)
+		RenderTargetDesc alphaDesc(PF_RGBA8, unpackedSize);
+		alphaDesc.levels = VoxelMipLevels;
+		if (!voxelData.alpha || voxelData.alpha->GetDesc() != alphaDesc)
 		{
-			voxelData.alpha = RTPool->Get(unpackedDesc);
+			voxelData.alpha = RTPool->Get(alphaDesc);
 
 			for (uint32 i = 0; i < VoxelMipLevels; i++)
 			{
 				voxelData.alpha->GetTexture().Clear(0, i);
 			}
 		}
-		if (!voxelData.radiance || voxelData.radiance->GetDesc() != unpackedDesc)
+		RenderTargetDesc radianceDesc(PF_RGBA16, unpackedSize);
+		radianceDesc.levels = VoxelMipLevels;
+		if (!voxelData.radiance || voxelData.radiance->GetDesc() != radianceDesc)
 		{
-			voxelData.radiance = RTPool->Get(unpackedDesc);
+			voxelData.radiance = RTPool->Get(radianceDesc);
 
 			for (uint32 i = 0; i < VoxelMipLevels; i++)
 			{

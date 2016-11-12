@@ -80,8 +80,8 @@ void main()
 	}
 
 	uint rg = (uint(diffuseColor.r * 0xFF) << 16) + uint(diffuseColor.g * 0xFF);
-	uint br = (uint(diffuseColor.b * 0xFF) << 16) + uint(pixelLuminance.r * 0xFF);
-	uint gb = (uint(pixelLuminance.g * 0xFF) << 16) + uint(pixelLuminance.b * 0xFF);
+	uint br = (uint(diffuseColor.b * 0xFF) << 16) + uint(pixelLuminance.r * 0x7FF);
+	uint gb = (uint(pixelLuminance.g * 0x7FF) << 16) + uint(pixelLuminance.b * 0x7FF);
 	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 4, position.yz), rg);
 	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 4 + 1, position.yz), br);
 	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 4 + 2, position.yz), gb);

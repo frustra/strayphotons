@@ -4,7 +4,7 @@
 ##import raytrace/intersection
 
 const float VoxelGridSize = 256;
-const float VoxelSize = 0.12;
+const float VoxelSize = 0.04;
 const vec3 VoxelGridCenter = vec3(0, 5, 0);
 
 const uint MipmapWorkGroupSize = 256;
@@ -29,18 +29,18 @@ float ReadVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, o
 	ivec3 index = position * ivec3(4, 1, 1);
 
 	uint data = imageAtomicExchange(packedVoxelImg, index, uint(0)).r;
-	float colorRed = float((data & 0xFFFF0000) >> 16) / 255.0;
-	float colorGreen = float(data & 0xFFFF) / 255.0;
+	float colorRed = float((data & 0xFFFF0000) >> 16) / 0xFF;
+	float colorGreen = float(data & 0xFFFF) / 0xFF;
 
 	data = imageAtomicExchange(packedVoxelImg, index + ivec3(1, 0, 0), uint(0)).r;
 
-	float colorBlue = float((data & 0xFFFF0000) >> 16) / 255.0;
-	float radianceRed = float(data & 0xFFFF) / 255.0;
+	float colorBlue = float((data & 0xFFFF0000) >> 16) / 0xFF;
+	float radianceRed = float(data & 0xFFFF) / 0x7FF;
 
 	data = imageAtomicExchange(packedVoxelImg, index + ivec3(2, 0, 0), uint(0)).r;
 
-	float radianceGreen = float((data & 0xFFFF0000) >> 16) / 255.0;
-	float radianceBlue = float(data & 0xFFFF) / 255.0;
+	float radianceGreen = float((data & 0xFFFF0000) >> 16) / 0x7FF;
+	float radianceBlue = float(data & 0xFFFF) / 0x7FF;
 
 	outColor = vec3(colorRed, colorGreen, colorBlue);
 	outRadiance = vec3(radianceRed, radianceGreen, radianceBlue);

@@ -13,7 +13,9 @@ namespace sp
 
 		RenderTargetDesc GetOutputDesc(uint32 id)
 		{
-			return GetInput(0)->GetOutput()->TargetDesc;
+			auto desc = GetInput(0)->GetOutput()->TargetDesc;
+			desc.format = PF_RGBA16F;
+			return desc;
 		}
 
 		string Name()
