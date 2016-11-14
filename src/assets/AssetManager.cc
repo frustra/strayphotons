@@ -309,4 +309,3 @@ namespace sp
 		loadedModels.erase(model.name);
 	}
 }
-

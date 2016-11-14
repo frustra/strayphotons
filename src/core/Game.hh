@@ -2,6 +2,7 @@
 
 #include "physx/PhysxManager.hh"
 #include "graphics/GraphicsManager.hh"
+#include "audio/AudioManager.hh"
 #include "Common.hh"
 #include "game/GameLogic.hh"
 #include "game/InputManager.hh"
@@ -25,6 +26,7 @@ namespace sp
 		GuiManager gui;
 		GraphicsManager graphics;
 		InputManager input;
+		AudioManager audio;
 		ecs::EntityManager entityManager;
 		GameLogic logic;
 		PhysxManager physics;
