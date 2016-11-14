@@ -22,6 +22,7 @@ add_custom_command(
 )
 
 set(boost_libs
+	"system"
 	"filesystem"
 	# add more here if needed
 )
@@ -63,14 +64,14 @@ foreach(boost_lib ${boost_libs})
 	)
 
 	add_library(boost_${boost_lib} IMPORTED GLOBAL STATIC)
-	# set_target_properties(boost_${boost_lib}
-	#     PROPERTIES IMPORTED_LINK_INTERFACE_LIBRARIES
-	#     boost_${boost_lib}_target
-    # )
 	set_property(
 		TARGET boost_${boost_lib}
 		PROPERTY IMPORTED_LOCATION ${out_file}
 	)
 
 	add_dependencies(boost_${boost_lib} boost_${boost_lib}_target)
+
+	if (NOT ${boost_lib} STREQUAL "system")
+		add_dependencies(boost_${boost_lib}_target boost_system_target)
+	endif()
 endforeach()

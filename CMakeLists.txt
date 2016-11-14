@@ -161,9 +161,36 @@ set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJE
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
 
-target_link_libraries(${PROJECT_LIB} glfw ${GLFW_LIBRARIES} freetype boost_filesystem)
-target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
-target_link_libraries(sp ${OPENGL_LIBRARIES} GLEW glfw ${GLFW_LIBRARIES} freetype ImGui)
+set(BOOST_LIBS
+	boost_system
+	boost_filesystem
+)
+
+target_link_libraries(${PROJECT_LIB}
+	glfw
+	${GLFW_LIBRARIES}
+	freetype
+	${BOOST_LIBS}
+)
+
+# hacky way to ensure that the boost libs are built.
+# Simply depending on their libs isn't enough since they are built
+# outside of cmake but need to be triggered by cmake.
+# I can't figure out how to get a CMake "imported" library
+# to trigger a custom command or target (see boost CMakelists.txt)
+foreach (boost_lib ${BOOST_LIBS})
+	add_dependencies(${PROJECT_LIB} ${boost_lib}_target)
+endforeach()
+
+target_link_libraries(${PROJECT_EXE}
+	${PROJECT_LIB}
+	${OPENGL_LIBRARIES}
+	GLEW
+	glfw
+	${GLFW_LIBRARIES}
+	freetype
+	ImGui
+)
 
 ################################################
 # Build tests
