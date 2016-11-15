@@ -3,11 +3,13 @@ cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 if (UNIX)
 	set(b2_exe "b2")
 	set(bjam_exe "bjam")
-	set(bootstrap_cmd "bootstrap.sh")
+	set(bootstrap_cmd "./bootstrap.sh")
+	set(b2_cmd "./${b2_exe}")
 else() # Windows
 	set(b2_exe "b2.exe")
 	set(bjam_exe "bjam.exe")
 	set(bootstrap_cmd "bootstrap.bat")
+	set(b2_cmd ${b2_exe})
 endif()
 
 # build boost's own build system (b2)
@@ -29,13 +31,13 @@ set(boost_libs
 
 foreach(boost_lib ${boost_libs})
 	if (UNIX)
-		set(lib_file "boost_${boost_lib}-??????")
+		set(lib_file "libboost_${boost_lib}.a")
 		set(lib_build_dir
-			"${CMAKE_CURRENT_SOURCE_DIR}/??????")
+			"${CMAKE_CURRENT_SOURCE_DIR}/bin.v2/libs/${boost_lib}/build/gcc-4.8/debug/link-static")
 	else () # Windows
 		set(lib_file "libboost_${boost_lib}-vc140-mt-gd-1_61.lib")
 		set(lib_build_dir
-		"${CMAKE_CURRENT_SOURCE_DIR}/bin.v2/libs/${boost_lib}/build/msvc-14.0/debug/link-static/threading-multi")
+			"${CMAKE_CURRENT_SOURCE_DIR}/bin.v2/libs/${boost_lib}/build/msvc-14.0/debug/link-static/threading-multi")
 	endif()
 
 	set(out_file
@@ -49,7 +51,7 @@ foreach(boost_lib ${boost_libs})
 		OUTPUT ${out_file}
 		DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${b2_exe}"
 		COMMAND
-			"b2" "link=static" ${boost_lib}
+			${b2_cmd} "link=static" ${boost_lib}
 		COMMAND
 			${CMAKE_COMMAND} -E copy_if_different
 			${build_file}

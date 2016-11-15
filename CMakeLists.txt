@@ -71,8 +71,8 @@ include_directories(
 	${EXT_PATH}/tinygltfloader
 	${EXT_PATH}/glomerate/include
 	${EXT_PATH}/boost
-	${CMAKE_CURRENT_SOURCE_DIR}/vendor/include/fmodstudio
-	${CMAKE_CURRENT_SOURCE_DIR}/vendor/include/fmod
+	${EXT_PATH}/fmod/include/fmod
+	${EXT_PATH}/fmod/include/fmodstudio
 	${EXT_PATH}
 )
 
@@ -133,13 +133,21 @@ foreach (PHYSX_LIB ${PHYSX_LOADS})
 	LIST(APPEND PHYSX_LIBRARIES ${FOUND_LIB_${PHYSX_LIB}})
 endforeach (PHYSX_LIB)
 
-set (FMOD_LOADS "fmod_vc" "fmodstudio_vc")
+# Load fmod
+if (WIN32)
+	set (FMOD_LOADS "fmod_vc" "fmodstudio_vc")
+	set (FMOD_ARCH "x86")
+else ()
+	set (FMOD_LOADS "fmod" "fmodstudio")
+	set (FMOD_ARCH "x86_64")
+endif()
+
 foreach (FMOD_LIB ${FMOD_LOADS})
 	message(STATUS ${FMOD_LIB})
 
 	find_library(FOUND_LIB_${FMOD_LIB}
 		NAMES ${FMOD_LIB}
-		PATHS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/lib/fmod
+		PATHS ${EXT_PATH}/fmod/lib/${FMOD_ARCH}
 	)
 	LIST(APPEND FMOD_LIBRARIES ${FOUND_LIB_${FMOD_LIB}})
 endforeach (FMOD_LIB)

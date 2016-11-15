@@ -1,11 +1,13 @@
 #include "AudioManager.hh"
 #include "assets/AssetManager.hh"
 #include "core/Logging.hh"
-#include <cstdio>
+
 #include <fmod_errors.h>
 #include <fmod_common.h>
-#include <sstream>
 #include <boost/filesystem.hpp>
+
+#include <sstream>
+#include <cstdio>
 
 namespace fs = boost::filesystem;
 
