@@ -134,9 +134,19 @@ foreach (PHYSX_LIB ${PHYSX_LOADS})
 endforeach (PHYSX_LIB)
 
 # Load fmod
-if (WIN32)
-	set (FMOD_LOADS "fmod_vc" "fmodstudio_vc")
+if (MSVC)
+	set (FMOD_LIBS "fmod" "fmodstudio")
+	set (FMOD_LOADS )
 	set (FMOD_ARCH "x86")
+
+	# visual studio complains that it can't find the DLLs if
+	# they're not in "build" dir... *sigh*
+	foreach (lib ${FMOD_LIBS})
+		FILE(
+			COPY ${EXT_PATH}/fmod/lib/${FMOD_ARCH}/${lib}.dll
+			DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/build)
+		list(APPEND FMOD_LOADS ${lib}_vc)
+	endforeach()
 else ()
 	set (FMOD_LOADS "fmod" "fmodstudio")
 	set (FMOD_ARCH "x86_64")
