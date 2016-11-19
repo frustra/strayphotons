@@ -8,6 +8,7 @@
 
 #include <sstream>
 #include <cstdio>
+#include <stdexcept>
 
 namespace fs = boost::filesystem;
 
@@ -21,9 +22,34 @@ namespace sp
 		{
 			char err[1024];
 			snprintf(err, 1024, "%s(%d): FMOD error %d - %s", file, line,
-				result, FMOD_ErrorString(result));
+					 result, FMOD_ErrorString(result));
 			Logf(err);
 			Assert(false, err);
+		}
+	}
+
+	string speakerModeStr(FMOD_SPEAKERMODE mode)
+	{
+		switch (mode)
+		{
+			case FMOD_SPEAKERMODE_DEFAULT:
+				return "OS default";
+			case FMOD_SPEAKERMODE_RAW:
+				return "raw";
+			case FMOD_SPEAKERMODE_MONO:
+				return "mono";
+			case FMOD_SPEAKERMODE_STEREO:
+				return "stereo";
+			case FMOD_SPEAKERMODE_QUAD:
+				return "quad";
+			case FMOD_SPEAKERMODE_SURROUND:
+				return "surround";
+			case FMOD_SPEAKERMODE_5POINT1:
+				return "5.1";
+			case FMOD_SPEAKERMODE_7POINT1:
+				return "7.1";
+			default:
+				return "unknown";
 		}
 	}
 
@@ -32,22 +58,70 @@ namespace sp
 		FMOD_CHECK(FMOD::Studio::System::create(&system));
 
 		// project is authored for 5.1 sound
-		FMOD::System* lowLevelSystem = NULL;
-		FMOD_CHECK(system->getLowLevelSystem(&lowLevelSystem) );
-		FMOD_CHECK(lowLevelSystem->setSoftwareFormat(0,
-			FMOD_SPEAKERMODE_5POINT1, 0) );
-
+		FMOD_CHECK(system->getLowLevelSystem(&lowSystem));
+		FMOD_CHECK(lowSystem->setSoftwareFormat(0,
+			FMOD_SPEAKERMODE_5POINT1, 0));
 		FMOD_CHECK(system->initialize(1024, FMOD_STUDIO_INIT_NORMAL,
 			FMOD_INIT_NORMAL, nullptr));
+
+		int driver;
+		int numDrivers;
+		FMOD_CHECK(lowSystem->getDriver(&driver));
+		FMOD_CHECK(lowSystem->getNumDrivers(&numDrivers));
+
+		char *driverNumStr = getenv("AUDIO_DRIVER");
+		if (nullptr != driverNumStr)
+		{
+			try
+			{
+				driver = std::stoi(string(driverNumStr));
+			}
+			catch (const std::invalid_argument &ex)
+			{
+				Errorf("AUDIO_DRIVER_NUM was invalid, using default audio driver");
+			}
+			catch (const std::out_of_range &ex)
+			{
+				Errorf("AUDIO_DRIVER_NUM was out of range, using default audio driver");
+			}
+
+			if (!SetDriver(driver))
+			{
+				Errorf("audio driver %d is invalid, using 0", driver);
+				driver = 0;
+			}
+		}
+
+		Logf("Using audio driver %d of %d", driver, numDrivers);
+
+		const int nameLen = 128;
+		char driverName[nameLen];
+		FMOD_SPEAKERMODE speakerMode;
+		int numChannels;
+		for (int i = 0; i < numDrivers; ++i)
+		{
+			FMOD_CHECK(lowSystem->getDriverInfo(i, driverName, nameLen, NULL,
+				NULL, &speakerMode, &numChannels));
+
+			Logf("\t%d: %2d channels, mode: %s, %s", i, numChannels,
+				 speakerModeStr(speakerMode).c_str(), driverName);
+		}
 	}
 
 	AudioManager::~AudioManager()
 	{
-		for (FMOD::Studio::Bank *bank : banks)
+		for (FMOD::Studio::Bank * bank : banks)
 		{
 			FMOD_CHECK(bank->unload());
 		}
 		FMOD_CHECK(system->release());
+	}
+
+	bool AudioManager::SetDriver(int driverIndex)
+	{
+		FMOD_RESULT res = lowSystem->setDriver(driverIndex);
+		FMOD_CHECK(res);
+		return res == FMOD_OK;
 	}
 
 	bool AudioManager::Frame()
@@ -103,17 +177,17 @@ namespace sp
 		if (fs::exists(bankDir) && fs::is_directory(bankDir))
 		{
 			for (fs::directory_iterator dir_iter(bankDir);
-			     dir_iter != end_iter; ++dir_iter)
+					dir_iter != end_iter; ++dir_iter)
 			{
 				fs::directory_entry &dentry = *dir_iter;
 				const string ext = dentry.path().extension().string();
 
 				if (fs::is_regular_file(dentry.status())
-				    && ext.compare(".bank") == 0)
+						&& ext.compare(".bank") == 0)
 				{
 					this->LoadBank(dentry.path().string());
 				}
-		 	}
+			}
 		}
 	}
 

@@ -16,16 +16,22 @@ namespace sp
 		AudioManager();
 		~AudioManager();
 
+		/**
+		 * Set the audio driver. View logs on startup to see available drivers.
+		 */
+		bool SetDriver(int driverIndex);
+
 		bool Frame();
 		void LoadBank(const string &filename);
 
 		void LoadProjectFiles();
 		void StartEvent(const string &eventName);
 	private:
-		FMOD::Studio::System* system = nullptr;
+		FMOD::Studio::System *system = nullptr;
+		FMOD::System *lowSystem = nullptr;
 		vector<FMOD::Studio::Bank *> banks;
 		boost::unordered_map<const string, FMOD::Studio::EventDescription *>
-			eventDescriptions;
+		eventDescriptions;
 
 	};
 }

@@ -25,6 +25,14 @@ We'll set something up with git bash to be able to run our scripts.
 
 - Windows: `./windows_cmake.sh`, open build/sp.sln and build in Visual Studio. To launch the binary from VS, you need to set the startup project to `sp`
 
+### Audio
+
+If you don't hear any sound your audio driver might not be the default. View the log output
+for "[log] Using audio driver 0 of 3" or similar. The next lines will list the available
+audio drivers.
+
+To use one, set the environment variable "AUDIO_DRIVER". For example,
+"AUDIO_DRIVER=2 ./run.sh"
 
 Developing
 ----------
