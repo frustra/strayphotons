@@ -26,7 +26,12 @@ namespace sp
 
 		void LoadProjectFiles();
 		void StartEvent(const string &eventName);
+
 	private:
+		void logAvailDrivers();
+		void initDriver();
+		void initOutputType();
+
 		FMOD::Studio::System *system = nullptr;
 		FMOD::System *lowSystem = nullptr;
 		vector<FMOD::Studio::Bank *> banks;

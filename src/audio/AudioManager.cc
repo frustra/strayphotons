@@ -64,10 +64,48 @@ namespace sp
 		FMOD_CHECK(system->initialize(1024, FMOD_STUDIO_INIT_NORMAL,
 			FMOD_INIT_NORMAL, nullptr));
 
+		initOutputType();
+		initDriver();
+		logAvailDrivers();
+	}
+
+	AudioManager::~AudioManager()
+	{
+		for (FMOD::Studio::Bank * bank : banks)
+		{
+			FMOD_CHECK(bank->unload());
+		}
+		FMOD_CHECK(system->release());
+	}
+
+	void AudioManager::initOutputType()
+	{
+		char *outputTypeStr = getenv("AUDIO_OUTPUT_TYPE");
+		if (nullptr == outputTypeStr)
+		{
+			return;
+		}
+
+		if (strcmp("pulseaudio", outputTypeStr) == 0)
+		{
+			lowSystem->setOutput(FMOD_OUTPUTTYPE_PULSEAUDIO);
+			Logf("set audio output type to pulseaudio");
+		}
+		else if (strcmp("alsa", outputTypeStr) == 0)
+		{
+			lowSystem->setOutput(FMOD_OUTPUTTYPE_ALSA);
+			Logf("set audio output type to alsa");
+		}
+		else
+		{
+			Errorf("unsupported value of AUDIO_OUTPUT_TYPE: %s", outputTypeStr);
+		}
+	}
+
+	void AudioManager::initDriver()
+	{
 		int driver;
-		int numDrivers;
 		FMOD_CHECK(lowSystem->getDriver(&driver));
-		FMOD_CHECK(lowSystem->getNumDrivers(&numDrivers));
 
 		char *driverNumStr = getenv("AUDIO_DRIVER");
 		if (nullptr != driverNumStr)
@@ -78,11 +116,11 @@ namespace sp
 			}
 			catch (const std::invalid_argument &ex)
 			{
-				Errorf("AUDIO_DRIVER_NUM was invalid, using default audio driver");
+				Errorf("AUDIO_DRIVER was invalid, using 0");
 			}
 			catch (const std::out_of_range &ex)
 			{
-				Errorf("AUDIO_DRIVER_NUM was out of range, using default audio driver");
+				Errorf("AUDIO_DRIVER was out of range, using 0");
 			}
 
 			if (!SetDriver(driver))
@@ -92,29 +130,25 @@ namespace sp
 			}
 		}
 
-		Logf("Using audio driver %d of %d", driver, numDrivers);
+		Logf("Using audio driver %d", driver);
+	}
 
+	void AudioManager::logAvailDrivers()
+	{
 		const int nameLen = 128;
 		char driverName[nameLen];
 		FMOD_SPEAKERMODE speakerMode;
 		int numChannels;
+		int numDrivers;
+		FMOD_CHECK(lowSystem->getNumDrivers(&numDrivers));
 		for (int i = 0; i < numDrivers; ++i)
 		{
 			FMOD_CHECK(lowSystem->getDriverInfo(i, driverName, nameLen, NULL,
 				NULL, &speakerMode, &numChannels));
 
-			Logf("\t%d: %2d channels, mode: %s, %s", i, numChannels,
-				 speakerModeStr(speakerMode).c_str(), driverName);
+			Logf("\t%d: %d channels, mode: %s, %s", i, numChannels,
+				speakerModeStr(speakerMode).c_str(), driverName);
 		}
-	}
-
-	AudioManager::~AudioManager()
-	{
-		for (FMOD::Studio::Bank * bank : banks)
-		{
-			FMOD_CHECK(bank->unload());
-		}
-		FMOD_CHECK(system->release());
 	}
 
 	bool AudioManager::SetDriver(int driverIndex)

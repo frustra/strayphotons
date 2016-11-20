@@ -31,16 +31,15 @@ set(boost_libs
 
 foreach(boost_lib ${boost_libs})
 	if (UNIX)
-		# determine the version of the compiler so we know where boost output will be located
+		# determine the version of the compiler so we know where boost output
+		# will be located
 		# this assumes gcc will always be used
 		execute_process(
 			COMMAND ${CMAKE_C_COMPILER} -dumpversion
 			OUTPUT_VARIABLE GCC_VERSION
+			OUTPUT_STRIP_TRAILING_WHITESPACE
 		)
-		string(REGEX MATCHALL "[0-9]+" GCC_VERSION_COMPONENTS ${GCC_VERSION})
-		list(GET GCC_VERSION_COMPONENTS 0 GCC_MAJOR)
-		list(GET GCC_VERSION_COMPONENTS 1 GCC_MINOR)
-		set(cc_str "gcc-${GCC_MAJOR}.${GCC_MINOR}")
+		set(cc_str "gcc-${GCC_VERSION}")
 
 		set(lib_file "libboost_${boost_lib}.a")
 		set(lib_build_dir

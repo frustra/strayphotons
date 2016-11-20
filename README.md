@@ -27,12 +27,16 @@ We'll set something up with git bash to be able to run our scripts.
 
 ### Audio
 
-If you don't hear any sound your audio driver might not be the default. View the log output
-for "[log] Using audio driver 0 of 3" or similar. The next lines will list the available
-audio drivers.
+If you don't hear any sound it might be because the correct audio driver or
+output type is not the default. You can change this with the following
+environment variables:
 
-To use one, set the environment variable "AUDIO_DRIVER". For example,
-"AUDIO_DRIVER=2 ./run.sh"
+**AUDIO_DRIVER:** Set to a number (default 0). View logs near
+"[log] Using audio driver 0 of 3" for a list of choices.
+
+**AUDIO_OUTPUT_TYPE:** Set to either "pulseaudio" or "alsa" on Linux.
+
+For example: ```AUDIO_DRIVER=2 AUDIO_OUTPUT_TYPE="alsa" ./run.sh```
 
 Developing
 ----------
