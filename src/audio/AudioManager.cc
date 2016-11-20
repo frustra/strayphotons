@@ -61,11 +61,14 @@ namespace sp
 		FMOD_CHECK(system->getLowLevelSystem(&lowSystem));
 		FMOD_CHECK(lowSystem->setSoftwareFormat(0,
 			FMOD_SPEAKERMODE_5POINT1, 0));
+
+		// must set output type and driver before initializing system
+		initOutputType();
+		initDriver();
+
 		FMOD_CHECK(system->initialize(1024, FMOD_STUDIO_INIT_NORMAL,
 			FMOD_INIT_NORMAL, nullptr));
 
-		initOutputType();
-		initDriver();
 		logAvailDrivers();
 	}
 
