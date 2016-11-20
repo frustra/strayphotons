@@ -57,6 +57,13 @@ vec3 GetVoxel(vec3 position, int level, out vec3 color, out vec3 radiance)
 	return alphaData.xyz / (alphaData.a + 0.00001);
 }
 
+bool CheckVoxel(vec3 position, float size)
+{
+	float level = max(0, log2(size));
+	vec4 alphaData = textureLod(voxelAlpha, position/vec3(VoxelGridSize), level);
+	return alphaData.a > 0;
+}
+
 vec4 SampleVoxel(vec3 position, vec3 dir, float size)
 {
 	float level = max(0, log2(size));
@@ -150,13 +157,19 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 		float planeDist = dot(surfaceNormal, rayDir * dist) - 1.75;
 		// If the sample intersects the surface, move it over
 		float offset = max(0, size - planeDist);
-		vec4 value = SampleVoxel(voxelPos + rayDir * dist + offset * surfaceNormal, rayDir, size);
-		result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
+		vec3 position = voxelPos + rayDir * dist + offset * surfaceNormal;
+		vec4 value = SampleVoxel(position, rayDir, size);
+		float alphaBias = 0.5 - smoothstep(1.0, 3.0, size) * 0.5;
+		result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a + alphaBias) * (1 - step(0, -value.a));
 
-		dist += size * 0.5;
+		if (CheckVoxel(position + rayDir * size * 4, size * 8)) {
+			dist += size;
+		} else {
+			dist += size * 4;
+		}
 	}
 
-	return result;
+	return vec4(result.rgb / (result.a + 0.00001), result.a);
 }
 
 vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
