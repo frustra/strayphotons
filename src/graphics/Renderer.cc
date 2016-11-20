@@ -133,7 +133,7 @@ namespace sp
 			PrepareRenderable(comp);
 		}
 
-		voxelInfo = {0.1, glm::vec3(0)};
+		voxelInfo = {0.1f, glm::vec3(0)};
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::VoxelInfo>())
 		{
 			voxelInfo = *ent.Get<ecs::VoxelInfo>();
