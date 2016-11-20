@@ -4,6 +4,7 @@
 #include "graphics/RenderTargetPool.hh"
 #include "graphics/Renderer.hh"
 #include "ecs/components/View.hh"
+#include "ecs/components/VoxelInfo.hh"
 #include "core/Game.hh"
 
 namespace sp

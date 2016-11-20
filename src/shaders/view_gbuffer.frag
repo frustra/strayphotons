@@ -12,6 +12,9 @@ layout (location = 0) out vec4 outFragColor;
 
 #define INCLUDE_VOXEL_TRACE
 
+uniform float voxelSize = 0.1;
+uniform vec3 voxelGridCenter = vec3(0);
+
 ##import lib/util
 ##import voxel_shared
 
@@ -36,23 +39,23 @@ void main()
 		vec4 rayPos = invViewMat * vec4(ScreenPosToViewPos(inTexCoord, 0, invProjMat), 1);
 		vec4 rayDir = normalize(rayPos - (invViewMat * vec4(0, 0, 0, 1)));
 		vec3 sampleRadiance;
-		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz - VoxelGridCenter, rayDir.xyz, outFragColor.rgb, sampleRadiance);
+		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz, rayDir.xyz, outFragColor.rgb, sampleRadiance);
 	} else if (mode == 6) {
 		vec4 rayPos = invViewMat * vec4(ScreenPosToViewPos(inTexCoord, 0, invProjMat), 1);
 		vec4 rayDir = normalize(rayPos - (invViewMat * vec4(0, 0, 0, 1)));
 		vec3 sampleColor;
-		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz - VoxelGridCenter, rayDir.xyz, sampleColor, outFragColor.rgb);
+		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz, rayDir.xyz, sampleColor, outFragColor.rgb);
 	} else if (mode == 7) {
 		vec4 rayPos = invViewMat * vec4(ScreenPosToViewPos(inTexCoord, 0, invProjMat), 1);
 		vec4 rayDir = normalize(rayPos - (invViewMat * vec4(0, 0, 0, 1)));
 		vec3 sampleColor;
 		vec3 sampleRadiance;
-		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz - VoxelGridCenter, rayDir.xyz, sampleColor, sampleRadiance);
+		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz, rayDir.xyz, sampleColor, sampleRadiance);
 		outFragColor.rgb = vec3(alpha);
 	} else if (mode == 8) {
 		vec4 rayPos = invViewMat * vec4(ScreenPosToViewPos(inTexCoord, 0, invProjMat), 1);
 		vec4 rayDir = normalize(rayPos - (invViewMat * vec4(0, 0, 0, 1)));
 
-		outFragColor.rgb = ConeTraceGrid(float(mipLevel) / 50.0, rayPos.xyz - VoxelGridCenter, rayDir.xyz, rayDir.xyz).rgb;
+		outFragColor.rgb = ConeTraceGrid(float(mipLevel) / 50.0, rayPos.xyz, rayDir.xyz, rayDir.xyz).rgb;
 	}
 }

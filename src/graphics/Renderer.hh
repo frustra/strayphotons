@@ -3,6 +3,7 @@
 #include "graphics/GraphicsContext.hh"
 #include "graphics/Buffer.hh"
 #include "graphics/Texture.hh"
+#include "ecs/components/VoxelInfo.hh"
 
 #include <glm/glm.hpp>
 
@@ -48,6 +49,7 @@ namespace sp
 		RenderTargetPool *RTPool = nullptr;
 		GPUTimer *timer = nullptr;
 
+		ecs::VoxelInfo voxelInfo;
 	private:
 		shared_ptr<RenderTarget> shadowMap;
 		Buffer computeIndirectBuffer;

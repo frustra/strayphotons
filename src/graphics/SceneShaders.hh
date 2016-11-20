@@ -4,6 +4,7 @@
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/Transform.hh"
+#include "ecs/components/VoxelInfo.hh"
 #include <Ecs.hh>
 
 namespace sp
@@ -77,11 +78,13 @@ namespace sp
 		VoxelRasterFS(shared_ptr<ShaderCompileOutput> compileOutput);
 
 		void SetLights(ecs::EntityManager &manager, ecs::EntityManager::EntityCollection &lightCollection);
+		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo);
 
 	private:
 		Uniform lightCount, lightPosition, lightTint, lightDirection, lightSpotAngleCos;
 		Uniform lightProj, lightView, lightClip, lightMapOffset, lightIntensity, lightIlluminance;
 		Uniform exposure, targetSize, viewMat, invViewMat, invProjMat;
+		Uniform voxelSize, voxelGridCenter;
 	};
 
 	class VoxelConvertCS : public Shader

@@ -21,6 +21,9 @@ layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inTexCoord;
 layout (location = 2) in flat int inDirection;
 
+uniform float voxelSize = 0.1;
+uniform vec3 voxelGridCenter = vec3(0);
+
 in vec4 gl_FragCoord;
 
 // Data format: [color.r, color.g], [color.b, radiance.r], [radiance.g, radiance.b], [count]
@@ -32,7 +35,7 @@ void main()
 
 	vec3 position = vec3(gl_FragCoord.xy / 2.0, gl_FragCoord.z * VoxelGridSize);
 	position = AxisSwapReverse[abs(inDirection)-1] * (position - VoxelGridSize / 2);
-	vec3 worldPosition = position * VoxelSize + VoxelGridCenter;
+	vec3 worldPosition = position * voxelSize + voxelGridCenter;
 	position += VoxelGridSize / 2;
 
 	vec3 pixelLuminance = vec3(0);
@@ -78,6 +81,9 @@ void main()
 		// Sum output.
 		pixelLuminance += occlusion * luminance * spotFalloff;
 	}
+
+	// Clip so we don't overflow
+	pixelLuminance = min(vec3(1), pixelLuminance);
 
 	uint rg = (uint(diffuseColor.r * 0xFF) << 16) + uint(diffuseColor.g * 0xFF);
 	uint br = (uint(diffuseColor.b * 0xFF) << 16) + uint(pixelLuminance.r * 0x7FF);

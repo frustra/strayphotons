@@ -15,6 +15,7 @@
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/Physics.hh"
+#include "ecs/components/VoxelInfo.hh"
 
 #include <iostream>
 #include <fstream>
@@ -287,6 +288,28 @@ namespace sp
 					if (actor)
 					{
 						auto physics = entity.Assign<ecs::Physics>(actor);
+					}
+				}
+				else if (comp.first == "voxels")
+				{
+					auto voxelInfo = entity.Assign<ecs::VoxelInfo>();
+					for (auto param : comp.second.get<picojson::object>())
+					{
+						if (param.first == "size")
+						{
+							voxelInfo->voxelSize = param.second.get<double>();
+						}
+						else if (param.first == "center")
+						{
+							auto values = param.second.get<picojson::array>();
+							numbers.resize(values.size());
+							for (size_t i = 0; i < values.size(); i++)
+							{
+								numbers[i] = values[i].get<double>();
+							}
+
+							voxelInfo->voxelGridCenter = glm::make_vec3(&numbers[0]);
+						}
 					}
 				}
 			}

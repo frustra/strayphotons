@@ -22,6 +22,9 @@ namespace sp
 			Bind(invViewMat, "invViewMat");
 			Bind(invViewRotMat, "invViewRotMat");
 			Bind(debug, "debug");
+
+			Bind(voxelSize, "voxelSize");
+			Bind(voxelGridCenter, "voxelGridCenter");
 		}
 
 		void SetViewParams(const ecs::View &view)
@@ -38,10 +41,17 @@ namespace sp
 			Set(debug, newDebug);
 		}
 
+		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo)
+		{
+			Set(voxelSize, voxelInfo.voxelSize);
+			Set(voxelGridCenter, voxelInfo.voxelGridCenter);
+		}
+
 	private:
 		Uniform projMat, invProjMat;
 		Uniform viewMat, invViewMat, invViewRotMat;
 		Uniform debug;
+		Uniform voxelSize, voxelGridCenter;
 	};
 
 	IMPLEMENT_SHADER_TYPE(VoxelLightingFS, "voxel_lighting.frag", Fragment);
@@ -53,6 +63,7 @@ namespace sp
 
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetViewParams(context->view);
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetDebug(CVarVoxelLightingDebug.Get());
+		r->GlobalShaders->Get<VoxelLightingFS>()->SetVoxelInfo(context->renderer->voxelInfo);
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingFS>(r->GlobalShaders);

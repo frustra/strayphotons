@@ -4,8 +4,6 @@
 ##import raytrace/intersection
 
 const float VoxelGridSize = 256;
-const float VoxelSize = 0.04;
-const vec3 VoxelGridCenter = vec3(0, 5, 0);
 
 const uint MipmapWorkGroupSize = 256;
 
@@ -81,8 +79,10 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out
 	float scale = float(1 << level);
 	float invScale = 1.0 / scale;
 
-	vec3 voxelVolumeMax = vec3(VoxelSize * VoxelGridSize * 0.5);
+	vec3 voxelVolumeMax = vec3(voxelSize * VoxelGridSize * 0.5);
 	vec3 voxelVolumeMin = -voxelVolumeMax;
+
+	rayPos -= voxelGridCenter;
 
 	float tmin, tmax;
 	aabbIntersectFast(rayPos, rayDir, 1.0 / rayDir, voxelVolumeMin, voxelVolumeMax, tmin, tmax);
@@ -99,7 +99,7 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out
 		rayPos += rayDir * tmin;
 	}
 
-	vec3 voxelPos = (rayPos.xyz / VoxelSize + VoxelGridSize * 0.5) * invScale;
+	vec3 voxelPos = (rayPos.xyz / voxelSize + VoxelGridSize * 0.5) * invScale;
 	ivec3 voxelIndex = ivec3(voxelPos);
 
 	vec3 deltaDist = abs(vec3(scale) / rayDir);
@@ -126,7 +126,7 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out
 
 		// Find axis with minimum distance
 		mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
-		voxelPos += rayDir * invScale;// * dot(vec3(mask), sideDist);
+		voxelPos += rayDir;// * dot(vec3(mask), sideDist);
 		voxelIndex += ivec3(mask) * rayStep;
 		sideDist = (raySign * (vec3(voxelIndex) - voxelPos) + (raySign * 0.5) + 0.5) * deltaDist;
 	}
@@ -138,9 +138,8 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out
 
 vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 {
-	vec3 voxelPos = (rayPos.xyz / VoxelSize + VoxelGridSize * 0.5);
-	float startDist = max(1.75, min(1.75 / dot(rayDir, surfaceNormal), VoxelGridSize / 2));
-	float dist = startDist;
+	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
+	float dist = max(1.75, min(1.75 / dot(rayDir, surfaceNormal), VoxelGridSize / 2));
 	float maxDist = VoxelGridSize * 1.5;
 
 	vec4 result = vec4(0);
@@ -162,7 +161,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 
 vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 {
-	vec3 voxelPos = (rayPos.xyz / VoxelSize + VoxelGridSize * 0.5);
+	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
 	float startDist = max(1.75, min(1.75 / dot(rayDir, surfaceNormal), VoxelGridSize / 2));
 	float dist = startDist;
 	float maxDist = VoxelGridSize * 1.5;
@@ -172,17 +171,14 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 
 	while (dist < maxDist && result.a < 0.9999)
 	{
-		float planeDist = dot(surfaceNormal, rayDir * dist) - 1.75;
-		// If the sample intersects the surface, move it over
 		vec4 value = SampleVoxelLod(voxelPos + rayDir * dist, rayDir, level);
-		result += vec4(value.rgb * value.a, value.a) * (1.5 - result.a) * (1 - step(0, -value.a));
+		result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
 		level += 1.0;
 		dist *= 2.0;
 	}
 
-	// TOOD(xthexder) Set AO distance via uniform
-	return vec4(result.rgb, smoothstep(startDist + 10, 100.0, dist));
+	return result;
 }
 
 #endif

@@ -13,6 +13,9 @@ layout (location = 0) out vec4 outFragColor;
 
 #define INCLUDE_VOXEL_TRACE
 
+uniform float voxelSize = 0.1;
+uniform vec3 voxelGridCenter = vec3(0);
+
 ##import lib/util
 ##import lib/lighting_util
 ##import voxel_shared
@@ -28,17 +31,7 @@ uniform mat4 invProjMat;
 
 uniform int debug = 0;
 
-const int diffuseSamples = 6;
-
-// theta, phi
-const vec2[diffuseSamples] diffuseAngles = vec2[](
-	vec2(0, 0),
-	vec2(0.5, 0),
-	vec2(0.5, 1.26),
-	vec2(0.5, 2.51),
-	vec2(0.5, 3.77),
-	vec2(0.5, 5.03)
-);
+const int diffuseAngles = 6;
 
 vec3 orientByNormal(float phi, float tht, vec3 normal)
 {
@@ -51,10 +44,6 @@ vec3 orientByNormal(float phi, float tht, vec3 normal)
 	vec3 tangent1 = normalize(up - normal * dot(up, normal));
 	vec3 tangent2 = normalize(cross(tangent1, normal));
 	return normalize(xs * tangent1 + ys * normal + zs * tangent2);
-}
-
-float rand(vec2 co){
-    return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
 }
 
 void main()
@@ -86,39 +75,36 @@ void main()
 
 	vec3 indirectSpecular = vec3(0);
 	vec4 indirectDiffuse = vec4(0);
-	vec3 voxelPosition = worldPosition - VoxelGridCenter;
 
 	{
 		// specular
 		vec3 sampleDir = rayReflectDir;
-		vec4 sampleColor = ConeTraceGrid(roughness, voxelPosition, sampleDir, worldNormal);
+		vec4 sampleColor = ConeTraceGrid(roughness, worldPosition, sampleDir, worldNormal);
 
 		indirectSpecular = sampleColor.rgb;
 	}
 
-	for (int i = 0; i < diffuseSamples; i++) {
-		// diffuse
-		vec2 angle = diffuseAngles[i];
-		vec3 sampleDir = orientByNormal(angle.y + rand(inTexCoord.xy) * 1.26, angle.x, worldNormal);
-		vec4 sampleColor = ConeTraceGridDiffuse(voxelPosition, sampleDir, worldNormal);
+	for (float r = 0; r < diffuseAngles; r++) {
+		for (float a = 0.3; a <= 0.9; a += 0.3) {
+			// diffuse
+			vec3 sampleDir = orientByNormal(r / diffuseAngles * 6.28, a, worldNormal);
+			vec4 sampleColor = ConeTraceGridDiffuse(worldPosition, sampleDir, worldNormal);
 
-		indirectDiffuse += sampleColor;
+			indirectDiffuse += sampleColor * cos(a);
+		}
 	}
 
-	indirectDiffuse /= float(diffuseSamples);
+	indirectDiffuse /= diffuseAngles;
 
 	vec3 indirectLight = roughness * indirectDiffuse.rgb * gb0.rgb + (1.0 - roughness) * indirectSpecular;
 
 	vec4 directLight = texture(lastOutput, inTexCoord);
-	directLight.rgb *= indirectDiffuse.a; // Include AO
 	if (debug == 1) { // combined
 		outFragColor = vec4(indirectLight, 1.0);
 	} else if (debug == 2) { // diffuse
 		outFragColor = vec4(indirectDiffuse.rgb, 1.0);
 	} else if (debug == 3) { // specular
 		outFragColor = vec4(indirectSpecular, 1.0);
-	} else if (debug == 4) { // AO
-		outFragColor = vec4(vec3(indirectDiffuse.a), 1.0);
 	} else {
 		outFragColor = directLight + vec4(indirectLight, 0.0);
 	}

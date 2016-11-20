@@ -66,6 +66,9 @@ namespace sp
 		Bind(viewMat, "viewMat");
 		Bind(invViewMat, "invViewMat");
 		Bind(invProjMat, "invProjMat");
+
+		Bind(voxelSize, "voxelSize");
+		Bind(voxelGridCenter, "voxelGridCenter");
 	}
 
 	void VoxelRasterFS::SetLights(ecs::EntityManager &manager, ecs::EntityManager::EntityCollection &lightCollection)
@@ -111,6 +114,12 @@ namespace sp
 		Set(lightMapOffset, lightMapOffsets, lightNum);
 		Set(lightIntensity, lightIntensities, lightNum);
 		Set(lightIlluminance, lightIlluminances, lightNum);
+	}
+
+	void VoxelRasterFS::SetVoxelInfo(ecs::VoxelInfo &voxelInfo)
+	{
+		Set(voxelSize, voxelInfo.voxelSize);
+		Set(voxelGridCenter, voxelInfo.voxelGridCenter);
 	}
 
 	IMPLEMENT_SHADER_TYPE(SceneVS, "scene.vert", Vertex);

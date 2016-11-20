@@ -14,6 +14,7 @@
 #include "ecs/components/Transform.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
+#include "ecs/components/VoxelInfo.hh"
 
 namespace sp
 {
@@ -34,7 +35,7 @@ namespace sp
 		DefaultMaterial()
 		{
 			unsigned char baseColor[4] = { 255, 255, 255, 255 };
-			unsigned char roughness[4] = { 200, 200, 200, 200 };
+			unsigned char roughness[4] = { 0, 0, 0, 0 };
 			unsigned char bump[4] = { 127, 127, 127, 255 };
 
 			baseColorTex.Create()
@@ -54,7 +55,7 @@ namespace sp
 	static CVar<float> CVarFlashlightIntensity("r.Flashlight", 2000, "Flashlight intensity");
 	static CVar<bool> CVarRenderWireframe("r.Wireframe", false, "Render wireframes");
 
-	// TODO Clean up Renderable when unloaded.
+	// TODO(xthexder) Clean up Renderable when unloaded.
 	void PrepareRenderable(ecs::Handle<ecs::Renderable> comp)
 	{
 		static DefaultMaterial defaultMat;
@@ -130,6 +131,13 @@ namespace sp
 		{
 			auto comp = ent.Get<ecs::Renderable>();
 			PrepareRenderable(comp);
+		}
+
+		voxelInfo = {0.1, glm::vec3(0)};
+		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::VoxelInfo>())
+		{
+			voxelInfo = *ent.Get<ecs::VoxelInfo>();
+			break;
 		}
 
 		AssertGLOK("Renderer::Prepare");
@@ -215,9 +223,7 @@ namespace sp
 	}
 
 	const int VoxelGridSize = 256;
-	const int VoxelMipLevels = 5;
-	const float VoxelSize = 0.04;
-	const glm::vec3 VoxelGridCenter = glm::vec3(0, 5, 0);
+	const int VoxelMipLevels = 8;
 	const int VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize / 4;
 
 	void Renderer::PrepareVoxelTextures()
@@ -285,8 +291,8 @@ namespace sp
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
 		ecs::View ortho;
-		ortho.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * VoxelSize)));
-		ortho.viewMat = glm::translate(ortho.viewMat, -VoxelGridCenter);
+		ortho.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * voxelInfo.voxelSize)));
+		ortho.viewMat = glm::translate(ortho.viewMat, -voxelInfo.voxelGridCenter);
 		ortho.projMat = glm::mat4();
 		ortho.offset = glm::ivec2(0);
 		ortho.extents = glm::ivec2(VoxelGridSize * 2);
@@ -306,6 +312,7 @@ namespace sp
 
 			auto lights = game->entityManager.EntitiesWith<ecs::Light>();
 			GlobalShaders->Get<VoxelRasterFS>()->SetLights(game->entityManager, lights);
+			GlobalShaders->Get<VoxelRasterFS>()->SetVoxelInfo(voxelInfo);
 			shadowMap->GetTexture().Bind(3);
 
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
