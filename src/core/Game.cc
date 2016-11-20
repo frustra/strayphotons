@@ -33,6 +33,7 @@ namespace sp
 	{
 		try
 		{
+			audio.LoadProjectFiles();
 			logic.Init();
 			graphics.CreateContext();
 			graphics.BindContextInputCallbacks(input);
@@ -66,6 +67,7 @@ namespace sp
 
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;
+		if (!audio.Frame()) return false;
 
 		{
 			// Sync transforms to physx
@@ -123,4 +125,3 @@ namespace sp
 		return !graphics.HasActiveContext();
 	}
 }
-

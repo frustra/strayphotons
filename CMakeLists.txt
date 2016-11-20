@@ -43,10 +43,6 @@ else()
 	set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
-
 set(EXT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext)
 
 find_package(OpenGL REQUIRED)
@@ -61,6 +57,8 @@ add_subdirectory(${EXT_PATH}/freetype2)
 set(GOOGLETEST_DIR ${EXT_PATH}/googletest/googletest)
 add_subdirectory(${EXT_PATH}/googletest)
 
+add_subdirectory(${EXT_PATH}/boost)
+
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${EXT_PATH}/physx/PhysXSDK/Include
@@ -72,6 +70,9 @@ include_directories(
 	${EXT_PATH}/freetype2/include
 	${EXT_PATH}/tinygltfloader
 	${EXT_PATH}/glomerate/include
+	${EXT_PATH}/boost
+	${EXT_PATH}/fmod/include/fmod
+	${EXT_PATH}/fmod/include/fmodstudio
 	${EXT_PATH}
 )
 
@@ -132,10 +133,38 @@ foreach (PHYSX_LIB ${PHYSX_LOADS})
 	LIST(APPEND PHYSX_LIBRARIES ${FOUND_LIB_${PHYSX_LIB}})
 endforeach (PHYSX_LIB)
 
+# Load fmod
+if (MSVC)
+	set (FMOD_LIBS "fmod" "fmodstudio")
+	set (FMOD_LOADS )
+	set (FMOD_ARCH "x86")
+
+	# visual studio complains that it can't find the DLLs if
+	# they're not in "build" dir... *sigh*
+	foreach (lib ${FMOD_LIBS})
+		FILE(
+			COPY ${EXT_PATH}/fmod/lib/${FMOD_ARCH}/${lib}.dll
+			DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/build)
+		list(APPEND FMOD_LOADS ${lib}_vc)
+	endforeach()
+else ()
+	set (FMOD_LOADS "fmod" "fmodstudio")
+	set (FMOD_ARCH "x86_64")
+endif()
+
+foreach (FMOD_LIB ${FMOD_LOADS})
+	message(STATUS ${FMOD_LIB})
+
+	find_library(FOUND_LIB_${FMOD_LIB}
+		NAMES ${FMOD_LIB}
+		PATHS ${EXT_PATH}/fmod/lib/${FMOD_ARCH}
+	)
+	LIST(APPEND FMOD_LIBRARIES ${FOUND_LIB_${FMOD_LIB}})
+endforeach (FMOD_LIB)
 
 add_executable(${PROJECT_EXE} ${PROJECT_MAIN_CC})
 target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
-target_link_libraries(${PROJECT_LIB} ${PHYSX_LIBRARIES})
+target_link_libraries(${PROJECT_LIB} ${PHYSX_LIBRARIES} ${FMOD_LIBRARIES})
 
 # C++11
 target_compile_features(${PROJECT_LIB} PRIVATE cxx_range_for)
@@ -150,9 +179,36 @@ set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJE
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
 
-target_link_libraries(${PROJECT_LIB} glfw ${GLFW_LIBRARIES} freetype)
-target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
-target_link_libraries(sp ${OPENGL_LIBRARIES} GLEW glfw ${GLFW_LIBRARIES} freetype ImGui)
+set(BOOST_LIBS
+	boost_system
+	boost_filesystem
+)
+
+target_link_libraries(${PROJECT_LIB}
+	glfw
+	${GLFW_LIBRARIES}
+	freetype
+	${BOOST_LIBS}
+)
+
+# hacky way to ensure that the boost libs are built.
+# Simply depending on their libs isn't enough since they are built
+# outside of cmake but need to be triggered by cmake.
+# I can't figure out how to get a CMake "imported" library
+# to trigger a custom command or target (see boost CMakelists.txt)
+foreach (boost_lib ${BOOST_LIBS})
+	add_dependencies(${PROJECT_LIB} ${boost_lib}_target)
+endforeach()
+
+target_link_libraries(${PROJECT_EXE}
+	${PROJECT_LIB}
+	${OPENGL_LIBRARIES}
+	GLEW
+	glfw
+	${GLFW_LIBRARIES}
+	freetype
+	ImGui
+)
 
 ################################################
 # Build tests

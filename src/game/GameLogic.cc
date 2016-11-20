@@ -46,6 +46,8 @@ namespace sp
 				}
 			}
 		});
+
+		game->audio.StartEvent("event:/german nonsense");
 	}
 
 	GameLogic::~GameLogic()
@@ -61,4 +63,3 @@ namespace sp
 		return true;
 	}
 }
-
