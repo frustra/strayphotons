@@ -66,14 +66,24 @@
 			}
 		},
 		{
-			"_name": "duck",
-			"renderable": "duck",
+			"_name": "duck_parent",
 			"transform": {
-				"translate": [0, 0, -2]
+				"translate": [0, 0.5, -2]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate" : [0, 0.5, -2]
 			}
 		},
 		{
-			"_name": "box",
+			"_name": "duck",
+			"renderable": "duck",
+			"transform": {
+				"translate": [0, -0.5, 0],
+				"relativeTo": "duck_parent"
+			}
+		},
+		{
 			"renderable": "box",
 			"transform": {
 				"translate": [-0.2, 3, 0.5]
@@ -84,13 +94,13 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": "pbr-cube",
 			"transform": {
 				"translate": [0, 1, 1]
 			},
 			"physics": {
-				"model": "box",
-				"pxTranslate" : [0, 1, 1]
+				"model": "pbr-cube",
+				"pxTranslate": [0, 1, 1]
 			}
 		},
 		{

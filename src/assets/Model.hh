@@ -30,12 +30,12 @@ namespace sp
 			glm::mat4 matrix;
 			int drawMode;
 			Attribute indexBuffer;
-			string materialName, baseColorName, roughnessName, bumpName;
+			string materialName, baseColorName, roughnessName, metallicName, heightName;
 			Attribute attributes[3];
 
 			GLuint vertexBufferHandle;
 			GLuint indexBufferHandle;
-			Texture *baseColorTex, *roughnessTex, *bumpTex;
+			Texture *baseColorTex, *roughnessTex, *metallicTex, *heightTex;
 		};
 
 		const string name;

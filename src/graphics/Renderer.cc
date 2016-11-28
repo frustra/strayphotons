@@ -30,12 +30,13 @@ namespace sp
 
 	struct DefaultMaterial
 	{
-		Texture baseColorTex, roughnessTex, bumpTex;
+		Texture baseColorTex, roughnessTex, metallicTex, heightTex;
 
 		DefaultMaterial()
 		{
 			unsigned char baseColor[4] = { 255, 255, 255, 255 };
 			unsigned char roughness[4] = { 0, 0, 0, 0 };
+			unsigned char metallic[4] = { 0, 0, 0, 0 };
 			unsigned char bump[4] = { 127, 127, 127, 255 };
 
 			baseColorTex.Create()
@@ -44,11 +45,15 @@ namespace sp
 
 			roughnessTex.Create()
 			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_RGB8).Image2D(roughness);
+			.Size(1, 1).Storage(PF_R8).Image2D(roughness);
 
-			bumpTex.Create()
+			metallicTex.Create()
 			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_RGB8).Image2D(bump);
+			.Size(1, 1).Storage(PF_R8).Image2D(metallic);
+
+			heightTex.Create()
+			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+			.Size(1, 1).Storage(PF_R8).Image2D(bump);
 		}
 	};
 
@@ -74,10 +79,17 @@ namespace sp
 			else
 				primitive->roughnessTex = &defaultMat.roughnessTex;
 
-			if (primitive->bumpName.length() > 0)
-				primitive->bumpTex = comp->model->LoadTexture(primitive->bumpName);
+			if (primitive->metallicName.length() > 0)
+				primitive->metallicTex = comp->model->LoadTexture(primitive->metallicName);
 			else
-				primitive->bumpTex = &defaultMat.bumpTex;
+				primitive->metallicTex = &defaultMat.metallicTex;
+
+			if (primitive->heightName.length() > 0)
+				primitive->heightTex = comp->model->LoadTexture(primitive->heightName);
+			else
+				primitive->heightTex = &defaultMat.heightTex;
+
+			Logf(primitive->heightName);
 
 			glCreateVertexArrays(1, &primitive->vertexBufferHandle);
 			for (int i = 0; i < 3; i++)
@@ -104,8 +116,11 @@ namespace sp
 			if (primitive->roughnessTex)
 				primitive->roughnessTex->Bind(1);
 
-			if (primitive->bumpTex)
-				primitive->bumpTex->Bind(2);
+			if (primitive->metallicTex)
+				primitive->metallicTex->Bind(2);
+
+			if (primitive->heightTex)
+				primitive->heightTex->Bind(3);
 
 			glDrawElements(
 				primitive->drawMode,
@@ -313,7 +328,7 @@ namespace sp
 			auto lights = game->entityManager.EntitiesWith<ecs::Light>();
 			GlobalShaders->Get<VoxelRasterFS>()->SetLights(game->entityManager, lights);
 			GlobalShaders->Get<VoxelRasterFS>()->SetVoxelInfo(voxelInfo);
-			shadowMap->GetTexture().Bind(3);
+			shadowMap->GetTexture().Bind(4);
 
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
 			ForwardPass(ortho, voxelVS);

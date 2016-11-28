@@ -120,7 +120,7 @@
                     0,
                     1
                 ],
-                "diffuse": "texture_file2",
+                "baseColor": "texture_file2",
                 "emission": [
                     0,
                     0,

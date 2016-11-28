@@ -43,7 +43,7 @@ namespace sp
 		return Model::Attribute
 		{
 			accessor.byteOffset + bufView.byteOffset,
-			accessor.byteStride,
+			accessor.byteStride ? accessor.byteStride : 4 * componentCount,
 			accessor.componentType,
 			componentCount,
 			accessor.count,
@@ -145,15 +145,16 @@ namespace sp
 						iBufView.buffer
 					},
 					primitive.material,
-					material.values["diffuse"].string_value,
-					material.values["specular"].string_value,
-					material.values["bump"].string_value,
+					material.values["baseColor"].string_value,
+					material.values["roughness"].string_value,
+					material.values["metallic"].string_value,
+					material.values["height"].string_value,
 					{
 						GetPrimitiveAttribute(scene, &primitive, "POSITION"),
 						GetPrimitiveAttribute(scene, &primitive, "NORMAL"),
 						GetPrimitiveAttribute(scene, &primitive, "TEXCOORD_0")
 					},
-					0, 0, nullptr, nullptr, nullptr
+					0, 0, nullptr, nullptr, nullptr, nullptr
 				});
 			}
 		}

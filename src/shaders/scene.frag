@@ -6,7 +6,8 @@
 
 layout (binding = 0) uniform sampler2D baseColorTex;
 layout (binding = 1) uniform sampler2D roughnessTex;
-layout (binding = 2) uniform sampler2D bumpTex;
+layout (binding = 2) uniform sampler2D metallicTex;
+layout (binding = 3) uniform sampler2D heightTex;
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec3 inTangent;
@@ -24,21 +25,22 @@ void main()
 	if (baseColor.a < 0.5) discard;
 
 	float roughness = texture(roughnessTex, inTexCoord).r;
+	float metallic = texture(metallicTex, inTexCoord).r;
 
 #ifdef USE_BUMP_MAP
-	vec2 dCoord = 1.0 / textureSize(bumpTex, 0);
+	vec2 dCoord = 1.0 / textureSize(heightTex, 0);
 
 	mat3 tangentMat = mat3(normalize(inTangent), normalize(inBitangent), normalize(inNormal));
 
-	float a = texture(bumpTex, inTexCoord).r;
+	float a = texture(heightTex, inTexCoord).r;
 	float dx;
 	// If the UV coordinates are mirroed, calculate dx in the opposite direction.
 	if (dot(cross(inNormal, inTangent), inBitangent) < 0) {
-		dx = texture(bumpTex, inTexCoord + vec2(dCoord.x, 0)).r - a;
+		dx = texture(heightTex, inTexCoord + vec2(dCoord.x, 0)).r - a;
 	} else {
-		dx = a - texture(bumpTex, inTexCoord - vec2(dCoord.x, 0)).r;
+		dx = a - texture(heightTex, inTexCoord - vec2(dCoord.x, 0)).r;
 	}
-	float dy = a - texture(bumpTex, inTexCoord - vec2(0, dCoord.y)).r;
+	float dy = a - texture(heightTex, inTexCoord - vec2(0, dCoord.y)).r;
 
 	vec3 viewNormal = normalize(tangentMat * vec3(dx, dy, bumpDepth));
 
@@ -51,5 +53,5 @@ void main()
 	gBuffer0.rgb = baseColor.rgb;
 	gBuffer0.a = roughness;
 	gBuffer1.rgb = viewNormal;
-	gBuffer1.a = 1.0;
+	gBuffer1.a = metallic;
 }

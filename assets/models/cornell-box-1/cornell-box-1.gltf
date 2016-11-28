@@ -633,7 +633,6 @@
     "materials": {
         "backWall-effect": {
             "name": "backWall",
-            "technique": "technique0",
             "values": {
                 "ambient": [
                     0,
@@ -641,7 +640,7 @@
                     0,
                     1
                 ],
-                "diffuse": "texture_backWall_Diffuse_Color",
+                "baseColor": "texture_backWall_Diffuse_Color",
                 "emission": [
                     0,
                     0,
@@ -659,7 +658,6 @@
         },
         "ceiling-effect": {
             "name": "ceiling",
-            "technique": "technique0",
             "values": {
                 "ambient": [
                     0,
@@ -667,7 +665,7 @@
                     0,
                     1
                 ],
-                "diffuse": "texture_ceiling_Diffuse_Color",
+                "baseColor": "texture_ceiling_Diffuse_Color",
                 "emission": [
                     0,
                     0,
@@ -685,7 +683,6 @@
         },
         "floor-effect": {
             "name": "floor",
-            "technique": "technique0",
             "values": {
                 "ambient": [
                     0,
@@ -693,7 +690,7 @@
                     0,
                     1
                 ],
-                "diffuse": "texture_floor_Diffuse_Color",
+                "baseColor": "texture_floor_Diffuse_Color",
                 "emission": [
                     0,
                     0,
@@ -711,7 +708,6 @@
         },
         "floor_001-effect": {
             "name": "floor_001",
-            "technique": "technique0",
             "values": {
                 "ambient": [
                     0,
@@ -719,7 +715,7 @@
                     0,
                     1
                 ],
-                "diffuse": "texture_floor_001_Diffuse_Color",
+                "baseColor": "texture_floor_001_Diffuse_Color",
                 "emission": [
                     0,
                     0,
@@ -737,7 +733,6 @@
         },
         "leftWall-effect": {
             "name": "leftWall",
-            "technique": "technique0",
             "values": {
                 "ambient": [
                     0,
@@ -745,7 +740,7 @@
                     0,
                     1
                 ],
-                "diffuse": "texture_leftWall_Diffuse_Color_001",
+                "baseColor": "texture_leftWall_Diffuse_Color_001",
                 "emission": [
                     0,
                     0,
@@ -763,7 +758,6 @@
         },
         "light-effect": {
             "name": "light",
-            "technique": "technique0",
             "values": {
                 "ambient": [
                     0,
@@ -771,7 +765,7 @@
                     0,
                     1
                 ],
-                "diffuse": "texture_light_Diffuse_Color",
+                "baseColor": "texture_light_Diffuse_Color",
                 "emission": [
                     0,
                     0,
@@ -789,7 +783,6 @@
         },
         "rightWall-effect": {
             "name": "rightWall",
-            "technique": "technique0",
             "values": {
                 "ambient": [
                     0,
@@ -797,7 +790,7 @@
                     0,
                     1
                 ],
-                "diffuse": "texture_rightWall_Diffuse_Color",
+                "baseColor": "texture_rightWall_Diffuse_Color",
                 "emission": [
                     0,
                     0,
@@ -815,7 +808,6 @@
         },
         "shortBox-effect": {
             "name": "shortBox",
-            "technique": "technique0",
             "values": {
                 "ambient": [
                     0,
@@ -823,7 +815,7 @@
                     0,
                     1
                 ],
-                "diffuse": "texture_shortBox_Diffuse_Color",
+                "baseColor": "texture_shortBox_Diffuse_Color",
                 "emission": [
                     0,
                     0,
@@ -841,7 +833,6 @@
         },
         "tallBox-effect": {
             "name": "tallBox",
-            "technique": "technique0",
             "values": {
                 "ambient": [
                     0,
@@ -849,7 +840,7 @@
                     0,
                     1
                 ],
-                "diffuse": "texture_tallBox_Diffuse_Color_001",
+                "baseColor": "texture_tallBox_Diffuse_Color_001",
                 "emission": [
                     0,
                     0,
@@ -1309,17 +1300,6 @@
             "name": "tallBox"
         }
     },
-    "programs": {
-        "program_0": {
-            "attributes": [
-                "a_normal",
-                "a_position",
-                "a_texcoord0"
-            ],
-            "fragmentShader": "untitled0FS",
-            "vertexShader": "untitled0VS"
-        }
-    },
     "samplers": {
         "sampler_0": {
             "magFilter": 9729,
@@ -1336,114 +1316,7 @@
             ]
         }
     },
-    "shaders": {
-        "untitled0FS": {
-            "type": 35632,
-            "uri": "data:text/plain;base64,cHJlY2lzaW9uIGhpZ2hwIGZsb2F0Owp2YXJ5aW5nIHZlYzMgdl9ub3JtYWw7CnVuaWZvcm0gdmVjNCB1X2FtYmllbnQ7CnZhcnlpbmcgdmVjMiB2X3RleGNvb3JkMDsKdW5pZm9ybSBzYW1wbGVyMkQgdV9kaWZmdXNlOwp1bmlmb3JtIHZlYzQgdV9lbWlzc2lvbjsKdW5pZm9ybSB2ZWM0IHVfc3BlY3VsYXI7CnVuaWZvcm0gZmxvYXQgdV9zaGluaW5lc3M7CnZhcnlpbmcgdmVjMyB2X2xpZ2h0MERpcmVjdGlvbjsKdmFyeWluZyB2ZWMzIHZfcG9zaXRpb247CnVuaWZvcm0gZmxvYXQgdV9saWdodDBDb25zdGFudEF0dGVudWF0aW9uOwp1bmlmb3JtIGZsb2F0IHVfbGlnaHQwTGluZWFyQXR0ZW51YXRpb247CnVuaWZvcm0gZmxvYXQgdV9saWdodDBRdWFkcmF0aWNBdHRlbnVhdGlvbjsKdW5pZm9ybSB2ZWMzIHVfbGlnaHQwQ29sb3I7CnZvaWQgbWFpbih2b2lkKSB7CnZlYzMgbm9ybWFsID0gbm9ybWFsaXplKHZfbm9ybWFsKTsKdmVjNCBjb2xvciA9IHZlYzQoMC4sIDAuLCAwLiwgMC4pOwp2ZWM0IGRpZmZ1c2UgPSB2ZWM0KDAuLCAwLiwgMC4sIDEuKTsKdmVjMyBkaWZmdXNlTGlnaHQgPSB2ZWMzKDAuLCAwLiwgMC4pOwp2ZWM0IGVtaXNzaW9uOwp2ZWM0IGFtYmllbnQ7CnZlYzQgc3BlY3VsYXI7CmFtYmllbnQgPSB1X2FtYmllbnQ7CmRpZmZ1c2UgPSB0ZXh0dXJlMkQodV9kaWZmdXNlLCB2X3RleGNvb3JkMCk7CmVtaXNzaW9uID0gdV9lbWlzc2lvbjsKc3BlY3VsYXIgPSB1X3NwZWN1bGFyOwp2ZWMzIHNwZWN1bGFyTGlnaHQgPSB2ZWMzKDAuLCAwLiwgMC4pOwp7CmZsb2F0IHNwZWN1bGFySW50ZW5zaXR5ID0gMC47CmZsb2F0IGF0dGVudWF0aW9uID0gMS4wOwpmbG9hdCByYW5nZSA9IGxlbmd0aCh2X2xpZ2h0MERpcmVjdGlvbik7CmF0dGVudWF0aW9uID0gMS4wIC8gKCB1X2xpZ2h0MENvbnN0YW50QXR0ZW51YXRpb24gKyAodV9saWdodDBMaW5lYXJBdHRlbnVhdGlvbiAqIHJhbmdlKSArICh1X2xpZ2h0MFF1YWRyYXRpY0F0dGVudWF0aW9uICogcmFuZ2UgKiByYW5nZSkgKSA7CnZlYzMgbCA9IG5vcm1hbGl6ZSh2X2xpZ2h0MERpcmVjdGlvbik7CnZlYzMgdmlld0RpciA9IC1ub3JtYWxpemUodl9wb3NpdGlvbik7CmZsb2F0IHBob25nVGVybSA9IG1heCgwLjAsIGRvdChyZWZsZWN0KC1sLG5vcm1hbCksIHZpZXdEaXIpKTsKc3BlY3VsYXJJbnRlbnNpdHkgPSBtYXgoMC4sIHBvdyhwaG9uZ1Rlcm0gLCB1X3NoaW5pbmVzcykpICogYXR0ZW51YXRpb247CnNwZWN1bGFyTGlnaHQgKz0gdV9saWdodDBDb2xvciAqIHNwZWN1bGFySW50ZW5zaXR5OwpkaWZmdXNlTGlnaHQgKz0gdV9saWdodDBDb2xvciAqIG1heChkb3Qobm9ybWFsLGwpLCAwLikgKiBhdHRlbnVhdGlvbjsKfQpzcGVjdWxhci54eXogKj0gc3BlY3VsYXJMaWdodDsKY29sb3IueHl6ICs9IHNwZWN1bGFyLnh5ejsKZGlmZnVzZS54eXogKj0gZGlmZnVzZUxpZ2h0Owpjb2xvci54eXogKz0gZGlmZnVzZS54eXo7CmNvbG9yLnh5eiArPSBlbWlzc2lvbi54eXo7CmNvbG9yID0gdmVjNChjb2xvci5yZ2IgKiBkaWZmdXNlLmEsIGRpZmZ1c2UuYSk7CmdsX0ZyYWdDb2xvciA9IGNvbG9yOwp9Cg=="
-        },
-        "untitled0VS": {
-            "type": 35633,
-            "uri": "data:text/plain;base64,cHJlY2lzaW9uIGhpZ2hwIGZsb2F0OwphdHRyaWJ1dGUgdmVjMyBhX3Bvc2l0aW9uOwphdHRyaWJ1dGUgdmVjMyBhX25vcm1hbDsKdmFyeWluZyB2ZWMzIHZfbm9ybWFsOwp1bmlmb3JtIG1hdDMgdV9ub3JtYWxNYXRyaXg7CnVuaWZvcm0gbWF0NCB1X21vZGVsVmlld01hdHJpeDsKdW5pZm9ybSBtYXQ0IHVfcHJvamVjdGlvbk1hdHJpeDsKYXR0cmlidXRlIHZlYzIgYV90ZXhjb29yZDA7CnZhcnlpbmcgdmVjMiB2X3RleGNvb3JkMDsKdmFyeWluZyB2ZWMzIHZfbGlnaHQwRGlyZWN0aW9uOwp2YXJ5aW5nIHZlYzMgdl9wb3NpdGlvbjsKdW5pZm9ybSBtYXQ0IHVfbGlnaHQwVHJhbnNmb3JtOwp2b2lkIG1haW4odm9pZCkgewp2ZWM0IHBvcyA9IHVfbW9kZWxWaWV3TWF0cml4ICogdmVjNChhX3Bvc2l0aW9uLDEuMCk7CnZfbm9ybWFsID0gdV9ub3JtYWxNYXRyaXggKiBhX25vcm1hbDsKdl90ZXhjb29yZDAgPSBhX3RleGNvb3JkMDsKdl9wb3NpdGlvbiA9IHBvcy54eXo7CnZfbGlnaHQwRGlyZWN0aW9uID0gdV9saWdodDBUcmFuc2Zvcm1bM10ueHl6IC0gcG9zLnh5ejsKZ2xfUG9zaXRpb24gPSB1X3Byb2plY3Rpb25NYXRyaXggKiBwb3M7Cn0K"
-        }
-    },
     "skins": {},
-    "techniques": {
-        "technique0": {
-            "attributes": {
-                "a_normal": "normal",
-                "a_position": "position",
-                "a_texcoord0": "texcoord0"
-            },
-            "parameters": {
-                "ambient": {
-                    "type": 35666
-                },
-                "diffuse": {
-                    "type": 35678
-                },
-                "emission": {
-                    "type": 35666
-                },
-                "light0Color": {
-                    "type": 35665,
-                    "value": [
-                        1,
-                        1,
-                        1
-                    ]
-                },
-                "light0ConstantAttenuation": {
-                    "type": 5126,
-                    "value": 1
-                },
-                "light0LinearAttenuation": {
-                    "type": 5126,
-                    "value": 0
-                },
-                "light0QuadraticAttenuation": {
-                    "type": 5126,
-                    "value": 0.00111109
-                },
-                "light0Transform": {
-                    "node": "Lamp",
-                    "semantic": "MODELVIEW",
-                    "type": 35676
-                },
-                "modelViewMatrix": {
-                    "semantic": "MODELVIEW",
-                    "type": 35676
-                },
-                "normal": {
-                    "semantic": "NORMAL",
-                    "type": 35665
-                },
-                "normalMatrix": {
-                    "semantic": "MODELVIEWINVERSETRANSPOSE",
-                    "type": 35675
-                },
-                "position": {
-                    "semantic": "POSITION",
-                    "type": 35665
-                },
-                "projectionMatrix": {
-                    "semantic": "PROJECTION",
-                    "type": 35676
-                },
-                "shininess": {
-                    "type": 5126
-                },
-                "specular": {
-                    "type": 35666
-                },
-                "texcoord0": {
-                    "semantic": "TEXCOORD_0",
-                    "type": 35664
-                }
-            },
-            "program": "program_0",
-            "states": {
-                "enable": [
-                    2929,
-                    2884
-                ]
-            },
-            "uniforms": {
-                "u_ambient": "ambient",
-                "u_diffuse": "diffuse",
-                "u_emission": "emission",
-                "u_light0Color": "light0Color",
-                "u_light0ConstantAttenuation": "light0ConstantAttenuation",
-                "u_light0LinearAttenuation": "light0LinearAttenuation",
-                "u_light0QuadraticAttenuation": "light0QuadraticAttenuation",
-                "u_light0Transform": "light0Transform",
-                "u_modelViewMatrix": "modelViewMatrix",
-                "u_normalMatrix": "normalMatrix",
-                "u_projectionMatrix": "projectionMatrix",
-                "u_shininess": "shininess",
-                "u_specular": "specular"
-            }
-        }
-    },
     "textures": {
         "texture_backWall_Diffuse_Color": {
             "format": 6408,

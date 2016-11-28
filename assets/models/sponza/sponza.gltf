@@ -16,12 +16,132 @@
             "count": 10416,
             "type": "SCALAR"
         },
+        "accessor_index_10": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 1.001364e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 2640,
+            "type": "SCALAR"
+        },
+        "accessor_index_11": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 1.011924e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 69624,
+            "type": "SCALAR"
+        },
+        "accessor_index_12": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 1.29042e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 54,
+            "type": "SCALAR"
+        },
+        "accessor_index_13": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 1.290636e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 49488,
+            "type": "SCALAR"
+        },
+        "accessor_index_14": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 1.488588e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 49536,
+            "type": "SCALAR"
+        },
+        "accessor_index_15": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 1.686732e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 49536,
+            "type": "SCALAR"
+        },
+        "accessor_index_16": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 1.884876e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 33024,
+            "type": "SCALAR"
+        },
+        "accessor_index_17": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 2.016972e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 43008,
+            "type": "SCALAR"
+        },
+        "accessor_index_18": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 2.189004e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 56832,
+            "type": "SCALAR"
+        },
+        "accessor_index_19": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 2.416332e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 43008,
+            "type": "SCALAR"
+        },
         "accessor_index_2": {
             "bufferView": "bufferView_index",
             "byteOffset": 418896,
             "byteStride": 0,
             "componentType": 5125,
             "count": 53064,
+            "type": "SCALAR"
+        },
+        "accessor_index_20": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 2.588364e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 96,
+            "type": "SCALAR"
+        },
+        "accessor_index_21": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 2.588748e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 59484,
+            "type": "SCALAR"
+        },
+        "accessor_index_22": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 2.826684e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 27552,
+            "type": "SCALAR"
+        },
+        "accessor_index_23": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 2.936892e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 9126,
+            "type": "SCALAR"
+        },
+        "accessor_index_24": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 2.973396e+06,
+            "byteStride": 0,
+            "componentType": 5125,
+            "count": 43452,
             "type": "SCALAR"
         },
         "accessor_index_3": {
@@ -80,125 +200,13 @@
             "count": 21264,
             "type": "SCALAR"
         },
-        "accessor_index_10": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 1001364,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 2640,
-            "type": "SCALAR"
-        },
-        "accessor_index_11": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 1011924,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 69624,
-            "type": "SCALAR"
-        },
-        "accessor_index_12": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 1290420,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 54,
-            "type": "SCALAR"
-        },
-        "accessor_index_13": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 1290636,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 49488,
-            "type": "SCALAR"
-        },
-        "accessor_index_14": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 1488588,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 49536,
-            "type": "SCALAR"
-        },
-        "accessor_index_15": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 1686732,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 49536,
-            "type": "SCALAR"
-        },
-        "accessor_index_16": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 1884876,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 33024,
-            "type": "SCALAR"
-        },
-        "accessor_index_17": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 2016972,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 43008,
-            "type": "SCALAR"
-        },
-        "accessor_index_18": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 2189004,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 56832,
-            "type": "SCALAR"
-        },
-        "accessor_index_19": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 2416332,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 43008,
-            "type": "SCALAR"
-        },
-        "accessor_index_20": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 2588364,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 96,
-            "type": "SCALAR"
-        },
-        "accessor_index_21": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 2588748,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 59484,
-            "type": "SCALAR"
-        },
-        "accessor_index_22": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 2826684,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 27552,
-            "type": "SCALAR"
-        },
-        "accessor_index_23": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 2936892,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 9126,
-            "type": "SCALAR"
-        },
-        "accessor_index_24": {
-            "bufferView": "bufferView_index",
-            "byteOffset": 2973396,
-            "byteStride": 0,
-            "componentType": 5125,
-            "count": 43452,
-            "type": "SCALAR"
+        "accessor_normal": {
+            "bufferView": "bufferView_vertex",
+            "byteOffset": 12,
+            "byteStride": 32,
+            "componentType": 5126,
+            "count": 184406,
+            "type": "VEC3"
         },
         "accessor_position": {
             "bufferView": "bufferView_vertex",
@@ -206,24 +214,16 @@
             "byteStride": 32,
             "componentType": 5126,
             "count": 184406,
-            "min": [
-                -1920.9459,
-                -126.4425,
-                -1182.8071
-            ],
             "max": [
                 1799.9081,
                 1429.4332,
                 1105.426
             ],
-            "type": "VEC3"
-        },
-        "accessor_normal": {
-            "bufferView": "bufferView_vertex",
-            "byteOffset": 12,
-            "byteStride": 32,
-            "componentType": 5126,
-            "count": 184406,
+            "min": [
+                -1920.9459,
+                -126.4425,
+                -1182.8071
+            ],
             "type": "VEC3"
         },
         "accessor_uv": {
@@ -244,148 +244,46 @@
         },
         "version": 1
     },
+    "bufferViews": {
+        "bufferView_index": {
+            "buffer": "buffer_sponza",
+            "byteLength": 3.147204e+06,
+            "byteOffset": 5.900992e+06,
+            "target": 34963
+        },
+        "bufferView_vertex": {
+            "buffer": "buffer_sponza",
+            "byteLength": 5.900992e+06,
+            "byteOffset": 0,
+            "target": 34962
+        }
+    },
     "buffers": {
         "buffer_sponza": {
-            "byteLength": 9048196,
+            "byteLength": 9.048196e+06,
             "type": "arraybuffer",
             "uri": "sponza.bin"
         }
     },
-    "bufferViews": {
-        "bufferView_vertex": {
-            "buffer": "buffer_sponza",
-            "byteLength": 5900992,
-            "byteOffset": 0,
-            "target": 34962
-        },
-        "bufferView_index": {
-            "buffer": "buffer_sponza",
-            "byteLength": 3147204,
-            "byteOffset": 5900992,
-            "target": 34963
-        }
-    },
     "extensionsUsed": [],
     "images": {
-        "image_vase_round.tga": {
-            "uri": "vase_round.tga"
-        },
-        "image_vase_round_spec.tga": {
-            "uri": "vase_round_spec.tga"
-        },
         "image_background.tga": {
             "uri": "background.tga"
-        },
-        "image_spnza_bricks_a_spec_fixed.tga": {
-            "uri": "spnza_bricks_a_spec_fixed.tga"
-        },
-        "image_vase_plant.tga": {
-            "uri": "vase_plant.tga"
-        },
-        "image_gi_flag.tga": {
-            "uri": "gi_flag.tga"
-        },
-        "image_sponza_arch_diff.tga": {
-            "uri": "sponza_arch_diff.tga"
-        },
-        "image_sponza_thorn_diff.tga": {
-            "uri": "sponza_thorn_diff.tga"
-        },
-        "image_spnza_bricks_a_diff.tga": {
-            "uri": "spnza_bricks_a_diff.tga"
-        },
-        "image_sponza_ceiling_a_diff.tga": {
-            "uri": "sponza_ceiling_a_diff.tga"
-        },
-        "image_sponza_ceiling_a_spec.tga": {
-            "uri": "sponza_ceiling_a_spec.tga"
-        },
-        "image_sponza_arch_spec.tga": {
-            "uri": "sponza_arch_spec.tga"
-        },
-        "image_sponza_thorn_spec.tga": {
-            "uri": "sponza_thorn_spec.tga"
-        },
-        "image_sponza_column_a_diff.tga": {
-            "uri": "sponza_column_a_diff.tga"
-        },
-        "image_sponza_floor_a_spec.tga": {
-            "uri": "sponza_floor_a_spec.tga"
-        },
-        "image_sponza_floor_a_diff.tga": {
-            "uri": "sponza_floor_a_diff.tga"
-        },
-        "image_sponza_column_a_spec.tga": {
-            "uri": "sponza_column_a_spec.tga"
-        },
-        "image_sponza_column_c_spec.tga": {
-            "uri": "sponza_column_c_spec.tga"
-        },
-        "image_sponza_column_b_diff.tga": {
-            "uri": "sponza_column_b_diff.tga"
-        },
-        "image_sponza_column_b_spec.tga": {
-            "uri": "sponza_column_b_spec.tga"
-        },
-        "image_sponza_details_diff.tga": {
-            "uri": "sponza_details_diff.tga"
-        },
-        "image_sponza_column_c_diff.tga": {
-            "uri": "sponza_column_c_diff.tga"
-        },
-        "image_sponza_flagpole_diff.tga": {
-            "uri": "sponza_flagpole_diff.tga"
-        },
-        "image_sponza_details_spec.tga": {
-            "uri": "sponza_details_spec.tga"
-        },
-        "image_sponza_fabric_green_diff.tga": {
-            "uri": "sponza_fabric_green_diff.tga"
-        },
-        "image_sponza_flagpole_spec.tga": {
-            "uri": "sponza_flagpole_spec.tga"
-        },
-        "image_sponza_fabric_spec.tga": {
-            "uri": "sponza_fabric_spec.tga"
-        },
-        "image_sponza_fabric_diff.tga": {
-            "uri": "sponza_fabric_diff.tga"
-        },
-        "image_sponza_curtain_spec.tga": {
-            "uri": "sponza_curtain_spec.tga"
-        },
-        "image_sponza_fabric_blue_diff.tga": {
-            "uri": "sponza_fabric_blue_diff.tga"
-        },
-        "image_chain_texture.tga": {
-            "uri": "chain_texture.tga"
-        },
-        "image_vase_hanging.tga": {
-            "uri": "vase_hanging.tga"
-        },
-        "image_vase_dif.tga": {
-            "uri": "vase_dif.tga"
-        },
-        "image_sponza_curtain_blue_diff.tga": {
-            "uri": "sponza_curtain_blue_diff.tga"
-        },
-        "image_sponza_roof_diff.tga": {
-            "uri": "sponza_roof_diff.tga"
-        },
-        "image_sponza_curtain_diff.tga": {
-            "uri": "sponza_curtain_diff.tga"
-        },
-        "image_sponza_curtain_green_diff.tga": {
-            "uri": "sponza_curtain_green_diff.tga"
-        },
-        "image_lion.tga": {
-            "uri": "lion.tga"
         },
         "image_background_bump.png": {
             "uri": "background_bump.png"
         },
+        "image_chain_texture.tga": {
+            "uri": "chain_texture.tga"
+        },
         "image_chain_texture_bump.png": {
             "uri": "chain_texture_bump.png"
+        },
+        "image_gi_flag.tga": {
+            "uri": "gi_flag.tga"
+        },
+        "image_lion.tga": {
+            "uri": "lion.tga"
         },
         "image_lion_bump.png": {
             "uri": "lion_bump.png"
@@ -393,244 +291,170 @@
         "image_spnza_bricks_a_bump.png": {
             "uri": "spnza_bricks_a_bump.png"
         },
+        "image_spnza_bricks_a_diff.tga": {
+            "uri": "spnza_bricks_a_diff.tga"
+        },
+        "image_spnza_bricks_a_spec_fixed.tga": {
+            "uri": "spnza_bricks_a_spec_fixed.tga"
+        },
         "image_sponza_arch_bump.png": {
             "uri": "sponza_arch_bump.png"
+        },
+        "image_sponza_arch_diff.tga": {
+            "uri": "sponza_arch_diff.tga"
+        },
+        "image_sponza_arch_spec.tga": {
+            "uri": "sponza_arch_spec.tga"
+        },
+        "image_sponza_ceiling_a_diff.tga": {
+            "uri": "sponza_ceiling_a_diff.tga"
+        },
+        "image_sponza_ceiling_a_spec.tga": {
+            "uri": "sponza_ceiling_a_spec.tga"
         },
         "image_sponza_column_a_bump.png": {
             "uri": "sponza_column_a_bump.png"
         },
+        "image_sponza_column_a_diff.tga": {
+            "uri": "sponza_column_a_diff.tga"
+        },
+        "image_sponza_column_a_spec.tga": {
+            "uri": "sponza_column_a_spec.tga"
+        },
         "image_sponza_column_b_bump.png": {
             "uri": "sponza_column_b_bump.png"
+        },
+        "image_sponza_column_b_diff.tga": {
+            "uri": "sponza_column_b_diff.tga"
+        },
+        "image_sponza_column_b_spec.tga": {
+            "uri": "sponza_column_b_spec.tga"
         },
         "image_sponza_column_c_bump.png": {
             "uri": "sponza_column_c_bump.png"
         },
+        "image_sponza_column_c_diff.tga": {
+            "uri": "sponza_column_c_diff.tga"
+        },
+        "image_sponza_column_c_spec.tga": {
+            "uri": "sponza_column_c_spec.tga"
+        },
+        "image_sponza_curtain_blue_diff.tga": {
+            "uri": "sponza_curtain_blue_diff.tga"
+        },
+        "image_sponza_curtain_diff.tga": {
+            "uri": "sponza_curtain_diff.tga"
+        },
+        "image_sponza_curtain_green_diff.tga": {
+            "uri": "sponza_curtain_green_diff.tga"
+        },
+        "image_sponza_curtain_spec.tga": {
+            "uri": "sponza_curtain_spec.tga"
+        },
+        "image_sponza_details_diff.tga": {
+            "uri": "sponza_details_diff.tga"
+        },
+        "image_sponza_details_spec.tga": {
+            "uri": "sponza_details_spec.tga"
+        },
+        "image_sponza_fabric_blue_diff.tga": {
+            "uri": "sponza_fabric_blue_diff.tga"
+        },
+        "image_sponza_fabric_diff.tga": {
+            "uri": "sponza_fabric_diff.tga"
+        },
+        "image_sponza_fabric_green_diff.tga": {
+            "uri": "sponza_fabric_green_diff.tga"
+        },
+        "image_sponza_fabric_spec.tga": {
+            "uri": "sponza_fabric_spec.tga"
+        },
+        "image_sponza_flagpole_diff.tga": {
+            "uri": "sponza_flagpole_diff.tga"
+        },
+        "image_sponza_flagpole_spec.tga": {
+            "uri": "sponza_flagpole_spec.tga"
+        },
+        "image_sponza_floor_a_diff.tga": {
+            "uri": "sponza_floor_a_diff.tga"
+        },
+        "image_sponza_floor_a_spec.tga": {
+            "uri": "sponza_floor_a_spec.tga"
+        },
+        "image_sponza_roof_diff.tga": {
+            "uri": "sponza_roof_diff.tga"
+        },
         "image_sponza_thorn_bump.png": {
             "uri": "sponza_thorn_bump.png"
+        },
+        "image_sponza_thorn_diff.tga": {
+            "uri": "sponza_thorn_diff.tga"
+        },
+        "image_sponza_thorn_spec.tga": {
+            "uri": "sponza_thorn_spec.tga"
         },
         "image_vase_bump.png": {
             "uri": "vase_bump.png"
         },
+        "image_vase_dif.tga": {
+            "uri": "vase_dif.tga"
+        },
+        "image_vase_hanging.tga": {
+            "uri": "vase_hanging.tga"
+        },
+        "image_vase_plant.tga": {
+            "uri": "vase_plant.tga"
+        },
+        "image_vase_round.tga": {
+            "uri": "vase_round.tga"
+        },
         "image_vase_round_bump.png": {
             "uri": "vase_round_bump.png"
+        },
+        "image_vase_round_spec.tga": {
+            "uri": "vase_round_spec.tga"
         }
     },
     "materials": {
-        "material_leaf": {
-            "name": "leaf",
+        "material_Material__25": {
             "extensions": {},
+            "name": "Material__25",
             "values": {
-                "ambient": "texture_sponza_thorn_diff.tga",
-                "diffuse": "texture_sponza_thorn_diff.tga",
-                "bump": "texture_sponza_thorn_bump.png",
+                "ambient": "texture_lion.tga",
+                "baseColor": "texture_lion.tga",
                 "emission": [
                     0,
                     0,
                     0,
                     1
                 ],
-                "specular": "texture_sponza_thorn_spec.tga",
-                "shininess": 10,
-                "transparency": 1
-            }
-        },
-        "material_Material__57": {
-            "name": "Material__57",
-            "extensions": {},
-            "values": {
-                "ambient": "texture_vase_plant.tga",
-                "diffuse": "texture_vase_plant.tga",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "specular": "texture_vase_plant.tga",
-                "shininess": 10,
-                "transparency": 1
-            }
-        },
-        "material_vase_round": {
-            "name": "vase_round",
-            "extensions": {},
-            "values": {
-                "ambient": "texture_vase_round.tga",
-                "diffuse": "texture_vase_round.tga",
-                "bump": "texture_vase_round_bump.png",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "specular": "texture_vase_round_spec.tga",
+                "height": "texture_lion_bump.png",
+                "roughness": "texture_lion.tga",
                 "shininess": 10,
                 "transparency": 1
             }
         },
         "material_Material__298": {
-            "name": "Material__298",
             "extensions": {},
+            "name": "Material__298",
             "values": {
                 "ambient": "texture_background.tga",
-                "diffuse": "texture_background.tga",
-                "bump": "texture_background_bump.png",
+                "baseColor": "texture_background.tga",
                 "emission": [
                     0,
                     0,
                     0,
                     1
                 ],
-                "specular": "texture_background.tga",
-                "shininess": 10,
-                "transparency": 1
-            }
-        },
-        "material_bricks": {
-            "name": "bricks",
-            "extensions": {},
-            "values": {
-                "ambient": "texture_spnza_bricks_a_diff.tga",
-                "diffuse": "texture_spnza_bricks_a_diff.tga",
-                "bump": "texture_spnza_bricks_a_bump.png",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "specular": "texture_spnza_bricks_a_spec_fixed.tga",
-                "shininess": 10,
-                "transparency": 1
-            }
-        },
-        "material_arch": {
-            "name": "arch",
-            "extensions": {},
-            "values": {
-                "ambient": "texture_sponza_arch_diff.tga",
-                "diffuse": "texture_sponza_arch_diff.tga",
-                "bump": "texture_sponza_arch_bump.png",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "specular": "texture_sponza_arch_spec.tga",
-                "shininess": 10,
-                "transparency": 1
-            }
-        },
-        "material_ceiling": {
-            "name": "ceiling",
-            "extensions": {},
-            "values": {
-                "ambient": "texture_sponza_ceiling_a_diff.tga",
-                "diffuse": "texture_sponza_ceiling_a_diff.tga",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "specular": "texture_sponza_ceiling_a_spec.tga",
-                "shininess": 10,
-                "transparency": 1
-            }
-        },
-        "material_column_a": {
-            "name": "column_a",
-            "extensions": {},
-            "values": {
-                "ambient": "texture_sponza_column_a_diff.tga",
-                "diffuse": "texture_sponza_column_a_diff.tga",
-                "bump": "texture_sponza_column_a_bump.png",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "specular": "texture_sponza_column_a_spec.tga",
-                "shininess": 10,
-                "transparency": 1
-            }
-        },
-        "material_floor": {
-            "name": "floor",
-            "extensions": {},
-            "values": {
-                "ambient": "texture_sponza_floor_a_diff.tga",
-                "diffuse": "texture_sponza_floor_a_diff.tga",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "specular": "texture_sponza_floor_a_spec.tga",
-                "shininess": 10,
-                "transparency": 1
-            }
-        },
-        "material_column_c": {
-            "name": "column_c",
-            "extensions": {},
-            "values": {
-                "ambient": "texture_sponza_column_c_diff.tga",
-                "diffuse": "texture_sponza_column_c_diff.tga",
-                "bump": "texture_sponza_column_c_bump.png",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "specular": "texture_sponza_column_c_spec.tga",
-                "shininess": 10,
-                "transparency": 1
-            }
-        },
-        "material_details": {
-            "name": "details",
-            "extensions": {},
-            "values": {
-                "ambient": "texture_sponza_details_diff.tga",
-                "diffuse": "texture_sponza_details_diff.tga",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "specular": "texture_sponza_details_spec.tga",
-                "shininess": 10,
-                "transparency": 1
-            }
-        },
-        "material_column_b": {
-            "name": "column_b",
-            "extensions": {},
-            "values": {
-                "ambient": "texture_sponza_column_b_diff.tga",
-                "diffuse": "texture_sponza_column_b_diff.tga",
-                "bump": "texture_sponza_column_b_bump.png",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "specular": "texture_sponza_column_b_spec.tga",
+                "height": "texture_background_bump.png",
+                "roughness": "texture_background.tga",
                 "shininess": 10,
                 "transparency": 1
             }
         },
         "material_Material__47": {
-            "name": "Material__47",
             "extensions": {},
+            "name": "Material__47",
             "values": {
                 "ambient": [
                     0.588,
@@ -638,7 +462,7 @@
                     0.588,
                     1
                 ],
-                "diffuse": [
+                "baseColor": [
                     0.588,
                     0.588,
                     0.588,
@@ -650,7 +474,7 @@
                     0,
                     1
                 ],
-                "specular": [
+                "roughness": [
                     0,
                     0,
                     0,
@@ -660,219 +484,395 @@
                 "transparency": 1
             }
         },
-        "material_flagpole": {
-            "name": "flagpole",
+        "material_Material__57": {
             "extensions": {},
+            "name": "Material__57",
             "values": {
-                "ambient": "texture_sponza_flagpole_diff.tga",
-                "diffuse": "texture_sponza_flagpole_diff.tga",
+                "ambient": "texture_vase_plant.tga",
+                "baseColor": "texture_vase_plant.tga",
                 "emission": [
                     0,
                     0,
                     0,
                     1
                 ],
-                "specular": "texture_sponza_flagpole_spec.tga",
+                "roughness": "texture_vase_plant.tga",
                 "shininess": 10,
                 "transparency": 1
             }
         },
-        "material_fabric_e": {
-            "name": "fabric_e",
+        "material_arch": {
             "extensions": {},
+            "name": "arch",
             "values": {
-                "ambient": "texture_sponza_fabric_green_diff.tga",
-                "diffuse": "texture_sponza_fabric_green_diff.tga",
+                "ambient": "texture_sponza_arch_diff.tga",
+                "baseColor": "texture_sponza_arch_diff.tga",
                 "emission": [
                     0,
                     0,
                     0,
                     1
                 ],
-                "specular": "texture_sponza_fabric_spec.tga",
+                "height": "texture_sponza_arch_bump.png",
+                "roughness": "texture_sponza_arch_spec.tga",
                 "shininess": 10,
                 "transparency": 1
             }
         },
-        "material_fabric_d": {
-            "name": "fabric_d",
+        "material_bricks": {
             "extensions": {},
+            "name": "bricks",
             "values": {
-                "ambient": "texture_sponza_fabric_blue_diff.tga",
-                "diffuse": "texture_sponza_fabric_blue_diff.tga",
+                "ambient": "texture_spnza_bricks_a_diff.tga",
+                "baseColor": "texture_spnza_bricks_a_diff.tga",
                 "emission": [
                     0,
                     0,
                     0,
                     1
                 ],
-                "specular": "texture_sponza_fabric_spec.tga",
+                "height": "texture_spnza_bricks_a_bump.png",
+                "roughness": "texture_spnza_bricks_a_spec_fixed.tga",
                 "shininess": 10,
                 "transparency": 1
             }
         },
-        "material_fabric_a": {
-            "name": "fabric_a",
+        "material_ceiling": {
             "extensions": {},
+            "name": "ceiling",
             "values": {
-                "ambient": "texture_sponza_fabric_diff.tga",
-                "diffuse": "texture_sponza_fabric_diff.tga",
+                "ambient": "texture_sponza_ceiling_a_diff.tga",
+                "baseColor": "texture_sponza_ceiling_a_diff.tga",
                 "emission": [
                     0,
                     0,
                     0,
                     1
                 ],
-                "specular": "texture_sponza_fabric_spec.tga",
-                "shininess": 10,
-                "transparency": 1
-            }
-        },
-        "material_fabric_g": {
-            "name": "fabric_g",
-            "extensions": {},
-            "values": {
-                "ambient": "texture_sponza_curtain_blue_diff.tga",
-                "diffuse": "texture_sponza_curtain_blue_diff.tga",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "specular": "texture_sponza_curtain_spec.tga",
-                "shininess": 10,
-                "transparency": 1
-            }
-        },
-        "material_fabric_c": {
-            "name": "fabric_c",
-            "extensions": {},
-            "values": {
-                "ambient": "texture_sponza_curtain_diff.tga",
-                "diffuse": "texture_sponza_curtain_diff.tga",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "specular": "texture_sponza_curtain_spec.tga",
-                "shininess": 10,
-                "transparency": 1
-            }
-        },
-        "material_fabric_f": {
-            "name": "fabric_f",
-            "extensions": {},
-            "values": {
-                "ambient": "texture_sponza_curtain_green_diff.tga",
-                "diffuse": "texture_sponza_curtain_green_diff.tga",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "specular": "texture_sponza_curtain_spec.tga",
+                "roughness": "texture_sponza_ceiling_a_spec.tga",
                 "shininess": 10,
                 "transparency": 1
             }
         },
         "material_chain": {
-            "name": "chain",
             "extensions": {},
+            "name": "chain",
             "values": {
                 "ambient": "texture_chain_texture.tga",
-                "diffuse": "texture_chain_texture.tga",
-                "bump": "texture_chain_texture_bump.png",
+                "baseColor": "texture_chain_texture.tga",
                 "emission": [
                     0,
                     0,
                     0,
                     1
                 ],
-                "specular": "texture_chain_texture.tga",
+                "height": "texture_chain_texture_bump.png",
+                "roughness": "texture_chain_texture.tga",
                 "shininess": 10,
                 "transparency": 1
             }
         },
-        "material_vase_hanging": {
-            "name": "vase_hanging",
+        "material_column_a": {
             "extensions": {},
+            "name": "column_a",
             "values": {
-                "ambient": "texture_vase_hanging.tga",
-                "diffuse": "texture_vase_hanging.tga",
+                "ambient": "texture_sponza_column_a_diff.tga",
+                "baseColor": "texture_sponza_column_a_diff.tga",
                 "emission": [
                     0,
                     0,
                     0,
                     1
                 ],
-                "specular": "texture_vase_hanging.tga",
+                "height": "texture_sponza_column_a_bump.png",
+                "roughness": "texture_sponza_column_a_spec.tga",
                 "shininess": 10,
                 "transparency": 1
             }
         },
-        "material_vase": {
-            "name": "vase",
+        "material_column_b": {
             "extensions": {},
+            "name": "column_b",
             "values": {
-                "ambient": "texture_vase_dif.tga",
-                "diffuse": "texture_vase_dif.tga",
-                "bump": "texture_vase_bump.png",
+                "ambient": "texture_sponza_column_b_diff.tga",
+                "baseColor": "texture_sponza_column_b_diff.tga",
                 "emission": [
                     0,
                     0,
                     0,
                     1
                 ],
-                "specular": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
+                "height": "texture_sponza_column_b_bump.png",
+                "roughness": "texture_sponza_column_b_spec.tga",
                 "shininess": 10,
                 "transparency": 1
             }
         },
-        "material_Material__25": {
-            "name": "Material__25",
+        "material_column_c": {
             "extensions": {},
+            "name": "column_c",
             "values": {
-                "ambient": "texture_lion.tga",
-                "diffuse": "texture_lion.tga",
-                "bump": "texture_lion_bump.png",
+                "ambient": "texture_sponza_column_c_diff.tga",
+                "baseColor": "texture_sponza_column_c_diff.tga",
                 "emission": [
                     0,
                     0,
                     0,
                     1
                 ],
-                "specular": "texture_lion.tga",
+                "height": "texture_sponza_column_c_bump.png",
+                "roughness": "texture_sponza_column_c_spec.tga",
+                "shininess": 10,
+                "transparency": 1
+            }
+        },
+        "material_details": {
+            "extensions": {},
+            "name": "details",
+            "values": {
+                "ambient": "texture_sponza_details_diff.tga",
+                "baseColor": "texture_sponza_details_diff.tga",
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "roughness": "texture_sponza_details_spec.tga",
+                "shininess": 10,
+                "transparency": 1
+            }
+        },
+        "material_fabric_a": {
+            "extensions": {},
+            "name": "fabric_a",
+            "values": {
+                "ambient": "texture_sponza_fabric_diff.tga",
+                "baseColor": "texture_sponza_fabric_diff.tga",
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "roughness": "texture_sponza_fabric_spec.tga",
+                "shininess": 10,
+                "transparency": 1
+            }
+        },
+        "material_fabric_c": {
+            "extensions": {},
+            "name": "fabric_c",
+            "values": {
+                "ambient": "texture_sponza_curtain_diff.tga",
+                "baseColor": "texture_sponza_curtain_diff.tga",
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "roughness": "texture_sponza_curtain_spec.tga",
+                "shininess": 10,
+                "transparency": 1
+            }
+        },
+        "material_fabric_d": {
+            "extensions": {},
+            "name": "fabric_d",
+            "values": {
+                "ambient": "texture_sponza_fabric_blue_diff.tga",
+                "baseColor": "texture_sponza_fabric_blue_diff.tga",
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "roughness": "texture_sponza_fabric_spec.tga",
+                "shininess": 10,
+                "transparency": 1
+            }
+        },
+        "material_fabric_e": {
+            "extensions": {},
+            "name": "fabric_e",
+            "values": {
+                "ambient": "texture_sponza_fabric_green_diff.tga",
+                "baseColor": "texture_sponza_fabric_green_diff.tga",
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "roughness": "texture_sponza_fabric_spec.tga",
+                "shininess": 10,
+                "transparency": 1
+            }
+        },
+        "material_fabric_f": {
+            "extensions": {},
+            "name": "fabric_f",
+            "values": {
+                "ambient": "texture_sponza_curtain_green_diff.tga",
+                "baseColor": "texture_sponza_curtain_green_diff.tga",
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "roughness": "texture_sponza_curtain_spec.tga",
+                "shininess": 10,
+                "transparency": 1
+            }
+        },
+        "material_fabric_g": {
+            "extensions": {},
+            "name": "fabric_g",
+            "values": {
+                "ambient": "texture_sponza_curtain_blue_diff.tga",
+                "baseColor": "texture_sponza_curtain_blue_diff.tga",
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "roughness": "texture_sponza_curtain_spec.tga",
+                "shininess": 10,
+                "transparency": 1
+            }
+        },
+        "material_flagpole": {
+            "extensions": {},
+            "name": "flagpole",
+            "values": {
+                "ambient": "texture_sponza_flagpole_diff.tga",
+                "baseColor": "texture_sponza_flagpole_diff.tga",
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "roughness": "texture_sponza_flagpole_spec.tga",
+                "shininess": 10,
+                "transparency": 1
+            }
+        },
+        "material_floor": {
+            "extensions": {},
+            "name": "floor",
+            "values": {
+                "ambient": "texture_sponza_floor_a_diff.tga",
+                "baseColor": "texture_sponza_floor_a_diff.tga",
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "roughness": "texture_sponza_floor_a_spec.tga",
+                "shininess": 10,
+                "transparency": 1
+            }
+        },
+        "material_leaf": {
+            "extensions": {},
+            "name": "leaf",
+            "values": {
+                "ambient": "texture_sponza_thorn_diff.tga",
+                "baseColor": "texture_sponza_thorn_diff.tga",
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "height": "texture_sponza_thorn_bump.png",
+                "roughness": "texture_sponza_thorn_spec.tga",
                 "shininess": 10,
                 "transparency": 1
             }
         },
         "material_roof": {
-            "name": "roof",
             "extensions": {},
+            "name": "roof",
             "values": {
                 "ambient": "texture_sponza_roof_diff.tga",
-                "diffuse": "texture_sponza_roof_diff.tga",
+                "baseColor": "texture_sponza_roof_diff.tga",
                 "emission": [
                     0,
                     0,
                     0,
                     1
                 ],
-                "specular": [
+                "roughness": [
                     0,
                     0,
                     0,
                     1
                 ],
+                "shininess": 10,
+                "transparency": 1
+            }
+        },
+        "material_vase": {
+            "extensions": {},
+            "name": "vase",
+            "values": {
+                "ambient": "texture_vase_dif.tga",
+                "baseColor": "texture_vase_dif.tga",
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "height": "texture_vase_bump.png",
+                "roughness": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "shininess": 10,
+                "transparency": 1
+            }
+        },
+        "material_vase_hanging": {
+            "extensions": {},
+            "name": "vase_hanging",
+            "values": {
+                "ambient": "texture_vase_hanging.tga",
+                "baseColor": "texture_vase_hanging.tga",
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "roughness": "texture_vase_hanging.tga",
+                "shininess": 10,
+                "transparency": 1
+            }
+        },
+        "material_vase_round": {
+            "extensions": {},
+            "name": "vase_round",
+            "values": {
+                "ambient": "texture_vase_round.tga",
+                "baseColor": "texture_vase_round.tga",
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "height": "texture_vase_round_bump.png",
+                "roughness": "texture_vase_round_spec.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -884,8 +884,8 @@
             "primitives": [
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_0",
@@ -894,8 +894,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_1",
@@ -904,8 +904,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_2",
@@ -914,8 +914,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_3",
@@ -924,8 +924,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_4",
@@ -934,8 +934,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_5",
@@ -944,8 +944,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_6",
@@ -954,8 +954,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_7",
@@ -964,8 +964,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_8",
@@ -974,8 +974,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_9",
@@ -984,8 +984,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_10",
@@ -994,8 +994,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_11",
@@ -1004,8 +1004,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_12",
@@ -1014,8 +1014,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_13",
@@ -1024,8 +1024,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_14",
@@ -1034,8 +1034,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_15",
@@ -1044,8 +1044,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_16",
@@ -1054,8 +1054,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_17",
@@ -1064,8 +1064,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_18",
@@ -1074,8 +1074,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_19",
@@ -1084,8 +1084,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_20",
@@ -1094,8 +1094,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_21",
@@ -1104,8 +1104,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_22",
@@ -1114,8 +1114,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_23",
@@ -1124,8 +1124,8 @@
                 },
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
                         "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_24",
@@ -1174,307 +1174,11 @@
         }
     },
     "textures": {
-        "texture_vase_round.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_vase_round.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_vase_round_spec.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_vase_round_spec.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_background.tga": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
             "source": "image_background.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_spnza_bricks_a_spec_fixed.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_spnza_bricks_a_spec_fixed.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_vase_plant.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_vase_plant.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_gi_flag.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_gi_flag.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_arch_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_arch_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_thorn_diff.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_sponza_thorn_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_spnza_bricks_a_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_spnza_bricks_a_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_ceiling_a_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_ceiling_a_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_ceiling_a_spec.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_ceiling_a_spec.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_arch_spec.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_arch_spec.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_thorn_spec.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_thorn_spec.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_column_a_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_column_a_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_floor_a_spec.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_floor_a_spec.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_floor_a_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_floor_a_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_column_a_spec.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_column_a_spec.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_column_c_spec.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_column_c_spec.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_column_b_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_column_b_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_column_b_spec.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_column_b_spec.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_details_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_details_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_column_c_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_column_c_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_flagpole_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_flagpole_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_details_spec.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_details_spec.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_fabric_green_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_fabric_green_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_flagpole_spec.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_flagpole_spec.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_fabric_spec.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_fabric_spec.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_fabric_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_fabric_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_curtain_spec.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_curtain_spec.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_fabric_blue_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_fabric_blue_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_chain_texture.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_chain_texture.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_vase_hanging.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_vase_hanging.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_vase_dif.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_vase_dif.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_curtain_blue_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_curtain_blue_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_roof_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_roof_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_curtain_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_curtain_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_sponza_curtain_green_diff.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_sponza_curtain_green_diff.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_lion.tga": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_lion.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1486,11 +1190,35 @@
             "target": 3553,
             "type": 5121
         },
+        "texture_chain_texture.tga": {
+            "format": 6408,
+            "internalFormat": 6408,
+            "sampler": "sampler_0",
+            "source": "image_chain_texture.tga",
+            "target": 3553,
+            "type": 5121
+        },
         "texture_chain_texture_bump.png": {
             "format": 6403,
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_chain_texture_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_gi_flag.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_gi_flag.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_lion.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_lion.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1510,11 +1238,59 @@
             "target": 3553,
             "type": 5121
         },
+        "texture_spnza_bricks_a_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_spnza_bricks_a_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_spnza_bricks_a_spec_fixed.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_spnza_bricks_a_spec_fixed.tga",
+            "target": 3553,
+            "type": 5121
+        },
         "texture_sponza_arch_bump.png": {
             "format": 6403,
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_sponza_arch_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_arch_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_arch_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_arch_spec.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_arch_spec.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_ceiling_a_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_ceiling_a_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_ceiling_a_spec.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_ceiling_a_spec.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1526,11 +1302,43 @@
             "target": 3553,
             "type": 5121
         },
+        "texture_sponza_column_a_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_column_a_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_column_a_spec.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_column_a_spec.tga",
+            "target": 3553,
+            "type": 5121
+        },
         "texture_sponza_column_b_bump.png": {
             "format": 6403,
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_sponza_column_b_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_column_b_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_column_b_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_column_b_spec.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_column_b_spec.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1542,11 +1350,163 @@
             "target": 3553,
             "type": 5121
         },
+        "texture_sponza_column_c_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_column_c_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_column_c_spec.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_column_c_spec.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_curtain_blue_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_curtain_blue_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_curtain_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_curtain_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_curtain_green_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_curtain_green_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_curtain_spec.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_curtain_spec.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_details_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_details_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_details_spec.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_details_spec.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_fabric_blue_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_fabric_blue_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_fabric_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_fabric_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_fabric_green_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_fabric_green_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_fabric_spec.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_fabric_spec.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_flagpole_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_flagpole_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_flagpole_spec.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_flagpole_spec.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_floor_a_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_floor_a_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_floor_a_spec.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_floor_a_spec.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_roof_diff.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_roof_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
         "texture_sponza_thorn_bump.png": {
             "format": 6403,
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_sponza_thorn_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_thorn_diff.tga": {
+            "format": 6408,
+            "internalFormat": 6408,
+            "sampler": "sampler_0",
+            "source": "image_sponza_thorn_diff.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_sponza_thorn_spec.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_sponza_thorn_spec.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1558,11 +1518,51 @@
             "target": 3553,
             "type": 5121
         },
+        "texture_vase_dif.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_vase_dif.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_vase_hanging.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_vase_hanging.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_vase_plant.tga": {
+            "format": 6408,
+            "internalFormat": 6408,
+            "sampler": "sampler_0",
+            "source": "image_vase_plant.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_vase_round.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_vase_round.tga",
+            "target": 3553,
+            "type": 5121
+        },
         "texture_vase_round_bump.png": {
             "format": 6403,
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_vase_round_bump.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_vase_round_spec.tga": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_vase_round_spec.tga",
             "target": 3553,
             "type": 5121
         }

@@ -36,23 +36,25 @@ void main()
 	} else if (mode == 4) {
 		outFragColor.rgb = vec3(texture(gBuffer0, inTexCoord).a);
 	} else if (mode == 5) {
+		outFragColor.rgb = vec3(texture(gBuffer1, inTexCoord).a);
+	} else if (mode == 6) {
 		vec4 rayPos = invViewMat * vec4(ScreenPosToViewPos(inTexCoord, 0, invProjMat), 1);
 		vec4 rayDir = normalize(rayPos - (invViewMat * vec4(0, 0, 0, 1)));
 		vec3 sampleRadiance;
 		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz, rayDir.xyz, outFragColor.rgb, sampleRadiance);
-	} else if (mode == 6) {
+	} else if (mode == 7) {
 		vec4 rayPos = invViewMat * vec4(ScreenPosToViewPos(inTexCoord, 0, invProjMat), 1);
 		vec4 rayDir = normalize(rayPos - (invViewMat * vec4(0, 0, 0, 1)));
 		vec3 sampleColor;
 		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz, rayDir.xyz, sampleColor, outFragColor.rgb);
-	} else if (mode == 7) {
+	} else if (mode == 8) {
 		vec4 rayPos = invViewMat * vec4(ScreenPosToViewPos(inTexCoord, 0, invProjMat), 1);
 		vec4 rayDir = normalize(rayPos - (invViewMat * vec4(0, 0, 0, 1)));
 		vec3 sampleColor;
 		vec3 sampleRadiance;
 		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz, rayDir.xyz, sampleColor, sampleRadiance);
 		outFragColor.rgb = vec3(alpha);
-	} else if (mode == 8) {
+	} else if (mode == 9) {
 		vec4 rayPos = invViewMat * vec4(ScreenPosToViewPos(inTexCoord, 0, invProjMat), 1);
 		vec4 rayDir = normalize(rayPos - (invViewMat * vec4(0, 0, 0, 1)));
 

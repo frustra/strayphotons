@@ -8,30 +8,30 @@
             "count": 108,
             "type": "SCALAR"
         },
-        "accessor_position": {
-            "bufferView": "bufferView_vertex",
-            "byteOffset": 0,
-            "byteStride": 24,
-            "componentType": 5126,
-            "count": 108,
-            "min": [
-                -0.9341719746589661,
-                -0.9341719746589661,
-                -0.9341719746589661
-            ],
-            "max": [
-                0.9341719746589661,
-                0.9341719746589661,
-                0.9341719746589661
-            ],
-            "type": "VEC3"
-        },
         "accessor_normal": {
             "bufferView": "bufferView_vertex",
             "byteOffset": 12,
             "byteStride": 24,
             "componentType": 5126,
             "count": 108,
+            "type": "VEC3"
+        },
+        "accessor_position": {
+            "bufferView": "bufferView_vertex",
+            "byteOffset": 0,
+            "byteStride": 24,
+            "componentType": 5126,
+            "count": 108,
+            "max": [
+                0.9341719746589661,
+                0.9341719746589661,
+                0.9341719746589661
+            ],
+            "min": [
+                -0.9341719746589661,
+                -0.9341719746589661,
+                -0.9341719746589661
+            ],
             "type": "VEC3"
         }
     },
@@ -44,6 +44,20 @@
         },
         "version": 1
     },
+    "bufferViews": {
+        "bufferView_index": {
+            "buffer": "buffer_dodecahedron",
+            "byteLength": 216,
+            "byteOffset": 2592,
+            "target": 34963
+        },
+        "bufferView_vertex": {
+            "buffer": "buffer_dodecahedron",
+            "byteLength": 2592,
+            "byteOffset": 0,
+            "target": 34962
+        }
+    },
     "buffers": {
         "buffer_dodecahedron": {
             "byteLength": 2808,
@@ -51,26 +65,12 @@
             "uri": "dodecahedron.bin"
         }
     },
-    "bufferViews": {
-        "bufferView_vertex": {
-            "buffer": "buffer_dodecahedron",
-            "byteLength": 2592,
-            "byteOffset": 0,
-            "target": 34962
-        },
-        "bufferView_index": {
-            "buffer": "buffer_dodecahedron",
-            "byteLength": 216,
-            "byteOffset": 2592,
-            "target": 34963
-        }
-    },
     "extensionsUsed": [],
     "images": {},
     "materials": {
         "material_czmDefaultMat": {
-            "name": "czmDefaultMat",
             "extensions": {},
+            "name": "czmDefaultMat",
             "values": {
                 "ambient": [
                     0,
@@ -90,13 +90,13 @@
                     0,
                     1
                 ],
+                "shininess": 0,
                 "specular": [
                     0,
                     0,
                     0,
                     1
                 ],
-                "shininess": 0,
                 "transparency": 1
             }
         }
@@ -107,8 +107,8 @@
             "primitives": [
                 {
                     "attributes": {
-                        "POSITION": "accessor_position",
-                        "NORMAL": "accessor_normal"
+                        "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position"
                     },
                     "indices": "accessor_index_0",
                     "material": "material_czmDefaultMat",

@@ -8,8 +8,9 @@
 
 layout (binding = 0) uniform sampler2D baseColorTex;
 // binding 1 = roughnessTex
-// binding 2 = bumpTex
-layout (binding = 3) uniform sampler2D shadowMap;
+// binding 2 = metallicTex
+// binding 3 = heightTex
+layout (binding = 4) uniform sampler2D shadowMap;
 
 layout (binding = 0) uniform atomic_uint fragListSize;
 layout (binding = 0, offset = 4) uniform atomic_uint nextComputeSize;
