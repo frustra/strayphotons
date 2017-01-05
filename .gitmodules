@@ -37,3 +37,9 @@
 [submodule "ext/glomerate"]
 	path = ext/glomerate
 	url = git@github.com:cstegel/glomerate.git
+[submodule "ext/cxxopts"]
+	path = ext/cxxopts
+	url = https://github.com/jarro2783/cxxopts.git
+[submodule "ext/linenoise"]
+	path = ext/linenoise
+	url = https://github.com/frustra/linenoise.git

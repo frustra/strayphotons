@@ -73,6 +73,7 @@ include_directories(
 	${EXT_PATH}/boost
 	${EXT_PATH}/fmod/include/fmod
 	${EXT_PATH}/fmod/include/fmodstudio
+	${EXT_PATH}/cxxopts/include
 	${EXT_PATH}
 )
 
@@ -81,6 +82,8 @@ add_library(GLEW STATIC ${EXT_PATH}/glew/src/glew.c)
 
 file(GLOB ImGui_sources ${EXT_PATH}/imgui/imgui.cpp ${EXT_PATH}/imgui/imgui_draw.cpp)
 add_library(ImGui STATIC ${ImGui_sources})
+
+add_library(linenoise STATIC ${EXT_PATH}/linenoise/linenoise.c)
 
 
 # split into lib and exe so tests can link against lib
@@ -112,17 +115,33 @@ add_library(${PROJECT_LIB} ${all_sources} ${all_headers} ${all_shaders})
 set (PHYSX_ENV DEBUG)
 
 if (WIN32)
-	set (PHYSX_ARCH x86)
+	set (PHYSX_ARCH _x86)
+elseif (APPLE)
+	set (PHYSX_ARCH "")
 else()
-	set (PHYSX_ARCH x64)
+	set (PHYSX_ARCH _x64)
 endif()
 
 set (PHYSX_LOADS
-	"PhysX3Common${PHYSX_ENV}_${PHYSX_ARCH}"
-	"PhysX3Cooking${PHYSX_ENV}_${PHYSX_ARCH}"
+	"PhysX3Common${PHYSX_ENV}${PHYSX_ARCH}"
+	"PhysX3Cooking${PHYSX_ENV}${PHYSX_ARCH}"
 	"PhysX3Extensions${PHYSX_ENV}"
-	"PhysX3${PHYSX_ENV}_${PHYSX_ARCH}"
+	"PhysX3${PHYSX_ENV}${PHYSX_ARCH}"
 )
+
+if (APPLE)
+	# for some reason on OS X linking fails without all the libs
+	set (PHYSX_LOADS ${PHYSX_LOADS}
+		"LowLevel${PHYSX_ENV}"
+		"LowLevelCloth${PHYSX_ENV}"
+		"PvdRuntime${PHYSX_ENV}"
+		"PxTask${PHYSX_ENV}"
+		"SimulationController${PHYSX_ENV}"
+		"SceneQuery${PHYSX_ENV}"
+		"PhysXProfileSDK${PHYSX_ENV}"
+		"PhysXVisualDebuggerSDK${PHYSX_ENV}"
+	)
+endif()
 
 foreach (PHYSX_LIB ${PHYSX_LOADS})
 	message(STATUS ${PHYSX_LIB})
@@ -147,6 +166,9 @@ if (MSVC)
 			DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/build)
 		list(APPEND FMOD_LOADS ${lib}_vc)
 	endforeach()
+elseif (APPLE)
+	set (FMOD_LOADS "fmod" "fmodstudio")
+	set (FMOD_ARCH "apple")
 else ()
 	set (FMOD_LOADS "fmod" "fmodstudio")
 	set (FMOD_ARCH "x86_64")
@@ -175,6 +197,11 @@ if (UNIX)
 	target_compile_options(${PROJECT_EXE} PRIVATE -Werror)
 endif()
 
+if (APPLE)
+	target_compile_options(${PROJECT_LIB} PRIVATE "-Wno-unused-local-typedef")
+	target_compile_options(${PROJECT_EXE} PRIVATE "-Wno-unused-local-typedef")
+endif()
+
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
@@ -196,9 +223,9 @@ target_link_libraries(${PROJECT_LIB}
 # outside of cmake but need to be triggered by cmake.
 # I can't figure out how to get a CMake "imported" library
 # to trigger a custom command or target (see boost CMakelists.txt)
-foreach (boost_lib ${BOOST_LIBS})
-	add_dependencies(${PROJECT_LIB} ${boost_lib}_target)
-endforeach()
+#foreach (boost_lib ${BOOST_LIBS})
+#	add_dependencies(${PROJECT_LIB} ${boost_lib}_target)
+#endforeach()
 
 target_link_libraries(${PROJECT_EXE}
 	${PROJECT_LIB}
@@ -208,6 +235,7 @@ target_link_libraries(${PROJECT_EXE}
 	${GLFW_LIBRARIES}
 	freetype
 	ImGui
+	linenoise
 )
 
 ################################################

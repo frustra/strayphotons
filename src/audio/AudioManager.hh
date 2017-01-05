@@ -16,9 +16,7 @@ namespace sp
 		AudioManager();
 		~AudioManager();
 
-		/**
-		 * Set the audio driver. View logs on startup to see available drivers.
-		 */
+		// Set the audio driver. View logs on startup to see available drivers.
 		bool SetDriver(int driverIndex);
 
 		bool Frame();

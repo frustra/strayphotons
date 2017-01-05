@@ -353,7 +353,7 @@ namespace sp
 					invocationOffset.y = 0;
 
 				// Call path tracer.
-				RenderPhase phase("PathTraceSceneCS", renderer->timer);
+				RenderPhase phase("PathTraceSceneCS", renderer->Timer);
 
 				auto shader = renderer->GlobalShaders->Get<PathTraceSceneCS>();
 				shader->UpdateInvocation(invocationOffset);
@@ -370,7 +370,7 @@ namespace sp
 			}
 
 			{
-				RenderPhase phase("RayTracerPostProcess", renderer->timer);
+				RenderPhase phase("RayTracerPostProcess", renderer->Timer);
 
 				auto outDesc = target->GetDesc();
 				outDesc.format = PF_RGBA16F;

@@ -49,7 +49,7 @@ namespace sp
 
 	void GuiRenderer::Render(ecs::View view)
 	{
-		RenderPhase phase("GuiRender", parent.timer);
+		RenderPhase phase("GuiRender", parent.Timer);
 
 		ImGuiIO &io = ImGui::GetIO();
 

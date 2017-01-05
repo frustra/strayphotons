@@ -44,7 +44,7 @@ namespace sp
 			for (size_t i = 0; i < idxAttrib.components; i++)
 			{
 				auto addr = i * idxStride + idxBufData;
-				uint32 idx;
+				uint32 idx = 0;
 
 				switch (idxAttrib.componentType)
 				{

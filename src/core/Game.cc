@@ -9,11 +9,12 @@
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
 
+#include <cxxopts.hpp>
 #include <glm/glm.hpp>
 
 namespace sp
 {
-	Game::Game() : graphics(this), logic(this), physics()
+	Game::Game(cxxopts::Options &options) : options(options), graphics(this), logic(this), physics()
 	{
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created

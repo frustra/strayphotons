@@ -91,7 +91,8 @@ namespace sp
 			glGetQueryObjectui64v(front.queries[0], GL_QUERY_RESULT, &start);
 			glGetQueryObjectui64v(front.queries[1], GL_QUERY_RESULT, &end);
 
-			if (start > end) {
+			if (start > end)
+			{
 				// Missed frame
 				pending.pop();
 				continue;

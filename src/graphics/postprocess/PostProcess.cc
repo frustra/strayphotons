@@ -92,7 +92,7 @@ namespace sp
 
 	void PostProcessing::Process(Renderer *renderer, sp::Game *game, ecs::View view, const EngineRenderTargets &targets)
 	{
-		RenderPhase phase("PostProcessing", renderer->timer);
+		RenderPhase phase("PostProcessing", renderer->Timer);
 
 		PostProcessingContext context;
 		context.renderer = renderer;
@@ -212,7 +212,7 @@ namespace sp
 		// Process in order.
 		for (auto pass : passes)
 		{
-			RenderPhase phase(pass->Name(), renderer->timer);
+			RenderPhase phase(pass->Name(), renderer->Timer);
 
 			// Set up inputs.
 			for (uint32 id = 0;; id++)

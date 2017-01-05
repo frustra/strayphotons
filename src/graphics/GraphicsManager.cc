@@ -2,6 +2,7 @@
 #include "core/Logging.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/raytrace/RaytracedRenderer.hh"
+#include "graphics/basic_renderer/BasicRenderer.hh"
 #include "graphics/GuiRenderer.hh"
 #include "graphics/GPUTimer.hh"
 #include "ecs/components/View.hh"
@@ -10,6 +11,7 @@
 #include "core/CVar.hh"
 #include "game/gui/ProfilerGui.hh"
 
+#include <cxxopts.hpp>
 #include <iostream>
 #include <system_error>
 
@@ -31,7 +33,15 @@ namespace sp
 
 	GraphicsManager::GraphicsManager(Game *game) : game(game)
 	{
-		Logf("Graphics starting up");
+		if (game->options.count("basic-renderer"))
+		{
+			Logf("Graphics starting up (basic renderer)");
+			useBasic = true;
+		}
+		else
+		{
+			Logf("Graphics starting up (full renderer)");
+		}
 
 		glfwSetErrorCallback(glfwErrorCallback);
 
@@ -43,18 +53,26 @@ namespace sp
 
 	GraphicsManager::~GraphicsManager()
 	{
-		if (renderer) ReleaseContext();
+		if (context) ReleaseContext();
 		glfwTerminate();
 	}
 
 	void GraphicsManager::CreateContext()
 	{
-		if (renderer) throw "already an active context";
+		if (context) throw "already an active context";
 
 		auto primaryView = updateViewCaches(playerView);
 
-		renderer = new Renderer(game);
-		renderer->CreateWindow(primaryView.extents);
+		if (useBasic)
+		{
+			context = new BasicRenderer(game);
+			context->CreateWindow(primaryView.extents);
+			return;
+		}
+
+		auto renderer = new Renderer(game);
+		context = renderer;
+		context->CreateWindow(primaryView.extents);
 
 		guiRenderer = new GuiRenderer(*renderer, game->gui);
 
@@ -62,20 +80,20 @@ namespace sp
 		rayTracer = new raytrace::RaytracedRenderer(game, renderer);
 #endif
 
-		game->gui.Attach(new ProfilerGui(renderer->timer));
+		game->gui.Attach(new ProfilerGui(context->Timer));
 	}
 
 	void GraphicsManager::ReleaseContext()
 	{
-		if (!renderer) throw "no active context";
+		if (!context) throw "no active context";
 
-		delete guiRenderer;
+		if (guiRenderer) delete guiRenderer;
 
 #ifdef SP_ENABLE_RAYTRACER
-		delete rayTracer;
+		if (rayTracer) delete rayTracer;
 #endif
 
-		delete renderer;
+		delete context;
 	}
 
 	void GraphicsManager::ReloadContext()
@@ -85,17 +103,17 @@ namespace sp
 
 	bool GraphicsManager::HasActiveContext()
 	{
-		return renderer && !renderer->ShouldClose();
+		return context && !context->ShouldClose();
 	}
 
 	void GraphicsManager::BindContextInputCallbacks(InputManager &inputManager)
 	{
-		renderer->BindInputCallbacks(inputManager);
+		context->BindInputCallbacks(inputManager);
 	}
 
 	bool GraphicsManager::Frame()
 	{
-		if (!renderer) throw "missing renderer";
+		if (!context) throw "no active context";
 		if (!HasActiveContext()) return false;
 
 		auto primaryView = updateViewCaches(playerView);
@@ -115,21 +133,16 @@ namespace sp
 			}
 		}
 
-		renderer->BeginFrame(primaryView, CVarWindowFullscreen.Get());
-		renderer->timer->StartFrame();
+		context->Timer->StartFrame();
+		context->BeginFrame(primaryView, CVarWindowFullscreen.Get());
 
 		{
-			RenderPhase phase("Frame", renderer->timer);
-			bool primaryRender = true;
+			RenderPhase phase("Frame", context->Timer);
 
 #ifdef SP_ENABLE_RAYTRACER
-			if (CVarRayTrace.Get())
+			if (CVarRayTrace.Get() && rayTracer->Enable(primaryView))
 			{
-				if (rayTracer->Enable(primaryView))
-				{
-					rayTracer->Render();
-					primaryRender = false;
-				}
+				rayTracer->Render();
 			}
 			else
 			{
@@ -137,23 +150,16 @@ namespace sp
 			}
 #endif
 
-			if (primaryRender)
-			{
-				renderer->RenderShadowMaps();
-				renderer->RenderVoxelGrid();
-				renderer->RenderPass(primaryView);
-			}
+			context->RenderPass(primaryView);
 
-			guiRenderer->Render(primaryView);
-
-			if (primaryRender)
+			if (guiRenderer)
 			{
-				renderer->ClearVoxelGrid();
+				guiRenderer->Render(primaryView);
 			}
 		}
 
-		renderer->timer->EndFrame();
-		renderer->EndFrame();
+		context->EndFrame();
+		context->Timer->EndFrame();
 
 		double frameEnd = glfwGetTime();
 		fpsTimer += frameEnd - lastFrameEnd;
@@ -161,7 +167,7 @@ namespace sp
 
 		if (fpsTimer > 1.0)
 		{
-			renderer->SetTitle("STRAY PHOTONS (" + std::to_string(frameCounter) + " FPS)");
+			context->SetTitle("STRAY PHOTONS (" + std::to_string(frameCounter) + " FPS)");
 			frameCounter = 0;
 			fpsTimer = 0;
 		}

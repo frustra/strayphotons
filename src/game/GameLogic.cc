@@ -9,6 +9,7 @@
 #include "ecs/components/Physics.hh"
 #include "ecs/components/View.hh"
 
+#include <cxxopts.hpp>
 #include <glm/glm.hpp>
 #include <cmath>
 
@@ -21,10 +22,7 @@ namespace sp
 
 	void GameLogic::Init()
 	{
-		char *sceneNameStr = getenv("SCENE_NAME");
-		string sceneName = "test1";
-		if (sceneNameStr) sceneName = sceneNameStr;
-		scene = GAssets.LoadScene(sceneName, &game->entityManager, game->physics);
+		scene = GAssets.LoadScene(game->options["map"].as<string>(), &game->entityManager, game->physics);
 
 		ecs::Entity player = scene->FindEntity("player");
 		humanControlSystem.AssignController(player);

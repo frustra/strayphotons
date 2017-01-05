@@ -1,3 +1,5 @@
+UNAME := $(shell uname)
+
 .PHONY: auto compile linux unix windowws vs14 clean unit-tests \
 	integration-tests tests astyle dependencies
 
@@ -35,9 +37,17 @@ dependencies:
 	git submodule sync
 	git submodule update --init --recursive
 
+ifeq ($(UNAME), Darwin)
+physx:
+	cd ext/physx/PhysXSDK/Source/compiler/xcode_osx64 && xcodebuild -project PhysX.xcodeproj -alltargets -configuration debug
+	rm -rf vendor/lib/physx
+	mkdir -p vendor/lib/physx
+	cp ext/physx/PhysXSDK/Lib/osx64/lib* vendor/lib/physx
+else
 physx:
 	cd ext/physx/PhysXSDK/Source/compiler/linux64 && make -j 16
 	rm -rf vendor/lib/physx
 	mkdir -p vendor/lib/physx
 	cp ext/physx/PhysXSDK/Lib/linux64/lib* vendor/lib/physx
 	cp ext/physx/PhysXSDK/Bin/linux64/lib* vendor/lib/physx
+endif

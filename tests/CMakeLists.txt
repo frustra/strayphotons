@@ -74,6 +74,7 @@ foreach(test_type unit integration)
 
 	# C++11
 	target_compile_features(${test_exe} PRIVATE cxx_range_for)
+
 	# Output location
 	set_target_properties(${test_exe} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 	set_target_properties(${test_exe} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)

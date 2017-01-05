@@ -1,0 +1,236 @@
+#include "graphics/basic_renderer/BasicRenderer.hh"
+#include "core/Game.hh"
+#include "core/Logging.hh"
+#include "core/CVar.hh"
+#include "ecs/components/Renderable.hh"
+#include "ecs/components/Transform.hh"
+#include "ecs/components/View.hh"
+
+namespace sp
+{
+	BasicRenderer::BasicRenderer(Game *game) : GraphicsContext(game)
+	{
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+	}
+
+	BasicRenderer::~BasicRenderer()
+	{
+	}
+
+	void prepareRenderable(ecs::Handle<ecs::Renderable> comp)
+	{
+		for (auto primitive : comp->model->primitives)
+		{
+			auto scene = comp->model->GetScene();
+
+			auto indexBuffer = scene->buffers[primitive->indexBuffer.bufferName];
+			glGenBuffers(1, &primitive->indexBufferHandle);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive->indexBufferHandle);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBuffer.data.size(), indexBuffer.data.data(), GL_STATIC_DRAW);
+
+			glGenVertexArrays(1, &primitive->vertexBufferHandle);
+			glBindVertexArray(primitive->vertexBufferHandle);
+			for (int i = 0; i < 3; i++)
+			{
+				auto *attr = &primitive->attributes[i];
+				if (attr->componentCount == 0) continue;
+
+				auto attribBuffer = scene->buffers[attr->bufferName];
+				GLuint attribBufferHandle;
+				glGenBuffers(1, &attribBufferHandle);
+				glBindBuffer(GL_ARRAY_BUFFER, attribBufferHandle);
+				glBufferData(GL_ARRAY_BUFFER, attribBuffer.data.size(), attribBuffer.data.data(), GL_STATIC_DRAW);
+
+				glVertexAttribPointer(i, attr->componentCount, attr->componentType, GL_FALSE, attr->byteStride, (void *) attr->byteOffset);
+				glEnableVertexAttribArray(i);
+			}
+		}
+	}
+
+	GLuint compileShader(GLenum type, const char *src)
+	{
+		auto shader = glCreateShader(type);
+		int success;
+
+		glShaderSource(shader, 1, &src, nullptr);
+		glCompileShader(shader);
+		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+
+		if (!success)
+		{
+			int llen = 0;
+			glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &llen);
+
+			vector<char> log(llen);
+			glGetShaderInfoLog(shader, llen, &llen, &log[0]);
+			Errorf("%s", string(&log[0]));
+
+			Assert(false, "compiling shader");
+		}
+
+		return shader;
+	}
+
+	void BasicRenderer::Prepare()
+	{
+		glEnable(GL_FRAMEBUFFER_SRGB);
+
+		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable>())
+		{
+			auto comp = ent.Get<ecs::Renderable>();
+			prepareRenderable(comp);
+		}
+
+		const char *vtxShaderSrc = R"(
+			#version 410
+
+			layout (location = 0) in vec3 inPos;
+			layout (location = 1) in vec3 inNormal;
+			layout (location = 2) in vec2 inTexCoord;
+
+			uniform mat4 mvpMatrix;
+
+			out vec3 vNormal;
+			out vec2 vTexCoord;
+
+			void main()
+			{
+				gl_Position = mvpMatrix * vec4(inPos, 1.0);
+				vNormal = inNormal;
+				vTexCoord = inTexCoord;
+			}
+		)";
+
+		const char *fragShaderSrc = R"(
+			#version 410
+
+			in vec3 vNormal;
+			in vec2 vTexCoord;
+
+			layout (location = 0) out vec4 frameBuffer;
+
+			void main()
+			{
+				frameBuffer.rgb = (vNormal * 0.5) + vec3(0.5);
+			}
+		)";
+
+		sceneProgram = glCreateProgram();
+
+		auto vtxShader = compileShader(GL_VERTEX_SHADER, vtxShaderSrc);
+		auto fragShader = compileShader(GL_FRAGMENT_SHADER, fragShaderSrc);
+		glAttachShader(sceneProgram, vtxShader);
+		glAttachShader(sceneProgram, fragShader);
+
+		GLint success;
+		glLinkProgram(sceneProgram);
+		glGetProgramiv(sceneProgram, GL_LINK_STATUS, &success);
+
+		if (!success)
+		{
+			int llen = 0;
+			glGetProgramiv(sceneProgram, GL_INFO_LOG_LENGTH, &llen);
+
+			vector<char> log(llen);
+			glGetProgramInfoLog(sceneProgram, llen, &llen, &log[0]);
+
+			Errorf("%s", string(&log[0]));
+			Assert(false, "linking shader program");
+		}
+
+		glDetachShader(sceneProgram, vtxShader);
+		glDetachShader(sceneProgram, fragShader);
+		glDeleteShader(vtxShader);
+		glDeleteShader(fragShader);
+
+		AssertGLOK("BasicRenderer::Prepare");
+	}
+
+	void drawRenderable(ecs::Handle<ecs::Renderable> comp)
+	{
+		for (auto primitive : comp->model->primitives)
+		{
+			glBindVertexArray(primitive->vertexBufferHandle);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive->indexBufferHandle);
+
+			glDrawElements(
+				primitive->drawMode,
+				primitive->indexBuffer.components,
+				primitive->indexBuffer.componentType,
+				(char *) primitive->indexBuffer.byteOffset
+			);
+		}
+	}
+
+	void BasicRenderer::RenderPass(ecs::View &viewRef)
+	{
+		glEnable(GL_CULL_FACE);
+		glEnable(GL_DEPTH_TEST);
+
+		ecs::View view = viewRef;
+		view.offset = glm::ivec2();
+		PrepareForView(view);
+
+		glUseProgram(sceneProgram);
+
+		auto mvpLoc = glGetUniformLocation(sceneProgram, "mvpMatrix");
+
+		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>())
+		{
+			auto comp = ent.Get<ecs::Renderable>();
+			auto modelMat = ent.Get<ecs::Transform>()->GetModelTransform(*ent.GetManager());
+			auto mvp = view.projMat * view.viewMat * modelMat;
+
+			glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+			drawRenderable(comp);
+		}
+
+		//AssertGLOK("BasicRenderer::RenderFrame");
+	}
+
+	void BasicRenderer::PrepareForView(ecs::View &view)
+	{
+		glDisable(GL_BLEND);
+		glDisable(GL_STENCIL_TEST);
+		glDepthMask(GL_TRUE);
+
+		glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
+		glScissor(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
+
+		if (view.clearMode != 0)
+		{
+			glClearColor(view.clearColor.r, view.clearColor.g, view.clearColor.b, view.clearColor.a);
+			glClear(view.clearMode);
+		}
+	}
+
+	void BasicRenderer::BeginFrame(ecs::View &view, int fullscreen)
+	{
+		if (prevFullscreen != fullscreen)
+		{
+			if (fullscreen == 0)
+			{
+				glfwSetWindowMonitor(window, nullptr, prevWindowPos.x, prevWindowPos.y, view.extents.x, view.extents.y, 0);
+			}
+			else if (fullscreen == 1)
+			{
+				glfwGetWindowPos(window, &prevWindowPos.x, &prevWindowPos.y);
+				glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, view.extents.x, view.extents.y, 60);
+			}
+		}
+
+		if (prevWindowSize != view.extents)
+		{
+			glfwSetWindowSize(window, view.extents.x, view.extents.y);
+		}
+
+		prevFullscreen = fullscreen;
+		prevWindowSize = view.extents;
+	}
+
+	void BasicRenderer::EndFrame()
+	{
+		glfwSwapBuffers(window);
+	}
+}

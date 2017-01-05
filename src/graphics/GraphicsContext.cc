@@ -1,5 +1,6 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
+#include "graphics/GPUTimer.hh"
 #include "graphics/GraphicsContext.hh"
 #include "graphics/Shader.hh"
 
@@ -16,14 +17,14 @@ namespace sp
 
 	GraphicsContext::GraphicsContext(Game *game) : game(game)
 	{
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 		glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 		GlobalShaders = new ShaderSet();
+		Timer = new GPUTimer();
 	}
 
 	GraphicsContext::~GraphicsContext()
@@ -46,12 +47,13 @@ namespace sp
 		Assert(glewInit() == GLEW_OK, "glewInit failed");
 		glGetError();
 
-		Assert(GLEW_ARB_compute_shader, "ARB_compute_shader required");
-		Assert(GLEW_ARB_direct_state_access, "ARB_direct_state_access required");
-		Assert(GLEW_ARB_multi_bind, "ARB_multi_bind required");
+		Logf("OpenGL version: %s", glGetString(GL_VERSION));
 
-		glDebugMessageCallback(DebugCallback, nullptr);
-		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+		if (GLEW_KHR_debug)
+		{
+			glDebugMessageCallback(DebugCallback, nullptr);
+			glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+		}
 
 		float maxAnisotropy;
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);

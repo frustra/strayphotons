@@ -59,25 +59,22 @@ namespace sp
 
 		// project is authored for 5.1 sound
 		FMOD_CHECK(system->getLowLevelSystem(&lowSystem));
-		FMOD_CHECK(lowSystem->setSoftwareFormat(0,
-			FMOD_SPEAKERMODE_5POINT1, 0));
+		FMOD_CHECK(lowSystem->setSoftwareFormat(0, FMOD_SPEAKERMODE_5POINT1, 0));
 
 		// must set output type and driver before initializing system
 		initOutputType();
 		initDriver();
 
-		FMOD_CHECK(system->initialize(1024, FMOD_STUDIO_INIT_NORMAL,
-			FMOD_INIT_NORMAL, nullptr));
+		FMOD_CHECK(system->initialize(1024, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, nullptr));
 
 		logAvailDrivers();
 	}
 
 	AudioManager::~AudioManager()
 	{
-		for (FMOD::Studio::Bank * bank : banks)
-		{
+		for (FMOD::Studio::Bank *bank : banks)
 			FMOD_CHECK(bank->unload());
-		}
+
 		FMOD_CHECK(system->release());
 	}
 
@@ -144,13 +141,11 @@ namespace sp
 		int numChannels;
 		int numDrivers;
 		FMOD_CHECK(lowSystem->getNumDrivers(&numDrivers));
+
 		for (int i = 0; i < numDrivers; ++i)
 		{
-			FMOD_CHECK(lowSystem->getDriverInfo(i, driverName, nameLen, NULL,
-				NULL, &speakerMode, &numChannels));
-
-			Logf("\t%d: %d channels, mode: %s, %s", i, numChannels,
-				speakerModeStr(speakerMode).c_str(), driverName);
+			FMOD_CHECK(lowSystem->getDriverInfo(i, driverName, nameLen, NULL, NULL, &speakerMode, &numChannels));
+			Logf("\t%d: %d channels, mode: %s, %s", i, numChannels, speakerModeStr(speakerMode).c_str(), driverName);
 		}
 	}
 
@@ -165,14 +160,14 @@ namespace sp
 	{
 		// TODO: update sound locations
 		// FMOD_3D_ATTRIBUTES vec = {0};
-		// vec.position.x = sinf(t) * 1.0f;        /* Rotate sound in a circle */
-		// vec.position.y = 0;                     /* At ground level */
-		// vec.position.z = cosf(t) * 1.0f;        /* Rotate sound in a circle */
+		// vec.position.x = sinf(t) * 1.0f;        // Rotate sound in a circle
+		// vec.position.y = 0;                     // At ground level
+		// vec.position.z = cosf(t) * 1.0f;        // Rotate sound in a circle
 		// FMOD_CHECK( objectInstance->set3DAttributes(&vec) );
 
 
 		// TODO: update based on player orientation
-		FMOD_3D_ATTRIBUTES listener_vec = {0};
+		FMOD_3D_ATTRIBUTES listener_vec = {{0}};
 
 		listener_vec.forward.x = 0;
 		listener_vec.forward.y = 0;
@@ -192,8 +187,7 @@ namespace sp
 		FMOD::Studio::Bank *bank = nullptr;
 		Logf("loading audio bank: %s", bankFile);
 
-		FMOD_RESULT res = system->loadBankFile(bankFile.c_str(),
-			FMOD_STUDIO_LOAD_BANK_NORMAL, &bank);
+		FMOD_RESULT res = system->loadBankFile(bankFile.c_str(), FMOD_STUDIO_LOAD_BANK_NORMAL, &bank);
 		FMOD_CHECK(res);
 
 		if (FMOD_OK != res)
@@ -219,8 +213,7 @@ namespace sp
 				fs::directory_entry &dentry = *dir_iter;
 				const string ext = dentry.path().extension().string();
 
-				if (fs::is_regular_file(dentry.status())
-						&& ext.compare(".bank") == 0)
+				if (fs::is_regular_file(dentry.status()) && ext.compare(".bank") == 0)
 				{
 					this->LoadBank(dentry.path().string());
 				}

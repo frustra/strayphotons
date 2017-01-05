@@ -14,7 +14,6 @@ namespace sp
 	class RenderTargetPool;
 	class ShaderManager;
 	class SceneShader;
-	class GPUTimer;
 
 	struct VoxelData
 	{
@@ -47,7 +46,6 @@ namespace sp
 
 		ShaderManager *ShaderControl = nullptr;
 		RenderTargetPool *RTPool = nullptr;
-		GPUTimer *timer = nullptr;
 
 		ecs::VoxelInfo voxelInfo;
 	private:

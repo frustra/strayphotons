@@ -7,12 +7,19 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <condition_variable>
 
 namespace sp
 {
 	struct ConsoleLine
 	{
 		logging::Level level;
+		string text;
+	};
+
+	struct ConsoleInputLine
+	{
+		std::condition_variable handled;
 		string text;
 	};
 
@@ -38,10 +45,11 @@ namespace sp
 
 		void ParseAndExecute(const string &line);
 		string AutoComplete(const string &input);
+		vector<string> AllCompletions(const string &input);
 
 	private:
 		std::map<string, CVarBase *> cvars;
-		std::queue<string> inputLines;
+		std::queue<ConsoleInputLine *> inputLines;
 		std::mutex inputLock;
 		std::thread inputThread;
 

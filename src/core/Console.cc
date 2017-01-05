@@ -1,6 +1,7 @@
 #include "Console.hh"
 #include "Logging.hh"
 
+#include <linenoise/linenoise.h>
 #include <iostream>
 #include <sstream>
 #include <boost/algorithm/string.hpp>
@@ -9,6 +10,8 @@
 namespace sp
 {
 	ConsoleManager GConsoleManager;
+
+	void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc);
 
 	namespace logging
 	{
@@ -40,13 +43,30 @@ namespace sp
 
 	void ConsoleManager::InputLoop()
 	{
-		string line;
+		char *str;
+		std::unique_lock<std::mutex> ulock(inputLock, std::defer_lock);
 
-		while (std::getline(std::cin, line))
+		linenoiseHistorySetMaxLen(256);
+		linenoiseSetCompletionCallback(LinenoiseCompletionCallback);
+
+		while ((str = linenoise("sp> ")) != nullptr)
 		{
-			inputLock.lock();
-			inputLines.push(line);
-			inputLock.unlock();
+			if (*str == '\0')
+			{
+				linenoiseFree(str);
+				continue;
+			}
+
+			ConsoleInputLine line;
+			line.text = string(str);
+
+			ulock.lock();
+			inputLines.push(&line);
+			line.handled.wait(ulock);
+			ulock.unlock();
+
+			linenoiseHistoryAdd(str);
+			linenoiseFree(str);
 		}
 	}
 
@@ -61,22 +81,27 @@ namespace sp
 
 	void ConsoleManager::Update()
 	{
-		if (!inputLock.try_lock())
-			return;
+		std::unique_lock<std::mutex> ulock(inputLock, std::defer_lock);
 
 		while (!inputLines.empty())
 		{
-			string line = inputLines.back();
+			if (!ulock.try_lock())
+				return;
+
+			auto line = inputLines.front();
 			inputLines.pop();
+			ParseAndExecute(line->text);
+			ulock.unlock();
 
-			ParseAndExecute(line);
+			line->handled.notify_all();
 		}
-
-		inputLock.unlock();
 	}
 
 	void ConsoleManager::ParseAndExecute(const string &line)
 	{
+		if (line == "")
+			return;
+
 		if (history.size() == 0 || history[history.size() - 1] != line)
 			history.push_back(line);
 
@@ -127,5 +152,35 @@ namespace sp
 
 		auto cvar = it->second;
 		return cvar->GetName() + " ";
+	}
+
+	vector<string> ConsoleManager::AllCompletions(const string &rawInput)
+	{
+		vector<string> results;
+
+		auto input = boost::algorithm::to_lower_copy(rawInput);
+		auto it = cvars.lower_bound(input);
+
+		for (; it != cvars.end(); it++)
+		{
+			auto cvar = it->second;
+			auto name = cvar->GetName();
+
+			if (boost::starts_with(boost::algorithm::to_lower_copy(name), input))
+				results.push_back(name);
+			else
+				break;
+		}
+
+		return results;
+	}
+
+	void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc)
+	{
+		auto completions = GConsoleManager.AllCompletions(string(buf));
+		for (auto str : completions)
+		{
+			linenoiseAddCompletion(lc, str.c_str());
+		}
 	}
 }

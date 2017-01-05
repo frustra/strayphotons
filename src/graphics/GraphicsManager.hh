@@ -9,7 +9,7 @@ namespace sp
 	class Game;
 	class GuiManager;
 	class GuiRenderer;
-	class Renderer;
+	class GraphicsContext;
 	class InputManager;
 
 	namespace raytrace
@@ -34,13 +34,18 @@ namespace sp
 		bool Frame();
 
 	private:
+		bool useBasic = false;
+
 		ecs::View &updateViewCaches(ecs::Entity entity);
 		void validateView(ecs::Entity viewEntity);
 
-		Renderer *renderer = nullptr;
+		GraphicsContext *context = nullptr;
 		Game *game = nullptr;
 		GuiRenderer *guiRenderer = nullptr;
+
+#ifdef SP_ENABLE_RAYTRACER
 		raytrace::RaytracedRenderer *rayTracer = nullptr;
+#endif
 
 		ecs::Entity playerView;
 

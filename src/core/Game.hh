@@ -10,17 +10,24 @@
 
 #include <Ecs.hh>
 
+namespace cxxopts
+{
+	class Options;
+}
+
 namespace sp
 {
 	class Game
 	{
 	public:
-		Game();
+		Game(cxxopts::Options &options);
 		~Game();
 
 		void Start();
 		bool Frame();
 		bool ShouldStop();
+
+		cxxopts::Options &options;
 
 		// Order is important.
 		GuiManager gui;

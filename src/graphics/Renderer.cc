@@ -20,6 +20,8 @@ namespace sp
 {
 	Renderer::Renderer(Game *game) : GraphicsContext(game)
 	{
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	}
 
 	Renderer::~Renderer()
@@ -133,14 +135,16 @@ namespace sp
 
 	void Renderer::Prepare()
 	{
+		Assert(GLEW_ARB_compute_shader, "ARB_compute_shader required");
+		Assert(GLEW_ARB_direct_state_access, "ARB_direct_state_access required");
+		Assert(GLEW_ARB_multi_bind, "ARB_multi_bind required");
+
 		glEnable(GL_FRAMEBUFFER_SRGB);
 
 		RTPool = new RenderTargetPool();
 
 		ShaderControl = new ShaderManager();
 		ShaderControl->CompileAll(GlobalShaders);
-
-		timer = new GPUTimer();
 
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable>())
 		{
@@ -175,7 +179,7 @@ namespace sp
 
 	void Renderer::RenderShadowMaps()
 	{
-		RenderPhase phase("ShadowMaps", timer);
+		RenderPhase phase("ShadowMaps", Timer);
 
 		// TODO(xthexder): Handle lights without shadowmaps
 		glm::ivec2 renderTargetSize;
@@ -296,7 +300,7 @@ namespace sp
 
 	void Renderer::RenderVoxelGrid()
 	{
-		RenderPhase phase("VoxelGrid", timer);
+		RenderPhase phase("VoxelGrid", Timer);
 
 		PrepareVoxelTextures();
 
@@ -320,7 +324,7 @@ namespace sp
 		computeIndirectBuffer.Clear(PF_RGBA32UI, listData);
 
 		{
-			RenderPhase phase("Accumulate", timer);
+			RenderPhase phase("Accumulate", Timer);
 			computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0);
 			voxelData.fragmentList->GetTexture().BindImage(0, GL_WRITE_ONLY, 0);
 			voxelData.packedData->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
@@ -338,7 +342,7 @@ namespace sp
 		computeIndirectBuffer.Bind(GL_DISPATCH_INDIRECT_BUFFER);
 
 		{
-			RenderPhase phase("Convert", timer);
+			RenderPhase phase("Convert", Timer);
 			computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0);
 			voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, 0);
 			voxelData.packedData->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
@@ -351,7 +355,7 @@ namespace sp
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
 		}
 		{
-			RenderPhase phase("Mipmap", timer);
+			RenderPhase phase("Mipmap", Timer);
 			for (uint32 i = 1; i < VoxelMipLevels; i++)
 			{
 				computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * (i - 1), sizeof(GLuint) * 8);
@@ -378,7 +382,7 @@ namespace sp
 
 	void Renderer::ClearVoxelGrid()
 	{
-		RenderPhase phase("VoxelClear", timer);
+		RenderPhase phase("VoxelClear", Timer);
 
 		computeIndirectBuffer.Bind(GL_DISPATCH_INDIRECT_BUFFER);
 
@@ -400,7 +404,10 @@ namespace sp
 
 	void Renderer::RenderPass(ecs::View &view)
 	{
-		RenderPhase phase("RenderPass", timer);
+		RenderPhase phase("RenderPass", Timer);
+
+		RenderShadowMaps();
+		RenderVoxelGrid();
 
 		EngineRenderTargets targets;
 		targets.gBuffer0 = RTPool->Get({ PF_RGBA8, view.extents });
@@ -455,7 +462,7 @@ namespace sp
 
 	void Renderer::ForwardPass(ecs::View &view, SceneShader *shader)
 	{
-		RenderPhase phase("ForwardPass", timer);
+		RenderPhase phase("ForwardPass", Timer);
 		PrepareForView(view);
 
 		if (CVarRenderWireframe.Get())
@@ -499,6 +506,7 @@ namespace sp
 
 	void Renderer::EndFrame()
 	{
+		ClearVoxelGrid();
 		RTPool->TickFrame();
 		glfwSwapBuffers(window);
 	}
