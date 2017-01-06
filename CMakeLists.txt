@@ -83,7 +83,9 @@ add_library(GLEW STATIC ${EXT_PATH}/glew/src/glew.c)
 file(GLOB ImGui_sources ${EXT_PATH}/imgui/imgui.cpp ${EXT_PATH}/imgui/imgui_draw.cpp)
 add_library(ImGui STATIC ${ImGui_sources})
 
-add_library(linenoise STATIC ${EXT_PATH}/linenoise/linenoise.c)
+if (NOT WIN32)
+	add_library(linenoise STATIC ${EXT_PATH}/linenoise/linenoise.c)
+endif()
 
 
 # split into lib and exe so tests can link against lib
@@ -235,8 +237,11 @@ target_link_libraries(${PROJECT_EXE}
 	${GLFW_LIBRARIES}
 	freetype
 	ImGui
-	linenoise
 )
+
+if (NOT WIN32)
+	target_link_libraries(${PROJECT_EXE} linenoise)
+endif()
 
 ################################################
 # Build tests

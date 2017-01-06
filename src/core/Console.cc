@@ -1,7 +1,14 @@
 #include "Console.hh"
 #include "Logging.hh"
 
+#ifndef _WIN32
+#define USE_LINENOISE_CLI
+#endif
+
+#ifdef USE_LINENOISE_CLI
 #include <linenoise/linenoise.h>
+#endif
+
 #include <iostream>
 #include <sstream>
 #include <boost/algorithm/string.hpp>
@@ -11,7 +18,9 @@ namespace sp
 {
 	ConsoleManager GConsoleManager;
 
+#ifdef USE_LINENOISE_CLI
 	void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc);
+#endif
 
 	namespace logging
 	{
@@ -43,8 +52,10 @@ namespace sp
 
 	void ConsoleManager::InputLoop()
 	{
-		char *str;
 		std::unique_lock<std::mutex> ulock(inputLock, std::defer_lock);
+
+#ifdef USE_LINENOISE_CLI
+		char *str;
 
 		linenoiseHistorySetMaxLen(256);
 		linenoiseSetCompletionCallback(LinenoiseCompletionCallback);
@@ -68,6 +79,23 @@ namespace sp
 			linenoiseHistoryAdd(str);
 			linenoiseFree(str);
 		}
+#else
+		std::string str;
+
+		while (std::getline(std::cin, str))
+		{
+			if (str == "")
+				continue;
+
+			ConsoleInputLine line;
+			line.text = str;
+
+			ulock.lock();
+			inputLines.push(&line);
+			line.handled.wait(ulock);
+			ulock.unlock();
+		}
+#endif
 	}
 
 	void ConsoleManager::AddLog(logging::Level lvl, const string &line)
@@ -175,6 +203,7 @@ namespace sp
 		return results;
 	}
 
+#ifdef USE_LINENOISE_CLI
 	void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc)
 	{
 		auto completions = GConsoleManager.AllCompletions(string(buf));
@@ -183,4 +212,5 @@ namespace sp
 			linenoiseAddCompletion(lc, str.c_str());
 		}
 	}
+#endif
 }
