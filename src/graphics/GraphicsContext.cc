@@ -79,11 +79,13 @@ namespace sp
 
 	void GraphicsContext::ResizeWindow(ecs::View &view, int fullscreen)
 	{
+		glm::ivec2 scaled = glm::dvec2(view.extents) * windowScale;
+
 		if (prevFullscreen != fullscreen)
 		{
 			if (fullscreen == 0)
 			{
-				glfwSetWindowMonitor(window, nullptr, prevWindowPos.x, prevWindowPos.y, view.extents.x, view.extents.y, 0);
+				glfwSetWindowMonitor(window, nullptr, prevWindowPos.x, prevWindowPos.y, scaled.x, scaled.y, 0);
 			}
 			else if (fullscreen == 1)
 			{
@@ -92,22 +94,30 @@ namespace sp
 			}
 		}
 
-		if (prevWindowSize != view.extents)
+		if (prevWindowSize != view.extents || prevFullscreen != fullscreen)
 		{
-			int fbWidth, fbHeight;
-			glfwSetWindowSize(window, (int) (view.extents.x * windowScale), (int) (view.extents.y * windowScale));
-			glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-
-			if (fbWidth != view.extents.x)
+			if (fullscreen)
 			{
-				double newScale = (double) view.extents.x / (double) fbWidth;
-				if (newScale != windowScale)
+				glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, view.extents.x, view.extents.y, 60);
+			}
+			else
+			{
+				glfwSetWindowSize(window, scaled.x, scaled.y);
+
+				int fbWidth, fbHeight;
+				glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+
+				if (fbWidth != view.extents.x)
 				{
+					glfwSetWindowSize(window, view.extents.x, view.extents.y);
+					glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+
+					double newScale = (double) view.extents.x / (double) fbWidth;
 					Logf("Setting window scale: %f", newScale);
 					windowScale = newScale;
+					scaled = glm::dvec2(view.extents) * windowScale;
+					glfwSetWindowSize(window, scaled.x, scaled.y);
 				}
-
-				glfwSetWindowSize(window, (int) (view.extents.x * windowScale), (int) (view.extents.y * windowScale));
 			}
 		}
 
