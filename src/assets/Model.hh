@@ -30,7 +30,7 @@ namespace sp
 			glm::mat4 matrix;
 			int drawMode;
 			Attribute indexBuffer;
-			string materialName, baseColorName, roughnessName, metallicName, heightName;
+			string materialName;
 			Attribute attributes[3];
 
 			GLuint vertexBufferHandle;
@@ -44,7 +44,7 @@ namespace sp
 		std::map<string, Texture> textures;
 
 		GLuint LoadBuffer(string name);
-		Texture *LoadTexture(string name);
+		Texture *LoadTexture(string materialName, string type);
 
 		tinygltf::Scene *GetScene()
 		{

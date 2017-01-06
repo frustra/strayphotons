@@ -22,7 +22,7 @@ namespace sp
 	static CVar<bool> CVarLightingEnabled("r.Lighting", true, "Enable lighting");
 	static CVar<bool> CVarTonemapEnabled("r.Tonemap", true, "Enable HDR tonemapping");
 	static CVar<bool> CVarSSAOEnabled("r.SSAO", false, "Enable Screen Space Ambient Occlusion");
-	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth, 4: roughness)");
+	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth, 4: roughness, 5: metallic, 6: voxel baseColor, 7: voxel radiance, 8: voxel alpha)");
 	static CVar<int> CVarVoxelMip("r.VoxelMip", 0, "");
 	static CVar<int> CVarAntiAlias("r.AntiAlias", 1, "Anti-aliasing mode (0: none, 1: SMAA 1x)");
 	static CVar<int> CVarVoxelLightingEnabled("r.VoxelLighting", 1, "Enable voxel lighting");

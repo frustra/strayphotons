@@ -153,7 +153,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 
 	while (dist < maxDist && result.a < 0.9999)
 	{
-		float size = max(1.0, ratio * dist);
+		float size = max(0.5, ratio * dist);
 		float planeDist = dot(surfaceNormal, rayDir * dist) - 1.75;
 		// If the sample intersects the surface, move it over
 		float offset = max(0, size - planeDist);
@@ -169,7 +169,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 		}
 	}
 
-	return vec4(result.rgb / (result.a + 0.00001), result.a);
+	return vec4(result.rgb / (result.a + 0.00001), dist * voxelSize);
 }
 
 vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)

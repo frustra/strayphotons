@@ -37,7 +37,7 @@ namespace sp
 		DefaultMaterial()
 		{
 			unsigned char baseColor[4] = { 255, 255, 255, 255 };
-			unsigned char roughness[4] = { 0, 0, 0, 0 };
+			unsigned char roughness[4] = { 255, 255, 255, 255 };
 			unsigned char metallic[4] = { 0, 0, 0, 0 };
 			unsigned char bump[4] = { 127, 127, 127, 255 };
 
@@ -71,27 +71,15 @@ namespace sp
 		{
 			primitive->indexBufferHandle = comp->model->LoadBuffer(primitive->indexBuffer.bufferName);
 
-			if (primitive->baseColorName.length() > 0)
-				primitive->baseColorTex = comp->model->LoadTexture(primitive->baseColorName);
-			else
-				primitive->baseColorTex = &defaultMat.baseColorTex;
+			primitive->baseColorTex = comp->model->LoadTexture(primitive->materialName, "baseColor");
+			primitive->roughnessTex = comp->model->LoadTexture(primitive->materialName, "roughness");
+			primitive->metallicTex = comp->model->LoadTexture(primitive->materialName, "metallic");
+			primitive->heightTex = comp->model->LoadTexture(primitive->materialName, "height");
 
-			if (primitive->roughnessName.length() > 0)
-				primitive->roughnessTex = comp->model->LoadTexture(primitive->roughnessName);
-			else
-				primitive->roughnessTex = &defaultMat.roughnessTex;
-
-			if (primitive->metallicName.length() > 0)
-				primitive->metallicTex = comp->model->LoadTexture(primitive->metallicName);
-			else
-				primitive->metallicTex = &defaultMat.metallicTex;
-
-			if (primitive->heightName.length() > 0)
-				primitive->heightTex = comp->model->LoadTexture(primitive->heightName);
-			else
-				primitive->heightTex = &defaultMat.heightTex;
-
-			Logf(primitive->heightName);
+			if (!primitive->baseColorTex) primitive->baseColorTex = &defaultMat.baseColorTex;
+			if (!primitive->roughnessTex) primitive->roughnessTex = &defaultMat.roughnessTex;
+			if (!primitive->metallicTex) primitive->metallicTex = &defaultMat.metallicTex;
+			if (!primitive->heightTex) primitive->heightTex = &defaultMat.heightTex;
 
 			glCreateVertexArrays(1, &primitive->vertexBufferHandle);
 			for (int i = 0; i < 3; i++)

@@ -51,7 +51,7 @@ void main() {
 
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
 	vec3 baseColor = gb0.rgb;
-	float roughness = 1.0 - gb0.a;
+	float roughness = gb0.a;
 
 	vec4 gb1 = texture(gBuffer1, inTexCoord);
 	vec3 normal = gb1.rgb;

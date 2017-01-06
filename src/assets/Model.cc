@@ -76,19 +76,41 @@ namespace sp
 		return handle;
 	}
 
-	Texture *Model::LoadTexture(string name)
+	Texture *Model::LoadTexture(string materialName, string type)
 	{
-		if (textures.count(name)) return &textures[name];
+		auto &material = scene->materials[materialName];
 
-		auto texture = scene->textures[name];
-		auto img = scene->images[texture.source];
+		if (!material.values.count(type)) return NULL;
 
-		return &textures[name].Create(texture.target)
-			   .Filter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, 4.0)
-			   .Wrap(GL_REPEAT, GL_REPEAT)
-			   .Size(img.width, img.height)
-			   .Storage(texture.internalFormat, texture.format, texture.type, Texture::FullyMipmap, true)
-			   .Image2D(img.image.data());
+		auto value = material.values[type];
+		if (value.string_value.empty()) {
+			char name[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+			unsigned char data[4];
+			for (size_t i = 0; i < 4; i++) {
+				data[i] = 255 * value.number_array.at(std::min(value.number_array.size() - 1, i));
+				name[i * 2] = 'A' + ((data[i] & 0xF0) >> 4);
+				name[i * 2 + 1] = 'A' + (data[i] & 0xF);
+			}
+
+			if (textures.count(name)) return &textures[name];
+
+			return &textures[name].Create()
+			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+			.Size(1, 1).Storage(PF_RGB8).Image2D(data);
+		} else {
+			auto name = value.string_value;
+			if (textures.count(name)) return &textures[name];
+
+			auto texture = scene->textures[name];
+			auto img = scene->images[texture.source];
+
+			return &textures[name].Create(texture.target)
+				   .Filter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, 4.0)
+				   .Wrap(GL_REPEAT, GL_REPEAT)
+				   .Size(img.width, img.height)
+				   .Storage(texture.internalFormat, texture.format, texture.type, Texture::FullyMipmap, true)
+				   .Image2D(img.image.data());
+		}
 	}
 
 	void Model::AddNode(string nodeName, glm::mat4 parentMatrix)
@@ -130,8 +152,6 @@ namespace sp
 
 				Assert(iAcc.type == TINYGLTF_TYPE_SCALAR);
 
-				auto &material = scene->materials[primitive.material];
-
 				primitives.push_back(new Primitive
 				{
 					matrix,
@@ -145,10 +165,6 @@ namespace sp
 						iBufView.buffer
 					},
 					primitive.material,
-					material.values["baseColor"].string_value,
-					material.values["roughness"].string_value,
-					material.values["metallic"].string_value,
-					material.values["height"].string_value,
 					{
 						GetPrimitiveAttribute(scene, &primitive, "POSITION"),
 						GetPrimitiveAttribute(scene, &primitive, "NORMAL"),

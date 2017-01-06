@@ -1,0 +1,56 @@
+{
+	"entities": [
+		{
+			"renderable": "cornell-box-2",
+			"transform": {
+				"scale": [2, 2, 2]
+			}
+		},
+		{
+			"_name": "player",
+			"view": {
+				"extents": [1024, 1024],
+				"clip": [0.1, 256],
+				"fov": 30
+			},
+			"transform": {
+				"translate": [-0.01, 2, 9.6],
+				"rotate": [0, 0, 1, 0]
+			},
+			"voxels": {
+				"size": 0.0165,
+				"center": [0, 2, 0]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 0.7, 0.235],
+				"intensity": 3000,
+				"spotAngle": 85
+			},
+			"view": {
+				"extents": [2048, 2048],
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"translate": [0, 4.2, 0],
+				"rotate": [-90, 1, 0, 0]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 0.7, 0.235],
+				"intensity": 3000,
+				"spotAngle": 30
+			},
+			"view": {
+				"extents": [1024, 1024],
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"translate": [0, 3.0, 0],
+				"rotate": [90, 1, 0, 0]
+			}
+		}
+	]
+}

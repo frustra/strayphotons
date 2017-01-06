@@ -57,7 +57,7 @@ void main()
 	}
 
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
-	float roughness = 1.0 - gb0.a;
+	float roughness = gb0.a;
 
 	vec3 worldNormal = invViewRotMat * viewNormal;
 
@@ -81,6 +81,11 @@ void main()
 		vec3 sampleDir = rayReflectDir;
 		vec4 sampleColor = ConeTraceGrid(roughness, worldPosition, sampleDir, worldNormal);
 
+		if (roughness == 0) {
+			worldPosition += sampleDir * sampleColor.a;
+			worldNormal = -sampleDir;
+		}
+
 		indirectSpecular = sampleColor.rgb;
 	}
 
@@ -96,16 +101,26 @@ void main()
 
 	indirectDiffuse /= diffuseAngles;
 
-	vec3 indirectLight = roughness * indirectDiffuse.rgb * gb0.rgb + (1.0 - roughness) * indirectSpecular;
-
 	vec4 directLight = texture(lastOutput, inTexCoord);
+
+	vec3 indirectLight = roughness * (indirectDiffuse.rgb * gb0.rgb + directLight.rgb) + (1.0 - roughness) * indirectSpecular;
+
+	if (roughness == 0) {
+		vec3 color, radiance;
+		vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
+		GetVoxel(voxelPos, 0, color, radiance);
+		directLight.rgb = indirectSpecular;
+		indirectLight = indirectDiffuse.rgb * color;
+	}
+
 	if (debug == 1) { // combined
+		indirectLight = roughness * indirectDiffuse.rgb * gb0.rgb + (1.0 - roughness) * indirectSpecular;
 		outFragColor = vec4(indirectLight, 1.0);
 	} else if (debug == 2) { // diffuse
 		outFragColor = vec4(indirectDiffuse.rgb, 1.0);
 	} else if (debug == 3) { // specular
 		outFragColor = vec4(indirectSpecular, 1.0);
 	} else {
-		outFragColor = directLight + vec4(indirectLight, 0.0);
+		outFragColor = vec4(indirectLight, 0.0);
 	}
 }
