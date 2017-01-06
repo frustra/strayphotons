@@ -8,12 +8,14 @@
 
 namespace sp
 {
+	class Game;
+
 	void FmodErrCheckFn(FMOD_RESULT res, const char *file, int line);
 
 	class AudioManager
 	{
 	public:
-		AudioManager();
+		AudioManager(Game *game);
 		~AudioManager();
 
 		// Set the audio driver. View logs on startup to see available drivers.
@@ -36,6 +38,7 @@ namespace sp
 		boost::unordered_map<const string, FMOD::Studio::EventDescription *>
 		eventDescriptions;
 
+		Game *game = nullptr;
 	};
 }
 

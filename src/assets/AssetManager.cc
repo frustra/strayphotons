@@ -33,7 +33,7 @@ namespace sp
 
 		if (it == loadedAssets.end())
 		{
-			Logf("Loading asset: %s", path.c_str());
+			Logf("Loading asset: %s", path);
 			std::ifstream in(ASSETS_DIR + path, std::ios::in | std::ios::binary);
 
 			if (in)
@@ -73,7 +73,7 @@ namespace sp
 
 		if (it == loadedModels.end())
 		{
-			Logf("Loading model: %s", name.c_str());
+			Logf("Loading model: %s", name);
 			shared_ptr<Asset> asset = Load("models/" + name + "/" + name + ".gltf");
 			tinygltf::Scene *scene = new tinygltf::Scene();
 			std::string err;
@@ -101,7 +101,7 @@ namespace sp
 
 	shared_ptr<Scene> AssetManager::LoadScene(const std::string &name, ecs::EntityManager *em, PhysxManager &px)
 	{
-		Logf("Loading scene: %s", name.c_str());
+		Logf("Loading scene: %s", name);
 
 		shared_ptr<Asset> asset = Load("scenes/" + name + ".json");
 		picojson::value root;

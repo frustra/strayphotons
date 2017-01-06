@@ -1,7 +1,9 @@
 #include "AudioManager.hh"
 #include "assets/AssetManager.hh"
 #include "core/Logging.hh"
+#include "core/Game.hh"
 
+#include <cxxopts.hpp>
 #include <fmod_errors.h>
 #include <fmod_common.h>
 #include <boost/filesystem.hpp>
@@ -53,7 +55,7 @@ namespace sp
 		}
 	}
 
-	AudioManager::AudioManager()
+	AudioManager::AudioManager(Game *game) : game(game)
 	{
 		FMOD_CHECK(FMOD::Studio::System::create(&system));
 
@@ -80,26 +82,26 @@ namespace sp
 
 	void AudioManager::initOutputType()
 	{
-		char *outputTypeStr = getenv("AUDIO_OUTPUT_TYPE");
-		if (nullptr == outputTypeStr)
-		{
+		if (!game->options.count("audio-output-type"))
 			return;
-		}
 
-		if (strcmp("pulseaudio", outputTypeStr) == 0)
+		auto outputTypeStr = game->options["audio-output-type"].as<string>();
+
+		if (outputTypeStr == "pulseaudio")
 		{
 			lowSystem->setOutput(FMOD_OUTPUTTYPE_PULSEAUDIO);
-			Logf("set audio output type to pulseaudio");
 		}
-		else if (strcmp("alsa", outputTypeStr) == 0)
+		else if (outputTypeStr == "alsa")
 		{
 			lowSystem->setOutput(FMOD_OUTPUTTYPE_ALSA);
-			Logf("set audio output type to alsa");
 		}
 		else
 		{
-			Errorf("unsupported value of AUDIO_OUTPUT_TYPE: %s", outputTypeStr);
+			Errorf("unsupported audio output type: %s", outputTypeStr);
+			return;
 		}
+
+		Logf("set audio output type to %s", outputTypeStr);
 	}
 
 	void AudioManager::initDriver()
@@ -107,21 +109,9 @@ namespace sp
 		int driver;
 		FMOD_CHECK(lowSystem->getDriver(&driver));
 
-		char *driverNumStr = getenv("AUDIO_DRIVER");
-		if (nullptr != driverNumStr)
+		if (game->options.count("audio-driver"))
 		{
-			try
-			{
-				driver = std::stoi(string(driverNumStr));
-			}
-			catch (const std::invalid_argument &ex)
-			{
-				Errorf("AUDIO_DRIVER was invalid, using 0");
-			}
-			catch (const std::out_of_range &ex)
-			{
-				Errorf("AUDIO_DRIVER was out of range, using 0");
-			}
+			driver = game->options["audio-driver"].as<int>();
 
 			if (!SetDriver(driver))
 			{
@@ -145,7 +135,7 @@ namespace sp
 		for (int i = 0; i < numDrivers; ++i)
 		{
 			FMOD_CHECK(lowSystem->getDriverInfo(i, driverName, nameLen, NULL, NULL, &speakerMode, &numChannels));
-			Logf("\t%d: %d channels, mode: %s, %s", i, numChannels, speakerModeStr(speakerMode).c_str(), driverName);
+			Logf("\t%d: %d channels, mode: %s, %s", i, numChannels, speakerModeStr(speakerMode), driverName);
 		}
 	}
 
