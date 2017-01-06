@@ -207,26 +207,7 @@ namespace sp
 
 	void BasicRenderer::BeginFrame(ecs::View &view, int fullscreen)
 	{
-		if (prevFullscreen != fullscreen)
-		{
-			if (fullscreen == 0)
-			{
-				glfwSetWindowMonitor(window, nullptr, prevWindowPos.x, prevWindowPos.y, view.extents.x, view.extents.y, 0);
-			}
-			else if (fullscreen == 1)
-			{
-				glfwGetWindowPos(window, &prevWindowPos.x, &prevWindowPos.y);
-				glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, view.extents.x, view.extents.y, 60);
-			}
-		}
-
-		if (prevWindowSize != view.extents)
-		{
-			glfwSetWindowSize(window, view.extents.x, view.extents.y);
-		}
-
-		prevFullscreen = fullscreen;
-		prevWindowSize = view.extents;
+		ResizeWindow(view, fullscreen);
 	}
 
 	void BasicRenderer::EndFrame()

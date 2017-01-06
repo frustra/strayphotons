@@ -76,4 +76,42 @@ namespace sp
 	{
 		return !!glfwWindowShouldClose(window);
 	}
+
+	void GraphicsContext::ResizeWindow(ecs::View &view, int fullscreen)
+	{
+		if (prevFullscreen != fullscreen)
+		{
+			if (fullscreen == 0)
+			{
+				glfwSetWindowMonitor(window, nullptr, prevWindowPos.x, prevWindowPos.y, view.extents.x, view.extents.y, 0);
+			}
+			else if (fullscreen == 1)
+			{
+				glfwGetWindowPos(window, &prevWindowPos.x, &prevWindowPos.y);
+				glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, view.extents.x, view.extents.y, 60);
+			}
+		}
+
+		if (prevWindowSize != view.extents)
+		{
+			int fbWidth, fbHeight;
+			glfwSetWindowSize(window, (int) (view.extents.x * windowScale), (int) (view.extents.y * windowScale));
+			glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+
+			if (fbWidth != view.extents.x)
+			{
+				double newScale = (double) view.extents.x / (double) fbWidth;
+				if (newScale != windowScale)
+				{
+					Logf("Setting window scale: %f", newScale);
+					windowScale = newScale;
+				}
+
+				glfwSetWindowSize(window, (int) (view.extents.x * windowScale), (int) (view.extents.y * windowScale));
+			}
+		}
+
+		prevFullscreen = fullscreen;
+		prevWindowSize = view.extents;
+	}
 }

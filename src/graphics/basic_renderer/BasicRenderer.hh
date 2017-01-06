@@ -21,8 +21,6 @@ namespace sp
 		void EndFrame();
 
 	private:
-		glm::ivec2 prevWindowSize, prevWindowPos;
-		int prevFullscreen = 0;
 		GLuint sceneProgram;
 	};
 }

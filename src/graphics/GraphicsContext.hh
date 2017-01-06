@@ -25,6 +25,7 @@ namespace sp
 		bool ShouldClose();
 		void SetTitle(string title);
 		void BindInputCallbacks(InputManager &inputManager);
+		void ResizeWindow(ecs::View &frameBufferView, int fullscreen);
 
 		virtual void Prepare() = 0;
 		virtual void BeginFrame(ecs::View &fbView, int fullscreen) = 0;
@@ -41,6 +42,9 @@ namespace sp
 		}
 
 	private:
+		glm::ivec2 prevWindowSize, prevWindowPos;
+		int prevFullscreen = 0;
+		double windowScale = 1.0;
 
 	protected:
 		GLFWwindow *window = nullptr;

@@ -83,10 +83,12 @@ namespace sp
 		if (!material.values.count(type)) return NULL;
 
 		auto value = material.values[type];
-		if (value.string_value.empty()) {
+		if (value.string_value.empty())
+		{
 			char name[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 			unsigned char data[4];
-			for (size_t i = 0; i < 4; i++) {
+			for (size_t i = 0; i < 4; i++)
+			{
 				data[i] = 255 * value.number_array.at(std::min(value.number_array.size() - 1, i));
 				name[i * 2] = 'A' + ((data[i] & 0xF0) >> 4);
 				name[i * 2 + 1] = 'A' + (data[i] & 0xF);
@@ -95,9 +97,11 @@ namespace sp
 			if (textures.count(name)) return &textures[name];
 
 			return &textures[name].Create()
-			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_RGB8).Image2D(data);
-		} else {
+				   .Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+				   .Size(1, 1).Storage(PF_RGB8).Image2D(data);
+		}
+		else
+		{
 			auto name = value.string_value;
 			if (textures.count(name)) return &textures[name];
 

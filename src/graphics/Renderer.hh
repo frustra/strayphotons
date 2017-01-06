@@ -52,8 +52,5 @@ namespace sp
 		shared_ptr<RenderTarget> shadowMap;
 		Buffer computeIndirectBuffer;
 		VoxelData voxelData;
-
-		glm::ivec2 prevWindowSize, prevWindowPos;
-		int prevFullscreen = 0;
 	};
 }
