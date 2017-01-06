@@ -39,7 +39,11 @@ foreach(boost_lib ${boost_libs})
 			OUTPUT_VARIABLE GCC_VERSION
 			OUTPUT_STRIP_TRAILING_WHITESPACE
 		)
-		set(cc_str "gcc-${GCC_VERSION}")
+		if (APPLE)
+			set(cc_str "darwin-${GCC_VERSION}")
+		else ()
+			set(cc_str "gcc-${GCC_VERSION}")
+		endif ()
 
 		set(lib_file "libboost_${boost_lib}.a")
 		set(lib_build_dir
