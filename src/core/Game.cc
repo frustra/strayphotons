@@ -32,6 +32,14 @@ namespace sp
 
 	void Game::Start()
 	{
+		if (options.count("cvar"))
+		{
+			for (auto cvarline : options["cvar"].as<vector<string>>())
+			{
+				GConsoleManager.ParseAndExecute(cvarline);
+			}
+		}
+
 		try
 		{
 			audio.LoadProjectFiles();
