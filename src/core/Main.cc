@@ -19,20 +19,27 @@ using cxxopts::value;
 
 int main(int argc, char **argv)
 {
-	char cwd[FILENAME_MAX];
-	os_getcwd(cwd, FILENAME_MAX);
-	Logf("Starting in directory: %s", cwd);
-
 	cxxopts::Options options("STRAYPHOTONS", "");
 
 	options.add_options()
+	("h,help", "Display help")
+	("m,map", "Boot into scene", value<string>()->default_value("test1"))
 	("basic-renderer", "Use minimal debug renderer", value<bool>())
-	("map", "Boot into scene", value<string>()->default_value("test1"))
 	;
 
 	try
 	{
 		options.parse(argc, argv);
+
+		if (options.count("help"))
+		{
+			std::cout << options.help() << std::endl;
+			return 0;
+		}
+
+		char cwd[FILENAME_MAX];
+		os_getcwd(cwd, FILENAME_MAX);
+		Logf("Starting in directory: %s", cwd);
 
 		sp::Game game(options);
 		game.Start();
