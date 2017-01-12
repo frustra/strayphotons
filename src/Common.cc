@@ -28,6 +28,11 @@ namespace sp
 		return Assert(condition, message);
 	}
 
+	void DebugBreak()
+	{
+		os_break();
+	}
+
 	uint32 CeilToPowerOfTwo(uint32 v)
 	{
 		v--;

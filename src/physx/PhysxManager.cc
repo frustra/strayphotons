@@ -5,7 +5,9 @@
 #include "core/Logging.hh"
 #include "core/CVar.hh"
 
+#include <VHACD.h>
 #include <thread>
+#include <unordered_map>
 
 namespace sp
 {
@@ -189,6 +191,121 @@ namespace sp
 		scene->unlockRead();
 	}
 
+	class VHACDCallback : public VHACD::IVHACD::IUserCallback
+	{
+	public:
+		VHACDCallback() {}
+		~VHACDCallback() {}
+
+		void Update(const double overallProgress, const double stageProgress, const double operationProgress,
+					const char *const stage, const char *const operation)
+		{
+			//Logf("VHACD %d (%s)", (int)(overallProgress + 0.5), stage);
+		};
+	};
+
+	struct ConvexHull
+	{
+		float *points;
+		int nPoints;
+	};
+
+	struct ConvexHullSet
+	{
+		vector<ConvexHull> hulls;
+	};
+
+	ConvexHullSet *buildConvexHulls(Model *model, Model::Primitive *prim)
+	{
+		static std::unordered_map<std::string, ConvexHullSet *> cache;
+
+		if (cache.count(model->name))
+		{
+			return cache[model->name];
+		}
+
+		Logf("Rebuilding convex decomposition for %s", model->name);
+
+		auto posAttrib = prim->attributes[0];
+		Assert(posAttrib.componentCount == 3);
+		Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+
+		auto indexAttrib = prim->indexBuffer;
+		Assert(prim->drawMode == GL_TRIANGLES);
+		Assert(indexAttrib.componentCount == 1);
+
+		auto pbuffer = model->GetScene()->buffers[posAttrib.bufferName];
+		auto points = (const float *)(pbuffer.data.data() + posAttrib.byteOffset);
+
+		auto ibuffer = model->GetScene()->buffers[indexAttrib.bufferName];
+		auto indices = (const int *)(ibuffer.data.data() + indexAttrib.byteOffset);
+		int *indicesCopy = nullptr;
+
+		switch (indexAttrib.componentType)
+		{
+			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+				// indices is already compatible
+				break;
+			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+				indicesCopy = new int[indexAttrib.components];
+
+				for (int i = 0; i < indexAttrib.components; i++)
+				{
+					indicesCopy[i] = (int)((const uint16 *) indices)[i];
+				}
+
+				indices = (const int *)indicesCopy;
+				break;
+			default:
+				Assert(false, "invalid index component type");
+				break;
+		}
+
+		static VHACDCallback vhacdCallback;
+		auto decomposition = new ConvexHullSet;
+
+		{
+			auto interfaceVHACD = VHACD::CreateVHACD();
+			int pointStride = posAttrib.byteStride / sizeof(float);
+
+			VHACD::IVHACD::Parameters params;
+			params.m_callback = &vhacdCallback;
+			params.m_oclAcceleration = false;
+			//params.m_resolution = 100000;
+			//params.m_convexhullDownsampling = 8;
+
+			bool res = interfaceVHACD->Compute(points, pointStride, posAttrib.components, indices, 3, indexAttrib.components / 3, params);
+			Assert(res, "building convex decomposition");
+
+			for (int i = 0; i < interfaceVHACD->GetNConvexHulls(); i++)
+			{
+				VHACD::IVHACD::ConvexHull ihull;
+				interfaceVHACD->GetConvexHull(i, ihull);
+
+				ConvexHull hull;
+				hull.points = new float[ihull.m_nPoints * 3];
+				hull.nPoints = ihull.m_nPoints;
+
+				for (int i = 0; i < ihull.m_nPoints * 3; i++)
+				{
+					hull.points[i] = (float) ihull.m_points[i];
+				}
+
+				decomposition->hulls.push_back(hull);
+			}
+
+			interfaceVHACD->Clean();
+			interfaceVHACD->Release();
+		}
+
+		cache[model->name] = decomposition;
+
+		if (indicesCopy)
+			delete indicesCopy;
+
+		return decomposition;
+	}
+
 	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PxTransform transform, PxMeshScale scale, bool dynamic)
 	{
 		Lock();
@@ -203,33 +320,31 @@ namespace sp
 
 		for (auto prim : model->primitives)
 		{
-			auto posAttrib = prim->attributes[0];
-			Assert(posAttrib.componentCount == 3);
-			Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+			auto decomposition = buildConvexHulls(model.get(), prim);
 
-			// Build convex hull
-			auto buffer = model->GetScene()->buffers[posAttrib.bufferName];
-
-			PxConvexMeshDesc convexDesc;
-			convexDesc.points.count = posAttrib.components;
-			convexDesc.points.stride = posAttrib.byteStride;
-			convexDesc.points.data = (PxVec3 *)(buffer.data.data() + posAttrib.byteOffset);
-			convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
-
-			PxDefaultMemoryOutputStream buf;
-			PxConvexMeshCookingResult::Enum result;
-
-			if (!pxCooking->cookConvexMesh(convexDesc, buf, &result))
+			for (auto hull : decomposition->hulls)
 			{
-				Errorf("Failed to cook PhysX hull for %s", model->name);
-				return nullptr;
+				PxConvexMeshDesc convexDesc;
+				convexDesc.points.count = hull.nPoints;
+				convexDesc.points.stride = sizeof(float) * 3;
+				convexDesc.points.data = hull.points;
+				convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+
+				PxDefaultMemoryOutputStream buf;
+				PxConvexMeshCookingResult::Enum result;
+
+				if (!pxCooking->cookConvexMesh(convexDesc, buf, &result))
+				{
+					Errorf("Failed to cook PhysX hull for %s", model->name);
+					return nullptr;
+				}
+
+				PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+				PxConvexMesh *pxhull = physics->createConvexMesh(input);
+
+				actor->createShape(PxConvexMeshGeometry(pxhull, scale), *mat);
 			}
-
-			PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
-			PxConvexMesh *hull = physics->createConvexMesh(input);
-
-			actor->createShape(PxConvexMeshGeometry(hull, scale), *mat);
-		}
+		};
 
 		if (dynamic)
 			PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidDynamic *>(actor), 1.0f);

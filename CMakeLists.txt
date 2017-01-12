@@ -59,6 +59,8 @@ add_subdirectory(${EXT_PATH}/googletest)
 
 add_subdirectory(${EXT_PATH}/boost)
 
+add_subdirectory(${EXT_PATH}/v-hacd)
+
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${EXT_PATH}/physx/PhysXSDK/Include
@@ -74,6 +76,7 @@ include_directories(
 	${EXT_PATH}/fmod/include/fmod
 	${EXT_PATH}/fmod/include/fmodstudio
 	${EXT_PATH}/cxxopts/include
+	${EXT_PATH}/v-hacd/VHACD_Lib/public
 	${EXT_PATH}
 )
 
@@ -234,6 +237,7 @@ target_link_libraries(${PROJECT_EXE}
 	${OPENGL_LIBRARIES}
 	GLEW
 	glfw
+	vhacd
 	${GLFW_LIBRARIES}
 	freetype
 	ImGui

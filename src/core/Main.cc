@@ -15,6 +15,8 @@ using namespace std;
 #define os_getcwd getcwd
 #endif
 
+//#define CATCH_GLOBAL_EXCEPTIONS
+
 using cxxopts::value;
 
 int main(int argc, char **argv)
@@ -30,7 +32,9 @@ int main(int argc, char **argv)
 	("audio-output-type", "Force use of audio API (pulseaudio, alsa)", value<string>())
 	;
 
+#ifdef CATCH_GLOBAL_EXCEPTIONS
 	try
+#endif
 	{
 		options.parse(argc, argv);
 
@@ -48,6 +52,7 @@ int main(int argc, char **argv)
 		game.Start();
 		return 0;
 	}
+#ifdef CATCH_GLOBAL_EXCEPTIONS
 	catch (const char *err)
 	{
 		Errorf("terminating with exception: %s", err);
@@ -56,6 +61,7 @@ int main(int argc, char **argv)
 	{
 		Errorf("terminating with exception: %s", ex.what());
 	}
+#endif
 	return -1;
 }
 
