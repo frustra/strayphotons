@@ -25,7 +25,7 @@ namespace sp
 		scene = GAssets.LoadScene(game->options["map"].as<string>(), &game->entityManager, game->physics);
 
 		ecs::Entity player = scene->FindEntity("player");
-		humanControlSystem.AssignController(player);
+		humanControlSystem.AssignController(player, game->physics);
 
 		game->graphics.SetPlayerView(player);
 

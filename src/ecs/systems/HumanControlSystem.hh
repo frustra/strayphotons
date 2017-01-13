@@ -4,6 +4,8 @@
 #include "ecs/components/Controller.hh"
 #include "game/InputManager.hh"
 
+#include "physx/PhysxManager.hh"
+
 #include <glm/glm.hpp>
 
 namespace ecs
@@ -22,7 +24,7 @@ namespace ecs
 		/**
 		 * Assigns a default HumanController to the given entity.
 		 */
-		ecs::Handle<HumanController> AssignController(ecs::Entity entity);
+		ecs::Handle<HumanController> AssignController(ecs::Entity entity, sp::PhysxManager &px);
 
 	private:
 
@@ -37,5 +39,7 @@ namespace ecs
 
 		ecs::EntityManager *entities;
 		sp::InputManager *input;
+
+
 	};
 }

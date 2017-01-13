@@ -1,5 +1,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_access.hpp>
 
 #include <Ecs.hh>
 #include "ecs/components/Transform.hh"
@@ -49,6 +50,16 @@ namespace ecs
 	void Transform::SetTransform(glm::mat4 mat)
 	{
 		this->translate = mat;
+	}
+
+	void Transform::SetPosition(glm::vec3 pos)
+	{
+		this->translate = glm::column(this->translate, 3, glm::vec4(pos.x, pos.y, pos.z, 1.f));
+	}
+
+	glm::vec3 Transform::GetPosition()
+	{
+		return this->translate*glm::vec4(0,0,0,1);
 	}
 
 	void Transform::Scale(glm::vec3 xyz)

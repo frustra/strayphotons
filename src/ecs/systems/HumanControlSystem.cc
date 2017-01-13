@@ -3,11 +3,16 @@
 
 #include "ecs/systems/HumanControlSystem.hh"
 #include "ecs/components/Transform.hh"
+#include "ecs/components/Physics.hh"
+
+#include "physx/physxUtils.hh"
 
 #include "Common.hh"
 
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
+#include <PxRigidActor.h>
+#include <PxScene.h>
 
 #include <sstream>
 
@@ -94,12 +99,19 @@ namespace ecs
 						throw std::invalid_argument(ss.str());
 				}
 			}
+
+			if (controller->pxController)
+			{
+				auto position = controller->pxController->getPosition();
+				physx::PxVec3 pxVec3 = physx::PxVec3(position.x, position.y, position.z);
+				transform->SetPosition(PxVec3ToGlmVec3P(pxVec3));
+			}
 		}
 
 		return true;
 	}
 
-	ecs::Handle<HumanController> HumanControlSystem::AssignController(ecs::Entity entity)
+	ecs::Handle<HumanController> HumanControlSystem::AssignController(ecs::Entity entity, sp::PhysxManager &px)
 	{
 		if (entity.Has<HumanController>())
 		{
@@ -134,6 +146,10 @@ namespace ecs
 			},
 		};
 
+		auto transform = entity.Get<ecs::Transform>();
+		physx::PxVec3 pos = GlmVec3ToPxVec3(transform->GetPosition());
+		controller->pxController = px.CreateController(pos, 0.2f, 0.5f, 0.5f);
+
 		return controller;
 	}
 
@@ -145,9 +161,19 @@ namespace ecs
 		}
 
 		auto transform = entity.Get<ecs::Transform>();
-		float movement = HumanControlSystem::MOVE_SPEED * (float)dt;
-		glm::vec4 translation(movement * normalizedDirection, 0);
+		auto controller = entity.Get<HumanController>();
 
-		transform->Translate(transform->rotate * translation);
+		float movement = HumanControlSystem::MOVE_SPEED * (float)dt;
+		physx::PxVec3 translation = GlmVec3ToPxVec3(transform->rotate*(movement * normalizedDirection));
+
+		if(controller->pxController)
+		{
+			physx::PxControllerFilters filters;
+			physx::PxScene* scene = controller->pxController->getScene();
+			Assert(scene);
+			scene->lockRead();
+			controller->pxController->move(translation, 0, dt, filters);
+			scene->unlockRead();
+		}
 	}
 }

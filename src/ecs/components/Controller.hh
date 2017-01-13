@@ -6,6 +6,8 @@
 #include <vector>
 #include <functional>
 
+#include <characterkinematic/PxCapsuleController.h>
+
 namespace ecs
 {
 	enum class ControlAction
@@ -29,6 +31,9 @@ namespace ecs
 		float pitch;
 		float yaw;
 		float roll;
+
+		// pxCapsuleController handles movement and physx simulation
+		physx::PxController* pxController;
 	};
 
 }

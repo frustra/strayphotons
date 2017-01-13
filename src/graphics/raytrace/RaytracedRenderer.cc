@@ -678,7 +678,7 @@ namespace sp
 				}
 
 				normalMetalnessAtlas.Image3D(data, 0, bcimg->width, bcimg->height, 1, 0, 0, texIndex, false);
-				delete data;
+				delete[] data;
 
 				auto &matRef = ctx.matData.materials[texIndex];
 				matRef.baseColorRoughnessIdx = texIndex;

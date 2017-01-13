@@ -125,6 +125,7 @@ else()
 endif()
 
 set (PHYSX_LOADS
+	"PhysX3CharacterKinematic${PHYSX_ENV}${PHYSX_ARCH}"
 	"PhysX3Common${PHYSX_ENV}${PHYSX_ARCH}"
 	"PhysX3Cooking${PHYSX_ENV}${PHYSX_ARCH}"
 	"PhysX3Extensions${PHYSX_ENV}"

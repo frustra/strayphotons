@@ -2,6 +2,7 @@
 #define SP_PHYSXMANAGER_H
 
 #include "Common.hh"
+
 #include <PxPhysicsAPI.h>
 #include <extensions/PxDefaultErrorCallback.h>
 #include <extensions/PxDefaultAllocator.h>
@@ -20,12 +21,14 @@ namespace sp
 		void StartThread();
 		void StartSimulation();
 		void StopSimulation();
+		void ReleaseControllers();
 		void Lock();
 		void Unlock();
 		void ReadLock();
 		void ReadUnlock();
 
 		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, physx::PxTransform transform = physx::PxTransform(), physx::PxMeshScale scale = physx::PxMeshScale(), bool dynamic = true);
+		physx::PxController *CreateController(physx::PxVec3 pos, float radius, float height, float density);
 	private:
 		void CreatePhysxScene();
 		void DestroyPhysxScene();
@@ -36,6 +39,7 @@ namespace sp
 		physx::PxDefaultErrorCallback defaultErrorCallback;
 		physx::PxDefaultAllocator defaultAllocatorCallback;
 		physx::PxCooking *pxCooking;
+		physx::PxControllerManager* manager; 
 
 		physx::PxScene *scene;
 		bool simulate = false, resultsPending = false;

@@ -1,4 +1,5 @@
 #include <PxScene.h>
+
 #include "physx/PhysxManager.hh"
 
 #include "assets/Model.hh"
@@ -33,6 +34,7 @@ namespace sp
 	PhysxManager::~PhysxManager()
 	{
 		StopSimulation();
+		ReleaseControllers();
 		DestroyPhysxScene();
 
 		pxCooking->release();
@@ -122,6 +124,7 @@ namespace sp
 	void PhysxManager::DestroyPhysxScene()
 	{
 		Lock();
+		scene->fetchResults();
 		scene->release();
 		scene = nullptr;
 		dispatcher->release();
@@ -162,6 +165,16 @@ namespace sp
 	{
 		Lock();
 		simulate = false;
+		Unlock();
+	}
+
+	void PhysxManager::ReleaseControllers()
+	{
+		Lock();
+		if(manager)
+		{
+			manager->purgeControllers();
+		}
 		Unlock();
 	}
 
@@ -237,5 +250,24 @@ namespace sp
 		scene->addActor(*actor);
 		Unlock();
 		return actor;
+	}
+
+	PxController *PhysxManager::CreateController(PxVec3 pos, float radius, float height, float density)
+	{
+		Lock();
+		manager = PxCreateControllerManager(*scene, true);
+
+		//Capsule controller description will want to be data driven
+		PxCapsuleControllerDesc desc;
+		desc.position = PxExtendedVec3(pos.x, pos.y, pos.z);
+		desc.upDirection = PxVec3(0,1,0);
+		desc.radius = radius;
+		desc.height = height;
+		desc.density = density;
+		desc.material = physics->createMaterial(0.3f, 0.3f, 0.3f);
+
+		PxController* controller = manager->createController(desc);
+		Unlock();
+		return controller;
 	}
 }
