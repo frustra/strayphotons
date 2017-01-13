@@ -4,7 +4,7 @@
 
 namespace sp
 {
-	class VoxelLighting : public PostProcessPass<7, 1>
+	class VoxelLighting : public PostProcessPass<8, 1>
 	{
 	public:
 		void Process(const PostProcessingContext *context);

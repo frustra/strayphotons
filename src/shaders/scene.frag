@@ -34,7 +34,7 @@ void main()
 
 	float a = texture(heightTex, inTexCoord).r;
 	float dx;
-	// If the UV coordinates are mirroed, calculate dx in the opposite direction.
+	// If the UV coordinates are mirrored, calculate dx in the opposite direction.
 	if (dot(cross(inNormal, inTangent), inBitangent) < 0) {
 		dx = texture(heightTex, inTexCoord + vec2(dCoord.x, 0)).r - a;
 	} else {

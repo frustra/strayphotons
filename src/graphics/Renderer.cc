@@ -235,7 +235,7 @@ namespace sp
 
 	void Renderer::PrepareVoxelTextures()
 	{
-		glm::ivec3 packedSize = glm::ivec3(VoxelGridSize * 4, VoxelGridSize, VoxelGridSize);
+		glm::ivec3 packedSize = glm::ivec3(VoxelGridSize * 6, VoxelGridSize, VoxelGridSize);
 		glm::ivec3 unpackedSize = glm::ivec3(VoxelGridSize, VoxelGridSize, VoxelGridSize);
 
 		if (!computeIndirectBuffer)
@@ -260,6 +260,11 @@ namespace sp
 		{
 			voxelData.color = RTPool->Get(RenderTargetDesc(PF_RGBA8, unpackedSize));
 			voxelData.color->GetTexture().Clear(0);
+		}
+		if (!voxelData.normal || voxelData.normal->GetDesc().extent != unpackedSize)
+		{
+			voxelData.normal = RTPool->Get(RenderTargetDesc(PF_RGBA16F, unpackedSize));
+			voxelData.normal->GetTexture().Clear(0);
 		}
 
 		RenderTargetDesc alphaDesc(PF_RGBA8, unpackedSize);
@@ -335,8 +340,9 @@ namespace sp
 			voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, 0);
 			voxelData.packedData->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
 			voxelData.color->GetTexture().BindImage(2, GL_WRITE_ONLY, 0, GL_TRUE, 0);
-			voxelData.alpha->GetTexture().BindImage(3, GL_WRITE_ONLY, 0, GL_TRUE, 0);
-			voxelData.radiance->GetTexture().BindImage(4, GL_WRITE_ONLY, 0, GL_TRUE, 0);
+			voxelData.normal->GetTexture().BindImage(3, GL_WRITE_ONLY, 0, GL_TRUE, 0);
+			voxelData.alpha->GetTexture().BindImage(4, GL_WRITE_ONLY, 0, GL_TRUE, 0);
+			voxelData.radiance->GetTexture().BindImage(5, GL_WRITE_ONLY, 0, GL_TRUE, 0);
 
 			ShaderControl->BindPipeline<VoxelConvertCS>(GlobalShaders);
 			glDispatchComputeIndirect(sizeof(GLuint));
@@ -379,8 +385,9 @@ namespace sp
 			computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint));
 			voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i);
 			voxelData.color->GetTexture().BindImage(1, GL_WRITE_ONLY, i, GL_TRUE, 0);
-			voxelData.alpha->GetTexture().BindImage(2, GL_WRITE_ONLY, i, GL_TRUE, 0);
-			voxelData.radiance->GetTexture().BindImage(3, GL_WRITE_ONLY, i, GL_TRUE, 0);
+			voxelData.normal->GetTexture().BindImage(2, GL_WRITE_ONLY, i, GL_TRUE, 0);
+			voxelData.alpha->GetTexture().BindImage(3, GL_WRITE_ONLY, i, GL_TRUE, 0);
+			voxelData.radiance->GetTexture().BindImage(4, GL_WRITE_ONLY, i, GL_TRUE, 0);
 
 			ShaderControl->BindPipeline<VoxelClearCS>(GlobalShaders);
 			GlobalShaders->Get<VoxelClearCS>()->SetLevel(i);

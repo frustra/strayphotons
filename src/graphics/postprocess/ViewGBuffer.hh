@@ -4,10 +4,10 @@
 
 namespace sp
 {
-	class ViewGBuffer : public PostProcessPass<6, 1>
+	class ViewGBuffer : public PostProcessPass<7, 1>
 	{
 	public:
-		ViewGBuffer(int mode, int level) : mode(mode), level(level) {}
+		ViewGBuffer(int mode, int source, int level) : mode(mode), source(source), level(level) {}
 
 		void Process(const PostProcessingContext *context);
 
@@ -24,6 +24,6 @@ namespace sp
 		}
 
 	private:
-		int mode, level;
+		int mode, source, level;
 	};
 }

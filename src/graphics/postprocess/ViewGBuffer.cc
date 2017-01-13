@@ -13,6 +13,7 @@ namespace sp
 		ViewGBufferFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			Bind(mode, "mode");
+			Bind(source, "source");
 			Bind(level, "mipLevel");
 			Bind(invProj, "invProjMat");
 			Bind(invView, "invViewMat");
@@ -21,9 +22,10 @@ namespace sp
 			Bind(voxelGridCenter, "voxelGridCenter");
 		}
 
-		void SetParameters(int newMode, int newLevel, const ecs::View &view)
+		void SetParameters(int newMode, int newSource, int newLevel, const ecs::View &view)
 		{
 			Set(mode, newMode);
+			Set(source, newSource);
 			Set(level, newLevel);
 			Set(invProj, view.invProjMat);
 			Set(invView, view.invViewMat);
@@ -36,7 +38,7 @@ namespace sp
 		}
 
 	private:
-		Uniform mode, level, invProj, invView;
+		Uniform mode, source, level, invProj, invView;
 		Uniform voxelSize, voxelGridCenter;
 	};
 
@@ -47,7 +49,7 @@ namespace sp
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
-		r->GlobalShaders->Get<ViewGBufferFS>()->SetParameters(mode, level, context->view);
+		r->GlobalShaders->Get<ViewGBufferFS>()->SetParameters(mode, source, level, context->view);
 		r->GlobalShaders->Get<ViewGBufferFS>()->SetVoxelInfo(context->renderer->voxelInfo);
 
 		r->SetRenderTarget(&dest, nullptr);

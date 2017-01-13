@@ -6,8 +6,9 @@ layout (binding = 0) uniform atomic_uint fragListSize;
 
 layout (binding = 0, r32ui) readonly uniform uimage2D voxelFragList;
 layout (binding = 1, rgba8) writeonly uniform image3D voxelColor;
-layout (binding = 2, rgba8) writeonly uniform image3D voxelAlpha;
-layout (binding = 3, rgba16) writeonly uniform image3D voxelRadiance;
+layout (binding = 2, rgba16) writeonly uniform image3D voxelNormal;
+layout (binding = 3, rgba8) writeonly uniform image3D voxelAlpha;
+layout (binding = 4, rgba16) writeonly uniform image3D voxelRadiance;
 
 uniform int mipLevel = 0;
 
@@ -26,7 +27,10 @@ void main()
 		packedPosition & 0x3FF
 	);
 
-	if (mipLevel == 0) imageStore(voxelColor, position, vec4(0));
+	if (mipLevel == 0) {
+		imageStore(voxelColor, position, vec4(0));
+		imageStore(voxelNormal, position, vec4(0));
+	}
 	imageStore(voxelAlpha, position, vec4(0));
 	imageStore(voxelRadiance, position, vec4(0));
 }

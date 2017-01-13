@@ -22,9 +22,9 @@ const mat3[3] AxisSwapReverse = mat3[](
 	mat3(1.0)
 );
 
-float ReadVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, out vec3 outColor, out vec3 outRadiance)
+float ReadVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, out vec3 outColor, out vec3 outNormal, out vec3 outRadiance, out float outRoughness)
 {
-	ivec3 index = position * ivec3(4, 1, 1);
+	ivec3 index = position * ivec3(6, 1, 1);
 
 	uint data = imageAtomicExchange(packedVoxelImg, index, uint(0)).r;
 	float colorRed = float((data & 0xFFFF0000) >> 16) / 0xFF;
@@ -40,20 +40,34 @@ float ReadVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, o
 	float radianceGreen = float((data & 0xFFFF0000) >> 16) / 0x7FF;
 	float radianceBlue = float(data & 0xFFFF) / 0x7FF;
 
+	data = imageAtomicExchange(packedVoxelImg, index + ivec3(3, 0, 0), uint(0)).r;
+
+	float normalX = (float((data & 0xFFFF0000) >> 16) / 0x7FF);
+	float normalY = (float(data & 0xFFFF) / 0x7FF);
+
+	data = imageAtomicExchange(packedVoxelImg, index + ivec3(4, 0, 0), uint(0)).r;
+
+	float normalZ = (float((data & 0xFFFF0000) >> 16) / 0x7FF);
+	outRoughness = float(data & 0xFFFF) / 0xFF;
+
 	outColor = vec3(colorRed, colorGreen, colorBlue);
 	outRadiance = vec3(radianceRed, radianceGreen, radianceBlue);
-	return float(imageAtomicExchange(packedVoxelImg, index + ivec3(3, 0, 0), uint(0)).r);
+	outNormal = vec3(normalX, normalY, normalZ);
+	return float(imageAtomicExchange(packedVoxelImg, index + ivec3(5, 0, 0), uint(0)).r);
 }
 
 #ifdef INCLUDE_VOXEL_TRACE
 
-vec3 GetVoxel(vec3 position, int level, out vec3 color, out vec3 radiance)
+vec3 GetVoxel(vec3 position, int level, out vec3 color, out vec3 normal, out vec3 radiance, out float roughness)
 {
-	vec4 colorData = textureLod(voxelColor, position/vec3(int(VoxelGridSize)>>level), 0);
+	vec4 colorData = textureLod(voxelColor, position/vec3(VoxelGridSize), 0);
+	vec4 normalData = textureLod(voxelNormal, position/vec3(VoxelGridSize), 0);
 	vec4 radianceData = textureLod(voxelRadiance, position/vec3(int(VoxelGridSize)>>level), level);
 	vec4 alphaData = textureLod(voxelAlpha, position/vec3(int(VoxelGridSize)>>level), level);
 	color = colorData.rgb / (colorData.a + 0.00001);
+	normal = normalData.xyz / (colorData.a + 0.00001);
 	radiance = radianceData.rgb / (radianceData.a + 0.00001);
+	roughness = normalData.a / (colorData.a + 0.00001);
 	return alphaData.xyz / (alphaData.a + 0.00001);
 }
 
@@ -81,7 +95,7 @@ vec4 SampleVoxelLod(vec3 position, vec3 dir, float level)
 	return vec4(radianceData.rgb / (radianceData.a + 0.00001), alpha);
 }
 
-float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out vec3 hitRadiance)
+float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out vec3 hitNormal, out vec3 hitRadiance, out float hitRoughness)
 {
 	float scale = float(1 << level);
 	float invScale = 1.0 / scale;
@@ -97,7 +111,9 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out
 	if (tmin > tmax || tmax < 0)
 	{
 		hitColor = vec3(0);
+		hitNormal = vec3(0);
 		hitRadiance = vec3(0);
+		hitRoughness = 0;
         return 0;
 	}
 
@@ -120,14 +136,16 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out
 
 	for (int i = 0; i < maxIterations; i++)
 	{
-		vec3 color;
-		vec3 radiance;
-		vec3 alpha = GetVoxel(voxelPos, level, color, radiance);
+		vec3 color, normal, radiance;
+		float roughness;
+		vec3 alpha = GetVoxel(voxelPos, level, color, normal, radiance, roughness);
 		float dirAlpha = dot(alpha, abs(rayDir)) / dot(vec3(1), abs(rayDir));
 		if (dirAlpha > 0)
 		{
 			hitColor = color;
+			hitNormal = normal;
 			hitRadiance = radiance;
+			hitRoughness = roughness;
 			return dirAlpha;
 		}
 
@@ -139,7 +157,9 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out
 	}
 
 	hitColor = vec3(0);
+	hitNormal = vec3(0);
 	hitRadiance = vec3(0);
+	hitRoughness = 0;
     return 0;
 }
 
@@ -169,7 +189,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 		}
 	}
 
-	return vec4(result.rgb / (result.a + 0.00001), dist * voxelSize);
+	return vec4(result.rgb / (result.a + 0.00001), (dist - 1) * voxelSize);
 }
 
 vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)

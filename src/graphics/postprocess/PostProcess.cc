@@ -22,7 +22,8 @@ namespace sp
 	static CVar<bool> CVarLightingEnabled("r.Lighting", true, "Enable lighting");
 	static CVar<bool> CVarTonemapEnabled("r.Tonemap", true, "Enable HDR tonemapping");
 	static CVar<bool> CVarSSAOEnabled("r.SSAO", false, "Enable Screen Space Ambient Occlusion");
-	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth, 4: roughness, 5: metallic, 6: voxel baseColor, 7: voxel radiance, 8: voxel alpha)");
+	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth (or alpha), 4: roughness, 5: metallic (or radiance))");
+	static CVar<int> CVarViewGBufferSource("r.ViewGBufferSource", 0, "GBuffer Debug Source (0: gbuffer, 1: voxel grid, 2: cone trace)");
 	static CVar<int> CVarVoxelMip("r.VoxelMip", 0, "");
 	static CVar<int> CVarAntiAlias("r.AntiAlias", 1, "Anti-aliasing mode (0: none, 1: SMAA 1x)");
 	static CVar<int> CVarVoxelLightingEnabled("r.VoxelLighting", 1, "Enable voxel lighting");
@@ -65,8 +66,9 @@ namespace sp
 		voxel->SetInput(2, context.GBuffer1);
 		voxel->SetInput(3, context.Depth);
 		voxel->SetInput(4, context.VoxelColor);
-		voxel->SetInput(5, context.VoxelAlpha);
-		voxel->SetInput(6, context.VoxelRadiance);
+		voxel->SetInput(5, context.VoxelNormal);
+		voxel->SetInput(6, context.VoxelAlpha);
+		voxel->SetInput(7, context.VoxelRadiance);
 
 		context.LastOutput = voxel;
 	}
@@ -112,6 +114,7 @@ namespace sp
 		if (targets.voxelData.color)
 		{
 			context.VoxelColor = context.AddPass<ProxyProcessPass>(targets.voxelData.color);
+			context.VoxelNormal = context.AddPass<ProxyProcessPass>(targets.voxelData.normal);
 			context.VoxelAlpha = context.AddPass<ProxyProcessPass>(targets.voxelData.alpha);
 			context.VoxelRadiance = context.AddPass<ProxyProcessPass>(targets.voxelData.radiance);
 		}
@@ -151,13 +154,14 @@ namespace sp
 
 		if (CVarViewGBuffer.Get() > 0)
 		{
-			auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(), CVarVoxelMip.Get());
+			auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(), CVarViewGBufferSource.Get(), CVarVoxelMip.Get());
 			viewGBuf->SetInput(0, context.GBuffer0);
 			viewGBuf->SetInput(1, context.GBuffer1);
 			viewGBuf->SetInput(2, context.Depth);
 			viewGBuf->SetInput(3, context.VoxelColor);
-			viewGBuf->SetInput(4, context.VoxelAlpha);
-			viewGBuf->SetInput(5, context.VoxelRadiance);
+			viewGBuf->SetInput(4, context.VoxelNormal);
+			viewGBuf->SetInput(5, context.VoxelAlpha);
+			viewGBuf->SetInput(6, context.VoxelRadiance);
 			context.LastOutput = viewGBuf;
 		}
 

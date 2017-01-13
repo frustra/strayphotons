@@ -5,8 +5,9 @@ layout (binding = 1) uniform sampler2D gBuffer0;
 layout (binding = 2) uniform sampler2D gBuffer1;
 layout (binding = 3) uniform sampler2D depthStencil;
 layout (binding = 4) uniform sampler3D voxelColor;
-layout (binding = 5) uniform sampler3D voxelAlpha;
-layout (binding = 6) uniform sampler3D voxelRadiance;
+layout (binding = 5) uniform sampler3D voxelNormal;
+layout (binding = 6) uniform sampler3D voxelAlpha;
+layout (binding = 7) uniform sampler3D voxelRadiance;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
@@ -20,8 +21,7 @@ uniform vec3 voxelGridCenter = vec3(0);
 ##import lib/lighting_util
 ##import voxel_shared
 
-const float radius = 0.4;
-const float power = 2.6;
+const int maxReflections = 2;
 
 uniform mat4 viewMat;
 uniform mat4 invViewMat;
@@ -57,9 +57,8 @@ void main()
 	}
 
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
+	vec3 baseColor = gb0.rgb;
 	float roughness = gb0.a;
-
-	vec3 worldNormal = invViewRotMat * viewNormal;
 
 	// Determine coordinates of fragment.
 	float depth = texture(depthStencil, inTexCoord).r;
@@ -69,6 +68,8 @@ void main()
 	vec3 worldPosition = (invViewMat * vec4(viewPosition, 1.0)).xyz;
 	vec3 worldFragPosition = (invViewMat * vec4(fragPosition, 1.0)).xyz;
 
+	vec3 worldNormal = invViewRotMat * viewNormal;
+
 	// Trace.
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
@@ -76,17 +77,23 @@ void main()
 	vec3 indirectSpecular = vec3(0);
 	vec4 indirectDiffuse = vec4(0);
 
-	{
+	vec4 directLight = texture(lastOutput, inTexCoord);
+
+	for (int i = 0; i < maxReflections; i++) {
 		// specular
 		vec3 sampleDir = rayReflectDir;
 		vec4 sampleColor = ConeTraceGrid(roughness, worldPosition, sampleDir, worldNormal);
 
 		if (roughness == 0) {
 			worldPosition += sampleDir * sampleColor.a;
-			worldNormal = -sampleDir;
+			rayReflectDir = reflect(sampleDir, worldNormal);
+			indirectSpecular = vec3(0);
+			vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
+			GetVoxel(voxelPos, 0, baseColor, worldNormal, directLight.rgb, roughness);
+		} else {
+			indirectSpecular = sampleColor.rgb;
+			break;
 		}
-
-		indirectSpecular = sampleColor.rgb;
 	}
 
 	for (float r = 0; r < diffuseAngles; r++) {
@@ -101,20 +108,10 @@ void main()
 
 	indirectDiffuse /= diffuseAngles;
 
-	vec4 directLight = texture(lastOutput, inTexCoord);
-
-	vec3 indirectLight = roughness * (indirectDiffuse.rgb * gb0.rgb + directLight.rgb) + (1.0 - roughness) * indirectSpecular;
-
-	if (roughness == 0) {
-		vec3 color, radiance;
-		vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
-		GetVoxel(voxelPos, 0, color, radiance);
-		directLight.rgb = indirectSpecular;
-		indirectLight = indirectDiffuse.rgb * color;
-	}
+	vec3 indirectLight = roughness * (indirectDiffuse.rgb * baseColor + directLight.rgb) + (1.0 - roughness) * indirectSpecular;
 
 	if (debug == 1) { // combined
-		indirectLight = roughness * indirectDiffuse.rgb * gb0.rgb + (1.0 - roughness) * indirectSpecular;
+		indirectLight = roughness * indirectDiffuse.rgb * baseColor + (1.0 - roughness) * indirectSpecular;
 		outFragColor = vec4(indirectLight, 1.0);
 	} else if (debug == 2) { // diffuse
 		outFragColor = vec4(indirectDiffuse.rgb, 1.0);

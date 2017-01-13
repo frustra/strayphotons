@@ -7,7 +7,7 @@
 ##import lib/shadow_sample
 
 layout (binding = 0) uniform sampler2D baseColorTex;
-// binding 1 = roughnessTex
+layout (binding = 1) uniform sampler2D roughnessTex;
 // binding 2 = metallicTex
 // binding 3 = heightTex
 layout (binding = 4) uniform sampler2D shadowMap;
@@ -27,12 +27,14 @@ uniform vec3 voxelGridCenter = vec3(0);
 
 in vec4 gl_FragCoord;
 
-// Data format: [color.r, color.g], [color.b, radiance.r], [radiance.g, radiance.b], [count]
+// Data format: [color.r, color.g], [color.b, radiance.r], [radiance.g, radiance.b], [normal.x, normal.y], [normal.z, roughness], [count]
 
 void main()
 {
-	vec4 diffuseColor = texture(baseColorTex, inTexCoord);
-	if (diffuseColor.a < 0.5) discard;
+	vec4 baseColor = texture(baseColorTex, inTexCoord);
+	if (baseColor.a < 0.5) discard;
+
+	float roughness = texture(roughnessTex, inTexCoord).r;
 
 	vec3 position = vec3(gl_FragCoord.xy / 2.0, gl_FragCoord.z * VoxelGridSize);
 	position = AxisSwapReverse[abs(inDirection)-1] * (position - VoxelGridSize / 2);
@@ -64,7 +66,7 @@ void main()
 		}
 
 		// Evaluate BRDF and calculate luminance.
-		vec3 diffuse = BRDF_Diffuse_Lambert(diffuseColor.rgb * 0.04);
+		vec3 diffuse = BRDF_Diffuse_Lambert(baseColor.rgb * 0.04);
 		vec3 luminance = diffuse * illuminance * currLightColor;
 
 		// Spotlight attenuation.
@@ -86,13 +88,19 @@ void main()
 	// Clip so we don't overflow
 	pixelLuminance = min(vec3(1), pixelLuminance);
 
-	uint rg = (uint(diffuseColor.r * 0xFF) << 16) + uint(diffuseColor.g * 0xFF);
-	uint br = (uint(diffuseColor.b * 0xFF) << 16) + uint(pixelLuminance.r * 0x7FF);
+	vec3 normal = normalize(inNormal) * 0.5 + 0.5;
+
+	uint rg = (uint(baseColor.r * 0xFF) << 16) + uint(baseColor.g * 0xFF);
+	uint br = (uint(baseColor.b * 0xFF) << 16) + uint(pixelLuminance.r * 0x7FF);
 	uint gb = (uint(pixelLuminance.g * 0x7FF) << 16) + uint(pixelLuminance.b * 0x7FF);
-	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 4, position.yz), rg);
-	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 4 + 1, position.yz), br);
-	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 4 + 2, position.yz), gb);
-	uint prevData = imageAtomicAdd(voxelData, ivec3(floor(position.x) * 4 + 3, position.yz), 1);
+	uint xy = (uint(normal.x * 0x7FF) << 16) + uint(normal.y * 0x7FF);
+	uint zr = (uint(normal.z * 0x7FF) << 16) + uint(roughness * 0xFF);
+	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 6, position.yz), rg);
+	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 6 + 1, position.yz), br);
+	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 6 + 2, position.yz), gb);
+	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 6 + 3, position.yz), xy);
+	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 6 + 4, position.yz), zr);
+	uint prevData = imageAtomicAdd(voxelData, ivec3(floor(position.x) * 6 + 5, position.yz), 1);
 
 	if ((prevData & 0xFFFF) == 0) {
 		uint index = atomicCounterIncrement(fragListSize);

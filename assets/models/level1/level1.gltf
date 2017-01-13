@@ -266,11 +266,10 @@
                     1,
                     1
                 ],
-                "baseColor": "texture_Exterior_Base_Color.png",
-                "diffuse": [
-                    0.64,
-                    0.64,
-                    0.64,
+                "baseColor": [
+                    0,
+                    0,
+                    0,
                     1
                 ],
                 "emission": [
