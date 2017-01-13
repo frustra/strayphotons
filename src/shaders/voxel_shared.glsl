@@ -65,7 +65,7 @@ vec3 GetVoxel(vec3 position, int level, out vec3 color, out vec3 normal, out vec
 	vec4 radianceData = textureLod(voxelRadiance, position/vec3(int(VoxelGridSize)>>level), level);
 	vec4 alphaData = textureLod(voxelAlpha, position/vec3(int(VoxelGridSize)>>level), level);
 	color = colorData.rgb / (colorData.a + 0.00001);
-	normal = normalData.xyz / (colorData.a + 0.00001);
+	normal = normalize(normalData.xyz / (colorData.a + 0.00001));
 	radiance = radianceData.rgb / (radianceData.a + 0.00001);
 	roughness = normalData.a / (colorData.a + 0.00001);
 	return alphaData.xyz / (alphaData.a + 0.00001);
@@ -189,7 +189,8 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 		}
 	}
 
-	return vec4(result.rgb / (result.a + 0.00001), (dist - 1) * voxelSize);
+	if (dist >= maxDist) dist = -1;
+	return vec4(result.rgb / (result.a + 0.00001), dist * voxelSize);
 }
 
 vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)

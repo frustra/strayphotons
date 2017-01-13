@@ -148,7 +148,7 @@ namespace ecs
 
 		auto transform = entity.Get<ecs::Transform>();
 		physx::PxVec3 pos = GlmVec3ToPxVec3(transform->GetPosition());
-		controller->pxController = px.CreateController(pos, 0.2f, 0.5f, 0.5f);
+		controller->pxController = px.CreateController(pos, 0.2f, 1.5f, 0.5f);
 
 		return controller;
 	}

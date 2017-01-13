@@ -35,7 +35,7 @@ void main()
 	radiance.rgb /= alpha;
 	roughness /= alpha;
 	imageStore(voxelColor, position, vec4(color.rgb, 1.0));
-	imageStore(voxelNormal, position, vec4(normal.xyz * 2.0 - 1.0, roughness));
+	imageStore(voxelNormal, position, vec4(normalize(normal.xyz * 2.0 - 1.0), roughness));
 	imageStore(voxelAlpha, position, vec4(1.0));
 	imageStore(voxelRadiance, position, vec4(radiance.rgb, 1.0));
 }

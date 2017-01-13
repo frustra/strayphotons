@@ -84,12 +84,11 @@ void main()
 		vec3 sampleDir = rayReflectDir;
 		vec4 sampleColor = ConeTraceGrid(roughness, worldPosition, sampleDir, worldNormal);
 
-		if (roughness == 0) {
-			worldPosition += sampleDir * sampleColor.a;
-			rayReflectDir = reflect(sampleDir, worldNormal);
-			indirectSpecular = vec3(0);
+		if (roughness == 0 && sampleColor.a >= 0) {
+			worldPosition += sampleDir * (sampleColor.a - 0.5 * voxelSize);
 			vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
 			GetVoxel(voxelPos, 0, baseColor, worldNormal, directLight.rgb, roughness);
+			rayReflectDir = reflect(sampleDir, worldNormal);
 		} else {
 			indirectSpecular = sampleColor.rgb;
 			break;
