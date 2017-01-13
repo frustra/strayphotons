@@ -32,7 +32,7 @@ namespace ecs
 		 * Move an entity in the given local direction based on how much time has passed
 		 * since last frame.
 		 */
-		void move(ecs::Entity entity, double dt, glm::vec3 normalizedDirection);
+		void move(ecs::Entity entity, double dt, glm::vec3 normalizedDirection, bool flight = false);
 
 		static const float MOVE_SPEED;
 		static const glm::vec2 CURSOR_SENSITIVITY;

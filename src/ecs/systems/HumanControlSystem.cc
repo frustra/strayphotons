@@ -5,7 +5,7 @@
 #include "ecs/components/Transform.hh"
 #include "ecs/components/Physics.hh"
 
-#include "physx/physxUtils.hh"
+#include "physx/PhysxUtils.hh"
 
 #include "Common.hh"
 
@@ -87,10 +87,10 @@ namespace ecs
 						move(entity, dtSinceLastFrame, glm::vec3(1, 0, 0));
 						break;
 					case ControlAction::MOVE_UP:
-						move(entity, dtSinceLastFrame, glm::vec3(0, 1, 0));
+						move(entity, dtSinceLastFrame, glm::vec3(0, 1, 0), true);
 						break;
 					case ControlAction::MOVE_DOWN:
-						move(entity, dtSinceLastFrame, glm::vec3(0, -1, 0));
+						move(entity, dtSinceLastFrame, glm::vec3(0, -1, 0), true);
 						break;
 					default:
 						std::stringstream ss;
@@ -153,7 +153,7 @@ namespace ecs
 		return controller;
 	}
 
-	void HumanControlSystem::move(ecs::Entity entity, double dt, glm::vec3 normalizedDirection)
+	void HumanControlSystem::move(ecs::Entity entity, double dt, glm::vec3 normalizedDirection, bool flight)
 	{
 		if (!entity.Has<ecs::Transform>())
 		{
@@ -163,16 +163,30 @@ namespace ecs
 		auto transform = entity.Get<ecs::Transform>();
 		auto controller = entity.Get<HumanController>();
 
-		float movement = HumanControlSystem::MOVE_SPEED * (float)dt;
-		physx::PxVec3 translation = GlmVec3ToPxVec3(transform->rotate*(movement * normalizedDirection));
-
 		if(controller->pxController)
 		{
+			float movement = HumanControlSystem::MOVE_SPEED * (float)dt;
+			
+			physx::PxVec3 moveVec3;
+			if(!flight)
+			{
+				// Kill upwards look rotation and renormalize
+				moveVec3 = GlmVec3ToPxVec3(transform->rotate * normalizedDirection);
+				moveVec3.y = 0;
+				moveVec3.normalizeSafe();
+				moveVec3 *= movement;
+			}
+			else
+			{
+				// Go straight up or down, ignoring look direction
+				moveVec3 = GlmVec3ToPxVec3(normalizedDirection * movement);
+			}
+
 			physx::PxControllerFilters filters;
 			physx::PxScene* scene = controller->pxController->getScene();
 			Assert(scene);
 			scene->lockRead();
-			controller->pxController->move(translation, 0, dt, filters);
+			controller->pxController->move(moveVec3, 0, dt, filters);
 			scene->unlockRead();
 		}
 	}
