@@ -166,7 +166,7 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out
 vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 {
 	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
-	float dist = max(1.75, min(1.75 / dot(rayDir, surfaceNormal), VoxelGridSize / 2));
+	float dist = 0;//max(1.75, min(1.75 / dot(rayDir, surfaceNormal), VoxelGridSize / 2));
 	float maxDist = VoxelGridSize * 1.5;
 
 	vec4 result = vec4(0);
