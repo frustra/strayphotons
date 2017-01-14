@@ -1,9 +1,12 @@
 #version 430
 
-layout (binding = 0) uniform sampler2D lastOutput;
-layout (binding = 1) uniform sampler2D gBuffer0;
-layout (binding = 2) uniform sampler2D gBuffer1;
-layout (binding = 3) uniform sampler2D depthStencil;
+#define USE_PCF
+
+layout (binding = 0) uniform sampler2D gBuffer0;
+layout (binding = 1) uniform sampler2D gBuffer1;
+layout (binding = 2) uniform sampler2D depthStencil;
+layout (binding = 3) uniform sampler2D shadowMap;
+
 layout (binding = 4) uniform sampler3D voxelColor;
 layout (binding = 5) uniform sampler3D voxelNormal;
 layout (binding = 6) uniform sampler3D voxelAlpha;
@@ -12,21 +15,23 @@ layout (binding = 7) uniform sampler3D voxelRadiance;
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
+##import lib/light_inputs
+
 #define INCLUDE_VOXEL_TRACE
 
 uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);
 
+uniform float exposure = 0.1;
+uniform vec2 targetSize;
+
 ##import lib/util
-##import lib/lighting_util
 ##import voxel_shared
+##import lib/shadow_sample
 
 const int maxReflections = 2;
 
-uniform mat4 viewMat;
 uniform mat4 invViewMat;
-uniform mat3 invViewRotMat;
-uniform mat4 projMat;
 uniform mat4 invProjMat;
 
 uniform int debug = 0;
@@ -49,7 +54,8 @@ vec3 orientByNormal(float phi, float tht, vec3 normal)
 void main()
 {
 	// Determine normal of surface at this fragment.
-	vec3 viewNormal = texture(gBuffer1, inTexCoord).rgb;
+	vec4 gb1 = texture(gBuffer1, inTexCoord);
+	vec3 viewNormal = gb1.rgb;
 	if (length(viewNormal) < 0.5) {
 		// Normal not defined.
 		outFragColor = vec4(0);
@@ -59,6 +65,7 @@ void main()
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
 	vec3 baseColor = gb0.rgb;
 	float roughness = gb0.a;
+	float metalness = gb1.a;
 
 	// Determine coordinates of fragment.
 	float depth = texture(depthStencil, inTexCoord).r;
@@ -68,7 +75,7 @@ void main()
 	vec3 worldPosition = (invViewMat * vec4(viewPosition, 1.0)).xyz;
 	vec3 worldFragPosition = (invViewMat * vec4(fragPosition, 1.0)).xyz;
 
-	vec3 worldNormal = invViewRotMat * viewNormal;
+	vec3 worldNormal = mat3(invViewMat) * viewNormal;
 
 	// Trace.
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
@@ -77,7 +84,7 @@ void main()
 	vec3 indirectSpecular = vec3(0);
 	vec4 indirectDiffuse = vec4(0);
 
-	vec4 directLight = texture(lastOutput, inTexCoord);
+	vec3 directLight = directShading(worldPosition, -rayDir, baseColor, worldNormal, roughness, metalness);
 
 	for (int i = 0; i < maxReflections; i++) {
 		// specular
@@ -87,7 +94,7 @@ void main()
 		if (roughness == 0 && sampleColor.a >= 0) {
 			worldPosition += sampleDir * (sampleColor.a - 0.5 * voxelSize);
 			vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
-			GetVoxel(voxelPos, 0, baseColor, worldNormal, directLight.rgb, roughness);
+			GetVoxel(voxelPos, 0, baseColor, worldNormal, directLight, roughness);
 			rayReflectDir = reflect(sampleDir, worldNormal);
 		} else {
 			indirectSpecular = sampleColor.rgb;
@@ -107,16 +114,16 @@ void main()
 
 	indirectDiffuse /= diffuseAngles;
 
-	vec3 indirectLight = roughness * (indirectDiffuse.rgb * baseColor + directLight.rgb) + (1.0 - roughness) * indirectSpecular;
+	vec3 totalLight = roughness * (indirectDiffuse.rgb * baseColor + directLight) + (1.0 - roughness) * indirectSpecular;
 
 	if (debug == 1) { // combined
-		indirectLight = roughness * indirectDiffuse.rgb * baseColor + (1.0 - roughness) * indirectSpecular;
-		outFragColor = vec4(indirectLight, 1.0);
+		totalLight = roughness * indirectDiffuse.rgb * baseColor + (1.0 - roughness) * indirectSpecular;
+		outFragColor = vec4(totalLight * exposure, 1.0);
 	} else if (debug == 2) { // diffuse
 		outFragColor = vec4(indirectDiffuse.rgb, 1.0);
 	} else if (debug == 3) { // specular
 		outFragColor = vec4(indirectSpecular, 1.0);
 	} else {
-		outFragColor = vec4(indirectLight, 0.0);
+		outFragColor = vec4(totalLight * exposure, 0.0);
 	}
 }

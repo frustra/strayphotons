@@ -49,28 +49,17 @@ namespace sp
 
 	static void AddLighting(PostProcessingContext &context)
 	{
-		auto lighting = context.AddPass<DeferredLighting>();
-		lighting->SetInput(0, context.LastOutput);
+		auto lighting = context.AddPass<VoxelLighting>();
+		lighting->SetInput(0, context.GBuffer0);
 		lighting->SetInput(1, context.GBuffer1);
 		lighting->SetInput(2, context.Depth);
 		lighting->SetInput(3, context.ShadowMap);
+		lighting->SetInput(4, context.VoxelColor);
+		lighting->SetInput(5, context.VoxelNormal);
+		lighting->SetInput(6, context.VoxelAlpha);
+		lighting->SetInput(7, context.VoxelRadiance);
 
 		context.LastOutput = lighting;
-	}
-
-	static void AddVoxelLighting(PostProcessingContext &context)
-	{
-		auto voxel = context.AddPass<VoxelLighting>();
-		voxel->SetInput(0, context.LastOutput);
-		voxel->SetInput(1, context.GBuffer0);
-		voxel->SetInput(2, context.GBuffer1);
-		voxel->SetInput(3, context.Depth);
-		voxel->SetInput(4, context.VoxelColor);
-		voxel->SetInput(5, context.VoxelNormal);
-		voxel->SetInput(6, context.VoxelAlpha);
-		voxel->SetInput(7, context.VoxelRadiance);
-
-		context.LastOutput = voxel;
 	}
 
 	static void AddSMAA(PostProcessingContext &context, ProcessPassOutputRef linearLuminosity)
@@ -122,11 +111,6 @@ namespace sp
 		if (CVarLightingEnabled.Get() && targets.shadowMap != nullptr)
 		{
 			AddLighting(context);
-		}
-
-		if (CVarVoxelLightingEnabled.Get())
-		{
-			AddVoxelLighting(context);
 		}
 
 		auto linearLuminosity = context.LastOutput;

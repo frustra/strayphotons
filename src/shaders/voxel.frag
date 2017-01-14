@@ -4,7 +4,6 @@
 
 ##import lib/util
 ##import voxel_shared
-##import lib/lighting_util
 
 layout (binding = 0) uniform sampler2D baseColorTex;
 layout (binding = 1) uniform sampler2D roughnessTex;

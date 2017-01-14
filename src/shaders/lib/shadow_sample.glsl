@@ -1,5 +1,7 @@
 #define USE_SHADOW_MAPPING
 
+##import lib/lighting_util
+
 float sampleOcclusion(sampler2D map, int i, vec3 shadowMapPos, vec3 shadowMapTexCoord) {
 	float sampledDepth = texture(map, shadowMapTexCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy).r;
 	float fragmentDepth = (length(shadowMapPos) - lightClip[i].x) / (lightClip[i].y - lightClip[i].x);
@@ -81,7 +83,7 @@ vec3 directShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 
 		// Evaluate BRDF and calculate luminance.
 #ifdef DIFFUSE_ONLY_SHADING
-		vec3 brdf = BRDF_Diffuse_Lambert(baseColor * 0.04);
+		vec3 brdf = BRDF_Diffuse_Lambert(baseColor);
 #else
 		vec3 brdf = evaluateBRDF(baseColor, vec3(0.04), roughness, incidence, directionToView, normal);
 #endif
