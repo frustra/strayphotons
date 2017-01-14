@@ -7,6 +7,9 @@
 #include <v-hacd/VHACD_Lib/inc/vhacdICHull.h>
 #include <v-hacd/VHACD_Lib/inc/vhacdVector.h>
 
+#include <glm/gtx/hash.hpp>
+#include <unordered_set>
+
 namespace sp
 {
 	class VHACDCallback : public VHACD::IVHACD::IUserCallback
@@ -143,11 +146,55 @@ namespace sp
 		Assert(posAttrib.componentCount == 3);
 		Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
+		auto indexAttrib = prim->indexBuffer;
+		Assert(prim->drawMode == GL_TRIANGLES);
+		Assert(indexAttrib.componentCount == 1);
+
 		auto pbuffer = model->GetScene()->buffers[posAttrib.bufferName];
-		auto points = (float *)(pbuffer.data.data() + posAttrib.byteOffset);
+		auto points = pbuffer.data.data() + posAttrib.byteOffset;
+
+		auto ibuffer = model->GetScene()->buffers[indexAttrib.bufferName];
+		auto indices = ibuffer.data.data() + indexAttrib.byteOffset;
+
+		std::unordered_set<glm::ivec3> visitedPoints;
+		std::unordered_set<uint32> visitedIndexes;
+		vector<glm::vec3> finalPoints;
+
+		for (uint32 i = 0; i < indexAttrib.components; i++)
+		{
+			uint32 index = 0;
+
+			switch (indexAttrib.componentType)
+			{
+				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+					index = *(const uint32 *)(indices + i * indexAttrib.byteStride);
+					break;
+				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+					index = *(const uint16 *)(indices + i * indexAttrib.byteStride);
+					break;
+				default:
+					Assert(false, "invalid index component type");
+					break;
+			}
+
+			auto tri = (float *) (points + index * posAttrib.byteStride);
+			glm::ivec3 lowResPoint({tri[0] * 1e6, tri[1] * 1e6, tri[2] * 1e6});
+
+			if (visitedIndexes.count(index))
+				continue;
+
+			visitedIndexes.insert(index);
+
+			if (visitedPoints.count(lowResPoint))
+				continue;
+
+			visitedPoints.insert(lowResPoint);
+			finalPoints.push_back({tri[0], tri[1], tri[2]});
+			Logf("%d %d %d", lowResPoint[0], lowResPoint[1], lowResPoint[2]);
+		}
 
 		btConvexHullComputer chc;
-		chc.compute(points, posAttrib.byteStride, posAttrib.components, -1, -1);
+		chc.compute((float *)&finalPoints[0], sizeof(glm::vec3), finalPoints.size(), -1, -1);
 
 		VHACD::ICHull icc;
 
