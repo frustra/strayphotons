@@ -97,7 +97,7 @@ namespace sp
 			memcpy(hull.triangles, ihull.m_triangles, sizeof(int) * 3 * ihull.m_nTriangles);
 
 			set->hulls.push_back(hull);
-			Logf("Adding hull, %d points, %d triangles", hull.pointCount, hull.triangleCount);
+			Logf("Adding VHACD hull, %d points, %d triangles", hull.pointCount, hull.triangleCount);
 		}
 
 		interfaceVHACD->Clean();
@@ -190,7 +190,6 @@ namespace sp
 
 			visitedPoints.insert(lowResPoint);
 			finalPoints.push_back({tri[0], tri[1], tri[2]});
-			Logf("%d %d %d", lowResPoint[0], lowResPoint[1], lowResPoint[2]);
 		}
 
 		btConvexHullComputer chc;
@@ -210,7 +209,7 @@ namespace sp
 		ConvexHull hull;
 		copyVhacdManifoldMeshToConvexHull(hull, icc.GetMesh());
 		set->hulls.push_back(hull);
-		Logf("Adding hull, %d points, %d triangles", hull.pointCount, hull.triangleCount);
+		Logf("Adding simple hull, %d points, %d triangles", hull.pointCount, hull.triangleCount);
 	}
 
 	void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set, Model *model)
