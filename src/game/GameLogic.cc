@@ -39,7 +39,9 @@ namespace sp
 				auto transform = entity.Assign<ecs::Transform>();
 				transform->Translate(glm::vec3(0, 5, 0));
 
-				auto actor = game->physics.CreateActor(model, physx::PxTransform(physx::PxVec3(0, 5, 0)));
+				PhysxManager::ActorDesc desc;
+				desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
+				auto actor = game->physics.CreateActor(model, desc);
 
 				if (actor)
 				{
@@ -48,7 +50,7 @@ namespace sp
 			}
 		});
 
-		game->audio.StartEvent("event:/german nonsense");
+		//game->audio.StartEvent("event:/german nonsense");
 	}
 
 	GameLogic::~GameLogic()

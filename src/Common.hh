@@ -30,6 +30,8 @@ namespace sp
 	void Assert(bool condition);
 	void Assert(bool condition, const string &message);
 
+	void DebugBreak();
+
 	uint32 CeilToPowerOfTwo(uint32 v);
 	uint32 Uint32Log2(uint32 v);
 

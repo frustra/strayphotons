@@ -2,10 +2,12 @@
 #define SP_PHYSXMANAGER_H
 
 #include "Common.hh"
+#include "ConvexHull.hh"
 
 #include <PxPhysicsAPI.h>
 #include <extensions/PxDefaultErrorCallback.h>
 #include <extensions/PxDefaultAllocator.h>
+#include <unordered_map>
 
 namespace sp
 {
@@ -27,11 +29,24 @@ namespace sp
 		void ReadLock();
 		void ReadUnlock();
 
-		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, physx::PxTransform transform = physx::PxTransform(), physx::PxMeshScale scale = physx::PxMeshScale(), bool dynamic = true);
+		ConvexHullSet *GetCollisionMesh(shared_ptr<Model> model);
+
+		struct ActorDesc
+		{
+			physx::PxTransform transform;
+			physx::PxMeshScale scale;
+			bool dynamic = true;
+			//bool mergePrimitives = true;
+		};
+
+		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, ActorDesc desc);
 		physx::PxController *CreateController(physx::PxVec3 pos, float radius, float height, float density);
+
 	private:
 		void CreatePhysxScene();
 		void DestroyPhysxScene();
+
+		ConvexHullSet *BuildConvexHulls(Model *model);
 
 		physx::PxFoundation *pxFoundation;
 		physx::PxPhysics *physics;
@@ -43,6 +58,8 @@ namespace sp
 
 		physx::PxScene *scene;
 		bool simulate = false, resultsPending = false;
+
+		std::unordered_map<string, ConvexHullSet *> cache;
 	};
 }
 

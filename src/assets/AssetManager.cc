@@ -281,9 +281,13 @@ namespace sp
 							dynamic = param.second.get<bool>();
 						}
 					}
-					physx::PxTransform transform(translate);
-					physx::PxMeshScale meshScale(scale, physx::PxQuat(physx::PxIdentity));
-					actor = px.CreateActor(model, transform, meshScale, dynamic);
+
+					PhysxManager::ActorDesc desc;
+					desc.transform = physx::PxTransform(translate);
+					desc.scale = physx::PxMeshScale(scale, physx::PxQuat(physx::PxIdentity));
+					desc.dynamic = dynamic;
+
+					actor = px.CreateActor(model, desc);
 
 					if (actor)
 					{

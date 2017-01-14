@@ -202,31 +202,51 @@ namespace sp
 		scene->unlockRead();
 	}
 
-	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PxTransform transform, PxMeshScale scale, bool dynamic)
+	ConvexHullSet *PhysxManager::GetCollisionMesh(shared_ptr<Model> model)
+	{
+		if (cache.count(model->name))
+		{
+			return cache[model->name];
+		}
+
+		return nullptr;
+	}
+
+	ConvexHullSet *PhysxManager::BuildConvexHulls(Model *model)
+	{
+		if (cache.count(model->name))
+		{
+			return cache[model->name];
+		}
+
+		Logf("Rebuilding convex hulls for %s", model->name);
+
+		ConvexHullSet *set = new ConvexHullSet;
+		ConvexHullBuilding::BuildConvexHulls(set, model);
+		cache[model->name] = set;
+		return set;
+	}
+
+	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, ActorDesc desc)
 	{
 		Lock();
 		PxRigidActor *actor;
 
-		if (dynamic)
-			actor = physics->createRigidDynamic(transform);
+		if (desc.dynamic)
+			actor = physics->createRigidDynamic(desc.transform);
 		else
-			actor = physics->createRigidStatic(transform);
+			actor = physics->createRigidStatic(desc.transform);
 
 		PxMaterial *mat = physics->createMaterial(0.6f, 0.5f, 0.0f);
 
-		for (auto prim : model->primitives)
+		auto decomposition = BuildConvexHulls(model.get());
+
+		for (auto hull : decomposition->hulls)
 		{
-			auto posAttrib = prim->attributes[0];
-			Assert(posAttrib.componentCount == 3);
-			Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
-
-			// Build convex hull
-			auto buffer = model->GetScene()->buffers[posAttrib.bufferName];
-
 			PxConvexMeshDesc convexDesc;
-			convexDesc.points.count = posAttrib.components;
-			convexDesc.points.stride = posAttrib.byteStride;
-			convexDesc.points.data = (PxVec3 *)(buffer.data.data() + posAttrib.byteOffset);
+			convexDesc.points.count = hull.pointCount;
+			convexDesc.points.stride = hull.pointByteStride;
+			convexDesc.points.data = hull.points;
 			convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
 
 			PxDefaultMemoryOutputStream buf;
@@ -239,12 +259,12 @@ namespace sp
 			}
 
 			PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
-			PxConvexMesh *hull = physics->createConvexMesh(input);
+			PxConvexMesh *pxhull = physics->createConvexMesh(input);
 
-			actor->createShape(PxConvexMeshGeometry(hull, scale), *mat);
+			actor->createShape(PxConvexMeshGeometry(pxhull, desc.scale), *mat);
 		}
 
-		if (dynamic)
+		if (desc.dynamic)
 			PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidDynamic *>(actor), 1.0f);
 
 		scene->addActor(*actor);
