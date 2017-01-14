@@ -17,6 +17,7 @@
 #include "ecs/components/Physics.hh"
 #include "ecs/components/VoxelInfo.hh"
 
+#include <boost/filesystem.hpp>
 #include <iostream>
 #include <fstream>
 
@@ -42,6 +43,9 @@ namespace sp
 
 	bool AssetManager::OutputStream(const std::string &path, std::ofstream &stream)
 	{
+		boost::filesystem::path p(ASSETS_DIR + path);
+		boost::filesystem::create_directories(p.parent_path());
+
 		stream.open(ASSETS_DIR + path, std::ios::out | std::ios::binary);
 		return !!stream;
 	}
