@@ -163,12 +163,12 @@ namespace ecs
 		auto transform = entity.Get<ecs::Transform>();
 		auto controller = entity.Get<HumanController>();
 
-		if(controller->pxController)
+		if (controller->pxController)
 		{
 			float movement = HumanControlSystem::MOVE_SPEED * (float)dt;
-			
+
 			physx::PxVec3 moveVec3;
-			if(!flight)
+			if (!flight)
 			{
 				// Kill upwards look rotation and renormalize
 				moveVec3 = GlmVec3ToPxVec3(transform->rotate * normalizedDirection);
@@ -183,7 +183,7 @@ namespace ecs
 			}
 
 			physx::PxControllerFilters filters;
-			physx::PxScene* scene = controller->pxController->getScene();
+			physx::PxScene *scene = controller->pxController->getScene();
 			Assert(scene);
 			scene->lockRead();
 			controller->pxController->move(moveVec3, 0, dt, filters);

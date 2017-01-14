@@ -54,7 +54,7 @@ namespace sp
 		physx::PxDefaultErrorCallback defaultErrorCallback;
 		physx::PxDefaultAllocator defaultAllocatorCallback;
 		physx::PxCooking *pxCooking;
-		physx::PxControllerManager* manager; 
+		physx::PxControllerManager *manager;
 
 		physx::PxScene *scene;
 		bool simulate = false, resultsPending = false;

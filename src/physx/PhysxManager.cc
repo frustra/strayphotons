@@ -171,7 +171,7 @@ namespace sp
 	void PhysxManager::ReleaseControllers()
 	{
 		Lock();
-		if(manager)
+		if (manager)
 		{
 			manager->purgeControllers();
 		}
@@ -280,13 +280,13 @@ namespace sp
 		//Capsule controller description will want to be data driven
 		PxCapsuleControllerDesc desc;
 		desc.position = PxExtendedVec3(pos.x, pos.y, pos.z);
-		desc.upDirection = PxVec3(0,1,0);
+		desc.upDirection = PxVec3(0, 1, 0);
 		desc.radius = radius;
 		desc.height = height;
 		desc.density = density;
 		desc.material = physics->createMaterial(0.3f, 0.3f, 0.3f);
 
-		PxController* controller = manager->createController(desc);
+		PxController *controller = manager->createController(desc);
 		Unlock();
 		return controller;
 	}

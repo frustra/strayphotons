@@ -33,7 +33,7 @@ namespace ecs
 		float roll;
 
 		// pxCapsuleController handles movement and physx simulation
-		physx::PxController* pxController;
+		physx::PxController *pxController;
 	};
 
 }

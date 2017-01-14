@@ -8,7 +8,7 @@ namespace ecs
 	struct Physics
 	{
 		Physics() {}
-		Physics(physx::PxRigidActor *actor) : actor(actor) 
+		Physics(physx::PxRigidActor *actor) : actor(actor)
 		{
 			if (actor)
 			{

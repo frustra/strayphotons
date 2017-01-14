@@ -59,7 +59,7 @@ namespace ecs
 
 	glm::vec3 Transform::GetPosition()
 	{
-		return this->translate*glm::vec4(0,0,0,1);
+		return this->translate * glm::vec4(0, 0, 0, 1);
 	}
 
 	void Transform::Scale(glm::vec3 xyz)
