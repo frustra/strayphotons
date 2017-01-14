@@ -16,6 +16,39 @@ namespace sp
 		return out;
 	}
 
+	size_t byteStrideForAccessor(int componentType, size_t componentCount, size_t existingByteStride)
+	{
+		if (existingByteStride)
+			return existingByteStride;
+
+		size_t componentWidth = 0;
+
+		switch (componentType)
+		{
+			case TINYGLTF_COMPONENT_TYPE_BYTE:
+			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+				componentWidth = 1;
+				break;
+			case TINYGLTF_COMPONENT_TYPE_SHORT:
+			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+				componentWidth = 2;
+				break;
+			case TINYGLTF_COMPONENT_TYPE_INT:
+			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+			case TINYGLTF_COMPONENT_TYPE_FLOAT:
+				componentWidth = 4;
+				break;
+			case TINYGLTF_COMPONENT_TYPE_DOUBLE:
+				componentWidth = 8;
+				break;
+			default:
+				Assert(false, "invalid component type");
+				break;
+		}
+
+		return componentCount * componentWidth;
+	}
+
 	Model::Attribute GetPrimitiveAttribute(tinygltf::Scene *scene, tinygltf::Primitive *p, string attribute)
 	{
 		if (!p->attributes.count(attribute)) return Model::Attribute();
@@ -43,7 +76,7 @@ namespace sp
 		return Model::Attribute
 		{
 			accessor.byteOffset + bufView.byteOffset,
-			accessor.byteStride ? accessor.byteStride : 4 * componentCount,
+			byteStrideForAccessor(accessor.componentType, componentCount, accessor.byteStride),
 			accessor.componentType,
 			componentCount,
 			accessor.count,
@@ -162,7 +195,7 @@ namespace sp
 					mode,
 					Attribute{
 						iAcc.byteOffset + iBufView.byteOffset,
-						iAcc.byteStride,
+						byteStrideForAccessor(iAcc.componentType, 1, iAcc.byteStride),
 						iAcc.componentType,
 						1,
 						iAcc.count,
