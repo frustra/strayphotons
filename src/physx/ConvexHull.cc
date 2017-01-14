@@ -83,7 +83,7 @@ namespace sp
 			hull.pointCount = ihull.m_nPoints;
 			hull.pointByteStride = sizeof(float) * 3;
 
-			for (int i = 0; i < ihull.m_nPoints * 3; i++)
+			for (uint32 i = 0; i < ihull.m_nPoints * 3; i++)
 			{
 				hull.points[i] = (float) ihull.m_points[i];
 			}

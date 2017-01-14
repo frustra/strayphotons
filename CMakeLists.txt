@@ -198,8 +198,13 @@ target_compile_features(${PROJECT_LIB} PRIVATE cxx_range_for)
 target_compile_features(${PROJECT_EXE} PRIVATE cxx_range_for)
 
 if (UNIX)
-	target_compile_options(${PROJECT_LIB} PRIVATE -Werror)
-	target_compile_options(${PROJECT_EXE} PRIVATE -Werror)
+	set(PROJECT_COMPILE_OPTIONS
+		-Werror
+		-Wsign-compare
+	)
+
+	target_compile_options(${PROJECT_LIB} PRIVATE ${PROJECT_COMPILE_OPTIONS})
+	target_compile_options(${PROJECT_EXE} PRIVATE ${PROJECT_COMPILE_OPTIONS})
 endif()
 
 if (APPLE)
