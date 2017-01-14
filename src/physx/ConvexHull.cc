@@ -47,7 +47,7 @@ namespace sp
 			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
 				indicesCopy = new int[indexAttrib.components];
 
-				for (int i = 0; i < indexAttrib.components; i++)
+				for (uint i = 0; i < indexAttrib.components; i++)
 				{
 					indicesCopy[i] = (int)((const uint16 *) indices)[i];
 				}
@@ -74,7 +74,7 @@ namespace sp
 			bool res = interfaceVHACD->Compute(points, pointStride, posAttrib.components, indices, 3, indexAttrib.components / 3, params);
 			Assert(res, "building convex decomposition");
 
-			for (int i = 0; i < interfaceVHACD->GetNConvexHulls(); i++)
+			for (uint i = 0; i < interfaceVHACD->GetNConvexHulls(); i++)
 			{
 				VHACD::IVHACD::ConvexHull ihull;
 				interfaceVHACD->GetConvexHull(i, ihull);
@@ -84,7 +84,7 @@ namespace sp
 				hull.pointCount = ihull.m_nPoints;
 				hull.pointByteStride = sizeof(float) * 3;
 
-				for (int i = 0; i < ihull.m_nPoints * 3; i++)
+				for (uint i = 0; i < ihull.m_nPoints * 3; i++)
 				{
 					hull.points[i] = (float) ihull.m_points[i];
 				}
