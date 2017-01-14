@@ -10,7 +10,7 @@
 
 namespace sp
 {
-	static CVar<int> CVarVoxelLightingDebug("r.VoxelLightingDebug", 0, "Show unprocessed Voxel lighting (1: combined, 2: diffuse, 3: specular, 4: AO)");
+	static CVar<int> CVarVoxelLightingMode("r.VoxelLighting", 1, "Voxel lighting mode (0: direct only, 1: full, 2: indirect only, 3: diffuse only, 4: specular only");
 
 	class VoxelLightingFS : public Shader
 	{
@@ -37,7 +37,7 @@ namespace sp
 
 			Bind(invProjMat, "invProjMat");
 			Bind(invViewMat, "invViewMat");
-			Bind(debug, "debug");
+			Bind(mode, "mode");
 
 			Bind(voxelSize, "voxelSize");
 			Bind(voxelGridCenter, "voxelGridCenter");
@@ -100,9 +100,9 @@ namespace sp
 			Set(targetSize, glm::vec2(view.extents));
 		}
 
-		void SetDebug(int newDebug)
+		void SetMode(int newMode)
 		{
-			Set(debug, newDebug);
+			Set(mode, newMode);
 		}
 
 		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo)
@@ -114,7 +114,7 @@ namespace sp
 	private:
 		Uniform lightCount, lightPosition, lightTint, lightDirection, lightSpotAngleCos;
 		Uniform lightProj, lightView, lightClip, lightMapOffset, lightIntensity, lightIlluminance;
-		Uniform exposure, targetSize, invViewMat, invProjMat, debug;
+		Uniform exposure, targetSize, invViewMat, invProjMat, mode;
 		Uniform voxelSize, voxelGridCenter;
 	};
 
@@ -129,7 +129,7 @@ namespace sp
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetLights(context->game->entityManager, lights);
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetExposure(0.1);
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetViewParams(context->view);
-		r->GlobalShaders->Get<VoxelLightingFS>()->SetDebug(CVarVoxelLightingDebug.Get());
+		r->GlobalShaders->Get<VoxelLightingFS>()->SetMode(CVarVoxelLightingMode.Get());
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetVoxelInfo(context->renderer->voxelInfo);
 
 		r->SetRenderTarget(&dest, nullptr);

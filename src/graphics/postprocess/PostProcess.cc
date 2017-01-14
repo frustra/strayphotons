@@ -26,7 +26,6 @@ namespace sp
 	static CVar<int> CVarViewGBufferSource("r.ViewGBufferSource", 0, "GBuffer Debug Source (0: gbuffer, 1: voxel grid, 2: cone trace)");
 	static CVar<int> CVarVoxelMip("r.VoxelMip", 0, "");
 	static CVar<int> CVarAntiAlias("r.AntiAlias", 1, "Anti-aliasing mode (0: none, 1: SMAA 1x)");
-	static CVar<int> CVarVoxelLightingEnabled("r.VoxelLighting", 1, "Enable voxel lighting");
 
 	static void AddSSAO(PostProcessingContext &context)
 	{

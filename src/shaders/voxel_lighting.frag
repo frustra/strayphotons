@@ -34,7 +34,7 @@ const int maxReflections = 2;
 uniform mat4 invViewMat;
 uniform mat4 invProjMat;
 
-uniform int debug = 0;
+uniform int mode = 1;
 
 const int diffuseAngles = 6;
 
@@ -116,14 +116,16 @@ void main()
 
 	vec3 totalLight = roughness * (indirectDiffuse.rgb * baseColor + directLight) + (1.0 - roughness) * indirectSpecular;
 
-	if (debug == 1) { // combined
+	if (mode == 0) { // Direct only
+		outFragColor = vec4(directLight * exposure, 1.0);
+	} else if (mode == 2) { // Indirect lighting
 		totalLight = roughness * indirectDiffuse.rgb * baseColor + (1.0 - roughness) * indirectSpecular;
 		outFragColor = vec4(totalLight * exposure, 1.0);
-	} else if (debug == 2) { // diffuse
+	} else if (mode == 3) { // diffuse
 		outFragColor = vec4(indirectDiffuse.rgb, 1.0);
-	} else if (debug == 3) { // specular
+	} else if (mode == 4) { // specular
 		outFragColor = vec4(indirectSpecular, 1.0);
-	} else {
-		outFragColor = vec4(totalLight * exposure, 0.0);
+	} else { // Full lighting
+		outFragColor = vec4(totalLight * exposure, 1.0);
 	}
 }
