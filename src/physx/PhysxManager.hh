@@ -29,7 +29,7 @@ namespace sp
 		void ReadLock();
 		void ReadUnlock();
 
-		ConvexHullSet *GetCollisionMesh(shared_ptr<Model> model);
+		ConvexHullSet *GetCachedConvexHulls(Model *model);
 
 		struct ActorDesc
 		{
@@ -47,6 +47,8 @@ namespace sp
 		void DestroyPhysxScene();
 
 		ConvexHullSet *BuildConvexHulls(Model *model);
+		ConvexHullSet *LoadCollisionCache(Model *model);
+		void SaveCollisionCache(Model *model, ConvexHullSet *set);
 
 		physx::PxFoundation *pxFoundation;
 		physx::PxPhysics *physics;

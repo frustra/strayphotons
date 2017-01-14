@@ -4,6 +4,10 @@
 			"renderable": "level1",
 			"transform": {
 				"translate": [0, 0, 0]
+			},
+			"physics": {
+				"model": "level1",
+				"dynamic": false
 			}
 		},
 		{

@@ -26,6 +26,26 @@ namespace sp
 
 	const std::string ASSETS_DIR = "../assets/";
 
+	bool AssetManager::InputStream(const std::string &path, std::ifstream &stream, size_t *size)
+	{
+		stream.open(ASSETS_DIR + path, std::ios::in | std::ios::binary);
+
+		if (size && stream)
+		{
+			stream.seekg(0, std::ios::end);
+			*size = stream.tellg();
+			stream.seekg(0, std::ios::beg);
+		}
+
+		return !!stream;
+	}
+
+	bool AssetManager::OutputStream(const std::string &path, std::ofstream &stream)
+	{
+		stream.open(ASSETS_DIR + path, std::ios::out | std::ios::binary);
+		return !!stream;
+	}
+
 	shared_ptr<Asset> AssetManager::Load(const std::string &path)
 	{
 		AssetMap::iterator it = loadedAssets.find(path);
@@ -34,14 +54,13 @@ namespace sp
 		if (it == loadedAssets.end())
 		{
 			Logf("Loading asset: %s", path);
-			std::ifstream in(ASSETS_DIR + path, std::ios::in | std::ios::binary);
 
-			if (in)
+			std::ifstream in;
+			size_t size;
+
+			if (InputStream(path, in, &size))
 			{
-				in.seekg(0, std::ios::end);
-				size_t size = in.tellg();
 				uint8 *buffer = new uint8[size];
-				in.seekg(0, std::ios::beg);
 				in.read((char *) buffer, size);
 				in.close();
 

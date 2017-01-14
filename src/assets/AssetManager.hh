@@ -22,6 +22,9 @@ namespace sp
 	class AssetManager
 	{
 	public:
+		bool InputStream(const std::string &path, std::ifstream &stream, size_t *size = nullptr);
+		bool OutputStream(const std::string &path, std::ofstream &stream);
+
 		shared_ptr<Asset> Load(const std::string &path);
 		Texture LoadTexture(const std::string &path);
 		shared_ptr<Model> LoadModel(const std::string &name);

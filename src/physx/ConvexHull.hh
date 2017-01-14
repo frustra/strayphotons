@@ -8,13 +8,13 @@ namespace sp
 
 	struct ConvexHull
 	{
-		float *points;
 		uint32 pointCount;
 		uint32 pointByteStride;
-
-		int *triangles;
 		uint32 triangleCount;
 		uint32 triangleByteStride;
+
+		float *points;
+		int *triangles;
 	};
 
 	struct ConvexHullSet

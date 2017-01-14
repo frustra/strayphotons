@@ -2,16 +2,18 @@
 
 #include "physx/PhysxManager.hh"
 
+#include "assets/AssetManager.hh"
 #include "assets/Model.hh"
 #include "core/Logging.hh"
 #include "core/CVar.hh"
 
+#include <fstream>
 #include <thread>
 
 namespace sp
 {
 	using namespace physx;
-	static CVar<float> CVarGravity("g.Gravity", -9.81f, "Force of gravity");
+	static CVar<float> CVarGravity("g.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
 
 	PhysxManager::PhysxManager()
 	{
@@ -202,7 +204,7 @@ namespace sp
 		scene->unlockRead();
 	}
 
-	ConvexHullSet *PhysxManager::GetCollisionMesh(shared_ptr<Model> model)
+	ConvexHullSet *PhysxManager::GetCachedConvexHulls(Model *model)
 	{
 		if (cache.count(model->name))
 		{
@@ -214,16 +216,23 @@ namespace sp
 
 	ConvexHullSet *PhysxManager::BuildConvexHulls(Model *model)
 	{
-		if (cache.count(model->name))
+		ConvexHullSet *set;
+
+		if ((set = GetCachedConvexHulls(model)))
+			return set;
+
+		if ((set = LoadCollisionCache(model)))
 		{
-			return cache[model->name];
+			cache[model->name] = set;
+			return set;
 		}
 
 		Logf("Rebuilding convex hulls for %s", model->name);
 
-		ConvexHullSet *set = new ConvexHullSet;
+		set = new ConvexHullSet;
 		ConvexHullBuilding::BuildConvexHulls(set, model);
 		cache[model->name] = set;
+		SaveCollisionCache(model, set);
 		return set;
 	}
 
@@ -289,5 +298,70 @@ namespace sp
 		PxController *controller = manager->createController(desc);
 		Unlock();
 		return controller;
+	}
+
+	const uint32 hullCacheMagic = 0xc040;
+
+	ConvexHullSet *PhysxManager::LoadCollisionCache(Model *model)
+	{
+		std::ifstream in;
+
+		if (GAssets.InputStream("cache/collision/" + model->name, in))
+		{
+			uint32 magic;
+			in.read((char *)&magic, 4);
+			Assert(magic == hullCacheMagic, "hull cache magic");
+
+			int32 hullCount;
+			in.read((char *)&hullCount, 4);
+			Assert(hullCount > 0, "hull cache count");
+
+			ConvexHullSet *set = new ConvexHullSet;
+			set->hulls.reserve(hullCount);
+
+			for (int i = 0; i < hullCount; i++)
+			{
+				ConvexHull hull;
+				in.read((char *)&hull, 4 * sizeof(uint32));
+
+				Assert(hull.pointByteStride % sizeof(float) == 0);
+				Assert(hull.triangleByteStride % sizeof(int) == 0);
+
+				hull.points = new float[hull.pointCount * hull.pointByteStride / sizeof(float)];
+				hull.triangles = new int[hull.triangleCount * hull.triangleByteStride / sizeof(int)];
+
+				in.read((char *)hull.points, hull.pointCount * hull.pointByteStride);
+				in.read((char *)hull.triangles, hull.triangleCount * hull.triangleByteStride);
+
+				set->hulls.push_back(hull);
+			}
+
+			in.close();
+			return set;
+		}
+
+		return nullptr;
+	}
+
+	void PhysxManager::SaveCollisionCache(Model *model, ConvexHullSet *set)
+	{
+		std::ofstream out;
+
+		if (GAssets.OutputStream("cache/collision/" + model->name, out))
+		{
+			out.write((char *)&hullCacheMagic, 4);
+
+			int32 hullCount = set->hulls.size();
+			out.write((char *)&hullCount, 4);
+
+			for (auto hull : set->hulls)
+			{
+				out.write((char *)&hull, 4 * sizeof(uint32));
+				out.write((char *)hull.points, hull.pointCount * hull.pointByteStride);
+				out.write((char *)hull.triangles, hull.triangleCount * hull.triangleByteStride);
+			}
+
+			out.close();
+		}
 	}
 }

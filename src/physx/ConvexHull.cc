@@ -61,46 +61,44 @@ namespace sp
 
 		static VHACDCallback vhacdCallback;
 
+		auto interfaceVHACD = VHACD::CreateVHACD();
+		int pointStride = posAttrib.byteStride / sizeof(float);
+
+		VHACD::IVHACD::Parameters params;
+		params.m_callback = &vhacdCallback;
+		params.m_oclAcceleration = false;
+		//params.m_resolution = 1000000;
+		//params.m_convexhullDownsampling = 8;
+
+		bool res = interfaceVHACD->Compute(points, pointStride, posAttrib.components, indices, 3, indexAttrib.components / 3, params);
+		Assert(res, "building convex decomposition");
+
+		for (uint32 i = 0; i < interfaceVHACD->GetNConvexHulls(); i++)
 		{
-			auto interfaceVHACD = VHACD::CreateVHACD();
-			int pointStride = posAttrib.byteStride / sizeof(float);
+			VHACD::IVHACD::ConvexHull ihull;
+			interfaceVHACD->GetConvexHull(i, ihull);
 
-			VHACD::IVHACD::Parameters params;
-			params.m_callback = &vhacdCallback;
-			params.m_oclAcceleration = false;
-			//params.m_resolution = 1000000;
-			//params.m_convexhullDownsampling = 8;
+			ConvexHull hull;
+			hull.points = new float[ihull.m_nPoints * 3];
+			hull.pointCount = ihull.m_nPoints;
+			hull.pointByteStride = sizeof(float) * 3;
 
-			bool res = interfaceVHACD->Compute(points, pointStride, posAttrib.components, indices, 3, indexAttrib.components / 3, params);
-			Assert(res, "building convex decomposition");
-
-			for (uint32 i = 0; i < interfaceVHACD->GetNConvexHulls(); i++)
+			for (int i = 0; i < ihull.m_nPoints * 3; i++)
 			{
-				VHACD::IVHACD::ConvexHull ihull;
-				interfaceVHACD->GetConvexHull(i, ihull);
-
-				ConvexHull hull;
-				hull.points = new float[ihull.m_nPoints * 3];
-				hull.pointCount = ihull.m_nPoints;
-				hull.pointByteStride = sizeof(float) * 3;
-
-				for (uint32 i = 0; i < ihull.m_nPoints * 3; i++)
-				{
-					hull.points[i] = (float) ihull.m_points[i];
-				}
-
-				hull.triangles = new int[ihull.m_nTriangles * 3];
-				hull.triangleCount = ihull.m_nTriangles;
-				hull.triangleByteStride = sizeof(int) * 3;
-				memcpy(hull.triangles, ihull.m_triangles, sizeof(int) * 3 * ihull.m_nTriangles);
-
-				set->hulls.push_back(hull);
-				Logf("Adding hull, %d points, %d triangles", hull.pointCount, hull.triangleCount);
+				hull.points[i] = (float) ihull.m_points[i];
 			}
 
-			interfaceVHACD->Clean();
-			interfaceVHACD->Release();
+			hull.triangles = new int[ihull.m_nTriangles * 3];
+			hull.triangleCount = ihull.m_nTriangles;
+			hull.triangleByteStride = sizeof(int) * 3;
+			memcpy(hull.triangles, ihull.m_triangles, sizeof(int) * 3 * ihull.m_nTriangles);
+
+			set->hulls.push_back(hull);
+			Logf("Adding hull, %d points, %d triangles", hull.pointCount, hull.triangleCount);
 		}
+
+		interfaceVHACD->Clean();
+		interfaceVHACD->Release();
 
 		if (indicesCopy)
 			delete indicesCopy;
