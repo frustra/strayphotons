@@ -8,6 +8,7 @@
 #include "physx/PhysxUtils.hh"
 
 #include "Common.hh"
+#include "core/CVar.hh"
 
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
@@ -18,6 +19,8 @@
 
 namespace ecs
 {
+	static sp::CVar<bool> CVarNoClip("p.NoClip", false, "Disable player clipping");
+
 	const float HumanControlSystem::MOVE_SPEED = 6.0f;
 	const glm::vec2 HumanControlSystem::CURSOR_SENSITIVITY = glm::vec2(0.001f, 0.001f);
 
@@ -100,7 +103,14 @@ namespace ecs
 				}
 			}
 
-			if (controller->pxController)
+			if (CVarNoClip.Changed() && !CVarNoClip.Get(true))
+			{
+				// Teleport character controller to position when disabling noclip
+				auto pos = transform->GetPosition();
+				controller->pxController->setPosition({pos[0], pos[1], pos[2]});
+			}
+
+			if (controller->pxController && !CVarNoClip.Get())
 			{
 				auto position = controller->pxController->getPosition();
 				physx::PxVec3 pxVec3 = physx::PxVec3(position.x, position.y, position.z);
@@ -163,31 +173,35 @@ namespace ecs
 		auto transform = entity.Get<ecs::Transform>();
 		auto controller = entity.Get<HumanController>();
 
-		if (controller->pxController)
+		float ds = HumanControlSystem::MOVE_SPEED * (float)dt;
+
+		glm::vec3 movement;
+
+		if (flight)
 		{
-			float movement = HumanControlSystem::MOVE_SPEED * (float)dt;
+			movement = normalizedDirection * ds;
+		}
+		else
+		{
+			movement = transform->rotate * normalizedDirection;
+			movement.y = 0;
+			movement = glm::normalize(movement);
+			movement *= ds;
+		}
 
-			physx::PxVec3 moveVec3;
-			if (!flight)
-			{
-				// Kill upwards look rotation and renormalize
-				moveVec3 = GlmVec3ToPxVec3(transform->rotate * normalizedDirection);
-				moveVec3.y = 0;
-				moveVec3.normalizeSafe();
-				moveVec3 *= movement;
-			}
-			else
-			{
-				// Go straight up or down, ignoring look direction
-				moveVec3 = GlmVec3ToPxVec3(normalizedDirection * movement);
-			}
-
+		if (controller->pxController && !CVarNoClip.Get())
+		{
 			physx::PxControllerFilters filters;
 			physx::PxScene *scene = controller->pxController->getScene();
+
 			Assert(scene);
 			scene->lockRead();
-			controller->pxController->move(moveVec3, 0, dt, filters);
+			controller->pxController->move(GlmVec3ToPxVec3(movement), 0, dt, filters);
 			scene->unlockRead();
+		}
+		else
+		{
+			transform->Translate(movement);
 		}
 	}
 }
