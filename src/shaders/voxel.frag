@@ -1,10 +1,10 @@
 #version 430
 
+#define DIFFUSE_ONLY_SHADING
+
 ##import lib/util
 ##import voxel_shared
 ##import lib/lighting_util
-##import lib/light_inputs
-##import lib/shadow_sample
 
 layout (binding = 0) uniform sampler2D baseColorTex;
 layout (binding = 1) uniform sampler2D roughnessTex;
@@ -22,10 +22,14 @@ layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inTexCoord;
 layout (location = 2) in flat int inDirection;
 
+##import lib/light_inputs
+
 uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);
 
 in vec4 gl_FragCoord;
+
+##import lib/shadow_sample
 
 // Data format: [color.r, color.g], [color.b, radiance.r], [radiance.g, radiance.b], [normal.x, normal.y], [normal.z, roughness], [count]
 
@@ -41,49 +45,7 @@ void main()
 	vec3 worldPosition = position * voxelSize + voxelGridCenter;
 	position += VoxelGridSize / 2;
 
-	vec3 pixelLuminance = vec3(0);
-
-	for (int i = 0; i < lightCount; i++) {
-		vec3 sampleToLightRay = lightPosition[i] - worldPosition;
-		vec3 incidence = normalize(sampleToLightRay);
-		vec3 currLightDir = normalize(lightDirection[i]);
-		float falloff = 1;
-
-		float illuminance = lightIlluminance[i];
-		vec3 currLightColor = lightTint[i];
-
-		if (illuminance == 0) {
-			// Determine physically-based distance attenuation.
-			float lightDistance = length(abs(lightPosition[i] - worldPosition));
-			float lightDistanceSq = lightDistance * lightDistance;
-			falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
-
-			// Calculate illuminance from intensity with E = L * n dot l.
-			illuminance = max(dot(inNormal, incidence), 0) * lightIntensity[i] * falloff;
-		} else {
-			// Given value is the orthogonal case, need to project to l.
-			illuminance *= max(dot(inNormal, incidence), 0);
-		}
-
-		// Evaluate BRDF and calculate luminance.
-		vec3 diffuse = BRDF_Diffuse_Lambert(baseColor.rgb * 0.04);
-		vec3 luminance = diffuse * illuminance * currLightColor;
-
-		// Spotlight attenuation.
-		float cosSpotAngle = lightSpotAngleCos[i];
-		float spotTerm = dot(incidence, -currLightDir);
-		float spotFalloff = smoothstep(cosSpotAngle, 1, spotTerm) * step(-1, cosSpotAngle) + step(cosSpotAngle, -1);
-
-		// Calculate direct occlusion.
-		vec3 shadowMapPos = (lightView[i] * vec4(worldPosition, 1.0)).xyz; // Position of light view-space.
-		vec3 shadowMapTexCoord = ViewPosToScreenPos(shadowMapPos, lightProj[i]);
-		float occlusion = 1;
-
-		occlusion = sampleOcclusion(shadowMap, i, shadowMapPos, shadowMapTexCoord);
-
-		// Sum output.
-		pixelLuminance += occlusion * luminance * spotFalloff;
-	}
+	vec3 pixelLuminance = directShading(worldPosition, baseColor.rgb, inNormal, roughness);
 
 	// Clip so we don't overflow
 	pixelLuminance = min(vec3(1), pixelLuminance);
