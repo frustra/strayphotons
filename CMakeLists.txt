@@ -76,7 +76,6 @@ include_directories(
 	${EXT_PATH}/fmod/include/fmod
 	${EXT_PATH}/fmod/include/fmodstudio
 	${EXT_PATH}/cxxopts/include
-	${EXT_PATH}/v-hacd/VHACD_Lib/public
 	${EXT_PATH}
 )
 

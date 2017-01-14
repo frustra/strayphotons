@@ -31,7 +31,7 @@ public:
     TMMVertex(void);
     ~TMMVertex(void);
 
-private:
+//private:
     Vec3<double> m_pos;
     int m_name;
     size_t m_id;
@@ -71,7 +71,7 @@ public:
     TMMTriangle(void);
     ~TMMTriangle(void);
 
-private:
+//private:
     size_t m_id;
     CircularListElement<TMMEdge>* m_edges[3];
     CircularListElement<TMMVertex>* m_vertices[3];
