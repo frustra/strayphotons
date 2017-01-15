@@ -28,7 +28,7 @@ uniform vec3 voxelGridCenter = vec3(0);
 
 in vec4 gl_FragCoord;
 
-##import lib/shadow_sample
+##import lib/shading
 
 // Data format: [color.r, color.g], [color.b, radiance.r], [radiance.g, radiance.b], [normal.x, normal.y], [normal.z, roughness], [count]
 

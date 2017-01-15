@@ -27,7 +27,7 @@ uniform vec2 targetSize;
 
 ##import lib/util
 ##import voxel_shared
-##import lib/shadow_sample
+##import lib/shading
 
 const int maxReflections = 2;
 
