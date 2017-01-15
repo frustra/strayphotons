@@ -28,7 +28,7 @@
 		{
 			"light": {
 				"tint": [1, 1, 1],
-				"intensity": 1000,
+				"intensity": 100,
 				"spotAngle": 10
 			},
 			"view": {
@@ -43,7 +43,7 @@
 		{
 			"light": {
 				"tint": [1, 0.5, 0.5],
-				"illuminance": 5000,
+				"illuminance": 500,
 				"spotAngle": 30
 			},
 			"view": {

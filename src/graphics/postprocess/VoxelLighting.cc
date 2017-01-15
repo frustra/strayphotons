@@ -127,7 +127,7 @@ namespace sp
 
 		auto lights = context->game->entityManager.EntitiesWith<ecs::Light>();
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetLights(context->game->entityManager, lights);
-		r->GlobalShaders->Get<VoxelLightingFS>()->SetExposure(0.1);
+		r->GlobalShaders->Get<VoxelLightingFS>()->SetExposure(1.0);
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetViewParams(context->view);
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetMode(CVarVoxelLightingMode.Get());
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetVoxelInfo(context->renderer->voxelInfo);

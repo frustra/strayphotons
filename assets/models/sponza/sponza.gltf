@@ -294,8 +294,8 @@
         "image_spnza_bricks_a_diff.tga": {
             "uri": "spnza_bricks_a_diff.tga"
         },
-        "image_spnza_bricks_a_spec_fixed.tga": {
-            "uri": "spnza_bricks_a_spec_fixed.tga"
+        "image_spnza_bricks_a_rough.tga": {
+            "uri": "spnza_bricks_a_rough.tga"
         },
         "image_sponza_arch_bump.png": {
             "uri": "sponza_arch_bump.png"
@@ -303,14 +303,14 @@
         "image_sponza_arch_diff.tga": {
             "uri": "sponza_arch_diff.tga"
         },
-        "image_sponza_arch_spec.tga": {
-            "uri": "sponza_arch_spec.tga"
+        "image_sponza_arch_rough.tga": {
+            "uri": "sponza_arch_rough.tga"
         },
         "image_sponza_ceiling_a_diff.tga": {
             "uri": "sponza_ceiling_a_diff.tga"
         },
-        "image_sponza_ceiling_a_spec.tga": {
-            "uri": "sponza_ceiling_a_spec.tga"
+        "image_sponza_ceiling_a_rough.tga": {
+            "uri": "sponza_ceiling_a_rough.tga"
         },
         "image_sponza_column_a_bump.png": {
             "uri": "sponza_column_a_bump.png"
@@ -318,8 +318,8 @@
         "image_sponza_column_a_diff.tga": {
             "uri": "sponza_column_a_diff.tga"
         },
-        "image_sponza_column_a_spec.tga": {
-            "uri": "sponza_column_a_spec.tga"
+        "image_sponza_column_a_rough.tga": {
+            "uri": "sponza_column_a_rough.tga"
         },
         "image_sponza_column_b_bump.png": {
             "uri": "sponza_column_b_bump.png"
@@ -327,8 +327,8 @@
         "image_sponza_column_b_diff.tga": {
             "uri": "sponza_column_b_diff.tga"
         },
-        "image_sponza_column_b_spec.tga": {
-            "uri": "sponza_column_b_spec.tga"
+        "image_sponza_column_b_rough.tga": {
+            "uri": "sponza_column_b_rough.tga"
         },
         "image_sponza_column_c_bump.png": {
             "uri": "sponza_column_c_bump.png"
@@ -336,8 +336,8 @@
         "image_sponza_column_c_diff.tga": {
             "uri": "sponza_column_c_diff.tga"
         },
-        "image_sponza_column_c_spec.tga": {
-            "uri": "sponza_column_c_spec.tga"
+        "image_sponza_column_c_rough.tga": {
+            "uri": "sponza_column_c_rough.tga"
         },
         "image_sponza_curtain_blue_diff.tga": {
             "uri": "sponza_curtain_blue_diff.tga"
@@ -348,14 +348,14 @@
         "image_sponza_curtain_green_diff.tga": {
             "uri": "sponza_curtain_green_diff.tga"
         },
-        "image_sponza_curtain_spec.tga": {
-            "uri": "sponza_curtain_spec.tga"
+        "image_sponza_curtain_rough.tga": {
+            "uri": "sponza_curtain_rough.tga"
         },
         "image_sponza_details_diff.tga": {
             "uri": "sponza_details_diff.tga"
         },
-        "image_sponza_details_spec.tga": {
-            "uri": "sponza_details_spec.tga"
+        "image_sponza_details_rough.tga": {
+            "uri": "sponza_details_rough.tga"
         },
         "image_sponza_fabric_blue_diff.tga": {
             "uri": "sponza_fabric_blue_diff.tga"
@@ -366,20 +366,20 @@
         "image_sponza_fabric_green_diff.tga": {
             "uri": "sponza_fabric_green_diff.tga"
         },
-        "image_sponza_fabric_spec.tga": {
-            "uri": "sponza_fabric_spec.tga"
+        "image_sponza_fabric_rough.tga": {
+            "uri": "sponza_fabric_rough.tga"
         },
         "image_sponza_flagpole_diff.tga": {
             "uri": "sponza_flagpole_diff.tga"
         },
-        "image_sponza_flagpole_spec.tga": {
-            "uri": "sponza_flagpole_spec.tga"
+        "image_sponza_flagpole_rough.tga": {
+            "uri": "sponza_flagpole_rough.tga"
         },
         "image_sponza_floor_a_diff.tga": {
             "uri": "sponza_floor_a_diff.tga"
         },
-        "image_sponza_floor_a_spec.tga": {
-            "uri": "sponza_floor_a_spec.tga"
+        "image_sponza_floor_a_rough.tga": {
+            "uri": "sponza_floor_a_rough.tga"
         },
         "image_sponza_roof_diff.tga": {
             "uri": "sponza_roof_diff.tga"
@@ -390,8 +390,8 @@
         "image_sponza_thorn_diff.tga": {
             "uri": "sponza_thorn_diff.tga"
         },
-        "image_sponza_thorn_spec.tga": {
-            "uri": "sponza_thorn_spec.tga"
+        "image_sponza_thorn_rough.tga": {
+            "uri": "sponza_thorn_rough.tga"
         },
         "image_vase_bump.png": {
             "uri": "vase_bump.png"
@@ -411,8 +411,8 @@
         "image_vase_round_bump.png": {
             "uri": "vase_round_bump.png"
         },
-        "image_vase_round_spec.tga": {
-            "uri": "vase_round_spec.tga"
+        "image_vase_round_rough.tga": {
+            "uri": "vase_round_rough.tga"
         }
     },
     "materials": {
@@ -474,12 +474,7 @@
                     0,
                     1
                 ],
-                "roughness": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
+                "roughness": 1,
                 "shininess": 10,
                 "transparency": 1
             }
@@ -496,7 +491,7 @@
                     0,
                     1
                 ],
-                "roughness": "texture_vase_plant.tga",
+                "roughness": 1,
                 "shininess": 10,
                 "transparency": 1
             }
@@ -514,7 +509,7 @@
                     1
                 ],
                 "height": "texture_sponza_arch_bump.png",
-                "roughness": "texture_sponza_arch_spec.tga",
+                "roughness": "texture_sponza_arch_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -532,7 +527,7 @@
                     1
                 ],
                 "height": "texture_spnza_bricks_a_bump.png",
-                "roughness": "texture_spnza_bricks_a_spec_fixed.tga",
+                "roughness": "texture_spnza_bricks_a_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -549,7 +544,7 @@
                     0,
                     1
                 ],
-                "roughness": "texture_sponza_ceiling_a_spec.tga",
+                "roughness": "texture_sponza_ceiling_a_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -585,7 +580,7 @@
                     1
                 ],
                 "height": "texture_sponza_column_a_bump.png",
-                "roughness": "texture_sponza_column_a_spec.tga",
+                "roughness": "texture_sponza_column_a_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -603,7 +598,7 @@
                     1
                 ],
                 "height": "texture_sponza_column_b_bump.png",
-                "roughness": "texture_sponza_column_b_spec.tga",
+                "roughness": "texture_sponza_column_b_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -621,7 +616,7 @@
                     1
                 ],
                 "height": "texture_sponza_column_c_bump.png",
-                "roughness": "texture_sponza_column_c_spec.tga",
+                "roughness": "texture_sponza_column_c_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -638,7 +633,7 @@
                     0,
                     1
                 ],
-                "roughness": "texture_sponza_details_spec.tga",
+                "roughness": "texture_sponza_details_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -655,7 +650,7 @@
                     0,
                     1
                 ],
-                "roughness": "texture_sponza_fabric_spec.tga",
+                "roughness": "texture_sponza_fabric_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -672,7 +667,7 @@
                     0,
                     1
                 ],
-                "roughness": "texture_sponza_curtain_spec.tga",
+                "roughness": "texture_sponza_curtain_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -689,7 +684,7 @@
                     0,
                     1
                 ],
-                "roughness": "texture_sponza_fabric_spec.tga",
+                "roughness": "texture_sponza_fabric_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -706,7 +701,7 @@
                     0,
                     1
                 ],
-                "roughness": "texture_sponza_fabric_spec.tga",
+                "roughness": "texture_sponza_fabric_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -723,7 +718,7 @@
                     0,
                     1
                 ],
-                "roughness": "texture_sponza_curtain_spec.tga",
+                "roughness": "texture_sponza_curtain_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -740,7 +735,7 @@
                     0,
                     1
                 ],
-                "roughness": "texture_sponza_curtain_spec.tga",
+                "roughness": "texture_sponza_curtain_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -757,7 +752,7 @@
                     0,
                     1
                 ],
-                "roughness": "texture_sponza_flagpole_spec.tga",
+                "roughness": "texture_sponza_flagpole_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -774,7 +769,7 @@
                     0,
                     1
                 ],
-                "roughness": "texture_sponza_floor_a_spec.tga",
+                "roughness": "texture_sponza_floor_a_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -792,7 +787,7 @@
                     1
                 ],
                 "height": "texture_sponza_thorn_bump.png",
-                "roughness": "texture_sponza_thorn_spec.tga",
+                "roughness": "texture_sponza_thorn_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -809,12 +804,7 @@
                     0,
                     1
                 ],
-                "roughness": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
+                "roughness": 1,
                 "shininess": 10,
                 "transparency": 1
             }
@@ -832,12 +822,7 @@
                     1
                 ],
                 "height": "texture_vase_bump.png",
-                "roughness": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
+                "roughness": 1,
                 "shininess": 10,
                 "transparency": 1
             }
@@ -872,7 +857,7 @@
                     1
                 ],
                 "height": "texture_vase_round_bump.png",
-                "roughness": "texture_vase_round_spec.tga",
+                "roughness": "texture_vase_round_rough.tga",
                 "shininess": 10,
                 "transparency": 1
             }
@@ -1246,11 +1231,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_spnza_bricks_a_spec_fixed.tga": {
+        "texture_spnza_bricks_a_rough.tga": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_spnza_bricks_a_spec_fixed.tga",
+            "source": "image_spnza_bricks_a_rough.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1270,11 +1255,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_sponza_arch_spec.tga": {
+        "texture_sponza_arch_rough.tga": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_sponza_arch_spec.tga",
+            "source": "image_sponza_arch_rough.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1286,11 +1271,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_sponza_ceiling_a_spec.tga": {
+        "texture_sponza_ceiling_a_rough.tga": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_sponza_ceiling_a_spec.tga",
+            "source": "image_sponza_ceiling_a_rough.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1310,11 +1295,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_sponza_column_a_spec.tga": {
+        "texture_sponza_column_a_rough.tga": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_sponza_column_a_spec.tga",
+            "source": "image_sponza_column_a_rough.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1334,11 +1319,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_sponza_column_b_spec.tga": {
+        "texture_sponza_column_b_rough.tga": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_sponza_column_b_spec.tga",
+            "source": "image_sponza_column_b_rough.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1358,11 +1343,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_sponza_column_c_spec.tga": {
+        "texture_sponza_column_c_rough.tga": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_sponza_column_c_spec.tga",
+            "source": "image_sponza_column_c_rough.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1390,11 +1375,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_sponza_curtain_spec.tga": {
+        "texture_sponza_curtain_rough.tga": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_sponza_curtain_spec.tga",
+            "source": "image_sponza_curtain_rough.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1406,11 +1391,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_sponza_details_spec.tga": {
+        "texture_sponza_details_rough.tga": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_sponza_details_spec.tga",
+            "source": "image_sponza_details_rough.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1438,11 +1423,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_sponza_fabric_spec.tga": {
+        "texture_sponza_fabric_rough.tga": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_sponza_fabric_spec.tga",
+            "source": "image_sponza_fabric_rough.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1454,11 +1439,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_sponza_flagpole_spec.tga": {
+        "texture_sponza_flagpole_rough.tga": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_sponza_flagpole_spec.tga",
+            "source": "image_sponza_flagpole_rough.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1470,11 +1455,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_sponza_floor_a_spec.tga": {
+        "texture_sponza_floor_a_rough.tga": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_sponza_floor_a_spec.tga",
+            "source": "image_sponza_floor_a_rough.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1502,11 +1487,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_sponza_thorn_spec.tga": {
+        "texture_sponza_thorn_rough.tga": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_sponza_thorn_spec.tga",
+            "source": "image_sponza_thorn_rough.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1558,11 +1543,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_vase_round_spec.tga": {
+        "texture_vase_round_rough.tga": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_vase_round_spec.tga",
+            "source": "image_vase_round_rough.tga",
             "target": 3553,
             "type": 5121
         }

@@ -25,7 +25,7 @@
 		{
 			"light": {
 				"tint": [1, 0.7, 0.235],
-				"intensity": 3000,
+				"intensity": 300,
 				"spotAngle": 85
 			},
 			"view": {
@@ -40,7 +40,7 @@
 		{
 			"light": {
 				"tint": [1, 0.7, 0.235],
-				"intensity": 3000,
+				"intensity": 300,
 				"spotAngle": 30
 			},
 			"view": {

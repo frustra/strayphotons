@@ -22,7 +22,7 @@ layout (location = 0) out vec4 outFragColor;
 uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);
 
-uniform float exposure = 0.1;
+uniform float exposure = 1.0;
 uniform vec2 targetSize;
 
 ##import lib/util
@@ -97,7 +97,7 @@ void main()
 		if (roughness == 0 && sampleColor.a >= 0) {
 			worldPosition += sampleDir * (sampleColor.a - 0.5 * voxelSize);
 			vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
-			GetVoxel(voxelPos, 0, baseColor, worldNormal, directLight, roughness);
+			GetVoxel(voxelPos, 0, directDiffuseColor, worldNormal, directLight, roughness);
 			rayDir = sampleDir;
 			rayReflectDir = reflect(sampleDir, worldNormal);
 		} else {

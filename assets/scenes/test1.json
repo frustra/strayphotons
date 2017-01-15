@@ -134,7 +134,7 @@
 		{
 			"light": {
 				"tint": [1, 1, 1],
-				"intensity": 1000,
+				"intensity": 100,
 				"spotAngle": 30
 			},
 			"view": {
@@ -149,7 +149,7 @@
 		{
 			"light": {
 				"tint": [1, 0.5, 0.5],
-				"intensity": 3000,
+				"intensity": 300,
 				"spotAngle": 50
 			},
 			"view": {
@@ -164,7 +164,7 @@
 		{
 			"light": {
 				"tint": [1, 1, 1],
-				"intensity": 100,
+				"intensity": 10,
 				"spotAngle": 50
 			},
 			"view": {
