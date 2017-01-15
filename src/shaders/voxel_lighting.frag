@@ -84,7 +84,7 @@ void main()
 	vec3 indirectSpecular = vec3(0);
 	vec4 indirectDiffuse = vec4(0);
 
-	vec3 directLight = directShading(worldPosition, -rayDir, baseColor, worldNormal, roughness, metalness);
+	vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, roughness, metalness);
 
 	for (int i = 0; i < maxReflections; i++) {
 		// specular

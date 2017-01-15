@@ -44,7 +44,7 @@ void main()
 	vec3 worldPosition = position * voxelSize + voxelGridCenter;
 	position += VoxelGridSize / 2;
 
-	vec3 pixelLuminance = directShading(worldPosition, baseColor.rgb, inNormal, roughness);
+	vec3 pixelLuminance = DirectShading(worldPosition, baseColor.rgb, inNormal, roughness);
 
 	// Clip so we don't overflow
 	pixelLuminance = min(vec3(1), pixelLuminance);

@@ -2,14 +2,14 @@
 
 ##import lib/lighting_util
 
-float sampleOcclusion(sampler2D map, int i, vec3 shadowMapPos, vec3 shadowMapTexCoord) {
+float SampleOcclusion(sampler2D map, int i, vec3 shadowMapPos, vec3 shadowMapTexCoord) {
 	float sampledDepth = texture(map, shadowMapTexCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy).r;
 	float fragmentDepth = (length(shadowMapPos) - lightClip[i].x) / (lightClip[i].y - lightClip[i].x);
 
 	return step(0, -shadowMapPos.z) * smoothstep(fragmentDepth - 0.0001, fragmentDepth - 0.00005, sampledDepth);
 }
 
-float directOcclusion(sampler2D map, int i, vec3 shadowMapPos, vec3 shadowMapTexCoord, mat2 rotation0) {
+float DirectOcclusion(sampler2D map, int i, vec3 shadowMapPos, vec3 shadowMapTexCoord, mat2 rotation0) {
 	vec2 sampleRadius = 5.0 / textureSize(map, 0).xy;
 	mat2 rotation1 = mat2(0.707, 0.707, -0.707, 0.707) * rotation0;
 	float occlusion = 0;
@@ -17,14 +17,14 @@ float directOcclusion(sampler2D map, int i, vec3 shadowMapPos, vec3 shadowMapTex
 	for (int s = 0; s < 8; s++) {
 		vec2 offset = SpiralOffsets[s] * sampleRadius;
 
-		occlusion += sampleOcclusion(map, i, shadowMapPos, shadowMapTexCoord + vec3(rotation0 * offset, 0));
-		occlusion += sampleOcclusion(map, i, shadowMapPos, shadowMapTexCoord + vec3(rotation1 * offset, 0));
+		occlusion += SampleOcclusion(map, i, shadowMapPos, shadowMapTexCoord + vec3(rotation0 * offset, 0));
+		occlusion += SampleOcclusion(map, i, shadowMapPos, shadowMapTexCoord + vec3(rotation1 * offset, 0));
 	}
 
 	return min(occlusion / 16.0, 1);
 }
 
-vec3 evaluateBRDF(vec3 diffuseColor, vec3 specularColor, float roughness, vec3 L, vec3 V, vec3 N) {
+vec3 EvaluateBRDF(vec3 diffuseColor, vec3 specularColor, float roughness, vec3 L, vec3 V, vec3 N) {
 	vec3 H = normalize(V + L);
 	float NdotV = abs(dot(N, V)) + 1e-5; // see [Lagarde/Rousiers 2014]
 	float NdotL = abs(dot(N, L)) + 1e-5;
@@ -46,9 +46,9 @@ vec3 evaluateBRDF(vec3 diffuseColor, vec3 specularColor, float roughness, vec3 L
 }
 
 #ifdef DIFFUSE_ONLY_SHADING
-vec3 directShading(vec3 worldPosition, vec3 baseColor, vec3 normal, float roughness) {
+vec3 DirectShading(vec3 worldPosition, vec3 baseColor, vec3 normal, float roughness) {
 #else
-vec3 directShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec3 normal, float roughness, float metalness) {
+vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec3 normal, float roughness, float metalness) {
 #endif
 	vec3 pixelLuminance = vec3(0);
 
@@ -85,7 +85,9 @@ vec3 directShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 #ifdef DIFFUSE_ONLY_SHADING
 		vec3 brdf = BRDF_Diffuse_Lambert(baseColor);
 #else
-		vec3 brdf = evaluateBRDF(baseColor, vec3(0.04), roughness, incidence, directionToView, normal);
+		vec3 diffuseColor = baseColor - baseColor * metalness;
+		vec3 specularColor = mix(vec3(0.04), baseColor, metalness);
+		vec3 brdf = evaluateBRDF(diffuseColor, specularColor, roughness, incidence, directionToView, normal);
 #endif
 		vec3 luminance = brdf * illuminance * currLightColor;
 
@@ -101,9 +103,9 @@ vec3 directShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 
 #ifdef USE_SHADOW_MAPPING
 #ifdef USE_PCF
-		occlusion = directOcclusion(shadowMap, i, shadowMapPos, shadowMapTexCoord, rotation);
+		occlusion = DirectOcclusion(shadowMap, i, shadowMapPos, shadowMapTexCoord, rotation);
 #else
-		occlusion = sampleOcclusion(shadowMap, i, shadowMapPos, shadowMapTexCoord);
+		occlusion = SampleOcclusion(shadowMap, i, shadowMapPos, shadowMapTexCoord);
 #endif
 #endif
 
