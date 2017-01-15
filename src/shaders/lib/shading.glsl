@@ -87,7 +87,7 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 #else
 		vec3 diffuseColor = baseColor - baseColor * metalness;
 		vec3 specularColor = mix(vec3(0.04), baseColor, metalness);
-		vec3 brdf = evaluateBRDF(diffuseColor, specularColor, roughness, incidence, directionToView, normal);
+		vec3 brdf = EvaluateBRDF(diffuseColor, specularColor, roughness, incidence, directionToView, normal);
 #endif
 		vec3 luminance = brdf * illuminance * currLightColor;
 
