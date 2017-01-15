@@ -45,6 +45,19 @@ vec3 EvaluateBRDF(vec3 diffuseColor, vec3 specularColor, float roughness, vec3 L
 	return specular + diffuse;
 }
 
+vec3 EvaluateBRDFSpecularImportanceSampledGGX(vec3 specularColor, float roughness, vec3 L, vec3 V, vec3 N) {
+	vec3 H = normalize(V + L);
+	float NdotV = abs(dot(N, V)) + 1e-5; // see [Lagarde/Rousiers 2014]
+	float NdotL = abs(dot(N, L)) + 1e-5;
+	float NdotH = saturate(dot(N, H));
+	float VdotH = saturate(dot(V, H));
+
+	float Vis = BRDF_V_Schlick(roughness, NdotV, NdotL);
+	vec3 F = BRDF_F_Schlick(specularColor, VdotH);
+
+	return Vis * F;
+}
+
 #ifdef DIFFUSE_ONLY_SHADING
 vec3 DirectShading(vec3 worldPosition, vec3 baseColor, vec3 normal, float roughness) {
 #else

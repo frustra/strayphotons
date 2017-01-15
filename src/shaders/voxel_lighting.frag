@@ -101,7 +101,7 @@ void main()
 			rayDir = sampleDir;
 			rayReflectDir = reflect(sampleDir, worldNormal);
 		} else {
-			vec3 brdf = EvaluateBRDF(vec3(0), directSpecularColor, roughness, sampleDir, -rayDir, worldNormal);
+			vec3 brdf = EvaluateBRDFSpecularImportanceSampledGGX(directSpecularColor, roughness, sampleDir, -rayDir, worldNormal);
 			indirectSpecular = sampleColor.rgb * brdf;
 			break;
 		}
@@ -113,8 +113,7 @@ void main()
 			vec3 sampleDir = orientByNormal(r / diffuseAngles * 6.28, a, worldNormal);
 			vec4 sampleColor = ConeTraceGridDiffuse(worldPosition, sampleDir, worldNormal);
 
-			vec3 brdf = BRDF_Diffuse_Lambert(directDiffuseColor);
-			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * vec4(brdf, 1.0);
+			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * vec4(directDiffuseColor, 1.0);
 		}
 	}
 
