@@ -86,6 +86,9 @@ void main()
 
 	vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, roughness, metalness);
 
+	vec3 directDiffuseColor = baseColor - baseColor * metalness;
+	vec3 directSpecularColor = mix(vec3(0.04), baseColor, metalness);
+
 	for (int i = 0; i < maxReflections; i++) {
 		// specular
 		vec3 sampleDir = rayReflectDir;
@@ -95,9 +98,11 @@ void main()
 			worldPosition += sampleDir * (sampleColor.a - 0.5 * voxelSize);
 			vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
 			GetVoxel(voxelPos, 0, baseColor, worldNormal, directLight, roughness);
+			rayDir = sampleDir;
 			rayReflectDir = reflect(sampleDir, worldNormal);
 		} else {
-			indirectSpecular = sampleColor.rgb;
+			vec3 brdf = EvaluateBRDF(vec3(0), directSpecularColor, roughness, sampleDir, -rayDir, worldNormal);
+			indirectSpecular = sampleColor.rgb * brdf;
 			break;
 		}
 	}
@@ -108,13 +113,14 @@ void main()
 			vec3 sampleDir = orientByNormal(r / diffuseAngles * 6.28, a, worldNormal);
 			vec4 sampleColor = ConeTraceGridDiffuse(worldPosition, sampleDir, worldNormal);
 
-			indirectDiffuse += sampleColor * cos(a);
+			vec3 brdf = BRDF_Diffuse_Lambert(directDiffuseColor);
+			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * vec4(brdf, 1.0);
 		}
 	}
 
 	indirectDiffuse /= diffuseAngles;
 
-	vec3 totalLight = roughness * (indirectDiffuse.rgb * baseColor + directLight) + (1.0 - roughness) * indirectSpecular;
+	vec3 totalLight = directLight + indirectDiffuse.rgb + indirectSpecular;
 
 	if (mode == 0) { // Direct only
 		outFragColor = vec4(directLight * exposure, 1.0);
