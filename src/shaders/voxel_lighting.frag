@@ -119,18 +119,20 @@ void main()
 
 	indirectDiffuse /= diffuseAngles;
 
-	vec3 totalLight = directLight + indirectDiffuse.rgb + indirectSpecular;
+	vec3 indirectLight = indirectDiffuse.rgb + indirectSpecular;
+	vec3 totalLight = directLight + indirectLight;
 
 	if (mode == 0) { // Direct only
-		outFragColor = vec4(directLight * exposure, 1.0);
+		outFragColor = vec4(directLight, 1.0);
 	} else if (mode == 2) { // Indirect lighting
-		totalLight = roughness * indirectDiffuse.rgb * baseColor + (1.0 - roughness) * indirectSpecular;
-		outFragColor = vec4(totalLight * exposure, 1.0);
+		outFragColor = vec4(indirectLight, 1.0);
 	} else if (mode == 3) { // diffuse
 		outFragColor = vec4(indirectDiffuse.rgb, 1.0);
 	} else if (mode == 4) { // specular
 		outFragColor = vec4(indirectSpecular, 1.0);
 	} else { // Full lighting
-		outFragColor = vec4(totalLight * exposure, 1.0);
+		outFragColor = vec4(totalLight, 1.0);
 	}
+
+	outFragColor.rgb *= exposure;
 }
