@@ -3,8 +3,6 @@
 
 ##import raytrace/intersection
 
-const float VoxelGridSize = 256;
-
 const uint MipmapWorkGroupSize = 256;
 
 const uint[13] MaxFragListMask = uint[](8191, 4095, 2047, 1023, 511, 255, 127, 63, 31, 15, 7, 3, 1);

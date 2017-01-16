@@ -16,6 +16,9 @@
 #include "ecs/components/Light.hh"
 #include "ecs/components/VoxelInfo.hh"
 
+#include <glm/gtx/component_wise.hpp>
+#include <cxxopts.hpp>
+
 namespace sp
 {
 	Renderer::Renderer(Game *game) : GraphicsContext(game)
@@ -131,7 +134,20 @@ namespace sp
 
 		RTPool = new RenderTargetPool();
 
+		int voxelGridSize = 256;
+		float voxelSuperSampleScale = 2.0f;
+		if (game->options.count("voxel-gridsize"))
+		{
+			voxelGridSize = game->options["voxel-gridsize"].as<int>();
+		}
+		if (game->options.count("voxel-supersample"))
+		{
+			voxelSuperSampleScale = game->options["voxel-supersample"].as<float>();
+		}
+
 		ShaderControl = new ShaderManager();
+		ShaderManager::SetDefine("VoxelGridSize", std::to_string(voxelGridSize));
+		ShaderManager::SetDefine("VoxelSuperSampleScale", std::to_string(voxelSuperSampleScale));
 		ShaderControl->CompileAll(GlobalShaders);
 
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable>())
@@ -140,10 +156,14 @@ namespace sp
 			PrepareRenderable(comp);
 		}
 
-		voxelInfo = {0.1f, glm::vec3(0)};
+		voxelInfo = {voxelGridSize, 0.1f, voxelSuperSampleScale, glm::vec3(0), glm::vec3(0), glm::vec3(0)};
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::VoxelInfo>())
 		{
 			voxelInfo = *ent.Get<ecs::VoxelInfo>();
+			if (!voxelInfo.gridSize) voxelInfo.gridSize = voxelGridSize;
+			if (!voxelInfo.superSampleScale) voxelInfo.superSampleScale = voxelSuperSampleScale;
+			voxelInfo.voxelGridCenter = (voxelInfo.gridMin + voxelInfo.gridMax) * glm::vec3(0.5);
+			voxelInfo.voxelSize = glm::compMax(voxelInfo.gridMax - voxelInfo.gridMin) / voxelInfo.gridSize;
 			break;
 		}
 
@@ -229,14 +249,12 @@ namespace sp
 		}
 	}
 
-	const int VoxelGridSize = 256;
-	const int VoxelMipLevels = 8;
-	const int VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize / 4;
-
 	void Renderer::PrepareVoxelTextures()
 	{
+		auto VoxelGridSize = voxelInfo.gridSize;
 		glm::ivec3 packedSize = glm::ivec3(VoxelGridSize * 6, VoxelGridSize, VoxelGridSize);
 		glm::ivec3 unpackedSize = glm::ivec3(VoxelGridSize, VoxelGridSize, VoxelGridSize);
+		auto VoxelMipLevels = ceil(log2(VoxelGridSize));
 
 		if (!computeIndirectBuffer)
 		{
@@ -244,6 +262,7 @@ namespace sp
 			.Data(sizeof(GLuint) * 4 * VoxelMipLevels, nullptr, GL_DYNAMIC_COPY);
 		}
 
+		auto VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize / 4;
 		RenderTargetDesc listDesc(PF_R32UI, glm::ivec2(8192, ceil(VoxelListSize / 8192.0)));
 		listDesc.levels = VoxelMipLevels;
 		if (!voxelData.fragmentList || voxelData.fragmentList->GetDesc() != listDesc)
@@ -302,12 +321,14 @@ namespace sp
 		glDisable(GL_DEPTH_TEST);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
+		auto VoxelGridSize = voxelInfo.gridSize;
+
 		ecs::View ortho;
 		ortho.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * voxelInfo.voxelSize)));
 		ortho.viewMat = glm::translate(ortho.viewMat, -voxelInfo.voxelGridCenter);
 		ortho.projMat = glm::mat4();
 		ortho.offset = glm::ivec2(0);
-		ortho.extents = glm::ivec2(VoxelGridSize * 2);
+		ortho.extents = glm::ivec2(VoxelGridSize * voxelInfo.superSampleScale);
 		ortho.clearMode = 0;
 
 		auto voxelVS = GlobalShaders->Get<VoxelRasterVS>();
@@ -350,7 +371,7 @@ namespace sp
 		}
 		{
 			RenderPhase phase("Mipmap", Timer);
-			for (uint32 i = 1; i < VoxelMipLevels; i++)
+			for (uint32 i = 1; i < voxelData.alpha->GetDesc().levels; i++)
 			{
 				computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * (i - 1), sizeof(GLuint) * 8);
 				voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i - 1);
@@ -380,7 +401,7 @@ namespace sp
 
 		computeIndirectBuffer.Bind(GL_DISPATCH_INDIRECT_BUFFER);
 
-		for (uint32 i = 0; i < VoxelMipLevels; i++)
+		for (uint32 i = 0; i < voxelData.alpha->GetDesc().levels; i++)
 		{
 			computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint));
 			voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i);

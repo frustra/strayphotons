@@ -2,10 +2,13 @@
 #include "core/Logging.hh"
 #include "graphics/GPUTimer.hh"
 #include "graphics/GraphicsContext.hh"
+#include "graphics/ShaderManager.hh"
 #include "graphics/Shader.hh"
 
 #include <string>
 #include <iostream>
+#include <boost/algorithm/string.hpp>
+#include <boost/format.hpp>
 
 namespace sp
 {
@@ -48,6 +51,28 @@ namespace sp
 		glGetError();
 
 		Logf("OpenGL version: %s", glGetString(GL_VERSION));
+
+		string vendorStr = (char *) glGetString(GL_VENDOR);
+		if (boost::starts_with(vendorStr, "NVIDIA"))
+		{
+			Logf("GPU Vendor: NVIDIA");
+			ShaderManager::SetDefine("NVIDIA_GPU");
+		}
+		else if (boost::starts_with(vendorStr, "ATI"))
+		{
+			Logf("GPU Vendor: AMD");
+			ShaderManager::SetDefine("AMD_GPU");
+		}
+		else if (boost::starts_with(vendorStr, "Intel"))
+		{
+			Logf("GPU Vendor: Intel");
+			ShaderManager::SetDefine("INTEL_GPU");
+		}
+		else
+		{
+			Logf("GPU Vendor: Unknown (%s)", vendorStr);
+			ShaderManager::SetDefine("UNKNOWN_GPU");
+		}
 
 		if (GLEW_KHR_debug)
 		{

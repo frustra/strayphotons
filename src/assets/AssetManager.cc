@@ -322,20 +322,25 @@ namespace sp
 					auto voxelInfo = entity.Assign<ecs::VoxelInfo>();
 					for (auto param : comp.second.get<picojson::object>())
 					{
-						if (param.first == "size")
-						{
-							voxelInfo->voxelSize = param.second.get<double>();
-						}
-						else if (param.first == "center")
+						if (param.first == "min")
 						{
 							auto values = param.second.get<picojson::array>();
 							numbers.resize(values.size());
 							for (size_t i = 0; i < values.size(); i++)
 							{
-								numbers[i] = values[i].get<double>();
+								numbers[i] = values[i].get<double>() - 0.1;
 							}
-
-							voxelInfo->voxelGridCenter = glm::make_vec3(&numbers[0]);
+							voxelInfo->gridMin = glm::make_vec3(&numbers[0]);
+						}
+						else if (param.first == "max")
+						{
+							auto values = param.second.get<picojson::array>();
+							numbers.resize(values.size());
+							for (size_t i = 0; i < values.size(); i++)
+							{
+								numbers[i] = values[i].get<double>() + 0.1;
+							}
+							voxelInfo->gridMax = glm::make_vec3(&numbers[0]);
 						}
 					}
 				}

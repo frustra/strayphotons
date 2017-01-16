@@ -39,7 +39,7 @@ void main()
 
 	float roughness = texture(roughnessTex, inTexCoord).r;
 
-	vec3 position = vec3(gl_FragCoord.xy / 2.0, gl_FragCoord.z * VoxelGridSize);
+	vec3 position = vec3(gl_FragCoord.xy / VoxelSuperSampleScale, gl_FragCoord.z * VoxelGridSize);
 	position = AxisSwapReverse[abs(inDirection)-1] * (position - VoxelGridSize / 2);
 	vec3 worldPosition = position * voxelSize + voxelGridCenter;
 	position += VoxelGridSize / 2;

@@ -20,6 +20,19 @@ namespace sp
 		ShaderTypes().push_back(metaType);
 	}
 
+
+	std::unordered_map<string, string> &ShaderManager::DefineVars()
+	{
+		static std::unordered_map<string, string> defineVars;
+		return defineVars;
+	}
+
+	// TODO(xthexder): possibly recompile shaders if defines change
+	void ShaderManager::SetDefine(string name, string value)
+	{
+		DefineVars()[name] = value;
+	}
+
 	ShaderManager::~ShaderManager()
 	{
 		for (auto cached : pipelineCache)
@@ -121,22 +134,9 @@ namespace sp
 			if (boost::starts_with(line, "#version"))
 			{
 				output.push_back(line);
-				string vendorStr = (char *) glGetString(GL_VENDOR);
-				if (boost::starts_with(vendorStr, "NVIDIA"))
+				for (auto define : DefineVars())
 				{
-					output.push_back("#define NVIDIA_GPU");
-				}
-				else if (boost::starts_with(vendorStr, "AMD"))
-				{
-					output.push_back("#define AMD_GPU");
-				}
-				else if (boost::starts_with(vendorStr, "Intel"))
-				{
-					output.push_back("#define INTEL_GPU");
-				}
-				else
-				{
-					output.push_back("#define UNKNOWN_GPU");
+					output.push_back(boost::str(boost::format("#define %s %s") % define.first % define.second));
 				}
 				output.push_back(boost::str(boost::format("#line %d %d") % (linesProcessed + 1) % currUnit));
 				continue;

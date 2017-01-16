@@ -6,8 +6,9 @@ namespace ecs
 {
 	struct VoxelInfo
 	{
-		float voxelSize;
+		int gridSize;
+		float voxelSize, superSampleScale;
 		glm::vec3 voxelGridCenter;
-		// glm::vec3 voxelGridSize; TODO(xthexder)
+		glm::vec3 gridMin, gridMax;
 	};
 }
