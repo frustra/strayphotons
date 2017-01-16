@@ -118,7 +118,14 @@ namespace sp
 		{
 			linesProcessed++;
 
-			if (line[0] != '#' || line[1] != '#')
+			if (boost::starts_with(line, "#version"))
+			{
+				output.push_back(line);
+				output.push_back("#define INTEL_GPU");
+				Logf(glGetString(GL_VENDOR));
+				output.push_back(boost::str(boost::format("#line %d %d") % (linesProcessed + 1) % currUnit));
+				continue;
+			} else if (line[0] != '#' || line[1] != '#')
 			{
 				output.push_back(line);
 				continue;

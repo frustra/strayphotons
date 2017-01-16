@@ -22,7 +22,13 @@ const mat3[3] AxisSwapReverse = mat3[](
 	mat3(1.0)
 );
 
-float ReadVoxelAndClear(layout(r32ui) uimage3D packedVoxelImg, ivec3 position, out vec3 outColor, out vec3 outNormal, out vec3 outRadiance, out float outRoughness)
+#ifdef INTEL_GPU
+#define UIMAGE3D uimage3D
+#else
+#define UIMAGE3D layout(r32ui) uimage3D
+#endif
+
+float ReadVoxelAndClear(UIMAGE3D packedVoxelImg, ivec3 position, out vec3 outColor, out vec3 outNormal, out vec3 outRadiance, out float outRoughness)
 {
 	ivec3 index = position * ivec3(6, 1, 1);
 
