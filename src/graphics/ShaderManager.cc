@@ -121,11 +121,27 @@ namespace sp
 			if (boost::starts_with(line, "#version"))
 			{
 				output.push_back(line);
-				output.push_back("#define INTEL_GPU");
-				Logf(glGetString(GL_VENDOR));
+				string vendorStr = (char *) glGetString(GL_VENDOR);
+				if (boost::starts_with(vendorStr, "NVIDIA"))
+				{
+					output.push_back("#define NVIDIA_GPU");
+				}
+				else if (boost::starts_with(vendorStr, "AMD"))
+				{
+					output.push_back("#define AMD_GPU");
+				}
+				else if (boost::starts_with(vendorStr, "Intel"))
+				{
+					output.push_back("#define INTEL_GPU");
+				}
+				else
+				{
+					output.push_back("#define UNKNOWN_GPU");
+				}
 				output.push_back(boost::str(boost::format("#line %d %d") % (linesProcessed + 1) % currUnit));
 				continue;
-			} else if (line[0] != '#' || line[1] != '#')
+			}
+			else if (line[0] != '#' || line[1] != '#')
 			{
 				output.push_back(line);
 				continue;
