@@ -52,8 +52,6 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "")
 set(GLFW_INSTALL OFF CACHE BOOL "")
 add_subdirectory(${EXT_PATH}/glfw)
 
-add_subdirectory(${EXT_PATH}/freetype2)
-
 set(GOOGLETEST_DIR ${EXT_PATH}/googletest/googletest)
 add_subdirectory(${EXT_PATH}/googletest)
 
@@ -69,7 +67,6 @@ include_directories(
 	${EXT_PATH}/glew/include
 	${EXT_PATH}/boostconfig/include
 	${EXT_PATH}/glm
-	${EXT_PATH}/freetype2/include
 	${EXT_PATH}/tinygltfloader
 	${EXT_PATH}/glomerate/include
 	${EXT_PATH}/boost
@@ -224,7 +221,6 @@ set(BOOST_LIBS
 target_link_libraries(${PROJECT_LIB}
 	glfw
 	${GLFW_LIBRARIES}
-	freetype
 	${BOOST_LIBS}
 )
 
@@ -244,7 +240,6 @@ target_link_libraries(${PROJECT_EXE}
 	glfw
 	vhacd
 	${GLFW_LIBRARIES}
-	freetype
 	ImGui
 )
 
