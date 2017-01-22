@@ -27,6 +27,7 @@ func getTextureFormat(path string) int {
 		"RGB,":      6407, // GL_RGB
 		"grayscale": 6403, // GL_RED
 		// BMP
+		"x 32": 6408, // GL_RGBA
 		"x 24": 6407, // GL_RGB
 		"x 8":  6403, // GL_RED
 	}
@@ -124,10 +125,10 @@ func processGltf(gltf map[string]interface{}, folder string) {
 			}
 
 			textureMap := map[string]string{
-				"Base_Color": "baseColor",
-				"Roughness":  "roughness",
-				"Metallic":   "metallic",
-				"Height":     "height",
+				"diffuse":   "baseColor",
+				"roughness": "roughness",
+				"metallic":  "metallic",
+				"height":    "height",
 			}
 			for _, file := range files {
 				if !file.IsDir() && strings.HasPrefix(file.Name(), name+"_") {
