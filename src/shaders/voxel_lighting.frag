@@ -71,7 +71,6 @@ void main()
 	float depth = texture(depthStencil, inTexCoord).r;
 	vec3 fragPosition = ScreenPosToViewPos(inTexCoord, 0, invProjMat);
 	vec3 viewPosition = ScreenPosToViewPos(inTexCoord, depth, invProjMat);
-	vec3 directionFromView = normalize(viewPosition);
 	vec3 worldPosition = (invViewMat * vec4(viewPosition, 1.0)).xyz;
 	vec3 worldFragPosition = (invViewMat * vec4(fragPosition, 1.0)).xyz;
 
@@ -81,31 +80,40 @@ void main()
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
 
+	if (mode == 5) { // Full voxel lighting
+		vec4 sampleColor = ConeTraceGrid(0, worldFragPosition, rayDir, rayDir);
+		worldPosition = worldFragPosition + rayDir * (sampleColor.a - voxelSize);
+		vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
+		GetVoxel(voxelPos, 0, baseColor, worldNormal, sampleColor.rgb, roughness);
+
+		rayReflectDir = reflect(rayDir, worldNormal);
+	}
+
 	vec3 indirectSpecular = vec3(0);
 	vec4 indirectDiffuse = vec4(0);
-
-	vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, roughness, metalness);
-
-	vec3 directDiffuseColor = baseColor - baseColor * metalness;
-	vec3 directSpecularColor = mix(vec3(0.04), baseColor, metalness);
 
 	for (int i = 0; i < maxReflections; i++) {
 		// specular
 		vec3 sampleDir = rayReflectDir;
 		vec4 sampleColor = ConeTraceGrid(roughness, worldPosition, sampleDir, worldNormal);
 
-		if (roughness == 0 && sampleColor.a >= 0) {
-			worldPosition += sampleDir * (sampleColor.a - 0.5 * voxelSize);
+		if (roughness == 0 && metalness == 1 && sampleColor.a >= 0) {
+			worldPosition += sampleDir * (sampleColor.a - voxelSize);
 			vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
-			GetVoxel(voxelPos, 0, directDiffuseColor, worldNormal, directLight, roughness);
+			vec3 radiance;
+			GetVoxel(voxelPos, 0, baseColor, worldNormal, radiance, roughness);
 			rayDir = sampleDir;
 			rayReflectDir = reflect(sampleDir, worldNormal);
+			if (roughness != 0) metalness = 0;
 		} else {
+			vec3 directSpecularColor = mix(vec3(0.04), baseColor, metalness);
 			vec3 brdf = EvaluateBRDFSpecularImportanceSampledGGX(directSpecularColor, roughness, sampleDir, -rayDir, worldNormal);
 			indirectSpecular = sampleColor.rgb * brdf;
 			break;
 		}
 	}
+
+	vec3 directDiffuseColor = baseColor - baseColor * metalness;
 
 	for (float r = 0; r < diffuseAngles; r++) {
 		for (float a = 0.3; a <= 0.9; a += 0.3) {
@@ -116,6 +124,8 @@ void main()
 			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * vec4(directDiffuseColor, 1.0);
 		}
 	}
+
+	vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, roughness, metalness);
 
 	indirectDiffuse /= diffuseAngles;
 

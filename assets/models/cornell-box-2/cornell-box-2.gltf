@@ -841,12 +841,8 @@
                     1
                 ],
                 "baseColor": "texture_tallBox_Diffuse_Color_001",
-                "roughness": [
-                    0,
-                    0,
-                    0,
-                    0
-                ],
+                "roughness": 0,
+                "metallic": 1,
                 "emission": [
                     0,
                     0,
