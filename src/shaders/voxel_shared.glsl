@@ -194,7 +194,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 	}
 
 	if (dist >= maxDist) dist = -1;
-	return vec4(result.rgb / (result.a + 0.00001), dist * voxelSize);
+	return vec4(result.rgb, dist * voxelSize);
 }
 
 vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
