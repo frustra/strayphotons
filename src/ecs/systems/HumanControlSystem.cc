@@ -9,6 +9,7 @@
 
 #include "Common.hh"
 #include "core/CVar.hh"
+#include "core/Logging.hh"
 
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
@@ -184,6 +185,9 @@ namespace ecs
 		else
 		{
 			movement = transform->rotate * normalizedDirection;
+			if (abs(movement.y) > 0.999) {
+				movement = transform->rotate * glm::vec3(0, -movement.y, 0);
+			}
 			movement.y = 0;
 			movement = glm::normalize(movement);
 			movement *= ds;
