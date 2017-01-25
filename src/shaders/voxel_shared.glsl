@@ -183,8 +183,8 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 		float offset = max(0, size - planeDist);
 		vec3 position = voxelPos + rayDir * dist + offset * surfaceNormal;
 		vec4 value = SampleVoxel(position, rayDir, size);
-		float alphaBias = 0.5 - smoothstep(1.0, 3.0, size) * 0.5;
-		result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a + alphaBias) * (1 - step(0, -value.a));
+		if (ratio == 0) value.a = smoothstep(0.0, 0.4, value.a);
+		result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
 		if (CheckVoxel(position + rayDir * size * 4, size * 8)) {
 			dist += size;

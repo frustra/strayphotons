@@ -82,7 +82,7 @@ void main()
 
 	if (mode == 5) { // Full voxel lighting
 		vec4 sampleColor = ConeTraceGrid(0, worldFragPosition, rayDir, rayDir);
-		worldPosition = worldFragPosition + rayDir * (sampleColor.a - voxelSize);
+		worldPosition = worldFragPosition + rayDir * sampleColor.a;
 		vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
 		GetVoxel(voxelPos, 0, baseColor, worldNormal, sampleColor.rgb, roughness);
 
@@ -98,7 +98,7 @@ void main()
 		vec4 sampleColor = ConeTraceGrid(roughness, worldPosition, sampleDir, worldNormal);
 
 		if (roughness == 0 && metalness == 1 && sampleColor.a >= 0) {
-			worldPosition += sampleDir * (sampleColor.a - voxelSize);
+			worldPosition += sampleDir * sampleColor.a;
 			vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
 			vec3 radiance;
 			GetVoxel(voxelPos, 0, baseColor, worldNormal, radiance, roughness);
