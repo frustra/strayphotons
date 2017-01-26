@@ -2,6 +2,7 @@
 #define VOXEL_SHARED_GLSL_INCLUDED
 
 ##import raytrace/intersection
+##import lib/util
 
 const uint MipmapWorkGroupSize = 256;
 
@@ -170,7 +171,10 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out
 vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 {
 	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
-	float dist = 0;//max(1.75, min(1.75 / dot(rayDir, surfaceNormal), VoxelGridSize / 2));
+
+	vec4 rng = randState(rayPos);
+
+	float dist = rand2(rng);
 	float maxDist = VoxelGridSize * 1.5;
 
 	vec4 result = vec4(0);
@@ -183,7 +187,8 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 		float offset = max(0, size - planeDist);
 		vec3 position = voxelPos + rayDir * dist + offset * surfaceNormal;
 		vec4 value = SampleVoxel(position, rayDir, size);
-		if (ratio == 0) value.a = smoothstep(0.0, 0.4, value.a);
+		// Bias the alpha to prevent traces going through objects.
+		value.a = smoothstep(0.0, 0.4, value.a);
 		result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
 		if (CheckVoxel(position + rayDir * size * 4, size * 8)) {
