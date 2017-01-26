@@ -1,6 +1,7 @@
 #version 430
 
 ##import voxel_shared
+##import lib/util
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
@@ -32,9 +33,7 @@ void main() {
 	ivec3 mipPosition = position >> 1;
 	ivec3 floorPosition = mipPosition << 1;
 
-	// Alpha on each axis, front and back
 	vec3 alpha = vec3(0);
-	vec3 alphaBack = vec3(0);
 	float count = 0.0;
 	vec3 radiance = vec3(0);
 
@@ -45,8 +44,7 @@ void main() {
 				if (position == floorPosition + ivec3(x, y, z) && count > 0) return;
 
 				vec4 prevAlpha = imageLoad(previousVoxelAlpha, floorPosition + ivec3(x, y, z));
-				alpha += vec3(x, y, z) * prevAlpha.xyz;
-				alphaBack += (1 - vec3(x, y, z)) * prevAlpha.xyz;
+				alpha += prevAlpha.xyz;
 
 				radiance += imageLoad(previousVoxelRadiance, floorPosition + ivec3(x, y, z)).rgb;
 				count += 1 - step(0, -prevAlpha.a);
@@ -54,8 +52,8 @@ void main() {
 		}
 	}
 
-	alpha *= 0.25;
-	alpha += alphaBack * 0.25 * (1.0 - alpha);
+	// Bias alpha so that 50% full is opaque
+	alpha = saturate(alpha * 0.25);
 	imageStore(currentVoxelAlpha, mipPosition, vec4(alpha, 1.0));
 	imageStore(currentVoxelRadiance, mipPosition, vec4(radiance / count, 1.0));
 
