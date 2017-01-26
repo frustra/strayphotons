@@ -4,7 +4,6 @@
 #define M_PI 3.1415926535897932384626433832795
 
 #define saturate(x) clamp(x, 0.0, 1.0)
-
 #define hash(x) fract(sin(x) * 43758.543123)
 
 float rand2(inout vec4 state)

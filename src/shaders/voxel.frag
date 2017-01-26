@@ -56,12 +56,14 @@ void main()
 	uint gb = (uint(pixelLuminance.g * 0x7FF) << 16) + uint(pixelLuminance.b * 0x7FF);
 	uint xy = (uint(normal.x * 0x7FF) << 16) + uint(normal.y * 0x7FF);
 	uint zr = (uint(normal.z * 0x7FF) << 16) + uint(roughness * 0xFF);
-	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 6, position.yz), rg);
-	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 6 + 1, position.yz), br);
-	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 6 + 2, position.yz), gb);
-	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 6 + 3, position.yz), xy);
-	imageAtomicAdd(voxelData, ivec3(floor(position.x) * 6 + 4, position.yz), zr);
-	uint prevData = imageAtomicAdd(voxelData, ivec3(floor(position.x) * 6 + 5, position.yz), 1);
+
+	ivec3 dataOffset = ivec3(floor(position.x) * 6, position.yz);
+	imageAtomicAdd(voxelData, dataOffset + ivec3(0, 0, 0), rg);
+	imageAtomicAdd(voxelData, dataOffset + ivec3(1, 0, 0), br);
+	imageAtomicAdd(voxelData, dataOffset + ivec3(2, 0, 0), gb);
+	imageAtomicAdd(voxelData, dataOffset + ivec3(3, 0, 0), xy);
+	imageAtomicAdd(voxelData, dataOffset + ivec3(4, 0, 0), zr);
+	uint prevData = imageAtomicAdd(voxelData, dataOffset + ivec3(5, 0, 0), 1);
 
 	if ((prevData & 0xFFFF) == 0) {
 		uint index = atomicCounterIncrement(fragListSize);
