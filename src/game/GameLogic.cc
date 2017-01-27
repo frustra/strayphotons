@@ -1,5 +1,6 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
+#include "core/CVar.hh"
 
 #include "game/GameLogic.hh"
 #include "assets/Scene.hh"
@@ -8,6 +9,7 @@
 #include "ecs/components/Transform.hh"
 #include "ecs/components/Physics.hh"
 #include "ecs/components/View.hh"
+#include "ecs/components/Light.hh"
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -16,9 +18,12 @@
 namespace sp
 {
 	GameLogic::GameLogic(Game *game)
-		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input)
+		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input), flashlightFixed(false)
 	{
 	}
+
+	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
+	static CVar<float> CVarFlashlightAngle("r.FlashlightAngle", 20, "Flashlight spot angle");
 
 	void GameLogic::Init()
 	{
@@ -29,9 +34,22 @@ namespace sp
 
 		game->graphics.SetPlayerView(player);
 
+		// Create flashlight entity
+		flashlight = game->entityManager.NewEntity();
+		auto transform = flashlight.Assign<ecs::Transform>();
+		transform->Translate(glm::vec3(0, -0.3, 0));
+		transform->SetRelativeTo(player);
+		auto light = flashlight.Assign<ecs::Light>();
+		light->tint = glm::vec3(1.0);
+		light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
+		auto view = flashlight.Assign<ecs::View>();
+		view->extents = glm::vec2(512);
+		view->clip = glm::vec2(0.1, 256);
+
 		input->AddCharInputCallback([&](uint32 ch)
 		{
-			if (ch == 'q')
+			if (input->FocusLocked()) return;
+			if (ch == 'q') // Spawn dodecahedron
 			{
 				auto entity = game->entityManager.NewEntity();
 				auto model = GAssets.LoadModel("dodecahedron");
@@ -48,6 +66,36 @@ namespace sp
 					auto physics = entity.Assign<ecs::Physics>(actor);
 				}
 			}
+			else if (ch == 'e') // Toggle flashlight following player
+			{
+				auto transform = flashlight.Get<ecs::Transform>();
+				ecs::Entity player = scene->FindEntity("player");
+				auto playerTransform = player.Get<ecs::Transform>();
+				flashlightFixed = !flashlightFixed;
+				if (flashlightFixed)
+				{
+					transform->SetTransform(transform->GetModelTransform(game->entityManager));
+					transform->SetRelativeTo(ecs::Entity());
+				}
+				else
+				{
+					transform->SetTransform(glm::mat4());
+					transform->Translate(glm::vec3(0, -0.3, 0));
+					transform->SetRelativeTo(player);
+				}
+			}
+			else if (ch == 'f') // Turn flashlight on and off
+			{
+				auto light = flashlight.Get<ecs::Light>();
+				if (!light->intensity)
+				{
+					light->intensity = CVarFlashlight.Get(true);
+				}
+				else
+				{
+					light->intensity = 0;
+				}
+			}
 		});
 
 		//game->audio.StartEvent("event:/german nonsense");
@@ -59,6 +107,16 @@ namespace sp
 
 	bool GameLogic::Frame(double dtSinceLastFrame)
 	{
+		if (CVarFlashlight.Changed())
+		{
+			auto light = flashlight.Get<ecs::Light>();
+			if (light->intensity) light->intensity = CVarFlashlight.Get(true);
+		}
+		if (CVarFlashlightAngle.Changed())
+		{
+			auto light = flashlight.Get<ecs::Light>();
+			light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
+		}
 		if (!humanControlSystem.Frame(dtSinceLastFrame))
 		{
 			return false;

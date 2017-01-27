@@ -26,6 +26,12 @@ namespace ecs
 
 	void Transform::SetRelativeTo(ecs::Entity ent)
 	{
+		if (!ent.Valid())
+		{
+			this->relativeTo = ecs::Entity::Id();
+			return;
+		}
+
 		if (!ent.Has<Transform>())
 		{
 			std::stringstream ss;

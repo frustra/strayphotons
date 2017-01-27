@@ -13,6 +13,10 @@
 			"renderable": "duck",
 			"transform": {
 				"translate": [0, 0, -7]
+			},
+			"physics": {
+				"model": "duck",
+				"pxTranslate" : [0, 0, -7]
 			}
 		},
 		{
@@ -69,21 +73,6 @@
 			"voxels": {
 				"min": [-6, -1.0, -14.5],
 				"max": [6.5, 12, 13.5]
-			}
-		},
-		{
-			"light": {
-				"tint": [1, 1, 1],
-				"intensity": 100,
-				"spotAngle": 10
-			},
-			"view": {
-				"extents": [512, 512],
-				"clip": [0.1, 256]
-			},
-			"transform": {
-				"relativeTo": "player",
-				"translate": [0, -0.3, 0]
 			}
 		},
 		{

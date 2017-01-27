@@ -21,5 +21,7 @@ namespace sp
 		InputManager *input;
 		ecs::HumanControlSystem humanControlSystem;
 		shared_ptr<Scene> scene;
+		ecs::Entity flashlight;
+		bool flashlightFixed;
 	};
 }

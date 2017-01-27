@@ -75,6 +75,10 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out
 	}
 
 	vec3 voxelPos = (rayPos.xyz / voxelSize + VoxelGridSize * 0.5) * invScale;
+
+	vec4 rng = randState(rayPos);
+	voxelPos += rayDir * rand2(rng);
+
 	ivec3 voxelIndex = ivec3(voxelPos);
 
 	vec3 deltaDist = abs(vec3(scale) / rayDir);

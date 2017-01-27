@@ -62,7 +62,6 @@ namespace sp
 		}
 	};
 
-	static CVar<float> CVarFlashlightIntensity("r.Flashlight", 100, "Flashlight intensity");
 	static CVar<bool> CVarRenderWireframe("r.Wireframe", false, "Render wireframes");
 
 	// TODO(xthexder) Clean up Renderable when unloaded.
@@ -191,15 +190,11 @@ namespace sp
 
 		// TODO(xthexder): Handle lights without shadowmaps
 		glm::ivec2 renderTargetSize;
-		bool first = true;
+		bool empty = true;
 		for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
 		{
+			empty = false;
 			auto light = entity.Get<ecs::Light>();
-			if (first)
-			{
-				light->intensity = CVarFlashlightIntensity.Get();
-				first = false;
-			}
 			if (entity.Has<ecs::View>())
 			{
 				auto view = updateLightCaches(entity, light);
@@ -213,7 +208,7 @@ namespace sp
 			}
 		}
 
-		if (first) return;
+		if (empty) return;
 
 		if (!shadowMap || glm::ivec2(shadowMap->GetDesc().extent) != renderTargetSize)
 		{
