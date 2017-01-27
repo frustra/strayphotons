@@ -12,8 +12,6 @@ layout (binding = 6) uniform sampler3D voxelRadiance;
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
-#define INCLUDE_VOXEL_TRACE
-
 uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);
 
@@ -22,6 +20,7 @@ uniform vec2 targetSize;
 
 ##import lib/util
 ##import voxel_shared
+##import voxel_trace_shared
 
 uniform mat4 invViewMat;
 uniform mat4 invProjMat;

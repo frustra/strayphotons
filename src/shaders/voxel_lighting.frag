@@ -19,8 +19,6 @@ layout (location = 0) out vec4 outFragColor;
 
 ##import lib/light_inputs
 
-#define INCLUDE_VOXEL_TRACE
-
 uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);
 
@@ -29,6 +27,7 @@ uniform vec2 targetSize;
 
 ##import lib/util
 ##import voxel_shared
+##import voxel_trace_shared
 ##import lib/shading
 
 const int maxReflections = 2;
