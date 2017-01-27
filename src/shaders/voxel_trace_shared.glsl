@@ -3,41 +3,48 @@
 
 ##import raytrace/intersection
 
+const float InvVoxelGridSize = 1.0 / VoxelGridSize;
+const float VoxelEps = 0.00001;
+
 vec3 GetVoxel(vec3 position, int level, out vec3 color, out vec3 normal, out vec3 radiance, out float roughness)
 {
-	vec4 colorData = textureLod(voxelColor, position/vec3(VoxelGridSize), 0);
-	vec4 normalData = textureLod(voxelNormal, position/vec3(VoxelGridSize), 0);
-	vec4 radianceData = textureLod(voxelRadiance, position/vec3(int(VoxelGridSize)>>level), level);
-	vec4 alphaData = textureLod(voxelAlpha, position/vec3(int(VoxelGridSize)>>level), level);
-	color = colorData.rgb / (colorData.a + 0.00001);
-	normal = normalize(normalData.xyz / (colorData.a + 0.00001));
-	radiance = radianceData.rgb / (radianceData.a + 0.00001);
-	roughness = normalData.a / (colorData.a + 0.00001);
-	return alphaData.xyz / (alphaData.a + 0.00001);
+	vec3 invMipVoxelGridSize = vec3(1.0 / float(int(VoxelGridSize)>>level));
+
+	vec4 colorData = textureLod(voxelColor, position * InvVoxelGridSize, 0);
+	vec4 normalData = textureLod(voxelNormal, position * InvVoxelGridSize, 0);
+	vec4 radianceData = textureLod(voxelRadiance, position * invMipVoxelGridSize, level);
+	vec4 alphaData = textureLod(voxelAlpha, position * invMipVoxelGridSize, level);
+
+	color = colorData.rgb / (colorData.a + VoxelEps);
+	normal = normalize(normalData.xyz / (colorData.a + VoxelEps));
+	radiance = radianceData.rgb / (radianceData.a + VoxelEps);
+	roughness = normalData.a / (colorData.a + VoxelEps);
+
+	return alphaData.xyz / (alphaData.a + VoxelEps);
 }
 
 bool CheckVoxel(vec3 position, float size)
 {
 	float level = max(0, log2(size));
-	vec4 alphaData = textureLod(voxelAlpha, position/vec3(VoxelGridSize), level);
+	vec4 alphaData = textureLod(voxelAlpha, position * InvVoxelGridSize, level);
 	return alphaData.a > 0;
 }
 
 vec4 SampleVoxel(vec3 position, vec3 dir, float size)
 {
 	float level = max(0, log2(size));
-	vec4 radianceData = textureLod(voxelRadiance, position/vec3(VoxelGridSize), level);
-	vec4 alphaData = textureLod(voxelAlpha, position/vec3(VoxelGridSize), level);
+	vec4 radianceData = textureLod(voxelRadiance, position * InvVoxelGridSize, level);
+	vec4 alphaData = textureLod(voxelAlpha, position * InvVoxelGridSize, level);
 	float alpha = dot(alphaData.xyz, abs(dir)) / dot(vec3(1), abs(dir));
-	return vec4(radianceData.rgb / (radianceData.a + 0.00001), alpha);
+	return vec4(radianceData.rgb / (radianceData.a + VoxelEps), alpha);
 }
 
 vec4 SampleVoxelLod(vec3 position, vec3 dir, float level)
 {
-	vec4 radianceData = textureLod(voxelRadiance, position/vec3(VoxelGridSize), level);
-	vec4 alphaData = textureLod(voxelAlpha, position/vec3(VoxelGridSize), level);
+	vec4 radianceData = textureLod(voxelRadiance, position * InvVoxelGridSize, level);
+	vec4 alphaData = textureLod(voxelAlpha, position * InvVoxelGridSize, level);
 	float alpha = dot(alphaData.xyz, abs(dir)) / dot(vec3(1), abs(dir));
-	return vec4(radianceData.rgb / (radianceData.a + 0.00001), alpha);
+	return vec4(radianceData.rgb / (radianceData.a + VoxelEps), alpha);
 }
 
 float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out vec3 hitNormal, out vec3 hitRadiance, out float hitRoughness)
@@ -162,6 +169,24 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 	}
 
 	return result;
+}
+
+const int diffuseAngles = 6;
+const float diffuseScale = 1.0 / diffuseAngles;
+
+vec3 HemisphereIndirectDiffuse(vec3 directDiffuseColor, vec3 worldPosition, vec3 worldNormal) {
+	vec4 indirectDiffuse = vec4(0);
+
+	for (float r = 0; r < diffuseAngles; r++) {
+		for (float a = 0.3; a <= 0.9; a += 0.3) {
+			vec3 sampleDir = OrientByNormal(r * diffuseScale * 6.28, a, worldNormal);
+			vec4 sampleColor = ConeTraceGridDiffuse(worldPosition, sampleDir, worldNormal);
+
+			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * vec4(directDiffuseColor, 1.0);
+		}
+	}
+
+	return indirectDiffuse.rgb * diffuseScale;
 }
 
 #endif

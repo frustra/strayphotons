@@ -66,7 +66,7 @@ void main()
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
 
-	if (mode == 5) { // Full voxel lighting
+	if (mode == 5) { // Voxel direct lighting
 		vec4 sampleColor = ConeTraceGrid(0, worldFragPosition, rayDir, rayDir);
 		worldPosition = worldFragPosition + rayDir * sampleColor.a;
 		vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
@@ -75,8 +75,11 @@ void main()
 		rayReflectDir = reflect(rayDir, worldNormal);
 	}
 
+	//vec3 directDiffuseColor = baseColor - baseColor * metalness;
+	//vec3 indirectDiffuse = HemisphereIndirectDiffuse(directDiffuseColor, worldPosition, worldNormal);
+	vec3 indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
+
 	vec3 indirectSpecular = vec3(0);
-	vec4 indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord) / exposure;
 
 	for (int i = 0; i < maxReflections; i++) {
 		// specular
@@ -101,7 +104,7 @@ void main()
 
 	vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, roughness, metalness);
 
-	vec3 indirectLight = indirectDiffuse.rgb + indirectSpecular;
+	vec3 indirectLight = indirectDiffuse + indirectSpecular;
 	vec3 totalLight = directLight + indirectLight;
 
 	if (mode == 0) { // Direct only
@@ -109,7 +112,7 @@ void main()
 	} else if (mode == 2) { // Indirect lighting
 		outFragColor = vec4(indirectLight, 1.0);
 	} else if (mode == 3) { // diffuse
-		outFragColor = vec4(indirectDiffuse.rgb, 1.0);
+		outFragColor = vec4(indirectDiffuse, 1.0);
 	} else if (mode == 4) { // specular
 		outFragColor = vec4(indirectSpecular, 1.0);
 	} else { // Full lighting

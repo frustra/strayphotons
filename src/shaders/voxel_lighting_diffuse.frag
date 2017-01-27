@@ -25,10 +25,6 @@ uniform vec2 targetSize;
 uniform mat4 invViewMat;
 uniform mat4 invProjMat;
 
-const int diffuseAngles = 6;
-const float diffuseScale = 1.0 / diffuseAngles;
-
-
 void main()
 {
 	// Determine normal of surface at this fragment.
@@ -53,19 +49,9 @@ void main()
 	vec3 worldNormal = mat3(invViewMat) * viewNormal;
 
 	// Trace.
-	vec4 indirectDiffuse = vec4(0);
 	vec3 directDiffuseColor = baseColor - baseColor * metalness;
+	vec3 indirectDiffuse = HemisphereIndirectDiffuse(directDiffuseColor, worldPosition, worldNormal);
 
-	for (float r = 0; r < diffuseAngles; r++) {
-		for (float a = 0.3; a <= 0.9; a += 0.3) {
-			vec3 sampleDir = OrientByNormal(r / diffuseAngles * 6.28, a, worldNormal);
-			vec4 sampleColor = ConeTraceGridDiffuse(worldPosition, sampleDir, worldNormal);
-
-			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * vec4(directDiffuseColor, 1.0);
-		}
-	}
-
-	indirectDiffuse *= diffuseScale;
 	outFragColor = vec4(indirectDiffuse.rgb * exposure, 1.0);
 }
 
