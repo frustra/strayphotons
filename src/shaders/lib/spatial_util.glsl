@@ -69,4 +69,17 @@ const vec2[8] SpiralOffsets = vec2[](
 	vec2( 0.1250,  0.0000)
 );
 
+// Returns vector with angles phi, tht in the hemisphere defined by the input normal.
+vec3 OrientByNormal(float phi, float tht, vec3 normal) {
+	float sintht = sin(tht);
+	float xs = sintht * cos(phi);
+	float ys = cos(tht);
+	float zs = sintht * sin(phi);
+
+	vec3 up = abs(normal.y) < 0.999 ? vec3(0, 1, 0) : vec3(1, 0, 0);
+	vec3 tangent1 = normalize(up - normal * dot(up, normal));
+	vec3 tangent2 = normalize(cross(tangent1, normal));
+	return normalize(xs * tangent1 + ys * normal + zs * tangent2);
+}
+
 #endif

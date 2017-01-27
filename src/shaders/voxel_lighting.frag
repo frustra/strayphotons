@@ -12,6 +12,8 @@ layout (binding = 5) uniform sampler3D voxelNormal;
 layout (binding = 6) uniform sampler3D voxelAlpha;
 layout (binding = 7) uniform sampler3D voxelRadiance;
 
+layout (binding = 8) uniform sampler2D indirectDiffuseSampler;
+
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
@@ -35,21 +37,6 @@ uniform mat4 invViewMat;
 uniform mat4 invProjMat;
 
 uniform int mode = 1;
-
-const int diffuseAngles = 6;
-
-vec3 orientByNormal(float phi, float tht, vec3 normal)
-{
-	float sintht = sin(tht);
-	float xs = sintht * cos(phi);
-	float ys = cos(tht);
-	float zs = sintht * sin(phi);
-
-	vec3 up = abs(normal.y) < 0.999 ? vec3(0, 1, 0) : vec3(1, 0, 0);
-	vec3 tangent1 = normalize(up - normal * dot(up, normal));
-	vec3 tangent2 = normalize(cross(tangent1, normal));
-	return normalize(xs * tangent1 + ys * normal + zs * tangent2);
-}
 
 void main()
 {
@@ -90,7 +77,7 @@ void main()
 	}
 
 	vec3 indirectSpecular = vec3(0);
-	vec4 indirectDiffuse = vec4(0);
+	vec4 indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord) / exposure;
 
 	for (int i = 0; i < maxReflections; i++) {
 		// specular
@@ -113,21 +100,7 @@ void main()
 		}
 	}
 
-	vec3 directDiffuseColor = baseColor - baseColor * metalness;
-
-	for (float r = 0; r < diffuseAngles; r++) {
-		for (float a = 0.3; a <= 0.9; a += 0.3) {
-			// diffuse
-			vec3 sampleDir = orientByNormal(r / diffuseAngles * 6.28, a, worldNormal);
-			vec4 sampleColor = ConeTraceGridDiffuse(worldPosition, sampleDir, worldNormal);
-
-			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * vec4(directDiffuseColor, 1.0);
-		}
-	}
-
 	vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, roughness, metalness);
-
-	indirectDiffuse /= diffuseAngles;
 
 	vec3 indirectLight = indirectDiffuse.rgb + indirectSpecular;
 	vec3 totalLight = directLight + indirectLight;

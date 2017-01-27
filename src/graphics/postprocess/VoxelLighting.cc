@@ -11,6 +11,7 @@
 namespace sp
 {
 	static CVar<int> CVarVoxelLightingMode("r.VoxelLighting", 1, "Voxel lighting mode (0: direct only, 1: full, 2: indirect only, 3: diffuse only, 4: specular only, 5: full voxel)");
+	static CVar<int> CVarVoxelDiffuseDownsample("r.VoxelDiffuseDownsample", 1, "N times downsampled rendering of indirect diffuse lighting");
 
 	class VoxelLightingFS : public Shader
 	{
@@ -120,6 +121,47 @@ namespace sp
 
 	IMPLEMENT_SHADER_TYPE(VoxelLightingFS, "voxel_lighting.frag", Fragment);
 
+	class VoxelLightingDiffuseFS : public Shader
+	{
+		SHADER_TYPE(VoxelLightingDiffuseFS)
+
+		VoxelLightingDiffuseFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+		{
+			Bind(exposure, "exposure");
+			Bind(targetSize, "targetSize");
+
+			Bind(invProjMat, "invProjMat");
+			Bind(invViewMat, "invViewMat");
+
+			Bind(voxelSize, "voxelSize");
+			Bind(voxelGridCenter, "voxelGridCenter");
+		}
+
+		void SetExposure(float newExposure)
+		{
+			Set(exposure, newExposure);
+		}
+
+		void SetViewParams(const ecs::View &view)
+		{
+			Set(invProjMat, view.invProjMat);
+			Set(invViewMat, view.invViewMat);
+			Set(targetSize, glm::vec2(view.extents));
+		}
+
+		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo)
+		{
+			Set(voxelSize, voxelInfo.voxelSize);
+			Set(voxelGridCenter, voxelInfo.voxelGridCenter);
+		}
+
+	private:
+		Uniform exposure, targetSize, invViewMat, invProjMat;
+		Uniform voxelSize, voxelGridCenter;
+	};
+
+	IMPLEMENT_SHADER_TYPE(VoxelLightingDiffuseFS, "voxel_lighting_diffuse.frag", Fragment);
+
 	void VoxelLighting::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
@@ -136,5 +178,30 @@ namespace sp
 		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingFS>(r->GlobalShaders);
 
 		DrawScreenCover();
+	}
+
+	VoxelLightingDiffuse::VoxelLightingDiffuse()
+	{
+		downsample = CVarVoxelDiffuseDownsample.Get();
+		if (downsample < 1) downsample = 1;
+	}
+
+	void VoxelLightingDiffuse::Process(const PostProcessingContext *context)
+	{
+		auto r = context->renderer;
+		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+
+		r->GlobalShaders->Get<VoxelLightingDiffuseFS>()->SetExposure(1.0);
+		r->GlobalShaders->Get<VoxelLightingDiffuseFS>()->SetViewParams(context->view);
+		r->GlobalShaders->Get<VoxelLightingDiffuseFS>()->SetVoxelInfo(context->renderer->voxelInfo);
+
+		glViewport(0, 0, outputs[0].TargetDesc.extent[0], outputs[0].TargetDesc.extent[1]);
+		r->SetRenderTarget(&dest, nullptr);
+		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingDiffuseFS>(r->GlobalShaders);
+
+		DrawScreenCover();
+
+		auto view = context->view;
+		glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
 	}
 }

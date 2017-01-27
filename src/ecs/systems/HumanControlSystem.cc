@@ -185,7 +185,8 @@ namespace ecs
 		else
 		{
 			movement = transform->rotate * normalizedDirection;
-			if (abs(movement.y) > 0.999) {
+			if (abs(movement.y) > 0.999)
+			{
 				movement = transform->rotate * glm::vec3(0, -movement.y, 0);
 			}
 			movement.y = 0;

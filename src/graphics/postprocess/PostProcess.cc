@@ -48,6 +48,15 @@ namespace sp
 
 	static void AddLighting(PostProcessingContext &context)
 	{
+		auto indirectDiffuse = context.AddPass<VoxelLightingDiffuse>();
+		indirectDiffuse->SetInput(0, context.GBuffer0);
+		indirectDiffuse->SetInput(1, context.GBuffer1);
+		indirectDiffuse->SetInput(2, context.Depth);
+		indirectDiffuse->SetInput(3, context.VoxelColor);
+		indirectDiffuse->SetInput(4, context.VoxelNormal);
+		indirectDiffuse->SetInput(5, context.VoxelAlpha);
+		indirectDiffuse->SetInput(6, context.VoxelRadiance);
+
 		auto lighting = context.AddPass<VoxelLighting>();
 		lighting->SetInput(0, context.GBuffer0);
 		lighting->SetInput(1, context.GBuffer1);
@@ -57,6 +66,7 @@ namespace sp
 		lighting->SetInput(5, context.VoxelNormal);
 		lighting->SetInput(6, context.VoxelAlpha);
 		lighting->SetInput(7, context.VoxelRadiance);
+		lighting->SetInput(8, indirectDiffuse);
 
 		context.LastOutput = lighting;
 	}
