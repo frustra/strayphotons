@@ -40,6 +40,13 @@ namespace sp
 			}
 		}
 
+		bool triggeredExit = false;
+
+		CFunc cfExit("exit", "Quits the game", [&](const string & s)
+		{
+			triggeredExit = true;
+		});
+
 		try
 		{
 			audio.LoadProjectFiles();
@@ -49,7 +56,7 @@ namespace sp
 			gui.BindInput(input);
 			lastFrameTime = glfwGetTime();
 
-			while (true)
+			while (!triggeredExit)
 			{
 				if (ShouldStop()) break;
 				if (!Frame()) break;

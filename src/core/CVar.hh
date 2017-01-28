@@ -11,6 +11,7 @@ namespace sp
 	{
 	public:
 		CVarBase(const string &name, const string &description);
+		virtual ~CVarBase();
 
 		const string &GetName() const
 		{

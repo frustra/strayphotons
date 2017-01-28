@@ -39,6 +39,11 @@ namespace sp
 		GConsoleManager.AddCVar(this);
 	}
 
+	CVarBase::~CVarBase()
+	{
+		GConsoleManager.RemoveCVar(this);
+	}
+
 	ConsoleManager::ConsoleManager()
 	{
 		inputThread = std::thread([&] { this->InputLoop(); });
@@ -48,6 +53,11 @@ namespace sp
 	void ConsoleManager::AddCVar(CVarBase *cvar)
 	{
 		cvars[boost::algorithm::to_lower_copy(cvar->GetName())] = cvar;
+	}
+
+	void ConsoleManager::RemoveCVar(CVarBase *cvar)
+	{
+		cvars.erase(boost::algorithm::to_lower_copy(cvar->GetName()));
 	}
 
 	void ConsoleManager::InputLoop()

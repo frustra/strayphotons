@@ -28,6 +28,7 @@ namespace sp
 	public:
 		ConsoleManager();
 		void AddCVar(CVarBase *cvar);
+		void RemoveCVar(CVarBase *cvar);
 		void Update();
 		void InputLoop();
 
