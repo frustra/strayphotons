@@ -47,6 +47,11 @@ namespace sp
 		string AutoComplete(const string &input);
 		vector<string> AllCompletions(const string &input);
 
+		const std::map<string, CVarBase *> CVars()
+		{
+			return cvars;
+		}
+
 	private:
 		std::map<string, CVarBase *> cvars;
 		std::queue<ConsoleInputLine *> inputLines;

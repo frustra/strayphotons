@@ -3,6 +3,7 @@
 #include "Common.hh"
 #include "StreamOverloads.hh"
 #include <sstream>
+#include <functional>
 
 namespace sp
 {
@@ -23,6 +24,7 @@ namespace sp
 
 		virtual string StringValue() = 0;
 		virtual void SetFromString(const string &newValue) = 0;
+		virtual bool IsValueType() = 0;
 
 		bool Changed() const
 		{
@@ -45,7 +47,12 @@ namespace sp
 		{
 		}
 
-		inline VarType Get(bool setClean = false)
+		inline VarType Get()
+		{
+			return value;
+		}
+
+		inline VarType Get(bool setClean)
 		{
 			if (setClean)
 				dirty = false;
@@ -68,12 +75,53 @@ namespace sp
 
 		void SetFromString(const string &newValue)
 		{
+			if (newValue.size() == 0)
+				return;
+
 			std::stringstream in(newValue);
 			in >> value;
 			dirty = true;
 		}
 
+		bool IsValueType()
+		{
+			return true;
+		}
+
 	private:
 		VarType value;
+	};
+
+	class CFunc : public CVarBase
+	{
+	public:
+		typedef std::function<void(const string &)> Callback;
+
+		CFunc(const string &name, const string &description, Callback callback)
+			: CVarBase(name, description), callback(callback)
+		{
+		}
+
+		CFunc(const string &name, Callback callback) : CFunc(name, "", callback)
+		{
+		}
+
+		string StringValue()
+		{
+			return "CFunc:" + GetName();
+		}
+
+		void SetFromString(const string &newValue)
+		{
+			callback(newValue);
+		}
+
+		bool IsValueType()
+		{
+			return false;
+		}
+
+	private:
+		Callback callback;
 	};
 }

@@ -138,32 +138,22 @@ namespace sp
 		stream >> varName;
 		getline(stream, value);
 
-		if (varName == "list")
-		{
-			for (auto &kv : cvars)
-			{
-				auto cvar = kv.second;
-				logging::ConsoleWrite(logging::Level::Log, " > %s = %s", cvar->GetName(), cvar->StringValue());
-				logging::ConsoleWrite(logging::Level::Log, " >   %s", cvar->GetDescription());
-			}
-			return;
-		}
-
 		auto cvarit = cvars.find(boost::algorithm::to_lower_copy(varName));
 		if (cvarit != cvars.end())
 		{
+			boost::trim(value);
+
 			auto cvar = cvarit->second;
+			cvar->SetFromString(value);
 
-			if (value.length() > 0)
+			if (cvar->IsValueType())
 			{
-				cvar->SetFromString(value);
-			}
+				logging::ConsoleWrite(logging::Level::Log, " > %s = %s", cvar->GetName(), cvar->StringValue());
 
-			logging::ConsoleWrite(logging::Level::Log, " > %s = %s", cvar->GetName(), cvar->StringValue());
-
-			if (value.length() == 0)
-			{
-				logging::ConsoleWrite(logging::Level::Log, " >   %s", cvar->GetDescription());
+				if (value.length() == 0)
+				{
+					logging::ConsoleWrite(logging::Level::Log, " >   %s", cvar->GetDescription());
+				}
 			}
 		}
 		else
@@ -214,3 +204,5 @@ namespace sp
 	}
 #endif
 }
+
+#include "ConsoleCoreCommands.hh"
