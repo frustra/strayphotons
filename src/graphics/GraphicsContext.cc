@@ -55,22 +55,22 @@ namespace sp
 		string vendorStr = (char *) glGetString(GL_VENDOR);
 		if (boost::starts_with(vendorStr, "NVIDIA"))
 		{
-			Logf("GPU Vendor: NVIDIA");
+			Logf("GPU vendor: NVIDIA");
 			ShaderManager::SetDefine("NVIDIA_GPU");
 		}
 		else if (boost::starts_with(vendorStr, "ATI"))
 		{
-			Logf("GPU Vendor: AMD");
+			Logf("GPU vendor: AMD");
 			ShaderManager::SetDefine("AMD_GPU");
 		}
 		else if (boost::starts_with(vendorStr, "Intel"))
 		{
-			Logf("GPU Vendor: Intel");
+			Logf("GPU vendor: Intel");
 			ShaderManager::SetDefine("INTEL_GPU");
 		}
 		else
 		{
-			Logf("GPU Vendor: Unknown (%s)", vendorStr);
+			Logf("GPU vendor: Unknown (%s)", vendorStr);
 			ShaderManager::SetDefine("UNKNOWN_GPU");
 		}
 
@@ -82,7 +82,7 @@ namespace sp
 
 		float maxAnisotropy;
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
-		Debugf("maximum anisotropy: %f", maxAnisotropy);
+		Debugf("Maximum anisotropy: %f", maxAnisotropy);
 
 		Prepare();
 	}

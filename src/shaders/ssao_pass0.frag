@@ -12,7 +12,7 @@ layout (location = 0) out vec4 outFragColor;
 
 const int kernelSize = 24;
 const float radius = 0.4;
-const float power = 2.6;
+const float power = 2.2;
 
 uniform vec3 kernel[kernelSize];
 uniform mat4 projMat;

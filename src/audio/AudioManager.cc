@@ -175,7 +175,7 @@ namespace sp
 	void AudioManager::LoadBank(const string &bankFile)
 	{
 		FMOD::Studio::Bank *bank = nullptr;
-		Logf("loading audio bank: %s", bankFile);
+		Logf("Loading audio bank: %s", bankFile);
 
 		FMOD_RESULT res = system->loadBankFile(bankFile.c_str(), FMOD_STUDIO_LOAD_BANK_NORMAL, &bank);
 		FMOD_CHECK(res);
