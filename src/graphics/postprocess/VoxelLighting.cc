@@ -11,7 +11,7 @@
 namespace sp
 {
 	static CVar<int> CVarVoxelLightingMode("r.VoxelLighting", 1, "Voxel lighting mode (0: direct only, 1: full, 2: indirect only, 3: diffuse only, 4: specular only, 5: full voxel)");
-	static CVar<int> CVarVoxelDiffuseDownsample("r.VoxelDiffuseDownsample", 1, "N times downsampled rendering of indirect diffuse lighting");
+	static CVar<int> CVarVoxelDiffuseDownsample("r.VoxelDiffuseDownsample", 2, "N times downsampled rendering of indirect diffuse lighting");
 
 	class VoxelLightingFS : public Shader
 	{
@@ -42,6 +42,7 @@ namespace sp
 
 			Bind(voxelSize, "voxelSize");
 			Bind(voxelGridCenter, "voxelGridCenter");
+			Bind(diffuseDownsample, "diffuseDownsample");
 		}
 
 		void SetLights(ecs::EntityManager &manager, ecs::EntityManager::EntityCollection &lightCollection)
@@ -106,17 +107,18 @@ namespace sp
 			Set(mode, newMode);
 		}
 
-		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo)
+		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo, int diffDownsample)
 		{
 			Set(voxelSize, voxelInfo.voxelSize);
 			Set(voxelGridCenter, voxelInfo.voxelGridCenter);
+			Set(diffuseDownsample, (float) diffDownsample);
 		}
 
 	private:
 		Uniform lightCount, lightPosition, lightTint, lightDirection, lightSpotAngleCos;
 		Uniform lightProj, lightView, lightClip, lightMapOffset, lightIntensity, lightIlluminance;
 		Uniform exposure, targetSize, invViewMat, invProjMat, mode;
-		Uniform voxelSize, voxelGridCenter;
+		Uniform voxelSize, voxelGridCenter, diffuseDownsample;
 	};
 
 	IMPLEMENT_SHADER_TYPE(VoxelLightingFS, "voxel_lighting.frag", Fragment);
@@ -167,12 +169,15 @@ namespace sp
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
+		int diffuseDownsample = CVarVoxelDiffuseDownsample.Get();
+		if (diffuseDownsample < 1) diffuseDownsample = 1;
+
 		auto lights = context->game->entityManager.EntitiesWith<ecs::Light>();
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetLights(context->game->entityManager, lights);
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetExposure(1.0);
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetViewParams(context->view);
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetMode(CVarVoxelLightingMode.Get());
-		r->GlobalShaders->Get<VoxelLightingFS>()->SetVoxelInfo(context->renderer->voxelInfo);
+		r->GlobalShaders->Get<VoxelLightingFS>()->SetVoxelInfo(context->renderer->voxelInfo, diffuseDownsample);
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingFS>(r->GlobalShaders);

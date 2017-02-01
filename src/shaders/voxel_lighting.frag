@@ -24,6 +24,7 @@ uniform vec3 voxelGridCenter = vec3(0);
 
 uniform float exposure = 1.0;
 uniform vec2 targetSize;
+uniform float diffuseDownsample = 1;
 
 ##import lib/util
 ##import voxel_shared
@@ -36,6 +37,39 @@ uniform mat4 invViewMat;
 uniform mat4 invProjMat;
 
 uniform int mode = 1;
+
+bool compareEdge(vec3 centerNormal, float centerDepth, vec2 texCoord)
+{
+	vec3 normal = texture(gBuffer1, texCoord).xyz;
+	float depth = texture(depthStencil, texCoord).x;
+
+	if (dot(normal, centerNormal) < 0.8)
+		return true;
+
+	float depthRatio = depth / centerDepth;
+	return depthRatio < 0.999 || depthRatio > 1.001;
+}
+
+bool detectEdge(vec3 centerNormal, float centerDepth, vec2 tcRadius)
+{
+	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(1, 0)))
+		return true;
+	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(1, 1)))
+		return true;
+	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(0, 1)))
+		return true;
+	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(-1, 1)))
+		return true;
+	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(-1, 0)))
+		return true;
+	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(-1, -1)))
+		return true;
+	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(0, -1)))
+		return true;
+	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(1, -1)))
+		return true;
+	return false;
+}
 
 void main()
 {
@@ -75,9 +109,14 @@ void main()
 		rayReflectDir = reflect(rayDir, worldNormal);
 	}
 
-	//vec3 directDiffuseColor = baseColor - baseColor * metalness;
-	//vec3 indirectDiffuse = HemisphereIndirectDiffuse(directDiffuseColor, worldPosition, worldNormal);
-	vec3 indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
+	vec3 indirectDiffuse;
+
+	if (diffuseDownsample > 1 && detectEdge(viewNormal, depth, diffuseDownsample * 0.65 / textureSize(gBuffer0, 0))) {
+		vec3 directDiffuseColor = baseColor - baseColor * metalness;
+		indirectDiffuse = HemisphereIndirectDiffuse(directDiffuseColor, worldPosition, worldNormal);
+	} else {
+		indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
+	}
 
 	vec3 indirectSpecular = vec3(0);
 
