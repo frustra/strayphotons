@@ -38,37 +38,41 @@ uniform mat4 invProjMat;
 
 uniform int mode = 1;
 
-bool compareEdge(vec3 centerNormal, float centerDepth, vec2 texCoord)
+void getDepthNormal(out float depth, out vec3 normal, vec2 texCoord)
 {
-	vec3 normal = texture(gBuffer1, texCoord).xyz;
-	float depth = texture(depthStencil, texCoord).x;
-
-	if (dot(normal, centerNormal) < 0.8)
-		return true;
-
-	float depthRatio = depth / centerDepth;
-	return depthRatio < 0.999 || depthRatio > 1.001;
+	normal = texture(gBuffer1, texCoord).xyz;
+	depth = texture(depthStencil, texCoord).x;
 }
 
 bool detectEdge(vec3 centerNormal, float centerDepth, vec2 tcRadius)
 {
-	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(1, 0)))
-		return true;
-	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(1, 1)))
-		return true;
-	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(0, 1)))
-		return true;
-	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(-1, 1)))
-		return true;
-	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(-1, 0)))
-		return true;
-	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(-1, -1)))
-		return true;
-	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(0, -1)))
-		return true;
-	if (compareEdge(centerNormal, centerDepth, inTexCoord + tcRadius * vec2(1, -1)))
-		return true;
-	return false;
+	float depthU, depthUR, depthR, depthDR, depthD, depthDL, depthL, depthUL;
+	vec3 normalU, normalUR, normalR, normalDR, normalD, normalDL, normalL, normalUL;
+
+	getDepthNormal(depthU, normalU, inTexCoord + tcRadius * vec2(0, 1));
+	getDepthNormal(depthUR, normalUR, inTexCoord + tcRadius * vec2(1, 1));
+	getDepthNormal(depthR, normalR, inTexCoord + tcRadius * vec2(1, 0));
+	getDepthNormal(depthDR, normalDR, inTexCoord + tcRadius * vec2(1, -1));
+	getDepthNormal(depthD, normalD, inTexCoord + tcRadius * vec2(0, -1));
+	getDepthNormal(depthDL, normalDL, inTexCoord + tcRadius * vec2(-1, -1));
+	getDepthNormal(depthL, normalL, inTexCoord + tcRadius * vec2(-1, 0));
+	getDepthNormal(depthUL, normalUL, inTexCoord + tcRadius * vec2(-1, 1));
+
+	vec4 ntest1 = centerNormal * mat4x3(normalU, normalUR, normalR, normalDR);
+	vec4 ntest2 = centerNormal * mat4x3(normalD, normalDL, normalL, normalUL);
+
+	vec4 depthDiff = vec4(
+		depthD + depthU - 2 * centerDepth,
+		depthL + depthR - 2 * centerDepth,
+		depthUL + depthDR - 2 * centerDepth,
+		depthDL + depthUR - 2 * centerDepth
+	);
+
+	return any(bvec3(
+		any(lessThan(ntest1, vec4(0.8))),
+		any(lessThan(ntest2, vec4(0.8))),
+		any(greaterThan(depthDiff, vec4(0.0001)))
+	));
 }
 
 void main()
