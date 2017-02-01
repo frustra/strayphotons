@@ -27,7 +27,7 @@ float CheckVoxel(vec3 position, float size)
 {
 	float level = max(0, log2(size));
 	vec4 alphaData = textureLod(voxelAlpha, position * InvVoxelGridSize, level);
-	return 1.0 - step(0, -alphaData.a);
+	return step(0, -alphaData.a);
 }
 
 vec4 SampleVoxel(vec3 position, vec3 dir, float size)
@@ -142,7 +142,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 		value.a = smoothstep(0.0, 0.4, value.a);
 		result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
-		dist += size * (3.0 * CheckVoxel(position + rayDir * size * 4, size * 8) + 1.0);
+		dist += size * (3.0 * CheckVoxel(position + rayDir * size * 2, size * 4) + 1.0);
 	}
 
 	if (dist >= maxDist) dist = -1;
