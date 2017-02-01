@@ -122,7 +122,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 		vec4 value = SampleVoxelLod(position + offset * surfaceNormal, rayDir, level);
 		// Bias the alpha to prevent traces going through objects.
 		value.a = smoothstep(0.0, 0.4, value.a);
-		result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
+		result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
 		dist += size;
 	}
@@ -144,7 +144,7 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 	while (dist < maxDist && result.a < 0.9999)
 	{
 		vec4 value = SampleVoxelLod(voxelPos + rayDir * dist, rayDir, level);
-		result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
+		result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
 		level += 1.0;
 		dist *= 2.0;

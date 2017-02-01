@@ -43,18 +43,19 @@ void main() {
 				// This invocation should only run if we're the first value in the group.
 				if (position == floorPosition + ivec3(x, y, z) && count > 0) return;
 
-				float prevAlpha = imageLoad(previousVoxelAlpha, floorPosition + ivec3(x, y, z)).r;
-				alpha += prevAlpha;
+				// float prevAlpha = imageLoad(previousVoxelAlpha, floorPosition + ivec3(x, y, z)).r;
+				vec4 prevValue = imageLoad(previousVoxelRadiance, floorPosition + ivec3(x, y, z));
+				alpha += prevValue.a;
 
-				radiance += imageLoad(previousVoxelRadiance, floorPosition + ivec3(x, y, z)).rgb;
-				count += 1 - step(0, -prevAlpha);
+				radiance += prevValue.rgb;
+				count += 1 - step(0, -prevValue.a);
 			}
 		}
 	}
 
 	// Bias alpha so that 50% full is opaque
 	alpha = saturate(alpha * 0.25);
-	imageStore(currentVoxelAlpha, mipPosition, vec4(alpha));
+	// imageStore(currentVoxelAlpha, mipPosition, vec4(1.0));
 	imageStore(currentVoxelRadiance, mipPosition, vec4(radiance / count, alpha));
 
 	uint nextIndex = atomicCounterIncrement(nextFragListSize);
