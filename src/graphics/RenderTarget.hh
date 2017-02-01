@@ -37,17 +37,27 @@ namespace sp
 		RenderTargetDesc(PixelFormat format, glm::ivec2 extent, GLenum attachment) :
 			format(format), extent(extent.x, extent.y, 1), attachment(attachment) {}
 
+		RenderTargetDesc &Filter(GLenum minf, GLenum magf)
+		{
+			minFilter = minf;
+			magFilter = magf;
+			return *this;
+		}
+
 		PixelFormat format;
 		glm::ivec3 extent = { 0, 0, 0 };
 		uint32 levels = 1;
 		GLenum attachment;
+		GLenum minFilter = GL_LINEAR_MIPMAP_LINEAR, magFilter = GL_LINEAR;
 
 		bool operator==(const RenderTargetDesc &other) const
 		{
 			return other.format == format
 				   && other.extent == extent
 				   && other.levels == levels
-				   && other.attachment == attachment;
+				   && other.attachment == attachment
+				   && other.minFilter == minFilter
+				   && other.magFilter == magFilter;
 		}
 
 		bool operator!=(const RenderTargetDesc &other) const
