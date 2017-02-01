@@ -46,32 +46,23 @@ void getDepthNormal(out float depth, out vec3 normal, vec2 texCoord)
 
 bool detectEdge(vec3 centerNormal, float centerDepth, vec2 tcRadius)
 {
-	float depthU, depthUR, depthR, depthDR, depthD, depthDL, depthL, depthUL;
-	vec3 normalU, normalUR, normalR, normalDR, normalD, normalDL, normalL, normalUL;
+	float depthU, depthR, depthD, depthL;
+	vec3 normalU, normalR, normalD, normalL;
 
 	getDepthNormal(depthU, normalU, inTexCoord + tcRadius * vec2(0, 1));
-	getDepthNormal(depthUR, normalUR, inTexCoord + tcRadius * vec2(1, 1));
 	getDepthNormal(depthR, normalR, inTexCoord + tcRadius * vec2(1, 0));
-	getDepthNormal(depthDR, normalDR, inTexCoord + tcRadius * vec2(1, -1));
 	getDepthNormal(depthD, normalD, inTexCoord + tcRadius * vec2(0, -1));
-	getDepthNormal(depthDL, normalDL, inTexCoord + tcRadius * vec2(-1, -1));
 	getDepthNormal(depthL, normalL, inTexCoord + tcRadius * vec2(-1, 0));
-	getDepthNormal(depthUL, normalUL, inTexCoord + tcRadius * vec2(-1, 1));
 
-	vec4 ntest1 = centerNormal * mat4x3(normalU, normalUR, normalR, normalDR);
-	vec4 ntest2 = centerNormal * mat4x3(normalD, normalDL, normalL, normalUL);
+	vec4 ntest = centerNormal * mat4x3(normalU, normalD, normalL, normalR);
+	vec4 depthRatio = vec4(depthU, depthR, depthD, depthL) / centerDepth;
+	vec2 depthDiff = vec2(depthD + depthU - 2 * centerDepth, depthL + depthR - 2 * centerDepth);
 
-	vec4 depthDiff = vec4(
-		depthD + depthU - 2 * centerDepth,
-		depthL + depthR - 2 * centerDepth,
-		depthUL + depthDR - 2 * centerDepth,
-		depthDL + depthUR - 2 * centerDepth
-	);
-
-	return any(bvec3(
-		any(lessThan(ntest1, vec4(0.8))),
-		any(lessThan(ntest2, vec4(0.8))),
-		any(greaterThan(depthDiff, vec4(0.0001)))
+	return any(bvec4(
+		any(lessThan(ntest, vec4(0.8))),
+		any(greaterThan(depthRatio, vec4(1.001))),
+		any(lessThan(depthRatio, vec4(0.999))),
+		any(greaterThan(depthDiff, vec2(1e-4)))
 	));
 }
 
