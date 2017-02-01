@@ -178,7 +178,7 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 const int diffuseAngles = 6;
 const float diffuseScale = 1.0 / diffuseAngles;
 
-vec3 HemisphereIndirectDiffuse(vec3 directDiffuseColor, vec3 worldPosition, vec3 worldNormal) {
+vec3 HemisphereIndirectDiffuse(vec3 worldPosition, vec3 worldNormal) {
 	vec4 indirectDiffuse = vec4(0);
 
 	for (float r = 0; r < diffuseAngles; r++) {
@@ -186,7 +186,7 @@ vec3 HemisphereIndirectDiffuse(vec3 directDiffuseColor, vec3 worldPosition, vec3
 			vec3 sampleDir = OrientByNormal(r * diffuseScale * M_PI * 2.0, a, worldNormal);
 			vec4 sampleColor = ConeTraceGridDiffuse(worldPosition, sampleDir, worldNormal);
 
-			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * vec4(directDiffuseColor, 1.0);
+			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal);
 		}
 	}
 

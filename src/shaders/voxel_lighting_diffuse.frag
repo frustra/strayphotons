@@ -50,7 +50,7 @@ void main()
 
 	// Trace.
 	vec3 directDiffuseColor = baseColor - baseColor * metalness;
-	vec3 indirectDiffuse = HemisphereIndirectDiffuse(directDiffuseColor, worldPosition, worldNormal);
+	vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal);
 
 	outFragColor = vec4(indirectDiffuse.rgb * exposure, 1.0);
 }

@@ -107,8 +107,7 @@ void main()
 	vec3 indirectDiffuse;
 
 	if (diffuseDownsample > 1 && detectEdge(viewNormal, depth, diffuseDownsample * 0.65 / textureSize(gBuffer0, 0))) {
-		vec3 directDiffuseColor = baseColor - baseColor * metalness;
-		indirectDiffuse = HemisphereIndirectDiffuse(directDiffuseColor, worldPosition, worldNormal);
+		indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal);
 	} else {
 		indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
 	}
@@ -136,9 +135,10 @@ void main()
 		}
 	}
 
+	vec3 directDiffuseColor = baseColor - baseColor * metalness;
 	vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, roughness, metalness);
 
-	vec3 indirectLight = indirectDiffuse + indirectSpecular;
+	vec3 indirectLight = indirectDiffuse * directDiffuseColor + indirectSpecular;
 	vec3 totalLight = directLight + indirectLight;
 
 	if (mode == 0) { // Direct only
