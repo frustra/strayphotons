@@ -6,45 +6,26 @@
 const float InvVoxelGridSize = 1.0 / VoxelGridSize;
 const float VoxelEps = 0.00001;
 
-vec3 GetVoxel(vec3 position, int level, out vec3 color, out vec3 normal, out vec3 radiance, out float roughness)
+float GetVoxel(vec3 position, int level, out vec3 color, out vec3 normal, out vec3 radiance, out float roughness)
 {
 	vec3 invMipVoxelGridSize = vec3(1.0 / float(int(VoxelGridSize)>>level));
 
 	vec4 colorData = textureLod(voxelColor, position * InvVoxelGridSize, 0);
 	vec4 normalData = textureLod(voxelNormal, position * InvVoxelGridSize, 0);
 	vec4 radianceData = textureLod(voxelRadiance, position * invMipVoxelGridSize, level);
-	vec4 alphaData = textureLod(voxelAlpha, position * invMipVoxelGridSize, level);
+	float alpha = textureLod(voxelAlpha, position * invMipVoxelGridSize, level).r;
 
 	color = colorData.rgb / (colorData.a + VoxelEps);
 	normal = normalize(normalData.xyz / (colorData.a + VoxelEps));
 	radiance = radianceData.rgb / (radianceData.a + VoxelEps);
 	roughness = normalData.a / (colorData.a + VoxelEps);
 
-	return alphaData.xyz / (alphaData.a + VoxelEps);
-}
-
-float CheckVoxel(vec3 position, float size)
-{
-	float level = max(0, log2(size));
-	vec4 alphaData = textureLod(voxelAlpha, position * InvVoxelGridSize, level);
-	return step(0, -alphaData.a);
-}
-
-vec4 SampleVoxel(vec3 position, vec3 dir, float size)
-{
-	float level = max(0, log2(size));
-	vec4 radianceData = textureLod(voxelRadiance, position * InvVoxelGridSize, level);
-	vec4 alphaData = textureLod(voxelAlpha, position * InvVoxelGridSize, level);
-	float alpha = dot(alphaData.xyz, abs(dir)) / dot(vec3(1), abs(dir));
-	return vec4(radianceData.rgb / (radianceData.a + VoxelEps), alpha);
+	return alpha;
 }
 
 vec4 SampleVoxelLod(vec3 position, vec3 dir, float level)
 {
-	vec4 radianceData = textureLod(voxelRadiance, position * InvVoxelGridSize, level);
-	vec4 alphaData = textureLod(voxelAlpha, position * InvVoxelGridSize, level);
-	float alpha = dot(alphaData.xyz, abs(dir)) / dot(vec3(1), abs(dir));
-	return vec4(radianceData.rgb / (radianceData.a + VoxelEps), alpha);
+	return textureLod(voxelRadiance, position * InvVoxelGridSize, level);
 }
 
 float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out vec3 hitNormal, out vec3 hitRadiance, out float hitRoughness)
@@ -94,15 +75,14 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitColor, out
 	{
 		vec3 color, normal, radiance;
 		float roughness;
-		vec3 alpha = GetVoxel(voxelPos, level, color, normal, radiance, roughness);
-		float dirAlpha = dot(alpha, abs(rayDir)) / dot(vec3(1), abs(rayDir));
-		if (dirAlpha > 0)
+		float alpha = GetVoxel(voxelPos, level, color, normal, radiance, roughness);
+		if (alpha > 0)
 		{
 			hitColor = color;
 			hitNormal = normal;
 			hitRadiance = radiance;
 			hitRoughness = roughness;
-			return dirAlpha;
+			return alpha;
 		}
 
 		// Find axis with minimum distance
@@ -136,13 +116,15 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 		float planeDist = dot(surfaceNormal, rayDir * dist) - 1.75;
 		// If the sample intersects the surface, move it over
 		float offset = max(0, size - planeDist);
-		vec3 position = voxelPos + rayDir * dist + offset * surfaceNormal;
-		vec4 value = SampleVoxel(position, rayDir, size);
+		vec3 position = voxelPos + rayDir * dist;
+
+		float level = max(0, log2(size));
+		vec4 value = SampleVoxelLod(position + offset * surfaceNormal, rayDir, level);
 		// Bias the alpha to prevent traces going through objects.
 		value.a = smoothstep(0.0, 0.4, value.a);
 		result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
-		dist += size * (3.0 * CheckVoxel(position + rayDir * size * 2, size * 4) + 1.0);
+		dist += size;
 	}
 
 	if (dist >= maxDist) dist = -1;

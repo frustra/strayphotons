@@ -281,7 +281,7 @@ namespace sp
 			voxelData.normal->GetTexture().Clear(0);
 		}
 
-		RenderTargetDesc alphaDesc(PF_RGBA8, unpackedSize);
+		RenderTargetDesc alphaDesc(PF_R8, unpackedSize);
 		alphaDesc.levels = VoxelMipLevels;
 		if (!voxelData.alpha || voxelData.alpha->GetDesc() != alphaDesc)
 		{

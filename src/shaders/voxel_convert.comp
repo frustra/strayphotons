@@ -8,7 +8,7 @@ layout (binding = 0, r32ui) readonly uniform uimage2D voxelFragList;
 layout (binding = 1, r32ui) uniform uimage3D voxelPackedData;
 layout (binding = 2, rgba8) writeonly uniform image3D voxelColor;
 layout (binding = 3, rgba16) writeonly uniform image3D voxelNormal;
-layout (binding = 4, rgba8) writeonly uniform image3D voxelAlpha;
+layout (binding = 4, r8) writeonly uniform image3D voxelAlpha;
 layout (binding = 5, rgba16) writeonly uniform image3D voxelRadiance;
 
 ##import lib/util
