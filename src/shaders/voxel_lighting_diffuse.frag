@@ -39,17 +39,14 @@ void main()
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
 	vec3 baseColor = gb0.rgb;
 	float roughness = gb0.a;
-	float metalness = gb1.a;
 
 	// Determine coordinates of fragment.
 	float depth = texture(depthStencil, inTexCoord).r;
 	vec3 viewPosition = ScreenPosToViewPos(inTexCoord, depth, invProjMat);
 	vec3 worldPosition = (invViewMat * vec4(viewPosition, 1.0)).xyz;
-
 	vec3 worldNormal = mat3(invViewMat) * viewNormal;
 
 	// Trace.
-	vec3 directDiffuseColor = baseColor - baseColor * metalness;
 	vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal);
 
 	outFragColor = vec4(indirectDiffuse.rgb * exposure, 1.0);
