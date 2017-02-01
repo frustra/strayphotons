@@ -23,11 +23,11 @@ vec3 GetVoxel(vec3 position, int level, out vec3 color, out vec3 normal, out vec
 	return alphaData.xyz / (alphaData.a + VoxelEps);
 }
 
-bool CheckVoxel(vec3 position, float size)
+float CheckVoxel(vec3 position, float size)
 {
 	float level = max(0, log2(size));
 	vec4 alphaData = textureLod(voxelAlpha, position * InvVoxelGridSize, level);
-	return alphaData.a > 0;
+	return 1.0 - step(0, -alphaData.a);
 }
 
 vec4 SampleVoxel(vec3 position, vec3 dir, float size)
@@ -142,11 +142,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 		value.a = smoothstep(0.0, 0.4, value.a);
 		result += vec4(value.rgb * value.a, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
-		if (CheckVoxel(position + rayDir * size * 4, size * 8)) {
-			dist += size;
-		} else {
-			dist += size * 4;
-		}
+		dist += size * (3.0 * CheckVoxel(position + rayDir * size * 4, size * 8) + 1.0);
 	}
 
 	if (dist >= maxDist) dist = -1;
@@ -175,22 +171,20 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 	return result;
 }
 
-const int diffuseAngles = 6;
-const float diffuseScale = 1.0 / diffuseAngles;
-
 vec3 HemisphereIndirectDiffuse(vec3 worldPosition, vec3 worldNormal) {
 	vec4 indirectDiffuse = vec4(0);
 
-	for (float r = 0; r < diffuseAngles; r++) {
-		for (float a = 0.3; a <= 0.9; a += 0.3) {
-			vec3 sampleDir = OrientByNormal(r * diffuseScale * M_PI * 2.0, a, worldNormal);
+	for (int a = 3; a <= 6; a += 3) {
+		float diffuseScale = 1.0 / a;
+		for (float r = 0; r < a; r++) {
+			vec3 sampleDir = OrientByNormal(r * diffuseScale * M_PI * 2.0, a * 0.1, worldNormal);
 			vec4 sampleColor = ConeTraceGridDiffuse(worldPosition, sampleDir, worldNormal);
 
 			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal);
 		}
 	}
 
-	return indirectDiffuse.rgb * diffuseScale;
+	return indirectDiffuse.rgb / 6.0;
 }
 
 #endif

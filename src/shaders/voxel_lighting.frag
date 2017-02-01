@@ -117,7 +117,8 @@ void main()
 	for (int i = 0; i < maxReflections; i++) {
 		// specular
 		vec3 sampleDir = rayReflectDir;
-		vec4 sampleColor = ConeTraceGrid(roughness, worldPosition, sampleDir, worldNormal);
+		float specularConeRatio = roughness * 0.8;
+		vec4 sampleColor = ConeTraceGrid(specularConeRatio, worldPosition, sampleDir, worldNormal);
 
 		if (roughness == 0 && metalness == 1 && sampleColor.a >= 0) {
 			worldPosition += sampleDir * sampleColor.a;
