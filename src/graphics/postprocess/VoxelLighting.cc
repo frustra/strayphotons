@@ -12,6 +12,7 @@ namespace sp
 {
 	static CVar<int> CVarVoxelLightingMode("r.VoxelLighting", 1, "Voxel lighting mode (0: direct only, 1: full, 2: indirect only, 3: diffuse only, 4: specular only, 5: full voxel)");
 	static CVar<int> CVarVoxelDiffuseDownsample("r.VoxelDiffuseDownsample", 2, "N times downsampled rendering of indirect diffuse lighting");
+	static CVar<float> CVarExposure("r.Exposure", 1.0, "Fixed exposure value");
 
 	class VoxelLightingFS : public Shader
 	{
@@ -174,7 +175,7 @@ namespace sp
 
 		auto lights = context->game->entityManager.EntitiesWith<ecs::Light>();
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetLights(context->game->entityManager, lights);
-		r->GlobalShaders->Get<VoxelLightingFS>()->SetExposure(1.0);
+		r->GlobalShaders->Get<VoxelLightingFS>()->SetExposure(CVarExposure.Get());
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetViewParams(context->view);
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetMode(CVarVoxelLightingMode.Get());
 		r->GlobalShaders->Get<VoxelLightingFS>()->SetVoxelInfo(context->renderer->voxelInfo, diffuseDownsample);
@@ -196,7 +197,7 @@ namespace sp
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
-		r->GlobalShaders->Get<VoxelLightingDiffuseFS>()->SetExposure(1.0);
+		r->GlobalShaders->Get<VoxelLightingDiffuseFS>()->SetExposure(CVarExposure.Get());
 		r->GlobalShaders->Get<VoxelLightingDiffuseFS>()->SetViewParams(context->view);
 		r->GlobalShaders->Get<VoxelLightingDiffuseFS>()->SetVoxelInfo(context->renderer->voxelInfo);
 
