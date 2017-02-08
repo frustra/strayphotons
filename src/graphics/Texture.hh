@@ -30,6 +30,7 @@ namespace sp
 
 		Texture &Filter(GLenum minFilter = GL_LINEAR, GLenum magFilter = GL_LINEAR, float anisotropy = 0.0f);
 		Texture &Wrap(GLenum wrapS = GL_CLAMP_TO_EDGE, GLenum wrapT = GL_CLAMP_TO_EDGE, GLenum wrapR = GL_CLAMP_TO_EDGE);
+		Texture &Compare(GLenum mode = GL_COMPARE_REF_TO_TEXTURE, GLenum func = GL_LEQUAL);
 		Texture &Size(GLsizei width, GLsizei height, GLsizei depth = 1);
 
 		Texture &Storage(GLPixelFormat format, GLsizei levels = 1);

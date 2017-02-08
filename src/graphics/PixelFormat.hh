@@ -10,6 +10,8 @@ namespace sp
 	PF_DEF(PF_R32UI,             GL_R32UI,              GL_RED_INTEGER,     GL_UNSIGNED_INT) \
 	PF_DEF(PF_R32F,              GL_R32F,               GL_RED,             GL_FLOAT) \
 	PF_DEF(PF_RG8,               GL_RG8,                GL_RG,              GL_UNSIGNED_BYTE) \
+	PF_DEF(PF_RG16F,             GL_RG16F,              GL_RG,              GL_FLOAT) \
+	PF_DEF(PF_RG32F,             GL_RG32F,              GL_RG,              GL_FLOAT) \
 	PF_DEF(PF_RGB8,              GL_RGB8,               GL_RGB,             GL_UNSIGNED_BYTE) \
 	PF_DEF(PF_SRGB8,             GL_SRGB8,              GL_RGB,             GL_UNSIGNED_BYTE) \
 	PF_DEF(PF_RGB8F,             GL_RGB8,               GL_RGB,             GL_FLOAT) \

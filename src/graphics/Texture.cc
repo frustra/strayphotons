@@ -61,6 +61,14 @@ namespace sp
 		return *this;
 	}
 
+	Texture &Texture::Compare(GLenum mode, GLenum func)
+	{
+		Assert(handle);
+		glTextureParameteri(handle, GL_TEXTURE_COMPARE_MODE, mode);
+		glTextureParameteri(handle, GL_TEXTURE_COMPARE_FUNC, func);
+		return *this;
+	}
+
 	Texture &Texture::Size(GLsizei width, GLsizei height, GLsizei depth)
 	{
 		this->width = width;

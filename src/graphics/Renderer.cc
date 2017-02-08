@@ -212,11 +212,12 @@ namespace sp
 
 		if (!shadowMap || glm::ivec2(shadowMap->GetDesc().extent) != renderTargetSize)
 		{
-			shadowMap = RTPool->Get(RenderTargetDesc(PF_R32F, renderTargetSize));
+			shadowMap = RTPool->Get(RenderTargetDesc(PF_RG32F, renderTargetSize));
 		}
 
+		auto colorTarget = RTPool->Get(RenderTargetDesc(PF_RG32F, renderTargetSize));
 		auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, renderTargetSize));
-		SetRenderTarget(&shadowMap->GetTexture(), &depthTarget->GetTexture());
+		SetRenderTarget(&colorTarget->GetTexture(), &depthTarget->GetTexture());
 
 		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
 		glDisable(GL_SCISSOR_TEST);
@@ -241,6 +242,22 @@ namespace sp
 				shadowMapFS->SetClip(view->clip);
 				ForwardPass(*view, shadowMapVS);
 			}
+		}
+
+		{
+			RenderPhase phase("Shadow Blur", Timer);
+
+			glDisable(GL_DEPTH_TEST);
+			glDepthMask(GL_FALSE);
+
+			glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
+
+			colorTarget->GetTexture().Bind(0);
+
+			SetRenderTarget(&shadowMap->GetTexture(), NULL);
+			ShaderControl->BindPipeline<BasicPostVS, BlurFS>(GlobalShaders);
+
+			DrawScreenCover();
 		}
 	}
 

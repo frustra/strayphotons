@@ -47,6 +47,7 @@ namespace sp
 		PixelFormat format;
 		glm::ivec3 extent = { 0, 0, 0 };
 		uint32 levels = 1;
+		bool depthCompare = false;
 		GLenum attachment;
 		GLenum minFilter = GL_LINEAR_MIPMAP_LINEAR, magFilter = GL_LINEAR;
 
@@ -57,7 +58,8 @@ namespace sp
 				   && other.levels == levels
 				   && other.attachment == attachment
 				   && other.minFilter == minFilter
-				   && other.magFilter == magFilter;
+				   && other.magFilter == magFilter
+				   && other.depthCompare == depthCompare;
 		}
 
 		bool operator!=(const RenderTargetDesc &other) const

@@ -28,6 +28,8 @@ namespace sp
 		.Storage(desc.format, desc.levels)
 		.Attachment(desc.attachment);
 
+		if (desc.depthCompare) ptr->tex.Compare();
+
 		pool.push_back(ptr);
 		return ptr;
 	}
@@ -83,14 +85,14 @@ namespace sp
 
 		for (uint32 i = 0; i < numAttachments; i++)
 		{
-			Assert(attachments[i].attachment == GL_COLOR_ATTACHMENT0);
+			Assert(attachments[i].attachment == GL_COLOR_ATTACHMENT0, "attachment is not a color attachment");
 			glNamedFramebufferTexture(newFB, GL_COLOR_ATTACHMENT0 + i, attachments[i].handle, 0);
 		}
 
 		if (depthStencilAttachment)
 		{
 			auto atc = depthStencilAttachment->attachment;
-			Assert(atc == GL_DEPTH_ATTACHMENT || atc == GL_STENCIL_ATTACHMENT || atc == GL_DEPTH_STENCIL_ATTACHMENT);
+			Assert(atc == GL_DEPTH_ATTACHMENT || atc == GL_STENCIL_ATTACHMENT || atc == GL_DEPTH_STENCIL_ATTACHMENT, "attachment is not a depth attachment");
 			glNamedFramebufferTexture(newFB, atc, depthStencilAttachment->handle, 0);
 		}
 

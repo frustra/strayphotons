@@ -33,6 +33,10 @@ vec4 randState(vec3 seed)
 	return rng;
 }
 
+float linstep(float low, float high, float v) {
+	return clamp((v - low) / (high - low), 0.0, 1.0);
+}
+
 ##import lib/spatial_util
 ##import lib/color_util
 

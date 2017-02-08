@@ -52,4 +52,10 @@ namespace sp
 		SHADER_TYPE(BasicOrthoFS)
 		using Shader::Shader;
 	};
+
+	class BlurFS : public Shader
+	{
+		SHADER_TYPE(BlurFS)
+		using Shader::Shader;
+	};
 }

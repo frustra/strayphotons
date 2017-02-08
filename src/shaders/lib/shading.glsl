@@ -2,26 +2,50 @@
 
 ##import lib/lighting_util
 
-float SampleOcclusion(sampler2D map, int i, vec3 shadowMapPos, vec3 shadowMapTexCoord) {
-	float sampledDepth = texture(map, shadowMapTexCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy).r;
+float SampleOcclusion(int i, vec3 shadowMapPos, vec3 shadowMapTexCoord) {
+	float sampledDepth = texture(shadowMap, shadowMapTexCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy).r;
 	float fragmentDepth = (length(shadowMapPos) - lightClip[i].x) / (lightClip[i].y - lightClip[i].x);
 
-	return step(0, -shadowMapPos.z) * smoothstep(fragmentDepth - 0.0001, fragmentDepth - 0.00005, sampledDepth);
+	return step(0, -shadowMapPos.z) * smoothstep(fragmentDepth - 0.0005, fragmentDepth - 0.0001, sampledDepth);
 }
 
-float DirectOcclusion(sampler2D map, int i, vec3 shadowMapPos, vec3 shadowMapTexCoord, mat2 rotation0) {
-	vec2 sampleRadius = 5.0 / textureSize(map, 0).xy;
-	mat2 rotation1 = mat2(0.707, 0.707, -0.707, 0.707) * rotation0;
+float VarianceOcclusion(int i, vec3 shadowMapPos, vec3 shadowMapTexCoord) {
+	float depth = (length(shadowMapPos) - lightClip[i].x) / (lightClip[i].y - lightClip[i].x);
+	vec2 coord = shadowMapTexCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy;
+
+	vec2 moments = texture(shadowMap, coord).rg;
+	float p = smoothstep(depth - 0.0005, depth - 0.0001, moments.x);
+	float variance = max(moments.y - moments.x*moments.x, -0.001);
+	float d = depth - moments.x;
+	// Low value adjusts light leak reduction
+	float p_max = linstep(0.8 - depth * 0.8, 1.0, variance / (variance + d*d));
+
+	return step(0, -shadowMapPos.z) * saturate(max(p, p_max));
+}
+
+float DirectOcclusion(int i, vec3 shadowMapPos, vec3 shadowMapTexCoord, mat2 rotation0) {
+	// return VarianceOcclusion(i, shadowMapPos, shadowMapTexCoord);
+
+	vec2 sampleRadius = 1.0 / textureSize(shadowMap, 0).xy;
+
+	mat2 rotation1 = mat2(0.707, 0.707, -0.707, 0.707);// * rotation0;
 	float occlusion = 0;
 
-	for (int s = 0; s < 8; s++) {
-		vec2 offset = SpiralOffsets[s] * sampleRadius;
+	// for (int s = 0; s < 8; s++) {
+	// 	vec2 offset = SpiralOffsets[s] * sampleRadius;
 
-		occlusion += SampleOcclusion(map, i, shadowMapPos, shadowMapTexCoord + vec3(rotation0 * offset, 0));
-		occlusion += SampleOcclusion(map, i, shadowMapPos, shadowMapTexCoord + vec3(rotation1 * offset, 0));
+	// 	occlusion += SampleOcclusion(i, shadowMapPos, shadowMapTexCoord + vec3(rotation0 * offset, 0));
+	// 	// occlusion += SampleOcclusion(i, shadowMapPos, shadowMapTexCoord + vec3(rotation1 * offset, 0));
+	// }
+	for (int x = -1; x <= 1; x++) {
+		for (int y = -1; y <= 1; y++) {
+			vec2 offset = vec2(x, y) * sampleRadius;
+
+			occlusion += VarianceOcclusion(i, shadowMapPos, shadowMapTexCoord + vec3(rotation1 * offset, 0));
+		}
 	}
 
-	return min(occlusion / 16.0, 1);
+	return occlusion / 9.0;
 }
 
 vec3 EvaluateBRDF(vec3 diffuseColor, vec3 specularColor, float roughness, vec3 L, vec3 V, vec3 N) {
@@ -115,9 +139,9 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 
 #ifdef USE_SHADOW_MAPPING
 #ifdef USE_PCF
-		occlusion = DirectOcclusion(shadowMap, i, shadowMapPos, shadowMapTexCoord, rotation);
+		occlusion = DirectOcclusion(i, shadowMapPos, shadowMapTexCoord, rotation);
 #else
-		occlusion = SampleOcclusion(shadowMap, i, shadowMapPos, shadowMapTexCoord);
+		occlusion = SampleOcclusion(i, shadowMapPos, shadowMapTexCoord);
 #endif
 #endif
 
