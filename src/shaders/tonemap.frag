@@ -10,6 +10,8 @@ layout (binding = 0) uniform sampler2D luminanceTex;
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
+const float ditherAmount = 0.5 / 255.0;
+
 void main() {
 	vec4 luminosity = texture(luminanceTex, inTexCoord); // pre-exposed
 
@@ -22,5 +24,6 @@ void main() {
 	}
 #endif
 
-	outFragColor = vec4(toneMapped, luminosity.a);
+	vec4 rng = randState(inTexCoord.xyx);
+	outFragColor = vec4(toneMapped + (rand2(rng) - 0.5) * ditherAmount, luminosity.a);
 }
