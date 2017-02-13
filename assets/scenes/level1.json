@@ -36,7 +36,7 @@
 				"clip": [0.1, 256]
 			},
 			"transform": {
-				"translate": [10, 5, -2],
+				"translate": [12, 5, -2.5],
 				"rotate": [90, 0, 1, 0]
 			}
 		}

@@ -9,5 +9,5 @@ namespace sp
 	IMPLEMENT_SHADER_TYPE(BasicOrthoVS, "basic_ortho.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(BasicOrthoFS, "basic_ortho.frag", Fragment);
 
-	IMPLEMENT_SHADER_TYPE(BlurFS, "box_blur.frag", Fragment);
+	IMPLEMENT_SHADER_TYPE(BlurFS, "gauss_blur.frag", Fragment);
 }

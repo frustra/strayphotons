@@ -1,26 +1,30 @@
 #define USE_SHADOW_MAPPING
 
 ##import lib/lighting_util
+##import lib/spatial_util
 
 float SampleOcclusion(int i, vec3 shadowMapPos, vec3 shadowMapTexCoord) {
 	float sampledDepth = texture(shadowMap, shadowMapTexCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy).r;
-	float fragmentDepth = (length(shadowMapPos) - lightClip[i].x) / (lightClip[i].y - lightClip[i].x);
+	float fragmentDepth = WarpDepth(shadowMapPos, lightClip[i], 0).x;
 
 	return step(0, -shadowMapPos.z) * smoothstep(fragmentDepth - 0.0005, fragmentDepth - 0.0001, sampledDepth);
 }
 
-float VarianceOcclusion(int i, vec3 shadowMapPos, vec3 shadowMapTexCoord) {
-	float depth = (length(shadowMapPos) - lightClip[i].x) / (lightClip[i].y - lightClip[i].x);
-	vec2 coord = shadowMapTexCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy;
-
-	vec2 moments = texture(shadowMap, coord).rg;
-	float p = smoothstep(depth - 0.0005, depth - 0.0001, moments.x);
+float Chebyshev(vec2 moments, float depth) {
+	float p = step(depth, moments.x);
 	float variance = max(moments.y - moments.x*moments.x, -0.001);
 	float d = depth - moments.x;
 	// Low value adjusts light leak reduction
-	float p_max = linstep(0.8 - depth * 0.8, 1.0, variance / (variance + d*d));
+	float p_max = linstep(0.3, 1.0, variance / (variance + d*d));
+	return saturate(max(p, p_max));
+}
 
-	return step(0, -shadowMapPos.z) * saturate(max(p, p_max));
+float VarianceOcclusion(int i, vec3 shadowMapPos, vec3 shadowMapTexCoord) {
+	vec2 depth = WarpDepth(shadowMapPos, lightClip[i], 0.0001);
+	vec2 coord = shadowMapTexCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy;
+
+	vec4 moments = texture(shadowMap, coord);
+	return step(0, -shadowMapPos.z) * min(Chebyshev(moments.xz, depth.x), Chebyshev(moments.yw, depth.y));
 }
 
 float DirectOcclusion(int i, vec3 shadowMapPos, vec3 shadowMapTexCoord, mat2 rotation0) {

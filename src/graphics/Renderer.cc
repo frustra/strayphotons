@@ -212,10 +212,10 @@ namespace sp
 
 		if (!shadowMap || glm::ivec2(shadowMap->GetDesc().extent) != renderTargetSize)
 		{
-			shadowMap = RTPool->Get(RenderTargetDesc(PF_RG32F, renderTargetSize));
+			shadowMap = RTPool->Get(RenderTargetDesc(PF_RGBA32F, renderTargetSize));
 		}
 
-		auto colorTarget = RTPool->Get(RenderTargetDesc(PF_RG32F, renderTargetSize));
+		auto colorTarget = RTPool->Get(RenderTargetDesc(PF_RGBA32F, renderTargetSize));
 		auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, renderTargetSize));
 		SetRenderTarget(&colorTarget->GetTexture(), &depthTarget->GetTexture());
 

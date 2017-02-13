@@ -82,4 +82,12 @@ vec3 OrientByNormal(float phi, float tht, vec3 normal) {
 	return normalize(xs * tangent1 + ys * normal + zs * tangent2);
 }
 
+const float shadowExponent = 100.0;
+
+// Linear depth and exponential depth
+vec2 WarpDepth(vec3 viewPos, vec2 clip, float bias) {
+	float depth = (length(viewPos) - clip.x) / (clip.y - clip.x) - bias;
+    return vec2(depth, exp(shadowExponent * depth));
+}
+
 #endif

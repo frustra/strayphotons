@@ -149,7 +149,7 @@
 		{
 			"light": {
 				"tint": [1, 1, 1],
-				"intensity": 10,
+				"intensity": 50,
 				"spotAngle": 50
 			},
 			"view": {

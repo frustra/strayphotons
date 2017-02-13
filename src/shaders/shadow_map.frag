@@ -10,10 +10,6 @@ layout (location = 0) out vec4 gBuffer0;
 
 void main()
 {
-	float depth = (length(inViewPos) - clip.x) / (clip.y - clip.x);
-
-	// Variance shadow map component
-	float dx = dFdx(depth);
-	float dy = dFdy(depth);
-	gBuffer0.rg = vec2(depth, depth*depth);// + 0.25*(dx*dx + dy*dy));
+	vec2 depth = WarpDepth(inViewPos, clip, 0);
+	gBuffer0 = vec4(depth, depth*depth);
 }

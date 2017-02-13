@@ -48,6 +48,7 @@ namespace sp
 		glm::ivec3 extent = { 0, 0, 0 };
 		uint32 levels = 1;
 		bool depthCompare = false;
+		bool multiSample = false;
 		GLenum attachment;
 		GLenum minFilter = GL_LINEAR_MIPMAP_LINEAR, magFilter = GL_LINEAR;
 
@@ -59,7 +60,8 @@ namespace sp
 				   && other.attachment == attachment
 				   && other.minFilter == minFilter
 				   && other.magFilter == magFilter
-				   && other.depthCompare == depthCompare;
+				   && other.depthCompare == depthCompare
+				   && other.multiSample == multiSample;
 		}
 
 		bool operator!=(const RenderTargetDesc &other) const

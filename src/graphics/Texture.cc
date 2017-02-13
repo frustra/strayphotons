@@ -1,5 +1,6 @@
 #include "Texture.hh"
 #include "assets/Asset.hh"
+#include "core/Logging.hh"
 
 #include <stb_image.h>
 
@@ -43,6 +44,8 @@ namespace sp
 	Texture &Texture::Filter(GLenum minFilter, GLenum magFilter, float anisotropy)
 	{
 		Assert(handle);
+		if (target == GL_TEXTURE_2D_MULTISAMPLE) return *this;
+
 		glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, minFilter);
 		glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, magFilter);
 
@@ -55,6 +58,8 @@ namespace sp
 	Texture &Texture::Wrap(GLenum wrapS, GLenum wrapT, GLenum wrapR)
 	{
 		Assert(handle);
+		if (target == GL_TEXTURE_2D_MULTISAMPLE) return *this;
+
 		glTextureParameteri(handle, GL_TEXTURE_WRAP_S, wrapS);
 		glTextureParameteri(handle, GL_TEXTURE_WRAP_T, wrapT);
 		if (target == GL_TEXTURE_3D) glTextureParameteri(handle, GL_TEXTURE_WRAP_R, wrapR);
@@ -98,6 +103,9 @@ namespace sp
 			case GL_TEXTURE_2D_ARRAY:
 			case GL_TEXTURE_3D:
 				glTextureStorage3D(handle, levels, this->format.internalFormat, width, height, depth);
+				break;
+			case GL_TEXTURE_2D_MULTISAMPLE:
+				glTextureStorage2DMultisample(handle, 4, this->format.internalFormat, width, height, false);
 				break;
 			default:
 				glTextureStorage2D(handle, levels, this->format.internalFormat, width, height);
