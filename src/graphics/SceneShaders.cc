@@ -54,6 +54,7 @@ namespace sp
 		Bind(lightDirection, "lightDirection");
 		Bind(lightSpotAngleCos, "lightSpotAngleCos");
 		Bind(lightProj, "lightProj");
+		Bind(lightInvProj, "lightInvProj");
 		Bind(lightView, "lightView");
 		Bind(lightClip, "lightClip");
 		Bind(lightMapOffset, "lightMapOffset");
@@ -78,6 +79,7 @@ namespace sp
 		glm::vec3 lightDirections[maxLights];
 		float lightSpotAnglesCos[maxLights];
 		glm::mat4 lightProjs[maxLights];
+		glm::mat4 lightInvProjs[maxLights];
 		glm::mat4 lightViews[maxLights];
 		glm::vec2 lightClips[maxLights];
 		glm::vec4 lightMapOffsets[maxLights];
@@ -95,6 +97,7 @@ namespace sp
 			lightDirections[lightNum] = glm::mat3(transform->GetModelTransform(manager)) * glm::vec3(0, 0, -1);
 			lightSpotAnglesCos[lightNum] = cos(light->spotAngle);
 			lightProjs[lightNum] = view->projMat;
+			lightInvProjs[lightNum] = view->invProjMat;
 			lightViews[lightNum] = view->viewMat;
 			lightClips[lightNum] = view->clip;
 			lightMapOffsets[lightNum] = light->mapOffset;
@@ -109,6 +112,7 @@ namespace sp
 		Set(lightDirection, lightDirections, lightNum);
 		Set(lightSpotAngleCos, lightSpotAnglesCos, lightNum);
 		Set(lightProj, lightProjs, lightNum);
+		Set(lightInvProj, lightInvProjs, lightNum);
 		Set(lightView, lightViews, lightNum);
 		Set(lightClip, lightClips, lightNum);
 		Set(lightMapOffset, lightMapOffsets, lightNum);

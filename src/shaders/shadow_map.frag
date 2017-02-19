@@ -10,6 +10,5 @@ layout (location = 0) out vec4 gBuffer0;
 
 void main()
 {
-	vec2 depth = WarpDepth(inViewPos, clip, 0);
-	gBuffer0 = vec4(depth, depth*depth);
+	gBuffer0.r = LinearDepth(inViewPos, clip);
 }

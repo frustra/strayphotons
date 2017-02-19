@@ -8,6 +8,7 @@ uniform vec3[maxLights] lightTint;
 uniform vec3[maxLights] lightDirection;
 uniform float[maxLights] lightSpotAngleCos;
 uniform mat4[maxLights] lightProj;
+uniform mat4[maxLights] lightInvProj;
 uniform mat4[maxLights] lightView;
 uniform vec2[maxLights] lightClip;
 uniform vec4[maxLights] lightMapOffset;

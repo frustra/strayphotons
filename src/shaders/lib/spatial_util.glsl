@@ -1,13 +1,6 @@
 #ifndef SPATIAL_UTIL_GLSL_INCLUDED
 #define SPATIAL_UTIL_GLSL_INCLUDED
 
-// Inverse perspective divide to produce linear depth in (0, 1) relative to the
-// camera and far plane.
-float LinearDepth(float depth, vec2 clip) {
-	depth = 2 * depth - 1;
-	return 2 * clip.x / (clip.y + clip.x - depth * (clip.y - clip.x));
-}
-
 // Projects v onto a normalized vector u.
 vec3 ProjectVec3(vec3 v, vec3 u) {
 	return u * dot(v, u);
@@ -82,12 +75,14 @@ vec3 OrientByNormal(float phi, float tht, vec3 normal) {
 	return normalize(xs * tangent1 + ys * normal + zs * tangent2);
 }
 
-const float shadowExponent = 100.0;
+// Produce linear depth in (0, 1) using view space coordinates
+float LinearDepth(vec3 viewPos, vec2 clip) {
+	return (length(viewPos) - clip.x) / (clip.y - clip.x);
+}
 
-// Linear depth and exponential depth
-vec2 WarpDepth(vec3 viewPos, vec2 clip, float bias) {
-	float depth = (length(viewPos) - clip.x) / (clip.y - clip.x) - bias;
-    return vec2(depth, exp(shadowExponent * depth));
+// Produce linear depth in (0, 1) using view space coordinates
+float LinearDepthBias(vec3 viewPos, mat4 projMat, float bias) {
+	return ViewPosToScreenPos(viewPos + vec3(0, 0, bias), projMat).z;
 }
 
 #endif

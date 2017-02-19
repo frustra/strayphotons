@@ -3,53 +3,83 @@
 ##import lib/lighting_util
 ##import lib/spatial_util
 
-float SampleOcclusion(int i, vec3 shadowMapPos, vec3 shadowMapTexCoord) {
-	float sampledDepth = texture(shadowMap, shadowMapTexCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy).r;
-	float fragmentDepth = WarpDepth(shadowMapPos, lightClip[i], 0).x;
+const float shadowBiasDistance = 0.04;
 
-	return step(0, -shadowMapPos.z) * smoothstep(fragmentDepth - 0.0005, fragmentDepth - 0.0001, sampledDepth);
+float SimpleOcclusion(int i, vec3 shadowMapPos) {
+	vec3 texCoord = ViewPosToScreenPos(shadowMapPos, lightProj[i]);
+
+	float shadowBias = shadowBiasDistance / (lightClip[i].y - lightClip[i].x);
+
+	float testDepth = LinearDepth(shadowMapPos, lightClip[i]);
+	float sampledDepth = texture(shadowMap, texCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy).r;
+
+	return step(0, -shadowMapPos.z) * smoothstep(testDepth - shadowBias, testDepth - shadowBias * 0.2, sampledDepth);
 }
 
-float Chebyshev(vec2 moments, float depth) {
-	float p = step(depth, moments.x);
-	float variance = max(moments.y - moments.x*moments.x, -0.001);
-	float d = depth - moments.x;
-	// Low value adjusts light leak reduction
-	float p_max = linstep(0.3, 1.0, variance / (variance + d*d));
-	return saturate(max(p, p_max));
+float SampleOcclusion(int i, vec3 shadowMapCoord, vec3 shadowMapPos, vec3 surfaceNormal, vec2 offset) {
+	vec2 mapSize = textureSize(shadowMap, 0).xy * lightMapOffset[i].zw;
+	vec2 texelSize = 1.0 / mapSize;
+	vec3 texCoord = shadowMapCoord + vec3(offset * texelSize.xy, 0);
+
+	vec2 halfTanFovXY = vec2(lightInvProj[i][0][0], lightInvProj[i][1][1]);
+	vec3 rayDir = normalize(vec3(halfTanFovXY * (texCoord.xy * 2.0 - 1.0), -1.0));
+
+	float t = dot(surfaceNormal, shadowMapPos) / dot(surfaceNormal, rayDir);
+	vec3 hitPos = rayDir * t;
+
+	float shadowBias = shadowBiasDistance / (lightClip[i].y - lightClip[i].x);
+
+	float testDepth = LinearDepth(hitPos, lightClip[i]);
+	testDepth = max(testDepth, LinearDepth(shadowMapPos, lightClip[i]) - shadowBias * 2.0);
+
+	vec2 coord = texCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy;
+	vec3 sampledDepth = texture(shadowMap, coord).rrr;
+	vec4 values = textureGather(shadowMap, coord, 0);
+	sampledDepth.y = min(values.x, min(values.y, min(values.z, values.w)));
+	sampledDepth.z = max(values.x, max(values.y, max(values.z, values.w)));
+
+	float minTest = min(sampledDepth.y, testDepth - shadowBias);
+	minTest = max(minTest, step(sampledDepth.z, testDepth - shadowBias * 2.0) * testDepth - shadowBias);
+
+	return step(0, -shadowMapPos.z) * smoothstep(minTest, testDepth, sampledDepth.x);
 }
 
-float VarianceOcclusion(int i, vec3 shadowMapPos, vec3 shadowMapTexCoord) {
-	vec2 depth = WarpDepth(shadowMapPos, lightClip[i], 0.0001);
-	vec2 coord = shadowMapTexCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy;
+// const float[5] gaussKernel = float[](0.06136, 0.24477, 0.38774, 0.24477, 0.06136);
+const float[5][5] diskKernel = float[][](
+    float[]( 0.0   , 0.5/17, 1.0/17, 0.5/17, 0.0    ),
+    float[]( 0.5/17, 1.0/17, 1.0/17, 1.0/17, 0.5/17 ),
+    float[]( 1.0/17, 1.0/17, 1.0/17, 1.0/17, 1.0/17 ),
+    float[]( 0.5/17, 1.0/17, 1.0/17, 1.0/17, 0.5/17 ),
+    float[]( 0.0   , 0.5/17, 1.0/17, 0.5/17, 0.0    )
+);
 
-	vec4 moments = texture(shadowMap, coord);
-	return step(0, -shadowMapPos.z) * min(Chebyshev(moments.xz, depth.x), Chebyshev(moments.yw, depth.y));
-}
+const int kernelRadius = 2;
 
-float DirectOcclusion(int i, vec3 shadowMapPos, vec3 shadowMapTexCoord, mat2 rotation0) {
-	// return VarianceOcclusion(i, shadowMapPos, shadowMapTexCoord);
+float DirectOcclusion(int i, vec3 shadowMapPos, vec3 surfaceNormal, mat2 rotation0) {
+	vec3 shadowMapCoord = ViewPosToScreenPos(shadowMapPos, lightProj[i]);
 
-	vec2 sampleRadius = 1.0 / textureSize(shadowMap, 0).xy;
+	// return SampleOcclusion(i, shadowMapCoord, shadowMapPos, surfaceNormal, vec2(0));
 
 	mat2 rotation1 = mat2(0.707, 0.707, -0.707, 0.707);// * rotation0;
 	float occlusion = 0;
 
 	// for (int s = 0; s < 8; s++) {
-	// 	vec2 offset = SpiralOffsets[s] * sampleRadius;
+	// 	vec2 offset = SpiralOffsets[s] * 2;
 
-	// 	occlusion += SampleOcclusion(i, shadowMapPos, shadowMapTexCoord + vec3(rotation0 * offset, 0));
-	// 	// occlusion += SampleOcclusion(i, shadowMapPos, shadowMapTexCoord + vec3(rotation1 * offset, 0));
+	// 	occlusion += SampleOcclusion(i, shadowMapPos, surfaceNormal, rotation0 * offset);
+	// 	occlusion += SampleOcclusion(i, shadowMapPos, surfaceNormal, rotation1 * offset);
 	// }
-	for (int x = -1; x <= 1; x++) {
-		for (int y = -1; y <= 1; y++) {
-			vec2 offset = vec2(x, y) * sampleRadius;
+	for (int x = -kernelRadius; x <= kernelRadius; x++) {
+		for (int y = -kernelRadius; y <= kernelRadius; y++) {
+			vec2 offset = vec2(x, y);
 
-			occlusion += VarianceOcclusion(i, shadowMapPos, shadowMapTexCoord + vec3(rotation1 * offset, 0));
+			occlusion += SampleOcclusion(i, shadowMapCoord, shadowMapPos, surfaceNormal, rotation0 * offset)
+						 * diskKernel[x + kernelRadius][y + kernelRadius];
+						// * gaussKernel[x + kernelRadius] * gaussKernel[y + kernelRadius];
 		}
 	}
 
-	return occlusion / 9.0;
+	return occlusion;
 }
 
 vec3 EvaluateBRDF(vec3 diffuseColor, vec3 specularColor, float roughness, vec3 L, vec3 V, vec3 N) {
@@ -138,19 +168,19 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 
 		// Calculate direct occlusion.
 		vec3 shadowMapPos = (lightView[i] * vec4(worldPosition, 1.0)).xyz; // Position of light view-space.
-		vec3 shadowMapTexCoord = ViewPosToScreenPos(shadowMapPos, lightProj[i]);
+		vec3 surfaceNormal = normalize(mat3(lightView[i]) * normal);
 		float occlusion = 1;
 
 #ifdef USE_SHADOW_MAPPING
 #ifdef USE_PCF
-		occlusion = DirectOcclusion(i, shadowMapPos, shadowMapTexCoord, rotation);
+		occlusion = DirectOcclusion(i, shadowMapPos, surfaceNormal, rotation);
 #else
-		occlusion = SampleOcclusion(i, shadowMapPos, shadowMapTexCoord);
+		occlusion = SimpleOcclusion(i, shadowMapPos);
 #endif
 #endif
 
 		// Sum output.
-		pixelLuminance += occlusion * luminance * spotFalloff;
+		pixelLuminance += occlusion * spotFalloff * luminance;
 	}
 
 	return pixelLuminance;

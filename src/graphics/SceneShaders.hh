@@ -82,7 +82,7 @@ namespace sp
 
 	private:
 		Uniform lightCount, lightPosition, lightTint, lightDirection, lightSpotAngleCos;
-		Uniform lightProj, lightView, lightClip, lightMapOffset, lightIntensity, lightIlluminance;
+		Uniform lightProj, lightInvProj, lightView, lightClip, lightMapOffset, lightIntensity, lightIlluminance;
 		Uniform exposure, targetSize, viewMat, invViewMat, invProjMat;
 		Uniform voxelSize, voxelGridCenter;
 	};
