@@ -1,23 +1,14 @@
 #version 430
 
 ##import lib/util
-##import lib/lighting_util
+##import lib/histogram_common
 
 layout (binding = 0) uniform sampler2D lumiTex;
 layout (binding = 0, r32ui) uniform uimage2D finalHistogram;
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-#define HistogramBins 64
 shared uint Histogram[HistogramBins];
-
-const float lumMin = 0, lumMax = 1;
-
-uint pixelBin(vec3 c) {
-	float lum = DigitalLuminance(c);
-	float ratio = saturate((lum - lumMin) / (lumMax - lumMin));
-	return uint(float(HistogramBins - 1) * ratio);
-}
 
 void main() {
 	vec2 ts = textureSize(lumiTex, 0);
@@ -34,8 +25,17 @@ void main() {
 
 	if (texCoord.x < 1.0 && texCoord.y < 1.0) {
 		vec3 c = texture(lumiTex, texCoord).rgb;
-		uint bin = pixelBin(c);
-		atomicAdd(Histogram[bin], 1);
+		float bin = histogramBinFromPixel(c);
+
+		int bin0 = int(bin);
+		int bin1 = bin0 + 1;
+
+		// Weight by distance to integer bin.
+		float w1 = fract(bin);
+		float w0 = 1.0 - w1;
+
+		atomicAdd(Histogram[bin0], uint(histSampleScale * w0));
+		atomicAdd(Histogram[bin1], uint(histSampleScale * w1));
 	}
 
 	barrier();
