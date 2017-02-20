@@ -7,6 +7,8 @@ namespace sp
 		Bind(modelMat, "model");
 		Bind(viewMat, "view");
 		Bind(projMat, "projection");
+
+		Bind(mirrorId, "mirrorId");
 	}
 
 	void SceneShader::SetParams(const ecs::View &view, glm::mat4 modelMat)
@@ -14,6 +16,11 @@ namespace sp
 		Set(this->modelMat, modelMat);
 		Set(viewMat, view.viewMat);
 		Set(projMat, view.projMat);
+	}
+
+	void SceneShader::SetMirrorId(int newId)
+	{
+		Set(mirrorId, newId);
 	}
 
 	ShadowMapFS::ShadowMapFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)

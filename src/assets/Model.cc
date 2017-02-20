@@ -109,6 +109,11 @@ namespace sp
 		return handle;
 	}
 
+	vector<unsigned char> Model::GetBuffer(string name)
+	{
+		return scene->buffers[name].data;
+	}
+
 	Texture *Model::LoadTexture(string materialName, string type)
 	{
 		auto &material = scene->materials[materialName];

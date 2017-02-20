@@ -1,0 +1,180 @@
+{
+    "accessors": {
+        "accessor_21": {
+            "bufferView": "bufferView_29",
+            "byteOffset": 0,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 6,
+            "type": "SCALAR"
+        },
+        "accessor_23": {
+            "bufferView": "bufferView_30",
+            "byteOffset": 0,
+            "byteStride": 12,
+            "componentType": 5126,
+            "count": 4,
+            "max": [
+                0.5,
+                0.5,
+                0.0
+            ],
+            "min": [
+                -0.5,
+                -0.5,
+                0.0
+            ],
+            "type": "VEC3"
+        },
+        "accessor_25": {
+            "bufferView": "bufferView_30",
+            "byteOffset": 48,
+            "byteStride": 12,
+            "componentType": 5126,
+            "count": 4,
+            "max": [
+                0,
+                0,
+                -1
+            ],
+            "min": [
+                0,
+                0,
+                -1
+            ],
+            "type": "VEC3"
+        },
+        "accessor_27": {
+            "bufferView": "bufferView_30",
+            "byteOffset": 96,
+            "byteStride": 8,
+            "componentType": 5126,
+            "count": 4,
+            "max": [
+                1,
+                1
+            ],
+            "min": [
+                0,
+                0
+            ],
+            "type": "VEC2"
+        }
+    },
+    "asset": {
+        "generator": "xthexder",
+        "version": 1
+    },
+    "bufferViews": {
+        "bufferView_29": {
+            "buffer": "mirror",
+            "byteLength": 12,
+            "byteOffset": 0,
+            "target": 34963
+        },
+        "bufferView_30": {
+            "buffer": "mirror",
+            "byteLength": 128,
+            "byteOffset": 12,
+            "target": 34962
+        }
+    },
+    "buffers": {
+        "mirror": {
+            "byteLength": 140,
+            "type": "arraybuffer",
+            "uri": "data:application/octet-stream;base64,AAABAAIAAwACAAEAAAAAvwAAAL8AAAAAAAAAvwAAAD8AAAAAAAAAPwAAAL8AAAAAAAAAPwAAAD8AAAAAAAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAAAAAACAPwAAgD8AAAAAAACAPwAAgD8="
+        }
+    },
+    "materials": {
+        "Mirror": {
+            "name": "Mirror",
+            "values": {
+                "baseColor": [
+                    1,
+                    1,
+                    1,
+                    1
+                ],
+                "roughness": 0,
+                "metallic": 1
+            }
+        }
+    },
+    "meshes": {
+        "Geometry-mesh002": {
+            "name": "Mesh",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": "accessor_25",
+                        "POSITION": "accessor_23",
+                        "TEXCOORD_0": "accessor_27"
+                    },
+                    "indices": "accessor_21",
+                    "material": "Mirror",
+                    "mode": 4
+                }
+            ]
+        }
+    },
+    "nodes": {
+        "Geometry-mesh002Node": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "Geometry-mesh002"
+            ],
+            "name": "Mesh"
+        },
+        "node_1": {
+            "children": [
+                "Geometry-mesh002Node"
+            ],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                -1,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "name": "Y_UP_Transform"
+        }
+    },
+    "scene": "defaultScene",
+    "scenes": {
+        "defaultScene": {
+            "nodes": [
+                "node_1"
+            ]
+        }
+    }
+}

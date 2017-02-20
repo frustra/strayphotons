@@ -8,6 +8,7 @@
 #include "ecs/components/Controller.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
+#include "ecs/components/Mirror.hh"
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -24,6 +25,7 @@ namespace sp
 		entityManager.RegisterComponentType<ecs::HumanController>();
 		entityManager.RegisterComponentType<ecs::View>();
 		entityManager.RegisterComponentType<ecs::Light>();
+		entityManager.RegisterComponentType<ecs::Mirror>();
 	}
 
 	Game::~Game()

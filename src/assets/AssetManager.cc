@@ -16,6 +16,7 @@
 #include "ecs/components/Light.hh"
 #include "ecs/components/Physics.hh"
 #include "ecs/components/VoxelInfo.hh"
+#include "ecs/components/Mirror.hh"
 
 #include <boost/filesystem.hpp>
 #include <iostream>
@@ -343,6 +344,19 @@ namespace sp
 							voxelInfo->gridMax = glm::make_vec3(&numbers[0]);
 						}
 					}
+				}
+				else if (comp.first == "mirror")
+				{
+					auto mirror = entity.Assign<ecs::Mirror>();
+
+					auto values = comp.second.get<picojson::array>();
+					numbers.resize(values.size());
+					for (size_t i = 0; i < values.size(); i++)
+					{
+						numbers[i] = values[i].get<double>();
+					}
+
+					mirror->size = glm::make_vec2(&numbers[0]);
 				}
 			}
 			if (ent.count("_name"))

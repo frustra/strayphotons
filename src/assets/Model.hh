@@ -44,12 +44,8 @@ namespace sp
 		std::map<string, Texture> textures;
 
 		GLuint LoadBuffer(string name);
+		vector<unsigned char> GetBuffer(string name);
 		Texture *LoadTexture(string materialName, string type);
-
-		tinygltf::Scene *GetScene()
-		{
-			return scene;
-		}
 	private:
 		void AddNode(string nodeName, glm::mat4 parentMatrix);
 

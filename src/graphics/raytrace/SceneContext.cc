@@ -19,14 +19,12 @@ namespace sp
 			if (mat != materials.end())
 				mesh.materialID = mat->second.id;
 
-			auto scene = model->GetScene();
-
 			auto idxAttrib = primitive->indexBuffer;
 			Assert(idxAttrib.componentCount == 1);
 			Assert(idxAttrib.components % 3 == 0);
 
-			auto &idxBuf = scene->buffers[idxAttrib.bufferName];
-			auto idxBufData = idxBuf.data.data() + idxAttrib.byteOffset;
+			auto idxBuf = model->GetBuffer(idxAttrib.bufferName);
+			auto idxBufData = idxBuf.data() + idxAttrib.byteOffset;
 			auto idxStride = idxAttrib.byteStride;
 
 			switch (idxAttrib.componentType)
@@ -65,15 +63,15 @@ namespace sp
 			Assert(posAttrib.componentCount == 3);
 			Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
-			auto &posBuf = scene->buffers[posAttrib.bufferName];
-			auto posBufData = posBuf.data.data() + posAttrib.byteOffset;
+			auto posBuf = model->GetBuffer(posAttrib.bufferName);
+			auto posBufData = posBuf.data() + posAttrib.byteOffset;
 
 			auto normAttrib = primitive->attributes[1];
 			Assert(normAttrib.componentCount == 3);
 			Assert(normAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
-			auto &normBuf = scene->buffers[normAttrib.bufferName];
-			auto normBufData = normBuf.data.data() + normAttrib.byteOffset;
+			auto normBuf = model->GetBuffer(normAttrib.bufferName);
+			auto normBufData = normBuf.data() + normAttrib.byteOffset;
 
 			Assert(normAttrib.components == posAttrib.components);
 
@@ -85,8 +83,8 @@ namespace sp
 				Assert(uvAttrib.componentCount == 2);
 				Assert(uvAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 
-				auto &uvBuf = scene->buffers[uvAttrib.bufferName];
-				uvBufData = uvBuf.data.data() + uvAttrib.byteOffset;
+				auto uvBuf = model->GetBuffer(uvAttrib.bufferName);
+				uvBufData = uvBuf.data() + uvAttrib.byteOffset;
 
 				Assert(uvAttrib.components == posAttrib.components);
 			}

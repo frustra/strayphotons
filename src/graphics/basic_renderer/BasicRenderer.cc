@@ -22,12 +22,11 @@ namespace sp
 	{
 		for (auto primitive : comp->model->primitives)
 		{
-			auto scene = comp->model->GetScene();
+			auto indexBuffer = comp->model->GetBuffer(primitive->indexBuffer.bufferName);
 
-			auto indexBuffer = scene->buffers[primitive->indexBuffer.bufferName];
 			glGenBuffers(1, &primitive->indexBufferHandle);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive->indexBufferHandle);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBuffer.data.size(), indexBuffer.data.data(), GL_STATIC_DRAW);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBuffer.size(), indexBuffer.data(), GL_STATIC_DRAW);
 
 			glGenVertexArrays(1, &primitive->vertexBufferHandle);
 			glBindVertexArray(primitive->vertexBufferHandle);
@@ -36,11 +35,11 @@ namespace sp
 				auto *attr = &primitive->attributes[i];
 				if (attr->componentCount == 0) continue;
 
-				auto attribBuffer = scene->buffers[attr->bufferName];
+				auto attribBuffer = comp->model->GetBuffer(attr->bufferName);
 				GLuint attribBufferHandle;
 				glGenBuffers(1, &attribBufferHandle);
 				glBindBuffer(GL_ARRAY_BUFFER, attribBufferHandle);
-				glBufferData(GL_ARRAY_BUFFER, attribBuffer.data.size(), attribBuffer.data.data(), GL_STATIC_DRAW);
+				glBufferData(GL_ARRAY_BUFFER, attribBuffer.size(), attribBuffer.data(), GL_STATIC_DRAW);
 
 				glVertexAttribPointer(i, attr->componentCount, attr->componentType, GL_FALSE, attr->byteStride, (void *) attr->byteOffset);
 				glEnableVertexAttribArray(i);

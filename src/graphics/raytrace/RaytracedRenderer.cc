@@ -458,7 +458,8 @@ namespace sp
 			for (auto ent : game->entityManager.EntitiesWith<ecs::Renderable>())
 			{
 				auto comp = ent.Get<ecs::Renderable>();
-				auto scene = comp->model->GetScene();
+				// TODO(?): Use a more generic interface of some sort, Not all renderables have a scene.
+				tinygltf::Scene *scene = NULL;//comp->model->GetScene();
 				for (auto &it : scene->materials)
 				{
 					auto material = it.second;

@@ -77,6 +77,14 @@
 			}
 		},
 		{
+			"mirror": [1, 1],
+			"renderable": "mirror",
+			"transform": {
+				"relativeTo": "duck",
+				"translate": [0, 1, -1]
+			}
+		},
+		{
 			"renderable": "box",
 			"transform": {
 				"translate": [-0.2, 3, 0.5]

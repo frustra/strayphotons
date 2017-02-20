@@ -15,6 +15,7 @@
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/VoxelInfo.hh"
+#include "ecs/components/Mirror.hh"
 
 #include <glm/gtx/component_wise.hpp>
 #include <cxxopts.hpp>
@@ -149,10 +150,16 @@ namespace sp
 		ShaderManager::SetDefine("VoxelSuperSampleScale", std::to_string(voxelSuperSampleScale));
 		ShaderControl->CompileAll(GlobalShaders);
 
+		int mirrorId = 0;
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable>())
 		{
 			auto comp = ent.Get<ecs::Renderable>();
 			PrepareRenderable(comp);
+
+			if (ent.Has<ecs::Mirror>()) {
+				auto mirror = ent.Get<ecs::Mirror>();
+				mirror->mirrorId = ++mirrorId;
+			}
 		}
 
 		voxelInfo = {voxelGridSize, 0.1f, voxelSuperSampleScale, glm::vec3(0), glm::vec3(0), glm::vec3(0)};
@@ -472,6 +479,14 @@ namespace sp
 			auto comp = ent.Get<ecs::Renderable>();
 			auto modelMat = ent.Get<ecs::Transform>()->GetModelTransform(*ent.GetManager());
 			shader->SetParams(view, modelMat);
+
+			if (ent.Has<ecs::Mirror>()) {
+				auto mirror = ent.Get<ecs::Mirror>();
+				shader->SetMirrorId(mirror->mirrorId);
+			} else {
+				shader->SetMirrorId(0);
+			}
+
 			DrawRenderable(comp);
 		}
 

@@ -13,12 +13,13 @@ namespace sp
 	{
 	public:
 		void SetParams(const ecs::View &view, glm::mat4 modelMat);
+		void SetMirrorId(int id);
 
 	protected:
 		SceneShader(shared_ptr<ShaderCompileOutput> compileOutput);
 
 	private:
-		Uniform modelMat, viewMat, projMat;
+		Uniform modelMat, viewMat, projMat, mirrorId;
 	};
 
 	class SceneVS : public SceneShader

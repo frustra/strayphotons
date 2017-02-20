@@ -35,11 +35,11 @@ namespace sp
 		Assert(prim->drawMode == GL_TRIANGLES);
 		Assert(indexAttrib.componentCount == 1);
 
-		auto pbuffer = model->GetScene()->buffers[posAttrib.bufferName];
-		auto points = (const float *)(pbuffer.data.data() + posAttrib.byteOffset);
+		auto pbuffer = model->GetBuffer(posAttrib.bufferName);
+		auto points = (const float *)(pbuffer.data() + posAttrib.byteOffset);
 
-		auto ibuffer = model->GetScene()->buffers[indexAttrib.bufferName];
-		auto indices = (const int *)(ibuffer.data.data() + indexAttrib.byteOffset);
+		auto ibuffer = model->GetBuffer(indexAttrib.bufferName);
+		auto indices = (const int *)(ibuffer.data() + indexAttrib.byteOffset);
 		int *indicesCopy = nullptr;
 
 		switch (indexAttrib.componentType)
@@ -150,11 +150,11 @@ namespace sp
 		Assert(prim->drawMode == GL_TRIANGLES);
 		Assert(indexAttrib.componentCount == 1);
 
-		auto pbuffer = model->GetScene()->buffers[posAttrib.bufferName];
-		auto points = pbuffer.data.data() + posAttrib.byteOffset;
+		auto pbuffer = model->GetBuffer(posAttrib.bufferName);
+		auto points = pbuffer.data() + posAttrib.byteOffset;
 
-		auto ibuffer = model->GetScene()->buffers[indexAttrib.bufferName];
-		auto indices = ibuffer.data.data() + indexAttrib.byteOffset;
+		auto ibuffer = model->GetBuffer(indexAttrib.bufferName);
+		auto indices = ibuffer.data() + indexAttrib.byteOffset;
 
 		std::unordered_set<glm::ivec3> visitedPoints;
 		std::unordered_set<uint32> visitedIndexes;
