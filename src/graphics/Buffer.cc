@@ -51,4 +51,17 @@ namespace sp
 		glNamedBufferData(handle, size, data, usage);
 		return *this;
 	}
+
+	void *Buffer::Map(GLenum access)
+	{
+		Assert(handle);
+		return glMapNamedBuffer(handle, access);
+	}
+
+	Buffer &Buffer::Unmap()
+	{
+		Assert(handle);
+		glUnmapNamedBuffer(handle);
+		return *this;
+	}
 }

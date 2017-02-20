@@ -19,6 +19,8 @@ namespace sp
 		Buffer &Clear(PixelFormat format, const void *data = nullptr);
 
 		Buffer &Data(GLsizei size, const void *data = nullptr, GLenum usage = GL_STATIC_DRAW);
+		void *Map(GLenum access);
+		Buffer &Unmap();
 
 		bool operator==(const Buffer &other) const
 		{

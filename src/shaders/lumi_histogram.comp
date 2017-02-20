@@ -28,14 +28,14 @@ void main() {
 		float bin = histogramBinFromPixel(c);
 
 		int bin0 = int(bin);
-		int bin1 = bin0 + 1;
+		int bin1 = min(bin0 + 1, HistogramBins - 1);
 
 		// Weight by distance to integer bin.
 		float w1 = fract(bin);
 		float w0 = 1.0 - w1;
 
-		atomicAdd(Histogram[bin0], uint(histSampleScale * w0));
-		atomicAdd(Histogram[bin1], uint(histSampleScale * w1));
+		atomicAdd(Histogram[bin0], uint(round(histSampleScale * w0)));
+		atomicAdd(Histogram[bin1], uint(round(histSampleScale * w1)));
 	}
 
 	barrier();
