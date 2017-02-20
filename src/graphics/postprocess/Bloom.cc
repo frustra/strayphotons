@@ -8,8 +8,8 @@
 
 namespace sp
 {
-	static CVar<float> CVarBloomWeight1("r.BloomWeight1", 0.3f, "Bloom kernel 1 weight");
-	static CVar<float> CVarBloomWeight2("r.BloomWeight2", 0.2f, "Bloom kernel 2 weight");
+	static CVar<float> CVarBloomWeight1("r.BloomWeight1", 0.4f, "Bloom kernel 1 weight");
+	static CVar<float> CVarBloomWeight2("r.BloomWeight2", 0.4f, "Bloom kernel 2 weight");
 
 	class BloomHighpassFS : public Shader
 	{

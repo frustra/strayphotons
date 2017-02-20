@@ -8,13 +8,13 @@ layout (binding = 0) uniform sampler2D luminanceTex;
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
-const float threshold = 1.0;
+const float scale = 0.1;
 
 void main() {
 	vec3 lum = texture(luminanceTex, inTexCoord).rgb; // pre-exposed
-
-	float brightness = max(DigitalLuminance(lum) - threshold, 0.0);
-	brightness /= (1.0 + brightness);
-	
-	outFragColor = vec4(brightness * lum, 1.0);
+	if (any(isnan(lum))) {
+		outFragColor = vec4(vec3(0), 1);
+	} else {
+		outFragColor = vec4(lum * scale, 1);
+	}
 }

@@ -23,7 +23,6 @@ void main() {
 	for (int i = 0; i < size; i++) {
 		vec2 offset = (float(i - left) * direction * 2.0 + 0.5) / texsize;
 		vec3 px = texture(highpassTex, inTexCoord + offset).rgb;
-		if (any(isnan(px))) continue;
 		accum += px * kernel[i];
 	}
 
