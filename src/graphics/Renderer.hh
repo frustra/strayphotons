@@ -50,6 +50,7 @@ namespace sp
 		ecs::VoxelInfo voxelInfo;
 	private:
 		shared_ptr<RenderTarget> shadowMap;
+		shared_ptr<RenderTarget> mirrorData;
 		Buffer computeIndirectBuffer;
 		VoxelData voxelData;
 	};

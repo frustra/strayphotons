@@ -198,15 +198,15 @@ namespace sp
 
 		// TODO(xthexder): Handle lights without shadowmaps
 		glm::ivec2 renderTargetSize;
-		bool empty = true;
+		int lightCount = 0;
 		for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
 		{
-			empty = false;
 			auto light = entity.Get<ecs::Light>();
 			if (entity.Has<ecs::View>())
 			{
 				auto view = updateLightCaches(entity, light);
 				light->mapOffset = glm::vec4(renderTargetSize.x, 0, view->extents.x, view->extents.y);
+				light->lightId = ++lightCount;
 				view->offset = glm::ivec2(light->mapOffset);
 				view->clearMode = 0;
 
@@ -216,12 +216,18 @@ namespace sp
 			}
 		}
 
-		if (empty) return;
+		if (lightCount == 0) return;
 
 		RenderTargetDesc shadowDesc(PF_R32F, renderTargetSize);
 		if (!shadowMap || shadowMap->GetDesc() != shadowDesc)
 		{
 			shadowMap = RTPool->Get(shadowDesc);
+		}
+
+		RenderTargetDesc mirrorDesc(PF_R16UI, renderTargetSize);
+		if (!mirrorData || mirrorData->GetDesc() != mirrorDesc)
+		{
+			mirrorData = RTPool->Get(mirrorDesc);
 		}
 
 		auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, renderTargetSize));
@@ -248,6 +254,7 @@ namespace sp
 				auto shadowMapVS = GlobalShaders->Get<ShadowMapVS>();
 				auto shadowMapFS = GlobalShaders->Get<ShadowMapFS>();
 				shadowMapFS->SetClip(view->clip);
+				shadowMapFS->SetLight(light->lightId);
 				ForwardPass(*view, shadowMapVS);
 			}
 		}

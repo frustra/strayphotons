@@ -53,9 +53,10 @@ namespace sp
 		ShadowMapFS(shared_ptr<ShaderCompileOutput> compileOutput);
 
 		void SetClip(glm::vec2 newClip);
+		void SetLight(int lightId);
 
 	private:
-		Uniform clip;
+		Uniform clip, lightId;
 	};
 
 	class VoxelRasterVS : public SceneShader

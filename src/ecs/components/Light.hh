@@ -9,5 +9,6 @@ namespace ecs
 		float spotAngle, intensity, illuminance;
 		glm::vec3 tint;
 		glm::vec4 mapOffset;
+		int lightId;
 	};
 }

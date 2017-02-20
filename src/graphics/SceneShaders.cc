@@ -26,11 +26,17 @@ namespace sp
 	ShadowMapFS::ShadowMapFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 	{
 		Bind(clip, "clip");
+		Bind(lightId, "lightId");
 	}
 
 	void ShadowMapFS::SetClip(glm::vec2 newClip)
 	{
 		Set(clip, newClip);
+	}
+
+	void ShadowMapFS::SetLight(int newLightId)
+	{
+		Set(lightId, newLightId);
 	}
 
 	VoxelMipmapCS::VoxelMipmapCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
