@@ -156,7 +156,8 @@ namespace sp
 			auto comp = ent.Get<ecs::Renderable>();
 			PrepareRenderable(comp);
 
-			if (ent.Has<ecs::Mirror>()) {
+			if (ent.Has<ecs::Mirror>())
+			{
 				auto mirror = ent.Get<ecs::Mirror>();
 				mirror->mirrorId = ++mirrorId;
 			}
@@ -480,10 +481,13 @@ namespace sp
 			auto modelMat = ent.Get<ecs::Transform>()->GetModelTransform(*ent.GetManager());
 			shader->SetParams(view, modelMat);
 
-			if (ent.Has<ecs::Mirror>()) {
+			if (ent.Has<ecs::Mirror>())
+			{
 				auto mirror = ent.Get<ecs::Mirror>();
 				shader->SetMirrorId(mirror->mirrorId);
-			} else {
+			}
+			else
+			{
 				shader->SetMirrorId(0);
 			}
 

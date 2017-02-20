@@ -13,7 +13,6 @@
 #include "graphics/postprocess/SSAO.hh"
 #include "graphics/postprocess/SMAA.hh"
 #include "graphics/postprocess/GammaCorrect.hh"
-#include "graphics/postprocess/VoxelLighting.hh"
 
 #include "core/CVar.hh"
 

@@ -28,7 +28,8 @@ namespace sp
 	{
 		u.name = name;
 		u.location = glGetUniformLocation(program, name.c_str());
-		if (u.location == -1) {
+		if (u.location == -1)
+		{
 			// TODO(xthexder): Clean up the uniforms later
 			// Logf("Warning: Binding inactive uniform %s in shader %s: %s", name, type->name, type->filename);
 		}
