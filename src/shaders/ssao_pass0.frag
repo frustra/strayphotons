@@ -21,11 +21,6 @@ uniform mat4 invProjMat;
 void main()
 {
 	vec3 normalSample = texture(gBuffer1, inTexCoord).rgb;
-	if (length(normalSample) < 0.5) {
-		// Normal not defined.
-		outFragColor = vec4(1);
-		return;
-	}
 
 	// Determine view space coordinates of fragment.
 	float depth = texture(depthStencil, inTexCoord).r;

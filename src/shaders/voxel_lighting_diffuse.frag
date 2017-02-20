@@ -2,11 +2,11 @@
 
 layout (binding = 0) uniform sampler2D gBuffer0;
 layout (binding = 1) uniform sampler2D gBuffer1;
-layout (binding = 2) uniform sampler2D depthStencil;
+layout (binding = 2) uniform sampler2D gBuffer2;
+layout (binding = 3) uniform sampler2D depthStencil;
 
-layout (binding = 3) uniform sampler3D voxelColor;
-layout (binding = 4) uniform sampler3D voxelNormal;
-layout (binding = 5) uniform sampler3D voxelAlpha;
+layout (binding = 4) uniform sampler3D voxelColor;
+layout (binding = 5) uniform sampler3D voxelNormal;
 layout (binding = 6) uniform sampler3D voxelRadiance;
 
 layout (location = 0) in vec2 inTexCoord;
@@ -27,18 +27,11 @@ uniform mat4 invProjMat;
 
 void main()
 {
-	// Determine normal of surface at this fragment.
-	vec4 gb1 = texture(gBuffer1, inTexCoord);
-	vec3 viewNormal = gb1.rgb;
-	if (length(viewNormal) < 0.5) {
-		// Normal not defined.
-		outFragColor = vec4(0);
-		return;
-	}
-
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
+	vec4 gb1 = texture(gBuffer1, inTexCoord);
 	vec3 baseColor = gb0.rgb;
 	float roughness = gb0.a;
+	vec3 viewNormal = gb1.rgb;
 
 	// Determine coordinates of fragment.
 	float depth = texture(depthStencil, inTexCoord).r;

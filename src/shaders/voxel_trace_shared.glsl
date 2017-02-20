@@ -13,14 +13,13 @@ float GetVoxel(vec3 position, int level, out vec3 color, out vec3 normal, out ve
 	vec4 colorData = textureLod(voxelColor, position * InvVoxelGridSize, 0);
 	vec4 normalData = textureLod(voxelNormal, position * InvVoxelGridSize, 0);
 	vec4 radianceData = textureLod(voxelRadiance, position * invMipVoxelGridSize, level);
-	float alpha = textureLod(voxelAlpha, position * invMipVoxelGridSize, level).r;
 
 	color = colorData.rgb / (colorData.a + VoxelEps);
 	normal = normalize(normalData.xyz / (colorData.a + VoxelEps));
 	radiance = radianceData.rgb / (radianceData.a + VoxelEps);
 	roughness = normalData.a / (colorData.a + VoxelEps);
 
-	return alpha;
+	return radianceData.a;
 }
 
 vec4 SampleVoxelLod(vec3 position, vec3 dir, float level)

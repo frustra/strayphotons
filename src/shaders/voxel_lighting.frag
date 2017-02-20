@@ -4,12 +4,12 @@
 
 layout (binding = 0) uniform sampler2D gBuffer0;
 layout (binding = 1) uniform sampler2D gBuffer1;
-layout (binding = 2) uniform sampler2D depthStencil;
-layout (binding = 3) uniform sampler2D shadowMap;
+layout (binding = 2) uniform sampler2D gBuffer2;
+layout (binding = 3) uniform sampler2D depthStencil;
+layout (binding = 4) uniform sampler2D shadowMap;
 
-layout (binding = 4) uniform sampler3D voxelColor;
-layout (binding = 5) uniform sampler3D voxelNormal;
-layout (binding = 6) uniform sampler3D voxelAlpha;
+layout (binding = 5) uniform sampler3D voxelColor;
+layout (binding = 6) uniform sampler3D voxelNormal;
 layout (binding = 7) uniform sampler3D voxelRadiance;
 
 layout (binding = 8) uniform sampler2D indirectDiffuseSampler;
@@ -68,19 +68,15 @@ bool detectEdge(vec3 centerNormal, float centerDepth, vec2 tcRadius)
 
 void main()
 {
-	// Determine normal of surface at this fragment.
-	vec4 gb1 = texture(gBuffer1, inTexCoord);
-	vec3 viewNormal = gb1.rgb;
-	if (length(viewNormal) < 0.5) {
-		// Normal not defined.
-		outFragColor = vec4(0);
-		return;
-	}
 
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
+	vec4 gb1 = texture(gBuffer1, inTexCoord);
+	vec4 gb2 = texture(gBuffer2, inTexCoord);
 	vec3 baseColor = gb0.rgb;
 	float roughness = gb0.a;
-	float metalness = gb1.a;
+	vec3 viewNormal = gb1.rgb;
+	vec3 flatViewNormal = gb2.rgb;
+	float metalness = gb2.a;
 
 	// Determine coordinates of fragment.
 	float depth = texture(depthStencil, inTexCoord).r;
@@ -90,6 +86,7 @@ void main()
 	vec3 worldFragPosition = (invViewMat * vec4(fragPosition, 1.0)).xyz;
 
 	vec3 worldNormal = mat3(invViewMat) * viewNormal;
+	vec3 flatWorldNormal = mat3(invViewMat) * flatViewNormal;
 
 	// Trace.
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
@@ -104,21 +101,14 @@ void main()
 		rayReflectDir = reflect(rayDir, worldNormal);
 	}
 
-	vec3 indirectDiffuse;
-
-	if (diffuseDownsample > 1 && detectEdge(viewNormal, depth, diffuseDownsample * 0.65 / textureSize(gBuffer0, 0))) {
-		indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal);
-	} else {
-		indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
-	}
-
 	vec3 indirectSpecular = vec3(0);
+	bool reflected = false;
 
 	for (int i = 0; i < maxReflections; i++) {
 		// specular
 		vec3 sampleDir = rayReflectDir;
 		float specularConeRatio = roughness * 0.8;
-		vec4 sampleColor = ConeTraceGrid(specularConeRatio, worldPosition, sampleDir, worldNormal);
+		vec4 sampleColor = ConeTraceGrid(specularConeRatio, worldPosition, sampleDir, flatWorldNormal);
 
 		if (roughness == 0 && metalness == 1 && sampleColor.a >= 0) {
 			worldPosition += sampleDir * sampleColor.a;
@@ -127,7 +117,9 @@ void main()
 			GetVoxel(voxelPos, 0, baseColor, worldNormal, radiance, roughness);
 			rayDir = sampleDir;
 			rayReflectDir = reflect(sampleDir, worldNormal);
+			flatWorldNormal = worldNormal;
 			if (roughness != 0) metalness = 0;
+			reflected = true;
 		} else {
 			vec3 directSpecularColor = mix(vec3(0.04), baseColor, metalness);
 			vec3 brdf = EvaluateBRDFSpecularImportanceSampledGGX(directSpecularColor, roughness, sampleDir, -rayDir, worldNormal);
@@ -136,8 +128,16 @@ void main()
 		}
 	}
 
+	vec3 indirectDiffuse;
+
+	if (diffuseDownsample > 1 && detectEdge(viewNormal, depth, diffuseDownsample * 0.65 / textureSize(gBuffer0, 0)) || reflected) {
+		indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal);
+	} else {
+		indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
+	}
+
 	vec3 directDiffuseColor = baseColor - baseColor * metalness;
-	vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, roughness, metalness);
+	vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, flatWorldNormal, roughness, metalness);
 
 	vec3 indirectLight = indirectDiffuse * directDiffuseColor + indirectSpecular;
 	vec3 totalLight = directLight + indirectLight;

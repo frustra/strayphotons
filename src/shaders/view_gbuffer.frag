@@ -2,10 +2,10 @@
 
 layout (binding = 0) uniform sampler2D gBuffer0;
 layout (binding = 1) uniform sampler2D gBuffer1;
-layout (binding = 2) uniform sampler2D depthStencil;
-layout (binding = 3) uniform sampler3D voxelColor;
-layout (binding = 4) uniform sampler3D voxelNormal;
-layout (binding = 5) uniform sampler3D voxelAlpha;
+layout (binding = 2) uniform sampler2D gBuffer2;
+layout (binding = 3) uniform sampler2D depthStencil;
+layout (binding = 4) uniform sampler3D voxelColor;
+layout (binding = 5) uniform sampler3D voxelNormal;
 layout (binding = 6) uniform sampler3D voxelRadiance;
 
 layout (location = 0) in vec2 inTexCoord;
@@ -41,7 +41,7 @@ void main()
 		} else if (mode == 4) { // Roughness
 			outFragColor.rgb = vec3(texture(gBuffer0, inTexCoord).a);
 		} else if (mode == 5) { // Metallic
-			outFragColor.rgb = vec3(texture(gBuffer1, inTexCoord).a);
+			outFragColor.rgb = vec3(texture(gBuffer2, inTexCoord).a);
 		}
 	} else if (source == 1) { // Voxel source
 		vec3 sampleColor, sampleNormal, sampleRadiance;

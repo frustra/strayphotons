@@ -8,10 +8,8 @@ layout (local_size_x = 16, local_size_y = 16) in;
 layout (binding = 0, r32ui) readonly uniform uimage2D previousMipList;
 layout (binding = 1, r32ui) uniform uimage2D currentMipList;
 
-layout (binding = 2, r8) readonly uniform image3D previousVoxelAlpha;
-layout (binding = 3, rgba16) readonly uniform image3D previousVoxelRadiance;
-layout (binding = 4, r8) uniform image3D currentVoxelAlpha;
-layout (binding = 5, rgba16) uniform image3D currentVoxelRadiance;
+layout (binding = 2, rgba16) readonly uniform image3D previousVoxelRadiance;
+layout (binding = 3, rgba16) uniform image3D currentVoxelRadiance;
 
 layout (binding = 0) uniform atomic_uint previousFragListSize;
 layout (binding = 0, offset = 16) uniform atomic_uint nextFragListSize;
@@ -43,7 +41,6 @@ void main() {
 				// This invocation should only run if we're the first value in the group.
 				if (position == floorPosition + ivec3(x, y, z) && count > 0) return;
 
-				// float prevAlpha = imageLoad(previousVoxelAlpha, floorPosition + ivec3(x, y, z)).r;
 				vec4 prevValue = imageLoad(previousVoxelRadiance, floorPosition + ivec3(x, y, z));
 				alpha += prevValue.a;
 
@@ -55,7 +52,6 @@ void main() {
 
 	// Bias alpha so that 50% full is opaque
 	alpha = saturate(alpha * 0.25);
-	// imageStore(currentVoxelAlpha, mipPosition, vec4(1.0));
 	imageStore(currentVoxelRadiance, mipPosition, vec4(radiance / count, alpha));
 
 	uint nextIndex = atomicCounterIncrement(nextFragListSize);

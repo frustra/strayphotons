@@ -8,8 +8,7 @@ layout (binding = 0, r32ui) readonly uniform uimage2D voxelFragList;
 layout (binding = 1, r32ui) uniform uimage3D voxelPackedData;
 layout (binding = 2, rgba8) writeonly uniform image3D voxelColor;
 layout (binding = 3, rgba16) writeonly uniform image3D voxelNormal;
-layout (binding = 4, r8) writeonly uniform image3D voxelAlpha;
-layout (binding = 5, rgba16) writeonly uniform image3D voxelRadiance;
+layout (binding = 4, rgba16) writeonly uniform image3D voxelRadiance;
 
 ##import lib/util
 ##import voxel_shared
@@ -36,6 +35,5 @@ void main()
 	roughness /= alpha;
 	imageStore(voxelColor, position, vec4(color.rgb, 1.0));
 	imageStore(voxelNormal, position, vec4(normalize(normal.xyz * 2.0 - 1.0), roughness));
-	imageStore(voxelAlpha, position, vec4(1.0));
 	imageStore(voxelRadiance, position, vec4(radiance.rgb, 1.0));
 }

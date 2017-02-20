@@ -19,7 +19,7 @@ namespace sp
 	{
 		shared_ptr<RenderTarget> fragmentList;
 		shared_ptr<RenderTarget> packedData;
-		shared_ptr<RenderTarget> color, normal, alpha, radiance;
+		shared_ptr<RenderTarget> color, normal, radiance;
 		bool mipmapsGenerated;
 	};
 

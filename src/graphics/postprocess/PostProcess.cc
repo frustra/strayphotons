@@ -51,20 +51,20 @@ namespace sp
 		auto indirectDiffuse = context.AddPass<VoxelLightingDiffuse>();
 		indirectDiffuse->SetInput(0, context.GBuffer0);
 		indirectDiffuse->SetInput(1, context.GBuffer1);
-		indirectDiffuse->SetInput(2, context.Depth);
-		indirectDiffuse->SetInput(3, context.VoxelColor);
-		indirectDiffuse->SetInput(4, context.VoxelNormal);
-		indirectDiffuse->SetInput(5, context.VoxelAlpha);
+		indirectDiffuse->SetInput(2, context.GBuffer2);
+		indirectDiffuse->SetInput(3, context.Depth);
+		indirectDiffuse->SetInput(4, context.VoxelColor);
+		indirectDiffuse->SetInput(5, context.VoxelNormal);
 		indirectDiffuse->SetInput(6, context.VoxelRadiance);
 
 		auto lighting = context.AddPass<VoxelLighting>();
 		lighting->SetInput(0, context.GBuffer0);
 		lighting->SetInput(1, context.GBuffer1);
-		lighting->SetInput(2, context.Depth);
-		lighting->SetInput(3, context.ShadowMap);
-		lighting->SetInput(4, context.VoxelColor);
-		lighting->SetInput(5, context.VoxelNormal);
-		lighting->SetInput(6, context.VoxelAlpha);
+		lighting->SetInput(2, context.GBuffer2);
+		lighting->SetInput(3, context.Depth);
+		lighting->SetInput(4, context.ShadowMap);
+		lighting->SetInput(5, context.VoxelColor);
+		lighting->SetInput(6, context.VoxelNormal);
 		lighting->SetInput(7, context.VoxelRadiance);
 		lighting->SetInput(8, indirectDiffuse);
 
@@ -101,6 +101,7 @@ namespace sp
 
 		context.GBuffer0 = context.AddPass<ProxyProcessPass>(targets.gBuffer0);
 		context.GBuffer1 = context.AddPass<ProxyProcessPass>(targets.gBuffer1);
+		context.GBuffer2 = context.AddPass<ProxyProcessPass>(targets.gBuffer2);
 		context.Depth = context.AddPass<ProxyProcessPass>(targets.depth);
 		context.LastOutput = context.GBuffer0;
 
@@ -113,7 +114,6 @@ namespace sp
 		{
 			context.VoxelColor = context.AddPass<ProxyProcessPass>(targets.voxelData.color);
 			context.VoxelNormal = context.AddPass<ProxyProcessPass>(targets.voxelData.normal);
-			context.VoxelAlpha = context.AddPass<ProxyProcessPass>(targets.voxelData.alpha);
 			context.VoxelRadiance = context.AddPass<ProxyProcessPass>(targets.voxelData.radiance);
 		}
 
@@ -150,10 +150,10 @@ namespace sp
 			auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(), CVarViewGBufferSource.Get(), CVarVoxelMip.Get());
 			viewGBuf->SetInput(0, context.GBuffer0);
 			viewGBuf->SetInput(1, context.GBuffer1);
-			viewGBuf->SetInput(2, context.Depth);
-			viewGBuf->SetInput(3, context.VoxelColor);
-			viewGBuf->SetInput(4, context.VoxelNormal);
-			viewGBuf->SetInput(5, context.VoxelAlpha);
+			viewGBuf->SetInput(2, context.GBuffer2);
+			viewGBuf->SetInput(3, context.Depth);
+			viewGBuf->SetInput(4, context.VoxelColor);
+			viewGBuf->SetInput(5, context.VoxelNormal);
 			viewGBuf->SetInput(6, context.VoxelRadiance);
 			context.LastOutput = viewGBuf;
 		}

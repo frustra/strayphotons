@@ -16,8 +16,9 @@ layout (location = 3) in vec2 inTexCoord;
 
 layout (location = 0) out vec4 gBuffer0;
 layout (location = 1) out vec4 gBuffer1;
+layout (location = 2) out vec4 gBuffer2;
 
-const float bumpDepth = 0.09;
+const float bumpDepth = 0.1;
 
 void main()
 {
@@ -53,5 +54,7 @@ void main()
 	gBuffer0.rgb = baseColor.rgb;
 	gBuffer0.a = roughness;
 	gBuffer1.rgb = viewNormal;
-	gBuffer1.a = metallic;
+	gBuffer1.a = 0.0; // TODO(xthexder): Emissiveness
+	gBuffer2.rgb = inNormal;
+	gBuffer2.a = metallic;
 }

@@ -161,11 +161,11 @@ namespace sp
 		ProcessPassOutputRef LastOutput;
 		ProcessPassOutputRef GBuffer0;
 		ProcessPassOutputRef GBuffer1;
+		ProcessPassOutputRef GBuffer2;
 		ProcessPassOutputRef Depth;
 		ProcessPassOutputRef ShadowMap;
 		ProcessPassOutputRef VoxelColor;
 		ProcessPassOutputRef VoxelNormal;
-		ProcessPassOutputRef VoxelAlpha;
 		ProcessPassOutputRef VoxelRadiance;
 
 	private:

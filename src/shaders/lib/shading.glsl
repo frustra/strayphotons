@@ -33,7 +33,7 @@ float SampleOcclusion(int i, vec3 shadowMapCoord, vec3 shadowMapPos, vec3 surfac
 	testDepth = max(testDepth, LinearDepth(shadowMapPos, lightClip[i]) - shadowBias * 2.0);
 
 	vec2 coord = texCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy;
-	vec3 sampledDepth = texture(shadowMap, coord).rrr;
+	vec3 sampledDepth = vec3(texture(shadowMap, coord).r, 0, 0);
 	vec4 values = textureGather(shadowMap, coord, 0);
 	sampledDepth.y = min(values.x, min(values.y, min(values.z, values.w)));
 	sampledDepth.z = max(values.x, max(values.y, max(values.z, values.w)));
@@ -41,7 +41,7 @@ float SampleOcclusion(int i, vec3 shadowMapCoord, vec3 shadowMapPos, vec3 surfac
 	float minTest = min(sampledDepth.y, testDepth - shadowBias);
 	minTest = max(minTest, step(sampledDepth.z, testDepth - shadowBias * 2.0) * testDepth - shadowBias);
 
-	return step(0, -shadowMapPos.z) * smoothstep(minTest, testDepth, sampledDepth.x);
+	return step(0, -shadowMapPos.z) * smoothstep(0.0, 0.2, -dot(surfaceNormal, rayDir)) * smoothstep(minTest, testDepth, sampledDepth.x);
 }
 
 // const float[5] gaussKernel = float[](0.06136, 0.24477, 0.38774, 0.24477, 0.06136);
@@ -79,7 +79,7 @@ float DirectOcclusion(int i, vec3 shadowMapPos, vec3 surfaceNormal, mat2 rotatio
 		}
 	}
 
-	return occlusion;
+	return smoothstep(0.3, 1.0, occlusion);
 }
 
 vec3 EvaluateBRDF(vec3 diffuseColor, vec3 specularColor, float roughness, vec3 L, vec3 V, vec3 N) {
@@ -116,9 +116,9 @@ vec3 EvaluateBRDFSpecularImportanceSampledGGX(vec3 specularColor, float roughnes
 }
 
 #ifdef DIFFUSE_ONLY_SHADING
-vec3 DirectShading(vec3 worldPosition, vec3 baseColor, vec3 normal, float roughness) {
+vec3 DirectShading(vec3 worldPosition, vec3 baseColor, vec3 normal, vec3 flatNormal, float roughness) {
 #else
-vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec3 normal, float roughness, float metalness) {
+vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec3 normal, vec3 flatNormal, float roughness, float metalness) {
 #endif
 	vec3 pixelLuminance = vec3(0);
 
@@ -168,7 +168,7 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 
 		// Calculate direct occlusion.
 		vec3 shadowMapPos = (lightView[i] * vec4(worldPosition, 1.0)).xyz; // Position of light view-space.
-		vec3 surfaceNormal = normalize(mat3(lightView[i]) * normal);
+		vec3 surfaceNormal = normalize(mat3(lightView[i]) * flatNormal);
 		float occlusion = 1;
 
 #ifdef USE_SHADOW_MAPPING

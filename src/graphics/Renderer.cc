@@ -282,17 +282,6 @@ namespace sp
 			voxelData.normal->GetTexture().Clear(0);
 		}
 
-		RenderTargetDesc alphaDesc(PF_R8, unpackedSize);
-		alphaDesc.levels = VoxelMipLevels;
-		if (!voxelData.alpha || voxelData.alpha->GetDesc() != alphaDesc)
-		{
-			voxelData.alpha = RTPool->Get(alphaDesc);
-
-			for (uint32 i = 0; i < VoxelMipLevels; i++)
-			{
-				voxelData.alpha->GetTexture().Clear(0, i);
-			}
-		}
 		RenderTargetDesc radianceDesc(PF_RGBA16, unpackedSize);
 		radianceDesc.levels = VoxelMipLevels;
 		if (!voxelData.radiance || voxelData.radiance->GetDesc() != radianceDesc)
@@ -358,8 +347,7 @@ namespace sp
 			voxelData.packedData->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
 			voxelData.color->GetTexture().BindImage(2, GL_WRITE_ONLY, 0, GL_TRUE, 0);
 			voxelData.normal->GetTexture().BindImage(3, GL_WRITE_ONLY, 0, GL_TRUE, 0);
-			voxelData.alpha->GetTexture().BindImage(4, GL_WRITE_ONLY, 0, GL_TRUE, 0);
-			voxelData.radiance->GetTexture().BindImage(5, GL_WRITE_ONLY, 0, GL_TRUE, 0);
+			voxelData.radiance->GetTexture().BindImage(4, GL_WRITE_ONLY, 0, GL_TRUE, 0);
 
 			ShaderControl->BindPipeline<VoxelConvertCS>(GlobalShaders);
 			glDispatchComputeIndirect(sizeof(GLuint));
@@ -367,15 +355,13 @@ namespace sp
 		}
 		{
 			RenderPhase phase("Mipmap", Timer);
-			for (uint32 i = 1; i < voxelData.alpha->GetDesc().levels; i++)
+			for (uint32 i = 1; i < voxelData.radiance->GetDesc().levels; i++)
 			{
 				computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * (i - 1), sizeof(GLuint) * 8);
 				voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i - 1);
 				voxelData.fragmentList->GetTexture().BindImage(1, GL_READ_WRITE, i);
-				voxelData.alpha->GetTexture().BindImage(2, GL_READ_ONLY, i - 1, GL_TRUE, 0);
-				voxelData.radiance->GetTexture().BindImage(3, GL_READ_ONLY, i - 1, GL_TRUE, 0);
-				voxelData.alpha->GetTexture().BindImage(4, GL_READ_WRITE, i, GL_TRUE, 0);
-				voxelData.radiance->GetTexture().BindImage(5, GL_READ_WRITE, i, GL_TRUE, 0);
+				voxelData.radiance->GetTexture().BindImage(2, GL_READ_ONLY, i - 1, GL_TRUE, 0);
+				voxelData.radiance->GetTexture().BindImage(3, GL_READ_WRITE, i, GL_TRUE, 0);
 
 				ShaderControl->BindPipeline<VoxelMipmapCS>(GlobalShaders);
 				GlobalShaders->Get<VoxelMipmapCS>()->SetLevel(i);
@@ -397,14 +383,13 @@ namespace sp
 
 		computeIndirectBuffer.Bind(GL_DISPATCH_INDIRECT_BUFFER);
 
-		for (uint32 i = 0; i < voxelData.alpha->GetDesc().levels; i++)
+		for (uint32 i = 0; i < voxelData.radiance->GetDesc().levels; i++)
 		{
 			computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint));
 			voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i);
 			voxelData.color->GetTexture().BindImage(1, GL_WRITE_ONLY, i, GL_TRUE, 0);
 			voxelData.normal->GetTexture().BindImage(2, GL_WRITE_ONLY, i, GL_TRUE, 0);
-			voxelData.alpha->GetTexture().BindImage(3, GL_WRITE_ONLY, i, GL_TRUE, 0);
-			voxelData.radiance->GetTexture().BindImage(4, GL_WRITE_ONLY, i, GL_TRUE, 0);
+			voxelData.radiance->GetTexture().BindImage(3, GL_WRITE_ONLY, i, GL_TRUE, 0);
 
 			ShaderControl->BindPipeline<VoxelClearCS>(GlobalShaders);
 			GlobalShaders->Get<VoxelClearCS>()->SetLevel(i);
@@ -424,6 +409,7 @@ namespace sp
 		EngineRenderTargets targets;
 		targets.gBuffer0 = RTPool->Get({ PF_RGBA8, view.extents });
 		targets.gBuffer1 = RTPool->Get({ PF_RGBA16F, view.extents });
+		targets.gBuffer2 = RTPool->Get({ PF_RGBA16F, view.extents });
 		targets.depth = RTPool->Get({ PF_DEPTH32F, view.extents });
 		targets.shadowMap = shadowMap;
 		targets.voxelData = voxelData;
@@ -432,11 +418,12 @@ namespace sp
 		{
 			targets.gBuffer0->GetTexture(),
 			targets.gBuffer1->GetTexture(),
+			targets.gBuffer2->GetTexture(),
 		};
 
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
-		SetRenderTargets(2, attachments, &targets.depth->GetTexture());
+		SetRenderTargets(3, attachments, &targets.depth->GetTexture());
 
 		ecs::View forwardPassView = view;
 		forwardPassView.offset = glm::ivec2();
