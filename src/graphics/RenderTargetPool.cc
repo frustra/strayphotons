@@ -21,10 +21,13 @@ namespace sp
 
 		ptr->id = nextRenderTargetID++;
 
-		if (desc.multiSample) {
+		if (desc.multiSample)
+		{
 			Assert(desc.extent.z == 1, "only 2D textures can be multisampled");
 			ptr->tex.Create(GL_TEXTURE_2D_MULTISAMPLE);
-		} else {
+		}
+		else
+		{
 			ptr->tex.Create(desc.extent.z != 1 ? GL_TEXTURE_3D : GL_TEXTURE_2D);
 		}
 

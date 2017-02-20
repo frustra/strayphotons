@@ -1,5 +1,6 @@
 #include "Lighting.hh"
 #include "core/Logging.hh"
+#include "core/CVar.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/GenericShaders.hh"
@@ -7,6 +8,8 @@
 
 namespace sp
 {
+	static CVar<bool> CVarDrawHistogram("r.Histogram", false, "Draw HDR luminosity histogram");
+
 	class TonemapFS : public Shader
 	{
 		SHADER_TYPE(TonemapFS)
@@ -33,25 +36,67 @@ namespace sp
 	{
 		SHADER_TYPE(LumiHistogramCS)
 
+		const int Bins = 64;
+
 		LumiHistogramCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 		}
+
+		Texture &GetTarget(Renderer *r)
+		{
+			if (!target)
+			{
+				target = r->RTPool->Get(RenderTargetDesc(PF_R32UI, { Bins, 1 }));
+			}
+			return target->GetTexture();
+		}
+
+		shared_ptr<RenderTarget> target;
 	};
 
 	IMPLEMENT_SHADER_TYPE(LumiHistogramCS, "lumi_histogram.comp", Compute);
 
-	void HDRTest::Process(const PostProcessingContext *context)
+	class RenderHistogramFS : public Shader
 	{
-		const int wgsize = 8;
+		SHADER_TYPE(RenderHistogramFS)
+
+		RenderHistogramFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+		{
+		}
+	};
+
+	IMPLEMENT_SHADER_TYPE(RenderHistogramFS, "render_histogram.frag", Fragment);
+
+	void LumiHistogram::Process(const PostProcessingContext *context)
+	{
+		const int wgsize = 16;
 		auto r = context->renderer;
-		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto histTex = r->GlobalShaders->Get<LumiHistogramCS>()->GetTarget(r);
+
+		r->SetRenderTarget(&histTex, nullptr);
+		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glClear(GL_COLOR_BUFFER_BIT);
 
 		r->ShaderControl->BindPipeline<LumiHistogramCS>(r->GlobalShaders);
+		histTex.BindImage(0, GL_READ_WRITE);
 
-		dest.BindImage(0, GL_WRITE_ONLY);
-
+		auto extents = GetInput(0)->GetOutput()->TargetDesc.extent;
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-		glDispatchCompute((dest.width + wgsize - 1) / wgsize, (dest.height + wgsize - 1) / wgsize, 1);
+		glDispatchCompute((extents.x + wgsize - 1) / wgsize, (extents.y + wgsize - 1) / wgsize, 1);
 		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+
+		{
+			// TODO(jli): don't render copy if not drawing histogram
+			auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+
+			r->SetRenderTarget(&dest, nullptr);
+
+			if (CVarDrawHistogram.Get())
+				r->ShaderControl->BindPipeline<BasicPostVS, RenderHistogramFS>(r->GlobalShaders);
+			else
+				r->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(r->GlobalShaders);
+
+			DrawScreenCover();
+		}
 	}
 }
