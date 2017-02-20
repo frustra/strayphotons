@@ -97,6 +97,7 @@ void main()
 		worldPosition = worldFragPosition + rayDir * sampleColor.a;
 		vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
 		GetVoxel(voxelPos, 0, baseColor, worldNormal, sampleColor.rgb, roughness);
+		flatWorldNormal = worldNormal;
 
 		rayReflectDir = reflect(rayDir, worldNormal);
 	}
@@ -130,7 +131,7 @@ void main()
 
 	vec3 indirectDiffuse;
 
-	if (diffuseDownsample > 1 && detectEdge(viewNormal, depth, diffuseDownsample * 0.65 / textureSize(gBuffer0, 0)) || reflected) {
+	if (diffuseDownsample > 1 && detectEdge(viewNormal, depth, diffuseDownsample * 0.65 / textureSize(gBuffer0, 0)) || reflected || mode == 5) {
 		indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal);
 	} else {
 		indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
