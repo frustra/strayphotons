@@ -9,6 +9,7 @@
 #include "graphics/Util.hh"
 
 #include "graphics/postprocess/Lighting.hh"
+#include "graphics/postprocess/Bloom.hh"
 #include "graphics/postprocess/ViewGBuffer.hh"
 #include "graphics/postprocess/SSAO.hh"
 #include "graphics/postprocess/SMAA.hh"
@@ -20,6 +21,7 @@ namespace sp
 {
 	static CVar<bool> CVarLightingEnabled("r.Lighting", true, "Enable lighting");
 	static CVar<bool> CVarTonemapEnabled("r.Tonemap", true, "Enable HDR tonemapping");
+	static CVar<bool> CVarBloomEnabled("r.Bloom", true, "Enable HDR bloom");
 	static CVar<bool> CVarSSAOEnabled("r.SSAO", false, "Enable Screen Space Ambient Occlusion");
 	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth (or alpha), 4: roughness, 5: metallic (or radiance))");
 	static CVar<int> CVarViewGBufferSource("r.ViewGBufferSource", 0, "GBuffer Debug Source (0: gbuffer, 1: voxel grid, 2: cone trace)");
@@ -68,6 +70,31 @@ namespace sp
 		lighting->SetInput(8, indirectDiffuse);
 
 		context.LastOutput = lighting;
+	}
+
+	static void AddBloom(PostProcessingContext &context)
+	{
+		auto highpass = context.AddPass<BloomHighpass>();
+		highpass->SetInput(0, context.LastOutput);
+
+		auto blurY1 = context.AddPass<BloomBlur>(glm::ivec2(0, 1), 1);
+		blurY1->SetInput(0, highpass);
+
+		auto blurX1 = context.AddPass<BloomBlur>(glm::ivec2(1, 0), 2);
+		blurX1->SetInput(0, blurY1);
+
+		auto blurY2 = context.AddPass<BloomBlur>(glm::ivec2(0, 1), 1);
+		blurY2->SetInput(0, blurX1);
+
+		auto blurX2 = context.AddPass<BloomBlur>(glm::ivec2(1, 0), 1);
+		blurX2->SetInput(0, blurY2);
+
+		auto combine = context.AddPass<BloomCombine>();
+		combine->SetInput(0, context.LastOutput);
+		combine->SetInput(1, blurX1);
+		combine->SetInput(2, blurX2);
+
+		context.LastOutput = combine;
 	}
 
 	static void AddSMAA(PostProcessingContext &context, ProcessPassOutputRef linearLuminosity)
@@ -128,12 +155,19 @@ namespace sp
 			AddSSAO(context);
 		}
 
-		if (CVarTonemapEnabled.Get())
 		{
 			auto hist = context.AddPass<LumiHistogram>();
 			hist->SetInput(0, context.LastOutput);
 			context.LastOutput = hist;
+		}
 
+		if (CVarBloomEnabled.Get())
+		{
+			AddBloom(context);
+		}
+
+		if (CVarTonemapEnabled.Get())
+		{
 			auto tonemap = context.AddPass<Tonemap>();
 			tonemap->SetInput(0, context.LastOutput);
 			context.LastOutput = tonemap;

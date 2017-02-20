@@ -411,6 +411,6 @@ namespace sp
 		DrawScreenCover();
 
 		auto view = context->view;
-		glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
+		glViewport(0, 0, view.extents.x, view.extents.y);
 	}
 }
