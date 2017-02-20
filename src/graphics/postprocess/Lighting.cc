@@ -14,7 +14,7 @@ namespace sp
 	static CVar<int> CVarVoxelLightingMode("r.VoxelLighting", 1, "Voxel lighting mode (0: direct only, 1: full, 2: indirect only, 3: diffuse only, 4: specular only, 5: full voxel)");
 	static CVar<int> CVarVoxelDiffuseDownsample("r.VoxelDiffuseDownsample", 2, "N times downsampled rendering of indirect diffuse lighting");
 	static CVar<bool> CVarDrawHistogram("r.Histogram", false, "Draw HDR luminosity histogram");
-	static CVar<float> CVarExposure("r.Exposure", 0.0, "Fixed exposure value (0: auto)");
+	static CVar<float> CVarExposure("r.Exposure", 0.0, "Fixed exposure value in linear units (0: auto)");
 	static CVar<float> CVarExposureComp("r.ExposureComp", 1, "Exposure bias in EV units (logarithmic) for eye adaptation");
 	static CVar<float> CVarEyeAdaptationLow("r.EyeAdaptationLow", 65, "Percent of darkest pixels to ignore in eye adaptation");
 	static CVar<float> CVarEyeAdaptationHigh("r.EyeAdaptationHigh", 92, "Percent of brightest pixels to ignore in eye adaptation");
@@ -22,6 +22,7 @@ namespace sp
 	static CVar<float> CVarEyeAdaptationMaxLuminance("r.EyeAdaptationMaxLuminance", 100000, "Maximum target luminance for eye adaptation");
 	static CVar<float> CVarEyeAdaptationUpRate("r.EyeAdaptationUpRate", 0.1, "Rate at which eye adapts to brighter scenes");
 	static CVar<float> CVarEyeAdaptationDownRate("r.EyeAdaptationDownRate", 0.01, "Rate at which eye adapts to darker scenes");
+	static CVar<float> CVarEyeAdaptationKeyComp("r.EyeAdaptationKeyComp", 1.0, "Amount of key compensation for eye adaptation (0-1)");
 
 	class TonemapFS : public Shader
 	{
@@ -64,7 +65,7 @@ namespace sp
 			return target->GetTexture();
 		}
 
-		float ComputeExposure()
+		double ComputeScaledLuminance()
 		{
 			if (!readBackBuf)
 			{
@@ -74,7 +75,7 @@ namespace sp
 			uint32 *buf = (uint32 *) readBackBuf.Map(GL_READ_ONLY);
 			if (!buf)
 			{
-				Logf("Missed readback of luminosity histogram");
+				Errorf("Missed readback of luminosity histogram");
 				return 0.0f;
 			}
 
@@ -105,14 +106,7 @@ namespace sp
 			}
 
 			readBackBuf.Unmap();
-
-			accum /= std::max(1e-5, totalWeight);
-			accum = std::min(accum, (double) CVarEyeAdaptationMaxLuminance.Get());
-			accum = std::max(accum, (double) CVarEyeAdaptationMinLuminance.Get());
-
-			double ev100 = std::log2(accum * 100.0 / 12.5 / Exposure);
-			ev100 -= CVarExposureComp.Get();
-			return 1.0 / (1.2 * std::pow(2.0, ev100));
+			return accum / std::max(1e-5, totalWeight);
 		}
 
 		double LuminanceFromBin(double bin)
@@ -358,14 +352,7 @@ namespace sp
 		shader->SetViewParams(context->view);
 		shader->SetMode(CVarVoxelLightingMode.Get());
 		shader->SetVoxelInfo(context->renderer->voxelInfo, diffuseDownsample);
-
-		float autoExposure = r->GlobalShaders->Get<LumiHistogramCS>()->Exposure;
-		if (CVarExposure.Get() > 0.0f)
-			shader->SetExposure(CVarExposure.Get());
-		else if (autoExposure > 0.0f)
-			shader->SetExposure(autoExposure);
-		else
-			shader->SetExposure(1.0f);
+		shader->SetExposure(r->GlobalShaders->Get<LumiHistogramCS>()->Exposure);
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingFS>(r->GlobalShaders);
@@ -389,23 +376,33 @@ namespace sp
 		shader->SetViewParams(context->view);
 		shader->SetVoxelInfo(context->renderer->voxelInfo);
 
+		if (CVarExposure.Get() > 0.0f)
 		{
-			float newExposure = lumishader->ComputeExposure();
-			if (newExposure > 0)
+			lumishader->Exposure = CVarExposure.Get();
+		}
+		else
+		{
+			double luminance = lumishader->ComputeScaledLuminance();
+			if (luminance > 0)
 			{
+				luminance = std::min(luminance, (double) CVarEyeAdaptationMaxLuminance.Get());
+				luminance = std::max(luminance, (double) CVarEyeAdaptationMinLuminance.Get());
+				luminance /= lumishader->Exposure;
+
+				double autoKeyComp = 1.03 - 2.0 / (std::log10(luminance * 1000.0 + 1.0) + 2.0);
+				autoKeyComp = CVarEyeAdaptationKeyComp.Get() * autoKeyComp + 1.0 - CVarEyeAdaptationKeyComp.Get();
+
+				double ev100 = std::log2(luminance * 100.0 / 12.5) - CVarExposureComp.Get();
+				double newExposure = autoKeyComp / (1.2 * std::pow(2.0, ev100));
+
 				float alpha = newExposure < lumishader->Exposure ? CVarEyeAdaptationUpRate.Get() : CVarEyeAdaptationDownRate.Get();
 				alpha = std::max(std::min(alpha, 0.9999f), 0.0001f);
 				lumishader->Exposure = lumishader->Exposure * (1.0f - alpha) + newExposure * alpha;
 			}
 		}
 
-		float autoExposure = lumishader->Exposure;
-		if (CVarExposure.Get() > 0.0f)
-			shader->SetExposure(CVarExposure.Get());
-		else if (autoExposure > 0.0f)
-			shader->SetExposure(autoExposure);
-		else
-			shader->SetExposure(1.0f);
+		lumishader->Exposure = std::max(lumishader->Exposure, 1e-5f);
+		shader->SetExposure(lumishader->Exposure);
 
 		glViewport(0, 0, outputs[0].TargetDesc.extent[0], outputs[0].TargetDesc.extent[1]);
 		r->SetRenderTarget(&dest, nullptr);
