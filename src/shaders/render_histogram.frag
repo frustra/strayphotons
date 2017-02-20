@@ -11,11 +11,11 @@ layout (location = 0) out vec4 outFragColor;
 
 void main() {
 	ivec2 size = textureSize(luminanceTex, 0);
-	outFragColor = saturate(texture(luminanceTex, inTexCoord));
+	vec3 c = saturate(texture(luminanceTex, inTexCoord)).rgb;
 
 	int bin = int(floor(inTexCoord.x * HistogramBins));
 	uint count = imageLoad(histogram, ivec2(bin, 0)).r;
-	float ratio = count * (1.0 / histSampleScale) / float(size.x * size.y);
+	float ratio = count * (histDownsample * histDownsample / histSampleScale) / float(size.x * size.y);
 
-	outFragColor.rgb = step(inTexCoord.y, ratio) * (vec3(1, 0, 0) + outFragColor.rgb * 0.5) + step(ratio, inTexCoord.y) * outFragColor.rgb;
+	outFragColor.rgb = step(inTexCoord.y, ratio) * (vec3(1, 0, 0) + c * 0.5) + step(ratio, inTexCoord.y) * c;
 }

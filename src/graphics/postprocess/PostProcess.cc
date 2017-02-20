@@ -220,7 +220,10 @@ namespace sp
 				auto inputOutput = input->GetOutput();
 
 				if (inputOutput)
+				{
+					Assert(!!inputOutput->TargetRef, "post processing input is destroyed");
 					inputOutput->TargetRef->GetTexture().Bind(id);
+				}
 			}
 
 			//Debugf("Process %s", pass->Name());

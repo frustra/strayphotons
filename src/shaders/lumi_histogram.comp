@@ -12,7 +12,7 @@ shared uint Histogram[HistogramBins];
 
 void main() {
 	vec2 ts = textureSize(lumiTex, 0);
-	vec2 texCoord = (vec2(gl_GlobalInvocationID.xy) + 0.5) / ts;
+	vec2 texCoord = (vec2(gl_GlobalInvocationID.xy) + 0.5) * histDownsample / ts;
 
 	if (gl_LocalInvocationIndex == 0) {
 		// Initialize shared mem in first thread.

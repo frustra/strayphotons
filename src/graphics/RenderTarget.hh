@@ -86,6 +86,7 @@ namespace sp
 
 		Texture &GetTexture()
 		{
+			Assert(id >= 0, "render target destroyed");
 			return tex;
 		}
 

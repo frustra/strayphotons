@@ -70,6 +70,8 @@ namespace sp
 	void LumiHistogram::Process(const PostProcessingContext *context)
 	{
 		const int wgsize = 16;
+		const int downsample = 2; // Calculate histograms with N times fewer workgroups.
+
 		auto r = context->renderer;
 		auto histTex = r->GlobalShaders->Get<LumiHistogramCS>()->GetTarget(r);
 
@@ -80,23 +82,21 @@ namespace sp
 		r->ShaderControl->BindPipeline<LumiHistogramCS>(r->GlobalShaders);
 		histTex.BindImage(0, GL_READ_WRITE);
 
-		auto extents = GetInput(0)->GetOutput()->TargetDesc.extent;
+		auto extents = GetInput(0)->GetOutput()->TargetDesc.extent / downsample;
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		glDispatchCompute((extents.x + wgsize - 1) / wgsize, (extents.y + wgsize - 1) / wgsize, 1);
 		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
+		if (CVarDrawHistogram.Get())
 		{
-			// TODO(jli): don't render copy if not drawing histogram
 			auto dest = outputs[0].AllocateTarget(context)->GetTexture();
-
 			r->SetRenderTarget(&dest, nullptr);
-
-			if (CVarDrawHistogram.Get())
-				r->ShaderControl->BindPipeline<BasicPostVS, RenderHistogramFS>(r->GlobalShaders);
-			else
-				r->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(r->GlobalShaders);
-
+			r->ShaderControl->BindPipeline<BasicPostVS, RenderHistogramFS>(r->GlobalShaders);
 			DrawScreenCover();
+		}
+		else
+		{
+			SetOutputTarget(0, GetInput(0)->GetOutput()->TargetRef);
 		}
 	}
 }
