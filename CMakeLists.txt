@@ -2,19 +2,41 @@ project(sp)
 set(CMAKE_MIN_VERSION 3.1)
 cmake_minimum_required(VERSION ${CMAKE_MIN_VERSION} FATAL_ERROR)
 
+
 set(SP_VERSION_MAJOR "0")
 set(SP_VERSION_MINOR "1")
 set(SP_VERSION "${SP_VERSION_MAJOR}.${SP_VERSION_MINOR}")
+
+
+if (CMAKE_BUILD_TYPE MATCHES Release)
+	message(STATUS "sp target is Release")
+elseif (CMAKE_BUILD_TYPE MATCHES Debug)
+	message(STATUS "sp target is Debug")
+	set(SP_DEBUG 1)
+else()
+	message(STATUS "sp target is default, using Debug")
+	set(CMAKE_BUILD_TYPE Debug)
+	set(SP_DEBUG 1)
+endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 if (UNIX)
 	add_definitions(-Wall)
-	add_definitions(-D_DEBUG)
+
+	if (SP_DEBUG)
+		add_definitions(-D_DEBUG)
+	endif()
 endif()
 
 if (MSVC)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS /wd4800 /MP)
+
+	if (SP_DEBUG)
+		add_definitions(/MDd)
+	else()
+		add_definitions(/MD)
+	endif()
 endif()
 
 set(PROJECT_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
@@ -34,15 +56,6 @@ else()
 	message(FATAL_ERROR "Unsupported target platform")
 endif()
 
-if (CMAKE_BUILD_TYPE MATCHES Release)
-	message(STATUS "sp target is Release")
-elseif (CMAKE_BUILD_TYPE MATCHES Debug)
-	message(STATUS "sp target is Debug")
-else()
-	message(STATUS "sp target is default, using Debug")
-	set(CMAKE_BUILD_TYPE Debug)
-endif()
-
 set(EXT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext)
 
 find_package(OpenGL REQUIRED)
@@ -54,8 +67,6 @@ add_subdirectory(${EXT_PATH}/glfw)
 
 set(GOOGLETEST_DIR ${EXT_PATH}/googletest/googletest)
 add_subdirectory(${EXT_PATH}/googletest)
-
-add_subdirectory(${EXT_PATH}/boost)
 
 add_subdirectory(${EXT_PATH}/v-hacd)
 
@@ -113,7 +124,11 @@ add_library(${PROJECT_LIB} ${all_sources} ${all_headers} ${all_shaders})
 
 
 # load PhysX
-set (PHYSX_ENV DEBUG)
+if (SP_DEBUG)
+	set (PHYSX_ENV DEBUG)
+else()
+	set (PHYSX_ENV "")
+endif()
 
 if (WIN32)
 	set (PHYSX_ARCH _x86)
@@ -213,9 +228,15 @@ set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJE
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
 
+if (SP_DEBUG)
+	set(BOOST_VARIANT _DEBUG)
+else()
+	set(BOOST_VARIANT "")
+endif()
+
 set(BOOST_LIBS
-	boost_system
-	boost_filesystem
+	libboost_filesystem${BOOST_VARIANT}
+	libboost_system${BOOST_VARIANT}
 )
 
 target_link_libraries(${PROJECT_LIB}
@@ -223,15 +244,6 @@ target_link_libraries(${PROJECT_LIB}
 	${GLFW_LIBRARIES}
 	${BOOST_LIBS}
 )
-
-# hacky way to ensure that the boost libs are built.
-# Simply depending on their libs isn't enough since they are built
-# outside of cmake but need to be triggered by cmake.
-# I can't figure out how to get a CMake "imported" library
-# to trigger a custom command or target (see boost CMakelists.txt)
-#foreach (boost_lib ${BOOST_LIBS})
-#	add_dependencies(${PROJECT_LIB} ${boost_lib}_target)
-#endforeach()
 
 target_link_libraries(${PROJECT_EXE}
 	${PROJECT_LIB}
