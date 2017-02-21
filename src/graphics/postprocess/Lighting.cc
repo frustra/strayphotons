@@ -131,7 +131,6 @@ namespace sp
 	private:
 		shared_ptr<RenderTarget> target;
 		sp::Buffer readBackBuf;
-		float currExposure = 1.0f;
 	};
 
 	IMPLEMENT_SHADER_TYPE(LumiHistogramCS, "lumi_histogram.comp", Compute);

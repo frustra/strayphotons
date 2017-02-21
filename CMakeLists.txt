@@ -201,9 +201,29 @@ foreach (FMOD_LIB ${FMOD_LOADS})
 	LIST(APPEND FMOD_LIBRARIES ${FOUND_LIB_${FMOD_LIB}})
 endforeach (FMOD_LIB)
 
+if (SP_DEBUG)
+	set(BOOST_VARIANT _DEBUG)
+else()
+	set(BOOST_VARIANT "")
+endif()
+
+set(BOOST_LIBS
+	boost_filesystem${BOOST_VARIANT}
+	boost_system${BOOST_VARIANT}
+)
+
+foreach (BOOST_LIB ${BOOST_LIBS})
+	message(STATUS ${BOOST_LIB})
+	find_library(FOUND_LIB_${BOOST_LIB}
+		NAMES ${BOOST_LIB}
+		PATHS ${CMAKE_CURRENT_SOURCE_DIR}/build
+	)
+	LIST(APPEND BOOST_LIBRARIES ${FOUND_LIB_${BOOST_LIB}})
+endforeach (BOOST_LIB)
+
 add_executable(${PROJECT_EXE} ${PROJECT_MAIN_CC})
 target_link_libraries(${PROJECT_EXE} ${PROJECT_LIB})
-target_link_libraries(${PROJECT_LIB} ${PHYSX_LIBRARIES} ${FMOD_LIBRARIES})
+target_link_libraries(${PROJECT_LIB} ${PHYSX_LIBRARIES} ${FMOD_LIBRARIES} ${BOOST_LIBRARIES})
 
 # C++11
 target_compile_features(${PROJECT_LIB} PRIVATE cxx_range_for)
@@ -228,21 +248,9 @@ set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJE
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
 
-if (SP_DEBUG)
-	set(BOOST_VARIANT _DEBUG)
-else()
-	set(BOOST_VARIANT "")
-endif()
-
-set(BOOST_LIBS
-	libboost_filesystem${BOOST_VARIANT}
-	libboost_system${BOOST_VARIANT}
-)
-
 target_link_libraries(${PROJECT_LIB}
 	glfw
 	${GLFW_LIBRARIES}
-	${BOOST_LIBS}
 )
 
 target_link_libraries(${PROJECT_EXE}

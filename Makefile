@@ -66,12 +66,12 @@ boost-debug-windows: build ext/boost/b2.exe boost-compile-libs-debug
 	cp ext/boost/bin.v2/libs/system/build/msvc-14.0/debug/link-static/threading-multi/libboost_system-*.lib build/
 
 boost-release-unix: build ext/boost/b2 boost-compile-libs-release
-	cp ext/boost/bin.v2/libs/filesystem/build/*/release/link-static/threading-multi/libboost_filesystem.a build/libboost_filesystem.a
-	cp ext/boost/bin.v2/libs/system/build/*/release/link-static/threading-multi/libboost_system.a build/libboost_system.a
+	cp ext/boost/bin.v2/libs/filesystem/build/*/release/link-static/libboost_filesystem.a build/libboost_filesystem.a
+	cp ext/boost/bin.v2/libs/system/build/*/release/link-static/libboost_system.a build/libboost_system.a
 
 boost-debug-unix: build ext/boost/b2 boost-compile-libs-debug
-	cp ext/boost/bin.v2/libs/filesystem/build/*/debug/link-static/threading-multi/libboost_filesystem.a build/libboost_filesystem_DEBUG.a
-	cp ext/boost/bin.v2/libs/system/build/*/debug/link-static/threading-multi/libboost_system.a build/libboost_system_DEBUG.a
+	cp ext/boost/bin.v2/libs/filesystem/build/*/debug/link-static/libboost_filesystem.a build/libboost_filesystem_DEBUG.a
+	cp ext/boost/bin.v2/libs/system/build/*/debug/link-static/libboost_system.a build/libboost_system_DEBUG.a
 
 ext/boost/b2.exe:
 	cd ext/boost && cmd //c bootstrap.bat
