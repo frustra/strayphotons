@@ -26,6 +26,10 @@ namespace sp
 			Assert(desc.extent.z == 1, "only 2D textures can be multisampled");
 			ptr->tex.Create(GL_TEXTURE_2D_MULTISAMPLE);
 		}
+		else if (desc.textureArray)
+		{
+			ptr->tex.Create(GL_TEXTURE_2D_ARRAY);
+		}
 		else
 		{
 			ptr->tex.Create(desc.extent.z != 1 ? GL_TEXTURE_3D : GL_TEXTURE_2D);

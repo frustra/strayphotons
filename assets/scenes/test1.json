@@ -81,7 +81,8 @@
 			"renderable": "mirror",
 			"transform": {
 				"relativeTo": "duck",
-				"translate": [0, 1, -1]
+				"translate": [0, 1, 1],
+				"rotate": [-180, 0, 1, 0]
 			}
 		},
 		{
@@ -117,7 +118,7 @@
 		{
 			"renderable": "dodecahedron",
 			"transform": {
-				"translate": [1, 10, -0.5]
+				"translate": [3, 10, -0.5]
 			},
 			"physics": {
 				"model": "dodecahedron",
@@ -147,7 +148,7 @@
 			},
 			"view": {
 				"extents": [2048, 2048],
-				"clip": [0.1, 256]
+				"clip": [5, 50]
 			},
 			"transform": {
 				"translate": [7, 20, 7],

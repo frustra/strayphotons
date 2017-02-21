@@ -6,33 +6,33 @@
 const float shadowBiasDistance = 0.04;
 
 float SimpleOcclusion(int i, vec3 shadowMapPos) {
-	vec3 texCoord = ViewPosToScreenPos(shadowMapPos, lightProj[i]);
+	vec3 texCoord = ViewPosToScreenPos(shadowMapPos, lights[i].proj);
 
-	float shadowBias = shadowBiasDistance / (lightClip[i].y - lightClip[i].x);
+	float shadowBias = shadowBiasDistance / (lights[i].clip.y - lights[i].clip.x);
 
-	float testDepth = LinearDepth(shadowMapPos, lightClip[i]);
-	float sampledDepth = texture(shadowMap, texCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy).r;
+	float testDepth = LinearDepth(shadowMapPos, lights[i].clip);
+	float sampledDepth = texture(shadowMap, texCoord.xy * lights[i].mapOffset.zw + lights[i].mapOffset.xy).r;
 
 	return step(0, -shadowMapPos.z) * smoothstep(testDepth - shadowBias, testDepth - shadowBias * 0.2, sampledDepth);
 }
 
 float SampleOcclusion(int i, vec3 shadowMapCoord, vec3 shadowMapPos, vec3 surfaceNormal, vec2 offset) {
-	vec2 mapSize = textureSize(shadowMap, 0).xy * lightMapOffset[i].zw;
+	vec2 mapSize = textureSize(shadowMap, 0).xy * lights[i].mapOffset.zw;
 	vec2 texelSize = 1.0 / mapSize;
 	vec3 texCoord = shadowMapCoord + vec3(offset * texelSize.xy, 0);
 
-	vec2 halfTanFovXY = vec2(lightInvProj[i][0][0], lightInvProj[i][1][1]);
+	vec2 halfTanFovXY = vec2(lights[i].invProj[0][0], lights[i].invProj[1][1]);
 	vec3 rayDir = normalize(vec3(halfTanFovXY * (texCoord.xy * 2.0 - 1.0), -1.0));
 
 	float t = dot(surfaceNormal, shadowMapPos) / dot(surfaceNormal, rayDir);
 	vec3 hitPos = rayDir * t;
 
-	float shadowBias = shadowBiasDistance / (lightClip[i].y - lightClip[i].x);
+	float shadowBias = shadowBiasDistance / (lights[i].clip.y - lights[i].clip.x);
 
-	float testDepth = LinearDepth(hitPos, lightClip[i]);
-	testDepth = max(testDepth, LinearDepth(shadowMapPos, lightClip[i]) - shadowBias * 2.0);
+	float testDepth = LinearDepth(hitPos, lights[i].clip);
+	testDepth = max(testDepth, LinearDepth(shadowMapPos, lights[i].clip) - shadowBias * 2.0);
 
-	vec2 coord = texCoord.xy * lightMapOffset[i].zw + lightMapOffset[i].xy;
+	vec2 coord = texCoord.xy * lights[i].mapOffset.zw + lights[i].mapOffset.xy;
 	vec3 sampledDepth = vec3(texture(shadowMap, coord).r, 0, 0);
 	vec4 values = textureGather(shadowMap, coord, 0);
 	sampledDepth.y = min(values.x, min(values.y, min(values.z, values.w)));
@@ -56,7 +56,7 @@ const float[5][5] diskKernel = float[][](
 const int kernelRadius = 2;
 
 float DirectOcclusion(int i, vec3 shadowMapPos, vec3 surfaceNormal, mat2 rotation0) {
-	vec3 shadowMapCoord = ViewPosToScreenPos(shadowMapPos, lightProj[i]);
+	vec3 shadowMapCoord = ViewPosToScreenPos(shadowMapPos, lights[i].proj);
 
 	// return SampleOcclusion(i, shadowMapCoord, shadowMapPos, surfaceNormal, vec2(0));
 
@@ -130,22 +130,22 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 #endif
 
 	for (int i = 0; i < lightCount; i++) {
-		vec3 sampleToLightRay = lightPosition[i] - worldPosition;
+		vec3 sampleToLightRay = lights[i].position - worldPosition;
 		vec3 incidence = normalize(sampleToLightRay);
-		vec3 currLightDir = normalize(lightDirection[i]);
+		vec3 currLightDir = normalize(lights[i].direction);
 		float falloff = 1;
 
-		float illuminance = lightIlluminance[i];
-		vec3 currLightColor = lightTint[i];
+		float illuminance = lights[i].illuminance;
+		vec3 currLightColor = lights[i].tint;
 
 		if (illuminance == 0) {
 			// Determine physically-based distance attenuation.
-			float lightDistance = length(abs(lightPosition[i] - worldPosition));
+			float lightDistance = length(abs(lights[i].position - worldPosition));
 			float lightDistanceSq = lightDistance * lightDistance;
 			falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
 
 			// Calculate illuminance from intensity with E = L * n dot l.
-			illuminance = max(dot(normal, incidence), 0) * lightIntensity[i] * falloff;
+			illuminance = max(dot(normal, incidence), 0) * lights[i].intensity * falloff;
 		} else {
 			// Given value is the orthogonal case, need to project to l.
 			illuminance *= max(dot(normal, incidence), 0);
@@ -162,13 +162,13 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 		vec3 luminance = brdf * illuminance * currLightColor;
 
 		// Spotlight attenuation.
-		float cosSpotAngle = lightSpotAngleCos[i];
+		float cosSpotAngle = lights[i].spotAngleCos;
 		float spotTerm = dot(incidence, -currLightDir);
 		float spotFalloff = smoothstep(cosSpotAngle, 1, spotTerm) * step(-1, cosSpotAngle) + step(cosSpotAngle, -1);
 
 		// Calculate direct occlusion.
-		vec3 shadowMapPos = (lightView[i] * vec4(worldPosition, 1.0)).xyz; // Position of light view-space.
-		vec3 surfaceNormal = normalize(mat3(lightView[i]) * flatNormal);
+		vec3 shadowMapPos = (lights[i].view * vec4(worldPosition, 1.0)).xyz; // Position of light view-space.
+		vec3 surfaceNormal = normalize(mat3(lights[i].view) * flatNormal);
 		float occlusion = 1;
 
 #ifdef USE_SHADOW_MAPPING

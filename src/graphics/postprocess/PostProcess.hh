@@ -130,7 +130,7 @@ namespace sp
 	{
 		RenderTarget::Ref gBuffer0, gBuffer1, gBuffer2;
 		RenderTarget::Ref depth;
-		RenderTarget::Ref shadowMap;
+		RenderTarget::Ref shadowMap, mirrorShadowMap;
 		VoxelData voxelData;
 	};
 
@@ -164,6 +164,7 @@ namespace sp
 		ProcessPassOutputRef GBuffer2;
 		ProcessPassOutputRef Depth;
 		ProcessPassOutputRef ShadowMap;
+		ProcessPassOutputRef MirrorShadowMap;
 		ProcessPassOutputRef VoxelColor;
 		ProcessPassOutputRef VoxelNormal;
 		ProcessPassOutputRef VoxelRadiance;

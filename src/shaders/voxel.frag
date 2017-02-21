@@ -5,6 +5,8 @@
 ##import lib/util
 ##import voxel_shared
 
+##import lib/types_common
+
 layout (binding = 0) uniform sampler2D baseColorTex;
 layout (binding = 1) uniform sampler2D roughnessTex;
 // binding 2 = metallicTex
@@ -21,7 +23,11 @@ layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inTexCoord;
 layout (location = 2) in flat int inDirection;
 
-##import lib/light_inputs
+uniform int lightCount = 0;
+
+layout(binding = 0, std140) uniform GLLightData {
+	Light lights[MAX_LIGHTS];
+};
 
 uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);

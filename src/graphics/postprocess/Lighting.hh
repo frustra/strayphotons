@@ -38,7 +38,7 @@ namespace sp
 		}
 	};
 
-	class VoxelLighting : public PostProcessPass<9, 1>
+	class VoxelLighting : public PostProcessPass<10, 1>
 	{
 	public:
 		void Process(const PostProcessingContext *context);

@@ -6,6 +6,12 @@
 #include "ecs/components/VoxelInfo.hh"
 
 #include <glm/glm.hpp>
+#include <functional>
+
+namespace ecs
+{
+	class Entity;
+}
 
 namespace sp
 {
@@ -37,7 +43,7 @@ namespace sp
 		void BeginFrame(ecs::View &fbView, int fullscreen);
 		void RenderPass(ecs::View &view);
 		void PrepareForView(ecs::View &view);
-		void ForwardPass(ecs::View &view, SceneShader *shader);
+		void ForwardPass(ecs::View &view, SceneShader *shader, std::function<void(ecs::Entity &)> preDraw = [] (ecs::Entity &) {});
 		void EndFrame();
 
 		void SetRenderTarget(const Texture *attachment0, const Texture *depth);
@@ -50,8 +56,8 @@ namespace sp
 		ecs::VoxelInfo voxelInfo;
 	private:
 		shared_ptr<RenderTarget> shadowMap;
-		shared_ptr<RenderTarget> mirrorData;
-		Buffer computeIndirectBuffer;
+		shared_ptr<RenderTarget> mirrorShadowMap;
+		Buffer computeIndirectBuffer, mirrorVisData;
 		VoxelData voxelData;
 	};
 }

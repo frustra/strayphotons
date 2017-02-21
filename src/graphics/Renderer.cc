@@ -6,6 +6,7 @@
 #include "graphics/GenericShaders.hh"
 #include "graphics/SceneShaders.hh"
 #include "graphics/GPUTimer.hh"
+#include "graphics/GPUTypes.hh"
 #include "graphics/postprocess/PostProcess.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
@@ -150,7 +151,7 @@ namespace sp
 		ShaderManager::SetDefine("VoxelSuperSampleScale", std::to_string(voxelSuperSampleScale));
 		ShaderControl->CompileAll(GlobalShaders);
 
-		int mirrorId = 0;
+		int mirrorCount = 0;
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable>())
 		{
 			auto comp = ent.Get<ecs::Renderable>();
@@ -159,7 +160,7 @@ namespace sp
 			if (ent.Has<ecs::Mirror>())
 			{
 				auto mirror = ent.Get<ecs::Mirror>();
-				mirror->mirrorId = ++mirrorId;
+				mirror->mirrorId = mirrorCount++;
 			}
 		}
 
@@ -192,6 +193,8 @@ namespace sp
 		return view;
 	}
 
+	const int MirrorShadowMapResolution = 1024;
+
 	void Renderer::RenderShadowMaps()
 	{
 		RenderPhase phase("ShadowMaps", Timer);
@@ -206,7 +209,7 @@ namespace sp
 			{
 				auto view = updateLightCaches(entity, light);
 				light->mapOffset = glm::vec4(renderTargetSize.x, 0, view->extents.x, view->extents.y);
-				light->lightId = ++lightCount;
+				light->lightId = lightCount++;
 				view->offset = glm::ivec2(light->mapOffset);
 				view->clearMode = 0;
 
@@ -224,14 +227,18 @@ namespace sp
 			shadowMap = RTPool->Get(shadowDesc);
 		}
 
-		RenderTargetDesc mirrorDesc(PF_R16UI, renderTargetSize);
-		if (!mirrorData || mirrorData->GetDesc() != mirrorDesc)
+		if (!mirrorVisData)
 		{
-			mirrorData = RTPool->Get(mirrorDesc);
+			mirrorVisData.Create()
+			.Data(sizeof(GLint) + sizeof(GLuint) * MAX_LIGHTS + (sizeof(GLuint) + sizeof(glm::mat4) * 2) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
 		}
 
+		// TODO(xthexder): Try 16 bit depth
 		auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, renderTargetSize));
 		SetRenderTarget(&shadowMap->GetTexture(), &depthTarget->GetTexture());
+
+		mirrorVisData.Clear(PF_R32UI, 0);
+		mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 
 		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
 		glDisable(GL_SCISSOR_TEST);
@@ -255,8 +262,81 @@ namespace sp
 				auto shadowMapFS = GlobalShaders->Get<ShadowMapFS>();
 				shadowMapFS->SetClip(view->clip);
 				shadowMapFS->SetLight(light->lightId);
-				ForwardPass(*view, shadowMapVS);
+				ForwardPass(*view, shadowMapVS, [&] (ecs::Entity &ent)
+				{
+					if (ent.Has<ecs::Mirror>())
+					{
+						auto mirror = ent.Get<ecs::Mirror>();
+						shadowMapFS->SetMirrorId(mirror->mirrorId);
+					}
+					else
+					{
+						shadowMapFS->SetMirrorId(-1);
+					}
+				});
+				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 			}
+		}
+
+		{
+			RenderPhase phase("MatrixGen", Timer);
+
+			auto mirrorMapCS = GlobalShaders->Get<MirrorMapCS>();
+
+			GLLightData lightData[MAX_LIGHTS];
+			GLMirrorData mirrorData[MAX_LIGHTS];
+			int lightCount = FillLightData(&lightData[0], game->entityManager);
+			int mirrorCount = FillMirrorData(&mirrorData[0], game->entityManager);
+			mirrorMapCS->SetLightData(lightCount, &lightData[0]);
+			mirrorMapCS->SetMirrorData(mirrorCount, &mirrorData[0]);
+
+			ShaderControl->BindPipeline<MirrorMapCS>(GlobalShaders);
+			glDispatchCompute(1, 1, 1);
+			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		}
+
+		{
+			RenderPhase phase("MirrorMaps", Timer);
+
+			// TODO(xthexder): Set Z size properly
+			auto mirrorMapResolution = glm::ivec3(MirrorShadowMapResolution, MirrorShadowMapResolution, 8);
+			RenderTargetDesc mirrorMapDesc(PF_R32F, mirrorMapResolution);
+			mirrorMapDesc.textureArray = true;
+			if (!mirrorShadowMap || mirrorShadowMap->GetDesc() != mirrorMapDesc)
+			{
+				mirrorShadowMap = RTPool->Get(mirrorMapDesc);
+			}
+
+			RenderTargetDesc depthDesc(PF_DEPTH32F, mirrorMapResolution);
+			depthDesc.textureArray = true;
+			auto depthTarget = RTPool->Get(depthDesc);
+			SetRenderTarget(&mirrorShadowMap->GetTexture(), &depthTarget->GetTexture());
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			ecs::View basicView;
+			basicView.extents = glm::ivec2(MirrorShadowMapResolution);
+
+			ShaderControl->BindPipeline<MirrorMapVS, MirrorMapGS, ShadowMapFS>(GlobalShaders);
+
+			auto shadowMapFS = GlobalShaders->Get<ShadowMapFS>();
+			for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
+			{
+				auto light = entity.Get<ecs::Light>();
+				if (entity.Has<ecs::View>())
+				{
+					ecs::Handle<ecs::View> view = entity.Get<ecs::View>();
+					basicView = *view;
+					shadowMapFS->SetClip(view->clip);
+					shadowMapFS->SetLight(light->lightId);
+					break;
+				}
+			}
+
+			basicView.offset = glm::ivec2(0);
+			basicView.extents = glm::ivec2(MirrorShadowMapResolution);
+
+			auto mirrorMapVS = GlobalShaders->Get<MirrorMapVS>();
+			ForwardPass(basicView, mirrorMapVS);
 		}
 	}
 
@@ -327,12 +407,10 @@ namespace sp
 		ortho.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * voxelInfo.voxelSize)));
 		ortho.viewMat = glm::translate(ortho.viewMat, -voxelInfo.voxelGridCenter);
 		ortho.projMat = glm::mat4();
-		ortho.offset = glm::ivec2(0);
 		ortho.extents = glm::ivec2(VoxelGridSize * voxelInfo.superSampleScale);
 		ortho.clearMode = 0;
 
 		auto voxelVS = GlobalShaders->Get<VoxelRasterVS>();
-		glViewport(0, 0, VoxelGridSize, VoxelGridSize);
 
 		GLuint listData[] = {0, 0, 1, 1};
 		computeIndirectBuffer.Clear(PF_RGBA32UI, listData);
@@ -343,8 +421,10 @@ namespace sp
 			voxelData.fragmentList->GetTexture().BindImage(0, GL_WRITE_ONLY, 0);
 			voxelData.packedData->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
 
-			auto lights = game->entityManager.EntitiesWith<ecs::Light>();
-			GlobalShaders->Get<VoxelRasterFS>()->SetLights(game->entityManager, lights);
+			GLLightData lightData[MAX_LIGHTS];
+			int lightCount = FillLightData(&lightData[0], game->entityManager);
+
+			GlobalShaders->Get<VoxelRasterFS>()->SetLightData(lightCount, &lightData[0]);
 			GlobalShaders->Get<VoxelRasterFS>()->SetVoxelInfo(voxelInfo);
 			shadowMap->GetTexture().Bind(4);
 
@@ -427,6 +507,7 @@ namespace sp
 		targets.gBuffer2 = RTPool->Get({ PF_RGBA16F, view.extents });
 		targets.depth = RTPool->Get({ PF_DEPTH32F, view.extents });
 		targets.shadowMap = shadowMap;
+		targets.mirrorShadowMap = mirrorShadowMap;
 		targets.voxelData = voxelData;
 
 		Texture attachments[] =
@@ -474,7 +555,7 @@ namespace sp
 		}
 	}
 
-	void Renderer::ForwardPass(ecs::View &view, SceneShader *shader)
+	void Renderer::ForwardPass(ecs::View &view, SceneShader *shader, std::function<void(ecs::Entity &)> preDraw)
 	{
 		RenderPhase phase("ForwardPass", Timer);
 		PrepareForView(view);
@@ -488,16 +569,7 @@ namespace sp
 			auto modelMat = ent.Get<ecs::Transform>()->GetModelTransform(*ent.GetManager());
 			shader->SetParams(view, modelMat);
 
-			if (ent.Has<ecs::Mirror>())
-			{
-				auto mirror = ent.Get<ecs::Mirror>();
-				shader->SetMirrorId(mirror->mirrorId);
-			}
-			else
-			{
-				shader->SetMirrorId(0);
-			}
-
+			preDraw(ent);
 			DrawRenderable(comp);
 		}
 

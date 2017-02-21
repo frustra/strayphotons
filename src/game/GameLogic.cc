@@ -37,7 +37,7 @@ namespace sp
 		// Create flashlight entity
 		flashlight = game->entityManager.NewEntity();
 		auto transform = flashlight.Assign<ecs::Transform>();
-		transform->Translate(glm::vec3(0, -0.3, 0));
+		// transform->Translate(glm::vec3(0, -0.3, 0));
 		transform->SetRelativeTo(player);
 		auto light = flashlight.Assign<ecs::Light>();
 		light->tint = glm::vec3(1.0);
@@ -80,7 +80,7 @@ namespace sp
 				else
 				{
 					transform->SetTransform(glm::mat4());
-					transform->Translate(glm::vec3(0, -0.3, 0));
+					// transform->Translate(glm::vec3(0, -0.3, 0));
 					transform->SetRelativeTo(player);
 				}
 			}

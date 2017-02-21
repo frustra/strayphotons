@@ -1,6 +1,7 @@
 #pragma once
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
+#include "graphics/GPUTypes.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/Transform.hh"
@@ -13,13 +14,12 @@ namespace sp
 	{
 	public:
 		void SetParams(const ecs::View &view, glm::mat4 modelMat);
-		void SetMirrorId(int id);
 
 	protected:
 		SceneShader(shared_ptr<ShaderCompileOutput> compileOutput);
 
 	private:
-		Uniform modelMat, viewMat, projMat, mirrorId;
+		Uniform modelMat, viewMat, projMat;
 	};
 
 	class SceneVS : public SceneShader
@@ -54,9 +54,36 @@ namespace sp
 
 		void SetClip(glm::vec2 newClip);
 		void SetLight(int lightId);
+		void SetMirrorId(int id);
 
 	private:
-		Uniform clip, lightId;
+		Uniform clip, lightId, mirrorId;
+	};
+
+	class MirrorMapCS : public Shader
+	{
+		SHADER_TYPE(MirrorMapCS)
+
+		MirrorMapCS(shared_ptr<ShaderCompileOutput> compileOutput);
+
+		void SetLightData(int count, GLLightData *data);
+		void SetMirrorData(int count, GLMirrorData *data);
+
+	private:
+		Buffer lightData, mirrorData;
+		Uniform lightCount, mirrorCount;
+	};
+
+	class MirrorMapVS : public SceneShader
+	{
+		SHADER_TYPE(MirrorMapVS)
+		using SceneShader::SceneShader;
+	};
+
+	class MirrorMapGS : public Shader
+	{
+		SHADER_TYPE(MirrorMapGS)
+		using Shader::Shader;
 	};
 
 	class VoxelRasterVS : public SceneShader
@@ -75,16 +102,14 @@ namespace sp
 	{
 		SHADER_TYPE(VoxelRasterFS)
 
-		static const int maxLights = 16;
-
 		VoxelRasterFS(shared_ptr<ShaderCompileOutput> compileOutput);
 
-		void SetLights(ecs::EntityManager &manager, ecs::EntityManager::EntityCollection &lightCollection);
+		void SetLightData(int count, GLLightData *data);
 		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo);
 
 	private:
-		Uniform lightCount, lightPosition, lightTint, lightDirection, lightSpotAngleCos;
-		Uniform lightProj, lightInvProj, lightView, lightClip, lightMapOffset, lightIntensity, lightIlluminance;
+		Uniform lightCount;
+		Buffer lightData;
 		Uniform exposure, targetSize, viewMat, invViewMat, invProjMat;
 		Uniform voxelSize, voxelGridCenter;
 	};

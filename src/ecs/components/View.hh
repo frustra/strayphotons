@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include "graphics/Graphics.hh"
 
 namespace ecs
 {

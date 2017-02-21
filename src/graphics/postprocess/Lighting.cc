@@ -6,6 +6,7 @@
 #include "graphics/GenericShaders.hh"
 #include "graphics/Util.hh"
 #include "graphics/Buffer.hh"
+#include "graphics/GPUTypes.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/Transform.hh"
 
@@ -186,22 +187,10 @@ namespace sp
 	{
 		SHADER_TYPE(VoxelLightingFS)
 
-		static const int maxLights = 16;
-
 		VoxelLightingFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			Bind(lightCount, "lightCount");
-			Bind(lightPosition, "lightPosition");
-			Bind(lightTint, "lightTint");
-			Bind(lightDirection, "lightDirection");
-			Bind(lightSpotAngleCos, "lightSpotAngleCos");
-			Bind(lightProj, "lightProj");
-			Bind(lightInvProj, "lightInvProj");
-			Bind(lightView, "lightView");
-			Bind(lightClip, "lightClip");
-			Bind(lightMapOffset, "lightMapOffset");
-			Bind(lightIntensity, "lightIntensity");
-			Bind(lightIlluminance, "lightIlluminance");
+			BindBuffer(lightData, 0);
 
 			Bind(exposure, "exposure");
 			Bind(targetSize, "targetSize");
@@ -215,52 +204,10 @@ namespace sp
 			Bind(diffuseDownsample, "diffuseDownsample");
 		}
 
-		void SetLights(ecs::EntityManager &manager, ecs::EntityManager::EntityCollection &lightCollection)
+		void SetLightData(int count, GLLightData *data)
 		{
-			glm::vec3 lightPositions[maxLights];
-			glm::vec3 lightTints[maxLights];
-			glm::vec3 lightDirections[maxLights];
-			float lightSpotAnglesCos[maxLights];
-			glm::mat4 lightProjs[maxLights];
-			glm::mat4 lightInvProjs[maxLights];
-			glm::mat4 lightViews[maxLights];
-			glm::vec2 lightClips[maxLights];
-			glm::vec4 lightMapOffsets[maxLights];
-			float lightIntensities[maxLights];
-			float lightIlluminances[maxLights];
-
-			int lightNum = 0;
-			for (auto entity : lightCollection)
-			{
-				auto light = entity.Get<ecs::Light>();
-				auto view = entity.Get<ecs::View>();
-				auto transform = entity.Get<ecs::Transform>();
-				lightPositions[lightNum] = transform->GetModelTransform(manager) * glm::vec4(0, 0, 0, 1);
-				lightTints[lightNum] = light->tint;
-				lightDirections[lightNum] = glm::mat3(transform->GetModelTransform(manager)) * glm::vec3(0, 0, -1);
-				lightSpotAnglesCos[lightNum] = cos(light->spotAngle);
-				lightProjs[lightNum] = view->projMat;
-				lightInvProjs[lightNum] = view->invProjMat;
-				lightViews[lightNum] = view->viewMat;
-				lightClips[lightNum] = view->clip;
-				lightMapOffsets[lightNum] = light->mapOffset;
-				lightIntensities[lightNum] = light->intensity;
-				lightIlluminances[lightNum] = light->illuminance;
-				lightNum++;
-			}
-
-			Set(lightCount, lightNum);
-			Set(lightPosition, lightPositions, lightNum);
-			Set(lightTint, lightTints, lightNum);
-			Set(lightDirection, lightDirections, lightNum);
-			Set(lightSpotAngleCos, lightSpotAnglesCos, lightNum);
-			Set(lightProj, lightProjs, lightNum);
-			Set(lightInvProj, lightInvProjs, lightNum);
-			Set(lightView, lightViews, lightNum);
-			Set(lightClip, lightClips, lightNum);
-			Set(lightMapOffset, lightMapOffsets, lightNum);
-			Set(lightIntensity, lightIntensities, lightNum);
-			Set(lightIlluminance, lightIlluminances, lightNum);
+			Set(lightCount, count);
+			BufferData(lightData, sizeof(GLLightData) * count, data);
 		}
 
 		void SetExposure(float newExposure)
@@ -288,8 +235,8 @@ namespace sp
 		}
 
 	private:
-		Uniform lightCount, lightPosition, lightTint, lightDirection, lightSpotAngleCos;
-		Uniform lightProj, lightInvProj, lightView, lightClip, lightMapOffset, lightIntensity, lightIlluminance;
+		Uniform lightCount;
+		Buffer lightData;
 		Uniform exposure, targetSize, invViewMat, invProjMat, mode;
 		Uniform voxelSize, voxelGridCenter, diffuseDownsample;
 	};
@@ -345,9 +292,11 @@ namespace sp
 		int diffuseDownsample = CVarVoxelDiffuseDownsample.Get();
 		if (diffuseDownsample < 1) diffuseDownsample = 1;
 
-		auto lights = context->game->entityManager.EntitiesWith<ecs::Light>();
+		GLLightData lightData[MAX_LIGHTS];
+		int lightCount = FillLightData(&lightData[0], context->game->entityManager);
+
 		auto shader = r->GlobalShaders->Get<VoxelLightingFS>();
-		shader->SetLights(context->game->entityManager, lights);
+		shader->SetLightData(lightCount, &lightData[0]);
 		shader->SetViewParams(context->view);
 		shader->SetMode(CVarVoxelLightingMode.Get());
 		shader->SetVoxelInfo(context->renderer->voxelInfo, diffuseDownsample);

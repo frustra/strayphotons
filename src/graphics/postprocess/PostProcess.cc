@@ -64,10 +64,11 @@ namespace sp
 		lighting->SetInput(2, context.GBuffer2);
 		lighting->SetInput(3, context.Depth);
 		lighting->SetInput(4, context.ShadowMap);
-		lighting->SetInput(5, context.VoxelColor);
-		lighting->SetInput(6, context.VoxelNormal);
-		lighting->SetInput(7, context.VoxelRadiance);
-		lighting->SetInput(8, indirectDiffuse);
+		lighting->SetInput(5, context.MirrorShadowMap);
+		lighting->SetInput(6, context.VoxelColor);
+		lighting->SetInput(7, context.VoxelNormal);
+		lighting->SetInput(8, context.VoxelRadiance);
+		lighting->SetInput(9, indirectDiffuse);
 
 		context.LastOutput = lighting;
 	}
@@ -134,6 +135,11 @@ namespace sp
 		if (targets.shadowMap)
 		{
 			context.ShadowMap = context.AddPass<ProxyProcessPass>(targets.shadowMap);
+		}
+
+		if (targets.mirrorShadowMap)
+		{
+			context.MirrorShadowMap = context.AddPass<ProxyProcessPass>(targets.mirrorShadowMap);
 		}
 
 		if (targets.voxelData.color)

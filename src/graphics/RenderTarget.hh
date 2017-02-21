@@ -49,6 +49,7 @@ namespace sp
 		uint32 levels = 1;
 		bool depthCompare = false;
 		bool multiSample = false;
+		bool textureArray = false;
 		GLenum attachment;
 		GLenum minFilter = GL_LINEAR_MIPMAP_LINEAR, magFilter = GL_LINEAR;
 
