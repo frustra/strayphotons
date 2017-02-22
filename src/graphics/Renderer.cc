@@ -429,6 +429,8 @@ namespace sp
 			GlobalShaders->Get<VoxelRasterFS>()->SetLightData(lightCount, &lightData[0]);
 			GlobalShaders->Get<VoxelRasterFS>()->SetVoxelInfo(voxelInfo);
 			shadowMap->GetTexture().Bind(4);
+			mirrorShadowMap->GetTexture().Bind(5);
+			mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
 			ForwardPass(ortho, voxelVS);

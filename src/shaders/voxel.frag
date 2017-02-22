@@ -1,6 +1,7 @@
 #version 430
 
 #define DIFFUSE_ONLY_SHADING
+#define INCLUDE_MIRRORS
 
 ##import lib/util
 ##import voxel_shared
@@ -12,6 +13,7 @@ layout (binding = 1) uniform sampler2D roughnessTex;
 // binding 2 = metallicTex
 // binding 3 = heightTex
 layout (binding = 4) uniform sampler2D shadowMap;
+layout (binding = 5) uniform sampler2DArray mirrorShadowMap;
 
 layout (binding = 0) uniform atomic_uint fragListSize;
 layout (binding = 0, offset = 4) uniform atomic_uint nextComputeSize;
@@ -28,6 +30,8 @@ uniform int lightCount = 0;
 layout(binding = 0, std140) uniform GLLightData {
 	Light lights[MAX_LIGHTS];
 };
+
+##import lib/mirror_common
 
 uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);

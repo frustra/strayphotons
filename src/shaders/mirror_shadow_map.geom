@@ -13,7 +13,7 @@ in gl_PerVertex
 ##import lib/mirror_common
 
 layout (triangles) in;
-layout (triangle_strip, max_vertices = 60) out; // MAX_MIRRORS * MAX_LIGHTS * 3
+layout (triangle_strip, max_vertices = 27) out; // MAX_MIRRORS * MAX_LIGHTS * 3
 
 layout (location = 0) out vec3 outViewPos;
 

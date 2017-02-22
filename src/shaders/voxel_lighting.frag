@@ -112,7 +112,7 @@ void main()
 	}
 
 	vec3 indirectSpecular = vec3(0);
-	bool reflected = false;
+	float reflected = 0.0;
 
 	for (int i = 0; i < maxReflections; i++) {
 		// specular
@@ -129,7 +129,7 @@ void main()
 			rayReflectDir = reflect(sampleDir, worldNormal);
 			flatWorldNormal = worldNormal;
 			if (roughness != 0) metalness = 0;
-			reflected = true;
+			reflected = 1.0;
 		} else {
 			vec3 directSpecularColor = mix(vec3(0.04), baseColor, metalness);
 			vec3 brdf = EvaluateBRDFSpecularImportanceSampledGGX(directSpecularColor, roughness, sampleDir, -rayDir, worldNormal);
@@ -140,14 +140,14 @@ void main()
 
 	vec3 indirectDiffuse;
 
-	if (diffuseDownsample > 1 && detectEdge(viewNormal, depth, diffuseDownsample * 0.65 / textureSize(gBuffer0, 0)) || reflected || mode == 5) {
+	if (diffuseDownsample > 1 && detectEdge(viewNormal, depth, diffuseDownsample * 0.65 / textureSize(gBuffer0, 0)) || reflected == 1.0 || mode == 5) {
 		indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal);
 	} else {
 		indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
 	}
 
 	vec3 directDiffuseColor = baseColor - baseColor * metalness;
-	vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, flatWorldNormal, roughness, metalness);
+	vec3 directLight = DirectShading(worldPosition - reflected*rayDir*voxelSize*0.75, -rayDir, baseColor, worldNormal, flatWorldNormal, roughness, metalness);
 
 	vec3 indirectLight = indirectDiffuse * directDiffuseColor + indirectSpecular;
 	vec3 totalLight = directLight + indirectLight;
