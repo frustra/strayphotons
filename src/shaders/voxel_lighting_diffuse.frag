@@ -16,7 +16,6 @@ uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);
 
 uniform float exposure = 1.0;
-uniform vec2 targetSize;
 
 ##import lib/util
 ##import voxel_shared
@@ -40,7 +39,7 @@ void main()
 	vec3 worldNormal = mat3(invViewMat) * viewNormal;
 
 	// Trace.
-	vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal);
+	vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
 
 	outFragColor = vec4(indirectDiffuse.rgb * exposure, 1.0);
 }

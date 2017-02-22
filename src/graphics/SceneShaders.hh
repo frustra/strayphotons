@@ -123,7 +123,7 @@ namespace sp
 	private:
 		Uniform lightCount;
 		UniformBuffer lightData;
-		Uniform exposure, targetSize, viewMat, invViewMat, invProjMat;
+		Uniform exposure, viewMat, invViewMat, invProjMat;
 		Uniform voxelSize, voxelGridCenter;
 	};
 

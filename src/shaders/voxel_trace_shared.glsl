@@ -1,6 +1,8 @@
 #ifndef VOXEL_TRACE_SHARED_GLSL_INCLUDED
 #define VOXEL_TRACE_SHARED_GLSL_INCLUDED
 
+##import lib/spatial_util
+
 const float InvVoxelGridSize = 1.0 / VoxelGridSize;
 
 vec4 SampleVoxelLod(vec3 position, vec3 dir, float level)
@@ -62,20 +64,22 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 	return result;
 }
 
-vec3 HemisphereIndirectDiffuse(vec3 worldPosition, vec3 worldNormal) {
+vec3 HemisphereIndirectDiffuse(vec3 worldPosition, vec3 worldNormal, vec2 fragCoord) {
 	vec4 indirectDiffuse = vec4(0);
+
+	float rOffset = InterleavedGradientNoise(fragCoord);
 
 	for (int a = 3; a <= 6; a += 3) {
 		float diffuseScale = 1.0 / a;
 		for (float r = 0; r < a; r++) {
-			vec3 sampleDir = OrientByNormal(r * diffuseScale * M_PI * 2.0, a * 0.1, worldNormal);
+			vec3 sampleDir = OrientByNormal((r + rOffset) * diffuseScale * M_PI * 2.0, a * 0.1, worldNormal);
 			vec4 sampleColor = ConeTraceGridDiffuse(worldPosition, sampleDir, worldNormal);
 
-			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal);
+			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * diffuseScale;
 		}
 	}
 
-	return indirectDiffuse.rgb / 6.0;
+	return indirectDiffuse.rgb * 0.5;
 }
 
 #endif

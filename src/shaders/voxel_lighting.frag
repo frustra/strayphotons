@@ -33,7 +33,6 @@ uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);
 
 uniform float exposure = 1.0;
-uniform vec2 targetSize;
 uniform float diffuseDownsample = 1;
 
 ##import lib/util
@@ -141,7 +140,7 @@ void main()
 	vec3 indirectDiffuse;
 
 	if (diffuseDownsample > 1 && detectEdge(viewNormal, depth, diffuseDownsample * 0.65 / textureSize(gBuffer0, 0)) || reflected == 1.0 || mode == 5) {
-		indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal);
+		indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
 	} else {
 		indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
 	}

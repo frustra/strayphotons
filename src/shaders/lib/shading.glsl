@@ -54,7 +54,7 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 
 #ifdef USE_PCF
 	// Rotate PCF kernel by a random angle.
-	float angle = InterleavedGradientNoise(inTexCoord.xy * targetSize) * M_PI;
+	float angle = InterleavedGradientNoise(gl_FragCoord.xy) * M_PI;
 	float s = sin(angle), c = cos(angle);
 	mat2 rotation = mat2(c, s, -s, c);
 #endif

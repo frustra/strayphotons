@@ -13,7 +13,7 @@
 namespace sp
 {
 	static CVar<int> CVarVoxelLightingMode("r.VoxelLighting", 1, "Voxel lighting mode (0: direct only, 1: full, 2: indirect only, 3: diffuse only, 4: specular only, 5: full voxel)");
-	static CVar<int> CVarVoxelDiffuseDownsample("r.VoxelDiffuseDownsample", 2, "N times downsampled rendering of indirect diffuse lighting");
+	static CVar<int> CVarVoxelDiffuseDownsample("r.VoxelDiffuseDownsample", 1, "N times downsampled rendering of indirect diffuse lighting");
 	static CVar<bool> CVarDrawHistogram("r.Histogram", false, "Draw HDR luminosity histogram");
 	static CVar<float> CVarExposure("r.Exposure", 0.0, "Fixed exposure value in linear units (0: auto)");
 	static CVar<float> CVarExposureComp("r.ExposureComp", 1, "Exposure bias in EV units (logarithmic) for eye adaptation");
@@ -193,7 +193,6 @@ namespace sp
 			BindBuffer(lightData, 0);
 
 			Bind(exposure, "exposure");
-			Bind(targetSize, "targetSize");
 
 			Bind(invProjMat, "invProjMat");
 			Bind(invViewMat, "invViewMat");
@@ -219,7 +218,6 @@ namespace sp
 		{
 			Set(invProjMat, view.invProjMat);
 			Set(invViewMat, view.invViewMat);
-			Set(targetSize, glm::vec2(view.extents));
 		}
 
 		void SetMode(int newMode)
@@ -237,7 +235,7 @@ namespace sp
 	private:
 		Uniform lightCount;
 		UniformBuffer lightData;
-		Uniform exposure, targetSize, invViewMat, invProjMat, mode;
+		Uniform exposure, invViewMat, invProjMat, mode;
 		Uniform voxelSize, voxelGridCenter, diffuseDownsample;
 	};
 
@@ -250,7 +248,6 @@ namespace sp
 		VoxelLightingDiffuseFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			Bind(exposure, "exposure");
-			Bind(targetSize, "targetSize");
 
 			Bind(invProjMat, "invProjMat");
 			Bind(invViewMat, "invViewMat");
@@ -268,7 +265,6 @@ namespace sp
 		{
 			Set(invProjMat, view.invProjMat);
 			Set(invViewMat, view.invViewMat);
-			Set(targetSize, glm::vec2(view.extents));
 		}
 
 		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo)
@@ -278,7 +274,7 @@ namespace sp
 		}
 
 	private:
-		Uniform exposure, targetSize, invViewMat, invProjMat;
+		Uniform exposure, invViewMat, invProjMat;
 		Uniform voxelSize, voxelGridCenter;
 	};
 

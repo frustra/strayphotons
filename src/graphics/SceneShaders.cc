@@ -94,7 +94,6 @@ namespace sp
 		BindBuffer(lightData, 0);
 
 		Bind(exposure, "exposure");
-		Bind(targetSize, "targetSize");
 
 		Bind(viewMat, "viewMat");
 		Bind(invViewMat, "invViewMat");
