@@ -2,7 +2,7 @@
 
 namespace sp
 {
-	void MakeVec(int N, picojson::value val, float *ret)
+	void MakeVec(size_t N, picojson::value val, float *ret)
 	{
 		auto values = val.get<picojson::array>();
 		Assert(values.size() == N, "incorrect array size");
