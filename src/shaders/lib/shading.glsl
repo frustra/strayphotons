@@ -5,6 +5,21 @@
 
 const float shadowBiasDistance = 0.04;
 
+#ifdef INCLUDE_MIRRORS
+float MirrorOcclusion(int i, vec3 shadowMapPos) {
+	vec3 texCoord = ViewPosToScreenPos(shadowMapPos, mirrorData.projMat[i]);
+
+	if (texCoord.xy != clamp(texCoord.xy, 0, 1)) return 0;
+
+	float shadowBias = shadowBiasDistance / (mirrorData.clip[i].y - mirrorData.clip[i].x);
+
+	float testDepth = LinearDepth(shadowMapPos, mirrorData.clip[i]);
+	float sampledDepth = texture(mirrorShadowMap, vec3(texCoord.xy, i)).r;
+
+	return step(0, -shadowMapPos.z) * smoothstep(testDepth - shadowBias, testDepth - shadowBias * 0.2, sampledDepth);
+}
+#endif
+
 float SimpleOcclusion(int i, vec3 shadowMapPos) {
 	vec3 texCoord = ViewPosToScreenPos(shadowMapPos, lights[i].proj);
 
@@ -182,6 +197,60 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 		// Sum output.
 		pixelLuminance += occlusion * spotFalloff * luminance;
 	}
+
+#ifdef INCLUDE_MIRRORS
+	for (int i = 0; i < mirrorData.count; i++) {
+		vec3 sourcePos = vec3(mirrorData.invViewMat[i] * vec4(0, 0, 0, 1));
+		uint lightId = (mirrorData.list[i] >> 16) & 0xFFFF;
+
+		vec3 sampleToLightRay = sourcePos - worldPosition;
+		vec3 incidence = normalize(sampleToLightRay);
+		float falloff = 1;
+
+		float illuminance = lights[lightId].illuminance;
+		vec3 currLightColor = lights[lightId].tint;
+
+		if (illuminance == 0) {
+			// Determine physically-based distance attenuation.
+			float lightDistance = length(abs(sourcePos - worldPosition));
+			float lightDistanceSq = lightDistance * lightDistance;
+			falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
+
+			// Calculate illuminance from intensity with E = L * n dot l.
+			illuminance = max(dot(normal, incidence), 0) * lights[lightId].intensity * falloff;
+		} else {
+			// Given value is the orthogonal case, need to project to l.
+			illuminance *= max(dot(normal, incidence), 0);
+		}
+
+		// Evaluate BRDF and calculate luminance.
+#ifdef DIFFUSE_ONLY_SHADING
+		vec3 brdf = BRDF_Diffuse_Lambert(baseColor);
+#else
+		vec3 diffuseColor = baseColor - baseColor * metalness;
+		vec3 specularColor = mix(vec3(0.04), baseColor, metalness);
+		vec3 brdf = EvaluateBRDF(diffuseColor, specularColor, roughness, incidence, directionToView, normal);
+#endif
+		vec3 luminance = brdf * illuminance * currLightColor;
+
+		// Spotlight attenuation.
+		float cosSpotAngle = lights[lightId].spotAngleCos;
+		vec3 mirrorNormal = mat3(mirrorData.invViewMat[i]) * vec3(0, 0, -1);
+		vec3 currLightDir = reflect(lights[lightId].direction, mirrorNormal);
+		float spotTerm = dot(incidence, -currLightDir);
+		float spotFalloff = smoothstep(cosSpotAngle, 1, spotTerm) * step(-1, cosSpotAngle) + step(cosSpotAngle, -1);
+
+		// Calculate direct occlusion.
+		vec3 shadowMapPos = (mirrorData.viewMat[i] * vec4(worldPosition, 1.0)).xyz; // Position of light view-space.
+		vec3 surfaceNormal = normalize(mat3(mirrorData.viewMat[i]) * flatNormal);
+		float occlusion = 1;
+
+		occlusion = MirrorOcclusion(i, shadowMapPos);
+
+		// Sum output.
+		pixelLuminance += occlusion * spotFalloff * luminance;
+	}
+#endif
 
 	return pixelLuminance;
 }

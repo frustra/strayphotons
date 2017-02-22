@@ -1,6 +1,7 @@
 #version 430
 
 #define USE_PCF
+#define INCLUDE_MIRRORS
 
 ##import lib/types_common
 
@@ -25,6 +26,8 @@ uniform int lightCount = 0;
 layout(binding = 0, std140) uniform GLLightData {
 	Light lights[MAX_LIGHTS];
 };
+
+##import lib/mirror_common
 
 uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);
@@ -75,11 +78,6 @@ bool detectEdge(vec3 centerNormal, float centerDepth, vec2 tcRadius)
 
 void main()
 {
-	// if (inTexCoord.x < 0.25 && inTexCoord.y < 0.25 * 16 / 9) {
-	// 	outFragColor.rgb = texture(mirrorShadowMap, vec3(vec2(0.25 - inTexCoord.x, inTexCoord.y) * vec2(4.0, 4.0 * 9 / 16), 1)).rrr + 0.1;
-	// 	return;
-	// }
-
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
 	vec4 gb1 = texture(gBuffer1, inTexCoord);
 	vec4 gb2 = texture(gBuffer2, inTexCoord);

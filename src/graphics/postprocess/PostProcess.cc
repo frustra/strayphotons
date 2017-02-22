@@ -47,7 +47,7 @@ namespace sp
 		context.LastOutput = ssaoBlurY;
 	}
 
-	static void AddLighting(PostProcessingContext &context)
+	static void AddLighting(PostProcessingContext &context, Buffer mirrorVisData)
 	{
 		auto indirectDiffuse = context.AddPass<VoxelLightingDiffuse>();
 		indirectDiffuse->SetInput(0, context.GBuffer0);
@@ -58,7 +58,7 @@ namespace sp
 		indirectDiffuse->SetInput(5, context.VoxelNormal);
 		indirectDiffuse->SetInput(6, context.VoxelRadiance);
 
-		auto lighting = context.AddPass<VoxelLighting>();
+		auto lighting = context.AddPass<VoxelLighting>(mirrorVisData);
 		lighting->SetInput(0, context.GBuffer0);
 		lighting->SetInput(1, context.GBuffer1);
 		lighting->SetInput(2, context.GBuffer2);
@@ -151,7 +151,7 @@ namespace sp
 
 		if (CVarLightingEnabled.Get() && targets.shadowMap != nullptr)
 		{
-			AddLighting(context);
+			AddLighting(context, renderer->mirrorVisData);
 		}
 
 		auto linearLuminosity = context.LastOutput;

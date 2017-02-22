@@ -86,6 +86,18 @@ namespace sp
 		using Shader::Shader;
 	};
 
+	class MirrorMapFS : public Shader
+	{
+		SHADER_TYPE(MirrorMapFS)
+
+		MirrorMapFS(shared_ptr<ShaderCompileOutput> compileOutput);
+
+		void SetMirrorId(int id);
+
+	private:
+		Uniform mirrorId;
+	};
+
 	class VoxelRasterVS : public SceneShader
 	{
 		SHADER_TYPE(VoxelRasterVS)

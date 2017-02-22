@@ -41,6 +41,8 @@ namespace sp
 	class VoxelLighting : public PostProcessPass<10, 1>
 	{
 	public:
+		VoxelLighting(Buffer mirrorVisData) : mirrorVisData(mirrorVisData) {}
+
 		void Process(const PostProcessingContext *context);
 
 		RenderTargetDesc GetOutputDesc(uint32 id)
@@ -54,6 +56,8 @@ namespace sp
 		{
 			return "VoxelLighting";
 		}
+	private:
+		Buffer mirrorVisData;
 	};
 
 	class VoxelLightingDiffuse : public PostProcessPass<7, 1>

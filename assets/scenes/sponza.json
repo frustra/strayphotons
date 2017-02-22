@@ -20,6 +20,15 @@
 			}
 		},
 		{
+			"mirror": [1, 1],
+			"renderable": "mirror",
+			"transform": {
+				"relativeTo": "duck",
+				"translate": [0, 2, 1],
+				"rotate": [70, 1, 0, 0]
+			}
+		},
+		{
 			"_name": "box",
 			"renderable": "box",
 			"transform": {

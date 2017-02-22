@@ -292,6 +292,8 @@ namespace sp
 		int diffuseDownsample = CVarVoxelDiffuseDownsample.Get();
 		if (diffuseDownsample < 1) diffuseDownsample = 1;
 
+		mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
+
 		GLLightData lightData[MAX_LIGHTS];
 		int lightCount = FillLightData(&lightData[0], context->game->entityManager);
 

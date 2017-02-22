@@ -58,6 +58,16 @@ namespace sp
 		BufferData(mirrorData, sizeof(GLMirrorData) * count, data);
 	}
 
+	MirrorMapFS::MirrorMapFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+	{
+		Bind(mirrorId, "mirrorId");
+	}
+
+	void MirrorMapFS::SetMirrorId(int newId)
+	{
+		Set(mirrorId, newId);
+	}
+
 	VoxelMipmapCS::VoxelMipmapCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 	{
 		Bind(level, "mipLevel");
@@ -115,6 +125,7 @@ namespace sp
 
 	IMPLEMENT_SHADER_TYPE(MirrorMapVS, "mirror_shadow_map.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(MirrorMapGS, "mirror_shadow_map.geom", Geometry);
+	IMPLEMENT_SHADER_TYPE(MirrorMapFS, "mirror_shadow_map.frag", Fragment);
 	IMPLEMENT_SHADER_TYPE(MirrorMapCS, "mirror_shadow_map.comp", Compute);
 
 	IMPLEMENT_SHADER_TYPE(VoxelRasterVS, "voxel.vert", Vertex);

@@ -229,8 +229,17 @@ namespace sp
 
 		if (!mirrorVisData)
 		{
+			// int count;
+			// uint mask[MAX_LIGHTS];
+			// uint list[MAX_LIGHTS * MAX_MIRRORS];
+			// mat4 viewMat[MAX_LIGHTS * MAX_MIRRORS];
+			// mat4 invViewMat[MAX_LIGHTS * MAX_MIRRORS];
+			// mat4 projMat[MAX_LIGHTS * MAX_MIRRORS];
+			// mat4 invProjMat[MAX_LIGHTS * MAX_MIRRORS];
+			// vec2 clip[MAX_LIGHTS * MAX_MIRRORS];
+
 			mirrorVisData.Create()
-			.Data(sizeof(GLint) + sizeof(GLuint) * MAX_LIGHTS + (sizeof(GLuint) + sizeof(glm::mat4) * 2) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
+			.Data(sizeof(GLint) + (sizeof(GLuint) * 4 + sizeof(glm::mat4) * 4) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
 		}
 
 		// TODO(xthexder): Try 16 bit depth
@@ -312,31 +321,27 @@ namespace sp
 			auto depthTarget = RTPool->Get(depthDesc);
 			SetRenderTarget(&mirrorShadowMap->GetTexture(), &depthTarget->GetTexture());
 
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			ecs::View basicView;
-			basicView.extents = glm::ivec2(MirrorShadowMapResolution);
-
-			ShaderControl->BindPipeline<MirrorMapVS, MirrorMapGS, ShadowMapFS>(GlobalShaders);
-
-			auto shadowMapFS = GlobalShaders->Get<ShadowMapFS>();
-			for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
-			{
-				auto light = entity.Get<ecs::Light>();
-				if (entity.Has<ecs::View>())
-				{
-					ecs::Handle<ecs::View> view = entity.Get<ecs::View>();
-					basicView = *view;
-					shadowMapFS->SetClip(view->clip);
-					shadowMapFS->SetLight(light->lightId);
-					break;
-				}
-			}
-
 			basicView.offset = glm::ivec2(0);
 			basicView.extents = glm::ivec2(MirrorShadowMapResolution);
 
+			ShaderControl->BindPipeline<MirrorMapVS, MirrorMapGS, MirrorMapFS>(GlobalShaders);
+
+			auto mirrorMapFS = GlobalShaders->Get<MirrorMapFS>();
 			auto mirrorMapVS = GlobalShaders->Get<MirrorMapVS>();
-			ForwardPass(basicView, mirrorMapVS);
+			ForwardPass(basicView, mirrorMapVS, [&] (ecs::Entity &ent)
+			{
+				if (ent.Has<ecs::Mirror>())
+				{
+					auto mirror = ent.Get<ecs::Mirror>();
+					mirrorMapFS->SetMirrorId(mirror->mirrorId);
+				}
+				else
+				{
+					mirrorMapFS->SetMirrorId(-1);
+				}
+			});
+			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 		}
 	}
 

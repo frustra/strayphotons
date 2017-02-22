@@ -54,10 +54,11 @@ namespace sp
 		RenderTargetPool *RTPool = nullptr;
 
 		ecs::VoxelInfo voxelInfo;
+		Buffer mirrorVisData;
 	private:
 		shared_ptr<RenderTarget> shadowMap;
 		shared_ptr<RenderTarget> mirrorShadowMap;
-		Buffer computeIndirectBuffer, mirrorVisData;
+		Buffer computeIndirectBuffer;
 		VoxelData voxelData;
 	};
 }
