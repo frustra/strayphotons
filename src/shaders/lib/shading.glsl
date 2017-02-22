@@ -16,7 +16,7 @@ float MirrorOcclusion(int i, vec3 shadowMapPos) {
 	float testDepth = LinearDepth(shadowMapPos, mirrorData.clip[i]);
 	float sampledDepth = texture(mirrorShadowMap, vec3(texCoord.xy, i)).r;
 
-	return step(0, -shadowMapPos.z) * smoothstep(testDepth - shadowBias, testDepth - shadowBias * 0.2, sampledDepth);
+	return step(mirrorData.clip[i].x, -shadowMapPos.z) * smoothstep(testDepth - shadowBias, testDepth - shadowBias * 0.2, sampledDepth);
 }
 #endif
 
@@ -28,7 +28,7 @@ float SimpleOcclusion(int i, vec3 shadowMapPos) {
 	float testDepth = LinearDepth(shadowMapPos, lights[i].clip);
 	float sampledDepth = texture(shadowMap, texCoord.xy * lights[i].mapOffset.zw + lights[i].mapOffset.xy).r;
 
-	return step(0, -shadowMapPos.z) * smoothstep(testDepth - shadowBias, testDepth - shadowBias * 0.2, sampledDepth);
+	return step(lights[i].clip.x, -shadowMapPos.z) * smoothstep(testDepth - shadowBias, testDepth - shadowBias * 0.2, sampledDepth);
 }
 
 float SampleOcclusion(int i, vec3 shadowMapCoord, vec3 shadowMapPos, vec3 surfaceNormal, vec2 offset) {
