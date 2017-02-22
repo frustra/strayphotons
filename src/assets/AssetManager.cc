@@ -4,6 +4,7 @@
 
 #include "assets/AssetManager.hh"
 #include "assets/Asset.hh"
+#include "assets/AssetHelpers.hh"
 #include "assets/Model.hh"
 #include "assets/Scene.hh"
 
@@ -138,7 +139,6 @@ namespace sp
 		}
 
 		shared_ptr<Scene> scene = make_shared<Scene>(name, asset);
-		vector<double> numbers;
 
 		auto entityList = root.get<picojson::object>()["entities"];
 		for (auto value : entityList.get<picojson::array>())
@@ -170,24 +170,18 @@ namespace sp
 						}
 						else
 						{
-							auto values = subTransform.second.get<picojson::array>();
-							numbers.resize(values.size());
-							for (size_t i = 0; i < values.size(); i++)
-							{
-								numbers[i] = values[i].get<double>();
-							}
-
 							if (subTransform.first == "scale")
 							{
-								transform->Scale(glm::make_vec3(&numbers[0]));
+								transform->Scale(MakeVec3(subTransform.second));
 							}
 							else if (subTransform.first == "rotate")
 							{
-								transform->Rotate(glm::radians(numbers[0]), glm::make_vec3(&numbers[1]));
+								auto n = MakeVec4(subTransform.second);
+								transform->Rotate(glm::radians(n[0]), { n[1], n[2], n[3] });
 							}
 							else if (subTransform.first == "translate")
 							{
-								transform->Translate(glm::make_vec3(&numbers[0]));
+								transform->Translate(MakeVec3(subTransform.second));
 							}
 						}
 					}
@@ -203,24 +197,17 @@ namespace sp
 						}
 						else
 						{
-							auto values = param.second.get<picojson::array>();
-							numbers.resize(values.size());
-							for (size_t i = 0; i < values.size(); i++)
-							{
-								numbers[i] = values[i].get<double>();
-							}
-
 							if (param.first == "extents")
 							{
-								view->extents = glm::make_vec2(&numbers[0]);
+								view->extents = MakeVec2(param.second);
 							}
 							else if (param.first == "clip")
 							{
-								view->clip = glm::make_vec2(&numbers[0]);
+								view->clip = MakeVec2(param.second);
 							}
 							else if (param.first == "offset")
 							{
-								view->offset = glm::make_vec2(&numbers[0]);
+								view->offset = MakeVec2(param.second);
 							}
 						}
 					}
@@ -244,14 +231,7 @@ namespace sp
 						}
 						else if (param.first == "tint")
 						{
-							auto values = param.second.get<picojson::array>();
-							numbers.resize(values.size());
-							for (size_t i = 0; i < values.size(); i++)
-							{
-								numbers[i] = values[i].get<double>();
-							}
-
-							light->tint = glm::make_vec3(&numbers[0]);
+							light->tint = MakeVec3(param.second);
 						}
 					}
 				}
@@ -260,20 +240,13 @@ namespace sp
 					auto sensor = entity.Assign<ecs::LightSensor>();
 					for (auto param : comp.second.get<picojson::object>())
 					{
-						auto values = param.second.get<picojson::array>();
-						numbers.resize(values.size());
-						for (size_t i = 0; i < values.size(); i++)
-						{
-							numbers[i] = values[i].get<double>();
-						}
-
 						if (param.first == "translate")
 						{
-							sensor->position = glm::make_vec3(&numbers[0]);
+							sensor->position = MakeVec3(param.second);
 						}
 						else if (param.first == "direction")
 						{
-							sensor->direction = glm::make_vec3(&numbers[0]);
+							sensor->direction = MakeVec3(param.second);
 						}
 					}
 				}
@@ -295,33 +268,17 @@ namespace sp
 						}
 						if (param.first == "pxTranslate")
 						{
-							auto values = param.second.get<picojson::array>();
-							numbers.resize(values.size());
-
-							for (size_t i = 0; i < values.size(); i++)
-							{
-								numbers[i] = values[i].get<double>();
-							}
-
-							glm::vec3 gVec = glm::make_vec3(&numbers[0]);
-							translate = physx::PxVec3 (physx::PxReal(gVec.x), physx::PxReal(gVec.y), physx::PxReal(gVec.z));
+							glm::vec3 gVec = MakeVec3(param.second);
+							translate = physx::PxVec3(gVec.x, gVec.y, gVec.z);
 						}
 						else if (param.first == "pxScale")
 						{
-							auto values = param.second.get<picojson::array>();
-							numbers.resize(values.size());
-
-							for (size_t i = 0; i < values.size(); i++)
-							{
-								numbers[i] = values[i].get<double>();
-							}
-
-							glm::vec3 gVec = glm::make_vec3(&numbers[0]);
-							scale = physx::PxVec3 (physx::PxReal(gVec.x), physx::PxReal(gVec.y), physx::PxReal(gVec.z));
+							glm::vec3 gVec = MakeVec3(param.second);
+							scale = physx::PxVec3(gVec.x, gVec.y, gVec.z);
 						}
 						else if (param.first == "pxRotate")
 						{
-							//rotate = glm::make_vec3(&numbers[0]);
+							//rotate = MakeVec3(param.second);
 						}
 						else if (param.first == "dynamic")
 						{
@@ -348,38 +305,18 @@ namespace sp
 					{
 						if (param.first == "min")
 						{
-							auto values = param.second.get<picojson::array>();
-							numbers.resize(values.size());
-							for (size_t i = 0; i < values.size(); i++)
-							{
-								numbers[i] = values[i].get<double>() - 0.1;
-							}
-							voxelInfo->gridMin = glm::make_vec3(&numbers[0]);
+							voxelInfo->gridMin = MakeVec3(param.second);
 						}
 						else if (param.first == "max")
 						{
-							auto values = param.second.get<picojson::array>();
-							numbers.resize(values.size());
-							for (size_t i = 0; i < values.size(); i++)
-							{
-								numbers[i] = values[i].get<double>() + 0.1;
-							}
-							voxelInfo->gridMax = glm::make_vec3(&numbers[0]);
+							voxelInfo->gridMax = MakeVec3(param.second);
 						}
 					}
 				}
 				else if (comp.first == "mirror")
 				{
 					auto mirror = entity.Assign<ecs::Mirror>();
-
-					auto values = comp.second.get<picojson::array>();
-					numbers.resize(values.size());
-					for (size_t i = 0; i < values.size(); i++)
-					{
-						numbers[i] = values[i].get<double>();
-					}
-
-					mirror->size = glm::make_vec2(&numbers[0]);
+					mirror->size = MakeVec2(comp.second);
 				}
 			}
 			if (ent.count("_name"))
