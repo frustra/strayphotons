@@ -305,11 +305,11 @@ namespace sp
 					{
 						if (param.first == "min")
 						{
-							voxelInfo->gridMin = MakeVec3(param.second);
+							voxelInfo->gridMin = MakeVec3(param.second) - glm::vec3(0.1);
 						}
 						else if (param.first == "max")
 						{
-							voxelInfo->gridMax = MakeVec3(param.second);
+							voxelInfo->gridMax = MakeVec3(param.second) + glm::vec3(0.1);
 						}
 					}
 				}
