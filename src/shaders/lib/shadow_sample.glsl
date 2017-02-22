@@ -64,7 +64,7 @@ float SampleOcclusion(vec3 shadowMapCoord, ShadowInfo info, vec3 surfaceNormal, 
 	float minTest = min(sampledDepth.y, testDepth - shadowBias);
 	minTest = max(minTest, step(sampledDepth.z, testDepth - shadowBias * 2.0) * testDepth - shadowBias);
 
-	return step(0, -info.shadowMapPos.z) * edgeTerm.x * edgeTerm.y * smoothstep(0.0, 0.2, -dot(surfaceNormal, rayDir)) * smoothstep(minTest, testDepth, sampledDepth.x);
+	return step(info.clip.x, -info.shadowMapPos.z) * edgeTerm.x * edgeTerm.y * smoothstep(0.0, 0.2, -dot(surfaceNormal, rayDir)) * smoothstep(minTest, testDepth, sampledDepth.x);
 }
 
 #ifdef MIRROR_SAMPLE
