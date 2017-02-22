@@ -101,7 +101,7 @@ void main()
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
 
 	if (mode == 5) { // Voxel direct lighting
-		vec4 sampleColor = ConeTraceGrid(0, worldFragPosition, rayDir, rayDir);
+		vec4 sampleColor = ConeTraceGrid(0, worldFragPosition, rayDir, rayDir, gl_FragCoord.xy);
 		worldPosition = worldFragPosition + rayDir * sampleColor.a;
 		vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
 		GetVoxel(voxelPos, 0, baseColor, worldNormal, sampleColor.rgb, roughness);
@@ -117,7 +117,7 @@ void main()
 		// specular
 		vec3 sampleDir = rayReflectDir;
 		float specularConeRatio = roughness * 0.8;
-		vec4 sampleColor = ConeTraceGrid(specularConeRatio, worldPosition, sampleDir, flatWorldNormal);
+		vec4 sampleColor = ConeTraceGrid(specularConeRatio, worldPosition, sampleDir, flatWorldNormal, gl_FragCoord.xy);
 
 		if (roughness == 0 && metalness == 1 && sampleColor.a >= 0) {
 			worldPosition += sampleDir * sampleColor.a;

@@ -60,7 +60,7 @@ void main()
 			outFragColor.rgb = sampleRadiance;
 		}
 	} else if (source == 2) { // Cone trace source
-		vec4 sampleValue = ConeTraceGrid(float(mipLevel) / 50.0, rayPos.xyz, rayDir.xyz, rayDir.xyz);
+		vec4 sampleValue = ConeTraceGrid(float(mipLevel) / 50.0, rayPos.xyz, rayDir.xyz, rayDir.xyz, gl_FragCoord.xy);
 		if (mode == 1) { // Radiance
 			outFragColor.rgb = sampleValue.rgb;
 		} else if (mode == 2) { // Position

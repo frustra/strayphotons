@@ -10,13 +10,11 @@ vec4 SampleVoxelLod(vec3 position, vec3 dir, float level)
 	return textureLod(voxelRadiance, position * InvVoxelGridSize, level);
 }
 
-vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
+vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, vec2 fragCoord)
 {
 	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
 
-	vec4 rng = randState(rayPos);
-
-	float dist = rand2(rng);
+	float dist = InterleavedGradientNoise(fragCoord);
 	float maxDist = VoxelGridSize * 1.5;
 
 	vec4 result = vec4(0);

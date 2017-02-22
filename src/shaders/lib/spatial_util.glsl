@@ -44,10 +44,10 @@ vec3 ViewPosToScreenPos(vec3 viewPos, mat4 projMat) {
 	return clip.xyz / clip.w * vec3(0.5) + vec3(0.5);
 }
 
-// Gradient noise in [-1, 1] as in [Jimenez 2014]
+// Gradient noise in [0, 1] as in [Jimenez 2014]
 float InterleavedGradientNoise(vec2 position) {
 	const vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
-	return 2 * fract(magic.z * fract(dot(position, magic.xy))) - 1;
+	return fract(magic.z * fract(dot(position, magic.xy)));
 }
 
 // Some nice sample coordinates around a spiral.
