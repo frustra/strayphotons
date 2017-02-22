@@ -6,96 +6,11 @@
 const float shadowBiasDistance = 0.04;
 
 #ifdef INCLUDE_MIRRORS
-float MirrorOcclusion(int i, vec3 shadowMapPos) {
-	vec3 texCoord = ViewPosToScreenPos(shadowMapPos, mirrorData.projMat[i]);
-
-	if (texCoord.xy != clamp(texCoord.xy, 0, 1)) return 0;
-
-	float shadowBias = shadowBiasDistance / (mirrorData.clip[i].y - mirrorData.clip[i].x);
-
-	float testDepth = LinearDepth(shadowMapPos, mirrorData.clip[i]);
-	float sampledDepth = texture(mirrorShadowMap, vec3(texCoord.xy, i)).r;
-
-	return step(mirrorData.clip[i].x, -shadowMapPos.z) * smoothstep(testDepth - shadowBias, testDepth - shadowBias * 0.2, sampledDepth);
-}
+#define MIRROR_SAMPLE
+##import lib/shadow_sample
+#undef MIRROR_SAMPLE
 #endif
-
-float SimpleOcclusion(int i, vec3 shadowMapPos) {
-	vec3 texCoord = ViewPosToScreenPos(shadowMapPos, lights[i].proj);
-
-	float shadowBias = shadowBiasDistance / (lights[i].clip.y - lights[i].clip.x);
-
-	float testDepth = LinearDepth(shadowMapPos, lights[i].clip);
-	float sampledDepth = texture(shadowMap, texCoord.xy * lights[i].mapOffset.zw + lights[i].mapOffset.xy).r;
-
-	return step(lights[i].clip.x, -shadowMapPos.z) * smoothstep(testDepth - shadowBias, testDepth - shadowBias * 0.2, sampledDepth);
-}
-
-float SampleOcclusion(int i, vec3 shadowMapCoord, vec3 shadowMapPos, vec3 surfaceNormal, vec2 offset) {
-	vec2 mapSize = textureSize(shadowMap, 0).xy * lights[i].mapOffset.zw;
-	vec2 texelSize = 1.0 / mapSize;
-	vec3 texCoord = shadowMapCoord + vec3(offset * texelSize.xy, 0);
-
-	vec2 halfTanFovXY = vec2(lights[i].invProj[0][0], lights[i].invProj[1][1]);
-	vec3 rayDir = normalize(vec3(halfTanFovXY * (texCoord.xy * 2.0 - 1.0), -1.0));
-
-	float t = dot(surfaceNormal, shadowMapPos) / dot(surfaceNormal, rayDir);
-	vec3 hitPos = rayDir * t;
-
-	float shadowBias = shadowBiasDistance / (lights[i].clip.y - lights[i].clip.x);
-
-	float testDepth = LinearDepth(hitPos, lights[i].clip);
-	testDepth = max(testDepth, LinearDepth(shadowMapPos, lights[i].clip) - shadowBias * 2.0);
-
-	vec2 coord = texCoord.xy * lights[i].mapOffset.zw + lights[i].mapOffset.xy;
-	vec3 sampledDepth = vec3(texture(shadowMap, coord).r, 0, 0);
-	vec4 values = textureGather(shadowMap, coord, 0);
-	sampledDepth.y = min(values.x, min(values.y, min(values.z, values.w)));
-	sampledDepth.z = max(values.x, max(values.y, max(values.z, values.w)));
-
-	float minTest = min(sampledDepth.y, testDepth - shadowBias);
-	minTest = max(minTest, step(sampledDepth.z, testDepth - shadowBias * 2.0) * testDepth - shadowBias);
-
-	return step(0, -shadowMapPos.z) * smoothstep(0.0, 0.2, -dot(surfaceNormal, rayDir)) * smoothstep(minTest, testDepth, sampledDepth.x);
-}
-
-// const float[5] gaussKernel = float[](0.06136, 0.24477, 0.38774, 0.24477, 0.06136);
-const float[5][5] diskKernel = float[][](
-    float[]( 0.0   , 0.5/17, 1.0/17, 0.5/17, 0.0    ),
-    float[]( 0.5/17, 1.0/17, 1.0/17, 1.0/17, 0.5/17 ),
-    float[]( 1.0/17, 1.0/17, 1.0/17, 1.0/17, 1.0/17 ),
-    float[]( 0.5/17, 1.0/17, 1.0/17, 1.0/17, 0.5/17 ),
-    float[]( 0.0   , 0.5/17, 1.0/17, 0.5/17, 0.0    )
-);
-
-const int kernelRadius = 2;
-
-float DirectOcclusion(int i, vec3 shadowMapPos, vec3 surfaceNormal, mat2 rotation0) {
-	vec3 shadowMapCoord = ViewPosToScreenPos(shadowMapPos, lights[i].proj);
-
-	// return SampleOcclusion(i, shadowMapCoord, shadowMapPos, surfaceNormal, vec2(0));
-
-	mat2 rotation1 = mat2(0.707, 0.707, -0.707, 0.707);// * rotation0;
-	float occlusion = 0;
-
-	// for (int s = 0; s < 8; s++) {
-	// 	vec2 offset = SpiralOffsets[s] * 2;
-
-	// 	occlusion += SampleOcclusion(i, shadowMapPos, surfaceNormal, rotation0 * offset);
-	// 	occlusion += SampleOcclusion(i, shadowMapPos, surfaceNormal, rotation1 * offset);
-	// }
-	for (int x = -kernelRadius; x <= kernelRadius; x++) {
-		for (int y = -kernelRadius; y <= kernelRadius; y++) {
-			vec2 offset = vec2(x, y);
-
-			occlusion += SampleOcclusion(i, shadowMapCoord, shadowMapPos, surfaceNormal, rotation0 * offset)
-						 * diskKernel[x + kernelRadius][y + kernelRadius];
-						// * gaussKernel[x + kernelRadius] * gaussKernel[y + kernelRadius];
-		}
-	}
-
-	return smoothstep(0.3, 1.0, occlusion);
-}
+##import lib/shadow_sample
 
 vec3 EvaluateBRDF(vec3 diffuseColor, vec3 specularColor, float roughness, vec3 L, vec3 V, vec3 N) {
 	vec3 H = normalize(V + L);
@@ -186,11 +101,22 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 		vec3 surfaceNormal = normalize(mat3(lights[i].view) * flatNormal);
 		float occlusion = 1;
 
+		vec2 viewBounds = vec2(lights[i].invProj[0][0], lights[i].invProj[1][1]) * lights[i].clip.x;
+		ShadowInfo info = ShadowInfo(
+			i,
+			shadowMapPos,
+			lights[i].proj,
+			lights[i].invProj,
+			lights[i].mapOffset,
+			lights[i].clip,
+			vec4(-viewBounds, viewBounds * 2.0)
+		);
+
 #ifdef USE_SHADOW_MAPPING
 #ifdef USE_PCF
-		occlusion = DirectOcclusion(i, shadowMapPos, surfaceNormal, rotation);
+		occlusion = DirectOcclusion(info, surfaceNormal, rotation);
 #else
-		occlusion = SimpleOcclusion(i, shadowMapPos);
+		occlusion = SimpleOcclusion(info);
 #endif
 #endif
 
@@ -245,7 +171,23 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 		vec3 surfaceNormal = normalize(mat3(mirrorData.viewMat[i]) * flatNormal);
 		float occlusion = 1;
 
-		occlusion = MirrorOcclusion(i, shadowMapPos);
+		ShadowInfo info = ShadowInfo(
+			i,
+			shadowMapPos,
+			mirrorData.projMat[i],
+			mirrorData.invProjMat[i],
+			vec4(0, 0, 1, 1),
+			mirrorData.clip[i],
+			mirrorData.nearInfo[i]
+		);
+
+#ifdef USE_SHADOW_MAPPING
+#ifdef USE_PCF
+		occlusion = DirectOcclusionMirror(info, surfaceNormal, rotation);
+#else
+		occlusion = SimpleOcclusionMirror(info);
+#endif
+#endif
 
 		// Sum output.
 		pixelLuminance += occlusion * spotFalloff * luminance;

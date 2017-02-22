@@ -136,16 +136,8 @@ namespace sp
 
 		RTPool = new RenderTargetPool();
 
-		int voxelGridSize = 256;
-		float voxelSuperSampleScale = 2.0f;
-		if (game->options.count("voxel-gridsize"))
-		{
-			voxelGridSize = game->options["voxel-gridsize"].as<int>();
-		}
-		if (game->options.count("voxel-supersample"))
-		{
-			voxelSuperSampleScale = game->options["voxel-supersample"].as<float>();
-		}
+		int voxelGridSize = game->options["voxel-gridsize"].as<int>();
+		float voxelSuperSampleScale = game->options["voxel-supersample"].as<float>();
 
 		ShaderControl = new ShaderManager();
 		ShaderManager::SetDefine("VoxelGridSize", std::to_string(voxelGridSize));
@@ -194,7 +186,7 @@ namespace sp
 		return view;
 	}
 
-	const int MirrorShadowMapResolution = 1024;
+	const int MirrorShadowMapResolution = 512;
 
 	void Renderer::RenderShadowMaps()
 	{
@@ -238,9 +230,10 @@ namespace sp
 			// mat4 projMat[MAX_LIGHTS * MAX_MIRRORS];
 			// mat4 invProjMat[MAX_LIGHTS * MAX_MIRRORS];
 			// vec2 clip[MAX_LIGHTS * MAX_MIRRORS];
+			// vec4 nearInfo[MAX_LIGHTS * MAX_MIRRORS];
 
 			mirrorVisData.Create()
-			.Data(sizeof(GLint) + (sizeof(GLuint) * 4 + sizeof(glm::mat4) * 4) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
+			.Data(sizeof(GLint) + (sizeof(GLuint) * 8 + sizeof(glm::mat4) * 4) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
 		}
 
 		// TODO(xthexder): Try 16 bit depth
@@ -415,6 +408,9 @@ namespace sp
 		ortho.projMat = glm::mat4();
 		ortho.extents = glm::ivec2(VoxelGridSize * voxelInfo.superSampleScale);
 		ortho.clearMode = 0;
+
+		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_R8, ortho.extents));
+		SetRenderTarget(&renderTarget->GetTexture(), nullptr);
 
 		auto voxelVS = GlobalShaders->Get<VoxelRasterVS>();
 

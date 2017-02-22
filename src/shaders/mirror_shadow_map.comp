@@ -17,9 +17,7 @@ layout(binding = 1, std140) uniform GLMirrorData {
 	Mirror mirrors[MAX_MIRRORS];
 };
 
-mat4 makeProjectionMatrix(vec3 viewSpaceMirrorPos, vec2 clip, vec2 size) {
-	vec4 bounds = viewSpaceMirrorPos.xxyy + vec4(-size.x, size.x, -size.y, size.y) * 0.5;
-
+mat4 makeProjectionMatrix(vec3 viewSpaceMirrorPos, vec2 clip, vec2 size, vec4 bounds) {
 	return mat4(
 		2*clip.x/size.x,            0,                          0,                                0,
 		0,                          2*clip.x/size.y,            0,                                0,
@@ -48,10 +46,13 @@ void main() {
 
 	vec3 viewSpaceMirrorPos = vec3(mirrorViewMat * vec4(mirrorPos, 1.0));
 	vec2 clip = vec2(-viewSpaceMirrorPos.z, 64);
+	vec2 size = mirrors[mirrorId].size;
+	vec4 bounds = viewSpaceMirrorPos.xxyy + vec4(-size.x, size.x, -size.y, size.y) * 0.5;
 
 	mirrorData.viewMat[index] = mirrorViewMat;
-	mirrorData.projMat[index] = makeProjectionMatrix(viewSpaceMirrorPos, clip, mirrors[mirrorId].size);
+	mirrorData.projMat[index] = makeProjectionMatrix(viewSpaceMirrorPos, clip, size, bounds);
 	mirrorData.invViewMat[index] = inverse(mirrorData.viewMat[index]);
 	mirrorData.invProjMat[index] = inverse(mirrorData.projMat[index]);
 	mirrorData.clip[index] = clip;
+	mirrorData.nearInfo[index] = vec4(bounds.xz, size);
 }

@@ -7,4 +7,5 @@ layout(binding = 0, std430) buffer MirrorVisData {
 	mat4 projMat[MAX_LIGHTS * MAX_MIRRORS];
 	mat4 invProjMat[MAX_LIGHTS * MAX_MIRRORS];
 	vec2 clip[MAX_LIGHTS * MAX_MIRRORS];
+	vec4 nearInfo[MAX_LIGHTS * MAX_MIRRORS];
 } mirrorData;
