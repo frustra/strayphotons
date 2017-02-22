@@ -9,6 +9,11 @@
 #include "ecs/components/Transform.hh"
 #include <Ecs.hh>
 
+namespace ecs
+{
+	class VoxelInfo;
+}
+
 namespace sp
 {
 	class LightSensorUpdateCS : public Shader
@@ -17,6 +22,8 @@ namespace sp
 		LightSensorUpdateCS(shared_ptr<ShaderCompileOutput> compileOutput);
 
 		void SetSensors(ecs::EntityManager::EntityCollection &sensors);
+		void SetLightData(int count, GLLightData *data);
+		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo);
 		void StartReadback();
 		void UpdateValues(ecs::EntityManager &manager);
 
@@ -25,7 +32,8 @@ namespace sp
 		Texture outputTex;
 
 	private:
-		UniformBuffer sensorBuf;
+		UniformBuffer sensorData, lightData;
+		Uniform lightCount, voxelSize, voxelGridCenter;
 		Buffer readBackBuf;
 		size_t readBackSize;
 	};

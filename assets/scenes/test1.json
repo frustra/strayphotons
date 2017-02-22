@@ -12,7 +12,10 @@
 				"pxScale": [0.1, 0.1, 0.1],
 				"dynamic": false
 			},
-			"lightsensor": 1.0
+			"lightsensor": {
+				"translate": [0, 0, -1],
+				"direction": [0, 0, -1]
+			}
 		},
 		{
 			"renderable": "box",

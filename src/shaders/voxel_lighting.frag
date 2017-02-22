@@ -23,7 +23,7 @@ layout (location = 0) out vec4 outFragColor;
 
 uniform int lightCount = 0;
 
-layout(binding = 0, std140) uniform GLLightData {
+layout(binding = 0, std140) uniform LightData {
 	Light lights[MAX_LIGHTS];
 };
 

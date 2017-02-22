@@ -8,14 +8,15 @@ namespace ecs
 	class LightSensor
 	{
 	public:
-		// Optional parameters.
-		float threshold = 0.0f;
+		// Required parameters.
+		glm::vec3 position = { 0, 0, 0 }; // In model space.
+		glm::vec3 direction = { 0, 0, -1 }; // In model space.
 
 		// Updated automatically.
 		glm::vec3 illuminance;
 		bool triggered = false;
 
 		LightSensor() {}
-		LightSensor(float threshold) : threshold(threshold) {}
+		LightSensor(glm::vec3 p, glm::vec3 n) : position(p), direction(n) {}
 	};
 }

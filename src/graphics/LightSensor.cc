@@ -1,11 +1,16 @@
 #include "LightSensor.hh"
 #include "core/Logging.hh"
+#include "ecs/components/VoxelInfo.hh"
 
 namespace sp
 {
 	LightSensorUpdateCS::LightSensorUpdateCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 	{
-		BindBuffer(sensorBuf, 0);
+		BindBuffer(sensorData, 0);
+		BindBuffer(lightData, 1);
+		Bind(lightCount, "lightCount");
+		Bind(voxelSize, "voxelSize");
+		Bind(voxelGridCenter, "voxelGridCenter");
 
 		readBackSize = sizeof(float) * 4 * MAX_SENSORS * 2;
 		outputTex.Create().Size(MAX_SENSORS * 2, 1).Storage(PF_RGBA32F);
@@ -15,7 +20,7 @@ namespace sp
 	void LightSensorUpdateCS::SetSensors(ecs::EntityManager::EntityCollection &sensors)
 	{
 		int N = 0;
-		GLLightSensorData sensorData[MAX_SENSORS + 1];
+		GLLightSensorData data[MAX_SENSORS + 1];
 
 		for (auto entity : sensors)
 		{
@@ -23,17 +28,29 @@ namespace sp
 			auto transform = entity.Get<ecs::Transform>();
 			auto id = entity.GetId();
 
-			GLLightSensorData &s = sensorData[N++];
+			GLLightSensorData &s = data[N++];
 			auto mat = transform->GetModelTransform(*entity.GetManager());
-			s.position = mat * glm::vec4(0, 0, 0, 1);
-			s.direction = glm::normalize(glm::mat3(mat) * glm::vec3(0, 0, -1));
+			s.position = mat * glm::vec4(sensor->position, 1);
+			s.direction = glm::normalize(glm::mat3(mat) * sensor->direction);
 			s.id0 = ((float *)&id)[0];
 			s.id1 = ((float *)&id)[1];
 		}
 
-		*(uint32 *)&sensorData[MAX_SENSORS] = N;
+		*(uint32 *)&data[MAX_SENSORS] = N;
 
-		BufferData(sensorBuf, sizeof(GLLightSensorData) * MAX_SENSORS + sizeof(uint32), &sensorData[0]);
+		BufferData(sensorData, sizeof(GLLightSensorData) * MAX_SENSORS + sizeof(uint32), &data[0]);
+	}
+
+	void LightSensorUpdateCS::SetLightData(int count, GLLightData *data)
+	{
+		Set(lightCount, count);
+		BufferData(lightData, sizeof(GLLightData) * count, data);
+	}
+
+	void LightSensorUpdateCS::SetVoxelInfo(ecs::VoxelInfo &voxelInfo)
+	{
+		Set(voxelSize, voxelInfo.voxelSize);
+		Set(voxelGridCenter, voxelInfo.voxelGridCenter);
 	}
 
 	void LightSensorUpdateCS::StartReadback()
@@ -63,7 +80,9 @@ namespace sp
 			glm::vec3 lum(buf[0], buf[1], buf[2]);
 			buf += 4;
 
-			manager.Get<ecs::LightSensor>(eid)->illuminance = lum;
+			//Logf("%d: %f %f %f", eid.Index(), lum.x, lum.y, lum.z);
+			if (manager.Valid(eid))
+				manager.Get<ecs::LightSensor>(eid)->illuminance = lum;
 		}
 		readBackBuf.Unmap();
 	}

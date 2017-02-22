@@ -257,8 +257,25 @@ namespace sp
 				}
 				else if (comp.first == "lightsensor")
 				{
-					auto threshold = comp.second.get<double>();
-					entity.Assign<ecs::LightSensor>(threshold);
+					auto sensor = entity.Assign<ecs::LightSensor>();
+					for (auto param : comp.second.get<picojson::object>())
+					{
+						auto values = param.second.get<picojson::array>();
+						numbers.resize(values.size());
+						for (size_t i = 0; i < values.size(); i++)
+						{
+							numbers[i] = values[i].get<double>();
+						}
+
+						if (param.first == "translate")
+						{
+							sensor->position = glm::make_vec3(&numbers[0]);
+						}
+						else if (param.first == "direction")
+						{
+							sensor->direction = glm::make_vec3(&numbers[0]);
+						}
+					}
 				}
 				else if (comp.first == "physics")
 				{

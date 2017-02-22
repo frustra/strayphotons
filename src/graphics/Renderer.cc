@@ -330,7 +330,7 @@ namespace sp
 
 			auto mirrorMapFS = GlobalShaders->Get<MirrorMapFS>();
 			auto mirrorMapVS = GlobalShaders->Get<MirrorMapVS>();
-			ForwardPass(basicView, mirrorMapVS, [&] (ecs::Entity &ent)
+			ForwardPass(basicView, mirrorMapVS, [&] (ecs::Entity & ent)
 			{
 				if (ent.Has<ecs::Mirror>())
 				{
@@ -505,13 +505,19 @@ namespace sp
 		RenderPhase phase("UpdateLightSensors", Timer);
 		auto shader = GlobalShaders->Get<LightSensorUpdateCS>();
 
+		GLLightData lightData[MAX_LIGHTS];
+		int lightCount = FillLightData(&lightData[0], game->entityManager);
+
 		shader->UpdateValues(game->entityManager);
 		shader->SetSensors(game->entityManager.EntitiesWith<ecs::LightSensor>());
+		shader->SetLightData(lightCount, lightData);
+		shader->SetVoxelInfo(voxelInfo);
 
 		shader->outputTex.Clear(0);
 		shader->outputTex.BindImage(0, GL_WRITE_ONLY);
 
 		voxelData.radiance->GetTexture().Bind(0);
+		shadowMap->GetTexture().Bind(1);
 
 		ShaderControl->BindPipeline<LightSensorUpdateCS>(GlobalShaders);
 		glDispatchCompute(1, 1, 1);
