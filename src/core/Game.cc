@@ -8,6 +8,7 @@
 #include "ecs/components/Controller.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
+#include "ecs/components/LightSensor.hh"
 #include "ecs/components/Mirror.hh"
 
 #include <cxxopts.hpp>
@@ -25,6 +26,7 @@ namespace sp
 		entityManager.RegisterComponentType<ecs::HumanController>();
 		entityManager.RegisterComponentType<ecs::View>();
 		entityManager.RegisterComponentType<ecs::Light>();
+		entityManager.RegisterComponentType<ecs::LightSensor>();
 		entityManager.RegisterComponentType<ecs::Mirror>();
 	}
 
