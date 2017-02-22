@@ -40,6 +40,7 @@ namespace sp
 		void PrepareVoxelTextures();
 		void RenderVoxelGrid();
 		void ClearVoxelGrid();
+		void UpdateLightSensors();
 		void BeginFrame(ecs::View &fbView, int fullscreen);
 		void RenderPass(ecs::View &view);
 		void PrepareForView(ecs::View &view);

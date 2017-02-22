@@ -131,7 +131,7 @@ namespace sp
 
 	private:
 		shared_ptr<RenderTarget> target;
-		sp::Buffer readBackBuf;
+		Buffer readBackBuf;
 	};
 
 	IMPLEMENT_SHADER_TYPE(LumiHistogramCS, "lumi_histogram.comp", Compute);
@@ -236,7 +236,7 @@ namespace sp
 
 	private:
 		Uniform lightCount;
-		Buffer lightData;
+		UniformBuffer lightData;
 		Uniform exposure, targetSize, invViewMat, invProjMat, mode;
 		Uniform voxelSize, voxelGridCenter, diffuseDownsample;
 	};

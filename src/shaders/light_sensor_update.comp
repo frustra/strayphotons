@@ -1,0 +1,36 @@
+#version 430
+
+##import lib/util
+##import lib/types_common
+
+layout (binding = 0) uniform sampler3D voxelRadiance;
+layout (binding = 0, rgba32f) writeonly uniform image2D values;
+
+layout (binding = 0) uniform LightSensorData {
+	LightSensor sensors[MAX_LIGHT_SENSORS];
+	uint sensorCount;
+};
+
+uniform float voxelSize = 0.1;
+uniform vec3 voxelGridCenter = vec3(0);
+
+##import voxel_shared
+##import voxel_trace_shared
+
+layout (local_size_x = MAX_LIGHT_SENSORS) in;
+
+void main() {
+	uint index = gl_LocalInvocationIndex;
+	if (index >= sensorCount)
+		return;
+
+	LightSensor sensor = sensors[index];
+	
+	vec3 lum = vec3(0.0);
+
+	lum += HemisphereIndirectDiffuse(sensor.position, sensor.direction);
+
+	// first value r=1 indicates result is populated
+	imageStore(values, ivec2(index * 2, 0), vec4(1, sensor.id0, sensor.id1, 0));
+	imageStore(values, ivec2(index * 2 + 1, 0), vec4(lum, 0));
+}

@@ -3,6 +3,7 @@
 
 #define MAX_LIGHTS 16
 #define MAX_MIRRORS 16
+#define MAX_LIGHT_SENSORS 32
 
 const float punctualLightSizeSq = 0.01 * 0.01; // 1cm punctual lights
 
@@ -26,6 +27,11 @@ struct Light {
 	mat4 view;
 	vec4 mapOffset;
 	vec2 clip;
+};
+
+struct LightSensor {
+	vec3 position; float id0;
+	vec3 direction; float id1;
 };
 
 #endif

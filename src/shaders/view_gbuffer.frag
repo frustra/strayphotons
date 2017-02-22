@@ -16,7 +16,7 @@ uniform vec3 voxelGridCenter = vec3(0);
 
 ##import lib/util
 ##import voxel_shared
-##import voxel_trace_shared
+##import voxel_trace_shared2
 
 uniform int mode;
 uniform int source;

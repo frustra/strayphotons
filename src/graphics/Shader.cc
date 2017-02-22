@@ -36,7 +36,7 @@ namespace sp
 		AssertGLOK("glGetUniformLocation");
 	}
 
-	void Shader::BindBuffer(Buffer &b, int index, GLenum target, GLenum usage)
+	void Shader::BindBuffer(ShaderBuffer &b, int index, GLenum target, GLenum usage)
 	{
 		Assert(b.index == -1, "recreating shader buffer");
 
@@ -50,7 +50,7 @@ namespace sp
 		buffers.push_back(&b);
 	}
 
-	void Shader::BufferData(Buffer &b, GLsizei size, const void *data)
+	void Shader::BufferData(ShaderBuffer &b, GLsizei size, const void *data)
 	{
 		Assert(b.index != -1, "buffer not created");
 

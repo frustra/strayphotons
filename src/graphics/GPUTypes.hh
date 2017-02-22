@@ -10,7 +10,8 @@ namespace sp
 	static const int MAX_LIGHTS = 16;
 	static const int MAX_MIRRORS = 16;
 
-	struct GLLightData {
+	struct GLLightData
+	{
 		glm::vec3 position;
 		float spotAngleCos;
 
@@ -28,15 +29,26 @@ namespace sp
 		float padding[2];
 	};
 
-	static_assert(sizeof(GLLightData) == 4 * 17 * sizeof(float), "GLLightData size incorrect");
+	static_assert(sizeof(GLLightData) == 17 * 4 * sizeof(float), "GLLightData size incorrect");
 
-	struct GLMirrorData {
+	struct GLMirrorData
+	{
 		glm::mat4 modelMat;
 		glm::vec2 size;
 		float padding[2];
 	};
 
-	static_assert(sizeof(GLMirrorData) == 4 * 5 * sizeof(float), "GLMirrorData size incorrect");
+	static_assert(sizeof(GLMirrorData) == 5 * 4 * sizeof(float), "GLMirrorData size incorrect");
+
+	struct GLLightSensorData
+	{
+		glm::vec3 position;
+		float id0; // IDs are 4 bytes each of the 8 byte entity ID
+		glm::vec3 direction;
+		float id1;
+	};
+
+	static_assert(sizeof(GLLightSensorData) == 2 * 4 * sizeof(float), "GLLightSensorData size incorrect");
 
 	int FillLightData(GLLightData *data, ecs::EntityManager &manager);
 	int FillMirrorData(GLMirrorData *data, ecs::EntityManager &manager);

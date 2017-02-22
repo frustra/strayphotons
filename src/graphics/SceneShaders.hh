@@ -4,6 +4,7 @@
 #include "graphics/GPUTypes.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
+#include "ecs/components/LightSensor.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/VoxelInfo.hh"
 #include <Ecs.hh>
@@ -70,7 +71,7 @@ namespace sp
 		void SetMirrorData(int count, GLMirrorData *data);
 
 	private:
-		Buffer lightData, mirrorData;
+		UniformBuffer lightData, mirrorData;
 		Uniform lightCount, mirrorCount;
 	};
 
@@ -121,7 +122,7 @@ namespace sp
 
 	private:
 		Uniform lightCount;
-		Buffer lightData;
+		UniformBuffer lightData;
 		Uniform exposure, targetSize, viewMat, invViewMat, invProjMat;
 		Uniform voxelSize, voxelGridCenter;
 	};

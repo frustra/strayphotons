@@ -14,6 +14,7 @@
 #include "ecs/components/Transform.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
+#include "ecs/components/LightSensor.hh"
 #include "ecs/components/Physics.hh"
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/Mirror.hh"
@@ -253,6 +254,11 @@ namespace sp
 							light->tint = glm::make_vec3(&numbers[0]);
 						}
 					}
+				}
+				else if (comp.first == "lightsensor")
+				{
+					auto threshold = comp.second.get<double>();
+					entity.Assign<ecs::LightSensor>(threshold);
 				}
 				else if (comp.first == "physics")
 				{

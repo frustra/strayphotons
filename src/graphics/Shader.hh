@@ -91,7 +91,7 @@ namespace sp
 		Shader(shared_ptr<ShaderCompileOutput> compileOutput);
 		virtual ~Shader();
 
-		struct Buffer
+		struct ShaderBuffer
 		{
 			GLint index = -1;
 			size_t size;
@@ -99,13 +99,16 @@ namespace sp
 			GLenum target, usage;
 		};
 
+		typedef ShaderBuffer UniformBuffer;
+		typedef ShaderBuffer StorageBuffer;
+
 		struct Uniform
 		{
 			string name;
 			GLint location = -1;
 		};
 
-		vector<Buffer *> buffers;
+		vector<ShaderBuffer *> buffers;
 
 		const GLuint GLProgram()
 		{
@@ -116,8 +119,8 @@ namespace sp
 
 	protected:
 		void Bind(Uniform &u, string name);
-		void BindBuffer(Buffer &b, int index, GLenum target = GL_UNIFORM_BUFFER, GLenum usage = GL_STATIC_DRAW);
-		void BufferData(Buffer &b, GLsizei size, const void *data);
+		void BindBuffer(ShaderBuffer &b, int index, GLenum target = GL_UNIFORM_BUFFER, GLenum usage = GL_STATIC_DRAW);
+		void BufferData(ShaderBuffer &b, GLsizei size, const void *data);
 
 		// Methods for setting uniform values.
 

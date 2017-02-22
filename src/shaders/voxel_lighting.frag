@@ -38,7 +38,7 @@ uniform float diffuseDownsample = 1;
 
 ##import lib/util
 ##import voxel_shared
-##import voxel_trace_shared
+##import voxel_trace_shared2
 ##import lib/shading
 
 const int maxReflections = 2;

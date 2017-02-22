@@ -5,6 +5,7 @@
 #include "graphics/Util.hh"
 #include "graphics/GenericShaders.hh"
 #include "graphics/SceneShaders.hh"
+#include "graphics/LightSensor.hh"
 #include "graphics/GPUTimer.hh"
 #include "graphics/GPUTypes.hh"
 #include "graphics/postprocess/PostProcess.hh"
@@ -271,7 +272,7 @@ namespace sp
 				auto shadowMapFS = GlobalShaders->Get<ShadowMapFS>();
 				shadowMapFS->SetClip(view->clip);
 				shadowMapFS->SetLight(light->lightId);
-				ForwardPass(*view, shadowMapVS, [&] (ecs::Entity &ent)
+				ForwardPass(*view, shadowMapVS, [&] (ecs::Entity & ent)
 				{
 					if (ent.Has<ecs::Mirror>())
 					{
@@ -499,12 +500,32 @@ namespace sp
 		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
+	void Renderer::UpdateLightSensors()
+	{
+		RenderPhase phase("UpdateLightSensors", Timer);
+		auto shader = GlobalShaders->Get<LightSensorUpdateCS>();
+
+		shader->UpdateValues(game->entityManager);
+		shader->SetSensors(game->entityManager.EntitiesWith<ecs::LightSensor>());
+
+		shader->outputTex.Clear(0);
+		shader->outputTex.BindImage(0, GL_WRITE_ONLY);
+
+		voxelData.radiance->GetTexture().Bind(0);
+
+		ShaderControl->BindPipeline<LightSensorUpdateCS>(GlobalShaders);
+		glDispatchCompute(1, 1, 1);
+
+		shader->StartReadback();
+	}
+
 	void Renderer::RenderPass(ecs::View &view)
 	{
 		RenderPhase phase("RenderPass", Timer);
 
 		RenderShadowMaps();
 		RenderVoxelGrid();
+		UpdateLightSensors();
 
 		EngineRenderTargets targets;
 		targets.gBuffer0 = RTPool->Get({ PF_RGBA8, view.extents });

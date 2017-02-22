@@ -82,8 +82,8 @@ namespace sp
 			Uniform tanHalfFoV, seed, invocationOffset;
 			Uniform eyePos, eyeRot, focalDist, aperture;
 
-			Buffer materialData, lightData, sceneData; // UBOs
-			Buffer vertexData, faceData, bvhData; // SSBOs
+			UniformBuffer materialData, lightData, sceneData;
+			StorageBuffer vertexData, faceData, bvhData;
 
 			float prevSeed = 0.1f;
 		};
