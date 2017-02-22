@@ -85,14 +85,15 @@
 			}
 		},
 		{
+			"_name": "sun",
 			"light": {
 				"tint": [1, 0.5, 0.5],
 				"illuminance": 10,
-				"spotAngle": 30
+				"spotAngle": 22
 			},
 			"view": {
-				"extents": [2048, 2048],
-				"clip": [0.1, 256]
+				"extents": [4096, 4096],
+				"clip": [5, 50]
 			},
 			"transform": {
 				"translate": [7, 35, 0],

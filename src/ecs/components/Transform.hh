@@ -33,9 +33,14 @@ namespace ecs
 		void Translate(glm::vec3 xyz);
 
 		/**
-		 * Change the local position to xyz
+		 * Change the local transformation matrix
 		 */
 		void SetTransform(glm::mat4 mat);
+
+		/**
+		 * Change the local rotation matrix
+		 */
+		 void SetRotation(glm::mat4 mat);
 
 		/**
 		 * Change the local position to xyz

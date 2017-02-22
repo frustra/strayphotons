@@ -18,12 +18,13 @@
 namespace sp
 {
 	GameLogic::GameLogic(Game *game)
-		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input), flashlightFixed(false)
+		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input), flashlightFixed(false), sunPos(0)
 	{
 	}
 
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
 	static CVar<float> CVarFlashlightAngle("r.FlashlightAngle", 20, "Flashlight spot angle");
+	static CVar<float> CVarSunPostion("g.SunPostion", 0.2, "Sun angle");
 
 	void GameLogic::Init()
 	{
@@ -107,6 +108,23 @@ namespace sp
 
 	bool GameLogic::Frame(double dtSinceLastFrame)
 	{
+		ecs::Entity sun = scene->FindEntity("sun");
+		if (sun.Valid()) {
+			if (CVarSunPostion.Get() == 0) {
+				sunPos += dtSinceLastFrame * (0.05 + abs(sin(sunPos) * 0.1));
+				if (sunPos > M_PI/2.0) sunPos = -M_PI/2.0;
+			} else {
+				sunPos = CVarSunPostion.Get();
+			}
+
+			auto transform = sun.Get<ecs::Transform>();
+			transform->SetTransform(glm::mat4());
+			transform->SetRotation(glm::mat4());
+			transform->Rotate(glm::radians(-90.0), glm::vec3(1, 0, 0));
+			transform->Rotate(sunPos, glm::vec3(0, 1, 0));
+			transform->Translate(glm::vec3(sin(sunPos) * 40.0, cos(sunPos) * 40.0, 0));
+		}
+
 		if (CVarFlashlight.Changed())
 		{
 			auto light = flashlight.Get<ecs::Light>();

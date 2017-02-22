@@ -58,6 +58,11 @@ namespace ecs
 		this->translate = mat;
 	}
 
+	void Transform::SetRotation(glm::mat4 mat)
+	{
+		this->rotate = mat;
+	}
+
 	void Transform::SetPosition(glm::vec3 pos)
 	{
 		this->translate = glm::column(this->translate, 3, glm::vec4(pos.x, pos.y, pos.z, 1.f));

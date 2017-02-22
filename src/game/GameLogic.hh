@@ -23,5 +23,6 @@ namespace sp
 		shared_ptr<Scene> scene;
 		ecs::Entity flashlight;
 		bool flashlightFixed;
+		float sunPos;
 	};
 }
