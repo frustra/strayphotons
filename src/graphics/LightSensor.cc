@@ -26,7 +26,7 @@ namespace sp
 			GLLightSensorData &s = sensorData[N++];
 			auto mat = transform->GetModelTransform(*entity.GetManager());
 			s.position = mat * glm::vec4(0, 0, 0, 1);
-			s.direction = glm::mat3(mat) * glm::vec3(0, 1, 0);
+			s.direction = glm::normalize(glm::mat3(mat) * glm::vec3(0, 0, -1));
 			s.id0 = ((float *)&id)[0];
 			s.id1 = ((float *)&id)[1];
 		}
@@ -39,7 +39,7 @@ namespace sp
 	void LightSensorUpdateCS::StartReadback()
 	{
 		readBackBuf.Bind(GL_PIXEL_PACK_BUFFER);
-		glGetTextureImage(outputTex.handle, 0, GL_RGB, GL_FLOAT, readBackSize, 0);
+		glGetTextureImage(outputTex.handle, 0, GL_RGBA, GL_FLOAT, readBackSize, 0);
 	}
 
 	void LightSensorUpdateCS::UpdateValues(ecs::EntityManager &manager)
@@ -63,7 +63,6 @@ namespace sp
 			glm::vec3 lum(buf[0], buf[1], buf[2]);
 			buf += 4;
 
-			Logf("%d: %f %f %f", eid.Index(), lum[0], lum[1], lum[2]);
 			manager.Get<ecs::LightSensor>(eid)->illuminance = lum;
 		}
 		readBackBuf.Unmap();
