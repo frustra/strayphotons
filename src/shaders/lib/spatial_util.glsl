@@ -62,13 +62,20 @@ const vec2[8] SpiralOffsets = vec2[](
 	vec2( 0.1250,  0.0000)
 );
 
-const int DiskKernelRadius = 2;
-const float[5][5] DiskKernel = float[][](
-    float[]( 0.0   , 0.5/17, 1.0/17, 0.5/17, 0.0    ),
-    float[]( 0.5/17, 1.0/17, 1.0/17, 1.0/17, 0.5/17 ),
-    float[]( 1.0/17, 1.0/17, 1.0/17, 1.0/17, 1.0/17 ),
-    float[]( 0.5/17, 1.0/17, 1.0/17, 1.0/17, 0.5/17 ),
-    float[]( 0.0   , 0.5/17, 1.0/17, 0.5/17, 0.0    )
+// const int DiskKernelRadius = 2;
+// const float[5][5] DiskKernel = float[][](
+//     float[]( 0.0   , 0.5/17, 1.0/17, 0.5/17, 0.0    ),
+//     float[]( 0.5/17, 1.0/17, 1.0/17, 1.0/17, 0.5/17 ),
+//     float[]( 1.0/17, 1.0/17, 1.0/17, 1.0/17, 1.0/17 ),
+//     float[]( 0.5/17, 1.0/17, 1.0/17, 1.0/17, 0.5/17 ),
+//     float[]( 0.0   , 0.5/17, 1.0/17, 0.5/17, 0.0    )
+// );
+
+const int DiskKernelRadius = 1;
+const float[3][3] DiskKernel = float[][](
+    float[]( 0.5/7, 1.0/7, 0.5/7 ),
+    float[]( 1.0/7, 1.0/7, 1.0/7 ),
+    float[]( 0.5/7, 1.0/7, 0.5/7 )
 );
 
 // Returns vector with angles phi, tht in the hemisphere defined by the input normal.

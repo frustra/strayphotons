@@ -74,6 +74,12 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
 #endif
 	vec3 shadowMapCoord = ViewPosToScreenPos(info.shadowMapPos, info.projMat);
 
+// #ifdef MIRROR_SAMPLE
+// 	return SampleOcclusionMirror(shadowMapCoord, info, surfaceNormal, vec2(0));
+// #else
+// 	return SampleOcclusion(shadowMapCoord, info, surfaceNormal, vec2(0));
+// #endif
+
 	float occlusion = 0;
 	for (int x = -DiskKernelRadius; x <= DiskKernelRadius; x++) {
 		for (int y = -DiskKernelRadius; y <= DiskKernelRadius; y++) {
