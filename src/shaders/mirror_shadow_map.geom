@@ -19,12 +19,13 @@ layout (location = 0) out vec3 outViewPos;
 
 void main()
 {
-	for (int mirror = 0; mirror < mirrorData.count; mirror++) {
-		gl_Layer = mirror;
+	for (int index = 0; index < mirrorData.count; index++) {
+		gl_Layer = index;
 
 		for (int i = 0; i < 3; i++) {
-			outViewPos = vec3(mirrorData.viewMat[mirror] * gl_in[i].gl_Position);
-			gl_Position = mirrorData.projMat[mirror] * vec4(outViewPos, 1.0);
+			vec4 viewPos = mirrorData.viewMat[index] * gl_in[i].gl_Position;
+			gl_Position = mirrorData.projMat[index] * viewPos;
+			outViewPos = viewPos.xyz;
 	    	EmitVertex();
 		}
 

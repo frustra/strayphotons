@@ -3,8 +3,6 @@
 ##import lib/lighting_util
 ##import lib/spatial_util
 
-const float shadowBiasDistance = 0.04;
-
 #ifdef INCLUDE_MIRRORS
 #define MIRROR_SAMPLE
 ##import lib/shadow_sample

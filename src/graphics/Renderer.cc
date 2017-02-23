@@ -281,16 +281,17 @@ namespace sp
 			}
 		}
 
+		GLLightData lightData[MAX_LIGHTS];
+		int lightDataCount = FillLightData(&lightData[0], game->entityManager);
+
 		{
 			RenderPhase phase("MatrixGen", Timer);
 
 			auto mirrorMapCS = GlobalShaders->Get<MirrorMapCS>();
 
-			GLLightData lightData[MAX_LIGHTS];
 			GLMirrorData mirrorData[MAX_LIGHTS];
-			int lightCount = FillLightData(&lightData[0], game->entityManager);
 			int mirrorCount = FillMirrorData(&mirrorData[0], game->entityManager);
-			mirrorMapCS->SetLightData(lightCount, &lightData[0]);
+			mirrorMapCS->SetLightData(lightDataCount, &lightData[0]);
 			mirrorMapCS->SetMirrorData(mirrorCount, &mirrorData[0]);
 
 			ShaderControl->BindPipeline<MirrorMapCS>(GlobalShaders);
@@ -323,6 +324,10 @@ namespace sp
 
 			auto mirrorMapFS = GlobalShaders->Get<MirrorMapFS>();
 			auto mirrorMapVS = GlobalShaders->Get<MirrorMapVS>();
+
+			mirrorMapFS->SetLightData(lightDataCount, &lightData[0]);
+			shadowMap->GetTexture().Bind(4);
+
 			ForwardPass(basicView, mirrorMapVS, [&] (ecs::Entity & ent)
 			{
 				if (ent.Has<ecs::Mirror>())

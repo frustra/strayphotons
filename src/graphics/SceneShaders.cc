@@ -61,6 +61,14 @@ namespace sp
 	MirrorMapFS::MirrorMapFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 	{
 		Bind(mirrorId, "mirrorId");
+		Bind(lightCount, "lightCount");
+		BindBuffer(lightData, 0);
+	}
+
+	void MirrorMapFS::SetLightData(int count, GLLightData *data)
+	{
+		Set(lightCount, count);
+		BufferData(lightData, sizeof(GLLightData) * count, data);
 	}
 
 	void MirrorMapFS::SetMirrorId(int newId)

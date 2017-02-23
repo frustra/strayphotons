@@ -1,6 +1,8 @@
 #ifndef SPATIAL_UTIL_GLSL_INCLUDED
 #define SPATIAL_UTIL_GLSL_INCLUDED
 
+const float shadowBiasDistance = 0.04;
+
 // Projects v onto a normalized vector u.
 vec3 ProjectVec3(vec3 v, vec3 u) {
 	return u * dot(v, u);

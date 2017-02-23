@@ -111,11 +111,15 @@ namespace sp
 	bool GameLogic::Frame(double dtSinceLastFrame)
 	{
 		ecs::Entity sun = scene->FindEntity("sun");
-		if (sun.Valid()) {
-			if (CVarSunPostion.Get() == 0) {
+		if (sun.Valid())
+		{
+			if (CVarSunPostion.Get() == 0)
+			{
 				sunPos += dtSinceLastFrame * (0.05 + abs(sin(sunPos) * 0.1));
-				if (sunPos > M_PI/2.0) sunPos = -M_PI/2.0;
-			} else {
+				if (sunPos > M_PI / 2.0) sunPos = -M_PI / 2.0;
+			}
+			else
+			{
 				sunPos = CVarSunPostion.Get();
 			}
 

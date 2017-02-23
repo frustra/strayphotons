@@ -40,7 +40,7 @@ namespace ecs
 		/**
 		 * Change the local rotation matrix
 		 */
-		 void SetRotation(glm::mat4 mat);
+		void SetRotation(glm::mat4 mat);
 
 		/**
 		 * Change the local position to xyz

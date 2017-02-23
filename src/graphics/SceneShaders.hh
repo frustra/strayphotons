@@ -93,10 +93,12 @@ namespace sp
 
 		MirrorMapFS(shared_ptr<ShaderCompileOutput> compileOutput);
 
+		void SetLightData(int count, GLLightData *data);
 		void SetMirrorId(int id);
 
 	private:
-		Uniform mirrorId;
+		Uniform mirrorId, lightCount;
+		UniformBuffer lightData;
 	};
 
 	class VoxelRasterVS : public SceneShader
