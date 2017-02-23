@@ -9,6 +9,37 @@
 			}
 		},
 		{
+			"renderable": "occluder",
+			"transform": {
+				"translate": [-11, 5, -1],
+				"rotate": [90, 0, 1, 0],
+				"scale": [38, 15, 1]
+			}
+		},
+		{
+			"renderable": "occluder",
+			"transform": {
+				"translate": [12, 5, -1],
+				"rotate": [-90, 0, 1, 0],
+				"scale": [38, 15, 1]
+			}
+		},
+		{
+			"renderable": "occluder",
+			"transform": {
+				"translate": [0.5, 5, 18],
+				"rotate": [180, 0, 1, 0],
+				"scale": [23, 15, 1]
+			}
+		},
+		{
+			"renderable": "occluder",
+			"transform": {
+				"translate": [0.5, 5, -20],
+				"scale": [23, 15, 1]
+			}
+		},
+		{
 			"_name": "duck",
 			"renderable": "duck",
 			"transform": {

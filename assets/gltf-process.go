@@ -128,7 +128,7 @@ func processGltf(gltf map[string]interface{}, folder string) {
 				"diffuse":   "baseColor",
 				"roughness": "roughness",
 				"metallic":  "metallic",
-				"height":    "height",
+				"normal":    "normal",
 			}
 			for _, file := range files {
 				if !file.IsDir() && strings.HasPrefix(file.Name(), name+"_") {

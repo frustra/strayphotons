@@ -634,228 +634,73 @@
         "backWall-effect": {
             "name": "backWall",
             "values": {
-                "ambient": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
                 "baseColor": "texture_backWall_Diffuse_Color",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "shininess": 6,
-                "specular": [
-                    0,
-                    0,
-                    0,
-                    1
-                ]
+                "roughness": 1,
+                "metallic": 0
             }
         },
         "ceiling-effect": {
             "name": "ceiling",
             "values": {
-                "ambient": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
                 "baseColor": "texture_ceiling_Diffuse_Color",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "shininess": 6,
-                "specular": [
-                    0,
-                    0,
-                    0,
-                    1
-                ]
+                "roughness": 1,
+                "metallic": 0
             }
         },
         "floor-effect": {
             "name": "floor",
             "values": {
-                "ambient": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
                 "baseColor": "texture_floor_Diffuse_Color",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "shininess": 6,
-                "specular": [
-                    0,
-                    0,
-                    0,
-                    1
-                ]
+                "roughness": 1,
+                "metallic": 0
             }
         },
         "floor_001-effect": {
             "name": "floor_001",
             "values": {
-                "ambient": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
                 "baseColor": "texture_floor_001_Diffuse_Color",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "shininess": 6,
-                "specular": [
-                    0,
-                    0,
-                    0,
-                    1
-                ]
+                "roughness": 1,
+                "metallic": 0
             }
         },
         "leftWall-effect": {
             "name": "leftWall",
             "values": {
-                "ambient": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
                 "baseColor": "texture_leftWall_Diffuse_Color_001",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "shininess": 6,
-                "specular": [
-                    0,
-                    0,
-                    0,
-                    1
-                ]
+                "roughness": 1,
+                "metallic": 0
             }
         },
         "light-effect": {
             "name": "light",
             "values": {
-                "ambient": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
                 "baseColor": "texture_light_Diffuse_Color",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "shininess": 6,
-                "specular": [
-                    0,
-                    0,
-                    0,
-                    1
-                ]
+                "roughness": 1,
+                "metallic": 0
             }
         },
         "rightWall-effect": {
             "name": "rightWall",
             "values": {
-                "ambient": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
                 "baseColor": "texture_rightWall_Diffuse_Color",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "shininess": 6,
-                "specular": [
-                    0,
-                    0,
-                    0,
-                    1
-                ]
+                "roughness": 1,
+                "metallic": 0
             }
         },
         "shortBox-effect": {
             "name": "shortBox",
             "values": {
-                "ambient": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
                 "baseColor": "texture_shortBox_Diffuse_Color",
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "shininess": 6,
-                "specular": [
-                    0,
-                    0,
-                    0,
-                    1
-                ]
+                "roughness": 1,
+                "metallic": 0
             }
         },
         "tallBox-effect": {
             "name": "tallBox",
             "values": {
-                "ambient": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
                 "baseColor": "texture_tallBox_Diffuse_Color_001",
                 "roughness": 0,
-                "metallic": 1,
-                "emission": [
-                    0,
-                    0,
-                    0,
-                    1
-                ],
-                "shininess": 6,
-                "specular": [
-                    0,
-                    0,
-                    0,
-                    1
-                ]
+                "metallic": 1
             }
         }
     },
