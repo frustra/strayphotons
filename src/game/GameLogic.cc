@@ -1,3 +1,6 @@
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/CVar.hh"
@@ -13,7 +16,6 @@
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
-#include <cmath>
 
 namespace sp
 {
