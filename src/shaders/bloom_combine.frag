@@ -12,6 +12,8 @@ uniform float weight2 = 0.5;
 
 void main() {
 	vec3 lum = texture(luminanceTex, inTexCoord).rgb;
+	if (any(isnan(lum))) lum = vec3(0.0);
+
 	vec3 bloom1 = texture(highpassTex1, inTexCoord).rgb;
 	vec3 bloom2 = texture(highpassTex2, inTexCoord).rgb;
 

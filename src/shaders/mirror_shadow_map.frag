@@ -24,11 +24,11 @@ void main()
 {
 	// if (mirrorId >= 0) {
 	// 	uint lightId = (mirrorData.list[gl_Layer] >> 16) & 0xFFFF;
-	// 	uint mask = 1 << mirrorId;
+	// 	uint mask = 1 << uint(mirrorId);
 	// 	uint prevValue = atomicOr(mirrorData.mask[lightId], mask);
 	// 	if ((prevValue & mask) == 0) {
 	// 		uint index = atomicAdd(mirrorData.count, 1);
-	// 		mirrorData.list[index] = lightId << 16 + mirrorId;
+	// 		mirrorData.list[index] = (uint(lightId) << 16) + uint(mirrorId);
 	// 	}
 	// }
 

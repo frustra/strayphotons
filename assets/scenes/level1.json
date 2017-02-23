@@ -14,9 +14,18 @@
 			"mirror": [1, 1],
 			"renderable": "mirror",
 			"transform": {
-				"translate": [0, 2.49, 0],
+				"translate": [0, 2.49, -2],
 				"rotate": [-90, 1, 0, 0],
-				"scale": [3, 8, 1]
+				"scale": [3, 4, 1]
+			}
+		},
+		{
+			"mirror": [1, 1],
+			"renderable": "mirror",
+			"transform": {
+				"translate": [0, 2.49, 2],
+				"rotate": [-90, 1, 0, 0],
+				"scale": [3, 4, 1]
 			}
 		},
 		{

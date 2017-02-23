@@ -289,7 +289,7 @@ namespace sp
 
 			auto mirrorMapCS = GlobalShaders->Get<MirrorMapCS>();
 
-			GLMirrorData mirrorData[MAX_LIGHTS];
+			GLMirrorData mirrorData[MAX_MIRRORS];
 			int mirrorCount = FillMirrorData(&mirrorData[0], game->entityManager);
 			mirrorMapCS->SetLightData(lightDataCount, &lightData[0]);
 			mirrorMapCS->SetMirrorData(mirrorCount, &mirrorData[0]);

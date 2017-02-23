@@ -46,9 +46,9 @@ void main()
 	vec3 viewNormal = normalize(tangentMat * vec3(dx, dy, bumpDepth));
 
 	// Some model faces have undefined UV coordiantes, ignore bump map.
-	if (any(isnan(inTangent))) viewNormal = normalize(inNormal);
+	if (any(isnan(inTangent))) viewNormal = inNormal;
 #else
-	vec3 viewNormal = normalize(inNormal);
+	vec3 viewNormal = inNormal;
 #endif
 
 	gBuffer0.rgb = baseColor.rgb;

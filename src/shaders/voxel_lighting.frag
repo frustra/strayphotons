@@ -77,6 +77,14 @@ bool detectEdge(vec3 centerNormal, float centerDepth, vec2 tcRadius)
 
 void main()
 {
+	// for (int i = 0; i < mirrorData.count; i++) {
+	// 	vec2 coord = inTexCoord * 4.0 - vec2(i, 0);
+	// 	if (coord == clamp(coord, 0, 1)) {
+	// 		outFragColor.rgb = texture(mirrorShadowMap, vec3(coord, i)).rrr;
+	// 		return;
+	// 	}
+	// }
+
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
 	vec4 gb1 = texture(gBuffer1, inTexCoord);
 	vec4 gb2 = texture(gBuffer2, inTexCoord);

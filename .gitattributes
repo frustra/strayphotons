@@ -172,3 +172,14 @@ assets/models/sponza-pbr/Vase_roughness.tga filter=lfs diff=lfs merge=lfs -text
 assets/models/sponza-pbr/VaseRound_diffuse.tga filter=lfs diff=lfs merge=lfs -text
 assets/models/sponza-pbr/VaseRound_normal.tga filter=lfs diff=lfs merge=lfs -text
 assets/models/sponza-pbr/VaseRound_roughness.tga filter=lfs diff=lfs merge=lfs -text
+assets/models/sponza-pbr/Background_height.png filter=lfs diff=lfs merge=lfs -text
+assets/models/sponza-pbr/ChainTexture_height.png filter=lfs diff=lfs merge=lfs -text
+assets/models/sponza-pbr/Lion_height.png filter=lfs diff=lfs merge=lfs -text
+assets/models/sponza-pbr/Sponza_Arch_height.png filter=lfs diff=lfs merge=lfs -text
+assets/models/sponza-pbr/Sponza_Bricks_a_height.png filter=lfs diff=lfs merge=lfs -text
+assets/models/sponza-pbr/Sponza_Column_a_height.png filter=lfs diff=lfs merge=lfs -text
+assets/models/sponza-pbr/Sponza_Column_b_height.png filter=lfs diff=lfs merge=lfs -text
+assets/models/sponza-pbr/Sponza_Column_c_height.png filter=lfs diff=lfs merge=lfs -text
+assets/models/sponza-pbr/Sponza_Thorn_height.png filter=lfs diff=lfs merge=lfs -text
+assets/models/sponza-pbr/Vase_height.png filter=lfs diff=lfs merge=lfs -text
+assets/models/sponza-pbr/VaseRound_height.png filter=lfs diff=lfs merge=lfs -text

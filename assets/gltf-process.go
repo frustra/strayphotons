@@ -26,7 +26,7 @@ func getTextureFormat(path string) int {
 		"RGBA,":     6408, // GL_RGBA
 		"RGB,":      6407, // GL_RGB
 		"grayscale": 6403, // GL_RED
-		// BMP
+		// BMP + TGA
 		"x 32": 6408, // GL_RGBA
 		"x 24": 6407, // GL_RGB
 		"x 8":  6403, // GL_RED
@@ -128,7 +128,7 @@ func processGltf(gltf map[string]interface{}, folder string) {
 				"diffuse":   "baseColor",
 				"roughness": "roughness",
 				"metallic":  "metallic",
-				"normal":    "normal",
+				"height":    "height",
 			}
 			for _, file := range files {
 				if !file.IsDir() && strings.HasPrefix(file.Name(), name+"_") {
@@ -182,4 +182,7 @@ func main() {
 	}
 
 	err = ioutil.WriteFile(path, data, stat.Mode())
+	if err != nil {
+		log.Fatal(err)
+	}
 }

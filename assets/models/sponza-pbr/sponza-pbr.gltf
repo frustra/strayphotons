@@ -270,6 +270,9 @@
         "image_Background_diffuse.tga": {
             "uri": "Background_diffuse.tga"
         },
+        "image_Background_height.png": {
+            "uri": "Background_height.png"
+        },
         "image_Background_normal.tga": {
             "uri": "Background_normal.tga"
         },
@@ -278,6 +281,9 @@
         },
         "image_ChainTexture_diffuse.tga": {
             "uri": "ChainTexture_diffuse.tga"
+        },
+        "image_ChainTexture_height.png": {
+            "uri": "ChainTexture_height.png"
         },
         "image_ChainTexture_metallic.tga": {
             "uri": "ChainTexture_metallic.tga"
@@ -294,6 +300,9 @@
         "image_Lion_diffuse.tga": {
             "uri": "Lion_diffuse.tga"
         },
+        "image_Lion_height.png": {
+            "uri": "Lion_height.png"
+        },
         "image_Lion_normal.tga": {
             "uri": "Lion_normal.tga"
         },
@@ -306,6 +315,9 @@
         "image_Sponza_Arch_diffuse.tga": {
             "uri": "Sponza_Arch_diffuse.tga"
         },
+        "image_Sponza_Arch_height.png": {
+            "uri": "Sponza_Arch_height.png"
+        },
         "image_Sponza_Arch_normal.tga": {
             "uri": "Sponza_Arch_normal.tga"
         },
@@ -314,6 +326,9 @@
         },
         "image_Sponza_Bricks_a_diffuse.tga": {
             "uri": "Sponza_Bricks_a_diffuse.tga"
+        },
+        "image_Sponza_Bricks_a_height.png": {
+            "uri": "Sponza_Bricks_a_height.png"
         },
         "image_Sponza_Bricks_a_normal.tga": {
             "uri": "Sponza_Bricks_a_normal.tga"
@@ -333,6 +348,9 @@
         "image_Sponza_Column_a_diffuse.tga": {
             "uri": "Sponza_Column_a_diffuse.tga"
         },
+        "image_Sponza_Column_a_height.png": {
+            "uri": "Sponza_Column_a_height.png"
+        },
         "image_Sponza_Column_a_normal.tga": {
             "uri": "Sponza_Column_a_normal.tga"
         },
@@ -342,6 +360,9 @@
         "image_Sponza_Column_b_diffuse.tga": {
             "uri": "Sponza_Column_b_diffuse.tga"
         },
+        "image_Sponza_Column_b_height.png": {
+            "uri": "Sponza_Column_b_height.png"
+        },
         "image_Sponza_Column_b_normal.tga": {
             "uri": "Sponza_Column_b_normal.tga"
         },
@@ -350,6 +371,9 @@
         },
         "image_Sponza_Column_c_diffuse.tga": {
             "uri": "Sponza_Column_c_diffuse.tga"
+        },
+        "image_Sponza_Column_c_height.png": {
+            "uri": "Sponza_Column_c_height.png"
         },
         "image_Sponza_Column_c_normal.tga": {
             "uri": "Sponza_Column_c_normal.tga"
@@ -447,6 +471,9 @@
         "image_Sponza_Thorn_diffuse.tga": {
             "uri": "Sponza_Thorn_diffuse.tga"
         },
+        "image_Sponza_Thorn_height.png": {
+            "uri": "Sponza_Thorn_height.png"
+        },
         "image_Sponza_Thorn_normal.tga": {
             "uri": "Sponza_Thorn_normal.tga"
         },
@@ -474,6 +501,9 @@
         "image_VaseRound_diffuse.tga": {
             "uri": "VaseRound_diffuse.tga"
         },
+        "image_VaseRound_height.png": {
+            "uri": "VaseRound_height.png"
+        },
         "image_VaseRound_normal.tga": {
             "uri": "VaseRound_normal.tga"
         },
@@ -482,6 +512,9 @@
         },
         "image_Vase_diffuse.tga": {
             "uri": "Vase_diffuse.tga"
+        },
+        "image_Vase_height.png": {
+            "uri": "Vase_height.png"
         },
         "image_Vase_normal.tga": {
             "uri": "Vase_normal.tga"
@@ -496,6 +529,7 @@
             "name": "Lion",
             "values": {
                 "baseColor": "texture_Lion_diffuse.tga",
+                "height": "texture_Lion_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
                 "normal": "texture_Lion_normal.tga",
                 "roughness": "texture_Lion_roughness.tga"
@@ -506,6 +540,7 @@
             "name": "Background",
             "values": {
                 "baseColor": "texture_Background_diffuse.tga",
+                "height": "texture_Background_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
                 "normal": "texture_Background_normal.tga",
                 "roughness": "texture_Background_roughness.tga"
@@ -539,6 +574,7 @@
             "name": "Sponza_Arch",
             "values": {
                 "baseColor": "texture_Sponza_Arch_diffuse.tga",
+                "height": "texture_Sponza_Arch_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
                 "normal": "texture_Sponza_Arch_normal.tga",
                 "roughness": "texture_Sponza_Arch_roughness.tga"
@@ -549,6 +585,7 @@
             "name": "Sponza_Bricks_a",
             "values": {
                 "baseColor": "texture_Sponza_Bricks_a_diffuse.tga",
+                "height": "texture_Sponza_Bricks_a_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
                 "normal": "texture_Sponza_Bricks_a_normal.tga",
                 "roughness": "texture_Sponza_Bricks_a_roughness.tga"
@@ -569,6 +606,7 @@
             "name": "ChainTexture",
             "values": {
                 "baseColor": "texture_ChainTexture_diffuse.tga",
+                "height": "texture_ChainTexture_height.png",
                 "metallic": "texture_ChainTexture_metallic.tga",
                 "normal": "texture_ChainTexture_normal.tga",
                 "roughness": "texture_ChainTexture_roughness.tga"
@@ -579,6 +617,7 @@
             "name": "Sponza_Column_a",
             "values": {
                 "baseColor": "texture_Sponza_Column_a_diffuse.tga",
+                "height": "texture_Sponza_Column_a_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
                 "normal": "texture_Sponza_Column_a_normal.tga",
                 "roughness": "texture_Sponza_Column_a_roughness.tga"
@@ -589,6 +628,7 @@
             "name": "Sponza_Column_b",
             "values": {
                 "baseColor": "texture_Sponza_Column_b_diffuse.tga",
+                "height": "texture_Sponza_Column_b_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
                 "normal": "texture_Sponza_Column_b_normal.tga",
                 "roughness": "texture_Sponza_Column_b_roughness.tga"
@@ -599,6 +639,7 @@
             "name": "Sponza_Column_c",
             "values": {
                 "baseColor": "texture_Sponza_Column_c_diffuse.tga",
+                "height": "texture_Sponza_Column_c_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
                 "normal": "texture_Sponza_Column_c_normal.tga",
                 "roughness": "texture_Sponza_Column_c_roughness.tga"
@@ -699,6 +740,7 @@
             "name": "Sponza_Thorn",
             "values": {
                 "baseColor": "texture_Sponza_Thorn_diffuse.tga",
+                "height": "texture_Sponza_Thorn_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
                 "normal": "texture_Sponza_Thorn_normal.tga",
                 "roughness": "texture_Sponza_Thorn_roughness.tga"
@@ -719,6 +761,7 @@
             "name": "Vase",
             "values": {
                 "baseColor": "texture_Vase_diffuse.tga",
+                "height": "texture_Vase_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
                 "normal": "texture_Vase_normal.tga",
                 "roughness": "texture_Vase_roughness.tga"
@@ -739,6 +782,7 @@
             "name": "VaseRound",
             "values": {
                 "baseColor": "texture_VaseRound_diffuse.tga",
+                "height": "texture_VaseRound_height.png",
                 "metallic": "texture_Metallic_metallic.tga",
                 "normal": "texture_VaseRound_normal.tga",
                 "roughness": "texture_VaseRound_roughness.tga"
@@ -1049,6 +1093,14 @@
             "target": 3553,
             "type": 5121
         },
+        "texture_Background_height.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_Background_height.png",
+            "target": 3553,
+            "type": 5121
+        },
         "texture_Background_normal.tga": {
             "format": 6408,
             "internalFormat": 6408,
@@ -1070,6 +1122,14 @@
             "internalFormat": 6408,
             "sampler": "sampler_0",
             "source": "image_ChainTexture_diffuse.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_ChainTexture_height.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_ChainTexture_height.png",
             "target": 3553,
             "type": 5121
         },
@@ -1113,6 +1173,14 @@
             "target": 3553,
             "type": 5121
         },
+        "texture_Lion_height.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_Lion_height.png",
+            "target": 3553,
+            "type": 5121
+        },
         "texture_Lion_normal.tga": {
             "format": 6408,
             "internalFormat": 6408,
@@ -1145,6 +1213,14 @@
             "target": 3553,
             "type": 5121
         },
+        "texture_Sponza_Arch_height.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_Sponza_Arch_height.png",
+            "target": 3553,
+            "type": 5121
+        },
         "texture_Sponza_Arch_normal.tga": {
             "format": 6408,
             "internalFormat": 6408,
@@ -1166,6 +1242,14 @@
             "internalFormat": 6408,
             "sampler": "sampler_0",
             "source": "image_Sponza_Bricks_a_diffuse.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_Sponza_Bricks_a_height.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_Sponza_Bricks_a_height.png",
             "target": 3553,
             "type": 5121
         },
@@ -1217,6 +1301,14 @@
             "target": 3553,
             "type": 5121
         },
+        "texture_Sponza_Column_a_height.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_Sponza_Column_a_height.png",
+            "target": 3553,
+            "type": 5121
+        },
         "texture_Sponza_Column_a_normal.tga": {
             "format": 6408,
             "internalFormat": 6408,
@@ -1241,6 +1333,14 @@
             "target": 3553,
             "type": 5121
         },
+        "texture_Sponza_Column_b_height.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_Sponza_Column_b_height.png",
+            "target": 3553,
+            "type": 5121
+        },
         "texture_Sponza_Column_b_normal.tga": {
             "format": 6408,
             "internalFormat": 6408,
@@ -1262,6 +1362,14 @@
             "internalFormat": 6408,
             "sampler": "sampler_0",
             "source": "image_Sponza_Column_c_diffuse.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_Sponza_Column_c_height.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_Sponza_Column_c_height.png",
             "target": 3553,
             "type": 5121
         },
@@ -1521,6 +1629,14 @@
             "target": 3553,
             "type": 5121
         },
+        "texture_Sponza_Thorn_height.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_Sponza_Thorn_height.png",
+            "target": 3553,
+            "type": 5121
+        },
         "texture_Sponza_Thorn_normal.tga": {
             "format": 6408,
             "internalFormat": 6408,
@@ -1593,6 +1709,14 @@
             "target": 3553,
             "type": 5121
         },
+        "texture_VaseRound_height.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_VaseRound_height.png",
+            "target": 3553,
+            "type": 5121
+        },
         "texture_VaseRound_normal.tga": {
             "format": 6408,
             "internalFormat": 6408,
@@ -1614,6 +1738,14 @@
             "internalFormat": 6408,
             "sampler": "sampler_0",
             "source": "image_Vase_diffuse.tga",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_Vase_height.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_Vase_height.png",
             "target": 3553,
             "type": 5121
         },

@@ -16,11 +16,11 @@ layout (location = 0) out vec4 gBuffer0;
 void main()
 {
 	if (mirrorId >= 0) {
-		uint mask = 1 << mirrorId;
+		uint mask = 1 << uint(mirrorId);
 		uint prevValue = atomicOr(mirrorData.mask[lightId], mask);
 		if ((prevValue & mask) == 0) {
 			uint index = atomicAdd(mirrorData.count, 1);
-			mirrorData.list[index] = lightId << 16 + mirrorId;
+			mirrorData.list[index] = (uint(lightId) << 16) + uint(mirrorId);
 		}
 	}
 
