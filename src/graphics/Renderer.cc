@@ -195,6 +195,13 @@ namespace sp
 			}
 		}
 
+		int mirrorCount = 0;
+		for (auto entity : game->entityManager.EntitiesWith<ecs::Mirror>())
+		{
+			auto mirror = entity.Get<ecs::Mirror>();
+			mirror->mirrorId = mirrorCount++;
+		}
+
 		if (lightCount == 0) return;
 
 		RenderTargetDesc shadowDesc(PF_R32F, renderTargetSize);
@@ -270,7 +277,7 @@ namespace sp
 
 		GLLightData lightData[MAX_LIGHTS];
 		int lightDataCount = FillLightData(&lightData[0], game->entityManager);
-		int recursion = CVarMirrorRecursion.Get();
+		int recursion = mirrorCount == 0 ? 0 : CVarMirrorRecursion.Get();
 
 		for (int bounce = 0; bounce < recursion; bounce++)
 		{

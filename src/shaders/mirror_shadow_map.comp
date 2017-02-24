@@ -26,9 +26,6 @@ mat4 makeProjectionMatrix(vec3 viewSpaceMirrorPos, vec2 clip, vec2 size, vec4 bo
 	);
 }
 
-void updateMirror(uint index, uint mirrorId, vec3 sourceLightPos) {
-}
-
 void main() {
 	if (gl_LocalInvocationIndex == 0) {
 		mirrorData.count[1] = mirrorData.count[2];
