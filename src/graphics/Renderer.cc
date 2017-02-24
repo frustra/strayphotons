@@ -66,6 +66,7 @@ namespace sp
 	};
 
 	static CVar<bool> CVarRenderWireframe("r.Wireframe", false, "Render wireframes");
+	static CVar<int> CVarMirrorRecursion("r.MirrorRecursion", 2, "Mirror recursion depth");
 
 	// TODO(xthexder) Clean up Renderable when unloaded.
 	void PrepareRenderable(ecs::Handle<ecs::Renderable> comp)
@@ -222,18 +223,22 @@ namespace sp
 
 		if (!mirrorVisData)
 		{
-			// int count;
-			// uint mask[MAX_LIGHTS];
+			// int count[4];
+			// uint maskL[MAX_LIGHTS];
+			// uint maskM[MAX_MIRRORS];
 			// uint list[MAX_LIGHTS * MAX_MIRRORS];
+			// int sourceLight[MAX_LIGHTS * MAX_MIRRORS];
+			// int sourceIndex[MAX_LIGHTS * MAX_MIRRORS];
 			// mat4 viewMat[MAX_LIGHTS * MAX_MIRRORS];
 			// mat4 invViewMat[MAX_LIGHTS * MAX_MIRRORS];
 			// mat4 projMat[MAX_LIGHTS * MAX_MIRRORS];
 			// mat4 invProjMat[MAX_LIGHTS * MAX_MIRRORS];
 			// vec2 clip[MAX_LIGHTS * MAX_MIRRORS];
 			// vec4 nearInfo[MAX_LIGHTS * MAX_MIRRORS];
+			// vec3 lightDirection[MAX_LIGHTS * MAX_MIRRORS]; // stride of vec4
 
 			mirrorVisData.Create()
-			.Data(sizeof(GLint) + (sizeof(GLuint) * 8 + sizeof(glm::mat4) * 4) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
+			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * 14 + sizeof(glm::mat4) * 4) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
 		}
 
 		// TODO(xthexder): Try 16 bit depth
@@ -283,64 +288,76 @@ namespace sp
 
 		GLLightData lightData[MAX_LIGHTS];
 		int lightDataCount = FillLightData(&lightData[0], game->entityManager);
+		int recursion = CVarMirrorRecursion.Get();
 
+		for (int bounce = 0; bounce < recursion; bounce++)
 		{
-			RenderPhase phase("MatrixGen", Timer);
-
-			auto mirrorMapCS = GlobalShaders->Get<MirrorMapCS>();
-
-			GLMirrorData mirrorData[MAX_MIRRORS];
-			int mirrorCount = FillMirrorData(&mirrorData[0], game->entityManager);
-			mirrorMapCS->SetLightData(lightDataCount, &lightData[0]);
-			mirrorMapCS->SetMirrorData(mirrorCount, &mirrorData[0]);
-
-			ShaderControl->BindPipeline<MirrorMapCS>(GlobalShaders);
-			glDispatchCompute(1, 1, 1);
-			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-		}
-
-		{
-			RenderPhase phase("MirrorMaps", Timer);
-
-			// TODO(xthexder): Set Z size properly
-			auto mirrorMapResolution = glm::ivec3(MirrorShadowMapResolution, MirrorShadowMapResolution, 8);
-			RenderTargetDesc mirrorMapDesc(PF_R32F, mirrorMapResolution);
-			mirrorMapDesc.textureArray = true;
-			if (!mirrorShadowMap || mirrorShadowMap->GetDesc() != mirrorMapDesc)
 			{
-				mirrorShadowMap = RTPool->Get(mirrorMapDesc);
+				RenderPhase phase("MatrixGen", Timer);
+
+				auto mirrorMapCS = GlobalShaders->Get<MirrorMapCS>();
+
+				GLMirrorData mirrorData[MAX_MIRRORS];
+				int mirrorCount = FillMirrorData(&mirrorData[0], game->entityManager);
+				mirrorMapCS->SetLightData(lightDataCount, &lightData[0]);
+				mirrorMapCS->SetMirrorData(mirrorCount, &mirrorData[0]);
+
+				ShaderControl->BindPipeline<MirrorMapCS>(GlobalShaders);
+				glDispatchCompute(1, 1, 1);
+				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 			}
 
-			RenderTargetDesc depthDesc(PF_DEPTH32F, mirrorMapResolution);
-			depthDesc.textureArray = true;
-			auto depthTarget = RTPool->Get(depthDesc);
-			SetRenderTarget(&mirrorShadowMap->GetTexture(), &depthTarget->GetTexture());
-
-			ecs::View basicView;
-			basicView.offset = glm::ivec2(0);
-			basicView.extents = glm::ivec2(MirrorShadowMapResolution);
-
-			ShaderControl->BindPipeline<MirrorMapVS, MirrorMapGS, MirrorMapFS>(GlobalShaders);
-
-			auto mirrorMapFS = GlobalShaders->Get<MirrorMapFS>();
-			auto mirrorMapVS = GlobalShaders->Get<MirrorMapVS>();
-
-			mirrorMapFS->SetLightData(lightDataCount, &lightData[0]);
-			shadowMap->GetTexture().Bind(4);
-
-			ForwardPass(basicView, mirrorMapVS, [&] (ecs::Entity & ent)
 			{
-				if (ent.Has<ecs::Mirror>())
+				RenderPhase phase("MirrorMaps", Timer);
+
+				// TODO(xthexder): Set Z size properly
+				auto mirrorMapResolution = glm::ivec3(MirrorShadowMapResolution, MirrorShadowMapResolution, 8);
+				RenderTargetDesc mirrorMapDesc(PF_R32F, mirrorMapResolution);
+				mirrorMapDesc.textureArray = true;
+				if (!mirrorShadowMap || mirrorShadowMap->GetDesc() != mirrorMapDesc)
 				{
-					auto mirror = ent.Get<ecs::Mirror>();
-					mirrorMapFS->SetMirrorId(mirror->mirrorId);
+					mirrorShadowMap = RTPool->Get(mirrorMapDesc);
 				}
-				else
+
+				RenderTargetDesc depthDesc(PF_DEPTH32F, mirrorMapResolution);
+				depthDesc.textureArray = true;
+				auto depthTarget = RTPool->Get(depthDesc);
+				SetRenderTarget(&mirrorShadowMap->GetTexture(), &depthTarget->GetTexture());
+
+				ecs::View basicView;
+				basicView.offset = glm::ivec2(0);
+				basicView.extents = glm::ivec2(MirrorShadowMapResolution);
+
+				if (bounce > 0)
+					basicView.clearMode = 0;
+
+				ShaderControl->BindPipeline<MirrorMapVS, MirrorMapGS, MirrorMapFS>(GlobalShaders);
+
+				auto mirrorMapFS = GlobalShaders->Get<MirrorMapFS>();
+				auto mirrorMapVS = GlobalShaders->Get<MirrorMapVS>();
+
+				mirrorMapFS->SetLightData(lightDataCount, &lightData[0]);
+				shadowMap->GetTexture().Bind(4);
+				mirrorMapFS->SetMirrorId(-1);
+
+				ForwardPass(basicView, mirrorMapVS, [&](ecs::Entity & ent)
 				{
-					mirrorMapFS->SetMirrorId(-1);
-				}
-			});
-			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+					if (bounce == recursion - 1)
+					{
+						// Don't mark mirrors on last pass.
+					}
+					else if (ent.Has<ecs::Mirror>())
+					{
+						auto mirror = ent.Get<ecs::Mirror>();
+						mirrorMapFS->SetMirrorId(mirror->mirrorId);
+					}
+					else
+					{
+						mirrorMapFS->SetMirrorId(-1);
+					}
+				});
+				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+			}
 		}
 	}
 

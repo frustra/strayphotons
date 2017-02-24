@@ -8,19 +8,21 @@ layout (location = 0) in vec3 inViewPos;
 ##import lib/mirror_common
 
 uniform vec2 clip;
-uniform int lightId;
-uniform int mirrorId;
+uniform int drawLightId;
+uniform int drawMirrorId;
 
 layout (location = 0) out vec4 gBuffer0;
 
 void main()
 {
-	if (mirrorId >= 0) {
-		uint mask = 1 << uint(mirrorId);
-		uint prevValue = atomicOr(mirrorData.mask[lightId], mask);
+	if (drawMirrorId >= 0) {
+		uint mask = 1 << uint(drawMirrorId);
+		uint prevValue = atomicOr(mirrorData.maskL[drawLightId], mask);
 		if ((prevValue & mask) == 0) {
-			uint index = atomicAdd(mirrorData.count, 1);
-			mirrorData.list[index] = (uint(lightId) << 16) + uint(mirrorId);
+			uint index = atomicAdd(mirrorData.count[0], 1);
+			mirrorData.list[index] = PackLightAndMirror(drawLightId, drawMirrorId);
+			mirrorData.sourceIndex[index] = drawLightId;
+			mirrorData.sourceLight[index] = drawLightId;
 		}
 	}
 

@@ -29,6 +29,14 @@
 			}
 		},
 		{
+			"mirror": [1, 1],
+			"renderable": "mirror",
+			"transform": {
+				"translate": [0, 0, 2],
+				"rotate": [45, 1, 0, 0]
+			}
+		},
+		{
 			"_name": "player",
 			"view": {
 				"extents": [1600, 900],

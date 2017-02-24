@@ -123,9 +123,9 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 	}
 
 #ifdef INCLUDE_MIRRORS
-	for (int i = 0; i < mirrorData.count; i++) {
+	for (int i = 0; i < mirrorData.count[0]; i++) {
 		vec3 sourcePos = vec3(mirrorData.invViewMat[i] * vec4(0, 0, 0, 1));
-		uint lightId = (mirrorData.list[i] >> 16) & 0xFFFF;
+		uint lightId = mirrorData.sourceLight[i];
 
 		vec3 sampleToLightRay = sourcePos - worldPosition;
 		vec3 incidence = normalize(sampleToLightRay);
@@ -159,8 +159,7 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 
 		// Spotlight attenuation.
 		float cosSpotAngle = lights[lightId].spotAngleCos;
-		vec3 mirrorNormal = mat3(mirrorData.invViewMat[i]) * vec3(0, 0, -1);
-		vec3 currLightDir = reflect(lights[lightId].direction, mirrorNormal);
+		vec3 currLightDir = mirrorData.lightDirection[i];
 		float spotTerm = dot(incidence, -currLightDir);
 		float spotFalloff = smoothstep(cosSpotAngle, 1, spotTerm) * step(-1, cosSpotAngle) + step(cosSpotAngle, -1);
 

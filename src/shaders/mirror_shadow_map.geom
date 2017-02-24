@@ -19,7 +19,7 @@ layout (location = 0) out vec3 outViewPos;
 
 void main()
 {
-	for (int index = 0; index < mirrorData.count; index++) {
+	for (int index = mirrorData.count[1]; index < mirrorData.count[0]; index++) {
 		gl_Layer = index;
 
 		for (int i = 0; i < 3; i++) {

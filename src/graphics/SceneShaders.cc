@@ -19,8 +19,8 @@ namespace sp
 	ShadowMapFS::ShadowMapFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 	{
 		Bind(clip, "clip");
-		Bind(lightId, "lightId");
-		Bind(mirrorId, "mirrorId");
+		Bind(lightId, "drawLightId");
+		Bind(mirrorId, "drawMirrorId");
 	}
 
 	void ShadowMapFS::SetClip(glm::vec2 newClip)
@@ -60,7 +60,7 @@ namespace sp
 
 	MirrorMapFS::MirrorMapFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 	{
-		Bind(mirrorId, "mirrorId");
+		Bind(mirrorId, "drawMirrorId");
 		Bind(lightCount, "lightCount");
 		BindBuffer(lightData, 0);
 	}

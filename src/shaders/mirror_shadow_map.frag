@@ -10,7 +10,7 @@ layout (location = 0) in vec3 inViewPos;
 ##import lib/mirror_common
 ##import lib/shadow_sample
 
-uniform int mirrorId;
+uniform int drawMirrorId;
 
 uniform int lightCount = 0;
 
@@ -22,18 +22,20 @@ layout (location = 0) out vec4 gBuffer0;
 
 void main()
 {
-	// if (mirrorId >= 0) {
-	// 	uint lightId = (mirrorData.list[gl_Layer] >> 16) & 0xFFFF;
-	// 	uint mask = 1 << uint(mirrorId);
-	// 	uint prevValue = atomicOr(mirrorData.mask[lightId], mask);
-	// 	if ((prevValue & mask) == 0) {
-	// 		uint index = atomicAdd(mirrorData.count, 1);
-	// 		mirrorData.list[index] = (uint(lightId) << 16) + uint(mirrorId);
-	// 	}
-	// }
+	uint tuple = mirrorData.list[gl_Layer];
+	int sourceId = UnpackMirrorSource(tuple);
+	int mirrorId = UnpackMirrorDest(tuple);
 
-	uint lightId = (mirrorData.list[gl_Layer] >> 16) & 0xFFFF;
-	Light light = lights[lightId];
+	if (drawMirrorId >= 0) {
+		uint mask = 1 << uint(drawMirrorId);
+		uint prevValue = atomicOr(mirrorData.maskM[mirrorId], mask);
+		if ((prevValue & mask) == 0) {
+			uint index = atomicAdd(mirrorData.count[0], 1);
+			mirrorData.list[index] = PackMirrorAndMirror(mirrorId, drawMirrorId);
+			mirrorData.sourceIndex[index] = gl_Layer;
+			mirrorData.sourceLight[index] = mirrorData.sourceLight[gl_Layer];
+		}
+	}
 
 	vec4 ndcPosOnMirror = mirrorData.projMat[gl_Layer] * vec4(inViewPos, 1.0);
 	ndcPosOnMirror /= ndcPosOnMirror.w;
@@ -41,17 +43,30 @@ void main()
 	vec4 viewPosOnMirror = mirrorData.invProjMat[gl_Layer] * ndcPosOnMirror;
 	viewPosOnMirror /= viewPosOnMirror.w;
 	vec4 worldPosOnMirror = mirrorData.invViewMat[gl_Layer] * viewPosOnMirror;
-	vec4 lightViewPosOnMirror = light.view * worldPosOnMirror;
 
-	ShadowInfo info = ShadowInfo(
-		int(lightId),
-		lightViewPosOnMirror.xyz,
-		light.proj,
-		light.invProj,
-		light.mapOffset,
-		light.clip,
-		vec4(0)
-	);
+	ShadowInfo info;
+	info.index = mirrorData.sourceIndex[gl_Layer];
+
+	if (MirrorSourceIsMirror(tuple)) {
+		int i = info.index;
+		vec4 mirrorViewPosOnMirror = mirrorData.viewMat[i] * worldPosOnMirror;
+
+		info.shadowMapPos = mirrorViewPosOnMirror.xyz;
+		info.projMat = mirrorData.projMat[i];
+		info.invProjMat = mirrorData.invProjMat[i];
+		info.mapOffset = vec4(0, 0, 1, 1);
+		info.clip = mirrorData.clip[i];
+		//info.nearInfo = mirrorData.nearInfo[i]
+	} else {
+		Light light = lights[sourceId];
+		vec4 lightViewPosOnMirror = light.view * worldPosOnMirror;
+
+		info.shadowMapPos = lightViewPosOnMirror.xyz;
+		info.projMat = light.proj;
+		info.invProjMat = light.invProj;
+		info.mapOffset = light.mapOffset;
+		info.clip = light.clip;
+	}
 
 	float occlusion = SimpleOcclusion(info);
 	gBuffer0.r = (step(0.8, occlusion) * 0.1 + 0.9) * LinearDepth(inViewPos, mirrorData.clip[gl_Layer]);
