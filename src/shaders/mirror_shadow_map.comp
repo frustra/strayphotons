@@ -71,7 +71,7 @@ void main() {
 	mirrorViewMat = mirrorViewMat * translation;
 
 	vec3 viewSpaceMirrorPos = vec3(mirrorViewMat * vec4(mirrorPos, 1.0));
-	vec2 clip = vec2(-viewSpaceMirrorPos.z, 64);
+	vec2 clip = vec2(-viewSpaceMirrorPos.z + 0.0001, 64);
 	vec2 size = mirrors[mirrorId].size;
 	vec4 bounds = viewSpaceMirrorPos.xxyy + vec4(-size.x, size.x, -size.y, size.y) * 0.5;
 

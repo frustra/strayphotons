@@ -27,6 +27,7 @@ namespace sp
 
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
 	static CVar<float> CVarFlashlightAngle("r.FlashlightAngle", 20, "Flashlight spot angle");
+	static CVar<float> CVarFlashlightResolution("r.FlashlightResolution", 512, "Flashlight shadow map resolution");
 	static CVar<float> CVarSunPostion("g.SunPostion", 0.2, "Sun angle");
 
 	void GameLogic::Init()
@@ -127,6 +128,11 @@ namespace sp
 			auto light = flashlight.Get<ecs::Light>();
 			light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
 		}
+		if (CVarFlashlightResolution.Changed())
+		{
+			auto view = flashlight.Get<ecs::View>();
+			view->extents = glm::ivec2(CVarFlashlightResolution.Get(true));
+		}
 		if (!humanControlSystem.Frame(dtSinceLastFrame))
 		{
 			return false;
@@ -152,7 +158,7 @@ namespace sp
 		light->tint = glm::vec3(1.0);
 		light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
 		auto view = flashlight.Assign<ecs::View>();
-		view->extents = glm::vec2(512);
+		view->extents = glm::vec2(CVarFlashlightResolution.Get());
 		view->clip = glm::vec2(0.1, 256);
 	}
 }

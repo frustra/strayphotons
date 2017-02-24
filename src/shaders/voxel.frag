@@ -57,7 +57,7 @@ void main()
 	vec3 pixelLuminance = DirectShading(worldPosition, baseColor.rgb, inNormal, inNormal, roughness);
 
 	// Clip so we don't overflow
-	pixelLuminance = min(vec3(1), pixelLuminance);
+	pixelLuminance = min(vec3(1.0), pixelLuminance);
 
 	vec3 normal = normalize(inNormal) * 0.5 + 0.5;
 

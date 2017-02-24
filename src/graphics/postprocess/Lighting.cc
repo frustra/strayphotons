@@ -127,8 +127,6 @@ namespace sp
 			glGetTextureImage(target->GetTexture().handle, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, sizeof(uint32) * Bins, 0);
 		}
 
-		float Exposure = 1.0f;
-
 	private:
 		shared_ptr<RenderTarget> target;
 		Buffer readBackBuf;
@@ -298,7 +296,7 @@ namespace sp
 		shader->SetViewParams(context->view);
 		shader->SetMode(CVarVoxelLightingMode.Get());
 		shader->SetVoxelInfo(voxelData.info, diffuseDownsample);
-		shader->SetExposure(r->GlobalShaders->Get<LumiHistogramCS>()->Exposure);
+		shader->SetExposure(r->Exposure);
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingFS>(r->GlobalShaders);
@@ -324,7 +322,7 @@ namespace sp
 
 		if (CVarExposure.Get() > 0.0f)
 		{
-			lumishader->Exposure = CVarExposure.Get();
+			r->Exposure = CVarExposure.Get();
 		}
 		else
 		{
@@ -333,7 +331,7 @@ namespace sp
 			{
 				luminance = std::min(luminance, (double) CVarEyeAdaptationMaxLuminance.Get());
 				luminance = std::max(luminance, (double) CVarEyeAdaptationMinLuminance.Get());
-				luminance /= lumishader->Exposure;
+				luminance /= r->Exposure;
 
 				double autoKeyComp = 1.03 - 2.0 / (std::log10(luminance * 1000.0 + 1.0) + 2.0);
 				autoKeyComp = CVarEyeAdaptationKeyComp.Get() * autoKeyComp + 1.0 - CVarEyeAdaptationKeyComp.Get();
@@ -341,14 +339,14 @@ namespace sp
 				double ev100 = std::log2(luminance * 100.0 / 12.5) - CVarExposureComp.Get();
 				double newExposure = autoKeyComp / (1.2 * std::pow(2.0, ev100));
 
-				float alpha = newExposure < lumishader->Exposure ? CVarEyeAdaptationUpRate.Get() : CVarEyeAdaptationDownRate.Get();
+				float alpha = newExposure < r->Exposure ? CVarEyeAdaptationUpRate.Get() : CVarEyeAdaptationDownRate.Get();
 				alpha = std::max(std::min(alpha, 0.9999f), 0.0001f);
-				lumishader->Exposure = lumishader->Exposure * (1.0f - alpha) + newExposure * alpha;
+				r->Exposure = r->Exposure * (1.0f - alpha) + newExposure * alpha;
 			}
 		}
 
-		lumishader->Exposure = std::max(lumishader->Exposure, 1e-5f);
-		shader->SetExposure(lumishader->Exposure);
+		r->Exposure = std::max(r->Exposure, 1e-5f);
+		shader->SetExposure(r->Exposure);
 
 		glViewport(0, 0, outputs[0].TargetDesc.extent[0], outputs[0].TargetDesc.extent[1]);
 		r->SetRenderTarget(&dest, nullptr);

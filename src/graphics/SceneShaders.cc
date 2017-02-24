@@ -101,8 +101,6 @@ namespace sp
 		Bind(lightCount, "lightCount");
 		BindBuffer(lightData, 0);
 
-		Bind(exposure, "exposure");
-
 		Bind(viewMat, "viewMat");
 		Bind(invViewMat, "invViewMat");
 		Bind(invProjMat, "invProjMat");

@@ -67,6 +67,7 @@ namespace sp
 
 	static CVar<bool> CVarRenderWireframe("r.Wireframe", false, "Render wireframes");
 	static CVar<int> CVarMirrorRecursion("r.MirrorRecursion", 2, "Mirror recursion depth");
+	static CVar<int> CVarMirrorMapResolution("r.MirrorMapResolution", 512, "Resolution of mirror shadow maps");
 
 	// TODO(xthexder) Clean up Renderable when unloaded.
 	void PrepareRenderable(ecs::Handle<ecs::Renderable> comp)
@@ -169,8 +170,6 @@ namespace sp
 		AssertGLOK("Renderer::Prepare");
 	}
 
-	const int MirrorShadowMapResolution = 512;
-
 	void Renderer::RenderShadowMaps()
 	{
 		RenderPhase phase("ShadowMaps", Timer);
@@ -239,7 +238,7 @@ namespace sp
 
 		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
 		glDisable(GL_SCISSOR_TEST);
-		glEnable(GL_CULL_FACE);
+		glDisable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
 		glClear(GL_DEPTH_BUFFER_BIT);
@@ -299,8 +298,9 @@ namespace sp
 			{
 				RenderPhase phase("MirrorMaps", Timer);
 
-				// TODO(xthexder): Set Z size properly
-				auto mirrorMapResolution = glm::ivec3(MirrorShadowMapResolution, MirrorShadowMapResolution, 8);
+				int mapCount = lightCount * mirrorCount * recursion;
+				auto mapResolution = CVarMirrorMapResolution.Get();
+				auto mirrorMapResolution = glm::ivec3(mapResolution, mapResolution, mapCount);
 				RenderTargetDesc mirrorMapDesc(PF_R32F, mirrorMapResolution);
 				mirrorMapDesc.textureArray = true;
 				if (!mirrorShadowMap || mirrorShadowMap->GetDesc() != mirrorMapDesc)
@@ -315,7 +315,7 @@ namespace sp
 
 				ecs::View basicView;
 				basicView.offset = glm::ivec2(0);
-				basicView.extents = glm::ivec2(MirrorShadowMapResolution);
+				basicView.extents = glm::ivec2(mapResolution);
 
 				if (bounce > 0)
 					basicView.clearMode = 0;
@@ -352,7 +352,7 @@ namespace sp
 		}
 	}
 
-	void Renderer::PrepareVoxelTextures(VoxelData &voxelData)
+	void Renderer::PrepareVoxelTextures()
 	{
 		auto VoxelGridSize = voxelData.info.gridSize;
 
@@ -403,11 +403,11 @@ namespace sp
 		}
 	}
 
-	void Renderer::RenderVoxelGrid(VoxelData &voxelData)
+	void Renderer::RenderVoxelGrid()
 	{
 		RenderPhase phase("VoxelGrid", Timer);
 
-		PrepareVoxelTextures(voxelData);
+		PrepareVoxelTextures();
 
 		glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_CULL_FACE);
@@ -440,8 +440,9 @@ namespace sp
 			GLLightData lightData[MAX_LIGHTS];
 			int lightCount = FillLightData(&lightData[0], game->entityManager);
 
-			GlobalShaders->Get<VoxelRasterFS>()->SetLightData(lightCount, &lightData[0]);
-			GlobalShaders->Get<VoxelRasterFS>()->SetVoxelInfo(voxelData.info);
+			auto voxelRasterFS = GlobalShaders->Get<VoxelRasterFS>();
+			voxelRasterFS->SetLightData(lightCount, &lightData[0]);
+			voxelRasterFS->SetVoxelInfo(voxelData.info);
 			shadowMap->GetTexture().Bind(4);
 			mirrorShadowMap->GetTexture().Bind(5);
 			mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
@@ -490,7 +491,7 @@ namespace sp
 		glEnable(GL_CULL_FACE);
 	}
 
-	void Renderer::ClearVoxelGrid(VoxelData &voxelData)
+	void Renderer::ClearVoxelGrid()
 	{
 		RenderPhase phase("VoxelClear", Timer);
 
@@ -512,7 +513,7 @@ namespace sp
 		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
-	void Renderer::UpdateLightSensors(VoxelData &voxelData)
+	void Renderer::UpdateLightSensors()
 	{
 		RenderPhase phase("UpdateLightSensors", Timer);
 		auto shader = GlobalShaders->Get<LightSensorUpdateCS>();
@@ -544,15 +545,14 @@ namespace sp
 
 		RenderShadowMaps();
 
-		VoxelData voxelData;
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::VoxelInfo>())
 		{
 			int voxelGridSize = game->options["voxel-gridsize"].as<int>();
 			float voxelSuperSampleScale = game->options["voxel-supersample"].as<float>();
 
 			voxelData.info = *ecs::UpdateVoxelInfoCache(ent, voxelGridSize, voxelSuperSampleScale);
-			RenderVoxelGrid(voxelData);
-			UpdateLightSensors(voxelData);
+			RenderVoxelGrid();
+			UpdateLightSensors();
 			break;
 		}
 
@@ -591,7 +591,7 @@ namespace sp
 
 		PostProcessing::Process(this, game, view, targets);
 
-		if (voxelData.info.gridSize > 0) ClearVoxelGrid(voxelData);
+		if (voxelData.info.gridSize > 0) ClearVoxelGrid();
 
 		//AssertGLOK("Renderer::RenderFrame");
 	}
