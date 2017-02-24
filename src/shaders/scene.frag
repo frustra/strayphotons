@@ -13,10 +13,12 @@ layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec3 inTangent;
 layout (location = 2) in vec3 inBitangent;
 layout (location = 3) in vec2 inTexCoord;
+layout (location = 4) in vec3 inViewPos;
 
 layout (location = 0) out vec4 gBuffer0;
 layout (location = 1) out vec4 gBuffer1;
 layout (location = 2) out vec4 gBuffer2;
+layout (location = 3) out vec4 gBuffer3;
 
 const float bumpDepth = 0.1;
 
@@ -57,4 +59,5 @@ void main()
 	gBuffer1.a = 0.0; // TODO(xthexder): Emissiveness
 	gBuffer2.rgb = inNormal;
 	gBuffer2.a = metallic;
+	gBuffer3.rgb = inViewPos;
 }

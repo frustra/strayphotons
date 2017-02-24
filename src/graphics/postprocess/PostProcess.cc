@@ -23,7 +23,7 @@ namespace sp
 	static CVar<bool> CVarTonemapEnabled("r.Tonemap", true, "Enable HDR tonemapping");
 	static CVar<bool> CVarBloomEnabled("r.Bloom", true, "Enable HDR bloom");
 	static CVar<bool> CVarSSAOEnabled("r.SSAO", false, "Enable Screen Space Ambient Occlusion");
-	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth (or alpha), 4: roughness, 5: metallic (or radiance))");
+	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth (or alpha), 4: roughness, 5: metallic (or radiance), 6: position)");
 	static CVar<int> CVarViewGBufferSource("r.ViewGBufferSource", 0, "GBuffer Debug Source (0: gbuffer, 1: voxel grid, 2: cone trace)");
 	static CVar<int> CVarVoxelMip("r.VoxelMip", 0, "");
 	static CVar<int> CVarAntiAlias("r.AntiAlias", 1, "Anti-aliasing mode (0: none, 1: SMAA 1x)");
@@ -33,7 +33,7 @@ namespace sp
 		auto ssaoPass0 = context.AddPass<SSAOPass0>();
 		ssaoPass0->SetInput(0, context.LastOutput);
 		ssaoPass0->SetInput(1, context.GBuffer1);
-		ssaoPass0->SetInput(2, context.Depth);
+		ssaoPass0->SetInput(2, context.GBuffer3);
 
 		auto ssaoBlurX = context.AddPass<SSAOBlur>(true);
 		ssaoBlurX->SetInput(0, ssaoPass0);
@@ -53,7 +53,7 @@ namespace sp
 		indirectDiffuse->SetInput(0, context.GBuffer0);
 		indirectDiffuse->SetInput(1, context.GBuffer1);
 		indirectDiffuse->SetInput(2, context.GBuffer2);
-		indirectDiffuse->SetInput(3, context.Depth);
+		indirectDiffuse->SetInput(3, context.GBuffer3);
 		indirectDiffuse->SetInput(4, context.VoxelColor);
 		indirectDiffuse->SetInput(5, context.VoxelNormal);
 		indirectDiffuse->SetInput(6, context.VoxelRadiance);
@@ -62,7 +62,7 @@ namespace sp
 		lighting->SetInput(0, context.GBuffer0);
 		lighting->SetInput(1, context.GBuffer1);
 		lighting->SetInput(2, context.GBuffer2);
-		lighting->SetInput(3, context.Depth);
+		lighting->SetInput(3, context.GBuffer3);
 		lighting->SetInput(4, context.ShadowMap);
 		lighting->SetInput(5, context.MirrorShadowMap);
 		lighting->SetInput(6, context.VoxelColor);
@@ -129,6 +129,7 @@ namespace sp
 		context.GBuffer0 = context.AddPass<ProxyProcessPass>(targets.gBuffer0);
 		context.GBuffer1 = context.AddPass<ProxyProcessPass>(targets.gBuffer1);
 		context.GBuffer2 = context.AddPass<ProxyProcessPass>(targets.gBuffer2);
+		context.GBuffer3 = context.AddPass<ProxyProcessPass>(targets.gBuffer3);
 		context.Depth = context.AddPass<ProxyProcessPass>(targets.depth);
 		context.LastOutput = context.GBuffer0;
 
@@ -190,10 +191,11 @@ namespace sp
 			viewGBuf->SetInput(0, context.GBuffer0);
 			viewGBuf->SetInput(1, context.GBuffer1);
 			viewGBuf->SetInput(2, context.GBuffer2);
-			viewGBuf->SetInput(3, context.Depth);
-			viewGBuf->SetInput(4, context.VoxelColor);
-			viewGBuf->SetInput(5, context.VoxelNormal);
-			viewGBuf->SetInput(6, context.VoxelRadiance);
+			viewGBuf->SetInput(3, context.GBuffer3);
+			viewGBuf->SetInput(4, context.Depth);
+			viewGBuf->SetInput(5, context.VoxelColor);
+			viewGBuf->SetInput(6, context.VoxelNormal);
+			viewGBuf->SetInput(7, context.VoxelRadiance);
 			context.LastOutput = viewGBuf;
 		}
 

@@ -467,7 +467,8 @@ namespace sp
 		targets.gBuffer0 = RTPool->Get({ PF_RGBA8, view.extents });
 		targets.gBuffer1 = RTPool->Get({ PF_RGBA16F, view.extents });
 		targets.gBuffer2 = RTPool->Get({ PF_RGBA16F, view.extents });
-		targets.depth = RTPool->Get({ PF_DEPTH32F, view.extents });
+		targets.gBuffer3 = RTPool->Get({ PF_RGBA16F, view.extents });
+		targets.depth = RTPool->Get({ PF_DEPTH24_STENCIL8, view.extents });
 		targets.shadowMap = shadowMap;
 		targets.mirrorShadowMap = mirrorShadowMap;
 		targets.voxelData = voxelData;
@@ -477,19 +478,42 @@ namespace sp
 			targets.gBuffer0->GetTexture(),
 			targets.gBuffer1->GetTexture(),
 			targets.gBuffer2->GetTexture(),
+			targets.gBuffer3->GetTexture(),
 		};
 
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
-		SetRenderTargets(3, attachments, &targets.depth->GetTexture());
+		SetRenderTargets(4, attachments, &targets.depth->GetTexture());
 
 		ecs::View forwardPassView = view;
 		forwardPassView.offset = glm::ivec2();
 
 		ShaderControl->BindPipeline<SceneVS, SceneGS, SceneFS>(GlobalShaders);
 
+		int mirrorCount = 0;
+		for (auto entity : game->entityManager.EntitiesWith<ecs::Mirror>())
+		{
+			auto mirror = entity.Get<ecs::Mirror>();
+			mirror->mirrorId = mirrorCount++;
+		}
+
 		auto sceneVS = GlobalShaders->Get<SceneVS>();
-		ForwardPass(forwardPassView, sceneVS);
+		ForwardPass(forwardPassView, sceneVS, [&](ecs::Entity & ent)
+		{
+			if (ent.Has<ecs::Mirror>())
+			{
+				auto mirror = ent.Get<ecs::Mirror>();
+				glStencilFunc(GL_ALWAYS, mirror->mirrorId, 0);
+				glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+				//mirrorMapFS->SetMirrorId(mirror->mirrorId);
+			}
+			else
+			{
+				glStencilFunc(GL_ALWAYS, 0, 0);
+				glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
+				//mirrorMapFS->SetMirrorId(-1);
+			}
+		});
 
 		// Run postprocessing.
 		glDisable(GL_SCISSOR_TEST);

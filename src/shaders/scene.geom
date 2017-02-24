@@ -10,7 +10,7 @@ in gl_PerVertex
 } gl_in[];
 
 layout (triangles) in;
-layout (triangle_strip, max_vertices = 3) out;
+layout (triangle_strip, max_vertices = 27) out;
 
 layout (location = 0) in vec3 inViewPos[];
 layout (location = 1) in vec3 inNormal[];
@@ -20,6 +20,7 @@ layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec3 outTangent;
 layout (location = 2) out vec3 outBitangent;
 layout (location = 3) out vec2 outTexCoord;
+layout (location = 4) out vec3 outViewPos;
 
 void main()
 {
@@ -36,6 +37,7 @@ void main()
 	for (int i = 0; i < 3; i++) {
 		outNormal = inNormal[i];
 		outTexCoord = inTexCoord[i];
+		outViewPos = inViewPos[i];
 
 		gl_Position = gl_in[i].gl_Position;
     	EmitVertex();

@@ -3,7 +3,7 @@
 layout (binding = 0) uniform sampler2D gBuffer0;
 layout (binding = 1) uniform sampler2D gBuffer1;
 layout (binding = 2) uniform sampler2D gBuffer2;
-layout (binding = 3) uniform sampler2D depthStencil;
+layout (binding = 3) uniform sampler2D gBuffer3;
 
 layout (binding = 4) uniform sampler3D voxelColor;
 layout (binding = 5) uniform sampler3D voxelNormal;
@@ -22,19 +22,17 @@ uniform float exposure = 1.0;
 ##import voxel_trace_shared
 
 uniform mat4 invViewMat;
-uniform mat4 invProjMat;
 
 void main()
 {
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
 	vec4 gb1 = texture(gBuffer1, inTexCoord);
+	vec4 gb3 = texture(gBuffer3, inTexCoord);
+
 	vec3 baseColor = gb0.rgb;
 	float roughness = gb0.a;
 	vec3 viewNormal = gb1.rgb;
-
-	// Determine coordinates of fragment.
-	float depth = texture(depthStencil, inTexCoord).r;
-	vec3 viewPosition = ScreenPosToViewPos(inTexCoord, depth, invProjMat);
+	vec3 viewPosition = gb3.rgb;
 	vec3 worldPosition = (invViewMat * vec4(viewPosition, 1.0)).xyz;
 	vec3 worldNormal = mat3(invViewMat) * viewNormal;
 

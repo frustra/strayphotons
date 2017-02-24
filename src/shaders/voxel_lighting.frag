@@ -8,7 +8,7 @@
 layout (binding = 0) uniform sampler2D gBuffer0;
 layout (binding = 1) uniform sampler2D gBuffer1;
 layout (binding = 2) uniform sampler2D gBuffer2;
-layout (binding = 3) uniform sampler2D depthStencil;
+layout (binding = 3) uniform sampler2D gBuffer3;
 layout (binding = 4) uniform sampler2D shadowMap;
 layout (binding = 5) uniform sampler2DArray mirrorShadowMap;
 
@@ -50,11 +50,12 @@ uniform int mode = 1;
 void getDepthNormal(out float depth, out vec3 normal, vec2 texCoord)
 {
 	normal = texture(gBuffer1, texCoord).xyz;
-	depth = texture(depthStencil, texCoord).x;
+	depth = texture(gBuffer3, texCoord).z;
 }
 
 bool detectEdge(vec3 centerNormal, float centerDepth, vec2 tcRadius)
 {
+	return false; // TODO(jli): fix
 	float depthU, depthR, depthD, depthL;
 	vec3 normalU, normalR, normalD, normalL;
 
@@ -88,6 +89,8 @@ void main()
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
 	vec4 gb1 = texture(gBuffer1, inTexCoord);
 	vec4 gb2 = texture(gBuffer2, inTexCoord);
+	vec4 gb3 = texture(gBuffer3, inTexCoord);
+
 	vec3 baseColor = gb0.rgb;
 	float roughness = gb0.a;
 	vec3 viewNormal = gb1.rgb;
@@ -95,9 +98,8 @@ void main()
 	float metalness = gb2.a;
 
 	// Determine coordinates of fragment.
-	float depth = texture(depthStencil, inTexCoord).r;
 	vec3 fragPosition = ScreenPosToViewPos(inTexCoord, 0, invProjMat);
-	vec3 viewPosition = ScreenPosToViewPos(inTexCoord, depth, invProjMat);
+	vec3 viewPosition = gb3.rgb;
 	vec3 worldPosition = (invViewMat * vec4(viewPosition, 1.0)).xyz;
 	vec3 worldFragPosition = (invViewMat * vec4(fragPosition, 1.0)).xyz;
 
@@ -148,7 +150,7 @@ void main()
 
 	vec3 indirectDiffuse;
 
-	if (diffuseDownsample > 1 && detectEdge(viewNormal, depth, diffuseDownsample * 0.65 / textureSize(gBuffer0, 0)) || reflected == 1.0 || mode == 5) {
+	if (diffuseDownsample > 1 && detectEdge(viewNormal, viewPosition.z, diffuseDownsample * 0.65 / textureSize(gBuffer0, 0)) || reflected == 1.0 || mode == 5) {
 		indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
 	} else {
 		indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;

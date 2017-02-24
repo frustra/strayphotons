@@ -246,8 +246,6 @@ namespace sp
 		VoxelLightingDiffuseFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			Bind(exposure, "exposure");
-
-			Bind(invProjMat, "invProjMat");
 			Bind(invViewMat, "invViewMat");
 
 			Bind(voxelSize, "voxelSize");
@@ -261,7 +259,6 @@ namespace sp
 
 		void SetViewParams(const ecs::View &view)
 		{
-			Set(invProjMat, view.invProjMat);
 			Set(invViewMat, view.invViewMat);
 		}
 
@@ -272,7 +269,7 @@ namespace sp
 		}
 
 	private:
-		Uniform exposure, invViewMat, invProjMat;
+		Uniform exposure, invViewMat;
 		Uniform voxelSize, voxelGridCenter;
 	};
 
