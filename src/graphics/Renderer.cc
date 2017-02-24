@@ -337,8 +337,10 @@ namespace sp
 				auto mirrorMapVS = GlobalShaders->Get<MirrorMapVS>();
 
 				mirrorMapFS->SetLightData(lightDataCount, &lightData[0]);
-				shadowMap->GetTexture().Bind(4);
 				mirrorMapFS->SetMirrorId(-1);
+
+				shadowMap->GetTexture().Bind(4);
+				mirrorShadowMap->GetTexture().Bind(5);
 
 				ForwardPass(basicView, mirrorMapVS, [&](ecs::Entity & ent)
 				{

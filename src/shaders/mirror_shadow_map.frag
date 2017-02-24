@@ -2,12 +2,17 @@
 
 // 0-3 are model textures
 layout (binding = 4) uniform sampler2D shadowMap;
+layout (binding = 5) uniform sampler2DArray mirrorShadowMap;
 
 layout (location = 0) in vec3 inViewPos;
 
 ##import lib/util
 ##import lib/types_common
 ##import lib/mirror_common
+
+#define MIRROR_SAMPLE
+##import lib/shadow_sample
+#undef MIRROR_SAMPLE
 ##import lib/shadow_sample
 
 uniform int drawMirrorId;
@@ -44,6 +49,7 @@ void main()
 	viewPosOnMirror /= viewPosOnMirror.w;
 	vec4 worldPosOnMirror = mirrorData.invViewMat[gl_Layer] * viewPosOnMirror;
 
+	float occlusion;
 	ShadowInfo info;
 	info.index = mirrorData.sourceIndex[gl_Layer];
 
@@ -57,6 +63,7 @@ void main()
 		info.mapOffset = vec4(0, 0, 1, 1);
 		info.clip = mirrorData.clip[i];
 		//info.nearInfo = mirrorData.nearInfo[i]
+		occlusion = SimpleOcclusionMirror(info);
 	} else {
 		Light light = lights[sourceId];
 		vec4 lightViewPosOnMirror = light.view * worldPosOnMirror;
@@ -66,8 +73,8 @@ void main()
 		info.invProjMat = light.invProj;
 		info.mapOffset = light.mapOffset;
 		info.clip = light.clip;
+		occlusion = SimpleOcclusion(info);
 	}
 
-	float occlusion = SimpleOcclusion(info);
 	gBuffer0.r = (step(0.8, occlusion) * 0.1 + 0.9) * LinearDepth(inViewPos, mirrorData.clip[gl_Layer]);
 }
