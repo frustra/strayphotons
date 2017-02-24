@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CVar.hh"
+#include "CFunc.hh"
 #include "Logging.hh"
 
 #include <map>

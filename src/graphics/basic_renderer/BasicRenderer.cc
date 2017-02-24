@@ -204,9 +204,8 @@ namespace sp
 		}
 	}
 
-	void BasicRenderer::BeginFrame(ecs::View &view, int fullscreen)
+	void BasicRenderer::BeginFrame()
 	{
-		ResizeWindow(view, fullscreen);
 	}
 
 	void BasicRenderer::EndFrame()

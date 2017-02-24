@@ -297,7 +297,7 @@ namespace sp
 		shader->SetLightData(lightCount, &lightData[0]);
 		shader->SetViewParams(context->view);
 		shader->SetMode(CVarVoxelLightingMode.Get());
-		shader->SetVoxelInfo(context->renderer->voxelInfo, diffuseDownsample);
+		shader->SetVoxelInfo(voxelData.info, diffuseDownsample);
 		shader->SetExposure(r->GlobalShaders->Get<LumiHistogramCS>()->Exposure);
 
 		r->SetRenderTarget(&dest, nullptr);
@@ -306,7 +306,7 @@ namespace sp
 		DrawScreenCover();
 	}
 
-	VoxelLightingDiffuse::VoxelLightingDiffuse()
+	VoxelLightingDiffuse::VoxelLightingDiffuse(VoxelData voxelData) : voxelData(voxelData)
 	{
 		downsample = CVarVoxelDiffuseDownsample.Get();
 		if (downsample < 1) downsample = 1;
@@ -320,7 +320,7 @@ namespace sp
 		auto lumishader = r->GlobalShaders->Get<LumiHistogramCS>();
 
 		shader->SetViewParams(context->view);
-		shader->SetVoxelInfo(context->renderer->voxelInfo);
+		shader->SetVoxelInfo(voxelData.info);
 
 		if (CVarExposure.Get() > 0.0f)
 		{

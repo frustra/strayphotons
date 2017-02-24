@@ -10,7 +10,7 @@ namespace sp
 		ProxyProcessPass(RenderTarget::Ref input)
 			: input(input)
 		{
-			Assert(input != nullptr);
+			Assert(input != nullptr, "null proxy pass input");
 		}
 
 		void Process(const PostProcessingContext *context)

@@ -28,7 +28,7 @@ namespace sp
 		void ResizeWindow(ecs::View &frameBufferView, int fullscreen);
 
 		virtual void Prepare() = 0;
-		virtual void BeginFrame(ecs::View &fbView, int fullscreen) = 0;
+		virtual void BeginFrame() = 0;
 		virtual void RenderPass(ecs::View &view) = 0;
 		virtual void PrepareForView(ecs::View &view) = 0;
 		virtual void EndFrame() = 0;

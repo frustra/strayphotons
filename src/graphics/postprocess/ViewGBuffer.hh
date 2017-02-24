@@ -7,8 +7,7 @@ namespace sp
 	class ViewGBuffer : public PostProcessPass<7, 1>
 	{
 	public:
-		ViewGBuffer(int mode, int source, int level) : mode(mode), source(source), level(level) {}
-
+		ViewGBuffer(int mode, int source, int level, VoxelData voxelData) : mode(mode), source(source), level(level), voxelData(voxelData) {}
 		void Process(const PostProcessingContext *context);
 
 		RenderTargetDesc GetOutputDesc(uint32 id)
@@ -25,5 +24,6 @@ namespace sp
 
 	private:
 		int mode, source, level;
+		VoxelData voxelData;
 	};
 }

@@ -49,7 +49,7 @@ namespace sp
 			BVHNode *root = SubdivideBVH(faces, bvhctx);
 
 			// Copy face indexes in BVH order
-			Assert(bvhctx.newFaceIndexes.size() == (size_t) mesh.indexCount);
+			Assert(bvhctx.newFaceIndexes.size() == (size_t) mesh.indexCount, "assertion failed");
 
 			for (size_t i = 0; i < bvhctx.newFaceIndexes.size(); i++)
 				faceData[mesh.indexOffset + i] = bvhctx.newFaceIndexes[i];
@@ -164,7 +164,7 @@ returnLeafNode:
 			}
 
 			//Logf("%d %d, %d, %f", leftFaces.size(), rightFaces.size(), bestAxis, bestPartition);
-			Assert(leftFaces.size() > 0 && rightFaces.size() > 0);
+			Assert(leftFaces.size() > 0 && rightFaces.size() > 0, "assertion failed");
 
 			if (ctx.activeThreads >= 4 || faces.size() < 64)
 			{

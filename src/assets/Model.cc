@@ -84,7 +84,7 @@ namespace sp
 		};
 	}
 
-	Model::Model(const std::string &name, shared_ptr<Asset> asset, tinygltf::Scene *scene) : name(name), scene(scene), asset(asset)
+	Model::Model(const std::string &name, shared_ptr<Asset> asset, tinygltf::Scene *scene) : name(name), glPrepared(false), scene(scene), asset(asset)
 	{
 		for (auto node : scene->scenes[scene->defaultScene])
 		{
@@ -94,6 +94,7 @@ namespace sp
 
 	Model::~Model()
 	{
+		Logf("Destroying model (prepared: %d)", glPrepared);
 		asset->manager->UnregisterModel(*this);
 	}
 
@@ -192,7 +193,7 @@ namespace sp
 					mode = GL_LINE_LOOP;
 				};
 
-				Assert(iAcc.type == TINYGLTF_TYPE_SCALAR);
+				Assert(iAcc.type == TINYGLTF_TYPE_SCALAR, "index buffer type must be scalar");
 
 				primitives.push_back(new Primitive
 				{

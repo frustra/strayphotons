@@ -10,6 +10,7 @@
 #include "ecs/components/Light.hh"
 #include "ecs/components/LightSensor.hh"
 #include "ecs/components/Mirror.hh"
+#include "ecs/components/VoxelInfo.hh"
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -28,6 +29,7 @@ namespace sp
 		entityManager.RegisterComponentType<ecs::Light>();
 		entityManager.RegisterComponentType<ecs::LightSensor>();
 		entityManager.RegisterComponentType<ecs::Mirror>();
+		entityManager.RegisterComponentType<ecs::VoxelInfo>();
 	}
 
 	Game::~Game()
@@ -53,7 +55,7 @@ namespace sp
 
 		try
 		{
-			audio.LoadProjectFiles();
+			// audio.LoadProjectFiles();
 			logic.Init();
 			graphics.CreateContext();
 			graphics.BindContextInputCallbacks(input);

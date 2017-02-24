@@ -8,7 +8,7 @@ namespace sp
 {
 	Texture &Texture::Create(GLenum target)
 	{
-		Assert(!handle);
+		Assert(!handle, "texture cannot be recreated");
 		this->target = target;
 		glCreateTextures(target, 1, &handle);
 		return Filter().Wrap();
@@ -25,14 +25,14 @@ namespace sp
 
 	void Texture::Bind(GLuint binding) const
 	{
-		Assert(handle);
+		Assert(handle, "null texture handle");
 		glBindTextures(binding, 1, &handle);
 	}
 
 	void Texture::BindImage(GLuint binding, GLenum access, GLint level, GLboolean layered, GLint layer) const
 	{
-		Assert(handle);
-		Assert(format.Valid());
+		Assert(handle, "null texture handle");
+		Assert(format.Valid(), "binding texture without format specified");
 		glBindImageTexture(binding, handle, level, layered, layer, access, format.internalFormat);
 	}
 
@@ -43,7 +43,7 @@ namespace sp
 
 	Texture &Texture::Filter(GLenum minFilter, GLenum magFilter, float anisotropy)
 	{
-		Assert(handle);
+		Assert(handle, "null texture handle");
 		if (target == GL_TEXTURE_2D_MULTISAMPLE) return *this;
 
 		glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, minFilter);
@@ -57,7 +57,7 @@ namespace sp
 
 	Texture &Texture::Wrap(GLenum wrapS, GLenum wrapT, GLenum wrapR)
 	{
-		Assert(handle);
+		Assert(handle, "null texture handle");
 		if (target == GL_TEXTURE_2D_MULTISAMPLE) return *this;
 
 		glTextureParameteri(handle, GL_TEXTURE_WRAP_S, wrapS);
@@ -68,7 +68,7 @@ namespace sp
 
 	Texture &Texture::Compare(GLenum mode, GLenum func)
 	{
-		Assert(handle);
+		Assert(handle, "null texture handle");
 		glTextureParameteri(handle, GL_TEXTURE_COMPARE_MODE, mode);
 		glTextureParameteri(handle, GL_TEXTURE_COMPARE_FUNC, func);
 		return *this;
@@ -84,8 +84,8 @@ namespace sp
 
 	Texture &Texture::Storage(GLPixelFormat format, GLsizei levels)
 	{
-		Assert(handle);
-		Assert(width && height);
+		Assert(handle, "null texture handle");
+		Assert(width && height, "texture size must be set before storage format");
 
 		if (levels == FullyMipmap)
 		{
@@ -126,11 +126,11 @@ namespace sp
 
 	Texture &Texture::Image2D(const void *pixels, GLint level, GLsizei subWidth, GLsizei subHeight, GLsizei xoffset, GLsizei yoffset, bool genMipmap)
 	{
-		Assert(handle);
-		Assert(pixels);
-		Assert(width && height);
-		Assert(level < levels);
-		Assert(format.Valid());
+		Assert(handle, "null texture handle");
+		Assert(pixels, "null pixel data");
+		Assert(width && height, "texture size must be set before data");
+		Assert(level < levels, "setting texture data for invalid level");
+		Assert(format.Valid(), "setting texture data without format specified");
 
 		if (subWidth == 0) subWidth = width;
 		if (subHeight == 0) subHeight = height;
@@ -145,11 +145,11 @@ namespace sp
 
 	Texture &Texture::Image3D(const void *pixels, GLint level, GLsizei subWidth, GLsizei subHeight, GLsizei subDepth, GLsizei xoffset, GLsizei yoffset, GLsizei zoffset, bool genMipmap)
 	{
-		Assert(handle);
-		Assert(pixels);
-		Assert(width && height && depth);
-		Assert(level < levels);
-		Assert(format.Valid());
+		Assert(handle, "null texture handle");
+		Assert(pixels, "null pixel data");
+		Assert(width && height && depth, "texture size must be set before data");
+		Assert(level < levels, "setting texture data for invalid level");
+		Assert(format.Valid(), "setting texture data without format specified");
 
 		if (subWidth == 0) subWidth = width;
 		if (subHeight == 0) subHeight = height;
@@ -170,8 +170,8 @@ namespace sp
 
 	Texture &Texture::LoadFromAsset(shared_ptr<Asset> asset, GLsizei levels)
 	{
-		Assert(handle);
-		Assert(asset != nullptr);
+		Assert(handle, "null texture handle");
+		Assert(asset != nullptr, "loading asset from null asset");
 
 		int w, h, comp;
 		uint8 *data = stbi_load_from_memory(asset->Buffer(), asset->Size(), &w, &h, &comp, 0);

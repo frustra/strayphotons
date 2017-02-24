@@ -20,8 +20,9 @@
 namespace sp
 {
 	GameLogic::GameLogic(Game *game)
-		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input), flashlightFixed(false), sunPos(0)
+		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input), flashlightFixed(false), sunPos(0), funcs(this)
 	{
+		funcs.Register("loadscene", "Load a new scene and replace the existing one", &GameLogic::LoadScene);
 	}
 
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
@@ -30,24 +31,7 @@ namespace sp
 
 	void GameLogic::Init()
 	{
-		scene = GAssets.LoadScene(game->options["map"].as<string>(), &game->entityManager, game->physics);
-
-		ecs::Entity player = scene->FindEntity("player");
-		humanControlSystem.AssignController(player, game->physics);
-
-		game->graphics.SetPlayerView(player);
-
-		// Create flashlight entity
-		flashlight = game->entityManager.NewEntity();
-		auto transform = flashlight.Assign<ecs::Transform>();
-		// transform->Translate(glm::vec3(0, -0.3, 0));
-		transform->SetRelativeTo(player);
-		auto light = flashlight.Assign<ecs::Light>();
-		light->tint = glm::vec3(1.0);
-		light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
-		auto view = flashlight.Assign<ecs::View>();
-		view->extents = glm::vec2(512);
-		view->clip = glm::vec2(0.1, 256);
+		LoadScene(game->options["map"].as<string>());
 
 		input->AddCharInputCallback([&](uint32 ch)
 		{
@@ -83,7 +67,7 @@ namespace sp
 				else
 				{
 					transform->SetTransform(glm::mat4());
-					// transform->Translate(glm::vec3(0, -0.3, 0));
+					transform->Translate(glm::vec3(0, -0.3, 0));
 					transform->SetRelativeTo(player);
 				}
 			}
@@ -110,6 +94,8 @@ namespace sp
 
 	bool GameLogic::Frame(double dtSinceLastFrame)
 	{
+		if (!scene) return true;
+
 		ecs::Entity sun = scene->FindEntity("sun");
 		if (sun.Valid())
 		{
@@ -146,5 +132,27 @@ namespace sp
 			return false;
 		}
 		return true;
+	}
+
+	void GameLogic::LoadScene(const string &name)
+	{
+		scene = GAssets.LoadScene(name, &game->entityManager, game->physics);
+
+		ecs::Entity player = scene->FindEntity("player");
+		humanControlSystem.AssignController(player, game->physics);
+
+		game->graphics.SetPlayerView(player);
+
+		// Create flashlight entity
+		flashlight = game->entityManager.NewEntity();
+		auto transform = flashlight.Assign<ecs::Transform>();
+		transform->Translate(glm::vec3(0, -0.3, 0));
+		transform->SetRelativeTo(player);
+		auto light = flashlight.Assign<ecs::Light>();
+		light->tint = glm::vec3(1.0);
+		light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
+		auto view = flashlight.Assign<ecs::View>();
+		view->extents = glm::vec2(512);
+		view->clip = glm::vec2(0.1, 256);
 	}
 }

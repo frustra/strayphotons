@@ -39,6 +39,7 @@ namespace sp
 		};
 
 		const string name;
+		bool glPrepared;
 		vector<Primitive *> primitives;
 		std::map<string, GLuint> buffers;
 		std::map<string, Texture> textures;

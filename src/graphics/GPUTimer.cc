@@ -8,7 +8,7 @@ namespace sp
 	RenderPhase::RenderPhase(const string &name, GPUTimer *timer)
 		: name(name)
 	{
-		Assert(timer);
+		Assert(timer, "created RenderPhase with null timer");
 		if (timer->Active())
 		{
 			timer->Register(*this);
@@ -68,7 +68,7 @@ namespace sp
 
 	void GPUTimer::Complete(RenderPhase &phase)
 	{
-		Assert(stack.top() == &phase.query);
+		Assert(stack.top() == &phase.query, "RenderPhase query mismatch");
 		stack.pop();
 		glQueryCounter(phase.query.queries[1], GL_TIMESTAMP);
 		pending.push(phase.query);
@@ -97,7 +97,7 @@ namespace sp
 				pending.pop();
 				continue;
 			}
-			Assert(!pendingFrames.empty());
+			Assert(!pendingFrames.empty(), "pendingFrames is not empty");
 
 			auto &frame = pendingFrames.front();
 

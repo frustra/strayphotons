@@ -19,7 +19,8 @@
 
 namespace sp
 {
-	static CVar<glm::ivec2> CVarWindowSize("r.Size", { 0, 0 }, "Window height");
+	static CVar<glm::ivec2> CVarWindowSize("r.Size", { 1600, 900 }, "Window height");
+	static CVar<float> CVarFieldOfView("r.FieldOfView", 70, "Camera field of view");
 	static CVar<int> CVarWindowFullscreen("r.Fullscreen", false, "Fullscreen window (0: window, 1: fullscreen)");
 
 #ifdef SP_ENABLE_RAYTRACER
@@ -61,18 +62,16 @@ namespace sp
 	{
 		if (context) throw "already an active context";
 
-		auto primaryView = updateViewCaches(playerView);
-
 		if (useBasic)
 		{
 			context = new BasicRenderer(game);
-			context->CreateWindow(primaryView.extents);
+			context->CreateWindow(CVarWindowSize.Get());
 			return;
 		}
 
 		auto renderer = new Renderer(game);
 		context = renderer;
-		context->CreateWindow(primaryView.extents);
+		context->CreateWindow(CVarWindowSize.Get());
 
 		guiRenderer = new GuiRenderer(*renderer, game->gui);
 
@@ -116,25 +115,33 @@ namespace sp
 		if (!context) throw "no active context";
 		if (!HasActiveContext()) return false;
 
-		auto primaryView = updateViewCaches(playerView);
-		primaryView.clearMode |= GL_COLOR_BUFFER_BIT;
-
+		ecs::View primaryView;
+		if (playerView.Valid())
 		{
 			auto newSize = CVarWindowSize.Get();
+			auto newFov = CVarFieldOfView.Get();
 
-			if (newSize.x == 0 || newSize.y == 0)
+			if (newSize != primaryView.extents || newFov != primaryView.fov)
 			{
-				CVarWindowSize.Set(primaryView.extents);
+				auto view = playerView.Get<ecs::View>();
+				view->extents = newSize;
+				view->fov = newFov;
 			}
-			else if (newSize != primaryView.extents)
-			{
-				playerView.Get<ecs::View>()->extents = newSize;
-				primaryView = updateViewCaches(playerView);
-			}
+
+			primaryView = *ecs::UpdateViewCache(playerView);
+			primaryView.clearMode |= GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+		}
+		else
+		{
+			// Default view
+			primaryView.extents = CVarWindowSize.Get();
+			// primaryView.fov = CVarFieldOfView.Get();
 		}
 
+		context->ResizeWindow(primaryView, CVarWindowFullscreen.Get());
+
 		context->Timer->StartFrame();
-		context->BeginFrame(primaryView, CVarWindowFullscreen.Get());
+		context->BeginFrame();
 
 		{
 			RenderPhase phase("Frame", context->Timer);
@@ -182,40 +189,7 @@ namespace sp
 	*/
 	void GraphicsManager::SetPlayerView(ecs::Entity entity)
 	{
-		validateView(entity);
+		ecs::ValidateView(entity);
 		playerView = entity;
-	}
-
-	ecs::View &GraphicsManager::updateViewCaches(ecs::Entity entity)
-	{
-		validateView(entity);
-
-		auto view = entity.Get<ecs::View>();
-
-		view->aspect = (float)view->extents.x / (float)view->extents.y;
-		view->projMat = glm::perspective(view->fov, view->aspect, view->clip[0], view->clip[1]);
-		view->invProjMat = glm::inverse(view->projMat);
-
-		auto transform = entity.Get<ecs::Transform>();
-		view->invViewMat = transform->GetModelTransform(*entity.GetManager());
-		view->viewMat = glm::inverse(view->invViewMat);
-
-		return *view;
-	}
-
-	void GraphicsManager::validateView(ecs::Entity viewEntity)
-	{
-		if (!viewEntity.Valid())
-		{
-			throw std::runtime_error("view entity is not valid because the entity has been deleted");
-		}
-		if (!viewEntity.Has<ecs::View>())
-		{
-			throw std::runtime_error("view entity is not valid because it has no View component");
-		}
-		if (!viewEntity.Has<ecs::Transform>())
-		{
-			throw std::runtime_error("view entity is not valid because it has no Transform component");
-		}
 	}
 }

@@ -583,24 +583,24 @@ namespace sp
 				auto ntex = mat.normalTex;
 				uint8 *ndata = nimg ? nimg->image.data() : nullptr;
 
-				Assert(bctex->target == GL_TEXTURE_2D);
+				Assert(bctex->target == GL_TEXTURE_2D, "assertion failed");
 				int bcstride = 0, rstride = 0, mstride = 0, nstride = 0;
 
 				if (bctex->format == GL_RGBA)
 				{
-					Assert(bctex->internalFormat == GL_RGBA || bctex->internalFormat == GL_RGBA8);
+					Assert(bctex->internalFormat == GL_RGBA || bctex->internalFormat == GL_RGBA8, "assertion failed");
 					bcstride = 4;
 				}
 				else
 				{
-					Assert(bctex->format == GL_RGB);
-					Assert(bctex->internalFormat == GL_RGB || bctex->internalFormat == GL_RGB8);
+					Assert(bctex->format == GL_RGB, "assertion failed");
+					Assert(bctex->internalFormat == GL_RGB || bctex->internalFormat == GL_RGB8, "assertion failed");
 					bcstride = 3;
 				}
 
 				if (rtex)
 				{
-					Assert(rtex->target == GL_TEXTURE_2D);
+					Assert(rtex->target == GL_TEXTURE_2D, "assertion failed");
 					if (rtex->format == GL_RED)
 						rstride = 1;
 					else if (rtex->format == GL_RGB)
@@ -611,7 +611,7 @@ namespace sp
 
 				if (mtex)
 				{
-					Assert(mtex->target == GL_TEXTURE_2D);
+					Assert(mtex->target == GL_TEXTURE_2D, "assertion failed");
 					if (mtex->format == GL_RED)
 						mstride = 1;
 					else if (mtex->format == GL_RGB)
@@ -622,8 +622,8 @@ namespace sp
 
 				if (ntex)
 				{
-					Assert(ntex->target == GL_TEXTURE_2D);
-					Assert(ntex->type == GL_UNSIGNED_BYTE);
+					Assert(ntex->target == GL_TEXTURE_2D, "assertion failed");
+					Assert(ntex->type == GL_UNSIGNED_BYTE, "assertion failed");
 					if (ntex->format == GL_RGB)
 						nstride = 3;
 					else if (ntex->format == GL_RGBA)

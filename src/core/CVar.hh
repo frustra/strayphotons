@@ -92,37 +92,4 @@ namespace sp
 	private:
 		VarType value;
 	};
-
-	class CFunc : public CVarBase
-	{
-	public:
-		typedef std::function<void(const string &)> Callback;
-
-		CFunc(const string &name, const string &description, Callback callback)
-			: CVarBase(name, description), callback(callback)
-		{
-		}
-
-		CFunc(const string &name, Callback callback) : CFunc(name, "", callback)
-		{
-		}
-
-		string StringValue()
-		{
-			return "CFunc:" + GetName();
-		}
-
-		void SetFromString(const string &newValue)
-		{
-			callback(newValue);
-		}
-
-		bool IsValueType()
-		{
-			return false;
-		}
-
-	private:
-		Callback callback;
-	};
 }

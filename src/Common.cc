@@ -22,12 +22,6 @@ namespace sp
 #endif
 	}
 
-	void Assert(bool condition)
-	{
-		static const string message = "assertion failed";
-		return Assert(condition, message);
-	}
-
 	void DebugBreak()
 	{
 		os_break();

@@ -50,7 +50,7 @@ namespace sp
 		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
 
 		r->GlobalShaders->Get<ViewGBufferFS>()->SetParameters(mode, source, level, context->view);
-		r->GlobalShaders->Get<ViewGBufferFS>()->SetVoxelInfo(context->renderer->voxelInfo);
+		r->GlobalShaders->Get<ViewGBufferFS>()->SetVoxelInfo(voxelData.info);
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, ViewGBufferFS>(r->GlobalShaders);

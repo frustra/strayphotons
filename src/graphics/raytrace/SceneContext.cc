@@ -20,8 +20,8 @@ namespace sp
 				mesh.materialID = mat->second.id;
 
 			auto idxAttrib = primitive->indexBuffer;
-			Assert(idxAttrib.componentCount == 1);
-			Assert(idxAttrib.components % 3 == 0);
+			Assert(idxAttrib.componentCount == 1, "assertion failed");
+			Assert(idxAttrib.components % 3 == 0, "assertion failed");
 
 			auto idxBuf = model->GetBuffer(idxAttrib.bufferName);
 			auto idxBufData = idxBuf.data() + idxAttrib.byteOffset;
@@ -36,7 +36,7 @@ namespace sp
 					idxStride = sizeof(uint32);
 					break;
 				default:
-					Assert(false);
+					Assert(false, "assertion failed");
 			}
 
 			for (size_t i = 0; i < idxAttrib.components; i++)
@@ -53,40 +53,40 @@ namespace sp
 						idx = *(uint32 *)addr;
 						break;
 					default:
-						Assert(false);
+						Assert(false, "assertion failed");
 				}
 
 				faceData.push_back(idx + vtxData.size());
 			}
 
 			auto posAttrib = primitive->attributes[0];
-			Assert(posAttrib.componentCount == 3);
-			Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+			Assert(posAttrib.componentCount == 3, "assertion failed");
+			Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "assertion failed");
 
 			auto posBuf = model->GetBuffer(posAttrib.bufferName);
 			auto posBufData = posBuf.data() + posAttrib.byteOffset;
 
 			auto normAttrib = primitive->attributes[1];
-			Assert(normAttrib.componentCount == 3);
-			Assert(normAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+			Assert(normAttrib.componentCount == 3, "assertion failed");
+			Assert(normAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "assertion failed");
 
 			auto normBuf = model->GetBuffer(normAttrib.bufferName);
 			auto normBufData = normBuf.data() + normAttrib.byteOffset;
 
-			Assert(normAttrib.components == posAttrib.components);
+			Assert(normAttrib.components == posAttrib.components, "assertion failed");
 
 			auto uvAttrib = primitive->attributes[2];
 			uint8 *uvBufData = nullptr;
 
 			if (uvAttrib.componentCount > 0)
 			{
-				Assert(uvAttrib.componentCount == 2);
-				Assert(uvAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+				Assert(uvAttrib.componentCount == 2, "assertion failed");
+				Assert(uvAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "assertion failed");
 
 				auto uvBuf = model->GetBuffer(uvAttrib.bufferName);
 				uvBufData = uvBuf.data() + uvAttrib.byteOffset;
 
-				Assert(uvAttrib.components == posAttrib.components);
+				Assert(uvAttrib.components == posAttrib.components, "assertion failed");
 			}
 
 			for (size_t i = 0; i < posAttrib.components; i++)

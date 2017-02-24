@@ -73,34 +73,41 @@ namespace sp
 	{
 		static DefaultMaterial defaultMat;
 
-		for (auto primitive : comp->model->primitives)
+		if (!comp->model->glPrepared)
 		{
-			primitive->indexBufferHandle = comp->model->LoadBuffer(primitive->indexBuffer.bufferName);
+			comp->model->glPrepared = true;
 
-			primitive->baseColorTex = comp->model->LoadTexture(primitive->materialName, "baseColor");
-			primitive->roughnessTex = comp->model->LoadTexture(primitive->materialName, "roughness");
-			primitive->metallicTex = comp->model->LoadTexture(primitive->materialName, "metallic");
-			primitive->heightTex = comp->model->LoadTexture(primitive->materialName, "height");
-
-			if (!primitive->baseColorTex) primitive->baseColorTex = &defaultMat.baseColorTex;
-			if (!primitive->roughnessTex) primitive->roughnessTex = &defaultMat.roughnessTex;
-			if (!primitive->metallicTex) primitive->metallicTex = &defaultMat.metallicTex;
-			if (!primitive->heightTex) primitive->heightTex = &defaultMat.heightTex;
-
-			glCreateVertexArrays(1, &primitive->vertexBufferHandle);
-			for (int i = 0; i < 3; i++)
+			for (auto primitive : comp->model->primitives)
 			{
-				auto *attr = &primitive->attributes[i];
-				if (attr->componentCount == 0) continue;
-				glEnableVertexArrayAttrib(primitive->vertexBufferHandle, i);
-				glVertexArrayAttribFormat(primitive->vertexBufferHandle, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
-				glVertexArrayVertexBuffer(primitive->vertexBufferHandle, i, comp->model->LoadBuffer(attr->bufferName), attr->byteOffset, attr->byteStride);
+				primitive->indexBufferHandle = comp->model->LoadBuffer(primitive->indexBuffer.bufferName);
+
+				primitive->baseColorTex = comp->model->LoadTexture(primitive->materialName, "baseColor");
+				primitive->roughnessTex = comp->model->LoadTexture(primitive->materialName, "roughness");
+				primitive->metallicTex = comp->model->LoadTexture(primitive->materialName, "metallic");
+				primitive->heightTex = comp->model->LoadTexture(primitive->materialName, "height");
+
+				if (!primitive->baseColorTex) primitive->baseColorTex = &defaultMat.baseColorTex;
+				if (!primitive->roughnessTex) primitive->roughnessTex = &defaultMat.roughnessTex;
+				if (!primitive->metallicTex) primitive->metallicTex = &defaultMat.metallicTex;
+				if (!primitive->heightTex) primitive->heightTex = &defaultMat.heightTex;
+
+				glCreateVertexArrays(1, &primitive->vertexBufferHandle);
+				for (int i = 0; i < 3; i++)
+				{
+					auto *attr = &primitive->attributes[i];
+					if (attr->componentCount == 0) continue;
+					glEnableVertexArrayAttrib(primitive->vertexBufferHandle, i);
+					glVertexArrayAttribFormat(primitive->vertexBufferHandle, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
+					glVertexArrayVertexBuffer(primitive->vertexBufferHandle, i, comp->model->LoadBuffer(attr->bufferName), attr->byteOffset, attr->byteStride);
+				}
 			}
 		}
 	}
 
 	void DrawRenderable(ecs::Handle<ecs::Renderable> comp)
 	{
+		PrepareRenderable(comp);
+
 		for (auto primitive : comp->model->primitives)
 		{
 			glBindVertexArray(primitive->vertexBufferHandle);
@@ -145,46 +152,21 @@ namespace sp
 		ShaderManager::SetDefine("VoxelSuperSampleScale", std::to_string(voxelSuperSampleScale));
 		ShaderControl->CompileAll(GlobalShaders);
 
-		int mirrorCount = 0;
-		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable>())
-		{
-			auto comp = ent.Get<ecs::Renderable>();
-			PrepareRenderable(comp);
+		// TODO(xthexder): Replace this
+		// int mirrorCount = 0;
+		// for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable>())
+		// {
+		// 	auto comp = ent.Get<ecs::Renderable>();
+		// 	PrepareRenderable(comp);
 
-			if (ent.Has<ecs::Mirror>())
-			{
-				auto mirror = ent.Get<ecs::Mirror>();
-				mirror->mirrorId = mirrorCount++;
-			}
-		}
-
-		voxelInfo = {voxelGridSize, 0.1f, voxelSuperSampleScale, glm::vec3(0), glm::vec3(0), glm::vec3(0)};
-		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::VoxelInfo>())
-		{
-			voxelInfo = *ent.Get<ecs::VoxelInfo>();
-			if (!voxelInfo.gridSize) voxelInfo.gridSize = voxelGridSize;
-			if (!voxelInfo.superSampleScale) voxelInfo.superSampleScale = voxelSuperSampleScale;
-			voxelInfo.voxelGridCenter = (voxelInfo.gridMin + voxelInfo.gridMax) * glm::vec3(0.5);
-			voxelInfo.voxelSize = glm::compMax(voxelInfo.gridMax - voxelInfo.gridMin) / voxelInfo.gridSize;
-			break;
-		}
+		// 	if (ent.Has<ecs::Mirror>())
+		// 	{
+		// 		auto mirror = ent.Get<ecs::Mirror>();
+		// 		mirror->mirrorId = mirrorCount++;
+		// 	}
+		// }
 
 		AssertGLOK("Renderer::Prepare");
-	}
-
-	ecs::Handle<ecs::View> updateLightCaches(ecs::Entity entity, ecs::Handle<ecs::Light> light)
-	{
-		auto view = entity.Get<ecs::View>();
-
-		view->aspect = (float)view->extents.x / (float)view->extents.y;
-		view->projMat = glm::perspective(light->spotAngle * 2.0f, view->aspect, view->clip[0], view->clip[1]);
-		view->invProjMat = glm::inverse(view->projMat);
-
-		auto transform = entity.Get<ecs::Transform>();
-		view->invViewMat = transform->GetModelTransform(*entity.GetManager());
-		view->viewMat = glm::inverse(view->invViewMat);
-
-		return view;
 	}
 
 	const int MirrorShadowMapResolution = 512;
@@ -201,7 +183,7 @@ namespace sp
 			auto light = entity.Get<ecs::Light>();
 			if (entity.Has<ecs::View>())
 			{
-				auto view = updateLightCaches(entity, light);
+				auto view = ecs::UpdateViewCache(entity, light->spotAngle * 2.0f);
 				light->mapOffset = glm::vec4(renderTargetSize.x, 0, view->extents.x, view->extents.y);
 				light->lightId = lightCount++;
 				view->offset = glm::ivec2(light->mapOffset);
@@ -363,9 +345,10 @@ namespace sp
 		}
 	}
 
-	void Renderer::PrepareVoxelTextures()
+	void Renderer::PrepareVoxelTextures(VoxelData &voxelData)
 	{
-		auto VoxelGridSize = voxelInfo.gridSize;
+		auto VoxelGridSize = voxelData.info.gridSize;
+
 		glm::ivec3 packedSize = glm::ivec3(VoxelGridSize * 6, VoxelGridSize, VoxelGridSize);
 		glm::ivec3 unpackedSize = glm::ivec3(VoxelGridSize, VoxelGridSize, VoxelGridSize);
 		auto VoxelMipLevels = ceil(log2(VoxelGridSize));
@@ -413,24 +396,24 @@ namespace sp
 		}
 	}
 
-	void Renderer::RenderVoxelGrid()
+	void Renderer::RenderVoxelGrid(VoxelData &voxelData)
 	{
 		RenderPhase phase("VoxelGrid", Timer);
 
-		PrepareVoxelTextures();
+		PrepareVoxelTextures(voxelData);
 
 		glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-		auto VoxelGridSize = voxelInfo.gridSize;
+		auto VoxelGridSize = voxelData.info.gridSize;
 
 		ecs::View ortho;
-		ortho.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * voxelInfo.voxelSize)));
-		ortho.viewMat = glm::translate(ortho.viewMat, -voxelInfo.voxelGridCenter);
+		ortho.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * voxelData.info.voxelSize)));
+		ortho.viewMat = glm::translate(ortho.viewMat, -voxelData.info.voxelGridCenter);
 		ortho.projMat = glm::mat4();
-		ortho.extents = glm::ivec2(VoxelGridSize * voxelInfo.superSampleScale);
+		ortho.extents = glm::ivec2(VoxelGridSize * voxelData.info.superSampleScale);
 		ortho.clearMode = 0;
 
 		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_R8, ortho.extents));
@@ -451,7 +434,7 @@ namespace sp
 			int lightCount = FillLightData(&lightData[0], game->entityManager);
 
 			GlobalShaders->Get<VoxelRasterFS>()->SetLightData(lightCount, &lightData[0]);
-			GlobalShaders->Get<VoxelRasterFS>()->SetVoxelInfo(voxelInfo);
+			GlobalShaders->Get<VoxelRasterFS>()->SetVoxelInfo(voxelData.info);
 			shadowMap->GetTexture().Bind(4);
 			mirrorShadowMap->GetTexture().Bind(5);
 			mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
@@ -500,7 +483,7 @@ namespace sp
 		glEnable(GL_CULL_FACE);
 	}
 
-	void Renderer::ClearVoxelGrid()
+	void Renderer::ClearVoxelGrid(VoxelData &voxelData)
 	{
 		RenderPhase phase("VoxelClear", Timer);
 
@@ -522,7 +505,7 @@ namespace sp
 		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 
-	void Renderer::UpdateLightSensors()
+	void Renderer::UpdateLightSensors(VoxelData &voxelData)
 	{
 		RenderPhase phase("UpdateLightSensors", Timer);
 		auto shader = GlobalShaders->Get<LightSensorUpdateCS>();
@@ -534,7 +517,7 @@ namespace sp
 		shader->UpdateValues(game->entityManager);
 		shader->SetSensors(sensorCollection);
 		shader->SetLightData(lightCount, lightData);
-		shader->SetVoxelInfo(voxelInfo);
+		shader->SetVoxelInfo(voxelData.info);
 
 		shader->outputTex.Clear(0);
 		shader->outputTex.BindImage(0, GL_WRITE_ONLY);
@@ -553,8 +536,18 @@ namespace sp
 		RenderPhase phase("RenderPass", Timer);
 
 		RenderShadowMaps();
-		RenderVoxelGrid();
-		UpdateLightSensors();
+
+		VoxelData voxelData;
+		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::VoxelInfo>())
+		{
+			int voxelGridSize = game->options["voxel-gridsize"].as<int>();
+			float voxelSuperSampleScale = game->options["voxel-supersample"].as<float>();
+
+			voxelData.info = *ecs::UpdateVoxelInfoCache(ent, voxelGridSize, voxelSuperSampleScale);
+			RenderVoxelGrid(voxelData);
+			UpdateLightSensors(voxelData);
+			break;
+		}
 
 		EngineRenderTargets targets;
 		targets.gBuffer0 = RTPool->Get({ PF_RGBA8, view.extents });
@@ -590,6 +583,8 @@ namespace sp
 		glDepthMask(GL_FALSE);
 
 		PostProcessing::Process(this, game, view, targets);
+
+		if (voxelData.info.gridSize > 0) ClearVoxelGrid(voxelData);
 
 		//AssertGLOK("Renderer::RenderFrame");
 	}
@@ -632,14 +627,12 @@ namespace sp
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 
-	void Renderer::BeginFrame(ecs::View &view, int fullscreen)
+	void Renderer::BeginFrame()
 	{
-		ResizeWindow(view, fullscreen);
 	}
 
 	void Renderer::EndFrame()
 	{
-		ClearVoxelGrid();
 		RTPool->TickFrame();
 		glfwSwapBuffers(window);
 	}

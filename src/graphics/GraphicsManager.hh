@@ -36,9 +36,6 @@ namespace sp
 	private:
 		bool useBasic = false;
 
-		ecs::View &updateViewCaches(ecs::Entity entity);
-		void validateView(ecs::Entity viewEntity);
-
 		GraphicsContext *context = nullptr;
 		Game *game = nullptr;
 		GuiRenderer *guiRenderer = nullptr;

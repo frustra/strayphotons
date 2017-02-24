@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include "graphics/Graphics.hh"
+#include <Ecs.hh>
 
 namespace ecs
 {
@@ -23,4 +24,7 @@ namespace ecs
 		glm::mat4 projMat, invProjMat;
 		glm::mat4 viewMat, invViewMat;
 	};
+
+	void ValidateView(ecs::Entity viewEntity);
+	ecs::Handle<ecs::View> UpdateViewCache(ecs::Entity entity, float fov = 0.0);
 }

@@ -28,12 +28,12 @@ namespace sp
 	void decomposeConvexHullsForPrimitive(ConvexHullSet *set, Model *model, Model::Primitive *prim)
 	{
 		auto posAttrib = prim->attributes[0];
-		Assert(posAttrib.componentCount == 3);
-		Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+		Assert(posAttrib.componentCount == 3, "position must be vec3");
+		Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "position must be float type");
 
 		auto indexAttrib = prim->indexBuffer;
-		Assert(prim->drawMode == GL_TRIANGLES);
-		Assert(indexAttrib.componentCount == 1);
+		Assert(prim->drawMode == GL_TRIANGLES, "primitive draw mode must be triangles");
+		Assert(indexAttrib.componentCount == 1, "index buffer must be a single component");
 
 		auto pbuffer = model->GetBuffer(posAttrib.bufferName);
 		auto points = (const float *)(pbuffer.data() + posAttrib.byteOffset);
@@ -143,12 +143,12 @@ namespace sp
 	void buildConvexHullForPrimitive(ConvexHullSet *set, Model *model, Model::Primitive *prim)
 	{
 		auto posAttrib = prim->attributes[0];
-		Assert(posAttrib.componentCount == 3);
-		Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+		Assert(posAttrib.componentCount == 3, "position must be vec3");
+		Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "position must be float type");
 
 		auto indexAttrib = prim->indexBuffer;
-		Assert(prim->drawMode == GL_TRIANGLES);
-		Assert(indexAttrib.componentCount == 1);
+		Assert(prim->drawMode == GL_TRIANGLES, "primitive draw mode must be triangles");
+		Assert(indexAttrib.componentCount == 1, "index buffer must be a single component");
 
 		auto pbuffer = model->GetBuffer(posAttrib.bufferName);
 		auto points = pbuffer.data() + posAttrib.byteOffset;

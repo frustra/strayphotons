@@ -15,7 +15,7 @@ namespace sp
 		~BasicRenderer();
 
 		void Prepare();
-		void BeginFrame(ecs::View &fbView, int fullscreen);
+		void BeginFrame();
 		void RenderPass(ecs::View &view);
 		void PrepareForView(ecs::View &view);
 		void EndFrame();

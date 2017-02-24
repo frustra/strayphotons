@@ -182,25 +182,25 @@ namespace sp
 
 	void PhysxManager::Lock()
 	{
-		Assert(scene);
+		Assert(scene, "physx scene is null");
 		scene->lockWrite();
 	}
 
 	void PhysxManager::Unlock()
 	{
-		Assert(scene);
+		Assert(scene, "physx scene is null");
 		scene->unlockWrite();
 	}
 
 	void PhysxManager::ReadLock()
 	{
-		Assert(scene);
+		Assert(scene, "physx scene is null");
 		scene->lockRead();
 	}
 
 	void PhysxManager::ReadUnlock()
 	{
-		Assert(scene);
+		Assert(scene, "physx scene is null");
 		scene->unlockRead();
 	}
 
@@ -324,8 +324,8 @@ namespace sp
 				ConvexHull hull;
 				in.read((char *)&hull, 4 * sizeof(uint32));
 
-				Assert(hull.pointByteStride % sizeof(float) == 0);
-				Assert(hull.triangleByteStride % sizeof(int) == 0);
+				Assert(hull.pointByteStride % sizeof(float) == 0, "convex hull byte stride is odd");
+				Assert(hull.triangleByteStride % sizeof(int) == 0, "convex hull byte stride is odd");
 
 				hull.points = new float[hull.pointCount * hull.pointByteStride / sizeof(float)];
 				hull.triangles = new int[hull.triangleCount * hull.triangleByteStride / sizeof(int)];

@@ -26,7 +26,7 @@ namespace sp
 		shared_ptr<RenderTarget> fragmentList;
 		shared_ptr<RenderTarget> packedData;
 		shared_ptr<RenderTarget> color, normal, radiance;
-		bool mipmapsGenerated;
+		ecs::VoxelInfo info;
 	};
 
 	class Renderer : public GraphicsContext
@@ -37,11 +37,11 @@ namespace sp
 
 		void Prepare();
 		void RenderShadowMaps();
-		void PrepareVoxelTextures();
-		void RenderVoxelGrid();
-		void ClearVoxelGrid();
-		void UpdateLightSensors();
-		void BeginFrame(ecs::View &fbView, int fullscreen);
+		void PrepareVoxelTextures(VoxelData &voxelData);
+		void RenderVoxelGrid(VoxelData &voxelData);
+		void ClearVoxelGrid(VoxelData &voxelData);
+		void UpdateLightSensors(VoxelData &voxelData);
+		void BeginFrame();
 		void RenderPass(ecs::View &view);
 		void PrepareForView(ecs::View &view);
 		void ForwardPass(ecs::View &view, SceneShader *shader, std::function<void(ecs::Entity &)> preDraw = [] (ecs::Entity &) {});
@@ -54,12 +54,10 @@ namespace sp
 		ShaderManager *ShaderControl = nullptr;
 		RenderTargetPool *RTPool = nullptr;
 
-		ecs::VoxelInfo voxelInfo;
 		Buffer mirrorVisData;
 	private:
 		shared_ptr<RenderTarget> shadowMap;
 		shared_ptr<RenderTarget> mirrorShadowMap;
 		Buffer computeIndirectBuffer;
-		VoxelData voxelData;
 	};
 }

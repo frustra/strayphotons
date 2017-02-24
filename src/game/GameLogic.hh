@@ -2,6 +2,7 @@
 
 #include "ecs/systems/HumanControlSystem.hh"
 #include "Common.hh"
+#include "core/CFunc.hh"
 
 namespace sp
 {
@@ -16,6 +17,8 @@ namespace sp
 
 		void Init();
 		bool Frame(double dtSinceLastFrame);
+
+		void LoadScene(const string &name);
 	private:
 		Game *game;
 		InputManager *input;
@@ -24,5 +27,7 @@ namespace sp
 		ecs::Entity flashlight;
 		bool flashlightFixed;
 		float sunPos;
+
+		CFuncCollection<GameLogic> funcs;
 	};
 }

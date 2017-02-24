@@ -47,9 +47,9 @@ namespace sp
 		context.LastOutput = ssaoBlurY;
 	}
 
-	static void AddLighting(PostProcessingContext &context, Buffer mirrorVisData)
+	static void AddLighting(PostProcessingContext &context, VoxelData voxelData, Buffer mirrorVisData)
 	{
-		auto indirectDiffuse = context.AddPass<VoxelLightingDiffuse>();
+		auto indirectDiffuse = context.AddPass<VoxelLightingDiffuse>(voxelData);
 		indirectDiffuse->SetInput(0, context.GBuffer0);
 		indirectDiffuse->SetInput(1, context.GBuffer1);
 		indirectDiffuse->SetInput(2, context.GBuffer2);
@@ -58,7 +58,7 @@ namespace sp
 		indirectDiffuse->SetInput(5, context.VoxelNormal);
 		indirectDiffuse->SetInput(6, context.VoxelRadiance);
 
-		auto lighting = context.AddPass<VoxelLighting>(mirrorVisData);
+		auto lighting = context.AddPass<VoxelLighting>(voxelData, mirrorVisData);
 		lighting->SetInput(0, context.GBuffer0);
 		lighting->SetInput(1, context.GBuffer1);
 		lighting->SetInput(2, context.GBuffer2);
@@ -151,7 +151,7 @@ namespace sp
 
 		if (CVarLightingEnabled.Get() && targets.shadowMap != nullptr)
 		{
-			AddLighting(context, renderer->mirrorVisData);
+			AddLighting(context, targets.voxelData, renderer->mirrorVisData);
 		}
 
 		auto linearLuminosity = context.LastOutput;
@@ -186,7 +186,7 @@ namespace sp
 
 		if (CVarViewGBuffer.Get() > 0)
 		{
-			auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(), CVarViewGBufferSource.Get(), CVarVoxelMip.Get());
+			auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(), CVarViewGBufferSource.Get(), CVarVoxelMip.Get(), targets.voxelData);
 			viewGBuf->SetInput(0, context.GBuffer0);
 			viewGBuf->SetInput(1, context.GBuffer1);
 			viewGBuf->SetInput(2, context.GBuffer2);
