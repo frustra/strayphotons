@@ -29,10 +29,14 @@ namespace sp
 		using SceneShader::SceneShader;
 	};
 
-	class SceneGS : public Shader
+	class SceneGS : public SceneShader
 	{
 		SHADER_TYPE(SceneGS)
-		using Shader::Shader;
+		SceneGS(shared_ptr<ShaderCompileOutput> compileOutput);
+		void SetRenderMirrors(bool v);
+
+	private:
+		Uniform renderMirrors;
 	};
 
 	class SceneFS : public Shader
@@ -52,10 +56,12 @@ namespace sp
 
 		MirrorSceneCS(shared_ptr<ShaderCompileOutput> compileOutput);
 		void SetMirrorData(int count, GLMirrorData *data);
+		void SetViewParams(const ecs::View &view);
 
 	private:
 		UniformBuffer mirrorData;
 		Uniform mirrorCount;
+		Uniform invViewMat;
 	};
 
 	class SceneDepthClearVS : public SceneShader

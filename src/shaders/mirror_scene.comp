@@ -1,0 +1,56 @@
+#version 430
+
+##import lib/types_common
+
+layout (local_size_x = MAX_MIRRORS, local_size_y = MAX_MIRRORS) in;
+
+##import lib/mirror_scene_common
+
+uniform int mirrorCount = 0;
+uniform mat4 invViewMat;
+
+layout(binding = 0, std140) uniform GLMirrorData {
+	Mirror mirrors[MAX_MIRRORS];
+};
+
+mat4 makeProjectionMatrix(vec3 viewSpaceMirrorPos, vec2 clip, vec2 size, vec4 bounds) {
+	return mat4(
+		2*clip.x/size.x,            0,                          0,                                0,
+		0,                          2*clip.x/size.y,            0,                                0,
+		(bounds.y+bounds.x)/size.x, (bounds.z+bounds.w)/size.y, -(clip.y+clip.x)/(clip.y-clip.x), -1,
+		0,                          0,                          -2*clip.y*clip.x/(clip.y-clip.x), 0
+	);
+}
+
+void main() {
+	if (gl_LocalInvocationIndex == 0) {
+		mirrorSData.count[1] = mirrorSData.count[2];
+		mirrorSData.count[2] = mirrorSData.count[0];
+	}
+
+	barrier();
+
+	if (gl_LocalInvocationIndex == 0) {
+		for (int i = 0; i < MAX_MIRRORS; i++)
+			mirrorSData.mask[i] = 0;
+	}
+
+	uint index = gl_LocalInvocationIndex + mirrorSData.count[1];
+	if (index >= mirrorSData.count[0]) return;
+
+	uint tuple = mirrorSData.list[index];
+	int sourceId = UnpackMirrorSource(tuple);
+	int mirrorId = UnpackMirrorDest(tuple);
+
+	vec3 mirrorNormal = mat3(mirrors[mirrorId].modelMat) * vec3(0, 0, -1);
+	vec3 mirrorPos = vec3(mirrors[mirrorId].modelMat * vec4(0, 0, 0, 1));
+
+	float d = -dot(mirrorNormal, mirrorPos);
+	mat4 reflectionMat = mat4(mat3(1) - 2 * outerProduct(mirrorNormal, mirrorNormal));
+	reflectionMat[3] = vec4(-2 * d * mirrorNormal, 1);
+
+	mirrorSData.viewMat[index] = reflectionMat;
+	mirrorSData.invViewMat[index] = inverse(mirrorSData.viewMat[index]);
+
+	mirrorSData.clipPlane[index] = vec4(mirrorNormal, d);
+}

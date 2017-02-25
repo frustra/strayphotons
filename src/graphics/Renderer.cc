@@ -41,7 +41,7 @@ namespace sp
 	const int MAX_MIRROR_RECURSION = 4;
 
 	static CVar<bool> CVarRenderWireframe("r.Wireframe", false, "Render wireframes");
-	static CVar<int> CVarMirrorRecursion("r.MirrorRecursion", 2, "Mirror recursion depth");
+	static CVar<int> CVarMirrorRecursion("r.MirrorRecursion", 1, "Mirror recursion depth");
 	static CVar<int> CVarMirrorMapResolution("r.MirrorMapResolution", 512, "Resolution of mirror shadow maps");
 
 	void Renderer::Prepare()
@@ -482,6 +482,8 @@ namespace sp
 			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * 9 + sizeof(glm::mat4) * 4) * (MAX_MIRRORS * MAX_MIRROR_RECURSION + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
 		}
 
+		mirrorSceneData.Clear(PF_R32UI, 0);
+
 		EngineRenderTargets targets;
 		targets.gBuffer0 = RTPool->Get({ PF_RGBA8, view.extents });
 		targets.gBuffer1 = RTPool->Get({ PF_RGBA16F, view.extents });
@@ -521,12 +523,14 @@ namespace sp
 		int mirrorDataCount = FillMirrorData(&mirrorData[0], game->entityManager);
 
 		auto sceneVS = GlobalShaders->Get<SceneVS>();
+		auto sceneGS = GlobalShaders->Get<SceneGS>();
 		auto sceneFS = GlobalShaders->Get<SceneFS>();
 
 		int recursion = mirrorCount ? std::min(MAX_MIRROR_RECURSION, CVarMirrorRecursion.Get()) : 0;
 
 		forwardPassView.stencil = true;
 		glClearStencil(~0);
+		glEnable(GL_CLIP_DISTANCE0);
 
 		for (int bounce = 0; bounce <= recursion; bounce++)
 		{
@@ -534,6 +538,7 @@ namespace sp
 			if (bounce == 0)
 			{
 				forwardPassView.clearMode |= GL_STENCIL_BUFFER_BIT;
+				sceneGS->SetRenderMirrors(false);
 			}
 			else
 			{
@@ -542,8 +547,9 @@ namespace sp
 
 					auto cs = GlobalShaders->Get<MirrorSceneCS>();
 					cs->SetMirrorData(mirrorDataCount, &mirrorData[0]);
+					cs->SetViewParams(forwardPassView);
 
-					ShaderControl->BindPipeline<MirrorMapCS>(GlobalShaders);
+					ShaderControl->BindPipeline<MirrorSceneCS>(GlobalShaders);
 					glDispatchCompute(1, 1, 1);
 					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 				}
@@ -565,15 +571,20 @@ namespace sp
 				}
 
 				forwardPassView.clearMode = 0;
+				sceneGS->SetRenderMirrors(true);
 			}
 
 			int thisStencilBit = 1 << ((bounce) % 8);
 			glStencilFunc(GL_EQUAL, 0xff, ~thisStencilBit);
-			glStencilMask(~0);
+			glStencilMask(~0); // for clear
 
 			sceneFS->SetMirrorId(-1);
+			sceneGS->SetParams(forwardPassView, {});
 
 			ShaderControl->BindPipeline<SceneVS, SceneGS, SceneFS>(GlobalShaders);
+			glFrontFace(bounce % 2 == 0 ? GL_CCW : GL_CW);
+			//glDepthFunc(bounce % 2 == 0 ? GL_LESS : GL_GREATER);
+			//glDisable(GL_CULL_FACE);
 
 			ForwardPass(forwardPassView, sceneVS, [&](ecs::Entity & ent)
 			{
@@ -599,6 +610,9 @@ namespace sp
 		}
 
 		// Run postprocessing.
+		glFrontFace(GL_CCW);
+		glDepthFunc(GL_LESS);
+		glDisable(GL_CLIP_DISTANCE0);
 		glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_STENCIL_TEST);

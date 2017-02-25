@@ -284,6 +284,7 @@ namespace sp
 		if (diffuseDownsample < 1) diffuseDownsample = 1;
 
 		mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
+		r->mirrorSceneData.Bind(GL_SHADER_STORAGE_BUFFER, 1);
 
 		GLLightData lightData[MAX_LIGHTS];
 		int lightCount = FillLightData(&lightData[0], context->game->entityManager);

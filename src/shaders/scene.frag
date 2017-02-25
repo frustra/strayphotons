@@ -18,6 +18,7 @@ layout (location = 1) in vec3 inTangent;
 layout (location = 2) in vec3 inBitangent;
 layout (location = 3) in vec2 inTexCoord;
 layout (location = 4) in vec3 inViewPos;
+layout (location = 5) flat in int inMirrorIndex;
 
 layout (location = 0) out vec4 gBuffer0;
 layout (location = 1) out vec4 gBuffer1;
@@ -41,9 +42,9 @@ void main()
 		if ((prevValue & mask) == 0) {
 			uint index = atomicAdd(mirrorSData.count[0], 1);
 			mirrorSData.list[index] = uint(drawMirrorId);
+			mirrorSData.sourceIndex[index] = inMirrorIndex;
 		}
-		//discard;
-		//return;
+		discard;
 	}
 
 	vec4 baseColor = texture(baseColorTex, inTexCoord);

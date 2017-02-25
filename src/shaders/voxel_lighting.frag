@@ -28,6 +28,7 @@ layout(binding = 0, std140) uniform LightData {
 };
 
 ##import lib/mirror_shadow_common
+##import lib/mirror_scene_common
 
 uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);
@@ -86,6 +87,14 @@ void main()
 	//	}
 	//}
 
+	for (int i = 0; i < mirrorSData.count[0]; i++) {
+		vec2 coord = inTexCoord * vec2(6.0, 4.0) - vec2(i, 0);
+		if (coord == clamp(coord, 0, 1)) {
+			outFragColor.rgb = vec3(i / 8, 0, 0);
+			return;
+		}
+	}
+
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
 	vec4 gb1 = texture(gBuffer1, inTexCoord);
 	vec4 gb2 = texture(gBuffer2, inTexCoord);
@@ -130,22 +139,22 @@ void main()
 		float specularConeRatio = roughness * 0.8;
 		vec4 sampleColor = ConeTraceGrid(specularConeRatio, worldPosition, sampleDir, flatWorldNormal, gl_FragCoord.xy);
 
-		if (roughness == 0 && metalness == 1 && sampleColor.a >= 0) {
-			worldPosition += sampleDir * sampleColor.a;
-			vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
-			vec3 radiance;
-			GetVoxel(voxelPos, 0, baseColor, worldNormal, radiance, roughness);
-			rayDir = sampleDir;
-			rayReflectDir = reflect(sampleDir, worldNormal);
-			flatWorldNormal = worldNormal;
-			if (roughness != 0) metalness = 0;
-			reflected = 1.0;
-		} else {
+		//if (roughness == 0 && metalness == 1 && sampleColor.a >= 0) {
+		//	worldPosition += sampleDir * sampleColor.a;
+		//	vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
+		//	vec3 radiance;
+		//	GetVoxel(voxelPos, 0, baseColor, worldNormal, radiance, roughness);
+		//	rayDir = sampleDir;
+		//	rayReflectDir = reflect(sampleDir, worldNormal);
+		//	flatWorldNormal = worldNormal;
+		//	if (roughness != 0) metalness = 0;
+		//	reflected = 1.0;
+		//} else {
 			vec3 directSpecularColor = mix(vec3(0.04), baseColor, metalness);
 			vec3 brdf = EvaluateBRDFSpecularImportanceSampledGGX(directSpecularColor, roughness, sampleDir, -rayDir, worldNormal);
 			indirectSpecular = sampleColor.rgb * brdf;
 			break;
-		}
+		//}
 	}
 
 	vec3 indirectDiffuse;

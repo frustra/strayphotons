@@ -61,6 +61,8 @@ namespace sp
 		shared_ptr<RenderTarget> shadowMap;
 		shared_ptr<RenderTarget> mirrorShadowMap;
 		Buffer computeIndirectBuffer;
+
+	public: // TODO(jli): private
 		Buffer mirrorSceneData;
 		VoxelData voxelData;
 
