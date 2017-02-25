@@ -58,6 +58,7 @@ namespace sp
 			{
 				auto phys = ent.Get<ecs::Physics>();
 				physics.RemoveActor(phys->actor);
+				phys->model = nullptr;
 			}
 			if (ent.Has<ecs::HumanController>())
 			{

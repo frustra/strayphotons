@@ -63,6 +63,12 @@ namespace sp
 		game->entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction &d) {
 			if (ent.Has<ecs::Renderable>()) {
 				auto renderable = ent.Get<ecs::Renderable>();
+				if (renderable->model->glModel)
+				{
+					// Keep GLModel objects around for at least 5 frames after destruction
+					renderableGCQueue.push_back({renderable->model, 5});
+				}
+				renderable->model = nullptr;
 			}
 		});
 
@@ -541,6 +547,12 @@ namespace sp
 
 	void Renderer::BeginFrame()
 	{
+		int expiredCount = 0;
+		for (auto &pair : renderableGCQueue)
+		{
+			if (pair.second-- < 0) expiredCount++;
+		}
+		while (expiredCount-- > 0) renderableGCQueue.pop_front();
 	}
 
 	void Renderer::EndFrame()

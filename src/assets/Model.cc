@@ -94,7 +94,7 @@ namespace sp
 
 	Model::~Model()
 	{
-		Logf("Destroying model %s (prepared: %d)", name, !!glModel);
+		Debugf("Destroying model %s (prepared: %d)", name, !!glModel);
 		for (auto primitive : primitives)
 		{
 			delete primitive;

@@ -20,6 +20,7 @@ namespace sp
 	class RenderTargetPool;
 	class ShaderManager;
 	class SceneShader;
+	class Model;
 
 	struct VoxelData
 	{
@@ -61,5 +62,7 @@ namespace sp
 		shared_ptr<RenderTarget> mirrorShadowMap;
 		Buffer computeIndirectBuffer;
 		VoxelData voxelData;
+
+		std::deque<std::pair<shared_ptr<Model>, int>> renderableGCQueue;
 	};
 }
