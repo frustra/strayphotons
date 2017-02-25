@@ -1,3 +1,5 @@
+##import lib/mirror_common
+
 layout(binding = 0, std430) buffer MirrorVisData {
 	int count[4]; // array instead of multiple elements due to an nvidia driver bug with SSBOs in geometry shaders (C5133)
 	uint maskL[MAX_LIGHTS];
@@ -13,25 +15,3 @@ layout(binding = 0, std430) buffer MirrorVisData {
 	vec4 nearInfo[MAX_LIGHTS * MAX_MIRRORS];
 	vec3 lightDirection[MAX_LIGHTS * MAX_MIRRORS]; // stride of vec4
 } mirrorData;
-
-#define MIRROR_SOURCE_BIT 0x80000000
-
-uint PackLightAndMirror(int light, int mirror) {
-	return (uint(light) << 16) + uint(mirror);
-}
-
-uint PackMirrorAndMirror(int mirror1, int mirror2) {
-	return PackLightAndMirror(mirror1, mirror2) | MIRROR_SOURCE_BIT;
-}
-
-int UnpackMirrorSource(uint tuple) {
-	return int((tuple >> 16) & 0x7FFF);
-}
-
-int UnpackMirrorDest(uint tuple) {
-	return int(tuple & 0x7FFF);
-}
-
-bool MirrorSourceIsMirror(uint tuple) {
-	return (tuple & MIRROR_SOURCE_BIT) == MIRROR_SOURCE_BIT;
-}

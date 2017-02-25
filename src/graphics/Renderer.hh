@@ -61,6 +61,7 @@ namespace sp
 		shared_ptr<RenderTarget> shadowMap;
 		shared_ptr<RenderTarget> mirrorShadowMap;
 		Buffer computeIndirectBuffer;
+		Buffer mirrorSceneData;
 		VoxelData voxelData;
 
 		std::deque<std::pair<shared_ptr<Model>, int>> renderableGCQueue;

@@ -10,7 +10,7 @@ in gl_PerVertex
 } gl_in[];
 
 ##import lib/types_common
-##import lib/mirror_common
+##import lib/mirror_shadow_common
 
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 27) out; // MAX_MIRRORS * MAX_LIGHTS * 3

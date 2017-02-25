@@ -5,7 +5,7 @@
 layout (location = 0) in vec3 inViewPos;
 
 ##import lib/types_common
-##import lib/mirror_common
+##import lib/mirror_shadow_common
 
 uniform vec2 clip;
 uniform int drawLightId;

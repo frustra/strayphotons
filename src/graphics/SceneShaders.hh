@@ -38,7 +38,36 @@ namespace sp
 	class SceneFS : public Shader
 	{
 		SHADER_TYPE(SceneFS)
-		using Shader::Shader;
+		SceneFS(shared_ptr<ShaderCompileOutput> compileOutput);
+
+		void SetMirrorId(int id);
+
+	private:
+		Uniform mirrorId;
+	};
+
+	class MirrorSceneCS : public Shader
+	{
+		SHADER_TYPE(MirrorSceneCS)
+
+		MirrorSceneCS(shared_ptr<ShaderCompileOutput> compileOutput);
+		void SetMirrorData(int count, GLMirrorData *data);
+
+	private:
+		UniformBuffer mirrorData;
+		Uniform mirrorCount;
+	};
+
+	class SceneDepthClearVS : public SceneShader
+	{
+		SHADER_TYPE(SceneDepthClearVS)
+		using SceneShader::SceneShader;
+	};
+
+	class SceneDepthClearFS : public SceneShader
+	{
+		SHADER_TYPE(SceneDepthClearFS)
+		using SceneShader::SceneShader;
 	};
 
 	class ShadowMapVS : public SceneShader

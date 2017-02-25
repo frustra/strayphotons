@@ -16,6 +16,28 @@ namespace sp
 		Set(projMat, view.projMat);
 	}
 
+	SceneFS::SceneFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+	{
+		Bind(mirrorId, "drawMirrorId");
+	}
+
+	void SceneFS::SetMirrorId(int newId)
+	{
+		Set(mirrorId, newId);
+	}
+
+	MirrorSceneCS::MirrorSceneCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+	{
+		Bind(mirrorCount, "mirrorCount");
+		BindBuffer(mirrorData, 0);
+	}
+
+	void MirrorSceneCS::SetMirrorData(int count, GLMirrorData *data)
+	{
+		Set(mirrorCount, count);
+		BufferData(mirrorData, sizeof(GLMirrorData) * count, data);
+	}
+
 	ShadowMapFS::ShadowMapFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 	{
 		Bind(clip, "clip");
@@ -124,6 +146,9 @@ namespace sp
 	IMPLEMENT_SHADER_TYPE(SceneVS, "scene.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(SceneGS, "scene.geom", Geometry);
 	IMPLEMENT_SHADER_TYPE(SceneFS, "scene.frag", Fragment);
+	IMPLEMENT_SHADER_TYPE(MirrorSceneCS, "mirror_scene.comp", Compute);
+	IMPLEMENT_SHADER_TYPE(SceneDepthClearVS, "scene_depth_clear.vert", Vertex);
+	IMPLEMENT_SHADER_TYPE(SceneDepthClearFS, "scene_depth_clear.frag", Fragment);
 
 	IMPLEMENT_SHADER_TYPE(ShadowMapVS, "shadow_map.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(ShadowMapFS, "shadow_map.frag", Fragment);

@@ -1,8 +1,12 @@
 #version 430
 
+layout (early_fragment_tests) in; // Force stencil testing before shader invocation.
+
 #define USE_BUMP_MAP
 
 ##import lib/util
+##import lib/types_common
+##import lib/mirror_scene_common
 
 layout (binding = 0) uniform sampler2D baseColorTex;
 layout (binding = 1) uniform sampler2D roughnessTex;
@@ -22,8 +26,26 @@ layout (location = 3) out vec4 gBuffer3;
 
 const float bumpDepth = 0.1;
 
+uniform int drawMirrorId;
+
 void main()
 {
+	//if (drawMirrorId == -2) {
+	//	gBuffer0 = vec4(1,0,0,1);
+	//	return;
+	//}
+
+	if (drawMirrorId >= 0) {
+		uint mask = 1 << uint(drawMirrorId);
+		uint prevValue = atomicOr(mirrorSData.mask[0], mask);
+		if ((prevValue & mask) == 0) {
+			uint index = atomicAdd(mirrorSData.count[0], 1);
+			mirrorSData.list[index] = uint(drawMirrorId);
+		}
+		//discard;
+		//return;
+	}
+
 	vec4 baseColor = texture(baseColorTex, inTexCoord);
 	if (baseColor.a < 0.5) discard;
 

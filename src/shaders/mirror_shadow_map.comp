@@ -4,7 +4,7 @@
 
 layout (local_size_x = MAX_LIGHTS, local_size_y = MAX_MIRRORS) in;
 
-##import lib/mirror_common
+##import lib/mirror_shadow_common
 
 uniform int lightCount = 0;
 uniform int mirrorCount = 0;

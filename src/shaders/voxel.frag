@@ -31,7 +31,7 @@ layout(binding = 0, std140) uniform GLLightData {
 	Light lights[MAX_LIGHTS];
 };
 
-##import lib/mirror_common
+##import lib/mirror_shadow_common
 
 uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);
