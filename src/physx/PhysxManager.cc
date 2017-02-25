@@ -281,6 +281,15 @@ namespace sp
 		return actor;
 	}
 
+	void PhysxManager::RemoveActor(PxRigidActor *actor)
+	{
+		Lock();
+		// TODO(xthexder): Check this for memory leaks
+		scene->removeActor(*actor);
+		actor->release();
+		Unlock();
+	}
+
 	PxController *PhysxManager::CreateController(PxVec3 pos, float radius, float height, float density)
 	{
 		Lock();

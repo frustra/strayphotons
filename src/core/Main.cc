@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 
 	options.add_options()
 	("h,help", "Display help")
-	("m,map", "Boot into scene", value<string>()->default_value("test1"))
+	("m,map", "Initial scene to load", value<string>())
 	("basic-renderer", "Use minimal debug renderer", value<bool>())
 	("voxel-gridsize", "Number of voxels (NxNxN)", value<int>()->default_value("256"))
 	("voxel-supersample", "Resolution multiplier for generating voxel grid", value<float>()->default_value("1.0"))

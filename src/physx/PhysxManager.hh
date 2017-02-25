@@ -40,6 +40,7 @@ namespace sp
 		};
 
 		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, ActorDesc desc);
+		void RemoveActor(physx::PxRigidActor *actor);
 		physx::PxController *CreateController(physx::PxVec3 pos, float radius, float height, float density);
 
 	private:

@@ -36,104 +36,9 @@ namespace sp
 			delete ShaderControl;
 	}
 
-	struct DefaultMaterial
-	{
-		Texture baseColorTex, roughnessTex, metallicTex, heightTex;
-
-		DefaultMaterial()
-		{
-			unsigned char baseColor[4] = { 255, 255, 255, 255 };
-			unsigned char roughness[4] = { 255, 255, 255, 255 };
-			unsigned char metallic[4] = { 0, 0, 0, 0 };
-			unsigned char bump[4] = { 127, 127, 127, 255 };
-
-			baseColorTex.Create()
-			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_RGB8).Image2D(baseColor);
-
-			roughnessTex.Create()
-			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_R8).Image2D(roughness);
-
-			metallicTex.Create()
-			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_R8).Image2D(metallic);
-
-			heightTex.Create()
-			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_R8).Image2D(bump);
-		}
-	};
-
 	static CVar<bool> CVarRenderWireframe("r.Wireframe", false, "Render wireframes");
 	static CVar<int> CVarMirrorRecursion("r.MirrorRecursion", 2, "Mirror recursion depth");
 	static CVar<int> CVarMirrorMapResolution("r.MirrorMapResolution", 512, "Resolution of mirror shadow maps");
-
-	// TODO(xthexder) Clean up Renderable when unloaded.
-	void PrepareRenderable(ecs::Handle<ecs::Renderable> comp)
-	{
-		static DefaultMaterial defaultMat;
-
-		if (!comp->model->glPrepared)
-		{
-			comp->model->glPrepared = true;
-
-			for (auto primitive : comp->model->primitives)
-			{
-				primitive->indexBufferHandle = comp->model->LoadBuffer(primitive->indexBuffer.bufferName);
-
-				primitive->baseColorTex = comp->model->LoadTexture(primitive->materialName, "baseColor");
-				primitive->roughnessTex = comp->model->LoadTexture(primitive->materialName, "roughness");
-				primitive->metallicTex = comp->model->LoadTexture(primitive->materialName, "metallic");
-				primitive->heightTex = comp->model->LoadTexture(primitive->materialName, "height");
-
-				if (!primitive->baseColorTex) primitive->baseColorTex = &defaultMat.baseColorTex;
-				if (!primitive->roughnessTex) primitive->roughnessTex = &defaultMat.roughnessTex;
-				if (!primitive->metallicTex) primitive->metallicTex = &defaultMat.metallicTex;
-				if (!primitive->heightTex) primitive->heightTex = &defaultMat.heightTex;
-
-				glCreateVertexArrays(1, &primitive->vertexBufferHandle);
-				for (int i = 0; i < 3; i++)
-				{
-					auto *attr = &primitive->attributes[i];
-					if (attr->componentCount == 0) continue;
-					glEnableVertexArrayAttrib(primitive->vertexBufferHandle, i);
-					glVertexArrayAttribFormat(primitive->vertexBufferHandle, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
-					glVertexArrayVertexBuffer(primitive->vertexBufferHandle, i, comp->model->LoadBuffer(attr->bufferName), attr->byteOffset, attr->byteStride);
-				}
-			}
-		}
-	}
-
-	void DrawRenderable(ecs::Handle<ecs::Renderable> comp)
-	{
-		PrepareRenderable(comp);
-
-		for (auto primitive : comp->model->primitives)
-		{
-			glBindVertexArray(primitive->vertexBufferHandle);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive->indexBufferHandle);
-
-			if (primitive->baseColorTex)
-				primitive->baseColorTex->Bind(0);
-
-			if (primitive->roughnessTex)
-				primitive->roughnessTex->Bind(1);
-
-			if (primitive->metallicTex)
-				primitive->metallicTex->Bind(2);
-
-			if (primitive->heightTex)
-				primitive->heightTex->Bind(3);
-
-			glDrawElements(
-				primitive->drawMode,
-				primitive->indexBuffer.components,
-				primitive->indexBuffer.componentType,
-				(char *) primitive->indexBuffer.byteOffset
-			);
-		}
-	}
 
 	void Renderer::Prepare()
 	{
@@ -153,19 +58,11 @@ namespace sp
 		ShaderManager::SetDefine("VoxelSuperSampleScale", std::to_string(voxelSuperSampleScale));
 		ShaderControl->CompileAll(GlobalShaders);
 
-		// TODO(xthexder): Replace this
-		// int mirrorCount = 0;
-		// for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable>())
-		// {
-		// 	auto comp = ent.Get<ecs::Renderable>();
-		// 	PrepareRenderable(comp);
-
-		// 	if (ent.Has<ecs::Mirror>())
-		// 	{
-		// 		auto mirror = ent.Get<ecs::Mirror>();
-		// 		mirror->mirrorId = mirrorCount++;
-		// 	}
-		// }
+		game->entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction &d) {
+			if (ent.Has<ecs::Renderable>()) {
+				auto renderable = ent.Get<ecs::Renderable>();
+			}
+		});
 
 		AssertGLOK("Renderer::Prepare");
 	}
@@ -238,7 +135,7 @@ namespace sp
 
 		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
 		glDisable(GL_SCISSOR_TEST);
-		glDisable(GL_CULL_FACE);
+		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
 		glClear(GL_DEPTH_BUFFER_BIT);
@@ -274,9 +171,21 @@ namespace sp
 			}
 		}
 
+		glDisable(GL_CULL_FACE);
+
 		GLLightData lightData[MAX_LIGHTS];
 		int lightDataCount = FillLightData(&lightData[0], game->entityManager);
 		int recursion = mirrorCount == 0 ? 0 : CVarMirrorRecursion.Get();
+
+		int mapCount = lightCount * mirrorCount * recursion;
+		auto mapResolution = CVarMirrorMapResolution.Get();
+		auto mirrorMapResolution = glm::ivec3(mapResolution, mapResolution, std::max(1, mapCount));
+		RenderTargetDesc mirrorMapDesc(PF_R32F, mirrorMapResolution);
+		mirrorMapDesc.textureArray = true;
+		if (!mirrorShadowMap || mirrorShadowMap->GetDesc() != mirrorMapDesc)
+		{
+			mirrorShadowMap = RTPool->Get(mirrorMapDesc);
+		}
 
 		for (int bounce = 0; bounce < recursion; bounce++)
 		{
@@ -297,16 +206,6 @@ namespace sp
 
 			{
 				RenderPhase phase("MirrorMaps", Timer);
-
-				int mapCount = lightCount * mirrorCount * recursion;
-				auto mapResolution = CVarMirrorMapResolution.Get();
-				auto mirrorMapResolution = glm::ivec3(mapResolution, mapResolution, mapCount);
-				RenderTargetDesc mirrorMapDesc(PF_R32F, mirrorMapResolution);
-				mirrorMapDesc.textureArray = true;
-				if (!mirrorShadowMap || mirrorShadowMap->GetDesc() != mirrorMapDesc)
-				{
-					mirrorShadowMap = RTPool->Get(mirrorMapDesc);
-				}
 
 				RenderTargetDesc depthDesc(PF_DEPTH32F, mirrorMapResolution);
 				depthDesc.textureArray = true;
@@ -444,7 +343,7 @@ namespace sp
 			voxelRasterFS->SetLightData(lightCount, &lightData[0]);
 			voxelRasterFS->SetVoxelInfo(voxelData.info);
 			shadowMap->GetTexture().Bind(4);
-			mirrorShadowMap->GetTexture().Bind(5);
+			if (mirrorShadowMap) mirrorShadowMap->GetTexture().Bind(5);
 			mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
@@ -627,7 +526,11 @@ namespace sp
 			shader->SetParams(view, modelMat);
 
 			preDraw(ent);
-			DrawRenderable(comp);
+			if (!comp->model->glModel)
+			{
+				comp->model->glModel = make_shared<GLModel>(comp->model.get());
+			}
+			comp->model->glModel->Draw();
 		}
 
 		if (CVarRenderWireframe.Get())

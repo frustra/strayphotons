@@ -25,6 +25,7 @@ namespace sp
 
 		void Start();
 		bool Frame();
+		void PhysicsUpdate();
 		bool ShouldStop();
 
 		cxxopts::Options &options;

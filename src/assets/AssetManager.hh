@@ -26,7 +26,7 @@ namespace sp
 		bool OutputStream(const std::string &path, std::ofstream &stream);
 
 		shared_ptr<Asset> Load(const std::string &path);
-		Texture LoadTexture(const std::string &path);
+		Texture LoadTexture(const std::string &path, GLsizei levels = Texture::FullyMipmap);
 		shared_ptr<Model> LoadModel(const std::string &name);
 		shared_ptr<Scene> LoadScene(const std::string &name, ecs::EntityManager *em, PhysxManager &px);
 

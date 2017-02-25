@@ -32,7 +32,10 @@ namespace sp
 
 	void GameLogic::Init()
 	{
-		LoadScene(game->options["map"].as<string>());
+		if (game->options["map"].count())
+		{
+			LoadScene(game->options["map"].as<string>());
+		}
 
 		input->AddCharInputCallback([&](uint32 ch)
 		{
@@ -51,7 +54,7 @@ namespace sp
 
 				if (actor)
 				{
-					auto physics = entity.Assign<ecs::Physics>(actor);
+					auto physics = entity.Assign<ecs::Physics>(actor, model);
 				}
 			}
 			else if (ch == 'e') // Toggle flashlight following player
@@ -142,7 +145,14 @@ namespace sp
 
 	void GameLogic::LoadScene(const string &name)
 	{
+		// TODO(xthexder): Use ECS DestroyAll function
+		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Transform>())
+		{
+			ent.Destroy();
+		}
+
 		scene = GAssets.LoadScene(name, &game->entityManager, game->physics);
+		if (!scene) return;
 
 		ecs::Entity player = scene->FindEntity("player");
 		humanControlSystem.AssignController(player, game->physics);

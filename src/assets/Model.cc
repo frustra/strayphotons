@@ -84,7 +84,7 @@ namespace sp
 		};
 	}
 
-	Model::Model(const std::string &name, shared_ptr<Asset> asset, tinygltf::Scene *scene) : name(name), glPrepared(false), scene(scene), asset(asset)
+	Model::Model(const std::string &name, shared_ptr<Asset> asset, tinygltf::Scene *scene) : name(name), scene(scene), asset(asset)
 	{
 		for (auto node : scene->scenes[scene->defaultScene])
 		{
@@ -94,66 +94,13 @@ namespace sp
 
 	Model::~Model()
 	{
-		Logf("Destroying model (prepared: %d)", glPrepared);
+		Logf("Destroying model (prepared: %d)", glModel);
 		asset->manager->UnregisterModel(*this);
-	}
-
-	GLuint Model::LoadBuffer(string name)
-	{
-		if (buffers.count(name)) return buffers[name];
-
-		auto buffer = scene->buffers[name];
-		GLuint handle;
-		glCreateBuffers(1, &handle);
-		glNamedBufferData(handle, buffer.data.size(), buffer.data.data(), GL_STATIC_DRAW);
-		buffers[name] = handle;
-		return handle;
 	}
 
 	vector<unsigned char> Model::GetBuffer(string name)
 	{
 		return scene->buffers[name].data;
-	}
-
-	Texture *Model::LoadTexture(string materialName, string type)
-	{
-		auto &material = scene->materials[materialName];
-
-		if (!material.values.count(type)) return NULL;
-
-		auto value = material.values[type];
-		if (value.string_value.empty())
-		{
-			char name[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-			unsigned char data[4];
-			for (size_t i = 0; i < 4; i++)
-			{
-				data[i] = 255 * value.number_array.at(std::min(value.number_array.size() - 1, i));
-				name[i * 2] = 'A' + ((data[i] & 0xF0) >> 4);
-				name[i * 2 + 1] = 'A' + (data[i] & 0xF);
-			}
-
-			if (textures.count(name)) return &textures[name];
-
-			return &textures[name].Create()
-				   .Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-				   .Size(1, 1).Storage(PF_RGB8).Image2D(data);
-		}
-		else
-		{
-			auto name = value.string_value;
-			if (textures.count(name)) return &textures[name];
-
-			auto texture = scene->textures[name];
-			auto img = scene->images[texture.source];
-
-			return &textures[name].Create(texture.target)
-				   .Filter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, 4.0)
-				   .Wrap(GL_REPEAT, GL_REPEAT)
-				   .Size(img.width, img.height)
-				   .Storage(texture.internalFormat, texture.format, texture.type, Texture::FullyMipmap, true)
-				   .Image2D(img.image.data());
-		}
 	}
 
 	void Model::AddNode(string nodeName, glm::mat4 parentMatrix)
@@ -212,8 +159,7 @@ namespace sp
 						GetPrimitiveAttribute(scene, &primitive, "POSITION"),
 						GetPrimitiveAttribute(scene, &primitive, "NORMAL"),
 						GetPrimitiveAttribute(scene, &primitive, "TEXCOORD_0")
-					},
-					0, 0, nullptr, nullptr, nullptr, nullptr
+					}
 				});
 			}
 		}
@@ -221,6 +167,137 @@ namespace sp
 		for (auto child : scene->nodes[nodeName].children)
 		{
 			AddNode(child, matrix);
+		}
+	}
+
+	GLModel::GLModel(Model *model) : model(model)
+	{
+		static DefaultMaterial defaultMat;
+
+		for (auto primitive : model->primitives)
+		{
+			Primitive glPrimitive;
+			glPrimitive.parent = primitive;
+			glPrimitive.indexBufferHandle = LoadBuffer(primitive->indexBuffer.bufferName);
+
+			glPrimitive.baseColorTex = LoadTexture(primitive->materialName, "baseColor");
+			glPrimitive.roughnessTex = LoadTexture(primitive->materialName, "roughness");
+			glPrimitive.metallicTex = LoadTexture(primitive->materialName, "metallic");
+			glPrimitive.heightTex = LoadTexture(primitive->materialName, "height");
+
+			if (!glPrimitive.baseColorTex) glPrimitive.baseColorTex = &defaultMat.baseColorTex;
+			if (!glPrimitive.roughnessTex) glPrimitive.roughnessTex = &defaultMat.roughnessTex;
+			if (!glPrimitive.metallicTex) glPrimitive.metallicTex = &defaultMat.metallicTex;
+			if (!glPrimitive.heightTex) glPrimitive.heightTex = &defaultMat.heightTex;
+
+			glCreateVertexArrays(1, &glPrimitive.vertexBufferHandle);
+			for (int i = 0; i < 3; i++)
+			{
+				auto *attr = &primitive->attributes[i];
+				if (attr->componentCount == 0) continue;
+				glEnableVertexArrayAttrib(glPrimitive.vertexBufferHandle, i);
+				glVertexArrayAttribFormat(glPrimitive.vertexBufferHandle, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
+				glVertexArrayVertexBuffer(glPrimitive.vertexBufferHandle, i, LoadBuffer(attr->bufferName), attr->byteOffset, attr->byteStride);
+			}
+
+			primitives.push_back(glPrimitive);
+		}
+	}
+
+	GLModel::~GLModel()
+	{
+		for (auto primitive : primitives)
+		{
+			glDeleteVertexArrays(1, &primitive.vertexBufferHandle);
+		}
+		for (auto buf : buffers)
+		{
+			glDeleteBuffers(1, &buf.second);
+		}
+		for (auto tex : textures)
+		{
+			tex.second.Delete();
+		}
+	}
+
+	void GLModel::Draw()
+	{
+		for (auto primitive : primitives)
+		{
+			glBindVertexArray(primitive.vertexBufferHandle);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive.indexBufferHandle);
+
+			if (primitive.baseColorTex)
+				primitive.baseColorTex->Bind(0);
+
+			if (primitive.roughnessTex)
+				primitive.roughnessTex->Bind(1);
+
+			if (primitive.metallicTex)
+				primitive.metallicTex->Bind(2);
+
+			if (primitive.heightTex)
+				primitive.heightTex->Bind(3);
+
+			glDrawElements(
+				primitive.parent->drawMode,
+				primitive.parent->indexBuffer.components,
+				primitive.parent->indexBuffer.componentType,
+				(char *) primitive.parent->indexBuffer.byteOffset
+			);
+		}
+	}
+
+	GLuint GLModel::LoadBuffer(string name)
+	{
+		if (buffers.count(name)) return buffers[name];
+
+		auto buffer = model->scene->buffers[name];
+		GLuint handle;
+		glCreateBuffers(1, &handle);
+		glNamedBufferData(handle, buffer.data.size(), buffer.data.data(), GL_STATIC_DRAW);
+		buffers[name] = handle;
+		return handle;
+	}
+
+	Texture *GLModel::LoadTexture(string materialName, string type)
+	{
+		auto &material = model->scene->materials[materialName];
+
+		if (!material.values.count(type)) return NULL;
+
+		auto value = material.values[type];
+		if (value.string_value.empty())
+		{
+			char name[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+			unsigned char data[4];
+			for (size_t i = 0; i < 4; i++)
+			{
+				data[i] = 255 * value.number_array.at(std::min(value.number_array.size() - 1, i));
+				name[i * 2] = 'A' + ((data[i] & 0xF0) >> 4);
+				name[i * 2 + 1] = 'A' + (data[i] & 0xF);
+			}
+
+			if (textures.count(name)) return &textures[name];
+
+			return &textures[name].Create()
+				   .Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+				   .Size(1, 1).Storage(PF_RGB8).Image2D(data);
+		}
+		else
+		{
+			auto name = value.string_value;
+			if (textures.count(name)) return &textures[name];
+
+			auto texture = model->scene->textures[name];
+			auto img = model->scene->images[texture.source];
+
+			return &textures[name].Create(texture.target)
+				   .Filter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, 4.0)
+				   .Wrap(GL_REPEAT, GL_REPEAT)
+				   .Size(img.width, img.height)
+				   .Storage(texture.internalFormat, texture.format, texture.type, Texture::FullyMipmap, true)
+				   .Image2D(img.image.data());
 		}
 	}
 }

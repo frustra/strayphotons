@@ -2,7 +2,6 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/CVar.hh"
-#include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/View.hh"
 
@@ -18,18 +17,20 @@ namespace sp
 	{
 	}
 
-	void prepareRenderable(ecs::Handle<ecs::Renderable> comp)
+	void BasicRenderer::PrepareRenderable(ecs::Handle<ecs::Renderable> comp)
 	{
 		for (auto primitive : comp->model->primitives)
 		{
 			auto indexBuffer = comp->model->GetBuffer(primitive->indexBuffer.bufferName);
 
-			glGenBuffers(1, &primitive->indexBufferHandle);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive->indexBufferHandle);
+			GLModel::Primitive glPrimitive;
+
+			glGenBuffers(1, &glPrimitive.indexBufferHandle);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glPrimitive.indexBufferHandle);
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBuffer.size(), indexBuffer.data(), GL_STATIC_DRAW);
 
-			glGenVertexArrays(1, &primitive->vertexBufferHandle);
-			glBindVertexArray(primitive->vertexBufferHandle);
+			glGenVertexArrays(1, &glPrimitive.vertexBufferHandle);
+			glBindVertexArray(glPrimitive.vertexBufferHandle);
 			for (int i = 0; i < 3; i++)
 			{
 				auto *attr = &primitive->attributes[i];
@@ -44,6 +45,30 @@ namespace sp
 				glVertexAttribPointer(i, attr->componentCount, attr->componentType, GL_FALSE, attr->byteStride, (void *) attr->byteOffset);
 				glEnableVertexAttribArray(i);
 			}
+
+			primitiveMap[primitive] = glPrimitive;
+		}
+	}
+
+	void BasicRenderer::DrawRenderable(ecs::Handle<ecs::Renderable> comp)
+	{
+		for (auto primitive : comp->model->primitives)
+		{
+			if (!primitiveMap.count(primitive))
+			{
+				PrepareRenderable(comp);
+			}
+
+			auto glPrimitive = primitiveMap[primitive];
+			glBindVertexArray(glPrimitive.vertexBufferHandle);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glPrimitive.indexBufferHandle);
+
+			glDrawElements(
+				primitive->drawMode,
+				primitive->indexBuffer.components,
+				primitive->indexBuffer.componentType,
+				(char *) primitive->indexBuffer.byteOffset
+			);
 		}
 	}
 
@@ -74,12 +99,6 @@ namespace sp
 	void BasicRenderer::Prepare()
 	{
 		glEnable(GL_FRAMEBUFFER_SRGB);
-
-		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable>())
-		{
-			auto comp = ent.Get<ecs::Renderable>();
-			prepareRenderable(comp);
-		}
 
 		const char *vtxShaderSrc = R"(
 			#version 410
@@ -146,22 +165,6 @@ namespace sp
 		AssertGLOK("BasicRenderer::Prepare");
 	}
 
-	void drawRenderable(ecs::Handle<ecs::Renderable> comp)
-	{
-		for (auto primitive : comp->model->primitives)
-		{
-			glBindVertexArray(primitive->vertexBufferHandle);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive->indexBufferHandle);
-
-			glDrawElements(
-				primitive->drawMode,
-				primitive->indexBuffer.components,
-				primitive->indexBuffer.componentType,
-				(char *) primitive->indexBuffer.byteOffset
-			);
-		}
-	}
-
 	void BasicRenderer::RenderPass(ecs::View &viewRef)
 	{
 		glEnable(GL_CULL_FACE);
@@ -182,7 +185,7 @@ namespace sp
 			auto mvp = view.projMat * view.viewMat * modelMat;
 
 			glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
-			drawRenderable(comp);
+			DrawRenderable(comp);
 		}
 
 		//AssertGLOK("BasicRenderer::RenderFrame");

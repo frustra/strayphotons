@@ -1,6 +1,8 @@
 #pragma once
 
 #include "graphics/GraphicsContext.hh"
+#include "ecs/components/Renderable.hh"
+#include "assets/Model.hh"
 
 #include <glm/glm.hpp>
 
@@ -21,6 +23,10 @@ namespace sp
 		void EndFrame();
 
 	private:
+		void PrepareRenderable(ecs::Handle<ecs::Renderable> comp);
+		void DrawRenderable(ecs::Handle<ecs::Renderable> comp);
+
 		GLuint sceneProgram;
+		std::map<Model::Primitive *, GLModel::Primitive> primitiveMap;
 	};
 }

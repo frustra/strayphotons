@@ -9,6 +9,7 @@
 #include "assets/Scene.hh"
 
 #include "core/Logging.hh"
+#include "Common.hh"
 
 #include <Ecs.hh>
 #include "ecs/components/Renderable.hh"
@@ -58,7 +59,7 @@ namespace sp
 		AssetMap::iterator it = loadedAssets.find(path);
 		shared_ptr<Asset> asset;
 
-		if (it == loadedAssets.end())
+		if (it == loadedAssets.end() || it->second.expired())
 		{
 			Logf("Loading asset: %s", path);
 
@@ -76,7 +77,7 @@ namespace sp
 			}
 			else
 			{
-				throw std::runtime_error("Invalid asset path");
+				return nullptr;
 			}
 		}
 		else
@@ -87,9 +88,11 @@ namespace sp
 		return asset;
 	}
 
-	Texture AssetManager::LoadTexture(const std::string &path)
+	Texture AssetManager::LoadTexture(const std::string &path, GLsizei levels)
 	{
-		return Texture().Create().LoadFromAsset(Load(path));
+		auto asset = Load(path);
+		Assert(asset != nullptr, "Texture asset not found");
+		return Texture().Create().LoadFromAsset(asset, levels);
 	}
 
 	shared_ptr<Model> AssetManager::LoadModel(const std::string &name)
@@ -97,10 +100,11 @@ namespace sp
 		ModelMap::iterator it = loadedModels.find(name);
 		shared_ptr<Model> model;
 
-		if (it == loadedModels.end())
+		if (it == loadedModels.end() || it->second.expired())
 		{
 			Logf("Loading model: %s", name);
 			shared_ptr<Asset> asset = Load("models/" + name + "/" + name + ".gltf");
+			Assert(asset != nullptr, "Model asset not found");
 			tinygltf::Scene *scene = new tinygltf::Scene();
 			std::string err;
 
@@ -130,6 +134,11 @@ namespace sp
 		Logf("Loading scene: %s", name);
 
 		shared_ptr<Asset> asset = Load("scenes/" + name + ".json");
+		if (!asset)
+		{
+			Logf("Scene not found");
+			return nullptr;
+		}
 		picojson::value root;
 		string err = picojson::parse(root, asset->String());
 		if (!err.empty())
@@ -295,7 +304,7 @@ namespace sp
 
 					if (actor)
 					{
-						auto physics = entity.Assign<ecs::Physics>(actor);
+						auto physics = entity.Assign<ecs::Physics>(actor, model);
 					}
 				}
 				else if (comp.first == "voxels")

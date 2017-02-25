@@ -53,6 +53,13 @@ namespace sp
 			triggeredExit = true;
 		});
 
+		entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction &d) {
+			if (ent.Has<ecs::Physics>()) {
+				auto phys = ent.Get<ecs::Physics>();
+				physics.RemoveActor(phys->actor);
+			}
+		});
+
 		try
 		{
 			// audio.LoadProjectFiles();
@@ -90,7 +97,14 @@ namespace sp
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;
 		if (!audio.Frame()) return false;
+		PhysicsUpdate();
 
+		lastFrameTime = frameTime;
+		return true;
+	}
+
+	void Game::PhysicsUpdate()
+	{
 		{
 			// Sync transforms to physx
 			bool gotLock = false;
@@ -137,9 +151,6 @@ namespace sp
 
 			physics.ReadUnlock();
 		}
-
-		lastFrameTime = frameTime;
-		return true;
 	}
 
 	bool Game::ShouldStop()
