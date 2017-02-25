@@ -12,14 +12,12 @@ namespace sp
 {
 	void Assert(bool condition, const string &message)
 	{
-#ifndef NDEBUG
 		if (!condition)
 		{
 			Errorf("assertion failed: %s", message);
 			os_break();
 			throw std::runtime_error(message);
 		}
-#endif
 	}
 
 	void DebugBreak()

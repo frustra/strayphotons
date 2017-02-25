@@ -27,7 +27,7 @@ namespace sp
 
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
 	static CVar<float> CVarFlashlightAngle("r.FlashlightAngle", 20, "Flashlight spot angle");
-	static CVar<float> CVarFlashlightResolution("r.FlashlightResolution", 512, "Flashlight shadow map resolution");
+	static CVar<int> CVarFlashlightResolution("r.FlashlightResolution", 512, "Flashlight shadow map resolution");
 	static CVar<float> CVarSunPostion("g.SunPostion", 0.2, "Sun angle");
 
 	void GameLogic::Init()
@@ -145,11 +145,7 @@ namespace sp
 
 	void GameLogic::LoadScene(const string &name)
 	{
-		// TODO(xthexder): Use ECS DestroyAll function
-		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Transform>())
-		{
-			ent.Destroy();
-		}
+		game->entityManager.DestroyAll();
 
 		scene = GAssets.LoadScene(name, &game->entityManager, game->physics);
 		if (!scene) return;

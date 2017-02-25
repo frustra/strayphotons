@@ -35,9 +35,9 @@ namespace sp
 		FMOD::Studio::System *system = nullptr;
 		FMOD::System *lowSystem = nullptr;
 		vector<FMOD::Studio::Bank *> banks;
-		boost::unordered_map<const string, FMOD::Studio::EventDescription *>
-		eventDescriptions;
+		boost::unordered_map<const string, FMOD::Studio::EventDescription *> eventDescriptions;
 
+		bool audioEnabled = false;
 		Game *game = nullptr;
 	};
 }

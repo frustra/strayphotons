@@ -25,7 +25,7 @@ namespace sp
 			char err[1024];
 			snprintf(err, 1024, "%s(%d): FMOD error %d - %s", file, line,
 					 result, FMOD_ErrorString(result));
-			Logf(err);
+			Errorf(err);
 			Assert(false, err);
 		}
 	}
@@ -67,9 +67,19 @@ namespace sp
 		initOutputType();
 		initDriver();
 
-		FMOD_CHECK(system->initialize(1024, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, nullptr));
-
-		logAvailDrivers();
+		auto result = system->initialize(1024, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, nullptr);
+		if (result != FMOD_OK)
+		{
+			char err[1024];
+			snprintf(err, 1024, "FMOD initialization error %d - %s",
+				result, FMOD_ErrorString(result));
+			Errorf(err);
+		}
+		else
+		{
+			audioEnabled = true;
+			logAvailDrivers();
+		}
 	}
 
 	AudioManager::~AudioManager()
@@ -77,7 +87,8 @@ namespace sp
 		for (FMOD::Studio::Bank *bank : banks)
 			FMOD_CHECK(bank->unload());
 
-		FMOD_CHECK(system->release());
+		if (system->isValid())
+			FMOD_CHECK(system->release());
 	}
 
 	void AudioManager::initOutputType()
@@ -129,7 +140,7 @@ namespace sp
 		char driverName[nameLen];
 		FMOD_SPEAKERMODE speakerMode;
 		int numChannels;
-		int numDrivers;
+		int numDrivers = 0;
 		FMOD_CHECK(lowSystem->getNumDrivers(&numDrivers));
 
 		for (int i = 0; i < numDrivers; ++i)
@@ -148,6 +159,8 @@ namespace sp
 
 	bool AudioManager::Frame()
 	{
+		if (!audioEnabled) return true;
+
 		// TODO: update sound locations
 		// FMOD_3D_ATTRIBUTES vec = {0};
 		// vec.position.x = sinf(t) * 1.0f;        // Rotate sound in a circle
@@ -174,6 +187,8 @@ namespace sp
 
 	void AudioManager::LoadBank(const string &bankFile)
 	{
+		if (!audioEnabled) return;
+
 		FMOD::Studio::Bank *bank = nullptr;
 		Logf("Loading audio bank: %s", bankFile);
 
@@ -190,6 +205,8 @@ namespace sp
 
 	void AudioManager::LoadProjectFiles()
 	{
+		if (!audioEnabled) return;
+
 		fs::path bankDir(AUDIO_BANK_DIR);
 		fs::directory_iterator end_iter;
 
@@ -213,6 +230,8 @@ namespace sp
 
 	void AudioManager::StartEvent(const string &eventName)
 	{
+		if (!audioEnabled) return;
+
 		if (eventDescriptions.count(eventName) != 1)
 		{
 			FMOD::Studio::EventDescription *eventDescr = nullptr;
