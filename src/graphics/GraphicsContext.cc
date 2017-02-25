@@ -33,6 +33,7 @@ namespace sp
 	GraphicsContext::~GraphicsContext()
 	{
 		delete GlobalShaders;
+		delete Timer;
 
 		if (window)
 			glfwDestroyWindow(window);

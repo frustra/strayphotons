@@ -25,7 +25,7 @@ namespace sp
 	void BloomHighpass::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, BloomHighpassFS>(r->GlobalShaders);
@@ -57,7 +57,7 @@ namespace sp
 	void BloomBlur::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 
 		r->GlobalShaders->Get<BloomBlurFS>()->SetDirection(direction);
 
@@ -93,7 +93,7 @@ namespace sp
 	void BloomCombine::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 
 		r->GlobalShaders->Get<BloomCombineFS>()->SetWeights(CVarBloomWeight1.Get(), CVarBloomWeight2.Get());
 

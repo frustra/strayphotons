@@ -47,7 +47,7 @@ namespace sp
 	void ViewGBuffer::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 
 		r->GlobalShaders->Get<ViewGBufferFS>()->SetParameters(mode, source, level, context->view);
 		r->GlobalShaders->Get<ViewGBufferFS>()->SetVoxelInfo(voxelData.info);

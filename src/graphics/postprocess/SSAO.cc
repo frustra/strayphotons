@@ -112,7 +112,7 @@ namespace sp
 		static SSAONoiseTexture noiseTex(5);
 
 		auto r = context->renderer;
-		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 
 		r->GlobalShaders->Get<SSAOPass0FS>()->SetViewParams(context->view);
 
@@ -127,7 +127,7 @@ namespace sp
 	void SSAOBlur::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 
 		if (CVarSSAODebug.Get() != 2)
 		{

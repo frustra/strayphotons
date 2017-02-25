@@ -39,7 +39,7 @@ namespace sp
 	void Tonemap::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, TonemapFS>(r->GlobalShaders);
@@ -152,7 +152,7 @@ namespace sp
 
 		auto r = context->renderer;
 		auto shader = r->GlobalShaders->Get<LumiHistogramCS>();
-		auto histTex = shader->GetTarget(r);
+		auto &histTex = shader->GetTarget(r);
 
 		r->SetRenderTarget(&histTex, nullptr);
 		glClearColor(0.0, 0.0, 0.0, 0.0);
@@ -170,7 +170,7 @@ namespace sp
 
 		if (CVarDrawHistogram.Get())
 		{
-			auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+			auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 			r->SetRenderTarget(&dest, nullptr);
 			r->ShaderControl->BindPipeline<BasicPostVS, RenderHistogramFS>(r->GlobalShaders);
 			DrawScreenCover();
@@ -281,7 +281,7 @@ namespace sp
 	void VoxelLighting::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 
 		int diffuseDownsample = CVarVoxelDiffuseDownsample.Get();
 		if (diffuseDownsample < 1) diffuseDownsample = 1;
@@ -313,7 +313,7 @@ namespace sp
 	void VoxelLightingDiffuse::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 		auto shader = r->GlobalShaders->Get<VoxelLightingDiffuseFS>();
 		auto lumishader = r->GlobalShaders->Get<LumiHistogramCS>();
 

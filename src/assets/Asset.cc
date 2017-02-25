@@ -10,11 +10,12 @@ namespace sp
 	Asset::~Asset()
 	{
 		manager->Unregister(*this);
+		delete[] buffer;
 	}
 
 	const std::string Asset::String()
 	{
-		return std::string((char *) buffer);
+		return std::string((char *) buffer, size);
 	}
 
 	const uint8 *Asset::Buffer()

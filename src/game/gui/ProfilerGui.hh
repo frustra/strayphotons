@@ -17,6 +17,7 @@ namespace sp
 		{
 			memset(frameTimes, 0, sizeof(*frameTimes) * numFrameTimes);
 		}
+		virtual ~ProfilerGui() {}
 
 		void Add()
 		{

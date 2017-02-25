@@ -15,7 +15,7 @@ namespace sp
 	{
 		friend GLModel;
 	public:
-		Model(const string &name, shared_ptr<Asset> asset, tinygltf::Scene *scene);
+		Model(const string &name, shared_ptr<Asset> asset, shared_ptr<tinygltf::Scene> scene);
 		~Model();
 
 		struct Attribute
@@ -44,7 +44,7 @@ namespace sp
 	private:
 		void AddNode(string nodeName, glm::mat4 parentMatrix);
 
-		tinygltf::Scene *scene;
+		shared_ptr<tinygltf::Scene> scene;
 		shared_ptr<Asset> asset;
 	};
 

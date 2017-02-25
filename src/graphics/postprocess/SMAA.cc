@@ -75,8 +75,8 @@ namespace sp
 	void SMAAEdgeDetection::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
-		auto stencil = outputs[1].AllocateTarget(context)->GetTexture();
+		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto &stencil = outputs[1].AllocateTarget(context)->GetTexture();
 
 		r->GlobalShaders->Get<SMAAEdgeDetectionVS>()->SetViewParams(context->view);
 		r->GlobalShaders->Get<SMAAEdgeDetectionFS>()->SetViewParams(context->view);
@@ -109,8 +109,8 @@ namespace sp
 		static Texture searchTex = GAssets.LoadTexture("textures/smaa/SearchTex.tga", 1);
 
 		auto r = context->renderer;
-		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
-		auto stencil = dependencies[0].GetOutput()->TargetRef->GetTexture();
+		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto &stencil = dependencies[0].GetOutput()->TargetRef->GetTexture();
 
 		r->GlobalShaders->Get<SMAABlendingWeightsVS>()->SetViewParams(context->view);
 		r->GlobalShaders->Get<SMAABlendingWeightsFS>()->SetViewParams(context->view);
@@ -143,7 +143,7 @@ namespace sp
 		}
 
 		auto r = context->renderer;
-		auto dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 
 		r->GlobalShaders->Get<SMAABlendingVS>()->SetViewParams(context->view);
 		r->GlobalShaders->Get<SMAABlendingFS>()->SetViewParams(context->view);

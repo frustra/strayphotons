@@ -8,7 +8,6 @@
 #include "core/CVar.hh"
 
 #include <fstream>
-#include <thread>
 
 namespace sp
 {
@@ -35,8 +34,27 @@ namespace sp
 
 	PhysxManager::~PhysxManager()
 	{
-		StopSimulation();
-		ReleaseControllers();
+		Lock();
+		exiting = true;
+		thread.join();
+
+		for (auto val : cache)
+		{
+			auto hulSet = val.second;
+			for (auto hul : hulSet->hulls)
+			{
+				delete[] hul.points;
+				delete[] hul.triangles;
+			}
+			delete val.second;
+		}
+
+		if (manager)
+		{
+			manager->purgeControllers();
+			manager->release();
+		}
+		Unlock();
 		DestroyPhysxScene();
 
 		pxCooking->release();
@@ -135,11 +153,11 @@ namespace sp
 
 	void PhysxManager::StartThread()
 	{
-		std::thread thread([&]
+		thread = std::thread([&]
 		{
 			const double rate = 60.0; // frames/sec
 
-			while (true)
+			while (!exiting)
 			{
 				double frameStart = glfwGetTime();
 
@@ -152,8 +170,6 @@ namespace sp
 				std::this_thread::sleep_for(std::chrono::nanoseconds((uint64) (sleepFor * 1e9)));
 			}
 		});
-
-		thread.detach();
 	}
 
 	void PhysxManager::StartSimulation()
@@ -167,16 +183,6 @@ namespace sp
 	{
 		Lock();
 		simulate = false;
-		Unlock();
-	}
-
-	void PhysxManager::ReleaseControllers()
-	{
-		Lock();
-		if (manager)
-		{
-			manager->purgeControllers();
-		}
 		Unlock();
 	}
 
@@ -293,7 +299,7 @@ namespace sp
 	PxController *PhysxManager::CreateController(PxVec3 pos, float radius, float height, float density)
 	{
 		Lock();
-		manager = PxCreateControllerManager(*scene, true);
+		if (!manager) manager = PxCreateControllerManager(*scene, true);
 
 		//Capsule controller description will want to be data driven
 		PxCapsuleControllerDesc desc;
@@ -307,6 +313,13 @@ namespace sp
 		PxController *controller = manager->createController(desc);
 		Unlock();
 		return controller;
+	}
+
+	void PhysxManager::RemoveController(PxController *controller)
+	{
+		Lock();
+		controller->release();
+		Unlock();
 	}
 
 	const uint32 hullCacheMagic = 0xc040;

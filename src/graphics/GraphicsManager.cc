@@ -9,7 +9,6 @@
 #include "ecs/components/Transform.hh"
 #include "core/Game.hh"
 #include "core/CVar.hh"
-#include "game/gui/ProfilerGui.hh"
 
 #include <cxxopts.hpp>
 #include <iostream>
@@ -79,7 +78,8 @@ namespace sp
 		rayTracer = new raytrace::RaytracedRenderer(game, renderer);
 #endif
 
-		game->gui.Attach(new ProfilerGui(context->Timer));
+		profilerGui = new ProfilerGui(context->Timer);
+		game->gui.Attach(profilerGui);
 	}
 
 	void GraphicsManager::ReleaseContext()
@@ -87,6 +87,7 @@ namespace sp
 		if (!context) throw "no active context";
 
 		if (guiRenderer) delete guiRenderer;
+		if (profilerGui) delete profilerGui;
 
 #ifdef SP_ENABLE_RAYTRACER
 		if (rayTracer) delete rayTracer;

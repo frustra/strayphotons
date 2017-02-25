@@ -105,10 +105,10 @@ namespace sp
 			Logf("Loading model: %s", name);
 			shared_ptr<Asset> asset = Load("models/" + name + "/" + name + ".gltf");
 			Assert(asset != nullptr, "Model asset not found");
-			tinygltf::Scene *scene = new tinygltf::Scene();
+			auto scene = make_shared<tinygltf::Scene>();
 			std::string err;
 
-			bool ret = gltfLoader.LoadASCIIFromString(scene, &err, asset->CharBuffer(), asset->Size(), ASSETS_DIR + "models/" + name);
+			bool ret = gltfLoader.LoadASCIIFromString(scene.get(), &err, asset->CharBuffer(), asset->Size(), ASSETS_DIR + "models/" + name);
 			if (!err.empty())
 			{
 				throw std::runtime_error(err);

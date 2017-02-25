@@ -47,6 +47,11 @@ namespace sp
 		io.Fonts->TexID = (void *)(intptr_t) fontTex.handle;
 	}
 
+	GuiRenderer::~GuiRenderer()
+	{
+		ImGui::Shutdown();
+	}
+
 	void GuiRenderer::Render(ecs::View view)
 	{
 		RenderPhase phase("GuiRender", parent.Timer);

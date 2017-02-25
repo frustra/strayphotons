@@ -8,6 +8,7 @@
 #include <extensions/PxDefaultErrorCallback.h>
 #include <extensions/PxDefaultAllocator.h>
 #include <unordered_map>
+#include <thread>
 
 namespace sp
 {
@@ -23,7 +24,6 @@ namespace sp
 		void StartThread();
 		void StartSimulation();
 		void StopSimulation();
-		void ReleaseControllers();
 		void Lock();
 		void Unlock();
 		void ReadLock();
@@ -42,6 +42,7 @@ namespace sp
 		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, ActorDesc desc);
 		void RemoveActor(physx::PxRigidActor *actor);
 		physx::PxController *CreateController(physx::PxVec3 pos, float radius, float height, float density);
+		void RemoveController(physx::PxController *controller);
 
 	private:
 		void CreatePhysxScene();
@@ -51,16 +52,18 @@ namespace sp
 		ConvexHullSet *LoadCollisionCache(Model *model);
 		void SaveCollisionCache(Model *model, ConvexHullSet *set);
 
-		physx::PxFoundation *pxFoundation;
-		physx::PxPhysics *physics;
-		physx::PxDefaultCpuDispatcher *dispatcher;
+		physx::PxFoundation *pxFoundation = nullptr;
+		physx::PxPhysics *physics = nullptr;
+		physx::PxDefaultCpuDispatcher *dispatcher = nullptr;
 		physx::PxDefaultErrorCallback defaultErrorCallback;
 		physx::PxDefaultAllocator defaultAllocatorCallback;
-		physx::PxCooking *pxCooking;
-		physx::PxControllerManager *manager;
+		physx::PxCooking *pxCooking = nullptr;
+		physx::PxControllerManager *manager = nullptr;
 
-		physx::PxScene *scene;
-		bool simulate = false, resultsPending = false;
+		physx::PxScene *scene = nullptr;
+		bool simulate = false, exiting = false, resultsPending = false;
+
+		std::thread thread;
 
 		std::unordered_map<string, ConvexHullSet *> cache;
 	};

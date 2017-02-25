@@ -34,6 +34,8 @@ namespace sp
 	{
 		if (ShaderControl)
 			delete ShaderControl;
+		if (RTPool)
+			delete RTPool;
 	}
 
 	static CVar<bool> CVarRenderWireframe("r.Wireframe", false, "Render wireframes");

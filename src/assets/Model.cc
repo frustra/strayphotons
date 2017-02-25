@@ -49,7 +49,7 @@ namespace sp
 		return componentCount * componentWidth;
 	}
 
-	Model::Attribute GetPrimitiveAttribute(tinygltf::Scene *scene, tinygltf::Primitive *p, string attribute)
+	Model::Attribute GetPrimitiveAttribute(shared_ptr<tinygltf::Scene> scene, tinygltf::Primitive *p, string attribute)
 	{
 		if (!p->attributes.count(attribute)) return Model::Attribute();
 		auto accessor = scene->accessors[p->attributes[attribute]];
@@ -84,7 +84,7 @@ namespace sp
 		};
 	}
 
-	Model::Model(const std::string &name, shared_ptr<Asset> asset, tinygltf::Scene *scene) : name(name), scene(scene), asset(asset)
+	Model::Model(const std::string &name, shared_ptr<Asset> asset, shared_ptr<tinygltf::Scene> scene) : name(name), scene(scene), asset(asset)
 	{
 		for (auto node : scene->scenes[scene->defaultScene])
 		{
@@ -94,7 +94,11 @@ namespace sp
 
 	Model::~Model()
 	{
-		Logf("Destroying model (prepared: %d)", glModel);
+		Logf("Destroying model %s (prepared: %d)", name, !!glModel);
+		for (auto primitive : primitives)
+		{
+			delete primitive;
+		}
 		asset->manager->UnregisterModel(*this);
 	}
 

@@ -13,6 +13,7 @@ namespace sp
 	{
 	public:
 		GuiRenderer(Renderer &renderer, GuiManager &manager);
+		~GuiRenderer();
 		void Render(ecs::View view);
 
 	private:

@@ -21,7 +21,7 @@
 	url = https://github.com/boostorg/config
 [submodule "ext/tinygltfloader"]
 	path = ext/tinygltfloader
-	url = https://github.com/frustra/tinygltfloader.git
+	url = git@github.com:frustra/tinygltfloader.git
 [submodule "ext/physx"]
 	path = ext/physx
 	url = git@github.com:frustra/PhysX-3.3.git

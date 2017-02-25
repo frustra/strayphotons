@@ -54,9 +54,15 @@ namespace sp
 		});
 
 		entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction &d) {
-			if (ent.Has<ecs::Physics>()) {
+			if (ent.Has<ecs::Physics>())
+			{
 				auto phys = ent.Get<ecs::Physics>();
 				physics.RemoveActor(phys->actor);
+			}
+			if (ent.Has<ecs::HumanController>())
+			{
+				auto controller = ent.Get<ecs::HumanController>();
+				physics.RemoveController(controller->pxController);
 			}
 		});
 
