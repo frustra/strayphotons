@@ -38,7 +38,6 @@ namespace sp
 
 	MirrorSceneCS::MirrorSceneCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 	{
-		Bind(invViewMat, "invViewMat");
 		Bind(mirrorCount, "mirrorCount");
 		BindBuffer(mirrorData, 0);
 	}
@@ -47,11 +46,6 @@ namespace sp
 	{
 		Set(mirrorCount, count);
 		BufferData(mirrorData, sizeof(GLMirrorData) * count, data);
-	}
-
-	void MirrorSceneCS::SetViewParams(const ecs::View &view)
-	{
-		Set(invViewMat, view.invViewMat);
 	}
 
 	ShadowMapFS::ShadowMapFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)

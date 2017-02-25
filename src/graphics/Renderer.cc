@@ -62,8 +62,10 @@ namespace sp
 		ShaderManager::SetDefine("VoxelSuperSampleScale", std::to_string(voxelSuperSampleScale));
 		ShaderControl->CompileAll(GlobalShaders);
 
-		game->entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction &d) {
-			if (ent.Has<ecs::Renderable>()) {
+		game->entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction & d)
+		{
+			if (ent.Has<ecs::Renderable>())
+			{
 				auto renderable = ent.Get<ecs::Renderable>();
 				if (renderable->model->glModel)
 				{
@@ -471,15 +473,11 @@ namespace sp
 			// uint mask[MAX_MIRRORS];
 			// uint list[SCENE_MIRROR_LIST_SIZE];
 			// int sourceIndex[SCENE_MIRROR_LIST_SIZE];
-			// mat4 viewMat[SCENE_MIRROR_LIST_SIZE];
-			// mat4 invViewMat[SCENE_MIRROR_LIST_SIZE];
-			// mat4 projMat[SCENE_MIRROR_LIST_SIZE];
-			// mat4 invProjMat[SCENE_MIRROR_LIST_SIZE];
-			// vec2 clip[SCENE_MIRROR_LIST_SIZE];
-			// vec4 nearInfo[SCENE_MIRROR_LIST_SIZE];
+			// mat4 reflectMat[SCENE_MIRROR_LIST_SIZE];
+			// vec4 clipPlane[SCENE_MIRROR_LIST_SIZE];
 
 			mirrorSceneData.Create()
-			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * 9 + sizeof(glm::mat4) * 4) * (MAX_MIRRORS * MAX_MIRROR_RECURSION + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
+			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * 7 + sizeof(glm::mat4) * 1) * (MAX_MIRRORS * MAX_MIRROR_RECURSION + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
 		}
 
 		mirrorSceneData.Clear(PF_R32UI, 0);
@@ -547,7 +545,6 @@ namespace sp
 
 					auto cs = GlobalShaders->Get<MirrorSceneCS>();
 					cs->SetMirrorData(mirrorDataCount, &mirrorData[0]);
-					cs->SetViewParams(forwardPassView);
 
 					ShaderControl->BindPipeline<MirrorSceneCS>(GlobalShaders);
 					glDispatchCompute(1, 1, 1);
@@ -574,17 +571,15 @@ namespace sp
 				sceneGS->SetRenderMirrors(true);
 			}
 
-			int thisStencilBit = 1 << ((bounce) % 8);
+			int thisStencilBit = bounce > 0 ? 0 : 1 << ((bounce) % 8);
 			glStencilFunc(GL_EQUAL, 0xff, ~thisStencilBit);
-			glStencilMask(~0); // for clear
+			glStencilMask(bounce > 0 ? 0 : ~0); // for clear
+			glFrontFace(bounce % 2 == 0 ? GL_CCW : GL_CW);
 
 			sceneFS->SetMirrorId(-1);
 			sceneGS->SetParams(forwardPassView, {});
 
 			ShaderControl->BindPipeline<SceneVS, SceneGS, SceneFS>(GlobalShaders);
-			glFrontFace(bounce % 2 == 0 ? GL_CCW : GL_CW);
-			//glDepthFunc(bounce % 2 == 0 ? GL_LESS : GL_GREATER);
-			//glDisable(GL_CULL_FACE);
 
 			ForwardPass(forwardPassView, sceneVS, [&](ecs::Entity & ent)
 			{

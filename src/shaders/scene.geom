@@ -64,14 +64,14 @@ void main() {
 	} else {
 		for (int index = mirrorSData.count[1]; index < mirrorSData.count[0]; index++) {
 			outMirrorIndex = index;
-			mat4 view2 = view * mirrorSData.viewMat[index];
+			mat4 reflectView = view * mirrorSData.reflectMat[index];
 
 			for (int i = 0; i < 3; i++) {
 				outNormal = normalMat * inNormal[i];
 				outTexCoord = inTexCoord[i];
 				outViewPos = viewPos[i];
 				gl_ClipDistance[0] = dot(mirrorSData.clipPlane[index], gl_in[i].gl_Position);
-				gl_Position = projection * view2 * gl_in[i].gl_Position;
+				gl_Position = projection * reflectView * gl_in[i].gl_Position;
 				EmitVertex();
 			}
 

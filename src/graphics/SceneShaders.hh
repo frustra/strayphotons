@@ -56,12 +56,10 @@ namespace sp
 
 		MirrorSceneCS(shared_ptr<ShaderCompileOutput> compileOutput);
 		void SetMirrorData(int count, GLMirrorData *data);
-		void SetViewParams(const ecs::View &view);
 
 	private:
 		UniformBuffer mirrorData;
 		Uniform mirrorCount;
-		Uniform invViewMat;
 	};
 
 	class SceneDepthClearVS : public SceneShader

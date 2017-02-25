@@ -8,9 +8,6 @@ layout(binding = 1, std430) buffer MirrorSceneData {
 	uint mask[MAX_MIRRORS];
 	uint list[SCENE_MIRROR_LIST_SIZE];
 	int sourceIndex[SCENE_MIRROR_LIST_SIZE];
-	mat4 viewMat[SCENE_MIRROR_LIST_SIZE];
-	mat4 invViewMat[SCENE_MIRROR_LIST_SIZE];
-	mat4 projMat[SCENE_MIRROR_LIST_SIZE];
-	mat4 invProjMat[SCENE_MIRROR_LIST_SIZE];
+	mat4 reflectMat[SCENE_MIRROR_LIST_SIZE];
 	vec4 clipPlane[SCENE_MIRROR_LIST_SIZE];
 } mirrorSData;
