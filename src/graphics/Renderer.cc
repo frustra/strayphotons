@@ -541,6 +541,29 @@ namespace sp
 
 		for (int bounce = 0; bounce <= recursion; bounce++)
 		{
+			if (bounce > 0)
+			{
+				RenderPhase phase("StencilCopy", Timer);
+
+				int prevStencilBit = 1 << ((bounce - 1) % 8);
+				glStencilFunc(GL_EQUAL, 0xff, ~prevStencilBit);
+				glStencilMask(0);
+
+				if (bounce % 2 == 0)
+				{
+					mirrorIndexStencil1->GetTexture().Bind(0);
+					SetRenderTarget(&mirrorIndexStencil0->GetTexture(), nullptr);
+				}
+				else
+				{
+					mirrorIndexStencil0->GetTexture().Bind(0);
+					SetRenderTarget(&mirrorIndexStencil1->GetTexture(), nullptr);
+				}
+
+				ShaderControl->BindPipeline<BasicPostVS, CopyStencilFS>(GlobalShaders);
+				DrawScreenCover();
+			}
+
 			if (bounce % 2 == 0)
 			{
 				glBindFramebuffer(GL_FRAMEBUFFER, fb0);
@@ -594,7 +617,7 @@ namespace sp
 				sceneGS->SetRenderMirrors(true);
 			}
 
-			int thisStencilBit = 1 << ((bounce) % 8);
+			int thisStencilBit = 1 << (bounce % 8);
 			glStencilFunc(GL_EQUAL, 0xff, ~thisStencilBit);
 			glStencilMask(~0); // for clear
 			glFrontFace(bounce % 2 == 0 ? GL_CCW : GL_CW);

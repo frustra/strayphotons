@@ -84,13 +84,15 @@ bool detectEdge(vec3 centerNormal, float centerDepth, vec2 tcRadius)
 
 void main()
 {
-	//for (int i = 0; i < mirrorData.count[0]; i++) {
-	//	vec2 coord = inTexCoord * vec2(6.0, 4.0) - vec2(i, 0);
-	//	if (coord == clamp(coord, 0, 1)) {
-	//		outFragColor.rgb = texture(mirrorShadowMap, vec3(coord, i)).rrr;
-	//		return;
-	//	}
-	//}
+	for (int i = 0; i < mirrorData.count[0]; i++) {
+		vec2 coord = inTexCoord * vec2(6.0, 4.0) - vec2(i, 0);
+		if (coord == clamp(coord, 0, 1)) {
+			outFragColor.rgb = texture(mirrorShadowMap, vec3(coord, i)).rrr;
+			return;
+		}
+	}
+	//outFragColor.rgb = vec3(float(UnpackMirrorDest(texture(mirrorIndexStencil, inTexCoord).r)) * 0.1);
+	//return;
 
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
 	vec4 gb1 = texture(gBuffer1, inTexCoord);
@@ -113,16 +115,16 @@ void main()
 	vec3 flatWorldNormal = mat3(invViewMat) * flatViewNormal;
 
 	// Trace.
-	//uint tuple = texture(mirrorIndexStencil, inTexCoord).r;
-	//int mirrorId = UnpackMirrorDest(tuple);
-	//if (mirrorId < mirrorCount)
-	//{
-	//	worldFragPosition = vec3(mirrors[mirrorId].reflectMat * vec4(worldFragPosition, 1.0));
-	//	if (MirrorSourceIsMirror(tuple)) {
-	//		int sourceIndex = UnpackMirrorSource(tuple);
-	//		worldFragPosition = vec3(mirrorSData.reflectMat[sourceIndex] * vec4(worldFragPosition, 1.0));
-	//	}
-	//}
+	uint tuple = texture(mirrorIndexStencil, inTexCoord).r;
+	int mirrorId = UnpackMirrorDest(tuple);
+	if (mirrorId < mirrorCount)
+	{
+		if (MirrorSourceIsMirror(tuple)) {
+			int sourceIndex = UnpackMirrorSource(tuple);
+			worldFragPosition = vec3(mirrorSData.reflectMat[sourceIndex] * vec4(worldFragPosition, 1.0));
+		}
+		worldFragPosition = vec3(mirrors[mirrorId].reflectMat * vec4(worldFragPosition, 1.0));
+	}
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
 	float reflected = 0.0;
