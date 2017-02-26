@@ -84,15 +84,13 @@ bool detectEdge(vec3 centerNormal, float centerDepth, vec2 tcRadius)
 
 void main()
 {
-	for (int i = 0; i < mirrorData.count[0]; i++) {
-		vec2 coord = inTexCoord * vec2(6.0, 4.0) - vec2(i, 0);
-		if (coord == clamp(coord, 0, 1)) {
-			outFragColor.rgb = texture(mirrorShadowMap, vec3(coord, i)).rrr;
-			return;
-		}
-	}
-	//outFragColor.rgb = vec3(float(UnpackMirrorDest(texture(mirrorIndexStencil, inTexCoord).r)) * 0.1);
-	//return;
+	// for (int i = 0; i < mirrorData.count[0]; i++) {
+	// 	vec2 coord = inTexCoord * vec2(16.0, 9.0) - vec2(i, 0);
+	// 	if (coord == clamp(coord, 0, 1)) {
+	// 		outFragColor.rgb = texture(mirrorShadowMap, vec3(coord, i)).rrr;
+	// 		return;
+	// 	}
+	// }
 
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
 	vec4 gb1 = texture(gBuffer1, inTexCoord);
@@ -121,8 +119,9 @@ void main()
 	{
 		if (MirrorSourceIsMirror(tuple)) {
 			int sourceIndex = UnpackMirrorSource(tuple);
-			worldFragPosition = vec3(mirrorSData.reflectMat[sourceIndex] * vec4(worldFragPosition, 1.0));
+			worldFragPosition = vec3(mirrorSData.invReflectMat[sourceIndex] * vec4(worldFragPosition, 1.0));
 		}
+		// Single reflection matrix is involutory
 		worldFragPosition = vec3(mirrors[mirrorId].reflectMat * vec4(worldFragPosition, 1.0));
 	}
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);

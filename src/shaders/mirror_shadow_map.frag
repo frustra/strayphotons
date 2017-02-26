@@ -33,11 +33,10 @@ void main()
 
 	if (drawMirrorId >= 0) {
 		uint mask = 1 << uint(drawMirrorId);
-		uint prevValue = atomicOr(mirrorData.maskM[mirrorId], mask);
+		uint prevValue = atomicOr(mirrorData.mask[gl_Layer], mask);
 		if ((prevValue & mask) == 0) {
 			uint index = atomicAdd(mirrorData.count[0], 1);
-			mirrorData.list[index] = PackMirrorAndMirror(mirrorId, drawMirrorId);
-			mirrorData.sourceIndex[index] = gl_Layer;
+			mirrorData.list[index] = PackMirrorAndMirror(gl_Layer, drawMirrorId);
 			mirrorData.sourceLight[index] = mirrorData.sourceLight[gl_Layer];
 		}
 	}
@@ -51,18 +50,17 @@ void main()
 
 	float occlusion;
 	ShadowInfo info;
-	info.index = mirrorData.sourceIndex[gl_Layer];
 
 	if (MirrorSourceIsMirror(tuple)) {
-		int i = info.index;
-		vec4 mirrorViewPosOnMirror = mirrorData.viewMat[i] * worldPosOnMirror;
+		vec4 mirrorViewPosOnMirror = mirrorData.viewMat[sourceId] * worldPosOnMirror;
 
+		info.index = sourceId;
 		info.shadowMapPos = mirrorViewPosOnMirror.xyz;
-		info.projMat = mirrorData.projMat[i];
-		info.invProjMat = mirrorData.invProjMat[i];
+		info.projMat = mirrorData.projMat[sourceId];
+		info.invProjMat = mirrorData.invProjMat[sourceId];
 		info.mapOffset = vec4(0, 0, 1, 1);
-		info.clip = mirrorData.clip[i];
-		//info.nearInfo = mirrorData.nearInfo[i]
+		info.clip = mirrorData.clip[sourceId];
+		//info.nearInfo = mirrorData.nearInfo[sourceId]
 		occlusion = SimpleOcclusionMirror(info);
 	} else {
 		Light light = lights[sourceId];
@@ -76,5 +74,5 @@ void main()
 		occlusion = SimpleOcclusion(info);
 	}
 
-	gBuffer0.r = (occlusion * 0.1 + 0.9) * LinearDepth(inViewPos, mirrorData.clip[gl_Layer]);
+	gBuffer0.r = (occlusion * 0.5 + 0.5) * LinearDepth(inViewPos, mirrorData.clip[gl_Layer]);
 }

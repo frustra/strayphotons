@@ -11,8 +11,8 @@ uint PackLightAndMirror(int light, int mirror) {
 	return (uint(light) << 16) + uint(mirror);
 }
 
-uint PackMirrorAndMirror(int mirror1, int mirror2) {
-	return PackLightAndMirror(mirror1, mirror2) | MIRROR_SOURCE_BIT;
+uint PackMirrorAndMirror(int mirrorIndex, int mirrorId) {
+	return PackLightAndMirror(mirrorIndex, mirrorId) | MIRROR_SOURCE_BIT;
 }
 
 int UnpackMirrorSource(uint tuple) {

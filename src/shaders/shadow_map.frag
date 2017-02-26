@@ -17,11 +17,10 @@ void main()
 {
 	if (drawMirrorId >= 0) {
 		uint mask = 1 << uint(drawMirrorId);
-		uint prevValue = atomicOr(mirrorData.maskL[drawLightId], mask);
+		uint prevValue = atomicOr(mirrorData.mask[drawLightId], mask);
 		if ((prevValue & mask) == 0) {
 			uint index = atomicAdd(mirrorData.count[0], 1);
 			mirrorData.list[index] = PackLightAndMirror(drawLightId, drawMirrorId);
-			mirrorData.sourceIndex[index] = drawLightId;
 			mirrorData.sourceLight[index] = drawLightId;
 		}
 	}

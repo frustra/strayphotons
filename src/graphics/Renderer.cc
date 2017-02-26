@@ -60,6 +60,10 @@ namespace sp
 		ShaderControl = new ShaderManager();
 		ShaderManager::SetDefine("VoxelGridSize", std::to_string(voxelGridSize));
 		ShaderManager::SetDefine("VoxelSuperSampleScale", std::to_string(voxelSuperSampleScale));
+		ShaderManager::SetDefine("MAX_LIGHTS", std::to_string(MAX_LIGHTS));
+		ShaderManager::SetDefine("MAX_MIRRORS", std::to_string(MAX_MIRRORS));
+		ShaderManager::SetDefine("MAX_MIRROR_RECURSION", std::to_string(MAX_MIRROR_RECURSION));
+		ShaderManager::SetDefine("MAX_LIGHT_SENSORS", std::to_string(MAX_LIGHT_SENSORS));
 		ShaderControl->CompileAll(GlobalShaders);
 
 		game->entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction & d)
@@ -121,11 +125,9 @@ namespace sp
 		if (!mirrorVisData)
 		{
 			// int count[4];
-			// uint maskL[MAX_LIGHTS];
-			// uint maskM[MAX_MIRRORS];
+			// uint mask[MAX_LIGHTS * MAX_MIRRORS];
 			// uint list[MAX_LIGHTS * MAX_MIRRORS];
 			// int sourceLight[MAX_LIGHTS * MAX_MIRRORS];
-			// int sourceIndex[MAX_LIGHTS * MAX_MIRRORS];
 			// mat4 viewMat[MAX_LIGHTS * MAX_MIRRORS];
 			// mat4 invViewMat[MAX_LIGHTS * MAX_MIRRORS];
 			// mat4 projMat[MAX_LIGHTS * MAX_MIRRORS];
@@ -135,7 +137,7 @@ namespace sp
 			// vec3 lightDirection[MAX_LIGHTS * MAX_MIRRORS]; // stride of vec4
 
 			mirrorVisData.Create()
-			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * 14 + sizeof(glm::mat4) * 4) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
+			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * 12 + sizeof(glm::mat4) * 4) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
 		}
 
 		// TODO(xthexder): Try 16 bit depth
@@ -470,14 +472,15 @@ namespace sp
 		if (!mirrorSceneData)
 		{
 			// int count[4];
-			// uint mask[MAX_MIRRORS];
+			// uint mask[SCENE_MIRROR_LIST_SIZE];
 			// uint list[SCENE_MIRROR_LIST_SIZE];
 			// int sourceIndex[SCENE_MIRROR_LIST_SIZE];
 			// mat4 reflectMat[SCENE_MIRROR_LIST_SIZE];
+			// mat4 invReflectMat[SCENE_MIRROR_LIST_SIZE];
 			// vec4 clipPlane[SCENE_MIRROR_LIST_SIZE];
 
 			mirrorSceneData.Create()
-			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * 7 + sizeof(glm::mat4) * 1) * (MAX_MIRRORS * MAX_MIRROR_RECURSION + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
+			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * 7 + sizeof(glm::mat4) * 2) * (MAX_MIRRORS * MAX_MIRROR_RECURSION + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
 		}
 
 		mirrorSceneData.Clear(PF_R32UI, 0);

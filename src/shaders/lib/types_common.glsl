@@ -1,10 +1,6 @@
 #ifndef TYPES_COMMON_GLSL_INCLUDED
 #define TYPES_COMMON_GLSL_INCLUDED
 
-#define MAX_LIGHTS 16
-#define MAX_MIRRORS 16
-#define MAX_LIGHT_SENSORS 32
-
 const float punctualLightSizeSq = 0.01 * 0.01; // 1cm punctual lights
 
 struct Mirror {

@@ -53,11 +53,11 @@ void main()
 
 		if (inMirrorIndex >= 0) {
 			// Rendering from a mirror.
-			listData = (listData + (uint(inMirrorIndex) << 16)) | MIRROR_SOURCE_BIT;
+			listData = PackMirrorAndMirror(inMirrorIndex, drawMirrorId);
 		}
 
 		uint mask = 1 << uint(drawMirrorId);
-		uint prevValue = atomicOr(mirrorSData.mask[0], mask);
+		uint prevValue = atomicOr(mirrorSData.mask[max(0, inMirrorIndex)], mask);
 		if ((prevValue & mask) == 0) {
 			uint index = atomicAdd(mirrorSData.count[0], 1);
 			mirrorSData.list[index] = listData;

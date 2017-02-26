@@ -34,10 +34,8 @@ void main() {
 	barrier();
 
 	if (gl_LocalInvocationIndex == 0) {
-		for (int i = 0; i < MAX_LIGHTS; i++)
-			mirrorData.maskL[i] = 0;
-		for (int i = 0; i < MAX_MIRRORS; i++)
-			mirrorData.maskM[i] = 0;
+		for (int i = 0; i < MAX_LIGHTS * MAX_MIRRORS; i++)
+			mirrorData.mask[i] = 0;
 	}
 
 	uint index = gl_LocalInvocationIndex + mirrorData.count[1];
@@ -53,9 +51,8 @@ void main() {
 	vec3 sourcePos, lightDir;
 
 	if (MirrorSourceIsMirror(tuple)) {
-		int sourceIndex = mirrorData.sourceIndex[index];
-		sourcePos = vec3(mirrorData.invViewMat[sourceIndex] * vec4(0, 0, 0, 1));
-		lightDir = reflect(mirrorData.lightDirection[sourceIndex], mirrorNormal);
+		sourcePos = vec3(mirrorData.invViewMat[sourceId] * vec4(0, 0, 0, 1));
+		lightDir = reflect(mirrorData.lightDirection[sourceId], mirrorNormal);
 	} else {
 		sourcePos = lights[sourceId].position;
 		lightDir = reflect(lights[sourceId].direction, mirrorNormal);
