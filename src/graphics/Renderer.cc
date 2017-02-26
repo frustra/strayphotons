@@ -38,7 +38,7 @@ namespace sp
 			delete RTPool;
 	}
 
-	const int MAX_MIRROR_RECURSION = 4;
+	const int MAX_MIRROR_RECURSION = 10;
 
 	static CVar<bool> CVarRenderWireframe("r.Wireframe", false, "Render wireframes");
 	static CVar<int> CVarMirrorRecursion("r.MirrorRecursion", 2, "Mirror recursion depth");
@@ -188,10 +188,12 @@ namespace sp
 		glDisable(GL_CULL_FACE);
 
 		GLLightData lightData[MAX_LIGHTS];
+		GLMirrorData mirrorData[MAX_MIRRORS];
 		int lightDataCount = FillLightData(&lightData[0], game->entityManager);
+		int mirrorDataCount = FillMirrorData(&mirrorData[0], game->entityManager);
 		int recursion = mirrorCount == 0 ? 0 : CVarMirrorRecursion.Get();
 
-		int mapCount = lightCount * mirrorCount * recursion;
+		int mapCount = lightDataCount * mirrorDataCount * recursion;
 		auto mapResolution = CVarMirrorMapResolution.Get();
 		auto mirrorMapResolution = glm::ivec3(mapResolution, mapResolution, std::max(1, mapCount));
 		RenderTargetDesc mirrorMapDesc(PF_R32F, mirrorMapResolution);
@@ -208,10 +210,8 @@ namespace sp
 
 				auto mirrorMapCS = GlobalShaders->Get<MirrorMapCS>();
 
-				GLMirrorData mirrorData[MAX_MIRRORS];
-				int mirrorCount = FillMirrorData(&mirrorData[0], game->entityManager);
 				mirrorMapCS->SetLightData(lightDataCount, &lightData[0]);
-				mirrorMapCS->SetMirrorData(mirrorCount, &mirrorData[0]);
+				mirrorMapCS->SetMirrorData(mirrorDataCount, &mirrorData[0]);
 
 				ShaderControl->BindPipeline<MirrorMapCS>(GlobalShaders);
 				glDispatchCompute(1, 1, 1);
