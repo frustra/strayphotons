@@ -76,5 +76,5 @@ void main()
 		occlusion = SimpleOcclusion(info);
 	}
 
-	gBuffer0.r = (step(0.8, occlusion) * 0.1 + 0.9) * LinearDepth(inViewPos, mirrorData.clip[gl_Layer]);
+	gBuffer0.r = (occlusion * 0.1 + 0.9) * LinearDepth(inViewPos, mirrorData.clip[gl_Layer]);
 }

@@ -52,4 +52,10 @@ namespace sp
 		SHADER_TYPE(BasicOrthoFS)
 		using Shader::Shader;
 	};
+
+	class CopyStencilFS : public Shader
+	{
+		SHADER_TYPE(CopyStencilFS)
+		using Shader::Shader;
+	};
 }
