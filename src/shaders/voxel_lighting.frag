@@ -18,16 +18,24 @@ layout (binding = 8) uniform sampler3D voxelRadiance;
 
 layout (binding = 9) uniform sampler2D indirectDiffuseSampler;
 
+layout (binding = 10) uniform usampler2D mirrorIndexStencil;
+
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
 uniform int lightCount = 0;
+uniform int mirrorCount = 0;
 
-layout(binding = 0, std140) uniform LightData {
+layout(binding = 0, std140) uniform GLLightData {
 	Light lights[MAX_LIGHTS];
 };
 
+layout(binding = 1, std140) uniform GLMirrorData {
+	Mirror mirrors[MAX_MIRRORS];
+};
+
 ##import lib/mirror_shadow_common
+##import lib/mirror_scene_common
 
 uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);
@@ -105,6 +113,16 @@ void main()
 	vec3 flatWorldNormal = mat3(invViewMat) * flatViewNormal;
 
 	// Trace.
+	uint tuple = texture(mirrorIndexStencil, inTexCoord).r;
+	int mirrorId = UnpackMirrorDest(tuple);
+	if (mirrorId < mirrorCount)
+	{
+		worldFragPosition = vec3(mirrors[mirrorId].reflectMat * vec4(worldFragPosition, 1.0));
+		if (MirrorSourceIsMirror(tuple)) {
+			int sourceIndex = UnpackMirrorSource(tuple);
+			worldFragPosition = vec3(mirrorSData.reflectMat[sourceIndex] * vec4(worldFragPosition, 1.0));
+		}
+	}
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
 	float reflected = 0.0;

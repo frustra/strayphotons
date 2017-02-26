@@ -188,7 +188,9 @@ namespace sp
 		VoxelLightingFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			Bind(lightCount, "lightCount");
+			Bind(mirrorCount, "mirrorCount");
 			BindBuffer(lightData, 0);
+			BindBuffer(mirrorData, 1);
 
 			Bind(exposure, "exposure");
 
@@ -205,6 +207,12 @@ namespace sp
 		{
 			Set(lightCount, count);
 			BufferData(lightData, sizeof(GLLightData) * count, data);
+		}
+
+		void SetMirrorData(int count, GLMirrorData *data)
+		{
+			Set(mirrorCount, count);
+			BufferData(mirrorData, sizeof(GLMirrorData) * count, data);
 		}
 
 		void SetExposure(float newExposure)
@@ -231,8 +239,8 @@ namespace sp
 		}
 
 	private:
-		Uniform lightCount;
-		UniformBuffer lightData;
+		Uniform lightCount, mirrorCount;
+		UniformBuffer lightData, mirrorData;
 		Uniform exposure, invViewMat, invProjMat, mode;
 		Uniform voxelSize, voxelGridCenter, diffuseDownsample;
 	};
@@ -287,10 +295,13 @@ namespace sp
 		r->mirrorSceneData.Bind(GL_SHADER_STORAGE_BUFFER, 1);
 
 		GLLightData lightData[MAX_LIGHTS];
+		GLMirrorData mirrorData[MAX_MIRRORS];
 		int lightCount = FillLightData(&lightData[0], context->game->entityManager);
+		int mirrorCount = FillMirrorData(&mirrorData[0], context->game->entityManager);
 
 		auto shader = r->GlobalShaders->Get<VoxelLightingFS>();
 		shader->SetLightData(lightCount, &lightData[0]);
+		shader->SetMirrorData(mirrorCount, &mirrorData[0]);
 		shader->SetViewParams(context->view);
 		shader->SetMode(CVarVoxelLightingMode.Get());
 		shader->SetVoxelInfo(voxelData.info, diffuseDownsample);

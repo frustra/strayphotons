@@ -63,7 +63,7 @@ void main()
 		return;
 	}
 
-	outMirrorIndexStencil = 0xff;
+	outMirrorIndexStencil = ~0;
 
 	vec4 baseColor = texture(baseColorTex, inTexCoord);
 	if (baseColor.a < 0.5) discard;

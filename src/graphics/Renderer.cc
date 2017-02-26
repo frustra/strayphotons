@@ -492,8 +492,8 @@ namespace sp
 		targets.mirrorShadowMap = mirrorShadowMap;
 		targets.voxelData = voxelData;
 
-		auto mirrorIndexStencil0 = RTPool->Get({ PF_R8UI, view.extents });
-		auto mirrorIndexStencil1 = RTPool->Get({ PF_R8UI, view.extents });
+		auto mirrorIndexStencil0 = RTPool->Get({ PF_R32UI, view.extents });
+		auto mirrorIndexStencil1 = RTPool->Get({ PF_R32UI, view.extents });
 
 		const int attachmentCount = 5;
 
@@ -545,11 +545,13 @@ namespace sp
 			{
 				glBindFramebuffer(GL_FRAMEBUFFER, fb0);
 				mirrorIndexStencil1->GetTexture().Bind(4);
+				targets.mirrorIndexStencil = mirrorIndexStencil1;
 			}
 			else
 			{
 				glBindFramebuffer(GL_FRAMEBUFFER, fb1);
 				mirrorIndexStencil0->GetTexture().Bind(4);
+				targets.mirrorIndexStencil = mirrorIndexStencil0;
 			}
 
 			if (bounce == 0)

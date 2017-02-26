@@ -55,15 +55,14 @@ namespace sp
 		ShaderManager *ShaderControl = nullptr;
 		RenderTargetPool *RTPool = nullptr;
 
+		// TODO(jli): private
 		Buffer mirrorVisData;
+		Buffer mirrorSceneData;
 		float Exposure = 1.0f;
 	private:
 		shared_ptr<RenderTarget> shadowMap;
 		shared_ptr<RenderTarget> mirrorShadowMap;
 		Buffer computeIndirectBuffer;
-
-	public: // TODO(jli): private
-		Buffer mirrorSceneData;
 		VoxelData voxelData;
 
 		std::deque<std::pair<shared_ptr<Model>, int>> renderableGCQueue;

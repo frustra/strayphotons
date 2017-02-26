@@ -69,6 +69,7 @@ namespace sp
 		lighting->SetInput(7, context.VoxelNormal);
 		lighting->SetInput(8, context.VoxelRadiance);
 		lighting->SetInput(9, indirectDiffuse);
+		lighting->SetInput(10, context.MirrorIndexStencil);
 
 		context.LastOutput = lighting;
 	}
@@ -148,6 +149,11 @@ namespace sp
 			context.VoxelColor = context.AddPass<ProxyProcessPass>(targets.voxelData.color);
 			context.VoxelNormal = context.AddPass<ProxyProcessPass>(targets.voxelData.normal);
 			context.VoxelRadiance = context.AddPass<ProxyProcessPass>(targets.voxelData.radiance);
+		}
+
+		if (targets.mirrorIndexStencil)
+		{
+			context.MirrorIndexStencil = context.AddPass<ProxyProcessPass>(targets.mirrorIndexStencil);
 		}
 
 		if (CVarLightingEnabled.Get() && targets.shadowMap != nullptr)
