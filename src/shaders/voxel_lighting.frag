@@ -112,18 +112,19 @@ void main()
 	vec3 worldNormal = mat3(invViewMat) * viewNormal;
 	vec3 flatWorldNormal = mat3(invViewMat) * flatViewNormal;
 
-	// Trace.
+	// Transform fragment position into mirror space if drawn through a mirror.
 	uint tuple = texture(mirrorIndexStencil, inTexCoord).r;
 	int mirrorId = UnpackMirrorDest(tuple);
-	if (mirrorId < mirrorCount)
-	{
+	if (mirrorId < mirrorCount) {
 		if (MirrorSourceIsMirror(tuple)) {
 			int sourceIndex = UnpackMirrorSource(tuple);
 			worldFragPosition = vec3(mirrorSData.invReflectMat[sourceIndex] * vec4(worldFragPosition, 1.0));
 		}
-		// Single reflection matrix is involutory
+		// Single reflection matrix is involutory so reflectMat can be used without inversion
 		worldFragPosition = vec3(mirrors[mirrorId].reflectMat * vec4(worldFragPosition, 1.0));
 	}
+
+	// Trace.
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
 	float reflected = 0.0;

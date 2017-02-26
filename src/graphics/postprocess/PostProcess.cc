@@ -256,7 +256,12 @@ namespace sp
 		// Process in order.
 		for (auto pass : passes)
 		{
-			RenderPhase phase(pass->Name(), renderer->Timer);
+			RenderPhase phase(pass->Name());
+
+			if (phase.name != "ProxyTarget")
+			{
+				phase.StartTimer(renderer->Timer);
+			}
 
 			// Set up inputs.
 			for (uint32 id = 0;; id++)

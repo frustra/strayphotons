@@ -5,15 +5,10 @@ namespace sp
 {
 	CVar<bool> CVarProfileGPU("r.ProfileGPU", false, "Display GPU render timing");
 
-	RenderPhase::RenderPhase(const string &name, GPUTimer *timer)
-		: name(name)
+	RenderPhase::RenderPhase(const string &phaseName, GPUTimer *gpuTimer)
+		: name(phaseName)
 	{
-		Assert(timer, "created RenderPhase with null timer");
-		if (timer->Active())
-		{
-			timer->Register(*this);
-			this->timer = timer;
-		}
+		StartTimer(gpuTimer);
 	}
 
 	RenderPhase::~RenderPhase()
@@ -21,6 +16,19 @@ namespace sp
 		if (timer)
 		{
 			timer->Complete(*this);
+		}
+	}
+
+	void RenderPhase::StartTimer(GPUTimer *gpuTimer)
+	{
+		if (!timer)
+		{
+			Assert(gpuTimer, "created RenderPhase with null timer");
+			if (gpuTimer->Active())
+			{
+				gpuTimer->Register(*this);
+				timer = gpuTimer;
+			}
 		}
 	}
 

@@ -28,11 +28,19 @@ namespace sp
 	class RenderPhase
 	{
 	public:
-		const string &name;
+		const string name;
 		GPUTimer *timer = nullptr;
 		GPUTimeQuery query;
 
-		RenderPhase(const string &name, GPUTimer *timer);
+		// Create phase without starting the timer.
+		RenderPhase(const string &phaseName) : name(phaseName) { };
+
+		// Create phase and automatically start the timer.
+		RenderPhase(const string &phaseName, GPUTimer *gpuTimer);
+
+		// Starts the timer if not already started.
+		void StartTimer(GPUTimer *gpuTimer);
+
 		~RenderPhase();
 	};
 
