@@ -608,6 +608,7 @@ namespace sp
 				{
 					// Don't mark mirrors on last pass.
 					glStencilMask(0);
+					sceneFS->SetMirrorId(-2);
 				}
 				else if (ent.Has<ecs::Mirror>())
 				{
