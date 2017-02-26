@@ -575,6 +575,7 @@ namespace sp
 				{
 					RenderPhase phase("DepthClear", Timer);
 					glDepthFunc(GL_ALWAYS);
+					glDisable(GL_CULL_FACE);
 					glEnable(GL_STENCIL_TEST);
 					glEnable(GL_DEPTH_TEST);
 					glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -586,6 +587,7 @@ namespace sp
 
 					glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 					glDepthFunc(GL_LESS);
+					glEnable(GL_CULL_FACE);
 				}
 
 				forwardPassView.clearMode = 0;
@@ -601,8 +603,6 @@ namespace sp
 			sceneGS->SetParams(forwardPassView, {});
 
 			ShaderControl->BindPipeline<SceneVS, SceneGS, SceneFS>(GlobalShaders);
-
-			if (bounce == recursion) glDisable(GL_DEPTH_TEST); // TODO(jli) this is the problem
 
 			ForwardPass(forwardPassView, sceneVS, [&](ecs::Entity & ent)
 			{
