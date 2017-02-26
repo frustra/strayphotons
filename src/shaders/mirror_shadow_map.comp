@@ -27,16 +27,27 @@ mat4 makeProjectionMatrix(vec3 viewSpaceMirrorPos, vec2 clip, vec2 size, vec4 bo
 
 void main() {
 	if (gl_LocalInvocationIndex == 0) {
+		bool firstPass = mirrorData.count[2] == 0;
+
+		int prevCount = max(lightCount, mirrorData.count[0]);
+		for (int i = mirrorData.count[1]; i < prevCount; i++) {
+			for (int j = 0; j < mirrorCount; j++) {
+				if (mirrorData.mask[i][j] == 1) {
+					uint index = mirrorData.count[0]++;
+					mirrorData.list[index] = PackSourceAndMirror(i, j, firstPass);
+					mirrorData.sourceLight[index] = firstPass ? i : mirrorData.sourceLight[i];
+
+					mirrorData.mask[i][j] = 0;
+				}
+			}
+		}
+
 		mirrorData.count[1] = mirrorData.count[2];
 		mirrorData.count[2] = mirrorData.count[0];
 	}
 
 	barrier();
-
-	if (gl_LocalInvocationIndex == 0) {
-		for (int i = 0; i < MAX_LIGHTS * MAX_MIRRORS; i++)
-			mirrorData.mask[i] = 0;
-	}
+	memoryBarrier();
 
 	uint index = gl_LocalInvocationIndex + mirrorData.count[1];
 	if (index >= mirrorData.count[0]) return;

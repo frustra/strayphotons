@@ -2,7 +2,7 @@
 
 layout(binding = 0, std430) buffer MirrorVisData {
 	int count[4]; // array instead of multiple elements due to an nvidia driver bug with SSBOs in geometry shaders (C5133)
-	uint mask[MAX_LIGHTS * MAX_MIRRORS];
+	uint mask[MAX_LIGHTS * MAX_MIRRORS][MAX_MIRRORS];
 	uint list[MAX_LIGHTS * MAX_MIRRORS];
 	int sourceLight[MAX_LIGHTS * MAX_MIRRORS];
 	mat4 viewMat[MAX_LIGHTS * MAX_MIRRORS];

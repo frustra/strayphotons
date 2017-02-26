@@ -49,21 +49,10 @@ void main()
 	}
 
 	if (drawMirrorId >= 0) {
-		uint listData = uint(drawMirrorId);
+		int sourceId = max(0, inMirrorIndex);
+		mirrorSData.mask[sourceId][drawMirrorId] = 1;
 
-		if (inMirrorIndex >= 0) {
-			// Rendering from a mirror.
-			listData = PackMirrorAndMirror(inMirrorIndex, drawMirrorId);
-		}
-
-		uint mask = 1 << uint(drawMirrorId);
-		uint prevValue = atomicOr(mirrorSData.mask[max(0, inMirrorIndex)], mask);
-		if ((prevValue & mask) == 0) {
-			uint index = atomicAdd(mirrorSData.count[0], 1);
-			mirrorSData.list[index] = listData;
-		}
-
-		outMirrorIndexStencil = listData;
+		outMirrorIndexStencil = PackSourceAndMirror(sourceId, drawMirrorId, inMirrorIndex < 0);
 		return;
 	}
 

@@ -26,6 +26,7 @@ namespace sp
 			data->intensity = light->intensity;
 			data->illuminance = light->illuminance;
 			lightNum++;
+			if (lightNum >= MAX_LIGHTS) break;
 			data++;
 		}
 		return lightNum;
@@ -50,6 +51,7 @@ namespace sp
 			data->plane = glm::vec4(mirrorNormal, d);
 
 			mirrorNum++;
+			if (mirrorNum >= MAX_MIRRORS) break;
 			data++;
 		}
 		return mirrorNum;

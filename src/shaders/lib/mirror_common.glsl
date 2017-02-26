@@ -7,12 +7,8 @@ uint PackNoSourceMirror(int mirror) {
 	return uint(mirror);
 }
 
-uint PackLightAndMirror(int light, int mirror) {
-	return (uint(light) << 16) + uint(mirror);
-}
-
-uint PackMirrorAndMirror(int mirrorIndex, int mirrorId) {
-	return PackLightAndMirror(mirrorIndex, mirrorId) | MIRROR_SOURCE_BIT;
+uint PackSourceAndMirror(int sourceId, int mirrorId, bool sourceIsLight) {
+	return (uint(sourceId) << 16) | uint(mirrorId) | (sourceIsLight ? 0 : MIRROR_SOURCE_BIT);
 }
 
 int UnpackMirrorSource(uint tuple) {

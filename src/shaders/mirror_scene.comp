@@ -14,16 +14,26 @@ layout (binding = 0, std140) uniform GLMirrorData {
 
 void main() {
 	if (gl_LocalInvocationIndex == 0) {
+		bool firstPass = mirrorSData.count[2] == 0;
+
+		int prevCount = max(1, mirrorSData.count[0]);
+		for (int i = mirrorSData.count[1]; i < prevCount; i++) {
+			for (int j = 0; j < mirrorCount; j++) {
+				if (mirrorSData.mask[i][j] == 1) {
+					uint index = mirrorSData.count[0]++;
+					mirrorSData.list[index] = PackSourceAndMirror(i, j, firstPass);
+
+					mirrorSData.mask[i][j] = 0;
+				}
+			}
+		}
+
 		mirrorSData.count[1] = mirrorSData.count[2];
 		mirrorSData.count[2] = mirrorSData.count[0];
 	}
 
 	barrier();
-
-	if (gl_LocalInvocationIndex == 0) {
-		for (int i = 0; i < SCENE_MIRROR_LIST_SIZE; i++)
-			mirrorSData.mask[i] = 0;
-	}
+	memoryBarrier();
 
 	uint index = gl_LocalInvocationIndex + mirrorSData.count[1];
 	if (index >= mirrorSData.count[0]) return;

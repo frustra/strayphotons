@@ -125,7 +125,7 @@ namespace sp
 		if (!mirrorVisData)
 		{
 			// int count[4];
-			// uint mask[MAX_LIGHTS * MAX_MIRRORS];
+			// uint mask[MAX_LIGHTS * MAX_MIRRORS][MAX_MIRRORS];
 			// uint list[MAX_LIGHTS * MAX_MIRRORS];
 			// int sourceLight[MAX_LIGHTS * MAX_MIRRORS];
 			// mat4 viewMat[MAX_LIGHTS * MAX_MIRRORS];
@@ -137,7 +137,7 @@ namespace sp
 			// vec3 lightDirection[MAX_LIGHTS * MAX_MIRRORS]; // stride of vec4
 
 			mirrorVisData.Create()
-			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * 12 + sizeof(glm::mat4) * 4) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
+			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * MAX_MIRRORS + sizeof(GLuint) * 12 + sizeof(glm::mat4) * 4) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
 		}
 
 		// TODO(xthexder): Try 16 bit depth
@@ -472,7 +472,7 @@ namespace sp
 		if (!mirrorSceneData)
 		{
 			// int count[4];
-			// uint mask[SCENE_MIRROR_LIST_SIZE];
+			// uint mask[SCENE_MIRROR_LIST_SIZE][MAX_MIRRORS];
 			// uint list[SCENE_MIRROR_LIST_SIZE];
 			// int sourceIndex[SCENE_MIRROR_LIST_SIZE];
 			// mat4 reflectMat[SCENE_MIRROR_LIST_SIZE];
@@ -480,7 +480,7 @@ namespace sp
 			// vec4 clipPlane[SCENE_MIRROR_LIST_SIZE];
 
 			mirrorSceneData.Create()
-			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * 7 + sizeof(glm::mat4) * 2) * (MAX_MIRRORS * MAX_MIRROR_RECURSION + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
+			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * MAX_MIRRORS + sizeof(GLuint) * 6 + sizeof(glm::mat4) * 2) * (MAX_MIRRORS * MAX_MIRROR_RECURSION + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
 		}
 
 		mirrorSceneData.Clear(PF_R32UI, 0);
@@ -495,163 +495,167 @@ namespace sp
 		targets.mirrorShadowMap = mirrorShadowMap;
 		targets.voxelData = voxelData;
 
-		auto mirrorIndexStencil0 = RTPool->Get({ PF_R32UI, view.extents });
-		auto mirrorIndexStencil1 = RTPool->Get({ PF_R32UI, view.extents });
-
-		const int attachmentCount = 5;
-
-		Texture attachments[attachmentCount] =
 		{
-			targets.gBuffer0->GetTexture(),
-			targets.gBuffer1->GetTexture(),
-			targets.gBuffer2->GetTexture(),
-			targets.gBuffer3->GetTexture(),
-			mirrorIndexStencil0->GetTexture(),
-		};
+			RenderPhase phase("PlayerView", Timer);
 
-		GLuint fb0 = RTPool->GetFramebuffer(attachmentCount, attachments, &targets.depth->GetTexture());
-		attachments[4] = mirrorIndexStencil1->GetTexture();
-		GLuint fb1 = RTPool->GetFramebuffer(attachmentCount, attachments, &targets.depth->GetTexture());
+			auto mirrorIndexStencil0 = RTPool->Get({ PF_R32UI, view.extents });
+			auto mirrorIndexStencil1 = RTPool->Get({ PF_R32UI, view.extents });
 
-		glEnable(GL_CULL_FACE);
-		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_TRUE);
+			const int attachmentCount = 5;
 
-		ecs::View forwardPassView = view;
-		forwardPassView.offset = glm::ivec2();
-
-		mirrorSceneData.Bind(GL_SHADER_STORAGE_BUFFER, 1);
-
-		int mirrorCount = 0;
-		for (auto entity : game->entityManager.EntitiesWith<ecs::Mirror>())
-		{
-			auto mirror = entity.Get<ecs::Mirror>();
-			mirror->mirrorId = mirrorCount++;
-		}
-
-		GLMirrorData mirrorData[MAX_MIRRORS];
-		int mirrorDataCount = FillMirrorData(&mirrorData[0], game->entityManager);
-
-		auto sceneVS = GlobalShaders->Get<SceneVS>();
-		auto sceneGS = GlobalShaders->Get<SceneGS>();
-		auto sceneFS = GlobalShaders->Get<SceneFS>();
-
-		int recursion = mirrorCount ? std::min(MAX_MIRROR_RECURSION, CVarMirrorRecursion.Get()) : 0;
-
-		forwardPassView.stencil = true;
-		glClearStencil(~0);
-		glEnable(GL_CLIP_DISTANCE0);
-
-		for (int bounce = 0; bounce <= recursion; bounce++)
-		{
-			if (bounce > 0)
+			Texture attachments[attachmentCount] =
 			{
-				RenderPhase phase("StencilCopy", Timer);
+				targets.gBuffer0->GetTexture(),
+				targets.gBuffer1->GetTexture(),
+				targets.gBuffer2->GetTexture(),
+				targets.gBuffer3->GetTexture(),
+				mirrorIndexStencil0->GetTexture(),
+			};
 
-				int prevStencilBit = 1 << ((bounce - 1) % 8);
-				glStencilFunc(GL_EQUAL, 0xff, ~prevStencilBit);
-				glStencilMask(0);
+			GLuint fb0 = RTPool->GetFramebuffer(attachmentCount, attachments, &targets.depth->GetTexture());
+			attachments[4] = mirrorIndexStencil1->GetTexture();
+			GLuint fb1 = RTPool->GetFramebuffer(attachmentCount, attachments, &targets.depth->GetTexture());
+
+			glEnable(GL_CULL_FACE);
+			glEnable(GL_DEPTH_TEST);
+			glDepthMask(GL_TRUE);
+
+			ecs::View forwardPassView = view;
+			forwardPassView.offset = glm::ivec2();
+
+			mirrorSceneData.Bind(GL_SHADER_STORAGE_BUFFER, 1);
+
+			int mirrorCount = 0;
+			for (auto entity : game->entityManager.EntitiesWith<ecs::Mirror>())
+			{
+				auto mirror = entity.Get<ecs::Mirror>();
+				mirror->mirrorId = mirrorCount++;
+			}
+
+			GLMirrorData mirrorData[MAX_MIRRORS];
+			int mirrorDataCount = FillMirrorData(&mirrorData[0], game->entityManager);
+
+			auto sceneVS = GlobalShaders->Get<SceneVS>();
+			auto sceneGS = GlobalShaders->Get<SceneGS>();
+			auto sceneFS = GlobalShaders->Get<SceneFS>();
+
+			int recursion = mirrorCount ? std::min(MAX_MIRROR_RECURSION, CVarMirrorRecursion.Get()) : 0;
+
+			forwardPassView.stencil = true;
+			glClearStencil(~0);
+			glEnable(GL_CLIP_DISTANCE0);
+
+			for (int bounce = 0; bounce <= recursion; bounce++)
+			{
+				if (bounce > 0)
+				{
+					RenderPhase phase("StencilCopy", Timer);
+
+					int prevStencilBit = 1 << ((bounce - 1) % 8);
+					glStencilFunc(GL_EQUAL, 0xff, ~prevStencilBit);
+					glStencilMask(0);
+
+					if (bounce % 2 == 0)
+					{
+						mirrorIndexStencil1->GetTexture().Bind(0);
+						SetRenderTarget(&mirrorIndexStencil0->GetTexture(), nullptr);
+					}
+					else
+					{
+						mirrorIndexStencil0->GetTexture().Bind(0);
+						SetRenderTarget(&mirrorIndexStencil1->GetTexture(), nullptr);
+					}
+
+					ShaderControl->BindPipeline<BasicPostVS, CopyStencilFS>(GlobalShaders);
+					DrawScreenCover();
+				}
 
 				if (bounce % 2 == 0)
 				{
-					mirrorIndexStencil1->GetTexture().Bind(0);
-					SetRenderTarget(&mirrorIndexStencil0->GetTexture(), nullptr);
+					glBindFramebuffer(GL_FRAMEBUFFER, fb0);
+					mirrorIndexStencil1->GetTexture().Bind(4);
+					targets.mirrorIndexStencil = mirrorIndexStencil1;
 				}
 				else
 				{
-					mirrorIndexStencil0->GetTexture().Bind(0);
-					SetRenderTarget(&mirrorIndexStencil1->GetTexture(), nullptr);
+					glBindFramebuffer(GL_FRAMEBUFFER, fb1);
+					mirrorIndexStencil0->GetTexture().Bind(4);
+					targets.mirrorIndexStencil = mirrorIndexStencil0;
 				}
 
-				ShaderControl->BindPipeline<BasicPostVS, CopyStencilFS>(GlobalShaders);
-				DrawScreenCover();
-			}
-
-			if (bounce % 2 == 0)
-			{
-				glBindFramebuffer(GL_FRAMEBUFFER, fb0);
-				mirrorIndexStencil1->GetTexture().Bind(4);
-				targets.mirrorIndexStencil = mirrorIndexStencil1;
-			}
-			else
-			{
-				glBindFramebuffer(GL_FRAMEBUFFER, fb1);
-				mirrorIndexStencil0->GetTexture().Bind(4);
-				targets.mirrorIndexStencil = mirrorIndexStencil0;
-			}
-
-			if (bounce == 0)
-			{
-				forwardPassView.clearMode |= GL_STENCIL_BUFFER_BIT;
-				sceneGS->SetRenderMirrors(false);
-			}
-			else
-			{
+				if (bounce == 0)
 				{
-					RenderPhase phase("MatrixGen", Timer);
-
-					auto cs = GlobalShaders->Get<MirrorSceneCS>();
-					cs->SetMirrorData(mirrorDataCount, &mirrorData[0]);
-
-					ShaderControl->BindPipeline<MirrorSceneCS>(GlobalShaders);
-					glDispatchCompute(1, 1, 1);
-					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-				}
-
-				{
-					RenderPhase phase("DepthClear", Timer);
-					glDepthFunc(GL_ALWAYS);
-					glDisable(GL_CULL_FACE);
-					glEnable(GL_STENCIL_TEST);
-					glEnable(GL_DEPTH_TEST);
-					glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-					glStencilFunc(GL_EQUAL, 0xff, 0xff);
-					glStencilMask(0);
-
-					ShaderControl->BindPipeline<SceneDepthClearVS, SceneDepthClearFS>(GlobalShaders);
-					DrawScreenCover();
-
-					glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-					glDepthFunc(GL_LESS);
-					glEnable(GL_CULL_FACE);
-				}
-
-				forwardPassView.clearMode = 0;
-				sceneGS->SetRenderMirrors(true);
-			}
-
-			int thisStencilBit = 1 << (bounce % 8);
-			glStencilFunc(GL_EQUAL, 0xff, ~thisStencilBit);
-			glStencilMask(~0); // for clear
-			glFrontFace(bounce % 2 == 0 ? GL_CCW : GL_CW);
-
-			sceneFS->SetMirrorId(-1);
-			sceneGS->SetParams(forwardPassView, {});
-
-			ShaderControl->BindPipeline<SceneVS, SceneGS, SceneFS>(GlobalShaders);
-
-			ForwardPass(forwardPassView, sceneVS, [&](ecs::Entity & ent)
-			{
-				if (bounce == recursion)
-				{
-					// Don't mark mirrors on last pass.
-					glStencilMask(0);
-					sceneFS->SetMirrorId(-2);
-				}
-				else if (ent.Has<ecs::Mirror>())
-				{
-					glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-					glStencilMask(thisStencilBit);
-					auto mirror = ent.Get<ecs::Mirror>();
-					sceneFS->SetMirrorId(mirror->mirrorId);
+					forwardPassView.clearMode |= GL_STENCIL_BUFFER_BIT;
+					sceneGS->SetRenderMirrors(false);
 				}
 				else
 				{
-					glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
-					glStencilMask(thisStencilBit);
-					sceneFS->SetMirrorId(-1);
+					{
+						RenderPhase phase("MatrixGen", Timer);
+
+						auto cs = GlobalShaders->Get<MirrorSceneCS>();
+						cs->SetMirrorData(mirrorDataCount, &mirrorData[0]);
+
+						ShaderControl->BindPipeline<MirrorSceneCS>(GlobalShaders);
+						glDispatchCompute(1, 1, 1);
+						glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+					}
+
+					{
+						RenderPhase phase("DepthClear", Timer);
+						glDepthFunc(GL_ALWAYS);
+						glDisable(GL_CULL_FACE);
+						glEnable(GL_STENCIL_TEST);
+						glEnable(GL_DEPTH_TEST);
+						glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+						glStencilFunc(GL_EQUAL, 0xff, 0xff);
+						glStencilMask(0);
+
+						ShaderControl->BindPipeline<SceneDepthClearVS, SceneDepthClearFS>(GlobalShaders);
+						DrawScreenCover();
+
+						glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+						glDepthFunc(GL_LESS);
+						glEnable(GL_CULL_FACE);
+					}
+
+					forwardPassView.clearMode = 0;
+					sceneGS->SetRenderMirrors(true);
 				}
-			});
+
+				int thisStencilBit = 1 << (bounce % 8);
+				glStencilFunc(GL_EQUAL, 0xff, ~thisStencilBit);
+				glStencilMask(~0); // for clear
+				glFrontFace(bounce % 2 == 0 ? GL_CCW : GL_CW);
+
+				sceneFS->SetMirrorId(-1);
+				sceneGS->SetParams(forwardPassView, {});
+
+				ShaderControl->BindPipeline<SceneVS, SceneGS, SceneFS>(GlobalShaders);
+
+				ForwardPass(forwardPassView, sceneVS, [&](ecs::Entity & ent)
+				{
+					if (bounce == recursion)
+					{
+						// Don't mark mirrors on last pass.
+						glStencilMask(0);
+						sceneFS->SetMirrorId(-2);
+					}
+					else if (ent.Has<ecs::Mirror>())
+					{
+						glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+						glStencilMask(thisStencilBit);
+						auto mirror = ent.Get<ecs::Mirror>();
+						sceneFS->SetMirrorId(mirror->mirrorId);
+					}
+					else
+					{
+						glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
+						glStencilMask(thisStencilBit);
+						sceneFS->SetMirrorId(-1);
+					}
+				});
+			}
 		}
 
 		// Run postprocessing.

@@ -32,13 +32,7 @@ void main()
 	int mirrorId = UnpackMirrorDest(tuple);
 
 	if (drawMirrorId >= 0) {
-		uint mask = 1 << uint(drawMirrorId);
-		uint prevValue = atomicOr(mirrorData.mask[gl_Layer], mask);
-		if ((prevValue & mask) == 0) {
-			uint index = atomicAdd(mirrorData.count[0], 1);
-			mirrorData.list[index] = PackMirrorAndMirror(gl_Layer, drawMirrorId);
-			mirrorData.sourceLight[index] = mirrorData.sourceLight[gl_Layer];
-		}
+		mirrorData.mask[gl_Layer][drawMirrorId] = 1;
 	}
 
 	vec4 ndcPosOnMirror = mirrorData.projMat[gl_Layer] * vec4(inViewPos, 1.0);
