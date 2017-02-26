@@ -98,6 +98,11 @@ void main()
 	vec3 flatViewNormal = gb2.rgb;
 	float metalness = gb2.a;
 
+	if (length(viewNormal) < 0.9) {
+		outFragColor.rgb = vec3(0);
+		return;
+	}
+
 	// Determine coordinates of fragment.
 	vec3 fragPosition = ScreenPosToViewPos(inTexCoord, 0, invProjMat);
 	vec3 viewPosition = gb3.rgb;
@@ -109,8 +114,9 @@ void main()
 
 	// Transform fragment position into mirror space if drawn through a mirror.
 	uint tuple = texture(mirrorIndexStencil, inTexCoord).r;
-	int mirrorId = UnpackMirrorDest(tuple);
-	if (mirrorId < mirrorCount) {
+	if (tuple > 0) {
+		tuple -= 1; // Value is offset by 1 in texture.
+		int mirrorId = UnpackMirrorDest(tuple);
 		if (MirrorSourceIsMirror(tuple)) {
 			int sourceIndex = UnpackMirrorSource(tuple);
 			worldFragPosition = vec3(mirrorSData.invReflectMat[sourceIndex] * vec4(worldFragPosition, 1.0));

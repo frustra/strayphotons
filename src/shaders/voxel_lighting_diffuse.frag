@@ -30,11 +30,17 @@ void main()
 	float roughness = gb0.a;
 	vec3 viewNormal = gb1.rgb;
 	vec3 viewPosition = gb3.rgb;
+
+	if (length(viewNormal) < 0.9) {
+		outFragColor.rgb = vec3(0);
+		return;
+	}
+
 	vec3 worldPosition = (invViewMat * vec4(viewPosition, 1.0)).xyz;
 	vec3 worldNormal = mat3(invViewMat) * viewNormal;
 
 	// Trace.
 	vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
 
-	outFragColor = vec4(indirectDiffuse.rgb * exposure, 1.0);
+	outFragColor.rgb = indirectDiffuse.rgb * exposure;
 }

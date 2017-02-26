@@ -99,7 +99,7 @@
 			"transform": {
 				"relativeTo": "duck",
 				"translate": [0, 1, 1],
-				"rotate": [-180, 0, 1, 0]
+				"rotate": [90, 1, 0, 0]
 			}
 		},
 		{

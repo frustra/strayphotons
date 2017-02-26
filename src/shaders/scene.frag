@@ -39,20 +39,22 @@ void main()
 		vec2 screenTexCoord = gl_FragCoord.xy / textureSize(inMirrorIndexStencil, 0).xy;
 		uint mirrorIndexStencil = texture(inMirrorIndexStencil, screenTexCoord).x;
 
-		if (mirrorIndexStencil != mirrorSData.list[inMirrorIndex]) {
+		// Value is offset by 1.
+		if (mirrorIndexStencil != mirrorSData.list[inMirrorIndex] + 1) {
 			discard;
 		}
 
 		outMirrorIndexStencil = mirrorIndexStencil;
 	} else {
-		outMirrorIndexStencil = ~0;
+		outMirrorIndexStencil = 0;
 	}
 
 	if (drawMirrorId >= 0) {
 		int sourceId = max(0, inMirrorIndex);
 		mirrorSData.mask[sourceId][drawMirrorId] = 1;
 
-		outMirrorIndexStencil = PackSourceAndMirror(sourceId, drawMirrorId, inMirrorIndex < 0);
+		// Offset value by 1 to differentiate blank space.
+		outMirrorIndexStencil = PackSourceAndMirror(sourceId, drawMirrorId, inMirrorIndex < 0) + 1;
 		return;
 	}
 
