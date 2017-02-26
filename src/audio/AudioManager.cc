@@ -72,7 +72,7 @@ namespace sp
 		{
 			char err[1024];
 			snprintf(err, 1024, "FMOD initialization error %d - %s",
-				result, FMOD_ErrorString(result));
+					 result, FMOD_ErrorString(result));
 			Errorf(err);
 		}
 		else

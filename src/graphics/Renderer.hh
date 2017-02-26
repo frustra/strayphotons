@@ -7,11 +7,7 @@
 
 #include <glm/glm.hpp>
 #include <functional>
-
-namespace ecs
-{
-	class Entity;
-}
+#include <Ecs.hh>
 
 namespace sp
 {
@@ -33,6 +29,8 @@ namespace sp
 	class Renderer : public GraphicsContext
 	{
 	public:
+		typedef std::function<void(ecs::Entity &)> PreDrawFunc;
+
 		Renderer(Game *game);
 		~Renderer();
 
@@ -45,7 +43,8 @@ namespace sp
 		void BeginFrame();
 		void RenderPass(ecs::View &view);
 		void PrepareForView(ecs::View &view);
-		void ForwardPass(ecs::View &view, SceneShader *shader, std::function<void(ecs::Entity &)> preDraw = [] (ecs::Entity &) {});
+		void ForwardPass(ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw = {});
+		void DrawEntity(ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw = {});
 		void EndFrame();
 
 		void SetRenderTarget(const Texture *attachment0, const Texture *depth);

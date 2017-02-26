@@ -15,7 +15,7 @@
 			"renderable": "mirror",
 			"transform": {
 				"translate": [0, 0.01, 2],
-				"rotate": [90, 1, 0, 0],
+				"rotate": [45, 1, 0, 0],
 				"scale": [3, 4, 1]
 			}
 		},

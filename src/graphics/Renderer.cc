@@ -691,7 +691,7 @@ namespace sp
 		}
 	}
 
-	void Renderer::ForwardPass(ecs::View &view, SceneShader *shader, std::function<void(ecs::Entity &)> preDraw)
+	void Renderer::ForwardPass(ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw)
 	{
 		RenderPhase phase("ForwardPass", Timer);
 		PrepareForView(view);
@@ -701,20 +701,32 @@ namespace sp
 
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>())
 		{
-			auto comp = ent.Get<ecs::Renderable>();
-			auto modelMat = ent.Get<ecs::Transform>()->GetModelTransform(*ent.GetManager());
-			shader->SetParams(view, modelMat);
+			if (ent.Has<ecs::Mirror>()) continue;
+			DrawEntity(view, shader, ent, preDraw);
+		}
 
-			preDraw(ent);
-			if (!comp->model->glModel)
-			{
-				comp->model->glModel = make_shared<GLModel>(comp->model.get());
-			}
-			comp->model->glModel->Draw();
+		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform, ecs::Mirror>())
+		{
+			DrawEntity(view, shader, ent, preDraw);
 		}
 
 		if (CVarRenderWireframe.Get())
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
+
+	void Renderer::DrawEntity(ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw)
+	{
+		auto comp = ent.Get<ecs::Renderable>();
+		auto modelMat = ent.Get<ecs::Transform>()->GetModelTransform(*ent.GetManager());
+		shader->SetParams(view, modelMat);
+
+		if (preDraw) preDraw(ent);
+
+		if (!comp->model->glModel)
+		{
+			comp->model->glModel = make_shared<GLModel>(comp->model.get());
+		}
+		comp->model->glModel->Draw();
 	}
 
 	void Renderer::BeginFrame()
