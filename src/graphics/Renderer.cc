@@ -41,7 +41,7 @@ namespace sp
 	const int MAX_MIRROR_RECURSION = 4;
 
 	static CVar<bool> CVarRenderWireframe("r.Wireframe", false, "Render wireframes");
-	static CVar<int> CVarMirrorRecursion("r.MirrorRecursion", 1, "Mirror recursion depth");
+	static CVar<int> CVarMirrorRecursion("r.MirrorRecursion", 2, "Mirror recursion depth");
 	static CVar<int> CVarMirrorMapResolution("r.MirrorMapResolution", 512, "Resolution of mirror shadow maps");
 
 	void Renderer::Prepare()
@@ -592,7 +592,7 @@ namespace sp
 				sceneGS->SetRenderMirrors(true);
 			}
 
-			int thisStencilBit = bounce > 0 ? 0 : 1 << ((bounce) % 8);
+			int thisStencilBit = 1 << ((bounce) % 8);
 			glStencilFunc(GL_EQUAL, 0xff, ~thisStencilBit);
 			glStencilMask(~0); // for clear
 			glFrontFace(bounce % 2 == 0 ? GL_CCW : GL_CW);
@@ -601,6 +601,8 @@ namespace sp
 			sceneGS->SetParams(forwardPassView, {});
 
 			ShaderControl->BindPipeline<SceneVS, SceneGS, SceneFS>(GlobalShaders);
+
+			if (bounce == recursion) glDisable(GL_DEPTH_TEST); // TODO(jli) this is the problem
 
 			ForwardPass(forwardPassView, sceneVS, [&](ecs::Entity & ent)
 			{

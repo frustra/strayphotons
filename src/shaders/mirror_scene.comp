@@ -33,9 +33,7 @@ void main() {
 
 	if (MirrorSourceIsMirror(tuple)) {
 		int sourceIndex = UnpackMirrorSource(tuple);
-		uint sourceTuple = mirrorSData.list[sourceIndex];
-		int sourceMirrorId = UnpackMirrorDest(sourceTuple);
-		mirrorSData.reflectMat[index] = mirrors[mirrorId].reflectMat * mirrors[sourceMirrorId].reflectMat;
+		mirrorSData.reflectMat[index] = mirrorSData.reflectMat[sourceIndex] * mirrors[mirrorId].reflectMat;
 	} else {
 		mirrorSData.reflectMat[index] = mirrors[mirrorId].reflectMat;
 	}

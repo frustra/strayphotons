@@ -39,14 +39,10 @@ void main()
 		vec2 screenTexCoord = gl_FragCoord.xy / textureSize(inMirrorIndexStencil, 0).xy;
 		uint mirrorIndexStencil = texture(inMirrorIndexStencil, screenTexCoord).x;
 
-		if (drawMirrorId == -2) {
-			gBuffer0.rgb = vec3(1,0,0);//float(mirrorIndexStencil) / 10);
-			return;
-		}
-
 		if (mirrorIndexStencil != mirrorSData.list[inMirrorIndex]) {
 			discard;
 		}
+
 		outMirrorIndexStencil = mirrorIndexStencil;
 	} else {
 		outMirrorIndexStencil = ~0;
@@ -57,7 +53,7 @@ void main()
 
 		if (inMirrorIndex >= 0) {
 			// Rendering from a mirror.
-			listData = (listData + uint(inMirrorIndex << 16)) | MIRROR_SOURCE_BIT;
+			listData = (listData + (uint(inMirrorIndex) << 16)) | MIRROR_SOURCE_BIT;
 		}
 
 		uint mask = 1 << uint(drawMirrorId);
