@@ -12,7 +12,7 @@
 
 namespace sp
 {
-	static CVar<int> CVarVoxelLightingMode("r.VoxelLighting", 1, "Voxel lighting mode (0: direct only, 1: full, 2: indirect only, 3: diffuse only, 4: specular only, 5: full voxel)");
+	static CVar<int> CVarVoxelLightingMode("r.VoxelLighting", 1, "Voxel lighting mode (0: direct only, 1: full, 2: indirect only, 3: diffuse only, 4: specular only)");
 	static CVar<int> CVarVoxelDiffuseDownsample("r.VoxelDiffuseDownsample", 1, "N times downsampled rendering of indirect diffuse lighting");
 	static CVar<bool> CVarDrawHistogram("r.Histogram", false, "Draw HDR luminosity histogram");
 	static CVar<float> CVarExposure("r.Exposure", 0.0, "Fixed exposure value in linear units (0: auto)");
@@ -188,7 +188,9 @@ namespace sp
 		VoxelLightingFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			Bind(lightCount, "lightCount");
+			Bind(mirrorCount, "mirrorCount");
 			BindBuffer(lightData, 0);
+			BindBuffer(mirrorData, 1);
 
 			Bind(exposure, "exposure");
 
@@ -205,6 +207,12 @@ namespace sp
 		{
 			Set(lightCount, count);
 			BufferData(lightData, sizeof(GLLightData) * count, data);
+		}
+
+		void SetMirrorData(int count, GLMirrorData *data)
+		{
+			Set(mirrorCount, count);
+			BufferData(mirrorData, sizeof(GLMirrorData) * count, data);
 		}
 
 		void SetExposure(float newExposure)
@@ -231,8 +239,8 @@ namespace sp
 		}
 
 	private:
-		Uniform lightCount;
-		UniformBuffer lightData;
+		Uniform lightCount, mirrorCount;
+		UniformBuffer lightData, mirrorData;
 		Uniform exposure, invViewMat, invProjMat, mode;
 		Uniform voxelSize, voxelGridCenter, diffuseDownsample;
 	};
@@ -246,8 +254,6 @@ namespace sp
 		VoxelLightingDiffuseFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			Bind(exposure, "exposure");
-
-			Bind(invProjMat, "invProjMat");
 			Bind(invViewMat, "invViewMat");
 
 			Bind(voxelSize, "voxelSize");
@@ -261,7 +267,6 @@ namespace sp
 
 		void SetViewParams(const ecs::View &view)
 		{
-			Set(invProjMat, view.invProjMat);
 			Set(invViewMat, view.invViewMat);
 		}
 
@@ -272,7 +277,7 @@ namespace sp
 		}
 
 	private:
-		Uniform exposure, invViewMat, invProjMat;
+		Uniform exposure, invViewMat;
 		Uniform voxelSize, voxelGridCenter;
 	};
 
@@ -287,12 +292,16 @@ namespace sp
 		if (diffuseDownsample < 1) diffuseDownsample = 1;
 
 		mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
+		r->mirrorSceneData.Bind(GL_SHADER_STORAGE_BUFFER, 1);
 
 		GLLightData lightData[MAX_LIGHTS];
+		GLMirrorData mirrorData[MAX_MIRRORS];
 		int lightCount = FillLightData(&lightData[0], context->game->entityManager);
+		int mirrorCount = FillMirrorData(&mirrorData[0], context->game->entityManager);
 
 		auto shader = r->GlobalShaders->Get<VoxelLightingFS>();
 		shader->SetLightData(lightCount, &lightData[0]);
+		shader->SetMirrorData(mirrorCount, &mirrorData[0]);
 		shader->SetViewParams(context->view);
 		shader->SetMode(CVarVoxelLightingMode.Get());
 		shader->SetVoxelInfo(voxelData.info, diffuseDownsample);

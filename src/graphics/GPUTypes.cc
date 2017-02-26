@@ -40,6 +40,15 @@ namespace sp
 			auto transform = entity.Get<ecs::Transform>();
 			data->modelMat = transform->GetModelTransform(manager);
 			data->size = mirror->size;
+
+			glm::vec3 mirrorNormal = glm::mat3(data->modelMat) * glm::vec3(0, 0, -1);
+			glm::vec3 mirrorPos = glm::vec3(data->modelMat * glm::vec4(0, 0, 0, 1));
+
+			float d = -glm::dot(mirrorNormal, mirrorPos);
+			data->reflectMat = glm::mat4(glm::mat3(1) - 2.0f * glm::outerProduct(mirrorNormal, mirrorNormal));
+			data->reflectMat[3] = glm::vec4(-2.0f * d * mirrorNormal, 1);
+			data->plane = glm::vec4(mirrorNormal, d);
+
 			mirrorNum++;
 			data++;
 		}

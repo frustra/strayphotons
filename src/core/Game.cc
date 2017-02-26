@@ -53,7 +53,8 @@ namespace sp
 			triggeredExit = true;
 		});
 
-		entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction &d) {
+		entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction & d)
+		{
 			if (ent.Has<ecs::Physics>())
 			{
 				auto phys = ent.Get<ecs::Physics>();

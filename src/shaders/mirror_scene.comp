@@ -1,0 +1,42 @@
+#version 430
+
+##import lib/types_common
+
+layout (local_size_x = MAX_MIRRORS, local_size_y = MAX_MIRRORS) in;
+
+##import lib/mirror_scene_common
+
+uniform int mirrorCount = 0;
+
+layout (binding = 0, std140) uniform GLMirrorData {
+	Mirror mirrors[MAX_MIRRORS];
+};
+
+void main() {
+	if (gl_LocalInvocationIndex == 0) {
+		mirrorSData.count[1] = mirrorSData.count[2];
+		mirrorSData.count[2] = mirrorSData.count[0];
+	}
+
+	barrier();
+
+	if (gl_LocalInvocationIndex == 0) {
+		for (int i = 0; i < MAX_MIRRORS; i++)
+			mirrorSData.mask[i] = 0;
+	}
+
+	uint index = gl_LocalInvocationIndex + mirrorSData.count[1];
+	if (index >= mirrorSData.count[0]) return;
+
+	uint tuple = mirrorSData.list[index];
+	int mirrorId = UnpackMirrorDest(tuple);
+
+	if (MirrorSourceIsMirror(tuple)) {
+		int sourceIndex = UnpackMirrorSource(tuple);
+		mirrorSData.reflectMat[index] = mirrorSData.reflectMat[sourceIndex] * mirrors[mirrorId].reflectMat;
+	} else {
+		mirrorSData.reflectMat[index] = mirrors[mirrorId].reflectMat;
+	}
+
+	mirrorSData.clipPlane[index] = mirrors[mirrorId].plane;
+}

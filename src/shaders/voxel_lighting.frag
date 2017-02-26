@@ -8,7 +8,7 @@
 layout (binding = 0) uniform sampler2D gBuffer0;
 layout (binding = 1) uniform sampler2D gBuffer1;
 layout (binding = 2) uniform sampler2D gBuffer2;
-layout (binding = 3) uniform sampler2D depthStencil;
+layout (binding = 3) uniform sampler2D gBuffer3;
 layout (binding = 4) uniform sampler2D shadowMap;
 layout (binding = 5) uniform sampler2DArray mirrorShadowMap;
 
@@ -18,16 +18,24 @@ layout (binding = 8) uniform sampler3D voxelRadiance;
 
 layout (binding = 9) uniform sampler2D indirectDiffuseSampler;
 
+layout (binding = 10) uniform usampler2D mirrorIndexStencil;
+
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
 uniform int lightCount = 0;
+uniform int mirrorCount = 0;
 
-layout(binding = 0, std140) uniform LightData {
+layout(binding = 0, std140) uniform GLLightData {
 	Light lights[MAX_LIGHTS];
 };
 
-##import lib/mirror_common
+layout(binding = 1, std140) uniform GLMirrorData {
+	Mirror mirrors[MAX_MIRRORS];
+};
+
+##import lib/mirror_shadow_common
+##import lib/mirror_scene_common
 
 uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);
@@ -37,10 +45,8 @@ uniform float diffuseDownsample = 1;
 
 ##import lib/util
 ##import voxel_shared
-##import voxel_trace_shared2
+##import voxel_trace_shared
 ##import lib/shading
-
-const int maxReflections = 2;
 
 uniform mat4 invViewMat;
 uniform mat4 invProjMat;
@@ -50,11 +56,12 @@ uniform int mode = 1;
 void getDepthNormal(out float depth, out vec3 normal, vec2 texCoord)
 {
 	normal = texture(gBuffer1, texCoord).xyz;
-	depth = texture(depthStencil, texCoord).x;
+	depth = texture(gBuffer3, texCoord).z;
 }
 
 bool detectEdge(vec3 centerNormal, float centerDepth, vec2 tcRadius)
 {
+	return false; // TODO(jli): fix
 	float depthU, depthR, depthD, depthL;
 	vec3 normalU, normalR, normalD, normalL;
 
@@ -88,6 +95,8 @@ void main()
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
 	vec4 gb1 = texture(gBuffer1, inTexCoord);
 	vec4 gb2 = texture(gBuffer2, inTexCoord);
+	vec4 gb3 = texture(gBuffer3, inTexCoord);
+
 	vec3 baseColor = gb0.rgb;
 	float roughness = gb0.a;
 	vec3 viewNormal = gb1.rgb;
@@ -95,9 +104,8 @@ void main()
 	float metalness = gb2.a;
 
 	// Determine coordinates of fragment.
-	float depth = texture(depthStencil, inTexCoord).r;
 	vec3 fragPosition = ScreenPosToViewPos(inTexCoord, 0, invProjMat);
-	vec3 viewPosition = ScreenPosToViewPos(inTexCoord, depth, invProjMat);
+	vec3 viewPosition = gb3.rgb;
 	vec3 worldPosition = (invViewMat * vec4(viewPosition, 1.0)).xyz;
 	vec3 worldFragPosition = (invViewMat * vec4(fragPosition, 1.0)).xyz;
 
@@ -105,50 +113,34 @@ void main()
 	vec3 flatWorldNormal = mat3(invViewMat) * flatViewNormal;
 
 	// Trace.
+	//uint tuple = texture(mirrorIndexStencil, inTexCoord).r;
+	//int mirrorId = UnpackMirrorDest(tuple);
+	//if (mirrorId < mirrorCount)
+	//{
+	//	worldFragPosition = vec3(mirrors[mirrorId].reflectMat * vec4(worldFragPosition, 1.0));
+	//	if (MirrorSourceIsMirror(tuple)) {
+	//		int sourceIndex = UnpackMirrorSource(tuple);
+	//		worldFragPosition = vec3(mirrorSData.reflectMat[sourceIndex] * vec4(worldFragPosition, 1.0));
+	//	}
+	//}
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
 	float reflected = 0.0;
 
-	if (mode == 5) { // Voxel direct lighting
-		vec4 sampleColor = ConeTraceGrid(0, worldFragPosition, rayDir, rayDir, gl_FragCoord.xy);
-		worldPosition = worldFragPosition + rayDir * sampleColor.a;
-		vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
-		GetVoxel(voxelPos, 0, baseColor, worldNormal, sampleColor.rgb, roughness);
-		flatWorldNormal = worldNormal;
-		reflected = 1.0;
-
-		rayReflectDir = reflect(rayDir, worldNormal);
-	}
-
-	vec3 indirectSpecular = vec3(0);
-
-	for (int i = 0; i < maxReflections; i++) {
+	vec3 indirectSpecular;
+	{
 		// specular
-		vec3 sampleDir = rayReflectDir;
 		float specularConeRatio = roughness * 0.8;
-		vec4 sampleColor = ConeTraceGrid(specularConeRatio, worldPosition, sampleDir, flatWorldNormal, gl_FragCoord.xy);
+		vec4 sampleColor = ConeTraceGrid(specularConeRatio, worldPosition, rayReflectDir, flatWorldNormal, gl_FragCoord.xy);
 
-		if (roughness == 0 && metalness == 1 && sampleColor.a >= 0) {
-			worldPosition += sampleDir * sampleColor.a;
-			vec3 voxelPos = (worldPosition - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
-			vec3 radiance;
-			GetVoxel(voxelPos, 0, baseColor, worldNormal, radiance, roughness);
-			rayDir = sampleDir;
-			rayReflectDir = reflect(sampleDir, worldNormal);
-			flatWorldNormal = worldNormal;
-			if (roughness != 0) metalness = 0;
-			reflected = 1.0;
-		} else {
-			vec3 directSpecularColor = mix(vec3(0.04), baseColor, metalness);
-			vec3 brdf = EvaluateBRDFSpecularImportanceSampledGGX(directSpecularColor, roughness, sampleDir, -rayDir, worldNormal);
-			indirectSpecular = sampleColor.rgb * brdf;
-			break;
-		}
+		vec3 directSpecularColor = mix(vec3(0.04), baseColor, metalness);
+		vec3 brdf = EvaluateBRDFSpecularImportanceSampledGGX(directSpecularColor, roughness, rayReflectDir, -rayDir, worldNormal);
+		indirectSpecular = sampleColor.rgb * brdf;
 	}
 
 	vec3 indirectDiffuse;
 
-	if (diffuseDownsample > 1 && detectEdge(viewNormal, depth, diffuseDownsample * 0.65 / textureSize(gBuffer0, 0)) || reflected == 1.0 || mode == 5) {
+	if (diffuseDownsample > 1 && detectEdge(viewNormal, viewPosition.z, diffuseDownsample * 0.65 / textureSize(gBuffer0, 0)) || reflected == 1.0 || mode == 5) {
 		indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
 	} else {
 		indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;

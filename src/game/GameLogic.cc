@@ -59,32 +59,38 @@ namespace sp
 			}
 			else if (ch == 'e') // Toggle flashlight following player
 			{
-				auto transform = flashlight.Get<ecs::Transform>();
-				ecs::Entity player = scene->FindEntity("player");
-				auto playerTransform = player.Get<ecs::Transform>();
-				flashlightFixed = !flashlightFixed;
-				if (flashlightFixed)
+				if (flashlight.Valid())
 				{
-					transform->SetTransform(transform->GetModelTransform(game->entityManager));
-					transform->SetRelativeTo(ecs::Entity());
-				}
-				else
-				{
-					transform->SetTransform(glm::mat4());
-					transform->Translate(glm::vec3(0, -0.3, 0));
-					transform->SetRelativeTo(player);
+					auto transform = flashlight.Get<ecs::Transform>();
+					ecs::Entity player = scene->FindEntity("player");
+					auto playerTransform = player.Get<ecs::Transform>();
+					flashlightFixed = !flashlightFixed;
+					if (flashlightFixed)
+					{
+						transform->SetTransform(transform->GetModelTransform(game->entityManager));
+						transform->SetRelativeTo(ecs::Entity());
+					}
+					else
+					{
+						transform->SetTransform(glm::mat4());
+						transform->Translate(glm::vec3(0, -0.3, 0));
+						transform->SetRelativeTo(player);
+					}
 				}
 			}
 			else if (ch == 'f') // Turn flashlight on and off
 			{
-				auto light = flashlight.Get<ecs::Light>();
-				if (!light->intensity)
+				if (flashlight.Valid())
 				{
-					light->intensity = CVarFlashlight.Get(true);
-				}
-				else
-				{
-					light->intensity = 0;
+					auto light = flashlight.Get<ecs::Light>();
+					if (!light->intensity)
+					{
+						light->intensity = CVarFlashlight.Get(true);
+					}
+					else
+					{
+						light->intensity = 0;
+					}
 				}
 			}
 		});

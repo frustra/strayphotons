@@ -34,11 +34,13 @@ namespace sp
 	struct GLMirrorData
 	{
 		glm::mat4 modelMat;
+		glm::mat4 reflectMat;
+		glm::vec4 plane;
 		glm::vec2 size;
 		float padding[2];
 	};
 
-	static_assert(sizeof(GLMirrorData) == 5 * 4 * sizeof(float), "GLMirrorData size incorrect");
+	static_assert(sizeof(GLMirrorData) == 10 * 4 * sizeof(float), "GLMirrorData size incorrect");
 
 	struct GLLightSensorData
 	{

@@ -18,6 +18,8 @@ namespace ecs
 		// TODO(any): Maybe remove color clear once we have interior spaces
 		GLbitfield clearMode = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
 		glm::vec4 clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+		bool stencil = false;
+		bool blend = false;
 
 		// Updated automatically.
 		float aspect;
