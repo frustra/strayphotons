@@ -9,7 +9,7 @@
 
 namespace sp
 {
-	enum { MaxFramebufferAttachments = 4 };
+	enum { MaxFramebufferAttachments = 8 };
 
 	struct FramebufferState
 	{
@@ -20,6 +20,8 @@ namespace sp
 		FramebufferState(uint32 numAttachments, const Texture *attachments, const Texture *depthStencilAttachment)
 			: NumAttachments(numAttachments)
 		{
+			Assert(numAttachments <= MaxFramebufferAttachments, "exceeded maximum framebuffer attachment count");
+
 			for (uint32 i = 0; i < numAttachments; i++)
 			{
 				this->Attachments[i] = attachments[i];

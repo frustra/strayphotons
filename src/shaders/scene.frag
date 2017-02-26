@@ -12,6 +12,7 @@ layout (binding = 0) uniform sampler2D baseColorTex;
 layout (binding = 1) uniform sampler2D roughnessTex;
 layout (binding = 2) uniform sampler2D metallicTex;
 layout (binding = 3) uniform sampler2D heightTex;
+layout (binding = 4) uniform usampler2D inMirrorIndexStencil;
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec3 inTangent;
@@ -24,6 +25,7 @@ layout (location = 0) out vec4 gBuffer0;
 layout (location = 1) out vec4 gBuffer1;
 layout (location = 2) out vec4 gBuffer2;
 layout (location = 3) out vec4 gBuffer3;
+layout (location = 4) out uint outMirrorIndexStencil;
 
 const float bumpDepth = 0.1;
 
@@ -31,21 +33,37 @@ uniform int drawMirrorId;
 
 void main()
 {
-	//if (drawMirrorId == -2) {
-	//	gBuffer0 = vec4(1,0,0,1);
-	//	return;
-	//}
+	if (inMirrorIndex >= 0) {
+		// Rendering from a mirror.
+		// Discard fragments that are in an area not meant for this mirror.
+		vec2 screenTexCoord = gl_FragCoord.xy / textureSize(inMirrorIndexStencil, 0).xy;
+		uint mirrorIndexStencil = texture(inMirrorIndexStencil, screenTexCoord).x;
+
+		if (mirrorIndexStencil != mirrorSData.list[inMirrorIndex]) {
+			discard;
+		}
+	}
 
 	if (drawMirrorId >= 0) {
+		uint listData = uint(drawMirrorId);
+
+		if (inMirrorIndex >= 0) {
+			// Rendering from a mirror.
+			listData = (listData + uint(inMirrorIndex << 16)) | MIRROR_SOURCE_BIT;
+		}
+
 		uint mask = 1 << uint(drawMirrorId);
 		uint prevValue = atomicOr(mirrorSData.mask[0], mask);
 		if ((prevValue & mask) == 0) {
 			uint index = atomicAdd(mirrorSData.count[0], 1);
-			mirrorSData.list[index] = uint(drawMirrorId);
-			mirrorSData.sourceIndex[index] = inMirrorIndex;
+			mirrorSData.list[index] = listData;
 		}
-		discard;
+
+		outMirrorIndexStencil = listData;
+		return;
 	}
+
+	outMirrorIndexStencil = 0xff;
 
 	vec4 baseColor = texture(baseColorTex, inTexCoord);
 	if (baseColor.a < 0.5) discard;

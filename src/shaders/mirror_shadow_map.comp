@@ -47,7 +47,7 @@ void main() {
 	int sourceId = UnpackMirrorSource(tuple);
 	int mirrorId = UnpackMirrorDest(tuple);
 
-	vec3 mirrorNormal = mat3(mirrors[mirrorId].modelMat) * vec3(0, 0, -1);
+	vec3 mirrorNormal = mirrors[mirrorId].plane.xyz;
 	vec3 mirrorPos = vec3(mirrors[mirrorId].modelMat * vec4(0, 0, 0, 1));
 
 	vec3 sourcePos, lightDir;
@@ -61,8 +61,7 @@ void main() {
 		lightDir = reflect(lights[sourceId].direction, mirrorNormal);
 	}
 
-	mat3 reflectionMat = mat3(1) - 2 * outerProduct(mirrorNormal, mirrorNormal);
-	vec3 focalPoint = reflectionMat * (sourcePos - mirrorPos);
+	vec3 focalPoint = mat3(mirrors[mirrorId].reflectMat) * (sourcePos - mirrorPos);
 
 	mat4 mirrorViewMat = inverse(mirrors[mirrorId].modelMat);
 	mat4 translation = mat4(1);

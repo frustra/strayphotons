@@ -492,18 +492,27 @@ namespace sp
 		targets.mirrorShadowMap = mirrorShadowMap;
 		targets.voxelData = voxelData;
 
-		Texture attachments[] =
+		auto mirrorIndexStencil0 = RTPool->Get({ PF_R8UI, view.extents });
+		auto mirrorIndexStencil1 = RTPool->Get({ PF_R8UI, view.extents });
+
+		const int attachmentCount = 5;
+
+		Texture attachments[attachmentCount] =
 		{
 			targets.gBuffer0->GetTexture(),
 			targets.gBuffer1->GetTexture(),
 			targets.gBuffer2->GetTexture(),
 			targets.gBuffer3->GetTexture(),
+			mirrorIndexStencil0->GetTexture(),
 		};
+
+		GLuint fb0 = RTPool->GetFramebuffer(attachmentCount, attachments, &targets.depth->GetTexture());
+		attachments[4] = mirrorIndexStencil1->GetTexture();
+		GLuint fb1 = RTPool->GetFramebuffer(attachmentCount, attachments, &targets.depth->GetTexture());
 
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 		glDepthMask(GL_TRUE);
-		SetRenderTargets(4, attachments, &targets.depth->GetTexture());
 
 		ecs::View forwardPassView = view;
 		forwardPassView.offset = glm::ivec2();
@@ -532,6 +541,16 @@ namespace sp
 
 		for (int bounce = 0; bounce <= recursion; bounce++)
 		{
+			if (bounce % 2 == 0)
+			{
+				glBindFramebuffer(GL_FRAMEBUFFER, fb0);
+				mirrorIndexStencil1->GetTexture().Bind(4);
+			}
+			else
+			{
+				glBindFramebuffer(GL_FRAMEBUFFER, fb1);
+				mirrorIndexStencil0->GetTexture().Bind(4);
+			}
 
 			if (bounce == 0)
 			{
@@ -573,7 +592,7 @@ namespace sp
 
 			int thisStencilBit = bounce > 0 ? 0 : 1 << ((bounce) % 8);
 			glStencilFunc(GL_EQUAL, 0xff, ~thisStencilBit);
-			glStencilMask(bounce > 0 ? 0 : ~0); // for clear
+			glStencilMask(~0); // for clear
 			glFrontFace(bounce % 2 == 0 ? GL_CCW : GL_CW);
 
 			sceneFS->SetMirrorId(-1);
@@ -586,13 +605,13 @@ namespace sp
 				if (bounce == recursion)
 				{
 					// Don't mark mirrors on last pass.
-					if (bounce > 0) sceneFS->SetMirrorId(-2);
+					glStencilMask(0);
 				}
 				else if (ent.Has<ecs::Mirror>())
 				{
-					auto mirror = ent.Get<ecs::Mirror>();
 					glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 					glStencilMask(thisStencilBit);
+					auto mirror = ent.Get<ecs::Mirror>();
 					sceneFS->SetMirrorId(mirror->mirrorId);
 				}
 				else

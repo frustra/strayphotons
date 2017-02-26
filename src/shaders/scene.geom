@@ -76,7 +76,6 @@ void main() {
 			}
 
 			EndPrimitive();
-			break;
 		}
 	}
 }

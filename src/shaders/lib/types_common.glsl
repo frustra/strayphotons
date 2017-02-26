@@ -9,6 +9,8 @@ const float punctualLightSizeSq = 0.01 * 0.01; // 1cm punctual lights
 
 struct Mirror {
 	mat4 modelMat;
+	mat4 reflectMat;
+	vec4 plane;
 	vec2 size;
 };
 

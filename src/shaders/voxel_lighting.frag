@@ -40,8 +40,6 @@ uniform float diffuseDownsample = 1;
 ##import voxel_trace_shared
 ##import lib/shading
 
-const int maxReflections = 2;
-
 uniform mat4 invViewMat;
 uniform mat4 invProjMat;
 

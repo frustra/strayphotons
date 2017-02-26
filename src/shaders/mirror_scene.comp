@@ -8,7 +8,7 @@ layout (local_size_x = MAX_MIRRORS, local_size_y = MAX_MIRRORS) in;
 
 uniform int mirrorCount = 0;
 
-layout(binding = 0, std140) uniform GLMirrorData {
+layout (binding = 0, std140) uniform GLMirrorData {
 	Mirror mirrors[MAX_MIRRORS];
 };
 
@@ -31,13 +31,14 @@ void main() {
 	uint tuple = mirrorSData.list[index];
 	int mirrorId = UnpackMirrorDest(tuple);
 
-	vec3 mirrorNormal = mat3(mirrors[mirrorId].modelMat) * vec3(0, 0, -1);
-	vec3 mirrorPos = vec3(mirrors[mirrorId].modelMat * vec4(0, 0, 0, 1));
+	if (MirrorSourceIsMirror(tuple)) {
+		int sourceIndex = UnpackMirrorSource(tuple);
+		uint sourceTuple = mirrorSData.list[sourceIndex];
+		int sourceMirrorId = UnpackMirrorDest(sourceTuple);
+		mirrorSData.reflectMat[index] = mirrors[mirrorId].reflectMat * mirrors[sourceMirrorId].reflectMat;
+	} else {
+		mirrorSData.reflectMat[index] = mirrors[mirrorId].reflectMat;
+	}
 
-	float d = -dot(mirrorNormal, mirrorPos);
-	mat4 reflectionMat = mat4(mat3(1) - 2 * outerProduct(mirrorNormal, mirrorNormal));
-	reflectionMat[3] = vec4(-2 * d * mirrorNormal, 1);
-
-	mirrorSData.reflectMat[index] = reflectionMat;
-	mirrorSData.clipPlane[index] = vec4(mirrorNormal, d);
+	mirrorSData.clipPlane[index] = mirrors[mirrorId].plane;
 }

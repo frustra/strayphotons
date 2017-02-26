@@ -6,9 +6,13 @@
 #include "graphics/GenericShaders.hh"
 #include "graphics/Util.hh"
 
+//#define DISABLE_SMAA
+
 namespace sp
 {
+#ifndef DISABLE_SMAA
 	static CVar<int> CVarSMAADebug("r.SMAADebug", 0, "Show SMAA intermediates (1: weights, 2: edges)");
+#endif
 
 	class SMAAShaderBase : public Shader
 	{
@@ -65,12 +69,14 @@ namespace sp
 		using SMAAShaderBase::SMAAShaderBase;
 	};
 
+#ifndef DISABLE_SMAA
 	IMPLEMENT_SHADER_TYPE(SMAAEdgeDetectionVS, "smaa/edge_detection.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(SMAAEdgeDetectionFS, "smaa/edge_detection.frag", Fragment);
 	IMPLEMENT_SHADER_TYPE(SMAABlendingWeightsVS, "smaa/blending_weights.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(SMAABlendingWeightsFS, "smaa/blending_weights.frag", Fragment);
 	IMPLEMENT_SHADER_TYPE(SMAABlendingVS, "smaa/blending.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(SMAABlendingFS, "smaa/blending.frag", Fragment);
+#endif
 
 	void SMAAEdgeDetection::Process(const PostProcessingContext *context)
 	{
@@ -78,6 +84,7 @@ namespace sp
 		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 		auto &stencil = outputs[1].AllocateTarget(context)->GetTexture();
 
+#ifndef DISABLE_SMAA
 		r->GlobalShaders->Get<SMAAEdgeDetectionVS>()->SetViewParams(context->view);
 		r->GlobalShaders->Get<SMAAEdgeDetectionFS>()->SetViewParams(context->view);
 
@@ -95,10 +102,12 @@ namespace sp
 		DrawScreenCover();
 
 		glDisable(GL_STENCIL_TEST);
+#endif
 	}
 
 	void SMAABlendingWeights::Process(const PostProcessingContext *context)
 	{
+#ifndef DISABLE_SMAA
 		if (CVarSMAADebug.Get() >= 2)
 		{
 			SetOutputTarget(0, GetInput(0)->GetOutput()->TargetRef);
@@ -132,10 +141,14 @@ namespace sp
 		DrawScreenCover();
 
 		glDisable(GL_STENCIL_TEST);
+#else
+		SetOutputTarget(0, GetInput(0)->GetOutput()->TargetRef);
+#endif
 	}
 
 	void SMAABlending::Process(const PostProcessingContext *context)
 	{
+#ifndef DISABLE_SMAA
 		if (CVarSMAADebug.Get() >= 1)
 		{
 			SetOutputTarget(0, GetInput(1)->GetOutput()->TargetRef);
@@ -152,5 +165,8 @@ namespace sp
 		r->ShaderControl->BindPipeline<SMAABlendingVS, SMAABlendingFS>(r->GlobalShaders);
 
 		DrawScreenCover();
+#else
+		SetOutputTarget(0, GetInput(0)->GetOutput()->TargetRef);
+#endif
 	}
 }
