@@ -19,6 +19,7 @@ namespace sp
 		bool Frame(double dtSinceLastFrame);
 
 		void LoadScene(const string &name);
+		void ReloadScene(const string &);
 	private:
 		Game *game;
 		InputManager *input;

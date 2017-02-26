@@ -36,7 +36,7 @@ void main()
 		return;
 	}
 
-	vec3 worldPosition = (invViewMat * vec4(viewPosition, 1.0)).xyz;
+	vec3 worldPosition = vec3(invViewMat * vec4(viewPosition, 1.0));
 	vec3 worldNormal = mat3(invViewMat) * viewNormal;
 
 	// Trace.

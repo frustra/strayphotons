@@ -22,7 +22,8 @@ namespace sp
 	GameLogic::GameLogic(Game *game)
 		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input), flashlightFixed(false), sunPos(0), funcs(this)
 	{
-		funcs.Register("loadscene", "Load a new scene and replace the existing one", &GameLogic::LoadScene);
+		funcs.Register("loadscene", "Load a scene", &GameLogic::LoadScene);
+		funcs.Register("reloadscene", "Reload current scene", &GameLogic::ReloadScene);
 	}
 
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
@@ -149,10 +150,12 @@ namespace sp
 		return true;
 	}
 
-	void GameLogic::LoadScene(const string &name)
+	void GameLogic::LoadScene(const string &nameRef)
 	{
+		const string name = nameRef;
 		game->entityManager.DestroyAll();
 
+		scene.reset();
 		scene = GAssets.LoadScene(name, &game->entityManager, game->physics);
 		if (!scene) return;
 
@@ -172,5 +175,13 @@ namespace sp
 		auto view = flashlight.Assign<ecs::View>();
 		view->extents = glm::vec2(CVarFlashlightResolution.Get());
 		view->clip = glm::vec2(0.1, 256);
+	}
+
+	void GameLogic::ReloadScene(const string &)
+	{
+		if (scene)
+		{
+			LoadScene(scene->name);
+		}
 	}
 }
