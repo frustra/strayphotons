@@ -54,9 +54,7 @@ namespace sp
 		indirectDiffuse->SetInput(1, context.GBuffer1);
 		indirectDiffuse->SetInput(2, context.GBuffer2);
 		indirectDiffuse->SetInput(3, context.GBuffer3);
-		indirectDiffuse->SetInput(4, context.VoxelColor);
-		indirectDiffuse->SetInput(5, context.VoxelNormal);
-		indirectDiffuse->SetInput(6, context.VoxelRadiance);
+		indirectDiffuse->SetInput(4, context.VoxelRadiance);
 
 		auto lighting = context.AddPass<VoxelLighting>(voxelData, mirrorVisData);
 		lighting->SetInput(0, context.GBuffer0);
@@ -65,11 +63,9 @@ namespace sp
 		lighting->SetInput(3, context.GBuffer3);
 		lighting->SetInput(4, context.ShadowMap);
 		lighting->SetInput(5, context.MirrorShadowMap);
-		lighting->SetInput(6, context.VoxelColor);
-		lighting->SetInput(7, context.VoxelNormal);
-		lighting->SetInput(8, context.VoxelRadiance);
-		lighting->SetInput(9, indirectDiffuse);
-		lighting->SetInput(10, context.MirrorIndexStencil);
+		lighting->SetInput(6, context.VoxelRadiance);
+		lighting->SetInput(7, indirectDiffuse);
+		lighting->SetInput(8, context.MirrorIndexStencil);
 
 		context.LastOutput = lighting;
 	}
@@ -144,10 +140,8 @@ namespace sp
 			context.MirrorShadowMap = context.AddPass<ProxyProcessPass>(targets.mirrorShadowMap);
 		}
 
-		if (targets.voxelData.color)
+		if (targets.voxelData.radiance)
 		{
-			context.VoxelColor = context.AddPass<ProxyProcessPass>(targets.voxelData.color);
-			context.VoxelNormal = context.AddPass<ProxyProcessPass>(targets.voxelData.normal);
 			context.VoxelRadiance = context.AddPass<ProxyProcessPass>(targets.voxelData.radiance);
 		}
 
@@ -199,9 +193,7 @@ namespace sp
 			viewGBuf->SetInput(2, context.GBuffer2);
 			viewGBuf->SetInput(3, context.GBuffer3);
 			viewGBuf->SetInput(4, context.Depth);
-			viewGBuf->SetInput(5, context.VoxelColor);
-			viewGBuf->SetInput(6, context.VoxelNormal);
-			viewGBuf->SetInput(7, context.VoxelRadiance);
+			viewGBuf->SetInput(5, context.VoxelRadiance);
 			context.LastOutput = viewGBuf;
 		}
 

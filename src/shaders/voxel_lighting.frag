@@ -11,14 +11,9 @@ layout (binding = 2) uniform sampler2D gBuffer2;
 layout (binding = 3) uniform sampler2D gBuffer3;
 layout (binding = 4) uniform sampler2D shadowMap;
 layout (binding = 5) uniform sampler2DArray mirrorShadowMap;
-
-layout (binding = 6) uniform sampler3D voxelColor;
-layout (binding = 7) uniform sampler3D voxelNormal;
-layout (binding = 8) uniform sampler3D voxelRadiance;
-
-layout (binding = 9) uniform sampler2D indirectDiffuseSampler;
-
-layout (binding = 10) uniform usampler2D mirrorIndexStencil;
+layout (binding = 6) uniform sampler3D voxelRadiance;
+layout (binding = 7) uniform sampler2D indirectDiffuseSampler;
+layout (binding = 8) uniform usampler2D mirrorIndexStencil;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;

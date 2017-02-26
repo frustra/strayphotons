@@ -38,7 +38,7 @@ namespace sp
 		}
 	};
 
-	class VoxelLighting : public PostProcessPass<11, 1>
+	class VoxelLighting : public PostProcessPass<9, 1>
 	{
 	public:
 		VoxelLighting(VoxelData voxelData, Buffer mirrorVisData) : voxelData(voxelData), mirrorVisData(mirrorVisData) {}
@@ -61,7 +61,7 @@ namespace sp
 		Buffer mirrorVisData;
 	};
 
-	class VoxelLightingDiffuse : public PostProcessPass<7, 1>
+	class VoxelLightingDiffuse : public PostProcessPass<5, 1>
 	{
 	public:
 		VoxelLightingDiffuse(VoxelData voxelData);

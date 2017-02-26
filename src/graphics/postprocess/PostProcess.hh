@@ -167,8 +167,6 @@ namespace sp
 		ProcessPassOutputRef Depth;
 		ProcessPassOutputRef ShadowMap;
 		ProcessPassOutputRef MirrorShadowMap;
-		ProcessPassOutputRef VoxelColor;
-		ProcessPassOutputRef VoxelNormal;
 		ProcessPassOutputRef VoxelRadiance;
 		ProcessPassOutputRef MirrorIndexStencil;
 

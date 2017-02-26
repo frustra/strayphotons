@@ -5,9 +5,7 @@ layout (binding = 1) uniform sampler2D gBuffer1;
 layout (binding = 2) uniform sampler2D gBuffer2;
 layout (binding = 3) uniform sampler2D gBuffer3;
 layout (binding = 4) uniform sampler2D depthStencil;
-layout (binding = 5) uniform sampler3D voxelColor;
-layout (binding = 6) uniform sampler3D voxelNormal;
-layout (binding = 7) uniform sampler3D voxelRadiance;
+layout (binding = 5) uniform sampler3D voxelRadiance;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
@@ -47,19 +45,10 @@ void main()
 			outFragColor.rgb = vec3(texture(gBuffer3, inTexCoord).rgb * 0.1 + 0.5);
 		}
 	} else if (source == 1) { // Voxel source
-		vec3 sampleColor, sampleNormal, sampleRadiance;
-		float sampleRoughness;
-		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz, rayDir.xyz, sampleColor, sampleNormal, sampleRadiance, sampleRoughness);
+		vec3 sampleRadiance;
+		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz, rayDir.xyz, sampleRadiance);
 
-		if (mode == 1) { // Base color
-			outFragColor.rgb = sampleColor;
-		} else if (mode == 2) { // Normal
-			outFragColor.rgb = sampleNormal;
-		} else if (mode == 3) { // Alpha
-			outFragColor.rgb = vec3(alpha);
-		} else if (mode == 4) { // Roughness
-			outFragColor.rgb = vec3(sampleRoughness);
-		} else if (mode == 5) { // Radiance
+		if (mode == 1) { // Radiance
 			outFragColor.rgb = sampleRadiance;
 		}
 	} else if (source == 2) { // Cone trace source
