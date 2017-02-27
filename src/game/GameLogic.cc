@@ -29,7 +29,7 @@ namespace sp
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
 	static CVar<float> CVarFlashlightAngle("r.FlashlightAngle", 20, "Flashlight spot angle");
 	static CVar<int> CVarFlashlightResolution("r.FlashlightResolution", 512, "Flashlight shadow map resolution");
-	static CVar<float> CVarSunPostion("g.SunPostion", 0.2, "Sun angle");
+	static CVar<float> CVarSunPosition("g.SunPosition", 0.2, "Sun angle");
 
 	void GameLogic::Init()
 	{
@@ -110,14 +110,14 @@ namespace sp
 		ecs::Entity sun = scene->FindEntity("sun");
 		if (sun.Valid())
 		{
-			if (CVarSunPostion.Get() == 0)
+			if (CVarSunPosition.Get() == 0)
 			{
 				sunPos += dtSinceLastFrame * (0.05 + std::abs(sin(sunPos) * 0.1));
 				if (sunPos > M_PI / 2.0) sunPos = -M_PI / 2.0;
 			}
 			else
 			{
-				sunPos = CVarSunPostion.Get();
+				sunPos = CVarSunPosition.Get();
 			}
 
 			auto transform = sun.Get<ecs::Transform>();

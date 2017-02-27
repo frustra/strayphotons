@@ -83,7 +83,7 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
 	float occlusion = 0;
 	for (int x = -DiskKernelRadius; x <= DiskKernelRadius; x++) {
 		for (int y = -DiskKernelRadius; y <= DiskKernelRadius; y++) {
-			vec2 offset = vec2(x, y) * 1.5;
+			vec2 offset = vec2(x, y) * 1.3;
 
 #ifdef MIRROR_SAMPLE
 			occlusion += SampleOcclusionMirror(shadowMapCoord, info, surfaceNormal, rotation0 * offset)

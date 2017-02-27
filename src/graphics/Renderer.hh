@@ -24,6 +24,7 @@ namespace sp
 		shared_ptr<RenderTarget> packedData;
 		shared_ptr<RenderTarget> color, normal, radiance;
 		ecs::VoxelInfo info;
+		bool voxelsCleared = true;
 	};
 
 	class Renderer : public GraphicsContext
