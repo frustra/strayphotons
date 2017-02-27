@@ -7,12 +7,8 @@
 #include "graphics/GPUTypes.hh"
 #include "ecs/components/LightSensor.hh"
 #include "ecs/components/Transform.hh"
+#include "ecs/components/VoxelInfo.hh"
 #include <Ecs.hh>
-
-namespace ecs
-{
-	class VoxelInfo;
-}
 
 namespace sp
 {
