@@ -409,7 +409,6 @@ namespace sp
 	void Renderer::ClearVoxelGrid()
 	{
 		RenderPhase phase("VoxelClear", Timer);
-		voxelData.voxelsCleared = true;
 
 		if (CVarUpdateVoxels.Changed())
 		{
@@ -420,10 +419,12 @@ namespace sp
 				voxelData.color = nullptr;
 				voxelData.normal = nullptr;
 				voxelData.radiance = nullptr;
+				voxelData.voxelsCleared = true;
 			}
 		}
 		else if (CVarUpdateVoxels.Get())
 		{
+			voxelData.voxelsCleared = true;
 			computeIndirectBuffer.Bind(GL_DISPATCH_INDIRECT_BUFFER);
 
 			for (uint32 i = 0; i < voxelData.radiance->GetDesc().levels; i++)
