@@ -17,11 +17,19 @@ namespace ecs
 		MOVE_LEFT,
 		MOVE_RIGHT,
 		MOVE_UP,
-		MOVE_DOWN
+		MOVE_DOWN,
+		MOVE_JUMP
 	};
+	static float CONTROLLER_GRAVITY = 9.81f;
+	static float CONTROLLER_JUMP = 8.0f;
 
 	struct HumanController
 	{
+		HumanController()
+		{
+			movement = physx::PxVec3();
+		}
+
 		// map each action to a vector of glfw keys that could trigger it
 		// (see InputManager.hh for converting a mouse button to one of these ints)
 		std::unordered_map<ControlAction, std::vector<int>, sp::EnumHash> inputMap;
@@ -34,6 +42,13 @@ namespace ecs
 
 		// pxCapsuleController handles movement and physx simulation
 		physx::PxController *pxController;
+
+		// Custom physics to handle gravity
+		bool grounded;
+
+		physx::PxVec3 movement;
+
+		float upVelocity = 0.f;
 	};
 
 }

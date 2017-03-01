@@ -96,6 +96,12 @@ namespace ecs
 					case ControlAction::MOVE_DOWN:
 						move(entity, dtSinceLastFrame, glm::vec3(0, -1, 0), true);
 						break;
+					case ControlAction::MOVE_JUMP:
+						if(controller->grounded)
+						{
+							controller->upVelocity = ecs::CONTROLLER_JUMP;
+						}
+						break;
 					default:
 						std::stringstream ss;
 						ss << "Unknown ControlAction: "
@@ -113,6 +119,12 @@ namespace ecs
 
 			if (controller->pxController && !CVarNoClip.Get())
 			{
+				if(controller->upVelocity)
+				{
+					float jump = controller->upVelocity * dtSinceLastFrame;
+					controllerMove(entity, dtSinceLastFrame, glm::vec3(0, jump, 0));
+					controller->upVelocity -= ecs::CONTROLLER_GRAVITY * dtSinceLastFrame;
+				}
 				auto position = controller->pxController->getPosition();
 				physx::PxVec3 pxVec3 = physx::PxVec3(position.x, position.y, position.z);
 				transform->SetPosition(PxVec3ToGlmVec3P(pxVec3));
@@ -150,10 +162,13 @@ namespace ecs
 				ControlAction::MOVE_RIGHT, {GLFW_KEY_D}
 			},
 			{
-				ControlAction::MOVE_UP, {GLFW_KEY_SPACE}
+				ControlAction::MOVE_UP, {GLFW_KEY_Z}
 			},
 			{
-				ControlAction::MOVE_DOWN, {GLFW_KEY_LEFT_CONTROL}
+				ControlAction::MOVE_DOWN, {GLFW_KEY_X}
+			},
+			{
+				ControlAction::MOVE_JUMP, {GLFW_KEY_SPACE}
 			},
 		};
 
@@ -172,7 +187,6 @@ namespace ecs
 		}
 
 		auto transform = entity.Get<ecs::Transform>();
-		auto controller = entity.Get<HumanController>();
 
 		float ds = HumanControlSystem::MOVE_SPEED * (float)dt;
 
@@ -194,6 +208,14 @@ namespace ecs
 			movement *= ds;
 		}
 
+		controllerMove(entity, dt, movement);
+	}
+
+	void HumanControlSystem::controllerMove(ecs::Entity entity, double dt, glm::vec3 movement)
+	{
+		auto transform = entity.Get<ecs::Transform>();
+		auto controller = entity.Get<HumanController>();
+
 		if (controller->pxController && !CVarNoClip.Get())
 		{
 			physx::PxControllerFilters filters;
@@ -201,7 +223,8 @@ namespace ecs
 
 			Assert(scene);
 			scene->lockRead();
-			controller->pxController->move(GlmVec3ToPxVec3(movement), 0, dt, filters);
+			physx::PxControllerCollisionFlags flags = controller->pxController->move(GlmVec3ToPxVec3(movement), 0, dt, filters);
+			controller->grounded = flags && physx::PxControllerCollisionFlag::eCOLLISION_DOWN;
 			scene->unlockRead();
 		}
 		else

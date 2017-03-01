@@ -34,6 +34,8 @@ namespace ecs
 		 */
 		void move(ecs::Entity entity, double dt, glm::vec3 normalizedDirection, bool flight = false);
 
+		void controllerMove(ecs::Entity entity, double dt, glm::vec3 movement);
+
 		static const float MOVE_SPEED;
 		static const glm::vec2 CURSOR_SENSITIVITY;
 
