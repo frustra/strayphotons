@@ -20,8 +20,9 @@ namespace ecs
 		MOVE_DOWN,
 		MOVE_JUMP
 	};
-	static float CONTROLLER_GRAVITY = 9.81f;
-	static float CONTROLLER_JUMP = 8.0f;
+
+	const float CONTROLLER_GRAVITY = 9.81f;
+	const float CONTROLLER_JUMP = 8.0f;
 
 	struct HumanController
 	{

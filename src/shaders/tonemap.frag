@@ -1,6 +1,7 @@
 #version 430
 
 // #define DEBUG_OVEREXPOSED
+// #define ENABLE_DITHER
 
 ##import lib/util
 ##import lib/lighting_util
@@ -24,6 +25,10 @@ void main() {
 	}
 #endif
 
+#ifdef ENABLE_DITHER
 	vec4 rng = randState(inTexCoord.xyx);
-	outFragColor = vec4(toneMapped + (rand2(rng) - 0.5) * ditherAmount, luminosity.a);
+	toneMapped += (rand2(rng) - 0.5) * ditherAmount;
+#endif
+
+	outFragColor = vec4(toneMapped, luminosity.a);
 }
