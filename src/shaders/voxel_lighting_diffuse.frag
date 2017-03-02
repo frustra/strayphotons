@@ -13,6 +13,7 @@ uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);
 
 uniform float exposure = 1.0;
+uniform float diffuseDownsample = 1;
 
 ##import lib/util
 ##import voxel_shared
@@ -39,8 +40,8 @@ void main()
 	vec3 worldPosition = vec3(invViewMat * vec4(viewPosition, 1.0));
 	vec3 worldNormal = mat3(invViewMat) * viewNormal;
 
-	// Trace.
-	vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
+	// Trace. Only randomly seed if diffuse downsampling is off.
+	vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy * step(-1, -diffuseDownsample));
 
 	outFragColor.rgb = indirectDiffuse.rgb * exposure;
 }

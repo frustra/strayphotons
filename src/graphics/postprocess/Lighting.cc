@@ -258,6 +258,7 @@ namespace sp
 
 			Bind(voxelSize, "voxelSize");
 			Bind(voxelGridCenter, "voxelGridCenter");
+			Bind(diffuseDownsample, "diffuseDownsample");
 		}
 
 		void SetExposure(float newExposure)
@@ -270,15 +271,16 @@ namespace sp
 			Set(invViewMat, view.invViewMat);
 		}
 
-		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo)
+		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo, int diffDownsample)
 		{
 			Set(voxelSize, voxelInfo.voxelSize);
 			Set(voxelGridCenter, voxelInfo.voxelGridCenter);
+			Set(diffuseDownsample, (float) diffDownsample);
 		}
 
 	private:
 		Uniform exposure, invViewMat;
-		Uniform voxelSize, voxelGridCenter;
+		Uniform voxelSize, voxelGridCenter, diffuseDownsample;
 	};
 
 	IMPLEMENT_SHADER_TYPE(VoxelLightingDiffuseFS, "voxel_lighting_diffuse.frag", Fragment);
@@ -327,7 +329,7 @@ namespace sp
 		auto lumishader = r->GlobalShaders->Get<LumiHistogramCS>();
 
 		shader->SetViewParams(context->view);
-		shader->SetVoxelInfo(voxelData.info);
+		shader->SetVoxelInfo(voxelData.info, downsample);
 
 		if (CVarExposure.Get() > 0.0f)
 		{

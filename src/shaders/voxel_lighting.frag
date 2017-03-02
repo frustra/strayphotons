@@ -51,12 +51,12 @@ uniform int mode = 1;
 void getDepthNormal(out float depth, out vec3 normal, vec2 texCoord)
 {
 	normal = texture(gBuffer1, texCoord).xyz;
-	depth = texture(gBuffer3, texCoord).z;
+	depth = length(texture(gBuffer3, texCoord));
 }
 
 bool detectEdge(vec3 centerNormal, float centerDepth, vec2 tcRadius)
 {
-	return false; // TODO(jli): fix
+	//return false; // TODO(jli): fix
 	float depthU, depthR, depthD, depthL;
 	vec3 normalU, normalR, normalD, normalL;
 
@@ -66,14 +66,13 @@ bool detectEdge(vec3 centerNormal, float centerDepth, vec2 tcRadius)
 	getDepthNormal(depthL, normalL, inTexCoord + tcRadius * vec2(-1, 0));
 
 	vec4 ntest = centerNormal * mat4x3(normalU, normalD, normalL, normalR);
-	vec4 depthRatio = vec4(depthU, depthR, depthD, depthL) / centerDepth;
+	vec4 depthRatio = abs((vec4(depthU, depthR, depthD, depthL) / centerDepth) - 1.0);
 	vec2 depthDiff = vec2(depthD + depthU - 2 * centerDepth, depthL + depthR - 2 * centerDepth);
 
-	return any(bvec4(
+	return any(bvec3(
 		any(lessThan(ntest, vec4(0.8))),
-		any(greaterThan(depthRatio, vec4(1.001))),
-		any(lessThan(depthRatio, vec4(0.999))),
-		any(greaterThan(depthDiff, vec2(1e-4)))
+		any(greaterThan(depthRatio, vec4(0.05))),
+		any(greaterThan(depthDiff, vec2(0.01)))
 	));
 }
 
@@ -128,7 +127,6 @@ void main()
 	// Trace.
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
-	float reflected = 0.0;
 
 	vec3 indirectSpecular;
 	{
@@ -143,14 +141,14 @@ void main()
 
 	vec3 indirectDiffuse;
 
-	if (diffuseDownsample > 1 && detectEdge(viewNormal, viewPosition.z, diffuseDownsample * 0.65 / textureSize(gBuffer0, 0)) || reflected == 1.0 || mode == 5) {
+	if (diffuseDownsample > 1 && detectEdge(viewNormal, length(viewPosition), diffuseDownsample * 0.65 / textureSize(gBuffer0, 0))) {
 		indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
 	} else {
 		indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
 	}
 
 	vec3 directDiffuseColor = baseColor - baseColor * metalness;
-	vec3 directLight = DirectShading(worldPosition - reflected*rayDir*voxelSize*0.75, -rayDir, baseColor, worldNormal, flatWorldNormal, roughness, metalness);
+	vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, flatWorldNormal, roughness, metalness);
 
 	vec3 indirectLight = indirectDiffuse * directDiffuseColor + indirectSpecular;
 	vec3 totalLight = directLight + indirectLight;
