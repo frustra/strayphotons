@@ -174,7 +174,7 @@ namespace sp
 		light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
 		auto view = flashlight.Assign<ecs::View>();
 		view->extents = glm::vec2(CVarFlashlightResolution.Get());
-		view->clip = glm::vec2(0.1, 256);
+		view->clip = glm::vec2(0.1, 64);
 	}
 
 	void GameLogic::ReloadScene(const string &)

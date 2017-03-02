@@ -53,7 +53,7 @@ void main() {
 		gl_ClipDistance[0] = 1.0;
 
 		for (int i = 0; i < 3; i++) {
-			outNormal = normalMat * inNormal[i];
+			outNormal = normalize(normalMat * inNormal[i]);
 			outTexCoord = inTexCoord[i];
 			outViewPos = viewPos[i];
 			gl_Position = projection * vec4(outViewPos, 1);
@@ -67,7 +67,7 @@ void main() {
 			mat4 reflectView = view * mirrorSData.reflectMat[index];
 
 			for (int i = 0; i < 3; i++) {
-				outNormal = normalMat * inNormal[i];
+				outNormal = normalize(normalMat * inNormal[i]);
 				outTexCoord = inTexCoord[i];
 				outViewPos = viewPos[i];
 				gl_ClipDistance[0] = dot(mirrorSData.clipPlane[index], gl_in[i].gl_Position);

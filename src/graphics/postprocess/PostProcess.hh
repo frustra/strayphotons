@@ -133,6 +133,8 @@ namespace sp
 		RenderTarget::Ref shadowMap, mirrorShadowMap;
 		RenderTarget::Ref mirrorIndexStencil;
 		VoxelData voxelData;
+		Buffer mirrorVisData;
+		Buffer mirrorSceneData;
 	};
 
 	class PostProcessingContext

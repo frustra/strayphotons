@@ -56,7 +56,6 @@ void getDepthNormal(out float depth, out vec3 normal, vec2 texCoord)
 
 bool detectEdge(vec3 centerNormal, float centerDepth, vec2 tcRadius)
 {
-	//return false; // TODO(jli): fix
 	float depthU, depthR, depthD, depthL;
 	vec3 normalU, normalR, normalD, normalL;
 
@@ -128,18 +127,20 @@ void main()
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
 
-	vec3 indirectSpecular;
+	vec3 indirectSpecular = vec3(0);
 	{
 		// specular
-		float specularConeRatio = roughness * 0.8;
-		vec4 sampleColor = ConeTraceGrid(specularConeRatio, worldPosition, rayReflectDir, flatWorldNormal, gl_FragCoord.xy);
-
 		vec3 directSpecularColor = mix(vec3(0.04), baseColor, metalness);
-		vec3 brdf = EvaluateBRDFSpecularImportanceSampledGGX(directSpecularColor, roughness, rayReflectDir, -rayDir, worldNormal);
-		indirectSpecular = sampleColor.rgb * brdf;
+		if (any(greaterThan(directSpecularColor, vec3(0.0)))) {
+			float specularConeRatio = roughness * 0.8;
+			vec4 sampleColor = ConeTraceGrid(specularConeRatio, worldPosition, rayReflectDir, flatWorldNormal, gl_FragCoord.xy);
+
+			vec3 brdf = EvaluateBRDFSpecularImportanceSampledGGX(directSpecularColor, roughness, rayReflectDir, -rayDir, worldNormal);
+			indirectSpecular = sampleColor.rgb * brdf;
+		}
 	}
 
-	vec3 indirectDiffuse;
+	vec3 indirectDiffuse = vec3(0);
 
 	if (diffuseDownsample > 1 && detectEdge(viewNormal, length(viewPosition), diffuseDownsample * 0.65 / textureSize(gBuffer0, 0))) {
 		indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);

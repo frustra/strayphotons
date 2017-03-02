@@ -22,7 +22,7 @@ namespace sp
 	{
 		shared_ptr<RenderTarget> fragmentList;
 		shared_ptr<RenderTarget> packedData;
-		shared_ptr<RenderTarget> color, normal, radiance;
+		shared_ptr<RenderTarget> radiance;
 		ecs::VoxelInfo info;
 	};
 
@@ -54,15 +54,14 @@ namespace sp
 		ShaderManager *ShaderControl = nullptr;
 		RenderTargetPool *RTPool = nullptr;
 
-		// TODO(jli): private
-		Buffer mirrorVisData;
-		Buffer mirrorSceneData;
 		float Exposure = 1.0f;
 	private:
 		shared_ptr<RenderTarget> shadowMap;
 		shared_ptr<RenderTarget> mirrorShadowMap;
 		Buffer computeIndirectBuffer;
 		VoxelData voxelData;
+		Buffer mirrorVisData;
+		Buffer mirrorSceneData;
 
 		std::deque<std::pair<shared_ptr<Model>, int>> renderableGCQueue;
 	};

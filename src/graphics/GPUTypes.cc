@@ -12,22 +12,25 @@ namespace sp
 		for (auto entity : manager.EntitiesWith<ecs::Light>())
 		{
 			auto light = entity.Get<ecs::Light>();
-			auto view = entity.Get<ecs::View>();
-			auto transform = entity.Get<ecs::Transform>();
-			data->position = transform->GetModelTransform(manager) * glm::vec4(0, 0, 0, 1);
-			data->tint = light->tint;
-			data->direction = glm::mat3(transform->GetModelTransform(manager)) * glm::vec3(0, 0, -1);
-			data->spotAngleCos = cos(light->spotAngle);
-			data->proj = view->projMat;
-			data->invProj = view->invProjMat;
-			data->view = view->viewMat;
-			data->clip = view->clip;
-			data->mapOffset = light->mapOffset;
-			data->intensity = light->intensity;
-			data->illuminance = light->illuminance;
-			lightNum++;
-			if (lightNum >= MAX_LIGHTS) break;
-			data++;
+			if (entity.Has<ecs::View>())
+			{
+				auto view = entity.Get<ecs::View>();
+				auto transform = entity.Get<ecs::Transform>();
+				data->position = transform->GetModelTransform(manager) * glm::vec4(0, 0, 0, 1);
+				data->tint = light->tint;
+				data->direction = glm::mat3(transform->GetModelTransform(manager)) * glm::vec3(0, 0, -1);
+				data->spotAngleCos = cos(light->spotAngle);
+				data->proj = view->projMat;
+				data->invProj = view->invProjMat;
+				data->view = view->viewMat;
+				data->clip = view->clip;
+				data->mapOffset = light->mapOffset;
+				data->intensity = light->intensity;
+				data->illuminance = light->illuminance;
+				lightNum++;
+				if (lightNum >= MAX_LIGHTS) break;
+				data++;
+			}
 		}
 		return lightNum;
 	}

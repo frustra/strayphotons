@@ -40,7 +40,7 @@ in vec4 gl_FragCoord;
 
 ##import lib/shading
 
-// Data format: [color.r, color.g], [color.b, radiance.r], [radiance.g, radiance.b], [normal.x, normal.y], [normal.z, roughness], [count]
+// Data format: [radiance.r], [radiance.g], [radiance.b, count] (24 bit per color, 8 bits count)
 
 void main()
 {
@@ -56,26 +56,15 @@ void main()
 
 	vec3 pixelLuminance = DirectShading(worldPosition, baseColor.rgb, inNormal, inNormal, roughness);
 
-	// Clip so we don't overflow
-	pixelLuminance = min(vec3(1.0), pixelLuminance);
+	// Clip so we don't overflow, scale to 16 bits
+	uvec3 radiance = uvec3(min(vec3(1.0), pixelLuminance) * 0xFFFF);
 
-	vec3 normal = normalize(inNormal) * 0.5 + 0.5;
+	ivec3 dataOffset = ivec3(floor(position.x) * 3, position.yz);
+	imageAtomicAdd(voxelData, dataOffset + ivec3(0, 0, 0), radiance.r);
+	imageAtomicAdd(voxelData, dataOffset + ivec3(1, 0, 0), radiance.g);
+	uint prevData = imageAtomicAdd(voxelData, dataOffset + ivec3(2, 0, 0), (radiance.b << 8) + 1);
 
-	uint rg = (uint(baseColor.r * 0xFF) << 16) + uint(baseColor.g * 0xFF);
-	uint br = (uint(baseColor.b * 0xFF) << 16) + uint(pixelLuminance.r * 0x7FF);
-	uint gb = (uint(pixelLuminance.g * 0x7FF) << 16) + uint(pixelLuminance.b * 0x7FF);
-	uint xy = (uint(normal.x * 0x7FF) << 16) + uint(normal.y * 0x7FF);
-	uint zr = (uint(normal.z * 0x7FF) << 16) + uint(roughness * 0xFF);
-
-	ivec3 dataOffset = ivec3(floor(position.x) * 6, position.yz);
-	imageAtomicAdd(voxelData, dataOffset + ivec3(0, 0, 0), rg);
-	imageAtomicAdd(voxelData, dataOffset + ivec3(1, 0, 0), br);
-	imageAtomicAdd(voxelData, dataOffset + ivec3(2, 0, 0), gb);
-	imageAtomicAdd(voxelData, dataOffset + ivec3(3, 0, 0), xy);
-	imageAtomicAdd(voxelData, dataOffset + ivec3(4, 0, 0), zr);
-	uint prevData = imageAtomicAdd(voxelData, dataOffset + ivec3(5, 0, 0), 1);
-
-	if ((prevData & 0xFFFF) == 0) {
+	if ((prevData & 0xFF) == 0) {
 		uint index = atomicCounterIncrement(fragListSize);
 		if (index % MipmapWorkGroupSize == 0) atomicCounterIncrement(nextComputeSize);
 

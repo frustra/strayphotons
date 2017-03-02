@@ -88,7 +88,6 @@ namespace sp
 	{
 		RenderPhase phase("ShadowMaps", Timer);
 
-		// TODO(xthexder): Handle lights without shadowmaps
 		glm::ivec2 renderTargetSize;
 		int lightCount = 0;
 		for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
@@ -141,8 +140,7 @@ namespace sp
 			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * MAX_MIRRORS + sizeof(GLuint) * 12 + sizeof(glm::mat4) * 4) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
 		}
 
-		// TODO(xthexder): Try 16 bit depth
-		auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH32F, renderTargetSize));
+		auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH16, renderTargetSize));
 		SetRenderTarget(&shadowMap->GetTexture(), &depthTarget->GetTexture());
 
 		mirrorVisData.Clear(PF_R32UI, 0);
@@ -270,7 +268,7 @@ namespace sp
 	{
 		auto VoxelGridSize = voxelData.info.gridSize;
 
-		glm::ivec3 packedSize = glm::ivec3(VoxelGridSize * 6, VoxelGridSize, VoxelGridSize);
+		glm::ivec3 packedSize = glm::ivec3(VoxelGridSize * 3, VoxelGridSize, VoxelGridSize);
 		glm::ivec3 unpackedSize = glm::ivec3(VoxelGridSize, VoxelGridSize, VoxelGridSize);
 		auto VoxelMipLevels = ceil(log2(VoxelGridSize));
 
@@ -295,16 +293,6 @@ namespace sp
 		{
 			voxelData.packedData = RTPool->Get(RenderTargetDesc(PF_R32UI, packedSize));
 			voxelData.packedData->GetTexture().Clear(0);
-		}
-		if (!voxelData.color || voxelData.color->GetDesc().extent != unpackedSize)
-		{
-			voxelData.color = RTPool->Get(RenderTargetDesc(PF_RGBA8, unpackedSize));
-			voxelData.color->GetTexture().Clear(0);
-		}
-		if (!voxelData.normal || voxelData.normal->GetDesc().extent != unpackedSize)
-		{
-			voxelData.normal = RTPool->Get(RenderTargetDesc(PF_RGBA16F, unpackedSize));
-			voxelData.normal->GetTexture().Clear(0);
 		}
 
 		RenderTargetDesc radianceDesc(PF_RGBA16, unpackedSize);
@@ -374,9 +362,7 @@ namespace sp
 			computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0);
 			voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, 0);
 			voxelData.packedData->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
-			voxelData.color->GetTexture().BindImage(2, GL_WRITE_ONLY, 0, GL_TRUE, 0);
-			voxelData.normal->GetTexture().BindImage(3, GL_WRITE_ONLY, 0, GL_TRUE, 0);
-			voxelData.radiance->GetTexture().BindImage(4, GL_WRITE_ONLY, 0, GL_TRUE, 0);
+			voxelData.radiance->GetTexture().BindImage(2, GL_WRITE_ONLY, 0, GL_TRUE, 0);
 
 			ShaderControl->BindPipeline<VoxelConvertCS>(GlobalShaders);
 			glDispatchComputeIndirect(sizeof(GLuint));
@@ -416,9 +402,7 @@ namespace sp
 		{
 			computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint));
 			voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i);
-			voxelData.color->GetTexture().BindImage(1, GL_WRITE_ONLY, i, GL_TRUE, 0);
-			voxelData.normal->GetTexture().BindImage(2, GL_WRITE_ONLY, i, GL_TRUE, 0);
-			voxelData.radiance->GetTexture().BindImage(3, GL_WRITE_ONLY, i, GL_TRUE, 0);
+			voxelData.radiance->GetTexture().BindImage(1, GL_WRITE_ONLY, i, GL_TRUE, 0);
 
 			ShaderControl->BindPipeline<VoxelClearCS>(GlobalShaders);
 			GlobalShaders->Get<VoxelClearCS>()->SetLevel(i);
@@ -499,6 +483,8 @@ namespace sp
 		targets.shadowMap = shadowMap;
 		targets.mirrorShadowMap = mirrorShadowMap;
 		targets.voxelData = voxelData;
+		targets.mirrorVisData = mirrorVisData;
+		targets.mirrorSceneData = mirrorSceneData;
 
 		{
 			RenderPhase phase("PlayerView", Timer);
@@ -579,13 +565,13 @@ namespace sp
 				{
 					glBindFramebuffer(GL_FRAMEBUFFER, fb0);
 					mirrorIndexStencil1->GetTexture().Bind(4);
-					targets.mirrorIndexStencil = mirrorIndexStencil1;
+					targets.mirrorIndexStencil = mirrorIndexStencil0;
 				}
 				else
 				{
 					glBindFramebuffer(GL_FRAMEBUFFER, fb1);
 					mirrorIndexStencil0->GetTexture().Bind(4);
-					targets.mirrorIndexStencil = mirrorIndexStencil0;
+					targets.mirrorIndexStencil = mirrorIndexStencil1;
 				}
 
 				if (bounce == 0)

@@ -124,7 +124,7 @@
 			},
 			"view": {
 				"extents": [4096, 4096],
-				"clip": [5, 50]
+				"clip": [20, 50]
 			},
 			"transform": {
 				"translate": [7, 35, 0],

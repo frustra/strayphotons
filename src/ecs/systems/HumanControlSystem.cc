@@ -97,7 +97,7 @@ namespace ecs
 						move(entity, dtSinceLastFrame, glm::vec3(0, -1, 0), true);
 						break;
 					case ControlAction::MOVE_JUMP:
-						if(controller->grounded)
+						if (controller->grounded)
 						{
 							controller->upVelocity = ecs::CONTROLLER_JUMP;
 						}
@@ -119,7 +119,7 @@ namespace ecs
 
 			if (controller->pxController && !CVarNoClip.Get())
 			{
-				if(controller->upVelocity)
+				if (controller->upVelocity)
 				{
 					float jump = controller->upVelocity * dtSinceLastFrame;
 					controllerMove(entity, dtSinceLastFrame, glm::vec3(0, jump, 0));

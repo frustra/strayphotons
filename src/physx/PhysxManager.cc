@@ -290,7 +290,6 @@ namespace sp
 	void PhysxManager::RemoveActor(PxRigidActor *actor)
 	{
 		Lock();
-		// TODO(xthexder): Check this for memory leaks
 		scene->removeActor(*actor);
 		actor->release();
 		Unlock();
