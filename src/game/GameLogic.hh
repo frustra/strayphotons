@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Ecs.hh>
 #include "ecs/systems/HumanControlSystem.hh"
 #include "Common.hh"
 #include "core/CFunc.hh"
@@ -20,6 +21,12 @@ namespace sp
 
 		void LoadScene(const string &name);
 		void ReloadScene(const string &);
+
+	private:
+		ecs::Entity createDoor(const glm::vec3 &pos, const string &modelStr);
+		void closeDoor(ecs::Entity e);
+		void openDoor(ecs::Entity e);
+
 	private:
 		Game *game;
 		InputManager *input;

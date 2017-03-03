@@ -11,6 +11,7 @@
 #include "ecs/components/LightSensor.hh"
 #include "ecs/components/Mirror.hh"
 #include "ecs/components/VoxelInfo.hh"
+#include "ecs/components/Door.hh"
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -30,6 +31,7 @@ namespace sp
 		entityManager.RegisterComponentType<ecs::LightSensor>();
 		entityManager.RegisterComponentType<ecs::Mirror>();
 		entityManager.RegisterComponentType<ecs::VoxelInfo>();
+		entityManager.RegisterComponentType<ecs::Door>();
 	}
 
 	Game::~Game()

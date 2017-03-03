@@ -13,6 +13,8 @@
 #include "ecs/components/Physics.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
+#include "ecs/components/Door.hh"
+#include "physx/PhysxUtils.hh"
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -94,8 +96,20 @@ namespace sp
 					}
 				}
 			}
+			else if (ch == 'g') // open/close doors
+			{
+				for (auto e : game->entityManager.EntitiesWith<ecs::Door>()) {
+					auto doorComp = e.Get<ecs::Door>();
+					if (doorComp->isOpen) {
+						closeDoor(e);
+					} else {
+						openDoor(e);
+					}
+				}
+			}
 		});
 
+		createDoor(glm::vec3(-4, 1, 1), "dodecahedron");
 		//game->audio.StartEvent("event:/german nonsense");
 	}
 
@@ -147,6 +161,14 @@ namespace sp
 		{
 			return false;
 		}
+
+		// debug, ensures that moving kinematic objects work
+		for (auto e : game->entityManager.EntitiesWith<ecs::Door>()) {
+			auto doorPhysics = e.Get<ecs::Physics>();
+			physx::PxRigidDynamic *actor = doorPhysics->dynamic;
+			game->physics.Translate(actor, physx::PxVec3(0, 0.001, 0));
+		}
+
 		return true;
 	}
 
@@ -183,5 +205,51 @@ namespace sp
 		{
 			LoadScene(scene->name);
 		}
+	}
+
+	ecs::Entity GameLogic::createDoor(
+		const glm::vec3 &pos,
+		const string &modelStr)
+	{
+		ecs::Entity door = game->entityManager.NewEntity();
+		auto model = GAssets.LoadModel(modelStr);
+		door.Assign<ecs::Renderable>(model);
+		auto transform = door.Assign<ecs::Transform>();
+		transform->Translate(pos);
+
+		PhysxManager::ActorDesc desc;
+		desc.transform = physx::PxTransform(GlmVec3ToPxVec3(pos));
+		desc.dynamic = true;
+		desc.kinematic = true;
+
+		auto actor = game->physics.CreateActor(model, desc);
+		door.Assign<ecs::Physics>(actor, model);
+		door.Assign<ecs::Door>();
+
+		return door;
+	}
+
+	void GameLogic::openDoor(ecs::Entity e)
+	{
+		auto door = e.Get<ecs::Door>();
+
+		physx::PxRigidDynamic *actor = e.Get<ecs::Physics>()->dynamic;
+		game->physics.EnableCollisions(actor);
+
+		auto renderable = e.Get<ecs::Renderable>();
+		renderable->hidden = false;
+		door->isOpen = true;
+	}
+
+	void GameLogic::closeDoor(ecs::Entity e)
+	{
+		auto door = e.Get<ecs::Door>();
+
+		physx::PxRigidDynamic *actor = e.Get<ecs::Physics>()->dynamic;
+		game->physics.DisableCollisions(actor);
+
+		auto renderable = e.Get<ecs::Renderable>();
+		renderable->hidden = true;
+		door->isOpen = false;
 	}
 }

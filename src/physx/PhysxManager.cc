@@ -242,15 +242,66 @@ namespace sp
 		return set;
 	}
 
+	void PhysxManager::Translate(
+		physx::PxRigidDynamic *actor,
+		const physx::PxVec3 &transform)
+	{
+		Lock();
+
+		physx::PxRigidBodyFlags flags = actor->getRigidBodyFlags();
+		if (!flags.isSet(physx::PxRigidBodyFlag::eKINEMATIC)) {
+			throw std::runtime_error("cannot translate a non-kinematic actor");
+		}
+
+		physx::PxTransform pose = actor->getGlobalPose();
+		pose.p += transform;
+		actor->setKinematicTarget(pose);
+		Unlock();
+	}
+
+	void PhysxManager::DisableCollisions(physx::PxRigidActor *actor)
+	{
+		ToggleCollisions(actor, false);
+	}
+
+	void PhysxManager::EnableCollisions(physx::PxRigidActor *actor)
+	{
+		ToggleCollisions(actor, true);
+	}
+
+	void PhysxManager::ToggleCollisions(physx::PxRigidActor *actor, bool enabled)
+	{
+		Lock();
+
+		physx::PxU32 nShapes = actor->getNbShapes();
+		physx::PxShape **shapes = new physx::PxShape*[nShapes];
+		actor->getShapes(shapes, nShapes);
+		for (uint32 i = 0; i < nShapes; ++i) {
+			shapes[i]->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, enabled);
+			shapes[i]->setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, enabled);
+		}
+		delete[] shapes;
+
+		Unlock();
+	}
+
 	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, ActorDesc desc)
 	{
 		Lock();
 		PxRigidActor *actor;
 
-		if (desc.dynamic)
+		if (desc.dynamic) {
 			actor = physics->createRigidDynamic(desc.transform);
-		else
+
+			if (desc.kinematic) {
+				auto rigidBody = static_cast<physx::PxRigidBody*>(actor);
+				rigidBody->setRigidBodyFlag(
+					physx::PxRigidBodyFlag::eKINEMATIC, 1);
+			}
+		}
+		else {
 			actor = physics->createRigidStatic(desc.transform);
+		}
 
 		PxMaterial *mat = physics->createMaterial(0.6f, 0.5f, 0.0f);
 
