@@ -23,17 +23,6 @@ namespace sp
 		void ReloadScene(const string &);
 
 	private:
-
-		/**
-		 * Creates a barrier that starts closed.
-		 */
-		ecs::Entity createBarrier(
-			const glm::vec3 &pos,
-			const glm::vec3 &dimensions);
-		void closeBarrier(ecs::Entity e);
-		void openBarrier(ecs::Entity e);
-
-	private:
 		Game *game;
 		InputManager *input;
 		ecs::HumanControlSystem humanControlSystem;

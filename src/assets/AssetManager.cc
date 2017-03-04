@@ -20,6 +20,7 @@
 #include "ecs/components/Physics.hh"
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/Mirror.hh"
+#include "ecs/components/Barrier.hh"
 
 #include <boost/filesystem.hpp>
 #include <iostream>
@@ -267,6 +268,7 @@ namespace sp
 					auto translate = physx::PxVec3 (0, 0, 0);
 					auto scale = physx::PxVec3 (1, 1, 1);
 					bool dynamic = true;
+					bool kinematic = false;
 
 					//auto rotate = physx::PxQuat (0);
 					for (auto param : comp.second.get<picojson::object>())
@@ -293,18 +295,47 @@ namespace sp
 						{
 							dynamic = param.second.get<bool>();
 						}
+						else if (param.first == "kinematic")
+						{
+							kinematic = param.second.get<bool>();
+						}
 					}
 
 					PhysxManager::ActorDesc desc;
 					desc.transform = physx::PxTransform(translate);
 					desc.scale = physx::PxMeshScale(scale, physx::PxQuat(physx::PxIdentity));
 					desc.dynamic = dynamic;
+					desc.kinematic = kinematic;
 
 					actor = px.CreateActor(model, desc);
 
 					if (actor)
 					{
 						auto physics = entity.Assign<ecs::Physics>(actor, model);
+					}
+				}
+				else if (comp.first == "barrier")
+				{
+					auto barrier = entity.Assign<ecs::Barrier>();
+
+					for (auto param : comp.second.get<picojson::object>())
+					{
+						if (param.first == "isOpen")
+						{
+							barrier->isOpen = param.second.get<bool>();
+						}
+					}
+
+					if (barrier->isOpen)
+					{
+						if (!entity.Has<ecs::Physics>()
+						    || !entity.Has<ecs::Renderable>())
+						{
+							throw std::runtime_error(
+								"barrier component must come after Physics and Renderable!"
+							);
+						}
+						ecs::Barrier::Open(entity, px);
 					}
 				}
 				else if (comp.first == "voxels")

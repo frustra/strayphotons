@@ -101,15 +101,18 @@ namespace sp
 				for (auto e : game->entityManager.EntitiesWith<ecs::Barrier>()) {
 					auto barrierComp = e.Get<ecs::Barrier>();
 					if (barrierComp->isOpen) {
-						closeBarrier(e);
+						ecs::Barrier::Close(e, game->physics);
+						Logf("closed");
 					} else {
-						openBarrier(e);
+						ecs::Barrier::Open(e, game->physics);
+						Logf("opened");
 					}
 				}
 			}
 		});
 
-		createBarrier(glm::vec3(-4, 0, 0), glm::vec3(1, 2, 0.25));
+		ecs::Barrier::Create(glm::vec3(-4, 0, 0), glm::vec3(1, 2, 0.25),
+			game->physics, game->entityManager);
 		//game->audio.StartEvent("event:/german nonsense");
 	}
 
@@ -207,54 +210,54 @@ namespace sp
 		}
 	}
 
-	ecs::Entity GameLogic::createBarrier(
-		const glm::vec3 &pos,
-		const glm::vec3 &dimensions)
-	{
-		ecs::Entity barrier = game->entityManager.NewEntity();
-		auto model = GAssets.LoadModel("box");
-		barrier.Assign<ecs::Renderable>(model);
-		auto transform = barrier.Assign<ecs::Transform>();
-		transform->Scale(dimensions);
-
-		// align bottom of barrier with given y pos
-		glm::vec3 adjustedPos(pos);
-		adjustedPos.y += dimensions.y / 2.f;
-		transform->Translate(adjustedPos);
-
-		PhysxManager::ActorDesc desc;
-		desc.transform = physx::PxTransform(GlmVec3ToPxVec3(adjustedPos));
-		desc.dynamic = true;
-		desc.kinematic = true;
-
-		auto actor = game->physics.CreateActor(model, desc);
-		barrier.Assign<ecs::Physics>(actor, model);
-		barrier.Assign<ecs::Barrier>();
-
-		return barrier;
-	}
-
-	void GameLogic::openBarrier(ecs::Entity e)
-	{
-		auto barrier = e.Get<ecs::Barrier>();
-
-		physx::PxRigidDynamic *actor = e.Get<ecs::Physics>()->dynamic;
-		game->physics.EnableCollisions(actor);
-
-		auto renderable = e.Get<ecs::Renderable>();
-		renderable->hidden = false;
-		barrier->isOpen = true;
-	}
-
-	void GameLogic::closeBarrier(ecs::Entity e)
-	{
-		auto barrier = e.Get<ecs::Barrier>();
-
-		physx::PxRigidDynamic *actor = e.Get<ecs::Physics>()->dynamic;
-		game->physics.DisableCollisions(actor);
-
-		auto renderable = e.Get<ecs::Renderable>();
-		renderable->hidden = true;
-		barrier->isOpen = false;
-	}
+	// ecs::Entity GameLogic::createBarrier(
+	// 	const glm::vec3 &pos,
+	// 	const glm::vec3 &dimensions)
+	// {
+	// 	ecs::Entity barrier = game->entityManager.NewEntity();
+	// 	auto model = GAssets.LoadModel("box");
+	// 	barrier.Assign<ecs::Renderable>(model);
+	// 	auto transform = barrier.Assign<ecs::Transform>();
+	// 	transform->Scale(dimensions);
+	//
+	// 	// align bottom of barrier with given y pos
+	// 	glm::vec3 adjustedPos(pos);
+	// 	adjustedPos.y += dimensions.y / 2.f;
+	// 	transform->Translate(adjustedPos);
+	//
+	// 	PhysxManager::ActorDesc desc;
+	// 	desc.transform = physx::PxTransform(GlmVec3ToPxVec3(adjustedPos));
+	// 	desc.dynamic = true;
+	// 	desc.kinematic = true;
+	//
+	// 	auto actor = game->physics.CreateActor(model, desc);
+	// 	barrier.Assign<ecs::Physics>(actor, model);
+	// 	barrier.Assign<ecs::Barrier>();
+	//
+	// 	return barrier;
+	// }
+	//
+	// void GameLogic::openBarrier(ecs::Entity e)
+	// {
+	// 	auto barrier = e.Get<ecs::Barrier>();
+	//
+	// 	physx::PxRigidDynamic *actor = e.Get<ecs::Physics>()->dynamic;
+	// 	game->physics.EnableCollisions(actor);
+	//
+	// 	auto renderable = e.Get<ecs::Renderable>();
+	// 	renderable->hidden = false;
+	// 	barrier->isOpen = true;
+	// }
+	//
+	// void GameLogic::closeBarrier(ecs::Entity e)
+	// {
+	// 	auto barrier = e.Get<ecs::Barrier>();
+	//
+	// 	physx::PxRigidDynamic *actor = e.Get<ecs::Physics>()->dynamic;
+	// 	game->physics.DisableCollisions(actor);
+	//
+	// 	auto renderable = e.Get<ecs::Renderable>();
+	// 	renderable->hidden = true;
+	// 	barrier->isOpen = false;
+	// }
 }

@@ -18,6 +18,22 @@
 			}
 		},
 		{
+			"barrier": {
+				"isOpen": false
+			},
+			"renderable": "box",
+			"transform": {
+				"scale": [1, 2, 0.1],
+				"translate": [-2.5, 1, 0]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [-2.5, 1, 0],
+				"pxScale": [1, 2, 0.1],
+				"kinematic": true
+			}
+		},
+		{
 			"renderable": "box",
 			"transform": {
 				"scale": [10, 10, 10],
