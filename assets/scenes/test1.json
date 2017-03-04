@@ -34,6 +34,13 @@
 			}
 		},
 		{
+			"barrier_prefab": {
+				"translate": [1.5, 0, 0],
+				"scale": [1, 2, 0.1],
+				"isOpen": false
+			}
+		},
+		{
 			"renderable": "box",
 			"transform": {
 				"scale": [10, 10, 10],

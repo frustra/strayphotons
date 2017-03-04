@@ -338,6 +338,37 @@ namespace sp
 						ecs::Barrier::Open(entity, px);
 					}
 				}
+				else if (comp.first == "barrier_prefab")
+				{
+					glm::vec3 translate;
+					glm::vec3 scale;
+					bool isOpen = false;
+
+					vector<string> reqParams = {"translate", "scale"};
+
+					ParameterCheck(comp, reqParams);
+					for (auto param : comp.second.get<picojson::object>())
+					{
+						if (param.first == "isOpen")
+						{
+							isOpen = param.second.get<bool>();
+						}
+						else if (param.first == "translate")
+						{
+							translate = MakeVec3(param.second);
+						}
+						else if (param.first == "scale")
+						{
+							scale = MakeVec3(param.second);
+						}
+					}
+
+					ecs::Barrier::Create(translate, scale, px, *em);
+					if (isOpen)
+					{
+						ecs::Barrier::Open(entity, px);
+					}
+				}
 				else if (comp.first == "voxels")
 				{
 					auto voxelInfo = entity.Assign<ecs::VoxelInfo>();
@@ -376,5 +407,36 @@ namespace sp
 	void AssetManager::UnregisterModel(const Model &model)
 	{
 		loadedModels.erase(model.name);
+	}
+
+	void AssetManager::ParameterCheck(
+		std::pair<const string, picojson::value> &jsonComp,
+		vector<string> reqParams)
+	{
+		vector<bool> found(reqParams.size(), false);
+
+		for (auto param : jsonComp.second.get<picojson::object>())
+		{
+			for (uint i = 0; i < found.size(); ++i)
+			{
+				if (param.first == reqParams.at(i))
+				{
+					found.at(i) = true;
+					break;
+				}
+			}
+		}
+
+		for (uint i = 0; i < found.size(); ++i)
+		{
+			if (!found.at(i))
+			{
+				std::stringstream ss;
+				ss << "\"" << jsonComp.first << "\""
+				   << " gltf component is missing required \""
+				   << reqParams.at(i) << "\" field";
+				throw std::runtime_error(ss.str());
+			}
+		}
 	}
 }

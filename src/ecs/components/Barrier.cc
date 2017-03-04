@@ -26,6 +26,8 @@ namespace ecs {
 
 		sp::PhysxManager::ActorDesc desc;
 		desc.transform = physx::PxTransform(GlmVec3ToPxVec3(adjustedPos));
+		desc.scale = physx::PxMeshScale(GlmVec3ToPxVec3(dimensions),
+			physx::PxQuat(physx::PxIdentity));
 		desc.dynamic = true;
 		desc.kinematic = true;
 

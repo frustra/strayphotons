@@ -5,6 +5,7 @@
 #include "physx/PhysxManager.hh"
 #include "graphics/Texture.hh"
 #include <tiny_gltf_loader.h>
+#include <tinygltfloader/picojson.h>
 
 #include <unordered_map>
 #include <string>
@@ -32,6 +33,15 @@ namespace sp
 
 		void Unregister(const Asset &asset);
 		void UnregisterModel(const Model &model);
+
+	private:
+
+		/**
+		 * throws an std::runtime_error if a required parameter is not found
+		 */
+		void ParameterCheck(
+			std::pair<const string, picojson::value> &jsonComp,
+			vector<string> reqParams);
 
 	private:
 		std::string base;
