@@ -2,7 +2,7 @@
 
 namespace ecs
 {
-	struct Door
+	struct Barrier
 	{
 		bool isOpen = true;
 	};

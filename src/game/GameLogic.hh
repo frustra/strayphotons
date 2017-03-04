@@ -23,9 +23,9 @@ namespace sp
 		void ReloadScene(const string &);
 
 	private:
-		ecs::Entity createDoor(const glm::vec3 &pos, const string &modelStr);
-		void closeDoor(ecs::Entity e);
-		void openDoor(ecs::Entity e);
+		ecs::Entity createBarrier(const glm::vec3 &pos, const string &modelStr);
+		void closeBarrier(ecs::Entity e);
+		void openBarrier(ecs::Entity e);
 
 	private:
 		Game *game;

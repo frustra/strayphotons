@@ -13,7 +13,7 @@
 #include "ecs/components/Physics.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
-#include "ecs/components/Door.hh"
+#include "ecs/components/Barrier.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <cxxopts.hpp>
@@ -96,20 +96,20 @@ namespace sp
 					}
 				}
 			}
-			else if (ch == 'g') // open/close doors
+			else if (ch == 'g') // open/close barrier
 			{
-				for (auto e : game->entityManager.EntitiesWith<ecs::Door>()) {
-					auto doorComp = e.Get<ecs::Door>();
-					if (doorComp->isOpen) {
-						closeDoor(e);
+				for (auto e : game->entityManager.EntitiesWith<ecs::Barrier>()) {
+					auto barrierComp = e.Get<ecs::Barrier>();
+					if (barrierComp->isOpen) {
+						closeBarrier(e);
 					} else {
-						openDoor(e);
+						openBarrier(e);
 					}
 				}
 			}
 		});
 
-		createDoor(glm::vec3(-4, 1, 1), "dodecahedron");
+		createBarrier(glm::vec3(-4, 1, 1), "dodecahedron");
 		//game->audio.StartEvent("event:/german nonsense");
 	}
 
@@ -163,9 +163,9 @@ namespace sp
 		}
 
 		// debug, ensures that moving kinematic objects work
-		for (auto e : game->entityManager.EntitiesWith<ecs::Door>()) {
-			auto doorPhysics = e.Get<ecs::Physics>();
-			physx::PxRigidDynamic *actor = doorPhysics->dynamic;
+		for (auto e : game->entityManager.EntitiesWith<ecs::Barrier>()) {
+			auto barrierPhysics = e.Get<ecs::Physics>();
+			physx::PxRigidDynamic *actor = barrierPhysics->dynamic;
 			game->physics.Translate(actor, physx::PxVec3(0, 0.001, 0));
 		}
 
@@ -207,14 +207,14 @@ namespace sp
 		}
 	}
 
-	ecs::Entity GameLogic::createDoor(
+	ecs::Entity GameLogic::createBarrier(
 		const glm::vec3 &pos,
 		const string &modelStr)
 	{
-		ecs::Entity door = game->entityManager.NewEntity();
+		ecs::Entity barrier = game->entityManager.NewEntity();
 		auto model = GAssets.LoadModel(modelStr);
-		door.Assign<ecs::Renderable>(model);
-		auto transform = door.Assign<ecs::Transform>();
+		barrier.Assign<ecs::Renderable>(model);
+		auto transform = barrier.Assign<ecs::Transform>();
 		transform->Translate(pos);
 
 		PhysxManager::ActorDesc desc;
@@ -223,33 +223,33 @@ namespace sp
 		desc.kinematic = true;
 
 		auto actor = game->physics.CreateActor(model, desc);
-		door.Assign<ecs::Physics>(actor, model);
-		door.Assign<ecs::Door>();
+		barrier.Assign<ecs::Physics>(actor, model);
+		barrier.Assign<ecs::Barrier>();
 
-		return door;
+		return barrier;
 	}
 
-	void GameLogic::openDoor(ecs::Entity e)
+	void GameLogic::openBarrier(ecs::Entity e)
 	{
-		auto door = e.Get<ecs::Door>();
+		auto barrier = e.Get<ecs::Barrier>();
 
 		physx::PxRigidDynamic *actor = e.Get<ecs::Physics>()->dynamic;
 		game->physics.EnableCollisions(actor);
 
 		auto renderable = e.Get<ecs::Renderable>();
 		renderable->hidden = false;
-		door->isOpen = true;
+		barrier->isOpen = true;
 	}
 
-	void GameLogic::closeDoor(ecs::Entity e)
+	void GameLogic::closeBarrier(ecs::Entity e)
 	{
-		auto door = e.Get<ecs::Door>();
+		auto barrier = e.Get<ecs::Barrier>();
 
 		physx::PxRigidDynamic *actor = e.Get<ecs::Physics>()->dynamic;
 		game->physics.DisableCollisions(actor);
 
 		auto renderable = e.Get<ecs::Renderable>();
 		renderable->hidden = true;
-		door->isOpen = false;
+		barrier->isOpen = false;
 	}
 }
