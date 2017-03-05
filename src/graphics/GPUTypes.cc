@@ -27,6 +27,7 @@ namespace sp
 				data->mapOffset = light->mapOffset;
 				data->intensity = light->intensity;
 				data->illuminance = light->illuminance;
+				data->gelId = light->gelId;
 				lightNum++;
 				if (lightNum >= MAX_LIGHTS) break;
 				data++;

@@ -65,6 +65,7 @@ namespace sp
 		virtual ~MenuGuiManager() { }
 
 		void BeforeFrame();
+		void DefineWindows();
 		void BindInput(InputManager &inputManager);
 
 	private:

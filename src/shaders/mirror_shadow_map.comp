@@ -59,14 +59,15 @@ void main() {
 	vec3 mirrorNormal = mirrors[mirrorId].plane.xyz;
 	vec3 mirrorPos = vec3(mirrors[mirrorId].modelMat * vec4(0, 0, 0, 1));
 
-	vec3 sourcePos, lightDir;
+	vec3 sourcePos;
+	mat4 sourceViewMat;
 
 	if (MirrorSourceIsMirror(tuple)) {
 		sourcePos = vec3(mirrorData.invViewMat[sourceId] * vec4(0, 0, 0, 1));
-		lightDir = reflect(mirrorData.lightDirection[sourceId], mirrorNormal);
+		sourceViewMat = mirrorData.lightViewMat[sourceId];
 	} else {
 		sourcePos = lights[sourceId].position;
-		lightDir = reflect(lights[sourceId].direction, mirrorNormal);
+		sourceViewMat = lights[sourceId].view;
 	}
 
 	vec3 focalPoint = mat3(mirrors[mirrorId].reflectMat) * (sourcePos - mirrorPos);
@@ -85,7 +86,8 @@ void main() {
 	mirrorData.projMat[index] = makeProjectionMatrix(viewSpaceMirrorPos, clip, size, bounds);
 	mirrorData.invViewMat[index] = inverse(mirrorData.viewMat[index]);
 	mirrorData.invProjMat[index] = inverse(mirrorData.projMat[index]);
+	mirrorData.lightViewMat[index] = sourceViewMat * mirrors[mirrorId].reflectMat;
+	mirrorData.invLightViewMat[index] = inverse(mirrorData.lightViewMat[index]);
 	mirrorData.clip[index] = clip;
 	mirrorData.nearInfo[index] = vec4(bounds.xz, size);
-	mirrorData.lightDirection[index] = normalize(lightDir);
 }

@@ -131,7 +131,7 @@ namespace sp
 		RenderTarget::Ref gBuffer0, gBuffer1, gBuffer2, gBuffer3;
 		RenderTarget::Ref depth;
 		RenderTarget::Ref shadowMap, mirrorShadowMap;
-		RenderTarget::Ref mirrorIndexStencil;
+		RenderTarget::Ref mirrorIndexStencil, lightingGel;
 		VoxelData voxelData;
 		Buffer mirrorVisData;
 		Buffer mirrorSceneData;
@@ -171,6 +171,7 @@ namespace sp
 		ProcessPassOutputRef MirrorShadowMap;
 		ProcessPassOutputRef VoxelRadiance;
 		ProcessPassOutputRef MirrorIndexStencil;
+		ProcessPassOutputRef LightingGel;
 
 	private:
 		vector<PostProcessPassBase *> passes;

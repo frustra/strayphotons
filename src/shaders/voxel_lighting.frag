@@ -2,6 +2,7 @@
 
 #define USE_PCF
 #define INCLUDE_MIRRORS
+#define LIGHTING_GEL
 
 ##import lib/types_common
 
@@ -14,6 +15,7 @@ layout (binding = 5) uniform sampler2DArray mirrorShadowMap;
 layout (binding = 6) uniform sampler3D voxelRadiance;
 layout (binding = 7) uniform sampler2D indirectDiffuseSampler;
 layout (binding = 8) uniform usampler2D mirrorIndexStencil;
+layout (binding = 9) uniform sampler2D lightingGel;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;

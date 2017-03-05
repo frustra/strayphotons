@@ -18,6 +18,7 @@
 #include "ecs/components/Light.hh"
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/Mirror.hh"
+#include "assets/AssetManager.hh"
 
 #include <glm/gtx/component_wise.hpp>
 #include <cxxopts.hpp>
@@ -132,12 +133,13 @@ namespace sp
 			// mat4 invViewMat[MAX_LIGHTS * MAX_MIRRORS];
 			// mat4 projMat[MAX_LIGHTS * MAX_MIRRORS];
 			// mat4 invProjMat[MAX_LIGHTS * MAX_MIRRORS];
+			// mat4 lightViewMat[MAX_LIGHTS * MAX_MIRRORS];
+			// mat4 invLightViewMat[MAX_LIGHTS * MAX_MIRRORS];
 			// vec2 clip[MAX_LIGHTS * MAX_MIRRORS];
 			// vec4 nearInfo[MAX_LIGHTS * MAX_MIRRORS];
-			// vec3 lightDirection[MAX_LIGHTS * MAX_MIRRORS]; // stride of vec4
 
 			mirrorVisData.Create()
-			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * MAX_MIRRORS + sizeof(GLuint) * 12 + sizeof(glm::mat4) * 4) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
+			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * MAX_MIRRORS + sizeof(GLuint) * 8 + sizeof(glm::mat4) * 6) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
 		}
 
 		auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH16, renderTargetSize));
@@ -348,6 +350,7 @@ namespace sp
 			voxelRasterFS->SetVoxelInfo(voxelData.info);
 			shadowMap->GetTexture().Bind(4);
 			if (mirrorShadowMap) mirrorShadowMap->GetTexture().Bind(5);
+			// if (gameMenu) gameMenu->GetTexture().Bind(6); // TODO(xthexder): bind correct light gel
 			mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
@@ -485,6 +488,7 @@ namespace sp
 		targets.voxelData = voxelData;
 		targets.mirrorVisData = mirrorVisData;
 		targets.mirrorSceneData = mirrorSceneData;
+		targets.lightingGel = namedTargets["menu"];
 
 		{
 			RenderPhase phase("PlayerView", Timer);

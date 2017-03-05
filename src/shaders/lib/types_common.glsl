@@ -25,6 +25,8 @@ struct Light {
 	mat4 view;
 	vec4 mapOffset;
 	vec2 clip;
+
+	int gelId;
 };
 
 struct LightSensor {

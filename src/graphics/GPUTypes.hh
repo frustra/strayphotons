@@ -27,7 +27,8 @@ namespace sp
 		glm::mat4 view;
 		glm::vec4 mapOffset;
 		glm::vec2 clip;
-		float padding[2];
+		int gelId;
+		float padding[1];
 	};
 
 	static_assert(sizeof(GLLightData) == 17 * 4 * sizeof(float), "GLLightData size incorrect");

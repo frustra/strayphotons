@@ -2,6 +2,7 @@
 
 #define DIFFUSE_ONLY_SHADING
 #define INCLUDE_MIRRORS
+#define LIGHTING_GEL
 
 ##import lib/util
 ##import voxel_shared
@@ -14,6 +15,7 @@ layout (binding = 1) uniform sampler2D roughnessTex;
 // binding 3 = heightTex
 layout (binding = 4) uniform sampler2D shadowMap;
 layout (binding = 5) uniform sampler2DArray mirrorShadowMap;
+layout (binding = 6) uniform sampler2D lightingGel;
 
 layout (binding = 0) uniform atomic_uint fragListSize;
 layout (binding = 0, offset = 4) uniform atomic_uint nextComputeSize;

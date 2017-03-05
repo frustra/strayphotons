@@ -156,4 +156,20 @@ namespace sp
 		ImGuiIO &io = ImGui::GetIO();
 		io.MouseDrawCursor = false;
 	}
+
+	void MenuGuiManager::DefineWindows()
+	{
+		ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0.0f, 0.0f, 0.0f, 0.8f));
+		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.95f, 0.95f, 0.95f, 1.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+
+		static ConsoleGui console;
+		console.Add();
+		GuiManager::DefineWindows();
+
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor(4);
+	}
 }
