@@ -81,6 +81,15 @@ namespace sp
 		}
 	}
 
+	RenderTargetPool::~RenderTargetPool()
+	{
+		for (auto it = framebufferCache.begin(); it != framebufferCache.end();)
+		{
+			glDeleteFramebuffers(1, &it->second);
+			it = framebufferCache.erase(it);
+		}
+	}
+
 	GLuint RenderTargetPool::GetFramebuffer(uint32 numAttachments, const Texture *attachments, const Texture *depthStencilAttachment)
 	{
 		FramebufferState key(numAttachments, attachments, depthStencilAttachment);
