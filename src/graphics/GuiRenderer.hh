@@ -12,9 +12,9 @@ namespace sp
 	class GuiRenderer
 	{
 	public:
-		GuiRenderer(Renderer &renderer);
+		GuiRenderer(Renderer &renderer, GuiManager *manager);
 		~GuiRenderer();
-		void Render(ecs::View view, GuiManager &manager);
+		void Render(ecs::View view);
 
 	private:
 		VertexBuffer vertices, indices;
@@ -22,5 +22,6 @@ namespace sp
 		double lastTime = 0.0;
 
 		Renderer &parent;
+		GuiManager *manager;
 	};
 }

@@ -3,6 +3,8 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+class ImGuiContext;
+
 namespace sp
 {
 	class InputManager;
@@ -17,6 +19,24 @@ namespace sp
 	{
 	public:
 		GuiManager();
+		virtual ~GuiManager();
+		void Attach(GuiRenderable *component);
+		void SetGuiContext();
+
+		virtual void BeforeFrame() { }
+		virtual void DefineWindows();
+
+	private:
+		std::vector<GuiRenderable *> components;
+		ImGuiContext *imCtx = nullptr;
+	};
+
+	class DebugGuiManager : public GuiManager
+	{
+	public:
+		DebugGuiManager() { }
+		virtual ~DebugGuiManager() { }
+
 		void BeforeFrame();
 		void DefineWindows();
 
@@ -29,8 +49,6 @@ namespace sp
 		void GrabFocus();
 		void ReleaseFocus();
 
-		void Attach(GuiRenderable *component);
-
 		void ToggleConsole();
 
 	private:
@@ -38,7 +56,18 @@ namespace sp
 
 		bool consoleOpen = false;
 		glm::vec2 guiCursorPos = { 200.0f, 200.0f };
+	};
 
-		std::vector<GuiRenderable *> components;
+	class MenuGuiManager : public GuiManager
+	{
+	public:
+		MenuGuiManager() { }
+		virtual ~MenuGuiManager() { }
+
+		void BeforeFrame();
+		void BindInput(InputManager &inputManager);
+
+	private:
+		InputManager *inputManager = nullptr;
 	};
 }

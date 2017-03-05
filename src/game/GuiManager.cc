@@ -6,7 +6,38 @@
 
 namespace sp
 {
+	GuiManager::GuiManager()
+	{
+		imCtx = ImGui::CreateContext();
+	}
+
+	GuiManager::~GuiManager()
+	{
+		SetGuiContext();
+		ImGui::Shutdown();
+		ImGui::DestroyContext(imCtx);
+		imCtx = nullptr;
+	}
+
+	void GuiManager::SetGuiContext()
+	{
+		ImGui::SetCurrentContext(imCtx);
+	}
+
 	void GuiManager::DefineWindows()
+	{
+		for (auto component : components)
+		{
+			component->Add();
+		}
+	}
+
+	void GuiManager::Attach(GuiRenderable *component)
+	{
+		components.push_back(component);
+	}
+
+	void DebugGuiManager::DefineWindows()
 	{
 		ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0.0f, 0.0f, 0.0f, 0.8f));
 		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
@@ -16,21 +47,13 @@ namespace sp
 
 		static ConsoleGui console;
 		if (consoleOpen) console.Add();
-
-		for (auto component : components)
-		{
-			component->Add();
-		}
+		GuiManager::DefineWindows();
 
 		ImGui::PopStyleVar();
 		ImGui::PopStyleColor(4);
 	}
 
-	GuiManager::GuiManager()
-	{
-	}
-
-	void GuiManager::BeforeFrame()
+	void DebugGuiManager::BeforeFrame()
 	{
 		ImGuiIO &io = ImGui::GetIO();
 		io.MouseDrawCursor = false;
@@ -51,8 +74,9 @@ namespace sp
 		}
 	}
 
-	void GuiManager::BindInput(InputManager &input)
+	void DebugGuiManager::BindInput(InputManager &input)
 	{
+		SetGuiContext();
 		ImGuiIO &io = ImGui::GetIO();
 		inputManager = &input;
 
@@ -78,7 +102,7 @@ namespace sp
 		});
 	}
 
-	void GuiManager::GrabFocus()
+	void DebugGuiManager::GrabFocus()
 	{
 		if (!Focused())
 		{
@@ -87,7 +111,7 @@ namespace sp
 		}
 	}
 
-	void GuiManager::ReleaseFocus()
+	void DebugGuiManager::ReleaseFocus()
 	{
 		if (!Focused())
 		{
@@ -96,12 +120,7 @@ namespace sp
 		}
 	}
 
-	void GuiManager::Attach(GuiRenderable *component)
-	{
-		components.push_back(component);
-	}
-
-	void GuiManager::ToggleConsole()
+	void DebugGuiManager::ToggleConsole()
 	{
 		if (!consoleOpen)
 			GrabFocus();
@@ -110,5 +129,31 @@ namespace sp
 
 		if (!consoleOpen)
 			ReleaseFocus();
+	}
+
+	void MenuGuiManager::BindInput(InputManager &input)
+	{
+		SetGuiContext();
+		ImGuiIO &io = ImGui::GetIO();
+		inputManager = &input;
+
+		input.AddKeyInputCallback([&](int key, int state)
+		{
+			if (state == GLFW_PRESS)
+				io.KeysDown[key] = true;
+			if (state == GLFW_RELEASE)
+				io.KeysDown[key] = false;
+
+			io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
+			io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
+			io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
+			io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
+		});
+	}
+
+	void MenuGuiManager::BeforeFrame()
+	{
+		ImGuiIO &io = ImGui::GetIO();
+		io.MouseDrawCursor = false;
 	}
 }

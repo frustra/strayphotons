@@ -20,6 +20,7 @@ namespace ecs
 		glm::vec4 clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 		bool stencil = false;
 		bool blend = false;
+		string targetName = "";
 
 		// Updated automatically.
 		float aspect;

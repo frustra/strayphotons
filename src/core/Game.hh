@@ -31,7 +31,8 @@ namespace sp
 		cxxopts::Options &options;
 
 		// Order is important.
-		GuiManager debugGui;
+		DebugGuiManager debugGui;
+		MenuGuiManager menuGui;
 		GraphicsManager graphics;
 		InputManager input;
 		AudioManager audio;

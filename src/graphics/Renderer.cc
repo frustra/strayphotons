@@ -665,6 +665,13 @@ namespace sp
 
 	void Renderer::PrepareForView(ecs::View &view)
 	{
+		if (view.targetName != "")
+		{
+			auto target = RTPool->Get({ PF_RGBA8, view.extents });
+			namedTargets[view.targetName] = target;
+			SetRenderTarget(&target->GetTexture(), nullptr);
+		}
+
 		if (view.blend)
 			glEnable(GL_BLEND);
 		else

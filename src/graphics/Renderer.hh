@@ -64,5 +64,6 @@ namespace sp
 		Buffer mirrorSceneData;
 
 		std::deque<std::pair<shared_ptr<Model>, int>> renderableGCQueue;
+		std::unordered_map<string, shared_ptr<RenderTarget>> namedTargets;
 	};
 }

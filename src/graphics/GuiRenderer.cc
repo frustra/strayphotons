@@ -17,9 +17,10 @@
 
 namespace sp
 {
-	GuiRenderer::GuiRenderer(Renderer &renderer)
-		: parent(renderer)
+	GuiRenderer::GuiRenderer(Renderer &renderer, GuiManager *manager)
+		: parent(renderer), manager(manager)
 	{
+		manager->SetGuiContext();
 		ImGuiIO &io = ImGui::GetIO();
 
 		io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
@@ -89,13 +90,13 @@ namespace sp
 
 	GuiRenderer::~GuiRenderer()
 	{
-		ImGui::Shutdown();
 	}
 
-	void GuiRenderer::Render(ecs::View view, GuiManager &manager)
+	void GuiRenderer::Render(ecs::View view)
 	{
 		RenderPhase phase("GuiRender", parent.Timer);
 
+		manager->SetGuiContext();
 		ImGuiIO &io = ImGui::GetIO();
 
 		io.DisplaySize = ImVec2((float)view.extents.x, (float)view.extents.y);
@@ -104,9 +105,9 @@ namespace sp
 		io.DeltaTime = lastTime > 0.0 ? (float)(currTime - lastTime) : 1.0f / 60.0f;
 		lastTime = currTime;
 
-		manager.BeforeFrame();
+		manager->BeforeFrame();
 		ImGui::NewFrame();
-		manager.DefineWindows();
+		manager->DefineWindows();
 		ImGui::Render();
 
 		auto drawData = ImGui::GetDrawData();
