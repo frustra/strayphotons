@@ -38,8 +38,6 @@ namespace sp
 
 		GraphicsContext *context = nullptr;
 		Game *game = nullptr;
-		GuiRenderer *debugGuiRenderer = nullptr;
-		GuiRenderer *menuGuiRenderer = nullptr;
 		ProfilerGui *profilerGui = nullptr;
 
 #ifdef SP_ENABLE_RAYTRACER

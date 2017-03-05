@@ -17,6 +17,7 @@ namespace sp
 	class ShaderManager;
 	class SceneShader;
 	class Model;
+	class GuiRenderer;
 
 	struct VoxelData
 	{
@@ -35,6 +36,7 @@ namespace sp
 		~Renderer();
 
 		void Prepare();
+		void RenderMainMenu(ecs::View &view);
 		void RenderShadowMaps();
 		void PrepareVoxelTextures();
 		void RenderVoxelGrid();
@@ -58,12 +60,15 @@ namespace sp
 	private:
 		shared_ptr<RenderTarget> shadowMap;
 		shared_ptr<RenderTarget> mirrorShadowMap;
+		shared_ptr<RenderTarget> menuGuiTarget;
 		Buffer computeIndirectBuffer;
 		VoxelData voxelData;
 		Buffer mirrorVisData;
 		Buffer mirrorSceneData;
 
+		shared_ptr<GuiRenderer> debugGuiRenderer;
+		shared_ptr<GuiRenderer> menuGuiRenderer;
+
 		std::deque<std::pair<shared_ptr<Model>, int>> renderableGCQueue;
-		std::unordered_map<string, shared_ptr<RenderTarget>> namedTargets;
 	};
 }

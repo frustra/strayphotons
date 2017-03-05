@@ -9,6 +9,7 @@
 #include "graphics/GPUTimer.hh"
 #include "graphics/GPUTypes.hh"
 #include "graphics/postprocess/PostProcess.hh"
+#include "graphics/GuiRenderer.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/CVar.hh"
@@ -55,6 +56,8 @@ namespace sp
 		glEnable(GL_FRAMEBUFFER_SRGB);
 
 		RTPool = new RenderTargetPool();
+		debugGuiRenderer = make_shared<GuiRenderer>(*this, &game->debugGui);
+		menuGuiRenderer = make_shared<GuiRenderer>(*this, &game->menuGui);
 
 		int voxelGridSize = game->options["voxel-gridsize"].as<int>();
 		float voxelSuperSampleScale = game->options["voxel-supersample"].as<float>();
@@ -83,6 +86,21 @@ namespace sp
 		});
 
 		AssertGLOK("Renderer::Prepare");
+	}
+
+	void Renderer::RenderMainMenu(ecs::View &view)
+	{
+		RenderTargetDesc menuDesc(PF_RGBA8, view.extents);
+		menuDesc.levels = Texture::FullyMipmap;
+		if (!menuGuiTarget || menuGuiTarget->GetDesc() != menuDesc)
+		{
+			menuGuiTarget = RTPool->Get(menuDesc);
+		}
+
+		SetRenderTarget(&menuGuiTarget->GetTexture(), nullptr);
+		menuGuiRenderer->Render(view);
+
+		menuGuiTarget->GetTexture().GenMipmap();
 	}
 
 	void Renderer::RenderShadowMaps()
@@ -350,7 +368,7 @@ namespace sp
 			voxelRasterFS->SetVoxelInfo(voxelData.info);
 			shadowMap->GetTexture().Bind(4);
 			if (mirrorShadowMap) mirrorShadowMap->GetTexture().Bind(5);
-			// if (gameMenu) gameMenu->GetTexture().Bind(6); // TODO(xthexder): bind correct light gel
+			if (menuGuiTarget) menuGuiTarget->GetTexture().Bind(6); // TODO(xthexder): bind correct light gel
 			mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
@@ -448,6 +466,7 @@ namespace sp
 	{
 		RenderPhase phase("RenderPass", Timer);
 
+		RenderMainMenu(view);
 		RenderShadowMaps();
 
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::VoxelInfo>())
@@ -488,7 +507,7 @@ namespace sp
 		targets.voxelData = voxelData;
 		targets.mirrorVisData = mirrorVisData;
 		targets.mirrorSceneData = mirrorSceneData;
-		targets.lightingGel = namedTargets["menu"];
+		targets.lightingGel = menuGuiTarget;
 
 		{
 			RenderPhase phase("PlayerView", Timer);
@@ -664,18 +683,13 @@ namespace sp
 
 		PostProcessing::Process(this, game, view, targets);
 
+		debugGuiRenderer->Render(view);
+
 		//AssertGLOK("Renderer::RenderFrame");
 	}
 
 	void Renderer::PrepareForView(ecs::View &view)
 	{
-		if (view.targetName != "")
-		{
-			auto target = RTPool->Get({ PF_RGBA8, view.extents });
-			namedTargets[view.targetName] = target;
-			SetRenderTarget(&target->GetTexture(), nullptr);
-		}
-
 		if (view.blend)
 			glEnable(GL_BLEND);
 		else

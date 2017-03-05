@@ -72,9 +72,6 @@ namespace sp
 		context = renderer;
 		context->CreateWindow(CVarWindowSize.Get());
 
-		debugGuiRenderer = new GuiRenderer(*renderer, &game->debugGui);
-		menuGuiRenderer = new GuiRenderer(*renderer, &game->menuGui);
-
 #ifdef SP_ENABLE_RAYTRACER
 		rayTracer = new raytrace::RaytracedRenderer(game, renderer);
 #endif
@@ -87,8 +84,6 @@ namespace sp
 	{
 		if (!context) throw "no active context";
 
-		if (menuGuiRenderer) delete menuGuiRenderer;
-		if (debugGuiRenderer) delete debugGuiRenderer;
 		if (profilerGui) delete profilerGui;
 
 #ifdef SP_ENABLE_RAYTRACER
@@ -149,14 +144,6 @@ namespace sp
 		{
 			RenderPhase phase("Frame", context->Timer);
 
-			if (menuGuiRenderer)
-			{
-				ecs::View menuView = primaryView;
-				menuView.targetName = "menu";
-				context->PrepareForView(menuView);
-				menuGuiRenderer->Render(menuView);
-			}
-
 #ifdef SP_ENABLE_RAYTRACER
 			if (CVarRayTrace.Get() && rayTracer->Enable(primaryView))
 			{
@@ -169,11 +156,6 @@ namespace sp
 #endif
 
 			context->RenderPass(primaryView);
-
-			if (debugGuiRenderer)
-			{
-				debugGuiRenderer->Render(primaryView);
-			}
 		}
 
 		context->EndFrame();
