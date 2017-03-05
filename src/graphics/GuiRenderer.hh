@@ -4,8 +4,6 @@
 #include "Texture.hh"
 #include "ecs/components/View.hh"
 
-class ImGuiContext;
-
 namespace sp
 {
 	class Renderer;
@@ -14,9 +12,9 @@ namespace sp
 	class GuiRenderer
 	{
 	public:
-		GuiRenderer(Renderer &renderer, GuiManager &manager, string font);
+		GuiRenderer(Renderer &renderer);
 		~GuiRenderer();
-		void Render(ecs::View view);
+		void Render(ecs::View view, GuiManager &manager);
 
 	private:
 		VertexBuffer vertices, indices;
@@ -24,7 +22,5 @@ namespace sp
 		double lastTime = 0.0;
 
 		Renderer &parent;
-		GuiManager &manager;
-		ImGuiContext *imCtx = nullptr;
 	};
 }

@@ -17,11 +17,9 @@
 
 namespace sp
 {
-	GuiRenderer::GuiRenderer(Renderer &renderer, GuiManager &manager, string font)
-		: parent(renderer), manager(manager)
+	GuiRenderer::GuiRenderer(Renderer &renderer)
+		: parent(renderer)
 	{
-		imCtx = ImGui::CreateContext(nullptr, nullptr);
-		ImGui::SetCurrentContext(imCtx);
 		ImGuiIO &io = ImGui::GetIO();
 
 		io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
@@ -48,12 +46,22 @@ namespace sp
 		io.ImeWindowHandle = glfwGetWin32Window(renderer.GetWindow());
 #endif
 
-		shared_ptr<Asset> fontAsset;
-
-		if (font != "")
+		shared_ptr<Asset> fontAssets[] =
 		{
-			fontAsset = GAssets.Load(font);
-			io.Fonts->AddFontFromMemoryTTF((void *)fontAsset->Buffer(), fontAsset->Size(), 16.0f);
+			GAssets.Load("fonts/DroidSans.ttf"),
+		};
+
+		io.Fonts->AddFontDefault(nullptr);
+
+		for (auto &asset : fontAssets)
+		{
+			ImFontConfig cfg;
+			cfg.FontData = (void *) asset->Buffer();
+			cfg.FontDataSize = asset->Size();
+			cfg.FontDataOwnedByAtlas = false;
+			cfg.SizePixels = 16.0f;
+			memcpy(cfg.Name, asset->path.c_str(), std::min(sizeof(cfg.Name), asset->path.length()));
+			io.Fonts->AddFont(&cfg);
 		}
 
 #define OFFSET(typ, field) ((size_t) &(((typ *) nullptr)->field))
@@ -81,15 +89,13 @@ namespace sp
 
 	GuiRenderer::~GuiRenderer()
 	{
-		ImGui::DestroyContext(imCtx);
 		ImGui::Shutdown();
 	}
 
-	void GuiRenderer::Render(ecs::View view)
+	void GuiRenderer::Render(ecs::View view, GuiManager &manager)
 	{
 		RenderPhase phase("GuiRender", parent.Timer);
 
-		ImGui::SetCurrentContext(imCtx);
 		ImGuiIO &io = ImGui::GetIO();
 
 		io.DisplaySize = ImVec2((float)view.extents.x, (float)view.extents.y);

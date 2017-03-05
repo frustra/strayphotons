@@ -328,11 +328,10 @@ namespace sp
 
 					if (barrier->isOpen)
 					{
-						if (!entity.Has<ecs::Physics>()
-								|| !entity.Has<ecs::Renderable>())
+						if (!entity.Has<ecs::Physics>() || !entity.Has<ecs::Renderable>())
 						{
 							throw std::runtime_error(
-								"barrier component must come after Physics and Renderable!"
+								"barrier component must come after Physics and Renderable"
 							);
 						}
 						ecs::Barrier::Open(entity, px);

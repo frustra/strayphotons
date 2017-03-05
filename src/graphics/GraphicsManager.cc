@@ -72,14 +72,14 @@ namespace sp
 		context = renderer;
 		context->CreateWindow(CVarWindowSize.Get());
 
-		guiRenderer = new GuiRenderer(*renderer, game->gui, "");
+		guiRenderer = new GuiRenderer(*renderer);
 
 #ifdef SP_ENABLE_RAYTRACER
 		rayTracer = new raytrace::RaytracedRenderer(game, renderer);
 #endif
 
 		profilerGui = new ProfilerGui(context->Timer);
-		game->gui.Attach(profilerGui);
+		game->debugGui.Attach(profilerGui);
 	}
 
 	void GraphicsManager::ReleaseContext()
@@ -162,7 +162,7 @@ namespace sp
 
 			if (guiRenderer)
 			{
-				guiRenderer->Render(primaryView);
+				guiRenderer->Render(primaryView, game->debugGui);
 			}
 		}
 
