@@ -1,0 +1,47 @@
+{
+	"entities": [
+		{
+			"renderable": "level02",
+			"transform": {
+				"scale": [1, 1, 1],
+				"translate": [0, 0, 0]
+			},
+			"physics": {
+				"model": "level02",
+				"pxTranslate": [0, 0, 0],
+				"pxScale": [1, 1, 1],
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "player",
+			"view": {
+				"extents": [1600, 900],
+				"clip": [0.1, 256],
+				"fov": 60
+			},
+			"transform": {
+				"translate": [0, 1, 0]
+			},
+			"voxels": {
+				"min": [-2, 0, -5],
+				"max": [6.5, 3, 3]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"illuminance": 100,
+				"spotAngle": 30
+			},
+			"view": {
+				"extents": [2048, 2048],
+				"clip": [0.1, 64]
+			},
+			"transform": {
+				"translate": [12, 5, -2.5],
+				"rotate": [90, 0, 1, 0]
+			}
+		}
+	]
+}
