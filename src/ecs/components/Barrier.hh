@@ -3,7 +3,8 @@
 #include <glm/glm.hpp>
 #include <Ecs.hh>
 
-namespace sp {
+namespace sp
+{
 	class PhysxManager;
 }
 

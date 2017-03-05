@@ -98,12 +98,16 @@ namespace sp
 			}
 			else if (ch == 'g') // open/close barrier
 			{
-				for (auto e : game->entityManager.EntitiesWith<ecs::Barrier>()) {
+				for (auto e : game->entityManager.EntitiesWith<ecs::Barrier>())
+				{
 					auto barrierComp = e.Get<ecs::Barrier>();
-					if (barrierComp->isOpen) {
+					if (barrierComp->isOpen)
+					{
 						ecs::Barrier::Close(e, game->physics);
 						Logf("closed");
-					} else {
+					}
+					else
+					{
 						ecs::Barrier::Open(e, game->physics);
 						Logf("opened");
 					}
@@ -165,7 +169,8 @@ namespace sp
 
 		// TODO: remove later
 		// serves as debug, ensures that moving kinematic objects work
-		for (auto e : game->entityManager.EntitiesWith<ecs::Barrier>()) {
+		for (auto e : game->entityManager.EntitiesWith<ecs::Barrier>())
+		{
 			auto barrierPhysics = e.Get<ecs::Physics>();
 			physx::PxRigidDynamic *actor = barrierPhysics->dynamic;
 			game->physics.Translate(actor, physx::PxVec3(0, 0.001, 0));

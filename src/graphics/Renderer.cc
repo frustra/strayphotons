@@ -713,10 +713,11 @@ namespace sp
 	void Renderer::DrawEntity(ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw)
 	{
 		auto comp = ent.Get<ecs::Renderable>();
-		if (comp->hidden) {
+		if (comp->hidden)
+		{
 			return;
 		}
-		
+
 		auto modelMat = ent.Get<ecs::Transform>()->GetModelTransform(*ent.GetManager());
 		shader->SetParams(view, modelMat);
 

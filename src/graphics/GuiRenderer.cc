@@ -5,6 +5,8 @@
 #include "GPUTimer.hh"
 #include "game/InputManager.hh"
 #include "game/GuiManager.hh"
+#include "assets/AssetManager.hh"
+#include "assets/Asset.hh"
 
 #include <imgui/imgui.h>
 
@@ -15,14 +17,24 @@
 
 namespace sp
 {
-	GuiRenderer::GuiRenderer(Renderer &renderer, GuiManager &manager)
+	GuiRenderer::GuiRenderer(Renderer &renderer, GuiManager &manager, string font)
 		: parent(renderer), manager(manager)
 	{
+		imCtx = ImGui::CreateContext(nullptr, nullptr);
+		ImGui::SetCurrentContext(imCtx);
 		ImGuiIO &io = ImGui::GetIO();
 
 #ifdef _WIN32
 		io.ImeWindowHandle = glfwGetWin32Window(renderer.GetWindow());
 #endif
+
+		shared_ptr<Asset> fontAsset;
+
+		if (font != "")
+		{
+			fontAsset = GAssets.Load(font);
+			io.Fonts->AddFontFromMemoryTTF((void *)fontAsset->Buffer(), fontAsset->Size(), 16.0f);
+		}
 
 #define OFFSET(typ, field) ((size_t) &(((typ *) nullptr)->field))
 
@@ -49,6 +61,7 @@ namespace sp
 
 	GuiRenderer::~GuiRenderer()
 	{
+		ImGui::DestroyContext(imCtx);
 		ImGui::Shutdown();
 	}
 
@@ -56,6 +69,7 @@ namespace sp
 	{
 		RenderPhase phase("GuiRender", parent.Timer);
 
+		ImGui::SetCurrentContext(imCtx);
 		ImGuiIO &io = ImGui::GetIO();
 
 		io.DisplaySize = ImVec2((float)view.extents.x, (float)view.extents.y);

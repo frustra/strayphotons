@@ -249,7 +249,8 @@ namespace sp
 		Lock();
 
 		physx::PxRigidBodyFlags flags = actor->getRigidBodyFlags();
-		if (!flags.isSet(physx::PxRigidBodyFlag::eKINEMATIC)) {
+		if (!flags.isSet(physx::PxRigidBodyFlag::eKINEMATIC))
+		{
 			throw std::runtime_error("cannot translate a non-kinematic actor");
 		}
 
@@ -276,7 +277,8 @@ namespace sp
 		physx::PxU32 nShapes = actor->getNbShapes();
 		physx::PxShape **shapes = new physx::PxShape*[nShapes];
 		actor->getShapes(shapes, nShapes);
-		for (uint32 i = 0; i < nShapes; ++i) {
+		for (uint32 i = 0; i < nShapes; ++i)
+		{
 			shapes[i]->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, enabled);
 			shapes[i]->setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, enabled);
 		}
@@ -290,16 +292,19 @@ namespace sp
 		Lock();
 		PxRigidActor *actor;
 
-		if (desc.dynamic) {
+		if (desc.dynamic)
+		{
 			actor = physics->createRigidDynamic(desc.transform);
 
-			if (desc.kinematic) {
-				auto rigidBody = static_cast<physx::PxRigidBody*>(actor);
+			if (desc.kinematic)
+			{
+				auto rigidBody = static_cast<physx::PxRigidBody *>(actor);
 				rigidBody->setRigidBodyFlag(
 					physx::PxRigidBodyFlag::eKINEMATIC, 1);
 			}
 		}
-		else {
+		else
+		{
 			actor = physics->createRigidStatic(desc.transform);
 		}
 

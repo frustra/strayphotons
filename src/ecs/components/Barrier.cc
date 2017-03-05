@@ -6,7 +6,8 @@
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 
-namespace ecs {
+namespace ecs
+{
 	Entity Barrier::Create(
 		const glm::vec3 &pos,
 		const glm::vec3 &dimensions,
@@ -27,7 +28,7 @@ namespace ecs {
 		sp::PhysxManager::ActorDesc desc;
 		desc.transform = physx::PxTransform(GlmVec3ToPxVec3(adjustedPos));
 		desc.scale = physx::PxMeshScale(GlmVec3ToPxVec3(dimensions),
-			physx::PxQuat(physx::PxIdentity));
+										physx::PxQuat(physx::PxIdentity));
 		desc.dynamic = true;
 		desc.kinematic = true;
 

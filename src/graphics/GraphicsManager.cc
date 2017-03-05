@@ -72,7 +72,7 @@ namespace sp
 		context = renderer;
 		context->CreateWindow(CVarWindowSize.Get());
 
-		guiRenderer = new GuiRenderer(*renderer, game->gui);
+		guiRenderer = new GuiRenderer(*renderer, game->gui, "");
 
 #ifdef SP_ENABLE_RAYTRACER
 		rayTracer = new raytrace::RaytracedRenderer(game, renderer);
