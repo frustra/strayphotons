@@ -47,20 +47,22 @@ namespace sp
 		io.ImeWindowHandle = glfwGetWin32Window(renderer.GetWindow());
 #endif
 
-		shared_ptr<Asset> fontAssets[] =
+		std::pair<shared_ptr<Asset>, float> fontAssets[] =
 		{
-			GAssets.Load("fonts/DroidSans.ttf"),
+			std::make_pair(GAssets.Load("fonts/DroidSans.ttf"), 16.0f),
+			std::make_pair(GAssets.Load("fonts/VT220.ttf"), 40.0f),
 		};
 
 		io.Fonts->AddFontDefault(nullptr);
 
-		for (auto &asset : fontAssets)
+		for (auto &pair : fontAssets)
 		{
+			auto &asset = pair.first;
 			ImFontConfig cfg;
 			cfg.FontData = (void *) asset->Buffer();
 			cfg.FontDataSize = asset->Size();
 			cfg.FontDataOwnedByAtlas = false;
-			cfg.SizePixels = 16.0f;
+			cfg.SizePixels = pair.second;
 			memcpy(cfg.Name, asset->path.c_str(), std::min(sizeof(cfg.Name), asset->path.length()));
 			io.Fonts->AddFont(&cfg);
 		}

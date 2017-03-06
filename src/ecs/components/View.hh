@@ -8,6 +8,9 @@ namespace ecs
 {
 	struct View
 	{
+		View() { }
+		View(glm::ivec2 extents) : extents(extents) { }
+
 		// Required parameters.
 		glm::ivec2 extents;
 		glm::vec2 clip; // {near, far}

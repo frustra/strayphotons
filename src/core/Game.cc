@@ -77,6 +77,7 @@ namespace sp
 			graphics.CreateContext();
 			graphics.BindContextInputCallbacks(input);
 			debugGui.BindInput(input);
+			menuGui.BindInput(input);
 			lastFrameTime = glfwGetTime();
 
 			while (!triggeredExit)

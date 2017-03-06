@@ -467,7 +467,8 @@ namespace sp
 	{
 		RenderPhase phase("RenderPass", Timer);
 
-		RenderMainMenu(view);
+		ecs::View menuView({ 1024, 1024 });
+		RenderMainMenu(menuView);
 		RenderShadowMaps();
 
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::VoxelInfo>())
