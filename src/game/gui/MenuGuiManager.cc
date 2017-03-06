@@ -1,11 +1,15 @@
 #include "MenuGuiManager.hh"
 #include "game/InputManager.hh"
 #include "core/Logging.hh"
+#include "core/CVar.hh"
+#include "core/Console.hh"
 
 #include <imgui/imgui.h>
 
 namespace sp
 {
+	static CVar<bool> CVarMenuFocused("g.MenuFocused", false, "Focus input on menu");
+
 	void MenuGuiManager::BindInput(InputManager &input)
 	{
 		SetGuiContext();
@@ -40,10 +44,9 @@ namespace sp
 	{
 		ImGuiIO &io = ImGui::GetIO();
 		io.MouseDrawCursor = selectedScreen > 0;
-		if (selectedScreen > 0) {
-			Focused = true;
-			inputManager->LockFocus(true, FocusLevel);
-		}
+
+		Focused = CVarMenuFocused.Get();
+		inputManager->LockFocus(Focused, FocusLevel);
 
 		if (Focused && inputManager->FocusLocked(FocusLevel))
 		{
@@ -70,6 +73,8 @@ namespace sp
 		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.95f, 0.95f, 0.95f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0, 0.0, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0, 0.0, 1.0f));
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 		ImGui::PushFont(io.Fonts->Fonts[2]);
 
@@ -88,10 +93,27 @@ namespace sp
 		}
 		else if (selectedScreen == 1)
 		{
+			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
+
+			ImGui::Begin("Menu", nullptr, flags);
+
+			if (ImGui::Button("Start Game"))
+			{
+				CVarMenuFocused.Set(false);
+			}
+
+			ImGui::Button("Options");
+
+			if (ImGui::Button("Exit Game"))
+			{
+				GConsoleManager.ParseAndExecute("exit");
+			}
+
+			ImGui::End();
 		}
 
 		ImGui::PopFont();
 		ImGui::PopStyleVar();
-		ImGui::PopStyleColor(4);
+		ImGui::PopStyleColor(6);
 	}
 }

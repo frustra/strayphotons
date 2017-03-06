@@ -1,0 +1,104 @@
+{
+	"autoexec": [
+		"g.MenuFocused 1",
+		"r.EyeAdaptationMinLuminance 0.1",
+		"r.Exposure 0.12"
+	],
+	"entities": [
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [0, -5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [0, -5, 0],
+				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [10, 5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [10, 5, 0],
+				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [0, 5, 10]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [0, 5, 10],
+				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [0, 5, -10]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [0, 5, -10],
+				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [-10, 5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [-10, 5, 0],
+				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "player",
+			"view": {
+				"extents": [1600, 900],
+				"clip": [0.1, 256],
+				"fov": 60
+			},
+			"transform": {
+				"translate": [0, 5, 5]
+			},
+			"voxels": {
+				"min": [-5, -0, -5],
+				"max": [5, 10, 5]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 1, 1],
+				"intensity": 300,
+				"spotAngle": 35,
+				"gel": true
+			},
+			"view": {
+				"extents": [1024, 1024],
+				"clip": [0.1, 10]
+			},
+			"transform": {
+				"translate": [0, 5, -1]
+			}
+		}
+	]
+}

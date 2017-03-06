@@ -99,9 +99,7 @@ namespace sp
 		}
 
 		SetRenderTarget(&menuGuiTarget->GetTexture(), nullptr);
-		glViewport(0, 0, view.extents.x, view.extents.y);
-		glScissor(0, 0, view.extents.x, view.extents.y);
-		glClear(GL_COLOR_BUFFER_BIT);
+		PrepareForView(view);
 		menuGuiRenderer->Render(view);
 
 		menuGuiTarget->GetTexture().GenMipmap();
@@ -471,6 +469,7 @@ namespace sp
 		RenderPhase phase("RenderPass", Timer);
 
 		ecs::View menuView({ 1024, 1024 });
+		menuView.clearMode = GL_COLOR_BUFFER_BIT;
 		RenderMainMenu(menuView);
 		RenderShadowMaps();
 

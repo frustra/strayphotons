@@ -215,7 +215,7 @@
 		{
 			"light": {
 				"tint": [1, 1, 1],
-				"intensity": 500,
+				"intensity": 300,
 				"spotAngle": 35,
 				"gel": true
 			},

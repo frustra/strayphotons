@@ -135,9 +135,8 @@ namespace sp
 		}
 		else
 		{
-			if (!focusLocked.empty())
+			if (!focusLocked.empty() && focusLocked.back() == priority)
 			{
-				Assert(focusLocked.back() == priority, "focus unlocked out of order");
 				focusLocked.pop_back();
 				return true;
 			}
