@@ -72,12 +72,12 @@ namespace sp
 	{
 		ImGuiIO &io = ImGui::GetIO();
 
-		ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0.0f, 0.0f, 0.0f, 0.8f));
-		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.95f, 0.95f, 0.95f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0, 0.0, 0.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0, 0.0, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0, 0.0, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0, 1.0, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_TextButtonHover, ImVec4(0.0f, 0.0, 0.0, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_TextButtonActive, ImVec4(0.0f, 0.0, 0.0, 1.0f));
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 		ImGui::PushFont(io.Fonts->Fonts[2]);
 
