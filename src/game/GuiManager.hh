@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-class ImGuiContext;
+struct ImGuiContext;
 
 namespace sp
 {

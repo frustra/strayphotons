@@ -8,6 +8,7 @@
 #include "assets/AssetManager.hh"
 #include "assets/Asset.hh"
 
+#include <algorithm>
 #include <imgui/imgui.h>
 
 #ifdef _WIN32

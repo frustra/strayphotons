@@ -430,7 +430,7 @@ namespace sp
 
 		for (auto param : jsonComp.second.get<picojson::object>())
 		{
-			for (uint i = 0; i < found.size(); ++i)
+			for (uint32 i = 0; i < found.size(); ++i)
 			{
 				if (param.first == reqParams.at(i))
 				{
@@ -440,7 +440,7 @@ namespace sp
 			}
 		}
 
-		for (uint i = 0; i < found.size(); ++i)
+		for (uint32 i = 0; i < found.size(); ++i)
 		{
 			if (!found.at(i))
 			{

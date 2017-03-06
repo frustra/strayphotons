@@ -70,13 +70,10 @@ void main()
 	mat3 tangentMat = mat3(normalize(inTangent), normalize(inBitangent), normalize(inNormal));
 
 	float a = texture(heightTex, inTexCoord).r;
-	float dx;
+
 	// If the UV coordinates are mirrored, calculate dx in the opposite direction.
-	if (dot(cross(inNormal, inTangent), inBitangent) < 0) {
-		dx = texture(heightTex, inTexCoord + vec2(dCoord.x, 0)).r - a;
-	} else {
-		dx = a - texture(heightTex, inTexCoord - vec2(dCoord.x, 0)).r;
-	}
+	float reversed = step(0, dot(cross(inNormal, inTangent), inBitangent)) * 2.0 - 1.0;
+	float dx = reversed * (a - texture(heightTex, inTexCoord - vec2(reversed * dCoord.x, 0)).r);
 	float dy = a - texture(heightTex, inTexCoord - vec2(0, dCoord.y)).r;
 
 	vec3 viewNormal = normalize(tangentMat * vec3(dx, dy, bumpDepth));

@@ -1,5 +1,7 @@
 #pragma once
 
+#define NOMINMAX // windows.h defines min/max
+
 #include "Common.hh"
 
 //#define GLEW_STATIC
