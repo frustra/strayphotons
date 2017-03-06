@@ -4,20 +4,10 @@
 ##import raytrace/intersection
 ##import voxel_trace_shared
 
-const float VoxelEps = 0.00001;
-
-float GetVoxel(vec3 position, int level, out vec3 radiance)
-{
-	vec3 invMipVoxelGridSize = vec3(1.0 / float(int(VoxelGridSize)>>level));
-	vec4 radianceData = textureLod(voxelRadiance, position * invMipVoxelGridSize, level);
-	radiance = radianceData.rgb / (radianceData.a + VoxelEps);
-	return radianceData.a;
-}
-
 float GetVoxelNearest(vec3 position, int level, out vec3 radiance)
 {
 	vec4 radianceData = texelFetch(voxelRadiance, ivec3(position) >> level, level);
-	radiance = radianceData.rgb / (radianceData.a + VoxelEps);
+	radiance = radianceData.rgb * VoxelFixedPointExposure;
 	return radianceData.a;
 }
 

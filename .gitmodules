@@ -27,7 +27,7 @@
 	url = git@github.com:frustra/PhysX-3.3.git
 [submodule "ext/imgui"]
 	path = ext/imgui
-	url = https://github.com/ocornut/imgui.git
+	url = https://github.com/frustra/imgui.git
 [submodule "ext/glomerate"]
 	path = ext/glomerate
 	url = git@github.com:cstegel/glomerate.git

@@ -3,10 +3,10 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+struct ImGuiContext;
+
 namespace sp
 {
-	class InputManager;
-
 	class GuiRenderable
 	{
 	public:
@@ -17,28 +17,15 @@ namespace sp
 	{
 	public:
 		GuiManager();
-		void BeforeFrame();
-		void DefineWindows();
-
-		bool Focused()
-		{
-			return consoleOpen;
-		}
-
-		void BindInput(InputManager &inputManager);
-		void GrabFocus();
-		void ReleaseFocus();
-
+		virtual ~GuiManager();
 		void Attach(GuiRenderable *component);
+		void SetGuiContext();
 
-		void ToggleConsole();
+		virtual void BeforeFrame() { }
+		virtual void DefineWindows();
 
 	private:
-		InputManager *inputManager = nullptr;
-
-		bool consoleOpen = false;
-		glm::vec2 guiCursorPos = { 200.0f, 200.0f };
-
 		std::vector<GuiRenderable *> components;
+		ImGuiContext *imCtx = nullptr;
 	};
 }

@@ -44,7 +44,7 @@ vec3 EvaluateBRDFSpecularImportanceSampledGGX(vec3 specularColor, float roughnes
 }
 
 #ifdef DIFFUSE_ONLY_SHADING
-vec3 DirectShading(vec3 worldPosition, vec3 baseColor, vec3 normal, vec3 flatNormal, float roughness) {
+vec3 DirectShading(vec3 worldPosition, vec3 baseColor, vec3 normal, vec3 flatNormal) {
 #else
 vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec3 normal, vec3 flatNormal, float roughness, float metalness) {
 #endif
@@ -118,8 +118,16 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 #endif
 #endif
 
+		vec3 lightTint = vec3(spotFalloff);
+#ifdef LIGHTING_GEL
+		if (lights[i].gelId > 0) {
+			vec2 coord = ViewPosToScreenPos(shadowMapPos, lights[i].proj).xy;
+			lightTint = texture(lightingGel, coord).rgb;
+		}
+#endif
+
 		// Sum output.
-		pixelLuminance += occlusion * spotFalloff * luminance;
+		pixelLuminance += occlusion * lightTint * luminance;
 	}
 
 #ifdef INCLUDE_MIRRORS
@@ -159,7 +167,7 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 
 		// Spotlight attenuation.
 		float cosSpotAngle = lights[lightId].spotAngleCos;
-		vec3 currLightDir = mirrorData.lightDirection[i];
+		vec3 currLightDir = normalize(mat3(mirrorData.invLightViewMat[i]) * vec3(0, 0, -1));
 		float spotTerm = dot(incidence, -currLightDir);
 		float spotFalloff = smoothstep(cosSpotAngle, 1, spotTerm) * step(-1, cosSpotAngle) + step(cosSpotAngle, -1);
 
@@ -186,8 +194,16 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 #endif
 #endif
 
+		vec3 lightTint = vec3(spotFalloff);
+#ifdef LIGHTING_GEL
+		if (lights[lightId].gelId > 0) {
+			vec2 coord = ViewPosToScreenPos((mirrorData.lightViewMat[i] * vec4(worldPosition, 1.0)).xyz, lights[lightId].proj).xy;
+			lightTint = texture(lightingGel, coord).rgb;
+		}
+#endif
+
 		// Sum output.
-		pixelLuminance += occlusion * spotFalloff * luminance;
+		pixelLuminance += occlusion * lightTint * luminance;
 	}
 #endif
 

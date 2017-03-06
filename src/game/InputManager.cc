@@ -118,18 +118,31 @@ namespace sp
 		glfwSetCursorPos(window, pos.x, pos.y);
 	}
 
-	bool InputManager::FocusLocked() const
+	bool InputManager::FocusLocked(int priority) const
 	{
-		return focusLocked;
+		return focusLocked.size() > 0 && focusLocked.back() > priority;
 	}
 
-	bool InputManager::LockFocus(bool locked)
+	bool InputManager::LockFocus(bool locked, int priority)
 	{
-		if (locked && focusLocked)
-			return false;
+		if (locked)
+		{
+			if (focusLocked.empty() || focusLocked.back() < priority)
+			{
+				focusLocked.push_back(priority);
+				return true;
+			}
+		}
+		else
+		{
+			if (!focusLocked.empty() && focusLocked.back() == priority)
+			{
+				focusLocked.pop_back();
+				return true;
+			}
+		}
 
-		focusLocked = locked;
-		return true;
+		return false;
 	}
 
 	void InputManager::KeyInputCallback(

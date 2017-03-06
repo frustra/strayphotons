@@ -154,12 +154,14 @@ namespace sp
 
 		void SetLightData(int count, GLLightData *data);
 		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo);
+		void SetLightAttenuation(float attenuation);
 
 	private:
 		Uniform lightCount;
 		UniformBuffer lightData;
 		Uniform viewMat, invViewMat, invProjMat;
 		Uniform voxelSize, voxelGridCenter;
+		Uniform lightAttenuation;
 	};
 
 	class VoxelConvertCS : public Shader

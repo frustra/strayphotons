@@ -4,6 +4,7 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/CVar.hh"
+#include "core/Console.hh"
 
 #include "game/GameLogic.hh"
 #include "assets/Scene.hh"
@@ -13,6 +14,8 @@
 #include "ecs/components/Physics.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
+#include "ecs/components/Barrier.hh"
+#include "physx/PhysxUtils.hh"
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -36,6 +39,10 @@ namespace sp
 		if (game->options["map"].count())
 		{
 			LoadScene(game->options["map"].as<string>());
+		}
+		else
+		{
+			LoadScene("menu");
 		}
 
 		input->AddCharInputCallback([&](uint32 ch)
@@ -94,6 +101,23 @@ namespace sp
 					}
 				}
 			}
+			else if (ch == 'g') // open/close barrier
+			{
+				for (auto e : game->entityManager.EntitiesWith<ecs::Barrier>())
+				{
+					auto barrierComp = e.Get<ecs::Barrier>();
+					if (barrierComp->isOpen)
+					{
+						ecs::Barrier::Close(e, game->physics);
+						Logf("closed");
+					}
+					else
+					{
+						ecs::Barrier::Open(e, game->physics);
+						Logf("opened");
+					}
+				}
+			}
 		});
 
 		//game->audio.StartEvent("event:/german nonsense");
@@ -147,6 +171,16 @@ namespace sp
 		{
 			return false;
 		}
+
+		// TODO: remove later
+		// serves as debug, ensures that moving kinematic objects work
+		for (auto e : game->entityManager.EntitiesWith<ecs::Barrier>())
+		{
+			auto barrierPhysics = e.Get<ecs::Physics>();
+			physx::PxRigidDynamic *actor = barrierPhysics->dynamic;
+			game->physics.Translate(actor, physx::PxVec3(0, 0.001, 0));
+		}
+
 		return true;
 	}
 
@@ -164,6 +198,11 @@ namespace sp
 
 		game->graphics.SetPlayerView(player);
 
+		for (auto &line : scene->autoexecList)
+		{
+			GConsoleManager.ParseAndExecute(line);
+		}
+
 		// Create flashlight entity
 		flashlight = game->entityManager.NewEntity();
 		auto transform = flashlight.Assign<ecs::Transform>();
@@ -174,7 +213,7 @@ namespace sp
 		light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
 		auto view = flashlight.Assign<ecs::View>();
 		view->extents = glm::vec2(CVarFlashlightResolution.Get());
-		view->clip = glm::vec2(0.1, 256);
+		view->clip = glm::vec2(0.1, 64);
 	}
 
 	void GameLogic::ReloadScene(const string &)

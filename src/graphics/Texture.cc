@@ -82,6 +82,15 @@ namespace sp
 		return *this;
 	}
 
+	int CalculateMipmapLevels(int width, int height, int depth)
+	{
+		int dim = std::max(std::max(width, height), depth);
+		if (dim <= 0) return 1;
+		int cmp = 31;
+		while (!(dim >> cmp)) cmp--;
+		return cmp + 1;
+	}
+
 	Texture &Texture::Storage(GLPixelFormat format, GLsizei levels)
 	{
 		Assert(handle, "null texture handle");
@@ -89,9 +98,7 @@ namespace sp
 
 		if (levels == FullyMipmap)
 		{
-			int maxdim = width > height ? width : height;
-			maxdim = depth > maxdim ? depth : maxdim;
-			levels = Uint32Log2(CeilToPowerOfTwo(maxdim)) + 1;
+			levels = CalculateMipmapLevels(width, height, depth);
 		}
 
 		this->format = format;

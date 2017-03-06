@@ -8,7 +8,6 @@
 namespace sp
 {
 	class Game;
-	class GuiManager;
 	class GuiRenderer;
 	class GraphicsContext;
 	class InputManager;
@@ -39,7 +38,6 @@ namespace sp
 
 		GraphicsContext *context = nullptr;
 		Game *game = nullptr;
-		GuiRenderer *guiRenderer = nullptr;
 		ProfilerGui *profilerGui = nullptr;
 
 #ifdef SP_ENABLE_RAYTRACER

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Ecs.hh>
 #include "ecs/systems/HumanControlSystem.hh"
 #include "Common.hh"
 #include "core/CFunc.hh"
@@ -20,6 +21,7 @@ namespace sp
 
 		void LoadScene(const string &name);
 		void ReloadScene(const string &);
+
 	private:
 		Game *game;
 		InputManager *input;

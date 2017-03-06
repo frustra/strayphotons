@@ -17,14 +17,15 @@ namespace sp
 	class ShaderManager;
 	class SceneShader;
 	class Model;
+	class GuiRenderer;
 
 	struct VoxelData
 	{
-		shared_ptr<RenderTarget> fragmentList;
+		shared_ptr<RenderTarget> fragmentList1;
+		shared_ptr<RenderTarget> fragmentList2;
 		shared_ptr<RenderTarget> packedData;
-		shared_ptr<RenderTarget> color, normal, radiance;
+		shared_ptr<RenderTarget> radiance;
 		ecs::VoxelInfo info;
-		bool voxelsCleared = true;
 	};
 
 	class Renderer : public GraphicsContext
@@ -36,6 +37,7 @@ namespace sp
 		~Renderer();
 
 		void Prepare();
+		void RenderMainMenu(ecs::View &view);
 		void RenderShadowMaps();
 		void PrepareVoxelTextures();
 		void RenderVoxelGrid();
@@ -55,15 +57,19 @@ namespace sp
 		ShaderManager *ShaderControl = nullptr;
 		RenderTargetPool *RTPool = nullptr;
 
-		// TODO(jli): private
-		Buffer mirrorVisData;
-		Buffer mirrorSceneData;
 		float Exposure = 1.0f;
 	private:
 		shared_ptr<RenderTarget> shadowMap;
 		shared_ptr<RenderTarget> mirrorShadowMap;
-		Buffer computeIndirectBuffer;
+		shared_ptr<RenderTarget> menuGuiTarget;
+		Buffer computeIndirectBuffer1, computeIndirectBuffer2;
+		bool voxelFlipflop = true;
 		VoxelData voxelData;
+		Buffer mirrorVisData;
+		Buffer mirrorSceneData;
+
+		shared_ptr<GuiRenderer> debugGuiRenderer;
+		shared_ptr<GuiRenderer> menuGuiRenderer;
 
 		std::deque<std::pair<shared_ptr<Model>, int>> renderableGCQueue;
 	};

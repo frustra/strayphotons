@@ -9,5 +9,6 @@ namespace ecs
 		Renderable() {}
 		Renderable(shared_ptr<sp::Model> model) : model(model) {}
 		shared_ptr<sp::Model> model;
+		bool hidden = false;
 	};
 }

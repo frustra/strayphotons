@@ -7,7 +7,7 @@ const float InvVoxelGridSize = 1.0 / VoxelGridSize;
 
 vec4 SampleVoxelLod(vec3 position, vec3 dir, float level)
 {
-	return textureLod(voxelRadiance, position * InvVoxelGridSize, level);
+	return textureLod(voxelRadiance, position * InvVoxelGridSize, level) * vec4(vec3(VoxelFixedPointExposure), 1.0);
 }
 
 vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, vec2 fragCoord)
@@ -21,7 +21,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 
 	while (dist < maxDist && result.a < 0.9999)
 	{
-		float size = max(0.5, ratio * dist);
+		float size = max(1.0, ratio * dist);
 		float planeDist = dot(surfaceNormal, rayDir * dist) - 1.75;
 		// If the sample intersects the surface, move it over
 		float offset = max(0, size - planeDist);

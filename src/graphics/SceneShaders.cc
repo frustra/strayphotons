@@ -139,6 +139,8 @@ namespace sp
 
 		Bind(voxelSize, "voxelSize");
 		Bind(voxelGridCenter, "voxelGridCenter");
+
+		Bind(lightAttenuation, "lightAttenuation");
 	}
 
 	void VoxelRasterFS::SetLightData(int count, GLLightData *data)
@@ -151,6 +153,11 @@ namespace sp
 	{
 		Set(voxelSize, voxelInfo.voxelSize);
 		Set(voxelGridCenter, voxelInfo.voxelGridCenter);
+	}
+
+	void VoxelRasterFS::SetLightAttenuation(float newAttenuation)
+	{
+		Set(lightAttenuation, newAttenuation);
 	}
 
 	IMPLEMENT_SHADER_TYPE(SceneVS, "scene.vert", Vertex);

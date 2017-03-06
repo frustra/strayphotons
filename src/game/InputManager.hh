@@ -87,13 +87,13 @@ namespace sp
 		/**
 		 * Returns true if input is currently consumed by a foreground system.
 		 */
-		bool FocusLocked() const;
+		bool FocusLocked(int priority = 1) const;
 
 		/**
-		 * Enables or disables the focus lock.
+		 * Enables or disables the focus lock at a given priority.
 		 * Returns false if the lock is already held.
 		 */
-		bool LockFocus(bool locked);
+		bool LockFocus(bool locked, int priority = 1);
 
 		void DisableCursor();
 		void EnableCursor();
@@ -183,7 +183,7 @@ namespace sp
 		vector<KeyEventCallback> keyEventCallbacks;
 		vector<CharEventCallback> charEventCallbacks;
 
-		bool focusLocked = false;
+		vector<int> focusLocked;
 	};
 
 	int MouseButtonToKey(int button);

@@ -52,7 +52,8 @@ void main() {
 
 	// Bias alpha so that 50% full is opaque
 	alpha = saturate(alpha * 0.25);
-	imageStore(currentVoxelRadiance, mipPosition, vec4(radiance / count, alpha));
+	// It look good, don't touch it ¯\_(ツ)_/¯
+	imageStore(currentVoxelRadiance, mipPosition, vec4(radiance * 0.25, alpha));
 
 	uint nextIndex = atomicCounterIncrement(nextFragListSize);
 	if (nextIndex % MipmapWorkGroupSize == 0) atomicCounterIncrement(nextComputeSize);

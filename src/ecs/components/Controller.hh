@@ -24,12 +24,11 @@ namespace ecs
 		INTERACT
 	};
 
-	// Will move these to HumanControlSystem
-	static float CONTROLLER_GRAVITY = 9.81f;
-	static float CONTROLLER_JUMP = 8.0f;
-	static float CONTROLLER_STEP = 0.1f;
-	static float CONTROLLER_AIR_STRAFE = 0.1f;
-	static float CONTROLLER_ACCELERATION = 50.0f;
+	const float CONTROLLER_GRAVITY = 9.81f;
+	const float CONTROLLER_JUMP = 8.0f;
+	const float CONTROLLER_STEP = 0.1f;
+	const float CONTROLLER_AIR_STRAFE = 0.1f;
+	const float CONTROLLER_ACCELERATION = 50.0f;
 
 	struct HumanController
 	{

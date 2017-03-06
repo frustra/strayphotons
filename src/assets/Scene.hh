@@ -20,6 +20,8 @@ namespace sp
 		std::unordered_map<string, ecs::Entity> namedEntities;
 
 		ecs::Entity FindEntity(const std::string name);
+
+		vector<string> autoexecList;
 	private:
 		shared_ptr<Asset> asset;
 	};

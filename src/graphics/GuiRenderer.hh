@@ -12,7 +12,7 @@ namespace sp
 	class GuiRenderer
 	{
 	public:
-		GuiRenderer(Renderer &renderer, GuiManager &manager);
+		GuiRenderer(Renderer &renderer, GuiManager *manager);
 		~GuiRenderer();
 		void Render(ecs::View view);
 
@@ -22,6 +22,6 @@ namespace sp
 		double lastTime = 0.0;
 
 		Renderer &parent;
-		GuiManager &manager;
+		GuiManager *manager;
 	};
 }

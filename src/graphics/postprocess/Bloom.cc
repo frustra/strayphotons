@@ -10,6 +10,7 @@ namespace sp
 {
 	static CVar<float> CVarBloomWeight1("r.BloomWeight1", 0.4f, "Bloom kernel 1 weight");
 	static CVar<float> CVarBloomWeight2("r.BloomWeight2", 0.4f, "Bloom kernel 2 weight");
+	static CVar<float> CVarBloomScale("r.BloomScale", 0.1f, "Bloom prescale for highpass");
 
 	class BloomHighpassFS : public Shader
 	{
@@ -17,7 +18,16 @@ namespace sp
 
 		BloomHighpassFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
+			Bind(scale, "scale");
 		}
+
+		void SetScale(float newScale)
+		{
+			Set(scale, newScale);
+		}
+
+	private:
+		Uniform scale;
 	};
 
 	IMPLEMENT_SHADER_TYPE(BloomHighpassFS, "bloom_highpass.frag", Fragment);
@@ -26,6 +36,8 @@ namespace sp
 	{
 		auto r = context->renderer;
 		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
+
+		r->GlobalShaders->Get<BloomHighpassFS>()->SetScale(CVarBloomScale.Get());
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, BloomHighpassFS>(r->GlobalShaders);

@@ -6,7 +6,8 @@
 #include "Common.hh"
 #include "game/GameLogic.hh"
 #include "game/InputManager.hh"
-#include "game/GuiManager.hh"
+#include "game/gui/DebugGuiManager.hh"
+#include "game/gui/MenuGuiManager.hh"
 
 #include <Ecs.hh>
 
@@ -31,7 +32,8 @@ namespace sp
 		cxxopts::Options &options;
 
 		// Order is important.
-		GuiManager gui;
+		DebugGuiManager debugGui;
+		MenuGuiManager menuGui;
 		GraphicsManager graphics;
 		InputManager input;
 		AudioManager audio;

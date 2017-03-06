@@ -49,6 +49,9 @@ namespace sp
 			physx::PxTransform transform;
 			physx::PxMeshScale scale;
 			bool dynamic = true;
+
+			// only dynamic actors can be kinematic
+			bool kinematic = false;
 			//bool mergePrimitives = true;
 		};
 
@@ -57,7 +60,34 @@ namespace sp
 		physx::PxController *CreateController(physx::PxVec3 pos, float radius, float height, float density);
 		void RemoveController(physx::PxController *controller);
 
+<<<<<<< HEAD
 		bool RaycastQuery(ecs::Entity& entity, const physx::PxVec3 origin, const physx::PxVec3 dir, const float distance, physx::PxRaycastBuffer& hit);
+=======
+		/**
+		 * Translates a kinematic @actor by @transform.
+		 * Throws a runtime_error if @actor is not kinematic
+		 */
+		void Translate(
+			physx::PxRigidDynamic *actor,
+			const physx::PxVec3 &transform);
+
+		/**
+		 * Collisions between this actor's shapes and other physx objects
+		 * will be enabled (default).
+		 */
+		void EnableCollisions(physx::PxRigidActor *actor);
+
+		/**
+		 * Collisions between this actor's shapes and other physx objects
+		 * will be disabled.
+		 */
+		void DisableCollisions(physx::PxRigidActor *actor);
+
+		/**
+		 * Enable or disable collisions for an actor.
+		 */
+		void ToggleCollisions(physx::PxRigidActor *actor, bool enabled);
+>>>>>>> e5b0f3f66e0c4c03b338b1353b4c476141ffb9d1
 
 	private:
 		void CreatePhysxScene();

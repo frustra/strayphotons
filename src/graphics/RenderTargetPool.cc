@@ -36,7 +36,7 @@ namespace sp
 		}
 
 		ptr->tex
-		.Filter(desc.minFilter, desc.magFilter)
+		.Filter(desc.minFilter, desc.magFilter, desc.anisotropy)
 		.Size(desc.extent.x, desc.extent.y, desc.extent.z)
 		.Storage(desc.format, desc.levels)
 		.Attachment(desc.attachment);
@@ -78,6 +78,15 @@ namespace sp
 			{
 				i++;
 			}
+		}
+	}
+
+	RenderTargetPool::~RenderTargetPool()
+	{
+		for (auto it = framebufferCache.begin(); it != framebufferCache.end();)
+		{
+			glDeleteFramebuffers(1, &it->second);
+			it = framebufferCache.erase(it);
 		}
 	}
 

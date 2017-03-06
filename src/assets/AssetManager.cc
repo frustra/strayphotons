@@ -20,6 +20,7 @@
 #include "ecs/components/Physics.hh"
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/Mirror.hh"
+#include "ecs/components/Barrier.hh"
 
 #include <boost/filesystem.hpp>
 #include <iostream>
@@ -149,6 +150,16 @@ namespace sp
 
 		shared_ptr<Scene> scene = make_shared<Scene>(name, asset);
 
+		auto autoexecList = root.get<picojson::object>()["autoexec"];
+		if (autoexecList.is<picojson::array>())
+		{
+			for (auto value : autoexecList.get<picojson::array>())
+			{
+				auto line = value.get<string>();
+				scene->autoexecList.push_back(line);
+			}
+		}
+
 		auto entityList = root.get<picojson::object>()["entities"];
 		for (auto value : entityList.get<picojson::array>())
 		{
@@ -242,6 +253,10 @@ namespace sp
 						{
 							light->tint = MakeVec3(param.second);
 						}
+						else if (param.first == "gel")
+						{
+							light->gelId = param.second.get<bool>() ? 1 : 0;
+						}
 					}
 				}
 				else if (comp.first == "lightsensor")
@@ -267,6 +282,7 @@ namespace sp
 					auto translate = physx::PxVec3 (0, 0, 0);
 					auto scale = physx::PxVec3 (1, 1, 1);
 					bool dynamic = true;
+					bool kinematic = false;
 
 					//auto rotate = physx::PxQuat (0);
 					for (auto param : comp.second.get<picojson::object>())
@@ -293,18 +309,77 @@ namespace sp
 						{
 							dynamic = param.second.get<bool>();
 						}
+						else if (param.first == "kinematic")
+						{
+							kinematic = param.second.get<bool>();
+						}
 					}
 
 					PhysxManager::ActorDesc desc;
 					desc.transform = physx::PxTransform(translate);
 					desc.scale = physx::PxMeshScale(scale, physx::PxQuat(physx::PxIdentity));
 					desc.dynamic = dynamic;
+					desc.kinematic = kinematic;
 
 					actor = px.CreateActor(model, desc);
 
 					if (actor)
 					{
 						auto physics = entity.Assign<ecs::Physics>(actor, model);
+					}
+				}
+				else if (comp.first == "barrier")
+				{
+					auto barrier = entity.Assign<ecs::Barrier>();
+
+					for (auto param : comp.second.get<picojson::object>())
+					{
+						if (param.first == "isOpen")
+						{
+							barrier->isOpen = param.second.get<bool>();
+						}
+					}
+
+					if (barrier->isOpen)
+					{
+						if (!entity.Has<ecs::Physics>() || !entity.Has<ecs::Renderable>())
+						{
+							throw std::runtime_error(
+								"barrier component must come after Physics and Renderable"
+							);
+						}
+						ecs::Barrier::Open(entity, px);
+					}
+				}
+				else if (comp.first == "barrier_prefab")
+				{
+					glm::vec3 translate;
+					glm::vec3 scale;
+					bool isOpen = false;
+
+					vector<string> reqParams = {"translate", "scale"};
+
+					ParameterCheck(comp, reqParams);
+					for (auto param : comp.second.get<picojson::object>())
+					{
+						if (param.first == "isOpen")
+						{
+							isOpen = param.second.get<bool>();
+						}
+						else if (param.first == "translate")
+						{
+							translate = MakeVec3(param.second);
+						}
+						else if (param.first == "scale")
+						{
+							scale = MakeVec3(param.second);
+						}
+					}
+
+					ecs::Barrier::Create(translate, scale, px, *em);
+					if (isOpen)
+					{
+						ecs::Barrier::Open(entity, px);
 					}
 				}
 				else if (comp.first == "voxels")
@@ -345,5 +420,36 @@ namespace sp
 	void AssetManager::UnregisterModel(const Model &model)
 	{
 		loadedModels.erase(model.name);
+	}
+
+	void AssetManager::ParameterCheck(
+		std::pair<const string, picojson::value> &jsonComp,
+		vector<string> reqParams)
+	{
+		vector<bool> found(reqParams.size(), false);
+
+		for (auto param : jsonComp.second.get<picojson::object>())
+		{
+			for (uint32 i = 0; i < found.size(); ++i)
+			{
+				if (param.first == reqParams.at(i))
+				{
+					found.at(i) = true;
+					break;
+				}
+			}
+		}
+
+		for (uint32 i = 0; i < found.size(); ++i)
+		{
+			if (!found.at(i))
+			{
+				std::stringstream ss;
+				ss << "\"" << jsonComp.first << "\""
+				   << " gltf component is missing required \""
+				   << reqParams.at(i) << "\" field";
+				throw std::runtime_error(ss.str());
+			}
+		}
 	}
 }
