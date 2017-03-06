@@ -209,6 +209,21 @@
 				"translate": [-7, 20, -7],
 				"rotate": [-130, 1, 0, 0]
 			}
+		},
+		{
+			"light": {
+				"tint": [1, 1, 1],
+				"intensity": 500,
+				"spotAngle": 35,
+				"gel": true
+			},
+			"view": {
+				"extents": [1280, 720],
+				"clip": [0.1, 10]
+			},
+			"transform": {
+				"translate": [0, 5, -1]
+			}
 		}
 	]
 }

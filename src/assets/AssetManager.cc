@@ -243,6 +243,10 @@ namespace sp
 						{
 							light->tint = MakeVec3(param.second);
 						}
+						else if (param.first == "gel")
+						{
+							light->gelId = param.second.get<bool>() ? 1 : 0;
+						}
 					}
 				}
 				else if (comp.first == "lightsensor")
