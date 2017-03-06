@@ -40,6 +40,10 @@ namespace sp
 		{
 			LoadScene(game->options["map"].as<string>());
 		}
+		else
+		{
+			LoadScene("menu");
+		}
 
 		input->AddCharInputCallback([&](uint32 ch)
 		{
