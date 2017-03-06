@@ -52,6 +52,7 @@ namespace sp
 		bool textureArray = false;
 		GLenum attachment;
 		GLenum minFilter = GL_LINEAR_MIPMAP_LINEAR, magFilter = GL_LINEAR;
+		float anisotropy = 0.0;
 
 		bool operator==(const RenderTargetDesc &other) const
 		{
@@ -62,7 +63,8 @@ namespace sp
 				   && other.minFilter == minFilter
 				   && other.magFilter == magFilter
 				   && other.depthCompare == depthCompare
-				   && other.multiSample == multiSample;
+				   && other.multiSample == multiSample
+				   && other.anisotropy == anisotropy;
 		}
 
 		bool operator!=(const RenderTargetDesc &other) const

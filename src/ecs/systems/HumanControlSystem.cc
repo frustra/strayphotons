@@ -119,12 +119,11 @@ namespace ecs
 
 			if (controller->pxController && !CVarNoClip.Get())
 			{
-				if (controller->upVelocity)
-				{
-					float jump = controller->upVelocity * dtSinceLastFrame;
-					controllerMove(entity, dtSinceLastFrame, glm::vec3(0, jump, 0));
-					controller->upVelocity -= ecs::CONTROLLER_GRAVITY * dtSinceLastFrame;
-				}
+				float jump = controller->upVelocity * dtSinceLastFrame;
+				controllerMove(entity, dtSinceLastFrame, glm::vec3(0, jump, 0));
+				controller->upVelocity -= ecs::CONTROLLER_GRAVITY * dtSinceLastFrame;
+				if (controller->grounded) controller->upVelocity = 0.0; // Reset the velocity when we hit something.
+
 				auto position = controller->pxController->getPosition();
 				physx::PxVec3 pxVec3 = physx::PxVec3(position.x, position.y, position.z);
 				transform->SetPosition(PxVec3ToGlmVec3P(pxVec3));

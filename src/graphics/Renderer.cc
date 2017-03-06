@@ -92,6 +92,7 @@ namespace sp
 	{
 		RenderTargetDesc menuDesc(PF_RGBA8, view.extents);
 		menuDesc.levels = Texture::FullyMipmap;
+		menuDesc.anisotropy = 4.0;
 		if (!menuGuiTarget || menuGuiTarget->GetDesc() != menuDesc)
 		{
 			menuGuiTarget = RTPool->Get(menuDesc);

@@ -7,7 +7,8 @@
 float GetVoxelNearest(vec3 position, int level, out vec3 radiance)
 {
 	vec4 radianceData = texelFetch(voxelRadiance, ivec3(position) >> level, level);
-	radiance = radianceData.rgb;
+	// Scale back to 0-256 for HDR
+	radiance = radianceData.rgb * 256.0;
 	return radianceData.a;
 }
 

@@ -201,7 +201,7 @@ namespace sp
 		auto light = flashlight.Assign<ecs::Light>();
 		light->tint = glm::vec3(1.0);
 		light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
-		light->gelId = 1;
+		// light->gelId = 1;
 		auto view = flashlight.Assign<ecs::View>();
 		view->extents = glm::vec2(CVarFlashlightResolution.Get());
 		view->clip = glm::vec2(0.1, 64);

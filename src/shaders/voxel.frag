@@ -42,7 +42,7 @@ in vec4 gl_FragCoord;
 
 ##import lib/shading
 
-// Data format: [radiance.r], [radiance.g], [radiance.b, count] (24 bit per color, 8 bits count)
+// Data format: [radiance.r], [radiance.g], [radiance.b, count] (16 bit per color + 8 bit overflow, 8 bits count)
 
 void main()
 {
@@ -58,8 +58,8 @@ void main()
 
 	vec3 pixelLuminance = DirectShading(worldPosition, baseColor.rgb, inNormal, inNormal, roughness);
 
-	// Clip so we don't overflow, scale to 16 bits
-	uvec3 radiance = uvec3(min(vec3(1.0), pixelLuminance) * 0xFFFF);
+	// Scale to 8 bits 0-1, clamp to 16 bit for HDR 0-256
+	uvec3 radiance = uvec3(clamp(pixelLuminance, 0, 256) * 0xFF);
 
 	ivec3 dataOffset = ivec3(floor(position.x) * 3, position.yz);
 	imageAtomicAdd(voxelData, dataOffset + ivec3(0, 0, 0), radiance.r);
