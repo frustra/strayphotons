@@ -1,4 +1,7 @@
 #include "MenuGuiManager.hh"
+
+#include "assets/AssetManager.hh"
+#include "graphics/Texture.hh"
 #include "game/InputManager.hh"
 #include "core/Logging.hh"
 #include "core/CVar.hh"
@@ -30,7 +33,7 @@ namespace sp
 			io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
 			io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
 
-			if (state == GLFW_PRESS && Focused && inputManager->FocusLocked(FocusLevel))
+			if (state == GLFW_PRESS && Focused && !inputManager->FocusLocked(FocusLevel))
 			{
 				if (key == GLFW_KEY_ENTER && selectedScreen == 0)
 				{
@@ -48,7 +51,7 @@ namespace sp
 		Focused = CVarMenuFocused.Get();
 		inputManager->LockFocus(Focused, FocusLevel);
 
-		if (Focused && inputManager->FocusLocked(FocusLevel))
+		if (Focused && !inputManager->FocusLocked(FocusLevel))
 		{
 			auto &input = *inputManager;
 
@@ -59,7 +62,7 @@ namespace sp
 
 			io.MouseWheel = input.ScrollOffset().y;
 
-			auto cursorDiff = input.CursorDiff();
+			auto cursorDiff = input.CursorDiff() * 2.0f;
 			io.MousePos.x = std::max(std::min(io.MousePos.x + cursorDiff.x, io.DisplaySize.x), 0.0f);
 			io.MousePos.y = std::max(std::min(io.MousePos.y + cursorDiff.y, io.DisplaySize.y), 0.0f);
 		}
@@ -81,7 +84,8 @@ namespace sp
 		ImGuiWindowFlags flags =
 			ImGuiWindowFlags_NoCollapse |
 			ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoTitleBar;
+			ImGuiWindowFlags_NoTitleBar |
+			ImGuiWindowFlags_AlwaysAutoResize;
 
 		if (selectedScreen == 0)
 		{
@@ -96,6 +100,10 @@ namespace sp
 			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
 
 			ImGui::Begin("Menu", nullptr, flags);
+
+			static Texture logoTex = GAssets.LoadTexture("logos/sp-menu.png");
+
+			ImGui::Image((void *)(uintptr_t) logoTex.handle, ImVec2(logoTex.width, logoTex.height));
 
 			if (ImGui::Button("Start Game"))
 			{

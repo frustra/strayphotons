@@ -468,7 +468,7 @@ namespace sp
 	{
 		RenderPhase phase("RenderPass", Timer);
 
-		ecs::View menuView({ 1024, 1024 });
+		ecs::View menuView({ 2048, 2048 });
 		menuView.clearMode = GL_COLOR_BUFFER_BIT;
 		RenderMainMenu(menuView);
 		RenderShadowMaps();

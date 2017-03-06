@@ -8,7 +8,7 @@ layout (binding = 0) uniform sampler2D luminanceTex;
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
-const float scale = 0.1;
+uniform float scale = 0.1;
 
 void main() {
 	vec3 lum = texture(luminanceTex, inTexCoord).rgb; // pre-exposed

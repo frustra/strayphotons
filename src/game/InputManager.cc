@@ -120,7 +120,7 @@ namespace sp
 
 	bool InputManager::FocusLocked(int priority) const
 	{
-		return focusLocked.size() > 0 && focusLocked.back() >= priority;
+		return focusLocked.size() > 0 && focusLocked.back() > priority;
 	}
 
 	bool InputManager::LockFocus(bool locked, int priority)
