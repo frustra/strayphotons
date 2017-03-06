@@ -44,7 +44,7 @@ vec3 EvaluateBRDFSpecularImportanceSampledGGX(vec3 specularColor, float roughnes
 }
 
 #ifdef DIFFUSE_ONLY_SHADING
-vec3 DirectShading(vec3 worldPosition, vec3 baseColor, vec3 normal, vec3 flatNormal, float roughness) {
+vec3 DirectShading(vec3 worldPosition, vec3 baseColor, vec3 normal, vec3 flatNormal) {
 #else
 vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec3 normal, vec3 flatNormal, float roughness, float metalness) {
 #endif

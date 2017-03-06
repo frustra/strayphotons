@@ -35,10 +35,10 @@ void main() {
 		return;
 
 	LightSensor sensor = sensors[index];
-	
+
 	vec3 lum = vec3(0.0);
 
-	lum += DirectShading(sensor.position, vec3(1.0), sensor.direction, sensor.direction, 1.0);
+	lum += DirectShading(sensor.position, vec3(1.0), sensor.direction, sensor.direction);
 	lum += HemisphereIndirectDiffuse(sensor.position, sensor.direction, vec2(0));
 
 	// first value r=1 indicates result is populated

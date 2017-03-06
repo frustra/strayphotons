@@ -7,8 +7,7 @@ const float InvVoxelGridSize = 1.0 / VoxelGridSize;
 
 vec4 SampleVoxelLod(vec3 position, vec3 dir, float level)
 {
-	// Scale back to 0-256 for HDR
-	return textureLod(voxelRadiance, position * InvVoxelGridSize, level) * vec4(vec3(256.0), 1.0);
+	return textureLod(voxelRadiance, position * InvVoxelGridSize, level) * vec4(vec3(VoxelFixedPointExposure), 1.0);
 }
 
 vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, vec2 fragCoord)

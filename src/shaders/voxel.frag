@@ -10,12 +10,13 @@
 ##import lib/types_common
 
 layout (binding = 0) uniform sampler2D baseColorTex;
-layout (binding = 1) uniform sampler2D roughnessTex;
-// binding 2 = metallicTex
+// binding 1 = roughnessTex
+layout (binding = 2) uniform sampler2D metallicTex;
 // binding 3 = heightTex
 layout (binding = 4) uniform sampler2D shadowMap;
 layout (binding = 5) uniform sampler2DArray mirrorShadowMap;
 layout (binding = 6) uniform sampler2D lightingGel;
+layout (binding = 7) uniform sampler3D voxelRadiance;
 
 layout (binding = 0) uniform atomic_uint fragListSize;
 layout (binding = 0, offset = 4) uniform atomic_uint nextComputeSize;
@@ -38,9 +39,12 @@ layout(binding = 0, std140) uniform GLLightData {
 uniform float voxelSize = 0.1;
 uniform vec3 voxelGridCenter = vec3(0);
 
+uniform float lightAttenuation = 0.5;
+
 in vec4 gl_FragCoord;
 
 ##import lib/shading
+##import voxel_trace_shared
 
 // Data format: [radiance.r], [radiance.g], [radiance.b, count] (16 bit per color + 8 bit overflow, 8 bits count)
 
@@ -49,17 +53,22 @@ void main()
 	vec4 baseColor = texture(baseColorTex, inTexCoord);
 	if (baseColor.a < 0.5) discard;
 
-	float roughness = texture(roughnessTex, inTexCoord).r;
+	float metalness = texture(metallicTex, inTexCoord).r;
 
 	vec3 position = vec3(gl_FragCoord.xy / VoxelSuperSampleScale, gl_FragCoord.z * VoxelGridSize);
 	position = AxisSwapReverse[abs(inDirection)-1] * (position - VoxelGridSize / 2);
 	vec3 worldPosition = position * voxelSize + voxelGridCenter;
 	position += VoxelGridSize / 2;
 
-	vec3 pixelLuminance = DirectShading(worldPosition, baseColor.rgb, inNormal, inNormal, roughness);
+	vec3 pixelLuminance = DirectShading(worldPosition, baseColor.rgb, inNormal, inNormal);
+	if (lightAttenuation > 0) {
+		vec3 directDiffuseColor = baseColor.rgb - baseColor.rgb * metalness;
+		vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, inNormal, vec2(0));
+		pixelLuminance += indirectDiffuse * directDiffuseColor * lightAttenuation * smoothstep(0.0, 0.1, length(indirectDiffuse));
+	}
 
-	// Scale to 8 bits 0-1, clamp to 16 bit for HDR 0-256
-	uvec3 radiance = uvec3(clamp(pixelLuminance, 0, 256) * 0xFF);
+	// Scale to 10 bits 0-1, clamp to 16 bit for HDR
+	uvec3 radiance = uvec3(clamp(pixelLuminance, 0, VoxelFixedPointExposure) * 0x3FF);
 
 	ivec3 dataOffset = ivec3(floor(position.x) * 3, position.yz);
 	imageAtomicAdd(voxelData, dataOffset + ivec3(0, 0, 0), radiance.r);
