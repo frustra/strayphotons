@@ -150,6 +150,16 @@ namespace sp
 
 		shared_ptr<Scene> scene = make_shared<Scene>(name, asset);
 
+		auto autoexecList = root.get<picojson::object>()["autoexec"];
+		if (autoexecList.is<picojson::array>())
+		{
+			for (auto value : autoexecList.get<picojson::array>())
+			{
+				auto line = value.get<string>();
+				scene->autoexecList.push_back(line);
+			}
+		}
+
 		auto entityList = root.get<picojson::object>()["entities"];
 		for (auto value : entityList.get<picojson::array>())
 		{

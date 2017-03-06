@@ -26,7 +26,7 @@ namespace sp
 			io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
 			io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
 
-			if (state == GLFW_PRESS)
+			if (state == GLFW_PRESS && Focused && inputManager->FocusLocked(FocusLevel))
 			{
 				if (key == GLFW_KEY_ENTER && selectedScreen == 0)
 				{
@@ -45,7 +45,7 @@ namespace sp
 			inputManager->LockFocus(true, FocusLevel);
 		}
 
-		if (Focused && inputManager && inputManager->FocusLocked(FocusLevel))
+		if (Focused && inputManager->FocusLocked(FocusLevel))
 		{
 			auto &input = *inputManager;
 

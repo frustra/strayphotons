@@ -4,6 +4,7 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/CVar.hh"
+#include "core/Console.hh"
 
 #include "game/GameLogic.hh"
 #include "assets/Scene.hh"
@@ -192,6 +193,11 @@ namespace sp
 		humanControlSystem.AssignController(player, game->physics);
 
 		game->graphics.SetPlayerView(player);
+
+		for (auto &line : scene->autoexecList)
+		{
+			GConsoleManager.ParseAndExecute(line);
+		}
 
 		// Create flashlight entity
 		flashlight = game->entityManager.NewEntity();

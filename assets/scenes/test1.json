@@ -1,4 +1,6 @@
 {
+	"autoexec": [
+	],
 	"entities": [
 		{
 			"renderable": "box",
