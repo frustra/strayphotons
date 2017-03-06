@@ -2,6 +2,7 @@
 #include <cmath>
 
 #include "ecs/systems/HumanControlSystem.hh"
+#include "ecs/components/Interact.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/Physics.hh"
 
@@ -22,7 +23,7 @@ namespace ecs
 {
 	static sp::CVar<bool> CVarNoClip("p.NoClip", false, "Disable player clipping");
 
-	const float HumanControlSystem::MOVE_SPEED = 6.0f;
+	const float HumanControlSystem::MOVE_SPEED = 3.5f;
 	const glm::vec2 HumanControlSystem::CURSOR_SENSITIVITY = glm::vec2(0.001f, 0.001f);
 
 	HumanControlSystem::HumanControlSystem(ecs::EntityManager *entities, sp::InputManager *input)
@@ -65,6 +66,8 @@ namespace ecs
 
 			transform->rotate = glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll));
 
+			bool moving = false;
+
 			// keyboard controls
 			for (auto const &actionKeysPair : entity.Get<ecs::HumanController>()->inputMap)
 			{
@@ -79,15 +82,19 @@ namespace ecs
 				switch (action)
 				{
 					case ControlAction::MOVE_FORWARD:
+						moving = true;
 						move(entity, dtSinceLastFrame, glm::vec3(0, 0, -1));
 						break;
 					case ControlAction::MOVE_BACKWARD:
+						moving = true;
 						move(entity, dtSinceLastFrame, glm::vec3(0, 0, 1));
 						break;
 					case ControlAction::MOVE_LEFT:
+						moving = true;
 						move(entity, dtSinceLastFrame, glm::vec3(-1, 0, 0));
 						break;
 					case ControlAction::MOVE_RIGHT:
+						moving = true;
 						move(entity, dtSinceLastFrame, glm::vec3(1, 0, 0));
 						break;
 					case ControlAction::MOVE_UP:
@@ -102,12 +109,22 @@ namespace ecs
 							controller->upVelocity = ecs::CONTROLLER_JUMP;
 						}
 						break;
+					case ControlAction::INTERACT:
+						if(input->IsAnyPressed(actionKeysPair.second))
+						{
+							interact(entity, dtSinceLastFrame);
+						}
+						break;
 					default:
 						std::stringstream ss;
 						ss << "Unknown ControlAction: "
 						   << static_cast<std::underlying_type<ControlAction>::type>(action);
 						throw std::invalid_argument(ss.str());
 				}
+			}
+			if (!moving)
+			{
+				controller->lastVelocity = glm::vec3();
 			}
 
 			if (CVarNoClip.Changed() && !CVarNoClip.Get(true))
@@ -170,11 +187,18 @@ namespace ecs
 			{
 				ControlAction::MOVE_JUMP, {GLFW_KEY_SPACE}
 			},
+			{
+				ControlAction::INTERACT, {GLFW_KEY_R}
+			}
 		};
+
+		auto interact = entity.Assign<InteractController>();
+		interact->manager = &px;
 
 		auto transform = entity.Get<ecs::Transform>();
 		physx::PxVec3 pos = GlmVec3ToPxVec3(transform->GetPosition());
 		controller->pxController = px.CreateController(pos, 0.2f, 1.5f, 0.5f);
+		controller->pxController->setStepOffset(ecs::CONTROLLER_STEP);
 
 		return controller;
 	}
@@ -186,15 +210,17 @@ namespace ecs
 			throw std::invalid_argument("entity must have a Transform component");
 		}
 
+		auto controller = entity.Get<ecs::HumanController>();
 		auto transform = entity.Get<ecs::Transform>();
 
-		float ds = HumanControlSystem::MOVE_SPEED * (float)dt;
+		float df = (float)dt;
 
 		glm::vec3 movement;
+		glm::vec3 deltaMovement;
 
 		if (flight)
 		{
-			movement = normalizedDirection * ds;
+			movement = normalizedDirection * df;
 		}
 		else
 		{
@@ -205,10 +231,24 @@ namespace ecs
 			}
 			movement.y = 0;
 			movement = glm::normalize(movement);
-			movement *= ds;
-		}
+			movement *= ecs::CONTROLLER_ACCELERATION * df;
+			movement += controller->lastVelocity;
 
-		controllerMove(entity, dt, movement);
+			deltaMovement = movement * df;
+
+			if(glm::length(movement) >= HumanControlSystem::MOVE_SPEED)
+			{
+				deltaMovement = glm::normalize(movement);
+				movement = deltaMovement * HumanControlSystem::MOVE_SPEED;
+				deltaMovement *= HumanControlSystem::MOVE_SPEED * df;
+			}
+		}
+		if (!controller->grounded)
+		{
+			//movement *= ecs::CONTROLLER_AIR_STRAFE;
+		}
+		controller->lastVelocity = movement;
+		controllerMove(entity, dt, deltaMovement);
 	}
 
 	void HumanControlSystem::controllerMove(ecs::Entity entity, double dt, glm::vec3 movement)
@@ -231,5 +271,11 @@ namespace ecs
 		{
 			transform->Translate(movement);
 		}
+	}
+
+	void HumanControlSystem::interact(ecs::Entity entity, double dt)
+	{
+		auto interact = entity.Get<ecs::InteractController>();
+		interact->PickUpObject(entity);
 	}
 }

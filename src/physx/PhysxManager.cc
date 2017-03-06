@@ -1,6 +1,11 @@
 #include <PxScene.h>
 
 #include "physx/PhysxManager.hh"
+#include "physx/PhysxUtils.hh"
+
+#include "ecs/components/Controller.hh"
+#include "ecs/components/Transform.hh"
+#include "ecs/components/Physics.hh"
 
 #include "assets/AssetManager.hh"
 #include "assets/Model.hh"
@@ -65,6 +70,37 @@ namespace sp
 	void PhysxManager::Frame(double timeStep)
 	{
 		bool hadResults = false;
+
+		for (PhysxConstraint& constraint : constraints)
+		{
+			auto transform = constraint.parent.Get<ecs::Transform>();
+			PxTransform destination;
+
+			if(constraint.parent.Has<ecs::Physics>())
+			{
+				auto physics = constraint.parent.Get<ecs::Physics>();
+				destination = physics->actor->getGlobalPose();
+
+			}
+			else if (constraint.parent.Has<ecs::HumanController>())
+			{
+				auto controller = constraint.parent.Get<ecs::HumanController>();
+				PxController* pxController = controller->pxController;
+				destination = pxController->getActor()->getGlobalPose();
+			}
+			else
+			{
+				std::cout << "Error physics constraint, parent not registered with physics system!";
+				continue;
+			}
+			glm::vec3 forward = glm::vec3(0,0,-1);
+			glm::vec3 rotate = forward * transform->rotate;
+			PxVec3 dir = GlmVec3ToPxVec3(rotate);
+			dir.normalizeSafe();
+
+			destination.p += (dir * 3.f);
+			constraint.child->setKinematicTarget(destination);
+		}
 
 		while (resultsPending)
 		{
@@ -320,6 +356,45 @@ namespace sp
 		Lock();
 		controller->release();
 		Unlock();
+	}
+
+	bool PhysxManager::RaycastQuery(ecs::Entity& entity, const PxVec3 origin, const PxVec3 dir, const float distance, PxRaycastBuffer& hit)
+	{
+		Lock();
+		scene->lockRead();
+
+		physx::PxRigidDynamic* controllerActor  = nullptr;
+		if (entity.Has<ecs::HumanController>())
+		{
+			auto controller = entity.Get<ecs::HumanController>();
+			controllerActor = controller->pxController->getActor();
+			scene->removeActor(*controllerActor);
+		}
+
+		bool status = scene->raycast(origin, dir, distance, hit);
+
+		if (controllerActor)
+		{
+			scene->addActor(*controllerActor);
+		}
+
+		scene->unlockRead();
+		Unlock();
+
+		return status;
+	}
+
+	void PhysxManager::CreateConstraint(ecs::Entity parent, PxRigidDynamic* child, PxVec3 offset)
+	{
+		PhysxConstraint constraint;
+		constraint.parent = parent;
+		constraint.child = child;
+		constraint.offset = offset;
+
+		if(parent.Has<ecs::Physics>() || parent.Has<ecs::HumanController>())
+		{
+			constraints.emplace_back(constraint);
+		}
 	}
 
 	const uint32 hullCacheMagic = 0xc040;

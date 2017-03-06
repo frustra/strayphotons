@@ -6,6 +6,7 @@
 #include "ecs/components/Physics.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/Controller.hh"
+#include "ecs/components/Interact.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/LightSensor.hh"
@@ -25,6 +26,7 @@ namespace sp
 		entityManager.RegisterComponentType<ecs::Transform>();
 		entityManager.RegisterComponentType<ecs::Physics>();
 		entityManager.RegisterComponentType<ecs::HumanController>();
+		entityManager.RegisterComponentType<ecs::InteractController>();
 		entityManager.RegisterComponentType<ecs::View>();
 		entityManager.RegisterComponentType<ecs::Light>();
 		entityManager.RegisterComponentType<ecs::LightSensor>();
@@ -134,7 +136,10 @@ namespace sp
 					auto pxMat = *(physx::PxMat44 *)(glm::value_ptr(mat));
 
 					physx::PxTransform newPose(pxMat);
-					ph->actor->setGlobalPose(newPose);
+					if(ph->dynamic)
+					{
+						ph->actor->setGlobalPose(newPose);
+					}
 					ph->needsTransformSync = false;
 				}
 			}

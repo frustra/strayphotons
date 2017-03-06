@@ -8,6 +8,8 @@
 
 #include <characterkinematic/PxCapsuleController.h>
 
+#include <glm/glm.hpp>
+
 namespace ecs
 {
 	enum class ControlAction
@@ -18,16 +20,22 @@ namespace ecs
 		MOVE_RIGHT,
 		MOVE_UP,
 		MOVE_DOWN,
-		MOVE_JUMP
+		MOVE_JUMP,
+		INTERACT
 	};
+
+	// Will move these to HumanControlSystem
 	static float CONTROLLER_GRAVITY = 9.81f;
 	static float CONTROLLER_JUMP = 8.0f;
+	static float CONTROLLER_STEP = 0.1f;
+	static float CONTROLLER_AIR_STRAFE = 0.1f;
+	static float CONTROLLER_ACCELERATION = 50.0f;
 
 	struct HumanController
 	{
 		HumanController()
 		{
-			movement = physx::PxVec3();
+			lastVelocity = glm::vec3();
 		}
 
 		// map each action to a vector of glfw keys that could trigger it
@@ -46,8 +54,7 @@ namespace ecs
 		// Custom physics to handle gravity
 		bool grounded;
 
-		physx::PxVec3 movement;
-
+		glm::vec3 lastVelocity;
 		float upVelocity = 0.f;
 	};
 

@@ -36,6 +36,11 @@ namespace ecs
 
 		void controllerMove(ecs::Entity entity, double dt, glm::vec3 movement);
 
+		/**
+		* Pick up the object that the player is looking at and make it move at to a fixed location relative to camera
+		*/
+		void interact(ecs::Entity entity, double dt);
+
 		static const float MOVE_SPEED;
 		static const glm::vec2 CURSOR_SENSITIVITY;
 
