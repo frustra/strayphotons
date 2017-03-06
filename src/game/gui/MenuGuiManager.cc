@@ -72,13 +72,13 @@ namespace sp
 	{
 		ImGuiIO &io = ImGui::GetIO();
 
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0, 0.0, 0.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0, 0.0, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 1.0, 0.0, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0, 1.0, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_TextButtonHover, ImVec4(0.0f, 0.0, 0.0, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_TextButtonActive, ImVec4(0.0f, 0.0, 0.0, 1.0f));
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0, 0.0, 0.0, 0.0));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.05, 1.0, 0.3, 1.0));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05, 1.0, 0.3, 1.0));
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 1.0, 1.0, 1.0));
+		ImGui::PushStyleColor(ImGuiCol_TextButtonHover, ImVec4(0.0, 0.0, 0.0, 1.0));
+		ImGui::PushStyleColor(ImGuiCol_TextButtonActive, ImVec4(0.0, 0.0, 0.0, 1.0));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0);
 		ImGui::PushFont(io.Fonts->Fonts[2]);
 
 		ImGuiWindowFlags flags =
