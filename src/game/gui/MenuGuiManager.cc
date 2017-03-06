@@ -1,5 +1,6 @@
 #include "MenuGuiManager.hh"
 #include "game/InputManager.hh"
+#include "core/Logging.hh"
 
 #include <imgui/imgui.h>
 
@@ -39,8 +40,10 @@ namespace sp
 	{
 		ImGuiIO &io = ImGui::GetIO();
 		io.MouseDrawCursor = selectedScreen > 0;
-		//Focused = true;
-		//inputManager->LockFocus(true, FocusLevel);
+		if (selectedScreen > 0) {
+			Focused = true;
+			inputManager->LockFocus(true, FocusLevel);
+		}
 
 		if (Focused && inputManager && inputManager->FocusLocked(FocusLevel))
 		{

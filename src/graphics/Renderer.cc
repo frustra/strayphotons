@@ -99,6 +99,9 @@ namespace sp
 		}
 
 		SetRenderTarget(&menuGuiTarget->GetTexture(), nullptr);
+		glViewport(0, 0, view.extents.x, view.extents.y);
+		glScissor(0, 0, view.extents.x, view.extents.y);
+		glClear(GL_COLOR_BUFFER_BIT);
 		menuGuiRenderer->Render(view);
 
 		menuGuiTarget->GetTexture().GenMipmap();
