@@ -23,7 +23,7 @@
 namespace sp
 {
 	GameLogic::GameLogic(Game *game)
-		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input), flashlightFixed(false), sunPos(0), funcs(this)
+		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input, &game->physics), flashlightFixed(false), sunPos(0), funcs(this)
 	{
 		funcs.Register("loadscene", "Load a scene", &GameLogic::LoadScene);
 		funcs.Register("reloadscene", "Reload current scene", &GameLogic::ReloadScene);

@@ -64,6 +64,10 @@ namespace sp
 			ecs::Entity& entity,
 			const physx::PxVec3 origin, const physx::PxVec3 dir, const float distance, physx::PxRaycastBuffer& hit);
 
+		bool SweepQuery(
+			physx::PxRigidDynamic* actor,
+			const physx::PxVec3 dir,
+			const float distance);
 		/**
 		 * Translates a kinematic @actor by @transform.
 		 * Throws a runtime_error if @actor is not kinematic

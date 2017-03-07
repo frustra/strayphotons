@@ -23,11 +23,11 @@ namespace ecs
 {
 	static sp::CVar<bool> CVarNoClip("p.NoClip", false, "Disable player clipping");
 
-	const float HumanControlSystem::MOVE_SPEED = 3.5f;
+	const float HumanControlSystem::MOVE_SPEED = 5.5f;
 	const glm::vec2 HumanControlSystem::CURSOR_SENSITIVITY = glm::vec2(0.001f, 0.001f);
 
-	HumanControlSystem::HumanControlSystem(ecs::EntityManager *entities, sp::InputManager *input)
-		: entities(entities), input(input)
+	HumanControlSystem::HumanControlSystem(ecs::EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics)
+		: entities(entities), input(input), physics(physics)
 	{
 	}
 
@@ -45,8 +45,6 @@ namespace ecs
 			// control orientation with the mouse
 			auto transform = entity.Get<ecs::Transform>();
 			auto controller = entity.Get<ecs::HumanController>();
-
-
 			glm::vec2 dCursor = input->CursorDiff();
 
 			controller->yaw   -= dCursor.x * CURSOR_SENSITIVITY.x;
@@ -65,8 +63,12 @@ namespace ecs
 			controller->pitch = std::max(-((float)M_PI_2 - feps), std::min(controller->pitch, (float)M_PI_2 - feps));
 
 			transform->rotate = glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll));
-
+			
 			bool moving = false;
+			if(!controller->jumping)
+			{
+				controller->lastGroundVelocity = glm::vec3();
+			}
 
 			// keyboard controls
 			for (auto const &actionKeysPair : entity.Get<ecs::HumanController>()->inputMap)
@@ -104,7 +106,7 @@ namespace ecs
 						move(entity, dtSinceLastFrame, glm::vec3(0, -1, 0), true);
 						break;
 					case ControlAction::MOVE_JUMP:
-						if (controller->grounded)
+						if (!controller->jumping)
 						{
 							controller->upVelocity = ecs::CONTROLLER_JUMP;
 						}
@@ -122,9 +124,12 @@ namespace ecs
 						throw std::invalid_argument(ss.str());
 				}
 			}
-			if (!moving)
+
+			controller->jumping = !physics->SweepQuery(controller->pxController->getActor(), physx::PxVec3(0,-1,0), ecs::CONTROLLER_SWEEP_DISTANCE);
+
+			if (controller->jumping)
 			{
-				controller->lastVelocity = glm::vec3();
+				controllerMove(entity, dtSinceLastFrame, (controller->lastGroundVelocity * (float)dtSinceLastFrame));
 			}
 
 			if (CVarNoClip.Changed() && !CVarNoClip.Get(true))
@@ -137,9 +142,9 @@ namespace ecs
 			if (controller->pxController && !CVarNoClip.Get())
 			{
 				float jump = controller->upVelocity * dtSinceLastFrame;
-				controllerMove(entity, dtSinceLastFrame, glm::vec3(0, jump, 0));
 				controller->upVelocity -= ecs::CONTROLLER_GRAVITY * dtSinceLastFrame;
-				if (controller->grounded) controller->upVelocity = 0.0; // Reset the velocity when we hit something.
+				if (!controller->jumping) controller->upVelocity = 0.0; // Reset the velocity when we hit something.
+				controllerMove(entity, dtSinceLastFrame, glm::vec3(0, jump, 0));
 
 				auto position = controller->pxController->getPosition();
 				physx::PxVec3 pxVec3 = physx::PxVec3(position.x, position.y, position.z);
@@ -215,7 +220,7 @@ namespace ecs
 		float df = (float)dt;
 
 		glm::vec3 movement;
-		glm::vec3 deltaMovement;
+		glm::vec3 deltaMove;
 
 		if (flight)
 		{
@@ -229,25 +234,18 @@ namespace ecs
 				movement = transform->rotate * glm::vec3(0, -movement.y, 0);
 			}
 			movement.y = 0;
-			movement = glm::normalize(movement);
-			movement *= ecs::CONTROLLER_ACCELERATION * df;
-			movement += controller->lastVelocity;
-
-			deltaMovement = movement * df;
-
-			if(glm::length(movement) >= HumanControlSystem::MOVE_SPEED)
-			{
-				deltaMovement = glm::normalize(movement);
-				movement = deltaMovement * HumanControlSystem::MOVE_SPEED;
-				deltaMovement *= HumanControlSystem::MOVE_SPEED * df;
-			}
+			movement = glm::normalize(movement) * HumanControlSystem::MOVE_SPEED;
+			deltaMove = movement * df;
 		}
-		if (!controller->grounded)
+		if (controller->jumping)
 		{
-			//movement *= ecs::CONTROLLER_AIR_STRAFE;
+			deltaMove *= ecs::CONTROLLER_AIR_STRAFE;
 		}
-		controller->lastVelocity = movement;
-		controllerMove(entity, dt, deltaMovement);
+		else
+		{
+			controller->lastGroundVelocity += movement;
+		}
+		controllerMove(entity, dt, deltaMove);
 	}
 
 	void HumanControlSystem::controllerMove(ecs::Entity entity, double dt, glm::vec3 movement)
@@ -262,8 +260,7 @@ namespace ecs
 
 			Assert(scene);
 			scene->lockRead();
-			physx::PxControllerCollisionFlags flags = controller->pxController->move(GlmVec3ToPxVec3(movement), 0, dt, filters);
-			controller->grounded = flags && physx::PxControllerCollisionFlag::eCOLLISION_DOWN;
+			controller->pxController->move(GlmVec3ToPxVec3(movement), 0, dt, filters);
 			scene->unlockRead();
 		}
 		else

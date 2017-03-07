@@ -24,17 +24,19 @@ namespace ecs
 		INTERACT
 	};
 
+	const float CONTROLLER_SWEEP_DISTANCE = 0.5f;
+
 	const float CONTROLLER_GRAVITY = 9.81f;
 	const float CONTROLLER_JUMP = 8.0f;
 	const float CONTROLLER_STEP = 0.1f;
-	const float CONTROLLER_AIR_STRAFE = 0.1f;
+	const float CONTROLLER_AIR_STRAFE = 0.3f;
 	const float CONTROLLER_ACCELERATION = 50.0f;
 
 	struct HumanController
 	{
 		HumanController()
 		{
-			lastVelocity = glm::vec3();
+			lastGroundVelocity = glm::vec3();
 		}
 
 		// map each action to a vector of glfw keys that could trigger it
@@ -51,9 +53,9 @@ namespace ecs
 		physx::PxController *pxController;
 
 		// Custom physics to handle gravity
-		bool grounded;
+		bool jumping = true;
 
-		glm::vec3 lastVelocity;
+		glm::vec3 lastGroundVelocity;
 		float upVelocity = 0.f;
 	};
 

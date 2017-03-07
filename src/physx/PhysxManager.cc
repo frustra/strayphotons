@@ -439,6 +439,23 @@ namespace sp
 		return status;
 	}
 
+	bool PhysxManager::SweepQuery(PxRigidDynamic* actor, const PxVec3 dir, const float distance)
+	{
+		Lock();
+		PxShape* shape;
+		actor->getShapes(&shape, 1);
+
+		PxCapsuleGeometry capsuleGeometry;
+		shape->getCapsuleGeometry(capsuleGeometry);
+
+		scene->removeActor(*actor);
+		PxSweepBuffer hit;
+		bool status = scene->sweep(capsuleGeometry, actor->getGlobalPose(), dir, distance, hit);
+		scene->addActor(*actor);
+		Unlock();
+		return status;
+	}
+
 	void PhysxManager::CreateConstraint(ecs::Entity parent, PxRigidDynamic* child, PxVec3 offset)
 	{
 		PhysxConstraint constraint;

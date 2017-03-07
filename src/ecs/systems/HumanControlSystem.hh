@@ -13,7 +13,7 @@ namespace ecs
 	class HumanControlSystem
 	{
 	public:
-		HumanControlSystem(ecs::EntityManager *entities, sp::InputManager *input);
+		HumanControlSystem(ecs::EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics);
 		~HumanControlSystem();
 
 		/**
@@ -46,7 +46,7 @@ namespace ecs
 
 		ecs::EntityManager *entities;
 		sp::InputManager *input;
-
+		sp::PhysxManager *physics;
 
 	};
 }
