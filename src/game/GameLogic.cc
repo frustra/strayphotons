@@ -198,6 +198,8 @@ namespace sp
 
 		game->graphics.SetPlayerView(player);
 
+		// Always reset certain cvars
+		GConsoleManager.ParseAndExecute("r.Exposure 0");
 		for (auto &line : scene->autoexecList)
 		{
 			GConsoleManager.ParseAndExecute(line);

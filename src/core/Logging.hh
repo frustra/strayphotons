@@ -1,6 +1,7 @@
 #pragma once
 
 //#define SP_VERBOSE_LOGGING
+#include "Common.hh"
 
 #include <string>
 #include <cstring>
@@ -34,9 +35,16 @@ namespace sp
 
 		inline static void writeFormatter(Level lvl, boost::format &fmter)
 		{
-			auto str = fmter.str();
-			std::cerr << str;
-			GlobalLogOutput(lvl, str);
+#ifdef PACKAGE_RELEASE
+			if (lvl != logging::Level::Debug)
+			{
+#endif
+				auto str = fmter.str();
+				std::cerr << str;
+				GlobalLogOutput(lvl, str);
+#ifdef PACKAGE_RELEASE
+			}
+#endif
 		}
 
 		template <typename T1, typename... T>

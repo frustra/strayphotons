@@ -48,10 +48,14 @@ namespace sp
 		io.ImeWindowHandle = glfwGetWin32Window(renderer.GetWindow());
 #endif
 
+#ifdef PACKAGE_RELEASE
+		io.IniFilename = nullptr;
+#endif
+
 		std::pair<shared_ptr<Asset>, float> fontAssets[] =
 		{
 			std::make_pair(GAssets.Load("fonts/DroidSans.ttf"), 16.0f),
-			std::make_pair(GAssets.Load("fonts/3270Medium.ttf"), 80.0f),
+			std::make_pair(GAssets.Load("fonts/3270Medium.ttf"), 50.0f),
 		};
 
 		io.Fonts->AddFontDefault(nullptr);
@@ -59,6 +63,7 @@ namespace sp
 		for (auto &pair : fontAssets)
 		{
 			auto &asset = pair.first;
+			Assert(asset != nullptr, "Failed to load gui font");
 			ImFontConfig cfg;
 			cfg.FontData = (void *) asset->Buffer();
 			cfg.FontDataSize = asset->Size();

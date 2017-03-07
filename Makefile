@@ -1,7 +1,7 @@
 UNAME := $(shell uname)
 
 .PHONY: auto compile linux unix windowws vs14 clean unit-tests \
-	integration-tests tests astyle dependencies
+	integration-tests tests astyle dependencies assets
 
 auto: build unix compile
 
@@ -40,6 +40,9 @@ tests: unit-tests integration-tests
 
 astyle:
 	astyle --options="extra/astyle.config" "src/*.hh" "src/*.cc"
+
+assets:
+	cd assets; tar -cf ../bin/assets.tar *
 
 dependencies:
 	git submodule sync

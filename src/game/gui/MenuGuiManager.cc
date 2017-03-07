@@ -103,7 +103,7 @@ namespace sp
 
 			static Texture logoTex = GAssets.LoadTexture("logos/sp-menu.png");
 
-			ImGui::Image((void *)(uintptr_t) logoTex.handle, ImVec2(logoTex.width, logoTex.height));
+			ImGui::Image((void *)(uintptr_t) logoTex.handle, ImVec2(logoTex.width * 0.75, logoTex.height * 0.75));
 
 			if (ImGui::Button("Start Game"))
 			{

@@ -19,6 +19,7 @@ namespace sp
 
 	typedef std::unordered_map<std::string, weak_ptr<Asset> > AssetMap;
 	typedef std::unordered_map<std::string, weak_ptr<Model> > ModelMap;
+	typedef std::unordered_map<std::string, std::pair<size_t, size_t> > TarIndex;
 
 	class AssetManager
 	{
@@ -43,10 +44,13 @@ namespace sp
 			std::pair<const string, picojson::value> &jsonComp,
 			vector<string> reqParams);
 
+		void UpdateTarIndex();
+
 	private:
 		std::string base;
 		AssetMap loadedAssets;
 		ModelMap loadedModels;
+		TarIndex tarIndex;
 
 		tinygltf::TinyGLTFLoader gltfLoader;
 	};

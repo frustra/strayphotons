@@ -96,19 +96,14 @@
         "Effect-Red": {
             "name": "Red",
             "values": {
-                "diffuse": [
-                    0.8,
-                    0,
-                    0,
+                "baseColor": [
+                    1,
+                    1,
+                    1,
                     1
                 ],
-                "shininess": 256,
-                "specular": [
-                    0.2,
-                    0.2,
-                    0.2,
-                    1
-                ]
+                "roughness": 1,
+                "metallic": 0
             }
         }
     },

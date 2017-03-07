@@ -1,4 +1,6 @@
 #include "graphics/ShaderManager.hh"
+#include "assets/AssetManager.hh"
+#include "assets/Asset.hh"
 #include "core/Logging.hh"
 
 #include <fstream>
@@ -83,21 +85,6 @@ namespace sp
 		return output;
 	}
 
-	// TODO(pushrax): use asset manager
-	string loadFile(string path)
-	{
-		string filename = "../src/shaders/" + path;
-
-		std::ifstream fin(filename, std::ios::binary);
-		if (!fin.good())
-		{
-			Errorf("Shader file %s could not be read", path);
-			throw std::runtime_error("missing shader: " + path);
-		}
-
-		return string((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
-	}
-
 	string formatError(string err, string unit, string root, int line)
 	{
 		if (root == unit || root == "")
@@ -115,9 +102,9 @@ namespace sp
 
 	string ShaderManager::LoadShader(ShaderCompileInput &input, string name)
 	{
-		string src = loadFile(name);
+		auto asset = GAssets.Load("shaders/" + name);
 		input.units.push_back(name);
-		return ProcessShaderSource(input, src);
+		return ProcessShaderSource(input, asset->String());
 	}
 
 	string ShaderManager::ProcessShaderSource(ShaderCompileInput &input, string src)
