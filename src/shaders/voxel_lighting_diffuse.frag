@@ -3,8 +3,7 @@
 layout (binding = 0) uniform sampler2D gBuffer0;
 layout (binding = 1) uniform sampler2D gBuffer1;
 layout (binding = 2) uniform sampler2D gBuffer2;
-layout (binding = 3) uniform sampler2D gBuffer3;
-layout (binding = 4) uniform sampler3D voxelRadiance;
+layout (binding = 3) uniform sampler3D voxelRadiance;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
@@ -25,12 +24,12 @@ void main()
 {
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
 	vec4 gb1 = texture(gBuffer1, inTexCoord);
-	vec4 gb3 = texture(gBuffer3, inTexCoord);
+	vec4 gb2 = texture(gBuffer2, inTexCoord);
 
 	vec3 baseColor = gb0.rgb;
 	float roughness = gb0.a;
-	vec3 viewNormal = gb1.rgb;
-	vec3 viewPosition = gb3.rgb;
+	vec3 viewNormal = DecodeNormal(gb1.rg);
+	vec3 viewPosition = gb2.rgb;
 
 	if (length(viewNormal) < 0.9) {
 		outFragColor.rgb = vec3(0);

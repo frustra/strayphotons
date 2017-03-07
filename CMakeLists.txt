@@ -84,6 +84,7 @@ include_directories(
 	${EXT_PATH}/fmod/include/fmod
 	${EXT_PATH}/fmod/include/fmodstudio
 	${EXT_PATH}/cxxopts/include
+	${EXT_PATH}/microtar/src
 	${EXT_PATH}
 )
 
@@ -96,6 +97,8 @@ add_library(ImGui STATIC ${ImGui_sources})
 if (NOT WIN32)
 	add_library(linenoise STATIC ${EXT_PATH}/linenoise/linenoise.c)
 endif()
+
+add_library(microtar STATIC ${EXT_PATH}/microtar/src/microtar.c)
 
 
 # split into lib and exe so tests can link against lib
@@ -111,13 +114,13 @@ file(GLOB_RECURSE all_headers ${CMAKE_CURRENT_SOURCE_DIR}/src/*.hh)
 list(REMOVE_DUPLICATES all_headers)
 
 file(GLOB_RECURSE all_shaders
-	${CMAKE_CURRENT_SOURCE_DIR}/src/*.glsl
-	${CMAKE_CURRENT_SOURCE_DIR}/src/*.vert
-	${CMAKE_CURRENT_SOURCE_DIR}/src/*.tesc
-	${CMAKE_CURRENT_SOURCE_DIR}/src/*.tese
-	${CMAKE_CURRENT_SOURCE_DIR}/src/*.geom
-	${CMAKE_CURRENT_SOURCE_DIR}/src/*.frag
-	${CMAKE_CURRENT_SOURCE_DIR}/src/*.comp)
+	${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/*.glsl
+	${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/*.vert
+	${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/*.tesc
+	${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/*.tese
+	${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/*.geom
+	${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/*.frag
+	${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/*.comp)
 list(REMOVE_DUPLICATES all_shaders)
 
 add_library(${PROJECT_LIB} ${all_sources} ${all_headers} ${all_shaders})
@@ -261,6 +264,7 @@ target_link_libraries(${PROJECT_EXE}
 	vhacd
 	${GLFW_LIBRARIES}
 	ImGui
+	microtar
 )
 
 if (NOT WIN32)

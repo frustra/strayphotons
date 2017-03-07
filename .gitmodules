@@ -37,3 +37,6 @@
 [submodule "ext/linenoise"]
 	path = ext/linenoise
 	url = https://github.com/frustra/linenoise.git
+[submodule "ext/microtar"]
+	path = ext/microtar
+	url = git@github.com:rxi/microtar.git

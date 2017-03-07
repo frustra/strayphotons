@@ -103,4 +103,19 @@ float LinearDepthBias(vec3 viewPos, mat4 projMat, float bias) {
 	return ViewPosToScreenPos(viewPos + vec3(0, 0, bias), projMat).z;
 }
 
+// Encodes a normal vector into a vec2 by using length to store z
+vec2 EncodeNormalSphereMap(vec3 normal) {
+	if (dot(normal.xy, normal.xy) < 1e-8) {
+		return normalize(vec2(1));
+	} else {
+		return normalize(normal.xy) * sqrt(normal.z * 0.5 + 0.5);
+	}
+}
+
+// Decodes a normal vector from EncodeNormalSphereMap
+vec3 DecodeNormal(vec2 encoded) {
+	float z = dot(encoded, encoded) * 2.0 - 1.0;
+	return vec3(normalize(encoded) * sqrt(1.0 - z * z), z);
+}
+
 #endif

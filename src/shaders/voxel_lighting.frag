@@ -9,13 +9,12 @@
 layout (binding = 0) uniform sampler2D gBuffer0;
 layout (binding = 1) uniform sampler2D gBuffer1;
 layout (binding = 2) uniform sampler2D gBuffer2;
-layout (binding = 3) uniform sampler2D gBuffer3;
-layout (binding = 4) uniform sampler2D shadowMap;
-layout (binding = 5) uniform sampler2DArray mirrorShadowMap;
-layout (binding = 6) uniform sampler3D voxelRadiance;
-layout (binding = 7) uniform sampler2D indirectDiffuseSampler;
-layout (binding = 8) uniform usampler2D mirrorIndexStencil;
-layout (binding = 9) uniform sampler2D lightingGel;
+layout (binding = 3) uniform sampler2D shadowMap;
+layout (binding = 4) uniform sampler2DArray mirrorShadowMap;
+layout (binding = 5) uniform sampler3D voxelRadiance;
+layout (binding = 6) uniform sampler2D indirectDiffuseSampler;
+layout (binding = 7) uniform usampler2D mirrorIndexStencil;
+layout (binding = 8) uniform sampler2D lightingGel;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
@@ -52,8 +51,8 @@ uniform int mode = 1;
 
 void getDepthNormal(out float depth, out vec3 normal, vec2 texCoord)
 {
-	normal = texture(gBuffer1, texCoord).xyz;
-	depth = length(texture(gBuffer3, texCoord));
+	normal = DecodeNormal(texture(gBuffer1, texCoord).xy);
+	depth = length(texture(gBuffer2, texCoord));
 }
 
 bool detectEdge(vec3 centerNormal, float centerDepth, vec2 tcRadius)
@@ -90,12 +89,11 @@ void main()
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
 	vec4 gb1 = texture(gBuffer1, inTexCoord);
 	vec4 gb2 = texture(gBuffer2, inTexCoord);
-	vec4 gb3 = texture(gBuffer3, inTexCoord);
 
 	vec3 baseColor = gb0.rgb;
 	float roughness = gb0.a;
-	vec3 viewNormal = gb1.rgb;
-	vec3 flatViewNormal = gb2.rgb;
+	vec3 viewNormal = DecodeNormal(gb1.rg);
+	vec3 flatViewNormal = DecodeNormal(gb1.ba);
 	float metalness = gb2.a;
 
 	if (length(viewNormal) < 0.9) {
@@ -105,7 +103,7 @@ void main()
 
 	// Determine coordinates of fragment.
 	vec3 fragPosition = ScreenPosToViewPos(inTexCoord, 0, invProjMat);
-	vec3 viewPosition = gb3.rgb;
+	vec3 viewPosition = gb2.rgb;
 	vec3 worldPosition = (invViewMat * vec4(viewPosition, 1.0)).xyz;
 	vec3 worldFragPosition = (invViewMat * vec4(fragPosition, 1.0)).xyz;
 

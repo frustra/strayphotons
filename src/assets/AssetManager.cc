@@ -1,6 +1,10 @@
 #define TINYGLTF_LOADER_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #include "tiny_gltf_loader.h"
+extern "C"
+{
+#include <microtar.h>
+}
 
 #include "assets/AssetManager.hh"
 #include "assets/Asset.hh"
@@ -23,18 +27,58 @@
 #include "ecs/components/Barrier.hh"
 
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
 #include <iostream>
 #include <fstream>
+#include <utility>
 
 namespace sp
 {
 	AssetManager GAssets;
 
 	const std::string ASSETS_DIR = "../assets/";
+	const std::string ASSETS_TAR = "./assets.tar";
+	const std::string SHADERS_DIR = "../src/";
+
+	void AssetManager::UpdateTarIndex()
+	{
+		mtar_t tar;
+		if (mtar_open(&tar, ASSETS_TAR.c_str(), "r") != MTAR_ESUCCESS)
+		{
+			Errorf("Failed to build asset index");
+			return;
+		}
+
+		mtar_header_t h;
+		while (mtar_read_header(&tar, &h) != MTAR_ENULLRECORD)
+		{
+			size_t offset = tar.pos + 512 * sizeof(unsigned char);
+			tarIndex[h.name] = std::make_pair(offset, h.size);
+			mtar_next(&tar);
+		}
+
+		mtar_close(&tar);
+	}
 
 	bool AssetManager::InputStream(const std::string &path, std::ifstream &stream, size_t *size)
 	{
-		stream.open(ASSETS_DIR + path, std::ios::in | std::ios::binary);
+#ifdef PACKAGE_RELEASE
+		if (tarIndex.size() == 0) UpdateTarIndex();
+
+		stream.open(ASSETS_TAR, std::ios::in | std::ios::binary);
+
+		if (stream && tarIndex.count(path))
+		{
+			auto indexData = tarIndex[path];
+			if (size) *size = indexData.second;
+			stream.seekg(indexData.first, std::ios::beg);
+			return true;
+		}
+
+		return false;
+#else
+		string filename = (boost::starts_with(path, "shaders/") ? SHADERS_DIR : ASSETS_DIR) + path;
+		stream.open(filename, std::ios::in | std::ios::binary);
 
 		if (size && stream)
 		{
@@ -44,6 +88,7 @@ namespace sp
 		}
 
 		return !!stream;
+#endif
 	}
 
 	bool AssetManager::OutputStream(const std::string &path, std::ofstream &stream)
@@ -62,8 +107,6 @@ namespace sp
 
 		if (it == loadedAssets.end() || it->second.expired())
 		{
-			Logf("Loading asset: %s", path);
-
 			std::ifstream in;
 			size_t size;
 
@@ -105,6 +148,7 @@ namespace sp
 		{
 			Logf("Loading model: %s", name);
 			shared_ptr<Asset> asset = Load("models/" + name + "/" + name + ".gltf");
+			if (!asset) asset = Load("models/" + name + ".gltf");
 			Assert(asset != nullptr, "Model asset not found");
 			auto scene = make_shared<tinygltf::Scene>();
 			std::string err;
