@@ -524,7 +524,6 @@ namespace sp
 		targets.gBuffer0 = RTPool->Get({ PF_RGBA8, view.extents });
 		targets.gBuffer1 = RTPool->Get({ PF_RGBA16F, view.extents });
 		targets.gBuffer2 = RTPool->Get({ PF_RGBA16F, view.extents });
-		targets.gBuffer3 = RTPool->Get({ PF_RGBA16F, view.extents });
 		targets.depth = RTPool->Get({ PF_DEPTH24_STENCIL8, view.extents });
 		targets.shadowMap = shadowMap;
 		targets.mirrorShadowMap = mirrorShadowMap;
@@ -539,19 +538,18 @@ namespace sp
 			auto mirrorIndexStencil0 = RTPool->Get({ PF_R32UI, view.extents });
 			auto mirrorIndexStencil1 = RTPool->Get({ PF_R32UI, view.extents });
 
-			const int attachmentCount = 5;
+			const int attachmentCount = 4;
 
 			Texture attachments[attachmentCount] =
 			{
 				targets.gBuffer0->GetTexture(),
 				targets.gBuffer1->GetTexture(),
 				targets.gBuffer2->GetTexture(),
-				targets.gBuffer3->GetTexture(),
 				mirrorIndexStencil0->GetTexture(),
 			};
 
 			GLuint fb0 = RTPool->GetFramebuffer(attachmentCount, attachments, &targets.depth->GetTexture());
-			attachments[4] = mirrorIndexStencil1->GetTexture();
+			attachments[attachmentCount - 1] = mirrorIndexStencil1->GetTexture();
 			GLuint fb1 = RTPool->GetFramebuffer(attachmentCount, attachments, &targets.depth->GetTexture());
 
 			glEnable(GL_CULL_FACE);

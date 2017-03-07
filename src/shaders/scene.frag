@@ -24,8 +24,7 @@ layout (location = 5) flat in int inMirrorIndex;
 layout (location = 0) out vec4 gBuffer0;
 layout (location = 1) out vec4 gBuffer1;
 layout (location = 2) out vec4 gBuffer2;
-layout (location = 3) out vec4 gBuffer3;
-layout (location = 4) out uint outMirrorIndexStencil;
+layout (location = 3) out uint outMirrorIndexStencil;
 
 const float bumpDepth = 0.1;
 
@@ -86,9 +85,8 @@ void main()
 
 	gBuffer0.rgb = baseColor.rgb;
 	gBuffer0.a = roughness;
-	gBuffer1.rgb = viewNormal;
-	gBuffer1.a = 0.0; // TODO(xthexder): Emissiveness
-	gBuffer2.rgb = inNormal;
+	gBuffer1.rg = EncodeNormalSphereMap(viewNormal);
+	gBuffer1.ba = EncodeNormalSphereMap(inNormal);
+	gBuffer2.rgb = inViewPos;
 	gBuffer2.a = metallic;
-	gBuffer3.rgb = inViewPos;
 }
