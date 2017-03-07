@@ -55,10 +55,10 @@ void main()
 
 	float metalness = texture(metallicTex, inTexCoord).r;
 
-	vec3 position = vec3(gl_FragCoord.xy / VoxelSuperSampleScale, gl_FragCoord.z * VoxelGridSize);
-	position = AxisSwapReverse[abs(inDirection)-1] * (position - VoxelGridSize / 2);
+	vec3 position = vec3(gl_FragCoord.xy / VOXEL_SUPER_SAMPLE_SCALE, gl_FragCoord.z * VOXEL_GRID_SIZE);
+	position = AxisSwapReverse[abs(inDirection)-1] * (position - VOXEL_GRID_SIZE / 2);
 	vec3 worldPosition = position * voxelSize + voxelGridCenter;
-	position += VoxelGridSize / 2;
+	position += VOXEL_GRID_SIZE / 2;
 
 	vec3 pixelLuminance = DirectShading(worldPosition, baseColor.rgb, inNormal, inNormal);
 	if (lightAttenuation > 0) {

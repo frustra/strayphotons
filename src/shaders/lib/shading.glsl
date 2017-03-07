@@ -1,5 +1,3 @@
-#define USE_SHADOW_MAPPING
-
 ##import lib/lighting_util
 ##import lib/spatial_util
 
@@ -97,7 +95,7 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 		// Calculate direct occlusion.
 		vec3 shadowMapPos = (lights[i].view * vec4(worldPosition, 1.0)).xyz; // Position of light view-space.
 		vec3 surfaceNormal = normalize(mat3(lights[i].view) * flatNormal);
-		float occlusion = 1;
+		float occlusion = step(lights[i].clip.x, -shadowMapPos.z);
 
 		vec2 viewBounds = vec2(lights[i].invProj[0][0], lights[i].invProj[1][1]) * lights[i].clip.x;
 		ShadowInfo info = ShadowInfo(
@@ -110,11 +108,11 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 			vec4(-viewBounds, viewBounds * 2.0)
 		);
 
-#ifdef USE_SHADOW_MAPPING
+#ifdef SHADOWS_ENABLED
 #ifdef USE_PCF
-		occlusion = DirectOcclusion(info, surfaceNormal, rotation);
+		occlusion *= DirectOcclusion(info, surfaceNormal, rotation);
 #else
-		occlusion = SimpleOcclusion(info);
+		occlusion *= SimpleOcclusion(info);
 #endif
 #endif
 
@@ -122,7 +120,7 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 #ifdef LIGHTING_GEL
 		if (lights[i].gelId > 0) {
 			vec2 coord = ViewPosToScreenPos(shadowMapPos, lights[i].proj).xy;
-			lightTint = texture(lightingGel, coord).rgb;
+			lightTint = texture(lightingGel, coord).rgb * float(coord == clamp(coord, 0, 1));
 		}
 #endif
 
@@ -174,7 +172,7 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 		// Calculate direct occlusion.
 		vec3 shadowMapPos = (mirrorData.viewMat[i] * vec4(worldPosition, 1.0)).xyz; // Position of light view-space.
 		vec3 surfaceNormal = normalize(mat3(mirrorData.viewMat[i]) * flatNormal);
-		float occlusion = 1;
+		float occlusion = step(mirrorData.clip[i].x, -shadowMapPos.z);
 
 		ShadowInfo info = ShadowInfo(
 			i,
@@ -186,11 +184,11 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 			mirrorData.nearInfo[i]
 		);
 
-#ifdef USE_SHADOW_MAPPING
+#ifdef SHADOWS_ENABLED
 #ifdef USE_PCF
-		occlusion = DirectOcclusionMirror(info, surfaceNormal, rotation);
+		occlusion *= DirectOcclusionMirror(info, surfaceNormal, rotation);
 #else
-		occlusion = SimpleOcclusionMirror(info);
+		occlusion *= SimpleOcclusionMirror(info);
 #endif
 #endif
 

@@ -3,7 +3,7 @@
 
 ##import lib/spatial_util
 
-const float InvVoxelGridSize = 1.0 / VoxelGridSize;
+const float InvVoxelGridSize = 1.0 / VOXEL_GRID_SIZE;
 
 vec4 SampleVoxelLod(vec3 position, vec3 dir, float level)
 {
@@ -12,10 +12,10 @@ vec4 SampleVoxelLod(vec3 position, vec3 dir, float level)
 
 vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, vec2 fragCoord)
 {
-	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
+	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VOXEL_GRID_SIZE * 0.5;
 
 	float dist = InterleavedGradientNoise(fragCoord);
-	float maxDist = VoxelGridSize * 1.5;
+	float maxDist = VOXEL_GRID_SIZE * 1.5;
 
 	vec4 result = vec4(0);
 
@@ -42,10 +42,10 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 
 vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 {
-	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VoxelGridSize * 0.5;
+	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VOXEL_GRID_SIZE * 0.5;
 	float startDist = max(1.75, min(1.75 / dot(rayDir, surfaceNormal), 3.0));
 	float dist = startDist;
-	float maxDist = VoxelGridSize * 1.5;
+	float maxDist = VOXEL_GRID_SIZE * 1.5;
 
 	vec4 result = vec4(0);
 	float level = 0;

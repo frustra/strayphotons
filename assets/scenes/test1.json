@@ -1,5 +1,6 @@
 {
 	"autoexec": [
+		"r.MirrorRecursion 1"
 	],
 	"entities": [
 		{

@@ -28,7 +28,7 @@ float SimpleOcclusion(ShadowInfo info) {
 	float testDepth = LinearDepth(info.shadowMapPos, info.clip);
 	float sampledDepth = texture(TEXTURE_SAMPLER(texCoord.xy * info.mapOffset.zw + info.mapOffset.xy)).r;
 
-	return step(info.clip.x, -info.shadowMapPos.z) * smoothstep(testDepth - shadowBias, testDepth - shadowBias * 0.2, sampledDepth);
+	return smoothstep(testDepth - shadowBias, testDepth - shadowBias * 0.2, sampledDepth);
 }
 
 #ifdef MIRROR_SAMPLE
@@ -64,7 +64,7 @@ float SampleOcclusion(vec3 shadowMapCoord, ShadowInfo info, vec3 surfaceNormal, 
 	float minTest = min(sampledDepth.y, testDepth - shadowBias);
 	minTest = max(minTest, step(sampledDepth.z, testDepth - shadowBias * 2.0) * testDepth - shadowBias);
 
-	return step(info.clip.x, -info.shadowMapPos.z) * edgeTerm.x * edgeTerm.y * smoothstep(minTest, testDepth, sampledDepth.x);
+	return edgeTerm.x * edgeTerm.y * smoothstep(minTest, testDepth, sampledDepth.x);
 }
 
 #ifdef MIRROR_SAMPLE

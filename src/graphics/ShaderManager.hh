@@ -11,7 +11,8 @@ namespace sp
 		static void RegisterShaderType(ShaderMeta *metaType);
 		static vector<ShaderMeta *> &ShaderTypes();
 
-		static void SetDefine(string name, string value = "");
+		static void SetDefine(string name, string value);
+		static void SetDefine(string name, bool value = true);
 		static std::unordered_map<string, string> &DefineVars();
 
 		ShaderManager() { }

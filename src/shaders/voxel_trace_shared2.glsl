@@ -13,7 +13,7 @@ float GetVoxelNearest(vec3 position, int level, out vec3 radiance)
 
 float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitRadiance)
 {
-	vec3 voxelVolumeMax = vec3(voxelSize * VoxelGridSize * 0.5);
+	vec3 voxelVolumeMax = vec3(voxelSize * VOXEL_GRID_SIZE * 0.5);
 	vec3 voxelVolumeMin = -voxelVolumeMax;
 
 	rayPos -= voxelGridCenter;
@@ -32,7 +32,7 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitRadiance)
 		rayPos += rayDir * tmin;
 	}
 
-	vec3 voxelPos = (rayPos.xyz / voxelSize + VoxelGridSize * 0.5);
+	vec3 voxelPos = (rayPos.xyz / voxelSize + VOXEL_GRID_SIZE * 0.5);
 	ivec3 voxelIndex = ivec3(voxelPos);
 
 	vec3 deltaDist = abs(vec3(1.0) / rayDir);
@@ -41,7 +41,7 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitRadiance)
 
 	// Distance to next voxel in each axis
 	vec3 sideDist = (raySign * (vec3(voxelIndex) - voxelPos) + (raySign * 0.5) + 0.5) * deltaDist;
-	int maxIterations = int(VoxelGridSize * 3);
+	int maxIterations = int(VOXEL_GRID_SIZE * 3);
 	bvec3 mask;
 
 	for (int i = 0; i < maxIterations; i++)

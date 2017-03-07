@@ -29,10 +29,21 @@ namespace sp
 		return defineVars;
 	}
 
-	// TODO(xthexder): possibly recompile shaders if defines change
 	void ShaderManager::SetDefine(string name, string value)
 	{
 		DefineVars()[name] = value;
+	}
+
+	void ShaderManager::SetDefine(string name, bool value)
+	{
+		if (value)
+		{
+			DefineVars()[name] = "1";
+		}
+		else
+		{
+			DefineVars().erase(name);
+		}
 	}
 
 	ShaderManager::~ShaderManager()

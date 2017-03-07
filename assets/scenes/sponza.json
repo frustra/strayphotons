@@ -1,4 +1,7 @@
 {
+	"autoexec": [
+		"r.MirrorRecursion 1"
+	],
 	"entities": [
 		{
 			"renderable": "sponza-pbr",

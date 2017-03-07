@@ -63,8 +63,7 @@ namespace ecs
 			controller->pitch = std::max(-((float)M_PI_2 - feps), std::min(controller->pitch, (float)M_PI_2 - feps));
 
 			transform->rotate = glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll));
-			
-			bool moving = false;
+
 			if(!controller->jumping)
 			{
 				controller->lastGroundVelocity = glm::vec3();
@@ -84,19 +83,15 @@ namespace ecs
 				switch (action)
 				{
 					case ControlAction::MOVE_FORWARD:
-						moving = true;
 						move(entity, dtSinceLastFrame, glm::vec3(0, 0, -1));
 						break;
 					case ControlAction::MOVE_BACKWARD:
-						moving = true;
 						move(entity, dtSinceLastFrame, glm::vec3(0, 0, 1));
 						break;
 					case ControlAction::MOVE_LEFT:
-						moving = true;
 						move(entity, dtSinceLastFrame, glm::vec3(-1, 0, 0));
 						break;
 					case ControlAction::MOVE_RIGHT:
-						moving = true;
 						move(entity, dtSinceLastFrame, glm::vec3(1, 0, 0));
 						break;
 					case ControlAction::MOVE_UP:

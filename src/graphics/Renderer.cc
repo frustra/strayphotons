@@ -48,6 +48,28 @@ namespace sp
 	static CVar<int> CVarMirrorMapResolution("r.MirrorMapResolution", 512, "Resolution of mirror shadow maps");
 	static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.5, "Light attenuation for voxel bounces");
 
+	static CVar<int> CVarVoxelGridSize("r.VoxelGridSize", 256, "NxNxN voxel grid dimensions");
+	static CVar<float> CVarVoxelSuperSample("r.VoxelSuperSample", 1.0, "Render voxel grid with Nx supersampling");
+	static CVar<bool> CVarEnableShadows("r.EnableShadows", true, "Enable shadow mapping");
+	static CVar<bool> CVarEnablePCF("r.EnablePCF", true, "Enable smooth shadow sampling");
+
+	void Renderer::UpdateShaders(bool force)
+	{
+		if (force ||
+			CVarVoxelGridSize.Changed() ||
+			CVarVoxelSuperSample.Changed() ||
+			CVarEnableShadows.Changed() ||
+			CVarEnablePCF.Changed()
+		)
+		{
+			ShaderManager::SetDefine("VOXEL_GRID_SIZE", std::to_string(CVarVoxelGridSize.Get(true)));
+			ShaderManager::SetDefine("VOXEL_SUPER_SAMPLE_SCALE", std::to_string(CVarVoxelSuperSample.Get(true)));
+			ShaderManager::SetDefine("SHADOWS_ENABLED", CVarEnableShadows.Get(true));
+			ShaderManager::SetDefine("PCF_ENABLED", CVarEnablePCF.Get(true));
+			ShaderControl->CompileAll(GlobalShaders);
+		}
+	}
+
 	void Renderer::Prepare()
 	{
 		Assert(GLEW_ARB_compute_shader, "ARB_compute_shader required");
@@ -60,17 +82,12 @@ namespace sp
 		debugGuiRenderer = make_shared<GuiRenderer>(*this, &game->debugGui);
 		menuGuiRenderer = make_shared<GuiRenderer>(*this, &game->menuGui);
 
-		int voxelGridSize = game->options["voxel-gridsize"].as<int>();
-		float voxelSuperSampleScale = game->options["voxel-supersample"].as<float>();
-
 		ShaderControl = new ShaderManager();
-		ShaderManager::SetDefine("VoxelGridSize", std::to_string(voxelGridSize));
-		ShaderManager::SetDefine("VoxelSuperSampleScale", std::to_string(voxelSuperSampleScale));
 		ShaderManager::SetDefine("MAX_LIGHTS", std::to_string(MAX_LIGHTS));
 		ShaderManager::SetDefine("MAX_MIRRORS", std::to_string(MAX_MIRRORS));
 		ShaderManager::SetDefine("MAX_MIRROR_RECURSION", std::to_string(MAX_MIRROR_RECURSION));
 		ShaderManager::SetDefine("MAX_LIGHT_SENSORS", std::to_string(MAX_LIGHT_SENSORS));
-		ShaderControl->CompileAll(GlobalShaders);
+		UpdateShaders(true);
 
 		game->entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction & d)
 		{
@@ -138,6 +155,13 @@ namespace sp
 
 		if (lightCount == 0) return;
 
+		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
+		glDisable(GL_SCISSOR_TEST);
+		glEnable(GL_CULL_FACE);
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		glClear(GL_DEPTH_BUFFER_BIT);
+
 		RenderTargetDesc shadowDesc(PF_R32F, renderTargetSize);
 		if (!shadowMap || shadowMap->GetDesc() != shadowDesc)
 		{
@@ -163,47 +187,43 @@ namespace sp
 			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * MAX_MIRRORS + sizeof(GLuint) * 8 + sizeof(glm::mat4) * 6) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
 		}
 
-		auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH16, renderTargetSize));
-		SetRenderTarget(&shadowMap->GetTexture(), &depthTarget->GetTexture());
-
-		mirrorVisData.Clear(PF_R32UI, 0);
-		mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
-
-		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
-		glDisable(GL_SCISSOR_TEST);
-		glEnable(GL_CULL_FACE);
-		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_TRUE);
-		glClear(GL_DEPTH_BUFFER_BIT);
-
-		for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
+		if (CVarEnableShadows.Get())
 		{
-			auto light = entity.Get<ecs::Light>();
-			if (entity.Has<ecs::View>())
+			auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH16, renderTargetSize));
+			SetRenderTarget(&shadowMap->GetTexture(), &depthTarget->GetTexture());
+
+			mirrorVisData.Clear(PF_R32UI, 0);
+			mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
+
+			for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
 			{
-				light->mapOffset /= glm::vec4(renderTargetSize, renderTargetSize);
-
-				ecs::Handle<ecs::View> view = entity.Get<ecs::View>();
-
-				ShaderControl->BindPipeline<ShadowMapVS, ShadowMapFS>(GlobalShaders);
-
-				auto shadowMapVS = GlobalShaders->Get<ShadowMapVS>();
-				auto shadowMapFS = GlobalShaders->Get<ShadowMapFS>();
-				shadowMapFS->SetClip(view->clip);
-				shadowMapFS->SetLight(light->lightId);
-				ForwardPass(*view, shadowMapVS, [&] (ecs::Entity & ent)
+				auto light = entity.Get<ecs::Light>();
+				if (entity.Has<ecs::View>())
 				{
-					if (ent.Has<ecs::Mirror>())
+					light->mapOffset /= glm::vec4(renderTargetSize, renderTargetSize);
+
+					ecs::Handle<ecs::View> view = entity.Get<ecs::View>();
+
+					ShaderControl->BindPipeline<ShadowMapVS, ShadowMapFS>(GlobalShaders);
+
+					auto shadowMapVS = GlobalShaders->Get<ShadowMapVS>();
+					auto shadowMapFS = GlobalShaders->Get<ShadowMapFS>();
+					shadowMapFS->SetClip(view->clip);
+					shadowMapFS->SetLight(light->lightId);
+					ForwardPass(*view, shadowMapVS, [&] (ecs::Entity & ent)
 					{
-						auto mirror = ent.Get<ecs::Mirror>();
-						shadowMapFS->SetMirrorId(mirror->mirrorId);
-					}
-					else
-					{
-						shadowMapFS->SetMirrorId(-1);
-					}
-				});
-				glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+						if (ent.Has<ecs::Mirror>())
+						{
+							auto mirror = ent.Get<ecs::Mirror>();
+							shadowMapFS->SetMirrorId(mirror->mirrorId);
+						}
+						else
+						{
+							shadowMapFS->SetMirrorId(-1);
+						}
+					});
+					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+				}
 			}
 		}
 
@@ -295,18 +315,20 @@ namespace sp
 		glm::ivec3 unpackedSize = glm::ivec3(VoxelGridSize, VoxelGridSize, VoxelGridSize);
 		auto VoxelMipLevels = ceil(log2(VoxelGridSize));
 
-		if (!computeIndirectBuffer1)
+		auto indirectBufferSize = sizeof(GLuint) * 4 * VoxelMipLevels;
+
+		if (!computeIndirectBuffer1) computeIndirectBuffer1.Create();
+		if (!computeIndirectBuffer2) computeIndirectBuffer2.Create();
+		if (computeIndirectBuffer1.size != indirectBufferSize)
 		{
-			computeIndirectBuffer1.Create()
-			.Data(sizeof(GLuint) * 4 * VoxelMipLevels, nullptr, GL_DYNAMIC_COPY);
+			computeIndirectBuffer1.Data(indirectBufferSize, nullptr, GL_DYNAMIC_COPY);
 
 			GLuint listData[] = {0, 0, 1, 1};
 			computeIndirectBuffer1.Clear(PF_RGBA32UI, listData);
 		}
-		if (!computeIndirectBuffer2)
+		if (computeIndirectBuffer2.size != indirectBufferSize)
 		{
-			computeIndirectBuffer2.Create()
-			.Data(sizeof(GLuint) * 4 * VoxelMipLevels, nullptr, GL_DYNAMIC_COPY);
+			computeIndirectBuffer2.Data(indirectBufferSize, nullptr, GL_DYNAMIC_COPY);
 
 			GLuint listData[] = {0, 0, 1, 1};
 			computeIndirectBuffer2.Clear(PF_RGBA32UI, listData);
@@ -488,6 +510,8 @@ namespace sp
 	{
 		RenderPhase phase("RenderPass", Timer);
 
+		UpdateShaders();
+
 		ecs::View menuView({ 2048, 2048 });
 		menuView.clearMode = GL_COLOR_BUFFER_BIT;
 		RenderMainMenu(menuView);
@@ -495,10 +519,7 @@ namespace sp
 
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::VoxelInfo>())
 		{
-			int voxelGridSize = game->options["voxel-gridsize"].as<int>();
-			float voxelSuperSampleScale = game->options["voxel-supersample"].as<float>();
-
-			voxelData.info = *ecs::UpdateVoxelInfoCache(ent, voxelGridSize, voxelSuperSampleScale);
+			voxelData.info = *ecs::UpdateVoxelInfoCache(ent, CVarVoxelGridSize.Get(), CVarVoxelSuperSample.Get());
 			if (CVarUpdateVoxels.Get()) RenderVoxelGrid();
 			UpdateLightSensors();
 			break;

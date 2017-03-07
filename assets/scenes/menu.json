@@ -1,7 +1,8 @@
 {
 	"autoexec": [
 		"g.MenuFocused 1",
-		"r.Exposure 0.15"
+		"r.Exposure 0.15",
+		"r.MirrorRecursion 0"
 	],
 	"entities": [
 		{

@@ -1,6 +1,9 @@
 #version 430
 
+#ifdef PCF_ENABLED
 #define USE_PCF
+#endif
+
 #define INCLUDE_MIRRORS
 #define LIGHTING_GEL
 
@@ -142,8 +145,14 @@ void main()
 
 	vec3 indirectDiffuse = vec3(0);
 
-	if (diffuseDownsample > 1 && detectEdge(viewNormal, length(viewPosition), diffuseDownsample * 0.65 / textureSize(gBuffer0, 0))) {
-		indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy);
+	if (diffuseDownsample > 1) {
+		if (detectEdge(viewNormal, length(viewPosition), diffuseDownsample * 0.65 / textureSize(gBuffer0, 0))) {
+			indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, vec2(0));
+		} else {
+			indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
+		}
+		// Add noise back in at full resolution to remove banding
+		indirectDiffuse *= 1.0 + InterleavedGradientNoise(gl_FragCoord.xy) * 0.1;
 	} else {
 		indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
 	}

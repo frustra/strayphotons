@@ -1,4 +1,7 @@
 {
+	"autoexec": [
+		"r.MirrorRecursion 0"
+	],
 	"entities": [
 		{
 			"renderable": "cornell-box-1",
