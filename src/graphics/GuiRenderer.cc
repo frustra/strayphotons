@@ -168,5 +168,8 @@ namespace sp
 				offset += pcmd.ElemCount;
 			}
 		}
+
+		glDisable(GL_SCISSOR_TEST);
+		glDisable(GL_BLEND);
 	}
 }

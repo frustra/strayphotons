@@ -63,7 +63,7 @@ namespace sp
 		framesSinceOpened++;
 
 		ImGuiIO &io = ImGui::GetIO();
-		io.MouseDrawCursor = selectedScreen != MenuScreen::Splash;
+		io.MouseDrawCursor = selectedScreen != MenuScreen::Splash && RenderMode() == MenuRenderMode::Gel;
 
 		inputManager->LockFocus(Focused(), FocusLevel);
 
@@ -80,9 +80,17 @@ namespace sp
 			{
 				io.MouseWheel = input.ScrollOffset().y;
 
-				auto cursorDiff = input.CursorDiff() * 2.0f;
-				io.MousePos.x = std::max(std::min(io.MousePos.x + cursorDiff.x, io.DisplaySize.x), 0.0f);
-				io.MousePos.y = std::max(std::min(io.MousePos.y + cursorDiff.y, io.DisplaySize.y), 0.0f);
+				if (RenderMode() == MenuRenderMode::Gel)
+				{
+					auto cursorDiff = input.CursorDiff() * 2.0f;
+					io.MousePos.x = std::max(std::min(io.MousePos.x + cursorDiff.x, io.DisplaySize.x), 0.0f);
+					io.MousePos.y = std::max(std::min(io.MousePos.y + cursorDiff.y, io.DisplaySize.y), 0.0f);
+				}
+				else
+				{
+					auto guiCursorPos = input.ImmediateCursor();
+					io.MousePos = ImVec2(guiCursorPos.x, guiCursorPos.y);
+				}
 			}
 		}
 	}
@@ -314,6 +322,8 @@ namespace sp
 	{
 		if (RenderMode() == MenuRenderMode::None)
 		{
+			inputManager->EnableCursor();
+
 			SetRenderMode(MenuRenderMode::Pause);
 			selectedScreen = MenuScreen::Main;
 
@@ -325,6 +335,11 @@ namespace sp
 
 	void MenuGuiManager::CloseMenu()
 	{
+		if (!inputManager->FocusLocked(FocusLevel) && RenderMode() != MenuRenderMode::Gel)
+		{
+			inputManager->DisableCursor();
+		}
+
 		if (RenderMode() == MenuRenderMode::Pause)
 		{
 			SetRenderMode(MenuRenderMode::None);
