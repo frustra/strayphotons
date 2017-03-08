@@ -131,7 +131,7 @@ namespace sp
 		ImVec4 white(1.0, 1.0, 1.0, 1.0);
 		ImVec4 green(0.05, 1.0, 0.3, 1.0);
 
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, black);
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, empty);
 		ImGui::PushStyleColor(ImGuiCol_Button, empty);
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, green);
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, green);
@@ -181,7 +181,7 @@ namespace sp
 				selectedScreen = MenuScreen::Options;
 			}
 
-			if (ImGui::Button("Exit Game"))
+			if (ImGui::Button("Quit"))
 			{
 				GConsoleManager.ParseAndExecute("exit");
 			}
@@ -240,12 +240,14 @@ namespace sp
 			ImGui::Columns(2, "optcols", false);
 
 			ImGui::PushFont(io.Fonts->Fonts[3]);
-			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 10));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 15));
 
 			ImGui::Text("Resolution");
 			ImGui::Text("Full Screen");
 
+			ImGui::PopStyleVar();
 			ImGui::NextColumn();
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 10));
 
 			{
 				static auto modes = game->graphics.GetContext()->MonitorModes();

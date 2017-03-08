@@ -4,7 +4,7 @@
 
 namespace sp
 {
-	class RenderMenuGui : public PostProcessPass<1, 1>
+	class RenderMenuGui : public PostProcessPass<2, 1>
 	{
 	public:
 		void Process(const PostProcessingContext *context);

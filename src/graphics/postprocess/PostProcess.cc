@@ -114,6 +114,32 @@ namespace sp
 		context.LastOutput = blending;
 	}
 
+	static void AddMenu(PostProcessingContext &context)
+	{
+		auto blurY1 = context.AddPass<BloomBlur>(glm::ivec2(0, 1), 2, 1.0f);
+		blurY1->SetInput(0, context.LastOutput);
+
+		auto blurX1 = context.AddPass<BloomBlur>(glm::ivec2(1, 0), 2);
+		blurX1->SetInput(0, blurY1);
+
+		auto blurY2 = context.AddPass<BloomBlur>(glm::ivec2(0, 1), 1);
+		blurY2->SetInput(0, blurX1);
+
+		auto blurX2 = context.AddPass<BloomBlur>(glm::ivec2(1, 0), 2);
+		blurX2->SetInput(0, blurY2);
+
+		auto blurY3 = context.AddPass<BloomBlur>(glm::ivec2(0, 1), 1);
+		blurY3->SetInput(0, blurX2);
+
+		auto blurX3 = context.AddPass<BloomBlur>(glm::ivec2(1, 0), 1, FLT_MAX, 0.2f);
+		blurX3->SetInput(0, blurY3);
+
+		auto menu = context.AddPass<RenderMenuGui>();
+		menu->SetInput(0, context.LastOutput);
+		menu->SetInput(1, blurX3);
+		context.LastOutput = menu;
+	}
+
 	void PostProcessing::Process(Renderer *renderer, sp::Game *game, ecs::View view, const EngineRenderTargets &targets)
 	{
 		RenderPhase phase("PostProcessing", renderer->Timer);
@@ -174,9 +200,7 @@ namespace sp
 
 		if (game->menuGui.RenderMode() == MenuRenderMode::Pause)
 		{
-			auto menu = context.AddPass<RenderMenuGui>();
-			menu->SetInput(0, context.LastOutput);
-			context.LastOutput = menu;
+			AddMenu(context);
 		}
 
 		if (CVarBloomEnabled.Get())

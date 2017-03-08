@@ -53,6 +53,7 @@ namespace sp
 		BloomBlurFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			Bind(direction, "direction");
+			Bind(clip, "clip");
 		}
 
 		void SetDirection(glm::ivec2 d)
@@ -60,8 +61,13 @@ namespace sp
 			Set(direction, glm::vec2(d));
 		}
 
+		void SetClip(float threshold, float scale)
+		{
+			Set(clip, glm::vec2(threshold, scale));
+		}
+
 	private:
-		Uniform direction;
+		Uniform direction, clip;
 	};
 
 	IMPLEMENT_SHADER_TYPE(BloomBlurFS, "bloom_blur.frag", Fragment);
@@ -71,7 +77,9 @@ namespace sp
 		auto r = context->renderer;
 		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 
-		r->GlobalShaders->Get<BloomBlurFS>()->SetDirection(direction);
+		auto shader = r->GlobalShaders->Get<BloomBlurFS>();
+		shader->SetDirection(direction);
+		shader->SetClip(clip, scale);
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, BloomBlurFS>(r->GlobalShaders);

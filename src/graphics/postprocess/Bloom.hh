@@ -26,7 +26,8 @@ namespace sp
 	class BloomBlur : public PostProcessPass<1, 1>
 	{
 	public:
-		BloomBlur(glm::ivec2 direction, int downsample = 1) : direction(direction), downsample(downsample) { }
+		BloomBlur(glm::ivec2 direction, int downsample = 1, float clip = FLT_MAX, float scale = 1.0f)
+			: direction(direction), downsample(downsample), clip(clip), scale(scale) { }
 
 		void Process(const PostProcessingContext *context);
 
@@ -45,6 +46,7 @@ namespace sp
 
 		glm::ivec2 direction;
 		int downsample;
+		float clip, scale;
 	};
 
 	class BloomCombine : public PostProcessPass<3, 1>
