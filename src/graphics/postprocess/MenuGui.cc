@@ -1,8 +1,5 @@
 #include "MenuGui.hh"
 #include "graphics/Renderer.hh"
-#include "graphics/ShaderManager.hh"
-#include "graphics/GenericShaders.hh"
-#include "graphics/Util.hh"
 
 namespace sp
 {
@@ -10,10 +7,11 @@ namespace sp
 	{
 		auto r = context->renderer;
 		auto view = context->view;
+		auto target = GetInput(0)->GetOutput()->TargetRef;
 
-		r->SetRenderTarget(&GetInput(0)->GetOutput()->TargetRef->GetTexture(), nullptr);
+		r->SetRenderTarget(&target->GetTexture(), nullptr);
 		r->RenderMainMenu(view);
 
-		SetOutputTarget(0, GetInput(0)->GetOutput()->TargetRef);
+		SetOutputTarget(0, target);
 	}
 }

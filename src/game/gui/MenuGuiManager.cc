@@ -131,6 +131,7 @@ namespace sp
 		ImVec4 white(1.0, 1.0, 1.0, 1.0);
 		ImVec4 green(0.05, 1.0, 0.3, 1.0);
 
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, black);
 		ImGui::PushStyleColor(ImGuiCol_Button, empty);
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, green);
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, green);
@@ -149,6 +150,7 @@ namespace sp
 			ImGuiWindowFlags_AlwaysAutoResize;
 
 		static Texture logoTex = GAssets.LoadTexture("logos/sp-menu.png");
+		static ImVec2 logoSize(logoTex.width * 0.5, logoTex.height * 0.5);
 
 		if (selectedScreen == MenuScreen::Splash)
 		{
@@ -162,7 +164,7 @@ namespace sp
 			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
 			ImGui::Begin("MenuMain", nullptr, flags);
 
-			ImGui::Image((void *)(uintptr_t) logoTex.handle, ImVec2(logoTex.width * 0.75, logoTex.height * 0.75));
+			ImGui::Image((void *)(uintptr_t) logoTex.handle, logoSize);
 
 			if (ImGui::Button(RenderMode() == MenuRenderMode::Pause ? "Resume" : "Start Game"))
 			{
@@ -191,7 +193,7 @@ namespace sp
 			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
 			ImGui::Begin("MenuSceneSelect", nullptr, flags);
 
-			ImGui::Image((void *)(uintptr_t) logoTex.handle, ImVec2(logoTex.width * 0.75, logoTex.height * 0.75));
+			ImGui::Image((void *)(uintptr_t) logoTex.handle, logoSize);
 
 			ImGui::Text("Scene Select");
 			ImGui::Text(" ");
@@ -200,19 +202,19 @@ namespace sp
 
 			if (ImGui::Button("Test1"))
 			{
-				CVarMenuFocused.Set(false);
+				CloseMenu();
 				GConsoleManager.ParseAndExecute("loadscene test1");
 			}
 
 			if (ImGui::Button("Level1"))
 			{
-				CVarMenuFocused.Set(false);
+				CloseMenu();
 				GConsoleManager.ParseAndExecute("loadscene level1");
 			}
 
 			if (ImGui::Button("Sponza"))
 			{
-				CVarMenuFocused.Set(false);
+				CloseMenu();
 				GConsoleManager.ParseAndExecute("loadscene sponza");
 			}
 
@@ -231,7 +233,7 @@ namespace sp
 			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
 			ImGui::Begin("MenuOptions", nullptr, flags);
 
-			ImGui::Image((void *)(uintptr_t) logoTex.handle, ImVec2(logoTex.width * 0.75, logoTex.height * 0.75));
+			ImGui::Image((void *)(uintptr_t) logoTex.handle, logoSize);
 
 			ImGui::Text("Options");
 			ImGui::Text(" ");
@@ -249,7 +251,7 @@ namespace sp
 				static auto modes = game->graphics.GetContext()->MonitorModes();
 				static vector<string> resLabels = MakeResolutionLabels(modes);
 
-				ImGui::PushItemWidth(400.0f);
+				ImGui::PushItemWidth(250.0f);
 				int resIndex = std::find(modes.begin(), modes.end(), CVarWindowSize.Get()) - modes.begin();
 				ImGui::Combo("##respicker", &resIndex, StringVectorGetter, &resLabels, modes.size());
 				ImGui::PopItemWidth();
@@ -281,7 +283,7 @@ namespace sp
 
 		ImGui::PopFont();
 		ImGui::PopStyleVar();
-		ImGui::PopStyleColor(8);
+		ImGui::PopStyleColor(9);
 	}
 
 	bool MenuGuiManager::Focused()
@@ -311,6 +313,7 @@ namespace sp
 		if (RenderMode() == MenuRenderMode::None)
 		{
 			SetRenderMode(MenuRenderMode::Pause);
+			selectedScreen = MenuScreen::Main;
 
 			CVarMenuFocused.Set(true);
 			inputManager->LockFocus(true, FocusLevel);
@@ -321,7 +324,10 @@ namespace sp
 	void MenuGuiManager::CloseMenu()
 	{
 		if (RenderMode() == MenuRenderMode::Pause)
+		{
 			SetRenderMode(MenuRenderMode::None);
+			selectedScreen = MenuScreen::Main;
+		}
 
 		CVarMenuFocused.Set(false);
 		inputManager->LockFocus(false, FocusLevel);

@@ -520,7 +520,7 @@ namespace sp
 
 		if (game->menuGui.RenderMode() == MenuRenderMode::Gel)
 		{
-			ecs::View menuView({ 2048, 2048 });
+			ecs::View menuView({ 1280, 1280 });
 			menuView.clearMode = GL_COLOR_BUFFER_BIT;
 			RenderMainMenu(menuView, true);
 		}
