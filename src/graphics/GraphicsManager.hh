@@ -4,6 +4,7 @@
 #include "ecs/Entity.hh"
 #include "ecs/components/View.hh"
 #include "game/gui/ProfilerGui.hh"
+#include "core/CVar.hh"
 
 namespace sp
 {
@@ -11,6 +12,10 @@ namespace sp
 	class GuiRenderer;
 	class GraphicsContext;
 	class InputManager;
+
+	extern CVar<glm::ivec2> CVarWindowSize;
+	extern CVar<float> CVarFieldOfView;
+	extern CVar<int> CVarWindowFullscreen;
 
 	namespace raytrace
 	{
@@ -33,6 +38,11 @@ namespace sp
 		void RenderLoading();
 
 		bool Frame();
+
+		GraphicsContext *GetContext()
+		{
+			return context;
+		}
 
 	private:
 		bool useBasic = false;

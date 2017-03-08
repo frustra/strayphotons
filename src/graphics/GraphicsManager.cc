@@ -18,9 +18,9 @@
 
 namespace sp
 {
-	static CVar<glm::ivec2> CVarWindowSize("r.Size", { 1600, 900 }, "Window height");
-	static CVar<float> CVarFieldOfView("r.FieldOfView", 70, "Camera field of view");
-	static CVar<int> CVarWindowFullscreen("r.Fullscreen", false, "Fullscreen window (0: window, 1: fullscreen)");
+	CVar<glm::ivec2> CVarWindowSize("r.Size", { 1600, 900 }, "Window height");
+	CVar<float> CVarFieldOfView("r.FieldOfView", 70, "Camera field of view");
+	CVar<int> CVarWindowFullscreen("r.Fullscreen", false, "Fullscreen window (0: window, 1: fullscreen)");
 
 #ifdef SP_ENABLE_RAYTRACER
 	static CVar<int> CVarRayTrace("r.RayTrace", false, "Run reference raytracer");

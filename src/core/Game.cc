@@ -20,7 +20,7 @@
 
 namespace sp
 {
-	Game::Game(cxxopts::Options &options) : options(options), graphics(this), audio(this), logic(this), physics()
+	Game::Game(cxxopts::Options &options) : options(options), menuGui(this), graphics(this), audio(this), logic(this), physics()
 	{
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created

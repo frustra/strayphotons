@@ -56,6 +56,7 @@ namespace sp
 		{
 			std::make_pair(GAssets.Load("fonts/DroidSans.ttf"), 16.0f),
 			std::make_pair(GAssets.Load("fonts/3270Medium.ttf"), 50.0f),
+			std::make_pair(GAssets.Load("fonts/3270Medium.ttf"), 40.0f),
 		};
 
 		io.Fonts->AddFontDefault(nullptr);

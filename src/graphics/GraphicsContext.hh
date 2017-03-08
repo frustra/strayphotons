@@ -26,6 +26,7 @@ namespace sp
 		void SetTitle(string title);
 		void BindInputCallbacks(InputManager &inputManager);
 		void ResizeWindow(ecs::View &frameBufferView, int fullscreen);
+		const vector<glm::ivec2> &MonitorModes();
 
 		virtual void Prepare() = 0;
 		virtual void BeginFrame() = 0;
@@ -46,6 +47,7 @@ namespace sp
 		glm::ivec2 prevWindowSize, prevWindowPos;
 		int prevFullscreen = 0;
 		double windowScale = 1.0;
+		vector<glm::ivec2> monitorModes;
 
 	protected:
 		GLFWwindow *window = nullptr;

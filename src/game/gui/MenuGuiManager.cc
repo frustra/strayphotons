@@ -2,11 +2,15 @@
 
 #include "assets/AssetManager.hh"
 #include "graphics/Texture.hh"
+#include "graphics/GraphicsManager.hh"
+#include "graphics/GraphicsContext.hh"
 #include "game/InputManager.hh"
 #include "core/Logging.hh"
 #include "core/CVar.hh"
 #include "core/Console.hh"
+#include "core/Game.hh"
 
+#include <sstream>
 #include <imgui/imgui.h>
 
 namespace sp
@@ -35,9 +39,9 @@ namespace sp
 
 			if (state == GLFW_PRESS && Focused && !inputManager->FocusLocked(FocusLevel))
 			{
-				if (key == GLFW_KEY_ENTER && selectedScreen == 0)
+				if (key == GLFW_KEY_ENTER && selectedScreen == MenuScreen::Splash)
 				{
-					selectedScreen = 1;
+					selectedScreen = MenuScreen::Main;
 				}
 			}
 		});
@@ -46,7 +50,7 @@ namespace sp
 	void MenuGuiManager::BeforeFrame()
 	{
 		ImGuiIO &io = ImGui::GetIO();
-		io.MouseDrawCursor = selectedScreen > 0;
+		io.MouseDrawCursor = selectedScreen != MenuScreen::Splash;
 
 		Focused = CVarMenuFocused.Get();
 		inputManager->LockFocus(Focused, FocusLevel);
@@ -60,17 +64,55 @@ namespace sp
 				io.MouseDown[i] = input.IsDown(MouseButtonToKey(i));
 			}
 
-			io.MouseWheel = input.ScrollOffset().y;
+			if (selectedScreen != MenuScreen::Splash)
+			{
+				io.MouseWheel = input.ScrollOffset().y;
 
-			auto cursorDiff = input.CursorDiff() * 2.0f;
-			io.MousePos.x = std::max(std::min(io.MousePos.x + cursorDiff.x, io.DisplaySize.x), 0.0f);
-			io.MousePos.y = std::max(std::min(io.MousePos.y + cursorDiff.y, io.DisplaySize.y), 0.0f);
+				auto cursorDiff = input.CursorDiff() * 2.0f;
+				io.MousePos.x = std::max(std::min(io.MousePos.x + cursorDiff.x, io.DisplaySize.x), 0.0f);
+				io.MousePos.y = std::max(std::min(io.MousePos.y + cursorDiff.y, io.DisplaySize.y), 0.0f);
+			}
 		}
+	}
+
+	static bool StringVectorGetter(void *data, int idx, const char **out_text)
+	{
+		auto vec = (vector<string> *) data;
+		if (out_text)
+		{
+			*out_text = vec->at(idx).c_str();
+		}
+		return true;
+	}
+
+	static bool IsAspect(glm::ivec2 size, int w, int h)
+	{
+		return ((size.x * h) / w) == size.y;
+	}
+
+	static vector<string> MakeResolutionLabels(const vector<glm::ivec2> &modes)
+	{
+		vector<string> labels;
+		for (int i = 0; i < modes.size(); i++)
+		{
+			auto m = modes[i];
+			std::stringstream str;
+			str << m.x << "x" << m.y;
+
+			if (IsAspect(m, 16, 9)) str << " (16:9)";
+			if (IsAspect(m, 16, 10)) str << " (16:10)";
+			if (IsAspect(m, 4, 3)) str << " (4:3)";
+
+			labels.push_back(str.str());
+		}
+		return labels;
 	}
 
 	void MenuGuiManager::DefineWindows()
 	{
 		ImGuiIO &io = ImGui::GetIO();
+
+		//ImGui::ShowTestWindow();
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0, 0.0, 0.0, 0.0));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.05, 1.0, 0.3, 1.0));
@@ -87,21 +129,19 @@ namespace sp
 			ImGuiWindowFlags_NoTitleBar |
 			ImGuiWindowFlags_AlwaysAutoResize;
 
-		if (selectedScreen == 0)
+		static Texture logoTex = GAssets.LoadTexture("logos/sp-menu.png");
+
+		if (selectedScreen == MenuScreen::Splash)
 		{
 			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
-
 			ImGui::Begin("Menu", nullptr, flags);
 			ImGui::Text("Press Enter");
 			ImGui::End();
 		}
-		else if (selectedScreen == 1)
+		else if (selectedScreen == MenuScreen::Main)
 		{
 			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
-
 			ImGui::Begin("Menu", nullptr, flags);
-
-			static Texture logoTex = GAssets.LoadTexture("logos/sp-menu.png");
 
 			ImGui::Image((void *)(uintptr_t) logoTex.handle, ImVec2(logoTex.width * 0.75, logoTex.height * 0.75));
 
@@ -110,11 +150,53 @@ namespace sp
 				CVarMenuFocused.Set(false);
 			}
 
-			ImGui::Button("Options");
+			if (ImGui::Button("Options"))
+			{
+				selectedScreen = MenuScreen::Options;
+			}
 
 			if (ImGui::Button("Exit Game"))
 			{
 				GConsoleManager.ParseAndExecute("exit");
+			}
+
+			ImGui::End();
+		}
+		else if (selectedScreen == MenuScreen::Options)
+		{
+			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
+			ImGui::Begin("Menu", nullptr, flags);
+
+			ImGui::Image((void *)(uintptr_t) logoTex.handle, ImVec2(logoTex.width * 0.75, logoTex.height * 0.75));
+
+			ImGui::PushFont(io.Fonts->Fonts[3]);
+			{
+				static auto modes = game->graphics.GetContext()->MonitorModes();
+				static vector<string> resLabels = MakeResolutionLabels(modes);
+
+				ImGui::PushItemWidth(400.0f);
+				int resIndex = std::find(modes.begin(), modes.end(), CVarWindowSize.Get()) - modes.begin();
+				ImGui::Combo(" Resolution", &resIndex, StringVectorGetter, &resLabels, modes.size());
+				ImGui::PopItemWidth();
+
+				if (resIndex >= 0 && resIndex < modes.size())
+				{
+					CVarWindowSize.Set(modes[resIndex]);
+				}
+			}
+
+			{
+				bool fullscreen = CVarWindowFullscreen.Get();
+				ImGui::Checkbox(" Full Screen", &fullscreen);
+				CVarWindowFullscreen.Set((int) fullscreen);
+			}
+			ImGui::PopFont();
+
+			ImGui::Text(" ");
+
+			if (ImGui::Button("Done"))
+			{
+				selectedScreen = MenuScreen::Main;
 			}
 
 			ImGui::End();

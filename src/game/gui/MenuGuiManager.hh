@@ -5,10 +5,20 @@
 namespace sp
 {
 	class InputManager;
+	class Game;
+
+	enum class MenuScreen
+	{
+		Splash,
+		Main,
+		Options,
+		SceneSelect
+	};
 
 	class MenuGuiManager : public GuiManager
 	{
 	public:
+		MenuGuiManager(Game *game) : game(game) { }
 		virtual ~MenuGuiManager() { }
 
 		void BeforeFrame();
@@ -20,7 +30,8 @@ namespace sp
 		const int FocusLevel = 10;
 
 	private:
+		Game *game = nullptr;
 		InputManager *inputManager = nullptr;
-		int selectedScreen = 0;
+		MenuScreen selectedScreen = MenuScreen::Splash;
 	};
 }

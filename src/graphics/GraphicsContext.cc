@@ -7,6 +7,7 @@
 
 #include <string>
 #include <iostream>
+#include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 
@@ -149,5 +150,30 @@ namespace sp
 
 		prevFullscreen = fullscreen;
 		prevWindowSize = view.extents;
+	}
+
+	const vector<glm::ivec2> &GraphicsContext::MonitorModes()
+	{
+		if (!monitorModes.empty())
+			return monitorModes;
+
+		int count;
+		const GLFWvidmode *modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &count);
+
+		for (int i = 0; i < count; i++)
+		{
+			glm::ivec2 size(modes[i].width, modes[i].height);
+			if (std::find(monitorModes.begin(), monitorModes.end(), size) == monitorModes.end())
+			{
+				monitorModes.push_back(size);
+			}
+		}
+
+		std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 & a, const glm::ivec2 & b)
+		{
+			return a.x > b.x || (a.x == b.x && a.y > b.y);
+		});
+
+		return monitorModes;
 	}
 }
