@@ -114,12 +114,19 @@ namespace sp
 
 		//ImGui::ShowTestWindow();
 
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0, 0.0, 0.0, 0.0));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.05, 1.0, 0.3, 1.0));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05, 1.0, 0.3, 1.0));
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 1.0, 1.0, 1.0));
-		ImGui::PushStyleColor(ImGuiCol_TextButtonHover, ImVec4(0.0, 0.0, 0.0, 1.0));
-		ImGui::PushStyleColor(ImGuiCol_TextButtonActive, ImVec4(0.0, 0.0, 0.0, 1.0));
+		ImVec4 empty(0.0, 0.0, 0.0, 0.0);
+		ImVec4 black(0.0, 0.0, 0.0, 1.0);
+		ImVec4 white(1.0, 1.0, 1.0, 1.0);
+		ImVec4 green(0.05, 1.0, 0.3, 1.0);
+
+		ImGui::PushStyleColor(ImGuiCol_Button, empty);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, green);
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, green);
+		ImGui::PushStyleColor(ImGuiCol_Text, white);
+		ImGui::PushStyleColor(ImGuiCol_TextButtonHover, black);
+		ImGui::PushStyleColor(ImGuiCol_TextButtonActive, black);
+		ImGui::PushStyleColor(ImGuiCol_CheckMark, green);
+		ImGui::PushStyleColor(ImGuiCol_ComboBg, black);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0);
 		ImGui::PushFont(io.Fonts->Fonts[2]);
 
@@ -134,14 +141,14 @@ namespace sp
 		if (selectedScreen == MenuScreen::Splash)
 		{
 			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
-			ImGui::Begin("Menu", nullptr, flags);
+			ImGui::Begin("MenuSplash", nullptr, flags);
 			ImGui::Text("Press Enter");
 			ImGui::End();
 		}
 		else if (selectedScreen == MenuScreen::Main)
 		{
 			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
-			ImGui::Begin("Menu", nullptr, flags);
+			ImGui::Begin("MenuMain", nullptr, flags);
 
 			ImGui::Image((void *)(uintptr_t) logoTex.handle, ImVec2(logoTex.width * 0.75, logoTex.height * 0.75));
 
@@ -165,18 +172,29 @@ namespace sp
 		else if (selectedScreen == MenuScreen::Options)
 		{
 			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
-			ImGui::Begin("Menu", nullptr, flags);
+			ImGui::Begin("MenuOptions", nullptr, flags);
 
 			ImGui::Image((void *)(uintptr_t) logoTex.handle, ImVec2(logoTex.width * 0.75, logoTex.height * 0.75));
 
+			ImGui::Text("Options");
+			ImGui::Text(" ");
+			ImGui::Columns(2, "optcols", false);
+
 			ImGui::PushFont(io.Fonts->Fonts[3]);
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 10));
+
+			ImGui::Text("Resolution");
+			ImGui::Text("Full Screen");
+
+			ImGui::NextColumn();
+
 			{
 				static auto modes = game->graphics.GetContext()->MonitorModes();
 				static vector<string> resLabels = MakeResolutionLabels(modes);
 
 				ImGui::PushItemWidth(400.0f);
 				int resIndex = std::find(modes.begin(), modes.end(), CVarWindowSize.Get()) - modes.begin();
-				ImGui::Combo(" Resolution", &resIndex, StringVectorGetter, &resLabels, modes.size());
+				ImGui::Combo("##respicker", &resIndex, StringVectorGetter, &resLabels, modes.size());
 				ImGui::PopItemWidth();
 
 				if (resIndex >= 0 && resIndex < (int) modes.size())
@@ -187,11 +205,13 @@ namespace sp
 
 			{
 				bool fullscreen = CVarWindowFullscreen.Get();
-				ImGui::Checkbox(" Full Screen", &fullscreen);
+				ImGui::Checkbox("##fullscreencheck", &fullscreen);
 				CVarWindowFullscreen.Set((int) fullscreen);
 			}
-			ImGui::PopFont();
 
+			ImGui::PopStyleVar();
+			ImGui::PopFont();
+			ImGui::Columns(1);
 			ImGui::Text(" ");
 
 			if (ImGui::Button("Done"))
@@ -204,6 +224,6 @@ namespace sp
 
 		ImGui::PopFont();
 		ImGui::PopStyleVar();
-		ImGui::PopStyleColor(6);
+		ImGui::PopStyleColor(8);
 	}
 }
