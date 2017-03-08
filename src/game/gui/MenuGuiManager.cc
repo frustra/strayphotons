@@ -93,7 +93,7 @@ namespace sp
 	static vector<string> MakeResolutionLabels(const vector<glm::ivec2> &modes)
 	{
 		vector<string> labels;
-		for (int i = 0; i < modes.size(); i++)
+		for (size_t i = 0; i < modes.size(); i++)
 		{
 			auto m = modes[i];
 			std::stringstream str;
@@ -179,7 +179,7 @@ namespace sp
 				ImGui::Combo(" Resolution", &resIndex, StringVectorGetter, &resLabels, modes.size());
 				ImGui::PopItemWidth();
 
-				if (resIndex >= 0 && resIndex < modes.size())
+				if (resIndex >= 0 && resIndex < (int) modes.size())
 				{
 					CVarWindowSize.Set(modes[resIndex]);
 				}
