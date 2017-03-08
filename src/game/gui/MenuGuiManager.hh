@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Common.hh"
 #include "game/GuiManager.hh"
 
 namespace sp
@@ -15,6 +16,13 @@ namespace sp
 		SceneSelect
 	};
 
+	enum class MenuRenderMode : int
+	{
+		None = 0,
+		Pause = 1,
+		Gel = 2
+	};
+
 	class MenuGuiManager : public GuiManager
 	{
 	public:
@@ -25,7 +33,11 @@ namespace sp
 		void DefineWindows();
 		void BindInput(InputManager &inputManager);
 
-		bool Focused = false;
+		bool Focused();
+		MenuRenderMode RenderMode();
+		void SetRenderMode(MenuRenderMode mode);
+		void OpenPauseMenu();
+		void CloseMenu();
 
 		const int FocusLevel = 10;
 
@@ -33,5 +45,7 @@ namespace sp
 		Game *game = nullptr;
 		InputManager *inputManager = nullptr;
 		MenuScreen selectedScreen = MenuScreen::Splash;
+
+		uint64 framesSinceOpened = 0;
 	};
 }

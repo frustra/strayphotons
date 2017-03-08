@@ -106,21 +106,27 @@ namespace sp
 		AssertGLOK("Renderer::Prepare");
 	}
 
-	void Renderer::RenderMainMenu(ecs::View &view)
+	void Renderer::RenderMainMenu(ecs::View &view, bool renderToGel)
 	{
-		RenderTargetDesc menuDesc(PF_RGBA8, view.extents);
-		menuDesc.levels = Texture::FullyMipmap;
-		menuDesc.anisotropy = 4.0;
-		if (!menuGuiTarget || menuGuiTarget->GetDesc() != menuDesc)
+		if (renderToGel)
 		{
-			menuGuiTarget = RTPool->Get(menuDesc);
+			RenderTargetDesc menuDesc(PF_RGBA8, view.extents);
+			menuDesc.levels = Texture::FullyMipmap;
+			menuDesc.anisotropy = 4.0;
+			if (!menuGuiTarget || menuGuiTarget->GetDesc() != menuDesc)
+			{
+				menuGuiTarget = RTPool->Get(menuDesc);
+			}
+
+			SetRenderTarget(&menuGuiTarget->GetTexture(), nullptr);
+			PrepareForView(view);
+			menuGuiRenderer->Render(view);
+			menuGuiTarget->GetTexture().GenMipmap();
 		}
-
-		SetRenderTarget(&menuGuiTarget->GetTexture(), nullptr);
-		PrepareForView(view);
-		menuGuiRenderer->Render(view);
-
-		menuGuiTarget->GetTexture().GenMipmap();
+		else
+		{
+			menuGuiRenderer->Render(view);
+		}
 	}
 
 	void Renderer::RenderShadowMaps()
@@ -512,9 +518,13 @@ namespace sp
 
 		UpdateShaders();
 
-		ecs::View menuView({ 2048, 2048 });
-		menuView.clearMode = GL_COLOR_BUFFER_BIT;
-		RenderMainMenu(menuView);
+		if (game->menuGui.RenderMode() == MenuRenderMode::Gel)
+		{
+			ecs::View menuView({ 2048, 2048 });
+			menuView.clearMode = GL_COLOR_BUFFER_BIT;
+			RenderMainMenu(menuView, true);
+		}
+
 		RenderShadowMaps();
 
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::VoxelInfo>())

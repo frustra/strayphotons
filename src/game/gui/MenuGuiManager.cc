@@ -16,6 +16,7 @@
 namespace sp
 {
 	static CVar<bool> CVarMenuFocused("g.MenuFocused", false, "Focus input on menu");
+	static CVar<int> CVarMenuDisplay("g.MenuDisplay", 0, "Display pause menu");
 
 	void MenuGuiManager::BindInput(InputManager &input)
 	{
@@ -37,9 +38,19 @@ namespace sp
 			io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
 			io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
 
-			if (state == GLFW_PRESS && Focused && !inputManager->FocusLocked(FocusLevel))
+			if (state == GLFW_PRESS && Focused() && !inputManager->FocusLocked(FocusLevel))
 			{
-				if (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_ENTER && selectedScreen == MenuScreen::Splash)
+				if (key == GLFW_KEY_ESCAPE && framesSinceOpened > 0)
+				{
+					if (selectedScreen == MenuScreen::Main && RenderMode() == MenuRenderMode::Pause)
+					{
+						CloseMenu();
+					}
+
+					selectedScreen = MenuScreen::Main;
+				}
+
+				if (key == GLFW_KEY_ENTER && selectedScreen == MenuScreen::Splash)
 				{
 					selectedScreen = MenuScreen::Main;
 				}
@@ -49,13 +60,14 @@ namespace sp
 
 	void MenuGuiManager::BeforeFrame()
 	{
+		framesSinceOpened++;
+
 		ImGuiIO &io = ImGui::GetIO();
 		io.MouseDrawCursor = selectedScreen != MenuScreen::Splash;
 
-		Focused = CVarMenuFocused.Get();
-		inputManager->LockFocus(Focused, FocusLevel);
+		inputManager->LockFocus(Focused(), FocusLevel);
 
-		if (Focused && !inputManager->FocusLocked(FocusLevel))
+		if (Focused() && !inputManager->FocusLocked(FocusLevel))
 		{
 			auto &input = *inputManager;
 
@@ -152,9 +164,9 @@ namespace sp
 
 			ImGui::Image((void *)(uintptr_t) logoTex.handle, ImVec2(logoTex.width * 0.75, logoTex.height * 0.75));
 
-			if (ImGui::Button("Start Game"))
+			if (ImGui::Button(RenderMode() == MenuRenderMode::Pause ? "Resume" : "Start Game"))
 			{
-				CVarMenuFocused.Set(false);
+				CloseMenu();
 			}
 
 			if (ImGui::Button("Scene Select"))
@@ -270,5 +282,49 @@ namespace sp
 		ImGui::PopFont();
 		ImGui::PopStyleVar();
 		ImGui::PopStyleColor(8);
+	}
+
+	bool MenuGuiManager::Focused()
+	{
+		return CVarMenuFocused.Get();
+	}
+
+	MenuRenderMode MenuGuiManager::RenderMode()
+	{
+		switch (CVarMenuDisplay.Get())
+		{
+			case 1:
+				return MenuRenderMode::Pause;
+			case 2:
+				return MenuRenderMode::Gel;
+		}
+		return MenuRenderMode::None;
+	}
+
+	void MenuGuiManager::SetRenderMode(MenuRenderMode mode)
+	{
+		CVarMenuDisplay.Set((int) mode);
+	}
+
+	void MenuGuiManager::OpenPauseMenu()
+	{
+		if (RenderMode() == MenuRenderMode::None)
+		{
+			SetRenderMode(MenuRenderMode::Pause);
+
+			CVarMenuFocused.Set(true);
+			inputManager->LockFocus(true, FocusLevel);
+			framesSinceOpened = 0;
+		}
+	}
+
+	void MenuGuiManager::CloseMenu()
+	{
+		if (RenderMode() == MenuRenderMode::Pause)
+			SetRenderMode(MenuRenderMode::None);
+
+		CVarMenuFocused.Set(false);
+		inputManager->LockFocus(false, FocusLevel);
+		framesSinceOpened = 0;
 	}
 }

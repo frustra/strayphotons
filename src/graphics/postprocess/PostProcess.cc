@@ -8,12 +8,13 @@
 #include "graphics/GPUTimer.hh"
 #include "graphics/Util.hh"
 
-#include "graphics/postprocess/Lighting.hh"
 #include "graphics/postprocess/Bloom.hh"
-#include "graphics/postprocess/ViewGBuffer.hh"
+#include "graphics/postprocess/GammaCorrect.hh"
+#include "graphics/postprocess/Lighting.hh"
+#include "graphics/postprocess/MenuGui.hh"
 #include "graphics/postprocess/SSAO.hh"
 #include "graphics/postprocess/SMAA.hh"
-#include "graphics/postprocess/GammaCorrect.hh"
+#include "graphics/postprocess/ViewGBuffer.hh"
 
 #include "core/CVar.hh"
 
@@ -169,6 +170,13 @@ namespace sp
 			auto hist = context.AddPass<LumiHistogram>();
 			hist->SetInput(0, context.LastOutput);
 			context.LastOutput = hist;
+		}
+
+		if (game->menuGui.RenderMode() == MenuRenderMode::Pause)
+		{
+			auto menu = context.AddPass<RenderMenuGui>();
+			menu->SetInput(0, context.LastOutput);
+			context.LastOutput = menu;
 		}
 
 		if (CVarBloomEnabled.Get())

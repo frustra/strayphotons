@@ -46,6 +46,16 @@ namespace sp
 			LoadScene("menu");
 		}
 
+		input->AddKeyInputCallback([&](int key, int state)
+		{
+			if (input->FocusLocked()) return;
+
+			if (state == GLFW_PRESS && key == GLFW_KEY_ESCAPE)
+			{
+				game->menuGui.OpenPauseMenu();
+			}
+		});
+
 		input->AddCharInputCallback([&](uint32 ch)
 		{
 			if (input->FocusLocked()) return;
@@ -216,6 +226,14 @@ namespace sp
 
 		game->entityManager.DestroyAll();
 
+		if (scene != nullptr)
+		{
+			for (auto &line : scene->unloadExecList)
+			{
+				GConsoleManager.ParseAndExecute(line);
+			}
+		}
+
 		scene.reset();
 		scene = GAssets.LoadScene(name, &game->entityManager, game->physics);
 		if (!scene) return;
@@ -225,9 +243,7 @@ namespace sp
 
 		game->graphics.SetPlayerView(player);
 
-		// Always reset certain cvars
-		GConsoleManager.ParseAndExecute("r.Exposure 0");
-		for (auto &line : scene->autoexecList)
+		for (auto &line : scene->autoExecList)
 		{
 			GConsoleManager.ParseAndExecute(line);
 		}

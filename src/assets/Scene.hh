@@ -21,7 +21,7 @@ namespace sp
 
 		ecs::Entity FindEntity(const std::string name);
 
-		vector<string> autoexecList;
+		vector<string> autoExecList, unloadExecList;
 	private:
 		shared_ptr<Asset> asset;
 	};

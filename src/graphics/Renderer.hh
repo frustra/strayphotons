@@ -38,7 +38,7 @@ namespace sp
 
 		void UpdateShaders(bool force = false);
 		void Prepare();
-		void RenderMainMenu(ecs::View &view);
+		void RenderMainMenu(ecs::View &view, bool renderToGel = false);
 		void RenderShadowMaps();
 		void PrepareVoxelTextures();
 		void RenderVoxelGrid();

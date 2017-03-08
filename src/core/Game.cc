@@ -102,11 +102,6 @@ namespace sp
 		double dt = frameTime - lastFrameTime;
 
 		input.Checkpoint();
-		if (input.IsDown(GLFW_KEY_ESCAPE))
-		{
-			return false;
-		}
-
 		GConsoleManager.Update();
 
 		if (!logic.Frame(dt)) return false;

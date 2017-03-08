@@ -1,6 +1,7 @@
 #define TINYGLTF_LOADER_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #include "tiny_gltf_loader.h"
+
 extern "C"
 {
 #include <microtar.h>
@@ -195,13 +196,23 @@ namespace sp
 
 		shared_ptr<Scene> scene = make_shared<Scene>(name, asset);
 
-		auto autoexecList = root.get<picojson::object>()["autoexec"];
-		if (autoexecList.is<picojson::array>())
+		auto autoExecList = root.get<picojson::object>()["autoexec"];
+		if (autoExecList.is<picojson::array>())
 		{
-			for (auto value : autoexecList.get<picojson::array>())
+			for (auto value : autoExecList.get<picojson::array>())
 			{
 				auto line = value.get<string>();
-				scene->autoexecList.push_back(line);
+				scene->autoExecList.push_back(line);
+			}
+		}
+
+		auto unloadExecList = root.get<picojson::object>()["unloadexec"];
+		if (unloadExecList.is<picojson::array>())
+		{
+			for (auto value : unloadExecList.get<picojson::array>())
+			{
+				auto line = value.get<string>();
+				scene->unloadExecList.push_back(line);
 			}
 		}
 
