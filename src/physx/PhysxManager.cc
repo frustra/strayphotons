@@ -71,37 +71,6 @@ namespace sp
 	{
 		bool hadResults = false;
 
-		for (PhysxConstraint &constraint : constraints)
-		{
-			auto transform = constraint.parent.Get<ecs::Transform>();
-			PxTransform destination;
-
-			if (constraint.parent.Has<ecs::Physics>())
-			{
-				auto physics = constraint.parent.Get<ecs::Physics>();
-				destination = physics->actor->getGlobalPose();
-
-			}
-			else if (constraint.parent.Has<ecs::HumanController>())
-			{
-				auto controller = constraint.parent.Get<ecs::HumanController>();
-				PxController *pxController = controller->pxController;
-				destination = pxController->getActor()->getGlobalPose();
-			}
-			else
-			{
-				std::cout << "Error physics constraint, parent not registered with physics system!";
-				continue;
-			}
-			glm::vec3 forward = glm::vec3(0, 0, -1);
-			glm::vec3 rotate = forward * transform->rotate;
-			PxVec3 dir = GlmVec3ToPxVec3(rotate);
-			dir.normalizeSafe();
-
-			destination.p += (dir * 3.f);
-			constraint.child->setKinematicTarget(destination);
-		}
-
 		while (resultsPending)
 		{
 			if (!simulate)
@@ -125,6 +94,37 @@ namespace sp
 
 		if (!hadResults)
 			Lock();
+
+		for (PhysxConstraint &constraint : constraints)
+		{
+			auto transform = constraint.parent.Get<ecs::Transform>();
+			PxTransform destination;
+
+			if (constraint.parent.Has<ecs::Physics>())
+			{
+				auto physics = constraint.parent.Get<ecs::Physics>();
+				destination = physics->actor->getGlobalPose();
+
+			}
+			else if (constraint.parent.Has<ecs::HumanController>())
+			{
+				auto controller = constraint.parent.Get<ecs::HumanController>();
+				PxController *pxController = controller->pxController;
+				destination = pxController->getActor()->getGlobalPose();
+			}
+			else
+			{
+				std::cout << "Error physics constraint, parent not registered with physics system!";
+				continue;
+			}
+			glm::vec3 forward = glm::vec3(0, 0, -1);
+			glm::vec3 rotate = transform->rotate * forward;
+			PxVec3 dir = GlmVec3ToPxVec3(rotate);
+			dir.normalizeSafe();
+
+			destination.p += (dir * 3.f);
+			constraint.child->setKinematicTarget(destination);
+		}
 
 		if (CVarGravity.Changed())
 		{
