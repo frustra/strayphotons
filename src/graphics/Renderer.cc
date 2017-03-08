@@ -801,7 +801,7 @@ namespace sp
 	void Renderer::RenderLoading(ecs::View &view)
 	{
 		auto screenResolution = view.extents;
-		view.extents = glm::ivec2(192 / 2, 160 / 2);
+		view.extents = glm::ivec2(192 / 2, 80 / 2);
 		view.offset = glm::ivec2(screenResolution / 2) - view.extents / 2;
 
 		PrepareForView(view);
