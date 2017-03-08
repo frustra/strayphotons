@@ -101,4 +101,42 @@ namespace sp
 			.Size(1, 1).Storage(PF_R8).Image2D(bump);
 		}
 	};
+
+	struct BasicMaterial
+	{
+		Texture baseColorTex, roughnessTex, metallicTex, heightTex;
+
+		BasicMaterial(
+			unsigned char *baseColor = nullptr,
+			unsigned char *roughness = nullptr,
+			unsigned char *metallic = nullptr,
+			unsigned char *bump = nullptr)
+		{
+			unsigned char baseColorDefault[4] = { 255, 255, 255, 255 };
+			unsigned char roughnessDefault[4] = { 255, 255, 255, 255 };
+			unsigned char metallicDefault[4] = { 0, 0, 0, 0 };
+			unsigned char bumpDefault[4] = { 127, 127, 127, 255 };
+
+			if (!baseColor) baseColor = baseColorDefault;
+			if (!roughness) roughness = roughnessDefault;
+			if (!metallic) metallic = metallicDefault;
+			if (!bump) bump = bumpDefault;
+
+			baseColorTex.Create()
+			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+			.Size(1, 1).Storage(PF_RGB8).Image2D(baseColor);
+
+			roughnessTex.Create()
+			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+			.Size(1, 1).Storage(PF_R8).Image2D(roughness);
+
+			metallicTex.Create()
+			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+			.Size(1, 1).Storage(PF_R8).Image2D(metallic);
+
+			heightTex.Create()
+			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+			.Size(1, 1).Storage(PF_R8).Image2D(bump);
+		}
+	};
 }

@@ -150,6 +150,10 @@ namespace sp
 			}
 		}
 
+		// TODO(cstegel): if debugging enabled
+		CacheDebugTriangles();
+		CacheDebugLines();
+
 		scene->simulate((PxReal) timeStep);
 		resultsPending = true;
 		Unlock();
@@ -194,19 +198,36 @@ namespace sp
 		dispatcher = nullptr;
 	}
 
-	void PhysxManager::IterateDebugLines(
-		std::function<void(const PxDebugLine &)> callback)
+	void PhysxManager::CacheDebugTriangles()
 	{
-		Lock();
-
 		const physx::PxRenderBuffer& rb = scene->getRenderBuffer();
-		for(PxU32 i=0; i < rb.getNbLines(); i++)
-		{
-			const PxDebugLine& line = rb.getLines()[i];
-			callback(line);
-		}
+		const physx::PxDebugTriangle *triangles = rb.getTriangles();
 
-		Unlock();
+		debugTriangles = vector<physx::PxDebugTriangle>(
+			triangles, triangles + rb.getNbTriangles());
+
+		Logf("cached %d lines", rb.getNbLines());
+	}
+
+	void PhysxManager::CacheDebugLines()
+	{
+		const physx::PxRenderBuffer& rb = scene->getRenderBuffer();
+		const physx::PxDebugLine *lines = rb.getLines();
+
+		debugLines = vector<physx::PxDebugLine>(
+			lines, lines + rb.getNbLines());
+
+		Logf("cached %d lines", rb.getNbLines());
+	}
+
+	const vector<physx::PxDebugTriangle>& PhysxManager::GetDebugTriangles()
+	{
+		return debugTriangles;
+	}
+
+	const vector<physx::PxDebugLine>& PhysxManager::GetDebugLines()
+	{
+		return debugLines;
 	}
 
 	void PhysxManager::StartThread()

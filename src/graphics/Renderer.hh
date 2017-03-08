@@ -51,7 +51,8 @@ namespace sp
 		void ForwardPass(ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw = {});
 		void DrawEntity(ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw = {});
 		void RenderLoading(ecs::View &view);
-		void DrawLine(ecs::View &view, SceneShader *shader, const physx::PxDebugLine &line);
+		void DrawPhysxLines(ecs::View &view, SceneShader *shader,
+			const vector<physx::PxDebugLine> &lines);
 		void EndFrame();
 
 		void SetRenderTarget(const Texture *attachment0, const Texture *depth);

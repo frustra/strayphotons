@@ -20,8 +20,11 @@
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/Mirror.hh"
 #include "assets/AssetManager.hh"
+#include "physx/PhysxUtils.hh"
 
 #include <glm/gtx/component_wise.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <cxxopts.hpp>
 
 namespace sp
@@ -784,63 +787,74 @@ namespace sp
 			DrawEntity(view, shader, ent, preDraw);
 		}
 
-		// // show physx debug view
-		// // game->physics.IterateDebugLines([&](const physx::PxDebugLine &line) {
-		// // 	DrawLine(view, shader, line);
-		// // });
-		auto line = physx::PxDebugLine(physx::PxVec3(0,0,0), physx::PxVec3(1,1,1), 20000);
-		DrawLine(view, shader, line);
+		// TODO(cstegel): if debug enabled
+		{
+			RenderPhase phase("PhysxBounds");
+			DrawPhysxLines(view, shader, game->physics.GetDebugLines());
+		}
 
 		if (CVarRenderWireframe.Get())
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 
-	void Renderer::DrawLine(
+	void Renderer::DrawPhysxLines(
 		ecs::View &view,
 		SceneShader *shader,
-		const physx::PxDebugLine &line)
+		const vector<physx::PxDebugLine> &lines)
 	{
-		static DefaultMaterial defaultMat;
+
+		glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
+		vector<SceneVertex> vertices(6*lines.size());
+		for (auto &line : lines) {
+			glm::vec3 lineDir = glm::vec3(
+				line.pos1.x - line.pos0.x,
+				line.pos1.y - line.pos0.y,
+				line.pos1.z - line.pos0.z);
+
+			auto lineMid = 0.5 * (line.pos1 + line.pos0);
+			glm::vec3 viewDir = glm::normalize(glm::vec3(
+				viewPos.x - lineMid.x,
+				viewPos.y - lineMid.y,
+				viewPos.z - lineMid.z));
+
+			glm::vec3 widthVec = 0.01f * glm::normalize(glm::cross(viewDir, lineDir));
+			glm::vec3 pos0 = PxVec3ToGlmVec3P(line.pos0);
+			glm::vec3 pos1 = PxVec3ToGlmVec3P(line.pos1);
+
+			auto addVertex = [&](const glm::vec3 &pos) {
+				vertices.push_back({
+					{pos.x, pos.y, pos.z},
+					viewDir,
+					{0, 0}
+				});
+			};
+
+			// 2 triangles that make up a "fat" line connecting pos0 and pos1
+			// with the flat face pointing at the player
+			addVertex(pos0 - widthVec);
+			addVertex(pos1 + widthVec);
+			addVertex(pos0 + widthVec);
+
+			addVertex(pos1 - widthVec);
+			addVertex(pos1 + widthVec);
+			addVertex(pos0 - widthVec);
+		}
+
 		shader->SetParams(view, glm::mat4());
 
-		// pos, normal, tex coord
-		static float vertices[] = {
-			-50, 5, 0,         0, -1, 0,    0, 0,
-			+50, 5, 0,         0, -1, 0,    0, 0,
-			 0, 5, 50,         0, -1, 0,    0, 0,
-		};
+		unsigned char baseColor[4] = { 0, 0, 255, 255 };
+		static BasicMaterial mat(baseColor);
 
-		static GLuint vao = 0;
-		static GLuint vbo = 0;
-		if (vao == 0) {
-			glGenVertexArrays(1, &vao);
-			glBindVertexArray(vao);
+		static VertexBuffer vbo;
+		vbo.SetElementsVAO(vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
+		vbo.BindVAO();
 
-			glGenBuffers(1, &vbo);
-			glBindBuffer(GL_ARRAY_BUFFER, vbo);
-			glBufferData(
-				GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		mat.baseColorTex.Bind(0);
+		mat.roughnessTex.Bind(1);
+		mat.metallicTex.Bind(2);
+		mat.heightTex.Bind(3);
 
-			GLuint stride = (3 + 3 + 2) * sizeof(GL_FLOAT);
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void *)0);
-			glEnableVertexAttribArray(0); // position
-
-			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void *)3);
-			glEnableVertexAttribArray(1); // normal
-
-			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void *)6);
-			glEnableVertexAttribArray(2); // texcoord
-		}
-		glBindVertexArray(vao);
-
-		defaultMat.baseColorTex.Bind(0);
-		defaultMat.roughnessTex.Bind(1);
-		defaultMat.metallicTex.Bind(2);
-		defaultMat.heightTex.Bind(3);
-
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-
-		glBindVertexArray(0);
+		glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
 	}
 
 	void Renderer::DrawEntity(ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw)

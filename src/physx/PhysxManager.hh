@@ -98,14 +98,16 @@ namespace sp
 		void ToggleCollisions(physx::PxRigidActor *actor, bool enabled);
 
 		/**
-		 * Call a function with every debug line in the PhysX scene.
+		 * Get the triangles showing the AABB bounds of all physx objects
 		 */
-		void IterateDebugLines(
-			std::function<void(const physx::PxDebugLine &)> callback);
+		const vector<physx::PxDebugTriangle>& GetDebugTriangles();
+		const vector<physx::PxDebugLine>& GetDebugLines();
 
 	private:
 		void CreatePhysxScene();
 		void DestroyPhysxScene();
+		void CacheDebugTriangles();
+		void CacheDebugLines();
 
 		ConvexHullSet *BuildConvexHulls(Model *model);
 		ConvexHullSet *LoadCollisionCache(Model *model);
@@ -127,6 +129,9 @@ namespace sp
 		ConstraintList constraints;
 
 		std::unordered_map<string, ConvexHullSet *> cache;
+
+		vector<physx::PxDebugTriangle> debugTriangles;
+		vector<physx::PxDebugLine> debugLines;
 	};
 }
 
