@@ -11,6 +11,14 @@ namespace ecs
 {
 	void InteractController::PickUpObject(ecs::Entity entity)
 	{
+		if (target)
+		{
+			target->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, false);
+			manager->RemoveConstraints(entity, target);
+			target = nullptr;
+			return;
+		}
+
 		auto transform = entity.Get<ecs::Transform>();
 		auto controller = entity.Get<ecs::HumanController>();
 
@@ -21,7 +29,7 @@ namespace ecs
 
 		physx::PxVec3 dir = GlmVec3ToPxVec3(rotate);
 		dir.normalizeSafe();
-		physx::PxReal maxDistance = 10.f;
+		physx::PxReal maxDistance = 2.0f;
 
 		physx::PxRaycastBuffer hit;
 		bool status = manager->RaycastQuery(entity, origin, dir, maxDistance, hit);
@@ -32,10 +40,10 @@ namespace ecs
 			if (hitActor && hitActor->getType() == physx::PxActorType::eRIGID_DYNAMIC)
 			{
 				physx::PxRigidDynamic *dynamic = static_cast<physx::PxRigidDynamic *>(hitActor);
-				if (dynamic)
+				if (dynamic && !(dynamic->getRigidBodyFlags() & physx::PxRigidBodyFlag::eKINEMATIC))
 				{
+					target = dynamic;
 					dynamic->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
-
 					manager->CreateConstraint(entity, dynamic, physx::PxVec3(hit.block.distance, 0.f, 0.f));
 				}
 			}

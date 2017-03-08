@@ -112,7 +112,7 @@ namespace ecs
 					case ControlAction::INTERACT:
 						if (input->IsAnyPressed(actionKeysPair.second))
 						{
-							interact(entity, dtSinceLastFrame);
+							Interact(entity, dtSinceLastFrame);
 						}
 						break;
 					default:
@@ -254,7 +254,7 @@ namespace ecs
 		}
 	}
 
-	void HumanControlSystem::interact(ecs::Entity entity, double dt)
+	void HumanControlSystem::Interact(ecs::Entity entity, double dt)
 	{
 		auto interact = entity.Get<ecs::InteractController>();
 		interact->PickUpObject(entity);

@@ -33,7 +33,7 @@ namespace ecs
 		/**
 		* Pick up the object that the player is looking at and make it move at to a fixed location relative to camera
 		*/
-		void interact(ecs::Entity entity, double dt);
+		void Interact(ecs::Entity entity, double dt);
 
 		ecs::EntityManager *entities;
 		sp::InputManager *input;

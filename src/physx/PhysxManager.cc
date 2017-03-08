@@ -95,7 +95,7 @@ namespace sp
 		if (!hadResults)
 			Lock();
 
-		for (PhysxConstraint &constraint : constraints)
+		for (auto &constraint : constraints)
 		{
 			auto transform = constraint.parent.Get<ecs::Transform>();
 			PxTransform destination;
@@ -104,7 +104,6 @@ namespace sp
 			{
 				auto physics = constraint.parent.Get<ecs::Physics>();
 				destination = physics->actor->getGlobalPose();
-
 			}
 			else if (constraint.parent.Has<ecs::HumanController>())
 			{
@@ -122,6 +121,8 @@ namespace sp
 			PxVec3 dir = GlmVec3ToPxVec3(rotate);
 			dir.normalizeSafe();
 
+			auto prevPose = constraint.child->getGlobalPose();
+			destination.q = prevPose.q;
 			destination.p += (dir * 3.f);
 			constraint.child->setKinematicTarget(destination);
 		}
@@ -481,6 +482,18 @@ namespace sp
 		if (parent.Has<ecs::Physics>() || parent.Has<ecs::HumanController>())
 		{
 			constraints.emplace_back(constraint);
+		}
+	}
+
+	void PhysxManager::RemoveConstraints(ecs::Entity parent, physx::PxRigidDynamic *child)
+	{
+		for (auto it = constraints.begin(); it != constraints.end();)
+		{
+			if (it->parent == parent && it->child == child)
+			{
+				it = constraints.erase(it);
+			}
+			else it++;
 		}
 	}
 
