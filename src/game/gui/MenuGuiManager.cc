@@ -39,7 +39,7 @@ namespace sp
 
 			if (state == GLFW_PRESS && Focused && !inputManager->FocusLocked(FocusLevel))
 			{
-				if (key == GLFW_KEY_ENTER && selectedScreen == MenuScreen::Splash)
+				if (key == GLFW_KEY_ESCAPE || key == GLFW_KEY_ENTER && selectedScreen == MenuScreen::Splash)
 				{
 					selectedScreen = MenuScreen::Main;
 				}

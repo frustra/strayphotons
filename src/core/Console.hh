@@ -45,7 +45,7 @@ namespace sp
 			return history;
 		}
 
-		void ParseAndExecute(const string &line);
+		void ParseAndExecute(const string &line, bool saveHistory = false);
 		string AutoComplete(const string &input);
 		vector<string> AllCompletions(const string &input);
 

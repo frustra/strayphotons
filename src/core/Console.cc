@@ -128,19 +128,19 @@ namespace sp
 
 			auto line = inputLines.front();
 			inputLines.pop();
-			ParseAndExecute(line->text);
+			ParseAndExecute(line->text, true);
 			ulock.unlock();
 
 			line->handled.notify_all();
 		}
 	}
 
-	void ConsoleManager::ParseAndExecute(const string &line)
+	void ConsoleManager::ParseAndExecute(const string &line, bool saveHistory)
 	{
 		if (line == "")
 			return;
 
-		if (history.size() == 0 || history[history.size() - 1] != line)
+		if (saveHistory && (history.size() == 0 || history[history.size() - 1] != line))
 			history.push_back(line);
 
 		std::stringstream stream(line);

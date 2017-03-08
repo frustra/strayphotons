@@ -54,7 +54,7 @@ namespace sp
 				if (ImGui::InputText("##CommandInput", inputBuf, sizeof(inputBuf), iflags, CommandEditStub, (void *) this))
 				{
 					string line(inputBuf);
-					GConsoleManager.ParseAndExecute(line);
+					GConsoleManager.ParseAndExecute(line, true);
 					inputBuf[0] = '\0';
 					historyOffset = 0;
 					ImGui::SetKeyboardFocusHere(-1);
