@@ -1,6 +1,9 @@
 {
 	"autoexec": [
-		"r.MirrorRecursion 0"
+		"r.MirrorRecursion 0",
+		"r.Size 1024 1024",
+		"r.FieldOfView 30",
+		"p.NoClip 1"
 	],
 	"entities": [
 		{
@@ -12,9 +15,7 @@
 		{
 			"_name": "player",
 			"view": {
-				"extents": [1024, 1024],
-				"clip": [0.1, 256],
-				"fov": 30
+				"clip": [0.1, 256]
 			},
 			"transform": {
 				"translate": [-0.01, 2, 9.6],

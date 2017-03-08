@@ -157,6 +157,11 @@ namespace sp
 				CVarMenuFocused.Set(false);
 			}
 
+			if (ImGui::Button("Scene Select"))
+			{
+				selectedScreen = MenuScreen::SceneSelect;
+			}
+
 			if (ImGui::Button("Options"))
 			{
 				selectedScreen = MenuScreen::Options;
@@ -165,6 +170,46 @@ namespace sp
 			if (ImGui::Button("Exit Game"))
 			{
 				GConsoleManager.ParseAndExecute("exit");
+			}
+
+			ImGui::End();
+		}
+		else if (selectedScreen == MenuScreen::SceneSelect)
+		{
+			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
+			ImGui::Begin("MenuSceneSelect", nullptr, flags);
+
+			ImGui::Image((void *)(uintptr_t) logoTex.handle, ImVec2(logoTex.width * 0.75, logoTex.height * 0.75));
+
+			ImGui::Text("Scene Select");
+			ImGui::Text(" ");
+
+			ImGui::PushFont(io.Fonts->Fonts[3]);
+
+			if (ImGui::Button("Test1"))
+			{
+				CVarMenuFocused.Set(false);
+				GConsoleManager.ParseAndExecute("loadscene test1");
+			}
+
+			if (ImGui::Button("Level1"))
+			{
+				CVarMenuFocused.Set(false);
+				GConsoleManager.ParseAndExecute("loadscene level1");
+			}
+
+			if (ImGui::Button("Sponza"))
+			{
+				CVarMenuFocused.Set(false);
+				GConsoleManager.ParseAndExecute("loadscene sponza");
+			}
+
+			ImGui::PopFont();
+			ImGui::Text(" ");
+
+			if (ImGui::Button("Back"))
+			{
+				selectedScreen = MenuScreen::Main;
 			}
 
 			ImGui::End();

@@ -18,19 +18,16 @@ namespace ecs
 		MOVE_BACKWARD,
 		MOVE_LEFT,
 		MOVE_RIGHT,
-		MOVE_UP,
-		MOVE_DOWN,
 		MOVE_JUMP,
+		MOVE_CROUCH,
 		INTERACT
 	};
 
-	const float CONTROLLER_SWEEP_DISTANCE = 0.5f;
-
+	const float CONTROLLER_SWEEP_DISTANCE = 0.4f;
 	const float CONTROLLER_GRAVITY = 9.81f;
-	const float CONTROLLER_JUMP = 8.0f;
+	const float CONTROLLER_JUMP = 2.5f;
 	const float CONTROLLER_STEP = 0.1f;
 	const float CONTROLLER_AIR_STRAFE = 0.3f;
-	const float CONTROLLER_ACCELERATION = 50.0f;
 
 	struct HumanController
 	{

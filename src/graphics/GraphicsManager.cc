@@ -19,7 +19,7 @@
 namespace sp
 {
 	CVar<glm::ivec2> CVarWindowSize("r.Size", { 1600, 900 }, "Window height");
-	CVar<float> CVarFieldOfView("r.FieldOfView", 70, "Camera field of view");
+	CVar<float> CVarFieldOfView("r.FieldOfView", 60, "Camera field of view");
 	CVar<int> CVarWindowFullscreen("r.Fullscreen", false, "Fullscreen window (0: window, 1: fullscreen)");
 
 #ifdef SP_ENABLE_RAYTRACER
@@ -117,7 +117,7 @@ namespace sp
 		if (playerView.Valid())
 		{
 			auto newSize = CVarWindowSize.Get();
-			auto newFov = CVarFieldOfView.Get();
+			auto newFov = glm::radians(CVarFieldOfView.Get());
 
 			if (newSize != primaryView.extents || newFov != primaryView.fov)
 			{
@@ -133,7 +133,6 @@ namespace sp
 		{
 			// Default view
 			primaryView.extents = CVarWindowSize.Get();
-			// primaryView.fov = CVarFieldOfView.Get();
 		}
 
 		context->ResizeWindow(primaryView, CVarWindowFullscreen.Get());

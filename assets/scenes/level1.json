@@ -34,9 +34,7 @@
 		{
 			"_name": "player",
 			"view": {
-				"extents": [1600, 900],
-				"clip": [0.1, 256],
-				"fov": 60
+				"clip": [0.1, 256]
 			},
 			"transform": {
 				"translate": [0, 1, 0]

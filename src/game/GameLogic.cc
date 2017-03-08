@@ -66,7 +66,7 @@ namespace sp
 					auto physics = entity.Assign<ecs::Physics>(actor, model);
 				}
 			}
-			else if (ch == 'e') // Toggle flashlight following player
+			else if (ch == 'p') // Toggle flashlight following player
 			{
 				if (flashlight.Valid())
 				{

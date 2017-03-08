@@ -73,12 +73,10 @@
 		{
 			"_name": "player",
 			"view": {
-				"extents": [1600, 900],
-				"clip": [0.1, 256],
-				"fov": 60
+				"clip": [0.1, 256]
 			},
 			"transform": {
-				"translate": [0, 5, 4.5]
+				"translate": [0, 5, 2]
 			},
 			"voxels": {
 				"min": [-5, 0, -5],
@@ -102,7 +100,7 @@
 		},
 		{
 			"triggerarea": {
-				"min": [-5, 0, 4],
+				"min": [-5, 0, -5],
 				"max": [5, 2, 5],
 				"command": "loadscene test1"
 			}

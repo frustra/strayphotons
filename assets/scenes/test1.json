@@ -171,9 +171,7 @@
 		{
 			"_name": "player",
 			"view": {
-				"extents": [1600, 900],
-				"clip": [0.1, 256],
-				"fov": 60
+				"clip": [0.1, 256]
 			},
 			"transform": {
 				"translate": [0, 1, 0]
@@ -181,9 +179,6 @@
 			"voxels": {
 				"min": [-5, -0, -5],
 				"max": [5, 10, 5]
-			},
-			"interact": {
-				
 			}
 		},
 		{
@@ -214,21 +209,6 @@
 			"transform": {
 				"translate": [-7, 20, -7],
 				"rotate": [-130, 1, 0, 0]
-			}
-		},
-		{
-			"light": {
-				"tint": [1, 1, 1],
-				"intensity": 300,
-				"spotAngle": 35,
-				"gel": true
-			},
-			"view": {
-				"extents": [1024, 1024],
-				"clip": [0.1, 10]
-			},
-			"transform": {
-				"translate": [0, 5, -1]
 			}
 		}
 	]

@@ -23,8 +23,11 @@ namespace ecs
 {
 	static sp::CVar<bool> CVarNoClip("p.NoClip", false, "Disable player clipping");
 
-	const float HumanControlSystem::MOVE_SPEED = 5.5f;
-	const glm::vec2 HumanControlSystem::CURSOR_SENSITIVITY = glm::vec2(0.001f, 0.001f);
+	const float MOVE_SPEED = 3.0; // Unit is meters per second
+	const glm::vec2 CURSOR_SENSITIVITY = glm::vec2(0.001, 0.001);
+
+	const float PLAYER_HEIGHT = 1.3; // Add radius * 2 for total capsule height
+	const float PLAYER_RADIUS = 0.2;
 
 	HumanControlSystem::HumanControlSystem(ecs::EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics)
 		: entities(entities), input(input), physics(physics)
@@ -66,8 +69,17 @@ namespace ecs
 
 			if (!controller->jumping)
 			{
-				controller->lastGroundVelocity = glm::vec3();
+				controller->lastGroundVelocity = glm::vec3(0);
 			}
+
+			if (CVarNoClip.Changed() && !CVarNoClip.Get(true))
+			{
+				// Teleport character controller to position when disabling noclip
+				auto pos = transform->GetPosition() - glm::vec3(0, PLAYER_HEIGHT / 2, 0);
+				controller->pxController->setPosition({pos[0], pos[1], pos[2]});
+			}
+			auto noclip = CVarNoClip.Get();
+			glm::vec3 inputMovement = glm::vec3(0);
 
 			// keyboard controls
 			for (auto const &actionKeysPair : entity.Get<ecs::HumanController>()->inputMap)
@@ -83,27 +95,34 @@ namespace ecs
 				switch (action)
 				{
 					case ControlAction::MOVE_FORWARD:
-						move(entity, dtSinceLastFrame, glm::vec3(0, 0, -1));
+						inputMovement += glm::vec3(0, 0, -1);
 						break;
 					case ControlAction::MOVE_BACKWARD:
-						move(entity, dtSinceLastFrame, glm::vec3(0, 0, 1));
+						inputMovement += glm::vec3(0, 0, 1);
 						break;
 					case ControlAction::MOVE_LEFT:
-						move(entity, dtSinceLastFrame, glm::vec3(-1, 0, 0));
+						inputMovement += glm::vec3(-1, 0, 0);
 						break;
 					case ControlAction::MOVE_RIGHT:
-						move(entity, dtSinceLastFrame, glm::vec3(1, 0, 0));
-						break;
-					case ControlAction::MOVE_UP:
-						move(entity, dtSinceLastFrame, glm::vec3(0, 1, 0), true);
-						break;
-					case ControlAction::MOVE_DOWN:
-						move(entity, dtSinceLastFrame, glm::vec3(0, -1, 0), true);
+						inputMovement += glm::vec3(1, 0, 0);
 						break;
 					case ControlAction::MOVE_JUMP:
-						if (!controller->jumping)
+						if (noclip)
 						{
-							controller->upVelocity = ecs::CONTROLLER_JUMP;
+							move(entity, dtSinceLastFrame, glm::vec3(0, 1, 0), true);
+						}
+						else
+						{
+							if (!controller->jumping)
+							{
+								controller->upVelocity = ecs::CONTROLLER_JUMP;
+							}
+						}
+						break;
+					case ControlAction::MOVE_CROUCH:
+						if (noclip)
+						{
+							move(entity, dtSinceLastFrame, glm::vec3(0, -1, 0), true);
 						}
 						break;
 					case ControlAction::INTERACT:
@@ -120,21 +139,16 @@ namespace ecs
 				}
 			}
 
-			controller->jumping = !physics->SweepQuery(controller->pxController->getActor(), physx::PxVec3(0, -1, 0), ecs::CONTROLLER_SWEEP_DISTANCE);
+			move(entity, dtSinceLastFrame, inputMovement);
 
-			if (controller->jumping)
+			controller->jumping = !noclip && !physics->SweepQuery(controller->pxController->getActor(), physx::PxVec3(0, -1, 0), ecs::CONTROLLER_SWEEP_DISTANCE);
+
+			if (controller->jumping && !noclip)
 			{
 				controllerMove(entity, dtSinceLastFrame, (controller->lastGroundVelocity * (float)dtSinceLastFrame));
 			}
 
-			if (CVarNoClip.Changed() && !CVarNoClip.Get(true))
-			{
-				// Teleport character controller to position when disabling noclip
-				auto pos = transform->GetPosition();
-				controller->pxController->setPosition({pos[0], pos[1], pos[2]});
-			}
-
-			if (controller->pxController && !CVarNoClip.Get())
+			if (controller->pxController && !noclip)
 			{
 				float jump = controller->upVelocity * dtSinceLastFrame;
 				controller->upVelocity -= ecs::CONTROLLER_GRAVITY * dtSinceLastFrame;
@@ -143,7 +157,7 @@ namespace ecs
 
 				auto position = controller->pxController->getPosition();
 				physx::PxVec3 pxVec3 = physx::PxVec3(position.x, position.y, position.z);
-				transform->SetPosition(PxVec3ToGlmVec3P(pxVec3));
+				transform->SetPosition(PxVec3ToGlmVec3P(pxVec3) + glm::vec3(0, PLAYER_HEIGHT / 2, 0));
 			}
 		}
 
@@ -178,16 +192,13 @@ namespace ecs
 				ControlAction::MOVE_RIGHT, {GLFW_KEY_D}
 			},
 			{
-				ControlAction::MOVE_UP, {GLFW_KEY_Z}
-			},
-			{
-				ControlAction::MOVE_DOWN, {GLFW_KEY_X}
-			},
-			{
 				ControlAction::MOVE_JUMP, {GLFW_KEY_SPACE}
 			},
 			{
-				ControlAction::INTERACT, {GLFW_KEY_R}
+				ControlAction::MOVE_CROUCH, {GLFW_KEY_LEFT_CONTROL}
+			},
+			{
+				ControlAction::INTERACT, {GLFW_KEY_E}
 			}
 		};
 
@@ -195,43 +206,45 @@ namespace ecs
 		interact->manager = &px;
 
 		auto transform = entity.Get<ecs::Transform>();
-		physx::PxVec3 pos = GlmVec3ToPxVec3(transform->GetPosition());
-		controller->pxController = px.CreateController(pos, 0.2f, 1.5f, 0.5f);
+		physx::PxVec3 pos = GlmVec3ToPxVec3(transform->GetPosition() - glm::vec3(0, PLAYER_HEIGHT / 2, 0));
+		controller->pxController = px.CreateController(pos, PLAYER_RADIUS, PLAYER_HEIGHT, 0.5f);
 		controller->pxController->setStepOffset(ecs::CONTROLLER_STEP);
 
 		return controller;
 	}
 
-	void HumanControlSystem::move(ecs::Entity entity, double dt, glm::vec3 normalizedDirection, bool flight)
+	void HumanControlSystem::move(ecs::Entity entity, double dt, glm::vec3 direction, bool flight)
 	{
 		if (!entity.Has<ecs::Transform>())
 		{
 			throw std::invalid_argument("entity must have a Transform component");
 		}
+		if (direction == glm::vec3(0)) return;
 
 		auto controller = entity.Get<ecs::HumanController>();
 		auto transform = entity.Get<ecs::Transform>();
-
-		float df = (float)dt;
 
 		glm::vec3 movement;
 		glm::vec3 deltaMove;
 
 		if (flight)
 		{
-			movement = normalizedDirection * df;
+			movement = direction;
 		}
 		else
 		{
-			movement = transform->rotate * normalizedDirection;
-			if (std::abs(movement.y) > 0.999)
+			movement = transform->rotate * direction;
+			if (!CVarNoClip.Get())
 			{
-				movement = transform->rotate * glm::vec3(0, -movement.y, 0);
+				if (std::abs(movement.y) > 0.999)
+				{
+					movement = transform->rotate * glm::vec3(0, -movement.y, 0);
+				}
+				movement.y = 0;
 			}
-			movement.y = 0;
-			movement = glm::normalize(movement) * HumanControlSystem::MOVE_SPEED;
-			deltaMove = movement * df;
 		}
+		movement = glm::normalize(movement) * MOVE_SPEED;
+		deltaMove = movement * (float) dt;
 		if (controller->jumping)
 		{
 			deltaMove *= ecs::CONTROLLER_AIR_STRAFE;

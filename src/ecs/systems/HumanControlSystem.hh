@@ -41,9 +41,6 @@ namespace ecs
 		*/
 		void interact(ecs::Entity entity, double dt);
 
-		static const float MOVE_SPEED;
-		static const glm::vec2 CURSOR_SENSITIVITY;
-
 		ecs::EntityManager *entities;
 		sp::InputManager *input;
 		sp::PhysxManager *physics;
