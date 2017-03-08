@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <functional>
 #include <Ecs.hh>
+#include <PxPhysicsAPI.h>
 
 namespace sp
 {
@@ -36,8 +37,9 @@ namespace sp
 		Renderer(Game *game);
 		~Renderer();
 
+		void UpdateShaders(bool force = false);
 		void Prepare();
-		void RenderMainMenu(ecs::View &view);
+		void RenderMainMenu(ecs::View &view, bool renderToGel = false);
 		void RenderShadowMaps();
 		void PrepareVoxelTextures();
 		void RenderVoxelGrid();
