@@ -28,6 +28,7 @@ namespace sp
 	{
 		funcs.Register("loadscene", "Load a scene", &GameLogic::LoadScene);
 		funcs.Register("reloadscene", "Reload current scene", &GameLogic::ReloadScene);
+		funcs.Register("printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
 	}
 
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
@@ -266,6 +267,27 @@ namespace sp
 		if (scene)
 		{
 			LoadScene(scene->name);
+		}
+	}
+
+	void GameLogic::PrintDebug(const string &)
+	{
+		Logf("Currently loaded scene: %s", scene ? scene->name : "none");
+		if (!scene) return;
+		auto player = scene->FindEntity("player");
+		if (player.Valid() && player.Has<ecs::Transform>() && player.Has<ecs::HumanController>())
+		{
+			auto transform = player.Get<ecs::Transform>();
+			auto controller = player.Get<ecs::HumanController>();
+			auto position = transform->GetPosition();
+			auto pxFeet = controller->pxController->getFootPosition();
+			Logf("Player position: [%f, %f, %f], feet: %f", position.x, position.y, position.z, pxFeet.y);
+			Logf("Player velocity: [%f, %f, %f]", controller->velocity.x, controller->velocity.y, controller->velocity.z);
+			Logf("Player on ground: %s", controller->onGround ? "true" : "false");
+		}
+		else
+		{
+			Logf("Scene has no valid player");
 		}
 	}
 }

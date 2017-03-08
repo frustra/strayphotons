@@ -37,7 +37,7 @@
 				"clip": [0.1, 256]
 			},
 			"transform": {
-				"translate": [0, 1, 0]
+				"translate": [0, 1.75, 0]
 			},
 			"voxels": {
 				"min": [-2, 0, -5],

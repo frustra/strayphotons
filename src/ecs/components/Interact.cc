@@ -13,7 +13,6 @@ namespace ecs
 	{
 		if (target)
 		{
-			target->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, false);
 			manager->RemoveConstraints(entity, target);
 			target = nullptr;
 			return;
@@ -40,11 +39,12 @@ namespace ecs
 			if (hitActor && hitActor->getType() == physx::PxActorType::eRIGID_DYNAMIC)
 			{
 				physx::PxRigidDynamic *dynamic = static_cast<physx::PxRigidDynamic *>(hitActor);
-				if (dynamic && !(dynamic->getRigidBodyFlags() & physx::PxRigidBodyFlag::eKINEMATIC))
+				if (dynamic && !dynamic->getRigidBodyFlags().isSet(physx::PxRigidBodyFlag::eKINEMATIC))
 				{
 					target = dynamic;
-					dynamic->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
-					manager->CreateConstraint(entity, dynamic, physx::PxVec3(hit.block.distance, 0.f, 0.f));
+					auto currentPos = dynamic->getGlobalPose().transform(dynamic->getCMassLocalPose().transform(physx::PxVec3(0.0)));
+					auto offset = glm::inverse(transform->rotate) * PxVec3ToGlmVec3P(currentPos - origin);
+					manager->CreateConstraint(entity, dynamic, GlmVec3ToPxVec3(offset));
 				}
 			}
 		}

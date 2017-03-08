@@ -214,16 +214,22 @@ namespace sp
 				GConsoleManager.ParseAndExecute("loadscene test1");
 			}
 
-			if (ImGui::Button("Level1"))
+			if (ImGui::Button("Test2"))
 			{
 				CloseMenu();
-				GConsoleManager.ParseAndExecute("loadscene level1");
+				GConsoleManager.ParseAndExecute("loadscene test2");
 			}
 
 			if (ImGui::Button("Sponza"))
 			{
 				CloseMenu();
 				GConsoleManager.ParseAndExecute("loadscene sponza");
+			}
+
+			if (ImGui::Button("Cornell Box"))
+			{
+				CloseMenu();
+				GConsoleManager.ParseAndExecute("loadscene cornell-box-1");
 			}
 
 			ImGui::PopFont();

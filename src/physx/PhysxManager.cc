@@ -6,6 +6,7 @@
 #include "ecs/components/Controller.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/Physics.hh"
+#include "ecs/components/Interact.hh"
 
 #include "assets/AssetManager.hh"
 #include "assets/Model.hh"
@@ -95,19 +96,19 @@ namespace sp
 		if (!hadResults)
 			Lock();
 
-		for (auto &constraint : constraints)
+		for (auto constraint = constraints.begin(); constraint != constraints.end();)
 		{
-			auto transform = constraint.parent.Get<ecs::Transform>();
+			auto transform = constraint->parent.Get<ecs::Transform>();
 			PxTransform destination;
 
-			if (constraint.parent.Has<ecs::Physics>())
+			if (constraint->parent.Has<ecs::Physics>())
 			{
-				auto physics = constraint.parent.Get<ecs::Physics>();
+				auto physics = constraint->parent.Get<ecs::Physics>();
 				destination = physics->actor->getGlobalPose();
 			}
-			else if (constraint.parent.Has<ecs::HumanController>())
+			else if (constraint->parent.Has<ecs::HumanController>())
 			{
-				auto controller = constraint.parent.Get<ecs::HumanController>();
+				auto controller = constraint->parent.Get<ecs::HumanController>();
 				PxController *pxController = controller->pxController;
 				destination = pxController->getActor()->getGlobalPose();
 			}
@@ -116,15 +117,26 @@ namespace sp
 				std::cout << "Error physics constraint, parent not registered with physics system!";
 				continue;
 			}
-			glm::vec3 forward = glm::vec3(0, 0, -1);
-			glm::vec3 rotate = transform->rotate * forward;
-			PxVec3 dir = GlmVec3ToPxVec3(rotate);
-			dir.normalizeSafe();
+			glm::vec3 rotate = transform->rotate * PxVec3ToGlmVec3P(constraint->offset);
+			PxVec3 targetPos = GlmVec3ToPxVec3(transform->GetPosition() + rotate);
+			auto currentPos = constraint->child->getGlobalPose().transform(constraint->child->getCMassLocalPose().transform(physx::PxVec3(0.0)));
+			auto distance = targetPos - currentPos;
 
-			auto prevPose = constraint.child->getGlobalPose();
-			destination.q = prevPose.q;
-			destination.p += (dir * 3.f);
-			constraint.child->setKinematicTarget(destination);
+			if (distance.magnitude() < 2.0)
+			{
+				constraint->child->setAngularVelocity(PxVec3(0));
+				constraint->child->setLinearVelocity(distance.multiply(PxVec3(20.0)));
+				constraint++;
+			}
+			else
+			{
+				// Remove the constraint if the distance is too far
+				if (constraint->parent.Has<ecs::InteractController>())
+				{
+					constraint->parent.Get<ecs::InteractController>()->target = nullptr;
+				}
+				constraint = constraints.erase(constraint);
+			}
 		}
 
 		if (CVarGravity.Changed())
@@ -336,8 +348,7 @@ namespace sp
 			if (desc.kinematic)
 			{
 				auto rigidBody = static_cast<physx::PxRigidBody *>(actor);
-				rigidBody->setRigidBodyFlag(
-					physx::PxRigidBodyFlag::eKINEMATIC, 1);
+				rigidBody->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
 			}
 		}
 		else
@@ -388,6 +399,23 @@ namespace sp
 		Unlock();
 	}
 
+	void ControllerHitReport::onShapeHit(const physx::PxControllerShapeHit &hit)
+	{
+		auto dynamic = hit.actor->isRigidDynamic();
+		if (dynamic && !dynamic->getRigidDynamicFlags().isSet(PxRigidDynamicFlag::eKINEMATIC))
+		{
+			manager->Lock();
+			glm::vec3 *velocity = (glm::vec3 *) hit.controller->getUserData();
+			PxRigidBodyExt::addForceAtPos(
+				*dynamic,
+				hit.dir.multiply(PxVec3(glm::length(*velocity) * ecs::PLAYER_PUSH_FORCE)),
+				PxVec3(hit.worldPos.x, hit.worldPos.y, hit.worldPos.z),
+				PxForceMode::eIMPULSE
+			);
+			manager->Unlock();
+		}
+	}
+
 	PxController *PhysxManager::CreateController(PxVec3 pos, float radius, float height, float density)
 	{
 		Lock();
@@ -401,6 +429,9 @@ namespace sp
 		desc.height = height;
 		desc.density = density;
 		desc.material = physics->createMaterial(0.3f, 0.3f, 0.3f);
+		desc.climbingMode = physx::PxCapsuleClimbingMode::eCONSTRAINED;
+		desc.reportCallback = new ControllerHitReport(this);
+		desc.userData = new glm::vec3(0);
 
 		PxController *controller = manager->createController(desc);
 		Unlock();
@@ -474,6 +505,7 @@ namespace sp
 
 	void PhysxManager::CreateConstraint(ecs::Entity parent, PxRigidDynamic *child, PxVec3 offset)
 	{
+		Lock();
 		PhysxConstraint constraint;
 		constraint.parent = parent;
 		constraint.child = child;
@@ -483,10 +515,12 @@ namespace sp
 		{
 			constraints.emplace_back(constraint);
 		}
+		Unlock();
 	}
 
 	void PhysxManager::RemoveConstraints(ecs::Entity parent, physx::PxRigidDynamic *child)
 	{
+		Lock();
 		for (auto it = constraints.begin(); it != constraints.end();)
 		{
 			if (it->parent == parent && it->child == child)
@@ -495,6 +529,7 @@ namespace sp
 			}
 			else it++;
 		}
+		Unlock();
 	}
 
 	const uint32 hullCacheMagic = 0xc040;

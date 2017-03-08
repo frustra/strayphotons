@@ -15,12 +15,24 @@
 namespace sp
 {
 	class Model;
+	class PhysxManager;
 
 	struct PhysxConstraint
 	{
 		ecs::Entity parent;
 		physx::PxRigidDynamic *child;
 		physx::PxVec3 offset;
+	};
+
+	class ControllerHitReport : public physx::PxUserControllerHitReport
+	{
+	public:
+		ControllerHitReport(PhysxManager *manager) : manager(manager) {}
+		void onShapeHit(const physx::PxControllerShapeHit &hit);
+		void onControllerHit(const physx::PxControllersHit &hit) {}
+		void onObstacleHit(const physx::PxControllerObstacleHit &hit) {}
+	private:
+		PhysxManager *manager;
 	};
 
 	class PhysxManager

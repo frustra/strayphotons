@@ -131,20 +131,21 @@ namespace sp
 			{
 				glfwSetWindowSize(window, scaled.x, scaled.y);
 
-				int fbWidth, fbHeight;
-				glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+				// TODO(pushrax): Convert this to glfwSetFramebufferSizeCallback
+				// int fbWidth, fbHeight;
+				// glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
 
-				if (fbWidth != view.extents.x)
-				{
-					glfwSetWindowSize(window, view.extents.x, view.extents.y);
-					glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+				// if (fbWidth != view.extents.x)
+				// {
+				// 	glfwSetWindowSize(window, view.extents.x, view.extents.y);
+				// 	glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
 
-					double newScale = (double) view.extents.x / (double) fbWidth;
-					Logf("Setting window scale: %f", newScale);
-					windowScale = newScale;
-					scaled = glm::dvec2(view.extents) * windowScale;
-					glfwSetWindowSize(window, scaled.x, scaled.y);
-				}
+				// 	double newScale = (double) view.extents.x / (double) fbWidth;
+				// 	Logf("Setting window scale: %f", newScale);
+				// 	windowScale = newScale;
+				// 	scaled = glm::dvec2(view.extents) * windowScale;
+				// 	glfwSetWindowSize(window, scaled.x, scaled.y);
+				// }
 			}
 		}
 

@@ -21,6 +21,7 @@ namespace sp
 
 		void LoadScene(const string &name);
 		void ReloadScene(const string &);
+		void PrintDebug(const string &);
 
 	private:
 		Game *game;

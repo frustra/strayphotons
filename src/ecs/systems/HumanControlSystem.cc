@@ -128,8 +128,8 @@ namespace ecs
 				physics->ToggleCollisions(controller->pxController->getActor(), !CVarNoClip.Get(true));
 			}
 
-			bool onGround = physics->SweepQuery(controller->pxController->getActor(), physx::PxVec3(0, -1, 0), ecs::PLAYER_SWEEP_DISTANCE);
-			auto velocity = CalculatePlayerVelocity(entity, dtSinceLastFrame, onGround, inputMovement, jumping);
+			controller->onGround = physics->SweepQuery(controller->pxController->getActor(), physx::PxVec3(0, -1, 0), ecs::PLAYER_SWEEP_DISTANCE);
+			auto velocity = CalculatePlayerVelocity(entity, dtSinceLastFrame, inputMovement, jumping);
 			MoveEntity(entity, dtSinceLastFrame, velocity);
 		}
 
@@ -179,14 +179,14 @@ namespace ecs
 
 		auto transform = entity.Get<ecs::Transform>();
 		// Offset the capsule position so the camera is at the top
-		physx::PxVec3 pos = GlmVec3ToPxVec3(transform->GetPosition() - glm::vec3(0, ecs::PLAYER_HEIGHT / 2, 0));
-		controller->pxController = px.CreateController(pos, ecs::PLAYER_RADIUS, ecs::PLAYER_HEIGHT - ecs::PLAYER_RADIUS * 2.0, 0.5f);
+		physx::PxVec3 pos = GlmVec3ToPxVec3(transform->GetPosition() - glm::vec3(0, ecs::PLAYER_HEIGHT / 2 - ecs::PLAYER_RADIUS, 0));
+		controller->pxController = px.CreateController(pos, ecs::PLAYER_RADIUS, ecs::PLAYER_HEIGHT - ecs::PLAYER_RADIUS, 0.5f);
 		controller->pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
 
 		return controller;
 	}
 
-	glm::vec3 HumanControlSystem::CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, bool onGround, glm::vec3 inDirection, bool jump)
+	glm::vec3 HumanControlSystem::CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump)
 	{
 		if (!entity.Has<ecs::Transform>())
 		{
@@ -210,16 +210,22 @@ namespace ecs
 		if (movement != glm::vec3(0)) movement = glm::normalize(movement) * CVarMovementSpeed.Get();
 		movement.y += inDirection.y * CVarMovementSpeed.Get();
 
-		if (onGround || noclip)
+		if (noclip)
 		{
-			if (jump) movement.y += ecs::PLAYER_JUMP_VELOCITY;
 			controller->velocity = movement;
+			return controller->velocity;
+		}
+		if (controller->onGround)
+		{
+			controller->velocity.x = movement.x;
+			if (jump) controller->velocity.y = ecs::PLAYER_JUMP_VELOCITY;
+			controller->velocity.z = movement.z;
 		}
 		else
 		{
 			controller->velocity += movement * ecs::PLAYER_AIR_STRAFE * (float)dtSinceLastFrame;
-			controller->velocity.y -= ecs::PLAYER_GRAVITY * dtSinceLastFrame;
 		}
+		controller->velocity.y -= ecs::PLAYER_GRAVITY * dtSinceLastFrame;
 
 		return controller->velocity;
 	}
@@ -248,9 +254,11 @@ namespace ecs
 
 			// Update the velocity based on what happened in physx
 			controller->velocity = (newPosition - prevPosition) / (float)dtSinceLastFrame;
+			glm::vec3 *velocity = (glm::vec3 *) controller->pxController->getUserData();
+			*velocity = controller->velocity;
 
 			// Offset the capsule position so the camera is at the top
-			transform->SetPosition(newPosition + glm::vec3(0, PLAYER_HEIGHT / 2, 0));
+			transform->SetPosition(newPosition + glm::vec3(0, PLAYER_HEIGHT / 2 - ecs::PLAYER_RADIUS, 0));
 		}
 	}
 

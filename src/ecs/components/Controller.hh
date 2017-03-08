@@ -32,6 +32,7 @@ namespace ecs
 	const float PLAYER_GRAVITY = 9.81;
 	const float PLAYER_JUMP_VELOCITY = 5.0;
 	const float PLAYER_AIR_STRAFE = 0.8; // Movement scaler for acceleration in air
+	const float PLAYER_PUSH_FORCE = 0.3;
 
 	struct HumanController
 	{
@@ -49,6 +50,7 @@ namespace ecs
 		physx::PxController *pxController;
 
 		bool crouched = false;
+		bool onGround = false;
 		glm::vec3 velocity = glm::vec3(0);
 	};
 
