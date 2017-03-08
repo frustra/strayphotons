@@ -25,6 +25,7 @@ extern "C"
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/Mirror.hh"
 #include "ecs/components/Barrier.hh"
+#include "ecs/components/TriggerArea.hh"
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -445,6 +446,29 @@ namespace sp
 				{
 					auto mirror = entity.Assign<ecs::Mirror>();
 					mirror->size = MakeVec2(comp.second);
+				}
+				else if (comp.first == "triggerarea")
+				{
+					auto area = entity.Assign<ecs::TriggerArea>();
+					for (auto param : comp.second.get<picojson::object>())
+					{
+						if (param.first == "min")
+						{
+							area->boundsMin = MakeVec3(param.second);
+						}
+						else if (param.first == "max")
+						{
+							area->boundsMax = MakeVec3(param.second);
+						}
+						else if (param.first == "command")
+						{
+							area->command = param.second.get<string>();
+						}
+					}
+				}
+				else
+				{
+					Errorf("Unknown component, ignoring: %s", comp.first);
 				}
 			}
 			if (ent.count("_name"))

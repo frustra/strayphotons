@@ -20,6 +20,7 @@ namespace sp
 		void BeginFrame();
 		void RenderPass(ecs::View &view);
 		void PrepareForView(ecs::View &view);
+		void RenderLoading(ecs::View &view);
 		void EndFrame();
 
 	private:

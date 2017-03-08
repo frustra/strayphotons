@@ -56,11 +56,11 @@ namespace sp
 	void Renderer::UpdateShaders(bool force)
 	{
 		if (force ||
-			CVarVoxelGridSize.Changed() ||
-			CVarVoxelSuperSample.Changed() ||
-			CVarEnableShadows.Changed() ||
-			CVarEnablePCF.Changed()
-		)
+				CVarVoxelGridSize.Changed() ||
+				CVarVoxelSuperSample.Changed() ||
+				CVarEnableShadows.Changed() ||
+				CVarEnablePCF.Changed()
+		   )
 		{
 			ShaderManager::SetDefine("VOXEL_GRID_SIZE", std::to_string(CVarVoxelGridSize.Get(true)));
 			ShaderManager::SetDefine("VOXEL_SUPER_SAMPLE_SCALE", std::to_string(CVarVoxelSuperSample.Get(true)));
@@ -155,13 +155,6 @@ namespace sp
 
 		if (lightCount == 0) return;
 
-		glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
-		glDisable(GL_SCISSOR_TEST);
-		glEnable(GL_CULL_FACE);
-		glEnable(GL_DEPTH_TEST);
-		glDepthMask(GL_TRUE);
-		glClear(GL_DEPTH_BUFFER_BIT);
-
 		RenderTargetDesc shadowDesc(PF_R32F, renderTargetSize);
 		if (!shadowMap || shadowMap->GetDesc() != shadowDesc)
 		{
@@ -191,6 +184,13 @@ namespace sp
 		{
 			auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH16, renderTargetSize));
 			SetRenderTarget(&shadowMap->GetTexture(), &depthTarget->GetTexture());
+
+			glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
+			glDisable(GL_SCISSOR_TEST);
+			glEnable(GL_CULL_FACE);
+			glEnable(GL_DEPTH_TEST);
+			glDepthMask(GL_TRUE);
+			glClear(GL_DEPTH_BUFFER_BIT);
 
 			mirrorVisData.Clear(PF_R32UI, 0);
 			mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
@@ -796,6 +796,23 @@ namespace sp
 			comp->model->glModel = make_shared<GLModel>(comp->model.get());
 		}
 		comp->model->glModel->Draw();
+	}
+
+	void Renderer::RenderLoading(ecs::View &view)
+	{
+		auto screenResolution = view.extents;
+		view.extents = glm::ivec2(400, 200);
+		view.offset = glm::ivec2(screenResolution / 2) - view.extents / 2;
+
+		PrepareForView(view);
+
+		static Texture loadingTex = GAssets.LoadTexture("logos/loading.png");
+		loadingTex.Bind(0);
+
+		ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(GlobalShaders);
+		SetDefaultRenderTarget();
+		DrawScreenCover(true);
+		glfwSwapBuffers(window);
 	}
 
 	void Renderer::BeginFrame()

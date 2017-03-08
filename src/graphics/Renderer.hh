@@ -49,6 +49,7 @@ namespace sp
 		void PrepareForView(ecs::View &view);
 		void ForwardPass(ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw = {});
 		void DrawEntity(ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw = {});
+		void RenderLoading(ecs::View &view);
 		void EndFrame();
 
 		void SetRenderTarget(const Texture *attachment0, const Texture *depth);

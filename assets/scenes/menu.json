@@ -81,7 +81,7 @@
 				"translate": [0, 5, 4.5]
 			},
 			"voxels": {
-				"min": [-5, -0, -5],
+				"min": [-5, 0, -5],
 				"max": [5, 10, 5]
 			}
 		},
@@ -98,6 +98,13 @@
 			},
 			"transform": {
 				"translate": [0, 5, 0]
+			}
+		},
+		{
+			"triggerarea": {
+				"min": [-5, 0, 4],
+				"max": [5, 2, 5],
+				"command": "loadscene test1"
 			}
 		}
 	]

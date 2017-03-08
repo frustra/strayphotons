@@ -15,6 +15,7 @@
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/Barrier.hh"
+#include "ecs/components/TriggerArea.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <cxxopts.hpp>
@@ -130,6 +131,30 @@ namespace sp
 	bool GameLogic::Frame(double dtSinceLastFrame)
 	{
 		if (!scene) return true;
+		ecs::Entity player = scene->FindEntity("player");
+		if (!player.Valid()) return true;
+
+		for (auto entity : game->entityManager.EntitiesWith<ecs::TriggerArea>())
+		{
+			auto area = entity.Get<ecs::TriggerArea>();
+			auto transform = player.Get<ecs::Transform>();
+			auto playerPos = transform->GetPosition();
+			if (
+				playerPos.x > area->boundsMin.x &&
+				playerPos.y > area->boundsMin.y &&
+				playerPos.z > area->boundsMin.z &&
+				playerPos.x < area->boundsMax.x &&
+				playerPos.y < area->boundsMax.y &&
+				playerPos.z < area->boundsMax.z &&
+				!area->triggered
+			)
+			{
+				area->triggered = true;
+				Debugf("Player at: %f %f %f", playerPos.x, playerPos.y, playerPos.z);
+				Logf("Triggering event: %s", area->command);
+				GConsoleManager.ParseAndExecute(area->command);
+			}
+		}
 
 		ecs::Entity sun = scene->FindEntity("sun");
 		if (sun.Valid())
@@ -187,6 +212,8 @@ namespace sp
 	void GameLogic::LoadScene(const string &nameRef)
 	{
 		const string name = nameRef;
+		game->graphics.RenderLoading();
+
 		game->entityManager.DestroyAll();
 
 		scene.reset();

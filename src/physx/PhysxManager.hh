@@ -19,7 +19,7 @@ namespace sp
 	struct PhysxConstraint
 	{
 		ecs::Entity parent;
-		physx::PxRigidDynamic* child;
+		physx::PxRigidDynamic *child;
 		physx::PxVec3 offset;
 	};
 
@@ -40,7 +40,7 @@ namespace sp
 		void ReadLock();
 		void ReadUnlock();
 
-		void CreateConstraint(ecs::Entity parent, physx::PxRigidDynamic* child, physx::PxVec3 offset);
+		void CreateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 offset);
 
 		ConvexHullSet *GetCachedConvexHulls(Model *model);
 
@@ -61,11 +61,11 @@ namespace sp
 		void RemoveController(physx::PxController *controller);
 
 		bool RaycastQuery(
-			ecs::Entity& entity,
-			const physx::PxVec3 origin, const physx::PxVec3 dir, const float distance, physx::PxRaycastBuffer& hit);
+			ecs::Entity &entity,
+			const physx::PxVec3 origin, const physx::PxVec3 dir, const float distance, physx::PxRaycastBuffer &hit);
 
 		bool SweepQuery(
-			physx::PxRigidDynamic* actor,
+			physx::PxRigidDynamic *actor,
 			const physx::PxVec3 dir,
 			const float distance);
 		/**

@@ -3,23 +3,45 @@
 
 namespace sp
 {
-	void DrawScreenCover()
+	void DrawScreenCover(bool flipped)
 	{
-		static TextureVertex screenCoverElements[] =
+		if (flipped)
 		{
-			{{ -2, -1, 0}, { -0.5, 0}},
-			{{2, -1, 0}, {1.5, 0}},
-			{{0, 3, 0}, {0.5, 2}},
-		};
+			static TextureVertex screenCoverElements[] =
+			{
+				{{ -2, -1, 0}, { -0.5, 1}},
+				{{2, -1, 0}, {1.5, 1}},
+				{{0, 3, 0}, {0.5, -1}},
+			};
 
-		static VertexBuffer vbo;
+			static VertexBuffer vbo;
 
-		if (!vbo.Initialized())
-		{
-			vbo.SetElementsVAO(3, screenCoverElements);
+			if (!vbo.Initialized())
+			{
+				vbo.SetElementsVAO(3, screenCoverElements);
+			}
+
+			vbo.BindVAO();
+			glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
 		}
+		else
+		{
+			static TextureVertex screenCoverElements[] =
+			{
+				{{ -2, -1, 0}, { -0.5, 0}},
+				{{2, -1, 0}, {1.5, 0}},
+				{{0, 3, 0}, {0.5, 2}},
+			};
 
-		vbo.BindVAO();
-		glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
+			static VertexBuffer vbo;
+
+			if (!vbo.Initialized())
+			{
+				vbo.SetElementsVAO(3, screenCoverElements);
+			}
+
+			vbo.BindVAO();
+			glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
+		}
 	}
 }

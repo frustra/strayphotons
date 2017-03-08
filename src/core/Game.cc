@@ -13,6 +13,7 @@
 #include "ecs/components/Mirror.hh"
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/Barrier.hh"
+#include "ecs/components/TriggerArea.hh"
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -34,6 +35,7 @@ namespace sp
 		entityManager.RegisterComponentType<ecs::Mirror>();
 		entityManager.RegisterComponentType<ecs::VoxelInfo>();
 		entityManager.RegisterComponentType<ecs::Barrier>();
+		entityManager.RegisterComponentType<ecs::TriggerArea>();
 	}
 
 	Game::~Game()
@@ -139,7 +141,7 @@ namespace sp
 					auto pxMat = *(physx::PxMat44 *)(glm::value_ptr(mat));
 
 					physx::PxTransform newPose(pxMat);
-					if(ph->dynamic)
+					if (ph->dynamic)
 					{
 						ph->actor->setGlobalPose(newPose);
 					}

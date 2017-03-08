@@ -2,5 +2,5 @@
 
 namespace sp
 {
-	void DrawScreenCover();
+	void DrawScreenCover(bool flipped = false);
 }

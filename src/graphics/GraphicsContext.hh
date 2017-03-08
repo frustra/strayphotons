@@ -31,6 +31,7 @@ namespace sp
 		virtual void BeginFrame() = 0;
 		virtual void RenderPass(ecs::View &view) = 0;
 		virtual void PrepareForView(ecs::View &view) = 0;
+		virtual void RenderLoading(ecs::View &view) = 0;
 		virtual void EndFrame() = 0;
 
 		ShaderSet *GlobalShaders;

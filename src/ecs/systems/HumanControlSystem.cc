@@ -64,7 +64,7 @@ namespace ecs
 
 			transform->rotate = glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll));
 
-			if(!controller->jumping)
+			if (!controller->jumping)
 			{
 				controller->lastGroundVelocity = glm::vec3();
 			}
@@ -107,7 +107,7 @@ namespace ecs
 						}
 						break;
 					case ControlAction::INTERACT:
-						if(input->IsAnyPressed(actionKeysPair.second))
+						if (input->IsAnyPressed(actionKeysPair.second))
 						{
 							interact(entity, dtSinceLastFrame);
 						}
@@ -120,7 +120,7 @@ namespace ecs
 				}
 			}
 
-			controller->jumping = !physics->SweepQuery(controller->pxController->getActor(), physx::PxVec3(0,-1,0), ecs::CONTROLLER_SWEEP_DISTANCE);
+			controller->jumping = !physics->SweepQuery(controller->pxController->getActor(), physx::PxVec3(0, -1, 0), ecs::CONTROLLER_SWEEP_DISTANCE);
 
 			if (controller->jumping)
 			{

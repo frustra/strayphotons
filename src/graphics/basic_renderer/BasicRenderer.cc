@@ -207,6 +207,11 @@ namespace sp
 		}
 	}
 
+	void BasicRenderer::RenderLoading(ecs::View &view)
+	{
+		// TODO(xthexder): Put something here
+	}
+
 	void BasicRenderer::BeginFrame()
 	{
 	}

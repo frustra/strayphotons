@@ -185,4 +185,18 @@ namespace sp
 		ecs::ValidateView(entity);
 		playerView = entity;
 	}
+
+	void GraphicsManager::RenderLoading()
+	{
+		if (!context) return;
+
+		ecs::View primaryView;
+		if (playerView.Valid()) primaryView = *ecs::UpdateViewCache(playerView);
+
+		primaryView.extents = CVarWindowSize.Get();
+		primaryView.blend = true;
+		primaryView.clearMode = 0;
+
+		context->RenderLoading(primaryView);
+	}
 }

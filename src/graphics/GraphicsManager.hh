@@ -30,6 +30,7 @@ namespace sp
 
 		void BindContextInputCallbacks(InputManager &inputManager);
 		void SetPlayerView(ecs::Entity entity);
+		void RenderLoading();
 
 		bool Frame();
 
