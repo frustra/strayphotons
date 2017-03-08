@@ -27,14 +27,8 @@ namespace ecs
 		ecs::Handle<HumanController> AssignController(ecs::Entity entity, sp::PhysxManager &px);
 
 	private:
-
-		/**
-		 * Move an entity in the given local direction based on how much time has passed
-		 * since last frame.
-		 */
-		void move(ecs::Entity entity, double dt, glm::vec3 normalizedDirection, bool flight = false);
-
-		void controllerMove(ecs::Entity entity, double dt, glm::vec3 movement);
+		glm::vec3 CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, bool onGround, glm::vec3 inDirection, bool jump);
+		void MoveEntity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 velocity);
 
 		/**
 		* Pick up the object that the player is looking at and make it move at to a fixed location relative to camera

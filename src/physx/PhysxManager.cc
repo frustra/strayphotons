@@ -406,6 +406,21 @@ namespace sp
 		return controller;
 	}
 
+	void PhysxManager::MoveController(PxController *controller, double dt, physx::PxVec3 displacement)
+	{
+		Lock();
+		physx::PxControllerFilters filters;
+		controller->move(displacement, 0, dt, filters);
+		Unlock();
+	}
+
+	void PhysxManager::TeleportController(physx::PxController *controller, physx::PxExtendedVec3 position)
+	{
+		Lock();
+		controller->setPosition(position);
+		Unlock();
+	}
+
 	void PhysxManager::RemoveController(PxController *controller)
 	{
 		Lock();

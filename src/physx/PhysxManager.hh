@@ -56,8 +56,11 @@ namespace sp
 		};
 
 		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, ActorDesc desc);
+		void ToggleActor(physx::PxRigidActor *actor, bool enabled);
 		void RemoveActor(physx::PxRigidActor *actor);
 		physx::PxController *CreateController(physx::PxVec3 pos, float radius, float height, float density);
+		void MoveController(physx::PxController *controller, double dt, physx::PxVec3 displacement);
+		void TeleportController(physx::PxController *controller, physx::PxExtendedVec3 position);
 		void RemoveController(physx::PxController *controller);
 
 		bool RaycastQuery(

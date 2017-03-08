@@ -23,19 +23,18 @@ namespace ecs
 		INTERACT
 	};
 
-	const float CONTROLLER_SWEEP_DISTANCE = 0.4f;
-	const float CONTROLLER_GRAVITY = 9.81f;
-	const float CONTROLLER_JUMP = 2.5f;
-	const float CONTROLLER_STEP = 0.1f;
-	const float CONTROLLER_AIR_STRAFE = 0.3f;
+	// Units in meters
+	const float PLAYER_HEIGHT = 1.7;
+	const float PLAYER_RADIUS = 0.2;
+	const float PLAYER_STEP_HEIGHT = 0.3;
+	const float PLAYER_SWEEP_DISTANCE = 0.4; // Distance to check if on ground
+
+	const float PLAYER_GRAVITY = 9.81;
+	const float PLAYER_JUMP_VELOCITY = 5.0;
+	const float PLAYER_AIR_STRAFE = 0.8; // Movement scaler for acceleration in air
 
 	struct HumanController
 	{
-		HumanController()
-		{
-			lastGroundVelocity = glm::vec3();
-		}
-
 		// map each action to a vector of glfw keys that could trigger it
 		// (see InputManager.hh for converting a mouse button to one of these ints)
 		std::unordered_map<ControlAction, std::vector<int>, sp::EnumHash> inputMap;
@@ -49,11 +48,8 @@ namespace ecs
 		// pxCapsuleController handles movement and physx simulation
 		physx::PxController *pxController;
 
-		// Custom physics to handle gravity
-		bool jumping = true;
-
-		glm::vec3 lastGroundVelocity;
-		float upVelocity = 0.f;
+		bool crouched = false;
+		glm::vec3 velocity = glm::vec3(0);
 	};
 
 }
