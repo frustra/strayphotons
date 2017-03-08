@@ -36,9 +36,8 @@ namespace sp
 		Renderer(Game *game);
 		~Renderer();
 
-		void UpdateShaders(bool force = false);
 		void Prepare();
-		void RenderMainMenu(ecs::View &view, bool renderToGel = false);
+		void RenderMainMenu(ecs::View &view);
 		void RenderShadowMaps();
 		void PrepareVoxelTextures();
 		void RenderVoxelGrid();
@@ -50,6 +49,7 @@ namespace sp
 		void ForwardPass(ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw = {});
 		void DrawEntity(ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw = {});
 		void RenderLoading(ecs::View &view);
+		void DrawLine(ecs::View &view, SceneShader *shader, const physx::PxDebugLine &line);
 		void EndFrame();
 
 		void SetRenderTarget(const Texture *attachment0, const Texture *depth);

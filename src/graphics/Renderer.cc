@@ -784,8 +784,63 @@ namespace sp
 			DrawEntity(view, shader, ent, preDraw);
 		}
 
+		// // show physx debug view
+		// // game->physics.IterateDebugLines([&](const physx::PxDebugLine &line) {
+		// // 	DrawLine(view, shader, line);
+		// // });
+		auto line = physx::PxDebugLine(physx::PxVec3(0,0,0), physx::PxVec3(1,1,1), 20000);
+		DrawLine(view, shader, line);
+
 		if (CVarRenderWireframe.Get())
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
+
+	void Renderer::DrawLine(
+		ecs::View &view,
+		SceneShader *shader,
+		const physx::PxDebugLine &line)
+	{
+		static DefaultMaterial defaultMat;
+		shader->SetParams(view, glm::mat4());
+
+		// pos, normal, tex coord
+		static float vertices[] = {
+			-50, 5, 0,         0, -1, 0,    0, 0,
+			+50, 5, 0,         0, -1, 0,    0, 0,
+			 0, 5, 50,         0, -1, 0,    0, 0,
+		};
+
+		static GLuint vao = 0;
+		static GLuint vbo = 0;
+		if (vao == 0) {
+			glGenVertexArrays(1, &vao);
+			glBindVertexArray(vao);
+
+			glGenBuffers(1, &vbo);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo);
+			glBufferData(
+				GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+			GLuint stride = (3 + 3 + 2) * sizeof(GL_FLOAT);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void *)0);
+			glEnableVertexAttribArray(0); // position
+
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void *)3);
+			glEnableVertexAttribArray(1); // normal
+
+			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void *)6);
+			glEnableVertexAttribArray(2); // texcoord
+		}
+		glBindVertexArray(vao);
+
+		defaultMat.baseColorTex.Bind(0);
+		defaultMat.roughnessTex.Bind(1);
+		defaultMat.metallicTex.Bind(2);
+		defaultMat.heightTex.Bind(3);
+
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		glBindVertexArray(0);
 	}
 
 	void Renderer::DrawEntity(ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw)

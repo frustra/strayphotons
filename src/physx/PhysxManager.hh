@@ -11,6 +11,7 @@
 #include <extensions/PxDefaultAllocator.h>
 #include <unordered_map>
 #include <thread>
+#include <functional>
 
 namespace sp
 {
@@ -95,6 +96,12 @@ namespace sp
 		 * Enable or disable collisions for an actor.
 		 */
 		void ToggleCollisions(physx::PxRigidActor *actor, bool enabled);
+
+		/**
+		 * Call a function with every debug line in the PhysX scene.
+		 */
+		void IterateDebugLines(
+			std::function<void(const physx::PxDebugLine &)> callback);
 
 	private:
 		void CreatePhysxScene();

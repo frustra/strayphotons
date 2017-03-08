@@ -170,6 +170,13 @@ namespace sp
 		scene = physics->createScene(sceneDesc);
 		Assert(scene, "creating PhysX scene");
 
+		// debug view
+		scene->setVisualizationParameter(
+			physx::PxVisualizationParameter::eSCALE, 1.0f);
+
+		scene->setVisualizationParameter(
+			PxVisualizationParameter::eCOLLISION_AABBS, 1.0f);
+
 		Lock();
 		PxMaterial *groundMat = physics->createMaterial(0.6f, 0.5f, 0.0f);
 		PxRigidStatic *groundPlane = PxCreatePlane(*physics, PxPlane(0.f, 1.f, 0.f, 1.03f), *groundMat);
@@ -185,6 +192,21 @@ namespace sp
 		scene = nullptr;
 		dispatcher->release();
 		dispatcher = nullptr;
+	}
+
+	void PhysxManager::IterateDebugLines(
+		std::function<void(const PxDebugLine &)> callback)
+	{
+		Lock();
+
+		const physx::PxRenderBuffer& rb = scene->getRenderBuffer();
+		for(PxU32 i=0; i < rb.getNbLines(); i++)
+		{
+			const PxDebugLine& line = rb.getLines()[i];
+			callback(line);
+		}
+
+		Unlock();
 	}
 
 	void PhysxManager::StartThread()
