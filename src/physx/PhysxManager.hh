@@ -3,6 +3,8 @@
 
 #include "Common.hh"
 #include "ConvexHull.hh"
+#include "core/CFunc.hh"
+#include "threading/MutexedVector.hh"
 
 #include <Ecs.hh>
 
@@ -11,6 +13,7 @@
 #include <extensions/PxDefaultAllocator.h>
 #include <unordered_map>
 #include <thread>
+#include <functional>
 
 namespace sp
 {
@@ -108,9 +111,18 @@ namespace sp
 		 */
 		void ToggleCollisions(physx::PxRigidActor *actor, bool enabled);
 
+		void ToggleDebug(bool enabled);
+		bool IsDebugEnabled() const;
+
+		/**
+		 * Get the lines for the bounds of all physx objects
+		 */
+		MutexedVector<physx::PxDebugLine> GetDebugLines();
+
 	private:
 		void CreatePhysxScene();
 		void DestroyPhysxScene();
+		void CacheDebugLines();
 
 		ConvexHullSet *BuildConvexHulls(Model *model);
 		ConvexHullSet *LoadCollisionCache(Model *model);
@@ -126,12 +138,16 @@ namespace sp
 
 		physx::PxScene *scene = nullptr;
 		bool simulate = false, exiting = false, resultsPending = false;
+		bool debug = false;
 
 		std::thread thread;
 
 		ConstraintList constraints;
 
 		std::unordered_map<string, ConvexHullSet *> cache;
+
+		vector<physx::PxDebugLine> debugLines;
+		std::mutex debugLinesMutex;
 	};
 }
 

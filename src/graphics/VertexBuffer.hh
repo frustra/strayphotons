@@ -27,6 +27,23 @@ namespace sp
 		}
 	};
 
+	struct SceneVertex
+	{
+		glm::vec3 position;
+		glm::vec3 normal;
+		glm::vec2 uv;
+
+		static vector<Attribute> Attributes()
+		{
+			return
+			{
+				{ 0, 3, GL_FLOAT, 0 },
+				{ 1, 3, GL_FLOAT, sizeof(position) },
+				{ 2, 2, GL_FLOAT, sizeof(position) + sizeof(normal)},
+			};
+		}
+	};
+
 	class VertexBuffer
 	{
 	public:

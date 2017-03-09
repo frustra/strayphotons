@@ -73,16 +73,25 @@ namespace sp
 		vector<Primitive> primitives;
 	};
 
-	struct DefaultMaterial
+	struct BasicMaterial
 	{
 		Texture baseColorTex, roughnessTex, metallicTex, heightTex;
 
-		DefaultMaterial()
+		BasicMaterial(
+			unsigned char *baseColor = nullptr,
+			unsigned char *roughness = nullptr,
+			unsigned char *metallic = nullptr,
+			unsigned char *bump = nullptr)
 		{
-			unsigned char baseColor[4] = { 255, 255, 255, 255 };
-			unsigned char roughness[4] = { 255, 255, 255, 255 };
-			unsigned char metallic[4] = { 0, 0, 0, 0 };
-			unsigned char bump[4] = { 127, 127, 127, 255 };
+			unsigned char baseColorDefault[4] = { 255, 255, 255, 255 };
+			unsigned char roughnessDefault[4] = { 255, 255, 255, 255 };
+			unsigned char metallicDefault[4] = { 0, 0, 0, 0 };
+			unsigned char bumpDefault[4] = { 127, 127, 127, 255 };
+
+			if (!baseColor) baseColor = baseColorDefault;
+			if (!roughness) roughness = roughnessDefault;
+			if (!metallic) metallic = metallicDefault;
+			if (!bump) bump = bumpDefault;
 
 			baseColorTex.Create()
 			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)

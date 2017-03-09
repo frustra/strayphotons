@@ -12,13 +12,16 @@
 #include "assets/Model.hh"
 #include "core/Logging.hh"
 #include "core/CVar.hh"
+#include "core/CFunc.hh"
 
 #include <fstream>
 
 namespace sp
 {
 	using namespace physx;
-	static CVar<float> CVarGravity("g.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
+	static CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
+	static CVar<bool> CVarShowShapes("x.ShowShapes", false,
+		"Show (1) or hide (0) the outline of physx collision shapes");
 
 	PhysxManager::PhysxManager()
 	{
@@ -34,6 +37,7 @@ namespace sp
 		Assert(pxCooking, "PxCreateCooking");
 
 		CreatePhysxScene();
+
 		StartThread();
 		StartSimulation();
 	}
@@ -163,6 +167,13 @@ namespace sp
 			}
 		}
 
+		if (CVarShowShapes.Changed()) {
+			ToggleDebug(CVarShowShapes.Get(true));
+		}
+		if (CVarShowShapes.Get()) {
+			CacheDebugLines();
+		}
+
 		scene->simulate((PxReal) timeStep);
 		resultsPending = true;
 		Unlock();
@@ -198,6 +209,42 @@ namespace sp
 		scene = nullptr;
 		dispatcher->release();
 		dispatcher = nullptr;
+	}
+
+	void PhysxManager::ToggleDebug(bool enabled)
+	{
+		debug = enabled;
+		float scale = (enabled ? 1.0f : 0.0f);
+
+		Lock();
+		scene->setVisualizationParameter(
+			physx::PxVisualizationParameter::eSCALE, scale);
+
+		scene->setVisualizationParameter(
+			PxVisualizationParameter::eCOLLISION_SHAPES, scale);
+		Unlock();
+	}
+
+	bool PhysxManager::IsDebugEnabled() const
+	{
+		return debug;
+	}
+
+	void PhysxManager::CacheDebugLines()
+	{
+		const physx::PxRenderBuffer& rb = scene->getRenderBuffer();
+		const physx::PxDebugLine *lines = rb.getLines();
+
+		{
+			std::lock_guard<std::mutex> lock(debugLinesMutex);
+			debugLines = vector<physx::PxDebugLine>(
+				lines, lines + rb.getNbLines());
+		}
+	}
+
+	MutexedVector<physx::PxDebugLine> PhysxManager::GetDebugLines()
+	{
+		return MutexedVector<physx::PxDebugLine>(debugLines, debugLinesMutex);
 	}
 
 	void PhysxManager::StartThread()

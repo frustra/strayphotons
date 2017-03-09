@@ -20,8 +20,12 @@
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/Mirror.hh"
 #include "assets/AssetManager.hh"
+#include "physx/PhysxUtils.hh"
+#include "threading/MutexedVector.hh"
 
 #include <glm/gtx/component_wise.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <cxxopts.hpp>
 
 namespace sp
@@ -783,8 +787,83 @@ namespace sp
 			DrawEntity(view, shader, ent, preDraw);
 		}
 
+		if (game->physics.IsDebugEnabled())
+		{
+			RenderPhase phase("PhysxBounds", Timer);
+			MutexedVector<physx::PxDebugLine> lines =
+				game->physics.GetDebugLines();
+			DrawPhysxLines(view, shader, lines.Vector(), preDraw);
+		}
+
 		if (CVarRenderWireframe.Get())
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
+
+	void Renderer::DrawPhysxLines(
+		ecs::View &view,
+		SceneShader *shader,
+		const vector<physx::PxDebugLine> &lines,
+		const PreDrawFunc &preDraw)
+	{
+		ecs::Entity nullEnt;
+		if (preDraw) preDraw(nullEnt);
+
+		glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
+		vector<SceneVertex> vertices(6*lines.size());
+		for (auto &line : lines) {
+			glm::vec3 lineDir = glm::normalize(glm::vec3(
+				line.pos1.x - line.pos0.x,
+				line.pos1.y - line.pos0.y,
+				line.pos1.z - line.pos0.z));
+
+			auto lineMid = 0.5 * (line.pos1 + line.pos0);
+			glm::vec3 viewDir = glm::normalize(glm::vec3(
+				viewPos.x - lineMid.x,
+				viewPos.y - lineMid.y,
+				viewPos.z - lineMid.z));
+
+			const float lineWidth = 0.004f;
+			glm::vec3 widthVec =
+				lineWidth * glm::normalize(glm::cross(viewDir, lineDir));
+
+			// move the positions back a bit to account for overlapping lines
+			glm::vec3 pos0 = PxVec3ToGlmVec3P(line.pos0) - lineWidth * lineDir;
+			glm::vec3 pos1 = PxVec3ToGlmVec3P(line.pos1) + lineWidth * lineDir;;
+
+			auto addVertex = [&](const glm::vec3 &pos) {
+				vertices.push_back({
+					{pos.x, pos.y, pos.z},
+					viewDir,
+					{0, 0}
+				});
+			};
+
+			// 2 triangles that make up a "fat" line connecting pos0 and pos1
+			// with the flat face pointing at the player
+			addVertex(pos0 - widthVec);
+			addVertex(pos1 + widthVec);
+			addVertex(pos0 + widthVec);
+
+			addVertex(pos1 - widthVec);
+			addVertex(pos1 + widthVec);
+			addVertex(pos0 - widthVec);
+		}
+
+		shader->SetParams(view, glm::mat4());
+
+		static unsigned char baseColor[4] = { 0, 0, 255, 255 };
+		static BasicMaterial mat(baseColor);
+
+		static VertexBuffer vbo;
+		vbo.SetElementsVAO(vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
+		vbo.BindVAO();
+
+		mat.baseColorTex.Bind(0);
+		mat.roughnessTex.Bind(1);
+		mat.metallicTex.Bind(2);
+		mat.heightTex.Bind(3);
+
+		glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
 	}
 
 	void Renderer::DrawEntity(ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw)

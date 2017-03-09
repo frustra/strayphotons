@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <functional>
 #include <Ecs.hh>
+#include <PxPhysicsAPI.h>
 
 namespace sp
 {
@@ -50,6 +51,8 @@ namespace sp
 		void ForwardPass(ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw = {});
 		void DrawEntity(ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw = {});
 		void RenderLoading(ecs::View &view);
+		void DrawPhysxLines(ecs::View &view, SceneShader *shader,
+			const vector<physx::PxDebugLine> &lines, const PreDrawFunc &preDraw);
 		void EndFrame();
 
 		void SetRenderTarget(const Texture *attachment0, const Texture *depth);
