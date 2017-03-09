@@ -460,7 +460,7 @@ namespace sp
 				auto comp = ent.Get<ecs::Renderable>();
 				// TODO(?): Use a more generic interface of some sort, Not all renderables have a scene.
 				tinygltf::Scene *scene = NULL;//comp->model->GetScene();
-				for (auto &it : scene->materials)
+				for (auto & it : scene->materials)
 				{
 					auto material = it.second;
 					auto key = comp->model->name + it.first;
@@ -559,7 +559,7 @@ namespace sp
 			Assert(ctx.materials.size() <= MAX_MATERIALS, "reached max materials");
 			ctx.matData.nMaterials = ctx.materials.size();
 
-			for (auto &it : ctx.materials)
+			for (auto & it : ctx.materials)
 			{
 				auto &mat = it.second;
 
@@ -717,7 +717,7 @@ namespace sp
 
 			std::thread updater([ &, models]
 			{
-				for (auto &it : models)
+				for (auto & it : models)
 				{
 					auto model = it.first;
 					auto trmat = it.second;

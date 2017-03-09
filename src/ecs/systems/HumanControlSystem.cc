@@ -71,7 +71,7 @@ namespace ecs
 			bool jumping = false;
 			bool sprinting = false;
 
-			for (auto const &actionKeysPair : entity.Get<ecs::HumanController>()->inputMap)
+			for (auto const & actionKeysPair : entity.Get<ecs::HumanController>()->inputMap)
 			{
 				ControlAction action = actionKeysPair.first;
 				const vector<int> &keys = actionKeysPair.second;

@@ -810,18 +810,19 @@ namespace sp
 		if (preDraw) preDraw(nullEnt);
 
 		glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
-		vector<SceneVertex> vertices(6*lines.size());
-		for (auto &line : lines) {
+		vector<SceneVertex> vertices(6 * lines.size());
+		for (auto & line : lines)
+		{
 			glm::vec3 lineDir = glm::normalize(glm::vec3(
-				line.pos1.x - line.pos0.x,
-				line.pos1.y - line.pos0.y,
-				line.pos1.z - line.pos0.z));
+												   line.pos1.x - line.pos0.x,
+												   line.pos1.y - line.pos0.y,
+												   line.pos1.z - line.pos0.z));
 
 			auto lineMid = 0.5 * (line.pos1 + line.pos0);
 			glm::vec3 viewDir = glm::normalize(glm::vec3(
-				viewPos.x - lineMid.x,
-				viewPos.y - lineMid.y,
-				viewPos.z - lineMid.z));
+												   viewPos.x - lineMid.x,
+												   viewPos.y - lineMid.y,
+												   viewPos.z - lineMid.z));
 
 			const float lineWidth = 0.004f;
 			glm::vec3 widthVec =
@@ -831,8 +832,10 @@ namespace sp
 			glm::vec3 pos0 = PxVec3ToGlmVec3P(line.pos0) - lineWidth * lineDir;
 			glm::vec3 pos1 = PxVec3ToGlmVec3P(line.pos1) + lineWidth * lineDir;;
 
-			auto addVertex = [&](const glm::vec3 &pos) {
-				vertices.push_back({
+			auto addVertex = [&](const glm::vec3 & pos)
+			{
+				vertices.push_back(
+				{
 					{pos.x, pos.y, pos.z},
 					viewDir,
 					{0, 0}
@@ -907,7 +910,7 @@ namespace sp
 	void Renderer::BeginFrame()
 	{
 		int expiredCount = 0;
-		for (auto &pair : renderableGCQueue)
+		for (auto & pair : renderableGCQueue)
 		{
 			if (pair.second-- < 0) expiredCount++;
 		}

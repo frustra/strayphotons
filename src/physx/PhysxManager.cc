@@ -21,7 +21,7 @@ namespace sp
 	using namespace physx;
 	static CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
 	static CVar<bool> CVarShowShapes("x.ShowShapes", false,
-		"Show (1) or hide (0) the outline of physx collision shapes");
+									 "Show (1) or hide (0) the outline of physx collision shapes");
 
 	PhysxManager::PhysxManager()
 	{
@@ -167,10 +167,12 @@ namespace sp
 			}
 		}
 
-		if (CVarShowShapes.Changed()) {
+		if (CVarShowShapes.Changed())
+		{
 			ToggleDebug(CVarShowShapes.Get(true));
 		}
-		if (CVarShowShapes.Get()) {
+		if (CVarShowShapes.Get())
+		{
 			CacheDebugLines();
 		}
 
@@ -232,13 +234,13 @@ namespace sp
 
 	void PhysxManager::CacheDebugLines()
 	{
-		const physx::PxRenderBuffer& rb = scene->getRenderBuffer();
+		const physx::PxRenderBuffer &rb = scene->getRenderBuffer();
 		const physx::PxDebugLine *lines = rb.getLines();
 
 		{
 			std::lock_guard<std::mutex> lock(debugLinesMutex);
 			debugLines = vector<physx::PxDebugLine>(
-				lines, lines + rb.getNbLines());
+							 lines, lines + rb.getNbLines());
 		}
 	}
 

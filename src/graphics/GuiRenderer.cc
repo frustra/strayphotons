@@ -66,7 +66,7 @@ namespace sp
 			0,
 		};
 
-		for (auto &pair : fontAssets)
+		for (auto & pair : fontAssets)
 		{
 			auto &asset = pair.first;
 			Assert(asset != nullptr, "Failed to load gui font");
@@ -152,7 +152,7 @@ namespace sp
 			vertices.SetElements(cmdList->VtxBuffer.size(), &cmdList->VtxBuffer.front(), GL_STREAM_DRAW);
 			indices.SetElements(cmdList->IdxBuffer.size(), &cmdList->IdxBuffer.front(), GL_STREAM_DRAW);
 
-			for (const auto &pcmd : cmdList->CmdBuffer)
+			for (const auto & pcmd : cmdList->CmdBuffer)
 			{
 				if (pcmd.UserCallback)
 				{

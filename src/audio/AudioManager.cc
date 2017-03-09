@@ -84,7 +84,7 @@ namespace sp
 
 	AudioManager::~AudioManager()
 	{
-		for (FMOD::Studio::Bank *bank : banks)
+		for (FMOD::Studio::Bank * bank : banks)
 			FMOD_CHECK(bank->unload());
 
 		if (system->isValid())

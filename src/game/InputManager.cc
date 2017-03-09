@@ -183,7 +183,7 @@ namespace sp
 				break;
 		}
 
-		for (auto &cb : keyEventCallbacks)
+		for (auto & cb : keyEventCallbacks)
 		{
 			cb(key, action);
 		}
@@ -191,7 +191,7 @@ namespace sp
 
 	void InputManager::charInput(uint32 ch)
 	{
-		for (auto &cb : charEventCallbacks)
+		for (auto & cb : charEventCallbacks)
 		{
 			cb(ch);
 		}

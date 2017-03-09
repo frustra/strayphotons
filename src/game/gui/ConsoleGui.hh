@@ -29,7 +29,7 @@ namespace sp
 
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1));
 
-				for (auto &line : GConsoleManager.Lines())
+				for (auto & line : GConsoleManager.Lines())
 				{
 					ImGui::PushStyleColor(ImGuiCol_Text, LogColours[(int)line.level]);
 					ImGui::TextUnformatted(line.text.c_str());
