@@ -4,6 +4,7 @@
 	],
 	"entities": [
 		{
+			"_name": "sensor1",
 			"renderable": "box",
 			"transform": {
 				"scale": [0.1, 0.1, 0.1],

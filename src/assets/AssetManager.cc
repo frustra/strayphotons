@@ -17,16 +17,17 @@ extern "C"
 #include "Common.hh"
 
 #include <Ecs.hh>
-#include "ecs/components/Renderable.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/View.hh"
+#include "ecs/components/Barrier.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/LightSensor.hh"
 #include "ecs/components/Physics.hh"
-#include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/Mirror.hh"
-#include "ecs/components/Barrier.hh"
+#include "ecs/components/Name.hh"
+#include "ecs/components/Renderable.hh"
+#include "ecs/components/Transform.hh"
 #include "ecs/components/TriggerArea.hh"
+#include "ecs/components/View.hh"
+#include "ecs/components/VoxelInfo.hh"
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -496,7 +497,9 @@ namespace sp
 			}
 			if (ent.count("_name"))
 			{
-				scene->namedEntities[ent["_name"].get<string>()] = entity;
+				auto name = ent["_name"].get<string>();
+				entity.Assign<ecs::Name>(name);
+				scene->namedEntities[name] = entity;
 			}
 			scene->entities.push_back(entity);
 		}

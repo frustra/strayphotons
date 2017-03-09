@@ -9,13 +9,15 @@
 #include "game/GameLogic.hh"
 #include "assets/Scene.hh"
 #include "assets/AssetManager.hh"
+#include "ecs/components/Barrier.hh"
+#include "ecs/components/Light.hh"
+#include "ecs/components/LightSensor.hh"
+#include "ecs/components/Name.hh"
+#include "ecs/components/Physics.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
-#include "ecs/components/Physics.hh"
-#include "ecs/components/View.hh"
-#include "ecs/components/Light.hh"
-#include "ecs/components/Barrier.hh"
 #include "ecs/components/TriggerArea.hh"
+#include "ecs/components/View.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <cxxopts.hpp>
@@ -288,6 +290,20 @@ namespace sp
 		else
 		{
 			Logf("Scene has no valid player");
+		}
+
+		for (auto &ent : game->entityManager.EntitiesWith<ecs::LightSensor>())
+		{
+			auto sensor = ent.Get<ecs::LightSensor>();
+			auto i = sensor->illuminance;
+			string name = ent.ToString();
+
+			if (ent.Has<ecs::Name>())
+			{
+				name += " (" + ent.Get<ecs::Name>()->name + ")";
+			}
+
+			Logf("Light sensor %s: %f %f %f", name, i.r, i.g, i.b);
 		}
 	}
 }

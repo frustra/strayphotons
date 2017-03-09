@@ -2,18 +2,18 @@
 #include "core/Logging.hh"
 #include "core/Console.hh"
 
-#include "ecs/components/Renderable.hh"
-#include "ecs/components/Physics.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/Controller.hh"
+#include "ecs/components/Barrier.hh"
 #include "ecs/components/Interact.hh"
-#include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/LightSensor.hh"
+#include "ecs/components/Physics.hh"
 #include "ecs/components/Mirror.hh"
-#include "ecs/components/VoxelInfo.hh"
-#include "ecs/components/Barrier.hh"
+#include "ecs/components/Name.hh"
+#include "ecs/components/Renderable.hh"
+#include "ecs/components/Transform.hh"
 #include "ecs/components/TriggerArea.hh"
+#include "ecs/components/View.hh"
+#include "ecs/components/VoxelInfo.hh"
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -24,18 +24,19 @@ namespace sp
 	{
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
-		entityManager.RegisterComponentType<ecs::Renderable>();
-		entityManager.RegisterComponentType<ecs::Transform>();
-		entityManager.RegisterComponentType<ecs::Physics>();
+		entityManager.RegisterComponentType<ecs::Barrier>();
 		entityManager.RegisterComponentType<ecs::HumanController>();
 		entityManager.RegisterComponentType<ecs::InteractController>();
-		entityManager.RegisterComponentType<ecs::View>();
 		entityManager.RegisterComponentType<ecs::Light>();
 		entityManager.RegisterComponentType<ecs::LightSensor>();
+		entityManager.RegisterComponentType<ecs::Physics>();
 		entityManager.RegisterComponentType<ecs::Mirror>();
-		entityManager.RegisterComponentType<ecs::VoxelInfo>();
-		entityManager.RegisterComponentType<ecs::Barrier>();
+		entityManager.RegisterComponentType<ecs::Name>();
+		entityManager.RegisterComponentType<ecs::Renderable>();
+		entityManager.RegisterComponentType<ecs::Transform>();
 		entityManager.RegisterComponentType<ecs::TriggerArea>();
+		entityManager.RegisterComponentType<ecs::View>();
+		entityManager.RegisterComponentType<ecs::VoxelInfo>();
 	}
 
 	Game::~Game()
