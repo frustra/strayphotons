@@ -42,6 +42,14 @@ namespace sp
 	const std::string ASSETS_TAR = "./assets.spdata";
 	const std::string SHADERS_DIR = "../src/";
 
+	AssetManager::AssetManager()
+	{
+		tinygltf::OpenFileCallback = [](const std::string &path, std::ifstream &stream, size_t *size) -> bool
+		{
+			return GAssets.InputStream(path, stream, size);
+		};
+	}
+
 	void AssetManager::UpdateTarIndex()
 	{
 		mtar_t tar;
@@ -155,7 +163,11 @@ namespace sp
 			auto scene = make_shared<tinygltf::Scene>();
 			std::string err;
 
+#ifdef PACKAGE_RELEASE
+			bool ret = gltfLoader.LoadASCIIFromString(scene.get(), &err, asset->CharBuffer(), asset->Size(), "models/" + name);
+#else
 			bool ret = gltfLoader.LoadASCIIFromString(scene.get(), &err, asset->CharBuffer(), asset->Size(), ASSETS_DIR + "models/" + name);
+#endif
 			if (!err.empty())
 			{
 				throw std::runtime_error(err);
