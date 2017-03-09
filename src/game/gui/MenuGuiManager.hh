@@ -13,7 +13,8 @@ namespace sp
 		Splash,
 		Main,
 		Options,
-		SceneSelect
+		SceneSelect,
+		Credits
 	};
 
 	enum class MenuRenderMode : int
@@ -47,5 +48,6 @@ namespace sp
 		MenuScreen selectedScreen = MenuScreen::Splash;
 
 		uint64 framesSinceOpened = 0;
+		float creditsScroll = 0.0f;
 	};
 }

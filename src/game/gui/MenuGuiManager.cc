@@ -189,6 +189,12 @@ namespace sp
 				selectedScreen = MenuScreen::Options;
 			}
 
+			if (RenderMode() != MenuRenderMode::Pause && ImGui::Button("Credits"))
+			{
+				selectedScreen = MenuScreen::Credits;
+				creditsScroll = 0.0f;
+			}
+
 			if (ImGui::Button("Quit"))
 			{
 				GConsoleManager.ParseAndExecute("exit");
@@ -294,6 +300,76 @@ namespace sp
 				selectedScreen = MenuScreen::Main;
 			}
 
+			ImGui::End();
+		}
+		else if (selectedScreen == MenuScreen::Credits)
+		{
+			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
+			ImGui::Begin("MenuCredits", nullptr, flags);
+
+			static Texture frLogoTex = GAssets.LoadTexture("logos/credits-frustra.png");
+			static ImVec2 frLogoSize(frLogoTex.width * 0.5, frLogoTex.height * 0.5);
+
+			ImGui::BeginChild("CreditScroller", ImVec2(600, 600), false, ImGuiWindowFlags_NoScrollbar);
+
+#define CenteredText(str) \
+	{ \
+		auto size = ImGui::CalcTextSize((str)); \
+		ImGui::Indent(300.0f - size.x / 2.0f); \
+		ImGui::Text((str)); \
+		ImGui::Unindent(300.0f - size.x / 2.0f); \
+	}
+
+			ImGui::Dummy({1, 500});
+			CenteredText("STRAY PHOTONS");
+			CenteredText(" ");
+			CenteredText(u8"Copyright © 2017 Frustra Software");
+			CenteredText(" ");
+
+			ImGui::Indent(300.0f - frLogoSize.x / 2.0f);
+			ImGui::Image((void *)(uintptr_t) frLogoTex.handle, frLogoSize);
+			ImGui::Unindent(300.0f - frLogoSize.x / 2.0f);
+
+			CenteredText(" ");
+			CenteredText(" ");
+
+			CenteredText("Development Team");
+			CenteredText(" ");
+			CenteredText("Jacob Wirth");
+			CenteredText("Justin Li");
+			CenteredText("Cory Stegelmeier");
+			CenteredText("Kevin Jeong");
+			CenteredText("Michael Noukhovitch");
+
+			ImGui::Dummy({1, 100});
+
+			ImGui::PushFont(io.Fonts->Fonts[3]);
+			CenteredText(u8"NVIDIA GameWorks™ Technology provided under");
+			CenteredText(u8"license from NVIDIA Corporation.");
+			CenteredText(u8"Copyright © 2002-2015 NVIDIA Corporation.");
+			CenteredText(u8"All rights reserved.");
+			ImGui::PopFont();
+
+			CenteredText(" ");
+
+			ImGui::PushFont(io.Fonts->Fonts[3]);
+			CenteredText(u8"Audio Engine supplied by FMOD");
+			CenteredText(u8"by Firelight Technologies Pty Ltd.");
+			ImGui::PopFont();
+
+			ImGui::Dummy({1, 600});
+
+			ImGui::SetScrollY(creditsScroll);
+			creditsScroll += io.DeltaTime * 15.0f;
+
+			if (creditsScroll >= ImGui::GetScrollMaxY() && creditsScroll > 100)
+			{
+				selectedScreen = MenuScreen::Main;
+			}
+
+#undef CenteredText
+
+			ImGui::EndChild();
 			ImGui::End();
 		}
 
