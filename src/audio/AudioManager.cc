@@ -215,7 +215,7 @@ namespace sp
 		if (fs::exists(bankDir) && fs::is_directory(bankDir))
 		{
 			for (fs::directory_iterator dir_iter(bankDir);
-					dir_iter != end_iter; ++dir_iter)
+				 dir_iter != end_iter; ++dir_iter)
 			{
 				fs::directory_entry &dentry = *dir_iter;
 				const string ext = dentry.path().extension().string();

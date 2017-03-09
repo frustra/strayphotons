@@ -53,8 +53,7 @@ namespace sp
 		void DrawEntity(ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw = {});
 		void RenderLoading(ecs::View &view);
 		void ExpireRenderables();
-		void DrawPhysxLines(ecs::View &view, SceneShader *shader,
-			const vector<physx::PxDebugLine> &lines, const PreDrawFunc &preDraw);
+		void DrawPhysxLines(ecs::View &view, SceneShader *shader, const vector<physx::PxDebugLine> &lines, const PreDrawFunc &preDraw);
 		void EndFrame();
 
 		void SetRenderTarget(const Texture *attachment0, const Texture *depth);
