@@ -10,19 +10,27 @@ compile:
 
 linux: unix
 unix: build boost-debug-unix
-	cd build; cmake -G "Unix Makefiles" ..
+	cd build; cmake -DSP_PACKAGE_RELEASE=0 -G "Unix Makefiles" ..
 
 linux-release: unix-release
 unix-release: build boost-release-unix
-	cd build; cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" ..
+	cd build; cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=0 -G "Unix Makefiles" ..
+
+linux-package-release: unix-package-release
+unix-package-release: build boost-release-unix
+	cd build; cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=1 -G "Unix Makefiles" ..
 
 windows: vs14
 vs14: build boost-debug-windows
-	cd build; cmake -G "Visual Studio 14" ..
+	cd build; cmake -DSP_PACKAGE_RELEASE=0 -G "Visual Studio 14" ..
 
 windows-release: vs14-release
 vs14-release: build boost-release-windows
-	cd build; cmake -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 14" ..
+	cd build; cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=0 --G "Visual Studio 14" ..
+
+windows-package-release: vs14-package-release
+vs14-package-release: build boost-release-windows
+	cd build; cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=1 -G "Visual Studio 14" ..
 
 clean:
 	rm -rf build bin

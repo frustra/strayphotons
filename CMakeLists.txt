@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION ${CMAKE_MIN_VERSION} FATAL_ERROR)
 set(SP_VERSION_MAJOR "0")
 set(SP_VERSION_MINOR "1")
 set(SP_VERSION "${SP_VERSION_MAJOR}.${SP_VERSION_MINOR}")
+set(SP_PACKAGE_RELEASE FALSE CACHE BOOL "Build packaged release")
 
 
 if (CMAKE_BUILD_TYPE MATCHES Release)
@@ -17,6 +18,11 @@ else()
 	message(STATUS "sp target is default, using Debug")
 	set(CMAKE_BUILD_TYPE Debug)
 	set(SP_DEBUG 1)
+endif()
+
+if (SP_PACKAGE_RELEASE)
+	message(STATUS "Enabling build for packaged release")
+	add_definitions(-DPACKAGE_RELEASE)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
@@ -250,6 +256,10 @@ endif()
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
+
+if (SP_PACKAGE_RELEASE AND MSVC)
+	set_target_properties(${PROJECT_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
+endif()
 
 target_link_libraries(${PROJECT_LIB}
 	glfw
