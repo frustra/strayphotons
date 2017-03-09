@@ -136,7 +136,7 @@ namespace sp
 					auto pxMat = *(physx::PxMat44 *)(glm::value_ptr(mat));
 
 					physx::PxTransform newPose(pxMat);
-					if (ph->dynamic)
+					if (ph->dynamic && newPose.isValid())
 					{
 						ph->actor->setGlobalPose(newPose);
 					}

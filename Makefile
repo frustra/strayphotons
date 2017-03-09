@@ -42,7 +42,9 @@ astyle:
 	astyle --options="extra/astyle.config" "src/*.hh" "src/*.cc"
 
 assets:
-	cd assets; tar -cf ../bin/assets.tar *
+	cd assets; bash -c 'tar -cf ../bin/assets.tar cache fonts logos scenes textures \
+		`find models -name "*.gltf" -o -name "*.bin" -o -name "*.png" -o -name "*.tga"` \
+		-C ../src shaders'
 
 dependencies:
 	git submodule sync

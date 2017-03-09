@@ -4,7 +4,7 @@
 	],
 	"entities": [
 		{
-			"renderable": "sponza-pbr",
+			"renderable": "sponza",
 			"transform": {
 				"scale": [0.01, 0.01, 0.01],
 				"rotate": [-90, 0, 1, 0],
