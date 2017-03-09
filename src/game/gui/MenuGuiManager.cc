@@ -311,6 +311,7 @@ namespace sp
 			static ImVec2 frLogoSize(frLogoTex.width * 0.5, frLogoTex.height * 0.5);
 
 			ImGui::BeginChild("CreditScroller", ImVec2(600, 600), false, ImGuiWindowFlags_NoScrollbar);
+			ImGui::SetScrollY(creditsScroll);
 
 #define CenteredText(str) \
 	{ \
@@ -359,9 +360,7 @@ namespace sp
 
 			ImGui::Dummy({1, 600});
 
-			ImGui::SetScrollY(creditsScroll);
-			creditsScroll += io.DeltaTime * 15.0f;
-
+			creditsScroll += io.DeltaTime * 20.0f;
 			if (creditsScroll >= ImGui::GetScrollMaxY() && creditsScroll > 100)
 			{
 				selectedScreen = MenuScreen::Main;
