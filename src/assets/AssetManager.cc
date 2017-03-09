@@ -39,7 +39,7 @@ namespace sp
 	AssetManager GAssets;
 
 	const std::string ASSETS_DIR = "../assets/";
-	const std::string ASSETS_TAR = "./assets.tar";
+	const std::string ASSETS_TAR = "./assets.spdata";
 	const std::string SHADERS_DIR = "../src/";
 
 	void AssetManager::UpdateTarIndex()

@@ -50,7 +50,7 @@ astyle:
 	astyle --options="extra/astyle.config" "src/*.hh" "src/*.cc"
 
 assets:
-	cd assets; bash -c 'tar -cf ../bin/assets.tar cache fonts logos scenes textures \
+	cd assets; bash -c 'tar -cf ../bin/assets.spdata cache fonts logos scenes textures \
 		`find models -name "*.gltf" -o -name "*.bin" -o -name "*.png" -o -name "*.tga"` \
 		-C ../src shaders'
 
