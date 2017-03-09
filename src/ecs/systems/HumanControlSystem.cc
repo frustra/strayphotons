@@ -22,7 +22,8 @@
 namespace ecs
 {
 	static sp::CVar<bool> CVarNoClip("p.NoClip", false, "Disable player clipping");
-	static sp::CVar<float> CVarMovementSpeed("p.MovementSpeed", 3.0, "Player movement speed (m/s)");
+	static sp::CVar<float> CVarMovementSpeed("p.MovementSpeed", 3.0, "Player walking movement speed (m/s)");
+	static sp::CVar<float> CVarSprintSpeed("p.SprintSpeed", 6.0, "Player sprinting movement speed (m/s)");
 	static sp::CVar<float> CVarCursorSensitivity("p.CursorSensitivity", 1.0, "Mouse cursor sensitivity");
 
 	HumanControlSystem::HumanControlSystem(ecs::EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics)
@@ -68,6 +69,7 @@ namespace ecs
 			auto noclip = CVarNoClip.Get();
 			glm::vec3 inputMovement = glm::vec3(0);
 			bool jumping = false;
+			bool sprinting = false;
 
 			for (auto const &actionKeysPair : entity.Get<ecs::HumanController>()->inputMap)
 			{
@@ -109,6 +111,9 @@ namespace ecs
 							inputMovement += glm::vec3(0, -1, 0);
 						}
 						break;
+					case ControlAction::MOVE_SPRINT:
+						sprinting = true;
+						break;
 					case ControlAction::INTERACT:
 						if (input->IsAnyPressed(actionKeysPair.second))
 						{
@@ -129,7 +134,7 @@ namespace ecs
 			}
 
 			controller->onGround = physics->SweepQuery(controller->pxController->getActor(), physx::PxVec3(0, -1, 0), ecs::PLAYER_SWEEP_DISTANCE);
-			auto velocity = CalculatePlayerVelocity(entity, dtSinceLastFrame, inputMovement, jumping);
+			auto velocity = CalculatePlayerVelocity(entity, dtSinceLastFrame, inputMovement, jumping, sprinting);
 			MoveEntity(entity, dtSinceLastFrame, velocity);
 		}
 
@@ -170,6 +175,9 @@ namespace ecs
 				ControlAction::MOVE_CROUCH, {GLFW_KEY_LEFT_CONTROL}
 			},
 			{
+				ControlAction::MOVE_SPRINT, {GLFW_KEY_LEFT_SHIFT}
+			},
+			{
 				ControlAction::INTERACT, {GLFW_KEY_E}
 			}
 		};
@@ -186,7 +194,7 @@ namespace ecs
 		return controller;
 	}
 
-	glm::vec3 HumanControlSystem::CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump)
+	glm::vec3 HumanControlSystem::CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint)
 	{
 		if (!entity.Has<ecs::Transform>())
 		{
@@ -207,7 +215,12 @@ namespace ecs
 			}
 			movement.y = 0;
 		}
-		if (movement != glm::vec3(0)) movement = glm::normalize(movement) * CVarMovementSpeed.Get();
+		if (movement != glm::vec3(0))
+		{
+			float speed = CVarMovementSpeed.Get();
+			if (sprint) speed = CVarSprintSpeed.Get();
+			movement = glm::normalize(movement) * speed;
+		}
 		movement.y += inDirection.y * CVarMovementSpeed.Get();
 
 		if (noclip)

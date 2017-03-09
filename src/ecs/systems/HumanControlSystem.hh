@@ -27,7 +27,7 @@ namespace ecs
 		ecs::Handle<HumanController> AssignController(ecs::Entity entity, sp::PhysxManager &px);
 
 	private:
-		glm::vec3 CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump);
+		glm::vec3 CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint);
 		void MoveEntity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 velocity);
 
 		/**

@@ -20,6 +20,7 @@ namespace ecs
 		MOVE_RIGHT,
 		MOVE_JUMP,
 		MOVE_CROUCH,
+		MOVE_SPRINT,
 		INTERACT
 	};
 
