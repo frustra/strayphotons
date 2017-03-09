@@ -23,7 +23,7 @@ using cxxopts::value;
 #include <windows.h>
 #define ARGC_NAME __argc
 #define ARGV_NAME __argv
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 #else
 #define ARGC_NAME argc
 #define ARGV_NAME argv
