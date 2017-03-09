@@ -295,8 +295,8 @@ namespace sp
 		int diffuseDownsample = CVarVoxelDiffuseDownsample.Get();
 		if (diffuseDownsample < 1) diffuseDownsample = 1;
 
-		mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
-		mirrorSceneData.Bind(GL_SHADER_STORAGE_BUFFER, 1);
+		context->MirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
+		context->MirrorSceneData.Bind(GL_SHADER_STORAGE_BUFFER, 1);
 
 		GLLightData lightData[MAX_LIGHTS];
 		GLMirrorData mirrorData[MAX_MIRRORS];

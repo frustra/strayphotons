@@ -490,6 +490,12 @@ namespace sp
 		glEnable(GL_CULL_FACE);
 	}
 
+	void Renderer::ReadBackLightSensors()
+	{
+		auto shader = GlobalShaders->Get<LightSensorUpdateCS>();
+		shader->UpdateValues(game->entityManager);
+	}
+
 	void Renderer::UpdateLightSensors()
 	{
 		RenderPhase phase("UpdateLightSensors", Timer);
@@ -497,8 +503,6 @@ namespace sp
 
 		GLLightData lightData[MAX_LIGHTS];
 		int lightCount = FillLightData(&lightData[0], game->entityManager);
-
-		shader->UpdateValues(game->entityManager);
 
 		auto sensorCollection = game->entityManager.EntitiesWith<ecs::LightSensor>();
 		shader->SetSensors(sensorCollection);
@@ -508,8 +512,10 @@ namespace sp
 		shader->outputTex.Clear(0);
 		shader->outputTex.BindImage(0, GL_WRITE_ONLY);
 
+		mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 		voxelData.radiance->GetTexture().Bind(0);
 		shadowMap->GetTexture().Bind(1);
+		mirrorShadowMap->GetTexture().Bind(2);
 
 		ShaderControl->BindPipeline<LightSensorUpdateCS>(GlobalShaders);
 		glDispatchCompute(1, 1, 1);
@@ -904,14 +910,23 @@ namespace sp
 		glfwSwapBuffers(window);
 	}
 
-	void Renderer::BeginFrame()
+	void Renderer::ExpireRenderables()
 	{
 		int expiredCount = 0;
 		for (auto &pair : renderableGCQueue)
 		{
 			if (pair.second-- < 0) expiredCount++;
 		}
-		while (expiredCount-- > 0) renderableGCQueue.pop_front();
+		while (expiredCount-- > 0)
+		{
+			renderableGCQueue.pop_front();
+		}
+	}
+
+	void Renderer::BeginFrame()
+	{
+		ExpireRenderables();
+		ReadBackLightSensors();
 	}
 
 	void Renderer::EndFrame()

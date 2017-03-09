@@ -133,6 +133,13 @@ namespace sp
 
 			line->handled.notify_all();
 		}
+
+		for (auto &line : queuedCommands)
+		{
+			ParseAndExecute(line, false);
+		}
+
+		queuedCommands.clear();
 	}
 
 	void ConsoleManager::ParseAndExecute(const string &line, bool saveHistory)
@@ -170,6 +177,11 @@ namespace sp
 		{
 			logging::ConsoleWrite(logging::Level::Log, " > '%s' undefined", varName);
 		}
+	}
+
+	void ConsoleManager::QueueParseAndExecute(const string &line)
+	{
+		queuedCommands.push_back(line);
 	}
 
 	string ConsoleManager::AutoComplete(const string &input)

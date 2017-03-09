@@ -173,6 +173,9 @@ namespace sp
 		ProcessPassOutputRef LightingGel;
 		ProcessPassOutputRef AoBuffer;
 
+		Buffer MirrorVisData;
+		Buffer MirrorSceneData;
+
 	private:
 		vector<PostProcessPassBase *> passes;
 	};

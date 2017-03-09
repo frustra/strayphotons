@@ -41,8 +41,8 @@ namespace sp
 	class VoxelLighting : public PostProcessPass<10, 1>
 	{
 	public:
-		VoxelLighting(VoxelData voxelData, Buffer mirrorVisData, Buffer mirrorSceneData, bool ssaoEnabled)
-			: voxelData(voxelData), mirrorVisData(mirrorVisData), mirrorSceneData(mirrorSceneData), ssaoEnabled(ssaoEnabled) {}
+		VoxelLighting(VoxelData voxelData, bool ssaoEnabled)
+			: voxelData(voxelData), ssaoEnabled(ssaoEnabled) {}
 
 		void Process(const PostProcessingContext *context);
 
@@ -59,8 +59,6 @@ namespace sp
 		}
 	private:
 		VoxelData voxelData;
-		Buffer mirrorVisData;
-		Buffer mirrorSceneData;
 		bool ssaoEnabled;
 	};
 

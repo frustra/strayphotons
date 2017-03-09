@@ -44,6 +44,7 @@ namespace sp
 		void PrepareVoxelTextures();
 		void RenderVoxelGrid();
 		void ClearVoxelGrid();
+		void ReadBackLightSensors();
 		void UpdateLightSensors();
 		void BeginFrame();
 		void RenderPass(ecs::View &view);
@@ -51,6 +52,7 @@ namespace sp
 		void ForwardPass(ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw = {});
 		void DrawEntity(ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw = {});
 		void RenderLoading(ecs::View &view);
+		void ExpireRenderables();
 		void DrawPhysxLines(ecs::View &view, SceneShader *shader,
 			const vector<physx::PxDebugLine> &lines, const PreDrawFunc &preDraw);
 		void EndFrame();

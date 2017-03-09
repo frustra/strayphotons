@@ -5,6 +5,7 @@
 
 layout (binding = 0) uniform sampler3D voxelRadiance;
 layout (binding = 1) uniform sampler2D shadowMap;
+layout (binding = 2) uniform sampler2DArray mirrorShadowMap;
 layout (binding = 0, rgba32f) writeonly uniform image2D values;
 
 layout (binding = 0, std140) uniform LightSensorData {
@@ -18,7 +19,9 @@ layout(binding = 1, std140) uniform LightData {
 	Light lights[MAX_LIGHTS];
 };
 
-#define DIFFUSE_ONLY_SHADING 1
+#define DIFFUSE_ONLY_SHADING
+#define INCLUDE_MIRRORS
+##import lib/mirror_shadow_common
 ##import lib/shading
 
 uniform float voxelSize = 0.1;
