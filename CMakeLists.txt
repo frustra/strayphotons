@@ -29,6 +29,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 if (UNIX)
 	add_definitions(-Wall)
+	add_definitions(-Wno-error=strict-aliasing)
 
 	if (SP_DEBUG)
 		add_definitions(-D_DEBUG)
