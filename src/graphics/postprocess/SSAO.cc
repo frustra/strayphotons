@@ -10,7 +10,7 @@
 
 namespace sp
 {
-	static CVar<int> CVarSSAODebug("r.SSAODebug", 0, "Show unprocessed SSAO output (1: no blending, 2: no blur)");
+	static CVar<bool> CVarSSAODebug("r.SSAODebug", false, "Show unprocessed SSAO output");
 
 	class SSAOPass0FS : public Shader
 	{
@@ -67,19 +67,17 @@ namespace sp
 		SSAOBlurFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			Bind(samplePattern, "samplePattern");
-			Bind(combineOutput, "combineOutput");
 			Bind(invProjMat, "invProjMat");
 		}
 
-		void SetParameters(glm::vec2 pattern, bool combine, const ecs::View &view)
+		void SetParameters(glm::vec2 pattern, const ecs::View &view)
 		{
 			Set(samplePattern, pattern);
-			Set(combineOutput, combine);
 			Set(invProjMat, view.invProjMat);
 		}
 
 	private:
-		Uniform invProjMat, samplePattern, combineOutput;
+		Uniform invProjMat, samplePattern;
 	};
 
 	IMPLEMENT_SHADER_TYPE(SSAOBlurFS, "ssao_blur.frag", Fragment);
@@ -121,6 +119,7 @@ namespace sp
 
 		noiseTex.tex.Bind(3);
 
+		glViewport(0, 0, dest.width, dest.height);
 		DrawScreenCover();
 	}
 
@@ -129,7 +128,7 @@ namespace sp
 		auto r = context->renderer;
 		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 
-		if (CVarSSAODebug.Get() != 2)
+		if (!CVarSSAODebug.Get())
 		{
 			auto extent = GetInput(0)->GetOutput()->TargetDesc.extent;
 
@@ -140,9 +139,7 @@ namespace sp
 			else
 				samplePattern.y = 1.0f / (float)extent.y;
 
-			bool combine = !horizontal && CVarSSAODebug.Get() == 0;
-
-			r->GlobalShaders->Get<SSAOBlurFS>()->SetParameters(samplePattern, combine, context->view);
+			r->GlobalShaders->Get<SSAOBlurFS>()->SetParameters(samplePattern, context->view);
 
 			r->ShaderControl->BindPipeline<BasicPostVS, SSAOBlurFS>(r->GlobalShaders);
 		}
@@ -152,6 +149,7 @@ namespace sp
 		}
 
 		r->SetRenderTarget(&dest, nullptr);
+		glViewport(0, 0, dest.width, dest.height);
 		DrawScreenCover();
 	}
 }

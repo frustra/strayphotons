@@ -5,7 +5,7 @@
 
 const float InvVoxelGridSize = 1.0 / VOXEL_GRID_SIZE;
 
-vec4 SampleVoxelLod(vec3 position, vec3 dir, float level)
+vec4 SampleVoxelLod(vec3 position, float level)
 {
 	return textureLod(voxelRadiance, position * InvVoxelGridSize, level) * vec4(vec3(VoxelFixedPointExposure), 1.0);
 }
@@ -28,7 +28,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 		vec3 position = voxelPos + rayDir * dist;
 
 		float level = max(0, log2(size));
-		vec4 value = SampleVoxelLod(position + offset * surfaceNormal, rayDir, level);
+		vec4 value = SampleVoxelLod(position + offset * surfaceNormal, level);
 		// Bias the alpha to prevent traces going through objects.
 		value.a = smoothstep(0.0, 0.4, value.a);
 		result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
@@ -43,7 +43,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 {
 	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VOXEL_GRID_SIZE * 0.5;
-	float startDist = max(1.75, min(1.75 / dot(rayDir, surfaceNormal), 3.0));
+	float startDist = clamp(1.75 / dot(rayDir, surfaceNormal), 1.75, 3.0);
 	float dist = startDist;
 	float maxDist = VOXEL_GRID_SIZE * 1.5;
 
@@ -52,7 +52,7 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 
 	while (dist < maxDist && result.a < 0.9999)
 	{
-		vec4 value = SampleVoxelLod(voxelPos + rayDir * dist, rayDir, level);
+		vec4 value = SampleVoxelLod(voxelPos + rayDir * dist, level);
 		result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
 		level += 1.0;
@@ -62,17 +62,17 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 	return result;
 }
 
-vec3 HemisphereIndirectDiffuse(vec3 worldPosition, vec3 worldNormal, vec2 fragCoord) {
+vec3 HemisphereIndirectDiffuse(vec3 worldPosition, vec3 worldNormal, vec3 flatWorldNormal, vec2 fragCoord) {
 	float rOffset = InterleavedGradientNoise(fragCoord);
 
 	vec3 sampleDir = OrientByNormal(rOffset * M_PI * 2.0, 0.1, worldNormal);
-	vec4 indirectDiffuse = ConeTraceGridDiffuse(worldPosition, sampleDir, worldNormal);
+	vec4 indirectDiffuse = ConeTraceGridDiffuse(worldPosition, sampleDir, flatWorldNormal);
 
 	for (int a = 3; a <= 6; a += 3) {
 		float diffuseScale = 1.0 / a;
 		for (float r = 0; r < a; r++) {
 			vec3 sampleDir = OrientByNormal((r + rOffset) * diffuseScale * M_PI * 2.0, a * 0.1, worldNormal);
-			vec4 sampleColor = ConeTraceGridDiffuse(worldPosition, sampleDir, worldNormal);
+			vec4 sampleColor = ConeTraceGridDiffuse(worldPosition, sampleDir, flatWorldNormal);
 
 			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * diffuseScale * 0.5;
 		}

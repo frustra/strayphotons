@@ -2,9 +2,9 @@
 
 ##import lib/util
 
-layout (binding = 0) uniform sampler2D gBuffer0;
-layout (binding = 1) uniform sampler2D gBuffer1;
-layout (binding = 2) uniform sampler2D gBuffer2;
+layout (binding = 0) uniform sampler2D gBuffer1;
+layout (binding = 1) uniform sampler2D gBuffer2;
+layout (binding = 2) uniform usampler2D mirrorIndexStencil;
 layout (binding = 3) uniform sampler2D noiseTexture;
 
 layout (location = 0) in vec2 inTexCoord;
@@ -12,7 +12,7 @@ layout (location = 0) out vec4 outFragColor;
 
 const int kernelSize = 24;
 const float radius = 0.4;
-const float power = 2.2;
+const float power = 4.0;
 
 uniform vec3 kernel[kernelSize];
 uniform mat4 projMat;
@@ -20,7 +20,13 @@ uniform mat4 invProjMat;
 
 void main()
 {
-	vec3 normalSample = DecodeNormal(texture(gBuffer1, inTexCoord).rg);
+	// Don't do ssao in mirrors
+	if (texture(mirrorIndexStencil, inTexCoord).r > 0) {
+		outFragColor.r = 1.0;
+		return;
+	}
+
+	vec3 normalSample = DecodeNormal(texture(gBuffer1, inTexCoord).ba);
 	vec3 position = texture(gBuffer2, inTexCoord).rgb; // view space
 
 	// Load screen space normal in range [-1, 1].
@@ -28,7 +34,7 @@ void main()
 	normal.z *= -1;
 
 	// Calculate kernel rotation.
-	vec2 noiseTextureScale = vec2(textureSize(gBuffer2, 0)) / vec2(textureSize(noiseTexture, 0));
+	vec2 noiseTextureScale = vec2(textureSize(gBuffer2, 0) * 0.5) / vec2(textureSize(noiseTexture, 0));
 	vec3 rotation = texture(noiseTexture, inTexCoord * noiseTextureScale).xyz * 2 - 1;
 
 	// Compute 3 orthonomal vectors to construct a change-of-basis matrix that
@@ -52,12 +58,12 @@ void main()
 
 		// Compare with theoretical depth of sample, if the screen space depth
 		// is closer then there must be an occluder.
-		float occluded = step(sampleViewSpacePos.z, samplePosition.z);
+		float occluded = smoothstep(sampleViewSpacePos.z + 0.05, sampleViewSpacePos.z + 0.1, samplePosition.z);
 		occlusion += distanceFalloff * occluded;
 	}
 
 	occlusion = 1.000001 - (occlusion / float(kernelSize));
 	occlusion = pow(occlusion, power);
 
-	outFragColor = vec4(vec3(occlusion), 1.0);
+	outFragColor.r = smoothstep(0.0, 0.5, occlusion);
 }

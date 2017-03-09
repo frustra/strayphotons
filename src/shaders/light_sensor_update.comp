@@ -39,7 +39,7 @@ void main() {
 	vec3 lum = vec3(0.0);
 
 	lum += DirectShading(sensor.position, vec3(1.0), sensor.direction, sensor.direction);
-	lum += HemisphereIndirectDiffuse(sensor.position, sensor.direction, vec2(0));
+	lum += HemisphereIndirectDiffuse(sensor.position, sensor.direction, sensor.direction, vec2(0));
 
 	// first value r=1 indicates result is populated
 	imageStore(values, ivec2(index * 2, 0), vec4(1, sensor.id0, sensor.id1, 0));

@@ -29,6 +29,7 @@ void main()
 	vec3 baseColor = gb0.rgb;
 	float roughness = gb0.a;
 	vec3 viewNormal = DecodeNormal(gb1.rg);
+	vec3 flatViewNormal = DecodeNormal(gb1.ba);
 	vec3 viewPosition = gb2.rgb;
 
 	if (length(viewNormal) < 0.9) {
@@ -38,9 +39,10 @@ void main()
 
 	vec3 worldPosition = vec3(invViewMat * vec4(viewPosition, 1.0));
 	vec3 worldNormal = mat3(invViewMat) * viewNormal;
+	vec3 flatWorldNormal = mat3(invViewMat) * flatViewNormal;
 
 	// Trace. Only randomly seed if diffuse downsampling is off.
-	vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy * step(-1, -diffuseDownsample));
+	vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, flatWorldNormal, gl_FragCoord.xy * step(-1, -diffuseDownsample));
 
 	outFragColor.rgb = indirectDiffuse.rgb * exposure;
 }

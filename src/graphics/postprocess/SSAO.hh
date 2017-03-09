@@ -11,7 +11,11 @@ namespace sp
 
 		RenderTargetDesc GetOutputDesc(uint32 id)
 		{
-			return GetInput(0)->GetOutput()->TargetDesc;
+			auto desc = GetInput(0)->GetOutput()->TargetDesc;
+			desc.format = PF_R16F;
+			desc.extent.x /= 2;
+			desc.extent.y /= 2;
+			return desc;
 		}
 
 		string Name()
@@ -20,7 +24,7 @@ namespace sp
 		}
 	};
 
-	class SSAOBlur : public PostProcessPass<4, 1>
+	class SSAOBlur : public PostProcessPass<3, 1>
 	{
 	public:
 		SSAOBlur(bool horizontal)

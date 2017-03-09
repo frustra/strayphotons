@@ -4,11 +4,9 @@
 
 layout (binding = 0) uniform sampler2D occlusionTex;
 layout (binding = 1) uniform sampler2D depthStencil;
-layout (binding = 2) uniform sampler2D gBuffer0;
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
-uniform bool combineOutput;
 uniform vec2 samplePattern;
 const int radius = 5;
 const float sharpness = 10.0;
@@ -42,12 +40,5 @@ void main() {
 		totalWeight += weight;
 	}
 
-	accum /= totalWeight;
-
-	if (combineOutput) {
-		vec4 baseColor = texture(gBuffer0, inTexCoord);
-		outFragColor = vec4(baseColor.rgb * accum, baseColor.a);
-	} else {
-		outFragColor.rgb = vec3(accum);
-	}
+	outFragColor.r = accum / totalWeight;
 }

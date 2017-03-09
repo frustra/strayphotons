@@ -23,7 +23,7 @@ namespace sp
 	static CVar<bool> CVarLightingEnabled("r.Lighting", true, "Enable lighting");
 	static CVar<bool> CVarTonemapEnabled("r.Tonemap", true, "Enable HDR tonemapping");
 	static CVar<bool> CVarBloomEnabled("r.Bloom", true, "Enable HDR bloom");
-	static CVar<bool> CVarSSAOEnabled("r.SSAO", false, "Enable Screen Space Ambient Occlusion");
+	static CVar<bool> CVarSSAOEnabled("r.SSAO", true, "Enable Screen Space Ambient Occlusion");
 	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth (or alpha), 4: roughness, 5: metallic (or radiance), 6: position, 7: face normal)");
 	static CVar<int> CVarViewGBufferSource("r.ViewGBufferSource", 0, "GBuffer Debug Source (0: gbuffer, 1: voxel grid, 2: cone trace)");
 	static CVar<int> CVarVoxelMip("r.VoxelMip", 0, "");
@@ -32,9 +32,9 @@ namespace sp
 	static void AddSSAO(PostProcessingContext &context)
 	{
 		auto ssaoPass0 = context.AddPass<SSAOPass0>();
-		ssaoPass0->SetInput(0, context.LastOutput);
-		ssaoPass0->SetInput(1, context.GBuffer1);
-		ssaoPass0->SetInput(2, context.GBuffer2);
+		ssaoPass0->SetInput(0, context.GBuffer1);
+		ssaoPass0->SetInput(1, context.GBuffer2);
+		ssaoPass0->SetInput(2, context.MirrorIndexStencil);
 
 		auto ssaoBlurX = context.AddPass<SSAOBlur>(true);
 		ssaoBlurX->SetInput(0, ssaoPass0);
@@ -43,9 +43,8 @@ namespace sp
 		auto ssaoBlurY = context.AddPass<SSAOBlur>(false);
 		ssaoBlurY->SetInput(0, ssaoBlurX);
 		ssaoBlurY->SetInput(1, context.Depth);
-		ssaoBlurY->SetInput(2, context.LastOutput);
 
-		context.LastOutput = ssaoBlurY;
+		context.AoBuffer = ssaoBlurY;
 	}
 
 	static void AddLighting(PostProcessingContext &context, VoxelData voxelData, Buffer mirrorVisData, Buffer mirrorSceneData)
@@ -56,7 +55,7 @@ namespace sp
 		indirectDiffuse->SetInput(2, context.GBuffer2);
 		indirectDiffuse->SetInput(3, context.VoxelRadiance);
 
-		auto lighting = context.AddPass<VoxelLighting>(voxelData, mirrorVisData, mirrorSceneData);
+		auto lighting = context.AddPass<VoxelLighting>(voxelData, mirrorVisData, mirrorSceneData, CVarSSAOEnabled.Get());
 		lighting->SetInput(0, context.GBuffer0);
 		lighting->SetInput(1, context.GBuffer1);
 		lighting->SetInput(2, context.GBuffer2);
@@ -66,6 +65,7 @@ namespace sp
 		lighting->SetInput(6, indirectDiffuse);
 		lighting->SetInput(7, context.MirrorIndexStencil);
 		lighting->SetInput(8, context.LightingGel);
+		lighting->SetInput(9, context.AoBuffer);
 
 		context.LastOutput = lighting;
 	}
@@ -180,17 +180,17 @@ namespace sp
 			context.LightingGel = context.AddPass<ProxyProcessPass>(targets.lightingGel);
 		}
 
+		if (CVarSSAOEnabled.Get())
+		{
+			AddSSAO(context);
+		}
+
 		if (CVarLightingEnabled.Get() && targets.shadowMap != nullptr)
 		{
 			AddLighting(context, targets.voxelData, targets.mirrorVisData, targets.mirrorSceneData);
 		}
 
 		auto linearLuminosity = context.LastOutput;
-
-		if (CVarSSAOEnabled.Get())
-		{
-			AddSSAO(context);
-		}
 
 		{
 			auto hist = context.AddPass<LumiHistogram>();
