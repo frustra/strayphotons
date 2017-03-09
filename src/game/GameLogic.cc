@@ -299,7 +299,7 @@ namespace sp
 			Logf("Scene has no valid player");
 		}
 
-		for (auto &ent : game->entityManager.EntitiesWith<ecs::LightSensor>())
+		for (auto ent : game->entityManager.EntitiesWith<ecs::LightSensor>())
 		{
 			auto sensor = ent.Get<ecs::LightSensor>();
 			auto i = sensor->illuminance;
