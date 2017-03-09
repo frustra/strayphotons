@@ -11,7 +11,7 @@ layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
 const int kernelSize = 24;
-const float radius = 0.4;
+const float radius = 0.3;
 const float power = 4.0;
 
 uniform vec3 kernel[kernelSize];
@@ -65,5 +65,5 @@ void main()
 	occlusion = 1.000001 - (occlusion / float(kernelSize));
 	occlusion = pow(occlusion, power);
 
-	outFragColor.r = smoothstep(0.0, 0.5, occlusion);
+	outFragColor.r = saturate(smoothstep(0.1, 0.5, occlusion) + 0.1);
 }

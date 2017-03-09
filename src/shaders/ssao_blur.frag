@@ -8,7 +8,7 @@ layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
 uniform vec2 samplePattern;
-const int radius = 5;
+const int radius = 10;
 const float sharpness = 10.0;
 
 // Bottom/left corner of sample area.
@@ -25,7 +25,7 @@ void main() {
 	float totalWeight = 1e-6;
 
 	for (int index = 0; index < radius; index++) {
-		vec2 relativeCoord = vec2(offset + float(index));
+		vec2 relativeCoord = vec2(offset * 0.5 + float(index));
 
 		vec2 sampleCoord = relativeCoord * samplePattern + inTexCoord;
 
