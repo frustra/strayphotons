@@ -341,6 +341,29 @@ namespace sp
 						{
 							sensor->direction = MakeVec3(param.second);
 						}
+						else if (param.first == "triggers")
+						{
+							for (auto trigger : param.second.get<picojson::array>())
+							{
+								ecs::LightSensor::Trigger tr;
+								for (auto param : trigger.get<picojson::object>())
+								{
+									if (param.first == "illuminance")
+									{
+										tr.illuminance = MakeVec3(param.second);
+									}
+									else if (param.first == "oncmd")
+									{
+										tr.oncmd = param.second.get<string>();
+									}
+									else if (param.first == "offcmd")
+									{
+										tr.offcmd = param.second.get<string>();
+									}
+								}
+								sensor->triggers.push_back(tr);
+							}
+						}
 					}
 				}
 				else if (comp.first == "physics")

@@ -1,5 +1,6 @@
 #include "LightSensor.hh"
 #include "core/Logging.hh"
+#include "core/Console.hh"
 #include "ecs/components/VoxelInfo.hh"
 
 namespace sp
@@ -82,7 +83,24 @@ namespace sp
 
 			//Logf("%d: %f %f %f", eid.Index(), lum.x, lum.y, lum.z);
 			if (manager.Valid(eid))
-				manager.Get<ecs::LightSensor>(eid)->illuminance = lum;
+			{
+				auto sensor = manager.Get<ecs::LightSensor>(eid);
+				auto triggers = sensor->triggers;
+				auto prev = sensor->illuminance;
+				sensor->illuminance = lum;
+
+				for (auto trigger : triggers)
+				{
+					if (trigger(lum) && !trigger(prev))
+					{
+						GConsoleManager.ParseAndExecute(trigger.oncmd);
+					}
+					if (!trigger(lum) && trigger(prev))
+					{
+						GConsoleManager.ParseAndExecute(trigger.offcmd);
+					}
+				}
+			}
 		}
 		readBackBuf.Unmap();
 	}

@@ -32,6 +32,9 @@ namespace sp
 		funcs.Register("loadscene", "Load a scene", &GameLogic::LoadScene);
 		funcs.Register("reloadscene", "Reload current scene", &GameLogic::ReloadScene);
 		funcs.Register("printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
+
+		funcs.Register("g.OpenBarrier", "Open barrier by name", &GameLogic::OpenBarrier);
+		funcs.Register("g.CloseBarrier", "Close barrier by name", &GameLogic::CloseBarrier);
 	}
 
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
@@ -123,23 +126,6 @@ namespace sp
 					}
 				}
 			}
-			else if (ch == 'g') // open/close barrier
-			{
-				for (auto e : game->entityManager.EntitiesWith<ecs::Barrier>())
-				{
-					auto barrierComp = e.Get<ecs::Barrier>();
-					if (barrierComp->isOpen)
-					{
-						ecs::Barrier::Close(e, game->physics);
-						Logf("closed");
-					}
-					else
-					{
-						ecs::Barrier::Open(e, game->physics);
-						Logf("opened");
-					}
-				}
-			}
 		});
 
 		//game->audio.StartEvent("event:/german nonsense");
@@ -216,15 +202,6 @@ namespace sp
 		if (!humanControlSystem.Frame(dtSinceLastFrame))
 		{
 			return false;
-		}
-
-		// TODO: remove later
-		// serves as debug, ensures that moving kinematic objects work
-		for (auto e : game->entityManager.EntitiesWith<ecs::Barrier>())
-		{
-			auto barrierPhysics = e.Get<ecs::Physics>();
-			physx::PxRigidDynamic *actor = barrierPhysics->dynamic;
-			game->physics.Translate(actor, physx::PxVec3(0, 0.001, 0));
 		}
 
 		return true;
@@ -335,5 +312,37 @@ namespace sp
 
 			Logf("Light sensor %s: %f %f %f", name, i.r, i.g, i.b);
 		}
+	}
+
+	void GameLogic::OpenBarrier(const string &name)
+	{
+		if (!scene->namedEntities.count(name))
+		{
+			return Logf("%s not found", name);
+		}
+
+		auto ent = scene->namedEntities[name];
+		if (!ent.Has<ecs::Barrier>())
+		{
+			return Logf("%s is not a barrier", name);
+		}
+
+		ecs::Barrier::Open(ent, game->physics);
+	}
+
+	void GameLogic::CloseBarrier(const string &name)
+	{
+		if (!scene->namedEntities.count(name))
+		{
+			return Logf("%s not found", name);
+		}
+
+		auto ent = scene->namedEntities[name];
+		if (!ent.Has<ecs::Barrier>())
+		{
+			return Logf("%s is not a barrier", name);
+		}
+
+		ecs::Barrier::Close(ent, game->physics);
 	}
 }

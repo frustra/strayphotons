@@ -8,9 +8,22 @@ namespace ecs
 	class LightSensor
 	{
 	public:
+		struct Trigger
+		{
+			glm::vec3 illuminance;
+			string oncmd, offcmd;
+
+			bool operator()(glm::vec3 val)
+			{
+				return glm::all(glm::greaterThanEqual(val, illuminance));
+			}
+		};
+
 		// Required parameters.
 		glm::vec3 position = { 0, 0, 0 }; // In model space.
 		glm::vec3 direction = { 0, 0, -1 }; // In model space.
+
+		vector<Trigger> triggers;
 
 		// Updated automatically.
 		glm::vec3 illuminance;

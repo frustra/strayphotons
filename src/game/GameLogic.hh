@@ -23,6 +23,9 @@ namespace sp
 		void ReloadScene(const string &);
 		void PrintDebug(const string &);
 
+		void OpenBarrier(const string &name);
+		void CloseBarrier(const string &name);
+
 	private:
 		Game *game;
 		InputManager *input;

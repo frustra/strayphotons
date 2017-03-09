@@ -498,8 +498,9 @@ namespace sp
 		GLLightData lightData[MAX_LIGHTS];
 		int lightCount = FillLightData(&lightData[0], game->entityManager);
 
-		auto sensorCollection = game->entityManager.EntitiesWith<ecs::LightSensor>();
 		shader->UpdateValues(game->entityManager);
+
+		auto sensorCollection = game->entityManager.EntitiesWith<ecs::LightSensor>();
 		shader->SetSensors(sensorCollection);
 		shader->SetLightData(lightCount, lightData);
 		shader->SetVoxelInfo(voxelData.info);
