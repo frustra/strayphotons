@@ -13,6 +13,7 @@ namespace sp
 
 		MutexedVector(std::vector<T> &vec, std::mutex &m) : vec(vec), lock(m) {}
 		MutexedVector(MutexedVector &&vec) = default;
+		MutexedVector(MutexedVector &vec) = delete;
 		~MutexedVector() {}
 
 		std::vector<T> &Vector() { return vec; }
