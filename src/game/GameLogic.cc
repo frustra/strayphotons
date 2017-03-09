@@ -18,6 +18,7 @@
 #include "ecs/components/Transform.hh"
 #include "ecs/components/TriggerArea.hh"
 #include "ecs/components/View.hh"
+#include "ecs/components/Controller.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <cxxopts.hpp>
@@ -53,9 +54,16 @@ namespace sp
 		{
 			if (input->FocusLocked()) return;
 
-			if (state == GLFW_PRESS && key == GLFW_KEY_ESCAPE)
+			if (state == GLFW_PRESS)
 			{
-				game->menuGui.OpenPauseMenu();
+				if (key == GLFW_KEY_ESCAPE)
+				{
+					game->menuGui.OpenPauseMenu();
+				}
+				else if (key == GLFW_KEY_F5)
+				{
+					ReloadScene("");
+				}
 			}
 		});
 
@@ -264,11 +272,33 @@ namespace sp
 		view->clip = glm::vec2(0.1, 64);
 	}
 
-	void GameLogic::ReloadScene(const string &)
+	void GameLogic::ReloadScene(const string &arg)
 	{
 		if (scene)
 		{
-			LoadScene(scene->name);
+			auto player = scene->FindEntity("player");
+			if (arg == "reset")
+			{
+				LoadScene(scene->name);
+			}
+			else if (player.Valid() && player.Has<ecs::Transform>())
+			{
+				// Store the player position and set it back on the new player entity
+				auto transform = player.Get<ecs::Transform>();
+				auto position = transform->GetPosition();
+				auto rotation = transform->rotate;
+
+				LoadScene(scene->name);
+
+				if (scene)
+				{
+					player = scene->FindEntity("player");
+					if (player.Valid() && player.Has<ecs::HumanController>())
+					{
+						humanControlSystem.Teleport(player, position, rotation);
+					}
+				}
+			}
 		}
 	}
 

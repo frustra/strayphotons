@@ -1,0 +1,118 @@
+{
+	"autoexec": [
+		"r.MirrorRecursion 0",
+		"p.NoClip 1"
+	],
+	"entities": [
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [0.1, 0.1, 0.1],
+				"translate": [0, 1.05, 0]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [0, 1.05, 0],
+				"pxScale": [0.1, 0.1, 0.1],
+				"dynamic": false
+			},
+			"lightsensor": {
+				"translate": [0, 0, -1],
+				"direction": [0, 0, -1]
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 1, 10],
+				"translate": [0, -0.5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [0, -0.5, 0],
+				"pxScale": [10, 1, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [10, 5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [10, 5, 0],
+				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [0, 5, 10]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [0, 5, 10],
+				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [0, 5, -10]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [0, 5, -10],
+				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [-10, 5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"pxTranslate": [-10, 5, 0],
+				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "player",
+			"view": {
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"translate": [0, 2, 0]
+			},
+			"voxels": {
+				"min": [-5, -0, -5],
+				"max": [5, 10, 5]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"intensity": 300,
+				"spotAngle": 50
+			},
+			"view": {
+				"extents": [2048, 2048],
+				"clip": [5, 50]
+			},
+			"transform": {
+				"translate": [7, 20, 7],
+				"rotate": [-50, 1, -1, 0]
+			}
+		}
+	]
+}

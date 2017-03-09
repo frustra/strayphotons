@@ -7,6 +7,7 @@
 #include "physx/PhysxManager.hh"
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace ecs
 {
@@ -25,6 +26,11 @@ namespace ecs
 		 * Assigns a default HumanController to the given entity.
 		 */
 		ecs::Handle<HumanController> AssignController(ecs::Entity entity, sp::PhysxManager &px);
+
+		/**
+		 * Teleports the entity and properly syncs to physx.
+		 */
+		void Teleport(ecs::Entity entity, glm::vec3 position, glm::quat rotation = glm::quat());
 
 	private:
 		glm::vec3 CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint);

@@ -194,6 +194,40 @@ namespace ecs
 		return controller;
 	}
 
+	void HumanControlSystem::Teleport(ecs::Entity entity, glm::vec3 position, glm::quat rotation)
+	{
+		if (!entity.Has<ecs::Transform>())
+		{
+			throw std::invalid_argument("entity must have a Transform component");
+		}
+		if (!entity.Has<ecs::HumanController>())
+		{
+			throw std::invalid_argument("entity must have a HumanController component");
+		}
+
+		auto controller = entity.Get<ecs::HumanController>();
+		auto transform = entity.Get<ecs::Transform>();
+		transform->SetPosition(position);
+		if (rotation != glm::quat())
+		{
+			transform->rotate = rotation;
+			controller->pitch = glm::pitch(rotation);
+			controller->yaw = glm::yaw(rotation);
+
+			if (abs(glm::roll(rotation)) > 0.00001)
+			{
+				controller->pitch += controller->pitch > 0 ? -M_PI : M_PI;
+				controller->yaw = M_PI - controller->yaw;
+			}
+		}
+
+		if (controller->pxController)
+		{
+			// Offset the capsule position so the camera is at the top
+			physics->TeleportController(controller->pxController, GlmVec3ToPxExtendedVec3(position - glm::vec3(0, ecs::PLAYER_HEIGHT / 2 - ecs::PLAYER_RADIUS, 0)));
+		}
+	}
+
 	glm::vec3 HumanControlSystem::CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint)
 	{
 		if (!entity.Has<ecs::Transform>())
