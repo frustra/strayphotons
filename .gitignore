@@ -1,5 +1,6 @@
 /build
 /bin
+/assets/gltf-process
 /assets/shaders
 /assets/audio/Metadata
 /assets/audio/Plugins
