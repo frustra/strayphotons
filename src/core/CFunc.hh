@@ -44,17 +44,19 @@ namespace sp
 		Callback callback;
 	};
 
-	template <typename ParamType>
+	template <typename ThisType, typename ParamType>
 	class CFuncCollection
 	{
 	public:
-		typedef std::function<void(const ParamType &)> Callback;
+		typedef void(ThisType::* Callback)(const string &);
 
-		CFuncCollection() {}
+		CFuncCollection(ThisType *parent) : parent(parent) {}
 
 		void Register(const string &name, const string &description, Callback callback)
 		{
-			collection.push_back(make_shared<CFunc<ParamType>>(name, description, callback));
+			collection.push_back(make_shared<CFunc<ParamType>>(
+				name, description,
+				std::bind(callback, parent, std::placeholders::_1)));
 		}
 
 		void Register(const string &name, Callback callback)
@@ -62,6 +64,7 @@ namespace sp
 			Register(name, "", callback);
 		}
 	private:
+		ThisType *parent;
 		vector<shared_ptr<CFunc<ParamType>>> collection;
 	};
 }

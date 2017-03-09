@@ -31,6 +31,6 @@ namespace sp
 		bool flashlightFixed;
 		float sunPos;
 
-		CFuncCollection<string> funcs;
+		CFuncCollection<GameLogic, string> funcs;
 	};
 }

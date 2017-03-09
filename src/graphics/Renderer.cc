@@ -852,7 +852,7 @@ namespace sp
 
 		shader->SetParams(view, glm::mat4());
 
-		unsigned char baseColor[4] = { 0, 0, 255, 255 };
+		static unsigned char baseColor[4] = { 0, 0, 255, 255 };
 		static BasicMaterial mat(baseColor);
 
 		static VertexBuffer vbo;

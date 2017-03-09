@@ -73,35 +73,6 @@ namespace sp
 		vector<Primitive> primitives;
 	};
 
-	struct DefaultMaterial
-	{
-		Texture baseColorTex, roughnessTex, metallicTex, heightTex;
-
-		DefaultMaterial()
-		{
-			unsigned char baseColor[4] = { 255, 255, 255, 255 };
-			unsigned char roughness[4] = { 255, 255, 255, 255 };
-			unsigned char metallic[4] = { 0, 0, 0, 0 };
-			unsigned char bump[4] = { 127, 127, 127, 255 };
-
-			baseColorTex.Create()
-			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_RGB8).Image2D(baseColor);
-
-			roughnessTex.Create()
-			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_R8).Image2D(roughness);
-
-			metallicTex.Create()
-			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_R8).Image2D(metallic);
-
-			heightTex.Create()
-			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_R8).Image2D(bump);
-		}
-	};
-
 	struct BasicMaterial
 	{
 		Texture baseColorTex, roughnessTex, metallicTex, heightTex;

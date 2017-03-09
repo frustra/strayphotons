@@ -136,8 +136,6 @@ namespace sp
 
 		vector<physx::PxDebugLine> debugLines;
 		std::mutex debugLinesMutex;
-
-		CFuncCollection<bool> funcs;
 	};
 }
 

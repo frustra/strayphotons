@@ -176,7 +176,7 @@ namespace sp
 
 	GLModel::GLModel(Model *model) : model(model)
 	{
-		static DefaultMaterial defaultMat;
+		static BasicMaterial defaultMat;
 
 		for (auto primitive : model->primitives)
 		{
