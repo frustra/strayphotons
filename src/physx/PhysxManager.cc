@@ -35,7 +35,7 @@ namespace sp
 
 		CreatePhysxScene();
 
-		funcs.Register("x.debug",
+		funcs.Register("x.ShowShapes",
 			"Show (1) or hide (0) the outline of physx collision shapes",
 			[&](bool enabled) {
 				ToggleDebug(enabled);
@@ -223,13 +223,16 @@ namespace sp
 		const physx::PxRenderBuffer& rb = scene->getRenderBuffer();
 		const physx::PxDebugLine *lines = rb.getLines();
 
-		debugLines = vector<physx::PxDebugLine>(
-			lines, lines + rb.getNbLines());
+		{
+			std::lock_guard<std::mutex> lock(debugLinesMutex);
+			debugLines = vector<physx::PxDebugLine>(
+				lines, lines + rb.getNbLines());
+		}
 	}
 
-	const vector<physx::PxDebugLine>& PhysxManager::GetDebugLines()
+	MutexedVector<physx::PxDebugLine> PhysxManager::GetDebugLines()
 	{
-		return debugLines;
+		return MutexedVector<physx::PxDebugLine>(debugLines, debugLinesMutex);
 	}
 
 	void PhysxManager::StartThread()

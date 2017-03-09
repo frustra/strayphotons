@@ -4,6 +4,7 @@
 #include "Common.hh"
 #include "ConvexHull.hh"
 #include "core/CFunc.hh"
+#include "threading/MutexedVector.hh"
 
 #include <Ecs.hh>
 
@@ -102,9 +103,9 @@ namespace sp
 		bool IsDebugEnabled() const;
 
 		/**
-		 * Get the lines the bounds of all physx objects
+		 * Get the lines for the bounds of all physx objects
 		 */
-		const vector<physx::PxDebugLine>& GetDebugLines();
+		MutexedVector<physx::PxDebugLine> GetDebugLines();
 
 	private:
 		void CreatePhysxScene();
@@ -134,6 +135,7 @@ namespace sp
 		std::unordered_map<string, ConvexHullSet *> cache;
 
 		vector<physx::PxDebugLine> debugLines;
+		std::mutex debugLinesMutex;
 
 		CFuncCollection<bool> funcs;
 	};

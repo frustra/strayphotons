@@ -21,6 +21,7 @@
 #include "ecs/components/Mirror.hh"
 #include "assets/AssetManager.hh"
 #include "physx/PhysxUtils.hh"
+#include "threading/MutexedVector.hh"
 
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/transform.hpp>
@@ -789,8 +790,10 @@ namespace sp
 
 		if (game->physics.IsDebugEnabled())
 		{
-			RenderPhase phase("PhysxBounds");
-			DrawPhysxLines(view, shader, game->physics.GetDebugLines(), preDraw);
+			RenderPhase phase("PhysxBounds", Timer);
+			MutexedVector<physx::PxDebugLine> lines =
+				game->physics.GetDebugLines();
+			DrawPhysxLines(view, shader, lines.Vector(), preDraw);
 		}
 
 		if (CVarRenderWireframe.Get())
