@@ -16,10 +16,7 @@ namespace sp
 		MutexedVector(MutexedVector &vec) = delete;
 		~MutexedVector() {}
 
-		std::vector<T> &Vector()
-		{
-			return vec;
-		}
+		std::vector<T> &Vector() { return vec; }
 
 	private:
 		std::vector<T> &vec;

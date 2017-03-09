@@ -101,38 +101,38 @@ namespace sp
 		glEnable(GL_FRAMEBUFFER_SRGB);
 
 		const char *vtxShaderSrc = R"(
-#version 410
+			#version 410
 
-								   layout (location = 0) in vec3 inPos;
-								   layout (location = 1) in vec3 inNormal;
-								   layout (location = 2) in vec2 inTexCoord;
+			layout (location = 0) in vec3 inPos;
+			layout (location = 1) in vec3 inNormal;
+			layout (location = 2) in vec2 inTexCoord;
 
-								   uniform mat4 mvpMatrix;
+			uniform mat4 mvpMatrix;
 
-								   out vec3 vNormal;
-								   out vec2 vTexCoord;
+			out vec3 vNormal;
+			out vec2 vTexCoord;
 
-								   void main()
-								   {
-								   gl_Position = mvpMatrix * vec4(inPos, 1.0);
-								   vNormal = inNormal;
-								   vTexCoord = inTexCoord;
-							   }
-								   )";
+			void main()
+			{
+				gl_Position = mvpMatrix * vec4(inPos, 1.0);
+				vNormal = inNormal;
+				vTexCoord = inTexCoord;
+			}
+		)";
 
 		const char *fragShaderSrc = R"(
-#version 410
+			#version 410
 
-									in vec3 vNormal;
-									in vec2 vTexCoord;
+			in vec3 vNormal;
+			in vec2 vTexCoord;
 
-									layout (location = 0) out vec4 frameBuffer;
+			layout (location = 0) out vec4 frameBuffer;
 
-									void main()
-									{
-									frameBuffer.rgb = (vNormal * 0.5) + vec3(0.5);
-								}
-									)";
+			void main()
+			{
+				frameBuffer.rgb = (vNormal * 0.5) + vec3(0.5);
+			}
+		)";
 
 		sceneProgram = glCreateProgram();
 

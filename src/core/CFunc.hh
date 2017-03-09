@@ -55,8 +55,8 @@ namespace sp
 		void Register(const string &name, const string &description, Callback callback)
 		{
 			collection.push_back(make_shared<CFunc<ParamType>>(
-									 name, description,
-									 std::bind(callback, parent, std::placeholders::_1)));
+				name, description,
+				std::bind(callback, parent, std::placeholders::_1)));
 		}
 
 		void Register(const string &name, Callback callback)

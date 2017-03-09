@@ -70,7 +70,7 @@ namespace sp
 
 			// Generate AABB for entire input
 			BVHAABB aabb = faces[0].aabb;
-			for (auto & f : faces)
+			for (auto &f : faces)
 			{
 				aabb.min = glm::min(aabb.min, f.aabb.min);
 				aabb.max = glm::max(aabb.max, f.aabb.max);
@@ -94,7 +94,7 @@ returnLeafNode:
 
 				// Copy face indexes to secondary buffer in BVH order
 				int index = offset;
-				for (auto & f : faces)
+				for (auto &f : faces)
 				{
 					for (int i = 0; i < 3; i++)
 					{
@@ -155,7 +155,7 @@ returnLeafNode:
 			vector<BVHLeaf> leftFaces, rightFaces;
 
 			// Perform final partitioning
-			for (auto & f : faces)
+			for (auto &f : faces)
 			{
 				if (f.center[bestAxis] <= bestPartition)
 					leftFaces.push_back(f);
@@ -211,7 +211,7 @@ returnLeafNode:
 				leftBox.max = rightBox.max = glm::vec3(FLT_MIN);
 
 				// Partition faces based on split point
-				for (auto & f : faces)
+				for (auto &f : faces)
 				{
 					if (f.center[axis] <= partition)
 					{

@@ -216,7 +216,7 @@ namespace sp
 
 		if (scene != nullptr)
 		{
-			for (auto & line : scene->unloadExecList)
+			for (auto &line : scene->unloadExecList)
 			{
 				GConsoleManager.ParseAndExecute(line);
 			}
@@ -231,7 +231,7 @@ namespace sp
 
 		game->graphics.SetPlayerView(player);
 
-		for (auto & line : scene->autoExecList)
+		for (auto &line : scene->autoExecList)
 		{
 			GConsoleManager.ParseAndExecute(line);
 		}

@@ -45,7 +45,7 @@ namespace sp
 
 	AssetManager::AssetManager()
 	{
-		tinygltf::OpenFileCallback = [](const std::string & path, std::ifstream & stream, size_t * size) -> bool
+		tinygltf::OpenFileCallback = [](const std::string &path, std::ifstream &stream, size_t *size) -> bool
 		{
 			return GAssets.InputStream(path, stream, size);
 		};
