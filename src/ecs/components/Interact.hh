@@ -12,8 +12,7 @@ namespace ecs
 	{
 		void PickUpObject(ecs::Entity entity);
 
-		bool interacting = false;
-		physx::PxRigidDynamic *object;
+		physx::PxRigidDynamic *target = nullptr;
 		sp::PhysxManager *manager;
 	};
 }

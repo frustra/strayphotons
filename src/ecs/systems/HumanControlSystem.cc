@@ -22,7 +22,8 @@
 namespace ecs
 {
 	static sp::CVar<bool> CVarNoClip("p.NoClip", false, "Disable player clipping");
-	static sp::CVar<float> CVarMovementSpeed("p.MovementSpeed", 3.0, "Player movement speed (m/s)");
+	static sp::CVar<float> CVarMovementSpeed("p.MovementSpeed", 3.0, "Player walking movement speed (m/s)");
+	static sp::CVar<float> CVarSprintSpeed("p.SprintSpeed", 6.0, "Player sprinting movement speed (m/s)");
 	static sp::CVar<float> CVarCursorSensitivity("p.CursorSensitivity", 1.0, "Mouse cursor sensitivity");
 
 	HumanControlSystem::HumanControlSystem(ecs::EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics)
@@ -68,6 +69,7 @@ namespace ecs
 			auto noclip = CVarNoClip.Get();
 			glm::vec3 inputMovement = glm::vec3(0);
 			bool jumping = false;
+			bool sprinting = false;
 
 			for (auto const &actionKeysPair : entity.Get<ecs::HumanController>()->inputMap)
 			{
@@ -109,10 +111,13 @@ namespace ecs
 							inputMovement += glm::vec3(0, -1, 0);
 						}
 						break;
+					case ControlAction::MOVE_SPRINT:
+						sprinting = true;
+						break;
 					case ControlAction::INTERACT:
 						if (input->IsAnyPressed(actionKeysPair.second))
 						{
-							interact(entity, dtSinceLastFrame);
+							Interact(entity, dtSinceLastFrame);
 						}
 						break;
 					default:
@@ -128,8 +133,8 @@ namespace ecs
 				physics->ToggleCollisions(controller->pxController->getActor(), !CVarNoClip.Get(true));
 			}
 
-			bool onGround = physics->SweepQuery(controller->pxController->getActor(), physx::PxVec3(0, -1, 0), ecs::PLAYER_SWEEP_DISTANCE);
-			auto velocity = CalculatePlayerVelocity(entity, dtSinceLastFrame, onGround, inputMovement, jumping);
+			controller->onGround = physics->SweepQuery(controller->pxController->getActor(), physx::PxVec3(0, -1, 0), ecs::PLAYER_SWEEP_DISTANCE);
+			auto velocity = CalculatePlayerVelocity(entity, dtSinceLastFrame, inputMovement, jumping, sprinting);
 			MoveEntity(entity, dtSinceLastFrame, velocity);
 		}
 
@@ -170,6 +175,9 @@ namespace ecs
 				ControlAction::MOVE_CROUCH, {GLFW_KEY_LEFT_CONTROL}
 			},
 			{
+				ControlAction::MOVE_SPRINT, {GLFW_KEY_LEFT_SHIFT}
+			},
+			{
 				ControlAction::INTERACT, {GLFW_KEY_E}
 			}
 		};
@@ -179,14 +187,14 @@ namespace ecs
 
 		auto transform = entity.Get<ecs::Transform>();
 		// Offset the capsule position so the camera is at the top
-		physx::PxVec3 pos = GlmVec3ToPxVec3(transform->GetPosition() - glm::vec3(0, ecs::PLAYER_HEIGHT / 2, 0));
-		controller->pxController = px.CreateController(pos, ecs::PLAYER_RADIUS, ecs::PLAYER_HEIGHT - ecs::PLAYER_RADIUS * 2.0, 0.5f);
+		physx::PxVec3 pos = GlmVec3ToPxVec3(transform->GetPosition() - glm::vec3(0, ecs::PLAYER_HEIGHT / 2 - ecs::PLAYER_RADIUS, 0));
+		controller->pxController = px.CreateController(pos, ecs::PLAYER_RADIUS, ecs::PLAYER_HEIGHT - ecs::PLAYER_RADIUS, 0.5f);
 		controller->pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
 
 		return controller;
 	}
 
-	glm::vec3 HumanControlSystem::CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, bool onGround, glm::vec3 inDirection, bool jump)
+	glm::vec3 HumanControlSystem::CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint)
 	{
 		if (!entity.Has<ecs::Transform>())
 		{
@@ -207,19 +215,30 @@ namespace ecs
 			}
 			movement.y = 0;
 		}
-		if (movement != glm::vec3(0)) movement = glm::normalize(movement) * CVarMovementSpeed.Get();
+		if (movement != glm::vec3(0))
+		{
+			float speed = CVarMovementSpeed.Get();
+			if (sprint) speed = CVarSprintSpeed.Get();
+			movement = glm::normalize(movement) * speed;
+		}
 		movement.y += inDirection.y * CVarMovementSpeed.Get();
 
-		if (onGround || noclip)
+		if (noclip)
 		{
-			if (jump) movement.y += ecs::PLAYER_JUMP_VELOCITY;
 			controller->velocity = movement;
+			return controller->velocity;
+		}
+		if (controller->onGround)
+		{
+			controller->velocity.x = movement.x;
+			if (jump) controller->velocity.y = ecs::PLAYER_JUMP_VELOCITY;
+			controller->velocity.z = movement.z;
 		}
 		else
 		{
 			controller->velocity += movement * ecs::PLAYER_AIR_STRAFE * (float)dtSinceLastFrame;
-			controller->velocity.y -= ecs::PLAYER_GRAVITY * dtSinceLastFrame;
 		}
+		controller->velocity.y -= ecs::PLAYER_GRAVITY * dtSinceLastFrame;
 
 		return controller->velocity;
 	}
@@ -248,13 +267,15 @@ namespace ecs
 
 			// Update the velocity based on what happened in physx
 			controller->velocity = (newPosition - prevPosition) / (float)dtSinceLastFrame;
+			glm::vec3 *velocity = (glm::vec3 *) controller->pxController->getUserData();
+			*velocity = controller->velocity;
 
 			// Offset the capsule position so the camera is at the top
-			transform->SetPosition(newPosition + glm::vec3(0, PLAYER_HEIGHT / 2, 0));
+			transform->SetPosition(newPosition + glm::vec3(0, PLAYER_HEIGHT / 2 - ecs::PLAYER_RADIUS, 0));
 		}
 	}
 
-	void HumanControlSystem::interact(ecs::Entity entity, double dt)
+	void HumanControlSystem::Interact(ecs::Entity entity, double dt)
 	{
 		auto interact = entity.Get<ecs::InteractController>();
 		interact->PickUpObject(entity);

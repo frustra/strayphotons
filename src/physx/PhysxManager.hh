@@ -18,12 +18,24 @@
 namespace sp
 {
 	class Model;
+	class PhysxManager;
 
 	struct PhysxConstraint
 	{
 		ecs::Entity parent;
 		physx::PxRigidDynamic *child;
 		physx::PxVec3 offset;
+	};
+
+	class ControllerHitReport : public physx::PxUserControllerHitReport
+	{
+	public:
+		ControllerHitReport(PhysxManager *manager) : manager(manager) {}
+		void onShapeHit(const physx::PxControllerShapeHit &hit);
+		void onControllerHit(const physx::PxControllersHit &hit) {}
+		void onObstacleHit(const physx::PxControllerObstacleHit &hit) {}
+	private:
+		PhysxManager *manager;
 	};
 
 	class PhysxManager
@@ -44,6 +56,7 @@ namespace sp
 		void ReadUnlock();
 
 		void CreateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 offset);
+		void RemoveConstraints(ecs::Entity parent, physx::PxRigidDynamic *child);
 
 		ConvexHullSet *GetCachedConvexHulls(Model *model);
 
@@ -59,7 +72,6 @@ namespace sp
 		};
 
 		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, ActorDesc desc);
-		void ToggleActor(physx::PxRigidActor *actor, bool enabled);
 		void RemoveActor(physx::PxRigidActor *actor);
 		physx::PxController *CreateController(physx::PxVec3 pos, float radius, float height, float density);
 		void MoveController(physx::PxController *controller, double dt, physx::PxVec3 displacement);

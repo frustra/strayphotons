@@ -63,7 +63,7 @@ void main()
 	vec3 pixelLuminance = DirectShading(worldPosition, baseColor.rgb, inNormal, inNormal);
 	if (lightAttenuation > 0) {
 		vec3 directDiffuseColor = baseColor.rgb - baseColor.rgb * metalness;
-		vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, inNormal, vec2(0));
+		vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, inNormal, inNormal, vec2(0));
 		pixelLuminance += indirectDiffuse * directDiffuseColor * lightAttenuation * smoothstep(0.0, 0.1, length(indirectDiffuse));
 	}
 

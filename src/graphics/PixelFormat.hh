@@ -9,6 +9,7 @@ namespace sp
 	PF_DEF(PF_R8,                GL_R8,                 GL_RED,             GL_UNSIGNED_BYTE) \
 	PF_DEF(PF_R8I,               GL_R8I,                GL_RED_INTEGER,     GL_BYTE) \
 	PF_DEF(PF_R8UI,              GL_R8UI,               GL_RED_INTEGER,     GL_UNSIGNED_BYTE) \
+	PF_DEF(PF_R16F,              GL_R16F,               GL_RED,             GL_FLOAT) \
 	PF_DEF(PF_R16I,              GL_R16I,               GL_RED_INTEGER,     GL_SHORT) \
 	PF_DEF(PF_R16UI,             GL_R16UI,              GL_RED_INTEGER,     GL_UNSIGNED_SHORT) \
 	PF_DEF(PF_R32I,              GL_R32I,               GL_RED_INTEGER,     GL_INT) \

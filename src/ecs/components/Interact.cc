@@ -11,6 +11,13 @@ namespace ecs
 {
 	void InteractController::PickUpObject(ecs::Entity entity)
 	{
+		if (target)
+		{
+			manager->RemoveConstraints(entity, target);
+			target = nullptr;
+			return;
+		}
+
 		auto transform = entity.Get<ecs::Transform>();
 		auto controller = entity.Get<ecs::HumanController>();
 
@@ -21,7 +28,7 @@ namespace ecs
 
 		physx::PxVec3 dir = GlmVec3ToPxVec3(rotate);
 		dir.normalizeSafe();
-		physx::PxReal maxDistance = 10.f;
+		physx::PxReal maxDistance = 2.0f;
 
 		physx::PxRaycastBuffer hit;
 		bool status = manager->RaycastQuery(entity, origin, dir, maxDistance, hit);
@@ -32,11 +39,12 @@ namespace ecs
 			if (hitActor && hitActor->getType() == physx::PxActorType::eRIGID_DYNAMIC)
 			{
 				physx::PxRigidDynamic *dynamic = static_cast<physx::PxRigidDynamic *>(hitActor);
-				if (dynamic)
+				if (dynamic && !dynamic->getRigidBodyFlags().isSet(physx::PxRigidBodyFlag::eKINEMATIC))
 				{
-					dynamic->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
-
-					manager->CreateConstraint(entity, dynamic, physx::PxVec3(hit.block.distance, 0.f, 0.f));
+					target = dynamic;
+					auto currentPos = dynamic->getGlobalPose().transform(dynamic->getCMassLocalPose().transform(physx::PxVec3(0.0)));
+					auto offset = glm::inverse(transform->rotate) * PxVec3ToGlmVec3P(currentPos - origin);
+					manager->CreateConstraint(entity, dynamic, GlmVec3ToPxVec3(offset));
 				}
 			}
 		}

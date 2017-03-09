@@ -27,13 +27,13 @@ namespace ecs
 		ecs::Handle<HumanController> AssignController(ecs::Entity entity, sp::PhysxManager &px);
 
 	private:
-		glm::vec3 CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, bool onGround, glm::vec3 inDirection, bool jump);
+		glm::vec3 CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint);
 		void MoveEntity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 velocity);
 
 		/**
 		* Pick up the object that the player is looking at and make it move at to a fixed location relative to camera
 		*/
-		void interact(ecs::Entity entity, double dt);
+		void Interact(ecs::Entity entity, double dt);
 
 		ecs::EntityManager *entities;
 		sp::InputManager *input;

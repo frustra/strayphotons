@@ -20,18 +20,20 @@ namespace ecs
 		MOVE_RIGHT,
 		MOVE_JUMP,
 		MOVE_CROUCH,
+		MOVE_SPRINT,
 		INTERACT
 	};
 
 	// Units in meters
-	const float PLAYER_HEIGHT = 1.7;
-	const float PLAYER_RADIUS = 0.2;
-	const float PLAYER_STEP_HEIGHT = 0.3;
-	const float PLAYER_SWEEP_DISTANCE = 0.4; // Distance to check if on ground
+	const float PLAYER_HEIGHT = 1.7f;
+	const float PLAYER_RADIUS = 0.2f;
+	const float PLAYER_STEP_HEIGHT = 0.3f;
+	const float PLAYER_SWEEP_DISTANCE = 0.4f; // Distance to check if on ground
 
-	const float PLAYER_GRAVITY = 9.81;
-	const float PLAYER_JUMP_VELOCITY = 5.0;
-	const float PLAYER_AIR_STRAFE = 0.8; // Movement scaler for acceleration in air
+	const float PLAYER_GRAVITY = 9.81f;
+	const float PLAYER_JUMP_VELOCITY = 5.0f;
+	const float PLAYER_AIR_STRAFE = 0.8f; // Movement scaler for acceleration in air
+	const float PLAYER_PUSH_FORCE = 0.3f;
 
 	struct HumanController
 	{
@@ -49,6 +51,7 @@ namespace ecs
 		physx::PxController *pxController;
 
 		bool crouched = false;
+		bool onGround = false;
 		glm::vec3 velocity = glm::vec3(0);
 	};
 

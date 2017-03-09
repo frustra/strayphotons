@@ -171,6 +171,7 @@ namespace sp
 		ProcessPassOutputRef VoxelRadiance;
 		ProcessPassOutputRef MirrorIndexStencil;
 		ProcessPassOutputRef LightingGel;
+		ProcessPassOutputRef AoBuffer;
 
 	private:
 		vector<PostProcessPassBase *> passes;

@@ -18,6 +18,7 @@ layout (binding = 5) uniform sampler3D voxelRadiance;
 layout (binding = 6) uniform sampler2D indirectDiffuseSampler;
 layout (binding = 7) uniform usampler2D mirrorIndexStencil;
 layout (binding = 8) uniform sampler2D lightingGel;
+layout (binding = 9) uniform sampler2D aoBuffer;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
@@ -51,6 +52,7 @@ uniform mat4 invViewMat;
 uniform mat4 invProjMat;
 
 uniform int mode = 1;
+uniform bool ssaoEnabled;
 
 void getDepthNormal(out float depth, out vec3 normal, vec2 texCoord)
 {
@@ -147,7 +149,7 @@ void main()
 
 	if (diffuseDownsample > 1) {
 		if (detectEdge(viewNormal, length(viewPosition), diffuseDownsample * 0.65 / textureSize(gBuffer0, 0))) {
-			indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, vec2(0));
+			indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, flatWorldNormal, vec2(0));
 		} else {
 			indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
 		}
@@ -156,6 +158,7 @@ void main()
 	} else {
 		indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
 	}
+	if (ssaoEnabled) indirectDiffuse *= vec3(texture(aoBuffer, inTexCoord).r);
 
 	vec3 directDiffuseColor = baseColor - baseColor * metalness;
 	vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, flatWorldNormal, roughness, metalness);

@@ -1,9 +1,12 @@
 {
 	"autoexec": [
 		"r.MirrorRecursion 0",
-		"r.Size 1024 1024",
 		"r.FieldOfView 30",
 		"p.NoClip 1"
+	],
+	"unloadexec": [
+		"r.FieldOfView 60",
+		"p.NoClip 0"
 	],
 	"entities": [
 		{

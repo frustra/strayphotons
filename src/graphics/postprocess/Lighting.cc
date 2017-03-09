@@ -197,6 +197,7 @@ namespace sp
 			Bind(invProjMat, "invProjMat");
 			Bind(invViewMat, "invViewMat");
 			Bind(mode, "mode");
+			Bind(ssaoEnabled, "ssaoEnabled");
 
 			Bind(voxelSize, "voxelSize");
 			Bind(voxelGridCenter, "voxelGridCenter");
@@ -226,9 +227,10 @@ namespace sp
 			Set(invViewMat, view.invViewMat);
 		}
 
-		void SetMode(int newMode)
+		void SetMode(int newMode, int ssaoMode)
 		{
 			Set(mode, newMode);
+			Set(ssaoEnabled, ssaoMode);
 		}
 
 		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo, int diffDownsample)
@@ -241,7 +243,7 @@ namespace sp
 	private:
 		Uniform lightCount, mirrorCount;
 		UniformBuffer lightData, mirrorData;
-		Uniform exposure, invViewMat, invProjMat, mode;
+		Uniform exposure, invViewMat, invProjMat, mode, ssaoEnabled;
 		Uniform voxelSize, voxelGridCenter, diffuseDownsample;
 	};
 
@@ -305,7 +307,7 @@ namespace sp
 		shader->SetLightData(lightCount, &lightData[0]);
 		shader->SetMirrorData(mirrorCount, &mirrorData[0]);
 		shader->SetViewParams(context->view);
-		shader->SetMode(CVarVoxelLightingMode.Get());
+		shader->SetMode(CVarVoxelLightingMode.Get(), ssaoEnabled);
 		shader->SetVoxelInfo(voxelData.info, diffuseDownsample);
 		shader->SetExposure(r->Exposure);
 

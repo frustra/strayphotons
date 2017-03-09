@@ -1,7 +1,5 @@
 #pragma once
 
-// #define PACKAGE_RELEASE
-
 #include <memory>
 using std::make_shared;
 using std::unique_ptr;

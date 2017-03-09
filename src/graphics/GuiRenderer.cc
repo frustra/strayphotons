@@ -59,6 +59,13 @@ namespace sp
 
 		io.Fonts->AddFontDefault(nullptr);
 
+		static const ImWchar glyphRanges[] =
+		{
+			0x0020, 0x00FF, // Basic Latin + Latin Supplement
+			0x2100, 0x214F, // Letterlike Symbols
+			0,
+		};
+
 		for (auto &pair : fontAssets)
 		{
 			auto &asset = pair.first;
@@ -68,6 +75,7 @@ namespace sp
 			cfg.FontDataSize = asset->Size();
 			cfg.FontDataOwnedByAtlas = false;
 			cfg.SizePixels = pair.second;
+			cfg.GlyphRanges = &glyphRanges[0];
 			memcpy(cfg.Name, asset->path.c_str(), std::min(sizeof(cfg.Name), asset->path.length()));
 			io.Fonts->AddFont(&cfg);
 		}

@@ -51,12 +51,14 @@ namespace sp
 
 		VertexBuffer &Create()
 		{
+			Assert(vbo == 0, "vertex buffer already created");
 			glCreateBuffers(1, &vbo);
 			return *this;
 		}
 
 		VertexBuffer &CreateVAO()
 		{
+			Assert(vao == 0, "vertex array already created");
 			glCreateVertexArrays(1, &vao);
 			return *this;
 		}
@@ -74,7 +76,7 @@ namespace sp
 		{
 			elements = n;
 
-			if (vao == 0)
+			if (vbo == 0)
 				Create();
 
 			glNamedBufferData(vbo, n * sizeof(T), buffer, usage);
@@ -94,6 +96,7 @@ namespace sp
 
 		VertexBuffer &EnableAttrib(GLuint index, GLint size, GLenum type, bool normalized = false, GLuint offset = 0, GLsizei stride = 0)
 		{
+			Assert(vao != 0, "vertex array not created");
 			glEnableVertexArrayAttrib(vao, index);
 			glVertexArrayAttribFormat(vao, index, size, type, normalized, offset);
 
@@ -106,17 +109,20 @@ namespace sp
 
 		VertexBuffer &SetAttribBuffer(GLuint index, GLsizei stride, GLintptr offset = 0)
 		{
+			Assert(vao != 0, "vertex array not created");
 			glVertexArrayVertexBuffer(vao, index, vbo, offset, stride);
 			return *this;
 		}
 
 		void BindVAO() const
 		{
+			Assert(vao != 0, "vertex array not created");
 			glBindVertexArray(vao);
 		}
 
 		void BindElementArray() const
 		{
+			Assert(vbo != 0, "vertex buffer not created");
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo);
 		}
 

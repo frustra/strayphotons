@@ -38,11 +38,11 @@ namespace sp
 		}
 	};
 
-	class VoxelLighting : public PostProcessPass<9, 1>
+	class VoxelLighting : public PostProcessPass<10, 1>
 	{
 	public:
-		VoxelLighting(VoxelData voxelData, Buffer mirrorVisData, Buffer mirrorSceneData)
-			: voxelData(voxelData), mirrorVisData(mirrorVisData), mirrorSceneData(mirrorSceneData) {}
+		VoxelLighting(VoxelData voxelData, Buffer mirrorVisData, Buffer mirrorSceneData, bool ssaoEnabled)
+			: voxelData(voxelData), mirrorVisData(mirrorVisData), mirrorSceneData(mirrorSceneData), ssaoEnabled(ssaoEnabled) {}
 
 		void Process(const PostProcessingContext *context);
 
@@ -61,6 +61,7 @@ namespace sp
 		VoxelData voxelData;
 		Buffer mirrorVisData;
 		Buffer mirrorSceneData;
+		bool ssaoEnabled;
 	};
 
 	class VoxelLightingDiffuse : public PostProcessPass<4, 1>

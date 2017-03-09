@@ -19,7 +19,16 @@ using namespace std;
 
 using cxxopts::value;
 
+#if defined(_WIN32) && defined(PACKAGE_RELEASE)
+#include <windows.h>
+#define ARGC_NAME __argc
+#define ARGV_NAME __argv
+int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+#else
+#define ARGC_NAME argc
+#define ARGV_NAME argv
 int main(int argc, char **argv)
+#endif
 {
 	cxxopts::Options options("STRAYPHOTONS", "");
 
@@ -36,7 +45,7 @@ int main(int argc, char **argv)
 	try
 #endif
 	{
-		options.parse(argc, argv);
+		options.parse(ARGC_NAME, ARGV_NAME);
 
 		if (options.count("help"))
 		{

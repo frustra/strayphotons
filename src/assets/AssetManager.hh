@@ -24,6 +24,8 @@ namespace sp
 	class AssetManager
 	{
 	public:
+		AssetManager();
+
 		bool InputStream(const std::string &path, std::ifstream &stream, size_t *size = nullptr);
 		bool OutputStream(const std::string &path, std::ofstream &stream);
 
