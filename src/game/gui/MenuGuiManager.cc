@@ -324,7 +324,7 @@ namespace sp
 			ImGui::Dummy({1, 500});
 			CenteredText("STRAY PHOTONS");
 			CenteredText(" ");
-			CenteredText(u8"Copyright © 2017 Frustra Software");
+			CenteredText("Copyright © 2017 Frustra Software");
 			CenteredText(" ");
 
 			ImGui::Indent(300.0f - frLogoSize.x / 2.0f);
@@ -345,17 +345,17 @@ namespace sp
 			ImGui::Dummy({1, 100});
 
 			ImGui::PushFont(io.Fonts->Fonts[3]);
-			CenteredText(u8"NVIDIA GameWorks™ Technology provided under");
-			CenteredText(u8"license from NVIDIA Corporation.");
-			CenteredText(u8"Copyright © 2002-2015 NVIDIA Corporation.");
-			CenteredText(u8"All rights reserved.");
+			CenteredText("NVIDIA GameWorks™ Technology provided under");
+			CenteredText("license from NVIDIA Corporation.");
+			CenteredText("Copyright © 2002-2015 NVIDIA Corporation.");
+			CenteredText("All rights reserved.");
 			ImGui::PopFont();
 
 			CenteredText(" ");
 
 			ImGui::PushFont(io.Fonts->Fonts[3]);
-			CenteredText(u8"Audio Engine supplied by FMOD");
-			CenteredText(u8"by Firelight Technologies Pty Ltd.");
+			CenteredText("Audio Engine supplied by FMOD");
+			CenteredText("by Firelight Technologies Pty Ltd.");
 			ImGui::PopFont();
 
 			ImGui::Dummy({1, 600});

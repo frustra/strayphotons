@@ -36,7 +36,7 @@ if (UNIX)
 endif()
 
 if (MSVC)
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS /wd4800 /MP)
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS -DUNICODE -D_UNICODE /wd4800 /MP)
 
 	if (SP_DEBUG)
 		add_definitions(/MDd)
