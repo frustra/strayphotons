@@ -3,6 +3,7 @@
 
 #include "Common.hh"
 #include "ConvexHull.hh"
+#include "core/CFunc.hh"
 
 #include <Ecs.hh>
 
@@ -97,16 +98,17 @@ namespace sp
 		 */
 		void ToggleCollisions(physx::PxRigidActor *actor, bool enabled);
 
+		void ToggleDebug(bool enabled);
+		bool IsDebugEnabled() const;
+
 		/**
-		 * Get the triangles showing the AABB bounds of all physx objects
+		 * Get the lines the bounds of all physx objects
 		 */
-		const vector<physx::PxDebugTriangle>& GetDebugTriangles();
 		const vector<physx::PxDebugLine>& GetDebugLines();
 
 	private:
 		void CreatePhysxScene();
 		void DestroyPhysxScene();
-		void CacheDebugTriangles();
 		void CacheDebugLines();
 
 		ConvexHullSet *BuildConvexHulls(Model *model);
@@ -123,6 +125,7 @@ namespace sp
 
 		physx::PxScene *scene = nullptr;
 		bool simulate = false, exiting = false, resultsPending = false;
+		bool debug = false;
 
 		std::thread thread;
 
@@ -130,8 +133,9 @@ namespace sp
 
 		std::unordered_map<string, ConvexHullSet *> cache;
 
-		vector<physx::PxDebugTriangle> debugTriangles;
 		vector<physx::PxDebugLine> debugLines;
+
+		CFuncCollection<bool> funcs;
 	};
 }
 

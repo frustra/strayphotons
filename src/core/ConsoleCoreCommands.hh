@@ -5,7 +5,7 @@
 
 namespace sp
 {
-	CFunc CFuncList("list", "Lists all CVar names, values, and descriptions", [](const string &s)
+	CFunc<string> CFuncList("list", "Lists all CVar names, values, and descriptions", [](const string &s)
 	{
 		for (auto &kv : GConsoleManager.CVars())
 		{

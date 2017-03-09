@@ -6,10 +6,11 @@
 
 namespace sp
 {
+	template <typename ParamType>
 	class CFunc : public CVarBase
 	{
 	public:
-		typedef std::function<void(const string &)> Callback;
+		typedef std::function<void(const ParamType &)> Callback;
 
 		CFunc(const string &name, const string &description, Callback callback)
 			: CVarBase(name, description), callback(callback)
@@ -27,7 +28,11 @@ namespace sp
 
 		void SetFromString(const string &newValue)
 		{
-			callback(newValue);
+			ParamType value;
+			std::stringstream in(newValue);
+			in >> value;
+
+			callback(value);
 		}
 
 		bool IsValueType()
@@ -39,17 +44,17 @@ namespace sp
 		Callback callback;
 	};
 
-	template <typename ThisType>
+	template <typename ParamType>
 	class CFuncCollection
 	{
 	public:
-		typedef void(ThisType::* Callback)(const string &);
+		typedef std::function<void(const ParamType &)> Callback;
 
-		CFuncCollection(ThisType *parent) : parent(parent) {}
+		CFuncCollection() {}
 
 		void Register(const string &name, const string &description, Callback callback)
 		{
-			collection.push_back(make_shared<CFunc>(name, description, std::bind(callback, parent, std::placeholders::_1)));
+			collection.push_back(make_shared<CFunc<ParamType>>(name, description, callback));
 		}
 
 		void Register(const string &name, Callback callback)
@@ -57,7 +62,6 @@ namespace sp
 			Register(name, "", callback);
 		}
 	private:
-		ThisType *parent;
-		vector<shared_ptr<CFunc>> collection;
+		vector<shared_ptr<CFunc<ParamType>>> collection;
 	};
 }

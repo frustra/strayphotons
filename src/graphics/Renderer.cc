@@ -787,10 +787,10 @@ namespace sp
 			DrawEntity(view, shader, ent, preDraw);
 		}
 
-		// TODO(cstegel): if debug enabled
+		if (game->physics.IsDebugEnabled())
 		{
 			RenderPhase phase("PhysxBounds");
-			DrawPhysxLines(view, shader, game->physics.GetDebugLines());
+			DrawPhysxLines(view, shader, game->physics.GetDebugLines(), preDraw);
 		}
 
 		if (CVarRenderWireframe.Get())
@@ -800,16 +800,19 @@ namespace sp
 	void Renderer::DrawPhysxLines(
 		ecs::View &view,
 		SceneShader *shader,
-		const vector<physx::PxDebugLine> &lines)
+		const vector<physx::PxDebugLine> &lines,
+		const PreDrawFunc &preDraw)
 	{
+		ecs::Entity nullEnt;
+		if (preDraw) preDraw(nullEnt);
 
 		glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
 		vector<SceneVertex> vertices(6*lines.size());
 		for (auto &line : lines) {
-			glm::vec3 lineDir = glm::vec3(
+			glm::vec3 lineDir = glm::normalize(glm::vec3(
 				line.pos1.x - line.pos0.x,
 				line.pos1.y - line.pos0.y,
-				line.pos1.z - line.pos0.z);
+				line.pos1.z - line.pos0.z));
 
 			auto lineMid = 0.5 * (line.pos1 + line.pos0);
 			glm::vec3 viewDir = glm::normalize(glm::vec3(
@@ -817,9 +820,13 @@ namespace sp
 				viewPos.y - lineMid.y,
 				viewPos.z - lineMid.z));
 
-			glm::vec3 widthVec = 0.01f * glm::normalize(glm::cross(viewDir, lineDir));
-			glm::vec3 pos0 = PxVec3ToGlmVec3P(line.pos0);
-			glm::vec3 pos1 = PxVec3ToGlmVec3P(line.pos1);
+			const float lineWidth = 0.004f;
+			glm::vec3 widthVec =
+				lineWidth * glm::normalize(glm::cross(viewDir, lineDir));
+
+			// move the positions back a bit to account for overlapping lines
+			glm::vec3 pos0 = PxVec3ToGlmVec3P(line.pos0) - lineWidth * lineDir;
+			glm::vec3 pos1 = PxVec3ToGlmVec3P(line.pos1) + lineWidth * lineDir;;
 
 			auto addVertex = [&](const glm::vec3 &pos) {
 				vertices.push_back({

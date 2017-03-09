@@ -11,13 +11,14 @@
 #include "assets/Model.hh"
 #include "core/Logging.hh"
 #include "core/CVar.hh"
+#include "core/CFunc.hh"
 
 #include <fstream>
 
 namespace sp
 {
 	using namespace physx;
-	static CVar<float> CVarGravity("g.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
+	static CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
 
 	PhysxManager::PhysxManager()
 	{
@@ -33,6 +34,13 @@ namespace sp
 		Assert(pxCooking, "PxCreateCooking");
 
 		CreatePhysxScene();
+
+		funcs.Register("x.debug",
+			"Show (1) or hide (0) the outline of physx collision shapes",
+			[&](bool enabled) {
+				ToggleDebug(enabled);
+			});
+
 		StartThread();
 		StartSimulation();
 	}
@@ -150,9 +158,9 @@ namespace sp
 			}
 		}
 
-		// TODO(cstegel): if debugging enabled
-		CacheDebugTriangles();
-		CacheDebugLines();
+		if (debug) {
+			CacheDebugLines();
+		}
 
 		scene->simulate((PxReal) timeStep);
 		resultsPending = true;
@@ -174,13 +182,6 @@ namespace sp
 		scene = physics->createScene(sceneDesc);
 		Assert(scene, "creating PhysX scene");
 
-		// debug view
-		scene->setVisualizationParameter(
-			physx::PxVisualizationParameter::eSCALE, 1.0f);
-
-		scene->setVisualizationParameter(
-			PxVisualizationParameter::eCOLLISION_AABBS, 1.0f);
-
 		Lock();
 		PxMaterial *groundMat = physics->createMaterial(0.6f, 0.5f, 0.0f);
 		PxRigidStatic *groundPlane = PxCreatePlane(*physics, PxPlane(0.f, 1.f, 0.f, 1.03f), *groundMat);
@@ -198,15 +199,23 @@ namespace sp
 		dispatcher = nullptr;
 	}
 
-	void PhysxManager::CacheDebugTriangles()
+	void PhysxManager::ToggleDebug(bool enabled)
 	{
-		const physx::PxRenderBuffer& rb = scene->getRenderBuffer();
-		const physx::PxDebugTriangle *triangles = rb.getTriangles();
+		debug = enabled;
+		float scale = (enabled ? 1.0f : 0.0f);
 
-		debugTriangles = vector<physx::PxDebugTriangle>(
-			triangles, triangles + rb.getNbTriangles());
+		Lock();
+		scene->setVisualizationParameter(
+			physx::PxVisualizationParameter::eSCALE, scale);
 
-		Logf("cached %d lines", rb.getNbLines());
+		scene->setVisualizationParameter(
+			PxVisualizationParameter::eCOLLISION_SHAPES, scale);
+		Unlock();
+	}
+
+	bool PhysxManager::IsDebugEnabled() const
+	{
+		return debug;
 	}
 
 	void PhysxManager::CacheDebugLines()
@@ -216,13 +225,6 @@ namespace sp
 
 		debugLines = vector<physx::PxDebugLine>(
 			lines, lines + rb.getNbLines());
-
-		Logf("cached %d lines", rb.getNbLines());
-	}
-
-	const vector<physx::PxDebugTriangle>& PhysxManager::GetDebugTriangles()
-	{
-		return debugTriangles;
 	}
 
 	const vector<physx::PxDebugLine>& PhysxManager::GetDebugLines()

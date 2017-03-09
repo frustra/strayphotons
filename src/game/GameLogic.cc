@@ -24,10 +24,12 @@
 namespace sp
 {
 	GameLogic::GameLogic(Game *game)
-		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input, &game->physics), flashlightFixed(false), sunPos(0), funcs(this)
+		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input, &game->physics), flashlightFixed(false), sunPos(0)
 	{
-		funcs.Register("loadscene", "Load a scene", &GameLogic::LoadScene);
-		funcs.Register("reloadscene", "Reload current scene", &GameLogic::ReloadScene);
+		funcs.Register("loadscene", "Load a scene",
+			std::bind(&GameLogic::LoadScene, this, std::placeholders::_1));
+		funcs.Register("reloadscene", "Reload current scene",
+			std::bind(&GameLogic::ReloadScene, this, std::placeholders::_1));
 	}
 
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
