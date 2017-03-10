@@ -107,6 +107,15 @@ namespace ecs
 							jumping = true;
 						}
 						break;
+					case ControlAction::MOVE_SPRINT:
+						sprinting = true;
+						break;
+					case ControlAction::INTERACT:
+						if (input->IsAnyPressed(actionKeysPair.second))
+						{
+							Interact(entity, dtSinceLastFrame);
+						}
+						break;
 					case ControlAction::MOVE_CROUCH:
 						if (noclip)
 						{
@@ -115,15 +124,6 @@ namespace ecs
 						else
 						{
 							crouching = true;
-						}
-						break;
-					case ControlAction::MOVE_SPRINT:
-						sprinting = true;
-						break;
-					case ControlAction::INTERACT:
-						if (input->IsAnyPressed(actionKeysPair.second))
-						{
-							Interact(entity, dtSinceLastFrame);
 						}
 						break;
 					default:
