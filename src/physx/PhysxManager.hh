@@ -47,6 +47,7 @@ namespace sp
 		~PhysxManager();
 
 		void Frame(double timeStep);
+		bool LogicFrame(ecs::EntityManager &manager);
 		void StartThread();
 		void StartSimulation();
 		void StopSimulation();
@@ -62,8 +63,8 @@ namespace sp
 
 		struct ActorDesc
 		{
-			physx::PxTransform transform;
-			physx::PxMeshScale scale;
+			physx::PxTransform transform = physx::PxTransform(physx::PxVec3(0));
+			physx::PxMeshScale scale = physx::PxMeshScale();
 			bool dynamic = true;
 
 			// only dynamic actors can be kinematic

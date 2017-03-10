@@ -63,7 +63,7 @@ namespace ecs
 			const float feps = std::numeric_limits<float>::epsilon();
 			controller->pitch = std::max(-((float)M_PI_2 - feps), std::min(controller->pitch, (float)M_PI_2 - feps));
 
-			transform->rotate = glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll));
+			transform->SetRotate(glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll)));
 
 			// Handle keyboard controls
 			auto noclip = CVarNoClip.Get();
@@ -210,7 +210,7 @@ namespace ecs
 		transform->SetPosition(position);
 		if (rotation != glm::quat())
 		{
-			transform->rotate = rotation;
+			transform->SetRotate(rotation);
 			controller->pitch = glm::pitch(rotation);
 			controller->yaw = glm::yaw(rotation);
 
@@ -239,13 +239,13 @@ namespace ecs
 		auto controller = entity.Get<ecs::HumanController>();
 		auto transform = entity.Get<ecs::Transform>();
 
-		glm::vec3 movement = transform->rotate * glm::vec3(inDirection.x, 0, inDirection.z);
+		glm::vec3 movement = transform->GetRotate() * glm::vec3(inDirection.x, 0, inDirection.z);
 
 		if (!noclip)
 		{
 			if (std::abs(movement.y) > 0.999)
 			{
-				movement = transform->rotate * glm::vec3(0, -movement.y, 0);
+				movement = transform->GetRotate() * glm::vec3(0, -movement.y, 0);
 			}
 			movement.y = 0;
 		}

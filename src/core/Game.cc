@@ -1,6 +1,7 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/Console.hh"
+#include "physx/PhysxUtils.hh"
 
 #include "ecs/components/Barrier.hh"
 #include "ecs/components/Interact.hh"
@@ -108,63 +109,10 @@ namespace sp
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;
 		if (!audio.Frame()) return false;
-		PhysicsUpdate();
+		if (!physics.LogicFrame(entityManager)) return false;
 
 		lastFrameTime = frameTime;
 		return true;
-	}
-
-	void Game::PhysicsUpdate()
-	{
-		{
-			// Sync transforms to physx
-			bool gotLock = false;
-
-			for (ecs::Entity ent : entityManager.EntitiesWith<ecs::Physics>())
-			{
-				auto ph = ent.Get<ecs::Physics>();
-
-				if (ph->needsTransformSync)
-				{
-					if (!gotLock)
-					{
-						physics.Lock();
-						gotLock = true;
-					}
-
-					auto transform = ent.Get<ecs::Transform>();
-					auto mat = transform->GetModelTransform(entityManager);
-					auto pxMat = *(physx::PxMat44 *)(glm::value_ptr(mat));
-
-					physx::PxTransform newPose(pxMat);
-					if (ph->dynamic && newPose.isValid())
-					{
-						ph->actor->setGlobalPose(newPose);
-					}
-					ph->needsTransformSync = false;
-				}
-			}
-
-			if (gotLock)
-				physics.Unlock();
-		}
-
-		{
-			// Sync transforms from physx
-			physics.ReadLock();
-
-			for (ecs::Entity ent : entityManager.EntitiesWith<ecs::Physics>())
-			{
-				auto physics = ent.Get<ecs::Physics>();
-				auto pxMat = (physx::PxMat44)(physics->actor->getGlobalPose());
-				auto mat = *((glm::mat4 *) pxMat.front());
-
-				auto transform = ent.Get<ecs::Transform>();
-				transform->SetTransform(mat);
-			}
-
-			physics.ReadUnlock();
-		}
 	}
 
 	bool Game::ShouldStop()

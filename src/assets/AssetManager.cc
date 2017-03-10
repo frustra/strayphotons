@@ -245,7 +245,7 @@ namespace sp
 				}
 				else if (comp.first == "transform")
 				{
-					auto transform = entity.Assign<ecs::Transform>();
+					auto transform = entity.Assign<ecs::Transform>(em);
 					for (auto subTransform : comp.second.get<picojson::object>())
 					{
 						if (subTransform.first == "relativeTo")
@@ -255,7 +255,7 @@ namespace sp
 							{
 								throw std::runtime_error("Entity relative to non-existent parent");
 							}
-							transform->SetRelativeTo(parent);
+							transform->SetParent(parent);
 						}
 						else
 						{
@@ -371,31 +371,14 @@ namespace sp
 					physx::PxRigidActor *actor = nullptr;
 
 					shared_ptr<Model> model;
-					auto translate = physx::PxVec3 (0, 0, 0);
-					auto scale = physx::PxVec3 (1, 1, 1);
 					bool dynamic = true;
 					bool kinematic = false;
 
-					//auto rotate = physx::PxQuat (0);
 					for (auto param : comp.second.get<picojson::object>())
 					{
 						if (param.first == "model")
 						{
 							model = LoadModel(param.second.get<string>());
-						}
-						if (param.first == "pxTranslate")
-						{
-							glm::vec3 gVec = MakeVec3(param.second);
-							translate = physx::PxVec3(gVec.x, gVec.y, gVec.z);
-						}
-						else if (param.first == "pxScale")
-						{
-							glm::vec3 gVec = MakeVec3(param.second);
-							scale = physx::PxVec3(gVec.x, gVec.y, gVec.z);
-						}
-						else if (param.first == "pxRotate")
-						{
-							//rotate = MakeVec3(param.second);
 						}
 						else if (param.first == "dynamic")
 						{
@@ -408,8 +391,6 @@ namespace sp
 					}
 
 					PhysxManager::ActorDesc desc;
-					desc.transform = physx::PxTransform(translate);
-					desc.scale = physx::PxMeshScale(scale, physx::PxQuat(physx::PxIdentity));
 					desc.dynamic = dynamic;
 					desc.kinematic = kinematic;
 

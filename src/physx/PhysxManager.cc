@@ -120,7 +120,7 @@ namespace sp
 				std::cout << "Error physics constraint, parent not registered with physics system!";
 				continue;
 			}
-			glm::vec3 rotate = transform->rotate * PxVec3ToGlmVec3P(constraint->offset);
+			glm::vec3 rotate = transform->GetRotate() * PxVec3ToGlmVec3P(constraint->offset);
 			PxVec3 targetPos = GlmVec3ToPxVec3(transform->GetPosition() + rotate);
 			auto currentPos = constraint->child->getGlobalPose().transform(constraint->child->getCMassLocalPose().transform(physx::PxVec3(0.0)));
 			auto distance = targetPos - currentPos;
@@ -178,6 +178,82 @@ namespace sp
 		scene->simulate((PxReal) timeStep);
 		resultsPending = true;
 		Unlock();
+	}
+
+	bool PhysxManager::LogicFrame(ecs::EntityManager &manager)
+	{
+		{
+			// Sync transforms to physx
+			bool gotLock = false;
+
+			for (ecs::Entity ent : manager.EntitiesWith<ecs::Physics, ecs::Transform>())
+			{
+				auto ph = ent.Get<ecs::Physics>();
+				auto transform = ent.Get<ecs::Transform>();
+
+				if (ph->actor && transform->ClearDirty())
+				{
+					if (!gotLock)
+					{
+						Lock();
+						gotLock = true;
+					}
+
+					auto position = transform->GetGlobalTransform() * glm::vec4(0, 0, 0, 1);
+					auto rotate = transform->GetGlobalRotation();
+
+					auto lastScale = ph->scale;
+					auto newScale = glm::vec3(transform->GetScale() * glm::vec4(1, 1, 1, 0));
+					if (lastScale != newScale)
+					{
+						auto n = ph->actor->getNbShapes();
+						physx::PxShape *shapes[n];
+						ph->actor->getShapes(&shapes[0], n);
+						for (uint32 i = 0; i < n; i++)
+						{
+							physx::PxConvexMeshGeometry geom;
+							if (shapes[i]->getConvexMeshGeometry(geom))
+							{
+								geom.scale = physx::PxMeshScale(GlmVec3ToPxVec3(newScale), physx::PxQuat(physx::PxIdentity));
+								shapes[i]->setGeometry(geom);
+							}
+							else Assert(false, "Physx geometry type not implemented");
+						}
+					}
+
+
+					physx::PxTransform newPose(GlmVec3ToPxVec3(position), GlmQuatToPxQuat(rotate));
+					ph->actor->setGlobalPose(newPose);
+				}
+			}
+
+			if (gotLock)
+				Unlock();
+		}
+
+		{
+			// Sync transforms from physx
+			ReadLock();
+
+			for (ecs::Entity ent : manager.EntitiesWith<ecs::Physics, ecs::Transform>())
+			{
+				auto ph = ent.Get<ecs::Physics>();
+				auto transform = ent.Get<ecs::Transform>();
+
+				Assert(!transform->HasParent(), "Physics objects must have no parent");
+
+				if (ph->actor)
+				{
+					auto pose = ph->actor->getGlobalPose();
+					transform->SetPosition(PxVec3ToGlmVec3P(pose.p));
+					transform->SetRotate(PxQuatToGlmQuat(pose.q));
+					transform->ClearDirty();
+				}
+			}
+
+			ReadUnlock();
+		}
+		return true;
 	}
 
 	void PhysxManager::CreatePhysxScene()
@@ -371,14 +447,13 @@ namespace sp
 		Lock();
 
 		physx::PxU32 nShapes = actor->getNbShapes();
-		physx::PxShape **shapes = new physx::PxShape*[nShapes];
-		actor->getShapes(shapes, nShapes);
+		physx::PxShape *shapes[nShapes];
+		actor->getShapes(&shapes[0], nShapes);
 		for (uint32 i = 0; i < nShapes; ++i)
 		{
 			shapes[i]->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, enabled);
 			shapes[i]->setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, enabled);
 		}
-		delete[] shapes;
 
 		Unlock();
 	}

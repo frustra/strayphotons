@@ -16,9 +16,9 @@ namespace sp
 			{
 				auto view = entity.Get<ecs::View>();
 				auto transform = entity.Get<ecs::Transform>();
-				data->position = transform->GetModelTransform(manager) * glm::vec4(0, 0, 0, 1);
+				data->position = transform->GetGlobalTransform() * glm::vec4(0, 0, 0, 1);
 				data->tint = light->tint;
-				data->direction = glm::mat3(transform->GetModelTransform(manager)) * glm::vec3(0, 0, -1);
+				data->direction = glm::mat3(transform->GetGlobalTransform()) * glm::vec3(0, 0, -1);
 				data->spotAngleCos = cos(light->spotAngle);
 				data->proj = view->projMat;
 				data->invProj = view->invProjMat;
@@ -43,7 +43,7 @@ namespace sp
 		{
 			auto mirror = entity.Get<ecs::Mirror>();
 			auto transform = entity.Get<ecs::Transform>();
-			data->modelMat = transform->GetModelTransform(manager);
+			data->modelMat = transform->GetGlobalTransform();
 			data->size = mirror->size;
 
 			glm::vec3 mirrorNormal = glm::mat3(data->modelMat) * glm::vec3(0, 0, -1);

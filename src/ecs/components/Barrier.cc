@@ -17,7 +17,7 @@ namespace ecs
 		Entity barrier = em.NewEntity();
 		auto model = sp::GAssets.LoadModel("box");
 		barrier.Assign<Renderable>(model);
-		auto transform = barrier.Assign<Transform>();
+		auto transform = barrier.Assign<Transform>(&em);
 		transform->Scale(dimensions);
 
 		// align bottom of barrier with given y pos
@@ -43,8 +43,7 @@ namespace ecs
 	{
 		auto barrier = e.Get<Barrier>();
 
-		physx::PxRigidDynamic *actor = e.Get<Physics>()->dynamic;
-		px.EnableCollisions(actor);
+		px.EnableCollisions(e.Get<Physics>()->actor);
 
 		auto renderable = e.Get<Renderable>();
 		renderable->hidden = false;
@@ -55,8 +54,7 @@ namespace ecs
 	{
 		auto barrier = e.Get<Barrier>();
 
-		physx::PxRigidDynamic *actor = e.Get<Physics>()->dynamic;
-		px.DisableCollisions(actor);
+		px.DisableCollisions(e.Get<Physics>()->actor);
 
 		auto renderable = e.Get<Renderable>();
 		renderable->hidden = true;

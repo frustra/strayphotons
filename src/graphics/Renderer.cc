@@ -886,7 +886,7 @@ namespace sp
 			return;
 		}
 
-		auto modelMat = ent.Get<ecs::Transform>()->GetModelTransform(*ent.GetManager());
+		auto modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform();
 		shader->SetParams(view, modelMat);
 
 		if (preDraw) preDraw(ent);

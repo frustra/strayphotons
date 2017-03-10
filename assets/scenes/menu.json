@@ -19,8 +19,6 @@
 			},
 			"physics": {
 				"model": "box",
-				"pxTranslate": [0, -5, 0],
-				"pxScale": [10, 10, 10],
 				"dynamic": false
 			}
 		},
@@ -32,8 +30,6 @@
 			},
 			"physics": {
 				"model": "box",
-				"pxTranslate": [10, 5, 0],
-				"pxScale": [10, 10, 10],
 				"dynamic": false
 			}
 		},
@@ -45,8 +41,6 @@
 			},
 			"physics": {
 				"model": "box",
-				"pxTranslate": [0, 5, 10],
-				"pxScale": [10, 10, 10],
 				"dynamic": false
 			}
 		},
@@ -58,8 +52,6 @@
 			},
 			"physics": {
 				"model": "box",
-				"pxTranslate": [0, 5, -10],
-				"pxScale": [10, 10, 10],
 				"dynamic": false
 			}
 		},
@@ -71,8 +63,6 @@
 			},
 			"physics": {
 				"model": "box",
-				"pxTranslate": [-10, 5, 0],
-				"pxScale": [10, 10, 10],
 				"dynamic": false
 			}
 		},

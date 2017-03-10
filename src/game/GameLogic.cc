@@ -27,7 +27,7 @@
 namespace sp
 {
 	GameLogic::GameLogic(Game *game)
-		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input, &game->physics), flashlightFixed(false), sunPos(0), funcs(this)
+		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input, &game->physics), sunPos(0), funcs(this)
 	{
 		funcs.Register("loadscene", "Load a scene", &GameLogic::LoadScene);
 		funcs.Register("reloadscene", "Reload current scene", &GameLogic::ReloadScene);
@@ -78,7 +78,7 @@ namespace sp
 				auto entity = game->entityManager.NewEntity();
 				auto model = GAssets.LoadModel("dodecahedron");
 				entity.Assign<ecs::Renderable>(model);
-				auto transform = entity.Assign<ecs::Transform>();
+				auto transform = entity.Assign<ecs::Transform>(&game->entityManager);
 				transform->Translate(glm::vec3(0, 5, 0));
 
 				PhysxManager::ActorDesc desc;
@@ -97,17 +97,17 @@ namespace sp
 					auto transform = flashlight.Get<ecs::Transform>();
 					ecs::Entity player = scene->FindEntity("player");
 					auto playerTransform = player.Get<ecs::Transform>();
-					flashlightFixed = !flashlightFixed;
-					if (flashlightFixed)
+					if (transform->HasParent())
 					{
-						transform->SetTransform(transform->GetModelTransform(game->entityManager));
-						transform->SetRelativeTo(ecs::Entity());
+						transform->SetPosition(transform->GetGlobalTransform() * glm::vec4(0, 0, 0, 1));
+						transform->SetRotate(playerTransform->GetGlobalRotation());
+						transform->SetParent(ecs::Entity());
 					}
 					else
 					{
-						transform->SetTransform(glm::mat4());
-						transform->Translate(glm::vec3(0, -0.3, 0));
-						transform->SetRelativeTo(player);
+						transform->SetPosition(glm::vec3(0, -0.3, 0));
+						transform->SetRotate(glm::quat());
+						transform->SetParent(player);
 					}
 				}
 			}
@@ -177,11 +177,10 @@ namespace sp
 			}
 
 			auto transform = sun.Get<ecs::Transform>();
-			transform->SetTransform(glm::mat4());
-			transform->SetRotation(glm::mat4());
+			transform->SetRotate(glm::mat4());
 			transform->Rotate(glm::radians(-90.0), glm::vec3(1, 0, 0));
 			transform->Rotate(sunPos, glm::vec3(0, 1, 0));
-			transform->Translate(glm::vec3(sin(sunPos) * 40.0, cos(sunPos) * 40.0, 0));
+			transform->SetPosition(glm::vec3(sin(sunPos) * 40.0, cos(sunPos) * 40.0, 0));
 		}
 
 		if (CVarFlashlight.Changed())
@@ -211,7 +210,7 @@ namespace sp
 	{
 		const string name = nameRef;
 		game->graphics.RenderLoading();
-
+		game->physics.StopSimulation();
 		game->entityManager.DestroyAll();
 
 		if (scene != nullptr)
@@ -224,7 +223,11 @@ namespace sp
 
 		scene.reset();
 		scene = GAssets.LoadScene(name, &game->entityManager, game->physics);
-		if (!scene) return;
+		if (!scene)
+		{
+			game->physics.StartSimulation();
+			return;
+		}
 
 		ecs::Entity player = scene->FindEntity("player");
 		humanControlSystem.AssignController(player, game->physics);
@@ -238,15 +241,19 @@ namespace sp
 
 		// Create flashlight entity
 		flashlight = game->entityManager.NewEntity();
-		auto transform = flashlight.Assign<ecs::Transform>();
-		transform->Translate(glm::vec3(0, -0.3, 0));
-		transform->SetRelativeTo(player);
+		auto transform = flashlight.Assign<ecs::Transform>(&game->entityManager);
+		transform->SetPosition(glm::vec3(0, -0.3, 0));
+		transform->SetParent(player);
 		auto light = flashlight.Assign<ecs::Light>();
 		light->tint = glm::vec3(1.0);
 		light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
 		auto view = flashlight.Assign<ecs::View>();
 		view->extents = glm::vec2(CVarFlashlightResolution.Get());
 		view->clip = glm::vec2(0.1, 64);
+
+		// Make sure all objects are in the correct physx state before restarting simulation
+		game->physics.LogicFrame(game->entityManager);
+		game->physics.StartSimulation();
 	}
 
 	void GameLogic::ReloadScene(const string &arg)
@@ -263,7 +270,7 @@ namespace sp
 				// Store the player position and set it back on the new player entity
 				auto transform = player.Get<ecs::Transform>();
 				auto position = transform->GetPosition();
-				auto rotation = transform->rotate;
+				auto rotation = transform->GetRotate();
 
 				LoadScene(scene->name);
 

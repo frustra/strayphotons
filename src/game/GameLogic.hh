@@ -32,7 +32,6 @@ namespace sp
 		ecs::HumanControlSystem humanControlSystem;
 		shared_ptr<Scene> scene;
 		ecs::Entity flashlight;
-		bool flashlightFixed;
 		float sunPos;
 
 		CFuncCollection<GameLogic, string> funcs;

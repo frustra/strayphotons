@@ -24,7 +24,7 @@ namespace ecs
 		physx::PxVec3 origin = GlmVec3ToPxVec3(transform->GetPosition());
 
 		glm::vec3 forward = glm::vec3(0, 0, -1);
-		glm::vec3 rotate = transform->rotate * forward;
+		glm::vec3 rotate = transform->GetRotate() * forward;
 
 		physx::PxVec3 dir = GlmVec3ToPxVec3(rotate);
 		dir.normalizeSafe();
@@ -43,7 +43,7 @@ namespace ecs
 				{
 					target = dynamic;
 					auto currentPos = dynamic->getGlobalPose().transform(dynamic->getCMassLocalPose().transform(physx::PxVec3(0.0)));
-					auto offset = glm::inverse(transform->rotate) * PxVec3ToGlmVec3P(currentPos - origin);
+					auto offset = glm::inverse(transform->GetRotate()) * PxVec3ToGlmVec3P(currentPos - origin);
 					manager->CreateConstraint(entity, dynamic, GlmVec3ToPxVec3(offset));
 				}
 			}

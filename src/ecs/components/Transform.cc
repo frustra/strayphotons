@@ -7,28 +7,11 @@
 
 namespace ecs
 {
-	glm::mat4 Transform::GetModelTransform(ecs::EntityManager &manager)
-	{
-		glm::mat4 model;
-
-		if (this->relativeTo != ecs::Entity::Id())
-		{
-			sp::Assert(
-				manager.Has<Transform>(this->relativeTo),
-				"cannot be relative to something that does not have a Transform"
-			);
-
-			model = manager.Get<Transform>(this->relativeTo)->GetModelTransform(manager);
-		}
-
-		return model * this->translate * GetRotateMatrix() * this->scale;
-	}
-
-	void Transform::SetRelativeTo(ecs::Entity ent)
+	void Transform::SetParent(ecs::Entity ent)
 	{
 		if (!ent.Valid())
 		{
-			this->relativeTo = ecs::Entity::Id();
+			this->parent = ecs::Entity::Id();
 			return;
 		}
 
@@ -40,46 +23,126 @@ namespace ecs
 			throw std::runtime_error(ss.str());
 		}
 
-		this->relativeTo = ent.GetId();
+		this->parent = ent.GetId();
+		this->dirty = true;
 	}
 
-	void Transform::Rotate(float radians, glm::vec3 axis)
+	bool Transform::HasParent()
 	{
-		this->rotate = glm::rotate(this->rotate, radians, axis);
+		return this->parent != ecs::Entity::Id();
+	}
+
+	glm::mat4 Transform::GetGlobalTransform() const
+	{
+		glm::mat4 model;
+
+		if (this->parent != ecs::Entity::Id())
+		{
+			sp::Assert(
+				manager->Has<Transform>(this->parent),
+				"cannot be relative to something that does not have a Transform"
+			);
+
+			model = manager->Get<Transform>(this->parent)->GetGlobalTransform();
+		}
+
+		return model * this->translate * GetRotateMatrix() * this->scale;
+	}
+
+	glm::quat Transform::GetGlobalRotation() const
+	{
+		glm::quat model;
+
+		if (this->parent != ecs::Entity::Id())
+		{
+			sp::Assert(
+				manager->Has<Transform>(this->parent),
+				"cannot be relative to something that does not have a Transform"
+			);
+
+			model = manager->Get<Transform>(this->parent)->GetGlobalRotation();
+		}
+
+		return model * this->rotate;
 	}
 
 	void Transform::Translate(glm::vec3 xyz)
 	{
 		this->translate = glm::translate(this->translate, xyz);
+		this->dirty = true;
 	}
 
-	void Transform::SetTransform(glm::mat4 mat)
+	void Transform::Rotate(float radians, glm::vec3 axis)
 	{
-		this->translate = mat;
-	}
-
-	void Transform::SetRotation(glm::mat4 mat)
-	{
-		this->rotate = mat;
-	}
-
-	void Transform::SetPosition(glm::vec3 pos)
-	{
-		this->translate = glm::column(this->translate, 3, glm::vec4(pos.x, pos.y, pos.z, 1.f));
-	}
-
-	glm::vec3 Transform::GetPosition()
-	{
-		return this->translate * glm::vec4(0, 0, 0, 1);
+		this->rotate = glm::rotate(this->rotate, radians, axis);
+		this->dirty = true;
 	}
 
 	void Transform::Scale(glm::vec3 xyz)
 	{
 		this->scale = glm::scale(this->scale, xyz);
+		this->dirty = true;
 	}
 
-	glm::mat4 Transform::GetRotateMatrix()
+	void Transform::SetTranslate(glm::mat4 mat)
+	{
+		this->translate = mat;
+		this->dirty = true;
+	}
+
+	glm::mat4 Transform::GetTranslate() const
+	{
+		return this->translate;
+	}
+
+	void Transform::SetPosition(glm::vec3 pos)
+	{
+		this->translate = glm::column(this->translate, 3, glm::vec4(pos.x, pos.y, pos.z, 1.f));
+		this->dirty = true;
+	}
+
+	glm::vec3 Transform::GetPosition() const
+	{
+		return this->translate * glm::vec4(0, 0, 0, 1);
+	}
+
+	void Transform::SetRotate(glm::mat4 mat)
+	{
+		this->rotate = mat;
+		this->dirty = true;
+	}
+
+	void Transform::SetRotate(glm::quat quat)
+	{
+		this->rotate = quat;
+		this->dirty = true;
+	}
+
+	glm::quat Transform::GetRotate() const
+	{
+		return this->rotate;
+	}
+
+	glm::mat4 Transform::GetRotateMatrix() const
 	{
 		return glm::mat4_cast(rotate);
+	}
+
+	void Transform::SetScale(glm::mat4 mat)
+	{
+		this->scale = mat;
+		this->dirty = true;
+	}
+
+	glm::mat4 Transform::GetScale() const
+	{
+		return this->scale;
+	}
+
+	bool Transform::ClearDirty()
+	{
+		bool tmp = this->dirty;
+		this->dirty = false;
+		return tmp;
 	}
 }

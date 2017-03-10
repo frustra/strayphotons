@@ -12,8 +12,6 @@
 			},
 			"physics": {
 				"model": "box",
-				"pxTranslate": [0, 1.05, 0],
-				"pxScale": [0.1, 0.1, 0.1],
 				"dynamic": false
 			},
 			"lightsensor": {
@@ -29,60 +27,61 @@
 			},
 			"physics": {
 				"model": "box",
-				"pxTranslate": [0, -0.5, 0],
-				"pxScale": [10, 1, 10],
 				"dynamic": false
 			}
 		},
 		{
 			"renderable": "box",
 			"transform": {
-				"scale": [10, 10, 10],
-				"translate": [10, 5, 0]
+				"scale": [10, 1, 10],
+				"translate": [0, 5.5, 0]
 			},
 			"physics": {
 				"model": "box",
-				"pxTranslate": [10, 5, 0],
-				"pxScale": [10, 10, 10],
 				"dynamic": false
 			}
 		},
 		{
 			"renderable": "box",
 			"transform": {
-				"scale": [10, 10, 10],
-				"translate": [0, 5, 10]
+				"scale": [1, 5, 10],
+				"translate": [5.5, 2.5, 0]
 			},
 			"physics": {
 				"model": "box",
-				"pxTranslate": [0, 5, 10],
-				"pxScale": [10, 10, 10],
 				"dynamic": false
 			}
 		},
 		{
 			"renderable": "box",
 			"transform": {
-				"scale": [10, 10, 10],
-				"translate": [0, 5, -10]
+				"scale": [10, 5, 1],
+				"translate": [0, 2.5, 5.5]
 			},
 			"physics": {
 				"model": "box",
-				"pxTranslate": [0, 5, -10],
-				"pxScale": [10, 10, 10],
 				"dynamic": false
 			}
 		},
 		{
 			"renderable": "box",
 			"transform": {
-				"scale": [10, 10, 10],
-				"translate": [-10, 5, 0]
+				"scale": [10, 5, 1],
+				"translate": [0, 2.5, -5.5]
 			},
 			"physics": {
 				"model": "box",
-				"pxTranslate": [-10, 5, 0],
-				"pxScale": [10, 10, 10],
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [1, 5, 10],
+				"translate": [-5.5, 2.5, 0]
+			},
+			"physics": {
+				"model": "box",
 				"dynamic": false
 			}
 		},

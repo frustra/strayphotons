@@ -12,20 +12,19 @@ namespace ecs
 	class Transform
 	{
 	public:
-		Transform() {}
-		void SetRelativeTo(ecs::Entity);
+		Transform(ecs::EntityManager *manager) : manager(manager), dirty(false) {}
+		void SetParent(ecs::Entity);
+		bool HasParent();
 
 		/**
-		 * Return the matrix for specifying the placement of the entity in the world.
-		 * This involves computing the incremental model transforms for any entities
-		 * that this placement is relative to.
+		 * Return the transformation matrix including all parent transforms.
 		 */
-		glm::mat4 GetModelTransform(ecs::EntityManager &manager);
+		glm::mat4 GetGlobalTransform() const;
 
 		/**
-		 * Change the local rotation by "radians" amount about the local "axis"
+		 * Returns the same as GetGlobalTransform() but only includes rotation components.
 		 */
-		void Rotate(float radians, glm::vec3 axis);
+		glm::quat GetGlobalRotation() const;
 
 		/**
 		 * Change the local position by an amount in the local x, y, z planes
@@ -33,24 +32,9 @@ namespace ecs
 		void Translate(glm::vec3 xyz);
 
 		/**
-		 * Change the local transformation matrix
+		 * Change the local rotation by "radians" amount about the local "axis"
 		 */
-		void SetTransform(glm::mat4 mat);
-
-		/**
-		 * Change the local rotation matrix
-		 */
-		void SetRotation(glm::mat4 mat);
-
-		/**
-		 * Change the local position to xyz
-		 */
-		void SetPosition(glm::vec3 pos);
-
-		/**
-		 * Get position from mat4
-		 */
-		glm::vec3 GetPosition();
+		void Rotate(float radians, glm::vec3 axis);
 
 		/**
 		 * Change the local scale by an amount in the local x, y, z planes.
@@ -58,13 +42,28 @@ namespace ecs
 		 */
 		void Scale(glm::vec3 xyz);
 
-		glm::mat4 GetRotateMatrix();
+		void SetTranslate(glm::mat4 mat);
+		glm::mat4 GetTranslate() const;
+		void SetPosition(glm::vec3 pos);
+		glm::vec3 GetPosition() const;
+
+		void SetRotate(glm::mat4 mat);
+		void SetRotate(glm::quat quat);
+		glm::quat GetRotate() const;
+		glm::mat4 GetRotateMatrix() const;
+
+		void SetScale(glm::mat4 mat);
+		glm::mat4 GetScale() const;
+
+		bool ClearDirty();
+	private:
+		ecs::Entity::Id parent;
+		ecs::EntityManager *manager;
 
 		glm::mat4 translate;
 		glm::mat4 scale;
 		glm::quat rotate;
 
-	private:
-		ecs::Entity::Id relativeTo;
+		bool dirty;
 	};
 }

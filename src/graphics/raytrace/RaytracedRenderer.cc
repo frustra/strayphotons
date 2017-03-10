@@ -710,7 +710,7 @@ namespace sp
 			{
 				auto renderable = ent.Get<ecs::Renderable>();
 				auto transform = ent.Get<ecs::Transform>();
-				auto trmat = transform->GetModelTransform(game->entityManager);
+				auto trmat = transform->GetGlobalTransform();
 
 				models.push_back(std::make_pair(renderable->model, trmat));
 			}

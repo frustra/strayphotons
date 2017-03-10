@@ -49,8 +49,7 @@
 				"translate": [0, 0, -7]
 			},
 			"physics": {
-				"model": "duck",
-				"pxTranslate" : [0, 0, -7]
+				"model": "duck"
 			}
 		},
 		{
@@ -69,8 +68,7 @@
 				"translate": [-0.2, 3, -4.5]
 			},
 			"physics": {
-				"model": "box",
-				"pxTranslate": [-0.2, 3, -4.5]
+				"model": "box"
 			}
 		},
 		{
@@ -79,8 +77,7 @@
 				"translate": [0, 1, -4]
 			},
 			"physics": {
-				"model": "box",
-				"pxTranslate" : [0, 1, -4]
+				"model": "box"
 			}
 		},
 		{
@@ -89,8 +86,7 @@
 				"translate": [0.5, 5, -4.5]
 			},
 			"physics": {
-				"model": "box",
-				"pxTranslate" : [0.5, 5, -4.5]
+				"model": "box"
 			}
 		},
 		{
@@ -99,8 +95,7 @@
 				"translate": [1, 10, -0.5]
 			},
 			"physics": {
-				"model": "dodecahedron",
-				"pxTranslate": [1, 10, -0.5]
+				"model": "dodecahedron"
 			}
 		},
 		{

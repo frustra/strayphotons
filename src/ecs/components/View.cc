@@ -34,7 +34,7 @@ namespace ecs
 		view->invProjMat = glm::inverse(view->projMat);
 
 		auto transform = entity.Get<Transform>();
-		view->invViewMat = transform->GetModelTransform(*entity.GetManager());
+		view->invViewMat = transform->GetGlobalTransform();
 		view->viewMat = glm::inverse(view->invViewMat);
 
 		return view;

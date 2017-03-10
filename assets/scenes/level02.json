@@ -8,8 +8,6 @@
 			},
 			"physics": {
 				"model": "level02",
-				"pxTranslate": [0, 0, 0],
-				"pxScale": [1, 1, 1],
 				"dynamic": false
 			}
 		},
