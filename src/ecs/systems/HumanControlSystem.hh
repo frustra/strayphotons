@@ -33,8 +33,13 @@ namespace ecs
 		void Teleport(ecs::Entity entity, glm::vec3 position, glm::quat rotation = glm::quat());
 
 	private:
-		glm::vec3 CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint);
+		glm::vec3 CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint, bool crouch);
 		void MoveEntity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 velocity);
+
+		/**
+		* Resize entity used for crouching and uncrouching. Can perform overlap checks to make sure resize is valid
+		*/
+		bool ResizeEntity(ecs::Entity entity, float height, float oldHeight, bool overlapCheck);
 
 		/**
 		* Pick up the object that the player is looking at and make it move at to a fixed location relative to camera

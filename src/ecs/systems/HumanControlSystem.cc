@@ -24,6 +24,7 @@ namespace ecs
 	static sp::CVar<bool> CVarNoClip("p.NoClip", false, "Disable player clipping");
 	static sp::CVar<float> CVarMovementSpeed("p.MovementSpeed", 3.0, "Player walking movement speed (m/s)");
 	static sp::CVar<float> CVarSprintSpeed("p.SprintSpeed", 6.0, "Player sprinting movement speed (m/s)");
+	static sp::CVar<float> CVarCrouchSpeed("p.CrouchSpeed", 1.5, "Player crouching movement speed (m/s)");
 	static sp::CVar<float> CVarCursorSensitivity("p.CursorSensitivity", 1.0, "Mouse cursor sensitivity");
 
 	HumanControlSystem::HumanControlSystem(ecs::EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics)
@@ -70,6 +71,7 @@ namespace ecs
 			glm::vec3 inputMovement = glm::vec3(0);
 			bool jumping = false;
 			bool sprinting = false;
+			bool crouching = false;
 
 			for (auto const &actionKeysPair : entity.Get<ecs::HumanController>()->inputMap)
 			{
@@ -110,6 +112,10 @@ namespace ecs
 						{
 							inputMovement += glm::vec3(0, -1, 0);
 						}
+						else
+						{
+							crouching = true;
+						}
 						break;
 					case ControlAction::MOVE_SPRINT:
 						sprinting = true;
@@ -133,8 +139,29 @@ namespace ecs
 				physics->ToggleCollisions(controller->pxController->getActor(), !CVarNoClip.Get(true));
 			}
 
+			if (crouching)
+			{
+				if (controller->crouched == false)
+				{
+					if (ResizeEntity(entity, ecs::PLAYER_CROUCH_HEIGHT, ecs::PLAYER_HEIGHT, false))
+					{
+						controller->crouched = true;
+					}
+				}
+			}
+			else
+			{
+				if (controller->crouched == true)
+				{
+					if (ResizeEntity(entity, ecs::PLAYER_HEIGHT, ecs::PLAYER_CROUCH_HEIGHT, true))
+					{
+						controller->crouched = false;
+					}
+				}
+			}
+
 			controller->onGround = physics->SweepQuery(controller->pxController->getActor(), physx::PxVec3(0, -1, 0), ecs::PLAYER_SWEEP_DISTANCE);
-			auto velocity = CalculatePlayerVelocity(entity, dtSinceLastFrame, inputMovement, jumping, sprinting);
+			auto velocity = CalculatePlayerVelocity(entity, dtSinceLastFrame, inputMovement, jumping, sprinting, crouching);
 			MoveEntity(entity, dtSinceLastFrame, velocity);
 		}
 
@@ -214,7 +241,7 @@ namespace ecs
 			controller->pitch = glm::pitch(rotation);
 			controller->yaw = glm::yaw(rotation);
 
-			if (abs(glm::roll(rotation)) > 0.00001)
+			if (std::abs(glm::roll(rotation)) > 0.00001)
 			{
 				controller->pitch += controller->pitch > 0 ? -M_PI : M_PI;
 				controller->yaw = M_PI - controller->yaw;
@@ -228,7 +255,7 @@ namespace ecs
 		}
 	}
 
-	glm::vec3 HumanControlSystem::CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint)
+	glm::vec3 HumanControlSystem::CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint, bool crouch)
 	{
 		if (!entity.Has<ecs::Transform>())
 		{
@@ -253,6 +280,7 @@ namespace ecs
 		{
 			float speed = CVarMovementSpeed.Get();
 			if (sprint) speed = CVarSprintSpeed.Get();
+			if (crouch) speed = CVarCrouchSpeed.Get();
 			movement = glm::normalize(movement) * speed;
 		}
 		movement.y += inDirection.y * CVarMovementSpeed.Get();
@@ -307,6 +335,22 @@ namespace ecs
 			// Offset the capsule position so the camera is at the top
 			transform->SetPosition(newPosition + glm::vec3(0, PLAYER_HEIGHT / 2 - ecs::PLAYER_RADIUS, 0));
 		}
+	}
+	
+	bool HumanControlSystem::ResizeEntity(ecs::Entity entity, float height, float oldHeight, bool overlapCheck)
+	{
+		auto controller = entity.Get<HumanController>();
+
+		if (controller->pxController)
+		{
+			bool valid = true;
+			physics->ResizeController(controller->pxController, height);
+
+			if (overlapCheck) valid = !physics->OverlapQuery(controller->pxController->getActor());
+			if (!valid) physics->ResizeController(controller->pxController, oldHeight);
+			return valid;
+		}
+		return false;
 	}
 
 	void HumanControlSystem::Interact(ecs::Entity entity, double dt)

@@ -26,6 +26,7 @@ namespace ecs
 
 	// Units in meters
 	const float PLAYER_HEIGHT = 1.7f;
+	const float PLAYER_CROUCH_HEIGHT = 0.8f;
 	const float PLAYER_RADIUS = 0.2f;
 	const float PLAYER_STEP_HEIGHT = 0.3f;
 	const float PLAYER_SWEEP_DISTANCE = 0.4f; // Distance to check if on ground

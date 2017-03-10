@@ -77,16 +77,23 @@ namespace sp
 		physx::PxController *CreateController(physx::PxVec3 pos, float radius, float height, float density);
 		void MoveController(physx::PxController *controller, double dt, physx::PxVec3 displacement);
 		void TeleportController(physx::PxController *controller, physx::PxExtendedVec3 position);
+		void ResizeController(physx::PxController *controller, const float height);
 		void RemoveController(physx::PxController *controller);
 
 		bool RaycastQuery(
 			ecs::Entity &entity,
-			const physx::PxVec3 origin, const physx::PxVec3 dir, const float distance, physx::PxRaycastBuffer &hit);
+			const physx::PxVec3 origin, 
+			const physx::PxVec3 dir, 
+			const float distance, 
+			physx::PxRaycastBuffer &hit);
 
 		bool SweepQuery(
 			physx::PxRigidDynamic *actor,
 			const physx::PxVec3 dir,
 			const float distance);
+
+		bool OverlapQuery(physx::PxRigidDynamic *actor);
+
 		/**
 		 * Translates a kinematic @actor by @transform.
 		 * Throws a runtime_error if @actor is not kinematic

@@ -575,6 +575,13 @@ namespace sp
 		Unlock();
 	}
 
+	void PhysxManager::ResizeController(PxController *controller, const float height)
+	{
+		Lock();
+		controller->resize(height);
+		Unlock();
+	}
+
 	void PhysxManager::RemoveController(PxController *controller)
 	{
 		Lock();
@@ -620,6 +627,23 @@ namespace sp
 		scene->removeActor(*actor);
 		PxSweepBuffer hit;
 		bool status = scene->sweep(capsuleGeometry, actor->getGlobalPose(), dir, distance, hit);
+		scene->addActor(*actor);
+		Unlock();
+		return status;
+	}
+	
+	bool PhysxManager::OverlapQuery(PxRigidDynamic *actor)
+	{
+		Lock();
+		PxShape *shape;
+		actor->getShapes(&shape, 1);
+
+		PxCapsuleGeometry capsuleGeometry;
+		shape->getCapsuleGeometry(capsuleGeometry);
+
+		scene->removeActor(*actor);
+		PxOverlapBuffer hit;
+		bool status = scene->overlap(capsuleGeometry, actor->getGlobalPose(), hit, physx::PxQueryFilterData(physx::PxQueryFlag::eANY_HIT));
 		scene->addActor(*actor);
 		Unlock();
 		return status;
