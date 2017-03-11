@@ -643,7 +643,8 @@ namespace sp
 
 		scene->removeActor(*actor);
 		PxOverlapBuffer hit;
-		bool status = scene->overlap(capsuleGeometry, actor->getGlobalPose(), hit, physx::PxQueryFilterData(physx::PxQueryFlag::eANY_HIT));
+		physx::PxQueryFilterData filterData = physx::PxQueryFilterData(physx::PxQueryFlag::eANY_HIT|PxQueryFlag::eSTATIC|PxQueryFlag::eDYNAMIC);
+		bool status = scene->overlap(capsuleGeometry, actor->getGlobalPose(), hit, filterData);
 		scene->addActor(*actor);
 		Unlock();
 		return status;

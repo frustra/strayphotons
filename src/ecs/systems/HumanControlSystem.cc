@@ -347,7 +347,10 @@ namespace ecs
 			physics->ResizeController(controller->pxController, height);
 
 			if (overlapCheck) valid = !physics->OverlapQuery(controller->pxController->getActor());
-			if (!valid) physics->ResizeController(controller->pxController, oldHeight);
+			if (!valid) 
+			{
+				physics->ResizeController(controller->pxController, oldHeight);
+			}
 			return valid;
 		}
 		return false;
