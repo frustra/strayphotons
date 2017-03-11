@@ -67,6 +67,10 @@ namespace sp
 				{
 					ReloadScene("");
 				}
+				else if (key == GLFW_KEY_F6)
+				{
+					ReloadScene("reset");
+				}
 			}
 		});
 
