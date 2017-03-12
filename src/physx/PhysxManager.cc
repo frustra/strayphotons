@@ -631,7 +631,7 @@ namespace sp
 		Unlock();
 		return status;
 	}
-	
+
 	bool PhysxManager::OverlapQuery(PxRigidDynamic *actor)
 	{
 		Lock();
@@ -643,7 +643,7 @@ namespace sp
 
 		scene->removeActor(*actor);
 		PxOverlapBuffer hit;
-		physx::PxQueryFilterData filterData = physx::PxQueryFilterData(physx::PxQueryFlag::eANY_HIT|PxQueryFlag::eSTATIC|PxQueryFlag::eDYNAMIC);
+		physx::PxQueryFilterData filterData = physx::PxQueryFilterData(physx::PxQueryFlag::eANY_HIT | PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC);
 		bool status = scene->overlap(capsuleGeometry, actor->getGlobalPose(), hit, filterData);
 		scene->addActor(*actor);
 		Unlock();
@@ -679,7 +679,7 @@ namespace sp
 		Unlock();
 	}
 
-	const uint32 hullCacheMagic = 0xc040;
+	const uint32 hullCacheMagic = 0xc041;
 
 	ConvexHullSet *PhysxManager::LoadCollisionCache(Model *model)
 	{
@@ -689,7 +689,38 @@ namespace sp
 		{
 			uint32 magic;
 			in.read((char *)&magic, 4);
-			Assert(magic == hullCacheMagic, "hull cache magic");
+			if (magic != hullCacheMagic)
+			{
+				Logf("Ignoring outdated collision cache format for %s", model->name);
+				in.close();
+				return nullptr;
+			}
+
+			int32 bufferCount;
+			in.read((char *)&bufferCount, 4);
+			Assert(bufferCount > 0, "hull cache buffer count");
+
+			char bufferName[256];
+
+			for (int i = 0; i < bufferCount; i++)
+			{
+				uint32 nameLen;
+				in.read((char *)&nameLen, 4);
+				Assert(nameLen <= 256, "hull cache buffer name too long on read");
+
+				in.read(bufferName, nameLen);
+				string name(bufferName, nameLen);
+
+				Hash128 hash;
+				in.read((char *)hash.data(), sizeof(hash));
+
+				if (!model->HasBuffer(name) || model->HashBuffer(name) != hash)
+				{
+					Logf("Ignoring outdated collision cache for %s", model->name);
+					in.close();
+					return nullptr;
+				}
+			}
 
 			int32 hullCount;
 			in.read((char *)&hullCount, 4);
@@ -729,6 +760,20 @@ namespace sp
 		if (GAssets.OutputStream("cache/collision/" + model->name, out))
 		{
 			out.write((char *)&hullCacheMagic, 4);
+
+			int32 bufferCount = set->bufferNames.size();
+			out.write((char *)&bufferCount, 4);
+
+			for (auto bufferName : set->bufferNames)
+			{
+				Hash128 hash = model->HashBuffer(bufferName);
+				uint32 nameLen = bufferName.length();
+				Assert(nameLen <= 256, "hull cache buffer name too long on write");
+
+				out.write((char *)&nameLen, 4);
+				out.write(bufferName.c_str(), nameLen);
+				out.write((char *)hash.data(), sizeof(hash));
+			}
 
 			int32 hullCount = set->hulls.size();
 			out.write((char *)&hullCount, 4);

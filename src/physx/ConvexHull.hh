@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.hh"
+#include <unordered_set>
 
 namespace sp
 {
@@ -20,6 +21,7 @@ namespace sp
 	struct ConvexHullSet
 	{
 		vector<ConvexHull> hulls;
+		std::unordered_set<string> bufferNames;
 	};
 
 	namespace ConvexHullBuilding

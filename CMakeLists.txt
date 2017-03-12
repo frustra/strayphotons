@@ -106,6 +106,7 @@ if (NOT WIN32)
 endif()
 
 add_library(microtar STATIC ${EXT_PATH}/microtar/src/microtar.c)
+add_library(murmurhash STATIC ${EXT_PATH}/murmurhash/MurmurHash3.cpp)
 
 
 # split into lib and exe so tests can link against lib
@@ -282,6 +283,7 @@ target_link_libraries(${PROJECT_EXE}
 	${GLFW_LIBRARIES}
 	ImGui
 	microtar
+	murmurhash
 )
 
 if (NOT WIN32)

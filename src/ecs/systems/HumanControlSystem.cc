@@ -336,7 +336,7 @@ namespace ecs
 			transform->SetPosition(newPosition + glm::vec3(0, PLAYER_HEIGHT / 2 - ecs::PLAYER_RADIUS, 0));
 		}
 	}
-	
+
 	bool HumanControlSystem::ResizeEntity(ecs::Entity entity, float height, float oldHeight, bool overlapCheck)
 	{
 		auto controller = entity.Get<HumanController>();
@@ -347,7 +347,7 @@ namespace ecs
 			physics->ResizeController(controller->pxController, height);
 
 			if (overlapCheck) valid = !physics->OverlapQuery(controller->pxController->getActor());
-			if (!valid) 
+			if (!valid)
 			{
 				physics->ResizeController(controller->pxController, oldHeight);
 			}

@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
+#include <murmurhash/MurmurHash3.h>
 
 namespace sp
 {
@@ -102,9 +103,22 @@ namespace sp
 		asset->manager->UnregisterModel(*this);
 	}
 
+	bool Model::HasBuffer(string name)
+	{
+		return scene->buffers.count(name) > 0;
+	}
+
 	vector<unsigned char> Model::GetBuffer(string name)
 	{
 		return scene->buffers[name].data;
+	}
+
+	Hash128 Model::HashBuffer(string name)
+	{
+		Hash128 output;
+		auto buffer = GetBuffer(name);
+		MurmurHash3_x86_128(buffer.data(), buffer.size(), 0, output.data());
+		return output;
 	}
 
 	void Model::AddNode(string nodeName, glm::mat4 parentMatrix)

@@ -82,9 +82,9 @@ namespace sp
 
 		bool RaycastQuery(
 			ecs::Entity &entity,
-			const physx::PxVec3 origin, 
-			const physx::PxVec3 dir, 
-			const float distance, 
+			const physx::PxVec3 origin,
+			const physx::PxVec3 dir,
+			const float distance,
 			physx::PxRaycastBuffer &hit);
 
 		bool SweepQuery(

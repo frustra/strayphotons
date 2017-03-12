@@ -35,6 +35,9 @@ namespace sp
 		Assert(prim->drawMode == GL_TRIANGLES, "primitive draw mode must be triangles");
 		Assert(indexAttrib.componentCount == 1, "index buffer must be a single component");
 
+		set->bufferNames.insert(posAttrib.bufferName);
+		set->bufferNames.insert(indexAttrib.bufferName);
+
 		auto pbuffer = model->GetBuffer(posAttrib.bufferName);
 		auto points = (const float *)(pbuffer.data() + posAttrib.byteOffset);
 
@@ -149,6 +152,9 @@ namespace sp
 		auto indexAttrib = prim->indexBuffer;
 		Assert(prim->drawMode == GL_TRIANGLES, "primitive draw mode must be triangles");
 		Assert(indexAttrib.componentCount == 1, "index buffer must be a single component");
+
+		set->bufferNames.insert(posAttrib.bufferName);
+		set->bufferNames.insert(indexAttrib.bufferName);
 
 		auto pbuffer = model->GetBuffer(posAttrib.bufferName);
 		auto points = pbuffer.data() + posAttrib.byteOffset;

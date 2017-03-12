@@ -4,12 +4,15 @@
 #include "graphics/Graphics.hh"
 #include "graphics/Texture.hh"
 
+#include <array>
 #include <tiny_gltf_loader.h>
 
 namespace sp
 {
 	class Asset;
 	class GLModel;
+
+	typedef std::array<uint32, 4> Hash128;
 
 	class Model : public NonCopyable
 	{
@@ -40,7 +43,10 @@ namespace sp
 		shared_ptr<GLModel> glModel;
 		vector<Primitive *> primitives;
 
+		bool HasBuffer(string name);
 		vector<unsigned char> GetBuffer(string name);
+		Hash128 HashBuffer(string name);
+
 	private:
 		void AddNode(string nodeName, glm::mat4 parentMatrix);
 
