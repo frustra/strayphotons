@@ -1,14 +1,192 @@
 {
+	"autoexec": [
+		"p.NoClip 1"
+	],
 	"entities": [
 		{
-			"renderable": "level02",
+			"renderable": "ground-1x1x1",
 			"transform": {
-				"scale": [1, 1, 1],
-				"translate": [0, 0, 0]
+				"scale": [12, 1, 12],
+				"translate": [-1, 0, -1]
 			},
 			"physics": {
-				"model": "level02",
+				"model": "ground-1x1x1",
 				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-1x1x1",
+			"transform": {
+				"scale": [12, 1, 12],
+				"translate": [-1, 5, -1]
+			},
+			"physics": {
+				"model": "ground-1x1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-1x1x1",
+			"transform": {
+				"scale": [1, 4, 10],
+				"translate": [-1, 4, 0]
+			},
+			"physics": {
+				"model": "ground-1x1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-1x1x1",
+			"transform": {
+				"scale": [1, 4, 10],
+				"translate": [10, 4, 0]
+			},
+			"physics": {
+				"model": "ground-1x1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-1x1x1",
+			"transform": {
+				"scale": [12, 4, 1],
+				"translate": [-1, 4, -1]
+			},
+			"physics": {
+				"model": "ground-1x1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-1x1x1",
+			"transform": {
+				"scale": [12, 4, 1],
+				"translate": [-1, 4, 10]
+			},
+			"physics": {
+				"model": "ground-1x1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-1x1",
+			"transform": {
+				"scale": [1, 4, 5],
+				"translate": [6, 0, 0]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-1x1",
+			"transform": {
+				"scale": [1, 4, 2],
+				"translate": [6, 0, 6]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ledge-caged-1x0.5",
+			"transform": {
+				"scale": [1, 1, 1],
+				"translate": [6.1, 0, 6],
+				"rotate": [180, 0, 1, 0]
+			},
+			"physics": {
+				"model": "ledge-caged-1x0.5",
+				"dynamic": false
+			}
+		},
+		{
+			"_comment": "above door",
+			"renderable": "wall-1x1",
+			"transform": {
+				"scale": [1, 2, 1],
+				"translate": [6, 2, 8]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"_comment": "right of door",
+			"renderable": "wall-1x1",
+			"transform": {
+				"scale": [1, 4, 1],
+				"translate": [6, 0, 9]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "door-hex-1x2",
+			"transform": {
+				"scale": [1, 1, 1],
+				"translate": [6, 0, 8]
+			},
+			"physics": {
+				"model": "door-hex-1x2",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "door-hex-frame-1x2",
+			"transform": {
+				"scale": [1, 1, 1],
+				"translate": [6, 0, 8]
+			},
+			"physics": {
+				"model": "door-hex-frame-1x2",
+				"dynamic": false
+			}
+		},
+		{
+			"_comment": "above ledge",
+			"renderable": "wall-1x1",
+			"transform": {
+				"scale": [1, 2, 1],
+				"translate": [6, 2, 5]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"_comment": "physx box",
+			"renderable": "box",
+			"transform": {
+				"scale": [0.5, 0.8, 0.8],
+				"translate": [5, 0.4, 6],
+				"rotate": [-53, 0, 1, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": true
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [0.1, 0.1, 0.1],
+				"translate": [8, 1.05, 5]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			},
+			"lightsensor": {
+				"translate": [0, 0, -1],
+				"direction": [0, 0, -1]
 			}
 		},
 		{
@@ -17,26 +195,32 @@
 				"clip": [0.1, 256]
 			},
 			"transform": {
-				"translate": [0, 1, 0]
+				"translate": [2, 2, 2],
+				"rotate": [0, 0, 1, 0]
 			},
 			"voxels": {
-				"min": [-2, 0, -5],
-				"max": [6.5, 3, 3]
+				"min": [-15, -0, -15],
+				"max": [15, 10, 15]
 			}
 		},
 		{
+			"renderable": "dodecahedron",
 			"light": {
 				"tint": [1, 0.5, 0.5],
-				"illuminance": 100,
+				"intensity": 300,
 				"spotAngle": 30
 			},
 			"view": {
 				"extents": [2048, 2048],
-				"clip": [0.1, 64]
+				"clip": [0.3, 70]
 			},
 			"transform": {
-				"translate": [12, 5, -2.5],
-				"rotate": [90, 0, 1, 0]
+				"rotate": [
+					[-90, 0, 1, 0],
+					[-45, 1, 0, 0]
+				],
+				"translate": [2, 3.6, 5],
+				"scale": [0.1, 0.1, 0.1]
 			}
 		}
 	]
