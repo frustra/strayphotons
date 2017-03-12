@@ -257,21 +257,37 @@ namespace sp
 							}
 							transform->SetParent(parent);
 						}
-						else
+						else if (subTransform.first == "scale")
 						{
-							if (subTransform.first == "scale")
+							transform->Scale(MakeVec3(subTransform.second));
+						}
+						else if (subTransform.first == "rotate")
+						{
+							vector<picojson::value *> rotations;
+							picojson::array &subSecond = subTransform.second.get<picojson::array>();
+							if (subSecond.at(0).is<picojson::array>())
 							{
-								transform->Scale(MakeVec3(subTransform.second));
+								// multiple rotations were given
+								for (picojson::value &r : subSecond)
+								{
+									rotations.push_back(&r);
+								}
 							}
-							else if (subTransform.first == "rotate")
+							else
 							{
-								auto n = MakeVec4(subTransform.second);
+								// a single rotation was given
+								rotations.push_back(&subTransform.second);
+							}
+
+							for (picojson::value *r : rotations)
+							{
+								auto n = MakeVec4(*r);
 								transform->Rotate(glm::radians(n[0]), { n[1], n[2], n[3] });
 							}
-							else if (subTransform.first == "translate")
-							{
-								transform->Translate(MakeVec3(subTransform.second));
-							}
+						}
+						else if (subTransform.first == "translate")
+						{
+							transform->Translate(MakeVec3(subTransform.second));
 						}
 					}
 				}
