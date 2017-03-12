@@ -232,6 +232,12 @@ namespace sp
 				GConsoleManager.ParseAndExecute("loadscene level02");
 			}
 
+			if (ImGui::Button("03 - Light Gun"))
+			{
+				CloseMenu();
+				GConsoleManager.ParseAndExecute("loadscene 03-light-gun");
+			}
+
 			if (ImGui::Button("Sponza"))
 			{
 				CloseMenu();

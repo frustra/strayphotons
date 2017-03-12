@@ -1,0 +1,418 @@
+{
+	"autoexec": [
+		"p.NoClip 1"
+	],
+	"entities": [
+		{
+			"renderable": "ground-1x1x1",
+			"transform": {
+				"scale": [12, 1, 12],
+				"translate": [-1, 0, -1]
+			},
+			"physics": {
+				"model": "ground-1x1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-1x1x1",
+			"transform": {
+				"scale": [12, 1, 12],
+				"translate": [-1, 5, -1]
+			},
+			"physics": {
+				"model": "ground-1x1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-1x1x1",
+			"transform": {
+				"scale": [1, 4, 10],
+				"translate": [-1, 4, 0]
+			},
+			"physics": {
+				"model": "ground-1x1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-1x1x1",
+			"transform": {
+				"scale": [1, 4, 10],
+				"translate": [10, 4, 0]
+			},
+			"physics": {
+				"model": "ground-1x1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-1x1x1",
+			"transform": {
+				"scale": [12, 4, 1],
+				"translate": [-1, 4, -1]
+			},
+			"physics": {
+				"model": "ground-1x1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-1x1x1",
+			"transform": {
+				"scale": [12, 4, 1],
+				"translate": [-1, 4, 10]
+			},
+			"physics": {
+				"model": "ground-1x1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "left of ledge",
+			"renderable": "wall-1x1",
+			"transform": {
+				"scale": [1, 4, 1],
+				"translate": [5, 0, 3]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "opposite 1st barrier",
+			"renderable": "wall-1x1",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"scale": [1, 4, 2.1],
+				"translate": [5, 0, 3.1]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "left back wall",
+			"renderable": "wall-1x1",
+			"transform": {
+				"scale": [1, 4, 3],
+				"translate": [7, 0, 0]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "above barrier",
+			"renderable": "wall-1x1",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"scale": [1, 2, 2],
+				"translate": [5, 2, 7]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "right of ledge",
+			"renderable": "wall-1x1",
+			"transform": {
+				"scale": [1, 4, 1],
+				"translate": [5, 0, 6]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "wall above ledge",
+			"renderable": "wall-1x1",
+			"transform": {
+				"scale": [1, 2, 2],
+				"translate": [5, 2, 4]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ledge-caged-1x0.5",
+			"transform": {
+				"scale": [1, 1, 1],
+				"translate": [5.1, 0, 6],
+				"rotate": [180, 0, 1, 0]
+			},
+			"physics": {
+				"model": "ledge-caged-1x0.5",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ledge-caged-1x0.5",
+			"transform": {
+				"scale": [1, 1, 1],
+				"translate": [5.1, 0, 5],
+				"rotate": [180, 0, 1, 0]
+			},
+			"physics": {
+				"model": "ledge-caged-1x0.5",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "barrier1",
+			"renderable": "door-hex-1x2",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [5.5, 0, 7]
+			},
+			"physics": {
+				"model": "door-hex-1x2",
+				"dynamic": false
+			},
+			"barrier": {
+				"isOpen": false
+			}
+		},
+		{
+			"renderable": "door-hex-frame-1x2",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"translate": [5.5, 0, 7]
+			},
+			"physics": {
+				"model": "door-hex-frame-1x2",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "0.5 wall left of barrier",
+			"renderable": "wall-1x1",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"scale": [1, 2, 0.5],
+				"translate": [5, 0, 7]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "0.5 wall right of barrier",
+			"renderable": "wall-1x1",
+			"transform": {
+				"rotate": [90, 0, 1, 0],
+				"scale": [1, 2, 0.5],
+				"translate": [6.5, 0, 7]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "far right wall",
+			"renderable": "wall-1x1",
+			"transform": {
+				"scale": [1, 4, 3],
+				"translate": [7, 0, 7]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "right of barrier2",
+			"renderable": "wall-1x1",
+			"transform": {
+				"scale": [1, 4, 1.5],
+				"translate": [7, 0, 5.5]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "left of barrier2",
+			"renderable": "wall-1x1",
+			"transform": {
+				"scale": [1, 4, 1.5],
+				"translate": [7, 0, 3]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "above barrier2",
+			"renderable": "wall-1x1",
+			"transform": {
+				"scale": [1, 2, 1],
+				"translate": [7, 2, 4.5]
+			},
+			"physics": {
+				"model": "wall-1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "barrier2",
+			"renderable": "door-hex-1x2",
+			"transform": {
+				"translate": [7, 0, 4.5]
+			},
+			"physics": {
+				"model": "door-hex-1x2",
+				"dynamic": false
+			},
+			"barrier": {
+				"isOpen": false
+			}
+		},
+		{
+			"renderable": "door-hex-frame-1x2",
+			"transform": {
+				"translate": [7, 0, 4.5]
+			},
+			"physics": {
+				"model": "door-hex-frame-1x2",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "sensor2_plate",
+			"renderable": "l-sensor-plate",
+			"transform": {
+				"translate": [6, 1.05, 2.975],
+				"rotate": [0, 0, 1, 0]
+			},
+			"physics": {
+				"model": "l-sensor-plate",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "sensor2",
+			"renderable": "l-sensor",
+			"transform": {
+				"translate": [6, 1.05, 2.975]
+			},
+			"physics": {
+				"model": "l-sensor",
+				"dynamic": false
+			},
+			"lightsensor": {
+				"translate": [0, 0, -1],
+				"direction": [0, 0, -1],
+				"triggers": [
+					{
+						"illuminance": [0.5, 0.5, 0.5],
+						"oncmd": "g.OpenBarrier barrier2",
+						"offcmd": "g.CloseBarrier barrier2"
+					}
+				]
+			}
+		},
+		{
+			"_name": "sensor1_plate",
+			"renderable": "l-sensor-plate",
+			"transform": {
+				"rotate": [180, 0, 1, 0],
+				"translate": [6, 2.5, 7.025]
+			},
+			"physics": {
+				"model": "l-sensor-plate",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "sensor1",
+			"renderable": "l-sensor",
+			"transform": {
+				"rotate": [180, 0, 1, 0],
+				"translate": [6, 2.5, 7.025]
+			},
+			"physics": {
+				"model": "l-sensor",
+				"dynamic": false
+			},
+			"lightsensor": {
+				"translate": [0, 0, -1],
+				"direction": [0, 0, -1],
+				"triggers": [
+					{
+						"illuminance": [0.5, 0.5, 0.5],
+						"oncmd": "g.OpenBarrier barrier1",
+						"offcmd": "g.CloseBarrier barrier1"
+					}
+				]
+			}
+		},
+		{
+			"_name": "player",
+			"view": {
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"rotate": [200, 0, 1, 0],
+				"translate": [2, 2, 2]
+			},
+			"voxels": {
+				"min": [-15, -0, -15],
+				"max": [15, 10, 15]
+			}
+		},
+		{
+			"_name": "left light",
+			"renderable": "spotlight-01",
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"intensity": 300,
+				"spotAngle": 30
+			},
+			"view": {
+				"extents": [2048, 2048],
+				"clip": [0.1, 70]
+			},
+			"transform": {
+				"rotate": [
+					[-45, 0, 1, 0],
+					[-45, 1, 0, 0]
+				],
+				"translate": [2, 3.75, 4]
+			}
+		},
+		{
+			"_name": "right light",
+			"renderable": "spotlight-01",
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"intensity": 300,
+				"spotAngle": 30
+			},
+			"view": {
+				"extents": [2048, 2048],
+				"clip": [0.1, 70]
+			},
+			"transform": {
+				"rotate": [
+					[-135, 0, 1, 0],
+					[-35, 1, 0, 0]
+				],
+				"translate": [2, 3.75, 6]
+			}
+		}
+	]
+}
