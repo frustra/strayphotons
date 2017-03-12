@@ -204,7 +204,7 @@
 			}
 		},
 		{
-			"renderable": "dodecahedron",
+			"renderable": "spotlight-01",
 			"light": {
 				"tint": [1, 0.5, 0.5],
 				"intensity": 300,
@@ -212,15 +212,14 @@
 			},
 			"view": {
 				"extents": [2048, 2048],
-				"clip": [0.3, 70]
+				"clip": [0.1, 70]
 			},
 			"transform": {
 				"rotate": [
 					[-90, 0, 1, 0],
 					[-45, 1, 0, 0]
 				],
-				"translate": [2, 3.6, 5],
-				"scale": [0.1, 0.1, 0.1]
+				"translate": [2, 3.75, 5]
 			}
 		}
 	]
