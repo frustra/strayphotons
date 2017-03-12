@@ -177,10 +177,11 @@ namespace ecs
 			   << " cannot be assigned a new HumanController because it already has one.";
 			throw std::invalid_argument(ss.str());
 		}
+		auto transform = entity.Get<ecs::Transform>();
+		glm::quat rotation = transform->GetRotate();
+
 		auto controller = entity.Assign<HumanController>();
-		controller->pitch = 0;
-		controller->yaw = 0;
-		controller->roll = 0;
+		controller->SetRotate(rotation);
 		controller->inputMap =
 		{
 			{
@@ -212,7 +213,6 @@ namespace ecs
 		auto interact = entity.Assign<InteractController>();
 		interact->manager = &px;
 
-		auto transform = entity.Get<ecs::Transform>();
 		// Offset the capsule position so the camera is at the top
 		physx::PxVec3 pos = GlmVec3ToPxVec3(transform->GetPosition() - glm::vec3(0, ecs::PLAYER_HEIGHT / 2 - ecs::PLAYER_RADIUS, 0));
 		controller->pxController = px.CreateController(pos, ecs::PLAYER_RADIUS, ecs::PLAYER_HEIGHT - ecs::PLAYER_RADIUS, 0.5f);
@@ -238,14 +238,7 @@ namespace ecs
 		if (rotation != glm::quat())
 		{
 			transform->SetRotate(rotation);
-			controller->pitch = glm::pitch(rotation);
-			controller->yaw = glm::yaw(rotation);
-
-			if (std::abs(glm::roll(rotation)) > 0.00001)
-			{
-				controller->pitch += controller->pitch > 0 ? -M_PI : M_PI;
-				controller->yaw = M_PI - controller->yaw;
-			}
+			controller->SetRotate(rotation);
 		}
 
 		if (controller->pxController)

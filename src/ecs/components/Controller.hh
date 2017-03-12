@@ -9,6 +9,7 @@
 #include <characterkinematic/PxCapsuleController.h>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace ecs
 {
@@ -36,17 +37,24 @@ namespace ecs
 	const float PLAYER_AIR_STRAFE = 0.8f; // Movement scaler for acceleration in air
 	const float PLAYER_PUSH_FORCE = 0.3f;
 
-	struct HumanController
+	class HumanController
 	{
+	public:
+		/**
+		 * Set pitch and yaw from this quaternion.
+		 * Roll is not set to maintain the FPS perspective.
+		 */
+		void SetRotate(const glm::quat &rotation);
+
 		// map each action to a vector of glfw keys that could trigger it
 		// (see InputManager.hh for converting a mouse button to one of these ints)
 		std::unordered_map<ControlAction, std::vector<int>, sp::EnumHash> inputMap;
 
-		// overrides ecs::Placement::rotate for an FPS-style orientation
-		// until I figure out how to actually use quaternions
-		float pitch;
-		float yaw;
-		float roll;
+		// overrides ecs::Transform::rotate for an FPS-style orientation
+		// until quaternions make sense to me (which will never happen)
+		float pitch = 0;
+		float yaw = 0;
+		float roll = 0;
 
 		// pxCapsuleController handles movement and physx simulation
 		physx::PxController *pxController;
