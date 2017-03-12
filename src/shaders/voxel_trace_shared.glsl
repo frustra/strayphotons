@@ -43,7 +43,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 {
 	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VOXEL_GRID_SIZE * 0.5;
-	float startDist = clamp(1.75 / dot(rayDir, surfaceNormal), 1.75, 3.0);
+	float startDist = 1.75;
 	float dist = startDist;
 	float maxDist = VOXEL_GRID_SIZE * 1.5;
 

@@ -129,6 +129,10 @@
 		},
 		{
 			"renderable": "door-hex-1x2",
+			"_name": "barrier1",
+			"barrier": {
+				"isOpen": false
+			},
 			"transform": {
 				"scale": [1, 1, 1],
 				"translate": [6, 0, 8]
@@ -199,7 +203,14 @@
 			},
 			"lightsensor": {
 				"translate": [0, 0, -1],
-				"direction": [0, 0, -1]
+				"direction": [0, 0, -1],
+				"triggers": [
+					{
+						"illuminance": [1, 1, 1],
+						"oncmd": "g.OpenBarrier barrier1",
+						"offcmd": "g.CloseBarrier barrier1"
+					}
+				]
 			}
 		},
 		{
@@ -212,8 +223,8 @@
 				"translate": [2, 2, 2]
 			},
 			"voxels": {
-				"min": [-15, -0, -15],
-				"max": [15, 10, 15]
+				"min": [0, 0, 0],
+				"max": [10, 4, 10]
 			}
 		},
 		{
