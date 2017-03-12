@@ -175,13 +175,26 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"_name": "sensor1_plate",
+			"renderable": "l-sensor-plate",
 			"transform": {
-				"scale": [0.1, 0.1, 0.1],
-				"translate": [8, 1.05, 5]
+				"translate": [9.975, 1.05, 6],
+				"rotate": [90, 0, 1, 0]
 			},
 			"physics": {
-				"model": "box",
+				"model": "l-sensor-plate",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "sensor1",
+			"renderable": "l-sensor",
+			"transform": {
+				"translate": [9.975, 1.05, 6],
+				"rotate": [90, 0, 1, 0]
+			},
+			"physics": {
+				"model": "l-sensor",
 				"dynamic": false
 			},
 			"lightsensor": {
