@@ -77,6 +77,7 @@ add_subdirectory(${EXT_PATH}/googletest)
 
 add_subdirectory(${EXT_PATH}/v-hacd)
 
+
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${EXT_PATH}/physx/PhysXSDK/Include
@@ -133,6 +134,11 @@ list(REMOVE_DUPLICATES all_shaders)
 
 add_library(${PROJECT_LIB} ${all_sources} ${all_headers} ${all_shaders})
 
+# Configure glomerate to use 32 bit entities on WIN32
+if (WIN32)
+	target_compile_definitions(${PROJECT_LIB}
+		PRIVATE "-DGLOMERATE_32BIT_ENTITIES")
+endif()
 
 # load PhysX
 if (SP_DEBUG)
