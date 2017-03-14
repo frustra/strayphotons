@@ -142,6 +142,11 @@ namespace sp
 		for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
 		{
 			auto light = entity.Get<ecs::Light>();
+			if (!light->on)
+			{
+				continue;
+			}
+
 			if (entity.Has<ecs::View>())
 			{
 				auto view = ecs::UpdateViewCache(entity, light->spotAngle * 2.0f);
@@ -208,6 +213,11 @@ namespace sp
 			for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
 			{
 				auto light = entity.Get<ecs::Light>();
+				if (!light->on)
+				{
+					continue;
+				}
+				
 				if (entity.Has<ecs::View>())
 				{
 					light->mapOffset /= glm::vec4(renderTargetSize, renderTargetSize);

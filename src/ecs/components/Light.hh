@@ -11,5 +11,6 @@ namespace ecs
 		glm::vec4 mapOffset;
 		int gelId;
 		int lightId;
+		bool on = true;
 	};
 }

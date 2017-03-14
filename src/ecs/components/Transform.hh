@@ -27,6 +27,16 @@ namespace ecs
 		glm::quat GetGlobalRotation() const;
 
 		/**
+		 * Get position including any transforms this is relative to
+		 */
+		glm::vec3 GetGlobalPosition() const;
+
+		/**
+		 * Get forward vector including any transforms this is relative to
+		 */
+		glm::vec3 GetGlobalForward() const;
+
+		/**
 		 * Change the local position by an amount in the local x, y, z planes
 		 */
 		void Translate(glm::vec3 xyz);
@@ -46,6 +56,8 @@ namespace ecs
 		glm::mat4 GetTranslate() const;
 		void SetPosition(glm::vec3 pos);
 		glm::vec3 GetPosition() const;
+
+		glm::vec3 GetForward() const;
 
 		void SetRotate(glm::mat4 mat);
 		void SetRotate(glm::quat quat);

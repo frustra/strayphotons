@@ -458,7 +458,7 @@ namespace sp
 		Unlock();
 	}
 
-	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, ActorDesc desc)
+	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, ActorDesc desc, const ecs::Entity &entity)
 	{
 		Lock();
 		PxRigidActor *actor;
@@ -508,6 +508,11 @@ namespace sp
 		if (desc.dynamic)
 			PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidDynamic *>(actor), 1.0f);
 
+		static_assert(sizeof(void *) == sizeof(ecs::Entity::Id),
+			"wrong size of Entity::Id; it must be same size as a pointer");
+		ecs::Entity::Id id = entity.GetId();
+		memcpy(&actor->userData, &id, sizeof(actor->userData));
+
 		scene->addActor(*actor);
 		Unlock();
 		return actor;
@@ -519,6 +524,16 @@ namespace sp
 		scene->removeActor(*actor);
 		actor->release();
 		Unlock();
+	}
+
+	ecs::Entity::Id PhysxManager::GetEntityId(const physx::PxActor &actor) const
+	{
+		ecs::Entity::Id id;
+		static_assert(
+			sizeof(ecs::Entity::Id) == sizeof(physx::PxActor::userData),
+			"size mismatch");
+		memcpy(&id, &actor.userData, sizeof(actor.userData));
+		return id;
 	}
 
 	void ControllerHitReport::onShapeHit(const physx::PxControllerShapeHit &hit)
