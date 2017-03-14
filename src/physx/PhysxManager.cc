@@ -207,7 +207,7 @@ namespace sp
 					if (lastScale != newScale)
 					{
 						auto n = ph->actor->getNbShapes();
-						physx::PxShape *shapes[n];
+						vector<physx::PxShape *> shapes(n);
 						ph->actor->getShapes(&shapes[0], n);
 						for (uint32 i = 0; i < n; i++)
 						{
@@ -447,8 +447,9 @@ namespace sp
 		Lock();
 
 		physx::PxU32 nShapes = actor->getNbShapes();
-		physx::PxShape *shapes[nShapes];
-		actor->getShapes(&shapes[0], nShapes);
+		vector<physx::PxShape *> shapes(nShapes);
+		actor->getShapes(shapes.data(), nShapes);
+
 		for (uint32 i = 0; i < nShapes; ++i)
 		{
 			shapes[i]->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, enabled);
