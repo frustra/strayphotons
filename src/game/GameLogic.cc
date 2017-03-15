@@ -27,7 +27,13 @@
 namespace sp
 {
 	GameLogic::GameLogic(Game *game)
-		: game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input, &game->physics), sunPos(0), funcs(this)
+		:
+		game(game),
+		input(&game->input),
+		humanControlSystem(&game->entityManager, &game->input, &game->physics),
+		lightGunSystem(&game->entityManager, &game->input, &game->physics),
+		sunPos(0),
+		funcs(this)
 	{
 		funcs.Register("loadscene", "Load a scene", &GameLogic::LoadScene);
 		funcs.Register("reloadscene", "Reload current scene", &GameLogic::ReloadScene);
@@ -38,6 +44,7 @@ namespace sp
 	}
 
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
+	static CVar<bool> CVarFlashlightOn("r.FlashlightOn", false, "Flashlight on/off");
 	static CVar<float> CVarFlashlightAngle("r.FlashlightAngle", 20, "Flashlight spot angle");
 	static CVar<int> CVarFlashlightResolution("r.FlashlightResolution", 512, "Flashlight shadow map resolution");
 	static CVar<float> CVarSunPosition("g.SunPosition", 0.2, "Sun angle");
@@ -87,7 +94,7 @@ namespace sp
 
 				PhysxManager::ActorDesc desc;
 				desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
-				auto actor = game->physics.CreateActor(model, desc);
+				auto actor = game->physics.CreateActor(model, desc, entity);
 
 				if (actor)
 				{
@@ -117,18 +124,7 @@ namespace sp
 			}
 			else if (ch == 'f') // Turn flashlight on and off
 			{
-				if (flashlight.Valid())
-				{
-					auto light = flashlight.Get<ecs::Light>();
-					if (!light->intensity)
-					{
-						light->intensity = CVarFlashlight.Get(true);
-					}
-					else
-					{
-						light->intensity = 0;
-					}
-				}
+				CVarFlashlightOn.Set(!CVarFlashlightOn.Get());
 			}
 		});
 
@@ -190,7 +186,12 @@ namespace sp
 		if (CVarFlashlight.Changed())
 		{
 			auto light = flashlight.Get<ecs::Light>();
-			if (light->intensity) light->intensity = CVarFlashlight.Get(true);
+			light->intensity = CVarFlashlight.Get(true);
+		}
+		if (CVarFlashlightOn.Changed())
+		{
+			auto light = flashlight.Get<ecs::Light>();
+			light->on = CVarFlashlightOn.Get(true);
 		}
 		if (CVarFlashlightAngle.Changed())
 		{
@@ -203,6 +204,10 @@ namespace sp
 			view->extents = glm::ivec2(CVarFlashlightResolution.Get(true));
 		}
 		if (!humanControlSystem.Frame(dtSinceLastFrame))
+		{
+			return false;
+		}
+		if (!lightGunSystem.Frame(dtSinceLastFrame))
 		{
 			return false;
 		}
@@ -251,6 +256,7 @@ namespace sp
 		auto light = flashlight.Assign<ecs::Light>();
 		light->tint = glm::vec3(1.0);
 		light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
+		light->on = false;
 		auto view = flashlight.Assign<ecs::View>();
 		view->extents = glm::vec2(CVarFlashlightResolution.Get());
 		view->clip = glm::vec2(0.1, 64);

@@ -375,8 +375,19 @@
 			}
 		},
 		{
+			"_name": "gun",
+			"lightGun": {},
+			"transform": {
+				"relativeTo": "player"
+			}
+		},
+		{
 			"_name": "left light",
 			"renderable": "spotlight-01",
+			"physics": {
+				"model": "spotlight-01",
+				"dynamic": false
+			},
 			"light": {
 				"tint": [1, 0.5, 0.5],
 				"intensity": 300,
@@ -397,10 +408,15 @@
 		{
 			"_name": "right light",
 			"renderable": "spotlight-01",
+			"physics": {
+				"model": "spotlight-01",
+				"dynamic": false
+			},
 			"light": {
 				"tint": [1, 0.5, 0.5],
 				"intensity": 300,
-				"spotAngle": 30
+				"spotAngle": 30,
+				"on": false
 			},
 			"view": {
 				"extents": [2048, 2048],

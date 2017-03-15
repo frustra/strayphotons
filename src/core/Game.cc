@@ -15,6 +15,7 @@
 #include "ecs/components/TriggerArea.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/VoxelInfo.hh"
+#include "ecs/components/LightGun.hh"
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -38,6 +39,7 @@ namespace sp
 		entityManager.RegisterComponentType<ecs::TriggerArea>();
 		entityManager.RegisterComponentType<ecs::View>();
 		entityManager.RegisterComponentType<ecs::VoxelInfo>();
+		entityManager.RegisterComponentType<ecs::LightGun>();
 	}
 
 	Game::~Game()

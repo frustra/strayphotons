@@ -12,6 +12,11 @@ namespace sp
 		for (auto entity : manager.EntitiesWith<ecs::Light>())
 		{
 			auto light = entity.Get<ecs::Light>();
+			if (!light->on)
+			{
+				continue;
+			}
+
 			if (entity.Has<ecs::View>())
 			{
 				auto view = entity.Get<ecs::View>();
