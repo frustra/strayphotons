@@ -124,11 +124,7 @@ namespace sp
 			}
 			else if (ch == 'f') // Turn flashlight on and off
 			{
-				if (flashlight.Valid())
-				{
-					auto light = flashlight.Get<ecs::Light>();
-					light->on = !light->on;
-				}
+				CVarFlashlightOn.Set(!CVarFlashlightOn.Get());
 			}
 		});
 
