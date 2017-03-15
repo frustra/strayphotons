@@ -292,8 +292,8 @@ namespace ecs
 		else
 		{
 			controller->velocity += movement * ecs::PLAYER_AIR_STRAFE * (float)dtSinceLastFrame;
+			controller->velocity.y -= ecs::PLAYER_GRAVITY * dtSinceLastFrame;
 		}
-		controller->velocity.y -= ecs::PLAYER_GRAVITY * dtSinceLastFrame;
 
 		return controller->velocity;
 	}
@@ -339,7 +339,18 @@ namespace ecs
 			bool valid = true;
 			physics->ResizeController(controller->pxController, height);
 
-			if (overlapCheck) valid = !physics->OverlapQuery(controller->pxController->getActor());
+			if (overlapCheck)
+			{
+				physx::PxOverlapBuffer hit;
+				physx::PxRigidDynamic* actor = controller->pxController->getActor();
+
+				// Shift actor position slightly upwards to prevent ground contact
+				// and head clipping into things
+				physx::PxVec3 translation = physx::PxVec3(0.f,0.5f,0.f);
+
+				bool overlapFound = physics->OverlapQuery(actor, translation, hit);
+				if (overlapFound) valid = false;
+			}
 			if (!valid)
 			{
 				physics->ResizeController(controller->pxController, oldHeight);

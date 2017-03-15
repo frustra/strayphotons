@@ -632,7 +632,7 @@ namespace sp
 		return status;
 	}
 
-	bool PhysxManager::OverlapQuery(PxRigidDynamic *actor)
+	bool PhysxManager::OverlapQuery(PxRigidDynamic *actor, PxVec3 translation, PxOverlapBuffer& hit)
 	{
 		Lock();
 		PxShape *shape;
@@ -642,12 +642,13 @@ namespace sp
 		shape->getCapsuleGeometry(capsuleGeometry);
 
 		scene->removeActor(*actor);
-		PxOverlapBuffer hit;
 		physx::PxQueryFilterData filterData = physx::PxQueryFilterData(physx::PxQueryFlag::eANY_HIT | PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC);
-		bool status = scene->overlap(capsuleGeometry, actor->getGlobalPose(), hit, filterData);
+		physx::PxTransform pose = actor->getGlobalPose();
+		pose.p += translation;
+		bool overlapFound = scene->overlap(capsuleGeometry, pose, hit, filterData);
 		scene->addActor(*actor);
 		Unlock();
-		return status;
+		return overlapFound;
 	}
 
 	void PhysxManager::CreateConstraint(ecs::Entity parent, PxRigidDynamic *child, PxVec3 offset)

@@ -92,7 +92,14 @@ namespace sp
 			const physx::PxVec3 dir,
 			const float distance);
 
-		bool OverlapQuery(physx::PxRigidDynamic *actor);
+		/**
+		* Checks scene for an overlapping hit in the shape
+		* Will return true if a hit is found and false otherwise
+		*/
+		bool OverlapQuery(
+			physx::PxRigidDynamic *actor, 
+			physx::PxVec3 translation,
+			physx::PxOverlapBuffer& hit);
 
 		/**
 		 * Translates a kinematic @actor by @transform.
