@@ -28,6 +28,7 @@ extern "C"
 #include "ecs/components/TriggerArea.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/VoxelInfo.hh"
+#include "ecs/components/LightGun.hh"
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -342,6 +343,10 @@ namespace sp
 						{
 							light->gelId = param.second.get<bool>() ? 1 : 0;
 						}
+						else if (param.first == "on")
+						{
+							light->on = param.second.get<bool>();
+						}
 					}
 				}
 				else if (comp.first == "lightsensor")
@@ -410,12 +415,16 @@ namespace sp
 					desc.dynamic = dynamic;
 					desc.kinematic = kinematic;
 
-					actor = px.CreateActor(model, desc);
+					actor = px.CreateActor(model, desc, entity);
 
 					if (actor)
 					{
 						auto physics = entity.Assign<ecs::Physics>(actor, model);
 					}
+				}
+				else if (comp.first == "lightGun")
+				{
+					entity.Assign<ecs::LightGun>();
 				}
 				else if (comp.first == "barrier")
 				{

@@ -24,7 +24,7 @@ namespace sp
 	{
 		ecs::Entity parent;
 		physx::PxRigidDynamic *child;
-		physx::PxVec3 offset;
+		physx::PxVec3 offset, rotation;
 	};
 
 	class ControllerHitReport : public physx::PxUserControllerHitReport
@@ -57,6 +57,7 @@ namespace sp
 		void ReadUnlock();
 
 		void CreateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 offset);
+		void RotateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 rotation);
 		void RemoveConstraints(ecs::Entity parent, physx::PxRigidDynamic *child);
 
 		ConvexHullSet *GetCachedConvexHulls(Model *model);
@@ -72,9 +73,21 @@ namespace sp
 			//bool mergePrimitives = true;
 		};
 
-		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, ActorDesc desc);
+		/**
+		 * Create an actor and bind the entity's Id to the actor's userData
+		 */
+		physx::PxRigidActor *CreateActor(shared_ptr<Model> model,
+			ActorDesc desc, const ecs::Entity &entity);
+
 		void RemoveActor(physx::PxRigidActor *actor);
 		physx::PxController *CreateController(physx::PxVec3 pos, float radius, float height, float density);
+
+		/**
+		 * Get the Entity associated with this actor.
+		 * Returns the NULL Entity Id if one doesn't exist.
+		 */
+		ecs::Entity::Id GetEntityId(const physx::PxActor &actor) const;
+
 		void MoveController(physx::PxController *controller, double dt, physx::PxVec3 displacement);
 		void TeleportController(physx::PxController *controller, physx::PxExtendedVec3 position);
 		void ResizeController(physx::PxController *controller, const float height);

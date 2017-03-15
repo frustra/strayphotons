@@ -23,8 +23,7 @@ namespace ecs
 
 		physx::PxVec3 origin = GlmVec3ToPxVec3(transform->GetPosition());
 
-		glm::vec3 forward = glm::vec3(0, 0, -1);
-		glm::vec3 rotate = transform->GetRotate() * forward;
+		glm::vec3 rotate = transform->GetForward();
 
 		physx::PxVec3 dir = GlmVec3ToPxVec3(rotate);
 		dir.normalizeSafe();

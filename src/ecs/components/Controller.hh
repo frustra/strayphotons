@@ -22,7 +22,8 @@ namespace ecs
 		MOVE_JUMP,
 		MOVE_CROUCH,
 		MOVE_SPRINT,
-		INTERACT
+		INTERACT,
+		INTERACT_ROTATE
 	};
 
 	// Units in meters

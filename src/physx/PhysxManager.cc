@@ -127,7 +127,8 @@ namespace sp
 
 			if (distance.magnitude() < 2.0)
 			{
-				constraint->child->setAngularVelocity(PxVec3(0));
+				constraint->child->setAngularVelocity(constraint->rotation);
+				constraint->rotation = PxVec3(0); // Don't continue to rotate
 				constraint->child->setLinearVelocity(distance.multiply(PxVec3(20.0)));
 				constraint++;
 			}
@@ -207,7 +208,7 @@ namespace sp
 					if (lastScale != newScale)
 					{
 						auto n = ph->actor->getNbShapes();
-						physx::PxShape *shapes[n];
+						vector<physx::PxShape *> shapes(n);
 						ph->actor->getShapes(&shapes[0], n);
 						for (uint32 i = 0; i < n; i++)
 						{
@@ -447,8 +448,9 @@ namespace sp
 		Lock();
 
 		physx::PxU32 nShapes = actor->getNbShapes();
-		physx::PxShape *shapes[nShapes];
-		actor->getShapes(&shapes[0], nShapes);
+		vector<physx::PxShape *> shapes(nShapes);
+		actor->getShapes(shapes.data(), nShapes);
+
 		for (uint32 i = 0; i < nShapes; ++i)
 		{
 			shapes[i]->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, enabled);
@@ -458,7 +460,7 @@ namespace sp
 		Unlock();
 	}
 
-	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, ActorDesc desc)
+	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, ActorDesc desc, const ecs::Entity &entity)
 	{
 		Lock();
 		PxRigidActor *actor;
@@ -508,6 +510,10 @@ namespace sp
 		if (desc.dynamic)
 			PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidDynamic *>(actor), 1.0f);
 
+		static_assert(sizeof(void *) == sizeof(ecs::id_t),
+			"wrong size of Entity::Id; it must be same size as a pointer");
+		actor->userData = reinterpret_cast<void *>(entity.GetId().GetId());
+
 		scene->addActor(*actor);
 		Unlock();
 		return actor;
@@ -519,6 +525,13 @@ namespace sp
 		scene->removeActor(*actor);
 		actor->release();
 		Unlock();
+	}
+
+	ecs::Entity::Id PhysxManager::GetEntityId(const physx::PxActor &actor) const
+	{
+		static_assert(sizeof(ecs::id_t) == sizeof(physx::PxActor::userData),
+			"size mismatch");
+		return ecs::Entity::Id(reinterpret_cast<ecs::id_t>(actor.userData));
 	}
 
 	void ControllerHitReport::onShapeHit(const physx::PxControllerShapeHit &hit)
@@ -658,10 +671,25 @@ namespace sp
 		constraint.parent = parent;
 		constraint.child = child;
 		constraint.offset = offset;
+		constraint.rotation = PxVec3(0);
 
 		if (parent.Has<ecs::Physics>() || parent.Has<ecs::HumanController>())
 		{
 			constraints.emplace_back(constraint);
+		}
+		Unlock();
+	}
+
+	void PhysxManager::RotateConstraint(ecs::Entity parent, PxRigidDynamic *child, PxVec3 rotation)
+	{
+		Lock();
+		for (auto it = constraints.begin(); it != constraints.end();)
+		{
+			if (it->parent == parent && it->child == child)
+			{
+				it->rotation = rotation;
+				break;
+			}
 		}
 		Unlock();
 	}

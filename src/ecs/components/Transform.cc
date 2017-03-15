@@ -66,6 +66,17 @@ namespace ecs
 		return model * this->rotate;
 	}
 
+	glm::vec3 Transform::GetGlobalPosition() const
+	{
+		return GetGlobalTransform() * glm::vec4(0, 0, 0, 1);
+	}
+
+	glm::vec3 Transform::GetGlobalForward() const
+	{
+		glm::vec3 forward = glm::vec3(0, 0, -1);
+		return GetGlobalRotation() * forward;
+	}
+
 	void Transform::Translate(glm::vec3 xyz)
 	{
 		this->translate = glm::translate(this->translate, xyz);
@@ -104,6 +115,12 @@ namespace ecs
 	glm::vec3 Transform::GetPosition() const
 	{
 		return this->translate * glm::vec4(0, 0, 0, 1);
+	}
+
+	glm::vec3 Transform::GetForward() const
+	{
+		glm::vec3 forward = glm::vec3(0, 0, -1);
+		return GetRotate() * forward;
 	}
 
 	void Transform::SetRotate(glm::mat4 mat)
