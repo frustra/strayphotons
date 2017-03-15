@@ -43,35 +43,13 @@ namespace ecs
 
 		for (ecs::Entity entity : entities->EntitiesWith<ecs::Transform, ecs::HumanController>())
 		{
-			// Handle mouse controls
-			auto transform = entity.Get<ecs::Transform>();
-			auto controller = entity.Get<ecs::HumanController>();
-			glm::vec2 dCursor = input->CursorDiff();
-
-			float sensitivity = CVarCursorSensitivity.Get() * 0.001;
-			controller->yaw -= dCursor.x * sensitivity;
-			if (controller->yaw > 2.0f * M_PI)
-			{
-				controller->yaw -= 2.0f * M_PI;
-			}
-			if (controller->yaw < 0)
-			{
-				controller->yaw += 2.0f * M_PI;
-			}
-
-			controller->pitch -= dCursor.y * sensitivity;
-
-			const float feps = std::numeric_limits<float>::epsilon();
-			controller->pitch = std::max(-((float)M_PI_2 - feps), std::min(controller->pitch, (float)M_PI_2 - feps));
-
-			transform->SetRotate(glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll)));
-
 			// Handle keyboard controls
 			auto noclip = CVarNoClip.Get();
 			glm::vec3 inputMovement = glm::vec3(0);
 			bool jumping = false;
 			bool sprinting = false;
 			bool crouching = false;
+			bool rotating = false;
 
 			for (auto const &actionKeysPair : entity.Get<ecs::HumanController>()->inputMap)
 			{
@@ -116,6 +94,9 @@ namespace ecs
 							Interact(entity, dtSinceLastFrame);
 						}
 						break;
+					case ControlAction::INTERACT_ROTATE:
+						rotating = true;
+						break;
 					case ControlAction::MOVE_CROUCH:
 						if (noclip)
 						{
@@ -134,6 +115,33 @@ namespace ecs
 				}
 			}
 
+			// Handle mouse controls
+			auto transform = entity.Get<ecs::Transform>();
+			auto controller = entity.Get<ecs::HumanController>();
+			glm::vec2 dCursor = input->CursorDiff();
+
+			if (!rotating || !InteractRotate(entity, dtSinceLastFrame, dCursor))
+			{
+				float sensitivity = CVarCursorSensitivity.Get() * 0.001;
+				controller->yaw -= dCursor.x * sensitivity;
+				if (controller->yaw > 2.0f * M_PI)
+				{
+					controller->yaw -= 2.0f * M_PI;
+				}
+				if (controller->yaw < 0)
+				{
+					controller->yaw += 2.0f * M_PI;
+				}
+
+				controller->pitch -= dCursor.y * sensitivity;
+
+				const float feps = std::numeric_limits<float>::epsilon();
+				controller->pitch = std::max(-((float)M_PI_2 - feps), std::min(controller->pitch, (float)M_PI_2 - feps));
+
+				transform->SetRotate(glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll)));
+			}
+
+			// Move the player
 			if (CVarNoClip.Changed())
 			{
 				physics->ToggleCollisions(controller->pxController->getActor(), !CVarNoClip.Get(true));
@@ -207,6 +215,9 @@ namespace ecs
 			},
 			{
 				ControlAction::INTERACT, {GLFW_KEY_E}
+			},
+			{
+				ControlAction::INTERACT_ROTATE, {GLFW_KEY_R}
 			}
 		};
 
@@ -353,5 +364,19 @@ namespace ecs
 	{
 		auto interact = entity.Get<ecs::InteractController>();
 		interact->PickUpObject(entity);
+	}
+
+	bool HumanControlSystem::InteractRotate(ecs::Entity entity, double dt, glm::vec2 dCursor)
+	{
+		auto interact = entity.Get<ecs::InteractController>();
+		auto transform = entity.Get<ecs::Transform>();
+		if (interact->target)
+		{
+			auto rotation = transform->GetRotate() * glm::vec3(dCursor.y, dCursor.x, 0) * (float)dt;
+			rotation *= CVarCursorSensitivity.Get() * 10.0;
+			physics->RotateConstraint(entity, interact->target, GlmVec3ToPxVec3(rotation));
+			return true;
+		}
+		return false;
 	}
 }

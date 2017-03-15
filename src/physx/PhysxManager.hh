@@ -24,7 +24,7 @@ namespace sp
 	{
 		ecs::Entity parent;
 		physx::PxRigidDynamic *child;
-		physx::PxVec3 offset;
+		physx::PxVec3 offset, rotation;
 	};
 
 	class ControllerHitReport : public physx::PxUserControllerHitReport
@@ -57,6 +57,7 @@ namespace sp
 		void ReadUnlock();
 
 		void CreateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 offset);
+		void RotateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 rotation);
 		void RemoveConstraints(ecs::Entity parent, physx::PxRigidDynamic *child);
 
 		ConvexHullSet *GetCachedConvexHulls(Model *model);

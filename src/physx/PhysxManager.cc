@@ -127,7 +127,8 @@ namespace sp
 
 			if (distance.magnitude() < 2.0)
 			{
-				constraint->child->setAngularVelocity(PxVec3(0));
+				constraint->child->setAngularVelocity(constraint->rotation);
+				constraint->rotation = PxVec3(0); // Don't continue to rotate
 				constraint->child->setLinearVelocity(distance.multiply(PxVec3(20.0)));
 				constraint++;
 			}
@@ -669,10 +670,25 @@ namespace sp
 		constraint.parent = parent;
 		constraint.child = child;
 		constraint.offset = offset;
+		constraint.rotation = PxVec3(0);
 
 		if (parent.Has<ecs::Physics>() || parent.Has<ecs::HumanController>())
 		{
 			constraints.emplace_back(constraint);
+		}
+		Unlock();
+	}
+
+	void PhysxManager::RotateConstraint(ecs::Entity parent, PxRigidDynamic *child, PxVec3 rotation)
+	{
+		Lock();
+		for (auto it = constraints.begin(); it != constraints.end();)
+		{
+			if (it->parent == parent && it->child == child)
+			{
+				it->rotation = rotation;
+				break;
+			}
 		}
 		Unlock();
 	}

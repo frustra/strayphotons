@@ -46,6 +46,12 @@ namespace ecs
 		*/
 		void Interact(ecs::Entity entity, double dt);
 
+		/**
+		 * Rotate the object the player is currently holding, using mouse input.
+		 * Returns true if there is currently a target.
+		 */
+		bool InteractRotate(ecs::Entity entity, double dt, glm::vec2 dCursor);
+
 		ecs::EntityManager *entities;
 		sp::InputManager *input;
 		sp::PhysxManager *physics;
