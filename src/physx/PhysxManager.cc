@@ -509,10 +509,9 @@ namespace sp
 		if (desc.dynamic)
 			PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidDynamic *>(actor), 1.0f);
 
-		static_assert(sizeof(void *) == sizeof(ecs::Entity::Id),
+		static_assert(sizeof(void *) == sizeof(ecs::id_t),
 			"wrong size of Entity::Id; it must be same size as a pointer");
-		ecs::Entity::Id id = entity.GetId();
-		memcpy(&actor->userData, &id, sizeof(actor->userData));
+		actor->userData = reinterpret_cast<void *>(entity.GetId().GetId());
 
 		scene->addActor(*actor);
 		Unlock();
@@ -529,12 +528,9 @@ namespace sp
 
 	ecs::Entity::Id PhysxManager::GetEntityId(const physx::PxActor &actor) const
 	{
-		ecs::Entity::Id id;
-		static_assert(
-			sizeof(ecs::Entity::Id) == sizeof(physx::PxActor::userData),
+		static_assert(sizeof(ecs::id_t) == sizeof(physx::PxActor::userData),
 			"size mismatch");
-		memcpy(&id, &actor.userData, sizeof(actor.userData));
-		return id;
+		return ecs::Entity::Id(reinterpret_cast<ecs::id_t>(actor.userData));
 	}
 
 	void ControllerHitReport::onShapeHit(const physx::PxControllerShapeHit &hit)
