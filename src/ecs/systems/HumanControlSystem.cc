@@ -151,25 +151,27 @@ namespace ecs
 			{
 				if (controller->crouched == false)
 				{
-					if (ResizeEntity(entity, ecs::PLAYER_CROUCH_HEIGHT, ecs::PLAYER_HEIGHT, false))
-					{
-						controller->crouched = true;
-					}
+					controller->crouched = ResizeEntity(
+						entity, ecs::PLAYER_CAPSULE_CROUCH_HEIGHT, false);
 				}
 			}
 			else
 			{
 				if (controller->crouched == true)
 				{
-					if (ResizeEntity(entity, ecs::PLAYER_HEIGHT, ecs::PLAYER_CROUCH_HEIGHT, true))
-					{
-						controller->crouched = false;
-					}
+					controller->crouched = !ResizeEntity(
+						entity, ecs::PLAYER_CAPSULE_HEIGHT, false);
 				}
 			}
 
-			controller->onGround = physics->SweepQuery(controller->pxController->getActor(), physx::PxVec3(0, -1, 0), ecs::PLAYER_SWEEP_DISTANCE);
-			auto velocity = CalculatePlayerVelocity(entity, dtSinceLastFrame, inputMovement, jumping, sprinting, crouching);
+			controller->onGround = physics->SweepQuery(
+				controller->pxController->getActor(),
+				physx::PxVec3(0, -1, 0),
+				ecs::PLAYER_SWEEP_DISTANCE
+			);
+			auto velocity = CalculatePlayerVelocity(entity,
+				dtSinceLastFrame, inputMovement, jumping, sprinting,
+				crouching);
 			MoveEntity(entity, dtSinceLastFrame, velocity);
 		}
 
@@ -225,8 +227,11 @@ namespace ecs
 		interact->manager = &px;
 
 		// Offset the capsule position so the camera is at the top
-		physx::PxVec3 pos = GlmVec3ToPxVec3(transform->GetPosition() - glm::vec3(0, ecs::PLAYER_HEIGHT / 2 - ecs::PLAYER_RADIUS, 0));
-		controller->pxController = px.CreateController(pos, ecs::PLAYER_RADIUS, ecs::PLAYER_HEIGHT - 2*ecs::PLAYER_RADIUS, 0.5f);
+		physx::PxVec3 pos = GlmVec3ToPxVec3(
+			transform->GetPosition()
+			- glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT / 2, 0)
+		);
+		controller->pxController = px.CreateController(pos, ecs::PLAYER_RADIUS, ecs::PLAYER_CAPSULE_HEIGHT, 0.5f);
 		controller->pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
 
 		return controller;
@@ -255,7 +260,11 @@ namespace ecs
 		if (controller->pxController)
 		{
 			// Offset the capsule position so the camera is at the top
-			physics->TeleportController(controller->pxController, GlmVec3ToPxExtendedVec3(position - glm::vec3(0, ecs::PLAYER_HEIGHT / 2 - ecs::PLAYER_RADIUS, 0)));
+			physics->TeleportController(
+				controller->pxController,
+				GlmVec3ToPxExtendedVec3(
+					position - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT / 2, 0))
+			);
 		}
 	}
 
@@ -337,23 +346,26 @@ namespace ecs
 			*velocity = controller->velocity;
 
 			// Offset the capsule position so the camera is at the top
-			transform->SetPosition(newPosition + glm::vec3(0, PLAYER_HEIGHT / 2 - ecs::PLAYER_RADIUS, 0));
+			transform->SetPosition(newPosition
+				+ glm::vec3(0, PLAYER_CAPSULE_HEIGHT / 2, 0));
 		}
 	}
 
-	bool HumanControlSystem::ResizeEntity(ecs::Entity entity, float height, float oldHeight, bool overlapCheck)
+	bool HumanControlSystem::ResizeEntity(ecs::Entity entity, float height, bool overlapCheck)
 	{
 		auto controller = entity.Get<HumanController>();
 
-		if (controller->pxController)
+		physx::PxCapsuleController *pxController = controller->pxController;
+		if (pxController)
 		{
+			float oldHeight = physics->GetCapsuleHeight(pxController);
 			bool valid = true;
-			physics->ResizeController(controller->pxController, height);
+			physics->SetControllerHeight(pxController, height);
 
 			if (overlapCheck)
 			{
 				physx::PxOverlapBuffer hit;
-				physx::PxRigidDynamic* actor = controller->pxController->getActor();
+				physx::PxRigidDynamic* actor = pxController->getActor();
 
 				// Shift actor position slightly upwards to prevent ground contact
 				// and head clipping into things
@@ -364,7 +376,7 @@ namespace ecs
 			}
 			if (!valid)
 			{
-				physics->ResizeController(controller->pxController, oldHeight);
+				physics->SetControllerHeight(pxController, oldHeight);
 			}
 			return valid;
 		}

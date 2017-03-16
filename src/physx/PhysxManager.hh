@@ -80,7 +80,9 @@ namespace sp
 			ActorDesc desc, const ecs::Entity &entity);
 
 		void RemoveActor(physx::PxRigidActor *actor);
-		physx::PxController *CreateController(physx::PxVec3 pos, float radius, float height, float density);
+
+		physx::PxCapsuleController *CreateController(physx::PxVec3 pos,
+			float radius, float height, float density);
 
 		/**
 		 * Get the Entity associated with this actor.
@@ -90,8 +92,17 @@ namespace sp
 
 		void MoveController(physx::PxController *controller, double dt, physx::PxVec3 displacement);
 		void TeleportController(physx::PxController *controller, physx::PxExtendedVec3 position);
-		void ResizeController(physx::PxController *controller, const float height);
+
+		/**
+		 * capsuleHeight should not include the height of top and bottom
+		 * radiuses
+		 */
+		void SetControllerHeight(physx::PxCapsuleController *controller,
+			const float capsuleHeight);
+
 		void RemoveController(physx::PxController *controller);
+
+		float GetCapsuleHeight(physx::PxCapsuleController *controller);
 
 		bool RaycastQuery(
 			ecs::Entity &entity,
@@ -110,7 +121,7 @@ namespace sp
 		* Will return true if a hit is found and false otherwise
 		*/
 		bool OverlapQuery(
-			physx::PxRigidDynamic *actor, 
+			physx::PxRigidDynamic *actor,
 			physx::PxVec3 translation,
 			physx::PxOverlapBuffer& hit);
 

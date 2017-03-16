@@ -551,7 +551,7 @@ namespace sp
 		}
 	}
 
-	PxController *PhysxManager::CreateController(PxVec3 pos, float radius, float height, float density)
+	PxCapsuleController *PhysxManager::CreateController(PxVec3 pos, float radius, float height, float density)
 	{
 		Lock();
 		if (!manager) manager = PxCreateControllerManager(*scene, true);
@@ -568,7 +568,8 @@ namespace sp
 		desc.reportCallback = new ControllerHitReport(this);
 		desc.userData = new glm::vec3(0);
 
-		PxController *controller = manager->createController(desc);
+		PxCapsuleController *controller =
+			static_cast<PxCapsuleController *>(manager->createController(desc));
 		Unlock();
 		return controller;
 	}
@@ -588,10 +589,12 @@ namespace sp
 		Unlock();
 	}
 
-	void PhysxManager::ResizeController(PxController *controller, const float height)
+	void PhysxManager::SetControllerHeight(
+		PxCapsuleController *controller,
+		const float capsuleHeight)
 	{
 		Lock();
-		controller->resize(height);
+		controller->setHeight(capsuleHeight);
 		Unlock();
 	}
 
@@ -600,6 +603,14 @@ namespace sp
 		Lock();
 		controller->release();
 		Unlock();
+	}
+
+	float PhysxManager::GetCapsuleHeight(PxCapsuleController *controller)
+	{
+		ReadLock();
+		float height = controller->getHeight();
+		ReadUnlock();
+		return height;
 	}
 
 	bool PhysxManager::RaycastQuery(ecs::Entity &entity, const PxVec3 origin, const PxVec3 dir, const float distance, PxRaycastBuffer &hit)

@@ -39,7 +39,7 @@ namespace ecs
 		/**
 		* Resize entity used for crouching and uncrouching. Can perform overlap checks to make sure resize is valid
 		*/
-		bool ResizeEntity(ecs::Entity entity, float height, float oldHeight, bool overlapCheck);
+		bool ResizeEntity(ecs::Entity entity, float height, bool overlapCheck);
 
 		/**
 		* Pick up the object that the player is looking at and make it move at to a fixed location relative to camera
