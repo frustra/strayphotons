@@ -5,9 +5,37 @@
 
 const float InvVoxelGridSize = 1.0 / VOXEL_GRID_SIZE;
 
-vec4 SampleVoxelLod(vec3 position, float level)
+vec4 SampleVoxelLod(vec3 position, vec3 dir, float level, float map)
 {
-	return textureLod(voxelRadiance, position * InvVoxelGridSize, level) * vec4(vec3(VoxelFixedPointExposure), 1.0);
+	vec4 result;
+	if (level >= 1) {
+		vec3 axes = step(0, dir);
+		vec3 scale = InvVoxelGridSize / vec3(6, 1, 1);
+		vec3 mipCoord = position * scale;
+		vec3 mipDelta = vec3(VOXEL_GRID_SIZE, 0, 0) * scale;
+
+		result = textureLod(voxelRadianceMips, mipCoord + mipDelta * map, level - 1);
+		// vec4 yr = textureLod(voxelRadianceMips, mipCoord + 3 * mipDelta * axes.y + mipDelta, level - 1);
+		// vec4 zr = textureLod(voxelRadianceMips, mipCoord + 3 * mipDelta * axes.z + mipDelta * 2, level - 1);
+		// xr.rgb *= smoothstep(0.05, 0.1, abs(dir.x));
+		// yr.rgb *= smoothstep(0.05, 0.1, abs(dir.y));
+		// zr.rgb *= smoothstep(0.05, 0.1, abs(dir.z));
+
+		// vec3 w = abs(dir);
+		// result = xr * w.x + yr * w.y + zr * w.z;
+		// result = max(xr, max(yr, zr));
+	} else {
+		result = textureLod(voxelRadiance, position * InvVoxelGridSize, level);
+	}
+	return result * vec4(vec3(VoxelFixedPointExposure), 1.0);
+	// float brightness = (result.r + result.g + result.b) / 3;
+	// if (level < 5) {
+	// 	return vec4(brightness, 0, 0, result.a);
+	// } else if (level < 7) {
+	// 	return vec4(0, brightness, 0, result.a);
+	// } else {
+	// 	return vec4(0, 0, brightness, result.a);
+	// }
 }
 
 vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, vec2 fragCoord)
@@ -28,7 +56,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 		vec3 position = voxelPos + rayDir * dist;
 
 		float level = max(0, log2(size));
-		vec4 value = SampleVoxelLod(position + offset * surfaceNormal, level);
+		vec4 value = SampleVoxelLod(position + offset * surfaceNormal, rayDir, level, step(154, voxelPos.x));
 		// Bias the alpha to prevent traces going through objects.
 		value.a = smoothstep(0.0, 0.4, value.a);
 		result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
@@ -40,7 +68,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 	return vec4(result.rgb, dist * voxelSize);
 }
 
-vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
+vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir)
 {
 	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VOXEL_GRID_SIZE * 0.5;
 	float startDist = 1.75;
@@ -50,7 +78,7 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 	float level = 0;
 
 	for (int level = 0; level < VOXEL_MIP_LEVELS; level++) {
-		vec4 value = SampleVoxelLod(voxelPos + rayDir * dist, float(level));
+		vec4 value = SampleVoxelLod(voxelPos + rayDir * dist, rayDir, float(level), step(154, voxelPos.x));
 		result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
 		if (result.a > 0.999) break;
@@ -60,17 +88,18 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 	return result;
 }
 
-vec3 HemisphereIndirectDiffuse(vec3 worldPosition, vec3 worldNormal, vec3 flatWorldNormal, vec2 fragCoord) {
+vec3 HemisphereIndirectDiffuse(vec3 worldPosition, vec3 worldNormal, vec2 fragCoord) {
 	float rOffset = InterleavedGradientNoise(fragCoord);
 
 	vec3 sampleDir = OrientByNormal(rOffset * M_PI * 2.0, 0.1, worldNormal);
-	vec4 indirectDiffuse = ConeTraceGridDiffuse(worldPosition, sampleDir, flatWorldNormal);
+	vec4 indirectDiffuse = ConeTraceGridDiffuse(worldPosition, sampleDir);
 
 	for (int a = 3; a <= 6; a += 3) {
 		float diffuseScale = 1.0 / a;
 		for (float r = 0; r < a; r++) {
 			vec3 sampleDir = OrientByNormal((r + rOffset) * diffuseScale * M_PI * 2.0, a * 0.1, worldNormal);
-			vec4 sampleColor = ConeTraceGridDiffuse(worldPosition, sampleDir, flatWorldNormal);
+			vec4 sampleColor = ConeTraceGridDiffuse(worldPosition, sampleDir);
+			sampleColor.rgb *= step(0.3, sampleDir.x);
 
 			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * diffuseScale * 0.5;
 		}

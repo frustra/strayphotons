@@ -4,8 +4,9 @@
 ##import lib/types_common
 
 layout (binding = 0) uniform sampler3D voxelRadiance;
-layout (binding = 1) uniform sampler2D shadowMap;
-layout (binding = 2) uniform sampler2DArray mirrorShadowMap;
+layout (binding = 1) uniform sampler3D voxelRadianceMips;
+layout (binding = 2) uniform sampler2D shadowMap;
+layout (binding = 3) uniform sampler2DArray mirrorShadowMap;
 layout (binding = 0, rgba32f) writeonly uniform image2D values;
 
 layout (binding = 0, std140) uniform LightSensorData {
@@ -42,7 +43,7 @@ void main() {
 	vec3 lum = vec3(0.0);
 
 	lum += DirectShading(sensor.position, vec3(1.0), sensor.direction, sensor.direction);
-	lum += HemisphereIndirectDiffuse(sensor.position, sensor.direction, sensor.direction, vec2(0));
+	lum += HemisphereIndirectDiffuse(sensor.position, sensor.direction, vec2(0));
 
 	// first value r=1 indicates result is populated
 	imageStore(values, ivec2(index * 2, 0), vec4(1, sensor.id0, sensor.id1, 0));

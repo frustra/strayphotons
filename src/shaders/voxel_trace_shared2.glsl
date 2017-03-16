@@ -3,10 +3,18 @@
 
 ##import raytrace/intersection
 ##import voxel_trace_shared
+##import voxel_shared
 
 float GetVoxelNearest(vec3 position, int level, out vec3 radiance)
 {
-	vec4 radianceData = texelFetch(voxelRadiance, ivec3(position) >> level, level);
+	vec4 radianceData;
+	if (level > 0) {
+		int axis = int(step(154, position.x));//DominantAxis(fract(position) - 0.5);
+
+		radianceData = texelFetch(voxelRadianceMips, (ivec3(position) + ivec3(axis * VOXEL_GRID_SIZE, 0, 0)) >> level, level - 1);
+	} else {
+		radianceData = texelFetch(voxelRadiance, ivec3(position), 0);
+	}
 	radiance = radianceData.rgb * VoxelFixedPointExposure;
 	return radianceData.a;
 }

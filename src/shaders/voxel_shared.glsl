@@ -21,11 +21,26 @@ const mat3[3] AxisSwapReverse = mat3[](
 	mat3(1.0)
 );
 
-int DominantAxis(vec3 normal)
+const vec3[6] AxisVector = vec3[](
+	vec3(1, 0, 0),
+	vec3(0, 1, 0),
+	vec3(0, 0, 1),
+	vec3(-1, 0, 0),
+	vec3(0, -1, 0),
+	vec3(0, 0, -1)
+);
+
+int SignedDominantAxis(vec3 normal)
 {
 	vec3 absNormal = abs(normal);
 	bvec3 mask = greaterThanEqual(absNormal.xyz, max(absNormal.yzx, absNormal.zxy));
 	return int(dot(vec3(mask) * sign(normal), vec3(1, 2, 3)));
+}
+
+int DominantAxis(vec3 normal)
+{
+	int axis = SignedDominantAxis(normal);
+	return abs(axis) - 1 + int(step(0, -axis)) * 3;
 }
 
 #endif

@@ -358,8 +358,9 @@ namespace sp
 
 		mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 		voxelData.radiance->GetTexture().Bind(0);
-		shadowMap->GetTexture().Bind(1);
-		mirrorShadowMap->GetTexture().Bind(2);
+		voxelData.radianceMips->GetTexture().Bind(1);
+		shadowMap->GetTexture().Bind(2);
+		mirrorShadowMap->GetTexture().Bind(3);
 
 		ShaderControl->BindPipeline<LightSensorUpdateCS>(GlobalShaders);
 		glDispatchCompute(1, 1, 1);

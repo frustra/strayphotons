@@ -17,6 +17,7 @@ layout (binding = 4) uniform sampler2D shadowMap;
 layout (binding = 5) uniform sampler2DArray mirrorShadowMap;
 layout (binding = 6) uniform sampler2D lightingGel;
 layout (binding = 7) uniform sampler3D voxelRadiance;
+layout (binding = 8) uniform sampler3D voxelRadianceMips;
 
 layout (binding = 0) uniform atomic_uint fragListSize;
 layout (binding = 0, offset = 4) uniform atomic_uint nextComputeSize;
@@ -63,7 +64,7 @@ void main()
 	vec3 pixelLuminance = DirectShading(worldPosition, baseColor.rgb, inNormal, inNormal);
 	if (lightAttenuation > 0) {
 		vec3 directDiffuseColor = baseColor.rgb - baseColor.rgb * metalness;
-		vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, inNormal, inNormal, vec2(0));
+		vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, inNormal, vec2(0));
 		pixelLuminance += indirectDiffuse * directDiffuseColor * lightAttenuation * smoothstep(0.0, 0.1, length(indirectDiffuse));
 	}
 

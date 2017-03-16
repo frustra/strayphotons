@@ -49,16 +49,28 @@ namespace sp
 		}
 
 		RenderTargetDesc radianceDesc(PF_RGBA16, unpackedSize);
-		radianceDesc.levels = VoxelMipLevels;
 		radianceDesc.wrapS = radianceDesc.wrapT = radianceDesc.wrapR = GL_CLAMP_TO_BORDER;
 		radianceDesc.borderColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		if (!voxelData.radiance || voxelData.radiance->GetDesc() != radianceDesc)
 		{
 			voxelData.radiance = RTPool->Get(radianceDesc);
+			voxelData.radiance->GetTexture().Clear(0);
+		}
 
-			for (uint32 i = 0; i < VoxelMipLevels; i++)
+		auto mipSize = unpackedSize / 2;
+		mipSize.x *= 6; // 6x anisotropy
+
+		RenderTargetDesc radianceMipsDesc(PF_RGBA16, mipSize);
+		radianceMipsDesc.levels = VoxelMipLevels - 1;
+		radianceMipsDesc.wrapS = radianceDesc.wrapT = radianceDesc.wrapR = GL_CLAMP_TO_BORDER;
+		radianceMipsDesc.borderColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		if (!voxelData.radianceMips || voxelData.radianceMips->GetDesc() != radianceMipsDesc)
+		{
+			voxelData.radianceMips = RTPool->Get(radianceMipsDesc);
+
+			for (uint32 i = 0; i < VoxelMipLevels - 1; i++)
 			{
-				voxelData.radiance->GetTexture().Clear(0, i);
+				voxelData.radianceMips->GetTexture().Clear(0, i);
 			}
 		}
 	}
@@ -112,6 +124,7 @@ namespace sp
 			if (mirrorShadowMap) mirrorShadowMap->GetTexture().Bind(5);
 			if (menuGuiTarget) menuGuiTarget->GetTexture().Bind(6); // TODO(xthexder): bind correct light gel
 			voxelData.radiance->GetTexture().Bind(7);
+			voxelData.radianceMips->GetTexture().Bind(8);
 			mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 
 			ShaderControl->BindPipeline<VoxelRasterVS, VoxelRasterGS, VoxelRasterFS>(GlobalShaders);
@@ -124,11 +137,18 @@ namespace sp
 
 			lastComputeIndirectBuffer.Bind(GL_DISPATCH_INDIRECT_BUFFER);
 
-			for (uint32 i = 0; i < voxelData.radiance->GetDesc().levels; i++)
+			for (uint32 i = 0; i < voxelData.radianceMips->GetDesc().levels + 1; i++)
 			{
 				lastComputeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint));
 				lastFragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i);
-				voxelData.radiance->GetTexture().BindImage(1, GL_WRITE_ONLY, i, GL_TRUE, 0);
+				if (i == 0)
+				{
+					voxelData.radiance->GetTexture().BindImage(1, GL_WRITE_ONLY, 0, GL_TRUE, 0);
+				}
+				else
+				{
+					voxelData.radianceMips->GetTexture().BindImage(1, GL_WRITE_ONLY, i - 1, GL_TRUE, 0);
+				}
 
 				ShaderControl->BindPipeline<VoxelClearCS>(GlobalShaders);
 				GlobalShaders->Get<VoxelClearCS>()->SetLevel(i);
@@ -155,14 +175,17 @@ namespace sp
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
 		}
 		{
-			RenderPhase phase("Mipmap", Timer);
-			for (uint32 i = 1; i < voxelData.radiance->GetDesc().levels; i++)
+			for (uint32 i = 1; i < voxelData.radianceMips->GetDesc().levels + 1; i++)
 			{
+				RenderPhase phase("Mipmap", Timer);
 				computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * (i - 1), sizeof(GLuint) * 8);
 				fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i - 1);
 				fragmentList->GetTexture().BindImage(1, GL_READ_WRITE, i);
-				voxelData.radiance->GetTexture().BindImage(2, GL_READ_ONLY, i - 1, GL_TRUE, 0);
-				voxelData.radiance->GetTexture().BindImage(3, GL_READ_WRITE, i, GL_TRUE, 0);
+				if (i == 1)
+					voxelData.radiance->GetTexture().BindImage(2, GL_READ_ONLY, 0, GL_TRUE, 0);
+				else
+					voxelData.radianceMips->GetTexture().BindImage(2, GL_READ_ONLY, i - 2, GL_TRUE, 0);
+				voxelData.radianceMips->GetTexture().BindImage(3, GL_WRITE_ONLY, i - 1, GL_TRUE, 0);
 
 				ShaderControl->BindPipeline<VoxelMipmapCS>(GlobalShaders);
 				GlobalShaders->Get<VoxelMipmapCS>()->SetLevel(i);

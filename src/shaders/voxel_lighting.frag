@@ -15,10 +15,11 @@ layout (binding = 2) uniform sampler2D gBuffer2;
 layout (binding = 3) uniform sampler2D shadowMap;
 layout (binding = 4) uniform sampler2DArray mirrorShadowMap;
 layout (binding = 5) uniform sampler3D voxelRadiance;
-layout (binding = 6) uniform sampler2D indirectDiffuseSampler;
-layout (binding = 7) uniform usampler2D mirrorIndexStencil;
-layout (binding = 8) uniform sampler2D lightingGel;
-layout (binding = 9) uniform sampler2D aoBuffer;
+layout (binding = 6) uniform sampler3D voxelRadianceMips;
+layout (binding = 7) uniform sampler2D indirectDiffuseSampler;
+layout (binding = 8) uniform usampler2D mirrorIndexStencil;
+layout (binding = 9) uniform sampler2D lightingGel;
+layout (binding = 10) uniform sampler2D aoBuffer;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
@@ -149,7 +150,7 @@ void main()
 
 	if (diffuseDownsample > 1) {
 		if (detectEdge(viewNormal, length(viewPosition), diffuseDownsample * 0.65 / textureSize(gBuffer0, 0))) {
-			indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, flatWorldNormal, vec2(0));
+			indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, vec2(0));
 		} else {
 			indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
 		}

@@ -26,7 +26,7 @@ void main()
 	vec3 edge3 = vec3(gl_in[2].gl_Position - gl_in[1].gl_Position);
 	vec3 realNormal = normalize(cross(edge1, edge2));
 
-	outDirection = DominantAxis(realNormal);
+	outDirection = SignedDominantAxis(realNormal);
 	mat4 rotation = AxisSwapForward[abs(outDirection)-1];
 
 	for (int i = 0; i < 3; i++) {

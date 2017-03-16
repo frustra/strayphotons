@@ -55,6 +55,7 @@ namespace sp
 		indirectDiffuse->SetInput(1, context.GBuffer1);
 		indirectDiffuse->SetInput(2, context.GBuffer2);
 		indirectDiffuse->SetInput(3, context.VoxelRadiance);
+		indirectDiffuse->SetInput(4, context.VoxelRadianceMips);
 
 		auto lighting = context.AddPass<VoxelLighting>(voxelData, CVarSSAOEnabled.Get());
 		lighting->SetInput(0, context.GBuffer0);
@@ -63,10 +64,11 @@ namespace sp
 		lighting->SetInput(3, context.ShadowMap);
 		lighting->SetInput(4, context.MirrorShadowMap);
 		lighting->SetInput(5, context.VoxelRadiance);
-		lighting->SetInput(6, indirectDiffuse);
-		lighting->SetInput(7, context.MirrorIndexStencil);
-		lighting->SetInput(8, context.LightingGel);
-		lighting->SetInput(9, context.AoBuffer);
+		lighting->SetInput(6, context.VoxelRadianceMips);
+		lighting->SetInput(7, indirectDiffuse);
+		lighting->SetInput(8, context.MirrorIndexStencil);
+		lighting->SetInput(9, context.LightingGel);
+		lighting->SetInput(10, context.AoBuffer);
 
 		context.LastOutput = lighting;
 	}
@@ -168,9 +170,10 @@ namespace sp
 			context.MirrorShadowMap = context.AddPass<ProxyProcessPass>(targets.mirrorShadowMap);
 		}
 
-		if (targets.voxelData.radiance)
+		if (targets.voxelData.radiance && targets.voxelData.radianceMips)
 		{
 			context.VoxelRadiance = context.AddPass<ProxyProcessPass>(targets.voxelData.radiance);
+			context.VoxelRadianceMips = context.AddPass<ProxyProcessPass>(targets.voxelData.radianceMips);
 		}
 
 		if (targets.mirrorIndexStencil)
@@ -238,6 +241,7 @@ namespace sp
 			viewGBuf->SetInput(2, context.GBuffer2);
 			viewGBuf->SetInput(3, context.Depth);
 			viewGBuf->SetInput(4, context.VoxelRadiance);
+			viewGBuf->SetInput(5, context.VoxelRadianceMips);
 			context.LastOutput = viewGBuf;
 		}
 
