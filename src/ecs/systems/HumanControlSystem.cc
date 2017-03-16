@@ -226,7 +226,7 @@ namespace ecs
 
 		// Offset the capsule position so the camera is at the top
 		physx::PxVec3 pos = GlmVec3ToPxVec3(transform->GetPosition() - glm::vec3(0, ecs::PLAYER_HEIGHT / 2 - ecs::PLAYER_RADIUS, 0));
-		controller->pxController = px.CreateController(pos, ecs::PLAYER_RADIUS, ecs::PLAYER_HEIGHT - ecs::PLAYER_RADIUS, 0.5f);
+		controller->pxController = px.CreateController(pos, ecs::PLAYER_RADIUS, ecs::PLAYER_HEIGHT - 2*ecs::PLAYER_RADIUS, 0.5f);
 		controller->pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
 
 		return controller;
