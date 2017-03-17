@@ -117,10 +117,24 @@ namespace ecs
 		return this->translate * glm::vec4(0, 0, 0, 1);
 	}
 
+	glm::vec3 Transform::GetUp() const
+	{
+		return GetRotate() * glm::vec3(0, 1, 0);
+	}
+
 	glm::vec3 Transform::GetForward() const
 	{
-		glm::vec3 forward = glm::vec3(0, 0, -1);
-		return GetRotate() * forward;
+		return GetRotate() * glm::vec3(0, 0, -1);
+	}
+
+	glm::vec3 Transform::GetLeft() const
+	{
+		return GetRotate() * glm::vec3(1, 0, 0);
+	}
+
+	glm::vec3 Transform::GetRight() const
+	{
+		return -GetLeft();
 	}
 
 	void Transform::SetRotate(glm::mat4 mat)
@@ -160,6 +174,11 @@ namespace ecs
 	glm::mat4 Transform::GetScale() const
 	{
 		return this->scale;
+	}
+
+	glm::vec3 Transform::GetScaleVec() const
+	{
+		return this->scale * glm::vec4(1, 1, 1, 0);
 	}
 
 	bool Transform::ClearDirty()

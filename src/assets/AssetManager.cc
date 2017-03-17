@@ -476,6 +476,11 @@ namespace sp
 							slideDoor->openTime = param.second.get<double>();
 							slideDoor->ApplyParams();
 						}
+						else if (param.first == "forward")
+						{
+							slideDoor->forward = MakeVec3(param.second);
+							slideDoor->ApplyParams();
+						}
 					}
 				}
 				else if (comp.first == "lightGun")

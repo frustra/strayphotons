@@ -46,36 +46,45 @@
 				"triggers": [
 					{
 						"illuminance": [0.1, 0.1, 0.1],
-						"oncmd": "g.CloseBarrier barrier1",
-						"offcmd": "g.OpenBarrier barrier1"
+						"oncmd": "g.CloseDoor door1",
+						"offcmd": "g.OpenDoor door1"
 					}
 				]
 			}
 		},
 		{
-			"renderable": "door-hex-1x2",
-			"_name": "barrier1",
-			"barrier": {
-				"isOpen": false
-			},
+			"_name": "door1-l",
+			"renderable": "door-panel-l-1.5x2",
 			"transform": {
-				"scale": [1.5, 1.5, 1.5],
-				"translate": [-5.3, 0.6, -7.75]
-			},
-			"physics": {
-				"model": "door-hex-1x2",
-				"dynamic": false
+				"translate": [-5.3, 0.6, -7.75],
+				"scale": [1, 1.25, 1]
 			}
 		},
 		{
-			"renderable": "door-hex-frame-1x2",
+			"_name": "door1-r",
+			"renderable": "door-panel-r-1.5x2",
 			"transform": {
-				"scale": [1.5, 1.5, 1.5],
-				"translate": [-5.3, 0.6, -7.75]
+				"translate": [-5.3, 0.6, -7.75],
+				"scale": [1, 1.25, 1]
+			}
+		},
+		{
+			"_name": "door1",
+			"renderable": "door-frame-1.5x2",
+			"transform": {
+				"translate": [-5.3, 0.6, -7.75],
+				"scale": [1, 1.25, 1]
 			},
 			"physics": {
-				"model": "door-hex-frame-1x2",
+				"model": "door-frame-1.5x2",
 				"dynamic": false
+			},
+			"slideDoor": {
+				"left": "door1-l",
+				"right": "door1-r",
+				"width": 1.3,
+				"openTime": 0.5,
+				"forward": [1, 0, 0]
 			}
 		},
 		{

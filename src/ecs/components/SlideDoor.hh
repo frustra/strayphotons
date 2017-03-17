@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Ecs.hh>
+#include <glm/glm.hpp>
 
 namespace ecs
 {
@@ -18,5 +19,6 @@ namespace ecs
 
 		float width = 1.0f;
 		float openTime = 0.5f;
+		glm::vec3 forward = glm::vec3(0, 0, -1);
 	};
 }

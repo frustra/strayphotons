@@ -63,13 +63,15 @@ namespace ecs
 			glm::vec3 panelPos = transform->GetPosition();
 			glm::vec3 animatePos;
 			float panelWidth = this->width / 2;
+			glm::vec3 leftDir = glm::normalize(
+				glm::cross(this->forward, transform->GetUp()));
 			if (panel == left)
 			{
-				animatePos = panelPos + glm::vec3(panelWidth, 0, 0);
+				animatePos = panelPos + panelWidth * leftDir;
 			}
 			else
 			{
-				animatePos = panelPos + glm::vec3(-panelWidth, 0, 0);
+				animatePos = panelPos - panelWidth * leftDir;
 			}
 
 			animation->states.resize(2);
@@ -77,14 +79,14 @@ namespace ecs
 
 			// closed
 			Animation::State closeState;
-			closeState.scale = glm::vec3(1, 1, 1);
+			closeState.scale = transform->GetScaleVec();
 			closeState.pos = panelPos;
 			animation->states[0] = closeState;
 			animation->animationTimes[0] = this->openTime;
 
 			// open
 			Animation::State openState;
-			openState.scale = glm::vec3(1, 1, 1);
+			openState.scale = transform->GetScaleVec();
 			openState.pos = animatePos;
 			animation->states[1] = openState;
 			animation->animationTimes[1] = this->openTime;

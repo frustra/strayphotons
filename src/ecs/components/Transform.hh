@@ -57,7 +57,10 @@ namespace ecs
 		void SetPosition(glm::vec3 pos);
 		glm::vec3 GetPosition() const;
 
+		glm::vec3 GetUp() const;
 		glm::vec3 GetForward() const;
+		glm::vec3 GetLeft() const;
+		glm::vec3 GetRight() const;
 
 		void SetRotate(glm::mat4 mat);
 		void SetRotate(glm::quat quat);
@@ -67,6 +70,7 @@ namespace ecs
 		void SetScale(glm::mat4 mat);
 		void SetScale(glm::vec3 xyz);
 		glm::mat4 GetScale() const;
+		glm::vec3 GetScaleVec() const;
 
 		bool ClearDirty();
 	private:

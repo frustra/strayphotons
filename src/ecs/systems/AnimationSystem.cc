@@ -4,8 +4,6 @@
 #include "ecs/components/Renderable.hh"
 #include "physx/PhysxUtils.hh"
 
-#include "core/Logging.hh"
-
 #include <PxPhysicsAPI.h>
 
 namespace ecs
@@ -29,27 +27,27 @@ namespace ecs
 
 		for (auto ent : entities.EntitiesWith<Animation, Transform>())
 		{
-			auto block = ent.Get<Animation>();
+			auto animation = ent.Get<Animation>();
 			auto transform = ent.Get<Transform>();
 
-			if (block->nextState < 0)
+			if (animation->nextState < 0)
 			{
 				continue;
 			}
 
-			Assert((uint32) block->nextState < block->states.size(),
+			Assert((uint32)animation->nextState < animation->states.size(),
 				"invalid next state");
-			Assert((uint32) block->curState < block->states.size(),
+			Assert((uint32)animation->curState < animation->states.size(),
 				"invalid current state");
-			Assert(block->curState >= 0, "curState not set during an animation");
-			Assert(block->timeLeft >= 0, "negative animation time");
+			Assert(animation->curState >= 0, "curState not set during an animation");
+			Assert(animation->timeLeft >= 0, "negative animation time");
 
-			if (dtSinceLastFrame > block->timeLeft)
+			if (dtSinceLastFrame > animation->timeLeft)
 			{
-				block->timeLeft = 0;
-				block->curState = block->nextState;
-				block->nextState = -1;
-				Animation::State &curState = block->states[block->curState];
+				animation->timeLeft = 0;
+				animation->curState = animation->nextState;
+				animation->nextState = -1;
+				Animation::State &curState = animation->states[animation->curState];
 
 				transform->SetPosition(curState.pos);
 				transform->SetScale(curState.scale);
@@ -61,12 +59,14 @@ namespace ecs
 			}
 			else
 			{
-				block->timeLeft -= dtSinceLastFrame;
-				Animation::State &curState = block->states[block->curState];
-				Animation::State &nextState = block->states[block->nextState];
+				animation->timeLeft -= dtSinceLastFrame;
+				Animation::State &curState =
+					animation->states[animation->curState];
+				Animation::State &nextState =
+					animation->states[animation->nextState];
 
-				float duration = block->animationTimes[block->nextState];
-				float completion = 1 - (block->timeLeft / duration);
+				float duration = animation->animationTimes[animation->nextState];
+				float completion = 1 - (animation->timeLeft / duration);
 
 				glm::vec3 dPos = nextState.pos - curState.pos;
 				glm::vec3 dScale = nextState.scale - curState.scale;
@@ -80,8 +80,6 @@ namespace ecs
 				{
 					ent.Get<ecs::Renderable>()->hidden = false;
 				}
-
-				Logf("animating %f", completion);
 			}
 		}
 
