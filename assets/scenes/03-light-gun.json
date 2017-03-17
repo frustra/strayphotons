@@ -297,8 +297,8 @@
 			"_name": "sensor2_plate",
 			"renderable": "l-sensor-plate",
 			"transform": {
-				"translate": [6, 1.05, 2.975],
-				"rotate": [0, 0, 1, 0]
+				"translate": [6, 1.05, 3],
+				"rotate": [180, 0, 1, 0]
 			},
 			"physics": {
 				"model": "l-sensor-plate",
