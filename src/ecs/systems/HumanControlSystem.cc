@@ -360,7 +360,7 @@ namespace ecs
 		{
 			float oldHeight = physics->GetCapsuleHeight(pxController);
 			bool valid = true;
-			physics->SetControllerHeight(pxController, height);
+			physics->ResizeController(pxController, height);
 
 			if (overlapCheck)
 			{
@@ -376,7 +376,7 @@ namespace ecs
 			}
 			if (!valid)
 			{
-				physics->SetControllerHeight(pxController, oldHeight);
+				physics->ResizeController(pxController, oldHeight);
 			}
 			return valid;
 		}
