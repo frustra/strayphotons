@@ -4,6 +4,8 @@
 #include "ecs/components/Renderable.hh"
 #include "physx/PhysxUtils.hh"
 
+#include "core/Logging.hh"
+
 #include <PxPhysicsAPI.h>
 
 namespace ecs
@@ -78,6 +80,8 @@ namespace ecs
 				{
 					ent.Get<ecs::Renderable>()->hidden = false;
 				}
+
+				Logf("animating %f", completion);
 			}
 		}
 

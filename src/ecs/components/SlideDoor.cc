@@ -30,6 +30,8 @@ namespace ecs
 	void SlideDoor::Open()
 	{
 		ValidateDoor();
+		if (IsOpen()) return;
+
 		auto lPanel = left.Get<Animation>();
 		auto rPanel = right.Get<Animation>();
 		lPanel->AnimateToState(1);
@@ -39,6 +41,8 @@ namespace ecs
 	void SlideDoor::Close()
 	{
 		ValidateDoor();
+		if (!IsOpen()) return;
+
 		auto lPanel = left.Get<Animation>();
 		auto rPanel = right.Get<Animation>();
 		lPanel->AnimateToState(0);
