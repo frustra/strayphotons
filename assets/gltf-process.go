@@ -125,10 +125,18 @@ func processGltf(gltf map[string]interface{}, folder string) {
 			}
 
 			textureMap := map[string]string{
+				// For sponza
 				"diffuse":   "baseColor",
 				"roughness": "roughness",
 				"metallic":  "metallic",
 				"height":    "height",
+
+				// From substance
+				"Base_Color": "baseColor",
+				"Height":     "height",
+				"Metallic":   "metallic",
+				"Normal":     "normal",
+				"Roughness":  "roughness",
 			}
 			for _, file := range files {
 				if !file.IsDir() && strings.HasPrefix(file.Name(), name+"_") {
