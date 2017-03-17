@@ -58,6 +58,10 @@
 			"transform": {
 				"translate": [-5.3, 0.6, -7.75],
 				"scale": [1, 1.25, 1]
+			},
+			"physics": {
+				"model": "door-panel-l-1.5x2",
+				"dynamic": false
 			}
 		},
 		{
@@ -66,18 +70,23 @@
 			"transform": {
 				"translate": [-5.3, 0.6, -7.75],
 				"scale": [1, 1.25, 1]
+			},
+			"physics": {
+				"model": "door-panel-r-1.5x2",
+				"dynamic": false
 			}
 		},
 		{
 			"_name": "door1",
 			"renderable": "door-frame-1.5x2",
 			"transform": {
-				"translate": [-5.3, 0.6, -7.75],
+				"translate": [-5.275, 0.6, -7.75],
 				"scale": [1, 1.25, 1]
 			},
 			"physics": {
 				"model": "door-frame-1.5x2",
-				"dynamic": false
+				"dynamic": false,
+				"decomposeHull": true
 			},
 			"slideDoor": {
 				"left": "door1-l",
