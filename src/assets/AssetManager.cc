@@ -29,6 +29,8 @@ extern "C"
 #include "ecs/components/View.hh"
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/LightGun.hh"
+#include "ecs/components/SlideDoor.hh"
+#include "ecs/components/AnimateBlock.hh"
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -426,6 +428,64 @@ namespace sp
 					if (actor)
 					{
 						auto physics = entity.Assign<ecs::Physics>(actor, model);
+					}
+				}
+				else if (comp.first == "slideDoor")
+				{
+					auto slideDoor = entity.Assign<ecs::SlideDoor>();
+					for (auto param : comp.second.get<picojson::object>())
+					{
+						bool isLeft = (param.first == "left");
+						bool isRight = (param.first == "right");
+						if (isLeft || isRight)
+						{
+							ecs::Entity panel = scene->FindEntity(
+								param.second.get<string>());
+							if (panel.Has<ecs::AnimateBlock>())
+							{
+								throw std::runtime_error(
+									"slideDoor left/right panels should not already have an AnimateBlock");
+							}
+							if (!panel.Has<ecs::Transform>())
+							{
+								throw std::runtime_error(
+									"slideDoor entity must already have a transform"
+								);
+							}
+
+							auto transform = panel.Get<ecs::Transform>();
+							glm::vec3 panelPos = transform->GetPosition();
+							glm::vec3 animatePos;
+							if (isLeft)
+							{
+								slideDoor->left = panel;
+								animatePos = panelPos + glm::vec3(-0.65/2, 0, 0);
+							}
+							else
+							{
+								slideDoor->right = panel;
+								animatePos = panelPos + glm::vec3(0.65/2, 0, 0);
+							}
+
+							auto block = panel.Assign<ecs::AnimateBlock>();
+
+							// closed
+							ecs::AnimateBlock::State closeState;
+							closeState.scale = glm::vec3(1, 1, 1);
+							closeState.pos = panelPos;
+							block->states.push_back(closeState);
+							block->animationTimes.push_back(0.5);
+
+							// open
+							ecs::AnimateBlock::State openState;
+							openState.scale = glm::vec3(1, 1, 0);
+							openState.pos = animatePos;
+							openState.hidden = true;
+							block->states.push_back(openState);
+							block->animationTimes.push_back(0.5);
+
+							block->curState = 0;
+						}
 					}
 				}
 				else if (comp.first == "lightGun")

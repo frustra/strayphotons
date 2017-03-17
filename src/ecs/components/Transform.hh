@@ -65,6 +65,7 @@ namespace ecs
 		glm::mat4 GetRotateMatrix() const;
 
 		void SetScale(glm::mat4 mat);
+		void SetScale(glm::vec3 xyz);
 		glm::mat4 GetScale() const;
 
 		bool ClearDirty();
