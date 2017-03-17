@@ -4,106 +4,194 @@
 	],
 	"entities": [
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [0, 0, 0]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [3, 0, 0]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [0, 0, 3]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [3, 0, 3]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [0, 0, 6]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [3, 0, 6]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [6, 0, 0]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [6, 0, 3]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [6, 0, 6]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 
 		{
 			"_comment": "ceiling",
-			"renderable": "ground-1x1x1",
+			"renderable": "ceiling-3x3",
 			"transform": {
-				"scale": [11, 1, 11],
-				"translate": [-1, 5, -1]
+				"translate": [0, 4, 0]
 			},
 			"physics": {
-				"model": "ground-1x1x1",
+				"model": "ceiling-3x3",
+				"dynamic": false
+			}
+		},
+		{
+			"_comment": "ceiling",
+			"renderable": "ceiling-3x3",
+			"transform": {
+				"translate": [0, 4, 3]
+			},
+			"physics": {
+				"model": "ceiling-3x3",
+				"dynamic": false
+			}
+		},
+		{
+			"_comment": "ceiling",
+			"renderable": "ceiling-3x3",
+			"transform": {
+				"translate": [0, 4, 6]
+			},
+			"physics": {
+				"model": "ceiling-3x3",
+				"dynamic": false
+			}
+		},
+		{
+			"_comment": "ceiling",
+			"renderable": "ceiling-3x3",
+			"transform": {
+				"translate": [3, 4, 0]
+			},
+			"physics": {
+				"model": "ceiling-3x3",
+				"dynamic": false
+			}
+		},
+		{
+			"_comment": "ceiling",
+			"renderable": "ceiling-3x3",
+			"transform": {
+				"translate": [3, 4, 3]
+			},
+			"physics": {
+				"model": "ceiling-3x3",
+				"dynamic": false
+			}
+		},
+		{
+			"_comment": "ceiling",
+			"renderable": "ceiling-3x3",
+			"transform": {
+				"translate": [3, 4, 6]
+			},
+			"physics": {
+				"model": "ceiling-3x3",
+				"dynamic": false
+			}
+		},
+
+		{
+			"_comment": "ceiling",
+			"renderable": "ceiling-3x3",
+			"transform": {
+				"translate": [6, 4, 0]
+			},
+			"physics": {
+				"model": "ceiling-3x3",
+				"dynamic": false
+			}
+		},
+		{
+			"_comment": "ceiling",
+			"renderable": "ceiling-3x3",
+			"transform": {
+				"translate": [6, 4, 3]
+			},
+			"physics": {
+				"model": "ceiling-3x3",
+				"dynamic": false
+			}
+		},
+		{
+			"_comment": "ceiling",
+			"renderable": "ceiling-3x3",
+			"transform": {
+				"translate": [6, 4, 6]
+			},
+			"physics": {
+				"model": "ceiling-3x3",
 				"dynamic": false
 			}
 		},
