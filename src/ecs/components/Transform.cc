@@ -145,6 +145,12 @@ namespace ecs
 		return glm::mat4_cast(rotate);
 	}
 
+	void Transform::SetScale(glm::vec3 xyz)
+	{
+		this->scale = glm::scale(glm::mat4(), xyz);
+		this->dirty = true;
+	}
+
 	void Transform::SetScale(glm::mat4 mat)
 	{
 		this->scale = mat;

@@ -5,6 +5,7 @@
 #include "audio/AudioManager.hh"
 #include "Common.hh"
 #include "game/GameLogic.hh"
+#include "ecs/systems/AnimationSystem.hh"
 #include "game/InputManager.hh"
 #include "game/gui/DebugGuiManager.hh"
 #include "game/gui/MenuGuiManager.hh"
@@ -40,6 +41,7 @@ namespace sp
 		ecs::EntityManager entityManager;
 		GameLogic logic;
 		PhysxManager physics;
+		ecs::AnimationSystem animation;
 
 	private:
 		double lastFrameTime;

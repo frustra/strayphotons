@@ -27,6 +27,9 @@ namespace sp
 		void OpenBarrier(const string &name);
 		void CloseBarrier(const string &name);
 
+		void OpenDoor(const string &name);
+		void CloseDoor(const string &name);
+
 	private:
 		Game *game;
 		InputManager *input;

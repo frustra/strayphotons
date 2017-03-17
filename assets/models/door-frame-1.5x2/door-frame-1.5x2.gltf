@@ -1,0 +1,159 @@
+{
+    "accessors": {
+        "accessor_index_0": {
+            "bufferView": "bufferView_index",
+            "byteOffset": 0,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 108,
+            "type": "SCALAR"
+        },
+        "accessor_normal": {
+            "bufferView": "bufferView_vertex",
+            "byteOffset": 12,
+            "byteStride": 24,
+            "componentType": 5126,
+            "count": 72,
+            "type": "VEC3"
+        },
+        "accessor_position": {
+            "bufferView": "bufferView_vertex",
+            "byteOffset": 0,
+            "byteStride": 24,
+            "componentType": 5126,
+            "count": 72,
+            "max": [
+                0.1375,
+                2,
+                1.5
+            ],
+            "min": [
+                -0.0375,
+                0,
+                0
+            ],
+            "type": "VEC3"
+        }
+    },
+    "asset": {
+        "generator": "OBJ2GLTF",
+        "premultipliedAlpha": true,
+        "profile": {
+            "api": "WebGL",
+            "version": "1.0"
+        },
+        "version": 1
+    },
+    "bufferViews": {
+        "bufferView_index": {
+            "buffer": "buffer_door-frame-1.5x2",
+            "byteLength": 216,
+            "byteOffset": 1728,
+            "target": 34963
+        },
+        "bufferView_vertex": {
+            "buffer": "buffer_door-frame-1.5x2",
+            "byteLength": 1728,
+            "byteOffset": 0,
+            "target": 34962
+        }
+    },
+    "buffers": {
+        "buffer_door-frame-1.5x2": {
+            "byteLength": 1944,
+            "type": "arraybuffer",
+            "uri": "door-frame-1.5x2.bin"
+        }
+    },
+    "extensionsUsed": [],
+    "images": {},
+    "materials": {
+        "material_None": {
+            "extensions": {},
+            "name": "None",
+            "values": {
+                "ambient": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "diffuse": [
+                    0.8,
+                    0.8,
+                    0.8,
+                    1
+                ],
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "shininess": 0,
+                "specular": [
+                    0.8,
+                    0.8,
+                    0.8,
+                    1
+                ],
+                "transparency": 1
+            }
+        }
+    },
+    "meshes": {
+        "mesh_door-frame-1.5x2": {
+            "name": "door-frame-1.5x2",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position"
+                    },
+                    "indices": "accessor_index_0",
+                    "material": "material_None",
+                    "mode": 4
+                }
+            ]
+        }
+    },
+    "nodes": {
+        "node_door-frame-1.5x2": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "mesh_door-frame-1.5x2"
+            ],
+            "name": "door-frame-1.5x2"
+        }
+    },
+    "samplers": {
+        "sampler_0": {}
+    },
+    "scene": "scene_door-frame-1.5x2",
+    "scenes": {
+        "scene_door-frame-1.5x2": {
+            "nodes": [
+                "node_door-frame-1.5x2"
+            ]
+        }
+    },
+    "textures": {}
+}

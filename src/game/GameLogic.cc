@@ -19,6 +19,7 @@
 #include "ecs/components/TriggerArea.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Controller.hh"
+#include "ecs/components/SlideDoor.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <cxxopts.hpp>
@@ -41,6 +42,8 @@ namespace sp
 
 		funcs.Register("g.OpenBarrier", "Open barrier by name", &GameLogic::OpenBarrier);
 		funcs.Register("g.CloseBarrier", "Close barrier by name", &GameLogic::CloseBarrier);
+		funcs.Register("g.OpenDoor", "Open door by name", &GameLogic::OpenDoor);
+		funcs.Register("g.CloseDoor", "Open door by name", &GameLogic::CloseDoor);
 	}
 
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
@@ -361,5 +364,37 @@ namespace sp
 		}
 
 		ecs::Barrier::Close(ent, game->physics);
+	}
+
+	void GameLogic::OpenDoor(const string &name)
+	{
+		if (!scene->namedEntities.count(name))
+		{
+			return Logf("%s not found", name);
+		}
+
+		auto ent = scene->namedEntities[name];
+		if (!ent.Has<ecs::SlideDoor>())
+		{
+			return Logf("%s is not a door", name);
+		}
+
+		ent.Get<ecs::SlideDoor>()->Open();
+	}
+
+	void GameLogic::CloseDoor(const string &name)
+	{
+		if (!scene->namedEntities.count(name))
+		{
+			return Logf("%s not found", name);
+		}
+
+		auto ent = scene->namedEntities[name];
+		if (!ent.Has<ecs::SlideDoor>())
+		{
+			return Logf("%s is not a door", name);
+		}
+
+		ent.Get<ecs::SlideDoor>()->Close();
 	}
 }

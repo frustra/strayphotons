@@ -16,13 +16,15 @@
 #include "ecs/components/View.hh"
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/LightGun.hh"
+#include "ecs/components/SlideDoor.hh"
+#include "ecs/components/Animation.hh"
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
 
 namespace sp
 {
-	Game::Game(cxxopts::Options &options) : options(options), menuGui(this), graphics(this), audio(this), logic(this), physics()
+	Game::Game(cxxopts::Options &options) : options(options), menuGui(this), graphics(this), audio(this), logic(this), physics(), animation(entityManager, physics)
 	{
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
@@ -40,6 +42,8 @@ namespace sp
 		entityManager.RegisterComponentType<ecs::View>();
 		entityManager.RegisterComponentType<ecs::VoxelInfo>();
 		entityManager.RegisterComponentType<ecs::LightGun>();
+		entityManager.RegisterComponentType<ecs::SlideDoor>();
+		entityManager.RegisterComponentType<ecs::Animation>();
 	}
 
 	Game::~Game()
@@ -112,6 +116,7 @@ namespace sp
 		if (!graphics.Frame()) return false;
 		if (!audio.Frame()) return false;
 		if (!physics.LogicFrame(entityManager)) return false;
+		if (!animation.Frame(dt)) return false;
 
 		lastFrameTime = frameTime;
 		return true;
