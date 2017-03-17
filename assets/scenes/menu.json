@@ -98,7 +98,7 @@
 			"triggerarea": {
 				"min": [-5, 0, -5],
 				"max": [5, 2, 5],
-				"command": "loadscene test1"
+				"command": "loadscene 01-outside"
 			}
 		}
 	]

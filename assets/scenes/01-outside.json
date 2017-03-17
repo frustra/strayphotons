@@ -1,0 +1,132 @@
+{
+	"autoexec": [
+		"r.MirrorRecursion 0"
+	],
+	"entities": [
+		{
+			"renderable": "01-outside",
+			"transform": {
+				"translate": [0, 0, 0]
+			},
+			"physics": {
+				"model": "01-outside",
+				"dynamic": false,
+				"decomposeHull": true
+			}
+		},
+		{
+			"_name": "sensor1_plate",
+			"renderable": "l-sensor-plate",
+			"transform": {
+				"translate": [-3.5, 0.7, -5.8]
+			},
+			"physics": {
+				"model": "l-sensor-plate",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "sensor1",
+			"renderable": "l-sensor",
+			"transform": {
+				"rotate": [180, 0, 1, 0],
+				"translate": [-3.5, 0.7, -5.78]
+			},
+			"physics": {
+				"model": "l-sensor",
+				"dynamic": false
+			},
+			"lightsensor": {
+				"translate": [0, 0, -0.1],
+				"direction": [0, 0, -1],
+				"triggers": [
+					{
+						"illuminance": [0.1, 0.1, 0.1],
+						"oncmd": "g.CloseBarrier barrier1",
+						"offcmd": "g.OpenBarrier barrier1"
+					}
+				]
+			}
+		},
+		{
+			"renderable": "door-hex-1x2",
+			"_name": "barrier1",
+			"barrier": {
+				"isOpen": false
+			},
+			"transform": {
+				"scale": [1.5, 1.5, 1.5],
+				"translate": [-5.3, 0.6, -7.75]
+			},
+			"physics": {
+				"model": "door-hex-1x2",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "door-hex-frame-1x2",
+			"transform": {
+				"scale": [1.5, 1.5, 1.5],
+				"translate": [-5.3, 0.6, -7.75]
+			},
+			"physics": {
+				"model": "door-hex-frame-1x2",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [1, 0.75, 1],
+				"translate": [-3, 0.6, -3],
+				"rotate": [30, 0, 1, 0]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"_name": "player",
+			"view": {
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"translate": [0, 2, 0]
+			},
+			"voxels": {
+				"min": [-5, 0, -8],
+				"max": [4, 7, 4]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"intensity": 300,
+				"spotAngle": 30
+			},
+			"view": {
+				"extents": [512, 512],
+				"clip": [0.1, 50]
+			},
+			"transform": {
+				"translate": [-4.9, 3.5, -7],
+				"rotate": [-90, 1, 0, 0]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"intensity": 100,
+				"spotAngle": 30
+			},
+			"view": {
+				"extents": [2048, 2048],
+				"clip": [0.1, 50]
+			},
+			"transform": {
+				"translate": [2.5, 5, 0],
+				"rotate": [-60, 1, -1, 0]
+			}
+		}
+	]
+}
