@@ -593,12 +593,12 @@ namespace sp
 		Unlock();
 	}
 
-	void PhysxManager::SetControllerHeight(
-		PxCapsuleController *controller,
-		const float capsuleHeight)
+	void PhysxManager::ResizeController(
+		PxController *controller,
+		const float height)
 	{
 		Lock();
-		controller->setHeight(capsuleHeight);
+		controller->resize(height);
 		Unlock();
 	}
 

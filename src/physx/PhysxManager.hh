@@ -95,11 +95,11 @@ namespace sp
 		void TeleportController(physx::PxController *controller, physx::PxExtendedVec3 position);
 
 		/**
-		 * capsuleHeight should not include the height of top and bottom
-		 * radiuses
+		 * height should not include the height of top and bottom
+		 * radiuses for capsule controllers
 		 */
-		void SetControllerHeight(physx::PxCapsuleController *controller,
-			const float capsuleHeight);
+		void ResizeController(physx::PxController *controller,
+			const float height);
 
 		void RemoveController(physx::PxController *controller);
 
