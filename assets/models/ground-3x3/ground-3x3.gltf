@@ -40,12 +40,12 @@
             "count": 24,
             "max": [
                 3,
-                0.5,
+                0,
                 3
             ],
             "min": [
                 0,
-                0,
+                -0.5,
                 0
             ],
             "type": "VEC3"
@@ -58,10 +58,10 @@
             "count": 24,
             "max": [
                 0.9998999834060669,
-                1
+                0.9998999834060669
             ],
             "min": [
-                0,
+                0.00009999999747378752,
                 0.00009999999747378752
             ],
             "type": "VEC2"
@@ -79,49 +79,49 @@
     },
     "bufferViews": {
         "bufferView_0": {
-            "buffer": "ceiling-3x3_buffer",
+            "buffer": "ground-3x3_buffer",
             "byteLength": 768,
             "byteOffset": 0,
             "target": 34962
         },
         "bufferView_1": {
-            "buffer": "ceiling-3x3_buffer",
+            "buffer": "ground-3x3_buffer",
             "byteLength": 72,
             "byteOffset": 768,
             "target": 34963
         }
     },
     "buffers": {
-        "ceiling-3x3_buffer": {
+        "ground-3x3_buffer": {
             "byteLength": 840,
             "type": "arraybuffer",
-            "uri": "data:application/octet-stream;base64,AABAQAAAAAAAAEBAAAAAAAAAAAAAAEBAAAAAgAAAAAAAAACAAABAQAAAAAAAAAAAAABAQAAAAD8AAEBAAABAQAAAAD8AAAAAAAAAgAAAAD8AAACAAAAAAAAAAD8AAEBAAABAQAAAAAAAAEBAAABAQAAAAAAAAAAAAABAQAAAAD8AAAAAAABAQAAAAD8AAEBAAAAAgAAAAAAAAACAAAAAAAAAAAAAAEBAAAAAAAAAAD8AAEBAAAAAgAAAAD8AAACAAAAAAAAAAAAAAEBAAABAQAAAAAAAAEBAAABAQAAAAD8AAEBAAAAAAAAAAD8AAEBAAABAQAAAAAAAAAAAAAAAgAAAAAAAAACAAAAAgAAAAD8AAACAAABAQAAAAD8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAAAAgAAAAAAAAIA/AAAAgAAAAAAAAIA/AAAAgAAAAAAAAIA/AAAAgAAAAAAAAIA/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/F7fROBe30TgXt9E4cvl/P3L5fz9y+X8/cvl/Pxe30TgXt9E4F7fROBe30Thy+X8/cvl/P3L5fz9y+X8/F7fROAAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAABAAIAAAACAAMABAAFAAYABAAGAAcACAAJAAoACAAKAAsADAANAA4ADAAOAA8AEAARABIAEAASABMAFAAVABYAFAAWABcA"
+            "uri": "data:application/octet-stream;base64,AABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8/z9A+P8/QAAAAAAAAEBAAABAQAAAAL8AAAAA+P8/QAAAAL8AAEBAAAAAAAAAAL/8/z9AAAAAAAAAAL8AAAAAAAAAAAAAAAD8/z9AAAAAAAAAAL/8/z9A+P8/QAAAAL8AAEBA+P8/QAAAAAAAAEBA+P8/QAAAAAAAAEBA+P8/QAAAAL8AAEBAAABAQAAAAL8AAAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL8AAAAAAAAAAAAAAL/8/z9AAAAAAAAAAAD8/z9AAABAQAAAAAAAAAAAAABAQAAAAL8AAAAAAAAAAAAAAL8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAgAAAAAAAAIA/AAAAgAAAAAAAAIA/AAAAgAAAAAAAAIA/AAAAgAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/cvl/Pxe30Thy+X8/cvl/Pxe30Thy+X8/F7fROBe30Thy+X8/F7fROHL5fz9y+X8/F7fROHL5fz8Xt9E4F7fROBe30Thy+X8/F7fROHL5fz9y+X8/cvl/P3L5fz9y+X8/cvl/P3L5fz9y+X8/cvl/P3L5fz8Xt9E4cvl/Pxe30TgXt9E4F7fROBe30TgXt9E4F7fROHL5fz8Xt9E4cvl/P3L5fz8Xt9E4cvl/Pxe30TgXt9E4F7fROBe30TgXt9E4AAABAAIAAAACAAMABAAFAAYABAAGAAcACAAJAAoACAAKAAsADAANAA4ADAAOAA8AEAARABIAEAASABMAFAAVABYAFAAWABcA"
         }
     },
     "cameras": {},
     "extensions": {},
     "extensionsUsed": [],
     "images": {
-        "image_Material_Base_Color.png": {
-            "uri": "Material_Base_Color.png"
+        "image_Concrete_Base_Color.png": {
+            "uri": "Concrete_Base_Color.png"
         },
-        "image_Material_Height.png": {
-            "uri": "Material_Height.png"
+        "image_Concrete_Height.png": {
+            "uri": "Concrete_Height.png"
         },
-        "image_Material_Metallic.png": {
-            "uri": "Material_Metallic.png"
+        "image_Concrete_Metallic.png": {
+            "uri": "Concrete_Metallic.png"
         },
-        "image_Material_Normal.png": {
-            "uri": "Material_Normal.png"
+        "image_Concrete_Normal.png": {
+            "uri": "Concrete_Normal.png"
         },
-        "image_Material_Roughness.png": {
-            "uri": "Material_Roughness.png"
+        "image_Concrete_Roughness.png": {
+            "uri": "Concrete_Roughness.png"
         }
     },
     "materials": {
-        "material_Material": {
+        "material_Concrete": {
             "extensions": {},
-            "name": "Material",
+            "name": "Concrete",
             "values": {
                 "ambient": [
                     1,
@@ -129,7 +129,7 @@
                     1,
                     1
                 ],
-                "baseColor": "texture_Material_Base_Color.png",
+                "baseColor": "texture_Concrete_Base_Color.png",
                 "diffuse": [
                     0.64,
                     0.64,
@@ -142,10 +142,10 @@
                     0,
                     1
                 ],
-                "height": "texture_Material_Height.png",
-                "metallic": "texture_Material_Metallic.png",
-                "normal": "texture_Material_Normal.png",
-                "roughness": "texture_Material_Roughness.png",
+                "height": "texture_Concrete_Height.png",
+                "metallic": "texture_Concrete_Metallic.png",
+                "normal": "texture_Concrete_Normal.png",
+                "roughness": "texture_Concrete_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
                     0.5,
@@ -158,8 +158,8 @@
         }
     },
     "meshes": {
-        "mesh_ceiling-3x3": {
-            "name": "ceiling-3x3",
+        "mesh_ground-3x3": {
+            "name": "ground-3x3",
             "primitives": [
                 {
                     "attributes": {
@@ -168,7 +168,7 @@
                         "TEXCOORD_0": "accessor_uv"
                     },
                     "indices": "accessor_index_0",
-                    "material": "material_Material",
+                    "material": "material_Concrete",
                     "mode": 4
                 }
             ]
@@ -196,16 +196,16 @@
                 1
             ],
             "meshes": [
-                "mesh_ceiling-3x3"
+                "mesh_ground-3x3"
             ]
         }
     },
     "samplers": {
         "sampler_0": {}
     },
-    "scene": "scene_ceiling-3x3",
+    "scene": "scene_ground-3x3",
     "scenes": {
-        "scene_ceiling-3x3": {
+        "scene_ground-3x3": {
             "nodes": [
                 "rootNode"
             ]
@@ -213,43 +213,43 @@
     },
     "skins": {},
     "textures": {
-        "texture_Material_Base_Color.png": {
+        "texture_Concrete_Base_Color.png": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_Material_Base_Color.png",
+            "source": "image_Concrete_Base_Color.png",
             "target": 3553,
             "type": 5121
         },
-        "texture_Material_Height.png": {
+        "texture_Concrete_Height.png": {
             "format": 6403,
             "internalFormat": 33321,
             "sampler": "sampler_0",
-            "source": "image_Material_Height.png",
+            "source": "image_Concrete_Height.png",
             "target": 3553,
             "type": 5121
         },
-        "texture_Material_Metallic.png": {
+        "texture_Concrete_Metallic.png": {
             "format": 6403,
             "internalFormat": 33321,
             "sampler": "sampler_0",
-            "source": "image_Material_Metallic.png",
+            "source": "image_Concrete_Metallic.png",
             "target": 3553,
             "type": 5121
         },
-        "texture_Material_Normal.png": {
+        "texture_Concrete_Normal.png": {
             "format": 6407,
             "internalFormat": 6407,
             "sampler": "sampler_0",
-            "source": "image_Material_Normal.png",
+            "source": "image_Concrete_Normal.png",
             "target": 3553,
             "type": 5121
         },
-        "texture_Material_Roughness.png": {
+        "texture_Concrete_Roughness.png": {
             "format": 6403,
             "internalFormat": 33321,
             "sampler": "sampler_0",
-            "source": "image_Material_Roughness.png",
+            "source": "image_Concrete_Roughness.png",
             "target": 3553,
             "type": 5121
         }

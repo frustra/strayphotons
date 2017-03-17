@@ -4,93 +4,93 @@
 	],
 	"entities": [
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [0, 0, 0]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [3, 0, 0]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [0, 0, 3]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [3, 0, 3]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [0, 0, 6]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [3, 0, 6]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [6, 0, 0]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [6, 0, 3]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ground-3x3x3",
+			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [6, 0, 6]
 			},
 			"physics": {
-				"model": "ground-3x3x3",
+				"model": "ground-3x3",
 				"dynamic": false
 			}
 		},
