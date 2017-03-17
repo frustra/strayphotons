@@ -4,70 +4,68 @@
 	],
 	"entities": [
 		{
-			"renderable": "ground-3x3",
+			"renderable": "ground-1x1x1",
 			"transform": {
-				"scale": [4, 1, 4],
+				"scale": [12, 1, 12],
 				"translate": [-1, 0, -1]
 			},
 			"physics": {
-				"model": "ground-3x3",
+				"model": "ground-1x1x1",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "ceiling-3x3",
+			"renderable": "ground-1x1x1",
 			"transform": {
-				"scale": [4, 1, 4],
+				"scale": [12, 1, 12],
+				"translate": [-1, 5, -1]
+			},
+			"physics": {
+				"model": "ground-1x1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-1x1x1",
+			"transform": {
+				"scale": [1, 4, 10],
+				"translate": [-1, 4, 0]
+			},
+			"physics": {
+				"model": "ground-1x1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-1x1x1",
+			"transform": {
+				"scale": [1, 4, 10],
+				"translate": [10, 4, 0]
+			},
+			"physics": {
+				"model": "ground-1x1x1",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-1x1x1",
+			"transform": {
+				"scale": [12, 4, 1],
 				"translate": [-1, 4, -1]
 			},
 			"physics": {
-				"model": "ceiling-3x3",
+				"model": "ground-1x1x1",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "wall-1x1",
+			"renderable": "ground-1x1x1",
 			"transform": {
-				"scale": [10, 4, 10],
-				"translate": [-1, 0, 0]
+				"scale": [12, 4, 1],
+				"translate": [-1, 4, 10]
 			},
 			"physics": {
-				"model": "wall-1x1",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-1x1",
-			"transform": {
-				"scale": [10, 4, 10],
-				"translate": [10, 0, 0]
-			},
-			"physics": {
-				"model": "wall-1x1",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-1x1",
-			"transform": {
-				"scale": [10, 4, 12],
-				"translate": [-1, 0, 0],
-				"rotate": [90, 0, 1, 0]
-			},
-			"physics": {
-				"model": "wall-1x1",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-1x1",
-			"transform": {
-				"scale": [10, 4, 12],
-				"translate": [11, 0, 10],
-				"rotate": [-90, 0, 1, 0]
-			},
-			"physics": {
-				"model": "wall-1x1",
+				"model": "ground-1x1x1",
 				"dynamic": false
 			}
 		},
@@ -154,7 +152,8 @@
 			},
 			"physics": {
 				"model": "ledge-caged-1x0.5",
-				"dynamic": false
+				"dynamic": false,
+				"decomposeHull": true
 			}
 		},
 		{
@@ -166,7 +165,8 @@
 			},
 			"physics": {
 				"model": "ledge-caged-1x0.5",
-				"dynamic": false
+				"dynamic": false,
+				"decomposeHull": true
 			}
 		},
 		{
