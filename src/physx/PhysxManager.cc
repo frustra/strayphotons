@@ -387,11 +387,11 @@ namespace sp
 		scene->unlockRead();
 	}
 
-	ConvexHullSet *PhysxManager::GetCachedConvexHulls(Model *model, bool decomposeHull)
+	ConvexHullSet *PhysxManager::GetCachedConvexHulls(std::string name)
 	{
-		if (cache.count(model->name))
+		if (cache.count(name))
 		{
-			return cache[model->name];
+			return cache[name];
 		}
 
 		return nullptr;
@@ -401,20 +401,23 @@ namespace sp
 	{
 		ConvexHullSet *set;
 
-		if ((set = GetCachedConvexHulls(model, decomposeHull)))
+		std::string name = model->name;
+		if (decomposeHull) name += "-decompose";
+
+		if ((set = GetCachedConvexHulls(name)))
 			return set;
 
 		if ((set = LoadCollisionCache(model, decomposeHull)))
 		{
-			cache[model->name] = set;
+			cache[name] = set;
 			return set;
 		}
 
-		Logf("Rebuilding convex hulls for %s", model->name);
+		Logf("Rebuilding convex hulls for %s", name);
 
 		set = new ConvexHullSet;
 		ConvexHullBuilding::BuildConvexHulls(set, model, decomposeHull);
-		cache[model->name] = set;
+		cache[name] = set;
 		SaveCollisionCache(model, set, decomposeHull);
 		return set;
 	}
@@ -738,7 +741,7 @@ namespace sp
 			in.read((char *)&magic, 4);
 			if (magic != hullCacheMagic)
 			{
-				Logf("Ignoring outdated collision cache format for %s", model->name);
+				Logf("Ignoring outdated collision cache format for %s", name);
 				in.close();
 				return nullptr;
 			}
@@ -763,7 +766,7 @@ namespace sp
 
 				if (!model->HasBuffer(name) || model->HashBuffer(name) != hash)
 				{
-					Logf("Ignoring outdated collision cache for %s", model->name);
+					Logf("Ignoring outdated collision cache for %s", name);
 					in.close();
 					return nullptr;
 				}

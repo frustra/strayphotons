@@ -60,7 +60,7 @@ namespace sp
 		void RotateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 rotation);
 		void RemoveConstraints(ecs::Entity parent, physx::PxRigidDynamic *child);
 
-		ConvexHullSet *GetCachedConvexHulls(Model *model, bool decomposeHull);
+		ConvexHullSet *GetCachedConvexHulls(std::string name);
 
 		struct ActorDesc
 		{

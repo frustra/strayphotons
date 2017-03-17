@@ -152,8 +152,7 @@
 			},
 			"physics": {
 				"model": "ledge-caged-1x0.5",
-				"dynamic": false,
-				"decompHull": true
+				"dynamic": false
 			}
 		},
 		{
@@ -165,8 +164,7 @@
 			},
 			"physics": {
 				"model": "ledge-caged-1x0.5",
-				"dynamic": false,
-				"decompHull": true
+				"dynamic": false
 			}
 		},
 		{
