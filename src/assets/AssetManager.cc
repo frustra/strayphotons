@@ -433,6 +433,7 @@ namespace sp
 				else if (comp.first == "slideDoor")
 				{
 					auto slideDoor = entity.Assign<ecs::SlideDoor>();
+
 					for (auto param : comp.second.get<picojson::object>())
 					{
 						bool isLeft = (param.first == "left");
@@ -453,38 +454,27 @@ namespace sp
 								);
 							}
 
-							auto transform = panel.Get<ecs::Transform>();
-							glm::vec3 panelPos = transform->GetPosition();
-							glm::vec3 animatePos;
+							panel.Assign<ecs::Animation>();
 							if (isLeft)
 							{
 								slideDoor->left = panel;
-								animatePos = panelPos + glm::vec3(-0.65/2, 0, 0);
 							}
 							else
 							{
 								slideDoor->right = panel;
-								animatePos = panelPos + glm::vec3(0.65/2, 0, 0);
 							}
 
-							auto block = panel.Assign<ecs::Animation>();
-
-							// closed
-							ecs::Animation::State closeState;
-							closeState.scale = glm::vec3(1, 1, 1);
-							closeState.pos = panelPos;
-							block->states.push_back(closeState);
-							block->animationTimes.push_back(0.5);
-
-							// open
-							ecs::Animation::State openState;
-							openState.scale = glm::vec3(1, 1, 0);
-							openState.pos = animatePos;
-							openState.hidden = true;
-							block->states.push_back(openState);
-							block->animationTimes.push_back(0.5);
-
-							block->curState = 0;
+							slideDoor->ApplyParams();
+						}
+						else if (param.first == "width")
+						{
+							slideDoor->width = param.second.get<double>();
+							slideDoor->ApplyParams();
+						}
+						else if (param.first == "openTime")
+						{
+							slideDoor->openTime = param.second.get<double>();
+							slideDoor->ApplyParams();
 						}
 					}
 				}

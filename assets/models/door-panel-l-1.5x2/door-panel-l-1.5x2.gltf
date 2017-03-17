@@ -25,12 +25,12 @@
             "max": [
                 0.125,
                 1.9,
-                0.325
+                1.4
             ],
             "min": [
                 0.025,
                 0,
-                -0.325
+                0.75
             ],
             "type": "VEC3"
         }
@@ -46,23 +46,23 @@
     },
     "bufferViews": {
         "bufferView_index": {
-            "buffer": "buffer_door-panel-c-1.5x2",
+            "buffer": "buffer_door-panel-l-1.5x2",
             "byteLength": 72,
             "byteOffset": 576,
             "target": 34963
         },
         "bufferView_vertex": {
-            "buffer": "buffer_door-panel-c-1.5x2",
+            "buffer": "buffer_door-panel-l-1.5x2",
             "byteLength": 576,
             "byteOffset": 0,
             "target": 34962
         }
     },
     "buffers": {
-        "buffer_door-panel-c-1.5x2": {
+        "buffer_door-panel-l-1.5x2": {
             "byteLength": 648,
             "type": "arraybuffer",
-            "uri": "door-panel-c-1.5x2.bin"
+            "uri": "door-panel-l-1.5x2.bin"
         }
     },
     "extensionsUsed": [],
@@ -102,8 +102,8 @@
         }
     },
     "meshes": {
-        "mesh_door-panel-c-1.5x2": {
-            "name": "door-panel-c-1.5x2",
+        "mesh_door-panel-l-1.5x2": {
+            "name": "door-panel-l-1.5x2",
             "primitives": [
                 {
                     "attributes": {
@@ -118,7 +118,7 @@
         }
     },
     "nodes": {
-        "node_door-panel-c-1.5x2": {
+        "node_door-panel-l-1.5x2": {
             "children": [],
             "matrix": [
                 1,
@@ -139,19 +139,19 @@
                 1
             ],
             "meshes": [
-                "mesh_door-panel-c-1.5x2"
+                "mesh_door-panel-l-1.5x2"
             ],
-            "name": "door-panel-c-1.5x2"
+            "name": "door-panel-l-1.5x2"
         }
     },
     "samplers": {
         "sampler_0": {}
     },
-    "scene": "scene_door-panel-c-1.5x2",
+    "scene": "scene_door-panel-l-1.5x2",
     "scenes": {
-        "scene_door-panel-c-1.5x2": {
+        "scene_door-panel-l-1.5x2": {
             "nodes": [
-                "node_door-panel-c-1.5x2"
+                "node_door-panel-l-1.5x2"
             ]
         }
     },
