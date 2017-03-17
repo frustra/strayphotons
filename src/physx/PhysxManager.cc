@@ -23,7 +23,11 @@ namespace sp
 	static CVar<bool> CVarShowShapes("x.ShowShapes", false, "Show (1) or hide (0) the outline of physx collision shapes");
 
 	PhysxManager::PhysxManager()
+		:
+		funcs(this)
 	{
+		funcs.Register("p.connectPVD", "Connect to a running PVD", &PhysxManager::ConnectToPVD);
+
 		Logf("PhysX %d.%d.%d starting up", PX_PHYSICS_VERSION_MAJOR, PX_PHYSICS_VERSION_MINOR, PX_PHYSICS_VERSION_BUGFIX);
 
 		PxTolerancesScale scale;
@@ -826,6 +830,35 @@ namespace sp
 			}
 
 			out.close();
+		}
+	}
+
+	void PhysxManager::ConnectToPVD(const string &)
+	{
+		if (!physics->getPvdConnectionManager())
+		{
+		    std::cout << "Warning: PhysX Visual Debugger not found running!\n";
+		    return;
+		}
+
+		const char* pvdHostIP = "127.0.0.1";
+		int port = 5425;
+		unsigned int timeout = 100;
+		PxVisualDebuggerConnectionFlags flags =
+		      PxVisualDebuggerConnectionFlag::eDEBUG
+		    | PxVisualDebuggerConnectionFlag::ePROFILE
+		    | PxVisualDebuggerConnectionFlag::eMEMORY;
+
+		debugger::comm::PvdConnection* conn = physx::PxVisualDebuggerExt::createConnection(
+		    physics->getPvdConnectionManager(),
+		    pvdHostIP,
+		    port,
+		    timeout,
+		    flags);
+
+		if (conn)
+		{
+		    std::cout << "Connected to PhysX Visual Debugger!\n";
 		}
 	}
 }
