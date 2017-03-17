@@ -90,6 +90,28 @@
 			}
 		},
 		{
+			"renderable": "parking-block",
+			"transform": {
+				"scale": [0.8, 1, 1],
+				"translate": [-4, 0, -0.8],
+				"rotate": [90, 0, 1, 0]
+			},
+			"physics": {
+				"model": "parking-block"
+			}
+		},
+		{
+			"renderable": "parking-block",
+			"transform": {
+				"scale": [0.8, 1, 1],
+				"translate": [-4, 0, -3.5],
+				"rotate": [90, 0, 1, 0]
+			},
+			"physics": {
+				"model": "parking-block"
+			}
+		},
+		{
 			"_name": "player",
 			"view": {
 				"clip": [0.1, 256]
