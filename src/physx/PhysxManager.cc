@@ -835,13 +835,14 @@ namespace sp
 
 	void PhysxManager::ConnectToPVD(const string &)
 	{
+#if defined(_WIN32) || defined(__APPLE__)
 		if (!physics->getPvdConnectionManager())
 		{
-		    std::cout << "Warning: PhysX Visual Debugger not found running!\n";
+		    std::cout << "Run PhysX Visual Debugger and connect to 127.0.0.1:5425\n";
 		    return;
 		}
 
-		const char* pvdHostIP = "127.0.0.1";
+		const char* ip = "127.0.0.1";
 		int port = 5425;
 		unsigned int timeout = 100;
 		PxVisualDebuggerConnectionFlags flags =
@@ -849,16 +850,14 @@ namespace sp
 		    | PxVisualDebuggerConnectionFlag::ePROFILE
 		    | PxVisualDebuggerConnectionFlag::eMEMORY;
 
-		debugger::comm::PvdConnection* conn = physx::PxVisualDebuggerExt::createConnection(
-		    physics->getPvdConnectionManager(),
-		    pvdHostIP,
-		    port,
-		    timeout,
-		    flags);
+		debugger::comm::PvdConnection* conn = PxVisualDebuggerExt::createConnection(physics->getPvdConnectionManager(), ip, port, timeout, flags);
 
 		if (conn)
 		{
-		    std::cout << "Connected to PhysX Visual Debugger!\n";
+		    std::cout << "Connected to PVD!\n";
 		}
+#elif
+		std::cout << "PhysX Visual Debugger not supported for Linux platforms\n";
+#endif
 	}
 }
