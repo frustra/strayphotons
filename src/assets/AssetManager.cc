@@ -30,7 +30,7 @@ extern "C"
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/LightGun.hh"
 #include "ecs/components/SlideDoor.hh"
-#include "ecs/components/AnimateBlock.hh"
+#include "ecs/components/Animation.hh"
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -441,10 +441,10 @@ namespace sp
 						{
 							ecs::Entity panel = scene->FindEntity(
 								param.second.get<string>());
-							if (panel.Has<ecs::AnimateBlock>())
+							if (panel.Has<ecs::Animation>())
 							{
 								throw std::runtime_error(
-									"slideDoor left/right panels should not already have an AnimateBlock");
+									"slideDoor left/right panels should not already have an Animation");
 							}
 							if (!panel.Has<ecs::Transform>())
 							{
@@ -467,17 +467,17 @@ namespace sp
 								animatePos = panelPos + glm::vec3(0.65/2, 0, 0);
 							}
 
-							auto block = panel.Assign<ecs::AnimateBlock>();
+							auto block = panel.Assign<ecs::Animation>();
 
 							// closed
-							ecs::AnimateBlock::State closeState;
+							ecs::Animation::State closeState;
 							closeState.scale = glm::vec3(1, 1, 1);
 							closeState.pos = panelPos;
 							block->states.push_back(closeState);
 							block->animationTimes.push_back(0.5);
 
 							// open
-							ecs::AnimateBlock::State openState;
+							ecs::Animation::State openState;
 							openState.scale = glm::vec3(1, 1, 0);
 							openState.pos = animatePos;
 							openState.hidden = true;

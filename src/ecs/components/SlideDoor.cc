@@ -1,5 +1,5 @@
 #include "ecs/components/SlideDoor.hh"
-#include "ecs/components/AnimateBlock.hh"
+#include "ecs/components/Animation.hh"
 
 namespace ecs
 {
@@ -9,7 +9,7 @@ namespace ecs
 		{
 			throw std::runtime_error("door panel is no longer valid");
 		}
-		if (!left.Has<AnimateBlock>() || !right.Has<AnimateBlock>())
+		if (!left.Has<Animation>() || !right.Has<Animation>())
 		{
 			throw std::runtime_error("door panel cannot be animated");
 		}
@@ -19,8 +19,8 @@ namespace ecs
 	{
 		ValidateDoor();
 		ValidateDoor();
-		auto lPanel = left.Get<AnimateBlock>();
-		auto rPanel = right.Get<AnimateBlock>();
+		auto lPanel = left.Get<Animation>();
+		auto rPanel = right.Get<Animation>();
 		return
 			lPanel->curState == 1 && lPanel->nextState < 0
 			&& rPanel->curState == 1 && rPanel->nextState < 0;
@@ -30,8 +30,8 @@ namespace ecs
 	void SlideDoor::Open()
 	{
 		ValidateDoor();
-		auto lPanel = left.Get<AnimateBlock>();
-		auto rPanel = right.Get<AnimateBlock>();
+		auto lPanel = left.Get<Animation>();
+		auto rPanel = right.Get<Animation>();
 		lPanel->AnimateToState(1);
 		rPanel->AnimateToState(1);
 	}
@@ -39,8 +39,8 @@ namespace ecs
 	void SlideDoor::Close()
 	{
 		ValidateDoor();
-		auto lPanel = left.Get<AnimateBlock>();
-		auto rPanel = right.Get<AnimateBlock>();
+		auto lPanel = left.Get<Animation>();
+		auto rPanel = right.Get<Animation>();
 		lPanel->AnimateToState(0);
 		rPanel->AnimateToState(0);
 	}

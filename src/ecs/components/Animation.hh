@@ -5,7 +5,7 @@
 
 namespace ecs
 {
-	class AnimateBlock
+	class Animation
 	{
 	public:
 		void AnimateToState(uint i);

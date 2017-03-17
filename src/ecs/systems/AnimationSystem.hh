@@ -11,12 +11,12 @@ namespace sp
 
 namespace ecs
 {
-	class AnimateBlockSystem
+	class AnimationSystem
 	{
 	public:
-		AnimateBlockSystem(EntityManager &entities, sp::PhysxManager &physics);
+		AnimationSystem(EntityManager &entities, sp::PhysxManager &physics);
 
-		~AnimateBlockSystem();
+		~AnimationSystem();
 
 		bool Frame(float dtSinceLastFrame);
 

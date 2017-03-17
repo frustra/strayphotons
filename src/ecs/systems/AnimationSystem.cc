@@ -1,5 +1,5 @@
-#include "ecs/systems/AnimateBlockSystem.hh"
-#include "ecs/components/AnimateBlock.hh"
+#include "ecs/systems/AnimationSystem.hh"
+#include "ecs/components/Animation.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/Renderable.hh"
 #include "physx/PhysxUtils.hh"
@@ -8,16 +8,16 @@
 
 namespace ecs
 {
-	AnimateBlockSystem::AnimateBlockSystem(
+	AnimationSystem::AnimationSystem(
 		ecs::EntityManager &entities,
 		sp::PhysxManager &physics)
 		: entities(entities), physics(physics)
 	{
 	}
 
-	AnimateBlockSystem::~AnimateBlockSystem() {}
+	AnimationSystem::~AnimationSystem() {}
 
-	bool AnimateBlockSystem::Frame(float dtSinceLastFrame)
+	bool AnimationSystem::Frame(float dtSinceLastFrame)
 	{
 		// safety net to avoid divide by 0
 		if (dtSinceLastFrame <= std::numeric_limits<float>::epsilon())
@@ -25,9 +25,9 @@ namespace ecs
 			return true;
 		}
 
-		for (auto ent : entities.EntitiesWith<AnimateBlock, Transform>())
+		for (auto ent : entities.EntitiesWith<Animation, Transform>())
 		{
-			auto block = ent.Get<AnimateBlock>();
+			auto block = ent.Get<Animation>();
 			auto transform = ent.Get<Transform>();
 
 			if (block->nextState < 0)
@@ -47,7 +47,7 @@ namespace ecs
 				block->timeLeft = 0;
 				block->curState = block->nextState;
 				block->nextState = -1;
-				AnimateBlock::State &curState = block->states[block->curState];
+				Animation::State &curState = block->states[block->curState];
 
 				transform->SetPosition(curState.pos);
 				transform->SetScale(curState.scale);
@@ -60,8 +60,8 @@ namespace ecs
 			else
 			{
 				block->timeLeft -= dtSinceLastFrame;
-				AnimateBlock::State &curState = block->states[block->curState];
-				AnimateBlock::State &nextState = block->states[block->nextState];
+				Animation::State &curState = block->states[block->curState];
+				Animation::State &nextState = block->states[block->nextState];
 
 				float duration = block->animationTimes[block->nextState];
 				float completion = 1 - (block->timeLeft / duration);

@@ -1,15 +1,15 @@
-#include "ecs/components/AnimateBlock.hh"
+#include "ecs/components/Animation.hh"
 
 #include <sstream>
 
 namespace ecs
 {
-	void AnimateBlock::AnimateToState(uint i)
+	void Animation::AnimateToState(uint i)
 	{
 		if (i > states.size())
 		{
 			std::stringstream ss;
-			ss << "\"" << i << "\" is an invalid state for this AnimateBlock with "
+			ss << "\"" << i << "\" is an invalid state for this Animation with "
 			   << states.size() << " states";
 			throw std::runtime_error(ss.str());
 		}

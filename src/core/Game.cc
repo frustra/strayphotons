@@ -17,7 +17,7 @@
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/LightGun.hh"
 #include "ecs/components/SlideDoor.hh"
-#include "ecs/components/AnimateBlock.hh"
+#include "ecs/components/Animation.hh"
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -43,7 +43,7 @@ namespace sp
 		entityManager.RegisterComponentType<ecs::VoxelInfo>();
 		entityManager.RegisterComponentType<ecs::LightGun>();
 		entityManager.RegisterComponentType<ecs::SlideDoor>();
-		entityManager.RegisterComponentType<ecs::AnimateBlock>();
+		entityManager.RegisterComponentType<ecs::Animation>();
 	}
 
 	Game::~Game()
