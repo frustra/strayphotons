@@ -37,9 +37,9 @@ namespace ecs
 				continue;
 			}
 
-			Assert((uint)block->nextState < block->states.size(),
+			Assert((uint32) block->nextState < block->states.size(),
 				"invalid next state");
-			Assert((uint)block->curState < block->states.size(),
+			Assert((uint32) block->curState < block->states.size(),
 				"invalid current state");
 			Assert(block->curState >= 0, "curState not set during an animation");
 			Assert(block->timeLeft >= 0, "negative animation time");

@@ -8,7 +8,7 @@ namespace ecs
 	class Animation
 	{
 	public:
-		void AnimateToState(uint i);
+		void AnimateToState(uint32 i);
 
 		struct State
 		{

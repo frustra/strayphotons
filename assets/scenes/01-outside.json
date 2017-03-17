@@ -1,6 +1,10 @@
 {
 	"autoexec": [
-		"r.MirrorRecursion 0"
+		"r.MirrorRecursion 0",
+		"r.EyeAdaptationKeyComp 1.5"
+	],
+	"unloadexec": [
+		"r.EyeAdaptationKeyComp 1"
 	],
 	"entities": [
 		{

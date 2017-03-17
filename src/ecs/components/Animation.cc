@@ -4,7 +4,7 @@
 
 namespace ecs
 {
-	void Animation::AnimateToState(uint i)
+	void Animation::AnimateToState(uint32 i)
 	{
 		if (i > states.size())
 		{
