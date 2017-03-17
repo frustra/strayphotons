@@ -60,7 +60,7 @@ namespace sp
 		void RotateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 rotation);
 		void RemoveConstraints(ecs::Entity parent, physx::PxRigidDynamic *child);
 
-		ConvexHullSet *GetCachedConvexHulls(Model *model);
+		ConvexHullSet *GetCachedConvexHulls(Model *model, bool decomposeHull);
 
 		struct ActorDesc
 		{
@@ -71,6 +71,7 @@ namespace sp
 			// only dynamic actors can be kinematic
 			bool kinematic = false;
 			//bool mergePrimitives = true;
+			bool decomposeHull = false;
 		};
 
 		/**
@@ -163,9 +164,9 @@ namespace sp
 		void DestroyPhysxScene();
 		void CacheDebugLines();
 
-		ConvexHullSet *BuildConvexHulls(Model *model);
-		ConvexHullSet *LoadCollisionCache(Model *model);
-		void SaveCollisionCache(Model *model, ConvexHullSet *set);
+		ConvexHullSet *BuildConvexHulls(Model *model, bool decomposeHull);
+		ConvexHullSet *LoadCollisionCache(Model *model, bool decomposeHull);
+		void SaveCollisionCache(Model *model, ConvexHullSet *set, bool decomposeHull);
 
 		void ConnectToPVD(const string &);
 

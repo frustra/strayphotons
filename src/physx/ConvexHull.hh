@@ -22,11 +22,12 @@ namespace sp
 	{
 		vector<ConvexHull> hulls;
 		std::unordered_set<string> bufferNames;
+		bool decomposed;
 	};
 
 	namespace ConvexHullBuilding
 	{
 		// Builds convex hull set for a model without caching
-		void BuildConvexHulls(ConvexHullSet *set, Model *model);
+		void BuildConvexHulls(ConvexHullSet *set, Model *model, bool decompHull);
 	}
 }

@@ -394,6 +394,7 @@ namespace sp
 					shared_ptr<Model> model;
 					bool dynamic = true;
 					bool kinematic = false;
+					bool decomposeHull = false;
 
 					for (auto param : comp.second.get<picojson::object>())
 					{
@@ -409,11 +410,16 @@ namespace sp
 						{
 							kinematic = param.second.get<bool>();
 						}
+						else if (param.first == "decomposeHull")
+						{
+							decomposeHull = param.second.get<bool>();
+						}
 					}
 
 					PhysxManager::ActorDesc desc;
 					desc.dynamic = dynamic;
 					desc.kinematic = kinematic;
+					desc.decomposeHull = decomposeHull;
 
 					actor = px.CreateActor(model, desc, entity);
 

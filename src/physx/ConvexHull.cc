@@ -27,6 +27,8 @@ namespace sp
 
 	void decomposeConvexHullsForPrimitive(ConvexHullSet *set, Model *model, Model::Primitive *prim)
 	{
+		set->decomposed = true;
+
 		auto posAttrib = prim->attributes[0];
 		Assert(posAttrib.componentCount == 3, "position must be vec3");
 		Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "position must be float type");
@@ -145,6 +147,8 @@ namespace sp
 
 	void buildConvexHullForPrimitive(ConvexHullSet *set, Model *model, Model::Primitive *prim)
 	{
+		set->decomposed = false;
+
 		auto posAttrib = prim->attributes[0];
 		Assert(posAttrib.componentCount == 3, "position must be vec3");
 		Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "position must be float type");
@@ -218,11 +222,11 @@ namespace sp
 		Logf("Adding simple hull, %d points, %d triangles", hull.pointCount, hull.triangleCount);
 	}
 
-	void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set, Model *model)
+	void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set, Model *model, bool decompHull)
 	{
 		for (auto prim : model->primitives)
 		{
-			if (prim->attributes[0].components < 255)
+			if (!decompHull)
 			{
 				// Use points for a single hull without decomposing.
 				buildConvexHullForPrimitive(set, model, prim);

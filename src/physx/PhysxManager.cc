@@ -387,7 +387,7 @@ namespace sp
 		scene->unlockRead();
 	}
 
-	ConvexHullSet *PhysxManager::GetCachedConvexHulls(Model *model)
+	ConvexHullSet *PhysxManager::GetCachedConvexHulls(Model *model, bool decomposeHull)
 	{
 		if (cache.count(model->name))
 		{
@@ -397,14 +397,14 @@ namespace sp
 		return nullptr;
 	}
 
-	ConvexHullSet *PhysxManager::BuildConvexHulls(Model *model)
+	ConvexHullSet *PhysxManager::BuildConvexHulls(Model *model, bool decomposeHull)
 	{
 		ConvexHullSet *set;
 
-		if ((set = GetCachedConvexHulls(model)))
+		if ((set = GetCachedConvexHulls(model, decomposeHull)))
 			return set;
 
-		if ((set = LoadCollisionCache(model)))
+		if ((set = LoadCollisionCache(model, decomposeHull)))
 		{
 			cache[model->name] = set;
 			return set;
@@ -413,9 +413,9 @@ namespace sp
 		Logf("Rebuilding convex hulls for %s", model->name);
 
 		set = new ConvexHullSet;
-		ConvexHullBuilding::BuildConvexHulls(set, model);
+		ConvexHullBuilding::BuildConvexHulls(set, model, decomposeHull);
 		cache[model->name] = set;
-		SaveCollisionCache(model, set);
+		SaveCollisionCache(model, set, decomposeHull);
 		return set;
 	}
 
@@ -486,7 +486,7 @@ namespace sp
 
 		PxMaterial *mat = physics->createMaterial(0.6f, 0.5f, 0.0f);
 
-		auto decomposition = BuildConvexHulls(model.get());
+		auto decomposition = BuildConvexHulls(model.get(), desc.decomposeHull);
 
 		for (auto hull : decomposition->hulls)
 		{
@@ -725,11 +725,14 @@ namespace sp
 
 	const uint32 hullCacheMagic = 0xc041;
 
-	ConvexHullSet *PhysxManager::LoadCollisionCache(Model *model)
+	ConvexHullSet *PhysxManager::LoadCollisionCache(Model *model, bool decomposeHull)
 	{
 		std::ifstream in;
 
-		if (GAssets.InputStream("cache/collision/" + model->name, in))
+		std::string name = "cache/collision/" + model->name;
+		if (decomposeHull) name += "-decompose";
+
+		if (GAssets.InputStream(name, in))
 		{
 			uint32 magic;
 			in.read((char *)&magic, 4);
@@ -797,11 +800,13 @@ namespace sp
 		return nullptr;
 	}
 
-	void PhysxManager::SaveCollisionCache(Model *model, ConvexHullSet *set)
+	void PhysxManager::SaveCollisionCache(Model *model, ConvexHullSet *set, bool decomposeHull)
 	{
 		std::ofstream out;
+		std::string name = "cache/collision/" + model->name;
+		if (decomposeHull) name += "-decompose";
 
-		if (GAssets.OutputStream("cache/collision/" + model->name, out))
+		if (GAssets.OutputStream(name, out))
 		{
 			out.write((char *)&hullCacheMagic, 4);
 
