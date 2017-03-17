@@ -856,7 +856,7 @@ namespace sp
 		{
 		    std::cout << "Connected to PVD!\n";
 		}
-#elif
+#else
 		std::cout << "PhysX Visual Debugger not supported for this platform or build\n";
 #endif
 	}
