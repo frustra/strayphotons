@@ -99,6 +99,17 @@
 			"_comment": "ceiling",
 			"renderable": "ceiling-3x3",
 			"transform": {
+				"translate": [0, 4, 0]
+			},
+			"physics": {
+				"model": "ceiling-3x3",
+				"dynamic": false
+			}
+		},
+		{
+			"_comment": "ceiling",
+			"renderable": "ceiling-3x3",
+			"transform": {
 				"translate": [0, 4, 3]
 			},
 			"physics": {
@@ -121,7 +132,7 @@
 			"_comment": "ceiling",
 			"renderable": "ceiling-3x3",
 			"transform": {
-				"translate": [0, 4, 9]
+				"translate": [3, 4, 0]
 			},
 			"physics": {
 				"model": "ceiling-3x3",
@@ -150,18 +161,18 @@
 				"dynamic": false
 			}
 		},
+
 		{
 			"_comment": "ceiling",
 			"renderable": "ceiling-3x3",
 			"transform": {
-				"translate": [3, 4, 9]
+				"translate": [6, 4, 0]
 			},
 			"physics": {
 				"model": "ceiling-3x3",
 				"dynamic": false
 			}
 		},
-
 		{
 			"_comment": "ceiling",
 			"renderable": "ceiling-3x3",
@@ -178,17 +189,6 @@
 			"renderable": "ceiling-3x3",
 			"transform": {
 				"translate": [6, 4, 6]
-			},
-			"physics": {
-				"model": "ceiling-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "ceiling",
-			"renderable": "ceiling-3x3",
-			"transform": {
-				"translate": [6, 4, 9]
 			},
 			"physics": {
 				"model": "ceiling-3x3",
