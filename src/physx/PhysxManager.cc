@@ -835,7 +835,7 @@ namespace sp
 
 	void PhysxManager::ConnectToPVD(const string &)
 	{
-#if defined(_WIN32) || defined(__APPLE__)
+#if (defined(_WIN32) || defined(__APPLE__)) && !defined(PACKAGE_RELEASE)
 		if (!physics->getPvdConnectionManager())
 		{
 		    std::cout << "Run PhysX Visual Debugger and connect to 127.0.0.1:5425\n";
@@ -857,7 +857,7 @@ namespace sp
 		    std::cout << "Connected to PVD!\n";
 		}
 #elif
-		std::cout << "PhysX Visual Debugger not supported for Linux platforms\n";
+		std::cout << "PhysX Visual Debugger not supported for this platform or build\n";
 #endif
 	}
 }

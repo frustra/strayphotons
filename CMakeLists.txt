@@ -163,6 +163,12 @@ set (PHYSX_LOADS
 	"PhysX3${PHYSX_ENV}${PHYSX_ARCH}"
 )
 
+if (NOT SP_PACKAGE_RELEASE)
+	set(PHYSX_LOADS ${PHYSX_LOADS}
+		"PhysXVisualDebuggerSDK${PHYSX_ENV}"
+	)
+endif()
+
 if (APPLE)
 	# for some reason on OS X linking fails without all the libs
 	set (PHYSX_LOADS ${PHYSX_LOADS}
@@ -173,7 +179,6 @@ if (APPLE)
 		"SimulationController${PHYSX_ENV}"
 		"SceneQuery${PHYSX_ENV}"
 		"PhysXProfileSDK${PHYSX_ENV}"
-		"PhysXVisualDebuggerSDK${PHYSX_ENV}"
 	)
 endif()
 
