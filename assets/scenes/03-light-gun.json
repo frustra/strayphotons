@@ -172,18 +172,18 @@
 
 		{
 			"_name": "door1-l",
-			"renderable": "door-panel-c-1.5x2",
+			"renderable": "door-panel-l-1.5x2",
 			"transform": {
 				"rotate": [90, 0, 1, 0],
-				"translate": [5.675, 0, 7]
+				"translate": [5.25, 0, 7]
 			}
 		},
 		{
 			"_name": "door1-r",
-			"renderable": "door-panel-c-1.5x2",
+			"renderable": "door-panel-r-1.5x2",
 			"transform": {
 				"rotate": [90, 0, 1, 0],
-				"translate": [6.325, 0, 7]
+				"translate": [5.25, 0, 7]
 			}
 		},
 		{
@@ -199,7 +199,9 @@
 			},
 			"slideDoor": {
 				"left": "door1-l",
-				"right": "door1-r"
+				"right": "door1-r",
+				"forward": [0, 0, -1],
+				"width": 1.3
 			}
 		},
 		{
