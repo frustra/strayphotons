@@ -1,0 +1,142 @@
+{
+	"autoexec": [
+		"r.MirrorRecursion 2",
+		"r.Flashlight 100"
+	],
+	"entities": [
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [0, -5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [10, 5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [0, 5, 10]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [0, 5, -10]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [-10, 5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "duck",
+			"renderable": "duck",
+			"transform": {
+				"translate": [0, 0, -2]
+			},
+			"physics": {
+				"model": "duck"
+			}
+		},
+		{
+			"_name": "mirrorbox",
+			"renderable": "box",
+			"transform": {
+				"translate": [2, 0, -2]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"mirror": [1, 1],
+			"renderable": "mirror",
+			"transform": {
+				"relativeTo": "mirrorbox",
+				"translate": [0, 0, 0.5001],
+				"rotate": [-180, 0, 1, 0]
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"translate": [-0.2, 3, 0.5]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"renderable": "box",
+			"_name": "mirrorbox2",
+			"transform": {
+				"translate": [0.5, 5, 0.5]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"mirror": [1, 1],
+			"renderable": "mirror",
+			"transform": {
+				"relativeTo": "mirrorbox2",
+				"translate": [0, 0, 0.5001],
+				"rotate": [-180, 0, 1, 0]
+			}
+		},
+		{
+			"renderable": "dodecahedron",
+			"transform": {
+				"translate": [3, 10, -0.5]
+			},
+			"physics": {
+				"model": "dodecahedron"
+			}
+		},
+		{
+			"_name": "player",
+			"view": {
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"translate": [0, 2, 0]
+			},
+			"voxels": {
+				"min": [-5, -0, -5],
+				"max": [5, 10, 5]
+			}
+		}
+	]
+}
