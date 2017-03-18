@@ -9,6 +9,7 @@
 #include "graphics/Util.hh"
 
 #include "graphics/postprocess/Bloom.hh"
+#include "graphics/postprocess/Crosshair.hh"
 #include "graphics/postprocess/GammaCorrect.hh"
 #include "graphics/postprocess/Lighting.hh"
 #include "graphics/postprocess/MenuGui.hh"
@@ -220,6 +221,13 @@ namespace sp
 		if (CVarAntiAlias.Get() == 1)
 		{
 			AddSMAA(context, linearLuminosity);
+		}
+
+		if (game->menuGui.RenderMode() == MenuRenderMode::None)
+		{
+			auto crosshair = context.AddPass<Crosshair>();
+			crosshair->SetInput(0, context.LastOutput);
+			context.LastOutput = crosshair;
 		}
 
 		if (CVarViewGBuffer.Get() > 0)
