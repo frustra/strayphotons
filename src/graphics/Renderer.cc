@@ -79,6 +79,7 @@ namespace sp
 		Assert(GLEW_ARB_compute_shader, "ARB_compute_shader required");
 		Assert(GLEW_ARB_direct_state_access, "ARB_direct_state_access required");
 		Assert(GLEW_ARB_multi_bind, "ARB_multi_bind required");
+		Assert(!RTPool, "Renderer already prepared");
 
 		glEnable(GL_FRAMEBUFFER_SRGB);
 

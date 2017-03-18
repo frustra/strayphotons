@@ -29,25 +29,40 @@ namespace sp
 	void Crosshair::Process(const PostProcessingContext *context)
 	{
 		auto view = context->view;
-		auto offset = view.extents / 2;
 		auto spread = CVarCrosshairSpread.Get();
 		auto size = CVarCrosshairDotSize.Get();
+		auto offset = view.extents / 2 - glm::ivec2(size / 2);
 
-		static Texture tex1;
+		static Texture tex1, tex2;
 
 		if (!tex1.handle)
 		{
-			static unsigned char color[4] = { 255, 255, 255, 127 };
+			static unsigned char color[4] = { 255, 255, 255, 50 };
 			tex1.Create().Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_RGB8).Image2D(color);
+			.Size(1, 1).Storage(PF_RGBA8).Image2D(color);
+		}
+
+		if (!tex2.handle)
+		{
+			static unsigned char color[4] = { 150, 150, 150, 255 };
+			tex2.Create().Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+			.Size(1, 1).Storage(PF_RGBA8).Image2D(color);
 		}
 
 		glEnable(GL_BLEND);
-		glBlendFuncSeparate(GL_ONE_MINUS_DST_COLOR, GL_ZERO, GL_ZERO, GL_ONE);
+		//glBlendFuncSeparate(GL_ONE_MINUS_DST_COLOR, GL_ZERO, GL_ZERO, GL_ONE);
+		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ZERO, GL_ONE);
+		glBlendEquation(GL_FUNC_ADD);
 		tex1.Bind(0);
 		drawDots(offset, spread, size);
 
+		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ZERO, GL_ZERO, GL_ONE);
+		glBlendEquation(GL_MIN);
+		tex2.Bind(0);
+		drawDots(offset, spread, size);
+
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glBlendEquation(GL_FUNC_ADD);
 		glDisable(GL_BLEND);
 		glViewport(0, 0, view.extents.x, view.extents.y);
 
