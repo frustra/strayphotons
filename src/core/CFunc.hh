@@ -89,14 +89,14 @@ namespace sp
 		}
 
 		template <typename ParamType, typename ThisType>
-		void RegisterMember(ThisType *parent, const string &name, const string &description, void(ThisType::*callback)(ParamType))
+		void Register(ThisType *parent, const string &name, const string &description, void(ThisType::*callback)(ParamType))
 		{
 			auto cb = std::bind(callback, parent, std::placeholders::_1);
 			collection.push_back(make_shared<CFunc<ParamType>>(name, description, cb));
 		}
 
 		template <typename ThisType>
-		void RegisterMember(ThisType *parent, const string &name, const string &description, void(ThisType::*callback)())
+		void Register(ThisType *parent, const string &name, const string &description, void(ThisType::*callback)())
 		{
 			auto cb = std::bind(callback, parent);
 			collection.push_back(make_shared<CFunc<void>>(name, description, cb));

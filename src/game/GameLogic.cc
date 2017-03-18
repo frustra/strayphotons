@@ -35,14 +35,14 @@ namespace sp
 		lightGunSystem(&game->entityManager, &game->input, &game->physics),
 		sunPos(0)
 	{
-		funcs.RegisterMember(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
-		funcs.RegisterMember(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
-		funcs.RegisterMember(this, "printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
+		funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
+		funcs.Register(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
+		funcs.Register(this, "printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
 
-		funcs.RegisterMember(this, "g.OpenBarrier", "Open barrier by name", &GameLogic::OpenBarrier);
-		funcs.RegisterMember(this, "g.CloseBarrier", "Close barrier by name", &GameLogic::CloseBarrier);
-		funcs.RegisterMember(this, "g.OpenDoor", "Open door by name", &GameLogic::OpenDoor);
-		funcs.RegisterMember(this, "g.CloseDoor", "Open door by name", &GameLogic::CloseDoor);
+		funcs.Register(this, "g.OpenBarrier", "Open barrier by name", &GameLogic::OpenBarrier);
+		funcs.Register(this, "g.CloseBarrier", "Close barrier by name", &GameLogic::CloseBarrier);
+		funcs.Register(this, "g.OpenDoor", "Open door by name", &GameLogic::OpenDoor);
+		funcs.Register(this, "g.CloseDoor", "Open door by name", &GameLogic::CloseDoor);
 	}
 
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");

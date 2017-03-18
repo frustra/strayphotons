@@ -24,7 +24,7 @@ namespace sp
 
 	PhysxManager::PhysxManager()
 	{
-		funcs.RegisterMember(this, "p.ConnectPVD", "Connect to a running PVD", &PhysxManager::ConnectToPVD);
+		funcs.Register(this, "p.ConnectPVD", "Connect to a running PVD", &PhysxManager::ConnectToPVD);
 
 		Logf("PhysX %d.%d.%d starting up", PX_PHYSICS_VERSION_MAJOR, PX_PHYSICS_VERSION_MINOR, PX_PHYSICS_VERSION_BUGFIX);
 
