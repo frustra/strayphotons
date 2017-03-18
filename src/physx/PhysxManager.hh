@@ -168,7 +168,7 @@ namespace sp
 		ConvexHullSet *LoadCollisionCache(Model *model, bool decomposeHull);
 		void SaveCollisionCache(Model *model, ConvexHullSet *set, bool decomposeHull);
 
-		void ConnectToPVD(const string &);
+		void ConnectToPVD();
 
 		physx::PxFoundation *pxFoundation = nullptr;
 		physx::PxPhysics *physics = nullptr;
@@ -191,7 +191,7 @@ namespace sp
 		vector<physx::PxDebugLine> debugLines;
 		std::mutex debugLinesMutex;
 
-		CFuncCollection<PhysxManager, string> funcs;
+		CFuncCollection funcs;
 	};
 }
 

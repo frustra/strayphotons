@@ -20,15 +20,15 @@ namespace sp
 		void Init();
 		bool Frame(double dtSinceLastFrame);
 
-		void LoadScene(const string &name);
-		void ReloadScene(const string &);
-		void PrintDebug(const string &);
+		void LoadScene(string name);
+		void ReloadScene(string arg);
+		void PrintDebug();
 
-		void OpenBarrier(const string &name);
-		void CloseBarrier(const string &name);
+		void OpenBarrier(string name);
+		void CloseBarrier(string name);
 
-		void OpenDoor(const string &name);
-		void CloseDoor(const string &name);
+		void OpenDoor(string name);
+		void CloseDoor(string name);
 
 	private:
 		Game *game;
@@ -39,6 +39,6 @@ namespace sp
 		ecs::Entity flashlight;
 		float sunPos;
 
-		CFuncCollection<GameLogic, string> funcs;
+		CFuncCollection funcs;
 	};
 }

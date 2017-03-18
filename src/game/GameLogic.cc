@@ -33,17 +33,16 @@ namespace sp
 		input(&game->input),
 		humanControlSystem(&game->entityManager, &game->input, &game->physics),
 		lightGunSystem(&game->entityManager, &game->input, &game->physics),
-		sunPos(0),
-		funcs(this)
+		sunPos(0)
 	{
-		funcs.Register("loadscene", "Load a scene", &GameLogic::LoadScene);
-		funcs.Register("reloadscene", "Reload current scene", &GameLogic::ReloadScene);
-		funcs.Register("printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
+		funcs.RegisterMember(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
+		funcs.RegisterMember(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
+		funcs.RegisterMember(this, "printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
 
-		funcs.Register("g.OpenBarrier", "Open barrier by name", &GameLogic::OpenBarrier);
-		funcs.Register("g.CloseBarrier", "Close barrier by name", &GameLogic::CloseBarrier);
-		funcs.Register("g.OpenDoor", "Open door by name", &GameLogic::OpenDoor);
-		funcs.Register("g.CloseDoor", "Open door by name", &GameLogic::CloseDoor);
+		funcs.RegisterMember(this, "g.OpenBarrier", "Open barrier by name", &GameLogic::OpenBarrier);
+		funcs.RegisterMember(this, "g.CloseBarrier", "Close barrier by name", &GameLogic::CloseBarrier);
+		funcs.RegisterMember(this, "g.OpenDoor", "Open door by name", &GameLogic::OpenDoor);
+		funcs.RegisterMember(this, "g.CloseDoor", "Open door by name", &GameLogic::CloseDoor);
 	}
 
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
@@ -218,9 +217,8 @@ namespace sp
 		return true;
 	}
 
-	void GameLogic::LoadScene(const string &nameRef)
+	void GameLogic::LoadScene(string name)
 	{
-		const string name = nameRef;
 		game->graphics.RenderLoading();
 		game->physics.StopSimulation();
 		game->entityManager.DestroyAll();
@@ -269,7 +267,7 @@ namespace sp
 		game->physics.StartSimulation();
 	}
 
-	void GameLogic::ReloadScene(const string &arg)
+	void GameLogic::ReloadScene(string arg)
 	{
 		if (scene)
 		{
@@ -299,7 +297,7 @@ namespace sp
 		}
 	}
 
-	void GameLogic::PrintDebug(const string &)
+	void GameLogic::PrintDebug()
 	{
 		Logf("Currently loaded scene: %s", scene ? scene->name : "none");
 		if (!scene) return;
@@ -334,7 +332,7 @@ namespace sp
 		}
 	}
 
-	void GameLogic::OpenBarrier(const string &name)
+	void GameLogic::OpenBarrier(string name)
 	{
 		if (!scene->namedEntities.count(name))
 		{
@@ -350,7 +348,7 @@ namespace sp
 		ecs::Barrier::Open(ent, game->physics);
 	}
 
-	void GameLogic::CloseBarrier(const string &name)
+	void GameLogic::CloseBarrier(string name)
 	{
 		if (!scene->namedEntities.count(name))
 		{
@@ -366,7 +364,7 @@ namespace sp
 		ecs::Barrier::Close(ent, game->physics);
 	}
 
-	void GameLogic::OpenDoor(const string &name)
+	void GameLogic::OpenDoor(string name)
 	{
 		if (!scene->namedEntities.count(name))
 		{
@@ -382,7 +380,7 @@ namespace sp
 		ent.Get<ecs::SlideDoor>()->Open();
 	}
 
-	void GameLogic::CloseDoor(const string &name)
+	void GameLogic::CloseDoor(string name)
 	{
 		if (!scene->namedEntities.count(name))
 		{

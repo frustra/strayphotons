@@ -23,10 +23,8 @@ namespace sp
 	static CVar<bool> CVarShowShapes("x.ShowShapes", false, "Show (1) or hide (0) the outline of physx collision shapes");
 
 	PhysxManager::PhysxManager()
-		:
-		funcs(this)
 	{
-		funcs.Register("p.connectPVD", "Connect to a running PVD", &PhysxManager::ConnectToPVD);
+		funcs.RegisterMember(this, "p.ConnectPVD", "Connect to a running PVD", &PhysxManager::ConnectToPVD);
 
 		Logf("PhysX %d.%d.%d starting up", PX_PHYSICS_VERSION_MAJOR, PX_PHYSICS_VERSION_MINOR, PX_PHYSICS_VERSION_BUGFIX);
 
@@ -841,7 +839,7 @@ namespace sp
 		}
 	}
 
-	void PhysxManager::ConnectToPVD(const string &)
+	void PhysxManager::ConnectToPVD()
 	{
 #if (defined(_WIN32) || defined(__APPLE__)) && !defined(PACKAGE_RELEASE)
 		if (!physics->getPvdConnectionManager())

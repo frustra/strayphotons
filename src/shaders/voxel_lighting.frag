@@ -141,7 +141,7 @@ void main()
 			vec4 sampleColor = ConeTraceGrid(specularConeRatio, worldPosition, rayReflectDir, flatWorldNormal, gl_FragCoord.xy);
 
 			vec3 brdf = EvaluateBRDFSpecularImportanceSampledGGX(directSpecularColor, roughness, rayReflectDir, -rayDir, worldNormal);
-			indirectSpecular = sampleColor.rgb * brdf;
+			indirectSpecular = sampleColor.rgb * brdf * M_PI;
 		}
 	}
 

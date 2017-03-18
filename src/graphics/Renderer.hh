@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/CFunc.hh"
 #include "graphics/GraphicsContext.hh"
 #include "graphics/Buffer.hh"
 #include "graphics/Texture.hh"
@@ -43,7 +44,6 @@ namespace sp
 		void RenderShadowMaps();
 		void PrepareVoxelTextures();
 		void RenderVoxelGrid();
-		void ClearVoxelGrid();
 		void ReadBackLightSensors();
 		void UpdateLightSensors();
 		void BeginFrame();
@@ -78,5 +78,7 @@ namespace sp
 		shared_ptr<GuiRenderer> menuGuiRenderer;
 
 		std::deque<std::pair<shared_ptr<Model>, int>> renderableGCQueue;
+
+		CFuncCollection funcs;
 	};
 }

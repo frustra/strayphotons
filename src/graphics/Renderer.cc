@@ -93,6 +93,11 @@ namespace sp
 		ShaderManager::SetDefine("MAX_LIGHT_SENSORS", std::to_string(MAX_LIGHT_SENSORS));
 		UpdateShaders(true);
 
+		funcs.Register("reloadshaders", "Recompile all shaders", [&]()
+		{
+			UpdateShaders(true);
+		});
+
 		game->entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction & d)
 		{
 			if (ent.Has<ecs::Renderable>())

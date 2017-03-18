@@ -62,7 +62,7 @@ namespace sp
 
 		bool triggeredExit = false;
 
-		CFunc<string> cfExit("exit", "Quits the game", [&](const string & s)
+		CFunc<void> cfExit("exit", "Quits the game", [&]()
 		{
 			triggeredExit = true;
 		});
