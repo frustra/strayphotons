@@ -22,7 +22,6 @@ namespace ecs
 		vector<State> states;
 		int curState = -1;
 		int nextState = -1;
-		float timeLeft = 0;
 
 		/**
 		 * the time it takes to animate to the given state

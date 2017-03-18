@@ -1,6 +1,7 @@
 #include "ecs/components/Animation.hh"
 
 #include <sstream>
+#include "core/Logging.hh"
 
 namespace ecs
 {
@@ -14,7 +15,9 @@ namespace ecs
 			throw std::runtime_error(ss.str());
 		}
 
+		if (nextState >= 0)
+			curState = nextState;
+
 		nextState = i;
-		timeLeft = animationTimes.at(i);
 	}
 }
