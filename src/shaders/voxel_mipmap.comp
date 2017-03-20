@@ -10,6 +10,7 @@ layout (binding = 1, r32ui) uniform uimage2D currentMipList;
 
 layout (binding = 2, rgba16) readonly uniform image3D previousVoxelRadiance;
 layout (binding = 3, rgba16) uniform image3D currentVoxelRadiance;
+layout (binding = 4, rgba8) readonly uniform image3D voxelNormal;
 
 layout (binding = 0) uniform atomic_uint previousFragListSize;
 layout (binding = 0, offset = 16) uniform atomic_uint nextFragListSize;

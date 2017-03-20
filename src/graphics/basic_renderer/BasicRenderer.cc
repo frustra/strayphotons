@@ -218,6 +218,5 @@ namespace sp
 
 	void BasicRenderer::EndFrame()
 	{
-		glfwSwapBuffers(window);
 	}
 }

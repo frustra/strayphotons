@@ -4,14 +4,15 @@
 ##import raytrace/intersection
 ##import voxel_trace_shared
 
-float GetVoxelNearest(vec3 position, int level, out vec3 radiance)
+float GetVoxelNearest(vec3 position, int level, out vec3 radiance, out vec3 normal)
 {
 	vec4 radianceData = texelFetch(voxelRadiance, ivec3(position) >> level, level);
 	radiance = radianceData.rgb * VoxelFixedPointExposure;
+	normal = normalize(texelFetch(voxelNormal, ivec3(position), 0).rgb * 2.0 - 1.0) * 0.5 + 0.5;
 	return radianceData.a;
 }
 
-float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitRadiance)
+float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitRadiance, out vec3 hitNormal)
 {
 	vec3 voxelVolumeMax = vec3(voxelSize * VOXEL_GRID_SIZE * 0.5);
 	vec3 voxelVolumeMin = -voxelVolumeMax;
@@ -46,11 +47,12 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitRadiance)
 
 	for (int i = 0; i < maxIterations; i++)
 	{
-		vec3 radiance;
-		float alpha = GetVoxelNearest(voxelPos + rayDir * 0.001, level, radiance);
+		vec3 radiance, normal;
+		float alpha = GetVoxelNearest(voxelPos + rayDir * 0.001, level, radiance, normal);
 		if (alpha > 0)
 		{
 			hitRadiance = radiance;
+			hitNormal = normal;
 			return alpha;
 		}
 

@@ -7,6 +7,7 @@ layout (binding = 0) uniform atomic_uint fragListSize;
 layout (binding = 0, r32ui) readonly uniform uimage2D voxelFragList;
 layout (binding = 1, r32ui) uniform uimage3D voxelPackedData;
 layout (binding = 2, rgba16) writeonly uniform image3D voxelRadiance;
+layout (binding = 3, rgba8) writeonly uniform image3D voxelNormal;
 
 ##import lib/util
 ##import voxel_shared
@@ -24,7 +25,8 @@ void main()
 		packedPosition & 0x3FF
 	);
 
-	vec3 radiance;
-	uint count = ReadVoxelAndClear(voxelPackedData, position, radiance);
-	imageStore(voxelRadiance, position, vec4(radiance / float(count), 1.0));
+	vec3 radiance, normal;
+	float count = ReadVoxelAndClear(voxelPackedData, position, radiance, normal);
+	imageStore(voxelRadiance, position, vec4(radiance, 1.0));
+	imageStore(voxelNormal, position, vec4(normal, count));
 }

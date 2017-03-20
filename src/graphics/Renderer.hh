@@ -27,6 +27,7 @@ namespace sp
 		shared_ptr<RenderTarget> fragmentList2;
 		shared_ptr<RenderTarget> packedData;
 		shared_ptr<RenderTarget> radiance;
+		shared_ptr<RenderTarget> normal;
 		ecs::VoxelInfo info;
 	};
 

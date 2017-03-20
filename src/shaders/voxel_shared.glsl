@@ -34,21 +34,32 @@ int DominantAxis(vec3 normal)
 #define UIMAGE3D layout(r32ui) uimage3D
 #endif
 
-uint ReadVoxelAndClear(UIMAGE3D packedVoxelImg, ivec3 position, out vec3 outRadiance)
+float ReadVoxelAndClear(UIMAGE3D packedVoxelImg, ivec3 position, out vec3 outRadiance, out vec3 outNormal)
 {
-	ivec3 index = position * ivec3(3, 1, 1);
+	ivec3 index = position * ivec3(3, 2, 1);
 
-	uint data = imageAtomicExchange(packedVoxelImg, index, uint(0)).r;
+	uint data = imageAtomicExchange(packedVoxelImg, index, uint(0));
 	float radianceRed = float(data) / 0xFFFF;
 
-	data = imageAtomicExchange(packedVoxelImg, index + ivec3(1, 0, 0), uint(0)).r;
+	data = imageAtomicExchange(packedVoxelImg, index + ivec3(1, 0, 0), uint(0));
 	float radianceGreen = float(data) / 0xFFFF;
 
-	data = imageAtomicExchange(packedVoxelImg, index + ivec3(2, 0, 0), uint(0)).r;
-	float radianceBlue = float((data & 0xFFFFFF00) >> 8) / 0xFFFF;
+	data = imageAtomicExchange(packedVoxelImg, index + ivec3(2, 0, 0), uint(0));
+	float radianceBlue = float(data) / 0xFFFF;
 
-	outRadiance = vec3(radianceRed, radianceGreen, radianceBlue);
-	return data & 0xFF;
+	data = imageAtomicExchange(packedVoxelImg, index + ivec3(0, 1, 0), uint(0));
+	float normalX = float(data) / 0xFFFF;
+
+	data = imageAtomicExchange(packedVoxelImg, index + ivec3(1, 1, 0), uint(0));
+	float normalY = float(data) / 0xFFFF;
+
+	data = imageAtomicExchange(packedVoxelImg, index + ivec3(2, 1, 0), uint(0));
+	float normalZ = float((data & 0xFFFFFF00) >> 8) / 0xFFFF;
+
+	float count = float(data & 0xFF);
+	outRadiance = vec3(radianceRed, radianceGreen, radianceBlue) / count;
+	outNormal = vec3(normalX, normalY, normalZ) / count;
+	return count;
 }
 
 #endif

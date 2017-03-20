@@ -138,10 +138,10 @@ namespace sp
 		context->ResizeWindow(primaryView, CVarWindowFullscreen.Get());
 
 		context->Timer->StartFrame();
-		context->BeginFrame();
 
 		{
 			RenderPhase phase("Frame", context->Timer);
+			context->BeginFrame();
 
 #ifdef SP_ENABLE_RAYTRACER
 			if (CVarRayTrace.Get() && rayTracer->Enable(primaryView))
@@ -155,9 +155,10 @@ namespace sp
 #endif
 
 			context->RenderPass(primaryView);
+			context->EndFrame();
 		}
 
-		context->EndFrame();
+		glfwSwapBuffers(context->GetWindow());
 		context->Timer->EndFrame();
 
 		double frameEnd = glfwGetTime();
