@@ -28,38 +28,4 @@ int DominantAxis(vec3 normal)
 	return int(dot(vec3(mask) * sign(normal), vec3(1, 2, 3)));
 }
 
-#ifdef INTEL_GPU
-#define UIMAGE3D uimage3D
-#else
-#define UIMAGE3D layout(r32ui) uimage3D
-#endif
-
-float ReadVoxelAndClear(UIMAGE3D packedVoxelImg, ivec3 position, out vec3 outRadiance, out vec3 outNormal)
-{
-	ivec3 index = position * ivec3(3, 2, 1);
-
-	uint data = imageAtomicExchange(packedVoxelImg, index, uint(0));
-	float radianceRed = float(data) / 0xFFFF;
-
-	data = imageAtomicExchange(packedVoxelImg, index + ivec3(1, 0, 0), uint(0));
-	float radianceGreen = float(data) / 0xFFFF;
-
-	data = imageAtomicExchange(packedVoxelImg, index + ivec3(2, 0, 0), uint(0));
-	float radianceBlue = float(data) / 0xFFFF;
-
-	data = imageAtomicExchange(packedVoxelImg, index + ivec3(0, 1, 0), uint(0));
-	float normalX = float(data) / 0xFFFF;
-
-	data = imageAtomicExchange(packedVoxelImg, index + ivec3(1, 1, 0), uint(0));
-	float normalY = float(data) / 0xFFFF;
-
-	data = imageAtomicExchange(packedVoxelImg, index + ivec3(2, 1, 0), uint(0));
-	float normalZ = float((data & 0xFFFFFF00) >> 8) / 0xFFFF;
-
-	float count = float(data & 0xFF);
-	outRadiance = vec3(radianceRed, radianceGreen, radianceBlue) / count;
-	outNormal = vec3(normalX, normalY, normalZ) / count;
-	return count;
-}
-
 #endif
