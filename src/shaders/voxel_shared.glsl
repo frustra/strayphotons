@@ -21,6 +21,13 @@ const mat3[3] AxisSwapReverse = mat3[](
 	mat3(1.0)
 );
 
+int DominantAxis(vec3 normal)
+{
+	vec3 absNormal = abs(normal);
+	bvec3 mask = greaterThanEqual(absNormal.xyz, max(absNormal.yzx, absNormal.zxy));
+	return int(dot(vec3(mask) * sign(normal), vec3(1, 2, 3)));
+}
+
 #ifdef INTEL_GPU
 #define UIMAGE3D uimage3D
 #else

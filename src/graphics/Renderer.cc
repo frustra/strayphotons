@@ -66,7 +66,9 @@ namespace sp
 			CVarEnablePCF.Changed()
 		   )
 		{
-			ShaderManager::SetDefine("VOXEL_GRID_SIZE", std::to_string(CVarVoxelGridSize.Get(true)));
+			int voxelGridSize = CVarVoxelGridSize.Get(true);
+			ShaderManager::SetDefine("VOXEL_GRID_SIZE", std::to_string(voxelGridSize));
+			ShaderManager::SetDefine("VOXEL_MIP_LEVELS", std::to_string(ceil(log2(voxelGridSize))));
 			ShaderManager::SetDefine("VOXEL_SUPER_SAMPLE_SCALE", std::to_string(CVarVoxelSuperSample.Get(true)));
 			ShaderManager::SetDefine("SHADOWS_ENABLED", CVarEnableShadows.Get(true));
 			ShaderManager::SetDefine("PCF_ENABLED", CVarEnablePCF.Get(true));
@@ -345,18 +347,13 @@ namespace sp
 
 		if (!computeIndirectBuffer1) computeIndirectBuffer1.Create();
 		if (!computeIndirectBuffer2) computeIndirectBuffer2.Create();
-		if (computeIndirectBuffer1.size != indirectBufferSize)
+		if (computeIndirectBuffer1.size != indirectBufferSize || computeIndirectBuffer2.size != indirectBufferSize)
 		{
 			computeIndirectBuffer1.Data(indirectBufferSize, nullptr, GL_DYNAMIC_COPY);
-
-			GLuint listData[] = {0, 0, 1, 1};
-			computeIndirectBuffer1.Clear(PF_RGBA32UI, listData);
-		}
-		if (computeIndirectBuffer2.size != indirectBufferSize)
-		{
 			computeIndirectBuffer2.Data(indirectBufferSize, nullptr, GL_DYNAMIC_COPY);
 
 			GLuint listData[] = {0, 0, 1, 1};
+			computeIndirectBuffer1.Clear(PF_RGBA32UI, listData);
 			computeIndirectBuffer2.Clear(PF_RGBA32UI, listData);
 		}
 

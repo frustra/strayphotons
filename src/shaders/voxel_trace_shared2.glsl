@@ -47,13 +47,7 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitRadiance)
 	for (int i = 0; i < maxIterations; i++)
 	{
 		vec3 radiance;
-		float alpha = GetVoxelNearest(voxelPos, level, radiance);
-		if (alpha > 0)
-		{
-			hitRadiance = radiance;
-			return alpha;
-		}
-		alpha = GetVoxelNearest(voxelPos + rayDir * 0.01, level, radiance);
+		float alpha = GetVoxelNearest(voxelPos + rayDir * 0.001, level, radiance);
 		if (alpha > 0)
 		{
 			hitRadiance = radiance;

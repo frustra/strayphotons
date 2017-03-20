@@ -45,17 +45,15 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir, vec3 surfaceNormal)
 	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VOXEL_GRID_SIZE * 0.5;
 	float startDist = 1.75;
 	float dist = startDist;
-	float maxDist = VOXEL_GRID_SIZE * 1.5;
 
 	vec4 result = vec4(0);
 	float level = 0;
 
-	while (dist < maxDist && result.a < 0.9999)
-	{
-		vec4 value = SampleVoxelLod(voxelPos + rayDir * dist, level);
+	for (int level = 0; level < VOXEL_MIP_LEVELS; level++) {
+		vec4 value = SampleVoxelLod(voxelPos + rayDir * dist, float(level));
 		result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
-		level += 1.0;
+		if (result.a > 0.999) break;
 		dist *= 2.0;
 	}
 
