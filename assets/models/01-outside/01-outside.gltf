@@ -1,67 +1,95 @@
 {
     "accessors": {
-        "accessor_index_0": {
-            "bufferView": "bufferView_1",
+        "accessor_0": {
+            "bufferView": "bufferView_0",
             "byteOffset": 0,
             "byteStride": 0,
-            "componentType": 5123,
-            "count": 60,
+            "componentType": 5126,
+            "count": 42,
             "max": [
-                33
+                -5,
+                6,
+                -6.25
+            ],
+            "min": [
+                -5.5,
+                3.0999999046325684,
+                -8.5
+            ],
+            "type": "VEC3"
+        },
+        "accessor_1": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 504,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 42,
+            "max": [
+                1,
+                1,
+                1
+            ],
+            "min": [
+                -1,
+                -1,
+                -0.707099974155426
+            ],
+            "type": "VEC3"
+        },
+        "accessor_10": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 4144,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 46,
+            "max": [
+                0.9984999895095825,
+                1.0055999755859375
+            ],
+            "min": [
+                -2.7797000408172607,
+                -0.7858999967575073
+            ],
+            "type": "VEC2"
+        },
+        "accessor_11": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 330,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 84,
+            "max": [
+                45
             ],
             "min": [
                 0
             ],
             "type": "SCALAR"
         },
-        "accessor_index_1": {
-            "bufferView": "bufferView_1",
-            "byteOffset": 120,
-            "byteStride": 0,
-            "componentType": 5123,
-            "count": 108,
-            "max": [
-                105
-            ],
-            "min": [
-                34
-            ],
-            "type": "SCALAR"
-        },
-        "accessor_index_2": {
-            "bufferView": "bufferView_1",
-            "byteOffset": 336,
-            "byteStride": 0,
-            "componentType": 5123,
-            "count": 36,
-            "max": [
-                129
-            ],
-            "min": [
-                106
-            ],
-            "type": "SCALAR"
-        },
-        "accessor_index_3": {
-            "bufferView": "bufferView_1",
-            "byteOffset": 408,
-            "byteStride": 0,
-            "componentType": 5123,
-            "count": 360,
-            "max": [
-                301
-            ],
-            "min": [
-                130
-            ],
-            "type": "SCALAR"
-        },
-        "accessor_normal": {
+        "accessor_12": {
             "bufferView": "bufferView_0",
-            "byteOffset": 3384,
+            "byteOffset": 4512,
             "byteStride": 0,
             "componentType": 5126,
-            "count": 282,
+            "count": 34,
+            "max": [
+                -1.9999899864196777,
+                1.5,
+                -5.800000190734863
+            ],
+            "min": [
+                -5,
+                0,
+                -6
+            ],
+            "type": "VEC3"
+        },
+        "accessor_13": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 4920,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 34,
             "max": [
                 1,
                 1,
@@ -74,12 +102,190 @@
             ],
             "type": "VEC3"
         },
-        "accessor_position": {
+        "accessor_14": {
             "bufferView": "bufferView_0",
-            "byteOffset": 0,
+            "byteOffset": 5328,
             "byteStride": 0,
             "componentType": 5126,
-            "count": 282,
+            "count": 34,
+            "max": [
+                0.9998999834060669,
+                1
+            ],
+            "min": [
+                0,
+                0.024900000542402267
+            ],
+            "type": "VEC2"
+        },
+        "accessor_15": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 498,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 60,
+            "max": [
+                33
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
+        },
+        "accessor_16": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 5600,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 72,
+            "max": [
+                -2,
+                0.6000000238418579,
+                -6
+            ],
+            "min": [
+                -5,
+                0,
+                -8
+            ],
+            "type": "VEC3"
+        },
+        "accessor_17": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 6464,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 72,
+            "max": [
+                1,
+                1,
+                1
+            ],
+            "min": [
+                -1,
+                -1,
+                -1
+            ],
+            "type": "VEC3"
+        },
+        "accessor_18": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 7328,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 72,
+            "max": [
+                0.9958000183105469,
+                1
+            ],
+            "min": [
+                0,
+                0.13519999384880066
+            ],
+            "type": "VEC2"
+        },
+        "accessor_19": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 618,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 108,
+            "max": [
+                71
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
+        },
+        "accessor_2": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 1008,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 42,
+            "max": [
+                1.6167999505996704,
+                1.0055999755859375
+            ],
+            "min": [
+                0.0035000001080334187,
+                -0.7858999967575073
+            ],
+            "type": "VEC2"
+        },
+        "accessor_20": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 7904,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                3,
+                0,
+                2
+            ],
+            "min": [
+                -5,
+                -0.5,
+                -8
+            ],
+            "type": "VEC3"
+        },
+        "accessor_21": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 8192,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                1,
+                1,
+                1
+            ],
+            "min": [
+                -1,
+                0,
+                -1
+            ],
+            "type": "VEC3"
+        },
+        "accessor_22": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 8480,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                2.4995999336242676,
+                2.199700117111206
+            ],
+            "min": [
+                -1.4996000528335571,
+                -0.9997000098228455
+            ],
+            "type": "VEC2"
+        },
+        "accessor_23": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 834,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 36,
+            "max": [
+                23
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
+        },
+        "accessor_24": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 8672,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 90,
             "max": [
                 3.5,
                 6,
@@ -92,26 +298,174 @@
             ],
             "type": "VEC3"
         },
-        "accessor_uv": {
+        "accessor_25": {
             "bufferView": "bufferView_0",
-            "byteOffset": 6768,
+            "byteOffset": 9752,
             "byteStride": 0,
             "componentType": 5126,
-            "count": 282,
+            "count": 90,
             "max": [
-                8.208100318908691,
-                2.199700117111206
+                1,
+                1,
+                1
             ],
             "min": [
-                -4.981500148773193,
-                -0.9997000098228455
+                -1,
+                -1,
+                -1
+            ],
+            "type": "VEC3"
+        },
+        "accessor_26": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 10832,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 90,
+            "max": [
+                8.211600303649902,
+                1.0055999755859375
+            ],
+            "min": [
+                -4.978000164031982,
+                -0.7858999967575073
             ],
             "type": "VEC2"
+        },
+        "accessor_27": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 906,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 168,
+            "max": [
+                89
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
+        },
+        "accessor_3": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 0,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 66,
+            "max": [
+                41
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
+        },
+        "accessor_4": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 1344,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 53,
+            "max": [
+                -5,
+                3.0999999046325684,
+                -6.25
+            ],
+            "min": [
+                -5.5,
+                -0.5,
+                -8.5
+            ],
+            "type": "VEC3"
+        },
+        "accessor_5": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 1980,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 53,
+            "max": [
+                1,
+                1,
+                1
+            ],
+            "min": [
+                -1,
+                -1,
+                0
+            ],
+            "type": "VEC3"
+        },
+        "accessor_6": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 2616,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 53,
+            "max": [
+                1.6167999505996704,
+                1.0055999755859375
+            ],
+            "min": [
+                0.0035000001080334187,
+                0.010999999940395355
+            ],
+            "type": "VEC2"
+        },
+        "accessor_7": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 132,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 99,
+            "max": [
+                52
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
+        },
+        "accessor_8": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 3040,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 46,
+            "max": [
+                -5,
+                6,
+                7.5
+            ],
+            "min": [
+                -5.5,
+                -0.5,
+                -6.25
+            ],
+            "type": "VEC3"
+        },
+        "accessor_9": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 3592,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 46,
+            "max": [
+                1,
+                1,
+                1
+            ],
+            "min": [
+                -1,
+                -1,
+                -1
+            ],
+            "type": "VEC3"
         }
     },
     "animations": {},
     "asset": {
-        "generator": "OBJ2GLTF",
+        "generator": "obj2gltf",
         "premultipliedAlpha": true,
         "profile": {
             "api": "WebGL",
@@ -121,27 +475,26 @@
     },
     "bufferViews": {
         "bufferView_0": {
-            "buffer": "buffer_0",
-            "byteLength": 9024,
+            "buffer": "buffer",
+            "byteLength": 11552,
             "byteOffset": 0,
             "target": 34962
         },
         "bufferView_1": {
-            "buffer": "buffer_0",
-            "byteLength": 1128,
-            "byteOffset": 9024,
+            "buffer": "buffer",
+            "byteLength": 1242,
+            "byteOffset": 11552,
             "target": 34963
         }
     },
     "buffers": {
-        "buffer_0": {
-            "byteLength": 10152,
+        "buffer": {
+            "byteLength": 12794,
             "type": "arraybuffer",
-            "uri": "01-outside.bin"
+            "uri": "data:application/octet-stream;base64,AACwwAAAwEAAAAjBAACwwGZmRkAAAAjBAACwwGZmRkAAAPjAAACwwAAAwEAAAMjAAACgwAAAwEAAAMjAAACgwAAAwEAAAADBAACgwGZmRkAAAADBAACwwAAAwEAAAAjBAACgwAAAwEAAAADBAACgwAAAwEAAAMjAAACgwGZmRkAAAMjAAACgwGZmRkAAAPjAAACwwGZmRkAAAPjAAACgwGZmRkAAAADBAACgwGZmRkAAAPjAAACgwGZmRkAAAPjAAACwwGZmRkAAAPjAAACgwGZmRkAAAPjAAACgwGZmRkAAAMjAAACwwAAAwEAAAMjAAACwwGZmRkAAAMjAAACgwGZmRkAAAPjAAACgwGZmRkAAAMjAAACwwGZmRkAAAPjAAACgwGZmRkAAAPjAAACwwGZmRkAAAMjAAACwwAAAwEAAAMjAAACwwAAAwEAAAAjBAACwwAAAwEAAAMjAAACwwAAAwEAAAMjAAACgwAAAwEAAAMjAAACgwAAAwEAAAMjAAACgwAAAwEAAAADBAACwwAAAwEAAAAjBAACwwGZmRkAAAAjBAACgwGZmRkAAAADBAACgwAAAwEAAAADBAACwwGZmRkAAAAjBAACwwGZmRkAAAPjAAACgwAAAwEAAAMjAAACgwGZmRkAAAMjAAACwwGZmRkAAAMjAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAgQQ1PwAAAACBBDW/gQQ1PwAAAACBBDW/gQQ1PwAAAACBBDW/AACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAgD8AAAAAgQQ1PwAAAACBBDW/AACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgL8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAgL8AAAAAQmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/TfPOP1g5NDxN884/vjBJv03zzj++MEm/sp1/P74wSb+ynX8/WDk0PNGRtD9YOTQ8QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9N884/WDk0PE3zzj9YOTQ8TfPOP74wSb9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/AACgwAAAMEAAAADBAACwwGZmRkAAAAjBAACwwAAAAL8AAAjBAACwwAAAAL8AAPjAAACgwAAAAL8AAOzAAACwwAAAAL8AAMjAAACgwJqZGT8AAPjAAACgwGZmRkAAAPjAAACgwJqZGT8AAPjAAACgwAAAAL8AAOzAAACgwJqZGT8AAMjAAACgwAAAAL8AAMjAAACgwAAAAL8AAADBAACgwJqZGT8AAPjAAACgwGZmRkAAAADBAACgwJqZGT8AAPjAAACgwJqZGT8AAADBAACwwJqZGT8AAPjAAACgwAAAAL8AAMjAAACwwJqZGT8AAMjAAACwwAAAAL8AAMjAAACwwGZmRkAAAPjAAACgwGZmRkAAAADBAACwwGZmRkAAAAjBAACgwJqZGT8AAMjAAACgwJqZGT8AAMjAAACwwGZmRkAAAPjAAACwwJqZGT8AAAjBAACwwJqZGT8AAPjAAACgwJqZGT8AAPjAAACwwJqZGT8AAMjAAACgwJqZGT8AAMjAAACwwAAAAL8AAAjBAACwwAAAAL8AAPjAAACwwJqZGT8AAMjAAACwwAAAAL8AAMjAAACgwAAAAL8AAADBAACgwGZmRkAAAADBAACwwAAAAL8AAMjAAACwwAAAAL8AAPjAAACwwAAAAL8AAAjBAACgwAAAAL8AAADBAACgwAAAAL8AAOzAAACgwAAAAL8AAMjAAACgwAAAAL8AAMjAAACgwGZmRkAAAPjAAACgwJqZGT8AAADBAACgwGZmRkAAAPjAAACwwGZmRkAAAPjAAACgwJqZGT8AAMjAAACgwGZmRkAAAPjAAACwwGZmRkAAAAjBAACwwJqZGT8AAPjAgQQ1vwAAAACBBDU/gQQ1vwAAAACBBDU/gQQ1vwAAAACBBDU/AAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAgQQ1vwAAAACBBDU/gQQ1vwAAAACBBDU/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAgL8AAAAAAAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAAAAAAAAgD8AAAAAQmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7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AAAAAAAAwMAAAKDAmpkZPwAAwMAAAEDAzczMPgAAAMEAACDAzczMPgAAAMEAACDAzczMPgAAwMAAAEDAzczMPgAAwMAAACDAAAAAAAAAwMAAAEDAzczMPgAAwMAAACDAzcxMPgAAAMEAAADAzcxMPgAAAMEAAADAzcxMPgAAwMAAACDAzcxMPgAAwMAAAADAAAAAAAAAwMAAACDAzcxMPgAAwMAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAIC/AAAAAAAAAAAAAAAAAAAAAAAAgL8AAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAACAPwAAAAAAAIC/AAAAAAAAAAAAAAAAAAAAAAAAgL8AAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAACAPwAAAAAAAIC/AAAAAAAAAAAAAAAAAAAAAAAAgL8AAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD/A7H4/3nEKPqjGqz4xmao+wOx+PzGZqj4AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD988rA7MZmqPlFrKj8EVn4/UWsqPzGZqj4AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD/A7H4/XwdOPqjGqz4xmao+wOx+PzGZqj4AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD9Rayo/MZmqPsGoVD8EVn4/wahUPzGZqj4AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD/A7H4/cM6IPqjGqz4xmao+wOx+PzGZqj4AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD/BqFQ/MZmqPsDsfj8EVn4/wOx+PzGZqj4AAAAAAACAPwAAAAAAAIA/qMarPt5xCj4AAAAAAACAPwAAAAAAAIA/fPKwOwRWfj8AAAAAAACAPwAAAAAAAIA/qMarPl8HTj4AAAAAAACAPwAAAAAAAIA/UWsqPwRWfj8AAAAAAACAPwAAAAAAAIA/qMarPnDOiD4AAAAAAACAPwAAAAAAAIA/wahUPwRWfj8AAEBAAAAAAAAAAEAAAKDAAAAAAAAAAMEAAKDAAAAAAAAAAEAAAEBAAAAAvwAAAEAAAKDAAAAAvwAAAMEAAKDAAAAAvwAAAEAAAEBAAAAAAAAAAMEAAEBAAAAAvwAAAEAAAEBAAAAAAAAAAEAAAKDAAAAAAAAAAEAAAKDAAAAAvwAAAMEAAKDAAAAAAAAAAMEAAKDAAAAAAAAAAMEAAEBAAAAAvwAAAMEAAEBAAAAAAAAAAMEAAEBAAAAAAAAAAEAAAKDAAAAAvwAAAEAAAKDAAAAAAAAAAEAAAEBAAAAAAAAAAMEAAEBAAAAAvwAAAMEAAEBAAAAAvwAAAMEAAKDAAAAAvwAAAEAAAKDAAAAAvwAAAMEAAEBAAAAAvwAAAEAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAIC/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgL/l8r+/48cMQHL5H0BX7H+/5fK/v1fsf78AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD9y+R9A48cMQAAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAKDAAACAQAAAIEAAAKDAAAAAvwAAAEAAAKDAAAAAvwAAIEAAAKDAAACAQAAAAEAAAEBAAAAAvwAAAEAAAKDAAAAAvwAAAEAAAEBAAACAQAAAAEAAAEBAAAAAvwAAIEAAAEBAAAAAvwAAAEAAAEBAAACAQAAAIEAAAKDAAAAAvwAAIEAAAEBAAAAAvwAAIEAAAEBAAAAAvwAAAEAAAKDAAAAAvwAAIEAAAKDAAAAAvwAAAEAAAKDAAACAQAAAAEAAAEBAAACAQAAAIEAAAEBAAACAQAAAAEAAAGBAAADAQAAA8EAAAEBAAAAwQAAA8EAAAGBAAAAAvwAA8EAAAEBAAADAQAAAAL8AAEBAAAAwQAAAAMEAAEBAAAAwQAAAAL8AAEBAAAAwQAAAAMEAAGBAAADAQAAACMEAAGBAAAAAvwAACMEAAGBAAADAQAAACMEAAGBAAAAAvwAA8EAAAGBAAAAAvwAACMEAAEBAAAAAvwAAAL8AAGBAAAAAvwAACMEAAGBAAAAAvwAA8EAAAEBAAADAQAAAAL8AAGBAAADAQAAA8EAAAGBAAADAQAAACMEAAEBAAAAAvwAAAMEAAEBAAAAAvwAAAL8AAEBAAAAwQAAA8EAAAEBAAAAAvwAA8EAAAEBAAADAQAAA8EAAAKDAAAAwQAAAAMEAALDAAADAQAAACMEAALDAAAAAvwAACMEAALDAAADAQAAACMEAAGBAAAAAvwAACMEAALDAAAAAvwAACMEAAGBAAADAQAAACMEAAEBAAAAwQAAAAMEAAGBAAAAAvwAACMEAAIC/AADAQAAAAMEAAKDAAAAwQAAAAMEAAIC/AAAwQAAAAMEAAGBAAAAAvwAACMEAAIC/AAAAvwAAAMEAALDAAAAAvwAACMEAALDAAADAQAAACMEAAIC/AADAQAAAAMEAAGBAAADAQAAACMEAAKDAAAAAvwAAAMEAAIC/AAAAvwAAAMEAAEBAAAAwQAAAAMEAAEBAAAAAvwAAAMEAAEBAAADAQAAAAMEAAKDAAACAQAAAAEAAAEBAAACAQAAAAEAAAEBAAACAQAAAIEAAAKDAAACAQAAAIEAAAEBAAAAAvwAAIEAAAKDAAACAQAAAIEAAAEBAAAAAvwAA8EAAAEBAAADAQAAA8EAAAEBAAADAQAAAAMEAAEBAAAAAvwAAAMEAAEBAAADAQAAAAMEAAGBAAADAQAAA8EAAAEBAAAAAvwAA8EAAAEBAAAAAvwAAAMEAAEBAAADAQAAAAMEAAEBAAADAQAAA8EAAAKDAAAAAvwAAAMEAAKDAAADAQAAAAMEAAGBAAADAQAAACMEAAEBAAAAAvwAAAMEAAEBAAADAQAAAAMEAAKDAAADAQAAAAMEAAKDAAAAAvwAAAMEAAEBAAAAAvwAAAMEAAEBAAADAQAAAAMEAAKDAAADAQAAAAMEAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAACBBDW/AAAAAIEENb+BBDW/AAAAAIEENb+BBDW/AAAAAIEENb8AAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAACBBDW/AAAAAIEENT+BBDW/AAAAAIEENT+BBDW/AAAAAIEENT8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL+BBDU/AAAAAIEENT+BBDU/AAAAAIEENT+BBDU/AAAAAIEENT8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAIC/AAAAAAAAAAAAAAAAAAAAAAAAgL8AAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAIC/AAAAAAAAAACBBDW/AAAAAIEENb+BBDW/AAAAAIEENb8AAIA/AAAAAAAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAACBBDW/AAAAAIEENT+BBDW/AAAAAIEENT8AAAAAAAAAAAAAgL+BBDU/AAAAAIEENT+BBDU/AAAAAIEENT8AAAAAAAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAABCYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD/HS5/AjgaAP5vmMcCh+HG+x0ufwKH4cb5CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD+qgom/UieAP2IQgD+x4Sm+qoKJv7HhKb5CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD/0bMBAvjBJv5kqdECsi9s99GzAQKyL2z1CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD+ZKnRAjgaAP/RswECOBoA/t2IDQayL2z23YgNBjgaAP7diA0G+MEm/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/TtEtQL4wSb9N884/rIvbPU7RLUCsi9s9QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/TfPOP44GgD9O0S1AjgaAP5kqdECsi9s9mSp0QI4GgD+ZKnRAvjBJv0JgZTuAt4A/m+YxwI4GgD9CYGU7gLeAP2IQgD9SJ4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD+ZKnRAvjBJv0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD9CYGU7gLeAP03zzj++MEm/QmBlO4C3gD9CYGU7gLeAP0JgZTuAt4A/QmBlO4C3gD8AAAEAAgADAAQABQAGAAcACAAJAAoACwAMAA0ADgAPABAAEQASABMAFAAVABIADwAWABcAGAACABkAGgAaAAAAAgAbABwAHQAeAB8AIAAhAAMABQAGACIABwALACMAJAAkAAkACwAMACUADQAPACYAEAASACcAEwAVACgAEgAWACkAFwAAAAEAAgADAAQABQAGAAcACAAJAAoACwAMAA0ACQAOAA8AEAAHABEACAASABMAFAAVABYAFwAYAAgAGQAaABsAHAAdAB4AHwAcACAAIQAiACEAIwACACQAAAAAACUAAQAUACYAJwADACgAKQAqACsAEgADACkABAAsAAUABAAGAC0ABwAJAA0ACgAMAC4ADQAOAC8ADwAHADAAEQASADEAEwAVADIAFgAYAAYACAAaADMAGwAdADQAHgAcABsAIAAiABwAIQAAAAEAAgADAAQABQAGAAcACAAJAAQACgALAAwADQAOAA8AEAARABIAEwAUABUAFgAXABgAGQAaABsAFwAUABwAHQAeAB8AAAAAACAAAQACAB4AAAADACEABAAiACMAAQAgACQAJQAIACYABgAKACcACQAJAAUABAALACgADAAOACkADwARACoAEgAUAB0AFQArABkAGAAXABsAGAAaACwAGwAUAC0AHAAAAAEAAgADAAQABQAGAAcACAAJAAoACwAMAA0ADgAPABAAEQASABMAFAAOABUAFgAXAAsAGAAZAAMAGgAAABsAAQADABwABAAGAB0ABwAJAB4ACgAMAB8ADQAPACAAEAASACEAEwAOAA0AFQAXAAkACwAZABwAAwAAAAEAAgADAAQABQAGAAcACAAJAAoACwAMAA0ADgAPABAAEQASABMAFAAVABYAFwAYABkAGgAbABwAHQAeAB8AIAAhACIAIwAkACUAJgAnACgAKQAqACsALAAtAC4ALwAwADEAMgAzADQANQAAADYAAQADADcABAAGADgABwAJADkACgAMADoADQAPADsAEAASADwAEwAVAD0AFgAYAD4AGQAbAD8AHAAeAEAAHwAhAEEAIgAkAEIAJQAnAEMAKAAqAEQAKwAtAEUALgAwAEYAMQAzAEcANAAAAAEAAgADAAQABQAGAAcACAAJAAoACwAMAA0ADgAPABAAEQAAABIAAQADABMABAAGABQABwAJABUACgAMABYADQAPABcAEAAAAAEAAgADAAQABQAGAAcACAAJAAoACwAMAA0ADgAPABAAEQASABMAFAAVABYAFwAYABkAGgAbABwAHQAeAB8AIAAhACIAIwAXACQAJQAmACUAJwAoABcAJgApACoAKwAsAC0ALgAvADAAMQAyADMANAA1ADYANwA4ADkAOgA0ADsAPAA9ADwAPgA/ADQAPQAAAEAAAQADAEEABAAGAEIABwAJAEMACgAMAEQADQAPAEUAEABGABQAEwASAEcAEwAVAEgAFgAaAEkAGAAYAEoAGQAbAEsAHAAgAEwAHgAeAE0AHwAjAE4AIQAhAE8AIgAXABYAJAAmABcAJQAoABUAFwArAFAAKQApAFEAKgAsAFIALQBTADEAMAAvAFQAMAAyAFUAMwBWADcANgA1AFcANgBYADoAOQA4AFkAOQA0ADMAOwA9ADQAPAA/ADIANAA="
         }
     },
     "cameras": {},
-    "extensions": {},
     "extensionsUsed": [],
     "images": {
         "image_Brick_Base_Color.png": {
@@ -206,9 +559,7 @@
         }
     },
     "materials": {
-        "material_Brick": {
-            "extensions": {},
-            "name": "Brick",
+        "Brick": {
             "values": {
                 "ambient": [
                     1,
@@ -243,9 +594,7 @@
                 "transparency": 1
             }
         },
-        "material_Concrete": {
-            "extensions": {},
-            "name": "Concrete",
+        "Concrete": {
             "values": {
                 "ambient": [
                     1,
@@ -280,9 +629,7 @@
                 "transparency": 1
             }
         },
-        "material_Pavement": {
-            "extensions": {},
-            "name": "Pavement",
+        "Pavement": {
             "values": {
                 "ambient": [
                     1,
@@ -317,9 +664,7 @@
                 "transparency": 1
             }
         },
-        "material_Steps": {
-            "extensions": {},
-            "name": "Steps",
+        "Steps": {
             "values": {
                 "ambient": [
                     1,
@@ -356,54 +701,114 @@
         }
     },
     "meshes": {
-        "mesh_01-outside": {
-            "name": "01-outside",
+        "Barrier_Cube.006-Mesh": {
+            "name": "Barrier_Cube.006-Mesh",
             "primitives": [
                 {
                     "attributes": {
-                        "NORMAL": "accessor_normal",
-                        "POSITION": "accessor_position",
-                        "TEXCOORD_0": "accessor_uv"
+                        "NORMAL": "accessor_13",
+                        "POSITION": "accessor_12",
+                        "TEXCOORD_0": "accessor_14"
                     },
-                    "indices": "accessor_index_0",
-                    "material": "material_Concrete",
+                    "indices": "accessor_15",
+                    "material": "Concrete",
                     "mode": 4
-                },
+                }
+            ]
+        },
+        "Ground_Plane-Mesh": {
+            "name": "Ground_Plane-Mesh",
+            "primitives": [
                 {
                     "attributes": {
-                        "NORMAL": "accessor_normal",
-                        "POSITION": "accessor_position",
-                        "TEXCOORD_0": "accessor_uv"
+                        "NORMAL": "accessor_21",
+                        "POSITION": "accessor_20",
+                        "TEXCOORD_0": "accessor_22"
                     },
-                    "indices": "accessor_index_1",
-                    "material": "material_Steps",
+                    "indices": "accessor_23",
+                    "material": "Pavement",
                     "mode": 4
-                },
+                }
+            ]
+        },
+        "Steps_Cube.005-Mesh": {
+            "name": "Steps_Cube.005-Mesh",
+            "primitives": [
                 {
                     "attributes": {
-                        "NORMAL": "accessor_normal",
-                        "POSITION": "accessor_position",
-                        "TEXCOORD_0": "accessor_uv"
+                        "NORMAL": "accessor_17",
+                        "POSITION": "accessor_16",
+                        "TEXCOORD_0": "accessor_18"
                     },
-                    "indices": "accessor_index_2",
-                    "material": "material_Pavement",
+                    "indices": "accessor_19",
+                    "material": "Steps",
                     "mode": 4
-                },
+                }
+            ]
+        },
+        "Walls1_Cube.004-Mesh": {
+            "name": "Walls1_Cube.004-Mesh",
+            "primitives": [
                 {
                     "attributes": {
-                        "NORMAL": "accessor_normal",
-                        "POSITION": "accessor_position",
-                        "TEXCOORD_0": "accessor_uv"
+                        "NORMAL": "accessor_25",
+                        "POSITION": "accessor_24",
+                        "TEXCOORD_0": "accessor_26"
                     },
-                    "indices": "accessor_index_3",
-                    "material": "material_Brick",
+                    "indices": "accessor_27",
+                    "material": "Brick",
+                    "mode": 4
+                }
+            ]
+        },
+        "Walls2_Cube.000-Mesh": {
+            "name": "Walls2_Cube.000-Mesh",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": "accessor_9",
+                        "POSITION": "accessor_8",
+                        "TEXCOORD_0": "accessor_10"
+                    },
+                    "indices": "accessor_11",
+                    "material": "Brick",
+                    "mode": 4
+                }
+            ]
+        },
+        "Walls3_Cube.001-Mesh": {
+            "name": "Walls3_Cube.001-Mesh",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": "accessor_5",
+                        "POSITION": "accessor_4",
+                        "TEXCOORD_0": "accessor_6"
+                    },
+                    "indices": "accessor_7",
+                    "material": "Brick",
+                    "mode": 4
+                }
+            ]
+        },
+        "Walls4_Cube.002-Mesh": {
+            "name": "Walls4_Cube.002-Mesh",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": "accessor_1",
+                        "POSITION": "accessor_0",
+                        "TEXCOORD_0": "accessor_2"
+                    },
+                    "indices": "accessor_3",
+                    "material": "Brick",
                     "mode": 4
                 }
             ]
         }
     },
     "nodes": {
-        "rootNode": {
+        "Barrier_Cube.006": {
             "children": [],
             "matrix": [
                 1,
@@ -424,18 +829,175 @@
                 1
             ],
             "meshes": [
-                "mesh_01-outside"
-            ]
+                "Barrier_Cube.006-Mesh"
+            ],
+            "name": "Barrier_Cube.006"
+        },
+        "Ground_Plane": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "Ground_Plane-Mesh"
+            ],
+            "name": "Ground_Plane"
+        },
+        "Steps_Cube.005": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "Steps_Cube.005-Mesh"
+            ],
+            "name": "Steps_Cube.005"
+        },
+        "Walls1_Cube.004": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "Walls1_Cube.004-Mesh"
+            ],
+            "name": "Walls1_Cube.004"
+        },
+        "Walls2_Cube.000": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "Walls2_Cube.000-Mesh"
+            ],
+            "name": "Walls2_Cube.000"
+        },
+        "Walls3_Cube.001": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "Walls3_Cube.001-Mesh"
+            ],
+            "name": "Walls3_Cube.001"
+        },
+        "Walls4_Cube.002": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "Walls4_Cube.002-Mesh"
+            ],
+            "name": "Walls4_Cube.002"
         }
     },
     "samplers": {
         "sampler_0": {}
     },
-    "scene": "scene_01-outside",
+    "scene": "scene",
     "scenes": {
-        "scene_01-outside": {
+        "scene": {
             "nodes": [
-                "rootNode"
+                "Walls4_Cube.002",
+                "Walls3_Cube.001",
+                "Walls2_Cube.000",
+                "Barrier_Cube.006",
+                "Steps_Cube.005",
+                "Ground_Plane",
+                "Walls1_Cube.004"
             ]
         }
     },
