@@ -50,6 +50,8 @@ namespace sp
 
 		RenderTargetDesc radianceDesc(PF_RGBA16, unpackedSize);
 		radianceDesc.levels = VoxelMipLevels;
+		radianceDesc.wrapS = radianceDesc.wrapT = radianceDesc.wrapR = GL_CLAMP_TO_BORDER;
+		radianceDesc.borderColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		if (!voxelData.radiance || voxelData.radiance->GetDesc() != radianceDesc)
 		{
 			voxelData.radiance = RTPool->Get(radianceDesc);

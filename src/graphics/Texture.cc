@@ -66,6 +66,13 @@ namespace sp
 		return *this;
 	}
 
+	Texture &Texture::BorderColor(glm::vec4 borderColor)
+	{
+		Assert(handle, "null texture handle");
+		glTextureParameterfv(handle, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(borderColor));
+		return *this;
+	}
+
 	Texture &Texture::Compare(GLenum mode, GLenum func)
 	{
 		Assert(handle, "null texture handle");

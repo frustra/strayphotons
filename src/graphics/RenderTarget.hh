@@ -52,6 +52,8 @@ namespace sp
 		bool textureArray = false;
 		GLenum attachment;
 		GLenum minFilter = GL_LINEAR_MIPMAP_LINEAR, magFilter = GL_LINEAR;
+		GLenum wrapS = GL_CLAMP_TO_EDGE, wrapT = GL_CLAMP_TO_EDGE, wrapR = GL_CLAMP_TO_EDGE;
+		glm::vec4 borderColor = { 0.0f, 0.0f, 0.0f, 0.0f };
 		float anisotropy = 0.0;
 
 		bool operator==(const RenderTargetDesc &other) const
@@ -64,6 +66,11 @@ namespace sp
 				   && other.magFilter == magFilter
 				   && other.depthCompare == depthCompare
 				   && other.multiSample == multiSample
+				   && other.textureArray == textureArray
+				   && other.wrapS == wrapS
+				   && other.wrapT == wrapT
+				   && other.wrapR == wrapR
+				   && other.borderColor == borderColor
 				   && other.anisotropy == anisotropy;
 		}
 

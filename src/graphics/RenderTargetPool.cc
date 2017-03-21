@@ -37,6 +37,8 @@ namespace sp
 
 		ptr->tex
 		.Filter(desc.minFilter, desc.magFilter, desc.anisotropy)
+		.Wrap(desc.wrapS, desc.wrapT, desc.wrapR)
+		.BorderColor(desc.borderColor)
 		.Size(desc.extent.x, desc.extent.y, desc.extent.z)
 		.Storage(desc.format, desc.levels)
 		.Attachment(desc.attachment);
