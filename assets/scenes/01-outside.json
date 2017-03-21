@@ -97,14 +97,13 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": "cardboard-box",
 			"transform": {
-				"scale": [1, 0.75, 1],
 				"translate": [-3, 0.6, -3],
 				"rotate": [30, 0, 1, 0]
 			},
 			"physics": {
-				"model": "box"
+				"model": "cardboard-box"
 			}
 		},
 		{
@@ -170,6 +169,13 @@
 			"transform": {
 				"translate": [2.5, 5, 0],
 				"rotate": [-60, 1, -1, 0]
+			}
+		},
+		{
+			"triggerarea": {
+				"min": [-7, 0, -8],
+				"max": [-5.5, 3.5, -6],
+				"command": "loadscene level02"
 			}
 		}
 	]
