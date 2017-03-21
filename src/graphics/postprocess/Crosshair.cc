@@ -37,20 +37,19 @@ namespace sp
 
 		if (!tex1.handle)
 		{
-			static unsigned char color[4] = { 255, 255, 255, 50 };
+			static unsigned char color[4] = { 255, 255, 235, 50 };
 			tex1.Create().Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
 			.Size(1, 1).Storage(PF_RGBA8).Image2D(color);
 		}
 
 		if (!tex2.handle)
 		{
-			static unsigned char color[4] = { 150, 150, 150, 255 };
+			static unsigned char color[4] = { 150, 150, 138, 255 };
 			tex2.Create().Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
 			.Size(1, 1).Storage(PF_RGBA8).Image2D(color);
 		}
 
 		glEnable(GL_BLEND);
-		//glBlendFuncSeparate(GL_ONE_MINUS_DST_COLOR, GL_ZERO, GL_ZERO, GL_ONE);
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ZERO, GL_ONE);
 		glBlendEquation(GL_FUNC_ADD);
 		tex1.Bind(0);

@@ -47,8 +47,8 @@
 		{
 			"light": {
 				"tint": [1, 0.5, 0.5],
-				"illuminance": 100,
-				"spotAngle": 30
+				"illuminance": 50,
+				"spotAngle": 20
 			},
 			"view": {
 				"extents": [2048, 2048],
@@ -56,7 +56,7 @@
 			},
 			"transform": {
 				"translate": [12, 5, -2.5],
-				"rotate": [90, 0, 1, 0]
+				"rotate": [90, -0.4, 1, 0]
 			}
 		}
 	]

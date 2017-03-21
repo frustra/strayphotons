@@ -1,7 +1,7 @@
 {
 	"autoexec": [
 		"r.MirrorRecursion 0",
-		"r.ExposureComp -2"
+		"r.ExposureComp -1"
 	],
 	"unloadexec": [
 		"r.ExposureComp 1"
@@ -145,7 +145,7 @@
 		{
 			"light": {
 				"tint": [1, 0.5, 0.5],
-				"intensity": 300,
+				"intensity": 30,
 				"spotAngle": 30
 			},
 			"view": {
@@ -160,7 +160,7 @@
 		{
 			"light": {
 				"tint": [1, 0.5, 0.5],
-				"intensity": 100,
+				"intensity": 10,
 				"spotAngle": 30
 			},
 			"view": {
