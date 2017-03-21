@@ -364,7 +364,7 @@
 				"direction": [0, 0, -1],
 				"triggers": [
 					{
-						"illuminance": [0.5, 0.5, 0.5],
+						"illuminance": [0.5, 0.3, 0.3],
 						"oncmd": "g.OpenDoor door1",
 						"offcmd": "g.CloseDoor door1"
 					}
