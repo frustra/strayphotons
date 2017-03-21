@@ -40,3 +40,6 @@
 [submodule "ext/microtar"]
 	path = ext/microtar
 	url = git@github.com:rxi/microtar.git
+[submodule "ext/obj2gltf"]
+	path = ext/obj2gltf
+	url = git@github.com:AnalyticalGraphicsInc/obj2gltf.git

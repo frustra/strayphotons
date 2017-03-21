@@ -112,7 +112,10 @@ func processGltf(gltf map[string]interface{}, folder string) {
 		materials := gltf["materials"].(map[string]interface{})
 		for key, value := range materials {
 			material := value.(map[string]interface{})
-			name := material["name"].(string)
+			name, ok := material["name"].(string)
+			if !ok {
+				name = key
+			}
 			values := material["values"].(map[string]interface{})
 			if _, ok := material["technique"]; ok {
 				log.Printf("%s: Removing technique", key)

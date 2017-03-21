@@ -9,8 +9,10 @@ fi
 # strip .obj from path
 model=${1%.*}
 
-# obj2gltf must be a command to run https://github.com/AnalyticalGraphicsInc/obj2gltf
-obj2gltf -i "${model}.obj" -o "${model}.gltf"
+if [ ! -d "../ext/obj2gltf/node_modules" ]; then
+  bash -c "cd ../ext/obj2gltf; npm install"
+fi
+node ../ext/obj2gltf/bin/obj2gltf.js -i "${model}.obj" -o "${model}.gltf"
 
 # run `go build gltf-process` if this doesn't exist
 ./gltf-process "${model}.gltf"
