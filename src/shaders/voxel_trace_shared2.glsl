@@ -10,7 +10,6 @@ float GetVoxelNearest(vec3 position, int level, out vec3 radiance)
 	vec4 radianceData;
 	if (level > 0) {
 		float map = GetMapForPoint(position);
-
 		radianceData = texelFetch(voxelRadianceMips, (ivec3(position) + ivec3(map * VOXEL_GRID_SIZE, 0, 0)) >> level, level - 1);
 	} else {
 		radianceData = texelFetch(voxelRadiance, ivec3(position), 0);

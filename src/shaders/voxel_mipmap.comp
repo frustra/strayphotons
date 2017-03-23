@@ -59,6 +59,7 @@ void main() {
 	// Bias alpha so that 50% full is opaque
 	alpha = saturate(alpha * 0.25);
 
+	// 0.25 looks good, don't touch it ¯\_(ツ)_/¯
 	for (int i = 0; i < MAX_VOXEL_AREAS; i++) {
 		imageStore(currentVoxelRadiance, MIPMAP_POSITION(mipPosition, i, mipLevel), vec4(radiance[i] * 0.25, alpha));
 	}

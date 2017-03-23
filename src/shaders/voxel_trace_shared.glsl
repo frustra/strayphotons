@@ -5,7 +5,7 @@
 
 const float InvVoxelGridSize = 1.0 / VOXEL_GRID_SIZE;
 
-vec4 SampleVoxelLod(vec3 position, vec3 dir, float level, float map)
+vec4 SampleVoxelLod(vec3 position, float level, float map)
 {
 	vec4 result;
 	if (level >= 1) {
@@ -44,7 +44,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 		vec3 position = voxelPos + rayDir * dist;
 
 		float level = max(0, log2(size));
-		vec4 value = SampleVoxelLod(position + offset * surfaceNormal, rayDir, level, GetMapForPoint(rayPos));
+		vec4 value = SampleVoxelLod(position + offset * surfaceNormal, level, GetMapForPoint(rayPos));
 		// Bias the alpha to prevent traces going through objects.
 		value.a = smoothstep(0.0, 0.4, value.a);
 		result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
@@ -66,7 +66,7 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir)
 	float level = 0;
 
 	for (int level = 0; level < VOXEL_MIP_LEVELS; level++) {
-		vec4 value = SampleVoxelLod(voxelPos + rayDir * dist, rayDir, float(level), GetMapForPoint(rayPos));
+		vec4 value = SampleVoxelLod(voxelPos + rayDir * dist, float(level), GetMapForPoint(rayPos));
 		result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
 		if (result.a > 0.999) break;
@@ -87,7 +87,6 @@ vec3 HemisphereIndirectDiffuse(vec3 worldPosition, vec3 worldNormal, vec2 fragCo
 		for (float r = 0; r < a; r++) {
 			vec3 sampleDir = OrientByNormal((r + rOffset) * diffuseScale * M_PI * 2.0, a * 0.1, worldNormal);
 			vec4 sampleColor = ConeTraceGridDiffuse(worldPosition, sampleDir);
-			sampleColor.rgb *= step(0.3, sampleDir.x);
 
 			indirectDiffuse += sampleColor * dot(sampleDir, worldNormal) * diffuseScale * 0.5;
 		}
