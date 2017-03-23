@@ -51,13 +51,9 @@ void main()
 		}
 	} else if (source == 1) { // Voxel source
 		vec3 sampleRadiance;
-		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz, rayDir.xyz, sampleRadiance);
+		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz, rayDir.xyz, mode - 1, sampleRadiance);
 
-		if (mode == 1) { // Radiance
-			outFragColor.rgb = sampleRadiance;
-		} else if (mode == 2) { // Alpha
-			outFragColor.rgb = vec3(alpha);
-		}
+		outFragColor.rgb = sampleRadiance;
 	} else if (source == 2) { // Cone trace source
 		vec4 sampleValue = ConeTraceGrid(float(mipLevel) / 50.0, rayPos.xyz, rayDir.xyz, rayDir.xyz, gl_FragCoord.xy);
 		if (mode == 1) { // Radiance

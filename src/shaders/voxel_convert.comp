@@ -11,8 +11,6 @@ layout (binding = 2, rgba16) writeonly uniform image3D voxelRadiance;
 ##import lib/util
 ##import voxel_shared
 
-// TODO(xthexder): Do the first mipmap level here
-
 void main()
 {
 	uint index = gl_WorkGroupID.x * (gl_WorkGroupSize.x * gl_WorkGroupSize.y) + gl_LocalInvocationIndex;

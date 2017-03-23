@@ -73,8 +73,8 @@ namespace sp
 		data->voxelGridCenter = source.voxelGridCenter;
 		for (int i = 0; i < MAX_VOXEL_AREAS; i++)
 		{
-			data->areas[i].min = source.areas[i].min;
-			data->areas[i].max = source.areas[i].max;
+			data->areas[i].min = source.areas[i].min - glm::vec3(0.05);
+			data->areas[i].max = source.areas[i].max + glm::vec3(0.05);
 		}
 	}
 }

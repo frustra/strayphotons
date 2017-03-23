@@ -16,6 +16,7 @@ namespace ecs
 		int gridSize = 0;
 		float voxelSize, superSampleScale;
 		glm::vec3 voxelGridCenter;
+		glm::vec3 gridMin, gridMax;
 		VoxelArea areas[sp::MAX_VOXEL_AREAS];
 	};
 

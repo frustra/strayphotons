@@ -58,7 +58,7 @@ namespace sp
 		}
 
 		auto mipSize = unpackedSize / 2;
-		mipSize.x *= MAX_VOXEL_AREAS;
+		mipSize.x *= MAX_VOXEL_AREAS + 1;
 
 		RenderTargetDesc radianceMipsDesc(PF_RGBA16, mipSize);
 		radianceMipsDesc.levels = VoxelMipLevels - 1;
@@ -177,6 +177,14 @@ namespace sp
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
 		}
 		{
+			GLVoxelInfo voxelInfo;
+			FillVoxelInfo(&voxelInfo, voxelData.info);
+
+			auto voxelMipmapCS = GlobalShaders->Get<VoxelMipmapCS>();
+			voxelMipmapCS->SetVoxelInfo(&voxelInfo);
+
+			ShaderControl->BindPipeline<VoxelMipmapCS>(GlobalShaders);
+
 			for (uint32 i = 1; i < voxelData.radianceMips->GetDesc().levels + 1; i++)
 			{
 				RenderPhase phase("Mipmap", Timer);
@@ -189,8 +197,8 @@ namespace sp
 					voxelData.radianceMips->GetTexture().BindImage(2, GL_READ_ONLY, i - 2, GL_TRUE, 0);
 				voxelData.radianceMips->GetTexture().BindImage(3, GL_WRITE_ONLY, i - 1, GL_TRUE, 0);
 
-				ShaderControl->BindPipeline<VoxelMipmapCS>(GlobalShaders);
-				GlobalShaders->Get<VoxelMipmapCS>()->SetLevel(i);
+				voxelMipmapCS->SetLevel(i);
+
 				glDispatchComputeIndirect(sizeof(GLuint) * 4 * (i - 1) + sizeof(GLuint));
 				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
 			}

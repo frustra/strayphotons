@@ -548,11 +548,11 @@ namespace sp
 					{
 						if (param.first == "min")
 						{
-							voxelArea->min = MakeVec3(param.second) - glm::vec3(0.1);
+							voxelArea->min = MakeVec3(param.second);
 						}
 						else if (param.first == "max")
 						{
-							voxelArea->max = MakeVec3(param.second) + glm::vec3(0.1);
+							voxelArea->max = MakeVec3(param.second);
 						}
 					}
 				}

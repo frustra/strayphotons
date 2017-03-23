@@ -176,14 +176,16 @@ namespace sp
 		VoxelMipmapCS(shared_ptr<ShaderCompileOutput> compileOutput);
 
 		void SetLevel(int newLevel);
+		void SetVoxelInfo(GLVoxelInfo *data);
 
 	private:
+		UniformBuffer voxelInfo;
 		Uniform level;
 	};
 
 	class VoxelClearCS : public Shader
 	{
-		SHADER_TYPE(VoxelMipmapCS)
+		SHADER_TYPE(VoxelClearCS)
 
 		VoxelClearCS(shared_ptr<ShaderCompileOutput> compileOutput);
 

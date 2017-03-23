@@ -5,11 +5,10 @@
 ##import voxel_trace_shared
 ##import voxel_shared
 
-float GetVoxelNearest(vec3 position, int level, out vec3 radiance)
+float GetVoxelNearest(vec3 position, int level, int map, out vec3 radiance)
 {
 	vec4 radianceData;
 	if (level > 0) {
-		float map = GetMapForPoint(position);
 		radianceData = texelFetch(voxelRadianceMips, (ivec3(position) + ivec3(map * VOXEL_GRID_SIZE, 0, 0)) >> level, level - 1);
 	} else {
 		radianceData = texelFetch(voxelRadiance, ivec3(position), 0);
@@ -18,7 +17,7 @@ float GetVoxelNearest(vec3 position, int level, out vec3 radiance)
 	return radianceData.a;
 }
 
-float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitRadiance)
+float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, int map, out vec3 hitRadiance)
 {
 	vec3 voxelVolumeMax = vec3(voxelInfo.size * VOXEL_GRID_SIZE * 0.5);
 	vec3 voxelVolumeMin = -voxelVolumeMax;
@@ -54,7 +53,7 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitRadiance)
 	for (int i = 0; i < maxIterations; i++)
 	{
 		vec3 radiance;
-		float alpha = GetVoxelNearest(voxelPos + rayDir * 0.001, level, radiance);
+		float alpha = GetVoxelNearest(voxelPos + rayDir * 0.001, level, map, radiance);
 		if (alpha > 0)
 		{
 			hitRadiance = radiance;

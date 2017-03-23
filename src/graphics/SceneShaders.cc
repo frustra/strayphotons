@@ -110,12 +110,18 @@ namespace sp
 
 	VoxelMipmapCS::VoxelMipmapCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 	{
+		BindBuffer(voxelInfo, 0);
 		Bind(level, "mipLevel");
 	}
 
 	void VoxelMipmapCS::SetLevel(int newLevel)
 	{
 		Set(level, newLevel);
+	}
+
+	void VoxelMipmapCS::SetVoxelInfo(GLVoxelInfo *data)
+	{
+		BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
 	}
 
 	VoxelClearCS::VoxelClearCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)

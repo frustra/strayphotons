@@ -5,11 +5,11 @@
 
 const float InvVoxelGridSize = 1.0 / VOXEL_GRID_SIZE;
 
-vec4 SampleVoxelLod(vec3 position, float level, float map)
+vec4 SampleVoxelLod(vec3 position, float level, int map)
 {
 	vec4 result;
 	if (level >= 1) {
-		vec3 scale = InvVoxelGridSize / vec3(MAX_VOXEL_AREAS, 1, 1);
+		vec3 scale = InvVoxelGridSize / vec3(MAX_VOXEL_AREAS + 1, 1, 1);
 		vec3 mipCoord = position * scale;
 		vec3 mipDelta = vec3(VOXEL_GRID_SIZE, 0, 0) * scale;
 
@@ -20,9 +20,13 @@ vec4 SampleVoxelLod(vec3 position, float level, float map)
 	return result * vec4(vec3(VoxelFixedPointExposure), 1.0);
 }
 
-float GetMapForPoint(vec3 position)
+int GetMapForPoint(vec3 position)
 {
-	// TODO(xthexder): Make this function
+	for (int i = 0; i < MAX_VOXEL_AREAS; i++) {
+		if (position == clamp(position, voxelInfo.areas[i].areaMin, voxelInfo.areas[i].areaMax)) {
+			return i + 1;
+		}
+	}
 	return 0;
 }
 
