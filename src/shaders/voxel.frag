@@ -35,10 +35,11 @@ layout(binding = 0, std140) uniform GLLightData {
 	Light lights[MAX_LIGHTS];
 };
 
-##import lib/mirror_shadow_common
+layout(binding = 1, std140) uniform GLVoxelInfo {
+	VoxelInfo voxelInfo;
+};
 
-uniform float voxelSize = 0.1;
-uniform vec3 voxelGridCenter = vec3(0);
+##import lib/mirror_shadow_common
 
 uniform float lightAttenuation = 0.5;
 
@@ -58,7 +59,7 @@ void main()
 
 	vec3 position = vec3(gl_FragCoord.xy / VOXEL_SUPER_SAMPLE_SCALE, gl_FragCoord.z * VOXEL_GRID_SIZE);
 	position = AxisSwapReverse[abs(inDirection)-1] * (position - VOXEL_GRID_SIZE / 2);
-	vec3 worldPosition = position * voxelSize + voxelGridCenter;
+	vec3 worldPosition = position * voxelInfo.size + voxelInfo.center;
 	position += VOXEL_GRID_SIZE / 2;
 
 	vec3 pixelLuminance = DirectShading(worldPosition, baseColor.rgb, inNormal, inNormal);

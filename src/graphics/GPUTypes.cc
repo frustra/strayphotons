@@ -3,6 +3,7 @@
 #include "ecs/components/Light.hh"
 #include "ecs/components/Mirror.hh"
 #include "ecs/components/Transform.hh"
+#include "ecs/components/VoxelInfo.hh"
 
 namespace sp
 {
@@ -64,5 +65,16 @@ namespace sp
 			data++;
 		}
 		return mirrorNum;
+	}
+
+	void FillVoxelInfo(GLVoxelInfo *data, ecs::VoxelInfo &source)
+	{
+		data->voxelSize = source.voxelSize;
+		data->voxelGridCenter = source.voxelGridCenter;
+		for (int i = 0; i < MAX_VOXEL_AREAS; i++)
+		{
+			data->areas[i].min = source.areas[i].min;
+			data->areas[i].max = source.areas[i].max;
+		}
 	}
 }

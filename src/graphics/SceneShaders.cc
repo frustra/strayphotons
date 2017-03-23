@@ -132,13 +132,11 @@ namespace sp
 	{
 		Bind(lightCount, "lightCount");
 		BindBuffer(lightData, 0);
+		BindBuffer(voxelInfo, 1);
 
 		Bind(viewMat, "viewMat");
 		Bind(invViewMat, "invViewMat");
 		Bind(invProjMat, "invProjMat");
-
-		Bind(voxelSize, "voxelSize");
-		Bind(voxelGridCenter, "voxelGridCenter");
 
 		Bind(lightAttenuation, "lightAttenuation");
 	}
@@ -149,10 +147,9 @@ namespace sp
 		BufferData(lightData, sizeof(GLLightData) * count, data);
 	}
 
-	void VoxelRasterFS::SetVoxelInfo(ecs::VoxelInfo &voxelInfo)
+	void VoxelRasterFS::SetVoxelInfo(GLVoxelInfo *data)
 	{
-		Set(voxelSize, voxelInfo.voxelSize);
-		Set(voxelGridCenter, voxelInfo.voxelGridCenter);
+		BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
 	}
 
 	void VoxelRasterFS::SetLightAttenuation(float newAttenuation)

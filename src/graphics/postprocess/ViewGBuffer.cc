@@ -12,14 +12,13 @@ namespace sp
 
 		ViewGBufferFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
+			BindBuffer(voxelInfo, 0);
+
 			Bind(mode, "mode");
 			Bind(source, "source");
 			Bind(level, "mipLevel");
 			Bind(invProj, "invProjMat");
 			Bind(invView, "invViewMat");
-
-			Bind(voxelSize, "voxelSize");
-			Bind(voxelGridCenter, "voxelGridCenter");
 		}
 
 		void SetParameters(int newMode, int newSource, int newLevel, const ecs::View &view)
@@ -31,15 +30,14 @@ namespace sp
 			Set(invView, view.invViewMat);
 		}
 
-		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo)
+		void SetVoxelInfo(GLVoxelInfo *data)
 		{
-			Set(voxelSize, voxelInfo.voxelSize);
-			Set(voxelGridCenter, voxelInfo.voxelGridCenter);
+			BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
 		}
 
 	private:
+		UniformBuffer voxelInfo;
 		Uniform mode, source, level, invProj, invView;
-		Uniform voxelSize, voxelGridCenter;
 	};
 
 	IMPLEMENT_SHADER_TYPE(ViewGBufferFS, "view_gbuffer.frag", Fragment);
@@ -49,8 +47,11 @@ namespace sp
 		auto r = context->renderer;
 		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 
+		GLVoxelInfo voxelInfo;
+		FillVoxelInfo(&voxelInfo, voxelData.info);
+
 		r->GlobalShaders->Get<ViewGBufferFS>()->SetParameters(mode, source, level, context->view);
-		r->GlobalShaders->Get<ViewGBufferFS>()->SetVoxelInfo(voxelData.info);
+		r->GlobalShaders->Get<ViewGBufferFS>()->SetVoxelInfo(&voxelInfo);
 
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, ViewGBufferFS>(r->GlobalShaders);

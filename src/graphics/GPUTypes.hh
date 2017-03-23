@@ -5,11 +5,17 @@
 #include <Ecs.hh>
 #include <glm/glm.hpp>
 
+namespace ecs
+{
+	struct VoxelInfo;
+}
+
 namespace sp
 {
 	static const int MAX_LIGHTS = 16;
 	static const int MAX_MIRRORS = 16;
 	static const int MAX_LIGHT_SENSORS = 32;
+	static const int MAX_VOXEL_AREAS = 4;
 
 	struct GLLightData
 	{
@@ -54,6 +60,26 @@ namespace sp
 
 	static_assert(sizeof(GLLightSensorData) == 2 * 4 * sizeof(float), "GLLightSensorData size incorrect");
 
+	struct GLVoxelArea
+	{
+		glm::vec3 min;
+		float padding1[1];
+		glm::vec3 max;
+		float padding2[1];
+	};
+
+	static_assert(sizeof(GLVoxelArea) == 2 * 4 * sizeof(float), "GLVoxelArea size incorrect");
+
+	struct GLVoxelInfo
+	{
+		glm::vec3 voxelGridCenter;
+		float voxelSize;
+		GLVoxelArea areas[MAX_VOXEL_AREAS];
+	};
+
+	static_assert(sizeof(GLVoxelInfo) == (1 + 2 * MAX_VOXEL_AREAS) * 4 * sizeof(float), "GLVoxelInfo size incorrect");
+
 	int FillLightData(GLLightData *data, ecs::EntityManager &manager);
 	int FillMirrorData(GLMirrorData *data, ecs::EntityManager &manager);
+	void FillVoxelInfo(GLVoxelInfo *data, ecs::VoxelInfo &source);
 }

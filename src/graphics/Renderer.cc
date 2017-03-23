@@ -93,6 +93,7 @@ namespace sp
 		ShaderManager::SetDefine("MAX_MIRRORS", std::to_string(MAX_MIRRORS));
 		ShaderManager::SetDefine("MAX_MIRROR_RECURSION", std::to_string(MAX_MIRROR_RECURSION));
 		ShaderManager::SetDefine("MAX_LIGHT_SENSORS", std::to_string(MAX_LIGHT_SENSORS));
+		ShaderManager::SetDefine("MAX_VOXEL_AREAS", std::to_string(MAX_VOXEL_AREAS));
 		UpdateShaders(true);
 
 		funcs.Register("reloadshaders", "Recompile all shaders", [&]()
@@ -346,12 +347,14 @@ namespace sp
 		auto shader = GlobalShaders->Get<LightSensorUpdateCS>();
 
 		GLLightData lightData[MAX_LIGHTS];
+		GLVoxelInfo voxelInfo;
 		int lightCount = FillLightData(&lightData[0], game->entityManager);
+		FillVoxelInfo(&voxelInfo, voxelData.info);
 
 		auto sensorCollection = game->entityManager.EntitiesWith<ecs::LightSensor>();
 		shader->SetSensors(sensorCollection);
 		shader->SetLightData(lightCount, lightData);
-		shader->SetVoxelInfo(voxelData.info);
+		shader->SetVoxelInfo(&voxelInfo);
 
 		shader->outputTex.Clear(0);
 		shader->outputTex.BindImage(0, GL_WRITE_ONLY);
@@ -771,7 +774,7 @@ namespace sp
 
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::VoxelInfo>())
 		{
-			voxelData.info = *ecs::UpdateVoxelInfoCache(ent, CVarVoxelGridSize.Get(), CVarVoxelSuperSample.Get());
+			voxelData.info = *ecs::UpdateVoxelInfoCache(ent, CVarVoxelGridSize.Get(), CVarVoxelSuperSample.Get(), game->entityManager);
 			if (CVarUpdateVoxels.Get()) RenderVoxelGrid();
 			UpdateLightSensors();
 			break;

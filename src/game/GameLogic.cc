@@ -20,6 +20,7 @@
 #include "ecs/components/View.hh"
 #include "ecs/components/Controller.hh"
 #include "ecs/components/SlideDoor.hh"
+#include "ecs/components/VoxelInfo.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <cxxopts.hpp>
@@ -241,6 +242,7 @@ namespace sp
 
 		ecs::Entity player = scene->FindEntity("player");
 		humanControlSystem.AssignController(player, game->physics);
+		player.Assign<ecs::VoxelInfo>();
 
 		game->graphics.SetPlayerView(player);
 
@@ -257,9 +259,10 @@ namespace sp
 		auto light = flashlight.Assign<ecs::Light>();
 		light->tint = glm::vec3(1.0);
 		light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
-		light->on = false;
+		light->intensity = CVarFlashlight.Get(true);
+		light->on = CVarFlashlightOn.Get(true);
 		auto view = flashlight.Assign<ecs::View>();
-		view->extents = glm::vec2(CVarFlashlightResolution.Get());
+		view->extents = glm::vec2(CVarFlashlightResolution.Get(true));
 		view->clip = glm::vec2(0.1, 64);
 
 		// Make sure all objects are in the correct physx state before restarting simulation

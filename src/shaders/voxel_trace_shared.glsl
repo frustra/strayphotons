@@ -9,38 +9,26 @@ vec4 SampleVoxelLod(vec3 position, vec3 dir, float level, float map)
 {
 	vec4 result;
 	if (level >= 1) {
-		vec3 axes = step(0, dir);
-		vec3 scale = InvVoxelGridSize / vec3(6, 1, 1);
+		vec3 scale = InvVoxelGridSize / vec3(MAX_VOXEL_AREAS, 1, 1);
 		vec3 mipCoord = position * scale;
 		vec3 mipDelta = vec3(VOXEL_GRID_SIZE, 0, 0) * scale;
 
 		result = textureLod(voxelRadianceMips, mipCoord + mipDelta * map, level - 1);
-		// vec4 yr = textureLod(voxelRadianceMips, mipCoord + 3 * mipDelta * axes.y + mipDelta, level - 1);
-		// vec4 zr = textureLod(voxelRadianceMips, mipCoord + 3 * mipDelta * axes.z + mipDelta * 2, level - 1);
-		// xr.rgb *= smoothstep(0.05, 0.1, abs(dir.x));
-		// yr.rgb *= smoothstep(0.05, 0.1, abs(dir.y));
-		// zr.rgb *= smoothstep(0.05, 0.1, abs(dir.z));
-
-		// vec3 w = abs(dir);
-		// result = xr * w.x + yr * w.y + zr * w.z;
-		// result = max(xr, max(yr, zr));
 	} else {
 		result = textureLod(voxelRadiance, position * InvVoxelGridSize, level);
 	}
 	return result * vec4(vec3(VoxelFixedPointExposure), 1.0);
-	// float brightness = (result.r + result.g + result.b) / 3;
-	// if (level < 5) {
-	// 	return vec4(brightness, 0, 0, result.a);
-	// } else if (level < 7) {
-	// 	return vec4(0, brightness, 0, result.a);
-	// } else {
-	// 	return vec4(0, 0, brightness, result.a);
-	// }
+}
+
+float GetMapForPoint(vec3 position)
+{
+	// TODO(xthexder): Make this function
+	return 0;
 }
 
 vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, vec2 fragCoord)
 {
-	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VOXEL_GRID_SIZE * 0.5;
+	vec3 voxelPos = (rayPos.xyz - voxelInfo.center) / voxelInfo.size + VOXEL_GRID_SIZE * 0.5;
 
 	float dist = InterleavedGradientNoise(fragCoord);
 	float maxDist = VOXEL_GRID_SIZE * 1.5;
@@ -56,7 +44,7 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 		vec3 position = voxelPos + rayDir * dist;
 
 		float level = max(0, log2(size));
-		vec4 value = SampleVoxelLod(position + offset * surfaceNormal, rayDir, level, step(154, voxelPos.x));
+		vec4 value = SampleVoxelLod(position + offset * surfaceNormal, rayDir, level, GetMapForPoint(rayPos));
 		// Bias the alpha to prevent traces going through objects.
 		value.a = smoothstep(0.0, 0.4, value.a);
 		result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
@@ -65,12 +53,12 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 	}
 
 	if (dist >= maxDist) dist = -1;
-	return vec4(result.rgb, dist * voxelSize);
+	return vec4(result.rgb, dist * voxelInfo.size);
 }
 
 vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir)
 {
-	vec3 voxelPos = (rayPos.xyz - voxelGridCenter) / voxelSize + VOXEL_GRID_SIZE * 0.5;
+	vec3 voxelPos = (rayPos.xyz - voxelInfo.center) / voxelInfo.size + VOXEL_GRID_SIZE * 0.5;
 	float startDist = 1.75;
 	float dist = startDist;
 
@@ -78,7 +66,7 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir)
 	float level = 0;
 
 	for (int level = 0; level < VOXEL_MIP_LEVELS; level++) {
-		vec4 value = SampleVoxelLod(voxelPos + rayDir * dist, rayDir, float(level), step(154, voxelPos.x));
+		vec4 value = SampleVoxelLod(voxelPos + rayDir * dist, rayDir, float(level), GetMapForPoint(rayPos));
 		result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
 		if (result.a > 0.999) break;

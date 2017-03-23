@@ -1,5 +1,8 @@
 #version 430
 
+##import lib/util
+##import lib/types_common
+
 layout (binding = 0) uniform sampler2D gBuffer0;
 layout (binding = 1) uniform sampler2D gBuffer1;
 layout (binding = 2) uniform sampler2D gBuffer2;
@@ -10,10 +13,10 @@ layout (binding = 5) uniform sampler3D voxelRadianceMips;
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
-uniform float voxelSize = 0.1;
-uniform vec3 voxelGridCenter = vec3(0);
+layout(binding = 0, std140) uniform GLVoxelInfo {
+	VoxelInfo voxelInfo;
+};
 
-##import lib/util
 ##import voxel_shared
 ##import voxel_trace_shared2
 
@@ -52,9 +55,7 @@ void main()
 
 		if (mode == 1) { // Radiance
 			outFragColor.rgb = sampleRadiance;
-		} else if (mode == 2) { // Weighted Radiance
-			outFragColor.rgb = sampleRadiance * max(0, dot(sampleNormal, -rayDir.xyz));
-		} else if (mode == 4) { // Alpha
+		} else if (mode == 2) { // Alpha
 			outFragColor.rgb = vec3(alpha);
 		}
 	} else if (source == 2) { // Cone trace source

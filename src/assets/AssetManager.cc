@@ -543,16 +543,16 @@ namespace sp
 				}
 				else if (comp.first == "voxels")
 				{
-					auto voxelInfo = entity.Assign<ecs::VoxelInfo>();
+					auto voxelArea = entity.Assign<ecs::VoxelArea>();
 					for (auto param : comp.second.get<picojson::object>())
 					{
 						if (param.first == "min")
 						{
-							voxelInfo->gridMin = MakeVec3(param.second) - glm::vec3(0.1);
+							voxelArea->min = MakeVec3(param.second) - glm::vec3(0.1);
 						}
 						else if (param.first == "max")
 						{
-							voxelInfo->gridMax = MakeVec3(param.second) + glm::vec3(0.1);
+							voxelArea->max = MakeVec3(param.second) + glm::vec3(0.1);
 						}
 					}
 				}

@@ -19,7 +19,7 @@ namespace sp
 
 		void SetSensors(ecs::EntityManager::EntityCollection &sensors);
 		void SetLightData(int count, GLLightData *data);
-		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo);
+		void SetVoxelInfo(GLVoxelInfo *data);
 		void StartReadback();
 		void UpdateValues(ecs::EntityManager &manager);
 
@@ -28,8 +28,8 @@ namespace sp
 		Texture outputTex;
 
 	private:
-		UniformBuffer sensorData, lightData;
-		Uniform lightCount, voxelSize, voxelGridCenter;
+		UniformBuffer sensorData, lightData, voxelInfo;
+		Uniform lightCount;
 		Buffer readBackBuf;
 		size_t readBackSize;
 	};

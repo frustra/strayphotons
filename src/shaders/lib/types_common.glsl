@@ -34,4 +34,15 @@ struct LightSensor {
 	vec3 direction; float id1;
 };
 
+struct VoxelArea {
+	vec3 areaMin;
+	vec3 areaMax;
+};
+
+struct VoxelInfo {
+	vec3 center;
+	float size;
+	VoxelArea areas[MAX_VOXEL_AREAS];
+};
+
 #endif

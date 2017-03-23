@@ -9,9 +9,9 @@ float GetVoxelNearest(vec3 position, int level, out vec3 radiance)
 {
 	vec4 radianceData;
 	if (level > 0) {
-		int axis = int(step(154, position.x));//DominantAxis(fract(position) - 0.5);
+		float map = GetMapForPoint(position);
 
-		radianceData = texelFetch(voxelRadianceMips, (ivec3(position) + ivec3(axis * VOXEL_GRID_SIZE, 0, 0)) >> level, level - 1);
+		radianceData = texelFetch(voxelRadianceMips, (ivec3(position) + ivec3(map * VOXEL_GRID_SIZE, 0, 0)) >> level, level - 1);
 	} else {
 		radianceData = texelFetch(voxelRadiance, ivec3(position), 0);
 	}
@@ -21,10 +21,10 @@ float GetVoxelNearest(vec3 position, int level, out vec3 radiance)
 
 float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitRadiance)
 {
-	vec3 voxelVolumeMax = vec3(voxelSize * VOXEL_GRID_SIZE * 0.5);
+	vec3 voxelVolumeMax = vec3(voxelInfo.size * VOXEL_GRID_SIZE * 0.5);
 	vec3 voxelVolumeMin = -voxelVolumeMax;
 
-	rayPos -= voxelGridCenter;
+	rayPos -= voxelInfo.center;
 
 	float tmin, tmax;
 	aabbIntersectFast(rayPos, rayDir, 1.0 / rayDir, voxelVolumeMin, voxelVolumeMax, tmin, tmax);
@@ -40,7 +40,7 @@ float TraceVoxelGrid(int level, vec3 rayPos, vec3 rayDir, out vec3 hitRadiance)
 		rayPos += rayDir * tmin;
 	}
 
-	vec3 voxelPos = (rayPos.xyz / voxelSize + VOXEL_GRID_SIZE * 0.5);
+	vec3 voxelPos = (rayPos.xyz / voxelInfo.size + VOXEL_GRID_SIZE * 0.5);
 	ivec3 voxelIndex = ivec3(voxelPos);
 
 	vec3 deltaDist = abs(vec3(1.0) / rayDir);

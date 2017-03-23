@@ -153,14 +153,13 @@ namespace sp
 		VoxelRasterFS(shared_ptr<ShaderCompileOutput> compileOutput);
 
 		void SetLightData(int count, GLLightData *data);
-		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo);
+		void SetVoxelInfo(GLVoxelInfo *data);
 		void SetLightAttenuation(float attenuation);
 
 	private:
 		Uniform lightCount;
-		UniformBuffer lightData;
+		UniformBuffer lightData, voxelInfo;
 		Uniform viewMat, invViewMat, invProjMat;
-		Uniform voxelSize, voxelGridCenter;
 		Uniform lightAttenuation;
 	};
 

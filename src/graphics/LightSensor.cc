@@ -9,9 +9,8 @@ namespace sp
 	{
 		BindBuffer(sensorData, 0);
 		BindBuffer(lightData, 1);
+		BindBuffer(voxelInfo, 2);
 		Bind(lightCount, "lightCount");
-		Bind(voxelSize, "voxelSize");
-		Bind(voxelGridCenter, "voxelGridCenter");
 
 		readBackSize = sizeof(float) * 4 * MAX_SENSORS * 2;
 		outputTex.Create().Size(MAX_SENSORS * 2, 1).Storage(PF_RGBA32F);
@@ -48,10 +47,9 @@ namespace sp
 		BufferData(lightData, sizeof(GLLightData) * count, data);
 	}
 
-	void LightSensorUpdateCS::SetVoxelInfo(ecs::VoxelInfo &voxelInfo)
+	void LightSensorUpdateCS::SetVoxelInfo(GLVoxelInfo *data)
 	{
-		Set(voxelSize, voxelInfo.voxelSize);
-		Set(voxelGridCenter, voxelInfo.voxelGridCenter);
+		BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
 	}
 
 	void LightSensorUpdateCS::StartReadback()

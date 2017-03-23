@@ -58,7 +58,7 @@ namespace sp
 		}
 
 		auto mipSize = unpackedSize / 2;
-		mipSize.x *= 6; // 6x anisotropy
+		mipSize.x *= MAX_VOXEL_AREAS;
 
 		RenderTargetDesc radianceMipsDesc(PF_RGBA16, mipSize);
 		radianceMipsDesc.levels = VoxelMipLevels - 1;
@@ -113,11 +113,13 @@ namespace sp
 			voxelData.packedData->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
 
 			GLLightData lightData[MAX_LIGHTS];
+			GLVoxelInfo voxelInfo;
 			int lightCount = FillLightData(&lightData[0], game->entityManager);
+			FillVoxelInfo(&voxelInfo, voxelData.info);
 
 			auto voxelRasterFS = GlobalShaders->Get<VoxelRasterFS>();
 			voxelRasterFS->SetLightData(lightCount, &lightData[0]);
-			voxelRasterFS->SetVoxelInfo(voxelData.info);
+			voxelRasterFS->SetVoxelInfo(&voxelInfo);
 			voxelRasterFS->SetLightAttenuation(CVarLightAttenuation.Get());
 
 			shadowMap->GetTexture().Bind(4);

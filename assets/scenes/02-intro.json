@@ -548,9 +548,19 @@
 			"transform": {
 				"rotate": [270, 0, 1, 0],
 				"translate": [1.5, 1.5, 1.4]
-			},
+			}
+		},
+		{
+			"_comment": "blue room",
 			"voxels": {
 				"min": [0, 0, 0],
+				"max": [6, 4, 10]
+			}
+		},
+		{
+			"_comment": "red room",
+			"voxels": {
+				"min": [6, 0, 0],
 				"max": [10, 4, 10]
 			}
 		},

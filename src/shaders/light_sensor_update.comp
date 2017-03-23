@@ -20,13 +20,14 @@ layout(binding = 1, std140) uniform LightData {
 	Light lights[MAX_LIGHTS];
 };
 
+layout(binding = 2, std140) uniform GLVoxelInfo {
+	VoxelInfo voxelInfo;
+};
+
 #define DIFFUSE_ONLY_SHADING
 #define INCLUDE_MIRRORS
 ##import lib/mirror_shadow_common
 ##import lib/shading
-
-uniform float voxelSize = 0.1;
-uniform vec3 voxelGridCenter = vec3(0);
 
 ##import voxel_shared
 ##import voxel_trace_shared

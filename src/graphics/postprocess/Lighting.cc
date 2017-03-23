@@ -191,6 +191,7 @@ namespace sp
 			Bind(mirrorCount, "mirrorCount");
 			BindBuffer(lightData, 0);
 			BindBuffer(mirrorData, 1);
+			BindBuffer(voxelInfo, 2);
 
 			Bind(exposure, "exposure");
 
@@ -199,8 +200,6 @@ namespace sp
 			Bind(mode, "mode");
 			Bind(ssaoEnabled, "ssaoEnabled");
 
-			Bind(voxelSize, "voxelSize");
-			Bind(voxelGridCenter, "voxelGridCenter");
 			Bind(diffuseDownsample, "diffuseDownsample");
 		}
 
@@ -233,18 +232,17 @@ namespace sp
 			Set(ssaoEnabled, ssaoMode);
 		}
 
-		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo, int diffDownsample)
+		void SetVoxelInfo(GLVoxelInfo *data, int diffDownsample)
 		{
-			Set(voxelSize, voxelInfo.voxelSize);
-			Set(voxelGridCenter, voxelInfo.voxelGridCenter);
+			BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
 			Set(diffuseDownsample, (float) diffDownsample);
 		}
 
 	private:
 		Uniform lightCount, mirrorCount;
-		UniformBuffer lightData, mirrorData;
+		UniformBuffer lightData, mirrorData, voxelInfo;
 		Uniform exposure, invViewMat, invProjMat, mode, ssaoEnabled;
-		Uniform voxelSize, voxelGridCenter, diffuseDownsample;
+		Uniform diffuseDownsample;
 	};
 
 	IMPLEMENT_SHADER_TYPE(VoxelLightingFS, "voxel_lighting.frag", Fragment);
@@ -255,11 +253,11 @@ namespace sp
 
 		VoxelLightingDiffuseFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
+			BindBuffer(voxelInfo, 0);
+
 			Bind(exposure, "exposure");
 			Bind(invViewMat, "invViewMat");
 
-			Bind(voxelSize, "voxelSize");
-			Bind(voxelGridCenter, "voxelGridCenter");
 			Bind(diffuseDownsample, "diffuseDownsample");
 		}
 
@@ -273,16 +271,16 @@ namespace sp
 			Set(invViewMat, view.invViewMat);
 		}
 
-		void SetVoxelInfo(ecs::VoxelInfo &voxelInfo, int diffDownsample)
+		void SetVoxelInfo(GLVoxelInfo *data, int diffDownsample)
 		{
-			Set(voxelSize, voxelInfo.voxelSize);
-			Set(voxelGridCenter, voxelInfo.voxelGridCenter);
+			BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
 			Set(diffuseDownsample, (float) diffDownsample);
 		}
 
 	private:
+		UniformBuffer voxelInfo;
 		Uniform exposure, invViewMat;
-		Uniform voxelSize, voxelGridCenter, diffuseDownsample;
+		Uniform diffuseDownsample;
 	};
 
 	IMPLEMENT_SHADER_TYPE(VoxelLightingDiffuseFS, "voxel_lighting_diffuse.frag", Fragment);
@@ -300,15 +298,17 @@ namespace sp
 
 		GLLightData lightData[MAX_LIGHTS];
 		GLMirrorData mirrorData[MAX_MIRRORS];
+		GLVoxelInfo voxelInfo;
 		int lightCount = FillLightData(&lightData[0], context->game->entityManager);
 		int mirrorCount = FillMirrorData(&mirrorData[0], context->game->entityManager);
+		FillVoxelInfo(&voxelInfo, voxelData.info);
 
 		auto shader = r->GlobalShaders->Get<VoxelLightingFS>();
 		shader->SetLightData(lightCount, &lightData[0]);
 		shader->SetMirrorData(mirrorCount, &mirrorData[0]);
 		shader->SetViewParams(context->view);
 		shader->SetMode(CVarVoxelLightingMode.Get(), ssaoEnabled);
-		shader->SetVoxelInfo(voxelData.info, diffuseDownsample);
+		shader->SetVoxelInfo(&voxelInfo, diffuseDownsample);
 		shader->SetExposure(r->Exposure);
 
 		r->SetRenderTarget(&dest, nullptr);
@@ -330,8 +330,11 @@ namespace sp
 		auto shader = r->GlobalShaders->Get<VoxelLightingDiffuseFS>();
 		auto lumishader = r->GlobalShaders->Get<LumiHistogramCS>();
 
+		GLVoxelInfo voxelInfo;
+		FillVoxelInfo(&voxelInfo, voxelData.info);
+
 		shader->SetViewParams(context->view);
-		shader->SetVoxelInfo(voxelData.info, downsample);
+		shader->SetVoxelInfo(&voxelInfo, downsample);
 
 		if (CVarExposure.Get() > 0.0f)
 		{

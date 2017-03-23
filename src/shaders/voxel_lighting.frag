@@ -35,11 +35,12 @@ layout(binding = 1, std140) uniform GLMirrorData {
 	Mirror mirrors[MAX_MIRRORS];
 };
 
+layout(binding = 2, std140) uniform GLVoxelInfo {
+	VoxelInfo voxelInfo;
+};
+
 ##import lib/mirror_shadow_common
 ##import lib/mirror_scene_common
-
-uniform float voxelSize = 0.1;
-uniform vec3 voxelGridCenter = vec3(0);
 
 uniform float exposure = 1.0;
 uniform float diffuseDownsample = 1;
