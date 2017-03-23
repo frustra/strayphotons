@@ -7,7 +7,6 @@ layout (binding = 0) uniform atomic_uint fragListSize;
 layout (binding = 0, r32ui) readonly uniform uimage2D voxelFragList;
 layout (binding = 1, r32ui) uniform uimage3D voxelPackedData;
 layout (binding = 2, rgba16) writeonly uniform image3D voxelRadiance;
-layout (binding = 3, rgba8) writeonly uniform image3D voxelNormal;
 
 ##import lib/util
 ##import voxel_shared
@@ -25,26 +24,19 @@ void main()
 		packedPosition & 0x3FF
 	);
 
-	ivec3 dataOffset = position * ivec3(3, 2, 1);
+	ivec3 dataOffset = position * ivec3(3, 1, 1);
 
-	vec3 radiance, normal;
+	vec3 radiance;
 	radiance.r = float(imageLoad(voxelPackedData, dataOffset + ivec3(0, 0, 0)).r) / 0xFFFF;
 	radiance.g = float(imageLoad(voxelPackedData, dataOffset + ivec3(1, 0, 0)).r) / 0xFFFF;
-	radiance.b = float(imageLoad(voxelPackedData, dataOffset + ivec3(2, 0, 0)).r) / 0xFFFF;
-	normal.x = float(imageLoad(voxelPackedData, dataOffset + ivec3(0, 1, 0)).r) / 0xFFFF;
-	normal.y = float(imageLoad(voxelPackedData, dataOffset + ivec3(1, 1, 0)).r) / 0xFFFF;
 
-	uint data = imageLoad(voxelPackedData, dataOffset + ivec3(2, 1, 0)).r;
-	normal.z = float((data & 0xFFFFFF00) >> 8) / 0xFFFF;
+	uint data = imageLoad(voxelPackedData, dataOffset + ivec3(2, 0, 0)).r;
+	radiance.b = float((data & 0xFFFFFF00) >> 8) / 0xFFFF;
 	float count = float(data & 0xFF);
 
 	imageStore(voxelRadiance, position, vec4(radiance / count, 1.0));
-	imageStore(voxelNormal, position, vec4(normal / count, count));
 
 	imageStore(voxelPackedData, dataOffset + ivec3(0, 0, 0), uvec4(0));
 	imageStore(voxelPackedData, dataOffset + ivec3(1, 0, 0), uvec4(0));
 	imageStore(voxelPackedData, dataOffset + ivec3(2, 0, 0), uvec4(0));
-	imageStore(voxelPackedData, dataOffset + ivec3(0, 1, 0), uvec4(0));
-	imageStore(voxelPackedData, dataOffset + ivec3(1, 1, 0), uvec4(0));
-	imageStore(voxelPackedData, dataOffset + ivec3(2, 1, 0), uvec4(0));
 }

@@ -5,7 +5,6 @@ layout (binding = 1) uniform sampler2D gBuffer1;
 layout (binding = 2) uniform sampler2D gBuffer2;
 layout (binding = 3) uniform sampler2D depthStencil;
 layout (binding = 4) uniform sampler3D voxelRadiance;
-layout (binding = 5) uniform sampler3D voxelNormal;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
@@ -47,13 +46,11 @@ void main()
 			outFragColor.rgb = DecodeNormal(texture(gBuffer1, inTexCoord).ba);
 		}
 	} else if (source == 1) { // Voxel source
-		vec3 sampleRadiance, sampleNormal;
-		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz, rayDir.xyz, sampleRadiance, sampleNormal);
+		vec3 sampleRadiance;
+		float alpha = TraceVoxelGrid(mipLevel, rayPos.xyz, rayDir.xyz, sampleRadiance);
 
 		if (mode == 1) { // Radiance
 			outFragColor.rgb = sampleRadiance;
-		} else if (mode == 2) { // Normal
-			outFragColor.rgb = sampleNormal;
 		}
 	} else if (source == 2) { // Cone trace source
 		vec4 sampleValue = ConeTraceGrid(float(mipLevel) / 50.0, rayPos.xyz, rayDir.xyz, rayDir.xyz, gl_FragCoord.xy);

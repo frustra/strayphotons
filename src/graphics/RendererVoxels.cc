@@ -12,7 +12,7 @@ namespace sp
 	{
 		auto VoxelGridSize = voxelData.info.gridSize;
 
-		glm::ivec3 packedSize = glm::ivec3(VoxelGridSize * 3, VoxelGridSize * 2, VoxelGridSize);
+		glm::ivec3 packedSize = glm::ivec3(VoxelGridSize * 3, VoxelGridSize, VoxelGridSize);
 		glm::ivec3 unpackedSize = glm::ivec3(VoxelGridSize, VoxelGridSize, VoxelGridSize);
 		auto VoxelMipLevels = ceil(log2(VoxelGridSize));
 
@@ -60,12 +60,6 @@ namespace sp
 			{
 				voxelData.radiance->GetTexture().Clear(0, i);
 			}
-		}
-
-		if (!voxelData.normal || voxelData.normal->GetDesc().extent != unpackedSize)
-		{
-			voxelData.normal = RTPool->Get(RenderTargetDesc(PF_RGBA8, unpackedSize));
-			voxelData.normal->GetTexture().Clear(0);
 		}
 	}
 
@@ -135,7 +129,6 @@ namespace sp
 				lastComputeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint));
 				lastFragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i);
 				voxelData.radiance->GetTexture().BindImage(1, GL_WRITE_ONLY, i, GL_TRUE, 0);
-				voxelData.normal->GetTexture().BindImage(2, GL_WRITE_ONLY, 0, GL_TRUE, 0);
 
 				ShaderControl->BindPipeline<VoxelClearCS>(GlobalShaders);
 				GlobalShaders->Get<VoxelClearCS>()->SetLevel(i);
@@ -156,7 +149,6 @@ namespace sp
 			fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, 0);
 			voxelData.packedData->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
 			voxelData.radiance->GetTexture().BindImage(2, GL_WRITE_ONLY, 0, GL_TRUE, 0);
-			voxelData.normal->GetTexture().BindImage(3, GL_WRITE_ONLY, 0, GL_TRUE, 0);
 
 			ShaderControl->BindPipeline<VoxelConvertCS>(GlobalShaders);
 			glDispatchComputeIndirect(sizeof(GLuint));
@@ -171,7 +163,6 @@ namespace sp
 				fragmentList->GetTexture().BindImage(1, GL_READ_WRITE, i);
 				voxelData.radiance->GetTexture().BindImage(2, GL_READ_ONLY, i - 1, GL_TRUE, 0);
 				voxelData.radiance->GetTexture().BindImage(3, GL_READ_WRITE, i, GL_TRUE, 0);
-				voxelData.normal->GetTexture().BindImage(4, GL_READ_ONLY, 0, GL_TRUE, 0);
 
 				ShaderControl->BindPipeline<VoxelMipmapCS>(GlobalShaders);
 				GlobalShaders->Get<VoxelMipmapCS>()->SetLevel(i);

@@ -46,8 +46,7 @@ in vec4 gl_FragCoord;
 ##import lib/shading
 ##import voxel_trace_shared
 
-// Data format: [radiance.r], [radiance.g], [radiance.b] (16 bit per color + 8 bit overflow)
-//              [normal.x],   [normal.y],   [normal.z, count] (16 bit per axis + 8 bit overflow, 8 bits count)
+// Data format: [radiance.r], [radiance.g], [radiance.b, count] (16 bit per color + 8 bit overflow, 8 bits count)
 
 void main()
 {
@@ -70,16 +69,11 @@ void main()
 
 	// Scale to 10 bits 0-1, clamp to 16 bit for HDR
 	uvec3 radiance = uvec3(clamp(pixelLuminance, 0, VoxelFixedPointExposure) * 0x3FF);
-	uvec3 normal = uvec3((normalize(inNormal) * 0.5 + 0.5) * 0xFFFF);
 
-	ivec3 dataOffset = ivec3(floor(position.x) * 3, floor(position.y) * 2, position.z);
+	ivec3 dataOffset = ivec3(floor(position.x) * 3, position.yz);
 	imageAtomicAdd(voxelData, dataOffset + ivec3(0, 0, 0), radiance.r);
 	imageAtomicAdd(voxelData, dataOffset + ivec3(1, 0, 0), radiance.g);
-	imageAtomicAdd(voxelData, dataOffset + ivec3(2, 0, 0), radiance.b);
-
-	imageAtomicAdd(voxelData, dataOffset + ivec3(0, 1, 0), normal.x);
-	imageAtomicAdd(voxelData, dataOffset + ivec3(1, 1, 0), normal.y);
-	uint prevData = imageAtomicAdd(voxelData, dataOffset + ivec3(2, 1, 0), (normal.z << 8) + 1);
+	uint prevData = imageAtomicAdd(voxelData, dataOffset + ivec3(2, 0, 0), (radiance.b << 8) + 1);
 
 	if ((prevData & 0xFF) == 0) {
 		uint index = atomicCounterIncrement(fragListSize);

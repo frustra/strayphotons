@@ -173,11 +173,6 @@ namespace sp
 			context.VoxelRadiance = context.AddPass<ProxyProcessPass>(targets.voxelData.radiance);
 		}
 
-		if (targets.voxelData.normal)
-		{
-			context.VoxelNormal = context.AddPass<ProxyProcessPass>(targets.voxelData.normal);
-		}
-
 		if (targets.mirrorIndexStencil)
 		{
 			context.MirrorIndexStencil = context.AddPass<ProxyProcessPass>(targets.mirrorIndexStencil);
@@ -243,7 +238,6 @@ namespace sp
 			viewGBuf->SetInput(2, context.GBuffer2);
 			viewGBuf->SetInput(3, context.Depth);
 			viewGBuf->SetInput(4, context.VoxelRadiance);
-			viewGBuf->SetInput(5, context.VoxelNormal);
 			context.LastOutput = viewGBuf;
 		}
 
