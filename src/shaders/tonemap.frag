@@ -16,7 +16,7 @@ const float ditherAmount = 0.5 / 255.0;
 void main() {
 	vec4 luminosity = texture(luminanceTex, inTexCoord); // pre-exposed
 
-	vec3 toneMapped = HDRTonemap(luminosity.rgb) / HDRTonemap(vec3(1.0));
+	vec3 toneMapped = HDRTonemap(luminosity.rgb * 2.8) / HDRTonemap(vec3(8.0));
 
 #ifdef DEBUG_OVEREXPOSED
 	if (toneMapped.r > 1 || toneMapped.g > 1 || toneMapped.b > 1) {
