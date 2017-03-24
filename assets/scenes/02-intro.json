@@ -1,8 +1,75 @@
 {
 	"autoexec": [
-		"p.NoClip 1"
+		"wait 1000 g.OpenDoor door1"
 	],
 	"entities": [
+		{
+			"renderable": "airlock",
+			"transform": {
+				"translate": [3.2, 0.0, 2.2],
+				"rotate": [180, 0, 1, 0]
+			},
+			"physics": {
+				"model": "airlock",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "door1-l",
+			"renderable": "door-panel-l-1.5x2",
+			"transform": {
+				"translate": [2.95, 0.0, 0.7],
+				"scale": [2, 1.25, 1]
+			},
+			"physics": {
+				"model": "door-panel-l-1.5x2",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "door1-r",
+			"renderable": "door-panel-r-1.5x2",
+			"transform": {
+				"translate": [2.95, 0.0, 0.7],
+				"scale": [2, 1.25, 1]
+			},
+			"physics": {
+				"model": "door-panel-r-1.5x2",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "door-panel-l-1.5x2",
+			"transform": {
+				"translate": [0.2, 0.0, 0.7],
+				"scale": [2, 1.25, 1]
+			},
+			"physics": {
+				"model": "door-panel-l-1.5x2",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "door-panel-r-1.5x2",
+			"transform": {
+				"translate": [0.2, 0.0, 0.7],
+				"scale": [2, 1.25, 1]
+			},
+			"physics": {
+				"model": "door-panel-r-1.5x2",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "door1",
+			"slideDoor": {
+				"left": "door1-l",
+				"right": "door1-r",
+				"width": 1.3,
+				"openTime": 0.5,
+				"forward": [1, 0, 0]
+			}
+		},
 		{
 			"renderable": "ground-3x3",
 			"transform": {
@@ -479,8 +546,8 @@
 				"clip": [0.1, 256]
 			},
 			"transform": {
-				"rotate": [200, 0, 1, 0],
-				"translate": [2, 2, 2]
+				"rotate": [270, 0, 1, 0],
+				"translate": [1.5, 1.5, 1.4]
 			},
 			"voxels": {
 				"min": [0, 0, 0],
