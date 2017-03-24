@@ -1,0 +1,79 @@
+{
+	"_name": <%= name %>,
+	"renderable": "airlock",
+	"transform": {
+		"translate": <%= translate %>
+	},
+	"physics": {
+		"model": "airlock",
+		"dynamic": false
+	}
+},
+{
+	"_name": <%= name + '-out-left' %>,
+	"renderable": "door-panel-l-1.5x2",
+	"transform": {
+		"translate": <%= offset(translate, [-0.05, 0, 0]) %>,
+		"scale": [2, 1.25, 1]
+	},
+	"physics": {
+		"model": "door-panel-l-1.5x2",
+		"dynamic": false
+	}
+},
+{
+	"_name": <%= name + '-out-right' %>,
+	"renderable": "door-panel-r-1.5x2",
+	"transform": {
+		"translate": <%= offset(translate, [-0.05, 0, 0]) %>,
+		"scale": [2, 1.25, 1]
+	},
+	"physics": {
+		"model": "door-panel-r-1.5x2",
+		"dynamic": false
+	}
+},
+{
+	"_name": <%= name + '-out' %>,
+	"slideDoor": {
+		"left": <%= name + '-out-left' %>,
+		"right": <%= name + '-out-right' %>,
+		"width": 1.3,
+		"openTime": 0.5,
+		"forward": [1, 0, 0]
+	}
+},
+{
+	"_name": <%= name + '-in-left' %>,
+	"renderable": "door-panel-l-1.5x2",
+	"transform": {
+		"translate": <%= offset(translate, [2.75, 0, 0]) %>,
+		"scale": [2, 1.25, 1]
+	},
+	"physics": {
+		"model": "door-panel-l-1.5x2",
+		"dynamic": false
+	}
+},
+{
+	"_name": <%= name + '-in-right' %>,
+	"renderable": "door-panel-r-1.5x2",
+	"transform": {
+		"translate": <%= offset(translate, [2.75, 0, 0]) %>,
+		"scale": [2, 1.25, 1]
+	},
+	"physics": {
+		"model": "door-panel-r-1.5x2",
+		"dynamic": false
+	}
+},
+{
+	"_name": <%= name + '-in' %>,
+	"slideDoor": {
+		"left": <%= name + '-in-left' %>,
+		"right": <%= name + '-in-right' %>,
+		"width": 1.3,
+		"openTime": 0.5,
+		"forward": [1, 0, 0]
+	}
+}
