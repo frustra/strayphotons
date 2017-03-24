@@ -13,7 +13,8 @@
 	"_name": <%= name + '-out-left' %>,
 	"renderable": "door-panel-l-1.5x2",
 	"transform": {
-		"translate": <%= offset(translate, [-0.05, 0, 0]) %>,
+		"parent": <%= name %>,
+		"translate": [-0.05, 0, 0],
 		"scale": [2, 1.25, 1]
 	},
 	"physics": {
@@ -25,7 +26,8 @@
 	"_name": <%= name + '-out-right' %>,
 	"renderable": "door-panel-r-1.5x2",
 	"transform": {
-		"translate": <%= offset(translate, [-0.05, 0, 0]) %>,
+		"parent": <%= name %>,
+		"translate": [-0.05, 0, 0],
 		"scale": [2, 1.25, 1]
 	},
 	"physics": {
@@ -47,7 +49,8 @@
 	"_name": <%= name + '-in-left' %>,
 	"renderable": "door-panel-l-1.5x2",
 	"transform": {
-		"translate": <%= offset(translate, [2.75, 0, 0]) %>,
+		"parent": <%= name %>,
+		"translate": [2.75, 0, 0],
 		"scale": [2, 1.25, 1]
 	},
 	"physics": {
@@ -59,7 +62,8 @@
 	"_name": <%= name + '-in-right' %>,
 	"renderable": "door-panel-r-1.5x2",
 	"transform": {
-		"translate": <%= offset(translate, [2.75, 0, 0]) %>,
+		"parent": <%= name %>,
+		"translate": [2.75, 0, 0],
 		"scale": [2, 1.25, 1]
 	},
 	"physics": {

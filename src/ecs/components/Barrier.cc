@@ -25,7 +25,7 @@ namespace ecs
 		adjustedPos.y += dimensions.y / 2.f;
 		transform->Translate(adjustedPos);
 
-		sp::PhysxManager::ActorDesc desc;
+		sp::PhysxActorDesc desc;
 		desc.transform = physx::PxTransform(GlmVec3ToPxVec3(adjustedPos));
 		desc.scale = physx::PxMeshScale(GlmVec3ToPxVec3(dimensions),
 										physx::PxQuat(physx::PxIdentity));
@@ -33,7 +33,7 @@ namespace ecs
 		desc.kinematic = true;
 
 		auto actor = px.CreateActor(model, desc, barrier);
-		barrier.Assign<Physics>(actor, model);
+		barrier.Assign<Physics>(actor, model, desc);
 		barrier.Assign<Barrier>();
 
 		return barrier;

@@ -1,8 +1,8 @@
-#ifndef SP_PHYSXMANAGER_H
-#define SP_PHYSXMANAGER_H
+#pragma once
 
 #include "Common.hh"
 #include "ConvexHull.hh"
+#include "PhysxActorDesc.hh"
 #include "core/CFunc.hh"
 #include "threading/MutexedVector.hh"
 
@@ -62,28 +62,14 @@ namespace sp
 
 		ConvexHullSet *GetCachedConvexHulls(std::string name);
 
-		struct ActorDesc
-		{
-			physx::PxTransform transform = physx::PxTransform(physx::PxVec3(0));
-			physx::PxMeshScale scale = physx::PxMeshScale();
-			bool dynamic = true;
-
-			// only dynamic actors can be kinematic
-			bool kinematic = false;
-			//bool mergePrimitives = true;
-			bool decomposeHull = false;
-		};
-
 		/**
 		 * Create an actor and bind the entity's Id to the actor's userData
 		 */
-		physx::PxRigidActor *CreateActor(shared_ptr<Model> model,
-			ActorDesc desc, const ecs::Entity &entity);
+		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, PhysxActorDesc desc, const ecs::Entity &entity);
 
 		void RemoveActor(physx::PxRigidActor *actor);
 
-		physx::PxCapsuleController *CreateController(physx::PxVec3 pos,
-			float radius, float height, float density);
+		physx::PxCapsuleController *CreateController(physx::PxVec3 pos, float radius, float height, float density);
 
 		/**
 		 * Get the Entity associated with this actor.
@@ -194,5 +180,3 @@ namespace sp
 		CFuncCollection funcs;
 	};
 }
-
-#endif

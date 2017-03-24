@@ -251,7 +251,7 @@ namespace sp
 					auto transform = entity.Assign<ecs::Transform>(em);
 					for (auto subTransform : comp.second.get<picojson::object>())
 					{
-						if (subTransform.first == "relativeTo")
+						if (subTransform.first == "parent")
 						{
 							ecs::Entity parent = scene->FindEntity(subTransform.second.get<string>());
 							if (!parent.Valid())
@@ -418,7 +418,7 @@ namespace sp
 						}
 					}
 
-					PhysxManager::ActorDesc desc;
+					PhysxActorDesc desc;
 					desc.dynamic = dynamic;
 					desc.kinematic = kinematic;
 					desc.decomposeHull = decomposeHull;
@@ -427,7 +427,7 @@ namespace sp
 
 					if (actor)
 					{
-						auto physics = entity.Assign<ecs::Physics>(actor, model);
+						auto physics = entity.Assign<ecs::Physics>(actor, model, desc);
 					}
 				}
 				else if (comp.first == "slideDoor")

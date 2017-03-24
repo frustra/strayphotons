@@ -243,7 +243,10 @@ namespace sp
 				auto ph = ent.Get<ecs::Physics>();
 				auto transform = ent.Get<ecs::Transform>();
 
-				Assert(!transform->HasParent(), "Physics objects must have no parent");
+				if (!ph->desc.dynamic)
+					continue;
+
+				Assert(!transform->HasParent(), "Dynamic physics objects must have no parent");
 
 				if (ph->actor)
 				{
@@ -465,7 +468,7 @@ namespace sp
 		Unlock();
 	}
 
-	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, ActorDesc desc, const ecs::Entity &entity)
+	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PhysxActorDesc desc, const ecs::Entity &entity)
 	{
 		Lock();
 		PxRigidActor *actor;

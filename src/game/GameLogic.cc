@@ -95,13 +95,13 @@ namespace sp
 				auto transform = entity.Assign<ecs::Transform>(&game->entityManager);
 				transform->Translate(glm::vec3(0, 5, 0));
 
-				PhysxManager::ActorDesc desc;
+				PhysxActorDesc desc;
 				desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
 				auto actor = game->physics.CreateActor(model, desc, entity);
 
 				if (actor)
 				{
-					auto physics = entity.Assign<ecs::Physics>(actor, model);
+					auto physics = entity.Assign<ecs::Physics>(actor, model, desc);
 				}
 			}
 			else if (ch == 'p') // Toggle flashlight following player
@@ -165,6 +165,8 @@ namespace sp
 				GConsoleManager.ParseAndExecute(area->command);
 			}
 		}
+
+		if (!scene) return true;
 
 		ecs::Entity sun = scene->FindEntity("sun");
 		if (sun.Valid())

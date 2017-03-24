@@ -389,7 +389,7 @@
 			"_name": "gun",
 			"lightGun": {},
 			"transform": {
-				"relativeTo": "player"
+				"parent": "player"
 			}
 		},
 		{

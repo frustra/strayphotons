@@ -118,7 +118,7 @@
 			"mirror": [1, 1],
 			"renderable": "mirror",
 			"transform": {
-				"relativeTo": "duck",
+				"parent": "duck",
 				"translate": [0, 1, 1],
 				"rotate": [-180, 0, 1, 0]
 			}

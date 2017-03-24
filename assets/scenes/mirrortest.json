@@ -83,7 +83,7 @@
 			"mirror": [1, 1],
 			"renderable": "mirror",
 			"transform": {
-				"relativeTo": "mirrorbox",
+				"parent": "mirrorbox",
 				"translate": [0, 0, 0.5001],
 				"rotate": [-180, 0, 1, 0]
 			}
@@ -111,7 +111,7 @@
 			"mirror": [1, 1],
 			"renderable": "mirror",
 			"transform": {
-				"relativeTo": "mirrorbox2",
+				"parent": "mirrorbox2",
 				"translate": [0, 0, 0.5001],
 				"rotate": [-180, 0, 1, 0]
 			}

@@ -82,7 +82,8 @@
 	"_name": "airlock1-out-left",
 	"renderable": "door-panel-l-1.5x2",
 	"transform": {
-		"translate": [-8.25,0.6,-7.75],
+		"parent": "airlock1",
+		"translate": [-0.05, 0, 0],
 		"scale": [2, 1.25, 1]
 	},
 	"physics": {
@@ -94,7 +95,8 @@
 	"_name": "airlock1-out-right",
 	"renderable": "door-panel-r-1.5x2",
 	"transform": {
-		"translate": [-8.25,0.6,-7.75],
+		"parent": "airlock1",
+		"translate": [-0.05, 0, 0],
 		"scale": [2, 1.25, 1]
 	},
 	"physics": {
@@ -116,7 +118,8 @@
 	"_name": "airlock1-in-left",
 	"renderable": "door-panel-l-1.5x2",
 	"transform": {
-		"translate": [-5.449999999999999,0.6,-7.75],
+		"parent": "airlock1",
+		"translate": [2.75, 0, 0],
 		"scale": [2, 1.25, 1]
 	},
 	"physics": {
@@ -128,7 +131,8 @@
 	"_name": "airlock1-in-right",
 	"renderable": "door-panel-r-1.5x2",
 	"transform": {
-		"translate": [-5.449999999999999,0.6,-7.75],
+		"parent": "airlock1",
+		"translate": [2.75, 0, 0],
 		"scale": [2, 1.25, 1]
 	},
 	"physics": {
