@@ -16,6 +16,8 @@ namespace sp
 	static CVar<int> CVarVoxelDiffuseDownsample("r.VoxelDiffuseDownsample", 1, "N times downsampled rendering of indirect diffuse lighting");
 	static CVar<bool> CVarDrawHistogram("r.Histogram", false, "Draw HDR luminosity histogram");
 	static CVar<float> CVarExposure("r.Exposure", 0.0, "Fixed exposure value in linear units (0: auto)");
+	static CVar<float> CVarExposureMin("r.ExposureMin", 0.01, "Minimum linear exposure value (controls max brightness)");
+	static CVar<float> CVarExposureMax("r.ExposureMax", 10, "Maximum linear exposure value (controls min brightness)");
 	static CVar<float> CVarExposureComp("r.ExposureComp", 1, "Exposure bias in EV units (logarithmic) for eye adaptation");
 	static CVar<float> CVarEyeAdaptationLow("r.EyeAdaptationLow", 65, "Percent of darkest pixels to ignore in eye adaptation");
 	static CVar<float> CVarEyeAdaptationHigh("r.EyeAdaptationHigh", 92, "Percent of brightest pixels to ignore in eye adaptation");
@@ -359,7 +361,10 @@ namespace sp
 
 				float alpha = newExposure < r->Exposure ? CVarEyeAdaptationUpRate.Get() : CVarEyeAdaptationDownRate.Get();
 				alpha = std::max(std::min(alpha, 0.9999f), 0.0001f);
-				r->Exposure = r->Exposure * (1.0f - alpha) + newExposure * alpha;
+
+				double blended = r->Exposure * (1.0f - alpha) + newExposure * alpha;
+				blended = std::max(std::min(blended, (double) CVarExposureMax.Get()), (double) CVarExposureMin.Get());
+				r->Exposure = blended;
 			}
 		}
 
