@@ -359,9 +359,9 @@
 				"left": "door1-l",
 				"right": "door1-r",
 				"forward": [
+					1,
 					0,
-					0,
-					-1
+					0
 				],
 				"width": 1.3
 			}

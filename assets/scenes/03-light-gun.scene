@@ -200,7 +200,7 @@
 			"slideDoor": {
 				"left": "door1-l",
 				"right": "door1-r",
-				"forward": [0, 0, -1],
+				"forward": [1, 0, 0],
 				"width": 1.3
 			}
 		},

@@ -44,7 +44,7 @@ namespace sp
 		SHADER_TYPE(SceneFS)
 		SceneFS(shared_ptr<ShaderCompileOutput> compileOutput);
 
-		void SetEmissive(float scale);
+		void SetEmissive(glm::vec3 em);
 		void SetMirrorId(int id);
 
 	private:

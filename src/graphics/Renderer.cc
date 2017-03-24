@@ -154,7 +154,7 @@ namespace sp
 			if (light->bulb.Valid())
 			{
 				auto bulb = light->bulb.Get<ecs::Renderable>();
-				bulb->emissive = light->on ? light->intensity * 0.1f : 0.0f;
+				bulb->emissive = light->on ? light->intensity * light->tint * 0.1f : glm::vec3(0.0f);
 			}
 
 			if (!light->on)

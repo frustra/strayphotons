@@ -32,9 +32,9 @@ namespace sp
 		Bind(mirrorId, "drawMirrorId");
 	}
 
-	void SceneFS::SetEmissive(float scale)
+	void SceneFS::SetEmissive(glm::vec3 em)
 	{
-		Set(emissive, scale);
+		Set(emissive, em);
 	}
 
 	void SceneFS::SetMirrorId(int newId)

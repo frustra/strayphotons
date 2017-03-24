@@ -30,7 +30,7 @@ layout (location = 4) out uint outMirrorIndexStencil;
 const float bumpDepth = 0.1;
 
 uniform int drawMirrorId;
-uniform float emissive = 0;
+uniform vec3 emissive = vec3(0);
 
 void main()
 {
@@ -89,11 +89,14 @@ void main()
 	vec3 viewNormal = inNormal;
 #endif
 
-	gBuffer0.rgb = baseColor.rgb;
+	float emissiveScale = max(emissive.r, max(emissive.g, emissive.b));
+	vec3 emissiveCoeff = emissiveScale > 0 ? emissive / emissiveScale : vec3(1.0f);
+
+	gBuffer0.rgb = baseColor.rgb * emissiveCoeff;
 	gBuffer0.a = roughness;
 	gBuffer1.rg = EncodeNormalSphereMap(viewNormal);
 	gBuffer1.ba = EncodeNormalSphereMap(inNormal);
 	gBuffer2.rgb = inViewPos;
-	gBuffer2.a = emissive;
+	gBuffer2.a = emissiveScale;
 	gBuffer3.r = metallic;
 }

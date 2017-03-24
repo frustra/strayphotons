@@ -255,11 +255,11 @@ namespace sp
 						{
 							if (param.first == "emissive")
 							{
-								r->emissive = param.second.get<double>();
+								r->emissive = MakeVec3(param.second);
 							}
 							else if (param.first == "light")
 							{
-								r->voxelEmissive = param.second.get<double>();
+								r->voxelEmissive = MakeVec3(param.second);
 							}
 							else if (param.first == "model")
 							{
@@ -269,7 +269,7 @@ namespace sp
 					}
 					Assert(!!r->model, "Renderable must have a model");
 
-					if (r->emissive == 0.0f && r->voxelEmissive > 0.0f)
+					if (glm::length(r->emissive) == 0.0f && glm::length(r->voxelEmissive) > 0.0f)
 					{
 						r->emissive = r->voxelEmissive;
 					}
