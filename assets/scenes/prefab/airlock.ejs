@@ -2,6 +2,7 @@
 	"_name": <%= name %>,
 	"renderable": "airlock",
 	"transform": {
+		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
 		"translate": <%= translate %>
 	},
 	"physics": {

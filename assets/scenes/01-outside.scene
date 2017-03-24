@@ -67,7 +67,10 @@
 				]
 			}
 		},
-		<%- include('prefab/airlock', { name: 'airlock1', translate: [-8.2, 0.6, -7.75] }) %>,
+		<%- include('prefab/airlock', {
+			name: 'airlock1',
+			translate: [-8.2, 0.6, -7.75]
+		}) %>,
 		{
 			"_comment": "airlock",
 			"voxels": {

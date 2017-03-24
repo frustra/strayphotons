@@ -61,8 +61,10 @@ namespace ecs
 			glm::vec3 panelPos = transform->GetPosition();
 			glm::vec3 animatePos;
 			float panelWidth = this->width / 2;
-			glm::vec3 leftDir = glm::normalize(
-				glm::cross(this->forward, transform->GetUp()));
+
+			glm::mat3 localRot = glm::inverse(glm::mat3(transform->GetRotateMatrix()));
+			glm::vec3 leftDir = glm::normalize(glm::cross(this->forward, transform->GetUp()) * localRot);
+
 			if (panel == left)
 			{
 				animatePos = panelPos + panelWidth * leftDir;

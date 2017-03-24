@@ -71,6 +71,7 @@
 	"_name": "airlock1",
 	"renderable": "airlock",
 	"transform": {
+		
 		"translate": [-8.2,0.6,-7.75]
 	},
 	"physics": {
