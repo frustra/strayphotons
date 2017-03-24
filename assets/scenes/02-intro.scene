@@ -8,6 +8,18 @@
 			"translate": [3.1, 0.0, 2.2],
 			"rotate": [180, 0, 1, 0]
 		}) %>,
+		<%- include('prefab/airlock', {
+			name: 'airlock2',
+			"translate": [12, 0.0, 2.2],
+			"rotate": [180, 0, 1, 0]
+		}) %>,
+		{
+			"triggerarea": {
+				"min": [10, 1, 0],
+				"max": [13, 2, 4],
+				"command": "g.CloseDoor airlock2-in; wait 1000 loadscene 03-light-gun"
+			}
+		},
 		{
 			"renderable": "ground-3x3",
 			"transform": {
@@ -213,6 +225,7 @@
 			}
 		},
 		{
+			"_comment": "above airlock2",
 			"renderable": "wall-4x3",
 			"transform": {
 				"translate": [-1, 0, 6],
@@ -234,11 +247,10 @@
 				"dynamic": false
 			}
 		},
-
 		{
 			"renderable": "wall-4x3",
 			"transform": {
-				"translate": [9, 0, 3],
+				"translate": [9, 3, 3],
 				"rotate": [90, 0, 1, 0]
 			},
 			"physics": {
@@ -346,9 +358,10 @@
 			}
 		},
 		{
+			"_name": "left of door",
 			"renderable": "wall-1x1",
 			"transform": {
-				"scale": [1, 4, 2],
+				"scale": [1, 4, 1.75],
 				"translate": [6, 0, 5]
 			},
 			"physics": {
@@ -372,8 +385,8 @@
 			"_comment": "above door",
 			"renderable": "wall-1x1",
 			"transform": {
-				"scale": [1, 2, 1],
-				"translate": [6, 2, 7]
+				"scale": [1, 2.5, 1.5],
+				"translate": [6, 2.5, 6.75]
 			},
 			"physics": {
 				"model": "wall-1x1",
@@ -385,39 +398,18 @@
 			"renderable": "wall-1x1",
 			"transform": {
 				"scale": [1, 4, 1],
-				"translate": [6, 0, 8]
+				"translate": [6, 0, 8.25]
 			},
 			"physics": {
 				"model": "wall-1x1",
 				"dynamic": false
 			}
 		},
-		{
-			"renderable": "door-hex-1x2",
-			"_name": "barrier1",
-			"barrier": {
-				"isOpen": false
-			},
-			"transform": {
-				"scale": [1, 1, 1],
-				"translate": [6, 0, 7]
-			},
-			"physics": {
-				"model": "door-hex-1x2",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "door-hex-frame-1x2",
-			"transform": {
-				"scale": [1, 1, 1],
-				"translate": [6, 0, 7]
-			},
-			"physics": {
-				"model": "door-hex-frame-1x2",
-				"dynamic": false
-			}
-		},
+		<%- include('prefab/slide_door_1_5', {
+			name: 'door1',
+				"translate": [6, 0.0, 6.75],
+				"rotate": [0, 0, 1, 0]
+		}) %>,
 		{
 			"_comment": "above ledge",
 			"renderable": "wall-1x1",
@@ -471,9 +463,9 @@
 				"direction": [0, 0, -1],
 				"triggers": [
 					{
-						"illuminance": [1, 1, 1],
-						"oncmd": "g.OpenBarrier barrier1",
-						"offcmd": "g.CloseBarrier barrier1"
+						"illuminance": [0.5, 0.2, 0.2],
+						"oncmd": "g.CloseDoor door1; g.CloseDoor airlock2-in",
+						"offcmd": "g.OpenDoor door1; g.OpenDoor airlock2-in"
 					}
 				]
 			}
@@ -523,9 +515,9 @@
 			"transform": {
 				"rotate": [
 					[-90, 0, 1, 0],
-					[-45, 1, 0, 0]
+					[-30, 1, 0, 0]
 				],
-				"translate": [2, 3.75, 4]
+				"translate": [0.15, 3.35, 4]
 			}
 		}
 	]

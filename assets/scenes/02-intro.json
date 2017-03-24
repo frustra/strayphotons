@@ -172,6 +172,189 @@
 			}
 		},
 		{
+			"_name": "airlock2",
+			"renderable": "airlock",
+			"transform": {
+				"rotate": [
+					180,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					12,
+					0,
+					2.2
+				]
+			},
+			"physics": {
+				"model": "airlock",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "airlock2-out-left",
+			"renderable": "door-panel-l-1.5x2",
+			"transform": {
+				"parent": "airlock2",
+				"translate": [
+					-0.05,
+					0,
+					0
+				],
+				"scale": [
+					2,
+					1.25,
+					1
+				]
+			},
+			"physics": {
+				"model": "door-panel-l-1.5x2",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "airlock2-out-right",
+			"renderable": "door-panel-r-1.5x2",
+			"transform": {
+				"parent": "airlock2",
+				"translate": [
+					-0.05,
+					0,
+					0
+				],
+				"scale": [
+					2,
+					1.25,
+					1
+				]
+			},
+			"physics": {
+				"model": "door-panel-r-1.5x2",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "airlock2-out",
+			"slideDoor": {
+				"left": "airlock2-out-left",
+				"right": "airlock2-out-right",
+				"width": 1.3,
+				"openTime": 0.5,
+				"forward": [
+					1,
+					0,
+					0
+				]
+			}
+		},
+		{
+			"_name": "airlock2-in-left",
+			"renderable": "door-panel-l-1.5x2",
+			"transform": {
+				"parent": "airlock2",
+				"translate": [
+					2.75,
+					0,
+					0
+				],
+				"scale": [
+					2,
+					1.25,
+					1
+				]
+			},
+			"physics": {
+				"model": "door-panel-l-1.5x2",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "airlock2-in-right",
+			"renderable": "door-panel-r-1.5x2",
+			"transform": {
+				"parent": "airlock2",
+				"translate": [
+					2.75,
+					0,
+					0
+				],
+				"scale": [
+					2,
+					1.25,
+					1
+				]
+			},
+			"physics": {
+				"model": "door-panel-r-1.5x2",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "airlock2-in",
+			"slideDoor": {
+				"left": "airlock2-in-left",
+				"right": "airlock2-in-right",
+				"width": 1.3,
+				"openTime": 0.5,
+				"forward": [
+					1,
+					0,
+					0
+				]
+			}
+		},
+		{
+			"light": {
+				"tint": [
+					0.5,
+					0.5,
+					1
+				],
+				"intensity": 10,
+				"spotAngle": 60
+			},
+			"view": {
+				"extents": [
+					2048,
+					2048
+				],
+				"clip": [
+					0.1,
+					70
+				]
+			},
+			"transform": {
+				"parent": "airlock2",
+				"rotate": [
+					-90,
+					1,
+					0,
+					0
+				],
+				"translate": [
+					1.4,
+					2.5,
+					0.8
+				]
+			}
+		},
+		{
+			"triggerarea": {
+				"min": [
+					10,
+					1,
+					0
+				],
+				"max": [
+					13,
+					2,
+					4
+				],
+				"command": "g.CloseDoor airlock2-in; wait 1000 loadscene 03-light-gun"
+			}
+		},
+		{
 			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [
@@ -453,6 +636,7 @@
 			}
 		},
 		{
+			"_comment": "above airlock2",
 			"renderable": "wall-4x3",
 			"transform": {
 				"translate": [
@@ -497,7 +681,7 @@
 			"transform": {
 				"translate": [
 					9,
-					0,
+					3,
 					3
 				],
 				"rotate": [
@@ -674,12 +858,13 @@
 			}
 		},
 		{
+			"_name": "left of door",
 			"renderable": "wall-1x1",
 			"transform": {
 				"scale": [
 					1,
 					4,
-					2
+					1.75
 				],
 				"translate": [
 					6,
@@ -723,13 +908,13 @@
 			"transform": {
 				"scale": [
 					1,
-					2,
-					1
+					2.5,
+					1.5
 				],
 				"translate": [
 					6,
-					2,
-					7
+					2.5,
+					6.75
 				]
 			},
 			"physics": {
@@ -749,7 +934,7 @@
 				"translate": [
 					6,
 					0,
-					8
+					8.25
 				]
 			},
 			"physics": {
@@ -758,45 +943,79 @@
 			}
 		},
 		{
-			"renderable": "door-hex-1x2",
-			"_name": "barrier1",
-			"barrier": {
-				"isOpen": false
-			},
+			"_name": "door1-root",
 			"transform": {
-				"scale": [
+				"rotate": [
+					0,
+					0,
 					1,
-					1,
-					1
+					0
 				],
 				"translate": [
 					6,
 					0,
-					7
+					6.75
+				],
+				"scale": [
+					1,
+					1.25,
+					1
+				]
+			},
+			"renderable": "door-frame-1.5x2",
+			"physics": {
+				"model": "door-frame-1.5x2",
+				"dynamic": false,
+				"decomposeHull": true
+			}
+		},
+		{
+			"_name": "door1-left",
+			"renderable": "door-panel-l-1.5x2",
+			"transform": {
+				"parent": "door1-root",
+				"translate": [
+					0,
+					0,
+					0
 				]
 			},
 			"physics": {
-				"model": "door-hex-1x2",
+				"model": "door-panel-l-1.5x2",
 				"dynamic": false
 			}
 		},
 		{
-			"renderable": "door-hex-frame-1x2",
+			"_name": "door1-right",
+			"renderable": "door-panel-r-1.5x2",
 			"transform": {
-				"scale": [
-					1,
-					1,
-					1
-				],
+				"parent": "door1-root",
 				"translate": [
-					6,
 					0,
-					7
+					0,
+					0
 				]
 			},
 			"physics": {
-				"model": "door-hex-frame-1x2",
+				"model": "door-panel-r-1.5x2",
 				"dynamic": false
+			}
+		},
+		{
+			"_name": "door1",
+			"transform": {
+				"parent": "door1-root"
+			},
+			"slideDoor": {
+				"left": "door1-left",
+				"right": "door1-right",
+				"width": 1.3,
+				"openTime": 0.5,
+				"forward": [
+					1,
+					0,
+					0
+				]
 			}
 		},
 		{
@@ -900,12 +1119,12 @@
 				"triggers": [
 					{
 						"illuminance": [
-							1,
-							1,
-							1
+							0.5,
+							0.2,
+							0.2
 						],
-						"oncmd": "g.OpenBarrier barrier1",
-						"offcmd": "g.CloseBarrier barrier1"
+						"oncmd": "g.CloseDoor door1; g.CloseDoor airlock2-in",
+						"offcmd": "g.OpenDoor door1; g.OpenDoor airlock2-in"
 					}
 				]
 			}
@@ -1007,15 +1226,15 @@
 						0
 					],
 					[
-						-45,
+						-30,
 						1,
 						0,
 						0
 					]
 				],
 				"translate": [
-					2,
-					3.75,
+					0.15,
+					3.35,
 					4
 				]
 			}
