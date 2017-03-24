@@ -36,7 +36,7 @@
 				"spotAngle": 85
 			},
 			"view": {
-				"extents": [2048, 2048],
+				"extents": [4096, 4096],
 				"clip": [0.1, 64]
 			},
 			"transform": {
