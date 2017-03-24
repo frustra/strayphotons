@@ -214,41 +214,22 @@ namespace sp
 
 			ImGui::PushFont(io.Fonts->Fonts[3]);
 
-			if (ImGui::Button("Test1"))
-			{
-				CloseMenu();
-				GConsoleManager.ParseAndExecute("loadscene test1");
+#define LEVEL_BUTTON(name, file) \
+			if (ImGui::Button(name)) \
+			{ \
+				CloseMenu(); \
+				GConsoleManager.ParseAndExecute("loadscene " file); \
 			}
 
-			if (ImGui::Button("Test2"))
-			{
-				CloseMenu();
-				GConsoleManager.ParseAndExecute("loadscene test2");
-			}
+			LEVEL_BUTTON("01 - Outside", "01-outside")
+			LEVEL_BUTTON("02 - Intro", "02-intro")
+			LEVEL_BUTTON("03 - Light Gun", "03-light-gun")
+			LEVEL_BUTTON("Sponza", "sponza")
+			LEVEL_BUTTON("Cornell Box", "cornell-box-1")
+			LEVEL_BUTTON("Test 1", "test1")
+			LEVEL_BUTTON("Test 2", "test2")
 
-			if (ImGui::Button("Level02"))
-			{
-				CloseMenu();
-				GConsoleManager.ParseAndExecute("loadscene level02");
-			}
-
-			if (ImGui::Button("03 - Light Gun"))
-			{
-				CloseMenu();
-				GConsoleManager.ParseAndExecute("loadscene 03-light-gun");
-			}
-
-			if (ImGui::Button("Sponza"))
-			{
-				CloseMenu();
-				GConsoleManager.ParseAndExecute("loadscene sponza");
-			}
-
-			if (ImGui::Button("Cornell Box"))
-			{
-				CloseMenu();
-				GConsoleManager.ParseAndExecute("loadscene cornell-box-1");
-			}
+#undef LEVEL_BUTTON
 
 			ImGui::PopFont();
 			ImGui::Text(" ");
