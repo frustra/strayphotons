@@ -103,7 +103,7 @@
 			"view": {
 				"clip": [0.1, 256],
 				"clear": [0.66, 0.84, 1],
-				"sky": 0.35
+				"sky": 0.4
 			},
 			"transform": {
 				"translate": [0, 2, 0]
@@ -116,7 +116,7 @@
 		{
 			"_name": "sun",
 			"light": {
-				"tint": [1, 0.8, 0.9],
+				"tint": [0.9, 0.9, 1],
 				"illuminance": 10,
 				"spotAngle": 22
 			},

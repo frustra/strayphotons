@@ -26,6 +26,8 @@ namespace sp
 	static CVar<float> CVarEyeAdaptationUpRate("r.EyeAdaptationUpRate", 0.1, "Rate at which eye adapts to brighter scenes");
 	static CVar<float> CVarEyeAdaptationDownRate("r.EyeAdaptationDownRate", 0.04, "Rate at which eye adapts to darker scenes");
 	static CVar<float> CVarEyeAdaptationKeyComp("r.EyeAdaptationKeyComp", 1.0, "Amount of key compensation for eye adaptation (0-1)");
+	static CVar<float> CVarSaturationMin("r.SaturationMin", 0.0, "Saturation minimum clip");
+	static CVar<float> CVarSaturationMax("r.SaturationMax", 1.05, "Saturation maximum clip");
 
 	class TonemapFS : public Shader
 	{
@@ -33,7 +35,16 @@ namespace sp
 
 		TonemapFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
+			Bind(saturation, "saturation");
 		}
+
+		void SetParams()
+		{
+			Set(saturation, glm::vec2(CVarSaturationMin.Get(), CVarSaturationMax.Get()));
+		}
+
+	private:
+		Uniform saturation;
 	};
 
 	IMPLEMENT_SHADER_TYPE(TonemapFS, "tonemap.frag", Fragment);
@@ -43,6 +54,7 @@ namespace sp
 		auto r = context->renderer;
 		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
 
+		r->GlobalShaders->Get<TonemapFS>()->SetParams();
 		r->SetRenderTarget(&dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, TonemapFS>(r->GlobalShaders);
 
