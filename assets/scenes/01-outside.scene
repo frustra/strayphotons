@@ -22,40 +22,19 @@
 				"max": [4, 7, 4]
 			}
 		},
+		<%- include('prefab/lightsensor',
 		{
-			"_name": "sensor1_plate",
-			"renderable": "l-sensor-plate",
-			"transform": {
-				"translate": [-3.5, 0.7, -5.8]
-			},
-			"physics": {
-				"model": "l-sensor-plate",
-				"dynamic": false
-			}
-		},
-		{
-			"_name": "sensor1",
-			"renderable": "l-sensor",
-			"transform": {
-				"rotate": [180, 0, 1, 0],
-				"translate": [-3.5, 0.7, -5.78]
-			},
-			"physics": {
-				"model": "l-sensor",
-				"dynamic": false
-			},
-			"lightsensor": {
-				"translate": [0, 0, -0.1],
-				"direction": [0, 0, -1],
-				"triggers": [
-					{
-						"illuminance": [0.01, 0.01, 0.01],
-						"oncmd": "g.CloseDoor airlock1-in",
-						"offcmd": "g.OpenDoor airlock1-in"
-					}
-				]
-			}
-		},
+			name: "sensor1",
+			translate: [-3.5, 0.7, -5.78],
+			rotate: [180, 0, 1, 0],
+			triggers: [
+				{
+					illuminance: [0.01, 0.01, 0.01],
+					oncmd: "g.CloseDoor airlock1-in",
+					offcmd: "g.OpenDoor airlock1-in"
+				}
+			]
+		}) %>,
 		<%- include('prefab/airlock', {
 			name: 'airlock1',
 			translate: [-8.2, 0.6, -7.75]

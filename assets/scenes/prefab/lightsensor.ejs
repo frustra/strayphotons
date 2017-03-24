@@ -1,0 +1,31 @@
+{
+	"_name": <%= name %>,
+	"renderable": {
+		"model": "l-sensor"
+	},
+	"transform": {
+		"rotate": <%= rotate %>,
+		"translate": <%= translate %>
+	},
+	"physics": {
+		"model": "l-sensor",
+		"dynamic": false
+	},
+	"lightsensor": {
+		"translate": [0, 0, -0.1],
+		"direction": [0, 0, -1],
+		"triggers": <%= triggers %>
+	}
+},
+{
+	"_name": <%= name + "_plate" %>,
+	"renderable": "l-sensor-plate",
+	"transform": {
+		"parent": <%= name %>,
+		"translate": [0, 0, 0]
+	},
+	"physics": {
+		"model": "l-sensor-plate",
+		"dynamic": false
+	}
+}
