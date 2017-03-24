@@ -38,7 +38,7 @@ namespace sp
 		}
 	};
 
-	class VoxelLighting : public PostProcessPass<11, 1>
+	class VoxelLighting : public PostProcessPass<12, 1>
 	{
 	public:
 		VoxelLighting(VoxelData voxelData, bool ssaoEnabled)

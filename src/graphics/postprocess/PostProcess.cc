@@ -61,14 +61,15 @@ namespace sp
 		lighting->SetInput(0, context.GBuffer0);
 		lighting->SetInput(1, context.GBuffer1);
 		lighting->SetInput(2, context.GBuffer2);
-		lighting->SetInput(3, context.ShadowMap);
-		lighting->SetInput(4, context.MirrorShadowMap);
-		lighting->SetInput(5, context.VoxelRadiance);
-		lighting->SetInput(6, context.VoxelRadianceMips);
-		lighting->SetInput(7, indirectDiffuse);
-		lighting->SetInput(8, context.MirrorIndexStencil);
-		lighting->SetInput(9, context.LightingGel);
-		lighting->SetInput(10, context.AoBuffer);
+		lighting->SetInput(3, context.GBuffer3);
+		lighting->SetInput(4, context.ShadowMap);
+		lighting->SetInput(5, context.MirrorShadowMap);
+		lighting->SetInput(6, context.VoxelRadiance);
+		lighting->SetInput(7, context.VoxelRadianceMips);
+		lighting->SetInput(8, indirectDiffuse);
+		lighting->SetInput(9, context.MirrorIndexStencil);
+		lighting->SetInput(10, context.LightingGel);
+		lighting->SetInput(11, context.AoBuffer);
 
 		context.LastOutput = lighting;
 	}
@@ -155,6 +156,7 @@ namespace sp
 		context.GBuffer0 = context.AddPass<ProxyProcessPass>(targets.gBuffer0);
 		context.GBuffer1 = context.AddPass<ProxyProcessPass>(targets.gBuffer1);
 		context.GBuffer2 = context.AddPass<ProxyProcessPass>(targets.gBuffer2);
+		context.GBuffer3 = context.AddPass<ProxyProcessPass>(targets.gBuffer3);
 		context.Depth = context.AddPass<ProxyProcessPass>(targets.depth);
 		context.MirrorVisData = targets.mirrorVisData;
 		context.MirrorSceneData = targets.mirrorSceneData;
@@ -239,9 +241,10 @@ namespace sp
 			viewGBuf->SetInput(0, context.GBuffer0);
 			viewGBuf->SetInput(1, context.GBuffer1);
 			viewGBuf->SetInput(2, context.GBuffer2);
-			viewGBuf->SetInput(3, context.Depth);
-			viewGBuf->SetInput(4, context.VoxelRadiance);
-			viewGBuf->SetInput(5, context.VoxelRadianceMips);
+			viewGBuf->SetInput(3, context.GBuffer3);
+			viewGBuf->SetInput(4, context.Depth);
+			viewGBuf->SetInput(5, context.VoxelRadiance);
+			viewGBuf->SetInput(6, context.VoxelRadianceMips);
 			context.LastOutput = viewGBuf;
 		}
 

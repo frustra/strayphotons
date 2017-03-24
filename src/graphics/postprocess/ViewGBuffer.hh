@@ -4,7 +4,7 @@
 
 namespace sp
 {
-	class ViewGBuffer : public PostProcessPass<6, 1>
+	class ViewGBuffer : public PostProcessPass<7, 1>
 	{
 	public:
 		ViewGBuffer(int mode, int source, int level, VoxelData voxelData) : mode(mode), source(source), level(level), voxelData(voxelData) {}

@@ -21,14 +21,16 @@ layout (location = 3) in vec2 inTexCoord;
 layout (location = 4) in vec3 inViewPos;
 layout (location = 5) flat in int inMirrorIndex;
 
-layout (location = 0) out vec4 gBuffer0;
-layout (location = 1) out vec4 gBuffer1;
-layout (location = 2) out vec4 gBuffer2;
-layout (location = 3) out uint outMirrorIndexStencil;
+layout (location = 0) out vec4 gBuffer0; // rgba8
+layout (location = 1) out vec4 gBuffer1; // rgba16f
+layout (location = 2) out vec4 gBuffer2; // rgba16f
+layout (location = 3) out vec4 gBuffer3; // rgba8
+layout (location = 4) out uint outMirrorIndexStencil;
 
 const float bumpDepth = 0.1;
 
 uniform int drawMirrorId;
+uniform float emissive = 0;
 
 void main()
 {
@@ -92,5 +94,6 @@ void main()
 	gBuffer1.rg = EncodeNormalSphereMap(viewNormal);
 	gBuffer1.ba = EncodeNormalSphereMap(inNormal);
 	gBuffer2.rgb = inViewPos;
-	gBuffer2.a = metallic;
+	gBuffer2.a = emissive;
+	gBuffer3.r = metallic;
 }

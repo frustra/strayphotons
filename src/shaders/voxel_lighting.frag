@@ -12,14 +12,15 @@
 layout (binding = 0) uniform sampler2D gBuffer0;
 layout (binding = 1) uniform sampler2D gBuffer1;
 layout (binding = 2) uniform sampler2D gBuffer2;
-layout (binding = 3) uniform sampler2D shadowMap;
-layout (binding = 4) uniform sampler2DArray mirrorShadowMap;
-layout (binding = 5) uniform sampler3D voxelRadiance;
-layout (binding = 6) uniform sampler3D voxelRadianceMips;
-layout (binding = 7) uniform sampler2D indirectDiffuseSampler;
-layout (binding = 8) uniform usampler2D mirrorIndexStencil;
-layout (binding = 9) uniform sampler2D lightingGel;
-layout (binding = 10) uniform sampler2D aoBuffer;
+layout (binding = 3) uniform sampler2D gBuffer3;
+layout (binding = 4) uniform sampler2D shadowMap;
+layout (binding = 5) uniform sampler2DArray mirrorShadowMap;
+layout (binding = 6) uniform sampler3D voxelRadiance;
+layout (binding = 7) uniform sampler3D voxelRadianceMips;
+layout (binding = 8) uniform sampler2D indirectDiffuseSampler;
+layout (binding = 9) uniform usampler2D mirrorIndexStencil;
+layout (binding = 10) uniform sampler2D lightingGel;
+layout (binding = 11) uniform sampler2D aoBuffer;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
@@ -97,15 +98,17 @@ void main()
 	vec4 gb0 = texture(gBuffer0, inTexCoord);
 	vec4 gb1 = texture(gBuffer1, inTexCoord);
 	vec4 gb2 = texture(gBuffer2, inTexCoord);
+	vec4 gb3 = texture(gBuffer3, inTexCoord);
 
 	vec3 baseColor = gb0.rgb;
 	float roughness = gb0.a;
 	vec3 viewNormal = DecodeNormal(gb1.rg);
 	vec3 flatViewNormal = DecodeNormal(gb1.ba);
-	float metalness = gb2.a;
+	vec3 emissive = gb2.a * baseColor;
+	float metalness = gb3.r;
 
 	if (gb2.rgb == vec3(0)) {
-		outFragColor.rgb = FastSRGBToLinear(gb0.rgb) * exposure * skyIlluminance;
+		outFragColor.rgb = FastSRGBToLinear(baseColor) * exposure * skyIlluminance;
 		return;
 	}
 
