@@ -21,6 +21,7 @@ namespace sp
 	using namespace physx;
 	static CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
 	static CVar<bool> CVarShowShapes("x.ShowShapes", false, "Show (1) or hide (0) the outline of physx collision shapes");
+	static CVar<bool> CVarPropJumping("x.PropJumping", false, "Disable player collision with held object");
 
 	PhysxManager::PhysxManager()
 	{
@@ -179,6 +180,7 @@ namespace sp
 		}
 
 		scene->simulate((PxReal) timeStep);
+
 		resultsPending = true;
 		Unlock();
 	}
@@ -267,9 +269,7 @@ namespace sp
 		PxSceneDesc sceneDesc(physics->getTolerancesScale());
 
 		sceneDesc.gravity = PxVec3(0.f, CVarGravity.Get(true), 0.f);
-
-		if (!sceneDesc.filterShader)
-			sceneDesc.filterShader = PxDefaultSimulationFilterShader;
+		sceneDesc.filterShader = PxDefaultSimulationFilterShader;
 
 		dispatcher = PxDefaultCpuDispatcherCreate(1);
 		sceneDesc.cpuDispatcher = dispatcher;
@@ -280,6 +280,13 @@ namespace sp
 		Lock();
 		PxMaterial *groundMat = physics->createMaterial(0.6f, 0.5f, 0.0f);
 		PxRigidStatic *groundPlane = PxCreatePlane(*physics, PxPlane(0.f, 1.f, 0.f, 1.03f), *groundMat);
+
+		PxShape *shape;
+		groundPlane->getShapes(&shape, 1);
+		PxFilterData data;
+		data.word0 = 3;
+		shape->setQueryFilterData(data);
+
 		scene->addActor(*groundPlane);
 		Unlock();
 	}
@@ -512,7 +519,10 @@ namespace sp
 			PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
 			PxConvexMesh *pxhull = physics->createConvexMesh(input);
 
-			actor->createShape(PxConvexMeshGeometry(pxhull, desc.scale), *mat);
+			auto shape = actor->createShape(PxConvexMeshGeometry(pxhull, desc.scale), *mat);
+			PxFilterData data;
+			data.word0 = 3;
+			shape->setQueryFilterData(data);
 		}
 
 		if (desc.dynamic)
@@ -564,7 +574,7 @@ namespace sp
 		Lock();
 		if (!manager) manager = PxCreateControllerManager(*scene, true);
 
-		//Capsule controller description will want to be data driven
+		// Capsule controller description will want to be data driven
 		PxCapsuleControllerDesc desc;
 		desc.position = PxExtendedVec3(pos.x, pos.y, pos.z);
 		desc.upDirection = PxVec3(0, 1, 0);
@@ -578,16 +588,20 @@ namespace sp
 
 		PxCapsuleController *controller =
 			static_cast<PxCapsuleController *>(manager->createController(desc));
+
 		Unlock();
 		return controller;
 	}
 
-	void PhysxManager::MoveController(PxController *controller, double dt, physx::PxVec3 displacement)
+	bool PhysxManager::MoveController(PxController *controller, double dt, physx::PxVec3 displacement)
 	{
 		Lock();
-		physx::PxControllerFilters filters;
-		controller->move(displacement, 0, dt, filters);
+		PxFilterData data;
+		data.word0 = CVarPropJumping.Get() ? 3 : 2;
+		physx::PxControllerFilters filters(&data);
+		auto flags = controller->move(displacement, 0, dt, filters);
 		Unlock();
+		return flags & PxControllerCollisionFlag::eCOLLISION_DOWN;
 	}
 
 	void PhysxManager::TeleportController(physx::PxController *controller, physx::PxExtendedVec3 position)
@@ -597,12 +611,17 @@ namespace sp
 		Unlock();
 	}
 
-	void PhysxManager::ResizeController(
-		PxController *controller,
-		const float height)
+	void PhysxManager::ResizeController(PxController *controller, const float height, bool fromTop)
 	{
 		Lock();
+		auto currentHeight = ((PxCapsuleController*) controller)->getHeight();
+		auto currentPos = controller->getFootPosition();
 		controller->resize(height);
+		if (fromTop)
+		{
+			currentPos.y += currentHeight - height;
+			controller->setFootPosition(currentPos);
+		}
 		Unlock();
 	}
 
@@ -686,11 +705,18 @@ namespace sp
 	void PhysxManager::CreateConstraint(ecs::Entity parent, PxRigidDynamic *child, PxVec3 offset)
 	{
 		Lock();
+		PxShape *shape;
+		child->getShapes(&shape, 1);
+
 		PhysxConstraint constraint;
 		constraint.parent = parent;
 		constraint.child = child;
 		constraint.offset = offset;
 		constraint.rotation = PxVec3(0);
+
+		PxFilterData data;
+		data.word0 = 1;
+		shape->setQueryFilterData(data);
 
 		if (parent.Has<ecs::Physics>() || parent.Has<ecs::HumanController>())
 		{
@@ -716,6 +742,13 @@ namespace sp
 	void PhysxManager::RemoveConstraints(ecs::Entity parent, physx::PxRigidDynamic *child)
 	{
 		Lock();
+		PxShape *shape;
+		child->getShapes(&shape, 1);
+
+		PxFilterData data;
+		data.word0 = 3;
+		shape->setQueryFilterData(data);
+
 		for (auto it = constraints.begin(); it != constraints.end();)
 		{
 			if (it->parent == parent && it->child == child)

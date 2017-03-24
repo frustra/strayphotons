@@ -37,7 +37,7 @@ namespace ecs
 	const float PLAYER_SWEEP_DISTANCE = 0.4f; // Distance to check if on ground
 
 	const float PLAYER_GRAVITY = 9.81f;
-	const float PLAYER_JUMP_VELOCITY = 5.0f;
+	const float PLAYER_JUMP_VELOCITY = 4.0f;
 	const float PLAYER_AIR_STRAFE = 0.8f; // Movement scaler for acceleration in air
 	const float PLAYER_PUSH_FORCE = 0.3f;
 
@@ -66,7 +66,6 @@ namespace ecs
 		float capsuleHeight;
 		float height;
 
-		bool crouched = false;
 		bool onGround = false;
 		glm::vec3 velocity = glm::vec3(0);
 	};

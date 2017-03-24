@@ -77,15 +77,14 @@ namespace sp
 		 */
 		ecs::Entity::Id GetEntityId(const physx::PxActor &actor) const;
 
-		void MoveController(physx::PxController *controller, double dt, physx::PxVec3 displacement);
+		bool MoveController(physx::PxController *controller, double dt, physx::PxVec3 displacement);
 		void TeleportController(physx::PxController *controller, physx::PxExtendedVec3 position);
 
 		/**
 		 * height should not include the height of top and bottom
 		 * radiuses for capsule controllers
 		 */
-		void ResizeController(physx::PxController *controller,
-			const float height);
+		void ResizeController(physx::PxController *controller, const float height, bool fromTop);
 
 		void RemoveController(physx::PxController *controller);
 

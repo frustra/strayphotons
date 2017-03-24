@@ -35,30 +35,6 @@
 			}
 		},
 		{
-			"transform": {
-				"translate": [
-					0,
-					6,
-					-3
-				],
-				"rotate": [
-					-90,
-					1,
-					0,
-					0
-				],
-				"scale": [
-					15,
-					15,
-					1
-				]
-			},
-			"physics": {
-				"model": "occluder",
-				"dynamic": false
-			}
-		},
-		{
 			"_name": "sensor1_plate",
 			"renderable": "l-sensor-plate",
 			"transform": {
