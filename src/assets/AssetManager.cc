@@ -317,6 +317,14 @@ namespace sp
 							{
 								view->offset = MakeVec2(param.second);
 							}
+							else if (param.first == "clear")
+							{
+								view->clearColor = glm::vec4(MakeVec3(param.second), 1.0f);
+							}
+							else if (param.first == "sky")
+							{
+								view->skyIlluminance = param.second.get<double>();
+							}
 						}
 					}
 				}

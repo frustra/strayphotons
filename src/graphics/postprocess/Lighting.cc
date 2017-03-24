@@ -194,6 +194,7 @@ namespace sp
 			BindBuffer(voxelInfo, 2);
 
 			Bind(exposure, "exposure");
+			Bind(skyIlluminance, "skyIlluminance");
 
 			Bind(invProjMat, "invProjMat");
 			Bind(invViewMat, "invViewMat");
@@ -224,6 +225,7 @@ namespace sp
 		{
 			Set(invProjMat, view.invProjMat);
 			Set(invViewMat, view.invViewMat);
+			Set(skyIlluminance, view.skyIlluminance);
 		}
 
 		void SetMode(int newMode, int ssaoMode)
@@ -242,7 +244,7 @@ namespace sp
 		Uniform lightCount, mirrorCount;
 		UniformBuffer lightData, mirrorData, voxelInfo;
 		Uniform exposure, invViewMat, invProjMat, mode, ssaoEnabled;
-		Uniform diffuseDownsample;
+		Uniform diffuseDownsample, skyIlluminance;
 	};
 
 	IMPLEMENT_SHADER_TYPE(VoxelLightingFS, "voxel_lighting.frag", Fragment);

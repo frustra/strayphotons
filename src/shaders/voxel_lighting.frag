@@ -43,7 +43,8 @@ layout(binding = 2, std140) uniform GLVoxelInfo {
 ##import lib/mirror_scene_common
 
 uniform float exposure = 1.0;
-uniform float diffuseDownsample = 1;
+uniform float diffuseDownsample = 1.0;
+uniform float skyIlluminance = 1.0;
 
 ##import lib/util
 ##import voxel_shared
@@ -103,8 +104,8 @@ void main()
 	vec3 flatViewNormal = DecodeNormal(gb1.ba);
 	float metalness = gb2.a;
 
-	if (length(viewNormal) < 0.9) {
-		outFragColor.rgb = vec3(0);
+	if (gb2.rgb == vec3(0)) {
+		outFragColor.rgb = FastSRGBToLinear(gb0.rgb) * exposure * skyIlluminance;
 		return;
 	}
 

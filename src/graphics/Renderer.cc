@@ -429,6 +429,16 @@ namespace sp
 
 			ecs::View forwardPassView = view;
 			forwardPassView.offset = glm::ivec2();
+			forwardPassView.clearMode = 0;
+
+			glBindFramebuffer(GL_FRAMEBUFFER, fb0);
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			if (forwardPassView.clearColor != glm::vec4(0.0f, 0.0f, 0.0f, 1.0f))
+			{
+				glClearBufferfv(GL_COLOR, 0, glm::value_ptr(forwardPassView.clearColor));
+			}
 
 			mirrorSceneData.Bind(GL_SHADER_STORAGE_BUFFER, 1);
 
@@ -526,7 +536,6 @@ namespace sp
 						glEnable(GL_CULL_FACE);
 					}
 
-					forwardPassView.clearMode = 0;
 					sceneGS->SetRenderMirrors(true);
 				}
 
