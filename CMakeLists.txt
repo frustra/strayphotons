@@ -301,6 +301,11 @@ if (NOT WIN32)
 	target_link_libraries(${PROJECT_EXE} linenoise)
 endif()
 
+
+if (CMAKE_VERSION VERSION_GREATER 3.6)
+	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT sp)
+endif()
+
 ################################################
 # Build tests
 ################################################

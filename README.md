@@ -23,7 +23,7 @@ There might be some missing dependencies in this list, add any you find.
 - Linux: `make physx` (if not done already), `make` or `make unix-release`.
 
 - Windows: `make physx-windows-release` (if not done already), then `make windows-release`, then open build/sp.sln in Visual Studio.
-Set the startup project to `sp`. Set the target to `RelWithDebInfo` under normal usage. Press the play button to build and run.
+If using CMake <3.6, set the startup project to `sp`. Set the target to `RelWithDebInfo` under normal usage. Press the play button to build and run.
 To create a debug build, use `make windows` and set the target to `Debug`.
 
 ### Running
@@ -32,6 +32,15 @@ To create a debug build, use `make windows` and set the target to `Debug`.
   - On Mac, the `--basic-renderer` flag is required.
 
 - Windows: set command line arguments in Visual Studio via Debug->sp Properties->Debugging.
+
+### Assets
+
+When making changes to certain assets, build tools need to be run.
+These tools require installing node.
+
+- To compile a `.scene`, use `./sp-scenes.sh` in the assets folder.
+- To automatically compile scenes when the files change, `npm install -g nodemon` and run `make watch-scenes`.
+- To compile a model, use `./sp-convert.sh <path to obj>`.
 
 ### Audio
 
