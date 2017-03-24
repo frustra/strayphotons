@@ -435,41 +435,20 @@
 				"dynamic": true
 			}
 		},
+
+		<%- include('prefab/lightsensor',
 		{
-			"_name": "sensor1_plate",
-			"renderable": "l-sensor-plate",
-			"transform": {
-				"translate": [9, 1.2, 5],
-				"rotate": [-90, 0, 1, 0]
-			},
-			"physics": {
-				"model": "l-sensor-plate",
-				"dynamic": false
-			}
-		},
-		{
-			"_name": "sensor1",
-			"renderable": "l-sensor",
-			"transform": {
-				"translate": [8.975, 1.2, 5],
-				"rotate": [90, 0, 1, 0]
-			},
-			"physics": {
-				"model": "l-sensor",
-				"dynamic": false
-			},
-			"lightsensor": {
-				"translate": [0, 0, -1],
-				"direction": [0, 0, -1],
-				"triggers": [
-					{
-						"illuminance": [0.5, 0.2, 0.2],
-						"oncmd": "g.CloseDoor door1; g.CloseDoor airlock2-in",
-						"offcmd": "g.OpenDoor door1; g.OpenDoor airlock2-in"
-					}
-				]
-			}
-		},
+			name: "sensor1",
+			translate: [9, 1.2, 5],
+			rotate: [-90, 0, 1, 0],
+			triggers: [
+				{
+					illuminance: [0.5, 0.2, 0.2],
+					oncmd: "g.CloseDoor door1; g.CloseDoor airlock2-in",
+					offcmd: "g.OpenDoor door1; g.OpenDoor airlock2-in"
+				}
+			]
+		}) %>,
 		{
 			"_name": "player",
 			"view": {

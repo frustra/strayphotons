@@ -1065,40 +1065,21 @@
 			}
 		},
 		{
-			"_name": "sensor1_plate",
-			"renderable": "l-sensor-plate",
+			"_name": "sensor1",
+			"renderable": {
+				"model": "l-sensor"
+			},
 			"transform": {
-				"translate": [
-					9,
-					1.2,
-					5
-				],
 				"rotate": [
 					-90,
 					0,
 					1,
 					0
-				]
-			},
-			"physics": {
-				"model": "l-sensor-plate",
-				"dynamic": false
-			}
-		},
-		{
-			"_name": "sensor1",
-			"renderable": "l-sensor",
-			"transform": {
+				],
 				"translate": [
-					8.975,
+					9,
 					1.2,
 					5
-				],
-				"rotate": [
-					90,
-					0,
-					1,
-					0
 				]
 			},
 			"physics": {
@@ -1109,7 +1090,7 @@
 				"translate": [
 					0,
 					0,
-					-1
+					-0.1
 				],
 				"direction": [
 					0,
@@ -1127,6 +1108,22 @@
 						"offcmd": "g.OpenDoor door1; g.OpenDoor airlock2-in"
 					}
 				]
+			}
+		},
+		{
+			"_name": "sensor1_plate",
+			"renderable": "l-sensor-plate",
+			"transform": {
+				"parent": "sensor1",
+				"translate": [
+					0,
+					0,
+					0
+				]
+			},
+			"physics": {
+				"model": "l-sensor-plate",
+				"dynamic": false
 			}
 		},
 		{

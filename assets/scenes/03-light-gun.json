@@ -531,34 +531,21 @@
 			}
 		},
 		{
-			"_name": "sensor2_plate",
-			"renderable": "l-sensor-plate",
+			"_name": "sensor2",
+			"renderable": {
+				"model": "l-sensor"
+			},
 			"transform": {
-				"translate": [
-					6,
-					1.05,
-					3
-				],
 				"rotate": [
-					180,
+					0,
 					0,
 					1,
 					0
-				]
-			},
-			"physics": {
-				"model": "l-sensor-plate",
-				"dynamic": false
-			}
-		},
-		{
-			"_name": "sensor2",
-			"renderable": "l-sensor",
-			"transform": {
+				],
 				"translate": [
 					6,
 					1.05,
-					2.975
+					2.98
 				]
 			},
 			"physics": {
@@ -569,7 +556,7 @@
 				"translate": [
 					0,
 					0,
-					-1
+					-0.1
 				],
 				"direction": [
 					0,
@@ -590,19 +577,14 @@
 			}
 		},
 		{
-			"_name": "sensor1_plate",
+			"_name": "sensor2_plate",
 			"renderable": "l-sensor-plate",
 			"transform": {
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				],
+				"parent": "sensor2",
 				"translate": [
-					6,
-					2.5,
-					7.025
+					0,
+					0,
+					0
 				]
 			},
 			"physics": {
@@ -612,7 +594,9 @@
 		},
 		{
 			"_name": "sensor1",
-			"renderable": "l-sensor",
+			"renderable": {
+				"model": "l-sensor"
+			},
 			"transform": {
 				"rotate": [
 					180,
@@ -634,7 +618,7 @@
 				"translate": [
 					0,
 					0,
-					-1
+					-0.1
 				],
 				"direction": [
 					0,
@@ -652,6 +636,22 @@
 						"offcmd": "g.CloseDoor door1"
 					}
 				]
+			}
+		},
+		{
+			"_name": "sensor1_plate",
+			"renderable": "l-sensor-plate",
+			"transform": {
+				"parent": "sensor1",
+				"translate": [
+					0,
+					0,
+					0
+				]
+			},
+			"physics": {
+				"model": "l-sensor-plate",
+				"dynamic": false
 			}
 		},
 		{
