@@ -67,6 +67,17 @@
 			}
 		},
 		{
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 10, 10],
+				"translate": [0, 15, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
 			"_name": "player",
 			"view": {
 				"clip": [0.1, 256]

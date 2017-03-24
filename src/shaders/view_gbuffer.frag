@@ -61,8 +61,6 @@ void main()
 		vec4 sampleValue = ConeTraceGrid(float(mipLevel) / 50.0, rayPos.xyz, rayDir.xyz, rayDir.xyz, gl_FragCoord.xy);
 		if (mode == 1) { // Radiance
 			outFragColor.rgb = sampleValue.rgb;
-		} else if (mode == 2) { // Position
-			outFragColor.rgb = rayPos.xyz + rayDir.xyz * sampleValue.a;
 		}
 	}
 }

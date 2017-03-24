@@ -25,12 +25,13 @@ vec4 SampleVoxelLod(vec3 position, float level, int map)
 
 int GetMapForPoint(vec3 position)
 {
+	int j = 0;
 	for (int i = 0; i < MAX_VOXEL_AREAS; i++) {
 		if (position == clamp(position, voxelInfo.areas[i].areaMin, voxelInfo.areas[i].areaMax)) {
-			return i;
+			j = i;
 		}
 	}
-	return 0;
+	return j;
 }
 
 vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, vec2 fragCoord)
@@ -38,12 +39,9 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 	vec3 voxelPos = (rayPos.xyz - voxelInfo.center) / voxelInfo.size + VOXEL_GRID_SIZE * 0.5;
 
 	float dist = InterleavedGradientNoise(fragCoord);
-	float maxDist = VOXEL_GRID_SIZE * 1.5;
-
 	vec4 result = vec4(0);
 
-	while (dist < maxDist && result.a < 0.9999)
-	{
+	for (int i = 0; i < VOXEL_GRID_SIZE; i++) {
 		float size = max(1.0, ratio * dist);
 		float planeDist = dot(surfaceNormal, rayDir * dist) - 1.75;
 		// If the sample intersects the surface, move it over
@@ -56,11 +54,11 @@ vec4 ConeTraceGrid(float ratio, vec3 rayPos, vec3 rayDir, vec3 surfaceNormal, ve
 		value.a = smoothstep(0.0, 0.4, value.a);
 		result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
+		if (result.a > 0.999) break;
 		dist += size;
 	}
 
-	if (dist >= maxDist) dist = -1;
-	return vec4(result.rgb, dist * voxelInfo.size);
+	return result;
 }
 
 vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir)
@@ -76,7 +74,6 @@ vec4 ConeTraceGridDiffuse(vec3 rayPos, vec3 rayDir)
 		vec4 value = SampleVoxelLod(voxelPos + rayDir * dist, float(level), GetMapForPoint(rayPos));
 		result += vec4(value.rgb, value.a) * (1.0 - result.a) * (1 - step(0, -value.a));
 
-		if (result.a > 0.999) break;
 		dist *= 2.0;
 	}
 
