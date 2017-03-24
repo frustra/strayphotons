@@ -170,7 +170,7 @@ void main()
 	vec3 directLight = DirectShading(worldPosition, -rayDir, baseColor, worldNormal, flatWorldNormal, roughness, metalness);
 
 	vec3 indirectLight = indirectDiffuse * directDiffuseColor + indirectSpecular;
-	vec3 totalLight = directLight + indirectLight;
+	vec3 totalLight = emissive + directLight + indirectLight;
 
 	if (mode == 0) { // Direct only
 		outFragColor = vec4(directLight, 1.0);

@@ -243,8 +243,36 @@ namespace sp
 
 				if (comp.first == "renderable")
 				{
-					auto model = LoadModel(comp.second.get<string>());
-					entity.Assign<ecs::Renderable>(model);
+					auto r = entity.Assign<ecs::Renderable>();
+
+					if (comp.second.is<string>())
+					{
+						r->model = LoadModel(comp.second.get<string>());
+					}
+					else
+					{
+						for (auto param : comp.second.get<picojson::object>())
+						{
+							if (param.first == "emissive")
+							{
+								r->emissive = param.second.get<double>();
+							}
+							else if (param.first == "light")
+							{
+								r->voxelEmissive = param.second.get<double>();
+							}
+							else if (param.first == "model")
+							{
+								r->model = LoadModel(param.second.get<string>());
+							}
+						}
+					}
+					Assert(!!r->model, "Renderable must have a model");
+
+					if (r->emissive == 0.0f && r->voxelEmissive > 0.0f)
+					{
+						r->emissive = r->voxelEmissive;
+					}
 				}
 				else if (comp.first == "transform")
 				{

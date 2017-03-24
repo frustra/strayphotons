@@ -28,7 +28,13 @@ namespace sp
 
 	SceneFS::SceneFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 	{
+		Bind(emissive, "emissive");
 		Bind(mirrorId, "drawMirrorId");
+	}
+
+	void SceneFS::SetEmissive(float scale)
+	{
+		Set(emissive, scale);
 	}
 
 	void SceneFS::SetMirrorId(int newId)

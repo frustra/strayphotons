@@ -44,10 +44,11 @@ namespace sp
 		SHADER_TYPE(SceneFS)
 		SceneFS(shared_ptr<ShaderCompileOutput> compileOutput);
 
+		void SetEmissive(float scale);
 		void SetMirrorId(int id);
 
 	private:
-		Uniform mirrorId;
+		Uniform emissive, mirrorId;
 	};
 
 	class MirrorSceneCS : public Shader

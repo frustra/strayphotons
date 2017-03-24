@@ -1197,12 +1197,13 @@
 			}
 		},
 		{
+			"_name": "light1",
 			"renderable": "spotlight-01",
 			"light": {
 				"tint": [
 					1,
-					0.5,
-					0.5
+					0.8,
+					0.8
 				],
 				"intensity": 300,
 				"spotAngle": 30
@@ -1236,6 +1237,25 @@
 					0.15,
 					3.35,
 					4
+				]
+			}
+		},
+		{
+			"renderable": {
+				"model": "box",
+				"emissive": 30
+			},
+			"transform": {
+				"parent": "light1",
+				"translate": [
+					0,
+					0,
+					-0.06
+				],
+				"scale": [
+					0.1,
+					0.1,
+					0.03
 				]
 			}
 		}

@@ -571,6 +571,9 @@ namespace sp
 						glStencilMask(thisStencilBit);
 						sceneFS->SetMirrorId(-1);
 					}
+
+					auto renderable = ent.Get<ecs::Renderable>();
+					sceneFS->SetEmissive(renderable->emissive);
 				});
 			}
 		}

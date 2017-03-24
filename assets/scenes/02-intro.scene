@@ -5,13 +5,13 @@
 	"entities": [
 		<%- include('prefab/airlock', {
 			name: 'airlock1',
-			"translate": [3.1, 0.0, 2.2],
-			"rotate": [180, 0, 1, 0]
+			translate: [3.1, 0.0, 2.2],
+			rotate: [180, 0, 1, 0]
 		}) %>,
 		<%- include('prefab/airlock', {
 			name: 'airlock2',
-			"translate": [12, 0.0, 2.2],
-			"rotate": [180, 0, 1, 0]
+			translate: [12, 0.0, 2.2],
+			rotate: [180, 0, 1, 0]
 		}) %>,
 		{
 			"triggerarea": {
@@ -501,24 +501,13 @@
 				"max": [10, 4, 10]
 			}
 		},
-		{
-			"renderable": "spotlight-01",
-			"light": {
-				"tint": [1, 0.5, 0.5],
-				"intensity": 300,
-				"spotAngle": 30
-			},
-			"view": {
-				"extents": [2048, 2048],
-				"clip": [0.1, 70]
-			},
-			"transform": {
-				"rotate": [
-					[-90, 0, 1, 0],
-					[-30, 1, 0, 0]
-				],
-				"translate": [0.15, 3.35, 4]
-			}
-		}
+		<%- include('prefab/spotlight', {
+			name: 'light1',
+			tint: [1, 0.8, 0.8],
+			intensity: 300,
+			spotAngle: 30,
+			translate: [0.15, 3.35, 4],
+			rotate: [[-90, 0, 1, 0], [-30, 1, 0, 0]]
+		}) %>
 	]
 }
