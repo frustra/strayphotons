@@ -37,8 +37,7 @@
 		{
 			"_name": "sensor1",
 			"renderable": {
-				"model": "l-sensor",
-				"voxelEmissive": 10
+				"model": "l-sensor"
 			},
 			"transform": {
 				"rotate": [
