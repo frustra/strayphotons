@@ -41,6 +41,7 @@ namespace sp
 		entityManager.RegisterComponentType<ecs::TriggerArea>();
 		entityManager.RegisterComponentType<ecs::View>();
 		entityManager.RegisterComponentType<ecs::VoxelInfo>();
+		entityManager.RegisterComponentType<ecs::VoxelArea>();
 		entityManager.RegisterComponentType<ecs::LightGun>();
 		entityManager.RegisterComponentType<ecs::SlideDoor>();
 		entityManager.RegisterComponentType<ecs::Animation>();

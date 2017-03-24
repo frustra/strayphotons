@@ -1,0 +1,69 @@
+{
+	"autoexec": [
+		"r.MirrorRecursion 2",
+		"r.Flashlight 100"
+	],
+	"entities": [
+		{
+			"renderable": "ground-3x3",
+			"transform": {
+				"translate": [-500, 0, -500],
+				"scale": [1000, 1, 1000]
+			},
+			"physics": {
+				"model": "ground-3x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"translate": [0, 2, -20],
+				"scale": [15, 1, 15],
+				"rotate": [-10, 1, 0, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"intensity": 300,
+				"spotAngle": 30
+			},
+			"view": {
+				"extents": [2048, 2048],
+				"clip": [0.1, 50]
+			},
+			"transform": {
+				"translate": [0, 1, 0]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 1, 1],
+				"illuminance": 1,
+				"spotAngle": 80
+			},
+			"view": {
+				"extents": [2048, 2048],
+				"clip": [0.1, 500]
+			},
+			"transform": {
+				"translate": [0, 50, 0],
+				"rotate": [-45, 1, 0, 0]
+			}
+		},
+		{
+			"_name": "player",
+			"view": {
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"translate": [0, 2, 0]
+			}
+		}
+	]
+}

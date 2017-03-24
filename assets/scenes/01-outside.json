@@ -403,6 +403,24 @@
 			}
 		},
 		{
+			"transform": {
+				"scale": [
+					8,
+					2,
+					1
+				],
+				"translate": [
+					-1,
+					5,
+					2
+				]
+			},
+			"physics": {
+				"model": "occluder",
+				"dynamic": false
+			}
+		},
+		{
 			"_name": "player",
 			"view": {
 				"clip": [

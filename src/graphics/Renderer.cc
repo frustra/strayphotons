@@ -176,9 +176,7 @@ namespace sp
 			mirror->mirrorId = mirrorCount++;
 		}
 
-		if (lightCount == 0) return;
-
-		RenderTargetDesc shadowDesc(PF_R32F, renderTargetSize);
+		RenderTargetDesc shadowDesc(PF_R32F, glm::max(glm::ivec2(1), renderTargetSize));
 		if (!shadowMap || shadowMap->GetDesc() != shadowDesc)
 		{
 			shadowMap = RTPool->Get(shadowDesc);
@@ -202,6 +200,8 @@ namespace sp
 			mirrorVisData.Create()
 			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * MAX_MIRRORS + sizeof(GLuint) * 8 + sizeof(glm::mat4) * 6) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
 		}
+
+		if (lightCount == 0) return;
 
 		if (CVarEnableShadows.Get())
 		{
@@ -363,7 +363,7 @@ namespace sp
 		voxelData.radiance->GetTexture().Bind(0);
 		voxelData.radianceMips->GetTexture().Bind(1);
 		shadowMap->GetTexture().Bind(2);
-		mirrorShadowMap->GetTexture().Bind(3);
+		if (mirrorShadowMap) mirrorShadowMap->GetTexture().Bind(3);
 
 		ShaderControl->BindPipeline<LightSensorUpdateCS>(GlobalShaders);
 		glDispatchCompute(1, 1, 1);

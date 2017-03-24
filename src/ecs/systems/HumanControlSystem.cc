@@ -8,6 +8,7 @@
 
 #include "physx/PhysxUtils.hh"
 
+#include "core/Logging.hh"
 #include "Common.hh"
 #include "core/CVar.hh"
 #include "core/Logging.hh"
@@ -156,9 +157,7 @@ namespace ecs
 				ResizeEntity(entity, newHeight, !controller->onGround);
 			}
 
-			auto velocity = CalculatePlayerVelocity(entity,
-				dtSinceLastFrame, inputMovement, jumping, sprinting,
-				crouching);
+			auto velocity = CalculatePlayerVelocity(entity, dtSinceLastFrame, inputMovement, jumping, sprinting, crouching);
 			MoveEntity(entity, dtSinceLastFrame, velocity);
 		}
 
@@ -323,7 +322,7 @@ namespace ecs
 				controller->onGround = physics->MoveController(controller->pxController, dtSinceLastFrame, GlmVec3ToPxVec3(disp));
 			}
 			auto newPosition = PxExtendedVec3ToGlmVec3P(controller->pxController->getPosition());
-			// Don't accelerate from physics glitches
+			// Don't accelerate more than our current velocity
 			newPosition = glm::min(prevPosition + glm::abs(disp), newPosition);
 			newPosition = glm::max(prevPosition - glm::abs(disp), newPosition);
 
@@ -352,20 +351,11 @@ namespace ecs
 			physx::PxOverlapBuffer hit;
 			physx::PxRigidDynamic* actor = pxController->getActor();
 
-			// Shift actor position slightly upwards to prevent ground contact
-			// and head clipping into things
-			physx::PxVec3 translation = physx::PxVec3(0.f,0.f,0.f);
-
-			bool valid = !physics->OverlapQuery(actor, translation, hit);
+			bool valid = !physics->OverlapQuery(actor, physx::PxVec3(0), hit);
 
 			if (!valid)
 			{
 				physics->ResizeController(pxController, oldHeight, fromTop);
-			}
-			else if (!fromTop)
-			{
-				// Offset the capsule position so the camera is at the top
-				transform->Translate(glm::vec3(0, height - oldHeight, 0));
 			}
 			return valid;
 		}
