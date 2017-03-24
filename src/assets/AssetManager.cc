@@ -387,6 +387,12 @@ namespace sp
 						}
 					}
 				}
+				else if (comp.first == "bulb")
+				{
+					auto lightEnt = scene->FindEntity(comp.second.get<string>());
+					auto light = lightEnt.Get<ecs::Light>();
+					light->bulb = entity;
+				}
 				else if (comp.first == "lightsensor")
 				{
 					auto sensor = entity.Assign<ecs::LightSensor>();
@@ -476,8 +482,8 @@ namespace sp
 						bool isRight = (param.first == "right");
 						if (isLeft || isRight)
 						{
-							ecs::Entity panel = scene->FindEntity(
-								param.second.get<string>());
+							ecs::Entity panel = scene->FindEntity(param.second.get<string>());
+
 							if (panel.Has<ecs::Animation>())
 							{
 								throw std::runtime_error(

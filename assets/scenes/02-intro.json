@@ -1241,10 +1241,8 @@
 			}
 		},
 		{
-			"renderable": {
-				"model": "box",
-				"emissive": 30
-			},
+			"renderable": "box",
+			"bulb": "light1",
 			"transform": {
 				"parent": "light1",
 				"translate": [

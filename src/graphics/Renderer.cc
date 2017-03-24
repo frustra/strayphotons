@@ -150,6 +150,13 @@ namespace sp
 		for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
 		{
 			auto light = entity.Get<ecs::Light>();
+
+			if (light->bulb.Valid())
+			{
+				auto bulb = light->bulb.Get<ecs::Renderable>();
+				bulb->emissive = light->on ? light->intensity * 0.1f : 0.0f;
+			}
+
 			if (!light->on)
 			{
 				continue;

@@ -2,6 +2,7 @@
 	"_name": <%= name %>,
 	"renderable": "spotlight-01",
 	"light": {
+		<% if (locals.on != null) { %>"on": <%= on %>,<% } %>
 		"tint": <%= tint %>,
 		"intensity": <%= intensity %>,
 		"spotAngle": <%= spotAngle %> 
@@ -10,16 +11,20 @@
 		"extents": [2048, 2048],
 		"clip": [0.1, 70]
 	},
+	<% if (locals.physics) { %>
+	"physics": {
+		"model": "spotlight-01",
+		"dynamic": false
+	},
+	<% } %>
 	"transform": {
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
 		"translate": <%= translate %>
 	}
 },
 {
-	"renderable": {
-		"model": "box",
-		"emissive": <%= intensity / 10 %>
-	},
+	"renderable": "box",
+	"bulb": <%= name %>,
 	"transform": {
 		"parent": <%= name %>,
 		"translate": [0, 0, -0.06],

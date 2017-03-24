@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include <Ecs.hh>
+
 namespace ecs
 {
 	struct Light
@@ -12,5 +14,6 @@ namespace ecs
 		int gelId;
 		int lightId;
 		bool on = true;
+		ecs::Entity bulb;
 	};
 }
