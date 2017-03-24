@@ -1,0 +1,119 @@
+{
+	"autoexec": [
+		"r.MirrorRecursion 1",
+		"r.FieldOfView 30",
+		"p.NoClip 1"
+	],
+	"unloadexec": [
+		"r.FieldOfView 60",
+		"p.NoClip 0"
+	],
+	"entities": [
+		{
+			"renderable": "cornell-box-3",
+			"transform": {
+				"scale": [2, 2, 2]
+			}
+		},
+		{
+			"renderable": "mirror",
+			"mirror": [1, 1],
+			"transform": {
+				"translate": [-0.67, 2.40, -0.58],
+				"scale": [1.2, 1.215, 1],
+				"rotate": [
+					[17.5, 0, 1, 0],
+					[90, 1, 0, 0]
+				]
+			}
+		},
+		{
+			"renderable": "mirror",
+			"mirror": [1, 1],
+			"transform": {
+				"translate": [-0.8527, 1.20, -1.1594],
+				"scale": [1.2, 2.4, 1],
+				"rotate": [
+					[17.5, 0, 1, 0]
+				]
+			}
+		},
+		{
+			"renderable": "mirror",
+			"mirror": [1, 1],
+			"transform": {
+				"translate": [-0.0978, 1.20, -0.7604],
+				"scale": [1.215, 2.4, 1],
+				"rotate": [
+					[-72.5, 0, 1, 0]
+				]
+			}
+		},
+		{
+			"renderable": "mirror",
+			"mirror": [1, 1],
+			"transform": {
+				"translate": [-1.2422, 1.20, -0.3996],
+				"scale": [1.215, 2.4, 1],
+				"rotate": [
+					[107.5, 0, 1, 0]
+				]
+			}
+		},
+		{
+			"renderable": "mirror",
+			"mirror": [1, 1],
+			"transform": {
+				"translate": [-0.4873, 1.20, -0.0006],
+				"scale": [1.2, 2.4, 1],
+				"rotate": [
+					[-162.5, 0, 1, 0]
+				]
+			}
+		},
+		{
+			"_name": "player",
+			"view": {
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"translate": [-0.01, 2, 9.6],
+				"rotate": [0, 0, 1, 0]
+			},
+			"voxels": {
+				"min": [-2, 0, -2.1],
+				"max": [2, 4, 2]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 0.7, 0.235],
+				"intensity": 100,
+				"spotAngle": 85
+			},
+			"view": {
+				"extents": [2048, 2048],
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"translate": [0, 4.2, 0],
+				"rotate": [-90, 1, 0, 0]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 0.7, 0.235],
+				"intensity": 100,
+				"spotAngle": 30
+			},
+			"view": {
+				"extents": [1024, 1024],
+				"clip": [0.1, 256]
+			},
+			"transform": {
+				"translate": [0, 3.0, 0],
+				"rotate": [90, 1, 0, 0]
+			}
+		}
+	]
+}
