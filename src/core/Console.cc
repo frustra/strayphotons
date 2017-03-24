@@ -13,6 +13,7 @@
 #include <sstream>
 #include <boost/algorithm/string.hpp>
 #include <mutex>
+#include <chrono>
 
 namespace sp
 {
@@ -31,6 +32,13 @@ namespace sp
 			GConsoleManager.AddLog(lvl, line);
 			mut.unlock();
 		}
+	}
+
+	static uint64 NowMonotonicMs()
+	{
+		auto now = std::chrono::steady_clock::now();
+		auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+		return now_ms.time_since_epoch().count();
 	}
 
 	CVarBase::CVarBase(const string &name, const string &description)
@@ -134,12 +142,17 @@ namespace sp
 			line->handled.notify_all();
 		}
 
-		for (auto &line : queuedCommands)
-		{
-			ParseAndExecute(line, false);
-		}
+		uint64 now = NowMonotonicMs();
 
-		queuedCommands.clear();
+		while (!queuedCommands.empty())
+		{
+			auto top = queuedCommands.top();
+			if (top.first > now)
+				break;
+
+			queuedCommands.pop();
+			ParseAndExecute(top.second, false);
+		}
 	}
 
 	void ConsoleManager::ParseAndExecute(const string &line, bool saveHistory)
@@ -150,24 +163,33 @@ namespace sp
 		if (saveHistory && (history.size() == 0 || history[history.size() - 1] != line))
 			history.push_back(line);
 
-		std::stringstream stream(line);
-		string varName, value;
-		stream >> varName;
-		getline(stream, value);
+		vector<string> cmds;
+		boost::split(cmds, line, boost::is_any_of(";"));
 
-		auto cvarit = cvars.find(boost::algorithm::to_lower_copy(varName));
+		for (auto &cmd : cmds)
+		{
+			std::stringstream stream(cmd);
+			string varName, value;
+			stream >> varName;
+			getline(stream, value);
+			boost::trim(value);
+			Execute(varName, value);
+		}
+	}
+
+	void ConsoleManager::Execute(const string &cmd, const string &args)
+	{
+		auto cvarit = cvars.find(boost::algorithm::to_lower_copy(cmd));
 		if (cvarit != cvars.end())
 		{
-			boost::trim(value);
-
 			auto cvar = cvarit->second;
-			cvar->SetFromString(value);
+			cvar->SetFromString(args);
 
 			if (cvar->IsValueType())
 			{
 				logging::ConsoleWrite(logging::Level::Log, " > %s = %s", cvar->GetName(), cvar->StringValue());
 
-				if (value.length() == 0)
+				if (args.length() == 0)
 				{
 					logging::ConsoleWrite(logging::Level::Log, " >   %s", cvar->GetDescription());
 				}
@@ -175,13 +197,13 @@ namespace sp
 		}
 		else
 		{
-			logging::ConsoleWrite(logging::Level::Log, " > '%s' undefined", varName);
+			logging::ConsoleWrite(logging::Level::Log, " > '%s' undefined", cmd);
 		}
 	}
 
-	void ConsoleManager::QueueParseAndExecute(const string &line)
+	void ConsoleManager::QueueParseAndExecute(const string &line, uint64 dt)
 	{
-		queuedCommands.push_back(line);
+		queuedCommands.push({NowMonotonicMs() + dt, line});
 	}
 
 	string ConsoleManager::AutoComplete(const string &input)

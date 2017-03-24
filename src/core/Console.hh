@@ -46,7 +46,8 @@ namespace sp
 		}
 
 		void ParseAndExecute(const string &line, bool saveHistory = false);
-		void QueueParseAndExecute(const string &line);
+		void Execute(const string &cmd, const string &args);
+		void QueueParseAndExecute(const string &line, uint64 dt = 0);
 		string AutoComplete(const string &input);
 		vector<string> AllCompletions(const string &input);
 
@@ -61,7 +62,7 @@ namespace sp
 		std::mutex inputLock;
 		std::thread inputThread;
 
-		vector<string> queuedCommands;
+		std::priority_queue<std::pair<uint64 ,string>> queuedCommands;
 		vector<ConsoleLine> outputLines;
 		vector<string> history;
 	};

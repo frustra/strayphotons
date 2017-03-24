@@ -43,6 +43,38 @@ namespace sp
 	};
 
 	template <>
+	class CFunc<string> : public CVarBase
+	{
+	public:
+		typedef std::function<void(string)> Callback;
+
+		CFunc(const string &name, const string &description, Callback callback)
+			: CVarBase(name, description), callback(callback) { }
+
+		CFunc(const string &name, Callback callback) : CFunc(name, "", callback) { }
+
+		virtual ~CFunc() { };
+
+		string StringValue()
+		{
+			return "CFunc:" + GetName();
+		}
+
+		void SetFromString(const string &newValue)
+		{
+			callback(newValue);
+		}
+
+		bool IsValueType()
+		{
+			return false;
+		}
+
+	private:
+		Callback callback;
+	};
+
+	template <>
 	class CFunc<void> : public CVarBase
 	{
 	public:

@@ -3,6 +3,8 @@
 #include "Console.hh"
 #include "Logging.hh"
 
+#include <sstream>
+
 namespace sp
 {
 	CFunc<void> CFuncList("list", "Lists all CVar names, values, and descriptions", []()
@@ -25,5 +27,16 @@ namespace sp
 				logging::ConsoleWrite(logging::Level::Log, " >   %s", desc);
 			}
 		}
+	});
+
+	CFunc<string> CFuncWait("wait", "Queue command for later (wait <ms> <command>)", [](string args)
+	{
+		std::stringstream stream(args);
+		uint64 dt;
+		stream >> dt;
+
+		string cmd;
+		getline(stream, cmd);
+		GConsoleManager.QueueParseAndExecute(cmd, dt);
 	});
 }
