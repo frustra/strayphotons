@@ -58,7 +58,7 @@ namespace sp
 		}
 
 		auto mipSize = unpackedSize / 2;
-		mipSize.x *= MAX_VOXEL_AREAS + 1;
+		mipSize.x *= MAX_VOXEL_AREAS;
 
 		RenderTargetDesc radianceMipsDesc(PF_RGBA16, mipSize);
 		radianceMipsDesc.levels = VoxelMipLevels - 1;

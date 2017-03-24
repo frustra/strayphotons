@@ -7,15 +7,18 @@ const float InvVoxelGridSize = 1.0 / VOXEL_GRID_SIZE;
 
 vec4 SampleVoxelLod(vec3 position, float level, int map)
 {
+	vec3 scale = InvVoxelGridSize / vec3(MAX_VOXEL_AREAS, 1, 1);
+	vec3 mipCoord = position * scale;
+	vec3 mipDelta = vec3(VOXEL_GRID_SIZE, 0, 0) * scale;
+
 	vec4 result;
 	if (level >= 1) {
-		vec3 scale = InvVoxelGridSize / vec3(MAX_VOXEL_AREAS + 1, 1, 1);
-		vec3 mipCoord = position * scale;
-		vec3 mipDelta = vec3(VOXEL_GRID_SIZE, 0, 0) * scale;
-
 		result = textureLod(voxelRadianceMips, mipCoord + mipDelta * map, level - 1);
 	} else {
-		result = textureLod(voxelRadiance, position * InvVoxelGridSize, level);
+		// TODO(xthexder): Evauluate if this is worth the extra lookup
+		vec4 a = textureLod(voxelRadiance, position * InvVoxelGridSize, 0);
+		vec4 b = textureLod(voxelRadianceMips, mipCoord + mipDelta * map, 0);
+		result = mix(a, b, level);
 	}
 	return result * vec4(vec3(VoxelFixedPointExposure), 1.0);
 }
@@ -24,7 +27,7 @@ int GetMapForPoint(vec3 position)
 {
 	for (int i = 0; i < MAX_VOXEL_AREAS; i++) {
 		if (position == clamp(position, voxelInfo.areas[i].areaMin, voxelInfo.areas[i].areaMax)) {
-			return i + 1;
+			return i;
 		}
 	}
 	return 0;
