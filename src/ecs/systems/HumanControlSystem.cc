@@ -150,7 +150,7 @@ namespace ecs
 
 			auto currentHeight = physics->GetCapsuleHeight(controller->pxController);
 			auto targetHeight = crouching ? ecs::PLAYER_CAPSULE_CROUCH_HEIGHT : ecs::PLAYER_CAPSULE_HEIGHT;
-			if (abs(targetHeight - currentHeight) > 0.1)
+			if (fabs(targetHeight - currentHeight) > 0.1)
 			{
 				// If player is in the air, resize from the top to implement crouch-jumping.
 				auto newHeight = currentHeight + (targetHeight - currentHeight) * (controller->onGround ? 0.1 : 1.0);

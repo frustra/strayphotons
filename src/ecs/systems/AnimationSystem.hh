@@ -14,7 +14,7 @@ namespace ecs
 	class AnimationSystem
 	{
 	public:
-		AnimationSystem(EntityManager &entities, sp::PhysxManager &physics);
+		AnimationSystem(EntityManager &entities);
 
 		~AnimationSystem();
 
@@ -23,6 +23,5 @@ namespace ecs
 	private:
 
 		EntityManager &entities;
-		sp::PhysxManager &physics;
 	};
 }

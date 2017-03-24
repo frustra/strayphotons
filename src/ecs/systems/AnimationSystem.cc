@@ -11,9 +11,8 @@
 namespace ecs
 {
 	AnimationSystem::AnimationSystem(
-		ecs::EntityManager &entities,
-		sp::PhysxManager &physics)
-		: entities(entities), physics(physics)
+		ecs::EntityManager &entities)
+		: entities(entities)
 	{
 	}
 
