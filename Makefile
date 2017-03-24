@@ -131,3 +131,6 @@ physx-windows-debug:
 	mkdir -p vendor/lib/physx build
 	cp ext/physx/PhysXSDK/Lib/vc14win32/*.lib vendor/lib/physx
 	cp ext/physx/PhysXSDK/Bin/vc14win32/*.dll build
+
+watch-scenes:
+	cd assets; nodemon --watch scenes -e ejs,scene --exec bash sp-scenes.sh
