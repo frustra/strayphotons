@@ -7,7 +7,7 @@ global.offset = function(vec, d) {
 	return vec.map(function(v, i) { return v + d[i]; });
 }
 
-for (var f of files) {
+files.forEach(function(f) {
   if (f.endsWith('.scene')) {
     var name = f.slice(0, -6);
 
@@ -37,4 +37,4 @@ for (var f of files) {
       });
     });
   }
-}
+});

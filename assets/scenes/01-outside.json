@@ -245,6 +245,41 @@
 			}
 		},
 		{
+			"light": {
+				"tint": [
+					0.5,
+					0.5,
+					1
+				],
+				"intensity": 10,
+				"spotAngle": 60
+			},
+			"view": {
+				"extents": [
+					2048,
+					2048
+				],
+				"clip": [
+					0.1,
+					70
+				]
+			},
+			"transform": {
+				"parent": "airlock1",
+				"rotate": [
+					-90,
+					1,
+					0,
+					0
+				],
+				"translate": [
+					1.4,
+					2.5,
+					0.8
+				]
+			}
+		},
+		{
 			"_comment": "airlock",
 			"voxels": {
 				"min": [
@@ -516,40 +551,6 @@
 					1,
 					0,
 					0
-				]
-			}
-		},
-		{
-			"light": {
-				"tint": [
-					0.5,
-					0.5,
-					1
-				],
-				"intensity": 10,
-				"spotAngle": 60
-			},
-			"view": {
-				"extents": [
-					2048,
-					2048
-				],
-				"clip": [
-					0.1,
-					70
-				]
-			},
-			"transform": {
-				"rotate": [
-					-90,
-					1,
-					0,
-					0
-				],
-				"translate": [
-					-6.7,
-					3.4,
-					-7
 				]
 			}
 		},

@@ -204,21 +204,6 @@
 			}
 		},
 		{
-			"light": {
-				"tint": [0.5, 0.5, 1],
-				"intensity": 10,
-				"spotAngle": 60
-			},
-			"view": {
-				"extents": [2048, 2048],
-				"clip": [0.1, 70]
-			},
-			"transform": {
-				"rotate": [-90, 1, 0, 0],
-				"translate": [-6.7, 3.4, -7]
-			}
-		},
-		{
 			"triggerarea": {
 				"min": [-7, 0, -8],
 				"max": [-5.5, 3.5, -6],
