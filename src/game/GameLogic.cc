@@ -33,7 +33,7 @@ namespace sp
 		game(game),
 		input(&game->input),
 		humanControlSystem(&game->entityManager, &game->input, &game->physics),
-		lightGunSystem(&game->entityManager, &game->input, &game->physics),
+		lightGunSystem(&game->entityManager, &game->input, &game->physics, this),
 		sunPos(0)
 	{
 		funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
@@ -335,6 +335,11 @@ namespace sp
 
 			Logf("Light sensor %s: %f %f %f", name, i.r, i.g, i.b);
 		}
+	}
+
+	ecs::Entity GameLogic::GetPlayer()
+	{
+		return scene->FindEntity("player");
 	}
 
 	void GameLogic::OpenBarrier(string name)

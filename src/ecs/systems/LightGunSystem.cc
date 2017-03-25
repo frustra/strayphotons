@@ -2,11 +2,13 @@
 #include "ecs/components/View.hh"
 #include "ecs/components/LightGun.hh"
 #include "ecs/components/Transform.hh"
+#include "ecs/components/Controller.hh"
 #include "ecs/components/Light.hh"
 #include "physx/PhysxUtils.hh"
 #include "core/Logging.hh"
 
 #include "game/InputManager.hh"
+#include "game/GameLogic.hh"
 
 #include <PxPhysicsAPI.h>
 
@@ -15,8 +17,9 @@ namespace ecs
 	LightGunSystem::LightGunSystem(
 		ecs::EntityManager *entities,
 		sp::InputManager *input,
-		sp::PhysxManager *physics)
-		: entities(entities), input(input), physics(physics)
+		sp::PhysxManager *physics,
+		sp::GameLogic *logic)
+		: entities(entities), input(input), physics(physics), logic(logic)
 	{
 	}
 
@@ -24,6 +27,22 @@ namespace ecs
 
 	bool LightGunSystem::Frame(float dtSinceLastFrame)
 	{
+		Entity player = logic->GetPlayer();
+		physx::PxRigidActor *playerActor = nullptr;
+
+		if (player.Valid() && player.Has<HumanController>())
+		{
+			auto *controller = player.Get<HumanController>()->pxController;
+			if (controller)
+			{
+				playerActor = controller->getActor();
+				if (playerActor)
+				{
+					this->physics->DisableCollisions(playerActor);
+				}
+			}
+		}
+
 		for (auto ent : entities->EntitiesWith<LightGun, Transform>())
 		{
 			auto gun = ent.Get<LightGun>();
@@ -36,6 +55,11 @@ namespace ecs
 			{
 				ShootLight(ent);
 			}
+		}
+
+		if (playerActor)
+		{
+			this->physics->EnableCollisions(playerActor);
 		}
 
 		return true;

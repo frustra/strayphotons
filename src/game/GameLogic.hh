@@ -30,6 +30,8 @@ namespace sp
 		void OpenDoor(string name);
 		void CloseDoor(string name);
 
+		ecs::Entity GetPlayer();
+
 	private:
 		Game *game;
 		InputManager *input;

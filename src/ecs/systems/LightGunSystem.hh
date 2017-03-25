@@ -7,6 +7,7 @@
 namespace sp
 {
 	class InputManager;
+	class GameLogic;
 }
 
 namespace ecs
@@ -14,7 +15,7 @@ namespace ecs
 	class LightGunSystem
 	{
 	public:
-		LightGunSystem(EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics);
+		LightGunSystem(EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics, sp::GameLogic *logic);
 
 		~LightGunSystem();
 
@@ -28,5 +29,6 @@ namespace ecs
 		EntityManager *entities;
 		sp::InputManager *input;
 		sp::PhysxManager *physics;
+		sp::GameLogic *logic;
 	};
 }
