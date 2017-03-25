@@ -18,6 +18,9 @@
 #include "graphics/postprocess/ViewGBuffer.hh"
 
 #include "core/CVar.hh"
+#include "core/CFunc.hh"
+
+#include <stb_image_write.h>
 
 namespace sp
 {
@@ -144,6 +147,31 @@ namespace sp
 		context.LastOutput = menu;
 	}
 
+	static string ScreenshotPath;
+
+	CFunc<string> CFuncQueueScreenshot("screenshot", "Save screenshot to <path>", [](string path)
+	{
+		ScreenshotPath = path;
+	});
+
+	void SaveScreenshot(string path, Texture &tex)
+	{
+		size_t size = tex.width * tex.height * 4;
+		uint8 *buf = new uint8[size], *flipped = new uint8[size];
+		glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+		glGetTextureImage(tex.handle, 0, GL_RGBA, GL_UNSIGNED_BYTE, size, buf);
+
+		for (int y = 0; y < tex.height; y++)
+		{
+			memcpy(flipped + tex.width * (tex.height - y - 1) * 4, buf + tex.width * y * 4, tex.width * 4);
+		}
+
+		stbi_write_png(path.c_str(), tex.width, tex.height, 4, flipped, 0);
+
+		delete []buf;
+		delete []flipped;
+	}
+
 	void PostProcessing::Process(Renderer *renderer, sp::Game *game, ecs::View view, const EngineRenderTargets &targets)
 	{
 		RenderPhase phase("PostProcessing", renderer->Timer);
@@ -260,6 +288,12 @@ namespace sp
 
 		lastOutput->TargetRef->GetTexture().Bind(0);
 		DrawScreenCover();
+
+		if (!ScreenshotPath.empty())
+		{
+			SaveScreenshot(ScreenshotPath, lastOutput->TargetRef->GetTexture());
+			ScreenshotPath = "";
+		}
 
 		lastOutput->ReleaseDependency();
 	}

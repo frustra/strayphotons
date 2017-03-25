@@ -1,5 +1,8 @@
 #include "AssetHelpers.hh"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+
 namespace sp
 {
 	void MakeVec(size_t N, picojson::value val, float *ret)
