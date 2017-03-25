@@ -168,8 +168,8 @@
 		},
 		<%- include('prefab/slide_door_1_5', {
 			name: 'door1',
-				"translate": [5.25, 0, 7],
-				"rotate": [90, 0, 1, 0]
+			translate: [5.25, 0, 7],
+			rotate: [90, 0, 1, 0]
 		}) %>,
 		{
 			"_name": "0.25 wall left of barrier",

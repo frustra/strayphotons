@@ -407,8 +407,8 @@
 		},
 		<%- include('prefab/slide_door_1_5', {
 			name: 'door1',
-				"translate": [6, 0.0, 6.75],
-				"rotate": [0, 0, 1, 0]
+			translate: [6, 0.0, 6.75],
+			rotate: [0, 0, 1, 0]
 		}) %>,
 		{
 			"_comment": "above ledge",
