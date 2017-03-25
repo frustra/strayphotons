@@ -25,7 +25,7 @@ namespace sp
 		bool ShouldClose();
 		void SetTitle(string title);
 		void BindInputCallbacks(InputManager &inputManager);
-		void ResizeWindow(ecs::View &frameBufferView, float scale, int fullscreen);
+		void ResizeWindow(ecs::View &frameBufferView, double scale, int fullscreen);
 		const vector<glm::ivec2> &MonitorModes();
 
 		virtual void Prepare() = 0;

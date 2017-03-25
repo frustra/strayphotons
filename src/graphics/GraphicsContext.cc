@@ -104,10 +104,9 @@ namespace sp
 		return !!glfwWindowShouldClose(window);
 	}
 
-	void GraphicsContext::ResizeWindow(ecs::View &view, float scale, int fullscreen)
+	void GraphicsContext::ResizeWindow(ecs::View &view, double scale, int fullscreen)
 	{
-		windowScale = scale;
-		glm::ivec2 scaled = glm::dvec2(view.extents) * windowScale;
+		glm::ivec2 scaled = glm::dvec2(view.extents) * scale;
 
 		if (prevFullscreen != fullscreen)
 		{
@@ -122,8 +121,9 @@ namespace sp
 			}
 		}
 
-		if (prevWindowSize != view.extents || prevFullscreen != fullscreen)
+		if (prevWindowSize != view.extents || prevFullscreen != fullscreen || windowScale != scale)
 		{
+			windowScale = scale;
 			if (fullscreen)
 			{
 				glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, view.extents.x, view.extents.y, 60);
