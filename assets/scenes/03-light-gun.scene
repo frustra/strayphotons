@@ -1,7 +1,4 @@
 {
-	"autoexec": [
-		"p.NoClip 1"
-	],
 	"entities": [
 		{
 			"renderable": "ground-1x1x1",
@@ -112,7 +109,7 @@
 			"transform": {
 				"rotate": [90, 0, 1, 0],
 				"scale": [1, 2, 2],
-				"translate": [5, 2, 7]
+				"translate": [5, 2.5, 7]
 			},
 			"physics": {
 				"model": "wall-1x1",
@@ -169,47 +166,17 @@
 				"decomposeHull": true
 			}
 		},
-
-		{
-			"_name": "door1-l",
-			"renderable": "door-panel-l-1.5x2",
-			"transform": {
-				"rotate": [90, 0, 1, 0],
-				"translate": [5.25, 0, 7]
-			}
-		},
-		{
-			"_name": "door1-r",
-			"renderable": "door-panel-r-1.5x2",
-			"transform": {
-				"rotate": [90, 0, 1, 0],
-				"translate": [5.25, 0, 7]
-			}
-		},
-		{
-			"_name": "door1",
-			"renderable": "door-frame-1.5x2",
-			"transform": {
-				"rotate": [90, 0, 1, 0],
-				"translate": [5.25, 0, 7]
-			},
-			"physics": {
-				"model": "door-frame-1.5x2",
-				"dynamic": false
-			},
-			"slideDoor": {
-				"left": "door1-l",
-				"right": "door1-r",
-				"forward": [1, 0, 0],
-				"width": 1.3
-			}
-		},
+		<%- include('prefab/slide_door_1_5', {
+			name: 'door1',
+				"translate": [5.25, 0, 7],
+				"rotate": [90, 0, 1, 0]
+		}) %>,
 		{
 			"_name": "0.25 wall left of barrier",
 			"renderable": "wall-1x1",
 			"transform": {
 				"rotate": [90, 0, 1, 0],
-				"scale": [1, 2, 0.25],
+				"scale": [1, 2.5, 0.25],
 				"translate": [5, 0, 7]
 			},
 			"physics": {
@@ -222,7 +189,7 @@
 			"renderable": "wall-1x1",
 			"transform": {
 				"rotate": [90, 0, 1, 0],
-				"scale": [1, 2, 0.25],
+				"scale": [1, 2.5, 0.25],
 				"translate": [6.75, 0, 7]
 			},
 			"physics": {
@@ -320,7 +287,7 @@
 		{
 			name: "sensor1",
 			type: "light",
-			translate: [6, 2.5, 7],
+			translate: [6, 2.85, 7],
 			triggers: [
 				{
 					illuminance: [0.5, 0.3, 0.3],
