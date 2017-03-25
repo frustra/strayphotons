@@ -12,8 +12,8 @@ vec3 EvaluateBRDF(vec3 diffuseColor, vec3 specularColor, float roughness, vec3 L
 	vec3 H = normalize(V + L);
 	float NdotV = abs(dot(N, V)) + 1e-5; // see [Lagarde/Rousiers 2014]
 	float NdotL = abs(dot(N, L)) + 1e-5;
-	float NdotH = saturate(dot(N, H));
-	float VdotH = saturate(dot(V, H));
+	float NdotH = clamp(dot(N, H), 0.0, 0.99999);
+	float VdotH = clamp(dot(V, H), 0.0, 0.99999);
 
 	// float D = BRDF_D_Blinn(roughness, NdotH);
 	// float Vis = 0.25; // implicit case
