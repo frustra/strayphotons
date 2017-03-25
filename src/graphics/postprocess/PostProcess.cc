@@ -284,7 +284,7 @@ namespace sp
 		renderer->SetDefaultRenderTarget();
 		renderer->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(renderer->GlobalShaders);
 
-		glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
+		glViewport(view.offset.x, view.offset.y, view.extents.x * view.scale, view.extents.y * view.scale);
 
 		lastOutput->TargetRef->GetTexture().Bind(0);
 		DrawScreenCover();

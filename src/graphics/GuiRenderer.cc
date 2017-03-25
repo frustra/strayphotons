@@ -114,7 +114,9 @@ namespace sp
 		manager->SetGuiContext();
 		ImGuiIO &io = ImGui::GetIO();
 
-		io.DisplaySize = ImVec2((float)view.extents.x, (float)view.extents.y);
+		auto extents = glm::ivec2(glm::vec2(view.extents) * view.scale);
+
+		io.DisplaySize = ImVec2((float)extents.x, (float)extents.y);
 
 		double currTime = glfwGetTime();
 		io.DeltaTime = lastTime > 0.0 ? (float)(currTime - lastTime) : 1.0f / 60.0f;
@@ -129,9 +131,9 @@ namespace sp
 
 		drawData->ScaleClipRects(io.DisplayFramebufferScale);
 
-		glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
+		glViewport(view.offset.x, view.offset.y, extents.x, extents.y);
 
-		parent.GlobalShaders->Get<BasicOrthoVS>()->SetViewport(view.extents.x, view.extents.y);
+		parent.GlobalShaders->Get<BasicOrthoVS>()->SetViewport(extents.x, extents.y);
 		parent.ShaderControl->BindPipeline<BasicOrthoVS, BasicOrthoFS>(parent.GlobalShaders);
 
 		glEnable(GL_BLEND);
@@ -165,7 +167,7 @@ namespace sp
 
 					glScissor(
 						(int)pcmd.ClipRect.x,
-						(int)(view.extents.y - pcmd.ClipRect.w),
+						(int)(extents.y - pcmd.ClipRect.w),
 						(int)(pcmd.ClipRect.z - pcmd.ClipRect.x),
 						(int)(pcmd.ClipRect.w - pcmd.ClipRect.y)
 					);

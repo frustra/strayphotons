@@ -104,8 +104,9 @@ namespace sp
 		return !!glfwWindowShouldClose(window);
 	}
 
-	void GraphicsContext::ResizeWindow(ecs::View &view, int fullscreen)
+	void GraphicsContext::ResizeWindow(ecs::View &view, float scale, int fullscreen)
 	{
+		windowScale = scale;
 		glm::ivec2 scaled = glm::dvec2(view.extents) * windowScale;
 
 		if (prevFullscreen != fullscreen)

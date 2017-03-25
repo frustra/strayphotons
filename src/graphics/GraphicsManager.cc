@@ -19,6 +19,7 @@
 namespace sp
 {
 	CVar<glm::ivec2> CVarWindowSize("r.Size", { 1600, 900 }, "Window height");
+	CVar<float> CVarWindowScale("r.Scale", 1.0f, "Scale framebuffer");
 	CVar<float> CVarFieldOfView("r.FieldOfView", 60, "Camera field of view");
 	CVar<int> CVarWindowFullscreen("r.Fullscreen", false, "Fullscreen window (0: window, 1: fullscreen)");
 
@@ -118,12 +119,14 @@ namespace sp
 		{
 			auto newSize = CVarWindowSize.Get();
 			auto newFov = glm::radians(CVarFieldOfView.Get());
+			auto newScale = CVarWindowScale.Get();
 
-			if (newSize != primaryView.extents || newFov != primaryView.fov)
+			if (newSize != primaryView.extents || newFov != primaryView.fov || newScale != primaryView.scale)
 			{
 				auto view = playerView.Get<ecs::View>();
 				view->extents = newSize;
 				view->fov = newFov;
+				view->scale = newScale;
 			}
 
 			primaryView = *ecs::UpdateViewCache(playerView);
@@ -134,7 +137,7 @@ namespace sp
 			primaryView.extents = CVarWindowSize.Get();
 		}
 
-		context->ResizeWindow(primaryView, CVarWindowFullscreen.Get());
+		context->ResizeWindow(primaryView, CVarWindowScale.Get(), CVarWindowFullscreen.Get());
 
 		context->Timer->StartFrame();
 

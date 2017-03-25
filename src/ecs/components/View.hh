@@ -24,6 +24,7 @@ namespace ecs
 		bool stencil = false;
 		bool blend = false;
 		float skyIlluminance = 0.0f;
+		float scale = 1.0f;
 
 		// Updated automatically.
 		float aspect;
