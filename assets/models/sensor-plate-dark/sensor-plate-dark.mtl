@@ -1,7 +1,7 @@
-# Blender MTL File: 'l-sensor-plate.blend'
+# Blender MTL File: 'sensor-plate-dark.blend'
 # Material Count: 1
 
-newmtl Material
+newmtl DarkPlate
 Ns 96.078431
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000

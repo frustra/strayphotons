@@ -439,7 +439,8 @@
 		<%- include('prefab/lightsensor',
 		{
 			name: "sensor1",
-			translate: [9, 1.2, 5],
+			type: "light",
+			translate: [9, 1, 5],
 			rotate: [-90, 0, 1, 0],
 			triggers: [
 				{

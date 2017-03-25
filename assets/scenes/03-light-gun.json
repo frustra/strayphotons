@@ -531,72 +531,8 @@
 			}
 		},
 		{
-			"_name": "sensor2",
-			"renderable": {
-				"model": "l-sensor"
-			},
-			"transform": {
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					6,
-					1.05,
-					2.98
-				]
-			},
-			"physics": {
-				"model": "l-sensor",
-				"dynamic": false
-			},
-			"lightsensor": {
-				"translate": [
-					0,
-					0,
-					-0.1
-				],
-				"direction": [
-					0,
-					0,
-					-1
-				],
-				"triggers": [
-					{
-						"illuminance": [
-							0.5,
-							0.5,
-							0.5
-						],
-						"oncmd": "g.OpenBarrier barrier2",
-						"offcmd": "g.CloseBarrier barrier2"
-					}
-				]
-			}
-		},
-		{
 			"_name": "sensor2_plate",
-			"renderable": "l-sensor-plate",
-			"transform": {
-				"parent": "sensor2",
-				"translate": [
-					0,
-					0,
-					0
-				]
-			},
-			"physics": {
-				"model": "l-sensor-plate",
-				"dynamic": false
-			}
-		},
-		{
-			"_name": "sensor1",
-			"renderable": {
-				"model": "l-sensor"
-			},
+			"renderable": "sensor-plate-light",
 			"transform": {
 				"rotate": [
 					180,
@@ -606,24 +542,86 @@
 				],
 				"translate": [
 					6,
-					2.5,
-					7.025
+					1.05,
+					3
 				]
 			},
 			"physics": {
-				"model": "l-sensor",
+				"model": "sensor-plate-light",
 				"dynamic": false
+			}
+		},
+		{
+			"_name": "sensor2",
+			"renderable": "sensor",
+			"transform": {
+				"parent": "sensor2_plate",
+				"translate": [
+					0,
+					0,
+					0.015
+				]
 			},
 			"lightsensor": {
 				"translate": [
 					0,
 					0,
-					-0.1
+					0.1
 				],
 				"direction": [
 					0,
 					0,
-					-1
+					1
+				],
+				"triggers": [
+					{
+						"illuminance": [
+							0.5,
+							0.25,
+							0.25
+						],
+						"oncmd": "g.OpenBarrier barrier2",
+						"offcmd": "g.CloseBarrier barrier2"
+					}
+				]
+			}
+		},
+		{
+			"_name": "sensor1_plate",
+			"renderable": "sensor-plate-light",
+			"transform": {
+				"translate": [
+					6,
+					2.5,
+					7
+				]
+			},
+			"physics": {
+				"model": "sensor-plate-light",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "sensor1",
+			"renderable": "sensor",
+			"transform": {
+				"parent": "sensor1_plate",
+				"translate": [
+					0,
+					0,
+					0.015
+				]
+			},
+			"lightsensor": {
+				"translate": [
+					0,
+					0,
+					0.1
+				],
+				"direction": [
+					0,
+					0,
+					1
 				],
 				"triggers": [
 					{
@@ -636,22 +634,6 @@
 						"offcmd": "g.CloseDoor door1"
 					}
 				]
-			}
-		},
-		{
-			"_name": "sensor1_plate",
-			"renderable": "l-sensor-plate",
-			"transform": {
-				"parent": "sensor1",
-				"translate": [
-					0,
-					0,
-					0
-				]
-			},
-			"physics": {
-				"model": "l-sensor-plate",
-				"dynamic": false
 			}
 		},
 		{

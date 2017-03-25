@@ -1,31 +1,25 @@
 {
-	"_name": <%= name %>,
-	"renderable": {
-		"model": "l-sensor"
-	},
+	"_name": <%= name + "_plate" %>,
+	"renderable": <%= 'sensor-plate-' + type %>,
 	"transform": {
-		"rotate": <%= rotate %>,
+		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
 		"translate": <%= translate %>
 	},
 	"physics": {
-		"model": "l-sensor",
+		"model": <%= 'sensor-plate-' + type %>,
 		"dynamic": false
-	},
-	"lightsensor": {
-		"translate": [0, 0, -0.1],
-		"direction": [0, 0, -1],
-		"triggers": <%= triggers %>
 	}
 },
 {
-	"_name": <%= name + "_plate" %>,
-	"renderable": "l-sensor-plate",
+	"_name": <%= name %>,
+	"renderable": "sensor",
 	"transform": {
-		"parent": <%= name %>,
-		"translate": [0, 0, 0]
+		"parent": <%= name + "_plate" %>,
+		"translate": [0, 0, 0.015]
 	},
-	"physics": {
-		"model": "l-sensor-plate",
-		"dynamic": false
+	"lightsensor": {
+		"translate": [0, 0, 0.1],
+		"direction": [0, 0, 1],
+		"triggers": <%= triggers %>
 	}
 }

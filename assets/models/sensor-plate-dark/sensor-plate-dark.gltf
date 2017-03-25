@@ -1,0 +1,255 @@
+{
+    "accessors": {
+        "accessor_0": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 0,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                0.25,
+                0.25,
+                0.02500000037252903
+            ],
+            "min": [
+                -0.25,
+                -0.25,
+                0
+            ],
+            "type": "VEC3"
+        },
+        "accessor_1": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 288,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                1,
+                1,
+                1
+            ],
+            "min": [
+                -1,
+                -1,
+                -1
+            ],
+            "type": "VEC3"
+        },
+        "accessor_2": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 576,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                0.9998999834060669,
+                1
+            ],
+            "min": [
+                0,
+                0.00009999999747378752
+            ],
+            "type": "VEC2"
+        },
+        "accessor_3": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 0,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 36,
+            "max": [
+                23
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
+        }
+    },
+    "animations": {},
+    "asset": {
+        "generator": "obj2gltf",
+        "premultipliedAlpha": true,
+        "profile": {
+            "api": "WebGL",
+            "version": "1.0"
+        },
+        "version": "1.0"
+    },
+    "bufferViews": {
+        "bufferView_0": {
+            "buffer": "buffer",
+            "byteLength": 768,
+            "byteOffset": 0,
+            "target": 34962
+        },
+        "bufferView_1": {
+            "buffer": "buffer",
+            "byteLength": 72,
+            "byteOffset": 768,
+            "target": 34963
+        }
+    },
+    "buffers": {
+        "buffer": {
+            "byteLength": 840,
+            "type": "arraybuffer",
+            "uri": "data:application/octet-stream;base64,AACAPgAAgL7NzMw8AACAvgAAgL4AAAAAAACAPgAAgL4AAAAAAACAvgAAgD4AAAAAAACAPgAAgD7NzMw8AACAPgAAgD4AAAAAAACAPgAAgD4AAAAAAACAPgAAgL7NzMw8AACAPgAAgL4AAAAAAACAPgAAgD7NzMw8AACAvgAAgL7NzMw8AACAPgAAgL7NzMw8AACAvgAAgD7NzMw8AACAvgAAgL4AAAAAAACAvgAAgL7NzMw8AACAPgAAgL4AAAAAAACAvgAAgD4AAAAAAACAPgAAgD4AAAAAAACAvgAAgL7NzMw8AACAvgAAgD7NzMw8AACAPgAAgD7NzMw8AACAvgAAgD7NzMw8AACAvgAAgD4AAAAAAACAvgAAgL4AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AACAvwAAAIAAAACAAACAvwAAAIAAAACAAACAvwAAAIAAAACAAAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAgL8AAAAAAAAAAAAAgD8AAAAAAACAPwAAAIAAAAAAAAAAgAAAAIAAAIA/AACAvwAAAIAAAACAAAAAAAAAAAAAAIC/HVp0Px1adD81Xjo9cvl/Px1adD9y+X8/NV46PRe30TgdWnQ/NV46PR1adD8Xt9E4cvl/PzVeOj0dWnQ/HVp0P3L5fz8dWnQ/HVp0PzVeOj01Xjo9HVp0Px1adD8dWnQ/NV46PTVeOj0Xt9E4HVp0PzVeOj0dWnQ/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/NV46PR1adD81Xjo9NV46PR1adD81Xjo9NV46PTVeOj0Xt9E4NV46PQAAAAAAAIA/AAABAAIAAwAEAAUABgAHAAgACQAKAAsADAANAA4ADwAQABEAAAASAAEAAwATAAQABgAUAAcACQAVAAoADAAWAA0ADwAXABAA"
+        }
+    },
+    "cameras": {},
+    "extensionsUsed": [],
+    "images": {
+        "image_DarkPlate_Base_Color.png": {
+            "uri": "DarkPlate_Base_Color.png"
+        },
+        "image_DarkPlate_Height.png": {
+            "uri": "DarkPlate_Height.png"
+        },
+        "image_DarkPlate_Metallic.png": {
+            "uri": "DarkPlate_Metallic.png"
+        },
+        "image_DarkPlate_Normal.png": {
+            "uri": "DarkPlate_Normal.png"
+        },
+        "image_DarkPlate_Roughness.png": {
+            "uri": "DarkPlate_Roughness.png"
+        }
+    },
+    "materials": {
+        "DarkPlate": {
+            "values": {
+                "ambient": [
+                    1,
+                    1,
+                    1,
+                    1
+                ],
+                "baseColor": "texture_DarkPlate_Base_Color.png",
+                "diffuse": [
+                    0.64,
+                    0.64,
+                    0.64,
+                    1
+                ],
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "height": "texture_DarkPlate_Height.png",
+                "metallic": "texture_DarkPlate_Metallic.png",
+                "normal": "texture_DarkPlate_Normal.png",
+                "roughness": "texture_DarkPlate_Roughness.png",
+                "shininess": 96.078431,
+                "specular": [
+                    0.5,
+                    0.5,
+                    0.5,
+                    1
+                ],
+                "transparency": 1
+            }
+        }
+    },
+    "meshes": {
+        "Cube-Mesh": {
+            "name": "Cube-Mesh",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": "accessor_1",
+                        "POSITION": "accessor_0",
+                        "TEXCOORD_0": "accessor_2"
+                    },
+                    "indices": "accessor_3",
+                    "material": "DarkPlate",
+                    "mode": 4
+                }
+            ]
+        }
+    },
+    "nodes": {
+        "Cube": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "Cube-Mesh"
+            ],
+            "name": "Cube"
+        }
+    },
+    "samplers": {
+        "sampler_0": {}
+    },
+    "scene": "scene",
+    "scenes": {
+        "scene": {
+            "nodes": [
+                "Cube"
+            ]
+        }
+    },
+    "skins": {},
+    "textures": {
+        "texture_DarkPlate_Base_Color.png": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_DarkPlate_Base_Color.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_DarkPlate_Height.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_DarkPlate_Height.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_DarkPlate_Metallic.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_DarkPlate_Metallic.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_DarkPlate_Normal.png": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_DarkPlate_Normal.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_DarkPlate_Roughness.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_DarkPlate_Roughness.png",
+            "target": 3553,
+            "type": 5121
+        }
+    }
+}

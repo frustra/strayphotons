@@ -305,11 +305,12 @@
 		<%- include('prefab/lightsensor',
 		{
 			name: "sensor2",
-			translate: [6, 1.05, 2.98],
-			rotate: [0, 0, 1, 0],
+			type: "light",
+			translate: [6, 1.05, 3],
+			rotate: [180, 0, 1, 0],
 			triggers: [
 				{
-					illuminance: [0.5, 0.5, 0.5],
+					illuminance: [0.5, 0.25, 0.25],
 					oncmd: "g.OpenBarrier barrier2",
 					offcmd: "g.CloseBarrier barrier2"
 				}
@@ -318,8 +319,8 @@
 		<%- include('prefab/lightsensor',
 		{
 			name: "sensor1",
-			translate: [6, 2.5, 7.025],
-			rotate: [180, 0, 1, 0],
+			type: "light",
+			translate: [6, 2.5, 7],
 			triggers: [
 				{
 					illuminance: [0.5, 0.3, 0.3],

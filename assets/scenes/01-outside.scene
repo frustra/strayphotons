@@ -25,8 +25,8 @@
 		<%- include('prefab/lightsensor',
 		{
 			name: "sensor1",
-			translate: [-3.5, 0.7, -5.78],
-			rotate: [180, 0, 1, 0],
+			type: "dark",
+			translate: [-3.5, 0.7, -5.8],
 			triggers: [
 				{
 					illuminance: [0.01, 0.01, 0.01],
