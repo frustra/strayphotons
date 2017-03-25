@@ -110,9 +110,6 @@
         "image_DarkPlate_Metallic.png": {
             "uri": "DarkPlate_Metallic.png"
         },
-        "image_DarkPlate_Normal.png": {
-            "uri": "DarkPlate_Normal.png"
-        },
         "image_DarkPlate_Roughness.png": {
             "uri": "DarkPlate_Roughness.png"
         }
@@ -141,7 +138,6 @@
                 ],
                 "height": "texture_DarkPlate_Height.png",
                 "metallic": "texture_DarkPlate_Metallic.png",
-                "normal": "texture_DarkPlate_Normal.png",
                 "roughness": "texture_DarkPlate_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
@@ -232,14 +228,6 @@
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_DarkPlate_Metallic.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_DarkPlate_Normal.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_DarkPlate_Normal.png",
             "target": 3553,
             "type": 5121
         },

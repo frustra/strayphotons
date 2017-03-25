@@ -1,0 +1,273 @@
+{
+	"autoexec": [
+		"r.MirrorRecursion 1"
+	],
+	"entities": [
+		{
+			"renderable": "sponza",
+			"transform": {
+				"scale": [0.01, 0.01, 0.01],
+				"rotate": [-90, 0, 1, 0],
+				"translate": [0, -1, 0]
+			}
+		},
+		{
+			"renderable": "occluder",
+			"transform": {
+				"translate": [-11, 5, -1],
+				"rotate": [90, 0, 1, 0],
+				"scale": [38, 15, 1]
+			}
+		},
+		{
+			"renderable": "occluder",
+			"transform": {
+				"translate": [12, 5, -1],
+				"rotate": [-90, 0, 1, 0],
+				"scale": [38, 15, 1]
+			}
+		},
+		{
+			"renderable": "occluder",
+			"transform": {
+				"translate": [0.5, 5, 18],
+				"rotate": [180, 0, 1, 0],
+				"scale": [23, 15, 1]
+			}
+		},
+		{
+			"renderable": "occluder",
+			"transform": {
+				"translate": [0.5, 5, -20],
+				"scale": [23, 15, 1]
+			}
+		},
+		{
+			"_name": "duck",
+			"renderable": "duck",
+			"transform": {
+				"translate": [0, 0, -7]
+			},
+			"physics": {
+				"model": "duck"
+			}
+		},
+		{
+			"_name": "mirrorbox",
+			"renderable": "box",
+			"transform": {
+				"translate": [-0.2, 3, -4.5]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"mirror": [1, 1],
+			"renderable": "mirror",
+			"transform": {
+				"parent": "mirrorbox",
+				"translate": [0, 0, 0.5001],
+				"rotate": [-180, 0, 1, 0]
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"translate": [0, 1, -4]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"translate": [0.5, 5, -4.5]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"renderable": "dodecahedron",
+			"transform": {
+				"translate": [1, 5, -0.5],
+				"rotate": [-30, 0, 0, 1]
+			},
+			"physics": {
+				"model": "dodecahedron"
+			}
+		},
+		<% for (var z = 0; z < 4; z++) { %>
+		{
+			"transform": {
+				"scale": [0.7, 10, 0.7],
+				"translate": [-2.05, 4, <%= z * 3.7 - 6.18 %>]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"transform": {
+				"scale": [0.7, 10, 0.7],
+				"translate": [2.75, 4, <%= z * 3.7 - 6.18 %>]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		<% } %>
+		<% for (var x = 0; x < 2; x++) { %>
+		<% for (var z = 0; z < 5; z++) { %>
+		{
+			"transform": {
+				"scale": [0.2, 3, 3.7],
+				"translate": [<%= x * 4.75 - 2.0 %>, 0.4, <%= z * 3.7 - 8 %>]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"transform": {
+				"scale": [1, 1.4, 3.7],
+				"translate": [<%= x * 4.75 - 2.0 %>, 3.4, <%= z * 3.7 - 8 %>]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"transform": {
+				"scale": [0.4, 4, 0.4],
+				"translate": [<%= x * 4.85 - 2.05 %>, 6, <%= z * 3.7 - 8.05 %>]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		<% } } %>
+		<% for (var z = 0; z < 2; z++) { %>
+		{
+			"transform": {
+				"scale": [5.75, 1.4, 1],
+				"translate": [0.375, 3.4, <%= z * 18.75 - 10 %>]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"transform": {
+				"scale": [1, 10, 1],
+				"translate": [-2, 4, <%= z * 18.75 - 10 %>]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"transform": {
+				"scale": [1, 10, 1],
+				"translate": [2.75, 4, <%= z * 18.75 - 10 %>]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"transform": {
+				"scale": [0.4, 4, 0.4],
+				"translate": [0.37, 6, <%= z * 18.9 - 10.1 %>]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"transform": {
+				"scale": [12, 0.5, 4],
+				"translate": [0.37, 2.95, <%= z * 23.5 - 12.5 %>]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"transform": {
+				"scale": [12, 10, 0.5],
+				"translate": [0.37, 4, <%= z * 27.7 - 14.5 %>]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		<% } %>
+		<% for (var x = 0; x < 2; x++) { %>
+		{
+			"transform": {
+				"scale": [3.2, 0.5, 22],
+				"translate": [<%= x * 9 - 4.1 %>, 2.95, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"transform": {
+				"scale": [0.5, 10, 28],
+				"translate": [<%= x * 12.55 - 5.9 %>, 4, -0.5]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		<% } %>
+		{
+			"_name": "player",
+			"view": {
+				"clip": [0.1, 256],
+				"clear": [0.66, 0.84, 1],
+				"sky": 0.4
+			},
+			"transform": {
+				"translate": [0, 2, 0]
+			},
+			"voxels": {
+				"min": [-6, -1.0, -14.5],
+				"max": [6.5, 12, 13.5]
+			}
+		},
+		{
+			"_name": "sun",
+			"light": {
+				"tint": [0.9, 0.9, 1],
+				"illuminance": 10,
+				"spotAngle": 22
+			},
+			"view": {
+				"extents": [4096, 4096],
+				"clip": [20, 50]
+			},
+			"transform": {
+				"translate": [7, 35, 0],
+				"rotate": [-90, 1, 0, 0]
+			}
+		}
+	]
+}

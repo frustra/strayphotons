@@ -176,9 +176,6 @@
         "image_Sensor_Metallic.png": {
             "uri": "Sensor_Metallic.png"
         },
-        "image_Sensor_Normal.png": {
-            "uri": "Sensor_Normal.png"
-        },
         "image_Sensor_Roughness.png": {
             "uri": "Sensor_Roughness.png"
         }
@@ -207,7 +204,6 @@
                 ],
                 "height": "texture_Sensor_Height.png",
                 "metallic": "texture_Sensor_Metallic.png",
-                "normal": "texture_Sensor_Normal.png",
                 "roughness": "texture_Sensor_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
@@ -339,14 +335,6 @@
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_Sensor_Metallic.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Sensor_Normal.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_Sensor_Normal.png",
             "target": 3553,
             "type": 5121
         },

@@ -1,84 +1,108 @@
 {
     "accessors": {
-        "accessor_index_0": {
-            "bufferView": "bufferView_index",
+        "accessor_0": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 0,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 44,
+            "max": [
+                0.07500000298023224,
+                2,
+                0.9999979734420776
+            ],
+            "min": [
+                0.02500000037252903,
+                0,
+                0.0000019999999949504854
+            ],
+            "type": "VEC3"
+        },
+        "accessor_1": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 528,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 44,
+            "max": [
+                1,
+                1,
+                1
+            ],
+            "min": [
+                -1,
+                -1,
+                -0.9700999855995178
+            ],
+            "type": "VEC3"
+        },
+        "accessor_2": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 1056,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 44,
+            "max": [
+                0.9330000281333923,
+                1
+            ],
+            "min": [
+                0,
+                0
+            ],
+            "type": "VEC2"
+        },
+        "accessor_3": {
+            "bufferView": "bufferView_1",
             "byteOffset": 0,
             "byteStride": 0,
             "componentType": 5123,
             "count": 72,
-            "type": "SCALAR"
-        },
-        "accessor_normal": {
-            "bufferView": "bufferView_vertex",
-            "byteOffset": 12,
-            "byteStride": 32,
-            "componentType": 5126,
-            "count": 44,
-            "type": "VEC3"
-        },
-        "accessor_position": {
-            "bufferView": "bufferView_vertex",
-            "byteOffset": 0,
-            "byteStride": 32,
-            "componentType": 5126,
-            "count": 44,
             "max": [
-                0.075,
-                2,
-                0.999998
+                43
             ],
             "min": [
-                0.025,
-                0,
-                2e-06
+                0
             ],
-            "type": "VEC3"
-        },
-        "accessor_uv": {
-            "bufferView": "bufferView_vertex",
-            "byteOffset": 24,
-            "byteStride": 32,
-            "componentType": 5126,
-            "count": 44,
-            "type": "VEC2"
+            "type": "SCALAR"
         }
     },
+    "animations": {},
     "asset": {
-        "generator": "OBJ2GLTF",
+        "generator": "obj2gltf",
         "premultipliedAlpha": true,
         "profile": {
             "api": "WebGL",
             "version": "1.0"
         },
-        "version": 1
+        "version": "1.0"
     },
     "bufferViews": {
-        "bufferView_index": {
-            "buffer": "buffer_door-hex-1x2",
-            "byteLength": 144,
-            "byteOffset": 1408,
-            "target": 34963
-        },
-        "bufferView_vertex": {
-            "buffer": "buffer_door-hex-1x2",
+        "bufferView_0": {
+            "buffer": "buffer",
             "byteLength": 1408,
             "byteOffset": 0,
             "target": 34962
+        },
+        "bufferView_1": {
+            "buffer": "buffer",
+            "byteLength": 144,
+            "byteOffset": 1408,
+            "target": 34963
         }
     },
     "buffers": {
-        "buffer_door-hex-1x2": {
+        "buffer": {
             "byteLength": 1552,
             "type": "arraybuffer",
-            "uri": "door-hex-1x2.bin"
+            "uri": "data:application/octet-stream;base64,zczMPAAAAAAiAIA+mpmZPQAAAADv/z8/zczMPAAAAADv/z8/zczMPAAAAADv/z8/zczMPAAAgD/e/38/zczMPAAAAADv/z8/mpmZPQAAAEAiAIA+mpmZPQAAgD/e/38/mpmZPQAAgD+9NwY2zczMPAAAgD/e/38/mpmZPQAAAEDv/z8/zczMPAAAAEDv/z8/zczMPAAAAEAiAIA+mpmZPQAAgD+9NwY2zczMPAAAgD+9NwY2zczMPAAAgD+9NwY2mpmZPQAAAAAiAIA+zczMPAAAAAAiAIA+zczMPAAAAADv/z8/mpmZPQAAgD/e/38/zczMPAAAgD/e/38/zczMPAAAAEDv/z8/mpmZPQAAAEAiAIA+zczMPAAAAEAiAIA+zczMPAAAgD+9NwY2zczMPAAAAAAiAIA+zczMPAAAgD/e/38/mpmZPQAAAAAiAIA+zczMPAAAgD/e/38/mpmZPQAAAAAiAIA+mpmZPQAAAEDv/z8/mpmZPQAAAADv/z8/mpmZPQAAgD/e/38/mpmZPQAAAEAiAIA+mpmZPQAAgD+9NwY2mpmZPQAAAADv/z8/mpmZPQAAAEDv/z8/zczMPAAAAEDv/z8/zczMPAAAAEAiAIA+zczMPAAAAADv/z8/zczMPAAAgD/e/38/zczMPAAAAADv/z8/zczMPAAAAADv/z8/zczMPAAAAAAiAIA+AAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAAAAAOxReD55WHg/AAAAAOxReD55WHg/AAAAAOxReD55WHg/AAAAAOxReD55WHi/AAAAAOxReD55WHi/AAAAAOxReD55WHi/AAAAAOxReL55WHi/AAAAAOxReL55WHi/AAAAAOxReL55WHi/AAAAAOxReL55WHg/AAAAAOxReL55WHg/AAAAAOxReL55WHg/AAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAAAAAAAAgL8AAAAAAAAAAAAAAAAAAIA/AACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAAAAAOxReD55WHg/AAAAAOxReD55WHi/AAAAAOxReL55WHi/AAAAAOxReL55WHg/AAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AACAvwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/F9luPwAAQD8AAAA/AACAPxfZbj8AAEA/TDeJPQAAgD4AAAA/AACAPwAAAD8AAAAAAAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/F9luPwAAQD8AAAA/AACAPwAAAD8AAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAA/AACAPxfZbj8AAIA+TDeJPQAAQD8X2W4/AABAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPxfZbj8AAEA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAQACAAMABAAFAAYABwAIAAkACgALAAwADQAOAA8AEAARABIAEwAUABUAFgAXABgAGQAaAAAAGwABAAMAHAAEAB0ACAAHAAYAHgAHAAcAHwAdAAkAIAAKAAwAIQANAA8AIgAQABIAIwATABUAJAAWACUAJgAYACcAKAApACoAGgAZACUAGAAaACsAJwApAA=="
         }
     },
+    "cameras": {},
     "extensionsUsed": [],
     "images": {},
     "materials": {
-        "material_None": {
-            "extensions": {},
-            "name": "None",
+        "None": {
             "values": {
                 "ambient": [
                     0,
@@ -110,24 +134,24 @@
         }
     },
     "meshes": {
-        "mesh_door-hex-1x2": {
-            "name": "door-hex-1x2",
+        "Circle-Mesh": {
+            "name": "Circle-Mesh",
             "primitives": [
                 {
                     "attributes": {
-                        "NORMAL": "accessor_normal",
-                        "POSITION": "accessor_position",
-                        "TEXCOORD_0": "accessor_uv"
+                        "NORMAL": "accessor_1",
+                        "POSITION": "accessor_0",
+                        "TEXCOORD_0": "accessor_2"
                     },
-                    "indices": "accessor_index_0",
-                    "material": "material_None",
+                    "indices": "accessor_3",
+                    "material": "None",
                     "mode": 4
                 }
             ]
         }
     },
     "nodes": {
-        "node_door-hex-1x2": {
+        "Circle": {
             "children": [],
             "matrix": [
                 1,
@@ -148,21 +172,20 @@
                 1
             ],
             "meshes": [
-                "mesh_door-hex-1x2"
+                "Circle-Mesh"
             ],
-            "name": "door-hex-1x2"
+            "name": "Circle"
         }
     },
-    "samplers": {
-        "sampler_0": {}
-    },
-    "scene": "scene_door-hex-1x2",
+    "samplers": {},
+    "scene": "scene",
     "scenes": {
-        "scene_door-hex-1x2": {
+        "scene": {
             "nodes": [
-                "node_door-hex-1x2"
+                "Circle"
             ]
         }
     },
+    "skins": {},
     "textures": {}
 }

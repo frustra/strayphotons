@@ -48,7 +48,7 @@
             ],
             "min": [
                 0,
-                9.999999747378752e-05
+                0.00009999999747378752
             ],
             "type": "VEC2"
         },
@@ -114,7 +114,7 @@
             ],
             "min": [
                 0,
-                9.999999747378752e-05
+                0.00009999999747378752
             ],
             "type": "VEC2"
         },
@@ -180,7 +180,7 @@
             ],
             "min": [
                 0,
-                9.999999747378752e-05
+                0.00009999999747378752
             ],
             "type": "VEC2"
         },
@@ -262,7 +262,7 @@
             ],
             "min": [
                 0,
-                9.999999747378752e-05
+                0.00009999999747378752
             ],
             "type": "VEC2"
         },
@@ -328,7 +328,7 @@
             ],
             "min": [
                 0,
-                9.999999747378752e-05
+                0.00009999999747378752
             ],
             "type": "VEC2"
         },
@@ -408,7 +408,7 @@
             ],
             "min": [
                 0,
-                9.999999747378752e-05
+                0.00009999999747378752
             ],
             "type": "VEC2"
         },
@@ -474,7 +474,7 @@
             ],
             "min": [
                 0,
-                9.999999747378752e-05
+                0.00009999999747378752
             ],
             "type": "VEC2"
         },
@@ -689,7 +689,7 @@
                 1
             ],
             "min": [
-                9.999999747378752e-05,
+                0.00009999999747378752,
                 0.04010000079870224
             ],
             "type": "VEC2"
@@ -870,7 +870,7 @@
             ],
             "min": [
                 0,
-                9.999999747378752e-05
+                0.00009999999747378752
             ],
             "type": "VEC2"
         },
@@ -965,12 +965,6 @@
         "image_Ceiling_Height.png": {
             "uri": "Ceiling_Height.png"
         },
-        "image_Ceiling_Metallic.png": {
-            "uri": "Ceiling_Metallic.png"
-        },
-        "image_Ceiling_Normal.png": {
-            "uri": "Ceiling_Normal.png"
-        },
         "image_Ceiling_Roughness.png": {
             "uri": "Ceiling_Roughness.png"
         },
@@ -979,12 +973,6 @@
         },
         "image_Floor_Height.png": {
             "uri": "Floor_Height.png"
-        },
-        "image_Floor_Metallic.png": {
-            "uri": "Floor_Metallic.png"
-        },
-        "image_Floor_Normal.png": {
-            "uri": "Floor_Normal.png"
         },
         "image_Floor_Roughness.png": {
             "uri": "Floor_Roughness.png"
@@ -995,12 +983,6 @@
         "image_Wall0_Height.png": {
             "uri": "Wall0_Height.png"
         },
-        "image_Wall0_Metallic.png": {
-            "uri": "Wall0_Metallic.png"
-        },
-        "image_Wall0_Normal.png": {
-            "uri": "Wall0_Normal.png"
-        },
         "image_Wall0_Roughness.png": {
             "uri": "Wall0_Roughness.png"
         },
@@ -1009,12 +991,6 @@
         },
         "image_Wall1_Height.png": {
             "uri": "Wall1_Height.png"
-        },
-        "image_Wall1_Metallic.png": {
-            "uri": "Wall1_Metallic.png"
-        },
-        "image_Wall1_Normal.png": {
-            "uri": "Wall1_Normal.png"
         },
         "image_Wall1_Roughness.png": {
             "uri": "Wall1_Roughness.png"
@@ -1025,12 +1001,6 @@
         "image_Wall2_Height.png": {
             "uri": "Wall2_Height.png"
         },
-        "image_Wall2_Metallic.png": {
-            "uri": "Wall2_Metallic.png"
-        },
-        "image_Wall2_Normal.png": {
-            "uri": "Wall2_Normal.png"
-        },
         "image_Wall2_Roughness.png": {
             "uri": "Wall2_Roughness.png"
         },
@@ -1040,12 +1010,6 @@
         "image_Wall3_Height.png": {
             "uri": "Wall3_Height.png"
         },
-        "image_Wall3_Metallic.png": {
-            "uri": "Wall3_Metallic.png"
-        },
-        "image_Wall3_Normal.png": {
-            "uri": "Wall3_Normal.png"
-        },
         "image_Wall3_Roughness.png": {
             "uri": "Wall3_Roughness.png"
         },
@@ -1054,12 +1018,6 @@
         },
         "image_Wall4_Height.png": {
             "uri": "Wall4_Height.png"
-        },
-        "image_Wall4_Metallic.png": {
-            "uri": "Wall4_Metallic.png"
-        },
-        "image_Wall4_Normal.png": {
-            "uri": "Wall4_Normal.png"
         },
         "image_Wall4_Roughness.png": {
             "uri": "Wall4_Roughness.png"
@@ -1088,8 +1046,6 @@
                     1
                 ],
                 "height": "texture_Ceiling_Height.png",
-                "metallic": "texture_Ceiling_Metallic.png",
-                "normal": "texture_Ceiling_Normal.png",
                 "roughness": "texture_Ceiling_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
@@ -1123,8 +1079,6 @@
                     1
                 ],
                 "height": "texture_Floor_Height.png",
-                "metallic": "texture_Floor_Metallic.png",
-                "normal": "texture_Floor_Normal.png",
                 "roughness": "texture_Floor_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
@@ -1158,8 +1112,6 @@
                     1
                 ],
                 "height": "texture_Wall0_Height.png",
-                "metallic": "texture_Wall0_Metallic.png",
-                "normal": "texture_Wall0_Normal.png",
                 "roughness": "texture_Wall0_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
@@ -1193,8 +1145,6 @@
                     1
                 ],
                 "height": "texture_Wall1_Height.png",
-                "metallic": "texture_Wall1_Metallic.png",
-                "normal": "texture_Wall1_Normal.png",
                 "roughness": "texture_Wall1_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
@@ -1228,8 +1178,6 @@
                     1
                 ],
                 "height": "texture_Wall2_Height.png",
-                "metallic": "texture_Wall2_Metallic.png",
-                "normal": "texture_Wall2_Normal.png",
                 "roughness": "texture_Wall2_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
@@ -1263,8 +1211,6 @@
                     1
                 ],
                 "height": "texture_Wall3_Height.png",
-                "metallic": "texture_Wall3_Metallic.png",
-                "normal": "texture_Wall3_Normal.png",
                 "roughness": "texture_Wall3_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
@@ -1298,8 +1244,6 @@
                     1
                 ],
                 "height": "texture_Wall4_Height.png",
-                "metallic": "texture_Wall4_Metallic.png",
-                "normal": "texture_Wall4_Normal.png",
                 "roughness": "texture_Wall4_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
@@ -1918,22 +1862,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Ceiling_Metallic.png": {
-            "format": 6403,
-            "internalFormat": 33321,
-            "sampler": "sampler_0",
-            "source": "image_Ceiling_Metallic.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Ceiling_Normal.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_Ceiling_Normal.png",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Ceiling_Roughness.png": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1955,22 +1883,6 @@
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_Floor_Height.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Floor_Metallic.png": {
-            "format": 6403,
-            "internalFormat": 33321,
-            "sampler": "sampler_0",
-            "source": "image_Floor_Metallic.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Floor_Normal.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_Floor_Normal.png",
             "target": 3553,
             "type": 5121
         },
@@ -1998,22 +1910,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Wall0_Metallic.png": {
-            "format": 6403,
-            "internalFormat": 33321,
-            "sampler": "sampler_0",
-            "source": "image_Wall0_Metallic.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Wall0_Normal.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_Wall0_Normal.png",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Wall0_Roughness.png": {
             "format": 6403,
             "internalFormat": 33321,
@@ -2035,22 +1931,6 @@
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_Wall1_Height.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Wall1_Metallic.png": {
-            "format": 6403,
-            "internalFormat": 33321,
-            "sampler": "sampler_0",
-            "source": "image_Wall1_Metallic.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Wall1_Normal.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_Wall1_Normal.png",
             "target": 3553,
             "type": 5121
         },
@@ -2078,22 +1958,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Wall2_Metallic.png": {
-            "format": 6403,
-            "internalFormat": 33321,
-            "sampler": "sampler_0",
-            "source": "image_Wall2_Metallic.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Wall2_Normal.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_Wall2_Normal.png",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Wall2_Roughness.png": {
             "format": 6403,
             "internalFormat": 33321,
@@ -2118,22 +1982,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Wall3_Metallic.png": {
-            "format": 6403,
-            "internalFormat": 33321,
-            "sampler": "sampler_0",
-            "source": "image_Wall3_Metallic.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Wall3_Normal.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_Wall3_Normal.png",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Wall3_Roughness.png": {
             "format": 6403,
             "internalFormat": 33321,
@@ -2155,22 +2003,6 @@
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_Wall4_Height.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Wall4_Metallic.png": {
-            "format": 6403,
-            "internalFormat": 33321,
-            "sampler": "sampler_0",
-            "source": "image_Wall4_Metallic.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Wall4_Normal.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_Wall4_Normal.png",
             "target": 3553,
             "type": 5121
         },

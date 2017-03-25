@@ -1,76 +1,92 @@
 {
     "accessors": {
-        "accessor_index_0": {
-            "bufferView": "bufferView_index",
+        "accessor_0": {
+            "bufferView": "bufferView_0",
             "byteOffset": 0,
             "byteStride": 0,
-            "componentType": 5123,
-            "count": 36,
-            "type": "SCALAR"
-        },
-        "accessor_normal": {
-            "bufferView": "bufferView_vertex",
-            "byteOffset": 12,
-            "byteStride": 24,
-            "componentType": 5126,
-            "count": 24,
-            "type": "VEC3"
-        },
-        "accessor_position": {
-            "bufferView": "bufferView_vertex",
-            "byteOffset": 0,
-            "byteStride": 24,
             "componentType": 5126,
             "count": 24,
             "max": [
                 0.125,
-                1.9,
+                1.899999976158142,
                 0.75
             ],
             "min": [
-                0.025,
+                0.02500000037252903,
                 0,
-                0.1
+                0.10000000149011612
             ],
             "type": "VEC3"
+        },
+        "accessor_1": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 288,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                1,
+                1,
+                1
+            ],
+            "min": [
+                -1,
+                -1,
+                -1
+            ],
+            "type": "VEC3"
+        },
+        "accessor_2": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 0,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 36,
+            "max": [
+                23
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
         }
     },
+    "animations": {},
     "asset": {
-        "generator": "OBJ2GLTF",
+        "generator": "obj2gltf",
         "premultipliedAlpha": true,
         "profile": {
             "api": "WebGL",
             "version": "1.0"
         },
-        "version": 1
+        "version": "1.0"
     },
     "bufferViews": {
-        "bufferView_index": {
-            "buffer": "buffer_door-panel-r-1.5x2",
-            "byteLength": 72,
-            "byteOffset": 576,
-            "target": 34963
-        },
-        "bufferView_vertex": {
-            "buffer": "buffer_door-panel-r-1.5x2",
+        "bufferView_0": {
+            "buffer": "buffer",
             "byteLength": 576,
             "byteOffset": 0,
             "target": 34962
+        },
+        "bufferView_1": {
+            "buffer": "buffer",
+            "byteLength": 72,
+            "byteOffset": 576,
+            "target": 34963
         }
     },
     "buffers": {
-        "buffer_door-panel-r-1.5x2": {
+        "buffer": {
             "byteLength": 648,
             "type": "arraybuffer",
-            "uri": "door-panel-r-1.5x2.bin"
+            "uri": "data:application/octet-stream;base64,zczMPDMz8z8AAEA/zczMPAAAAADNzMw9zczMPAAAAAAAAEA/zczMPDMz8z/NzMw9AAAAPgAAAADNzMw9zczMPAAAAADNzMw9AAAAPjMz8z/NzMw9AAAAPgAAAAAAAEA/AAAAPgAAAADNzMw9AAAAPjMz8z8AAEA/zczMPAAAAAAAAEA/AAAAPgAAAAAAAEA/AAAAPgAAAADNzMw9zczMPAAAAAAAAEA/zczMPAAAAADNzMw9zczMPDMz8z/NzMw9AAAAPjMz8z8AAEA/AAAAPjMz8z/NzMw9zczMPDMz8z/NzMw9AAAAPjMz8z/NzMw9AAAAPjMz8z8AAEA/zczMPDMz8z8AAEA/AAAAPgAAAAAAAEA/zczMPDMz8z8AAEA/AACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAAAAAAAAAAAAAIC/AACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAgL8AAAAAAAAAAAAAgD8AAAAAAAABAAIAAwAEAAUABgAHAAgACQAKAAsADAANAA4ADwAQABEAAAASAAEAAwATAAQABgAUAAcACQAVAAoADAAWAA0ADwAXABAA"
         }
     },
+    "cameras": {},
     "extensionsUsed": [],
     "images": {},
     "materials": {
-        "material_None": {
-            "extensions": {},
-            "name": "None",
+        "None": {
             "values": {
                 "ambient": [
                     0,
@@ -102,23 +118,23 @@
         }
     },
     "meshes": {
-        "mesh_door-panel-r-1.5x2": {
-            "name": "door-panel-r-1.5x2",
+        "Cube.003-Mesh": {
+            "name": "Cube.003-Mesh",
             "primitives": [
                 {
                     "attributes": {
-                        "NORMAL": "accessor_normal",
-                        "POSITION": "accessor_position"
+                        "NORMAL": "accessor_1",
+                        "POSITION": "accessor_0"
                     },
-                    "indices": "accessor_index_0",
-                    "material": "material_None",
+                    "indices": "accessor_2",
+                    "material": "None",
                     "mode": 4
                 }
             ]
         }
     },
     "nodes": {
-        "node_door-panel-r-1.5x2": {
+        "Cube.003": {
             "children": [],
             "matrix": [
                 1,
@@ -139,21 +155,20 @@
                 1
             ],
             "meshes": [
-                "mesh_door-panel-r-1.5x2"
+                "Cube.003-Mesh"
             ],
-            "name": "door-panel-r-1.5x2"
+            "name": "Cube.003"
         }
     },
-    "samplers": {
-        "sampler_0": {}
-    },
-    "scene": "scene_door-panel-r-1.5x2",
+    "samplers": {},
+    "scene": "scene",
     "scenes": {
-        "scene_door-panel-r-1.5x2": {
+        "scene": {
             "nodes": [
-                "node_door-panel-r-1.5x2"
+                "Cube.003"
             ]
         }
     },
+    "skins": {},
     "textures": {}
 }

@@ -503,12 +503,6 @@
         "image_Brick_Height.png": {
             "uri": "Brick_Height.png"
         },
-        "image_Brick_Metallic.png": {
-            "uri": "Brick_Metallic.png"
-        },
-        "image_Brick_Normal.png": {
-            "uri": "Brick_Normal.png"
-        },
         "image_Brick_Roughness.png": {
             "uri": "Brick_Roughness.png"
         },
@@ -517,12 +511,6 @@
         },
         "image_Concrete_Height.png": {
             "uri": "Concrete_Height.png"
-        },
-        "image_Concrete_Metallic.png": {
-            "uri": "Concrete_Metallic.png"
-        },
-        "image_Concrete_Normal.png": {
-            "uri": "Concrete_Normal.png"
         },
         "image_Concrete_Roughness.png": {
             "uri": "Concrete_Roughness.png"
@@ -536,9 +524,6 @@
         "image_Pavement_Metallic.png": {
             "uri": "Pavement_Metallic.png"
         },
-        "image_Pavement_Normal.png": {
-            "uri": "Pavement_Normal.png"
-        },
         "image_Pavement_Roughness.png": {
             "uri": "Pavement_Roughness.png"
         },
@@ -547,12 +532,6 @@
         },
         "image_Steps_Height.png": {
             "uri": "Steps_Height.png"
-        },
-        "image_Steps_Metallic.png": {
-            "uri": "Steps_Metallic.png"
-        },
-        "image_Steps_Normal.png": {
-            "uri": "Steps_Normal.png"
         },
         "image_Steps_Roughness.png": {
             "uri": "Steps_Roughness.png"
@@ -581,8 +560,6 @@
                     1
                 ],
                 "height": "texture_Brick_Height.png",
-                "metallic": "texture_Brick_Metallic.png",
-                "normal": "texture_Brick_Normal.png",
                 "roughness": "texture_Brick_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
@@ -616,8 +593,6 @@
                     1
                 ],
                 "height": "texture_Concrete_Height.png",
-                "metallic": "texture_Concrete_Metallic.png",
-                "normal": "texture_Concrete_Normal.png",
                 "roughness": "texture_Concrete_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
@@ -652,7 +627,6 @@
                 ],
                 "height": "texture_Pavement_Height.png",
                 "metallic": "texture_Pavement_Metallic.png",
-                "normal": "texture_Pavement_Normal.png",
                 "roughness": "texture_Pavement_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
@@ -686,8 +660,6 @@
                     1
                 ],
                 "height": "texture_Steps_Height.png",
-                "metallic": "texture_Steps_Metallic.png",
-                "normal": "texture_Steps_Normal.png",
                 "roughness": "texture_Steps_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
@@ -1019,22 +991,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Brick_Metallic.png": {
-            "format": 6403,
-            "internalFormat": 33321,
-            "sampler": "sampler_0",
-            "source": "image_Brick_Metallic.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Brick_Normal.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_Brick_Normal.png",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Brick_Roughness.png": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1056,22 +1012,6 @@
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_Concrete_Height.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Concrete_Metallic.png": {
-            "format": 6403,
-            "internalFormat": 33321,
-            "sampler": "sampler_0",
-            "source": "image_Concrete_Metallic.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Concrete_Normal.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_Concrete_Normal.png",
             "target": 3553,
             "type": 5121
         },
@@ -1107,14 +1047,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Pavement_Normal.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_Pavement_Normal.png",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Pavement_Roughness.png": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1136,22 +1068,6 @@
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_Steps_Height.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Steps_Metallic.png": {
-            "format": 6403,
-            "internalFormat": 33321,
-            "sampler": "sampler_0",
-            "source": "image_Steps_Metallic.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Steps_Normal.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_Steps_Normal.png",
             "target": 3553,
             "type": 5121
         },

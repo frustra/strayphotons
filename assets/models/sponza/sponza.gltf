@@ -18,7 +18,7 @@
         },
         "accessor_index_10": {
             "bufferView": "bufferView_index",
-            "byteOffset": 1.001364e+06,
+            "byteOffset": 1001364,
             "byteStride": 0,
             "componentType": 5125,
             "count": 2640,
@@ -26,7 +26,7 @@
         },
         "accessor_index_11": {
             "bufferView": "bufferView_index",
-            "byteOffset": 1.011924e+06,
+            "byteOffset": 1011924,
             "byteStride": 0,
             "componentType": 5125,
             "count": 69624,
@@ -34,7 +34,7 @@
         },
         "accessor_index_12": {
             "bufferView": "bufferView_index",
-            "byteOffset": 1.29042e+06,
+            "byteOffset": 1290420,
             "byteStride": 0,
             "componentType": 5125,
             "count": 54,
@@ -42,7 +42,7 @@
         },
         "accessor_index_13": {
             "bufferView": "bufferView_index",
-            "byteOffset": 1.290636e+06,
+            "byteOffset": 1290636,
             "byteStride": 0,
             "componentType": 5125,
             "count": 49488,
@@ -50,7 +50,7 @@
         },
         "accessor_index_14": {
             "bufferView": "bufferView_index",
-            "byteOffset": 1.488588e+06,
+            "byteOffset": 1488588,
             "byteStride": 0,
             "componentType": 5125,
             "count": 49536,
@@ -58,7 +58,7 @@
         },
         "accessor_index_15": {
             "bufferView": "bufferView_index",
-            "byteOffset": 1.686732e+06,
+            "byteOffset": 1686732,
             "byteStride": 0,
             "componentType": 5125,
             "count": 49536,
@@ -66,7 +66,7 @@
         },
         "accessor_index_16": {
             "bufferView": "bufferView_index",
-            "byteOffset": 1.884876e+06,
+            "byteOffset": 1884876,
             "byteStride": 0,
             "componentType": 5125,
             "count": 33024,
@@ -74,7 +74,7 @@
         },
         "accessor_index_17": {
             "bufferView": "bufferView_index",
-            "byteOffset": 2.016972e+06,
+            "byteOffset": 2016972,
             "byteStride": 0,
             "componentType": 5125,
             "count": 43008,
@@ -82,7 +82,7 @@
         },
         "accessor_index_18": {
             "bufferView": "bufferView_index",
-            "byteOffset": 2.189004e+06,
+            "byteOffset": 2189004,
             "byteStride": 0,
             "componentType": 5125,
             "count": 56832,
@@ -90,7 +90,7 @@
         },
         "accessor_index_19": {
             "bufferView": "bufferView_index",
-            "byteOffset": 2.416332e+06,
+            "byteOffset": 2416332,
             "byteStride": 0,
             "componentType": 5125,
             "count": 43008,
@@ -106,7 +106,7 @@
         },
         "accessor_index_20": {
             "bufferView": "bufferView_index",
-            "byteOffset": 2.588364e+06,
+            "byteOffset": 2588364,
             "byteStride": 0,
             "componentType": 5125,
             "count": 96,
@@ -114,7 +114,7 @@
         },
         "accessor_index_21": {
             "bufferView": "bufferView_index",
-            "byteOffset": 2.588748e+06,
+            "byteOffset": 2588748,
             "byteStride": 0,
             "componentType": 5125,
             "count": 59484,
@@ -122,7 +122,7 @@
         },
         "accessor_index_22": {
             "bufferView": "bufferView_index",
-            "byteOffset": 2.826684e+06,
+            "byteOffset": 2826684,
             "byteStride": 0,
             "componentType": 5125,
             "count": 27552,
@@ -130,7 +130,7 @@
         },
         "accessor_index_23": {
             "bufferView": "bufferView_index",
-            "byteOffset": 2.936892e+06,
+            "byteOffset": 2936892,
             "byteStride": 0,
             "componentType": 5125,
             "count": 9126,
@@ -138,7 +138,7 @@
         },
         "accessor_index_24": {
             "bufferView": "bufferView_index",
-            "byteOffset": 2.973396e+06,
+            "byteOffset": 2973396,
             "byteStride": 0,
             "componentType": 5125,
             "count": 43452,
@@ -247,20 +247,20 @@
     "bufferViews": {
         "bufferView_index": {
             "buffer": "buffer_sponza",
-            "byteLength": 3.147204e+06,
-            "byteOffset": 5.900992e+06,
+            "byteLength": 3147204,
+            "byteOffset": 5900992,
             "target": 34963
         },
         "bufferView_vertex": {
             "buffer": "buffer_sponza",
-            "byteLength": 5.900992e+06,
+            "byteLength": 5900992,
             "byteOffset": 0,
             "target": 34962
         }
     },
     "buffers": {
         "buffer_sponza": {
-            "byteLength": 9.048196e+06,
+            "byteLength": 9048196,
             "type": "arraybuffer",
             "uri": "sponza.bin"
         }
@@ -272,9 +272,6 @@
         },
         "image_Background_height.png": {
             "uri": "Background_height.png"
-        },
-        "image_Background_normal.tga": {
-            "uri": "Background_normal.tga"
         },
         "image_Background_roughness.tga": {
             "uri": "Background_roughness.tga"
@@ -288,9 +285,6 @@
         "image_ChainTexture_metallic.tga": {
             "uri": "ChainTexture_metallic.tga"
         },
-        "image_ChainTexture_normal.tga": {
-            "uri": "ChainTexture_normal.tga"
-        },
         "image_ChainTexture_roughness.tga": {
             "uri": "ChainTexture_roughness.tga"
         },
@@ -302,9 +296,6 @@
         },
         "image_Lion_height.png": {
             "uri": "Lion_height.png"
-        },
-        "image_Lion_normal.tga": {
-            "uri": "Lion_normal.tga"
         },
         "image_Lion_roughness.tga": {
             "uri": "Lion_roughness.tga"
@@ -318,9 +309,6 @@
         "image_Sponza_Arch_height.png": {
             "uri": "Sponza_Arch_height.png"
         },
-        "image_Sponza_Arch_normal.tga": {
-            "uri": "Sponza_Arch_normal.tga"
-        },
         "image_Sponza_Arch_roughness.tga": {
             "uri": "Sponza_Arch_roughness.tga"
         },
@@ -330,17 +318,11 @@
         "image_Sponza_Bricks_a_height.png": {
             "uri": "Sponza_Bricks_a_height.png"
         },
-        "image_Sponza_Bricks_a_normal.tga": {
-            "uri": "Sponza_Bricks_a_normal.tga"
-        },
         "image_Sponza_Bricks_a_roughness.tga": {
             "uri": "Sponza_Bricks_a_roughness.tga"
         },
         "image_Sponza_Ceiling_diffuse.tga": {
             "uri": "Sponza_Ceiling_diffuse.tga"
-        },
-        "image_Sponza_Ceiling_normal.tga": {
-            "uri": "Sponza_Ceiling_normal.tga"
         },
         "image_Sponza_Ceiling_roughness.tga": {
             "uri": "Sponza_Ceiling_roughness.tga"
@@ -351,9 +333,6 @@
         "image_Sponza_Column_a_height.png": {
             "uri": "Sponza_Column_a_height.png"
         },
-        "image_Sponza_Column_a_normal.tga": {
-            "uri": "Sponza_Column_a_normal.tga"
-        },
         "image_Sponza_Column_a_roughness.tga": {
             "uri": "Sponza_Column_a_roughness.tga"
         },
@@ -362,9 +341,6 @@
         },
         "image_Sponza_Column_b_height.png": {
             "uri": "Sponza_Column_b_height.png"
-        },
-        "image_Sponza_Column_b_normal.tga": {
-            "uri": "Sponza_Column_b_normal.tga"
         },
         "image_Sponza_Column_b_roughness.tga": {
             "uri": "Sponza_Column_b_roughness.tga"
@@ -375,29 +351,17 @@
         "image_Sponza_Column_c_height.png": {
             "uri": "Sponza_Column_c_height.png"
         },
-        "image_Sponza_Column_c_normal.tga": {
-            "uri": "Sponza_Column_c_normal.tga"
-        },
         "image_Sponza_Column_c_roughness.tga": {
             "uri": "Sponza_Column_c_roughness.tga"
         },
         "image_Sponza_Curtain_Blue_diffuse.tga": {
             "uri": "Sponza_Curtain_Blue_diffuse.tga"
         },
-        "image_Sponza_Curtain_Blue_normal.tga": {
-            "uri": "Sponza_Curtain_Blue_normal.tga"
-        },
         "image_Sponza_Curtain_Green_diffuse.tga": {
             "uri": "Sponza_Curtain_Green_diffuse.tga"
         },
-        "image_Sponza_Curtain_Green_normal.tga": {
-            "uri": "Sponza_Curtain_Green_normal.tga"
-        },
         "image_Sponza_Curtain_Red_diffuse.tga": {
             "uri": "Sponza_Curtain_Red_diffuse.tga"
-        },
-        "image_Sponza_Curtain_Red_normal.tga": {
-            "uri": "Sponza_Curtain_Red_normal.tga"
         },
         "image_Sponza_Curtain_metallic.tga": {
             "uri": "Sponza_Curtain_metallic.tga"
@@ -411,29 +375,17 @@
         "image_Sponza_Details_metallic.tga": {
             "uri": "Sponza_Details_metallic.tga"
         },
-        "image_Sponza_Details_normal.tga": {
-            "uri": "Sponza_Details_normal.tga"
-        },
         "image_Sponza_Details_roughness.tga": {
             "uri": "Sponza_Details_roughness.tga"
         },
         "image_Sponza_Fabric_Blue_diffuse.tga": {
             "uri": "Sponza_Fabric_Blue_diffuse.tga"
         },
-        "image_Sponza_Fabric_Blue_normal.tga": {
-            "uri": "Sponza_Fabric_Blue_normal.tga"
-        },
         "image_Sponza_Fabric_Green_diffuse.tga": {
             "uri": "Sponza_Fabric_Green_diffuse.tga"
         },
-        "image_Sponza_Fabric_Green_normal.tga": {
-            "uri": "Sponza_Fabric_Green_normal.tga"
-        },
         "image_Sponza_Fabric_Red_diffuse.tga": {
             "uri": "Sponza_Fabric_Red_diffuse.tga"
-        },
-        "image_Sponza_Fabric_Red_normal.tga": {
-            "uri": "Sponza_Fabric_Red_normal.tga"
         },
         "image_Sponza_Fabric_metallic.tga": {
             "uri": "Sponza_Fabric_metallic.tga"
@@ -444,26 +396,17 @@
         "image_Sponza_FlagPole_diffuse.tga": {
             "uri": "Sponza_FlagPole_diffuse.tga"
         },
-        "image_Sponza_FlagPole_normal.tga": {
-            "uri": "Sponza_FlagPole_normal.tga"
-        },
         "image_Sponza_FlagPole_roughness.tga": {
             "uri": "Sponza_FlagPole_roughness.tga"
         },
         "image_Sponza_Floor_diffuse.tga": {
             "uri": "Sponza_Floor_diffuse.tga"
         },
-        "image_Sponza_Floor_normal.tga": {
-            "uri": "Sponza_Floor_normal.tga"
-        },
         "image_Sponza_Floor_roughness.tga": {
             "uri": "Sponza_Floor_roughness.tga"
         },
         "image_Sponza_Roof_diffuse.tga": {
             "uri": "Sponza_Roof_diffuse.tga"
-        },
-        "image_Sponza_Roof_normal.tga": {
-            "uri": "Sponza_Roof_normal.tga"
         },
         "image_Sponza_Roof_roughness.tga": {
             "uri": "Sponza_Roof_roughness.tga"
@@ -474,26 +417,17 @@
         "image_Sponza_Thorn_height.png": {
             "uri": "Sponza_Thorn_height.png"
         },
-        "image_Sponza_Thorn_normal.tga": {
-            "uri": "Sponza_Thorn_normal.tga"
-        },
         "image_Sponza_Thorn_roughness.tga": {
             "uri": "Sponza_Thorn_roughness.tga"
         },
         "image_VaseHanging_diffuse.tga": {
             "uri": "VaseHanging_diffuse.tga"
         },
-        "image_VaseHanging_normal.tga": {
-            "uri": "VaseHanging_normal.tga"
-        },
         "image_VaseHanging_roughness.tga": {
             "uri": "VaseHanging_roughness.tga"
         },
         "image_VasePlant_diffuse.tga": {
             "uri": "VasePlant_diffuse.tga"
-        },
-        "image_VasePlant_normal.tga": {
-            "uri": "VasePlant_normal.tga"
         },
         "image_VasePlant_roughness.tga": {
             "uri": "VasePlant_roughness.tga"
@@ -504,9 +438,6 @@
         "image_VaseRound_height.png": {
             "uri": "VaseRound_height.png"
         },
-        "image_VaseRound_normal.tga": {
-            "uri": "VaseRound_normal.tga"
-        },
         "image_VaseRound_roughness.tga": {
             "uri": "VaseRound_roughness.tga"
         },
@@ -515,9 +446,6 @@
         },
         "image_Vase_height.png": {
             "uri": "Vase_height.png"
-        },
-        "image_Vase_normal.tga": {
-            "uri": "Vase_normal.tga"
         },
         "image_Vase_roughness.tga": {
             "uri": "Vase_roughness.tga"
@@ -531,7 +459,6 @@
                 "baseColor": "texture_Lion_diffuse.tga",
                 "height": "texture_Lion_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
-                "normal": "texture_Lion_normal.tga",
                 "roughness": "texture_Lion_roughness.tga"
             }
         },
@@ -542,7 +469,6 @@
                 "baseColor": "texture_Background_diffuse.tga",
                 "height": "texture_Background_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
-                "normal": "texture_Background_normal.tga",
                 "roughness": "texture_Background_roughness.tga"
             }
         },
@@ -565,7 +491,6 @@
             "values": {
                 "baseColor": "texture_VasePlant_diffuse.tga",
                 "metallic": "texture_Dielectric_metallic.tga",
-                "normal": "texture_VasePlant_normal.tga",
                 "roughness": "texture_VasePlant_roughness.tga"
             }
         },
@@ -576,7 +501,6 @@
                 "baseColor": "texture_Sponza_Arch_diffuse.tga",
                 "height": "texture_Sponza_Arch_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
-                "normal": "texture_Sponza_Arch_normal.tga",
                 "roughness": "texture_Sponza_Arch_roughness.tga"
             }
         },
@@ -587,7 +511,6 @@
                 "baseColor": "texture_Sponza_Bricks_a_diffuse.tga",
                 "height": "texture_Sponza_Bricks_a_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
-                "normal": "texture_Sponza_Bricks_a_normal.tga",
                 "roughness": "texture_Sponza_Bricks_a_roughness.tga"
             }
         },
@@ -597,7 +520,6 @@
             "values": {
                 "baseColor": "texture_Sponza_Ceiling_diffuse.tga",
                 "metallic": "texture_Dielectric_metallic.tga",
-                "normal": "texture_Sponza_Ceiling_normal.tga",
                 "roughness": "texture_Sponza_Ceiling_roughness.tga"
             }
         },
@@ -608,7 +530,6 @@
                 "baseColor": "texture_ChainTexture_diffuse.tga",
                 "height": "texture_ChainTexture_height.png",
                 "metallic": "texture_ChainTexture_metallic.tga",
-                "normal": "texture_ChainTexture_normal.tga",
                 "roughness": "texture_ChainTexture_roughness.tga"
             }
         },
@@ -619,7 +540,6 @@
                 "baseColor": "texture_Sponza_Column_a_diffuse.tga",
                 "height": "texture_Sponza_Column_a_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
-                "normal": "texture_Sponza_Column_a_normal.tga",
                 "roughness": "texture_Sponza_Column_a_roughness.tga"
             }
         },
@@ -630,7 +550,6 @@
                 "baseColor": "texture_Sponza_Column_b_diffuse.tga",
                 "height": "texture_Sponza_Column_b_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
-                "normal": "texture_Sponza_Column_b_normal.tga",
                 "roughness": "texture_Sponza_Column_b_roughness.tga"
             }
         },
@@ -641,7 +560,6 @@
                 "baseColor": "texture_Sponza_Column_c_diffuse.tga",
                 "height": "texture_Sponza_Column_c_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
-                "normal": "texture_Sponza_Column_c_normal.tga",
                 "roughness": "texture_Sponza_Column_c_roughness.tga"
             }
         },
@@ -651,7 +569,6 @@
             "values": {
                 "baseColor": "texture_Sponza_Details_diffuse.tga",
                 "metallic": "texture_Sponza_Details_metallic.tga",
-                "normal": "texture_Sponza_Details_normal.tga",
                 "roughness": "texture_Sponza_Details_roughness.tga"
             }
         },
@@ -661,7 +578,6 @@
             "values": {
                 "baseColor": "texture_Sponza_Fabric_Red_diffuse.tga",
                 "metallic": "texture_Sponza_Fabric_metallic.tga",
-                "normal": "texture_Sponza_Fabric_Red_normal.tga",
                 "roughness": "texture_Sponza_Fabric_roughness.tga"
             }
         },
@@ -671,7 +587,6 @@
             "values": {
                 "baseColor": "texture_Sponza_Curtain_Red_diffuse.tga",
                 "metallic": "texture_Sponza_Curtain_metallic.tga",
-                "normal": "texture_Sponza_Curtain_Red_normal.tga",
                 "roughness": "texture_Sponza_Curtain_roughness.tga"
             }
         },
@@ -681,7 +596,6 @@
             "values": {
                 "baseColor": "texture_Sponza_Fabric_Blue_diffuse.tga",
                 "metallic": "texture_Sponza_Fabric_metallic.tga",
-                "normal": "texture_Sponza_Fabric_Blue_normal.tga",
                 "roughness": "texture_Sponza_Fabric_roughness.tga"
             }
         },
@@ -691,7 +605,6 @@
             "values": {
                 "baseColor": "texture_Sponza_Fabric_Green_diffuse.tga",
                 "metallic": "texture_Sponza_Fabric_metallic.tga",
-                "normal": "texture_Sponza_Fabric_Green_normal.tga",
                 "roughness": "texture_Sponza_Fabric_roughness.tga"
             }
         },
@@ -701,7 +614,6 @@
             "values": {
                 "baseColor": "texture_Sponza_Curtain_Green_diffuse.tga",
                 "metallic": "texture_Sponza_Curtain_metallic.tga",
-                "normal": "texture_Sponza_Curtain_Green_normal.tga",
                 "roughness": "texture_Sponza_Curtain_roughness.tga"
             }
         },
@@ -711,7 +623,6 @@
             "values": {
                 "baseColor": "texture_Sponza_Curtain_Blue_diffuse.tga",
                 "metallic": "texture_Sponza_Curtain_metallic.tga",
-                "normal": "texture_Sponza_Curtain_Blue_normal.tga",
                 "roughness": "texture_Sponza_Curtain_roughness.tga"
             }
         },
@@ -721,7 +632,6 @@
             "values": {
                 "baseColor": "texture_Sponza_FlagPole_diffuse.tga",
                 "metallic": "texture_Metallic_metallic.tga",
-                "normal": "texture_Sponza_FlagPole_normal.tga",
                 "roughness": "texture_Sponza_FlagPole_roughness.tga"
             }
         },
@@ -731,7 +641,6 @@
             "values": {
                 "baseColor": "texture_Sponza_Floor_diffuse.tga",
                 "metallic": "texture_Dielectric_metallic.tga",
-                "normal": "texture_Sponza_Floor_normal.tga",
                 "roughness": "texture_Sponza_Floor_roughness.tga"
             }
         },
@@ -742,7 +651,6 @@
                 "baseColor": "texture_Sponza_Thorn_diffuse.tga",
                 "height": "texture_Sponza_Thorn_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
-                "normal": "texture_Sponza_Thorn_normal.tga",
                 "roughness": "texture_Sponza_Thorn_roughness.tga"
             }
         },
@@ -752,7 +660,6 @@
             "values": {
                 "baseColor": "texture_Sponza_Roof_diffuse.tga",
                 "metallic": "texture_Dielectric_metallic.tga",
-                "normal": "texture_Sponza_Roof_normal.tga",
                 "roughness": "texture_Sponza_Roof_roughness.tga"
             }
         },
@@ -763,7 +670,6 @@
                 "baseColor": "texture_Vase_diffuse.tga",
                 "height": "texture_Vase_height.png",
                 "metallic": "texture_Dielectric_metallic.tga",
-                "normal": "texture_Vase_normal.tga",
                 "roughness": "texture_Vase_roughness.tga"
             }
         },
@@ -773,7 +679,6 @@
             "values": {
                 "baseColor": "texture_VaseHanging_diffuse.tga",
                 "metallic": "texture_Metallic_metallic.tga",
-                "normal": "texture_VaseHanging_normal.tga",
                 "roughness": "texture_VaseHanging_roughness.tga"
             }
         },
@@ -784,7 +689,6 @@
                 "baseColor": "texture_VaseRound_diffuse.tga",
                 "height": "texture_VaseRound_height.png",
                 "metallic": "texture_Metallic_metallic.tga",
-                "normal": "texture_VaseRound_normal.tga",
                 "roughness": "texture_VaseRound_roughness.tga"
             }
         }
@@ -1101,14 +1005,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Background_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Background_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Background_roughness.tga": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1138,14 +1034,6 @@
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_ChainTexture_metallic.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_ChainTexture_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_ChainTexture_normal.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1181,14 +1069,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Lion_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Lion_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Lion_roughness.tga": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1221,14 +1101,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Sponza_Arch_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Arch_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Sponza_Arch_roughness.tga": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1253,14 +1125,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Sponza_Bricks_a_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Bricks_a_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Sponza_Bricks_a_roughness.tga": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1274,14 +1138,6 @@
             "internalFormat": 6408,
             "sampler": "sampler_0",
             "source": "image_Sponza_Ceiling_diffuse.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Sponza_Ceiling_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Ceiling_normal.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1309,14 +1165,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Sponza_Column_a_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Column_a_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Sponza_Column_a_roughness.tga": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1338,14 +1186,6 @@
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_Sponza_Column_b_height.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Sponza_Column_b_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Column_b_normal.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1373,14 +1213,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Sponza_Column_c_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Column_c_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Sponza_Column_c_roughness.tga": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1397,14 +1229,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Sponza_Curtain_Blue_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Curtain_Blue_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Sponza_Curtain_Green_diffuse.tga": {
             "format": 6408,
             "internalFormat": 6408,
@@ -1413,27 +1237,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Sponza_Curtain_Green_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Curtain_Green_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Sponza_Curtain_Red_diffuse.tga": {
             "format": 6408,
             "internalFormat": 6408,
             "sampler": "sampler_0",
             "source": "image_Sponza_Curtain_Red_diffuse.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Sponza_Curtain_Red_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Curtain_Red_normal.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1469,14 +1277,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Sponza_Details_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Details_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Sponza_Details_roughness.tga": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1493,14 +1293,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Sponza_Fabric_Blue_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Fabric_Blue_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Sponza_Fabric_Green_diffuse.tga": {
             "format": 6408,
             "internalFormat": 6408,
@@ -1509,27 +1301,11 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Sponza_Fabric_Green_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Fabric_Green_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Sponza_Fabric_Red_diffuse.tga": {
             "format": 6408,
             "internalFormat": 6408,
             "sampler": "sampler_0",
             "source": "image_Sponza_Fabric_Red_diffuse.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Sponza_Fabric_Red_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Fabric_Red_normal.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1557,14 +1333,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Sponza_FlagPole_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_FlagPole_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Sponza_FlagPole_roughness.tga": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1581,14 +1349,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Sponza_Floor_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Floor_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Sponza_Floor_roughness.tga": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1602,14 +1362,6 @@
             "internalFormat": 6408,
             "sampler": "sampler_0",
             "source": "image_Sponza_Roof_diffuse.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Sponza_Roof_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Roof_normal.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1637,14 +1389,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_Sponza_Thorn_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Sponza_Thorn_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_Sponza_Thorn_roughness.tga": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1661,14 +1405,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_VaseHanging_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_VaseHanging_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_VaseHanging_roughness.tga": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1682,14 +1418,6 @@
             "internalFormat": 6408,
             "sampler": "sampler_0",
             "source": "image_VasePlant_diffuse.tga",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_VasePlant_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_VasePlant_normal.tga",
             "target": 3553,
             "type": 5121
         },
@@ -1717,14 +1445,6 @@
             "target": 3553,
             "type": 5121
         },
-        "texture_VaseRound_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_VaseRound_normal.tga",
-            "target": 3553,
-            "type": 5121
-        },
         "texture_VaseRound_roughness.tga": {
             "format": 6403,
             "internalFormat": 33321,
@@ -1746,14 +1466,6 @@
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_Vase_height.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Vase_normal.tga": {
-            "format": 6408,
-            "internalFormat": 6408,
-            "sampler": "sampler_0",
-            "source": "image_Vase_normal.tga",
             "target": 3553,
             "type": 5121
         },

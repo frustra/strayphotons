@@ -1,30 +1,14 @@
 {
     "accessors": {
-        "accessor_index_0": {
-            "bufferView": "bufferView_index",
+        "accessor_0": {
+            "bufferView": "bufferView_0",
             "byteOffset": 0,
             "byteStride": 0,
-            "componentType": 5123,
-            "count": 36,
-            "type": "SCALAR"
-        },
-        "accessor_normal": {
-            "bufferView": "bufferView_vertex",
-            "byteOffset": 12,
-            "byteStride": 24,
-            "componentType": 5126,
-            "count": 24,
-            "type": "VEC3"
-        },
-        "accessor_position": {
-            "bufferView": "bufferView_vertex",
-            "byteOffset": 0,
-            "byteStride": 24,
             "componentType": 5126,
             "count": 24,
             "max": [
                 1,
-                5e-324,
+                0,
                 1
             ],
             "min": [
@@ -33,55 +17,87 @@
                 0
             ],
             "type": "VEC3"
+        },
+        "accessor_1": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 288,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                1,
+                1,
+                1
+            ],
+            "min": [
+                -1,
+                -1,
+                -1
+            ],
+            "type": "VEC3"
+        },
+        "accessor_2": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 0,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 36,
+            "max": [
+                23
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
         }
     },
+    "animations": {},
     "asset": {
-        "generator": "OBJ2GLTF",
+        "generator": "obj2gltf",
         "premultipliedAlpha": true,
         "profile": {
             "api": "WebGL",
             "version": "1.0"
         },
-        "version": 1
+        "version": "1.0"
     },
     "bufferViews": {
-        "bufferView_index": {
-            "buffer": "buffer_ground-1x1x1",
-            "byteLength": 72,
-            "byteOffset": 576,
-            "target": 34963
-        },
-        "bufferView_vertex": {
-            "buffer": "buffer_ground-1x1x1",
+        "bufferView_0": {
+            "buffer": "buffer",
             "byteLength": 576,
             "byteOffset": 0,
             "target": 34962
+        },
+        "bufferView_1": {
+            "buffer": "buffer",
+            "byteLength": 72,
+            "byteOffset": 576,
+            "target": 34963
         }
     },
     "buffers": {
-        "buffer_ground-1x1x1": {
+        "buffer": {
             "byteLength": 648,
             "type": "arraybuffer",
-            "uri": "ground-1x1x1.bin"
+            "uri": "data:application/octet-stream;base64,AACAPwAAgL8AAAAAAAAAAAAAgL8AAIA/AAAAAAAAgL8AAAAAAAAAAAAAAAAAAAAA7/9/PwAAAAAAAIA/AACAPwAAAAC9N4Y1AACAPwAAAAC9N4Y1AACAPwAAgL8AAIA/AACAPwAAgL8AAAAA7/9/PwAAAAAAAIA/AAAAAAAAgL8AAIA/AACAPwAAgL8AAIA/AAAAAAAAAAAAAIA/AAAAAAAAgL8AAAAAAAAAAAAAgL8AAIA/AACAPwAAgL8AAAAAAAAAAAAAAAAAAAAAAACAPwAAAAC9N4Y1AACAPwAAgL8AAIA/AAAAAAAAAAAAAIA/7/9/PwAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AACAvwAAAIAAAACAAACAvwAAAIAAAACAAACAvwAAAIAAAACAAAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAgL8AAAAAAAAAAAAAgD8AAAAAAACAPwAAAIAAAAAAAAAAgAAAAIAAAIA/AACAvwAAAIAAAACAAAAAAAAAAAAAAIC/AAABAAIAAwAEAAUABgAHAAgACQAKAAsADAANAA4ADwAQABEAAAASAAEAAwATAAQABgAUAAcACQAVAAoADAAWAA0ADwAXABAA"
         }
     },
+    "cameras": {},
     "extensionsUsed": [],
     "images": {},
     "materials": {
-        "material_Material": {
-            "extensions": {},
-            "name": "Material",
+        "Material": {
             "values": {
                 "ambient": [
-                    1,
-                    1,
-                    1,
+                    0,
+                    0,
+                    0,
                     1
                 ],
                 "diffuse": [
-                    0.64,
-                    0.64,
-                    0.64,
+                    0.5,
+                    0.5,
+                    0.5,
                     1
                 ],
                 "emission": [
@@ -90,11 +106,11 @@
                     0,
                     1
                 ],
-                "shininess": 96.078431,
+                "shininess": 0,
                 "specular": [
-                    0.5,
-                    0.5,
-                    0.5,
+                    0,
+                    0,
+                    0,
                     1
                 ],
                 "transparency": 1
@@ -102,23 +118,23 @@
         }
     },
     "meshes": {
-        "mesh_ground-1x1x1": {
-            "name": "ground-1x1x1",
+        "Cube-Mesh": {
+            "name": "Cube-Mesh",
             "primitives": [
                 {
                     "attributes": {
-                        "NORMAL": "accessor_normal",
-                        "POSITION": "accessor_position"
+                        "NORMAL": "accessor_1",
+                        "POSITION": "accessor_0"
                     },
-                    "indices": "accessor_index_0",
-                    "material": "material_Material",
+                    "indices": "accessor_2",
+                    "material": "Material",
                     "mode": 4
                 }
             ]
         }
     },
     "nodes": {
-        "node_ground-1x1x1": {
+        "Cube": {
             "children": [],
             "matrix": [
                 1,
@@ -139,21 +155,20 @@
                 1
             ],
             "meshes": [
-                "mesh_ground-1x1x1"
+                "Cube-Mesh"
             ],
-            "name": "ground-1x1x1"
+            "name": "Cube"
         }
     },
-    "samplers": {
-        "sampler_0": {}
-    },
-    "scene": "scene_ground-1x1x1",
+    "samplers": {},
+    "scene": "scene",
     "scenes": {
-        "scene_ground-1x1x1": {
+        "scene": {
             "nodes": [
-                "node_ground-1x1x1"
+                "Cube"
             ]
         }
     },
+    "skins": {},
     "textures": {}
 }

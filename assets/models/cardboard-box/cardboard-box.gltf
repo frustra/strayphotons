@@ -107,12 +107,6 @@
         "image_Material_Height.png": {
             "uri": "Material_Height.png"
         },
-        "image_Material_Metallic.png": {
-            "uri": "Material_Metallic.png"
-        },
-        "image_Material_Normal.png": {
-            "uri": "Material_Normal.png"
-        },
         "image_Material_Roughness.png": {
             "uri": "Material_Roughness.png"
         }
@@ -140,8 +134,6 @@
                     1
                 ],
                 "height": "texture_Material_Height.png",
-                "metallic": "texture_Material_Metallic.png",
-                "normal": "texture_Material_Normal.png",
                 "roughness": "texture_Material_Roughness.png",
                 "shininess": 96.078431,
                 "specular": [
@@ -224,22 +216,6 @@
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_Material_Height.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Material_Metallic.png": {
-            "format": 6403,
-            "internalFormat": 33321,
-            "sampler": "sampler_0",
-            "source": "image_Material_Metallic.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Material_Normal.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_Material_Normal.png",
             "target": 3553,
             "type": 5121
         },
