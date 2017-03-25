@@ -579,8 +579,11 @@ namespace sp
 						sceneFS->SetMirrorId(-1);
 					}
 
-					auto renderable = ent.Get<ecs::Renderable>();
-					sceneFS->SetEmissive(renderable->emissive);
+					if (ent.Has<ecs::Renderable>())
+					{
+						auto renderable = ent.Get<ecs::Renderable>();
+						sceneFS->SetEmissive(renderable->emissive);
+					}
 				});
 			}
 		}
