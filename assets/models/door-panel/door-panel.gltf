@@ -5,7 +5,7 @@
             "byteOffset": 0,
             "byteStride": 0,
             "componentType": 5126,
-            "count": 24,
+            "count": 28,
             "max": [
                 0.05000000074505806,
                 2.5,
@@ -20,10 +20,10 @@
         },
         "accessor_1": {
             "bufferView": "bufferView_0",
-            "byteOffset": 288,
+            "byteOffset": 336,
             "byteStride": 0,
             "componentType": 5126,
-            "count": 24,
+            "count": 28,
             "max": [
                 1,
                 1,
@@ -38,10 +38,10 @@
         },
         "accessor_2": {
             "bufferView": "bufferView_0",
-            "byteOffset": 576,
+            "byteOffset": 672,
             "byteStride": 0,
             "componentType": 5126,
-            "count": 24,
+            "count": 28,
             "max": [
                 0.991100013256073,
                 0.9998999834060669
@@ -57,9 +57,9 @@
             "byteOffset": 0,
             "byteStride": 0,
             "componentType": 5123,
-            "count": 36,
+            "count": 42,
             "max": [
-                23
+                27
             ],
             "min": [
                 0
@@ -80,22 +80,22 @@
     "bufferViews": {
         "bufferView_0": {
             "buffer": "buffer",
-            "byteLength": 768,
+            "byteLength": 896,
             "byteOffset": 0,
             "target": 34962
         },
         "bufferView_1": {
             "buffer": "buffer",
-            "byteLength": 72,
-            "byteOffset": 768,
+            "byteLength": 84,
+            "byteOffset": 896,
             "target": 34963
         }
     },
     "buffers": {
         "buffer": {
-            "byteLength": 840,
+            "byteLength": 980,
             "type": "arraybuffer",
-            "uri": "data:application/octet-stream;base64,zcxMPQAAAAAAAAAAzcxMPQAAAAAAAEA/zcxMvQAAAAAAAEA/zcxMvQAAAAAAAACAzcxMPQAAIEAAAAAAzcxMvQAAIEAAAAAAzcxMvQAAIEAAAEA/zcxMPQAAIEAAAEA/zcxMPQAAAAAAAAAAzcxMPQAAIEAAAAAAzcxMPQAAIEAAAEA/zcxMPQAAAAAAAEA/zcxMPQAAAAAAAEA/zcxMPQAAIEAAAEA/zcxMvQAAIEAAAEA/zcxMvQAAAAAAAEA/zcxMvQAAAAAAAEA/zcxMvQAAIEAAAEA/zcxMvQAAIEAAAAAAzcxMvQAAAAAAAACAzcxMPQAAIEAAAAAAzcxMPQAAAAAAAAAAzcxMvQAAAAAAAACAzcxMvQAAIEAAAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AACAvwAAAIAAAACAAACAvwAAAIAAAACAAACAvwAAAIAAAACAAACAvwAAAIAAAACAAAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/u7h9P4MvTD+7uH0/gy9MP7u4fT+DL0w/u7h9P4MvTD/CF3Y/4ul1P8IXdj/i6XU/whd2P+LpdT/CF3Y/4ul1P5qZmT5y+X8/mpmZPhe30TgXt9E4F7fROBe30Thy+X8/ZRnCPnL5fz9lGcI+F7fROISerT4Xt9E4hJ6tPnL5fz+fzTo/cvl/P5/NOj8Xt9E4owHcPhe30TijAdw+cvl/P4SerT4Xt9E4hJ6tPnL5fz9lGcI+cvl/P2UZwj4Xt9E4AAABAAIAAAACAAMABAAFAAYABAAGAAcACAAJAAoACAAKAAsADAANAA4ADAAOAA8AEAARABIAEAASABMAFAAVABYAFAAWABcA"
+            "uri": "data:application/octet-stream;base64,zcxMPQAAAAAAAAAAzcxMvQAAAAAAAEA/zcxMvQAAAAAAAACAzcxMPQAAIEAAAAAAzcxMvQAAIEAAAEA/zcxMPQAAIEAAAEA/zcxMPQAAIEAAAAAAzcxMPQAAAAAAAEA/zcxMPQAAAAAAAAAAzcxMPQAAIEAAAEA/zcxMvQAAAAAAAEA/zcxMPQAAAAAAAEA/zcxMvQAAIEAAAEA/zcxMvQAAAAAAAACAzcxMvQAAAAAAAEA/zcxMPQAAIEAAAAAAzcxMvQAAAAAAAACAzcxMvQAAIEAAAAAAgh9VOgAAIEAAAAAAgh9VOgAAAIAAAEA/gh9VOgAAAIAAAACAzcxMPQAAAAAAAEA/zcxMvQAAIEAAAAAAzcxMPQAAIEAAAEA/zcxMvQAAIEAAAEA/zcxMvQAAIEAAAAAAzcxMPQAAAAAAAAAAgh9VOgAAIEAAAEA/AAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgD8AAACAAAAAAAAAgD8AAACAAAAAAAAAgD8AAACAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AACAvwAAAIAAAACAAACAvwAAAIAAAACAAACAvwAAAIAAAACAAAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAAAAAAAAgL8AAAAAAAAAAAAAgD8AAACAAACAPwAAAIAAAAAAAAAAgAAAAIAAAIA/AACAvwAAAIAAAACAAAAAAAAAAAAAAIC/AACAPwAAAIAAAAAAu7h9P4MvTD+7uH0/gy9MP7u4fT+DL0w/whd2P+LpdT/CF3Y/4ul1P8IXdj/i6XU/mpmZPhe30TgXt9E4cvl/P5qZmT5y+X8/ZRnCPhe30TiEnq0+cvl/P2UZwj5y+X8/n806Pxe30TijAdw+cvl/P5/NOj9y+X8/hJ6tPhe30ThlGcI+cvl/P2UZwj4Xt9E4mpmZPhe30TgXt9E4cvl/P5qZmT5y+X8/u7h9P4MvTD/CF3Y/4ul1Pxe30TgXt9E4hJ6tPhe30TijAdw+F7fROISerT5y+X8/F7fROBe30TgAAAEAAgADAAQABQAGAAcACAAJAAoACwAMAA0ADgAPABAAEQASABMAFAAAABUAAQADABYABAAGABcABwAJABgACgAMABkADQAPABoAEAASABsAEwA="
         }
     },
     "cameras": {},
