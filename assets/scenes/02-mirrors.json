@@ -351,7 +351,7 @@
 					2,
 					4
 				],
-				"command": "g.CloseDoor airlock2-in; wait 1000 loadscene 03-light-gun"
+				"_command": "g.CloseDoor airlock2-in; wait 1000 loadscene 03-light-gun"
 			}
 		},
 		{
@@ -859,61 +859,378 @@
 			}
 		},
 		{
-			"_comment": "start airlock wall that needs a hole",
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					-1,
-					0,
-					3
-				],
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "sensor corner wall beside start",
 			"renderable": "wall-4x3",
 			"transform": {
 				"rotate": [
-					90,
+					-180,
 					0,
 					1,
 					0
 				],
 				"translate": [
-					-1,
-					0,
-					6
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "sensor1 wall",
-			"renderable": "wall-4x3",
-			"transform": {
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					-4,
+					4.5,
 					0,
 					9
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					-180,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					1.5,
+					0,
+					9
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					-180,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					-1.5,
+					0,
+					9
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					-3,
+					0,
+					7.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					0,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					-1.5,
+					0,
+					6
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					0,
+					0,
+					4.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3-door",
+			"transform": {
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					0,
+					0,
+					1.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3-door",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					0,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					1.5,
+					0,
+					0
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					0,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					4.5,
+					0,
+					0
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					-90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					6,
+					0,
+					1.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3-door",
+			"transform": {
+				"rotate": [
+					-90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					6,
+					0,
+					4.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3-door",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3-door",
+			"transform": {
+				"rotate": [
+					-90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					6,
+					0,
+					7.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3-door",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					0,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					7.5,
+					0,
+					9
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					0,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					10.5,
+					0,
+					9
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					12,
+					0,
+					7.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					12,
+					0,
+					4.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					12,
+					0,
+					1.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3-door",
+			"transform": {
+				"rotate": [
+					-180,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					10.5,
+					0,
+					0
+				]
+			},
+			"physics": {
+				"model": "wall-4x3-door",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					-180,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					7.5,
+					0,
+					0
 				]
 			},
 			"physics": {
@@ -932,7 +1249,7 @@
 					0
 				],
 				"translate": [
-					-3,
+					-2.9,
 					1.5,
 					7.5
 				]
@@ -967,239 +1284,14 @@
 				"triggers": [
 					{
 						"illuminance": [
-							0.5,
+							0.2,
 							0.2,
 							0.2
 						],
-						"oncmd": "g.CloseDoor door1",
-						"offcmd": "g.OpenDoor door1"
+						"oncmd": "g.OpenDoor door1",
+						"offcmd": "g.CloseDoor door1"
 					}
 				]
-			}
-		},
-		{
-			"_comment": "corner by sensor",
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					-3,
-					0,
-					5
-				],
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "SW wall by sensor1",
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					0,
-					0,
-					10
-				],
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "SW wall2",
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					3,
-					0,
-					10
-				],
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "SW wall3",
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					6,
-					0,
-					10
-				],
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "SW wall4",
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					9,
-					0,
-					10
-				],
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "SW wall5",
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					12,
-					0,
-					10
-				],
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "N wall 1",
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					0,
-					0,
-					-1
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "N wall 2",
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					3,
-					0,
-					-1
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "N wall 3",
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					6,
-					0,
-					-1
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "N wall 4 - covers airlock2",
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					9,
-					0,
-					-1
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-1x1",
-			"transform": {
-				"scale": [
-					1,
-					4,
-					4
-				],
-				"translate": [
-					6,
-					0,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-1x1",
-				"dynamic": false
-			}
-		},
-		{
-			"_name": "left of door",
-			"renderable": "wall-1x1",
-			"transform": {
-				"scale": [
-					1,
-					4,
-					1.75
-				],
-				"translate": [
-					6,
-					0,
-					5
-				]
-			},
-			"physics": {
-				"model": "wall-1x1",
-				"dynamic": false
 			}
 		},
 		{
@@ -1212,7 +1304,7 @@
 					0
 				],
 				"translate": [
-					6,
+					5.95,
 					0,
 					6.75
 				],
@@ -1276,49 +1368,45 @@
 			}
 		},
 		{
-			"_comment": "above ledge",
-			"renderable": "wall-1x1",
+			"_name": "mirrorcube1",
+			"renderable": "mcube",
 			"transform": {
-				"scale": [
-					1,
-					2,
-					1
-				],
 				"translate": [
-					6,
 					2,
-					4
-				]
-			},
-			"physics": {
-				"model": "wall-1x1",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "physx box",
-			"renderable": "box",
-			"transform": {
-				"scale": [
-					0.5,
-					0.8,
-					0.8
-				],
-				"translate": [
-					5,
 					0.4,
 					5
 				],
 				"rotate": [
-					-53,
+					-33,
 					0,
 					1,
 					0
 				]
 			},
 			"physics": {
-				"model": "box",
+				"model": "mcube",
 				"dynamic": true
+			}
+		},
+		{
+			"renderable": "mirror",
+			"mirror": [
+				1,
+				1
+			],
+			"transform": {
+				"parent": "mirrorcube1",
+				"translate": [
+					0,
+					0.5,
+					-0.6
+				],
+				"rotate": [
+					10,
+					1,
+					0,
+					0
+				]
 			}
 		},
 		{
@@ -1337,7 +1425,7 @@
 					0
 				],
 				"translate": [
-					1.5,
+					-1.7,
 					1.7,
 					1.4
 				]
@@ -1347,7 +1435,7 @@
 			"_comment": "blue room",
 			"voxels": {
 				"min": [
-					-6,
+					-5.95,
 					0,
 					0
 				],
@@ -1362,7 +1450,7 @@
 			"_comment": "red room",
 			"voxels": {
 				"min": [
-					6.1,
+					6.05,
 					0,
 					0
 				],
