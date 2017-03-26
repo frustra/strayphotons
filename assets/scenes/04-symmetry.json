@@ -1963,7 +1963,8 @@
 				]
 			},
 			"physics": {
-				"model": "mcube"
+				"model": "mcube",
+				"density": 4
 			}
 		},
 		{
@@ -2059,7 +2060,8 @@
 				]
 			},
 			"physics": {
-				"model": "mcube"
+				"model": "mcube",
+				"density": 4
 			}
 		},
 		{
@@ -2117,7 +2119,8 @@
 				]
 			},
 			"physics": {
-				"model": "mcube"
+				"model": "mcube",
+				"density": 4
 			}
 		},
 		{

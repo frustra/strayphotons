@@ -15,11 +15,16 @@ namespace ecs
 	struct Physics
 	{
 		Physics() {}
-		Physics(physx::PxRigidActor *actor, shared_ptr<sp::Model> model, sp::PhysxActorDesc desc) : actor(actor), model(model), desc(desc) {}
+		Physics(
+			physx::PxRigidActor *actor,
+			shared_ptr<sp::Model> model,
+			sp::PhysxActorDesc desc
+		) : actor(actor), model(model), desc(desc) {}
 
 		physx::PxRigidActor *actor = nullptr;
-		glm::vec3 scale = glm::vec3(1.0);
 		shared_ptr<sp::Model> model;
 		sp::PhysxActorDesc desc;
+
+		glm::vec3 scale = glm::vec3(1.0);
 	};
 }

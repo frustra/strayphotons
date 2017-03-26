@@ -519,7 +519,9 @@ namespace sp
 		}
 
 		if (desc.dynamic)
-			PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidDynamic *>(actor), 1.0f);
+		{
+			PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidDynamic *>(actor), desc.density);
+		}
 
 		static_assert(sizeof(void *) == sizeof(ecs::id_t),
 			"wrong size of Entity::Id; it must be same size as a pointer");

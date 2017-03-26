@@ -13,5 +13,6 @@ namespace sp
 		// Initial values
 		physx::PxTransform transform = physx::PxTransform(physx::PxVec3(0));
 		physx::PxMeshScale scale = physx::PxMeshScale();
+		float density = 1.0f;
 	};
 }

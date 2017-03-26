@@ -436,9 +436,7 @@ namespace sp
 					physx::PxRigidActor *actor = nullptr;
 
 					shared_ptr<Model> model;
-					bool dynamic = true;
-					bool kinematic = false;
-					bool decomposeHull = false;
+					PhysxActorDesc desc;
 
 					for (auto param : comp.second.get<picojson::object>())
 					{
@@ -448,22 +446,21 @@ namespace sp
 						}
 						else if (param.first == "dynamic")
 						{
-							dynamic = param.second.get<bool>();
+							desc.dynamic = param.second.get<bool>();
 						}
 						else if (param.first == "kinematic")
 						{
-							kinematic = param.second.get<bool>();
+							desc.kinematic = param.second.get<bool>();
 						}
 						else if (param.first == "decomposeHull")
 						{
-							decomposeHull = param.second.get<bool>();
+							desc.decomposeHull = param.second.get<bool>();
+						}
+						else if (param.first == "density")
+						{
+							desc.density = param.second.get<double>();
 						}
 					}
-
-					PhysxActorDesc desc;
-					desc.dynamic = dynamic;
-					desc.kinematic = kinematic;
-					desc.decomposeHull = decomposeHull;
 
 					actor = px.CreateActor(model, desc, entity);
 
