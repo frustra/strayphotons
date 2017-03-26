@@ -25,6 +25,9 @@ int DominantAxis(vec3 normal)
 {
 	vec3 absNormal = abs(normal);
 	bvec3 mask = greaterThanEqual(absNormal.xyz, max(absNormal.yzx, absNormal.zxy));
+	// If axes are equal, multiple bits could be true, make sure only one is set.
+	mask.y = mask.y && !mask.x;
+	mask.z = mask.z && !(mask.x || mask.y);
 	return int(dot(vec3(mask) * sign(normal), vec3(1, 2, 3)));
 }
 

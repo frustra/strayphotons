@@ -263,7 +263,7 @@ namespace sp
 			context.LastOutput = crosshair;
 		}
 
-		if (CVarViewGBuffer.Get() > 0)
+		if (CVarViewGBuffer.Get() > 0 && game->menuGui.RenderMode() == MenuRenderMode::None)
 		{
 			auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(), CVarViewGBufferSource.Get(), CVarVoxelMip.Get(), targets.voxelData);
 			viewGBuf->SetInput(0, context.GBuffer0);

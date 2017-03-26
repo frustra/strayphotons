@@ -359,9 +359,6 @@
 		},
 		{
 			"_name": "door1",
-			"transform": {
-				"parent": "door1-root"
-			},
 			"slideDoor": {
 				"left": "door1-left",
 				"right": "door1-right",

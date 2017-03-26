@@ -208,7 +208,7 @@ namespace sp
 					auto rotate = transform->GetGlobalRotation();
 
 					auto lastScale = ph->scale;
-					auto newScale = glm::vec3(transform->GetScale() * glm::vec4(1, 1, 1, 0));
+					auto newScale = glm::vec3(glm::inverse(rotate) * (transform->GetGlobalTransform() * glm::vec4(1, 1, 1, 0)));
 					if (lastScale != newScale)
 					{
 						auto n = ph->actor->getNbShapes();

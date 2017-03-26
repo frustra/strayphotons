@@ -323,11 +323,11 @@ namespace ecs
 			}
 			auto newPosition = PxExtendedVec3ToGlmVec3P(controller->pxController->getPosition());
 			// Don't accelerate more than our current velocity
-			newPosition = glm::min(prevPosition + glm::abs(disp), newPosition);
-			newPosition = glm::max(prevPosition - glm::abs(disp), newPosition);
+			auto velocityPosition = glm::min(prevPosition + glm::abs(disp), newPosition);
+			velocityPosition = glm::max(prevPosition - glm::abs(disp), velocityPosition);
 
 			// Update the velocity based on what happened in physx
-			controller->velocity = (newPosition - prevPosition) / (float)dtSinceLastFrame;
+			controller->velocity = (velocityPosition - prevPosition) / (float)dtSinceLastFrame;
 			glm::vec3 *velocity = (glm::vec3 *) controller->pxController->getUserData();
 			*velocity = controller->velocity;
 

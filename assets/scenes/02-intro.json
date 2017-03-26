@@ -14,7 +14,7 @@
 					0
 				],
 				"translate": [
-					3.1,
+					0,
 					0,
 					2.2
 				]
@@ -168,6 +168,21 @@
 					1.4,
 					2.5,
 					0.8
+				]
+			}
+		},
+		{
+			"_comment": "airlock1",
+			"voxels": {
+				"min": [
+					-2.8,
+					0,
+					0
+				],
+				"max": [
+					-0.1,
+					2.7,
+					2.9
 				]
 			}
 		},
@@ -340,6 +355,19 @@
 			}
 		},
 		{
+			"_comment": "airlock2",
+			"voxels": {
+				"min": [
+					9.05,
+					0,
+					0
+				],
+				"max": [
+					11.8,
+					2.7,
+					2.9
+				]
+			},
 			"triggerarea": {
 				"min": [
 					10,
@@ -609,37 +637,16 @@
 		{
 			"renderable": "wall-4x3",
 			"transform": {
-				"translate": [
-					-1,
-					0,
-					3
-				],
 				"rotate": [
-					90,
+					0,
 					0,
 					1,
 					0
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "above airlock2",
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					-1,
-					0,
-					6
 				],
-				"rotate": [
-					90,
+				"translate": [
+					1.5,
 					0,
-					1,
-					0
+					-0.1
 				]
 			},
 			"physics": {
@@ -650,124 +657,16 @@
 		{
 			"renderable": "wall-4x3",
 			"transform": {
-				"translate": [
-					-1,
-					0,
-					9
-				],
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					9,
-					3,
-					3
-				],
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					9,
-					0,
-					6
-				],
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					9,
-					0,
-					9
-				],
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					0,
-					0,
-					-1
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					3,
-					0,
-					-1
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [
-					9,
-					0,
-					0
-				],
 				"rotate": [
 					180,
 					0,
 					1,
 					0
+				],
+				"translate": [
+					1.5,
+					0,
+					9.1
 				]
 			},
 			"physics": {
@@ -778,16 +677,16 @@
 		{
 			"renderable": "wall-4x3",
 			"transform": {
-				"translate": [
-					3,
-					0,
-					10
-				],
 				"rotate": [
-					180,
+					0,
 					0,
 					1,
 					0
+				],
+				"translate": [
+					4.5,
+					0,
+					-0.1
 				]
 			},
 			"physics": {
@@ -798,16 +697,16 @@
 		{
 			"renderable": "wall-4x3",
 			"transform": {
-				"translate": [
-					6,
-					0,
-					10
-				],
 				"rotate": [
 					180,
 					0,
 					1,
 					0
+				],
+				"translate": [
+					4.5,
+					0,
+					9.1
 				]
 			},
 			"physics": {
@@ -818,10 +717,16 @@
 		{
 			"renderable": "wall-4x3",
 			"transform": {
-				"translate": [
-					6,
+				"rotate": [
+					180,
 					0,
-					9
+					1,
+					0
+				],
+				"translate": [
+					7.5,
+					0,
+					-0.1
 				]
 			},
 			"physics": {
@@ -830,106 +735,122 @@
 			}
 		},
 		{
-			"renderable": "wall-1x1",
+			"renderable": "wall-4x3",
 			"transform": {
-				"scale": [
-					1,
-					4,
-					4
-				],
-				"translate": [
-					6,
-					0,
-					0
-				]
-			},
-			"physics": {
-				"model": "wall-1x1",
-				"dynamic": false
-			}
-		},
-		{
-			"_name": "left of door",
-			"renderable": "wall-1x1",
-			"transform": {
-				"scale": [
-					1,
-					4,
-					1.75
-				],
-				"translate": [
-					6,
-					0,
-					5
-				]
-			},
-			"physics": {
-				"model": "wall-1x1",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ledge-caged-1x0.5",
-			"transform": {
-				"scale": [
-					1,
-					1,
-					1
-				],
-				"translate": [
-					6.1,
-					0,
-					5
-				],
 				"rotate": [
-					180,
+					0,
 					0,
 					1,
 					0
-				]
-			},
-			"physics": {
-				"model": "ledge-caged-1x0.5",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "above door",
-			"renderable": "wall-1x1",
-			"transform": {
-				"scale": [
-					1,
-					2.5,
-					1.5
 				],
 				"translate": [
-					6,
-					2.5,
-					6.75
+					7.5,
+					0,
+					9.1
 				]
 			},
 			"physics": {
-				"model": "wall-1x1",
+				"model": "wall-4x3",
 				"dynamic": false
 			}
 		},
 		{
-			"_comment": "right of door",
-			"renderable": "wall-1x1",
+			"renderable": "wall-4x3",
 			"transform": {
-				"scale": [
+				"rotate": [
+					90,
+					0,
 					1,
-					4,
-					1
+					0
+				],
+				"translate": [
+					-0.1,
+					0,
+					4.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					9.1,
+					0,
+					4.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					-0.1,
+					0,
+					7.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					9.1,
+					0,
+					7.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3-door",
+			"transform": {
+				"rotate": [
+					-90,
+					0,
+					1,
+					0
 				],
 				"translate": [
 					6,
 					0,
-					8.25
+					7.5
 				]
 			},
 			"physics": {
-				"model": "wall-1x1",
+				"model": "wall-4x3-door",
 				"dynamic": false
 			}
 		},
@@ -943,7 +864,7 @@
 					0
 				],
 				"translate": [
-					6,
+					5.95,
 					0,
 					6.75
 				],
@@ -994,9 +915,6 @@
 		},
 		{
 			"_name": "door1",
-			"transform": {
-				"parent": "door1-root"
-			},
 			"slideDoor": {
 				"left": "door1-left",
 				"right": "door1-right",
@@ -1010,22 +928,47 @@
 			}
 		},
 		{
-			"_comment": "above ledge",
-			"renderable": "wall-1x1",
+			"renderable": "wall-4x3-door",
 			"transform": {
-				"scale": [
+				"rotate": [
+					-90,
+					0,
 					1,
-					2,
-					1
+					0
 				],
 				"translate": [
 					6,
-					2,
-					4
+					0,
+					4.5
 				]
 			},
 			"physics": {
-				"model": "wall-1x1",
+				"model": "wall-4x3-door",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ledge-caged-1x0.5",
+			"transform": {
+				"scale": [
+					1,
+					1,
+					1
+				],
+				"translate": [
+					5.7,
+					0.1,
+					5
+				],
+				"rotate": [
+					180,
+					0,
+					1,
+					0
+				]
+			},
+			"physics": {
+				"model": "ledge-caged-1x0.5",
 				"dynamic": false
 			}
 		},
@@ -1053,6 +996,26 @@
 			"physics": {
 				"model": "box",
 				"dynamic": true
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					-90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					6,
+					0,
+					1.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
 			}
 		},
 		{
@@ -1134,21 +1097,6 @@
 			}
 		},
 		{
-			"_comment": "airlock",
-			"voxels": {
-				"min": [
-					0.1,
-					0,
-					0
-				],
-				"max": [
-					2.95,
-					2.7,
-					2.9
-				]
-			}
-		},
-		{
 			"_comment": "blue room",
 			"voxels": {
 				"min": [
@@ -1157,7 +1105,7 @@
 					0
 				],
 				"max": [
-					6,
+					5.95,
 					4,
 					10
 				]
@@ -1167,12 +1115,12 @@
 			"_comment": "red room",
 			"voxels": {
 				"min": [
-					6.1,
+					6.05,
 					0,
 					0
 				],
 				"max": [
-					10,
+					9,
 					4,
 					10
 				]

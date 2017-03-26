@@ -5,15 +5,28 @@
 	"entities": [
 		<%- include('prefab/airlock', {
 			name: 'airlock1',
-			translate: [3.1, 0.0, 2.2],
+			translate: [0.0, 0.0, 2.2],
 			rotate: [180, 0, 1, 0]
 		}) %>,
+		{
+			"_comment": "airlock1",
+			"voxels": {
+				"min": [-2.8, 0, 0],
+				"max": [-0.1, 2.7, 2.9]
+			}
+		},
+
 		<%- include('prefab/airlock', {
 			name: 'airlock2',
 			translate: [12, 0.0, 2.2],
 			rotate: [180, 0, 1, 0]
 		}) %>,
 		{
+			"_comment": "airlock2",
+			"voxels": {
+				"min": [9.05, 0, 0],
+				"max": [11.8, 2.7, 2.9]
+			},
 			"triggerarea": {
 				"min": [10, 1, 0],
 				"max": [13, 2, 4],
@@ -28,159 +41,80 @@
 			y: 4,
 			corners: [[0, 0], [9, 9]]
 		}) %>,
+
+		<% for (var x = 0; x < 3; x++) { %>
+			{
+				"renderable": "wall-4x3",
+				"transform": {
+					"rotate": [<%= (x == 2) ? 180 : 0 %>, 0, 1, 0],
+					"translate": [<%= x * 3 + 1.5 %>, 0, -0.1]
+				},
+				"physics": {
+					"model": "wall-4x3",
+					"dynamic": false
+				}
+			},
+			{
+				"renderable": "wall-4x3",
+				"transform": {
+					"rotate": [<%= (x == 2) ? 0 : 180 %>, 0, 1, 0],
+					"translate": [<%= x * 3 + 1.5 %>, 0, 9.1]
+				},
+				"physics": {
+					"model": "wall-4x3",
+					"dynamic": false
+				}
+			},
+		<% } %>
+		<% for (var z = 1; z < 3; z++) { %>
+			{
+				"renderable": "wall-4x3",
+				"transform": {
+					"rotate": [90, 0, 1, 0],
+					"translate": [-0.1, 0, <%= z * 3 + 1.5 %>]
+				},
+				"physics": {
+					"model": "wall-4x3",
+					"dynamic": false
+				}
+			},
+			{
+				"renderable": "wall-4x3",
+				"transform": {
+					"rotate": [90, 0, 1, 0],
+					"translate": [9.1, 0, <%= z * 3 + 1.5 %>]
+				},
+				"physics": {
+					"model": "wall-4x3",
+					"dynamic": false
+				}
+			},
+		<% } %>
 		{
-			"renderable": "wall-4x3",
+			"renderable": "wall-4x3-door",
 			"transform": {
-				"translate": [-1, 0, 3],
-				"rotate": [90, 0, 1, 0]
+				"rotate": [-90, 0, 1, 0],
+				"translate": [6, 0, 7.5]
 			},
 			"physics": {
-				"model": "wall-4x3",
+				"model": "wall-4x3-door",
 				"dynamic": false
 			}
 		},
-		{
-			"_comment": "above airlock2",
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [-1, 0, 6],
-				"rotate": [90, 0, 1, 0]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [-1, 0, 9],
-				"rotate": [90, 0, 1, 0]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [9, 3, 3],
-				"rotate": [90, 0, 1, 0]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [9, 0, 6],
-				"rotate": [90, 0, 1, 0]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [9, 0, 9],
-				"rotate": [90, 0, 1, 0]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
+		<%- include('prefab/slide_door_1_5', {
+			name: 'door1',
+			translate: [5.95, 0.0, 6.75],
+			rotate: [0, 0, 1, 0]
+		}) %>,
 
 		{
-			"renderable": "wall-4x3",
+			"renderable": "wall-4x3-door",
 			"transform": {
-				"translate": [0, 0, -1]
+				"rotate": [-90, 0, 1, 0],
+				"translate": [6, 0, 4.5]
 			},
 			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [3, 0, -1]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [9, 0, 0],
-				"rotate": [180, 0, 1, 0]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [3, 0, 10],
-				"rotate": [180, 0, 1, 0]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [6, 0, 10],
-				"rotate": [180, 0, 1, 0]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"translate": [6, 0, 9]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-
-		{
-			"renderable": "wall-1x1",
-			"transform": {
-				"scale": [1, 4, 4],
-				"translate": [6, 0, 0]
-			},
-			"physics": {
-				"model": "wall-1x1",
-				"dynamic": false
-			}
-		},
-		{
-			"_name": "left of door",
-			"renderable": "wall-1x1",
-			"transform": {
-				"scale": [1, 4, 1.75],
-				"translate": [6, 0, 5]
-			},
-			"physics": {
-				"model": "wall-1x1",
+				"model": "wall-4x3-door",
 				"dynamic": false
 			}
 		},
@@ -188,52 +122,11 @@
 			"renderable": "ledge-caged-1x0.5",
 			"transform": {
 				"scale": [1, 1, 1],
-				"translate": [6.1, 0, 5],
+				"translate": [5.7, 0.1, 5],
 				"rotate": [180, 0, 1, 0]
 			},
 			"physics": {
 				"model": "ledge-caged-1x0.5",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "above door",
-			"renderable": "wall-1x1",
-			"transform": {
-				"scale": [1, 2.5, 1.5],
-				"translate": [6, 2.5, 6.75]
-			},
-			"physics": {
-				"model": "wall-1x1",
-				"dynamic": false
-			}
-		},
-		{
-			"_comment": "right of door",
-			"renderable": "wall-1x1",
-			"transform": {
-				"scale": [1, 4, 1],
-				"translate": [6, 0, 8.25]
-			},
-			"physics": {
-				"model": "wall-1x1",
-				"dynamic": false
-			}
-		},
-		<%- include('prefab/slide_door_1_5', {
-			name: 'door1',
-			translate: [6, 0.0, 6.75],
-			rotate: [0, 0, 1, 0]
-		}) %>,
-		{
-			"_comment": "above ledge",
-			"renderable": "wall-1x1",
-			"transform": {
-				"scale": [1, 2, 1],
-				"translate": [6, 2, 4]
-			},
-			"physics": {
-				"model": "wall-1x1",
 				"dynamic": false
 			}
 		},
@@ -248,6 +141,18 @@
 			"physics": {
 				"model": "box",
 				"dynamic": true
+			}
+		},
+
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [-90, 0, 1, 0],
+				"translate": [6, 0, 1.5]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
 			}
 		},
 
@@ -276,24 +181,17 @@
 			}
 		},
 		{
-			"_comment": "airlock",
-			"voxels": {
-				"min": [0.1, 0, 0],
-				"max": [2.95, 2.7, 2.9]
-			}
-		},
-		{
 			"_comment": "blue room",
 			"voxels": {
 				"min": [0, 0, 0],
-				"max": [6, 4, 10]
+				"max": [5.95, 4, 10]
 			}
 		},
 		{
 			"_comment": "red room",
 			"voxels": {
-				"min": [6.1, 0, 0],
-				"max": [10, 4, 10]
+				"min": [6.05, 0, 0],
+				"max": [9, 4, 10]
 			}
 		},
 		<%- include('prefab/spotlight', {

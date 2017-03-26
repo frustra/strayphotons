@@ -63,4 +63,5 @@ void main()
 			outFragColor.rgb = sampleValue.rgb;
 		}
 	}
+	outFragColor.a = 1.0;
 }
