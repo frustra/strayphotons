@@ -1,6 +1,10 @@
 {
 	"autoexec": [
-		"wait 1000 g.OpenDoor airlock1-out"
+		"wait 1000 g.OpenDoor airlock1-out",
+		"r.LightAttenuation 0.15"
+	],
+	"unloadexec": [
+		"r.LightAttenuation 0.5"
 	],
 	"entities": [
 		<%- include('prefab/airlock', {
@@ -31,19 +35,27 @@
 
 		<%- include("prefab/wall", {
 			y: 0,
-			points: [[6, 9], [-3, 9], [-3, 6], [0, 6], [0, 3, "wall-4x3-door"], [0, 0], [6, 0], [6, 3, "wall-4x3-door"], [6, 9]]
+			points: [[6, 9], [-3, 9], [-3, 6], [0, 6], [0, 3, "wall-4x3-door"], [0, 0], [6, 0, "wall-4x3-door"], [6, 3], [6, 9]]
+		}) %>,
+		<%- include('prefab/slide_door', {
+			name: 'door1',
+			translate: [6, 0.0, 1.5],
+			rotate: [0, 0, 1, 0]
 		}) %>,
 
-		<%- include("prefab/wall", {
-			y: 0,
-			points: [[6, 9], [12, 9], [12, 0, "wall-4x3-door"], [9, 0], [6, 0]]
+		<%- include('prefab/spotlight', {
+			name: 'light1',
+			tint: [1, 0.8, 0.8],
+			intensity: 500,
+			spotAngle: 20,
+			translate: [3, 0.5, 0.2],
+			rotate: [[180, 0, 1, 0]]
 		}) %>,
-
 		<%- include('prefab/lightsensor',
 		{
 			name: "sensor1",
 			type: "light",
-			translate: [-2.9, 1.5, 7.5],
+			translate: [-2.9, 1, 7.5],
 			rotate: [90, 0, 1, 0],
 			triggers: [
 				{
@@ -53,33 +65,47 @@
 				}
 			]
 		}) %>,
-
-		<%- include('prefab/slide_door', {
-			name: 'door1',
-			translate: [6, 0.0, 7.5],
-			rotate: [0, 0, 1, 0]
+		<%- include("prefab/cube", {
+			name: "mirrorcube1",
+			sides: 1,
+			translate: [2, 0.0, 5],
+			rotate: [-43, 0, 1, 0]
 		}) %>,
+
+		<%- include("prefab/wall", {
+			y: 0,
+			points: [[6, 9], [12, 9], [12, 6], [9, 6], [9, 3], [12, 3], [12, 0, "wall-4x3-door"], [9, 0], [6, 0]]
+		}) %>,
+
+		<%- include('prefab/spotlight', {
+			name: 'light2',
+			tint: [0.8, 0.8, 1],
+			intensity: 500,
+			spotAngle: 25,
+			translate: [11.8, 0.5, 1.5],
+			rotate: [[90, 0, 1, 0]]
+		}) %>,
+		<%- include('prefab/lightsensor',
 		{
-			"_name": "mirrorcube1",
-			"renderable": "mcube",
-			"transform": {
-				"translate": [2, 0.4, 5],
-				"rotate": [-33, 0, 1, 0]
-			},
-			"physics": {
-				"model": "mcube",
-				"dynamic": true
-			}
-		},
-		{
-			"renderable": "mirror",
-			"mirror": [1, 1],
-			"transform": {
-				"parent": "mirrorcube1",
-				"translate": [0, 0.5, -0.6],
-				"rotate": [10, 1, 0, 0]
-			}
-		},
+			name: "sensor2",
+			type: "light",
+			translate: [11.9, 1, 7.5],
+			rotate: [-90, 0, 1, 0],
+			triggers: [
+				{
+					illuminance: [0.02, 0.02, 0.02],
+					oncmd: "g.OpenDoor airlock2-in",
+					offcmd: "g.CloseDoor airlock2-in"
+				}
+			]
+		}) %>,
+		<%- include("prefab/cube", {
+			name: "mirrorcube2",
+			sides: 1,
+			translate: [7.8, 0.0, 5],
+			rotate: [43, 0, 1, 0]
+		}) %>,
+
 		{
 			"_name": "player",
 			"view": {
@@ -93,24 +119,16 @@
 		{
 			"_comment": "blue room",
 			"voxels": {
-				"min": [-5.95, 0, 0],
-				"max": [6, 4, 10]
+				"min": [-2.95, 0, 0.05],
+				"max": [5.95, 4, 8.95]
 			}
 		},
 		{
 			"_comment": "red room",
 			"voxels": {
-				"min": [6.05, 0, 0],
-				"max": [12, 4, 10]
+				"min": [6.05, 0, 0.05],
+				"max": [11.95, 4, 8.95]
 			}
-		},
-		<%- include('prefab/spotlight', {
-			name: 'light1',
-			tint: [1, 0.8, 0.8],
-			intensity: 300,
-			spotAngle: 30,
-			translate: [3, 2, 0.2],
-			rotate: [[180, 0, 1, 0], [-30, 1, 0, 0]]
-		}) %>
+		}
 	]
 }

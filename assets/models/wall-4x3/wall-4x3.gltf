@@ -5,6 +5,56 @@
             "byteOffset": 0,
             "byteStride": 0,
             "componentType": 5126,
+            "count": 12,
+            "max": [
+                1.4500000476837158,
+                3.950000047683716,
+                0.05000000074505806
+            ],
+            "min": [
+                -1.4500000476837158,
+                0.05000000074505806,
+                -0.05000000074505806
+            ],
+            "type": "VEC3"
+        },
+        "accessor_1": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 144,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 12,
+            "max": [
+                0,
+                0,
+                1
+            ],
+            "min": [
+                0,
+                0,
+                1
+            ],
+            "type": "VEC3"
+        },
+        "accessor_2": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 0,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 18,
+            "max": [
+                11
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
+        },
+        "accessor_3": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 288,
+            "byteStride": 0,
+            "componentType": 5126,
             "count": 24,
             "max": [
                 1.5,
@@ -18,9 +68,9 @@
             ],
             "type": "VEC3"
         },
-        "accessor_1": {
+        "accessor_4": {
             "bufferView": "bufferView_0",
-            "byteOffset": 288,
+            "byteOffset": 576,
             "byteStride": 0,
             "componentType": 5126,
             "count": 24,
@@ -36,9 +86,9 @@
             ],
             "type": "VEC3"
         },
-        "accessor_2": {
+        "accessor_5": {
             "bufferView": "bufferView_0",
-            "byteOffset": 576,
+            "byteOffset": 864,
             "byteStride": 0,
             "componentType": 5126,
             "count": 24,
@@ -52,9 +102,9 @@
             ],
             "type": "VEC2"
         },
-        "accessor_3": {
+        "accessor_6": {
             "bufferView": "bufferView_1",
-            "byteOffset": 0,
+            "byteOffset": 36,
             "byteStride": 0,
             "componentType": 5123,
             "count": 36,
@@ -80,22 +130,22 @@
     "bufferViews": {
         "bufferView_0": {
             "buffer": "buffer",
-            "byteLength": 768,
+            "byteLength": 1056,
             "byteOffset": 0,
             "target": 34962
         },
         "bufferView_1": {
             "buffer": "buffer",
-            "byteLength": 72,
-            "byteOffset": 768,
+            "byteLength": 108,
+            "byteOffset": 1056,
             "target": 34963
         }
     },
     "buffers": {
         "buffer": {
-            "byteLength": 840,
+            "byteLength": 1164,
             "type": "arraybuffer",
-            "uri": "data:application/octet-stream;base64,AADAPwAAAADNzMw9AADAvwAAAADNzMy9AADAPwAAAADNzMy9AADAvwAAgEDNzMy9+P+/PwAAgEBTzcw9AADAPwAAgEBHzMy9AADAPwAAgEBHzMy9AADAPwAAAADNzMw9AADAPwAAAADNzMy9+P+/PwAAgEBTzcw9AADAvwAAAADNzMw9AADAPwAAAADNzMw9AADAvwAAgEDNzMw9AADAvwAAAADNzMy9AADAvwAAAADNzMw9AADAPwAAAADNzMy9AADAvwAAgEDNzMy9AADAPwAAgEBHzMy9AADAvwAAAADNzMw9AADAvwAAgEDNzMw9+P+/PwAAgEBTzcw9AADAvwAAgEDNzMw9AADAvwAAgEDNzMy9AADAvwAAAADNzMy9AAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AACAvwAAAIAAAACAAACAvwAAAIAAAACAAACAvwAAAIAAAACAAAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAgL8AAAAAAAAAAAAAgD8AAAAAAACAPwAAAIAAAAAAAAAAgAAAAIAAAIA/AACAvwAAAIAAAACAAAAAAAAAAAAAAIC/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/F7fRODMzcz/NzEw9AAAAAAAAAAAAAAAAzcxMPaUscz+lLEM/AAAAAM3MTD0AAAAAbxJDP83MTD2iRTY/AACAP28SQz8AAIA/F7fROHL5fz9mZjY/zcxMPRe30TjNzEw9AAAAAAAAgD8AAAAAAACAP6g1TT0zM3M/pSxDP6Uscz+iRTY/zcxMPWZmNj9y+X8/AAABAAIAAwAEAAUABgAHAAgACQAKAAsADAANAA4ADwAQABEAAAASAAEAAwATAAQABgAUAAcACQAVAAoADAAWAA0ADwAXABAA"
+            "uri": "data:application/octet-stream;base64,mpm5P83MTD3NzEw9mpm5v83MfEDNzEw9mpm5v83MTD3NzEw9mpm5P83MTD0AAACAmpm5v83MfEAAAAAAmpm5v83MTD0AAACAmpm5P83MTD3NzEy9mpm5v83MfEDNzEy9mpm5v83MTD3NzEy9mpm5P83MfEDNzEw9mpm5P83MfEAAAAAAmpm5P83MfEDNzEy9AAAAAAAAAIAAAIA/AAAAAAAAAIAAAIA/AAAAAAAAAIAAAIA/AAAAAAAAAIAAAIA/AAAAAAAAAIAAAIA/AAAAAAAAAIAAAIA/AAAAAAAAAIAAAIA/AAAAAAAAAIAAAIA/AAAAAAAAAIAAAIA/AAAAAAAAAIAAAIA/AAAAAAAAAIAAAIA/AAAAAAAAAIAAAIA/AADAPwAAAADNzMw9AADAvwAAAADNzMy9AADAPwAAAADNzMy9AADAvwAAgEDNzMy9+P+/PwAAgEBTzcw9AADAPwAAgEBHzMy9AADAPwAAgEBHzMy9AADAPwAAAADNzMw9AADAPwAAAADNzMy9+P+/PwAAgEBTzcw9AADAvwAAAADNzMw9AADAPwAAAADNzMw9AADAvwAAgEDNzMw9AADAvwAAAADNzMy9AADAvwAAAADNzMw9AADAPwAAAADNzMy9AADAvwAAgEDNzMy9AADAPwAAgEBHzMy9AADAvwAAAADNzMw9AADAvwAAgEDNzMw9+P+/PwAAgEBTzcw9AADAvwAAgEDNzMw9AADAvwAAgEDNzMy9AADAvwAAAADNzMy9AAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AACAvwAAAIAAAACAAACAvwAAAIAAAACAAACAvwAAAIAAAACAAAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAgL8AAAAAAAAAAAAAgD8AAAAAAACAPwAAAIAAAAAAAAAAgAAAAIAAAIA/AACAvwAAAIAAAACAAAAAAAAAAAAAAIC/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/F7fRODMzcz/NzEw9AAAAAAAAAAAAAAAAzcxMPaUscz+lLEM/AAAAAM3MTD0AAAAAbxJDP83MTD2iRTY/AACAP28SQz8AAIA/F7fROHL5fz9mZjY/zcxMPRe30TjNzEw9AAAAAAAAgD8AAAAAAACAP6g1TT0zM3M/pSxDP6Uscz+iRTY/zcxMPWZmNj9y+X8/AAABAAIAAwAEAAUABgAHAAgAAAAJAAEAAwAKAAQABgALAAcAAAABAAIAAwAEAAUABgAHAAgACQAKAAsADAANAA4ADwAQABEAAAASAAEAAwATAAQABgAUAAcACQAVAAoADAAWAA0ADwAXABAA"
         }
     },
     "cameras": {},
@@ -144,6 +194,36 @@
                 ],
                 "transparency": 1
             }
+        },
+        "None": {
+            "values": {
+                "ambient": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "diffuse": [
+                    0.8,
+                    0.8,
+                    0.8,
+                    1
+                ],
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "shininess": 0,
+                "specular": [
+                    0.8,
+                    0.8,
+                    0.8,
+                    1
+                ],
+                "transparency": 1
+            }
         }
     },
     "meshes": {
@@ -152,12 +232,26 @@
             "primitives": [
                 {
                     "attributes": {
-                        "NORMAL": "accessor_1",
-                        "POSITION": "accessor_0",
-                        "TEXCOORD_0": "accessor_2"
+                        "NORMAL": "accessor_4",
+                        "POSITION": "accessor_3",
+                        "TEXCOORD_0": "accessor_5"
                     },
-                    "indices": "accessor_3",
+                    "indices": "accessor_6",
                     "material": "Material",
+                    "mode": 4
+                }
+            ]
+        },
+        "Plane-Mesh": {
+            "name": "Plane-Mesh",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": "accessor_1",
+                        "POSITION": "accessor_0"
+                    },
+                    "indices": "accessor_2",
+                    "material": "None",
                     "mode": 4
                 }
             ]
@@ -188,6 +282,31 @@
                 "Cube-Mesh"
             ],
             "name": "Cube"
+        },
+        "Plane": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "Plane-Mesh"
+            ],
+            "name": "Plane"
         }
     },
     "samplers": {
@@ -197,6 +316,7 @@
     "scenes": {
         "scene": {
             "nodes": [
+                "Plane",
                 "Cube"
             ]
         }
