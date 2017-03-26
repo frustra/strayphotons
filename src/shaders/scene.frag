@@ -94,8 +94,8 @@ void main()
 
 	gBuffer0.rgb = baseColor.rgb * emissiveCoeff;
 	gBuffer0.a = roughness;
-	gBuffer1.rg = EncodeNormalSphereMap(viewNormal);
-	gBuffer1.ba = EncodeNormalSphereMap(inNormal);
+	gBuffer1.rg = EncodeNormal(viewNormal);
+	gBuffer1.ba = EncodeNormal(inNormal);
 	gBuffer2.rgb = inViewPos;
 	gBuffer2.a = emissiveScale;
 	gBuffer3.r = metallic;
