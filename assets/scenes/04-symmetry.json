@@ -1846,7 +1846,7 @@
 				],
 				"translate": [
 					11.9,
-					1.1,
+					0.7,
 					1.5
 				]
 			},
@@ -1902,7 +1902,7 @@
 				],
 				"translate": [
 					11.9,
-					1.1,
+					0.7,
 					7.5
 				]
 			},
@@ -1951,14 +1951,14 @@
 			"renderable": "mcube",
 			"transform": {
 				"rotate": [
-					-43,
+					134,
 					0,
 					1,
 					0
 				],
 				"translate": [
 					2,
-					0.4,
+					0,
 					5
 				]
 			},
@@ -2047,14 +2047,14 @@
 			"renderable": "mcube",
 			"transform": {
 				"rotate": [
-					-43,
+					-160,
 					0,
 					1,
 					0
 				],
 				"translate": [
 					1.5,
-					0.4,
+					0,
 					1.5
 				]
 			},
@@ -2105,14 +2105,14 @@
 			"renderable": "mcube",
 			"transform": {
 				"rotate": [
-					-20,
+					-143,
 					0,
 					1,
 					0
 				],
 				"translate": [
 					1.5,
-					0.8,
+					1,
 					1.5
 				]
 			},
