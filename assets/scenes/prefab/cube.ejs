@@ -26,5 +26,13 @@ for (i = 0; i < locals.sides; i++) { %>
 		"rotate": [<%= i * 90 %>, 0, 1, 0],
 		"translate": [<%= faces[i][0] %>, 0.5, <%= faces[i][1] %>]
 	}
+},
+{
+	"renderable": "occluder",
+	"transform": {
+		"parent": <%= name %>,
+		"rotate": [<%= i * 90 + 180 %>, 0, 1, 0],
+		"translate": [<%= faces[i][0] * 0.99 %>, 0.5, <%= faces[i][1] * 0.99 %>]
+	}
 }
 <% } %>

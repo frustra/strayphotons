@@ -49,5 +49,8 @@ void main() {
 	}
 
 	mirrorSData.invReflectMat[index] = inverse(mirrorSData.reflectMat[index]);
-	mirrorSData.clipPlane[index] = mirrors[mirrorId].plane;
+
+	vec4 plane = mirrors[mirrorId].plane;
+	plane.w -= 0.0001;
+	mirrorSData.clipPlane[index] = plane;
 }
