@@ -1880,9 +1880,9 @@
 				"triggers": [
 					{
 						"illuminance": [
-							0.2,
-							0.2,
-							0.2
+							0.25,
+							0.25,
+							0.25
 						],
 						"oncmd": "g.OpenDoor airlock2-in",
 						"offcmd": "g.CloseDoor airlock2-out"
@@ -1936,9 +1936,9 @@
 				"triggers": [
 					{
 						"illuminance": [
-							0.2,
-							0.2,
-							0.2
+							0.25,
+							0.25,
+							0.25
 						],
 						"oncmd": "g.OpenDoor airlock2-in",
 						"offcmd": "g.CloseDoor airlock2-in"
@@ -2205,7 +2205,7 @@
 					0.8
 				],
 				"intensity": 300,
-				"spotAngle": 30
+				"spotAngle": 12
 			},
 			"view": {
 				"extents": [
@@ -2234,7 +2234,7 @@
 				],
 				"translate": [
 					0.1,
-					1,
+					0.8,
 					4.5
 				]
 			}

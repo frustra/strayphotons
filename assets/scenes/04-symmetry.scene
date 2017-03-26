@@ -113,8 +113,8 @@
 			name: 'light1',
 			tint: [1, 0.8, 0.8],
 			intensity: 300,
-			spotAngle: 30,
-			translate: [0.1, 1, 4.5],
+			spotAngle: 12,
+			translate: [0.1, 0.8, 4.5],
 			rotate: [[-90, 0, 1, 0], [0, 1, 0, 0]]
 		}) %>
 	]
