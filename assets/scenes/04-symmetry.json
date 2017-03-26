@@ -351,7 +351,7 @@
 					2,
 					4
 				],
-				"_command": "g.CloseDoor airlock2-in; wait 1000 loadscene 03-light-gun"
+				"_command": "g.CloseDoor airlock2-in; wait 1000 loadscene 05-light-gun"
 			}
 		},
 		{

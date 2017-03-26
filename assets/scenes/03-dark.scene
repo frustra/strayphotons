@@ -22,7 +22,7 @@
 			"triggerarea": {
 				"min": [10, 0, -2.5],
 				"max": [12, 2, 0],
-				"command": "g.CloseDoor airlock2-in; wait 1000 loadscene 03-dark"
+				"command": "g.CloseDoor airlock2-in; wait 1000 loadscene 04-symmetry"
 			}
 		},
 		<%- include("prefab/floor", {

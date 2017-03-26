@@ -17,7 +17,7 @@
 			"triggerarea": {
 				"min": [10, 1, 0],
 				"max": [13, 2, 4],
-				"_command": "g.CloseDoor airlock2-in; wait 1000 loadscene 03-light-gun"
+				"_command": "g.CloseDoor airlock2-in; wait 1000 loadscene 05-light-gun"
 			}
 		},
 		<%- include("prefab/floor", {
