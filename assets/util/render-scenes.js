@@ -7,6 +7,21 @@ global.offset = function(vec, d) {
 	return vec.map(function(v, i) { return v + d[i]; });
 }
 
+/**
+ * Create entities that fill the space between two 3D coordinates
+ * model: string name of model
+ * corner0: [x, y, z]
+ * corner1: [x, y, z]
+ * xyzStep: [x, y, z] to indicate the spacing of entities from corner0
+ *          to corner1
+ *
+ * This will create at least one entity in each dimension to allow
+ * for creation of straight lines (ex: [0, 0, 0] to [0, 0, 6] or
+ * planes of entities (ex: [0, 0, 0] to [9, 0, 9] instead of
+ * just rectangular prisms of entities (ex: [0, 0, 0] to [3, 3, 3]).
+ *
+ * Returns a list of objects that correspond to entities.
+ */
 global.createTiles = function(model, corner0, corner1, xyzStep) {
 	x0 = corner0[0];
 	y0 = corner0[1];
