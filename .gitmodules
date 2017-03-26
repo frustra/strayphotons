@@ -43,3 +43,6 @@
 [submodule "ext/obj2gltf"]
 	path = ext/obj2gltf
 	url = git@github.com:AnalyticalGraphicsInc/obj2gltf.git
+[submodule "assets/util/jsonlint"]
+	path = assets/util/jsonlint
+	url = git@github.com:zaach/jsonlint.git

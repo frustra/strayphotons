@@ -1,6 +1,28 @@
 ejs = require('./ejs/ejs.js')
 fs = require('fs')
 
+var jsonlint = require('./jsonlint/lib/jsonlint.js')
+var jsonFormatter = require("./jsonlint/lib/formatter.js").formatter;
+
+JSON._parse = JSON.parse;
+JSON.parse = function (json) {
+  try {
+    return JSON._parse(json)
+  } catch(e) {
+    var formatted = jsonFormatter.formatJson(json);
+    errFile = 'jsonlint_err.json';
+    fs.writeFileSync('./' + errFile, formatted);
+
+    // Re-parse so exception output gets better line numbers
+    try {
+    	jsonlint.parse(formatted);
+    } catch(formattedError) {
+    	formattedError.message += '\nInvalid json saved as ' + errFile;
+    	throw formattedError;
+    }
+  }
+}
+
 var files = fs.readdirSync('../scenes');
 
 global.offset = function(vec, d) {

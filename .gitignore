@@ -9,6 +9,7 @@
 /assets/audio/.user
 /assets/cache
 /assets/models/**/*.blend1
+/assets/util/jsonlint_err.json
 /vendor/lib
 /strayphotons
 /strayphotons.zip
