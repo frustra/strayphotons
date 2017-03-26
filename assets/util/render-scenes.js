@@ -7,6 +7,53 @@ global.offset = function(vec, d) {
 	return vec.map(function(v, i) { return v + d[i]; });
 }
 
+global.createTiles = function(model, corner0, corner1, xyzStep) {
+	x0 = corner0[0];
+	y0 = corner0[1];
+	z0 = corner0[2];
+
+	x1 = corner1[0];
+	y1 = corner1[1];
+	z1 = corner1[2];
+
+	dx = x1 - x0;
+	dy = y1 - y0;
+	dz = z1 - z0;
+
+	nx = 1;
+	if (dx != 0 && xyzStep[0] != 0) {
+		nx = dx / xyzStep[0];
+	}
+	ny = 1;
+	if (dy != 0 && xyzStep[1] != 0) {
+		ny = dy / xyzStep[1];
+	}
+	nz = 1;
+	if (dz != 0 && xyzStep[2] != 0) {
+		nz = dz / xyzStep[2];
+	}
+
+	tiles = []
+	for (xi = 0, x = x0; xi < nx; xi += 1, x += xyzStep[0]) {
+		for (yi = 0, y = y0; yi < ny; yi += 1, y += xyzStep[1]) {
+			for (zi = 0, z = z0; zi < nz; zi += 1, z += xyzStep[2]) {
+				tiles.push({
+					renderable: model,
+					transform: {
+						translate: [x, y, z]
+					},
+					physics: {
+						model: model,
+						dynamic: false
+					}
+				});
+			}
+		}
+	}
+
+	return tiles;
+}
+
 files.forEach(function(f) {
   if (f.endsWith('.scene')) {
     var name = f.slice(0, -6);

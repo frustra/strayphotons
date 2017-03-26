@@ -1,0 +1,13 @@
+<%
+p0 = [locals.corners[0][0], locals.y, locals.corners[0][1]];
+p1 = [locals.corners[1][0], locals.y, locals.corners[1][1]];
+step = [3, 0, 3];
+
+tiles = global.createTiles("ground-3x3", p0, p1, step);
+for (i = 0; i < tiles.length; ++i) {
+	if (i > 0) {%>
+		,
+	<%}%>
+	<%= tiles[i] %>
+<%}
+%>

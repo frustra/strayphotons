@@ -372,35 +372,7 @@
 			"renderable": "ground-3x3",
 			"transform": {
 				"translate": [
-					3,
 					0,
-					0
-				]
-			},
-			"physics": {
-				"model": "ground-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ground-3x3",
-			"transform": {
-				"translate": [
-					0,
-					0,
-					3
-				]
-			},
-			"physics": {
-				"model": "ground-3x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "ground-3x3",
-			"transform": {
-				"translate": [
-					3,
 					0,
 					3
 				]
@@ -417,6 +389,34 @@
 					0,
 					0,
 					6
+				]
+			},
+			"physics": {
+				"model": "ground-3x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-3x3",
+			"transform": {
+				"translate": [
+					3,
+					0,
+					0
+				]
+			},
+			"physics": {
+				"model": "ground-3x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "ground-3x3",
+			"transform": {
+				"translate": [
+					3,
+					0,
+					3
 				]
 			},
 			"physics": {
@@ -481,7 +481,6 @@
 			}
 		},
 		{
-			"_comment": "ceiling",
 			"renderable": "ceiling-3x3",
 			"transform": {
 				"translate": [
@@ -496,7 +495,6 @@
 			}
 		},
 		{
-			"_comment": "ceiling",
 			"renderable": "ceiling-3x3",
 			"transform": {
 				"translate": [
@@ -511,7 +509,6 @@
 			}
 		},
 		{
-			"_comment": "ceiling",
 			"renderable": "ceiling-3x3",
 			"transform": {
 				"translate": [
@@ -526,7 +523,6 @@
 			}
 		},
 		{
-			"_comment": "ceiling",
 			"renderable": "ceiling-3x3",
 			"transform": {
 				"translate": [
@@ -541,7 +537,6 @@
 			}
 		},
 		{
-			"_comment": "ceiling",
 			"renderable": "ceiling-3x3",
 			"transform": {
 				"translate": [
@@ -556,7 +551,6 @@
 			}
 		},
 		{
-			"_comment": "ceiling",
 			"renderable": "ceiling-3x3",
 			"transform": {
 				"translate": [
@@ -571,7 +565,6 @@
 			}
 		},
 		{
-			"_comment": "ceiling",
 			"renderable": "ceiling-3x3",
 			"transform": {
 				"translate": [
@@ -586,7 +579,6 @@
 			}
 		},
 		{
-			"_comment": "ceiling",
 			"renderable": "ceiling-3x3",
 			"transform": {
 				"translate": [
@@ -601,7 +593,6 @@
 			}
 		},
 		{
-			"_comment": "ceiling",
 			"renderable": "ceiling-3x3",
 			"transform": {
 				"translate": [
