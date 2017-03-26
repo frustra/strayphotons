@@ -1,8 +1,8 @@
 ejs = require('./ejs/ejs.js')
 fs = require('fs')
 
-var jsonlint = require('./jsonlint/lib/jsonlint.js')
-var jsonFormatter = require("./jsonlint/lib/formatter.js").formatter;
+var jsonlint = require('./jsonlint/jsonlint.js')
+var jsonFormatter = require('./jsonlint/formatter.js').formatter;
 
 JSON._parse = JSON.parse;
 JSON.parse = function (json) {
