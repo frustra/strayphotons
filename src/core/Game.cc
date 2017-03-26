@@ -73,6 +73,8 @@ namespace sp
 			if (ent.Has<ecs::Physics>())
 			{
 				auto phys = ent.Get<ecs::Physics>();
+				auto rigidBody = phys->actor->isRigidDynamic();
+				if (rigidBody) physics.RemoveConstraints(rigidBody);
 				physics.RemoveActor(phys->actor);
 				phys->model = nullptr;
 			}

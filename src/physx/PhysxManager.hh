@@ -59,7 +59,8 @@ namespace sp
 
 		void CreateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 offset, physx::PxQuat rotationOffset);
 		void RotateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 rotation);
-		void RemoveConstraints(ecs::Entity parent, physx::PxRigidDynamic *child);
+		void RemoveConstraint(ecs::Entity parent, physx::PxRigidDynamic *child);
+		void RemoveConstraints(physx::PxRigidDynamic *child);
 
 		ConvexHullSet *GetCachedConvexHulls(std::string name);
 

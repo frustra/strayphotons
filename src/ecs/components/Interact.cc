@@ -13,7 +13,7 @@ namespace ecs
 	{
 		if (target)
 		{
-			manager->RemoveConstraints(entity, target);
+			manager->RemoveConstraint(entity, target);
 			target = nullptr;
 			return;
 		}

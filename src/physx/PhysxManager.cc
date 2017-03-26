@@ -737,7 +737,7 @@ namespace sp
 		Unlock();
 	}
 
-	void PhysxManager::RemoveConstraints(ecs::Entity parent, physx::PxRigidDynamic *child)
+	void PhysxManager::RemoveConstraint(ecs::Entity parent, physx::PxRigidDynamic *child)
 	{
 		Lock();
 		PxShape *shape;
@@ -750,6 +750,27 @@ namespace sp
 		for (auto it = constraints.begin(); it != constraints.end();)
 		{
 			if (it->parent == parent && it->child == child)
+			{
+				it = constraints.erase(it);
+			}
+			else it++;
+		}
+		Unlock();
+	}
+
+	void PhysxManager::RemoveConstraints(physx::PxRigidDynamic *child)
+	{
+		Lock();
+		PxShape *shape;
+		child->getShapes(&shape, 1);
+
+		PxFilterData data;
+		data.word0 = 3;
+		shape->setQueryFilterData(data);
+
+		for (auto it = constraints.begin(); it != constraints.end();)
+		{
+			if (it->child == child)
 			{
 				it = constraints.erase(it);
 			}
