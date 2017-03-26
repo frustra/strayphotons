@@ -22,7 +22,7 @@ for (i = 1; i < locals.points.length; i++) {
 	if (Math.abs(lastrotation - rotation) > Math.abs(lastrotation - rotation - 360)) {
 		lastrotation -= 360;
 	}
-	if (i < locals.points.length - 1 && lastrotation != rotation) { %>
+	if (lastrotation != rotation) { %>
 		,
 		{
 			"renderable": "wall-4-corner",

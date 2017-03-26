@@ -27,11 +27,11 @@
 		},
 		<%- include("prefab/floor", {
 			y: 0,
-			corners: [[-6, 0], [12, 9]]
+			corners: [[-3, 0], [12, 9]]
 		}) %>,
 		<%- include("prefab/ceiling", {
 			y: 4,
-			corners: [[-6, 0], [12, 9]]
+			corners: [[-3, 0], [12, 9]]
 		}) %>,
 
 		<%- include("prefab/wall", {

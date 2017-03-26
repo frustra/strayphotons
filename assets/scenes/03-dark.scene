@@ -1,6 +1,6 @@
 {
 	"autoexec": [
-		"r.MirrorRecursion 1",
+		"r.MirrorRecursion 2",
 		"wait 1000 g.OpenDoor airlock1-out",
 		"r.LightAttenuation 0.15"
 	],
@@ -15,23 +15,23 @@
 		}) %>,
 		<%- include('prefab/airlock', {
 			name: 'airlock2',
-			translate: [11.2, 0, -3],
-			rotate: [-90, 0, 1, 0]
+			translate: [6.8, 0, 12],
+			rotate: [90, 0, 1, 0]
 		}) %>,
 		{
 			"triggerarea": {
-				"min": [10, 0, -2.5],
-				"max": [12, 2, 0],
+				"min": [6, 0, 9],
+				"max": [9, 2, 11.5],
 				"command": "g.CloseDoor airlock2-in; wait 1000 loadscene 04-symmetry"
 			}
 		},
 		<%- include("prefab/floor", {
 			y: 0,
-			corners: [[-6, 0], [12, 9]]
+			corners: [[-3, 0], [12, 9]]
 		}) %>,
 		<%- include("prefab/ceiling", {
 			y: 4,
-			corners: [[-6, 0], [12, 9]]
+			corners: [[-3, 0], [12, 9]]
 		}) %>,
 
 		<%- include("prefab/wall", {
@@ -66,35 +66,50 @@
 				}
 			]
 		}) %>,
+		{
+			"renderable": "box",
+			"transform": {
+				"translate": [5.85, 2, 4],
+				"scale": [0.1, 0.1, 0.2]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
 		<%- include("prefab/cube", {
 			name: "mirrorcube1",
 			sides: 1,
-			translate: [2, 0.0, 5],
-			rotate: [-43, 0, 1, 0]
+			translate: [5.4, 1.65, 4.45],
+			rotate: [-90, 1, 0, 0]
 		}) %>,
 
 		<%- include("prefab/wall", {
 			y: 0,
-			points: [[6, 9], [12, 9], [12, 6], [9, 6], [9, 3], [12, 3], [12, 0, "wall-4x3-door"], [9, 0], [6, 0]]
+			points: [[6, 3], [9, 3], [9, 6], [6, 6]]
+		}) %>,
+		<%- include("prefab/wall", {
+			y: 0,
+			points: [[6, 9, "wall-4x3-door"], [9, 9], [12, 9], [12, 0], [6, 0]]
 		}) %>,
 
 		<%- include('prefab/spotlight', {
 			name: 'light2',
 			tint: [0.8, 0.8, 1],
-			intensity: 500,
+			intensity: 10,
 			spotAngle: 25,
-			translate: [11.8, 0.5, 1.5],
-			rotate: [[90, 0, 1, 0]]
+			translate: [7.5, 3.8, 1.5],
+			rotate: [[90, 0, 1, 0], [-55, 1, 0, 0]]
 		}) %>,
 		<%- include('prefab/lightsensor',
 		{
 			name: "sensor2",
 			type: "light",
-			translate: [11.9, 1, 7.5],
-			rotate: [-90, 0, 1, 0],
+			translate: [10.5, 1, 8.9],
+			rotate: [180, 0, 1, 0],
 			triggers: [
 				{
-					illuminance: [0.015, 0.015, 0.015],
+					illuminance: [0.1, 0.1, 0.1],
 					oncmd: "g.OpenDoor airlock2-in",
 					offcmd: "g.CloseDoor airlock2-in"
 				}
@@ -103,8 +118,14 @@
 		<%- include("prefab/cube", {
 			name: "mirrorcube2",
 			sides: 1,
-			translate: [7.8, 0.0, 5],
-			rotate: [43, 0, 1, 0]
+			translate: [7.8, 0.5, 1.5],
+			rotate: [[23, 0, 1, 0], [90, 1, 0, 0]]
+		}) %>,
+		<%- include("prefab/cube", {
+			name: "mirrorcube3",
+			sides: 1,
+			translate: [8.9, 0.0, 7.5],
+			rotate: [[23, 0, 1, 0]]
 		}) %>,
 
 		{
