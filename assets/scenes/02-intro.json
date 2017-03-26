@@ -675,6 +675,26 @@
 			}
 		},
 		{
+			"renderable": "wall-4-corner",
+			"transform": {
+				"rotate": [
+					135,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					0,
+					0,
+					9
+				]
+			},
+			"physics": {
+				"model": "wall-4-corner",
+				"dynamic": false
+			}
+		},
+		{
 			"renderable": "wall-4x3",
 			"transform": {
 				"rotate": [
@@ -735,6 +755,26 @@
 			}
 		},
 		{
+			"renderable": "wall-4-corner",
+			"transform": {
+				"rotate": [
+					45,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					0,
+					0,
+					0
+				]
+			},
+			"physics": {
+				"model": "wall-4-corner",
+				"dynamic": false
+			}
+		},
+		{
 			"renderable": "wall-4x3",
 			"transform": {
 				"rotate": [
@@ -771,6 +811,26 @@
 			},
 			"physics": {
 				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4-corner",
+			"transform": {
+				"rotate": [
+					-45,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					6,
+					0,
+					0
+				]
+			},
+			"physics": {
+				"model": "wall-4-corner",
 				"dynamic": false
 			}
 		},
@@ -851,6 +911,26 @@
 			},
 			"physics": {
 				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4-corner",
+			"transform": {
+				"rotate": [
+					45,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					9,
+					0,
+					9
+				]
+			},
+			"physics": {
+				"model": "wall-4-corner",
 				"dynamic": false
 			}
 		},

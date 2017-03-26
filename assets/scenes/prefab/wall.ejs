@@ -1,5 +1,6 @@
 <%
 comma = false;
+lastrotation = false;
 for (i = 1; i < locals.points.length; i++) {
 	dir = [
 		locals.points[i][0] - locals.points[i-1][0],
@@ -10,7 +11,36 @@ for (i = 1; i < locals.points.length; i++) {
 	dir[1] *= 3 / distance;
 	rotation = Math.atan2(-dir[1], dir[0]) * 180 / Math.PI;
 
-	point = [locals.points[i-1][0] + dir[0] / 2, locals.y, locals.points[i-1][1] + dir[1] / 2];
+	point = [locals.points[i-1][0], locals.y, locals.points[i-1][1]];
+
+	if (lastrotation === false) {
+		lastrotation = rotation;
+	}
+	if (Math.abs(lastrotation - rotation) > Math.abs(lastrotation - rotation + 360)) {
+		lastrotation += 360;
+	}
+	if (Math.abs(lastrotation - rotation) > Math.abs(lastrotation - rotation - 360)) {
+		lastrotation -= 360;
+	}
+	if (i < locals.points.length - 1 && lastrotation != rotation) { %>
+		,
+		{
+			"renderable": "wall-4-corner",
+			"transform": {
+				"rotate": [<%= (rotation + lastrotation) / 2 %>, 0, 1, 0],
+				"translate": <%= point %>
+			},
+			"physics": {
+				"model": "wall-4-corner",
+				"dynamic": false
+			}
+		}
+	<%
+	}
+	lastrotation = rotation;
+	point[0] += dir[0] / 2;
+	point[2] += dir[1] / 2;
+
 	for (j = 0; j < distance - (distance % 3); j += 3) {
 		if (comma) { %>
 			,

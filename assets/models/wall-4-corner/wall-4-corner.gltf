@@ -1,0 +1,231 @@
+{
+    "accessors": {
+        "accessor_0": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 0,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                0.07071100175380707,
+                4,
+                0.07071100175380707
+            ],
+            "min": [
+                -0.07071100175380707,
+                0,
+                -0.07071100175380707
+            ],
+            "type": "VEC3"
+        },
+        "accessor_1": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 288,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                1,
+                1,
+                1
+            ],
+            "min": [
+                -1,
+                -1,
+                -1
+            ],
+            "type": "VEC3"
+        },
+        "accessor_2": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 576,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                0.20000000298023224,
+                1
+            ],
+            "min": [
+                0,
+                0
+            ],
+            "type": "VEC2"
+        },
+        "accessor_3": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 0,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 36,
+            "max": [
+                23
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
+        }
+    },
+    "animations": {},
+    "asset": {
+        "generator": "obj2gltf",
+        "premultipliedAlpha": true,
+        "profile": {
+            "api": "WebGL",
+            "version": "1.0"
+        },
+        "version": "1.0"
+    },
+    "bufferViews": {
+        "bufferView_0": {
+            "buffer": "buffer",
+            "byteLength": 768,
+            "byteOffset": 0,
+            "target": 34962
+        },
+        "bufferView_1": {
+            "buffer": "buffer",
+            "byteLength": 72,
+            "byteOffset": 768,
+            "target": 34963
+        }
+    },
+    "buffers": {
+        "buffer": {
+            "byteLength": 840,
+            "type": "arraybuffer",
+            "uri": "data:application/octet-stream;base64,7tCQPQAAAADu0JC97tCQvQAAAADu0JA9aNCQvQAAAADu0JC97tCQvQAAgEDu0JC9aNCQPQAAgEDu0JA97tCQPQAAgEBo0JC97tCQPQAAgEBo0JC97tCQPQAAAADu0JA97tCQPQAAAADu0JC9aNCQPQAAgEDu0JA97tCQvQAAAADu0JA97tCQPQAAAADu0JA97tCQvQAAgEBo0JA9aNCQvQAAAADu0JC97tCQvQAAAADu0JA97tCQPQAAAADu0JC97tCQvQAAgEDu0JC97tCQPQAAgEBo0JC97tCQPQAAAADu0JA97tCQvQAAgEBo0JA9aNCQPQAAgEDu0JA97tCQvQAAgEBo0JA97tCQvQAAgEDu0JC9aNCQvQAAAADu0JC9AAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAACAPwAAAIAAAAAAAAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AAAAgAAAAIAAAIA/AACAvwAAAIAAAACAAACAvwAAAIAAAACAAACAvwAAAIAAAACAAAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAAAAAAIC/AAAAAAAAgL8AAAAAAAAAAAAAgD8AAAAAAACAPwAAAIAAAAAAAAAAgAAAAIAAAIA/AACAvwAAAIAAAACAAAAAAAAAAAAAAIC/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/AAAAAAAAgD8AAAAAAACAPwAAAAAAAIA/OwHNPTMzcz+amRk+AAAAAM3MzD0AAAAAmpkZPqUscz/NzEw+AAAAAJqZGT4AAAAAzczMPc3MTD3NzEw9AACAP83MzD0AAIA/F7fROHL5fz/NzEw9qDVNPRe30TjNzEw9AAAAAAAAgD8AAAAAAACAP9CzGT4zM3M/zcxMPqUscz/NzEw9zcxMPc3MTD0AAIA/AAABAAIAAwAEAAUABgAHAAgACQAKAAsADAANAA4ADwAQABEAAAASAAEAAwATAAQABgAUAAcACQAVAAoADAAWAA0ADwAXABAA"
+        }
+    },
+    "cameras": {},
+    "extensionsUsed": [],
+    "images": {
+        "image_Material_Base_Color.png": {
+            "uri": "Material_Base_Color.png"
+        },
+        "image_Material_Height.png": {
+            "uri": "Material_Height.png"
+        },
+        "image_Material_Roughness.png": {
+            "uri": "Material_Roughness.png"
+        }
+    },
+    "materials": {
+        "Material": {
+            "values": {
+                "ambient": [
+                    1,
+                    1,
+                    1,
+                    1
+                ],
+                "baseColor": "texture_Material_Base_Color.png",
+                "diffuse": [
+                    0.64,
+                    0.64,
+                    0.64,
+                    1
+                ],
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "height": "texture_Material_Height.png",
+                "roughness": "texture_Material_Roughness.png",
+                "shininess": 96.078431,
+                "specular": [
+                    0.5,
+                    0.5,
+                    0.5,
+                    1
+                ],
+                "transparency": 1
+            }
+        }
+    },
+    "meshes": {
+        "Cube-Mesh": {
+            "name": "Cube-Mesh",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": "accessor_1",
+                        "POSITION": "accessor_0",
+                        "TEXCOORD_0": "accessor_2"
+                    },
+                    "indices": "accessor_3",
+                    "material": "Material",
+                    "mode": 4
+                }
+            ]
+        }
+    },
+    "nodes": {
+        "Cube": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "Cube-Mesh"
+            ],
+            "name": "Cube"
+        }
+    },
+    "samplers": {
+        "sampler_0": {}
+    },
+    "scene": "scene",
+    "scenes": {
+        "scene": {
+            "nodes": [
+                "Cube"
+            ]
+        }
+    },
+    "skins": {},
+    "textures": {
+        "texture_Material_Base_Color.png": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_Material_Base_Color.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_Material_Height.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_Material_Height.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_Material_Roughness.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_Material_Roughness.png",
+            "target": 3553,
+            "type": 5121
+        }
+    }
+}
