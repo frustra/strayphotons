@@ -1,0 +1,457 @@
+{
+    "accessors": {
+        "accessor_0": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 0,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 20,
+            "max": [
+                0.11400000005960464,
+                2.4749999046325684,
+                -0.7425000071525574
+            ],
+            "min": [
+                -0.11400000005960464,
+                0,
+                -0.8414999842643738
+            ],
+            "type": "VEC3"
+        },
+        "accessor_1": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 240,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 20,
+            "max": [
+                1,
+                0,
+                1
+            ],
+            "min": [
+                -1,
+                -1,
+                -1
+            ],
+            "type": "VEC3"
+        },
+        "accessor_10": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 2176,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 32,
+            "max": [
+                0.916700005531311,
+                1
+            ],
+            "min": [
+                0,
+                0
+            ],
+            "type": "VEC2"
+        },
+        "accessor_11": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 132,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 66,
+            "max": [
+                31
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
+        },
+        "accessor_2": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 480,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 20,
+            "max": [
+                0.875,
+                1
+            ],
+            "min": [
+                0,
+                0
+            ],
+            "type": "VEC2"
+        },
+        "accessor_3": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 0,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 30,
+            "max": [
+                19
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
+        },
+        "accessor_4": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 640,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                0.11400000005960464,
+                2.5739998817443848,
+                0.8414999842643738
+            ],
+            "min": [
+                -0.11400000005960464,
+                2.4749999046325684,
+                -0.8414999842643738
+            ],
+            "type": "VEC3"
+        },
+        "accessor_5": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 928,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                1,
+                1,
+                1
+            ],
+            "min": [
+                -1,
+                -1,
+                -1
+            ],
+            "type": "VEC3"
+        },
+        "accessor_6": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 1216,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                1,
+                1
+            ],
+            "min": [
+                0,
+                0.34619998931884766
+            ],
+            "type": "VEC2"
+        },
+        "accessor_7": {
+            "bufferView": "bufferView_1",
+            "byteOffset": 60,
+            "byteStride": 0,
+            "componentType": 5123,
+            "count": 36,
+            "max": [
+                23
+            ],
+            "min": [
+                0
+            ],
+            "type": "SCALAR"
+        },
+        "accessor_8": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 1408,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 32,
+            "max": [
+                0.11400000005960464,
+                2.4749999046325684,
+                0.8414999842643738
+            ],
+            "min": [
+                -0.11400000005960464,
+                0,
+                0.7425000071525574
+            ],
+            "type": "VEC3"
+        },
+        "accessor_9": {
+            "bufferView": "bufferView_0",
+            "byteOffset": 1792,
+            "byteStride": 0,
+            "componentType": 5126,
+            "count": 32,
+            "max": [
+                1,
+                0,
+                1
+            ],
+            "min": [
+                -1,
+                -1,
+                -1
+            ],
+            "type": "VEC3"
+        }
+    },
+    "animations": {},
+    "asset": {
+        "generator": "obj2gltf",
+        "premultipliedAlpha": true,
+        "profile": {
+            "api": "WebGL",
+            "version": "1.0"
+        },
+        "version": "1.0"
+    },
+    "bufferViews": {
+        "bufferView_0": {
+            "buffer": "buffer",
+            "byteLength": 2432,
+            "byteOffset": 0,
+            "target": 34962
+        },
+        "bufferView_1": {
+            "buffer": "buffer",
+            "byteLength": 264,
+            "byteOffset": 2432,
+            "target": 34963
+        }
+    },
+    "buffers": {
+        "buffer": {
+            "byteLength": 2696,
+            "type": "arraybuffer",
+            "uri": "data:application/octet-stream;base64,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"
+        }
+    },
+    "cameras": {},
+    "extensionsUsed": [],
+    "images": {
+        "image_DoorFrame_Base_Color.png": {
+            "uri": "DoorFrame_Base_Color.png"
+        },
+        "image_DoorFrame_Height.png": {
+            "uri": "DoorFrame_Height.png"
+        },
+        "image_DoorFrame_Metallic.png": {
+            "uri": "DoorFrame_Metallic.png"
+        },
+        "image_DoorFrame_Roughness.png": {
+            "uri": "DoorFrame_Roughness.png"
+        }
+    },
+    "materials": {
+        "DoorFrame": {
+            "values": {
+                "ambient": [
+                    1,
+                    1,
+                    1,
+                    1
+                ],
+                "baseColor": "texture_DoorFrame_Base_Color.png",
+                "diffuse": [
+                    0.64,
+                    0.64,
+                    0.64,
+                    1
+                ],
+                "emission": [
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                "height": "texture_DoorFrame_Height.png",
+                "metallic": "texture_DoorFrame_Metallic.png",
+                "roughness": "texture_DoorFrame_Roughness.png",
+                "shininess": 96.078431,
+                "specular": [
+                    0.5,
+                    0.5,
+                    0.5,
+                    1
+                ],
+                "transparency": 1
+            }
+        }
+    },
+    "meshes": {
+        "Cube-Mesh": {
+            "name": "Cube-Mesh",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": "accessor_9",
+                        "POSITION": "accessor_8",
+                        "TEXCOORD_0": "accessor_10"
+                    },
+                    "indices": "accessor_11",
+                    "material": "DoorFrame",
+                    "mode": 4
+                }
+            ]
+        },
+        "Cube.001_Cube.003-Mesh": {
+            "name": "Cube.001_Cube.003-Mesh",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": "accessor_5",
+                        "POSITION": "accessor_4",
+                        "TEXCOORD_0": "accessor_6"
+                    },
+                    "indices": "accessor_7",
+                    "material": "DoorFrame",
+                    "mode": 4
+                }
+            ]
+        },
+        "Cube.002_Cube.004-Mesh": {
+            "name": "Cube.002_Cube.004-Mesh",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": "accessor_1",
+                        "POSITION": "accessor_0",
+                        "TEXCOORD_0": "accessor_2"
+                    },
+                    "indices": "accessor_3",
+                    "material": "DoorFrame",
+                    "mode": 4
+                }
+            ]
+        }
+    },
+    "nodes": {
+        "Cube": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "Cube-Mesh"
+            ],
+            "name": "Cube"
+        },
+        "Cube.001_Cube.003": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "Cube.001_Cube.003-Mesh"
+            ],
+            "name": "Cube.001_Cube.003"
+        },
+        "Cube.002_Cube.004": {
+            "children": [],
+            "matrix": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "meshes": [
+                "Cube.002_Cube.004-Mesh"
+            ],
+            "name": "Cube.002_Cube.004"
+        }
+    },
+    "samplers": {
+        "sampler_0": {}
+    },
+    "scene": "scene",
+    "scenes": {
+        "scene": {
+            "nodes": [
+                "Cube.002_Cube.004",
+                "Cube.001_Cube.003",
+                "Cube"
+            ]
+        }
+    },
+    "skins": {},
+    "textures": {
+        "texture_DoorFrame_Base_Color.png": {
+            "format": 6407,
+            "internalFormat": 6407,
+            "sampler": "sampler_0",
+            "source": "image_DoorFrame_Base_Color.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_DoorFrame_Height.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_DoorFrame_Height.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_DoorFrame_Metallic.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_DoorFrame_Metallic.png",
+            "target": 3553,
+            "type": 5121
+        },
+        "texture_DoorFrame_Roughness.png": {
+            "format": 6403,
+            "internalFormat": 33321,
+            "sampler": "sampler_0",
+            "source": "image_DoorFrame_Roughness.png",
+            "target": 3553,
+            "type": 5121
+        }
+    }
+}

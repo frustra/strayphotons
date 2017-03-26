@@ -54,9 +54,9 @@
 			]
 		}) %>,
 
-		<%- include('prefab/slide_door_1_5', {
+		<%- include('prefab/slide_door', {
 			name: 'door1',
-			translate: [5.95, 0.0, 6.75],
+			translate: [6, 0.0, 7.5],
 			rotate: [0, 0, 1, 0]
 		}) %>,
 		{

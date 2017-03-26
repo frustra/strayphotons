@@ -166,9 +166,9 @@
 				"decomposeHull": true
 			}
 		},
-		<%- include('prefab/slide_door_1_5', {
+		<%- include('prefab/slide_door', {
 			name: 'door1',
-			translate: [5.25, 0, 7],
+			translate: [6, 0, 7],
 			rotate: [90, 0, 1, 0]
 		}) %>,
 		{

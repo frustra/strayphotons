@@ -51,10 +51,9 @@
 			y: 0,
 			points: [[6, 9], [9, 9], [9, 3, "wall-4x3-door"], [9, 0], [6, 0]]
 		}) %>,
-
-		<%- include('prefab/slide_door_1_5', {
+		<%- include('prefab/slide_door', {
 			name: 'door1',
-			translate: [5.95, 0.0, 6.75],
+			translate: [6, 0.0, 7.5],
 			rotate: [0, 0, 1, 0]
 		}) %>,
 
