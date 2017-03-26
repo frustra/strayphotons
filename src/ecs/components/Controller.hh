@@ -38,7 +38,7 @@ namespace ecs
 	const float PLAYER_GRAVITY = 9.81f;
 	const float PLAYER_JUMP_VELOCITY = 4.0f;
 	const float PLAYER_AIR_STRAFE = 0.8f; // Movement scaler for acceleration in air
-	const float PLAYER_PUSH_FORCE = 0.3f;
+	const float PLAYER_PUSH_FORCE = 0.1f;
 
 	class HumanController
 	{

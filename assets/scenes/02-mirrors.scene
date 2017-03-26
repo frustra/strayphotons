@@ -1,5 +1,6 @@
 {
 	"autoexec": [
+		"r.MirrorRecursion 1",
 		"wait 1000 g.OpenDoor airlock1-out",
 		"r.LightAttenuation 0.15"
 	],
@@ -19,9 +20,9 @@
 		}) %>,
 		{
 			"triggerarea": {
-				"min": [10, 1, 0],
-				"max": [13, 2, 4],
-				"_command": "g.CloseDoor airlock2-in; wait 1000 loadscene 03-light-gun"
+				"min": [10, 0, -2.5],
+				"max": [12, 2, 0],
+				"command": "g.CloseDoor airlock2-in; wait 1000 loadscene 03-light-gun"
 			}
 		},
 		<%- include("prefab/floor", {
@@ -93,7 +94,7 @@
 			rotate: [-90, 0, 1, 0],
 			triggers: [
 				{
-					illuminance: [0.02, 0.02, 0.02],
+					illuminance: [0.015, 0.015, 0.015],
 					oncmd: "g.OpenDoor airlock2-in",
 					offcmd: "g.CloseDoor airlock2-in"
 				}

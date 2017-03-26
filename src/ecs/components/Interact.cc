@@ -41,9 +41,11 @@ namespace ecs
 				if (dynamic && !dynamic->getRigidBodyFlags().isSet(physx::PxRigidBodyFlag::eKINEMATIC))
 				{
 					target = dynamic;
-					auto currentPos = dynamic->getGlobalPose().transform(dynamic->getCMassLocalPose().transform(physx::PxVec3(0.0)));
-					auto offset = glm::inverse(transform->GetRotate()) * PxVec3ToGlmVec3P(currentPos - origin);
-					manager->CreateConstraint(entity, dynamic, GlmVec3ToPxVec3(offset));
+					auto pose = dynamic->getGlobalPose();
+					auto currentPos = pose.transform(dynamic->getCMassLocalPose().transform(physx::PxVec3(0.0)));
+					auto invRotate = glm::inverse(transform->GetRotate());
+					auto offset = invRotate * PxVec3ToGlmVec3P(currentPos - origin);
+					manager->CreateConstraint(entity, dynamic, GlmVec3ToPxVec3(offset), GlmQuatToPxQuat(invRotate) * pose.q);
 				}
 			}
 		}

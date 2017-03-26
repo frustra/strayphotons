@@ -105,34 +105,27 @@ namespace sp
 		for (auto constraint = constraints.begin(); constraint != constraints.end();)
 		{
 			auto transform = constraint->parent.Get<ecs::Transform>();
-			PxTransform destination;
+			auto pose = constraint->child->getGlobalPose();
 
-			if (constraint->parent.Has<ecs::Physics>())
-			{
-				auto physics = constraint->parent.Get<ecs::Physics>();
-				destination = physics->actor->getGlobalPose();
-			}
-			else if (constraint->parent.Has<ecs::HumanController>())
-			{
-				auto controller = constraint->parent.Get<ecs::HumanController>();
-				PxController *pxController = controller->pxController;
-				destination = pxController->getActor()->getGlobalPose();
-			}
-			else
-			{
-				std::cout << "Error physics constraint, parent not registered with physics system!";
-				continue;
-			}
-			glm::vec3 rotate = transform->GetRotate() * PxVec3ToGlmVec3P(constraint->offset);
-			PxVec3 targetPos = GlmVec3ToPxVec3(transform->GetPosition() + rotate);
-			auto currentPos = constraint->child->getGlobalPose().transform(constraint->child->getCMassLocalPose().transform(physx::PxVec3(0.0)));
-			auto distance = targetPos - currentPos;
 
-			if (distance.magnitude() < 2.0)
+			auto targetPos = transform->GetPosition() + transform->GetRotate() * PxVec3ToGlmVec3P(constraint->offset);
+			auto currentPos = pose.transform(constraint->child->getCMassLocalPose().transform(physx::PxVec3(0.0)));
+			auto deltaPos = GlmVec3ToPxVec3(targetPos) - currentPos;
+
+			auto upAxis = GlmVec3ToPxVec3(transform->GetUp());
+			constraint->rotationOffset = PxQuat(constraint->rotation.y, upAxis) * constraint->rotationOffset;
+			constraint->rotationOffset = PxQuat(constraint->rotation.x, PxVec3(1, 0, 0)) * constraint->rotationOffset;
+
+			auto targetRotate = transform->GetRotate() * PxQuatToGlmQuat(constraint->rotationOffset);
+			auto currentRotate = PxQuatToGlmQuat(pose.q);
+			auto deltaRotate = targetRotate * glm::inverse(currentRotate);
+
+			if (deltaPos.magnitude() < 2.0)
 			{
-				constraint->child->setAngularVelocity(constraint->rotation);
+				// TODO(xthexder): constraint->rotation
+				constraint->child->setAngularVelocity(GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate)).multiply(PxVec3(40.0)));
 				constraint->rotation = PxVec3(0); // Don't continue to rotate
-				constraint->child->setLinearVelocity(distance.multiply(PxVec3(20.0)));
+				constraint->child->setLinearVelocity(deltaPos.multiply(PxVec3(20.0)));
 				constraint++;
 			}
 			else
@@ -559,12 +552,16 @@ namespace sp
 		{
 			manager->Lock();
 			glm::vec3 *velocity = (glm::vec3 *) hit.controller->getUserData();
-			PxRigidBodyExt::addForceAtPos(
-				*dynamic,
-				hit.dir.multiply(PxVec3(glm::length(*velocity) * ecs::PLAYER_PUSH_FORCE)),
-				PxVec3(hit.worldPos.x, hit.worldPos.y, hit.worldPos.z),
-				PxForceMode::eIMPULSE
-			);
+			auto magnitude = glm::length(*velocity);
+			if (magnitude > 0.0001)
+			{
+				PxRigidBodyExt::addForceAtPos(
+					*dynamic,
+					hit.dir.multiply(PxVec3(magnitude * ecs::PLAYER_PUSH_FORCE)),
+					PxVec3(hit.worldPos.x, hit.worldPos.y, hit.worldPos.z),
+					PxForceMode::eIMPULSE
+				);
+			}
 			manager->Unlock();
 		}
 	}
@@ -702,7 +699,7 @@ namespace sp
 		return overlapFound;
 	}
 
-	void PhysxManager::CreateConstraint(ecs::Entity parent, PxRigidDynamic *child, PxVec3 offset)
+	void PhysxManager::CreateConstraint(ecs::Entity parent, PxRigidDynamic *child, PxVec3 offset, PxQuat rotationOffset)
 	{
 		Lock();
 		PxShape *shape;
@@ -712,6 +709,7 @@ namespace sp
 		constraint.parent = parent;
 		constraint.child = child;
 		constraint.offset = offset;
+		constraint.rotationOffset = rotationOffset;
 		constraint.rotation = PxVec3(0);
 
 		PxFilterData data;

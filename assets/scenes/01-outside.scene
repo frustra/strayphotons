@@ -185,7 +185,7 @@
 			"triggerarea": {
 				"min": [-7, 0, -8],
 				"max": [-5.5, 3.5, -6],
-				"command": "g.CloseDoor airlock1-in; wait 1000 loadscene 02-intro"
+				"command": "g.CloseDoor airlock1-in; wait 1000 loadscene 02-mirrors"
 			}
 		}
 	]

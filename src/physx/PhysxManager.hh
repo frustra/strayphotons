@@ -25,6 +25,7 @@ namespace sp
 		ecs::Entity parent;
 		physx::PxRigidDynamic *child;
 		physx::PxVec3 offset, rotation;
+		physx::PxQuat rotationOffset;
 	};
 
 	class ControllerHitReport : public physx::PxUserControllerHitReport
@@ -56,7 +57,7 @@ namespace sp
 		void ReadLock();
 		void ReadUnlock();
 
-		void CreateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 offset);
+		void CreateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 offset, physx::PxQuat rotationOffset);
 		void RotateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 rotation);
 		void RemoveConstraints(ecs::Entity parent, physx::PxRigidDynamic *child);
 

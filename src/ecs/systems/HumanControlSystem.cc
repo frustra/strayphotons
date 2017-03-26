@@ -316,6 +316,7 @@ namespace ecs
 			if (CVarNoClip.Get())
 			{
 				physics->TeleportController(controller->pxController, GlmVec3ToPxExtendedVec3(prevPosition + disp));
+				controller->onGround = true;
 			}
 			else
 			{
@@ -329,7 +330,7 @@ namespace ecs
 			// Update the velocity based on what happened in physx
 			controller->velocity = (velocityPosition - prevPosition) / (float)dtSinceLastFrame;
 			glm::vec3 *velocity = (glm::vec3 *) controller->pxController->getUserData();
-			*velocity = controller->velocity;
+			*velocity = CVarNoClip.Get() ? glm::vec3(0) : controller->velocity;
 
 			// Offset the capsule position so the camera is at the top
 			float capsuleHeight = physics->GetCapsuleHeight(controller->pxController);
@@ -374,8 +375,7 @@ namespace ecs
 		auto transform = entity.Get<ecs::Transform>();
 		if (interact->target)
 		{
-			auto rotation = transform->GetRotate() * glm::vec3(dCursor.y, dCursor.x, 0) * (float)dt;
-			rotation *= CVarCursorSensitivity.Get() * 10.0;
+			auto rotation = glm::vec3(dCursor.y, dCursor.x, 0) * (float)(CVarCursorSensitivity.Get() * 0.1 * dt);
 			physics->RotateConstraint(entity, interact->target, GlmVec3ToPxVec3(rotation));
 			return true;
 		}
