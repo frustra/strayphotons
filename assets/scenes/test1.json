@@ -124,12 +124,12 @@
 			}
 		},
 		{
-			"renderable": "box",
+			"renderable": "mcube",
 			"transform": {
 				"translate": [-0.2, 3, 0.5]
 			},
 			"physics": {
-				"model": "box"
+				"model": "mcube"
 			}
 		},
 		{
