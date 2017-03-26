@@ -644,109 +644,9 @@
 					0
 				],
 				"translate": [
-					1.5,
-					0,
-					-0.1
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					1.5,
-					0,
-					9.1
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					4.5,
-					0,
-					-0.1
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					4.5,
-					0,
-					9.1
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"rotate": [
-					180,
-					0,
-					1,
-					0
-				],
-				"translate": [
 					7.5,
 					0,
-					-0.1
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"rotate": [
-					0,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					7.5,
-					0,
-					9.1
+					9
 				]
 			},
 			"physics": {
@@ -764,47 +664,7 @@
 					0
 				],
 				"translate": [
-					-0.1,
-					0,
-					4.5
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					9.1,
-					0,
-					4.5
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"rotate": [
-					90,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					-0.1,
+					9,
 					0,
 					7.5
 				]
@@ -824,13 +684,233 @@
 					0
 				],
 				"translate": [
-					9.1,
+					9,
+					0,
+					4.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3-door",
+			"transform": {
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					9,
+					0,
+					1.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3-door",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					-180,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					7.5,
+					0,
+					0
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					-180,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					4.5,
+					0,
+					9
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					-180,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					1.5,
+					0,
+					9
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					0,
 					0,
 					7.5
 				]
 			},
 			"physics": {
 				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					0,
+					0,
+					4.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3-door",
+			"transform": {
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					0,
+					0,
+					1.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3-door",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					0,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					1.5,
+					0,
+					0
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					0,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					4.5,
+					0,
+					0
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3",
+			"transform": {
+				"rotate": [
+					-90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					6,
+					0,
+					1.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3",
+				"dynamic": false
+			}
+		},
+		{
+			"renderable": "wall-4x3-door",
+			"transform": {
+				"rotate": [
+					-90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					6,
+					0,
+					4.5
+				]
+			},
+			"physics": {
+				"model": "wall-4x3-door",
 				"dynamic": false
 			}
 		},
@@ -928,26 +1008,6 @@
 			}
 		},
 		{
-			"renderable": "wall-4x3-door",
-			"transform": {
-				"rotate": [
-					-90,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					6,
-					0,
-					4.5
-				]
-			},
-			"physics": {
-				"model": "wall-4x3-door",
-				"dynamic": false
-			}
-		},
-		{
 			"renderable": "ledge-caged-1x0.5",
 			"transform": {
 				"scale": [
@@ -999,26 +1059,6 @@
 			}
 		},
 		{
-			"renderable": "wall-4x3",
-			"transform": {
-				"rotate": [
-					-90,
-					0,
-					1,
-					0
-				],
-				"translate": [
-					6,
-					0,
-					1.5
-				]
-			},
-			"physics": {
-				"model": "wall-4x3",
-				"dynamic": false
-			}
-		},
-		{
 			"_name": "sensor1_plate",
 			"renderable": "sensor-plate-light",
 			"transform": {
@@ -1029,7 +1069,7 @@
 					0
 				],
 				"translate": [
-					9,
+					8.9,
 					1,
 					5
 				]
@@ -1090,7 +1130,7 @@
 					0
 				],
 				"translate": [
-					1.5,
+					-1.7,
 					1.7,
 					1.4
 				]
