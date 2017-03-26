@@ -1,5 +1,6 @@
 {
 	"autoexec": [
+		"r.MirrorRecursion 6",
 		"wait 1000 g.OpenDoor airlock1-out"
 	],
 	"entities": [
