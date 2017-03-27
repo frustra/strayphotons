@@ -85,7 +85,7 @@
 		<%- include('prefab/spotlight', {
 			name: 'light2',
 			tint: [0.8, 0.8, 1],
-			intensity: 500,
+			intensity: 600,
 			spotAngle: 25,
 			translate: [11.8, 0.5, 1.5],
 			rotate: [[90, 0, 1, 0]]
