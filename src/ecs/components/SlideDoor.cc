@@ -16,14 +16,31 @@ namespace ecs
 		}
 	}
 
-	bool SlideDoor::IsOpen()
+	SlideDoor::State SlideDoor::GetState()
 	{
 		ValidateDoor();
 		auto lPanel = left.Get<Animation>();
 		auto rPanel = right.Get<Animation>();
-		return
-			lPanel->curState == 1 && lPanel->nextState < 0
-			&& rPanel->curState == 1 && rPanel->nextState < 0;
+
+		SlideDoor::State state;
+		if (lPanel->curState == 1 && lPanel->nextState < 0)
+		{
+			state = SlideDoor::State::OPENED;
+		}
+		else if (lPanel->curState == 1 && lPanel->nextState >= 0)
+		{
+			state = SlideDoor::State::CLOSING;
+		}
+		else if (lPanel->curState == 0 && lPanel->nextState < 0)
+		{
+			state = SlideDoor::State::CLOSED;
+		}
+		else
+		{
+			state = SlideDoor::State::OPENING;
+		}
+
+		return state;
 	}
 
 	void SlideDoor::Open()

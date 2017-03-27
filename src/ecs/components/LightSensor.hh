@@ -12,6 +12,8 @@ namespace ecs
 		{
 			glm::vec3 illuminance;
 			string oncmd, offcmd;
+			float onSignal = 1.0f;
+			float offSignal = 0.0f;
 
 			bool operator()(glm::vec3 val)
 			{

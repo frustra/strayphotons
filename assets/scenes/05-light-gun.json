@@ -364,7 +364,8 @@
 					0,
 					0
 				]
-			}
+			},
+			"signalReceiver": {}
 		},
 		{
 			"_name": "0.25 wall left of barrier",

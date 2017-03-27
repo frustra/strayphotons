@@ -21,6 +21,7 @@
 #include "ecs/components/Controller.hh"
 #include "ecs/components/SlideDoor.hh"
 #include "ecs/components/VoxelInfo.hh"
+#include "ecs/components/SignalReceiver.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <cxxopts.hpp>
@@ -34,6 +35,7 @@ namespace sp
 		input(&game->input),
 		humanControlSystem(&game->entityManager, &game->input, &game->physics),
 		lightGunSystem(&game->entityManager, &game->input, &game->physics, this),
+		doorSystem(game->entityManager),
 		sunPos(0)
 	{
 		funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
@@ -208,14 +210,10 @@ namespace sp
 			auto view = flashlight.Get<ecs::View>();
 			view->extents = glm::ivec2(CVarFlashlightResolution.Get(true));
 		}
-		if (!humanControlSystem.Frame(dtSinceLastFrame))
-		{
-			return false;
-		}
-		if (!lightGunSystem.Frame(dtSinceLastFrame))
-		{
-			return false;
-		}
+
+		if (!humanControlSystem.Frame(dtSinceLastFrame)) return false;
+		if (!lightGunSystem.Frame(dtSinceLastFrame)) return false;
+		if (!doorSystem.Frame(dtSinceLastFrame)) return false;
 
 		return true;
 	}
@@ -302,6 +300,17 @@ namespace sp
 		}
 	}
 
+	string entityName(ecs::Entity ent)
+	{
+		string name = ent.ToString();
+
+		if (ent.Has<ecs::Name>())
+		{
+			name += " (" + ent.Get<ecs::Name>()->name + ")";
+		}
+		return name;
+	}
+
 	void GameLogic::PrintDebug()
 	{
 		Logf("Currently loaded scene: %s", scene ? scene->name : "none");
@@ -326,16 +335,20 @@ namespace sp
 		{
 			auto sensor = ent.Get<ecs::LightSensor>();
 			auto i = sensor->illuminance;
-			string name = ent.ToString();
-
-			if (ent.Has<ecs::Name>())
-			{
-				name += " (" + ent.Get<ecs::Name>()->name + ")";
-			}
+			string name = entityName(ent);
 
 			Logf("Light sensor %s: %f %f %f", name, i.r, i.g, i.b);
 		}
+
+		for (auto ent : game->entityManager.EntitiesWith<ecs::SignalReceiver>())
+		{
+			auto receiver = ent.Get<ecs::SignalReceiver>();
+			string name = entityName(ent);
+
+			Logf("Signal receiver %s: %.2f", name, receiver->GetSignal());
+		}
 	}
+
 
 	ecs::Entity GameLogic::GetPlayer()
 	{
@@ -387,7 +400,14 @@ namespace sp
 			return Logf("%s is not a door", name);
 		}
 
-		ent.Get<ecs::SlideDoor>()->Open();
+		if (ent.Has<ecs::SignalReceiver>())
+		{
+			ent.Get<ecs::SignalReceiver>()->SetOffset(1.0f);
+		}
+		else
+		{
+			ent.Get<ecs::SlideDoor>()->Open();
+		}
 	}
 
 	void GameLogic::CloseDoor(string name)
@@ -403,6 +423,13 @@ namespace sp
 			return Logf("%s is not a door", name);
 		}
 
-		ent.Get<ecs::SlideDoor>()->Close();
+		if (ent.Has<ecs::SignalReceiver>())
+		{
+			ent.Get<ecs::SignalReceiver>()->SetOffset(0.0f);
+		}
+		else
+		{
+			ent.Get<ecs::SlideDoor>()->Close();
+		}
 	}
 }

@@ -1,0 +1,67 @@
+#include "ecs/components/SignalReceiver.hh"
+#include "ecs/events/SignalChange.hh"
+
+namespace ecs
+{
+	void SignalReceiver::AttachSignal(Entity signaller, float startSig)
+	{
+		Entity::Id eId = signaller.GetId();
+
+		if (this->signallers.count(eId) > 0)
+		{
+			return;
+		}
+
+		auto handler = [&](Entity e, const SignalChange &sig) {
+			this->signallers.at(e.GetId()).signal = sig.signal;
+		};
+
+		this->signallers[eId] = {
+			.sub = signaller.Subscribe<SignalChange>(handler),
+			.signal = startSig
+		};
+	}
+
+	void SignalReceiver::DetachSignal(Entity signaller)
+	{
+		Entity::Id eId = signaller.GetId();
+		if (this->signallers.count(eId) <= 0)
+		{
+			return;
+		}
+
+		this->signallers[eId].sub.Unsubscribe();
+		this->signallers.erase(eId);
+	}
+
+	float SignalReceiver::GetSignal() const
+	{
+		float signal = 0;
+		for (auto &kv : this->signallers)
+		{
+			const SignalReceiver::Input &inputSig = kv.second;
+			signal += inputSig.signal;
+		}
+
+		return this->amplifier * signal + this->offset;
+	}
+
+	bool SignalReceiver::IsTriggered() const
+	{
+		return this->GetSignal()
+			> (1.0f - SignalReceiver::TRIGGER_TOLERANCE);
+	}
+
+	void SignalReceiver::SetAmplifier(float amp)
+	{
+		this->amplifier = amp;
+	}
+
+	void SignalReceiver::SetOffset(float offs)
+	{
+		this->offset = offs;
+	}
+
+	const float SignalReceiver::TRIGGER_TOLERANCE =
+		10*std::numeric_limits<float>::epsilon();
+}

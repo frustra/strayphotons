@@ -18,6 +18,7 @@
 		"translate": [0, 0, 0.015]
 	},
 	"lightsensor": {
+		<% if (locals.outputTo) { %>"outputTo": <%= outputTo %>,<% } %>
 		"translate": [0, 0, 0.1],
 		"direction": [0, 0, 1],
 		"triggers": <%= triggers %>
