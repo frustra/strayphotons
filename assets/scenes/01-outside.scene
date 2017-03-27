@@ -37,7 +37,7 @@
 		}) %>,
 		<%- include('prefab/airlock', {
 			name: 'airlock1',
-			translate: [-8.5, 0.6, -7]
+			translate: [-8.1, 0.6, -7]
 		}) %>,
 		{
 			"_comment": "airlock",
@@ -132,18 +132,19 @@
 			}
 		},
 		{
+			"_comment": "above door",
 			"light": {
 				"tint": [1, 0.5, 0.5],
 				"intensity": 30,
-				"spotAngle": 30
+				"spotAngle": 25
 			},
 			"view": {
 				"extents": [512, 512],
 				"clip": [0.1, 50]
 			},
 			"transform": {
-				"translate": [-4.9, 3.5, -7],
-				"rotate": [-90, 1, 0, 0]
+				"translate": [-4.5, 4, -7],
+				"rotate": [[80, 0, 0, 1], [90, 0, 1, 0]]
 			}
 		},
 		{
@@ -166,7 +167,7 @@
 			}
 		},
 		{
-			"_comment": "above door",
+			"_comment": "moonlight",
 			"light": {
 				"tint": [0.5, 0.5, 1],
 				"intensity": 10,
