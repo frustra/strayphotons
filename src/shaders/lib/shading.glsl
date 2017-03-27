@@ -58,22 +58,20 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 	for (int i = 0; i < lightCount; i++) {
 		vec3 sampleToLightRay = lights[i].position - worldPosition;
 		vec3 incidence = normalize(sampleToLightRay);
+
 		vec3 currLightDir = normalize(lights[i].direction);
-		float falloff = 1;
-
-		float illuminance = lights[i].illuminance;
 		vec3 currLightColor = lights[i].tint;
+		float illuminance = lights[i].illuminance;
 
-		if (illuminance == 0) {
-			// Determine physically-based distance attenuation.
+		float notHasIllum = step(illuminance, 0);
+		float hasIllum = 1.0 - notHasIllum;
+
+		{
 			float lightDistance = length(abs(lights[i].position - worldPosition));
 			float lightDistanceSq = lightDistance * lightDistance;
-			falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
+			float falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
 
-			// Calculate illuminance from intensity with E = L * n dot l.
-			illuminance = max(dot(normal, incidence), 0) * lights[i].intensity * falloff;
-		} else {
-			// Given value is the orthogonal case, need to project to l.
+			illuminance = notHasIllum * lights[i].intensity * falloff + hasIllum * illuminance;
 			illuminance *= max(dot(normal, incidence), 0);
 		}
 
@@ -90,7 +88,7 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 		// Spotlight attenuation.
 		float cosSpotAngle = lights[i].spotAngleCos;
 		float spotTerm = dot(incidence, -currLightDir);
-		float spotFalloff = smoothstep(cosSpotAngle, 1, spotTerm) * step(-1, cosSpotAngle) + step(cosSpotAngle, -1);
+		float spotFalloff = smoothstep(cosSpotAngle, 1, spotTerm) * notHasIllum + hasIllum;
 
 		// Calculate direct occlusion.
 		vec3 shadowMapPos = (lights[i].view * vec4(worldPosition, 1.0)).xyz; // Position of light view-space.
@@ -135,21 +133,19 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 
 		vec3 sampleToLightRay = sourcePos - worldPosition;
 		vec3 incidence = normalize(sampleToLightRay);
-		float falloff = 1;
 
-		float illuminance = lights[lightId].illuminance;
 		vec3 currLightColor = lights[lightId].tint;
+		float illuminance = lights[lightId].illuminance;
 
-		if (illuminance == 0) {
-			// Determine physically-based distance attenuation.
+		float notHasIllum = step(illuminance, 0);
+		float hasIllum = 1.0 - notHasIllum;
+
+		{
 			float lightDistance = length(abs(sourcePos - worldPosition));
 			float lightDistanceSq = lightDistance * lightDistance;
-			falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
+			float falloff = 1.0 / (max(lightDistanceSq, punctualLightSizeSq));
 
-			// Calculate illuminance from intensity with E = L * n dot l.
-			illuminance = max(dot(normal, incidence), 0) * lights[lightId].intensity * falloff;
-		} else {
-			// Given value is the orthogonal case, need to project to l.
+			illuminance = notHasIllum * lights[lightId].intensity * falloff + hasIllum * illuminance;
 			illuminance *= max(dot(normal, incidence), 0);
 		}
 
@@ -167,7 +163,7 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 		float cosSpotAngle = lights[lightId].spotAngleCos;
 		vec3 currLightDir = normalize(mat3(mirrorData.invLightViewMat[i]) * vec3(0, 0, -1));
 		float spotTerm = dot(incidence, -currLightDir);
-		float spotFalloff = smoothstep(cosSpotAngle, 1, spotTerm) * step(-1, cosSpotAngle) + step(cosSpotAngle, -1);
+		float spotFalloff = smoothstep(cosSpotAngle, 1, spotTerm) * notHasIllum + hasIllum;
 
 		// Calculate direct occlusion.
 		vec3 shadowMapPos = (mirrorData.viewMat[i] * vec4(worldPosition, 1.0)).xyz; // Position of light view-space.
