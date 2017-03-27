@@ -375,16 +375,16 @@
 		{
 			"triggerarea": {
 				"min": [
-					10,
-					1,
-					0
+					4,
+					0,
+					-2.5
 				],
 				"max": [
-					13,
-					2,
-					4
+					6,
+					4,
+					-0.5
 				],
-				"_command": "g.CloseDoor airlock2-in; wait 1000 loadscene 05-light-gun"
+				"command": "g.CloseDoor airlock2-in; wait 1000 loadscene menu"
 			}
 		},
 		{
