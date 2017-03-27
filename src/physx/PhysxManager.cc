@@ -130,7 +130,7 @@ namespace sp
 			{
 				constraint->child->setAngularVelocity(GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate)).multiply(PxVec3(40.0)));
 				constraint->rotation = PxVec3(0); // Don't continue to rotate
-				constraint->child->setLinearVelocity(deltaPos.multiply(PxVec3(10.0)));
+				constraint->child->setLinearVelocity(deltaPos.multiply(PxVec3(20.0)));
 				constraint++;
 			}
 			else
