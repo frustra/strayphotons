@@ -153,7 +153,7 @@
 			"slideDoor": {
 				"left": "airlock1-out-left",
 				"right": "airlock1-out-right",
-				"width": 1.25,
+				"width": 1.4,
 				"openTime": 0.5,
 				"forward": [
 					1,
@@ -216,7 +216,7 @@
 			"slideDoor": {
 				"left": "airlock1-in-left",
 				"right": "airlock1-in-right",
-				"width": 1.25,
+				"width": 1.4,
 				"openTime": 0.5,
 				"forward": [
 					1,

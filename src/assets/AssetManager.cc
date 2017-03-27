@@ -435,7 +435,7 @@ namespace sp
 				{
 					physx::PxRigidActor *actor = nullptr;
 
-					shared_ptr<Model> model, altModel;
+					shared_ptr<Model> model;
 					PhysxActorDesc desc;
 
 					for (auto param : comp.second.get<picojson::object>())
@@ -443,10 +443,6 @@ namespace sp
 						if (param.first == "model")
 						{
 							model = LoadModel(param.second.get<string>());
-						}
-						else if (param.first == "altModel")
-						{
-							altModel = LoadModel(param.second.get<string>());
 						}
 						else if (param.first == "dynamic")
 						{
@@ -466,7 +462,7 @@ namespace sp
 						}
 					}
 
-					actor = px.CreateActor(model, desc, entity, altModel);
+					actor = px.CreateActor(model, desc, entity);
 
 					if (actor)
 					{

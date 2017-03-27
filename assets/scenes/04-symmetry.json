@@ -79,7 +79,7 @@
 			"slideDoor": {
 				"left": "airlock1-out-left",
 				"right": "airlock1-out-right",
-				"width": 1.25,
+				"width": 1.4,
 				"openTime": 0.5,
 				"forward": [
 					1,
@@ -142,7 +142,7 @@
 			"slideDoor": {
 				"left": "airlock1-in-left",
 				"right": "airlock1-in-right",
-				"width": 1.25,
+				"width": 1.4,
 				"openTime": 0.5,
 				"forward": [
 					1,
@@ -261,7 +261,7 @@
 			"slideDoor": {
 				"left": "airlock2-out-left",
 				"right": "airlock2-out-right",
-				"width": 1.25,
+				"width": 1.4,
 				"openTime": 0.5,
 				"forward": [
 					1,
@@ -324,7 +324,7 @@
 			"slideDoor": {
 				"left": "airlock2-in-left",
 				"right": "airlock2-in-right",
-				"width": 1.25,
+				"width": 1.4,
 				"openTime": 0.5,
 				"forward": [
 					1,
@@ -1796,9 +1796,8 @@
 				]
 			},
 			"physics": {
-				"model": "mcube",
-				"altModel": "mcube-alt",
-				"density": 4
+				"model": "mcube-physx",
+				"density": 1
 			}
 		},
 		{
@@ -1894,9 +1893,8 @@
 				]
 			},
 			"physics": {
-				"model": "mcube",
-				"altModel": "mcube-alt",
-				"density": 4
+				"model": "mcube-physx",
+				"density": 1
 			}
 		},
 		{
@@ -1954,9 +1952,8 @@
 				]
 			},
 			"physics": {
-				"model": "mcube",
-				"altModel": "mcube-alt",
-				"density": 4
+				"model": "mcube-physx",
+				"density": 1
 			}
 		},
 		{

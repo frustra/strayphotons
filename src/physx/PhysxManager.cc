@@ -1,4 +1,3 @@
-#define _USE_MATH_DEFINES
 #include <PxScene.h>
 
 #include "physx/PhysxManager.hh"
@@ -131,7 +130,9 @@ namespace sp
 			{
 				constraint->child->setAngularVelocity(GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate)).multiply(PxVec3(40.0)));
 				constraint->rotation = PxVec3(0); // Don't continue to rotate
-				constraint->child->setLinearVelocity(deltaPos.multiply(PxVec3(20.0)));
+
+				auto clampRatio = std::min(0.5f, deltaPos.magnitude()) / (deltaPos.magnitude() + 0.00001);
+				constraint->child->setLinearVelocity(deltaPos.multiply(PxVec3(20.0 * clampRatio)));
 				constraint++;
 			}
 			else
@@ -270,8 +271,8 @@ namespace sp
 		sceneDesc.gravity = PxVec3(0.f, CVarGravity.Get(true), 0.f);
 		sceneDesc.filterShader = PxDefaultSimulationFilterShader;
 
-		// Don't collide with alt models
-		PxSetGroupCollisionFlag(3, 4, false);
+		// Don't collide held model with player
+		PxSetGroupCollisionFlag(1, 2, false);
 
 		dispatcher = PxDefaultCpuDispatcherCreate(1);
 		sceneDesc.cpuDispatcher = dispatcher;
@@ -478,7 +479,7 @@ namespace sp
 		Unlock();
 	}
 
-	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PhysxActorDesc desc, const ecs::Entity &entity, shared_ptr<Model> altModel)
+	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PhysxActorDesc desc, const ecs::Entity &entity)
 	{
 		Lock();
 		PxRigidActor *actor;
@@ -490,7 +491,7 @@ namespace sp
 			if (desc.kinematic)
 			{
 				auto rigidBody = static_cast<physx::PxRigidBody *>(actor);
-				rigidBody->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
+				rigidBody->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 			}
 		}
 		else
@@ -527,37 +528,6 @@ namespace sp
 			data.word0 = 3;
 			shape->setQueryFilterData(data);
 			shape->setSimulationFilterData(data);
-		}
-
-		if (altModel) {
-			decomposition = BuildConvexHulls(altModel.get(), false);
-
-			for (auto hull : decomposition->hulls)
-			{
-				PxConvexMeshDesc convexDesc;
-				convexDesc.points.count = hull.pointCount;
-				convexDesc.points.stride = hull.pointByteStride;
-				convexDesc.points.data = hull.points;
-				convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
-
-				PxDefaultMemoryOutputStream buf;
-				PxConvexMeshCookingResult::Enum result;
-
-				if (!pxCooking->cookConvexMesh(convexDesc, buf, &result))
-				{
-					Errorf("Failed to cook PhysX hull for %s", model->name);
-					return nullptr;
-				}
-
-				PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
-				PxConvexMesh *pxhull = physics->createConvexMesh(input);
-
-				auto shape = actor->createShape(PxConvexMeshGeometry(pxhull, desc.scale), *mat);
-				PxFilterData data;
-				data.word0 = 4;
-				shape->setQueryFilterData(data);
-				shape->setSimulationFilterData(data);
-			}
 		}
 
 		if (desc.dynamic)
@@ -629,6 +599,12 @@ namespace sp
 
 		PxCapsuleController *controller =
 			static_cast<PxCapsuleController *>(manager->createController(desc));
+
+		PxShape *shape;
+		controller->getActor()->getShapes(&shape, 1);
+		PxFilterData data;
+		data.word0 = 2;
+		shape->setSimulationFilterData(data);
 
 		Unlock();
 		return controller;
@@ -754,10 +730,8 @@ namespace sp
 		data.word0 = 1;
 		for (uint32 i = 0; i < nShapes; ++i)
 		{
-			if (shapes[i]->getQueryFilterData().word0 == 3)
-			{
-				shapes[i]->setQueryFilterData(data);
-			}
+			shapes[i]->setQueryFilterData(data);
+			shapes[i]->setSimulationFilterData(data);
 		}
 
 		PhysxConstraint constraint;
@@ -799,10 +773,8 @@ namespace sp
 		data.word0 = 3;
 		for (uint32 i = 0; i < nShapes; ++i)
 		{
-			if (shapes[i]->getQueryFilterData().word0 == 1)
-			{
-				shapes[i]->setQueryFilterData(data);
-			}
+			shapes[i]->setQueryFilterData(data);
+			shapes[i]->setSimulationFilterData(data);
 		}
 
 		for (auto it = constraints.begin(); it != constraints.end();)
@@ -827,10 +799,8 @@ namespace sp
 		data.word0 = 3;
 		for (uint32 i = 0; i < nShapes; ++i)
 		{
-			if (shapes[i]->getQueryFilterData().word0 == 1)
-			{
-				shapes[i]->setQueryFilterData(data);
-			}
+			shapes[i]->setQueryFilterData(data);
+			shapes[i]->setSimulationFilterData(data);
 		}
 
 		for (auto it = constraints.begin(); it != constraints.end();)
