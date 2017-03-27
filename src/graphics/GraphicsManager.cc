@@ -130,7 +130,7 @@ namespace sp
 			defaultView.extents = CVarWindowSize.Get();
 			views.push_back(defaultView);
 		}
-		for (int i = 1; i < playerViews.size(); i++)
+		for (uint i = 1; i < playerViews.size(); i++)
 		{
 			views.push_back(*ecs::UpdateViewCache(playerViews[i]));
 		}
