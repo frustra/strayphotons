@@ -16,10 +16,7 @@ namespace ecs
 			this->signallers.at(e.GetId()).signal = sig.signal;
 		};
 
-		this->signallers[eId] = {
-			.sub = signaller.Subscribe<SignalChange>(handler),
-			.signal = startSig
-		};
+		this->signallers[eId] = {signaller.Subscribe<SignalChange>(handler), startSig};
 	}
 
 	void SignalReceiver::DetachSignal(Entity signaller)
