@@ -509,15 +509,6 @@
         "image_Ceiling_Roughness.png": {
             "uri": "Ceiling_Roughness.png"
         },
-        "image_Exterior_Base_Color.png": {
-            "uri": "Exterior_Base_Color.png"
-        },
-        "image_Exterior_Height.png": {
-            "uri": "Exterior_Height.png"
-        },
-        "image_Exterior_Roughness.png": {
-            "uri": "Exterior_Roughness.png"
-        },
         "image_Floor_Base_Color.png": {
             "uri": "Floor_Base_Color.png"
         },
@@ -589,7 +580,7 @@
                     1,
                     1
                 ],
-                "baseColor": "texture_Exterior_Base_Color.png",
+                "baseColor": [0, 0, 0, 1],
                 "diffuse": [
                     0.64,
                     0.64,
@@ -602,8 +593,7 @@
                     0,
                     1
                 ],
-                "height": "texture_Exterior_Height.png",
-                "roughness": "texture_Exterior_Roughness.png",
+                "roughness": 1,
                 "shininess": 96.078431,
                 "specular": [
                     0.5,
@@ -1046,30 +1036,6 @@
             "internalFormat": 33321,
             "sampler": "sampler_0",
             "source": "image_Ceiling_Roughness.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Exterior_Base_Color.png": {
-            "format": 6407,
-            "internalFormat": 6407,
-            "sampler": "sampler_0",
-            "source": "image_Exterior_Base_Color.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Exterior_Height.png": {
-            "format": 6403,
-            "internalFormat": 33321,
-            "sampler": "sampler_0",
-            "source": "image_Exterior_Height.png",
-            "target": 3553,
-            "type": 5121
-        },
-        "texture_Exterior_Roughness.png": {
-            "format": 6403,
-            "internalFormat": 33321,
-            "sampler": "sampler_0",
-            "source": "image_Exterior_Roughness.png",
             "target": 3553,
             "type": 5121
         },

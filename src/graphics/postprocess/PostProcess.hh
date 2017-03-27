@@ -135,6 +135,8 @@ namespace sp
 		VoxelData voxelData;
 		Buffer mirrorVisData;
 		Buffer mirrorSceneData;
+
+		RenderTarget::Ref finalOutput;
 	};
 
 	class PostProcessingContext

@@ -25,6 +25,7 @@ namespace ecs
 		bool blend = false;
 		float skyIlluminance = 0.0f;
 		float scale = 1.0f;
+		int vrEye = 0;
 
 		// Updated automatically.
 		float aspect;

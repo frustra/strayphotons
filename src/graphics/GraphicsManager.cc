@@ -114,30 +114,28 @@ namespace sp
 		if (!context) throw "no active context";
 		if (!HasActiveContext()) return false;
 
-		ecs::View primaryView;
-		if (playerView.Valid())
+		vector<ecs::View> views;
+		if (playerViews.size() > 0)
 		{
-			auto newSize = CVarWindowSize.Get();
-			auto newFov = glm::radians(CVarFieldOfView.Get());
-			auto newScale = CVarWindowScale.Get();
+			auto view = playerViews[0].Get<ecs::View>();
+			view->extents = CVarWindowSize.Get();
+			view->fov = glm::radians(CVarFieldOfView.Get());
+			view->scale = CVarWindowScale.Get();
 
-			if (newSize != primaryView.extents || newFov != primaryView.fov || newScale != primaryView.scale)
-			{
-				auto view = playerView.Get<ecs::View>();
-				view->extents = newSize;
-				view->fov = newFov;
-				view->scale = newScale;
-			}
-
-			primaryView = *ecs::UpdateViewCache(playerView);
+			views.push_back(*ecs::UpdateViewCache(playerViews[0]));
 		}
 		else
 		{
-			// Default view
-			primaryView.extents = CVarWindowSize.Get();
+			ecs::View defaultView;
+			defaultView.extents = CVarWindowSize.Get();
+			views.push_back(defaultView);
+		}
+		for (int i = 1; i < playerViews.size(); i++)
+		{
+			views.push_back(*ecs::UpdateViewCache(playerViews[i]));
 		}
 
-		context->ResizeWindow(primaryView, CVarWindowScale.Get(), CVarWindowFullscreen.Get());
+		context->ResizeWindow(views[0], CVarWindowScale.Get(), CVarWindowFullscreen.Get());
 
 		context->Timer->StartFrame();
 
@@ -155,8 +153,10 @@ namespace sp
 				rayTracer->Disable();
 			}
 #endif
-
-			context->RenderPass(primaryView);
+			for (size_t i = 0; i < std::min(playerViews.size(), views.size()); i++)
+			{
+				context->RenderPass(views[i]);
+			}
 			context->EndFrame();
 		}
 
@@ -182,10 +182,13 @@ namespace sp
 	/**
 	* This View will be used when rendering from the player's viewpoint
 	*/
-	void GraphicsManager::SetPlayerView(ecs::Entity entity)
+	void GraphicsManager::SetPlayerView(vector<ecs::Entity> entities)
 	{
-		ecs::ValidateView(entity);
-		playerView = entity;
+		for (auto entity : entities)
+		{
+			ecs::ValidateView(entity);
+		}
+		playerViews = entities;
 	}
 
 	void GraphicsManager::RenderLoading()
@@ -193,7 +196,7 @@ namespace sp
 		if (!context) return;
 
 		ecs::View primaryView;
-		if (playerView.Valid()) primaryView = *ecs::UpdateViewCache(playerView);
+		if (playerViews.size() > 0) primaryView = *ecs::UpdateViewCache(playerViews[0]);
 
 		primaryView.extents = CVarWindowSize.Get();
 		primaryView.blend = true;

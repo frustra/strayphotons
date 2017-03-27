@@ -27,6 +27,10 @@
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
 
+#ifdef ENABLE_VR
+#include <openvr.h>
+#endif
+
 namespace sp
 {
 	GameLogic::GameLogic(Game *game)
@@ -54,6 +58,10 @@ namespace sp
 	static CVar<int> CVarFlashlightResolution("r.FlashlightResolution", 512, "Flashlight shadow map resolution");
 	static CVar<float> CVarSunPosition("g.SunPosition", 0.2, "Sun angle");
 
+#ifdef ENABLE_VR
+	static CVar<bool> CVarConnectVR("r.ConnectVR", false, "Connect to SteamVR");
+#endif
+
 	void GameLogic::Init()
 	{
 		if (game->options["map"].count())
@@ -75,6 +83,25 @@ namespace sp
 				{
 					game->menuGui.OpenPauseMenu();
 				}
+#ifdef ENABLE_VR
+				else if (key == GLFW_KEY_F1 && CVarConnectVR.Get())
+				{
+					for (auto entity : game->entityManager.EntitiesWith<ecs::Transform, ecs::Name>())
+					{
+						auto name = entity.Get<ecs::Name>();
+						if (name->name == "vr-origin")
+						{
+							auto transform = entity.Get<ecs::Transform>();
+							auto player = scene->FindEntity("player");
+							if (player.Valid())
+							{
+								auto playerTransform = player.Get<ecs::Transform>();
+								transform->SetPosition(playerTransform->GetGlobalPosition() - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));	
+							}
+						}
+					}
+				}
+#endif
 				else if (key == GLFW_KEY_F5)
 				{
 					ReloadScene("");
@@ -211,6 +238,30 @@ namespace sp
 			view->extents = glm::ivec2(CVarFlashlightResolution.Get(true));
 		}
 
+#ifdef ENABLE_VR
+		if (vrSystem != nullptr)
+		{
+			vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
+			vr::VRCompositor()->WaitGetPoses(trackedDevicePoses, vr::k_unMaxTrackedDeviceCount, NULL, 0);
+			if (trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid)
+			{
+				auto headPos = glm::mat4(glm::make_mat3x4((float *)trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking.m));
+				for (auto entity : game->entityManager.EntitiesWith<ecs::Transform, ecs::Name>())
+				{
+					auto name = entity.Get<ecs::Name>();
+					if (name->name == "vr-origin")
+					{
+						auto transform = entity.Get<ecs::Transform>();
+						headPos = headPos * glm::transpose(transform->GetGlobalTransform());
+						eyeEntity[0].Get<ecs::View>()->invViewMat = glm::transpose(eyePos[0] * headPos);
+						eyeEntity[1].Get<ecs::View>()->invViewMat = glm::transpose(eyePos[1] * headPos);
+						break;
+					}
+				}
+			}
+		}
+#endif
+
 		if (!humanControlSystem.Frame(dtSinceLastFrame)) return false;
 		if (!lightGunSystem.Frame(dtSinceLastFrame)) return false;
 		if (!doorSystem.Frame(dtSinceLastFrame)) return false;
@@ -244,7 +295,70 @@ namespace sp
 		humanControlSystem.AssignController(player, game->physics);
 		player.Assign<ecs::VoxelInfo>();
 
-		game->graphics.SetPlayerView(player);
+		vector<ecs::Entity> viewEntities;
+		viewEntities.push_back(player);
+
+#ifdef ENABLE_VR
+		if (CVarConnectVR.Get())
+		{
+			if (vrSystem == nullptr)
+			{
+				vr::EVRInitError err = vr::VRInitError_None;
+				vrSystem = vr::VR_Init(&err, vr::VRApplication_Scene);
+				if (err != vr::VRInitError_None)
+				{
+					throw std::runtime_error("Failed to init VR system");
+				}
+			}
+
+			ecs::Entity vrOrigin = scene->FindEntity("vr-origin");
+			if (!vrOrigin.Valid())
+			{
+				vrOrigin = game->entityManager.NewEntity();
+				vrOrigin.Assign<ecs::Name>("vr-origin");
+			}
+			if (!vrOrigin.Has<ecs::Transform>())
+			{
+				auto transform = vrOrigin.Assign<ecs::Transform>(&game->entityManager);
+				if (player.Valid() && player.Has<ecs::Transform>())
+				{
+					auto playerTransform = player.Get<ecs::Transform>();
+					transform->SetPosition(playerTransform->GetGlobalPosition() - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
+					transform->SetRotate(playerTransform->GetRotate());
+				}
+			}
+
+			uint32_t vrWidth, vrHeight;
+			vrSystem->GetRecommendedRenderTargetSize(&vrWidth, &vrHeight);
+
+			Debugf("VR headset render size: %dx%d", vrWidth, vrHeight);
+
+			for (int i = 0; i < 2; i++)
+			{
+				auto eyeType = i == 0 ? vr::Eye_Left : vr::Eye_Right;
+
+				glm::vec2 playerViewClip = player.Get<ecs::View>()->clip;
+				eyeEntity[i] = game->entityManager.NewEntity();
+				auto eyeView = eyeEntity[i].Assign<ecs::View>();
+				eyeView->extents = { vrWidth, vrHeight };
+				eyeView->clip = playerViewClip;
+				eyeView->vrEye = i + 1;
+				auto projMatrix = vrSystem->GetProjectionMatrix(eyeType, eyeView->clip.x, eyeView->clip.y);
+				eyeView->projMat = glm::transpose(glm::make_mat4((float *)projMatrix.m));
+				auto eyePosOvr = vrSystem->GetEyeToHeadTransform(eyeType);
+				eyePos[i] = glm::mat4(glm::make_mat3x4((float *)eyePosOvr.m));
+
+				viewEntities.push_back(eyeEntity[i]);
+			}
+		}
+		else if (vrSystem != nullptr)
+		{
+			vr::VR_Shutdown();
+			vrSystem = nullptr;
+		}
+#endif
+
+		game->graphics.SetPlayerView(viewEntities);
 
 		for (auto &line : scene->autoExecList)
 		{

@@ -176,6 +176,8 @@ namespace sp
 	{
 		RenderPhase phase("PostProcessing", renderer->Timer);
 
+		bool renderToTexture = (targets.finalOutput != nullptr);
+
 		PostProcessingContext context;
 		context.renderer = renderer;
 		context.game = game;
@@ -234,7 +236,7 @@ namespace sp
 			context.LastOutput = hist;
 		}
 
-		if (game->menuGui.RenderMode() == MenuRenderMode::Pause)
+		if (!renderToTexture && game->menuGui.RenderMode() == MenuRenderMode::Pause)
 		{
 			AddMenu(context);
 		}
@@ -256,7 +258,7 @@ namespace sp
 			AddSMAA(context, linearLuminosity);
 		}
 
-		if (game->menuGui.RenderMode() == MenuRenderMode::None)
+		if (!renderToTexture && game->menuGui.RenderMode() == MenuRenderMode::None)
 		{
 			auto crosshair = context.AddPass<Crosshair>();
 			crosshair->SetInput(0, context.LastOutput);
@@ -281,7 +283,14 @@ namespace sp
 
 		context.ProcessAllPasses();
 
-		renderer->SetDefaultRenderTarget();
+		if (renderToTexture)
+		{
+			renderer->SetRenderTarget(&targets.finalOutput->GetTexture(), nullptr);
+		}
+		else
+		{
+			renderer->SetDefaultRenderTarget();
+		}
 		renderer->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(renderer->GlobalShaders);
 
 		glViewport(view.offset.x, view.offset.y, view.extents.x * view.scale, view.extents.y * view.scale);

@@ -34,7 +34,7 @@ namespace sp
 		bool HasActiveContext();
 
 		void BindContextInputCallbacks(InputManager &inputManager);
-		void SetPlayerView(ecs::Entity entity);
+		void SetPlayerView(vector<ecs::Entity> entities);
 		void RenderLoading();
 
 		bool Frame();
@@ -55,7 +55,7 @@ namespace sp
 		raytrace::RaytracedRenderer *rayTracer = nullptr;
 #endif
 
-		ecs::Entity playerView;
+		vector<ecs::Entity> playerViews;
 
 		double lastFrameEnd = 0, fpsTimer = 0;
 		int frameCounter = 0;

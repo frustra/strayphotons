@@ -28,6 +28,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <cxxopts.hpp>
 
+#ifdef ENABLE_VR
+#include <openvr.h>
+#endif
+
 namespace sp
 {
 	Renderer::Renderer(Game *game) : GraphicsContext(game)
@@ -411,6 +415,11 @@ namespace sp
 		targets.mirrorSceneData = mirrorSceneData;
 		targets.lightingGel = menuGuiTarget;
 
+		if (view.vrEye > 0)
+		{
+			targets.finalOutput = RTPool->Get({ PF_SRGB8_A8, view.extents });
+		}
+
 		{
 			RenderPhase phase("PlayerView", Timer);
 
@@ -598,6 +607,14 @@ namespace sp
 		glDepthMask(GL_FALSE);
 
 		PostProcessing::Process(this, game, view, targets);
+
+#ifdef ENABLE_VR
+		if (view.vrEye > 0)
+		{
+			vr::Texture_t vrTexture = { (void*)targets.finalOutput->GetTexture().handle, vr::TextureType_OpenGL, vr::ColorSpace_Linear };
+			vr::VRCompositor()->Submit(view.vrEye == 1 ? vr::Eye_Left : vr::Eye_Right, &vrTexture);
+		}
+#endif
 
 		debugGuiRenderer->Render(view);
 

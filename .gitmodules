@@ -43,3 +43,6 @@
 [submodule "ext/obj2gltf"]
 	path = ext/obj2gltf
 	url = git@github.com:AnalyticalGraphicsInc/obj2gltf.git
+[submodule "ext/openvr"]
+	path = ext/openvr
+	url = git@github.com:ValveSoftware/openvr.git

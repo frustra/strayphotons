@@ -7,6 +7,7 @@ set(SP_VERSION_MAJOR "0")
 set(SP_VERSION_MINOR "1")
 set(SP_VERSION "${SP_VERSION_MAJOR}.${SP_VERSION_MINOR}")
 set(SP_PACKAGE_RELEASE FALSE CACHE BOOL "Build packaged release")
+set(SP_ENABLE_VR FALSE CACHE BOOL "Build with VR support")
 
 
 if (CMAKE_BUILD_TYPE MATCHES Release)
@@ -23,6 +24,11 @@ endif()
 if (SP_PACKAGE_RELEASE)
 	message(STATUS "Enabling build for packaged release")
 	add_definitions(-DPACKAGE_RELEASE)
+endif()
+
+if (SP_ENABLE_VR)
+	message(STATUS "Enabling VR support")
+	add_definitions(-DENABLE_VR)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
@@ -95,6 +101,10 @@ include_directories(
 	${EXT_PATH}/microtar/src
 	${EXT_PATH}
 )
+
+if (SP_ENABLE_VR)
+	include_directories(${EXT_PATH}/openvr/headers)
+endif()
 
 add_definitions(-DGLEW_STATIC=1)
 add_library(GLEW STATIC ${EXT_PATH}/glew/src/glew.c)
@@ -296,6 +306,10 @@ target_link_libraries(${PROJECT_EXE}
 	microtar
 	murmurhash
 )
+
+if (SP_ENABLE_VR)
+	target_link_libraries(${PROJECT_EXE} ${EXT_PATH}/openvr/lib/win32/openvr_api.lib)
+endif()
 
 if (NOT WIN32)
 	target_link_libraries(${PROJECT_EXE} linenoise)

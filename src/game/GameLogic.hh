@@ -7,6 +7,11 @@
 #include "Common.hh"
 #include "core/CFunc.hh"
 
+namespace vr
+{
+	class IVRSystem;
+}
+
 namespace sp
 {
 	class Game;
@@ -42,6 +47,10 @@ namespace sp
 		shared_ptr<Scene> scene;
 		ecs::Entity flashlight;
 		float sunPos;
+
+		vr::IVRSystem *vrSystem = nullptr;
+		ecs::Entity eyeEntity[2];
+		glm::mat4 eyePos[2];
 
 		CFuncCollection funcs;
 	};
