@@ -106,26 +106,31 @@ namespace sp
 		{
 			auto transform = constraint->parent.Get<ecs::Transform>();
 			auto pose = constraint->child->getGlobalPose();
+			auto rotate = transform->GetRotate();
+			auto invRotate = glm::inverse(rotate);
 
-
-			auto targetPos = transform->GetPosition() + transform->GetRotate() * PxVec3ToGlmVec3P(constraint->offset);
+			auto targetPos = transform->GetPosition() + rotate * PxVec3ToGlmVec3P(constraint->offset);
 			auto currentPos = pose.transform(constraint->child->getCMassLocalPose().transform(physx::PxVec3(0.0)));
 			auto deltaPos = GlmVec3ToPxVec3(targetPos) - currentPos;
 
-			auto upAxis = GlmVec3ToPxVec3(transform->GetUp());
+			auto upAxis = GlmVec3ToPxVec3(invRotate * glm::vec3(0, 1, 0));
 			constraint->rotationOffset = PxQuat(constraint->rotation.y, upAxis) * constraint->rotationOffset;
 			constraint->rotationOffset = PxQuat(constraint->rotation.x, PxVec3(1, 0, 0)) * constraint->rotationOffset;
 
-			auto targetRotate = transform->GetRotate() * PxQuatToGlmQuat(constraint->rotationOffset);
+			auto targetRotate = rotate * PxQuatToGlmQuat(constraint->rotationOffset);
 			auto currentRotate = PxQuatToGlmQuat(pose.q);
 			auto deltaRotate = targetRotate * glm::inverse(currentRotate);
 
+			if (glm::angle(deltaRotate) > M_PI_2)
+			{
+				constraint->rotationOffset = GlmQuatToPxQuat(invRotate * currentRotate);
+			}
+
 			if (deltaPos.magnitude() < 2.0)
 			{
-				// TODO(xthexder): constraint->rotation
 				constraint->child->setAngularVelocity(GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate)).multiply(PxVec3(40.0)));
 				constraint->rotation = PxVec3(0); // Don't continue to rotate
-				constraint->child->setLinearVelocity(deltaPos.multiply(PxVec3(20.0)));
+				constraint->child->setLinearVelocity(deltaPos.multiply(PxVec3(10.0)));
 				constraint++;
 			}
 			else

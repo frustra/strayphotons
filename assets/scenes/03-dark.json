@@ -1299,38 +1299,19 @@
 			}
 		},
 		{
-			"renderable": "box",
-			"transform": {
-				"translate": [
-					5.85,
-					2,
-					4
-				],
-				"scale": [
-					0.1,
-					0.1,
-					0.2
-				]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
 			"_name": "mirrorcube1",
 			"renderable": "mcube",
 			"transform": {
 				"rotate": [
-					-90,
-					1,
+					130,
 					0,
+					1,
 					0
 				],
 				"translate": [
-					5.4,
-					1.65,
-					4.45
+					4.4,
+					0,
+					4
 				]
 			},
 			"physics": {
@@ -1798,7 +1779,8 @@
 				]
 			},
 			"physics": {
-				"model": "mcube"
+				"model": "mcube",
+				"density": 4
 			}
 		},
 		{
@@ -1835,7 +1817,7 @@
 				"translate": [
 					0,
 					0.5,
-					-0.495
+					-0.475
 				]
 			}
 		},

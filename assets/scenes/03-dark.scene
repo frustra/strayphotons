@@ -66,22 +66,11 @@
 				}
 			]
 		}) %>,
-		{
-			"renderable": "box",
-			"transform": {
-				"translate": [5.85, 2, 4],
-				"scale": [0.1, 0.1, 0.2]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
 		<%- include("prefab/cube", {
 			name: "mirrorcube1",
 			sides: 1,
-			translate: [5.4, 1.65, 4.45],
-			rotate: [-90, 1, 0, 0]
+			translate: [4.4, 0, 4],
+			rotate: [130, 0, 1, 0]
 		}) %>,
 
 		<%- include("prefab/wall", {
