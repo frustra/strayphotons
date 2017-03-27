@@ -709,8 +709,16 @@ namespace sp
 	void PhysxManager::CreateConstraint(ecs::Entity parent, PxRigidDynamic *child, PxVec3 offset, PxQuat rotationOffset)
 	{
 		Lock();
-		PxShape *shape;
-		child->getShapes(&shape, 1);
+		physx::PxU32 nShapes = child->getNbShapes();
+		vector<physx::PxShape *> shapes(nShapes);
+		child->getShapes(shapes.data(), nShapes);
+
+		PxFilterData data;
+		data.word0 = 1;
+		for (uint32 i = 0; i < nShapes; ++i)
+		{
+			shapes[i]->setQueryFilterData(data);
+		}
 
 		PhysxConstraint constraint;
 		constraint.parent = parent;
@@ -718,10 +726,6 @@ namespace sp
 		constraint.offset = offset;
 		constraint.rotationOffset = rotationOffset;
 		constraint.rotation = PxVec3(0);
-
-		PxFilterData data;
-		data.word0 = 1;
-		shape->setQueryFilterData(data);
 
 		if (parent.Has<ecs::Physics>() || parent.Has<ecs::HumanController>())
 		{
@@ -747,12 +751,16 @@ namespace sp
 	void PhysxManager::RemoveConstraint(ecs::Entity parent, physx::PxRigidDynamic *child)
 	{
 		Lock();
-		PxShape *shape;
-		child->getShapes(&shape, 1);
+		physx::PxU32 nShapes = child->getNbShapes();
+		vector<physx::PxShape *> shapes(nShapes);
+		child->getShapes(shapes.data(), nShapes);
 
 		PxFilterData data;
 		data.word0 = 3;
-		shape->setQueryFilterData(data);
+		for (uint32 i = 0; i < nShapes; ++i)
+		{
+			shapes[i]->setQueryFilterData(data);
+		}
 
 		for (auto it = constraints.begin(); it != constraints.end();)
 		{
@@ -768,12 +776,16 @@ namespace sp
 	void PhysxManager::RemoveConstraints(physx::PxRigidDynamic *child)
 	{
 		Lock();
-		PxShape *shape;
-		child->getShapes(&shape, 1);
+		physx::PxU32 nShapes = child->getNbShapes();
+		vector<physx::PxShape *> shapes(nShapes);
+		child->getShapes(shapes.data(), nShapes);
 
 		PxFilterData data;
 		data.word0 = 3;
-		shape->setQueryFilterData(data);
+		for (uint32 i = 0; i < nShapes; ++i)
+		{
+			shapes[i]->setQueryFilterData(data);
+		}
 
 		for (auto it = constraints.begin(); it != constraints.end();)
 		{
