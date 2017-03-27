@@ -269,6 +269,9 @@ namespace sp
 		sceneDesc.gravity = PxVec3(0.f, CVarGravity.Get(true), 0.f);
 		sceneDesc.filterShader = PxDefaultSimulationFilterShader;
 
+		// Don't collide with alt models
+		PxSetGroupCollisionFlag(3, 4, false);
+
 		dispatcher = PxDefaultCpuDispatcherCreate(1);
 		sceneDesc.cpuDispatcher = dispatcher;
 
@@ -284,6 +287,7 @@ namespace sp
 		PxFilterData data;
 		data.word0 = 3;
 		shape->setQueryFilterData(data);
+		shape->setSimulationFilterData(data);
 
 		scene->addActor(*groundPlane);
 		Unlock();
@@ -473,7 +477,7 @@ namespace sp
 		Unlock();
 	}
 
-	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PhysxActorDesc desc, const ecs::Entity &entity)
+	PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PhysxActorDesc desc, const ecs::Entity &entity, shared_ptr<Model> altModel)
 	{
 		Lock();
 		PxRigidActor *actor;
@@ -521,6 +525,38 @@ namespace sp
 			PxFilterData data;
 			data.word0 = 3;
 			shape->setQueryFilterData(data);
+			shape->setSimulationFilterData(data);
+		}
+
+		if (altModel) {
+			decomposition = BuildConvexHulls(altModel.get(), false);
+
+			for (auto hull : decomposition->hulls)
+			{
+				PxConvexMeshDesc convexDesc;
+				convexDesc.points.count = hull.pointCount;
+				convexDesc.points.stride = hull.pointByteStride;
+				convexDesc.points.data = hull.points;
+				convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+
+				PxDefaultMemoryOutputStream buf;
+				PxConvexMeshCookingResult::Enum result;
+
+				if (!pxCooking->cookConvexMesh(convexDesc, buf, &result))
+				{
+					Errorf("Failed to cook PhysX hull for %s", model->name);
+					return nullptr;
+				}
+
+				PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+				PxConvexMesh *pxhull = physics->createConvexMesh(input);
+
+				auto shape = actor->createShape(PxConvexMeshGeometry(pxhull, desc.scale), *mat);
+				PxFilterData data;
+				data.word0 = 4;
+				shape->setQueryFilterData(data);
+				shape->setSimulationFilterData(data);
+			}
 		}
 
 		if (desc.dynamic)
@@ -717,7 +753,10 @@ namespace sp
 		data.word0 = 1;
 		for (uint32 i = 0; i < nShapes; ++i)
 		{
-			shapes[i]->setQueryFilterData(data);
+			if (shapes[i]->getQueryFilterData().word0 == 3)
+			{
+				shapes[i]->setQueryFilterData(data);
+			}
 		}
 
 		PhysxConstraint constraint;
@@ -759,7 +798,10 @@ namespace sp
 		data.word0 = 3;
 		for (uint32 i = 0; i < nShapes; ++i)
 		{
-			shapes[i]->setQueryFilterData(data);
+			if (shapes[i]->getQueryFilterData().word0 == 1)
+			{
+				shapes[i]->setQueryFilterData(data);
+			}
 		}
 
 		for (auto it = constraints.begin(); it != constraints.end();)
@@ -784,7 +826,10 @@ namespace sp
 		data.word0 = 3;
 		for (uint32 i = 0; i < nShapes; ++i)
 		{
-			shapes[i]->setQueryFilterData(data);
+			if (shapes[i]->getQueryFilterData().word0 == 1)
+			{
+				shapes[i]->setQueryFilterData(data);
+			}
 		}
 
 		for (auto it = constraints.begin(); it != constraints.end();)

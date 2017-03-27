@@ -1316,6 +1316,7 @@
 			},
 			"physics": {
 				"model": "mcube",
+				"altModel": "mcube-alt",
 				"density": 4
 			}
 		},
@@ -1786,6 +1787,7 @@
 			},
 			"physics": {
 				"model": "mcube",
+				"altModel": "mcube-alt",
 				"density": 4
 			}
 		},

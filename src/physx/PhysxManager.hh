@@ -67,7 +67,7 @@ namespace sp
 		/**
 		 * Create an actor and bind the entity's Id to the actor's userData
 		 */
-		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, PhysxActorDesc desc, const ecs::Entity &entity);
+		physx::PxRigidActor *CreateActor(shared_ptr<Model> model, PhysxActorDesc desc, const ecs::Entity &entity, shared_ptr<Model> altModel = NULL);
 
 		void RemoveActor(physx::PxRigidActor *actor);
 
