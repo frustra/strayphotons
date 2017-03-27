@@ -2,6 +2,7 @@
 #include "core/Logging.hh"
 #include "core/Console.hh"
 #include "ecs/components/VoxelInfo.hh"
+#include "ecs/events/SignalChange.hh"
 
 namespace sp
 {
@@ -69,16 +70,16 @@ namespace sp
 
 		while (buf[0] == 1.0f)
 		{
-			ecs::Entity::Id eid((ecs::id_t) buf[1], (ecs::gen_t) buf[2]);
+			ecs::Entity::Id eid((ecs::eid_t) buf[1], (ecs::gen_t) buf[2]);
 
 			buf += 4;
 			glm::vec3 lum(buf[0], buf[1], buf[2]);
 			buf += 4;
 
-			//Logf("%d: %f %f %f", eid.Index(), lum.x, lum.y, lum.z);
-			if (manager.Valid(eid))
+			ecs::Entity sensorEnt(&manager, eid);
+			if (sensorEnt.Valid())
 			{
-				auto sensor = manager.Get<ecs::LightSensor>(eid);
+				auto sensor = sensorEnt.Get<ecs::LightSensor>();
 				auto triggers = sensor->triggers;
 				auto prev = sensor->illuminance;
 				sensor->illuminance = lum;
@@ -87,10 +88,14 @@ namespace sp
 				{
 					if (trigger(lum) && !trigger(prev))
 					{
+						ecs::SignalChange sig(trigger.onSignal);
+						sensorEnt.Emit(sig);
 						GConsoleManager.ParseAndExecute(trigger.oncmd);
 					}
 					if (!trigger(lum) && trigger(prev))
 					{
+						ecs::SignalChange sig(trigger.offSignal);
+						sensorEnt.Emit(sig);
 						GConsoleManager.ParseAndExecute(trigger.offcmd);
 					}
 				}

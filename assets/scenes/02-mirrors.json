@@ -90,7 +90,8 @@
 					0,
 					0
 				]
-			}
+			},
+			"signalReceiver": {}
 		},
 		{
 			"_name": "airlock1-in-root",
@@ -153,7 +154,8 @@
 					0,
 					0
 				]
-			}
+			},
+			"signalReceiver": {}
 		},
 		{
 			"light": {
@@ -272,7 +274,8 @@
 					0,
 					0
 				]
-			}
+			},
+			"signalReceiver": {}
 		},
 		{
 			"_name": "airlock2-in-root",
@@ -335,7 +338,8 @@
 					0,
 					0
 				]
-			}
+			},
+			"signalReceiver": {}
 		},
 		{
 			"light": {
@@ -1199,7 +1203,8 @@
 					0,
 					0
 				]
-			}
+			},
+			"signalReceiver": {}
 		},
 		{
 			"_name": "light1",

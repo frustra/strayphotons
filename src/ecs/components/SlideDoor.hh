@@ -8,7 +8,15 @@ namespace ecs
 	class SlideDoor
 	{
 	public:
-		bool IsOpen();
+		enum State
+		{
+			CLOSED,
+			OPENED,
+			OPENING,
+			CLOSING
+		};
+
+		SlideDoor::State GetState();
 		void Close();
 		void Open();
 		void ValidateDoor() const;

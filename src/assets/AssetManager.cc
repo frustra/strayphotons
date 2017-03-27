@@ -31,6 +31,7 @@ extern "C"
 #include "ecs/components/LightGun.hh"
 #include "ecs/components/SlideDoor.hh"
 #include "ecs/components/Animation.hh"
+#include "ecs/components/SignalReceiver.hh"
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -406,6 +407,22 @@ namespace sp
 						{
 							sensor->direction = MakeVec3(param.second);
 						}
+						else if (param.first == "outputTo")
+						{
+							for (auto entName : param.second.get<picojson::array>())
+							{
+								ecs::Entity receiverEnt =
+									scene->FindEntity(entName.get<string>());
+								if (!receiverEnt.Has<ecs::SignalReceiver>())
+								{
+									throw runtime_error(
+										"\"outputTo\" entities must have a SignalReceiver");
+								}
+								auto receiver =
+									receiverEnt.Get<ecs::SignalReceiver>();
+								receiver->AttachSignal(entity);
+							}
+						}
 						else if (param.first == "triggers")
 						{
 							for (auto trigger : param.second.get<picojson::array>())
@@ -424,6 +441,14 @@ namespace sp
 									else if (param.first == "offcmd")
 									{
 										tr.offcmd = param.second.get<string>();
+									}
+									else if (param.first == "onSignal")
+									{
+										tr.onSignal = param.second.get<double>();
+									}
+									else if (param.first == "offSignal")
+									{
+										tr.offSignal = param.second.get<double>();
 									}
 								}
 								sensor->triggers.push_back(tr);
@@ -523,6 +548,22 @@ namespace sp
 						{
 							slideDoor->forward = MakeVec3(param.second);
 							slideDoor->ApplyParams();
+						}
+					}
+				}
+				else if (comp.first == "signalReceiver")
+				{
+					auto receiver = entity.Assign<ecs::SignalReceiver>();
+
+					for (auto param : comp.second.get<picojson::object>())
+					{
+						if (param.first == "amplifier")
+						{
+							receiver->SetAmplifier(param.second.get<double>());
+						}
+						else if (param.first == "offset")
+						{
+							receiver->SetOffset(param.second.get<double>());
 						}
 					}
 				}

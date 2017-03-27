@@ -3,6 +3,7 @@
 #include <Ecs.hh>
 #include "ecs/systems/HumanControlSystem.hh"
 #include "ecs/systems/LightGunSystem.hh"
+#include "ecs/systems/DoorSystem.hh"
 #include "Common.hh"
 #include "core/CFunc.hh"
 
@@ -37,6 +38,7 @@ namespace sp
 		InputManager *input;
 		ecs::HumanControlSystem humanControlSystem;
 		ecs::LightGunSystem lightGunSystem;
+		ecs::DoorSystem doorSystem;
 		shared_ptr<Scene> scene;
 		ecs::Entity flashlight;
 		float sunPos;

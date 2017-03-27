@@ -18,6 +18,7 @@
 #include "ecs/components/LightGun.hh"
 #include "ecs/components/SlideDoor.hh"
 #include "ecs/components/Animation.hh"
+#include "ecs/components/SignalReceiver.hh"
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -45,6 +46,7 @@ namespace sp
 		entityManager.RegisterComponentType<ecs::LightGun>();
 		entityManager.RegisterComponentType<ecs::SlideDoor>();
 		entityManager.RegisterComponentType<ecs::Animation>();
+		entityManager.RegisterComponentType<ecs::SignalReceiver>();
 	}
 
 	Game::~Game()
