@@ -226,7 +226,6 @@ namespace sp
 						}
 					}
 
-
 					physx::PxTransform newPose(GlmVec3ToPxVec3(position), GlmQuatToPxQuat(rotate));
 					ph->actor->setGlobalPose(newPose);
 				}

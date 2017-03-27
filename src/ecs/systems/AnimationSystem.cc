@@ -46,7 +46,7 @@ namespace ecs
 			float duration = animation->animationTimes[animation->nextState];
 			float target = completion + dtSinceLastFrame / duration;
 
-			if (distToTarget < 1e-4f || target >= 1.0f || std::isnan(target))
+			if (distToTarget < 1e-4f || target >= 1.0f || std::isnan(target) || std::isinf(target))
 			{
 				animation->curState = animation->nextState;
 				animation->nextState = -1;

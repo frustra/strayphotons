@@ -1,6 +1,6 @@
 {
 	"autoexec": [
-		"r.MirrorRecursion 1"
+		"r.MirrorRecursion 2"
 	],
 	"entities": [
 		{
@@ -52,47 +52,29 @@
 				"model": "duck"
 			}
 		},
+		<%- include("prefab/cube", {
+			name: "mirrorcube1",
+			sides: 1,
+			translate: [-0.2, 3, -4.5]
+		}) %>,
+		<%- include("prefab/cube", {
+			name: "mirrorcube1",
+			sides: 4,
+			translate: [0.5, 5, -4.5]
+		}) %>,
 		{
-			"_name": "mirrorbox",
-			"renderable": "box",
-			"transform": {
-				"translate": [-0.2, 3, -4.5]
-			},
-			"physics": {
-				"model": "box"
-			}
-		},
-		{
-			"mirror": [1, 1],
-			"renderable": "mirror",
-			"transform": {
-				"parent": "mirrorbox",
-				"translate": [0, 0, 0.5001],
-				"rotate": [-180, 0, 1, 0]
-			}
-		},
-		{
-			"renderable": "box",
+			"renderable": "cardboard-box",
 			"transform": {
 				"translate": [0, 1, -4]
 			},
 			"physics": {
-				"model": "box"
-			}
-		},
-		{
-			"renderable": "box",
-			"transform": {
-				"translate": [0.5, 5, -4.5]
-			},
-			"physics": {
-				"model": "box"
+				"model": "cardboard-box"
 			}
 		},
 		{
 			"renderable": "dodecahedron",
 			"transform": {
-				"translate": [1, 5, -0.5],
+				"translate": [1, 5, 3.5],
 				"rotate": [-30, 0, 0, 1]
 			},
 			"physics": {
