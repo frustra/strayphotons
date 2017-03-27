@@ -10,12 +10,12 @@
 	"entities": [
 		<%- include('prefab/airlock', {
 			name: 'airlock1',
-			translate: [0, 0.0, 2.2],
+			translate: [0, 0.0, 1.5],
 			rotate: [180, 0, 1, 0]
 		}) %>,
 		<%- include('prefab/airlock', {
 			name: 'airlock2',
-			translate: [6.8, 0, 12],
+			translate: [7.5, 0, 12],
 			rotate: [90, 0, 1, 0]
 		}) %>,
 		{
@@ -27,7 +27,11 @@
 		},
 		<%- include("prefab/floor", {
 			y: 0,
-			corners: [[-3, 0], [12, 9]]
+			corners: [[0, 0], [12, 9]]
+		}) %>,
+		<%- include("prefab/floor", {
+			y: 0,
+			corners: [[-3, 3], [0, 9]]
 		}) %>,
 		<%- include("prefab/ceiling", {
 			y: 4,

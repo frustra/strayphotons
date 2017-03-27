@@ -37,7 +37,7 @@
 		}) %>,
 		<%- include('prefab/airlock', {
 			name: 'airlock1',
-			translate: [-8.2, 0.6, -7.75]
+			translate: [-8.5, 0.6, -7]
 		}) %>,
 		{
 			"_comment": "airlock",
