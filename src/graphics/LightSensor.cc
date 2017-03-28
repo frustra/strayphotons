@@ -2,7 +2,10 @@
 #include "core/Logging.hh"
 #include "core/Console.hh"
 #include "ecs/components/VoxelInfo.hh"
+#include "ecs/components/Renderable.hh"
 #include "ecs/events/SignalChange.hh"
+
+#include <cmath>
 
 namespace sp
 {
@@ -84,8 +87,15 @@ namespace sp
 				auto prev = sensor->illuminance;
 				sensor->illuminance = lum;
 
+				glm::vec3 triggerLevels(0, 0, 0);
+
 				for (auto trigger : triggers)
 				{
+					for (size_t i = 0; i < 3; ++i)
+					{
+						triggerLevels[i] += std::min(1.0f, lum[i] / trigger.illuminance[i]);
+					}
+
 					if (trigger(lum) && !trigger(prev))
 					{
 						ecs::SignalChange sig(trigger.onSignal);
@@ -98,6 +108,27 @@ namespace sp
 						sensorEnt.Emit(sig);
 						GConsoleManager.ParseAndExecute(trigger.offcmd);
 					}
+				}
+
+				// scale the emissiveness r & g colours by how close
+				// the sensor is to being fully activated
+				if (sensorEnt.Has<ecs::Renderable>())
+				{
+					triggerLevels /= 3*triggers.size();
+					float triggerLevel = triggerLevels.x + triggerLevels.y + triggerLevels.z;
+
+					// triggerLevel in [0, 1]
+					float boost = 0.1;
+					if (triggerLevel < 1.0 - 5 * std::numeric_limits<float>::epsilon())
+					{
+						boost *= -1;
+					}
+
+					float g = std::max(0.0f, (1 - boost) * triggerLevel + boost);
+
+					auto renderable = sensorEnt.Get<ecs::Renderable>();
+					renderable->emissive.g = g;
+					renderable->emissive.r = 1 - g;
 				}
 			}
 		}

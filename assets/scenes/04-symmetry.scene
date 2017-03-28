@@ -56,7 +56,7 @@
 			rotate: [-90, 0, 1, 0],
 			triggers: [
 				{
-					illuminance: [0.25, 0.25, 0.25],
+					illuminance: [0.10, 0.10, 0.10],
 					onSignal: 0.5,
 					offSignal: 0.0
 				}
@@ -71,7 +71,7 @@
 			rotate: [-90, 0, 1, 0],
 			triggers: [
 				{
-					illuminance: [0.25, 0.25, 0.25],
+					illuminance: [0.10, 0.10, 0.10],
 					onSignal: 0.5,
 					offSignal: 0.0
 				}

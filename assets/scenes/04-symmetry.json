@@ -1720,9 +1720,9 @@
 				"triggers": [
 					{
 						"illuminance": [
-							0.25,
-							0.25,
-							0.25
+							0.1,
+							0.1,
+							0.1
 						],
 						"onSignal": 0.5,
 						"offSignal": 0
@@ -1779,9 +1779,9 @@
 				"triggers": [
 					{
 						"illuminance": [
-							0.25,
-							0.25,
-							0.25
+							0.1,
+							0.1,
+							0.1
 						],
 						"onSignal": 0.5,
 						"offSignal": 0
