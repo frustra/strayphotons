@@ -52,6 +52,9 @@ namespace sp
 		ecs::Entity eyeEntity[2];
 		glm::mat4 eyePos[2];
 
+		bool vrTriggerPressed = false;
+		bool vrTouchpadPressed = false;
+
 		CFuncCollection funcs;
 	};
 }

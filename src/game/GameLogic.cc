@@ -22,6 +22,7 @@
 #include "ecs/components/SlideDoor.hh"
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/SignalReceiver.hh"
+#include "ecs/components/Interact.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <cxxopts.hpp>
@@ -253,14 +254,15 @@ namespace sp
 			}
 
 			auto transform = vrOrigin.Get<ecs::Transform>();
+			glm::mat4 headTransform;
 			vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
 			vr::VRCompositor()->WaitGetPoses(trackedDevicePoses, vr::k_unMaxTrackedDeviceCount, NULL, 0);
 			if (trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid)
 			{
-				auto headPos = glm::mat4(glm::make_mat3x4((float *)trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking.m));
-				headPos = headPos * glm::transpose(transform->GetGlobalTransform());
-				eyeEntity[0].Get<ecs::View>()->invViewMat = glm::transpose(eyePos[0] * headPos);
-				eyeEntity[1].Get<ecs::View>()->invViewMat = glm::transpose(eyePos[1] * headPos);
+				headTransform = glm::mat4(glm::make_mat3x4((float *)trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking.m));
+				headTransform = headTransform * glm::transpose(transform->GetGlobalTransform());
+				eyeEntity[0].Get<ecs::View>()->invViewMat = glm::transpose(eyePos[0] * headTransform);
+				eyeEntity[1].Get<ecs::View>()->invViewMat = glm::transpose(eyePos[1] * headTransform);
 			}
 
 			for (uint32 i = 1; i < vr::k_unMaxTrackedDeviceCount; i++)
@@ -313,6 +315,49 @@ namespace sp
 
 						vr::VRRenderModels()->FreeTexture(vrTex);
 						vr::VRRenderModels()->FreeRenderModel(vrModel);
+					}
+
+					vr::VRControllerState_t state;
+					if (vrSystem->GetControllerState(i, &state, sizeof(state)))
+					{
+						auto interact = vrController.Get<ecs::InteractController>();
+						bool touchpadPressed = state.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_Axis0);
+						bool triggerPressed = state.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_Axis1);
+						if (touchpadPressed && !vrTouchpadPressed)
+						{
+							Logf("Teleport");
+
+							auto origin = GlmVec3ToPxVec3(ctrl->GetPosition());
+							auto dir = GlmVec3ToPxVec3(ctrl->GetForward());
+							dir.normalizeSafe();
+							physx::PxReal maxDistance = 10.0f;
+
+							physx::PxRaycastBuffer hit;
+							bool status = game->physics.RaycastQuery(vrController, origin, dir, maxDistance, hit);
+							if (status && hit.block.distance > 0.5)
+							{
+								auto headPos = glm::vec3(glm::transpose(headTransform) * glm::vec4(0, 0, 0, 1)) - transform->GetPosition();
+								auto newPos = PxVec3ToGlmVec3P(origin + dir * std::max(0.0, hit.block.distance - 0.5)) - headPos;
+								transform->SetPosition(glm::vec3(newPos.x, transform->GetPosition().y, newPos.z));
+							}
+						}
+						else if (triggerPressed && !vrTriggerPressed)
+						{
+							Logf("Grab");
+
+							interact->PickUpObject(vrController);
+						}
+						else if (!triggerPressed && vrTriggerPressed)
+						{
+							Logf("Let go");
+							if (interact->target)
+							{
+								interact->manager->RemoveConstraint(vrController, interact->target);
+								interact->target = nullptr;
+							}
+						}
+						vrTouchpadPressed = touchpadPressed;
+						vrTriggerPressed = triggerPressed;
 					}
 
 					break;
@@ -391,6 +436,8 @@ namespace sp
 				ecs::Entity vrController = game->entityManager.NewEntity();
 				vrController.Assign<ecs::Name>("vr-controller");
 				vrController.Assign<ecs::Transform>(&game->entityManager);
+				auto interact = vrController.Assign<ecs::InteractController>();
+				interact->manager = &game->physics;
 			}
 
 			uint32_t vrWidth, vrHeight;

@@ -19,7 +19,6 @@ namespace ecs
 		}
 
 		auto transform = entity.Get<ecs::Transform>();
-		auto controller = entity.Get<ecs::HumanController>();
 
 		physx::PxVec3 origin = GlmVec3ToPxVec3(transform->GetPosition());
 
