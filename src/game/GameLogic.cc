@@ -96,7 +96,7 @@ namespace sp
 							if (player.Valid())
 							{
 								auto playerTransform = player.Get<ecs::Transform>();
-								transform->SetPosition(playerTransform->GetGlobalPosition() - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));	
+								transform->SetPosition(playerTransform->GetGlobalPosition() - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
 							}
 						}
 					}
@@ -539,7 +539,7 @@ namespace sp
 
 		if (ent.Has<ecs::SignalReceiver>())
 		{
-			ent.Get<ecs::SignalReceiver>()->SetOffset(0.0f);
+			ent.Get<ecs::SignalReceiver>()->SetOffset(-1.0f);
 		}
 		else
 		{
