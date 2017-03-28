@@ -143,6 +143,18 @@ namespace sp
 				{
 					constraint->parent.Get<ecs::InteractController>()->target = nullptr;
 				}
+
+				physx::PxU32 nShapes = constraint->child->getNbShapes();
+				vector<physx::PxShape *> shapes(nShapes);
+				constraint->child->getShapes(shapes.data(), nShapes);
+
+				PxFilterData data;
+				data.word0 = 3;
+				for (uint32 i = 0; i < nShapes; ++i)
+				{
+					shapes[i]->setQueryFilterData(data);
+					shapes[i]->setSimulationFilterData(data);
+				}
 				constraint = constraints.erase(constraint);
 			}
 		}
