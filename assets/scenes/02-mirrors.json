@@ -1307,9 +1307,9 @@
 				"triggers": [
 					{
 						"illuminance": [
-							0.2,
-							0.2,
-							0.2
+							0.15,
+							0.15,
+							0.15
 						],
 						"oncmd": "g.OpenDoor door1",
 						"offcmd": "g.CloseDoor door1"
@@ -1777,9 +1777,9 @@
 				"triggers": [
 					{
 						"illuminance": [
-							0.015,
-							0.015,
-							0.015
+							0.02,
+							0.02,
+							0.02
 						],
 						"oncmd": "g.OpenDoor airlock2-in",
 						"offcmd": "g.CloseDoor airlock2-in"

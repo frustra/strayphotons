@@ -117,18 +117,24 @@ namespace sp
 					triggerLevels /= 3*triggers.size();
 					float triggerLevel = triggerLevels.x + triggerLevels.y + triggerLevels.z;
 
-					// triggerLevel in [0, 1]
-					float boost = 0.1;
+					// triggerLevel now in [0, 1]
+
+					glm::vec3 lightLevel = glm::vec3(0.0f, 1.0f, 0.0f);
+
 					if (triggerLevel < 1.0 - 5 * std::numeric_limits<float>::epsilon())
 					{
-						boost *= -1;
+						// sensor not triggered
+						float maxUntriggeredLight = 0.5;
+						float bias = -0.1;
+						float intensity = std::max(0.0f,
+						(1 - maxUntriggeredLight - bias) * triggerLevel + bias);
+						lightLevel =
+							glm::vec3(intensity, intensity, intensity);
 					}
 
-					float g = std::max(0.0f, (1 - boost) * triggerLevel + boost);
-
 					auto renderable = sensorEnt.Get<ecs::Renderable>();
-					renderable->emissive.g = g;
-					renderable->emissive.r = 1 - g;
+					renderable->emissive = lightLevel;
+					Logf("lightlevel: %.2f", lightLevel.g);
 				}
 			}
 		}
