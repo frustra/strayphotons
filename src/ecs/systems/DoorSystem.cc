@@ -22,7 +22,6 @@ namespace ecs
 				if (state != SlideDoor::State::OPENED
 				    && state != SlideDoor::State::OPENING)
 				{
-					Logf("opening");
 					door->Open();
 				}
 			}
@@ -31,7 +30,6 @@ namespace ecs
 				if (state != SlideDoor::State::CLOSED
 				    && state != SlideDoor::State::CLOSING)
 				{
-					Logf("closing");
 					door->Close();
 				}
 			}
