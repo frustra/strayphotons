@@ -241,22 +241,81 @@ namespace sp
 #ifdef ENABLE_VR
 		if (vrSystem != nullptr)
 		{
+			ecs::Entity vrOrigin, vrController;
+
+			for (auto entity : game->entityManager.EntitiesWith<ecs::Name>())
+			{
+				auto name = entity.Get<ecs::Name>();
+				if (name->name == "vr-origin")
+					vrOrigin = entity;
+				else if (name->name == "vr-controller")
+					vrController = entity;
+			}
+
+			auto transform = vrOrigin.Get<ecs::Transform>();
 			vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
 			vr::VRCompositor()->WaitGetPoses(trackedDevicePoses, vr::k_unMaxTrackedDeviceCount, NULL, 0);
 			if (trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid)
 			{
 				auto headPos = glm::mat4(glm::make_mat3x4((float *)trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking.m));
-				for (auto entity : game->entityManager.EntitiesWith<ecs::Transform, ecs::Name>())
+				headPos = headPos * glm::transpose(transform->GetGlobalTransform());
+				eyeEntity[0].Get<ecs::View>()->invViewMat = glm::transpose(eyePos[0] * headPos);
+				eyeEntity[1].Get<ecs::View>()->invViewMat = glm::transpose(eyePos[1] * headPos);
+			}
+
+			for (uint32 i = 1; i < vr::k_unMaxTrackedDeviceCount; i++)
+			{
+				if (trackedDevicePoses[i].bPoseIsValid && vrSystem->GetTrackedDeviceClass(i) == vr::TrackedDeviceClass_Controller)
 				{
-					auto name = entity.Get<ecs::Name>();
-					if (name->name == "vr-origin")
+					auto pos = glm::mat4(glm::make_mat3x4((float *)trackedDevicePoses[i].mDeviceToAbsoluteTracking.m));
+					pos = glm::transpose(pos * glm::transpose(transform->GetGlobalTransform()));
+
+					auto ctrl = vrController.Get<ecs::Transform>();
+					ctrl->SetPosition(pos * glm::vec4(0, 0, 0, 1));
+					ctrl->SetRotate(glm::mat4(glm::mat3(pos)));
+
+					if (!vrController.Has<ecs::Renderable>())
 					{
-						auto transform = entity.Get<ecs::Transform>();
-						headPos = headPos * glm::transpose(transform->GetGlobalTransform());
-						eyeEntity[0].Get<ecs::View>()->invViewMat = glm::transpose(eyePos[0] * headPos);
-						eyeEntity[1].Get<ecs::View>()->invViewMat = glm::transpose(eyePos[1] * headPos);
-						break;
+						char modelName[128];
+						auto len = vrSystem->GetStringTrackedDeviceProperty(i, vr::Prop_RenderModelName_String, modelName, 128);
+
+						Logf("Loading VR render model %s", modelName);
+						vr::RenderModel_t *vrModel;
+						vr::RenderModel_TextureMap_t *vrTex;
+						vr::EVRRenderModelError merr;
+
+						while (true)
+						{
+							merr = vr::VRRenderModels()->LoadRenderModel_Async(modelName, &vrModel);
+							if (merr != vr::VRRenderModelError_Loading) break;
+							std::this_thread::sleep_for(std::chrono::milliseconds(1));
+						}
+						if (merr != vr::VRRenderModelError_None)
+						{
+							Errorf("VR render model error: %s", vr::VRRenderModels()->GetRenderModelErrorNameFromEnum(merr));
+							throw std::runtime_error("Failed to load VR render model");
+						}
+
+						while (true)
+						{
+							merr = vr::VRRenderModels()->LoadTexture_Async(vrModel->diffuseTextureId, &vrTex);
+							if (merr != vr::VRRenderModelError_Loading) break;
+							std::this_thread::sleep_for(std::chrono::milliseconds(1));
+						}
+						if (merr != vr::VRRenderModelError_None)
+						{
+							Errorf("VR render texture error: %s", vr::VRRenderModels()->GetRenderModelErrorNameFromEnum(merr));
+							throw std::runtime_error("Failed to load VR render texture");
+						}
+
+						auto r = vrController.Assign<ecs::Renderable>();
+						r->model = make_shared<VRModel>(vrModel, vrTex);
+
+						vr::VRRenderModels()->FreeTexture(vrTex);
+						vr::VRRenderModels()->FreeRenderModel(vrModel);
 					}
+
+					break;
 				}
 			}
 		}
@@ -326,6 +385,12 @@ namespace sp
 					transform->SetPosition(playerTransform->GetGlobalPosition() - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
 					transform->SetRotate(playerTransform->GetRotate());
 				}
+			}
+
+			{
+				ecs::Entity vrController = game->entityManager.NewEntity();
+				vrController.Assign<ecs::Name>("vr-controller");
+				vrController.Assign<ecs::Transform>(&game->entityManager);
 			}
 
 			uint32_t vrWidth, vrHeight;

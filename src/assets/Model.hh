@@ -3,6 +3,8 @@
 #include "Common.hh"
 #include "graphics/Graphics.hh"
 #include "graphics/Texture.hh"
+#include "graphics/Buffer.hh"
+#include "graphics/VertexBuffer.hh"
 
 #include <array>
 #include <tiny_gltf_loader.h>
@@ -18,8 +20,9 @@ namespace sp
 	{
 		friend GLModel;
 	public:
+		Model(const string &name) : name(name) { }
 		Model(const string &name, shared_ptr<Asset> asset, shared_ptr<tinygltf::Scene> scene);
-		~Model();
+		virtual ~Model();
 
 		struct Attribute
 		{
@@ -69,6 +72,7 @@ namespace sp
 		};
 
 		void Draw();
+		void AddPrimitive(Primitive prim);
 	private:
 		GLuint LoadBuffer(string name);
 		Texture *LoadTexture(string materialName, string type);
@@ -117,3 +121,27 @@ namespace sp
 		}
 	};
 }
+
+#ifdef ENABLE_VR
+namespace vr
+{
+	class RenderModel_t;
+	class RenderModel_TextureMap_t;
+}
+
+namespace sp
+{
+	class VRModel : public Model
+	{
+	public:
+		VRModel(vr::RenderModel_t *vrModel, vr::RenderModel_TextureMap_t *vrTex);
+		virtual ~VRModel();
+
+	private:
+		Texture baseColorTex, roughnessTex, metallicTex, heightTex;
+		VertexBuffer vbo;
+		Buffer ibo;
+		Model::Primitive sourcePrim;
+	};
+}
+#endif
