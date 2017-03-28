@@ -225,12 +225,11 @@ namespace sp
 			LEVEL_BUTTON("02 - Mirrors", "02-mirrors")
 			LEVEL_BUTTON("03 - Dark", "03-dark")
 			LEVEL_BUTTON("04 - Symmetry", "04-symmetry")
-			LEVEL_BUTTON("05 - Light Gun", "05-light-gun")
+			LEVEL_BUTTON("Light Gun Test", "05-light-gun")
 			LEVEL_BUTTON("Sponza", "sponza")
 			LEVEL_BUTTON("Cornell Box", "cornell-box-1")
 			LEVEL_BUTTON("Cornell Box Mirror", "cornell-box-3")
 			LEVEL_BUTTON("Test 1", "test1")
-			LEVEL_BUTTON("Test 2", "test2")
 
 #undef LEVEL_BUTTON
 

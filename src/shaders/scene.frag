@@ -2,8 +2,6 @@
 
 //layout (early_fragment_tests) in; // Force stencil testing before shader invocation.
 
-#define USE_BUMP_MAP
-
 ##import lib/util
 ##import lib/types_common
 ##import lib/mirror_scene_common
@@ -65,7 +63,7 @@ void main()
 	float roughness = texture(roughnessTex, inTexCoord).r;
 	float metallic = texture(metallicTex, inTexCoord).r;
 
-#ifdef USE_BUMP_MAP
+#ifdef BUMP_MAP_ENABLED
 	vec2 dCoord = 1.0 / textureSize(heightTex, 0);
 
 	mat3 tangentMat = mat3(normalize(inTangent), normalize(inBitangent), normalize(inNormal));

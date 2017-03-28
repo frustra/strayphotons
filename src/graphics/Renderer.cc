@@ -59,6 +59,7 @@ namespace sp
 	static CVar<float> CVarVoxelSuperSample("r.VoxelSuperSample", 1.0, "Render voxel grid with Nx supersampling");
 	static CVar<bool> CVarEnableShadows("r.EnableShadows", true, "Enable shadow mapping");
 	static CVar<bool> CVarEnablePCF("r.EnablePCF", true, "Enable smooth shadow sampling");
+	static CVar<bool> CVarEnableBumpMap("r.EnableBumpMap", true, "Enable bump mapping");
 
 	void Renderer::UpdateShaders(bool force)
 	{
@@ -66,8 +67,9 @@ namespace sp
 			CVarVoxelGridSize.Changed() ||
 			CVarVoxelSuperSample.Changed() ||
 			CVarEnableShadows.Changed() ||
-			CVarEnablePCF.Changed()
-		   )
+			CVarEnablePCF.Changed() ||
+			CVarEnableBumpMap.Changed()
+		)
 		{
 			int voxelGridSize = CVarVoxelGridSize.Get(true);
 			ShaderManager::SetDefine("VOXEL_GRID_SIZE", std::to_string(voxelGridSize));
@@ -75,6 +77,7 @@ namespace sp
 			ShaderManager::SetDefine("VOXEL_SUPER_SAMPLE_SCALE", std::to_string(CVarVoxelSuperSample.Get(true)));
 			ShaderManager::SetDefine("SHADOWS_ENABLED", CVarEnableShadows.Get(true));
 			ShaderManager::SetDefine("PCF_ENABLED", CVarEnablePCF.Get(true));
+			ShaderManager::SetDefine("BUMP_MAP_ENABLED", CVarEnableBumpMap.Get(true));
 			ShaderControl->CompileAll(GlobalShaders);
 		}
 	}
