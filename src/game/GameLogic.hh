@@ -48,7 +48,10 @@ namespace sp
 		ecs::Entity flashlight;
 		float sunPos;
 
+#ifdef ENABLE_VR
 		vr::IVRSystem *vrSystem = nullptr;
+#endif
+
 		ecs::Entity eyeEntity[2];
 		glm::mat4 eyePos[2];
 
