@@ -42,11 +42,11 @@ namespace sp
 
 		auto ssaoBlurX = context.AddPass<SSAOBlur>(true);
 		ssaoBlurX->SetInput(0, ssaoPass0);
-		ssaoBlurX->SetInput(1, context.Depth);
+		ssaoBlurX->SetInput(1, context.GBuffer2);
 
 		auto ssaoBlurY = context.AddPass<SSAOBlur>(false);
 		ssaoBlurY->SetInput(0, ssaoBlurX);
-		ssaoBlurY->SetInput(1, context.Depth);
+		ssaoBlurY->SetInput(1, context.GBuffer2);
 
 		context.AoBuffer = ssaoBlurY;
 	}
@@ -187,7 +187,6 @@ namespace sp
 		context.GBuffer1 = context.AddPass<ProxyProcessPass>(targets.gBuffer1);
 		context.GBuffer2 = context.AddPass<ProxyProcessPass>(targets.gBuffer2);
 		context.GBuffer3 = context.AddPass<ProxyProcessPass>(targets.gBuffer3);
-		context.Depth = context.AddPass<ProxyProcessPass>(targets.depth);
 		context.MirrorVisData = targets.mirrorVisData;
 		context.MirrorSceneData = targets.mirrorSceneData;
 		context.LastOutput = context.GBuffer0;
@@ -272,9 +271,8 @@ namespace sp
 			viewGBuf->SetInput(1, context.GBuffer1);
 			viewGBuf->SetInput(2, context.GBuffer2);
 			viewGBuf->SetInput(3, context.GBuffer3);
-			viewGBuf->SetInput(4, context.Depth);
-			viewGBuf->SetInput(5, context.VoxelRadiance);
-			viewGBuf->SetInput(6, context.VoxelRadianceMips);
+			viewGBuf->SetInput(4, context.VoxelRadiance);
+			viewGBuf->SetInput(5, context.VoxelRadianceMips);
 			context.LastOutput = viewGBuf;
 		}
 
@@ -285,7 +283,7 @@ namespace sp
 
 		if (renderToTexture)
 		{
-			renderer->SetRenderTarget(&targets.finalOutput->GetTexture(), nullptr);
+			renderer->SetRenderTarget(targets.finalOutput, nullptr);
 		}
 		else
 		{

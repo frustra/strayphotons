@@ -7,9 +7,8 @@ layout (binding = 0) uniform sampler2D gBuffer0;
 layout (binding = 1) uniform sampler2D gBuffer1;
 layout (binding = 2) uniform sampler2D gBuffer2;
 layout (binding = 3) uniform sampler2D gBuffer3;
-layout (binding = 4) uniform sampler2D depthStencil;
-layout (binding = 5) uniform sampler3D voxelRadiance;
-layout (binding = 6) uniform sampler3D voxelRadianceMips;
+layout (binding = 4) uniform sampler3D voxelRadiance;
+layout (binding = 5) uniform sampler3D voxelRadianceMips;
 
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
@@ -38,9 +37,8 @@ void main()
 		} else if (mode == 2) { // Normal
 			outFragColor.rgb = DecodeNormal(texture(gBuffer1, inTexCoord).rg);
 		} else if (mode == 3) { // Depth
-			float depth = texture(depthStencil, inTexCoord).r;
-			vec3 position = ScreenPosToViewPos(inTexCoord, depth, invProjMat);
-			outFragColor.rgb = vec3(-position.z / 32.0);
+			float z = texture(gBuffer2, inTexCoord).z;
+			outFragColor.rgb = vec3(-z / 32.0);
 		} else if (mode == 4) { // Roughness
 			outFragColor.rgb = vec3(texture(gBuffer0, inTexCoord).a);
 		} else if (mode == 5) { // Metallic

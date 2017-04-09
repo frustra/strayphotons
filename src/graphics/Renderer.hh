@@ -57,8 +57,8 @@ namespace sp
 		void DrawPhysxLines(ecs::View &view, SceneShader *shader, const vector<physx::PxDebugLine> &lines, const PreDrawFunc &preDraw);
 		void EndFrame();
 
-		void SetRenderTarget(const Texture *attachment0, const Texture *depth);
-		void SetRenderTargets(size_t attachmentCount, const Texture *attachments, const Texture *depth);
+		void SetRenderTarget(shared_ptr<RenderTarget> attachment0, shared_ptr<RenderTarget> depth);
+		void SetRenderTargets(size_t attachmentCount, shared_ptr<RenderTarget> *attachments, shared_ptr<RenderTarget> depth);
 		void SetDefaultRenderTarget();
 
 		ShaderManager *ShaderControl = nullptr;

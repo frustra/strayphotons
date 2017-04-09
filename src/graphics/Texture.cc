@@ -1,6 +1,5 @@
 #include "Texture.hh"
 #include "assets/Asset.hh"
-#include "core/Logging.hh"
 
 #include <stb_image.h>
 

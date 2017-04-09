@@ -186,7 +186,7 @@ namespace sp
 			auto desc = input->GetDesc();
 			desc.format = PF_SRGB8_A8;
 			auto output = r->RTPool->Get(desc);
-			r->SetRenderTarget(&output->GetTexture(), nullptr);
+			r->SetRenderTarget(output, nullptr);
 			r->ShaderControl->BindPipeline<BasicPostVS, RayTraceTonemapFS>(r->GlobalShaders);
 
 			input->GetTexture().Bind(0);
@@ -199,7 +199,7 @@ namespace sp
 		{
 			// Highpass luminance.
 			auto bloomThresholdTarget = r->RTPool->Get(input->GetDesc());
-			r->SetRenderTarget(&bloomThresholdTarget->GetTexture(), nullptr);
+			r->SetRenderTarget(bloomThresholdTarget, nullptr);
 			r->GlobalShaders->Get<RayTraceBloomThresholdFS>()->UpdateThreshold(CVarBloomThreshold.Get());
 			r->ShaderControl->BindPipeline<BasicPostVS, RayTraceBloomThresholdFS>(r->GlobalShaders);
 
@@ -208,7 +208,7 @@ namespace sp
 
 			// Blur highpassed result.
 			auto bloomBlurTarget1 = r->RTPool->Get(input->GetDesc());
-			r->SetRenderTarget(&bloomBlurTarget1->GetTexture(), nullptr);
+			r->SetRenderTarget(bloomBlurTarget1, nullptr);
 			r->GlobalShaders->Get<RayTraceBloomBlurFS>()->SetDirection(0);
 			r->ShaderControl->BindPipeline<BasicPostVS, RayTraceBloomBlurFS>(r->GlobalShaders);
 
@@ -217,7 +217,7 @@ namespace sp
 
 			bloomThresholdTarget.reset();
 			auto bloomBlurTarget2 = r->RTPool->Get(input->GetDesc());
-			r->SetRenderTarget(&bloomBlurTarget2->GetTexture(), nullptr);
+			r->SetRenderTarget(bloomBlurTarget2, nullptr);
 			r->GlobalShaders->Get<RayTraceBloomBlurFS>()->SetDirection(1);
 			r->ShaderControl->BindPipeline<BasicPostVS, RayTraceBloomBlurFS>(r->GlobalShaders);
 
@@ -226,7 +226,7 @@ namespace sp
 
 			// Combine.
 			auto outputTarget = r->RTPool->Get(input->GetDesc());
-			r->SetRenderTarget(&outputTarget->GetTexture(), nullptr);
+			r->SetRenderTarget(outputTarget, nullptr);
 			r->ShaderControl->BindPipeline<BasicPostVS, RayTraceBloomCombineFS>(r->GlobalShaders);
 
 			input->GetTexture().Bind(0);
@@ -264,7 +264,7 @@ namespace sp
 				auto x = r->RTPool->Get(desc);
 				auto downsampleTarget = r->RTPool->Get(desc);
 
-				r->SetRenderTarget(&downsampleTarget->GetTexture(), nullptr);
+				r->SetRenderTarget(downsampleTarget, nullptr);
 				r->GlobalShaders->Get<RayTraceExposureScaleFS>()->SetExposure(1.0f);
 				r->ShaderControl->BindPipeline<BasicPostVS, RayTraceExposureScaleFS>(r->GlobalShaders);
 
@@ -311,7 +311,7 @@ namespace sp
 				exposureScale = CVarExposure.Get();
 			}
 
-			r->SetRenderTarget(&output->GetTexture(), nullptr);
+			r->SetRenderTarget(output, nullptr);
 			r->GlobalShaders->Get<RayTraceExposureScaleFS>()->SetExposure(exposureScale);
 			r->ShaderControl->BindPipeline<BasicPostVS, RayTraceExposureScaleFS>(r->GlobalShaders);
 
@@ -430,7 +430,7 @@ namespace sp
 
 			if (forceClear)
 			{
-				renderer->SetRenderTarget(&target->GetTexture(), nullptr);
+				renderer->SetRenderTarget(target, nullptr);
 				glDisable(GL_SCISSOR_TEST);
 				glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 				glClear(GL_COLOR_BUFFER_BIT);

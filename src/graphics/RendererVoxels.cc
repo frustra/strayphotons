@@ -96,7 +96,7 @@ namespace sp
 		ortho.clearMode = 0;
 
 		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_R8, ortho.extents));
-		SetRenderTarget(&renderTarget->GetTexture(), nullptr);
+		SetRenderTarget(renderTarget, nullptr);
 
 		auto voxelVS = GlobalShaders->Get<VoxelRasterVS>();
 
@@ -177,6 +177,8 @@ namespace sp
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
 		}
 		{
+			RenderPhase phase("Mipmap", Timer);
+
 			GLVoxelInfo voxelInfo;
 			FillVoxelInfo(&voxelInfo, voxelData.info);
 
@@ -187,7 +189,7 @@ namespace sp
 
 			for (uint32 i = 1; i < voxelData.radianceMips->GetDesc().levels + 1; i++)
 			{
-				RenderPhase phase("Mipmap", Timer);
+				RenderPhase phase("MipmapLevel", Timer);
 				computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * (i - 1), sizeof(GLuint) * 8);
 				fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i - 1);
 				fragmentList->GetTexture().BindImage(1, GL_READ_WRITE, i);

@@ -35,14 +35,15 @@ namespace sp
 	void BloomHighpass::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto dest = outputs[0].AllocateTarget(context);
 
 		r->GlobalShaders->Get<BloomHighpassFS>()->SetScale(CVarBloomScale.Get());
 
-		r->SetRenderTarget(&dest, nullptr);
+		r->SetRenderTarget(dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, BloomHighpassFS>(r->GlobalShaders);
 
-		glViewport(0, 0, dest.width, dest.height);
+		auto desc = dest->GetDesc();
+		glViewport(0, 0, desc.extent.x, desc.extent.y);
 		DrawScreenCover();
 	}
 
@@ -75,16 +76,17 @@ namespace sp
 	void BloomBlur::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto dest = outputs[0].AllocateTarget(context);
 
 		auto shader = r->GlobalShaders->Get<BloomBlurFS>();
 		shader->SetDirection(direction);
 		shader->SetClip(clip, scale);
 
-		r->SetRenderTarget(&dest, nullptr);
+		r->SetRenderTarget(dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, BloomBlurFS>(r->GlobalShaders);
 
-		glViewport(0, 0, dest.width, dest.height);
+		auto desc = dest->GetDesc();
+		glViewport(0, 0, desc.extent.x, desc.extent.y);
 		DrawScreenCover();
 	}
 
@@ -113,14 +115,15 @@ namespace sp
 	void BloomCombine::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto dest = outputs[0].AllocateTarget(context);
 
 		r->GlobalShaders->Get<BloomCombineFS>()->SetWeights(CVarBloomWeight1.Get(), CVarBloomWeight2.Get());
 
-		r->SetRenderTarget(&dest, nullptr);
+		r->SetRenderTarget(dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, BloomCombineFS>(r->GlobalShaders);
 
-		glViewport(0, 0, dest.width, dest.height);
+		auto desc = dest->GetDesc();
+		glViewport(0, 0, desc.extent.x, desc.extent.y);
 		DrawScreenCover();
 	}
 }

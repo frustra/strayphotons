@@ -52,10 +52,10 @@ namespace sp
 	void Tonemap::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto dest = outputs[0].AllocateTarget(context);
 
 		r->GlobalShaders->Get<TonemapFS>()->SetParams();
-		r->SetRenderTarget(&dest, nullptr);
+		r->SetRenderTarget(dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, TonemapFS>(r->GlobalShaders);
 
 		DrawScreenCover();
@@ -71,13 +71,13 @@ namespace sp
 		{
 		}
 
-		Texture &GetTarget(Renderer *r)
+		RenderTarget::Ref GetTarget(Renderer *r)
 		{
 			if (!target)
 			{
 				target = r->RTPool->Get(RenderTargetDesc(PF_R32UI, { Bins, 1 }));
 			}
-			return target->GetTexture();
+			return target;
 		}
 
 		double ComputeScaledLuminance()
@@ -166,14 +166,14 @@ namespace sp
 
 		auto r = context->renderer;
 		auto shader = r->GlobalShaders->Get<LumiHistogramCS>();
-		auto &histTex = shader->GetTarget(r);
+		auto histTex = shader->GetTarget(r);
 
-		r->SetRenderTarget(&histTex, nullptr);
+		r->SetRenderTarget(histTex, nullptr);
 		glClearColor(0.0, 0.0, 0.0, 0.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		r->ShaderControl->BindPipeline<LumiHistogramCS>(r->GlobalShaders);
-		histTex.BindImage(0, GL_READ_WRITE);
+		histTex->GetTexture().BindImage(0, GL_READ_WRITE);
 
 		auto extents = GetInput(0)->GetOutput()->TargetDesc.extent / downsample;
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -184,8 +184,8 @@ namespace sp
 
 		if (CVarDrawHistogram.Get())
 		{
-			auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
-			r->SetRenderTarget(&dest, nullptr);
+			auto dest = outputs[0].AllocateTarget(context);
+			r->SetRenderTarget(dest, nullptr);
 			r->ShaderControl->BindPipeline<BasicPostVS, RenderHistogramFS>(r->GlobalShaders);
 			DrawScreenCover();
 		}
@@ -304,7 +304,7 @@ namespace sp
 	void VoxelLighting::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto dest = outputs[0].AllocateTarget(context);
 
 		int diffuseDownsample = CVarVoxelDiffuseDownsample.Get();
 		if (diffuseDownsample < 1) diffuseDownsample = 1;
@@ -327,7 +327,7 @@ namespace sp
 		shader->SetVoxelInfo(&voxelInfo, diffuseDownsample);
 		shader->SetExposure(r->Exposure);
 
-		r->SetRenderTarget(&dest, nullptr);
+		r->SetRenderTarget(dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingFS>(r->GlobalShaders);
 
 		DrawScreenCover();
@@ -342,7 +342,7 @@ namespace sp
 	void VoxelLightingDiffuse::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto dest = outputs[0].AllocateTarget(context);
 		auto shader = r->GlobalShaders->Get<VoxelLightingDiffuseFS>();
 		auto lumishader = r->GlobalShaders->Get<LumiHistogramCS>();
 
@@ -384,7 +384,7 @@ namespace sp
 		shader->SetExposure(r->Exposure);
 
 		glViewport(0, 0, outputs[0].TargetDesc.extent[0], outputs[0].TargetDesc.extent[1]);
-		r->SetRenderTarget(&dest, nullptr);
+		r->SetRenderTarget(dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingDiffuseFS>(r->GlobalShaders);
 
 		DrawScreenCover();

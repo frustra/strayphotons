@@ -129,7 +129,6 @@ namespace sp
 	struct EngineRenderTargets
 	{
 		RenderTarget::Ref gBuffer0, gBuffer1, gBuffer2, gBuffer3;
-		RenderTarget::Ref depth;
 		RenderTarget::Ref shadowMap, mirrorShadowMap;
 		RenderTarget::Ref mirrorIndexStencil, lightingGel;
 		VoxelData voxelData;
@@ -168,7 +167,6 @@ namespace sp
 		ProcessPassOutputRef GBuffer1;
 		ProcessPassOutputRef GBuffer2;
 		ProcessPassOutputRef GBuffer3;
-		ProcessPassOutputRef Depth;
 		ProcessPassOutputRef ShadowMap;
 		ProcessPassOutputRef MirrorShadowMap;
 		ProcessPassOutputRef VoxelRadiance;

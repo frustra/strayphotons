@@ -81,14 +81,14 @@ namespace sp
 	void SMAAEdgeDetection::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
-		auto &stencil = outputs[1].AllocateTarget(context)->GetTexture();
+		auto dest = outputs[0].AllocateTarget(context);
+		auto stencil = outputs[1].AllocateTarget(context);
 
 #ifndef DISABLE_SMAA
 		r->GlobalShaders->Get<SMAAEdgeDetectionVS>()->SetViewParams(context->view);
 		r->GlobalShaders->Get<SMAAEdgeDetectionFS>()->SetViewParams(context->view);
 
-		r->SetRenderTarget(&dest, &stencil);
+		r->SetRenderTarget(dest, stencil);
 		r->ShaderControl->BindPipeline<SMAAEdgeDetectionVS, SMAAEdgeDetectionFS>(r->GlobalShaders);
 
 		glEnable(GL_STENCIL_TEST);
@@ -118,13 +118,13 @@ namespace sp
 		static Texture searchTex = GAssets.LoadTexture("textures/smaa/SearchTex.tga", 1);
 
 		auto r = context->renderer;
-		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
-		auto &stencil = dependencies[0].GetOutput()->TargetRef->GetTexture();
+		auto dest = outputs[0].AllocateTarget(context);
+		auto stencil = dependencies[0].GetOutput()->TargetRef;
 
 		r->GlobalShaders->Get<SMAABlendingWeightsVS>()->SetViewParams(context->view);
 		r->GlobalShaders->Get<SMAABlendingWeightsFS>()->SetViewParams(context->view);
 
-		r->SetRenderTarget(&dest, &stencil);
+		r->SetRenderTarget(dest, stencil);
 		r->ShaderControl->BindPipeline<SMAABlendingWeightsVS, SMAABlendingWeightsFS>(r->GlobalShaders);
 
 		areaTex.Bind(1);
@@ -156,12 +156,12 @@ namespace sp
 		}
 
 		auto r = context->renderer;
-		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto dest = outputs[0].AllocateTarget(context);
 
 		r->GlobalShaders->Get<SMAABlendingVS>()->SetViewParams(context->view);
 		r->GlobalShaders->Get<SMAABlendingFS>()->SetViewParams(context->view);
 
-		r->SetRenderTarget(&dest, nullptr);
+		r->SetRenderTarget(dest, nullptr);
 		r->ShaderControl->BindPipeline<SMAABlendingVS, SMAABlendingFS>(r->GlobalShaders);
 
 		DrawScreenCover();

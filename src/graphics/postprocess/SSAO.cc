@@ -110,23 +110,24 @@ namespace sp
 		static SSAONoiseTexture noiseTex(5);
 
 		auto r = context->renderer;
-		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto dest = outputs[0].AllocateTarget(context);
 
 		r->GlobalShaders->Get<SSAOPass0FS>()->SetViewParams(context->view);
 
-		r->SetRenderTarget(&dest, nullptr);
+		r->SetRenderTarget(dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, SSAOPass0FS>(r->GlobalShaders);
 
 		noiseTex.tex.Bind(3);
 
-		glViewport(0, 0, dest.width, dest.height);
+		auto desc = dest->GetDesc();
+		glViewport(0, 0, desc.extent.x, desc.extent.y);
 		DrawScreenCover();
 	}
 
 	void SSAOBlur::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto dest = outputs[0].AllocateTarget(context);
 
 		if (!CVarSSAODebug.Get())
 		{
@@ -148,8 +149,9 @@ namespace sp
 			r->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(r->GlobalShaders);
 		}
 
-		r->SetRenderTarget(&dest, nullptr);
-		glViewport(0, 0, dest.width, dest.height);
+		r->SetRenderTarget(dest, nullptr);
+		auto desc = dest->GetDesc();
+		glViewport(0, 0, desc.extent.x, desc.extent.y);
 		DrawScreenCover();
 	}
 }

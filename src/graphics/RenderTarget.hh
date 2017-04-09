@@ -2,6 +2,7 @@
 
 #include "Common.hh"
 #include "Texture.hh"
+#include "RenderBuffer.hh"
 #include <glm/glm.hpp>
 
 namespace sp
@@ -37,6 +38,12 @@ namespace sp
 		RenderTargetDesc(PixelFormat format, glm::ivec2 extent, GLenum attachment) :
 			format(format), extent(extent.x, extent.y, 1), attachment(attachment) {}
 
+		RenderTargetDesc(PixelFormat format, glm::ivec2 extent, bool renderBuffer) :
+			RenderTargetDesc(format, glm::ivec3(extent.x, extent.y, 1))
+		{
+			this->renderBuffer = renderBuffer;
+		}
+
 		RenderTargetDesc &Filter(GLenum minf, GLenum magf)
 		{
 			minFilter = minf;
@@ -50,6 +57,7 @@ namespace sp
 		bool depthCompare = false;
 		bool multiSample = false;
 		bool textureArray = false;
+		bool renderBuffer = false;
 		GLenum attachment;
 		GLenum minFilter = GL_LINEAR_MIPMAP_LINEAR, magFilter = GL_LINEAR;
 		GLenum wrapS = GL_CLAMP_TO_EDGE, wrapT = GL_CLAMP_TO_EDGE, wrapR = GL_CLAMP_TO_EDGE;
@@ -67,6 +75,7 @@ namespace sp
 				   && other.depthCompare == depthCompare
 				   && other.multiSample == multiSample
 				   && other.textureArray == textureArray
+				   && other.renderBuffer == renderBuffer
 				   && other.wrapS == wrapS
 				   && other.wrapT == wrapT
 				   && other.wrapR == wrapR
@@ -97,7 +106,23 @@ namespace sp
 		Texture &GetTexture()
 		{
 			Assert(id >= 0, "render target destroyed");
+			Assert(tex.handle, "target is a renderbuffer");
 			return tex;
+		}
+
+		RenderBuffer &GetRenderBuffer()
+		{
+			Assert(id >= 0, "render target destroyed");
+			Assert(buf.handle, "target is a texture");
+			return buf;
+		}
+
+		GLuint GetHandle()
+		{
+			Assert(id >= 0, "render target destroyed");
+			Assert(tex.handle || buf.handle, "render target must have an underlying target");
+			if (tex.handle) return tex.handle;
+			return buf.handle;
 		}
 
 		RenderTargetDesc GetDesc()
@@ -105,10 +130,23 @@ namespace sp
 			return desc;
 		}
 
+		bool operator==(const RenderTarget &other) const
+		{
+			return other.desc == desc
+				   && other.tex == tex
+				   && other.buf == buf;
+		}
+
+		bool operator!=(const RenderTarget &other) const
+		{
+			return !(*this == other);
+		}
+
 	private:
 		RenderTargetDesc desc;
 		int64 id;
 		Texture tex;
+		RenderBuffer buf;
 
 		int unusedFrames = 0;
 		friend class RenderTargetPool;

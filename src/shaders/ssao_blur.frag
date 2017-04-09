@@ -3,7 +3,7 @@
 ##import lib/util
 
 layout (binding = 0) uniform sampler2D occlusionTex;
-layout (binding = 1) uniform sampler2D depthStencil;
+layout (binding = 1) uniform sampler2D gBuffer2;
 layout (location = 0) in vec2 inTexCoord;
 layout (location = 0) out vec4 outFragColor;
 
@@ -17,8 +17,7 @@ const float offset = float(-radius) * 0.5 + 0.5;
 uniform mat4 invProjMat;
 
 void main() {
-	float fragDepth = texture(depthStencil, inTexCoord).r;
-	vec3 fragPos = ScreenPosToViewPos(inTexCoord, fragDepth, invProjMat);
+	vec3 fragPos = texture(gBuffer2, inTexCoord).rgb; // view space
 
 	// Sum of samples.
 	float accum = 0.0;
@@ -28,9 +27,7 @@ void main() {
 		vec2 relativeCoord = vec2(offset * 0.5 + float(index));
 
 		vec2 sampleCoord = relativeCoord * samplePattern + inTexCoord;
-
-		float sampleDepth = texture(depthStencil, sampleCoord).r;
-		vec3 samplePos = ScreenPosToViewPos(inTexCoord, sampleDepth, invProjMat);
+		vec3 samplePos = texture(gBuffer2, sampleCoord).rgb; // view space
 
 		float ddepth = (fragPos.z - samplePos.z) * sharpness;
 		float weight = exp2(- ddepth * ddepth);

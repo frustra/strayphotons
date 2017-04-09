@@ -45,7 +45,7 @@ namespace sp
 	void ViewGBuffer::Process(const PostProcessingContext *context)
 	{
 		auto r = context->renderer;
-		auto &dest = outputs[0].AllocateTarget(context)->GetTexture();
+		auto dest = outputs[0].AllocateTarget(context);
 
 		GLVoxelInfo voxelInfo;
 		FillVoxelInfo(&voxelInfo, voxelData.info);
@@ -53,7 +53,7 @@ namespace sp
 		r->GlobalShaders->Get<ViewGBufferFS>()->SetParameters(mode, source, level, context->view);
 		r->GlobalShaders->Get<ViewGBufferFS>()->SetVoxelInfo(&voxelInfo);
 
-		r->SetRenderTarget(&dest, nullptr);
+		r->SetRenderTarget(dest, nullptr);
 		r->ShaderControl->BindPipeline<BasicPostVS, ViewGBufferFS>(r->GlobalShaders);
 
 		DrawScreenCover();
