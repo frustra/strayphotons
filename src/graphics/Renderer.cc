@@ -478,6 +478,8 @@ namespace sp
 			auto sceneGS = GlobalShaders->Get<SceneGS>();
 			auto sceneFS = GlobalShaders->Get<SceneFS>();
 
+			sceneGS->SetParams(forwardPassView, {});
+
 			int recursion = mirrorCount ? std::min(MAX_MIRROR_RECURSION, CVarMirrorRecursion.Get()) : 0;
 
 			forwardPassView.stencil = true;
@@ -529,6 +531,7 @@ namespace sp
 				}
 				else
 				{
+					forwardPassView.clearMode &= ~GL_STENCIL_BUFFER_BIT;
 					{
 						RenderPhase phase("MatrixGen", Timer);
 
@@ -563,13 +566,31 @@ namespace sp
 
 				int thisStencilBit = 1 << (bounce % 8);
 				glStencilFunc(GL_EQUAL, 0xff, ~thisStencilBit);
-				glStencilMask(~0); // for clear
+				glStencilMask(~0); // for forward pass clearMode
 				glFrontFace(bounce % 2 == 0 ? GL_CCW : GL_CW);
 
+				if (bounce > 0)
+				{
+					RenderPhase phase("DepthPredraw", Timer);
+					glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+					ShaderControl->BindPipeline<SceneVS, SceneGS, SceneDepthPredrawFS>(GlobalShaders);
+
+					ForwardPass(forwardPassView, sceneVS, nullptr);
+
+					glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+					glDepthFunc(GL_EQUAL);
+				}
+				else
+				{
+					glDepthFunc(GL_LESS);
+				}
+
 				sceneFS->SetMirrorId(-1);
-				sceneGS->SetParams(forwardPassView, {});
 
 				ShaderControl->BindPipeline<SceneVS, SceneGS, SceneFS>(GlobalShaders);
+
+				glDepthMask(GL_FALSE);
 
 				ForwardPass(forwardPassView, sceneVS, [&](ecs::Entity & ent)
 				{
@@ -598,6 +619,9 @@ namespace sp
 						sceneFS->SetEmissive(renderable->emissive);
 					}
 				});
+
+				glDepthFunc(GL_LESS);
+				glDepthMask(GL_TRUE);
 			}
 		}
 
