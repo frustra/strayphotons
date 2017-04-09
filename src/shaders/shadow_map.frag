@@ -1,5 +1,7 @@
 #version 430
 
+layout (early_fragment_tests) in; // Force stencil testing before shader invocation.
+
 ##import lib/util
 
 layout (location = 0) in vec3 inViewPos;

@@ -1,5 +1,7 @@
 #version 430
 
+layout (early_fragment_tests) in; // Force stencil testing before shader invocation.
+
 // 0-3 are model textures
 layout (binding = 4) uniform sampler2D shadowMap;
 layout (binding = 5) uniform sampler2DArray mirrorShadowMap;
