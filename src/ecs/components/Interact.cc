@@ -44,7 +44,7 @@ namespace ecs
 					auto pose = dynamic->getGlobalPose();
 					auto currentPos = pose.transform(dynamic->getCMassLocalPose().transform(physx::PxVec3(0.0)));
 					auto invRotate = glm::inverse(transform->GetRotate());
-					auto offset = invRotate * PxVec3ToGlmVec3P(currentPos - origin);
+					auto offset = invRotate * (PxVec3ToGlmVec3P(currentPos - origin) + glm::vec3(0, 0.1, 0));
 					manager->CreateConstraint(entity, dynamic, GlmVec3ToPxVec3(offset), GlmQuatToPxQuat(invRotate) * pose.q);
 				}
 			}

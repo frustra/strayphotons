@@ -114,7 +114,7 @@ namespace sp
 				if (sensorEnt.Has<ecs::Renderable>())
 				{
 					auto renderable = sensorEnt.Get<ecs::Renderable>();
-					renderable->emissive.g = allTriggered ? 1.0f : 0;
+					renderable->emissive = allTriggered ? sensor->onColor : sensor->offColor;
 				}
 			}
 		}

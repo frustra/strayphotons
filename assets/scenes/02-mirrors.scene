@@ -98,7 +98,7 @@
 			rotate: [-90, 0, 1, 0],
 			triggers: [
 				{
-					illuminance: [0.020, 0.020, 0.020],
+					illuminance: [0.015, 0.015, 0.015],
 					oncmd: "g.OpenDoor airlock2-in",
 					offcmd: "g.CloseDoor airlock2-in"
 				}

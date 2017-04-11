@@ -71,6 +71,11 @@
 					0,
 					1
 				],
+				"onColor": [
+					1,
+					0,
+					0
+				],
 				"triggers": [
 					{
 						"illuminance": [

@@ -24,6 +24,8 @@ namespace ecs
 		// Required parameters.
 		glm::vec3 position = { 0, 0, 0 }; // In model space.
 		glm::vec3 direction = { 0, 0, -1 }; // In model space.
+		glm::vec3 onColor = { 0, 1, 0 };
+		glm::vec3 offColor = { 0, 0, 0 };
 
 		vector<Trigger> triggers;
 

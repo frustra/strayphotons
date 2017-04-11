@@ -574,6 +574,11 @@
 					0,
 					1
 				],
+				"onColor": [
+					0,
+					1,
+					0
+				],
 				"triggers": [
 					{
 						"illuminance": [
@@ -623,6 +628,11 @@
 					0,
 					0,
 					1
+				],
+				"onColor": [
+					0,
+					1,
+					0
 				],
 				"triggers": [
 					{

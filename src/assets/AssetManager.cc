@@ -423,6 +423,14 @@ namespace sp
 								receiver->AttachSignal(entity);
 							}
 						}
+						else if (param.first == "onColor")
+						{
+							sensor->onColor = MakeVec3(param.second);
+						}
+						else if (param.first == "offColor")
+						{
+							sensor->offColor = MakeVec3(param.second);
+						}
 						else if (param.first == "triggers")
 						{
 							for (auto trigger : param.second.get<picojson::array>())
