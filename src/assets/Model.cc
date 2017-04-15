@@ -8,6 +8,10 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <murmurhash/MurmurHash3.h>
 
+#ifdef ENABLE_VR
+#include <openvr.h>
+#endif
+
 namespace sp
 {
 	glm::mat4 GetNodeMatrix(tinygltf::Node *node)
@@ -100,7 +104,11 @@ namespace sp
 		{
 			delete primitive;
 		}
-		asset->manager->UnregisterModel(*this);
+
+		if (!!asset)
+		{
+			asset->manager->UnregisterModel(*this);
+		}
 	}
 
 	bool Model::HasBuffer(string name)
@@ -218,7 +226,7 @@ namespace sp
 				glVertexArrayVertexBuffer(glPrimitive.vertexBufferHandle, i, LoadBuffer(attr->bufferName), attr->byteOffset, attr->byteStride);
 			}
 
-			primitives.push_back(glPrimitive);
+			AddPrimitive(glPrimitive);
 		}
 	}
 
@@ -236,6 +244,11 @@ namespace sp
 		{
 			tex.second.Delete();
 		}
+	}
+
+	void GLModel::AddPrimitive(Primitive prim)
+	{
+		primitives.push_back(prim);
 	}
 
 	void GLModel::Draw()
@@ -318,4 +331,47 @@ namespace sp
 				   .Image2D(img.image.data());
 		}
 	}
+
+#ifdef ENABLE_VR
+	VRModel::VRModel(vr::RenderModel_t *vrModel, vr::RenderModel_TextureMap_t *vrTex)
+		: Model("vr-model")
+	{
+		static BasicMaterial defaultMat;
+		roughnessTex = defaultMat.roughnessTex;
+		metallicTex = defaultMat.metallicTex;
+		heightTex = defaultMat.heightTex;
+
+		baseColorTex.Create()
+			.Filter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR).Wrap(GL_REPEAT, GL_REPEAT)
+			.Size(vrTex->unWidth, vrTex->unHeight).Storage(PF_RGBA8).Image2D(vrTex->rubTextureMapData);
+
+		GLModel::Primitive prim;
+		prim.parent = &sourcePrim;
+		prim.baseColorTex = &baseColorTex;
+		prim.roughnessTex = &roughnessTex;
+		prim.metallicTex = &metallicTex;
+		prim.heightTex = &heightTex;
+
+		static_assert(sizeof(*vr::RenderModel_t::rIndexData) == sizeof(uint16), "index data wrong size");
+
+		vbo.SetElementsVAO(vrModel->unVertexCount, (SceneVertex *) vrModel->rVertexData);
+		prim.vertexBufferHandle = vbo.VAO();
+
+		ibo.Create().Data(vrModel->unTriangleCount * 3 * sizeof(uint16), vrModel->rIndexData);
+		prim.indexBufferHandle = ibo.handle;
+
+		sourcePrim.drawMode = GL_TRIANGLES;
+		sourcePrim.indexBuffer.byteOffset = 0;
+		sourcePrim.indexBuffer.components = vrModel->unTriangleCount * 3;
+		sourcePrim.indexBuffer.componentType = GL_UNSIGNED_SHORT;
+
+		glModel = make_shared<GLModel>(this);
+		glModel->AddPrimitive(prim);
+	}
+
+	VRModel::~VRModel()
+	{
+		vbo.DestroyVAO().Destroy();
+	}
+#endif
 }

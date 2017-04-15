@@ -63,6 +63,22 @@ namespace sp
 			return *this;
 		}
 
+		VertexBuffer &Destroy()
+		{
+			Assert(vbo != 0, "vertex buffer not created");
+			glDeleteBuffers(1, &vbo);
+			vbo = 0;
+			return *this;
+		}
+
+		VertexBuffer &DestroyVAO()
+		{
+			Assert(vao != 0, "vertex array not created");
+			glDeleteVertexArrays(1, &vao);
+			vao = 0;
+			return *this;
+		}
+
 		template <typename T>
 		VertexBuffer &SetElements(size_t n, T *buffer, GLenum usage = GL_STATIC_DRAW)
 		{
@@ -134,6 +150,16 @@ namespace sp
 		size_t Elements() const
 		{
 			return elements;
+		}
+
+		GLuint VAO() const
+		{
+			return vao;
+		}
+
+		GLuint VBO() const
+		{
+			return vbo;
 		}
 
 	private:

@@ -753,7 +753,7 @@ namespace sp
 		constraint.rotationOffset = rotationOffset;
 		constraint.rotation = PxVec3(0);
 
-		if (parent.Has<ecs::Physics>() || parent.Has<ecs::HumanController>())
+		if (parent.Has<ecs::Transform>())
 		{
 			constraints.emplace_back(constraint);
 		}
