@@ -1,6 +1,7 @@
 #include "Texture.hh"
 #include "assets/Asset.hh"
 
+#include <algorithm>
 #include <stb_image.h>
 
 namespace sp

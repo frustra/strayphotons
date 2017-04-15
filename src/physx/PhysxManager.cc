@@ -356,7 +356,7 @@ namespace sp
 	{
 		thread = std::thread([&]
 		{
-			const double rate = 60.0; // frames/sec
+			const double rate = 120.0; // frames/sec
 
 			while (!exiting)
 			{

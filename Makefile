@@ -33,15 +33,15 @@ unix-package-release: build boost-release-unix assets
 
 windows: vs14
 vs14: build boost-debug-windows
-	cd build; cmake -DSP_PACKAGE_RELEASE=0 -G "Visual Studio 14" ..
+	cd build; cmake -DSP_PACKAGE_RELEASE=0 -G "Visual Studio 14 2015" ..
 
 windows-release: vs14-release
 vs14-release: build boost-release-windows
-	cd build; cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=0 --G "Visual Studio 14" ..
+	cd build; cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=0 -G "Visual Studio 14 2015" ..
 
 windows-package-release: vs14-package-release
 vs14-package-release: build boost-release-windows
-	cd build; cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=1 -G "Visual Studio 14" ..
+	cd build; cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=1 -G "Visual Studio 14 2015" ..
 
 clean:
 	rm -rf build bin strayphotons
