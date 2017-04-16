@@ -165,12 +165,11 @@ namespace sp
 		AssertGLOK("BasicRenderer::Prepare");
 	}
 
-	void BasicRenderer::RenderPass(ecs::View &viewRef)
+	void BasicRenderer::RenderPass(ecs::View view)
 	{
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 
-		ecs::View view = viewRef;
 		view.offset = glm::ivec2();
 		PrepareForView(view);
 
@@ -191,7 +190,7 @@ namespace sp
 		//AssertGLOK("BasicRenderer::RenderFrame");
 	}
 
-	void BasicRenderer::PrepareForView(ecs::View &view)
+	void BasicRenderer::PrepareForView(const ecs::View &view)
 	{
 		glDisable(GL_BLEND);
 		glDisable(GL_STENCIL_TEST);
@@ -207,7 +206,7 @@ namespace sp
 		}
 	}
 
-	void BasicRenderer::RenderLoading(ecs::View &view)
+	void BasicRenderer::RenderLoading(ecs::View view)
 	{
 		// TODO(xthexder): Put something here
 	}

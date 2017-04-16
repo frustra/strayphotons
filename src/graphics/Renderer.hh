@@ -48,13 +48,13 @@ namespace sp
 		void ReadBackLightSensors();
 		void UpdateLightSensors();
 		void BeginFrame();
-		void RenderPass(ecs::View &view);
-		void PrepareForView(ecs::View &view);
-		void ForwardPass(ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw = {});
-		void DrawEntity(ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw = {});
-		void RenderLoading(ecs::View &view);
+		void RenderPass(ecs::View view);
+		void PrepareForView(const ecs::View &view);
+		void ForwardPass(const ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw = {});
+		void DrawEntity(const ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw = {});
+		void RenderLoading(ecs::View view);
 		void ExpireRenderables();
-		void DrawPhysxLines(ecs::View &view, SceneShader *shader, const vector<physx::PxDebugLine> &lines, const PreDrawFunc &preDraw);
+		void DrawPhysxLines(const ecs::View &view, SceneShader *shader, const vector<physx::PxDebugLine> &lines, const PreDrawFunc &preDraw);
 		void EndFrame();
 
 		void SetRenderTarget(shared_ptr<RenderTarget> attachment0, shared_ptr<RenderTarget> depth);

@@ -386,7 +386,7 @@ namespace sp
 		shader->StartReadback();
 	}
 
-	void Renderer::RenderPass(ecs::View &view)
+	void Renderer::RenderPass(ecs::View view)
 	{
 		RenderPhase phase("RenderPass", Timer);
 
@@ -650,7 +650,7 @@ namespace sp
 		//AssertGLOK("Renderer::RenderFrame");
 	}
 
-	void Renderer::PrepareForView(ecs::View &view)
+	void Renderer::PrepareForView(const ecs::View &view)
 	{
 		if (view.blend)
 			glEnable(GL_BLEND);
@@ -674,7 +674,7 @@ namespace sp
 		}
 	}
 
-	void Renderer::ForwardPass(ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw)
+	void Renderer::ForwardPass(const ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw)
 	{
 		RenderPhase phase("ForwardPass", Timer);
 		PrepareForView(view);
@@ -706,7 +706,7 @@ namespace sp
 	}
 
 	void Renderer::DrawPhysxLines(
-		ecs::View &view,
+		const ecs::View &view,
 		SceneShader *shader,
 		const vector<physx::PxDebugLine> &lines,
 		const PreDrawFunc &preDraw)
@@ -777,7 +777,7 @@ namespace sp
 		glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
 	}
 
-	void Renderer::DrawEntity(ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw)
+	void Renderer::DrawEntity(const ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw)
 	{
 		auto comp = ent.Get<ecs::Renderable>();
 		if (comp->hidden)
@@ -866,7 +866,7 @@ namespace sp
 		}
 	}
 
-	void Renderer::RenderLoading(ecs::View &view)
+	void Renderer::RenderLoading(ecs::View view)
 	{
 		auto screenResolution = view.extents;
 		view.extents = glm::ivec2(192 / 2, 80 / 2);
