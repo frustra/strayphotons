@@ -19,7 +19,7 @@
 #include "ecs/components/Light.hh"
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/Mirror.hh"
-#include "ecs/components/NAme.hh"
+#include "ecs/components/Name.hh"
 #include "assets/AssetManager.hh"
 #include "physx/PhysxUtils.hh"
 #include "threading/MutexedVector.hh"

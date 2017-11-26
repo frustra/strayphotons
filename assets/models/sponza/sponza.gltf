@@ -703,26 +703,6 @@
                         "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
-                    "indices": "accessor_index_0",
-                    "material": "material_leaf",
-                    "mode": 4
-                },
-                {
-                    "attributes": {
-                        "NORMAL": "accessor_normal",
-                        "POSITION": "accessor_position",
-                        "TEXCOORD_0": "accessor_uv"
-                    },
-                    "indices": "accessor_index_1",
-                    "material": "material_Material__57",
-                    "mode": 4
-                },
-                {
-                    "attributes": {
-                        "NORMAL": "accessor_normal",
-                        "POSITION": "accessor_position",
-                        "TEXCOORD_0": "accessor_uv"
-                    },
                     "indices": "accessor_index_2",
                     "material": "material_vase_round",
                     "mode": 4
@@ -903,16 +883,6 @@
                         "POSITION": "accessor_position",
                         "TEXCOORD_0": "accessor_uv"
                     },
-                    "indices": "accessor_index_20",
-                    "material": "material_chain",
-                    "mode": 4
-                },
-                {
-                    "attributes": {
-                        "NORMAL": "accessor_normal",
-                        "POSITION": "accessor_position",
-                        "TEXCOORD_0": "accessor_uv"
-                    },
                     "indices": "accessor_index_21",
                     "material": "material_vase_hanging",
                     "mode": 4
@@ -945,6 +915,36 @@
                     },
                     "indices": "accessor_index_24",
                     "material": "material_roof",
+                    "mode": 4
+                },
+                {
+                    "attributes": {
+                        "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
+                        "TEXCOORD_0": "accessor_uv"
+                    },
+                    "indices": "accessor_index_1",
+                    "material": "material_Material__57",
+                    "mode": 4
+                },
+                {
+                    "attributes": {
+                        "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
+                        "TEXCOORD_0": "accessor_uv"
+                    },
+                    "indices": "accessor_index_0",
+                    "material": "material_leaf",
+                    "mode": 4
+                },
+                {
+                    "attributes": {
+                        "NORMAL": "accessor_normal",
+                        "POSITION": "accessor_position",
+                        "TEXCOORD_0": "accessor_uv"
+                    },
+                    "indices": "accessor_index_20",
+                    "material": "material_chain",
                     "mode": 4
                 }
             ]
