@@ -45,6 +45,8 @@ vs14-package-release: build boost-release-windows
 
 clean:
 	rm -rf build bin strayphotons
+	rm -rf ext/boost/bin.v2/libs/filesystem/build
+	rm -rf ext/boost/bin.v2/libs/system/build
 
 build:
 	mkdir -p build

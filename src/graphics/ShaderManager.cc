@@ -87,7 +87,11 @@ namespace sp
 
 			auto err = ProcessError(input, string(infoLog));
 			Errorf("%s", err);
+#ifdef PACKAGE_RELEASE
 			throw std::runtime_error(err);
+#else
+			return nullptr;
+#endif
 		}
 
 		auto output = make_shared<ShaderCompileOutput>();
