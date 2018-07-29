@@ -36,7 +36,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 if (UNIX)
 	add_definitions(-Wall)
-	add_definitions(-Wno-error=strict-aliasing)
+	add_definitions(-Wno-error=strict-aliasing -Wno-error=parentheses)
 endif()
 
 if (MSVC)
