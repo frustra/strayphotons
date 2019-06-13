@@ -6,13 +6,11 @@
 #include <cxxopts.hpp>
 #include <fmod_errors.h>
 #include <fmod_common.h>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include <sstream>
 #include <cstdio>
 #include <stdexcept>
-
-namespace fs = boost::filesystem;
 
 namespace sp
 {
@@ -207,20 +205,18 @@ namespace sp
 	{
 		if (!audioEnabled) return;
 
-		fs::path bankDir(AUDIO_BANK_DIR);
-		fs::directory_iterator end_iter;
+		std::filesystem::path bankDir(AUDIO_BANK_DIR);
+		std::filesystem::directory_iterator end_iter;
 
 		vector<string> bankFiles;
 
-		if (fs::exists(bankDir) && fs::is_directory(bankDir))
+		if (std::filesystem::exists(bankDir) && std::filesystem::is_directory(bankDir))
 		{
-			for (fs::directory_iterator dir_iter(bankDir);
-				 dir_iter != end_iter; ++dir_iter)
+			for (auto &dentry : std::filesystem::directory_iterator(bankDir))
 			{
-				fs::directory_entry &dentry = *dir_iter;
 				const string ext = dentry.path().extension().string();
 
-				if (fs::is_regular_file(dentry.status()) && ext.compare(".bank") == 0)
+				if (std::filesystem::is_regular_file(dentry.status()) && ext.compare(".bank") == 0)
 				{
 					this->LoadBank(dentry.path().string());
 				}

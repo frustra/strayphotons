@@ -33,8 +33,7 @@ extern "C"
 #include "ecs/components/Animation.hh"
 #include "ecs/components/SignalReceiver.hh"
 
-#include <boost/filesystem.hpp>
-#include <boost/algorithm/string.hpp>
+#include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <utility>
@@ -92,7 +91,7 @@ namespace sp
 
 		return false;
 #else
-		string filename = (boost::starts_with(path, "shaders/") ? SHADERS_DIR : ASSETS_DIR) + path;
+		string filename = (starts_with(path, "shaders/") ? SHADERS_DIR : ASSETS_DIR) + path;
 		stream.open(filename, std::ios::in | std::ios::binary);
 
 		if (size && stream)
@@ -108,8 +107,8 @@ namespace sp
 
 	bool AssetManager::OutputStream(const std::string &path, std::ofstream &stream)
 	{
-		boost::filesystem::path p(ASSETS_DIR + path);
-		boost::filesystem::create_directories(p.parent_path());
+		std::filesystem::path p(ASSETS_DIR + path);
+		std::filesystem::create_directories(p.parent_path());
 
 		stream.open(ASSETS_DIR + path, std::ios::out | std::ios::binary);
 		return !!stream;

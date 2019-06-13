@@ -8,8 +8,6 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
-#include <boost/algorithm/string.hpp>
-#include <boost/format.hpp>
 
 namespace sp
 {
@@ -55,17 +53,17 @@ namespace sp
 		Logf("OpenGL version: %s", glGetString(GL_VERSION));
 
 		string vendorStr = (char *) glGetString(GL_VENDOR);
-		if (boost::starts_with(vendorStr, "NVIDIA"))
+		if (starts_with(vendorStr, "NVIDIA"))
 		{
 			Logf("GPU vendor: NVIDIA");
 			ShaderManager::SetDefine("NVIDIA_GPU");
 		}
-		else if (boost::starts_with(vendorStr, "ATI"))
+		else if (starts_with(vendorStr, "ATI"))
 		{
 			Logf("GPU vendor: AMD");
 			ShaderManager::SetDefine("AMD_GPU");
 		}
-		else if (boost::starts_with(vendorStr, "Intel"))
+		else if (starts_with(vendorStr, "Intel"))
 		{
 			Logf("GPU vendor: Intel");
 			ShaderManager::SetDefine("INTEL_GPU");

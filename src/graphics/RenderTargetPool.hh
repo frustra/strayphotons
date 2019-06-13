@@ -3,9 +3,7 @@
 #include "Common.hh"
 #include "core/Logging.hh"
 #include "RenderTarget.hh"
-
-#include <boost/unordered_map.hpp>
-#include <boost/functional/hash.hpp>
+#include <unordered_map>
 
 namespace sp
 {
@@ -104,15 +102,15 @@ namespace sp
 		{
 			size_t hash = 0;
 
-			boost::hash_combine(hash, key.NumAttachments);
+			hash_combine(hash, key.NumAttachments);
 
-			boost::hash_combine(hash, key.DepthStencilAttachment.tex);
-			boost::hash_combine(hash, key.DepthStencilAttachment.buf);
+			hash_combine(hash, key.DepthStencilAttachment.tex);
+			hash_combine(hash, key.DepthStencilAttachment.buf);
 
 			for (size_t i = 0; i < key.NumAttachments; i++)
 			{
-				boost::hash_combine(hash, key.Attachments[i].tex);
-				boost::hash_combine(hash, key.Attachments[i].buf);
+				hash_combine(hash, key.Attachments[i].tex);
+				hash_combine(hash, key.Attachments[i].buf);
 			}
 
 			return hash;
@@ -133,6 +131,6 @@ namespace sp
 		vector<RenderTarget::Ref> pool;
 		int64 nextRenderTargetID = 0;
 
-		boost::unordered_map<FramebufferState, GLuint, FramebufferStateHasher> framebufferCache;
+		std::unordered_map<FramebufferState, GLuint, FramebufferStateHasher> framebufferCache;
 	};
 }

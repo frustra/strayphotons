@@ -11,7 +11,6 @@
 
 #include <iostream>
 #include <sstream>
-#include <boost/algorithm/string.hpp>
 #include <mutex>
 #include <chrono>
 
@@ -60,12 +59,12 @@ namespace sp
 
 	void ConsoleManager::AddCVar(CVarBase *cvar)
 	{
-		cvars[boost::algorithm::to_lower_copy(cvar->GetName())] = cvar;
+		cvars[to_lower_copy(cvar->GetName())] = cvar;
 	}
 
 	void ConsoleManager::RemoveCVar(CVarBase *cvar)
 	{
-		cvars.erase(boost::algorithm::to_lower_copy(cvar->GetName()));
+		cvars.erase(to_lower_copy(cvar->GetName()));
 	}
 
 	void ConsoleManager::InputLoop()
@@ -163,23 +162,26 @@ namespace sp
 		if (saveHistory && (history.size() == 0 || history[history.size() - 1] != line))
 			history.push_back(line);
 
-		vector<string> cmds;
-		boost::split(cmds, line, boost::is_any_of(";"));
-
-		for (auto &cmd : cmds)
+		auto cmd = line.begin();
+		do
 		{
-			std::stringstream stream(cmd);
+			auto cmdEnd = std::find(cmd, line.end(), ';');
+
+			std::stringstream stream(std::string(cmd, cmdEnd));
 			string varName, value;
 			stream >> varName;
 			getline(stream, value);
-			boost::trim(value);
+			trim(value);
 			Execute(varName, value);
-		}
+
+			if (cmdEnd != line.end()) cmdEnd++;
+			cmd = cmdEnd;
+		} while (cmd != line.end());
 	}
 
 	void ConsoleManager::Execute(const string &cmd, const string &args)
 	{
-		auto cvarit = cvars.find(boost::algorithm::to_lower_copy(cmd));
+		auto cvarit = cvars.find(to_lower_copy(cmd));
 		if (cvarit != cvars.end())
 		{
 			auto cvar = cvarit->second;
@@ -208,7 +210,7 @@ namespace sp
 
 	string ConsoleManager::AutoComplete(const string &input)
 	{
-		auto it = cvars.upper_bound(boost::algorithm::to_lower_copy(input));
+		auto it = cvars.upper_bound(to_lower_copy(input));
 		if (it == cvars.end())
 			return input;
 
@@ -220,7 +222,7 @@ namespace sp
 	{
 		vector<string> results;
 
-		auto input = boost::algorithm::to_lower_copy(rawInput);
+		auto input = to_lower_copy(rawInput);
 		auto it = cvars.lower_bound(input);
 
 		for (; it != cvars.end(); it++)
@@ -228,7 +230,7 @@ namespace sp
 			auto cvar = it->second;
 			auto name = cvar->GetName();
 
-			if (boost::starts_with(boost::algorithm::to_lower_copy(name), input))
+			if (starts_with(to_lower_copy(name), input))
 				results.push_back(name);
 			else
 				break;

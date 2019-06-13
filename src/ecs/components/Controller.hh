@@ -51,7 +51,7 @@ namespace ecs
 
 		// map each action to a vector of glfw keys that could trigger it
 		// (see InputManager.hh for converting a mouse button to one of these ints)
-		std::unordered_map<ControlAction, std::vector<int>, sp::EnumHash> inputMap;
+		std::unordered_map<ControlAction, std::vector<int>> inputMap;
 
 		// overrides ecs::Transform::rotate for an FPS-style orientation
 		// until quaternions make sense to me (which will never happen)

@@ -1,12 +1,12 @@
 #pragma once
 
-//#define SP_VERBOSE_LOGGING
+// #define SP_VERBOSE_LOGGING
 #include "Common.hh"
 
 #include <string>
 #include <cstring>
 #include <iostream>
-#include <boost/format.hpp>
+#include <memory>
 
 #define Debugf(...) sp::logging::Debug(__FILE__, __LINE__, __VA_ARGS__)
 #define Logf(...) sp::logging::Log(__FILE__, __LINE__, __VA_ARGS__)
@@ -33,55 +33,52 @@ namespace sp
 			return file;
 		}
 
-		inline static void writeFormatter(Level lvl, boost::format &fmter)
+		// Convert all std::strings to const char* using constexpr if (C++17)
+		// Source: https://gist.github.com/Zitrax/a2e0040d301bf4b8ef8101c0b1e3f1d5
+		template<typename T>
+		auto convert(T&& t)
+		{
+			if constexpr (std::is_same<std::remove_cv_t<std::remove_reference_t<T>>, std::string>::value)
+			{
+				return std::forward<T>(t).c_str();
+			}
+			else
+			{
+				return std::forward<T>(t);
+			}
+		}
+
+		template <typename... T>
+		inline static void writeFormatter(Level lvl, const std::string &fmt, T&&... t)
 		{
 #ifdef PACKAGE_RELEASE
 			if (lvl != logging::Level::Debug)
 			{
 #endif
-				auto str = fmter.str();
-				std::cerr << str;
-				GlobalLogOutput(lvl, str);
+				int size = std::snprintf(nullptr, 0, fmt.c_str(), std::forward<T>(t)...);
+				std::unique_ptr<char[]> buf(new char[size + 1]);
+				std::snprintf(buf.get(), size + 1, fmt.c_str(), std::forward<T>(t)...);
+				std::cerr << buf.get();
+				GlobalLogOutput(lvl, string(buf.get(), buf.get() + size));
 #ifdef PACKAGE_RELEASE
 			}
 #endif
 		}
 
-		template <typename T1, typename... T>
-		inline static void writeFormatter(Level lvl, boost::format &fmter, T1 t1, T... t)
-		{
-			fmter % t1;
-			writeFormatter(lvl, fmter, t...);
-		}
-
-		inline static void writeLog(Level lvl, const char *file, int line, const std::string &message)
-		{
-#ifdef SP_VERBOSE_LOGGING
-			boost::format fmter("%s  (%s:%d)\n");
-			writeFormatter(lvl, fmter, message, basename(file), line);
-#else
-			boost::format fmter("%s\n");
-			writeFormatter(lvl, fmter, message);
-#endif
-		}
-
 		template <typename... T>
-		inline static void writeLog(Level lvl, const char *file, int line, const std::string &fmt, T... t)
+		inline static void writeLog(Level lvl, const char *file, int line, const std::string &fmt, T&&... t)
 		{
 #ifdef SP_VERBOSE_LOGGING
-			boost::format fmter(fmt + "  (%s:%d)\n");
-			writeFormatter(lvl, fmter, t..., basename(file), line);
+			writeFormatter(lvl, fmt + "  (%s:%d)\n", convert(std::forward<T>(t))..., basename(file), line);
 #else
-			boost::format fmter(fmt + "\n");
-			writeFormatter(lvl, fmter, t...);
+			writeFormatter(lvl, fmt + "\n", convert(std::forward<T>(t))...);
 #endif
 		}
 
 		template <typename... T>
 		static void ConsoleWrite(Level lvl, const std::string &fmt, T... t)
 		{
-			boost::format fmter(fmt + "\n");
-			writeFormatter(lvl, fmter, t...);
+			writeFormatter(lvl, fmt + "\n", convert(std::forward<T>(t))...);
 		}
 
 		template <typename... T>

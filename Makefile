@@ -9,15 +9,15 @@ compile:
 	cd build; make -j5
 
 linux: unix
-unix: build boost-debug-unix
+unix: build
 	cd build; cmake -DSP_PACKAGE_RELEASE=0 -G "Unix Makefiles" ..; make -j5
 
 linux-release: unix-release
-unix-release: build boost-release-unix
+unix-release: build
 	cd build; cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=0 -G "Unix Makefiles" ..; make -j5
 
 linux-package-release: unix-package-release
-unix-package-release: build boost-release-unix assets
+unix-package-release: build assets
 	cd build; cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=1 -G "Unix Makefiles" ..; make -j5
 	rm -rf strayphotons
 	mkdir -p strayphotons/bin
@@ -32,21 +32,19 @@ unix-package-release: build boost-release-unix assets
 	cp ext/fmod/lib/x86_64/libfmodstudio.so.8.11 strayphotons/bin/libfmodstudio.so.8
 
 windows: vs14
-vs14: build boost-debug-windows
+vs14: build
 	cd build; cmake -DSP_PACKAGE_RELEASE=0 -G "Visual Studio 14 2015" ..
 
 windows-release: vs14-release
-vs14-release: build boost-release-windows
+vs14-release: build
 	cd build; cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=0 -G "Visual Studio 14 2015" ..
 
 windows-package-release: vs14-package-release
-vs14-package-release: build boost-release-windows
+vs14-package-release: build
 	cd build; cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=1 -G "Visual Studio 14 2015" ..
 
 clean:
 	rm -rf build bin strayphotons
-	rm -rf ext/boost/bin.v2/libs/filesystem/build
-	rm -rf ext/boost/bin.v2/libs/system/build
 
 build:
 	mkdir -p build
@@ -71,41 +69,6 @@ assets:
 dependencies:
 	git submodule sync
 	git submodule update --init --recursive
-
-boost-compile-libs-release:
-	cd ext/boost && ./b2 link=static variant=release filesystem
-	cd ext/boost && ./b2 link=static variant=release system
-
-boost-compile-libs-debug:
-	cd ext/boost && ./b2 link=static variant=debug filesystem
-	cd ext/boost && ./b2 link=static variant=debug system
-
-boost-release-windows: build ext/boost/b2.exe boost-compile-libs-release
-	cp ext/boost/bin.v2/libs/filesystem/build/msvc-14.0/release/link-static/threading-multi/libboost_filesystem-*.lib build/libboost_filesystem.lib
-	cp ext/boost/bin.v2/libs/system/build/msvc-14.0/release/link-static/threading-multi/libboost_system-*.lib build/libboost_system.lib
-	cp ext/boost/bin.v2/libs/filesystem/build/msvc-14.0/release/link-static/threading-multi/libboost_filesystem-*.lib build/
-	cp ext/boost/bin.v2/libs/system/build/msvc-14.0/release/link-static/threading-multi/libboost_system-*.lib build/
-
-boost-debug-windows: build ext/boost/b2.exe boost-compile-libs-debug
-	cp ext/boost/bin.v2/libs/filesystem/build/msvc-14.0/debug/link-static/threading-multi/libboost_filesystem-*.lib build/libboost_filesystem_DEBUG.lib
-	cp ext/boost/bin.v2/libs/system/build/msvc-14.0/debug/link-static/threading-multi/libboost_system-*.lib build/libboost_system_DEBUG.lib
-	cp ext/boost/bin.v2/libs/filesystem/build/msvc-14.0/debug/link-static/threading-multi/libboost_filesystem-*.lib build/
-	cp ext/boost/bin.v2/libs/system/build/msvc-14.0/debug/link-static/threading-multi/libboost_system-*.lib build/
-
-boost-release-unix: build ext/boost/b2 boost-compile-libs-release
-	cp ext/boost/bin.v2/libs/filesystem/build/*/release/link-static/libboost_filesystem.a build/libboost_filesystem.a
-	cp ext/boost/bin.v2/libs/system/build/*/release/link-static/libboost_system.a build/libboost_system.a
-
-boost-debug-unix: build ext/boost/b2 boost-compile-libs-debug
-	cp ext/boost/bin.v2/libs/filesystem/build/*/debug/link-static/libboost_filesystem.a build/libboost_filesystem_DEBUG.a
-	cp ext/boost/bin.v2/libs/system/build/*/debug/link-static/libboost_system.a build/libboost_system_DEBUG.a
-
-ext/boost/b2.exe:
-	cd ext/boost && cmd //c bootstrap.bat
-
-ext/boost/b2:
-	cd ext/boost && ./bootstrap.sh
-
 
 ifeq ($(UNAME), Darwin)
 physx:

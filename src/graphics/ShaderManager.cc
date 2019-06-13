@@ -5,9 +5,6 @@
 
 #include <fstream>
 #include <sstream>
-#include <boost/functional/hash.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/format.hpp>
 
 namespace sp
 {
@@ -100,14 +97,6 @@ namespace sp
 		return output;
 	}
 
-	string formatError(string err, string unit, string root, int line)
-	{
-		if (root == unit || root == "")
-			return boost::str(boost::format("%s:%d %s") % unit % line % err);
-		else
-			return boost::str(boost::format("%s:%d (via %s) %s") % unit % line % root % err);
-	}
-
 	ShaderCompileInput ShaderManager::LoadShader(ShaderMeta *shaderType)
 	{
 		auto input = ShaderCompileInput {shaderType};
@@ -127,26 +116,26 @@ namespace sp
 	{
 		std::istringstream lines(src);
 		string line;
-		vector<string> output;
+		std::ostringstream output;
 		int linesProcessed = 0, currUnit = input.units.size() - 1;
 
 		while (std::getline(lines, line))
 		{
 			linesProcessed++;
 
-			if (boost::starts_with(line, "#version"))
+			if (starts_with(line, "#version"))
 			{
-				output.push_back(line);
+				output << line << std::endl;
 				for (auto define : DefineVars())
 				{
-					output.push_back(boost::str(boost::format("#define %s %s") % define.first % define.second));
+					output << "#define " << define.first << " " << define.second << std::endl;
 				}
-				output.push_back(boost::str(boost::format("#line %d %d") % (linesProcessed + 1) % currUnit));
+				output << "#line " << (linesProcessed + 1) << " " << currUnit << std::endl;
 				continue;
 			}
 			else if (line[0] != '#' || line[1] != '#')
 			{
-				output.push_back(line);
+				output << line << std::endl;
 				continue;
 			}
 
@@ -160,16 +149,16 @@ namespace sp
 
 				string importPath;
 				std::getline(tokens, importPath);
-				boost::algorithm::trim(importPath);
+				trim(importPath);
 				importPath += ".glsl";
 
 				string importSrc = LoadShader(input, importPath);
 
-				output.push_back("//start " + line);
-				output.push_back(boost::str(boost::format("#line 1 %d") % nextUnit));
-				output.push_back(importSrc);
-				output.push_back("//end " + line);
-				output.push_back(boost::str(boost::format("#line %d %d") % (linesProcessed + 1) % currUnit));
+				output << "//start " << line << std::endl;
+				output << "#line 1 " << nextUnit << std::endl;
+				output << importSrc << std::endl;
+				output << "//end " << line << std::endl;
+				output << "#line " << (linesProcessed + 1) << " " << currUnit << std::endl;
 			}
 			else
 			{
@@ -177,18 +166,19 @@ namespace sp
 			}
 		}
 
-		return boost::algorithm::join(output, "\n");
+		return output.str();
 	}
 
 	string ShaderManager::ProcessError(ShaderCompileInput &input, string err)
 	{
 		std::istringstream lines(err);
 		string line;
-		vector<string> output;
+		std::ostringstream output;
+		bool newline = false;
 
 		while (std::getline(lines, line))
 		{
-			boost::trim(line);
+			trim(line);
 
 			int lineNumber = -1;
 			string unitName = input.units[0];
@@ -221,10 +211,20 @@ namespace sp
 				}
 			}
 
-			output.push_back(formatError(line, unitName, input.units[0], lineNumber));
+			if (newline) output << std::endl;
+			newline = true;
+
+			if (input.units[0] == unitName || input.units[0] == "")
+			{
+				output << unitName << ":" << lineNumber << " " << line;
+			}
+			else
+			{
+				output << unitName << ":" << lineNumber << " (via " << input.units[0] << ") " << line;
+			}
 		}
 
-		return boost::algorithm::join(output, "\n");
+		return output.str();
 	}
 
 	void ShaderManager::BindPipeline(ShaderSet *shaders, vector<ShaderMeta *> shaderMetaTypes)
@@ -234,7 +234,7 @@ namespace sp
 		for (auto shaderMeta : shaderMetaTypes)
 		{
 			auto shader = shaders->Get(shaderMeta);
-			boost::hash_combine(hash, shader->GLProgram());
+			hash_combine(hash, shader->GLProgram());
 			shader->BindBuffers();
 		}
 

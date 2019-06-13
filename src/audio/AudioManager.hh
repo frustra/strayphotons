@@ -4,7 +4,7 @@
 
 #include <fmod_studio.hpp>
 #include <fmod.hpp>
-#include <boost/unordered_map.hpp>
+#include <unordered_map>
 
 namespace sp
 {
@@ -35,7 +35,7 @@ namespace sp
 		FMOD::Studio::System *system = nullptr;
 		FMOD::System *lowSystem = nullptr;
 		vector<FMOD::Studio::Bank *> banks;
-		boost::unordered_map<const string, FMOD::Studio::EventDescription *> eventDescriptions;
+		std::unordered_map<string, FMOD::Studio::EventDescription *> eventDescriptions;
 
 		bool audioEnabled = false;
 		Game *game = nullptr;

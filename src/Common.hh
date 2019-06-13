@@ -42,16 +42,16 @@ namespace sp
 		NonCopyable() = default;
 	};
 
-	/**
-	 * Functor that can be instantiated as a hash function for an enum class.
-	 * Useful for when you want to use an enum class as an unordered_map key
-	 */
-	struct EnumHash
+	// Boost replacement functions
+	template<typename T>
+	void hash_combine(std::size_t &seed, const T &val)
 	{
-		template <typename T>
-		std::size_t operator()(T t) const
-		{
-			return static_cast<std::size_t>(t);
-		}
-	};
+		seed ^= std::hash<T>()(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+	}
+
+	bool starts_with(const string &str, const string &prefix);
+	string to_lower_copy(const string &str);
+	void trim(string &str);
+	void trim_left(string &str);
+	void trim_right(string &str);
 }
