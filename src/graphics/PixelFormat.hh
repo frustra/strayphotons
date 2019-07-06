@@ -26,7 +26,7 @@ namespace sp
 	PF_DEF(PF_RGBA8,             GL_RGBA8,              GL_RGBA,            GL_UNSIGNED_BYTE) \
 	PF_DEF(PF_RGBA8I,            GL_RGBA8_SNORM,        GL_RGBA,            GL_BYTE) \
 	PF_DEF(PF_SRGB8_A8,          GL_SRGB8_ALPHA8,       GL_RGBA,            GL_UNSIGNED_BYTE) \
-	PF_DEF(PF_RGBA16,            GL_RGBA16,             GL_RGBA,            GL_UNSIGNED_SHORT) \
+	PF_DEF(PF_RGB10_A2UI,        GL_RGB10_A2UI,         GL_RGBA,            GL_UNSIGNED_INT_2_10_10_10_REV) \
 	PF_DEF(PF_RGBA16F,           GL_RGBA16F,            GL_RGBA,            GL_FLOAT) \
 	PF_DEF(PF_RGBA32F,           GL_RGBA32F,            GL_RGBA,            GL_FLOAT) \
 	PF_DEF(PF_RGBA32UI,          GL_RGBA32UI,           GL_RGBA_INTEGER,    GL_UNSIGNED_INT) \

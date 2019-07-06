@@ -4,7 +4,7 @@ layout (local_size_x = 16, local_size_y = 16) in;
 
 layout (binding = 0) uniform atomic_uint fragListSize;
 
-layout (binding = 0, r32ui) readonly uniform uimage2D voxelFragList;
+layout (binding = 0, rgb10_a2ui) readonly uniform uimage2D fragmentList;
 layout (binding = 1, rgba16) writeonly uniform image3D voxelRadiance;
 
 uniform int mipLevel = 0;
@@ -17,12 +17,7 @@ void main()
 	uint size = atomicCounter(fragListSize);
 	if (index >= size) return;
 
-	uint packedPosition = imageLoad(voxelFragList, ivec2(index & MaxFragListMask[mipLevel], index >> FragListWidthBits[mipLevel])).r;
-	ivec3 position = ivec3(
-		(packedPosition >> 20) & 0x3FF,
-		(packedPosition >> 10) & 0x3FF,
-		packedPosition & 0x3FF
-	);
+	ivec3 position = ivec3(imageLoad(fragmentList, ivec2(index & MaxFragListMask[mipLevel], index >> FragListWidthBits[mipLevel])).xyz);
 
 	imageStore(voxelRadiance, position, vec4(0));
 	if (mipLevel > 0) {

@@ -20,10 +20,14 @@ layout (binding = 7) uniform sampler3D voxelRadiance;
 layout (binding = 8) uniform sampler3D voxelRadianceMips;
 
 layout (binding = 0) uniform atomic_uint fragListSize;
-layout (binding = 0, offset = 4) uniform atomic_uint nextComputeSize;
+layout (binding = 0, offset = 4) uniform atomic_uint overflowSize1;
+layout (binding = 0, offset = 8) uniform atomic_uint overflowSize2;
+layout (binding = 0, offset = 12) uniform atomic_uint overflowSize3;
 
-layout (binding = 0, r32ui) writeonly uniform uimage2D voxelFragList;
-layout (binding = 1, r32ui) uniform uimage3D voxelData;
+layout (binding = 0, r32ui) uniform uimage3D voxelCounters;
+layout (binding = 1, rgb10_a2ui) writeonly uniform uimage2D fragmentList;
+layout (binding = 2, rgba16) writeonly uniform image2D voxelOverflow;
+layout (binding = 3, rgba16) writeonly uniform image3D voxelGrid;
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inTexCoord;
@@ -63,27 +67,25 @@ void main()
 	position += VOXEL_GRID_SIZE / 2;
 
 	vec3 pixelLuminance = DirectShading(worldPosition, baseColor.rgb, inNormal, inNormal);
-	if (lightAttenuation > 0) {
-		vec3 directDiffuseColor = baseColor.rgb - baseColor.rgb * metalness;
-		vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, inNormal, vec2(0));
-		pixelLuminance += indirectDiffuse * directDiffuseColor * lightAttenuation * smoothstep(0.0, 0.1, length(indirectDiffuse));
-	}
+	// if (lightAttenuation > 0) {
+	// 	vec3 directDiffuseColor = baseColor.rgb - baseColor.rgb * metalness;
+	// 	vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, inNormal, vec2(0));
+	// 	pixelLuminance += indirectDiffuse * directDiffuseColor * lightAttenuation * smoothstep(0.0, 0.1, length(indirectDiffuse));
+	// }
 
-	// Scale to 10 bits 0-1, clamp to 16 bit for HDR
-	uvec3 radiance = uvec3(clamp(pixelLuminance, 0, VoxelFixedPointExposure) * 0x3FF);
-
-	ivec3 dataOffset = ivec3(floor(position.x) * 3, position.yz);
-	imageAtomicAdd(voxelData, dataOffset + ivec3(0, 0, 0), radiance.r);
-	imageAtomicAdd(voxelData, dataOffset + ivec3(1, 0, 0), radiance.g);
-	uint prevData = imageAtomicAdd(voxelData, dataOffset + ivec3(2, 0, 0), (radiance.b << 8) + 1);
-
-	if ((prevData & 0xFF) == 0) {
+	uint count = imageAtomicAdd(voxelCounters, ivec3(position), 1);
+	if (count == 0) {
 		uint index = atomicCounterIncrement(fragListSize);
-		if (index % MipmapWorkGroupSize == 0) atomicCounterIncrement(nextComputeSize);
-
-		uint packedData = (uint(position.x) & 0x3FF) << 20;
-		packedData += (uint(position.y) & 0x3FF) << 10;
-		packedData += uint(position.z) & 0x3FF;
-		imageStore(voxelFragList, ivec2(index & MaxFragListMask[0], index >> FragListWidthBits[0]), uvec4(packedData));
+		imageStore(fragmentList, ivec2(index & MaxFragListMask[0], index >> FragListWidthBits[0]), uvec4(position, 1));
+		imageStore(voxelGrid, ivec3(position), vec4(pixelLuminance, 1.0));
+	} else if (count == 1) {
+		atomicCounterIncrement(overflowSize1);
+	} else if (count == 2) {
+		atomicCounterIncrement(overflowSize2);
+	} else {
+		atomicCounterIncrement(overflowSize3);
+		// uint index = atomicCounterIncrement(overflowSize) * 2;
+		// imageStore(voxelOverflow, ivec2(index & MaxFragListMask[0], index >> FragListWidthBits[0]), vec4(position / 0xFFFF, 1.0));
+		// imageStore(voxelOverflow, ivec2((index & MaxFragListMask[0]) + 1, index >> FragListWidthBits[0]), vec4(pixelLuminance, 1.0));
 	}
 }

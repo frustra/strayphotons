@@ -7,48 +7,55 @@
 namespace sp
 {
 	static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.5, "Light attenuation for voxel bounces");
+	static CVar<float> CVarMaxVoxelFill("r.MaxVoxelFill", 0.5, "Maximum percentage of voxels that can be filled");
+
+	std::atomic_bool printGfxDebug = false;
+	static CFunc<void> CFuncList("printgfx", "Print the graphics debug output", []()
+	{
+		printGfxDebug = true;
+	});
 
 	void Renderer::PrepareVoxelTextures()
 	{
 		auto VoxelGridSize = voxelData.info.gridSize;
+		auto VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize * CVarMaxVoxelFill.Get();
 
-		glm::ivec3 packedSize = glm::ivec3(VoxelGridSize * 3, VoxelGridSize, VoxelGridSize);
-		glm::ivec3 unpackedSize = glm::ivec3(VoxelGridSize, VoxelGridSize, VoxelGridSize);
+		glm::ivec3 gridDimensions = glm::ivec3(VoxelGridSize, VoxelGridSize, VoxelGridSize);
 		auto VoxelMipLevels = ceil(log2(VoxelGridSize));
 
 		auto indirectBufferSize = sizeof(GLuint) * 4 * VoxelMipLevels;
 
-		if (!computeIndirectBuffer1) computeIndirectBuffer1.Create();
-		if (!computeIndirectBuffer2) computeIndirectBuffer2.Create();
-		if (computeIndirectBuffer1.size != indirectBufferSize || computeIndirectBuffer2.size != indirectBufferSize)
+		if (!computeIndirectBuffer) computeIndirectBuffer.Create();
+		if (computeIndirectBuffer.size != indirectBufferSize)
 		{
-			computeIndirectBuffer1.Data(indirectBufferSize, nullptr, GL_DYNAMIC_COPY);
-			computeIndirectBuffer2.Data(indirectBufferSize, nullptr, GL_DYNAMIC_COPY);
+			computeIndirectBuffer.Data(indirectBufferSize, nullptr, GL_STATIC_COPY);
 
-			GLuint listData[] = {0, 0, 1, 1};
-			computeIndirectBuffer1.Clear(PF_RGBA32UI, listData);
-			computeIndirectBuffer2.Clear(PF_RGBA32UI, listData);
+			// GLuint listData[] = {0, 0, 1, 1};
+			computeIndirectBuffer.Clear(PF_RGBA32UI, 0);//listData);
 		}
 
-		auto VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize / 4;
-		RenderTargetDesc listDesc(PF_R32UI, glm::ivec2(8192, ceil(VoxelListSize / 8192.0)));
+		RenderTargetDesc listDesc(PF_RGB10_A2UI, glm::ivec2(8192, ceil(VoxelListSize / 8192.0)));
 		listDesc.levels = VoxelMipLevels;
-		if (!voxelData.fragmentList1 || voxelData.fragmentList1->GetDesc() != listDesc)
+		if (!voxelData.fragmentList || voxelData.fragmentList->GetDesc() != listDesc)
 		{
-			voxelData.fragmentList1 = RTPool->Get(listDesc);
-		}
-		if (!voxelData.fragmentList2 || voxelData.fragmentList2->GetDesc() != listDesc)
-		{
-			voxelData.fragmentList2 = RTPool->Get(listDesc);
+			voxelData.fragmentList = RTPool->Get(listDesc);
 		}
 
-		if (!voxelData.packedData || voxelData.packedData->GetDesc().extent != packedSize)
+		RenderTargetDesc counterDesc(PF_R32UI, gridDimensions);
+		if (!voxelData.voxelCounters || voxelData.voxelCounters->GetDesc() != counterDesc)
 		{
-			voxelData.packedData = RTPool->Get(RenderTargetDesc(PF_R32UI, packedSize));
-			voxelData.packedData->GetTexture().Clear(0);
+			voxelData.voxelCounters = RTPool->Get(counterDesc);
+			voxelData.voxelCounters->GetTexture().Clear(0);
 		}
 
-		RenderTargetDesc radianceDesc(PF_RGBA16, unpackedSize);
+		RenderTargetDesc overflowDesc(PF_RGBA16F, glm::ivec2(8192, ceil(VoxelListSize / 8192.0)));
+		overflowDesc.levels = VoxelMipLevels;
+		if (!voxelData.fragmentList || voxelData.fragmentList->GetDesc() != overflowDesc)
+		{
+			voxelData.voxelOverflow = RTPool->Get(overflowDesc);
+		}
+
+		RenderTargetDesc radianceDesc(PF_RGBA16F, gridDimensions);
 		radianceDesc.wrapS = radianceDesc.wrapT = radianceDesc.wrapR = GL_CLAMP_TO_BORDER;
 		radianceDesc.borderColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 		if (!voxelData.radiance || voxelData.radiance->GetDesc() != radianceDesc)
@@ -57,10 +64,10 @@ namespace sp
 			voxelData.radiance->GetTexture().Clear(0);
 		}
 
-		auto mipSize = unpackedSize / 2;
+		auto mipSize = gridDimensions / 2;
 		mipSize.x *= MAX_VOXEL_AREAS;
 
-		RenderTargetDesc radianceMipsDesc(PF_RGBA16, mipSize);
+		RenderTargetDesc radianceMipsDesc(PF_RGBA16F, mipSize);
 		radianceMipsDesc.levels = VoxelMipLevels - 1;
 		radianceMipsDesc.wrapS = radianceDesc.wrapT = radianceDesc.wrapR = GL_CLAMP_TO_BORDER;
 		radianceMipsDesc.borderColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -78,6 +85,7 @@ namespace sp
 	void Renderer::RenderVoxelGrid()
 	{
 		RenderPhase phase("VoxelGrid", Timer);
+		AssertGLOK("Renderer::RenderVoxelGrid Pre Setup");
 
 		PrepareVoxelTextures();
 
@@ -99,18 +107,47 @@ namespace sp
 		SetRenderTarget(renderTarget, nullptr);
 
 		auto voxelVS = GlobalShaders->Get<VoxelRasterVS>();
+		AssertGLOK("Renderer::RenderVoxelGrid Setup");
 
-		auto computeIndirectBuffer = voxelFlipflop ? computeIndirectBuffer1 : computeIndirectBuffer2;
-		auto lastComputeIndirectBuffer = voxelFlipflop ? computeIndirectBuffer2 : computeIndirectBuffer1;
-		auto fragmentList = voxelFlipflop ? voxelData.fragmentList1 : voxelData.fragmentList2;
-		auto lastFragmentList = voxelFlipflop ? voxelData.fragmentList2 : voxelData.fragmentList1;
-		voxelFlipflop = !voxelFlipflop;
+		{
+			RenderPhase phase("VoxelClear", Timer);
+
+			computeIndirectBuffer.Bind(GL_DISPATCH_INDIRECT_BUFFER);
+
+			for (uint32 i = 0; i < 1; i++)//voxelData.radianceMips->GetDesc().levels + 1; i++)
+			{
+				computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint));
+				voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i);
+				if (i == 0)
+				{
+					voxelData.radiance->GetTexture().BindImage(1, GL_WRITE_ONLY, 0, GL_TRUE, 0);
+				}
+				else
+				{
+					voxelData.radianceMips->GetTexture().BindImage(1, GL_WRITE_ONLY, i - 1, GL_TRUE, 0);
+				}
+
+				ShaderControl->BindPipeline<VoxelClearCS>(GlobalShaders);
+				GlobalShaders->Get<VoxelClearCS>()->SetLevel(i);
+				// glDispatchComputeIndirect(sizeof(GLuint) * 4 * i + sizeof(GLuint));
+				glDispatchCompute(3125, 1, 1);
+			}
+
+			// GLuint listData[] = {0, 0, 1, 1};
+			computeIndirectBuffer.Clear(PF_RGBA32UI, 0);//listData);
+			voxelData.voxelCounters->GetTexture().Clear(0);
+
+			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		}
+		AssertGLOK("Renderer::RenderVoxelGrid VoxelClear");
 
 		{
 			RenderPhase phase("Accumulate", Timer);
 			computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0);
-			fragmentList->GetTexture().BindImage(0, GL_WRITE_ONLY, 0);
-			voxelData.packedData->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
+			voxelData.voxelCounters->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
+			voxelData.fragmentList->GetTexture().BindImage(1, GL_WRITE_ONLY, 0);
+			voxelData.voxelOverflow->GetTexture().BindImage(2, GL_WRITE_ONLY, 0);
+			voxelData.radiance->GetTexture().BindImage(3, GL_WRITE_ONLY, 0, GL_TRUE, 0);
 
 			GLLightData lightData[MAX_LIGHTS];
 			GLVoxelInfo voxelInfo;
@@ -133,44 +170,27 @@ namespace sp
 			ForwardPass(ortho, voxelVS);
 			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
 		}
+		AssertGLOK("Renderer::RenderVoxelGrid Accumulate");
 
+		if (printGfxDebug)
 		{
-			RenderPhase phase("VoxelClear", Timer);
+			uint32 *buf = (uint32 *) computeIndirectBuffer.Map(GL_READ_ONLY);
+			Logf("Size: %d %d %d %d", buf[0], buf[1], buf[2], buf[3]);
+			computeIndirectBuffer.Unmap();
 
-			lastComputeIndirectBuffer.Bind(GL_DISPATCH_INDIRECT_BUFFER);
+			computeIndirectBuffer.Delete();
+			PrepareVoxelTextures();
 
-			for (uint32 i = 0; i < voxelData.radianceMips->GetDesc().levels + 1; i++)
-			{
-				lastComputeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint));
-				lastFragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i);
-				if (i == 0)
-				{
-					voxelData.radiance->GetTexture().BindImage(1, GL_WRITE_ONLY, 0, GL_TRUE, 0);
-				}
-				else
-				{
-					voxelData.radianceMips->GetTexture().BindImage(1, GL_WRITE_ONLY, i - 1, GL_TRUE, 0);
-				}
-
-				ShaderControl->BindPipeline<VoxelClearCS>(GlobalShaders);
-				GlobalShaders->Get<VoxelClearCS>()->SetLevel(i);
-				glDispatchComputeIndirect(sizeof(GLuint) * 4 * i + sizeof(GLuint));
-			}
-
-			GLuint listData[] = {0, 0, 1, 1};
-			lastComputeIndirectBuffer.Clear(PF_RGBA32UI, listData);
-
-			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			// computeIndirectBuffer.Bind(GL_DISPATCH_INDIRECT_BUFFER);
+			printGfxDebug = false;
 		}
 
-		computeIndirectBuffer.Bind(GL_DISPATCH_INDIRECT_BUFFER);
-
-		{
+		/*{
 			RenderPhase phase("Convert", Timer);
 			computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0);
-			fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, 0);
-			voxelData.packedData->GetTexture().BindImage(1, GL_READ_WRITE, 0, GL_TRUE, 0);
-			voxelData.radiance->GetTexture().BindImage(2, GL_WRITE_ONLY, 0, GL_TRUE, 0);
+			voxelData.voxelCounters->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
+			voxelData.fragmentList->GetTexture().BindImage(1, GL_READ_WRITE, 0);
+			voxelData.radiance->GetTexture().BindImage(2, GL_READ_WRITE, 0, GL_TRUE, 0);
 
 			ShaderControl->BindPipeline<VoxelConvertCS>(GlobalShaders);
 			glDispatchComputeIndirect(sizeof(GLuint));
@@ -191,8 +211,8 @@ namespace sp
 			{
 				RenderPhase phase("MipmapLevel", Timer);
 				computeIndirectBuffer.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * (i - 1), sizeof(GLuint) * 8);
-				fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i - 1);
-				fragmentList->GetTexture().BindImage(1, GL_READ_WRITE, i);
+				voxelData.fragmentList->GetTexture().BindImage(0, GL_READ_ONLY, i - 1);
+				voxelData.fragmentList->GetTexture().BindImage(1, GL_READ_WRITE, i);
 				if (i == 1)
 					voxelData.radiance->GetTexture().BindImage(2, GL_READ_ONLY, 0, GL_TRUE, 0);
 				else
@@ -204,7 +224,7 @@ namespace sp
 				glDispatchComputeIndirect(sizeof(GLuint) * 4 * (i - 1) + sizeof(GLuint));
 				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
 			}
-		}
+		}*/
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

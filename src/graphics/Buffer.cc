@@ -14,6 +14,7 @@ namespace sp
 		if (handle)
 			glDeleteBuffers(1, &handle);
 		handle = 0;
+		size = 0;
 		return *this;
 	}
 

@@ -23,9 +23,9 @@ namespace sp
 
 	struct VoxelData
 	{
-		shared_ptr<RenderTarget> fragmentList1;
-		shared_ptr<RenderTarget> fragmentList2;
-		shared_ptr<RenderTarget> packedData;
+		shared_ptr<RenderTarget> voxelCounters;
+		shared_ptr<RenderTarget> fragmentList;
+		shared_ptr<RenderTarget> voxelOverflow;
 		shared_ptr<RenderTarget> radiance;
 		shared_ptr<RenderTarget> radianceMips;
 		ecs::VoxelInfo info;
@@ -69,8 +69,7 @@ namespace sp
 		shared_ptr<RenderTarget> shadowMap;
 		shared_ptr<RenderTarget> mirrorShadowMap;
 		shared_ptr<RenderTarget> menuGuiTarget;
-		Buffer computeIndirectBuffer1, computeIndirectBuffer2;
-		bool voxelFlipflop = true;
+		Buffer computeIndirectBuffer;
 		VoxelData voxelData;
 		Buffer mirrorVisData;
 		Buffer mirrorSceneData;
