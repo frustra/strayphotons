@@ -114,6 +114,16 @@ namespace sp
 		Set(mirrorId, newId);
 	}
 
+	VoxelMergeCS::VoxelMergeCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+	{
+		Bind(level, "mipLevel");
+	}
+
+	void VoxelMergeCS::SetLevel(int newLevel)
+	{
+		Set(level, newLevel);
+	}
+
 	VoxelMipmapCS::VoxelMipmapCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 	{
 		BindBuffer(voxelInfo, 0);
@@ -140,7 +150,7 @@ namespace sp
 		Set(level, newLevel);
 	}
 
-	VoxelRasterFS::VoxelRasterFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+	VoxelFillFS::VoxelFillFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 	{
 		Bind(lightCount, "lightCount");
 		BindBuffer(lightData, 0);
@@ -153,18 +163,18 @@ namespace sp
 		Bind(lightAttenuation, "lightAttenuation");
 	}
 
-	void VoxelRasterFS::SetLightData(int count, GLLightData *data)
+	void VoxelFillFS::SetLightData(int count, GLLightData *data)
 	{
 		Set(lightCount, count);
 		BufferData(lightData, sizeof(GLLightData) * count, data);
 	}
 
-	void VoxelRasterFS::SetVoxelInfo(GLVoxelInfo *data)
+	void VoxelFillFS::SetVoxelInfo(GLVoxelInfo *data)
 	{
 		BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
 	}
 
-	void VoxelRasterFS::SetLightAttenuation(float newAttenuation)
+	void VoxelFillFS::SetLightAttenuation(float newAttenuation)
 	{
 		Set(lightAttenuation, newAttenuation);
 	}
@@ -185,10 +195,10 @@ namespace sp
 	IMPLEMENT_SHADER_TYPE(MirrorMapFS, "mirror_shadow_map.frag", Fragment);
 	IMPLEMENT_SHADER_TYPE(MirrorMapCS, "mirror_shadow_map.comp", Compute);
 
-	IMPLEMENT_SHADER_TYPE(VoxelRasterVS, "voxel.vert", Vertex);
-	IMPLEMENT_SHADER_TYPE(VoxelRasterGS, "voxel.geom", Geometry);
-	IMPLEMENT_SHADER_TYPE(VoxelRasterFS, "voxel.frag", Fragment);
-	IMPLEMENT_SHADER_TYPE(VoxelConvertCS, "voxel_convert.comp", Compute);
+	IMPLEMENT_SHADER_TYPE(VoxelFillVS, "voxel_fill.vert", Vertex);
+	IMPLEMENT_SHADER_TYPE(VoxelFillGS, "voxel_fill.geom", Geometry);
+	IMPLEMENT_SHADER_TYPE(VoxelFillFS, "voxel_fill.frag", Fragment);
+	IMPLEMENT_SHADER_TYPE(VoxelMergeCS, "voxel_merge.comp", Compute);
 	IMPLEMENT_SHADER_TYPE(VoxelMipmapCS, "voxel_mipmap.comp", Compute);
 	IMPLEMENT_SHADER_TYPE(VoxelClearCS, "voxel_clear.comp", Compute);
 }

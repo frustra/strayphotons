@@ -6,11 +6,11 @@
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-layout (binding = 0, r32ui) readonly uniform uimage2D previousMipList;
-layout (binding = 1, r32ui) uniform uimage2D currentMipList;
+layout (binding = 0, rgb10_a2ui) readonly uniform uimage2D previousFragmentList;
+layout (binding = 1, rgb10_a2ui) uniform uimage2D currentFragmentList;
 
-layout (binding = 2, rgba16) readonly uniform image3D previousVoxelRadiance;
-layout (binding = 3, rgba16) writeonly uniform image3D currentVoxelRadiance;
+layout (binding = 2, rgba16f) readonly uniform image3D previousVoxelRadiance;
+layout (binding = 3, rgba16f) writeonly uniform image3D currentVoxelRadiance;
 
 layout (binding = 0) uniform atomic_uint previousFragListSize;
 layout (binding = 0, offset = 16) uniform atomic_uint nextFragListSize;
@@ -20,7 +20,7 @@ layout(binding = 0, std140) uniform GLVoxelInfo {
 	VoxelInfo voxelInfo;
 };
 
-uniform int mipLevel = 1;
+uniform int mipLevel = 0;
 
 #define MIPMAP_POSITION(mipPosition, map, level) ((mipPosition) + ivec3((map) * VOXEL_GRID_SIZE >> (level), 0, 0))
 
@@ -29,12 +29,7 @@ void main() {
 	uint size = atomicCounter(previousFragListSize);
 	if (index >= size) return;
 
-	uint packedPosition = imageLoad(previousMipList, ivec2(index & MaxFragListMask[mipLevel - 1], index >> FragListWidthBits[mipLevel - 1])).r;
-	ivec3 position = ivec3(
-		(packedPosition >> 20) & 0x3FF,
-		(packedPosition >> 10) & 0x3FF,
-		packedPosition & 0x3FF
-	);
+	ivec3 position = ivec3(imageLoad(previousFragmentList, ivec2(index & MaxFragListMask[mipLevel], index >> FragListWidthBits[mipLevel])).xyz);
 	ivec3 mipPosition = position >> 1;
 	ivec3 floorPosition = mipPosition << 1;
 
@@ -52,7 +47,7 @@ void main() {
 				ivec3 samplePos = floorPosition + ivec3(x, y, z);
 				vec4 sampleValue = imageLoad(previousVoxelRadiance, samplePos);
 
-				if (mipLevel == 1) {
+				if (mipLevel == 0) {
 					vec3 samplePosWorld = vec3(samplePos - VOXEL_GRID_SIZE * 0.5 + 0.5) * voxelInfo.size + voxelInfo.center;
 					for (int i = 0; i < MAX_VOXEL_AREAS; i++) {
 						float inArea = float(samplePosWorld == clamp(samplePosWorld, voxelInfo.areas[i].areaMin, voxelInfo.areas[i].areaMax));
@@ -61,9 +56,10 @@ void main() {
 				} else {
 					radiance[0] += sampleValue.rgb;
 					for (int i = 1; i < MAX_VOXEL_AREAS; i++) {
-						radiance[i] += imageLoad(previousVoxelRadiance, MIPMAP_POSITION(samplePos, i, mipLevel - 1)).rgb;
+						radiance[i] += imageLoad(previousVoxelRadiance, MIPMAP_POSITION(samplePos, i, mipLevel)).rgb;
 					}
 				}
+				sampleValue.a = min(sampleValue.a, 1.0);
 				alpha += sampleValue.a;
 
 				count += 1 - step(0, -sampleValue.a);
@@ -76,14 +72,11 @@ void main() {
 
 	// 0.25 looks good, don't touch it ¯\_(ツ)_/¯
 	for (int i = 0; i < MAX_VOXEL_AREAS; i++) {
-		imageStore(currentVoxelRadiance, MIPMAP_POSITION(mipPosition, i, mipLevel), vec4(radiance[i] * 0.25, alpha));
+		imageStore(currentVoxelRadiance, MIPMAP_POSITION(mipPosition, i, mipLevel + 1), vec4(radiance[i] * 0.25, alpha));
 	}
 
 	uint nextIndex = atomicCounterIncrement(nextFragListSize);
 	if (nextIndex % MipmapWorkGroupSize == 0) atomicCounterIncrement(nextComputeSize);
 
-	uint packedData = (uint(mipPosition.x) & 0x3FF) << 20;
-	packedData += (uint(mipPosition.y) & 0x3FF) << 10;
-	packedData += uint(mipPosition.z) & 0x3FF;
-	imageStore(currentMipList, ivec2(nextIndex & MaxFragListMask[mipLevel], nextIndex >> FragListWidthBits[mipLevel]), uvec4(packedData));
+	imageStore(currentFragmentList, ivec2(nextIndex & MaxFragListMask[mipLevel + 1], nextIndex >> FragListWidthBits[mipLevel + 1]), uvec4(mipPosition, 1.0));
 }

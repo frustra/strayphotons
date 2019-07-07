@@ -13,7 +13,7 @@ float GetVoxelNearest(vec3 position, int level, int map, out vec3 radiance)
 	} else {
 		radianceData = texelFetch(voxelRadiance, ivec3(position), 0);
 	}
-	radiance = radianceData.rgb * VoxelFixedPointExposure;
+	radiance = radianceData.rgb;
 	return radianceData.a;
 }
 

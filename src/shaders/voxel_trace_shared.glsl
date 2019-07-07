@@ -17,10 +17,11 @@ vec4 SampleVoxelLod(vec3 position, float level, int map)
 	} else {
 		// TODO(xthexder): Evauluate if this is worth the extra lookup
 		vec4 a = textureLod(voxelRadiance, position * InvVoxelGridSize, 0);
+		a.a = min(a.a, 1.0);
 		vec4 b = textureLod(voxelRadianceMips, mipCoord + mipDelta * map, 0);
 		result = mix(a, b, level);
 	}
-	return result * vec4(vec3(VoxelFixedPointExposure), 1.0);
+	return result;
 }
 
 vec4 SampleVoxelLodDiffuse(vec3 position, float level, int map)
@@ -35,7 +36,8 @@ vec4 SampleVoxelLodDiffuse(vec3 position, float level, int map)
 	} else {
 		result = textureLod(voxelRadiance, position * InvVoxelGridSize, 0);
 	}
-	return result * vec4(vec3(VoxelFixedPointExposure), 1.0);
+	result.a = min(result.a, 1.0);
+	return result;
 }
 
 int GetMapForPoint(vec3 position)

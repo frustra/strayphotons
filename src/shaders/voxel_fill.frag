@@ -20,14 +20,20 @@ layout (binding = 7) uniform sampler3D voxelRadiance;
 layout (binding = 8) uniform sampler3D voxelRadianceMips;
 
 layout (binding = 0) uniform atomic_uint fragListSize;
-layout (binding = 0, offset = 4) uniform atomic_uint overflowSize1;
-layout (binding = 0, offset = 8) uniform atomic_uint overflowSize2;
-layout (binding = 0, offset = 12) uniform atomic_uint overflowSize3;
+layout (binding = 0, offset = 4) uniform atomic_uint indirectFragCount;
+layout (binding = 0, offset = 16) uniform atomic_uint overflowSize1;
+layout (binding = 0, offset = 20) uniform atomic_uint indirectOverflowCount1;
+layout (binding = 0, offset = 32) uniform atomic_uint overflowSize2;
+layout (binding = 0, offset = 36) uniform atomic_uint indirectOverflowCount2;
+layout (binding = 0, offset = 48) uniform atomic_uint overflowSize3;
+layout (binding = 0, offset = 52) uniform atomic_uint indirectOverflowCount3;
 
 layout (binding = 0, r32ui) uniform uimage3D voxelCounters;
 layout (binding = 1, rgb10_a2ui) writeonly uniform uimage2D fragmentList;
-layout (binding = 2, rgba16) writeonly uniform image2D voxelOverflow;
-layout (binding = 3, rgba16) writeonly uniform image3D voxelGrid;
+layout (binding = 2, rgba16f) writeonly uniform image3D voxelGrid;
+layout (binding = 3, rgba16f) writeonly uniform image2D voxelOverflow1;
+layout (binding = 4, rgba16f) writeonly uniform image2D voxelOverflow2;
+layout (binding = 5, rgba16f) writeonly uniform image2D voxelOverflow3;
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inTexCoord;
@@ -67,6 +73,7 @@ void main()
 	position += VOXEL_GRID_SIZE / 2;
 
 	vec3 pixelLuminance = DirectShading(worldPosition, baseColor.rgb, inNormal, inNormal);
+	// TODO(xthexder): Fix IIR pass, buffers are cleared at this point
 	// if (lightAttenuation > 0) {
 	// 	vec3 directDiffuseColor = baseColor.rgb - baseColor.rgb * metalness;
 	// 	vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, inNormal, vec2(0));
@@ -76,16 +83,23 @@ void main()
 	uint count = imageAtomicAdd(voxelCounters, ivec3(position), 1);
 	if (count == 0) {
 		uint index = atomicCounterIncrement(fragListSize);
+		if (index % 256 == 0) atomicCounterIncrement(indirectFragCount);
 		imageStore(fragmentList, ivec2(index & MaxFragListMask[0], index >> FragListWidthBits[0]), uvec4(position, 1));
 		imageStore(voxelGrid, ivec3(position), vec4(pixelLuminance, 1.0));
 	} else if (count == 1) {
-		atomicCounterIncrement(overflowSize1);
+		uint index = atomicCounterIncrement(overflowSize1) * 2;
+		if (index % 512 == 0) atomicCounterIncrement(indirectOverflowCount1);
+		imageStore(voxelOverflow1, ivec2(index & MaxFragListMask[0], index >> FragListWidthBits[0]), vec4(position, 1.0));
+		imageStore(voxelOverflow1, ivec2((index & MaxFragListMask[0]) + 1, index >> FragListWidthBits[0]), vec4(pixelLuminance, 1.0));
 	} else if (count == 2) {
-		atomicCounterIncrement(overflowSize2);
+		uint index = atomicCounterIncrement(overflowSize2) * 2;
+		if (index % 512 == 0) atomicCounterIncrement(indirectOverflowCount2);
+		imageStore(voxelOverflow2, ivec2(index & MaxFragListMask[1], index >> FragListWidthBits[1]), vec4(position, 1.0));
+		imageStore(voxelOverflow2, ivec2((index & MaxFragListMask[1]) + 1, index >> FragListWidthBits[1]), vec4(pixelLuminance, 1.0));
 	} else {
-		atomicCounterIncrement(overflowSize3);
-		// uint index = atomicCounterIncrement(overflowSize) * 2;
-		// imageStore(voxelOverflow, ivec2(index & MaxFragListMask[0], index >> FragListWidthBits[0]), vec4(position / 0xFFFF, 1.0));
-		// imageStore(voxelOverflow, ivec2((index & MaxFragListMask[0]) + 1, index >> FragListWidthBits[0]), vec4(pixelLuminance, 1.0));
+		uint index = atomicCounterIncrement(overflowSize3) * 2;
+		if (index % 512 == 0) atomicCounterIncrement(indirectOverflowCount3);
+		imageStore(voxelOverflow3, ivec2(index & MaxFragListMask[2], index >> FragListWidthBits[2]), vec4(position, 1.0));
+		imageStore(voxelOverflow3, ivec2((index & MaxFragListMask[2]) + 1, index >> FragListWidthBits[2]), vec4(pixelLuminance, 1.0));
 	}
 }

@@ -28,8 +28,22 @@ namespace sp
 	{
 		Assert(handle, "null buffer handle");
 		if (size < 0) size = this->size - offset;
-		Assert(this->size >= 0, "binding offset is greater than size");
+		Assert(size >= 0, "binding offset is greater than size");
 		glBindBufferRange(target, index, handle, offset, size);
+	}
+
+	Buffer &Buffer::ClearRegion(GLPixelFormat format, GLintptr offset, GLsizeiptr size, const void *data)
+	{
+		Assert(handle, "null buffer handle");
+		if (size < 0) size = this->size - offset;
+		Assert(size >= 0, "region offset is greater than size");
+		glClearNamedBufferSubData(handle, format.internalFormat, offset, size, format.format, format.type, data);
+		return *this;
+	}
+
+	Buffer &Buffer::ClearRegion(PixelFormat format, GLintptr offset, GLsizeiptr size, const void *data)
+	{
+		return ClearRegion(GLPixelFormat::PixelFormatMapping(format), offset, size, data);
 	}
 
 	Buffer &Buffer::Clear(GLPixelFormat format, const void *data)

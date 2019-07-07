@@ -69,7 +69,7 @@ namespace sp
 		shared_ptr<RenderTarget> shadowMap;
 		shared_ptr<RenderTarget> mirrorShadowMap;
 		shared_ptr<RenderTarget> menuGuiTarget;
-		Buffer computeIndirectBuffer;
+		Buffer atomicCounterBuffer;
 		VoxelData voxelData;
 		Buffer mirrorVisData;
 		Buffer mirrorSceneData;

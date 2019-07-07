@@ -4,7 +4,6 @@
 ##import lib/util
 
 const uint MipmapWorkGroupSize = 256;
-const float VoxelFixedPointExposure = 64.0;
 
 const uint[13] MaxFragListMask = uint[](8191, 4095, 2047, 1023, 511, 255, 127, 63, 31, 15, 7, 3, 1);
 const uint[13] FragListWidthBits = uint[](13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1);

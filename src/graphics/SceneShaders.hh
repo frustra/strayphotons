@@ -139,23 +139,23 @@ namespace sp
 		UniformBuffer lightData;
 	};
 
-	class VoxelRasterVS : public SceneShader
+	class VoxelFillVS : public SceneShader
 	{
-		SHADER_TYPE(VoxelRasterVS)
+		SHADER_TYPE(VoxelFillVS)
 		using SceneShader::SceneShader;
 	};
 
-	class VoxelRasterGS : public Shader
+	class VoxelFillGS : public Shader
 	{
-		SHADER_TYPE(VoxelRasterGS)
+		SHADER_TYPE(VoxelFillGS)
 		using Shader::Shader;
 	};
 
-	class VoxelRasterFS : public Shader
+	class VoxelFillFS : public Shader
 	{
-		SHADER_TYPE(VoxelRasterFS)
+		SHADER_TYPE(VoxelFillFS)
 
-		VoxelRasterFS(shared_ptr<ShaderCompileOutput> compileOutput);
+		VoxelFillFS(shared_ptr<ShaderCompileOutput> compileOutput);
 
 		void SetLightData(int count, GLLightData *data);
 		void SetVoxelInfo(GLVoxelInfo *data);
@@ -168,10 +168,16 @@ namespace sp
 		Uniform lightAttenuation;
 	};
 
-	class VoxelConvertCS : public Shader
+	class VoxelMergeCS : public Shader
 	{
-		SHADER_TYPE(VoxelConvertCS)
-		using Shader::Shader;
+		SHADER_TYPE(VoxelMergeCS)
+
+		VoxelMergeCS(shared_ptr<ShaderCompileOutput> compileOutput);
+
+		void SetLevel(int newLevel);
+
+	private:
+		Uniform level;
 	};
 
 	class VoxelMipmapCS : public Shader
