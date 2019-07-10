@@ -6,6 +6,7 @@ layout (binding = 0) uniform atomic_uint fragListSize;
 
 layout (binding = 0, rgb10_a2ui) readonly uniform uimage2D fragmentList;
 layout (binding = 1, rgba16f) writeonly uniform image3D voxelRadiance;
+layout (binding = 2, r32ui) writeonly uniform uimage3D voxelCounter;
 
 uniform int mipLevel = 0;
 
@@ -24,5 +25,7 @@ void main()
 		for (int a = 1; a < MAX_VOXEL_AREAS; a++) {
 			imageStore(voxelRadiance, position + ivec3(a * VOXEL_GRID_SIZE >> mipLevel, 0, 0), vec4(0));
 		}
+	} else {
+		imageStore(voxelCounter, position, uvec4(0));
 	}
 }

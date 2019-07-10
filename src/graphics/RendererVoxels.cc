@@ -119,6 +119,7 @@ namespace sp
 				if (i == 0)
 				{
 					voxelData.radiance->GetTexture().BindImage(1, GL_WRITE_ONLY, 0, GL_TRUE, 0);
+					voxelData.voxelCounters->GetTexture().BindImage(2, GL_WRITE_ONLY, 0);
 				}
 				else
 				{
@@ -132,7 +133,6 @@ namespace sp
 
 			GLuint listData[] = {0, 0, 1, 1};
 			atomicCounterBuffer.Clear(PF_RGBA32UI, listData);
-			voxelData.voxelCounters->GetTexture().Clear(0);
 
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 		}

@@ -34,7 +34,7 @@ namespace sp
 					auto root = timer->lastCompleteFrame.results[0];
 					double elapsed = (double)root.elapsed / 1000000.0;
 
-					memcpy(frameTimes, frameTimes + 1, (numFrameTimes - 1) * sizeof(*frameTimes));
+					memmove(frameTimes, frameTimes + 1, (numFrameTimes - 1) * sizeof(*frameTimes));
 					frameTimes[numFrameTimes - 1] = (float)elapsed;
 				}
 
