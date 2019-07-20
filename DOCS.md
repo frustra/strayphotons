@@ -5,7 +5,7 @@ Buffer Overview
 ---------------
 
 Voxel Grid: NxNxN rgba16f buffer, used to store the radiance output of each voxel
-Voxel Grid Mipmap: NxNxN rgba16f buffer, log2(N) layers, used to store the mipmaped radiance output of a group of voxels.
+Voxel Grid Mipmap: NxNxN rgba16f buffer, log2(N)-1 layers, used to store the mipmaped radiance output of a group of voxels.
 Fragment List: 2x rgb10_a2ui buffers, log2(N) layers, stores a position list of populated voxels, these lists alternate with eachother each frame.
 Voxel Overflow: rgba16f buffer, log2(N) layers, stores a list of fragment info { position.xyz, fragment_radiance.rgb }
 Indirect Buffer: 2x 4*log2(N) uint32 buffer, used to store the number of fragements at each level, and provides the indirect buffer for `glDispatchComputeIndirect`

@@ -73,32 +73,31 @@ void main()
 	position += VOXEL_GRID_SIZE / 2;
 
 	vec3 pixelLuminance = DirectShading(worldPosition, baseColor.rgb, inNormal, inNormal);
-	// TODO(xthexder): Fix IIR pass, buffers are cleared at this point
-	// if (lightAttenuation > 0) {
-	// 	vec3 directDiffuseColor = baseColor.rgb - baseColor.rgb * metalness;
-	// 	vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, inNormal, vec2(0));
-	// 	pixelLuminance += indirectDiffuse * directDiffuseColor * lightAttenuation * smoothstep(0.0, 0.1, length(indirectDiffuse));
-	// }
+	if (lightAttenuation > 0) {
+		vec3 directDiffuseColor = baseColor.rgb - baseColor.rgb * metalness;
+		vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, inNormal, vec2(0));
+		pixelLuminance += indirectDiffuse * directDiffuseColor * lightAttenuation * smoothstep(0.0, 0.1, length(indirectDiffuse));
+	}
 
 	uint count = imageAtomicAdd(voxelCounters, ivec3(position), 1);
 	if (count == 0) {
 		uint index = atomicCounterIncrement(fragListSize);
-		if (index % 256 == 0) atomicCounterIncrement(indirectFragCount);
+		if (index % MipmapWorkGroupSize == 0) atomicCounterIncrement(indirectFragCount);
 		imageStore(fragmentList, ivec2(index & MaxFragListMask[0], index >> FragListWidthBits[0]), uvec4(position, 1));
 		imageStore(voxelGrid, ivec3(position), vec4(pixelLuminance, 1.0));
 	} else if (count == 1) {
 		uint index = atomicCounterIncrement(overflowSize1) * 2;
-		if (index % 512 == 0) atomicCounterIncrement(indirectOverflowCount1);
+		if (index % (MipmapWorkGroupSize * 2) == 0) atomicCounterIncrement(indirectOverflowCount1);
 		imageStore(voxelOverflow1, ivec2(index & MaxFragListMask[0], index >> FragListWidthBits[0]), vec4(position, 1.0));
 		imageStore(voxelOverflow1, ivec2((index & MaxFragListMask[0]) + 1, index >> FragListWidthBits[0]), vec4(pixelLuminance, 1.0));
 	} else if (count == 2) {
 		uint index = atomicCounterIncrement(overflowSize2) * 2;
-		if (index % 512 == 0) atomicCounterIncrement(indirectOverflowCount2);
+		if (index % (MipmapWorkGroupSize * 2) == 0) atomicCounterIncrement(indirectOverflowCount2);
 		imageStore(voxelOverflow2, ivec2(index & MaxFragListMask[1], index >> FragListWidthBits[1]), vec4(position, 1.0));
 		imageStore(voxelOverflow2, ivec2((index & MaxFragListMask[1]) + 1, index >> FragListWidthBits[1]), vec4(pixelLuminance, 1.0));
 	} else {
 		uint index = atomicCounterIncrement(overflowSize3) * 2;
-		if (index % 512 == 0) atomicCounterIncrement(indirectOverflowCount3);
+		if (index % (MipmapWorkGroupSize * 2) == 0) atomicCounterIncrement(indirectOverflowCount3);
 		imageStore(voxelOverflow3, ivec2(index & MaxFragListMask[2], index >> FragListWidthBits[2]), vec4(position, 1.0));
 		imageStore(voxelOverflow3, ivec2((index & MaxFragListMask[2]) + 1, index >> FragListWidthBits[2]), vec4(pixelLuminance, 1.0));
 	}

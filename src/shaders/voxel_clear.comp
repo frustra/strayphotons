@@ -5,8 +5,8 @@ layout (local_size_x = 16, local_size_y = 16) in;
 layout (binding = 0) uniform atomic_uint fragListSize;
 
 layout (binding = 0, rgb10_a2ui) readonly uniform uimage2D fragmentList;
-layout (binding = 1, rgba16f) writeonly uniform image3D voxelRadiance;
-layout (binding = 2, r32ui) writeonly uniform uimage3D voxelCounter;
+layout (binding = 1, r32ui) readonly uniform uimage3D voxelCounters;
+layout (binding = 2, rgba16f) writeonly uniform image3D voxelRadiance;
 
 uniform int mipLevel = 0;
 
@@ -20,12 +20,13 @@ void main()
 
 	ivec3 position = ivec3(imageLoad(fragmentList, ivec2(index & MaxFragListMask[mipLevel], index >> FragListWidthBits[mipLevel])).xyz);
 
-	imageStore(voxelRadiance, position, vec4(0));
-	if (mipLevel > 0) {
-		for (int a = 1; a < MAX_VOXEL_AREAS; a++) {
-			imageStore(voxelRadiance, position + ivec3(a * VOXEL_GRID_SIZE >> mipLevel, 0, 0), vec4(0));
-		}
-	} else {
-		imageStore(voxelCounter, position, uvec4(0));
+	uint count = imageLoad(voxelCounters, position).r;
+	if (count == 0) {
+		imageStore(voxelRadiance, position, vec4(0));
+		// if (mipLevel > 0) {
+		// 	for (int a = 1; a < MAX_VOXEL_AREAS; a++) {
+		// 		imageStore(voxelRadiance, position + ivec3(a * VOXEL_GRID_SIZE >> mipLevel, 0, 0), vec4(0));
+		// 	}
+		// }
 	}
 }

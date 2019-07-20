@@ -4,9 +4,13 @@
 #include "Texture.hh"
 #include "RenderBuffer.hh"
 #include <glm/glm.hpp>
+#include <cstring>
 
 namespace sp
 {
+	class RenderTarget;
+	class RenderTargetPool;
+
 	struct RenderTargetDesc
 	{
 		RenderTargetDesc() {}
@@ -44,12 +48,31 @@ namespace sp
 			this->renderBuffer = renderBuffer;
 		}
 
-		RenderTargetDesc &Filter(GLenum minf, GLenum magf)
+		RenderTargetDesc &Filter(GLenum minFilter, GLenum magFilter)
 		{
-			minFilter = minf;
-			magFilter = magf;
+			this->minFilter = minFilter;
+			this->magFilter = magFilter;
 			return *this;
 		}
+
+		RenderTargetDesc &Wrap(GLenum wrapS, GLenum wrapT, GLenum wrapR)
+		{
+			this->wrapS = wrapS;
+			this->wrapT = wrapT;
+			this->wrapR = wrapR;
+			return *this;
+		}
+
+		RenderTargetDesc &Wrap(GLenum wrap)
+		{
+			this->wrapS = wrap;
+			this->wrapT = wrap;
+			this->wrapR = wrap;
+			return *this;
+		}
+
+
+		void Prepare(RenderTargetPool *rtPool, shared_ptr<RenderTarget> &target, bool clear = false, const void *data = nullptr);
 
 		PixelFormat format;
 		glm::ivec3 extent = { 0, 0, 0 };
@@ -66,21 +89,7 @@ namespace sp
 
 		bool operator==(const RenderTargetDesc &other) const
 		{
-			return other.format == format
-				   && other.extent == extent
-				   && other.levels == levels
-				   && other.attachment == attachment
-				   && other.minFilter == minFilter
-				   && other.magFilter == magFilter
-				   && other.depthCompare == depthCompare
-				   && other.multiSample == multiSample
-				   && other.textureArray == textureArray
-				   && other.renderBuffer == renderBuffer
-				   && other.wrapS == wrapS
-				   && other.wrapT == wrapT
-				   && other.wrapR == wrapR
-				   && other.borderColor == borderColor
-				   && other.anisotropy == anisotropy;
+			return std::memcmp(this, &other, sizeof(RenderTargetDesc)) == 0;
 		}
 
 		bool operator!=(const RenderTargetDesc &other) const

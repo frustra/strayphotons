@@ -6,15 +6,17 @@
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-layout (binding = 0, rgb10_a2ui) readonly uniform uimage2D previousFragmentList;
-layout (binding = 1, rgb10_a2ui) uniform uimage2D currentFragmentList;
+layout (binding = 0, rgb10_a2ui) readonly uniform uimage2D currentFragmentList;
+layout (binding = 1, rgb10_a2ui) writeonly uniform uimage2D nextFragmentList;
+layout (binding = 2, r32ui) writeonly uniform uimage3D currentVoxelCounters;
+layout (binding = 3, r32ui) uniform uimage3D nextVoxelCounters;
 
-layout (binding = 2, rgba16f) readonly uniform image3D previousVoxelRadiance;
-layout (binding = 3, rgba16f) writeonly uniform image3D currentVoxelRadiance;
+layout (binding = 4, rgba16f) readonly uniform image3D previousVoxelRadiance;
+layout (binding = 5, rgba16f) writeonly uniform image3D currentVoxelRadiance;
 
-layout (binding = 0) uniform atomic_uint previousFragListSize;
-layout (binding = 0, offset = 16) uniform atomic_uint nextFragListSize;
-layout (binding = 0, offset = 20) uniform atomic_uint nextComputeSize;
+layout (binding = 0) uniform atomic_uint currentFragListSize;
+layout (binding = 1) uniform atomic_uint nextFragListSize;
+layout (binding = 1, offset = 4) uniform atomic_uint nextComputeSize;
 
 layout(binding = 0, std140) uniform GLVoxelInfo {
 	VoxelInfo voxelInfo;
@@ -26,57 +28,60 @@ uniform int mipLevel = 0;
 
 void main() {
 	uint index = gl_WorkGroupID.x * (gl_WorkGroupSize.x * gl_WorkGroupSize.y) + gl_LocalInvocationIndex;
-	uint size = atomicCounter(previousFragListSize);
+	uint size = atomicCounter(currentFragListSize);
 	if (index >= size) return;
 
-	ivec3 position = ivec3(imageLoad(previousFragmentList, ivec2(index & MaxFragListMask[mipLevel], index >> FragListWidthBits[mipLevel])).xyz);
-	ivec3 mipPosition = position >> 1;
-	ivec3 floorPosition = mipPosition << 1;
+	ivec3 position = ivec3(imageLoad(currentFragmentList, ivec2(index & MaxFragListMask[mipLevel], index >> FragListWidthBits[mipLevel])).xyz);
 
-	float alpha = 0.0;
-	float count = 0.0;
-	vec3[MAX_VOXEL_AREAS] radiance;
-	for (int i = 0; i < MAX_VOXEL_AREAS; i++) radiance[i] = vec3(0);
+	imageStore(currentVoxelCounters, position, uvec4(0));
 
-	for (int x = 0; x < 2; x++) {
-		for (int y = 0; y < 2; y++) {
-			for (int z = 0; z < 2; z++) {
-				// This invocation should only run if we're the first value in the group.
-				if (position == floorPosition + ivec3(x, y, z) && count > 0) return;
+	if (mipLevel > 0) {
+		ivec3 floorPosition = position << 1;
 
-				ivec3 samplePos = floorPosition + ivec3(x, y, z);
-				vec4 sampleValue = imageLoad(previousVoxelRadiance, samplePos);
+		float alpha = 0.0;
+		vec3[MAX_VOXEL_AREAS] radiance;
+		// for (int i = 0; i < MAX_VOXEL_AREAS; i++) radiance[i] = vec3(0);
 
-				if (mipLevel == 0) {
-					vec3 samplePosWorld = vec3(samplePos - VOXEL_GRID_SIZE * 0.5 + 0.5) * voxelInfo.size + voxelInfo.center;
-					for (int i = 0; i < MAX_VOXEL_AREAS; i++) {
-						float inArea = float(samplePosWorld == clamp(samplePosWorld, voxelInfo.areas[i].areaMin, voxelInfo.areas[i].areaMax));
-						radiance[i] += sampleValue.rgb * inArea;
-					}
-				} else {
-					radiance[0] += sampleValue.rgb;
-					for (int i = 1; i < MAX_VOXEL_AREAS; i++) {
-						radiance[i] += imageLoad(previousVoxelRadiance, MIPMAP_POSITION(samplePos, i, mipLevel)).rgb;
-					}
+		for (int x = 0; x < 2; x++) {
+			for (int y = 0; y < 2; y++) {
+				for (int z = 0; z < 2; z++) {
+					ivec3 samplePos = floorPosition + ivec3(x, y, z);
+					vec4 sampleValue = imageLoad(previousVoxelRadiance, samplePos);
+
+					// if (mipLevel == 1) {
+					// 	vec3 samplePosWorld = vec3(samplePos - VOXEL_GRID_SIZE * 0.5 + 0.5) * voxelInfo.size + voxelInfo.center;
+					// 	for (int i = 0; i < MAX_VOXEL_AREAS; i++) {
+					// 		float inArea = float(samplePosWorld == clamp(samplePosWorld, voxelInfo.areas[i].areaMin, voxelInfo.areas[i].areaMax));
+					// 		radiance[i] += sampleValue.rgb * inArea;
+					// 	}
+					// } else {
+						radiance[0] += sampleValue.rgb;
+					// 	for (int i = 1; i < MAX_VOXEL_AREAS; i++) {
+					// 		radiance[i] += imageLoad(previousVoxelRadiance, MIPMAP_POSITION(samplePos, i, mipLevel - 2)).rgb;
+					// 	}
+					// }
+					sampleValue.a = min(sampleValue.a, 1.0);
+					alpha += sampleValue.a;
 				}
-				sampleValue.a = min(sampleValue.a, 1.0);
-				alpha += sampleValue.a;
-
-				count += 1 - step(0, -sampleValue.a);
 			}
 		}
+
+		// Bias alpha so that 50% full is opaque
+		alpha = saturate(alpha * 0.25);
+
+		// 0.25 looks good, don't touch it ¯\_(ツ)_/¯
+		// for (int i = 0; i < MAX_VOXEL_AREAS; i++) {
+		// 	imageStore(currentVoxelRadiance, MIPMAP_POSITION(position, i, mipLevel - 1), vec4(radiance[i] * 0.25, alpha));
+		// }
+		imageStore(currentVoxelRadiance, position, vec4(radiance[0] * 0.25, alpha));
 	}
 
-	// Bias alpha so that 50% full is opaque
-	alpha = saturate(alpha * 0.25);
-
-	// 0.25 looks good, don't touch it ¯\_(ツ)_/¯
-	for (int i = 0; i < MAX_VOXEL_AREAS; i++) {
-		imageStore(currentVoxelRadiance, MIPMAP_POSITION(mipPosition, i, mipLevel + 1), vec4(radiance[i] * 0.25, alpha));
+	if (mipLevel < VOXEL_MIP_LEVELS - 1) {
+		uint count = imageAtomicAdd(nextVoxelCounters, position >> 1, 1);
+		if (count == 0) {
+			uint nextIndex = atomicCounterIncrement(nextFragListSize);
+			if (nextIndex % MipmapWorkGroupSize == 0) atomicCounterIncrement(nextComputeSize);
+			imageStore(nextFragmentList, ivec2(nextIndex & MaxFragListMask[mipLevel + 1], nextIndex >> FragListWidthBits[mipLevel + 1]), uvec4(position >> 1, 1.0));
+		}
 	}
-
-	uint nextIndex = atomicCounterIncrement(nextFragListSize);
-	if (nextIndex % MipmapWorkGroupSize == 0) atomicCounterIncrement(nextComputeSize);
-
-	imageStore(currentFragmentList, ivec2(nextIndex & MaxFragListMask[mipLevel + 1], nextIndex >> FragListWidthBits[mipLevel + 1]), uvec4(mipPosition, 1.0));
 }

@@ -24,7 +24,7 @@ namespace sp
 	struct VoxelData
 	{
 		shared_ptr<RenderTarget> voxelCounters;
-		shared_ptr<RenderTarget> fragmentList;
+		shared_ptr<RenderTarget> fragmentListCurrent, fragmentListPrevious;
 		shared_ptr<RenderTarget> voxelOverflow;
 		shared_ptr<RenderTarget> radiance;
 		shared_ptr<RenderTarget> radianceMips;
@@ -69,7 +69,7 @@ namespace sp
 		shared_ptr<RenderTarget> shadowMap;
 		shared_ptr<RenderTarget> mirrorShadowMap;
 		shared_ptr<RenderTarget> menuGuiTarget;
-		Buffer atomicCounterBuffer;
+		Buffer indirectBufferCurrent, indirectBufferPrevious;
 		VoxelData voxelData;
 		Buffer mirrorVisData;
 		Buffer mirrorSceneData;
