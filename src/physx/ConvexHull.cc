@@ -7,6 +7,7 @@
 #include <v-hacd/VHACD_Lib/inc/vhacdICHull.h>
 #include <v-hacd/VHACD_Lib/inc/vhacdVector.h>
 
+#define GLM_FORCE_CXX11
 #include <glm/gtx/hash.hpp>
 #include <unordered_set>
 

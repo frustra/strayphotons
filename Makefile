@@ -10,21 +10,20 @@ compile:
 
 linux: unix
 unix: build
-	cd build; cmake -DSP_PACKAGE_RELEASE=0 -G "Unix Makefiles" ..; make -j5
+	cd build; CC=clang CXX=clang++ cmake -DSP_PACKAGE_RELEASE=0 -G "Unix Makefiles" ..; make -j5
 
 linux-release: unix-release
 unix-release: build
-	cd build; cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=0 -G "Unix Makefiles" ..; make -j5
+	cd build; CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=0 -G "Unix Makefiles" ..; make -j5
 
 linux-package-release: unix-package-release
 unix-package-release: build assets
-	cd build; cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=1 -G "Unix Makefiles" ..; make -j5
+	cd build; CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=1 -G "Unix Makefiles" ..; make -j5
 	rm -rf strayphotons
 	mkdir -p strayphotons/bin
 	cp bin/Release/sp strayphotons/bin/strayphotons
 	cp extra/strayphotons.sh strayphotons
 	cp bin/assets.spdata strayphotons/bin
-	# TODO copy physx from bin/physx
 	cp ext/fmod/lib/x86_64/libfmod.so.8.11 strayphotons/bin/libfmod.so.8
 	cp ext/fmod/lib/x86_64/libfmodstudio.so.8.11 strayphotons/bin/libfmodstudio.so.8
 

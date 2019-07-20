@@ -31,7 +31,7 @@ namespace sp
 
 		PxTolerancesScale scale;
 
-#if (defined(_WIN32) || defined(__APPLE__)) && !defined(PACKAGE_RELEASE)
+#if !defined(PACKAGE_RELEASE)
 		pxPvd = physx::PxCreatePvd(*pxFoundation);
 		pxPvdTransport = PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
 		pxPvd->connect(*pxPvdTransport, PxPvdInstrumentationFlag::eALL);
@@ -75,9 +75,13 @@ namespace sp
 		Unlock();
 		DestroyPhysxScene();
 
-		pxCooking->release();
-		physics->release();
-		pxFoundation->release();
+		if (pxCooking) pxCooking->release();
+		if (physics) physics->release();
+#if !defined(PACKAGE_RELEASE)
+		if (pxPvd) pxPvd->release();
+		if (pxPvdTransport) pxPvdTransport->release();
+#endif
+		if (pxFoundation) pxFoundation->release();
 	}
 
 	void PhysxManager::Frame(double timeStep)
@@ -315,11 +319,17 @@ namespace sp
 	void PhysxManager::DestroyPhysxScene()
 	{
 		Lock();
-		scene->fetchResults();
-		scene->release();
-		scene = nullptr;
-		dispatcher->release();
-		dispatcher = nullptr;
+		if (scene)
+		{
+			scene->fetchResults();
+			scene->release();
+			scene = nullptr;
+		}
+		if (dispatcher)
+		{
+			dispatcher->release();
+			dispatcher = nullptr;
+		}
 	}
 
 	void PhysxManager::ToggleDebug(bool enabled)

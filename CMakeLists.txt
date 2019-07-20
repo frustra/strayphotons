@@ -9,7 +9,6 @@ set(SP_VERSION "${SP_VERSION_MAJOR}.${SP_VERSION_MINOR}")
 set(SP_PACKAGE_RELEASE FALSE CACHE BOOL "Build packaged release")
 set(SP_ENABLE_VR FALSE CACHE BOOL "Build with VR support")
 
-
 if (CMAKE_BUILD_TYPE MATCHES Release)
 	message(STATUS "sp target is Release")
 	set(SP_DEBUG 0)
@@ -24,12 +23,12 @@ endif()
 
 if (SP_PACKAGE_RELEASE)
 	message(STATUS "Enabling build for packaged release")
-	add_definitions(-DPACKAGE_RELEASE)
+	list(APPEND SP_TARGET_OPTIONS -DPACKAGE_RELEASE)
 endif()
 
 if (SP_ENABLE_VR)
 	message(STATUS "Enabling VR support")
-	add_definitions(-DENABLE_VR)
+	list(APPEND SP_TARGET_OPTIONS -DENABLE_VR)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
@@ -37,24 +36,24 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (UNIX)
-	add_definitions(-Wall)
-	add_definitions(-Wno-error=strict-aliasing -Wno-error=parentheses)
+	list(APPEND SP_TARGET_OPTIONS -Wall)
+	list(APPEND SP_TARGET_OPTIONS -Wno-error=strict-aliasing -Wno-error=parentheses)
 endif()
 
 if (MSVC)
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS -DUNICODE -D_UNICODE /wd4800 /MP)
+	list(APPEND SP_TARGET_OPTIONS -D_CRT_SECURE_NO_WARNINGS -DUNICODE -D_UNICODE /wd4800 /MP)
 
 	if (SP_DEBUG)
-		add_definitions(/MDd)
+		list(APPEND SP_TARGET_OPTIONS /MDd)
 	else()
-		add_definitions(/MD)
+		list(APPEND SP_TARGET_OPTIONS /MD)
 	endif()
 endif()
 
 if (SP_DEBUG)
-	add_definitions(-D_DEBUG)
+	list(APPEND SP_TARGET_OPTIONS -D_DEBUG)
 else()
-	add_definitions(-DNDEBUG)
+	list(APPEND SP_TARGET_OPTIONS -DNDEBUG)
 endif()
 
 set(PROJECT_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
@@ -89,25 +88,33 @@ add_subdirectory(${EXT_PATH}/googletest)
 add_subdirectory(${EXT_PATH}/v-hacd)
 
 function(ADD_PHYSX_SUBDIRECTORY)
-	set(TARGET_BUILD_PLATFORM mac)
 	set(PX_OUTPUT_ARCH x86)
 	set(PHYSX_ROOT_DIR ${EXT_PATH}/physx/physx)
 	set(PX_OUTPUT_LIB_DIR ${PROJECT_OUTPUT_DIR}/physx)
 	set(PX_OUTPUT_BIN_DIR ${PX_OUTPUT_LIB_DIR})
-	set(NV_FORCE_64BIT_SUFFIX TRUE)
-	set(NV_FORCE_32BIT_SUFFIX FALSE)
+	set(PX_GENERATE_STATIC_LIBRARIES ON CACHE BOOL "")
 
 	set(ENV{PM_PATHS} ${EXT_PATH}/physx/externals/opengl-linux)
 	set(ENV{PM_CMakeModules_PATH} ${EXT_PATH}/physx/externals/cmakemodules)
-	set(ENV{PM_PxShared_PATH} ${EXT_PATH}/physx/PxShared)
+	set(ENV{PM_PxShared_PATH} ${EXT_PATH}/physx/pxshared)
 
 	if (APPLE)
-		SET(PHYSX_CXX_FLAGS_APPLE "-faligned-allocation -Wno-atomic-implicit-seq-cst") # our variable
+		set(TARGET_BUILD_PLATFORM mac)
+		set(OUR_PHYSX_CXX_FLAGS_FOR_APPLE "-faligned-allocation -Wno-atomic-implicit-seq-cst")
 
-		SET(PHYSX_CXX_FLAGS_DEBUG "-O0 -g ${PHYSX_CXX_FLAGS_APPLE}" CACHE INTERNAL "PhysX Debug CXX Flags")
-		SET(PHYSX_CXX_FLAGS_CHECKED "-O3 -g ${PHYSX_CXX_FLAGS_APPLE}" CACHE INTERNAL "PhysX Checked CXX Flags")
-		SET(PHYSX_CXX_FLAGS_PROFILE "-O3 -g ${PHYSX_CXX_FLAGS_APPLE}" CACHE INTERNAL "PhysX Profile CXX Flags")
-		SET(PHYSX_CXX_FLAGS_RELEASE "-O3 -g ${PHYSX_CXX_FLAGS_APPLE}" CACHE INTERNAL "PhysX Release CXX Flags")
+		set(PHYSX_CXX_FLAGS_DEBUG "-O0 -g ${OUR_PHYSX_CXX_FLAGS_FOR_APPLE}" CACHE INTERNAL "")
+		set(PHYSX_CXX_FLAGS_CHECKED "-O3 -g ${OUR_PHYSX_CXX_FLAGS_FOR_APPLE}" CACHE INTERNAL "")
+		set(PHYSX_CXX_FLAGS_PROFILE "-O3 -g ${OUR_PHYSX_CXX_FLAGS_FOR_APPLE}" CACHE INTERNAL "")
+		set(PHYSX_CXX_FLAGS_RELEASE "-O3 -g ${OUR_PHYSX_CXX_FLAGS_FOR_APPLE}" CACHE INTERNAL "")
+		set(NV_FORCE_64BIT_SUFFIX TRUE)
+		set(NV_FORCE_32BIT_SUFFIX FALSE)
+	elseif (UNIX)
+		set(TARGET_BUILD_PLATFORM linux)
+
+		set(CMAKE_SYSTEM_NAME Linux)
+		set(CMAKE_SYSTEM_VERSION 1)
+		set(CMAKE_SYSROOT ${LINUX_ROOT})
+		set(CMAKE_LIBRARY_ARCHITECTURE x86_64-linux-gnu)
 	endif()
 	add_subdirectory(${EXT_PATH}/physx/physx/compiler/public)
 endfunction()
@@ -135,8 +142,8 @@ if (SP_ENABLE_VR)
 	include_directories(${EXT_PATH}/openvr/headers)
 endif()
 
-add_definitions(-DGLEW_STATIC=1)
 add_library(GLEW STATIC ${EXT_PATH}/glew/src/glew.c)
+target_compile_definitions(GLEW PRIVATE -DGLEW_STATIC=1)
 
 file(GLOB ImGui_sources ${EXT_PATH}/imgui/imgui.cpp ${EXT_PATH}/imgui/imgui_draw.cpp ${EXT_PATH}/imgui/imgui_demo.cpp)
 add_library(ImGui STATIC ${ImGui_sources})
@@ -175,8 +182,7 @@ add_library(${PROJECT_LIB} ${all_sources} ${all_headers} ${all_shaders})
 
 # Configure glomerate to use 32 bit entities on WIN32
 if (WIN32)
-	target_compile_definitions(${PROJECT_LIB}
-		PRIVATE "-DGLOMERATE_32BIT_ENTITIES")
+	target_compile_definitions(${PROJECT_LIB} PRIVATE "-DGLOMERATE_32BIT_ENTITIES")
 endif()
 
 set (PHYSX_LIBRARIES
@@ -230,19 +236,15 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 endif()
 
 if (UNIX)
-	set(PROJECT_COMPILE_OPTIONS
-		-Werror
-		-Wsign-compare
-	)
-
-	target_compile_options(${PROJECT_LIB} PRIVATE ${PROJECT_COMPILE_OPTIONS})
-	target_compile_options(${PROJECT_EXE} PRIVATE ${PROJECT_COMPILE_OPTIONS})
+	list(APPEND SP_TARGET_OPTIONS -Werror -Wsign-compare)
 endif()
 
 if (APPLE)
-	target_compile_options(${PROJECT_LIB} PRIVATE "-Wno-unused-local-typedef")
-	target_compile_options(${PROJECT_EXE} PRIVATE "-Wno-unused-local-typedef")
+	list(APPEND SP_TARGET_OPTIONS -Wno-unused-local-typedef)
 endif()
+
+target_compile_options(${PROJECT_LIB} PRIVATE ${SP_TARGET_OPTIONS})
+target_compile_options(${PROJECT_EXE} PRIVATE ${SP_TARGET_OPTIONS})
 
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 set_target_properties(${PROJECT_EXE} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)

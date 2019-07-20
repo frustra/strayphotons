@@ -162,8 +162,11 @@ namespace sp
 		physx::PxDefaultAllocator defaultAllocatorCallback;
 		physx::PxCooking *pxCooking = nullptr;
 		physx::PxControllerManager *manager = nullptr;
+
+#if !defined(PACKAGE_RELEASE)
 		physx::PxPvd *pxPvd = nullptr;
 		physx::PxPvdTransport *pxPvdTransport = nullptr;
+#endif
 
 		physx::PxScene *scene = nullptr;
 		bool simulate = false, exiting = false, resultsPending = false;
