@@ -155,8 +155,6 @@ namespace sp
 		ConvexHullSet *LoadCollisionCache(Model *model, bool decomposeHull);
 		void SaveCollisionCache(Model *model, ConvexHullSet *set, bool decomposeHull);
 
-		void ConnectToPVD();
-
 		physx::PxFoundation *pxFoundation = nullptr;
 		physx::PxPhysics *physics = nullptr;
 		physx::PxDefaultCpuDispatcher *dispatcher = nullptr;
@@ -164,6 +162,11 @@ namespace sp
 		physx::PxDefaultAllocator defaultAllocatorCallback;
 		physx::PxCooking *pxCooking = nullptr;
 		physx::PxControllerManager *manager = nullptr;
+
+#if !defined(PACKAGE_RELEASE)
+		physx::PxPvd *pxPvd = nullptr;
+		physx::PxPvdTransport *pxPvdTransport = nullptr;
+#endif
 
 		physx::PxScene *scene = nullptr;
 		bool simulate = false, exiting = false, resultsPending = false;

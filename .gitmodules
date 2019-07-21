@@ -21,7 +21,7 @@
 	url = git@github.com:frustra/tinygltfloader.git
 [submodule "ext/physx"]
 	path = ext/physx
-	url = git@github.com:frustra/PhysX-3.3.git
+	url = git@github.com:NVIDIAGameWorks/PhysX
 [submodule "ext/imgui"]
 	path = ext/imgui
 	url = https://github.com/frustra/imgui.git

@@ -179,7 +179,7 @@ namespace sp
 		} while (cmd != line.end());
 	}
 
-	void ConsoleManager::Execute(const string &cmd, const string &args)
+	void ConsoleManager::Execute(const string cmd, const string &args)
 	{
 		auto cvarit = cvars.find(to_lower_copy(cmd));
 		if (cvarit != cvars.end())
@@ -203,7 +203,7 @@ namespace sp
 		}
 	}
 
-	void ConsoleManager::QueueParseAndExecute(const string &line, uint64 dt)
+	void ConsoleManager::QueueParseAndExecute(const string line, uint64 dt)
 	{
 		queuedCommands.push({NowMonotonicMs() + dt, line});
 	}

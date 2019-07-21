@@ -14,7 +14,7 @@
 
 namespace cxxopts
 {
-	class Options;
+	class ParseResult;
 }
 
 namespace sp
@@ -22,7 +22,7 @@ namespace sp
 	class Game
 	{
 	public:
-		Game(cxxopts::Options &options);
+		Game(cxxopts::ParseResult &options);
 		~Game();
 
 		void Start();
@@ -30,7 +30,7 @@ namespace sp
 		void PhysicsUpdate();
 		bool ShouldStop();
 
-		cxxopts::Options &options;
+		cxxopts::ParseResult &options;
 
 		// Order is important.
 		DebugGuiManager debugGui;

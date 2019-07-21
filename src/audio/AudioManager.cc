@@ -6,7 +6,9 @@
 #include <cxxopts.hpp>
 #include <fmod_errors.h>
 #include <fmod_common.h>
+#if !(__APPLE__)
 #include <filesystem>
+#endif
 
 #include <sstream>
 #include <cstdio>
@@ -205,6 +207,7 @@ namespace sp
 	{
 		if (!audioEnabled) return;
 
+#if !(__APPLE__)
 		std::filesystem::path bankDir(AUDIO_BANK_DIR);
 		std::filesystem::directory_iterator end_iter;
 
@@ -222,6 +225,7 @@ namespace sp
 				}
 			}
 		}
+#endif
 	}
 
 	void AudioManager::StartEvent(const string &eventName)

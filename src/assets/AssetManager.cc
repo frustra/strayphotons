@@ -33,7 +33,9 @@ extern "C"
 #include "ecs/components/Animation.hh"
 #include "ecs/components/SignalReceiver.hh"
 
+#if !(__APPLE__)
 #include <filesystem>
+#endif
 #include <iostream>
 #include <fstream>
 #include <utility>
@@ -107,8 +109,10 @@ namespace sp
 
 	bool AssetManager::OutputStream(const std::string &path, std::ofstream &stream)
 	{
+#if !(__APPLE__)
 		std::filesystem::path p(ASSETS_DIR + path);
 		std::filesystem::create_directories(p.parent_path());
+#endif
 
 		stream.open(ASSETS_DIR + path, std::ios::out | std::ios::binary);
 		return !!stream;

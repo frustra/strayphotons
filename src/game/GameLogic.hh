@@ -50,13 +50,13 @@ namespace sp
 
 #ifdef ENABLE_VR
 		vr::IVRSystem *vrSystem = nullptr;
-#endif
-
-		ecs::Entity eyeEntity[2];
-		glm::mat4 eyePos[2];
 
 		bool vrTriggerPressed = false;
 		bool vrTouchpadPressed = false;
+
+		ecs::Entity eyeEntity[2];
+		glm::mat4 eyePos[2];
+#endif
 
 		CFuncCollection funcs;
 	};

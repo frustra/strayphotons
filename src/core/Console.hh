@@ -46,8 +46,8 @@ namespace sp
 		}
 
 		void ParseAndExecute(const string line, bool saveHistory = false);
-		void Execute(const string &cmd, const string &args);
-		void QueueParseAndExecute(const string &line, uint64 dt = 0);
+		void Execute(const string cmd, const string &args);
+		void QueueParseAndExecute(const string line, uint64 dt = 0);
 		string AutoComplete(const string &input);
 		vector<string> AllCompletions(const string &input);
 

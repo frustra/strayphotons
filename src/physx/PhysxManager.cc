@@ -26,14 +26,19 @@ namespace sp
 
 	PhysxManager::PhysxManager()
 	{
-		funcs.Register(this, "p.ConnectPVD", "Connect to a running PVD", &PhysxManager::ConnectToPVD);
-
 		Logf("PhysX %d.%d.%d starting up", PX_PHYSICS_VERSION_MAJOR, PX_PHYSICS_VERSION_MINOR, PX_PHYSICS_VERSION_BUGFIX);
+		pxFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, defaultAllocatorCallback, defaultErrorCallback);
 
 		PxTolerancesScale scale;
 
-		pxFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, defaultAllocatorCallback, defaultErrorCallback);
-		physics = PxCreatePhysics(PX_PHYSICS_VERSION, *pxFoundation, scale);
+#if !defined(PACKAGE_RELEASE)
+		pxPvd = physx::PxCreatePvd(*pxFoundation);
+		pxPvdTransport = PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
+		pxPvd->connect(*pxPvdTransport, PxPvdInstrumentationFlag::eALL);
+		Logf("PhysX visual debugger listening on :5425");
+#endif
+
+		physics = PxCreatePhysics(PX_PHYSICS_VERSION, *pxFoundation, scale, false, pxPvd);
 		Assert(physics, "PxCreatePhysics");
 
 		pxCooking = PxCreateCooking(PX_PHYSICS_VERSION, *pxFoundation, PxCookingParams(scale));
@@ -70,9 +75,13 @@ namespace sp
 		Unlock();
 		DestroyPhysxScene();
 
-		pxCooking->release();
-		physics->release();
-		pxFoundation->release();
+		if (pxCooking) pxCooking->release();
+		if (physics) physics->release();
+#if !defined(PACKAGE_RELEASE)
+		if (pxPvd) pxPvd->release();
+		if (pxPvdTransport) pxPvdTransport->release();
+#endif
+		if (pxFoundation) pxFoundation->release();
 	}
 
 	void PhysxManager::Frame(double timeStep)
@@ -310,11 +319,17 @@ namespace sp
 	void PhysxManager::DestroyPhysxScene()
 	{
 		Lock();
-		scene->fetchResults();
-		scene->release();
-		scene = nullptr;
-		dispatcher->release();
-		dispatcher = nullptr;
+		if (scene)
+		{
+			scene->fetchResults();
+			scene->release();
+			scene = nullptr;
+		}
+		if (dispatcher)
+		{
+			dispatcher->release();
+			dispatcher = nullptr;
+		}
 	}
 
 	void PhysxManager::ToggleDebug(bool enabled)
@@ -535,7 +550,7 @@ namespace sp
 			PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
 			PxConvexMesh *pxhull = physics->createConvexMesh(input);
 
-			auto shape = actor->createShape(PxConvexMeshGeometry(pxhull, desc.scale), *mat);
+			auto shape = PxRigidActorExt::createExclusiveShape(*actor, PxConvexMeshGeometry(pxhull, desc.scale), *mat);
 			PxFilterData data;
 			data.word0 = 3;
 			shape->setQueryFilterData(data);
@@ -573,8 +588,8 @@ namespace sp
 
 	void ControllerHitReport::onShapeHit(const physx::PxControllerShapeHit &hit)
 	{
-		auto dynamic = hit.actor->isRigidDynamic();
-		if (dynamic && !dynamic->getRigidDynamicFlags().isSet(PxRigidDynamicFlag::eKINEMATIC))
+		auto dynamic = hit.actor->is<physx::PxRigidDynamic>();
+		if (dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC))
 		{
 			manager->Lock();
 			glm::vec3 *velocity = (glm::vec3 *) hit.controller->getUserData();
@@ -939,33 +954,5 @@ namespace sp
 
 			out.close();
 		}
-	}
-
-	void PhysxManager::ConnectToPVD()
-	{
-#if (defined(_WIN32) || defined(__APPLE__)) && !defined(PACKAGE_RELEASE)
-		if (!physics->getPvdConnectionManager())
-		{
-		    std::cout << "Run PhysX Visual Debugger and connect to 127.0.0.1:5425\n";
-		    return;
-		}
-
-		const char* ip = "127.0.0.1";
-		int port = 5425;
-		unsigned int timeout = 100;
-		PxVisualDebuggerConnectionFlags flags =
-		      PxVisualDebuggerConnectionFlag::eDEBUG
-		    | PxVisualDebuggerConnectionFlag::ePROFILE
-		    | PxVisualDebuggerConnectionFlag::eMEMORY;
-
-		debugger::comm::PvdConnection* conn = PxVisualDebuggerExt::createConnection(physics->getPvdConnectionManager(), ip, port, timeout, flags);
-
-		if (conn)
-		{
-		    std::cout << "Connected to PVD!\n";
-		}
-#else
-		std::cout << "PhysX Visual Debugger not supported for this platform or build\n";
-#endif
 	}
 }
