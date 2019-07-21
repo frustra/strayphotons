@@ -37,7 +37,10 @@ namespace sp
 		Assert(handle, "null buffer handle");
 		if (size < 0) size = this->size - offset;
 		Assert(size >= 0, "region offset is greater than size");
-		glClearNamedBufferSubData(handle, format.internalFormat, offset, size, format.format, format.type, data);
+		// Bug in Nvidia Optimus driver, glClearNamedBufferSubData does not operate as expected.
+		glBindBuffer(GL_COPY_READ_BUFFER, handle);
+		glClearBufferSubData(GL_COPY_READ_BUFFER, format.internalFormat, offset, size, format.format, format.type, data);
+		// glClearNamedBufferSubData(handle, format.internalFormat, offset, size, format.format, format.type, data);
 		return *this;
 	}
 

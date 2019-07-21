@@ -4,6 +4,8 @@
 #include "graphics/GPUTimer.hh"
 #include "core/Game.hh"
 
+#include <atomic>
+
 namespace sp
 {
 	static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.5, "Light attenuation for voxel bounces");
