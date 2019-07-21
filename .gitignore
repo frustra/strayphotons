@@ -1,5 +1,6 @@
 /build
 /bin
+/.vscode
 /assets/gltf-process
 /assets/gltf-process.exe
 /assets/shaders

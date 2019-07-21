@@ -2,6 +2,7 @@
 #include "core/Logging.hh"
 
 #include <algorithm>
+#include <cctype>
 
 #ifdef _WIN32
 #include <intrin.h>

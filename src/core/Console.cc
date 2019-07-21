@@ -154,7 +154,7 @@ namespace sp
 		}
 	}
 
-	void ConsoleManager::ParseAndExecute(const string &line, bool saveHistory)
+	void ConsoleManager::ParseAndExecute(const string line, bool saveHistory)
 	{
 		if (line == "")
 			return;

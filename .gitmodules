@@ -27,7 +27,7 @@
 	url = https://github.com/frustra/imgui.git
 [submodule "ext/glomerate"]
 	path = ext/glomerate
-	url = git@github.com:cstegel/glomerate.git
+	url = git@github.com:frustra/glomerate.git
 [submodule "ext/cxxopts"]
 	path = ext/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git

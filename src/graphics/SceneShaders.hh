@@ -14,10 +14,8 @@ namespace sp
 	class SceneShader : public Shader
 	{
 	public:
-		void SetParams(const ecs::View &view, glm::mat4 modelMat);
-
-	protected:
 		SceneShader(shared_ptr<ShaderCompileOutput> compileOutput);
+		void SetParams(const ecs::View &view, glm::mat4 modelMat);
 
 	private:
 		Uniform modelMat, viewMat, projMat;

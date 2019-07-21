@@ -1,7 +1,7 @@
 #ifndef MIRROR_COMMON_INCLUDED
 #define MIRROR_COMMON_INCLUDED
 
-#define MIRROR_SOURCE_BIT 0x80000000
+#define MIRROR_SOURCE_BIT 0x40000000
 
 uint PackNoSourceMirror(int mirror) {
 	return uint(mirror);
