@@ -3,7 +3,7 @@ UNAME := $(shell uname)
 .PHONY: auto compile linux unix windowws vs14 clean unit-tests \
 	integration-tests tests astyle dependencies assets
 
-auto: build unix
+auto: unix
 
 compile:
 	cd build; make -j5
@@ -24,10 +24,7 @@ unix-package-release: build assets
 	cp bin/Release/sp strayphotons/bin/strayphotons
 	cp extra/strayphotons.sh strayphotons
 	cp bin/assets.spdata strayphotons/bin
-	cp vendor/lib/physx/libPhysX3CharacterKinematic_x64.so strayphotons/bin
-	cp vendor/lib/physx/libPhysX3Common_x64.so strayphotons/bin
-	cp vendor/lib/physx/libPhysX3Cooking_x64.so strayphotons/bin
-	cp vendor/lib/physx/libPhysX3_x64.so strayphotons/bin
+	# TODO copy physx from bin/physx
 	cp ext/fmod/lib/x86_64/libfmod.so.8.11 strayphotons/bin/libfmod.so.8
 	cp ext/fmod/lib/x86_64/libfmodstudio.so.8.11 strayphotons/bin/libfmodstudio.so.8
 
@@ -69,33 +66,6 @@ assets:
 dependencies:
 	git submodule sync
 	git submodule update --init --recursive
-
-ifeq ($(UNAME), Darwin)
-physx:
-	cd ext/physx/PhysXSDK/Source/compiler/xcode_osx64 && xcodebuild -project PhysX.xcodeproj -alltargets -configuration debug
-	rm -rf vendor/lib/physx
-	mkdir -p vendor/lib/physx
-	cp ext/physx/PhysXSDK/Lib/osx64/lib* vendor/lib/physx
-else
-physx:
-	cd ext/physx/PhysXSDK/Source/compiler/linux64 && make -j 16
-	rm -rf vendor/lib/physx
-	mkdir -p vendor/lib/physx
-	cp ext/physx/PhysXSDK/Lib/linux64/lib* vendor/lib/physx
-	cp ext/physx/PhysXSDK/Bin/linux64/lib* vendor/lib/physx
-endif
-
-physx-windows-release:
-	cd . && cmd //c physx-windows-release.bat
-	mkdir -p vendor/lib/physx build
-	cp ext/physx/PhysXSDK/Lib/vc14win32/*.lib vendor/lib/physx
-	cp ext/physx/PhysXSDK/Bin/vc14win32/*.dll build
-
-physx-windows-debug:
-	cd . && cmd //c physx-windows-debug.bat
-	mkdir -p vendor/lib/physx build
-	cp ext/physx/PhysXSDK/Lib/vc14win32/*.lib vendor/lib/physx
-	cp ext/physx/PhysXSDK/Bin/vc14win32/*.dll build
 
 watch-scenes:
 	cd assets; nodemon --watch scenes -e ejs,scene --exec bash sp-scenes.sh

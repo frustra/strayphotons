@@ -20,15 +20,15 @@ There might be some missing dependencies in this list, add any you find.
 
 ### Build
 
-- Linux: `make physx` (if not done already), `make` or `make unix-release`.
+- Unix: `make` or `make unix-release`.
 
-- Windows: `make physx-windows-release` (if not done already), then `make windows-release`, then open build/sp.sln in Visual Studio.
+- Windows: then `make windows-release`, then open build/sp.sln in Visual Studio.
 If using CMake <3.6, set the startup project to `sp`. Set the target to `RelWithDebInfo` under normal usage. Press the play button to build and run.
 To create a debug build, use `make windows` and set the target to `Debug`.
 
 ### Running
 
-- Linux/Mac: `./run.sh --map <map> --cvar "key val"`
+- Unix: `./run.sh --map <map> --cvar "key val"`
   - On Mac, the `--basic-renderer` flag is required.
 
 - Windows: set command line arguments in Visual Studio via Debug->sp Properties->Debugging.

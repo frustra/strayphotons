@@ -25,7 +25,7 @@
 
 namespace sp
 {
-	Game::Game(cxxopts::Options &options) : options(options), menuGui(this), graphics(this), audio(this), logic(this), physics(), animation(entityManager)
+	Game::Game(cxxopts::ParseResult &options) : options(options), menuGui(this), graphics(this), audio(this), logic(this), physics(), animation(entityManager)
 	{
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
@@ -75,7 +75,7 @@ namespace sp
 			if (ent.Has<ecs::Physics>())
 			{
 				auto phys = ent.Get<ecs::Physics>();
-				auto rigidBody = phys->actor->isRigidDynamic();
+				auto rigidBody = phys->actor->is<physx::PxRigidDynamic>();
 				if (rigidBody) physics.RemoveConstraints(rigidBody);
 				physics.RemoveActor(phys->actor);
 				phys->model = nullptr;

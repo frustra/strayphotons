@@ -12,6 +12,9 @@
 #define Logf(...) sp::logging::Log(__FILE__, __LINE__, __VA_ARGS__)
 #define Errorf(...) sp::logging::Error(__FILE__, __LINE__, __VA_ARGS__)
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-security"
+
 namespace sp
 {
 	namespace logging
@@ -100,3 +103,5 @@ namespace sp
 		}
 	}
 }
+
+#pragma clang diagnostic pop

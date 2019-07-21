@@ -21,13 +21,13 @@
 	url = git@github.com:frustra/tinygltfloader.git
 [submodule "ext/physx"]
 	path = ext/physx
-	url = git@github.com:frustra/PhysX-3.3.git
+	url = git@github.com:NVIDIAGameWorks/PhysX
 [submodule "ext/imgui"]
 	path = ext/imgui
 	url = https://github.com/frustra/imgui.git
 [submodule "ext/glomerate"]
 	path = ext/glomerate
-	url = git@github.com:cstegel/glomerate.git
+	url = git@github.com:frustra/glomerate.git
 [submodule "ext/cxxopts"]
 	path = ext/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git

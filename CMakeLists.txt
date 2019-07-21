@@ -1,5 +1,5 @@
 project(sp)
-set(CMAKE_MIN_VERSION 3.1)
+set(CMAKE_MIN_VERSION 3.12)
 cmake_minimum_required(VERSION ${CMAKE_MIN_VERSION} FATAL_ERROR)
 
 
@@ -88,10 +88,36 @@ add_subdirectory(${EXT_PATH}/googletest)
 
 add_subdirectory(${EXT_PATH}/v-hacd)
 
+function(ADD_PHYSX_SUBDIRECTORY)
+	set(TARGET_BUILD_PLATFORM mac)
+	set(PX_OUTPUT_ARCH x86)
+	set(PHYSX_ROOT_DIR ${EXT_PATH}/physx/physx)
+	set(PX_OUTPUT_LIB_DIR ${PROJECT_OUTPUT_DIR}/physx)
+	set(PX_OUTPUT_BIN_DIR ${PX_OUTPUT_LIB_DIR})
+	set(NV_FORCE_64BIT_SUFFIX TRUE)
+	set(NV_FORCE_32BIT_SUFFIX FALSE)
+
+	set(ENV{PM_PATHS} ${EXT_PATH}/physx/externals/opengl-linux)
+	set(ENV{PM_CMakeModules_PATH} ${EXT_PATH}/physx/externals/cmakemodules)
+	set(ENV{PM_PxShared_PATH} ${EXT_PATH}/physx/PxShared)
+
+	if (APPLE)
+		SET(PHYSX_CXX_FLAGS_APPLE "-faligned-allocation -Wno-atomic-implicit-seq-cst") # our variable
+
+		SET(PHYSX_CXX_FLAGS_DEBUG "-O0 -g ${PHYSX_CXX_FLAGS_APPLE}" CACHE INTERNAL "PhysX Debug CXX Flags")
+		SET(PHYSX_CXX_FLAGS_CHECKED "-O3 -g ${PHYSX_CXX_FLAGS_APPLE}" CACHE INTERNAL "PhysX Checked CXX Flags")
+		SET(PHYSX_CXX_FLAGS_PROFILE "-O3 -g ${PHYSX_CXX_FLAGS_APPLE}" CACHE INTERNAL "PhysX Profile CXX Flags")
+		SET(PHYSX_CXX_FLAGS_RELEASE "-O3 -g ${PHYSX_CXX_FLAGS_APPLE}" CACHE INTERNAL "PhysX Release CXX Flags")
+	endif()
+	add_subdirectory(${EXT_PATH}/physx/physx/compiler/public)
+endfunction()
+
+ADD_PHYSX_SUBDIRECTORY()
 
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/include
-	${EXT_PATH}/physx/PhysXSDK/Include
+	${EXT_PATH}/physx/physx/include
+	${EXT_PATH}/physx/PxShared/include
 	${CMAKE_CURRENT_SOURCE_DIR}/src
 	${EXT_PATH}/glfw/include
 	${EXT_PATH}/glew/include
@@ -153,56 +179,15 @@ if (WIN32)
 		PRIVATE "-DGLOMERATE_32BIT_ENTITIES")
 endif()
 
-# load PhysX
-if (SP_DEBUG)
-	set (PHYSX_ENV DEBUG)
-else()
-	set (PHYSX_ENV "")
-endif()
-
-if (WIN32)
-	set (PHYSX_ARCH _x86)
-elseif (APPLE)
-	set (PHYSX_ARCH "")
-else()
-	set (PHYSX_ARCH _x64)
-endif()
-
-set (PHYSX_LOADS
-	"PhysX3CharacterKinematic${PHYSX_ENV}${PHYSX_ARCH}"
-	"PhysX3Common${PHYSX_ENV}${PHYSX_ARCH}"
-	"PhysX3Cooking${PHYSX_ENV}${PHYSX_ARCH}"
-	"PhysX3Extensions${PHYSX_ENV}"
-	"PhysX3${PHYSX_ENV}${PHYSX_ARCH}"
+set (PHYSX_LIBRARIES
+	"PhysX"
+	"PhysXCharacterKinematic"
+	"PhysXCommon"
+	"PhysXCooking"
+	"PhysXExtensions"
+	"PhysXFoundation"
+	"PhysXPvdSDK"
 )
-
-if (NOT SP_PACKAGE_RELEASE)
-	set(PHYSX_LOADS ${PHYSX_LOADS}
-		"PhysXVisualDebuggerSDK${PHYSX_ENV}"
-	)
-endif()
-
-if (APPLE)
-	# for some reason on OS X linking fails without all the libs
-	set (PHYSX_LOADS ${PHYSX_LOADS}
-		"LowLevel${PHYSX_ENV}"
-		"LowLevelCloth${PHYSX_ENV}"
-		"PvdRuntime${PHYSX_ENV}"
-		"PxTask${PHYSX_ENV}"
-		"SimulationController${PHYSX_ENV}"
-		"SceneQuery${PHYSX_ENV}"
-		"PhysXProfileSDK${PHYSX_ENV}"
-	)
-endif()
-
-foreach (PHYSX_LIB ${PHYSX_LOADS})
-	message(STATUS ${PHYSX_LIB})
-	find_library(FOUND_LIB_${PHYSX_LIB}
-		NAMES ${PHYSX_LIB}
-		PATHS ${CMAKE_CURRENT_SOURCE_DIR}/vendor/lib/physx
-	)
-	LIST(APPEND PHYSX_LIBRARIES ${FOUND_LIB_${PHYSX_LIB}})
-endforeach (PHYSX_LIB)
 
 # Load fmod
 if (MSVC)

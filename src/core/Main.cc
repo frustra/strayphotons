@@ -45,9 +45,9 @@ int main(int argc, char **argv)
 	try
 #endif
 	{
-		options.parse(ARGC_NAME, ARGV_NAME);
+		auto optionsResult = options.parse(ARGC_NAME, ARGV_NAME);
 
-		if (options.count("help"))
+		if (optionsResult.count("help"))
 		{
 			std::cout << options.help() << std::endl;
 			return 0;
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 		os_getcwd(cwd, FILENAME_MAX);
 		Logf("Starting in directory: %s", cwd);
 
-		sp::Game game(options);
+		sp::Game game(optionsResult);
 		game.Start();
 		return 0;
 	}
