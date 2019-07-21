@@ -23,10 +23,10 @@ void main()
 	uint count = imageLoad(voxelCounters, position).r;
 	if (count == 0) {
 		imageStore(voxelRadiance, position, vec4(0));
-		// if (mipLevel > 0) {
-		// 	for (int a = 1; a < MAX_VOXEL_AREAS; a++) {
-		// 		imageStore(voxelRadiance, position + ivec3(a * VOXEL_GRID_SIZE >> mipLevel, 0, 0), vec4(0));
-		// 	}
-		// }
+		if (mipLevel > 0) {
+			for (int a = 1; a < MAX_VOXEL_AREAS; a++) {
+				imageStore(voxelRadiance, position + ivec3(a * VOXEL_GRID_SIZE >> mipLevel, 0, 0), vec4(0));
+			}
+		}
 	}
 }

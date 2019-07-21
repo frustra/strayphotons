@@ -40,7 +40,7 @@ void main() {
 
 		float alpha = 0.0;
 		vec3[MAX_VOXEL_AREAS] radiance;
-		// for (int i = 0; i < MAX_VOXEL_AREAS; i++) radiance[i] = vec3(0);
+		for (int i = 0; i < MAX_VOXEL_AREAS; i++) radiance[i] = vec3(0);
 
 		for (int x = 0; x < 2; x++) {
 			for (int y = 0; y < 2; y++) {
@@ -48,18 +48,18 @@ void main() {
 					ivec3 samplePos = floorPosition + ivec3(x, y, z);
 					vec4 sampleValue = imageLoad(previousVoxelRadiance, samplePos);
 
-					// if (mipLevel == 1) {
-					// 	vec3 samplePosWorld = vec3(samplePos - VOXEL_GRID_SIZE * 0.5 + 0.5) * voxelInfo.size + voxelInfo.center;
-					// 	for (int i = 0; i < MAX_VOXEL_AREAS; i++) {
-					// 		float inArea = float(samplePosWorld == clamp(samplePosWorld, voxelInfo.areas[i].areaMin, voxelInfo.areas[i].areaMax));
-					// 		radiance[i] += sampleValue.rgb * inArea;
-					// 	}
-					// } else {
+					if (mipLevel == 1) {
+						vec3 samplePosWorld = vec3(samplePos - VOXEL_GRID_SIZE * 0.5 + 0.5) * voxelInfo.size + voxelInfo.center;
+						for (int i = 0; i < MAX_VOXEL_AREAS; i++) {
+							float inArea = float(samplePosWorld == clamp(samplePosWorld, voxelInfo.areas[i].areaMin, voxelInfo.areas[i].areaMax));
+							radiance[i] += sampleValue.rgb * inArea;
+						}
+					} else {
 						radiance[0] += sampleValue.rgb;
-					// 	for (int i = 1; i < MAX_VOXEL_AREAS; i++) {
-					// 		radiance[i] += imageLoad(previousVoxelRadiance, MIPMAP_POSITION(samplePos, i, mipLevel - 2)).rgb;
-					// 	}
-					// }
+						for (int i = 1; i < MAX_VOXEL_AREAS; i++) {
+							radiance[i] += imageLoad(previousVoxelRadiance, MIPMAP_POSITION(samplePos, i, mipLevel - 2)).rgb;
+						}
+					}
 					sampleValue.a = min(sampleValue.a, 1.0);
 					alpha += sampleValue.a;
 				}
