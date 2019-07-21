@@ -153,7 +153,7 @@ namespace sp
 	{
 		RenderPhase phase("ShadowMaps", Timer);
 
-		glm::ivec2 renderTargetSize;
+		glm::ivec2 renderTargetSize(0, 0);
 		int lightCount = 0;
 		for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
 		{

@@ -34,7 +34,7 @@ namespace ecs
 
 	glm::mat4 Transform::GetGlobalTransform() const
 	{
-		glm::mat4 model;
+		glm::mat4 model = glm::identity<glm::mat4>();
 
 		if (this->parent != ecs::Entity::Id())
 		{
@@ -51,7 +51,7 @@ namespace ecs
 
 	glm::quat Transform::GetGlobalRotation() const
 	{
-		glm::quat model;
+		glm::quat model = glm::identity<glm::quat>();
 
 		if (this->parent != ecs::Entity::Id())
 		{

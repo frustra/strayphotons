@@ -77,9 +77,9 @@ namespace ecs
 		ecs::Entity::Id parent;
 		ecs::EntityManager *manager;
 
-		glm::mat4 translate;
-		glm::mat4 scale;
-		glm::quat rotate;
+		glm::mat4 translate = glm::identity<glm::mat4>();
+		glm::mat4 scale = glm::identity<glm::mat4>();
+		glm::quat rotate = glm::identity<glm::quat>();
 
 		bool dirty;
 	};
