@@ -112,7 +112,23 @@ namespace sp
 			auto &result = frame.results[front.resultIndex];
 			result.start = start;
 			result.end = end;
-			result.elapsed = end - start;
+			GLuint64 elapsed = end - start;
+			if (front.resultIndex < (int)lastCompleteFrame.results.size())
+			{
+				GLuint64 lastElapsed = lastCompleteFrame.results[front.resultIndex].elapsed;
+				if (elapsed < lastElapsed)
+				{
+					result.elapsed = std::max(elapsed, lastElapsed * 99 / 100);
+				}
+				else
+				{
+					result.elapsed = elapsed;
+				}
+			}
+			else
+			{
+				result.elapsed = elapsed;
+			}
 
 			queryPool.push_back(front.queries[0]);
 			queryPool.push_back(front.queries[1]);
