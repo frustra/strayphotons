@@ -6,9 +6,9 @@
 
 #ifdef _WIN32
 #include <intrin.h>
-#define os_break __debugbreak
+#define os_break() __debugbreak()
 #else
-#define os_break __builtin_trap
+#define os_break() asm("int $3")
 #endif
 
 namespace sp

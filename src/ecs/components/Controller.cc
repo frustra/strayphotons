@@ -9,6 +9,7 @@ namespace ecs
 	void HumanController::SetRotate(const glm::quat &rotation)
 	{
 		pitch = glm::pitch(rotation);
+		if (pitch > M_PI) pitch -= M_PI * 2;
 		yaw = glm::yaw(rotation);
 
 		if (std::abs(glm::roll(rotation)) > std::numeric_limits<float>::epsilon())
