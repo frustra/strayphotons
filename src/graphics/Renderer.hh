@@ -55,6 +55,7 @@ namespace sp
 		void RenderLoading(ecs::View view);
 		void ExpireRenderables();
 		void DrawPhysxLines(const ecs::View &view, SceneShader *shader, const vector<physx::PxDebugLine> &lines, const PreDrawFunc &preDraw);
+		void DrawGridDebug(const ecs::View &view, SceneShader *shader);
 		void EndFrame();
 
 		void SetRenderTarget(shared_ptr<RenderTarget> attachment0, shared_ptr<RenderTarget> depth);

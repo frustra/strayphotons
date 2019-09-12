@@ -251,7 +251,7 @@ namespace sp
 		void SetVoxelInfo(GLVoxelInfo *data, int diffDownsample)
 		{
 			BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
-			Set(diffuseDownsample, (float) diffDownsample);
+			Set(diffuseDownsample, diffDownsample);
 		}
 
 	private:
@@ -290,7 +290,7 @@ namespace sp
 		void SetVoxelInfo(GLVoxelInfo *data, int diffDownsample)
 		{
 			BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
-			Set(diffuseDownsample, (float) diffDownsample);
+			Set(diffuseDownsample, diffDownsample);
 		}
 
 	private:

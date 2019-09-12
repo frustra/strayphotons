@@ -17,7 +17,7 @@ layout(binding = 0, std140) uniform GLVoxelInfo {
 };
 
 uniform float exposure = 1.0;
-uniform float diffuseDownsample = 1;
+uniform int diffuseDownsample = 1;
 
 ##import voxel_shared
 ##import voxel_trace_shared

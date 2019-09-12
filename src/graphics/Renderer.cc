@@ -57,6 +57,7 @@ namespace sp
 	static CVar<int> CVarMirrorMapResolution("r.MirrorMapResolution", 512, "Resolution of mirror shadow maps");
 
 	static CVar<int> CVarVoxelGridSize("r.VoxelGridSize", 256, "NxNxN voxel grid dimensions");
+	static CVar<int> CVarShowVoxels("r.ShowVoxels", 0, "Show a wireframe of voxels at level N");
 	static CVar<float> CVarVoxelSuperSample("r.VoxelSuperSample", 1.0, "Render voxel grid with Nx supersampling");
 	static CVar<bool> CVarEnableShadows("r.EnableShadows", true, "Enable shadow mapping");
 	static CVar<bool> CVarEnablePCF("r.EnablePCF", true, "Enable smooth shadow sampling");
@@ -621,6 +622,11 @@ namespace sp
 					}
 				});
 
+				if (bounce == 0 && CVarShowVoxels.Get() > 0)
+				{
+					DrawGridDebug(view, sceneVS);
+				}
+
 				glDepthFunc(GL_LESS);
 				glDepthMask(GL_TRUE);
 			}
@@ -705,6 +711,42 @@ namespace sp
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 
+	static void addLine(const ecs::View &view, vector<SceneVertex> &vertices, glm::vec3 start, glm::vec3 end, float lineWidth)
+	{
+		glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
+		glm::vec3 lineDir = glm::normalize(end - start);
+
+
+		glm::vec3 lineMid = glm::vec3(0.5) * (start + end);
+		glm::vec3 viewDir = glm::normalize(viewPos - lineMid);
+
+		glm::vec3 widthVec = lineWidth * glm::normalize(glm::cross(viewDir, lineDir));
+
+		// move the positions back a bit to account for overlapping lines
+		glm::vec3 pos0 = start - lineWidth * lineDir;
+		glm::vec3 pos1 = end + lineWidth * lineDir;;
+
+		auto addVertex = [&](const glm::vec3 & pos)
+		{
+			vertices.push_back(
+			{
+				{pos.x, pos.y, pos.z},
+				viewDir,
+				{0, 0}
+			});
+		};
+
+		// 2 triangles that make up a "fat" line connecting pos0 and pos1
+		// with the flat face pointing at the player
+		addVertex(pos0 - widthVec);
+		addVertex(pos1 + widthVec);
+		addVertex(pos0 + widthVec);
+
+		addVertex(pos1 - widthVec);
+		addVertex(pos1 + widthVec);
+		addVertex(pos0 - widthVec);
+	}
+
 	void Renderer::DrawPhysxLines(
 		const ecs::View &view,
 		SceneShader *shader,
@@ -714,50 +756,10 @@ namespace sp
 		ecs::Entity nullEnt;
 		if (preDraw) preDraw(nullEnt);
 
-		glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
 		vector<SceneVertex> vertices(6 * lines.size());
 		for (auto &line : lines)
 		{
-			glm::vec3 lineDir = glm::normalize(glm::vec3(
-												   line.pos1.x - line.pos0.x,
-												   line.pos1.y - line.pos0.y,
-												   line.pos1.z - line.pos0.z
-											   ));
-
-			auto lineMid = 0.5 * (line.pos1 + line.pos0);
-			glm::vec3 viewDir = glm::normalize(glm::vec3(
-												   viewPos.x - lineMid.x,
-												   viewPos.y - lineMid.y,
-												   viewPos.z - lineMid.z
-											   ));
-
-			const float lineWidth = 0.004f;
-			glm::vec3 widthVec =
-				lineWidth * glm::normalize(glm::cross(viewDir, lineDir));
-
-			// move the positions back a bit to account for overlapping lines
-			glm::vec3 pos0 = PxVec3ToGlmVec3P(line.pos0) - lineWidth * lineDir;
-			glm::vec3 pos1 = PxVec3ToGlmVec3P(line.pos1) + lineWidth * lineDir;;
-
-			auto addVertex = [&](const glm::vec3 & pos)
-			{
-				vertices.push_back(
-				{
-					{pos.x, pos.y, pos.z},
-					viewDir,
-					{0, 0}
-				});
-			};
-
-			// 2 triangles that make up a "fat" line connecting pos0 and pos1
-			// with the flat face pointing at the player
-			addVertex(pos0 - widthVec);
-			addVertex(pos1 + widthVec);
-			addVertex(pos0 + widthVec);
-
-			addVertex(pos1 - widthVec);
-			addVertex(pos1 + widthVec);
-			addVertex(pos0 - widthVec);
+			addLine(view, vertices, PxVec3ToGlmVec3P(line.pos0), PxVec3ToGlmVec3P(line.pos1), 0.004f);
 		}
 
 		shader->SetParams(view, glm::mat4());
@@ -803,47 +805,8 @@ namespace sp
 			{
 				glm::vec3 lpos0 = glm::vec3(modelMat * glm::vec4(0, 0, 0, 1.0));
 				glm::vec3 lpos1 = glm::vec3(modelMat * glm::vec4(0, 0, -10.0, 1.0));
-				glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
-				SceneVertex vertices[6];
-				glm::vec3 lineDir = glm::normalize(glm::vec3(
-					lpos1.x - lpos0.x,
-					lpos1.y - lpos0.y,
-					lpos1.z - lpos0.z
-				));
-
-				auto lineMid = (lpos1 + lpos0) * 0.5f;
-				glm::vec3 viewDir = glm::normalize(glm::vec3(
-					viewPos.x - lineMid.x,
-					viewPos.y - lineMid.y,
-					viewPos.z - lineMid.z
-				));
-
-				const float lineWidth = 0.001f;
-				glm::vec3 widthVec =
-					lineWidth * glm::normalize(glm::cross(viewDir, lineDir));
-
-				// move the positions back a bit to account for overlapping lines
-				glm::vec3 pos0 = lpos0 - lineWidth * lineDir;
-				glm::vec3 pos1 = lpos1 + lineWidth * lineDir;
-
-				auto addVertex = [&](const int i, const glm::vec3 & pos)
-				{
-					vertices[i] = {
-						{ pos.x, pos.y, pos.z },
-						viewDir,
-						{ 0, 0 }
-					};
-				};
-
-				// 2 triangles that make up a "fat" line connecting pos0 and pos1
-				// with the flat face pointing at the player
-				addVertex(0, pos0 - widthVec);
-				addVertex(1, pos1 + widthVec);
-				addVertex(2, pos0 + widthVec);
-
-				addVertex(3, pos1 - widthVec);
-				addVertex(4, pos1 + widthVec);
-				addVertex(5, pos0 - widthVec);
+				vector<SceneVertex> vertices(6);
+				addLine(view, vertices, lpos0, lpos1, 0.001f);
 
 				shader->SetParams(view, glm::mat4());
 				auto fragShader = GlobalShaders->Get<SceneFS>();
@@ -853,7 +816,7 @@ namespace sp
 				static BasicMaterial mat(baseColor);
 
 				static VertexBuffer vbo;
-				vbo.SetElementsVAO(6, vertices, GL_DYNAMIC_DRAW);
+				vbo.SetElementsVAO(vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
 				vbo.BindVAO();
 
 				mat.baseColorTex.Bind(0);
@@ -864,6 +827,45 @@ namespace sp
 				glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
 			}
 		}
+	}
+
+	void Renderer::DrawGridDebug(const ecs::View &view, SceneShader *shader)
+	{
+		int gridSize = CVarVoxelGridSize.Get() >> (CVarShowVoxels.Get() - 1);
+		glm::vec3 min = voxelData.info.voxelGridCenter - (voxelData.info.voxelSize * (float)(voxelData.info.gridSize / 2));
+		glm::vec3 max = voxelData.info.voxelGridCenter + (voxelData.info.voxelSize * (float)(voxelData.info.gridSize / 2));
+
+		vector<SceneVertex> vertices;
+		for (int a = 0; a <= gridSize; a++)
+		{
+			float x = min.x + (float)a * (max.x - min.x) / (float)gridSize;
+			float y = min.y + (float)a * (max.y - min.y) / (float)gridSize;
+			for (int b = 0; b <= gridSize; b++)
+			{
+				float y2 = min.y + (float)b * (max.y - min.y) / (float)gridSize;
+				float z = min.z + (float)b * (max.z - min.z) / (float)gridSize;
+
+				addLine(view, vertices, glm::vec3(min.x, y, z), glm::vec3(max.x, y, z), 0.001f);
+				addLine(view, vertices, glm::vec3(x, min.y, z), glm::vec3(x, max.y, z), 0.001f);
+				addLine(view, vertices, glm::vec3(x, y2, min.z), glm::vec3(x, y2, max.z), 0.001f);
+			}
+		}
+
+		shader->SetParams(view, glm::mat4());
+
+		static unsigned char baseColor[4] = { 0, 255, 0, 255 };
+		static BasicMaterial mat(baseColor);
+
+		static VertexBuffer vbo;
+		vbo.SetElementsVAO(vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
+		vbo.BindVAO();
+
+		mat.baseColorTex.Bind(0);
+		mat.roughnessTex.Bind(1);
+		mat.metallicTex.Bind(2);
+		mat.heightTex.Bind(3);
+
+		glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
 	}
 
 	void Renderer::RenderLoading(ecs::View view)

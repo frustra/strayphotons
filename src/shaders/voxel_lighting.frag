@@ -44,7 +44,7 @@ layout(binding = 2, std140) uniform GLVoxelInfo {
 ##import lib/mirror_scene_common
 
 uniform float exposure = 1.0;
-uniform float diffuseDownsample = 1.0;
+uniform int diffuseDownsample = 1;
 uniform float skyIlluminance = 1.0;
 
 ##import lib/util
@@ -154,7 +154,7 @@ void main()
 	vec3 indirectDiffuse = vec3(0);
 
 	if (diffuseDownsample > 1) {
-		if (detectEdge(viewNormal, length(viewPosition), diffuseDownsample * 0.65 / textureSize(gBuffer0, 0))) {
+		if (detectEdge(viewNormal, length(viewPosition), float(diffuseDownsample) * 0.65 / textureSize(gBuffer0, 0))) {
 			indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, vec2(0));
 		} else {
 			indirectDiffuse = texture(indirectDiffuseSampler, inTexCoord).rgb / exposure;
