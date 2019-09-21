@@ -110,6 +110,47 @@ namespace sp
 				else if (key == GLFW_KEY_F6)
 				{
 					ReloadScene("reset");
+				} else if (key == GLFW_KEY_Q) // Spawn dodecahedron
+				{
+					auto entity = game->entityManager.NewEntity();
+					auto model = GAssets.LoadModel("dodecahedron");
+					entity.Assign<ecs::Renderable>(model);
+					auto transform = entity.Assign<ecs::Transform>(&game->entityManager);
+					transform->Translate(glm::vec3(0, 5, 0));
+
+					PhysxActorDesc desc;
+					desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
+					auto actor = game->physics.CreateActor(model, desc, entity);
+
+					if (actor)
+					{
+						auto physics = entity.Assign<ecs::Physics>(actor, model, desc);
+					}
+				}
+				else if (key == GLFW_KEY_P) // Toggle flashlight following player
+				{
+					if (flashlight.Valid())
+					{
+						auto transform = flashlight.Get<ecs::Transform>();
+						ecs::Entity player = scene->FindEntity("player");
+						auto playerTransform = player.Get<ecs::Transform>();
+						if (transform->HasParent())
+						{
+							transform->SetPosition(transform->GetGlobalTransform() * glm::vec4(0, 0, 0, 1));
+							transform->SetRotate(playerTransform->GetGlobalRotation());
+							transform->SetParent(ecs::Entity());
+						}
+						else
+						{
+							transform->SetPosition(glm::vec3(0, -0.3, 0));
+							transform->SetRotate(glm::quat());
+							transform->SetParent(player);
+						}
+					}
+				}
+				else if (key == GLFW_KEY_F) // Turn flashlight on and off
+				{
+					CVarFlashlightOn.Set(!CVarFlashlightOn.Get());
 				}
 			}
 		});
@@ -117,48 +158,6 @@ namespace sp
 		input->AddCharInputCallback([&](uint32 ch)
 		{
 			if (input->FocusLocked()) return;
-			if (ch == 'q') // Spawn dodecahedron
-			{
-				auto entity = game->entityManager.NewEntity();
-				auto model = GAssets.LoadModel("dodecahedron");
-				entity.Assign<ecs::Renderable>(model);
-				auto transform = entity.Assign<ecs::Transform>(&game->entityManager);
-				transform->Translate(glm::vec3(0, 5, 0));
-
-				PhysxActorDesc desc;
-				desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
-				auto actor = game->physics.CreateActor(model, desc, entity);
-
-				if (actor)
-				{
-					auto physics = entity.Assign<ecs::Physics>(actor, model, desc);
-				}
-			}
-			else if (ch == 'p') // Toggle flashlight following player
-			{
-				if (flashlight.Valid())
-				{
-					auto transform = flashlight.Get<ecs::Transform>();
-					ecs::Entity player = scene->FindEntity("player");
-					auto playerTransform = player.Get<ecs::Transform>();
-					if (transform->HasParent())
-					{
-						transform->SetPosition(transform->GetGlobalTransform() * glm::vec4(0, 0, 0, 1));
-						transform->SetRotate(playerTransform->GetGlobalRotation());
-						transform->SetParent(ecs::Entity());
-					}
-					else
-					{
-						transform->SetPosition(glm::vec3(0, -0.3, 0));
-						transform->SetRotate(glm::quat());
-						transform->SetParent(player);
-					}
-				}
-			}
-			else if (ch == 'f') // Turn flashlight on and off
-			{
-				CVarFlashlightOn.Set(!CVarFlashlightOn.Get());
-			}
 		});
 
 		//game->audio.StartEvent("event:/german nonsense");
