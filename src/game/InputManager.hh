@@ -5,6 +5,7 @@
 #include <array>
 #include <functional>
 #include "Common.hh"
+#include "core/CFunc.hh"
 
 namespace sp
 {
@@ -13,6 +14,21 @@ namespace sp
 	 */
 	class InputManager
 	{
+		class KeyBinding
+		{
+		public:
+			string keyName;
+			string command;
+
+			friend std::istringstream &operator>> (std::istringstream &in, KeyBinding &kb)
+			{
+				in >> kb.keyName;
+				std::getline(in, kb.command);
+				trim(kb.command);
+				return in;
+			}
+		};
+
 	public:
 		InputManager();
 		~InputManager();
@@ -150,6 +166,8 @@ namespace sp
 			charEventCallbacks.push_back(cb);
 		}
 
+		void BindKey(KeyBinding kb);
+
 	private:
 		void keyChange(int key, int action);
 		void charInput(uint32 ch);
@@ -184,6 +202,8 @@ namespace sp
 		vector<CharEventCallback> charEventCallbacks;
 
 		vector<int> focusLocked;
+
+		CFuncCollection funcs;
 	};
 
 	int MouseButtonToKey(int button);

@@ -1,9 +1,11 @@
 #include "InputManager.hh"
 #include "Common.hh"
+#include "BindingNames.hh"
 
 #include <algorithm>
 #include <stdexcept>
 #include <GLFW/glfw3.h>
+#include <core/Logging.hh>
 
 namespace sp
 {
@@ -13,6 +15,8 @@ namespace sp
 		keysPressed.fill(false);
 		keysReleased.fill(false);
 		firstCursorAction = true;
+
+		funcs.Register(this, "bind", "Bind a key to a command", &InputManager::BindKey);
 	}
 
 	InputManager::~InputManager() {}
@@ -242,6 +246,23 @@ namespace sp
 		glfwSetScrollCallback(window, MouseScrollCallback);
 		glfwSetMouseButtonCallback(window, MouseButtonCallback);
 		glfwSetCursorPosCallback(window, MouseMoveCallback);
+	}
+
+	void InputManager::BindKey(InputManager::KeyBinding kb)
+	{
+		Debugf("Key Name: %s, Command: %s", kb.keyName, kb.command);
+
+		auto it = bindingNames.find(kb.keyName);
+
+		if (it != bindingNames.end())
+		{
+			// Binding exists
+			// TODO: Implement.
+		}
+		else
+		{
+			Errorf("Binding %s does not exist", kb.keyName);
+		}
 	}
 
 	void InputManager::DisableCursor()

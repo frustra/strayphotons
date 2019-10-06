@@ -27,7 +27,7 @@ namespace sp
 		void SetFromString(const string &newValue)
 		{
 			ParamType value;
-			std::stringstream in(newValue);
+			std::istringstream in(newValue);
 			in >> value;
 
 			callback(value);
