@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <GLFW/glfw3.h>
 #include <core/Logging.hh>
+#include <core/Console.hh>
 
 namespace sp
 {
@@ -187,6 +188,16 @@ namespace sp
 				break;
 		}
 
+		if (action == GLFW_PRESS && !FocusLocked(FOCUS_MENU))
+		{
+			auto it = keyBindings.find(key);
+			if (it != keyBindings.end())
+			{
+				// Run the bound command
+				GConsoleManager.ParseAndExecute(it->second);
+			}
+		}
+
 		for (auto &cb : keyEventCallbacks)
 		{
 			cb(key, action);
@@ -248,20 +259,25 @@ namespace sp
 		glfwSetCursorPosCallback(window, MouseMoveCallback);
 	}
 
-	void InputManager::BindKey(InputManager::KeyBinding kb)
+	void InputManager::BindKey(string args)
 	{
-		Debugf("Key Name: %s, Command: %s", kb.keyName, kb.command);
+		std::stringstream stream(args);
+		string keyName;
+		stream >> keyName;
 
-		auto it = bindingNames.find(kb.keyName);
-
+		auto it = bindingNames.find(to_upper_copy(keyName));
 		if (it != bindingNames.end())
 		{
-			// Binding exists
-			// TODO: Implement.
+			string command;
+			std::getline(stream, command);
+			trim(command);
+
+			Logf("Binding %s to command: %s", keyName, command);
+			BindCommand(it->second, command);
 		}
 		else
 		{
-			Errorf("Binding %s does not exist", kb.keyName);
+			Errorf("Binding %s does not exist", keyName);
 		}
 	}
 

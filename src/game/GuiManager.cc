@@ -6,7 +6,7 @@
 
 namespace sp
 {
-	GuiManager::GuiManager()
+	GuiManager::GuiManager(const FocusLevel focusPriority) : focusPriority(focusPriority)
 	{
 		imCtx = ImGui::CreateContext();
 	}

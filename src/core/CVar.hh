@@ -25,6 +25,7 @@ namespace sp
 
 		virtual string StringValue() = 0;
 		virtual void SetFromString(const string &newValue) = 0;
+		virtual void ToggleValue(const string *values, size_t count) {}
 		virtual bool IsValueType() = 0;
 
 		bool Changed() const
@@ -81,6 +82,57 @@ namespace sp
 
 			std::stringstream in(newValue);
 			in >> value;
+			dirty = true;
+		}
+
+		/*
+		 * Toggle values between those given in the set.
+		 * If no values are given, a true/false toggle is used.
+		 */
+		void ToggleValue(const string *str_values, size_t count)
+		{
+			if (count == 0)
+			{
+				if (value == VarType())
+				{
+					value = VarType(1);
+				}
+				else
+				{
+					value = VarType();
+				}
+			}
+			else if (count == 1)
+			{
+				std::stringstream in(str_values[0]);
+				VarType v;
+				in >> v;
+				if (value == v)
+				{
+					value = VarType();
+				}
+				else
+				{
+					value = v;
+				}
+			}
+			else
+			{
+				std::vector<VarType> values(count);
+				size_t target = count - 1;
+				for (size_t i = 0; i < count && i <= target; i++)
+				{
+					std::stringstream in(str_values[i]);
+					VarType v;
+					in >> v;
+					values[i] = v;
+					if (value == values[i])
+					{
+						target = (i + 1) % count;
+					}
+				}
+				value = values[target];
+			}
 			dirty = true;
 		}
 

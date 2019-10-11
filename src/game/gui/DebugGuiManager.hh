@@ -9,7 +9,7 @@ namespace sp
 	class DebugGuiManager : public GuiManager
 	{
 	public:
-		DebugGuiManager() { }
+		DebugGuiManager() : GuiManager(FOCUS_OVERLAY) { }
 		virtual ~DebugGuiManager() { }
 
 		void BeforeFrame();
@@ -25,8 +25,6 @@ namespace sp
 		void ReleaseFocus();
 
 		void ToggleConsole();
-
-		const int FocusLevel = 1000;
 
 	private:
 		InputManager *inputManager = nullptr;
