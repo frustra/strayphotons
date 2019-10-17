@@ -20,7 +20,7 @@ namespace ecs
 			if (receiver->IsTriggered())
 			{
 				if (state != SlideDoor::State::OPENED
-				    && state != SlideDoor::State::OPENING)
+					&& state != SlideDoor::State::OPENING)
 				{
 					door->Open();
 				}
@@ -28,7 +28,7 @@ namespace ecs
 			else
 			{
 				if (state != SlideDoor::State::CLOSED
-				    && state != SlideDoor::State::CLOSING)
+					&& state != SlideDoor::State::CLOSING)
 				{
 					door->Close();
 				}

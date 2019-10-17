@@ -9,7 +9,7 @@ namespace ecs
 	{
 	public:
 		LightGun(const vector<int> *suckLightKeys = nullptr,
-			const vector<int> *shootLightKeys = nullptr);
+				 const vector<int> *shootLightKeys = nullptr);
 
 
 		bool hasLight;

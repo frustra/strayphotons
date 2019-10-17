@@ -12,7 +12,8 @@ namespace ecs
 			return;
 		}
 
-		auto handler = [&](Entity e, const SignalChange &sig) {
+		auto handler = [&](Entity e, const SignalChange & sig)
+		{
 			this->signallers.at(e.GetId()).signal = sig.signal;
 		};
 
@@ -46,7 +47,7 @@ namespace ecs
 	bool SignalReceiver::IsTriggered() const
 	{
 		return this->GetSignal()
-			> (1.0f - SignalReceiver::TRIGGER_TOLERANCE);
+			   > (1.0f - SignalReceiver::TRIGGER_TOLERANCE);
 	}
 
 	void SignalReceiver::SetAmplifier(float amp)
@@ -60,5 +61,5 @@ namespace ecs
 	}
 
 	const float SignalReceiver::TRIGGER_TOLERANCE =
-		10*std::numeric_limits<float>::epsilon();
+		10 * std::numeric_limits<float>::epsilon();
 }

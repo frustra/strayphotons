@@ -39,7 +39,7 @@ namespace sp
 		// Convert all std::strings to const char* using constexpr if (C++17)
 		// Source: https://gist.github.com/Zitrax/a2e0040d301bf4b8ef8101c0b1e3f1d5
 		template<typename T>
-		auto convert(T&& t)
+		auto convert(T &&t)
 		{
 			if constexpr (std::is_same<std::remove_cv_t<std::remove_reference_t<T>>, std::string>::value)
 			{
@@ -52,7 +52,7 @@ namespace sp
 		}
 
 		template <typename... T>
-		inline static void writeFormatter(Level lvl, const std::string &fmt, T&&... t)
+		inline static void writeFormatter(Level lvl, const std::string &fmt, T &&... t)
 		{
 #ifdef PACKAGE_RELEASE
 			if (lvl != logging::Level::Debug)
@@ -69,7 +69,7 @@ namespace sp
 		}
 
 		template <typename... T>
-		inline static void writeLog(Level lvl, const char *file, int line, const std::string &fmt, T&&... t)
+		inline static void writeLog(Level lvl, const char *file, int line, const std::string &fmt, T &&... t)
 		{
 #ifdef SP_VERBOSE_LOGGING
 			writeFormatter(lvl, fmt + "  (%s:%d)\n", convert(std::forward<T>(t))..., basename(file), line);

@@ -342,8 +342,8 @@ namespace sp
 		heightTex = defaultMat.heightTex;
 
 		baseColorTex.Create()
-			.Filter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(vrTex->unWidth, vrTex->unHeight).Storage(PF_RGBA8).Image2D(vrTex->rubTextureMapData);
+		.Filter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR).Wrap(GL_REPEAT, GL_REPEAT)
+		.Size(vrTex->unWidth, vrTex->unHeight).Storage(PF_RGBA8).Image2D(vrTex->rubTextureMapData);
 
 		GLModel::Primitive prim;
 		prim.parent = &sourcePrim;

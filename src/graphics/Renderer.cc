@@ -71,7 +71,7 @@ namespace sp
 			CVarEnableShadows.Changed() ||
 			CVarEnablePCF.Changed() ||
 			CVarEnableBumpMap.Changed()
-		)
+		   )
 		{
 			int voxelGridSize = CVarVoxelGridSize.Get(true);
 			ShaderManager::SetDefine("VOXEL_GRID_SIZE", std::to_string(voxelGridSize));
@@ -646,7 +646,7 @@ namespace sp
 #ifdef ENABLE_VR
 		if (view.vrEye > 0)
 		{
-			vr::Texture_t vrTexture = { (void*)targets.finalOutput->GetTexture().handle, vr::TextureType_OpenGL, vr::ColorSpace_Linear };
+			vr::Texture_t vrTexture = { (void *)targets.finalOutput->GetTexture().handle, vr::TextureType_OpenGL, vr::ColorSpace_Linear };
 			vr::VRCompositor()->Submit(view.vrEye == 1 ? vr::Eye_Left : vr::Eye_Right, &vrTexture);
 		}
 #endif
@@ -787,7 +787,7 @@ namespace sp
 			return;
 		}
 
-		auto modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform();
+		auto modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform(game->entityManager);
 		shader->SetParams(view, modelMat);
 
 		if (preDraw) preDraw(ent);

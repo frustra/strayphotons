@@ -17,7 +17,7 @@ namespace ecs
 		Entity barrier = em.NewEntity();
 		auto model = sp::GAssets.LoadModel("box");
 		barrier.Assign<Renderable>(model);
-		auto transform = barrier.Assign<Transform>(&em);
+		auto transform = barrier.Assign<Transform>();
 		transform->Scale(dimensions);
 
 		// align bottom of barrier with given y pos

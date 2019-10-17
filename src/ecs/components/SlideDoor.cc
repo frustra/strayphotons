@@ -68,7 +68,7 @@ namespace ecs
 		for (Entity panel : vector<Entity>({left, right}))
 		{
 			if (!panel.Valid() || !panel.Has<Transform>()
-			 || !panel.Has<Animation>())
+				|| !panel.Has<Animation>())
 			{
 				continue;
 			}

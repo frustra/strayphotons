@@ -17,6 +17,7 @@ extern "C"
 #include "Common.hh"
 
 #include <Ecs.hh>
+#include "ecs/Components.hh"
 #include "ecs/components/Barrier.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/LightSensor.hh"
@@ -245,7 +246,15 @@ namespace sp
 			{
 				if (comp.first[0] == '_') continue;
 
-				if (comp.first == "renderable")
+				if (ecs::GComponentList.count(comp.first) > 0)
+				{
+					bool result = ecs::GComponentList[comp.first]->LoadEntity(entity, comp.second);
+					if (!result)
+					{
+						throw new std::runtime_error("Failed to load component type: " + comp.first);
+					}
+				}
+				else if (comp.first == "renderable")
 				{
 					auto r = entity.Assign<ecs::Renderable>();
 
@@ -276,88 +285,6 @@ namespace sp
 					if (glm::length(r->emissive) == 0.0f && glm::length(r->voxelEmissive) > 0.0f)
 					{
 						r->emissive = r->voxelEmissive;
-					}
-				}
-				else if (comp.first == "transform")
-				{
-					auto transform = entity.Assign<ecs::Transform>(em);
-					for (auto subTransform : comp.second.get<picojson::object>())
-					{
-						if (subTransform.first == "parent")
-						{
-							ecs::Entity parent = scene->FindEntity(subTransform.second.get<string>());
-							if (!parent.Valid())
-							{
-								throw std::runtime_error("Entity relative to non-existent parent");
-							}
-							transform->SetParent(parent);
-						}
-						else if (subTransform.first == "scale")
-						{
-							transform->Scale(MakeVec3(subTransform.second));
-						}
-						else if (subTransform.first == "rotate")
-						{
-							vector<picojson::value *> rotations;
-							picojson::array &subSecond = subTransform.second.get<picojson::array>();
-							if (subSecond.at(0).is<picojson::array>())
-							{
-								// multiple rotations were given
-								for (picojson::value &r : subSecond)
-								{
-									rotations.push_back(&r);
-								}
-							}
-							else
-							{
-								// a single rotation was given
-								rotations.push_back(&subTransform.second);
-							}
-
-							for (picojson::value *r : rotations)
-							{
-								auto n = MakeVec4(*r);
-								transform->Rotate(glm::radians(n[0]), { n[1], n[2], n[3] });
-							}
-						}
-						else if (subTransform.first == "translate")
-						{
-							transform->Translate(MakeVec3(subTransform.second));
-						}
-					}
-				}
-				else if (comp.first == "view")
-				{
-					auto view = entity.Assign<ecs::View>();
-					for (auto param : comp.second.get<picojson::object>())
-					{
-						if (param.first == "fov")
-						{
-							view->fov = glm::radians(param.second.get<double>());
-						}
-						else
-						{
-							if (param.first == "extents")
-							{
-								view->extents = MakeVec2(param.second);
-							}
-							else if (param.first == "clip")
-							{
-								view->clip = MakeVec2(param.second);
-							}
-							else if (param.first == "offset")
-							{
-								view->offset = MakeVec2(param.second);
-							}
-							else if (param.first == "clear")
-							{
-								view->clearColor = glm::vec4(MakeVec3(param.second), 1.0f);
-							}
-							else if (param.first == "sky")
-							{
-								view->skyIlluminance = param.second.get<double>();
-							}
-						}
 					}
 				}
 				else if (comp.first == "light")

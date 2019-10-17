@@ -31,7 +31,7 @@ namespace ecs
 		float amplifier = 1.0f;
 		float offset = 0.0f;
 		std::map<Entity::Id, Input> signallers;
-		
+
 		static const float TRIGGER_TOLERANCE;
 	};
 }

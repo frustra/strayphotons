@@ -28,7 +28,8 @@ namespace ecs
 			}
 			voxelInfo->areas[areaIndex++] = *area;
 		}
-		for (; areaIndex < sp::MAX_VOXEL_AREAS; areaIndex++) {
+		for (; areaIndex < sp::MAX_VOXEL_AREAS; areaIndex++)
+		{
 			voxelInfo->areas[areaIndex] = VoxelArea{glm::vec3(0), glm::vec3(-1)};
 		}
 

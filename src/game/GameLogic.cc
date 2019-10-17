@@ -110,13 +110,13 @@ namespace sp
 				else if (key == GLFW_KEY_F6)
 				{
 					ReloadScene("reset");
-				} else if (key == GLFW_KEY_Q) // Spawn dodecahedron
+				}
+				else if (key == GLFW_KEY_Q)   // Spawn dodecahedron
 				{
 					auto entity = game->entityManager.NewEntity();
 					auto model = GAssets.LoadModel("dodecahedron");
 					entity.Assign<ecs::Renderable>(model);
-					auto transform = entity.Assign<ecs::Transform>(&game->entityManager);
-					transform->Translate(glm::vec3(0, 5, 0));
+					entity.Assign<ecs::Transform>(glm::vec3(0, 5, 0));
 
 					PhysxActorDesc desc;
 					desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
@@ -134,10 +134,10 @@ namespace sp
 						auto transform = flashlight.Get<ecs::Transform>();
 						ecs::Entity player = scene->FindEntity("player");
 						auto playerTransform = player.Get<ecs::Transform>();
-						if (transform->HasParent())
+						if (transform->HasParent(game->entityManager))
 						{
-							transform->SetPosition(transform->GetGlobalTransform() * glm::vec4(0, 0, 0, 1));
-							transform->SetRotate(playerTransform->GetGlobalRotation());
+							transform->SetPosition(transform->GetGlobalTransform(game->entityManager) * glm::vec4(0, 0, 0, 1));
+							transform->SetRotate(playerTransform->GetGlobalRotation(game->entityManager));
 							transform->SetParent(ecs::Entity());
 						}
 						else
@@ -422,7 +422,7 @@ namespace sp
 			}
 			if (!vrOrigin.Has<ecs::Transform>())
 			{
-				auto transform = vrOrigin.Assign<ecs::Transform>(&game->entityManager);
+				auto transform = vrOrigin.Assign<ecs::Transform>();
 				if (player.Valid() && player.Has<ecs::Transform>())
 				{
 					auto playerTransform = player.Get<ecs::Transform>();
@@ -434,7 +434,7 @@ namespace sp
 			{
 				ecs::Entity vrController = game->entityManager.NewEntity();
 				vrController.Assign<ecs::Name>("vr-controller");
-				vrController.Assign<ecs::Transform>(&game->entityManager);
+				vrController.Assign<ecs::Transform>();
 				auto interact = vrController.Assign<ecs::InteractController>();
 				interact->manager = &game->physics;
 			}
@@ -478,8 +478,7 @@ namespace sp
 
 		// Create flashlight entity
 		flashlight = game->entityManager.NewEntity();
-		auto transform = flashlight.Assign<ecs::Transform>(&game->entityManager);
-		transform->SetPosition(glm::vec3(0, -0.3, 0));
+		auto transform = flashlight.Assign<ecs::Transform>(glm::vec3(0, -0.3, 0));
 		transform->SetParent(player);
 		auto light = flashlight.Assign<ecs::Light>();
 		light->tint = glm::vec3(1.0);

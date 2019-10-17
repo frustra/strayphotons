@@ -2,6 +2,7 @@
 #include "core/Logging.hh"
 #include "core/Console.hh"
 #include "physx/PhysxUtils.hh"
+#include "ecs/Components.hh"
 
 #include "ecs/components/Barrier.hh"
 #include "ecs/components/Interact.hh"
@@ -29,6 +30,9 @@ namespace sp
 	{
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
+		ecs::RegisterComponents(entityManager);
+		// entityManager.RegisterComponentType<ecs::Transform>();
+		// entityManager.RegisterComponentType<ecs::View>();
 		entityManager.RegisterComponentType<ecs::Barrier>();
 		entityManager.RegisterComponentType<ecs::HumanController>();
 		entityManager.RegisterComponentType<ecs::InteractController>();
@@ -38,9 +42,7 @@ namespace sp
 		entityManager.RegisterComponentType<ecs::Mirror>();
 		entityManager.RegisterComponentType<ecs::Name>();
 		entityManager.RegisterComponentType<ecs::Renderable>();
-		entityManager.RegisterComponentType<ecs::Transform>();
 		entityManager.RegisterComponentType<ecs::TriggerArea>();
-		entityManager.RegisterComponentType<ecs::View>();
 		entityManager.RegisterComponentType<ecs::VoxelInfo>();
 		entityManager.RegisterComponentType<ecs::VoxelArea>();
 		entityManager.RegisterComponentType<ecs::LightGun>();

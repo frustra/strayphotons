@@ -70,11 +70,11 @@ namespace ecs
 		auto transform = origin.Get<Transform>();
 		physx::PxRaycastBuffer hitBuff;
 		bool hit = physics->RaycastQuery(
-			origin,
-			GlmVec3ToPxVec3(transform->GetGlobalPosition()),
-			GlmVec3ToPxVec3(transform->GetGlobalForward()),
-			1000.0f,
-			hitBuff);
+					   origin,
+					   GlmVec3ToPxVec3(transform->GetGlobalPosition(*origin.GetManager())),
+					   GlmVec3ToPxVec3(transform->GetGlobalForward(*origin.GetManager())),
+					   1000.0f,
+					   hitBuff);
 
 		if (!hit)
 			return Entity();

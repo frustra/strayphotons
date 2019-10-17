@@ -68,7 +68,8 @@ namespace sp
 
 	void trim_left(string &str)
 	{
-		auto left = std::find_if(str.begin(), str.end(), [](char ch) {
+		auto left = std::find_if(str.begin(), str.end(), [](char ch)
+		{
 			return !std::isspace(ch);
 		});
 		str.erase(str.begin(), left);
@@ -76,7 +77,8 @@ namespace sp
 
 	void trim_right(string &str)
 	{
-		auto right = std::find_if(str.rbegin(), str.rend(), [](char ch) {
+		auto right = std::find_if(str.rbegin(), str.rend(), [](char ch)
+		{
 			return !std::isspace(ch);
 		}).base();
 		str.erase(right, str.end());

@@ -3,10 +3,12 @@
 
 namespace ecs
 {
-	const vector<int> LightGun::DEFAULT_SUCK_LIGHT_KEYS = {
+	const vector<int> LightGun::DEFAULT_SUCK_LIGHT_KEYS =
+	{
 		sp::MouseButtonToKey(GLFW_MOUSE_BUTTON_RIGHT)
 	};
-	const vector<int> LightGun::DEFAULT_SHOOT_LIGHT_KEYS = {
+	const vector<int> LightGun::DEFAULT_SHOOT_LIGHT_KEYS =
+	{
 		sp::MouseButtonToKey(GLFW_MOUSE_BUTTON_LEFT)
 	};
 
