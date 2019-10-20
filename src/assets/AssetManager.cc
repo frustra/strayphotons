@@ -23,7 +23,6 @@ extern "C"
 #include "ecs/components/LightSensor.hh"
 #include "ecs/components/Physics.hh"
 #include "ecs/components/Mirror.hh"
-#include "ecs/components/Name.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/TriggerArea.hh"
@@ -606,7 +605,7 @@ namespace sp
 			if (ent.count("_name"))
 			{
 				auto name = ent["_name"].get<string>();
-				entity.Assign<ecs::Name>(name);
+				entity.AssignKey<ecs::Name>(name);
 				scene->namedEntities[name] = entity;
 			}
 			scene->entities.push_back(entity);

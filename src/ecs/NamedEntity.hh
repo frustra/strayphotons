@@ -5,6 +5,8 @@
 
 namespace ecs
 {
+	typedef std::string Name;
+
 	class NamedEntity
 	{
 	public:
@@ -21,17 +23,28 @@ namespace ecs
 		{
 			if (!this->name.empty() && !this->ent.Valid())
 			{
-				// TODO: Find entity in ECS
-				// ecs::Entity parent = scene->FindEntity(subTransform.second.get<string>());
-				// if (!parent.Valid())
-				// {
-				// 	throw std::runtime_error("Entity relative to non-existent parent");
-				// }
-				// transform->SetParent(parent);
-				std::stringstream ss;
-				ss << *this;
-				Errorf("Entity does not exist: %s", ss.str());
-				this->name = "";
+				for (auto ent : em.EntitiesWith<ecs::Name>(this->name))
+				{
+					if (this->ent.Valid())
+					{
+						std::stringstream ss;
+						ss << *this;
+						Errorf("NamedEntity has multiple matches: %s", ss.str());
+						this->name = "";
+						break;
+					}
+					else
+					{
+						this->ent = ent;
+					}
+				}
+				if (!this->ent.Valid())
+				{
+					std::stringstream ss;
+					ss << *this;
+					Errorf("Entity does not exist: %s", ss.str());
+					this->name = "";
+				}
 			}
 			return *this;
 		}

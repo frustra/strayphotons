@@ -19,7 +19,6 @@
 #include "ecs/components/Light.hh"
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/Mirror.hh"
-#include "ecs/components/Name.hh"
 #include "assets/AssetManager.hh"
 #include "physx/PhysxUtils.hh"
 #include "threading/MutexedVector.hh"
@@ -801,7 +800,7 @@ namespace sp
 		if (ent.Has<ecs::Name>())
 		{
 			auto name = ent.Get<ecs::Name>();
-			if (name->name == "vr-controller")
+			if (*name == "vr-controller")
 			{
 				glm::vec3 lpos0 = glm::vec3(modelMat * glm::vec4(0, 0, 0, 1.0));
 				glm::vec3 lpos1 = glm::vec3(modelMat * glm::vec4(0, 0, -10.0, 1.0));

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Ecs.hh>
+#include "ecs/NamedEntity.hh"
 #include <map>
 #include <string>
 #include <tinygltfloader/picojson.h>
@@ -52,6 +53,7 @@ namespace ecs
 
 	static inline void RegisterComponents(EntityManager &em)
 	{
+		em.RegisterKeyedComponentType<ecs::Name>();
 		for (auto comp : GComponentList)
 		{
 			comp.second->Register(em);

@@ -12,7 +12,6 @@
 #include "ecs/components/Barrier.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/LightSensor.hh"
-#include "ecs/components/Name.hh"
 #include "ecs/components/Physics.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
@@ -530,7 +529,7 @@ namespace sp
 
 		if (ent.Has<ecs::Name>())
 		{
-			name += " (" + ent.Get<ecs::Name>()->name + ")";
+			name += " (" + *ent.Get<ecs::Name>() + ")";
 		}
 		return name;
 	}

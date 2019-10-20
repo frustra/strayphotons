@@ -10,7 +10,6 @@
 #include "ecs/components/LightSensor.hh"
 #include "ecs/components/Physics.hh"
 #include "ecs/components/Mirror.hh"
-#include "ecs/components/Name.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/TriggerArea.hh"
@@ -40,7 +39,6 @@ namespace sp
 		entityManager.RegisterComponentType<ecs::LightSensor>();
 		entityManager.RegisterComponentType<ecs::Physics>();
 		entityManager.RegisterComponentType<ecs::Mirror>();
-		entityManager.RegisterComponentType<ecs::Name>();
 		entityManager.RegisterComponentType<ecs::Renderable>();
 		entityManager.RegisterComponentType<ecs::TriggerArea>();
 		entityManager.RegisterComponentType<ecs::VoxelInfo>();
