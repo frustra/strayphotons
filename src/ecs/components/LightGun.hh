@@ -3,6 +3,8 @@
 #include "Common.hh"
 #include <vector>
 
+#include <ecs/Components.hh>
+
 namespace ecs
 {
 	class LightGun
@@ -20,4 +22,9 @@ namespace ecs
 		const static vector<int> DEFAULT_SUCK_LIGHT_KEYS;
 		const static vector<int> DEFAULT_SHOOT_LIGHT_KEYS;
 	};
+
+	static Component<LightGun> ComponentLightGun("lightGun");
+
+	template<>
+	bool Component<LightGun>::LoadEntity(Entity &dst, picojson::value &src);
 }

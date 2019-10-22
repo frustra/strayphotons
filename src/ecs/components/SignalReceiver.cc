@@ -1,8 +1,30 @@
 #include "ecs/components/SignalReceiver.hh"
 #include "ecs/events/SignalChange.hh"
 
+#include <tinygltfloader/picojson.h>
+#include <assets/AssetHelpers.hh>
+
 namespace ecs
 {
+	template<>
+	bool Component<SignalReceiver>::LoadEntity(Entity &dst, picojson::value &src)
+	{
+		auto receiver = dst.Assign<SignalReceiver>();
+
+		for (auto param : src.get<picojson::object>())
+		{
+			if (param.first == "amplifier")
+			{
+				receiver->SetAmplifier(param.second.get<double>());
+			}
+			else if (param.first == "offset")
+			{
+				receiver->SetOffset(param.second.get<double>());
+			}
+		}
+		return true;
+	}
+
 	void SignalReceiver::AttachSignal(Entity signaller, float startSig)
 	{
 		Entity::Id eId = signaller.GetId();

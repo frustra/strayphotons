@@ -38,14 +38,6 @@ namespace sp
 		void UnregisterModel(const Model &model);
 
 	private:
-
-		/**
-		 * throws an std::runtime_error if a required parameter is not found
-		 */
-		void ParameterCheck(
-			std::pair<const string, picojson::value> &jsonComp,
-			vector<string> reqParams);
-
 		void UpdateTarIndex();
 
 	private:

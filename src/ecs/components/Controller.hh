@@ -11,6 +11,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include <ecs/Components.hh>
+
 namespace ecs
 {
 	enum class ControlAction
@@ -69,5 +71,6 @@ namespace ecs
 		glm::vec3 velocity = glm::vec3(0);
 	};
 
+	static Component<HumanController> ComponentHumanController("human_controller");
 }
 

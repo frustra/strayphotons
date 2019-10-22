@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <Ecs.hh>
+#include <ecs/Components.hh>
 
 namespace sp
 {
@@ -26,4 +27,9 @@ namespace ecs
 		static void Close(Entity e, sp::PhysxManager &px);
 		static void Open(Entity e, sp::PhysxManager &px);
 	};
+
+	static Component<Barrier> ComponentBarrier("barrier");
+
+	template<>
+	bool Component<Barrier>::LoadEntity(Entity &dst, picojson::value &src);
 }

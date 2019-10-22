@@ -6,14 +6,11 @@
 #include <glm/gtc/matrix_access.hpp>
 
 #include "Ecs.hh"
-#include <ecs/Components.hh>
 #include <tinygltfloader/picojson.h>
 #include <assets/AssetHelpers.hh>
 
 namespace ecs
 {
-	Component<View> ComponentView("view");
-
 	template<>
 	bool Component<View>::LoadEntity(Entity &dst, picojson::value &src)
 	{

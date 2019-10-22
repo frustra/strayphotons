@@ -6,6 +6,8 @@
 #include <limits>
 #include <map>
 
+#include <ecs/Components.hh>
+
 namespace ecs
 {
 	class SignalReceiver
@@ -34,4 +36,9 @@ namespace ecs
 
 		static const float TRIGGER_TOLERANCE;
 	};
+
+	static Component<SignalReceiver> ComponentSignalReceiver("signalReceiver"); // TODO: Rename this
+
+	template<>
+	bool Component<SignalReceiver>::LoadEntity(Entity &dst, picojson::value &src);
 }

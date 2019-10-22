@@ -8,6 +8,8 @@
 #include <Ecs.hh>
 #include <ecs/NamedEntity.hh>
 
+#include <ecs/Components.hh>
+
 namespace ecs
 {
 	class Transform
@@ -89,4 +91,9 @@ namespace ecs
 
 		bool dirty;
 	};
+
+	static Component<Transform> ComponentTransform("transform");
+
+	template<>
+	bool Component<Transform>::LoadEntity(Entity &dst, picojson::value &src);
 }

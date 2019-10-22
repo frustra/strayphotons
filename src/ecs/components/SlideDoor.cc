@@ -2,25 +2,63 @@
 #include "ecs/components/Animation.hh"
 #include "ecs/components/Transform.hh"
 
+#include <tinygltfloader/picojson.h>
+#include <assets/AssetHelpers.hh>
+
 namespace ecs
 {
-	void SlideDoor::ValidateDoor() const
+	template<>
+	bool Component<SlideDoor>::LoadEntity(Entity &dst, picojson::value &src)
 	{
-		if (!left.Valid() || !right.Valid())
+		auto slideDoor = dst.Assign<SlideDoor>();
+
+		for (auto param : src.get<picojson::object>())
+		{
+			if (param.first == "left")
+			{
+				slideDoor->left = NamedEntity(param.second.get<string>());
+			}
+			else if (param.first == "right")
+			{
+				slideDoor->right = NamedEntity(param.second.get<string>());
+			}
+			else if (param.first == "width")
+			{
+				slideDoor->width = param.second.get<double>();
+			}
+			else if (param.first == "openTime")
+			{
+				slideDoor->openTime = param.second.get<double>();
+			}
+			else if (param.first == "forward")
+			{
+				slideDoor->forward = sp::MakeVec3(param.second);
+			}
+		}
+		return true;
+	}
+
+	void SlideDoor::ValidateDoor(EntityManager &em)
+	{
+		if (!left.Load(em) || !right.Load(em))
 		{
 			throw std::runtime_error("door panel is no longer valid");
 		}
-		if (!left.Has<Animation>() || !right.Has<Animation>())
+		if (!left->Has<Animation>())
 		{
-			throw std::runtime_error("door panel cannot be animated");
+			SetAnimation(left, LeftDirection(left));
+		}
+		if (!right->Has<Animation>())
+		{
+			SetAnimation(right, -LeftDirection(right));
 		}
 	}
 
-	SlideDoor::State SlideDoor::GetState()
+	SlideDoor::State SlideDoor::GetState(EntityManager &em)
 	{
-		ValidateDoor();
-		auto lPanel = left.Get<Animation>();
-		auto rPanel = right.Get<Animation>();
+		ValidateDoor(em);
+		auto lPanel = left->Get<Animation>();
+		auto rPanel = right->Get<Animation>();
 
 		SlideDoor::State state;
 		if (lPanel->curState == 1 && lPanel->nextState < 0)
@@ -43,71 +81,65 @@ namespace ecs
 		return state;
 	}
 
-	void SlideDoor::Open()
+	void SlideDoor::Open(EntityManager &em)
 	{
-		ValidateDoor();
+		ValidateDoor(em);
 
-		auto lPanel = left.Get<Animation>();
-		auto rPanel = right.Get<Animation>();
+		auto lPanel = left->Get<Animation>();
+		auto rPanel = right->Get<Animation>();
 		lPanel->AnimateToState(1);
 		rPanel->AnimateToState(1);
 	}
 
-	void SlideDoor::Close()
+	void SlideDoor::Close(EntityManager &em)
 	{
-		ValidateDoor();
+		ValidateDoor(em);
 
-		auto lPanel = left.Get<Animation>();
-		auto rPanel = right.Get<Animation>();
+		auto lPanel = left->Get<Animation>();
+		auto rPanel = right->Get<Animation>();
 		lPanel->AnimateToState(0);
 		rPanel->AnimateToState(0);
 	}
 
-	void SlideDoor::ApplyParams()
+	void SlideDoor::SetAnimation(NamedEntity &panel, glm::vec3 openDir)
 	{
-		for (Entity panel : vector<Entity>({left, right}))
+		if (!panel->Valid() || !panel->Has<Transform>() || panel->Has<Animation>())
 		{
-			if (!panel.Valid() || !panel.Has<Transform>()
-				|| !panel.Has<Animation>())
-			{
-				continue;
-			}
-
-			auto transform = panel.Get<Transform>();
-			auto animation = panel.Get<Animation>();
-			glm::vec3 panelPos = transform->GetPosition();
-			glm::vec3 animatePos;
-			float panelWidth = this->width / 2;
-
-			glm::vec3 leftDir = glm::normalize(glm::cross(this->forward, transform->GetUp()));
-
-			if (panel == left)
-			{
-				animatePos = panelPos + panelWidth * leftDir;
-			}
-			else
-			{
-				animatePos = panelPos - panelWidth * leftDir;
-			}
-
-			animation->states.resize(2);
-			animation->animationTimes.resize(2);
-
-			// closed
-			Animation::State closeState;
-			closeState.scale = transform->GetScaleVec();
-			closeState.pos = panelPos;
-			animation->states[0] = closeState;
-			animation->animationTimes[0] = this->openTime;
-
-			// open
-			Animation::State openState;
-			openState.scale = transform->GetScaleVec();
-			openState.pos = animatePos;
-			animation->states[1] = openState;
-			animation->animationTimes[1] = this->openTime;
-
-			animation->curState = 0;
+			return;
 		}
+
+		auto transform = panel->Get<Transform>();
+		Animation animation;
+		float panelWidth = this->width / 2;
+		glm::vec3 panelPos = transform->GetPosition();
+		glm::vec3 animatePos = panelPos + panelWidth * openDir;
+
+		animation.states.resize(2);
+		animation.animationTimes.resize(2);
+
+		// closed
+		Animation::State closeState;
+		closeState.scale = transform->GetScaleVec();
+		closeState.pos = panelPos;
+		animation.states[0] = closeState;
+		animation.animationTimes[0] = this->openTime;
+
+		// open
+		Animation::State openState;
+		openState.scale = transform->GetScaleVec();
+		openState.pos = animatePos;
+		animation.states[1] = openState;
+		animation.animationTimes[1] = this->openTime;
+
+		animation.curState = 0;
+
+		panel->Assign<Animation>(animation);
+	}
+
+	glm::vec3 SlideDoor::LeftDirection(NamedEntity &panel)
+	{
+		Assert(panel->Valid() && panel->Has<Transform>());
+		auto transform = panel->Get<Transform>();
+		return glm::normalize(glm::cross(this->forward, transform->GetUp()));
 	}
 }

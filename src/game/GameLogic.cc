@@ -629,7 +629,7 @@ namespace sp
 		}
 		else
 		{
-			ent.Get<ecs::SlideDoor>()->Open();
+			ent.Get<ecs::SlideDoor>()->Open(game->entityManager);
 		}
 	}
 
@@ -652,7 +652,7 @@ namespace sp
 		}
 		else
 		{
-			ent.Get<ecs::SlideDoor>()->Close();
+			ent.Get<ecs::SlideDoor>()->Close(game->entityManager);
 		}
 	}
 }

@@ -4,6 +4,8 @@
 #include "graphics/Graphics.hh"
 #include <Ecs.hh>
 
+#include <ecs/Components.hh>
+
 namespace ecs
 {
 	struct View
@@ -32,6 +34,11 @@ namespace ecs
 		glm::mat4 projMat, invProjMat;
 		glm::mat4 viewMat, invViewMat;
 	};
+
+	static Component<View> ComponentView("view");
+
+	template<>
+	bool Component<View>::LoadEntity(Entity &dst, picojson::value &src);
 
 	void ValidateView(ecs::Entity viewEntity);
 	ecs::Handle<ecs::View> UpdateViewCache(ecs::Entity entity, float fov = 0.0);

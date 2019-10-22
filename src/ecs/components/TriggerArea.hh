@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include <ecs/Components.hh>
+
 namespace ecs
 {
 	struct TriggerArea
@@ -10,4 +12,9 @@ namespace ecs
 		std::string command;
 		bool triggered = false;
 	};
+
+	static Component<TriggerArea> ComponentTriggerArea("triggerarea"); // TODO: Rename this
+
+	template<>
+	bool Component<TriggerArea>::LoadEntity(Entity &dst, picojson::value &src);
 }

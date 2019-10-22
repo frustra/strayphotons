@@ -3,6 +3,8 @@
 #include "Common.hh"
 #include <glm/glm.hpp>
 
+#include <ecs/Components.hh>
+
 namespace ecs
 {
 	class Animation
@@ -28,4 +30,6 @@ namespace ecs
 		 */
 		vector<float> animationTimes;
 	};
+
+	static Component<Animation> ComponentAnimation("animation");
 }

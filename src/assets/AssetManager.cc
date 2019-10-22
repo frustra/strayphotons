@@ -245,12 +245,13 @@ namespace sp
 			{
 				if (comp.first[0] == '_') continue;
 
-				if (ecs::GComponentList.count(comp.first) > 0)
+				auto componentType = ecs::LookupComponent(comp.first);
+				if (componentType != nullptr)
 				{
-					bool result = ecs::GComponentList[comp.first]->LoadEntity(entity, comp.second);
+					bool result = componentType->LoadEntity(entity, comp.second);
 					if (!result)
 					{
-						throw new std::runtime_error("Failed to load component type: " + comp.first);
+						throw std::runtime_error("Failed to load component type: " + comp.first);
 					}
 				}
 				else if (comp.first == "renderable")
@@ -284,37 +285,6 @@ namespace sp
 					if (glm::length(r->emissive) == 0.0f && glm::length(r->voxelEmissive) > 0.0f)
 					{
 						r->emissive = r->voxelEmissive;
-					}
-				}
-				else if (comp.first == "light")
-				{
-					auto light = entity.Assign<ecs::Light>();
-					for (auto param : comp.second.get<picojson::object>())
-					{
-						if (param.first == "intensity")
-						{
-							light->intensity = param.second.get<double>();
-						}
-						else if (param.first == "illuminance")
-						{
-							light->illuminance = param.second.get<double>();
-						}
-						else if (param.first == "spotAngle")
-						{
-							light->spotAngle = glm::radians(param.second.get<double>());
-						}
-						else if (param.first == "tint")
-						{
-							light->tint = MakeVec3(param.second);
-						}
-						else if (param.first == "gel")
-						{
-							light->gelId = param.second.get<bool>() ? 1 : 0;
-						}
-						else if (param.first == "on")
-						{
-							light->on = param.second.get<bool>();
-						}
 					}
 				}
 				else if (comp.first == "bulb")
@@ -431,172 +401,6 @@ namespace sp
 						auto physics = entity.Assign<ecs::Physics>(actor, model, desc);
 					}
 				}
-				else if (comp.first == "slideDoor")
-				{
-					auto slideDoor = entity.Assign<ecs::SlideDoor>();
-
-					for (auto param : comp.second.get<picojson::object>())
-					{
-						bool isLeft = (param.first == "left");
-						bool isRight = (param.first == "right");
-						if (isLeft || isRight)
-						{
-							ecs::Entity panel = scene->FindEntity(param.second.get<string>());
-
-							if (panel.Has<ecs::Animation>())
-							{
-								throw std::runtime_error(
-									"slideDoor left/right panels should not already have an Animation");
-							}
-							if (!panel.Has<ecs::Transform>())
-							{
-								throw std::runtime_error(
-									"slideDoor entity must already have a transform"
-								);
-							}
-
-							panel.Assign<ecs::Animation>();
-							if (isLeft)
-							{
-								slideDoor->left = panel;
-							}
-							else
-							{
-								slideDoor->right = panel;
-							}
-
-							slideDoor->ApplyParams();
-						}
-						else if (param.first == "width")
-						{
-							slideDoor->width = param.second.get<double>();
-							slideDoor->ApplyParams();
-						}
-						else if (param.first == "openTime")
-						{
-							slideDoor->openTime = param.second.get<double>();
-							slideDoor->ApplyParams();
-						}
-						else if (param.first == "forward")
-						{
-							slideDoor->forward = MakeVec3(param.second);
-							slideDoor->ApplyParams();
-						}
-					}
-				}
-				else if (comp.first == "signalReceiver")
-				{
-					auto receiver = entity.Assign<ecs::SignalReceiver>();
-
-					for (auto param : comp.second.get<picojson::object>())
-					{
-						if (param.first == "amplifier")
-						{
-							receiver->SetAmplifier(param.second.get<double>());
-						}
-						else if (param.first == "offset")
-						{
-							receiver->SetOffset(param.second.get<double>());
-						}
-					}
-				}
-				else if (comp.first == "lightGun")
-				{
-					entity.Assign<ecs::LightGun>();
-				}
-				else if (comp.first == "barrier")
-				{
-					auto barrier = entity.Assign<ecs::Barrier>();
-
-					for (auto param : comp.second.get<picojson::object>())
-					{
-						if (param.first == "isOpen")
-						{
-							barrier->isOpen = param.second.get<bool>();
-						}
-					}
-
-					if (barrier->isOpen)
-					{
-						if (!entity.Has<ecs::Physics>() || !entity.Has<ecs::Renderable>())
-						{
-							throw std::runtime_error(
-								"barrier component must come after Physics and Renderable"
-							);
-						}
-						ecs::Barrier::Open(entity, px);
-					}
-				}
-				else if (comp.first == "barrier_prefab")
-				{
-					glm::vec3 translate;
-					glm::vec3 scale;
-					bool isOpen = false;
-
-					vector<string> reqParams = {"translate", "scale"};
-
-					ParameterCheck(comp, reqParams);
-					for (auto param : comp.second.get<picojson::object>())
-					{
-						if (param.first == "isOpen")
-						{
-							isOpen = param.second.get<bool>();
-						}
-						else if (param.first == "translate")
-						{
-							translate = MakeVec3(param.second);
-						}
-						else if (param.first == "scale")
-						{
-							scale = MakeVec3(param.second);
-						}
-					}
-
-					ecs::Barrier::Create(translate, scale, px, *em);
-					if (isOpen)
-					{
-						ecs::Barrier::Open(entity, px);
-					}
-				}
-				else if (comp.first == "voxels")
-				{
-					auto voxelArea = entity.Assign<ecs::VoxelArea>();
-					for (auto param : comp.second.get<picojson::object>())
-					{
-						if (param.first == "min")
-						{
-							voxelArea->min = MakeVec3(param.second);
-						}
-						else if (param.first == "max")
-						{
-							voxelArea->max = MakeVec3(param.second);
-						}
-					}
-				}
-				else if (comp.first == "mirror")
-				{
-					auto mirror = entity.Assign<ecs::Mirror>();
-					mirror->size = MakeVec2(comp.second);
-				}
-				else if (comp.first == "triggerarea")
-				{
-					auto area = entity.Assign<ecs::TriggerArea>();
-					for (auto param : comp.second.get<picojson::object>())
-					{
-						if (param.first == "min")
-						{
-							area->boundsMin = MakeVec3(param.second);
-						}
-						else if (param.first == "max")
-						{
-							area->boundsMax = MakeVec3(param.second);
-						}
-						else if (param.first == "command")
-						{
-							area->command = param.second.get<string>();
-						}
-					}
-				}
 				else
 				{
 					Errorf("Unknown component, ignoring: %s", comp.first);
@@ -621,36 +425,5 @@ namespace sp
 	void AssetManager::UnregisterModel(const Model &model)
 	{
 		loadedModels.erase(model.name);
-	}
-
-	void AssetManager::ParameterCheck(
-		std::pair<const string, picojson::value> &jsonComp,
-		vector<string> reqParams)
-	{
-		vector<bool> found(reqParams.size(), false);
-
-		for (auto param : jsonComp.second.get<picojson::object>())
-		{
-			for (uint32 i = 0; i < found.size(); ++i)
-			{
-				if (param.first == reqParams.at(i))
-				{
-					found.at(i) = true;
-					break;
-				}
-			}
-		}
-
-		for (uint32 i = 0; i < found.size(); ++i)
-		{
-			if (!found.at(i))
-			{
-				std::stringstream ss;
-				ss << "\"" << jsonComp.first << "\""
-				   << " gltf component is missing required \""
-				   << reqParams.at(i) << "\" field";
-				throw std::runtime_error(ss.str());
-			}
-		}
 	}
 }

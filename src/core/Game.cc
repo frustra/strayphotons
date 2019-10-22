@@ -30,23 +30,23 @@ namespace sp
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
 		ecs::RegisterComponents(entityManager);
+		// entityManager.RegisterComponentType<ecs::Animation>();
+		// entityManager.RegisterComponentType<ecs::Barrier>();
+		// entityManager.RegisterComponentType<ecs::HumanController>();
+		// entityManager.RegisterComponentType<ecs::InteractController>();
+		// entityManager.RegisterComponentType<ecs::Light>();
+		// entityManager.RegisterComponentType<ecs::LightGun>();
+		// entityManager.RegisterComponentType<ecs::Mirror>();
+		// entityManager.RegisterComponentType<ecs::SignalReceiver>();
+		// entityManager.RegisterComponentType<ecs::SlideDoor>();
 		// entityManager.RegisterComponentType<ecs::Transform>();
+		// entityManager.RegisterComponentType<ecs::TriggerArea>();
 		// entityManager.RegisterComponentType<ecs::View>();
-		entityManager.RegisterComponentType<ecs::Barrier>();
-		entityManager.RegisterComponentType<ecs::HumanController>();
-		entityManager.RegisterComponentType<ecs::InteractController>();
-		entityManager.RegisterComponentType<ecs::Light>();
+		// entityManager.RegisterComponentType<ecs::VoxelArea>();
+		// entityManager.RegisterComponentType<ecs::VoxelInfo>();
 		entityManager.RegisterComponentType<ecs::LightSensor>();
 		entityManager.RegisterComponentType<ecs::Physics>();
-		entityManager.RegisterComponentType<ecs::Mirror>();
 		entityManager.RegisterComponentType<ecs::Renderable>();
-		entityManager.RegisterComponentType<ecs::TriggerArea>();
-		entityManager.RegisterComponentType<ecs::VoxelInfo>();
-		entityManager.RegisterComponentType<ecs::VoxelArea>();
-		entityManager.RegisterComponentType<ecs::LightGun>();
-		entityManager.RegisterComponentType<ecs::SlideDoor>();
-		entityManager.RegisterComponentType<ecs::Animation>();
-		entityManager.RegisterComponentType<ecs::SignalReceiver>();
 	}
 
 	Game::~Game()
