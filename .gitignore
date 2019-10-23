@@ -11,6 +11,7 @@
 /assets/cache
 /assets/models/**/*.blend1
 /assets/util/jsonlint_err.json
+/tests/cppcheck-result.txt
 /vendor/lib
 /strayphotons
 /strayphotons.zip
