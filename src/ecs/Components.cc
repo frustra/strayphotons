@@ -3,15 +3,15 @@
 namespace ecs
 {
 	typedef std::map<std::string, ComponentBase *> ComponentList;
-    ComponentList *GComponentList;
-    
-    void RegisterComponent(const char *name, ComponentBase *comp)
-    {
-        if (GComponentList == nullptr) GComponentList = new ComponentList();
-        std::cout << "Registering component: " << name << std::endl;
-        if (GComponentList->count(name) > 0) throw std::runtime_error("Duplicate component registration: " + std::string(name));
-        GComponentList->emplace(name, comp);
-    }
+	ComponentList *GComponentList;
+
+	void RegisterComponent(const char *name, ComponentBase *comp)
+	{
+		if (GComponentList == nullptr) GComponentList = new ComponentList();
+		std::cout << "Registering component: " << name << std::endl;
+		if (GComponentList->count(name) > 0) throw std::runtime_error("Duplicate component registration: " + std::string(name));
+		GComponentList->emplace(name, comp);
+	}
 
 
 	void RegisterComponents(EntityManager &em)
@@ -25,16 +25,16 @@ namespace ecs
 	}
 
 	ComponentBase *LookupComponent(const std::string name)
-    {
+	{
 		if (GComponentList == nullptr) GComponentList = new ComponentList();
 
-        try
-        {
-            return GComponentList->at(name);
-        }
-        catch (std::out_of_range)
-        {
-            return nullptr;
-        }
-    }
+		try
+		{
+			return GComponentList->at(name);
+		}
+		catch (std::out_of_range)
+		{
+			return nullptr;
+		}
+	}
 }

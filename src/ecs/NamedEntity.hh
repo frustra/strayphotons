@@ -45,7 +45,8 @@ namespace ecs
 					ss << *this;
 					Errorf("Entity does not exist: %s", ss.str());
 					this->name = "";
-				} else if (onLoad)
+				}
+				else if (onLoad)
 				{
 					if (!onLoad(*this))
 					{
