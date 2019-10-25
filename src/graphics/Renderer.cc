@@ -159,9 +159,9 @@ namespace sp
 		{
 			auto light = entity.Get<ecs::Light>();
 
-			if (light->bulb.Valid())
+			if (light->bulb.Load(game->entityManager))
 			{
-				auto bulb = light->bulb.Get<ecs::Renderable>();
+				auto bulb = light->bulb->Get<ecs::Renderable>();
 				bulb->emissive = light->on ? light->intensity * light->tint * 0.1f : glm::vec3(0.0f);
 			}
 

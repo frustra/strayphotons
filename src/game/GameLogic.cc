@@ -123,7 +123,7 @@ namespace sp
 
 					if (actor)
 					{
-						auto physics = entity.Assign<ecs::Physics>(actor, model, desc);
+						entity.Assign<ecs::Physics>(actor, model, desc);
 					}
 				}
 				else if (key == GLFW_KEY_P) // Toggle flashlight following player

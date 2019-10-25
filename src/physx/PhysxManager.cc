@@ -218,6 +218,11 @@ namespace sp
 				auto ph = ent.Get<ecs::Physics>();
 				auto transform = ent.Get<ecs::Transform>();
 
+				if (!ph->actor && ph->model)
+				{
+					ph->actor = CreateActor(ph->model, ph->desc, ent);
+				}
+
 				if (ph->actor && transform->ClearDirty())
 				{
 					if (!gotLock)

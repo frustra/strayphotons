@@ -698,7 +698,8 @@
 					0.5
 				],
 				"intensity": 300,
-				"spotAngle": 30
+				"spotAngle": 30,
+				"bulb": "light-left-bulb"
 			},
 			"view": {
 				"extents": [
@@ -737,8 +738,8 @@
 			}
 		},
 		{
+			"_name": "light-left-bulb",
 			"renderable": "box",
-			"bulb": "light-left",
 			"transform": {
 				"parent": "light-left",
 				"translate": [
@@ -764,7 +765,8 @@
 					0.5
 				],
 				"intensity": 300,
-				"spotAngle": 30
+				"spotAngle": 30,
+				"bulb": "light-right-bulb"
 			},
 			"view": {
 				"extents": [
@@ -803,8 +805,8 @@
 			}
 		},
 		{
+			"_name": "light-right-bulb",
 			"renderable": "box",
-			"bulb": "light-right",
 			"transform": {
 				"parent": "light-right",
 				"translate": [

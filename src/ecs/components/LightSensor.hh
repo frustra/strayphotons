@@ -1,7 +1,10 @@
 #pragma once
 
 #include "Common.hh"
-#include <Ecs.hh>
+#include <glm/glm.hpp>
+
+#include <ecs/Components.hh>
+#include <ecs/NamedEntity.hh>
 
 namespace ecs
 {
@@ -28,6 +31,7 @@ namespace ecs
 		glm::vec3 offColor = { 0, 0, 0 };
 
 		vector<Trigger> triggers;
+		vector<NamedEntity> outputTo;
 
 		// Updated automatically.
 		glm::vec3 illuminance;
@@ -36,4 +40,9 @@ namespace ecs
 		LightSensor() {}
 		LightSensor(glm::vec3 p, glm::vec3 n) : position(p), direction(n) {}
 	};
+
+	static Component<LightSensor> ComponentLightSensor("lightsensor"); // TODO: rename this
+
+	template<>
+	bool Component<LightSensor>::LoadEntity(Entity &dst, picojson::value &src);
 }

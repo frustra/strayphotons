@@ -12,6 +12,7 @@ namespace ecs
 	public:
 		NamedEntity() {}
 		NamedEntity(std::string name) : name(name) {}
+		NamedEntity(std::string name, std::function<bool(NamedEntity &)> &&onLoad) : name(name), onLoad(std::move(onLoad)) {}
 		NamedEntity(Entity &ent, std::string name = "") : name(name), ent(ent) {}
 
 		std::string Name() const
@@ -44,6 +45,15 @@ namespace ecs
 					ss << *this;
 					Errorf("Entity does not exist: %s", ss.str());
 					this->name = "";
+				} else if (onLoad)
+				{
+					if (!onLoad(*this))
+					{
+						std::stringstream ss;
+						ss << *this;
+						Errorf("Entity is not valid: %s", ss.str());
+						this->name = "";
+					}
 				}
 			}
 			return *this;
@@ -111,5 +121,6 @@ namespace ecs
 	private:
 		std::string name = "";
 		Entity ent;
+		std::function<bool(NamedEntity &)> onLoad;
 	};
 }

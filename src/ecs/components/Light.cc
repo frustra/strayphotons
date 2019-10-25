@@ -35,6 +35,10 @@ namespace ecs
 			{
 				light->on = param.second.get<bool>();
 			}
+			else if (param.first == "bulb")
+			{
+				light->bulb = param.second.get<string>();
+			}
 		}
 		return true;
 	}
