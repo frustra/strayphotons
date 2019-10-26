@@ -38,7 +38,7 @@ namespace sp
 			io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
 			io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
 
-			if (state == GLFW_PRESS && Focused() && !inputManager->FocusLocked(FocusLevel))
+			if (state == GLFW_PRESS && Focused() && !inputManager->FocusLocked(focusPriority))
 			{
 				if (key == GLFW_KEY_ESCAPE && framesSinceOpened > 0)
 				{
@@ -65,9 +65,9 @@ namespace sp
 		ImGuiIO &io = ImGui::GetIO();
 		io.MouseDrawCursor = selectedScreen != MenuScreen::Splash && RenderMode() == MenuRenderMode::Gel;
 
-		inputManager->LockFocus(Focused(), FocusLevel);
+		inputManager->LockFocus(Focused(), focusPriority);
 
-		if (Focused() && !inputManager->FocusLocked(FocusLevel))
+		if (Focused() && !inputManager->FocusLocked(focusPriority))
 		{
 			auto &input = *inputManager;
 
@@ -404,14 +404,14 @@ namespace sp
 			selectedScreen = MenuScreen::Main;
 
 			CVarMenuFocused.Set(true);
-			inputManager->LockFocus(true, FocusLevel);
+			inputManager->LockFocus(true, focusPriority);
 			framesSinceOpened = 0;
 		}
 	}
 
 	void MenuGuiManager::CloseMenu()
 	{
-		if (!inputManager->FocusLocked(FocusLevel) && RenderMode() != MenuRenderMode::Gel)
+		if (!inputManager->FocusLocked(focusPriority) && RenderMode() != MenuRenderMode::Gel)
 		{
 			inputManager->DisableCursor();
 		}
@@ -423,7 +423,7 @@ namespace sp
 		}
 
 		CVarMenuFocused.Set(false);
-		inputManager->LockFocus(false, FocusLevel);
+		inputManager->LockFocus(false, focusPriority);
 		framesSinceOpened = 0;
 	}
 }
