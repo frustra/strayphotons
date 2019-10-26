@@ -40,6 +40,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if (UNIX)
 	list(APPEND SP_TARGET_OPTIONS -Wall)
 	list(APPEND SP_TARGET_OPTIONS -Wno-error=strict-aliasing -Wno-error=parentheses)
+	
+	if(SP_DEBUG)
+		set(CMAKE_CXX_FLAGS_DEBUG "-ggdb3")
+	endif()
 endif()
 
 if (MSVC)

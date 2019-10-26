@@ -18,7 +18,7 @@ compile:
 
 linux: unix
 unix: build
-	cd build; CC=clang CXX=clang++ cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DSP_PACKAGE_RELEASE=0 -G "Unix Makefiles" ..; make -j$(NPROCS)
+	cd build; CC=clang CXX=clang++ cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug -DSP_PACKAGE_RELEASE=0 -G "Unix Makefiles" ..; make -j5
 
 linux-release: unix-release
 unix-release: build
@@ -66,6 +66,9 @@ tests: unit-tests integration-tests cpp-check
 
 static-analysis:
 	cd build; scan-build make -B -j$(NPROCS)
+
+valgrind:
+	cd bin; MESA_GL_VERSION_OVERRIDE=4.3 MESA_GLSL_VERSION_OVERRIDE=430 MESA_EXTENSION_OVERRIDE=GL_ARB_compute_shader valgrind --leak-check=full --log-file=../tests/valgrind-out.txt ./Debug/sp
 
 astyle:
 	astyle --options="extra/astyle.config" "src/*.hh" "src/*.cc"
