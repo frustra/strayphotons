@@ -275,6 +275,15 @@ namespace sp
 					resIndex = 0;
 				}
 
+				{
+					static vector<string> resLabels = MakeResolutionLabels(modes);
+
+					ImGui::PushItemWidth(250.0f);
+					ImGui::Combo("##respicker", &resIndex, StringVectorGetter, &resLabels, modes.size());
+					ImGui::PopItemWidth();
+
+				}
+
 				bool fullscreen = CVarWindowFullscreen.Get();
 				static bool prevFullscreen = fullscreen;
 				ImGui::Checkbox("##fullscreencheck", &fullscreen);
@@ -297,18 +306,8 @@ namespace sp
 					prevFullscreen = fullscreen;
 				}
 
+				CVarWindowSize.Set(modes[resIndex]);
 				CVarWindowFullscreen.Set((int) fullscreen);
-
-				{
-					static vector<string> resLabels = MakeResolutionLabels(modes);
-
-					ImGui::PushItemWidth(250.0f);
-					ImGui::Combo("##respicker", &resIndex, StringVectorGetter, &resLabels, modes.size());
-					ImGui::PopItemWidth();
-
-					CVarWindowSize.Set(modes[resIndex]);
-				}
-
 			}
 
 			ImGui::PopStyleVar();
