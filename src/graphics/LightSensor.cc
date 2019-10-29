@@ -33,7 +33,7 @@ namespace sp
 			auto id = entity.GetId();
 
 			GLLightSensorData &s = data[N++];
-			auto mat = transform->GetGlobalTransform();
+			auto mat = transform->GetGlobalTransform(*entity.GetManager());
 			s.position = mat * glm::vec4(sensor->position, 1);
 			s.direction = glm::normalize(glm::mat3(mat) * sensor->direction);
 			s.id0 = (float) id.Index();
@@ -86,6 +86,11 @@ namespace sp
 				auto triggers = sensor->triggers;
 				auto prev = sensor->illuminance;
 				sensor->illuminance = lum;
+
+				for (auto output : sensor->outputTo)
+				{
+					output.Load(manager);
+				}
 
 				bool allTriggered = true;
 

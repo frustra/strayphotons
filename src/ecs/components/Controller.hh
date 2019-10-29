@@ -11,6 +11,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include <ecs/Components.hh>
+
 namespace ecs
 {
 	enum class ControlAction
@@ -30,8 +32,8 @@ namespace ecs
 	const float PLAYER_HEIGHT = 1.7f;
 	const float PLAYER_CROUCH_HEIGHT = 0.8f;
 	const float PLAYER_RADIUS = 0.2f;
-	const float PLAYER_CAPSULE_CROUCH_HEIGHT = PLAYER_CROUCH_HEIGHT - 2*PLAYER_RADIUS;
-	const float PLAYER_CAPSULE_HEIGHT = PLAYER_HEIGHT - 2*PLAYER_RADIUS;
+	const float PLAYER_CAPSULE_CROUCH_HEIGHT = PLAYER_CROUCH_HEIGHT - 2 * PLAYER_RADIUS;
+	const float PLAYER_CAPSULE_HEIGHT = PLAYER_HEIGHT - 2 * PLAYER_RADIUS;
 	const float PLAYER_STEP_HEIGHT = 0.2f;
 	const float PLAYER_SWEEP_DISTANCE = 0.4f; // Distance to check if on ground
 
@@ -69,5 +71,6 @@ namespace ecs
 		glm::vec3 velocity = glm::vec3(0);
 	};
 
+	static Component<HumanController> ComponentHumanController("human_controller");
 }
 

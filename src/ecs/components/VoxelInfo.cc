@@ -1,10 +1,31 @@
+#include "ecs/components/VoxelInfo.hh"
+
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
 
-#include "ecs/components/VoxelInfo.hh"
+#include <tinygltfloader/picojson.h>
+#include <assets/AssetHelpers.hh>
 
 namespace ecs
 {
+	template<>
+	bool Component<VoxelArea>::LoadEntity(Entity &dst, picojson::value &src)
+	{
+		auto voxelArea = dst.Assign<VoxelArea>();
+		for (auto param : src.get<picojson::object>())
+		{
+			if (param.first == "min")
+			{
+				voxelArea->min = sp::MakeVec3(param.second);
+			}
+			else if (param.first == "max")
+			{
+				voxelArea->max = sp::MakeVec3(param.second);
+			}
+		}
+		return true;
+	}
+
 	Handle<VoxelInfo> UpdateVoxelInfoCache(Entity entity, int gridSize, float superSampleScale, EntityManager &em)
 	{
 		auto voxelInfo = entity.Get<VoxelInfo>();
@@ -28,7 +49,8 @@ namespace ecs
 			}
 			voxelInfo->areas[areaIndex++] = *area;
 		}
-		for (; areaIndex < sp::MAX_VOXEL_AREAS; areaIndex++) {
+		for (; areaIndex < sp::MAX_VOXEL_AREAS; areaIndex++)
+		{
 			voxelInfo->areas[areaIndex] = VoxelArea{glm::vec3(0), glm::vec3(-1)};
 		}
 

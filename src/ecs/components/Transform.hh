@@ -6,35 +6,44 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include <Ecs.hh>
+#include <ecs/NamedEntity.hh>
+
+#include <ecs/Components.hh>
 
 namespace ecs
 {
 	class Transform
 	{
 	public:
-		Transform(ecs::EntityManager *manager) : manager(manager), dirty(false) {}
-		void SetParent(ecs::Entity);
-		bool HasParent();
+		Transform() : dirty(false) {}
+		Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>()) : rotate(orientation), dirty(false)
+		{
+			SetPosition(pos);
+		}
+
+		void SetParent(ecs::Entity ent);
+		void SetParent(ecs::NamedEntity ent);
+		bool HasParent(EntityManager &em);
 
 		/**
 		 * Return the transformation matrix including all parent transforms.
 		 */
-		glm::mat4 GetGlobalTransform() const;
+		glm::mat4 GetGlobalTransform(EntityManager &em);
 
 		/**
 		 * Returns the same as GetGlobalTransform() but only includes rotation components.
 		 */
-		glm::quat GetGlobalRotation() const;
+		glm::quat GetGlobalRotation(EntityManager &em);
 
 		/**
 		 * Get position including any transforms this is relative to
 		 */
-		glm::vec3 GetGlobalPosition() const;
+		glm::vec3 GetGlobalPosition(EntityManager &em);
 
 		/**
 		 * Get forward vector including any transforms this is relative to
 		 */
-		glm::vec3 GetGlobalForward() const;
+		glm::vec3 GetGlobalForward(EntityManager &em);
 
 		/**
 		 * Change the local position by an amount in the local x, y, z planes
@@ -74,8 +83,7 @@ namespace ecs
 
 		bool ClearDirty();
 	private:
-		ecs::Entity::Id parent;
-		ecs::EntityManager *manager;
+		ecs::NamedEntity parent;
 
 		glm::mat4 translate = glm::identity<glm::mat4>();
 		glm::mat4 scale = glm::identity<glm::mat4>();
@@ -83,4 +91,9 @@ namespace ecs
 
 		bool dirty;
 	};
+
+	static Component<Transform> ComponentTransform("transform");
+
+	template<>
+	bool Component<Transform>::LoadEntity(Entity &dst, picojson::value &src);
 }

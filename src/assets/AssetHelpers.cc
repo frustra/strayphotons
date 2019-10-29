@@ -37,4 +37,30 @@ namespace sp
 		MakeVec(4, val, (float *) &ret);
 		return ret;
 	}
+
+	bool ParametersExist(picojson::value &json, vector<string> reqParams)
+	{
+		vector<bool> found(reqParams.size(), false);
+
+		for (auto param : json.get<picojson::object>())
+		{
+			for (uint32 i = 0; i < found.size(); ++i)
+			{
+				if (param.first == reqParams.at(i))
+				{
+					found.at(i) = true;
+					break;
+				}
+			}
+		}
+
+		for (uint32 i = 0; i < found.size(); ++i)
+		{
+			if (!found.at(i))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
 }

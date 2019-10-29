@@ -176,7 +176,8 @@ namespace sp
 
 			if (cmdEnd != line.end()) cmdEnd++;
 			cmd = cmdEnd;
-		} while (cmd != line.end());
+		}
+		while (cmd != line.end());
 	}
 
 	void ConsoleManager::Execute(const string cmd, const string &args)

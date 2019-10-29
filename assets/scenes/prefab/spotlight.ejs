@@ -5,7 +5,8 @@
 		<% if (locals.on != null) { %>"on": <%= on %>,<% } %>
 		"tint": <%= tint %>,
 		"intensity": <%= intensity %>,
-		"spotAngle": <%= spotAngle %> 
+		"spotAngle": <%= spotAngle %>,
+		"bulb": <%= name + "-bulb" %>
 	},
 	"view": {
 		"extents": [2048, 2048],
@@ -23,8 +24,8 @@
 	}
 },
 {
+	"_name": <%= name + "-bulb" %>,
 	"renderable": "box",
-	"bulb": <%= name %>,
 	"transform": {
 		"parent": <%= name %>,
 		"translate": [0, 0, -0.06],

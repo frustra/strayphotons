@@ -1,8 +1,30 @@
 #include "ecs/components/SignalReceiver.hh"
 #include "ecs/events/SignalChange.hh"
 
+#include <tinygltfloader/picojson.h>
+#include <assets/AssetHelpers.hh>
+
 namespace ecs
 {
+	template<>
+	bool Component<SignalReceiver>::LoadEntity(Entity &dst, picojson::value &src)
+	{
+		auto receiver = dst.Assign<SignalReceiver>();
+
+		for (auto param : src.get<picojson::object>())
+		{
+			if (param.first == "amplifier")
+			{
+				receiver->SetAmplifier(param.second.get<double>());
+			}
+			else if (param.first == "offset")
+			{
+				receiver->SetOffset(param.second.get<double>());
+			}
+		}
+		return true;
+	}
+
 	void SignalReceiver::AttachSignal(Entity signaller, float startSig)
 	{
 		Entity::Id eId = signaller.GetId();
@@ -12,7 +34,8 @@ namespace ecs
 			return;
 		}
 
-		auto handler = [&](Entity e, const SignalChange &sig) {
+		auto handler = [&](Entity e, const SignalChange & sig)
+		{
 			this->signallers.at(e.GetId()).signal = sig.signal;
 		};
 
@@ -46,7 +69,7 @@ namespace ecs
 	bool SignalReceiver::IsTriggered() const
 	{
 		return this->GetSignal()
-			> (1.0f - SignalReceiver::TRIGGER_TOLERANCE);
+			   > (1.0f - SignalReceiver::TRIGGER_TOLERANCE);
 	}
 
 	void SignalReceiver::SetAmplifier(float amp)
@@ -60,5 +83,5 @@ namespace ecs
 	}
 
 	const float SignalReceiver::TRIGGER_TOLERANCE =
-		10*std::numeric_limits<float>::epsilon();
+		10 * std::numeric_limits<float>::epsilon();
 }

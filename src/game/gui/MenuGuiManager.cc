@@ -215,11 +215,11 @@ namespace sp
 			ImGui::PushFont(io.Fonts->Fonts[3]);
 
 #define LEVEL_BUTTON(name, file) \
-			if (ImGui::Button(name)) \
-			{ \
-				CloseMenu(); \
-				GConsoleManager.ParseAndExecute("loadscene " file); \
-			}
+	if (ImGui::Button(name)) \
+	{ \
+		CloseMenu(); \
+		GConsoleManager.ParseAndExecute("loadscene " file); \
+	}
 
 			LEVEL_BUTTON("01 - Outside", "01-outside")
 			LEVEL_BUTTON("02 - Mirrors", "02-mirrors")

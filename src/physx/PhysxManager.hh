@@ -111,7 +111,7 @@ namespace sp
 		bool OverlapQuery(
 			physx::PxRigidDynamic *actor,
 			physx::PxVec3 translation,
-			physx::PxOverlapBuffer& hit);
+			physx::PxOverlapBuffer &hit);
 
 		/**
 		 * Translates a kinematic @actor by @transform.

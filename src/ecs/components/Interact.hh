@@ -6,6 +6,8 @@
 
 #include <PxRigidDynamic.h>
 
+#include <ecs/Components.hh>
+
 namespace ecs
 {
 	struct InteractController
@@ -15,4 +17,6 @@ namespace ecs
 		physx::PxRigidDynamic *target = nullptr;
 		sp::PhysxManager *manager;
 	};
+
+	static Component<InteractController> ComponentInteractController("interact_controller");
 }

@@ -16,21 +16,21 @@ namespace ecs
 			auto receiver = ent.Get<SignalReceiver>();
 			auto door = ent.Get<SlideDoor>();
 
-			SlideDoor::State state = door->GetState();
+			SlideDoor::State state = door->GetState(entities);
 			if (receiver->IsTriggered())
 			{
 				if (state != SlideDoor::State::OPENED
-				    && state != SlideDoor::State::OPENING)
+					&& state != SlideDoor::State::OPENING)
 				{
-					door->Open();
+					door->Open(entities);
 				}
 			}
 			else
 			{
 				if (state != SlideDoor::State::CLOSED
-				    && state != SlideDoor::State::CLOSING)
+					&& state != SlideDoor::State::CLOSING)
 				{
-					door->Close();
+					door->Close(entities);
 				}
 			}
 		}

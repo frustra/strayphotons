@@ -214,8 +214,8 @@ namespace ecs
 
 		// Offset the capsule position so the camera is at the top
 		physx::PxVec3 pos = GlmVec3ToPxVec3(
-			transform->GetPosition() - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT / 2, 0)
-		);
+								transform->GetPosition() - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT / 2, 0)
+							);
 		controller->pxController = px.CreateController(pos, ecs::PLAYER_RADIUS, ecs::PLAYER_CAPSULE_HEIGHT, 0.5f);
 		controller->pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
 
@@ -350,7 +350,7 @@ namespace ecs
 			physics->ResizeController(pxController, height, fromTop);
 
 			physx::PxOverlapBuffer hit;
-			physx::PxRigidDynamic* actor = pxController->getActor();
+			physx::PxRigidDynamic *actor = pxController->getActor();
 
 			bool valid = !physics->OverlapQuery(actor, physx::PxVec3(0), hit);
 

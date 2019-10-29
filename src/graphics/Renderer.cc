@@ -19,7 +19,6 @@
 #include "ecs/components/Light.hh"
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/Mirror.hh"
-#include "ecs/components/Name.hh"
 #include "assets/AssetManager.hh"
 #include "physx/PhysxUtils.hh"
 #include "threading/MutexedVector.hh"
@@ -71,7 +70,7 @@ namespace sp
 			CVarEnableShadows.Changed() ||
 			CVarEnablePCF.Changed() ||
 			CVarEnableBumpMap.Changed()
-		)
+		   )
 		{
 			int voxelGridSize = CVarVoxelGridSize.Get(true);
 			ShaderManager::SetDefine("VOXEL_GRID_SIZE", std::to_string(voxelGridSize));
@@ -160,9 +159,9 @@ namespace sp
 		{
 			auto light = entity.Get<ecs::Light>();
 
-			if (light->bulb.Valid())
+			if (light->bulb.Load(game->entityManager))
 			{
-				auto bulb = light->bulb.Get<ecs::Renderable>();
+				auto bulb = light->bulb->Get<ecs::Renderable>();
 				bulb->emissive = light->on ? light->intensity * light->tint * 0.1f : glm::vec3(0.0f);
 			}
 
@@ -646,7 +645,7 @@ namespace sp
 #ifdef ENABLE_VR
 		if (view.vrEye > 0)
 		{
-			vr::Texture_t vrTexture = { (void*)targets.finalOutput->GetTexture().handle, vr::TextureType_OpenGL, vr::ColorSpace_Linear };
+			vr::Texture_t vrTexture = { (void *)targets.finalOutput->GetTexture().handle, vr::TextureType_OpenGL, vr::ColorSpace_Linear };
 			vr::VRCompositor()->Submit(view.vrEye == 1 ? vr::Eye_Left : vr::Eye_Right, &vrTexture);
 		}
 #endif
@@ -787,7 +786,7 @@ namespace sp
 			return;
 		}
 
-		auto modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform();
+		auto modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform(game->entityManager);
 		shader->SetParams(view, modelMat);
 
 		if (preDraw) preDraw(ent);
@@ -801,7 +800,7 @@ namespace sp
 		if (ent.Has<ecs::Name>())
 		{
 			auto name = ent.Get<ecs::Name>();
-			if (name->name == "vr-controller")
+			if (*name == "vr-controller")
 			{
 				glm::vec3 lpos0 = glm::vec3(modelMat * glm::vec4(0, 0, 0, 1.0));
 				glm::vec3 lpos1 = glm::vec3(modelMat * glm::vec4(0, 0, -10.0, 1.0));

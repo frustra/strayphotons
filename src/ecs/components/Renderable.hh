@@ -2,6 +2,8 @@
 
 #include "assets/Model.hh"
 
+#include <ecs/Components.hh>
+
 namespace ecs
 {
 	struct Renderable
@@ -13,4 +15,9 @@ namespace ecs
 		glm::vec3 emissive = {0.0f, 0.0f, 0.0f};
 		glm::vec3 voxelEmissive = {0.0f, 0.0f, 0.0f};
 	};
+
+	static Component<Renderable> ComponentRenderable("renderable");
+
+	template<>
+	bool Component<Renderable>::LoadEntity(Entity &dst, picojson::value &src);
 }

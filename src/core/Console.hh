@@ -62,7 +62,7 @@ namespace sp
 		std::mutex inputLock;
 		std::thread inputThread;
 
-		std::priority_queue<std::pair<uint64 ,string>> queuedCommands;
+		std::priority_queue<std::pair<uint64, string>> queuedCommands;
 		vector<ConsoleLine> outputLines;
 		vector<string> history;
 	};

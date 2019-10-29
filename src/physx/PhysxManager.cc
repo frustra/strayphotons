@@ -218,6 +218,11 @@ namespace sp
 				auto ph = ent.Get<ecs::Physics>();
 				auto transform = ent.Get<ecs::Transform>();
 
+				if (!ph->actor && ph->model)
+				{
+					ph->actor = CreateActor(ph->model, ph->desc, ent);
+				}
+
 				if (ph->actor && transform->ClearDirty())
 				{
 					if (!gotLock)
@@ -226,11 +231,11 @@ namespace sp
 						gotLock = true;
 					}
 
-					auto position = transform->GetGlobalTransform() * glm::vec4(0, 0, 0, 1);
-					auto rotate = transform->GetGlobalRotation();
+					auto position = transform->GetGlobalTransform(manager) * glm::vec4(0, 0, 0, 1);
+					auto rotate = transform->GetGlobalRotation(manager);
 
 					auto lastScale = ph->scale;
-					auto newScale = glm::vec3(glm::inverse(rotate) * (transform->GetGlobalTransform() * glm::vec4(1, 1, 1, 0)));
+					auto newScale = glm::vec3(glm::inverse(rotate) * (transform->GetGlobalTransform(manager) * glm::vec4(1, 1, 1, 0)));
 					if (lastScale != newScale)
 					{
 						auto n = ph->actor->getNbShapes();
@@ -269,7 +274,7 @@ namespace sp
 				if (!ph->desc.dynamic)
 					continue;
 
-				Assert(!transform->HasParent(), "Dynamic physics objects must have no parent");
+				Assert(!transform->HasParent(manager), "Dynamic physics objects must have no parent");
 
 				if (ph->actor)
 				{
@@ -563,7 +568,7 @@ namespace sp
 		}
 
 		static_assert(sizeof(void *) == sizeof(ecs::eid_t),
-			"wrong size of Entity::Id; it must be same size as a pointer");
+					  "wrong size of Entity::Id; it must be same size as a pointer");
 		actor->userData = reinterpret_cast<void *>(entity.GetId().GetId());
 
 		scene->addActor(*actor);
@@ -582,7 +587,7 @@ namespace sp
 	ecs::Entity::Id PhysxManager::GetEntityId(const physx::PxActor &actor) const
 	{
 		static_assert(sizeof(ecs::eid_t) == sizeof(physx::PxActor::userData),
-			"size mismatch");
+					  "size mismatch");
 		return ecs::Entity::Id(reinterpret_cast<ecs::eid_t>(actor.userData));
 	}
 
@@ -658,7 +663,7 @@ namespace sp
 	void PhysxManager::ResizeController(PxController *controller, const float height, bool fromTop)
 	{
 		Lock();
-		auto currentHeight = ((PxCapsuleController*) controller)->getHeight();
+		auto currentHeight = ((PxCapsuleController *) controller)->getHeight();
 		auto currentPos = controller->getFootPosition();
 		controller->resize(height);
 		if (fromTop)
@@ -727,7 +732,7 @@ namespace sp
 		return status;
 	}
 
-	bool PhysxManager::OverlapQuery(PxRigidDynamic *actor, PxVec3 translation, PxOverlapBuffer& hit)
+	bool PhysxManager::OverlapQuery(PxRigidDynamic *actor, PxVec3 translation, PxOverlapBuffer &hit)
 	{
 		Lock();
 		PxShape *shape;

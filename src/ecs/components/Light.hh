@@ -3,6 +3,8 @@
 #include <glm/glm.hpp>
 
 #include <Ecs.hh>
+#include <ecs/Components.hh>
+#include <ecs/NamedEntity.hh>
 
 namespace ecs
 {
@@ -14,6 +16,11 @@ namespace ecs
 		int gelId;
 		int lightId;
 		bool on = true;
-		ecs::Entity bulb;
+		NamedEntity bulb;
 	};
+
+	static Component<Light> ComponentLight("light");
+
+	template<>
+	bool Component<Light>::LoadEntity(Entity &dst, picojson::value &src);
 }
