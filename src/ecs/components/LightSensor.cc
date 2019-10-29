@@ -25,7 +25,7 @@ namespace ecs
 			{
 				for (auto entName : param.second.get<picojson::array>())
 				{
-					sensor->outputTo.emplace_back(entName.get<string>(), [&dst](NamedEntity & ent)
+					sensor->outputTo.emplace_back(entName.get<string>(), [dst](NamedEntity & ent)
 					{
 						if (!ent->Has<SignalReceiver>())
 						{

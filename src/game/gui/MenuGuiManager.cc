@@ -38,7 +38,7 @@ namespace sp
 			io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
 			io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
 
-			if (state == GLFW_PRESS && Focused() && !inputManager->FocusLocked(FocusLevel))
+			if (state == GLFW_PRESS && Focused() && !inputManager->FocusLocked(focusPriority))
 			{
 				if (key == GLFW_KEY_ESCAPE && framesSinceOpened > 0)
 				{
@@ -65,9 +65,9 @@ namespace sp
 		ImGuiIO &io = ImGui::GetIO();
 		io.MouseDrawCursor = selectedScreen != MenuScreen::Splash && RenderMode() == MenuRenderMode::Gel;
 
-		inputManager->LockFocus(Focused(), FocusLevel);
+		inputManager->LockFocus(Focused(), focusPriority);
 
-		if (Focused() && !inputManager->FocusLocked(FocusLevel))
+		if (Focused() && !inputManager->FocusLocked(focusPriority))
 		{
 			auto &input = *inputManager;
 
@@ -266,22 +266,47 @@ namespace sp
 
 			{
 				static auto modes = game->graphics.GetContext()->MonitorModes();
-				static vector<string> resLabels = MakeResolutionLabels(modes);
-
-				ImGui::PushItemWidth(250.0f);
 				int resIndex = std::find(modes.begin(), modes.end(), CVarWindowSize.Get()) - modes.begin();
-				ImGui::Combo("##respicker", &resIndex, StringVectorGetter, &resLabels, modes.size());
-				ImGui::PopItemWidth();
-
-				if (resIndex >= 0 && resIndex < (int) modes.size())
+				static int prevResIndex = resIndex;
+				// Check for valid resIndex.  Note: An invalid index may occur if the default window size is not a support graphics mode for the monitor.
+				if (resIndex < 0 || resIndex >= (int) modes.size())
 				{
-					CVarWindowSize.Set(modes[resIndex]);
+					// Invalid resIndex, set to first possible index.
+					resIndex = 0;
 				}
-			}
 
-			{
+				{
+					static vector<string> resLabels = MakeResolutionLabels(modes);
+
+					ImGui::PushItemWidth(250.0f);
+					ImGui::Combo("##respicker", &resIndex, StringVectorGetter, &resLabels, modes.size());
+					ImGui::PopItemWidth();
+
+				}
+
 				bool fullscreen = CVarWindowFullscreen.Get();
+				static bool prevFullscreen = fullscreen;
 				ImGui::Checkbox("##fullscreencheck", &fullscreen);
+
+				// FIXME: Show modes that only support fullscreen in the Menu GUI.
+				// If fullscreen is toggeled from the Menu GUI, then set resIndex to first entry.  This is the highest supported resolution of the monitor.
+				if (prevFullscreen != fullscreen)
+				{
+					if (fullscreen)
+					{
+						// Set resIndex to get maximum supported resolution.  If this is not done, a valid resIndex for windowed mode may be used in fullscreen mode.
+						prevResIndex = resIndex;
+						resIndex = 0;
+					}
+					else
+					{
+						resIndex = prevResIndex;
+					}
+
+					prevFullscreen = fullscreen;
+				}
+
+				CVarWindowSize.Set(modes[resIndex]);
 				CVarWindowFullscreen.Set((int) fullscreen);
 			}
 
@@ -404,14 +429,14 @@ namespace sp
 			selectedScreen = MenuScreen::Main;
 
 			CVarMenuFocused.Set(true);
-			inputManager->LockFocus(true, FocusLevel);
+			inputManager->LockFocus(true, focusPriority);
 			framesSinceOpened = 0;
 		}
 	}
 
 	void MenuGuiManager::CloseMenu()
 	{
-		if (!inputManager->FocusLocked(FocusLevel) && RenderMode() != MenuRenderMode::Gel)
+		if (!inputManager->FocusLocked(focusPriority) && RenderMode() != MenuRenderMode::Gel)
 		{
 			inputManager->DisableCursor();
 		}
@@ -423,7 +448,7 @@ namespace sp
 		}
 
 		CVarMenuFocused.Set(false);
-		inputManager->LockFocus(false, FocusLevel);
+		inputManager->LockFocus(false, focusPriority);
 		framesSinceOpened = 0;
 	}
 }

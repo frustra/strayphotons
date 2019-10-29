@@ -73,6 +73,10 @@ namespace sp
 			LoadScene("menu");
 		}
 
+		input->BindCommand(GLFW_KEY_F5, "reloadscene");
+		input->BindCommand(GLFW_KEY_F6, "reloadscene reset");
+		input->BindCommand(GLFW_KEY_F, "toggle r.FlashlightOn");
+
 		input->AddKeyInputCallback([&](int key, int state)
 		{
 			if (input->FocusLocked()) return;
@@ -102,15 +106,7 @@ namespace sp
 					}
 				}
 #endif
-				else if (key == GLFW_KEY_F5)
-				{
-					ReloadScene("");
-				}
-				else if (key == GLFW_KEY_F6)
-				{
-					ReloadScene("reset");
-				}
-				else if (key == GLFW_KEY_Q)   // Spawn dodecahedron
+				else if (key == GLFW_KEY_Q) // Spawn dodecahedron
 				{
 					auto entity = game->entityManager.NewEntity();
 					auto model = GAssets.LoadModel("dodecahedron");
@@ -146,10 +142,6 @@ namespace sp
 							transform->SetParent(player);
 						}
 					}
-				}
-				else if (key == GLFW_KEY_F) // Turn flashlight on and off
-				{
-					CVarFlashlightOn.Set(!CVarFlashlightOn.Get());
 				}
 			}
 		});

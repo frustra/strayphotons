@@ -39,4 +39,36 @@ namespace sp
 		getline(stream, cmd);
 		GConsoleManager.QueueParseAndExecute(cmd, dt);
 	});
+
+	CFunc<string> CFuncToggle("toggle", "Toggle a CVar between values (toggle <cvar_name> [<value_a> <value_b>])", [](string args)
+	{
+		std::stringstream stream(args);
+		string cvarName;
+		stream >> cvarName;
+
+		auto cvars = GConsoleManager.CVars();
+		auto cvarit = cvars.find(to_lower_copy(cvarName));
+		if (cvarit != cvars.end())
+		{
+			auto cvar = cvarit->second;
+			if (cvar->IsValueType())
+			{
+				vector<string> values;
+				string value;
+				while (stream >> value)
+				{
+					values.push_back(value);
+				}
+				cvar->ToggleValue(values.data(), values.size());
+			}
+			else
+			{
+				logging::ConsoleWrite(logging::Level::Log, " > '%s' is not a cvar", cvarName);
+			}
+		}
+		else
+		{
+			logging::ConsoleWrite(logging::Level::Log, " > '%s' undefined", cvarName);
+		}
+	});
 }

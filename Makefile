@@ -1,4 +1,12 @@
 UNAME := $(shell uname)
+BASE_DIR := $(shell pwd)
+NPROCS := 1
+
+ifeq ($(UNAME),Linux)
+	NPROCS := $(shell grep -c ^processor /proc/cpuinfo)
+else ifeq ($(UNAME),Darwin) # Assume Mac OS X
+	NPROCS := $(shell system_profiler | awk '/Number Of CPUs/{print $4}{next;}')
+endif
 
 .PHONY: auto compile linux unix windowws vs14 clean unit-tests \
 	integration-tests tests astyle dependencies assets
@@ -6,19 +14,19 @@ UNAME := $(shell uname)
 auto: unix
 
 compile:
-	cd build; make -j5
+	cd build; make -j$(NPROCS)
 
 linux: unix
 unix: build
-	cd build; CC=clang CXX=clang++ cmake -DSP_PACKAGE_RELEASE=0 -G "Unix Makefiles" ..; make -j5
+	cd build; CC=clang CXX=clang++ cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug -DSP_PACKAGE_RELEASE=0 -G "Unix Makefiles" ..; make -j5
 
 linux-release: unix-release
 unix-release: build
-	cd build; CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=0 -G "Unix Makefiles" ..; make -j5
+	cd build; CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=0 -G "Unix Makefiles" ..; make -j$(NPROCS)
 
 linux-package-release: unix-package-release
 unix-package-release: build assets
-	cd build; CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=1 -G "Unix Makefiles" ..; make -j5
+	cd build; CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Release -DSP_PACKAGE_RELEASE=1 -G "Unix Makefiles" ..; make -j$(NPROCS)
 	rm -rf strayphotons
 	mkdir -p strayphotons/bin
 	cp bin/Release/sp strayphotons/bin/strayphotons
@@ -51,7 +59,16 @@ unit-tests: build unix
 integration-tests: build unix
 	cd build; make integration-tests
 
-tests: unit-tests integration-tests
+cpp-check:
+	cd tests; cppcheck --project=$(BASE_DIR)/build/compile_commands.json -i $(BASE_DIR)/ext/ -j$(NPROCS) 2> cppcheck-result.txt
+
+tests: unit-tests integration-tests cpp-check
+
+static-analysis:
+	cd build; scan-build make -B -j$(NPROCS)
+
+valgrind:
+	cd bin; MESA_GL_VERSION_OVERRIDE=4.3 MESA_GLSL_VERSION_OVERRIDE=430 MESA_EXTENSION_OVERRIDE=GL_ARB_compute_shader valgrind --leak-check=full --log-file=../tests/valgrind-out.txt ./Debug/sp
 
 astyle:
 	astyle --options="extra/astyle.config" "src/*.hh" "src/*.cc"

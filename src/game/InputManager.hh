@@ -3,8 +3,11 @@
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 #include <array>
+#include <map>
 #include <functional>
 #include "Common.hh"
+#include "GuiManager.hh"
+#include <core/CFunc.hh>
 
 namespace sp
 {
@@ -85,15 +88,15 @@ namespace sp
 		void SetCursorPosition(glm::vec2 pos);
 
 		/**
-		 * Returns true if input is currently consumed by a foreground system.
+		 * Returns true if input is currently consumed by a foreground system of higher input priority.
 		 */
-		bool FocusLocked(int priority = 1) const;
+		bool FocusLocked(int priority = FOCUS_GAME) const;
 
 		/**
 		 * Enables or disables the focus lock at a given priority.
 		 * Returns false if the lock is already held.
 		 */
-		bool LockFocus(bool locked, int priority = 1);
+		bool LockFocus(bool locked, int priority = FOCUS_GAME);
 
 		void DisableCursor();
 		void EnableCursor();
@@ -150,6 +153,25 @@ namespace sp
 			charEventCallbacks.push_back(cb);
 		}
 
+		/**
+		 * Bind a key code to a console command
+		 */
+		void BindCommand(int key, string command)
+		{
+			keyBindings[key] = command;
+		}
+
+		/**
+		 * Unbind a key code
+		 */
+		void UnbindCommand(int key, string command)
+		{
+			keyBindings.erase(key);
+		}
+
+		// CFunc
+		void BindKey(string args);
+
 	private:
 		void keyChange(int key, int action);
 		void charInput(uint32 ch);
@@ -184,6 +206,9 @@ namespace sp
 		vector<CharEventCallback> charEventCallbacks;
 
 		vector<int> focusLocked;
+
+		CFuncCollection funcs;
+		std::map<int, string> keyBindings;
 	};
 
 	int MouseButtonToKey(int button);

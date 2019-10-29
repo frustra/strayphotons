@@ -87,6 +87,11 @@ namespace sp
 				auto prev = sensor->illuminance;
 				sensor->illuminance = lum;
 
+				for (auto output : sensor->outputTo)
+				{
+					output.Load(manager);
+				}
+
 				bool allTriggered = true;
 
 				for (auto trigger : triggers)

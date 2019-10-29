@@ -51,6 +51,7 @@ namespace sp
 
 	bool starts_with(const string &str, const string &prefix);
 	string to_lower_copy(const string &str);
+	string to_upper_copy(const string &str);
 	void trim(string &str);
 	void trim_left(string &str);
 	void trim_right(string &str);

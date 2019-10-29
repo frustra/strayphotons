@@ -27,7 +27,7 @@ namespace sp
 	class MenuGuiManager : public GuiManager
 	{
 	public:
-		MenuGuiManager(Game *game) : game(game) { }
+		MenuGuiManager(Game *game) : GuiManager(FOCUS_MENU), game(game) { }
 		virtual ~MenuGuiManager() { }
 
 		void BeforeFrame();
@@ -39,8 +39,6 @@ namespace sp
 		void SetRenderMode(MenuRenderMode mode);
 		void OpenPauseMenu();
 		void CloseMenu();
-
-		const int FocusLevel = 10;
 
 	private:
 		Game *game = nullptr;

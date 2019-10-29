@@ -75,7 +75,7 @@ namespace sp
 	{
 		if (!Focused())
 		{
-			inputManager->LockFocus(true, FocusLevel);
+			inputManager->LockFocus(true, focusPriority);
 			inputManager->EnableCursor();
 		}
 	}
@@ -85,7 +85,7 @@ namespace sp
 		if (!Focused())
 		{
 			inputManager->DisableCursor();
-			inputManager->LockFocus(false, FocusLevel);
+			inputManager->LockFocus(false, focusPriority);
 		}
 	}
 
