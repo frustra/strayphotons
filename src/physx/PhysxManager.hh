@@ -39,6 +39,13 @@ namespace sp
 		PhysxManager *manager;
 	};
 
+	enum PhysxCollisionGroup {
+		HELD_OBJECT = 1,
+		PLAYER = 2,
+		WORLD = 3,
+		NOCLIP = 4
+	};
+
 	class PhysxManager
 	{
 		typedef std::list<PhysxConstraint> ConstraintList;

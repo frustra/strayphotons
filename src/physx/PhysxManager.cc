@@ -158,7 +158,7 @@ namespace sp
 				constraint->child->getShapes(shapes.data(), nShapes);
 
 				PxFilterData data;
-				data.word0 = 3;
+				data.word0 = PhysxCollisionGroup::WORLD;
 				for (uint32 i = 0; i < nShapes; ++i)
 				{
 					shapes[i]->setQueryFilterData(data);
@@ -298,7 +298,10 @@ namespace sp
 		sceneDesc.filterShader = PxDefaultSimulationFilterShader;
 
 		// Don't collide held model with player
-		PxSetGroupCollisionFlag(1, 2, false);
+		PxSetGroupCollisionFlag(PhysxCollisionGroup::HELD_OBJECT, PhysxCollisionGroup::PLAYER, false);
+		// Don't collide anything with the noclip group.
+		PxSetGroupCollisionFlag(PhysxCollisionGroup::WORLD, PhysxCollisionGroup::NOCLIP, false);
+		PxSetGroupCollisionFlag(PhysxCollisionGroup::HELD_OBJECT, PhysxCollisionGroup::NOCLIP, false);
 
 		dispatcher = PxDefaultCpuDispatcherCreate(1);
 		sceneDesc.cpuDispatcher = dispatcher;
@@ -313,7 +316,7 @@ namespace sp
 		PxShape *shape;
 		groundPlane->getShapes(&shape, 1);
 		PxFilterData data;
-		data.word0 = 3;
+		data.word0 = PhysxCollisionGroup::WORLD;
 		shape->setQueryFilterData(data);
 		shape->setSimulationFilterData(data);
 
@@ -557,7 +560,7 @@ namespace sp
 
 			auto shape = PxRigidActorExt::createExclusiveShape(*actor, PxConvexMeshGeometry(pxhull, desc.scale), *mat);
 			PxFilterData data;
-			data.word0 = 3;
+			data.word0 = PhysxCollisionGroup::WORLD;
 			shape->setQueryFilterData(data);
 			shape->setSimulationFilterData(data);
 		}
@@ -635,7 +638,7 @@ namespace sp
 		PxShape *shape;
 		controller->getActor()->getShapes(&shape, 1);
 		PxFilterData data;
-		data.word0 = 2;
+		data.word0 = PhysxCollisionGroup::PLAYER;
 		shape->setSimulationFilterData(data);
 
 		Unlock();
@@ -646,7 +649,7 @@ namespace sp
 	{
 		Lock();
 		PxFilterData data;
-		data.word0 = CVarPropJumping.Get() ? 3 : 2;
+		data.word0 = CVarPropJumping.Get() ? PhysxCollisionGroup::WORLD : PhysxCollisionGroup::PLAYER;
 		physx::PxControllerFilters filters(&data);
 		auto flags = controller->move(displacement, 0, dt, filters);
 		Unlock();
@@ -759,7 +762,7 @@ namespace sp
 		child->getShapes(shapes.data(), nShapes);
 
 		PxFilterData data;
-		data.word0 = 1;
+		data.word0 = PhysxCollisionGroup::HELD_OBJECT;
 		for (uint32 i = 0; i < nShapes; ++i)
 		{
 			shapes[i]->setQueryFilterData(data);
@@ -802,7 +805,7 @@ namespace sp
 		child->getShapes(shapes.data(), nShapes);
 
 		PxFilterData data;
-		data.word0 = 3;
+		data.word0 = PhysxCollisionGroup::WORLD;
 		for (uint32 i = 0; i < nShapes; ++i)
 		{
 			shapes[i]->setQueryFilterData(data);
@@ -828,7 +831,7 @@ namespace sp
 		child->getShapes(shapes.data(), nShapes);
 
 		PxFilterData data;
-		data.word0 = 3;
+		data.word0 = PhysxCollisionGroup::WORLD;
 		for (uint32 i = 0; i < nShapes; ++i)
 		{
 			shapes[i]->setQueryFilterData(data);

@@ -42,10 +42,12 @@ namespace ecs
 		if (input->FocusLocked())
 			return true;
 
+		bool noclipChanged = CVarNoClip.Changed();
+		auto noclip = CVarNoClip.Get(true);
+
 		for (ecs::Entity entity : entities->EntitiesWith<ecs::Transform, ecs::HumanController>())
 		{
 			// Handle keyboard controls
-			auto noclip = CVarNoClip.Get();
 			glm::vec3 inputMovement = glm::vec3(0);
 			bool jumping = false;
 			bool sprinting = false;
@@ -143,9 +145,16 @@ namespace ecs
 			}
 
 			// Move the player
-			if (CVarNoClip.Changed())
+			if (noclipChanged)
 			{
-				physics->ToggleCollisions(controller->pxController->getActor(), !CVarNoClip.Get(true));
+				physics->ToggleCollisions(controller->pxController->getActor(), !noclip);
+
+				physx::PxShape *shape;
+				controller->pxController->getActor()->getShapes(&shape, 1);
+				physx::PxFilterData data;
+				data.word0 = noclip ? sp::PhysxCollisionGroup::NOCLIP : sp::PhysxCollisionGroup::PLAYER;
+				shape->setQueryFilterData(data);
+				shape->setSimulationFilterData(data);
 			}
 
 			auto currentHeight = physics->GetCapsuleHeight(controller->pxController);
