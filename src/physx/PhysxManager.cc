@@ -639,6 +639,7 @@ namespace sp
 		controller->getActor()->getShapes(&shape, 1);
 		PxFilterData data;
 		data.word0 = PhysxCollisionGroup::PLAYER;
+		shape->setQueryFilterData(data);
 		shape->setSimulationFilterData(data);
 
 		Unlock();

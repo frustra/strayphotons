@@ -60,6 +60,11 @@ void main()
 		if (mode == 1) { // Radiance
 			outFragColor.rgb = sampleValue.rgb;
 		}
+	} else if (source == 3) { // Diffuse cone trace source
+		vec4 sampleValue = ConeTraceGridDiffuse(rayPos.xyz, rayDir.xyz, 0.0);
+		if (mode == 1) { // Radiance
+			outFragColor.rgb = sampleValue.rgb;
+		}
 	}
 	outFragColor.a = 1.0;
 }

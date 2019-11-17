@@ -52,6 +52,12 @@ float InterleavedGradientNoise(vec2 position) {
 	return fract(magic.z * fract(dot(position, magic.xy)));
 }
 
+// Returns the maximum size of a voxel along an axis
+float AxisVoxelWidth(vec3 axis) {
+	vec3 absAxis = abs(axis);
+	return 1.0 / max(absAxis.x, max(absAxis.y, absAxis.z));
+}
+
 // Some nice sample coordinates around a spiral.
 const vec2[8] SpiralOffsets = vec2[](
 	vec2(-0.7071,  0.7071),

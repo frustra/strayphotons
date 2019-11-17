@@ -67,38 +67,51 @@ void main()
 
 	float metalness = texture(metallicTex, inTexCoord).r;
 
-	vec3 position = vec3(gl_FragCoord.xy / VOXEL_SUPER_SAMPLE_SCALE, gl_FragCoord.z * VOXEL_GRID_SIZE);
-	position = AxisSwapReverse[abs(inDirection)-1] * (position - VOXEL_GRID_SIZE / 2);
-	vec3 worldPosition = position * voxelInfo.size + voxelInfo.center;
-	position += VOXEL_GRID_SIZE / 2;
+	// Render each fragment 2 voxels deep along the dominant axis.
+	// This reduces holes in geometry and light leak for objects close to eachother.
+	vec3 position[2] = vec3[](
+		vec3(gl_FragCoord.xy / VOXEL_SUPER_SAMPLE_SCALE, gl_FragCoord.z * VOXEL_GRID_SIZE),
+		vec3(gl_FragCoord.xy / VOXEL_SUPER_SAMPLE_SCALE, gl_FragCoord.z * VOXEL_GRID_SIZE - sign(inDirection))
+	);
+	position[0] = AxisSwapReverse[abs(inDirection)-1] * (position[0] - VOXEL_GRID_SIZE / 2);
+	position[1] = AxisSwapReverse[abs(inDirection)-1] * (position[1] - VOXEL_GRID_SIZE / 2);
+	vec3 worldPosition = position[0] * voxelInfo.size + voxelInfo.center;
+	position[0] += VOXEL_GRID_SIZE / 2;
+	position[1] += VOXEL_GRID_SIZE / 2;
 
 	vec3 pixelLuminance = DirectShading(worldPosition, baseColor.rgb, inNormal, inNormal);
+	vec3 directLuminance = pixelLuminance;
 	if (lightAttenuation > 0) {
 		vec3 directDiffuseColor = baseColor.rgb - baseColor.rgb * metalness;
 		vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, inNormal, vec2(0));
 		pixelLuminance += indirectDiffuse * directDiffuseColor * lightAttenuation * smoothstep(0.0, 0.1, length(indirectDiffuse));
 	}
 
-	uint count = imageAtomicAdd(voxelCounters, ivec3(position), 1);
-	if (count == 0) {
-		uint index = atomicCounterIncrement(fragListSize);
-		if (index % MipmapWorkGroupSize == 0) atomicCounterIncrement(indirectFragCount);
-		imageStore(fragmentList, ivec2(index & MaxFragListMask[0], index >> FragListWidthBits[0]), uvec4(position, 1));
-		imageStore(voxelGrid, ivec3(position), vec4(pixelLuminance, 1.0));
-	} else if (count == 1) {
-		uint index = atomicCounterIncrement(overflowSize1) * 2;
-		if (index % (MipmapWorkGroupSize * 2) == 0) atomicCounterIncrement(indirectOverflowCount1);
-		imageStore(voxelOverflow1, ivec2(index & MaxFragListMask[0], index >> FragListWidthBits[0]), vec4(position, 1.0));
-		imageStore(voxelOverflow1, ivec2((index & MaxFragListMask[0]) + 1, index >> FragListWidthBits[0]), vec4(pixelLuminance, 1.0));
-	} else if (count == 2) {
-		uint index = atomicCounterIncrement(overflowSize2) * 2;
-		if (index % (MipmapWorkGroupSize * 2) == 0) atomicCounterIncrement(indirectOverflowCount2);
-		imageStore(voxelOverflow2, ivec2(index & MaxFragListMask[1], index >> FragListWidthBits[1]), vec4(position, 1.0));
-		imageStore(voxelOverflow2, ivec2((index & MaxFragListMask[1]) + 1, index >> FragListWidthBits[1]), vec4(pixelLuminance, 1.0));
-	} else {
-		uint index = atomicCounterIncrement(overflowSize3) * 2;
-		if (index % (MipmapWorkGroupSize * 2) == 0) atomicCounterIncrement(indirectOverflowCount3);
-		imageStore(voxelOverflow3, ivec2(index & MaxFragListMask[2], index >> FragListWidthBits[2]), vec4(position, 1.0));
-		imageStore(voxelOverflow3, ivec2((index & MaxFragListMask[2]) + 1, index >> FragListWidthBits[2]), vec4(pixelLuminance, 1.0));
+	for (int i = 0; i < 2; i++) {
+		if (i > 0) {
+			pixelLuminance = directLuminance; // TODO: Find a way to set a voxel as opaque without contributing any lighting data to the average.
+		}
+		uint count = imageAtomicAdd(voxelCounters, ivec3(position[i]), 1);
+		if (count == 0) {
+			uint index = atomicCounterIncrement(fragListSize);
+			if (index % MipmapWorkGroupSize == 0) atomicCounterIncrement(indirectFragCount);
+			imageStore(fragmentList, ivec2(index & MaxFragListMask[0], index >> FragListWidthBits[0]), uvec4(position[i], 1));
+			imageStore(voxelGrid, ivec3(position[i]), vec4(pixelLuminance, 1.0));
+		} else if (count == 1) {
+			uint index = atomicCounterIncrement(overflowSize1) * 2;
+			if (index % (MipmapWorkGroupSize * 2) == 0) atomicCounterIncrement(indirectOverflowCount1);
+			imageStore(voxelOverflow1, ivec2(index & MaxFragListMask[0], index >> FragListWidthBits[0]), vec4(position[i], 1.0));
+			imageStore(voxelOverflow1, ivec2((index & MaxFragListMask[0]) + 1, index >> FragListWidthBits[0]), vec4(pixelLuminance, 1.0));
+		} else if (count == 2) {
+			uint index = atomicCounterIncrement(overflowSize2) * 2;
+			if (index % (MipmapWorkGroupSize * 2) == 0) atomicCounterIncrement(indirectOverflowCount2);
+			imageStore(voxelOverflow2, ivec2(index & MaxFragListMask[1], index >> FragListWidthBits[1]), vec4(position[i], 1.0));
+			imageStore(voxelOverflow2, ivec2((index & MaxFragListMask[1]) + 1, index >> FragListWidthBits[1]), vec4(pixelLuminance, 1.0));
+		} else {
+			uint index = atomicCounterIncrement(overflowSize3) * 2;
+			if (index % (MipmapWorkGroupSize * 2) == 0) atomicCounterIncrement(indirectOverflowCount3);
+			imageStore(voxelOverflow3, ivec2(index & MaxFragListMask[2], index >> FragListWidthBits[2]), vec4(position[i], 1.0));
+			imageStore(voxelOverflow3, ivec2((index & MaxFragListMask[2]) + 1, index >> FragListWidthBits[2]), vec4(pixelLuminance, 1.0));
+		}
 	}
 }
