@@ -62,10 +62,12 @@ namespace sp
 				std::unique_ptr<char[]> buf(new char[size + 1]);
 				std::snprintf(buf.get(), size + 1, fmt.c_str(), std::forward<T>(t)...);
 				std::cerr << buf.get();
-				GlobalLogOutput(lvl, string(buf.get(), buf.get() + size));
-#ifdef PACKAGE_RELEASE
-			}
+#ifndef PACKAGE_RELEASE
+			if (lvl != logging::Level::Debug)
+			{
 #endif
+				GlobalLogOutput(lvl, string(buf.get(), buf.get() + size));
+			}
 		}
 
 		template <typename... T>
