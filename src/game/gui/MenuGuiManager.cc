@@ -17,6 +17,7 @@ namespace sp
 {
 	static CVar<bool> CVarMenuFocused("g.MenuFocused", false, "Focus input on menu");
 	static CVar<int> CVarMenuDisplay("g.MenuDisplay", 0, "Display pause menu");
+	static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
 
 	void MenuGuiManager::BindInput(InputManager &input)
 	{
@@ -64,6 +65,7 @@ namespace sp
 
 		ImGuiIO &io = ImGui::GetIO();
 		io.MouseDrawCursor = selectedScreen != MenuScreen::Splash && RenderMode() == MenuRenderMode::Gel;
+		io.MouseDrawCursor = io.MouseDrawCursor || CVarMenuDebugCursor.Get();
 
 		inputManager->LockFocus(Focused(), focusPriority);
 
@@ -265,14 +267,21 @@ namespace sp
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 10));
 
 			{
-				static auto modes = game->graphics.GetContext()->MonitorModes();
-				int resIndex = std::find(modes.begin(), modes.end(), CVarWindowSize.Get()) - modes.begin();
-				static int prevResIndex = resIndex;
-				// Check for valid resIndex.  Note: An invalid index may occur if the default window size is not a support graphics mode for the monitor.
+				static std::vector<glm::ivec2> modes;
+				auto size = CVarWindowSize.Get();
+				static auto prevSize = size;
+				int resIndex = std::find(modes.begin(), modes.end(), size) - modes.begin();
+				// Check for valid resIndex.  Note: An invalid index may occur if the default window size is not a supported graphics mode for the monitor.
 				if (resIndex < 0 || resIndex >= (int) modes.size())
 				{
-					// Invalid resIndex, set to first possible index.
-					resIndex = 0;
+					// If the mode isn't in the list, refresh it, and then add the current resolution to the bottom if not found.
+					modes = game->graphics.GetContext()->MonitorModes();
+					resIndex = std::find(modes.begin(), modes.end(), size) - modes.begin();
+					if (resIndex < 0 || resIndex >= (int) modes.size())
+					{
+						resIndex = modes.size();
+						modes.push_back(size);
+					}
 				}
 
 				{
@@ -288,26 +297,34 @@ namespace sp
 				static bool prevFullscreen = fullscreen;
 				ImGui::Checkbox("##fullscreencheck", &fullscreen);
 
-				// FIXME: Show modes that only support fullscreen in the Menu GUI.
-				// If fullscreen is toggeled from the Menu GUI, then set resIndex to first entry.  This is the highest supported resolution of the monitor.
+				// If fullscreen is toggeled from the Menu GUI.
 				if (prevFullscreen != fullscreen)
 				{
 					if (fullscreen)
 					{
-						// Set resIndex to get maximum supported resolution.  If this is not done, a valid resIndex for windowed mode may be used in fullscreen mode.
-						prevResIndex = resIndex;
-						resIndex = 0;
+						// Store windowed mode resolution for returning from fullscreen.
+						prevSize = size;
+						// Resize the window to the current screen resolution.
+						size = game->graphics.GetContext()->CurrentMode();
+						if (size != glm::ivec2(0))
+						{
+							CVarWindowSize.Set(size);
+						}
+						CVarWindowFullscreen.Set(1);
 					}
 					else
 					{
-						resIndex = prevResIndex;
+						CVarWindowFullscreen.Set(0);
+						CVarWindowSize.Set(prevSize);
 					}
 
 					prevFullscreen = fullscreen;
 				}
-
-				CVarWindowSize.Set(modes[resIndex]);
-				CVarWindowFullscreen.Set((int) fullscreen);
+				else if (size != modes[resIndex])
+				{
+					size = modes[resIndex];
+					CVarWindowSize.Set(size);
+				}
 			}
 
 			ImGui::PopStyleVar();

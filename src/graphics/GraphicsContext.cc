@@ -115,41 +115,23 @@ namespace sp
 			else if (fullscreen == 1)
 			{
 				glfwGetWindowPos(window, &prevWindowPos.x, &prevWindowPos.y);
-				glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, view.extents.x, view.extents.y, 60);
+				glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, scaled.x, scaled.y, 60);
 			}
-		}
-
-		if (prevWindowSize != view.extents || prevFullscreen != fullscreen || windowScale != scale)
+		} else if (prevWindowSize != view.extents || windowScale != scale)
 		{
-			windowScale = scale;
 			if (fullscreen)
 			{
-				glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, view.extents.x, view.extents.y, 60);
+				glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, scaled.x, scaled.y, 60);
 			}
 			else
 			{
 				glfwSetWindowSize(window, scaled.x, scaled.y);
-
-				// TODO(pushrax): Convert this to glfwSetFramebufferSizeCallback
-				// int fbWidth, fbHeight;
-				// glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-
-				// if (fbWidth != view.extents.x)
-				// {
-				// 	glfwSetWindowSize(window, view.extents.x, view.extents.y);
-				// 	glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-
-				// 	double newScale = (double) view.extents.x / (double) fbWidth;
-				// 	Logf("Setting window scale: %f", newScale);
-				// 	windowScale = newScale;
-				// 	scaled = glm::dvec2(view.extents) * windowScale;
-				// 	glfwSetWindowSize(window, scaled.x, scaled.y);
-				// }
 			}
 		}
 
 		prevFullscreen = fullscreen;
 		prevWindowSize = view.extents;
+		windowScale = scale;
 	}
 
 	const vector<glm::ivec2> &GraphicsContext::MonitorModes()
@@ -175,5 +157,15 @@ namespace sp
 		});
 
 		return monitorModes;
+	}
+
+	const glm::ivec2 GraphicsContext::CurrentMode()
+	{
+		const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+		if (mode != NULL)
+		{
+			return glm::ivec2(mode->width, mode->height);
+		}
+		return glm::ivec2(0);
 	}
 }

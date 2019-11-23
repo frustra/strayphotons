@@ -1,3 +1,5 @@
+#include <graphics/GraphicsManager.hh>
+
 #include "InputManager.hh"
 #include "Common.hh"
 #include "BindingNames.hh"
@@ -104,8 +106,11 @@ namespace sp
 		if (glfwGetWindowAttrib(window, GLFW_FOCUSED))
 		{
 			double mouseX, mouseY;
+			int fbWidth, fbHeight;
 			glfwGetCursorPos(window, &mouseX, &mouseY);
-			return glm::vec2((float) mouseX, (float) mouseY);
+			glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+			glm::ivec2 windowSize = CVarWindowSize.Get();
+			return glm::vec2((float) mouseX, (float) mouseY + (float) (windowSize.y - fbHeight));
 		}
 		else
 		{

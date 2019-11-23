@@ -27,6 +27,7 @@ namespace sp
 		void BindInputCallbacks(InputManager &inputManager);
 		void ResizeWindow(ecs::View &frameBufferView, double scale, int fullscreen);
 		const vector<glm::ivec2> &MonitorModes();
+		const glm::ivec2 CurrentMode();
 
 		virtual void Prepare() = 0;
 		virtual void BeginFrame() = 0;
