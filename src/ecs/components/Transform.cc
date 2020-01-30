@@ -73,6 +73,7 @@ namespace ecs
 		}
 
 		this->parent = NamedEntity(ent);
+		this->parentCacheCount = 0;
 		this->dirty = true;
 	}
 
@@ -87,6 +88,7 @@ namespace ecs
 		}
 
 		this->parent = ent;
+		this->parentCacheCount = 0;
 		this->dirty = true;
 	}
 
@@ -97,8 +99,6 @@ namespace ecs
 
 	glm::mat4 Transform::GetGlobalTransform(EntityManager &em)
 	{
-		glm::mat4 model = glm::identity<glm::mat4>();
-
 		if (this->parent.Load(em))
 		{
 			sp::Assert(
@@ -106,10 +106,22 @@ namespace ecs
 				"cannot be relative to something that does not have a Transform"
 			);
 
-			model = this->parent->Get<Transform>()->GetGlobalTransform(em);
+			auto parentTransform = this->parent->Get<Transform>();
+			
+			if (this->cacheCount != this->changeCount || this->parentCacheCount != parentTransform->changeCount)
+			{
+				glm::mat4 parentModel = parentTransform->GetGlobalTransform(em);
+				this->cachedTransform = parentModel * this->translate * GetRotateMatrix() * this->scale;
+				this->cacheCount = this->changeCount;
+				this->parentCacheCount = parentTransform->changeCount;
+			}
 		}
-
-		return model * this->translate * GetRotateMatrix() * this->scale;
+		else if (this->cacheCount != this->changeCount)
+		{
+			this->cachedTransform = this->translate * GetRotateMatrix() * this->scale;
+			this->cacheCount = this->changeCount;
+		}
+		return this->cachedTransform;
 	}
 
 	glm::quat Transform::GetGlobalRotation(EntityManager &em)
@@ -143,24 +155,28 @@ namespace ecs
 	void Transform::Translate(glm::vec3 xyz)
 	{
 		this->translate = glm::translate(this->translate, xyz);
+		this->changeCount++;
 		this->dirty = true;
 	}
 
 	void Transform::Rotate(float radians, glm::vec3 axis)
 	{
 		this->rotate = glm::rotate(this->rotate, radians, axis);
+		this->changeCount++;
 		this->dirty = true;
 	}
 
 	void Transform::Scale(glm::vec3 xyz)
 	{
 		this->scale = glm::scale(this->scale, xyz);
+		this->changeCount++;
 		this->dirty = true;
 	}
 
 	void Transform::SetTranslate(glm::mat4 mat)
 	{
 		this->translate = mat;
+		this->changeCount++;
 		this->dirty = true;
 	}
 
@@ -172,6 +188,7 @@ namespace ecs
 	void Transform::SetPosition(glm::vec3 pos)
 	{
 		this->translate = glm::column(this->translate, 3, glm::vec4(pos.x, pos.y, pos.z, 1.f));
+		this->changeCount++;
 		this->dirty = true;
 	}
 
@@ -203,12 +220,14 @@ namespace ecs
 	void Transform::SetRotate(glm::mat4 mat)
 	{
 		this->rotate = mat;
+		this->changeCount++;
 		this->dirty = true;
 	}
 
 	void Transform::SetRotate(glm::quat quat)
 	{
 		this->rotate = quat;
+		this->changeCount++;
 		this->dirty = true;
 	}
 
@@ -225,12 +244,14 @@ namespace ecs
 	void Transform::SetScale(glm::vec3 xyz)
 	{
 		this->scale = glm::scale(glm::mat4(), xyz);
+		this->changeCount++;
 		this->dirty = true;
 	}
 
 	void Transform::SetScale(glm::mat4 mat)
 	{
 		this->scale = mat;
+		this->changeCount++;
 		this->dirty = true;
 	}
 
