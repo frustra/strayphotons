@@ -43,3 +43,6 @@
 [submodule "ext/openvr"]
 	path = ext/openvr
 	url = https://github.com/ValveSoftware/openvr.git
+[submodule "ext/robin-hood-hashing"]
+	path = ext/robin-hood-hashing
+	url = https://github.com/martinus/robin-hood-hashing
