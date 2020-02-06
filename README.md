@@ -14,7 +14,8 @@ Try to get the latest drivers for your hardware.
 - Linux: `cmake build-essential astyle xorg-dev libxrandr-dev mesa-common-dev libgl1-mesa-dev libglu1-mesa-dev` (or equivalent for your distro).
 There might be some missing dependencies in this list, add any you find.
 
-- Windows: cmake, Visual Studio 14 (2015), Git Bash, GNU Make. Use Git Bash as your shell for the scripts to work.
+- Windows: cmake >= 3.13, Visual Studio 2019 Community Edition, Git Bash, GNU Make. Use Git Bash as your shell for the scripts to work.
+  - On Windows, using Visual Studio Code as your editor is recommended as it is faster than using the full Visual Studio. Installing Visual Studio 2019 is still required to get the MSVC compiler.
 
 - All: `make dependencies`
 

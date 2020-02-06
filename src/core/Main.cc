@@ -1,3 +1,7 @@
+#if defined(_WIN32) && defined(PACKAGE_RELEASE)
+#include <windows.h>
+#endif
+
 #include <iostream>
 using namespace std;
 
@@ -10,6 +14,12 @@ using namespace std;
 #ifdef _WIN32
 #include <direct.h>
 #define os_getcwd _getcwd
+
+// Instruct NVidia GPU to render this app on optimus-enabled machines (laptops with two GPUs)
+extern "C" {
+	_declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+}
+
 #else
 #include <unistd.h>
 #define os_getcwd getcwd
@@ -20,7 +30,6 @@ using namespace std;
 using cxxopts::value;
 
 #if defined(_WIN32) && defined(PACKAGE_RELEASE)
-#include <windows.h>
 #define ARGC_NAME __argc
 #define ARGV_NAME __argv
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)

@@ -249,7 +249,6 @@ namespace sp
 			{
 				auto name = ent["_name"].get<string>();
 				entity.AssignKey<ecs::Name>(name);
-				scene->namedEntities[name] = entity;
 			}
 			scene->entities.push_back(entity);
 		}

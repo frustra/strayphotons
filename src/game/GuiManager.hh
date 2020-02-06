@@ -11,7 +11,8 @@ namespace sp
 	 * Set of defined focus level priorities.
 	 * A higher number has priority over lower numbers.
 	 */
-	enum FocusLevel {
+	enum FocusLevel
+	{
 		FOCUS_GAME = 1,
 		FOCUS_MENU = 10,
 		FOCUS_OVERLAY = 1000

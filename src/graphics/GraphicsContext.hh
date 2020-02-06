@@ -3,6 +3,7 @@
 #include <string>
 
 #include "graphics/Graphics.hh"
+#include "graphics/RenderTarget.hh"
 #include "ecs/components/View.hh"
 #include "Common.hh"
 
@@ -31,7 +32,7 @@ namespace sp
 
 		virtual void Prepare() = 0;
 		virtual void BeginFrame() = 0;
-		virtual void RenderPass(ecs::View view) = 0;
+		virtual void RenderPass(ecs::View view, RenderTarget::Ref finalOutput = nullptr) = 0;
 		virtual void PrepareForView(const ecs::View &view) = 0;
 		virtual void RenderLoading(ecs::View view) = 0;
 		virtual void EndFrame() = 0;

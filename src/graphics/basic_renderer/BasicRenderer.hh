@@ -18,7 +18,7 @@ namespace sp
 
 		void Prepare();
 		void BeginFrame();
-		void RenderPass(ecs::View view);
+		void RenderPass(ecs::View view, RenderTarget::Ref finalOutput = nullptr);
 		void PrepareForView(const ecs::View &view);
 		void RenderLoading(ecs::View view);
 		void EndFrame();

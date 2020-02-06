@@ -12,6 +12,7 @@ namespace ecs
 		Renderable(shared_ptr<sp::Model> model) : model(model) {}
 		shared_ptr<sp::Model> model;
 		bool hidden = false;
+		bool xrExcluded = false; // Do not render this on XR Views
 		glm::vec3 emissive = {0.0f, 0.0f, 0.0f};
 		glm::vec3 voxelEmissive = {0.0f, 0.0f, 0.0f};
 	};

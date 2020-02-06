@@ -1,0 +1,24 @@
+buildType:
+  default: debug
+  choices:
+    debug:
+      short: Debug
+      long: Emit debug information
+      buildType: Debug
+    release:
+      short: Release
+      long: Optimize generated code
+      buildType: Release
+packageRelease:
+  default: dev
+  choices:
+    dev:
+      short: Developer Build
+      long: Build for Developer Workflow
+      settings: 
+        SP_PACKAGE_RELEASE: off
+    rel:
+      short: Package Build
+      long: Build for Packaged Release Workflow
+      settings: 
+        SP_PACKAGE_RELEASE: on

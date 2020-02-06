@@ -48,7 +48,7 @@ namespace sp
 		void ReadBackLightSensors();
 		void UpdateLightSensors();
 		void BeginFrame();
-		void RenderPass(ecs::View view);
+		void RenderPass(ecs::View view, RenderTarget::Ref finalOutput = nullptr);
 		void PrepareForView(const ecs::View &view);
 		void ForwardPass(const ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw = {});
 		void DrawEntity(const ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw = {});

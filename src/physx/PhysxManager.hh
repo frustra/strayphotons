@@ -39,7 +39,8 @@ namespace sp
 		PhysxManager *manager;
 	};
 
-	enum PhysxCollisionGroup {
+	enum PhysxCollisionGroup
+	{
 		HELD_OBJECT = 1,
 		PLAYER = 2,
 		WORLD = 3,
@@ -170,10 +171,8 @@ namespace sp
 		physx::PxCooking *pxCooking = nullptr;
 		physx::PxControllerManager *manager = nullptr;
 
-#if !defined(PACKAGE_RELEASE)
 		physx::PxPvd *pxPvd = nullptr;
 		physx::PxPvdTransport *pxPvdTransport = nullptr;
-#endif
 
 		physx::PxScene *scene = nullptr;
 		bool simulate = false, exiting = false, resultsPending = false;

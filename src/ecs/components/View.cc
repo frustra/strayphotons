@@ -1,5 +1,6 @@
 #include "ecs/components/View.hh"
 #include "ecs/components/Transform.hh"
+#include "ecs/components/XRView.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -58,7 +59,7 @@ namespace ecs
 		{
 			throw std::runtime_error("view entity is not valid because it has no View component");
 		}
-		if (!viewEntity.Get<ecs::View>()->vrEye && !viewEntity.Has<Transform>())
+		if (!viewEntity.Has<ecs::XRView>() && !viewEntity.Has<Transform>())
 		{
 			throw std::runtime_error("view entity is not valid because it has no Transform component");
 		}
@@ -71,7 +72,7 @@ namespace ecs
 		auto view = entity.Get<View>();
 		view->aspect = (float)view->extents.x / (float)view->extents.y;
 
-		if (!view->vrEye)
+		if (!entity.Has<ecs::XRView>())
 		{
 			view->projMat = glm::perspective(fov > 0.0 ? fov : view->fov, view->aspect, view->clip[0], view->clip[1]);
 
@@ -83,5 +84,63 @@ namespace ecs
 		view->viewMat = glm::inverse(view->invViewMat);
 
 		return view;
+	}
+
+	void View::SetProjMat(float _fov, glm::vec2 _clip, glm::ivec2 _extents)
+	{
+		extents = _extents;
+		fov = _fov;
+		clip = _clip;
+
+		aspect = (float)extents.x / (float)extents.y;
+
+		SetProjMat(glm::perspective(fov, aspect, clip[0], clip[1]));
+	}
+
+	void View::SetProjMat(glm::mat4 proj)
+	{
+		projMat = proj;
+		invProjMat = glm::inverse(projMat);
+	}
+
+	void View::SetInvViewMat(glm::mat4 invView)
+	{
+		invViewMat = invView;
+		viewMat = glm::inverse(invViewMat);
+	}
+
+	glm::ivec2 View::GetExtents()
+	{
+		return extents;
+	}
+
+	glm::vec2 View::GetClip()
+	{
+		return clip;
+	}
+
+	float View::GetFov()
+	{
+		return fov;
+	}
+
+	glm::mat4 View::GetProjMat()
+	{
+		return projMat;
+	}
+
+	glm::mat4 View::GetInvProjMat()
+	{
+		return invProjMat;
+	}
+
+	glm::mat4 View::GetViewMat()
+	{
+		return viewMat;
+	}
+
+	glm::mat4 View::GetInvViewMat()
+	{
+		return invViewMat;
 	}
 }

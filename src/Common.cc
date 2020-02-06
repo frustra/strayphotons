@@ -7,6 +7,8 @@
 #ifdef _WIN32
 #include <intrin.h>
 #define os_break() __debugbreak()
+#elif defined(__arm__) || defined(__aarch64__)
+#define os_break()
 #else
 #define os_break() asm("int $3")
 #endif
@@ -56,14 +58,20 @@ namespace sp
 	string to_lower_copy(const string &str)
 	{
 		string out(str);
-		std::transform(str.begin(), str.end(), out.begin(), [](unsigned char c){ return std::tolower(c); });
+		std::transform(str.begin(), str.end(), out.begin(), [](unsigned char c)
+		{
+			return std::tolower(c);
+		});
 		return out;
 	}
 
 	string to_upper_copy(const string &str)
 	{
 		string out(str);
-		std::transform(str.begin(), str.end(), out.begin(), [](unsigned char c){ return std::toupper(c); });
+		std::transform(str.begin(), str.end(), out.begin(), [](unsigned char c)
+		{
+			return std::toupper(c);
+		});
 		return out;
 	}
 

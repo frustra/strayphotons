@@ -121,27 +121,3 @@ namespace sp
 		}
 	};
 }
-
-#ifdef ENABLE_VR
-namespace vr
-{
-	class RenderModel_t;
-	class RenderModel_TextureMap_t;
-}
-
-namespace sp
-{
-	class VRModel : public Model
-	{
-	public:
-		VRModel(vr::RenderModel_t *vrModel, vr::RenderModel_TextureMap_t *vrTex);
-		virtual ~VRModel();
-
-	private:
-		Texture baseColorTex, roughnessTex, metallicTex, heightTex;
-		VertexBuffer vbo;
-		Buffer ibo;
-		Model::Primitive sourcePrim;
-	};
-}
-#endif
