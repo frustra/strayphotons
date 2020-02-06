@@ -14,9 +14,18 @@ namespace sp
 		return Filter().Wrap();
 	}
 
+	Texture &Texture::Assign(GLenum target, GLuint handle)
+	{
+		Assert(!this->handle, "texture cannot be recreated");
+		this->target = target;
+		this->handle = handle;
+		assigned = true;
+		return *this;
+	}
+
 	Texture &Texture::Delete()
 	{
-		if (handle)
+		if (handle && !assigned)
 			glDeleteTextures(1, &handle);
 		handle = 0;
 		target = 0;
@@ -102,6 +111,7 @@ namespace sp
 	{
 		Assert(handle, "null texture handle");
 		Assert(width && height, "texture size must be set before storage format");
+		Assert(!assigned, "do not call Storage() on assigned textures");
 
 		if (levels == FullyMipmap)
 		{

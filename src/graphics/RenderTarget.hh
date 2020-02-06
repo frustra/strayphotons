@@ -11,6 +11,11 @@ namespace sp
 	class RenderTarget;
 	class RenderTargetPool;
 
+	namespace xr
+	{
+		class XrCompositor;
+	}
+
 	struct RenderTargetDesc
 	{
 		RenderTargetDesc() {}
@@ -107,28 +112,20 @@ namespace sp
 		RenderTarget(RenderTargetDesc desc);
 		~RenderTarget();
 
-		int64 GetID()
-		{
-			return id;
-		}
-
 		Texture &GetTexture()
 		{
-			Assert(id >= 0, "render target destroyed");
 			Assert(tex.handle, "target is a renderbuffer");
 			return tex;
 		}
 
 		RenderBuffer &GetRenderBuffer()
 		{
-			Assert(id >= 0, "render target destroyed");
 			Assert(buf.handle, "target is a texture");
 			return buf;
 		}
 
 		GLuint GetHandle()
 		{
-			Assert(id >= 0, "render target destroyed");
 			Assert(tex.handle || buf.handle, "render target must have an underlying target");
 			if (tex.handle) return tex.handle;
 			return buf.handle;
@@ -153,11 +150,11 @@ namespace sp
 
 	private:
 		RenderTargetDesc desc;
-		int64 id;
 		Texture tex;
 		RenderBuffer buf;
 
 		int unusedFrames = 0;
 		friend class RenderTargetPool;
+		friend class xr::XrCompositor;
 	};
 }

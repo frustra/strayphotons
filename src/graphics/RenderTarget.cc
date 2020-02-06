@@ -26,8 +26,6 @@ namespace sp
 
 	RenderTarget::~RenderTarget()
 	{
-		Debugf("Render target %d destroyed", id);
 		tex.Delete();
-		id = -1;
 	}
 }

@@ -28,10 +28,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <cxxopts.hpp>
 
-#ifdef ENABLE_VR
-#include <openvr.h>
-#endif
-
 namespace sp
 {
 	Renderer::Renderer(Game *game) : GraphicsContext(game)
@@ -386,7 +382,7 @@ namespace sp
 		shader->StartReadback();
 	}
 
-	void Renderer::RenderPass(ecs::View view)
+	void Renderer::RenderPass(ecs::View view, RenderTarget::Ref finalOutput)
 	{
 		RenderPhase phase("RenderPass", Timer);
 
@@ -418,9 +414,9 @@ namespace sp
 		targets.mirrorSceneData = mirrorSceneData;
 		targets.lightingGel = menuGuiTarget;
 
-		if (view.vrEye > 0)
+		if (finalOutput)
 		{
-			targets.finalOutput = RTPool->Get({ PF_SRGB8_A8, view.extents });
+			targets.finalOutput = finalOutput;
 		}
 
 		{
@@ -642,15 +638,10 @@ namespace sp
 
 		PostProcessing::Process(this, game, view, targets);
 
-#ifdef ENABLE_VR
-		if (view.vrEye > 0)
+		if (!finalOutput)
 		{
-			vr::Texture_t vrTexture = { (void *)targets.finalOutput->GetTexture().handle, vr::TextureType_OpenGL, vr::ColorSpace_Linear };
-			vr::VRCompositor()->Submit(view.vrEye == 1 ? vr::Eye_Left : vr::Eye_Right, &vrTexture);
+			debugGuiRenderer->Render(view);
 		}
-#endif
-
-		debugGuiRenderer->Render(view);
 
 		//AssertGLOK("Renderer::RenderFrame");
 	}
@@ -786,6 +777,12 @@ namespace sp
 			return;
 		}
 
+		// Don't render XR-excluded entities from XR views
+		if (view.viewType == ecs::View::VIEW_TYPE_XR && comp->xrExcluded)
+		{
+			return;
+		}
+
 		auto modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform(game->entityManager);
 		shader->SetParams(view, modelMat);
 
@@ -800,7 +797,7 @@ namespace sp
 		if (ent.Has<ecs::Name>())
 		{
 			auto name = ent.Get<ecs::Name>();
-			if (*name == "vr-controller")
+			if (*name == "xr-controller-right")
 			{
 				glm::vec3 lpos0 = glm::vec3(modelMat * glm::vec4(0, 0, 0, 1.0));
 				glm::vec3 lpos1 = glm::vec3(modelMat * glm::vec4(0, 0, -10.0, 1.0));

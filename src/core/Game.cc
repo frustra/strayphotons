@@ -11,7 +11,11 @@
 
 namespace sp
 {
+#if defined(SP_AUDIO)
 	Game::Game(cxxopts::ParseResult &options) : options(options), menuGui(this), graphics(this), audio(this), logic(this), physics(), animation(entityManager)
+#else
+	Game::Game(cxxopts::ParseResult & options) : options(options), menuGui(this), graphics(this), logic(this), physics(), animation(entityManager)
+#endif
 	{
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
@@ -62,8 +66,8 @@ namespace sp
 		try
 		{
 			// audio.LoadProjectFiles();
-			logic.Init();
 			graphics.CreateContext();
+			logic.Init();
 			graphics.BindContextInputCallbacks(input);
 			debugGui.BindInput(input);
 			menuGui.BindInput(input);
@@ -91,7 +95,9 @@ namespace sp
 
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;
+#if defined(SP_AUDIO)
 		if (!audio.Frame()) return false;
+#endif
 		if (!physics.LogicFrame(entityManager)) return false;
 		if (!animation.Frame(dt)) return false;
 

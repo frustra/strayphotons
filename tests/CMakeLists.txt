@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION ${CMAKE_MIN_VERSION} FATAL_ERROR)
 project(sp-test)
 
 # macro from https://stackoverflow.com/questions/10113017
@@ -45,12 +44,6 @@ macro(configure_msvc_runtime)
 endmacro()
 
 ################################
-# Test Configuration
-################################
-
-include_directories(${project_include_dirs} ${GOOGLETEST_DIR}/include)
-
-################################
 # Test targets
 ################################
 
@@ -63,7 +56,6 @@ foreach(test_type unit integration)
 	set(test_exe sp-${test_type}-tests)
 
 	file(GLOB_RECURSE test_sources ${CMAKE_CURRENT_SOURCE_DIR}/${test_type}/*.cc)
-	list(APPEND test_sources ${GOOGLETEST_DIR}/src/gtest_main.cc)
 	list(REMOVE_DUPLICATES test_sources)
 
 	file(GLOB_RECURSE test_headers ${CMAKE_CURRENT_SOURCE_DIR}/${test_type}/*.hh)
@@ -71,11 +63,6 @@ foreach(test_type unit integration)
 
 	add_executable(${test_exe} ${test_sources} ${test_headers})
 	target_link_libraries(${test_exe} ${PROJECT_LIB} gtest gtest_main)
-
-	# Output location
-	set_target_properties(${test_exe} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
-	set_target_properties(${test_exe} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_OUTPUT_DIR}/Release)
-	set_target_properties(${test_exe} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_OUTPUT_DIR}/Debug)
 
 	# target to run the tests
 	add_custom_target(

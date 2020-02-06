@@ -15,6 +15,7 @@
 #include "ecs/components/Physics.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
+#include "ecs/components/Triggerable.h"
 #include "ecs/components/TriggerArea.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Controller.hh"
@@ -22,14 +23,12 @@
 #include "ecs/components/VoxelInfo.hh"
 #include "ecs/components/SignalReceiver.hh"
 #include "ecs/components/Interact.hh"
+#include "ecs/components/XRView.hh"
 #include "physx/PhysxUtils.hh"
+#include "xr/XrSystemFactory.hh"
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
-
-#ifdef ENABLE_VR
-#include <openvr.h>
-#endif
 
 namespace sp
 {
@@ -40,7 +39,8 @@ namespace sp
 		humanControlSystem(&game->entityManager, &game->input, &game->physics),
 		lightGunSystem(&game->entityManager, &game->input, &game->physics, this),
 		doorSystem(game->entityManager),
-		sunPos(0)
+		sunPos(0),
+		gameXrActions("game_actions", "The actions a user can take while playing the game")
 	{
 		funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
 		funcs.Register(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
@@ -50,17 +50,59 @@ namespace sp
 		funcs.Register(this, "g.CloseBarrier", "Close barrier by name", &GameLogic::CloseBarrier);
 		funcs.Register(this, "g.OpenDoor", "Open door by name", &GameLogic::OpenDoor);
 		funcs.Register(this, "g.CloseDoor", "Open door by name", &GameLogic::CloseDoor);
+
+		InitXrActions();
 	}
 
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
 	static CVar<bool> CVarFlashlightOn("r.FlashlightOn", false, "Flashlight on/off");
+	static CVar<string> CVarFlashlightParent("r.FlashlightParent", "player", "Flashlight parent entity name");
 	static CVar<float> CVarFlashlightAngle("r.FlashlightAngle", 20, "Flashlight spot angle");
 	static CVar<int> CVarFlashlightResolution("r.FlashlightResolution", 512, "Flashlight shadow map resolution");
 	static CVar<float> CVarSunPosition("g.SunPosition", 0.2, "Sun angle");
 
-#ifdef ENABLE_VR
-	static CVar<bool> CVarConnectVR("r.ConnectVR", false, "Connect to SteamVR");
-#endif
+	static CVar<bool> CVarConnectVR("r.ConnectVR", true, "Connect to SteamVR");
+
+	void GameLogic::InitXrActions()
+	{
+		// Create teleport action
+		std::shared_ptr<xr::XrAction<xr::XrActionType::Bool>> teleportAction(new xr::XrAction<xr::XrActionType::Bool>("teleport"));
+
+		// Suggested bindings for Oculus Touch
+		teleportAction->AddSuggestedBinding("/interaction_profiles/oculus/touch_controller", "/user/hand/right/input/a/click");
+
+		// Suggested bindings for Valve Index
+		teleportAction->AddSuggestedBinding("/interaction_profiles/valve/index_controller", "/user/hand/right/input/trigger/click");
+
+		// Suggested bindings for HTC Vive
+		teleportAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller", "/user/hand/right/input/trackpad/click");
+
+		// Tell the XR runtime we will want to be able to query this action on a per-hand basis
+		teleportAction->AddSubactionPath("/user/hand/right");
+
+		gameXrActions.AddAction(teleportAction);
+
+		// Create grab / interract action
+		std::shared_ptr<xr::XrAction<xr::XrActionType::Bool>> grabAction(new xr::XrAction<xr::XrActionType::Bool>("grab"));
+
+		// Suggested bindings for Oculus Touch
+		grabAction->AddSuggestedBinding("/interaction_profiles/oculus/touch_controller", "/user/hand/left/input/squeeze/value");
+		grabAction->AddSuggestedBinding("/interaction_profiles/oculus/touch_controller", "/user/hand/right/input/squeeze/value");
+
+		// Suggested bindings for Valve Index
+		grabAction->AddSuggestedBinding("/interaction_profiles/valve/index_controller", "/user/hand/left/input/squeeze/click");
+		grabAction->AddSuggestedBinding("/interaction_profiles/valve/index_controller", "/user/hand/right/input/squeeze/click");
+
+		// Suggested bindings for HTC Vive
+		grabAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller", "/user/hand/left/input/squeeze/click");
+		grabAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller", "/user/hand/right/input/squeeze/click");
+
+		// Tell the XR runtime we will want to be able to query this action on a per-hand basis
+		grabAction->AddSubactionPath("/user/hand/left");
+		grabAction->AddSubactionPath("/user/hand/right");
+
+		gameXrActions.AddAction(grabAction);
+	}
 
 	void GameLogic::Init()
 	{
@@ -75,6 +117,7 @@ namespace sp
 
 		input->BindCommand(GLFW_KEY_F5, "reloadscene");
 		input->BindCommand(GLFW_KEY_F6, "reloadscene reset");
+		input->BindCommand(GLFW_KEY_F7, "reloadshaders");
 		input->BindCommand(GLFW_KEY_F, "toggle r.FlashlightOn");
 
 		input->AddKeyInputCallback([&](int key, int state)
@@ -87,25 +130,18 @@ namespace sp
 				{
 					game->menuGui.OpenPauseMenu();
 				}
-#ifdef ENABLE_VR
 				else if (key == GLFW_KEY_F1 && CVarConnectVR.Get())
 				{
-					for (auto entity : game->entityManager.EntitiesWith<ecs::Transform, ecs::Name>())
+					auto vrOrigin = game->entityManager.EntityWith<ecs::Name>("vr-origin");
+					auto player = GetPlayer();
+					if (vrOrigin && vrOrigin.Has<ecs::Transform>() && player && player.Has<ecs::Transform>())
 					{
-						auto name = entity.Get<ecs::Name>();
-						if (name->name == "vr-origin")
-						{
-							auto transform = entity.Get<ecs::Transform>();
-							auto player = scene->FindEntity("player");
-							if (player.Valid())
-							{
-								auto playerTransform = player.Get<ecs::Transform>();
-								transform->SetPosition(playerTransform->GetGlobalPosition() - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
-							}
-						}
+						auto vrTransform = vrOrigin.Get<ecs::Transform>();
+						auto playerTransform = player.Get<ecs::Transform>();
+
+						vrTransform->SetPosition(playerTransform->GetGlobalPosition(game->entityManager) - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
 					}
 				}
-#endif
 				else if (key == GLFW_KEY_Q) // Spawn dodecahedron
 				{
 					auto entity = game->entityManager.NewEntity();
@@ -127,19 +163,22 @@ namespace sp
 					if (flashlight.Valid())
 					{
 						auto transform = flashlight.Get<ecs::Transform>();
-						ecs::Entity player = scene->FindEntity("player");
-						auto playerTransform = player.Get<ecs::Transform>();
-						if (transform->HasParent(game->entityManager))
+						auto player = game->entityManager.EntityWith<ecs::Name>(CVarFlashlightParent.Get());
+						if (player && player.Has<ecs::Transform>())
 						{
-							transform->SetPosition(transform->GetGlobalTransform(game->entityManager) * glm::vec4(0, 0, 0, 1));
-							transform->SetRotate(playerTransform->GetGlobalRotation(game->entityManager));
-							transform->SetParent(ecs::Entity());
-						}
-						else
-						{
-							transform->SetPosition(glm::vec3(0, -0.3, 0));
-							transform->SetRotate(glm::quat());
-							transform->SetParent(player);
+							auto playerTransform = player.Get<ecs::Transform>();
+							if (transform->HasParent(game->entityManager))
+							{
+								transform->SetPosition(transform->GetGlobalTransform(game->entityManager) * glm::vec4(0, 0, 0, 1));
+								transform->SetRotate(playerTransform->GetGlobalRotation(game->entityManager));
+								transform->SetParent(ecs::Entity());
+							}
+							else
+							{
+								transform->SetPosition(glm::vec3(0, -0.3, 0));
+								transform->SetRotate(glm::quat());
+								transform->SetParent(player);
+							}
 						}
 					}
 				}
@@ -161,34 +200,38 @@ namespace sp
 	bool GameLogic::Frame(double dtSinceLastFrame)
 	{
 		if (!scene) return true;
-		ecs::Entity player = scene->FindEntity("player");
+		ecs::Entity player = GetPlayer();
 		if (!player.Valid()) return true;
 
 		for (auto entity : game->entityManager.EntitiesWith<ecs::TriggerArea>())
 		{
 			auto area = entity.Get<ecs::TriggerArea>();
-			auto transform = player.Get<ecs::Transform>();
-			auto playerPos = transform->GetPosition();
-			if (
-				playerPos.x > area->boundsMin.x &&
-				playerPos.y > area->boundsMin.y &&
-				playerPos.z > area->boundsMin.z &&
-				playerPos.x < area->boundsMax.x &&
-				playerPos.y < area->boundsMax.y &&
-				playerPos.z < area->boundsMax.z &&
-				!area->triggered
-			)
+
+			for (auto triggerableEntity : game->entityManager.EntitiesWith<ecs::Triggerable>())
 			{
-				area->triggered = true;
-				Debugf("Player at: %f %f %f", playerPos.x, playerPos.y, playerPos.z);
-				Logf("Triggering event: %s", area->command);
-				GConsoleManager.ParseAndExecute(area->command);
+				auto transform = triggerableEntity.Get<ecs::Transform>();
+				auto entityPos = transform->GetPosition();
+				if (
+					entityPos.x > area->boundsMin.x &&
+					entityPos.y > area->boundsMin.y &&
+					entityPos.z > area->boundsMin.z &&
+					entityPos.x < area->boundsMax.x &&
+					entityPos.y < area->boundsMax.y &&
+					entityPos.z < area->boundsMax.z &&
+					!area->triggered
+				)
+				{
+					area->triggered = true;
+					Debugf("Entity at: %f %f %f", entityPos.x, entityPos.y, entityPos.z);
+					Logf("Triggering event: %s", area->command);
+					GConsoleManager.ParseAndExecute(area->command);
+				}
 			}
 		}
 
 		if (!scene) return true;
 
-		ecs::Entity sun = scene->FindEntity("sun");
+		ecs::Entity sun = game->entityManager.EntityWith<ecs::Name>("sun");
 		if (sun.Valid())
 		{
 			if (CVarSunPosition.Get() == 0)
@@ -226,141 +269,152 @@ namespace sp
 		if (CVarFlashlightResolution.Changed())
 		{
 			auto view = flashlight.Get<ecs::View>();
-			view->extents = glm::ivec2(CVarFlashlightResolution.Get(true));
+			view->SetProjMat(view->GetFov(), view->GetClip(), glm::ivec2(CVarFlashlightResolution.Get(true)));
 		}
 
-#ifdef ENABLE_VR
-		if (vrSystem != nullptr)
+		if (xrSystem)
 		{
-			ecs::Entity vrOrigin, vrController;
+			ecs::Entity vrOrigin = game->entityManager.EntityWith<ecs::Name>("vr-origin");
 
-			for (auto entity : game->entityManager.EntitiesWith<ecs::Name>())
+			if (vrOrigin.Valid())
 			{
-				auto name = entity.Get<ecs::Name>();
-				if (name->name == "vr-origin")
-					vrOrigin = entity;
-				else if (name->name == "vr-controller")
-					vrController = entity;
-			}
+				auto vrOriginTransform = vrOrigin.Get<ecs::Transform>();
 
-			auto transform = vrOrigin.Get<ecs::Transform>();
-			glm::mat4 headTransform;
-			vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
-			vr::VRCompositor()->WaitGetPoses(trackedDevicePoses, vr::k_unMaxTrackedDeviceCount, NULL, 0);
-			if (trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid)
-			{
-				headTransform = glm::mat4(glm::make_mat3x4((float *)trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking.m));
-				headTransform = headTransform * glm::transpose(transform->GetGlobalTransform());
-				eyeEntity[0].Get<ecs::View>()->invViewMat = glm::transpose(eyePos[0] * headTransform);
-				eyeEntity[1].Get<ecs::View>()->invViewMat = glm::transpose(eyePos[1] * headTransform);
-			}
+				xrSystem->SyncActions(gameXrActions);
 
-			for (uint32 i = 1; i < vr::k_unMaxTrackedDeviceCount; i++)
-			{
-				if (trackedDevicePoses[i].bPoseIsValid && vrSystem->GetTrackedDeviceClass(i) == vr::TrackedDeviceClass_Controller)
+				for (auto trackedObjectHandle : xrSystem->GetTrackedObjectHandles())
 				{
-					auto pos = glm::mat4(glm::make_mat3x4((float *)trackedDevicePoses[i].mDeviceToAbsoluteTracking.m));
-					pos = glm::transpose(pos * glm::transpose(transform->GetGlobalTransform()));
+					ecs::Entity xrObject = ValidateAndLoadTrackedObject(trackedObjectHandle);
 
-					auto ctrl = vrController.Get<ecs::Transform>();
-					ctrl->SetPosition(pos * glm::vec4(0, 0, 0, 1));
-					ctrl->SetRotate(glm::mat4(glm::mat3(pos)));
-
-					if (!vrController.Has<ecs::Renderable>())
+					if (xrObject.Valid())
 					{
-						char modelName[128];
-						auto len = vrSystem->GetStringTrackedDeviceProperty(i, vr::Prop_RenderModelName_String, modelName, 128);
+						glm::mat4 xrObjectPos;
 
-						Logf("Loading VR render model %s", modelName);
-						vr::RenderModel_t *vrModel;
-						vr::RenderModel_TextureMap_t *vrTex;
-						vr::EVRRenderModelError merr;
-
-						while (true)
+						if (xrSystem->GetTracking()->GetPredictedObjectPose(trackedObjectHandle, xrObjectPos))
 						{
-							merr = vr::VRRenderModels()->LoadRenderModel_Async(modelName, &vrModel);
-							if (merr != vr::VRRenderModelError_Loading) break;
-							std::this_thread::sleep_for(std::chrono::milliseconds(1));
-						}
-						if (merr != vr::VRRenderModelError_None)
-						{
-							Errorf("VR render model error: %s", vr::VRRenderModels()->GetRenderModelErrorNameFromEnum(merr));
-							throw std::runtime_error("Failed to load VR render model");
-						}
+							xrObjectPos = glm::transpose(xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
 
-						while (true)
-						{
-							merr = vr::VRRenderModels()->LoadTexture_Async(vrModel->diffuseTextureId, &vrTex);
-							if (merr != vr::VRRenderModelError_Loading) break;
-							std::this_thread::sleep_for(std::chrono::milliseconds(1));
-						}
-						if (merr != vr::VRRenderModelError_None)
-						{
-							Errorf("VR render texture error: %s", vr::VRRenderModels()->GetRenderModelErrorNameFromEnum(merr));
-							throw std::runtime_error("Failed to load VR render texture");
-						}
+							auto ctrl = xrObject.Get<ecs::Transform>();
+							ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
+							ctrl->SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
 
-						auto r = vrController.Assign<ecs::Renderable>();
-						r->model = make_shared<VRModel>(vrModel, vrTex);
-
-						vr::VRRenderModels()->FreeTexture(vrTex);
-						vr::VRRenderModels()->FreeRenderModel(vrModel);
-					}
-
-					vr::VRControllerState_t state;
-					if (vrSystem->GetControllerState(i, &state, sizeof(state)))
-					{
-						auto interact = vrController.Get<ecs::InteractController>();
-						bool touchpadPressed = state.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_Axis0);
-						bool triggerPressed = state.ulButtonPressed & vr::ButtonMaskFromId(vr::k_EButton_Axis1);
-						if (touchpadPressed && !vrTouchpadPressed)
-						{
-							Logf("Teleport");
-
-							auto origin = GlmVec3ToPxVec3(ctrl->GetPosition());
-							auto dir = GlmVec3ToPxVec3(ctrl->GetForward());
-							dir.normalizeSafe();
-							physx::PxReal maxDistance = 10.0f;
-
-							physx::PxRaycastBuffer hit;
-							bool status = game->physics.RaycastQuery(vrController, origin, dir, maxDistance, hit);
-							if (status && hit.block.distance > 0.5)
+							if (trackedObjectHandle.type == xr::TrackedObjectType::CONTROLLER)
 							{
-								auto headPos = glm::vec3(glm::transpose(headTransform) * glm::vec4(0, 0, 0, 1)) - transform->GetPosition();
-								auto newPos = PxVec3ToGlmVec3P(origin + dir * std::max(0.0, hit.block.distance - 0.5)) - headPos;
-								transform->SetPosition(glm::vec3(newPos.x, transform->GetPosition().y, newPos.z));
+								std::string subpath = "";
+
+								if (trackedObjectHandle.hand == xr::TrackedObjectHand::LEFT)
+								{
+									subpath = "/user/hand/left";
+								}
+								else if (trackedObjectHandle.hand == xr::TrackedObjectHand::RIGHT)
+								{
+									subpath = "/user/hand/right";
+								}
+
+								xrSystem->GetActionState("teleport", gameXrActions, subpath);
+								if (gameXrActions.GetRisingEdgeActionValue("teleport", subpath))
+								{
+									Logf("Teleport on subpath %s", subpath);
+
+									auto origin = GlmVec3ToPxVec3(ctrl->GetPosition());
+									auto dir = GlmVec3ToPxVec3(ctrl->GetForward());
+									dir.normalizeSafe();
+									physx::PxReal maxDistance = 10.0f;
+
+									physx::PxRaycastBuffer hit;
+									bool status = game->physics.RaycastQuery(xrObject, origin, dir, maxDistance, hit);
+
+									if (status && hit.block.distance > 0.5)
+									{
+										auto headPos = glm::vec3(xrObjectPos * glm::vec4(0, 0, 0, 1)) - vrOriginTransform->GetPosition();
+										auto newPos = PxVec3ToGlmVec3P(origin + dir * std::max(0.0, hit.block.distance - 0.5)) - headPos;
+										vrOriginTransform->SetPosition(glm::vec3(newPos.x, vrOriginTransform->GetPosition().y, newPos.z));
+									}
+								}
+
+								auto interact = xrObject.Get<ecs::InteractController>();
+
+								xrSystem->GetActionState("grab", gameXrActions, subpath);
+								if (gameXrActions.GetRisingEdgeActionValue("grab", subpath))
+								{
+									Logf("grab on subpath %s", subpath);
+									interact->PickUpObject(xrObject);
+								}
+								else if (gameXrActions.GetFallingEdgeActionValue("grab", subpath))
+								{
+									Logf("Let go on subpath %s", subpath);
+									if (interact->target)
+									{
+										interact->manager->RemoveConstraint(xrObject, interact->target);
+										interact->target = nullptr;
+									}
+								}
 							}
 						}
-						else if (triggerPressed && !vrTriggerPressed)
-						{
-							Logf("Grab");
-
-							interact->PickUpObject(vrController);
-						}
-						else if (!triggerPressed && vrTriggerPressed)
-						{
-							Logf("Let go");
-							if (interact->target)
-							{
-								interact->manager->RemoveConstraint(vrController, interact->target);
-								interact->target = nullptr;
-							}
-						}
-						vrTouchpadPressed = touchpadPressed;
-						vrTriggerPressed = triggerPressed;
 					}
-
-					break;
 				}
 			}
 		}
-#endif
 
 		if (!humanControlSystem.Frame(dtSinceLastFrame)) return false;
 		if (!lightGunSystem.Frame(dtSinceLastFrame)) return false;
 		if (!doorSystem.Frame(dtSinceLastFrame)) return false;
 
 		return true;
+	}
+
+	ecs::Entity GameLogic::ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &trackedObjectHandle)
+	{
+		string entityName = trackedObjectHandle.name;
+		ecs::Entity xrObject = game->entityManager.EntityWith<ecs::Name>(entityName);
+
+		if (trackedObjectHandle.connected)
+		{
+			// Make sure object is valid
+			if (!xrObject.Valid())
+			{
+				xrObject = game->entityManager.NewEntity();
+				xrObject.AssignKey<ecs::Name>(entityName);
+			}
+
+			if (!xrObject.Has<ecs::Transform>())
+			{
+				xrObject.Assign<ecs::Transform>();
+			}
+
+			if (!xrObject.Has<ecs::InteractController>())
+			{
+				auto interact = xrObject.Assign<ecs::InteractController>();
+				interact->manager = &game->physics;
+			}
+
+			if (!xrObject.Has<ecs::Renderable>())
+			{
+				auto renderable = xrObject.Assign<ecs::Renderable>();
+				renderable->model = xrSystem->GetTrackedObjectModel(trackedObjectHandle);
+
+				// Rendering an XR HMD model from the viewpoint of an XRView is a bad idea
+				if (trackedObjectHandle.type == xr::HMD)
+				{
+					renderable->xrExcluded = true;
+				}
+			}
+
+			// Mark the XR HMD as being able to activate TriggerAreas
+			if (trackedObjectHandle.type == xr::HMD && !xrObject.Has<ecs::Triggerable>())
+			{
+				xrObject.Assign<ecs::Triggerable>();
+			}
+		}
+		else
+		{
+			if (xrObject.Valid())
+			{
+				xrObject.Destroy();
+			}
+		}
+
+		return xrObject;
 	}
 
 	void GameLogic::LoadScene(string name)
@@ -385,80 +439,98 @@ namespace sp
 			return;
 		}
 
-		ecs::Entity player = scene->FindEntity("player");
+		ecs::Entity player = GetPlayer();
 		humanControlSystem.AssignController(player, game->physics);
 		player.Assign<ecs::VoxelInfo>();
+
+		// Mark the player as being able to activate trigger areas
+		player.Assign<ecs::Triggerable>();
 
 		vector<ecs::Entity> viewEntities;
 		viewEntities.push_back(player);
 
-#ifdef ENABLE_VR
+		// On scene load, check if the status of xrSystem matches the status of CVarConnectVR
 		if (CVarConnectVR.Get())
 		{
-			if (vrSystem == nullptr)
+			// No xrSystem loaded but CVarConnectVR indicates we should try to load one.
+			if (!xrSystem)
 			{
-				vr::EVRInitError err = vr::VRInitError_None;
-				vrSystem = vr::VR_Init(&err, vr::VRApplication_Scene);
-				if (err != vr::VRInitError_None)
+				// TODO: refactor this so that xrSystemFactory.GetBestXrSystem() returns a TypeTrait
+				xr::XrSystemFactory xrSystemFactory;
+				xrSystem = xrSystemFactory.GetBestXrSystem();
+
+				if (xrSystem)
 				{
-					throw std::runtime_error("Failed to init VR system");
+					try
+					{
+						xrSystem->Init();
+					}
+					catch (std::exception e)
+					{
+						Errorf("XR Runtime threw error on initialization! Error: %s", e.what());
+						xrSystem.reset();
+					}
+				}
+				else
+				{
+					Logf("Failed to load an XR runtime");
 				}
 			}
 
-			ecs::Entity vrOrigin = scene->FindEntity("vr-origin");
-			if (!vrOrigin.Valid())
+			// The previous step might have failed to load an XR system, test it is loaded
+			if (xrSystem)
 			{
-				vrOrigin = game->entityManager.NewEntity();
-				vrOrigin.Assign<ecs::Name>("vr-origin");
-			}
-			if (!vrOrigin.Has<ecs::Transform>())
-			{
-				auto transform = vrOrigin.Assign<ecs::Transform>();
-				if (player.Valid() && player.Has<ecs::Transform>())
+				// Create a VR origin if one does not already exist
+				ecs::Entity vrOrigin = game->entityManager.EntityWith<ecs::Name>("vr-origin");
+				if (!vrOrigin.Valid())
 				{
-					auto playerTransform = player.Get<ecs::Transform>();
-					transform->SetPosition(playerTransform->GetGlobalPosition() - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
-					transform->SetRotate(playerTransform->GetRotate());
+					vrOrigin = game->entityManager.NewEntity();
+					// Use AssignKey so we can find this entity by name later
+					vrOrigin.AssignKey<ecs::Name>("vr-origin");
 				}
-			}
 
-			{
-				ecs::Entity vrController = game->entityManager.NewEntity();
-				vrController.Assign<ecs::Name>("vr-controller");
-				vrController.Assign<ecs::Transform>();
-				auto interact = vrController.Assign<ecs::InteractController>();
-				interact->manager = &game->physics;
-			}
+				// Add a transform to the VR origin if one does not already exist
+				if (!vrOrigin.Has<ecs::Transform>())
+				{
+					auto transform = vrOrigin.Assign<ecs::Transform>();
+					if (player.Valid() && player.Has<ecs::Transform>())
+					{
+						auto playerTransform = player.Get<ecs::Transform>();
+						transform->SetPosition(playerTransform->GetGlobalPosition(game->entityManager) - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
+						transform->SetRotate(playerTransform->GetRotate());
+					}
+				}
 
-			uint32_t vrWidth, vrHeight;
-			vrSystem->GetRecommendedRenderTargetSize(&vrWidth, &vrHeight);
+				// Query the XR runtime for all tracked objects and create entities for them
+				for (auto trackedObjectHandle : xrSystem->GetTrackedObjectHandles())
+				{
+					ValidateAndLoadTrackedObject(trackedObjectHandle);
+				}
 
-			Debugf("VR headset render size: %dx%d", vrWidth, vrHeight);
+				// Create swapchains for all the views this runtime exposes. Only create the minimum number of views, since
+				// it's unlikely we can render more than the bare minimum. Ex: we don't support 3rd eye rendering for mixed
+				// reality capture
+				// TODO: add a CVar to allow 3rd eye rendering
+				for (unsigned int i = 0; i < xrSystem->GetCompositor()->GetNumViews(true /* minimum */); i++)
+				{
+					ecs::Entity viewEntity = game->entityManager.NewEntity();
+					auto ecsView = viewEntity.Assign<ecs::View>();
+					xrSystem->GetCompositor()->PopulateView(i, ecsView);
 
-			for (int i = 0; i < 2; i++)
-			{
-				auto eyeType = i == 0 ? vr::Eye_Left : vr::Eye_Right;
+					// Mark this as an XR View
+					auto ecsXrView = viewEntity.Assign<ecs::XRView>();
+					ecsXrView->viewId = i;
 
-				glm::vec2 playerViewClip = player.Get<ecs::View>()->clip;
-				eyeEntity[i] = game->entityManager.NewEntity();
-				auto eyeView = eyeEntity[i].Assign<ecs::View>();
-				eyeView->extents = { vrWidth, vrHeight };
-				eyeView->clip = playerViewClip;
-				eyeView->vrEye = i + 1;
-				auto projMatrix = vrSystem->GetProjectionMatrix(eyeType, eyeView->clip.x, eyeView->clip.y);
-				eyeView->projMat = glm::transpose(glm::make_mat4((float *)projMatrix.m));
-				auto eyePosOvr = vrSystem->GetEyeToHeadTransform(eyeType);
-				eyePos[i] = glm::mat4(glm::make_mat3x4((float *)eyePosOvr.m));
-
-				viewEntities.push_back(eyeEntity[i]);
+					viewEntities.push_back(viewEntity);
+				}
 			}
 		}
-		else if (vrSystem != nullptr)
+		// CVar says XR should be disabled. Ensure xrSystem state matches.
+		else if (xrSystem)
 		{
-			vr::VR_Shutdown();
-			vrSystem = nullptr;
+			xrSystem->Deinit();
+			xrSystem.reset();
 		}
-#endif
 
 		game->graphics.SetPlayerView(viewEntities);
 
@@ -477,6 +549,7 @@ namespace sp
 		light->intensity = CVarFlashlight.Get(true);
 		light->on = CVarFlashlightOn.Get(true);
 		auto view = flashlight.Assign<ecs::View>();
+		view->fov = light->spotAngle * 2.0f;
 		view->extents = glm::vec2(CVarFlashlightResolution.Get(true));
 		view->clip = glm::vec2(0.1, 64);
 
@@ -489,12 +562,12 @@ namespace sp
 	{
 		if (scene)
 		{
-			auto player = scene->FindEntity("player");
+			auto player = GetPlayer();
 			if (arg == "reset")
 			{
 				LoadScene(scene->name);
 			}
-			else if (player.Valid() && player.Has<ecs::Transform>())
+			else if (player && player.Has<ecs::Transform>())
 			{
 				// Store the player position and set it back on the new player entity
 				auto transform = player.Get<ecs::Transform>();
@@ -505,8 +578,8 @@ namespace sp
 
 				if (scene)
 				{
-					player = scene->FindEntity("player");
-					if (player.Valid() && player.Has<ecs::HumanController>())
+					player = GetPlayer();
+					if (player && player.Has<ecs::HumanController>())
 					{
 						humanControlSystem.Teleport(player, position, rotation);
 					}
@@ -530,8 +603,8 @@ namespace sp
 	{
 		Logf("Currently loaded scene: %s", scene ? scene->name : "none");
 		if (!scene) return;
-		auto player = scene->FindEntity("player");
-		if (player.Valid() && player.Has<ecs::Transform>() && player.Has<ecs::HumanController>())
+		auto player = GetPlayer();
+		if (player && player.Has<ecs::Transform>() && player.Has<ecs::HumanController>())
 		{
 			auto transform = player.Get<ecs::Transform>();
 			auto controller = player.Get<ecs::HumanController>();
@@ -564,20 +637,24 @@ namespace sp
 		}
 	}
 
+	shared_ptr<xr::XrSystem> GameLogic::GetXrSystem()
+	{
+		return xrSystem;
+	}
 
 	ecs::Entity GameLogic::GetPlayer()
 	{
-		return scene->FindEntity("player");
+		return game->entityManager.EntityWith<ecs::Name>("player");
 	}
 
 	void GameLogic::OpenBarrier(string name)
 	{
-		if (!scene->namedEntities.count(name))
+		auto ent = game->entityManager.EntityWith<ecs::Name>(name);
+		if (!ent.Valid())
 		{
 			return Logf("%s not found", name);
 		}
 
-		auto ent = scene->namedEntities[name];
 		if (!ent.Has<ecs::Barrier>())
 		{
 			return Logf("%s is not a barrier", name);
@@ -588,12 +665,12 @@ namespace sp
 
 	void GameLogic::CloseBarrier(string name)
 	{
-		if (!scene->namedEntities.count(name))
+		auto ent = game->entityManager.EntityWith<ecs::Name>(name);
+		if (!ent.Valid())
 		{
 			return Logf("%s not found", name);
 		}
 
-		auto ent = scene->namedEntities[name];
 		if (!ent.Has<ecs::Barrier>())
 		{
 			return Logf("%s is not a barrier", name);
@@ -604,12 +681,12 @@ namespace sp
 
 	void GameLogic::OpenDoor(string name)
 	{
-		if (!scene->namedEntities.count(name))
+		auto ent = game->entityManager.EntityWith<ecs::Name>(name);
+		if (!ent.Valid())
 		{
 			return Logf("%s not found", name);
 		}
 
-		auto ent = scene->namedEntities[name];
 		if (!ent.Has<ecs::SlideDoor>())
 		{
 			return Logf("%s is not a door", name);
@@ -627,12 +704,12 @@ namespace sp
 
 	void GameLogic::CloseDoor(string name)
 	{
-		if (!scene->namedEntities.count(name))
+		auto ent = game->entityManager.EntityWith<ecs::Name>(name);
+		if (!ent.Valid())
 		{
 			return Logf("%s not found", name);
 		}
 
-		auto ent = scene->namedEntities[name];
 		if (!ent.Has<ecs::SlideDoor>())
 		{
 			return Logf("%s is not a door", name);

@@ -117,7 +117,8 @@ namespace sp
 				glfwGetWindowPos(window, &prevWindowPos.x, &prevWindowPos.y);
 				glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, scaled.x, scaled.y, 60);
 			}
-		} else if (prevWindowSize != view.extents || windowScale != scale)
+		}
+		else if (prevWindowSize != view.extents || windowScale != scale)
 		{
 			if (fullscreen)
 			{

@@ -60,7 +60,7 @@ namespace sp
 		FMOD_CHECK(FMOD::Studio::System::create(&system));
 
 		// project is authored for 5.1 sound
-		FMOD_CHECK(system->getLowLevelSystem(&lowSystem));
+		FMOD_CHECK(system->getCoreSystem(&lowSystem));
 		FMOD_CHECK(lowSystem->setSoftwareFormat(0, FMOD_SPEAKERMODE_5POINT1, 0));
 
 		// must set output type and driver before initializing system

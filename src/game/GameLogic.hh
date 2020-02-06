@@ -6,11 +6,8 @@
 #include "ecs/systems/DoorSystem.hh"
 #include "Common.hh"
 #include "core/CFunc.hh"
-
-namespace vr
-{
-	class IVRSystem;
-}
+#include "xr/XrSystem.hh"
+#include "xr/XrAction.hh"
 
 namespace sp
 {
@@ -38,6 +35,10 @@ namespace sp
 
 		ecs::Entity GetPlayer();
 
+		shared_ptr<xr::XrSystem> GetXrSystem();
+		void InitXrActions();
+		ecs::Entity ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &handle);
+
 	private:
 		Game *game;
 		InputManager *input;
@@ -48,15 +49,11 @@ namespace sp
 		ecs::Entity flashlight;
 		float sunPos;
 
-#ifdef ENABLE_VR
-		vr::IVRSystem *vrSystem = nullptr;
+		shared_ptr<xr::XrSystem> xrSystem;
+		xr::XrActionSet gameXrActions;
 
-		bool vrTriggerPressed = false;
-		bool vrTouchpadPressed = false;
-
-		ecs::Entity eyeEntity[2];
-		glm::mat4 eyePos[2];
-#endif
+		bool xrTeleported = false;
+		bool xrGrabbed = false;
 
 		CFuncCollection funcs;
 	};

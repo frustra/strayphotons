@@ -19,8 +19,6 @@ namespace sp
 
 		auto ptr = make_shared<RenderTarget>(desc);
 
-		ptr->id = nextRenderTargetID++;
-
 		if (desc.renderBuffer)
 		{
 			Assert(desc.extent.z == 1, "renderbuffers can't be 3D");

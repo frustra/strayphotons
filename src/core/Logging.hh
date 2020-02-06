@@ -12,8 +12,10 @@
 #define Logf(...) sp::logging::Log(__FILE__, __LINE__, __VA_ARGS__)
 #define Errorf(...) sp::logging::Error(__FILE__, __LINE__, __VA_ARGS__)
 
+#if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat-security"
+#endif
 
 namespace sp
 {
@@ -63,47 +65,49 @@ namespace sp
 				std::snprintf(buf.get(), size + 1, fmt.c_str(), std::forward<T>(t)...);
 				std::cerr << buf.get();
 #ifndef PACKAGE_RELEASE
-			if (lvl != logging::Level::Debug)
-			{
+				if (lvl != logging::Level::Debug)
+				{
 #endif
-				GlobalLogOutput(lvl, string(buf.get(), buf.get() + size));
+					GlobalLogOutput(lvl, string(buf.get(), buf.get() + size));
+				}
+			}
+
+			template <typename... T>
+			inline static void writeLog(Level lvl, const char *file, int line, const std::string & fmt, T && ... t)
+			{
+#ifdef SP_VERBOSE_LOGGING
+				writeFormatter(lvl, fmt + "  (%s:%d)\n", convert(std::forward<T>(t))..., basename(file), line);
+#else
+				writeFormatter(lvl, fmt + "\n", convert(std::forward<T>(t))...);
+#endif
+			}
+
+			template <typename... T>
+			static void ConsoleWrite(Level lvl, const std::string & fmt, T... t)
+			{
+				writeFormatter(lvl, fmt + "\n", convert(std::forward<T>(t))...);
+			}
+
+			template <typename... T>
+			static void Log(const char *file, int line, const std::string & fmt, T... t)
+			{
+				writeLog(Level::Log, file, line, "[log] " + fmt, t...);
+			}
+
+			template <typename... T>
+			static void Debug(const char *file, int line, const std::string & fmt, T... t)
+			{
+				writeLog(Level::Debug, file, line, "[dbg] " + fmt, t...);
+			}
+
+			template <typename... T>
+			static void Error(const char *file, int line, const std::string & fmt, T... t)
+			{
+				writeLog(Level::Error, file, line, "[err] " + fmt, t...);
 			}
 		}
-
-		template <typename... T>
-		inline static void writeLog(Level lvl, const char *file, int line, const std::string &fmt, T &&... t)
-		{
-#ifdef SP_VERBOSE_LOGGING
-			writeFormatter(lvl, fmt + "  (%s:%d)\n", convert(std::forward<T>(t))..., basename(file), line);
-#else
-			writeFormatter(lvl, fmt + "\n", convert(std::forward<T>(t))...);
-#endif
-		}
-
-		template <typename... T>
-		static void ConsoleWrite(Level lvl, const std::string &fmt, T... t)
-		{
-			writeFormatter(lvl, fmt + "\n", convert(std::forward<T>(t))...);
-		}
-
-		template <typename... T>
-		static void Log(const char *file, int line, const std::string &fmt, T... t)
-		{
-			writeLog(Level::Log, file, line, "[log] " + fmt, t...);
-		}
-
-		template <typename... T>
-		static void Debug(const char *file, int line, const std::string &fmt, T... t)
-		{
-			writeLog(Level::Debug, file, line, "[dbg] " + fmt, t...);
-		}
-
-		template <typename... T>
-		static void Error(const char *file, int line, const std::string &fmt, T... t)
-		{
-			writeLog(Level::Error, file, line, "[err] " + fmt, t...);
-		}
 	}
-}
 
+#if defined(__clang__)
 #pragma clang diagnostic pop
+#endif

@@ -17,11 +17,13 @@ namespace sp
 		GLenum target = 0;
 		GLPixelFormat format;
 		GLsizei width = 0, height = 0, depth = 0, levels = 0;
+		bool assigned = false; // If true, do not destroy glTexture on dealloc
 
 		// For color attachments, must be GL_COLOR_ATTACHMENT0.
 		GLenum attachment;
 
 		Texture &Create(GLenum target = GL_TEXTURE_2D);
+		Texture &Assign(GLenum target, GLuint handle);
 		Texture &Delete();
 
 		void Bind(GLuint binding) const;

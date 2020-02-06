@@ -17,9 +17,6 @@ namespace sp
 
 		const string name;
 		vector<ecs::Entity> entities;
-		std::unordered_map<string, ecs::Entity> namedEntities;
-
-		ecs::Entity FindEntity(const std::string name);
 
 		vector<string> autoExecList, unloadExecList;
 	private:

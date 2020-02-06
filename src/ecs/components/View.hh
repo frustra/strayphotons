@@ -8,15 +8,32 @@
 
 namespace ecs
 {
-	struct View
+	class View
 	{
+	public:
+		enum ViewType
+		{
+			VIEW_TYPE_PANCAKE,
+			VIEW_TYPE_XR,
+			VIEW_TYPE_LIGHT,
+		};
+
 		View() { }
 		View(glm::ivec2 extents) : extents(extents) { }
 
-		// Required parameters.
-		glm::ivec2 extents;
-		glm::vec2 clip; // {near, far}
-		float fov;
+		// When setting these parameters, View needs to recompute some internal params
+		void SetProjMat(glm::mat4 proj);
+		void SetProjMat(float _fov, glm::vec2 _clip, glm::ivec2 _extents);
+		void SetInvViewMat(glm::mat4 invView);
+
+		glm::ivec2 GetExtents();
+		glm::vec2 GetClip();
+		float GetFov();
+
+		glm::mat4 GetProjMat();
+		glm::mat4 GetInvProjMat();
+		glm::mat4 GetViewMat();
+		glm::mat4 GetInvViewMat();
 
 		// Optional parameters;
 		glm::ivec2 offset = { 0, 0 };
@@ -27,7 +44,15 @@ namespace ecs
 		bool blend = false;
 		float skyIlluminance = 0.0f;
 		float scale = 1.0f;
-		int vrEye = 0;
+
+		// For XR Views
+		ViewType viewType = VIEW_TYPE_PANCAKE;
+
+		//private:
+		// Required parameters.
+		glm::ivec2 extents;
+		glm::vec2 clip; // {near, far}
+		float fov;
 
 		// Updated automatically.
 		float aspect;

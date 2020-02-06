@@ -2,7 +2,6 @@
 
 #include "physx/PhysxManager.hh"
 #include "graphics/GraphicsManager.hh"
-#include "audio/AudioManager.hh"
 #include "Common.hh"
 #include "game/GameLogic.hh"
 #include "ecs/systems/AnimationSystem.hh"
@@ -11,6 +10,10 @@
 #include "game/gui/MenuGuiManager.hh"
 
 #include <Ecs.hh>
+
+#if defined(SP_AUDIO)
+#include "audio/AudioManager.hh"
+#endif
 
 namespace cxxopts
 {
@@ -37,7 +40,9 @@ namespace sp
 		MenuGuiManager menuGui;
 		GraphicsManager graphics;
 		InputManager input;
+#if defined(SP_AUDIO)
 		AudioManager audio;
+#endif
 		ecs::EntityManager entityManager;
 		GameLogic logic;
 		PhysxManager physics;

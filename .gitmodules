@@ -1,33 +1,33 @@
 [submodule "ext/glfw"]
 	path = ext/glfw
-	url = git://github.com/glfw/glfw.git
+	url = https://github.com/glfw/glfw.git
 [submodule "ext/glm"]
 	path = ext/glm
-	url = git://github.com/g-truc/glm.git
+	url = https://github.com/g-truc/glm.git
 [submodule "ext/luabridge"]
 	path = ext/luabridge
-	url = git://github.com/frustra/LuaBridge.git
+	url = https://github.com/frustra/LuaBridge.git
 [submodule "ext/luajit"]
 	path = ext/luajit
-	url = git://github.com/frustra/luajit-2.0.git
+	url = https://github.com/frustra/luajit-2.0.git
 [submodule "ext/Vulkan-LoaderAndValidationLayers"]
 	path = ext/Vulkan-LoaderAndValidationLayers
-	url = git@github.com:KhronosGroup/Vulkan-LoaderAndValidationLayers.git
+	url = https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers.git
 [submodule "ext/googletest"]
 	path = ext/googletest
 	url = https://github.com/google/googletest.git
 [submodule "ext/tinygltfloader"]
 	path = ext/tinygltfloader
-	url = git@github.com:frustra/tinygltfloader.git
+	url = https://github.com/frustra/tinygltfloader.git
 [submodule "ext/physx"]
 	path = ext/physx
-	url = git@github.com:NVIDIAGameWorks/PhysX
+	url = https://github.com/NVIDIAGameWorks/PhysX.git
 [submodule "ext/imgui"]
 	path = ext/imgui
 	url = https://github.com/frustra/imgui.git
 [submodule "ext/glomerate"]
 	path = ext/glomerate
-	url = git@github.com:frustra/glomerate.git
+	url = https://github.com/frustra/glomerate.git
 [submodule "ext/cxxopts"]
 	path = ext/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
@@ -36,10 +36,10 @@
 	url = https://github.com/frustra/linenoise.git
 [submodule "ext/microtar"]
 	path = ext/microtar
-	url = git@github.com:rxi/microtar.git
+	url = https://github.com/rxi/microtar.git
 [submodule "ext/obj2gltf"]
 	path = ext/obj2gltf
-	url = git@github.com:AnalyticalGraphicsInc/obj2gltf.git
+	url = https://github.com/AnalyticalGraphicsInc/obj2gltf.git
 [submodule "ext/openvr"]
 	path = ext/openvr
-	url = git@github.com:ValveSoftware/openvr.git
+	url = https://github.com/ValveSoftware/openvr.git
