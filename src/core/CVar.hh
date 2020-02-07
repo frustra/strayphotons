@@ -145,9 +145,6 @@ namespace sp
 		VarType value;
 	};
 
-	template <>
-	void CVar<string>::ToggleValue(const string *str_values, size_t count)
-	{
-
-	}
+	template <> 
+	void CVar<string>::ToggleValue(const string *str_values, size_t count);
 }
