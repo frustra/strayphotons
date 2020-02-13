@@ -18,6 +18,7 @@ set(CXXOPTS_BUILD_TESTS OFF CACHE BOOL "Disable CXXOPTS Test Suite" FORCE)
 add_subdirectory(cxxopts)
 
 add_subdirectory(fmod)
+add_subdirectory(robin-hood-hashing)
 
 # These projects require more configuration that is encapsulated their own CMake files
 include(PhysX.cmake)
