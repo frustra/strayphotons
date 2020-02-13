@@ -5,6 +5,7 @@ target_sources(
         Console.cc
         Game.cc
         CVar.cc
+        PerfTimer.cc
 )
 
 target_sources(

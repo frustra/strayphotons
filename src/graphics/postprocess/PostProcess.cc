@@ -5,7 +5,6 @@
 #include "graphics/ShaderManager.hh"
 #include "graphics/RenderTargetPool.hh"
 #include "graphics/GenericShaders.hh"
-#include "graphics/GPUTimer.hh"
 #include "graphics/Util.hh"
 
 #include "graphics/postprocess/Bloom.hh"
@@ -19,6 +18,7 @@
 
 #include "core/CVar.hh"
 #include "core/CFunc.hh"
+#include "core/PerfTimer.hh"
 
 #include <stb_image_write.h>
 

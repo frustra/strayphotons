@@ -1,8 +1,8 @@
 #include "graphics/Renderer.hh"
 #include "graphics/RenderTargetPool.hh"
 #include "graphics/SceneShaders.hh"
-#include "graphics/GPUTimer.hh"
 #include "core/Game.hh"
+#include "core/PerfTimer.hh"
 
 #include <atomic>
 

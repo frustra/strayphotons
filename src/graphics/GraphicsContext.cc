@@ -1,6 +1,6 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
-#include "graphics/GPUTimer.hh"
+#include "core/PerfTimer.hh"
 #include "graphics/GraphicsContext.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/Shader.hh"
@@ -26,13 +26,11 @@ namespace sp
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 		GlobalShaders = new ShaderSet();
-		Timer = new GPUTimer();
 	}
 
 	GraphicsContext::~GraphicsContext()
 	{
 		delete GlobalShaders;
-		delete Timer;
 
 		if (window)
 			glfwDestroyWindow(window);

@@ -4,13 +4,13 @@
 #include "graphics/raytrace/RaytracedRenderer.hh"
 #include "graphics/basic_renderer/BasicRenderer.hh"
 #include "graphics/GuiRenderer.hh"
-#include "graphics/GPUTimer.hh"
 #include "graphics/RenderTargetPool.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/XRView.hh"
 #include "core/Game.hh"
 #include "core/CVar.hh"
+#include "core/PerfTimer.hh"
 
 #include <cxxopts.hpp>
 #include <iostream>
@@ -79,7 +79,7 @@ namespace sp
 		rayTracer = new raytrace::RaytracedRenderer(game, renderer);
 #endif
 
-		profilerGui = new ProfilerGui(context->Timer);
+		profilerGui = new ProfilerGui(&context->Timer);
 		game->debugGui.Attach(profilerGui);
 	}
 
@@ -147,7 +147,7 @@ namespace sp
 			return false;
 		}
 
-		context->Timer->StartFrame();
+		context->Timer.StartFrame();
 
 		{
 			RenderPhase phase("Frame", context->Timer);
@@ -216,7 +216,7 @@ namespace sp
 		}
 
 		glfwSwapBuffers(context->GetWindow());
-		context->Timer->EndFrame();
+		context->Timer.EndFrame();
 
 		double frameEnd = glfwGetTime();
 		fpsTimer += frameEnd - lastFrameEnd;
