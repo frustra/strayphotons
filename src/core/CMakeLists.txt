@@ -4,11 +4,11 @@ target_sources(
     PRIVATE
         Console.cc
         Game.cc
-        
+        CVar.cc
 )
 
 target_sources(
     ${PROJECT_EXE}
     PRIVATE
-        Main.cc       
+        Main.cc
 )
