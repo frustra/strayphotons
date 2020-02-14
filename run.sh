@@ -6,6 +6,6 @@ MESA_EXTENSION_OVERRIDE=GL_ARB_compute_shader \
 if [ -z "$RUN_DBG" ]; then
 	./sp "$@"
 else
-	$RUN_DBG ./Debug/sp
+	$RUN_DBG ./sp
    #	-o "run $@"
 fi
