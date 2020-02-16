@@ -13,11 +13,7 @@ namespace sp
 	public:
 		static const uint64 numFrameTimes = 32, sampleFrameTimeEvery = 10;
 
-		ProfilerGui(PerfTimer *timer) : timer(timer)
-		{
-			memset(cpuFrameTimes, 0, sizeof(*cpuFrameTimes) * numFrameTimes);
-			memset(gpuFrameTimes, 0, sizeof(*gpuFrameTimes) * numFrameTimes);
-		}
+		ProfilerGui(PerfTimer *timer) : timer(timer), cpuFrameTimes(), gpuFrameTimes() {}
 		virtual ~ProfilerGui() {}
 
 		void Add()
