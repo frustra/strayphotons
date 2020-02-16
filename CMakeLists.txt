@@ -256,7 +256,7 @@ set (_physx_libraries
 
 # Change glomerate to use robin hood hashing
 if(MSVC)
-	list(APPEND SP_TARGET_OPTIONS /FI"robin_hood.h" -DGLOMERATE_MAP_TYPE=robin_hood::unordered_flat_map)
+	list(APPEND SP_TARGET_OPTIONS /FIrobin_hood.h -DGLOMERATE_MAP_TYPE=robin_hood::unordered_flat_map)
 else()
     # GCC or Clang
 	list(APPEND SP_TARGET_OPTIONS -include robin_hood.h -DGLOMERATE_MAP_TYPE=robin_hood::unordered_flat_map)
