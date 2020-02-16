@@ -2,11 +2,11 @@
 #include "Renderer.hh"
 #include "GenericShaders.hh"
 #include "ShaderManager.hh"
-#include "GPUTimer.hh"
 #include "game/InputManager.hh"
 #include "game/GuiManager.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Asset.hh"
+#include "core/PerfTimer.hh"
 
 #include <algorithm>
 #include <imgui/imgui.h>

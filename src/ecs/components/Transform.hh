@@ -89,6 +89,11 @@ namespace ecs
 		glm::mat4 scale = glm::identity<glm::mat4>();
 		glm::quat rotate = glm::identity<glm::quat>();
 
+		glm::mat4 cachedTransform = glm::identity<glm::mat4>();
+		uint32 changeCount = 1;
+		uint32 cacheCount = 0;
+		uint32 parentCacheCount = 0;
+
 		bool dirty;
 	};
 

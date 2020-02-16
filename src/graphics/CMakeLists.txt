@@ -7,7 +7,6 @@ target_sources(
     PRIVATE
         Buffer.cc
         GenericShaders.cc
-        GPUTimer.cc
         GPUTypes.cc
         Graphics.cc
         GraphicsContext.cc

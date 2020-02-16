@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics/GPUTimer.hh"
+#include "core/PerfTimer.hh"
 #include "game/GuiManager.hh"
 
 #include <sstream>
@@ -13,39 +13,59 @@ namespace sp
 	public:
 		static const uint64 numFrameTimes = 32, sampleFrameTimeEvery = 10;
 
-		ProfilerGui(GPUTimer *timer) : timer(timer)
-		{
-			memset(frameTimes, 0, sizeof(*frameTimes) * numFrameTimes);
-		}
+		ProfilerGui(PerfTimer *timer) : timer(timer), cpuFrameTimes(), gpuFrameTimes() {}
 		virtual ~ProfilerGui() {}
 
 		void Add()
 		{
-			if (CVarProfileGPU.Get() != 1 || timer->lastCompleteFrame.results.empty())
+			if (timer->lastCompleteFrame.results.empty())
+				return;
+			if (CVarProfileCPU.Get() != 1 && CVarProfileGPU.Get() != 1)
 				return;
 
 			ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize;
 			frameCount++;
 
-			ImGui::Begin("Profiler", nullptr, flags);
+			if (CVarProfileCPU.Get() == 1)
 			{
+				ImGui::Begin("CpuProfiler", nullptr, flags);
+
 				if (frameCount % sampleFrameTimeEvery == 1)
 				{
 					auto root = timer->lastCompleteFrame.results[0];
-					double elapsed = (double)root.elapsed / 1000000.0;
 
-					memmove(frameTimes, frameTimes + 1, (numFrameTimes - 1) * sizeof(*frameTimes));
-					frameTimes[numFrameTimes - 1] = (float)elapsed;
+					memmove(cpuFrameTimes, cpuFrameTimes + 1, (numFrameTimes - 1) * sizeof(*cpuFrameTimes));
+					cpuFrameTimes[numFrameTimes - 1] = (float)(root.cpuElapsed * 1000.0);
 				}
 
-				ImGui::PlotLines("##frameTimes", frameTimes, numFrameTimes);
-				AddResults(timer->lastCompleteFrame.results);
+				ImGui::PlotLines("##frameTimes", cpuFrameTimes, numFrameTimes);
+				AddResults(timer->lastCompleteFrame.results, false);
+
+				ImGui::End();
 			}
-			ImGui::End();
+
+			if (CVarProfileGPU.Get() == 1)
+			{
+				ImGui::Begin("GpuProfiler", nullptr, flags);
+
+				if (frameCount % sampleFrameTimeEvery == 1)
+				{
+					auto root = timer->lastCompleteFrame.results[0];
+					double elapsed = (double)root.gpuElapsed / 1000000.0;
+
+					memmove(gpuFrameTimes, gpuFrameTimes + 1, (numFrameTimes - 1) * sizeof(*gpuFrameTimes));
+					gpuFrameTimes[numFrameTimes - 1] = (float)elapsed;
+				}
+
+				ImGui::PlotLines("##frameTimes", gpuFrameTimes, numFrameTimes);
+				AddResults(timer->lastCompleteFrame.results, true);
+
+				ImGui::End();
+			}
 		}
 
 	private:
-		size_t AddResults(const vector<GPUTimeResult> &results, size_t offset = 0, int depth = 1)
+		size_t AddResults(const vector<TimeResult> &results, bool gpuTime, size_t offset = 0, int depth = 1)
 		{
 			while (offset < results.size())
 			{
@@ -60,11 +80,11 @@ namespace sp
 				ImGui::PushID(offset);
 
 				int depth = result.depth;
-				double elapsed = (double)result.elapsed / 1000000.0;
+				double elapsed = gpuTime ? (double)result.gpuElapsed / 1000000.0 : result.cpuElapsed * 1000.0;
 
 				if (ImGui::TreeNodeEx("node", ImGuiTreeNodeFlags_DefaultOpen, "%s %.2fms", result.name.c_str(), elapsed))
 				{
-					offset = AddResults(results, offset, depth + 1);
+					offset = AddResults(results, gpuTime, offset, depth + 1);
 					ImGui::TreePop();
 				}
 
@@ -73,8 +93,9 @@ namespace sp
 			return offset;
 		}
 
-		GPUTimer *timer;
-		float frameTimes[numFrameTimes];
+		PerfTimer *timer;
+		float cpuFrameTimes[numFrameTimes];
+		float gpuFrameTimes[numFrameTimes];
 		uint64 frameCount = 0;
 	};
 }

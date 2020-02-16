@@ -4,6 +4,7 @@ target_sources(
     PRIVATE
         Console.cc
         Game.cc
+        PerfTimer.cc
 )
 
 target_sources(

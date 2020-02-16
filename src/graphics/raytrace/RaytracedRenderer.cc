@@ -6,13 +6,13 @@
 #include "graphics/ShaderManager.hh"
 #include "graphics/GenericShaders.hh"
 #include "graphics/Util.hh"
-#include "graphics/GPUTimer.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
 #include "core/Game.hh"
 #include "core/CVar.hh"
+#include "core/PerfTimer.hh"
 
 #include <thread>
 #include <cmath>

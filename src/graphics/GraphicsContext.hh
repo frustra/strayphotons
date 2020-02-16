@@ -6,6 +6,7 @@
 #include "graphics/RenderTarget.hh"
 #include "ecs/components/View.hh"
 #include "Common.hh"
+#include "core/PerfTimer.hh"
 
 namespace sp
 {
@@ -14,7 +15,6 @@ namespace sp
 	class Game;
 	class InputManager;
 	class RenderTarget;
-	class GPUTimer;
 
 	class GraphicsContext
 	{
@@ -38,7 +38,7 @@ namespace sp
 		virtual void EndFrame() = 0;
 
 		ShaderSet *GlobalShaders;
-		GPUTimer *Timer = nullptr;
+		PerfTimer Timer;
 
 		GLFWwindow *GetWindow()
 		{
