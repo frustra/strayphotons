@@ -566,27 +566,11 @@ namespace sp
 				glStencilMask(~0); // for forward pass clearMode
 				glFrontFace(bounce % 2 == 0 ? GL_CCW : GL_CW);
 
-				if (bounce > 0)
-				{
-					RenderPhase phase("DepthPredraw", Timer);
-					glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
-					ShaderControl->BindPipeline<SceneVS, SceneGS, SceneDepthPredrawFS>(GlobalShaders);
-
-					ForwardPass(forwardPassView, sceneVS, nullptr);
-
-					glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-					glDepthFunc(GL_EQUAL);
-				}
-				else
-				{
-					glDepthFunc(GL_LESS);
-				}
-
 				sceneFS->SetMirrorId(-1);
 
 				ShaderControl->BindPipeline<SceneVS, SceneGS, SceneFS>(GlobalShaders);
 
+				glDepthFunc(GL_LESS);
 				glDepthMask(GL_FALSE);
 
 				ForwardPass(forwardPassView, sceneVS, [&](ecs::Entity & ent)

@@ -73,12 +73,6 @@ namespace sp
 		using SceneShader::SceneShader;
 	};
 
-	class SceneDepthPredrawFS : public SceneShader
-	{
-		SHADER_TYPE(SceneDepthPredrawFS)
-		using SceneShader::SceneShader;
-	};
-
 	class ShadowMapVS : public SceneShader
 	{
 		SHADER_TYPE(ShadowMapVS)

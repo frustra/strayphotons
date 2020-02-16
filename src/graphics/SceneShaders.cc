@@ -185,7 +185,6 @@ namespace sp
 	IMPLEMENT_SHADER_TYPE(MirrorSceneCS, "mirror_scene.comp", Compute);
 	IMPLEMENT_SHADER_TYPE(SceneDepthClearVS, "scene_depth_clear.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(SceneDepthClearFS, "scene_depth_clear.frag", Fragment);
-	IMPLEMENT_SHADER_TYPE(SceneDepthPredrawFS, "scene_depth_predraw.frag", Fragment);
 
 	IMPLEMENT_SHADER_TYPE(ShadowMapVS, "shadow_map.vert", Vertex);
 	IMPLEMENT_SHADER_TYPE(ShadowMapFS, "shadow_map.frag", Fragment);
