@@ -146,5 +146,8 @@ namespace sp
 	};
 
 	template <> 
-	void CVar<string>::ToggleValue(const string *str_values, size_t count);
+	inline void CVar<string>::ToggleValue(const string *str_values, size_t count)
+	{
+		// Do nothing
+	}
 }

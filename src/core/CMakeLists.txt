@@ -4,7 +4,6 @@ target_sources(
     PRIVATE
         Console.cc
         Game.cc
-        CVar.cc
 )
 
 target_sources(
