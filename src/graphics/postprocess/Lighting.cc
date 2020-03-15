@@ -49,7 +49,7 @@ namespace sp
 
 		r->GlobalShaders->Get<TonemapFS>()->SetParams();
 		r->SetRenderTarget(dest, nullptr);
-		r->ShaderControl->BindPipeline<BasicPostVS, TonemapFS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<BasicPostVS, TonemapFS>();
 
 		DrawScreenCover();
 	}
@@ -165,7 +165,7 @@ namespace sp
 		glClearColor(0.0, 0.0, 0.0, 0.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		r->ShaderControl->BindPipeline<LumiHistogramCS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<LumiHistogramCS>();
 		histTex->GetTexture().BindImage(0, GL_READ_WRITE);
 
 		auto extents = GetInput(0)->GetOutput()->TargetDesc.extent / downsample;
@@ -179,7 +179,7 @@ namespace sp
 		{
 			auto dest = outputs[0].AllocateTarget(context);
 			r->SetRenderTarget(dest, nullptr);
-			r->ShaderControl->BindPipeline<BasicPostVS, RenderHistogramFS>(r->GlobalShaders);
+			r->ShaderControl->BindPipeline<BasicPostVS, RenderHistogramFS>();
 			DrawScreenCover();
 		}
 		else
@@ -299,7 +299,7 @@ namespace sp
 		shader->SetExposure(r->Exposure);
 
 		r->SetRenderTarget(dest, nullptr);
-		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingFS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingFS>();
 
 		DrawScreenCover();
 	}
@@ -356,7 +356,7 @@ namespace sp
 
 		glViewport(0, 0, outputs[0].TargetDesc.extent[0], outputs[0].TargetDesc.extent[1]);
 		r->SetRenderTarget(dest, nullptr);
-		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingDiffuseFS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingDiffuseFS>();
 
 		DrawScreenCover();
 

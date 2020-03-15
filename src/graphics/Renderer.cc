@@ -93,7 +93,7 @@ namespace sp
 		debugGuiRenderer = make_shared<GuiRenderer>(*this, &game->debugGui);
 		menuGuiRenderer = make_shared<GuiRenderer>(*this, &game->menuGui);
 
-		ShaderControl = new ShaderManager();
+		ShaderControl = new ShaderManager(GlobalShaders);
 		ShaderManager::SetDefine("MAX_LIGHTS", std::to_string(MAX_LIGHTS));
 		ShaderManager::SetDefine("MAX_MIRRORS", std::to_string(MAX_MIRRORS));
 		ShaderManager::SetDefine("MAX_MIRROR_RECURSION", std::to_string(MAX_MIRROR_RECURSION));
@@ -349,8 +349,7 @@ namespace sp
 
 	void Renderer::ReadBackLightSensors()
 	{
-		auto shader = GlobalShaders->Get<LightSensorUpdateCS>();
-		shader->UpdateValues(game->entityManager);
+		GlobalShaders->Get<LightSensorUpdateCS>()->UpdateValues(game->entityManager);
 	}
 
 	void Renderer::UpdateLightSensors()
@@ -533,8 +532,7 @@ namespace sp
 					{
 						RenderPhase phase("MatrixGen", Timer);
 
-						auto cs = GlobalShaders->Get<MirrorSceneCS>();
-						cs->SetMirrorData(mirrorDataCount, &mirrorData[0]);
+						GlobalShaders->Get<MirrorSceneCS>()->SetMirrorData(mirrorDataCount, &mirrorData[0]);
 
 						ShaderControl->BindPipeline<MirrorSceneCS>(GlobalShaders);
 						glDispatchCompute(1, 1, 1);
@@ -788,8 +786,7 @@ namespace sp
 				addLine(view, vertices, lpos0, lpos1, 0.001f);
 
 				shader->SetParams(view, glm::mat4(), glm::mat4());
-				auto fragShader = GlobalShaders->Get<SceneFS>();
-				fragShader->SetEmissive(glm::vec3(10.0));
+				GlobalShaders->Get<SceneFS>()->SetEmissive(glm::vec3(10.0));
 
 				static unsigned char baseColor[4] = {255, 0, 0, 255};
 				static BasicMaterial mat(baseColor);

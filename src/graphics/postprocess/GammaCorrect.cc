@@ -21,7 +21,7 @@ namespace sp
 		auto dest = outputs[0].AllocateTarget(context);
 
 		r->SetRenderTarget(dest, nullptr);
-		r->ShaderControl->BindPipeline<BasicPostVS, GammaCorrectFS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<BasicPostVS, GammaCorrectFS>();
 
 		DrawScreenCover();
 	}

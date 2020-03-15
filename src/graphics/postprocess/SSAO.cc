@@ -100,7 +100,7 @@ namespace sp
 		r->GlobalShaders->Get<SSAOPass0FS>()->SetViewParams(context->view);
 
 		r->SetRenderTarget(dest, nullptr);
-		r->ShaderControl->BindPipeline<BasicPostVS, SSAOPass0FS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<BasicPostVS, SSAOPass0FS>();
 
 		noiseTex.tex.Bind(3);
 
@@ -127,11 +127,11 @@ namespace sp
 
 			r->GlobalShaders->Get<SSAOBlurFS>()->SetParameters(samplePattern, context->view);
 
-			r->ShaderControl->BindPipeline<BasicPostVS, SSAOBlurFS>(r->GlobalShaders);
+			r->ShaderControl->BindPipeline<BasicPostVS, SSAOBlurFS>();
 		}
 		else
 		{
-			r->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(r->GlobalShaders);
+			r->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>();
 		}
 
 		r->SetRenderTarget(dest, nullptr);

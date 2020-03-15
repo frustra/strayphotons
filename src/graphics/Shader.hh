@@ -176,13 +176,7 @@ namespace sp
 		}
 
 		template <typename ShaderType>
-		ShaderType *Get()
-		{
-			return static_cast<ShaderType *>(Get(&ShaderType::MetaType).get());
-		}
-
-		template <typename ShaderType>
-		ShaderType *operator()()
+		ShaderType *Get() const
 		{
 			return static_cast<ShaderType *>(Get(&ShaderType::MetaType).get());
 		}
