@@ -2,7 +2,7 @@
 
 #include "Common.hh"
 #include "Graphics.hh"
-#include <unordered_map>
+#include <robin_hood.h>
 
 #define SHADER_TYPE(ClassName) \
 	public: \
@@ -118,20 +118,32 @@ namespace sp
 		void BindBuffers();
 
 	protected:
-		void Bind(Uniform &u, string name);
+		Uniform &LookupUniform(string name);
 		void BindBuffer(ShaderBuffer &b, int index, GLenum target = GL_UNIFORM_BUFFER, GLenum usage = GL_STATIC_DRAW);
 		void BufferData(ShaderBuffer &b, GLsizei size, const void *data);
 
 		// Methods for setting uniform values.
 
 		template <typename ValueType>
-		void Set(Uniform u, const ValueType &v)
+		void Set(string name, const ValueType &v)
+		{
+			Set(LookupUniform(name), v);
+		}
+
+		template <typename ValueType>
+		void Set(string name, const ValueType v[], GLsizei count)
+		{
+			Set(LookupUniform(name), v, count);
+		}
+
+		template <typename ValueType>
+		void Set(Uniform &u, const ValueType &v)
 		{
 			Assert(false, "unimplemented uniform type");
 		}
 
 		template <typename ValueType>
-		void Set(Uniform u, const ValueType v[], GLsizei count)
+		void Set(Uniform &u, const ValueType v[], GLsizei count)
 		{
 			Assert(false, "unimplemented uniform type");
 		}
@@ -140,12 +152,13 @@ namespace sp
 		ShaderMeta *type;
 		GLuint program;
 		shared_ptr<ShaderCompileOutput> compileOutput;
+		robin_hood::unordered_flat_map<string, Uniform> uniforms;
 	};
 
 	class ShaderSet
 	{
 	public:
-		typedef std::unordered_map<ShaderMeta *, shared_ptr<Shader>> MapType;
+		typedef robin_hood::unordered_flat_map<ShaderMeta *, shared_ptr<Shader>> MapType;
 
 		const MapType &Map() const
 		{
@@ -168,38 +181,44 @@ namespace sp
 			return static_cast<ShaderType *>(Get(&ShaderType::MetaType).get());
 		}
 
+		template <typename ShaderType>
+		ShaderType *operator()()
+		{
+			return static_cast<ShaderType *>(Get(&ShaderType::MetaType).get());
+		}
+
 	private:
 		MapType shaders;
 
 		friend class ShaderManager;
 	};
 
-	template <> inline void Shader::Set<bool>(Uniform u, const bool &v)
+	template <> inline void Shader::Set<bool>(Uniform &u, const bool &v)
 	{
 		glProgramUniform1i(program, u.location, v);
 	}
 
 #define DECLARE_SET_SCALAR(UniformSuffix, ValueType, GLType) \
-	template <> inline void Shader::Set<ValueType>(Uniform u, const ValueType &v) { \
+	template <> inline void Shader::Set<ValueType>(Uniform &u, const ValueType &v) { \
 		glProgramUniform##UniformSuffix(program, u.location, 1, &v); \
 	} \
-	template <> inline void Shader::Set<ValueType>(Uniform u, const ValueType v[], GLsizei count) { \
+	template <> inline void Shader::Set<ValueType>(Uniform &u, const ValueType v[], GLsizei count) { \
 		glProgramUniform##UniformSuffix(program, u.location, count, (const GLType *) v); \
 	}
 
 #define DECLARE_SET_GLM(UniformSuffix, ValueType, GLType) \
-	template <> inline void Shader::Set<ValueType>(Uniform u, const ValueType &v) { \
+	template <> inline void Shader::Set<ValueType>(Uniform &u, const ValueType &v) { \
 		glProgramUniform##UniformSuffix(program, u.location, 1, glm::value_ptr(v)); \
 	} \
-	template <> inline void Shader::Set<ValueType>(Uniform u, const ValueType v[], GLsizei count) { \
+	template <> inline void Shader::Set<ValueType>(Uniform &u, const ValueType v[], GLsizei count) { \
 		glProgramUniform##UniformSuffix(program, u.location, count, (const GLType *) v); \
 	}
 
 #define DECLARE_SET_GLM_MAT(UniformSuffix, ValueType, GLType) \
-	template <> inline void Shader::Set<ValueType>(Uniform u, const ValueType &v) { \
+	template <> inline void Shader::Set<ValueType>(Uniform &u, const ValueType &v) { \
 		glProgramUniformMatrix##UniformSuffix(program, u.location, 1, 0, glm::value_ptr(v)); \
 	} \
-	template <> inline void Shader::Set<ValueType>(Uniform u, const ValueType v[], GLsizei count) { \
+	template <> inline void Shader::Set<ValueType>(Uniform &u, const ValueType v[], GLsizei count) { \
 		glProgramUniformMatrix##UniformSuffix(program, u.location, count, 0, (const GLType *) v); \
 	}
 

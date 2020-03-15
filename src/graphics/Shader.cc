@@ -24,15 +24,20 @@ namespace sp
 		}
 	}
 
-	void Shader::Bind(Uniform &u, string name)
+	Shader::Uniform &Shader::LookupUniform(string name)
 	{
-		u.name = name;
-		u.location = glGetUniformLocation(program, name.c_str());
-		if (u.location == -1)
+		Uniform &u = uniforms[name];
+		if (u.name.empty())
 		{
-			Debugf("Warning: Binding inactive uniform %s in shader %s: %s", name, type->name, type->filename);
+			u.name = name;
+			u.location = glGetUniformLocation(program, name.c_str());
+			if (u.location == -1)
+			{
+				Debugf("Warning: Binding inactive uniform %s in shader %s: %s", name, type->name, type->filename);
+			}
+			AssertGLOK("glGetUniformLocation");
 		}
-		AssertGLOK("glGetUniformLocation");
+		return u;
 	}
 
 	void Shader::BindBuffer(ShaderBuffer &b, int index, GLenum target, GLenum usage)

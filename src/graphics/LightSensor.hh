@@ -29,7 +29,6 @@ namespace sp
 
 	private:
 		UniformBuffer sensorData, lightData, voxelInfo;
-		Uniform lightCount;
 		Buffer readBackBuf;
 		size_t readBackSize;
 	};

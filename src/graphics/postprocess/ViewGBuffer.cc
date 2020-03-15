@@ -13,21 +13,15 @@ namespace sp
 		ViewGBufferFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			BindBuffer(voxelInfo, 0);
-
-			Bind(mode, "mode");
-			Bind(source, "source");
-			Bind(level, "mipLevel");
-			Bind(invProj, "invProjMat");
-			Bind(invView, "invViewMat");
 		}
 
 		void SetParameters(int newMode, int newSource, int newLevel, const ecs::View &view)
 		{
-			Set(mode, newMode);
-			Set(source, newSource);
-			Set(level, newLevel);
-			Set(invProj, view.invProjMat);
-			Set(invView, view.invViewMat);
+			Set("mode", newMode);
+			Set("source", newSource);
+			Set("mipLevel", newLevel);
+			Set("invProjMat", view.invProjMat);
+			Set("invViewMat", view.invViewMat);
 		}
 
 		void SetVoxelInfo(GLVoxelInfo *data)
@@ -37,7 +31,6 @@ namespace sp
 
 	private:
 		UniformBuffer voxelInfo;
-		Uniform mode, source, level, invProj, invView;
 	};
 
 	IMPLEMENT_SHADER_TYPE(ViewGBufferFS, "view_gbuffer.frag", Fragment);

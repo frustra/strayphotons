@@ -25,11 +25,7 @@ namespace sp
 	class BasicOrthoVS : public Shader
 	{
 		SHADER_TYPE(BasicOrthoVS)
-
-		BasicOrthoVS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
-			Bind(projMat, "projMat");
-		}
+		using Shader::Shader;
 
 		void SetViewport(int width, int height)
 		{
@@ -40,11 +36,8 @@ namespace sp
 			proj[3][0] = -1.0f;
 			proj[3][1] = 1.0f;
 			proj[3][3] = 1.0f;
-			Set(projMat, proj);
+			Set("projMat", proj);
 		}
-
-	private:
-		Uniform projMat;
 	};
 
 	class BasicOrthoFS : public Shader

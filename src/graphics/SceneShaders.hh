@@ -14,11 +14,8 @@ namespace sp
 	class SceneShader : public Shader
 	{
 	public:
-		SceneShader(shared_ptr<ShaderCompileOutput> compileOutput);
+		SceneShader(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput) {}
 		void SetParams(const ecs::View &view, glm::mat4 modelMat, glm::mat4 primitiveMat);
-
-	private:
-		Uniform modelMat, primitiveMat, viewMat, projMat;
 	};
 
 	class SceneVS : public SceneShader
@@ -30,23 +27,18 @@ namespace sp
 	class SceneGS : public SceneShader
 	{
 		SHADER_TYPE(SceneGS)
-		SceneGS(shared_ptr<ShaderCompileOutput> compileOutput);
-		void SetRenderMirrors(bool v);
+		using SceneShader::SceneShader;
 
-	private:
-		Uniform renderMirrors;
+		void SetRenderMirrors(bool v);
 	};
 
 	class SceneFS : public Shader
 	{
 		SHADER_TYPE(SceneFS)
-		SceneFS(shared_ptr<ShaderCompileOutput> compileOutput);
+		using Shader::Shader;
 
 		void SetEmissive(glm::vec3 em);
 		void SetMirrorId(int id);
-
-	private:
-		Uniform emissive, mirrorId;
 	};
 
 	class MirrorSceneCS : public Shader
@@ -58,7 +50,6 @@ namespace sp
 
 	private:
 		UniformBuffer mirrorData;
-		Uniform mirrorCount;
 	};
 
 	class SceneDepthClearVS : public SceneShader
@@ -82,15 +73,11 @@ namespace sp
 	class ShadowMapFS : public Shader
 	{
 		SHADER_TYPE(ShadowMapFS)
-
-		ShadowMapFS(shared_ptr<ShaderCompileOutput> compileOutput);
+		using Shader::Shader;
 
 		void SetClip(glm::vec2 newClip);
 		void SetLight(int lightId);
 		void SetMirrorId(int id);
-
-	private:
-		Uniform clip, lightId, mirrorId;
 	};
 
 	class MirrorMapCS : public Shader
@@ -104,7 +91,6 @@ namespace sp
 
 	private:
 		UniformBuffer lightData, mirrorData;
-		Uniform lightCount, mirrorCount;
 	};
 
 	class MirrorMapVS : public SceneShader
@@ -129,7 +115,6 @@ namespace sp
 		void SetMirrorId(int id);
 
 	private:
-		Uniform mirrorId, lightCount;
 		UniformBuffer lightData;
 	};
 
@@ -156,22 +141,15 @@ namespace sp
 		void SetLightAttenuation(float attenuation);
 
 	private:
-		Uniform lightCount;
 		UniformBuffer lightData, voxelInfo;
-		Uniform viewMat, invViewMat, invProjMat;
-		Uniform lightAttenuation;
 	};
 
 	class VoxelMergeCS : public Shader
 	{
 		SHADER_TYPE(VoxelMergeCS)
-
-		VoxelMergeCS(shared_ptr<ShaderCompileOutput> compileOutput);
+		using Shader::Shader;
 
 		void SetLevel(int newLevel);
-
-	private:
-		Uniform level;
 	};
 
 	class VoxelMipmapCS : public Shader
@@ -185,18 +163,13 @@ namespace sp
 
 	private:
 		UniformBuffer voxelInfo;
-		Uniform level;
 	};
 
 	class VoxelClearCS : public Shader
 	{
 		SHADER_TYPE(VoxelClearCS)
-
-		VoxelClearCS(shared_ptr<ShaderCompileOutput> compileOutput);
+		using Shader::Shader;
 
 		void SetLevel(int newLevel);
-
-	private:
-		Uniform level;
 	};
 }

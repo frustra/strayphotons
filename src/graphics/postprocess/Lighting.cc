@@ -32,19 +32,12 @@ namespace sp
 	class TonemapFS : public Shader
 	{
 		SHADER_TYPE(TonemapFS)
-
-		TonemapFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
-			Bind(saturation, "saturation");
-		}
+		using Shader::Shader;
 
 		void SetParams()
 		{
-			Set(saturation, glm::vec2(CVarSaturationMin.Get(), CVarSaturationMax.Get()));
+			Set("saturation", glm::vec2(CVarSaturationMin.Get(), CVarSaturationMax.Get()));
 		}
-
-	private:
-		Uniform saturation;
 	};
 
 	IMPLEMENT_SHADER_TYPE(TonemapFS, "tonemap.frag", Fragment);
@@ -201,64 +194,49 @@ namespace sp
 
 		VoxelLightingFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
-			Bind(lightCount, "lightCount");
-			Bind(mirrorCount, "mirrorCount");
 			BindBuffer(lightData, 0);
 			BindBuffer(mirrorData, 1);
 			BindBuffer(voxelInfo, 2);
-
-			Bind(exposure, "exposure");
-			Bind(skyIlluminance, "skyIlluminance");
-
-			Bind(invProjMat, "invProjMat");
-			Bind(invViewMat, "invViewMat");
-			Bind(mode, "mode");
-			Bind(ssaoEnabled, "ssaoEnabled");
-
-			Bind(diffuseDownsample, "diffuseDownsample");
 		}
 
 		void SetLightData(int count, GLLightData *data)
 		{
-			Set(lightCount, count);
+			Set("lightCount", count);
 			BufferData(lightData, sizeof(GLLightData) * count, data);
 		}
 
 		void SetMirrorData(int count, GLMirrorData *data)
 		{
-			Set(mirrorCount, count);
+			Set("mirrorCount", count);
 			BufferData(mirrorData, sizeof(GLMirrorData) * count, data);
 		}
 
 		void SetExposure(float newExposure)
 		{
-			Set(exposure, newExposure);
+			Set("exposure", newExposure);
 		}
 
 		void SetViewParams(const ecs::View &view)
 		{
-			Set(invProjMat, view.invProjMat);
-			Set(invViewMat, view.invViewMat);
-			Set(skyIlluminance, view.skyIlluminance);
+			Set("invProjMat", view.invProjMat);
+			Set("invViewMat", view.invViewMat);
+			Set("skyIlluminance", view.skyIlluminance);
 		}
 
 		void SetMode(int newMode, int ssaoMode)
 		{
-			Set(mode, newMode);
-			Set(ssaoEnabled, ssaoMode);
+			Set("mode", newMode);
+			Set("ssaoEnabled", ssaoMode);
 		}
 
 		void SetVoxelInfo(GLVoxelInfo *data, int diffDownsample)
 		{
 			BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
-			Set(diffuseDownsample, diffDownsample);
+			Set("diffuseDownsample", diffDownsample);
 		}
 
 	private:
-		Uniform lightCount, mirrorCount;
 		UniformBuffer lightData, mirrorData, voxelInfo;
-		Uniform exposure, invViewMat, invProjMat, mode, ssaoEnabled;
-		Uniform diffuseDownsample, skyIlluminance;
 	};
 
 	IMPLEMENT_SHADER_TYPE(VoxelLightingFS, "voxel_lighting.frag", Fragment);
@@ -270,33 +248,26 @@ namespace sp
 		VoxelLightingDiffuseFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			BindBuffer(voxelInfo, 0);
-
-			Bind(exposure, "exposure");
-			Bind(invViewMat, "invViewMat");
-
-			Bind(diffuseDownsample, "diffuseDownsample");
 		}
 
 		void SetExposure(float newExposure)
 		{
-			Set(exposure, newExposure);
+			Set("exposure", newExposure);
 		}
 
 		void SetViewParams(const ecs::View &view)
 		{
-			Set(invViewMat, view.invViewMat);
+			Set("invViewMat", view.invViewMat);
 		}
 
 		void SetVoxelInfo(GLVoxelInfo *data, int diffDownsample)
 		{
 			BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
-			Set(diffuseDownsample, diffDownsample);
+			Set("diffuseDownsample", diffDownsample);
 		}
 
 	private:
 		UniformBuffer voxelInfo;
-		Uniform exposure, invViewMat;
-		Uniform diffuseDownsample;
 	};
 
 	IMPLEMENT_SHADER_TYPE(VoxelLightingDiffuseFS, "voxel_lighting_diffuse.frag", Fragment);

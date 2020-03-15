@@ -17,20 +17,14 @@ namespace sp
 	class SMAAShaderBase : public Shader
 	{
 	public:
-		SMAAShaderBase(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
-			Bind(rtMetrics, "smaaRTMetrics");
-		}
+		using Shader::Shader;
 
 		void SetViewParams(const ecs::View &view)
 		{
 			auto extents = glm::vec2(view.extents);
 			glm::vec4 metrics(1.0f / extents, extents);
-			Set(rtMetrics, metrics);
+			Set("smaaRTMetrics", metrics);
 		}
-
-	private:
-		Uniform rtMetrics;
 	};
 
 	class SMAAEdgeDetectionVS : public SMAAShaderBase

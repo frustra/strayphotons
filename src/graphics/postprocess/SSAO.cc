@@ -18,10 +18,6 @@ namespace sp
 
 		SSAOPass0FS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
-			Bind(projMat, "projMat");
-			Bind(invProjMat, "invProjMat");
-			Bind(kernel, "kernel");
-
 			GenerateKernel();
 		}
 
@@ -45,17 +41,14 @@ namespace sp
 				offsets[i] = normalize(offsets[i]) * distance;
 			}
 
-			Set(kernel, offsets, samples);
+			Set("kernel", offsets, samples);
 		}
 
 		void SetViewParams(const ecs::View &view)
 		{
-			Set(projMat, view.projMat);
-			Set(invProjMat, view.invProjMat);
+			Set("projMat", view.projMat);
+			Set("invProjMat", view.invProjMat);
 		}
-
-	private:
-		Uniform projMat, invProjMat, kernel;
 	};
 
 	IMPLEMENT_SHADER_TYPE(SSAOPass0FS, "ssao_pass0.frag", Fragment);
@@ -63,21 +56,13 @@ namespace sp
 	class SSAOBlurFS : public Shader
 	{
 		SHADER_TYPE(SSAOBlurFS)
-
-		SSAOBlurFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
-			Bind(samplePattern, "samplePattern");
-			Bind(invProjMat, "invProjMat");
-		}
+		using Shader::Shader;
 
 		void SetParameters(glm::vec2 pattern, const ecs::View &view)
 		{
-			Set(samplePattern, pattern);
-			Set(invProjMat, view.invProjMat);
+			Set("samplePattern", pattern);
+			Set("invProjMat", view.invProjMat);
 		}
-
-	private:
-		Uniform invProjMat, samplePattern;
 	};
 
 	IMPLEMENT_SHADER_TYPE(SSAOBlurFS, "ssao_blur.frag", Fragment);
