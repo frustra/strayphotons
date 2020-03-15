@@ -1,7 +1,6 @@
 #include "graphics/GraphicsManager.hh"
 #include "core/Logging.hh"
 #include "graphics/Renderer.hh"
-#include "graphics/raytrace/RaytracedRenderer.hh"
 #include "graphics/basic_renderer/BasicRenderer.hh"
 #include "graphics/GuiRenderer.hh"
 #include "graphics/RenderTargetPool.hh"
@@ -16,18 +15,12 @@
 #include <iostream>
 #include <system_error>
 
-//#define SP_ENABLE_RAYTRACER
-
 namespace sp
 {
 	CVar<glm::ivec2> CVarWindowSize("r.Size", { 1280, 720 }, "Window height");
 	CVar<float> CVarWindowScale("r.Scale", 1.0f, "Scale framebuffer");
 	CVar<float> CVarFieldOfView("r.FieldOfView", 60, "Camera field of view");
 	CVar<int> CVarWindowFullscreen("r.Fullscreen", false, "Fullscreen window (0: window, 1: fullscreen)");
-
-#ifdef SP_ENABLE_RAYTRACER
-	static CVar<int> CVarRayTrace("r.RayTrace", false, "Run reference raytracer");
-#endif
 
 	static void glfwErrorCallback(int error, const char *message)
 	{
@@ -75,10 +68,6 @@ namespace sp
 		context = renderer;
 		context->CreateWindow(CVarWindowSize.Get());
 
-#ifdef SP_ENABLE_RAYTRACER
-		rayTracer = new raytrace::RaytracedRenderer(game, renderer);
-#endif
-
 		profilerGui = new ProfilerGui(&context->Timer);
 		game->debugGui.Attach(profilerGui);
 	}
@@ -88,10 +77,6 @@ namespace sp
 		if (!context) throw "no active context";
 
 		if (profilerGui) delete profilerGui;
-
-#ifdef SP_ENABLE_RAYTRACER
-		if (rayTracer) delete rayTracer;
-#endif
 
 		delete context;
 	}
@@ -162,16 +147,6 @@ namespace sp
 			// entities, with invalid components.
 			context->BeginFrame();
 
-#ifdef SP_ENABLE_RAYTRACER
-			if (CVarRayTrace.Get() && rayTracer->Enable(primaryView))
-			{
-				rayTracer->Render();
-			}
-			else
-			{
-				rayTracer->Disable();
-			}
-#endif
 			// Always render XR content first, since this allows the compositor to immediately start work rendering to the HMD
 			// Only attempt to render if we have an active XR System
 			if (game->logic.GetXrSystem())

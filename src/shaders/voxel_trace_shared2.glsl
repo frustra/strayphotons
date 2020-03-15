@@ -1,9 +1,18 @@
 #ifndef VOXEL_TRACE_SHARED2_GLSL_INCLUDED
 #define VOXEL_TRACE_SHARED2_GLSL_INCLUDED
 
-##import raytrace/intersection
 ##import voxel_trace_shared
 ##import voxel_shared
+
+void aabbIntersectFast(vec3 P, vec3 R, vec3 invR, vec3 aabb1, vec3 aabb2, out float tmin, out float tmax)
+{
+	vec3 t1 = (aabb1 - P) * invR;
+	vec3 t2 = (aabb2 - P) * invR;
+	vec3 tmins = min(t1, t2);
+	vec3 tmaxs = max(t1, t2);
+	tmin = max(max(tmins.x, tmins.y), tmins.z);
+	tmax = min(min(tmaxs.x, tmaxs.y), tmaxs.z);
+}
 
 float GetVoxelNearest(vec3 position, int level, int map, out vec3 radiance)
 {

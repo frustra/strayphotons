@@ -1,6 +1,5 @@
 add_subdirectory(basic_renderer)
 add_subdirectory(postprocess)
-add_subdirectory(raytrace)
 
 target_sources(
     ${PROJECT_LIB}
@@ -15,7 +14,7 @@ target_sources(
         LightSensor.cc
         PixelFormat.cc
         RenderBuffer.cc
-        Renderer.cc ## Potentially move into a subfolder like basic_renderer and raytrace
+        Renderer.cc ## Potentially move into a subfolder like basic_renderer
         RendererVoxels.cc
         RenderTarget.cc
         RenderTargetPool.cc

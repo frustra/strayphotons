@@ -17,11 +17,6 @@ namespace sp
 	extern CVar<float> CVarFieldOfView;
 	extern CVar<int> CVarWindowFullscreen;
 
-	namespace raytrace
-	{
-		class RaytracedRenderer;
-	}
-
 	class GraphicsManager
 	{
 	public:
@@ -50,10 +45,6 @@ namespace sp
 		GraphicsContext *context = nullptr;
 		Game *game = nullptr;
 		ProfilerGui *profilerGui = nullptr;
-
-#ifdef SP_ENABLE_RAYTRACER
-		raytrace::RaytracedRenderer *rayTracer = nullptr;
-#endif
 
 		vector<ecs::Entity> playerViews;
 
