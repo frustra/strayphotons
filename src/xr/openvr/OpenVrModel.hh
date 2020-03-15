@@ -16,7 +16,7 @@ namespace sp
 			virtual ~OpenVrModel();
 
 		private:
-			Texture baseColorTex, roughnessTex, metallicTex, heightTex;
+			Texture baseColorTex, metallicRoughnessTex, heightTex;
 			VertexBuffer vbo;
 			Buffer ibo;
 			Model::Primitive sourcePrim;

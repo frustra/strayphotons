@@ -1,7 +1,3 @@
-#define TINYGLTF_LOADER_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#include <tiny_gltf_loader.h>
-
 extern "C"
 {
 #include <microtar.h>
@@ -26,6 +22,10 @@ extern "C"
 #include <fstream>
 #include <utility>
 
+#define TINYGLTF_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#include <tinygltf/tiny_gltf.h>
+
 namespace sp
 {
 	AssetManager GAssets;
@@ -36,10 +36,27 @@ namespace sp
 
 	AssetManager::AssetManager()
 	{
-		tinygltf::OpenFileCallback = [](const std::string & path, std::ifstream & stream, size_t *size) -> bool
-		{
-			return GAssets.InputStream(path, stream, size);
+		fs = {
+			[] (const std::string &abs_filename, void *user_data) -> bool
+			{
+				return GAssets.FileExists(abs_filename, user_data);
+			},
+
+			[](const std::string &filepath, void *user_data)-> std::string
+			{
+				return GAssets.ExpandFilePath(filepath, user_data);
+			},
+
+			[](std::vector<unsigned char> *out, std::string *err, const std::string &path, void *user_data) -> bool
+			{
+				return GAssets.ReadWholeFile(out, err, path, user_data);
+			}, 
+
+			nullptr, // WriteFile callback, not supported
+			nullptr  // Fs callback user data
 		};
+
+		gltfLoader.SetFsCallbacks(fs);
 	}
 
 	void AssetManager::UpdateTarIndex()
@@ -60,6 +77,71 @@ namespace sp
 		}
 
 		mtar_close(&tar);
+	}
+
+	std::string AssetManager::ExpandFilePath(const std::string &filepath, void * /* user_data */)
+	{
+		return filepath;
+	}
+
+	bool AssetManager::FileExists(const std::string &abs_filename, void * /* user_data */)
+	{
+		return true;
+	}
+
+	bool AssetManager::ReadWholeFile(std::vector<unsigned char> *out, std::string *err,
+                   					 const std::string &path, void * /* user_data */ )
+	{
+		std::ifstream stream;
+
+#ifdef PACKAGE_RELEASE
+		if (tarIndex.size() == 0) UpdateTarIndex();
+
+		stream.open(ASSETS_TAR, std::ios::in | std::ios::binary);
+
+		if (stream && tarIndex.count(path))
+		{
+			// Get the start and end location of the requested file in the tarIndex
+			auto indexData = tarIndex[path];
+		
+			// Move the stream head to the start location of the file in the tarIndex
+			stream.seekg(indexData.first, std::ios::beg);
+
+			// Resize the output vector to match the size of the file to be read
+			out->resize(indexData.second, '\0');
+
+			// Copy bytes from the file into the output buffer
+			stream.read(reinterpret_cast<char *>(&out->at(0)),
+						static_cast<std::streamsize>(indexData.second));
+			stream.close();
+			return true;
+		}
+#else
+		stream.open(path, std::ios::in | std::ios::binary);
+
+		if (stream)
+		{
+			// Move the head to the end of the file
+			stream.seekg(0, std::ios::end);
+
+			// Get the head position (since we're at the end, this is the filesize)
+			size_t fileSize = stream.tellg();
+
+			// Move back to the beginning
+			stream.seekg(0, std::ios::beg);
+
+			// Make output buffer fit the file
+			out->resize(fileSize, '\0');
+
+			// Copy bytes from the file into the output buffer
+			stream.read(reinterpret_cast<char *>(&out->at(0)),
+						static_cast<std::streamsize>(fileSize));
+			stream.close();
+
+			return true;
+		}
+#endif
+		return false;
 	}
 
 	bool AssetManager::InputStream(const std::string &path, std::ifstream &stream, size_t *size)
@@ -151,17 +233,39 @@ namespace sp
 		if (it == loadedModels.end() || it->second.expired())
 		{
 			Logf("Loading model: %s", name);
-			shared_ptr<Asset> asset = Load("models/" + name + "/" + name + ".gltf");
-			if (!asset) asset = Load("models/" + name + ".gltf");
-			Assert(asset != nullptr, "Model asset not found");
-			auto scene = make_shared<tinygltf::Scene>();
-			std::string err;
 
-#ifdef PACKAGE_RELEASE
-			bool ret = gltfLoader.LoadASCIIFromString(scene.get(), &err, asset->CharBuffer(), asset->Size(), "models/" + name);
-#else
-			bool ret = gltfLoader.LoadASCIIFromString(scene.get(), &err, asset->CharBuffer(), asset->Size(), ASSETS_DIR + "models/" + name);
-#endif
+			auto gltfModel = make_shared<tinygltf::Model>();
+			std::string err;
+			std::string warn;
+			bool ret = false;
+
+			// Check if there is a .glb version of the model and prefer that
+			shared_ptr<Asset> asset = Load("models/" + name + "/" + name + ".glb");
+			if (!asset) asset = Load("models/" + name + ".glb");
+
+			// Found a GLB
+			if(asset)
+			{
+				#ifdef PACKAGE_RELEASE
+				ret = gltfLoader.LoadBinaryFromMemory(gltfModel.get(), &err, &warn, (const unsigned char *) asset->CharBuffer(), asset->Size(), "models/" + name);
+				#else
+				ret = gltfLoader.LoadBinaryFromMemory(gltfModel.get(), &err, &warn, (const unsigned char *) asset->CharBuffer(), asset->Size(), ASSETS_DIR + "models/" + name);
+				#endif
+			}
+			else
+			{
+				asset = Load("models/" + name + "/" + name + ".gltf");
+				if (!asset) asset = Load("models/" + name + ".gltf");
+
+				#ifdef PACKAGE_RELEASE
+				ret = gltfLoader.LoadASCIIFromString(gltfModel.get(), &err, &warn, asset->CharBuffer(), asset->Size(), "models/" + name);
+				#else
+				ret = gltfLoader.LoadASCIIFromString(gltfModel.get(), &err, &warn, asset->CharBuffer(), asset->Size(), ASSETS_DIR + "models/" + name);
+				#endif
+			}
+
+			Assert(asset != nullptr, "Model asset not found");
+
 			if (!err.empty())
 			{
 				throw std::runtime_error(err);
@@ -171,7 +275,7 @@ namespace sp
 				throw std::runtime_error("Failed to parse glTF");
 			}
 
-			model = make_shared<Model>(name, asset, scene);
+			model = make_shared<Model>(name, asset, gltfModel);
 			loadedModels[name] = weak_ptr<Model>(model);
 		}
 		else

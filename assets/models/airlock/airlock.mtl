@@ -2,20 +2,28 @@
 # Material Count: 2
 
 newmtl AirlockFloor
+map_Kd AirlockFloor_Base_Color.png
+map_Bump AirlockFloor_Height.png
+map_Ks AirlockFloor_Metallic.png
+map_Ns AirlockFloor_Roughness.png
 Ns 96.078431
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
-Ks 0.500000 0.500000 0.500000
+Ks 1.000000 1.000000 1.000000
 Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
 
 newmtl AirlockInterior
+map_Kd AirlockInterior_Base_Color.png
+map_Bump AirlockInterior_Height.png
+map_Ks AirlockInterior_Metallic.png
+map_Ns AirlockInterior_Roughness.png
 Ns 96.078431
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
-Ks 0.500000 0.500000 0.500000
+Ks 1.000000 1.000000 1.000000
 Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000

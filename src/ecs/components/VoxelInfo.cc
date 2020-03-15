@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
 
-#include <tinygltfloader/picojson.h>
+#include <picojson/picojson.h>
 #include <assets/AssetHelpers.hh>
 
 namespace ecs

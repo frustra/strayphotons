@@ -46,3 +46,12 @@
 [submodule "ext/robin-hood-hashing"]
 	path = ext/robin-hood-hashing
 	url = https://github.com/martinus/robin-hood-hashing
+[submodule "ext/tinygltf"]
+	path = ext/tinygltf
+	url = https://github.com/syoyo/tinygltf.git
+[submodule "ext/picojson"]
+	path = ext/picojson
+	url = https://github.com/kazuho/picojson.git
+[submodule "ext/gltf-pipeline"]
+	path = ext/gltf-pipeline
+	url = https://github.com/AnalyticalGraphicsInc/gltf-pipeline.git

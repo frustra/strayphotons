@@ -12,8 +12,40 @@ namespace sp
 {
 	glm::mat4 GetNodeMatrix(tinygltf::Node *node)
 	{
-		glm::mat4 out;
-		std::copy(node->matrix.begin(), node->matrix.end(), glm::value_ptr(out));
+        glm::mat4 out(1.0);
+
+        if (node->matrix.size() == 16)
+        {
+			std::copy(node->matrix.begin(), node->matrix.end(), glm::value_ptr(out));
+        }
+        else
+        {            
+            if (node->translation.size() == 3)
+            {
+                out = glm::translate(
+                    out, 
+                    glm::vec3(
+                        node->translation[0], node->translation[1], node->translation[2]
+                    )
+                ); 
+            }
+
+            if (node->rotation.size() == 4)
+            {
+				out = out * glm::mat4_cast(glm::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]));
+            }
+
+            if (node->scale.size() == 3)
+            {
+                out = glm::scale(
+                    out, 
+                    glm::vec3(
+                        node->scale[0], node->scale[1], node->scale[2]
+                    )
+                );
+            }
+        }
+
 		return out;
 	}
 
@@ -50,11 +82,11 @@ namespace sp
 		return componentCount * componentWidth;
 	}
 
-	Model::Attribute GetPrimitiveAttribute(shared_ptr<tinygltf::Scene> scene, tinygltf::Primitive *p, string attribute)
+	Model::Attribute GetPrimitiveAttribute(shared_ptr<tinygltf::Model> model, tinygltf::Primitive *p, string attribute)
 	{
 		if (!p->attributes.count(attribute)) return Model::Attribute();
-		auto accessor = scene->accessors[p->attributes[attribute]];
-		auto bufView = scene->bufferViews[accessor.bufferView];
+		auto accessor = model->accessors[p->attributes[attribute]];
+		auto bufView = model->bufferViews[accessor.bufferView];
 
 		size_t componentCount = 1;
 		if (accessor.type == TINYGLTF_TYPE_SCALAR)
@@ -77,7 +109,7 @@ namespace sp
 		return Model::Attribute
 		{
 			accessor.byteOffset + bufView.byteOffset,
-			byteStrideForAccessor(accessor.componentType, componentCount, accessor.byteStride),
+			accessor.ByteStride(bufView),
 			accessor.componentType,
 			componentCount,
 			accessor.count,
@@ -85,9 +117,16 @@ namespace sp
 		};
 	}
 
-	Model::Model(const std::string &name, shared_ptr<Asset> asset, shared_ptr<tinygltf::Scene> scene) : name(name), scene(scene), asset(asset)
+	Model::Model(const std::string &name, shared_ptr<Asset> asset, shared_ptr<tinygltf::Model> model) : name(name), model(model), asset(asset)
 	{
-		for (auto node : scene->scenes[scene->defaultScene])
+		int defaultScene = 0;
+
+		if (model->defaultScene != -1)
+		{
+			defaultScene = model->defaultScene;
+		}
+
+		for (int node : model->scenes[defaultScene].nodes)
 		{
 			AddNode(node, glm::mat4());
 		}
@@ -107,34 +146,35 @@ namespace sp
 		}
 	}
 
-	bool Model::HasBuffer(string name)
+	bool Model::HasBuffer(int index)
 	{
-		return scene->buffers.count(name) > 0;
+		return model->buffers.size() > index;
 	}
 
-	vector<unsigned char> Model::GetBuffer(string name)
+	vector<unsigned char> Model::GetBuffer(int index)
 	{
-		return scene->buffers[name].data;
+		return model->buffers[index].data;
 	}
 
-	Hash128 Model::HashBuffer(string name)
+	Hash128 Model::HashBuffer(int index)
 	{
 		Hash128 output;
-		auto buffer = GetBuffer(name);
+		auto buffer = GetBuffer(index);
 		MurmurHash3_x86_128(buffer.data(), buffer.size(), 0, output.data());
 		return output;
 	}
 
-	void Model::AddNode(string nodeName, glm::mat4 parentMatrix)
+	void Model::AddNode(int nodeIndex, glm::mat4 parentMatrix)
 	{
-		glm::mat4 matrix = parentMatrix * GetNodeMatrix(&scene->nodes[nodeName]);
+		glm::mat4 matrix = parentMatrix * GetNodeMatrix(&model->nodes[nodeIndex]);
 
-		for (auto mesh : scene->nodes[nodeName].meshes)
+		// Meshes are optional on nodes
+		if (model->nodes[nodeIndex].mesh != -1)
 		{
-			for (auto primitive : scene->meshes[mesh].primitives)
+			for (auto primitive : model->meshes[model->nodes[nodeIndex].mesh].primitives)
 			{
-				auto iAcc = scene->accessors[primitive.indices];
-				auto iBufView = scene->bufferViews[iAcc.bufferView];
+				auto iAcc = model->accessors[primitive.indices];
+				auto iBufView = model->bufferViews[iAcc.bufferView];
 
 				int mode = -1;
 				if (primitive.mode == TINYGLTF_MODE_TRIANGLES)
@@ -170,7 +210,7 @@ namespace sp
 					mode,
 					Attribute{
 						iAcc.byteOffset + iBufView.byteOffset,
-						byteStrideForAccessor(iAcc.componentType, 1, iAcc.byteStride),
+						iAcc.ByteStride(iBufView),
 						iAcc.componentType,
 						1,
 						iAcc.count,
@@ -178,17 +218,17 @@ namespace sp
 					},
 					primitive.material,
 					{
-						GetPrimitiveAttribute(scene, &primitive, "POSITION"),
-						GetPrimitiveAttribute(scene, &primitive, "NORMAL"),
-						GetPrimitiveAttribute(scene, &primitive, "TEXCOORD_0")
+						GetPrimitiveAttribute(model, &primitive, "POSITION"),
+						GetPrimitiveAttribute(model, &primitive, "NORMAL"),
+						GetPrimitiveAttribute(model, &primitive, "TEXCOORD_0")
 					}
 				});
 			}
 		}
 
-		for (auto child : scene->nodes[nodeName].children)
+		for (int childNodeIndex : model->nodes[nodeIndex].children)
 		{
-			AddNode(child, matrix);
+			AddNode(childNodeIndex, matrix);
 		}
 	}
 
@@ -200,16 +240,14 @@ namespace sp
 		{
 			Primitive glPrimitive;
 			glPrimitive.parent = primitive;
-			glPrimitive.indexBufferHandle = LoadBuffer(primitive->indexBuffer.bufferName);
+			glPrimitive.indexBufferHandle = LoadBuffer(primitive->indexBuffer.bufferIndex);
 
-			glPrimitive.baseColorTex = LoadTexture(primitive->materialName, "baseColor");
-			glPrimitive.roughnessTex = LoadTexture(primitive->materialName, "roughness");
-			glPrimitive.metallicTex = LoadTexture(primitive->materialName, "metallic");
-			glPrimitive.heightTex = LoadTexture(primitive->materialName, "height");
+			glPrimitive.baseColorTex = LoadTexture(primitive->materialIndex, BaseColor);
+			glPrimitive.metallicRoughnessTex = LoadTexture(primitive->materialIndex, MetallicRoughness);
+			glPrimitive.heightTex = LoadTexture(primitive->materialIndex, Height);
 
 			if (!glPrimitive.baseColorTex) glPrimitive.baseColorTex = &defaultMat.baseColorTex;
-			if (!glPrimitive.roughnessTex) glPrimitive.roughnessTex = &defaultMat.roughnessTex;
-			if (!glPrimitive.metallicTex) glPrimitive.metallicTex = &defaultMat.metallicTex;
+			if (!glPrimitive.metallicRoughnessTex) glPrimitive.metallicRoughnessTex = &defaultMat.metallicRoughnessTex;
 			if (!glPrimitive.heightTex) glPrimitive.heightTex = &defaultMat.heightTex;
 
 			glCreateVertexArrays(1, &glPrimitive.vertexBufferHandle);
@@ -219,7 +257,7 @@ namespace sp
 				if (attr->componentCount == 0) continue;
 				glEnableVertexArrayAttrib(glPrimitive.vertexBufferHandle, i);
 				glVertexArrayAttribFormat(glPrimitive.vertexBufferHandle, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
-				glVertexArrayVertexBuffer(glPrimitive.vertexBufferHandle, i, LoadBuffer(attr->bufferName), attr->byteOffset, attr->byteStride);
+				glVertexArrayVertexBuffer(glPrimitive.vertexBufferHandle, i, LoadBuffer(attr->bufferIndex), attr->byteOffset, attr->byteStride);
 			}
 
 			AddPrimitive(glPrimitive);
@@ -247,7 +285,7 @@ namespace sp
 		primitives.push_back(prim);
 	}
 
-	void GLModel::Draw()
+	void GLModel::Draw(SceneShader *shader, glm::mat4 modelMat, const ecs::View &view)
 	{
 		for (auto primitive : primitives)
 		{
@@ -257,14 +295,13 @@ namespace sp
 			if (primitive.baseColorTex)
 				primitive.baseColorTex->Bind(0);
 
-			if (primitive.roughnessTex)
-				primitive.roughnessTex->Bind(1);
-
-			if (primitive.metallicTex)
-				primitive.metallicTex->Bind(2);
+			if (primitive.metallicRoughnessTex)
+				primitive.metallicRoughnessTex->Bind(1);
 
 			if (primitive.heightTex)
 				primitive.heightTex->Bind(3);
+
+			shader->SetParams(view, modelMat, primitive.parent->matrix);
 
 			glDrawElements(
 				primitive.parent->drawMode,
@@ -275,56 +312,166 @@ namespace sp
 		}
 	}
 
-	GLuint GLModel::LoadBuffer(string name)
+	GLuint GLModel::LoadBuffer(int index)
 	{
-		if (buffers.count(name)) return buffers[name];
+		if (buffers.count(index)) return buffers[index];
 
-		auto buffer = model->scene->buffers[name];
+		auto buffer = model->model->buffers[index];
 		GLuint handle;
 		glCreateBuffers(1, &handle);
 		glNamedBufferData(handle, buffer.data.size(), buffer.data.data(), GL_STATIC_DRAW);
-		buffers[name] = handle;
+		buffers[index] = handle;
 		return handle;
 	}
 
-	Texture *GLModel::LoadTexture(string materialName, string type)
+
+
+	Texture *GLModel::LoadTexture(int materialIndex, TextureType textureType)
 	{
-		auto &material = model->scene->materials[materialName];
+		auto &material = model->model->materials[materialIndex];
 
-		if (!material.values.count(type)) return NULL;
+		string name = std::to_string(materialIndex) + "_";
+		int textureIndex = -1;
+		std::vector<double> factor;
 
-		auto value = material.values[type];
-		if (value.string_value.empty())
+		switch (textureType)
 		{
-			char name[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+			case BaseColor:
+				name += std::to_string(material.pbrMetallicRoughness.baseColorTexture.index) + "_BASE";
+				textureIndex = material.pbrMetallicRoughness.baseColorTexture.index;
+				factor = material.pbrMetallicRoughness.baseColorFactor;
+				break;
+
+			// gltf2.0 uses a combined texture for metallic roughness.
+			// Roughness = G channel, Metallic = B channel.
+			// R and A channels are not used / should be ignored.
+			case MetallicRoughness:
+				name += std::to_string(material.pbrMetallicRoughness.metallicRoughnessTexture.index) + "_METALICROUGHNESS";
+				textureIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
+				factor = {0.0, material.pbrMetallicRoughness.roughnessFactor, material.pbrMetallicRoughness.metallicFactor, 0.0};
+				break;
+
+			case Height:
+				name += std::to_string(material.normalTexture.index) + "_HEIGHT";
+				textureIndex = material.normalTexture.index;
+				// factor not supported for height textures
+				break;
+
+			case Occlusion:
+				name += std::to_string(material.occlusionTexture.index) + "_OCCLUSION";
+				textureIndex = material.occlusionTexture.index;
+				// factor not supported for occlusion textures
+				break;
+
+			case Emissive:
+				name += std::to_string(material.occlusionTexture.index) + "_EMISSIVE";
+				textureIndex = material.emissiveTexture.index;
+				factor = material.emissiveFactor;
+				break;
+
+			default:
+				return NULL;
+		}
+
+		// Test if we have already cached this texture
+		if (textures.count(name)) return &textures[name];
+
+		// Need to create a texture for this Material / Type combo
+		if (textureIndex != -1)
+		{
+			tinygltf::Texture texture = model->model->textures[textureIndex];
+			tinygltf::Image img = model->model->images[texture.source];
+
+			GLenum minFilter = GL_LINEAR_MIPMAP_LINEAR;
+			GLenum magFilter = GL_LINEAR;
+			GLenum wrapS = GL_REPEAT;
+			GLenum wrapT = GL_REPEAT;
+
+			if (texture.sampler != -1)
+			{
+				tinygltf::Sampler sampler = model->model->samplers[texture.sampler];
+
+				magFilter = sampler.magFilter;
+				minFilter = sampler.minFilter;
+				wrapS = sampler.wrapS;
+				wrapT = sampler.wrapT;
+			}
+
+			GLenum format = GL_NONE;
+			if (img.component == 4)
+			{
+				format = GL_RGBA;
+			}
+			else if (img.component == 3)
+			{
+				format = GL_RGB;
+			}
+			else if (img.component == 2)
+			{
+				format = GL_RG;
+			} 
+			else if (img.component == 1)
+			{
+				format = GL_RED;
+			} 
+			else
+			{
+				Errorf("Failed to load image at index %d: invalid number of image components (%d)", texture.source, img.component);
+			}
+
+			GLenum type = GL_NONE;
+			if (img.bits == 8) 
+			{
+				type = GL_UNSIGNED_BYTE;
+			} 
+			else if (img.bits == 16)
+			{
+				type = GL_UNSIGNED_SHORT;
+			}
+			else 
+			{
+				Errorf("Failed to load image at index %d: invalid pixel bit width (%d)", texture.source, img.bits);
+			}
+
+			if (factor.size() > 0)
+			{
+				if (type == GL_UNSIGNED_BYTE)
+				{
+					for(size_t i = 0; i < img.image.size(); i += img.component)
+					{
+						for(size_t j = 0; j < img.component; j++)
+						{
+							img.image.data()[i + j] *= factor.at(std::min(factor.size() - 1, j));
+						}
+					}
+				}
+				else
+				{
+					throw std::runtime_error("Scaling textures that are not GL_UNSIGNED_BYTE is not supported");
+				}
+			}
+
+			return &textures[name].Create()
+				   .Filter(minFilter, magFilter, 4.0)
+				   .Wrap(wrapS, wrapT)
+				   .Size(img.width, img.height)
+				   .Storage(GL_RGBA, format, type, Texture::FullyMipmap, textureType == BaseColor)
+				   .Image2D(img.image.data());
+		}
+		else if (factor.size() > 0)
+		{
 			unsigned char data[4];
 			for (size_t i = 0; i < 4; i++)
 			{
-				data[i] = 255 * value.number_array.at(std::min(value.number_array.size() - 1, i));
-				name[i * 2] = 'A' + ((data[i] & 0xF0) >> 4);
-				name[i * 2 + 1] = 'A' + (data[i] & 0xF);
+				data[i] = 255 * factor.at(std::min(factor.size() - 1, i));
 			}
 
-			if (textures.count(name)) return &textures[name];
-
+			// Create a single pixel texture based on the factor data provided
 			return &textures[name].Create()
 				   .Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-				   .Size(1, 1).Storage(PF_RGB8).Image2D(data);
+				   .Size(1, 1).Storage(PF_RGBA8).Image2D(data);
 		}
-		else
-		{
-			auto name = value.string_value;
-			if (textures.count(name)) return &textures[name];
 
-			auto texture = model->scene->textures[name];
-			auto img = model->scene->images[texture.source];
-
-			return &textures[name].Create(texture.target)
-				   .Filter(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, 4.0)
-				   .Wrap(GL_REPEAT, GL_REPEAT)
-				   .Size(img.width, img.height)
-				   .Storage(texture.internalFormat, texture.format, texture.type, Texture::FullyMipmap, true)
-				   .Image2D(img.image.data());
-		}
+		return NULL;
 	}
 }

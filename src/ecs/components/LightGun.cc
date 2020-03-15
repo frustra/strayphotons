@@ -1,7 +1,7 @@
 #include "ecs/components/LightGun.hh"
 #include "game/InputManager.hh"
 
-#include <tinygltfloader/picojson.h>
+#include <picojson/picojson.h>
 #include <assets/AssetHelpers.hh>
 
 namespace ecs

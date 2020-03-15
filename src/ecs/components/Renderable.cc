@@ -1,7 +1,7 @@
 #include "ecs/components/Renderable.hh"
 
 #include <ecs/Components.hh>
-#include <tinygltfloader/picojson.h>
+#include <picojson/picojson.h>
 #include <assets/AssetManager.hh>
 #include <assets/AssetHelpers.hh>
 #include <core/Logging.hh>

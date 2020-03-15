@@ -475,7 +475,7 @@ namespace sp
 			auto sceneGS = GlobalShaders->Get<SceneGS>();
 			auto sceneFS = GlobalShaders->Get<SceneFS>();
 
-			sceneGS->SetParams(forwardPassView, {});
+			sceneGS->SetParams(forwardPassView, {}, {});
 
 			int recursion = mirrorCount ? std::min(MAX_MIRROR_RECURSION, CVarMirrorRecursion.Get()) : 0;
 
@@ -736,7 +736,7 @@ namespace sp
 			addLine(view, vertices, PxVec3ToGlmVec3P(line.pos0), PxVec3ToGlmVec3P(line.pos1), 0.004f);
 		}
 
-		shader->SetParams(view, glm::mat4());
+		shader->SetParams(view, glm::mat4(), glm::mat4());
 
 		static unsigned char baseColor[4] = { 0, 0, 255, 255 };
 		static BasicMaterial mat(baseColor);
@@ -746,8 +746,7 @@ namespace sp
 		vbo.BindVAO();
 
 		mat.baseColorTex.Bind(0);
-		mat.roughnessTex.Bind(1);
-		mat.metallicTex.Bind(2);
+		mat.metallicRoughnessTex.Bind(1);
 		mat.heightTex.Bind(3);
 
 		glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
@@ -767,8 +766,7 @@ namespace sp
 			return;
 		}
 
-		auto modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform(game->entityManager);
-		shader->SetParams(view, modelMat);
+		glm::mat4 modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform(game->entityManager);
 
 		if (preDraw) preDraw(ent);
 
@@ -776,7 +774,7 @@ namespace sp
 		{
 			comp->model->glModel = make_shared<GLModel>(comp->model.get());
 		}
-		comp->model->glModel->Draw();
+		comp->model->glModel->Draw(shader, modelMat, view);
 
 		if (ent.Has<ecs::Name>())
 		{
@@ -788,7 +786,7 @@ namespace sp
 				vector<SceneVertex> vertices(6);
 				addLine(view, vertices, lpos0, lpos1, 0.001f);
 
-				shader->SetParams(view, glm::mat4());
+				shader->SetParams(view, glm::mat4(), glm::mat4());
 				auto fragShader = GlobalShaders->Get<SceneFS>();
 				fragShader->SetEmissive(glm::vec3(10.0));
 
@@ -800,8 +798,7 @@ namespace sp
 				vbo.BindVAO();
 
 				mat.baseColorTex.Bind(0);
-				mat.roughnessTex.Bind(1);
-				mat.metallicTex.Bind(2);
+				mat.metallicRoughnessTex.Bind(1);
 				mat.heightTex.Bind(3);
 
 				glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
@@ -831,7 +828,7 @@ namespace sp
 			}
 		}
 
-		shader->SetParams(view, glm::mat4());
+		shader->SetParams(view, glm::mat4(), glm::mat4());
 
 		static unsigned char baseColor[4] = { 0, 255, 0, 255 };
 		static BasicMaterial mat(baseColor);
@@ -841,8 +838,7 @@ namespace sp
 		vbo.BindVAO();
 
 		mat.baseColorTex.Bind(0);
-		mat.roughnessTex.Bind(1);
-		mat.metallicTex.Bind(2);
+		mat.metallicRoughnessTex.Bind(1);
 		mat.heightTex.Bind(3);
 
 		glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());

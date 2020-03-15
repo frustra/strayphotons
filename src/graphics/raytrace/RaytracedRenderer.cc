@@ -459,22 +459,31 @@ namespace sp
 			{
 				auto comp = ent.Get<ecs::Renderable>();
 				// TODO(?): Use a more generic interface of some sort, Not all renderables have a scene.
-				tinygltf::Scene *scene = NULL;//comp->model->GetScene();
-				for (auto &it : scene->materials)
+				tinygltf::Model *model = NULL;//comp->model->GetScene();
+
+				// No iterator here so we have the material index
+				for (int i = 0; i < model->materials.size(); i++)
 				{
-					auto material = it.second;
-					auto key = comp->model->name + it.first;
+					tinygltf::Material &material = model->materials[i];
+					auto key = comp->model->name + std::to_string(i);
 
 					if (ctx.materials.find(key) == ctx.materials.end())
 					{
-						auto baseColorName = material.values["diffuse"].string_value;
-						if (baseColorName == "")
+						int baseColorIndex = material.pbrMetallicRoughness.baseColorTexture.index;
+						if (baseColorIndex == -1)
 							continue;
 
 						MaterialInfo info;
-						info.baseColorTex = &scene->textures[baseColorName];
-						info.baseColorImg = &scene->images[info.baseColorTex->source];
+						info.baseColorTex = &model->textures[baseColorIndex];
+						info.baseColorImg = &model->images[info.baseColorTex->source];
 
+						// PR COMMENT
+						// @jwirth: GLTF2.0 does not contain specular materials.
+						// This appears to be special-case code that can use either
+						// "roughness" or "specular" textures as part of a material.
+						// Since only "roughness" is supported in GLTF2.0, it seems fine
+						// to remove this code.
+						/*
 						auto roughnessName = material.values["specular"].string_value;
 						if (roughnessName != "")
 						{
@@ -482,45 +491,45 @@ namespace sp
 							info.roughnessImg = &scene->images[info.roughnessTex->source];
 							info.roughnessInverted = true;
 						}
+						*/
 
-						roughnessName = material.values["roughness"].string_value;
-						if (roughnessName != "")
+						// TODO: needs to be reworked to accept combined metallicRoughtness textures
+						int roughnessIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
+						if (roughnessIndex != -1)
 						{
-							info.roughnessTex = &scene->textures[roughnessName];
-							info.roughnessImg = &scene->images[info.roughnessTex->source];
+							info.roughnessTex = &model->textures[roughnessIndex];
+							info.roughnessImg = &model->images[info.roughnessTex->source];
 							info.roughnessInverted = false;
 						}
 						else
 						{
-							auto roughnessVal = material.values["roughness"].number_array;
-							if (roughnessVal.size())
-							{
-								info.roughness = roughnessVal[0];
-							}
+							info.roughness = material.pbrMetallicRoughness.roughnessFactor;
 						}
 
-						auto metalnessName = material.values["metal"].string_value;
-						if (metalnessName != "")
+						// TODO: needs to be reworked to accept combined metallicRoughtness textures
+						int metalnessIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
+						if (metalnessIndex != -1)
 						{
-							info.metalnessTex = &scene->textures[metalnessName];
-							info.metalnessImg = &scene->images[info.metalnessTex->source];
+							info.metalnessTex = &model->textures[metalnessIndex];
+							info.metalnessImg = &model->images[info.metalnessTex->source];
 						}
 						else
 						{
-							auto metalnessVal = material.values["metal"].number_array;
-							if (metalnessVal.size())
-							{
-								info.metalness = metalnessVal[0];
-							}
+							info.metalness = material.pbrMetallicRoughness.metallicFactor;
 						}
 
-						auto normalName = material.values["normal"].string_value;
-						if (normalName != "")
+						int normalIndex = material.normalTexture.index;
+						if (normalIndex != -1)
 						{
-							info.normalTex = &scene->textures[normalName];
-							info.normalImg = &scene->images[info.normalTex->source];
+							info.normalTex = &model->textures[normalIndex];
+							info.normalImg = &model->images[info.normalTex->source];
 						}
 
+						
+						// PR COMMENT
+						// @jwirth: GLTF2.0 has a recommended way of calculating f0
+						// which can be found here:
+						// https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#metallic-roughness-material
 						auto f0 = material.values["f0"].number_array;
 						for (size_t i = 0; i < 3 && i < f0.size(); i++)
 						{
@@ -583,51 +592,27 @@ namespace sp
 				auto ntex = mat.normalTex;
 				uint8 *ndata = nimg ? nimg->image.data() : nullptr;
 
-				Assert(bctex->target == GL_TEXTURE_2D, "assertion failed");
-				int bcstride = 0, rstride = 0, mstride = 0, nstride = 0;
+				int bcstride = bcimg->component;
+				int rstride = 0, mstride = 0, nstride = 0;
 
-				if (bctex->format == GL_RGBA)
+				Assert(bcstride == 3 || bcstride == 4, "must be RGB or RGBA image");
+
+				if (rimg)
 				{
-					Assert(bctex->internalFormat == GL_RGBA || bctex->internalFormat == GL_RGBA8, "assertion failed");
-					bcstride = 4;
-				}
-				else
-				{
-					Assert(bctex->format == GL_RGB, "assertion failed");
-					Assert(bctex->internalFormat == GL_RGB || bctex->internalFormat == GL_RGB8, "assertion failed");
-					bcstride = 3;
+					rstride = rimg->component;
 				}
 
-				if (rtex)
+				if (mimg)
 				{
-					Assert(rtex->target == GL_TEXTURE_2D, "assertion failed");
-					if (rtex->format == GL_RED)
-						rstride = 1;
-					else if (rtex->format == GL_RGB)
-						rstride = 3;
-					else if (rtex->format == GL_RGBA)
-						rstride = 4;
+					mstride = mimg->component;
 				}
 
-				if (mtex)
+				if (nimg)
 				{
-					Assert(mtex->target == GL_TEXTURE_2D, "assertion failed");
-					if (mtex->format == GL_RED)
-						mstride = 1;
-					else if (mtex->format == GL_RGB)
-						mstride = 3;
-					else if (mtex->format == GL_RGBA)
-						mstride = 4;
-				}
+					Assert(nimg->bits == GL_UNSIGNED_BYTE, "normal image must be unsigned byte");
 
-				if (ntex)
-				{
-					Assert(ntex->target == GL_TEXTURE_2D, "assertion failed");
-					Assert(ntex->type == GL_UNSIGNED_BYTE, "assertion failed");
-					if (ntex->format == GL_RGB)
-						nstride = 3;
-					else if (ntex->format == GL_RGBA)
-						nstride = 4;
+					nstride = nimg->component;
+					Assert(nstride == 3 || nstride == 4, "must be RGB or RGBA image");
 				}
 
 				auto pixelCount = bcimg->width * bcimg->height;

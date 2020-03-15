@@ -4,8 +4,8 @@
 #include <Ecs.hh>
 #include "physx/PhysxManager.hh"
 #include "graphics/Texture.hh"
-#include <tiny_gltf_loader.h>
-#include <tinygltfloader/picojson.h>
+#include <tiny_gltf.h>
+#include <picojson/picojson.h>
 
 #include <unordered_map>
 #include <string>
@@ -29,6 +29,12 @@ namespace sp
 		bool InputStream(const std::string &path, std::ifstream &stream, size_t *size = nullptr);
 		bool OutputStream(const std::string &path, std::ofstream &stream);
 
+		// TinyGLTF filesystem functions
+		bool ReadWholeFile(std::vector<unsigned char> *out, std::string *err,
+                   		   const std::string &path, void *user_data);
+		bool FileExists(const std::string &abs_filename, void *user_data);
+		std::string ExpandFilePath(const std::string &filepath, void *user_data);
+
 		shared_ptr<Asset> Load(const std::string &path);
 		Texture LoadTexture(const std::string &path, GLsizei levels = Texture::FullyMipmap);
 		shared_ptr<Model> LoadModel(const std::string &name);
@@ -46,7 +52,8 @@ namespace sp
 		ModelMap loadedModels;
 		TarIndex tarIndex;
 
-		tinygltf::TinyGLTFLoader gltfLoader;
+		tinygltf::TinyGLTF gltfLoader;
+		tinygltf::FsCallbacks fs;
 	};
 
 	extern AssetManager GAssets;

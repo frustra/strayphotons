@@ -7,7 +7,7 @@
 #include "physx/PhysxUtils.hh"
 
 #include "Ecs.hh"
-#include <tinygltfloader/picojson.h>
+#include <picojson/picojson.h>
 #include <assets/AssetHelpers.hh>
 
 namespace ecs

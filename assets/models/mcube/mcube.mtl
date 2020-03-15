@@ -2,10 +2,14 @@
 # Material Count: 1
 
 newmtl Material.001
+map_Kd Material.001_Base_Color.png
+map_Bump Material.001_Height.png
+map_Ks Material.001_Metallic.png
+map_Ns Material.001_Roughness.png
 Ns 96.078431
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
-Ks 0.500000 0.500000 0.500000
+Ks 1.000000 1.000000 1.000000
 Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000

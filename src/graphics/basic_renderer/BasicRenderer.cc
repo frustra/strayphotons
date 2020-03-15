@@ -21,7 +21,7 @@ namespace sp
 	{
 		for (auto primitive : comp->model->primitives)
 		{
-			auto indexBuffer = comp->model->GetBuffer(primitive->indexBuffer.bufferName);
+			auto indexBuffer = comp->model->GetBuffer(primitive->indexBuffer.bufferIndex);
 
 			GLModel::Primitive glPrimitive;
 
@@ -36,7 +36,7 @@ namespace sp
 				auto *attr = &primitive->attributes[i];
 				if (attr->componentCount == 0) continue;
 
-				auto attribBuffer = comp->model->GetBuffer(attr->bufferName);
+				auto attribBuffer = comp->model->GetBuffer(attr->bufferIndex);
 				GLuint attribBufferHandle;
 				glGenBuffers(1, &attribBufferHandle);
 				glBindBuffer(GL_ARRAY_BUFFER, attribBufferHandle);

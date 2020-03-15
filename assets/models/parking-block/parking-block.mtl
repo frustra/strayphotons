@@ -2,6 +2,9 @@
 # Material Count: 1
 
 newmtl None
+map_Kd None_Base_Color.png
+map_Bump None_Height.png
+map_Ns None_Roughness.png
 Ns 0
 Ka 0.000000 0.000000 0.000000
 Kd 0.8 0.8 0.8

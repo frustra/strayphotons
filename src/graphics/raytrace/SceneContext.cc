@@ -14,7 +14,7 @@ namespace sp
 			mesh.trans = tr;
 			mesh.invtrans = glm::inverse(tr);
 
-			auto mat = materials.find(model->name + primitive->materialName);
+			auto mat = materials.find(model->name + std::to_string(primitive->materialIndex));
 
 			if (mat != materials.end())
 				mesh.materialID = mat->second.id;
@@ -23,7 +23,7 @@ namespace sp
 			Assert(idxAttrib.componentCount == 1, "assertion failed");
 			Assert(idxAttrib.components % 3 == 0, "assertion failed");
 
-			auto idxBuf = model->GetBuffer(idxAttrib.bufferName);
+			auto idxBuf = model->GetBuffer(idxAttrib.bufferIndex);
 			auto idxBufData = idxBuf.data() + idxAttrib.byteOffset;
 			auto idxStride = idxAttrib.byteStride;
 
@@ -63,14 +63,14 @@ namespace sp
 			Assert(posAttrib.componentCount == 3, "assertion failed");
 			Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "assertion failed");
 
-			auto posBuf = model->GetBuffer(posAttrib.bufferName);
+			auto posBuf = model->GetBuffer(posAttrib.bufferIndex);
 			auto posBufData = posBuf.data() + posAttrib.byteOffset;
 
 			auto normAttrib = primitive->attributes[1];
 			Assert(normAttrib.componentCount == 3, "assertion failed");
 			Assert(normAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "assertion failed");
 
-			auto normBuf = model->GetBuffer(normAttrib.bufferName);
+			auto normBuf = model->GetBuffer(normAttrib.bufferIndex);
 			auto normBufData = normBuf.data() + normAttrib.byteOffset;
 
 			Assert(normAttrib.components == posAttrib.components, "assertion failed");
@@ -83,7 +83,7 @@ namespace sp
 				Assert(uvAttrib.componentCount == 2, "assertion failed");
 				Assert(uvAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "assertion failed");
 
-				auto uvBuf = model->GetBuffer(uvAttrib.bufferName);
+				auto uvBuf = model->GetBuffer(uvAttrib.bufferIndex);
 				uvBufData = uvBuf.data() + uvAttrib.byteOffset;
 
 				Assert(uvAttrib.components == posAttrib.components, "assertion failed");

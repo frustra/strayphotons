@@ -2,7 +2,7 @@
 #include "ecs/components/Animation.hh"
 #include "ecs/components/Transform.hh"
 
-#include <tinygltfloader/picojson.h>
+#include <picojson/picojson.h>
 #include <assets/AssetHelpers.hh>
 
 namespace ecs

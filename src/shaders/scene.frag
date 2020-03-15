@@ -5,8 +5,8 @@
 ##import lib/mirror_scene_common
 
 layout (binding = 0) uniform sampler2D baseColorTex;
-layout (binding = 1) uniform sampler2D roughnessTex;
-layout (binding = 2) uniform sampler2D metallicTex;
+layout (binding = 1) uniform sampler2D metallicRoughnessTex;
+// binding 2  = unused
 layout (binding = 3) uniform sampler2D heightTex;
 layout (binding = 4) uniform usampler2D inMirrorIndexStencil;
 
@@ -58,8 +58,8 @@ void main()
 	vec4 baseColor = texture(baseColorTex, inTexCoord);
 	if (baseColor.a < 0.5) discard;
 
-	float roughness = texture(roughnessTex, inTexCoord).r;
-	float metallic = texture(metallicTex, inTexCoord).r;
+	float roughness = texture(metallicRoughnessTex, inTexCoord).g;
+	float metallic = texture(metallicRoughnessTex, inTexCoord).b;
 
 #ifdef BUMP_MAP_ENABLED
 	vec2 dCoord = 1.0 / textureSize(heightTex, 0);

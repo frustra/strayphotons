@@ -1,7 +1,7 @@
 #include "ecs/components/SignalReceiver.hh"
 #include "ecs/events/SignalChange.hh"
 
-#include <tinygltfloader/picojson.h>
+#include <picojson/picojson.h>
 #include <assets/AssetHelpers.hh>
 
 namespace ecs

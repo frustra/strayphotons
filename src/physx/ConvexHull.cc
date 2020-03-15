@@ -38,13 +38,13 @@ namespace sp
 		Assert(prim->drawMode == GL_TRIANGLES, "primitive draw mode must be triangles");
 		Assert(indexAttrib.componentCount == 1, "index buffer must be a single component");
 
-		set->bufferNames.insert(posAttrib.bufferName);
-		set->bufferNames.insert(indexAttrib.bufferName);
+		set->bufferIndexes.insert(posAttrib.bufferIndex);
+		set->bufferIndexes.insert(indexAttrib.bufferIndex);
 
-		auto pbuffer = model->GetBuffer(posAttrib.bufferName);
+		auto pbuffer = model->GetBuffer(posAttrib.bufferIndex);
 		auto points = (const float *)(pbuffer.data() + posAttrib.byteOffset);
 
-		auto ibuffer = model->GetBuffer(indexAttrib.bufferName);
+		auto ibuffer = model->GetBuffer(indexAttrib.bufferIndex);
 		auto indices = (const int *)(ibuffer.data() + indexAttrib.byteOffset);
 		int *indicesCopy = nullptr;
 
@@ -158,13 +158,13 @@ namespace sp
 		Assert(prim->drawMode == GL_TRIANGLES, "primitive draw mode must be triangles");
 		Assert(indexAttrib.componentCount == 1, "index buffer must be a single component");
 
-		set->bufferNames.insert(posAttrib.bufferName);
-		set->bufferNames.insert(indexAttrib.bufferName);
+		set->bufferIndexes.insert(posAttrib.bufferIndex);
+		set->bufferIndexes.insert(indexAttrib.bufferIndex);
 
-		auto pbuffer = model->GetBuffer(posAttrib.bufferName);
+		auto pbuffer = model->GetBuffer(posAttrib.bufferIndex);
 		auto points = pbuffer.data() + posAttrib.byteOffset;
 
-		auto ibuffer = model->GetBuffer(indexAttrib.bufferName);
+		auto ibuffer = model->GetBuffer(indexAttrib.bufferIndex);
 		auto indices = ibuffer.data() + indexAttrib.byteOffset;
 
 		std::unordered_set<glm::ivec3> visitedPoints;
@@ -189,7 +189,10 @@ namespace sp
 			}
 
 			auto tri = (float *) (points + index * posAttrib.byteStride);
-			glm::ivec3 lowResPoint({tri[0] * 1e6, tri[1] * 1e6, tri[2] * 1e6});
+
+			glm::vec4 temp({tri[0], tri[1], tri[2], 1.0});
+			temp = prim->matrix * temp;
+			glm::ivec3 lowResPoint({temp.x * 1e6, temp.y * 1e6, temp.z * 1e6});
 
 			if (visitedIndexes.count(index))
 				continue;
@@ -200,7 +203,7 @@ namespace sp
 				continue;
 
 			visitedPoints.insert(lowResPoint);
-			finalPoints.push_back({tri[0], tri[1], tri[2]});
+			finalPoints.push_back({temp.x, temp.y, temp.z});
 		}
 
 		btConvexHullComputer chc;

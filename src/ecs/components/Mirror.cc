@@ -1,7 +1,7 @@
 #include "ecs/components/Mirror.hh"
 
 #include <ecs/Components.hh>
-#include <tinygltfloader/picojson.h>
+#include <picojson/picojson.h>
 #include <assets/AssetHelpers.hh>
 
 namespace ecs

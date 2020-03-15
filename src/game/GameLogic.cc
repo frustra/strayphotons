@@ -61,7 +61,7 @@ namespace sp
 	static CVar<int> CVarFlashlightResolution("r.FlashlightResolution", 512, "Flashlight shadow map resolution");
 	static CVar<float> CVarSunPosition("g.SunPosition", 0.2, "Sun angle");
 
-	static CVar<bool> CVarConnectVR("r.ConnectVR", true, "Connect to SteamVR");
+	static CVar<bool> CVarConnectVR("r.ConnectVR", false, "Connect to SteamVR");
 
 	void GameLogic::InitXrActions()
 	{

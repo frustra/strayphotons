@@ -10,8 +10,8 @@
 ##import lib/types_common
 
 layout (binding = 0) uniform sampler2D baseColorTex;
-// binding 1 = roughnessTex
-layout (binding = 2) uniform sampler2D metallicTex;
+layout (binding = 1) uniform sampler2D metallicRoughnessTex;
+// binding 3 = unused
 // binding 3 = heightTex
 layout (binding = 4) uniform sampler2D shadowMap;
 layout (binding = 5) uniform sampler2DArray mirrorShadowMap;
@@ -65,7 +65,7 @@ void main()
 	vec4 baseColor = texture(baseColorTex, inTexCoord);
 	if (baseColor.a < 0.5) discard;
 
-	float metalness = texture(metallicTex, inTexCoord).r;
+	float metalness = texture(metallicRoughnessTex, inTexCoord).b;
 
 	// Render each fragment 2 voxels deep along the dominant axis.
 	// This reduces holes in geometry and light leak for objects close to eachother.

@@ -12,11 +12,6 @@
 		{
 			"renderable": "sponza",
 			"transform": {
-				"scale": [
-					0.01,
-					0.01,
-					0.01
-				],
 				"rotate": [
 					-90,
 					0,
@@ -27,6 +22,11 @@
 					0,
 					-1,
 					0
+				],
+				"scale": [
+					1.25,
+					1.25,
+					1.25
 				]
 			}
 		},
@@ -375,7 +375,18 @@
 			}
 		},
 		{
+			"_name": "sponza-physics",
 			"transform": {
+				"scale": [
+					1,
+					1,
+					1
+				]
+			}
+		},
+		{
+			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.7,
 					10,
@@ -394,6 +405,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.7,
 					10,
@@ -412,6 +424,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.7,
 					10,
@@ -430,6 +443,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.7,
 					10,
@@ -448,6 +462,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.7,
 					10,
@@ -466,6 +481,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.7,
 					10,
@@ -484,6 +500,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.7,
 					10,
@@ -502,6 +519,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.7,
 					10,
@@ -520,6 +538,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.2,
 					3,
@@ -538,6 +557,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					1,
 					1.4,
@@ -556,6 +576,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.4,
 					4,
@@ -574,6 +595,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.2,
 					3,
@@ -592,6 +614,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					1,
 					1.4,
@@ -610,6 +633,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.4,
 					4,
@@ -628,6 +652,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.2,
 					3,
@@ -646,6 +671,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					1,
 					1.4,
@@ -664,6 +690,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.4,
 					4,
@@ -682,6 +709,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.2,
 					3,
@@ -700,6 +728,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					1,
 					1.4,
@@ -718,6 +747,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.4,
 					4,
@@ -736,6 +766,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.2,
 					3,
@@ -754,6 +785,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					1,
 					1.4,
@@ -772,6 +804,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.4,
 					4,
@@ -790,6 +823,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.2,
 					3,
@@ -808,6 +842,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					1,
 					1.4,
@@ -826,6 +861,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.4,
 					4,
@@ -844,6 +880,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.2,
 					3,
@@ -862,6 +899,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					1,
 					1.4,
@@ -880,6 +918,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.4,
 					4,
@@ -898,6 +937,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.2,
 					3,
@@ -916,6 +956,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					1,
 					1.4,
@@ -934,6 +975,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.4,
 					4,
@@ -952,6 +994,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.2,
 					3,
@@ -970,6 +1013,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					1,
 					1.4,
@@ -988,6 +1032,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.4,
 					4,
@@ -1006,6 +1051,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.2,
 					3,
@@ -1024,6 +1070,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					1,
 					1.4,
@@ -1042,6 +1089,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.4,
 					4,
@@ -1060,6 +1108,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					5.75,
 					1.4,
@@ -1078,6 +1127,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					1,
 					10,
@@ -1096,6 +1146,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					1,
 					10,
@@ -1114,6 +1165,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.4,
 					4,
@@ -1132,6 +1184,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					12,
 					0.5,
@@ -1150,6 +1203,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					12,
 					10,
@@ -1168,6 +1222,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					5.75,
 					1.4,
@@ -1186,6 +1241,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					1,
 					10,
@@ -1204,6 +1260,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					1,
 					10,
@@ -1222,6 +1279,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.4,
 					4,
@@ -1240,6 +1298,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					12,
 					0.5,
@@ -1258,6 +1317,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					12,
 					10,
@@ -1276,6 +1336,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					3.2,
 					0.5,
@@ -1294,6 +1355,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.5,
 					10,
@@ -1312,6 +1374,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					3.2,
 					0.5,
@@ -1330,6 +1393,7 @@
 		},
 		{
 			"transform": {
+				"parent": "sponza-physics",
 				"scale": [
 					0.5,
 					10,

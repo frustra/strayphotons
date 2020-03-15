@@ -22,3 +22,16 @@ packageRelease:
       long: Build for Packaged Release Workflow
       settings: 
         SP_PACKAGE_RELEASE: on
+buildModels:
+  default: yes
+  choices:
+    yes:
+      short: Build Models
+      long: Run the model compile workflow when a model file changes. Requires Node.js
+      settings: 
+        SP_NO_MODEL_COMPILE: off
+    no:
+      short: Do Not Build Models
+      long: Don't run the model compiler if a model has changed. Don't check in uncompiled models!
+      settings: 
+        SP_NO_MODEL_COMPILE: on

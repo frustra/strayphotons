@@ -5,13 +5,15 @@ namespace sp
 	SceneShader::SceneShader(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 	{
 		Bind(modelMat, "model");
+		Bind(primitiveMat, "primitive");
 		Bind(viewMat, "view");
 		Bind(projMat, "projection");
 	}
 
-	void SceneShader::SetParams(const ecs::View &view, glm::mat4 modelMat)
+	void SceneShader::SetParams(const ecs::View &view, glm::mat4 modelMat, glm::mat4 primitiveMat)
 	{
 		Set(this->modelMat, modelMat);
+		Set(this->primitiveMat, primitiveMat);
 		Set(viewMat, view.viewMat);
 		Set(projMat, view.projMat);
 	}

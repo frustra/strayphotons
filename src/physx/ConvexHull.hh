@@ -21,7 +21,7 @@ namespace sp
 	struct ConvexHullSet
 	{
 		vector<ConvexHull> hulls;
-		std::unordered_set<string> bufferNames;
+		std::unordered_set<int> bufferIndexes;
 		bool decomposed;
 	};
 

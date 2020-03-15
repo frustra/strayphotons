@@ -2,7 +2,7 @@
 
 #include "Common.hh"
 #include <glm/glm.hpp>
-#include <tinygltfloader/picojson.h>
+#include <picojson/picojson.h>
 
 namespace sp
 {

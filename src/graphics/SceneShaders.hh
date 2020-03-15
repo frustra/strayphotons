@@ -15,10 +15,10 @@ namespace sp
 	{
 	public:
 		SceneShader(shared_ptr<ShaderCompileOutput> compileOutput);
-		void SetParams(const ecs::View &view, glm::mat4 modelMat);
+		void SetParams(const ecs::View &view, glm::mat4 modelMat, glm::mat4 primitiveMat);
 
 	private:
-		Uniform modelMat, viewMat, projMat;
+		Uniform modelMat, primitiveMat, viewMat, projMat;
 	};
 
 	class SceneVS : public SceneShader

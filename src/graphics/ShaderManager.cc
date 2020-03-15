@@ -66,6 +66,9 @@ namespace sp
 
 	shared_ptr<ShaderCompileOutput> ShaderManager::CompileShader(ShaderCompileInput &input)
 	{
+		// Call glGetError() to ensure we have a clean GL error state
+		glGetError();
+
 		auto sourceStr = input.source.c_str();
 		GLuint program = glCreateShaderProgramv(input.shaderType->GLStage(), 1, &sourceStr);
 		Assert(program, "failed to create shader program");

@@ -5,9 +5,10 @@
 #include "graphics/Texture.hh"
 #include "graphics/Buffer.hh"
 #include "graphics/VertexBuffer.hh"
+#include "graphics/SceneShaders.hh"
 
 #include <array>
-#include <tiny_gltf_loader.h>
+#include <tinygltf/tiny_gltf.h>
 
 namespace sp
 {
@@ -16,21 +17,30 @@ namespace sp
 
 	typedef std::array<uint32, 4> Hash128;
 
+	enum TextureType {
+		BaseColor,
+		MetallicRoughness,
+		Height,
+		Occlusion,
+		Emissive,
+	};
+
 	class Model : public NonCopyable
 	{
 		friend GLModel;
 	public:
 		Model(const string &name) : name(name) { }
-		Model(const string &name, shared_ptr<Asset> asset, shared_ptr<tinygltf::Scene> scene);
+		Model(const string &name, shared_ptr<Asset> asset, shared_ptr<tinygltf::Model> model);
 		virtual ~Model();
 
 		struct Attribute
 		{
-			size_t byteOffset, byteStride;
+			size_t byteOffset;
+			int byteStride;
 			int componentType;
 			size_t componentCount;
 			size_t components;
-			string bufferName;
+			int bufferIndex;
 		};
 
 		struct Primitive
@@ -38,7 +48,7 @@ namespace sp
 			glm::mat4 matrix;
 			int drawMode;
 			Attribute indexBuffer;
-			string materialName;
+			int materialIndex;
 			Attribute attributes[3];
 		};
 
@@ -46,14 +56,14 @@ namespace sp
 		shared_ptr<GLModel> glModel;
 		vector<Primitive *> primitives;
 
-		bool HasBuffer(string name);
-		vector<unsigned char> GetBuffer(string name);
-		Hash128 HashBuffer(string name);
+		bool HasBuffer(int index);
+		vector<unsigned char> GetBuffer(int index);
+		Hash128 HashBuffer(int index);
 
 	private:
-		void AddNode(string nodeName, glm::mat4 parentMatrix);
+		void AddNode(int nodeIndex, glm::mat4 parentMatrix);
 
-		shared_ptr<tinygltf::Scene> scene;
+		shared_ptr<tinygltf::Model> model;
 		shared_ptr<Asset> asset;
 	};
 
@@ -68,52 +78,45 @@ namespace sp
 			Model::Primitive *parent;
 			GLuint vertexBufferHandle;
 			GLuint indexBufferHandle;
-			Texture *baseColorTex, *roughnessTex, *metallicTex, *heightTex;
+			Texture *baseColorTex, *metallicRoughnessTex, *heightTex;
 		};
 
-		void Draw();
+		void Draw(SceneShader *shader, glm::mat4 modelMat, const ecs::View &view);
 		void AddPrimitive(Primitive prim);
 	private:
-		GLuint LoadBuffer(string name);
-		Texture *LoadTexture(string materialName, string type);
+		GLuint LoadBuffer(int index);
+		Texture *LoadTexture(int materialIndex, TextureType type);
 
 		Model *model;
-		std::map<string, GLuint> buffers;
-		std::map<string, Texture> textures;
+		std::map<int, GLuint> buffers;
+		std::map<std::string, Texture> textures;
 		vector<Primitive> primitives;
 	};
 
 	struct BasicMaterial
 	{
-		Texture baseColorTex, roughnessTex, metallicTex, heightTex;
+		Texture baseColorTex, metallicRoughnessTex, heightTex;
 
 		BasicMaterial(
 			unsigned char *baseColor = nullptr,
-			unsigned char *roughness = nullptr,
-			unsigned char *metallic = nullptr,
+			unsigned char *metallicRoughness = nullptr,
 			unsigned char *bump = nullptr)
 		{
 			unsigned char baseColorDefault[4] = { 255, 255, 255, 255 };
-			unsigned char roughnessDefault[4] = { 255, 255, 255, 255 };
-			unsigned char metallicDefault[4] = { 0, 0, 0, 0 };
+			unsigned char metallicRoughnessDefault[4] = { 0, 255, 0, 0 }; // Roughness = G channel, Metallic = B channel
 			unsigned char bumpDefault[4] = { 127, 127, 127, 255 };
 
 			if (!baseColor) baseColor = baseColorDefault;
-			if (!roughness) roughness = roughnessDefault;
-			if (!metallic) metallic = metallicDefault;
+			if (!metallicRoughness) metallicRoughness = metallicRoughnessDefault;
 			if (!bump) bump = bumpDefault;
 
 			baseColorTex.Create()
 			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
 			.Size(1, 1).Storage(PF_RGB8).Image2D(baseColor);
 
-			roughnessTex.Create()
+			metallicRoughnessTex.Create()
 			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_R8).Image2D(roughness);
-
-			metallicTex.Create()
-			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_R8).Image2D(metallic);
+			.Size(1, 1).Storage(PF_R8).Image2D(metallicRoughness);
 
 			heightTex.Create()
 			.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)

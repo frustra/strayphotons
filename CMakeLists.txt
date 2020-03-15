@@ -10,6 +10,7 @@ set(SP_VERSION_MINOR "${CMAKE_PROJECT_VERSION_MINOR}")
 set(SP_VERSION "${SP_VERSION_MAJOR}.${SP_VERSION_MINOR}")
 
 option(SP_PACKAGE_RELEASE "Build packaged release" off)
+option(SP_NO_MODEL_COMPILE "Disable the model compiler, which needs Node.js" off)
 
 if (CMAKE_BUILD_TYPE MATCHES Release)
 	message(STATUS "sp target is Release")
@@ -124,6 +125,8 @@ target_include_directories(
 
 add_subdirectory(src)
 
+add_subdirectory(assets)
+
 ## COMPILE DEFINITIONS ##
 
 if (SP_PACKAGE_RELEASE)
@@ -140,17 +143,8 @@ if (SP_PACKAGE_RELEASE)
 	# When adding entirely new assets, CMake will need
 	# to be re-run
 	set(_asset_filename assets.spdata)
-	file(GLOB_RECURSE _gltf_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}/assets" CONFIGURE_DEPENDS "assets/models/*.gltf")
-	file(GLOB_RECURSE _gltf_assets_full "assets/models/*.gltf")
-
-	file(GLOB_RECURSE _bin_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}/assets" CONFIGURE_DEPENDS "assets/models/*.bin")
-	file(GLOB_RECURSE _bin_assets_full "assets/models/*.bin")
-
-	file(GLOB_RECURSE _png_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}/assets" CONFIGURE_DEPENDS "assets/models/*.png")
-	file(GLOB_RECURSE _png_assets_full "assets/models/*.png")
-
-	file(GLOB_RECURSE _tga_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}/assets" CONFIGURE_DEPENDS "assets/models/*.tga")
-	file(GLOB_RECURSE _tga_assets_full "assets/models/*.tga")
+	file(GLOB_RECURSE _glb_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}/assets" CONFIGURE_DEPENDS "assets/models/*.glb")
+	file(GLOB_RECURSE _glb_assets_full "assets/models/*.glb")
 
 	file(GLOB_RECURSE _shaders_assets_full CONFIGURE_DEPENDS "src/shaders/*")
 
@@ -158,22 +152,27 @@ if (SP_PACKAGE_RELEASE)
 		COMMAND
 			${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/src/shaders ${CMAKE_CURRENT_LIST_DIR}/assets/shaders
 		COMMAND
-			${CMAKE_COMMAND} -E tar c ${PROJECT_OUTPUT_DIR}/${_asset_filename} -- cache fonts logos scenes textures shaders ${_gltf_assets} ${_bin_assets} ${_png_assets} ${_tga_assets}
+			${CMAKE_COMMAND} -E tar c ${PROJECT_OUTPUT_DIR}/${_asset_filename} -- cache fonts logos scenes textures shaders ${_glb_assets}
 		COMMAND
 			${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_LIST_DIR}/assets/shaders
 		OUTPUT
 			${PROJECT_OUTPUT_DIR}/${_asset_filename}
 		DEPENDS
-			${_gltf_assets_full}
-			${_bin_assets_full}
-			${_png_assets_full}
-			${_tga_assets_full}
+			${_glb_assets_full}
 			${_shaders_assets_full}
 		WORKING_DIRECTORY 
 			${CMAKE_CURRENT_LIST_DIR}/assets
 	)
 
 	add_custom_target(assets_tar DEPENDS ${PROJECT_OUTPUT_DIR}/${_asset_filename})
+
+	# Make the TAR generation depend on having up-to-date models
+	add_dependencies(assets_tar models)
+
+	# Make the TAR generation depend on having up-to-date models
+	add_dependencies(assets_tar compiled-scenes)
+
+	# Make the exe depend on having the tar
 	add_dependencies(${PROJECT_EXE} assets_tar)
 
 endif()
@@ -276,11 +275,12 @@ target_link_libraries(
 		microtar
 		murmurhash
 		robin_hood
-		tinygltfloader
+		tinygltf
 		glomerate
 		glm
 		cxxopts
 		OpenGL::GL
+		picojson
 )
 
 target_link_libraries(

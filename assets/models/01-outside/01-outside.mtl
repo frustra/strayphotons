@@ -2,40 +2,53 @@
 # Material Count: 4
 
 newmtl Brick
+map_Kd Brick_Base_Color.png
+map_Bump Brick_Height.png
+map_Ns Brick_Roughness.png
 Ns 96.078431
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
-Ks 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
 Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
 
 newmtl Concrete
+map_Kd Concrete_Base_Color.png
+map_Bump Concrete_Height.png
+map_Ns Concrete_Roughness.png
 Ns 96.078431
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
-Ks 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
 Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
 
 newmtl Pavement
+map_Kd Pavement_Base_Color.png
+map_Bump Pavement_Height.png
+map_Ks Pavement_Metallic.png
+map_Ns Pavement_Roughness.png
 Ns 96.078431
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
-Ks 0.500000 0.500000 0.500000
+Ks 1.000000 1.000000 1.000000
 Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
 
 newmtl Steps
+map_Kd Steps_Base_Color.png
+map_Bump Steps_Height.png
+map_Ns Steps_Roughness.png
 Ns 96.078431
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
-Ks 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
 Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000

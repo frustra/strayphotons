@@ -846,7 +846,8 @@ namespace sp
 		Unlock();
 	}
 
-	const uint32 hullCacheMagic = 0xc041;
+	// Increment if the Collision Cache format ever changes
+	const uint32 hullCacheMagic = 0xc042;
 
 	ConvexHullSet *PhysxManager::LoadCollisionCache(Model *model, bool decomposeHull)
 	{
@@ -870,7 +871,7 @@ namespace sp
 			in.read((char *)&bufferCount, 4);
 			Assert(bufferCount > 0, "hull cache buffer count");
 
-			char bufferName[256];
+			char bufferName[256] = {'\0'};
 
 			for (int i = 0; i < bufferCount; i++)
 			{
@@ -884,7 +885,9 @@ namespace sp
 				Hash128 hash;
 				in.read((char *)hash.data(), sizeof(hash));
 
-				if (!model->HasBuffer(name) || model->HashBuffer(name) != hash)
+				int bufferIndex = std::stoi(name);
+
+				if (!model->HasBuffer(bufferIndex) || model->HashBuffer(bufferIndex) != hash)
 				{
 					Logf("Ignoring outdated collision cache for %s", name);
 					in.close();
@@ -933,12 +936,13 @@ namespace sp
 		{
 			out.write((char *)&hullCacheMagic, 4);
 
-			int32 bufferCount = set->bufferNames.size();
+			int32 bufferCount = set->bufferIndexes.size();
 			out.write((char *)&bufferCount, 4);
 
-			for (auto bufferName : set->bufferNames)
+			for (int bufferIndex : set->bufferIndexes)
 			{
-				Hash128 hash = model->HashBuffer(bufferName);
+				Hash128 hash = model->HashBuffer(bufferIndex);
+				string bufferName = std::to_string(bufferIndex);
 				uint32 nameLen = bufferName.length();
 				Assert(nameLen <= 256, "hull cache buffer name too long on write");
 

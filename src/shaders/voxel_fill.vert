@@ -7,6 +7,7 @@ layout (location = 1) in vec3 inNormal;
 layout (location = 2) in vec2 inTexCoord;
 
 uniform mat4 model;
+uniform mat4 primitive;
 uniform mat4 view;
 uniform mat4 projection;
 
@@ -14,6 +15,6 @@ layout (location = 0) out vec2 outTexCoord;
 
 void main()
 {
-	gl_Position = view * model * vec4(inPos, 1.0);
+	gl_Position = view * model * primitive *  vec4(inPos, 1.0);
 	outTexCoord = inTexCoord;
 }
