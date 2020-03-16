@@ -1,0 +1,36 @@
+{
+    "default_bindings": [
+     {
+        "controller_type": "oculus_touch",
+        "binding_url": "sp_bindings_oculus_touch.json"
+     }
+    ], 
+    "actions": [
+      {
+        "name": "/actions/main/in/grab",
+        "requirement": "mandatory",
+        "type": "boolean"
+      },
+      {
+        "name": "/actions/main/in/teleport",
+        "requirement": "mandatory",
+        "type": "boolean"
+      }
+    ],
+    "action_sets": [
+      {
+        "name": "/actions/main",
+        "usage": "leftright"
+      }
+    ],
+    "localization" : [
+     {
+         "language_tag": "en_us",
+  
+          "/actions/main" : "Primary Actions",
+  
+          "/actions/main/in/grab" : "Grab",
+          "/actions/main/in/teleport" : "Teleport"
+      }
+    ]
+  }

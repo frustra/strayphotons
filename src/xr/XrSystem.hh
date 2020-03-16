@@ -39,20 +39,11 @@ namespace sp
 
 			virtual std::shared_ptr<XrCompositor> GetCompositor() = 0;
 
+			virtual std::shared_ptr<XrActionSet> GetActionSet(std::string setName) = 0;
+
 			virtual std::vector<TrackedObjectHandle> GetTrackedObjectHandles() = 0;
 
 			virtual std::shared_ptr<XrModel> GetTrackedObjectModel(const TrackedObjectHandle &handle) = 0;
-
-			// XrAction manipulation
-			// TODO: consider moving into a separate XrInteraction class
-
-			// This function does several things:
-			// - Reads and caches the state of the underlying XR runtime's input system
-			// - Populates all XrActions inside the action set with values
-			// If any XrActions within the action set cannot be populated, throws a std::runtime_error
-			virtual void SyncActions(XrActionSet &actionSet) = 0;
-
-			virtual void GetActionState(std::string actionName, XrActionSet &actionSet, std::string subpath = "") = 0;
 		};
 
 	} // namespace xr

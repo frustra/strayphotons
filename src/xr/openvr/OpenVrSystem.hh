@@ -2,7 +2,7 @@
 
 #include "xr/XrSystem.hh"
 #include "xr/openvr/OpenVrTrackingCompositor.hh"
-#include "xr/openvr/OpenVrInputSources.hh"
+#include "xr/openvr/OpenVrAction.hh"
 
 #include <openvr.h>
 
@@ -29,27 +29,18 @@ namespace sp
 
 			std::shared_ptr<XrCompositor> GetCompositor();
 
+			std::shared_ptr<XrActionSet> GetActionSet(std::string setName);
+
 			std::vector<TrackedObjectHandle> GetTrackedObjectHandles();
 
 			std::shared_ptr<XrModel> GetTrackedObjectModel(const TrackedObjectHandle &handle);
 
 			static vr::TrackedDeviceIndex_t GetOpenVrIndexFromHandle(vr::IVRSystem *vrs, const TrackedObjectHandle &handle);
 
-			void SyncActions(XrActionSet &actionSet);
-
-			void GetActionState(std::string actionName, XrActionSet &actionSet, std::string subpath = "");
-
-			std::string GetInteractionProfile();
-
-			bool GetInputSourceState(std::string inputSource);
-
-			std::shared_ptr<OpenVrInputSource> GetInteractionSourceFromManufacturer(vr::TrackedDeviceIndex_t deviceIndex);
-
 		private:
 			vr::IVRSystem *vrSystem;
 			std::shared_ptr<OpenVrTrackingCompositor> trackingCompositor;
-			vr::VRControllerState_t controllerState[2];
-			std::shared_ptr<OpenVrInputSource> inputSources[2];
+			std::map<std::string, std::shared_ptr<OpenVrActionSet>> actionSets;
 			char tempVrProperty[vr::k_unMaxPropertyStringSize];
 		};
 

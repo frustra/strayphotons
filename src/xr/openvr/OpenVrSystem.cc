@@ -13,9 +13,12 @@
 // System Headers
 #include <stdexcept>
 #include <thread>
+#include <filesystem>
+#include <memory>
 
 using namespace sp;
 using namespace xr;
+namespace fs = std::filesystem;
 
 OpenVrSystem::OpenVrSystem() :
 	vrSystem(nullptr)
@@ -53,6 +56,20 @@ void OpenVrSystem::Init()
 
 	// Initialize the tracking / compositor subsystem
 	trackingCompositor = make_shared<OpenVrTrackingCompositor>(vrSystem);
+
+	// Initialize SteamVR Input subsystem
+	fs::path cwd = fs::current_path();
+	cwd /= "actions.json";
+	cwd = fs::absolute(cwd);
+
+	std::string action_path = cwd.string();
+
+	vr::EVRInputError inputError = vr::VRInput()->SetActionManifestPath(action_path.c_str());
+
+	if (inputError != vr::EVRInputError::VRInputError_None)
+	{
+		throw std::runtime_error("Failed to init SteamVR input");
+	}
 }
 
 bool OpenVrSystem::IsInitialized()
@@ -85,6 +102,16 @@ std::shared_ptr<XrTracking> OpenVrSystem::GetTracking()
 std::shared_ptr<XrCompositor> OpenVrSystem::GetCompositor()
 {
 	return trackingCompositor;
+}
+
+std::shared_ptr<XrActionSet> OpenVrSystem::GetActionSet(std::string setName)
+{
+	if (actionSets.count(setName) == 0)
+	{
+		actionSets[setName] = make_shared<OpenVrActionSet>(setName, "A SteamVr Action Set");
+	}
+
+	return actionSets[setName];
 }
 
 std::vector<TrackedObjectHandle> OpenVrSystem::GetTrackedObjectHandles()
@@ -200,141 +227,4 @@ vr::TrackedDeviceIndex_t OpenVrSystem::GetOpenVrIndexFromHandle(vr::IVRSystem *v
 	}
 
 	return deviceIndex;
-}
-
-std::shared_ptr<OpenVrInputSource> OpenVrSystem::GetInteractionSourceFromManufacturer(vr::TrackedDeviceIndex_t deviceIndex)
-{
-	// Determine the manufacturer of this device.
-	// Potentially supported options: HTC, Oculus, Valve
-	vr::ETrackedPropertyError error;
-	vrSystem->GetStringTrackedDeviceProperty(deviceIndex, vr::Prop_ManufacturerName_String, tempVrProperty, vr::k_unMaxPropertyStringSize, &error);
-
-	if (strcmp(tempVrProperty, "Oculus") == 0)
-	{
-		Logf("Creating OculusInputSource");
-		return make_shared<OculusInputSource>();
-	}
-	else if (strcmp(tempVrProperty, "HTC") == 0)
-	{
-		Logf("Creating ViveInputSource");
-		return make_shared<ViveInputSource>();
-	}
-	else if (strcmp(tempVrProperty, "Valve") == 0)
-	{
-		Logf("Creating IndexInputSource");
-		return make_shared<IndexInputSource>();
-	}
-
-	// No input source...
-	Errorf("Failed to determine OpenVrInputSource for name: %s", tempVrProperty);
-	return std::shared_ptr<NullInputSource>();
-}
-
-void OpenVrSystem::SyncActions(XrActionSet &actionSet)
-{
-	vr::TrackedDeviceIndex_t deviceIndex = vr::k_unTrackedDeviceIndexInvalid;
-	deviceIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(vr::TrackedControllerRole_LeftHand);
-	if (deviceIndex != vr::k_unTrackedDeviceIndexInvalid)
-	{
-		if (!inputSources[0])
-		{
-			inputSources[0] = GetInteractionSourceFromManufacturer(deviceIndex);
-		}
-
-		vrSystem->GetControllerState(deviceIndex, &controllerState[0], sizeof(vr::VRControllerState_t));
-	}
-	else
-	{
-		inputSources[0].reset();
-	}
-
-	deviceIndex = vrSystem->GetTrackedDeviceIndexForControllerRole(vr::TrackedControllerRole_RightHand);
-	if (deviceIndex != vr::k_unTrackedDeviceIndexInvalid)
-	{
-		if (!inputSources[1])
-		{
-			inputSources[1] = GetInteractionSourceFromManufacturer(deviceIndex);
-		}
-
-		vrSystem->GetControllerState(deviceIndex, &controllerState[1], sizeof(vr::VRControllerState_t));
-	}
-	else
-	{
-		inputSources[1].reset();
-	}
-}
-
-void OpenVrSystem::GetActionState(std::string actionName, xr::XrActionSet &actionSet, std::string subpath)
-{
-	std::shared_ptr<XrActionBase> action = (actionSet.GetActionMap())[actionName];
-
-	// No subpath on this action. Nothing to sync
-	if (!action->HasSubpath(subpath))
-	{
-		return;
-	}
-
-	XrAction<XrActionType::Bool> *boolAction = dynamic_cast<XrAction<XrActionType::Bool>*>(action.get());
-
-	if (boolAction)
-	{
-		// Set edge_val to the "old" value
-		// This allows the edge detector to work out when we transition between states
-		boolAction->actionData[subpath].edge_val = boolAction->actionData[subpath].value;
-	}
-
-	action->Reset(subpath);
-
-	// TODO: requires rearchitechting to fix this.
-	// Since this is mostly throw away, just use controller 0's profile for now.
-	std::string interactionProfile = inputSources[0]->GetInteractionProfile();
-
-	for (std::string binding : action->GetSuggestedBindings()[interactionProfile])
-	{
-		if (starts_with(binding, subpath))
-		{
-			if (boolAction)
-			{
-				boolAction->actionData[subpath].value |= GetInputSourceState(binding);
-			}
-		}
-	}
-}
-
-std::string OpenVrSystem::GetInteractionProfile()
-{
-	return "/interaction_profiles/oculus/touch_controller";
-}
-
-bool OpenVrSystem::GetInputSourceState(std::string inputSourcePath)
-{
-	vr::VRControllerState_t *state;
-	std::shared_ptr<OpenVrInputSource> inputSource;
-	string prefix;
-
-	// IF OCULUS TOUCH CONTROLLER
-	if (starts_with(inputSourcePath, "/user/hand/left"))
-	{
-		prefix = "/user/hand/left/";
-		state = &controllerState[0];
-		inputSource = inputSources[0];
-	}
-	else if (starts_with(inputSourcePath, "/user/hand/right"))
-	{
-		prefix = "/user/hand/right/";
-		state = &controllerState[1];
-		inputSource = inputSources[1];
-
-	}
-	else
-	{
-		throw std::runtime_error("Unknown binding prefix");
-	}
-
-	if (inputSource)
-	{
-		return inputSource->GetInputSourceState(inputSourcePath, prefix, state);
-	}
-
-	return false;
 }

@@ -10,155 +10,130 @@
 
 namespace sp
 {
+namespace xr
+{
+	// Must match the OpenVR manifest files!
+	static const char* GameActionSet = "/actions/main";
+	static const char* GrabActionName = "/actions/main/in/grab";
+	static const char* TeleportActionName = "/actions/main/in/teleport";
 
-	namespace xr
+	static const char* SubpathLeftHand = "/user/hand/left";
+	static const char* SubpathRightHand = "/user/hand/right";
+	static const char* SubpathDefault = "/"; // TODO: correct?
+
+	// Mimicking OpenXr spec
+	enum XrActionType
 	{
+		Bool = 1,
+		Float = 2,
+		Vec2f = 3,
+		Pose = 4,
+	};
 
-		// Mimicking OpenXr spec
-		enum XrActionType
+	template <XrActionType T>
+	class XrActionDataType
+	{
+	};
+
+	template <>
+	class XrActionDataType<XrActionType::Bool>
+	{
+	public:
+		XrActionDataType() : value(false), edge_val(false) {};
+		XrActionDataType(bool init) : value(init), edge_val(false) {};
+		void Reset()
 		{
-			Bool = 1,
-			Float = 2,
-			Vec2f = 3,
-			Pose = 4,
-		};
+			value = false;    // Don't reset edge_val during reset!
+		}
+		bool value; // Actual current action value
+		bool edge_val; // Previous action value
+	};
 
-		template <XrActionType T>
-		class XrActionDataType
+	template <>
+	class XrActionDataType<XrActionType::Float>
+	{
+		XrActionDataType() : value(0.0f) {};
+		XrActionDataType(float init) : value(init) {};
+		void Reset()
 		{
-		};
+			value = 0.0f;
+		}
+		float value;
+	};
 
-		template <>
-		class XrActionDataType<XrActionType::Bool>
+	template <>
+	class XrActionDataType<XrActionType::Vec2f>
+	{
+		void Reset()
 		{
-		public:
-			XrActionDataType() : value(false), edge_val(false) {};
-			XrActionDataType(bool init) : value(init), edge_val(false) {};
-			void Reset()
-			{
-				value = false;    // Don't reset edge_val during reset!
-			}
-			bool value; // Actual current action value
-			bool edge_val; // Previous action value
-		};
+			value = glm::vec2();
+		}
+		glm::vec2 value;
+	};
 
-		template <>
-		class XrActionDataType<XrActionType::Float>
+	template <>
+	class XrActionDataType<XrActionType::Pose>
+	{
+		void Reset()
 		{
-			XrActionDataType() : value(0.0f) {};
-			XrActionDataType(float init) : value(init) {};
-			void Reset()
-			{
-				value = 0.0f;
-			}
-			float value;
-		};
+			value = glm::mat4();
+		}
+		glm::mat4 value;
+	};
 
-		template <>
-		class XrActionDataType<XrActionType::Vec2f>
-		{
-			void Reset()
-			{
-				value = glm::vec2();
-			}
-			glm::vec2 value;
-		};
+	class XrAction
+	{
+	public:
+		XrAction(std::string name, XrActionType type);
 
-		template <>
-		class XrActionDataType<XrActionType::Pose>
-		{
-			void Reset()
-			{
-				value = glm::mat4();
-			}
-			glm::mat4 value;
-		};
+		void Reset();
 
-		class XrActionBase
-		{
-		public:
-			XrActionBase(std::string name, XrActionType type);
+		void AddSuggestedBinding(std::string interactionProfile, std::string path);
+		
+		std::map<std::string, std::vector<std::string>> &GetSuggestedBindings();
 
-			void AddSuggestedBinding(std::string interactionProfile, std::string path);
-			std::map<std::string, std::vector<std::string>> &GetSuggestedBindings()
-			{
-				return suggestedBindings;
-			};
+		std::string GetName();
 
-			std::string GetName()
-			{
-				return actionName;
-			};
-			XrActionType GetActionType()
-			{
-				return actionType;
-			};
+		XrActionType GetActionType();
 
-			virtual void Reset(std::string subpath) = 0;
+		// Boolean action manipulation
+		virtual bool GetBooleanActionValue(std::string subpath) = 0;
 
-			virtual void AddSubactionPath(std::string subactionPath) = 0;
+		// Returns true if the boolean action transitioned from false to true
+		// during this update loop
+		virtual bool GetRisingEdgeActionValue(std::string subpath) = 0;
 
-			virtual bool HasSubpath(std::string subpath) = 0;
+		// Returns true if the boolean action transitioned from true to false
+		// during this update loop
+		virtual bool GetFallingEdgeActionValue(std::string subpath) = 0;
 
-		protected:
-			// Map interaction profile name -> interaction paths
-			std::map<std::string, std::vector<std::string>> suggestedBindings;
-			std::string actionName;
-			XrActionType actionType;
-		};
+	protected:
+		// Map interaction profile name -> interaction paths
+		std::map<std::string, std::vector<std::string>> suggestedBindings;
+		std::string actionName;
+		XrActionType actionType;		
+	};
 
-		template <XrActionType T>
-		class XrAction : public XrActionBase
-		{
-		public:
-			XrAction(std::string name) : XrActionBase(name, T)
-			{
-				AddSubactionPath("");
-			};
+	class XrActionSet
+	{
+	public:
+		XrActionSet(std::string setName, std::string description);
 
-			void Reset(std::string subpath)
-			{
-				actionData[subpath].Reset();
-			};
+		virtual std::shared_ptr<XrAction> CreateAction(std::string name, XrActionType type) = 0;
 
-			void AddSubactionPath(std::string subactionPath)
-			{
-				actionData[subactionPath] = XrActionDataType<T>();
-			};
+		void AddAction(std::shared_ptr<XrAction> action);
 
-			bool HasSubpath(std::string subpath)
-			{
-				return (actionData.count(subpath) != 0);
-			};
+		std::map<std::string, std::shared_ptr<XrAction>> &GetActionMap();
 
-			std::map<std::string, XrActionDataType<T>> actionData;
-		};
+		std::shared_ptr<XrAction> GetAction(std::string name) { return registeredActions[name]; };
 
-		class XrActionSet
-		{
-		public:
-			XrActionSet(std::string setName, std::string description);
+		virtual void Sync() = 0;
 
-			void AddAction(std::shared_ptr<XrActionBase> action);
+	protected:
+		std::string actionSetName;
+		std::string actionSetDescription;
+		std::map<std::string, std::shared_ptr<XrAction>> registeredActions;
+	};
 
-			std::map<std::string, std::shared_ptr<XrActionBase>> &GetActionMap();
-
-			// Boolean action manipulation
-			bool GetBooleanActionValue(std::string actionName, std::string subpath = "");
-
-			// Returns true if the boolean action transitioned from false to true
-			// during this update loop
-			bool GetRisingEdgeActionValue(std::string actionName, std::string subpath = "");
-
-			// Returns true if the boolean action transitioned from true to false
-			// during this update loop
-			bool GetFallingEdgeActionValue(std::string actionName, std::string subpath = "");
-
-		protected:
-			std::string actionSetName;
-			std::string actionSetDescription;
-			std::map<std::string, std::shared_ptr<XrActionBase>> registeredActions;
-		};
-
-	} // Namespace xr
+} // Namespace xr
 } // Namespace sp

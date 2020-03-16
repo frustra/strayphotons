@@ -39,8 +39,7 @@ namespace sp
 		humanControlSystem(&game->entityManager, &game->physics),
 		lightGunSystem(&game->entityManager, &game->physics, this),
 		doorSystem(game->entityManager),
-		sunPos(0),
-		gameXrActions("game_actions", "The actions a user can take while playing the game")
+		sunPos(0)
 	{
 		funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
 		funcs.Register(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
@@ -50,8 +49,6 @@ namespace sp
 		funcs.Register(this, "g.CloseBarrier", "Close barrier by name", &GameLogic::CloseBarrier);
 		funcs.Register(this, "g.OpenDoor", "Open door by name", &GameLogic::OpenDoor);
 		funcs.Register(this, "g.CloseDoor", "Open door by name", &GameLogic::CloseDoor);
-
-		InitXrActions();
 	}
 
 	static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
@@ -61,12 +58,14 @@ namespace sp
 	static CVar<int> CVarFlashlightResolution("r.FlashlightResolution", 512, "Flashlight shadow map resolution");
 	static CVar<float> CVarSunPosition("g.SunPosition", 0.2, "Sun angle");
 
-	static CVar<bool> CVarConnectVR("r.ConnectVR", false, "Connect to SteamVR");
+	static CVar<bool> CVarConnectVR("r.ConnectVR", true, "Connect to SteamVR");
 
 	void GameLogic::InitXrActions()
 	{
+		gameActionSet = xrSystem->GetActionSet(xr::GameActionSet); 
+
 		// Create teleport action
-		std::shared_ptr<xr::XrAction<xr::XrActionType::Bool>> teleportAction(new xr::XrAction<xr::XrActionType::Bool>("teleport"));
+		std::shared_ptr<xr::XrAction> teleportAction = gameActionSet->CreateAction(xr::TeleportActionName, xr::XrActionType::Bool);
 
 		// Suggested bindings for Oculus Touch
 		teleportAction->AddSuggestedBinding("/interaction_profiles/oculus/touch_controller", "/user/hand/right/input/a/click");
@@ -77,13 +76,8 @@ namespace sp
 		// Suggested bindings for HTC Vive
 		teleportAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller", "/user/hand/right/input/trackpad/click");
 
-		// Tell the XR runtime we will want to be able to query this action on a per-hand basis
-		teleportAction->AddSubactionPath("/user/hand/right");
-
-		gameXrActions.AddAction(teleportAction);
-
 		// Create grab / interract action
-		std::shared_ptr<xr::XrAction<xr::XrActionType::Bool>> grabAction(new xr::XrAction<xr::XrActionType::Bool>("grab"));
+		std::shared_ptr<xr::XrAction> grabAction = gameActionSet->CreateAction(xr::GrabActionName, xr::XrActionType::Bool);
 
 		// Suggested bindings for Oculus Touch
 		grabAction->AddSuggestedBinding("/interaction_profiles/oculus/touch_controller", "/user/hand/left/input/squeeze/value");
@@ -96,12 +90,6 @@ namespace sp
 		// Suggested bindings for HTC Vive
 		grabAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller", "/user/hand/left/input/squeeze/click");
 		grabAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller", "/user/hand/right/input/squeeze/click");
-
-		// Tell the XR runtime we will want to be able to query this action on a per-hand basis
-		grabAction->AddSubactionPath("/user/hand/left");
-		grabAction->AddSubactionPath("/user/hand/right");
-
-		gameXrActions.AddAction(grabAction);
 	}
 
 	void GameLogic::Init(InputManager *inputManager, Script *startupScript)
@@ -290,7 +278,7 @@ namespace sp
 			{
 				auto vrOriginTransform = vrOrigin.Get<ecs::Transform>();
 
-				xrSystem->SyncActions(gameXrActions);
+				gameActionSet->Sync();
 
 				for (auto trackedObjectHandle : xrSystem->GetTrackedObjectHandles())
 				{
@@ -314,15 +302,15 @@ namespace sp
 
 								if (trackedObjectHandle.hand == xr::TrackedObjectHand::LEFT)
 								{
-									subpath = "/user/hand/left";
+									subpath = xr::SubpathLeftHand;
 								}
 								else if (trackedObjectHandle.hand == xr::TrackedObjectHand::RIGHT)
 								{
-									subpath = "/user/hand/right";
+									subpath = xr::SubpathRightHand;
 								}
 
-								xrSystem->GetActionState("teleport", gameXrActions, subpath);
-								if (gameXrActions.GetRisingEdgeActionValue("teleport", subpath))
+								// TODO: get XrAction handle instead of using str::string -> XrAction map
+								if (gameActionSet->GetAction(xr::TeleportActionName)->GetRisingEdgeActionValue(subpath))
 								{
 									Logf("Teleport on subpath %s", subpath);
 
@@ -344,13 +332,12 @@ namespace sp
 
 								auto interact = xrObject.Get<ecs::InteractController>();
 
-								xrSystem->GetActionState("grab", gameXrActions, subpath);
-								if (gameXrActions.GetRisingEdgeActionValue("grab", subpath))
+								if (gameActionSet->GetAction(xr::GrabActionName)->GetRisingEdgeActionValue(subpath))
 								{
 									Logf("grab on subpath %s", subpath);
 									interact->PickUpObject(xrObject);
 								}
-								else if (gameXrActions.GetFallingEdgeActionValue("grab", subpath))
+								else if (gameActionSet->GetAction(xr::GrabActionName)->GetFallingEdgeActionValue(subpath))
 								{
 									Logf("Let go on subpath %s", subpath);
 									if (interact->target)
@@ -533,6 +520,9 @@ namespace sp
 
 					viewEntities.push_back(viewEntity);
 				}
+
+				// TODO: test this re-initializes correctly
+				InitXrActions();
 			}
 		}
 		// CVar says XR should be disabled. Ensure xrSystem state matches.

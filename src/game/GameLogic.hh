@@ -52,8 +52,8 @@ namespace sp
 		ecs::Entity flashlight;
 		float sunPos;
 
-		shared_ptr<xr::XrSystem> xrSystem;
-		xr::XrActionSet gameXrActions;
+		std::shared_ptr<xr::XrSystem> xrSystem;
+		std::shared_ptr<xr::XrActionSet> gameActionSet;
 
 		bool xrTeleported = false;
 		bool xrGrabbed = false;
