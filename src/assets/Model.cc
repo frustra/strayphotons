@@ -2,6 +2,8 @@
 #include "assets/Asset.hh"
 #include "assets/Model.hh"
 #include "core/Logging.hh"
+#include "graphics/Renderer.hh"
+#include "graphics/GenericShaders.hh"
 
 #include <iostream>
 #include <fstream>
@@ -232,7 +234,7 @@ namespace sp
 		}
 	}
 
-	GLModel::GLModel(Model *model) : model(model)
+	GLModel::GLModel(Model *model, GraphicsContext *context) : model(model), context(context)
 	{
 		static BasicMaterial defaultMat;
 
@@ -433,30 +435,49 @@ namespace sp
 				Errorf("Failed to load image at index %d: invalid pixel bit width (%d)", texture.source, img.bits);
 			}
 
-			if (factor.size() > 0)
+			// if (factor.size() > 0)
+			// {
+			// 	if (type == GL_UNSIGNED_BYTE)
+			// 	{
+			// 		for(size_t i = 0; i < img.image.size(); i += img.component)
+			// 		{
+			// 			for(size_t j = 0; j < img.component; j++)
+			// 			{
+			// 				img.image.data()[i + j] *= factor.at(std::min(factor.size() - 1, j));
+			// 			}
+			// 		}
+			// 	}
+			// 	else
+			// 	{
+			// 		throw std::runtime_error("Scaling textures that are not GL_UNSIGNED_BYTE is not supported");
+			// 	}
+			// }
+
+			Texture *tex = &textures[name].Create()
+							.Filter(minFilter, magFilter, 4.0)
+							.Wrap(wrapS, wrapT)
+							.Size(img.width, img.height)
+							.Storage(GL_RGBA, format, type, Texture::FullyMipmap, false)//textureType == BaseColor)
+							.Image2D(img.image.data(), 0, 0, 0, 0, 0, false);
+
+			if (Renderer *r = dynamic_cast<Renderer *>(context))
 			{
-				if (type == GL_UNSIGNED_BYTE)
-				{
-					for(size_t i = 0; i < img.image.size(); i += img.component)
-					{
-						for(size_t j = 0; j < img.component; j++)
-						{
-							img.image.data()[i + j] *= factor.at(std::min(factor.size() - 1, j));
-						}
-					}
-				}
-				else
-				{
-					throw std::runtime_error("Scaling textures that are not GL_UNSIGNED_BYTE is not supported");
-				}
+				r->GlobalShaders->Get<TextureFactorCS>()->SetFactor(std::min(img.component, (int) factor.size()), factor.data());
+				tex->BindImageConvert(0, GLPixelFormat::PixelFormatMapping(PF_RGBA8), GL_READ_WRITE);
+
+				r->ShaderControl->BindPipeline<TextureFactorCS>();
+				// Divide image size by 16 work grounds, rounding up.
+				glDispatchCompute((img.width + 15) / 16, (img.height + 15) / 16, 1);
+				glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+			}
+			else
+			{
+				throw std::runtime_error("Scaling textures is not supported");
 			}
 
-			return &textures[name].Create()
-				   .Filter(minFilter, magFilter, 4.0)
-				   .Wrap(wrapS, wrapT)
-				   .Size(img.width, img.height)
-				   .Storage(GL_RGBA, format, type, Texture::FullyMipmap, textureType == BaseColor)
-				   .Image2D(img.image.data());
+			tex->GenMipmap();
+
+			return tex;
 		}
 		else if (factor.size() > 0)
 		{

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/Shader.hh"
+#include "core/Logging.hh"
 
 namespace sp
 {
@@ -50,5 +51,19 @@ namespace sp
 	{
 		SHADER_TYPE(CopyStencilFS)
 		using Shader::Shader;
+	};
+
+	class TextureFactorCS : public Shader
+	{
+		SHADER_TYPE(TextureFactorCS)
+		using Shader::Shader;
+
+		void SetFactor(int components, double *factor)
+		{
+			Set("components", components);
+			glm::vec4 glFactor;
+			for (int i = 0; i < components; i++) glFactor[i] = (float) factor[i];
+			Set("factor", glFactor);
+		}
 	};
 }

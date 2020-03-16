@@ -45,6 +45,13 @@ namespace sp
 		glBindImageTexture(binding, handle, level, layered, layer, access, format.internalFormat);
 	}
 
+	void Texture::BindImageConvert(GLuint binding, GLPixelFormat bindFormat, GLenum access, GLint level, GLboolean layered, GLint layer) const
+	{
+		Assert(handle, "null texture handle");
+		Assert(format.Valid(), "binding texture without format specified");
+		glBindImageTexture(binding, handle, level, layered, layer, access, bindFormat.internalFormat);
+	}
+
 	void Texture::Clear(const void *data, GLint level) const
 	{
 		glClearTexImage(handle, level, format.format, format.type, data);
@@ -180,7 +187,7 @@ namespace sp
 
 		glTextureSubImage3D(handle, level, xoffset, yoffset, zoffset, subWidth, subHeight, subDepth, format.format, format.type, pixels);
 
-		if (genMipmap && levels > 1 && level == 0)
+		if (genMipmap && level == 0)
 			GenMipmap();
 
 		return *this;
@@ -188,7 +195,7 @@ namespace sp
 
 	Texture &Texture::GenMipmap()
 	{
-		glGenerateTextureMipmap(handle);
+		if (levels > 1) glGenerateTextureMipmap(handle);
 		return *this;
 	}
 

@@ -60,11 +60,11 @@ vec3 BRDF_Diffuse_Lambert(vec3 diffuseColor) {
 // [Blinn 1997, "Models of Light Reflection for Computer Synthesized Pictures"]
 // [Walter 2007, "Microfacet Models for Refraction through Rough Surfaces"]
 // [Burley (Disney) 2012, "Practical Physically Based Shading in Film and Game Production"]
-float BRDF_D_GGX(float roughness, float NdotM) {
+float BRDF_D_GGX(float roughness, float NdotH) {
 	float alpha = roughness * roughness;
 	float alphaSq = alpha * alpha;
-	float d = (NdotM * alphaSq - NdotM) * NdotM + 1;
-	return alphaSq / (M_PI * d * d);
+	float d = NdotH * NdotH * (alphaSq - 1) + 1;
+	return saturate(alphaSq / (M_PI * d * d));
 }
 
 // [Blinn 1977, "Models of light reflection for computer synthesized pictures"]
@@ -79,8 +79,8 @@ float BRDF_D_Blinn(float roughness, float NdotH) {
 // Includes denominator of base BRDF simplified in; Vis = G / (4 * NdotL * NdotV).
 // [Schlick 1994, "An Inexpensive BRDF Model for Physically-Based Rendering"]
 float BRDF_V_Schlick(float roughness, float NdotV, float NdotL) {
-	float alpha = roughness * roughness;
-	float k = alpha * 0.5;
+	float r = roughness + 1;
+	float k = r * r * 0.125;
 
 	// Calculate both terms G'(l) and G'(v) at once.
 	float visV = NdotV * (1 - k) + k;
@@ -93,7 +93,7 @@ float BRDF_V_Schlick(float roughness, float NdotV, float NdotL) {
 // [Karis 2013, "Real Shading in Unreal Engine 4"] (note, not using same spherical Gaussian approximation but still relevant)
 vec3 BRDF_F_Schlick(vec3 specularColor, float VdotH) {
 	float Fc = pow(1 - VdotH, 5);
-	return clamp(50.0 * specularColor.g, 0, 1) * Fc + (1 - Fc) * specularColor;
+	return specularColor + (1 - specularColor) * Fc;
 }
 
 #endif

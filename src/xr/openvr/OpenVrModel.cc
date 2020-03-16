@@ -38,7 +38,7 @@ OpenVrModel::OpenVrModel(vr::RenderModel_t *vrModel, vr::RenderModel_TextureMap_
 	sourcePrim.indexBuffer.components = vrModel->unTriangleCount * 3;
 	sourcePrim.indexBuffer.componentType = GL_UNSIGNED_SHORT;
 
-	glModel = make_shared<GLModel>(this);
+	glModel = make_shared<GLModel>(this, nullptr);
 	glModel->AddPrimitive(prim);
 }
 
