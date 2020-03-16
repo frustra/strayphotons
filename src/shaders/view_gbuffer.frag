@@ -33,8 +33,7 @@ void main()
 
 	if (source == 0) { // gBuffer source
 		if (mode == 1) { // Base color
-			// outFragColor.rgb = texture(gBuffer0, inTexCoord).rgb;
-			outFragColor.rgb = vec3(inTexCoord.x);
+			outFragColor.rgb = texture(gBuffer0, inTexCoord).rgb;
 		} else if (mode == 2) { // Normal
 			outFragColor.rgb = DecodeNormal(texture(gBuffer1, inTexCoord).rg);
 		} else if (mode == 3) { // Depth
