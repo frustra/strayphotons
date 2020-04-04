@@ -90,6 +90,14 @@ namespace sp
 		// Suggested bindings for HTC Vive
 		grabAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller", "/user/hand/left/input/squeeze/click");
 		grabAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller", "/user/hand/right/input/squeeze/click");
+
+		// Create LeftHand Pose action
+		std::shared_ptr<xr::XrAction> leftHandAction = gameActionSet->CreateAction(xr::LeftHandActionName, xr::XrActionType::Pose);
+		// TODO: add suggested bindings for real XR backends
+
+		// Create LeftHand Pose action
+		std::shared_ptr<xr::XrAction> rightHandAction = gameActionSet->CreateAction(xr::RightHandActionName, xr::XrActionType::Pose);
+		// TODO: add suggested bindings for real XR backends
 	}
 
 	void GameLogic::Init(InputManager *inputManager, Script *startupScript)
@@ -270,6 +278,7 @@ namespace sp
 			view->SetProjMat(view->GetFov(), view->GetClip(), glm::ivec2(CVarFlashlightResolution.Get(true)));
 		}
 
+		// Handle xr controller movement
 		if (xrSystem)
 		{
 			ecs::Entity vrOrigin = game->entityManager.EntityWith<ecs::Name>("vr-origin");
@@ -278,17 +287,32 @@ namespace sp
 			{
 				auto vrOriginTransform = vrOrigin.Get<ecs::Transform>();
 
+				// TODO: support other action sets
 				gameActionSet->Sync();
 
-				for (auto trackedObjectHandle : xrSystem->GetTrackedObjectHandles())
+				// Mapping of Input Sources to Pose Actions
+				std::vector<std::string> controllerPoseActions = { xr::LeftHandActionName, xr::RightHandActionName };
+
+				for (auto controllerAction : controllerPoseActions)
 				{
-					ecs::Entity xrObject = ValidateAndLoadTrackedObject(trackedObjectHandle);
+					ecs::Entity xrObject = ValidateAndLoadXrInputSource(controllerAction);
 
 					if (xrObject.Valid())
 					{
 						glm::mat4 xrObjectPos;
 
-						if (xrSystem->GetTracking()->GetPredictedObjectPose(trackedObjectHandle, xrObjectPos))
+						// TODO: make this a std::pair in the controllerPoseActions vector above?
+						std::string subpath = "";
+						if (controllerAction == xr::LeftHandActionName)
+						{
+							subpath = xr::SubpathLeftHand;
+						}
+						else if (controllerAction == xr::RightHandActionName)
+						{
+							subpath = xr::SubpathRightHand;
+						}
+
+						if (gameActionSet->GetAction(controllerAction)->GetPoseActionValueForNextFrame(subpath, xrObjectPos))
 						{
 							xrObjectPos = glm::transpose(xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
 
@@ -296,55 +320,41 @@ namespace sp
 							ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
 							ctrl->SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
 
-							if (trackedObjectHandle.type == xr::TrackedObjectType::CONTROLLER)
+							// TODO: get XrAction handle instead of using str::string -> XrAction map
+							if (gameActionSet->GetAction(xr::TeleportActionName)->GetRisingEdgeActionValue(subpath))
 							{
-								std::string subpath = "";
+								Logf("Teleport on subpath %s", subpath);
 
-								if (trackedObjectHandle.hand == xr::TrackedObjectHand::LEFT)
+								auto origin = GlmVec3ToPxVec3(ctrl->GetPosition());
+								auto dir = GlmVec3ToPxVec3(ctrl->GetForward());
+								dir.normalizeSafe();
+								physx::PxReal maxDistance = 10.0f;
+
+								physx::PxRaycastBuffer hit;
+								bool status = game->physics.RaycastQuery(xrObject, origin, dir, maxDistance, hit);
+
+								if (status && hit.block.distance > 0.5)
 								{
-									subpath = xr::SubpathLeftHand;
+									auto headPos = glm::vec3(xrObjectPos * glm::vec4(0, 0, 0, 1)) - vrOriginTransform->GetPosition();
+									auto newPos = PxVec3ToGlmVec3P(origin + dir * std::max(0.0, hit.block.distance - 0.5)) - headPos;
+									vrOriginTransform->SetPosition(glm::vec3(newPos.x, vrOriginTransform->GetPosition().y, newPos.z));
 								}
-								else if (trackedObjectHandle.hand == xr::TrackedObjectHand::RIGHT)
+							}
+
+							auto interact = xrObject.Get<ecs::InteractController>();
+
+							if (gameActionSet->GetAction(xr::GrabActionName)->GetRisingEdgeActionValue(subpath))
+							{
+								Logf("grab on subpath %s", subpath);
+								interact->PickUpObject(xrObject);
+							}
+							else if (gameActionSet->GetAction(xr::GrabActionName)->GetFallingEdgeActionValue(subpath))
+							{
+								Logf("Let go on subpath %s", subpath);
+								if (interact->target)
 								{
-									subpath = xr::SubpathRightHand;
-								}
-
-								// TODO: get XrAction handle instead of using str::string -> XrAction map
-								if (gameActionSet->GetAction(xr::TeleportActionName)->GetRisingEdgeActionValue(subpath))
-								{
-									Logf("Teleport on subpath %s", subpath);
-
-									auto origin = GlmVec3ToPxVec3(ctrl->GetPosition());
-									auto dir = GlmVec3ToPxVec3(ctrl->GetForward());
-									dir.normalizeSafe();
-									physx::PxReal maxDistance = 10.0f;
-
-									physx::PxRaycastBuffer hit;
-									bool status = game->physics.RaycastQuery(xrObject, origin, dir, maxDistance, hit);
-
-									if (status && hit.block.distance > 0.5)
-									{
-										auto headPos = glm::vec3(xrObjectPos * glm::vec4(0, 0, 0, 1)) - vrOriginTransform->GetPosition();
-										auto newPos = PxVec3ToGlmVec3P(origin + dir * std::max(0.0, hit.block.distance - 0.5)) - headPos;
-										vrOriginTransform->SetPosition(glm::vec3(newPos.x, vrOriginTransform->GetPosition().y, newPos.z));
-									}
-								}
-
-								auto interact = xrObject.Get<ecs::InteractController>();
-
-								if (gameActionSet->GetAction(xr::GrabActionName)->GetRisingEdgeActionValue(subpath))
-								{
-									Logf("grab on subpath %s", subpath);
-									interact->PickUpObject(xrObject);
-								}
-								else if (gameActionSet->GetAction(xr::GrabActionName)->GetFallingEdgeActionValue(subpath))
-								{
-									Logf("Let go on subpath %s", subpath);
-									if (interact->target)
-									{
-										interact->manager->RemoveConstraint(xrObject, interact->target);
-										interact->target = nullptr;
-									}
+									interact->manager->RemoveConstraint(xrObject, interact->target);
+									interact->target = nullptr;
 								}
 							}
 						}
@@ -379,12 +389,6 @@ namespace sp
 				xrObject.Assign<ecs::Transform>();
 			}
 
-			if (!xrObject.Has<ecs::InteractController>())
-			{
-				auto interact = xrObject.Assign<ecs::InteractController>();
-				interact->manager = &game->physics;
-			}
-
 			if (!xrObject.Has<ecs::Renderable>())
 			{
 				auto renderable = xrObject.Assign<ecs::Renderable>();
@@ -401,6 +405,55 @@ namespace sp
 			if (trackedObjectHandle.type == xr::HMD && !xrObject.Has<ecs::Triggerable>())
 			{
 				xrObject.Assign<ecs::Triggerable>();
+			}
+		}
+		else
+		{
+			if (xrObject.Valid())
+			{
+				xrObject.Destroy();
+			}
+		}
+
+		return xrObject;
+	}
+
+	// Validate and load the model associated with an XR Action.
+	// Note: this should only be used once per model per frame, or bad things will happen.
+	// Use the left and right hand pose actions to ensure that models aren't duplicated
+	ecs::Entity GameLogic::ValidateAndLoadXrInputSource(std::string action)
+	{
+		string entityName = "xr-action-" + action;
+		ecs::Entity xrObject = game->entityManager.EntityWith<ecs::Name>(entityName);
+
+		// Query the tracking system if this device is connected
+		// TODO: query the tracking system if the device is currently tracked. Potentially 
+		// don't render XR controllers that are not being actively tracked, expecially if they're XR Skeletons
+		// TODO: support other action sets?
+		if (gameActionSet->IsInputSourceConnected(action))
+		{
+			// Make sure object is valid
+			if (!xrObject.Valid())
+			{
+				xrObject = game->entityManager.NewEntity();
+				xrObject.AssignKey<ecs::Name>(entityName);
+			}
+
+			if (!xrObject.Has<ecs::Transform>())
+			{
+				xrObject.Assign<ecs::Transform>();
+			}
+
+			if (!xrObject.Has<ecs::InteractController>())
+			{
+				auto interact = xrObject.Assign<ecs::InteractController>();
+				interact->manager = &game->physics;
+			}
+
+			if (!xrObject.Has<ecs::Renderable>())
+			{
+				auto renderable = xrObject.Assign<ecs::Renderable>();
+				renderable->model = gameActionSet->GetInputSourceModel(action);
 			}
 		}
 		else
@@ -499,6 +552,7 @@ namespace sp
 				}
 
 				// Query the XR runtime for all tracked objects and create entities for them
+				// NOTE: these are not XR Controllers! XR Controllers get loaded during Frame()
 				for (auto trackedObjectHandle : xrSystem->GetTrackedObjectHandles())
 				{
 					ValidateAndLoadTrackedObject(trackedObjectHandle);

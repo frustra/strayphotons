@@ -34,14 +34,14 @@ namespace sp
 			std::vector<TrackedObjectHandle> GetTrackedObjectHandles();
 
 			std::shared_ptr<XrModel> GetTrackedObjectModel(const TrackedObjectHandle &handle);
+			std::shared_ptr<XrModel> GetInputSourceModel(std::string subpath);
 
-			static vr::TrackedDeviceIndex_t GetOpenVrIndexFromHandle(vr::IVRSystem *vrs, const TrackedObjectHandle &handle);
+			static vr::TrackedDeviceIndex_t GetOpenVrIndexFromHandle(const TrackedObjectHandle &handle);
 
 		private:
 			vr::IVRSystem *vrSystem;
 			std::shared_ptr<OpenVrTrackingCompositor> trackingCompositor;
 			std::map<std::string, std::shared_ptr<OpenVrActionSet>> actionSets;
-			char tempVrProperty[vr::k_unMaxPropertyStringSize];
 		};
 
 	} // namespace xr

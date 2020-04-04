@@ -119,79 +119,18 @@ std::vector<TrackedObjectHandle> OpenVrSystem::GetTrackedObjectHandles()
 	// TODO: probably shouldn't run this logic on every frame
 	std::vector<TrackedObjectHandle> connectedDevices =
 	{
-		{HMD, NONE, "xr-hmd", false},
-		{CONTROLLER, LEFT, "xr-controller-left", false},
-		{CONTROLLER, RIGHT, "xr-controller-right", false},
+		{HMD, NONE, "xr-hmd", vrSystem->IsTrackedDeviceConnected(vr::k_unTrackedDeviceIndex_Hmd)},
 	};
-
-	if (vrSystem->IsTrackedDeviceConnected(vr::k_unTrackedDeviceIndex_Hmd))
-	{
-		connectedDevices[0].connected = true;
-	}
-
-	if (vrSystem->GetTrackedDeviceIndexForControllerRole(vr::TrackedControllerRole_LeftHand) != vr::k_unTrackedDeviceIndexInvalid)
-	{
-		connectedDevices[1].connected = true;
-	}
-
-	if (vrSystem->GetTrackedDeviceIndexForControllerRole(vr::TrackedControllerRole_LeftHand) != vr::k_unTrackedDeviceIndexInvalid)
-	{
-		connectedDevices[2].connected = true;
-	}
 
 	return connectedDevices;
 }
 
 std::shared_ptr<XrModel> OpenVrSystem::GetTrackedObjectModel(const TrackedObjectHandle &handle)
 {
-	// Work out which model to load
-	vr::TrackedDeviceIndex_t deviceIndex = GetOpenVrIndexFromHandle(vrSystem, handle);
-
-	if (deviceIndex == vr::k_unTrackedDeviceIndexInvalid)
-	{
-		throw std::runtime_error("Failed to get tracked device index for TrackedObjectHandle");
-	}
-
-	vrSystem->GetStringTrackedDeviceProperty(deviceIndex, vr::Prop_RenderModelName_String, tempVrProperty, vr::k_unMaxPropertyStringSize);
-
-	Logf("Loading VR render model %s", tempVrProperty);
-	vr::RenderModel_t *vrModel;
-	vr::RenderModel_TextureMap_t *vrTex;
-	vr::EVRRenderModelError merr;
-
-	while (true)
-	{
-		merr = vr::VRRenderModels()->LoadRenderModel_Async(tempVrProperty, &vrModel);
-		if (merr != vr::VRRenderModelError_Loading) break;
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
-	if (merr != vr::VRRenderModelError_None)
-	{
-		Errorf("VR render model error: %s", vr::VRRenderModels()->GetRenderModelErrorNameFromEnum(merr));
-		throw std::runtime_error("Failed to load VR render model");
-	}
-
-	while (true)
-	{
-		merr = vr::VRRenderModels()->LoadTexture_Async(vrModel->diffuseTextureId, &vrTex);
-		if (merr != vr::VRRenderModelError_Loading) break;
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
-	if (merr != vr::VRRenderModelError_None)
-	{
-		Errorf("VR render texture error: %s", vr::VRRenderModels()->GetRenderModelErrorNameFromEnum(merr));
-		throw std::runtime_error("Failed to load VR render texture");
-	}
-
-	std::shared_ptr<XrModel> xrModel = make_shared<OpenVrModel>(vrModel, vrTex);
-
-	vr::VRRenderModels()->FreeTexture(vrTex);
-	vr::VRRenderModels()->FreeRenderModel(vrModel);
-
-	return xrModel;
+	return OpenVrModel::LoadOpenVRModel(GetOpenVrIndexFromHandle(handle));
 }
 
-vr::TrackedDeviceIndex_t OpenVrSystem::GetOpenVrIndexFromHandle(vr::IVRSystem *vrs, const TrackedObjectHandle &handle)
+vr::TrackedDeviceIndex_t OpenVrSystem::GetOpenVrIndexFromHandle(const TrackedObjectHandle &handle)
 {
 	// Work out which model to load
 	vr::TrackedDeviceIndex_t deviceIndex = vr::k_unTrackedDeviceIndexInvalid;
@@ -215,7 +154,7 @@ vr::TrackedDeviceIndex_t OpenVrSystem::GetOpenVrIndexFromHandle(vr::IVRSystem *v
 			throw std::runtime_error("Loading models for ambidextrous controllers not supported");
 		}
 
-		deviceIndex = vrs->GetTrackedDeviceIndexForControllerRole(desiredRole);
+		deviceIndex = vr::VRSystem()->GetTrackedDeviceIndexForControllerRole(desiredRole);
 	}
 	else if (handle.type == HMD)
 	{

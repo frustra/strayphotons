@@ -40,6 +40,7 @@ foreach(_file ${_files_to_copy})
         ${_file}-runtime-copy
         DEPENDS
             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_file}
+            ${CMAKE_CURRENT_LIST_DIR}/${_file}
     )
 
     add_dependencies(${PROJECT_LIB} ${_file}-runtime-copy)

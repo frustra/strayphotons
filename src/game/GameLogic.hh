@@ -41,6 +41,7 @@ namespace sp
 		shared_ptr<xr::XrSystem> GetXrSystem();
 		void InitXrActions();
 		ecs::Entity ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &handle);
+		ecs::Entity ValidateAndLoadXrInputSource(std::string subpath);
 
 	private:
 		Game *game;

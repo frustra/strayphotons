@@ -8,14 +8,19 @@
 #include <glm/glm.hpp>
 #include <glm/vec2.hpp>
 
+#include "xr/XrModel.hh"
+
 namespace sp
 {
 namespace xr
 {
 	// Must match the OpenVR manifest files!
 	static const char* GameActionSet = "/actions/main";
+
 	static const char* GrabActionName = "/actions/main/in/grab";
 	static const char* TeleportActionName = "/actions/main/in/teleport";
+	static const char* LeftHandActionName = "/actions/main/in/LeftHand";
+	static const char* RightHandActionName = "/actions/main/in/RightHand";
 
 	static const char* SubpathLeftHand = "/user/hand/left";
 	static const char* SubpathRightHand = "/user/hand/right";
@@ -107,6 +112,8 @@ namespace xr
 		// during this update loop
 		virtual bool GetFallingEdgeActionValue(std::string subpath) = 0;
 
+		virtual bool GetPoseActionValueForNextFrame(std::string subpath, glm::mat4 &pose) = 0;
+
 	protected:
 		// Map interaction profile name -> interaction paths
 		std::map<std::string, std::vector<std::string>> suggestedBindings;
@@ -128,6 +135,10 @@ namespace xr
 		std::shared_ptr<XrAction> GetAction(std::string name) { return registeredActions[name]; };
 
 		virtual void Sync() = 0;
+
+		virtual bool IsInputSourceConnected(std::string action) = 0;
+
+		virtual std::shared_ptr<XrModel> GetInputSourceModel(std::string action) = 0;
 
 	protected:
 		std::string actionSetName;

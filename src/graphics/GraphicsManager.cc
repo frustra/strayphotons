@@ -180,7 +180,7 @@ namespace sp
 					RenderPhase xrPhase("XrView", context->Timer);
 
 					static glm::mat4 viewPose;
-					game->logic.GetXrSystem()->GetTracking()->GetPredictedViewPose(xrViews[i].second.viewId, viewPose);
+					game->logic.GetXrSystem()->GetTracking()->GetPredictedObjectPose(xrViews[i].second.viewId, viewPose);
 
 					// Calculate the view pose relative to the current vrOrigin
 					viewPose = glm::transpose(viewPose * vrOriginMat4);

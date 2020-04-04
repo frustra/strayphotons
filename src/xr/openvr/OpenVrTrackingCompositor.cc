@@ -74,7 +74,7 @@ bool OpenVrTrackingCompositor::GetPredictedViewPose(size_t view, glm::mat4 &view
 bool OpenVrTrackingCompositor::GetPredictedObjectPose(const TrackedObjectHandle &handle, glm::mat4 &objectPose)
 {
 	// Work out which model to load
-	vr::TrackedDeviceIndex_t deviceIndex = OpenVrSystem::GetOpenVrIndexFromHandle(vrSystem, handle);
+	vr::TrackedDeviceIndex_t deviceIndex = OpenVrSystem::GetOpenVrIndexFromHandle(handle);
 
 	static vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
 	vr::EVRCompositorError error = vr::VRCompositor()->GetLastPoses(NULL, 0, trackedDevicePoses, vr::k_unMaxTrackedDeviceCount);

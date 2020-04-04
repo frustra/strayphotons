@@ -1,6 +1,7 @@
 #pragma once
 
 #include <xr/XrAction.hh>
+#include <xr/XrModel.hh>
 #include <openvr.h>
 #include <string>
 
@@ -15,6 +16,10 @@ namespace sp
 
                 std::shared_ptr<XrAction> CreateAction(std::string name, XrActionType type) override;
 
+                bool IsInputSourceConnected(std::string action);
+
+                std::shared_ptr<XrModel> GetInputSourceModel(std::string action);
+
                 void Sync();
 
             private:
@@ -25,6 +30,8 @@ namespace sp
         {
             public:
                 OpenVrAction(std::string name, XrActionType type);
+                
+                vr::VRActionHandle_t GetHandle() { return handle; };
 
                 // Boolean action manipulation
                 bool GetBooleanActionValue(std::string subpath);
@@ -36,6 +43,8 @@ namespace sp
                 // Returns true if the boolean action transitioned from true to false
                 // during this update loop
                 bool GetFallingEdgeActionValue(std::string subpath);
+
+                bool GetPoseActionValueForNextFrame(std::string subpath, glm::mat4 &pose);
                 
             private:
                 vr::VRActionHandle_t handle;

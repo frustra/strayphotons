@@ -22,6 +22,7 @@
 #include "assets/AssetManager.hh"
 #include "physx/PhysxUtils.hh"
 #include "threading/MutexedVector.hh"
+#include "xr/XrAction.hh"
 
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/transform.hpp>
@@ -776,11 +777,12 @@ namespace sp
 			comp->model->glModel = make_shared<GLModel>(comp->model.get());
 		}
 		comp->model->glModel->Draw(shader, modelMat, view);
-
+		
+		// TODO: make this an entity patented to the right controller
 		if (ent.Has<ecs::Name>())
 		{
 			auto name = ent.Get<ecs::Name>();
-			if (*name == "xr-controller-right")
+			if (*name == "xr-action-" + std::string(xr::RightHandActionName))
 			{
 				glm::vec3 lpos0 = glm::vec3(modelMat * glm::vec4(0, 0, 0, 1.0));
 				glm::vec3 lpos1 = glm::vec3(modelMat * glm::vec4(0, 0, -10.0, 1.0));

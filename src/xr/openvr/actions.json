@@ -15,6 +15,16 @@
         "name": "/actions/main/in/teleport",
         "requirement": "mandatory",
         "type": "boolean"
+      },
+      {
+        "name": "/actions/main/in/RightHand",
+        "requirement": "mandatory",
+        "type": "pose"
+      },
+      {
+        "name": "/actions/main/in/LeftHand",
+        "requirement": "mandatory",
+        "type": "pose"
       }
     ],
     "action_sets": [
@@ -30,7 +40,9 @@
           "/actions/main" : "Primary Actions",
   
           "/actions/main/in/grab" : "Grab",
-          "/actions/main/in/teleport" : "Teleport"
+          "/actions/main/in/teleport" : "Teleport",
+          "/actions/main/in/RightHand" : "Right Hand",
+          "/actions/main/in/LeftHand" : "Left Hand"
       }
     ]
   }
