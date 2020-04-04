@@ -35,57 +35,6 @@ namespace xr
 		Pose = 4,
 	};
 
-	template <XrActionType T>
-	class XrActionDataType
-	{
-	};
-
-	template <>
-	class XrActionDataType<XrActionType::Bool>
-	{
-	public:
-		XrActionDataType() : value(false), edge_val(false) {};
-		XrActionDataType(bool init) : value(init), edge_val(false) {};
-		void Reset()
-		{
-			value = false;    // Don't reset edge_val during reset!
-		}
-		bool value; // Actual current action value
-		bool edge_val; // Previous action value
-	};
-
-	template <>
-	class XrActionDataType<XrActionType::Float>
-	{
-		XrActionDataType() : value(0.0f) {};
-		XrActionDataType(float init) : value(init) {};
-		void Reset()
-		{
-			value = 0.0f;
-		}
-		float value;
-	};
-
-	template <>
-	class XrActionDataType<XrActionType::Vec2f>
-	{
-		void Reset()
-		{
-			value = glm::vec2();
-		}
-		glm::vec2 value;
-	};
-
-	template <>
-	class XrActionDataType<XrActionType::Pose>
-	{
-		void Reset()
-		{
-			value = glm::mat4();
-		}
-		glm::mat4 value;
-	};
-
 	class XrAction
 	{
 	public:
