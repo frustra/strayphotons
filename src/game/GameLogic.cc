@@ -9,6 +9,7 @@
 #include "game/GameLogic.hh"
 #include "assets/Scene.hh"
 #include "assets/AssetManager.hh"
+#include "assets/valvepak/ValvePak.hh"
 #include "ecs/components/Barrier.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/LightSensor.hh"
@@ -106,6 +107,10 @@ namespace sp
 
 	void GameLogic::Init()
 	{
+        std::cout << "Starting load" << std::endl;
+		shared_ptr<Asset> asset = GAssets.Load("D:\\Steam\\steamapps\\common\\Half-Life Alyx\\game\\hlvr\\maps\\a2_headcrabs_tunnel.vpk");
+		ValvePak pak = ValvePak("a2_headcrab_tunnel", asset);
+
 		if (game->options["map"].count())
 		{
 			LoadScene(game->options["map"].as<string>());

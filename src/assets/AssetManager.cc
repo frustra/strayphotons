@@ -161,7 +161,7 @@ namespace sp
 
 		return false;
 #else
-		string filename = (starts_with(path, "shaders/") ? SHADERS_DIR : ASSETS_DIR) + path;
+		string filename = starts_with(path, "D:") ? path : ((starts_with(path, "shaders/") ? SHADERS_DIR : ASSETS_DIR) + path);
 		stream.open(filename, std::ios::in | std::ios::binary);
 
 		if (size && stream)

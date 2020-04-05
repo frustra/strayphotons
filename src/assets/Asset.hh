@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.hh"
+#include <mutex>
 
 namespace sp
 {
@@ -9,13 +10,16 @@ namespace sp
 	class Asset : public NonCopyable
 	{
 	public:
-		Asset(AssetManager *manager, const string &path, uint8 *buffer, size_t size);
+		Asset(AssetManager *manager, const string &path);
 		~Asset();
 
-		const string String();
-		const uint8 *Buffer();
-		const char *CharBuffer();
-		int Size();
+		virtual bool InputStream(std::ifstream &stream, size_t *size = nullptr) = 0;
+		virtual bool OutputStream(std::ofstream &stream) = 0;
+
+		inline const uint8 *Buffer();
+		inline const char *CharBuffer();
+		inline const string String();
+		inline int Size();
 
 		AssetManager *manager;
 
@@ -24,5 +28,9 @@ namespace sp
 	private:
 		uint8 *buffer = nullptr;
 		size_t size = 0;
+		bool sizeValid = false;
+		
+		std::ifstream input;
+		std::mutex readLock;
 	};
 }

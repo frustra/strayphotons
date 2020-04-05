@@ -8,3 +8,5 @@ target_sources(
         Model.cc
         Scene.cc
 )
+
+add_subdirectory(valvepak)
