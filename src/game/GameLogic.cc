@@ -392,7 +392,7 @@ namespace sp
 			if (!xrObject.Has<ecs::Renderable>())
 			{
 				auto renderable = xrObject.Assign<ecs::Renderable>();
-				renderable->model = xrSystem->GetTrackedObjectModel(trackedObjectHandle);
+				renderable->model = xrSystem->GetTracking()->GetTrackedObjectModel(trackedObjectHandle);
 
 				// Rendering an XR HMD model from the viewpoint of an XRView is a bad idea
 				if (trackedObjectHandle.type == xr::HMD)
@@ -552,8 +552,8 @@ namespace sp
 				}
 
 				// Query the XR runtime for all tracked objects and create entities for them
-				// NOTE: these are not XR Controllers! XR Controllers get loaded during Frame()
-				for (auto trackedObjectHandle : xrSystem->GetTrackedObjectHandles())
+				// NOTE: these are not XR Controllers!
+				for (auto trackedObjectHandle : xrSystem->GetTracking()->GetTrackedObjectHandles())
 				{
 					ValidateAndLoadTrackedObject(trackedObjectHandle);
 				}

@@ -35,15 +35,14 @@ namespace sp
 			// This function MUST NOT require XrSystem::Init() to have been called.
 			virtual bool IsHmdPresent() = 0;
 
+			// Get a pointer to the XrTracking module for this XR Runtime
 			virtual std::shared_ptr<XrTracking> GetTracking() = 0;
 
+			// Get a pointer to the XrCompositor module for this XR Runtime
 			virtual std::shared_ptr<XrCompositor> GetCompositor() = 0;
 
+			// Get a pointer to one of the XrActionSets created by the game for this XR Runtime
 			virtual std::shared_ptr<XrActionSet> GetActionSet(std::string setName) = 0;
-
-			virtual std::vector<TrackedObjectHandle> GetTrackedObjectHandles() = 0;
-
-			virtual std::shared_ptr<XrModel> GetTrackedObjectModel(const TrackedObjectHandle &handle) = 0;
 		};
 
 	} // namespace xr

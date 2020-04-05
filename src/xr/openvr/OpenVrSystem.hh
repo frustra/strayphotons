@@ -31,13 +31,6 @@ namespace sp
 
 			std::shared_ptr<XrActionSet> GetActionSet(std::string setName);
 
-			std::vector<TrackedObjectHandle> GetTrackedObjectHandles();
-
-			std::shared_ptr<XrModel> GetTrackedObjectModel(const TrackedObjectHandle &handle);
-			std::shared_ptr<XrModel> GetInputSourceModel(std::string subpath);
-
-			static vr::TrackedDeviceIndex_t GetOpenVrIndexFromHandle(const TrackedObjectHandle &handle);
-
 		private:
 			vr::IVRSystem *vrSystem;
 			std::shared_ptr<OpenVrTrackingCompositor> trackingCompositor;

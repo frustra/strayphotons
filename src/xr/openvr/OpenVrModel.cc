@@ -8,8 +8,8 @@ using namespace sp;
 using namespace xr;
 
 
-OpenVrModel::OpenVrModel(vr::RenderModel_t *vrModel, vr::RenderModel_TextureMap_t *vrTex) :
-	XrModel("openvr-model")
+OpenVrModel::OpenVrModel(std::string name, vr::RenderModel_t *vrModel, vr::RenderModel_TextureMap_t *vrTex) :
+	XrModel(name)
 {
 	static BasicMaterial defaultMat;
 	metallicRoughnessTex = defaultMat.metallicRoughnessTex;
@@ -88,7 +88,7 @@ std::shared_ptr<XrModel> OpenVrModel::LoadOpenVRModel(vr::TrackedDeviceIndex_t d
 		throw std::runtime_error("Failed to load VR render texture");
 	}
 
-	std::shared_ptr<XrModel> xrModel = make_shared<OpenVrModel>(vrModel, vrTex);
+	std::shared_ptr<XrModel> xrModel = make_shared<OpenVrModel>(std::string(tempVrProperty), vrModel, vrTex);
 
 	vr::VRRenderModels()->FreeTexture(vrTex);
 	vr::VRRenderModels()->FreeRenderModel(vrModel);

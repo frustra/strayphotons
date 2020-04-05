@@ -21,6 +21,8 @@ namespace sp
 			// XrTracking functions
 			bool GetPredictedViewPose(size_t view, glm::mat4 &viewPose);
 			bool GetPredictedObjectPose(const TrackedObjectHandle &handle, glm::mat4 &objectPose);
+			std::vector<TrackedObjectHandle> GetTrackedObjectHandles();
+			std::shared_ptr<XrModel> GetTrackedObjectModel(const TrackedObjectHandle &handle);
 
 			// XrCompositor functions
 			size_t GetNumViews(bool minimum = true);
@@ -34,6 +36,8 @@ namespace sp
 			void EndFrame();
 
 		private:
+			vr::TrackedDeviceIndex_t GetOpenVrIndexFromHandle(const TrackedObjectHandle &handle);
+
 			vr::IVRSystem *vrSystem;
 			std::vector<std::shared_ptr<RenderTarget>> viewRenderTargets;
 		};

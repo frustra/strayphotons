@@ -12,7 +12,7 @@ namespace sp
 		class OpenVrModel : public XrModel
 		{
 		public:
-			OpenVrModel(vr::RenderModel_t *vrModel, vr::RenderModel_TextureMap_t *vrTex);
+			OpenVrModel(std::string name, vr::RenderModel_t *vrModel, vr::RenderModel_TextureMap_t *vrTex);
 			virtual ~OpenVrModel();
 
 			static std::shared_ptr<XrModel> LoadOpenVRModel(vr::TrackedDeviceIndex_t deviceIndex);

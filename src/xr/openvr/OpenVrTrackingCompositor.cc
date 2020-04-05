@@ -1,5 +1,6 @@
 #include "xr/openvr/OpenVrTrackingCompositor.hh"
 #include "xr/openvr/OpenVrSystem.hh"
+#include "xr/openvr/OpenVrModel.hh"
 #include "graphics/RenderTarget.hh"
 #include "ecs/components/View.hh"
 
@@ -74,7 +75,7 @@ bool OpenVrTrackingCompositor::GetPredictedViewPose(size_t view, glm::mat4 &view
 bool OpenVrTrackingCompositor::GetPredictedObjectPose(const TrackedObjectHandle &handle, glm::mat4 &objectPose)
 {
 	// Work out which model to load
-	vr::TrackedDeviceIndex_t deviceIndex = OpenVrSystem::GetOpenVrIndexFromHandle(handle);
+	vr::TrackedDeviceIndex_t deviceIndex = GetOpenVrIndexFromHandle(handle);
 
 	static vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
 	vr::EVRCompositorError error = vr::VRCompositor()->GetLastPoses(NULL, 0, trackedDevicePoses, vr::k_unMaxTrackedDeviceCount);
@@ -166,4 +167,58 @@ glm::mat4 OpenVrTrackingCompositor::GetViewProjectionMatrix(size_t view, float n
 
 	vr::HmdMatrix44_t projMatrix = vrSystem->GetProjectionMatrix(eyeType, nearZ, farZ);
 	return glm::make_mat4((float *)projMatrix.m);
+}
+
+std::vector<TrackedObjectHandle> OpenVrTrackingCompositor::GetTrackedObjectHandles()
+{
+	// TODO: probably shouldn't run this logic on every frame
+	std::vector<TrackedObjectHandle> connectedDevices =
+	{
+		{HMD, NONE, "xr-hmd", vrSystem->IsTrackedDeviceConnected(vr::k_unTrackedDeviceIndex_Hmd)},
+	};
+
+	return connectedDevices;
+}
+
+std::shared_ptr<XrModel> OpenVrTrackingCompositor::GetTrackedObjectModel(const TrackedObjectHandle &handle)
+{
+	return OpenVrModel::LoadOpenVRModel(GetOpenVrIndexFromHandle(handle));
+}
+
+vr::TrackedDeviceIndex_t OpenVrTrackingCompositor::GetOpenVrIndexFromHandle(const TrackedObjectHandle &handle)
+{
+	// Work out which model to load
+	vr::TrackedDeviceIndex_t deviceIndex = vr::k_unTrackedDeviceIndexInvalid;
+	vr::ETrackedDeviceClass desiredClass = vr::TrackedDeviceClass_Invalid;
+	vr::ETrackedControllerRole desiredRole = vr::TrackedControllerRole_Invalid;
+
+	if (handle.type == CONTROLLER)
+	{
+		desiredClass = vr::TrackedDeviceClass_Controller;
+
+		if (handle.hand == LEFT)
+		{
+			desiredRole = vr::TrackedControllerRole_LeftHand;
+		}
+		else if (handle.hand == RIGHT)
+		{
+			desiredRole = vr::TrackedControllerRole_RightHand;
+		}
+		else
+		{
+			throw std::runtime_error("Loading models for ambidextrous controllers not supported");
+		}
+
+		deviceIndex = vr::VRSystem()->GetTrackedDeviceIndexForControllerRole(desiredRole);
+	}
+	else if (handle.type == HMD)
+	{
+		deviceIndex = vr::k_unTrackedDeviceIndex_Hmd;
+	}
+	else
+	{
+		throw std::runtime_error("Loading models for other types not yet supported");
+	}
+
+	return deviceIndex;
 }

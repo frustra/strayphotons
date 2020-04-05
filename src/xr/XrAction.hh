@@ -61,6 +61,10 @@ namespace xr
 		// during this update loop
 		virtual bool GetFallingEdgeActionValue(std::string subpath) = 0;
 
+		// Returns a glm::mat4 representing the pose for this action during the next frame.
+		// This should be accessed during the Game::Frame() function. The pose returned by this
+		// function is intended to be "visually correct" when rendered _after_ the next call to.
+		// WaitGetPoses().
 		virtual bool GetPoseActionValueForNextFrame(std::string subpath, glm::mat4 &pose) = 0;
 
 	protected:
