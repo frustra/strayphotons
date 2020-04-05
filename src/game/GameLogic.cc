@@ -290,29 +290,21 @@ namespace sp
 				// TODO: support other action sets
 				gameActionSet->Sync();
 
-				// Mapping of Input Sources to Pose Actions
-				std::vector<std::string> controllerPoseActions = { xr::LeftHandActionName, xr::RightHandActionName };
+				// Mapping of Pose Actions to Subpaths. Needed so we can tell which-hand-did-what for the hand pose linked actions
+				std::vector<std::pair<std::string, std::string>> controllerPoseActions = { 
+					{xr::LeftHandActionName, xr::SubpathLeftHand}, 
+					{xr::RightHandActionName, xr::SubpathRightHand}
+				};
 
 				for (auto controllerAction : controllerPoseActions)
 				{
-					ecs::Entity xrObject = ValidateAndLoadXrInputSource(controllerAction);
+					ecs::Entity xrObject = ValidateAndLoadXrInputSource(controllerAction.first);
 
 					if (xrObject.Valid())
 					{
 						glm::mat4 xrObjectPos;
 
-						// TODO: make this a std::pair in the controllerPoseActions vector above?
-						std::string subpath = "";
-						if (controllerAction == xr::LeftHandActionName)
-						{
-							subpath = xr::SubpathLeftHand;
-						}
-						else if (controllerAction == xr::RightHandActionName)
-						{
-							subpath = xr::SubpathRightHand;
-						}
-
-						if (gameActionSet->GetAction(controllerAction)->GetPoseActionValueForNextFrame(subpath, xrObjectPos))
+						if (gameActionSet->GetAction(controllerAction.first)->GetPoseActionValueForNextFrame(controllerAction.second, xrObjectPos))
 						{
 							xrObjectPos = glm::transpose(xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
 
@@ -321,9 +313,9 @@ namespace sp
 							ctrl->SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
 
 							// TODO: get XrAction handle instead of using str::string -> XrAction map
-							if (gameActionSet->GetAction(xr::TeleportActionName)->GetRisingEdgeActionValue(subpath))
+							if (gameActionSet->GetAction(xr::TeleportActionName)->GetRisingEdgeActionValue(controllerAction.second))
 							{
-								Logf("Teleport on subpath %s", subpath);
+								Logf("Teleport on subpath %s", controllerAction.second);
 
 								auto origin = GlmVec3ToPxVec3(ctrl->GetPosition());
 								auto dir = GlmVec3ToPxVec3(ctrl->GetForward());
@@ -343,20 +335,40 @@ namespace sp
 
 							auto interact = xrObject.Get<ecs::InteractController>();
 
-							if (gameActionSet->GetAction(xr::GrabActionName)->GetRisingEdgeActionValue(subpath))
+							if (gameActionSet->GetAction(xr::GrabActionName)->GetRisingEdgeActionValue(controllerAction.second))
 							{
-								Logf("grab on subpath %s", subpath);
+								Logf("grab on subpath %s", controllerAction.second);
 								interact->PickUpObject(xrObject);
 							}
-							else if (gameActionSet->GetAction(xr::GrabActionName)->GetFallingEdgeActionValue(subpath))
+							else if (gameActionSet->GetAction(xr::GrabActionName)->GetFallingEdgeActionValue(controllerAction.second))
 							{
-								Logf("Let go on subpath %s", subpath);
+								Logf("Let go on subpath %s", controllerAction.second);
 								if (interact->target)
 								{
 									interact->manager->RemoveConstraint(xrObject, interact->target);
 									interact->target = nullptr;
 								}
 							}
+						}
+					}
+				}
+
+				// Now move generic tracked objects around
+				for (auto trackedObjectHandle : xrSystem->GetTracking()->GetTrackedObjectHandles())
+				{
+					ecs::Entity xrObject = ValidateAndLoadTrackedObject(trackedObjectHandle);
+
+					if (xrObject.Valid())
+					{
+						glm::mat4 xrObjectPos;
+
+						if (xrSystem->GetTracking()->GetPredictedObjectPose(trackedObjectHandle, xrObjectPos))
+						{
+							xrObjectPos = glm::transpose(xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
+
+							auto ctrl = xrObject.Get<ecs::Transform>();
+							ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
+							ctrl->SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
 						}
 					}
 				}
@@ -549,13 +561,6 @@ namespace sp
 						transform->SetPosition(playerTransform->GetGlobalPosition(game->entityManager) - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
 						transform->SetRotate(playerTransform->GetRotate());
 					}
-				}
-
-				// Query the XR runtime for all tracked objects and create entities for them
-				// NOTE: these are not XR Controllers!
-				for (auto trackedObjectHandle : xrSystem->GetTracking()->GetTrackedObjectHandles())
-				{
-					ValidateAndLoadTrackedObject(trackedObjectHandle);
 				}
 
 				// Create swapchains for all the views this runtime exposes. Only create the minimum number of views, since

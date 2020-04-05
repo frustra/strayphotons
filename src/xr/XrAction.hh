@@ -40,8 +40,6 @@ namespace xr
 	public:
 		XrAction(std::string name, XrActionType type);
 
-		void Reset();
-
 		void AddSuggestedBinding(std::string interactionProfile, std::string path);
 		
 		std::map<std::string, std::vector<std::string>> &GetSuggestedBindings();

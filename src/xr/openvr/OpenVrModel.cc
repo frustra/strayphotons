@@ -49,24 +49,23 @@ OpenVrModel::~OpenVrModel()
 
 std::shared_ptr<XrModel> OpenVrModel::LoadOpenVRModel(vr::TrackedDeviceIndex_t deviceIndex)
 {
-	// TODO: yikes, this is a big string. Declare it on the heap maybe?
-	char tempVrProperty[vr::k_unMaxPropertyStringSize];
+	std::shared_ptr<char[]> tempVrProperty(new char[vr::k_unMaxPropertyStringSize]);
 
 	if (deviceIndex == vr::k_unTrackedDeviceIndexInvalid)
 	{
 		throw std::runtime_error("Failed to get tracked device index for TrackedObjectHandle");
 	}
 
-	vr::VRSystem()->GetStringTrackedDeviceProperty(deviceIndex, vr::Prop_RenderModelName_String, tempVrProperty, vr::k_unMaxPropertyStringSize);
+	vr::VRSystem()->GetStringTrackedDeviceProperty(deviceIndex, vr::Prop_RenderModelName_String, tempVrProperty.get(), vr::k_unMaxPropertyStringSize);
 
-	Logf("Loading VR render model %s", tempVrProperty);
+	Logf("Loading VR render model %s", tempVrProperty.get());
 	vr::RenderModel_t *vrModel;
 	vr::RenderModel_TextureMap_t *vrTex;
 	vr::EVRRenderModelError merr;
 
 	while (true)
 	{
-		merr = vr::VRRenderModels()->LoadRenderModel_Async(tempVrProperty, &vrModel);
+		merr = vr::VRRenderModels()->LoadRenderModel_Async(tempVrProperty.get(), &vrModel);
 		if (merr != vr::VRRenderModelError_Loading) break;
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
@@ -88,7 +87,7 @@ std::shared_ptr<XrModel> OpenVrModel::LoadOpenVRModel(vr::TrackedDeviceIndex_t d
 		throw std::runtime_error("Failed to load VR render texture");
 	}
 
-	std::shared_ptr<XrModel> xrModel = make_shared<OpenVrModel>(std::string(tempVrProperty), vrModel, vrTex);
+	std::shared_ptr<XrModel> xrModel = make_shared<OpenVrModel>(std::string(tempVrProperty.get()), vrModel, vrTex);
 
 	vr::VRRenderModels()->FreeTexture(vrTex);
 	vr::VRRenderModels()->FreeRenderModel(vrModel);

@@ -29,12 +29,6 @@ XrAction::XrAction(string name, XrActionType type) :
 {
 };
 
-void XrAction::Reset()
-{
-	// TODO: what does this even mean?
-	// boolData.Reset();
-};
-
 void XrAction::AddSuggestedBinding(string interactionProfile, string path)
 {
 	suggestedBindings[interactionProfile].push_back(path);
