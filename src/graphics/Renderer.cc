@@ -776,7 +776,7 @@ namespace sp
 		{
 			comp->model->glModel = make_shared<GLModel>(comp->model.get());
 		}
-		comp->model->glModel->Draw(shader, modelMat, view);
+		comp->model->glModel->Draw(shader, modelMat, view, comp->model->bones.size(), comp->model->bones.size() > 0 ? comp->model->bones.data() : NULL);
 		
 		// TODO: make this an entity patented to the right controller
 		if (ent.Has<ecs::Name>())

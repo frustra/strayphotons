@@ -32,7 +32,7 @@ namespace sp
 
 			glGenVertexArrays(1, &glPrimitive.vertexBufferHandle);
 			glBindVertexArray(glPrimitive.vertexBufferHandle);
-			for (int i = 0; i < 3; i++)
+			for (int i = 0; i < std::size(primitive->attributes); i++)
 			{
 				auto *attr = &primitive->attributes[i];
 				if (attr->componentCount == 0) continue;

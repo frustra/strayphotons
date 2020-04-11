@@ -30,6 +30,8 @@
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/transform.hpp>
 
 namespace sp
 {
@@ -59,6 +61,7 @@ namespace sp
 	static CVar<float> CVarSunPosition("g.SunPosition", 0.2, "Sun angle");
 
 	static CVar<bool> CVarConnectVR("r.ConnectVR", true, "Connect to SteamVR");
+	static CVar<bool> CVarSkeletons("r.Skeletons", true, "Render hand skeletons instead of controllers");
 
 	void GameLogic::InitXrActions()
 	{
@@ -95,8 +98,16 @@ namespace sp
 		std::shared_ptr<xr::XrAction> leftHandAction = gameActionSet->CreateAction(xr::LeftHandActionName, xr::XrActionType::Pose);
 		// TODO: add suggested bindings for real XR backends
 
-		// Create LeftHand Pose action
+		// Create RightHand Pose action
 		std::shared_ptr<xr::XrAction> rightHandAction = gameActionSet->CreateAction(xr::RightHandActionName, xr::XrActionType::Pose);
+		// TODO: add suggested bindings for real XR backends
+
+		// Create LeftHand Skeleton action
+		std::shared_ptr<xr::XrAction> leftHandSkeletonAction = gameActionSet->CreateAction(xr::LeftHandSkeletonActionName, xr::XrActionType::Skeleton);
+		// TODO: add suggested bindings for real XR backends
+
+		// Create RightHand Skeleton action
+		std::shared_ptr<xr::XrAction> rightHandSkeletonAction = gameActionSet->CreateAction(xr::RightHandSkeletonActionName, xr::XrActionType::Skeleton);
 		// TODO: add suggested bindings for real XR backends
 	}
 
@@ -290,63 +301,66 @@ namespace sp
 				// TODO: support other action sets
 				gameActionSet->Sync();
 
-				// Mapping of Pose Actions to Subpaths. Needed so we can tell which-hand-did-what for the hand pose linked actions
-				std::vector<std::pair<std::string, std::string>> controllerPoseActions = { 
-					{xr::LeftHandActionName, xr::SubpathLeftHand}, 
-					{xr::RightHandActionName, xr::SubpathRightHand}
-				};
-
-				for (auto controllerAction : controllerPoseActions)
+				if (!CVarSkeletons.Get())
 				{
-					ecs::Entity xrObject = ValidateAndLoadXrInputSource(controllerAction.first);
+					// Mapping of Pose Actions to Subpaths. Needed so we can tell which-hand-did-what for the hand pose linked actions
+					std::vector<std::pair<std::string, std::string>> controllerPoseActions = { 
+						{xr::LeftHandActionName, xr::SubpathLeftHand}, 
+						{xr::RightHandActionName, xr::SubpathRightHand}
+					};
 
-					if (xrObject.Valid())
+					for (auto controllerAction : controllerPoseActions)
 					{
-						glm::mat4 xrObjectPos;
+						ecs::Entity xrObject = ValidateAndLoadXrInputSource(controllerAction.first);
 
-						if (gameActionSet->GetAction(controllerAction.first)->GetPoseActionValueForNextFrame(controllerAction.second, xrObjectPos))
+						if (xrObject.Valid())
 						{
-							xrObjectPos = glm::transpose(xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
+							glm::mat4 xrObjectPos;
 
-							auto ctrl = xrObject.Get<ecs::Transform>();
-							ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
-							ctrl->SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
-
-							// TODO: get XrAction handle instead of using str::string -> XrAction map
-							if (gameActionSet->GetAction(xr::TeleportActionName)->GetRisingEdgeActionValue(controllerAction.second))
+							if (gameActionSet->GetAction(controllerAction.first)->GetPoseActionValueForNextFrame(controllerAction.second, xrObjectPos))
 							{
-								Logf("Teleport on subpath %s", controllerAction.second);
+								xrObjectPos = glm::transpose(xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
 
-								auto origin = GlmVec3ToPxVec3(ctrl->GetPosition());
-								auto dir = GlmVec3ToPxVec3(ctrl->GetForward());
-								dir.normalizeSafe();
-								physx::PxReal maxDistance = 10.0f;
+								auto ctrl = xrObject.Get<ecs::Transform>();
+								ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
+								ctrl->SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
 
-								physx::PxRaycastBuffer hit;
-								bool status = game->physics.RaycastQuery(xrObject, origin, dir, maxDistance, hit);
-
-								if (status && hit.block.distance > 0.5)
+								// TODO: get XrAction handle instead of using str::string -> XrAction map
+								if (gameActionSet->GetAction(xr::TeleportActionName)->GetRisingEdgeActionValue(controllerAction.second))
 								{
-									auto headPos = glm::vec3(xrObjectPos * glm::vec4(0, 0, 0, 1)) - vrOriginTransform->GetPosition();
-									auto newPos = PxVec3ToGlmVec3P(origin + dir * std::max(0.0, hit.block.distance - 0.5)) - headPos;
-									vrOriginTransform->SetPosition(glm::vec3(newPos.x, vrOriginTransform->GetPosition().y, newPos.z));
+									Logf("Teleport on subpath %s", controllerAction.second);
+
+									auto origin = GlmVec3ToPxVec3(ctrl->GetPosition());
+									auto dir = GlmVec3ToPxVec3(ctrl->GetForward());
+									dir.normalizeSafe();
+									physx::PxReal maxDistance = 10.0f;
+
+									physx::PxRaycastBuffer hit;
+									bool status = game->physics.RaycastQuery(xrObject, origin, dir, maxDistance, hit);
+
+									if (status && hit.block.distance > 0.5)
+									{
+										auto headPos = glm::vec3(xrObjectPos * glm::vec4(0, 0, 0, 1)) - vrOriginTransform->GetPosition();
+										auto newPos = PxVec3ToGlmVec3P(origin + dir * std::max(0.0, hit.block.distance - 0.5)) - headPos;
+										vrOriginTransform->SetPosition(glm::vec3(newPos.x, vrOriginTransform->GetPosition().y, newPos.z));
+									}
 								}
-							}
 
-							auto interact = xrObject.Get<ecs::InteractController>();
+								auto interact = xrObject.Get<ecs::InteractController>();
 
-							if (gameActionSet->GetAction(xr::GrabActionName)->GetRisingEdgeActionValue(controllerAction.second))
-							{
-								Logf("grab on subpath %s", controllerAction.second);
-								interact->PickUpObject(xrObject);
-							}
-							else if (gameActionSet->GetAction(xr::GrabActionName)->GetFallingEdgeActionValue(controllerAction.second))
-							{
-								Logf("Let go on subpath %s", controllerAction.second);
-								if (interact->target)
+								if (gameActionSet->GetAction(xr::GrabActionName)->GetRisingEdgeActionValue(controllerAction.second))
 								{
-									interact->manager->RemoveConstraint(xrObject, interact->target);
-									interact->target = nullptr;
+									Logf("grab on subpath %s", controllerAction.second);
+									interact->PickUpObject(xrObject);
+								}
+								else if (gameActionSet->GetAction(xr::GrabActionName)->GetFallingEdgeActionValue(controllerAction.second))
+								{
+									Logf("Let go on subpath %s", controllerAction.second);
+									if (interact->target)
+									{
+										interact->manager->RemoveConstraint(xrObject, interact->target);
+										interact->target = nullptr;
+									}
 								}
 							}
 						}
@@ -372,6 +386,49 @@ namespace sp
 						}
 					}
 				}
+
+				if(CVarSkeletons.Get())
+				{
+					// Now load skeletons
+					std::vector<std::string> skeletonActions = { xr::LeftHandSkeletonActionName, xr::RightHandSkeletonActionName };
+
+					for(std::string action : skeletonActions)
+					{
+						ecs::Entity handSkeleton = ValidateAndLoadSkeletonHand(action);
+						if (handSkeleton.Valid())
+						{
+							// Get the action pose
+							glm::mat4 xrObjectPos;
+							if (!gameActionSet->GetAction(action)->GetPoseActionValueForNextFrame(xr::SubpathNone, xrObjectPos))
+							{
+								continue;
+							}
+
+							xrObjectPos = glm::transpose(xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
+
+							// Get the bone data
+							std::vector<xr::XrBoneData> boneData;
+							if (!gameActionSet->GetAction(action)->GetSkeletonActionValue(boneData))
+							{
+								continue;
+							}
+
+							//ValidateAndLoadSkeletonDebugHand(xrObjectPos, boneData);
+
+							auto hand = handSkeleton.Get<ecs::Renderable>();
+
+							ComputeBonePositions(hand->model, boneData, hand->model->bones);
+
+							auto ctrl = handSkeleton.Get<ecs::Transform>();
+							ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
+
+							glm::vec4 fix(0, 0, 0, 1);
+							glm::quat rotation = glm::quat(fix.w, fix.x, fix.y, fix.z);
+
+							ctrl->SetRotate(glm::mat4(glm::mat3(xrObjectPos)) * glm::mat4_cast(rotation));
+						}
+					}
+				}
 			}
 		}
 
@@ -380,6 +437,39 @@ namespace sp
 		if (!doorSystem.Frame(dtSinceLastFrame)) return false;
 
 		return true;
+	}
+
+	static xr::XrBoneData& GetSteamVRJoint(std::vector<xr::XrBoneData> &boneData, std::string name)
+	{
+		for(xr::XrBoneData& bone : boneData)
+		{
+			if (bone.name == name)
+			{
+				return bone;
+			}
+		}
+	}
+
+	void GameLogic::ComputeBonePositions(std::shared_ptr<Model> model, std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output)
+	{
+		// Get the names of all the joints that the GLTF "JOINTS_0" list will reference
+		std::vector<std::string> jointName = model->GetJointData();
+
+		// Resize our output to match the number of joints the GLTF expects
+		output.resize(jointName.size());
+
+		// Need to match up XrBoneData (identified by a name) with GLTF nodes (identified by index)
+		for(int i = 0; i < jointName.size(); i++)
+		{			
+			glm::mat4 invBindPose = model->GetInvBindPoseForNode(jointName[i]);
+
+			xr::XrBoneData& bone = GetSteamVRJoint(boneData, jointName[i]);
+
+			glm::mat4 rot_mat = glm::mat4_cast(bone.rot);
+			glm::mat4 trans_mat = glm::translate(bone.pos);
+			glm::mat4 pose = trans_mat * rot_mat;
+			output[i] = pose * invBindPose;
+		}
 	}
 
 	ecs::Entity GameLogic::ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &trackedObjectHandle)
@@ -433,6 +523,62 @@ namespace sp
 	// Validate and load the model associated with an XR Action.
 	// Note: this should only be used once per model per frame, or bad things will happen.
 	// Use the left and right hand pose actions to ensure that models aren't duplicated
+	void GameLogic::ValidateAndLoadSkeletonDebugHand(glm::mat4 xrObjectPos, std::vector<xr::XrBoneData>& boneData)
+	{
+		for (xr::XrBoneData& bone : boneData)
+		{
+			if (bone.name == "Root")
+			{
+				continue;
+			}
+
+			if (ends_with(bone.name, "_aux"))
+			{
+				continue;
+			}
+
+			string entityName = std::string("xr-skeleton-") + bone.name;
+
+			ecs::Entity boneEntity = game->entityManager.EntityWith<ecs::Name>(entityName);
+
+			if (!boneEntity.Valid())
+			{
+				boneEntity = game->entityManager.NewEntity();
+				boneEntity.AssignKey<ecs::Name>(entityName);
+			}
+
+			if (!boneEntity.Has<ecs::Transform>())
+			{
+				boneEntity.Assign<ecs::Transform>();
+			}
+
+			if (!boneEntity.Has<ecs::InteractController>())
+			{
+				auto interact = boneEntity.Assign<ecs::InteractController>();
+				interact->manager = &game->physics;
+			}
+
+			if (!boneEntity.Has<ecs::Renderable>())
+			{
+				auto model = GAssets.LoadModel("box");
+				auto renderable = boneEntity.Assign<ecs::Renderable>(model);
+
+				if (!renderable->model->glModel)
+				{
+					renderable->model->glModel = make_shared<GLModel>(renderable->model.get());
+				}
+			}
+
+			auto ctrl = boneEntity.Get<ecs::Transform>();
+			ctrl->SetScale(glm::vec3(0.01f));
+			ctrl->SetPosition(xrObjectPos * glm::vec4(bone.pos.x, bone.pos.y, bone.pos.z, 1));
+			ctrl->SetRotate(glm::toMat4(bone.rot) * glm::mat4(glm::mat3(xrObjectPos)));
+		}
+	}
+
+	// Validate and load the model associated with an XR Action.
+	// Note: this should only be used once per model per frame, or bad things will happen.
+	// Use the left and right hand pose actions to ensure that models aren't duplicated
 	ecs::Entity GameLogic::ValidateAndLoadXrInputSource(std::string action)
 	{
 		string entityName = "xr-action-" + action;
@@ -478,6 +624,86 @@ namespace sp
 
 		return xrObject;
 	}
+
+	// Validate and load the model associated with an XR Action.
+	// Note: this should only be used once per model per frame, or bad things will happen.
+	// Use the left and right hand pose actions to ensure that models aren't duplicated
+	ecs::Entity GameLogic::ValidateAndLoadSkeletonHand(std::string action)
+	{
+		string modelName = "";
+
+		if (action == xr::LeftHandSkeletonActionName)
+		{
+			modelName = "vr_glove_left_model";
+		}
+		else if (action == xr::RightHandSkeletonActionName)
+		{
+			modelName = "vr_glove_right_model";
+		}
+		else
+		{
+			throw std::runtime_error("Unknown skeleton, cannot load model");
+		}
+
+		string entityName = "xr-skeleton-" + action;
+		ecs::Entity xrObject = game->entityManager.EntityWith<ecs::Name>(entityName);
+
+		// TODO: add a way of detecting if skeletons are supported by the XR Runtime
+		// if (gameActionSet->IsInputSourceConnected(action))
+		// {
+			// Make sure object is valid
+			if (!xrObject.Valid())
+			{
+				xrObject = game->entityManager.NewEntity();
+				xrObject.AssignKey<ecs::Name>(entityName);
+			}
+
+			if (!xrObject.Has<ecs::Transform>())
+			{
+				xrObject.Assign<ecs::Transform>();
+			}
+
+			if (!xrObject.Has<ecs::InteractController>())
+			{
+				auto interact = xrObject.Assign<ecs::InteractController>();
+				interact->manager = &game->physics;
+			}
+
+			if (!xrObject.Has<ecs::Renderable>())
+			{
+				auto model = GAssets.LoadModel(modelName);
+				auto renderable = xrObject.Assign<ecs::Renderable>(model);
+
+				if (!renderable->model->glModel)
+				{
+					renderable->model->glModel = make_shared<GLModel>(renderable->model.get());
+				}
+
+				/*
+				TODO: do hands need a physics actor? I think no...
+				PhysxActorDesc desc;
+				desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
+				auto actor = game->physics.CreateActor(model, desc, entity);
+
+				if (actor)
+				{
+					entity.Assign<ecs::Physics>(actor, model, desc);
+				}
+				*/
+			}
+		// }
+		// else
+		// {
+		// 	if (xrObject.Valid())
+		// 	{
+		// 		xrObject.Destroy();
+		// 	}
+		// }
+
+		return xrObject;
+	}
+
+
 
 	void GameLogic::LoadScene(string name)
 	{

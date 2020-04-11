@@ -21,10 +21,13 @@ namespace xr
 	static const char* TeleportActionName = "/actions/main/in/teleport";
 	static const char* LeftHandActionName = "/actions/main/in/LeftHand";
 	static const char* RightHandActionName = "/actions/main/in/RightHand";
+	static const char* LeftHandSkeletonActionName = "/actions/main/in/lefthand_anim";
+	static const char* RightHandSkeletonActionName = "/actions/main/in/righthand_anim";
 
 	static const char* SubpathLeftHand = "/user/hand/left";
 	static const char* SubpathRightHand = "/user/hand/right";
-	static const char* SubpathDefault = "/"; // TODO: correct?
+	static const char* SubpathUser = "/user";
+	static const char* SubpathNone = "";
 
 	// Mimicking OpenXr spec
 	enum XrActionType
@@ -33,6 +36,15 @@ namespace xr
 		Float = 2,
 		Vec2f = 3,
 		Pose = 4,
+		Skeleton = 5,
+	};
+
+	struct XrBoneData
+	{
+		std::string name;
+		glm::vec3 	pos;
+		glm::quat 	rot;
+		XrBoneData* parent;
 	};
 
 	class XrAction
@@ -64,6 +76,8 @@ namespace xr
 		// function is intended to be "visually correct" when rendered _after_ the next call to.
 		// WaitGetPoses().
 		virtual bool GetPoseActionValueForNextFrame(std::string subpath, glm::mat4 &pose) = 0;
+
+		virtual bool GetSkeletonActionValue(std::vector<XrBoneData> &bones) = 0;
 
 	protected:
 		// Map interaction profile name -> interaction paths

@@ -1,48 +1,60 @@
 {
-    "default_bindings": [
-     {
-        "controller_type": "oculus_touch",
-        "binding_url": "sp_bindings_oculus_touch.json"
-     }
-    ], 
-    "actions": [
-      {
-        "name": "/actions/main/in/grab",
-        "requirement": "mandatory",
-        "type": "boolean"
-      },
-      {
-        "name": "/actions/main/in/teleport",
-        "requirement": "mandatory",
-        "type": "boolean"
-      },
-      {
-        "name": "/actions/main/in/RightHand",
-        "requirement": "mandatory",
-        "type": "pose"
-      },
-      {
-        "name": "/actions/main/in/LeftHand",
-        "requirement": "mandatory",
-        "type": "pose"
-      }
-    ],
-    "action_sets": [
-      {
-        "name": "/actions/main",
-        "usage": "leftright"
-      }
-    ],
-    "localization" : [
-     {
-         "language_tag": "en_us",
-  
-          "/actions/main" : "Primary Actions",
-  
-          "/actions/main/in/grab" : "Grab",
-          "/actions/main/in/teleport" : "Teleport",
-          "/actions/main/in/RightHand" : "Right Hand",
-          "/actions/main/in/LeftHand" : "Left Hand"
-      }
-    ]
-  }
+  "default_bindings": [
+   {
+      "controller_type": "oculus_touch",
+      "binding_url": "sp_bindings_oculus_touch.json"
+   }
+  ], 
+  "actions": [
+    {
+      "name": "/actions/main/in/grab",
+      "requirement": "mandatory",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/main/in/teleport",
+      "requirement": "mandatory",
+      "type": "boolean"
+    },
+    {
+      "name": "/actions/main/in/RightHand",
+      "requirement": "mandatory",
+      "type": "pose"
+    },
+    {
+      "name": "/actions/main/in/LeftHand",
+      "requirement": "mandatory",
+      "type": "pose"
+    },
+    {
+      "name": "/actions/main/in/righthand_anim",
+      "type": "skeleton",
+      "skeleton": "/skeleton/hand/right"
+    },
+    {
+      "name": "/actions/main/in/lefthand_anim",
+      "type": "skeleton",
+      "skeleton": "/skeleton/hand/left"
+    }
+  ],
+  "action_sets": [
+    {
+      "name": "/actions/main",
+      "usage": "leftright"
+    }
+  ],
+  "localization" : [
+   {
+       "language_tag": "en_us",
+
+        "/actions/main" : "Primary Actions",
+
+        "/actions/main/in/grab" : "Grab",
+        "/actions/main/in/teleport" : "Teleport",
+        "/actions/main/in/RightHand" : "Right Hand",
+        "/actions/main/in/LeftHand" : "Left Hand",
+        "/actions/main/in/righthand_anim" : "Right Hand Skeleton",
+        "/actions/main/in/lefthand_anim" : "Left Hand Skeleton"
+    }
+  ]
+}

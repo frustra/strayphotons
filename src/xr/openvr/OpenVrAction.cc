@@ -1,6 +1,7 @@
 #include <xr/openvr/OpenVrAction.hh>
 #include <xr/openvr/OpenVrSystem.hh>
 #include <xr/openvr/OpenVrModel.hh>
+#include <core/CVar.hh>
 
 #include <stdexcept>
 
@@ -10,6 +11,8 @@
 
 using namespace sp;
 using namespace xr;
+
+static CVar<bool> CVarBindPose("r.BindPose", false, "Feed the SteamVR bind pose instead of real hand skeletons");
 
 OpenVrActionSet::OpenVrActionSet(std::string setName, std::string description) : 
     XrActionSet(setName, description)
@@ -184,13 +187,18 @@ bool OpenVrAction::GetFallingEdgeActionValue(std::string subpath)
 bool OpenVrAction::GetPoseActionValueForNextFrame(std::string subpath, glm::mat4 &pose)
 {
     vr::VRInputValueHandle_t inputHandle = vr::k_ulInvalidInputValueHandle;
-    vr::EVRInputError inputError = vr::VRInput()->GetInputSourceHandle(subpath.c_str(), &inputHandle);
-
-    if(inputError != vr::EVRInputError::VRInputError_None)
+    vr::EVRInputError inputError = vr::EVRInputError::VRInputError_None;
+    
+    if (!subpath.empty())
     {
-        throw std::runtime_error("Failed to get subpath for action");
-    }
+        inputError = vr::VRInput()->GetInputSourceHandle(subpath.c_str(), &inputHandle);
 
+        if(inputError != vr::EVRInputError::VRInputError_None)
+        {
+            throw std::runtime_error("Failed to get subpath for action");
+        }
+    }
+    
 	vr::InputPoseActionData_t data;
     inputError = vr::VRInput()->GetPoseActionDataForNextFrame(handle, vr::ETrackingUniverseOrigin::TrackingUniverseStanding, &data, sizeof(vr::InputPoseActionData_t), inputHandle);
 
@@ -205,7 +213,88 @@ bool OpenVrAction::GetPoseActionValueForNextFrame(std::string subpath, glm::mat4
 		return false;
 	}
 
-	pose = glm::make_mat3x4((float *)data.pose.mDeviceToAbsoluteTracking.m);
+	pose = glm::mat4(glm::make_mat3x4((float *)data.pose.mDeviceToAbsoluteTracking.m));
+
+	return true;
+}
+
+bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones)
+{    
+	vr::InputSkeletalActionData_t data;
+    vr::EVRInputError inputError = vr::VRInput()->GetSkeletalActionData(handle, &data, sizeof(vr::InputSkeletalActionData_t));
+
+    if(inputError != vr::EVRInputError::VRInputError_None)
+    {
+        throw std::runtime_error("Failed to get skeletal action data");
+    }
+
+    // No active skeleton available
+	if (!data.bActive)
+	{
+		return false;
+	}
+
+    uint32_t boneCount = 0;
+    inputError = vr::VRInput()->GetBoneCount(handle, &boneCount);
+
+    if(inputError != vr::EVRInputError::VRInputError_None)
+    {
+        throw std::runtime_error("Failed to get skeletal action data");
+    }
+
+    std::vector<vr::VRBoneTransform_t> boneTransforms;
+    boneTransforms.resize(boneCount);
+
+    if (!CVarBindPose.Get())
+    {
+        inputError = vr::VRInput()->GetSkeletalBoneData(
+            handle, 
+            vr::EVRSkeletalTransformSpace::VRSkeletalTransformSpace_Model, 
+            vr::EVRSkeletalMotionRange::VRSkeletalMotionRange_WithoutController,
+            boneTransforms.data(),
+            boneCount
+        );
+    }
+    else
+    {
+        inputError = vr::VRInput()->GetSkeletalReferenceTransforms(
+            handle, 
+            vr::EVRSkeletalTransformSpace::VRSkeletalTransformSpace_Model, 
+            vr::EVRSkeletalReferencePose::VRSkeletalReferencePose_BindPose, 
+            boneTransforms.data(), 
+            boneCount
+        );
+    }
+
+    if(inputError != vr::EVRInputError::VRInputError_None)
+    {
+        throw std::runtime_error("Failed to get skeletal action data");
+    }
+    
+     // Make the output vector big enough to hold all the bones
+    bones.resize(boneCount);
+
+    for(int i = 0; i < boneCount; i++)
+    {
+        char name[255];
+        inputError = vr::VRInput()->GetBoneName(handle, i, name, 255);
+
+        if(inputError != vr::EVRInputError::VRInputError_None)
+        {
+            throw std::runtime_error("Failed to get skeletal action data");
+        }
+
+        bones[i].name = std::string(name);
+        bones[i].pos  = glm::vec3(
+            boneTransforms[i].position.v[0],
+            boneTransforms[i].position.v[1],
+            boneTransforms[i].position.v[2]);
+        bones[i].rot  = glm::quat(
+            boneTransforms[i].orientation.w,
+            boneTransforms[i].orientation.x,
+            boneTransforms[i].orientation.y,
+            boneTransforms[i].orientation.z);
+    }
 
 	return true;
 }

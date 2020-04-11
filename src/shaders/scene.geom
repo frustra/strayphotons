@@ -14,6 +14,7 @@ layout (triangle_strip, max_vertices = 27) out;
 
 layout (location = 0) in vec3 inNormal[];
 layout (location = 1) in vec2 inTexCoord[];
+layout (location = 6) in vec3 inRgb[];
 
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec3 outTangent;
@@ -21,6 +22,7 @@ layout (location = 2) out vec3 outBitangent;
 layout (location = 3) out vec2 outTexCoord;
 layout (location = 4) out vec3 outViewPos;
 layout (location = 5) flat out int outMirrorIndex;
+layout (location = 6) out vec3 outRgb;
 
 ##import lib/types_common
 ##import lib/mirror_scene_common
@@ -48,6 +50,8 @@ void main() {
 
 	mat3 normalMat = mat3(view);
 
+	
+
 	if (!renderMirrors) {
 		outMirrorIndex = -1;
 		gl_ClipDistance[0] = 1.0;
@@ -56,6 +60,7 @@ void main() {
 			outNormal = normalize(normalMat * inNormal[i]);
 			outTexCoord = inTexCoord[i];
 			outViewPos = viewPos[i];
+			outRgb = inRgb[i];
 			gl_Position = projection * vec4(outViewPos, 1);
 			EmitVertex();
 		}

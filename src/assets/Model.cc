@@ -220,9 +220,60 @@ namespace sp
 					{
 						GetPrimitiveAttribute(model, &primitive, "POSITION"),
 						GetPrimitiveAttribute(model, &primitive, "NORMAL"),
-						GetPrimitiveAttribute(model, &primitive, "TEXCOORD_0")
+						GetPrimitiveAttribute(model, &primitive, "TEXCOORD_0"),
+						GetPrimitiveAttribute(model, &primitive, "WEIGHTS_0"),
+						GetPrimitiveAttribute(model, &primitive, "JOINTS_0"),
 					}
 				});
+			}
+
+			// Must have a mesh to have a skin
+			if (model->nodes[nodeIndex].skin != -1)
+			{
+				int skinId = model->nodes[nodeIndex].skin;
+				int inverseBindMatrixAccessor = model->skins[skinId].inverseBindMatrices;
+
+				rootBone = model->skins[skinId].skeleton;
+
+				// Verify that the inverse bind matrix accessor has the name number of elements
+				// as the skin.joints vector (if it exists)
+				if (inverseBindMatrixAccessor != -1)
+				{					
+					if (model->accessors[inverseBindMatrixAccessor].count != model->skins[skinId].joints.size())
+					{
+						throw std::runtime_error("Invalid GLTF: mismatched inverse bind matrix and skin joints number");
+					}
+					
+					if (model->accessors[inverseBindMatrixAccessor].type != TINYGLTF_TYPE_MAT4)
+					{
+						throw std::runtime_error("Invalid GLTF: inverse bind matrix is not mat4");
+					}
+
+					if (model->accessors[inverseBindMatrixAccessor].componentType != TINYGLTF_PARAMETER_TYPE_FLOAT)
+					{
+						throw std::runtime_error("Invalid GLTF: inverse bind matrix is not float");
+					}
+				}
+
+				for(int i = 0; i < model->skins[skinId].joints.size(); i++)
+				{
+					if (inverseBindMatrixAccessor != -1)
+					{
+						int bufferView = model->accessors[inverseBindMatrixAccessor].bufferView;
+						int buffer = model->bufferViews[bufferView].buffer;
+						int byteStride = model->accessors[inverseBindMatrixAccessor].ByteStride(model->bufferViews[bufferView]);
+						int byteOffset = model->accessors[inverseBindMatrixAccessor].byteOffset + model->bufferViews[bufferView].byteOffset;
+
+						int dataOffset = byteOffset + (i * byteStride);
+
+						inverseBindMatrixForJoint[model->skins[skinId].joints[i]] = glm::make_mat4((float*)((uintptr_t) model->buffers[buffer].data.data() + dataOffset));
+					}
+					else
+					{
+						// If no inv bind matrix is supplied by the model, GLTF standard says use a 4x4 identity matrix
+						inverseBindMatrixForJoint[model->skins[skinId].joints[i]] = glm::mat4(1.0f);
+					}
+				}
 			}
 		}
 
@@ -230,6 +281,44 @@ namespace sp
 		{
 			AddNode(childNodeIndex, matrix);
 		}
+	}
+
+	// Returns a std::vector of the GLTF node names that are present in the "joints"
+	// array in the GLTF skin
+	std::vector<std::string> Model::GetJointData()
+	{
+		std::vector<std::string> nodeNames;
+
+		for(int node : model->skins[0].joints)
+		{
+			nodeNames.push_back(model->nodes[node].name);
+		}
+		
+		return nodeNames;
+	}
+
+	int Model::FindNodeByName(std::string name)
+	{
+		for (int i = 0; i < model->nodes.size(); i++)
+		{
+			if (model->nodes[i].name == name)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	glm::mat4 Model::GetInvBindPoseForNode(std::string name)
+	{
+		int nodeIndex = FindNodeByName(name);
+
+		if (nodeIndex == -1)
+		{
+			throw std::runtime_error("No such node exists");
+		}
+
+		return inverseBindMatrixForJoint[nodeIndex];
 	}
 
 	GLModel::GLModel(Model *model) : model(model)
@@ -251,7 +340,7 @@ namespace sp
 			if (!glPrimitive.heightTex) glPrimitive.heightTex = &defaultMat.heightTex;
 
 			glCreateVertexArrays(1, &glPrimitive.vertexBufferHandle);
-			for (int i = 0; i < 3; i++)
+			for (int i = 0; i < std::size(primitive->attributes); i++)
 			{
 				auto *attr = &primitive->attributes[i];
 				if (attr->componentCount == 0) continue;
@@ -285,7 +374,7 @@ namespace sp
 		primitives.push_back(prim);
 	}
 
-	void GLModel::Draw(SceneShader *shader, glm::mat4 modelMat, const ecs::View &view)
+	void GLModel::Draw(SceneShader *shader, glm::mat4 modelMat, const ecs::View &view, int boneCount, glm::mat4* boneData)
 	{
 		for (auto primitive : primitives)
 		{
@@ -302,6 +391,11 @@ namespace sp
 				primitive.heightTex->Bind(3);
 
 			shader->SetParams(view, modelMat, primitive.parent->matrix);
+
+			if (boneCount > 0)
+			{
+				shader->SetBoneData(boneCount, boneData);
+			}
 
 			glDrawElements(
 				primitive.parent->drawMode,
@@ -323,8 +417,6 @@ namespace sp
 		buffers[index] = handle;
 		return handle;
 	}
-
-
 
 	Texture *GLModel::LoadTexture(int materialIndex, TextureType textureType)
 	{

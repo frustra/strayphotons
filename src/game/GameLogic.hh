@@ -42,6 +42,11 @@ namespace sp
 		void InitXrActions();
 		ecs::Entity ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &handle);
 		ecs::Entity ValidateAndLoadXrInputSource(std::string subpath);
+		ecs::Entity ValidateAndLoadSkeletonHand(std::string action);
+
+		void ValidateAndLoadSkeletonDebugHand(glm::mat4 xrObjectPos, std::vector<xr::XrBoneData>& boneData);
+
+		void ComputeBonePositions(std::shared_ptr<Model> model, std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output);
 
 	private:
 		Game *game;
