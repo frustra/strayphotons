@@ -218,7 +218,7 @@ bool OpenVrAction::GetPoseActionValueForNextFrame(std::string subpath, glm::mat4
 	return true;
 }
 
-bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones)
+bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool withController)
 {    
 	vr::InputSkeletalActionData_t data;
     vr::EVRInputError inputError = vr::VRInput()->GetSkeletalActionData(handle, &data, sizeof(vr::InputSkeletalActionData_t));
@@ -250,7 +250,7 @@ bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones)
         inputError = vr::VRInput()->GetSkeletalBoneData(
             handle, 
             vr::EVRSkeletalTransformSpace::VRSkeletalTransformSpace_Model, 
-            vr::EVRSkeletalMotionRange::VRSkeletalMotionRange_WithoutController,
+            withController ? vr::EVRSkeletalMotionRange::VRSkeletalMotionRange_WithController : vr::EVRSkeletalMotionRange::VRSkeletalMotionRange_WithoutController,
             boneTransforms.data(),
             boneCount
         );

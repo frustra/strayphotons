@@ -61,7 +61,9 @@ namespace sp
 	static CVar<float> CVarSunPosition("g.SunPosition", 0.2, "Sun angle");
 
 	static CVar<bool> CVarConnectVR("r.ConnectVR", true, "Connect to SteamVR");
-	static CVar<bool> CVarSkeletons("r.Skeletons", true, "Render hand skeletons instead of controllers");
+	static CVar<bool> CVarController("r.Controllers", true, "Render controller model");
+	static CVar<bool> CVarSkeletons("r.Skeletons", true, "Render hand skeletons");
+	static CVar<bool> CVarSkeletonDebug("r.SkeletonDebug", false, "Render hand skeletons debug data");
 
 	void GameLogic::InitXrActions()
 	{
@@ -301,7 +303,7 @@ namespace sp
 				// TODO: support other action sets
 				gameActionSet->Sync();
 
-				if (!CVarSkeletons.Get())
+				if (CVarController.Get())
 				{
 					// Mapping of Pose Actions to Subpaths. Needed so we can tell which-hand-did-what for the hand pose linked actions
 					std::vector<std::pair<std::string, std::string>> controllerPoseActions = { 
@@ -387,45 +389,51 @@ namespace sp
 					}
 				}
 
-				if(CVarSkeletons.Get())
-				{
+				if(CVarSkeletons.Get() || CVarSkeletonDebug.Get())
+				{					
 					// Now load skeletons
 					std::vector<std::string> skeletonActions = { xr::LeftHandSkeletonActionName, xr::RightHandSkeletonActionName };
 
 					for(std::string action : skeletonActions)
 					{
-						ecs::Entity handSkeleton = ValidateAndLoadSkeletonHand(action);
-						if (handSkeleton.Valid())
+						// Get the action pose
+						glm::mat4 xrObjectPos;
+						if (!gameActionSet->GetAction(action)->GetPoseActionValueForNextFrame(xr::SubpathNone, xrObjectPos))
 						{
-							// Get the action pose
-							glm::mat4 xrObjectPos;
-							if (!gameActionSet->GetAction(action)->GetPoseActionValueForNextFrame(xr::SubpathNone, xrObjectPos))
+							continue;
+						}
+
+						xrObjectPos = glm::transpose(xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
+
+						// Get the bone data
+						std::vector<xr::XrBoneData> boneData;
+						if (!gameActionSet->GetAction(action)->GetSkeletonActionValue(boneData, CVarController.Get()))
+						{
+							continue;
+						}
+
+						if (CVarSkeletons.Get())
+						{
+							ecs::Entity handSkeleton = ValidateAndLoadSkeletonHand(action);
+							if (handSkeleton.Valid())
 							{
-								continue;
+								auto hand = handSkeleton.Get<ecs::Renderable>();
+
+								ComputeBonePositions(hand->model, boneData, hand->model->bones);
+
+								auto ctrl = handSkeleton.Get<ecs::Transform>();
+								ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
+
+								glm::vec4 fix(0, 0, 0, 1);
+								glm::quat rotation = glm::quat(fix.w, fix.x, fix.y, fix.z);
+
+								ctrl->SetRotate(glm::mat4(glm::mat3(xrObjectPos)) * glm::mat4_cast(rotation));
 							}
+						}
 
-							xrObjectPos = glm::transpose(xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
-
-							// Get the bone data
-							std::vector<xr::XrBoneData> boneData;
-							if (!gameActionSet->GetAction(action)->GetSkeletonActionValue(boneData))
-							{
-								continue;
-							}
-
-							//ValidateAndLoadSkeletonDebugHand(xrObjectPos, boneData);
-
-							auto hand = handSkeleton.Get<ecs::Renderable>();
-
-							ComputeBonePositions(hand->model, boneData, hand->model->bones);
-
-							auto ctrl = handSkeleton.Get<ecs::Transform>();
-							ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
-
-							glm::vec4 fix(0, 0, 0, 1);
-							glm::quat rotation = glm::quat(fix.w, fix.x, fix.y, fix.z);
-
-							ctrl->SetRotate(glm::mat4(glm::mat3(xrObjectPos)) * glm::mat4_cast(rotation));
+						if (CVarSkeletonDebug.Get())
+						{
+							ValidateAndLoadSkeletonDebugHand(xrObjectPos, boneData);
 						}
 					}
 				}

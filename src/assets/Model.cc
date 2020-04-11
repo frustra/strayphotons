@@ -345,7 +345,16 @@ namespace sp
 				auto *attr = &primitive->attributes[i];
 				if (attr->componentCount == 0) continue;
 				glEnableVertexArrayAttrib(glPrimitive.vertexBufferHandle, i);
-				glVertexArrayAttribFormat(glPrimitive.vertexBufferHandle, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
+
+				if (attr->componentType == GL_UNSIGNED_SHORT)
+				{
+					glVertexArrayAttribIFormat(glPrimitive.vertexBufferHandle, i, attr->componentCount, attr->componentType, 0);
+				}
+				else
+				{
+					glVertexArrayAttribFormat(glPrimitive.vertexBufferHandle, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
+				}
+
 				glVertexArrayVertexBuffer(glPrimitive.vertexBufferHandle, i, LoadBuffer(attr->bufferIndex), attr->byteOffset, attr->byteStride);
 			}
 
@@ -483,8 +492,9 @@ namespace sp
 			{
 				tinygltf::Sampler sampler = model->model->samplers[texture.sampler];
 
-				magFilter = sampler.magFilter;
-				minFilter = sampler.minFilter;
+				minFilter = sampler.minFilter > 0 ? sampler.minFilter : GL_LINEAR_MIPMAP_LINEAR;
+				magFilter = sampler.magFilter > 0 ? sampler.magFilter : GL_LINEAR;
+				
 				wrapS = sampler.wrapS;
 				wrapT = sampler.wrapT;
 			}

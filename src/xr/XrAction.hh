@@ -77,7 +77,7 @@ namespace xr
 		// WaitGetPoses().
 		virtual bool GetPoseActionValueForNextFrame(std::string subpath, glm::mat4 &pose) = 0;
 
-		virtual bool GetSkeletonActionValue(std::vector<XrBoneData> &bones) = 0;
+		virtual bool GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool withController) = 0;
 
 	protected:
 		// Map interaction profile name -> interaction paths

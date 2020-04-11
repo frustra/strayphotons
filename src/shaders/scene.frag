@@ -16,7 +16,6 @@ layout (location = 2) in vec3 inBitangent;
 layout (location = 3) in vec2 inTexCoord;
 layout (location = 4) in vec3 inViewPos;
 layout (location = 5) flat in int inMirrorIndex;
-layout (location = 6) in vec3 inRgb;
 
 layout (location = 0) out vec4 gBuffer0; // rgba8
 layout (location = 1) out vec4 gBuffer1; // rgba16f
@@ -89,7 +88,6 @@ void main()
 	float emissiveScale = max(emissive.r, max(emissive.g, emissive.b));
 	vec3 emissiveCoeff = emissiveScale > 0 ? emissive / emissiveScale : vec3(1.0f);
 
-	//gBuffer0.rgb = inRgb;
 	gBuffer0.rgb = baseColor.rgb * emissiveCoeff;
 	gBuffer0.a = roughness;
 	gBuffer1.rg = EncodeNormal(viewNormal);

@@ -46,7 +46,7 @@ namespace sp
 
                 bool GetPoseActionValueForNextFrame(std::string subpath, glm::mat4 &pose);
 
-                bool GetSkeletonActionValue(std::vector<XrBoneData> &bones);
+                bool GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool withController);
                 
             private:
                 vr::VRActionHandle_t handle;
