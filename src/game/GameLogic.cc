@@ -419,7 +419,7 @@ namespace sp
 							{
 								auto hand = handSkeleton.Get<ecs::Renderable>();
 
-								ComputeBonePositions(hand->model, boneData, hand->model->bones);
+								ComputeBonePositions(boneData, hand->model->bones);
 
 								auto ctrl = handSkeleton.Get<ecs::Transform>();
 								ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
@@ -433,7 +433,7 @@ namespace sp
 
 						if (CVarSkeletonDebug.Get())
 						{
-							ValidateAndLoadSkeletonDebugHand(xrObjectPos, boneData);
+							ValidateAndLoadSkeletonDebugHand(action, xrObjectPos, boneData);
 						}
 					}
 				}
@@ -447,36 +447,19 @@ namespace sp
 		return true;
 	}
 
-	static xr::XrBoneData& GetSteamVRJoint(std::vector<xr::XrBoneData> &boneData, std::string name)
+	void GameLogic::ComputeBonePositions(std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output)
 	{
-		for(xr::XrBoneData& bone : boneData)
+		// Resize the output vector to match the number of joints the GLTF will reference
+		output.resize(boneData.size());
+
+		for(int i = 0; i < boneData.size(); i++)
 		{
-			if (bone.name == name)
-			{
-				return bone;
-			}
-		}
-	}
-
-	void GameLogic::ComputeBonePositions(std::shared_ptr<Model> model, std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output)
-	{
-		// Get the names of all the joints that the GLTF "JOINTS_0" list will reference
-		std::vector<std::string> jointName = model->GetJointData();
-
-		// Resize our output to match the number of joints the GLTF expects
-		output.resize(jointName.size());
-
-		// Need to match up XrBoneData (identified by a name) with GLTF nodes (identified by index)
-		for(int i = 0; i < jointName.size(); i++)
-		{			
-			glm::mat4 invBindPose = model->GetInvBindPoseForNode(jointName[i]);
-
-			xr::XrBoneData& bone = GetSteamVRJoint(boneData, jointName[i]);
+			xr::XrBoneData& bone = boneData[i];
 
 			glm::mat4 rot_mat = glm::mat4_cast(bone.rot);
 			glm::mat4 trans_mat = glm::translate(bone.pos);
 			glm::mat4 pose = trans_mat * rot_mat;
-			output[i] = pose * invBindPose;
+			output[i] = pose * bone.inverseBindPose;
 		}
 	}
 
@@ -531,21 +514,12 @@ namespace sp
 	// Validate and load the model associated with an XR Action.
 	// Note: this should only be used once per model per frame, or bad things will happen.
 	// Use the left and right hand pose actions to ensure that models aren't duplicated
-	void GameLogic::ValidateAndLoadSkeletonDebugHand(glm::mat4 xrObjectPos, std::vector<xr::XrBoneData>& boneData)
+	void GameLogic::ValidateAndLoadSkeletonDebugHand(std::string action, glm::mat4 xrObjectPos, std::vector<xr::XrBoneData>& boneData)
 	{
-		for (xr::XrBoneData& bone : boneData)
+		for (int i = 0; i < boneData.size(); i++)
 		{
-			if (bone.name == "Root")
-			{
-				continue;
-			}
-
-			if (ends_with(bone.name, "_aux"))
-			{
-				continue;
-			}
-
-			string entityName = std::string("xr-skeleton-") + bone.name;
+			xr::XrBoneData& bone = boneData[i];
+			string entityName = std::string("xr-skeleton-debug-bone-") + action + std::to_string(i);
 
 			ecs::Entity boneEntity = game->entityManager.EntityWith<ecs::Name>(entityName);
 
@@ -596,7 +570,7 @@ namespace sp
 		// TODO: query the tracking system if the device is currently tracked. Potentially 
 		// don't render XR controllers that are not being actively tracked, expecially if they're XR Skeletons
 		// TODO: support other action sets?
-		if (gameActionSet->IsInputSourceConnected(action))
+		if (gameActionSet->GetAction(action)->IsInputSourceConnected())
 		{
 			// Make sure object is valid
 			if (!xrObject.Valid())
@@ -619,7 +593,7 @@ namespace sp
 			if (!xrObject.Has<ecs::Renderable>())
 			{
 				auto renderable = xrObject.Assign<ecs::Renderable>();
-				renderable->model = gameActionSet->GetInputSourceModel(action);
+				renderable->model = gameActionSet->GetAction(action)->GetInputSourceModel();
 			}
 		}
 		else
@@ -638,21 +612,6 @@ namespace sp
 	// Use the left and right hand pose actions to ensure that models aren't duplicated
 	ecs::Entity GameLogic::ValidateAndLoadSkeletonHand(std::string action)
 	{
-		string modelName = "";
-
-		if (action == xr::LeftHandSkeletonActionName)
-		{
-			modelName = "vr_glove_left_model";
-		}
-		else if (action == xr::RightHandSkeletonActionName)
-		{
-			modelName = "vr_glove_right_model";
-		}
-		else
-		{
-			throw std::runtime_error("Unknown skeleton, cannot load model");
-		}
-
 		string entityName = "xr-skeleton-" + action;
 		ecs::Entity xrObject = game->entityManager.EntityWith<ecs::Name>(entityName);
 
@@ -679,8 +638,8 @@ namespace sp
 
 			if (!xrObject.Has<ecs::Renderable>())
 			{
-				auto model = GAssets.LoadModel(modelName);
-				auto renderable = xrObject.Assign<ecs::Renderable>(model);
+				auto renderable = xrObject.Assign<ecs::Renderable>();
+				renderable->model = gameActionSet->GetAction(action)->GetInputSourceModel();
 
 				if (!renderable->model->glModel)
 				{

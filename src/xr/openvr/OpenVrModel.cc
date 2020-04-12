@@ -1,6 +1,9 @@
 #include "xr/openvr/OpenVrModel.hh"
+#include "xr/XrAction.hh"
 #include "Common.hh"
 #include "core/Logging.hh"
+#include "tiny_gltf.h"
+
 #include <stdexcept>
 #include <thread>
 
@@ -91,6 +94,42 @@ std::shared_ptr<XrModel> OpenVrModel::LoadOpenVRModel(vr::TrackedDeviceIndex_t d
 
 	vr::VRRenderModels()->FreeTexture(vrTex);
 	vr::VRRenderModels()->FreeRenderModel(vrModel);
+
+	return xrModel;
+}
+
+std::shared_ptr<XrModel> OpenVrModel::LoadOpenVrSkeleton(std::string skeletonAction)
+{
+	const char* handResource = NULL;
+	if (skeletonAction == xr::LeftHandSkeletonActionName)
+	{
+		handResource = xr::LeftHandModelResource;
+	}
+	else if (skeletonAction == xr::RightHandSkeletonActionName)
+	{
+		handResource = xr::RightHandModelResource;
+	}
+	else
+	{
+		return false;
+	}
+
+	// Get the length of the path to the model
+    size_t modelPathLen = vr::VRResources()->GetResourceFullPath(handResource, xr::HandModelResourceDir, NULL, 0);
+
+	// TODO: how does GetResourceFullPath fail? 0 length path?
+
+	std::shared_ptr<char[]> modelPath(new char[modelPathLen]);
+	vr::VRResources()->GetResourceFullPath(handResource, xr::HandModelResourceDir, modelPath.get(), modelPathLen);
+
+	tinygltf::TinyGLTF gltfLoader;
+	std::string err;
+	std::string warn;
+	std::shared_ptr<tinygltf::Model> gltfModel = make_shared<tinygltf::Model>();
+
+	gltfLoader.LoadBinaryFromFile(gltfModel.get(), &err, &warn, std::string(modelPath.get()));
+	
+	std::shared_ptr<XrModel> xrModel = make_shared<OpenVrModel>(handResource, gltfModel);
 
 	return xrModel;
 }

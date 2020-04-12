@@ -29,8 +29,10 @@ namespace sp
 	{
 		friend GLModel;
 	public:
-		Model(const string &name) : name(name) { }
-		Model(const string &name, shared_ptr<Asset> asset, shared_ptr<tinygltf::Model> model);
+		Model(const string &name) : name(name) { };
+		Model(const string &name, shared_ptr<Asset> asset, shared_ptr<tinygltf::Model> model) : Model(name, model) { this->asset = asset; };
+		Model(const string &name, shared_ptr<tinygltf::Model> model);
+
 		virtual ~Model();
 
 		struct Attribute
@@ -61,8 +63,9 @@ namespace sp
 		Hash128 HashBuffer(int index);
 
 		int FindNodeByName(std::string name);
-		glm::mat4 GetInvBindPoseForNode(std::string name);
-		std::vector<std::string> GetJointData();
+		std::string GetNodeName(int node);
+		glm::mat4 GetInvBindPoseForNode(int nodeIndex);
+		std::vector<int> GetJointNodes();
 
 		vector<glm::mat4> bones;
 

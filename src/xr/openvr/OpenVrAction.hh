@@ -9,18 +9,18 @@ namespace sp
 {
 	namespace xr
 	{
-        class OpenVrActionSet : public XrActionSet
+        class OpenVrActionSet : public XrActionSet, public std::enable_shared_from_this<OpenVrActionSet>
         {
             public:
+                // Inherited from XrActionSet
                 OpenVrActionSet(std::string setName, std::string description);
 
                 std::shared_ptr<XrAction> CreateAction(std::string name, XrActionType type) override;
 
-                bool IsInputSourceConnected(std::string action);
-
-                std::shared_ptr<XrModel> GetInputSourceModel(std::string action);
-
                 void Sync();
+
+                // Specific to OpenVrActionSet
+                vr::VRActionSetHandle_t GetHandle() { return handle; };
 
             private:
                 vr::VRActionSetHandle_t handle;
@@ -29,8 +29,6 @@ namespace sp
         class OpenVrAction : public XrAction
         {
             public:
-                OpenVrAction(std::string name, XrActionType type);
-                
                 vr::VRActionHandle_t GetHandle() { return handle; };
 
                 // Boolean action manipulation
@@ -47,9 +45,32 @@ namespace sp
                 bool GetPoseActionValueForNextFrame(std::string subpath, glm::mat4 &pose);
 
                 bool GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool withController);
+
+                std::shared_ptr<XrModel> GetInputSourceModel();
+
+                bool IsInputSourceConnected();
                 
             private:
+                friend class OpenVrActionSet;
+
+                struct BoneData {
+                    vr::BoneIndex_t steamVrBoneIndex;
+                    glm::mat4 inverseBindPose;
+                };
+
+                // Only the OpenVrActionSet is allowed to construct actions
+                OpenVrAction(std::string name, XrActionType type, std::shared_ptr<OpenVrActionSet> actionSet);
+
+                void ComputeBoneLookupTable(std::shared_ptr<XrModel> model);
+                std::vector<std::string> GetSteamVRBoneNames();
+
                 vr::VRActionHandle_t handle;
+                std::shared_ptr<OpenVrActionSet> parentActionSet;
+
+                // Contains bone data for each bone found _in the GLTF model_.
+                // This data stores the SteamVR Bone Index relevant to this Model Bone, 
+                // as well as the inverse bind pose for the bone.
+                std::vector<BoneData> modelBoneData;
         };
     }
 }

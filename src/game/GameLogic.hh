@@ -44,9 +44,9 @@ namespace sp
 		ecs::Entity ValidateAndLoadXrInputSource(std::string subpath);
 		ecs::Entity ValidateAndLoadSkeletonHand(std::string action);
 
-		void ValidateAndLoadSkeletonDebugHand(glm::mat4 xrObjectPos, std::vector<xr::XrBoneData>& boneData);
+		void ValidateAndLoadSkeletonDebugHand(std::string action, glm::mat4 xrObjectPos, std::vector<xr::XrBoneData>& boneData);
 
-		void ComputeBonePositions(std::shared_ptr<Model> model, std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output);
+		void ComputeBonePositions(std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output);
 
 	private:
 		Game *game;

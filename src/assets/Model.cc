@@ -117,7 +117,7 @@ namespace sp
 		};
 	}
 
-	Model::Model(const std::string &name, shared_ptr<Asset> asset, shared_ptr<tinygltf::Model> model) : name(name), model(model), asset(asset)
+	Model::Model(const std::string &name, shared_ptr<tinygltf::Model> model) : name(name), model(model)
 	{
 		int defaultScene = 0;
 
@@ -283,18 +283,19 @@ namespace sp
 		}
 	}
 
-	// Returns a std::vector of the GLTF node names that are present in the "joints"
-	// array in the GLTF skin
-	std::vector<std::string> Model::GetJointData()
+	// Returns a std::vector of the GLTF node indexes that are present in the "joints"
+	// array of the GLTF skin. 
+	std::vector<int> Model::GetJointNodes()
 	{
-		std::vector<std::string> nodeNames;
+		std::vector<int> nodes;
 
+		// TODO: deal with GLTFs that have more than one skin
 		for(int node : model->skins[0].joints)
 		{
-			nodeNames.push_back(model->nodes[node].name);
+			nodes.push_back(node);
 		}
 		
-		return nodeNames;
+		return nodes;
 	}
 
 	int Model::FindNodeByName(std::string name)
@@ -309,16 +310,14 @@ namespace sp
 		return -1;
 	}
 
-	glm::mat4 Model::GetInvBindPoseForNode(std::string name)
+	glm::mat4 Model::GetInvBindPoseForNode(int nodeIndex)
 	{
-		int nodeIndex = FindNodeByName(name);
-
-		if (nodeIndex == -1)
-		{
-			throw std::runtime_error("No such node exists");
-		}
-
 		return inverseBindMatrixForJoint[nodeIndex];
+	}
+
+	std::string Model::GetNodeName(int node)
+	{
+		return model->nodes[node].name;
 	}
 
 	GLModel::GLModel(Model *model) : model(model)

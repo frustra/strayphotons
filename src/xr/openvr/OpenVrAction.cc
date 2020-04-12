@@ -27,73 +27,10 @@ OpenVrActionSet::OpenVrActionSet(std::string setName, std::string description) :
 
 std::shared_ptr<XrAction> OpenVrActionSet::CreateAction(std::string name, XrActionType type)
 {
-    std::shared_ptr<XrAction> action = std::make_shared<OpenVrAction>(name, type);
+    std::shared_ptr<XrAction> action = std::shared_ptr<OpenVrAction>(new OpenVrAction(name, type, std::shared_ptr<OpenVrActionSet>(this)));
     XrActionSet::AddAction(action);
 
     return action;
-}
-
-bool OpenVrActionSet::IsInputSourceConnected(std::string actionStr)
-{
-    std::shared_ptr<OpenVrAction> action = std::dynamic_pointer_cast<OpenVrAction>(XrActionSet::GetAction(actionStr));
-
-	vr::VRInputValueHandle_t inputHandle = vr::k_ulInvalidInputValueHandle;
-	vr::EVRInputError inputError = vr::VRInput()->GetActionOrigins(handle, action->GetHandle(), &inputHandle, 1);
-
-    // We only support one binding source, this is bound to multiple sources
-    if(inputError == vr::EVRInputError::VRInputError_BufferTooSmall)
-    {
-        return false;
-    }
-	else if(inputError != vr::EVRInputError::VRInputError_None)
-    {
-        throw std::runtime_error("Failed to get subpath for action");
-    }
-
-    if (inputHandle == vr::k_ulInvalidInputValueHandle)
-    {
-        // No device connected or action is unbound.
-        return false;
-    }
-
-    vr::InputOriginInfo_t info;
-	inputError = vr::VRInput()->GetOriginTrackedDeviceInfo(inputHandle, &info, sizeof(vr::InputOriginInfo_t));
-
-    if(inputError != vr::EVRInputError::VRInputError_None)
-    {
-        throw std::runtime_error("Failed to get device info");
-    }
-
-	return info.trackedDeviceIndex != vr::k_unTrackedDeviceIndexInvalid;
-}
-
-std::shared_ptr<XrModel> OpenVrActionSet::GetInputSourceModel(std::string actionStr)
-{
-    std::shared_ptr<OpenVrAction> action = std::dynamic_pointer_cast<OpenVrAction>(XrActionSet::GetAction(actionStr));
-
-	vr::VRInputValueHandle_t inputHandle = vr::k_ulInvalidInputValueHandle;
-	vr::EVRInputError inputError = vr::VRInput()->GetActionOrigins(handle, action->GetHandle(), &inputHandle, 1);
-
-	if(inputError != vr::EVRInputError::VRInputError_None)
-    {
-        throw std::runtime_error("Failed to get subpath for action");
-    }
-
-    if (inputHandle == vr::k_ulInvalidInputValueHandle)
-    {
-        // No device connected or action is unbound.
-        return false;
-    }
-
-    vr::InputOriginInfo_t info;
-    inputError = vr::VRInput()->GetOriginTrackedDeviceInfo(inputHandle, &info, sizeof(vr::InputOriginInfo_t));
-
-    if(inputError != vr::EVRInputError::VRInputError_None)
-    {
-        throw std::runtime_error("Failed to get device info");
-    }
-
-	return OpenVrModel::LoadOpenVRModel(info.trackedDeviceIndex);
 }
 
 void OpenVrActionSet::Sync()
@@ -110,15 +47,24 @@ void OpenVrActionSet::Sync()
 	}
 }
 
-OpenVrAction::OpenVrAction(std::string name, XrActionType type) : 
+OpenVrAction::OpenVrAction(std::string name, XrActionType type, std::shared_ptr<OpenVrActionSet> actionSet) : 
     XrAction(name, type)
 {
+    this->parentActionSet = actionSet;
+
     vr::EVRInputError inputError = vr::VRInput()->GetActionHandle(name.c_str(), &handle);
 
     if (inputError != vr::EVRInputError::VRInputError_None)
     {
         throw std::runtime_error("Failed to initialize OpenVr action set");
     }
+
+    // TODO:
+    // If we are a skeleton action, we _must_ be one of the two supported Skeleton actions
+
+    // TODO:
+    // If we are a skeleton, we can preload the "joint tranlation table" that we will need to use
+    // to convert "SteamVR Input" bones into "model bones" that are referenced in the GLTF.
 }
 
 bool OpenVrAction::GetBooleanActionValue(std::string subpath)
@@ -271,30 +217,174 @@ bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool w
         throw std::runtime_error("Failed to get skeletal action data");
     }
     
-     // Make the output vector big enough to hold all the bones
-    bones.resize(boneCount);
+    // Make the output vector big enough to hold all the bones
+    // for the model that we've previously provided to the application.
+    // If we have not previously provided the application a model, this will
+    // do nothing.
+    bones.resize(modelBoneData.size());
 
-    for(int i = 0; i < boneCount; i++)
+    for(int i = 0; i < modelBoneData.size(); i++)
     {
-        char name[255];
-        inputError = vr::VRInput()->GetBoneName(handle, i, name, 255);
-
-        if(inputError != vr::EVRInputError::VRInputError_None)
-        {
-            throw std::runtime_error("Failed to get skeletal action data");
-        }
-
-        bones[i].name = std::string(name);
         bones[i].pos  = glm::vec3(
-            boneTransforms[i].position.v[0],
-            boneTransforms[i].position.v[1],
-            boneTransforms[i].position.v[2]);
+            boneTransforms[modelBoneData[i].steamVrBoneIndex].position.v[0],
+            boneTransforms[modelBoneData[i].steamVrBoneIndex].position.v[1],
+            boneTransforms[modelBoneData[i].steamVrBoneIndex].position.v[2]);
+
         bones[i].rot  = glm::quat(
-            boneTransforms[i].orientation.w,
-            boneTransforms[i].orientation.x,
-            boneTransforms[i].orientation.y,
-            boneTransforms[i].orientation.z);
+            boneTransforms[modelBoneData[i].steamVrBoneIndex].orientation.w,
+            boneTransforms[modelBoneData[i].steamVrBoneIndex].orientation.x,
+            boneTransforms[modelBoneData[i].steamVrBoneIndex].orientation.y,
+            boneTransforms[modelBoneData[i].steamVrBoneIndex].orientation.z);
+
+        bones[i].inverseBindPose = modelBoneData[i].inverseBindPose;
     }
 
 	return true;
+}
+
+bool OpenVrAction::IsInputSourceConnected()
+{
+	vr::VRInputValueHandle_t inputHandle = vr::k_ulInvalidInputValueHandle;
+	vr::EVRInputError inputError = vr::VRInput()->GetActionOrigins(parentActionSet->GetHandle(), handle, &inputHandle, 1);
+
+    // We only support one binding source, this is bound to multiple sources
+    if(inputError == vr::EVRInputError::VRInputError_BufferTooSmall)
+    {
+        return false;
+    }
+	else if(inputError != vr::EVRInputError::VRInputError_None)
+    {
+        throw std::runtime_error("Failed to get subpath for action");
+    }
+
+    if (inputHandle == vr::k_ulInvalidInputValueHandle)
+    {
+        // No device connected or action is unbound.
+        return false;
+    }
+
+    vr::InputOriginInfo_t info;
+	inputError = vr::VRInput()->GetOriginTrackedDeviceInfo(inputHandle, &info, sizeof(vr::InputOriginInfo_t));
+
+    if(inputError != vr::EVRInputError::VRInputError_None)
+    {
+        throw std::runtime_error("Failed to get device info");
+    }
+
+	return info.trackedDeviceIndex != vr::k_unTrackedDeviceIndexInvalid;
+}
+
+std::shared_ptr<XrModel> OpenVrAction::GetInputSourceModel()
+{
+    // Skeletons require special model loading
+    if (this->GetActionType() == xr::Skeleton)
+    {
+        std::shared_ptr<XrModel> skeleton = OpenVrModel::LoadOpenVrSkeleton(this->GetName());
+        ComputeBoneLookupTable(skeleton);
+        return skeleton;
+    }
+    else
+    {
+        vr::VRInputValueHandle_t inputHandle = vr::k_ulInvalidInputValueHandle;
+        vr::EVRInputError inputError = vr::VRInput()->GetActionOrigins(parentActionSet->GetHandle(), handle, &inputHandle, 1);
+
+        if(inputError != vr::EVRInputError::VRInputError_None)
+        {
+            throw std::runtime_error("Failed to get subpath for action");
+        }
+
+        if (inputHandle == vr::k_ulInvalidInputValueHandle)
+        {
+            // No device connected or action is unbound.
+            return false;
+        }
+
+        vr::InputOriginInfo_t info;
+        inputError = vr::VRInput()->GetOriginTrackedDeviceInfo(inputHandle, &info, sizeof(vr::InputOriginInfo_t));
+
+        if(inputError != vr::EVRInputError::VRInputError_None)
+        {
+            throw std::runtime_error("Failed to get device info");
+        }
+
+        return OpenVrModel::LoadOpenVRModel(info.trackedDeviceIndex);
+    }	
+}
+
+void OpenVrAction::ComputeBoneLookupTable(std::shared_ptr<XrModel> xrModel)
+{
+    std::shared_ptr<Model> model = std::dynamic_pointer_cast<Model>(xrModel);
+
+    // We are performing the following translations:
+    // 1. GLTF Joint Index -> GLTF Node Index (Stored in GLTF "joints" array)
+    // 2. GLTF Node Index -> GLTF Node Name (Stored in each GLTF Node)
+    // 3. Steam VR Bone Name -> Steam VR Bone Index (SteamVR provides this)
+    // 
+    // We want to store the translation of (Joint Index) -> (SteamVR Bone ID)
+    // so that our lookups can have high performance during each frame.
+    // The SteamVR Hand Skeleton Models have the property that
+    // GLTF Node Name == SteamVR Bone Name, so we can use this to translate
+    // GLTF Joint Index -> Steam VR Bone Index
+
+    // Get #1: GLTF Joint Index -> GLTF Node Index translations from the GLTF.
+    // GLTF Joint Index is the position in the vector.
+    // GLTF Node Index is the value at each position in the vector.
+    std::vector<int> jointNodes = model->GetJointNodes();
+
+    // Resize the translation table vector to match the number of joints the GLTF will reference
+    modelBoneData.resize(jointNodes.size());
+
+    // Get #3: Steam VR Bone Name -> Steam VR Bone Index. 
+    // Steam VR Bone Index is the position in the vector
+    // Steam VR Bone Name is the value at that position.
+    std::vector<std::string> steamVrBoneNames = GetSteamVRBoneNames();
+    
+    // For each joint in the model (pulled from the GLTF "joints" array...)
+    for(int i = 0; i < jointNodes.size(); i++)
+    {			
+        // Get the steamVrBone that corresponds to this joint
+        auto steamVrBone = std::find(
+            steamVrBoneNames.begin(), 
+            steamVrBoneNames.end(), 
+            model->GetNodeName(jointNodes[i]) // This is translation #2: GLTF Node Index -> GLTF Node Name
+        );
+
+        if (steamVrBone == steamVrBoneNames.end())
+        {
+            // TODO: there might be a way to handle bones in the model that don't have a matching
+            // bone in SteamVR. For example, it might be possible to use two-bone-IK to fill in
+            // the missing data.
+            throw std::runtime_error("Cannot find matching SteamVR bone for model bone");
+        }
+
+        // SteamVR Bone Index is the position in the steamVrBoneNames vector.
+        modelBoneData[i].steamVrBoneIndex = std::distance(steamVrBoneNames.begin(), steamVrBone);
+
+        // Store the inverse bind pose for this node, taken from the GLTF
+        modelBoneData[i].inverseBindPose = model->GetInvBindPoseForNode(jointNodes[i]);
+    }
+}
+
+std::vector<std::string> OpenVrAction::GetSteamVRBoneNames()
+{
+    uint32_t boneCount = 0;
+    vr::EVRInputError inputError = vr::VRInput()->GetBoneCount(handle, &boneCount);
+
+    if(inputError != vr::EVRInputError::VRInputError_None)
+    {
+        throw std::runtime_error("Failed to get bone count for action skeleton");
+    }
+
+    std::vector<std::string> boneNames;
+    boneNames.resize(boneCount);
+
+    for (int i = 0; i < boneCount; i++)
+    {
+        // TODO: bone name max length is not specified by SteamVR spec.
+        boneNames[i].resize(255);
+        vr::VRInput()->GetBoneName(handle, i, &boneNames[i].front(), 255);
+        boneNames[i].erase(boneNames[i].find('\0'));
+    }
+
+    return boneNames;
 }

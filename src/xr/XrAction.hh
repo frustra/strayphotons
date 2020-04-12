@@ -21,6 +21,7 @@ namespace xr
 	static const char* TeleportActionName = "/actions/main/in/teleport";
 	static const char* LeftHandActionName = "/actions/main/in/LeftHand";
 	static const char* RightHandActionName = "/actions/main/in/RightHand";
+
 	static const char* LeftHandSkeletonActionName = "/actions/main/in/lefthand_anim";
 	static const char* RightHandSkeletonActionName = "/actions/main/in/righthand_anim";
 
@@ -39,12 +40,12 @@ namespace xr
 		Skeleton = 5,
 	};
 
+	// TODO: upload vec3 and quat to GPU for skinning to save memory bandwidth
 	struct XrBoneData
 	{
-		std::string name;
 		glm::vec3 	pos;
 		glm::quat 	rot;
-		XrBoneData* parent;
+		glm::mat4   inverseBindPose;
 	};
 
 	class XrAction
@@ -79,6 +80,10 @@ namespace xr
 
 		virtual bool GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool withController) = 0;
 
+		virtual bool IsInputSourceConnected() = 0;
+
+		virtual std::shared_ptr<XrModel> GetInputSourceModel() = 0;
+
 	protected:
 		// Map interaction profile name -> interaction paths
 		std::map<std::string, std::vector<std::string>> suggestedBindings;
@@ -100,10 +105,6 @@ namespace xr
 		std::shared_ptr<XrAction> GetAction(std::string name) { return registeredActions[name]; };
 
 		virtual void Sync() = 0;
-
-		virtual bool IsInputSourceConnected(std::string action) = 0;
-
-		virtual std::shared_ptr<XrModel> GetInputSourceModel(std::string action) = 0;
 
 	protected:
 		std::string actionSetName;
