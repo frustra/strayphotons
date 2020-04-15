@@ -9,7 +9,8 @@ namespace sp
 		Bind(viewMat, "view");
 		Bind(projMat, "projection");
 		Bind(boneCount, "boneCount");
-		BindBuffer(boneData, 0);
+		//BindBuffer(boneData, "BoneData");
+		BindBuffer(boneData, 2);
 	}
 
 	void SceneShader::SetParams(const ecs::View &view, glm::mat4 modelMat, glm::mat4 primitiveMat)

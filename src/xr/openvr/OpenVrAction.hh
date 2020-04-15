@@ -9,7 +9,7 @@ namespace sp
 {
 	namespace xr
 	{
-        class OpenVrActionSet : public XrActionSet, public std::enable_shared_from_this<OpenVrActionSet>
+        class OpenVrActionSet : public XrActionSet
         {
             public:
                 // Inherited from XrActionSet

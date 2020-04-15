@@ -120,7 +120,11 @@ namespace sp
 	protected:
 		void Bind(Uniform &u, string name);
 		void BindBuffer(ShaderBuffer &b, int index, GLenum target = GL_UNIFORM_BUFFER, GLenum usage = GL_STATIC_DRAW);
+		void BindBuffer(ShaderBuffer &b, string name, GLenum target = GL_UNIFORM_BUFFER, GLenum usage = GL_STATIC_DRAW);
 		void BufferData(ShaderBuffer &b, GLsizei size, const void *data);
+
+		bool IsBound(Uniform &u) { return u.location != -1; };
+		bool IsBound(ShaderBuffer &b) { return b.index != -1; };
 
 		// Methods for setting uniform values.
 

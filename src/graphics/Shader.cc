@@ -49,6 +49,13 @@ namespace sp
 		buffers.push_back(&b);
 	}
 
+	void Shader::BindBuffer(ShaderBuffer &b, string name, GLenum target, GLenum usage)
+	{
+		int index = glGetUniformBlockIndex(program, name.c_str());
+		AssertGLOK("glGetUniformLocation");
+		BindBuffer(b, index, target, usage);
+	}
+
 	void Shader::BufferData(ShaderBuffer &b, GLsizei size, const void *data)
 	{
 		Assert(b.index != -1, "buffer not created");
