@@ -1,6 +1,8 @@
 /build
 /bin
 /.vscode
+/assets/models/*/
+/assets/logos
 /assets/gltf-process
 /assets/gltf-process.exe
 /assets/shaders
@@ -9,7 +11,6 @@
 /assets/audio/.cache
 /assets/audio/.user
 /assets/cache
-/assets/models/**/*.blend1
 /assets/util/jsonlint_err.json
 /tests/cppcheck-result.txt
 /tests/valgrind-out.txt*
