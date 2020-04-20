@@ -269,3 +269,8 @@ d575c2e2f135db63bb8f32b535d5a721    models/wall-4x3-door/Material_Roughness.png
 85e637b0f9607249686ecafb0d2f979f    models/wall-4x3-door/wall-4x3-door.gltf
 452cabfd0e48c9d628b4d063817d9200    models/wall-4x3-door/wall-4x3-door.mtl
 558ba8138f8be5b013682b3a8418c8df    models/wall-4x3-door/wall-4x3-door.obj
+7392d4c1cc880bb1f77d46a7dc73bbb8    textures/flashlight.jpg
+d505e2f46236ab748c3550864796e837    textures/smaa/AreaTex.tga
+520aaaa56035d0218d4e4aa45e75c96f    textures/smaa/AreaTexDX10.dds
+a2ba3f918f066a66f449923f4e49c085    textures/smaa/SearchTex.dds
+3a9b7bebc3f33757fa9a6d95c19a3bab    textures/smaa/SearchTex.tga
