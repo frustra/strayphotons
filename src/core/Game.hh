@@ -11,10 +11,6 @@
 
 #include <Ecs.hh>
 
-#if defined(SP_AUDIO)
-#include "audio/AudioManager.hh"
-#endif
-
 namespace cxxopts
 {
 	class ParseResult;
@@ -40,9 +36,6 @@ namespace sp
 		MenuGuiManager menuGui;
 		GraphicsManager graphics;
 		InputManager input;
-#if defined(SP_AUDIO)
-		AudioManager audio;
-#endif
 		ecs::EntityManager entityManager;
 		GameLogic logic;
 		PhysxManager physics;

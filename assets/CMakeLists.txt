@@ -1,7 +1,7 @@
 # Make asset-list.txt a build dependency
 configure_file(asset-list.txt asset-list.txt COPYONLY)
 
-message(STATUS "Downloading missing assets...")
+message(STATUS "Checking for missing assets...")
 set(frustra_s3_auth "github-repo:M9vS5IjJ&6%FHxCV")
 
 # Read the asset-list.txt file and download each of the paths into the assets folder
@@ -16,6 +16,10 @@ foreach(asset_line ${asset_list})
         list(GET asset_split 0 asset_md5)
         list(GET asset_split 1 asset_path)
     
+        if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${asset_path}")
+            message(STATUS "Downloading: ${CMAKE_CURRENT_SOURCE_DIR}/${asset_path}")
+        endif()
+
         file(DOWNLOAD
             "https://dd10eb56pu043.cloudfront.net/assets/${asset_path}"
             "${CMAKE_CURRENT_SOURCE_DIR}/${asset_path}"
@@ -26,6 +30,8 @@ foreach(asset_line ${asset_list})
         list(GET asset_split 0 asset_path)
 
         if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${asset_path}")
+            message(STATUS "Downloading: ${CMAKE_CURRENT_SOURCE_DIR}/${asset_path}")
+
             file(DOWNLOAD
                 "https://dd10eb56pu043.cloudfront.net/assets/${asset_path}"
                 "${CMAKE_CURRENT_SOURCE_DIR}/${asset_path}"

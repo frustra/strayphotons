@@ -189,8 +189,6 @@ namespace sp
 		{
 			if (input->FocusLocked()) return;
 		});
-
-		//game->audio.StartEvent("event:/german nonsense");
 	}
 
 	GameLogic::~GameLogic()

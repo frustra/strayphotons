@@ -43,19 +43,6 @@ These tools require installing node.
 - To automatically compile scenes when the files change, `npm install -g nodemon` and run `make watch-scenes`.
 - To compile a model, use `./sp-convert.sh <path to obj>`.
 
-### Audio
-
-If you don't hear any sound it might be because the correct audio driver or
-output type is not the default. You can change this with the following
-environment variables:
-
-**AUDIO_DRIVER:** Set to a number (default 0). View logs near
-"[log] Using audio driver 0 of 3" for a list of choices.
-
-**AUDIO_OUTPUT_TYPE:** Set to either "pulseaudio" or "alsa" on Linux.
-
-For example: ```AUDIO_DRIVER=2 AUDIO_OUTPUT_TYPE="alsa" ./run.sh```
-
 Developing
 ----------
 

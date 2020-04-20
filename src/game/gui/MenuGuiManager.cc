@@ -388,13 +388,6 @@ namespace sp
 			CenteredText("All rights reserved.");
 			ImGui::PopFont();
 
-			CenteredText(" ");
-
-			ImGui::PushFont(io.Fonts->Fonts[3]);
-			CenteredText("Audio Engine supplied by FMOD");
-			CenteredText("by Firelight Technologies Pty Ltd.");
-			ImGui::PopFont();
-
 			ImGui::Dummy({1, 600});
 
 			creditsScroll += io.DeltaTime * 20.0f;
