@@ -95,12 +95,6 @@ else()
 	set(ARM OFF)
 endif()
 
-if(NOT ARM)
-	set(SP_AUDIO ON)
-else()
-	set(SP_AUDIO OFF)
-endif()
-
 ## OpenVR is supported on Windows, Linux, and MacOS, but not on ARM
 if(NOT ARM)
 	if((WIN32 OR UNIX) OR APPLE)
@@ -226,21 +220,6 @@ if (SP_PACKAGE_RELEASE)
 		set_target_properties(${PROJECT_EXE} PROPERTIES INSTALL_RPATH "\$ORIGIN")
 		set_target_properties(${PROJECT_EXE} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	endif()
-endif()
-
-if(SP_AUDIO)
-	target_link_libraries(
-		${PROJECT_LIB}
-		PRIVATE
-			fmod
-			fmodstudio
-	)
-
-	target_compile_definitions(
-		${PROJECT_LIB}
-		PRIVATE
-			SP_AUDIO
-	)
 endif()
 
 set (_physx_libraries

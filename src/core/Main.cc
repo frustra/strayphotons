@@ -46,8 +46,6 @@ int main(int argc, char **argv)
 	("m,map", "Initial scene to load", value<string>())
 	("basic-renderer", "Use minimal debug renderer", value<bool>())
 	("cvar", "Set cvar to initial value", value<vector<string>>())
-	("audio-driver", "Use audio device by index", value<int>())
-	("audio-output-type", "Force use of audio API (pulseaudio, alsa)", value<string>())
 	;
 
 #ifdef CATCH_GLOBAL_EXCEPTIONS

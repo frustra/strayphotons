@@ -1,8 +1,0 @@
-/assets/audio/Assets/** filter=lfs diff=lfs merge=lfs -text
-/assets/audio/Build/** filter=lfs diff=lfs merge=lfs -text
-/vendor/lib/** filter=lfs diff=lfs merge=lfs -text
-/ext/fmod/lib/** filter=lfs diff=lfs merge=lfs -text
-*.png filter=lfs diff=lfs merge=lfs -text
-*.tga filter=lfs diff=lfs merge=lfs -text
-*.glb filter=lfs diff=lfs merge=lfs -text
-*.gltf filter=lfs diff=lfs merge=lfs -text
