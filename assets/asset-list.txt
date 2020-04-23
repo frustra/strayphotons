@@ -47,7 +47,6 @@ a13f74657d0dd22d21d8018b48707cd3    models/ceiling-3x3/ceiling-3x3.obj
 920480972b8cb61d54bf191972735d00    models/ceiling-3x3/Material_Height.png
 d4086398b443c7d3be268ddc5ecff898    models/ceiling-3x3/Material_Metallic.png
 58e9289359f0fa0985ec53ba6139dbee    models/ceiling-3x3/Material_Roughness.png
-083cbb391d39d2a227b1bd2d6c1fc08a    models/CMakeLists.txt
 ccf2848cc2242bee66b6272ef46d7a5d    models/cornell-box-1.gltf
 8419e7aa5b30a308cd5e409e2318129c    models/cornell-box-2.gltf
 a2a2fa0b54b13ff4e03b33208fe8c3d8    models/cornell-box-3.gltf
@@ -135,7 +134,6 @@ ea0f3016bb87523b5b93091822554b07    models/mcube/Material.001_Base_Color.png
 fb70d29a0c936a19ac73f89a0cdbb3e2    models/mcube/mcube.obj
 6cbfc97fea0ecf2f192c4c20f7e50c89    models/mcube-physx.gltf
 cfa55365c8008b63b5baabc16e891b04    models/mirror.gltf
-1ec0a85a93fa1042ae55cc3548dfe600    models/ModelProcessing.cmake
 3b012fc43776f6936c17296624e1666e    models/occluder.gltf
 f1a15bd5a12b8bd2e67bb1a7c90a22bf    models/parking-block/None_Base_Color.png
 ba99e944c2be1665691764eafc74c13b    models/parking-block/None_Height.png

@@ -5,6 +5,7 @@
 /assets/models/*.glb
 /assets/models/*.gltf
 /assets/logos
+/assets/textures
 /assets/gltf-process
 /assets/gltf-process.exe
 /assets/shaders
