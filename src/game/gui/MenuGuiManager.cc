@@ -141,7 +141,6 @@ namespace sp
 		ImVec4 white(1.0, 1.0, 1.0, 1.0);
 		ImVec4 green(0.05, 1.0, 0.3, 1.0);
 
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, empty);
 		ImGui::PushStyleColor(ImGuiCol_Button, empty);
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, green);
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, green);
@@ -149,11 +148,12 @@ namespace sp
 		ImGui::PushStyleColor(ImGuiCol_TextButtonHover, black);
 		ImGui::PushStyleColor(ImGuiCol_TextButtonActive, black);
 		ImGui::PushStyleColor(ImGuiCol_CheckMark, green);
-		ImGui::PushStyleColor(ImGuiCol_ComboBg, black);
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, black);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0);
 		ImGui::PushFont(io.Fonts->Fonts[2]);
 
 		ImGuiWindowFlags flags =
+			ImGuiWindowFlags_NoBackground |
 			ImGuiWindowFlags_NoCollapse |
 			ImGuiWindowFlags_NoResize |
 			ImGuiWindowFlags_NoTitleBar |
@@ -164,14 +164,14 @@ namespace sp
 
 		if (selectedScreen == MenuScreen::Splash)
 		{
-			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
 			ImGui::Begin("MenuSplash", nullptr, flags);
 			ImGui::Text("Press Enter");
 			ImGui::End();
 		}
 		else if (selectedScreen == MenuScreen::Main)
 		{
-			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
 			ImGui::Begin("MenuMain", nullptr, flags);
 
 			ImGui::Image((void *)(uintptr_t) logoTex.handle, logoSize);
@@ -206,7 +206,7 @@ namespace sp
 		}
 		else if (selectedScreen == MenuScreen::SceneSelect)
 		{
-			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
 			ImGui::Begin("MenuSceneSelect", nullptr, flags);
 
 			ImGui::Image((void *)(uintptr_t) logoTex.handle, logoSize);
@@ -247,7 +247,7 @@ namespace sp
 		}
 		else if (selectedScreen == MenuScreen::Options)
 		{
-			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
 			ImGui::Begin("MenuOptions", nullptr, flags);
 
 			ImGui::Image((void *)(uintptr_t) logoTex.handle, logoSize);
@@ -265,6 +265,7 @@ namespace sp
 			ImGui::PopStyleVar();
 			ImGui::NextColumn();
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 10));
+			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0);
 
 			{
 				static std::vector<glm::ivec2> modes;
@@ -327,7 +328,7 @@ namespace sp
 				}
 			}
 
-			ImGui::PopStyleVar();
+			ImGui::PopStyleVar(2);
 			ImGui::PopFont();
 			ImGui::Columns(1);
 			ImGui::Text(" ");
@@ -341,7 +342,7 @@ namespace sp
 		}
 		else if (selectedScreen == MenuScreen::Credits)
 		{
-			ImGui::SetNextWindowPosCenter(ImGuiSetCond_Always);
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
 			ImGui::Begin("MenuCredits", nullptr, flags);
 
 			static Texture frLogoTex = GAssets.LoadTexture("logos/credits-frustra.png");
@@ -404,7 +405,7 @@ namespace sp
 
 		ImGui::PopFont();
 		ImGui::PopStyleVar();
-		ImGui::PopStyleColor(9);
+		ImGui::PopStyleColor(8);
 	}
 
 	bool MenuGuiManager::Focused()

@@ -22,10 +22,13 @@ namespace sp
 				ImGuiWindowFlags_NoTitleBar;
 
 			ImGui::SetNextWindowPos(ImVec2(0, 0));
+			ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, 400.0f));
+			ImGui::SetNextWindowBgAlpha(0.7f);
 
-			ImGui::Begin("Console", nullptr, ImVec2(io.DisplaySize.x, 400.0f), 0.7f, flags);
+			ImGui::Begin("Console", nullptr, flags);
 			{
-				ImGui::BeginChild("ScrollingRegion", ImVec2(0, -ImGui::GetItemsLineHeightWithSpacing()), false, ImGuiWindowFlags_HorizontalScrollbar);
+        		const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+				ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
 
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1));
 
@@ -51,16 +54,18 @@ namespace sp
 					ImGuiInputTextFlags_CallbackCompletion |
 					ImGuiInputTextFlags_CallbackHistory;
 
+        		bool reclaim_focus = false;
 				if (ImGui::InputText("##CommandInput", inputBuf, sizeof(inputBuf), iflags, CommandEditStub, (void *) this))
 				{
 					string line(inputBuf);
 					GConsoleManager.ParseAndExecute(line, true);
 					inputBuf[0] = '\0';
 					historyOffset = 0;
-					ImGui::SetKeyboardFocusHere(-1);
+					reclaim_focus = true;
 				}
 
-				if (ImGui::IsItemHovered() || (ImGui::IsRootWindowOrAnyChildFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0)))
+        		ImGui::SetItemDefaultFocus();
+				if (reclaim_focus)
 					ImGui::SetKeyboardFocusHere(-1);
 			}
 			ImGui::End();
