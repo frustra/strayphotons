@@ -37,7 +37,12 @@ add_custom_command(
         ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline
 )
 
-add_custom_target(models)
+add_custom_target(
+    models
+    DEPENDS
+        ${PROJECT_SOURCE_DIR}/ext/obj2gltf/node_modules
+        ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/node_modules
+)
 
 # Add all the model directories
 set(MODEL_FOLDERS
