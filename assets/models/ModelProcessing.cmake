@@ -23,7 +23,7 @@ function(process_obj_to_gltf)
             ${PARAM_OBJ}
             ${PARAM_MTL}
             ${PARAM_TEXTURES}
-            ${PROJECT_SOURCE_DIR}/ext/obj2gltf/node_modules
+            obj2gltf-install
     )
 
     add_custom_target(${PARAM_TARGET} DEPENDS ${PARAM_GLTF})
@@ -52,7 +52,7 @@ function(process_gltf_to_glb)
         DEPENDS
             ${PARAM_DEPENDS}
             ${PARAM_GLTF}
-            ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/node_modules
+            gltf-pipeline-install
     )
 
     add_custom_target(${PARAM_TARGET} DEPENDS ${PARAM_GLB})

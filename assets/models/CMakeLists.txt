@@ -19,30 +19,27 @@ endif()
 
 # Custom commands to make sure gltf-pipeline and obj2gltf are installed
 
-add_custom_command(
+add_custom_target(
+    obj2gltf-install
     COMMAND
         ${NPM_EXE} install
-    OUTPUT
+    BYPRODUCTS
         ${PROJECT_SOURCE_DIR}/ext/obj2gltf/node_modules
     WORKING_DIRECTORY
         ${PROJECT_SOURCE_DIR}/ext/obj2gltf
 )
 
-add_custom_command(
+add_custom_target(
+    gltf-pipeline-install
     COMMAND
         ${NPM_EXE} install
-    OUTPUT
+    BYPRODUCTS
         ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/node_modules
     WORKING_DIRECTORY
         ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline
 )
 
-add_custom_target(
-    models
-    DEPENDS
-        ${PROJECT_SOURCE_DIR}/ext/obj2gltf/node_modules
-        ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/node_modules
-)
+add_custom_target(models)
 
 # Add all the model directories
 set(MODEL_FOLDERS
