@@ -24,6 +24,8 @@ namespace sp
 
 	void DebugGuiManager::BeforeFrame()
 	{
+		ImGui::StyleColorsClassic();
+
 		ImGuiIO &io = ImGui::GetIO();
 		io.MouseDrawCursor = false;
 

@@ -17,17 +17,17 @@ namespace sp
 			ImGuiIO &io = ImGui::GetIO();
 
 			ImGuiWindowFlags flags =
+				ImGuiWindowFlags_NoDecoration |
 				ImGuiWindowFlags_NoCollapse |
 				ImGuiWindowFlags_NoResize |
 				ImGuiWindowFlags_NoTitleBar;
 
 			ImGui::SetNextWindowPos(ImVec2(0, 0));
 			ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, 400.0f));
-			ImGui::SetNextWindowBgAlpha(0.7f);
 
 			ImGui::Begin("Console", nullptr, flags);
 			{
-        		const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+				const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
 				ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
 
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1));
@@ -54,7 +54,7 @@ namespace sp
 					ImGuiInputTextFlags_CallbackCompletion |
 					ImGuiInputTextFlags_CallbackHistory;
 
-        		bool reclaim_focus = false;
+				bool reclaim_focus = false;
 				if (ImGui::InputText("##CommandInput", inputBuf, sizeof(inputBuf), iflags, CommandEditStub, (void *) this))
 				{
 					string line(inputBuf);
@@ -64,7 +64,7 @@ namespace sp
 					reclaim_focus = true;
 				}
 
-        		ImGui::SetItemDefaultFocus();
+				ImGui::SetItemDefaultFocus();
 				if (reclaim_focus)
 					ImGui::SetKeyboardFocusHere(-1);
 			}

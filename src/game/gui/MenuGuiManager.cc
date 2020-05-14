@@ -61,6 +61,7 @@ namespace sp
 
 	void MenuGuiManager::BeforeFrame()
 	{
+		ImGui::StyleColorsClassic();
 		framesSinceOpened++;
 
 		ImGuiIO &io = ImGui::GetIO();
@@ -148,7 +149,6 @@ namespace sp
 		ImGui::PushStyleColor(ImGuiCol_TextButtonHover, black);
 		ImGui::PushStyleColor(ImGuiCol_TextButtonActive, black);
 		ImGui::PushStyleColor(ImGuiCol_CheckMark, green);
-		ImGui::PushStyleColor(ImGuiCol_FrameBg, black);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0);
 		ImGui::PushFont(io.Fonts->Fonts[2]);
 
@@ -405,7 +405,7 @@ namespace sp
 
 		ImGui::PopFont();
 		ImGui::PopStyleVar();
-		ImGui::PopStyleColor(8);
+		ImGui::PopStyleColor(7);
 	}
 
 	bool MenuGuiManager::Focused()

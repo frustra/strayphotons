@@ -18,22 +18,19 @@ if (${NPM_EXE} STREQUAL NPM_EXE-NOTFOUND)
 endif()
 
 # Custom commands to make sure gltf-pipeline and obj2gltf are installed
-
-add_custom_target(
-    obj2gltf-install
+add_custom_command(
     COMMAND
         ${NPM_EXE} install
-    BYPRODUCTS
+    OUTPUT
         ${PROJECT_SOURCE_DIR}/ext/obj2gltf/node_modules
     WORKING_DIRECTORY
         ${PROJECT_SOURCE_DIR}/ext/obj2gltf
 )
 
-add_custom_target(
-    gltf-pipeline-install
+add_custom_command(
     COMMAND
         ${NPM_EXE} install
-    BYPRODUCTS
+    OUTPUT
         ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/node_modules
     WORKING_DIRECTORY
         ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline
@@ -139,4 +136,3 @@ add_dependencies(models duck-gltf)
 
 # Make the project exe depend on having up to date models
 add_dependencies(${PROJECT_EXE} models)
-
