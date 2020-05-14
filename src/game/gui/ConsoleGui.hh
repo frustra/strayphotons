@@ -17,7 +17,6 @@ namespace sp
 			ImGuiIO &io = ImGui::GetIO();
 
 			ImGuiWindowFlags flags =
-				ImGuiWindowFlags_NoDecoration |
 				ImGuiWindowFlags_NoCollapse |
 				ImGuiWindowFlags_NoResize |
 				ImGuiWindowFlags_NoTitleBar;
