@@ -14,7 +14,6 @@ namespace sp
 	GuiManager::~GuiManager()
 	{
 		SetGuiContext();
-		ImGui::Shutdown();
 		ImGui::DestroyContext(imCtx);
 		imCtx = nullptr;
 	}
