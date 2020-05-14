@@ -24,6 +24,7 @@ namespace sp
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 		glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
 		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+		glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
 
 		GlobalShaders = new ShaderSet();
 	}
