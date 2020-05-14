@@ -8,4 +8,6 @@ if (WIN32)
 	set(GLFW_USE_HYBRID_HPG ON)
 endif()
 
+set(GLFW_USE_EGLHEADLESS ON)
+
 add_subdirectory(glfw)
