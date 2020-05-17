@@ -50,7 +50,7 @@ OpenVrModel::~OpenVrModel()
 	vbo.DestroyVAO().Destroy();
 }
 
-std::shared_ptr<XrModel> OpenVrModel::LoadOpenVRModel(vr::TrackedDeviceIndex_t deviceIndex)
+std::shared_ptr<XrModel> OpenVrModel::LoadOpenVrModel(vr::TrackedDeviceIndex_t deviceIndex)
 {
 	std::shared_ptr<char[]> tempVrProperty(new char[vr::k_unMaxPropertyStringSize]);
 
@@ -90,7 +90,7 @@ std::shared_ptr<XrModel> OpenVrModel::LoadOpenVRModel(vr::TrackedDeviceIndex_t d
 		throw std::runtime_error("Failed to load VR render texture");
 	}
 
-	std::shared_ptr<XrModel> xrModel = make_shared<OpenVrModel>(std::string(tempVrProperty.get()), vrModel, vrTex);
+	std::shared_ptr<XrModel> xrModel = std::shared_ptr<OpenVrModel>(new OpenVrModel(std::string(tempVrProperty.get()), vrModel, vrTex));
 
 	vr::VRRenderModels()->FreeTexture(vrTex);
 	vr::VRRenderModels()->FreeRenderModel(vrModel);
@@ -98,7 +98,7 @@ std::shared_ptr<XrModel> OpenVrModel::LoadOpenVRModel(vr::TrackedDeviceIndex_t d
 	return xrModel;
 }
 
-std::shared_ptr<XrModel> OpenVrModel::LoadOpenVrSkeleton(std::string skeletonAction)
+std::shared_ptr<XrModel> OpenVrSkeleton::LoadOpenVrSkeleton(std::string skeletonAction)
 {
 	const char* handResource = NULL;
 	if (skeletonAction == xr::LeftHandSkeletonActionName)
@@ -129,7 +129,7 @@ std::shared_ptr<XrModel> OpenVrModel::LoadOpenVrSkeleton(std::string skeletonAct
 
 	gltfLoader.LoadBinaryFromFile(gltfModel.get(), &err, &warn, std::string(modelPath.get()));
 	
-	std::shared_ptr<XrModel> xrModel = make_shared<OpenVrModel>(handResource, gltfModel);
+	std::shared_ptr<XrModel> xrModel = std::shared_ptr<OpenVrSkeleton>(new OpenVrSkeleton(handResource, gltfModel));
 
 	return xrModel;
 }

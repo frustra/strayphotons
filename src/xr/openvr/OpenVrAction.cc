@@ -27,7 +27,7 @@ OpenVrActionSet::OpenVrActionSet(std::string setName, std::string description) :
 
 std::shared_ptr<XrAction> OpenVrActionSet::CreateAction(std::string name, XrActionType type)
 {
-    std::shared_ptr<XrAction> action = std::shared_ptr<OpenVrAction>(new OpenVrAction(name, type, std::shared_ptr<OpenVrActionSet>(this)));
+    std::shared_ptr<XrAction> action = std::shared_ptr<OpenVrAction>(new OpenVrAction(name, type, shared_from_this()));
     XrActionSet::AddAction(action);
 
     return action;
@@ -279,7 +279,7 @@ std::shared_ptr<XrModel> OpenVrAction::GetInputSourceModel()
     // Skeletons require special model loading
     if (this->GetActionType() == xr::Skeleton)
     {
-        std::shared_ptr<XrModel> skeleton = OpenVrModel::LoadOpenVrSkeleton(this->GetName());
+        std::shared_ptr<XrModel> skeleton = OpenVrSkeleton::LoadOpenVrSkeleton(this->GetName());
         ComputeBoneLookupTable(skeleton);
         return skeleton;
     }
@@ -307,7 +307,7 @@ std::shared_ptr<XrModel> OpenVrAction::GetInputSourceModel()
             throw std::runtime_error("Failed to get device info");
         }
 
-        return OpenVrModel::LoadOpenVRModel(info.trackedDeviceIndex);
+        return OpenVrModel::LoadOpenVrModel(info.trackedDeviceIndex);
     }	
 }
 

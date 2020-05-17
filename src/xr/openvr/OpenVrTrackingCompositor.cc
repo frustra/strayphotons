@@ -182,7 +182,7 @@ std::vector<TrackedObjectHandle> OpenVrTrackingCompositor::GetTrackedObjectHandl
 
 std::shared_ptr<XrModel> OpenVrTrackingCompositor::GetTrackedObjectModel(const TrackedObjectHandle &handle)
 {
-	return OpenVrModel::LoadOpenVRModel(GetOpenVrIndexFromHandle(handle));
+	return OpenVrModel::LoadOpenVrModel(GetOpenVrIndexFromHandle(handle));
 }
 
 vr::TrackedDeviceIndex_t OpenVrTrackingCompositor::GetOpenVrIndexFromHandle(const TrackedObjectHandle &handle)

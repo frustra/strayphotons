@@ -91,7 +91,7 @@ namespace xr
 		XrActionType actionType;		
 	};
 
-	class XrActionSet : public std::enable_shared_from_this<XrActionSet>
+	class XrActionSet
 	{
 	public:
 		XrActionSet(std::string setName, std::string description);

@@ -3,13 +3,15 @@
 #include <xr/XrAction.hh>
 #include <xr/XrModel.hh>
 #include <openvr.h>
+
 #include <string>
+#include <memory>
 
 namespace sp
 {
 	namespace xr
 	{
-        class OpenVrActionSet : public XrActionSet
+        class OpenVrActionSet : public XrActionSet, public std::enable_shared_from_this<OpenVrActionSet>
         {
             public:
                 // Inherited from XrActionSet
@@ -51,14 +53,14 @@ namespace sp
                 bool IsInputSourceConnected();
                 
             private:
+                // Only OpenVrActionSet is allowed to construct actions
                 friend class OpenVrActionSet;
 
                 struct BoneData {
                     vr::BoneIndex_t steamVrBoneIndex;
                     glm::mat4 inverseBindPose;
                 };
-
-                // Only the OpenVrActionSet is allowed to construct actions
+                
                 OpenVrAction(std::string name, XrActionType type, std::shared_ptr<OpenVrActionSet> actionSet);
 
                 void ComputeBoneLookupTable(std::shared_ptr<XrModel> model);

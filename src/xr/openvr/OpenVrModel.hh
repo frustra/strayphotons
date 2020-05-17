@@ -15,18 +15,28 @@ namespace sp
 		class OpenVrModel : public XrModel
 		{
 		public:
-			OpenVrModel(std::string name, vr::RenderModel_t *vrModel, vr::RenderModel_TextureMap_t *vrTex);
-			OpenVrModel(const string &name, shared_ptr<tinygltf::Model> model) : XrModel(name, model) {};
-			virtual ~OpenVrModel();
+			~OpenVrModel();
 
-			static std::shared_ptr<XrModel> LoadOpenVRModel(vr::TrackedDeviceIndex_t deviceIndex);
-			static std::shared_ptr<XrModel> LoadOpenVrSkeleton(std::string skeletonAction);
+			static std::shared_ptr<XrModel> LoadOpenVrModel(vr::TrackedDeviceIndex_t deviceIndex);
 
 		private:
+			// OpenVrModels can onyl be created using OpenVrModel::LoadOpenVRModel()
+			OpenVrModel(std::string name, vr::RenderModel_t *vrModel, vr::RenderModel_TextureMap_t *vrTex);
+
 			Texture baseColorTex, metallicRoughnessTex, heightTex;
 			VertexBuffer vbo;
 			Buffer ibo;
 			Model::Primitive sourcePrim;
+		};
+
+		class OpenVrSkeleton : public XrModel
+		{
+		public:
+			static std::shared_ptr<XrModel> LoadOpenVrSkeleton(std::string skeletonAction);
+
+		private:
+			// OpenVrSkeletons can only be created using OpenVrSkeleton::LoadOpenVrSkeleton()
+			OpenVrSkeleton(const string &name, shared_ptr<tinygltf::Model> model) : XrModel(name, model) {};
 		};
 
 	}
