@@ -8,9 +8,12 @@ namespace sp
 {
 	namespace xr
 	{
-		static const char* HandModelResourceDir = "rendermodels\\vr_glove\\";
-		static const char* LeftHandModelResource = "vr_glove_left_model.glb";
-		static const char* RightHandModelResource = "vr_glove_right_model.glb";
+		namespace openvr 
+		{
+			static const char* HandModelResourceDir = "rendermodels\\vr_glove\\";
+			static const char* LeftHandModelResource = "vr_glove_left_model.glb";
+			static const char* RightHandModelResource = "vr_glove_right_model.glb";
+		};
 
 		class OpenVrModel : public XrModel
 		{

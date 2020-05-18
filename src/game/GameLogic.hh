@@ -48,6 +48,8 @@ namespace sp
 
 		void ComputeBonePositions(std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output);
 
+		ecs::Entity GetLaserPointer();
+
 	private:
 		Game *game;
 		InputManager *input = nullptr;

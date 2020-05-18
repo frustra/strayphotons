@@ -6,6 +6,7 @@
 
 #include <stdexcept>
 #include <thread>
+#include <filesystem>
 
 using namespace sp;
 using namespace xr;
@@ -19,8 +20,8 @@ OpenVrModel::OpenVrModel(std::string name, vr::RenderModel_t *vrModel, vr::Rende
 	heightTex = defaultMat.heightTex;
 
 	baseColorTex.Create()
-	.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-	.Size(vrTex->unWidth, vrTex->unHeight).Storage(PF_RGBA8).Image2D(vrTex->rubTextureMapData);
+		.Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
+		.Size(vrTex->unWidth, vrTex->unHeight).Storage(PF_RGBA8).Image2D(vrTex->rubTextureMapData);
 
 	GLModel::Primitive prim;
 	prim.parent = &sourcePrim;
@@ -103,11 +104,11 @@ std::shared_ptr<XrModel> OpenVrSkeleton::LoadOpenVrSkeleton(std::string skeleton
 	const char* handResource = NULL;
 	if (skeletonAction == xr::LeftHandSkeletonActionName)
 	{
-		handResource = xr::LeftHandModelResource;
+		handResource = xr::openvr::LeftHandModelResource;
 	}
 	else if (skeletonAction == xr::RightHandSkeletonActionName)
 	{
-		handResource = xr::RightHandModelResource;
+		handResource = xr::openvr::RightHandModelResource;
 	}
 	else
 	{
@@ -115,19 +116,31 @@ std::shared_ptr<XrModel> OpenVrSkeleton::LoadOpenVrSkeleton(std::string skeleton
 	}
 
 	// Get the length of the path to the model
-    size_t modelPathLen = vr::VRResources()->GetResourceFullPath(handResource, xr::HandModelResourceDir, NULL, 0);
+    size_t modelPathLen = vr::VRResources()->GetResourceFullPath(handResource, xr::openvr::HandModelResourceDir, NULL, 0);
 
-	// TODO: how does GetResourceFullPath fail? 0 length path?
+	std::shared_ptr<char[]> modelPathStr(new char[modelPathLen]);
+	vr::VRResources()->GetResourceFullPath(handResource, xr::openvr::HandModelResourceDir, modelPathStr.get(), modelPathLen);
 
-	std::shared_ptr<char[]> modelPath(new char[modelPathLen]);
-	vr::VRResources()->GetResourceFullPath(handResource, xr::HandModelResourceDir, modelPath.get(), modelPathLen);
+	// GetResourceFullPath has no error checking. We need to validate the path exists
+	std::filesystem::path modelPath(modelPathStr.get());
+	if (!std::filesystem::exists(modelPath) || std::filesystem::is_directory(modelPath))
+	{
+		Errorf("OpenVR Skeleton GLTF File Path (%s) is not a file", modelPathStr.get());
+		return false;
+	}
 
 	tinygltf::TinyGLTF gltfLoader;
 	std::string err;
 	std::string warn;
 	std::shared_ptr<tinygltf::Model> gltfModel = make_shared<tinygltf::Model>();
 
-	gltfLoader.LoadBinaryFromFile(gltfModel.get(), &err, &warn, std::string(modelPath.get()));
+	if (!gltfLoader.LoadBinaryFromFile(gltfModel.get(), &err, &warn, std::string(modelPathStr.get())))
+	{
+		Errorf("Failed to parse OpenVR Skeleton GLTF file: %s", modelPathStr.get());
+		Errorf("TinyGLTF Error: %s", err.c_str());
+		Errorf("TinyGLTF Warn: %s", warn.c_str());
+		return false;
+	}
 	
 	std::shared_ptr<XrModel> xrModel = std::shared_ptr<OpenVrSkeleton>(new OpenVrSkeleton(handResource, gltfModel));
 

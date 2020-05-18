@@ -98,19 +98,19 @@ namespace sp
 
 		// Create LeftHand Pose action
 		std::shared_ptr<xr::XrAction> leftHandAction = gameActionSet->CreateAction(xr::LeftHandActionName, xr::XrActionType::Pose);
-		// TODO: add suggested bindings for real XR backends
+		// TODO: add suggested bindings for real XR backends when OpenXR supports skeletons
 
 		// Create RightHand Pose action
 		std::shared_ptr<xr::XrAction> rightHandAction = gameActionSet->CreateAction(xr::RightHandActionName, xr::XrActionType::Pose);
-		// TODO: add suggested bindings for real XR backends
+		// TODO: add suggested bindings for real XR backends when OpenXR supports skeletons
 
 		// Create LeftHand Skeleton action
 		std::shared_ptr<xr::XrAction> leftHandSkeletonAction = gameActionSet->CreateAction(xr::LeftHandSkeletonActionName, xr::XrActionType::Skeleton);
-		// TODO: add suggested bindings for real XR backends
+		// TODO: add suggested bindings for real XR backends when OpenXR supports skeletons
 
 		// Create RightHand Skeleton action
 		std::shared_ptr<xr::XrAction> rightHandSkeletonAction = gameActionSet->CreateAction(xr::RightHandSkeletonActionName, xr::XrActionType::Skeleton);
-		// TODO: add suggested bindings for real XR backends
+		// TODO: add suggested bindings for real XR backends when OpenXR supports skeletons
 	}
 
 	void GameLogic::Init(InputManager *inputManager, Script *startupScript)
@@ -311,10 +311,34 @@ namespace sp
 						{xr::RightHandActionName, xr::SubpathRightHand}
 					};
 
+					ecs::Entity laserPointer = GetLaserPointer();
+
+					if (laserPointer.Valid())
+					{
+						auto transform = laserPointer.Get<ecs::Transform>();
+						auto parent = game->entityManager.EntityWith<ecs::Name>("xr-action-" + std::string(xr::RightHandActionName));
+						if (parent && parent.Has<ecs::Transform>())
+						{
+							auto parentTransform = parent.Get<ecs::Transform>();
+							if (transform->HasParent(game->entityManager))
+							{
+								transform->SetPosition(transform->GetGlobalTransform(game->entityManager) * glm::vec4(0, 0, 0, 1));
+								transform->SetRotate(parentTransform->GetGlobalRotation(game->entityManager));
+								transform->SetParent(ecs::Entity());
+							}
+							else
+							{
+								transform->SetPosition(glm::vec3(0, -0.3, 0));
+								transform->SetRotate(glm::quat());
+								transform->SetParent(parent);
+							}
+						}
+					}
+
 					for (auto controllerAction : controllerPoseActions)
 					{
 						ecs::Entity xrObject = ValidateAndLoadXrInputSource(controllerAction.first);
-
+						
 						if (xrObject.Valid())
 						{
 							glm::mat4 xrObjectPos;
@@ -369,7 +393,7 @@ namespace sp
 					}
 				}
 
-				// Now move generic tracked objects around
+				// Now move generic tracked objects around (HMD, Vive Pucks, etc..)
 				for (auto trackedObjectHandle : xrSystem->GetTracking()->GetTrackedObjectHandles())
 				{
 					ecs::Entity xrObject = ValidateAndLoadTrackedObject(trackedObjectHandle);
@@ -487,6 +511,9 @@ namespace sp
 				auto renderable = xrObject.Assign<ecs::Renderable>();
 				renderable->model = xrSystem->GetTracking()->GetTrackedObjectModel(trackedObjectHandle);
 
+				// TODO: better handling for failed model loads
+				Assert((bool)(renderable->model), "Failed to load skeleton model");
+
 				// Rendering an XR HMD model from the viewpoint of an XRView is a bad idea
 				if (trackedObjectHandle.type == xr::HMD)
 				{
@@ -545,10 +572,8 @@ namespace sp
 				auto model = GAssets.LoadModel("box");
 				auto renderable = boneEntity.Assign<ecs::Renderable>(model);
 
-				if (!renderable->model->glModel)
-				{
-					renderable->model->glModel = make_shared<GLModel>(renderable->model.get());
-				}
+				// TODO: better handling for failed model loads
+				Assert((bool)(renderable->model), "Failed to load skeleton model");
 			}
 
 			auto ctrl = boneEntity.Get<ecs::Transform>();
@@ -594,6 +619,9 @@ namespace sp
 			{
 				auto renderable = xrObject.Assign<ecs::Renderable>();
 				renderable->model = gameActionSet->GetAction(action)->GetInputSourceModel();
+
+				// TODO: better handling for failed model loads
+				Assert((bool)(renderable->model), "Failed to load skeleton model");
 			}
 		}
 		else
@@ -607,7 +635,8 @@ namespace sp
 		return xrObject;
 	}
 
-	// Validate and load the model associated with an XR Action.
+
+	// Validate and load the model associated with an XR Skeleton Action.
 	// Note: this should only be used once per model per frame, or bad things will happen.
 	// Use the left and right hand pose actions to ensure that models aren't duplicated
 	ecs::Entity GameLogic::ValidateAndLoadSkeletonHand(std::string action)
@@ -616,60 +645,138 @@ namespace sp
 		ecs::Entity xrObject = game->entityManager.EntityWith<ecs::Name>(entityName);
 
 		// TODO: add a way of detecting if skeletons are supported by the XR Runtime
-		// if (gameActionSet->IsInputSourceConnected(action))
-		// {
-			// Make sure object is valid
-			if (!xrObject.Valid())
-			{
-				xrObject = game->entityManager.NewEntity();
-				xrObject.AssignKey<ecs::Name>(entityName);
-			}
 
-			if (!xrObject.Has<ecs::Transform>())
-			{
-				xrObject.Assign<ecs::Transform>();
-			}
+		// Make sure object is valid
+		if (!xrObject.Valid())
+		{
+			xrObject = game->entityManager.NewEntity();
+			xrObject.AssignKey<ecs::Name>(entityName);
+		}
 
-			if (!xrObject.Has<ecs::InteractController>())
-			{
-				auto interact = xrObject.Assign<ecs::InteractController>();
-				interact->manager = &game->physics;
-			}
+		if (!xrObject.Has<ecs::Transform>())
+		{
+			xrObject.Assign<ecs::Transform>();
+		}
 
-			if (!xrObject.Has<ecs::Renderable>())
-			{
-				auto renderable = xrObject.Assign<ecs::Renderable>();
-				renderable->model = gameActionSet->GetAction(action)->GetInputSourceModel();
+		if (!xrObject.Has<ecs::InteractController>())
+		{
+			auto interact = xrObject.Assign<ecs::InteractController>();
+			interact->manager = &game->physics;
+		}
 
-				if (!renderable->model->glModel)
-				{
-					renderable->model->glModel = make_shared<GLModel>(renderable->model.get());
-				}
+		if (!xrObject.Has<ecs::Renderable>())
+		{
+			auto renderable = xrObject.Assign<ecs::Renderable>();
+			renderable->model = gameActionSet->GetAction(action)->GetInputSourceModel();
 
-				/*
-				TODO: do hands need a physics actor? I think no...
-				PhysxActorDesc desc;
-				desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
-				auto actor = game->physics.CreateActor(model, desc, entity);
-
-				if (actor)
-				{
-					entity.Assign<ecs::Physics>(actor, model, desc);
-				}
-				*/
-			}
-		// }
-		// else
-		// {
-		// 	if (xrObject.Valid())
-		// 	{
-		// 		xrObject.Destroy();
-		// 	}
-		// }
+			// TODO: better handling for failed model loads
+			Assert((bool)(renderable->model), "Failed to load skeleton model");
+		}
 
 		return xrObject;
 	}
 
+
+	ecs::Entity GameLogic::GetLaserPointer()
+	{
+		string entityName = "xr-laser-pointer";
+		ecs::Entity xrObject = game->entityManager.EntityWith<ecs::Name>(entityName);
+
+		// Make sure object is valid
+		if (!xrObject.Valid())
+		{
+			xrObject = game->entityManager.NewEntity();
+			xrObject.AssignKey<ecs::Name>(entityName);
+		}
+
+		if (!xrObject.Has<ecs::Transform>())
+		{
+			xrObject.Assign<ecs::Transform>();
+		}
+
+		if (!xrObject.Has<ecs::Renderable>())
+		{
+			auto renderable = xrObject.Assign<ecs::Renderable>();
+			std::shared_ptr<BasicModel> model = make_shared<BasicModel>("laser-pointer-beam");
+			renderable->model = model;
+
+			// 10 unit long line
+			glm::vec3 start = glm::vec3(0, 0, 0);
+			glm::vec3 end = glm::vec3(0, 0, -10.0);
+			float lineWidth = 0.001f;
+
+			// Doesn't have to persist
+			vector<SceneVertex> vertices;
+
+			glm::vec3 lineDir = glm::normalize(end - start);
+			glm::vec3 lineMid = glm::vec3(0.5) * (start + end);
+			glm::vec3 widthVec = lineWidth * glm::vec3(1.0, 0.0, 0.0);
+
+			// move the positions back a bit to account for overlapping lines
+			glm::vec3 pos0 = start; //start - lineWidth * lineDir;
+			glm::vec3 pos1 = end + lineWidth * lineDir;
+
+			auto addVertex = [&](const glm::vec3 & pos)
+			{
+				vertices.push_back(
+				{
+					{pos.x, pos.y, pos.z},
+					glm::vec3(0.0, 1.0, 0.0),
+					{0, 0}
+				});
+			};
+
+			// 2 triangles that make up a "fat" line connecting pos0 and pos1
+			// with the flat face pointing at the player
+			addVertex(pos0 - widthVec);
+			addVertex(pos1 + widthVec);
+			addVertex(pos0 + widthVec);
+
+			addVertex(pos1 - widthVec);
+			addVertex(pos1 + widthVec);
+			addVertex(pos0 - widthVec);
+
+			// Create the data for the GPU
+			unsigned char baseColor[4] = {255, 0, 0, 255};
+
+			model->basicMaterials["red_laser"] = BasicMaterial(baseColor);
+			BasicMaterial& mat = model->basicMaterials["red_laser"];
+
+			GLModel::Primitive prim;
+
+			model->vbos.try_emplace("beam");
+			VertexBuffer& vbo = model->vbos["beam"];
+
+			model->ibos.try_emplace("beam");
+			Buffer& ibo = model->ibos["beam"];
+
+			const vector<uint16_t> indexData = {0, 1, 2, 3, 4, 5, 2, 1, 0, 5, 4, 3};
+			
+			// Model class will delete this on destruction
+			Model::Primitive* sourcePrim = new Model::Primitive;
+
+			prim.parent = sourcePrim;
+			prim.baseColorTex = &mat.baseColorTex;
+			prim.metallicRoughnessTex = &mat.metallicRoughnessTex;
+			prim.heightTex = &mat.heightTex;
+
+			vbo.SetElementsVAO(vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
+			prim.vertexBufferHandle = vbo.VAO();
+
+			ibo.Create().Data(indexData.size() * sizeof(uint16_t), indexData.data());
+			prim.indexBufferHandle = ibo.handle;
+
+			sourcePrim->drawMode = GL_TRIANGLES;
+			sourcePrim->indexBuffer.byteOffset = 0;
+			sourcePrim->indexBuffer.components = indexData.size();
+			sourcePrim->indexBuffer.componentType = GL_UNSIGNED_SHORT;
+
+			renderable->model->glModel = make_shared<GLModel>(renderable->model.get());
+			renderable->model->glModel->AddPrimitive(prim);
+		}
+
+		return xrObject;
+	}
 
 
 	void GameLogic::LoadScene(string name)

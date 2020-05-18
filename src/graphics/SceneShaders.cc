@@ -9,7 +9,6 @@ namespace sp
 		Bind(viewMat, "view");
 		Bind(projMat, "projection");
 		Bind(boneCount, "boneCount");
-		//BindBuffer(boneData, "BoneData");
 		BindBuffer(boneData, 2);
 	}
 

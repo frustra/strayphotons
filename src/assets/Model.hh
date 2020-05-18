@@ -12,8 +12,10 @@
 
 namespace sp
 {
+	// Forward declarations
 	class Asset;
 	class GLModel;
+	struct BasicMaterial;
 
 	typedef std::array<uint32, 4> Hash128;
 
@@ -78,6 +80,16 @@ namespace sp
 		// TODO: support more than one "skin" in a GLTF
 		std::map<int, glm::mat4> inverseBindMatrixForJoint;
 		int rootBone;
+	};
+
+	class BasicModel : public Model
+	{
+	public:
+		BasicModel(const string &name) : Model(name) {};
+		
+		std::map<std::string, BasicMaterial> basicMaterials;
+		std::map<std::string, VertexBuffer> vbos;
+		std::map<std::string, Buffer> ibos;
 	};
 
 	class GLModel : public NonCopyable

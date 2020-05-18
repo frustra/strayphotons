@@ -700,7 +700,7 @@ namespace sp
 
 		// move the positions back a bit to account for overlapping lines
 		glm::vec3 pos0 = start - lineWidth * lineDir;
-		glm::vec3 pos1 = end + lineWidth * lineDir;;
+		glm::vec3 pos1 = end + lineWidth * lineDir;
 
 		auto addVertex = [&](const glm::vec3 & pos)
 		{
@@ -782,7 +782,7 @@ namespace sp
 		if (ent.Has<ecs::Name>())
 		{
 			auto name = ent.Get<ecs::Name>();
-			if (*name == "xr-action-" + std::string(xr::RightHandActionName))
+			if (*name == "xr-action-2" + std::string(xr::RightHandActionName))
 			{
 				glm::vec3 lpos0 = glm::vec3(modelMat * glm::vec4(0, 0, 0, 1.0));
 				glm::vec3 lpos1 = glm::vec3(modelMat * glm::vec4(0, 0, -10.0, 1.0));

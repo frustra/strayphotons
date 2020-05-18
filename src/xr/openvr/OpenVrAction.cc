@@ -29,7 +29,6 @@ std::shared_ptr<XrAction> OpenVrActionSet::CreateAction(std::string name, XrActi
 {
     std::shared_ptr<XrAction> action = std::shared_ptr<OpenVrAction>(new OpenVrAction(name, type, shared_from_this()));
     XrActionSet::AddAction(action);
-
     return action;
 }
 
@@ -280,8 +279,14 @@ std::shared_ptr<XrModel> OpenVrAction::GetInputSourceModel()
     if (this->GetActionType() == xr::Skeleton)
     {
         std::shared_ptr<XrModel> skeleton = OpenVrSkeleton::LoadOpenVrSkeleton(this->GetName());
-        ComputeBoneLookupTable(skeleton);
-        return skeleton;
+
+        if (skeleton)
+        {
+            ComputeBoneLookupTable(skeleton);
+            return skeleton;
+        }
+
+        return false;        
     }
     else
     {
