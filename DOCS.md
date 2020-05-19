@@ -65,3 +65,16 @@ Lighting Feedback Pass (Outdated, to be updated)
 	1. This can potentially be done using only the mipmapped voxel grid, eliminating the need of a duplicate flip buffer.
 1. Using the feedback weight, blend the light value with the current frame's light value.
 1. Store the light value back to the voxel grid.
+
+Networking
+==========
+
+Clients connect to each other through an IP-layer routing server. This allows for firewalling between clients, and anonymous IP addresses.
+
+A minimal server keeps track of connected players, and provides tie-breaking when clients disagree with eachother, as well as anti-cheat monitoring.
+
+Each entity in the scene can have a networked component for serializing data across clients. The component can specify what level of synchronization it requires, such as the update rate, update triggers, sync priority, and so-on.
+
+The server does not need to run light simulations or a full physics simulation, since the results can be determined by a majority vote from clients. Entities like light sensors can be read from all clients by the server, and game logic can be executed based on this.
+
+The server can monitor for impossible scenarios, such as players moving through walls, or entity values differing from other clients, and either make the appropriate updates, or kick the client.
