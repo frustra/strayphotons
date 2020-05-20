@@ -37,6 +37,8 @@ namespace sp
 		else if (game->options.count("headless"))
 		{
 			Logf("Graphics starting up (headless full renderer)");
+
+			glfwInitHint(GLFW_HEADLESS_RENDERING, GLFW_TRUE);
 			headless = true;
 		}
 		else

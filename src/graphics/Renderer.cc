@@ -38,7 +38,6 @@ namespace sp
 		if (headless)
 		{
 			glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
-			glfwWindowHint(GLFW_EGL_HEADLESS_RENDERING, GLFW_TRUE);
 		}
 	}
 
