@@ -46,6 +46,18 @@ namespace sp
 			Logf("Graphics starting up (full renderer)");
 		}
 
+		if (game->options.count("size"))
+		{
+			std::istringstream ss(game->options["size"].as<string>());
+			glm::ivec2 size;
+			ss >> size.x >> size.y;
+
+			if (size.x > 0 && size.y > 0)
+			{
+				CVarWindowSize.Set(size);
+			}
+		}
+
 		glfwSetErrorCallback(glfwErrorCallback);
 
 		if (!glfwInit())

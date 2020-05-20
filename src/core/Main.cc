@@ -46,6 +46,7 @@ int main(int argc, char **argv)
 	("m,map", "Initial scene to load", value<string>())
 	("basic-renderer", "Use minimal debug renderer", value<bool>())
 	("headless", "Use headless rendering", value<bool>())
+	("size", "Initial window size", value<string>())
 	("cvar", "Set cvar to initial value", value<vector<string>>())
 	;
 

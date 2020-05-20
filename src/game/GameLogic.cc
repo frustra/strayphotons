@@ -106,7 +106,7 @@ namespace sp
 
 	void GameLogic::Init()
 	{
-		if (game->options["map"].count())
+		if (game->options.count("map"))
 		{
 			LoadScene(game->options["map"].as<string>());
 		}
