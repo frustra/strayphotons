@@ -41,6 +41,7 @@ namespace sp
 
 	private:
 		bool useBasic = false;
+		bool headless = false;
 
 		GraphicsContext *context = nullptr;
 		Game *game = nullptr;

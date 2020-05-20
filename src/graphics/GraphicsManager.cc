@@ -34,6 +34,11 @@ namespace sp
 			Logf("Graphics starting up (basic renderer)");
 			useBasic = true;
 		}
+		else if (game->options.count("headless"))
+		{
+			Logf("Graphics starting up (headless full renderer)");
+			headless = true;
+		}
 		else
 		{
 			Logf("Graphics starting up (full renderer)");
@@ -64,7 +69,7 @@ namespace sp
 			return;
 		}
 
-		auto renderer = new Renderer(game);
+		auto renderer = new Renderer(game, headless);
 		context = renderer;
 		context->CreateWindow(CVarWindowSize.Get());
 
