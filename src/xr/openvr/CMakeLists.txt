@@ -12,9 +12,10 @@ target_sources(
 )
 
 set(_files_to_copy
-    .vrmanifest
     actions.json
     sp_bindings_oculus_touch.json
+    sp_bindings_knuckles.json
+    sp_bindings_vive_controller.json
 )
 
 foreach(_file ${_files_to_copy})

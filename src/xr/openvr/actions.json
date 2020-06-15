@@ -3,6 +3,14 @@
    {
       "controller_type": "oculus_touch",
       "binding_url": "sp_bindings_oculus_touch.json"
+   },
+   {
+      "controller_type": "vive_controller",
+      "binding_url": "sp_bindings_vive_controller.json"
+   },
+   {
+      "controller_type": "knuckles",
+      "binding_url": "sp_bindings_knuckles.json"
    }
   ], 
   "actions": [

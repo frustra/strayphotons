@@ -628,7 +628,7 @@ namespace sp
 				interact->manager = &game->physics;
 			}
 			
-			// XrAction models might take many frames to load. 
+			// XrAction models might take many frames to load.
 			// We constantly re-check the state of this entity while it's active
 			// to continue trying to load the model from the underlying XR Runtime,
 			// since it's likely being loaded from disk asyncrhonously and will eventually
