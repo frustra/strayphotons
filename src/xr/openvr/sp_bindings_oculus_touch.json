@@ -4,6 +4,26 @@
    "app_key" : "system.generated.sp.exe",
    "bindings" : {
       "/actions/main" : {
+         "poses" : [
+            {
+               "output" : "/actions/main/in/lefthand",
+               "path" : "/user/hand/left/pose/raw"
+            },
+            {
+               "output" : "/actions/main/in/righthand",
+               "path" : "/user/hand/right/pose/raw"
+            }
+         ],
+         "skeleton" : [
+            {
+               "output" : "/actions/main/in/lefthand_anim",
+               "path" : "/user/hand/left/input/skeleton/left"
+            },
+            {
+               "output" : "/actions/main/in/righthand_anim",
+               "path" : "/user/hand/right/input/skeleton/right"
+            }
+         ],
          "sources" : [
             {
                "inputs" : {
@@ -46,8 +66,8 @@
    },
    "category" : "steamvr_input",
    "controller_type" : "oculus_touch",
-   "description" : "A default set of controller bindings for Oculus Touch controllers",
-   "name" : "Stray Photons - Default Oculus Touch",
+   "description" : "",
+   "name" : "A default set of controller bindings for Oculus Touch controllers",
    "options" : {},
    "simulated_actions" : []
 }
