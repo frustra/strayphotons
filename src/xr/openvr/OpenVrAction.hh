@@ -34,15 +34,15 @@ namespace sp
                 vr::VRActionHandle_t GetHandle() { return handle; };
 
                 // Boolean action manipulation
-                bool GetBooleanActionValue(std::string subpath);
+                bool GetBooleanActionValue(std::string subpath, bool& value);
 
                 // Returns true if the boolean action transitioned from false to true
                 // during this update loop
-                bool GetRisingEdgeActionValue(std::string subpath);
+                bool GetRisingEdgeActionValue(std::string subpath, bool& value);
 
                 // Returns true if the boolean action transitioned from true to false
                 // during this update loop
-                bool GetFallingEdgeActionValue(std::string subpath);
+                bool GetFallingEdgeActionValue(std::string subpath, bool& value);
 
                 bool GetPoseActionValueForNextFrame(std::string subpath, glm::mat4 &pose);
 
@@ -63,7 +63,7 @@ namespace sp
                 
                 OpenVrAction(std::string name, XrActionType type, std::shared_ptr<OpenVrActionSet> actionSet);
 
-                void ComputeBoneLookupTable(std::shared_ptr<XrModel> model);
+                bool ComputeBoneLookupTable(std::shared_ptr<XrModel> model);
                 std::vector<std::string> GetSteamVRBoneNames();
 
                 vr::VRActionHandle_t handle;
@@ -73,6 +73,15 @@ namespace sp
                 // This data stores the SteamVR Bone Index relevant to this Model Bone, 
                 // as well as the inverse bind pose for the bone.
                 std::vector<BoneData> modelBoneData;
+
+                // Cached OpenVR models that can be provided to the engine
+                // as the user switches between controllers
+                //
+                // TODO: maybe make this static / atomic and share these models between all 
+                // instances of the OpenVrAction class? Say left and right hand Vive wands use
+                // the same model. Is it useful / allowed to only have a single underlying XrModel
+                // provided to the engine to render twice?
+                std::map<std::string, std::shared_ptr<XrModel>> cachedModels;
         };
     }
 }

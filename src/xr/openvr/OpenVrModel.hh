@@ -10,6 +10,7 @@ namespace sp
 	{
 		namespace openvr 
 		{
+			// TODO: Use system-independent paths for SteamVR model loading
 			static const char* HandModelResourceDir = "rendermodels\\vr_glove\\";
 			static const char* LeftHandModelResource = "vr_glove_left_model.glb";
 			static const char* RightHandModelResource = "vr_glove_right_model.glb";
@@ -21,6 +22,7 @@ namespace sp
 			~OpenVrModel();
 
 			static std::shared_ptr<XrModel> LoadOpenVrModel(vr::TrackedDeviceIndex_t deviceIndex);
+			static std::string ModelName(vr::TrackedDeviceIndex_t deviceIndex);
 
 		private:
 			// OpenVrModels can onyl be created using OpenVrModel::LoadOpenVRModel()
@@ -36,6 +38,7 @@ namespace sp
 		{
 		public:
 			static std::shared_ptr<XrModel> LoadOpenVrSkeleton(std::string skeletonAction);
+			static std::string ModelName(std::string skeletonAction);
 
 		private:
 			// OpenVrSkeletons can only be created using OpenVrSkeleton::LoadOpenVrSkeleton()

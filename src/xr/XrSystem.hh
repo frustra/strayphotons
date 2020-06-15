@@ -45,5 +45,7 @@ namespace sp
 			virtual std::shared_ptr<XrActionSet> GetActionSet(std::string setName) = 0;
 		};
 
+		typedef std::shared_ptr<XrSystem> XrSystemPtr;
+
 	} // namespace xr
 } // namespace sp

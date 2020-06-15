@@ -52,7 +52,8 @@ bool OpenVrTrackingCompositor::GetPredictedViewPose(size_t view, glm::mat4 &view
 
 	if (error != vr::EVRCompositorError::VRCompositorError_None)
 	{
-		throw std::runtime_error("Failed to get view pose");
+		Errorf("Failed to get view pose");
+		return false;
 	}
 
 	if (trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid)
@@ -131,7 +132,7 @@ void OpenVrTrackingCompositor::WaitFrame()
 	if (error != vr::EVRCompositorError::VRCompositorError_None)
 	{
 		// TODO: exception, or warning?
-		throw std::runtime_error("Failed to get predicted pose for tracker");
+		Errorf("WaitGetPoses failed: %d", error);
 	}
 }
 
@@ -206,7 +207,8 @@ vr::TrackedDeviceIndex_t OpenVrTrackingCompositor::GetOpenVrIndexFromHandle(cons
 		}
 		else
 		{
-			throw std::runtime_error("Loading models for ambidextrous controllers not supported");
+			Errorf("Loading models for ambidextrous controllers not supported");
+			return vr::k_unTrackedDeviceIndexInvalid;
 		}
 
 		deviceIndex = vr::VRSystem()->GetTrackedDeviceIndexForControllerRole(desiredRole);
@@ -217,7 +219,8 @@ vr::TrackedDeviceIndex_t OpenVrTrackingCompositor::GetOpenVrIndexFromHandle(cons
 	}
 	else
 	{
-		throw std::runtime_error("Loading models for other types not yet supported");
+		Errorf("Loading models for other types not yet supported");
+		return vr::k_unTrackedDeviceIndexInvalid;
 	}
 
 	return deviceIndex;

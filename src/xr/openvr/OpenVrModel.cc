@@ -53,30 +53,24 @@ OpenVrModel::~OpenVrModel()
 
 std::shared_ptr<XrModel> OpenVrModel::LoadOpenVrModel(vr::TrackedDeviceIndex_t deviceIndex)
 {
-	std::shared_ptr<char[]> tempVrProperty(new char[vr::k_unMaxPropertyStringSize]);
+	std::string modelName = ModelName(deviceIndex);
 
-	if (deviceIndex == vr::k_unTrackedDeviceIndexInvalid)
-	{
-		throw std::runtime_error("Failed to get tracked device index for TrackedObjectHandle");
-	}
-
-	vr::VRSystem()->GetStringTrackedDeviceProperty(deviceIndex, vr::Prop_RenderModelName_String, tempVrProperty.get(), vr::k_unMaxPropertyStringSize);
-
-	Logf("Loading VR render model %s", tempVrProperty.get());
+	Logf("Loading VR render model %s", modelName);
 	vr::RenderModel_t *vrModel;
 	vr::RenderModel_TextureMap_t *vrTex;
 	vr::EVRRenderModelError merr;
 
 	while (true)
 	{
-		merr = vr::VRRenderModels()->LoadRenderModel_Async(tempVrProperty.get(), &vrModel);
+		merr = vr::VRRenderModels()->LoadRenderModel_Async(modelName.c_str(), &vrModel);
 		if (merr != vr::VRRenderModelError_Loading) break;
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
+
 	if (merr != vr::VRRenderModelError_None)
 	{
 		Errorf("VR render model error: %s", vr::VRRenderModels()->GetRenderModelErrorNameFromEnum(merr));
-		throw std::runtime_error("Failed to load VR render model");
+		return false;
 	}
 
 	while (true)
@@ -85,13 +79,14 @@ std::shared_ptr<XrModel> OpenVrModel::LoadOpenVrModel(vr::TrackedDeviceIndex_t d
 		if (merr != vr::VRRenderModelError_Loading) break;
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
+
 	if (merr != vr::VRRenderModelError_None)
 	{
 		Errorf("VR render texture error: %s", vr::VRRenderModels()->GetRenderModelErrorNameFromEnum(merr));
-		throw std::runtime_error("Failed to load VR render texture");
+		return false;
 	}
 
-	std::shared_ptr<XrModel> xrModel = std::shared_ptr<OpenVrModel>(new OpenVrModel(std::string(tempVrProperty.get()), vrModel, vrTex));
+	std::shared_ptr<XrModel> xrModel = std::shared_ptr<OpenVrModel>(new OpenVrModel(modelName, vrModel, vrTex));
 
 	vr::VRRenderModels()->FreeTexture(vrTex);
 	vr::VRRenderModels()->FreeRenderModel(vrModel);
@@ -99,7 +94,56 @@ std::shared_ptr<XrModel> OpenVrModel::LoadOpenVrModel(vr::TrackedDeviceIndex_t d
 	return xrModel;
 }
 
+std::string OpenVrModel::ModelName(vr::TrackedDeviceIndex_t deviceIndex)
+{
+	if (deviceIndex == vr::k_unTrackedDeviceIndexInvalid)
+	{
+		Errorf("Failed to get tracked device index for TrackedObjectHandle");
+		return "";
+	}
+
+	uint32_t modelNameLength = vr::VRSystem()->GetStringTrackedDeviceProperty(deviceIndex, vr::Prop_RenderModelName_String, NULL, 0);
+	std::shared_ptr<char[]> modelNameStr(new char[modelNameLength]);
+
+	vr::VRSystem()->GetStringTrackedDeviceProperty(deviceIndex, vr::Prop_RenderModelName_String, modelNameStr.get(), modelNameLength);
+
+	return std::string(modelNameStr.get());
+}
+
 std::shared_ptr<XrModel> OpenVrSkeleton::LoadOpenVrSkeleton(std::string skeletonAction)
+{
+	std::string modelPathStr = ModelName(skeletonAction);
+
+	// GetResourceFullPath has no error checking. We need to validate the path exists
+	std::filesystem::path modelPath(modelPathStr);
+	if (!std::filesystem::exists(modelPath) || std::filesystem::is_directory(modelPath))
+	{
+		Errorf("OpenVR Skeleton GLTF File Path (%s) is not a file", modelPathStr);
+		return false;
+	}
+
+	tinygltf::TinyGLTF gltfLoader;
+	std::string err;
+	std::string warn;
+	std::shared_ptr<tinygltf::Model> gltfModel = make_shared<tinygltf::Model>();
+
+	if (!gltfLoader.LoadBinaryFromFile(gltfModel.get(), &err, &warn, modelPathStr))
+	{
+		Errorf("Failed to parse OpenVR Skeleton GLTF file: %s", modelPathStr);
+		Errorf("TinyGLTF Error: %s", err.c_str());
+		Errorf("TinyGLTF Warn: %s", warn.c_str());
+		return false;
+	}
+	
+	std::shared_ptr<XrModel> xrModel = std::shared_ptr<OpenVrSkeleton>(new OpenVrSkeleton(modelPathStr, gltfModel));
+
+	return xrModel;
+}
+
+// Standardized logic for determining the model path for a particular skeleton. We use this to:
+// - Find the model to load during the initial load process
+// - As a the key in a map which stores already-loaded Action models in OpenVrAction
+std::string OpenVrSkeleton::ModelName(std::string skeletonAction)
 {
 	const char* handResource = NULL;
 	if (skeletonAction == xr::LeftHandSkeletonActionName)
@@ -112,37 +156,14 @@ std::shared_ptr<XrModel> OpenVrSkeleton::LoadOpenVrSkeleton(std::string skeleton
 	}
 	else
 	{
-		return false;
+		throw std::runtime_error("Unknown skeleton hand action");
 	}
 
 	// Get the length of the path to the model
-    size_t modelPathLen = vr::VRResources()->GetResourceFullPath(handResource, xr::openvr::HandModelResourceDir, NULL, 0);
+    uint32_t modelPathLen = vr::VRResources()->GetResourceFullPath(handResource, xr::openvr::HandModelResourceDir, NULL, 0);
 
 	std::shared_ptr<char[]> modelPathStr(new char[modelPathLen]);
 	vr::VRResources()->GetResourceFullPath(handResource, xr::openvr::HandModelResourceDir, modelPathStr.get(), modelPathLen);
 
-	// GetResourceFullPath has no error checking. We need to validate the path exists
-	std::filesystem::path modelPath(modelPathStr.get());
-	if (!std::filesystem::exists(modelPath) || std::filesystem::is_directory(modelPath))
-	{
-		Errorf("OpenVR Skeleton GLTF File Path (%s) is not a file", modelPathStr.get());
-		return false;
-	}
-
-	tinygltf::TinyGLTF gltfLoader;
-	std::string err;
-	std::string warn;
-	std::shared_ptr<tinygltf::Model> gltfModel = make_shared<tinygltf::Model>();
-
-	if (!gltfLoader.LoadBinaryFromFile(gltfModel.get(), &err, &warn, std::string(modelPathStr.get())))
-	{
-		Errorf("Failed to parse OpenVR Skeleton GLTF file: %s", modelPathStr.get());
-		Errorf("TinyGLTF Error: %s", err.c_str());
-		Errorf("TinyGLTF Warn: %s", warn.c_str());
-		return false;
-	}
-	
-	std::shared_ptr<XrModel> xrModel = std::shared_ptr<OpenVrSkeleton>(new OpenVrSkeleton(handResource, gltfModel));
-
-	return xrModel;
+	return std::string(modelPathStr.get());
 }

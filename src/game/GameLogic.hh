@@ -40,11 +40,11 @@ namespace sp
 
 		shared_ptr<xr::XrSystem> GetXrSystem();
 		void InitXrActions();
-		ecs::Entity ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &handle);
-		ecs::Entity ValidateAndLoadXrInputSource(std::string subpath);
-		ecs::Entity ValidateAndLoadSkeletonHand(std::string action);
 
-		void ValidateAndLoadSkeletonDebugHand(std::string action, glm::mat4 xrObjectPos, std::vector<xr::XrBoneData>& boneData);
+		ecs::Entity ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &handle);
+		ecs::Entity UpdateXrActionEntity(xr::XrActionPtr action, bool active);
+
+		void UpdateSkeletonDebugHand(xr::XrActionPtr action, glm::mat4 xrObjectPos, std::vector<xr::XrBoneData>& boneData, bool active);
 
 		void ComputeBonePositions(std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output);
 
@@ -60,8 +60,20 @@ namespace sp
 		ecs::Entity flashlight;
 		float sunPos;
 
-		std::shared_ptr<xr::XrSystem> xrSystem;
-		std::shared_ptr<xr::XrActionSet> gameActionSet;
+		xr::XrSystemPtr xrSystem;
+		xr::XrActionSetPtr gameActionSet;
+
+		// Actions we use in game navigation
+		xr::XrActionPtr teleportAction;
+		xr::XrActionPtr grabAction;
+
+		// Actions for the raw input device pose
+		xr::XrActionPtr leftHandAction;
+		xr::XrActionPtr rightHandAction;
+		
+		// Actions for the skeleton pose
+		xr::XrActionPtr leftHandSkeletonAction;
+		xr::XrActionPtr rightHandSkeletonAction;
 
 		bool xrTeleported = false;
 		bool xrGrabbed = false;

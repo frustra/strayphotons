@@ -62,15 +62,15 @@ namespace xr
 		XrActionType GetActionType();
 
 		// Boolean action manipulation
-		virtual bool GetBooleanActionValue(std::string subpath) = 0;
+		virtual bool GetBooleanActionValue(std::string subpath, bool& value) = 0;
 
 		// Returns true if the boolean action transitioned from false to true
 		// during this update loop
-		virtual bool GetRisingEdgeActionValue(std::string subpath) = 0;
+		virtual bool GetRisingEdgeActionValue(std::string subpath, bool& value) = 0;
 
 		// Returns true if the boolean action transitioned from true to false
 		// during this update loop
-		virtual bool GetFallingEdgeActionValue(std::string subpath) = 0;
+		virtual bool GetFallingEdgeActionValue(std::string subpath, bool& value) = 0;
 
 		// Returns a glm::mat4 representing the pose for this action during the next frame.
 		// This should be accessed during the Game::Frame() function. The pose returned by this
@@ -80,8 +80,10 @@ namespace xr
 
 		virtual bool GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool withController) = 0;
 
+		// TODO: deprecate
 		virtual bool IsInputSourceConnected() = 0;
 
+		// TODO: can this directly return some kind of std::future, since it has to run async in some cases?
 		virtual std::shared_ptr<XrModel> GetInputSourceModel() = 0;
 
 	protected:
@@ -111,6 +113,9 @@ namespace xr
 		std::string actionSetDescription;
 		std::map<std::string, std::shared_ptr<XrAction>> registeredActions;
 	};
+
+	typedef std::shared_ptr<XrAction> XrActionPtr;
+	typedef std::shared_ptr<XrActionSet> XrActionSetPtr;
 
 } // Namespace xr
 } // Namespace sp
