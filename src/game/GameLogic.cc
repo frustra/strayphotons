@@ -35,9 +35,8 @@ namespace sp
 	GameLogic::GameLogic(Game *game)
 		:
 		game(game),
-		input(&game->input),
-		humanControlSystem(&game->entityManager, &game->input, &game->physics),
-		lightGunSystem(&game->entityManager, &game->input, &game->physics, this),
+		humanControlSystem(&game->entityManager, &game->physics),
+		lightGunSystem(&game->entityManager, &game->physics, this),
 		doorSystem(game->entityManager),
 		sunPos(0),
 		gameXrActions("game_actions", "The actions a user can take while playing the game")
@@ -104,8 +103,17 @@ namespace sp
 		gameXrActions.AddAction(grabAction);
 	}
 
-	void GameLogic::Init()
+	void GameLogic::Init(InputManager *inputManager)
 	{
+		Assert(input == nullptr, "InputManager can only be bound once.");
+		if (inputManager != nullptr)
+		{
+			input = inputManager;
+
+			humanControlSystem.BindInput(inputManager);
+			lightGunSystem.BindInput(inputManager);
+		}
+
 		if (game->options.count("map"))
 		{
 			LoadScene(game->options["map"].as<string>());
@@ -115,88 +123,85 @@ namespace sp
 			LoadScene("menu");
 		}
 
-		input->BindCommand(GLFW_KEY_F5, "reloadscene");
-		input->BindCommand(GLFW_KEY_F6, "reloadscene reset");
-		input->BindCommand(GLFW_KEY_F7, "reloadshaders");
-		input->BindCommand(GLFW_KEY_F, "toggle r.FlashlightOn");
-
-		input->AddKeyInputCallback([&](int key, int state)
-		{
-			if (input->FocusLocked()) return;
-
-			if (state == GLFW_PRESS)
-			{
-				if (key == GLFW_KEY_ESCAPE)
-				{
-					game->menuGui.OpenPauseMenu();
-				}
-				else if (key == GLFW_KEY_F1 && CVarConnectVR.Get())
-				{
-					auto vrOrigin = game->entityManager.EntityWith<ecs::Name>("vr-origin");
-					auto player = GetPlayer();
-					if (vrOrigin && vrOrigin.Has<ecs::Transform>() && player && player.Has<ecs::Transform>())
-					{
-						auto vrTransform = vrOrigin.Get<ecs::Transform>();
-						auto playerTransform = player.Get<ecs::Transform>();
-
-						vrTransform->SetPosition(playerTransform->GetGlobalPosition(game->entityManager) - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
-					}
-				}
-				else if (key == GLFW_KEY_Q) // Spawn dodecahedron
-				{
-					auto entity = game->entityManager.NewEntity();
-					auto model = GAssets.LoadModel("dodecahedron");
-					entity.Assign<ecs::Renderable>(model);
-					entity.Assign<ecs::Transform>(glm::vec3(0, 5, 0));
-
-					PhysxActorDesc desc;
-					desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
-					auto actor = game->physics.CreateActor(model, desc, entity);
-
-					if (actor)
-					{
-						entity.Assign<ecs::Physics>(actor, model, desc);
-					}
-				}
-				else if (key == GLFW_KEY_P) // Toggle flashlight following player
-				{
-					if (flashlight.Valid())
-					{
-						auto transform = flashlight.Get<ecs::Transform>();
-						auto player = game->entityManager.EntityWith<ecs::Name>(CVarFlashlightParent.Get());
-						if (player && player.Has<ecs::Transform>())
-						{
-							auto playerTransform = player.Get<ecs::Transform>();
-							if (transform->HasParent(game->entityManager))
-							{
-								transform->SetPosition(transform->GetGlobalTransform(game->entityManager) * glm::vec4(0, 0, 0, 1));
-								transform->SetRotate(playerTransform->GetGlobalRotation(game->entityManager));
-								transform->SetParent(ecs::Entity());
-							}
-							else
-							{
-								transform->SetPosition(glm::vec3(0, -0.3, 0));
-								transform->SetRotate(glm::quat());
-								transform->SetParent(player);
-							}
-						}
-					}
-				}
-			}
-		});
-
-		input->AddCharInputCallback([&](uint32 ch)
-		{
-			if (input->FocusLocked()) return;
-		});
+		input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f5", "reloadscene");
+		input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f6", "reloadscene reset");
+		input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f7", "reloadshaders");
+		input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f", "toggle r.FlashlightOn");
 	}
 
 	GameLogic::~GameLogic()
 	{
 	}
 
+	void GameLogic::HandleInput()
+	{
+		if (input->FocusLocked()) return;
+
+		if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/escape"))
+		{
+			game->menuGui.OpenPauseMenu();
+		}
+		else if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/f1") && CVarConnectVR.Get())
+		{
+			auto vrOrigin = game->entityManager.EntityWith<ecs::Name>("vr-origin");
+			auto player = GetPlayer();
+			if (vrOrigin && vrOrigin.Has<ecs::Transform>() && player && player.Has<ecs::Transform>())
+			{
+				auto vrTransform = vrOrigin.Get<ecs::Transform>();
+				auto playerTransform = player.Get<ecs::Transform>();
+
+				vrTransform->SetPosition(playerTransform->GetGlobalPosition(game->entityManager) - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
+			}
+		}
+		else if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/q")) // Spawn dodecahedron
+		{
+			auto entity = game->entityManager.NewEntity();
+			auto model = GAssets.LoadModel("dodecahedron");
+			entity.Assign<ecs::Renderable>(model);
+			entity.Assign<ecs::Transform>(glm::vec3(0, 5, 0));
+
+			PhysxActorDesc desc;
+			desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
+			auto actor = game->physics.CreateActor(model, desc, entity);
+
+			if (actor)
+			{
+				entity.Assign<ecs::Physics>(actor, model, desc);
+			}
+		}
+		else if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/p")) // Toggle flashlight following player
+		{
+			if (flashlight.Valid())
+			{
+				auto transform = flashlight.Get<ecs::Transform>();
+				auto player = game->entityManager.EntityWith<ecs::Name>(CVarFlashlightParent.Get());
+				if (player && player.Has<ecs::Transform>())
+				{
+					auto playerTransform = player.Get<ecs::Transform>();
+					if (transform->HasParent(game->entityManager))
+					{
+						transform->SetPosition(transform->GetGlobalTransform(game->entityManager) * glm::vec4(0, 0, 0, 1));
+						transform->SetRotate(playerTransform->GetGlobalRotation(game->entityManager));
+						transform->SetParent(ecs::Entity());
+					}
+					else
+					{
+						transform->SetPosition(glm::vec3(0, -0.3, 0));
+						transform->SetRotate(glm::quat());
+						transform->SetParent(player);
+					}
+				}
+			}
+		}
+	}
+
 	bool GameLogic::Frame(double dtSinceLastFrame)
 	{
+		if (input != nullptr)
+		{
+			HandleInput();
+		}
+
 		if (!scene) return true;
 		ecs::Entity player = GetPlayer();
 		if (!player.Valid()) return true;

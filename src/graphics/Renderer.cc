@@ -30,15 +30,10 @@
 
 namespace sp
 {
-	Renderer::Renderer(Game *game, bool headless) : GraphicsContext(game)
+	Renderer::Renderer(Game *game) : GraphicsContext(game)
 	{
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-
-		if (headless)
-		{
-			glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
-		}
 	}
 
 	Renderer::~Renderer()

@@ -302,7 +302,6 @@ install(
 	TARGETS
 		${PROJECT_EXE}
 		${PROJECT_LIB}
-		glfw
 		${_physx_libraries}
 	RUNTIME DESTINATION
 		bin

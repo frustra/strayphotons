@@ -5,6 +5,7 @@
 #include "ecs/Components.hh"
 
 #include "ecs/components/Physics.hh"
+#include <game/input/GlfwInputManager.hh>
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -61,11 +62,14 @@ namespace sp
 
 		try
 		{
+			input = std::make_unique<GlfwInputManager>();
+			auto glfwInput = (GlfwInputManager *) input.get();
+
 			graphics.CreateContext();
-			logic.Init();
-			graphics.BindContextInputCallbacks(input);
-			debugGui.BindInput(input);
-			menuGui.BindInput(input);
+			logic.Init(input.get());
+			graphics.BindContextInputCallbacks(glfwInput);
+			debugGui.BindInput(glfwInput);
+			menuGui.BindInput(glfwInput);
 			lastFrameTime = glfwGetTime();
 
 			while (!triggeredExit)
@@ -85,7 +89,7 @@ namespace sp
 		double frameTime = glfwGetTime();
 		double dt = frameTime - lastFrameTime;
 
-		input.Checkpoint();
+		input->BeginFrame();
 		GConsoleManager.Update();
 
 		if (!logic.Frame(dt)) return false;

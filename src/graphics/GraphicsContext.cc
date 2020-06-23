@@ -4,6 +4,7 @@
 #include "graphics/GraphicsContext.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/Shader.hh"
+#include <game/input/GlfwInputManager.hh>
 
 #include <string>
 #include <iostream>
@@ -90,9 +91,15 @@ namespace sp
 		glfwSetWindowTitle(window, title.c_str());
 	}
 
-	void GraphicsContext::BindInputCallbacks(InputManager &inputManager)
+	void GraphicsContext::BindInputCallbacks(GlfwInputManager *inputManager)
 	{
-		inputManager.BindCallbacks(window);
+		Assert(input == nullptr, "InputManager must only be bound once.");
+		if (inputManager != nullptr)
+		{
+			input = inputManager;
+
+			input->BindCallbacks(window);
+		}
 	}
 
 	bool GraphicsContext::ShouldClose()

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.hh"
-#include "game/GuiManager.hh"
+#include <game/gui/GuiManager.hh>
 
 namespace sp
 {
@@ -32,7 +32,6 @@ namespace sp
 
 		void BeforeFrame();
 		void DefineWindows();
-		void BindInput(InputManager &inputManager);
 
 		bool Focused();
 		MenuRenderMode RenderMode();
@@ -42,7 +41,6 @@ namespace sp
 
 	private:
 		Game *game = nullptr;
-		InputManager *inputManager = nullptr;
 		MenuScreen selectedScreen = MenuScreen::Splash;
 
 		uint64 framesSinceOpened = 0;

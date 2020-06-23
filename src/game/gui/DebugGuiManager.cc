@@ -1,5 +1,5 @@
 #include "DebugGuiManager.hh"
-#include "game/InputManager.hh"
+#include <game/input/GlfwInputManager.hh>
 
 #include <imgui/imgui.h>
 #include "ConsoleGui.hh"
@@ -29,65 +29,56 @@ namespace sp
 		ImGuiIO &io = ImGui::GetIO();
 		io.MouseDrawCursor = false;
 
-		if (inputManager && Focused())
+		if (input != nullptr && Focused())
 		{
-			auto &input = *inputManager;
+			io.MouseDown[0] = input->IsDown(INPUT_ACTION_MOUSE_BASE + "/button_left");
+			io.MouseDown[1] = input->IsDown(INPUT_ACTION_MOUSE_BASE + "/button_right");
+			io.MouseDown[2] = input->IsDown(INPUT_ACTION_MOUSE_BASE + "/button_middle");
 
-			for (int i = 0; i < 3; i++)
+			glm::vec2 scrollOffset, scrollOffsetDelta;
+			if (input->GetActionStateDelta(INPUT_ACTION_MOUSE_SCROLL, scrollOffset, scrollOffsetDelta))
 			{
-				io.MouseDown[i] = input.IsDown(MouseButtonToKey(i));
+				io.MouseWheel = scrollOffsetDelta.y;
 			}
 
-			io.MouseWheel = input.ScrollOffset().y;
-
-			guiCursorPos = input.ImmediateCursor();
+			glm::vec2 guiCursorPos = input->ImmediateCursor();
 			io.MousePos = ImVec2(guiCursorPos.x, guiCursorPos.y);
 		}
 	}
 
-	void DebugGuiManager::BindInput(InputManager &input)
+	void DebugGuiManager::BindInput(GlfwInputManager *inputManager)
 	{
-		SetGuiContext();
-		ImGuiIO &io = ImGui::GetIO();
-		inputManager = &input;
+		GuiManager::BindInput(inputManager);
 
-		input.AddCharInputCallback([&](uint32 ch)
+		if (input != nullptr)
 		{
-			if (ch == '`')
-				ToggleConsole();
-			else if (ch > 0 && ch < 0x10000)
-				io.AddInputCharacter(ch);
-		});
+			ImGuiIO &io = ImGui::GetIO();
 
-		input.AddKeyInputCallback([&](int key, int state)
-		{
-			if (state == GLFW_PRESS)
-				io.KeysDown[key] = true;
-			if (state == GLFW_RELEASE)
-				io.KeysDown[key] = false;
-
-			io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
-			io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
-			io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
-			io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
-		});
+			input->AddCharInputCallback([&](uint32 ch)
+			{
+				if (ch == '`')
+					ToggleConsole();
+				else if (ch > 0 && ch < 0x10000)
+					io.AddInputCharacter(ch);
+			});
+		}
 	}
 
 	void DebugGuiManager::GrabFocus()
 	{
-		if (!Focused())
+		if (input != nullptr && !Focused())
 		{
-			inputManager->LockFocus(true, focusPriority);
-			inputManager->EnableCursor();
+			input->LockFocus(true, focusPriority);
+			input->EnableCursor();
 		}
 	}
 
 	void DebugGuiManager::ReleaseFocus()
 	{
-		if (!Focused())
+		if (input != nullptr && !Focused())
 		{
-			inputManager->DisableCursor();
-			inputManager->LockFocus(false, focusPriority);
+			input->DisableCursor();
+			input->LockFocus(false, focusPriority);
 		}
 	}
 

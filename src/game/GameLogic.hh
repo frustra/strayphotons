@@ -13,6 +13,7 @@ namespace sp
 {
 	class Game;
 	class Scene;
+	class InputManager;
 
 	class GameLogic
 	{
@@ -20,7 +21,8 @@ namespace sp
 		GameLogic(Game *game);
 		~GameLogic();
 
-		void Init();
+		void Init(InputManager *inputManager);
+		void HandleInput();
 		bool Frame(double dtSinceLastFrame);
 
 		void LoadScene(string name);
@@ -41,7 +43,7 @@ namespace sp
 
 	private:
 		Game *game;
-		InputManager *input;
+		InputManager *input = nullptr;
 		ecs::HumanControlSystem humanControlSystem;
 		ecs::LightGunSystem lightGunSystem;
 		ecs::DoorSystem doorSystem;

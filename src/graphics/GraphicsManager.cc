@@ -10,6 +10,7 @@
 #include "core/Game.hh"
 #include "core/CVar.hh"
 #include "core/PerfTimer.hh"
+#include <game/input/GlfwInputManager.hh>
 
 #include <cxxopts.hpp>
 #include <iostream>
@@ -33,13 +34,6 @@ namespace sp
 		{
 			Logf("Graphics starting up (basic renderer)");
 			useBasic = true;
-		}
-		else if (game->options.count("headless"))
-		{
-			Logf("Graphics starting up (headless full renderer)");
-
-			glfwInitHint(GLFW_HEADLESS_RENDERING, GLFW_TRUE);
-			headless = true;
 		}
 		else
 		{
@@ -83,7 +77,7 @@ namespace sp
 			return;
 		}
 
-		auto renderer = new Renderer(game, headless);
+		auto renderer = new Renderer(game);
 		context = renderer;
 		context->CreateWindow(CVarWindowSize.Get());
 
@@ -110,7 +104,7 @@ namespace sp
 		return context && !context->ShouldClose();
 	}
 
-	void GraphicsManager::BindContextInputCallbacks(InputManager &inputManager)
+	void GraphicsManager::BindContextInputCallbacks(GlfwInputManager *inputManager)
 	{
 		context->BindInputCallbacks(inputManager);
 	}
@@ -233,7 +227,6 @@ namespace sp
 		}
 
 		lastFrameEnd = frameEnd;
-		glfwPollEvents();
 		return true;
 	}
 

@@ -15,9 +15,14 @@ namespace ecs
 	class LightGunSystem
 	{
 	public:
-		LightGunSystem(EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics, sp::GameLogic *logic);
+		LightGunSystem(EntityManager *entities, sp::PhysxManager *physics, sp::GameLogic *logic);
 
 		~LightGunSystem();
+
+		void BindInput(sp::InputManager *inputManager)
+		{
+			input = inputManager;
+		}
 
 		bool Frame(float dtSinceLastFrame);
 		void SuckLight(Entity &gun);

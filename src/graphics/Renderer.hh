@@ -36,7 +36,7 @@ namespace sp
 	public:
 		typedef std::function<void(ecs::Entity &)> PreDrawFunc;
 
-		Renderer(Game *game, bool headless = false);
+		Renderer(Game *game);
 		~Renderer();
 
 		void UpdateShaders(bool force = false);

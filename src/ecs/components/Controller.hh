@@ -2,8 +2,6 @@
 
 #include "Common.hh"
 
-#include <unordered_map>
-#include <vector>
 #include <functional>
 
 #include <characterkinematic/PxCapsuleController.h>
@@ -15,19 +13,6 @@
 
 namespace ecs
 {
-	enum class ControlAction
-	{
-		MOVE_FORWARD,
-		MOVE_BACKWARD,
-		MOVE_LEFT,
-		MOVE_RIGHT,
-		MOVE_JUMP,
-		MOVE_CROUCH,
-		MOVE_SPRINT,
-		INTERACT,
-		INTERACT_ROTATE
-	};
-
 	// Units in meters
 	const float PLAYER_HEIGHT = 1.7f;
 	const float PLAYER_CROUCH_HEIGHT = 0.8f;
@@ -50,10 +35,6 @@ namespace ecs
 		 * Roll is not set to maintain the FPS perspective.
 		 */
 		void SetRotate(const glm::quat &rotation);
-
-		// map each action to a vector of glfw keys that could trigger it
-		// (see InputManager.hh for converting a mouse button to one of these ints)
-		std::unordered_map<ControlAction, std::vector<int>> inputMap;
 
 		// overrides ecs::Transform::rotate for an FPS-style orientation
 		// until quaternions make sense to me (which will never happen)
