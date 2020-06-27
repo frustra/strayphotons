@@ -18,18 +18,21 @@ namespace cxxopts
 
 namespace sp
 {
+	class Script;
+
 	class Game
 	{
 	public:
-		Game(cxxopts::ParseResult &options);
+		Game(cxxopts::ParseResult &options, Script *startupScript = nullptr);
 		~Game();
 
-		void Start();
+		int Start();
 		bool Frame();
 		void PhysicsUpdate();
 		bool ShouldStop();
 
 		cxxopts::ParseResult &options;
+		Script *startupScript = nullptr;
 
 		// Order is important.
 		DebugGuiManager debugGui;

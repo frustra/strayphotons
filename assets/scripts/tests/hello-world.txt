@@ -1,0 +1,2 @@
+loadscene sponza
+wait 1000 screenshot hello-world.png

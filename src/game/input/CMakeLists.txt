@@ -9,3 +9,9 @@ target_sources(
     PRIVATE
         GlfwInputManager.cc
 )
+
+target_sources(
+    ${PROJECT_TEST_EXE}
+    PRIVATE
+        GlfwInputManager.cc
+)

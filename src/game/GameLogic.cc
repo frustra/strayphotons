@@ -8,6 +8,7 @@
 
 #include "game/GameLogic.hh"
 #include "assets/Scene.hh"
+#include "assets/Script.hh"
 #include "assets/AssetManager.hh"
 #include "ecs/components/Barrier.hh"
 #include "ecs/components/Light.hh"
@@ -103,7 +104,7 @@ namespace sp
 		gameXrActions.AddAction(grabAction);
 	}
 
-	void GameLogic::Init(InputManager *inputManager)
+	void GameLogic::Init(InputManager *inputManager, Script *startupScript)
 	{
 		Assert(input == nullptr, "InputManager can only be bound once.");
 		if (inputManager != nullptr)
@@ -118,10 +119,16 @@ namespace sp
 		{
 			LoadScene(game->options["map"].as<string>());
 		}
-		else
+
+		if (startupScript != nullptr)
+		{
+			startupScript->Exec();
+		}
+		else if (!game->options.count("map"))
 		{
 			LoadScene("menu");
 		}
+
 
 		input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f5", "reloadscene");
 		input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f6", "reloadscene reset");

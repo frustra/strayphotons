@@ -137,4 +137,5 @@ add_dependencies(models duck-gltf)
 
 # Make the project exe depend on having up to date models
 add_dependencies(${PROJECT_EXE} models)
+add_dependencies(${PROJECT_TEST_EXE} models)
 

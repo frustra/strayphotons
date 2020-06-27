@@ -246,14 +246,27 @@ namespace sp
 	{
 		if (!context) return;
 
-		ecs::View primaryView;
-		if (playerViews.size() > 0) primaryView = *ecs::UpdateViewCache(playerViews[0]);
+		if (playerViews.size() > 0)
+		{
+			for (size_t i = 0; i < playerViews.size(); i++)
+			{
+				auto view = playerViews[i].Get<ecs::View>();
 
-		primaryView.extents = CVarWindowSize.Get();
-		primaryView.blend = true;
-		primaryView.clearMode = 0;
+				if (view->viewType == ecs::View::VIEW_TYPE_PANCAKE)
+				{
+					// This claims to be a PancakeView, so we can update it
+					// with the screen geometry
+					view->SetProjMat(glm::radians(CVarFieldOfView.Get()), view->GetClip(), CVarWindowSize.Get());
+					view->scale = CVarWindowScale.Get();
 
-		context->RenderLoading(primaryView);
+					ecs::View pancakeView = *ecs::UpdateViewCache(playerViews[i]);
+					pancakeView.blend = true;
+					pancakeView.clearMode = 0;
+
+					context->RenderLoading(pancakeView);
+				}
+			}
+		}
 
 		// TODO: clear the XR scene to drop back to the compositor while we load
 	}

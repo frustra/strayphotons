@@ -13,6 +13,7 @@ namespace sp
 {
 	class Game;
 	class Scene;
+	class Script;
 	class InputManager;
 
 	class GameLogic
@@ -21,7 +22,7 @@ namespace sp
 		GameLogic(Game *game);
 		~GameLogic();
 
-		void Init(InputManager *inputManager);
+		void Init(InputManager *inputManager, Script *startupScript = nullptr);
 		void HandleInput();
 		bool Frame(double dtSinceLastFrame);
 

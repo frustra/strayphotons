@@ -9,7 +9,6 @@
 		"twxs.cmake",
 		"slevesque.shader",
 		"cesium.gltf-vscode",
-		"atlassian.atlascode",
 	],
 	// List of extensions recommended by VS Code that should not be recommended for users of this workspace.
 	"unwantedRecommendations": [

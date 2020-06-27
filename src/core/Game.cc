@@ -6,13 +6,14 @@
 
 #include "ecs/components/Physics.hh"
 #include <game/input/GlfwInputManager.hh>
+#include <assets/Script.hh>
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
 
 namespace sp
 {
-	Game::Game(cxxopts::ParseResult & options) : options(options), menuGui(this), graphics(this), logic(this), physics(), animation(entityManager)
+	Game::Game(cxxopts::ParseResult & options, Script *startupScript) : options(options), startupScript(startupScript), menuGui(this), graphics(this), logic(this), physics(), animation(entityManager)
 	{
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
@@ -23,8 +24,17 @@ namespace sp
 	{
 	}
 
-	void Game::Start()
+	int Game::Start()
 	{
+		bool triggeredExit = false;
+		int exitCode = 0;
+
+		CFunc<int> cfExit("exit", "Quits the game", [&](int arg)
+		{
+			triggeredExit = true;
+			exitCode = arg;
+		});
+
 		if (options.count("cvar"))
 		{
 			for (auto cvarline : options["cvar"].as<vector<string>>())
@@ -32,13 +42,6 @@ namespace sp
 				GConsoleManager.ParseAndExecute(cvarline);
 			}
 		}
-
-		bool triggeredExit = false;
-
-		CFunc<void> cfExit("exit", "Quits the game", [&]()
-		{
-			triggeredExit = true;
-		});
 
 		entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction & d)
 		{
@@ -66,7 +69,7 @@ namespace sp
 			auto glfwInput = (GlfwInputManager *) input.get();
 
 			graphics.CreateContext();
-			logic.Init(input.get());
+			logic.Init(input.get(), startupScript);
 			graphics.BindContextInputCallbacks(glfwInput);
 			debugGui.BindInput(glfwInput);
 			menuGui.BindInput(glfwInput);
@@ -77,10 +80,12 @@ namespace sp
 				if (ShouldStop()) break;
 				if (!Frame()) break;
 			}
+			return exitCode;
 		}
 		catch (char const *err)
 		{
 			Errorf(err);
+			return 1;
 		}
 	}
 
@@ -90,7 +95,8 @@ namespace sp
 		double dt = frameTime - lastFrameTime;
 
 		input->BeginFrame();
-		GConsoleManager.Update();
+
+		GConsoleManager.Update(startupScript);
 
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;
