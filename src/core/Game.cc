@@ -73,7 +73,7 @@ namespace sp
 			graphics.BindContextInputCallbacks(glfwInput);
 			debugGui.BindInput(glfwInput);
 			menuGui.BindInput(glfwInput);
-			lastFrameTime = glfwGetTime();
+			lastFrameTime = std::chrono::high_resolution_clock::now();
 
 			while (!triggeredExit)
 			{
@@ -91,8 +91,9 @@ namespace sp
 
 	bool Game::Frame()
 	{
-		double frameTime = glfwGetTime();
-		double dt = frameTime - lastFrameTime;
+		auto frameTime = std::chrono::high_resolution_clock::now();
+		double dt = (double)(frameTime - lastFrameTime).count();
+		dt /= std::chrono::high_resolution_clock::duration(std::chrono::seconds(1)).count();
 
 		input->BeginFrame();
 

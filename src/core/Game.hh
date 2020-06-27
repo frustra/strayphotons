@@ -9,6 +9,7 @@
 #include "game/gui/DebugGuiManager.hh"
 #include "game/gui/MenuGuiManager.hh"
 
+#include <chrono>
 #include <Ecs.hh>
 
 namespace cxxopts
@@ -45,6 +46,6 @@ namespace sp
 		ecs::AnimationSystem animation;
 
 	private:
-		double lastFrameTime;
+		std::chrono::high_resolution_clock::time_point lastFrameTime;
 	};
 }

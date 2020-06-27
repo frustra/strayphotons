@@ -8,7 +8,6 @@ target_sources(
         GenericShaders.cc
         GPUTypes.cc
         Graphics.cc
-        GraphicsManager.cc
         LightSensor.cc
         PixelFormat.cc
         RenderBuffer.cc
@@ -28,6 +27,7 @@ target_sources(
         Renderer.cc ## Potentially move into a subfolder like basic_renderer
         GuiRenderer.cc
         GraphicsContext.cc
+        GraphicsManager.cc
 )
 
 target_sources(
@@ -36,4 +36,5 @@ target_sources(
         Renderer.cc ## Potentially move into a subfolder like basic_renderer
         GuiRenderer.cc
         GraphicsContext.cc
+        GraphicsManager.cc
 )

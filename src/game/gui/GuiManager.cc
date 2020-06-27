@@ -1,6 +1,7 @@
 #include "GuiManager.hh"
 #include <game/input/InputManager.hh>
 #include <game/input/GlfwInputManager.hh>
+#include <GLFW/glfw3.h>
 
 #include <imgui/imgui.h>
 #include "ConsoleGui.hh"

@@ -11,6 +11,7 @@
 #include "core/CVar.hh"
 #include "core/PerfTimer.hh"
 #include <game/input/GlfwInputManager.hh>
+#include <GLFW/glfw3.h>
 
 #include <cxxopts.hpp>
 #include <iostream>

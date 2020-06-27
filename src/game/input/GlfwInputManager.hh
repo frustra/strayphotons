@@ -1,11 +1,12 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <GLFW/glfw3.h>
 #include <array>
 #include <robin_hood.h>
 #include <functional>
 #include "InputManager.hh"
+
+struct GLFWwindow;
 
 namespace sp
 {
