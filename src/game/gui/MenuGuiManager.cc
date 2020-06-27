@@ -185,7 +185,7 @@ namespace sp
 
 			if (ImGui::Button("Quit"))
 			{
-				GConsoleManager.ParseAndExecute("exit");
+				GetConsoleManager().ParseAndExecute("exit");
 			}
 
 			ImGui::End();
@@ -206,7 +206,7 @@ namespace sp
 	if (ImGui::Button(name)) \
 	{ \
 		CloseMenu(); \
-		GConsoleManager.ParseAndExecute("loadscene " file); \
+		GetConsoleManager().ParseAndExecute("loadscene " file); \
 	}
 
 			LEVEL_BUTTON("01 - Outside", "01-outside")

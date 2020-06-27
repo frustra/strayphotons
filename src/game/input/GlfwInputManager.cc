@@ -115,7 +115,7 @@ namespace sp
                 if (value && changed)
                 {
                     // Run the bound command
-                    GConsoleManager.ParseAndExecute(command);
+                    GetConsoleManager().ParseAndExecute(command);
                 }
             }
         }

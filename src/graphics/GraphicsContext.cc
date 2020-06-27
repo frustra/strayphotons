@@ -4,6 +4,7 @@
 #include "graphics/GraphicsContext.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/Shader.hh"
+#include <GLFW/glfw3.h>
 #include <game/input/GlfwInputManager.hh>
 
 #include <string>

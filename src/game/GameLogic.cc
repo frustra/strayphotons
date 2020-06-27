@@ -234,7 +234,7 @@ namespace sp
 					area->triggered = true;
 					Debugf("Entity at: %f %f %f", entityPos.x, entityPos.y, entityPos.z);
 					Logf("Triggering event: %s", area->command);
-					GConsoleManager.ParseAndExecute(area->command);
+					GetConsoleManager().ParseAndExecute(area->command);
 				}
 			}
 		}
@@ -437,7 +437,7 @@ namespace sp
 		{
 			for (auto &line : scene->unloadExecList)
 			{
-				GConsoleManager.ParseAndExecute(line);
+				GetConsoleManager().ParseAndExecute(line);
 			}
 		}
 
@@ -546,7 +546,7 @@ namespace sp
 
 		for (auto &line : scene->autoExecList)
 		{
-			GConsoleManager.ParseAndExecute(line);
+			GetConsoleManager().ParseAndExecute(line);
 		}
 
 		// Create flashlight entity

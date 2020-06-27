@@ -4,6 +4,7 @@
 #include "core/CVar.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/View.hh"
+#include <GLFW/glfw3.h>
 
 namespace sp
 {

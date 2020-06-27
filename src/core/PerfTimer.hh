@@ -6,6 +6,7 @@
 
 #include <stack>
 #include <queue>
+#include <chrono>
 
 namespace sp
 {
@@ -17,13 +18,13 @@ namespace sp
 	{
 		string name;
 		int depth = 0;
-		double cpuStart = 0, cpuEnd = 0, cpuElapsed = 0;
-		uint64 gpuStart = 0, gpuEnd = 0, gpuElapsed = 0;
+		std::chrono::high_resolution_clock::duration cpuElapsed;
+		uint64 gpuElapsed = 0;
 	};
 
 	struct TimeQuery
 	{
-		double cpuStart, cpuEnd;
+		std::chrono::high_resolution_clock::time_point cpuStart, cpuEnd;
 		GLuint glQueries[2];
 		int resultIndex;
 	};

@@ -15,7 +15,7 @@ namespace sp
         for (string line : lines)
         {
             Debugf("Running script: %s", line.c_str());
-			GConsoleManager.ParseAndExecute(line);
+			GetConsoleManager().ParseAndExecute(line);
         }
         return false;
     }

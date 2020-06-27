@@ -16,7 +16,12 @@
 
 namespace sp
 {
-	ConsoleManager GConsoleManager;
+	
+	ConsoleManager &GetConsoleManager()
+	{
+		static ConsoleManager GConsoleManager;
+		return GConsoleManager;
+	}
 
 #ifdef USE_LINENOISE_CLI
 	void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc);
@@ -28,7 +33,7 @@ namespace sp
 		{
 			static std::mutex mut;
 			mut.lock();
-			GConsoleManager.AddLog(lvl, line);
+			GetConsoleManager().AddLog(lvl, line);
 			mut.unlock();
 		}
 	}
@@ -43,12 +48,12 @@ namespace sp
 	CVarBase::CVarBase(const string &name, const string &description)
 		: name(name), description(description)
 	{
-		GConsoleManager.AddCVar(this);
+		GetConsoleManager().AddCVar(this);
 	}
 
 	CVarBase::~CVarBase()
 	{
-		GConsoleManager.RemoveCVar(this);
+		GetConsoleManager().RemoveCVar(this);
 	}
 
 	ConsoleManager::ConsoleManager()
@@ -248,7 +253,7 @@ namespace sp
 #ifdef USE_LINENOISE_CLI
 	void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc)
 	{
-		auto completions = GConsoleManager.AllCompletions(string(buf));
+		auto completions = GetConsoleManager().AllCompletions(string(buf));
 		for (auto str : completions)
 		{
 			linenoiseAddCompletion(lc, str.c_str());

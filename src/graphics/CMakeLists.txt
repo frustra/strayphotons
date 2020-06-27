@@ -8,13 +8,10 @@ target_sources(
         GenericShaders.cc
         GPUTypes.cc
         Graphics.cc
-        GraphicsContext.cc
         GraphicsManager.cc
-        GuiRenderer.cc
         LightSensor.cc
         PixelFormat.cc
         RenderBuffer.cc
-        Renderer.cc ## Potentially move into a subfolder like basic_renderer
         RendererVoxels.cc
         RenderTarget.cc
         RenderTargetPool.cc
@@ -23,4 +20,20 @@ target_sources(
         ShaderManager.cc
         Texture.cc
         Util.cc
+)
+
+target_sources(
+    ${PROJECT_EXE}
+    PRIVATE
+        Renderer.cc ## Potentially move into a subfolder like basic_renderer
+        GuiRenderer.cc
+        GraphicsContext.cc
+)
+
+target_sources(
+    ${PROJECT_TEST_EXE}
+    PRIVATE
+        Renderer.cc ## Potentially move into a subfolder like basic_renderer
+        GuiRenderer.cc
+        GraphicsContext.cc
 )

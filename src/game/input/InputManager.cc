@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <stdexcept>
-#include <GLFW/glfw3.h>
 #include <core/Logging.hh>
 #include <core/Console.hh>
 

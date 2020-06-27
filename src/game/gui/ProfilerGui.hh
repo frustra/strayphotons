@@ -8,6 +8,8 @@
 
 namespace sp
 {
+	using namespace std::chrono;
+
 	class ProfilerGui : public GuiRenderable
 	{
 	public:
@@ -35,7 +37,7 @@ namespace sp
 					auto root = timer->lastCompleteFrame.results[0];
 
 					memmove(cpuFrameTimes, cpuFrameTimes + 1, (numFrameTimes - 1) * sizeof(*cpuFrameTimes));
-					cpuFrameTimes[numFrameTimes - 1] = (float)(root.cpuElapsed * 1000.0);
+					cpuFrameTimes[numFrameTimes - 1] = (float)duration_cast<milliseconds>(root.cpuElapsed).count();
 				}
 
 				ImGui::PlotLines("##frameTimes", cpuFrameTimes, numFrameTimes);
@@ -80,7 +82,7 @@ namespace sp
 				ImGui::PushID(offset);
 
 				int depth = result.depth;
-				double elapsed = gpuTime ? (double)result.gpuElapsed / 1000000.0 : result.cpuElapsed * 1000.0;
+				double elapsed = gpuTime ? (double)result.gpuElapsed / 1000000.0 : duration_cast<milliseconds>(result.cpuElapsed).count();
 
 				if (ImGui::TreeNodeEx("node", ImGuiTreeNodeFlags_DefaultOpen, "%s %.2fms", result.name.c_str(), elapsed))
 				{

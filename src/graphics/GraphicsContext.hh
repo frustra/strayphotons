@@ -6,7 +6,9 @@
 #include "graphics/RenderTarget.hh"
 #include "ecs/components/View.hh"
 #include "Common.hh"
-#include "core/PerfTimer.hh"
+#include <core/PerfTimer.hh>
+
+struct GLFWwindow;
 
 namespace sp
 {

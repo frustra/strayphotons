@@ -14,7 +14,6 @@
 #include "core/Logging.hh"
 
 #include <glm/glm.hpp>
-#include <GLFW/glfw3.h>
 #include <PxRigidActor.h>
 #include <PxScene.h>
 

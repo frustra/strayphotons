@@ -39,7 +39,7 @@ namespace sp
 		{
 			for (auto cvarline : options["cvar"].as<vector<string>>())
 			{
-				GConsoleManager.ParseAndExecute(cvarline);
+				GetConsoleManager().ParseAndExecute(cvarline);
 			}
 		}
 
@@ -96,7 +96,7 @@ namespace sp
 
 		input->BeginFrame();
 
-		GConsoleManager.Update(startupScript);
+		GetConsoleManager().Update(startupScript);
 
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;

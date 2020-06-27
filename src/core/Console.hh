@@ -69,5 +69,5 @@ namespace sp
 		vector<string> history;
 	};
 
-	extern ConsoleManager GConsoleManager;
+	ConsoleManager &GetConsoleManager();
 }
