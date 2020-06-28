@@ -10,13 +10,16 @@ namespace sp
 	{
 	}
 
-    bool Script::Exec()
+    void Script::Exec()
     {
+        Debugf("Running script: %s", path.c_str());
         for (string line : lines)
         {
-            Debugf("Running script: %s", line.c_str());
-			GetConsoleManager().ParseAndExecute(line);
+            if (!line.empty() && line[0] != '#')
+            {
+                Debugf("$ %s", line.c_str());
+                GetConsoleManager().ParseAndExecute(line);
+            }
         }
-        return false;
     }
 }

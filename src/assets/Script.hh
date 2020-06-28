@@ -12,7 +12,7 @@ namespace sp
 		Script(const string &path, shared_ptr<Asset> asset, vector<string> &&lines);
 		~Script() {}
         
-        bool Exec();
+        void Exec();
 
 		const string path;
 	private:
