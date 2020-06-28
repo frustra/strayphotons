@@ -31,7 +31,6 @@ if [ -n "$ASSET_CACHE_PATH" ]; then
         file=$(echo $line | awk '{print $2}')
         if [ -f assets/${file} ]; then
             hash=$(md5sum assets/${file} | awk '{print $1}')
-            echo "Saving assets/${file}"
             cp assets/${file} ${ASSET_CACHE_PATH}/${hash}
         fi
     done < assets/asset-list.txt
@@ -72,7 +71,7 @@ for file in ../assets/scripts/tests/*.txt; do
     mkdir -p $output_path
     for file in screenshots/*.png; do
         mv $file $output_path
-        inline_image "artifact://bin/$output_path/$file" "$output_path/${file##*/}"
+        inline_image "artifact://bin/$output_path/${file##*/}" "$output_path/${file##*/}"
     done
 done
 
