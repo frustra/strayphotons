@@ -9,6 +9,7 @@ if [ -n "$BUILDKITE_ORGANIZATION_SLUG" ]; then
             file=$(echo $line | awk '{print $2}')
             if [ -f ${ASSET_CACHE_PATH}/${hash} ]; then
                 echo "Restoring assets/$file"
+                mkdir -p assets/${file%/*}
                 cp ${ASSET_CACHE_PATH}/${hash} assets/${file}
             fi
         done < assets/asset-list.txt
