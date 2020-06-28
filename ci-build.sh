@@ -8,20 +8,21 @@ if [ -n "$BUILDKITE_ORGANIZATION_SLUG" ]; then
             hash=$(echo $line | awk '{print $1}')
             file=$(echo $line | awk '{print $2}')
             if [ -f ${ASSET_CACHE_PATH}/${hash} ]; then
+                echo "Restoring assets/$file"
                 cp ${ASSET_CACHE_PATH}/${hash} assets/${file}
             fi
         done < assets/asset-list.txt
     fi
 fi
 
-echo -e "+++ Running \033[33mcmake configure\033[0m :video_game:"
+echo -e "--- Running \033[33mcmake configure\033[0m :video_game:"
 if ! cmake -DCMAKE_BUILD_TYPE=Release -S . -B ./build -GNinja; then
-    echo "CMake Configure failed"
+    echo "^^^ +++"]
+    echo "\033[31mCMake Configure failed\033[0m"
     exit 1
 fi
 
 if [ -n "$ASSET_CACHE_PATH" ]; then
-    echo "^^^ ---"
     echo -e "--- Saving assets cache"
 
     mkdir -p ${ASSET_CACHE_PATH}
@@ -29,19 +30,19 @@ if [ -n "$ASSET_CACHE_PATH" ]; then
         file=$(echo $line | awk '{print $2}')
         if [ -f assets/${file} ]; then
             hash=$(md5sum assets/${file} | awk '{print $1}')
+            echo "Saving assets/${file}"
             cp assets/${file} ${ASSET_CACHE_PATH}/${hash}
         fi
     done < assets/asset-list.txt
 fi
 
-echo "^^^ ---"
-echo -e "+++ Running \033[33mcmake build\033[0m :rocket:"
+echo -e "--- Running \033[33mcmake build\033[0m :rocket:"
 if ! cmake --build ./build --config Release --target all; then
-    echo "CMake Build failed"
+    echo "^^^ +++"]
+    echo "\033[31mCMake Build failed\033[0m"
     exit 1
 fi
 
-echo "^^^ ---"
 echo -e "+++ Running \033[33mtests\033[0m :camera_with_flash:"
 cd bin
 rm -rf screenshots/*.png
@@ -70,7 +71,7 @@ for file in ../assets/scripts/tests/*.txt; do
     mkdir -p $output_path
     for file in screenshots/*.png; do
         mv $file $output_path
-        inline_image "artifact://bin/$output_path/$file" "$output_path/$file"
+        inline_image "artifact://bin/$output_path/$file" "$output_path/${file##*/}"
     done
 done
 
