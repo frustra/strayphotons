@@ -206,7 +206,7 @@ namespace sp
 	if (ImGui::Button(name)) \
 	{ \
 		CloseMenu(); \
-		GetConsoleManager().ParseAndExecute("loadscene " file); \
+		GetConsoleManager().QueueParseAndExecute("loadscene " file); \
 	}
 
 			LEVEL_BUTTON("01 - Outside", "01-outside")

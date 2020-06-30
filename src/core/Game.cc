@@ -91,13 +91,12 @@ namespace sp
 
 	bool Game::Frame()
 	{
+		input->BeginFrame();
+		GetConsoleManager().Update(startupScript);
+
 		auto frameTime = std::chrono::high_resolution_clock::now();
 		double dt = (double)(frameTime - lastFrameTime).count();
 		dt /= std::chrono::high_resolution_clock::duration(std::chrono::seconds(1)).count();
-
-		input->BeginFrame();
-
-		GetConsoleManager().Update(startupScript);
 
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;

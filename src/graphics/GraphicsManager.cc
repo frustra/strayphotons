@@ -151,14 +151,6 @@ namespace sp
 		{
 			RenderPhase phase("Frame", context->Timer);
 
-			// TODO: Fix this.
-			// Inside this function call, the MainMenu is rendered. 
-			// When you click the button to load a level, the click event 
-			// is processed inside this function.
-			// That means, loading a level happens, inside this function.
-			// The first thing that happens when you load a level is destroy all the
-			// entities. This means the XrViews and PancakeViews suddenly become invalid
-			// entities, with invalid components.
 			context->BeginFrame();
 
 			// Always render XR content first, since this allows the compositor to immediately start work rendering to the HMD
