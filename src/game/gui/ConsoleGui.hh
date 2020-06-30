@@ -57,7 +57,7 @@ namespace sp
 				if (ImGui::InputText("##CommandInput", inputBuf, sizeof(inputBuf), iflags, CommandEditStub, (void *) this))
 				{
 					string line(inputBuf);
-					GetConsoleManager().ParseAndExecute(line, true);
+					GetConsoleManager().QueueParseAndExecute(line, true);
 					inputBuf[0] = '\0';
 					historyOffset = 0;
 					reclaim_focus = true;

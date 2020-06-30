@@ -185,7 +185,7 @@ namespace sp
 
 			if (ImGui::Button("Quit"))
 			{
-				GetConsoleManager().ParseAndExecute("exit");
+				GetConsoleManager().QueueParseAndExecute("exit");
 			}
 
 			ImGui::End();

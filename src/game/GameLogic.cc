@@ -234,7 +234,7 @@ namespace sp
 					area->triggered = true;
 					Debugf("Entity at: %f %f %f", entityPos.x, entityPos.y, entityPos.z);
 					Logf("Triggering event: %s", area->command);
-					GetConsoleManager().ParseAndExecute(area->command);
+					GetConsoleManager().QueueParseAndExecute(area->command);
 				}
 			}
 		}
