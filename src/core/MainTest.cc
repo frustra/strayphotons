@@ -19,7 +19,7 @@ using namespace std;
 
 // Instruct NVidia GPU to render this app on optimus-enabled machines (laptops with two GPUs)
 extern "C" {
-	_declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+    _declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
 }
 
 #else
@@ -41,30 +41,30 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmd
 int main(int argc, char **argv)
 #endif
 {
-	cxxopts::Options options("STRAYPHOTONS-TEST", "");
+    cxxopts::Options options("STRAYPHOTONS-TEST", "");
 
     options.positional_help("/path/to/script.txt]");
-	options.add_options()
-	("h,help", "Display help")
-	("m,map", "Initial scene to load", value<string>())
-	("basic-renderer", "Use minimal debug renderer", value<bool>())
-	("size", "Initial window size", value<string>())
-	("cvar", "Set cvar to initial value", value<vector<string>>())
+    options.add_options()
+    ("h,help", "Display help")
+    ("m,map", "Initial scene to load", value<string>())
+    ("basic-renderer", "Use minimal debug renderer", value<bool>())
+    ("size", "Initial window size", value<string>())
+    ("cvar", "Set cvar to initial value", value<vector<string>>())
     ("script-file", "", value<string>());
 
     options.parse_positional({"script-file"});
 
 #ifdef CATCH_GLOBAL_EXCEPTIONS
-	try
+    try
 #endif
-	{
-		auto optionsResult = options.parse(ARGC_NAME, ARGV_NAME);
+    {
+        auto optionsResult = options.parse(ARGC_NAME, ARGV_NAME);
 
-		if (optionsResult.count("help"))
-		{
-			std::cout << options.help() << std::endl;
-			return 0;
-		}
+        if (optionsResult.count("help"))
+        {
+            std::cout << options.help() << std::endl;
+            return 0;
+        }
 
         if (!optionsResult.count("script-file"))
         {
@@ -72,9 +72,9 @@ int main(int argc, char **argv)
             return 0;
         }
 
-		char cwd[FILENAME_MAX];
-		os_getcwd(cwd, FILENAME_MAX);
-		Logf("Starting in directory: %s", cwd);
+        char cwd[FILENAME_MAX];
+        os_getcwd(cwd, FILENAME_MAX);
+        Logf("Starting in directory: %s", cwd);
 
         string scriptPath = optionsResult["script-file"].as<string>();
         auto script = sp::GAssets.LoadScript(scriptPath);
@@ -84,19 +84,19 @@ int main(int argc, char **argv)
             return 0;
         }
 
-		sp::Game game(optionsResult, script.get());
-		return game.Start();
-	}
+        sp::Game game(optionsResult, script.get());
+        return game.Start();
+    }
 #ifdef CATCH_GLOBAL_EXCEPTIONS
-	catch (const char *err)
-	{
-		Errorf("terminating with exception: %s", err);
-	}
-	catch (const std::exception &ex)
-	{
-		Errorf("terminating with exception: %s", ex.what());
-	}
+    catch (const char *err)
+    {
+        Errorf("terminating with exception: %s", err);
+    }
+    catch (const std::exception &ex)
+    {
+        Errorf("terminating with exception: %s", ex.what());
+    }
 #endif
-	return -1;
+    return -1;
 }
 
