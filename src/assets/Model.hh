@@ -64,10 +64,10 @@ namespace sp
 		vector<unsigned char> GetBuffer(int index);
 		Hash128 HashBuffer(int index);
 
-		int FindNodeByName(std::string name);
-		std::string GetNodeName(int node);
+		int FindNodeByName(string name);
+		string GetNodeName(int node);
 		glm::mat4 GetInvBindPoseForNode(int nodeIndex);
-		std::vector<int> GetJointNodes();
+		vector<int> GetJointNodes();
 
 		vector<glm::mat4> bones;
 
@@ -87,9 +87,9 @@ namespace sp
 	public:
 		BasicModel(const string &name) : Model(name) {};
 		
-		std::map<std::string, BasicMaterial> basicMaterials;
-		std::map<std::string, VertexBuffer> vbos;
-		std::map<std::string, Buffer> ibos;
+		std::map<string, BasicMaterial> basicMaterials;
+		std::map<string, VertexBuffer> vbos;
+		std::map<string, Buffer> ibos;
 	};
 
 	class GLModel : public NonCopyable
@@ -108,7 +108,13 @@ namespace sp
 			Texture *baseColorTex, *metallicRoughnessTex, *heightTex;
 		};
 
-		void Draw(SceneShader *shader, glm::mat4 modelMat, const ecs::View &view, int boneCount, glm::mat4* boneData);
+		void Draw(
+			SceneShader *shader, 
+			glm::mat4 modelMat, 
+			const ecs::View &view, 
+			int boneCount, 
+			glm::mat4 *boneData);
+
 		void AddPrimitive(Primitive prim);
 
 	private:

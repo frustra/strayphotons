@@ -283,11 +283,11 @@ namespace sp
 		}
 	}
 
-	// Returns a std::vector of the GLTF node indexes that are present in the "joints"
+	// Returns a vector of the GLTF node indexes that are present in the "joints"
 	// array of the GLTF skin. 
-	std::vector<int> Model::GetJointNodes()
+	vector<int> Model::GetJointNodes()
 	{
-		std::vector<int> nodes;
+		vector<int> nodes;
 
 		// TODO: deal with GLTFs that have more than one skin
 		for(int node : model->skins[0].joints)
@@ -315,7 +315,7 @@ namespace sp
 		return inverseBindMatrixForJoint[nodeIndex];
 	}
 
-	std::string Model::GetNodeName(int node)
+	string Model::GetNodeName(int node)
 	{
 		return model->nodes[node].name;
 	}

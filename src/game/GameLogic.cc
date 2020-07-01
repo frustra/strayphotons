@@ -99,18 +99,24 @@ namespace sp
 
 		// Create LeftHand Pose action
 		leftHandAction = gameActionSet->CreateAction(xr::LeftHandActionName, xr::XrActionType::Pose);
-		// TODO: add suggested bindings for real XR backends when OpenXR supports skeletons
+		leftHandAction->AddSuggestedBinding("/interaction_profiles/oculus/touch_controller", "/user/hand/left/input/grip/pose");
+		leftHandAction->AddSuggestedBinding("/interaction_profiles/valve/index_controller", "/user/hand/left/input/grip/pose");
+		leftHandAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller", "/user/hand/left/input/grip/pose");
 
 		// Create RightHand Pose action
 		rightHandAction = gameActionSet->CreateAction(xr::RightHandActionName, xr::XrActionType::Pose);
-		// TODO: add suggested bindings for real XR backends when OpenXR supports skeletons
+		rightHandAction->AddSuggestedBinding("/interaction_profiles/oculus/touch_controller", "/user/hand/right/input/grip/pose");
+		rightHandAction->AddSuggestedBinding("/interaction_profiles/valve/index_controller", "/user/hand/right/input/grip/pose");
+		rightHandAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller", "/user/hand/right/input/grip/pose");
 
 		// Create LeftHand Skeleton action
 		leftHandSkeletonAction = gameActionSet->CreateAction(xr::LeftHandSkeletonActionName, xr::XrActionType::Skeleton);
+
 		// TODO: add suggested bindings for real XR backends when OpenXR supports skeletons
 
 		// Create RightHand Skeleton action
 		rightHandSkeletonAction = gameActionSet->CreateAction(xr::RightHandSkeletonActionName, xr::XrActionType::Skeleton);
+
 		// TODO: add suggested bindings for real XR backends when OpenXR supports skeletons
 	}
 
@@ -305,35 +311,10 @@ namespace sp
 				gameActionSet->Sync();
 
 				// Mapping of Pose Actions to Subpaths. Needed so we can tell which-hand-did-what for the hand pose linked actions
-				std::vector<std::pair<xr::XrActionPtr, std::string>> controllerPoseActions = { 
+				vector<std::pair<xr::XrActionPtr, std::string>> controllerPoseActions = { 
 					{leftHandAction, xr::SubpathLeftHand}, 
 					{rightHandAction, xr::SubpathRightHand}
 				};
-				
-				// TODO: run laser pointer parent code only once
-				ecs::Entity laserPointer = GetLaserPointer();
-
-				if (laserPointer.Valid())
-				{
-					auto transform = laserPointer.Get<ecs::Transform>();
-					auto parent = game->entityManager.EntityWith<ecs::Name>("xr-action-" + std::string(xr::RightHandActionName));
-					if (parent && parent.Has<ecs::Transform>())
-					{
-						auto parentTransform = parent.Get<ecs::Transform>();
-						if (transform->HasParent(game->entityManager))
-						{
-							transform->SetPosition(transform->GetGlobalTransform(game->entityManager) * glm::vec4(0, 0, 0, 1));
-							transform->SetRotate(parentTransform->GetGlobalRotation(game->entityManager));
-							transform->SetParent(ecs::Entity());
-						}
-						else
-						{
-							transform->SetPosition(glm::vec3(0, 0, 0));
-							transform->SetRotate(glm::quat());
-							transform->SetParent(parent);
-						}
-					}
-				}
 
 				for (auto controllerAction : controllerPoseActions)
 				{
@@ -343,6 +324,25 @@ namespace sp
 					
 					if (xrObject.Valid())
 					{
+						if (controllerAction.first == rightHandAction)
+						{
+							// TODO: make this bound to the "dominant user hand", or pick the last hand the user tried to teleport with
+							// TODO: make this support "skeleton-only" mode
+							// Parent the laser pointer to the xrObject representing the last teleport action
+							ecs::Entity laserPointer = GetLaserPointer();
+
+							if (laserPointer.Valid())
+							{
+								auto transform = laserPointer.Get<ecs::Transform>();
+								auto parent = xrObject;
+								auto parentTransform = ctrl;
+
+								transform->SetPosition(glm::vec3(0, 0, 0));
+								transform->SetRotate(glm::quat());
+								transform->SetParent(parent);
+							}
+						}
+						
 						xrObjectPos = glm::transpose(xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
 
 						auto ctrl = xrObject.Get<ecs::Transform>();
@@ -436,7 +436,7 @@ namespace sp
 						xrObjectPos = glm::transpose(xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
 
 						// Get the bone data (optionally with or without an attached controller)
-						std::vector<xr::XrBoneData> boneData;
+						vector<xr::XrBoneData> boneData;
 						bool activeSkeleton = action->GetSkeletonActionValue(boneData, CVarController.Get());
 
 						if (!activeSkeleton)
@@ -477,7 +477,7 @@ namespace sp
 		return true;
 	}
 
-	void GameLogic::ComputeBonePositions(std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output)
+	void GameLogic::ComputeBonePositions(vector<xr::XrBoneData> &boneData, vector<glm::mat4> &output)
 	{
 		// Resize the output vector to match the number of joints the GLTF will reference
 		output.resize(boneData.size());
@@ -547,7 +547,7 @@ namespace sp
 	// Validate and load the model associated with an XR Action.
 	// Note: this should only be used once per model per frame, or bad things will happen.
 	// Use the left and right hand pose actions to ensure that models aren't duplicated
-	void GameLogic::UpdateSkeletonDebugHand(xr::XrActionPtr action, glm::mat4 xrObjectPos, std::vector<xr::XrBoneData>& boneData, bool active)
+	void GameLogic::UpdateSkeletonDebugHand(xr::XrActionPtr action, glm::mat4 xrObjectPos, vector<xr::XrBoneData>& boneData, bool active)
 	{
 		for (int i = 0; i < boneData.size(); i++)
 		{
