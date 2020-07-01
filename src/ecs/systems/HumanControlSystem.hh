@@ -2,20 +2,33 @@
 
 #include <Ecs.hh>
 #include "ecs/components/Controller.hh"
-#include "game/InputManager.hh"
+#include <game/input/InputManager.hh>
 
 #include "physx/PhysxManager.hh"
+#include <string>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
 namespace ecs
 {
+	static const std::string INPUT_ACTION_PLAYER_MOVE_FORWARD = sp::INPUT_ACTION_PLAYER_BASE + "/move_forward";
+	static const std::string INPUT_ACTION_PLAYER_MOVE_BACKWARD = sp::INPUT_ACTION_PLAYER_BASE + "/move_backward";
+	static const std::string INPUT_ACTION_PLAYER_MOVE_LEFT = sp::INPUT_ACTION_PLAYER_BASE + "/move_left";
+	static const std::string INPUT_ACTION_PLAYER_MOVE_RIGHT = sp::INPUT_ACTION_PLAYER_BASE + "/move_right";
+	static const std::string INPUT_ACTION_PLAYER_MOVE_JUMP = sp::INPUT_ACTION_PLAYER_BASE + "/jump";
+	static const std::string INPUT_ACTION_PLAYER_MOVE_CROUCH = sp::INPUT_ACTION_PLAYER_BASE + "/crouch";
+	static const std::string INPUT_ACTION_PLAYER_MOVE_SPRINT = sp::INPUT_ACTION_PLAYER_BASE + "/sprint";
+	static const std::string INPUT_ACTION_PLAYER_INTERACT = sp::INPUT_ACTION_PLAYER_BASE + "/interact";
+	static const std::string INPUT_ACTION_PLAYER_INTERACT_ROTATE = sp::INPUT_ACTION_PLAYER_BASE + "/interact_rotate";
+
 	class HumanControlSystem
 	{
 	public:
-		HumanControlSystem(ecs::EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics);
+		HumanControlSystem(ecs::EntityManager *entities, sp::PhysxManager *physics);
 		~HumanControlSystem();
+
+		void BindInput(sp::InputManager *inputManager);
 
 		/**
 		 * Call this once per frame
@@ -52,9 +65,9 @@ namespace ecs
 		 */
 		bool InteractRotate(ecs::Entity entity, double dt, glm::vec2 dCursor);
 
-		ecs::EntityManager *entities;
-		sp::InputManager *input;
-		sp::PhysxManager *physics;
+		ecs::EntityManager *entities = nullptr;
+		sp::InputManager *input = nullptr;
+		sp::PhysxManager *physics = nullptr;
 
 	};
 }

@@ -12,6 +12,8 @@
 
 namespace sp
 {
+	class Script;
+
 	struct ConsoleLine
 	{
 		logging::Level level;
@@ -30,7 +32,7 @@ namespace sp
 		ConsoleManager();
 		void AddCVar(CVarBase *cvar);
 		void RemoveCVar(CVarBase *cvar);
-		void Update();
+		void Update(Script *startupScript = nullptr);
 		void InputLoop();
 
 		void AddLog(logging::Level lvl, const string &line);
@@ -67,5 +69,5 @@ namespace sp
 		vector<string> history;
 	};
 
-	extern ConsoleManager GConsoleManager;
+	ConsoleManager &GetConsoleManager();
 }

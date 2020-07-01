@@ -42,3 +42,4 @@ add_custom_command(
 
 add_custom_target(compiled-scenes DEPENDS ${SCENES_OUTPUT})
 add_dependencies(${PROJECT_EXE} compiled-scenes)
+add_dependencies(${PROJECT_TEST_EXE} compiled-scenes)

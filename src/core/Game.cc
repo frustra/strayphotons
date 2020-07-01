@@ -5,13 +5,15 @@
 #include "ecs/Components.hh"
 
 #include "ecs/components/Physics.hh"
+#include <game/input/GlfwInputManager.hh>
+#include <assets/Script.hh>
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
 
 namespace sp
 {
-	Game::Game(cxxopts::ParseResult & options) : options(options), menuGui(this), graphics(this), logic(this), physics(), animation(entityManager)
+	Game::Game(cxxopts::ParseResult & options, Script *startupScript) : options(options), startupScript(startupScript), menuGui(this), graphics(this), logic(this), physics(), animation(entityManager)
 	{
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
@@ -22,22 +24,24 @@ namespace sp
 	{
 	}
 
-	void Game::Start()
+	int Game::Start()
 	{
+		bool triggeredExit = false;
+		int exitCode = 0;
+
+		CFunc<int> cfExit("exit", "Quits the game", [&](int arg)
+		{
+			triggeredExit = true;
+			exitCode = arg;
+		});
+
 		if (options.count("cvar"))
 		{
 			for (auto cvarline : options["cvar"].as<vector<string>>())
 			{
-				GConsoleManager.ParseAndExecute(cvarline);
+				GetConsoleManager().ParseAndExecute(cvarline);
 			}
 		}
-
-		bool triggeredExit = false;
-
-		CFunc<void> cfExit("exit", "Quits the game", [&]()
-		{
-			triggeredExit = true;
-		});
 
 		entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction & d)
 		{
@@ -61,32 +65,38 @@ namespace sp
 
 		try
 		{
+			input = std::make_unique<GlfwInputManager>();
+			auto glfwInput = (GlfwInputManager *) input.get();
+
 			graphics.CreateContext();
-			logic.Init();
-			graphics.BindContextInputCallbacks(input);
-			debugGui.BindInput(input);
-			menuGui.BindInput(input);
-			lastFrameTime = glfwGetTime();
+			logic.Init(input.get(), startupScript);
+			graphics.BindContextInputCallbacks(glfwInput);
+			debugGui.BindInput(glfwInput);
+			menuGui.BindInput(glfwInput);
+			lastFrameTime = std::chrono::high_resolution_clock::now();
 
 			while (!triggeredExit)
 			{
 				if (ShouldStop()) break;
 				if (!Frame()) break;
 			}
+			return exitCode;
 		}
 		catch (char const *err)
 		{
 			Errorf(err);
+			return 1;
 		}
 	}
 
 	bool Game::Frame()
 	{
-		double frameTime = glfwGetTime();
-		double dt = frameTime - lastFrameTime;
+		input->BeginFrame();
+		GetConsoleManager().Update(startupScript);
 
-		input.Checkpoint();
-		GConsoleManager.Update();
+		auto frameTime = std::chrono::high_resolution_clock::now();
+		double dt = (double)(frameTime - lastFrameTime).count();
+		dt /= std::chrono::high_resolution_clock::duration(std::chrono::seconds(1)).count();
 
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;

@@ -6,14 +6,16 @@
 #include "graphics/RenderTarget.hh"
 #include "ecs/components/View.hh"
 #include "Common.hh"
-#include "core/PerfTimer.hh"
+#include <core/PerfTimer.hh>
+
+struct GLFWwindow;
 
 namespace sp
 {
 	class Device;
 	class ShaderSet;
 	class Game;
-	class InputManager;
+	class GlfwInputManager;
 	class RenderTarget;
 
 	class GraphicsContext
@@ -25,7 +27,7 @@ namespace sp
 		void CreateWindow(glm::ivec2 initialSize = { 640, 480 });
 		bool ShouldClose();
 		void SetTitle(string title);
-		void BindInputCallbacks(InputManager &inputManager);
+		void BindInputCallbacks(GlfwInputManager *inputManager);
 		void ResizeWindow(ecs::View &frameBufferView, double scale, int fullscreen);
 		const vector<glm::ivec2> &MonitorModes();
 		const glm::ivec2 CurrentMode();
@@ -54,5 +56,6 @@ namespace sp
 	protected:
 		GLFWwindow *window = nullptr;
 		Game *game;
+		GlfwInputManager *input = nullptr;
 	};
 }

@@ -4,6 +4,8 @@
 #include "graphics/GraphicsContext.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/Shader.hh"
+#include <GLFW/glfw3.h>
+#include <game/input/GlfwInputManager.hh>
 
 #include <string>
 #include <iostream>
@@ -23,7 +25,7 @@ namespace sp
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 		glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
-		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
 		GlobalShaders = new ShaderSet();
 	}
@@ -90,9 +92,15 @@ namespace sp
 		glfwSetWindowTitle(window, title.c_str());
 	}
 
-	void GraphicsContext::BindInputCallbacks(InputManager &inputManager)
+	void GraphicsContext::BindInputCallbacks(GlfwInputManager *inputManager)
 	{
-		inputManager.BindCallbacks(window);
+		Assert(input == nullptr, "InputManager must only be bound once.");
+		if (inputManager != nullptr)
+		{
+			input = inputManager;
+
+			input->BindCallbacks(window);
+		}
 	}
 
 	bool GraphicsContext::ShouldClose()

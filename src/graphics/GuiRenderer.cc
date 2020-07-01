@@ -2,14 +2,15 @@
 #include "Renderer.hh"
 #include "GenericShaders.hh"
 #include "ShaderManager.hh"
-#include "game/InputManager.hh"
-#include "game/GuiManager.hh"
+#include <game/input/InputManager.hh>
+#include <game/gui/GuiManager.hh>
 #include "assets/AssetManager.hh"
 #include "assets/Asset.hh"
 #include "core/PerfTimer.hh"
 
 #include <algorithm>
 #include <imgui/imgui.h>
+#include <GLFW/glfw3.h>
 
 #ifdef _WIN32
 #define GLFW_EXPOSE_NATIVE_WIN32

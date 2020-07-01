@@ -105,13 +105,13 @@ namespace sp
 					{
 						ecs::SignalChange sig(trigger.onSignal);
 						sensorEnt.Emit(sig);
-						GConsoleManager.ParseAndExecute(trigger.oncmd);
+						GetConsoleManager().QueueParseAndExecute(trigger.oncmd);
 					}
 					if (!trigger(lum) && trigger(prev))
 					{
 						ecs::SignalChange sig(trigger.offSignal);
 						sensorEnt.Emit(sig);
-						GConsoleManager.ParseAndExecute(trigger.offcmd);
+						GetConsoleManager().QueueParseAndExecute(trigger.offcmd);
 					}
 				}
 

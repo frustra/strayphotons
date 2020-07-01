@@ -21,6 +21,7 @@
 #include "core/PerfTimer.hh"
 
 #include <stb_image_write.h>
+#include <filesystem>
 
 namespace sp
 {
@@ -151,11 +152,30 @@ namespace sp
 
 	CFunc<string> CFuncQueueScreenshot("screenshot", "Save screenshot to <path>", [](string path)
 	{
-		ScreenshotPath = path;
+		if (ScreenshotPath.empty())
+		{
+			ScreenshotPath = path;
+		}
+		else
+		{
+			Logf("Can't save multiple screenshots on the same frame: %s, already saving %s", path.c_str(), ScreenshotPath.c_str());
+		}
 	});
 
 	void SaveScreenshot(string path, Texture &tex)
 	{
+		auto base = std::filesystem::absolute("screenshots");
+		if (!std::filesystem::is_directory(base))
+		{
+			if (!std::filesystem::create_directory(base))
+			{
+				Errorf("Couldn't save screenshot, couldn't create output directory: %s", base.c_str());
+				return;
+			}
+		}
+		auto fullPath = std::filesystem::weakly_canonical(base / path);
+		Logf("Saving screenshot to: %s", fullPath.c_str());
+
 		size_t size = tex.width * tex.height * 4;
 		uint8 *buf = new uint8[size], *flipped = new uint8[size];
 		glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
@@ -166,7 +186,7 @@ namespace sp
 			memcpy(flipped + tex.width * (tex.height - y - 1) * 4, buf + tex.width * y * 4, tex.width * 4);
 		}
 
-		stbi_write_png(path.c_str(), tex.width, tex.height, 4, flipped, 0);
+		stbi_write_png(fullPath.c_str(), tex.width, tex.height, 4, flipped, 0);
 
 		delete []buf;
 		delete []flipped;

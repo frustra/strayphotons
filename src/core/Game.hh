@@ -5,10 +5,11 @@
 #include "Common.hh"
 #include "game/GameLogic.hh"
 #include "ecs/systems/AnimationSystem.hh"
-#include "game/InputManager.hh"
+#include <game/input/InputManager.hh>
 #include "game/gui/DebugGuiManager.hh"
 #include "game/gui/MenuGuiManager.hh"
 
+#include <chrono>
 #include <Ecs.hh>
 
 namespace cxxopts
@@ -18,30 +19,33 @@ namespace cxxopts
 
 namespace sp
 {
+	class Script;
+
 	class Game
 	{
 	public:
-		Game(cxxopts::ParseResult &options);
+		Game(cxxopts::ParseResult &options, Script *startupScript = nullptr);
 		~Game();
 
-		void Start();
+		int Start();
 		bool Frame();
 		void PhysicsUpdate();
 		bool ShouldStop();
 
 		cxxopts::ParseResult &options;
+		Script *startupScript = nullptr;
 
 		// Order is important.
 		DebugGuiManager debugGui;
 		MenuGuiManager menuGui;
 		GraphicsManager graphics;
-		InputManager input;
+		std::unique_ptr<InputManager> input;
 		ecs::EntityManager entityManager;
 		GameLogic logic;
 		PhysxManager physics;
 		ecs::AnimationSystem animation;
 
 	private:
-		double lastFrameTime;
+		std::chrono::high_resolution_clock::time_point lastFrameTime;
 	};
 }

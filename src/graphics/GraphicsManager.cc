@@ -10,6 +10,8 @@
 #include "core/Game.hh"
 #include "core/CVar.hh"
 #include "core/PerfTimer.hh"
+#include <game/input/GlfwInputManager.hh>
+#include <GLFW/glfw3.h>
 
 #include <cxxopts.hpp>
 #include <iostream>
@@ -37,6 +39,18 @@ namespace sp
 		else
 		{
 			Logf("Graphics starting up (full renderer)");
+		}
+
+		if (game->options.count("size"))
+		{
+			std::istringstream ss(game->options["size"].as<string>());
+			glm::ivec2 size;
+			ss >> size.x >> size.y;
+
+			if (size.x > 0 && size.y > 0)
+			{
+				CVarWindowSize.Set(size);
+			}
 		}
 
 		glfwSetErrorCallback(glfwErrorCallback);
@@ -91,7 +105,7 @@ namespace sp
 		return context && !context->ShouldClose();
 	}
 
-	void GraphicsManager::BindContextInputCallbacks(InputManager &inputManager)
+	void GraphicsManager::BindContextInputCallbacks(GlfwInputManager *inputManager)
 	{
 		context->BindInputCallbacks(inputManager);
 	}
@@ -137,14 +151,6 @@ namespace sp
 		{
 			RenderPhase phase("Frame", context->Timer);
 
-			// TODO: Fix this.
-			// Inside this function call, the MainMenu is rendered. 
-			// When you click the button to load a level, the click event 
-			// is processed inside this function.
-			// That means, loading a level happens, inside this function.
-			// The first thing that happens when you load a level is destroy all the
-			// entities. This means the XrViews and PancakeViews suddenly become invalid
-			// entities, with invalid components.
 			context->BeginFrame();
 
 			// Always render XR content first, since this allows the compositor to immediately start work rendering to the HMD
@@ -214,7 +220,6 @@ namespace sp
 		}
 
 		lastFrameEnd = frameEnd;
-		glfwPollEvents();
 		return true;
 	}
 
@@ -234,14 +239,27 @@ namespace sp
 	{
 		if (!context) return;
 
-		ecs::View primaryView;
-		if (playerViews.size() > 0) primaryView = *ecs::UpdateViewCache(playerViews[0]);
+		if (playerViews.size() > 0)
+		{
+			for (size_t i = 0; i < playerViews.size(); i++)
+			{
+				auto view = playerViews[i].Get<ecs::View>();
 
-		primaryView.extents = CVarWindowSize.Get();
-		primaryView.blend = true;
-		primaryView.clearMode = 0;
+				if (view->viewType == ecs::View::VIEW_TYPE_PANCAKE)
+				{
+					// This claims to be a PancakeView, so we can update it
+					// with the screen geometry
+					view->SetProjMat(glm::radians(CVarFieldOfView.Get()), view->GetClip(), CVarWindowSize.Get());
+					view->scale = CVarWindowScale.Get();
 
-		context->RenderLoading(primaryView);
+					ecs::View pancakeView = *ecs::UpdateViewCache(playerViews[i]);
+					pancakeView.blend = true;
+					pancakeView.clearMode = 0;
+
+					context->RenderLoading(pancakeView);
+				}
+			}
+		}
 
 		// TODO: clear the XR scene to drop back to the compositor while we load
 	}

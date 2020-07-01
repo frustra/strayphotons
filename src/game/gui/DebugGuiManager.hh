@@ -1,11 +1,9 @@
 #pragma once
 
-#include "game/GuiManager.hh"
+#include <game/gui/GuiManager.hh>
 
 namespace sp
 {
-	class InputManager;
-
 	class DebugGuiManager : public GuiManager
 	{
 	public:
@@ -15,21 +13,18 @@ namespace sp
 		void BeforeFrame();
 		void DefineWindows();
 
+		virtual void BindInput(GlfwInputManager *inputManager);
+
 		bool Focused()
 		{
 			return consoleOpen;
 		}
-
-		void BindInput(InputManager &inputManager);
 		void GrabFocus();
 		void ReleaseFocus();
 
 		void ToggleConsole();
 
 	private:
-		InputManager *inputManager = nullptr;
-
 		bool consoleOpen = false;
-		glm::vec2 guiCursorPos = { 200.0f, 200.0f };
 	};
 }

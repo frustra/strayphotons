@@ -79,12 +79,16 @@ set(PROJECT_INSTALL sp)
 # split into lib and exe so tests can link against lib
 set(PROJECT_LIB strayphotons)
 set(PROJECT_EXE sp)
+set(PROJECT_TEST_EXE sp-test)
 
 # Core StrayPhotons lib. Contains all game code.
 add_library(${PROJECT_LIB} STATIC)
 
 # Exe Shim that loads StrayPhotons lib on desktop platforms
 add_executable(${PROJECT_EXE})
+
+# Exe Shim that loads StrayPhotons lib for CI testing purposes
+add_executable(${PROJECT_TEST_EXE})
 
 # Build all external dependencies
 add_subdirectory(ext)
@@ -113,6 +117,12 @@ target_include_directories(
 
 target_include_directories(
 	${PROJECT_EXE}
+	PRIVATE
+		src
+)
+
+target_include_directories(
+	${PROJECT_TEST_EXE}
 	PRIVATE
 		src
 )
@@ -168,6 +178,7 @@ if (SP_PACKAGE_RELEASE)
 
 	# Make the exe depend on having the tar
 	add_dependencies(${PROJECT_EXE} assets_tar)
+	add_dependencies(${PROJECT_TEST_EXE} assets_tar)
 
 endif()
 
@@ -242,13 +253,13 @@ endif()
 
 target_compile_options(${PROJECT_LIB} PRIVATE ${SP_TARGET_OPTIONS})
 target_compile_options(${PROJECT_EXE} PRIVATE ${SP_TARGET_OPTIONS})
+target_compile_options(${PROJECT_TEST_EXE} PRIVATE ${SP_TARGET_OPTIONS})
 
 target_link_libraries(
 	${PROJECT_LIB}
 	PUBLIC
 		${_physx_libraries} 
 		GLEW
-		glfw
 		vhacd
 		ImGui
 		microtar
@@ -266,6 +277,14 @@ target_link_libraries(
 	${PROJECT_EXE}
 	PRIVATE
 		${PROJECT_LIB}
+		glfw
+)
+
+target_link_libraries(
+	${PROJECT_TEST_EXE}
+	PRIVATE
+		${PROJECT_LIB}
+		glfw-egl
 )
 
 if(UNIX)
@@ -301,8 +320,8 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT s
 install(
 	TARGETS
 		${PROJECT_EXE}
+		${PROJECT_TEST_EXE}
 		${PROJECT_LIB}
-		glfw
 		${_physx_libraries}
 	RUNTIME DESTINATION
 		bin

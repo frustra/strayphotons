@@ -8,7 +8,6 @@ namespace ecs
 	void RegisterComponent(const char *name, ComponentBase *comp)
 	{
 		if (GComponentList == nullptr) GComponentList = new ComponentList();
-		std::cout << "Registering component: " << name << std::endl;
 		if (GComponentList->count(name) > 0) throw std::runtime_error("Duplicate component registration: " + std::string(name));
 		GComponentList->emplace(name, comp);
 	}

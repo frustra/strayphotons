@@ -22,6 +22,7 @@ add_subdirectory(robin-hood-hashing)
 # These projects require more configuration that is encapsulated their own CMake files
 include(PhysX.cmake)
 include(glfw.cmake)
+include(glfw-egl.cmake)
 include(imgui.cmake)
 include(glew.cmake)
 include(linenoise.cmake)

@@ -31,7 +31,7 @@ namespace sp
 
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1));
 
-				for (auto &line : GConsoleManager.Lines())
+				for (auto &line : GetConsoleManager().Lines())
 				{
 					ImGui::PushStyleColor(ImGuiCol_Text, LogColours[(int)line.level]);
 					ImGui::TextUnformatted(line.text.c_str());
@@ -57,7 +57,7 @@ namespace sp
 				if (ImGui::InputText("##CommandInput", inputBuf, sizeof(inputBuf), iflags, CommandEditStub, (void *) this))
 				{
 					string line(inputBuf);
-					GConsoleManager.ParseAndExecute(line, true);
+					GetConsoleManager().QueueParseAndExecute(line, true);
 					inputBuf[0] = '\0';
 					historyOffset = 0;
 					reclaim_focus = true;
@@ -81,7 +81,7 @@ namespace sp
 			if (data->EventFlag == ImGuiInputTextFlags_CallbackCompletion)
 			{
 				string line(data->Buf);
-				line = GConsoleManager.AutoComplete(line);
+				line = GetConsoleManager().AutoComplete(line);
 
 				int newLength = snprintf(data->Buf, (size_t)data->BufSize, "%s", line.c_str());
 				data->CursorPos = data->SelectionStart = data->SelectionEnd = data->BufTextLen = newLength;
@@ -105,7 +105,7 @@ namespace sp
 							newInputCursorOffset = data->CursorPos;
 						}
 
-						auto hist = GConsoleManager.History();
+						auto hist = GetConsoleManager().History();
 						if ((size_t) pos <= hist.size())
 						{
 							auto &line = hist[hist.size() - pos];

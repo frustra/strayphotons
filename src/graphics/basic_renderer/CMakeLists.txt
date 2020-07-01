@@ -1,6 +1,12 @@
 
 target_sources(
-    ${PROJECT_LIB}
+    ${PROJECT_EXE}
+    PRIVATE
+        BasicRenderer.cc
+)
+
+target_sources(
+    ${PROJECT_TEST_EXE}
     PRIVATE
         BasicRenderer.cc
 )

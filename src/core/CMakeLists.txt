@@ -12,3 +12,9 @@ target_sources(
     PRIVATE
         Main.cc
 )
+
+target_sources(
+    ${PROJECT_TEST_EXE}
+    PRIVATE
+        MainTest.cc
+)

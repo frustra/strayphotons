@@ -16,7 +16,12 @@
 
 namespace sp
 {
-	ConsoleManager GConsoleManager;
+	
+	ConsoleManager &GetConsoleManager()
+	{
+		static ConsoleManager GConsoleManager;
+		return GConsoleManager;
+	}
 
 #ifdef USE_LINENOISE_CLI
 	void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc);
@@ -28,7 +33,7 @@ namespace sp
 		{
 			static std::mutex mut;
 			mut.lock();
-			GConsoleManager.AddLog(lvl, line);
+			GetConsoleManager().AddLog(lvl, line);
 			mut.unlock();
 		}
 	}
@@ -43,12 +48,12 @@ namespace sp
 	CVarBase::CVarBase(const string &name, const string &description)
 		: name(name), description(description)
 	{
-		GConsoleManager.AddCVar(this);
+		GetConsoleManager().AddCVar(this);
 	}
 
 	CVarBase::~CVarBase()
 	{
-		GConsoleManager.RemoveCVar(this);
+		GetConsoleManager().RemoveCVar(this);
 	}
 
 	ConsoleManager::ConsoleManager()
@@ -124,9 +129,25 @@ namespace sp
 		});
 	}
 
-	void ConsoleManager::Update()
+	void ConsoleManager::Update(Script *startupScript)
 	{
 		std::unique_lock<std::mutex> ulock(inputLock, std::defer_lock);
+
+		uint64 now = NowMonotonicMs();
+
+		if (startupScript != nullptr && queuedCommands.empty())
+		{
+			ParseAndExecute("exit");
+		}
+		while (!queuedCommands.empty())
+		{
+			auto top = queuedCommands.top();
+			if (top.first > now)
+				break;
+
+			queuedCommands.pop();
+			ParseAndExecute(top.second, false);
+		}
 
 		while (!inputLines.empty())
 		{
@@ -139,18 +160,6 @@ namespace sp
 			ulock.unlock();
 
 			line->handled.notify_all();
-		}
-
-		uint64 now = NowMonotonicMs();
-
-		while (!queuedCommands.empty())
-		{
-			auto top = queuedCommands.top();
-			if (top.first > now)
-				break;
-
-			queuedCommands.pop();
-			ParseAndExecute(top.second, false);
 		}
 	}
 
@@ -206,7 +215,8 @@ namespace sp
 
 	void ConsoleManager::QueueParseAndExecute(const string line, uint64 dt)
 	{
-		queuedCommands.push({NowMonotonicMs() + dt, line});
+		// Queue commands 1ms forward so they don't run same frame.
+		queuedCommands.push({NowMonotonicMs() + dt + 1, line});
 	}
 
 	string ConsoleManager::AutoComplete(const string &input)
@@ -243,7 +253,7 @@ namespace sp
 #ifdef USE_LINENOISE_CLI
 	void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc)
 	{
-		auto completions = GConsoleManager.AllCompletions(string(buf));
+		auto completions = GetConsoleManager().AllCompletions(string(buf));
 		for (auto str : completions)
 		{
 			linenoiseAddCompletion(lc, str.c_str());

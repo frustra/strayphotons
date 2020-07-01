@@ -1,5 +1,6 @@
 #include "PerfTimer.hh"
 #include "core/Logging.hh"
+#include <chrono>
 
 namespace sp
 {
@@ -75,13 +76,13 @@ namespace sp
 		stack.push(&phase.query);
 
 		// Save CPU time as close to start of work as possible.
-		phase.query.cpuStart = glfwGetTime();
+		phase.query.cpuStart = std::chrono::high_resolution_clock::now();
 	}
 
 	void PerfTimer::Complete(RenderPhase &phase)
 	{
 		// Save CPU time as close to end of work as possible.
-		phase.query.cpuEnd = glfwGetTime();
+		phase.query.cpuEnd = std::chrono::high_resolution_clock::now();
 
 		Assert(stack.top() == &phase.query, "RenderPhase query mismatch");
 		stack.pop();
@@ -120,22 +121,19 @@ namespace sp
 			auto &frame = pendingFrames.front();
 			auto &result = frame.results[front.resultIndex];
 
-			result.cpuStart = front.cpuStart;
-			result.cpuEnd = front.cpuEnd;
 			result.cpuElapsed = front.cpuEnd - front.cpuStart;
-
-			result.gpuStart = gpuStart;
-			result.gpuEnd = gpuEnd;
 			result.gpuElapsed = gpuEnd - gpuStart;
 
 			if (front.resultIndex < (int)lastCompleteFrame.results.size())
 			{
 				// Smooth out the graph by applying a high-watermark filter.
-				double lastCpuElapsed = lastCompleteFrame.results[front.resultIndex].cpuElapsed;
+				auto lastCpuElapsed = lastCompleteFrame.results[front.resultIndex].cpuElapsed;
 				GLuint64 lastGpuElapsed = lastCompleteFrame.results[front.resultIndex].gpuElapsed;
 				if (result.cpuElapsed < lastCpuElapsed)
 				{
-					result.cpuElapsed = std::max(result.cpuElapsed, lastCpuElapsed * 0.99);
+					result.cpuElapsed = std::chrono::high_resolution_clock::duration(
+						std::max(result.cpuElapsed.count(), lastCpuElapsed.count() * 99 / 100)
+					);
 				}
 				if (result.gpuElapsed < lastGpuElapsed)
 				{
