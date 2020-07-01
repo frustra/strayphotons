@@ -1,0 +1,15 @@
+BasedOnStyle: LLVM
+ColumnLimit: 120
+IndentWidth: 4
+AccessModifierOffset: -4
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLambdasOnASingleLine: Empty
+AllowShortLoopsOnASingleLine: true
+AlwaysBreakTemplateDeclarations: true
+IndentPPDirectives: BeforeHash
+IncludeBlocks: Regroup
+BinPackArguments: false
+AllowAllArgumentsOnNextLine: false
