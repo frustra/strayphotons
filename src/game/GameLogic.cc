@@ -323,7 +323,13 @@ namespace sp
 					ecs::Entity xrObject = UpdateXrActionEntity(controllerAction.first, active && CVarController.Get());
 					
 					if (xrObject.Valid())
-					{
+					{						
+						xrObjectPos = glm::transpose(xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
+
+						auto ctrl = xrObject.Get<ecs::Transform>();
+						ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
+						ctrl->SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
+
 						if (controllerAction.first == rightHandAction)
 						{
 							// TODO: make this bound to the "dominant user hand", or pick the last hand the user tried to teleport with
@@ -342,12 +348,6 @@ namespace sp
 								transform->SetParent(parent);
 							}
 						}
-						
-						xrObjectPos = glm::transpose(xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
-
-						auto ctrl = xrObject.Get<ecs::Transform>();
-						ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
-						ctrl->SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
 
 						bool teleport = false;
 						teleportAction->GetRisingEdgeActionValue(controllerAction.second, teleport);
