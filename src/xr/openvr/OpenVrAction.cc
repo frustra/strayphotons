@@ -325,13 +325,13 @@ std::shared_ptr<XrModel> OpenVrAction::GetInputSourceModel()
 
         if (inputError != vr::EVRInputError::VRInputError_None)
         {
-            return false;
+            return nullptr;
         }
 
         if (inputHandle == vr::k_ulInvalidInputValueHandle)
         {
             // No device connected or action is unbound.
-            return false;
+            return nullptr;
         }
 
         vr::InputOriginInfo_t info;
@@ -340,7 +340,7 @@ std::shared_ptr<XrModel> OpenVrAction::GetInputSourceModel()
         if (inputError != vr::EVRInputError::VRInputError_None)
         {
             Errorf("Failed to get device information for action %s", GetName());
-            return false;
+            return nullptr;
         }
 
         std::string modelUniqueName = OpenVrModel::ModelName(info.trackedDeviceIndex);
@@ -360,7 +360,7 @@ std::shared_ptr<XrModel> OpenVrAction::GetInputSourceModel()
 
     // We only support models for Skeletons and Pose action types, since these
     // are the only ones that natively support getting position data
-    return false;
+    return nullptr;
 }
 
 bool OpenVrAction::ComputeBoneLookupTable(std::shared_ptr<XrModel> xrModel)
