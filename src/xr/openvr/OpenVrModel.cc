@@ -11,7 +11,6 @@
 using namespace sp;
 using namespace xr;
 
-
 OpenVrModel::OpenVrModel(std::string name, vr::RenderModel_t *vrModel, vr::RenderModel_TextureMap_t *vrTex) :
     XrModel(name)
 {
@@ -70,7 +69,7 @@ std::shared_ptr<XrModel> OpenVrModel::LoadOpenVrModel(vr::TrackedDeviceIndex_t d
     if (merr != vr::VRRenderModelError_None)
     {
         Errorf("VR render model error: %s", vr::VRRenderModels()->GetRenderModelErrorNameFromEnum(merr));
-        return false;
+        return nullptr;
     }
 
     while (true)
@@ -83,7 +82,7 @@ std::shared_ptr<XrModel> OpenVrModel::LoadOpenVrModel(vr::TrackedDeviceIndex_t d
     if (merr != vr::VRRenderModelError_None)
     {
         Errorf("VR render texture error: %s", vr::VRRenderModels()->GetRenderModelErrorNameFromEnum(merr));
-        return false;
+        return nullptr;
     }
 
     std::shared_ptr<XrModel> xrModel = std::shared_ptr<OpenVrModel>(new OpenVrModel(modelName, vrModel, vrTex));
@@ -119,7 +118,7 @@ std::shared_ptr<XrModel> OpenVrSkeleton::LoadOpenVrSkeleton(std::string skeleton
     if (!std::filesystem::exists(modelPath) || std::filesystem::is_directory(modelPath))
     {
         Errorf("OpenVR Skeleton GLTF File Path (%s) is not a file", modelPathStr);
-        return false;
+        return nullptr;
     }
 
     tinygltf::TinyGLTF gltfLoader;
@@ -132,7 +131,7 @@ std::shared_ptr<XrModel> OpenVrSkeleton::LoadOpenVrSkeleton(std::string skeleton
         Errorf("Failed to parse OpenVR Skeleton GLTF file: %s", modelPathStr);
         Errorf("TinyGLTF Error: %s", err.c_str());
         Errorf("TinyGLTF Warn: %s", warn.c_str());
-        return false;
+        return nullptr;
     }
     
     std::shared_ptr<XrModel> xrModel = std::shared_ptr<OpenVrSkeleton>(new OpenVrSkeleton(modelPathStr, gltfModel));
