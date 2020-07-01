@@ -48,8 +48,6 @@ void main() {
 
 	mat3 normalMat = mat3(view);
 
-	
-
 	if (!renderMirrors) {
 		outMirrorIndex = -1;
 		gl_ClipDistance[0] = 1.0;

@@ -12,39 +12,39 @@ namespace sp
 {
 	glm::mat4 GetNodeMatrix(tinygltf::Node *node)
 	{
-        glm::mat4 out(1.0);
+		glm::mat4 out(1.0);
 
-        if (node->matrix.size() == 16)
-        {
+		if (node->matrix.size() == 16)
+		{
 			std::copy(node->matrix.begin(), node->matrix.end(), glm::value_ptr(out));
-        }
-        else
-        {            
-            if (node->translation.size() == 3)
-            {
-                out = glm::translate(
-                    out, 
-                    glm::vec3(
-                        node->translation[0], node->translation[1], node->translation[2]
-                    )
-                ); 
-            }
+		}
+		else
+		{            
+			if (node->translation.size() == 3)
+			{
+				out = glm::translate(
+					out, 
+					glm::vec3(
+						node->translation[0], node->translation[1], node->translation[2]
+					)
+				); 
+			}
 
-            if (node->rotation.size() == 4)
-            {
+			if (node->rotation.size() == 4)
+			{
 				out = out * glm::mat4_cast(glm::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]));
-            }
+			}
 
-            if (node->scale.size() == 3)
-            {
-                out = glm::scale(
-                    out, 
-                    glm::vec3(
-                        node->scale[0], node->scale[1], node->scale[2]
-                    )
-                );
-            }
-        }
+			if (node->scale.size() == 3)
+			{
+				out = glm::scale(
+					out, 
+					glm::vec3(
+						node->scale[0], node->scale[1], node->scale[2]
+					)
+				);
+			}
+		}
 
 		return out;
 	}
@@ -402,6 +402,7 @@ namespace sp
 
 			if (boneCount > 0)
 			{
+				// TODO: upload vec3 and quat instead of a mat4 to save memory bw
 				shader->SetBoneData(boneCount, boneData);
 			}
 

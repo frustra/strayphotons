@@ -9,8 +9,8 @@
 
 namespace sp
 {
-	namespace xr
-	{
+    namespace xr
+    {
         class OpenVrActionSet : public XrActionSet, public std::enable_shared_from_this<OpenVrActionSet>
         {
             public:
@@ -49,8 +49,6 @@ namespace sp
                 bool GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool withController);
 
                 std::shared_ptr<XrModel> GetInputSourceModel();
-
-                bool IsInputSourceConnected();
                 
             private:
                 // Only OpenVrActionSet is allowed to construct actions

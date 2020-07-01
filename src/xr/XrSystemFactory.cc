@@ -11,25 +11,25 @@ XrSystemFactory::XrSystemFactory()
 {
 
 #if defined(XRSYSTEM_OPENVR)
-	compiledXrSystems.push_back(std::shared_ptr<XrSystem>(new OpenVrSystem));
+    compiledXrSystems.push_back(std::shared_ptr<XrSystem>(new OpenVrSystem));
 #endif
 
-	// TODO: add more XrSystems
+    // TODO: add more XrSystems
 
 }
 
 std::shared_ptr<XrSystem> XrSystemFactory::GetBestXrSystem()
 {
-	std::shared_ptr<XrSystem> selectedXrSystem;
+    std::shared_ptr<XrSystem> selectedXrSystem;
 
-	for (auto xrSystem : compiledXrSystems)
-	{
-		if (xrSystem->IsHmdPresent())
-		{
-			selectedXrSystem = xrSystem;
-			break;
-		}
-	}
+    for (auto xrSystem : compiledXrSystems)
+    {
+        if (xrSystem->IsHmdPresent())
+        {
+            selectedXrSystem = xrSystem;
+            break;
+        }
+    }
 
-	return selectedXrSystem;
+    return selectedXrSystem;
 }

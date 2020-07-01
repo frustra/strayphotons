@@ -19,7 +19,6 @@ set(_files_to_copy
 )
 
 foreach(_file ${_files_to_copy})
-    # Need to copy the .vrmanifest and actions.json
     install(
         FILES
             ${CMAKE_CURRENT_LIST_DIR}/${_file}

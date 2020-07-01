@@ -92,10 +92,8 @@ float BRDF_V_Schlick(float roughness, float NdotV, float NdotL) {
 // [Schlick 1994, "An Inexpensive BRDF Model for Physically-Based Rendering"]
 // [Karis 2013, "Real Shading in Unreal Engine 4"] (note, not using same spherical Gaussian approximation but still relevant)
 vec3 BRDF_F_Schlick(vec3 specularColor, float VdotH) {
-	return specularColor;
-
-	//float Fc = pow(1 - VdotH, 5);
-	//return clamp(50.0 * specularColor.g, 0, 1) * Fc + (1 - Fc) * specularColor;
+	float Fc = pow(1 - VdotH, 5);
+	return clamp(50.0 * specularColor.g, 0, 1) * Fc + (1 - Fc) * specularColor;
 }
 
 #endif

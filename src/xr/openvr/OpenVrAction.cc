@@ -34,16 +34,16 @@ std::shared_ptr<XrAction> OpenVrActionSet::CreateAction(std::string name, XrActi
 
 void OpenVrActionSet::Sync()
 {
-	vr::VRActiveActionSet_t activeActionSet;
-	activeActionSet.ulActionSet = handle;
-	activeActionSet.ulRestrictedToDevice = vr::k_ulInvalidInputValueHandle; // No restriction on hand syncing
+    vr::VRActiveActionSet_t activeActionSet;
+    activeActionSet.ulActionSet = handle;
+    activeActionSet.ulRestrictedToDevice = vr::k_ulInvalidInputValueHandle;
 
-	vr::EVRInputError inputError = vr::VRInput()->UpdateActionState(&activeActionSet, sizeof(vr::VRActiveActionSet_t), 1);
+    vr::EVRInputError inputError = vr::VRInput()->UpdateActionState(&activeActionSet, sizeof(vr::VRActiveActionSet_t), 1);
 
-	if (inputError != vr::EVRInputError::VRInputError_None)
-	{
+    if (inputError != vr::EVRInputError::VRInputError_None)
+    {
         Errorf("Failed to sync OpenVR actions");
-	}
+    }
 }
 
 OpenVrAction::OpenVrAction(std::string name, XrActionType type, std::shared_ptr<OpenVrActionSet> actionSet) : 
@@ -70,7 +70,7 @@ OpenVrAction::OpenVrAction(std::string name, XrActionType type, std::shared_ptr<
     // If we are a skeleton or a pose, we can potentially pre-load the model to avoid stalling 
     // the engine after loading the scene
     //
-    // Note that the model might need to reload mid-game, which will cause stuttering since it's done on the main thread
+    // Note that the model might need to reload mid-game, which will cause stuttering since it's done on the main thread. #41
     if (type == xr::Skeleton || type == xr::Pose)
     {
         GetInputSourceModel();
@@ -116,7 +116,7 @@ bool OpenVrAction::GetRisingEdgeActionValue(std::string subpath, bool& value)
         return false;
     }
 
-	vr::InputDigitalActionData_t data;
+    vr::InputDigitalActionData_t data;
     inputError = vr::VRInput()->GetDigitalActionData(handle, &data, sizeof(vr::InputDigitalActionData_t), inputHandle);
 
     if (inputError != vr::EVRInputError::VRInputError_None)
@@ -144,7 +144,7 @@ bool OpenVrAction::GetFallingEdgeActionValue(std::string subpath, bool& value)
         return false;
     }
 
-	vr::InputDigitalActionData_t data;
+    vr::InputDigitalActionData_t data;
     inputError = vr::VRInput()->GetDigitalActionData(handle, &data, sizeof(vr::InputDigitalActionData_t), inputHandle);
 
     if (inputError != vr::EVRInputError::VRInputError_None)
@@ -176,8 +176,13 @@ bool OpenVrAction::GetPoseActionValueForNextFrame(std::string subpath, glm::mat4
         }
     }
     
-	vr::InputPoseActionData_t data;
-    inputError = vr::VRInput()->GetPoseActionDataForNextFrame(handle, vr::ETrackingUniverseOrigin::TrackingUniverseStanding, &data, sizeof(vr::InputPoseActionData_t), inputHandle);
+    vr::InputPoseActionData_t data;
+    inputError = vr::VRInput()->GetPoseActionDataForNextFrame(
+        handle, 
+        vr::ETrackingUniverseOrigin::TrackingUniverseStanding, 
+        &data, 
+        sizeof(vr::InputPoseActionData_t), 
+        inputHandle);
 
     if (inputError != vr::EVRInputError::VRInputError_None)
     {
@@ -186,22 +191,22 @@ bool OpenVrAction::GetPoseActionValueForNextFrame(std::string subpath, glm::mat4
     }
 
     if (!data.bActive)
-	{
-		return false;
-	}
+    {
+        return false;
+    }
 
-	if (!data.pose.bPoseIsValid)
-	{
-		return false;
-	}
+    if (!data.pose.bPoseIsValid)
+    {
+        return false;
+    }
 
-	pose = glm::mat4(glm::make_mat3x4((float *)data.pose.mDeviceToAbsoluteTracking.m));
-	return true;
+    pose = glm::mat4(glm::make_mat3x4((float *)data.pose.mDeviceToAbsoluteTracking.m));
+    return true;
 }
 
 bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool withController)
 {    
-	vr::InputSkeletalActionData_t data;
+    vr::InputSkeletalActionData_t data;
     vr::EVRInputError inputError = vr::VRInput()->GetSkeletalActionData(handle, &data, sizeof(vr::InputSkeletalActionData_t));
 
     if (inputError != vr::EVRInputError::VRInputError_None)
@@ -210,10 +215,10 @@ bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool w
     }
 
     // No active skeleton available
-	if (!data.bActive)
-	{
-		return false;
-	}
+    if (!data.bActive)
+    {
+        return false;
+    }
 
     uint32_t boneCount = 0;
     inputError = vr::VRInput()->GetBoneCount(handle, &boneCount);
@@ -274,42 +279,7 @@ bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool w
         bones[i].inverseBindPose = modelBoneData[i].inverseBindPose;
     }
 
-	return true;
-}
-
-bool OpenVrAction::IsInputSourceConnected()
-{
-	vr::VRInputValueHandle_t inputHandle = vr::k_ulInvalidInputValueHandle;
-	vr::EVRInputError inputError = vr::VRInput()->GetActionOrigins(parentActionSet->GetHandle(), handle, &inputHandle, 1);
-
-    // We only support one binding source, this is bound to multiple sources
-    if (inputError == vr::EVRInputError::VRInputError_BufferTooSmall)
-    {
-        Errorf("Action is bound to multiple input devices");
-        return false;
-    }
-	else if (inputError != vr::EVRInputError::VRInputError_None)
-    {
-        Errorf("Failed to get subpath for action");
-        return false;
-    }
-
-    if (inputHandle == vr::k_ulInvalidInputValueHandle)
-    {
-        // No device connected or action is unbound.
-        return false;
-    }
-
-    vr::InputOriginInfo_t info;
-	inputError = vr::VRInput()->GetOriginTrackedDeviceInfo(inputHandle, &info, sizeof(vr::InputOriginInfo_t));
-
-    if (inputError != vr::EVRInputError::VRInputError_None)
-    {
-        Errorf("Failed to get device info");
-        return false;
-    }
-
-	return info.trackedDeviceIndex != vr::k_unTrackedDeviceIndexInvalid;
+    return true;
 }
 
 std::shared_ptr<XrModel> OpenVrAction::GetInputSourceModel()
@@ -329,6 +299,7 @@ std::shared_ptr<XrModel> OpenVrAction::GetInputSourceModel()
             skeleton = OpenVrSkeleton::LoadOpenVrSkeleton(GetName());
 
             // Only cache the model if it loaded correctly
+            // TODO: make the Asset loader handle model caching. #41
             if (skeleton)
             {
                 cachedModels[skeletonUniqueName] = skeleton;

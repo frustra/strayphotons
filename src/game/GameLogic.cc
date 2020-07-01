@@ -298,6 +298,7 @@ namespace sp
 			view->SetProjMat(view->GetFov(), view->GetClip(), glm::ivec2(CVarFlashlightResolution.Get(true)));
 		}
 
+		// TODO: move this into XrSystem as part of #39
 		// Handle xr controller movement
 		if (xrSystem)
 		{
@@ -311,7 +312,7 @@ namespace sp
 				gameActionSet->Sync();
 
 				// Mapping of Pose Actions to Subpaths. Needed so we can tell which-hand-did-what for the hand pose linked actions
-				vector<std::pair<xr::XrActionPtr, std::string>> controllerPoseActions = { 
+				vector<std::pair<xr::XrActionPtr, string>> controllerPoseActions = { 
 					{leftHandAction, xr::SubpathLeftHand}, 
 					{rightHandAction, xr::SubpathRightHand}
 				};
@@ -334,6 +335,7 @@ namespace sp
 						{
 							// TODO: make this bound to the "dominant user hand", or pick the last hand the user tried to teleport with
 							// TODO: make this support "skeleton-only" mode
+							// FIXME: the laser pointer is now affected by shadows and is no longer emissive. #40
 							// Parent the laser pointer to the xrObject representing the last teleport action
 							ecs::Entity laserPointer = GetLaserPointer();
 
@@ -463,7 +465,7 @@ namespace sp
 						}
 
 						// TODO: this checks the state of ~30 entities by name.
-						// Optimize this into separate functions for setup, teardown, and position updates
+						// Optimize this into separate functions for setup, teardown, and position updates. #39
 						UpdateSkeletonDebugHand(action, xrObjectPos, boneData, CVarSkeletons.Get() == SkeletonMode::DEBUG);
 					}
 				}
@@ -477,6 +479,7 @@ namespace sp
 		return true;
 	}
 
+	// TODO: move this into XrSystem as part of #39
 	void GameLogic::ComputeBonePositions(vector<xr::XrBoneData> &boneData, vector<glm::mat4> &output)
 	{
 		// Resize the output vector to match the number of joints the GLTF will reference
@@ -493,6 +496,7 @@ namespace sp
 		}
 	}
 
+	// TODO: move this into XrSystem as part of #39
 	ecs::Entity GameLogic::ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &trackedObjectHandle)
 	{
 		string entityName = trackedObjectHandle.name;
@@ -544,15 +548,14 @@ namespace sp
 		return xrObject;
 	}
 
-	// Validate and load the model associated with an XR Action.
-	// Note: this should only be used once per model per frame, or bad things will happen.
-	// Use the left and right hand pose actions to ensure that models aren't duplicated
+	// Validate and load the skeleton debug hand entities for a skeleton action. If the action is not "active", this destroys the 
+	// debug hand entities.
 	void GameLogic::UpdateSkeletonDebugHand(xr::XrActionPtr action, glm::mat4 xrObjectPos, vector<xr::XrBoneData>& boneData, bool active)
 	{
 		for (int i = 0; i < boneData.size(); i++)
 		{
 			xr::XrBoneData& bone = boneData[i];
-			std::string entityName = std::string("xr-skeleton-debug-bone-") + action->GetName() + std::to_string(i);
+			string entityName = string("xr-skeleton-debug-bone-") + action->GetName() + std::to_string(i);
 
 			ecs::Entity boneEntity = game->entityManager.EntityWith<ecs::Name>(entityName);
 
@@ -599,12 +602,11 @@ namespace sp
 		}
 	}
 
-	// Validate and load the model associated with an XR Action.
-	// Note: this should only be used once per model per frame, or bad things will happen.
-	// Use the left and right hand pose actions to ensure that models aren't duplicated
+	// Validate and load the entity and model associated with an action. If the action is not "active", this destroys the 
+	// entity and model.
 	ecs::Entity GameLogic::UpdateXrActionEntity(xr::XrActionPtr action, bool active)
 	{
-		std::string entityName = "xr-action-" + action->GetName();
+		string entityName = "xr-action-" + action->GetName();
 		ecs::Entity xrObject = game->entityManager.EntityWith<ecs::Name>(entityName);
 
 		// Test that the xrObject correctly reflects the "active" state
@@ -635,7 +637,7 @@ namespace sp
 			// become available.
 			if (!xrObject.Has<ecs::Renderable>())
 			{
-				std::shared_ptr<Model> inputSourceModel = action->GetInputSourceModel();
+				shared_ptr<Model> inputSourceModel = action->GetInputSourceModel();
 
 				if (inputSourceModel)
 				{
@@ -676,7 +678,7 @@ namespace sp
 		if (!xrObject.Has<ecs::Renderable>())
 		{
 			auto renderable = xrObject.Assign<ecs::Renderable>();
-			std::shared_ptr<BasicModel> model = make_shared<BasicModel>("laser-pointer-beam");
+			shared_ptr<BasicModel> model = make_shared<BasicModel>("laser-pointer-beam");
 			renderable->model = model;
 
 			// 10 unit long line
