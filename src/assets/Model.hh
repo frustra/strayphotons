@@ -12,9 +12,11 @@
 
 namespace sp
 {
+	// Forward declarations
 	class Asset;
 	class GLModel;
 	class GraphicsContext;
+	struct BasicMaterial;
 
 	typedef std::array<uint32, 4> Hash128;
 
@@ -30,8 +32,10 @@ namespace sp
 	{
 		friend GLModel;
 	public:
-		Model(const string &name) : name(name) { }
-		Model(const string &name, shared_ptr<Asset> asset, shared_ptr<tinygltf::Model> model);
+		Model(const string &name) : name(name) { };
+		Model(const string &name, shared_ptr<Asset> asset, shared_ptr<tinygltf::Model> model) : Model(name, model) { this->asset = asset; };
+		Model(const string &name, shared_ptr<tinygltf::Model> model);
+
 		virtual ~Model();
 
 		struct Attribute
@@ -50,7 +54,7 @@ namespace sp
 			int drawMode;
 			Attribute indexBuffer;
 			int materialIndex;
-			Attribute attributes[3];
+			std::array<Attribute, 5> attributes;
 		};
 
 		const string name;
@@ -61,11 +65,32 @@ namespace sp
 		vector<unsigned char> GetBuffer(int index);
 		Hash128 HashBuffer(int index);
 
+		int FindNodeByName(string name);
+		string GetNodeName(int node);
+		glm::mat4 GetInvBindPoseForNode(int nodeIndex);
+		vector<int> GetJointNodes();
+
+		vector<glm::mat4> bones;
+
 	private:
 		void AddNode(int nodeIndex, glm::mat4 parentMatrix);
 
 		shared_ptr<tinygltf::Model> model;
 		shared_ptr<Asset> asset;
+
+		// TODO: support more than one "skin" in a GLTF
+		std::map<int, glm::mat4> inverseBindMatrixForJoint;
+		int rootBone;
+	};
+
+	class BasicModel : public Model
+	{
+	public:
+		BasicModel(const string &name) : Model(name) {};
+		
+		std::map<string, BasicMaterial> basicMaterials;
+		std::map<string, VertexBuffer> vbos;
+		std::map<string, Buffer> ibos;
 	};
 
 	class GLModel : public NonCopyable
@@ -79,11 +104,20 @@ namespace sp
 			Model::Primitive *parent;
 			GLuint vertexBufferHandle;
 			GLuint indexBufferHandle;
+			GLuint weightsBufferHandle;
+			GLuint jointsBufferHandle;
 			Texture *baseColorTex, *metallicRoughnessTex, *heightTex;
 		};
 
-		void Draw(SceneShader *shader, glm::mat4 modelMat, const ecs::View &view);
+		void Draw(
+			SceneShader *shader, 
+			glm::mat4 modelMat, 
+			const ecs::View &view, 
+			int boneCount, 
+			glm::mat4 *boneData);
+
 		void AddPrimitive(Primitive prim);
+
 	private:
 		GLuint LoadBuffer(int index);
 		Texture *LoadTexture(int materialIndex, TextureType type);

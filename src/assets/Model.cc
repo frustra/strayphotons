@@ -14,39 +14,39 @@ namespace sp
 {
 	glm::mat4 GetNodeMatrix(tinygltf::Node *node)
 	{
-        glm::mat4 out(1.0);
+		glm::mat4 out(1.0);
 
-        if (node->matrix.size() == 16)
-        {
+		if (node->matrix.size() == 16)
+		{
 			std::copy(node->matrix.begin(), node->matrix.end(), glm::value_ptr(out));
-        }
-        else
-        {            
-            if (node->translation.size() == 3)
-            {
-                out = glm::translate(
-                    out, 
-                    glm::vec3(
-                        node->translation[0], node->translation[1], node->translation[2]
-                    )
-                ); 
-            }
+		}
+		else
+		{            
+			if (node->translation.size() == 3)
+			{
+				out = glm::translate(
+					out, 
+					glm::vec3(
+						node->translation[0], node->translation[1], node->translation[2]
+					)
+				); 
+			}
 
-            if (node->rotation.size() == 4)
-            {
+			if (node->rotation.size() == 4)
+			{
 				out = out * glm::mat4_cast(glm::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]));
-            }
+			}
 
-            if (node->scale.size() == 3)
-            {
-                out = glm::scale(
-                    out, 
-                    glm::vec3(
-                        node->scale[0], node->scale[1], node->scale[2]
-                    )
-                );
-            }
-        }
+			if (node->scale.size() == 3)
+			{
+				out = glm::scale(
+					out, 
+					glm::vec3(
+						node->scale[0], node->scale[1], node->scale[2]
+					)
+				);
+			}
+		}
 
 		return out;
 	}
@@ -119,7 +119,7 @@ namespace sp
 		};
 	}
 
-	Model::Model(const std::string &name, shared_ptr<Asset> asset, shared_ptr<tinygltf::Model> model) : name(name), model(model), asset(asset)
+	Model::Model(const std::string &name, shared_ptr<tinygltf::Model> model) : name(name), model(model)
 	{
 		int defaultScene = 0;
 
@@ -222,9 +222,60 @@ namespace sp
 					{
 						GetPrimitiveAttribute(model, &primitive, "POSITION"),
 						GetPrimitiveAttribute(model, &primitive, "NORMAL"),
-						GetPrimitiveAttribute(model, &primitive, "TEXCOORD_0")
+						GetPrimitiveAttribute(model, &primitive, "TEXCOORD_0"),
+						GetPrimitiveAttribute(model, &primitive, "WEIGHTS_0"),
+						GetPrimitiveAttribute(model, &primitive, "JOINTS_0"),
 					}
 				});
+			}
+
+			// Must have a mesh to have a skin
+			if (model->nodes[nodeIndex].skin != -1)
+			{
+				int skinId = model->nodes[nodeIndex].skin;
+				int inverseBindMatrixAccessor = model->skins[skinId].inverseBindMatrices;
+
+				rootBone = model->skins[skinId].skeleton;
+
+				// Verify that the inverse bind matrix accessor has the name number of elements
+				// as the skin.joints vector (if it exists)
+				if (inverseBindMatrixAccessor != -1)
+				{					
+					if (model->accessors[inverseBindMatrixAccessor].count != model->skins[skinId].joints.size())
+					{
+						throw std::runtime_error("Invalid GLTF: mismatched inverse bind matrix and skin joints number");
+					}
+					
+					if (model->accessors[inverseBindMatrixAccessor].type != TINYGLTF_TYPE_MAT4)
+					{
+						throw std::runtime_error("Invalid GLTF: inverse bind matrix is not mat4");
+					}
+
+					if (model->accessors[inverseBindMatrixAccessor].componentType != TINYGLTF_PARAMETER_TYPE_FLOAT)
+					{
+						throw std::runtime_error("Invalid GLTF: inverse bind matrix is not float");
+					}
+				}
+
+				for(int i = 0; i < model->skins[skinId].joints.size(); i++)
+				{
+					if (inverseBindMatrixAccessor != -1)
+					{
+						int bufferView = model->accessors[inverseBindMatrixAccessor].bufferView;
+						int buffer = model->bufferViews[bufferView].buffer;
+						int byteStride = model->accessors[inverseBindMatrixAccessor].ByteStride(model->bufferViews[bufferView]);
+						int byteOffset = model->accessors[inverseBindMatrixAccessor].byteOffset + model->bufferViews[bufferView].byteOffset;
+
+						int dataOffset = byteOffset + (i * byteStride);
+
+						inverseBindMatrixForJoint[model->skins[skinId].joints[i]] = glm::make_mat4((float*)((uintptr_t) model->buffers[buffer].data.data() + dataOffset));
+					}
+					else
+					{
+						// If no inv bind matrix is supplied by the model, GLTF standard says use a 4x4 identity matrix
+						inverseBindMatrixForJoint[model->skins[skinId].joints[i]] = glm::mat4(1.0f);
+					}
+				}
 			}
 		}
 
@@ -232,6 +283,43 @@ namespace sp
 		{
 			AddNode(childNodeIndex, matrix);
 		}
+	}
+
+	// Returns a vector of the GLTF node indexes that are present in the "joints"
+	// array of the GLTF skin. 
+	vector<int> Model::GetJointNodes()
+	{
+		vector<int> nodes;
+
+		// TODO: deal with GLTFs that have more than one skin
+		for(int node : model->skins[0].joints)
+		{
+			nodes.push_back(node);
+		}
+		
+		return nodes;
+	}
+
+	int Model::FindNodeByName(std::string name)
+	{
+		for (int i = 0; i < model->nodes.size(); i++)
+		{
+			if (model->nodes[i].name == name)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	glm::mat4 Model::GetInvBindPoseForNode(int nodeIndex)
+	{
+		return inverseBindMatrixForJoint[nodeIndex];
+	}
+
+	string Model::GetNodeName(int node)
+	{
+		return model->nodes[node].name;
 	}
 
 	GLModel::GLModel(Model *model, GraphicsContext *context) : model(model), context(context)
@@ -253,12 +341,21 @@ namespace sp
 			if (!glPrimitive.heightTex) glPrimitive.heightTex = &defaultMat.heightTex;
 
 			glCreateVertexArrays(1, &glPrimitive.vertexBufferHandle);
-			for (int i = 0; i < 3; i++)
+			for (int i = 0; i < std::size(primitive->attributes); i++)
 			{
 				auto *attr = &primitive->attributes[i];
 				if (attr->componentCount == 0) continue;
 				glEnableVertexArrayAttrib(glPrimitive.vertexBufferHandle, i);
-				glVertexArrayAttribFormat(glPrimitive.vertexBufferHandle, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
+
+				if (attr->componentType == GL_UNSIGNED_SHORT)
+				{
+					glVertexArrayAttribIFormat(glPrimitive.vertexBufferHandle, i, attr->componentCount, attr->componentType, 0);
+				}
+				else
+				{
+					glVertexArrayAttribFormat(glPrimitive.vertexBufferHandle, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
+				}
+
 				glVertexArrayVertexBuffer(glPrimitive.vertexBufferHandle, i, LoadBuffer(attr->bufferIndex), attr->byteOffset, attr->byteStride);
 			}
 
@@ -287,7 +384,7 @@ namespace sp
 		primitives.push_back(prim);
 	}
 
-	void GLModel::Draw(SceneShader *shader, glm::mat4 modelMat, const ecs::View &view)
+	void GLModel::Draw(SceneShader *shader, glm::mat4 modelMat, const ecs::View &view, int boneCount, glm::mat4* boneData)
 	{
 		for (auto primitive : primitives)
 		{
@@ -304,6 +401,12 @@ namespace sp
 				primitive.heightTex->Bind(3);
 
 			shader->SetParams(view, modelMat, primitive.parent->matrix);
+
+			if (boneCount > 0)
+			{
+				// TODO: upload vec3 and quat instead of a mat4 to save memory bw
+				shader->SetBoneData(boneCount, boneData);
+			}
 
 			glDrawElements(
 				primitive.parent->drawMode,
@@ -325,8 +428,6 @@ namespace sp
 		buffers[index] = handle;
 		return handle;
 	}
-
-
 
 	Texture *GLModel::LoadTexture(int materialIndex, TextureType textureType)
 	{
@@ -393,8 +494,9 @@ namespace sp
 			{
 				tinygltf::Sampler sampler = model->model->samplers[texture.sampler];
 
-				magFilter = sampler.magFilter;
-				minFilter = sampler.minFilter;
+				minFilter = sampler.minFilter > 0 ? sampler.minFilter : GL_LINEAR_MIPMAP_LINEAR;
+				magFilter = sampler.magFilter > 0 ? sampler.magFilter : GL_LINEAR;
+				
 				wrapS = sampler.wrapS;
 				wrapT = sampler.wrapT;
 			}

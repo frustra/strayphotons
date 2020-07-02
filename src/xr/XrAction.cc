@@ -7,96 +7,44 @@ using namespace xr;
 using namespace std;
 
 XrActionSet::XrActionSet(string name, string description) :
-	actionSetName(name),
-	actionSetDescription(description)
+    actionSetName(name),
+    actionSetDescription(description)
 {
-	// No other initialization needed
+    // No other initialization needed
 }
 
-void XrActionSet::AddAction(shared_ptr<XrActionBase> action)
+void XrActionSet::AddAction(shared_ptr<XrAction> action)
 {
-	registeredActions[action->GetName()] = action;
+    registeredActions[action->GetName()] = action;
 }
 
-std::map<std::string, std::shared_ptr<XrActionBase>> &XrActionSet::GetActionMap()
+std::map<std::string, std::shared_ptr<XrAction>> &XrActionSet::GetActionMap()
 {
-	return registeredActions;
+    return registeredActions;
 }
 
-bool XrActionSet::GetBooleanActionValue(std::string actionName, std::string subpath)
+XrAction::XrAction(string name, XrActionType type) : 
+    actionName(name), 
+    actionType(type)
 {
-	std::shared_ptr<XrActionBase> action = registeredActions[actionName];
+};
 
-	// This is actually fine. Just return a default value (false is a safe default value).
-	if (!action->HasSubpath(subpath))
-	{
-		return false;
-	}
-
-	XrAction<XrActionType::Bool> *boolAction = dynamic_cast<XrAction<XrActionType::Bool>*>(action.get());
-
-	if (boolAction)
-	{
-		return boolAction->actionData[subpath].value;
-	}
-	else
-	{
-		throw std::runtime_error("Does not appear to be a boolean action");
-	}
+void XrAction::AddSuggestedBinding(string interactionProfile, string path)
+{
+    suggestedBindings[interactionProfile].push_back(path);
 }
 
-bool XrActionSet::GetRisingEdgeActionValue(std::string actionName, std::string subpath)
+map<string, vector<string>> &XrAction::GetSuggestedBindings()
 {
-	std::shared_ptr<XrActionBase> action = registeredActions[actionName];
+    return suggestedBindings;
+};
 
-	// This is actually fine. Just return a default value (false is a safe default value).
-	if (!action->HasSubpath(subpath))
-	{
-		return false;
-	}
-
-	XrAction<XrActionType::Bool> *boolAction = dynamic_cast<XrAction<XrActionType::Bool>*>(action.get());
-
-	if (boolAction)
-	{
-		return boolAction->actionData[subpath].value && (boolAction->actionData[subpath].value != boolAction->actionData[subpath].edge_val);
-	}
-	else
-	{
-		throw std::runtime_error("Does not appear to be a boolean action");
-	}
-}
-
-bool XrActionSet::GetFallingEdgeActionValue(std::string actionName, std::string subpath)
+string XrAction::GetName()
 {
-	std::shared_ptr<XrActionBase> action = registeredActions[actionName];
+    return actionName;
+};
 
-	// This is actually fine. Just return a default value (false is a safe default value).
-	if (!action->HasSubpath(subpath))
-	{
-		return false;
-	}
-
-	XrAction<XrActionType::Bool> *boolAction = dynamic_cast<XrAction<XrActionType::Bool>*>(action.get());
-
-	if (boolAction)
-	{
-		return (!boolAction->actionData[subpath].value) && (boolAction->actionData[subpath].value != boolAction->actionData[subpath].edge_val);
-	}
-	else
-	{
-		throw std::runtime_error("Does not appear to be a boolean action");
-	}
-}
-
-XrActionBase::XrActionBase(string name, XrActionType type) :
-	actionName(name),
-	actionType(type)
+XrActionType XrAction::GetActionType()
 {
-	// No other initialization needed
-}
-
-void XrActionBase::AddSuggestedBinding(string interactionProfile, string path)
-{
-	suggestedBindings[interactionProfile].push_back(path);
-}
+    return actionType;
+};

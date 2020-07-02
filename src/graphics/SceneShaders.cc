@@ -2,12 +2,24 @@
 
 namespace sp
 {
+	SceneShader::SceneShader(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
+	{
+		BindBuffer(boneData, 2);
+	}
+
 	void SceneShader::SetParams(const ecs::View &view, glm::mat4 modelMat, glm::mat4 primitiveMat)
 	{
 		Set("model", modelMat);
 		Set("primitive", primitiveMat);
 		Set("view", view.viewMat);
 		Set("projection", view.projMat);
+		Set("boneCount", 0);
+	}
+
+	void SceneShader::SetBoneData(int count, glm::mat4* bones)
+	{
+		Set("boneCount", count);
+		BufferData(boneData, sizeof(glm::mat4) * count, bones);
 	}
 
 	void SceneGS::SetRenderMirrors(bool v)

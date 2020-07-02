@@ -2,56 +2,40 @@
 
 #include "xr/XrSystem.hh"
 #include "xr/openvr/OpenVrTrackingCompositor.hh"
-#include "xr/openvr/OpenVrInputSources.hh"
+#include "xr/openvr/OpenVrAction.hh"
 
 #include <openvr.h>
 
 namespace sp
 {
 
-	namespace xr
-	{
-		class OpenVrSystem : public XrSystem
-		{
-		public:
-			OpenVrSystem();
-			~OpenVrSystem();
+    namespace xr
+    {
+        class OpenVrSystem : public XrSystem
+        {
+        public:
+            OpenVrSystem();
+            ~OpenVrSystem();
 
-			void Init();
+            void Init();
 
-			bool IsInitialized();
+            bool IsInitialized();
 
-			void Deinit();
+            void Deinit();
 
-			bool IsHmdPresent();
+            bool IsHmdPresent();
 
-			std::shared_ptr<XrTracking> GetTracking();
+            std::shared_ptr<XrTracking> GetTracking();
 
-			std::shared_ptr<XrCompositor> GetCompositor();
+            std::shared_ptr<XrCompositor> GetCompositor();
 
-			std::vector<TrackedObjectHandle> GetTrackedObjectHandles();
+            std::shared_ptr<XrActionSet> GetActionSet(std::string setName);
 
-			std::shared_ptr<XrModel> GetTrackedObjectModel(const TrackedObjectHandle &handle);
+        private:
+            vr::IVRSystem *vrSystem;
+            std::shared_ptr<OpenVrTrackingCompositor> trackingCompositor;
+            std::map<std::string, std::shared_ptr<OpenVrActionSet>> actionSets;
+        };
 
-			static vr::TrackedDeviceIndex_t GetOpenVrIndexFromHandle(vr::IVRSystem *vrs, const TrackedObjectHandle &handle);
-
-			void SyncActions(XrActionSet &actionSet);
-
-			void GetActionState(std::string actionName, XrActionSet &actionSet, std::string subpath = "");
-
-			std::string GetInteractionProfile();
-
-			bool GetInputSourceState(std::string inputSource);
-
-			std::shared_ptr<OpenVrInputSource> GetInteractionSourceFromManufacturer(vr::TrackedDeviceIndex_t deviceIndex);
-
-		private:
-			vr::IVRSystem *vrSystem;
-			std::shared_ptr<OpenVrTrackingCompositor> trackingCompositor;
-			vr::VRControllerState_t controllerState[2];
-			std::shared_ptr<OpenVrInputSource> inputSources[2];
-			char tempVrProperty[vr::k_unMaxPropertyStringSize];
-		};
-
-	} // namespace xr
+    } // namespace xr
 } // namespace sp

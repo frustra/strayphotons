@@ -14,8 +14,12 @@ namespace sp
 	class SceneShader : public Shader
 	{
 	public:
-		SceneShader(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput) {}
+		SceneShader(shared_ptr<ShaderCompileOutput> compileOutput);
 		void SetParams(const ecs::View &view, glm::mat4 modelMat, glm::mat4 primitiveMat);
+		void SetBoneData(int count, glm::mat4* bones);
+
+	private:
+		UniformBuffer boneData;
 	};
 
 	class SceneVS : public SceneShader
