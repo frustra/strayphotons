@@ -55,6 +55,15 @@ namespace sp
 		return str.rfind(prefix, 0) == 0;
 	}
 
+	bool ends_with(const string& str, const string& suffix)
+	{
+		if (str.length() >= suffix.length()) {
+			return (str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0);
+		} else {
+			return false;
+		}
+	}
+
 	string to_lower_copy(const string &str)
 	{
 		string out(str);

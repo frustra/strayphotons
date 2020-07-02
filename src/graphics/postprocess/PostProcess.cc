@@ -186,7 +186,7 @@ namespace sp
 			memcpy(flipped + tex.width * (tex.height - y - 1) * 4, buf + tex.width * y * 4, tex.width * 4);
 		}
 
-		stbi_write_png(fullPath.c_str(), tex.width, tex.height, 4, flipped, 0);
+		stbi_write_png((const char*) fullPath.c_str(), tex.width, tex.height, 4, flipped, 0);
 
 		delete []buf;
 		delete []flipped;

@@ -122,6 +122,9 @@ namespace sp
 		void BindBuffer(ShaderBuffer &b, int index, GLenum target = GL_UNIFORM_BUFFER, GLenum usage = GL_STATIC_DRAW);
 		void BufferData(ShaderBuffer &b, GLsizei size, const void *data);
 
+		bool IsBound(Uniform &u) { return u.location != -1; };
+		bool IsBound(ShaderBuffer &b) { return b.index != -1; };
+
 		// Methods for setting uniform values.
 
 		template <typename ValueType>

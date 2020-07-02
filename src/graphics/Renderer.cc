@@ -22,6 +22,7 @@
 #include "assets/AssetManager.hh"
 #include "physx/PhysxUtils.hh"
 #include "threading/MutexedVector.hh"
+#include "xr/XrAction.hh"
 
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/transform.hpp>
@@ -699,7 +700,7 @@ namespace sp
 
 		// move the positions back a bit to account for overlapping lines
 		glm::vec3 pos0 = start - lineWidth * lineDir;
-		glm::vec3 pos1 = end + lineWidth * lineDir;;
+		glm::vec3 pos1 = end + lineWidth * lineDir;
 
 		auto addVertex = [&](const glm::vec3 & pos)
 		{
@@ -775,36 +776,7 @@ namespace sp
 		{
 			comp->model->glModel = make_shared<GLModel>(comp->model.get());
 		}
-		comp->model->glModel->Draw(shader, modelMat, view);
-
-		if (ent.Has<ecs::Name>())
-		{
-			auto name = ent.Get<ecs::Name>();
-			if (*name == "xr-controller-right")
-			{
-				glm::vec3 lpos0 = glm::vec3(modelMat * glm::vec4(0, 0, 0, 1.0));
-				glm::vec3 lpos1 = glm::vec3(modelMat * glm::vec4(0, 0, -10.0, 1.0));
-				vector<SceneVertex> vertices(6);
-				addLine(view, vertices, lpos0, lpos1, 0.001f);
-
-				shader->SetParams(view, glm::mat4(), glm::mat4());
-				auto fragShader = GlobalShaders->Get<SceneFS>();
-				fragShader->SetEmissive(glm::vec3(10.0));
-
-				static unsigned char baseColor[4] = {255, 0, 0, 255};
-				static BasicMaterial mat(baseColor);
-
-				static VertexBuffer vbo;
-				vbo.SetElementsVAO(vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
-				vbo.BindVAO();
-
-				mat.baseColorTex.Bind(0);
-				mat.metallicRoughnessTex.Bind(1);
-				mat.heightTex.Bind(3);
-
-				glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
-			}
-		}
+		comp->model->glModel->Draw(shader, modelMat, view, comp->model->bones.size(), comp->model->bones.size() > 0 ? comp->model->bones.data() : NULL);
 	}
 
 	void Renderer::DrawGridDebug(const ecs::View &view, SceneShader *shader)

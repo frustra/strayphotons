@@ -7,20 +7,21 @@
 
 namespace sp
 {
-	namespace xr
-	{
+namespace xr
+{
 
-		class XrSystemFactory
-		{
-		public:
-			XrSystemFactory();
-			std::shared_ptr<XrSystem> GetBestXrSystem();
+    class XrSystemFactory
+    {
+    public:
+        XrSystemFactory();
 
-			// TODO: GetNumAvailableXrSystems() to check if any are installed
+        // This function picks the "best" XR system based on the current execution environment.
+        // In many cases, this returns a NULL pointer 
+        std::shared_ptr<XrSystem> GetBestXrSystem();
 
-		private:
-			std::list<std::shared_ptr<XrSystem>> compiledXrSystems;
-		};
+    private:
+        std::list<std::shared_ptr<XrSystem>> compiledXrSystems;
+    };
 
-	}
+}
 }

@@ -8,6 +8,8 @@ namespace sp
 		Bind(primitiveMat, "primitive");
 		Bind(viewMat, "view");
 		Bind(projMat, "projection");
+		Bind(boneCount, "boneCount");
+		BindBuffer(boneData, 2);
 	}
 
 	void SceneShader::SetParams(const ecs::View &view, glm::mat4 modelMat, glm::mat4 primitiveMat)
@@ -16,6 +18,13 @@ namespace sp
 		Set(this->primitiveMat, primitiveMat);
 		Set(viewMat, view.viewMat);
 		Set(projMat, view.projMat);
+		Set(boneCount, 0);
+	}
+
+	void SceneShader::SetBoneData(int count, glm::mat4* bones)
+	{
+		Set(boneCount, count);
+		BufferData(boneData, sizeof(glm::mat4) * count, bones);
 	}
 
 	SceneGS::SceneGS(shared_ptr<ShaderCompileOutput> compileOutput) : SceneShader(compileOutput)
