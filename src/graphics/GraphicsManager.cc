@@ -10,7 +10,6 @@
 #include "core/Game.hh"
 #include "core/CVar.hh"
 #include "core/PerfTimer.hh"
-#include <game/input/GlfwInputManager.hh>
 #include <GLFW/glfw3.h>
 
 #include <cxxopts.hpp>
@@ -83,7 +82,10 @@ namespace sp
 		context->CreateWindow(CVarWindowSize.Get());
 
 		profilerGui = new ProfilerGui(&context->Timer);
-		game->debugGui.Attach(profilerGui);
+		if (game->debugGui)
+		{
+			game->debugGui->Attach(profilerGui);
+		}
 	}
 
 	void GraphicsManager::ReleaseContext()
@@ -105,9 +107,9 @@ namespace sp
 		return context && !context->ShouldClose();
 	}
 
-	void GraphicsManager::BindContextInputCallbacks(GlfwInputManager *inputManager)
+	void GraphicsManager::PreFrame()
 	{
-		context->BindInputCallbacks(inputManager);
+		if (context) context->PreFrame();
 	}
 
 	bool GraphicsManager::Frame()

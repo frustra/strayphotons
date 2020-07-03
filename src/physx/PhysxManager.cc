@@ -14,6 +14,7 @@
 #include "core/Logging.hh"
 #include "core/CVar.hh"
 #include "core/CFunc.hh"
+#include <Common.hh>
 
 #include <fstream>
 #include <chrono>
@@ -384,12 +385,12 @@ namespace sp
 
 			while (!exiting)
 			{
-				auto frameStart = std::chrono::high_resolution_clock::now();
+				auto frameStart = chrono_clock::now();
 
 				if (simulate)
 					Frame(1.0 / rate);
 
-				std::this_thread::sleep_until(frameStart + std::chrono::high_resolution_clock::duration(std::chrono::seconds(1)) / rate);
+				std::this_thread::sleep_until(frameStart + chrono_clock::duration(std::chrono::seconds(1)) / rate);
 			}
 		});
 	}

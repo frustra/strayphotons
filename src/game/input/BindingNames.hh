@@ -67,8 +67,9 @@ namespace sp
 		{"\\", "backslash"},
 		{"RIGHT_BRACKET", "right-bracket"},
 		{"]", "right-bracket"},
-		{"GRAVE_ACCENT", "grave-accent"},
-		{"`", "grave-accent"},
+		{"GRAVE_ACCENT", "backtick"},
+		{"BACKTICK", "backtick"},
+		{"`", "backtick"},
 
 		{"ESCAPE", "escape"},
 		{"ESC", "escape"},

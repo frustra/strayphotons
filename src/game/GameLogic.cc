@@ -38,8 +38,9 @@ namespace sp
 	GameLogic::GameLogic(Game *game)
 		:
 		game(game),
-		humanControlSystem(&game->entityManager, &game->physics),
-		lightGunSystem(&game->entityManager, &game->physics, this),
+		input(&game->input),
+		humanControlSystem(&game->entityManager, &game->input, &game->physics),
+		lightGunSystem(&game->entityManager, &game->input, &game->physics, this),
 		doorSystem(game->entityManager),
 		sunPos(0)
 	{
@@ -120,17 +121,8 @@ namespace sp
 		// TODO: add suggested bindings for real XR backends when OpenXR supports skeletons
 	}
 
-	void GameLogic::Init(InputManager *inputManager, Script *startupScript)
+	void GameLogic::Init(Script *startupScript)
 	{
-		Assert(input == nullptr, "InputManager can only be bound once.");
-		if (inputManager != nullptr)
-		{
-			input = inputManager;
-
-			humanControlSystem.BindInput(inputManager);
-			lightGunSystem.BindInput(inputManager);
-		}
-
 		if (game->options.count("map"))
 		{
 			LoadScene(game->options["map"].as<string>());
@@ -145,11 +137,13 @@ namespace sp
 			LoadScene("menu");
 		}
 
-
-		input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f5", "reloadscene");
-		input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f6", "reloadscene reset");
-		input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f7", "reloadshaders");
-		input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f", "toggle r.FlashlightOn");
+		if (input != nullptr)
+		{
+			input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f5", "reloadscene");
+			input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f6", "reloadscene reset");
+			input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f7", "reloadshaders");
+			input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f", "toggle r.FlashlightOn");
+		}
 	}
 
 	GameLogic::~GameLogic()
@@ -160,9 +154,9 @@ namespace sp
 	{
 		if (input->FocusLocked()) return;
 
-		if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/escape"))
+		if (game->menuGui && input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/escape"))
 		{
-			game->menuGui.OpenPauseMenu();
+			game->menuGui->OpenPauseMenu();
 		}
 		else if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/f1") && CVarConnectXR.Get())
 		{
@@ -690,7 +684,6 @@ namespace sp
 			vector<SceneVertex> vertices;
 
 			glm::vec3 lineDir = glm::normalize(end - start);
-			glm::vec3 lineMid = glm::vec3(0.5) * (start + end);
 			glm::vec3 widthVec = lineWidth * glm::vec3(1.0, 0.0, 0.0);
 
 			// move the positions back a bit to account for overlapping lines

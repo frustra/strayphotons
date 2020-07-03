@@ -22,7 +22,7 @@ namespace sp
 		GameLogic(Game *game);
 		~GameLogic();
 
-		void Init(InputManager *inputManager, Script *startupScript = nullptr);
+		void Init(Script *startupScript = nullptr);
 		void HandleInput();
 		bool Frame(double dtSinceLastFrame);
 

@@ -11,7 +11,6 @@ namespace sp
 	class Game;
 	class GuiRenderer;
 	class GraphicsContext;
-	class GlfwInputManager;
 
 	extern CVar<glm::ivec2> CVarWindowSize;
 	extern CVar<float> CVarFieldOfView;
@@ -28,10 +27,10 @@ namespace sp
 		void ReloadContext();
 		bool HasActiveContext();
 
-		void BindContextInputCallbacks(GlfwInputManager *inputManager);
 		void SetPlayerView(vector<ecs::Entity> entities);
 		void RenderLoading();
 
+		void PreFrame();
 		bool Frame();
 
 		GraphicsContext *GetContext()

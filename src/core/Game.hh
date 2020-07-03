@@ -2,7 +2,7 @@
 
 #include "physx/PhysxManager.hh"
 #include "graphics/GraphicsManager.hh"
-#include "Common.hh"
+#include <Common.hh>
 #include "game/GameLogic.hh"
 #include "ecs/systems/AnimationSystem.hh"
 #include <game/input/InputManager.hh>
@@ -35,17 +35,17 @@ namespace sp
 		cxxopts::ParseResult &options;
 		Script *startupScript = nullptr;
 
-		// Order is important.
-		DebugGuiManager debugGui;
-		MenuGuiManager menuGui;
+		std::unique_ptr<DebugGuiManager> debugGui = nullptr;
+		std::unique_ptr<MenuGuiManager> menuGui = nullptr;
+
 		GraphicsManager graphics;
-		std::unique_ptr<InputManager> input;
+		InputManager input;
 		ecs::EntityManager entityManager;
 		GameLogic logic;
 		PhysxManager physics;
 		ecs::AnimationSystem animation;
 
 	private:
-		std::chrono::high_resolution_clock::time_point lastFrameTime;
+		chrono_clock::time_point lastFrameTime;
 	};
 }

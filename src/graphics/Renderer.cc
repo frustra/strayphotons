@@ -91,8 +91,14 @@ namespace sp
 		glEnable(GL_FRAMEBUFFER_SRGB);
 
 		RTPool = new RenderTargetPool();
-		debugGuiRenderer = make_shared<GuiRenderer>(*this, &game->debugGui);
-		menuGuiRenderer = make_shared<GuiRenderer>(*this, &game->menuGui);
+		if (game->debugGui)
+		{
+			debugGuiRenderer = make_shared<GuiRenderer>(*this, game->debugGui.get());
+		}
+		if (game->menuGui)
+		{
+			menuGuiRenderer = make_shared<GuiRenderer>(*this, game->menuGui.get());
+		}
 
 		ShaderControl = new ShaderManager();
 		ShaderManager::SetDefine("MAX_LIGHTS", std::to_string(MAX_LIGHTS));
@@ -853,7 +859,7 @@ namespace sp
 		UpdateShaders();
 		ReadBackLightSensors();
 
-		if (game->menuGui.RenderMode() == MenuRenderMode::Gel)
+		if (game->menuGui && game->menuGui->RenderMode() == MenuRenderMode::Gel)
 		{
 			ecs::View menuView({ 1280, 1280 });
 			menuView.clearMode = GL_COLOR_BUFFER_BIT;

@@ -1,6 +1,6 @@
-#include <graphics/GraphicsManager.hh>
+#include "InputManager.hh"
 
-#include "GlfwInputManager.hh"
+#include "ActionSource.hh"
 #include "BindingNames.hh"
 #include <Common.hh>
 
@@ -17,6 +17,61 @@ namespace sp
 	}
 
 	InputManager::~InputManager() {}
+
+	bool InputManager::IsDown(std::string actionPath)
+	{
+		const bool *value;
+		if (GetActionValue(actionPath, &value)) return *value;
+		return false;
+	}
+
+	/**
+	 * Returns true if the action exists and the state changed from false to true this frame, otherwise false.
+	 * This is an alias helper for the below GetActionStateDelta() function.
+	 */
+	bool InputManager::IsPressed(std::string actionPath)
+	{
+		const bool *value, *previous;
+		if (GetActionDelta(actionPath, &value, &previous))
+		{
+			if (previous != nullptr)
+			{
+				return !*previous && *value;
+			}
+			return *value;
+		}
+		return false;
+	}
+
+	void InputManager::BeginFrame()
+	{
+		{ // Advance input action snapshots 1 frame.
+			std::lock_guard lock(actionStatesLock);
+			actionStatesPrevious = actionStatesCurrent;
+		}
+
+		{
+			std::lock_guard lock(sourcesLock);
+			for (auto source : sources)
+			{
+				source->BeginFrame();
+			}
+		}
+
+        if (!FocusLocked())
+        {
+            // Run any command bindings
+			std::lock_guard lock(commandsLock);
+            for (auto [actionPath, command] : commandBindings)
+            {
+                if (IsPressed(actionPath))
+                {
+					// Run the bound command
+					GetConsoleManager().QueueParseAndExecute(command);
+                }
+            }
+        }
+	}
 
 	bool InputManager::FocusLocked(FocusLevel priority) const
 	{
@@ -43,6 +98,31 @@ namespace sp
 		}
 
 		return false;
+	}
+
+	void InputManager::BindCommand(string action, string command)
+	{
+		std::lock_guard lock(commandsLock);
+		commandBindings[action] = command;
+	}
+
+	void InputManager::UnbindCommand(string action)
+	{
+		std::lock_guard lock(commandsLock);
+		commandBindings.erase(action);
+	}
+
+	void InputManager::AddActionSource(ActionSource *source)
+	{
+		std::lock_guard lock(sourcesLock);
+		sources.insert(source);
+	}
+
+
+	void InputManager::RemoveActionSource(ActionSource *source)
+	{
+		std::lock_guard lock(sourcesLock);
+		sources.erase(source);
 	}
 
 	void InputManager::BindKey(string args)

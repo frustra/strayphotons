@@ -5,8 +5,8 @@
 
 namespace sp
 {
-	class InputManager;
 	class Game;
+	class InputManager;
 
 	enum class MenuScreen
 	{
@@ -27,11 +27,11 @@ namespace sp
 	class MenuGuiManager : public GuiManager
 	{
 	public:
-		MenuGuiManager(Game *game) : GuiManager(FOCUS_MENU), game(game) { }
+		MenuGuiManager(Game *game);
 		virtual ~MenuGuiManager() { }
 
-		void BeforeFrame();
-		void DefineWindows();
+		void BeforeFrame() override;
+		void DefineWindows() override;
 
 		bool Focused();
 		MenuRenderMode RenderMode();
@@ -40,7 +40,6 @@ namespace sp
 		void CloseMenu();
 
 	private:
-		Game *game = nullptr;
 		MenuScreen selectedScreen = MenuScreen::Splash;
 
 		uint64 framesSinceOpened = 0;
