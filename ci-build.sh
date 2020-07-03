@@ -3,7 +3,7 @@ format_valid=0
 echo -e "--- Running \033[33mclang-format check\033[0m :clipboard:"
 if ! ./extra/validate_format.py; then
     echo "^^^ +++"]
-    echo "\033[31mclang-format validation failed\033[0m"
+    echo -e "\033[31mclang-format validation failed\033[0m"
     format_valid=1
 fi
 

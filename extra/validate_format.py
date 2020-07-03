@@ -13,13 +13,13 @@ allowed_clangformat_versions = ["clang-format version 10.0.0"]
 def run_clang_format(filepath, fix):
     if fix:
         modifytime_before = os.path.getmtime(filepath)
-        clangformat_output = subprocess.check_output(['clang-format', '-i', filepath], text=True)
+        clangformat_output = subprocess.getoutput('clang-format -i "' + filepath + '"')
         modifytime_after = os.path.getmtime(filepath)
         if modifytime_before != modifytime_after:
             print('Formatted file: ' + filepath)
         return True
     else:
-        clangformat_output = subprocess.check_output(['clang-format', '--output-replacements-xml', filepath], text=True)
+        clangformat_output = subprocess.getoutput('clang-format --output-replacements-xml "' + filepath + '"')
         if '<replacement ' in clangformat_output:
             print('Needs format: ' + filepath)
             return False
@@ -34,7 +34,7 @@ def main():
     project_root = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
 
     try:
-        clangformat_version = subprocess.check_output(['clang-format', '--version'], text=True).strip()
+        clangformat_version = subprocess.getoutput('clang-format --version').strip()
         if not clangformat_version in allowed_clangformat_versions:
             print('clang-format version not supported: ' + clangformat_version, file=sys.stderr)
             exit(1)
