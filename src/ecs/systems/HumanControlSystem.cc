@@ -12,6 +12,7 @@
 #include "Common.hh"
 #include "core/CVar.hh"
 #include "core/Logging.hh"
+#include <game/input/InputManager.hh>
 
 #include <glm/glm.hpp>
 #include <PxRigidActor.h>
@@ -27,34 +28,13 @@ namespace ecs
 	static sp::CVar<float> CVarCrouchSpeed("p.CrouchSpeed", 1.5, "Player crouching movement speed (m/s)");
 	static sp::CVar<float> CVarCursorSensitivity("p.CursorSensitivity", 1.0, "Mouse cursor sensitivity");
 
-	HumanControlSystem::HumanControlSystem(ecs::EntityManager *entities, sp::PhysxManager *physics)
-		: entities(entities), physics(physics)
+	HumanControlSystem::HumanControlSystem(ecs::EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics)
+		: entities(entities), input(input), physics(physics)
 	{
 	}
 
 	HumanControlSystem::~HumanControlSystem()
 	{
-	}
-
-	void HumanControlSystem::BindInput(sp::InputManager *inputManager)
-	{
-		Assert(input == nullptr, "InputManager can only be bound once.");
-
-		if (inputManager != nullptr)
-		{
-			input = inputManager;
-
-			// TODO: Expose some sort of configuration for these.
-			input->BindAction(sp::INPUT_ACTION_KEYBOARD_BASE + "/w", INPUT_ACTION_PLAYER_MOVE_FORWARD);
-			input->BindAction(sp::INPUT_ACTION_KEYBOARD_BASE + "/s", INPUT_ACTION_PLAYER_MOVE_BACKWARD);
-			input->BindAction(sp::INPUT_ACTION_KEYBOARD_BASE + "/a", INPUT_ACTION_PLAYER_MOVE_LEFT);
-			input->BindAction(sp::INPUT_ACTION_KEYBOARD_BASE + "/d", INPUT_ACTION_PLAYER_MOVE_RIGHT);
-			input->BindAction(sp::INPUT_ACTION_KEYBOARD_BASE + "/space", INPUT_ACTION_PLAYER_MOVE_JUMP);
-			input->BindAction(sp::INPUT_ACTION_KEYBOARD_BASE + "/control_left", INPUT_ACTION_PLAYER_MOVE_CROUCH);
-			input->BindAction(sp::INPUT_ACTION_KEYBOARD_BASE + "/shift_left", INPUT_ACTION_PLAYER_MOVE_SPRINT);
-			input->BindAction(sp::INPUT_ACTION_KEYBOARD_BASE + "/e", INPUT_ACTION_PLAYER_INTERACT);
-			input->BindAction(sp::INPUT_ACTION_KEYBOARD_BASE + "/r", INPUT_ACTION_PLAYER_INTERACT_ROTATE);
-		}
 	}
 
 	bool HumanControlSystem::Frame(double dtSinceLastFrame)
@@ -138,9 +118,14 @@ namespace ecs
 				}
 
 				// Handle mouse controls
-				glm::vec2 cursorPos, cursorDiff;
-				if (input->GetActionStateDelta(sp::INPUT_ACTION_MOUSE_CURSOR, cursorPos, cursorDiff))
+				const glm::vec2 *cursorPos, *cursorPosPrev;
+				if (input->GetActionDelta(sp::INPUT_ACTION_MOUSE_CURSOR, &cursorPos, &cursorPosPrev))
 				{
+					glm::vec2 cursorDiff = *cursorPos;
+					if (cursorPosPrev != nullptr)
+					{
+						cursorDiff -= *cursorPosPrev;
+					}
 					if (!rotating || !InteractRotate(entity, dtSinceLastFrame, cursorDiff))
 					{
 						float sensitivity = CVarCursorSensitivity.Get() * 0.001;

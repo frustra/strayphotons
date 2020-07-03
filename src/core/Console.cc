@@ -38,13 +38,6 @@ namespace sp
 		}
 	}
 
-	static uint64 NowMonotonicMs()
-	{
-		auto now = std::chrono::steady_clock::now();
-		auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
-		return now_ms.time_since_epoch().count();
-	}
-
 	CVarBase::CVarBase(const string &name, const string &description)
 		: name(name), description(description)
 	{
@@ -58,8 +51,8 @@ namespace sp
 
 	ConsoleManager::ConsoleManager()
 	{
-		inputThread = std::thread([&] { this->InputLoop(); });
-		inputThread.detach();
+		cliInputThread = std::thread([&] { this->InputLoop(); });
+		cliInputThread.detach();
 	}
 
 	void ConsoleManager::AddCVar(CVarBase *cvar)
@@ -74,7 +67,9 @@ namespace sp
 
 	void ConsoleManager::InputLoop()
 	{
-		std::unique_lock<std::mutex> ulock(inputLock, std::defer_lock);
+		std::mutex wait_lock;
+		std::condition_variable condition;
+		std::unique_lock ulock(wait_lock, std::defer_lock);
 
 #ifdef USE_LINENOISE_CLI
 		char *str;
@@ -89,13 +84,12 @@ namespace sp
 				linenoiseFree(str);
 				continue;
 			}
-
-			ConsoleInputLine line;
-			line.text = string(str);
+			string line(str);
 
 			ulock.lock();
-			inputLines.push(&line);
-			line.handled.wait(ulock);
+			AddHistory(str);
+			QueueParseAndExecute(line, chrono_clock::now(), &condition);
+			condition.wait(ulock);
 			ulock.unlock();
 
 			linenoiseHistoryAdd(str);
@@ -109,12 +103,12 @@ namespace sp
 			if (str == "")
 				continue;
 
-			ConsoleInputLine line;
-			line.text = str;
+			string line(str);
 
 			ulock.lock();
-			inputLines.push(&line);
-			line.handled.wait(ulock);
+			AddHistory(str);
+			QueueParseAndExecute(line, chrono_clock::now(), &condition);
+			condition.wait(ulock);
 			ulock.unlock();
 		}
 #endif
@@ -131,45 +125,41 @@ namespace sp
 
 	void ConsoleManager::Update(Script *startupScript)
 	{
-		std::unique_lock<std::mutex> ulock(inputLock, std::defer_lock);
+		std::unique_lock<std::mutex> ulock(queueLock, std::defer_lock);
 
-		uint64 now = NowMonotonicMs();
+		auto now = chrono_clock::now();
 
+		ulock.lock();
 		if (startupScript != nullptr && queuedCommands.empty())
 		{
+			ulock.unlock();
 			ParseAndExecute("exit");
+			return;
 		}
+
 		while (!queuedCommands.empty())
 		{
 			auto top = queuedCommands.top();
-			if (top.first > now)
+			if (top.wait_util > now)
 				break;
 
 			queuedCommands.pop();
-			ParseAndExecute(top.second, false);
-		}
-
-		while (!inputLines.empty())
-		{
-			if (!ulock.try_lock())
-				return;
-
-			auto line = inputLines.front();
-			inputLines.pop();
-			ParseAndExecute(line->text, true);
 			ulock.unlock();
 
-			line->handled.notify_all();
+			ParseAndExecute(top.text);
+			if (top.handled != nullptr)
+			{
+				top.handled->notify_all();
+			}
+
+			ulock.lock();
 		}
 	}
 
-	void ConsoleManager::ParseAndExecute(const string line, bool saveHistory)
+	void ConsoleManager::ParseAndExecute(const string line)
 	{
 		if (line == "")
 			return;
-
-		if (saveHistory && (history.size() == 0 || history[history.size() - 1] != line))
-			history.push_back(line);
 
 		auto cmd = line.begin();
 		do
@@ -213,10 +203,29 @@ namespace sp
 		}
 	}
 
-	void ConsoleManager::QueueParseAndExecute(const string line, uint64 dt)
+	void ConsoleManager::QueueParseAndExecute(const string line, chrono_clock::time_point wait_util, std::condition_variable *handled)
 	{
-		// Queue commands 1ms forward so they don't run same frame.
-		queuedCommands.push({NowMonotonicMs() + dt + 1, line});
+		std::lock_guard lock(queueLock);
+		queuedCommands.emplace(line, wait_util, handled);
+	}
+
+	void ConsoleManager::AddHistory(const string &input)
+	{
+		std::lock_guard lock(historyLock);
+		if (history.size() == 0 || history[history.size() - 1] != input)
+		{
+			history.push_back(input);
+		}
+	}
+
+	string ConsoleManager::GetHistory(size_t index)
+	{
+		std::lock_guard lock(historyLock);
+		if (index > 0 && index <= history.size())
+		{
+			return history[history.size() - index];
+		}
+		return "";
 	}
 
 	string ConsoleManager::AutoComplete(const string &input)

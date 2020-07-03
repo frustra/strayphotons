@@ -16,6 +16,9 @@ using std::string;
 using std::runtime_error;
 using std::invalid_argument;
 
+#include <chrono>
+typedef std::chrono::steady_clock chrono_clock;
+
 typedef unsigned char uint8;
 typedef signed char int8;
 typedef uint16_t uint16;

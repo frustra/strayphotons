@@ -1,6 +1,6 @@
 #include "GuiManager.hh"
 #include <game/input/InputManager.hh>
-#include <game/input/GlfwInputManager.hh>
+#include <core/Game.hh>
 
 #include <imgui/imgui.h>
 #include "ConsoleGui.hh"
@@ -12,9 +12,14 @@
 
 namespace sp
 {
-	GuiManager::GuiManager(const FocusLevel focusPriority) : focusPriority(focusPriority)
+	GuiManager::GuiManager(Game *game, const FocusLevel focusPriority) : focusPriority(focusPriority), game(game)
 	{
 		imCtx = ImGui::CreateContext();
+
+		if (game != nullptr)
+		{
+			GuiManager::BindInput(game->input);
+		}
 	}
 
 	GuiManager::~GuiManager()
@@ -24,36 +29,63 @@ namespace sp
 		imCtx = nullptr;
 	}
 
-	void GuiManager::BindInput(GlfwInputManager *inputManager)
+	void GuiManager::BindInput(InputManager &inputManager)
 	{
-		Assert(input == nullptr, "InputManager can only be bound once.");
+		input = &inputManager;
 
-		if (inputManager != nullptr)
-		{
-			input = inputManager;
+		SetGuiContext();
+		ImGuiIO &io = ImGui::GetIO();
 
-			SetGuiContext();
-			ImGuiIO &io = ImGui::GetIO();
-			io.MousePos = ImVec2(200, 200);
-
-			input->AddKeyInputCallback([&](int key, int state)
-			{
-				if (state == GLFW_PRESS)
-					io.KeysDown[key] = true;
-				if (state == GLFW_RELEASE)
-					io.KeysDown[key] = false;
-
-				io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
-				io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
-				io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
-				io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
-			});
-		}
+		io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
+		io.KeyMap[ImGuiKey_LeftArrow] = GLFW_KEY_LEFT;
+		io.KeyMap[ImGuiKey_RightArrow] = GLFW_KEY_RIGHT;
+		io.KeyMap[ImGuiKey_UpArrow] = GLFW_KEY_UP;
+		io.KeyMap[ImGuiKey_DownArrow] = GLFW_KEY_DOWN;
+		io.KeyMap[ImGuiKey_PageUp] = GLFW_KEY_PAGE_UP;
+		io.KeyMap[ImGuiKey_PageDown] = GLFW_KEY_PAGE_DOWN;
+		io.KeyMap[ImGuiKey_Home] = GLFW_KEY_HOME;
+		io.KeyMap[ImGuiKey_End] = GLFW_KEY_END;
+		io.KeyMap[ImGuiKey_Delete] = GLFW_KEY_DELETE;
+		io.KeyMap[ImGuiKey_Backspace] = GLFW_KEY_BACKSPACE;
+		io.KeyMap[ImGuiKey_Enter] = GLFW_KEY_ENTER;
+		io.KeyMap[ImGuiKey_Escape] = GLFW_KEY_ESCAPE;
+		io.KeyMap[ImGuiKey_A] = GLFW_KEY_A;
+		io.KeyMap[ImGuiKey_C] = GLFW_KEY_C;
+		io.KeyMap[ImGuiKey_V] = GLFW_KEY_V;
+		io.KeyMap[ImGuiKey_X] = GLFW_KEY_X;
+		io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
+		io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
 	}
 
 	void GuiManager::SetGuiContext()
 	{
 		ImGui::SetCurrentContext(imCtx);
+	}
+
+	void GuiManager::BeforeFrame()
+	{
+		ImGuiIO &io = ImGui::GetIO();
+
+		const KeyEvents *keys, *keysPrev;
+		if (input->GetActionDelta(INPUT_ACTION_KEYBOARD_KEYS, &keys, &keysPrev))
+		{
+			if (keysPrev != nullptr)
+			{
+				for (auto &key : *keysPrev)
+				{
+					io.KeysDown[key] = false;
+				}
+			}
+			for (auto &key : *keys)
+			{
+				io.KeysDown[key] = true;
+			}
+
+			io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
+			io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
+			io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
+			io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
+		};
 	}
 
 	void GuiManager::DefineWindows()

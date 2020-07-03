@@ -1,6 +1,6 @@
 #include "PerfTimer.hh"
 #include "core/Logging.hh"
-#include <chrono>
+#include <Common.hh>
 
 namespace sp
 {
@@ -76,13 +76,13 @@ namespace sp
 		stack.push(&phase.query);
 
 		// Save CPU time as close to start of work as possible.
-		phase.query.cpuStart = std::chrono::high_resolution_clock::now();
+		phase.query.cpuStart = chrono_clock::now();
 	}
 
 	void PerfTimer::Complete(RenderPhase &phase)
 	{
 		// Save CPU time as close to end of work as possible.
-		phase.query.cpuEnd = std::chrono::high_resolution_clock::now();
+		phase.query.cpuEnd = chrono_clock::now();
 
 		Assert(stack.top() == &phase.query, "RenderPhase query mismatch");
 		stack.pop();
@@ -131,7 +131,7 @@ namespace sp
 				GLuint64 lastGpuElapsed = lastCompleteFrame.results[front.resultIndex].gpuElapsed;
 				if (result.cpuElapsed < lastCpuElapsed)
 				{
-					result.cpuElapsed = std::chrono::high_resolution_clock::duration(
+					result.cpuElapsed = chrono_clock::duration(
 						std::max(result.cpuElapsed.count(), lastCpuElapsed.count() * 99 / 100)
 					);
 				}

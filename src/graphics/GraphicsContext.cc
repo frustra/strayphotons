@@ -4,7 +4,9 @@
 #include "graphics/GraphicsContext.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/Shader.hh"
-#include <game/input/GlfwInputManager.hh>
+#include <game/input/InputManager.hh>
+#include <game/input/GlfwActionSource.hh>
+#include <ecs/systems/HumanControlSystem.hh>
 
 #include <string>
 #include <iostream>
@@ -23,7 +25,7 @@ namespace sp
 		Debugf("[GL 0x%X] 0x%X: %s", id, type, message);
 	}
 
-	GraphicsContext::GraphicsContext(Game *game) : game(game)
+	GraphicsContext::GraphicsContext(Game *game) : game(game), input(&game->input)
 	{
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
@@ -88,23 +90,28 @@ namespace sp
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
 		Debugf("Maximum anisotropy: %f", maxAnisotropy);
 
+		if (input != nullptr && window != nullptr)
+		{
+			glfwActionSource = std::make_unique<GlfwActionSource>(*input, *window);
+
+			// TODO: Expose some sort of configuration for these.
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/w", ecs::INPUT_ACTION_PLAYER_MOVE_FORWARD);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/s", ecs::INPUT_ACTION_PLAYER_MOVE_BACKWARD);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/a", ecs::INPUT_ACTION_PLAYER_MOVE_LEFT);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/d", ecs::INPUT_ACTION_PLAYER_MOVE_RIGHT);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/space", ecs::INPUT_ACTION_PLAYER_MOVE_JUMP);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/control_left", ecs::INPUT_ACTION_PLAYER_MOVE_CROUCH);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/shift_left", ecs::INPUT_ACTION_PLAYER_MOVE_SPRINT);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/e", ecs::INPUT_ACTION_PLAYER_INTERACT);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/r", ecs::INPUT_ACTION_PLAYER_INTERACT_ROTATE);
+		}
+
 		Prepare();
 	}
 
 	void GraphicsContext::SetTitle(string title)
 	{
 		glfwSetWindowTitle(window, title.c_str());
-	}
-
-	void GraphicsContext::BindInputCallbacks(GlfwInputManager *inputManager)
-	{
-		Assert(input == nullptr, "InputManager must only be bound once.");
-		if (inputManager != nullptr)
-		{
-			input = inputManager;
-
-			input->BindCallbacks(window);
-		}
 	}
 
 	bool GraphicsContext::ShouldClose()
@@ -178,5 +185,29 @@ namespace sp
 			return glm::ivec2(mode->width, mode->height);
 		}
 		return glm::ivec2(0);
+	}
+
+	void GraphicsContext::PreFrame()
+	{
+		if (glfwActionSource != nullptr)
+		{
+			glfwActionSource->BeginFrame();
+		}
+	}
+
+	void GraphicsContext::DisableCursor()
+	{
+		if (glfwActionSource)
+		{
+			glfwActionSource->DisableCursor();
+		}
+	}
+
+	void GraphicsContext::EnableCursor()
+	{
+		if (glfwActionSource)
+		{
+			glfwActionSource->EnableCursor();
+		}
 	}
 }

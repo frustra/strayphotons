@@ -60,7 +60,7 @@ namespace sp
         {GLFW_KEY_LEFT_BRACKET, "left-bracket"},
         {GLFW_KEY_BACKSLASH, "backslash"},
         {GLFW_KEY_RIGHT_BRACKET, "right-bracket"},
-        {GLFW_KEY_GRAVE_ACCENT, "grave-accent"},
+        {GLFW_KEY_GRAVE_ACCENT, "backtick"},
         {GLFW_KEY_ESCAPE, "escape"},
         {GLFW_KEY_ENTER, "enter"},
         {GLFW_KEY_TAB, "tag"},
