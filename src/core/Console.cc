@@ -1,24 +1,23 @@
 #include "Console.hh"
+
 #include "Logging.hh"
 
 #ifndef _WIN32
-#define USE_LINENOISE_CLI
+	#define USE_LINENOISE_CLI
 #endif
 
 #ifdef USE_LINENOISE_CLI
-#include <linenoise/linenoise.h>
+	#include <linenoise/linenoise.h>
 #endif
 
-#include <iostream>
-#include <sstream>
-#include <mutex>
 #include <chrono>
+#include <iostream>
+#include <mutex>
+#include <sstream>
 
-namespace sp
-{
-	
-	ConsoleManager &GetConsoleManager()
-	{
+namespace sp {
+
+	ConsoleManager &GetConsoleManager() {
 		static ConsoleManager GConsoleManager;
 		return GConsoleManager;
 	}
@@ -27,53 +26,45 @@ namespace sp
 	void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc);
 #endif
 
-	namespace logging
-	{
-		void GlobalLogOutput(Level lvl, const string &line)
-		{
+	namespace logging {
+		void GlobalLogOutput(Level lvl, const string &line) {
 			static std::mutex mut;
 			mut.lock();
 			GetConsoleManager().AddLog(lvl, line);
 			mut.unlock();
 		}
-	}
+	} // namespace logging
 
-	static uint64 NowMonotonicMs()
-	{
+	static uint64 NowMonotonicMs() {
 		auto now = std::chrono::steady_clock::now();
 		auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
 		return now_ms.time_since_epoch().count();
 	}
 
-	CVarBase::CVarBase(const string &name, const string &description)
-		: name(name), description(description)
-	{
+	CVarBase::CVarBase(const string &name, const string &description) : name(name), description(description) {
 		GetConsoleManager().AddCVar(this);
 	}
 
-	CVarBase::~CVarBase()
-	{
+	CVarBase::~CVarBase() {
 		GetConsoleManager().RemoveCVar(this);
 	}
 
-	ConsoleManager::ConsoleManager()
-	{
-		inputThread = std::thread([&] { this->InputLoop(); });
+	ConsoleManager::ConsoleManager() {
+		inputThread = std::thread([&] {
+			this->InputLoop();
+		});
 		inputThread.detach();
 	}
 
-	void ConsoleManager::AddCVar(CVarBase *cvar)
-	{
+	void ConsoleManager::AddCVar(CVarBase *cvar) {
 		cvars[to_lower_copy(cvar->GetName())] = cvar;
 	}
 
-	void ConsoleManager::RemoveCVar(CVarBase *cvar)
-	{
+	void ConsoleManager::RemoveCVar(CVarBase *cvar) {
 		cvars.erase(to_lower_copy(cvar->GetName()));
 	}
 
-	void ConsoleManager::InputLoop()
-	{
+	void ConsoleManager::InputLoop() {
 		std::unique_lock<std::mutex> ulock(inputLock, std::defer_lock);
 
 #ifdef USE_LINENOISE_CLI
@@ -82,10 +73,8 @@ namespace sp
 		linenoiseHistorySetMaxLen(256);
 		linenoiseSetCompletionCallback(LinenoiseCompletionCallback);
 
-		while ((str = linenoise("sp> ")) != nullptr)
-		{
-			if (*str == '\0')
-			{
+		while ((str = linenoise("sp> ")) != nullptr) {
+			if (*str == '\0') {
 				linenoiseFree(str);
 				continue;
 			}
@@ -104,8 +93,7 @@ namespace sp
 #else
 		std::string str;
 
-		while (std::getline(std::cin, str))
-		{
+		while (std::getline(std::cin, str)) {
 			if (str == "")
 				continue;
 
@@ -120,27 +108,19 @@ namespace sp
 #endif
 	}
 
-	void ConsoleManager::AddLog(logging::Level lvl, const string &line)
-	{
-		outputLines.push_back(
-		{
-			lvl,
-			line
-		});
+	void ConsoleManager::AddLog(logging::Level lvl, const string &line) {
+		outputLines.push_back({lvl, line});
 	}
 
-	void ConsoleManager::Update(Script *startupScript)
-	{
+	void ConsoleManager::Update(Script *startupScript) {
 		std::unique_lock<std::mutex> ulock(inputLock, std::defer_lock);
 
 		uint64 now = NowMonotonicMs();
 
-		if (startupScript != nullptr && queuedCommands.empty())
-		{
+		if (startupScript != nullptr && queuedCommands.empty()) {
 			ParseAndExecute("exit");
 		}
-		while (!queuedCommands.empty())
-		{
+		while (!queuedCommands.empty()) {
 			auto top = queuedCommands.top();
 			if (top.first > now)
 				break;
@@ -149,8 +129,7 @@ namespace sp
 			ParseAndExecute(top.second, false);
 		}
 
-		while (!inputLines.empty())
-		{
+		while (!inputLines.empty()) {
 			if (!ulock.try_lock())
 				return;
 
@@ -163,8 +142,7 @@ namespace sp
 		}
 	}
 
-	void ConsoleManager::ParseAndExecute(const string line, bool saveHistory)
-	{
+	void ConsoleManager::ParseAndExecute(const string line, bool saveHistory) {
 		if (line == "")
 			return;
 
@@ -172,8 +150,7 @@ namespace sp
 			history.push_back(line);
 
 		auto cmd = line.begin();
-		do
-		{
+		do {
 			auto cmdEnd = std::find(cmd, line.end(), ';');
 
 			std::stringstream stream(std::string(cmd, cmdEnd));
@@ -183,44 +160,36 @@ namespace sp
 			trim(value);
 			Execute(varName, value);
 
-			if (cmdEnd != line.end()) cmdEnd++;
+			if (cmdEnd != line.end())
+				cmdEnd++;
 			cmd = cmdEnd;
-		}
-		while (cmd != line.end());
+		} while (cmd != line.end());
 	}
 
-	void ConsoleManager::Execute(const string cmd, const string &args)
-	{
+	void ConsoleManager::Execute(const string cmd, const string &args) {
 		auto cvarit = cvars.find(to_lower_copy(cmd));
-		if (cvarit != cvars.end())
-		{
+		if (cvarit != cvars.end()) {
 			auto cvar = cvarit->second;
 			cvar->SetFromString(args);
 
-			if (cvar->IsValueType())
-			{
+			if (cvar->IsValueType()) {
 				logging::ConsoleWrite(logging::Level::Log, " > %s = %s", cvar->GetName(), cvar->StringValue());
 
-				if (args.length() == 0)
-				{
+				if (args.length() == 0) {
 					logging::ConsoleWrite(logging::Level::Log, " >   %s", cvar->GetDescription());
 				}
 			}
-		}
-		else
-		{
+		} else {
 			logging::ConsoleWrite(logging::Level::Log, " > '%s' undefined", cmd);
 		}
 	}
 
-	void ConsoleManager::QueueParseAndExecute(const string line, uint64 dt)
-	{
+	void ConsoleManager::QueueParseAndExecute(const string line, uint64 dt) {
 		// Queue commands 1ms forward so they don't run same frame.
 		queuedCommands.push({NowMonotonicMs() + dt + 1, line});
 	}
 
-	string ConsoleManager::AutoComplete(const string &input)
-	{
+	string ConsoleManager::AutoComplete(const string &input) {
 		auto it = cvars.upper_bound(to_lower_copy(input));
 		if (it == cvars.end())
 			return input;
@@ -229,15 +198,13 @@ namespace sp
 		return cvar->GetName() + " ";
 	}
 
-	vector<string> ConsoleManager::AllCompletions(const string &rawInput)
-	{
+	vector<string> ConsoleManager::AllCompletions(const string &rawInput) {
 		vector<string> results;
 
 		auto input = to_lower_copy(rawInput);
 		auto it = cvars.lower_bound(input);
 
-		for (; it != cvars.end(); it++)
-		{
+		for (; it != cvars.end(); it++) {
 			auto cvar = it->second;
 			auto name = cvar->GetName();
 
@@ -251,15 +218,11 @@ namespace sp
 	}
 
 #ifdef USE_LINENOISE_CLI
-	void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc)
-	{
+	void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc) {
 		auto completions = GetConsoleManager().AllCompletions(string(buf));
-		for (auto str : completions)
-		{
-			linenoiseAddCompletion(lc, str.c_str());
-		}
+		for (auto str : completions) { linenoiseAddCompletion(lc, str.c_str()); }
 	}
 #endif
-}
+} // namespace sp
 
 #include "ConsoleCoreCommands.hh"

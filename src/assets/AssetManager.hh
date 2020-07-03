@@ -1,29 +1,27 @@
 #pragma once
 
 #include "Common.hh"
-#include <Ecs.hh>
-#include "physx/PhysxManager.hh"
 #include "graphics/Texture.hh"
-#include <tiny_gltf.h>
-#include <picojson/picojson.h>
+#include "physx/PhysxManager.hh"
 
-#include <unordered_map>
-#include <string>
+#include <Ecs.hh>
 #include <map>
+#include <picojson/picojson.h>
+#include <string>
+#include <tiny_gltf.h>
+#include <unordered_map>
 
-namespace sp
-{
+namespace sp {
 	class Asset;
 	class Model;
 	class Scene;
 	class Script;
 
-	typedef std::unordered_map<std::string, weak_ptr<Asset> > AssetMap;
-	typedef std::unordered_map<std::string, weak_ptr<Model> > ModelMap;
-	typedef std::unordered_map<std::string, std::pair<size_t, size_t> > TarIndex;
+	typedef std::unordered_map<std::string, weak_ptr<Asset>> AssetMap;
+	typedef std::unordered_map<std::string, weak_ptr<Model>> ModelMap;
+	typedef std::unordered_map<std::string, std::pair<size_t, size_t>> TarIndex;
 
-	class AssetManager
-	{
+	class AssetManager {
 	public:
 		AssetManager();
 
@@ -31,8 +29,7 @@ namespace sp
 		bool OutputStream(const std::string &path, std::ofstream &stream);
 
 		// TinyGLTF filesystem functions
-		bool ReadWholeFile(std::vector<unsigned char> *out, std::string *err,
-                   		   const std::string &path, void *user_data);
+		bool ReadWholeFile(std::vector<unsigned char> *out, std::string *err, const std::string &path, void *user_data);
 		bool FileExists(const std::string &abs_filename, void *user_data);
 		std::string ExpandFilePath(const std::string &filepath, void *user_data);
 
@@ -59,4 +56,4 @@ namespace sp
 	};
 
 	extern AssetManager GAssets;
-}
+} // namespace sp

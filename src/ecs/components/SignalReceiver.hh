@@ -3,18 +3,14 @@
 #include "Common.hh"
 
 #include <Ecs.hh>
+#include <ecs/Components.hh>
 #include <limits>
 #include <map>
 
-#include <ecs/Components.hh>
-
-namespace ecs
-{
-	class SignalReceiver
-	{
+namespace ecs {
+	class SignalReceiver {
 	public:
-		struct Input
-		{
+		struct Input {
 			Subscription sub;
 			float signal;
 		};
@@ -41,4 +37,4 @@ namespace ecs
 
 	template<>
 	bool Component<SignalReceiver>::LoadEntity(Entity &dst, picojson::value &src);
-}
+} // namespace ecs

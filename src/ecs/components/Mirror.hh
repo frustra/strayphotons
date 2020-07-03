@@ -1,13 +1,10 @@
 #pragma once
 
+#include <ecs/Components.hh>
 #include <glm/glm.hpp>
 
-#include <ecs/Components.hh>
-
-namespace ecs
-{
-	struct Mirror
-	{
+namespace ecs {
+	struct Mirror {
 		glm::vec2 size;
 		int mirrorId;
 	};
@@ -16,4 +13,4 @@ namespace ecs
 
 	template<>
 	bool Component<Mirror>::LoadEntity(Entity &dst, picojson::value &src);
-}
+} // namespace ecs

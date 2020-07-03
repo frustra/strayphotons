@@ -1,6 +1,5 @@
 #pragma once
 
-namespace sp
-{
+namespace sp {
 	void DrawScreenCover(bool flipped = false);
 }

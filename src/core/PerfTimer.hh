@@ -1,50 +1,45 @@
 #pragma once
 
+#include "CVar.hh"
 #include "Common.hh"
 #include "graphics/Graphics.hh"
-#include "CVar.hh"
 
-#include <stack>
-#include <queue>
 #include <chrono>
+#include <queue>
+#include <stack>
 
-namespace sp
-{
+namespace sp {
 	class PerfTimer;
 	extern CVar<bool> CVarProfileCPU;
 	extern CVar<bool> CVarProfileGPU;
 
-	struct TimeResult
-	{
+	struct TimeResult {
 		string name;
 		int depth = 0;
 		std::chrono::high_resolution_clock::duration cpuElapsed;
 		uint64 gpuElapsed = 0;
 	};
 
-	struct TimeQuery
-	{
+	struct TimeQuery {
 		std::chrono::high_resolution_clock::time_point cpuStart, cpuEnd;
 		GLuint glQueries[2];
 		int resultIndex;
 	};
 
-	class FrameTiming
-	{
+	class FrameTiming {
 	public:
 		vector<TimeResult> results;
 		size_t remaining = 0;
 	};
 
-	class RenderPhase
-	{
+	class RenderPhase {
 	public:
 		const string name;
 		PerfTimer *timer = nullptr;
 		TimeQuery query;
 
 		// Create phase without starting the timer.
-		RenderPhase(const string &phaseName) : name(phaseName) { };
+		RenderPhase(const string &phaseName) : name(phaseName){};
 
 		// Create phase and automatically start the timer.
 		RenderPhase(const string &phaseName, PerfTimer &perfTimer);
@@ -55,8 +50,7 @@ namespace sp
 		~RenderPhase();
 	};
 
-	class PerfTimer
-	{
+	class PerfTimer {
 	public:
 		void StartFrame();
 		void EndFrame();
@@ -77,4 +71,4 @@ namespace sp
 		FrameTiming *currentFrame = nullptr;
 		std::queue<FrameTiming> pendingFrames;
 	};
-}
+} // namespace sp

@@ -1,32 +1,24 @@
 #include "ecs/systems/AnimationSystem.hh"
-#include "ecs/components/Animation.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/Renderable.hh"
-#include "physx/PhysxUtils.hh"
 
 #include "core/Logging.hh"
+#include "ecs/components/Animation.hh"
+#include "ecs/components/Renderable.hh"
+#include "ecs/components/Transform.hh"
+#include "physx/PhysxUtils.hh"
 
 #include <PxPhysicsAPI.h>
 
-namespace ecs
-{
-	AnimationSystem::AnimationSystem(
-		ecs::EntityManager &entities)
-		: entities(entities)
-	{
-	}
+namespace ecs {
+	AnimationSystem::AnimationSystem(ecs::EntityManager &entities) : entities(entities) {}
 
 	AnimationSystem::~AnimationSystem() {}
 
-	bool AnimationSystem::Frame(float dtSinceLastFrame)
-	{
-		for (auto ent : entities.EntitiesWith<Animation, Transform>())
-		{
+	bool AnimationSystem::Frame(float dtSinceLastFrame) {
+		for (auto ent : entities.EntitiesWith<Animation, Transform>()) {
 			auto animation = ent.Get<Animation>();
 			auto transform = ent.Get<Transform>();
 
-			if (animation->nextState < 0)
-			{
+			if (animation->nextState < 0) {
 				continue;
 			}
 
@@ -46,27 +38,22 @@ namespace ecs
 			float duration = animation->animationTimes[animation->nextState];
 			float target = completion + dtSinceLastFrame / duration;
 
-			if (distToTarget < 1e-4f || target >= 1.0f || std::isnan(target) || std::isinf(target))
-			{
+			if (distToTarget < 1e-4f || target >= 1.0f || std::isnan(target) || std::isinf(target)) {
 				animation->curState = animation->nextState;
 				animation->nextState = -1;
 				transform->SetPosition(nextState.pos);
 				transform->SetScale(nextState.scale);
 
-				if (ent.Has<ecs::Renderable>())
-				{
+				if (ent.Has<ecs::Renderable>()) {
 					ent.Get<ecs::Renderable>()->hidden = nextState.hidden;
 				}
-			}
-			else
-			{
+			} else {
 				transform->SetPosition(curState.pos + target * dPos);
 				transform->SetScale(curState.scale + target * dScale);
 
 				// ensure the entity is visible during the animation
 				// when coming from a state that was hidden
-				if (ent.Has<ecs::Renderable>())
-				{
+				if (ent.Has<ecs::Renderable>()) {
 					ent.Get<ecs::Renderable>()->hidden = false;
 				}
 			}
@@ -74,4 +61,4 @@ namespace ecs
 
 		return true;
 	}
-}
+} // namespace ecs

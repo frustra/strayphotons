@@ -1,23 +1,22 @@
 #pragma once
 
-#include <Ecs.hh>
-#include "ecs/systems/HumanControlSystem.hh"
-#include "ecs/systems/LightGunSystem.hh"
-#include "ecs/systems/DoorSystem.hh"
 #include "Common.hh"
 #include "core/CFunc.hh"
-#include "xr/XrSystem.hh"
+#include "ecs/systems/DoorSystem.hh"
+#include "ecs/systems/HumanControlSystem.hh"
+#include "ecs/systems/LightGunSystem.hh"
 #include "xr/XrAction.hh"
+#include "xr/XrSystem.hh"
 
-namespace sp
-{
+#include <Ecs.hh>
+
+namespace sp {
 	class Game;
 	class Scene;
 	class Script;
 	class InputManager;
 
-	class GameLogic
-	{
+	class GameLogic {
 	public:
 		GameLogic(Game *game);
 		~GameLogic();
@@ -44,7 +43,8 @@ namespace sp
 		ecs::Entity ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &handle);
 		ecs::Entity UpdateXrActionEntity(xr::XrActionPtr action, bool active);
 
-		void UpdateSkeletonDebugHand(xr::XrActionPtr action, glm::mat4 xrObjectPos, std::vector<xr::XrBoneData>& boneData, bool active);
+		void UpdateSkeletonDebugHand(
+			xr::XrActionPtr action, glm::mat4 xrObjectPos, std::vector<xr::XrBoneData> &boneData, bool active);
 
 		void ComputeBonePositions(std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output);
 
@@ -70,7 +70,7 @@ namespace sp
 		// Actions for the raw input device pose
 		xr::XrActionPtr leftHandAction;
 		xr::XrActionPtr rightHandAction;
-		
+
 		// Actions for the skeleton pose
 		xr::XrActionPtr leftHandSkeletonAction;
 		xr::XrActionPtr rightHandSkeletonAction;
@@ -80,4 +80,4 @@ namespace sp
 
 		CFuncCollection funcs;
 	};
-}
+} // namespace sp

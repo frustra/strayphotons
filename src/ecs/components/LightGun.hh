@@ -4,10 +4,8 @@
 
 #include <ecs/Components.hh>
 
-namespace ecs
-{
-	class LightGun
-	{
+namespace ecs {
+	class LightGun {
 	public:
 		LightGun();
 
@@ -18,4 +16,4 @@ namespace ecs
 
 	template<>
 	bool Component<LightGun>::LoadEntity(Entity &dst, picojson::value &src);
-}
+} // namespace ecs

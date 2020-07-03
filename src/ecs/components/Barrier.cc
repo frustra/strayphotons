@@ -1,43 +1,35 @@
 #include "ecs/components/Barrier.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/Renderable.hh"
-#include "ecs/components/Physics.hh"
+
+#include "Ecs.hh"
 #include "assets/AssetManager.hh"
+#include "ecs/components/Physics.hh"
+#include "ecs/components/Renderable.hh"
+#include "ecs/components/Transform.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 
-#include "Ecs.hh"
-#include <picojson/picojson.h>
 #include <assets/AssetHelpers.hh>
+#include <picojson/picojson.h>
 
-namespace ecs
-{
+namespace ecs {
 	template<>
-	bool Component<Barrier>::LoadEntity(Entity &dst, picojson::value &src)
-	{
+	bool Component<Barrier>::LoadEntity(Entity &dst, picojson::value &src) {
 		auto barrier = dst.Assign<Barrier>();
 
-		for (auto param : src.get<picojson::object>())
-		{
-			if (param.first == "isOpen")
-			{
+		for (auto param : src.get<picojson::object>()) {
+			if (param.first == "isOpen") {
 				barrier->isOpen = param.second.get<bool>();
 			}
 		}
 
-		if (sp::ParametersExist(src, {"translate", "scale"}))
-		{
+		if (sp::ParametersExist(src, {"translate", "scale"})) {
 			glm::vec3 translate;
 			glm::vec3 scale;
 
-			for (auto param : src.get<picojson::object>())
-			{
-				if (param.first == "translate")
-				{
+			for (auto param : src.get<picojson::object>()) {
+				if (param.first == "translate") {
 					translate = sp::MakeVec3(param.second);
-				}
-				else if (param.first == "scale")
-				{
+				} else if (param.first == "scale") {
 					scale = sp::MakeVec3(param.second);
 				}
 			}
@@ -47,8 +39,7 @@ namespace ecs
 			// ecs::Barrier::Create(translate, scale, px, *em);
 		}
 
-		if (barrier->isOpen)
-		{
+		if (barrier->isOpen) {
 			Errorf("Deserialization of open barrier component not currently supported.");
 			return false;
 			// if (!dst.Has<Physics>() || !dst.Has<Renderable>())
@@ -63,11 +54,7 @@ namespace ecs
 	}
 
 	Entity Barrier::Create(
-		const glm::vec3 &pos,
-		const glm::vec3 &dimensions,
-		sp::PhysxManager &px,
-		ecs::EntityManager &em)
-	{
+		const glm::vec3 &pos, const glm::vec3 &dimensions, sp::PhysxManager &px, ecs::EntityManager &em) {
 		Entity barrier = em.NewEntity();
 		auto model = sp::GAssets.LoadModel("box");
 		barrier.Assign<Renderable>(model);
@@ -81,8 +68,7 @@ namespace ecs
 
 		sp::PhysxActorDesc desc;
 		desc.transform = physx::PxTransform(GlmVec3ToPxVec3(adjustedPos));
-		desc.scale = physx::PxMeshScale(GlmVec3ToPxVec3(dimensions),
-										physx::PxQuat(physx::PxIdentity));
+		desc.scale = physx::PxMeshScale(GlmVec3ToPxVec3(dimensions), physx::PxQuat(physx::PxIdentity));
 		desc.dynamic = true;
 		desc.kinematic = true;
 
@@ -93,8 +79,7 @@ namespace ecs
 		return barrier;
 	}
 
-	void Barrier::Close(Entity e, sp::PhysxManager &px)
-	{
+	void Barrier::Close(Entity e, sp::PhysxManager &px) {
 		auto barrier = e.Get<Barrier>();
 
 		px.EnableCollisions(e.Get<Physics>()->actor);
@@ -104,8 +89,7 @@ namespace ecs
 		barrier->isOpen = false;
 	}
 
-	void Barrier::Open(Entity e, sp::PhysxManager &px)
-	{
+	void Barrier::Open(Entity e, sp::PhysxManager &px) {
 		auto barrier = e.Get<Barrier>();
 
 		px.DisableCollisions(e.Get<Physics>()->actor);
@@ -114,4 +98,4 @@ namespace ecs
 		renderable->hidden = true;
 		barrier->isOpen = true;
 	}
-}
+} // namespace ecs

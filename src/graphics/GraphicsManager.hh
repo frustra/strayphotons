@@ -1,13 +1,12 @@
 #pragma once
 
-#include "graphics/Graphics.hh"
+#include "core/CVar.hh"
 #include "ecs/Entity.hh"
 #include "ecs/components/View.hh"
 #include "game/gui/ProfilerGui.hh"
-#include "core/CVar.hh"
+#include "graphics/Graphics.hh"
 
-namespace sp
-{
+namespace sp {
 	class Game;
 	class GuiRenderer;
 	class GraphicsContext;
@@ -17,8 +16,7 @@ namespace sp
 	extern CVar<float> CVarFieldOfView;
 	extern CVar<int> CVarWindowFullscreen;
 
-	class GraphicsManager
-	{
+	class GraphicsManager {
 	public:
 		GraphicsManager(Game *game);
 		~GraphicsManager();
@@ -34,8 +32,7 @@ namespace sp
 
 		bool Frame();
 
-		GraphicsContext *GetContext()
-		{
+		GraphicsContext *GetContext() {
 			return context;
 		}
 
@@ -51,4 +48,4 @@ namespace sp
 		double lastFrameEnd = 0, fpsTimer = 0;
 		int frameCounter = 0;
 	};
-}
+} // namespace sp

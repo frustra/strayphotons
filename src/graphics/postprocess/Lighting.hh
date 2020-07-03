@@ -2,75 +2,63 @@
 
 #include "PostProcess.hh"
 
-namespace sp
-{
-	class Tonemap : public PostProcessPass<1, 1>
-	{
+namespace sp {
+	class Tonemap : public PostProcessPass<1, 1> {
 	public:
 		void Process(const PostProcessingContext *context);
 
-		RenderTargetDesc GetOutputDesc(uint32 id)
-		{
+		RenderTargetDesc GetOutputDesc(uint32 id) {
 			auto desc = GetInput(0)->GetOutput()->TargetDesc;
 			desc.format = PF_RGBA8;
 			return desc;
 		}
 
-		string Name()
-		{
+		string Name() {
 			return "Tonemap";
 		}
 	};
 
-	class LumiHistogram : public PostProcessPass<1, 1>
-	{
+	class LumiHistogram : public PostProcessPass<1, 1> {
 	public:
 		void Process(const PostProcessingContext *context);
 
-		RenderTargetDesc GetOutputDesc(uint32 id)
-		{
+		RenderTargetDesc GetOutputDesc(uint32 id) {
 			return GetInput(0)->GetOutput()->TargetDesc;
 		}
 
-		string Name()
-		{
+		string Name() {
 			return "LumiHistogram";
 		}
 	};
 
-	class VoxelLighting : public PostProcessPass<12, 1>
-	{
+	class VoxelLighting : public PostProcessPass<12, 1> {
 	public:
-		VoxelLighting(VoxelData voxelData, bool ssaoEnabled)
-			: voxelData(voxelData), ssaoEnabled(ssaoEnabled) {}
+		VoxelLighting(VoxelData voxelData, bool ssaoEnabled) : voxelData(voxelData), ssaoEnabled(ssaoEnabled) {}
 
 		void Process(const PostProcessingContext *context);
 
-		RenderTargetDesc GetOutputDesc(uint32 id)
-		{
+		RenderTargetDesc GetOutputDesc(uint32 id) {
 			auto desc = GetInput(0)->GetOutput()->TargetDesc;
 			desc.format = PF_RGBA16F;
 			return desc;
 		}
 
-		string Name()
-		{
+		string Name() {
 			return "VoxelLighting";
 		}
+
 	private:
 		VoxelData voxelData;
 		bool ssaoEnabled;
 	};
 
-	class VoxelLightingDiffuse : public PostProcessPass<5, 1>
-	{
+	class VoxelLightingDiffuse : public PostProcessPass<5, 1> {
 	public:
 		VoxelLightingDiffuse(VoxelData voxelData);
 
 		void Process(const PostProcessingContext *context);
 
-		RenderTargetDesc GetOutputDesc(uint32 id)
-		{
+		RenderTargetDesc GetOutputDesc(uint32 id) {
 			auto desc = GetInput(0)->GetOutput()->TargetDesc;
 			desc.extent[0] /= downsample;
 			desc.extent[1] /= downsample;
@@ -78,8 +66,7 @@ namespace sp
 			return desc;
 		}
 
-		string Name()
-		{
+		string Name() {
 			return "VoxelLightingDiffuse";
 		}
 
@@ -87,4 +74,4 @@ namespace sp
 		VoxelData voxelData;
 		int downsample = 1;
 	};
-}
+} // namespace sp

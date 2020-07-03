@@ -1,17 +1,15 @@
 #pragma once
 
-#include "graphics/GraphicsContext.hh"
-#include "ecs/components/Renderable.hh"
 #include "assets/Model.hh"
+#include "ecs/components/Renderable.hh"
+#include "graphics/GraphicsContext.hh"
 
 #include <glm/glm.hpp>
 
-namespace sp
-{
+namespace sp {
 	class Game;
 
-	class BasicRenderer : public GraphicsContext
-	{
+	class BasicRenderer : public GraphicsContext {
 	public:
 		BasicRenderer(Game *game);
 		~BasicRenderer();
@@ -30,4 +28,4 @@ namespace sp
 		GLuint sceneProgram;
 		std::map<Model::Primitive *, GLModel::Primitive> primitiveMap;
 	};
-}
+} // namespace sp

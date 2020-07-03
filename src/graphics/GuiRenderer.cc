@@ -1,14 +1,15 @@
 #include "GuiRenderer.hh"
-#include "Renderer.hh"
+
 #include "GenericShaders.hh"
+#include "Renderer.hh"
 #include "ShaderManager.hh"
-#include <game/input/InputManager.hh>
-#include <game/gui/GuiManager.hh>
-#include "assets/AssetManager.hh"
 #include "assets/Asset.hh"
+#include "assets/AssetManager.hh"
 #include "core/PerfTimer.hh"
 
 #include <algorithm>
+#include <game/gui/GuiManager.hh>
+#include <game/input/InputManager.hh>
 #include <imgui/imgui.h>
 
 // clang-format off
@@ -20,11 +21,8 @@
 #endif
 // clang-format on
 
-namespace sp
-{
-	GuiRenderer::GuiRenderer(Renderer &renderer, GuiManager *manager)
-		: parent(renderer), manager(manager)
-	{
+namespace sp {
+	GuiRenderer::GuiRenderer(Renderer &renderer, GuiManager *manager) : parent(renderer), manager(manager) {
 		manager->SetGuiContext();
 		ImGuiIO &io = ImGui::GetIO();
 
@@ -54,8 +52,7 @@ namespace sp
 
 		io.IniFilename = nullptr;
 
-		std::pair<shared_ptr<Asset>, float> fontAssets[] =
-		{
+		std::pair<shared_ptr<Asset>, float> fontAssets[] = {
 			std::make_pair(GAssets.Load("fonts/DroidSans.ttf"), 16.0f),
 			std::make_pair(GAssets.Load("fonts/3270Medium.ttf"), 32.0f),
 			std::make_pair(GAssets.Load("fonts/3270Medium.ttf"), 25.0f),
@@ -63,19 +60,19 @@ namespace sp
 
 		io.Fonts->AddFontDefault(nullptr);
 
-		static const ImWchar glyphRanges[] =
-		{
-			0x0020, 0x00FF, // Basic Latin + Latin Supplement
-			0x2100, 0x214F, // Letterlike Symbols
+		static const ImWchar glyphRanges[] = {
+			0x0020,
+			0x00FF, // Basic Latin + Latin Supplement
+			0x2100,
+			0x214F, // Letterlike Symbols
 			0,
 		};
 
-		for (auto &pair : fontAssets)
-		{
+		for (auto &pair : fontAssets) {
 			auto &asset = pair.first;
 			Assert(asset != nullptr, "Failed to load gui font");
 			ImFontConfig cfg;
-			cfg.FontData = (void *) asset->Buffer();
+			cfg.FontData = (void *)asset->Buffer();
 			cfg.FontDataSize = asset->Size();
 			cfg.FontDataOwnedByAtlas = false;
 			cfg.SizePixels = pair.second;
@@ -84,12 +81,13 @@ namespace sp
 			io.Fonts->AddFont(&cfg);
 		}
 
-#define OFFSET(typ, field) ((size_t) &(((typ *) nullptr)->field))
+#define OFFSET(typ, field) ((size_t) & (((typ *)nullptr)->field))
 
-		vertices.Create().CreateVAO()
-		.EnableAttrib(0, 2, GL_FLOAT, false, OFFSET(ImDrawVert, pos), sizeof(ImDrawVert))
-		.EnableAttrib(1, 2, GL_FLOAT, false, OFFSET(ImDrawVert, uv), sizeof(ImDrawVert))
-		.EnableAttrib(2, 4, GL_UNSIGNED_BYTE, true, OFFSET(ImDrawVert, col), sizeof(ImDrawVert));
+		vertices.Create()
+			.CreateVAO()
+			.EnableAttrib(0, 2, GL_FLOAT, false, OFFSET(ImDrawVert, pos), sizeof(ImDrawVert))
+			.EnableAttrib(1, 2, GL_FLOAT, false, OFFSET(ImDrawVert, uv), sizeof(ImDrawVert))
+			.EnableAttrib(2, 4, GL_UNSIGNED_BYTE, true, OFFSET(ImDrawVert, col), sizeof(ImDrawVert));
 
 		indices.Create();
 
@@ -99,20 +97,18 @@ namespace sp
 		int fontWidth, fontHeight;
 		io.Fonts->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
 
-		fontTex.Create().Filter(GL_LINEAR, GL_LINEAR)
-		.Size(fontWidth, fontHeight)
-		.Storage(PF_RGBA8)
-		.Image2D(fontData, 0, fontWidth, fontHeight);
+		fontTex.Create()
+			.Filter(GL_LINEAR, GL_LINEAR)
+			.Size(fontWidth, fontHeight)
+			.Storage(PF_RGBA8)
+			.Image2D(fontData, 0, fontWidth, fontHeight);
 
-		io.Fonts->TexID = (void *)(intptr_t) fontTex.handle;
+		io.Fonts->TexID = (void *)(intptr_t)fontTex.handle;
 	}
 
-	GuiRenderer::~GuiRenderer()
-	{
-	}
+	GuiRenderer::~GuiRenderer() {}
 
-	void GuiRenderer::Render(ecs::View view)
-	{
+	void GuiRenderer::Render(ecs::View view) {
 		RenderPhase phase("GuiRender", parent.Timer);
 
 		manager->SetGuiContext();
@@ -150,31 +146,24 @@ namespace sp
 		vertices.BindVAO();
 		indices.BindElementArray();
 
-		for (int i = 0; i < drawData->CmdListsCount; i++)
-		{
+		for (int i = 0; i < drawData->CmdListsCount; i++) {
 			const auto cmdList = drawData->CmdLists[i];
 			const ImDrawIdx *offset = 0;
 
 			vertices.SetElements(cmdList->VtxBuffer.size(), &cmdList->VtxBuffer.front(), GL_STREAM_DRAW);
 			indices.SetElements(cmdList->IdxBuffer.size(), &cmdList->IdxBuffer.front(), GL_STREAM_DRAW);
 
-			for (const auto &pcmd : cmdList->CmdBuffer)
-			{
-				if (pcmd.UserCallback)
-				{
+			for (const auto &pcmd : cmdList->CmdBuffer) {
+				if (pcmd.UserCallback) {
 					pcmd.UserCallback(cmdList, &pcmd);
-				}
-				else
-				{
+				} else {
 					auto texID = (GLuint)(intptr_t)pcmd.TextureId;
 					glBindTextures(0, 1, &texID);
 
-					glScissor(
-						(int)pcmd.ClipRect.x,
+					glScissor((int)pcmd.ClipRect.x,
 						(int)(extents.y - pcmd.ClipRect.w),
 						(int)(pcmd.ClipRect.z - pcmd.ClipRect.x),
-						(int)(pcmd.ClipRect.w - pcmd.ClipRect.y)
-					);
+						(int)(pcmd.ClipRect.w - pcmd.ClipRect.y));
 
 					GLenum elemType = sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
 					glDrawElements(GL_TRIANGLES, pcmd.ElemCount, elemType, offset);
@@ -186,4 +175,4 @@ namespace sp
 		glDisable(GL_SCISSOR_TEST);
 		glDisable(GL_BLEND);
 	}
-}
+} // namespace sp

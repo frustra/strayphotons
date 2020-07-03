@@ -2,22 +2,18 @@
 
 #include "Common.hh"
 
+#include <Ecs.hh>
+#include <ecs/Components.hh>
+#include <ecs/NamedEntity.hh>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include <Ecs.hh>
-#include <ecs/NamedEntity.hh>
-
-#include <ecs/Components.hh>
-
-namespace ecs
-{
-	class Transform
-	{
+namespace ecs {
+	class Transform {
 	public:
 		Transform() : dirty(false) {}
-		Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>()) : rotate(orientation), dirty(false)
-		{
+		Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>())
+			: rotate(orientation), dirty(false) {
 			SetPosition(pos);
 		}
 
@@ -82,6 +78,7 @@ namespace ecs
 		glm::vec3 GetScaleVec() const;
 
 		bool ClearDirty();
+
 	private:
 		ecs::NamedEntity parent;
 
@@ -101,4 +98,4 @@ namespace ecs
 
 	template<>
 	bool Component<Transform>::LoadEntity(Entity &dst, picojson::value &src);
-}
+} // namespace ecs

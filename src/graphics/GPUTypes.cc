@@ -1,25 +1,21 @@
 #include "GPUTypes.hh"
-#include "ecs/components/View.hh"
+
 #include "ecs/components/Light.hh"
 #include "ecs/components/Mirror.hh"
 #include "ecs/components/Transform.hh"
+#include "ecs/components/View.hh"
 #include "ecs/components/VoxelInfo.hh"
 
-namespace sp
-{
-	int FillLightData(GLLightData *data, ecs::EntityManager &manager)
-	{
+namespace sp {
+	int FillLightData(GLLightData *data, ecs::EntityManager &manager) {
 		int lightNum = 0;
-		for (auto entity : manager.EntitiesWith<ecs::Light>())
-		{
+		for (auto entity : manager.EntitiesWith<ecs::Light>()) {
 			auto light = entity.Get<ecs::Light>();
-			if (!light->on)
-			{
+			if (!light->on) {
 				continue;
 			}
 
-			if (entity.Has<ecs::View>())
-			{
+			if (entity.Has<ecs::View>()) {
 				auto view = entity.Get<ecs::View>();
 				auto transform = entity.Get<ecs::Transform>();
 				data->position = transform->GetGlobalTransform(manager) * glm::vec4(0, 0, 0, 1);
@@ -35,18 +31,17 @@ namespace sp
 				data->illuminance = light->illuminance;
 				data->gelId = light->gelId;
 				lightNum++;
-				if (lightNum >= MAX_LIGHTS) break;
+				if (lightNum >= MAX_LIGHTS)
+					break;
 				data++;
 			}
 		}
 		return lightNum;
 	}
 
-	int FillMirrorData(GLMirrorData *data, ecs::EntityManager &manager)
-	{
+	int FillMirrorData(GLMirrorData *data, ecs::EntityManager &manager) {
 		int mirrorNum = 0;
-		for (auto entity : manager.EntitiesWith<ecs::Mirror>())
-		{
+		for (auto entity : manager.EntitiesWith<ecs::Mirror>()) {
 			auto mirror = entity.Get<ecs::Mirror>();
 			auto transform = entity.Get<ecs::Transform>();
 			data->modelMat = transform->GetGlobalTransform(manager);
@@ -61,20 +56,19 @@ namespace sp
 			data->plane = glm::vec4(mirrorNormal, d);
 
 			mirrorNum++;
-			if (mirrorNum >= MAX_MIRRORS) break;
+			if (mirrorNum >= MAX_MIRRORS)
+				break;
 			data++;
 		}
 		return mirrorNum;
 	}
 
-	void FillVoxelInfo(GLVoxelInfo *data, ecs::VoxelInfo &source)
-	{
+	void FillVoxelInfo(GLVoxelInfo *data, ecs::VoxelInfo &source) {
 		data->voxelSize = source.voxelSize;
 		data->voxelGridCenter = source.voxelGridCenter;
-		for (int i = 0; i < MAX_VOXEL_AREAS; i++)
-		{
+		for (int i = 0; i < MAX_VOXEL_AREAS; i++) {
 			data->areas[i].min = source.areas[i].min - glm::vec3(0.05);
 			data->areas[i].max = source.areas[i].max + glm::vec3(0.05);
 		}
 	}
-}
+} // namespace sp

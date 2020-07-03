@@ -1,33 +1,29 @@
 #pragma once
 
-#include "CVar.hh"
 #include "CFunc.hh"
+#include "CVar.hh"
 #include "Logging.hh"
 
+#include <condition_variable>
 #include <map>
 #include <mutex>
 #include <queue>
 #include <thread>
-#include <condition_variable>
 
-namespace sp
-{
+namespace sp {
 	class Script;
 
-	struct ConsoleLine
-	{
+	struct ConsoleLine {
 		logging::Level level;
 		string text;
 	};
 
-	struct ConsoleInputLine
-	{
+	struct ConsoleInputLine {
 		std::condition_variable handled;
 		string text;
 	};
 
-	class ConsoleManager
-	{
+	class ConsoleManager {
 	public:
 		ConsoleManager();
 		void AddCVar(CVarBase *cvar);
@@ -37,13 +33,11 @@ namespace sp
 
 		void AddLog(logging::Level lvl, const string &line);
 
-		const vector<ConsoleLine> Lines()
-		{
+		const vector<ConsoleLine> Lines() {
 			return outputLines;
 		}
 
-		const vector<string> History()
-		{
+		const vector<string> History() {
 			return history;
 		}
 
@@ -53,8 +47,7 @@ namespace sp
 		string AutoComplete(const string &input);
 		vector<string> AllCompletions(const string &input);
 
-		const std::map<string, CVarBase *> CVars()
-		{
+		const std::map<string, CVarBase *> CVars() {
 			return cvars;
 		}
 
@@ -70,4 +63,4 @@ namespace sp
 	};
 
 	ConsoleManager &GetConsoleManager();
-}
+} // namespace sp

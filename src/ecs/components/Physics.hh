@@ -1,29 +1,23 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <PxActor.h>
-#include <PxRigidDynamic.h>
 #include "physx/PhysxActorDesc.hh"
 
+#include <PxActor.h>
+#include <PxRigidDynamic.h>
 #include <ecs/Components.hh>
 #include <ecs/NamedEntity.hh>
+#include <glm/glm.hpp>
 
-namespace sp
-{
+namespace sp {
 	class Model;
 }
 
-namespace ecs
-{
-	struct Physics
-	{
+namespace ecs {
+	struct Physics {
 		Physics() {}
 		Physics(shared_ptr<sp::Model> model, sp::PhysxActorDesc desc) : model(model), desc(desc) {}
-		Physics(
-			physx::PxRigidActor *actor,
-			shared_ptr<sp::Model> model,
-			sp::PhysxActorDesc desc
-		) : actor(actor), model(model), desc(desc) {}
+		Physics(physx::PxRigidActor *actor, shared_ptr<sp::Model> model, sp::PhysxActorDesc desc)
+			: actor(actor), model(model), desc(desc) {}
 
 		physx::PxRigidActor *actor = nullptr;
 		shared_ptr<sp::Model> model;
@@ -36,4 +30,4 @@ namespace ecs
 
 	template<>
 	bool Component<Physics>::LoadEntity(Entity &dst, picojson::value &src);
-}
+} // namespace ecs

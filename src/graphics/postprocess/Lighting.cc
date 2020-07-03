@@ -1,49 +1,57 @@
 #include "Lighting.hh"
-#include "core/Logging.hh"
+
 #include "core/CVar.hh"
-#include "graphics/Renderer.hh"
-#include "graphics/ShaderManager.hh"
-#include "graphics/GenericShaders.hh"
-#include "graphics/Util.hh"
-#include "graphics/Buffer.hh"
-#include "graphics/GPUTypes.hh"
+#include "core/Logging.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/Transform.hh"
+#include "graphics/Buffer.hh"
+#include "graphics/GPUTypes.hh"
+#include "graphics/GenericShaders.hh"
+#include "graphics/Renderer.hh"
+#include "graphics/ShaderManager.hh"
+#include "graphics/Util.hh"
 
-namespace sp
-{
-	static CVar<int> CVarVoxelLightingMode("r.VoxelLighting", 1, "Voxel lighting mode (0: direct only, 1: full, 2: indirect only, 3: diffuse only, 4: specular only)");
-	static CVar<int> CVarVoxelDiffuseDownsample("r.VoxelDiffuseDownsample", 1, "N times downsampled rendering of indirect diffuse lighting");
+namespace sp {
+	static CVar<int> CVarVoxelLightingMode("r.VoxelLighting", 1,
+		"Voxel lighting mode (0: direct only, 1: full, 2: indirect only, 3: diffuse only, 4: specular only)");
+	static CVar<int> CVarVoxelDiffuseDownsample(
+		"r.VoxelDiffuseDownsample", 1, "N times downsampled rendering of indirect diffuse lighting");
 	static CVar<bool> CVarDrawHistogram("r.Histogram", false, "Draw HDR luminosity histogram");
 	static CVar<float> CVarExposure("r.Exposure", 0.0, "Fixed exposure value in linear units (0: auto)");
-	static CVar<float> CVarExposureMin("r.ExposureMin", 0.01, "Minimum linear exposure value (controls max brightness)");
+	static CVar<float> CVarExposureMin(
+		"r.ExposureMin", 0.01, "Minimum linear exposure value (controls max brightness)");
 	static CVar<float> CVarExposureMax("r.ExposureMax", 10, "Maximum linear exposure value (controls min brightness)");
-	static CVar<float> CVarExposureComp("r.ExposureComp", 3, "Exposure bias in EV units (logarithmic) for eye adaptation");
-	static CVar<float> CVarEyeAdaptationLow("r.EyeAdaptationLow", 65, "Percent of darkest pixels to ignore in eye adaptation");
-	static CVar<float> CVarEyeAdaptationHigh("r.EyeAdaptationHigh", 92, "Percent of brightest pixels to ignore in eye adaptation");
-	static CVar<float> CVarEyeAdaptationMinLuminance("r.EyeAdaptationMinLuminance", 0.01, "Minimum target luminance for eye adaptation");
-	static CVar<float> CVarEyeAdaptationMaxLuminance("r.EyeAdaptationMaxLuminance", 10000, "Maximum target luminance for eye adaptation");
-	static CVar<float> CVarEyeAdaptationUpRate("r.EyeAdaptationUpRate", 0.1, "Rate at which eye adapts to brighter scenes");
-	static CVar<float> CVarEyeAdaptationDownRate("r.EyeAdaptationDownRate", 0.04, "Rate at which eye adapts to darker scenes");
-	static CVar<float> CVarEyeAdaptationKeyComp("r.EyeAdaptationKeyComp", 1.0, "Amount of key compensation for eye adaptation (0-1)");
+	static CVar<float> CVarExposureComp(
+		"r.ExposureComp", 3, "Exposure bias in EV units (logarithmic) for eye adaptation");
+	static CVar<float> CVarEyeAdaptationLow(
+		"r.EyeAdaptationLow", 65, "Percent of darkest pixels to ignore in eye adaptation");
+	static CVar<float> CVarEyeAdaptationHigh(
+		"r.EyeAdaptationHigh", 92, "Percent of brightest pixels to ignore in eye adaptation");
+	static CVar<float> CVarEyeAdaptationMinLuminance(
+		"r.EyeAdaptationMinLuminance", 0.01, "Minimum target luminance for eye adaptation");
+	static CVar<float> CVarEyeAdaptationMaxLuminance(
+		"r.EyeAdaptationMaxLuminance", 10000, "Maximum target luminance for eye adaptation");
+	static CVar<float> CVarEyeAdaptationUpRate(
+		"r.EyeAdaptationUpRate", 0.1, "Rate at which eye adapts to brighter scenes");
+	static CVar<float> CVarEyeAdaptationDownRate(
+		"r.EyeAdaptationDownRate", 0.04, "Rate at which eye adapts to darker scenes");
+	static CVar<float> CVarEyeAdaptationKeyComp(
+		"r.EyeAdaptationKeyComp", 1.0, "Amount of key compensation for eye adaptation (0-1)");
 	static CVar<float> CVarSaturationMin("r.SaturationMin", 0.0, "Saturation minimum clip");
 	static CVar<float> CVarSaturationMax("r.SaturationMax", 1.05, "Saturation maximum clip");
 
-	class TonemapFS : public Shader
-	{
+	class TonemapFS : public Shader {
 		SHADER_TYPE(TonemapFS)
 		using Shader::Shader;
 
-		void SetParams()
-		{
+		void SetParams() {
 			Set("saturation", glm::vec2(CVarSaturationMin.Get(), CVarSaturationMax.Get()));
 		}
 	};
 
 	IMPLEMENT_SHADER_TYPE(TonemapFS, "tonemap.frag", Fragment);
 
-	void Tonemap::Process(const PostProcessingContext *context)
-	{
+	void Tonemap::Process(const PostProcessingContext *context) {
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context);
 
@@ -54,50 +62,40 @@ namespace sp
 		DrawScreenCover();
 	}
 
-	class LumiHistogramCS : public Shader
-	{
+	class LumiHistogramCS : public Shader {
 		SHADER_TYPE(LumiHistogramCS)
 
 		const int Bins = 64;
 
-		LumiHistogramCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
-		}
+		LumiHistogramCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput) {}
 
-		RenderTarget::Ref GetTarget(Renderer *r)
-		{
-			if (!target)
-			{
-				target = r->RTPool->Get(RenderTargetDesc(PF_R32UI, { Bins, 1 }));
+		RenderTarget::Ref GetTarget(Renderer *r) {
+			if (!target) {
+				target = r->RTPool->Get(RenderTargetDesc(PF_R32UI, {Bins, 1}));
 			}
 			return target;
 		}
 
-		double ComputeScaledLuminance()
-		{
-			if (!readBackBuf)
-			{
+		double ComputeScaledLuminance() {
+			if (!readBackBuf) {
 				return 0.0f;
 			}
 
-			uint32 *buf = (uint32 *) readBackBuf.Map(GL_READ_ONLY);
-			if (!buf)
-			{
+			uint32 *buf = (uint32 *)readBackBuf.Map(GL_READ_ONLY);
+			if (!buf) {
 				Errorf("Missed readback of luminosity histogram");
 				return 0.0f;
 			}
 
 			uint64 sum = 0;
 
-			for (int i = 0; i < Bins; i++)
-				sum += buf[i];
+			for (int i = 0; i < Bins; i++) sum += buf[i];
 
 			double discardLower = sum * CVarEyeAdaptationLow.Get() / 100.0;
 			double discardUpper = sum * CVarEyeAdaptationHigh.Get() / 100.0;
 			double accum = 0.0, totalWeight = 0.0;
 
-			for (int i = 0; i < Bins; i++)
-			{
+			for (int i = 0; i < Bins; i++) {
 				double weight = buf[i];
 				double m = std::min(weight, discardLower);
 
@@ -108,7 +106,7 @@ namespace sp
 				weight = std::min(weight, discardUpper);
 				discardUpper -= weight;
 
-				double luminance = LuminanceFromBin(i / (double) (Bins - 1));
+				double luminance = LuminanceFromBin(i / (double)(Bins - 1));
 				accum += luminance * weight;
 				totalWeight += weight;
 			}
@@ -117,21 +115,23 @@ namespace sp
 			return accum / std::max(1e-5, totalWeight);
 		}
 
-		double LuminanceFromBin(double bin)
-		{
+		double LuminanceFromBin(double bin) {
 			double lumMin = -8, lumMax = 4;
 			return std::exp2(bin * (lumMax - lumMin) + lumMin);
 		}
 
-		void StartReadback()
-		{
-			if (!readBackBuf)
-			{
+		void StartReadback() {
+			if (!readBackBuf) {
 				readBackBuf.Create().Data(sizeof(uint32) * Bins, nullptr, GL_STREAM_READ);
 			}
 
 			readBackBuf.Bind(GL_PIXEL_PACK_BUFFER);
-			glGetTextureImage(target->GetTexture().handle, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, sizeof(uint32) * Bins, 0);
+			glGetTextureImage(target->GetTexture().handle,
+				0,
+				GL_RED_INTEGER,
+				GL_UNSIGNED_INT,
+				sizeof(uint32) * Bins,
+				0);
 		}
 
 	private:
@@ -141,19 +141,15 @@ namespace sp
 
 	IMPLEMENT_SHADER_TYPE(LumiHistogramCS, "lumi_histogram.comp", Compute);
 
-	class RenderHistogramFS : public Shader
-	{
+	class RenderHistogramFS : public Shader {
 		SHADER_TYPE(RenderHistogramFS)
 
-		RenderHistogramFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
-		}
+		RenderHistogramFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput) {}
 	};
 
 	IMPLEMENT_SHADER_TYPE(RenderHistogramFS, "render_histogram.frag", Fragment);
 
-	void LumiHistogram::Process(const PostProcessingContext *context)
-	{
+	void LumiHistogram::Process(const PostProcessingContext *context) {
 		const int wgsize = 16;
 		const int downsample = 2; // Calculate histograms with N times fewer workgroups.
 
@@ -175,62 +171,51 @@ namespace sp
 
 		shader->StartReadback();
 
-		if (CVarDrawHistogram.Get())
-		{
+		if (CVarDrawHistogram.Get()) {
 			auto dest = outputs[0].AllocateTarget(context);
 			r->SetRenderTarget(dest, nullptr);
 			r->ShaderControl->BindPipeline<BasicPostVS, RenderHistogramFS>();
 			DrawScreenCover();
-		}
-		else
-		{
+		} else {
 			SetOutputTarget(0, GetInput(0)->GetOutput()->TargetRef);
 		}
 	}
 
-	class VoxelLightingFS : public Shader
-	{
+	class VoxelLightingFS : public Shader {
 		SHADER_TYPE(VoxelLightingFS)
 
-		VoxelLightingFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
+		VoxelLightingFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput) {
 			BindBuffer(lightData, 0);
 			BindBuffer(mirrorData, 1);
 			BindBuffer(voxelInfo, 2);
 		}
 
-		void SetLightData(int count, GLLightData *data)
-		{
+		void SetLightData(int count, GLLightData *data) {
 			Set("lightCount", count);
 			BufferData(lightData, sizeof(GLLightData) * count, data);
 		}
 
-		void SetMirrorData(int count, GLMirrorData *data)
-		{
+		void SetMirrorData(int count, GLMirrorData *data) {
 			Set("mirrorCount", count);
 			BufferData(mirrorData, sizeof(GLMirrorData) * count, data);
 		}
 
-		void SetExposure(float newExposure)
-		{
+		void SetExposure(float newExposure) {
 			Set("exposure", newExposure);
 		}
 
-		void SetViewParams(const ecs::View &view)
-		{
+		void SetViewParams(const ecs::View &view) {
 			Set("invProjMat", view.invProjMat);
 			Set("invViewMat", view.invViewMat);
 			Set("skyIlluminance", view.skyIlluminance);
 		}
 
-		void SetMode(int newMode, int ssaoMode)
-		{
+		void SetMode(int newMode, int ssaoMode) {
 			Set("mode", newMode);
 			Set("ssaoEnabled", ssaoMode);
 		}
 
-		void SetVoxelInfo(GLVoxelInfo *data, int diffDownsample)
-		{
+		void SetVoxelInfo(GLVoxelInfo *data, int diffDownsample) {
 			BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
 			Set("diffuseDownsample", diffDownsample);
 		}
@@ -241,27 +226,22 @@ namespace sp
 
 	IMPLEMENT_SHADER_TYPE(VoxelLightingFS, "voxel_lighting.frag", Fragment);
 
-	class VoxelLightingDiffuseFS : public Shader
-	{
+	class VoxelLightingDiffuseFS : public Shader {
 		SHADER_TYPE(VoxelLightingDiffuseFS)
 
-		VoxelLightingDiffuseFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
+		VoxelLightingDiffuseFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput) {
 			BindBuffer(voxelInfo, 0);
 		}
 
-		void SetExposure(float newExposure)
-		{
+		void SetExposure(float newExposure) {
 			Set("exposure", newExposure);
 		}
 
-		void SetViewParams(const ecs::View &view)
-		{
+		void SetViewParams(const ecs::View &view) {
 			Set("invViewMat", view.invViewMat);
 		}
 
-		void SetVoxelInfo(GLVoxelInfo *data, int diffDownsample)
-		{
+		void SetVoxelInfo(GLVoxelInfo *data, int diffDownsample) {
 			BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
 			Set("diffuseDownsample", diffDownsample);
 		}
@@ -272,13 +252,13 @@ namespace sp
 
 	IMPLEMENT_SHADER_TYPE(VoxelLightingDiffuseFS, "voxel_lighting_diffuse.frag", Fragment);
 
-	void VoxelLighting::Process(const PostProcessingContext *context)
-	{
+	void VoxelLighting::Process(const PostProcessingContext *context) {
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context);
 
 		int diffuseDownsample = CVarVoxelDiffuseDownsample.Get();
-		if (diffuseDownsample < 1) diffuseDownsample = 1;
+		if (diffuseDownsample < 1)
+			diffuseDownsample = 1;
 
 		context->MirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 		context->MirrorSceneData.Bind(GL_SHADER_STORAGE_BUFFER, 1);
@@ -304,14 +284,13 @@ namespace sp
 		DrawScreenCover();
 	}
 
-	VoxelLightingDiffuse::VoxelLightingDiffuse(VoxelData voxelData) : voxelData(voxelData)
-	{
+	VoxelLightingDiffuse::VoxelLightingDiffuse(VoxelData voxelData) : voxelData(voxelData) {
 		downsample = CVarVoxelDiffuseDownsample.Get();
-		if (downsample < 1) downsample = 1;
+		if (downsample < 1)
+			downsample = 1;
 	}
 
-	void VoxelLightingDiffuse::Process(const PostProcessingContext *context)
-	{
+	void VoxelLightingDiffuse::Process(const PostProcessingContext *context) {
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context);
 		auto shader = r->GlobalShaders->Get<VoxelLightingDiffuseFS>();
@@ -323,17 +302,13 @@ namespace sp
 		shader->SetViewParams(context->view);
 		shader->SetVoxelInfo(&voxelInfo, downsample);
 
-		if (CVarExposure.Get() > 0.0f)
-		{
+		if (CVarExposure.Get() > 0.0f) {
 			r->Exposure = CVarExposure.Get();
-		}
-		else
-		{
+		} else {
 			double luminance = lumishader->ComputeScaledLuminance();
-			if (luminance > 0)
-			{
-				luminance = std::min(luminance, (double) CVarEyeAdaptationMaxLuminance.Get());
-				luminance = std::max(luminance, (double) CVarEyeAdaptationMinLuminance.Get());
+			if (luminance > 0) {
+				luminance = std::min(luminance, (double)CVarEyeAdaptationMaxLuminance.Get());
+				luminance = std::max(luminance, (double)CVarEyeAdaptationMinLuminance.Get());
 				luminance /= r->Exposure;
 
 				double autoKeyComp = 1.03 - 2.0 / (std::log10(luminance * 1000.0 + 1.0) + 2.0);
@@ -342,11 +317,12 @@ namespace sp
 				double ev100 = std::log2(luminance * 100.0 / 12.5) - CVarExposureComp.Get();
 				double newExposure = autoKeyComp / (1.2 * std::pow(2.0, ev100));
 
-				float alpha = newExposure < r->Exposure ? CVarEyeAdaptationUpRate.Get() : CVarEyeAdaptationDownRate.Get();
+				float alpha =
+					newExposure < r->Exposure ? CVarEyeAdaptationUpRate.Get() : CVarEyeAdaptationDownRate.Get();
 				alpha = std::max(std::min(alpha, 0.9999f), 0.0001f);
 
 				double blended = r->Exposure * (1.0f - alpha) + newExposure * alpha;
-				blended = std::max(std::min(blended, (double) CVarExposureMax.Get()), (double) CVarExposureMin.Get());
+				blended = std::max(std::min(blended, (double)CVarExposureMax.Get()), (double)CVarExposureMin.Get());
 				r->Exposure = blended;
 			}
 		}
@@ -363,4 +339,4 @@ namespace sp
 		auto view = context->view;
 		glViewport(0, 0, view.extents.x, view.extents.y);
 	}
-}
+} // namespace sp

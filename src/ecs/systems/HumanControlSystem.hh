@@ -1,17 +1,15 @@
 #pragma once
 
-#include <Ecs.hh>
 #include "ecs/components/Controller.hh"
-#include <game/input/InputManager.hh>
-
 #include "physx/PhysxManager.hh"
-#include <string>
 
+#include <Ecs.hh>
+#include <game/input/InputManager.hh>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <string>
 
-namespace ecs
-{
+namespace ecs {
 	static const std::string INPUT_ACTION_PLAYER_MOVE_FORWARD = sp::INPUT_ACTION_PLAYER_BASE + "/move_forward";
 	static const std::string INPUT_ACTION_PLAYER_MOVE_BACKWARD = sp::INPUT_ACTION_PLAYER_BASE + "/move_backward";
 	static const std::string INPUT_ACTION_PLAYER_MOVE_LEFT = sp::INPUT_ACTION_PLAYER_BASE + "/move_left";
@@ -22,8 +20,7 @@ namespace ecs
 	static const std::string INPUT_ACTION_PLAYER_INTERACT = sp::INPUT_ACTION_PLAYER_BASE + "/interact";
 	static const std::string INPUT_ACTION_PLAYER_INTERACT_ROTATE = sp::INPUT_ACTION_PLAYER_BASE + "/interact_rotate";
 
-	class HumanControlSystem
-	{
+	class HumanControlSystem {
 	public:
 		HumanControlSystem(ecs::EntityManager *entities, sp::PhysxManager *physics);
 		~HumanControlSystem();
@@ -46,17 +43,18 @@ namespace ecs
 		void Teleport(ecs::Entity entity, glm::vec3 position, glm::quat rotation = glm::quat());
 
 	private:
-		glm::vec3 CalculatePlayerVelocity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint, bool crouch);
+		glm::vec3 CalculatePlayerVelocity(
+			ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint, bool crouch);
 		void MoveEntity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 velocity);
 
 		/**
-		* Resize entity used for crouching and uncrouching. Can perform overlap checks to make sure resize is valid
-		*/
+		 * Resize entity used for crouching and uncrouching. Can perform overlap checks to make sure resize is valid
+		 */
 		bool ResizeEntity(ecs::Entity entity, float height, bool overlapCheck);
 
 		/**
-		* Pick up the object that the player is looking at and make it move at to a fixed location relative to camera
-		*/
+		 * Pick up the object that the player is looking at and make it move at to a fixed location relative to camera
+		 */
 		void Interact(ecs::Entity entity, double dt);
 
 		/**
@@ -68,6 +66,5 @@ namespace ecs
 		ecs::EntityManager *entities = nullptr;
 		sp::InputManager *input = nullptr;
 		sp::PhysxManager *physics = nullptr;
-
 	};
-}
+} // namespace ecs

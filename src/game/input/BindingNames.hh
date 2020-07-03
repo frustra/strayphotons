@@ -3,11 +3,9 @@
 #include <robin_hood.h>
 #include <string>
 
-namespace sp
-{
+namespace sp {
 	// All inputs in UPPERCASE to allow for case-insensitivity
-	static robin_hood::unordered_flat_map<std::string, std::string> UserBindingNames =
-	{
+	static robin_hood::unordered_flat_map<std::string, std::string> UserBindingNames = {
 		{"0", "0"},
 		{"1", "1"},
 		{"2", "2"},
@@ -179,4 +177,4 @@ namespace sp
 		{"RIGHT_ALT", "alt_right"},
 		{"RIGHT_SUPER", "super_right"},
 	};
-}
+} // namespace sp

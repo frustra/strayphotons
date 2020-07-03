@@ -1,19 +1,18 @@
 #pragma once
 
-#include "graphics/Buffer.hh"
-#include "graphics/Texture.hh"
-#include "graphics/Shader.hh"
-#include "graphics/ShaderManager.hh"
-#include "graphics/GPUTypes.hh"
 #include "ecs/components/LightSensor.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/VoxelInfo.hh"
+#include "graphics/Buffer.hh"
+#include "graphics/GPUTypes.hh"
+#include "graphics/Shader.hh"
+#include "graphics/ShaderManager.hh"
+#include "graphics/Texture.hh"
+
 #include <Ecs.hh>
 
-namespace sp
-{
-	class LightSensorUpdateCS : public Shader
-	{
+namespace sp {
+	class LightSensorUpdateCS : public Shader {
 		SHADER_TYPE(LightSensorUpdateCS);
 		LightSensorUpdateCS(shared_ptr<ShaderCompileOutput> compileOutput);
 
@@ -32,4 +31,4 @@ namespace sp
 		Buffer readBackBuf;
 		size_t readBackSize;
 	};
-}
+} // namespace sp

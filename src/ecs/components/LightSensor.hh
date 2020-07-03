@@ -1,34 +1,30 @@
 #pragma once
 
 #include "Common.hh"
-#include <glm/glm.hpp>
 
 #include <ecs/Components.hh>
 #include <ecs/NamedEntity.hh>
+#include <glm/glm.hpp>
 
-namespace ecs
-{
-	class LightSensor
-	{
+namespace ecs {
+	class LightSensor {
 	public:
-		struct Trigger
-		{
+		struct Trigger {
 			glm::vec3 illuminance;
 			string oncmd, offcmd;
 			float onSignal = 1.0f;
 			float offSignal = 0.0f;
 
-			bool operator()(glm::vec3 val)
-			{
+			bool operator()(glm::vec3 val) {
 				return glm::all(glm::greaterThanEqual(val, illuminance));
 			}
 		};
 
 		// Required parameters.
-		glm::vec3 position = { 0, 0, 0 }; // In model space.
-		glm::vec3 direction = { 0, 0, -1 }; // In model space.
-		glm::vec3 onColor = { 0, 1, 0 };
-		glm::vec3 offColor = { 0, 0, 0 };
+		glm::vec3 position = {0, 0, 0};	  // In model space.
+		glm::vec3 direction = {0, 0, -1}; // In model space.
+		glm::vec3 onColor = {0, 1, 0};
+		glm::vec3 offColor = {0, 0, 0};
 
 		vector<Trigger> triggers;
 		vector<NamedEntity> outputTo;
@@ -45,4 +41,4 @@ namespace ecs
 
 	template<>
 	bool Component<LightSensor>::LoadEntity(Entity &dst, picojson::value &src);
-}
+} // namespace ecs

@@ -2,17 +2,13 @@
 
 #include "Common.hh"
 
-#include <functional>
-
 #include <characterkinematic/PxCapsuleController.h>
-
+#include <ecs/Components.hh>
+#include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include <ecs/Components.hh>
-
-namespace ecs
-{
+namespace ecs {
 	// Units in meters
 	const float PLAYER_HEIGHT = 1.7f;
 	const float PLAYER_CROUCH_HEIGHT = 0.8f;
@@ -27,8 +23,7 @@ namespace ecs
 	const float PLAYER_AIR_STRAFE = 0.8f; // Movement scaler for acceleration in air
 	const float PLAYER_PUSH_FORCE = 0.3f;
 
-	class HumanController
-	{
+	class HumanController {
 	public:
 		/**
 		 * Set pitch and yaw from this quaternion.
@@ -53,5 +48,4 @@ namespace ecs
 	};
 
 	static Component<HumanController> ComponentHumanController("human_controller");
-}
-
+} // namespace ecs

@@ -1,43 +1,39 @@
 #pragma once
-#include "graphics/Shader.hh"
-#include "graphics/ShaderManager.hh"
-#include "graphics/GPUTypes.hh"
-#include "ecs/components/View.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/LightSensor.hh"
 #include "ecs/components/Transform.hh"
+#include "ecs/components/View.hh"
 #include "ecs/components/VoxelInfo.hh"
+#include "graphics/GPUTypes.hh"
+#include "graphics/Shader.hh"
+#include "graphics/ShaderManager.hh"
+
 #include <Ecs.hh>
 
-namespace sp
-{
-	class SceneShader : public Shader
-	{
+namespace sp {
+	class SceneShader : public Shader {
 	public:
 		SceneShader(shared_ptr<ShaderCompileOutput> compileOutput);
 		void SetParams(const ecs::View &view, glm::mat4 modelMat, glm::mat4 primitiveMat);
-		void SetBoneData(int count, glm::mat4* bones);
+		void SetBoneData(int count, glm::mat4 *bones);
 
 	private:
 		UniformBuffer boneData;
 	};
 
-	class SceneVS : public SceneShader
-	{
+	class SceneVS : public SceneShader {
 		SHADER_TYPE(SceneVS)
 		using SceneShader::SceneShader;
 	};
 
-	class SceneGS : public SceneShader
-	{
+	class SceneGS : public SceneShader {
 		SHADER_TYPE(SceneGS)
 		using SceneShader::SceneShader;
 
 		void SetRenderMirrors(bool v);
 	};
 
-	class SceneFS : public Shader
-	{
+	class SceneFS : public Shader {
 		SHADER_TYPE(SceneFS)
 		using Shader::Shader;
 
@@ -45,8 +41,7 @@ namespace sp
 		void SetMirrorId(int id);
 	};
 
-	class MirrorSceneCS : public Shader
-	{
+	class MirrorSceneCS : public Shader {
 		SHADER_TYPE(MirrorSceneCS)
 
 		MirrorSceneCS(shared_ptr<ShaderCompileOutput> compileOutput);
@@ -56,26 +51,22 @@ namespace sp
 		UniformBuffer mirrorData;
 	};
 
-	class SceneDepthClearVS : public SceneShader
-	{
+	class SceneDepthClearVS : public SceneShader {
 		SHADER_TYPE(SceneDepthClearVS)
 		using SceneShader::SceneShader;
 	};
 
-	class SceneDepthClearFS : public SceneShader
-	{
+	class SceneDepthClearFS : public SceneShader {
 		SHADER_TYPE(SceneDepthClearFS)
 		using SceneShader::SceneShader;
 	};
 
-	class ShadowMapVS : public SceneShader
-	{
+	class ShadowMapVS : public SceneShader {
 		SHADER_TYPE(ShadowMapVS)
 		using SceneShader::SceneShader;
 	};
 
-	class ShadowMapFS : public Shader
-	{
+	class ShadowMapFS : public Shader {
 		SHADER_TYPE(ShadowMapFS)
 		using Shader::Shader;
 
@@ -84,8 +75,7 @@ namespace sp
 		void SetMirrorId(int id);
 	};
 
-	class MirrorMapCS : public Shader
-	{
+	class MirrorMapCS : public Shader {
 		SHADER_TYPE(MirrorMapCS)
 
 		MirrorMapCS(shared_ptr<ShaderCompileOutput> compileOutput);
@@ -97,20 +87,17 @@ namespace sp
 		UniformBuffer lightData, mirrorData;
 	};
 
-	class MirrorMapVS : public SceneShader
-	{
+	class MirrorMapVS : public SceneShader {
 		SHADER_TYPE(MirrorMapVS)
 		using SceneShader::SceneShader;
 	};
 
-	class MirrorMapGS : public Shader
-	{
+	class MirrorMapGS : public Shader {
 		SHADER_TYPE(MirrorMapGS)
 		using Shader::Shader;
 	};
 
-	class MirrorMapFS : public Shader
-	{
+	class MirrorMapFS : public Shader {
 		SHADER_TYPE(MirrorMapFS)
 
 		MirrorMapFS(shared_ptr<ShaderCompileOutput> compileOutput);
@@ -122,20 +109,17 @@ namespace sp
 		UniformBuffer lightData;
 	};
 
-	class VoxelFillVS : public SceneShader
-	{
+	class VoxelFillVS : public SceneShader {
 		SHADER_TYPE(VoxelFillVS)
 		using SceneShader::SceneShader;
 	};
 
-	class VoxelFillGS : public Shader
-	{
+	class VoxelFillGS : public Shader {
 		SHADER_TYPE(VoxelFillGS)
 		using Shader::Shader;
 	};
 
-	class VoxelFillFS : public Shader
-	{
+	class VoxelFillFS : public Shader {
 		SHADER_TYPE(VoxelFillFS)
 
 		VoxelFillFS(shared_ptr<ShaderCompileOutput> compileOutput);
@@ -148,16 +132,14 @@ namespace sp
 		UniformBuffer lightData, voxelInfo;
 	};
 
-	class VoxelMergeCS : public Shader
-	{
+	class VoxelMergeCS : public Shader {
 		SHADER_TYPE(VoxelMergeCS)
 		using Shader::Shader;
 
 		void SetLevel(int newLevel);
 	};
 
-	class VoxelMipmapCS : public Shader
-	{
+	class VoxelMipmapCS : public Shader {
 		SHADER_TYPE(VoxelMipmapCS)
 
 		VoxelMipmapCS(shared_ptr<ShaderCompileOutput> compileOutput);
@@ -169,11 +151,10 @@ namespace sp
 		UniformBuffer voxelInfo;
 	};
 
-	class VoxelClearCS : public Shader
-	{
+	class VoxelClearCS : public Shader {
 		SHADER_TYPE(VoxelClearCS)
 		using Shader::Shader;
 
 		void SetLevel(int newLevel);
 	};
-}
+} // namespace sp

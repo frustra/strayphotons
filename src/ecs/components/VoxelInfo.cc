@@ -1,56 +1,44 @@
 #include "ecs/components/VoxelInfo.hh"
 
+#include <assets/AssetHelpers.hh>
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
-
 #include <picojson/picojson.h>
-#include <assets/AssetHelpers.hh>
 
-namespace ecs
-{
+namespace ecs {
 	template<>
-	bool Component<VoxelArea>::LoadEntity(Entity &dst, picojson::value &src)
-	{
+	bool Component<VoxelArea>::LoadEntity(Entity &dst, picojson::value &src) {
 		auto voxelArea = dst.Assign<VoxelArea>();
-		for (auto param : src.get<picojson::object>())
-		{
-			if (param.first == "min")
-			{
+		for (auto param : src.get<picojson::object>()) {
+			if (param.first == "min") {
 				voxelArea->min = sp::MakeVec3(param.second);
-			}
-			else if (param.first == "max")
-			{
+			} else if (param.first == "max") {
 				voxelArea->max = sp::MakeVec3(param.second);
 			}
 		}
 		return true;
 	}
 
-	Handle<VoxelInfo> UpdateVoxelInfoCache(Entity entity, int gridSize, float superSampleScale, EntityManager &em)
-	{
+	Handle<VoxelInfo> UpdateVoxelInfoCache(Entity entity, int gridSize, float superSampleScale, EntityManager &em) {
 		auto voxelInfo = entity.Get<VoxelInfo>();
 		voxelInfo->gridMin = glm::vec3(0);
 		voxelInfo->gridMax = glm::vec3(0);
 		int areaIndex = 0;
-		for (Entity ent : em.EntitiesWith<VoxelArea>())
-		{
-			if (areaIndex >= sp::MAX_VOXEL_AREAS) break;
+		for (Entity ent : em.EntitiesWith<VoxelArea>()) {
+			if (areaIndex >= sp::MAX_VOXEL_AREAS)
+				break;
 
 			auto area = ent.Get<VoxelArea>();
-			if (!areaIndex)
-			{
+			if (!areaIndex) {
 				voxelInfo->gridMin = area->min;
 				voxelInfo->gridMax = area->max;
-			}
-			else
-			{
+			} else {
 				voxelInfo->gridMin = glm::min(voxelInfo->gridMin, area->min);
 				voxelInfo->gridMax = glm::max(voxelInfo->gridMax, area->max);
 			}
 			voxelInfo->areas[areaIndex++] = *area;
 		}
-		for (; areaIndex < sp::MAX_VOXEL_AREAS; areaIndex++)
-		{
+		for (; areaIndex < sp::MAX_VOXEL_AREAS; areaIndex++) {
 			voxelInfo->areas[areaIndex] = VoxelArea{glm::vec3(0), glm::vec3(-1)};
 		}
 
@@ -61,4 +49,4 @@ namespace ecs
 
 		return voxelInfo;
 	}
-}
+} // namespace ecs

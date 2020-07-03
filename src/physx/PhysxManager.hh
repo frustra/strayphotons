@@ -7,48 +7,38 @@
 #include "threading/MutexedVector.hh"
 
 #include <Ecs.hh>
-
 #include <PxPhysicsAPI.h>
-#include <extensions/PxDefaultErrorCallback.h>
 #include <extensions/PxDefaultAllocator.h>
-#include <unordered_map>
-#include <thread>
+#include <extensions/PxDefaultErrorCallback.h>
 #include <functional>
+#include <thread>
+#include <unordered_map>
 
-namespace sp
-{
+namespace sp {
 	class Model;
 	class PhysxManager;
 
-	struct PhysxConstraint
-	{
+	struct PhysxConstraint {
 		ecs::Entity parent;
 		physx::PxRigidDynamic *child;
 		physx::PxVec3 offset, rotation;
 		physx::PxQuat rotationOffset;
 	};
 
-	class ControllerHitReport : public physx::PxUserControllerHitReport
-	{
+	class ControllerHitReport : public physx::PxUserControllerHitReport {
 	public:
 		ControllerHitReport(PhysxManager *manager) : manager(manager) {}
 		void onShapeHit(const physx::PxControllerShapeHit &hit);
 		void onControllerHit(const physx::PxControllersHit &hit) {}
 		void onObstacleHit(const physx::PxControllerObstacleHit &hit) {}
+
 	private:
 		PhysxManager *manager;
 	};
 
-	enum PhysxCollisionGroup
-	{
-		HELD_OBJECT = 1,
-		PLAYER = 2,
-		WORLD = 3,
-		NOCLIP = 4
-	};
+	enum PhysxCollisionGroup { HELD_OBJECT = 1, PLAYER = 2, WORLD = 3, NOCLIP = 4 };
 
-	class PhysxManager
-	{
+	class PhysxManager {
 		typedef std::list<PhysxConstraint> ConstraintList;
 
 	public:
@@ -65,7 +55,8 @@ namespace sp
 		void ReadLock();
 		void ReadUnlock();
 
-		void CreateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 offset, physx::PxQuat rotationOffset);
+		void CreateConstraint(
+			ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 offset, physx::PxQuat rotationOffset);
 		void RotateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 rotation);
 		void RemoveConstraint(ecs::Entity parent, physx::PxRigidDynamic *child);
 		void RemoveConstraints(physx::PxRigidDynamic *child);
@@ -100,34 +91,22 @@ namespace sp
 
 		float GetCapsuleHeight(physx::PxCapsuleController *controller);
 
-		bool RaycastQuery(
-			ecs::Entity &entity,
-			const physx::PxVec3 origin,
-			const physx::PxVec3 dir,
-			const float distance,
-			physx::PxRaycastBuffer &hit);
+		bool RaycastQuery(ecs::Entity &entity, const physx::PxVec3 origin, const physx::PxVec3 dir,
+			const float distance, physx::PxRaycastBuffer &hit);
 
-		bool SweepQuery(
-			physx::PxRigidDynamic *actor,
-			const physx::PxVec3 dir,
-			const float distance);
+		bool SweepQuery(physx::PxRigidDynamic *actor, const physx::PxVec3 dir, const float distance);
 
 		/**
-		* Checks scene for an overlapping hit in the shape
-		* Will return true if a hit is found and false otherwise
-		*/
-		bool OverlapQuery(
-			physx::PxRigidDynamic *actor,
-			physx::PxVec3 translation,
-			physx::PxOverlapBuffer &hit);
+		 * Checks scene for an overlapping hit in the shape
+		 * Will return true if a hit is found and false otherwise
+		 */
+		bool OverlapQuery(physx::PxRigidDynamic *actor, physx::PxVec3 translation, physx::PxOverlapBuffer &hit);
 
 		/**
 		 * Translates a kinematic @actor by @transform.
 		 * Throws a runtime_error if @actor is not kinematic
 		 */
-		void Translate(
-			physx::PxRigidDynamic *actor,
-			const physx::PxVec3 &transform);
+		void Translate(physx::PxRigidDynamic *actor, const physx::PxVec3 &transform);
 
 		/**
 		 * Collisions between this actor's shapes and other physx objects
@@ -189,4 +168,4 @@ namespace sp
 
 		CFuncCollection funcs;
 	};
-}
+} // namespace sp

@@ -4,15 +4,12 @@
 
 #include <Ecs.hh>
 
-namespace sp
-{
+namespace sp {
 	class InputManager;
 }
 
-namespace ecs
-{
-	class AnimationSystem
-	{
+namespace ecs {
+	class AnimationSystem {
 	public:
 		AnimationSystem(EntityManager &entities);
 
@@ -21,7 +18,6 @@ namespace ecs
 		bool Frame(float dtSinceLastFrame);
 
 	private:
-
 		EntityManager &entities;
 	};
-}
+} // namespace ecs

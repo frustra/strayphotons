@@ -1,34 +1,21 @@
 #pragma once
 
 #include "Common.hh"
+
 #include <game/gui/GuiManager.hh>
 
-namespace sp
-{
+namespace sp {
 	class InputManager;
 	class Game;
 
-	enum class MenuScreen
-	{
-		Splash,
-		Main,
-		Options,
-		SceneSelect,
-		Credits
-	};
+	enum class MenuScreen { Splash, Main, Options, SceneSelect, Credits };
 
-	enum class MenuRenderMode : int
-	{
-		None = 0,
-		Pause = 1,
-		Gel = 2
-	};
+	enum class MenuRenderMode : int { None = 0, Pause = 1, Gel = 2 };
 
-	class MenuGuiManager : public GuiManager
-	{
+	class MenuGuiManager : public GuiManager {
 	public:
-		MenuGuiManager(Game *game) : GuiManager(FOCUS_MENU), game(game) { }
-		virtual ~MenuGuiManager() { }
+		MenuGuiManager(Game *game) : GuiManager(FOCUS_MENU), game(game) {}
+		virtual ~MenuGuiManager() {}
 
 		void BeforeFrame();
 		void DefineWindows();
@@ -46,4 +33,4 @@ namespace sp
 		uint64 framesSinceOpened = 0;
 		float creditsScroll = 0.0f;
 	};
-}
+} // namespace sp

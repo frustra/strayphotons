@@ -1,28 +1,25 @@
 #pragma once
 
-#include "physx/PhysxManager.hh"
-#include "graphics/GraphicsManager.hh"
 #include "Common.hh"
-#include "game/GameLogic.hh"
 #include "ecs/systems/AnimationSystem.hh"
-#include <game/input/InputManager.hh>
+#include "game/GameLogic.hh"
 #include "game/gui/DebugGuiManager.hh"
 #include "game/gui/MenuGuiManager.hh"
+#include "graphics/GraphicsManager.hh"
+#include "physx/PhysxManager.hh"
 
-#include <chrono>
 #include <Ecs.hh>
+#include <chrono>
+#include <game/input/InputManager.hh>
 
-namespace cxxopts
-{
+namespace cxxopts {
 	class ParseResult;
 }
 
-namespace sp
-{
+namespace sp {
 	class Script;
 
-	class Game
-	{
+	class Game {
 	public:
 		Game(cxxopts::ParseResult &options, Script *startupScript = nullptr);
 		~Game();
@@ -48,4 +45,4 @@ namespace sp
 	private:
 		std::chrono::high_resolution_clock::time_point lastFrameTime;
 	};
-}
+} // namespace sp

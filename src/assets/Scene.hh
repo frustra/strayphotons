@@ -1,16 +1,14 @@
 #pragma once
 
 #include "Common.hh"
-#include <Ecs.hh>
 
+#include <Ecs.hh>
 #include <unordered_map>
 
-namespace sp
-{
+namespace sp {
 	class Asset;
 
-	class Scene : public NonCopyable
-	{
+	class Scene : public NonCopyable {
 	public:
 		Scene(const string &name, shared_ptr<Asset> asset);
 		~Scene() {}
@@ -19,7 +17,8 @@ namespace sp
 		vector<ecs::Entity> entities;
 
 		vector<string> autoExecList, unloadExecList;
+
 	private:
 		shared_ptr<Asset> asset;
 	};
-}
+} // namespace sp

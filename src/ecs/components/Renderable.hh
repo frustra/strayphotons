@@ -4,10 +4,8 @@
 
 #include <ecs/Components.hh>
 
-namespace ecs
-{
-	struct Renderable
-	{
+namespace ecs {
+	struct Renderable {
 		Renderable() {}
 		Renderable(shared_ptr<sp::Model> model) : model(model) {}
 		shared_ptr<sp::Model> model;
@@ -21,4 +19,4 @@ namespace ecs
 
 	template<>
 	bool Component<Renderable>::LoadEntity(Entity &dst, picojson::value &src);
-}
+} // namespace ecs

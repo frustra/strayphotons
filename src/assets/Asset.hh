@@ -2,12 +2,10 @@
 
 #include "Common.hh"
 
-namespace sp
-{
+namespace sp {
 	class AssetManager;
 
-	class Asset : public NonCopyable
-	{
+	class Asset : public NonCopyable {
 	public:
 		Asset(AssetManager *manager, const string &path, uint8 *buffer, size_t size);
 		~Asset();
@@ -25,4 +23,4 @@ namespace sp
 		uint8 *buffer = nullptr;
 		size_t size = 0;
 	};
-}
+} // namespace sp

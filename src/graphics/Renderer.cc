@@ -1,49 +1,47 @@
 #include "graphics/Renderer.hh"
-#include "graphics/RenderTargetPool.hh"
-#include "graphics/Shader.hh"
-#include "graphics/ShaderManager.hh"
-#include "graphics/Util.hh"
-#include "graphics/GenericShaders.hh"
-#include "graphics/SceneShaders.hh"
-#include "graphics/LightSensor.hh"
-#include "graphics/GPUTypes.hh"
-#include "graphics/postprocess/PostProcess.hh"
-#include "graphics/GuiRenderer.hh"
+
+#include "assets/AssetManager.hh"
+#include "core/CVar.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
-#include "core/CVar.hh"
 #include "core/PerfTimer.hh"
+#include "ecs/components/Light.hh"
+#include "ecs/components/Mirror.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/View.hh"
-#include "ecs/components/Light.hh"
 #include "ecs/components/VoxelInfo.hh"
-#include "ecs/components/Mirror.hh"
-#include "assets/AssetManager.hh"
+#include "graphics/GPUTypes.hh"
+#include "graphics/GenericShaders.hh"
+#include "graphics/GuiRenderer.hh"
+#include "graphics/LightSensor.hh"
+#include "graphics/RenderTargetPool.hh"
+#include "graphics/SceneShaders.hh"
+#include "graphics/Shader.hh"
+#include "graphics/ShaderManager.hh"
+#include "graphics/Util.hh"
+#include "graphics/postprocess/PostProcess.hh"
 #include "physx/PhysxUtils.hh"
 #include "threading/MutexedVector.hh"
 #include "xr/XrAction.hh"
 
+#include <cxxopts.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/transform.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <cxxopts.hpp>
 
 // clang-format off
 // GLFW must be included after glew.h (Graphics.hh)
 #include <GLFW/glfw3.h>
 // clang-format on
 
-namespace sp
-{
-	Renderer::Renderer(Game *game) : GraphicsContext(game)
-	{
+namespace sp {
+	Renderer::Renderer(Game *game) : GraphicsContext(game) {
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	}
 
-	Renderer::~Renderer()
-	{
+	Renderer::~Renderer() {
 		if (ShaderControl)
 			delete ShaderControl;
 		if (RTPool)
@@ -64,16 +62,9 @@ namespace sp
 	static CVar<bool> CVarEnablePCF("r.EnablePCF", true, "Enable smooth shadow sampling");
 	static CVar<bool> CVarEnableBumpMap("r.EnableBumpMap", true, "Enable bump mapping");
 
-	void Renderer::UpdateShaders(bool force)
-	{
-		if (force ||
-			CVarVoxelGridSize.Changed() ||
-			CVarVoxelSuperSample.Changed() ||
-			CVarEnableShadows.Changed() ||
-			CVarEnablePCF.Changed() ||
-			CVarEnableBumpMap.Changed()
-		   )
-		{
+	void Renderer::UpdateShaders(bool force) {
+		if (force || CVarVoxelGridSize.Changed() || CVarVoxelSuperSample.Changed() || CVarEnableShadows.Changed() ||
+			CVarEnablePCF.Changed() || CVarEnableBumpMap.Changed()) {
 			int voxelGridSize = CVarVoxelGridSize.Get(true);
 			ShaderManager::SetDefine("VOXEL_GRID_SIZE", std::to_string(voxelGridSize));
 			ShaderManager::SetDefine("VOXEL_MIP_LEVELS", std::to_string(ceil(log2(voxelGridSize))));
@@ -85,8 +76,7 @@ namespace sp
 		}
 	}
 
-	void Renderer::Prepare()
-	{
+	void Renderer::Prepare() {
 		Assert(GLEW_ARB_compute_shader, "ARB_compute_shader required");
 		Assert(GLEW_ARB_direct_state_access, "ARB_direct_state_access required");
 		Assert(GLEW_ARB_multi_bind, "ARB_multi_bind required");
@@ -106,18 +96,14 @@ namespace sp
 		ShaderManager::SetDefine("MAX_VOXEL_AREAS", std::to_string(MAX_VOXEL_AREAS));
 		UpdateShaders(true);
 
-		funcs.Register("reloadshaders", "Recompile all shaders", [&]()
-		{
+		funcs.Register("reloadshaders", "Recompile all shaders", [&]() {
 			UpdateShaders(true);
 		});
 
-		game->entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction & d)
-		{
-			if (ent.Has<ecs::Renderable>())
-			{
+		game->entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction &d) {
+			if (ent.Has<ecs::Renderable>()) {
 				auto renderable = ent.Get<ecs::Renderable>();
-				if (renderable->model->glModel)
-				{
+				if (renderable->model->glModel) {
 					// Keep GLModel objects around for at least 5 frames after destruction
 					renderableGCQueue.push_back({renderable->model, 5});
 				}
@@ -128,15 +114,12 @@ namespace sp
 		AssertGLOK("Renderer::Prepare");
 	}
 
-	void Renderer::RenderMainMenu(ecs::View &view, bool renderToGel)
-	{
-		if (renderToGel)
-		{
+	void Renderer::RenderMainMenu(ecs::View &view, bool renderToGel) {
+		if (renderToGel) {
 			RenderTargetDesc menuDesc(PF_RGBA8, view.extents);
 			menuDesc.levels = Texture::FullyMipmap;
 			menuDesc.anisotropy = 4.0;
-			if (!menuGuiTarget || menuGuiTarget->GetDesc() != menuDesc)
-			{
+			if (!menuGuiTarget || menuGuiTarget->GetDesc() != menuDesc) {
 				menuGuiTarget = RTPool->Get(menuDesc);
 			}
 
@@ -144,36 +127,29 @@ namespace sp
 			PrepareForView(view);
 			menuGuiRenderer->Render(view);
 			menuGuiTarget->GetTexture().GenMipmap();
-		}
-		else
-		{
+		} else {
 			menuGuiRenderer->Render(view);
 		}
 	}
 
-	void Renderer::RenderShadowMaps()
-	{
+	void Renderer::RenderShadowMaps() {
 		RenderPhase phase("ShadowMaps", Timer);
 
 		glm::ivec2 renderTargetSize(0, 0);
 		int lightCount = 0;
-		for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
-		{
+		for (auto entity : game->entityManager.EntitiesWith<ecs::Light>()) {
 			auto light = entity.Get<ecs::Light>();
 
-			if (light->bulb.Load(game->entityManager))
-			{
+			if (light->bulb.Load(game->entityManager)) {
 				auto bulb = light->bulb->Get<ecs::Renderable>();
 				bulb->emissive = light->on ? light->intensity * light->tint * 0.1f : glm::vec3(0.0f);
 			}
 
-			if (!light->on)
-			{
+			if (!light->on) {
 				continue;
 			}
 
-			if (entity.Has<ecs::View>())
-			{
+			if (entity.Has<ecs::View>()) {
 				auto view = ecs::UpdateViewCache(entity, light->spotAngle * 2.0f);
 				light->mapOffset = glm::vec4(renderTargetSize.x, 0, view->extents.x, view->extents.y);
 				light->lightId = lightCount++;
@@ -187,20 +163,17 @@ namespace sp
 		}
 
 		int mirrorCount = 0;
-		for (auto entity : game->entityManager.EntitiesWith<ecs::Mirror>())
-		{
+		for (auto entity : game->entityManager.EntitiesWith<ecs::Mirror>()) {
 			auto mirror = entity.Get<ecs::Mirror>();
 			mirror->mirrorId = mirrorCount++;
 		}
 
 		RenderTargetDesc shadowDesc(PF_R32F, glm::max(glm::ivec2(1), renderTargetSize));
-		if (!shadowMap || shadowMap->GetDesc() != shadowDesc)
-		{
+		if (!shadowMap || shadowMap->GetDesc() != shadowDesc) {
 			shadowMap = RTPool->Get(shadowDesc);
 		}
 
-		if (!mirrorVisData)
-		{
+		if (!mirrorVisData) {
 			// int count[4];
 			// uint mask[MAX_LIGHTS * MAX_MIRRORS][MAX_MIRRORS];
 			// uint list[MAX_LIGHTS * MAX_MIRRORS];
@@ -214,14 +187,17 @@ namespace sp
 			// vec2 clip[MAX_LIGHTS * MAX_MIRRORS];
 			// vec4 nearInfo[MAX_LIGHTS * MAX_MIRRORS];
 
-			mirrorVisData.Create()
-			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * MAX_MIRRORS + sizeof(GLuint) * 8 + sizeof(glm::mat4) * 6) * (MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
+			mirrorVisData.Create().Data(
+				sizeof(GLint) * 4 + (sizeof(GLuint) * MAX_MIRRORS + sizeof(GLuint) * 8 + sizeof(glm::mat4) * 6) *
+										(MAX_LIGHTS * MAX_MIRRORS + 1 /* padding */),
+				nullptr,
+				GL_DYNAMIC_COPY);
 		}
 
-		if (lightCount == 0) return;
+		if (lightCount == 0)
+			return;
 
-		if (CVarEnableShadows.Get())
-		{
+		if (CVarEnableShadows.Get()) {
 			auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH16, renderTargetSize, true));
 			SetRenderTarget(shadowMap, depthTarget);
 
@@ -235,16 +211,13 @@ namespace sp
 			mirrorVisData.Clear(PF_R32UI, 0);
 			mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 
-			for (auto entity : game->entityManager.EntitiesWith<ecs::Light>())
-			{
+			for (auto entity : game->entityManager.EntitiesWith<ecs::Light>()) {
 				auto light = entity.Get<ecs::Light>();
-				if (!light->on)
-				{
+				if (!light->on) {
 					continue;
 				}
 
-				if (entity.Has<ecs::View>())
-				{
+				if (entity.Has<ecs::View>()) {
 					light->mapOffset /= glm::vec4(renderTargetSize, renderTargetSize);
 
 					ecs::Handle<ecs::View> view = entity.Get<ecs::View>();
@@ -255,15 +228,11 @@ namespace sp
 					auto shadowMapFS = GlobalShaders->Get<ShadowMapFS>();
 					shadowMapFS->SetClip(view->clip);
 					shadowMapFS->SetLight(light->lightId);
-					ForwardPass(*view, shadowMapVS, [&] (ecs::Entity & ent)
-					{
-						if (ent.Has<ecs::Mirror>())
-						{
+					ForwardPass(*view, shadowMapVS, [&](ecs::Entity &ent) {
+						if (ent.Has<ecs::Mirror>()) {
 							auto mirror = ent.Get<ecs::Mirror>();
 							shadowMapFS->SetMirrorId(mirror->mirrorId);
-						}
-						else
-						{
+						} else {
 							shadowMapFS->SetMirrorId(-1);
 						}
 					});
@@ -285,13 +254,11 @@ namespace sp
 		auto mirrorMapResolution = glm::ivec3(mapResolution, mapResolution, std::max(1, mapCount));
 		RenderTargetDesc mirrorMapDesc(PF_R32F, mirrorMapResolution);
 		mirrorMapDesc.textureArray = true;
-		if (!mirrorShadowMap || mirrorShadowMap->GetDesc() != mirrorMapDesc)
-		{
+		if (!mirrorShadowMap || mirrorShadowMap->GetDesc() != mirrorMapDesc) {
 			mirrorShadowMap = RTPool->Get(mirrorMapDesc);
 		}
 
-		for (int bounce = 0; bounce < recursion; bounce++)
-		{
+		for (int bounce = 0; bounce < recursion; bounce++) {
 			{
 				RenderPhase phase("MatrixGen", Timer);
 
@@ -331,19 +298,13 @@ namespace sp
 				shadowMap->GetTexture().Bind(4);
 				mirrorShadowMap->GetTexture().Bind(5);
 
-				ForwardPass(basicView, mirrorMapVS, [&](ecs::Entity & ent)
-				{
-					if (bounce == recursion - 1)
-					{
+				ForwardPass(basicView, mirrorMapVS, [&](ecs::Entity &ent) {
+					if (bounce == recursion - 1) {
 						// Don't mark mirrors on last pass.
-					}
-					else if (ent.Has<ecs::Mirror>())
-					{
+					} else if (ent.Has<ecs::Mirror>()) {
 						auto mirror = ent.Get<ecs::Mirror>();
 						mirrorMapFS->SetMirrorId(mirror->mirrorId);
-					}
-					else
-					{
+					} else {
 						mirrorMapFS->SetMirrorId(-1);
 					}
 				});
@@ -352,13 +313,11 @@ namespace sp
 		}
 	}
 
-	void Renderer::ReadBackLightSensors()
-	{
+	void Renderer::ReadBackLightSensors() {
 		GlobalShaders->Get<LightSensorUpdateCS>()->UpdateValues(game->entityManager);
 	}
 
-	void Renderer::UpdateLightSensors()
-	{
+	void Renderer::UpdateLightSensors() {
 		RenderPhase phase("UpdateLightSensors", Timer);
 		auto shader = GlobalShaders->Get<LightSensorUpdateCS>();
 
@@ -379,7 +338,8 @@ namespace sp
 		voxelData.radiance->GetTexture().Bind(0);
 		voxelData.radianceMips->GetTexture().Bind(1);
 		shadowMap->GetTexture().Bind(2);
-		if (mirrorShadowMap) mirrorShadowMap->GetTexture().Bind(3);
+		if (mirrorShadowMap)
+			mirrorShadowMap->GetTexture().Bind(3);
 
 		ShaderControl->BindPipeline<LightSensorUpdateCS>(GlobalShaders);
 		glDispatchCompute(1, 1, 1);
@@ -387,12 +347,10 @@ namespace sp
 		shader->StartReadback();
 	}
 
-	void Renderer::RenderPass(ecs::View view, RenderTarget::Ref finalOutput)
-	{
+	void Renderer::RenderPass(ecs::View view, RenderTarget::Ref finalOutput) {
 		RenderPhase phase("RenderPass", Timer);
 
-		if (!mirrorSceneData)
-		{
+		if (!mirrorSceneData) {
 			// int count[4];
 			// uint mask[SCENE_MIRROR_LIST_SIZE][MAX_MIRRORS];
 			// uint list[SCENE_MIRROR_LIST_SIZE];
@@ -401,17 +359,20 @@ namespace sp
 			// mat4 invReflectMat[SCENE_MIRROR_LIST_SIZE];
 			// vec4 clipPlane[SCENE_MIRROR_LIST_SIZE];
 
-			mirrorSceneData.Create()
-			.Data(sizeof(GLint) * 4 + (sizeof(GLuint) * MAX_MIRRORS + sizeof(GLuint) * 6 + sizeof(glm::mat4) * 2) * (MAX_MIRRORS * MAX_MIRROR_RECURSION + 1 /* padding */), nullptr, GL_DYNAMIC_COPY);
+			mirrorSceneData.Create().Data(
+				sizeof(GLint) * 4 + (sizeof(GLuint) * MAX_MIRRORS + sizeof(GLuint) * 6 + sizeof(glm::mat4) * 2) *
+										(MAX_MIRRORS * MAX_MIRROR_RECURSION + 1 /* padding */),
+				nullptr,
+				GL_DYNAMIC_COPY);
 		}
 
 		mirrorSceneData.Clear(PF_R32UI, 0);
 
 		EngineRenderTargets targets;
-		targets.gBuffer0 = RTPool->Get({ PF_RGBA8, view.extents });
-		targets.gBuffer1 = RTPool->Get({ PF_RGBA16F, view.extents });
-		targets.gBuffer2 = RTPool->Get({ PF_RGBA16F, view.extents });
-		targets.gBuffer3 = RTPool->Get({ PF_RGBA8, view.extents });
+		targets.gBuffer0 = RTPool->Get({PF_RGBA8, view.extents});
+		targets.gBuffer1 = RTPool->Get({PF_RGBA16F, view.extents});
+		targets.gBuffer2 = RTPool->Get({PF_RGBA16F, view.extents});
+		targets.gBuffer3 = RTPool->Get({PF_RGBA8, view.extents});
 		targets.shadowMap = shadowMap;
 		targets.mirrorShadowMap = mirrorShadowMap;
 		targets.voxelData = voxelData;
@@ -419,21 +380,19 @@ namespace sp
 		targets.mirrorSceneData = mirrorSceneData;
 		targets.lightingGel = menuGuiTarget;
 
-		if (finalOutput)
-		{
+		if (finalOutput) {
 			targets.finalOutput = finalOutput;
 		}
 
 		{
 			RenderPhase phase("PlayerView", Timer);
 
-			auto mirrorIndexStencil0 = RTPool->Get({ PF_R32UI, view.extents });
-			auto mirrorIndexStencil1 = RTPool->Get({ PF_R32UI, view.extents });
+			auto mirrorIndexStencil0 = RTPool->Get({PF_R32UI, view.extents});
+			auto mirrorIndexStencil1 = RTPool->Get({PF_R32UI, view.extents});
 
 			const int attachmentCount = 5;
 
-			RenderTarget::Ref attachments[attachmentCount] =
-			{
+			RenderTarget::Ref attachments[attachmentCount] = {
 				targets.gBuffer0,
 				targets.gBuffer1,
 				targets.gBuffer2,
@@ -459,16 +418,14 @@ namespace sp
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			if (forwardPassView.clearColor != glm::vec4(0.0f, 0.0f, 0.0f, 1.0f))
-			{
+			if (forwardPassView.clearColor != glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)) {
 				glClearBufferfv(GL_COLOR, 0, glm::value_ptr(forwardPassView.clearColor));
 			}
 
 			mirrorSceneData.Bind(GL_SHADER_STORAGE_BUFFER, 1);
 
 			int mirrorCount = 0;
-			for (auto entity : game->entityManager.EntitiesWith<ecs::Mirror>())
-			{
+			for (auto entity : game->entityManager.EntitiesWith<ecs::Mirror>()) {
 				auto mirror = entity.Get<ecs::Mirror>();
 				mirror->mirrorId = mirrorCount++;
 			}
@@ -488,23 +445,18 @@ namespace sp
 			glClearStencil(~0);
 			glEnable(GL_CLIP_DISTANCE0);
 
-			for (int bounce = 0; bounce <= recursion; bounce++)
-			{
-				if (bounce > 0)
-				{
+			for (int bounce = 0; bounce <= recursion; bounce++) {
+				if (bounce > 0) {
 					RenderPhase phase("StencilCopy", Timer);
 
 					int prevStencilBit = 1 << ((bounce - 1) % 8);
 					glStencilFunc(GL_EQUAL, 0xff, ~prevStencilBit);
 					glStencilMask(0);
 
-					if (bounce % 2 == 0)
-					{
+					if (bounce % 2 == 0) {
 						mirrorIndexStencil1->GetTexture().Bind(0);
 						SetRenderTarget(mirrorIndexStencil0, nullptr);
-					}
-					else
-					{
+					} else {
 						mirrorIndexStencil0->GetTexture().Bind(0);
 						SetRenderTarget(mirrorIndexStencil1, nullptr);
 					}
@@ -513,26 +465,20 @@ namespace sp
 					DrawScreenCover();
 				}
 
-				if (bounce % 2 == 0)
-				{
+				if (bounce % 2 == 0) {
 					glBindFramebuffer(GL_FRAMEBUFFER, fb0);
 					mirrorIndexStencil1->GetTexture().Bind(4);
 					targets.mirrorIndexStencil = mirrorIndexStencil0;
-				}
-				else
-				{
+				} else {
 					glBindFramebuffer(GL_FRAMEBUFFER, fb1);
 					mirrorIndexStencil0->GetTexture().Bind(4);
 					targets.mirrorIndexStencil = mirrorIndexStencil1;
 				}
 
-				if (bounce == 0)
-				{
+				if (bounce == 0) {
 					forwardPassView.clearMode |= GL_STENCIL_BUFFER_BIT;
 					sceneGS->SetRenderMirrors(false);
-				}
-				else
-				{
+				} else {
 					forwardPassView.clearMode &= ~GL_STENCIL_BUFFER_BIT;
 					{
 						RenderPhase phase("MatrixGen", Timer);
@@ -577,36 +523,28 @@ namespace sp
 				glDepthFunc(GL_LESS);
 				glDepthMask(GL_FALSE);
 
-				ForwardPass(forwardPassView, sceneVS, [&](ecs::Entity & ent)
-				{
-					if (bounce == recursion)
-					{
+				ForwardPass(forwardPassView, sceneVS, [&](ecs::Entity &ent) {
+					if (bounce == recursion) {
 						// Don't mark mirrors on last pass.
 						glStencilMask(0);
-					}
-					else if (ent.Has<ecs::Mirror>())
-					{
+					} else if (ent.Has<ecs::Mirror>()) {
 						glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 						glStencilMask(thisStencilBit);
 						auto mirror = ent.Get<ecs::Mirror>();
 						sceneFS->SetMirrorId(mirror->mirrorId);
-					}
-					else
-					{
+					} else {
 						glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
 						glStencilMask(thisStencilBit);
 						sceneFS->SetMirrorId(-1);
 					}
 
-					if (ent.Has<ecs::Renderable>())
-					{
+					if (ent.Has<ecs::Renderable>()) {
 						auto renderable = ent.Get<ecs::Renderable>();
 						sceneFS->SetEmissive(renderable->emissive);
 					}
 				});
 
-				if (bounce == 0 && CVarShowVoxels.Get() > 0)
-				{
+				if (bounce == 0 && CVarShowVoxels.Get() > 0) {
 					DrawGridDebug(view, sceneVS);
 				}
 
@@ -626,16 +564,14 @@ namespace sp
 
 		PostProcessing::Process(this, game, view, targets);
 
-		if (!finalOutput)
-		{
+		if (!finalOutput) {
 			debugGuiRenderer->Render(view);
 		}
 
-		//AssertGLOK("Renderer::RenderFrame");
+		// AssertGLOK("Renderer::RenderFrame");
 	}
 
-	void Renderer::PrepareForView(const ecs::View &view)
-	{
+	void Renderer::PrepareForView(const ecs::View &view) {
 		if (view.blend)
 			glEnable(GL_BLEND);
 		else
@@ -651,37 +587,32 @@ namespace sp
 		glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
 		glScissor(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
 
-		if (view.clearMode != 0)
-		{
+		if (view.clearMode != 0) {
 			glClearColor(view.clearColor.r, view.clearColor.g, view.clearColor.b, view.clearColor.a);
 			glClear(view.clearMode);
 		}
 	}
 
-	void Renderer::ForwardPass(const ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw)
-	{
+	void Renderer::ForwardPass(const ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw) {
 		RenderPhase phase("ForwardPass", Timer);
 		PrepareForView(view);
 
 		if (CVarRenderWireframe.Get())
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>())
-		{
-			if (ent.Has<ecs::Mirror>()) continue;
+		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>()) {
+			if (ent.Has<ecs::Mirror>())
+				continue;
 			DrawEntity(view, shader, ent, preDraw);
 		}
 
-		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform, ecs::Mirror>())
-		{
+		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform, ecs::Mirror>()) {
 			DrawEntity(view, shader, ent, preDraw);
 		}
 
-		if (game->physics.IsDebugEnabled())
-		{
+		if (game->physics.IsDebugEnabled()) {
 			RenderPhase phase("PhysxBounds", Timer);
-			MutexedVector<physx::PxDebugLine> lines =
-				game->physics.GetDebugLines();
+			MutexedVector<physx::PxDebugLine> lines = game->physics.GetDebugLines();
 			DrawPhysxLines(view, shader, lines.Vector(), preDraw);
 		}
 
@@ -689,11 +620,10 @@ namespace sp
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 
-	static void addLine(const ecs::View &view, vector<SceneVertex> &vertices, glm::vec3 start, glm::vec3 end, float lineWidth)
-	{
+	static void addLine(
+		const ecs::View &view, vector<SceneVertex> &vertices, glm::vec3 start, glm::vec3 end, float lineWidth) {
 		glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
 		glm::vec3 lineDir = glm::normalize(end - start);
-
 
 		glm::vec3 lineMid = glm::vec3(0.5) * (start + end);
 		glm::vec3 viewDir = glm::normalize(viewPos - lineMid);
@@ -704,14 +634,8 @@ namespace sp
 		glm::vec3 pos0 = start - lineWidth * lineDir;
 		glm::vec3 pos1 = end + lineWidth * lineDir;
 
-		auto addVertex = [&](const glm::vec3 & pos)
-		{
-			vertices.push_back(
-			{
-				{pos.x, pos.y, pos.z},
-				viewDir,
-				{0, 0}
-			});
+		auto addVertex = [&](const glm::vec3 &pos) {
+			vertices.push_back({{pos.x, pos.y, pos.z}, viewDir, {0, 0}});
 		};
 
 		// 2 triangles that make up a "fat" line connecting pos0 and pos1
@@ -725,24 +649,20 @@ namespace sp
 		addVertex(pos0 - widthVec);
 	}
 
-	void Renderer::DrawPhysxLines(
-		const ecs::View &view,
-		SceneShader *shader,
-		const vector<physx::PxDebugLine> &lines,
-		const PreDrawFunc &preDraw)
-	{
+	void Renderer::DrawPhysxLines(const ecs::View &view, SceneShader *shader, const vector<physx::PxDebugLine> &lines,
+		const PreDrawFunc &preDraw) {
 		ecs::Entity nullEnt;
-		if (preDraw) preDraw(nullEnt);
+		if (preDraw)
+			preDraw(nullEnt);
 
 		vector<SceneVertex> vertices(6 * lines.size());
-		for (auto &line : lines)
-		{
+		for (auto &line : lines) {
 			addLine(view, vertices, PxVec3ToGlmVec3P(line.pos0), PxVec3ToGlmVec3P(line.pos1), 0.004f);
 		}
 
 		shader->SetParams(view, glm::mat4(), glm::mat4());
 
-		static unsigned char baseColor[4] = { 0, 0, 255, 255 };
+		static unsigned char baseColor[4] = {0, 0, 255, 255};
 		static BasicMaterial mat(baseColor);
 
 		static VertexBuffer vbo;
@@ -756,44 +676,45 @@ namespace sp
 		glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
 	}
 
-	void Renderer::DrawEntity(const ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw)
-	{
+	void Renderer::DrawEntity(
+		const ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw) {
 		auto comp = ent.Get<ecs::Renderable>();
-		if (comp->hidden)
-		{
+		if (comp->hidden) {
 			return;
 		}
 
 		// Don't render XR-excluded entities from XR views
-		if (view.viewType == ecs::View::VIEW_TYPE_XR && comp->xrExcluded)
-		{
+		if (view.viewType == ecs::View::VIEW_TYPE_XR && comp->xrExcluded) {
 			return;
 		}
 
 		glm::mat4 modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform(game->entityManager);
 
-		if (preDraw) preDraw(ent);
+		if (preDraw)
+			preDraw(ent);
 
-		if (!comp->model->glModel)
-		{
+		if (!comp->model->glModel) {
 			comp->model->glModel = make_shared<GLModel>(comp->model.get(), this);
 		}
-		comp->model->glModel->Draw(shader, modelMat, view, comp->model->bones.size(), comp->model->bones.size() > 0 ? comp->model->bones.data() : NULL);
+		comp->model->glModel->Draw(shader,
+			modelMat,
+			view,
+			comp->model->bones.size(),
+			comp->model->bones.size() > 0 ? comp->model->bones.data() : NULL);
 	}
 
-	void Renderer::DrawGridDebug(const ecs::View &view, SceneShader *shader)
-	{
+	void Renderer::DrawGridDebug(const ecs::View &view, SceneShader *shader) {
 		int gridSize = CVarVoxelGridSize.Get() >> (CVarShowVoxels.Get() - 1);
-		glm::vec3 min = voxelData.info.voxelGridCenter - (voxelData.info.voxelSize * (float)(voxelData.info.gridSize / 2));
-		glm::vec3 max = voxelData.info.voxelGridCenter + (voxelData.info.voxelSize * (float)(voxelData.info.gridSize / 2));
+		glm::vec3 min =
+			voxelData.info.voxelGridCenter - (voxelData.info.voxelSize * (float)(voxelData.info.gridSize / 2));
+		glm::vec3 max =
+			voxelData.info.voxelGridCenter + (voxelData.info.voxelSize * (float)(voxelData.info.gridSize / 2));
 
 		vector<SceneVertex> vertices;
-		for (int a = 0; a <= gridSize; a++)
-		{
+		for (int a = 0; a <= gridSize; a++) {
 			float x = min.x + (float)a * (max.x - min.x) / (float)gridSize;
 			float y = min.y + (float)a * (max.y - min.y) / (float)gridSize;
-			for (int b = 0; b <= gridSize; b++)
-			{
+			for (int b = 0; b <= gridSize; b++) {
 				float y2 = min.y + (float)b * (max.y - min.y) / (float)gridSize;
 				float z = min.z + (float)b * (max.z - min.z) / (float)gridSize;
 
@@ -805,7 +726,7 @@ namespace sp
 
 		shader->SetParams(view, glm::mat4(), glm::mat4());
 
-		static unsigned char baseColor[4] = { 0, 255, 0, 255 };
+		static unsigned char baseColor[4] = {0, 255, 0, 255};
 		static BasicMaterial mat(baseColor);
 
 		static VertexBuffer vbo;
@@ -819,8 +740,7 @@ namespace sp
 		glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
 	}
 
-	void Renderer::RenderLoading(ecs::View view)
-	{
+	void Renderer::RenderLoading(ecs::View view) {
 		auto screenResolution = view.extents;
 		view.extents = glm::ivec2(192 / 2, 80 / 2);
 		view.offset = glm::ivec2(screenResolution / 2) - view.extents / 2;
@@ -836,61 +756,54 @@ namespace sp
 		glfwSwapBuffers(window);
 	}
 
-	void Renderer::ExpireRenderables()
-	{
+	void Renderer::ExpireRenderables() {
 		int expiredCount = 0;
-		for (auto &pair : renderableGCQueue)
-		{
-			if (pair.second-- < 0) expiredCount++;
+		for (auto &pair : renderableGCQueue) {
+			if (pair.second-- < 0)
+				expiredCount++;
 		}
-		while (expiredCount-- > 0)
-		{
-			renderableGCQueue.pop_front();
-		}
+		while (expiredCount-- > 0) { renderableGCQueue.pop_front(); }
 	}
 
-	void Renderer::BeginFrame()
-	{
+	void Renderer::BeginFrame() {
 		ExpireRenderables();
 		UpdateShaders();
 		ReadBackLightSensors();
 
-		if (game->menuGui.RenderMode() == MenuRenderMode::Gel)
-		{
-			ecs::View menuView({ 1280, 1280 });
+		if (game->menuGui.RenderMode() == MenuRenderMode::Gel) {
+			ecs::View menuView({1280, 1280});
 			menuView.clearMode = GL_COLOR_BUFFER_BIT;
 			RenderMainMenu(menuView, true);
 		}
 
 		RenderShadowMaps();
 
-		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::VoxelInfo>())
-		{
-			voxelData.info = *ecs::UpdateVoxelInfoCache(ent, CVarVoxelGridSize.Get(), CVarVoxelSuperSample.Get(), game->entityManager);
-			if (CVarUpdateVoxels.Get()) RenderVoxelGrid();
+		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::VoxelInfo>()) {
+			voxelData.info = *ecs::UpdateVoxelInfoCache(ent,
+				CVarVoxelGridSize.Get(),
+				CVarVoxelSuperSample.Get(),
+				game->entityManager);
+			if (CVarUpdateVoxels.Get())
+				RenderVoxelGrid();
 			UpdateLightSensors();
 			break;
 		}
 	}
 
-	void Renderer::EndFrame()
-	{
+	void Renderer::EndFrame() {
 		RTPool->TickFrame();
 	}
 
-	void Renderer::SetRenderTargets(size_t attachmentCount, RenderTarget::Ref *attachments, RenderTarget::Ref depth)
-	{
+	void Renderer::SetRenderTargets(size_t attachmentCount, RenderTarget::Ref *attachments, RenderTarget::Ref depth) {
 		GLuint fb = RTPool->GetFramebuffer(attachmentCount, attachments, depth);
 		glBindFramebuffer(GL_FRAMEBUFFER, fb);
 	}
 
-	void Renderer::SetRenderTarget(RenderTarget::Ref attachment0, RenderTarget::Ref depth)
-	{
+	void Renderer::SetRenderTarget(RenderTarget::Ref attachment0, RenderTarget::Ref depth) {
 		SetRenderTargets(1, &attachment0, depth);
 	}
 
-	void Renderer::SetDefaultRenderTarget()
-	{
+	void Renderer::SetDefaultRenderTarget() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-}
+} // namespace sp

@@ -2,10 +2,8 @@
 
 #include <Ecs.hh>
 
-namespace ecs
-{
-	class DoorSystem
-	{
+namespace ecs {
+	class DoorSystem {
 	public:
 		DoorSystem(EntityManager &entities);
 		bool Frame(float dtSinceLastFrame);
@@ -13,4 +11,4 @@ namespace ecs
 	private:
 		EntityManager &entities;
 	};
-}
+} // namespace ecs

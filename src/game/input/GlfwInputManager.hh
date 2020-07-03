@@ -1,20 +1,19 @@
 #pragma once
 
-#include <glm/glm.hpp>
-#include <array>
-#include <robin_hood.h>
-#include <functional>
 #include "InputManager.hh"
+
+#include <array>
+#include <functional>
+#include <glm/glm.hpp>
+#include <robin_hood.h>
 
 struct GLFWwindow;
 
-namespace sp
-{
+namespace sp {
 	/**
 	 * Class to manage hardware input.  Call this->BindCallbacks() to set it up.
 	 */
-	class GlfwInputManager : public InputManager
-	{
+	class GlfwInputManager : public InputManager {
 	public:
 		GlfwInputManager() {}
 		~GlfwInputManager() {}
@@ -47,31 +46,13 @@ namespace sp
 		virtual void DisableCursor();
 		virtual void EnableCursor();
 
-		static void KeyInputCallback(
-			GLFWwindow *window,
-			int key,
-			int scancode,
-			int action,
-			int mods
-		);
+		static void KeyInputCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
-		static void CharInputCallback(
-			GLFWwindow *window,
-			unsigned int ch
-		);
+		static void CharInputCallback(GLFWwindow *window, unsigned int ch);
 
-		static void MouseMoveCallback(
-			GLFWwindow *window,
-			double xPos,
-			double yPos
-		);
+		static void MouseMoveCallback(GLFWwindow *window, double xPos, double yPos);
 
-		static void MouseButtonCallback(
-			GLFWwindow *window,
-			int button,
-			int actions,
-			int mods
-		);
+		static void MouseButtonCallback(GLFWwindow *window, int button, int actions, int mods);
 
 		static void MouseScrollCallback(GLFWwindow *window, double xOffset, double yOffset);
 
@@ -85,8 +66,7 @@ namespace sp
 		/**
 		 * Register a function to be called when an input character is received.
 		 */
-		void AddKeyInputCallback(KeyEventCallback cb)
-		{
+		void AddKeyInputCallback(KeyEventCallback cb) {
 			keyEventCallbacks.push_back(cb);
 		}
 
@@ -94,8 +74,10 @@ namespace sp
 		vector<KeyEventCallback> keyEventCallbacks;
 		GLFWwindow *window = nullptr;
 
-        // The action states for the next, current, and previous frames.
-		robin_hood::unordered_flat_map<string, bool> actionStatesBoolNext, actionStatesBoolCurrent, actionStatesBoolPrevious;
-		robin_hood::unordered_flat_map<string, glm::vec2> actionStatesVec2Next, actionStatesVec2Current, actionStatesVec2Previous;
+		// The action states for the next, current, and previous frames.
+		robin_hood::unordered_flat_map<string, bool> actionStatesBoolNext, actionStatesBoolCurrent,
+			actionStatesBoolPrevious;
+		robin_hood::unordered_flat_map<string, glm::vec2> actionStatesVec2Next, actionStatesVec2Current,
+			actionStatesVec2Previous;
 	};
-}
+} // namespace sp

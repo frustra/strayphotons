@@ -2,10 +2,8 @@
 
 #include <PxPhysicsAPI.h>
 
-namespace sp
-{
-	struct PhysxActorDesc
-	{
+namespace sp {
+	struct PhysxActorDesc {
 		bool dynamic = true;
 		bool kinematic = false; // only dynamic actors can be kinematic
 		bool decomposeHull = false;
@@ -15,4 +13,4 @@ namespace sp
 		physx::PxMeshScale scale = physx::PxMeshScale();
 		float density = 1.0f;
 	};
-}
+} // namespace sp

@@ -3,10 +3,8 @@
 #include "Graphics.hh"
 #include "PixelFormat.hh"
 
-namespace sp
-{
-	struct RenderBuffer
-	{
+namespace sp {
+	struct RenderBuffer {
 		GLuint handle = 0;
 		GLPixelFormat format;
 		GLsizei width = 0, height = 0;
@@ -25,14 +23,12 @@ namespace sp
 
 		RenderBuffer &Attachment(GLenum attachment);
 
-		bool operator==(const RenderBuffer &other) const
-		{
+		bool operator==(const RenderBuffer &other) const {
 			return other.handle == handle;
 		}
 
-		bool operator!=(const RenderBuffer &other) const
-		{
+		bool operator!=(const RenderBuffer &other) const {
 			return !(*this == other);
 		}
 	};
-}
+} // namespace sp

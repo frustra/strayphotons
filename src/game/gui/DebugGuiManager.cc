@@ -1,13 +1,12 @@
 #include "DebugGuiManager.hh"
-#include <game/input/GlfwInputManager.hh>
 
-#include <imgui/imgui.h>
 #include "ConsoleGui.hh"
 
-namespace sp
-{
-	void DebugGuiManager::DefineWindows()
-	{
+#include <game/input/GlfwInputManager.hh>
+#include <imgui/imgui.h>
+
+namespace sp {
+	void DebugGuiManager::DefineWindows() {
 		ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0.0f, 0.0f, 0.0f, 0.8f));
 		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
@@ -15,29 +14,27 @@ namespace sp
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 
 		static ConsoleGui console;
-		if (consoleOpen) console.Add();
+		if (consoleOpen)
+			console.Add();
 		GuiManager::DefineWindows();
 
 		ImGui::PopStyleVar();
 		ImGui::PopStyleColor(4);
 	}
 
-	void DebugGuiManager::BeforeFrame()
-	{
+	void DebugGuiManager::BeforeFrame() {
 		ImGui::StyleColorsClassic();
 
 		ImGuiIO &io = ImGui::GetIO();
 		io.MouseDrawCursor = false;
 
-		if (input != nullptr && Focused())
-		{
+		if (input != nullptr && Focused()) {
 			io.MouseDown[0] = input->IsDown(INPUT_ACTION_MOUSE_BASE + "/button_left");
 			io.MouseDown[1] = input->IsDown(INPUT_ACTION_MOUSE_BASE + "/button_right");
 			io.MouseDown[2] = input->IsDown(INPUT_ACTION_MOUSE_BASE + "/button_middle");
 
 			glm::vec2 scrollOffset, scrollOffsetDelta;
-			if (input->GetActionStateDelta(INPUT_ACTION_MOUSE_SCROLL, scrollOffset, scrollOffsetDelta))
-			{
+			if (input->GetActionStateDelta(INPUT_ACTION_MOUSE_SCROLL, scrollOffset, scrollOffsetDelta)) {
 				io.MouseWheel = scrollOffsetDelta.y;
 			}
 
@@ -46,16 +43,13 @@ namespace sp
 		}
 	}
 
-	void DebugGuiManager::BindInput(GlfwInputManager *inputManager)
-	{
+	void DebugGuiManager::BindInput(GlfwInputManager *inputManager) {
 		GuiManager::BindInput(inputManager);
 
-		if (input != nullptr)
-		{
+		if (input != nullptr) {
 			ImGuiIO &io = ImGui::GetIO();
 
-			input->AddCharInputCallback([&](uint32 ch)
-			{
+			input->AddCharInputCallback([&](uint32 ch) {
 				if (ch == '`')
 					ToggleConsole();
 				else if (ch > 0 && ch < 0x10000)
@@ -64,26 +58,21 @@ namespace sp
 		}
 	}
 
-	void DebugGuiManager::GrabFocus()
-	{
-		if (input != nullptr && !Focused())
-		{
+	void DebugGuiManager::GrabFocus() {
+		if (input != nullptr && !Focused()) {
 			input->LockFocus(true, focusPriority);
 			input->EnableCursor();
 		}
 	}
 
-	void DebugGuiManager::ReleaseFocus()
-	{
-		if (input != nullptr && !Focused())
-		{
+	void DebugGuiManager::ReleaseFocus() {
+		if (input != nullptr && !Focused()) {
 			input->DisableCursor();
 			input->LockFocus(false, focusPriority);
 		}
 	}
 
-	void DebugGuiManager::ToggleConsole()
-	{
+	void DebugGuiManager::ToggleConsole() {
 		if (!consoleOpen)
 			GrabFocus();
 
@@ -92,4 +81,4 @@ namespace sp
 		if (!consoleOpen)
 			ReleaseFocus();
 	}
-}
+} // namespace sp

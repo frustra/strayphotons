@@ -1,25 +1,22 @@
 #pragma once
 
 #include "core/PerfTimer.hh"
+
 #include <game/gui/GuiManager.hh>
-
-#include <sstream>
 #include <imgui/imgui.h>
+#include <sstream>
 
-namespace sp
-{
+namespace sp {
 	using namespace std::chrono;
 
-	class ProfilerGui : public GuiRenderable
-	{
+	class ProfilerGui : public GuiRenderable {
 	public:
 		static const uint64 numFrameTimes = 32, sampleFrameTimeEvery = 10;
 
 		ProfilerGui(PerfTimer *timer) : timer(timer), cpuFrameTimes(), gpuFrameTimes() {}
 		virtual ~ProfilerGui() {}
 
-		void Add()
-		{
+		void Add() {
 			if (timer->lastCompleteFrame.results.empty())
 				return;
 			if (CVarProfileCPU.Get() != 1 && CVarProfileGPU.Get() != 1)
@@ -28,12 +25,10 @@ namespace sp
 			ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize;
 			frameCount++;
 
-			if (CVarProfileCPU.Get() == 1)
-			{
+			if (CVarProfileCPU.Get() == 1) {
 				ImGui::Begin("CpuProfiler", nullptr, flags);
 
-				if (frameCount % sampleFrameTimeEvery == 1)
-				{
+				if (frameCount % sampleFrameTimeEvery == 1) {
 					auto root = timer->lastCompleteFrame.results[0];
 
 					memmove(cpuFrameTimes, cpuFrameTimes + 1, (numFrameTimes - 1) * sizeof(*cpuFrameTimes));
@@ -46,12 +41,10 @@ namespace sp
 				ImGui::End();
 			}
 
-			if (CVarProfileGPU.Get() == 1)
-			{
+			if (CVarProfileGPU.Get() == 1) {
 				ImGui::Begin("GpuProfiler", nullptr, flags);
 
-				if (frameCount % sampleFrameTimeEvery == 1)
-				{
+				if (frameCount % sampleFrameTimeEvery == 1) {
 					auto root = timer->lastCompleteFrame.results[0];
 					double elapsed = (double)root.gpuElapsed / 1000000.0;
 
@@ -67,10 +60,8 @@ namespace sp
 		}
 
 	private:
-		size_t AddResults(const vector<TimeResult> &results, bool gpuTime, size_t offset = 0, int depth = 1)
-		{
-			while (offset < results.size())
-			{
+		size_t AddResults(const vector<TimeResult> &results, bool gpuTime, size_t offset = 0, int depth = 1) {
+			while (offset < results.size()) {
 				auto result = results[offset++];
 
 				if (result.depth < depth)
@@ -82,10 +73,14 @@ namespace sp
 				ImGui::PushID(offset);
 
 				int depth = result.depth;
-				double elapsed = gpuTime ? (double)result.gpuElapsed / 1000000.0 : duration_cast<milliseconds>(result.cpuElapsed).count();
+				double elapsed = gpuTime ? (double)result.gpuElapsed / 1000000.0
+										 : duration_cast<milliseconds>(result.cpuElapsed).count();
 
-				if (ImGui::TreeNodeEx("node", ImGuiTreeNodeFlags_DefaultOpen, "%s %.2fms", result.name.c_str(), elapsed))
-				{
+				if (ImGui::TreeNodeEx("node",
+						ImGuiTreeNodeFlags_DefaultOpen,
+						"%s %.2fms",
+						result.name.c_str(),
+						elapsed)) {
 					offset = AddResults(results, gpuTime, offset, depth + 1);
 					ImGui::TreePop();
 				}
@@ -100,4 +95,4 @@ namespace sp
 		float gpuFrameTimes[numFrameTimes];
 		uint64 frameCount = 0;
 	};
-}
+} // namespace sp

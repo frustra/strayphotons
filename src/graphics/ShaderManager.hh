@@ -1,13 +1,12 @@
 #pragma once
 
-#include "graphics/Shader.hh"
 #include "graphics/GraphicsContext.hh"
+#include "graphics/Shader.hh"
+
 #include <unordered_map>
 
-namespace sp
-{
-	class ShaderManager
-	{
+namespace sp {
+	class ShaderManager {
 	public:
 		static void RegisterShaderType(ShaderMeta *metaType);
 		static vector<ShaderMeta *> &ShaderTypes();
@@ -16,16 +15,15 @@ namespace sp
 		static void SetDefine(string name, bool value = true);
 		static std::unordered_map<string, string> &DefineVars();
 
-		ShaderManager(ShaderSet *shaders) : activeShaders(shaders) { }
+		ShaderManager(ShaderSet *shaders) : activeShaders(shaders) {}
 		~ShaderManager();
 		void CompileAll(ShaderSet *shaders = nullptr);
 
 		void BindPipeline(const ShaderSet *shaders, vector<ShaderMeta *> shaderMetaTypes);
 
-		template <typename ...ShaderTypes>
-		void BindPipeline(const ShaderSet *shaders = nullptr)
-		{
-			BindPipeline(shaders == nullptr ? activeShaders : shaders, { &ShaderTypes::MetaType... });
+		template<typename... ShaderTypes>
+		void BindPipeline(const ShaderSet *shaders = nullptr) {
+			BindPipeline(shaders == nullptr ? activeShaders : shaders, {&ShaderTypes::MetaType...});
 		}
 
 		const ShaderSet *activeShaders;
@@ -40,4 +38,4 @@ namespace sp
 
 		std::unordered_map<size_t, GLuint> pipelineCache;
 	};
-}
+} // namespace sp

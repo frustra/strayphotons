@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Common.hh"
+
 #include <glm/glm.hpp>
 #include <picojson/picojson.h>
 
-namespace sp
-{
+namespace sp {
 	glm::vec2 MakeVec2(picojson::value val);
 	glm::vec3 MakeVec3(picojson::value val);
 	glm::vec4 MakeVec4(picojson::value val);
@@ -14,4 +14,4 @@ namespace sp
 	 * Returns true if all the specified parameters are present
 	 */
 	bool ParametersExist(picojson::value &json, vector<string> reqParams);
-}
+} // namespace sp

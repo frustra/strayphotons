@@ -1,14 +1,13 @@
 #pragma once
 
 #include "Common.hh"
+
 #include <unordered_set>
 
-namespace sp
-{
+namespace sp {
 	class Model;
 
-	struct ConvexHull
-	{
+	struct ConvexHull {
 		uint32 pointCount;
 		uint32 pointByteStride;
 		uint32 triangleCount;
@@ -18,16 +17,14 @@ namespace sp
 		int *triangles;
 	};
 
-	struct ConvexHullSet
-	{
+	struct ConvexHullSet {
 		vector<ConvexHull> hulls;
 		std::unordered_set<int> bufferIndexes;
 		bool decomposed;
 	};
 
-	namespace ConvexHullBuilding
-	{
+	namespace ConvexHullBuilding {
 		// Builds convex hull set for a model without caching
 		void BuildConvexHulls(ConvexHullSet *set, Model *model, bool decompHull);
-	}
-}
+	} // namespace ConvexHullBuilding
+} // namespace sp

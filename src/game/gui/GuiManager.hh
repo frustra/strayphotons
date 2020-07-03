@@ -5,29 +5,21 @@
 
 struct ImGuiContext;
 
-namespace sp
-{
+namespace sp {
 	/**
 	 * Set of defined focus level priorities.
 	 * A higher number has priority over lower numbers.
 	 */
-	enum FocusLevel
-	{
-		FOCUS_GAME = 1,
-		FOCUS_MENU = 10,
-		FOCUS_OVERLAY = 1000
-	};
+	enum FocusLevel { FOCUS_GAME = 1, FOCUS_MENU = 10, FOCUS_OVERLAY = 1000 };
 
 	class GlfwInputManager;
 
-	class GuiRenderable
-	{
+	class GuiRenderable {
 	public:
 		virtual void Add() = 0;
 	};
 
-	class GuiManager
-	{
+	class GuiManager {
 	public:
 		GuiManager(const FocusLevel focusPriority = FOCUS_GAME);
 		virtual ~GuiManager();
@@ -35,7 +27,7 @@ namespace sp
 		void Attach(GuiRenderable *component);
 		void SetGuiContext();
 
-		virtual void BeforeFrame() { }
+		virtual void BeforeFrame() {}
 		virtual void DefineWindows();
 
 	protected:
@@ -46,4 +38,4 @@ namespace sp
 		std::vector<GuiRenderable *> components;
 		ImGuiContext *imCtx = nullptr;
 	};
-}
+} // namespace sp

@@ -1,20 +1,17 @@
 #pragma once
 
-#include <glm/glm.hpp>
 #include "Ecs.hh"
 #include "graphics/GPUTypes.hh"
 
 #include <ecs/Components.hh>
+#include <glm/glm.hpp>
 
-namespace ecs
-{
-	struct VoxelArea
-	{
+namespace ecs {
+	struct VoxelArea {
 		glm::vec3 min, max;
 	};
 
-	struct VoxelInfo
-	{
+	struct VoxelInfo {
 		int gridSize = 0;
 		float voxelSize, superSampleScale;
 		glm::vec3 voxelGridCenter;
@@ -29,4 +26,4 @@ namespace ecs
 	bool Component<VoxelArea>::LoadEntity(Entity &dst, picojson::value &src);
 
 	Handle<VoxelInfo> UpdateVoxelInfoCache(Entity entity, int gridSize, float superSampleScale, EntityManager &em);
-}
+} // namespace ecs

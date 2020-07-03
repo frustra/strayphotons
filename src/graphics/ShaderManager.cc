@@ -1,61 +1,49 @@
 #include "graphics/ShaderManager.hh"
-#include "assets/AssetManager.hh"
+
 #include "assets/Asset.hh"
+#include "assets/AssetManager.hh"
 #include "core/Logging.hh"
 
 #include <fstream>
 #include <sstream>
 
-namespace sp
-{
-	vector<ShaderMeta *> &ShaderManager::ShaderTypes()
-	{
+namespace sp {
+	vector<ShaderMeta *> &ShaderManager::ShaderTypes() {
 		static vector<ShaderMeta *> shaderTypes;
 		return shaderTypes;
 	}
 
-	void ShaderManager::RegisterShaderType(ShaderMeta *metaType)
-	{
+	void ShaderManager::RegisterShaderType(ShaderMeta *metaType) {
 		ShaderTypes().push_back(metaType);
 	}
 
-
-	std::unordered_map<string, string> &ShaderManager::DefineVars()
-	{
+	std::unordered_map<string, string> &ShaderManager::DefineVars() {
 		static std::unordered_map<string, string> defineVars;
 		return defineVars;
 	}
 
-	void ShaderManager::SetDefine(string name, string value)
-	{
+	void ShaderManager::SetDefine(string name, string value) {
 		DefineVars()[name] = value;
 	}
 
-	void ShaderManager::SetDefine(string name, bool value)
-	{
-		if (value)
-		{
+	void ShaderManager::SetDefine(string name, bool value) {
+		if (value) {
 			DefineVars()[name] = "1";
-		}
-		else
-		{
+		} else {
 			DefineVars().erase(name);
 		}
 	}
 
-	ShaderManager::~ShaderManager()
-	{
-		for (auto cached : pipelineCache)
-			glDeleteProgramPipelines(1, &cached.second);
+	ShaderManager::~ShaderManager() {
+		for (auto cached : pipelineCache) glDeleteProgramPipelines(1, &cached.second);
 	}
 
-	void ShaderManager::CompileAll(ShaderSet *shaders)
-	{
-		for (auto shaderType : ShaderTypes())
-		{
+	void ShaderManager::CompileAll(ShaderSet *shaders) {
+		for (auto shaderType : ShaderTypes()) {
 			auto input = LoadShader(shaderType);
 			auto output = CompileShader(input);
-			if (!output) continue;
+			if (!output)
+				continue;
 
 			output->shaderType = shaderType;
 			auto shader = shaderType->newInstance(output);
@@ -64,8 +52,7 @@ namespace sp
 		}
 	}
 
-	shared_ptr<ShaderCompileOutput> ShaderManager::CompileShader(ShaderCompileInput &input)
-	{
+	shared_ptr<ShaderCompileOutput> ShaderManager::CompileShader(ShaderCompileInput &input) {
 		// Call glGetError() to ensure we have a clean GL error state
 		glGetError();
 
@@ -77,8 +64,7 @@ namespace sp
 		int linked;
 		glGetProgramiv(program, GL_LINK_STATUS, &linked);
 
-		if (!linked)
-		{
+		if (!linked) {
 			int infoLogLength;
 			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
 
@@ -100,44 +86,36 @@ namespace sp
 		return output;
 	}
 
-	ShaderCompileInput ShaderManager::LoadShader(ShaderMeta *shaderType)
-	{
-		auto input = ShaderCompileInput {shaderType};
+	ShaderCompileInput ShaderManager::LoadShader(ShaderMeta *shaderType) {
+		auto input = ShaderCompileInput{shaderType};
 		input.source = LoadShader(input, shaderType->filename);
 		return input;
 	}
 
-	string ShaderManager::LoadShader(ShaderCompileInput &input, string name)
-	{
+	string ShaderManager::LoadShader(ShaderCompileInput &input, string name) {
 		auto asset = GAssets.Load("shaders/" + name);
 		Assert(asset != nullptr, "Shader asset not found");
 		input.units.push_back(name);
 		return ProcessShaderSource(input, asset->String());
 	}
 
-	string ShaderManager::ProcessShaderSource(ShaderCompileInput &input, string src)
-	{
+	string ShaderManager::ProcessShaderSource(ShaderCompileInput &input, string src) {
 		std::istringstream lines(src);
 		string line;
 		std::ostringstream output;
 		int linesProcessed = 0, currUnit = input.units.size() - 1;
 
-		while (std::getline(lines, line))
-		{
+		while (std::getline(lines, line)) {
 			linesProcessed++;
 
-			if (starts_with(line, "#version"))
-			{
+			if (starts_with(line, "#version")) {
 				output << line << std::endl;
-				for (auto define : DefineVars())
-				{
+				for (auto define : DefineVars()) {
 					output << "#define " << define.first << " " << define.second << std::endl;
 				}
 				output << "#line " << (linesProcessed + 1) << " " << currUnit << std::endl;
 				continue;
-			}
-			else if (line[0] != '#' || line[1] != '#')
-			{
+			} else if (line[0] != '#' || line[1] != '#') {
 				output << line << std::endl;
 				continue;
 			}
@@ -146,8 +124,7 @@ namespace sp
 			string command;
 			tokens >> command;
 
-			if (command == "import")
-			{
+			if (command == "import") {
 				int nextUnit = input.units.size();
 
 				string importPath;
@@ -162,9 +139,7 @@ namespace sp
 				output << importSrc << std::endl;
 				output << "//end " << line << std::endl;
 				output << "#line " << (linesProcessed + 1) << " " << currUnit << std::endl;
-			}
-			else
-			{
+			} else {
 				throw runtime_error("invalid shader command " + command + " #" + input.units.back());
 			}
 		}
@@ -172,15 +147,13 @@ namespace sp
 		return output.str();
 	}
 
-	string ShaderManager::ProcessError(ShaderCompileInput &input, string err)
-	{
+	string ShaderManager::ProcessError(ShaderCompileInput &input, string err) {
 		std::istringstream lines(err);
 		string line;
 		std::ostringstream output;
 		bool newline = false;
 
-		while (std::getline(lines, line))
-		{
+		while (std::getline(lines, line)) {
 			trim(line);
 
 			int lineNumber = -1;
@@ -189,40 +162,32 @@ namespace sp
 			vector<string> integers;
 			string lastInteger;
 
-			for (size_t i = 0; i <= line.length(); i++)
-			{
-				if (i < line.length() && line[i] > 0 && isdigit(line[i]))
-				{
+			for (size_t i = 0; i <= line.length(); i++) {
+				if (i < line.length() && line[i] > 0 && isdigit(line[i])) {
 					lastInteger += line[i];
-				}
-				else if (lastInteger.length())
-				{
+				} else if (lastInteger.length()) {
 					integers.push_back(lastInteger);
 					lastInteger = "";
 				}
 			}
 
 			// Assume first two integers are the unit# and line#
-			if (integers.size() >= 2)
-			{
+			if (integers.size() >= 2) {
 				uint32 unit = std::stoul(integers[0]);
 				lineNumber = std::stoi(integers[1]);
 
-				if (unit < input.units.size())
-				{
+				if (unit < input.units.size()) {
 					unitName = input.units[unit];
 				}
 			}
 
-			if (newline) output << std::endl;
+			if (newline)
+				output << std::endl;
 			newline = true;
 
-			if (input.units[0] == unitName || input.units[0] == "")
-			{
+			if (input.units[0] == unitName || input.units[0] == "") {
 				output << unitName << ":" << lineNumber << " " << line;
-			}
-			else
-			{
+			} else {
 				output << unitName << ":" << lineNumber << " (via " << input.units[0] << ") " << line;
 			}
 		}
@@ -230,20 +195,17 @@ namespace sp
 		return output.str();
 	}
 
-	void ShaderManager::BindPipeline(const ShaderSet *shaders, vector<ShaderMeta *> shaderMetaTypes)
-	{
+	void ShaderManager::BindPipeline(const ShaderSet *shaders, vector<ShaderMeta *> shaderMetaTypes) {
 		size_t hash = 0;
 
-		for (auto shaderMeta : shaderMetaTypes)
-		{
+		for (auto shaderMeta : shaderMetaTypes) {
 			auto shader = shaders->Get(shaderMeta);
 			hash_combine(hash, shader->GLProgram());
 			shader->BindBuffers();
 		}
 
 		auto cached = pipelineCache.find(hash);
-		if (cached != pipelineCache.end())
-		{
+		if (cached != pipelineCache.end()) {
 			glBindProgramPipeline(cached->second);
 			return;
 		}
@@ -251,8 +213,7 @@ namespace sp
 		GLuint pipeline;
 		glGenProgramPipelines(1, &pipeline);
 
-		for (auto shaderMeta : shaderMetaTypes)
-		{
+		for (auto shaderMeta : shaderMetaTypes) {
 			auto shader = shaders->Get(shaderMeta);
 			glUseProgramStages(pipeline, shaderMeta->GLStageBits(), shader->GLProgram());
 		}
@@ -260,4 +221,4 @@ namespace sp
 		glBindProgramPipeline(pipeline);
 		pipelineCache[hash] = pipeline;
 	}
-}
+} // namespace sp
