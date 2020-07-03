@@ -1,4 +1,12 @@
 #!/bin/bash
+format_valid=0
+echo -e "--- Running \033[33mclang-format check\033[0m :clipboard:"
+if ! ./extra/validate_format.py; then
+    echo "^^^ +++"]
+    echo "\033[31mclang-format validation failed\033[0m"
+    format_valid=1
+fi
+
 mkdir -p build
 if [ -n "$BUILDKITE_ORGANIZATION_SLUG" ]; then
     echo -e "--- Restoring assets cache"
@@ -76,6 +84,11 @@ for file in ../assets/scripts/tests/*.txt; do
 done
 
 if [ $success -ne 0 ]; then
-    echo "\033[31mTest failures detected\033[0m"
+    echo -e "\033[31mTest failures detected\033[0m"
     exit $success
+fi
+if [ $format_valid -ne 0 ]; then
+    echo -e "\033[31mclang-format errors detected\033[0m"
+    echo -e "Run clang-format with ./extra/validate_format.py --fix"
+    exit $format_valid
 fi
