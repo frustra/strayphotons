@@ -8,7 +8,7 @@ import subprocess
 
 include_paths = ["src/", "tests/"]
 include_extenions = [".cc", ".hh", ".cpp", ".hpp"]
-allowed_clangformat_versions = ["clang-format version 10.0.0"]
+allowed_clangformat_versions = ["clang-format version 6.0.0", "clang-format version 10.0.0"]
 
 def run_clang_format(filepath, fix):
     if fix:
@@ -35,7 +35,12 @@ def main():
 
     try:
         clangformat_version = subprocess.getoutput('clang-format --version').strip()
-        if not clangformat_version in allowed_clangformat_versions:
+        version_allowed = False
+        for allowed_version in allowed_clangformat_versions:
+            if allowed_version in clangformat_version:
+                version_allowed = True
+                break
+        if not version_allowed:
             print('clang-format version not supported: ' + clangformat_version, file=sys.stderr)
             exit(1)
     except OSError:
