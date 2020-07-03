@@ -1,5 +1,4 @@
 
-
 target_sources(
     ${PROJECT_LIB}
     PRIVATE
@@ -9,6 +8,7 @@ target_sources(
         Light.cc
         LightSensor.cc
         Mirror.cc
+        Network.cc
         Physics.cc
         Renderable.cc
         Script.cc
