@@ -15,6 +15,7 @@ namespace sp
 	// Forward declarations
 	class Asset;
 	class GLModel;
+	class GraphicsContext;
 	struct BasicMaterial;
 
 	typedef std::array<uint32, 4> Hash128;
@@ -95,7 +96,7 @@ namespace sp
 	class GLModel : public NonCopyable
 	{
 	public:
-		GLModel(Model *model);
+		GLModel(Model *model, GraphicsContext *context);
 		~GLModel();
 
 		struct Primitive
@@ -122,6 +123,7 @@ namespace sp
 		Texture *LoadTexture(int materialIndex, TextureType type);
 
 		Model *model;
+		GraphicsContext *context;
 		std::map<int, GLuint> buffers;
 		std::map<std::string, Texture> textures;
 		vector<Primitive> primitives;

@@ -135,7 +135,7 @@ namespace sp
 		glViewport(view.offset.x, view.offset.y, extents.x, extents.y);
 
 		parent.GlobalShaders->Get<BasicOrthoVS>()->SetViewport(extents.x, extents.y);
-		parent.ShaderControl->BindPipeline<BasicOrthoVS, BasicOrthoFS>(parent.GlobalShaders);
+		parent.ShaderControl->BindPipeline<BasicOrthoVS, BasicOrthoFS>();
 
 		glEnable(GL_BLEND);
 		glBlendEquation(GL_FUNC_ADD);

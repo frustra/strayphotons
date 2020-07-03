@@ -1,10 +1,10 @@
 {
 	"autoexec": [
 		"r.MirrorRecursion 0",
-		"r.ExposureComp -1"
+		"r.ExposureComp 1"
 	],
 	"unloadexec": [
-		"r.ExposureComp 1"
+		"r.ExposureComp 3"
 	],
 	"entities": [
 		{

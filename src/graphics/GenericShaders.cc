@@ -10,4 +10,6 @@ namespace sp
 	IMPLEMENT_SHADER_TYPE(BasicOrthoFS, "basic_ortho.frag", Fragment);
 
 	IMPLEMENT_SHADER_TYPE(CopyStencilFS, "copy_stencil.frag", Fragment);
+
+	IMPLEMENT_SHADER_TYPE(TextureFactorCS, "texture_factor.comp", Compute);
 }

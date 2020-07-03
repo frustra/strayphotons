@@ -309,7 +309,7 @@ namespace sp
 		{
 			renderer->SetDefaultRenderTarget();
 		}
-		renderer->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(renderer->GlobalShaders);
+		renderer->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>();
 
 		glViewport(view.offset.x, view.offset.y, view.extents.x * view.scale, view.extents.y * view.scale);
 

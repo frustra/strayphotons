@@ -108,7 +108,7 @@ void main()
 	float metalness = gb3.r;
 
 	if (gb2.rgb == vec3(0)) {
-		outFragColor.rgb = FastSRGBToLinear(baseColor) * exposure * skyIlluminance;
+		outFragColor.rgb = baseColor * exposure * skyIlluminance;
 		return;
 	}
 
@@ -147,7 +147,7 @@ void main()
 			vec4 sampleColor = ConeTraceGrid(specularConeRatio, worldPosition, rayReflectDir, flatWorldNormal, gl_FragCoord.xy);
 
 			vec3 brdf = EvaluateBRDFSpecularImportanceSampledGGX(directSpecularColor, roughness, rayReflectDir, -rayDir, worldNormal);
-			indirectSpecular = sampleColor.rgb * brdf * M_PI;
+			indirectSpecular = sampleColor.rgb * brdf;
 		}
 	}
 

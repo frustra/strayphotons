@@ -18,10 +18,6 @@ namespace sp
 
 		SSAOPass0FS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
-			Bind(projMat, "projMat");
-			Bind(invProjMat, "invProjMat");
-			Bind(kernel, "kernel");
-
 			GenerateKernel();
 		}
 
@@ -45,17 +41,14 @@ namespace sp
 				offsets[i] = normalize(offsets[i]) * distance;
 			}
 
-			Set(kernel, offsets, samples);
+			Set("kernel", offsets, samples);
 		}
 
 		void SetViewParams(const ecs::View &view)
 		{
-			Set(projMat, view.projMat);
-			Set(invProjMat, view.invProjMat);
+			Set("projMat", view.projMat);
+			Set("invProjMat", view.invProjMat);
 		}
-
-	private:
-		Uniform projMat, invProjMat, kernel;
 	};
 
 	IMPLEMENT_SHADER_TYPE(SSAOPass0FS, "ssao_pass0.frag", Fragment);
@@ -63,21 +56,13 @@ namespace sp
 	class SSAOBlurFS : public Shader
 	{
 		SHADER_TYPE(SSAOBlurFS)
-
-		SSAOBlurFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
-			Bind(samplePattern, "samplePattern");
-			Bind(invProjMat, "invProjMat");
-		}
+		using Shader::Shader;
 
 		void SetParameters(glm::vec2 pattern, const ecs::View &view)
 		{
-			Set(samplePattern, pattern);
-			Set(invProjMat, view.invProjMat);
+			Set("samplePattern", pattern);
+			Set("invProjMat", view.invProjMat);
 		}
-
-	private:
-		Uniform invProjMat, samplePattern;
 	};
 
 	IMPLEMENT_SHADER_TYPE(SSAOBlurFS, "ssao_blur.frag", Fragment);
@@ -115,7 +100,7 @@ namespace sp
 		r->GlobalShaders->Get<SSAOPass0FS>()->SetViewParams(context->view);
 
 		r->SetRenderTarget(dest, nullptr);
-		r->ShaderControl->BindPipeline<BasicPostVS, SSAOPass0FS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<BasicPostVS, SSAOPass0FS>();
 
 		noiseTex.tex.Bind(3);
 
@@ -142,11 +127,11 @@ namespace sp
 
 			r->GlobalShaders->Get<SSAOBlurFS>()->SetParameters(samplePattern, context->view);
 
-			r->ShaderControl->BindPipeline<BasicPostVS, SSAOBlurFS>(r->GlobalShaders);
+			r->ShaderControl->BindPipeline<BasicPostVS, SSAOBlurFS>();
 		}
 		else
 		{
-			r->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(r->GlobalShaders);
+			r->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>();
 		}
 
 		r->SetRenderTarget(dest, nullptr);

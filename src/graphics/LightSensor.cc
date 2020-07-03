@@ -14,7 +14,6 @@ namespace sp
 		BindBuffer(sensorData, 0);
 		BindBuffer(lightData, 1);
 		BindBuffer(voxelInfo, 2);
-		Bind(lightCount, "lightCount");
 
 		readBackSize = sizeof(float) * 4 * MAX_SENSORS * 2;
 		outputTex.Create().Size(MAX_SENSORS * 2, 1).Storage(PF_RGBA32F);
@@ -47,7 +46,7 @@ namespace sp
 
 	void LightSensorUpdateCS::SetLightData(int count, GLLightData *data)
 	{
-		Set(lightCount, count);
+		Set("lightCount", count);
 		BufferData(lightData, sizeof(GLLightData) * count, data);
 	}
 

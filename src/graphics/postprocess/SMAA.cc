@@ -17,20 +17,14 @@ namespace sp
 	class SMAAShaderBase : public Shader
 	{
 	public:
-		SMAAShaderBase(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
-			Bind(rtMetrics, "smaaRTMetrics");
-		}
+		using Shader::Shader;
 
 		void SetViewParams(const ecs::View &view)
 		{
 			auto extents = glm::vec2(view.extents);
 			glm::vec4 metrics(1.0f / extents, extents);
-			Set(rtMetrics, metrics);
+			Set("smaaRTMetrics", metrics);
 		}
-
-	private:
-		Uniform rtMetrics;
 	};
 
 	class SMAAEdgeDetectionVS : public SMAAShaderBase
@@ -89,7 +83,7 @@ namespace sp
 		r->GlobalShaders->Get<SMAAEdgeDetectionFS>()->SetViewParams(context->view);
 
 		r->SetRenderTarget(dest, stencil);
-		r->ShaderControl->BindPipeline<SMAAEdgeDetectionVS, SMAAEdgeDetectionFS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<SMAAEdgeDetectionVS, SMAAEdgeDetectionFS>();
 
 		glEnable(GL_STENCIL_TEST);
 		glStencilFunc(GL_ALWAYS, 1, 0xff);
@@ -125,7 +119,7 @@ namespace sp
 		r->GlobalShaders->Get<SMAABlendingWeightsFS>()->SetViewParams(context->view);
 
 		r->SetRenderTarget(dest, stencil);
-		r->ShaderControl->BindPipeline<SMAABlendingWeightsVS, SMAABlendingWeightsFS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<SMAABlendingWeightsVS, SMAABlendingWeightsFS>();
 
 		areaTex.Bind(1);
 		searchTex.Bind(2);
@@ -162,7 +156,7 @@ namespace sp
 		r->GlobalShaders->Get<SMAABlendingFS>()->SetViewParams(context->view);
 
 		r->SetRenderTarget(dest, nullptr);
-		r->ShaderControl->BindPipeline<SMAABlendingVS, SMAABlendingFS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<SMAABlendingVS, SMAABlendingFS>();
 
 		DrawScreenCover();
 #else

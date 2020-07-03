@@ -88,13 +88,13 @@ namespace sp
 		Assert(GLEW_ARB_multi_bind, "ARB_multi_bind required");
 		Assert(!RTPool, "Renderer already prepared");
 
-		glEnable(GL_FRAMEBUFFER_SRGB);
+		// glEnable(GL_FRAMEBUFFER_SRGB);
 
 		RTPool = new RenderTargetPool();
 		debugGuiRenderer = make_shared<GuiRenderer>(*this, &game->debugGui);
 		menuGuiRenderer = make_shared<GuiRenderer>(*this, &game->menuGui);
 
-		ShaderControl = new ShaderManager();
+		ShaderControl = new ShaderManager(GlobalShaders);
 		ShaderManager::SetDefine("MAX_LIGHTS", std::to_string(MAX_LIGHTS));
 		ShaderManager::SetDefine("MAX_MIRRORS", std::to_string(MAX_MIRRORS));
 		ShaderManager::SetDefine("MAX_MIRROR_RECURSION", std::to_string(MAX_MIRROR_RECURSION));
@@ -350,8 +350,7 @@ namespace sp
 
 	void Renderer::ReadBackLightSensors()
 	{
-		auto shader = GlobalShaders->Get<LightSensorUpdateCS>();
-		shader->UpdateValues(game->entityManager);
+		GlobalShaders->Get<LightSensorUpdateCS>()->UpdateValues(game->entityManager);
 	}
 
 	void Renderer::UpdateLightSensors()
@@ -534,8 +533,7 @@ namespace sp
 					{
 						RenderPhase phase("MatrixGen", Timer);
 
-						auto cs = GlobalShaders->Get<MirrorSceneCS>();
-						cs->SetMirrorData(mirrorDataCount, &mirrorData[0]);
+						GlobalShaders->Get<MirrorSceneCS>()->SetMirrorData(mirrorDataCount, &mirrorData[0]);
 
 						ShaderControl->BindPipeline<MirrorSceneCS>(GlobalShaders);
 						glDispatchCompute(1, 1, 1);
@@ -774,7 +772,7 @@ namespace sp
 
 		if (!comp->model->glModel)
 		{
-			comp->model->glModel = make_shared<GLModel>(comp->model.get());
+			comp->model->glModel = make_shared<GLModel>(comp->model.get(), this);
 		}
 		comp->model->glModel->Draw(shader, modelMat, view, comp->model->bones.size(), comp->model->bones.size() > 0 ? comp->model->bones.data() : NULL);
 	}

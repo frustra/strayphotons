@@ -18,7 +18,7 @@ namespace sp
 	static CVar<float> CVarExposure("r.Exposure", 0.0, "Fixed exposure value in linear units (0: auto)");
 	static CVar<float> CVarExposureMin("r.ExposureMin", 0.01, "Minimum linear exposure value (controls max brightness)");
 	static CVar<float> CVarExposureMax("r.ExposureMax", 10, "Maximum linear exposure value (controls min brightness)");
-	static CVar<float> CVarExposureComp("r.ExposureComp", 1, "Exposure bias in EV units (logarithmic) for eye adaptation");
+	static CVar<float> CVarExposureComp("r.ExposureComp", 3, "Exposure bias in EV units (logarithmic) for eye adaptation");
 	static CVar<float> CVarEyeAdaptationLow("r.EyeAdaptationLow", 65, "Percent of darkest pixels to ignore in eye adaptation");
 	static CVar<float> CVarEyeAdaptationHigh("r.EyeAdaptationHigh", 92, "Percent of brightest pixels to ignore in eye adaptation");
 	static CVar<float> CVarEyeAdaptationMinLuminance("r.EyeAdaptationMinLuminance", 0.01, "Minimum target luminance for eye adaptation");
@@ -32,19 +32,12 @@ namespace sp
 	class TonemapFS : public Shader
 	{
 		SHADER_TYPE(TonemapFS)
-
-		TonemapFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
-			Bind(saturation, "saturation");
-		}
+		using Shader::Shader;
 
 		void SetParams()
 		{
-			Set(saturation, glm::vec2(CVarSaturationMin.Get(), CVarSaturationMax.Get()));
+			Set("saturation", glm::vec2(CVarSaturationMin.Get(), CVarSaturationMax.Get()));
 		}
-
-	private:
-		Uniform saturation;
 	};
 
 	IMPLEMENT_SHADER_TYPE(TonemapFS, "tonemap.frag", Fragment);
@@ -56,7 +49,7 @@ namespace sp
 
 		r->GlobalShaders->Get<TonemapFS>()->SetParams();
 		r->SetRenderTarget(dest, nullptr);
-		r->ShaderControl->BindPipeline<BasicPostVS, TonemapFS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<BasicPostVS, TonemapFS>();
 
 		DrawScreenCover();
 	}
@@ -172,7 +165,7 @@ namespace sp
 		glClearColor(0.0, 0.0, 0.0, 0.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		r->ShaderControl->BindPipeline<LumiHistogramCS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<LumiHistogramCS>();
 		histTex->GetTexture().BindImage(0, GL_READ_WRITE);
 
 		auto extents = GetInput(0)->GetOutput()->TargetDesc.extent / downsample;
@@ -186,7 +179,7 @@ namespace sp
 		{
 			auto dest = outputs[0].AllocateTarget(context);
 			r->SetRenderTarget(dest, nullptr);
-			r->ShaderControl->BindPipeline<BasicPostVS, RenderHistogramFS>(r->GlobalShaders);
+			r->ShaderControl->BindPipeline<BasicPostVS, RenderHistogramFS>();
 			DrawScreenCover();
 		}
 		else
@@ -201,64 +194,49 @@ namespace sp
 
 		VoxelLightingFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
-			Bind(lightCount, "lightCount");
-			Bind(mirrorCount, "mirrorCount");
 			BindBuffer(lightData, 0);
 			BindBuffer(mirrorData, 1);
 			BindBuffer(voxelInfo, 2);
-
-			Bind(exposure, "exposure");
-			Bind(skyIlluminance, "skyIlluminance");
-
-			Bind(invProjMat, "invProjMat");
-			Bind(invViewMat, "invViewMat");
-			Bind(mode, "mode");
-			Bind(ssaoEnabled, "ssaoEnabled");
-
-			Bind(diffuseDownsample, "diffuseDownsample");
 		}
 
 		void SetLightData(int count, GLLightData *data)
 		{
-			Set(lightCount, count);
+			Set("lightCount", count);
 			BufferData(lightData, sizeof(GLLightData) * count, data);
 		}
 
 		void SetMirrorData(int count, GLMirrorData *data)
 		{
-			Set(mirrorCount, count);
+			Set("mirrorCount", count);
 			BufferData(mirrorData, sizeof(GLMirrorData) * count, data);
 		}
 
 		void SetExposure(float newExposure)
 		{
-			Set(exposure, newExposure);
+			Set("exposure", newExposure);
 		}
 
 		void SetViewParams(const ecs::View &view)
 		{
-			Set(invProjMat, view.invProjMat);
-			Set(invViewMat, view.invViewMat);
-			Set(skyIlluminance, view.skyIlluminance);
+			Set("invProjMat", view.invProjMat);
+			Set("invViewMat", view.invViewMat);
+			Set("skyIlluminance", view.skyIlluminance);
 		}
 
 		void SetMode(int newMode, int ssaoMode)
 		{
-			Set(mode, newMode);
-			Set(ssaoEnabled, ssaoMode);
+			Set("mode", newMode);
+			Set("ssaoEnabled", ssaoMode);
 		}
 
 		void SetVoxelInfo(GLVoxelInfo *data, int diffDownsample)
 		{
 			BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
-			Set(diffuseDownsample, diffDownsample);
+			Set("diffuseDownsample", diffDownsample);
 		}
 
 	private:
-		Uniform lightCount, mirrorCount;
 		UniformBuffer lightData, mirrorData, voxelInfo;
-		Uniform exposure, invViewMat, invProjMat, mode, ssaoEnabled;
-		Uniform diffuseDownsample, skyIlluminance;
 	};
 
 	IMPLEMENT_SHADER_TYPE(VoxelLightingFS, "voxel_lighting.frag", Fragment);
@@ -270,33 +248,26 @@ namespace sp
 		VoxelLightingDiffuseFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
 		{
 			BindBuffer(voxelInfo, 0);
-
-			Bind(exposure, "exposure");
-			Bind(invViewMat, "invViewMat");
-
-			Bind(diffuseDownsample, "diffuseDownsample");
 		}
 
 		void SetExposure(float newExposure)
 		{
-			Set(exposure, newExposure);
+			Set("exposure", newExposure);
 		}
 
 		void SetViewParams(const ecs::View &view)
 		{
-			Set(invViewMat, view.invViewMat);
+			Set("invViewMat", view.invViewMat);
 		}
 
 		void SetVoxelInfo(GLVoxelInfo *data, int diffDownsample)
 		{
 			BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
-			Set(diffuseDownsample, diffDownsample);
+			Set("diffuseDownsample", diffDownsample);
 		}
 
 	private:
 		UniformBuffer voxelInfo;
-		Uniform exposure, invViewMat;
-		Uniform diffuseDownsample;
 	};
 
 	IMPLEMENT_SHADER_TYPE(VoxelLightingDiffuseFS, "voxel_lighting_diffuse.frag", Fragment);
@@ -328,7 +299,7 @@ namespace sp
 		shader->SetExposure(r->Exposure);
 
 		r->SetRenderTarget(dest, nullptr);
-		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingFS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingFS>();
 
 		DrawScreenCover();
 	}
@@ -385,7 +356,7 @@ namespace sp
 
 		glViewport(0, 0, outputs[0].TargetDesc.extent[0], outputs[0].TargetDesc.extent[1]);
 		r->SetRenderTarget(dest, nullptr);
-		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingDiffuseFS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingDiffuseFS>();
 
 		DrawScreenCover();
 

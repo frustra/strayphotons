@@ -41,8 +41,8 @@ OpenVrModel::OpenVrModel(std::string name, vr::RenderModel_t *vrModel, vr::Rende
     sourcePrim.indexBuffer.components = vrModel->unTriangleCount * 3;
     sourcePrim.indexBuffer.componentType = GL_UNSIGNED_SHORT;
 
-    glModel = make_shared<GLModel>(this);
-    glModel->AddPrimitive(prim);
+	glModel = make_shared<GLModel>(this, nullptr);
+	glModel->AddPrimitive(prim);
 }
 
 OpenVrModel::~OpenVrModel()

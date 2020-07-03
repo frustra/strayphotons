@@ -19,7 +19,7 @@ namespace sp
 
                 std::shared_ptr<XrAction> CreateAction(std::string name, XrActionType type) override;
 
-                void Sync();
+                void Sync() override;
 
                 // Specific to OpenVrActionSet
                 vr::VRActionSetHandle_t GetHandle() { return handle; };

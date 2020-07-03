@@ -28,6 +28,7 @@ namespace sp
 
 		void Bind(GLuint binding) const;
 		void BindImage(GLuint binding, GLenum access, GLint level = 0, GLboolean layered = false, GLint layer = 0) const;
+		void BindImageConvert(GLuint binding, GLPixelFormat bindFormat, GLenum access, GLint level = 0, GLboolean layered = false, GLint layer = 0) const;
 		void Clear(const void *data, GLint level = 0) const;
 
 		Texture &Filter(GLenum minFilter = GL_LINEAR, GLenum magFilter = GL_LINEAR, float anisotropy = 0.0f);

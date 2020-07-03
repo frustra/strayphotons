@@ -15,19 +15,12 @@ namespace sp
 	class BloomHighpassFS : public Shader
 	{
 		SHADER_TYPE(BloomHighpassFS)
-
-		BloomHighpassFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
-			Bind(scale, "scale");
-		}
+		using Shader::Shader;
 
 		void SetScale(float newScale)
 		{
-			Set(scale, newScale);
+			Set("scale", newScale);
 		}
-
-	private:
-		Uniform scale;
 	};
 
 	IMPLEMENT_SHADER_TYPE(BloomHighpassFS, "bloom_highpass.frag", Fragment);
@@ -40,7 +33,7 @@ namespace sp
 		r->GlobalShaders->Get<BloomHighpassFS>()->SetScale(CVarBloomScale.Get());
 
 		r->SetRenderTarget(dest, nullptr);
-		r->ShaderControl->BindPipeline<BasicPostVS, BloomHighpassFS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<BasicPostVS, BloomHighpassFS>();
 
 		auto desc = dest->GetDesc();
 		glViewport(0, 0, desc.extent.x, desc.extent.y);
@@ -50,25 +43,17 @@ namespace sp
 	class BloomBlurFS : public Shader
 	{
 		SHADER_TYPE(BloomBlurFS)
-
-		BloomBlurFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
-			Bind(direction, "direction");
-			Bind(clip, "clip");
-		}
+		using Shader::Shader;
 
 		void SetDirection(glm::ivec2 d)
 		{
-			Set(direction, glm::vec2(d));
+			Set("direction", glm::vec2(d));
 		}
 
 		void SetClip(float threshold, float scale)
 		{
-			Set(clip, glm::vec2(threshold, scale));
+			Set("clip", glm::vec2(threshold, scale));
 		}
-
-	private:
-		Uniform direction, clip;
 	};
 
 	IMPLEMENT_SHADER_TYPE(BloomBlurFS, "bloom_blur.frag", Fragment);
@@ -83,7 +68,7 @@ namespace sp
 		shader->SetClip(clip, scale);
 
 		r->SetRenderTarget(dest, nullptr);
-		r->ShaderControl->BindPipeline<BasicPostVS, BloomBlurFS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<BasicPostVS, BloomBlurFS>();
 
 		auto desc = dest->GetDesc();
 		glViewport(0, 0, desc.extent.x, desc.extent.y);
@@ -93,21 +78,13 @@ namespace sp
 	class BloomCombineFS : public Shader
 	{
 		SHADER_TYPE(BloomCombineFS)
-
-		BloomCombineFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
-			Bind(weight1, "weight1");
-			Bind(weight2, "weight2");
-		}
+		using Shader::Shader;
 
 		void SetWeights(float w1, float w2)
 		{
-			Set(weight1, w1);
-			Set(weight2, w2);
+			Set("weight1", w1);
+			Set("weight2", w2);
 		}
-
-	private:
-		Uniform weight1, weight2;
 	};
 
 	IMPLEMENT_SHADER_TYPE(BloomCombineFS, "bloom_combine.frag", Fragment);
@@ -120,7 +97,7 @@ namespace sp
 		r->GlobalShaders->Get<BloomCombineFS>()->SetWeights(CVarBloomWeight1.Get(), CVarBloomWeight2.Get());
 
 		r->SetRenderTarget(dest, nullptr);
-		r->ShaderControl->BindPipeline<BasicPostVS, BloomCombineFS>(r->GlobalShaders);
+		r->ShaderControl->BindPipeline<BasicPostVS, BloomCombineFS>();
 
 		auto desc = dest->GetDesc();
 		glViewport(0, 0, desc.extent.x, desc.extent.y);

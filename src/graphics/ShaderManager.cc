@@ -230,7 +230,7 @@ namespace sp
 		return output.str();
 	}
 
-	void ShaderManager::BindPipeline(ShaderSet *shaders, vector<ShaderMeta *> shaderMetaTypes)
+	void ShaderManager::BindPipeline(const ShaderSet *shaders, vector<ShaderMeta *> shaderMetaTypes)
 	{
 		size_t hash = 0;
 
