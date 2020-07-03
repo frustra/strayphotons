@@ -1,7 +1,6 @@
 #include <graphics/GraphicsManager.hh>
 
 #include "GlfwInputManager.hh"
-#include "GlfwBindingNames.hh"
 #include <Common.hh>
 
 #include <algorithm>
@@ -11,6 +10,7 @@
 
 // clang-format off
 // GLFW must be included after glew.h (Graphics.hh)
+#include "GlfwBindingNames.hh"
 #include <GLFW/glfw3.h>
 // clang-format on
 
