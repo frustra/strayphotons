@@ -6,8 +6,8 @@
 #include "xr/XrTracking.hh"
 
 #include <glm/glm.hpp> // For glm::mat4
-#include <memory>	   // for shared_ptr
-#include <stdint.h>	   // For uint32_t
+#include <memory>      // for shared_ptr
+#include <stdint.h>    // For uint32_t
 
 namespace sp {
 	namespace xr {
