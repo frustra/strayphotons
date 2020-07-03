@@ -6,9 +6,13 @@
 
 #include <algorithm>
 #include <stdexcept>
-#include <GLFW/glfw3.h>
 #include <core/Logging.hh>
 #include <core/Console.hh>
+
+// clang-format off
+// GLFW must be included after glew.h (Graphics.hh)
+#include <GLFW/glfw3.h>
+// clang-format on
 
 namespace sp
 {

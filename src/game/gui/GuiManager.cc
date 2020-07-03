@@ -1,10 +1,14 @@
 #include "GuiManager.hh"
 #include <game/input/InputManager.hh>
 #include <game/input/GlfwInputManager.hh>
-#include <GLFW/glfw3.h>
 
 #include <imgui/imgui.h>
 #include "ConsoleGui.hh"
+
+// clang-format off
+// GLFW must be included after glew.h (Graphics.hh)
+#include <GLFW/glfw3.h>
+// clang-format on
 
 namespace sp
 {

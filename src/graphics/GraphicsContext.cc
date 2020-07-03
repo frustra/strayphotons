@@ -4,12 +4,16 @@
 #include "graphics/GraphicsContext.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/Shader.hh"
-#include <GLFW/glfw3.h>
 #include <game/input/GlfwInputManager.hh>
 
 #include <string>
 #include <iostream>
 #include <algorithm>
+
+// clang-format off
+// GLFW must be included after glew.h (Graphics.hh)
+#include <GLFW/glfw3.h>
+// clang-format on
 
 namespace sp
 {

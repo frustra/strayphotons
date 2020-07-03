@@ -11,11 +11,15 @@
 #include "core/CVar.hh"
 #include "core/PerfTimer.hh"
 #include <game/input/GlfwInputManager.hh>
-#include <GLFW/glfw3.h>
 
 #include <cxxopts.hpp>
 #include <iostream>
 #include <system_error>
+
+// clang-format off
+// GLFW must be included after glew.h (Graphics.hh)
+#include <GLFW/glfw3.h>
+// clang-format on
 
 namespace sp
 {

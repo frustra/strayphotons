@@ -1,4 +1,5 @@
 #include "core/Console.hh"
+#include <imgui/imgui.h>
 
 namespace sp
 {
