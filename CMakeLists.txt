@@ -45,14 +45,14 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
-	set(CMAKE_CXX_FLAGS 				"-fpermissive -Wall -Wno-unused-local-typedefs -Werror -Wno-error=sign-compare -Wno-error=restrict -Wno-error=catch-value= -Wno-error=format-security -Wno-error=strict-aliasing -Wno-error=parentheses -Wno-error=class-memaccess -Wno-error=int-to-pointer-cast -Wno-error=unused-but-set-variable -Wno-error=unused-result -Wno-error=maybe-uninitialized")
+	set(CMAKE_CXX_FLAGS 				"-fpermissive -Wall -Wno-unused-local-typedefs -Werror -Wno-error=sign-compare -Wno-error=restrict -Wno-error=catch-value= -Wno-error=format-security -Wno-error=strict-aliasing -Wno-error=parentheses -Wno-error=class-memaccess -Wno-error=int-to-pointer-cast -Wno-error=unused-but-set-variable -Wno-error=unused-result -Wno-error=maybe-uninitialized -Wno-error=unused-variable")
 	set(CMAKE_CXX_FLAGS_RELEASE 		"-O3")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"-g3 -ggdb3 -Og")
 	set(CMAKE_CXX_FLAGS_DEBUG 			"-g3 -ggdb3 -O0")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
-	set(CMAKE_CXX_FLAGS 				"-fpermissive -Wall -Wno-unused-local-typedefs -Werror -Wno-sign-compare -Wno-unused-private-field -Wno-delete-non-abstract-non-virtual-dtor -Wno-int-to-void-pointer-cast")
+	set(CMAKE_CXX_FLAGS 				"-fpermissive -Wall -Wno-unused-local-typedefs -Werror -Wno-sign-compare -Wno-unused-private-field -Wno-delete-non-abstract-non-virtual-dtor -Wno-int-to-void-pointer-cast -Wno-error=unused-variable")
 	set(CMAKE_CXX_FLAGS_RELEASE 		"-O3")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"-g3 -ggdb3 -Og")
 	set(CMAKE_CXX_FLAGS_DEBUG 			"-g3 -ggdb3 -O0")
@@ -79,12 +79,16 @@ set(PROJECT_INSTALL sp)
 # split into lib and exe so tests can link against lib
 set(PROJECT_LIB strayphotons)
 set(PROJECT_EXE sp)
+set(PROJECT_TEST_EXE sp-test)
 
 # Core StrayPhotons lib. Contains all game code.
 add_library(${PROJECT_LIB} STATIC)
 
 # Exe Shim that loads StrayPhotons lib on desktop platforms
 add_executable(${PROJECT_EXE})
+
+# Exe Shim that loads StrayPhotons lib for CI testing purposes
+add_executable(${PROJECT_TEST_EXE})
 
 # Build all external dependencies
 add_subdirectory(ext)
@@ -93,12 +97,6 @@ if((CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64") OR (CMAKE_SYSTEM_PROCESSOR STREQU
 	set(ARM ON)
 else()
 	set(ARM OFF)
-endif()
-
-if(NOT ARM)
-	set(SP_AUDIO ON)
-else()
-	set(SP_AUDIO OFF)
 endif()
 
 ## OpenVR is supported on Windows, Linux, and MacOS, but not on ARM
@@ -119,6 +117,12 @@ target_include_directories(
 
 target_include_directories(
 	${PROJECT_EXE}
+	PRIVATE
+		src
+)
+
+target_include_directories(
+	${PROJECT_TEST_EXE}
 	PRIVATE
 		src
 )
@@ -174,6 +178,7 @@ if (SP_PACKAGE_RELEASE)
 
 	# Make the exe depend on having the tar
 	add_dependencies(${PROJECT_EXE} assets_tar)
+	add_dependencies(${PROJECT_TEST_EXE} assets_tar)
 
 endif()
 
@@ -221,26 +226,12 @@ endif()
 if (SP_PACKAGE_RELEASE)
 	if (MSVC)
 		set_target_properties(${PROJECT_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
+		set_target_properties(${PROJECT_TEST_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 		set_target_properties(${PROJECT_LIB} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 	else()
 		set_target_properties(${PROJECT_EXE} PROPERTIES INSTALL_RPATH "\$ORIGIN")
 		set_target_properties(${PROJECT_EXE} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	endif()
-endif()
-
-if(SP_AUDIO)
-	target_link_libraries(
-		${PROJECT_LIB}
-		PRIVATE
-			fmod
-			fmodstudio
-	)
-
-	target_compile_definitions(
-		${PROJECT_LIB}
-		PRIVATE
-			SP_AUDIO
-	)
 endif()
 
 set (_physx_libraries
@@ -263,13 +254,13 @@ endif()
 
 target_compile_options(${PROJECT_LIB} PRIVATE ${SP_TARGET_OPTIONS})
 target_compile_options(${PROJECT_EXE} PRIVATE ${SP_TARGET_OPTIONS})
+target_compile_options(${PROJECT_TEST_EXE} PRIVATE ${SP_TARGET_OPTIONS})
 
 target_link_libraries(
 	${PROJECT_LIB}
 	PUBLIC
 		${_physx_libraries} 
 		GLEW
-		glfw
 		vhacd
 		ImGui
 		microtar
@@ -287,6 +278,14 @@ target_link_libraries(
 	${PROJECT_EXE}
 	PRIVATE
 		${PROJECT_LIB}
+		glfw
+)
+
+target_link_libraries(
+	${PROJECT_TEST_EXE}
+	PRIVATE
+		${PROJECT_LIB}
+		glfw-egl
 )
 
 if(UNIX)
@@ -322,8 +321,8 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT s
 install(
 	TARGETS
 		${PROJECT_EXE}
+		${PROJECT_TEST_EXE}
 		${PROJECT_LIB}
-		glfw
 		${_physx_libraries}
 	RUNTIME DESTINATION
 		bin

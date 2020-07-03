@@ -12,9 +12,9 @@
 #include "Common.hh"
 #include "core/CVar.hh"
 #include "core/Logging.hh"
+#include <game/input/InputManager.hh>
 
 #include <glm/glm.hpp>
-#include <GLFW/glfw3.h>
 #include <PxRigidActor.h>
 #include <PxScene.h>
 
@@ -39,7 +39,7 @@ namespace ecs
 
 	bool HumanControlSystem::Frame(double dtSinceLastFrame)
 	{
-		if (input->FocusLocked())
+		if (input != nullptr && input->FocusLocked())
 			return true;
 
 		bool noclipChanged = CVarNoClip.Changed();
@@ -54,94 +54,100 @@ namespace ecs
 			bool crouching = false;
 			bool rotating = false;
 
-			for (auto const &actionKeysPair : entity.Get<ecs::HumanController>()->inputMap)
-			{
-				ControlAction action = actionKeysPair.first;
-				const vector<int> &keys = actionKeysPair.second;
-
-				if (!input->IsAnyDown(keys))
-				{
-					continue;
-				}
-
-				switch (action)
-				{
-					case ControlAction::MOVE_FORWARD:
-						inputMovement += glm::vec3(0, 0, -1);
-						break;
-					case ControlAction::MOVE_BACKWARD:
-						inputMovement += glm::vec3(0, 0, 1);
-						break;
-					case ControlAction::MOVE_LEFT:
-						inputMovement += glm::vec3(-1, 0, 0);
-						break;
-					case ControlAction::MOVE_RIGHT:
-						inputMovement += glm::vec3(1, 0, 0);
-						break;
-					case ControlAction::MOVE_JUMP:
-						if (noclip)
-						{
-							inputMovement += glm::vec3(0, 1, 0);
-						}
-						else
-						{
-							jumping = true;
-						}
-						break;
-					case ControlAction::MOVE_SPRINT:
-						sprinting = true;
-						break;
-					case ControlAction::INTERACT:
-						if (input->IsAnyPressed(actionKeysPair.second))
-						{
-							Interact(entity, dtSinceLastFrame);
-						}
-						break;
-					case ControlAction::INTERACT_ROTATE:
-						rotating = true;
-						break;
-					case ControlAction::MOVE_CROUCH:
-						if (noclip)
-						{
-							inputMovement += glm::vec3(0, -1, 0);
-						}
-						else
-						{
-							crouching = true;
-						}
-						break;
-					default:
-						std::stringstream ss;
-						ss << "Unknown ControlAction: "
-						   << static_cast<std::underlying_type<ControlAction>::type>(action);
-						throw std::invalid_argument(ss.str());
-				}
-			}
-
-			// Handle mouse controls
-			auto transform = entity.Get<ecs::Transform>();
 			auto controller = entity.Get<ecs::HumanController>();
-			glm::vec2 dCursor = input->CursorDiff();
 
-			if (!rotating || !InteractRotate(entity, dtSinceLastFrame, dCursor))
+			if (input != nullptr)
 			{
-				float sensitivity = CVarCursorSensitivity.Get() * 0.001;
-				controller->yaw -= dCursor.x * sensitivity;
-				if (controller->yaw > 2.0f * M_PI)
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_FORWARD))
 				{
-					controller->yaw -= 2.0f * M_PI;
-				}
-				if (controller->yaw < 0)
-				{
-					controller->yaw += 2.0f * M_PI;
+					inputMovement += glm::vec3(0, 0, -1);
 				}
 
-				controller->pitch -= dCursor.y * sensitivity;
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_BACKWARD))
+				{
+					inputMovement += glm::vec3(0, 0, 1);
+				}
 
-				const float feps = std::numeric_limits<float>::epsilon();
-				controller->pitch = std::max(-((float)M_PI_2 - feps), std::min(controller->pitch, (float)M_PI_2 - feps));
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_LEFT))
+				{
+					inputMovement += glm::vec3(-1, 0, 0);
+				}
 
-				transform->SetRotate(glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll)));
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_RIGHT))
+				{
+					inputMovement += glm::vec3(1, 0, 0);
+				}
+
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_JUMP))
+				{
+					if (noclip)
+					{
+						inputMovement += glm::vec3(0, 1, 0);
+					}
+					else
+					{
+						jumping = true;
+					}
+				}
+
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_CROUCH))
+				{
+					if (noclip)
+					{
+						inputMovement += glm::vec3(0, -1, 0);
+					}
+					else
+					{
+						crouching = true;
+					}
+				}
+
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_SPRINT))
+				{
+					sprinting = true;
+				}
+
+				if (input->IsPressed(INPUT_ACTION_PLAYER_INTERACT))
+				{
+					Interact(entity, dtSinceLastFrame);
+				}
+
+				if (input->IsDown(INPUT_ACTION_PLAYER_INTERACT_ROTATE))
+				{
+					rotating = true;
+				}
+
+				// Handle mouse controls
+				const glm::vec2 *cursorPos, *cursorPosPrev;
+				if (input->GetActionDelta(sp::INPUT_ACTION_MOUSE_CURSOR, &cursorPos, &cursorPosPrev))
+				{
+					glm::vec2 cursorDiff = *cursorPos;
+					if (cursorPosPrev != nullptr)
+					{
+						cursorDiff -= *cursorPosPrev;
+					}
+					if (!rotating || !InteractRotate(entity, dtSinceLastFrame, cursorDiff))
+					{
+						float sensitivity = CVarCursorSensitivity.Get() * 0.001;
+						controller->yaw -= cursorDiff.x * sensitivity;
+						if (controller->yaw > 2.0f * M_PI)
+						{
+							controller->yaw -= 2.0f * M_PI;
+						}
+						if (controller->yaw < 0)
+						{
+							controller->yaw += 2.0f * M_PI;
+						}
+
+						controller->pitch -= cursorDiff.y * sensitivity;
+
+						const float feps = std::numeric_limits<float>::epsilon();
+						controller->pitch = std::max(-((float)M_PI_2 - feps), std::min(controller->pitch, (float)M_PI_2 - feps));
+
+						auto transform = entity.Get<ecs::Transform>();
+						transform->SetRotate(glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll)));
+					}
+				}
 			}
 
 			// Move the player
@@ -187,36 +193,6 @@ namespace ecs
 
 		auto controller = entity.Assign<HumanController>();
 		controller->SetRotate(rotation);
-		controller->inputMap =
-		{
-			{
-				ControlAction::MOVE_FORWARD, {GLFW_KEY_W}
-			},
-			{
-				ControlAction::MOVE_BACKWARD, {GLFW_KEY_S}
-			},
-			{
-				ControlAction::MOVE_LEFT, {GLFW_KEY_A}
-			},
-			{
-				ControlAction::MOVE_RIGHT, {GLFW_KEY_D}
-			},
-			{
-				ControlAction::MOVE_JUMP, {GLFW_KEY_SPACE}
-			},
-			{
-				ControlAction::MOVE_CROUCH, {GLFW_KEY_LEFT_CONTROL}
-			},
-			{
-				ControlAction::MOVE_SPRINT, {GLFW_KEY_LEFT_SHIFT}
-			},
-			{
-				ControlAction::INTERACT, {GLFW_KEY_E}
-			},
-			{
-				ControlAction::INTERACT_ROTATE, {GLFW_KEY_R}
-			}
-		};
 
 		auto interact = entity.Assign<InteractController>();
 		interact->manager = &px;

@@ -1,0 +1,8 @@
+steps:
+  - command: 
+    - "./ci-build.sh"
+    label: "Build"
+    artifact_paths:
+      - "bin/screenshots/**/*.png"
+    agents:
+    - "opengl=1"

@@ -1,47 +1,50 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/Console.hh"
+#include <Common.hh>
 #include "physx/PhysxUtils.hh"
 #include "ecs/Components.hh"
 
 #include "ecs/components/Physics.hh"
+#include <assets/Script.hh>
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
 
 namespace sp
 {
-#if defined(SP_AUDIO)
-	Game::Game(cxxopts::ParseResult &options) : options(options), menuGui(this), graphics(this), audio(this), logic(this), physics(), animation(entityManager)
-#else
-	Game::Game(cxxopts::ParseResult & options) : options(options), menuGui(this), graphics(this), logic(this), physics(), animation(entityManager)
-#endif
+	Game::Game(cxxopts::ParseResult & options, Script *startupScript) : options(options), startupScript(startupScript), graphics(this), logic(this), physics(), animation(entityManager)
 	{
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
 		ecs::RegisterComponents(entityManager);
+
+		debugGui = std::make_unique<DebugGuiManager>(this);
+		menuGui = std::make_unique<MenuGuiManager>(this);
 	}
 
 	Game::~Game()
 	{
 	}
 
-	void Game::Start()
+	int Game::Start()
 	{
+		bool triggeredExit = false;
+		int exitCode = 0;
+
+		CFunc<int> cfExit("exit", "Quits the game", [&](int arg)
+		{
+			triggeredExit = true;
+			exitCode = arg;
+		});
+
 		if (options.count("cvar"))
 		{
 			for (auto cvarline : options["cvar"].as<vector<string>>())
 			{
-				GConsoleManager.ParseAndExecute(cvarline);
+				GetConsoleManager().ParseAndExecute(cvarline);
 			}
 		}
-
-		bool triggeredExit = false;
-
-		CFunc<void> cfExit("exit", "Quits the game", [&]()
-		{
-			triggeredExit = true;
-		});
 
 		entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction & d)
 		{
@@ -65,39 +68,37 @@ namespace sp
 
 		try
 		{
-			// audio.LoadProjectFiles();
 			graphics.CreateContext();
-			logic.Init();
-			graphics.BindContextInputCallbacks(input);
-			debugGui.BindInput(input);
-			menuGui.BindInput(input);
-			lastFrameTime = glfwGetTime();
+			logic.Init(startupScript);
+
+			lastFrameTime = chrono_clock::now();
 
 			while (!triggeredExit)
 			{
 				if (ShouldStop()) break;
 				if (!Frame()) break;
 			}
+			return exitCode;
 		}
 		catch (char const *err)
 		{
 			Errorf(err);
+			return 1;
 		}
 	}
 
 	bool Game::Frame()
 	{
-		double frameTime = glfwGetTime();
-		double dt = frameTime - lastFrameTime;
+		graphics.PreFrame();
+		input.BeginFrame();
+		GetConsoleManager().Update(startupScript);
 
-		input.Checkpoint();
-		GConsoleManager.Update();
+		auto frameTime = chrono_clock::now();
+		double dt = (double)(frameTime - lastFrameTime).count();
+		dt /= chrono_clock::duration(std::chrono::seconds(1)).count();
 
 		if (!logic.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;
-#if defined(SP_AUDIO)
-		if (!audio.Frame()) return false;
-#endif
 		if (!physics.LogicFrame(entityManager)) return false;
 		if (!animation.Frame(dt)) return false;
 

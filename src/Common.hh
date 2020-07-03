@@ -16,6 +16,9 @@ using std::string;
 using std::runtime_error;
 using std::invalid_argument;
 
+#include <chrono>
+typedef std::chrono::steady_clock chrono_clock;
+
 typedef unsigned char uint8;
 typedef signed char int8;
 typedef uint16_t uint16;
@@ -28,7 +31,6 @@ typedef int64_t int64;
 namespace sp
 {
 	void Assert(bool condition, const string &message);
-
 	void DebugBreak();
 
 	uint32 CeilToPowerOfTwo(uint32 v);
@@ -50,6 +52,7 @@ namespace sp
 	}
 
 	bool starts_with(const string &str, const string &prefix);
+	bool ends_with(const string& str, const string& suffix);
 	string to_lower_copy(const string &str);
 	string to_upper_copy(const string &str);
 	void trim(string &str);

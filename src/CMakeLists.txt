@@ -1,6 +1,5 @@
 
 add_subdirectory(assets)
-add_subdirectory(audio)
 add_subdirectory(core)
 add_subdirectory(ecs)
 add_subdirectory(game)

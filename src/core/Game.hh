@@ -2,18 +2,15 @@
 
 #include "physx/PhysxManager.hh"
 #include "graphics/GraphicsManager.hh"
-#include "Common.hh"
+#include <Common.hh>
 #include "game/GameLogic.hh"
 #include "ecs/systems/AnimationSystem.hh"
-#include "game/InputManager.hh"
+#include <game/input/InputManager.hh>
 #include "game/gui/DebugGuiManager.hh"
 #include "game/gui/MenuGuiManager.hh"
 
+#include <chrono>
 #include <Ecs.hh>
-
-#if defined(SP_AUDIO)
-#include "audio/AudioManager.hh"
-#endif
 
 namespace cxxopts
 {
@@ -22,33 +19,33 @@ namespace cxxopts
 
 namespace sp
 {
+	class Script;
+
 	class Game
 	{
 	public:
-		Game(cxxopts::ParseResult &options);
+		Game(cxxopts::ParseResult &options, Script *startupScript = nullptr);
 		~Game();
 
-		void Start();
+		int Start();
 		bool Frame();
 		void PhysicsUpdate();
 		bool ShouldStop();
 
 		cxxopts::ParseResult &options;
+		Script *startupScript = nullptr;
 
-		// Order is important.
-		DebugGuiManager debugGui;
-		MenuGuiManager menuGui;
+		std::unique_ptr<DebugGuiManager> debugGui = nullptr;
+		std::unique_ptr<MenuGuiManager> menuGui = nullptr;
+
 		GraphicsManager graphics;
 		InputManager input;
-#if defined(SP_AUDIO)
-		AudioManager audio;
-#endif
 		ecs::EntityManager entityManager;
 		GameLogic logic;
 		PhysxManager physics;
 		ecs::AnimationSystem animation;
 
 	private:
-		double lastFrameTime;
+		chrono_clock::time_point lastFrameTime;
 	};
 }

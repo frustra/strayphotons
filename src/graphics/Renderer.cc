@@ -22,11 +22,13 @@
 #include "assets/AssetManager.hh"
 #include "physx/PhysxUtils.hh"
 #include "threading/MutexedVector.hh"
+#include "xr/XrAction.hh"
 
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <cxxopts.hpp>
+#include <GLFW/glfw3.h>
 
 namespace sp
 {
@@ -89,8 +91,14 @@ namespace sp
 		glEnable(GL_FRAMEBUFFER_SRGB);
 
 		RTPool = new RenderTargetPool();
-		debugGuiRenderer = make_shared<GuiRenderer>(*this, &game->debugGui);
-		menuGuiRenderer = make_shared<GuiRenderer>(*this, &game->menuGui);
+		if (game->debugGui)
+		{
+			debugGuiRenderer = make_shared<GuiRenderer>(*this, game->debugGui.get());
+		}
+		if (game->menuGui)
+		{
+			menuGuiRenderer = make_shared<GuiRenderer>(*this, game->menuGui.get());
+		}
 
 		ShaderControl = new ShaderManager();
 		ShaderManager::SetDefine("MAX_LIGHTS", std::to_string(MAX_LIGHTS));
@@ -698,7 +706,7 @@ namespace sp
 
 		// move the positions back a bit to account for overlapping lines
 		glm::vec3 pos0 = start - lineWidth * lineDir;
-		glm::vec3 pos1 = end + lineWidth * lineDir;;
+		glm::vec3 pos1 = end + lineWidth * lineDir;
 
 		auto addVertex = [&](const glm::vec3 & pos)
 		{
@@ -774,36 +782,7 @@ namespace sp
 		{
 			comp->model->glModel = make_shared<GLModel>(comp->model.get());
 		}
-		comp->model->glModel->Draw(shader, modelMat, view);
-
-		if (ent.Has<ecs::Name>())
-		{
-			auto name = ent.Get<ecs::Name>();
-			if (*name == "xr-controller-right")
-			{
-				glm::vec3 lpos0 = glm::vec3(modelMat * glm::vec4(0, 0, 0, 1.0));
-				glm::vec3 lpos1 = glm::vec3(modelMat * glm::vec4(0, 0, -10.0, 1.0));
-				vector<SceneVertex> vertices(6);
-				addLine(view, vertices, lpos0, lpos1, 0.001f);
-
-				shader->SetParams(view, glm::mat4(), glm::mat4());
-				auto fragShader = GlobalShaders->Get<SceneFS>();
-				fragShader->SetEmissive(glm::vec3(10.0));
-
-				static unsigned char baseColor[4] = {255, 0, 0, 255};
-				static BasicMaterial mat(baseColor);
-
-				static VertexBuffer vbo;
-				vbo.SetElementsVAO(vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
-				vbo.BindVAO();
-
-				mat.baseColorTex.Bind(0);
-				mat.metallicRoughnessTex.Bind(1);
-				mat.heightTex.Bind(3);
-
-				glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
-			}
-		}
+		comp->model->glModel->Draw(shader, modelMat, view, comp->model->bones.size(), comp->model->bones.size() > 0 ? comp->model->bones.data() : NULL);
 	}
 
 	void Renderer::DrawGridDebug(const ecs::View &view, SceneShader *shader)
@@ -880,7 +859,7 @@ namespace sp
 		UpdateShaders();
 		ReadBackLightSensors();
 
-		if (game->menuGui.RenderMode() == MenuRenderMode::Gel)
+		if (game->menuGui && game->menuGui->RenderMode() == MenuRenderMode::Gel)
 		{
 			ecs::View menuView({ 1280, 1280 });
 			menuView.clearMode = GL_COLOR_BUFFER_BIT;

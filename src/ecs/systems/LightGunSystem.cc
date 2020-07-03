@@ -7,8 +7,8 @@
 #include "physx/PhysxUtils.hh"
 #include "core/Logging.hh"
 
-#include "game/InputManager.hh"
-#include "game/GameLogic.hh"
+#include <game/input/InputManager.hh>
+#include <game/GameLogic.hh>
 
 #include <PxPhysicsAPI.h>
 
@@ -42,18 +42,21 @@ namespace ecs
 				}
 			}
 		}
-
-		for (auto ent : entities->EntitiesWith<LightGun, Transform>())
+		
+		if (input != nullptr)
 		{
-			auto gun = ent.Get<LightGun>();
+			for (auto ent : entities->EntitiesWith<LightGun, Transform>())
+			{
+				auto gun = ent.Get<LightGun>();
 
-			if (input->IsAnyPressed(gun->suckLightKeys))
-			{
-				SuckLight(ent);
-			}
-			if (input->IsAnyPressed(gun->shootLightKeys))
-			{
-				ShootLight(ent);
+				if (input->IsPressed(sp::INPUT_ACTION_PRIMARY_TRIGGER))
+				{
+					ShootLight(ent);
+				}
+				else if (input->IsPressed(sp::INPUT_ACTION_SECONDARY_TRIGGER))
+				{
+					SuckLight(ent);
+				}
 			}
 		}
 

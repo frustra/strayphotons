@@ -17,12 +17,12 @@ target_compile_definitions(
 set(CXXOPTS_BUILD_TESTS OFF CACHE BOOL "Disable CXXOPTS Test Suite" FORCE)
 add_subdirectory(cxxopts)
 
-add_subdirectory(fmod)
 add_subdirectory(robin-hood-hashing)
 
 # These projects require more configuration that is encapsulated their own CMake files
 include(PhysX.cmake)
 include(glfw.cmake)
+include(glfw-egl.cmake)
 include(imgui.cmake)
 include(glew.cmake)
 include(linenoise.cmake)

@@ -22,14 +22,16 @@ namespace sp
 				ImGuiWindowFlags_NoTitleBar;
 
 			ImGui::SetNextWindowPos(ImVec2(0, 0));
+			ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, 400.0f));
 
-			ImGui::Begin("Console", nullptr, ImVec2(io.DisplaySize.x, 400.0f), 0.7f, flags);
+			ImGui::Begin("Console", nullptr, flags);
 			{
-				ImGui::BeginChild("ScrollingRegion", ImVec2(0, -ImGui::GetItemsLineHeightWithSpacing()), false, ImGuiWindowFlags_HorizontalScrollbar);
+				const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+				ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
 
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1));
 
-				for (auto &line : GConsoleManager.Lines())
+				for (auto &line : GetConsoleManager().Lines())
 				{
 					ImGui::PushStyleColor(ImGuiCol_Text, LogColours[(int)line.level]);
 					ImGui::TextUnformatted(line.text.c_str());
@@ -51,16 +53,20 @@ namespace sp
 					ImGuiInputTextFlags_CallbackCompletion |
 					ImGuiInputTextFlags_CallbackHistory;
 
+				bool reclaim_focus = false;
 				if (ImGui::InputText("##CommandInput", inputBuf, sizeof(inputBuf), iflags, CommandEditStub, (void *) this))
 				{
 					string line(inputBuf);
-					GConsoleManager.ParseAndExecute(line, true);
+					auto &console = GetConsoleManager();
+					console.AddHistory(line);
+					console.QueueParseAndExecute(line);
 					inputBuf[0] = '\0';
 					historyOffset = 0;
-					ImGui::SetKeyboardFocusHere(-1);
+					reclaim_focus = true;
 				}
 
-				if (ImGui::IsItemHovered() || (ImGui::IsRootWindowOrAnyChildFocused() && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0)))
+				ImGui::SetItemDefaultFocus();
+				if (reclaim_focus)
 					ImGui::SetKeyboardFocusHere(-1);
 			}
 			ImGui::End();
@@ -77,7 +83,7 @@ namespace sp
 			if (data->EventFlag == ImGuiInputTextFlags_CallbackCompletion)
 			{
 				string line(data->Buf);
-				line = GConsoleManager.AutoComplete(line);
+				line = GetConsoleManager().AutoComplete(line);
 
 				int newLength = snprintf(data->Buf, (size_t)data->BufSize, "%s", line.c_str());
 				data->CursorPos = data->SelectionStart = data->SelectionEnd = data->BufTextLen = newLength;
@@ -101,10 +107,9 @@ namespace sp
 							newInputCursorOffset = data->CursorPos;
 						}
 
-						auto hist = GConsoleManager.History();
-						if ((size_t) pos <= hist.size())
+						auto line = GetConsoleManager().GetHistory(pos);
+						if (!line.empty())
 						{
-							auto &line = hist[hist.size() - pos];
 							int newLength = snprintf(data->Buf, (size_t)data->BufSize, "%s", line.c_str());
 							data->CursorPos = data->SelectionStart = data->SelectionEnd = data->BufTextLen = newLength;
 							data->BufDirty = true;

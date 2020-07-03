@@ -16,7 +16,12 @@
 
 namespace sp
 {
-	ConsoleManager GConsoleManager;
+	
+	ConsoleManager &GetConsoleManager()
+	{
+		static ConsoleManager GConsoleManager;
+		return GConsoleManager;
+	}
 
 #ifdef USE_LINENOISE_CLI
 	void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc);
@@ -28,33 +33,26 @@ namespace sp
 		{
 			static std::mutex mut;
 			mut.lock();
-			GConsoleManager.AddLog(lvl, line);
+			GetConsoleManager().AddLog(lvl, line);
 			mut.unlock();
 		}
-	}
-
-	static uint64 NowMonotonicMs()
-	{
-		auto now = std::chrono::steady_clock::now();
-		auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
-		return now_ms.time_since_epoch().count();
 	}
 
 	CVarBase::CVarBase(const string &name, const string &description)
 		: name(name), description(description)
 	{
-		GConsoleManager.AddCVar(this);
+		GetConsoleManager().AddCVar(this);
 	}
 
 	CVarBase::~CVarBase()
 	{
-		GConsoleManager.RemoveCVar(this);
+		GetConsoleManager().RemoveCVar(this);
 	}
 
 	ConsoleManager::ConsoleManager()
 	{
-		inputThread = std::thread([&] { this->InputLoop(); });
-		inputThread.detach();
+		cliInputThread = std::thread([&] { this->InputLoop(); });
+		cliInputThread.detach();
 	}
 
 	void ConsoleManager::AddCVar(CVarBase *cvar)
@@ -69,7 +67,9 @@ namespace sp
 
 	void ConsoleManager::InputLoop()
 	{
-		std::unique_lock<std::mutex> ulock(inputLock, std::defer_lock);
+		std::mutex wait_lock;
+		std::condition_variable condition;
+		std::unique_lock ulock(wait_lock, std::defer_lock);
 
 #ifdef USE_LINENOISE_CLI
 		char *str;
@@ -84,13 +84,12 @@ namespace sp
 				linenoiseFree(str);
 				continue;
 			}
-
-			ConsoleInputLine line;
-			line.text = string(str);
+			string line(str);
 
 			ulock.lock();
-			inputLines.push(&line);
-			line.handled.wait(ulock);
+			AddHistory(str);
+			QueueParseAndExecute(line, chrono_clock::now(), &condition);
+			condition.wait(ulock);
 			ulock.unlock();
 
 			linenoiseHistoryAdd(str);
@@ -104,12 +103,12 @@ namespace sp
 			if (str == "")
 				continue;
 
-			ConsoleInputLine line;
-			line.text = str;
+			string line(str);
 
 			ulock.lock();
-			inputLines.push(&line);
-			line.handled.wait(ulock);
+			AddHistory(str);
+			QueueParseAndExecute(line, chrono_clock::now(), &condition);
+			condition.wait(ulock);
 			ulock.unlock();
 		}
 #endif
@@ -124,43 +123,43 @@ namespace sp
 		});
 	}
 
-	void ConsoleManager::Update()
+	void ConsoleManager::Update(Script *startupScript)
 	{
-		std::unique_lock<std::mutex> ulock(inputLock, std::defer_lock);
+		std::unique_lock<std::mutex> ulock(queueLock, std::defer_lock);
 
-		while (!inputLines.empty())
+		auto now = chrono_clock::now();
+
+		ulock.lock();
+		if (startupScript != nullptr && queuedCommands.empty())
 		{
-			if (!ulock.try_lock())
-				return;
-
-			auto line = inputLines.front();
-			inputLines.pop();
-			ParseAndExecute(line->text, true);
 			ulock.unlock();
-
-			line->handled.notify_all();
+			ParseAndExecute("exit");
+			return;
 		}
-
-		uint64 now = NowMonotonicMs();
 
 		while (!queuedCommands.empty())
 		{
 			auto top = queuedCommands.top();
-			if (top.first > now)
+			if (top.wait_util > now)
 				break;
 
 			queuedCommands.pop();
-			ParseAndExecute(top.second, false);
+			ulock.unlock();
+
+			ParseAndExecute(top.text);
+			if (top.handled != nullptr)
+			{
+				top.handled->notify_all();
+			}
+
+			ulock.lock();
 		}
 	}
 
-	void ConsoleManager::ParseAndExecute(const string line, bool saveHistory)
+	void ConsoleManager::ParseAndExecute(const string line)
 	{
 		if (line == "")
 			return;
-
-		if (saveHistory && (history.size() == 0 || history[history.size() - 1] != line))
-			history.push_back(line);
 
 		auto cmd = line.begin();
 		do
@@ -204,9 +203,29 @@ namespace sp
 		}
 	}
 
-	void ConsoleManager::QueueParseAndExecute(const string line, uint64 dt)
+	void ConsoleManager::QueueParseAndExecute(const string line, chrono_clock::time_point wait_util, std::condition_variable *handled)
 	{
-		queuedCommands.push({NowMonotonicMs() + dt, line});
+		std::lock_guard lock(queueLock);
+		queuedCommands.emplace(line, wait_util, handled);
+	}
+
+	void ConsoleManager::AddHistory(const string &input)
+	{
+		std::lock_guard lock(historyLock);
+		if (history.size() == 0 || history[history.size() - 1] != input)
+		{
+			history.push_back(input);
+		}
+	}
+
+	string ConsoleManager::GetHistory(size_t index)
+	{
+		std::lock_guard lock(historyLock);
+		if (index > 0 && index <= history.size())
+		{
+			return history[history.size() - index];
+		}
+		return "";
 	}
 
 	string ConsoleManager::AutoComplete(const string &input)
@@ -243,7 +262,7 @@ namespace sp
 #ifdef USE_LINENOISE_CLI
 	void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc)
 	{
-		auto completions = GConsoleManager.AllCompletions(string(buf));
+		auto completions = GetConsoleManager().AllCompletions(string(buf));
 		for (auto str : completions)
 		{
 			linenoiseAddCompletion(lc, str.c_str());

@@ -14,8 +14,10 @@
 #include "core/Logging.hh"
 #include "core/CVar.hh"
 #include "core/CFunc.hh"
+#include <Common.hh>
 
 #include <fstream>
+#include <chrono>
 
 namespace sp
 {
@@ -379,19 +381,16 @@ namespace sp
 	{
 		thread = std::thread([&]
 		{
-			const double rate = 120.0; // frames/sec
+			const int rate = 120; // frames/sec
 
 			while (!exiting)
 			{
-				double frameStart = glfwGetTime();
+				auto frameStart = chrono_clock::now();
 
 				if (simulate)
 					Frame(1.0 / rate);
 
-				double frameEnd = glfwGetTime();
-				double sleepFor = 1.0 / rate + frameStart - frameEnd;
-
-				std::this_thread::sleep_for(std::chrono::nanoseconds((uint64) (sleepFor * 1e9)));
+				std::this_thread::sleep_until(frameStart + chrono_clock::duration(std::chrono::seconds(1)) / rate);
 			}
 		});
 	}

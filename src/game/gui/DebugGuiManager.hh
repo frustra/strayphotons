@@ -1,35 +1,29 @@
 #pragma once
 
-#include "game/GuiManager.hh"
+#include <game/gui/GuiManager.hh>
 
 namespace sp
 {
+	class Game;
 	class InputManager;
 
 	class DebugGuiManager : public GuiManager
 	{
 	public:
-		DebugGuiManager() : GuiManager(FOCUS_OVERLAY) { }
-		virtual ~DebugGuiManager() { }
+		DebugGuiManager(Game *game) : GuiManager(game, FOCUS_OVERLAY) {}
+		virtual ~DebugGuiManager() {}
 
-		void BeforeFrame();
-		void DefineWindows();
+		void BeforeFrame() override;
+		void DefineWindows() override;
 
 		bool Focused()
 		{
 			return consoleOpen;
 		}
 
-		void BindInput(InputManager &inputManager);
-		void GrabFocus();
-		void ReleaseFocus();
-
 		void ToggleConsole();
 
 	private:
-		InputManager *inputManager = nullptr;
-
 		bool consoleOpen = false;
-		glm::vec2 guiCursorPos = { 200.0f, 200.0f };
 	};
 }

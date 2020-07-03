@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Common.hh"
+#include <Common.hh>
 #include "graphics/Graphics.hh"
 #include "CVar.hh"
 
@@ -17,13 +17,13 @@ namespace sp
 	{
 		string name;
 		int depth = 0;
-		double cpuStart = 0, cpuEnd = 0, cpuElapsed = 0;
-		uint64 gpuStart = 0, gpuEnd = 0, gpuElapsed = 0;
+		chrono_clock::duration cpuElapsed;
+		uint64 gpuElapsed = 0;
 	};
 
 	struct TimeQuery
 	{
-		double cpuStart, cpuEnd;
+		chrono_clock::time_point cpuStart, cpuEnd;
 		GLuint glQueries[2];
 		int resultIndex;
 	};

@@ -9,7 +9,7 @@ namespace sp
 {
 	CFunc<void> CFuncList("list", "Lists all CVar names, values, and descriptions", []()
 	{
-		for (auto &kv : GConsoleManager.CVars())
+		for (auto &kv : GetConsoleManager().CVars())
 		{
 			auto cvar = kv.second;
 			if (cvar->IsValueType())
@@ -37,7 +37,7 @@ namespace sp
 
 		string cmd;
 		getline(stream, cmd);
-		GConsoleManager.QueueParseAndExecute(cmd, dt);
+		GetConsoleManager().QueueParseAndExecute(cmd, chrono_clock::now() + std::chrono::milliseconds(dt));
 	});
 
 	CFunc<string> CFuncToggle("toggle", "Toggle a CVar between values (toggle <cvar_name> [<value_a> <value_b>])", [](string args)
@@ -46,7 +46,7 @@ namespace sp
 		string cvarName;
 		stream >> cvarName;
 
-		auto cvars = GConsoleManager.CVars();
+		auto cvars = GetConsoleManager().CVars();
 		auto cvarit = cvars.find(to_lower_copy(cvarName));
 		if (cvarit != cvars.end())
 		{

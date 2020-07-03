@@ -1,6 +1,3 @@
-[submodule "ext/glfw"]
-	path = ext/glfw
-	url = https://github.com/glfw/glfw.git
 [submodule "ext/glm"]
 	path = ext/glm
 	url = https://github.com/g-truc/glm.git
@@ -55,3 +52,6 @@
 [submodule "ext/gltf-pipeline"]
 	path = ext/gltf-pipeline
 	url = https://github.com/AnalyticalGraphicsInc/gltf-pipeline.git
+[submodule "ext/glfw"]
+	path = ext/glfw
+	url = git@github.com:frustra/glfw.git

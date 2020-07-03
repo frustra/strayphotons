@@ -8,6 +8,7 @@ extern "C"
 #include "assets/AssetHelpers.hh"
 #include "assets/Model.hh"
 #include "assets/Scene.hh"
+#include "assets/Script.hh"
 
 #include "core/Logging.hh"
 #include "Common.hh"
@@ -357,6 +358,29 @@ namespace sp
 			scene->entities.push_back(entity);
 		}
 		return scene;
+	}
+
+	shared_ptr<Script> AssetManager::LoadScript(const std::string &path)
+	{
+		Logf("Loading script: %s", path);
+
+		shared_ptr<Asset> asset = Load("scripts/" + path);
+		if (!asset)
+		{
+			Logf("Script not found");
+			return nullptr;
+		}
+
+		std::stringstream ss(asset->String());
+		vector<string> lines;
+
+		string line;
+		while (std::getline(ss,line,'\n'))
+		{
+			lines.emplace_back(std::move(line));
+		}
+
+		return make_shared<Script>(path, asset, std::move(lines));
 	}
 
 	void AssetManager::Unregister(const Asset &asset)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Common.hh>
 #include "CVar.hh"
 #include "CFunc.hh"
 #include "Logging.hh"
@@ -12,6 +13,8 @@
 
 namespace sp
 {
+	class Script;
+
 	struct ConsoleLine
 	{
 		logging::Level level;
@@ -20,8 +23,17 @@ namespace sp
 
 	struct ConsoleInputLine
 	{
-		std::condition_variable handled;
 		string text;
+		chrono_clock::time_point wait_util;
+		std::condition_variable *handled;
+
+		ConsoleInputLine(string text, chrono_clock::time_point wait_util, std::condition_variable *handled)
+			: text(text), wait_util(wait_util), handled(handled) {}
+
+		bool operator<(const ConsoleInputLine &other) const
+		{
+			return this->wait_util < other.wait_util;
+		}
 	};
 
 	class ConsoleManager
@@ -30,7 +42,7 @@ namespace sp
 		ConsoleManager();
 		void AddCVar(CVarBase *cvar);
 		void RemoveCVar(CVarBase *cvar);
-		void Update();
+		void Update(Script *startupScript = nullptr);
 		void InputLoop();
 
 		void AddLog(logging::Level lvl, const string &line);
@@ -40,14 +52,11 @@ namespace sp
 			return outputLines;
 		}
 
-		const vector<string> History()
-		{
-			return history;
-		}
-
-		void ParseAndExecute(const string line, bool saveHistory = false);
+		void ParseAndExecute(const string line);
 		void Execute(const string cmd, const string &args);
-		void QueueParseAndExecute(const string line, uint64 dt = 0);
+		void QueueParseAndExecute(const string line, chrono_clock::time_point wait_util = chrono_clock::now(), std::condition_variable *handled = nullptr);
+		void AddHistory(const string &input);
+		string GetHistory(size_t index);
 		string AutoComplete(const string &input);
 		vector<string> AllCompletions(const string &input);
 
@@ -58,14 +67,15 @@ namespace sp
 
 	private:
 		std::map<string, CVarBase *> cvars;
-		std::queue<ConsoleInputLine *> inputLines;
-		std::mutex inputLock;
-		std::thread inputThread;
+		std::thread cliInputThread;
 
-		std::priority_queue<std::pair<uint64, string>> queuedCommands;
+		std::mutex queueLock;
+		std::priority_queue<ConsoleInputLine> queuedCommands;
 		vector<ConsoleLine> outputLines;
+
+		std::mutex historyLock;
 		vector<string> history;
 	};
 
-	extern ConsoleManager GConsoleManager;
+	ConsoleManager &GetConsoleManager();
 }
