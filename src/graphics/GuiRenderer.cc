@@ -10,12 +10,15 @@
 
 #include <algorithm>
 #include <imgui/imgui.h>
-#include <GLFW/glfw3.h>
 
+// clang-format off
+// GLFW must be included after glew.h (Graphics.hh)
+#include <GLFW/glfw3.h>
 #ifdef _WIN32
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <glfw/glfw3native.h>
+	#define GLFW_EXPOSE_NATIVE_WIN32
+	#include <glfw/glfw3native.h>
 #endif
+// clang-format on
 
 namespace sp
 {

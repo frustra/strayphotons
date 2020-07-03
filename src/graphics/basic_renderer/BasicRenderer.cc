@@ -4,7 +4,11 @@
 #include "core/CVar.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/View.hh"
+
+// clang-format off
+// GLFW must be included after glew.h (Graphics.hh)
 #include <GLFW/glfw3.h>
+// clang-format on
 
 namespace sp
 {

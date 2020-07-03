@@ -1,14 +1,18 @@
 #include <graphics/GraphicsManager.hh>
 
 #include "GlfwInputManager.hh"
-#include "GlfwBindingNames.hh"
 #include <Common.hh>
 
 #include <algorithm>
 #include <stdexcept>
-#include <GLFW/glfw3.h>
 #include <core/Logging.hh>
 #include <core/Console.hh>
+
+// clang-format off
+// GLFW must be included after glew.h (Graphics.hh)
+#include "GlfwBindingNames.hh"
+#include <GLFW/glfw3.h>
+// clang-format on
 
 namespace sp
 {

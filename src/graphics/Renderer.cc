@@ -28,7 +28,11 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <cxxopts.hpp>
+
+// clang-format off
+// GLFW must be included after glew.h (Graphics.hh)
 #include <GLFW/glfw3.h>
+// clang-format on
 
 namespace sp
 {
