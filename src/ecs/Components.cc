@@ -17,8 +17,8 @@ namespace ecs {
     ComponentBase *LookupComponent(const std::string name) {
         if (GComponentList == nullptr) GComponentList = new ComponentList();
 
-        try {
-            return GComponentList->at(name);
-        } catch (std::out_of_range &) { return nullptr; }
+        auto it = GComponentList->find(name);
+        if (it != GComponentList->end()) { return it->second; }
+        return nullptr;
     }
 } // namespace ecs

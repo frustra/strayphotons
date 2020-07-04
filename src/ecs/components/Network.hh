@@ -3,7 +3,6 @@
 #include <Common.hh>
 #include <Ecs.hh>
 #include <ecs/Components.hh>
-#include <ecs/NamedEntity.hh>
 
 namespace ecs {
 	typedef uint64_t UserId;

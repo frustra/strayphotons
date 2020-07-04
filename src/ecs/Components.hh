@@ -46,12 +46,22 @@ namespace ecs {
         }
 
         static bool Load(Lock<Read<ecs::Name>> lock, CompType &dst, const picojson::value &src) {
-            std::cerr << "Calling undefined Load on Compoent type: " << typeid(CompType).name() << std::endl;
+            std::cerr << "Calling undefined Load(json) on Compoent type: " << typeid(CompType).name() << std::endl;
             return false;
         }
 
         static bool Save(Lock<Read<ecs::Name>> lock, picojson::value &dst, const CompType &src) {
-            std::cerr << "Calling undefined Save on Compoent type: " << typeid(CompType).name() << std::endl;
+            std::cerr << "Calling undefined Save(json) on Compoent type: " << typeid(CompType).name() << std::endl;
+            return false;
+        }
+
+        static bool Load(Lock<Read<ecs::Name>> lock, CompType &dst /*, const protobuf &src*/) {
+            std::cerr << "Calling undefined Load(protobuf) on Compoent type: " << typeid(CompType).name() << std::endl;
+            return false;
+        }
+
+        static bool Save(Lock<Read<ecs::Name>> lock /*, protobuf &dst*/, const CompType &src) {
+            std::cerr << "Calling undefined Save(protobuf) on Compoent type: " << typeid(CompType).name() << std::endl;
             return false;
         }
 
