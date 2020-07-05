@@ -1,3 +1,6 @@
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error")
+endif()
 
 # These projects already have functional CMake scripts that can be used as part of the native build
 add_subdirectory(googletest)
