@@ -129,6 +129,14 @@ target_include_directories(
 
 add_subdirectory(src)
 
+# The GENERATED flag is not preserved in parent directories,
+# so set it again here https://gitlab.kitware.com/cmake/cmake/-/issues/18399
+set_source_files_properties(
+	src/network/protocol/Protocol.pb.cc
+	src/network/protocol/Protocol.pb.h
+	PROPERTIES GENERATED TRUE
+)
+
 add_subdirectory(assets)
 
 ## COMPILE DEFINITIONS ##
@@ -264,6 +272,7 @@ target_link_libraries(
 		cxxopts
 		OpenGL::GL
 		picojson
+		libprotobuf
 )
 
 target_link_libraries(

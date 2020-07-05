@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message Message {
+	repeated int32 id = 1;
+}

@@ -6,9 +6,11 @@ import re
 import glob
 import sys
 import subprocess
+import fnmatch
 
 include_paths = ["src/", "tests/"]
 include_extenions = [".cc", ".hh", ".cpp", ".hpp"]
+disallow = ["*.pb.h", "*.pb.cc"]
 version_pattern = re.compile("version ([0-9]+\.[0-9]+)\.[0-9]+")
 allowed_clangformat_versions = ["6.0", "10.0", "11.0"]
 
@@ -55,7 +57,12 @@ def main():
         for extension in include_extenions:
             glob_path = os.path.join(project_root, base_path, '**/*' + extension)
             for filepath in glob.iglob(glob_path, recursive=True):
-                if not run_clang_format(filepath, args.fix):
+                skip = False
+                for disallowed_pattern in disallow:
+                    if fnmatch.fnmatch(filepath, disallowed_pattern):
+                        skip = True
+                        break
+                if not skip and not run_clang_format(filepath, args.fix):
                     validated = False
 
     if not validated:

@@ -5,6 +5,7 @@
 #include "game/gui/DebugGuiManager.hh"
 #include "game/gui/MenuGuiManager.hh"
 #include "graphics/GraphicsManager.hh"
+#include "network/NetworkManager.hh"
 #include "physx/PhysxManager.hh"
 #include "xr/XrManager.hh"
 
@@ -37,6 +38,7 @@ namespace sp {
         std::unique_ptr<MenuGuiManager> menuGui = nullptr;
 
         GraphicsManager graphics;
+        NetworkManager network;
         InputManager input;
         ecs::EntityManager entityManager;
         GameLogic logic;

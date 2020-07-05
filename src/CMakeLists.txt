@@ -7,6 +7,7 @@ add_subdirectory(graphics)
 add_subdirectory(physx)
 add_subdirectory(shaders)
 add_subdirectory(xr)
+add_subdirectory(network)
 
 target_sources(
     ${PROJECT_LIB}
