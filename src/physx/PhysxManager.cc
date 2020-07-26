@@ -45,6 +45,8 @@ namespace sp {
 		pxCooking = PxCreateCooking(PX_PHYSICS_VERSION, *pxFoundation, PxCookingParams(scale));
 		Assert(pxCooking, "PxCreateCooking");
 
+		scratchBlock.resize(0x1000000); // 16MiB
+
 		CreatePhysxScene();
 
 		StartThread();
@@ -188,7 +190,7 @@ namespace sp {
 			CacheDebugLines();
 		}
 
-		scene->simulate((PxReal)timeStep);
+		scene->simulate((PxReal)timeStep, nullptr, scratchBlock.data(), scratchBlock.size());
 
 		resultsPending = true;
 		Unlock();
