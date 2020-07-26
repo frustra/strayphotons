@@ -1,7 +1,8 @@
 #include "graphics/basic_renderer/BasicRenderer.hh"
+
+#include "core/CVar.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
-#include "core/CVar.hh"
 #include "ecs/components/Transform.hh"
 #include "ecs/components/View.hh"
 
@@ -10,22 +11,16 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
-namespace sp
-{
-	BasicRenderer::BasicRenderer(Game *game) : GraphicsContext(game)
-	{
+namespace sp {
+	BasicRenderer::BasicRenderer(Game *game) : GraphicsContext(game) {
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 	}
 
-	BasicRenderer::~BasicRenderer()
-	{
-	}
+	BasicRenderer::~BasicRenderer() {}
 
-	void BasicRenderer::PrepareRenderable(ecs::Handle<ecs::Renderable> comp)
-	{
-		for (auto primitive : comp->model->primitives)
-		{
+	void BasicRenderer::PrepareRenderable(ecs::Handle<ecs::Renderable> comp) {
+		for (auto primitive : comp->model->primitives) {
 			auto indexBuffer = comp->model->GetBuffer(primitive->indexBuffer.bufferIndex);
 
 			GLModel::Primitive glPrimitive;
@@ -36,10 +31,10 @@ namespace sp
 
 			glGenVertexArrays(1, &glPrimitive.vertexBufferHandle);
 			glBindVertexArray(glPrimitive.vertexBufferHandle);
-			for (int i = 0; i < std::size(primitive->attributes); i++)
-			{
+			for (int i = 0; i < std::size(primitive->attributes); i++) {
 				auto *attr = &primitive->attributes[i];
-				if (attr->componentCount == 0) continue;
+				if (attr->componentCount == 0)
+					continue;
 
 				auto attribBuffer = comp->model->GetBuffer(attr->bufferIndex);
 				GLuint attribBufferHandle;
@@ -47,7 +42,12 @@ namespace sp
 				glBindBuffer(GL_ARRAY_BUFFER, attribBufferHandle);
 				glBufferData(GL_ARRAY_BUFFER, attribBuffer.size(), attribBuffer.data(), GL_STATIC_DRAW);
 
-				glVertexAttribPointer(i, attr->componentCount, attr->componentType, GL_FALSE, attr->byteStride, (void *) attr->byteOffset);
+				glVertexAttribPointer(i,
+					attr->componentCount,
+					attr->componentType,
+					GL_FALSE,
+					attr->byteStride,
+					(void *)attr->byteOffset);
 				glEnableVertexAttribArray(i);
 			}
 
@@ -55,12 +55,9 @@ namespace sp
 		}
 	}
 
-	void BasicRenderer::DrawRenderable(ecs::Handle<ecs::Renderable> comp)
-	{
-		for (auto primitive : comp->model->primitives)
-		{
-			if (!primitiveMap.count(primitive))
-			{
+	void BasicRenderer::DrawRenderable(ecs::Handle<ecs::Renderable> comp) {
+		for (auto primitive : comp->model->primitives) {
+			if (!primitiveMap.count(primitive)) {
 				PrepareRenderable(comp);
 			}
 
@@ -68,17 +65,14 @@ namespace sp
 			glBindVertexArray(glPrimitive.vertexBufferHandle);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glPrimitive.indexBufferHandle);
 
-			glDrawElements(
-				primitive->drawMode,
+			glDrawElements(primitive->drawMode,
 				primitive->indexBuffer.components,
 				primitive->indexBuffer.componentType,
-				(char *) primitive->indexBuffer.byteOffset
-			);
+				(char *)primitive->indexBuffer.byteOffset);
 		}
 	}
 
-	GLuint compileShader(GLenum type, const char *src)
-	{
+	GLuint compileShader(GLenum type, const char *src) {
 		auto shader = glCreateShader(type);
 		int success;
 
@@ -86,8 +80,7 @@ namespace sp
 		glCompileShader(shader);
 		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 
-		if (!success)
-		{
+		if (!success) {
 			int llen = 0;
 			glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &llen);
 
@@ -101,8 +94,7 @@ namespace sp
 		return shader;
 	}
 
-	void BasicRenderer::Prepare()
-	{
+	void BasicRenderer::Prepare() {
 		glEnable(GL_FRAMEBUFFER_SRGB);
 
 		const char *vtxShaderSrc = R"(
@@ -150,8 +142,7 @@ namespace sp
 		glLinkProgram(sceneProgram);
 		glGetProgramiv(sceneProgram, GL_LINK_STATUS, &success);
 
-		if (!success)
-		{
+		if (!success) {
 			int llen = 0;
 			glGetProgramiv(sceneProgram, GL_INFO_LOG_LENGTH, &llen);
 
@@ -170,8 +161,7 @@ namespace sp
 		AssertGLOK("BasicRenderer::Prepare");
 	}
 
-	void BasicRenderer::RenderPass(ecs::View view, RenderTarget::Ref finalOutput)
-	{
+	void BasicRenderer::RenderPass(ecs::View view, RenderTarget::Ref finalOutput) {
 		Assert(!finalOutput, "Basic renderer does not support XR rendering");
 
 		glEnable(GL_CULL_FACE);
@@ -184,8 +174,7 @@ namespace sp
 
 		auto mvpLoc = glGetUniformLocation(sceneProgram, "mvpMatrix");
 
-		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>())
-		{
+		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>()) {
 			auto comp = ent.Get<ecs::Renderable>();
 			auto modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform(game->entityManager);
 			auto mvp = view.projMat * view.viewMat * modelMat;
@@ -194,11 +183,10 @@ namespace sp
 			DrawRenderable(comp);
 		}
 
-		//AssertGLOK("BasicRenderer::RenderFrame");
+		// AssertGLOK("BasicRenderer::RenderFrame");
 	}
 
-	void BasicRenderer::PrepareForView(const ecs::View &view)
-	{
+	void BasicRenderer::PrepareForView(const ecs::View &view) {
 		glDisable(GL_BLEND);
 		glDisable(GL_STENCIL_TEST);
 		glDepthMask(GL_TRUE);
@@ -206,23 +194,17 @@ namespace sp
 		glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
 		glScissor(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
 
-		if (view.clearMode != 0)
-		{
+		if (view.clearMode != 0) {
 			glClearColor(view.clearColor.r, view.clearColor.g, view.clearColor.b, view.clearColor.a);
 			glClear(view.clearMode);
 		}
 	}
 
-	void BasicRenderer::RenderLoading(ecs::View view)
-	{
+	void BasicRenderer::RenderLoading(ecs::View view) {
 		// TODO(xthexder): Put something here
 	}
 
-	void BasicRenderer::BeginFrame()
-	{
-	}
+	void BasicRenderer::BeginFrame() {}
 
-	void BasicRenderer::EndFrame()
-	{
-	}
-}
+	void BasicRenderer::EndFrame() {}
+} // namespace sp

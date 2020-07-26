@@ -1,64 +1,56 @@
 #include "SMAA.hh"
+
 #include "assets/AssetManager.hh"
 #include "core/CVar.hh"
+#include "graphics/GenericShaders.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/ShaderManager.hh"
-#include "graphics/GenericShaders.hh"
 #include "graphics/Util.hh"
 
 //#define DISABLE_SMAA
 
-namespace sp
-{
+namespace sp {
 #ifndef DISABLE_SMAA
 	static CVar<int> CVarSMAADebug("r.SMAADebug", 0, "Show SMAA intermediates (1: weights, 2: edges)");
 #endif
 
-	class SMAAShaderBase : public Shader
-	{
+	class SMAAShaderBase : public Shader {
 	public:
 		using Shader::Shader;
 
-		void SetViewParams(const ecs::View &view)
-		{
+		void SetViewParams(const ecs::View &view) {
 			auto extents = glm::vec2(view.extents);
 			glm::vec4 metrics(1.0f / extents, extents);
 			Set("smaaRTMetrics", metrics);
 		}
 	};
 
-	class SMAAEdgeDetectionVS : public SMAAShaderBase
-	{
+	class SMAAEdgeDetectionVS : public SMAAShaderBase {
 		SHADER_TYPE(SMAAEdgeDetectionVS)
 		using SMAAShaderBase::SMAAShaderBase;
 	};
 
-	class SMAAEdgeDetectionFS : public SMAAShaderBase
-	{
+	class SMAAEdgeDetectionFS : public SMAAShaderBase {
 		SHADER_TYPE(SMAAEdgeDetectionFS)
 		using SMAAShaderBase::SMAAShaderBase;
 	};
 
-	class SMAABlendingWeightsVS : public SMAAShaderBase
-	{
+	class SMAABlendingWeightsVS : public SMAAShaderBase {
 		SHADER_TYPE(SMAABlendingWeightsVS)
 		using SMAAShaderBase::SMAAShaderBase;
 	};
 
-	class SMAABlendingWeightsFS : public SMAAShaderBase
-	{
+	class SMAABlendingWeightsFS : public SMAAShaderBase {
 		SHADER_TYPE(SMAABlendingWeightsFS)
 		using SMAAShaderBase::SMAAShaderBase;
 	};
 
-	class SMAABlendingVS : public SMAAShaderBase
-	{
+	class SMAABlendingVS : public SMAAShaderBase {
 		SHADER_TYPE(SMAABlendingVS)
 		using SMAAShaderBase::SMAAShaderBase;
 	};
 
-	class SMAABlendingFS : public SMAAShaderBase
-	{
+	class SMAABlendingFS : public SMAAShaderBase {
 		SHADER_TYPE(SMAABlendingFS)
 		using SMAAShaderBase::SMAAShaderBase;
 	};
@@ -72,8 +64,7 @@ namespace sp
 	IMPLEMENT_SHADER_TYPE(SMAABlendingFS, "smaa/blending.frag", Fragment);
 #endif
 
-	void SMAAEdgeDetection::Process(const PostProcessingContext *context)
-	{
+	void SMAAEdgeDetection::Process(const PostProcessingContext *context) {
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context);
 		auto stencil = outputs[1].AllocateTarget(context);
@@ -99,11 +90,9 @@ namespace sp
 #endif
 	}
 
-	void SMAABlendingWeights::Process(const PostProcessingContext *context)
-	{
+	void SMAABlendingWeights::Process(const PostProcessingContext *context) {
 #ifndef DISABLE_SMAA
-		if (CVarSMAADebug.Get() >= 2)
-		{
+		if (CVarSMAADebug.Get() >= 2) {
 			SetOutputTarget(0, GetInput(0)->GetOutput()->TargetRef);
 			return;
 		}
@@ -140,11 +129,9 @@ namespace sp
 #endif
 	}
 
-	void SMAABlending::Process(const PostProcessingContext *context)
-	{
+	void SMAABlending::Process(const PostProcessingContext *context) {
 #ifndef DISABLE_SMAA
-		if (CVarSMAADebug.Get() >= 1)
-		{
+		if (CVarSMAADebug.Get() >= 1) {
 			SetOutputTarget(0, GetInput(1)->GetOutput()->TargetRef);
 			return;
 		}
@@ -163,4 +150,4 @@ namespace sp
 		SetOutputTarget(0, GetInput(0)->GetOutput()->TargetRef);
 #endif
 	}
-}
+} // namespace sp

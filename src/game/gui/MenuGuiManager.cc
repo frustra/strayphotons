@@ -1,55 +1,46 @@
 #include "MenuGuiManager.hh"
 
 #include "assets/AssetManager.hh"
-#include "graphics/Texture.hh"
-#include "graphics/GraphicsManager.hh"
-#include <graphics/GraphicsContext.hh>
-#include <game/input/InputManager.hh>
-#include "core/Logging.hh"
 #include "core/CVar.hh"
 #include "core/Console.hh"
-#include <core/Game.hh>
+#include "core/Logging.hh"
+#include "graphics/GraphicsManager.hh"
+#include "graphics/Texture.hh"
+
 #include <GLFW/glfw3.h>
-
-#include <sstream>
+#include <core/Game.hh>
+#include <game/input/InputManager.hh>
+#include <graphics/GraphicsContext.hh>
 #include <imgui/imgui.h>
+#include <sstream>
 
-namespace sp
-{
+namespace sp {
 	static CVar<bool> CVarMenuFocused("g.MenuFocused", false, "Focus input on menu");
 	static CVar<int> CVarMenuDisplay("g.MenuDisplay", 0, "Display pause menu");
 	static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
 
-	MenuGuiManager::MenuGuiManager(Game *game) : GuiManager(game, FOCUS_MENU)
-	{
+	MenuGuiManager::MenuGuiManager(Game *game) : GuiManager(game, FOCUS_MENU) {
 		SetGuiContext();
 		ImGuiIO &io = ImGui::GetIO();
 		io.MousePos = ImVec2(200, 200);
 	}
 
-	void MenuGuiManager::BeforeFrame()
-	{
+	void MenuGuiManager::BeforeFrame() {
 		SetGuiContext();
 		ImGui::StyleColorsClassic();
 		framesSinceOpened++;
 
 		ImGuiIO &io = ImGui::GetIO();
 
-		if (input != nullptr)
-		{
+		if (input != nullptr) {
 			input->LockFocus(Focused(), focusPriority);
 
-			if (Focused() && !input->FocusLocked(focusPriority))
-			{
+			if (Focused() && !input->FocusLocked(focusPriority)) {
 				const KeyEvents *keys;
-				if (input->GetActionValue(INPUT_ACTION_KEYBOARD_KEYS, &keys))
-				{
-					if (framesSinceOpened > 1)
-					{
-						if (keys->contains(GLFW_KEY_ESCAPE))
-						{
-							if (selectedScreen == MenuScreen::Main && RenderMode() == MenuRenderMode::Pause)
-							{
+				if (input->GetActionValue(INPUT_ACTION_KEYBOARD_KEYS, &keys)) {
+					if (framesSinceOpened > 1) {
+						if (keys->contains(GLFW_KEY_ESCAPE)) {
+							if (selectedScreen == MenuScreen::Main && RenderMode() == MenuRenderMode::Pause) {
 								CloseMenu();
 							}
 
@@ -57,10 +48,8 @@ namespace sp
 						}
 					}
 
-					if (selectedScreen == MenuScreen::Splash)
-					{
-						if (keys->contains(GLFW_KEY_ENTER))
-						{
+					if (selectedScreen == MenuScreen::Splash) {
+						if (keys->contains(GLFW_KEY_ENTER)) {
 							selectedScreen = MenuScreen::Main;
 						}
 					}
@@ -71,28 +60,20 @@ namespace sp
 				io.MouseDown[2] = input->IsDown(INPUT_ACTION_MOUSE_BASE + "/button_middle");
 
 				const glm::vec2 *scrollOffset, *scrollOffsetPrev;
-				if (input->GetActionDelta(INPUT_ACTION_MOUSE_SCROLL, &scrollOffset, &scrollOffsetPrev))
-				{
-					if (scrollOffsetPrev != nullptr)
-					{
+				if (input->GetActionDelta(INPUT_ACTION_MOUSE_SCROLL, &scrollOffset, &scrollOffsetPrev)) {
+					if (scrollOffsetPrev != nullptr) {
 						io.MouseWheel = scrollOffset->y - scrollOffsetPrev->y;
-					}
-					else
-					{
+					} else {
 						io.MouseWheel = scrollOffset->y;
 					}
 				}
 
-				if (selectedScreen != MenuScreen::Splash)
-				{
-					if (RenderMode() == MenuRenderMode::Gel)
-					{
+				if (selectedScreen != MenuScreen::Splash) {
+					if (RenderMode() == MenuRenderMode::Gel) {
 						const glm::vec2 *cursorPos, *cursorPosPrev;
-						if (input->GetActionDelta(sp::INPUT_ACTION_MOUSE_CURSOR, &cursorPos, &cursorPosPrev))
-						{
+						if (input->GetActionDelta(sp::INPUT_ACTION_MOUSE_CURSOR, &cursorPos, &cursorPosPrev)) {
 							glm::vec2 cursorDiff = *cursorPos;
-							if (cursorPosPrev != nullptr)
-							{
+							if (cursorPosPrev != nullptr) {
 								cursorDiff -= *cursorPosPrev;
 							}
 
@@ -101,13 +82,10 @@ namespace sp
 							io.MousePos.x = std::max(std::min(io.MousePos.x + cursorDiff.x, io.DisplaySize.x), 0.0f);
 							io.MousePos.y = std::max(std::min(io.MousePos.y + cursorDiff.y, io.DisplaySize.y), 0.0f);
 						}
-					}
-					else
-					{
+					} else {
 						// auto guiCursorPos = input->ImmediateCursor();
 						const glm::vec2 *mousePos;
-						if (input->GetActionValue(INPUT_ACTION_MOUSE_CURSOR, &mousePos))
-						{
+						if (input->GetActionValue(INPUT_ACTION_MOUSE_CURSOR, &mousePos)) {
 							io.MousePos = ImVec2(mousePos->x, mousePos->y);
 						}
 					}
@@ -119,45 +97,42 @@ namespace sp
 		io.MouseDrawCursor = io.MouseDrawCursor || CVarMenuDebugCursor.Get();
 	}
 
-	static bool StringVectorGetter(void *data, int idx, const char **out_text)
-	{
-		auto vec = (vector<string> *) data;
-		if (out_text)
-		{
+	static bool StringVectorGetter(void *data, int idx, const char **out_text) {
+		auto vec = (vector<string> *)data;
+		if (out_text) {
 			*out_text = vec->at(idx).c_str();
 		}
 		return true;
 	}
 
-	static bool IsAspect(glm::ivec2 size, int w, int h)
-	{
+	static bool IsAspect(glm::ivec2 size, int w, int h) {
 		return ((size.x * h) / w) == size.y;
 	}
 
-	static vector<string> MakeResolutionLabels(const vector<glm::ivec2> &modes)
-	{
+	static vector<string> MakeResolutionLabels(const vector<glm::ivec2> &modes) {
 		vector<string> labels;
-		for (size_t i = 0; i < modes.size(); i++)
-		{
+		for (size_t i = 0; i < modes.size(); i++) {
 			auto m = modes[i];
 			std::stringstream str;
 			str << m.x << "x" << m.y;
 
-			if (IsAspect(m, 16, 9)) str << " (16:9)";
-			if (IsAspect(m, 16, 10)) str << " (16:10)";
-			if (IsAspect(m, 4, 3)) str << " (4:3)";
+			if (IsAspect(m, 16, 9))
+				str << " (16:9)";
+			if (IsAspect(m, 16, 10))
+				str << " (16:10)";
+			if (IsAspect(m, 4, 3))
+				str << " (4:3)";
 
 			labels.push_back(str.str());
 		}
 		return labels;
 	}
 
-	void MenuGuiManager::DefineWindows()
-	{
+	void MenuGuiManager::DefineWindows() {
 		SetGuiContext();
 		ImGuiIO &io = ImGui::GetIO();
 
-		//ImGui::ShowTestWindow();
+		// ImGui::ShowTestWindow();
 
 		ImVec4 empty(0.0, 0.0, 0.0, 0.0);
 		ImVec4 black(0.0, 0.0, 0.0, 1.0);
@@ -175,75 +150,67 @@ namespace sp
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0);
 		ImGui::PushFont(io.Fonts->Fonts[2]);
 
-		ImGuiWindowFlags flags =
-			ImGuiWindowFlags_NoBackground |
-			ImGuiWindowFlags_NoCollapse |
-			ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoTitleBar |
-			ImGuiWindowFlags_AlwaysAutoResize;
+		ImGuiWindowFlags flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse |
+								 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
+								 ImGuiWindowFlags_AlwaysAutoResize;
 
 		static Texture logoTex = GAssets.LoadTexture("logos/sp-menu.png");
 		static ImVec2 logoSize(logoTex.width * 0.5, logoTex.height * 0.5);
 
-		if (selectedScreen == MenuScreen::Splash)
-		{
-			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
+		if (selectedScreen == MenuScreen::Splash) {
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+				ImGuiCond_Always,
+				ImVec2(0.5f, 0.5f));
 			ImGui::Begin("MenuSplash", nullptr, flags);
 			ImGui::Text("Press Enter");
 			ImGui::End();
-		}
-		else if (selectedScreen == MenuScreen::Main)
-		{
-			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
+		} else if (selectedScreen == MenuScreen::Main) {
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+				ImGuiCond_Always,
+				ImVec2(0.5f, 0.5f));
 			ImGui::Begin("MenuMain", nullptr, flags);
 
-			ImGui::Image((void *)(uintptr_t) logoTex.handle, logoSize);
+			ImGui::Image((void *)(uintptr_t)logoTex.handle, logoSize);
 
-			if (ImGui::Button(RenderMode() == MenuRenderMode::Pause ? "Resume" : "Start Game"))
-			{
+			if (ImGui::Button(RenderMode() == MenuRenderMode::Pause ? "Resume" : "Start Game")) {
 				CloseMenu();
 			}
 
-			if (ImGui::Button("Scene Select"))
-			{
+			if (ImGui::Button("Scene Select")) {
 				selectedScreen = MenuScreen::SceneSelect;
 			}
 
-			if (ImGui::Button("Options"))
-			{
+			if (ImGui::Button("Options")) {
 				selectedScreen = MenuScreen::Options;
 			}
 
-			if (RenderMode() != MenuRenderMode::Pause && ImGui::Button("Credits"))
-			{
+			if (RenderMode() != MenuRenderMode::Pause && ImGui::Button("Credits")) {
 				selectedScreen = MenuScreen::Credits;
 				creditsScroll = 0.0f;
 			}
 
-			if (ImGui::Button("Quit"))
-			{
+			if (ImGui::Button("Quit")) {
 				GetConsoleManager().QueueParseAndExecute("exit");
 			}
 
 			ImGui::End();
-		}
-		else if (selectedScreen == MenuScreen::SceneSelect)
-		{
-			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
+		} else if (selectedScreen == MenuScreen::SceneSelect) {
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+				ImGuiCond_Always,
+				ImVec2(0.5f, 0.5f));
 			ImGui::Begin("MenuSceneSelect", nullptr, flags);
 
-			ImGui::Image((void *)(uintptr_t) logoTex.handle, logoSize);
+			ImGui::Image((void *)(uintptr_t)logoTex.handle, logoSize);
 
 			ImGui::Text("Scene Select");
 			ImGui::Text(" ");
 
 			ImGui::PushFont(io.Fonts->Fonts[3]);
 
-#define LEVEL_BUTTON(name, file) \
-	if (ImGui::Button(name)) \
-	{ \
-		CloseMenu(); \
-		GetConsoleManager().QueueParseAndExecute("loadscene " file); \
+#define LEVEL_BUTTON(name, file)                                                                                       \
+	if (ImGui::Button(name)) {                                                                                         \
+		CloseMenu();                                                                                                   \
+		GetConsoleManager().QueueParseAndExecute("loadscene " file);                                                   \
 	}
 
 			LEVEL_BUTTON("01 - Outside", "01-outside")
@@ -261,19 +228,18 @@ namespace sp
 			ImGui::PopFont();
 			ImGui::Text(" ");
 
-			if (ImGui::Button("Back"))
-			{
+			if (ImGui::Button("Back")) {
 				selectedScreen = MenuScreen::Main;
 			}
 
 			ImGui::End();
-		}
-		else if (selectedScreen == MenuScreen::Options)
-		{
-			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
+		} else if (selectedScreen == MenuScreen::Options) {
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+				ImGuiCond_Always,
+				ImVec2(0.5f, 0.5f));
 			ImGui::Begin("MenuOptions", nullptr, flags);
 
-			ImGui::Image((void *)(uintptr_t) logoTex.handle, logoSize);
+			ImGui::Image((void *)(uintptr_t)logoTex.handle, logoSize);
 
 			ImGui::Text("Options");
 			ImGui::Text(" ");
@@ -295,14 +261,14 @@ namespace sp
 				auto size = CVarWindowSize.Get();
 				static auto prevSize = size;
 				int resIndex = std::find(modes.begin(), modes.end(), size) - modes.begin();
-				// Check for valid resIndex.  Note: An invalid index may occur if the default window size is not a supported graphics mode for the monitor.
-				if (resIndex < 0 || resIndex >= (int) modes.size())
-				{
-					// If the mode isn't in the list, refresh it, and then add the current resolution to the bottom if not found.
+				// Check for valid resIndex.  Note: An invalid index may occur if the default window size is not a
+				// supported graphics mode for the monitor.
+				if (resIndex < 0 || resIndex >= (int)modes.size()) {
+					// If the mode isn't in the list, refresh it, and then add the current resolution to the bottom if
+					// not found.
 					modes = game->graphics.GetContext()->MonitorModes();
 					resIndex = std::find(modes.begin(), modes.end(), size) - modes.begin();
-					if (resIndex < 0 || resIndex >= (int) modes.size())
-					{
+					if (resIndex < 0 || resIndex >= (int)modes.size()) {
 						resIndex = modes.size();
 						modes.push_back(size);
 					}
@@ -314,7 +280,6 @@ namespace sp
 					ImGui::PushItemWidth(250.0f);
 					ImGui::Combo("##respicker", &resIndex, StringVectorGetter, &resLabels, modes.size());
 					ImGui::PopItemWidth();
-
 				}
 
 				bool fullscreen = CVarWindowFullscreen.Get();
@@ -322,30 +287,23 @@ namespace sp
 				ImGui::Checkbox("##fullscreencheck", &fullscreen);
 
 				// If fullscreen is toggeled from the Menu GUI.
-				if (prevFullscreen != fullscreen)
-				{
-					if (fullscreen)
-					{
+				if (prevFullscreen != fullscreen) {
+					if (fullscreen) {
 						// Store windowed mode resolution for returning from fullscreen.
 						prevSize = size;
 						// Resize the window to the current screen resolution.
 						size = game->graphics.GetContext()->CurrentMode();
-						if (size != glm::ivec2(0))
-						{
+						if (size != glm::ivec2(0)) {
 							CVarWindowSize.Set(size);
 						}
 						CVarWindowFullscreen.Set(1);
-					}
-					else
-					{
+					} else {
 						CVarWindowFullscreen.Set(0);
 						CVarWindowSize.Set(prevSize);
 					}
 
 					prevFullscreen = fullscreen;
-				}
-				else if (size != modes[resIndex])
-				{
+				} else if (size != modes[resIndex]) {
 					size = modes[resIndex];
 					CVarWindowSize.Set(size);
 				}
@@ -356,16 +314,15 @@ namespace sp
 			ImGui::Columns(1);
 			ImGui::Text(" ");
 
-			if (ImGui::Button("Done"))
-			{
+			if (ImGui::Button("Done")) {
 				selectedScreen = MenuScreen::Main;
 			}
 
 			ImGui::End();
-		}
-		else if (selectedScreen == MenuScreen::Credits)
-		{
-			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f,0.5f));
+		} else if (selectedScreen == MenuScreen::Credits) {
+			ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+				ImGuiCond_Always,
+				ImVec2(0.5f, 0.5f));
 			ImGui::Begin("MenuCredits", nullptr, flags);
 
 			static Texture frLogoTex = GAssets.LoadTexture("logos/credits-frustra.png");
@@ -374,12 +331,12 @@ namespace sp
 			ImGui::BeginChild("CreditScroller", ImVec2(600, 600), false, ImGuiWindowFlags_NoScrollbar);
 			ImGui::SetScrollY(creditsScroll);
 
-#define CenteredText(str) \
-	{ \
-		auto size = ImGui::CalcTextSize((str)); \
-		ImGui::Indent(300.0f - size.x / 2.0f); \
-		ImGui::Text((str)); \
-		ImGui::Unindent(300.0f - size.x / 2.0f); \
+#define CenteredText(str)                                                                                              \
+	{                                                                                                                  \
+		auto size = ImGui::CalcTextSize((str));                                                                        \
+		ImGui::Indent(300.0f - size.x / 2.0f);                                                                         \
+		ImGui::Text((str));                                                                                            \
+		ImGui::Unindent(300.0f - size.x / 2.0f);                                                                       \
 	}
 
 			ImGui::Dummy({1, 500});
@@ -389,7 +346,7 @@ namespace sp
 			CenteredText(" ");
 
 			ImGui::Indent(300.0f - frLogoSize.x / 2.0f);
-			ImGui::Image((void *)(uintptr_t) frLogoTex.handle, frLogoSize);
+			ImGui::Image((void *)(uintptr_t)frLogoTex.handle, frLogoSize);
 			ImGui::Unindent(300.0f - frLogoSize.x / 2.0f);
 
 			CenteredText(" ");
@@ -415,8 +372,7 @@ namespace sp
 			ImGui::Dummy({1, 600});
 
 			creditsScroll += io.DeltaTime * 20.0f;
-			if (creditsScroll >= ImGui::GetScrollMaxY() && creditsScroll > 100)
-			{
+			if (creditsScroll >= ImGui::GetScrollMaxY() && creditsScroll > 100) {
 				selectedScreen = MenuScreen::Main;
 			}
 
@@ -431,35 +387,28 @@ namespace sp
 		ImGui::PopStyleColor(8);
 	}
 
-	bool MenuGuiManager::Focused()
-	{
+	bool MenuGuiManager::Focused() {
 		return CVarMenuFocused.Get();
 	}
 
-	MenuRenderMode MenuGuiManager::RenderMode()
-	{
-		switch (CVarMenuDisplay.Get())
-		{
-			case 1:
-				return MenuRenderMode::Pause;
-			case 2:
-				return MenuRenderMode::Gel;
+	MenuRenderMode MenuGuiManager::RenderMode() {
+		switch (CVarMenuDisplay.Get()) {
+		case 1:
+			return MenuRenderMode::Pause;
+		case 2:
+			return MenuRenderMode::Gel;
 		}
 		return MenuRenderMode::None;
 	}
 
-	void MenuGuiManager::SetRenderMode(MenuRenderMode mode)
-	{
-		CVarMenuDisplay.Set((int) mode);
+	void MenuGuiManager::SetRenderMode(MenuRenderMode mode) {
+		CVarMenuDisplay.Set((int)mode);
 	}
 
-	void MenuGuiManager::OpenPauseMenu()
-	{
-		if (RenderMode() == MenuRenderMode::None)
-		{
+	void MenuGuiManager::OpenPauseMenu() {
+		if (RenderMode() == MenuRenderMode::None) {
 			auto gfxContext = game->graphics.GetContext();
-			if (gfxContext)
-			{
+			if (gfxContext) {
 				gfxContext->EnableCursor();
 			}
 
@@ -467,36 +416,30 @@ namespace sp
 			selectedScreen = MenuScreen::Main;
 
 			CVarMenuFocused.Set(true);
-			if (input != nullptr)
-			{
+			if (input != nullptr) {
 				input->LockFocus(true, focusPriority);
 			}
 			framesSinceOpened = 0;
 		}
 	}
 
-	void MenuGuiManager::CloseMenu()
-	{
-		if (input != nullptr && !input->FocusLocked(focusPriority) && RenderMode() != MenuRenderMode::Gel)
-		{
+	void MenuGuiManager::CloseMenu() {
+		if (input != nullptr && !input->FocusLocked(focusPriority) && RenderMode() != MenuRenderMode::Gel) {
 			auto gfxContext = game->graphics.GetContext();
-			if (gfxContext)
-			{
+			if (gfxContext) {
 				gfxContext->DisableCursor();
 			}
 		}
 
-		if (RenderMode() == MenuRenderMode::Pause)
-		{
+		if (RenderMode() == MenuRenderMode::Pause) {
 			SetRenderMode(MenuRenderMode::None);
 			selectedScreen = MenuScreen::Main;
 		}
 
 		CVarMenuFocused.Set(false);
-		if (input != nullptr)
-		{
+		if (input != nullptr) {
 			input->LockFocus(false, focusPriority);
 		}
 		framesSinceOpened = 0;
 	}
-}
+} // namespace sp

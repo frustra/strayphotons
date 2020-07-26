@@ -1,23 +1,14 @@
 #pragma once
 
 #include <Ecs.hh>
-#include <glm/glm.hpp>
-#include <ecs/NamedEntity.hh>
-
 #include <ecs/Components.hh>
+#include <ecs/NamedEntity.hh>
+#include <glm/glm.hpp>
 
-namespace ecs
-{
-	class SlideDoor
-	{
+namespace ecs {
+	class SlideDoor {
 	public:
-		enum State
-		{
-			CLOSED,
-			OPENED,
-			OPENING,
-			CLOSING
-		};
+		enum State { CLOSED, OPENED, OPENING, CLOSING };
 
 		SlideDoor::State GetState(EntityManager &em);
 		void Close(EntityManager &em);
@@ -38,4 +29,4 @@ namespace ecs
 
 	template<>
 	bool Component<SlideDoor>::LoadEntity(Entity &dst, picojson::value &src);
-}
+} // namespace ecs

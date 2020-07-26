@@ -1,16 +1,14 @@
 #pragma once
 
-#include "VertexBuffer.hh"
 #include "Texture.hh"
+#include "VertexBuffer.hh"
 #include "ecs/components/View.hh"
 
-namespace sp
-{
+namespace sp {
 	class Renderer;
 	class GuiManager;
 
-	class GuiRenderer
-	{
+	class GuiRenderer {
 	public:
 		GuiRenderer(Renderer &renderer, GuiManager *manager);
 		~GuiRenderer();
@@ -24,4 +22,4 @@ namespace sp
 		Renderer &parent;
 		GuiManager *manager;
 	};
-}
+} // namespace sp

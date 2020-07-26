@@ -1,41 +1,40 @@
 #include "graphics/postprocess/PostProcess.hh"
-#include "graphics/postprocess/Helpers.hh"
 
+#include "core/CFunc.hh"
+#include "core/CVar.hh"
+#include "core/PerfTimer.hh"
+#include "graphics/GenericShaders.hh"
+#include "graphics/RenderTargetPool.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/ShaderManager.hh"
-#include "graphics/RenderTargetPool.hh"
-#include "graphics/GenericShaders.hh"
 #include "graphics/Util.hh"
-
 #include "graphics/postprocess/Bloom.hh"
 #include "graphics/postprocess/Crosshair.hh"
 #include "graphics/postprocess/GammaCorrect.hh"
+#include "graphics/postprocess/Helpers.hh"
 #include "graphics/postprocess/Lighting.hh"
 #include "graphics/postprocess/MenuGui.hh"
-#include "graphics/postprocess/SSAO.hh"
 #include "graphics/postprocess/SMAA.hh"
+#include "graphics/postprocess/SSAO.hh"
 #include "graphics/postprocess/ViewGBuffer.hh"
 
-#include "core/CVar.hh"
-#include "core/CFunc.hh"
-#include "core/PerfTimer.hh"
-
-#include <stb_image_write.h>
 #include <filesystem>
+#include <stb_image_write.h>
 
-namespace sp
-{
+namespace sp {
 	static CVar<bool> CVarLightingEnabled("r.Lighting", true, "Enable lighting");
 	static CVar<bool> CVarTonemapEnabled("r.Tonemap", true, "Enable HDR tonemapping");
 	static CVar<bool> CVarBloomEnabled("r.Bloom", true, "Enable HDR bloom");
 	static CVar<bool> CVarSSAOEnabled("r.SSAO", false, "Enable Screen Space Ambient Occlusion");
-	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0, "Show GBuffer (1: baseColor, 2: normal, 3: depth (or alpha), 4: roughness, 5: metallic (or radiance), 6: position, 7: face normal)");
-	static CVar<int> CVarViewGBufferSource("r.ViewGBufferSource", 0, "GBuffer Debug Source (0: gbuffer, 1: voxel grid, 2: cone trace)");
+	static CVar<int> CVarViewGBuffer("r.ViewGBuffer", 0,
+		"Show GBuffer (1: baseColor, 2: normal, 3: depth (or alpha), 4: roughness, 5: metallic (or radiance), 6: "
+		"position, 7: face normal)");
+	static CVar<int> CVarViewGBufferSource(
+		"r.ViewGBufferSource", 0, "GBuffer Debug Source (0: gbuffer, 1: voxel grid, 2: cone trace)");
 	static CVar<int> CVarVoxelMip("r.VoxelMip", 0, "");
 	static CVar<int> CVarAntiAlias("r.AntiAlias", 1, "Anti-aliasing mode (0: none, 1: SMAA 1x)");
 
-	static void AddSSAO(PostProcessingContext &context)
-	{
+	static void AddSSAO(PostProcessingContext &context) {
 		auto ssaoPass0 = context.AddPass<SSAOPass0>();
 		ssaoPass0->SetInput(0, context.GBuffer1);
 		ssaoPass0->SetInput(1, context.GBuffer2);
@@ -52,8 +51,7 @@ namespace sp
 		context.AoBuffer = ssaoBlurY;
 	}
 
-	static void AddLighting(PostProcessingContext &context, VoxelData voxelData)
-	{
+	static void AddLighting(PostProcessingContext &context, VoxelData voxelData) {
 		auto indirectDiffuse = context.AddPass<VoxelLightingDiffuse>(voxelData);
 		indirectDiffuse->SetInput(0, context.GBuffer0);
 		indirectDiffuse->SetInput(1, context.GBuffer1);
@@ -78,8 +76,7 @@ namespace sp
 		context.LastOutput = lighting;
 	}
 
-	static void AddBloom(PostProcessingContext &context)
-	{
+	static void AddBloom(PostProcessingContext &context) {
 		auto highpass = context.AddPass<BloomHighpass>();
 		highpass->SetInput(0, context.LastOutput);
 
@@ -103,8 +100,7 @@ namespace sp
 		context.LastOutput = combine;
 	}
 
-	static void AddSMAA(PostProcessingContext &context, ProcessPassOutputRef linearLuminosity)
-	{
+	static void AddSMAA(PostProcessingContext &context, ProcessPassOutputRef linearLuminosity) {
 		auto gammaCorrect = context.AddPass<GammaCorrect>();
 		gammaCorrect->SetInput(0, linearLuminosity);
 
@@ -112,8 +108,8 @@ namespace sp
 		edgeDetect->SetInput(0, gammaCorrect);
 
 		auto blendingWeights = context.AddPass<SMAABlendingWeights>();
-		blendingWeights->SetInput(0, { edgeDetect, 0 });
-		blendingWeights->SetDependency(0, { edgeDetect, 1 });
+		blendingWeights->SetInput(0, {edgeDetect, 0});
+		blendingWeights->SetDependency(0, {edgeDetect, 1});
 
 		auto blending = context.AddPass<SMAABlending>();
 		blending->SetInput(0, context.LastOutput);
@@ -122,8 +118,7 @@ namespace sp
 		context.LastOutput = blending;
 	}
 
-	static void AddMenu(PostProcessingContext &context)
-	{
+	static void AddMenu(PostProcessingContext &context) {
 		auto blurY1 = context.AddPass<BloomBlur>(glm::ivec2(0, 1), 2, 1.0f);
 		blurY1->SetInput(0, context.LastOutput);
 
@@ -150,25 +145,20 @@ namespace sp
 
 	static string ScreenshotPath;
 
-	CFunc<string> CFuncQueueScreenshot("screenshot", "Save screenshot to <path>", [](string path)
-	{
-		if (ScreenshotPath.empty())
-		{
+	CFunc<string> CFuncQueueScreenshot("screenshot", "Save screenshot to <path>", [](string path) {
+		if (ScreenshotPath.empty()) {
 			ScreenshotPath = path;
-		}
-		else
-		{
-			Logf("Can't save multiple screenshots on the same frame: %s, already saving %s", path.c_str(), ScreenshotPath.c_str());
+		} else {
+			Logf("Can't save multiple screenshots on the same frame: %s, already saving %s",
+				path.c_str(),
+				ScreenshotPath.c_str());
 		}
 	});
 
-	void SaveScreenshot(string path, Texture &tex)
-	{
+	void SaveScreenshot(string path, Texture &tex) {
 		auto base = std::filesystem::absolute("screenshots");
-		if (!std::filesystem::is_directory(base))
-		{
-			if (!std::filesystem::create_directory(base))
-			{
+		if (!std::filesystem::is_directory(base)) {
+			if (!std::filesystem::create_directory(base)) {
 				Errorf("Couldn't save screenshot, couldn't create output directory: %s", base.c_str());
 				return;
 			}
@@ -181,19 +171,18 @@ namespace sp
 		glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 		glGetTextureImage(tex.handle, 0, GL_RGBA, GL_UNSIGNED_BYTE, size, buf);
 
-		for (int y = 0; y < tex.height; y++)
-		{
+		for (int y = 0; y < tex.height; y++) {
 			memcpy(flipped + tex.width * (tex.height - y - 1) * 4, buf + tex.width * y * 4, tex.width * 4);
 		}
 
-		stbi_write_png((const char*) fullPath.c_str(), tex.width, tex.height, 4, flipped, 0);
+		stbi_write_png((const char *)fullPath.c_str(), tex.width, tex.height, 4, flipped, 0);
 
-		delete []buf;
-		delete []flipped;
+		delete[] buf;
+		delete[] flipped;
 	}
 
-	void PostProcessing::Process(Renderer *renderer, sp::Game *game, ecs::View view, const EngineRenderTargets &targets)
-	{
+	void PostProcessing::Process(
+		Renderer *renderer, sp::Game *game, ecs::View view, const EngineRenderTargets &targets) {
 		RenderPhase phase("PostProcessing", renderer->Timer);
 
 		bool renderToTexture = (targets.finalOutput != nullptr);
@@ -211,39 +200,32 @@ namespace sp
 		context.MirrorSceneData = targets.mirrorSceneData;
 		context.LastOutput = context.GBuffer0;
 
-		if (targets.shadowMap)
-		{
+		if (targets.shadowMap) {
 			context.ShadowMap = context.AddPass<ProxyProcessPass>(targets.shadowMap);
 		}
 
-		if (targets.mirrorShadowMap)
-		{
+		if (targets.mirrorShadowMap) {
 			context.MirrorShadowMap = context.AddPass<ProxyProcessPass>(targets.mirrorShadowMap);
 		}
 
-		if (targets.voxelData.radiance && targets.voxelData.radianceMips)
-		{
+		if (targets.voxelData.radiance && targets.voxelData.radianceMips) {
 			context.VoxelRadiance = context.AddPass<ProxyProcessPass>(targets.voxelData.radiance);
 			context.VoxelRadianceMips = context.AddPass<ProxyProcessPass>(targets.voxelData.radianceMips);
 		}
 
-		if (targets.mirrorIndexStencil)
-		{
+		if (targets.mirrorIndexStencil) {
 			context.MirrorIndexStencil = context.AddPass<ProxyProcessPass>(targets.mirrorIndexStencil);
 		}
 
-		if (targets.lightingGel)
-		{
+		if (targets.lightingGel) {
 			context.LightingGel = context.AddPass<ProxyProcessPass>(targets.lightingGel);
 		}
 
-		if (CVarSSAOEnabled.Get())
-		{
+		if (CVarSSAOEnabled.Get()) {
 			AddSSAO(context);
 		}
 
-		if (CVarLightingEnabled.Get() && targets.shadowMap != nullptr)
-		{
+		if (CVarLightingEnabled.Get() && targets.shadowMap != nullptr) {
 			AddLighting(context, targets.voxelData);
 		}
 
@@ -255,38 +237,35 @@ namespace sp
 			context.LastOutput = hist;
 		}
 
-		if (!renderToTexture && game->menuGui && game->menuGui->RenderMode() == MenuRenderMode::Pause)
-		{
+		if (!renderToTexture && game->menuGui && game->menuGui->RenderMode() == MenuRenderMode::Pause) {
 			AddMenu(context);
 		}
 
-		if (CVarBloomEnabled.Get())
-		{
+		if (CVarBloomEnabled.Get()) {
 			AddBloom(context);
 		}
 
-		if (CVarTonemapEnabled.Get())
-		{
+		if (CVarTonemapEnabled.Get()) {
 			auto tonemap = context.AddPass<Tonemap>();
 			tonemap->SetInput(0, context.LastOutput);
 			context.LastOutput = tonemap;
 		}
 
-		if (CVarAntiAlias.Get() == 1)
-		{
+		if (CVarAntiAlias.Get() == 1) {
 			AddSMAA(context, linearLuminosity);
 		}
 
-		if (!renderToTexture && (!game->menuGui || game->menuGui->RenderMode() == MenuRenderMode::None))
-		{
+		if (!renderToTexture && (!game->menuGui || game->menuGui->RenderMode() == MenuRenderMode::None)) {
 			auto crosshair = context.AddPass<Crosshair>();
 			crosshair->SetInput(0, context.LastOutput);
 			context.LastOutput = crosshair;
 		}
 
-		if (CVarViewGBuffer.Get() > 0 && (!game->menuGui || game->menuGui->RenderMode() == MenuRenderMode::None))
-		{
-			auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(), CVarViewGBufferSource.Get(), CVarVoxelMip.Get(), targets.voxelData);
+		if (CVarViewGBuffer.Get() > 0 && (!game->menuGui || game->menuGui->RenderMode() == MenuRenderMode::None)) {
+			auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(),
+				CVarViewGBufferSource.Get(),
+				CVarVoxelMip.Get(),
+				targets.voxelData);
 			viewGBuf->SetInput(0, context.GBuffer0);
 			viewGBuf->SetInput(1, context.GBuffer1);
 			viewGBuf->SetInput(2, context.GBuffer2);
@@ -301,12 +280,9 @@ namespace sp
 
 		context.ProcessAllPasses();
 
-		if (renderToTexture)
-		{
+		if (renderToTexture) {
 			renderer->SetRenderTarget(targets.finalOutput, nullptr);
-		}
-		else
-		{
+		} else {
 			renderer->SetDefaultRenderTarget();
 		}
 		renderer->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>();
@@ -316,8 +292,7 @@ namespace sp
 		lastOutput->TargetRef->GetTexture().Bind(0);
 		DrawScreenCover();
 
-		if (!ScreenshotPath.empty())
-		{
+		if (!ScreenshotPath.empty()) {
 			SaveScreenshot(ScreenshotPath, lastOutput->TargetRef->GetTexture());
 			ScreenshotPath = "";
 		}
@@ -325,21 +300,19 @@ namespace sp
 		lastOutput->ReleaseDependency();
 	}
 
-	ProcessPassOutput *ProcessPassOutputRef::GetOutput()
-	{
-		if (pass == nullptr) return nullptr;
+	ProcessPassOutput *ProcessPassOutputRef::GetOutput() {
+		if (pass == nullptr)
+			return nullptr;
 		return pass->GetOutput(outputIndex);
 	}
 
-	void PostProcessingContext::ProcessAllPasses()
-	{
-		for (auto pass : passes)
-		{
+	void PostProcessingContext::ProcessAllPasses() {
+		for (auto pass : passes) {
 			// Propagate dependencies.
-			for (uint32 id = 0;; id++)
-			{
+			for (uint32 id = 0;; id++) {
 				ProcessPassOutputRef *depend = pass->GetAllDependencies(id);
-				if (!depend) break;
+				if (!depend)
+					break;
 
 				auto dependOutput = depend->GetOutput();
 
@@ -348,48 +321,45 @@ namespace sp
 			}
 
 			// Calculate render target descriptions.
-			for (uint32 id = 0;; id++)
-			{
+			for (uint32 id = 0;; id++) {
 				ProcessPassOutput *output = pass->GetOutput(id);
-				if (!output) break;
+				if (!output)
+					break;
 
 				output->TargetDesc = pass->GetOutputDesc(id);
 			}
 		}
 
 		// Process in order.
-		for (auto pass : passes)
-		{
+		for (auto pass : passes) {
 			RenderPhase phase(pass->Name());
 
-			if (phase.name != "ProxyTarget")
-			{
+			if (phase.name != "ProxyTarget") {
 				phase.StartTimer(renderer->Timer);
 			}
 
 			// Set up inputs.
-			for (uint32 id = 0;; id++)
-			{
+			for (uint32 id = 0;; id++) {
 				ProcessPassOutputRef *input = pass->GetInput(id);
-				if (!input) break;
+				if (!input)
+					break;
 
 				auto inputOutput = input->GetOutput();
 
-				if (inputOutput)
-				{
+				if (inputOutput) {
 					Assert(!!inputOutput->TargetRef, "post processing input is destroyed");
 					inputOutput->TargetRef->GetTexture().Bind(id);
 				}
 			}
 
-			//Debugf("Process %s", pass->Name());
+			// Debugf("Process %s", pass->Name());
 			pass->Process(this);
 
 			// Release dependencies.
-			for (uint32 id = 0;; id++)
-			{
+			for (uint32 id = 0;; id++) {
 				ProcessPassOutputRef *depend = pass->GetAllDependencies(id);
-				if (!depend) break;
+				if (!depend)
+					break;
 
 				auto dependOutput = depend->GetOutput();
 
@@ -399,13 +369,11 @@ namespace sp
 		}
 	}
 
-	RenderTarget::Ref ProcessPassOutput::AllocateTarget(const PostProcessingContext *context)
-	{
-		if (TargetRef == nullptr)
-		{
+	RenderTarget::Ref ProcessPassOutput::AllocateTarget(const PostProcessingContext *context) {
+		if (TargetRef == nullptr) {
 			TargetRef = context->renderer->RTPool->Get(TargetDesc);
-			//Debugf("Reserve target %d", TargetRef->GetID());
+			// Debugf("Reserve target %d", TargetRef->GetID());
 		}
 		return TargetRef;
 	}
-}
+} // namespace sp

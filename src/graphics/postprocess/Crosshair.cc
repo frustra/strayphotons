@@ -1,19 +1,18 @@
 #include "Crosshair.hh"
+
 #include "core/CVar.hh"
+#include "graphics/GenericShaders.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/ShaderManager.hh"
-#include "graphics/GenericShaders.hh"
 #include "graphics/Util.hh"
 
 #include <random>
 
-namespace sp
-{
+namespace sp {
 	static CVar<float> CVarCrosshairSpread("r.CrosshairSpread", 10.0f, "Distance between crosshair dots");
 	static CVar<float> CVarCrosshairDotSize("r.CrosshairDotSize", 2.0f, "Size of crosshair dots");
 
-	static void drawDots(glm::ivec2 offset, float spread, float size)
-	{
+	static void drawDots(glm::ivec2 offset, float spread, float size) {
 		glViewport(offset.x, offset.y, size, size);
 		DrawScreenCover();
 		glViewport(offset.x + spread, offset.y, size, size);
@@ -26,8 +25,7 @@ namespace sp
 		DrawScreenCover();
 	}
 
-	void Crosshair::Process(const PostProcessingContext *context)
-	{
+	void Crosshair::Process(const PostProcessingContext *context) {
 		auto view = context->view;
 		auto spread = CVarCrosshairSpread.Get();
 		auto size = CVarCrosshairDotSize.Get();
@@ -35,18 +33,24 @@ namespace sp
 
 		static Texture tex1, tex2;
 
-		if (!tex1.handle)
-		{
-			static unsigned char color[4] = { 255, 255, 235, 50 };
-			tex1.Create().Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_RGBA8).Image2D(color);
+		if (!tex1.handle) {
+			static unsigned char color[4] = {255, 255, 235, 50};
+			tex1.Create()
+				.Filter(GL_NEAREST, GL_NEAREST)
+				.Wrap(GL_REPEAT, GL_REPEAT)
+				.Size(1, 1)
+				.Storage(PF_RGBA8)
+				.Image2D(color);
 		}
 
-		if (!tex2.handle)
-		{
-			static unsigned char color[4] = { 150, 150, 138, 255 };
-			tex2.Create().Filter(GL_NEAREST, GL_NEAREST).Wrap(GL_REPEAT, GL_REPEAT)
-			.Size(1, 1).Storage(PF_RGBA8).Image2D(color);
+		if (!tex2.handle) {
+			static unsigned char color[4] = {150, 150, 138, 255};
+			tex2.Create()
+				.Filter(GL_NEAREST, GL_NEAREST)
+				.Wrap(GL_REPEAT, GL_REPEAT)
+				.Size(1, 1)
+				.Storage(PF_RGBA8)
+				.Image2D(color);
 		}
 
 		glEnable(GL_BLEND);
@@ -67,4 +71,4 @@ namespace sp
 
 		SetOutputTarget(0, GetInput(0)->GetOutput()->TargetRef);
 	}
-}
+} // namespace sp

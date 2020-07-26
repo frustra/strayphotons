@@ -1,19 +1,16 @@
 #include "ecs/components/LightGun.hh"
 
-#include <picojson/picojson.h>
 #include <assets/AssetHelpers.hh>
+#include <picojson/picojson.h>
 
-namespace ecs
-{
+namespace ecs {
 	template<>
-	bool Component<LightGun>::LoadEntity(Entity &dst, picojson::value &src)
-	{
+	bool Component<LightGun>::LoadEntity(Entity &dst, picojson::value &src) {
 		dst.Assign<LightGun>();
 		return true;
 	}
 
-	LightGun::LightGun()
-	{
+	LightGun::LightGun() {
 		this->hasLight = false;
 	}
-}
+} // namespace ecs

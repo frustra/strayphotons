@@ -1,28 +1,25 @@
 #pragma once
 
-#include <Common.hh>
-#include "CVar.hh"
 #include "CFunc.hh"
+#include "CVar.hh"
 #include "Logging.hh"
 
+#include <Common.hh>
+#include <condition_variable>
 #include <map>
 #include <mutex>
 #include <queue>
 #include <thread>
-#include <condition_variable>
 
-namespace sp
-{
+namespace sp {
 	class Script;
 
-	struct ConsoleLine
-	{
+	struct ConsoleLine {
 		logging::Level level;
 		string text;
 	};
 
-	struct ConsoleInputLine
-	{
+	struct ConsoleInputLine {
 		string text;
 		chrono_clock::time_point wait_util;
 		std::condition_variable *handled;
@@ -30,14 +27,12 @@ namespace sp
 		ConsoleInputLine(string text, chrono_clock::time_point wait_util, std::condition_variable *handled)
 			: text(text), wait_util(wait_util), handled(handled) {}
 
-		bool operator<(const ConsoleInputLine &other) const
-		{
+		bool operator<(const ConsoleInputLine &other) const {
 			return this->wait_util < other.wait_util;
 		}
 	};
 
-	class ConsoleManager
-	{
+	class ConsoleManager {
 	public:
 		ConsoleManager();
 		void AddCVar(CVarBase *cvar);
@@ -47,21 +42,20 @@ namespace sp
 
 		void AddLog(logging::Level lvl, const string &line);
 
-		const vector<ConsoleLine> Lines()
-		{
+		const vector<ConsoleLine> Lines() {
 			return outputLines;
 		}
 
 		void ParseAndExecute(const string line);
 		void Execute(const string cmd, const string &args);
-		void QueueParseAndExecute(const string line, chrono_clock::time_point wait_util = chrono_clock::now(), std::condition_variable *handled = nullptr);
+		void QueueParseAndExecute(const string line, chrono_clock::time_point wait_util = chrono_clock::now(),
+			std::condition_variable *handled = nullptr);
 		void AddHistory(const string &input);
 		string GetHistory(size_t index);
 		string AutoComplete(const string &input);
 		vector<string> AllCompletions(const string &input);
 
-		const std::map<string, CVarBase *> CVars()
-		{
+		const std::map<string, CVarBase *> CVars() {
 			return cvars;
 		}
 
@@ -78,4 +72,4 @@ namespace sp
 	};
 
 	ConsoleManager &GetConsoleManager();
-}
+} // namespace sp

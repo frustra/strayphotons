@@ -1,34 +1,29 @@
 #pragma once
 
 #include "Common.hh"
-#include "graphics/RenderTargetPool.hh"
-#include "graphics/Renderer.hh"
+#include "core/Game.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/VoxelInfo.hh"
-#include "core/Game.hh"
+#include "graphics/RenderTargetPool.hh"
+#include "graphics/Renderer.hh"
 
-namespace sp
-{
+namespace sp {
 	class Renderer;
 	class PostProcessPassBase;
 	class PostProcessingContext;
 
-	class ProcessPassOutput
-	{
+	class ProcessPassOutput {
 	public:
 		RenderTargetDesc TargetDesc;
 		RenderTarget::Ref TargetRef;
 
-		void AddDependency()
-		{
+		void AddDependency() {
 			dependencies++;
 		}
 
-		void ReleaseDependency()
-		{
-			if (--dependencies == 0)
-			{
-				//Debugf("Release target %d", TargetRef->GetID());
+		void ReleaseDependency() {
+			if (--dependencies == 0) {
+				// Debugf("Release target %d", TargetRef->GetID());
 				TargetRef.reset();
 			}
 		}
@@ -39,12 +34,11 @@ namespace sp
 		size_t dependencies = 0;
 	};
 
-	struct ProcessPassOutputRef
-	{
-		ProcessPassOutputRef() : pass(nullptr), outputIndex(0) { }
+	struct ProcessPassOutputRef {
+		ProcessPassOutputRef() : pass(nullptr), outputIndex(0) {}
 
-		ProcessPassOutputRef(PostProcessPassBase *pass, uint32 outputIndex = 0) :
-			pass(pass), outputIndex(outputIndex) { }
+		ProcessPassOutputRef(PostProcessPassBase *pass, uint32 outputIndex = 0)
+			: pass(pass), outputIndex(outputIndex) {}
 
 		ProcessPassOutput *GetOutput();
 
@@ -52,8 +46,7 @@ namespace sp
 		uint32 outputIndex;
 	};
 
-	class PostProcessPassBase
-	{
+	class PostProcessPassBase {
 	public:
 		virtual ~PostProcessPassBase() {}
 
@@ -69,52 +62,48 @@ namespace sp
 		virtual string Name() = 0;
 	};
 
-	template <uint32 inputCount, uint32 outputCount, uint32 dependencyCount = 0>
-	class PostProcessPass : public PostProcessPassBase
-	{
+	template<uint32 inputCount, uint32 outputCount, uint32 dependencyCount = 0>
+	class PostProcessPass : public PostProcessPassBase {
 	public:
 		PostProcessPass() {}
 
-		ProcessPassOutput *GetOutput(uint32 id)
-		{
-			if (id >= outputCount) return nullptr;
+		ProcessPassOutput *GetOutput(uint32 id) {
+			if (id >= outputCount)
+				return nullptr;
 			return &outputs[id];
 		}
 
-		void SetInput(uint32 id, ProcessPassOutputRef input)
-		{
+		void SetInput(uint32 id, ProcessPassOutputRef input) {
 			Assert(id < inputCount, "post-process input overflow");
 			inputs[id] = input;
 		}
 
-		void SetDependency(uint32 id, ProcessPassOutputRef depend)
-		{
+		void SetDependency(uint32 id, ProcessPassOutputRef depend) {
 			Assert(id < dependencyCount, "post-process dependency overflow");
 			dependencies[id] = depend;
 		}
 
-		ProcessPassOutputRef *GetInput(uint32 id)
-		{
-			if (id >= inputCount) return nullptr;
+		ProcessPassOutputRef *GetInput(uint32 id) {
+			if (id >= inputCount)
+				return nullptr;
 			return &inputs[id];
 		}
 
-		ProcessPassOutputRef *GetDependency(uint32 id)
-		{
-			if (id >= dependencyCount) return nullptr;
+		ProcessPassOutputRef *GetDependency(uint32 id) {
+			if (id >= dependencyCount)
+				return nullptr;
 			return &dependencies[id];
 		}
 
-		ProcessPassOutputRef *GetAllDependencies(uint32 id)
-		{
+		ProcessPassOutputRef *GetAllDependencies(uint32 id) {
 			auto ref = GetInput(id);
-			if (ref) return ref;
+			if (ref)
+				return ref;
 			return GetDependency(id - inputCount);
 		}
 
 	protected:
-		void SetOutputTarget(uint32 id, RenderTarget::Ref target)
-		{
+		void SetOutputTarget(uint32 id, RenderTarget::Ref target) {
 			outputs[id].TargetRef = target;
 		}
 
@@ -126,8 +115,7 @@ namespace sp
 		ProcessPassOutputRef dependencies[dependencyCount ? dependencyCount : 1];
 	};
 
-	struct EngineRenderTargets
-	{
+	struct EngineRenderTargets {
 		RenderTarget::Ref gBuffer0, gBuffer1, gBuffer2, gBuffer3;
 		RenderTarget::Ref shadowMap, mirrorShadowMap;
 		RenderTarget::Ref mirrorIndexStencil, lightingGel;
@@ -138,24 +126,20 @@ namespace sp
 		RenderTarget::Ref finalOutput;
 	};
 
-	class PostProcessingContext
-	{
+	class PostProcessingContext {
 	public:
 		void ProcessAllPasses();
 
-		template<typename PassType, typename ...ArgTypes>
-		PassType *AddPass(ArgTypes... args)
-		{
+		template<typename PassType, typename... ArgTypes>
+		PassType *AddPass(ArgTypes... args) {
 			// TODO(pushrax): don't use the heap
 			PassType *pass = new PassType(args...);
 			passes.push_back(pass);
 			return pass;
 		}
 
-		~PostProcessingContext()
-		{
-			for (auto pass : passes)
-				delete pass;
+		~PostProcessingContext() {
+			for (auto pass : passes) delete pass;
 		}
 
 		Renderer *renderer;
@@ -182,8 +166,7 @@ namespace sp
 		vector<PostProcessPassBase *> passes;
 	};
 
-	namespace PostProcessing
-	{
+	namespace PostProcessing {
 		void Process(Renderer *renderer, sp::Game *game, ecs::View view, const EngineRenderTargets &targets);
 	}
-}
+} // namespace sp

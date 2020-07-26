@@ -1,33 +1,30 @@
 #include "ConvexHull.hh"
+
 #include "assets/Model.hh"
 #include "core/Logging.hh"
 
-#include <v-hacd/VHACD_Lib/public/VHACD.h>
 #include <v-hacd/VHACD_Lib/inc/btConvexHullComputer.h>
 #include <v-hacd/VHACD_Lib/inc/vhacdICHull.h>
 #include <v-hacd/VHACD_Lib/inc/vhacdVector.h>
+#include <v-hacd/VHACD_Lib/public/VHACD.h>
 
 #define GLM_FORCE_CXX11
 #include <glm/gtx/hash.hpp>
 #include <unordered_set>
 
-namespace sp
-{
-	class VHACDCallback : public VHACD::IVHACD::IUserCallback
-	{
+namespace sp {
+	class VHACDCallback : public VHACD::IVHACD::IUserCallback {
 	public:
 		VHACDCallback() {}
 		~VHACDCallback() {}
 
 		void Update(const double overallProgress, const double stageProgress, const double operationProgress,
-					const char *const stage, const char *const operation)
-		{
+			const char *const stage, const char *const operation) {
 			Logf("VHACD %d (%s) %s", (int)(overallProgress + 0.5), stage, operation);
 		};
 	};
 
-	void decomposeConvexHullsForPrimitive(ConvexHullSet *set, Model *model, Model::Primitive *prim)
-	{
+	void decomposeConvexHullsForPrimitive(ConvexHullSet *set, Model *model, Model::Primitive *prim) {
 		set->decomposed = true;
 
 		auto posAttrib = prim->attributes[0];
@@ -48,24 +45,20 @@ namespace sp
 		auto indices = (const int *)(ibuffer.data() + indexAttrib.byteOffset);
 		int *indicesCopy = nullptr;
 
-		switch (indexAttrib.componentType)
-		{
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-				// indices is already compatible
-				break;
-			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-				indicesCopy = new int[indexAttrib.components];
+		switch (indexAttrib.componentType) {
+		case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+			// indices is already compatible
+			break;
+		case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+			indicesCopy = new int[indexAttrib.components];
 
-				for (uint32 i = 0; i < indexAttrib.components; i++)
-				{
-					indicesCopy[i] = (int)((const uint16 *) indices)[i];
-				}
+			for (uint32 i = 0; i < indexAttrib.components; i++) { indicesCopy[i] = (int)((const uint16 *)indices)[i]; }
 
-				indices = (const int *)indicesCopy;
-				break;
-			default:
-				Assert(false, "invalid index component type");
-				break;
+			indices = (const int *)indicesCopy;
+			break;
+		default:
+			Assert(false, "invalid index component type");
+			break;
 		}
 
 		static VHACDCallback vhacdCallback;
@@ -76,14 +69,15 @@ namespace sp
 		VHACD::IVHACD::Parameters params;
 		params.m_callback = &vhacdCallback;
 		params.m_oclAcceleration = false;
-		//params.m_resolution = 1000000;
-		//params.m_convexhullDownsampling = 8;
+		// params.m_resolution = 1000000;
+		// params.m_convexhullDownsampling = 8;
 
-		bool res = interfaceVHACD->Compute(points, pointStride, posAttrib.components, indices, 3, indexAttrib.components / 3, params);
+		bool res =
+			interfaceVHACD
+				->Compute(points, pointStride, posAttrib.components, indices, 3, indexAttrib.components / 3, params);
 		Assert(res, "building convex decomposition");
 
-		for (uint32 i = 0; i < interfaceVHACD->GetNConvexHulls(); i++)
-		{
+		for (uint32 i = 0; i < interfaceVHACD->GetNConvexHulls(); i++) {
 			VHACD::IVHACD::ConvexHull ihull;
 			interfaceVHACD->GetConvexHull(i, ihull);
 
@@ -92,10 +86,7 @@ namespace sp
 			hull.pointCount = ihull.m_nPoints;
 			hull.pointByteStride = sizeof(float) * 3;
 
-			for (uint32 i = 0; i < ihull.m_nPoints * 3; i++)
-			{
-				hull.points[i] = (float) ihull.m_points[i];
-			}
+			for (uint32 i = 0; i < ihull.m_nPoints * 3; i++) { hull.points[i] = (float)ihull.m_points[i]; }
 
 			hull.triangles = new int[ihull.m_nTriangles * 3];
 			hull.triangleCount = ihull.m_nTriangles;
@@ -113,8 +104,7 @@ namespace sp
 			delete indicesCopy;
 	}
 
-	void copyVhacdManifoldMeshToConvexHull(ConvexHull &hull, VHACD::TMMesh &mesh)
-	{
+	void copyVhacdManifoldMeshToConvexHull(ConvexHull &hull, VHACD::TMMesh &mesh) {
 		const size_t nT = mesh.GetNTriangles();
 		const size_t nV = mesh.GetNVertices();
 
@@ -122,8 +112,7 @@ namespace sp
 		hull.pointCount = nV;
 		hull.pointByteStride = sizeof(float) * 3;
 
-		for (size_t v = 0; v < nV; v++)
-		{
+		for (size_t v = 0; v < nV; v++) {
 			auto &pos = mesh.GetVertices().GetData().m_pos;
 			hull.points[v * 3 + 0] = pos[0];
 			hull.points[v * 3 + 1] = pos[1];
@@ -136,8 +125,7 @@ namespace sp
 		hull.triangleCount = nT;
 		hull.triangleByteStride = sizeof(int) * 3;
 
-		for (size_t f = 0; f < nT; f++)
-		{
+		for (size_t f = 0; f < nT; f++) {
 			auto &currentTriangle = mesh.GetTriangles().GetData();
 			hull.triangles[f * 3 + 0] = static_cast<int>(currentTriangle.m_vertices[0]->GetData().m_id);
 			hull.triangles[f * 3 + 1] = static_cast<int>(currentTriangle.m_vertices[1]->GetData().m_id);
@@ -146,8 +134,7 @@ namespace sp
 		}
 	}
 
-	void buildConvexHullForPrimitive(ConvexHullSet *set, Model *model, Model::Primitive *prim)
-	{
+	void buildConvexHullForPrimitive(ConvexHullSet *set, Model *model, Model::Primitive *prim) {
 		set->decomposed = false;
 
 		auto posAttrib = prim->attributes[0];
@@ -171,24 +158,22 @@ namespace sp
 		std::unordered_set<uint32> visitedIndexes;
 		vector<glm::vec3> finalPoints;
 
-		for (uint32 i = 0; i < indexAttrib.components; i++)
-		{
+		for (uint32 i = 0; i < indexAttrib.components; i++) {
 			uint32 index = 0;
 
-			switch (indexAttrib.componentType)
-			{
-				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-					index = *(const uint32 *)(indices + i * indexAttrib.byteStride);
-					break;
-				case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-					index = *(const uint16 *)(indices + i * indexAttrib.byteStride);
-					break;
-				default:
-					Assert(false, "invalid index component type");
-					break;
+			switch (indexAttrib.componentType) {
+			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+				index = *(const uint32 *)(indices + i * indexAttrib.byteStride);
+				break;
+			case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+				index = *(const uint16 *)(indices + i * indexAttrib.byteStride);
+				break;
+			default:
+				Assert(false, "invalid index component type");
+				break;
 			}
 
-			auto tri = (float *) (points + index * posAttrib.byteStride);
+			auto tri = (float *)(points + index * posAttrib.byteStride);
 
 			glm::vec4 temp({tri[0], tri[1], tri[2], 1.0});
 			temp = prim->matrix * temp;
@@ -211,8 +196,7 @@ namespace sp
 
 		VHACD::ICHull icc;
 
-		for (int i = 0; i < chc.vertices.size(); i++)
-		{
+		for (int i = 0; i < chc.vertices.size(); i++) {
 			auto &v = chc.vertices[i];
 			VHACD::Vec3<double> point(v[0], v[1], v[2]);
 			icc.AddPoint(point);
@@ -226,20 +210,15 @@ namespace sp
 		Logf("Adding simple hull, %d points, %d triangles", hull.pointCount, hull.triangleCount);
 	}
 
-	void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set, Model *model, bool decompHull)
-	{
-		for (auto prim : model->primitives)
-		{
-			if (!decompHull)
-			{
+	void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set, Model *model, bool decompHull) {
+		for (auto prim : model->primitives) {
+			if (!decompHull) {
 				// Use points for a single hull without decomposing.
 				buildConvexHullForPrimitive(set, model, prim);
-			}
-			else
-			{
+			} else {
 				// Break primitive into one or more convex hulls.
 				decomposeConvexHullsForPrimitive(set, model, prim);
 			}
 		}
 	}
-}
+} // namespace sp

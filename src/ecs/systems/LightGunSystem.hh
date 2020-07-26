@@ -4,18 +4,16 @@
 
 #include <Ecs.hh>
 
-namespace sp
-{
+namespace sp {
 	class InputManager;
 	class GameLogic;
-}
+} // namespace sp
 
-namespace ecs
-{
-	class LightGunSystem
-	{
+namespace ecs {
+	class LightGunSystem {
 	public:
-		LightGunSystem(EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics, sp::GameLogic *logic);
+		LightGunSystem(
+			EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics, sp::GameLogic *logic);
 
 		~LightGunSystem();
 
@@ -31,4 +29,4 @@ namespace ecs
 		sp::PhysxManager *physics;
 		sp::GameLogic *logic;
 	};
-}
+} // namespace ecs

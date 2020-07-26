@@ -1,13 +1,12 @@
 #include "MenuGui.hh"
+
+#include "graphics/GenericShaders.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/ShaderManager.hh"
-#include "graphics/GenericShaders.hh"
 #include "graphics/Util.hh"
 
-namespace sp
-{
-	void RenderMenuGui::Process(const PostProcessingContext *context)
-	{
+namespace sp {
+	void RenderMenuGui::Process(const PostProcessingContext *context) {
 		auto r = context->renderer;
 		auto target = GetInput(0)->GetOutput()->TargetRef;
 		auto blurred = GetInput(1)->GetOutput()->TargetRef;
@@ -23,4 +22,4 @@ namespace sp
 		auto view = context->view;
 		r->RenderMainMenu(view);
 	}
-}
+} // namespace sp

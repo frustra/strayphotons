@@ -1,19 +1,16 @@
 #pragma once
 
 #include "Common.hh"
-#include <glm/glm.hpp>
 
 #include <ecs/Components.hh>
+#include <glm/glm.hpp>
 
-namespace ecs
-{
-	class Animation
-	{
+namespace ecs {
+	class Animation {
 	public:
 		void AnimateToState(uint32 i);
 
-		struct State
-		{
+		struct State {
 			glm::vec3 scale;
 			glm::vec3 pos;
 
@@ -32,4 +29,4 @@ namespace ecs
 	};
 
 	static Component<Animation> ComponentAnimation("animation");
-}
+} // namespace ecs

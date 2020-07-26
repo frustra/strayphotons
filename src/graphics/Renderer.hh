@@ -1,18 +1,17 @@
 #pragma once
 
 #include "core/CFunc.hh"
-#include "graphics/GraphicsContext.hh"
-#include "graphics/Buffer.hh"
-#include "graphics/Texture.hh"
 #include "ecs/components/VoxelInfo.hh"
+#include "graphics/Buffer.hh"
+#include "graphics/GraphicsContext.hh"
+#include "graphics/Texture.hh"
 
-#include <glm/glm.hpp>
-#include <functional>
 #include <Ecs.hh>
 #include <PxPhysicsAPI.h>
+#include <functional>
+#include <glm/glm.hpp>
 
-namespace sp
-{
+namespace sp {
 	class Game;
 	class RenderTarget;
 	class RenderTargetPool;
@@ -21,8 +20,7 @@ namespace sp
 	class Model;
 	class GuiRenderer;
 
-	struct VoxelData
-	{
+	struct VoxelData {
 		shared_ptr<RenderTarget> voxelCounters;
 		shared_ptr<RenderTarget> fragmentListCurrent, fragmentListPrevious;
 		shared_ptr<RenderTarget> voxelOverflow;
@@ -31,8 +29,7 @@ namespace sp
 		ecs::VoxelInfo info;
 	};
 
-	class Renderer : public GraphicsContext
-	{
+	class Renderer : public GraphicsContext {
 	public:
 		typedef std::function<void(ecs::Entity &)> PreDrawFunc;
 
@@ -54,18 +51,21 @@ namespace sp
 		void DrawEntity(const ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw = {});
 		void RenderLoading(ecs::View view);
 		void ExpireRenderables();
-		void DrawPhysxLines(const ecs::View &view, SceneShader *shader, const vector<physx::PxDebugLine> &lines, const PreDrawFunc &preDraw);
+		void DrawPhysxLines(const ecs::View &view, SceneShader *shader, const vector<physx::PxDebugLine> &lines,
+			const PreDrawFunc &preDraw);
 		void DrawGridDebug(const ecs::View &view, SceneShader *shader);
 		void EndFrame();
 
 		void SetRenderTarget(shared_ptr<RenderTarget> attachment0, shared_ptr<RenderTarget> depth);
-		void SetRenderTargets(size_t attachmentCount, shared_ptr<RenderTarget> *attachments, shared_ptr<RenderTarget> depth);
+		void SetRenderTargets(
+			size_t attachmentCount, shared_ptr<RenderTarget> *attachments, shared_ptr<RenderTarget> depth);
 		void SetDefaultRenderTarget();
 
 		ShaderManager *ShaderControl = nullptr;
 		RenderTargetPool *RTPool = nullptr;
 
 		float Exposure = 1.0f;
+
 	private:
 		shared_ptr<RenderTarget> shadowMap;
 		shared_ptr<RenderTarget> mirrorShadowMap;
@@ -82,4 +82,4 @@ namespace sp
 
 		CFuncCollection funcs;
 	};
-}
+} // namespace sp

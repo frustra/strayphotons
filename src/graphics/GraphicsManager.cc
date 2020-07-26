@@ -1,15 +1,16 @@
 #include "graphics/GraphicsManager.hh"
+
+#include "core/CVar.hh"
+#include "core/Game.hh"
 #include "core/Logging.hh"
-#include "graphics/Renderer.hh"
-#include "graphics/basic_renderer/BasicRenderer.hh"
+#include "core/PerfTimer.hh"
+#include "ecs/components/Transform.hh"
+#include "ecs/components/View.hh"
+#include "ecs/components/XRView.hh"
 #include "graphics/GuiRenderer.hh"
 #include "graphics/RenderTargetPool.hh"
-#include "ecs/components/View.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/XRView.hh"
-#include "core/Game.hh"
-#include "core/CVar.hh"
-#include "core/PerfTimer.hh"
+#include "graphics/Renderer.hh"
+#include "graphics/basic_renderer/BasicRenderer.hh"
 
 #include <cxxopts.hpp>
 #include <iostream>
@@ -20,62 +21,52 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
-namespace sp
-{
-	CVar<glm::ivec2> CVarWindowSize("r.Size", { 1280, 720 }, "Window height");
+namespace sp {
+	CVar<glm::ivec2> CVarWindowSize("r.Size", {1280, 720}, "Window height");
 	CVar<float> CVarWindowScale("r.Scale", 1.0f, "Scale framebuffer");
 	CVar<float> CVarFieldOfView("r.FieldOfView", 60, "Camera field of view");
 	CVar<int> CVarWindowFullscreen("r.Fullscreen", false, "Fullscreen window (0: window, 1: fullscreen)");
 
-	static void glfwErrorCallback(int error, const char *message)
-	{
+	static void glfwErrorCallback(int error, const char *message) {
 		Errorf("GLFW returned %d: %s", error, message);
 	}
 
-	GraphicsManager::GraphicsManager(Game *game) : game(game)
-	{
-		if (game->options.count("basic-renderer"))
-		{
+	GraphicsManager::GraphicsManager(Game *game) : game(game) {
+		if (game->options.count("basic-renderer")) {
 			Logf("Graphics starting up (basic renderer)");
 			useBasic = true;
-		}
-		else
-		{
+		} else {
 			Logf("Graphics starting up (full renderer)");
 		}
 
-		if (game->options.count("size"))
-		{
+		if (game->options.count("size")) {
 			std::istringstream ss(game->options["size"].as<string>());
 			glm::ivec2 size;
 			ss >> size.x >> size.y;
 
-			if (size.x > 0 && size.y > 0)
-			{
+			if (size.x > 0 && size.y > 0) {
 				CVarWindowSize.Set(size);
 			}
 		}
 
 		glfwSetErrorCallback(glfwErrorCallback);
 
-		if (!glfwInit())
-		{
+		if (!glfwInit()) {
 			throw "glfw failed";
 		}
 	}
 
-	GraphicsManager::~GraphicsManager()
-	{
-		if (context) ReleaseContext();
+	GraphicsManager::~GraphicsManager() {
+		if (context)
+			ReleaseContext();
 		glfwTerminate();
 	}
 
-	void GraphicsManager::CreateContext()
-	{
-		if (context) throw "already an active context";
+	void GraphicsManager::CreateContext() {
+		if (context)
+			throw "already an active context";
 
-		if (useBasic)
-		{
+		if (useBasic) {
 			context = new BasicRenderer(game);
 			context->CreateWindow(CVarWindowSize.Get());
 			return;
@@ -86,67 +77,60 @@ namespace sp
 		context->CreateWindow(CVarWindowSize.Get());
 
 		profilerGui = new ProfilerGui(&context->Timer);
-		if (game->debugGui)
-		{
+		if (game->debugGui) {
 			game->debugGui->Attach(profilerGui);
 		}
 	}
 
-	void GraphicsManager::ReleaseContext()
-	{
-		if (!context) throw "no active context";
+	void GraphicsManager::ReleaseContext() {
+		if (!context)
+			throw "no active context";
 
-		if (profilerGui) delete profilerGui;
+		if (profilerGui)
+			delete profilerGui;
 
 		delete context;
 	}
 
-	void GraphicsManager::ReloadContext()
-	{
-		//context->Reload();
+	void GraphicsManager::ReloadContext() {
+		// context->Reload();
 	}
 
-	bool GraphicsManager::HasActiveContext()
-	{
+	bool GraphicsManager::HasActiveContext() {
 		return context && !context->ShouldClose();
 	}
 
-	void GraphicsManager::PreFrame()
-	{
-		if (context) context->PreFrame();
+	void GraphicsManager::PreFrame() {
+		if (context)
+			context->PreFrame();
 	}
 
-	bool GraphicsManager::Frame()
-	{
-		if (!context) throw "no active context";
-		if (!HasActiveContext()) return false;
+	bool GraphicsManager::Frame() {
+		if (!context)
+			throw "no active context";
+		if (!HasActiveContext())
+			return false;
 
-		ecs::View pancakeView; // Only support a single pancakeView (2D window)
+		ecs::View pancakeView;							   // Only support a single pancakeView (2D window)
 		vector<std::pair<ecs::View, ecs::XRView>> xrViews; // Support many xrViews
 
-		if (playerViews.size() > 0)
-		{
-			for (size_t i = 0; i < playerViews.size(); i++)
-			{
+		if (playerViews.size() > 0) {
+			for (size_t i = 0; i < playerViews.size(); i++) {
 				auto view = playerViews[i].Get<ecs::View>();
 
-				if (view->viewType == ecs::View::VIEW_TYPE_PANCAKE)
-				{
+				if (view->viewType == ecs::View::VIEW_TYPE_PANCAKE) {
 					// This claims to be a PancakeView, so we can update it
 					// with the screen geometry
 					view->SetProjMat(glm::radians(CVarFieldOfView.Get()), view->GetClip(), CVarWindowSize.Get());
 					view->scale = CVarWindowScale.Get();
 
 					pancakeView = *ecs::UpdateViewCache(playerViews[i]);
-				}
-				else if (view->viewType == ecs::View::VIEW_TYPE_XR && playerViews[i].Has<ecs::XRView>())
-				{
-					xrViews.push_back(std::make_pair(*ecs::UpdateViewCache(playerViews[i]), *playerViews[i].Get<ecs::XRView>()));
+				} else if (view->viewType == ecs::View::VIEW_TYPE_XR && playerViews[i].Has<ecs::XRView>()) {
+					xrViews.push_back(
+						std::make_pair(*ecs::UpdateViewCache(playerViews[i]), *playerViews[i].Get<ecs::XRView>()));
 				}
 			}
-		}
-		else
-		{
+		} else {
 			// Somehow we got here without a view...
 			throw std::runtime_error("Asked to render without a view");
 			return false;
@@ -159,10 +143,9 @@ namespace sp
 
 			context->BeginFrame();
 
-			// Always render XR content first, since this allows the compositor to immediately start work rendering to the HMD
-			// Only attempt to render if we have an active XR System
-			if (game->logic.GetXrSystem())
-			{
+			// Always render XR content first, since this allows the compositor to immediately start work rendering to
+			// the HMD Only attempt to render if we have an active XR System
+			if (game->logic.GetXrSystem()) {
 				RenderPhase xrPhase("XrViews", context->Timer);
 
 				// TODO: Should not have to do this on every frame...
@@ -181,8 +164,7 @@ namespace sp
 				game->logic.GetXrSystem()->GetCompositor()->BeginFrame();
 
 				// Render all the XR views at the same time
-				for (size_t i = 0; i < xrViews.size(); i++)
-				{
+				for (size_t i = 0; i < xrViews.size(); i++) {
 					RenderPhase xrPhase("XrView", context->Timer);
 
 					static glm::mat4 viewPose;
@@ -194,7 +176,8 @@ namespace sp
 					// Move the view to the appropriate place
 					xrViews[i].first.SetInvViewMat(viewPose);
 
-					RenderTarget::Ref viewOutputTexture = game->logic.GetXrSystem()->GetCompositor()->GetRenderTarget(xrViews[i].second.viewId);
+					RenderTarget::Ref viewOutputTexture =
+						game->logic.GetXrSystem()->GetCompositor()->GetRenderTarget(xrViews[i].second.viewId);
 
 					context->RenderPass(xrViews[i].first, viewOutputTexture);
 
@@ -218,8 +201,7 @@ namespace sp
 		fpsTimer += frameEnd - lastFrameEnd;
 		frameCounter++;
 
-		if (fpsTimer > 1.0)
-		{
+		if (fpsTimer > 1.0) {
 			context->SetTitle("STRAY PHOTONS (" + std::to_string(frameCounter) + " FPS)");
 			frameCounter = 0;
 			fpsTimer = 0;
@@ -230,29 +212,22 @@ namespace sp
 	}
 
 	/**
-	* This View will be used when rendering from the player's viewpoint
-	*/
-	void GraphicsManager::SetPlayerView(vector<ecs::Entity> entities)
-	{
-		for (auto entity : entities)
-		{
-			ecs::ValidateView(entity);
-		}
+	 * This View will be used when rendering from the player's viewpoint
+	 */
+	void GraphicsManager::SetPlayerView(vector<ecs::Entity> entities) {
+		for (auto entity : entities) { ecs::ValidateView(entity); }
 		playerViews = entities;
 	}
 
-	void GraphicsManager::RenderLoading()
-	{
-		if (!context) return;
+	void GraphicsManager::RenderLoading() {
+		if (!context)
+			return;
 
-		if (playerViews.size() > 0)
-		{
-			for (size_t i = 0; i < playerViews.size(); i++)
-			{
+		if (playerViews.size() > 0) {
+			for (size_t i = 0; i < playerViews.size(); i++) {
 				auto view = playerViews[i].Get<ecs::View>();
 
-				if (view->viewType == ecs::View::VIEW_TYPE_PANCAKE)
-				{
+				if (view->viewType == ecs::View::VIEW_TYPE_PANCAKE) {
 					// This claims to be a PancakeView, so we can update it
 					// with the screen geometry
 					view->SetProjMat(glm::radians(CVarFieldOfView.Get()), view->GetClip(), CVarWindowSize.Get());
@@ -269,4 +244,4 @@ namespace sp
 
 		// TODO: clear the XR scene to drop back to the compositor while we load
 	}
-}
+} // namespace sp

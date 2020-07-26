@@ -1,36 +1,32 @@
 #include "GuiManager.hh"
-#include <game/input/InputManager.hh>
-#include <core/Game.hh>
 
-#include <imgui/imgui.h>
 #include "ConsoleGui.hh"
+
+#include <core/Game.hh>
+#include <game/input/InputManager.hh>
+#include <imgui/imgui.h>
 
 // clang-format off
 // GLFW must be included after glew.h (Graphics.hh)
 #include <GLFW/glfw3.h>
 // clang-format on
 
-namespace sp
-{
-	GuiManager::GuiManager(Game *game, const FocusLevel focusPriority) : focusPriority(focusPriority), game(game)
-	{
+namespace sp {
+	GuiManager::GuiManager(Game *game, const FocusLevel focusPriority) : focusPriority(focusPriority), game(game) {
 		imCtx = ImGui::CreateContext();
 
-		if (game != nullptr)
-		{
+		if (game != nullptr) {
 			GuiManager::BindInput(game->input);
 		}
 	}
 
-	GuiManager::~GuiManager()
-	{
+	GuiManager::~GuiManager() {
 		SetGuiContext();
 		ImGui::DestroyContext(imCtx);
 		imCtx = nullptr;
 	}
 
-	void GuiManager::BindInput(InputManager &inputManager)
-	{
+	void GuiManager::BindInput(InputManager &inputManager) {
 		input = &inputManager;
 
 		SetGuiContext();
@@ -57,29 +53,19 @@ namespace sp
 		io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
 	}
 
-	void GuiManager::SetGuiContext()
-	{
+	void GuiManager::SetGuiContext() {
 		ImGui::SetCurrentContext(imCtx);
 	}
 
-	void GuiManager::BeforeFrame()
-	{
+	void GuiManager::BeforeFrame() {
 		ImGuiIO &io = ImGui::GetIO();
 
 		const KeyEvents *keys, *keysPrev;
-		if (input->GetActionDelta(INPUT_ACTION_KEYBOARD_KEYS, &keys, &keysPrev))
-		{
-			if (keysPrev != nullptr)
-			{
-				for (auto &key : *keysPrev)
-				{
-					io.KeysDown[key] = false;
-				}
+		if (input->GetActionDelta(INPUT_ACTION_KEYBOARD_KEYS, &keys, &keysPrev)) {
+			if (keysPrev != nullptr) {
+				for (auto &key : *keysPrev) { io.KeysDown[key] = false; }
 			}
-			for (auto &key : *keys)
-			{
-				io.KeysDown[key] = true;
-			}
+			for (auto &key : *keys) { io.KeysDown[key] = true; }
 
 			io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
 			io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
@@ -88,16 +74,11 @@ namespace sp
 		};
 	}
 
-	void GuiManager::DefineWindows()
-	{
-		for (auto component : components)
-		{
-			component->Add();
-		}
+	void GuiManager::DefineWindows() {
+		for (auto component : components) { component->Add(); }
 	}
 
-	void GuiManager::Attach(GuiRenderable *component)
-	{
+	void GuiManager::Attach(GuiRenderable *component) {
 		components.push_back(component);
 	}
-}
+} // namespace sp

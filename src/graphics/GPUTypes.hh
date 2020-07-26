@@ -5,20 +5,17 @@
 #include <Ecs.hh>
 #include <glm/glm.hpp>
 
-namespace ecs
-{
+namespace ecs {
 	struct VoxelInfo;
 }
 
-namespace sp
-{
+namespace sp {
 	static const int MAX_LIGHTS = 16;
 	static const int MAX_MIRRORS = 16;
 	static const int MAX_LIGHT_SENSORS = 32;
 	static const int MAX_VOXEL_AREAS = 4;
 
-	struct GLLightData
-	{
+	struct GLLightData {
 		glm::vec3 position;
 		float spotAngleCos;
 
@@ -39,8 +36,7 @@ namespace sp
 
 	static_assert(sizeof(GLLightData) == 17 * 4 * sizeof(float), "GLLightData size incorrect");
 
-	struct GLMirrorData
-	{
+	struct GLMirrorData {
 		glm::mat4 modelMat;
 		glm::mat4 reflectMat;
 		glm::vec4 plane;
@@ -50,8 +46,7 @@ namespace sp
 
 	static_assert(sizeof(GLMirrorData) == 10 * 4 * sizeof(float), "GLMirrorData size incorrect");
 
-	struct GLLightSensorData
-	{
+	struct GLLightSensorData {
 		glm::vec3 position;
 		float id0; // IDs are 4 bytes each of the 8 byte entity ID
 		glm::vec3 direction;
@@ -60,8 +55,7 @@ namespace sp
 
 	static_assert(sizeof(GLLightSensorData) == 2 * 4 * sizeof(float), "GLLightSensorData size incorrect");
 
-	struct GLVoxelArea
-	{
+	struct GLVoxelArea {
 		glm::vec3 min;
 		float padding1[1];
 		glm::vec3 max;
@@ -70,8 +64,7 @@ namespace sp
 
 	static_assert(sizeof(GLVoxelArea) == 2 * 4 * sizeof(float), "GLVoxelArea size incorrect");
 
-	struct GLVoxelInfo
-	{
+	struct GLVoxelInfo {
 		glm::vec3 voxelGridCenter;
 		float voxelSize;
 		GLVoxelArea areas[MAX_VOXEL_AREAS];
@@ -82,4 +75,4 @@ namespace sp
 	int FillLightData(GLLightData *data, ecs::EntityManager &manager);
 	int FillMirrorData(GLMirrorData *data, ecs::EntityManager &manager);
 	void FillVoxelInfo(GLVoxelInfo *data, ecs::VoxelInfo &source);
-}
+} // namespace sp

@@ -1,31 +1,29 @@
 #pragma once
 
-#include <string>
-
+#include "Common.hh"
+#include "ecs/components/View.hh"
 #include "graphics/Graphics.hh"
 #include "graphics/RenderTarget.hh"
-#include "ecs/components/View.hh"
-#include "Common.hh"
+
 #include <core/PerfTimer.hh>
 #include <game/input/GlfwActionSource.hh>
+#include <string>
 
 struct GLFWwindow;
 
-namespace sp
-{
+namespace sp {
 	class Device;
 	class ShaderSet;
 	class Game;
 	class InputManager;
 	class RenderTarget;
 
-	class GraphicsContext
-	{
+	class GraphicsContext {
 	public:
 		GraphicsContext(Game *game);
 		virtual ~GraphicsContext();
 
-		void CreateWindow(glm::ivec2 initialSize = { 640, 480 });
+		void CreateWindow(glm::ivec2 initialSize = {640, 480});
 		bool ShouldClose();
 		void SetTitle(string title);
 		void ResizeWindow(ecs::View &frameBufferView, double scale, int fullscreen);
@@ -43,8 +41,7 @@ namespace sp
 		ShaderSet *GlobalShaders;
 		PerfTimer Timer;
 
-		GLFWwindow *GetWindow()
-		{
+		GLFWwindow *GetWindow() {
 			return window;
 		}
 
@@ -63,4 +60,4 @@ namespace sp
 		InputManager *input = nullptr;
 		std::unique_ptr<GlfwActionSource> glfwActionSource = nullptr;
 	};
-}
+} // namespace sp

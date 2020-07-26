@@ -1,22 +1,19 @@
 #include "ViewGBuffer.hh"
+
+#include "graphics/GenericShaders.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/ShaderManager.hh"
-#include "graphics/GenericShaders.hh"
 #include "graphics/Util.hh"
 
-namespace sp
-{
-	class ViewGBufferFS : public Shader
-	{
+namespace sp {
+	class ViewGBufferFS : public Shader {
 		SHADER_TYPE(ViewGBufferFS)
 
-		ViewGBufferFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput)
-		{
+		ViewGBufferFS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput) {
 			BindBuffer(voxelInfo, 0);
 		}
 
-		void SetParameters(int newMode, int newSource, int newLevel, const ecs::View &view)
-		{
+		void SetParameters(int newMode, int newSource, int newLevel, const ecs::View &view) {
 			Set("mode", newMode);
 			Set("source", newSource);
 			Set("mipLevel", newLevel);
@@ -24,8 +21,7 @@ namespace sp
 			Set("invViewMat", view.invViewMat);
 		}
 
-		void SetVoxelInfo(GLVoxelInfo *data)
-		{
+		void SetVoxelInfo(GLVoxelInfo *data) {
 			BufferData(voxelInfo, sizeof(GLVoxelInfo), data);
 		}
 
@@ -35,8 +31,7 @@ namespace sp
 
 	IMPLEMENT_SHADER_TYPE(ViewGBufferFS, "view_gbuffer.frag", Fragment);
 
-	void ViewGBuffer::Process(const PostProcessingContext *context)
-	{
+	void ViewGBuffer::Process(const PostProcessingContext *context) {
 		auto r = context->renderer;
 		auto dest = outputs[0].AllocateTarget(context);
 
@@ -51,4 +46,4 @@ namespace sp
 
 		DrawScreenCover();
 	}
-}
+} // namespace sp

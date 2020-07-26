@@ -2,8 +2,8 @@
 
 #include <memory>
 using std::make_shared;
-using std::unique_ptr;
 using std::shared_ptr;
+using std::unique_ptr;
 using std::weak_ptr;
 
 #include <vector>
@@ -13,8 +13,8 @@ using std::vector;
 using std::string;
 
 #include <stdexcept>
-using std::runtime_error;
 using std::invalid_argument;
+using std::runtime_error;
 
 #include <chrono>
 typedef std::chrono::steady_clock chrono_clock;
@@ -28,16 +28,14 @@ typedef int32_t int32;
 typedef uint64_t uint64;
 typedef int64_t int64;
 
-namespace sp
-{
+namespace sp {
 	void Assert(bool condition, const string &message);
 	void DebugBreak();
 
 	uint32 CeilToPowerOfTwo(uint32 v);
 	uint32 Uint32Log2(uint32 v);
 
-	class NonCopyable
-	{
+	class NonCopyable {
 	public:
 		NonCopyable &operator=(const NonCopyable &) = delete;
 		NonCopyable(const NonCopyable &) = delete;
@@ -46,16 +44,15 @@ namespace sp
 
 	// Boost replacement functions
 	template<typename T>
-	void hash_combine(std::size_t &seed, const T &val)
-	{
+	void hash_combine(std::size_t &seed, const T &val) {
 		seed ^= std::hash<T>()(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 	}
 
 	bool starts_with(const string &str, const string &prefix);
-	bool ends_with(const string& str, const string& suffix);
+	bool ends_with(const string &str, const string &suffix);
 	string to_lower_copy(const string &str);
 	string to_upper_copy(const string &str);
 	void trim(string &str);
 	void trim_left(string &str);
 	void trim_right(string &str);
-}
+} // namespace sp

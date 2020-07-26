@@ -3,20 +3,18 @@
 #include "ActionSource.hh"
 #include "InputManager.hh"
 
-#include <robin_hood.h>
 #include <glm/glm.hpp>
-#include <queue>
 #include <mutex>
+#include <queue>
+#include <robin_hood.h>
 
 struct GLFWwindow;
 
-namespace sp
-{
+namespace sp {
 	/**
 	 * Glfw input source. Provides mouse and keyboard actions.
 	 */
-	class GlfwActionSource : public ActionSource
-	{
+	class GlfwActionSource : public ActionSource {
 	public:
 		GlfwActionSource(InputManager &inputManager, GLFWwindow &window);
 		~GlfwActionSource() {}
@@ -35,31 +33,13 @@ namespace sp
 		void DisableCursor();
 		void EnableCursor();
 
-		static void KeyInputCallback(
-			GLFWwindow *window,
-			int key,
-			int scancode,
-			int action,
-			int mods
-		);
+		static void KeyInputCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
-		static void CharInputCallback(
-			GLFWwindow *window,
-			unsigned int ch
-		);
+		static void CharInputCallback(GLFWwindow *window, unsigned int ch);
 
-		static void MouseMoveCallback(
-			GLFWwindow *window,
-			double xPos,
-			double yPos
-		);
+		static void MouseMoveCallback(GLFWwindow *window, double xPos, double yPos);
 
-		static void MouseButtonCallback(
-			GLFWwindow *window,
-			int button,
-			int actions,
-			int mods
-		);
+		static void MouseButtonCallback(GLFWwindow *window, int button, int actions, int mods);
 
 		static void MouseScrollCallback(GLFWwindow *window, double xOffset, double yOffset);
 
@@ -72,4 +52,4 @@ namespace sp
 		KeyEvents keyEvents, keyEventsNext;
 		ClickEvents clickEvents, clickEventsNext;
 	};
-}
+} // namespace sp

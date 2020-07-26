@@ -2,15 +2,12 @@
 
 #include "PostProcess.hh"
 
-namespace sp
-{
-	class SSAOPass0 : public PostProcessPass<3, 1>
-	{
+namespace sp {
+	class SSAOPass0 : public PostProcessPass<3, 1> {
 	public:
 		void Process(const PostProcessingContext *context);
 
-		RenderTargetDesc GetOutputDesc(uint32 id)
-		{
+		RenderTargetDesc GetOutputDesc(uint32 id) {
 			auto desc = GetInput(0)->GetOutput()->TargetDesc;
 			desc.format = PF_R16F;
 			desc.extent.x /= 2;
@@ -18,37 +15,31 @@ namespace sp
 			return desc;
 		}
 
-		string Name()
-		{
+		string Name() {
 			return "SSAOPass0";
 		}
 	};
 
-	class SSAOBlur : public PostProcessPass<2, 1>
-	{
+	class SSAOBlur : public PostProcessPass<2, 1> {
 	public:
-		SSAOBlur(bool horizontal)
-			: horizontal(horizontal) {}
+		SSAOBlur(bool horizontal) : horizontal(horizontal) {}
 
 		void Process(const PostProcessingContext *context);
 
-		RenderTargetDesc GetOutputDesc(uint32 id)
-		{
+		RenderTargetDesc GetOutputDesc(uint32 id) {
 			auto desc = GetInput(0)->GetOutput()->TargetDesc;
-			if (horizontal)
-			{
+			if (horizontal) {
 				desc.extent.x *= 2;
 				desc.extent.y *= 2;
 			}
 			return desc;
 		}
 
-		string Name()
-		{
+		string Name() {
 			return "SSAOBlur";
 		}
 
 	private:
 		bool horizontal;
 	};
-}
+} // namespace sp

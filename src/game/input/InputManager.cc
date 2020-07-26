@@ -2,26 +2,24 @@
 
 #include "ActionSource.hh"
 #include "BindingNames.hh"
+
 #include <Common.hh>
-
 #include <algorithm>
-#include <stdexcept>
-#include <core/Logging.hh>
 #include <core/Console.hh>
+#include <core/Logging.hh>
+#include <stdexcept>
 
-namespace sp
-{
-	InputManager::InputManager()
-	{
+namespace sp {
+	InputManager::InputManager() {
 		funcs.Register(this, "bind", "Bind a key to a command", &InputManager::BindKey);
 	}
 
 	InputManager::~InputManager() {}
 
-	bool InputManager::IsDown(std::string actionPath)
-	{
+	bool InputManager::IsDown(std::string actionPath) {
 		const bool *value;
-		if (GetActionValue(actionPath, &value)) return *value;
+		if (GetActionValue(actionPath, &value))
+			return *value;
 		return false;
 	}
 
@@ -29,13 +27,10 @@ namespace sp
 	 * Returns true if the action exists and the state changed from false to true this frame, otherwise false.
 	 * This is an alias helper for the below GetActionStateDelta() function.
 	 */
-	bool InputManager::IsPressed(std::string actionPath)
-	{
+	bool InputManager::IsPressed(std::string actionPath) {
 		const bool *value, *previous;
-		if (GetActionDelta(actionPath, &value, &previous))
-		{
-			if (previous != nullptr)
-			{
+		if (GetActionDelta(actionPath, &value, &previous)) {
+			if (previous != nullptr) {
 				return !*previous && *value;
 			}
 			return *value;
@@ -43,8 +38,7 @@ namespace sp
 		return false;
 	}
 
-	void InputManager::BeginFrame()
-	{
+	void InputManager::BeginFrame() {
 		{ // Advance input action snapshots 1 frame.
 			std::lock_guard lock(actionStatesLock);
 			actionStatesPrevious = actionStatesCurrent;
@@ -52,46 +46,33 @@ namespace sp
 
 		{
 			std::lock_guard lock(sourcesLock);
-			for (auto source : sources)
-			{
-				source->BeginFrame();
-			}
+			for (auto source : sources) { source->BeginFrame(); }
 		}
 
-        if (!FocusLocked())
-        {
-            // Run any command bindings
+		if (!FocusLocked()) {
+			// Run any command bindings
 			std::lock_guard lock(commandsLock);
-            for (auto [actionPath, command] : commandBindings)
-            {
-                if (IsPressed(actionPath))
-                {
+			for (auto [actionPath, command] : commandBindings) {
+				if (IsPressed(actionPath)) {
 					// Run the bound command
 					GetConsoleManager().QueueParseAndExecute(command);
-                }
-            }
-        }
+				}
+			}
+		}
 	}
 
-	bool InputManager::FocusLocked(FocusLevel priority) const
-	{
+	bool InputManager::FocusLocked(FocusLevel priority) const {
 		return focusLocked.size() > 0 && focusLocked.back() > priority;
 	}
 
-	bool InputManager::LockFocus(bool locked, FocusLevel priority)
-	{
-		if (locked)
-		{
-			if (focusLocked.empty() || focusLocked.back() < priority)
-			{
+	bool InputManager::LockFocus(bool locked, FocusLevel priority) {
+		if (locked) {
+			if (focusLocked.empty() || focusLocked.back() < priority) {
 				focusLocked.push_back(priority);
 				return true;
 			}
-		}
-		else
-		{
-			if (!focusLocked.empty() && focusLocked.back() == priority)
-			{
+		} else {
+			if (!focusLocked.empty() && focusLocked.back() == priority) {
 				focusLocked.pop_back();
 				return true;
 			}
@@ -100,50 +81,41 @@ namespace sp
 		return false;
 	}
 
-	void InputManager::BindCommand(string action, string command)
-	{
+	void InputManager::BindCommand(string action, string command) {
 		std::lock_guard lock(commandsLock);
 		commandBindings[action] = command;
 	}
 
-	void InputManager::UnbindCommand(string action)
-	{
+	void InputManager::UnbindCommand(string action) {
 		std::lock_guard lock(commandsLock);
 		commandBindings.erase(action);
 	}
 
-	void InputManager::AddActionSource(ActionSource *source)
-	{
+	void InputManager::AddActionSource(ActionSource *source) {
 		std::lock_guard lock(sourcesLock);
 		sources.insert(source);
 	}
 
-
-	void InputManager::RemoveActionSource(ActionSource *source)
-	{
+	void InputManager::RemoveActionSource(ActionSource *source) {
 		std::lock_guard lock(sourcesLock);
 		sources.erase(source);
 	}
 
-	void InputManager::BindKey(string args)
-	{
+	void InputManager::BindKey(string args) {
 		std::stringstream stream(args);
 		string keyName;
 		stream >> keyName;
 
 		auto it = UserBindingNames.find(to_upper_copy(keyName));
-		if (it != UserBindingNames.end())
-		{
+		if (it != UserBindingNames.end()) {
 			string command;
 			std::getline(stream, command);
 			trim(command);
 
 			Logf("Binding %s to command: %s", keyName, command);
 			BindCommand(it->second, command);
-		}
-		else
-		{
+		} else {
 			Errorf("Binding %s does not exist", keyName);
 		}
 	}
-}
+} // namespace sp

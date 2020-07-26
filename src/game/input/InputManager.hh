@@ -1,20 +1,19 @@
 #pragma once
 
-#include <Common.hh>
-#include <game/gui/GuiManager.hh>
-#include <core/CFunc.hh>
 #include "ActionValue.hh"
 
+#include <Common.hh>
+#include <core/CFunc.hh>
 #include <functional>
-#include <set>
-#include <mutex>
-#include <shared_mutex>
+#include <game/gui/GuiManager.hh>
 #include <glm/glm.hpp>
-#include <robin_hood.h>
 #include <list>
+#include <mutex>
+#include <robin_hood.h>
+#include <set>
+#include <shared_mutex>
 
-namespace sp
-{
+namespace sp {
 	/**
 	 * Custom action types
 	 */
@@ -22,18 +21,15 @@ namespace sp
 	typedef robin_hood::unordered_flat_set<int> KeyEvents;
 	typedef std::list<unsigned int> CharEvents;
 
-    // Stores a simultanious mouse button press and position.
-    struct ClickEvent
-	{
+	// Stores a simultanious mouse button press and position.
+	struct ClickEvent {
 		int button;
 		glm::vec2 pos;
-        bool down;
+		bool down;
 
-        ClickEvent(int button, glm::vec2 pos, bool down)
-            : button(button), pos(pos), down(down) {}
+		ClickEvent(int button, glm::vec2 pos, bool down) : button(button), pos(pos), down(down) {}
 
-		bool operator==(const ClickEvent &other) const
-		{
+		bool operator==(const ClickEvent &other) const {
 			return button == other.button && pos == other.pos && down == other.down;
 		}
 	};
@@ -48,31 +44,29 @@ namespace sp
 
 	static const std::string INPUT_ACTION_PLAYER_BASE = "/actions/main/in/player";
 	static const std::string INPUT_ACTION_TELEPORT = INPUT_ACTION_PLAYER_BASE + "/teleport"; // bool
-	static const std::string INPUT_ACTION_GRAB = INPUT_ACTION_PLAYER_BASE + "/grab"; // bool
+	static const std::string INPUT_ACTION_GRAB = INPUT_ACTION_PLAYER_BASE + "/grab";		 // bool
 
 	/**
 	 * Glfw Action paths
 	 */
 	static const std::string INPUT_ACTION_KEYBOARD_BASE = "/actions/main/in/keyboard";
 	static const std::string INPUT_ACTION_KEYBOARD_CHARS = INPUT_ACTION_KEYBOARD_BASE + "/chars"; // CharEvents
-	static const std::string INPUT_ACTION_KEYBOARD_KEYS = INPUT_ACTION_KEYBOARD_BASE + "/keys"; // KeyEvents
+	static const std::string INPUT_ACTION_KEYBOARD_KEYS = INPUT_ACTION_KEYBOARD_BASE + "/keys";	  // KeyEvents
 
 	static const std::string INPUT_ACTION_MOUSE_BASE = "/actions/main/in/mouse";
-	static const std::string INPUT_ACTION_MOUSE_CLICK = INPUT_ACTION_MOUSE_BASE + "/click"; // ClickEvents
+	static const std::string INPUT_ACTION_MOUSE_CLICK = INPUT_ACTION_MOUSE_BASE + "/click";				// ClickEvents
 	static const std::string INPUT_ACTION_MOUSE_BUTTON_LEFT = INPUT_ACTION_MOUSE_BASE + "/button_left"; // bool
 	static const std::string INPUT_ACTION_MOUSE_BUTTON_MIDDLE = INPUT_ACTION_MOUSE_BASE + "/button_middle"; // bool
-	static const std::string INPUT_ACTION_MOUSE_BUTTON_RIGHT = INPUT_ACTION_MOUSE_BASE + "/button_right"; // bool
-	static const std::string INPUT_ACTION_MOUSE_CURSOR = INPUT_ACTION_MOUSE_BASE + "/cursor"; // glm::vec2
-	static const std::string INPUT_ACTION_MOUSE_SCROLL = INPUT_ACTION_MOUSE_BASE + "/scroll"; // glm::vec2
-
+	static const std::string INPUT_ACTION_MOUSE_BUTTON_RIGHT = INPUT_ACTION_MOUSE_BASE + "/button_right";	// bool
+	static const std::string INPUT_ACTION_MOUSE_CURSOR = INPUT_ACTION_MOUSE_BASE + "/cursor";				// glm::vec2
+	static const std::string INPUT_ACTION_MOUSE_SCROLL = INPUT_ACTION_MOUSE_BASE + "/scroll";				// glm::vec2
 
 	class ActionSource;
 
 	/**
 	 * Class to manage input actions.  Call this->BindCallbacks() to set it up.
 	 */
-	class InputManager
-	{
+	class InputManager {
 		friend ActionSource;
 
 	public:
@@ -154,76 +148,63 @@ namespace sp
 		std::mutex sourcesLock;
 		std::set<ActionSource *> sources;
 
-        // The action states for the current, and previous frames.
+		// The action states for the current, and previous frames.
 		std::shared_mutex actionStatesLock;
-		robin_hood::unordered_flat_map<string, std::shared_ptr<ActionValueBase>> actionStatesCurrent, actionStatesPrevious;
+		robin_hood::unordered_flat_map<string, std::shared_ptr<ActionValueBase>> actionStatesCurrent,
+			actionStatesPrevious;
 	};
 
 	template<class T>
-    inline bool InputManager::GetActionValue(std::string actionPath, T **value)
-    {
-		if (value == nullptr) return false;
+	inline bool InputManager::GetActionValue(std::string actionPath, T **value) {
+		if (value == nullptr)
+			return false;
 
-		std::shared_lock lock(actionStatesLock);
-
-        auto it = actionStatesCurrent.find(actionPath);
-        if (it != actionStatesCurrent.end())
-        {
-            *value = it->second->Get<T>();
-            return *value != nullptr;
-        }
-		*value = nullptr;
-        return false;
-    }
-
-	template<class T>
-    inline bool InputManager::GetActionDelta(std::string actionPath, T **value, T **previous)
-    {
-		if (value == nullptr || previous == nullptr) return false;
 		std::shared_lock lock(actionStatesLock);
 
 		auto it = actionStatesCurrent.find(actionPath);
-		if (it != actionStatesCurrent.end())
-		{
+		if (it != actionStatesCurrent.end()) {
 			*value = it->second->Get<T>();
+			return *value != nullptr;
 		}
-		else
-		{
+		*value = nullptr;
+		return false;
+	}
+
+	template<class T>
+	inline bool InputManager::GetActionDelta(std::string actionPath, T **value, T **previous) {
+		if (value == nullptr || previous == nullptr)
+			return false;
+		std::shared_lock lock(actionStatesLock);
+
+		auto it = actionStatesCurrent.find(actionPath);
+		if (it != actionStatesCurrent.end()) {
+			*value = it->second->Get<T>();
+		} else {
 			*value = nullptr;
 		}
 		auto it2 = actionStatesPrevious.find(actionPath);
-		if (it2 != actionStatesPrevious.end())
-		{
+		if (it2 != actionStatesPrevious.end()) {
 			*previous = it2->second->Get<T>();
-		}
-		else
-		{
+		} else {
 			*previous = nullptr;
 		}
-		
-        return *value != nullptr;
-    }
+
+		return *value != nullptr;
+	}
 
 	template<class T>
-	inline void InputManager::SetAction(std::string actionPath, const T *value)
-	{
+	inline void InputManager::SetAction(std::string actionPath, const T *value) {
 		std::lock_guard lock(actionStatesLock);
-		if (value != nullptr)
-		{
+		if (value != nullptr) {
 			auto ptrValue = std::shared_ptr<ActionValueBase>(new ActionValue<const T>(*value));
 			auto it = actionStatesCurrent.find(actionPath);
-			if (it != actionStatesCurrent.end())
-			{
+			if (it != actionStatesCurrent.end()) {
 				it->second = std::move(ptrValue);
-			}
-			else
-			{
+			} else {
 				actionStatesCurrent[actionPath] = std::move(ptrValue);
 			}
-		}
-		else
-		{
+		} else {
 			actionStatesCurrent.erase(actionPath);
 		}
 	}
-}
+} // namespace sp

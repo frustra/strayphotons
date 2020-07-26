@@ -3,10 +3,8 @@
 #include "Graphics.hh"
 #include "PixelFormat.hh"
 
-namespace sp
-{
-	struct Buffer
-	{
+namespace sp {
+	struct Buffer {
 		GLuint handle = 0;
 		GLsizei size = 0;
 
@@ -15,7 +13,8 @@ namespace sp
 
 		void Bind(GLenum target) const;
 		void Bind(GLenum target, GLuint index, GLintptr offset = 0, GLsizeiptr size = -1) const;
-		Buffer &ClearRegion(GLPixelFormat format, GLintptr offset = 0, GLsizeiptr size = -1, const void *data = nullptr);
+		Buffer &ClearRegion(
+			GLPixelFormat format, GLintptr offset = 0, GLsizeiptr size = -1, const void *data = nullptr);
 		Buffer &ClearRegion(PixelFormat format, GLintptr offset = 0, GLsizeiptr size = -1, const void *data = nullptr);
 		Buffer &Clear(GLPixelFormat format, const void *data = nullptr);
 		Buffer &Clear(PixelFormat format, const void *data = nullptr);
@@ -24,24 +23,20 @@ namespace sp
 		void *Map(GLenum access);
 		Buffer &Unmap();
 
-		bool operator==(const Buffer &other) const
-		{
+		bool operator==(const Buffer &other) const {
 			return other.handle == handle;
 		}
 
-		bool operator!=(const Buffer &other) const
-		{
+		bool operator!=(const Buffer &other) const {
 			return !(*this == other);
 		}
 
-		bool operator!() const
-		{
+		bool operator!() const {
 			return !handle;
 		}
 
-		operator bool() const
-		{
+		operator bool() const {
 			return !!handle;
 		}
 	};
-}
+} // namespace sp

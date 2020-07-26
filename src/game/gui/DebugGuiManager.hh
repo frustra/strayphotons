@@ -2,13 +2,11 @@
 
 #include <game/gui/GuiManager.hh>
 
-namespace sp
-{
+namespace sp {
 	class Game;
 	class InputManager;
 
-	class DebugGuiManager : public GuiManager
-	{
+	class DebugGuiManager : public GuiManager {
 	public:
 		DebugGuiManager(Game *game) : GuiManager(game, FOCUS_OVERLAY) {}
 		virtual ~DebugGuiManager() {}
@@ -16,8 +14,7 @@ namespace sp
 		void BeforeFrame() override;
 		void DefineWindows() override;
 
-		bool Focused()
-		{
+		bool Focused() {
 			return consoleOpen;
 		}
 
@@ -26,4 +23,4 @@ namespace sp
 	private:
 		bool consoleOpen = false;
 	};
-}
+} // namespace sp

@@ -1,24 +1,21 @@
-#include "graphics/Renderer.hh"
-#include "graphics/RenderTargetPool.hh"
-#include "graphics/SceneShaders.hh"
 #include "core/Game.hh"
 #include "core/PerfTimer.hh"
+#include "graphics/RenderTargetPool.hh"
+#include "graphics/Renderer.hh"
+#include "graphics/SceneShaders.hh"
 
 #include <atomic>
 
-namespace sp
-{
+namespace sp {
 	static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.5, "Light attenuation for voxel bounces");
 	static CVar<float> CVarMaxVoxelFill("r.MaxVoxelFill", 0.5, "Maximum percentage of voxels that can be filled");
 
 	std::atomic_bool printGfxDebug = false;
-	static CFunc<void> CFuncList("printgfx", "Print the graphics debug output", []()
-	{
+	static CFunc<void> CFuncList("printgfx", "Print the graphics debug output", []() {
 		printGfxDebug = true;
 	});
 
-	void Renderer::PrepareVoxelTextures()
-	{
+	void Renderer::PrepareVoxelTextures() {
 		auto VoxelGridSize = voxelData.info.gridSize;
 		auto VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize * CVarMaxVoxelFill.Get();
 
@@ -27,10 +24,11 @@ namespace sp
 
 		// { listSize, indirect_x, indirect_y, indirect_z }
 		GLsizei indirectBufferSize = sizeof(GLuint) * 4 * VoxelMipLevels;
-		if (!indirectBufferCurrent) indirectBufferCurrent.Create();
-		if (!indirectBufferPrevious) indirectBufferPrevious.Create();
-		if (indirectBufferCurrent.size != indirectBufferSize || indirectBufferPrevious.size != indirectBufferSize)
-		{
+		if (!indirectBufferCurrent)
+			indirectBufferCurrent.Create();
+		if (!indirectBufferPrevious)
+			indirectBufferPrevious.Create();
+		if (indirectBufferCurrent.size != indirectBufferSize || indirectBufferPrevious.size != indirectBufferSize) {
 			indirectBufferCurrent.Data(indirectBufferSize, nullptr, GL_DYNAMIC_COPY);
 			indirectBufferPrevious.Data(indirectBufferSize, nullptr, GL_DYNAMIC_COPY);
 
@@ -67,8 +65,7 @@ namespace sp
 		radianceMipsDesc.Prepare(RTPool, voxelData.radianceMips, true);
 	}
 
-	void Renderer::RenderVoxelGrid()
-	{
+	void Renderer::RenderVoxelGrid() {
 		RenderPhase phase("VoxelGrid", Timer);
 
 		PrepareVoxelTextures();
@@ -90,7 +87,6 @@ namespace sp
 		auto renderTarget = RTPool->Get(RenderTargetDesc(PF_R8, ortho.extents));
 		SetRenderTarget(renderTarget, nullptr);
 
-
 		GLVoxelInfo voxelInfo;
 		FillVoxelInfo(&voxelInfo, voxelData.info);
 		GLLightData lightData[MAX_LIGHTS];
@@ -108,8 +104,10 @@ namespace sp
 			voxelData.voxelOverflow->GetTexture().BindImage(5, GL_WRITE_ONLY, 2);
 
 			shadowMap->GetTexture().Bind(4);
-			if (mirrorShadowMap) mirrorShadowMap->GetTexture().Bind(5);
-			if (menuGuiTarget) menuGuiTarget->GetTexture().Bind(6); // TODO(xthexder): bind correct light gel
+			if (mirrorShadowMap)
+				mirrorShadowMap->GetTexture().Bind(5);
+			if (menuGuiTarget)
+				menuGuiTarget->GetTexture().Bind(6); // TODO(xthexder): bind correct light gel
 			voxelData.radiance->GetTexture().Bind(7);
 			voxelData.radianceMips->GetTexture().Bind(8);
 			mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
@@ -121,7 +119,8 @@ namespace sp
 			voxelFillFS->SetLightAttenuation(CVarLightAttenuation.Get());
 
 			ForwardPass(ortho, GlobalShaders->Get<VoxelFillVS>());
-			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
+			glMemoryBarrier(
+				GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
 		}
 
 		{
@@ -130,8 +129,7 @@ namespace sp
 			indirectBufferCurrent.Bind(GL_DISPATCH_INDIRECT_BUFFER);
 
 			// TODO(xthexder): Make last bucket sequencial to eliminate flickering
-			for (uint32 i = 0; i < 3; i++)
-			{
+			for (uint32 i = 0; i < 3; i++) {
 				indirectBufferCurrent.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * (i + 1), sizeof(GLuint));
 				voxelData.radiance->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
 				voxelData.voxelOverflow->GetTexture().BindImage(1, GL_READ_ONLY, i);
@@ -150,8 +148,7 @@ namespace sp
 		{
 			RenderPhase phase("Mipmap", Timer);
 
-			for (uint32 i = 0; i <= voxelData.radianceMips->GetDesc().levels; i++)
-			{
+			for (uint32 i = 0; i <= voxelData.radianceMips->GetDesc().levels; i++) {
 				{
 					RenderPhase subPhase("Clear", Timer);
 
@@ -159,12 +156,9 @@ namespace sp
 					indirectBufferPrevious.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint));
 					voxelData.fragmentListPrevious->GetTexture().BindImage(0, GL_READ_ONLY, i);
 					voxelData.voxelCounters->GetTexture().BindImage(1, GL_READ_ONLY, i);
-					if (i == 0)
-					{
+					if (i == 0) {
 						voxelData.radiance->GetTexture().BindImage(2, GL_WRITE_ONLY, 0, GL_TRUE, 0);
-					}
-					else
-					{
+					} else {
 						voxelData.radianceMips->GetTexture().BindImage(2, GL_WRITE_ONLY, i - 1, GL_TRUE, 0);
 					}
 
@@ -181,14 +175,15 @@ namespace sp
 					indirectBufferCurrent.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint) * 4);
 					voxelData.fragmentListCurrent->GetTexture().BindImage(0, GL_READ_ONLY, i);
 					voxelData.voxelCounters->GetTexture().BindImage(2, GL_WRITE_ONLY, i);
-					if (i < voxelData.radianceMips->GetDesc().levels)
-					{
-						indirectBufferCurrent.Bind(GL_ATOMIC_COUNTER_BUFFER, 1, sizeof(GLuint) * 4 * (i + 1), sizeof(GLuint) * 4);
+					if (i < voxelData.radianceMips->GetDesc().levels) {
+						indirectBufferCurrent.Bind(GL_ATOMIC_COUNTER_BUFFER,
+							1,
+							sizeof(GLuint) * 4 * (i + 1),
+							sizeof(GLuint) * 4);
 						voxelData.voxelCounters->GetTexture().BindImage(3, GL_READ_WRITE, i + 1);
 						voxelData.fragmentListCurrent->GetTexture().BindImage(1, GL_WRITE_ONLY, i + 1);
 					}
-					if (i > 0)
-					{
+					if (i > 0) {
 						if (i > 1)
 							voxelData.radianceMips->GetTexture().BindImage(4, GL_READ_ONLY, i - 2, GL_TRUE, 0);
 						else
@@ -202,15 +197,15 @@ namespace sp
 					voxelMipmapCS->SetLevel(i);
 
 					glDispatchComputeIndirect(sizeof(GLuint) * 4 * i + sizeof(GLuint));
-					glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
+					glMemoryBarrier(
+						GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
 				}
 			}
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 		}
 
-		if (printGfxDebug)
-		{
-			uint32 *buf = (uint32 *) indirectBufferCurrent.Map(GL_READ_ONLY);
+		if (printGfxDebug) {
+			uint32 *buf = (uint32 *)indirectBufferCurrent.Map(GL_READ_ONLY);
 			Logf("Size: %d %d %d %d", buf[0], buf[4], buf[8], buf[12]);
 			Logf("Compute count: %d %d %d %d", buf[1], buf[5], buf[9], buf[13]);
 			indirectBufferCurrent.Unmap();
@@ -242,4 +237,4 @@ namespace sp
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 	}
-}
+} // namespace sp
