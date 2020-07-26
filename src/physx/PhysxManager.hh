@@ -155,6 +155,7 @@ namespace sp {
 
 		physx::PxScene *scene = nullptr;
 		bool simulate = false, exiting = false, resultsPending = false;
+		vector<uint8_t> scratchBlock;
 		bool debug = false;
 
 		std::thread thread;

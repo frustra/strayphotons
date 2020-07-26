@@ -167,8 +167,8 @@ namespace sp {
 				vrTransform->SetPosition(playerTransform->GetGlobalPosition(game->entityManager) -
 										 glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
 			}
-		} else if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/q")) // Spawn dodecahedron
-		{
+		} else if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/q")) {
+			// Spawn dodecahedron
 			auto entity = game->entityManager.NewEntity();
 			auto model = GAssets.LoadModel("dodecahedron");
 			entity.Assign<ecs::Renderable>(model);
@@ -181,8 +181,8 @@ namespace sp {
 			if (actor) {
 				entity.Assign<ecs::Physics>(actor, model, desc);
 			}
-		} else if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/p")) // Toggle flashlight following player
-		{
+		} else if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/p")) {
+			// Toggle flashlight following player
 			if (flashlight.Valid()) {
 				auto transform = flashlight.Get<ecs::Transform>();
 				auto player = game->entityManager.EntityWith<ecs::Name>(CVarFlashlightParent.Get());

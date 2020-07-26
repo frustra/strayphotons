@@ -1,12 +1,16 @@
 #include "GlfwActionSource.hh"
 
 #include <Common.hh>
-#include <GLFW/glfw3.h>
 #include <algorithm>
 #include <core/Console.hh>
 #include <core/Logging.hh>
 #include <graphics/GraphicsManager.hh>
 #include <stdexcept>
+
+// clang-format off
+// GLFW must be included after glew.h (Graphics.hh)
+#include <GLFW/glfw3.h>
+// clang-format on
 
 namespace sp {
 	GlfwActionSource::GlfwActionSource(InputManager &inputManager, GLFWwindow &glfwWindow)

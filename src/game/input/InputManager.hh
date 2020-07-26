@@ -44,22 +44,22 @@ namespace sp {
 
 	static const std::string INPUT_ACTION_PLAYER_BASE = "/actions/main/in/player";
 	static const std::string INPUT_ACTION_TELEPORT = INPUT_ACTION_PLAYER_BASE + "/teleport"; // bool
-	static const std::string INPUT_ACTION_GRAB = INPUT_ACTION_PLAYER_BASE + "/grab";		 // bool
+	static const std::string INPUT_ACTION_GRAB = INPUT_ACTION_PLAYER_BASE + "/grab";         // bool
 
 	/**
 	 * Glfw Action paths
 	 */
 	static const std::string INPUT_ACTION_KEYBOARD_BASE = "/actions/main/in/keyboard";
 	static const std::string INPUT_ACTION_KEYBOARD_CHARS = INPUT_ACTION_KEYBOARD_BASE + "/chars"; // CharEvents
-	static const std::string INPUT_ACTION_KEYBOARD_KEYS = INPUT_ACTION_KEYBOARD_BASE + "/keys";	  // KeyEvents
+	static const std::string INPUT_ACTION_KEYBOARD_KEYS = INPUT_ACTION_KEYBOARD_BASE + "/keys";   // KeyEvents
 
 	static const std::string INPUT_ACTION_MOUSE_BASE = "/actions/main/in/mouse";
-	static const std::string INPUT_ACTION_MOUSE_CLICK = INPUT_ACTION_MOUSE_BASE + "/click";				// ClickEvents
+	static const std::string INPUT_ACTION_MOUSE_CLICK = INPUT_ACTION_MOUSE_BASE + "/click";             // ClickEvents
 	static const std::string INPUT_ACTION_MOUSE_BUTTON_LEFT = INPUT_ACTION_MOUSE_BASE + "/button_left"; // bool
 	static const std::string INPUT_ACTION_MOUSE_BUTTON_MIDDLE = INPUT_ACTION_MOUSE_BASE + "/button_middle"; // bool
-	static const std::string INPUT_ACTION_MOUSE_BUTTON_RIGHT = INPUT_ACTION_MOUSE_BASE + "/button_right";	// bool
-	static const std::string INPUT_ACTION_MOUSE_CURSOR = INPUT_ACTION_MOUSE_BASE + "/cursor";				// glm::vec2
-	static const std::string INPUT_ACTION_MOUSE_SCROLL = INPUT_ACTION_MOUSE_BASE + "/scroll";				// glm::vec2
+	static const std::string INPUT_ACTION_MOUSE_BUTTON_RIGHT = INPUT_ACTION_MOUSE_BASE + "/button_right";   // bool
+	static const std::string INPUT_ACTION_MOUSE_CURSOR = INPUT_ACTION_MOUSE_BASE + "/cursor";               // glm::vec2
+	static const std::string INPUT_ACTION_MOUSE_SCROLL = INPUT_ACTION_MOUSE_BASE + "/scroll";               // glm::vec2
 
 	class ActionSource;
 

@@ -2,11 +2,15 @@
 
 #include "ConsoleGui.hh"
 
-#include <GLFW/glfw3.h>
 #include <core/Game.hh>
 #include <game/input/InputManager.hh>
 #include <graphics/GraphicsContext.hh>
 #include <imgui/imgui.h>
+
+// clang-format off
+// GLFW must be included after glew.h (Graphics.hh)
+#include <GLFW/glfw3.h>
+// clang-format on
 
 namespace sp {
 	void DebugGuiManager::DefineWindows() {

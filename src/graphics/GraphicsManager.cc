@@ -111,7 +111,7 @@ namespace sp {
 		if (!HasActiveContext())
 			return false;
 
-		ecs::View pancakeView;							   // Only support a single pancakeView (2D window)
+		ecs::View pancakeView;                             // Only support a single pancakeView (2D window)
 		vector<std::pair<ecs::View, ecs::XRView>> xrViews; // Support many xrViews
 
 		if (playerViews.size() > 0) {

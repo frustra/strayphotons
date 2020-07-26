@@ -7,12 +7,16 @@
 #include "graphics/GraphicsManager.hh"
 #include "graphics/Texture.hh"
 
-#include <GLFW/glfw3.h>
 #include <core/Game.hh>
 #include <game/input/InputManager.hh>
 #include <graphics/GraphicsContext.hh>
 #include <imgui/imgui.h>
 #include <sstream>
+
+// clang-format off
+// GLFW must be included after glew.h (Graphics.hh)
+#include <GLFW/glfw3.h>
+// clang-format on
 
 namespace sp {
 	static CVar<bool> CVarMenuFocused("g.MenuFocused", false, "Focus input on menu");
