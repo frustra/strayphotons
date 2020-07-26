@@ -84,17 +84,20 @@ namespace sp {
 			glfwActionSource = std::make_unique<GlfwActionSource>(*input, *window);
 
 			// TODO: Expose some sort of configuration for these.
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/w", ecs::INPUT_ACTION_PLAYER_MOVE_FORWARD);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/s", ecs::INPUT_ACTION_PLAYER_MOVE_BACKWARD);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/a", ecs::INPUT_ACTION_PLAYER_MOVE_LEFT);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/d", ecs::INPUT_ACTION_PLAYER_MOVE_RIGHT);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/space", ecs::INPUT_ACTION_PLAYER_MOVE_JUMP);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/control_left",
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/w", ecs::INPUT_ACTION_PLAYER_MOVE_FORWARD);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/s", ecs::INPUT_ACTION_PLAYER_MOVE_BACKWARD);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/a", ecs::INPUT_ACTION_PLAYER_MOVE_LEFT);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/d", ecs::INPUT_ACTION_PLAYER_MOVE_RIGHT);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/space", ecs::INPUT_ACTION_PLAYER_MOVE_JUMP);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/control_left",
 				ecs::INPUT_ACTION_PLAYER_MOVE_CROUCH);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/shift_left",
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/shift_left",
 				ecs::INPUT_ACTION_PLAYER_MOVE_SPRINT);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/e", ecs::INPUT_ACTION_PLAYER_INTERACT);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_BASE + "/r", ecs::INPUT_ACTION_PLAYER_INTERACT_ROTATE);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/e", ecs::INPUT_ACTION_PLAYER_INTERACT);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/r", ecs::INPUT_ACTION_PLAYER_INTERACT_ROTATE);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/backtick", INPUT_ACTION_TOGGLE_CONSOLE);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/enter", INPUT_ACTION_MENU_ENTER);
+			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/escape", INPUT_ACTION_MENU_BACK);
 		}
 
 		Prepare();
@@ -158,12 +161,6 @@ namespace sp {
 			return glm::ivec2(mode->width, mode->height);
 		}
 		return glm::ivec2(0);
-	}
-
-	void GraphicsContext::PreFrame() {
-		if (glfwActionSource != nullptr) {
-			glfwActionSource->BeginFrame();
-		}
 	}
 
 	void GraphicsContext::DisableCursor() {

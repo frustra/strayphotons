@@ -27,16 +27,16 @@ namespace sp {
 		 * Bind an action to another action.
 		 * `alias` will follow the state of `action`.
 		 */
-		void BindAction(std::string action, std::string alias);
+		virtual void BindAction(std::string action, std::string alias);
 
 		/**
 		 * Unbind an action from another action.
 		 */
-		void UnbindAction(std::string alias);
+		virtual void UnbindAction(std::string action);
 
 	protected:
 		template<class T>
-		void SetAction(std::string actionPath, const T *value);
+		void SetAction(std::string actionPath, const T &value);
 
 	private:
 		InputManager *input;
@@ -44,7 +44,7 @@ namespace sp {
 	};
 
 	template<class T>
-	inline void ActionSource::SetAction(std::string actionPath, const T *value) {
+	inline void ActionSource::SetAction(std::string actionPath, const T &value) {
 		if (input != nullptr) {
 			input->SetAction(actionPath, value);
 

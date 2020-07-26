@@ -101,6 +101,11 @@ namespace sp {
 		sources.erase(source);
 	}
 
+	void InputManager::UnsetAction(std::string actionPath) {
+		std::lock_guard lock(actionStatesLock);
+		actionStatesCurrent.erase(actionPath);
+	}
+
 	void InputManager::BindKey(string args) {
 		std::stringstream stream(args);
 		string keyName;

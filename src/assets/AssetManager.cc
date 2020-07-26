@@ -47,7 +47,7 @@ namespace sp {
 			},
 
 			nullptr, // WriteFile callback, not supported
-			nullptr	 // Fs callback user data
+			nullptr  // Fs callback user data
 		};
 
 		gltfLoader.SetFsCallbacks(fs);

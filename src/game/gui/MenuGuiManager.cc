@@ -13,11 +13,6 @@
 #include <imgui/imgui.h>
 #include <sstream>
 
-// clang-format off
-// GLFW must be included after glew.h (Graphics.hh)
-#include <GLFW/glfw3.h>
-// clang-format on
-
 namespace sp {
 	static CVar<bool> CVarMenuFocused("g.MenuFocused", false, "Focus input on menu");
 	static CVar<int> CVarMenuDisplay("g.MenuDisplay", 0, "Display pause menu");
@@ -40,22 +35,16 @@ namespace sp {
 			input->LockFocus(Focused(), focusPriority);
 
 			if (Focused() && !input->FocusLocked(focusPriority)) {
-				const KeyEvents *keys;
-				if (input->GetActionValue(INPUT_ACTION_KEYBOARD_KEYS, &keys)) {
-					if (framesSinceOpened > 1) {
-						if (keys->contains(GLFW_KEY_ESCAPE)) {
-							if (selectedScreen == MenuScreen::Main && RenderMode() == MenuRenderMode::Pause) {
-								CloseMenu();
-							}
-
-							selectedScreen = MenuScreen::Main;
-						}
+				if (framesSinceOpened > 1 && input->IsPressed(INPUT_ACTION_MENU_BACK)) {
+					if (selectedScreen == MenuScreen::Main && RenderMode() == MenuRenderMode::Pause) {
+						CloseMenu();
 					}
 
-					if (selectedScreen == MenuScreen::Splash) {
-						if (keys->contains(GLFW_KEY_ENTER)) {
-							selectedScreen = MenuScreen::Main;
-						}
+					selectedScreen = MenuScreen::Main;
+				}
+				if (selectedScreen == MenuScreen::Splash) {
+					if (input->IsPressed(INPUT_ACTION_MENU_ENTER)) {
+						selectedScreen = MenuScreen::Main;
 					}
 				}
 

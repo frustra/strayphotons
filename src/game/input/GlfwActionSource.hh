@@ -26,6 +26,12 @@ namespace sp {
 		void BeginFrame() override;
 
 		/**
+		 * Add extra handling for binding individual keys
+		 */
+		void BindAction(std::string action, std::string alias) override;
+		void UnbindAction(std::string action) override;
+
+		/**
 		 * Returns the x,y position of the current cursor, even if it has moved since the start of frame.
 		 */
 		glm::vec2 ImmediateCursor() const;
@@ -45,6 +51,7 @@ namespace sp {
 
 	private:
 		GLFWwindow *window = nullptr;
+		robin_hood::unordered_flat_map<int, std::string> keyBindings;
 
 		std::mutex dataLock;
 		glm::vec2 mousePos, mouseScroll;

@@ -42,6 +42,11 @@ namespace sp {
 	static const std::string INPUT_ACTION_PRIMARY_TRIGGER = INPUT_ACTION_BASE + "/primary_trigger";
 	static const std::string INPUT_ACTION_SECONDARY_TRIGGER = INPUT_ACTION_BASE + "/secondary_trigger";
 
+	static const std::string INPUT_ACTION_MENU_BASE = "/actions/main/in/menu";
+	static const std::string INPUT_ACTION_TOGGLE_CONSOLE = INPUT_ACTION_MENU_BASE + "/toggle_console";
+	static const std::string INPUT_ACTION_MENU_ENTER = INPUT_ACTION_MENU_BASE + "/enter";
+	static const std::string INPUT_ACTION_MENU_BACK = INPUT_ACTION_MENU_BASE + "/back";
+
 	static const std::string INPUT_ACTION_PLAYER_BASE = "/actions/main/in/player";
 	static const std::string INPUT_ACTION_TELEPORT = INPUT_ACTION_PLAYER_BASE + "/teleport"; // bool
 	static const std::string INPUT_ACTION_GRAB = INPUT_ACTION_PLAYER_BASE + "/grab";         // bool
@@ -132,7 +137,8 @@ namespace sp {
 		void RemoveActionSource(ActionSource *source);
 
 		template<class T>
-		void SetAction(std::string actionPath, const T *value);
+		void SetAction(std::string actionPath, const T &value);
+		void UnsetAction(std::string actionPath);
 
 	private:
 		// CFunc
@@ -193,18 +199,14 @@ namespace sp {
 	}
 
 	template<class T>
-	inline void InputManager::SetAction(std::string actionPath, const T *value) {
+	inline void InputManager::SetAction(std::string actionPath, const T &value) {
 		std::lock_guard lock(actionStatesLock);
-		if (value != nullptr) {
-			auto ptrValue = std::shared_ptr<ActionValueBase>(new ActionValue<const T>(*value));
-			auto it = actionStatesCurrent.find(actionPath);
-			if (it != actionStatesCurrent.end()) {
-				it->second = std::move(ptrValue);
-			} else {
-				actionStatesCurrent[actionPath] = std::move(ptrValue);
-			}
+		auto ptrValue = std::shared_ptr<ActionValueBase>(new ActionValue<const T>(value));
+		auto it = actionStatesCurrent.find(actionPath);
+		if (it != actionStatesCurrent.end()) {
+			it->second = std::move(ptrValue);
 		} else {
-			actionStatesCurrent.erase(actionPath);
+			actionStatesCurrent[actionPath] = std::move(ptrValue);
 		}
 	}
 } // namespace sp

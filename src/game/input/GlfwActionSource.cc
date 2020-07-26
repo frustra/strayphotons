@@ -9,6 +9,7 @@
 
 // clang-format off
 // GLFW must be included after glew.h (Graphics.hh)
+#include "GlfwBindingNames.hh"
 #include <GLFW/glfw3.h>
 // clang-format on
 
@@ -31,29 +32,48 @@ namespace sp {
 		glfwPollEvents(); // TODO: Move this to its own thread.
 
 		std::lock_guard lock(dataLock);
-		SetAction(INPUT_ACTION_MOUSE_CURSOR, &mousePos);
-		SetAction(INPUT_ACTION_MOUSE_SCROLL, &mouseScroll);
+		SetAction<glm::vec2>(INPUT_ACTION_MOUSE_CURSOR, mousePos);
+		SetAction<glm::vec2>(INPUT_ACTION_MOUSE_SCROLL, mouseScroll);
 
 		for (auto &click : clickEventsNext) {
 			if (click.button == GLFW_MOUSE_BUTTON_LEFT) {
-				SetAction(INPUT_ACTION_MOUSE_BUTTON_LEFT, &click.down);
+				SetAction<bool>(INPUT_ACTION_MOUSE_BUTTON_LEFT, click.down);
 			} else if (click.button == GLFW_MOUSE_BUTTON_MIDDLE) {
-				SetAction(INPUT_ACTION_MOUSE_BUTTON_MIDDLE, &click.down);
+				SetAction<bool>(INPUT_ACTION_MOUSE_BUTTON_MIDDLE, click.down);
 			} else if (click.button == GLFW_MOUSE_BUTTON_RIGHT) {
-				SetAction(INPUT_ACTION_MOUSE_BUTTON_RIGHT, &click.down);
+				SetAction<bool>(INPUT_ACTION_MOUSE_BUTTON_RIGHT, click.down);
 			}
 		}
 
 		keyEvents = keyEventsNext;
-		SetAction(INPUT_ACTION_KEYBOARD_KEYS, &keyEvents);
+		SetAction<KeyEvents>(INPUT_ACTION_KEYBOARD_KEYS, keyEvents);
+		for (auto [key, action] : keyBindings) { SetAction<bool>(action, keyEvents.contains(key)); }
 
 		charEvents = charEventsNext;
 		charEventsNext.clear();
-		SetAction(INPUT_ACTION_KEYBOARD_CHARS, &charEvents);
+		SetAction<CharEvents>(INPUT_ACTION_KEYBOARD_CHARS, charEvents);
 
 		clickEvents = clickEventsNext;
 		clickEventsNext.clear();
-		SetAction(INPUT_ACTION_MOUSE_CLICK, &clickEvents);
+		SetAction<ClickEvents>(INPUT_ACTION_MOUSE_CLICK, clickEvents);
+	}
+
+	void GlfwActionSource::BindAction(std::string action, std::string alias) {
+		if (starts_with(action, INPUT_ACTION_KEYBOARD_KEYS + "/")) {
+			int keyCode = GlfwKeyFromActionPath(action);
+			keyBindings[keyCode] = alias;
+		} else {
+			ActionSource::BindAction(action, alias);
+		}
+	}
+
+	void GlfwActionSource::UnbindAction(std::string action) {
+		if (starts_with(action, INPUT_ACTION_KEYBOARD_KEYS + "/")) {
+			int keyCode = GlfwKeyFromActionPath(action);
+			keyBindings.erase(keyCode);
+		} else {
+			ActionSource::UnbindAction(action);
+		}
 	}
 
 	glm::vec2 GlfwActionSource::ImmediateCursor() const {

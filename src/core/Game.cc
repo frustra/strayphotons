@@ -77,7 +77,6 @@ namespace sp {
 	}
 
 	bool Game::Frame() {
-		graphics.PreFrame();
 		input.BeginFrame();
 		GetConsoleManager().Update(startupScript);
 

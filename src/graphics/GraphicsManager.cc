@@ -100,11 +100,6 @@ namespace sp {
 		return context && !context->ShouldClose();
 	}
 
-	void GraphicsManager::PreFrame() {
-		if (context)
-			context->PreFrame();
-	}
-
 	bool GraphicsManager::Frame() {
 		if (!context)
 			throw "no active context";

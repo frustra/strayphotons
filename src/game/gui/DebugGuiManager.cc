@@ -7,11 +7,6 @@
 #include <graphics/GraphicsContext.hh>
 #include <imgui/imgui.h>
 
-// clang-format off
-// GLFW must be included after glew.h (Graphics.hh)
-#include <GLFW/glfw3.h>
-// clang-format on
-
 namespace sp {
 	void DebugGuiManager::DefineWindows() {
 		SetGuiContext();
@@ -38,11 +33,8 @@ namespace sp {
 		io.MouseDrawCursor = false;
 
 		if (input != nullptr) {
-			const KeyEvents *keys;
-			if (input->GetActionValue(INPUT_ACTION_KEYBOARD_KEYS, &keys)) {
-				if (keys->contains(GLFW_KEY_GRAVE_ACCENT)) {
-					ToggleConsole();
-				}
+			if (input->IsPressed(INPUT_ACTION_TOGGLE_CONSOLE)) {
+				ToggleConsole();
 			}
 
 			if (Focused() && !input->FocusLocked(focusPriority)) {

@@ -31,7 +31,6 @@ namespace sp {
 		const glm::ivec2 CurrentMode();
 
 		virtual void Prepare() = 0;
-		void PreFrame();
 		virtual void BeginFrame() = 0;
 		virtual void RenderPass(ecs::View view, RenderTarget::Ref finalOutput = nullptr) = 0;
 		virtual void PrepareForView(const ecs::View &view) = 0;

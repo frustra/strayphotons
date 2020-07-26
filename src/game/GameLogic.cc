@@ -142,10 +142,10 @@ namespace sp {
 		}
 
 		if (input != nullptr) {
-			input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f5", "reloadscene");
-			input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f6", "reloadscene reset");
-			input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f7", "reloadshaders");
-			input->BindCommand(INPUT_ACTION_KEYBOARD_BASE + "/f", "toggle r.FlashlightOn");
+			input->BindCommand(INPUT_ACTION_KEYBOARD_KEYS + "/f5", "reloadscene");
+			input->BindCommand(INPUT_ACTION_KEYBOARD_KEYS + "/f6", "reloadscene reset");
+			input->BindCommand(INPUT_ACTION_KEYBOARD_KEYS + "/f7", "reloadshaders");
+			input->BindCommand(INPUT_ACTION_KEYBOARD_KEYS + "/f", "toggle r.FlashlightOn");
 		}
 	}
 
@@ -155,9 +155,9 @@ namespace sp {
 		if (input->FocusLocked())
 			return;
 
-		if (game->menuGui && input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/escape")) {
+		if (game->menuGui && input->IsPressed(INPUT_ACTION_KEYBOARD_KEYS + "/escape")) {
 			game->menuGui->OpenPauseMenu();
-		} else if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/f1") && CVarConnectXR.Get()) {
+		} else if (input->IsPressed(INPUT_ACTION_KEYBOARD_KEYS + "/f1") && CVarConnectXR.Get()) {
 			auto vrOrigin = game->entityManager.EntityWith<ecs::Name>("vr-origin");
 			auto player = GetPlayer();
 			if (vrOrigin && vrOrigin.Has<ecs::Transform>() && player && player.Has<ecs::Transform>()) {
@@ -167,7 +167,7 @@ namespace sp {
 				vrTransform->SetPosition(playerTransform->GetGlobalPosition(game->entityManager) -
 										 glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
 			}
-		} else if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/q")) {
+		} else if (input->IsPressed(INPUT_ACTION_KEYBOARD_KEYS + "/q")) {
 			// Spawn dodecahedron
 			auto entity = game->entityManager.NewEntity();
 			auto model = GAssets.LoadModel("dodecahedron");
@@ -181,7 +181,7 @@ namespace sp {
 			if (actor) {
 				entity.Assign<ecs::Physics>(actor, model, desc);
 			}
-		} else if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/p")) {
+		} else if (input->IsPressed(INPUT_ACTION_KEYBOARD_KEYS + "/p")) {
 			// Toggle flashlight following player
 			if (flashlight.Valid()) {
 				auto transform = flashlight.Get<ecs::Transform>();

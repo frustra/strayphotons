@@ -28,7 +28,6 @@ namespace sp {
 		void SetPlayerView(vector<ecs::Entity> entities);
 		void RenderLoading();
 
-		void PreFrame();
 		bool Frame();
 
 		GraphicsContext *GetContext() {
