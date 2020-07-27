@@ -32,6 +32,7 @@ namespace sp {
 		SetGuiContext();
 		ImGuiIO &io = ImGui::GetIO();
 
+		// TODO: Set this mapping without requiring GLFW include.
 		io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
 		io.KeyMap[ImGuiKey_LeftArrow] = GLFW_KEY_LEFT;
 		io.KeyMap[ImGuiKey_RightArrow] = GLFW_KEY_RIGHT;

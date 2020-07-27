@@ -3,5 +3,16 @@ target_sources(
     PRIVATE
         DebugGuiManager.cc
         MenuGuiManager.cc
-        GuiManager.cc 
+)
+
+target_sources(
+    ${PROJECT_EXE}
+    PRIVATE
+        GuiManager.cc
+)
+
+target_sources(
+    ${PROJECT_TEST_EXE}
+    PRIVATE
+        GuiManager.cc
 )

@@ -106,6 +106,7 @@ namespace sp {
 		actionStatesCurrent.erase(actionPath);
 	}
 
+	// TODO: Fix to create a user-defined action
 	void InputManager::BindKey(string args) {
 		std::stringstream stream(args);
 		string keyName;
