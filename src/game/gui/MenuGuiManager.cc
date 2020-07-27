@@ -25,7 +25,8 @@ namespace sp {
 	}
 
 	void MenuGuiManager::BeforeFrame() {
-		SetGuiContext();
+		GuiManager::BeforeFrame();
+
 		ImGui::StyleColorsClassic();
 		framesSinceOpened++;
 

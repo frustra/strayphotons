@@ -47,7 +47,10 @@ namespace sp {
 
 		keyEvents = keyEventsNext;
 		SetAction<KeyEvents>(INPUT_ACTION_KEYBOARD_KEYS, keyEvents);
-		for (auto [key, action] : keyBindings) { SetAction<bool>(action, keyEvents.contains(key)); }
+		for (auto [key, actions] : keyBindings) {
+			bool keyDown = keyEvents.count(key) != 0;
+			for (auto action : actions) { SetAction<bool>(action, keyDown); }
+		}
 
 		charEvents = charEventsNext;
 		charEventsNext.clear();
@@ -58,22 +61,23 @@ namespace sp {
 		SetAction<ClickEvents>(INPUT_ACTION_MOUSE_CLICK, clickEvents);
 	}
 
-	void GlfwActionSource::BindAction(std::string action, std::string alias) {
-		if (starts_with(action, INPUT_ACTION_KEYBOARD_KEYS + "/")) {
-			int keyCode = GlfwKeyFromActionPath(action);
-			keyBindings[keyCode] = alias;
+	void GlfwActionSource::BindAction(std::string action, std::string source) {
+		if (starts_with(source, INPUT_ACTION_KEYBOARD_KEYS + "/")) {
+			int keyCode = GlfwKeyFromActionPath(source);
+			auto it = keyBindings.find(keyCode);
+			if (it != keyBindings.end()) {
+				keyBindings[keyCode].emplace(action);
+			} else {
+				keyBindings.emplace(keyCode, std::initializer_list<std::string>({action}));
+			}
 		} else {
-			ActionSource::BindAction(action, alias);
+			ActionSource::BindAction(action, source);
 		}
 	}
 
 	void GlfwActionSource::UnbindAction(std::string action) {
-		if (starts_with(action, INPUT_ACTION_KEYBOARD_KEYS + "/")) {
-			int keyCode = GlfwKeyFromActionPath(action);
-			keyBindings.erase(keyCode);
-		} else {
-			ActionSource::UnbindAction(action);
-		}
+		ActionSource::UnbindAction(action);
+		for (auto &[source, actions] : keyBindings) { actions.erase(action); }
 	}
 
 	glm::vec2 GlfwActionSource::ImmediateCursor() const {

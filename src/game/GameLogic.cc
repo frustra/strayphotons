@@ -40,6 +40,10 @@ namespace sp {
 		funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
 		funcs.Register(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
 		funcs.Register(this, "printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
+		funcs.Register(this,
+			"setvrorigin",
+			"Move the VR origin to the current player position",
+			&GameLogic::SetVrOrigin);
 
 		funcs.Register(this, "g.OpenBarrier", "Open barrier by name", &GameLogic::OpenBarrier);
 		funcs.Register(this, "g.CloseBarrier", "Close barrier by name", &GameLogic::CloseBarrier);
@@ -142,10 +146,11 @@ namespace sp {
 		}
 
 		if (input != nullptr) {
-			input->BindCommand(INPUT_ACTION_KEYBOARD_KEYS + "/f5", "reloadscene");
-			input->BindCommand(INPUT_ACTION_KEYBOARD_KEYS + "/f6", "reloadscene reset");
-			input->BindCommand(INPUT_ACTION_KEYBOARD_KEYS + "/f7", "reloadshaders");
-			input->BindCommand(INPUT_ACTION_KEYBOARD_KEYS + "/f", "toggle r.FlashlightOn");
+			input->BindCommand(INPUT_ACTION_SET_VR_ORIGIN, "setvrorigin");
+			input->BindCommand(INPUT_ACTION_RELOAD_SCENE, "reloadscene");
+			input->BindCommand(INPUT_ACTION_RESET_SCENE, "reloadscene reset");
+			input->BindCommand(INPUT_ACTION_RELOAD_SHADERS, "reloadshaders");
+			input->BindCommand(INPUT_ACTION_TOGGLE_FLASHLIGH, "toggle r.FlashlightOn");
 		}
 	}
 
@@ -155,19 +160,9 @@ namespace sp {
 		if (input->FocusLocked())
 			return;
 
-		if (game->menuGui && input->IsPressed(INPUT_ACTION_KEYBOARD_KEYS + "/escape")) {
+		if (game->menuGui && input->IsPressed(INPUT_ACTION_OPEN_MENU)) {
 			game->menuGui->OpenPauseMenu();
-		} else if (input->IsPressed(INPUT_ACTION_KEYBOARD_KEYS + "/f1") && CVarConnectXR.Get()) {
-			auto vrOrigin = game->entityManager.EntityWith<ecs::Name>("vr-origin");
-			auto player = GetPlayer();
-			if (vrOrigin && vrOrigin.Has<ecs::Transform>() && player && player.Has<ecs::Transform>()) {
-				auto vrTransform = vrOrigin.Get<ecs::Transform>();
-				auto playerTransform = player.Get<ecs::Transform>();
-
-				vrTransform->SetPosition(playerTransform->GetGlobalPosition(game->entityManager) -
-										 glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
-			}
-		} else if (input->IsPressed(INPUT_ACTION_KEYBOARD_KEYS + "/q")) {
+		} else if (input->IsPressed(INPUT_ACTION_SPAWN_DEBUG)) {
 			// Spawn dodecahedron
 			auto entity = game->entityManager.NewEntity();
 			auto model = GAssets.LoadModel("dodecahedron");
@@ -181,7 +176,7 @@ namespace sp {
 			if (actor) {
 				entity.Assign<ecs::Physics>(actor, model, desc);
 			}
-		} else if (input->IsPressed(INPUT_ACTION_KEYBOARD_KEYS + "/p")) {
+		} else if (input->IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
 			// Toggle flashlight following player
 			if (flashlight.Valid()) {
 				auto transform = flashlight.Get<ecs::Transform>();
@@ -865,6 +860,21 @@ namespace sp {
 			string name = entityName(ent);
 
 			Logf("Signal receiver %s: %.2f", name, receiver->GetSignal());
+		}
+	}
+
+	void GameLogic::SetVrOrigin() {
+		if (CVarConnectXR.Get()) {
+			Logf("Resetting VR Origin");
+			auto vrOrigin = game->entityManager.EntityWith<ecs::Name>("vr-origin");
+			auto player = GetPlayer();
+			if (vrOrigin && vrOrigin.Has<ecs::Transform>() && player && player.Has<ecs::Transform>()) {
+				auto vrTransform = vrOrigin.Get<ecs::Transform>();
+				auto playerTransform = player.Get<ecs::Transform>();
+
+				vrTransform->SetPosition(playerTransform->GetGlobalPosition(game->entityManager) -
+										 glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
+			}
 		}
 	}
 

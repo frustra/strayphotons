@@ -84,20 +84,31 @@ namespace sp {
 			glfwActionSource = std::make_unique<GlfwActionSource>(*input, *window);
 
 			// TODO: Expose some sort of configuration for these.
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/w", ecs::INPUT_ACTION_PLAYER_MOVE_FORWARD);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/s", ecs::INPUT_ACTION_PLAYER_MOVE_BACKWARD);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/a", ecs::INPUT_ACTION_PLAYER_MOVE_LEFT);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/d", ecs::INPUT_ACTION_PLAYER_MOVE_RIGHT);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/space", ecs::INPUT_ACTION_PLAYER_MOVE_JUMP);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/control_left",
-				ecs::INPUT_ACTION_PLAYER_MOVE_CROUCH);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/shift_left",
-				ecs::INPUT_ACTION_PLAYER_MOVE_SPRINT);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/e", ecs::INPUT_ACTION_PLAYER_INTERACT);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/r", ecs::INPUT_ACTION_PLAYER_INTERACT_ROTATE);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/backtick", INPUT_ACTION_TOGGLE_CONSOLE);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/enter", INPUT_ACTION_MENU_ENTER);
-			glfwActionSource->BindAction(INPUT_ACTION_KEYBOARD_KEYS + "/escape", INPUT_ACTION_MENU_BACK);
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_MOVE_FORWARD, INPUT_ACTION_KEYBOARD_KEYS + "/w");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_MOVE_BACKWARD, INPUT_ACTION_KEYBOARD_KEYS + "/s");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_MOVE_LEFT, INPUT_ACTION_KEYBOARD_KEYS + "/a");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_MOVE_RIGHT, INPUT_ACTION_KEYBOARD_KEYS + "/d");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_MOVE_JUMP, INPUT_ACTION_KEYBOARD_KEYS + "/space");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_MOVE_CROUCH,
+				INPUT_ACTION_KEYBOARD_KEYS + "/control_left");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_MOVE_SPRINT,
+				INPUT_ACTION_KEYBOARD_KEYS + "/shift_left");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_INTERACT, INPUT_ACTION_KEYBOARD_KEYS + "/e");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_INTERACT_ROTATE, INPUT_ACTION_KEYBOARD_KEYS + "/r");
+
+			glfwActionSource->BindAction(INPUT_ACTION_OPEN_MENU, INPUT_ACTION_KEYBOARD_KEYS + "/escape");
+			glfwActionSource->BindAction(INPUT_ACTION_TOGGLE_CONSOLE, INPUT_ACTION_KEYBOARD_KEYS + "/backtick");
+			glfwActionSource->BindAction(INPUT_ACTION_MENU_ENTER, INPUT_ACTION_KEYBOARD_KEYS + "/enter");
+			glfwActionSource->BindAction(INPUT_ACTION_MENU_BACK, INPUT_ACTION_KEYBOARD_KEYS + "/escape");
+
+			glfwActionSource->BindAction(INPUT_ACTION_SPAWN_DEBUG, INPUT_ACTION_KEYBOARD_KEYS + "/q");
+			glfwActionSource->BindAction(INPUT_ACTION_TOGGLE_FLASHLIGH, INPUT_ACTION_KEYBOARD_KEYS + "/f");
+			glfwActionSource->BindAction(INPUT_ACTION_DROP_FLASHLIGH, INPUT_ACTION_KEYBOARD_KEYS + "/p");
+
+			glfwActionSource->BindAction(INPUT_ACTION_SET_VR_ORIGIN, INPUT_ACTION_KEYBOARD_KEYS + "/f1");
+			glfwActionSource->BindAction(INPUT_ACTION_RELOAD_SCENE, INPUT_ACTION_KEYBOARD_KEYS + "/f5");
+			glfwActionSource->BindAction(INPUT_ACTION_RESET_SCENE, INPUT_ACTION_KEYBOARD_KEYS + "/f6");
+			glfwActionSource->BindAction(INPUT_ACTION_RELOAD_SHADERS, INPUT_ACTION_KEYBOARD_KEYS + "/f7");
 		}
 
 		Prepare();

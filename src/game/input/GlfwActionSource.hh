@@ -28,7 +28,7 @@ namespace sp {
 		/**
 		 * Add extra handling for binding individual keys
 		 */
-		void BindAction(std::string action, std::string alias) override;
+		void BindAction(std::string action, std::string source) override;
 		void UnbindAction(std::string action) override;
 
 		/**
@@ -51,7 +51,7 @@ namespace sp {
 
 	private:
 		GLFWwindow *window = nullptr;
-		robin_hood::unordered_flat_map<int, std::string> keyBindings;
+		robin_hood::unordered_flat_map<int, robin_hood::unordered_flat_set<std::string>> keyBindings;
 
 		std::mutex dataLock;
 		glm::vec2 mousePos, mouseScroll;

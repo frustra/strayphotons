@@ -25,12 +25,12 @@ namespace sp {
 
 		/**
 		 * Bind an action to another action.
-		 * `alias` will follow the state of `action`.
+		 * `action` will follow the state of `source`.
 		 */
-		virtual void BindAction(std::string action, std::string alias);
+		virtual void BindAction(std::string action, std::string source);
 
 		/**
-		 * Unbind an action from another action.
+		 * Unbind an action from a source.
 		 */
 		virtual void UnbindAction(std::string action);
 
@@ -40,7 +40,7 @@ namespace sp {
 
 	private:
 		InputManager *input;
-		robin_hood::unordered_flat_map<std::string, std::string> actionBindings;
+		robin_hood::unordered_flat_map<std::string, robin_hood::unordered_flat_set<std::string>> actionBindings;
 	};
 
 	template<class T>
@@ -51,7 +51,7 @@ namespace sp {
 			// Set any alias if it exists.
 			auto it = actionBindings.find(actionPath);
 			if (it != actionBindings.end()) {
-				input->SetAction(it->second, value);
+				for (auto action : it->second) { input->SetAction(action, value); }
 			}
 		}
 	}

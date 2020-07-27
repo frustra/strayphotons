@@ -58,6 +58,7 @@ namespace sp {
 	}
 
 	void GuiManager::BeforeFrame() {
+		SetGuiContext();
 		ImGuiIO &io = ImGui::GetIO();
 
 		const KeyEvents *keys, *keysPrev;

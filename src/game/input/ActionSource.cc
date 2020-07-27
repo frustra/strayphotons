@@ -17,11 +17,16 @@ namespace sp {
 		}
 	}
 
-	void ActionSource::BindAction(std::string action, std::string alias) {
-		actionBindings[action] = alias;
+	void ActionSource::BindAction(std::string action, std::string source) {
+		auto it = actionBindings.find(source);
+		if (it != actionBindings.end()) {
+			actionBindings[source].emplace(action);
+		} else {
+			actionBindings.emplace(source, std::initializer_list<std::string>({action}));
+		}
 	}
 
 	void ActionSource::UnbindAction(std::string action) {
-		actionBindings.erase(action);
+		for (auto &[source, actions] : actionBindings) { actions.erase(action); }
 	}
 } // namespace sp

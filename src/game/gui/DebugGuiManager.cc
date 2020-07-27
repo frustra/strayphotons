@@ -26,7 +26,8 @@ namespace sp {
 	}
 
 	void DebugGuiManager::BeforeFrame() {
-		SetGuiContext();
+		GuiManager::BeforeFrame();
+
 		ImGui::StyleColorsClassic();
 
 		ImGuiIO &io = ImGui::GetIO();

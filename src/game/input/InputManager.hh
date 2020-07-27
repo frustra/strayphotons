@@ -39,17 +39,31 @@ namespace sp {
 	 * Generic Action paths
 	 */
 	static const std::string INPUT_ACTION_BASE = "/actions/main/in";
-	static const std::string INPUT_ACTION_PRIMARY_TRIGGER = INPUT_ACTION_BASE + "/primary_trigger";
-	static const std::string INPUT_ACTION_SECONDARY_TRIGGER = INPUT_ACTION_BASE + "/secondary_trigger";
+	static const std::string INPUT_ACTION_PRIMARY_TRIGGER = INPUT_ACTION_BASE + "/primary_trigger";     // bool
+	static const std::string INPUT_ACTION_SECONDARY_TRIGGER = INPUT_ACTION_BASE + "/secondary_trigger"; // bool
 
 	static const std::string INPUT_ACTION_MENU_BASE = "/actions/main/in/menu";
-	static const std::string INPUT_ACTION_TOGGLE_CONSOLE = INPUT_ACTION_MENU_BASE + "/toggle_console";
-	static const std::string INPUT_ACTION_MENU_ENTER = INPUT_ACTION_MENU_BASE + "/enter";
-	static const std::string INPUT_ACTION_MENU_BACK = INPUT_ACTION_MENU_BASE + "/back";
+	static const std::string INPUT_ACTION_OPEN_MENU = INPUT_ACTION_MENU_BASE + "/open_menu"; // bool
+	static const std::string INPUT_ACTION_MENU_ENTER = INPUT_ACTION_MENU_BASE + "/enter";    // bool
+	static const std::string INPUT_ACTION_MENU_BACK = INPUT_ACTION_MENU_BASE + "/back";      // bool
 
 	static const std::string INPUT_ACTION_PLAYER_BASE = "/actions/main/in/player";
 	static const std::string INPUT_ACTION_TELEPORT = INPUT_ACTION_PLAYER_BASE + "/teleport"; // bool
 	static const std::string INPUT_ACTION_GRAB = INPUT_ACTION_PLAYER_BASE + "/grab";         // bool
+
+	/**
+	 * Debug actions
+	 */
+	static const std::string INPUT_ACTION_SET_VR_ORIGIN = INPUT_ACTION_BASE + "/set_vr_origin";   // bool
+	static const std::string INPUT_ACTION_RELOAD_SCENE = INPUT_ACTION_BASE + "/reload_scene";     // bool
+	static const std::string INPUT_ACTION_RESET_SCENE = INPUT_ACTION_BASE + "/reset_scene";       // bool
+	static const std::string INPUT_ACTION_RELOAD_SHADERS = INPUT_ACTION_BASE + "/reload_shaders"; // bool
+
+	static const std::string INPUT_ACTION_TOGGLE_CONSOLE = INPUT_ACTION_MENU_BASE + "/toggle_console"; // bool
+
+	static const std::string INPUT_ACTION_SPAWN_DEBUG = INPUT_ACTION_PLAYER_BASE + "/spawn_debug";            // bool
+	static const std::string INPUT_ACTION_TOGGLE_FLASHLIGH = INPUT_ACTION_PLAYER_BASE + "/toggle_flashlight"; // bool
+	static const std::string INPUT_ACTION_DROP_FLASHLIGH = INPUT_ACTION_PLAYER_BASE + "/drop_flashlight";     // bool
 
 	/**
 	 * Glfw Action paths

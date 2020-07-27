@@ -50,7 +50,7 @@ namespace sp {
 											 ImGuiInputTextFlags_CallbackCompletion |
 											 ImGuiInputTextFlags_CallbackHistory;
 
-				bool reclaim_focus = false;
+				bool reclaim_focus = ImGui::IsWindowAppearing();
 				if (ImGui::InputText("##CommandInput",
 						inputBuf,
 						sizeof(inputBuf),

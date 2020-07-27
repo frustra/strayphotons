@@ -28,6 +28,7 @@ namespace sp {
 		void LoadScene(string name);
 		void ReloadScene(string arg);
 		void PrintDebug();
+		void SetVrOrigin();
 
 		void OpenBarrier(string name);
 		void CloseBarrier(string name);
