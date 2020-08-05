@@ -79,6 +79,7 @@ for file in ../assets/scripts/tests/*.txt; do
     mkdir -p $output_path
     for file in screenshots/*.png; do
         mv $file $output_path
+        buildkite-agent artifact upload "$output_path/${file##*/}"
         inline_image "artifact://bin/$output_path/${file##*/}" "$output_path/${file##*/}"
     done
 done
