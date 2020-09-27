@@ -237,7 +237,7 @@ namespace sp {
 			context.LastOutput = hist;
 		}
 
-		if (!renderToTexture && game->menuGui.RenderMode() == MenuRenderMode::Pause) {
+		if (!renderToTexture && game->menuGui && game->menuGui->RenderMode() == MenuRenderMode::Pause) {
 			AddMenu(context);
 		}
 
@@ -255,13 +255,13 @@ namespace sp {
 			AddSMAA(context, linearLuminosity);
 		}
 
-		if (!renderToTexture && game->menuGui.RenderMode() == MenuRenderMode::None) {
+		if (!renderToTexture && (!game->menuGui || game->menuGui->RenderMode() == MenuRenderMode::None)) {
 			auto crosshair = context.AddPass<Crosshair>();
 			crosshair->SetInput(0, context.LastOutput);
 			context.LastOutput = crosshair;
 		}
 
-		if (CVarViewGBuffer.Get() > 0 && game->menuGui.RenderMode() == MenuRenderMode::None) {
+		if (CVarViewGBuffer.Get() > 0 && (!game->menuGui || game->menuGui->RenderMode() == MenuRenderMode::None)) {
 			auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(),
 				CVarViewGBufferSource.Get(),
 				CVarVoxelMip.Get(),

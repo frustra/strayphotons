@@ -13,8 +13,9 @@
 #include <game/input/InputManager.hh>
 
 namespace ecs {
-	LightGunSystem::LightGunSystem(ecs::EntityManager *entities, sp::PhysxManager *physics, sp::GameLogic *logic)
-		: entities(entities), physics(physics), logic(logic) {}
+	LightGunSystem::LightGunSystem(
+		ecs::EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics, sp::GameLogic *logic)
+		: entities(entities), input(input), physics(physics), logic(logic) {}
 
 	LightGunSystem::~LightGunSystem() {}
 

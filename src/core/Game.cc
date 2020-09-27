@@ -6,18 +6,21 @@
 #include "ecs/components/Physics.hh"
 #include "physx/PhysxUtils.hh"
 
+#include <Common.hh>
 #include <assets/Script.hh>
 #include <cxxopts.hpp>
-#include <game/input/GlfwInputManager.hh>
 #include <glm/glm.hpp>
 
 namespace sp {
 	Game::Game(cxxopts::ParseResult &options, Script *startupScript)
-		: options(options), startupScript(startupScript), menuGui(this), graphics(this), logic(this), physics(),
+		: options(options), startupScript(startupScript), graphics(this), logic(this), physics(),
 		  animation(entityManager) {
 		// pre-register all of our component types so that errors do not arise if they
 		// are queried for before an instance is ever created
 		ecs::RegisterComponents(entityManager);
+
+		debugGui = std::make_unique<DebugGuiManager>(this);
+		menuGui = std::make_unique<MenuGuiManager>(this);
 	}
 
 	Game::~Game() {}
@@ -55,15 +58,10 @@ namespace sp {
 		});
 
 		try {
-			input = std::make_unique<GlfwInputManager>();
-			auto glfwInput = (GlfwInputManager *)input.get();
-
 			graphics.CreateContext();
-			logic.Init(input.get(), startupScript);
-			graphics.BindContextInputCallbacks(glfwInput);
-			debugGui.BindInput(glfwInput);
-			menuGui.BindInput(glfwInput);
-			lastFrameTime = std::chrono::high_resolution_clock::now();
+			logic.Init(startupScript);
+
+			lastFrameTime = chrono_clock::now();
 
 			while (!triggeredExit) {
 				if (ShouldStop())
@@ -79,12 +77,12 @@ namespace sp {
 	}
 
 	bool Game::Frame() {
-		input->BeginFrame();
+		input.BeginFrame();
 		GetConsoleManager().Update(startupScript);
 
-		auto frameTime = std::chrono::high_resolution_clock::now();
+		auto frameTime = chrono_clock::now();
 		double dt = (double)(frameTime - lastFrameTime).count();
-		dt /= std::chrono::high_resolution_clock::duration(std::chrono::seconds(1)).count();
+		dt /= chrono_clock::duration(std::chrono::seconds(1)).count();
 
 		if (!logic.Frame(dt))
 			return false;

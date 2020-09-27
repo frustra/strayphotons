@@ -7,7 +7,9 @@
 #include "graphics/ShaderManager.hh"
 
 #include <algorithm>
-#include <game/input/GlfwInputManager.hh>
+#include <ecs/systems/HumanControlSystem.hh>
+#include <game/input/GlfwActionSource.hh>
+#include <game/input/InputManager.hh>
 #include <iostream>
 #include <string>
 
@@ -24,7 +26,7 @@ namespace sp {
 		Debugf("[GL 0x%X] 0x%X: %s", id, type, message);
 	}
 
-	GraphicsContext::GraphicsContext(Game *game) : game(game) {
+	GraphicsContext::GraphicsContext(Game *game) : game(game), input(&game->input) {
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -78,20 +80,42 @@ namespace sp {
 		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
 		Debugf("Maximum anisotropy: %f", maxAnisotropy);
 
+		if (input != nullptr && window != nullptr) {
+			glfwActionSource = std::make_unique<GlfwActionSource>(*input, *window);
+
+			// TODO: Expose some sort of configuration for these.
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_MOVE_FORWARD, INPUT_ACTION_KEYBOARD_KEYS + "/w");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_MOVE_BACKWARD, INPUT_ACTION_KEYBOARD_KEYS + "/s");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_MOVE_LEFT, INPUT_ACTION_KEYBOARD_KEYS + "/a");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_MOVE_RIGHT, INPUT_ACTION_KEYBOARD_KEYS + "/d");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_MOVE_JUMP, INPUT_ACTION_KEYBOARD_KEYS + "/space");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_MOVE_CROUCH,
+				INPUT_ACTION_KEYBOARD_KEYS + "/control_left");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_MOVE_SPRINT,
+				INPUT_ACTION_KEYBOARD_KEYS + "/shift_left");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_INTERACT, INPUT_ACTION_KEYBOARD_KEYS + "/e");
+			glfwActionSource->BindAction(ecs::INPUT_ACTION_PLAYER_INTERACT_ROTATE, INPUT_ACTION_KEYBOARD_KEYS + "/r");
+
+			glfwActionSource->BindAction(INPUT_ACTION_OPEN_MENU, INPUT_ACTION_KEYBOARD_KEYS + "/escape");
+			glfwActionSource->BindAction(INPUT_ACTION_TOGGLE_CONSOLE, INPUT_ACTION_KEYBOARD_KEYS + "/backtick");
+			glfwActionSource->BindAction(INPUT_ACTION_MENU_ENTER, INPUT_ACTION_KEYBOARD_KEYS + "/enter");
+			glfwActionSource->BindAction(INPUT_ACTION_MENU_BACK, INPUT_ACTION_KEYBOARD_KEYS + "/escape");
+
+			glfwActionSource->BindAction(INPUT_ACTION_SPAWN_DEBUG, INPUT_ACTION_KEYBOARD_KEYS + "/q");
+			glfwActionSource->BindAction(INPUT_ACTION_TOGGLE_FLASHLIGH, INPUT_ACTION_KEYBOARD_KEYS + "/f");
+			glfwActionSource->BindAction(INPUT_ACTION_DROP_FLASHLIGH, INPUT_ACTION_KEYBOARD_KEYS + "/p");
+
+			glfwActionSource->BindAction(INPUT_ACTION_SET_VR_ORIGIN, INPUT_ACTION_KEYBOARD_KEYS + "/f1");
+			glfwActionSource->BindAction(INPUT_ACTION_RELOAD_SCENE, INPUT_ACTION_KEYBOARD_KEYS + "/f5");
+			glfwActionSource->BindAction(INPUT_ACTION_RESET_SCENE, INPUT_ACTION_KEYBOARD_KEYS + "/f6");
+			glfwActionSource->BindAction(INPUT_ACTION_RELOAD_SHADERS, INPUT_ACTION_KEYBOARD_KEYS + "/f7");
+		}
+
 		Prepare();
 	}
 
 	void GraphicsContext::SetTitle(string title) {
 		glfwSetWindowTitle(window, title.c_str());
-	}
-
-	void GraphicsContext::BindInputCallbacks(GlfwInputManager *inputManager) {
-		Assert(input == nullptr, "InputManager must only be bound once.");
-		if (inputManager != nullptr) {
-			input = inputManager;
-
-			input->BindCallbacks(window);
-		}
 	}
 
 	bool GraphicsContext::ShouldClose() {
@@ -148,5 +172,17 @@ namespace sp {
 			return glm::ivec2(mode->width, mode->height);
 		}
 		return glm::ivec2(0);
+	}
+
+	void GraphicsContext::DisableCursor() {
+		if (glfwActionSource) {
+			glfwActionSource->DisableCursor();
+		}
+	}
+
+	void GraphicsContext::EnableCursor() {
+		if (glfwActionSource) {
+			glfwActionSource->EnableCursor();
+		}
 	}
 } // namespace sp

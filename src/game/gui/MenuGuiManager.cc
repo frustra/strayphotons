@@ -3,13 +3,13 @@
 #include "assets/AssetManager.hh"
 #include "core/CVar.hh"
 #include "core/Console.hh"
-#include "core/Game.hh"
 #include "core/Logging.hh"
-#include "graphics/GraphicsContext.hh"
 #include "graphics/GraphicsManager.hh"
 #include "graphics/Texture.hh"
 
-#include <game/input/GlfwInputManager.hh>
+#include <core/Game.hh>
+#include <game/input/InputManager.hh>
+#include <graphics/GraphicsContext.hh>
 #include <imgui/imgui.h>
 #include <sstream>
 
@@ -18,7 +18,15 @@ namespace sp {
 	static CVar<int> CVarMenuDisplay("g.MenuDisplay", 0, "Display pause menu");
 	static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
 
+	MenuGuiManager::MenuGuiManager(Game *game) : GuiManager(game, FOCUS_MENU) {
+		SetGuiContext();
+		ImGuiIO &io = ImGui::GetIO();
+		io.MousePos = ImVec2(200, 200);
+	}
+
 	void MenuGuiManager::BeforeFrame() {
+		GuiManager::BeforeFrame();
+
 		ImGui::StyleColorsClassic();
 		framesSinceOpened++;
 
@@ -28,39 +36,52 @@ namespace sp {
 			input->LockFocus(Focused(), focusPriority);
 
 			if (Focused() && !input->FocusLocked(focusPriority)) {
-				if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/escape") && framesSinceOpened > 1) {
+				if (framesSinceOpened > 1 && input->IsPressed(INPUT_ACTION_MENU_BACK)) {
 					if (selectedScreen == MenuScreen::Main && RenderMode() == MenuRenderMode::Pause) {
 						CloseMenu();
 					}
 
 					selectedScreen = MenuScreen::Main;
 				}
-
-				if (input->IsPressed(INPUT_ACTION_KEYBOARD_BASE + "/enter")) {
-					selectedScreen = MenuScreen::Main;
+				if (selectedScreen == MenuScreen::Splash) {
+					if (input->IsPressed(INPUT_ACTION_MENU_ENTER)) {
+						selectedScreen = MenuScreen::Main;
+					}
 				}
 
 				io.MouseDown[0] = input->IsDown(INPUT_ACTION_MOUSE_BASE + "/button_left");
 				io.MouseDown[1] = input->IsDown(INPUT_ACTION_MOUSE_BASE + "/button_right");
 				io.MouseDown[2] = input->IsDown(INPUT_ACTION_MOUSE_BASE + "/button_middle");
 
-				glm::vec2 scrollOffset, scrollOffsetDelta;
-				if (input->GetActionStateDelta(INPUT_ACTION_MOUSE_SCROLL, scrollOffset, scrollOffsetDelta)) {
-					io.MouseWheel = scrollOffsetDelta.y;
+				const glm::vec2 *scrollOffset, *scrollOffsetPrev;
+				if (input->GetActionDelta(INPUT_ACTION_MOUSE_SCROLL, &scrollOffset, &scrollOffsetPrev)) {
+					if (scrollOffsetPrev != nullptr) {
+						io.MouseWheel = scrollOffset->y - scrollOffsetPrev->y;
+					} else {
+						io.MouseWheel = scrollOffset->y;
+					}
 				}
 
 				if (selectedScreen != MenuScreen::Splash) {
 					if (RenderMode() == MenuRenderMode::Gel) {
-						glm::vec2 cursorPos, cursorDiff;
-						if (input->GetActionStateDelta(INPUT_ACTION_MOUSE_CURSOR, cursorPos, cursorDiff)) {
+						const glm::vec2 *cursorPos, *cursorPosPrev;
+						if (input->GetActionDelta(sp::INPUT_ACTION_MOUSE_CURSOR, &cursorPos, &cursorPosPrev)) {
+							glm::vec2 cursorDiff = *cursorPos;
+							if (cursorPosPrev != nullptr) {
+								cursorDiff -= *cursorPosPrev;
+							}
+
 							// TODO: Configure this scale
 							cursorDiff *= 2.0f;
 							io.MousePos.x = std::max(std::min(io.MousePos.x + cursorDiff.x, io.DisplaySize.x), 0.0f);
 							io.MousePos.y = std::max(std::min(io.MousePos.y + cursorDiff.y, io.DisplaySize.y), 0.0f);
 						}
 					} else {
-						auto guiCursorPos = input->ImmediateCursor();
-						io.MousePos = ImVec2(guiCursorPos.x, guiCursorPos.y);
+						// auto guiCursorPos = input->ImmediateCursor();
+						const glm::vec2 *mousePos;
+						if (input->GetActionValue(INPUT_ACTION_MOUSE_CURSOR, &mousePos)) {
+							io.MousePos = ImVec2(mousePos->x, mousePos->y);
+						}
 					}
 				}
 			}
@@ -102,6 +123,7 @@ namespace sp {
 	}
 
 	void MenuGuiManager::DefineWindows() {
+		SetGuiContext();
 		ImGuiIO &io = ImGui::GetIO();
 
 		// ImGui::ShowTestWindow();
@@ -379,8 +401,9 @@ namespace sp {
 
 	void MenuGuiManager::OpenPauseMenu() {
 		if (RenderMode() == MenuRenderMode::None) {
-			if (input != nullptr) {
-				input->EnableCursor();
+			auto gfxContext = game->graphics.GetContext();
+			if (gfxContext) {
+				gfxContext->EnableCursor();
 			}
 
 			SetRenderMode(MenuRenderMode::Pause);
@@ -396,7 +419,10 @@ namespace sp {
 
 	void MenuGuiManager::CloseMenu() {
 		if (input != nullptr && !input->FocusLocked(focusPriority) && RenderMode() != MenuRenderMode::Gel) {
-			input->DisableCursor();
+			auto gfxContext = game->graphics.GetContext();
+			if (gfxContext) {
+				gfxContext->DisableCursor();
+			}
 		}
 
 		if (RenderMode() == MenuRenderMode::Pause) {

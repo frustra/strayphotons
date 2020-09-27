@@ -3,21 +3,20 @@
 #include <game/gui/GuiManager.hh>
 
 namespace sp {
+	class Game;
+	class InputManager;
+
 	class DebugGuiManager : public GuiManager {
 	public:
-		DebugGuiManager() : GuiManager(FOCUS_OVERLAY) {}
+		DebugGuiManager(Game *game) : GuiManager(game, FOCUS_OVERLAY) {}
 		virtual ~DebugGuiManager() {}
 
-		void BeforeFrame();
-		void DefineWindows();
-
-		virtual void BindInput(GlfwInputManager *inputManager);
+		void BeforeFrame() override;
+		void DefineWindows() override;
 
 		bool Focused() {
 			return consoleOpen;
 		}
-		void GrabFocus();
-		void ReleaseFocus();
 
 		void ToggleConsole();
 

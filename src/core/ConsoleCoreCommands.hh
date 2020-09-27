@@ -29,7 +29,7 @@ namespace sp {
 
 		string cmd;
 		getline(stream, cmd);
-		GetConsoleManager().QueueParseAndExecute(cmd, dt);
+		GetConsoleManager().QueueParseAndExecute(cmd, chrono_clock::now() + std::chrono::milliseconds(dt));
 	});
 
 	CFunc<string> CFuncToggle(

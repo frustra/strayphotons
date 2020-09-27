@@ -22,10 +22,8 @@ namespace ecs {
 
 	class HumanControlSystem {
 	public:
-		HumanControlSystem(ecs::EntityManager *entities, sp::PhysxManager *physics);
+		HumanControlSystem(ecs::EntityManager *entities, sp::InputManager *input, sp::PhysxManager *physics);
 		~HumanControlSystem();
-
-		void BindInput(sp::InputManager *inputManager);
 
 		/**
 		 * Call this once per frame

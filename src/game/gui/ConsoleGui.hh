@@ -50,7 +50,7 @@ namespace sp {
 											 ImGuiInputTextFlags_CallbackCompletion |
 											 ImGuiInputTextFlags_CallbackHistory;
 
-				bool reclaim_focus = false;
+				bool reclaim_focus = ImGui::IsWindowAppearing();
 				if (ImGui::InputText("##CommandInput",
 						inputBuf,
 						sizeof(inputBuf),
@@ -58,7 +58,9 @@ namespace sp {
 						CommandEditStub,
 						(void *)this)) {
 					string line(inputBuf);
-					GetConsoleManager().QueueParseAndExecute(line, true);
+					auto &console = GetConsoleManager();
+					console.AddHistory(line);
+					console.QueueParseAndExecute(line);
 					inputBuf[0] = '\0';
 					historyOffset = 0;
 					reclaim_focus = true;
@@ -100,9 +102,8 @@ namespace sp {
 							newInputCursorOffset = data->CursorPos;
 						}
 
-						auto hist = GetConsoleManager().History();
-						if ((size_t)pos <= hist.size()) {
-							auto &line = hist[hist.size() - pos];
+						auto line = GetConsoleManager().GetHistory(pos);
+						if (!line.empty()) {
 							int newLength = snprintf(data->Buf, (size_t)data->BufSize, "%s", line.c_str());
 							data->CursorPos = data->SelectionStart = data->SelectionEnd = data->BufTextLen = newLength;
 							data->BufDirty = true;

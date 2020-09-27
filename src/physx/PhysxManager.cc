@@ -12,6 +12,7 @@
 #include "ecs/components/Transform.hh"
 #include "physx/PhysxUtils.hh"
 
+#include <Common.hh>
 #include <PxScene.h>
 #include <chrono>
 #include <fstream>
@@ -351,13 +352,12 @@ namespace sp {
 			const int rate = 120; // frames/sec
 
 			while (!exiting) {
-				auto frameStart = std::chrono::high_resolution_clock::now();
+				auto frameStart = chrono_clock::now();
 
 				if (simulate)
 					Frame(1.0 / rate);
 
-				std::this_thread::sleep_until(
-					frameStart + std::chrono::high_resolution_clock::duration(std::chrono::seconds(1)) / rate);
+				std::this_thread::sleep_until(frameStart + chrono_clock::duration(std::chrono::seconds(1)) / rate);
 			}
 		});
 	}

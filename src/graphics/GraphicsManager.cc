@@ -13,7 +13,6 @@
 #include "graphics/basic_renderer/BasicRenderer.hh"
 
 #include <cxxopts.hpp>
-#include <game/input/GlfwInputManager.hh>
 #include <iostream>
 #include <system_error>
 
@@ -78,7 +77,9 @@ namespace sp {
 		context->CreateWindow(CVarWindowSize.Get());
 
 		profilerGui = new ProfilerGui(&context->Timer);
-		game->debugGui.Attach(profilerGui);
+		if (game->debugGui) {
+			game->debugGui->Attach(profilerGui);
+		}
 	}
 
 	void GraphicsManager::ReleaseContext() {
@@ -97,10 +98,6 @@ namespace sp {
 
 	bool GraphicsManager::HasActiveContext() {
 		return context && !context->ShouldClose();
-	}
-
-	void GraphicsManager::BindContextInputCallbacks(GlfwInputManager *inputManager) {
-		context->BindInputCallbacks(inputManager);
 	}
 
 	bool GraphicsManager::Frame() {

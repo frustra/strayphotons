@@ -8,11 +8,11 @@ target_sources(
 target_sources(
     ${PROJECT_EXE}
     PRIVATE
-        GuiManager.cc 
+        GuiManager.cc
 )
 
 target_sources(
     ${PROJECT_TEST_EXE}
     PRIVATE
-        GuiManager.cc 
+        GuiManager.cc
 )

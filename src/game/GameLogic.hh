@@ -21,13 +21,14 @@ namespace sp {
 		GameLogic(Game *game);
 		~GameLogic();
 
-		void Init(InputManager *inputManager, Script *startupScript = nullptr);
+		void Init(Script *startupScript = nullptr);
 		void HandleInput();
 		bool Frame(double dtSinceLastFrame);
 
 		void LoadScene(string name);
 		void ReloadScene(string arg);
 		void PrintDebug();
+		void SetVrOrigin();
 
 		void OpenBarrier(string name);
 		void CloseBarrier(string name);

@@ -1,10 +1,9 @@
 #pragma once
 
 #include "CVar.hh"
-#include "Common.hh"
 #include "graphics/Graphics.hh"
 
-#include <chrono>
+#include <Common.hh>
 #include <queue>
 #include <stack>
 
@@ -16,12 +15,12 @@ namespace sp {
 	struct TimeResult {
 		string name;
 		int depth = 0;
-		std::chrono::high_resolution_clock::duration cpuElapsed;
+		chrono_clock::duration cpuElapsed;
 		uint64 gpuElapsed = 0;
 	};
 
 	struct TimeQuery {
-		std::chrono::high_resolution_clock::time_point cpuStart, cpuEnd;
+		chrono_clock::time_point cpuStart, cpuEnd;
 		GLuint glQueries[2];
 		int resultIndex;
 	};
