@@ -11,9 +11,8 @@ AlignAfterOpenBracket: DontAlign
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: Empty
 AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: Always
 AllowShortLambdasOnASingleLine: Empty
-AllowShortLoopsOnASingleLine: true
 AlwaysBreakTemplateDeclarations: true
 IndentPPDirectives: BeforeHash
 IncludeBlocks: Regroup
