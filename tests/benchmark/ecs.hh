@@ -8,21 +8,21 @@
 #include <memory>
 #include <thread>
 
-#define ENTITY_COUNT 10000000
-#define THREAD_COUNT 8
+#define ENTITY_COUNT 1000000
+#define THREAD_COUNT 6
 
 namespace benchmark {
 	struct Transform {
-		float pos[3] = {0};
+		double pos[3] = {0};
 		uint64_t generation = 0;
 
 		Transform() {}
-		Transform(float x, float y, float z) {
+		Transform(double x, double y, double z) {
 			pos[0] = x;
 			pos[1] = y;
 			pos[2] = z;
 		}
-		Transform(float x, float y, float z, uint64_t generation) : generation(generation) {
+		Transform(double x, double y, double z, uint64_t generation) : generation(generation) {
 			pos[0] = x;
 			pos[1] = y;
 			pos[2] = z;
@@ -31,10 +31,17 @@ namespace benchmark {
 
 	struct Script {
 		std::vector<uint8_t> data;
+
+		Script() {}
+		Script(uint8_t *data, size_t size) : data(data, data + size) {}
+		Script(std::initializer_list<uint8_t> init) : data(init) {}
 	};
 
 	struct Renderable {
 		std::string name;
+
+		Renderable() {}
+		Renderable(std::string name) : name(name) {}
 	};
 
 	typedef std::tuple<Transform, Renderable, Script> ComponentsTuple;
@@ -76,6 +83,12 @@ namespace benchmark {
 		template<typename T>
 		inline void Set(T &value) {
 			std::get<T>(components) = value;
+			valid[index_of_component<0, T>()] = true;
+		}
+
+		template<typename T, typename... Args>
+		inline void Set(Args &&... args) {
+			std::get<T>(components) = std::move(T(std::forward<Args>(args)...));
 			valid[index_of_component<0, T>()] = true;
 		}
 
