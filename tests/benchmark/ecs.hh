@@ -4,6 +4,7 @@
 
 #include <Ecs.hh>
 #include <atomic>
+#include <bitset>
 #include <cstdint>
 #include <initializer_list>
 #include <iostream>
@@ -50,6 +51,7 @@ namespace benchmark {
 	};
 
 	typedef std::tuple<Transform *, Renderable *, Script *> ComponentsTuple;
+	typedef std::bitset<std::tuple_size<ComponentsTuple>::value> ValidComponents;
 
 	template<size_t I, typename T>
 	constexpr size_t index_of_component() {
@@ -62,10 +64,25 @@ namespace benchmark {
 		}
 	}
 
+	template<typename T>
+	inline constexpr bool component_valid(const ValidComponents &components) {
+		return components[index_of_component<0, T *>()];
+	}
+
+	template<typename T, typename T2, typename... Tn>
+	inline constexpr bool component_valid(const ValidComponents &components) {
+		return component_valid<T>(components) && component_valid<T2, Tn...>(components);
+	}
+
+	template<typename T>
+	inline constexpr void set_component_valid(ValidComponents &components, bool value) {
+		components[index_of_component<0, T *>()] = value;
+	}
+
 	class Entity {
 	public:
 		Entity() {}
-		Entity(ecs::eid_t id) : id(id), valid({0}) {}
+		Entity(ecs::eid_t id) : id(id), valid(0) {}
 
 		inline Entity &operator=(const Entity &other) {
 			id = other.id;
@@ -77,9 +94,10 @@ namespace benchmark {
 			return id;
 		}
 
-		template<typename T>
+		// TODO: Use ComponentIndex lookup instead of local storage
+		/*template<typename... Tn>
 		inline constexpr bool Has() const {
-			return valid[index_of_component<0, T *>()];
+			return component_valid<Tn...>(valid);
 		}
 
 		template<typename T>
@@ -112,12 +130,12 @@ namespace benchmark {
 		template<typename T>
 		inline void Unset(T &value) {
 			valid[index_of_component<0, T *>()] = false;
-		}
+		}*/
 
 	private:
 		ecs::eid_t id;
-		std::array<bool, std::tuple_size<ComponentsTuple>::value> valid;
-		ComponentsTuple components;
+		ValidComponents valid;
+		// ComponentsTuple components;
 	};
 
 	template<typename T>
@@ -128,42 +146,9 @@ namespace benchmark {
 
 			readComponents.resize(readEntities.size());
 			writeComponents.resize(writeEntities.size());
-
-			auto rComp = readComponents.begin();
-			auto wComp = writeComponents.begin();
-			auto rEnt = readEntities.begin();
-			auto wEnt = writeEntities.begin();
-			auto rCompEnd = readComponents.end();
-			auto wCompEnd = writeComponents.end();
-			auto rEntEnd = readEntities.end();
-			auto wEntEnd = writeEntities.end();
-			while (rComp != rCompEnd && wComp != wCompEnd && rEnt != rEntEnd && wEnt != wEntEnd) {
-				rEnt->SetPtr<T>(&(*rComp));
-				wEnt->SetPtr<T>(&(*wComp));
-				rComp++;
-				wComp++;
-				rEnt++;
-				wEnt++;
-			}
 		}
 
-		void UpdateIndex(std::deque<Entity> &writeEntities) {
-			validIndexes.clear();
-
-			size_t i = 0;
-			for (auto &writeEnt : writeEntities) {
-				if (writeEnt.Has<T>()) validIndexes.emplace_back(std::make_tuple(i, writeEnt.GetPtr<T>()));
-				i++;
-			}
-			std::cout << typeid(T).name() << " Valid Indexes: " << validIndexes.size() << std::endl;
-		}
-
-		// inline T &AddEntity(Entity &ent) {
-		// 	T &comp = writeComponents.emplace_back();
-		// 	ent.SetPtr(&comp);
-		// }
-
-		inline std::deque<T> &RLock() {
+		inline void RLock() {
 			int retry = 0;
 			while (true) {
 				uint32_t current = readers;
@@ -171,7 +156,7 @@ namespace benchmark {
 					uint32_t next = current + 1;
 					if (readers.compare_exchange_weak(current, next)) {
 						// Lock aquired
-						return readComponents;
+						return;
 					}
 				}
 
@@ -180,20 +165,28 @@ namespace benchmark {
 					std::this_thread::yield();
 				}
 			}
+		}
+
+		inline std::deque<T> &ReadComponents() {
+			return readComponents;
+		}
+
+		inline std::vector<size_t> &ReadValidIndexes() {
+			return readValidIndexes;
 		}
 
 		inline void RUnlock() {
 			readers--;
 		}
 
-		inline std::vector<std::tuple<size_t, T *>> &StartWrite() {
+		inline void StartWrite() {
 			int retry = 0;
 			while (true) {
 				uint32_t current = writer;
 				if (current == WRITER_FREE) {
 					if (writer.compare_exchange_weak(current, WRITER_STARTED)) {
 						// Lock aquired
-						return validIndexes;
+						return;
 					}
 				}
 
@@ -204,9 +197,13 @@ namespace benchmark {
 			}
 		}
 
-		// Only use inside StartWrite/CommitWrite block.
-		inline std::vector<std::tuple<size_t, T *>> &ValidIndexes() {
-			return validIndexes;
+		inline std::deque<T> &WriteComponents() {
+			return writeComponents;
+		}
+
+		inline std::vector<size_t> &WriteValidIndexes() {
+			// TODO: Set writeValidDirty if indexes changed
+			return writeValidIndexes;
 		}
 
 		inline void CommitWrite() {
@@ -244,12 +241,16 @@ namespace benchmark {
 			Timer t(timer);
 
 			// Based on benchmarking, it is faster to bulk copy if >= 1/2 of the components are valid.
-			if (validIndexes.size() >= writeComponents.size() / 2) {
+			if (writeValidIndexes.size() >= writeComponents.size() / 2) {
 				readComponents = writeComponents;
 			} else {
-				for (auto &valid : validIndexes) {
-					readComponents[std::get<size_t>(valid)] = *std::get<T *>(valid);
+				for (auto &valid : writeValidIndexes) {
+					readComponents[valid] = writeComponents[valid];
 				}
+			}
+			if (writeValidDirty) {
+				readValidIndexes = writeValidIndexes;
+				writeValidDirty = false;
 			}
 		}
 
@@ -258,6 +259,8 @@ namespace benchmark {
 
 		std::deque<T> readComponents;
 		std::deque<T> writeComponents;
-		std::vector<std::tuple<size_t, T *>> validIndexes;
+		std::vector<size_t> readValidIndexes;
+		std::vector<size_t> writeValidIndexes;
+		bool writeValidDirty = false;
 	};
 } // namespace benchmark
