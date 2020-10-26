@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <iostream>
 #include <string>
 
 namespace benchmark {
@@ -17,16 +18,21 @@ namespace benchmark {
 
 		~MultiTimer() {
 			if (print) {
-				std::chrono::nanoseconds total(0);
-				for (auto value : values) {
-					total += value;
-				}
-				std::sort(values.begin(), values.end(), std::less());
+				if (values.size() >= 1) {
+					std::chrono::nanoseconds total(0);
+					for (auto value : values) {
+						total += value;
+					}
+					std::sort(values.begin(), values.end(), std::less());
 
-				std::cout << "[" << name << "] Avg: " << (total.count() / values.size() / 1000.0)
-						  << " usec, P95: " << (values[(size_t)((double)values.size() * 0.95) - 1].count() / 1000.0)
-						  << " usec, P99: " << (values[(size_t)((double)values.size() * 0.99) - 1].count() / 1000.0)
-						  << " usec" << std::endl;
+					std::cout << "[" << name << "] Min: " << (values[0].count() / 1000.0)
+							  << " usec, Avg: " << (total.count() / values.size() / 1000.0)
+							  << " usec, P95: " << (values[(size_t)((double)values.size() * 0.95) - 1].count() / 1000.0)
+							  << " usec, P99: " << (values[(size_t)((double)values.size() * 0.99) - 1].count() / 1000.0)
+							  << " usec" << std::endl;
+				} else {
+					std::cout << "[" << name << "] No timers completed" << std::endl;
+				}
 			}
 		}
 

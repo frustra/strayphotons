@@ -1,0 +1,55 @@
+1/1 Entities:
+Bulk Copy:
+15.4 Read (GB/s)
+5.4 Write (GB/s)
+50% L3HIT
+64% L2HIT
+[ComponentIndex Commit N9benchmark9TransformE] Min: 2866.61 usec, Avg: 3003.38 usec, P95: 3163.72 usec, P99: 5493.29 usec
+Filtered Copy:
+16.7 Read
+5.5 Write
+52% L3HIT
+69% L2HIT
+[ComponentIndex Commit N9benchmark9TransformE] Min: 3352.12 usec, Avg: 3793.4 usec, P95: 4352.43 usec, P99: 6997.65 usec
+
+1/2 Entities
+Bulk Copy:
+14.5 Read
+5.35 Write
+50% L3HIT
+52% L2HIT
+[ComponentIndex Commit N9benchmark9TransformE] Min: 2874.49 usec, Avg: 3098.61 usec, P95: 3556.16 usec, P99: 7887.37 usec
+Filtered Copy:
+15.3 Read
+5.4 Write
+52% L3HIT
+54% L2HIT
+[ComponentIndex Commit N9benchmark9TransformE] Min: 3056.65 usec, Avg: 3305.29 usec, P95: 3660.26 usec, P99: 6922.64 usec
+
+1/3 Entities:
+Bulk Copy:
+14.4 Read
+4.8 Write
+51% L3HIT
+45% L2HIT
+[ComponentIndex Commit N9benchmark9TransformE] Min: 2826.33 usec, Avg: 3220.85 usec, P95: 5237.59 usec, P99: 9214.56 usec
+Filtered Copy:
+14.8 Read
+4.4 Write
+51% L3HIT
+42% L2HIT
+[ComponentIndex Commit N9benchmark9TransformE] Min: 2873.27 usec, Avg: 3139.43 usec, P95: 3572.37 usec, P99: 7763.32 usec
+
+1/4 Entities:
+Bulk Copy:
+14.2 Read
+4.1 Write
+47% L3HIT
+39% L2HIT
+[ComponentIndex Commit N9benchmark9TransformE] Min: 2770.16 usec, Avg: 3142.05 usec, P95: 5220.3 usec, P99: 9152.52 usec
+Filtered Copy:
+14.7 Read
+3.45 Write
+46% L3HIT
+34% L2HIT
+[ComponentIndex Commit N9benchmark9TransformE] Min: 2722.65 usec, Avg: 3072.63 usec, P95: 3717.13 usec, P99: 7810.98 usec

@@ -13,16 +13,15 @@ using namespace benchmark;
 
 std::atomic_bool running;
 // static std::shared_mutex entityLock;
-static std::deque<Entity> entities;
-static std::shared_mutex transformLock;
-static std::vector<Entity *> transformEntities;
-static std::shared_mutex renderableLock;
-static std::vector<Entity *> renderableEntities;
-static std::shared_mutex scriptLock;
-static std::vector<Entity *> scriptEntities;
+static std::deque<Entity> readEntities;
+static std::deque<Entity> writeEntities;
+static ComponentIndex<Transform> transforms;
+static ComponentIndex<Renderable> renderables;
+static ComponentIndex<Script> scripts;
 
 void renderThread() {
 	MultiTimer timer("RenderThread");
+	MultiTimer timer2("RenderThread Aquired");
 	while (running) {
 		auto start = std::chrono::high_resolution_clock::now();
 		size_t goodCount = 0;
@@ -31,21 +30,26 @@ void renderThread() {
 		std::vector<std::string> bad;
 		{
 			Timer t(timer);
-			std::shared_lock lock(transformLock);
-			std::shared_lock lock2(renderableLock);
-			for (auto ent : renderableEntities) {
-				auto &transform = ent->Get<Transform>();
-				auto &renderable = ent->Get<Renderable>();
-				if (transform.pos[0] != transform.pos[1] || transform.pos[1] != transform.pos[2]) {
-					bad.emplace_back(renderable.name);
-				} else {
-					goodCount++;
-					if (transform.pos[0] > maxValue) {
-						maxValue = transform.pos[0];
-						maxName = renderable.name;
+			transforms.RLock();
+			renderables.RLock();
+			Timer t2(timer2);
+			for (auto &ent : readEntities) {
+				if (ent.Has<Renderable>()) {
+					auto &transform = ent.Get<Transform>();
+					auto &renderable = ent.Get<Renderable>();
+					if (transform.pos[0] != transform.pos[1] || transform.pos[1] != transform.pos[2]) {
+						bad.emplace_back(renderable.name);
+					} else {
+						goodCount++;
+						if (transform.pos[0] > maxValue) {
+							maxValue = transform.pos[0];
+							maxName = renderable.name;
+						}
 					}
 				}
 			}
+			renderables.RUnlock();
+			transforms.RUnlock();
 		}
 		// std::cout << "[RenderThread] Max value (" << maxName << ") at " << maxValue << ", Good: " << goodCount
 		// 		  << ", Bad: " << bad.size() << "" << std::endl;
@@ -57,24 +61,37 @@ static std::atomic_size_t scriptWorkerQueue;
 
 void scriptWorkerThread(bool master) {
 	MultiTimer timer("ScriptWorkerThread", master);
+	MultiTimer timer2("ScriptWorkerThread Aquired", master);
 	while (running) {
 		auto start = std::chrono::high_resolution_clock::now();
 		{
 			Timer t(timer);
-			std::shared_lock lock(scriptLock);
-			while (running) {
-				size_t scriptIndex = scriptWorkerQueue++;
-				if (scriptIndex < scriptEntities.size()) {
-					// "Run" script
-					auto &script = scriptEntities[scriptIndex]->Get<Script>();
-					for (int i = 0; i < script.data.size(); i++) {
-						script.data[i]++;
+			if (master) scripts.StartWrite();
+			auto &validScripts = scripts.ValidIndexes();
+			{
+				Timer t2(timer2);
+				while (running) {
+					size_t entIndex = scriptWorkerQueue++;
+					if (entIndex < validScripts.size()) {
+						auto &valid = validScripts[entIndex];
+						// "Run" script
+						auto &script = *std::get<Script *>(valid);
+						for (int i = 0; i < script.data.size(); i++) {
+							script.data[i]++;
+						}
+					} else {
+						break;
 					}
-				} else {
-					break;
 				}
 			}
-			if (master) { scriptWorkerQueue = 0; }
+			while (running && scriptWorkerQueue < THREAD_COUNT + validScripts.size()) {
+				std::this_thread::yield();
+			}
+
+			if (master) {
+				scripts.CommitWrite();
+				scriptWorkerQueue = 0;
+			}
 		}
 		std::this_thread::sleep_until(start + std::chrono::milliseconds(11));
 	}
@@ -82,52 +99,69 @@ void scriptWorkerThread(bool master) {
 
 void transformWorkerThread() {
 	MultiTimer timer("TransformWorkerThread");
+	MultiTimer timer2("TransformWorkerThread Aquired");
 	while (running) {
 		auto start = std::chrono::high_resolution_clock::now();
 		{
 			Timer t(timer);
-			std::unique_lock lock(transformLock);
-			for (auto ent : transformEntities) {
-				auto &transform = ent->Get<Transform>();
+			auto &validTransforms = transforms.StartWrite();
+			Timer t2(timer2);
+			for (auto &valid : validTransforms) {
+				auto &transform = *std::get<Transform *>(valid);
 				transform.pos[0]++;
 				transform.pos[1]++;
 				transform.pos[2]++;
 			}
+			transforms.CommitWrite();
 		}
 		std::this_thread::sleep_until(start + std::chrono::milliseconds(11));
 	}
 }
 
-#define TRANSFORM_DIVISOR 1
-#define RENDERABLE_DIVISOR 1
+#define TRANSFORM_DIVISOR 3
+#define RENDERABLE_DIVISOR 3
 #define SCRIPT_DIVISOR 10
-#define EXPECTED_COUNT 4
+#define EXPECTED_COUNT 900
 
 int main(int argc, char **argv) {
 	{
 		Timer t("Alloc entities");
-		entities.resize(ENTITY_COUNT);
-		transformEntities.resize(ENTITY_COUNT / TRANSFORM_DIVISOR);
-		renderableEntities.resize(ENTITY_COUNT / RENDERABLE_DIVISOR);
-		scriptEntities.resize(ENTITY_COUNT / SCRIPT_DIVISOR);
+		readEntities.resize(ENTITY_COUNT);
+		writeEntities.resize(ENTITY_COUNT);
+	}
+
+	{
+		Timer t("Build links");
+		transforms.Init(readEntities, writeEntities);
+		renderables.Init(readEntities, writeEntities);
+		scripts.Init(readEntities, writeEntities);
 	}
 
 	{
 		Timer t("Populate entities");
 		for (size_t i = 0; i < ENTITY_COUNT; i++) {
+			readEntities[i] = Entity((ecs::eid_t)i);
+			writeEntities[i] = Entity((ecs::eid_t)i);
 			if (i % TRANSFORM_DIVISOR == 0) {
-				entities[i].Set<Transform>(0.0, 0.0, 0.0, 1);
-				transformEntities[i / TRANSFORM_DIVISOR] = &entities[i];
+				readEntities[i].Set<Transform>(0.0, 0.0, 0.0, 1);
+				writeEntities[i].Set<Transform>(0.0, 0.0, 0.0, 1);
 			}
 			if (i % RENDERABLE_DIVISOR == 0) {
-				entities[i].Set<Renderable>("entity" + std::to_string(i));
-				renderableEntities[i / RENDERABLE_DIVISOR] = &entities[i];
+				readEntities[i].Set<Renderable>("entity" + std::to_string(i));
+				writeEntities[i].Set<Renderable>("entity" + std::to_string(i));
 			}
 			if (i % SCRIPT_DIVISOR == 0) {
-				entities[i].Set<Script>(std::initializer_list<uint8_t>({0, 0, 0, 0, 0, 0, 0, 0}));
-				scriptEntities[i / SCRIPT_DIVISOR] = &entities[i];
+				readEntities[i].Set<Script>(std::initializer_list<uint8_t>({0, 0, 0, 0, 0, 0, 0, 0}));
+				writeEntities[i].Set<Script>(std::initializer_list<uint8_t>({0, 0, 0, 0, 0, 0, 0, 0}));
 			}
 		}
+	}
+
+	{
+		Timer t("Build indexes");
+		transforms.UpdateIndex(writeEntities);
+		renderables.UpdateIndex(writeEntities);
+		scripts.UpdateIndex(writeEntities);
 	}
 
 	{
@@ -156,9 +190,9 @@ int main(int argc, char **argv) {
 	{
 		Timer t("Validate entities");
 		int invalid = 0;
-		for (auto ent : transformEntities) {
-			if (ent->Valid<Transform>()) {
-				auto transform = ent->Get<Transform>();
+		for (auto ent : readEntities) {
+			if (ent.Has<Transform>()) {
+				auto transform = ent.Get<Transform>();
 				if (transform.pos[0] != EXPECTED_COUNT || transform.pos[1] != EXPECTED_COUNT ||
 					transform.pos[2] != EXPECTED_COUNT) {
 					if (invalid == 0) {
@@ -176,8 +210,8 @@ int main(int argc, char **argv) {
 
 	{
 		Timer t("Remove entities");
-		entities.clear();
-		transformEntities.clear();
+		readEntities.clear();
+		writeEntities.clear();
 	}
 
 	return 0;
