@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Timer.hh"
+#include "ecs_util.h"
 
-#include <Ecs.hh>
 #include <atomic>
 #include <bitset>
 #include <cstdint>
+#include <deque>
 #include <initializer_list>
 #include <iostream>
 #include <memory>
@@ -18,136 +19,239 @@
 static_assert(ATOMIC_INT_LOCK_FREE == 2, "std::atomic_int is not lock-free");
 
 namespace benchmark {
-	struct Transform {
-		double pos[3] = {0};
-		uint64_t generation = 0;
 
-		Transform() {}
-		Transform(double x, double y, double z) {
-			pos[0] = x;
-			pos[1] = y;
-			pos[2] = z;
-		}
-		Transform(double x, double y, double z, uint64_t generation) : generation(generation) {
-			pos[0] = x;
-			pos[1] = y;
-			pos[2] = z;
-		}
-	};
+	template<typename, typename...>
+	class ComponentSetReadLock {};
 
-	struct Script {
-		std::vector<uint8_t> data;
-
-		Script() {}
-		Script(uint8_t *data, size_t size) : data(data, data + size) {}
-		Script(std::initializer_list<uint8_t> init) : data(init) {}
-	};
-
-	struct Renderable {
-		std::string name;
-
-		Renderable() {}
-		Renderable(std::string name) : name(name) {}
-	};
-
-	typedef std::tuple<Transform *, Renderable *, Script *> ComponentsTuple;
-	typedef std::bitset<std::tuple_size<ComponentsTuple>::value> ValidComponents;
-
-	template<size_t I, typename T>
-	constexpr size_t index_of_component() {
-		static_assert(I < std::tuple_size<ComponentsTuple>::value, "Component does not exist");
-
-		if constexpr (std::is_same<T, typename std::tuple_element<I, ComponentsTuple>::type>::value) {
-			return I;
-		} else {
-			return index_of_component<I + 1, T>();
-		}
-	}
-
-	template<typename T>
-	inline constexpr bool component_valid(const ValidComponents &components) {
-		return components[index_of_component<0, T *>()];
-	}
-
-	template<typename T, typename T2, typename... Tn>
-	inline constexpr bool component_valid(const ValidComponents &components) {
-		return component_valid<T>(components) && component_valid<T2, Tn...>(components);
-	}
-
-	template<typename T>
-	inline constexpr void set_component_valid(ValidComponents &components, bool value) {
-		components[index_of_component<0, T *>()] = value;
-	}
-
-	class Entity {
+	template<template<typename...> typename ECSType, typename... AllComponentTypes, typename... ReadComponentTypes>
+	class ComponentSetReadLock<ECSType<AllComponentTypes...>, ReadComponentTypes...> {
 	public:
-		Entity() {}
-		Entity(ecs::eid_t id) : id(id), valid(0) {}
-
-		inline Entity &operator=(const Entity &other) {
-			id = other.id;
-			valid = other.valid;
-			return *this;
+		inline ComponentSetReadLock(ECSType<AllComponentTypes...> &ecs) : ecs(ecs) {
+			ecs.validIndex.RLock();
+			LockInOrder<AllComponentTypes...>();
 		}
 
-		inline const ecs::eid_t Id() const {
-			return id;
-		}
-
-		// TODO: Use ComponentIndex lookup instead of local storage
-		/*template<typename... Tn>
-		inline constexpr bool Has() const {
-			return component_valid<Tn...>(valid);
+		inline ~ComponentSetReadLock() {
+			UnlockInOrder<AllComponentTypes...>();
+			ecs.validIndex.RUnlock();
 		}
 
 		template<typename T>
-		inline constexpr T &Get() {
-			return *std::get<T *>(components);
+		inline constexpr const std::vector<size_t> &ValidIndexes() const {
+			return ecs.template Storage<T>().readValidIndexes;
 		}
 
 		template<typename T>
-		inline T *&GetPtr() {
-			return std::get<T *>(components);
+		inline bool Has(size_t entityId) const {
+			auto &validBitset = ecs.validIndex.readComponents[entityId];
+			return Has<decltype(validBitset), T>(validBitset, entityId);
+		}
+
+		template<typename T, typename T2, typename... Tn>
+		inline bool Has(size_t entityId) const {
+			auto &validBitset = ecs.validIndex.readComponents[entityId];
+			return Has<decltype(validBitset), T>(validBitset, entityId) &&
+				   Has<decltype(validBitset), T2, Tn...>(validBitset, entityId);
 		}
 
 		template<typename T>
-		inline void SetPtr(T *ptr) {
-			std::get<T *>(components) = ptr;
+		inline const T &Get(size_t entityId) const {
+			return ecs.template Storage<T>().readComponents[entityId];
+		}
+
+	private:
+		// Call lock operations on ReadComponentTypes in the same order they are defined in AllComponentTypes
+		// This is accomplished by filtering AllComponentTypes by ReadComponentTypes
+		template<typename U>
+		inline void LockInOrder() {
+			if (is_type_in_set<U, ReadComponentTypes...>::value) { ecs.template Storage<U>().RLock(); }
+		}
+
+		template<typename U, typename U2, typename... Un>
+		inline void LockInOrder() {
+			LockInOrder<U>();
+			LockInOrder<U2, Un...>();
+		}
+
+		template<typename U>
+		inline void UnlockInOrder() {
+			if (is_type_in_set<U, ReadComponentTypes...>::value) { ecs.template Storage<U>().RUnlock(); }
+		}
+
+		template<typename U, typename U2, typename... Un>
+		inline void UnlockInOrder() {
+			UnlockInOrder<U2, Un...>();
+			UnlockInOrder<U>();
+		}
+
+		template<typename U, typename T>
+		inline constexpr bool Has(U &validBitset, size_t entityId) const {
+			return validBitset[ecs.template FindIndex<T>()];
+		}
+
+		template<typename U, typename T, typename T2, typename... Tn>
+		inline constexpr bool Has(U &validBitset, size_t entityId) const {
+			return Has<T>(validBitset, entityId) && Has<T2, Tn...>(validBitset, entityId);
+		}
+
+		ECSType<AllComponentTypes...> &ecs;
+	};
+
+	template<typename, bool, typename...>
+	class ComponentSetWriteTransaction {};
+
+	template<template<typename...> typename ECSType, typename... AllComponentTypes, bool AllowAddRemove,
+		typename... WriteComponentTypes>
+	class ComponentSetWriteTransaction<ECSType<AllComponentTypes...>, AllowAddRemove, WriteComponentTypes...> {
+	public:
+		inline ComponentSetWriteTransaction(ECSType<AllComponentTypes...> &ecs) : ecs(ecs) {
+			if (AllowAddRemove) {
+				ecs.validIndex.StartWrite();
+			} else {
+				ecs.validIndex.RLock();
+			}
+			LockInOrder<AllComponentTypes...>();
+		}
+
+		inline ~ComponentSetWriteTransaction() {
+			UnlockInOrder<AllComponentTypes...>();
+			if (AllowAddRemove) {
+				ecs.validIndex.CommitWrite();
+			} else {
+				ecs.validIndex.RUnlock();
+			}
 		}
 
 		template<typename T>
-		inline void Set(T &value) {
-			*std::get<T *>(components) = value;
-			valid[index_of_component<0, T *>()] = true;
+		inline constexpr const std::vector<size_t> &ValidIndexes() const {
+			return ecs.template Storage<T>().writeValidIndexes;
+		}
+
+		inline size_t AddEntity() {
+			if (AllowAddRemove) {
+				AddEntityToComponents<AllComponentTypes...>();
+				size_t id = ecs.validIndex.writeComponents.size();
+				ecs.validIndex.writeComponents.emplace_back();
+				ecs.validIndex.writeValidDirty = true;
+				return id;
+			} else {
+				throw std::runtime_error("Can't Add entity without setting AllowAddRemove to true");
+			}
+		}
+
+		template<typename T>
+		inline bool Has(size_t entityId) const {
+			auto &validBitset = ecs.validIndex.writeComponents[entityId];
+			return Has<decltype(validBitset), T>(validBitset, entityId);
+		}
+
+		template<typename T, typename T2, typename... Tn>
+		inline bool Has(size_t entityId) const {
+			auto &validBitset = ecs.validIndex.writeComponents[entityId];
+			return Has<decltype(validBitset), T>(validBitset, entityId) &&
+				   Has<decltype(validBitset), T2, Tn...>(validBitset, entityId);
+		}
+
+		template<typename T>
+		inline const T &Get(size_t entityId) const {
+			return ecs.template Storage<T>().writeComponents[entityId];
+		}
+
+		template<typename T>
+		inline T &Get(size_t entityId) {
+			return ecs.template Storage<T>().writeComponents[entityId];
+		}
+
+		template<typename T>
+		inline void Set(size_t entityId, T &value) {
+			ecs.template Storage<T>().writeComponents[entityId] = value;
+			auto &validBitset = ecs.validIndex.writeComponents[entityId];
+			if (!validBitset[ecs.template FindIndex<T>()]) {
+				if (!AllowAddRemove)
+					throw std::runtime_error("Can't Add new component without setting AllowAddRemove to true");
+				validBitset[ecs.template FindIndex<T>()] = true;
+				ecs.template Storage<T>().writeValidIndexes.emplace_back(entityId);
+				ecs.template Storage<T>().writeValidDirty = true;
+			}
 		}
 
 		template<typename T, typename... Args>
-		inline void Set(Args &&... args) {
-			*std::get<T *>(components) = std::move(T(std::forward<Args>(args)...));
-			valid[index_of_component<0, T *>()] = true;
+		inline void Set(size_t entityId, Args... args) {
+			ecs.template Storage<T>().writeComponents[entityId] = std::move(T(args...));
+			auto &validBitset = ecs.validIndex.writeComponents[entityId];
+			if (!validBitset[ecs.template FindIndex<T>()]) {
+				if (!AllowAddRemove)
+					throw std::runtime_error("Can't Add new component without setting AllowAddRemove to true");
+				validBitset[ecs.template FindIndex<T>()] = true;
+				ecs.template Storage<T>().writeValidIndexes.emplace_back(entityId);
+				ecs.template Storage<T>().writeValidDirty = true;
+			}
 		}
 
-		template<typename T>
-		inline void Unset(T &value) {
-			valid[index_of_component<0, T *>()] = false;
-		}*/
+		// Only allow this if AllowAddRemove is true
+		// template<typename T>
+		// inline void Unset(size_t entityId) {
+		// 	auto &validBitset = ecs.validIndex.writeComponents[entityId];
+		// 	if (validBitset[ecs.template FindIndex<T>()]) {
+		// 		validBitset[ecs.template FindIndex<T>()] = false;
+		// 		// TODO: Find index in ecs.template Storage<T>().writeValidIndexes and remove it.
+		// 		ecs.template Storage<T>().writeValidDirty = true;
+		// 	}
+		// }
 
 	private:
-		ecs::eid_t id;
-		ValidComponents valid;
-		// ComponentsTuple components;
+		// Call lock operations on WriteComponentTypes in the same order they are defined in AllComponentTypes
+		// This is accomplished by filtering AllComponentTypes by WriteComponentTypes
+		template<typename U>
+		inline void LockInOrder() {
+			if (is_type_in_set<U, WriteComponentTypes...>::value) { ecs.template Storage<U>().StartWrite(); }
+		}
+
+		template<typename U, typename U2, typename... Un>
+		inline void LockInOrder() {
+			LockInOrder<U>();
+			LockInOrder<U2, Un...>();
+		}
+
+		template<typename U>
+		inline void UnlockInOrder() {
+			if (is_type_in_set<U, WriteComponentTypes...>::value) { ecs.template Storage<U>().CommitWrite(); }
+		}
+
+		template<typename U, typename U2, typename... Un>
+		inline void UnlockInOrder() {
+			UnlockInOrder<U2, Un...>();
+			UnlockInOrder<U>();
+		}
+
+		template<typename U>
+		inline void AddEntityToComponents() {
+			ecs.template Storage<U>().writeComponents.emplace_back();
+			ecs.template Storage<U>().writeValidDirty = true;
+		}
+
+		template<typename U, typename U2, typename... Un>
+		inline void AddEntityToComponents() {
+			AddEntityToComponents<U>();
+			AddEntityToComponents<U2, Un...>();
+		}
+
+		template<typename U, typename T>
+		inline constexpr bool Has(U &validBitset, size_t entityId) const {
+			return validBitset[ecs.template FindIndex<T>()];
+		}
+
+		template<typename U, typename T, typename T2, typename... Tn>
+		inline constexpr bool Has(U &validBitset, size_t entityId) const {
+			return Has<T>(validBitset, entityId) && Has<T2, Tn...>(validBitset, entityId);
+		}
+
+		ECSType<AllComponentTypes...> &ecs;
 	};
 
 	template<typename T>
 	class ComponentIndex {
 	public:
-		void Init(std::deque<Entity> &readEntities, std::deque<Entity> &writeEntities) {
-			ecs::Assert(readEntities.size() == writeEntities.size(), "read and write entity lists should be same size");
-
-			readComponents.resize(readEntities.size());
-			writeComponents.resize(writeEntities.size());
-		}
-
 		inline void RLock() {
 			int retry = 0;
 			while (true) {
@@ -165,14 +269,6 @@ namespace benchmark {
 					std::this_thread::yield();
 				}
 			}
-		}
-
-		inline std::deque<T> &ReadComponents() {
-			return readComponents;
-		}
-
-		inline std::vector<size_t> &ReadValidIndexes() {
-			return readValidIndexes;
 		}
 
 		inline void RUnlock() {
@@ -195,15 +291,6 @@ namespace benchmark {
 					std::this_thread::yield();
 				}
 			}
-		}
-
-		inline std::deque<T> &WriteComponents() {
-			return writeComponents;
-		}
-
-		inline std::vector<size_t> &WriteValidIndexes() {
-			// TODO: Set writeValidDirty if indexes changed
-			return writeValidIndexes;
 		}
 
 		inline void CommitWrite() {
@@ -236,31 +323,104 @@ namespace benchmark {
 		static const uint32_t READER_FREE = 0;
 		static const uint32_t READER_LOCKED = UINT32_MAX;
 
-		MultiTimer timer = MultiTimer(std::string("ComponentIndex Commit ") + typeid(T).name());
-		inline void commitEntities() {
-			Timer t(timer);
-
-			// Based on benchmarking, it is faster to bulk copy if >= 1/2 of the components are valid.
-			if (writeValidIndexes.size() >= writeComponents.size() / 2) {
-				readComponents = writeComponents;
-			} else {
-				for (auto &valid : writeValidIndexes) {
-					readComponents[valid] = writeComponents[valid];
-				}
-			}
-			if (writeValidDirty) {
-				readValidIndexes = writeValidIndexes;
-				writeValidDirty = false;
-			}
-		}
-
 		std::atomic_uint32_t readers = 0;
 		std::atomic_uint32_t writer = 0;
 
-		std::deque<T> readComponents;
-		std::deque<T> writeComponents;
+		MultiTimer timer = MultiTimer(std::string("ComponentIndex Commit ") + typeid(T).name());
+		MultiTimer timerDirty = MultiTimer(std::string("ComponentIndex CommitDirty ") + typeid(T).name());
+		inline void commitEntities() {
+			// TODO: Possibly make this a compile-time branch
+			if (writeValidDirty) {
+				Timer t(timerDirty);
+				readComponents = writeComponents;
+				readValidIndexes = writeValidIndexes;
+				writeValidDirty = false;
+			} else {
+				Timer t(timer);
+				// Based on benchmarks, it is faster to bulk copy if more than roughly 1/6 of the components are valid.
+				if (writeValidIndexes.size() > writeComponents.size() / 6) {
+					readComponents = writeComponents;
+				} else {
+					for (auto &valid : writeValidIndexes) {
+						readComponents[valid] = writeComponents[valid];
+					}
+				}
+			}
+		}
+
+		std::vector<T> readComponents;
+		std::vector<T> writeComponents;
 		std::vector<size_t> readValidIndexes;
 		std::vector<size_t> writeValidIndexes;
 		bool writeValidDirty = false;
+
+		template<typename, typename...>
+		friend class ComponentSetReadLock;
+		template<typename, bool, typename...>
+		friend class ComponentSetWriteTransaction;
+	};
+
+	// Template magic to create
+	//     std::tuple<ComponentIndex<T1>, ComponentIndex<T2>, ...>
+	// from
+	//     ComponentIndexTuple<T1, T2, ...>::type
+	template<typename... Tn>
+	struct ComponentIndexTuple;
+
+	template<typename Tnew>
+	struct ComponentIndexTuple<Tnew> {
+		using type = std::tuple<ComponentIndex<Tnew>>;
+	};
+
+	template<typename... Texisting, typename Tnew>
+	struct ComponentIndexTuple<std::tuple<Texisting...>, Tnew> {
+		using type = std::tuple<Texisting..., ComponentIndex<Tnew>>;
+	};
+
+	template<typename Tnew, typename... Tremaining>
+	struct ComponentIndexTuple<Tnew, Tremaining...> {
+		using type = typename ComponentIndexTuple<std::tuple<ComponentIndex<Tnew>>, Tremaining...>::type;
+	};
+
+	template<typename... Texisting, typename Tnew, typename... Tremaining>
+	struct ComponentIndexTuple<std::tuple<Texisting...>, Tnew, Tremaining...> {
+		using type = typename ComponentIndexTuple<std::tuple<Texisting..., ComponentIndex<Tnew>>, Tremaining...>::type;
+	};
+
+	// ECS contains all ECS data. Component types must be known at compile-time and are passed in as
+	// template arguments.
+	template<typename... Tn>
+	class ECS {
+	private:
+		template<size_t I, typename T>
+		inline constexpr size_t FindIndex() {
+			static_assert(I < sizeof...(Tn), "Component does not exist");
+
+			if constexpr (std::is_same<T, typename std::tuple_element<I, std::tuple<Tn...>>::type>::value) {
+				return I;
+			} else {
+				return FindIndex<I + 1, T>();
+			}
+		}
+
+		template<typename T>
+		inline constexpr size_t FindIndex() {
+			return FindIndex<0, T>();
+		}
+
+		template<typename T>
+		inline constexpr ComponentIndex<T> &Storage() {
+			return std::get<ComponentIndex<T>>(indexes);
+		}
+
+		using ValidComponentSet = std::bitset<sizeof...(Tn)>;
+		ComponentIndex<ValidComponentSet> validIndex;
+		using IndexStorage = typename ComponentIndexTuple<Tn...>::type;
+		IndexStorage indexes;
+
+		template<typename, typename...>
+		friend class ComponentSetReadLock;
+		template<typename, bool, typename...>
+		friend class ComponentSetWriteTransaction;
 	};
 } // namespace benchmark

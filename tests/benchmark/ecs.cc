@@ -1,6 +1,7 @@
 #include "ecs.hh"
 
 #include "Timer.hh"
+#include "test_impl.h"
 
 #include <chrono>
 #include <cstring>
@@ -12,12 +13,7 @@
 using namespace benchmark;
 
 std::atomic_bool running;
-static std::deque<Entity> readEntities;
-static std::deque<Entity> writeEntities;
-static ComponentIndex<ValidComponents> validComponents;
-static ComponentIndex<Transform> transforms;
-static ComponentIndex<Renderable> renderables;
-static ComponentIndex<Script> scripts;
+static ECS<Transform, Renderable, Script> ecs;
 
 void renderThread() {
 	MultiTimer timer("RenderThread");
@@ -30,20 +26,15 @@ void renderThread() {
 		std::vector<std::string> bad;
 		{
 			Timer t(timer);
-			validComponents.RLock();
-			transforms.RLock();
-			renderables.RLock();
+			ComponentSetReadLock<decltype(ecs), Renderable, Transform> readLock(ecs);
 			Timer t2(timer2);
-			auto &validRenderables = renderables.ReadValidIndexes();
-			auto &validTransforms = transforms.ReadValidIndexes();
+			auto &validRenderables = readLock.ValidIndexes<Renderable>();
+			auto &validTransforms = readLock.ValidIndexes<Transform>();
 			auto &validIndexes = validRenderables.size() > validTransforms.size() ? validTransforms : validRenderables;
-			auto &validComps = validComponents.ReadComponents();
-			auto &renderableComponents = renderables.ReadComponents();
-			auto &transformComponents = transforms.ReadComponents();
 			for (auto i : validIndexes) {
-				if (component_valid<Renderable, Transform>(validComps[i])) {
-					auto &renderable = renderableComponents[i];
-					auto &transform = transformComponents[i];
+				if (readLock.Has<Renderable, Transform>(i)) {
+					auto &renderable = readLock.Get<Renderable>(i);
+					auto &transform = readLock.Get<Transform>(i);
 					if (transform.pos[0] != transform.pos[1] || transform.pos[1] != transform.pos[2]) {
 						bad.emplace_back(renderable.name);
 					} else {
@@ -55,9 +46,6 @@ void renderThread() {
 					}
 				}
 			}
-			renderables.RUnlock();
-			transforms.RUnlock();
-			validComponents.RUnlock();
 		}
 		// std::cout << "[RenderThread] Max value (" << maxName << ") at " << maxValue << ", Good: " << goodCount
 		// 		  << ", Bad: " << bad.size() << "" << std::endl;
@@ -65,19 +53,21 @@ void renderThread() {
 	}
 }
 
-static std::atomic_size_t scriptWorkerQueue;
+// static std::atomic_size_t scriptWorkerQueue;
+// static std::atomic<ComponentSetWriteTransaction<decltype(ecs), Script> *> scriptLock;
 
 void scriptWorkerThread(bool master) {
 	MultiTimer timer("ScriptWorkerThread", master);
 	MultiTimer timer2("ScriptWorkerThread Aquired", master);
 	while (running) {
 		auto start = std::chrono::high_resolution_clock::now();
-		{
+		/*{
 			Timer t(timer);
-			if (master) scripts.StartWrite();
-			auto &validScripts = scripts.WriteValidIndexes();
-			auto &scriptComponents = scripts.WriteComponents();
-			{
+			if (master) {
+				ComponentSetWriteTransaction<decltype(ecs), Script> writeLock(ecs);
+				scriptWorkerQueue = 0;
+				scriptLock = &writeLock;
+
 				Timer t2(timer2);
 				while (running) {
 					size_t entIndex = scriptWorkerQueue++;
@@ -91,16 +81,30 @@ void scriptWorkerThread(bool master) {
 						break;
 					}
 				}
-			}
-			while (running && scriptWorkerQueue < THREAD_COUNT + validScripts.size()) {
-				std::this_thread::yield();
-			}
 
-			if (master) {
-				scripts.CommitWrite();
-				scriptWorkerQueue = 0;
+				while (running && scriptWorkerQueue < THREAD_COUNT + validScripts.size()) {
+					std::this_thread::yield();
+				}
+
+				scriptLock = nullptr;
+			} else {
+				auto &validScripts = scriptLock.WriteValidIndexes();
+				auto &scriptComponents = scripts.WriteComponents();
+
+				while (running) {
+					size_t entIndex = scriptWorkerQueue++;
+					if (entIndex < validScripts.size()) {
+						auto &script = scriptComponents[validScripts[entIndex]];
+						// "Run" script
+						for (int i = 0; i < script.data.size(); i++) {
+							script.data[i]++;
+						}
+					} else {
+						break;
+					}
+				}
 			}
-		}
+		}*/
 		std::this_thread::sleep_until(start + std::chrono::milliseconds(11));
 	}
 }
@@ -112,84 +116,34 @@ void transformWorkerThread() {
 		auto start = std::chrono::high_resolution_clock::now();
 		{
 			Timer t(timer);
-			transforms.StartWrite();
+			ComponentSetWriteTransaction<decltype(ecs), false, Transform> writeLock(ecs);
 			Timer t2(timer2);
-			auto &validTransforms = transforms.WriteValidIndexes();
-			auto &transformComponents = transforms.WriteComponents();
+			auto &validTransforms = writeLock.ValidIndexes<Transform>();
 			for (auto i : validTransforms) {
-				auto &transform = transformComponents[i];
-				// for (auto &transform : transformComponents) {
+				auto &transform = writeLock.Get<Transform>(i);
 				transform.pos[0]++;
 				transform.pos[1]++;
 				transform.pos[2]++;
 			}
-			transforms.CommitWrite();
 		}
 		std::this_thread::sleep_until(start + std::chrono::milliseconds(11));
 	}
 }
 
-#define TRANSFORM_DIVISOR 3
-#define RENDERABLE_DIVISOR 3
+#define TRANSFORM_DIVISOR 6
+#define RENDERABLE_DIVISOR 6
 #define SCRIPT_DIVISOR 10
 
 int main(int argc, char **argv) {
 	{
-		Timer t("Alloc entities");
-		readEntities.resize(ENTITY_COUNT);
-		writeEntities.resize(ENTITY_COUNT);
-	}
-
-	{
-		Timer t("Build links");
-		validComponents.Init(readEntities, writeEntities);
-		transforms.Init(readEntities, writeEntities);
-		renderables.Init(readEntities, writeEntities);
-		scripts.Init(readEntities, writeEntities);
-	}
-
-	{
 		Timer t("Populate entities");
-		auto &readTransform = transforms.ReadValidIndexes();
-		auto &writeTransform = transforms.WriteValidIndexes();
-		auto &readRenderable = renderables.ReadValidIndexes();
-		auto &writeRenderable = renderables.WriteValidIndexes();
-		auto &readScript = scripts.ReadValidIndexes();
-		auto &writeScript = scripts.WriteValidIndexes();
+		ComponentSetWriteTransaction<decltype(ecs), true, Transform, Renderable, Script> writeLock(ecs);
 		for (size_t i = 0; i < ENTITY_COUNT; i++) {
-			readEntities[i] = Entity((ecs::eid_t)i);
-			writeEntities[i] = Entity((ecs::eid_t)i);
-			auto &readValid = validComponents.ReadComponents()[i];
-			auto &writeValid = validComponents.WriteComponents()[i];
-			if (i % TRANSFORM_DIVISOR == 0) {
-				// readEntities[i].Set<Transform>(0.0, 0.0, 0.0, 1);
-				// writeEntities[i].Set<Transform>(0.0, 0.0, 0.0, 1);
-				transforms.ReadComponents()[i] = Transform(0.0, 0.0, 0.0, 1);
-				transforms.WriteComponents()[i] = Transform(0.0, 0.0, 0.0, 1);
-				set_component_valid<Transform>(readValid, true);
-				set_component_valid<Transform>(writeValid, true);
-				readTransform.emplace_back(i);
-				writeTransform.emplace_back(i);
-			}
-			if (i % RENDERABLE_DIVISOR == 0) {
-				// readEntities[i].Set<Renderable>("entity" + std::to_string(i));
-				// writeEntities[i].Set<Renderable>("entity" + std::to_string(i));
-				renderables.ReadComponents()[i] = Renderable("entity" + std::to_string(i));
-				renderables.WriteComponents()[i] = Renderable("entity" + std::to_string(i));
-				set_component_valid<Renderable>(readValid, true);
-				set_component_valid<Renderable>(writeValid, true);
-				readRenderable.emplace_back(i);
-				writeRenderable.emplace_back(i);
-			}
+			size_t id = writeLock.AddEntity();
+			if (i % TRANSFORM_DIVISOR == 0) { writeLock.Set<Transform>(id, 0.0, 0.0, 0.0, 1); }
+			if (i % RENDERABLE_DIVISOR == 0) { writeLock.Set<Renderable>(id, "entity" + std::to_string(i)); }
 			if (i % SCRIPT_DIVISOR == 0) {
-				// readEntities[i].Set<Script>(std::initializer_list<uint8_t>({0, 0, 0, 0, 0, 0, 0, 0}));
-				// writeEntities[i].Set<Script>(std::initializer_list<uint8_t>({0, 0, 0, 0, 0, 0, 0, 0}));
-				scripts.ReadComponents()[i] = {0, 0, 0, 0, 0, 0, 0, 0};
-				scripts.WriteComponents()[i] = {0, 0, 0, 0, 0, 0, 0, 0};
-				set_component_valid<Script>(readValid, true);
-				set_component_valid<Script>(writeValid, true);
-				readScript.emplace_back(i);
-				writeScript.emplace_back(i);
+				writeLock.Set<Script>(id, std::initializer_list<uint8_t>({0, 0, 0, 0, 0, 0, 0, 0}));
 			}
 		}
 	}
@@ -221,10 +175,10 @@ int main(int argc, char **argv) {
 		int invalid = 0;
 		int valid = 0;
 		double commonValue;
-		auto &validTransforms = transforms.ReadComponents();
-		auto &validIndexes = transforms.ReadValidIndexes();
+		ComponentSetReadLock<decltype(ecs), Transform> readLock(ecs);
+		auto &validIndexes = readLock.ValidIndexes<Transform>();
 		for (auto i : validIndexes) {
-			auto transform = validTransforms[i];
+			auto transform = readLock.Get<Transform>(i);
 			if (transform.pos[0] != transform.pos[1] || transform.pos[1] != transform.pos[2]) {
 				if (invalid == 0) {
 					std::cerr << "Component is not in correct place! " << transform.pos[0] << ", " << transform.pos[1]
@@ -247,12 +201,6 @@ int main(int argc, char **argv) {
 		if (invalid != 0) { std::cerr << "Error: " << std::to_string(invalid) << " invalid components" << std::endl; }
 		std::cout << validIndexes.size() << " total components (" << valid << " with value " << commonValue << ")"
 				  << std::endl;
-	}
-
-	{
-		Timer t("Remove entities");
-		readEntities.clear();
-		writeEntities.clear();
 	}
 
 	return 0;

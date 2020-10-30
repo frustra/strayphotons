@@ -1,0 +1,55 @@
+Using static ComponentIndex<T> and deque storage
+[ComponentIndex Commit St6bitsetILm3EE] Start
+[ComponentIndex Commit N9benchmark9TransformE] Start
+[ComponentIndex Commit N9benchmark10RenderableE] Start
+[ComponentIndex Commit N9benchmark6ScriptE] Start
+[Alloc entities] Start
+[Alloc entities] End: 10.6364 ms
+[Build links] Start
+[Build links] End: 66.4607 ms
+[Populate entities] Start
+[Populate entities] End: 46.4465 ms
+[Run threads] Start
+[RenderThread] Start
+[RenderThread Aquired] Start
+[TransformWorkerThread] Start
+[TransformWorkerThread Aquired] Start
+[TransformWorkerThread Aquired] Min: 4654.62 usec, Avg: 5406.26 usec, P95: 6952.48 usec, P99: 12310.6 usec
+[RenderThread Aquired] Min: 2094.61 usec, Avg: 2872.71 usec, P95: 3687.36 usec, P99: 7275.27 usec
+[TransformWorkerThread] Min: 4654.77 usec, Avg: 5406.51 usec, P95: 6953.23 usec, P99: 12310.8 usec
+[RenderThread] Min: 2094.86 usec, Avg: 3027.44 usec, P95: 4361.78 usec, P99: 10934.5 usec
+[Run threads] End: 10001.7 ms
+[Validate entities] Start
+333334 total components (333334 with value 893)
+[Validate entities] End: 2.16146 ms
+[Remove entities] Start
+[Remove entities] End: 2.32623 ms
+[ComponentIndex Commit N9benchmark6ScriptE] No timers completed
+[ComponentIndex Commit N9benchmark10RenderableE] No timers completed
+[ComponentIndex Commit N9benchmark9TransformE] Min: 2844.51 usec, Avg: 3104.6 usec, P95: 3602.15 usec, P99: 5556.63 usec
+[ComponentIndex Commit St6bitsetILm3EE] No timers completed
+
+With Template wrappers and vector storage
+[ComponentIndex Commit St6bitsetILm3EE] Start
+[ComponentIndex Commit N9benchmark6ScriptE] Start
+[ComponentIndex Commit N9benchmark10RenderableE] Start
+[ComponentIndex Commit N9benchmark9TransformE] Start
+[Populate entities] Start
+[Populate entities] End: 276.705 ms
+[Run threads] Start
+[RenderThread] Start
+[RenderThread Aquired] Start
+[TransformWorkerThread] Start
+[TransformWorkerThread Aquired] Start
+[RenderThread Aquired] Min: 4134.27 usec, Avg: 7030.72 usec, P95: 7480.62 usec, P99: 7727.07 usec
+[RenderThread] Min: 4134.57 usec, Avg: 9063.24 usec, P95: 10422 usec, P99: 10710.2 usec
+[TransformWorkerThread Aquired] Min: 4884.49 usec, Avg: 6183.68 usec, P95: 6524.62 usec, P99: 6645.7 usec
+[TransformWorkerThread] Min: 9588.51 usec, Avg: 10305.1 usec, P95: 11127.6 usec, P99: 11493.6 usec
+[Run threads] End: 10009.5 ms
+[Validate entities] Start
+2000000 total components (2000000 with value 902)
+[Validate entities] End: 4.7018 ms
+[ComponentIndex Commit N9benchmark9TransformE] Min: 3645.45 usec, Avg: 3812.05 usec, P95: 3910.45 usec, P99: 3978.87 usec
+[ComponentIndex Commit N9benchmark10RenderableE] Min: 25499.3 usec, Avg: 25499.3 usec, P95: 0.033 usec, P99: 0.033 usec
+[ComponentIndex Commit N9benchmark6ScriptE] Min: 17498.3 usec, Avg: 17498.3 usec, P95: 0.032 usec, P99: 0.032 usec
+[ComponentIndex Commit St6bitsetILm3EE] Min: 4282.32 usec, Avg: 4282.32 usec, P95: 0.033 usec, P99: 0.033 usec
