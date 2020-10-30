@@ -26,7 +26,7 @@ void renderThread() {
 		std::vector<std::string> bad;
 		{
 			Timer t(timer);
-			ComponentSetReadLock<decltype(ecs), Renderable, Transform> readLock(ecs);
+			auto readLock = ecs.ReadEntitiesWith<Renderable, Transform>();
 			Timer t2(timer2);
 			auto &validRenderables = readLock.ValidIndexes<Renderable>();
 			auto &validTransforms = readLock.ValidIndexes<Transform>();
@@ -116,7 +116,7 @@ void transformWorkerThread() {
 		auto start = std::chrono::high_resolution_clock::now();
 		{
 			Timer t(timer);
-			ComponentSetWriteTransaction<decltype(ecs), false, Transform> writeLock(ecs);
+			auto writeLock = ecs.ModifyEntitiesWith<false, Transform>();
 			Timer t2(timer2);
 			auto &validTransforms = writeLock.ValidIndexes<Transform>();
 			for (auto i : validTransforms) {
@@ -130,14 +130,14 @@ void transformWorkerThread() {
 	}
 }
 
-#define TRANSFORM_DIVISOR 6
-#define RENDERABLE_DIVISOR 6
+#define TRANSFORM_DIVISOR 3
+#define RENDERABLE_DIVISOR 3
 #define SCRIPT_DIVISOR 10
 
 int main(int argc, char **argv) {
 	{
-		Timer t("Populate entities");
-		ComponentSetWriteTransaction<decltype(ecs), true, Transform, Renderable, Script> writeLock(ecs);
+		Timer t("Create entities");
+		auto writeLock = ecs.ModifyEntitiesWith<true, Transform, Renderable, Script>();
 		for (size_t i = 0; i < ENTITY_COUNT; i++) {
 			size_t id = writeLock.AddEntity();
 			if (i % TRANSFORM_DIVISOR == 0) { writeLock.Set<Transform>(id, 0.0, 0.0, 0.0, 1); }
@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
 		int invalid = 0;
 		int valid = 0;
 		double commonValue;
-		ComponentSetReadLock<decltype(ecs), Transform> readLock(ecs);
+		auto readLock = ecs.ReadEntitiesWith<Transform>();
 		auto &validIndexes = readLock.ValidIndexes<Transform>();
 		for (auto i : validIndexes) {
 			auto transform = readLock.Get<Transform>(i);

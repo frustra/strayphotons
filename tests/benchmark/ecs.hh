@@ -44,14 +44,13 @@ namespace benchmark {
 		template<typename T>
 		inline bool Has(size_t entityId) const {
 			auto &validBitset = ecs.validIndex.readComponents[entityId];
-			return Has<decltype(validBitset), T>(validBitset, entityId);
+			return ecs.template BitsetHas<T>(validBitset);
 		}
 
 		template<typename T, typename T2, typename... Tn>
 		inline bool Has(size_t entityId) const {
 			auto &validBitset = ecs.validIndex.readComponents[entityId];
-			return Has<decltype(validBitset), T>(validBitset, entityId) &&
-				   Has<decltype(validBitset), T2, Tn...>(validBitset, entityId);
+			return ecs.template BitsetHas<T>(validBitset) && ecs.template BitsetHas<T2, Tn...>(validBitset);
 		}
 
 		template<typename T>
@@ -82,16 +81,6 @@ namespace benchmark {
 		inline void UnlockInOrder() {
 			UnlockInOrder<U2, Un...>();
 			UnlockInOrder<U>();
-		}
-
-		template<typename U, typename T>
-		inline constexpr bool Has(U &validBitset, size_t entityId) const {
-			return validBitset[ecs.template FindIndex<T>()];
-		}
-
-		template<typename U, typename T, typename T2, typename... Tn>
-		inline constexpr bool Has(U &validBitset, size_t entityId) const {
-			return Has<T>(validBitset, entityId) && Has<T2, Tn...>(validBitset, entityId);
 		}
 
 		ECSType<AllComponentTypes...> &ecs;
@@ -142,14 +131,13 @@ namespace benchmark {
 		template<typename T>
 		inline bool Has(size_t entityId) const {
 			auto &validBitset = ecs.validIndex.writeComponents[entityId];
-			return Has<decltype(validBitset), T>(validBitset, entityId);
+			return ecs.template BitsetHas<T>(validBitset);
 		}
 
 		template<typename T, typename T2, typename... Tn>
 		inline bool Has(size_t entityId) const {
 			auto &validBitset = ecs.validIndex.writeComponents[entityId];
-			return Has<decltype(validBitset), T>(validBitset, entityId) &&
-				   Has<decltype(validBitset), T2, Tn...>(validBitset, entityId);
+			return ecs.template BitsetHas<T>(validBitset) && ecs.template BitsetHas<T2, Tn...>(validBitset);
 		}
 
 		template<typename T>
@@ -166,10 +154,10 @@ namespace benchmark {
 		inline void Set(size_t entityId, T &value) {
 			ecs.template Storage<T>().writeComponents[entityId] = value;
 			auto &validBitset = ecs.validIndex.writeComponents[entityId];
-			if (!validBitset[ecs.template FindIndex<T>()]) {
+			if (!validBitset[ecs.template FindIndex<0, T>()]) {
 				if (!AllowAddRemove)
 					throw std::runtime_error("Can't Add new component without setting AllowAddRemove to true");
-				validBitset[ecs.template FindIndex<T>()] = true;
+				validBitset[ecs.template FindIndex<0, T>()] = true;
 				ecs.template Storage<T>().writeValidIndexes.emplace_back(entityId);
 				ecs.template Storage<T>().writeValidDirty = true;
 			}
@@ -179,10 +167,10 @@ namespace benchmark {
 		inline void Set(size_t entityId, Args... args) {
 			ecs.template Storage<T>().writeComponents[entityId] = std::move(T(args...));
 			auto &validBitset = ecs.validIndex.writeComponents[entityId];
-			if (!validBitset[ecs.template FindIndex<T>()]) {
+			if (!validBitset[ecs.template FindIndex<0, T>()]) {
 				if (!AllowAddRemove)
 					throw std::runtime_error("Can't Add new component without setting AllowAddRemove to true");
-				validBitset[ecs.template FindIndex<T>()] = true;
+				validBitset[ecs.template FindIndex<0, T>()] = true;
 				ecs.template Storage<T>().writeValidIndexes.emplace_back(entityId);
 				ecs.template Storage<T>().writeValidDirty = true;
 			}
@@ -192,8 +180,8 @@ namespace benchmark {
 		// template<typename T>
 		// inline void Unset(size_t entityId) {
 		// 	auto &validBitset = ecs.validIndex.writeComponents[entityId];
-		// 	if (validBitset[ecs.template FindIndex<T>()]) {
-		// 		validBitset[ecs.template FindIndex<T>()] = false;
+		// 	if (validBitset[ecs.template FindIndex<0, T>()]) {
+		// 		validBitset[ecs.template FindIndex<0, T>()] = false;
 		// 		// TODO: Find index in ecs.template Storage<T>().writeValidIndexes and remove it.
 		// 		ecs.template Storage<T>().writeValidDirty = true;
 		// 	}
@@ -234,16 +222,6 @@ namespace benchmark {
 		inline void AddEntityToComponents() {
 			AddEntityToComponents<U>();
 			AddEntityToComponents<U2, Un...>();
-		}
-
-		template<typename U, typename T>
-		inline constexpr bool Has(U &validBitset, size_t entityId) const {
-			return validBitset[ecs.template FindIndex<T>()];
-		}
-
-		template<typename U, typename T, typename T2, typename... Tn>
-		inline constexpr bool Has(U &validBitset, size_t entityId) const {
-			return Has<T>(validBitset, entityId) && Has<T2, Tn...>(validBitset, entityId);
 		}
 
 		ECSType<AllComponentTypes...> &ecs;
@@ -327,11 +305,12 @@ namespace benchmark {
 		std::atomic_uint32_t writer = 0;
 
 		MultiTimer timer = MultiTimer(std::string("ComponentIndex Commit ") + typeid(T).name());
-		MultiTimer timerDirty = MultiTimer(std::string("ComponentIndex CommitDirty ") + typeid(T).name());
+		// MultiTimer timerDirty = MultiTimer(std::string("ComponentIndex CommitDirty ") + typeid(T).name());
 		inline void commitEntities() {
 			// TODO: Possibly make this a compile-time branch
+			// writeValidDirty means there was a change to the list of valid components (i.e new entities were added)
 			if (writeValidDirty) {
-				Timer t(timerDirty);
+				// Timer t(timerDirty);
 				readComponents = writeComponents;
 				readValidIndexes = writeValidIndexes;
 				writeValidDirty = false;
@@ -391,21 +370,40 @@ namespace benchmark {
 	// template arguments.
 	template<typename... Tn>
 	class ECS {
+	public:
+		template<typename... Un>
+		inline ComponentSetReadLock<ECS<Tn...>, Un...> ReadEntitiesWith() {
+			return ComponentSetReadLock<ECS<Tn...>, Un...>(*this);
+		}
+
+		template<bool AllowAddRemove, typename... Un>
+		inline ComponentSetWriteTransaction<ECS<Tn...>, AllowAddRemove, Un...> ModifyEntitiesWith() {
+			return ComponentSetWriteTransaction<ECS<Tn...>, AllowAddRemove, Un...>(*this);
+		}
+
 	private:
-		template<size_t I, typename T>
-		inline constexpr size_t FindIndex() {
+		using ValidComponentSet = std::bitset<sizeof...(Tn)>;
+		using IndexStorage = typename ComponentIndexTuple<Tn...>::type;
+
+		template<size_t I, typename U>
+		inline static constexpr size_t FindIndex() {
 			static_assert(I < sizeof...(Tn), "Component does not exist");
 
-			if constexpr (std::is_same<T, typename std::tuple_element<I, std::tuple<Tn...>>::type>::value) {
+			if constexpr (std::is_same<U, typename std::tuple_element<I, std::tuple<Tn...>>::type>::value) {
 				return I;
 			} else {
-				return FindIndex<I + 1, T>();
+				return FindIndex<I + 1, U>();
 			}
 		}
 
-		template<typename T>
-		inline constexpr size_t FindIndex() {
-			return FindIndex<0, T>();
+		template<typename U>
+		inline static constexpr bool BitsetHas(ValidComponentSet &validBitset) {
+			return validBitset[FindIndex<0, U>()];
+		}
+
+		template<typename U, typename U2, typename... Un>
+		inline static constexpr bool BitsetHas(ValidComponentSet &validBitset) {
+			return BitsetHas<U>(validBitset) && BitsetHas<U2, Un...>(validBitset);
 		}
 
 		template<typename T>
@@ -413,9 +411,7 @@ namespace benchmark {
 			return std::get<ComponentIndex<T>>(indexes);
 		}
 
-		using ValidComponentSet = std::bitset<sizeof...(Tn)>;
 		ComponentIndex<ValidComponentSet> validIndex;
-		using IndexStorage = typename ComponentIndexTuple<Tn...>::type;
 		IndexStorage indexes;
 
 		template<typename, typename...>
