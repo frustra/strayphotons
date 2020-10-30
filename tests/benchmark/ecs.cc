@@ -18,11 +18,11 @@ static ECS<Transform, Renderable, Script> ecs;
 void renderThread() {
 	MultiTimer timer("RenderThread");
 	MultiTimer timer2("RenderThread Aquired");
+	std::string maxName;
+	double maxValue = 0;
+	size_t goodCount = 0;
 	while (running) {
 		auto start = std::chrono::high_resolution_clock::now();
-		size_t goodCount = 0;
-		std::string maxName;
-		double maxValue = 0;
 		std::vector<std::string> bad;
 		{
 			Timer t(timer);
@@ -47,10 +47,9 @@ void renderThread() {
 				}
 			}
 		}
-		// std::cout << "[RenderThread] Max value (" << maxName << ") at " << maxValue << ", Good: " << goodCount
-		// 		  << ", Bad: " << bad.size() << "" << std::endl;
 		std::this_thread::sleep_until(start + std::chrono::milliseconds(11));
 	}
+	std::cout << "[RenderThread] Max value (" << maxName << ") at " << maxValue << ", Good: " << goodCount << std::endl;
 }
 
 // static std::atomic_size_t scriptWorkerQueue;

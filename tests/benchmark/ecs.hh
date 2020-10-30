@@ -11,6 +11,7 @@
 #include <iostream>
 #include <memory>
 #include <thread>
+#include <vector>
 
 #define ENTITY_COUNT 1000000
 #define THREAD_COUNT 0
