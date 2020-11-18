@@ -57,6 +57,17 @@
             ]
         },
         {
+            "name": "StrayPhotons Benchmark (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/sp-ecs-benchmark.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
             "name": "StrayPhotons Benchmark (gdb)",
             "type": "cppdbg",
             "request": "launch",
