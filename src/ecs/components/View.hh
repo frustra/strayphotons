@@ -62,5 +62,5 @@ namespace ecs {
 	bool Component<View>::LoadEntity(Entity &dst, picojson::value &src);
 
 	void ValidateView(ecs::Entity viewEntity);
-	void UpdateViewCache(ecs::Entity entity, ecs::View &view, float fov = 0.0);
+	ecs::Handle<ecs::View> UpdateViewCache(ecs::Entity entity, float fov = 0.0);
 } // namespace ecs

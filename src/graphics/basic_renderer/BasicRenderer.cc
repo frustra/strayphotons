@@ -3,8 +3,8 @@
 #include "core/CVar.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/View.hh"
+
+#include <ecs/Components.hh>
 
 // clang-format off
 // GLFW must be included after glew.h (Graphics.hh)
@@ -173,8 +173,8 @@ namespace sp {
 
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>()) {
 			auto comp = ent.Get<ecs::Renderable>();
-			auto transform = *ent.Get<ecs::Transform>();
-			auto modelMat = transform.GetGlobalTransform(game->entityManager);
+			auto transform = ent.Get<ecs::Transform>();
+			auto modelMat = transform->GetGlobalTransform(game->entityManager);
 			auto mvp = view.projMat * view.viewMat * modelMat;
 
 			glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));

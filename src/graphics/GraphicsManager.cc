@@ -105,12 +105,10 @@ namespace sp {
 					view->SetProjMat(glm::radians(CVarFieldOfView.Get()), view->GetClip(), CVarWindowSize.Get());
 					view->scale = CVarWindowScale.Get();
 
-					ecs::UpdateViewCache(playerViews[i], *view);
-
-					pancakeView = *view;
+					pancakeView = *ecs::UpdateViewCache(playerViews[i]);
 				} else if (view->viewType == ecs::View::VIEW_TYPE_XR && playerViews[i].Has<ecs::XRView>()) {
-					ecs::UpdateViewCache(playerViews[i], *view);
-					xrViews.push_back(std::make_pair(*view, *playerViews[i].Get<ecs::XRView>()));
+					xrViews.push_back(
+						std::make_pair(*ecs::UpdateViewCache(playerViews[i]), *playerViews[i].Get<ecs::XRView>()));
 				}
 			}
 		} else {
@@ -217,11 +215,11 @@ namespace sp {
 					view->SetProjMat(glm::radians(CVarFieldOfView.Get()), view->GetClip(), CVarWindowSize.Get());
 					view->scale = CVarWindowScale.Get();
 
-					ecs::UpdateViewCache(playerViews[i], *view);
-					view->blend = true;
-					view->clearMode = 0;
+					ecs::View pancakeView = *ecs::UpdateViewCache(playerViews[i]);
+					pancakeView.blend = true;
+					pancakeView.clearMode = 0;
 
-					context->RenderLoading(*view);
+					context->RenderLoading(pancakeView);
 				}
 			}
 		}

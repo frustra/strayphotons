@@ -103,12 +103,12 @@ namespace sp {
 		if (!hadResults) Lock();
 
 		for (auto constraint = constraints.begin(); constraint != constraints.end();) {
-			auto transform = *constraint->parent.Get<ecs::Transform>();
+			auto transform = constraint->parent.Get<ecs::Transform>();
 			auto pose = constraint->child->getGlobalPose();
-			auto rotate = transform.GetRotate();
+			auto rotate = transform->GetRotate();
 			auto invRotate = glm::inverse(rotate);
 
-			auto targetPos = transform.GetPosition() + rotate * PxVec3ToGlmVec3P(constraint->offset);
+			auto targetPos = transform->GetPosition() + rotate * PxVec3ToGlmVec3P(constraint->offset);
 			auto currentPos = pose.transform(constraint->child->getCMassLocalPose().transform(physx::PxVec3(0.0)));
 			auto deltaPos = GlmVec3ToPxVec3(targetPos) - currentPos;
 
@@ -188,22 +188,23 @@ namespace sp {
 
 			for (ecs::Entity ent : manager.EntitiesWith<ecs::Physics, ecs::Transform>()) {
 				auto ph = ent.Get<ecs::Physics>();
+				auto transform = ent.Get<ecs::Transform>();
 
 				if (!ph->actor && ph->model) { ph->actor = CreateActor(ph->model, ph->desc, ent); }
 
-				if (ph->actor && ent.Get<ecs::Transform>()->ClearDirty()) {
+				if (ph->actor && transform->ClearDirty()) {
 					if (!gotLock) {
 						Lock();
 						gotLock = true;
 					}
 
-					auto transform = *ent.Get<ecs::Transform>();
-					auto position = transform.GetGlobalTransform(manager) * glm::vec4(0, 0, 0, 1);
-					auto rotate = transform.GetGlobalRotation(manager);
+					auto transform = ent.Get<ecs::Transform>();
+					auto position = transform->GetGlobalTransform(manager) * glm::vec4(0, 0, 0, 1);
+					auto rotate = transform->GetGlobalRotation(manager);
 
 					auto lastScale = ph->scale;
 					auto newScale = glm::vec3(
-						glm::inverse(rotate) * (transform.GetGlobalTransform(manager) * glm::vec4(1, 1, 1, 0)));
+						glm::inverse(rotate) * (transform->GetGlobalTransform(manager) * glm::vec4(1, 1, 1, 0)));
 					if (lastScale != newScale) {
 						auto n = ph->actor->getNbShapes();
 						vector<physx::PxShape *> shapes(n);

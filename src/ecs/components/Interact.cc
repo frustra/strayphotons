@@ -1,9 +1,8 @@
 #include "ecs/components/Interact.hh"
 
-#include "ecs/components/Controller.hh"
-#include "ecs/components/Transform.hh"
 #include "physx/PhysxUtils.hh"
 
+#include <ecs/Components.hh>
 #include <ecs/Ecs.hh>
 #include <glm/glm.hpp>
 

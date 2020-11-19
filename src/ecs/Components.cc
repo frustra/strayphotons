@@ -31,13 +31,11 @@ namespace ecs {
 	}
 
 	void Entity::Destroy() {
-		auto manager = em;
-		auto id = e.id;
+		em->Emit(e.id, EntityDestruction());
 		{
 			auto lock = em->tecs.StartTransaction<Tecs::AddRemove>();
 			e.Destroy(lock);
 		}
-		manager->Emit(id, EntityDestruction());
 	}
 
 	EntityManager::EntityManager() {}
@@ -50,14 +48,17 @@ namespace ecs {
 	void EntityManager::DestroyAll() {
 		std::vector<Tecs::Entity> removeList;
 		{
-			auto lock = tecs.StartTransaction<Tecs::AddRemove>();
+			auto lock = tecs.StartTransaction<>();
 			removeList.assign(lock.Entities().begin(), lock.Entities().end());
-			for (auto e : removeList) {
-				e.Destroy(lock);
-			}
 		}
 		for (auto e : removeList) {
 			Emit(e.id, EntityDestruction());
+		}
+		{
+			auto lock = tecs.StartTransaction<Tecs::AddRemove>();
+			for (auto e : removeList) {
+				e.Destroy(lock);
+			}
 		}
 	}
 

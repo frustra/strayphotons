@@ -139,8 +139,7 @@ namespace sp {
 			if (!light->on) { continue; }
 
 			if (entity.Has<ecs::View>()) {
-				auto view = entity.Get<ecs::View>();
-				ecs::UpdateViewCache(entity, *view, light->spotAngle * 2.0f);
+				auto view = ecs::UpdateViewCache(entity, light->spotAngle * 2.0f);
 				light->mapOffset = glm::vec4(renderTargetSize.x, 0, view->extents.x, view->extents.y);
 				light->lightId = lightCount++;
 				view->offset = glm::ivec2(light->mapOffset);
@@ -658,7 +657,6 @@ namespace sp {
 
 		if (preDraw) preDraw(ent);
 
-		auto comp = ent.Get<ecs::Renderable>();
 		if (!comp->model->glModel) { comp->model->glModel = make_shared<GLModel>(comp->model.get(), this); }
 		comp->model->glModel->Draw(shader,
 			modelMat,

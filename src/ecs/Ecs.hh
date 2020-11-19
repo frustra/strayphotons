@@ -125,19 +125,14 @@ namespace ecs {
 	template<typename T>
 	class Handle {
 	public:
-		Handle(Tecs::Lock<ECS, Tecs::Write<T>> lock, T &ref) : lock(lock), ref(ref) {}
+		Handle(ECS &ecs, Tecs::Entity &e) : ecs(ecs), e(e) {}
 
-		T &operator*() {
-			return ref;
-		}
-
-		T *operator->() {
-			return &ref;
-		}
+		T &operator*();
+		T *operator->();
 
 	private:
-		Tecs::Lock<ECS, Tecs::Write<T>> lock;
-		T &ref;
+		ECS &ecs;
+		Tecs::Entity e;
 	};
 
 	class Entity {

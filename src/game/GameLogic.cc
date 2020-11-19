@@ -737,23 +737,17 @@ namespace sp {
 
 		// Create flashlight entity
 		flashlight = game->entityManager.NewEntity();
-		{
-			auto transform = flashlight.Assign<ecs::Transform>(glm::vec3(0, -0.3, 0));
-			transform->SetParent(player);
-		}
-		{
-			auto light = flashlight.Assign<ecs::Light>();
-			light->tint = glm::vec3(1.0);
-			light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
-			light->intensity = CVarFlashlight.Get(true);
-			light->on = CVarFlashlightOn.Get(true);
-		}
-		{
-			auto view = flashlight.Assign<ecs::View>();
-			view->fov = glm::radians(CVarFlashlightAngle.Get(true)) * 2.0f;
-			view->extents = glm::vec2(CVarFlashlightResolution.Get(true));
-			view->clip = glm::vec2(0.1, 64);
-		}
+		auto transform = flashlight.Assign<ecs::Transform>(glm::vec3(0, -0.3, 0));
+		transform->SetParent(player);
+		auto light = flashlight.Assign<ecs::Light>();
+		light->tint = glm::vec3(1.0);
+		light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
+		light->intensity = CVarFlashlight.Get(true);
+		light->on = CVarFlashlightOn.Get(true);
+		auto view = flashlight.Assign<ecs::View>();
+		view->fov = light->spotAngle * 2.0f;
+		view->extents = glm::vec2(CVarFlashlightResolution.Get(true));
+		view->clip = glm::vec2(0.1, 64);
 
 		// Make sure all objects are in the correct physx state before restarting simulation
 		game->physics.LogicFrame(game->entityManager);

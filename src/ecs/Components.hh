@@ -17,16 +17,30 @@
 #include <ecs/components/SlideDoor.hh>
 #include <ecs/components/Transform.hh>
 #include <ecs/components/TriggerArea.hh>
-#include <ecs/components/Triggerable.h>
+#include <ecs/components/Triggerable.hh>
 #include <ecs/components/View.hh>
 #include <ecs/components/VoxelInfo.hh>
 #include <ecs/components/XRView.hh>
 
 namespace ecs {
+
+	template<typename T>
+	T &Handle<T>::operator*() {
+		auto lock = ecs.StartTransaction<Tecs::Write<T>>();
+		return e.Get<T>(lock);
+	}
+
+	template<typename T>
+	T *Handle<T>::operator->() {
+		auto lock = ecs.StartTransaction<Tecs::Write<T>>();
+		return &e.Get<T>(lock);
+	}
+
 	template<typename T, typename... Args>
 	Handle<T> Entity::Assign(Args... args) {
 		auto lock = em->tecs.StartTransaction<Tecs::AddRemove>();
-		return Handle<T>(lock, e.Set<T>(lock, args...));
+		e.Set<T>(lock, args...);
+		return Handle<T>(em->tecs, e);
 	}
 
 	template<typename T>
@@ -37,8 +51,7 @@ namespace ecs {
 
 	template<typename T>
 	Handle<T> Entity::Get() {
-		auto lock = em->tecs.StartTransaction<Tecs::Write<T>>();
-		return Handle<T>(lock, e.Get<T>(lock));
+		return Handle<T>(em->tecs, e);
 	}
 
 	template<typename Event>

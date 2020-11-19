@@ -14,7 +14,7 @@ namespace sp {
 
 namespace ecs {
 	struct Physics {
-		Physics() : model(nullptr) {}
+		Physics() {}
 		Physics(shared_ptr<sp::Model> model, sp::PhysxActorDesc desc) : model(model), desc(desc) {}
 		Physics(physx::PxRigidActor *actor, shared_ptr<sp::Model> model, sp::PhysxActorDesc desc)
 			: actor(actor), model(model), desc(desc) {}

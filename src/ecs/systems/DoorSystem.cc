@@ -10,11 +10,10 @@ namespace ecs {
 
 	bool DoorSystem::Frame(float dtSinceLastFrame) {
 		for (Entity ent : entities.EntitiesWith<SlideDoor, SignalReceiver>()) {
-			auto doorRead = *ent.Get<SlideDoor>();
-
-			SlideDoor::State state = doorRead.GetState(entities);
 			auto receiver = ent.Get<SignalReceiver>();
 			auto door = ent.Get<SlideDoor>();
+
+			SlideDoor::State state = door->GetState(entities);
 			if (receiver->IsTriggered()) {
 				if (state != SlideDoor::State::OPENED && state != SlideDoor::State::OPENING) { door->Open(entities); }
 			} else {

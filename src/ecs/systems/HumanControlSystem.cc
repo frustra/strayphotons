@@ -42,85 +42,82 @@ namespace ecs {
 			bool crouching = false;
 			bool rotating = false;
 
-			{
-				if (input != nullptr) {
-					if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_FORWARD)) { inputMovement += glm::vec3(0, 0, -1); }
+			auto controller = entity.Get<ecs::HumanController>();
+			if (input != nullptr) {
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_FORWARD)) { inputMovement += glm::vec3(0, 0, -1); }
 
-					if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_BACKWARD)) { inputMovement += glm::vec3(0, 0, 1); }
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_BACKWARD)) { inputMovement += glm::vec3(0, 0, 1); }
 
-					if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_LEFT)) { inputMovement += glm::vec3(-1, 0, 0); }
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_LEFT)) { inputMovement += glm::vec3(-1, 0, 0); }
 
-					if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_RIGHT)) { inputMovement += glm::vec3(1, 0, 0); }
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_RIGHT)) { inputMovement += glm::vec3(1, 0, 0); }
 
-					if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_JUMP)) {
-						if (noclip) {
-							inputMovement += glm::vec3(0, 1, 0);
-						} else {
-							jumping = true;
-						}
-					}
-
-					if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_CROUCH)) {
-						if (noclip) {
-							inputMovement += glm::vec3(0, -1, 0);
-						} else {
-							crouching = true;
-						}
-					}
-
-					if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_SPRINT)) { sprinting = true; }
-
-					if (input->IsPressed(INPUT_ACTION_PLAYER_INTERACT)) { Interact(entity, dtSinceLastFrame); }
-
-					if (input->IsDown(INPUT_ACTION_PLAYER_INTERACT_ROTATE)) { rotating = true; }
-
-					auto controller = entity.Get<ecs::HumanController>();
-
-					// Handle mouse controls
-					const glm::vec2 *cursorPos, *cursorPosPrev;
-					if (input->GetActionDelta(sp::INPUT_ACTION_MOUSE_CURSOR, &cursorPos, &cursorPosPrev)) {
-						glm::vec2 cursorDiff = *cursorPos;
-						if (cursorPosPrev != nullptr) { cursorDiff -= *cursorPosPrev; }
-						if (!rotating || !InteractRotate(entity, dtSinceLastFrame, cursorDiff)) {
-							float sensitivity = CVarCursorSensitivity.Get() * 0.001;
-							controller->yaw -= cursorDiff.x * sensitivity;
-							if (controller->yaw > 2.0f * M_PI) { controller->yaw -= 2.0f * M_PI; }
-							if (controller->yaw < 0) { controller->yaw += 2.0f * M_PI; }
-
-							controller->pitch -= cursorDiff.y * sensitivity;
-
-							const float feps = std::numeric_limits<float>::epsilon();
-							controller->pitch =
-								std::max(-((float)M_PI_2 - feps), std::min(controller->pitch, (float)M_PI_2 - feps));
-
-							auto transform = entity.Get<ecs::Transform>();
-							transform->SetRotate(
-								glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll)));
-						}
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_JUMP)) {
+					if (noclip) {
+						inputMovement += glm::vec3(0, 1, 0);
+					} else {
+						jumping = true;
 					}
 				}
 
-				auto controller = *entity.Get<ecs::HumanController>();
-
-				// Move the player
-				if (noclipChanged) {
-					physics->ToggleCollisions(controller.pxController->getActor(), !noclip);
-
-					physx::PxShape *shape;
-					controller.pxController->getActor()->getShapes(&shape, 1);
-					physx::PxFilterData data;
-					data.word0 = noclip ? sp::PhysxCollisionGroup::NOCLIP : sp::PhysxCollisionGroup::PLAYER;
-					shape->setQueryFilterData(data);
-					shape->setSimulationFilterData(data);
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_CROUCH)) {
+					if (noclip) {
+						inputMovement += glm::vec3(0, -1, 0);
+					} else {
+						crouching = true;
+					}
 				}
 
-				auto currentHeight = physics->GetCapsuleHeight(controller.pxController);
-				auto targetHeight = crouching ? ecs::PLAYER_CAPSULE_CROUCH_HEIGHT : ecs::PLAYER_CAPSULE_HEIGHT;
-				if (fabs(targetHeight - currentHeight) > 0.1) {
-					// If player is in the air, resize from the top to implement crouch-jumping.
-					auto newHeight = currentHeight + (targetHeight - currentHeight) * (controller.onGround ? 0.1 : 1.0);
-					ResizeEntity(entity, newHeight, !controller.onGround);
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_SPRINT)) { sprinting = true; }
+
+				if (input->IsPressed(INPUT_ACTION_PLAYER_INTERACT)) { Interact(entity, dtSinceLastFrame); }
+
+				if (input->IsDown(INPUT_ACTION_PLAYER_INTERACT_ROTATE)) { rotating = true; }
+
+				auto controller = entity.Get<ecs::HumanController>();
+
+				// Handle mouse controls
+				const glm::vec2 *cursorPos, *cursorPosPrev;
+				if (input->GetActionDelta(sp::INPUT_ACTION_MOUSE_CURSOR, &cursorPos, &cursorPosPrev)) {
+					glm::vec2 cursorDiff = *cursorPos;
+					if (cursorPosPrev != nullptr) { cursorDiff -= *cursorPosPrev; }
+					if (!rotating || !InteractRotate(entity, dtSinceLastFrame, cursorDiff)) {
+						float sensitivity = CVarCursorSensitivity.Get() * 0.001;
+						controller->yaw -= cursorDiff.x * sensitivity;
+						if (controller->yaw > 2.0f * M_PI) { controller->yaw -= 2.0f * M_PI; }
+						if (controller->yaw < 0) { controller->yaw += 2.0f * M_PI; }
+
+						controller->pitch -= cursorDiff.y * sensitivity;
+
+						const float feps = std::numeric_limits<float>::epsilon();
+						controller->pitch =
+							std::max(-((float)M_PI_2 - feps), std::min(controller->pitch, (float)M_PI_2 - feps));
+
+						auto transform = entity.Get<ecs::Transform>();
+						transform->SetRotate(
+							glm::quat(glm::vec3(controller->pitch, controller->yaw, controller->roll)));
+					}
 				}
+			}
+
+			// Move the player
+			if (noclipChanged) {
+				physics->ToggleCollisions(controller->pxController->getActor(), !noclip);
+
+				physx::PxShape *shape;
+				controller->pxController->getActor()->getShapes(&shape, 1);
+				physx::PxFilterData data;
+				data.word0 = noclip ? sp::PhysxCollisionGroup::NOCLIP : sp::PhysxCollisionGroup::PLAYER;
+				shape->setQueryFilterData(data);
+				shape->setSimulationFilterData(data);
+			}
+
+			auto currentHeight = physics->GetCapsuleHeight(controller->pxController);
+			auto targetHeight = crouching ? ecs::PLAYER_CAPSULE_CROUCH_HEIGHT : ecs::PLAYER_CAPSULE_HEIGHT;
+			if (fabs(targetHeight - currentHeight) > 0.1) {
+				// If player is in the air, resize from the top to implement crouch-jumping.
+				auto newHeight = currentHeight + (targetHeight - currentHeight) * (controller->onGround ? 0.1 : 1.0);
+				ResizeEntity(entity, newHeight, !controller->onGround);
 			}
 
 			auto velocity =
@@ -137,19 +134,17 @@ namespace ecs {
 			ss << "entity " << entity << " cannot be assigned a new HumanController because it already has one.";
 			throw std::invalid_argument(ss.str());
 		}
-		auto transform = *entity.Get<ecs::Transform>();
-		glm::quat rotation = transform.GetRotate();
-
-		{
-			auto interact = entity.Assign<InteractController>();
-			interact->manager = &px;
-		}
+		auto transform = entity.Get<ecs::Transform>();
+		glm::quat rotation = transform->GetRotate();
 
 		auto controller = entity.Assign<HumanController>();
 		controller->SetRotate(rotation);
 
+		auto interact = entity.Assign<InteractController>();
+		interact->manager = &px;
+
 		// Offset the capsule position so the camera is at the top
-		physx::PxVec3 pos = GlmVec3ToPxVec3(transform.GetPosition() - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT / 2, 0));
+		physx::PxVec3 pos = GlmVec3ToPxVec3(transform->GetPosition() - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT / 2, 0));
 		controller->pxController = px.CreateController(pos, ecs::PLAYER_RADIUS, ecs::PLAYER_CAPSULE_HEIGHT, 0.5f);
 		controller->pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
 
@@ -218,6 +213,7 @@ namespace ecs {
 	}
 
 	void HumanControlSystem::MoveEntity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 velocity) {
+		auto transform = entity.Get<ecs::Transform>();
 		auto controller = entity.Get<HumanController>();
 
 		if (controller->pxController) {
@@ -242,7 +238,6 @@ namespace ecs {
 
 			// Offset the capsule position so the camera is at the top
 			float capsuleHeight = physics->GetCapsuleHeight(controller->pxController);
-			auto transform = entity.Get<ecs::Transform>();
 			transform->SetPosition(newPosition + glm::vec3(0, capsuleHeight / 2, 0));
 		}
 	}
