@@ -70,16 +70,12 @@ namespace sp {
 		LumiHistogramCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput) {}
 
 		RenderTarget::Ref GetTarget(Renderer *r) {
-			if (!target) {
-				target = r->RTPool->Get(RenderTargetDesc(PF_R32UI, {Bins, 1}));
-			}
+			if (!target) { target = r->RTPool->Get(RenderTargetDesc(PF_R32UI, {Bins, 1})); }
 			return target;
 		}
 
 		double ComputeScaledLuminance() {
-			if (!readBackBuf) {
-				return 0.0f;
-			}
+			if (!readBackBuf) { return 0.0f; }
 
 			uint32 *buf = (uint32 *)readBackBuf.Map(GL_READ_ONLY);
 			if (!buf) {
@@ -89,7 +85,8 @@ namespace sp {
 
 			uint64 sum = 0;
 
-			for (int i = 0; i < Bins; i++) sum += buf[i];
+			for (int i = 0; i < Bins; i++)
+				sum += buf[i];
 
 			double discardLower = sum * CVarEyeAdaptationLow.Get() / 100.0;
 			double discardUpper = sum * CVarEyeAdaptationHigh.Get() / 100.0;
@@ -121,9 +118,7 @@ namespace sp {
 		}
 
 		void StartReadback() {
-			if (!readBackBuf) {
-				readBackBuf.Create().Data(sizeof(uint32) * Bins, nullptr, GL_STREAM_READ);
-			}
+			if (!readBackBuf) { readBackBuf.Create().Data(sizeof(uint32) * Bins, nullptr, GL_STREAM_READ); }
 
 			readBackBuf.Bind(GL_PIXEL_PACK_BUFFER);
 			glGetTextureImage(target->GetTexture().handle,
@@ -257,8 +252,7 @@ namespace sp {
 		auto dest = outputs[0].AllocateTarget(context);
 
 		int diffuseDownsample = CVarVoxelDiffuseDownsample.Get();
-		if (diffuseDownsample < 1)
-			diffuseDownsample = 1;
+		if (diffuseDownsample < 1) diffuseDownsample = 1;
 
 		context->MirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 		context->MirrorSceneData.Bind(GL_SHADER_STORAGE_BUFFER, 1);
@@ -286,8 +280,7 @@ namespace sp {
 
 	VoxelLightingDiffuse::VoxelLightingDiffuse(VoxelData voxelData) : voxelData(voxelData) {
 		downsample = CVarVoxelDiffuseDownsample.Get();
-		if (downsample < 1)
-			downsample = 1;
+		if (downsample < 1) downsample = 1;
 	}
 
 	void VoxelLightingDiffuse::Process(const PostProcessingContext *context) {

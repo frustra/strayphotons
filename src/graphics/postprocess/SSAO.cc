@@ -70,7 +70,9 @@ namespace sp {
 			std::mt19937 rng;
 			std::uniform_real_distribution<float> dist(0.0f, 1.0f);
 
-			for (int i = 0; i < samples; i++) { noise.push_back(normalize(glm::vec3{dist(rng), dist(rng), 0.0f})); }
+			for (int i = 0; i < samples; i++) {
+				noise.push_back(normalize(glm::vec3{dist(rng), dist(rng), 0.0f}));
+			}
 
 			tex.Create()
 				.Filter(GL_NEAREST, GL_NEAREST)
@@ -108,8 +110,7 @@ namespace sp {
 
 			glm::vec2 samplePattern;
 
-			if (horizontal)
-				samplePattern.x = 1.0f / (float)extent.x;
+			if (horizontal) samplePattern.x = 1.0f / (float)extent.x;
 			else
 				samplePattern.y = 1.0f / (float)extent.y;
 

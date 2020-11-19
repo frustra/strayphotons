@@ -51,7 +51,9 @@ namespace sp {
 			// Set any alias if it exists.
 			auto it = actionBindings.find(actionPath);
 			if (it != actionBindings.end()) {
-				for (auto action : it->second) { input->SetAction(action, value); }
+				for (auto action : it->second) {
+					input->SetAction(action, value);
+				}
 			}
 		}
 	}

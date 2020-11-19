@@ -129,12 +129,9 @@ namespace sp {
 			unsigned char metallicRoughnessDefault[4] = {0, 255, 0, 0}; // Roughness = G channel, Metallic = B channel
 			unsigned char bumpDefault[4] = {127, 127, 127, 255};
 
-			if (!baseColor)
-				baseColor = baseColorDefault;
-			if (!metallicRoughness)
-				metallicRoughness = metallicRoughnessDefault;
-			if (!bump)
-				bump = bumpDefault;
+			if (!baseColor) baseColor = baseColorDefault;
+			if (!metallicRoughness) metallicRoughness = metallicRoughnessDefault;
+			if (!bump) bump = bumpDefault;
 
 			baseColorTex.Create()
 				.Filter(GL_NEAREST, GL_NEAREST)

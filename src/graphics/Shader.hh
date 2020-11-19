@@ -161,8 +161,7 @@ namespace sp {
 		shared_ptr<Shader> Get(ShaderMeta *meta) const {
 			auto ptr = shaders.find(meta);
 
-			if (ptr == shaders.end())
-				throw std::runtime_error("shader not loaded: " + meta->name);
+			if (ptr == shaders.end()) throw std::runtime_error("shader not loaded: " + meta->name);
 
 			return ptr->second;
 		}

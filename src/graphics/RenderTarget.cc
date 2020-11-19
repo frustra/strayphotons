@@ -10,7 +10,9 @@ namespace sp {
 			target = rtPool->Get(*this);
 
 			if (clear) {
-				for (uint32 i = 0; i < this->levels; i++) { target->GetTexture().Clear(data, i); }
+				for (uint32 i = 0; i < this->levels; i++) {
+					target->GetTexture().Clear(data, i);
+				}
 			}
 		}
 	}

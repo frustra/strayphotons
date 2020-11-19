@@ -137,9 +137,7 @@ namespace sp {
 			keyName = keyName.substr(INPUT_ACTION_KEYBOARD_KEYS.length() + 1);
 		}
 		auto it = GlfwActionKeys.find(keyName);
-		if (it != GlfwActionKeys.end()) {
-			return it->second;
-		}
+		if (it != GlfwActionKeys.end()) { return it->second; }
 		return -1;
 	}
 } // namespace sp

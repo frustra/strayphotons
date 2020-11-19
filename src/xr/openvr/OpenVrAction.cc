@@ -35,9 +35,7 @@ void OpenVrActionSet::Sync() {
 	vr::EVRInputError inputError =
 		vr::VRInput()->UpdateActionState(&activeActionSet, sizeof(vr::VRActiveActionSet_t), 1);
 
-	if (inputError != vr::EVRInputError::VRInputError_None) {
-		Errorf("Failed to sync OpenVR actions");
-	}
+	if (inputError != vr::EVRInputError::VRInputError_None) { Errorf("Failed to sync OpenVR actions"); }
 }
 
 OpenVrAction::OpenVrAction(std::string name, XrActionType type, std::shared_ptr<OpenVrActionSet> actionSet)
@@ -62,9 +60,7 @@ OpenVrAction::OpenVrAction(std::string name, XrActionType type, std::shared_ptr<
 	//
 	// Note that the model might need to reload mid-game, which will cause stuttering since it's done on the main
 	// thread. #41
-	if (type == xr::Skeleton || type == xr::Pose) {
-		GetInputSourceModel();
-	}
+	if (type == xr::Skeleton || type == xr::Pose) { GetInputSourceModel(); }
 }
 
 bool OpenVrAction::GetBooleanActionValue(std::string subpath, bool &value) {
@@ -79,13 +75,9 @@ bool OpenVrAction::GetBooleanActionValue(std::string subpath, bool &value) {
 	vr::InputDigitalActionData_t data;
 	inputError = vr::VRInput()->GetDigitalActionData(handle, &data, sizeof(vr::InputDigitalActionData_t), inputHandle);
 
-	if (inputError != vr::EVRInputError::VRInputError_None) {
-		return false;
-	}
+	if (inputError != vr::EVRInputError::VRInputError_None) { return false; }
 
-	if (!data.bActive) {
-		return false;
-	}
+	if (!data.bActive) { return false; }
 
 	value = data.bState;
 	return true;
@@ -103,13 +95,9 @@ bool OpenVrAction::GetRisingEdgeActionValue(std::string subpath, bool &value) {
 	vr::InputDigitalActionData_t data;
 	inputError = vr::VRInput()->GetDigitalActionData(handle, &data, sizeof(vr::InputDigitalActionData_t), inputHandle);
 
-	if (inputError != vr::EVRInputError::VRInputError_None) {
-		return false;
-	}
+	if (inputError != vr::EVRInputError::VRInputError_None) { return false; }
 
-	if (!data.bActive) {
-		return false;
-	}
+	if (!data.bActive) { return false; }
 
 	value = (data.bState && data.bChanged);
 	return true;
@@ -127,13 +115,9 @@ bool OpenVrAction::GetFallingEdgeActionValue(std::string subpath, bool &value) {
 	vr::InputDigitalActionData_t data;
 	inputError = vr::VRInput()->GetDigitalActionData(handle, &data, sizeof(vr::InputDigitalActionData_t), inputHandle);
 
-	if (inputError != vr::EVRInputError::VRInputError_None) {
-		return false;
-	}
+	if (inputError != vr::EVRInputError::VRInputError_None) { return false; }
 
-	if (!data.bActive) {
-		return false;
-	}
+	if (!data.bActive) { return false; }
 
 	value = ((!data.bState) && data.bChanged);
 	return true;
@@ -163,13 +147,9 @@ bool OpenVrAction::GetPoseActionValueForNextFrame(std::string subpath, glm::mat4
 		throw std::runtime_error("Failed to get pose data for device");
 	}
 
-	if (!data.bActive) {
-		return false;
-	}
+	if (!data.bActive) { return false; }
 
-	if (!data.pose.bPoseIsValid) {
-		return false;
-	}
+	if (!data.pose.bPoseIsValid) { return false; }
 
 	pose = glm::mat4(glm::make_mat3x4((float *)data.pose.mDeviceToAbsoluteTracking.m));
 	return true;
@@ -185,9 +165,7 @@ bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool w
 	}
 
 	// No active skeleton available
-	if (!data.bActive) {
-		return false;
-	}
+	if (!data.bActive) { return false; }
 
 	uint32_t boneCount = 0;
 	inputError = vr::VRInput()->GetBoneCount(handle, &boneCount);
@@ -253,18 +231,14 @@ std::shared_ptr<XrModel> OpenVrAction::GetInputSourceModel() {
 
 			// Only cache the model if it loaded correctly
 			// TODO: make the Asset loader handle model caching. #41
-			if (skeleton) {
-				cachedModels[skeletonUniqueName] = skeleton;
-			}
+			if (skeleton) { cachedModels[skeletonUniqueName] = skeleton; }
 		}
 
 		if (skeleton) {
 			// ComputeBoneLookupTable can fail if SteamVR Input isn't ready to give us a list of bone names yet
 			// This happens separately from loading the skeleton model.
 			// GameLogic will retry loading this input source model repeatedly, which will retry this section
-			if (ComputeBoneLookupTable(skeleton)) {
-				return skeleton;
-			}
+			if (ComputeBoneLookupTable(skeleton)) { return skeleton; }
 		}
 	}
 	// Poses (basically, input controllers) have their own model load code
@@ -273,9 +247,7 @@ std::shared_ptr<XrModel> OpenVrAction::GetInputSourceModel() {
 		vr::EVRInputError inputError =
 			vr::VRInput()->GetActionOrigins(parentActionSet->GetHandle(), handle, &inputHandle, 1);
 
-		if (inputError != vr::EVRInputError::VRInputError_None) {
-			return nullptr;
-		}
+		if (inputError != vr::EVRInputError::VRInputError_None) { return nullptr; }
 
 		if (inputHandle == vr::k_ulInvalidInputValueHandle) {
 			// No device connected or action is unbound.

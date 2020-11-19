@@ -12,8 +12,7 @@ namespace ecs {
 			throw std::runtime_error(ss.str());
 		}
 
-		if (nextState >= 0)
-			curState = nextState;
+		if (nextState >= 0) curState = nextState;
 
 		nextState = i;
 	}

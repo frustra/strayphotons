@@ -12,9 +12,7 @@ namespace sp {
 	}
 
 	ActionSource::~ActionSource() {
-		if (input != nullptr) {
-			input->RemoveActionSource(this);
-		}
+		if (input != nullptr) { input->RemoveActionSource(this); }
 	}
 
 	void ActionSource::BindAction(std::string action, std::string source) {
@@ -27,6 +25,8 @@ namespace sp {
 	}
 
 	void ActionSource::UnbindAction(std::string action) {
-		for (auto &[source, actions] : actionBindings) { actions.erase(action); }
+		for (auto &[source, actions] : actionBindings) {
+			actions.erase(action);
+		}
 	}
 } // namespace sp

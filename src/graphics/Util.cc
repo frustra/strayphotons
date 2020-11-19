@@ -13,9 +13,7 @@ namespace sp {
 
 			static VertexBuffer vbo;
 
-			if (!vbo.Initialized()) {
-				vbo.SetElementsVAO(3, screenCoverElements);
-			}
+			if (!vbo.Initialized()) { vbo.SetElementsVAO(3, screenCoverElements); }
 
 			vbo.BindVAO();
 			glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
@@ -28,9 +26,7 @@ namespace sp {
 
 			static VertexBuffer vbo;
 
-			if (!vbo.Initialized()) {
-				vbo.SetElementsVAO(3, screenCoverElements);
-			}
+			if (!vbo.Initialized()) { vbo.SetElementsVAO(3, screenCoverElements); }
 
 			vbo.BindVAO();
 			glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());

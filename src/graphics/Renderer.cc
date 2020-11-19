@@ -648,11 +648,11 @@ namespace sp {
 
 	void Renderer::DrawEntity(
 		const ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw) {
-		auto compRead = *ent.Get<ecs::Renderable>();
-		if (compRead.model) { return; }
+		auto comp = ent.Get<ecs::Renderable>();
+		if (comp->hidden) { return; }
 
 		// Don't render XR-excluded entities from XR views
-		if (view.viewType == ecs::View::VIEW_TYPE_XR && compRead.xrExcluded) { return; }
+		if (view.viewType == ecs::View::VIEW_TYPE_XR && comp->xrExcluded) { return; }
 
 		glm::mat4 modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform(game->entityManager);
 

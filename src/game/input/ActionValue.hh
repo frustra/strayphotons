@@ -30,9 +30,7 @@ namespace sp {
 	template<typename T>
 	inline const T *ActionValueBase::Get() {
 		auto value = dynamic_cast<ActionValue<T> *>(this);
-		if (value != nullptr) {
-			return &value->Get();
-		}
+		if (value != nullptr) { return &value->Get(); }
 		return nullptr;
 	}
 } // namespace sp

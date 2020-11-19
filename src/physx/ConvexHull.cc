@@ -52,7 +52,9 @@ namespace sp {
 		case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
 			indicesCopy = new int[indexAttrib.components];
 
-			for (uint32 i = 0; i < indexAttrib.components; i++) { indicesCopy[i] = (int)((const uint16 *)indices)[i]; }
+			for (uint32 i = 0; i < indexAttrib.components; i++) {
+				indicesCopy[i] = (int)((const uint16 *)indices)[i];
+			}
 
 			indices = (const int *)indicesCopy;
 			break;
@@ -86,7 +88,9 @@ namespace sp {
 			hull.pointCount = ihull.m_nPoints;
 			hull.pointByteStride = sizeof(float) * 3;
 
-			for (uint32 i = 0; i < ihull.m_nPoints * 3; i++) { hull.points[i] = (float)ihull.m_points[i]; }
+			for (uint32 i = 0; i < ihull.m_nPoints * 3; i++) {
+				hull.points[i] = (float)ihull.m_points[i];
+			}
 
 			hull.triangles = new int[ihull.m_nTriangles * 3];
 			hull.triangleCount = ihull.m_nTriangles;
@@ -100,8 +104,7 @@ namespace sp {
 		interfaceVHACD->Clean();
 		interfaceVHACD->Release();
 
-		if (indicesCopy)
-			delete indicesCopy;
+		if (indicesCopy) delete indicesCopy;
 	}
 
 	void copyVhacdManifoldMeshToConvexHull(ConvexHull &hull, VHACD::TMMesh &mesh) {
@@ -179,13 +182,11 @@ namespace sp {
 			temp = prim->matrix * temp;
 			glm::ivec3 lowResPoint({temp.x * 1e6, temp.y * 1e6, temp.z * 1e6});
 
-			if (visitedIndexes.count(index))
-				continue;
+			if (visitedIndexes.count(index)) continue;
 
 			visitedIndexes.insert(index);
 
-			if (visitedPoints.count(lowResPoint))
-				continue;
+			if (visitedPoints.count(lowResPoint)) continue;
 
 			visitedPoints.insert(lowResPoint);
 			finalPoints.push_back({temp.x, temp.y, temp.z});

@@ -89,8 +89,7 @@ namespace sp {
 		std::string str;
 
 		while (std::getline(std::cin, str)) {
-			if (str == "")
-				continue;
+			if (str == "") continue;
 
 			string line(str);
 
@@ -121,24 +120,20 @@ namespace sp {
 
 		while (!queuedCommands.empty()) {
 			auto top = queuedCommands.top();
-			if (top.wait_util > now)
-				break;
+			if (top.wait_util > now) break;
 
 			queuedCommands.pop();
 			ulock.unlock();
 
 			ParseAndExecute(top.text);
-			if (top.handled != nullptr) {
-				top.handled->notify_all();
-			}
+			if (top.handled != nullptr) { top.handled->notify_all(); }
 
 			ulock.lock();
 		}
 	}
 
 	void ConsoleManager::ParseAndExecute(const string line) {
-		if (line == "")
-			return;
+		if (line == "") return;
 
 		auto cmd = line.begin();
 		do {
@@ -151,8 +146,7 @@ namespace sp {
 			trim(value);
 			Execute(varName, value);
 
-			if (cmdEnd != line.end())
-				cmdEnd++;
+			if (cmdEnd != line.end()) cmdEnd++;
 			cmd = cmdEnd;
 		} while (cmd != line.end());
 	}
@@ -183,23 +177,18 @@ namespace sp {
 
 	void ConsoleManager::AddHistory(const string &input) {
 		std::lock_guard lock(historyLock);
-		if (history.size() == 0 || history[history.size() - 1] != input) {
-			history.push_back(input);
-		}
+		if (history.size() == 0 || history[history.size() - 1] != input) { history.push_back(input); }
 	}
 
 	string ConsoleManager::GetHistory(size_t index) {
 		std::lock_guard lock(historyLock);
-		if (index > 0 && index <= history.size()) {
-			return history[history.size() - index];
-		}
+		if (index > 0 && index <= history.size()) { return history[history.size() - index]; }
 		return "";
 	}
 
 	string ConsoleManager::AutoComplete(const string &input) {
 		auto it = cvars.upper_bound(to_lower_copy(input));
-		if (it == cvars.end())
-			return input;
+		if (it == cvars.end()) return input;
 
 		auto cvar = it->second;
 		return cvar->GetName() + " ";
@@ -215,8 +204,7 @@ namespace sp {
 			auto cvar = it->second;
 			auto name = cvar->GetName();
 
-			if (starts_with(to_lower_copy(name), input))
-				results.push_back(name);
+			if (starts_with(to_lower_copy(name), input)) results.push_back(name);
 			else
 				break;
 		}
@@ -227,7 +215,9 @@ namespace sp {
 #ifdef USE_LINENOISE_CLI
 	void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc) {
 		auto completions = GetConsoleManager().AllCompletions(string(buf));
-		for (auto str : completions) { linenoiseAddCompletion(lc, str.c_str()); }
+		for (auto str : completions) {
+			linenoiseAddCompletion(lc, str.c_str());
+		}
 	}
 #endif
 } // namespace sp

@@ -37,9 +37,7 @@ namespace sp {
 					ImGui::PopStyleColor();
 				}
 
-				if (ImGui::GetScrollY() >= lastScrollMaxY - 0.001f && io.MouseWheel == 0.0f) {
-					ImGui::SetScrollHere();
-				}
+				if (ImGui::GetScrollY() >= lastScrollMaxY - 0.001f && io.MouseWheel == 0.0f) { ImGui::SetScrollHere(); }
 
 				lastScrollMaxY = ImGui::GetScrollMaxY();
 
@@ -67,8 +65,7 @@ namespace sp {
 				}
 
 				ImGui::SetItemDefaultFocus();
-				if (reclaim_focus)
-					ImGui::SetKeyboardFocusHere(-1);
+				if (reclaim_focus) ImGui::SetKeyboardFocusHere(-1);
 			}
 			ImGui::End();
 		}
@@ -90,10 +87,8 @@ namespace sp {
 			} else if (data->EventFlag == ImGuiInputTextFlags_CallbackHistory) {
 				int pos = historyOffset;
 
-				if (data->EventKey == ImGuiKey_UpArrow)
-					pos++;
-				if (data->EventKey == ImGuiKey_DownArrow)
-					pos--;
+				if (data->EventKey == ImGuiKey_UpArrow) pos++;
+				if (data->EventKey == ImGuiKey_DownArrow) pos--;
 
 				if (pos != historyOffset) {
 					if (pos > 0) {
