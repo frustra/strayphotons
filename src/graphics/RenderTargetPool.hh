@@ -14,8 +14,7 @@ namespace sp {
 		GLuint buf = 0;
 
 		RenderTargetHandle &operator=(const RenderTarget::Ref &other) {
-			if (!other)
-				return *this;
+			if (!other) return *this;
 			if (other->GetDesc().renderBuffer) {
 				buf = other->GetHandle();
 			} else {
@@ -37,11 +36,8 @@ namespace sp {
 		}
 
 		bool operator==(const RenderTarget::Ref &other) const {
-			if (!other)
-				return tex == 0 && buf == 0;
-			if (other->GetDesc().renderBuffer) {
-				return tex == 0 && buf == other->GetHandle();
-			}
+			if (!other) return tex == 0 && buf == 0;
+			if (other->GetDesc().renderBuffer) { return tex == 0 && buf == other->GetHandle(); }
 			return buf == 0 && tex == other->GetHandle();
 		}
 
@@ -60,21 +56,20 @@ namespace sp {
 			: NumAttachments(numAttachments) {
 			Assert(numAttachments <= MaxFramebufferAttachments, "exceeded maximum framebuffer attachment count");
 
-			for (uint32 i = 0; i < numAttachments; i++) { this->Attachments[i] = attachments[i]; }
+			for (uint32 i = 0; i < numAttachments; i++) {
+				this->Attachments[i] = attachments[i];
+			}
 
 			this->DepthStencilAttachment = depthStencilAttachment;
 		}
 
 		bool operator==(const FramebufferState &other) const {
-			if (NumAttachments != other.NumAttachments)
-				return false;
+			if (NumAttachments != other.NumAttachments) return false;
 
-			if (DepthStencilAttachment != other.DepthStencilAttachment)
-				return false;
+			if (DepthStencilAttachment != other.DepthStencilAttachment) return false;
 
 			for (size_t i = 0; i < NumAttachments; i++) {
-				if (Attachments[i] != other.Attachments[i])
-					return false;
+				if (Attachments[i] != other.Attachments[i]) return false;
 			}
 
 			return true;

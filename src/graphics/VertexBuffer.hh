@@ -77,8 +77,7 @@ namespace sp {
 		VertexBuffer &SetElementsVAO(size_t n, T *buffer, GLenum usage = GL_STATIC_DRAW) {
 			elements = n;
 
-			if (vbo == 0)
-				Create();
+			if (vbo == 0) Create();
 
 			glNamedBufferData(vbo, n * sizeof(T), buffer, usage);
 
@@ -99,9 +98,7 @@ namespace sp {
 			glEnableVertexArrayAttrib(vao, index);
 			glVertexArrayAttribFormat(vao, index, size, type, normalized, offset);
 
-			if (stride > 0) {
-				SetAttribBuffer(index, stride);
-			}
+			if (stride > 0) { SetAttribBuffer(index, stride); }
 			return *this;
 		}
 

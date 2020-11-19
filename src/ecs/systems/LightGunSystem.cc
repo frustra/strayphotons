@@ -27,9 +27,7 @@ namespace ecs {
 			auto *controller = player.Get<HumanController>()->pxController;
 			if (controller) {
 				playerActor = controller->getActor();
-				if (playerActor) {
-					this->physics->DisableCollisions(playerActor);
-				}
+				if (playerActor) { this->physics->DisableCollisions(playerActor); }
 			}
 		}
 
@@ -45,9 +43,7 @@ namespace ecs {
 			}
 		}
 
-		if (playerActor) {
-			this->physics->EnableCollisions(playerActor);
-		}
+		if (playerActor) { this->physics->EnableCollisions(playerActor); }
 
 		return true;
 	}
@@ -61,8 +57,7 @@ namespace ecs {
 			1000.0f,
 			hitBuff);
 
-		if (!hit)
-			return Entity();
+		if (!hit) return Entity();
 
 		const physx::PxRaycastHit &touch = hitBuff.getAnyHit(0);
 		return Entity(entities, physics->GetEntityId(*touch.actor));
@@ -75,17 +70,13 @@ namespace ecs {
 
 		auto lightGun = gun.Get<LightGun>();
 		auto transform = gun.Get<Transform>();
-		if (lightGun->hasLight)
-			return;
+		if (lightGun->hasLight) return;
 
 		Entity hitEntity = EntityRaycast(gun);
-		if (!hitEntity.Valid() || !hitEntity.Has<Light>()) {
-			return;
-		}
+		if (!hitEntity.Valid() || !hitEntity.Has<Light>()) { return; }
 
 		auto light = hitEntity.Get<Light>();
-		if (!light->on)
-			return;
+		if (!light->on) return;
 
 		light->on = false;
 		lightGun->hasLight = true;
@@ -112,23 +103,17 @@ namespace ecs {
 
 		auto lightGun = gun.Get<LightGun>();
 		auto transform = gun.Get<Transform>();
-		if (!lightGun->hasLight)
-			return;
+		if (!lightGun->hasLight) return;
 
 		Entity hitEntity = EntityRaycast(gun);
-		if (!hitEntity.Valid() || !hitEntity.Has<Light>()) {
-			return;
-		}
+		if (!hitEntity.Valid() || !hitEntity.Has<Light>()) { return; }
 
 		auto light = hitEntity.Get<Light>();
-		if (light->on)
-			return;
+		if (light->on) return;
 
 		light->on = true;
 		lightGun->hasLight = false;
-		if (!gun.Has<Light>()) {
-			return;
-		}
+		if (!gun.Has<Light>()) { return; }
 
 		auto gunLight = gun.Get<Light>();
 		gunLight->on = false;

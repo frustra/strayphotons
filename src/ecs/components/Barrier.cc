@@ -17,9 +17,7 @@ namespace ecs {
 		auto barrier = dst.Assign<Barrier>();
 
 		for (auto param : src.get<picojson::object>()) {
-			if (param.first == "isOpen") {
-				barrier->isOpen = param.second.get<bool>();
-			}
+			if (param.first == "isOpen") { barrier->isOpen = param.second.get<bool>(); }
 		}
 
 		if (sp::ParametersExist(src, {"translate", "scale"})) {

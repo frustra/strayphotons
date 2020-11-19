@@ -18,9 +18,7 @@ namespace ecs {
 			auto animation = ent.Get<Animation>();
 			auto transform = ent.Get<Transform>();
 
-			if (animation->nextState < 0) {
-				continue;
-			}
+			if (animation->nextState < 0) { continue; }
 
 			Assert((uint32)animation->nextState < animation->states.size(), "invalid next state");
 			Assert((uint32)animation->curState < animation->states.size(), "invalid current state");
@@ -44,18 +42,14 @@ namespace ecs {
 				transform->SetPosition(nextState.pos);
 				transform->SetScale(nextState.scale);
 
-				if (ent.Has<ecs::Renderable>()) {
-					ent.Get<ecs::Renderable>()->hidden = nextState.hidden;
-				}
+				if (ent.Has<ecs::Renderable>()) { ent.Get<ecs::Renderable>()->hidden = nextState.hidden; }
 			} else {
 				transform->SetPosition(curState.pos + target * dPos);
 				transform->SetScale(curState.scale + target * dScale);
 
 				// ensure the entity is visible during the animation
 				// when coming from a state that was hidden
-				if (ent.Has<ecs::Renderable>()) {
-					ent.Get<ecs::Renderable>()->hidden = false;
-				}
+				if (ent.Has<ecs::Renderable>()) { ent.Get<ecs::Renderable>()->hidden = false; }
 			}
 		}
 

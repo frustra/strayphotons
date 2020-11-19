@@ -62,8 +62,7 @@ std::shared_ptr<XrModel> OpenVrModel::LoadOpenVrModel(vr::TrackedDeviceIndex_t d
 
 	while (true) {
 		merr = vr::VRRenderModels()->LoadRenderModel_Async(modelName.c_str(), &vrModel);
-		if (merr != vr::VRRenderModelError_Loading)
-			break;
+		if (merr != vr::VRRenderModelError_Loading) break;
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
@@ -74,8 +73,7 @@ std::shared_ptr<XrModel> OpenVrModel::LoadOpenVrModel(vr::TrackedDeviceIndex_t d
 
 	while (true) {
 		merr = vr::VRRenderModels()->LoadTexture_Async(vrModel->diffuseTextureId, &vrTex);
-		if (merr != vr::VRRenderModelError_Loading)
-			break;
+		if (merr != vr::VRRenderModelError_Loading) break;
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 

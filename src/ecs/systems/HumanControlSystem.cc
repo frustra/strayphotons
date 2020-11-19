@@ -30,8 +30,7 @@ namespace ecs {
 	HumanControlSystem::~HumanControlSystem() {}
 
 	bool HumanControlSystem::Frame(double dtSinceLastFrame) {
-		if (input != nullptr && input->FocusLocked())
-			return true;
+		if (input != nullptr && input->FocusLocked()) return true;
 
 		bool noclipChanged = CVarNoClip.Changed();
 		auto noclip = CVarNoClip.Get(true);
@@ -47,21 +46,13 @@ namespace ecs {
 			auto controller = entity.Get<ecs::HumanController>();
 
 			if (input != nullptr) {
-				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_FORWARD)) {
-					inputMovement += glm::vec3(0, 0, -1);
-				}
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_FORWARD)) { inputMovement += glm::vec3(0, 0, -1); }
 
-				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_BACKWARD)) {
-					inputMovement += glm::vec3(0, 0, 1);
-				}
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_BACKWARD)) { inputMovement += glm::vec3(0, 0, 1); }
 
-				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_LEFT)) {
-					inputMovement += glm::vec3(-1, 0, 0);
-				}
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_LEFT)) { inputMovement += glm::vec3(-1, 0, 0); }
 
-				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_RIGHT)) {
-					inputMovement += glm::vec3(1, 0, 0);
-				}
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_RIGHT)) { inputMovement += glm::vec3(1, 0, 0); }
 
 				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_JUMP)) {
 					if (noclip) {
@@ -79,34 +70,22 @@ namespace ecs {
 					}
 				}
 
-				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_SPRINT)) {
-					sprinting = true;
-				}
+				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_SPRINT)) { sprinting = true; }
 
-				if (input->IsPressed(INPUT_ACTION_PLAYER_INTERACT)) {
-					Interact(entity, dtSinceLastFrame);
-				}
+				if (input->IsPressed(INPUT_ACTION_PLAYER_INTERACT)) { Interact(entity, dtSinceLastFrame); }
 
-				if (input->IsDown(INPUT_ACTION_PLAYER_INTERACT_ROTATE)) {
-					rotating = true;
-				}
+				if (input->IsDown(INPUT_ACTION_PLAYER_INTERACT_ROTATE)) { rotating = true; }
 
 				// Handle mouse controls
 				const glm::vec2 *cursorPos, *cursorPosPrev;
 				if (input->GetActionDelta(sp::INPUT_ACTION_MOUSE_CURSOR, &cursorPos, &cursorPosPrev)) {
 					glm::vec2 cursorDiff = *cursorPos;
-					if (cursorPosPrev != nullptr) {
-						cursorDiff -= *cursorPosPrev;
-					}
+					if (cursorPosPrev != nullptr) { cursorDiff -= *cursorPosPrev; }
 					if (!rotating || !InteractRotate(entity, dtSinceLastFrame, cursorDiff)) {
 						float sensitivity = CVarCursorSensitivity.Get() * 0.001;
 						controller->yaw -= cursorDiff.x * sensitivity;
-						if (controller->yaw > 2.0f * M_PI) {
-							controller->yaw -= 2.0f * M_PI;
-						}
-						if (controller->yaw < 0) {
-							controller->yaw += 2.0f * M_PI;
-						}
+						if (controller->yaw > 2.0f * M_PI) { controller->yaw -= 2.0f * M_PI; }
+						if (controller->yaw < 0) { controller->yaw += 2.0f * M_PI; }
 
 						controller->pitch -= cursorDiff.y * sensitivity;
 
@@ -173,9 +152,7 @@ namespace ecs {
 	}
 
 	void HumanControlSystem::Teleport(ecs::Entity entity, glm::vec3 position, glm::quat rotation) {
-		if (!entity.Has<ecs::Transform>()) {
-			throw std::invalid_argument("entity must have a Transform component");
-		}
+		if (!entity.Has<ecs::Transform>()) { throw std::invalid_argument("entity must have a Transform component"); }
 		if (!entity.Has<ecs::HumanController>()) {
 			throw std::invalid_argument("entity must have a HumanController component");
 		}
@@ -198,9 +175,7 @@ namespace ecs {
 
 	glm::vec3 HumanControlSystem::CalculatePlayerVelocity(
 		ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint, bool crouch) {
-		if (!entity.Has<ecs::Transform>()) {
-			throw std::invalid_argument("entity must have a Transform component");
-		}
+		if (!entity.Has<ecs::Transform>()) { throw std::invalid_argument("entity must have a Transform component"); }
 
 		auto noclip = CVarNoClip.Get();
 		auto controller = entity.Get<ecs::HumanController>();
@@ -209,17 +184,13 @@ namespace ecs {
 		glm::vec3 movement = transform->GetRotate() * glm::vec3(inDirection.x, 0, inDirection.z);
 
 		if (!noclip) {
-			if (std::abs(movement.y) > 0.999) {
-				movement = transform->GetRotate() * glm::vec3(0, -movement.y, 0);
-			}
+			if (std::abs(movement.y) > 0.999) { movement = transform->GetRotate() * glm::vec3(0, -movement.y, 0); }
 			movement.y = 0;
 		}
 		if (movement != glm::vec3(0)) {
 			float speed = CVarMovementSpeed.Get();
-			if (sprint && controller->onGround)
-				speed = CVarSprintSpeed.Get();
-			if (crouch && controller->onGround)
-				speed = CVarCrouchSpeed.Get();
+			if (sprint && controller->onGround) speed = CVarSprintSpeed.Get();
+			if (crouch && controller->onGround) speed = CVarCrouchSpeed.Get();
 			movement = glm::normalize(movement) * speed;
 		}
 		movement.y += inDirection.y * CVarMovementSpeed.Get();
@@ -231,8 +202,7 @@ namespace ecs {
 		if (controller->onGround) {
 			controller->velocity.x = movement.x;
 			controller->velocity.y -= 0.01; // Always try moving down so that onGround detection is more consistent.
-			if (jump)
-				controller->velocity.y = ecs::PLAYER_JUMP_VELOCITY;
+			if (jump) controller->velocity.y = ecs::PLAYER_JUMP_VELOCITY;
 			controller->velocity.z = movement.z;
 		} else {
 			controller->velocity += movement * ecs::PLAYER_AIR_STRAFE * (float)dtSinceLastFrame;
@@ -286,9 +256,7 @@ namespace ecs {
 
 			bool valid = !physics->OverlapQuery(actor, physx::PxVec3(0), hit);
 
-			if (!valid) {
-				physics->ResizeController(pxController, oldHeight, fromTop);
-			}
+			if (!valid) { physics->ResizeController(pxController, oldHeight, fromTop); }
 			return valid;
 		}
 		return false;

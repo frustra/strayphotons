@@ -28,15 +28,9 @@ namespace ecs {
 	}
 
 	void SlideDoor::ValidateDoor(EntityManager &em) {
-		if (!left.Load(em) || !right.Load(em)) {
-			throw std::runtime_error("door panel is no longer valid");
-		}
-		if (!left->Has<Animation>()) {
-			SetAnimation(left, LeftDirection(left));
-		}
-		if (!right->Has<Animation>()) {
-			SetAnimation(right, -LeftDirection(right));
-		}
+		if (!left.Load(em) || !right.Load(em)) { throw std::runtime_error("door panel is no longer valid"); }
+		if (!left->Has<Animation>()) { SetAnimation(left, LeftDirection(left)); }
+		if (!right->Has<Animation>()) { SetAnimation(right, -LeftDirection(right)); }
 	}
 
 	SlideDoor::State SlideDoor::GetState(EntityManager &em) {
@@ -77,9 +71,7 @@ namespace ecs {
 	}
 
 	void SlideDoor::SetAnimation(NamedEntity &panel, glm::vec3 openDir) {
-		if (!panel->Valid() || !panel->Has<Transform>() || panel->Has<Animation>()) {
-			return;
-		}
+		if (!panel->Valid() || !panel->Has<Transform>() || panel->Has<Animation>()) { return; }
 
 		auto transform = panel->Get<Transform>();
 		Animation animation;

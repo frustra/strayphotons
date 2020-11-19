@@ -45,9 +45,7 @@ namespace sp {
 		}
 
 		for (uint32 i = 0; i < found.size(); ++i) {
-			if (!found.at(i)) {
-				return false;
-			}
+			if (!found.at(i)) { return false; }
 		}
 		return true;
 	}

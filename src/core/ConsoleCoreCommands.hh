@@ -16,9 +16,7 @@ namespace sp {
 			}
 
 			auto desc = cvar->GetDescription();
-			if (desc.size() > 0) {
-				logging::ConsoleWrite(logging::Level::Log, " >   %s", desc);
-			}
+			if (desc.size() > 0) { logging::ConsoleWrite(logging::Level::Log, " >   %s", desc); }
 		}
 	});
 
@@ -45,7 +43,9 @@ namespace sp {
 				if (cvar->IsValueType()) {
 					vector<string> values;
 					string value;
-					while (stream >> value) { values.push_back(value); }
+					while (stream >> value) {
+						values.push_back(value);
+					}
 					cvar->ToggleValue(values.data(), values.size());
 				} else {
 					logging::ConsoleWrite(logging::Level::Log, " > '%s' is not a cvar", cvarName);

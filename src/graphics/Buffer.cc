@@ -8,8 +8,7 @@ namespace sp {
 	}
 
 	Buffer &Buffer::Delete() {
-		if (handle)
-			glDeleteBuffers(1, &handle);
+		if (handle) glDeleteBuffers(1, &handle);
 		handle = 0;
 		size = 0;
 		return *this;
@@ -22,16 +21,14 @@ namespace sp {
 
 	void Buffer::Bind(GLenum target, GLuint index, GLintptr offset, GLsizeiptr size) const {
 		Assert(handle, "null buffer handle");
-		if (size < 0)
-			size = this->size - offset;
+		if (size < 0) size = this->size - offset;
 		Assert(size >= 0, "binding offset is greater than size");
 		glBindBufferRange(target, index, handle, offset, size);
 	}
 
 	Buffer &Buffer::ClearRegion(GLPixelFormat format, GLintptr offset, GLsizeiptr size, const void *data) {
 		Assert(handle, "null buffer handle");
-		if (size < 0)
-			size = this->size - offset;
+		if (size < 0) size = this->size - offset;
 		Assert(size >= 0, "region offset is greater than size");
 		// Bug in Nvidia Optimus driver, glClearNamedBufferSubData does not operate as expected.
 		glBindBuffer(GL_COPY_READ_BUFFER, handle);

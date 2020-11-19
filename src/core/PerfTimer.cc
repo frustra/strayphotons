@@ -13,9 +13,7 @@ namespace sp {
 	}
 
 	RenderPhase::~RenderPhase() {
-		if (timer) {
-			timer->Complete(*this);
-		}
+		if (timer) { timer->Complete(*this); }
 	}
 
 	void RenderPhase::StartTimer(PerfTimer &perfTimer) {
@@ -84,12 +82,10 @@ namespace sp {
 			// Wait for the GL timestamp queries to complete
 			auto front = pending.front();
 			glGetQueryObjectiv(front.glQueries[1], GL_QUERY_RESULT_AVAILABLE, &available);
-			if (available == 0)
-				break;
+			if (available == 0) break;
 
 			glGetQueryObjectiv(front.glQueries[0], GL_QUERY_RESULT_AVAILABLE, &available);
-			if (available == 0)
-				break;
+			if (available == 0) break;
 
 			// Get the GPU start and end time from the completed queries
 			glGetQueryObjectui64v(front.glQueries[0], GL_QUERY_RESULT, &gpuStart);

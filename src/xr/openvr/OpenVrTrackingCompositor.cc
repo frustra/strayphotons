@@ -16,9 +16,7 @@ using namespace sp;
 using namespace xr;
 
 OpenVrTrackingCompositor::OpenVrTrackingCompositor(vr::IVRSystem *vrs) : vrSystem(vrs) {
-	if (vrs == nullptr) {
-		throw std::runtime_error("Cannot initialize OpenVrTrackingCompositor with NULL IVRSystem");
-	}
+	if (vrs == nullptr) { throw std::runtime_error("Cannot initialize OpenVrTrackingCompositor with NULL IVRSystem"); }
 
 	uint32_t vrWidth, vrHeight;
 	GetRecommendedRenderTargetSize(vrWidth, vrHeight);
@@ -73,13 +71,9 @@ bool OpenVrTrackingCompositor::GetPredictedObjectPose(const TrackedObjectHandle 
 	vr::EVRCompositorError error =
 		vr::VRCompositor()->GetLastPoses(NULL, 0, trackedDevicePoses, vr::k_unMaxTrackedDeviceCount);
 
-	if (error != vr::VRCompositorError_None) {
-		return false;
-	}
+	if (error != vr::VRCompositorError_None) { return false; }
 
-	if (!trackedDevicePoses[deviceIndex].bPoseIsValid) {
-		return false;
-	}
+	if (!trackedDevicePoses[deviceIndex].bPoseIsValid) { return false; }
 
 	glm::mat4 pos = glm::make_mat3x4((float *)trackedDevicePoses[deviceIndex].mDeviceToAbsoluteTracking.m);
 	objectPose = pos;

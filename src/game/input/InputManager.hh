@@ -176,8 +176,7 @@ namespace sp {
 
 	template<class T>
 	inline bool InputManager::GetActionValue(std::string actionPath, T **value) {
-		if (value == nullptr)
-			return false;
+		if (value == nullptr) return false;
 
 		std::shared_lock lock(actionStatesLock);
 
@@ -192,8 +191,7 @@ namespace sp {
 
 	template<class T>
 	inline bool InputManager::GetActionDelta(std::string actionPath, T **value, T **previous) {
-		if (value == nullptr || previous == nullptr)
-			return false;
+		if (value == nullptr || previous == nullptr) return false;
 		std::shared_lock lock(actionStatesLock);
 
 		auto it = actionStatesCurrent.find(actionPath);

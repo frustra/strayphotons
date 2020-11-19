@@ -49,7 +49,9 @@ namespace sp {
 		SetAction<KeyEvents>(INPUT_ACTION_KEYBOARD_KEYS, keyEvents);
 		for (auto [key, actions] : keyBindings) {
 			bool keyDown = keyEvents.count(key) != 0;
-			for (auto action : actions) { SetAction<bool>(action, keyDown); }
+			for (auto action : actions) {
+				SetAction<bool>(action, keyDown);
+			}
 		}
 
 		charEvents = charEventsNext;
@@ -77,7 +79,9 @@ namespace sp {
 
 	void GlfwActionSource::UnbindAction(std::string action) {
 		ActionSource::UnbindAction(action);
-		for (auto &[source, actions] : keyBindings) { actions.erase(action); }
+		for (auto &[source, actions] : keyBindings) {
+			actions.erase(action);
+		}
 	}
 
 	glm::vec2 GlfwActionSource::ImmediateCursor() const {

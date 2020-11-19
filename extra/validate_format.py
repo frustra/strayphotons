@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
-import os 
+import os
+import re
 import glob
 import sys
 import subprocess
 
 include_paths = ["src/", "tests/"]
 include_extenions = [".cc", ".hh", ".cpp", ".hpp"]
-allowed_clangformat_versions = ["clang-format version 6.0.0", "clang-format version 10.0.0"]
+version_pattern = re.compile("version ([0-9]+\.[0-9]+)\.[0-9]+")
+allowed_clangformat_versions = ["6.0", "10.0", "11.0"]
 
 def run_clang_format(filepath, fix):
     if fix:
@@ -35,6 +37,7 @@ def main():
 
     try:
         clangformat_version = subprocess.getoutput('clang-format --version').strip()
+        clangformat_version = version_pattern.search(clangformat_version).group(1);
         version_allowed = False
         for allowed_version in allowed_clangformat_versions:
             if allowed_version in clangformat_version:
@@ -54,7 +57,7 @@ def main():
             for filepath in glob.iglob(glob_path, recursive=True):
                 if not run_clang_format(filepath, args.fix):
                     validated = False
-    
+
     if not validated:
         exit(1)
 

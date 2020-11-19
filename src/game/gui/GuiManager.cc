@@ -15,9 +15,7 @@ namespace sp {
 	GuiManager::GuiManager(Game *game, const FocusLevel focusPriority) : focusPriority(focusPriority), game(game) {
 		imCtx = ImGui::CreateContext();
 
-		if (game != nullptr) {
-			GuiManager::BindInput(game->input);
-		}
+		if (game != nullptr) { GuiManager::BindInput(game->input); }
 	}
 
 	GuiManager::~GuiManager() {
@@ -65,9 +63,13 @@ namespace sp {
 		const KeyEvents *keys, *keysPrev;
 		if (input->GetActionDelta(INPUT_ACTION_KEYBOARD_KEYS, &keys, &keysPrev)) {
 			if (keysPrev != nullptr) {
-				for (auto &key : *keysPrev) { io.KeysDown[key] = false; }
+				for (auto &key : *keysPrev) {
+					io.KeysDown[key] = false;
+				}
 			}
-			for (auto &key : *keys) { io.KeysDown[key] = true; }
+			for (auto &key : *keys) {
+				io.KeysDown[key] = true;
+			}
 
 			io.KeyCtrl = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
 			io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
@@ -77,7 +79,9 @@ namespace sp {
 	}
 
 	void GuiManager::DefineWindows() {
-		for (auto component : components) { component->Add(); }
+		for (auto component : components) {
+			component->Add();
+		}
 	}
 
 	void GuiManager::Attach(GuiRenderable *component) {

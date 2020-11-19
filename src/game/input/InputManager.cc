@@ -18,8 +18,7 @@ namespace sp {
 
 	bool InputManager::IsDown(std::string actionPath) {
 		const bool *value;
-		if (GetActionValue(actionPath, &value))
-			return *value;
+		if (GetActionValue(actionPath, &value)) return *value;
 		return false;
 	}
 
@@ -30,9 +29,7 @@ namespace sp {
 	bool InputManager::IsPressed(std::string actionPath) {
 		const bool *value, *previous;
 		if (GetActionDelta(actionPath, &value, &previous)) {
-			if (previous != nullptr) {
-				return !*previous && *value;
-			}
+			if (previous != nullptr) { return !*previous && *value; }
 			return *value;
 		}
 		return false;
@@ -46,7 +43,9 @@ namespace sp {
 
 		{
 			std::lock_guard lock(sourcesLock);
-			for (auto source : sources) { source->BeginFrame(); }
+			for (auto source : sources) {
+				source->BeginFrame();
+			}
 		}
 
 		if (!FocusLocked()) {

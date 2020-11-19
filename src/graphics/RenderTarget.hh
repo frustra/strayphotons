@@ -108,8 +108,7 @@ namespace sp {
 
 		GLuint GetHandle() {
 			Assert(tex.handle || buf.handle, "render target must have an underlying target");
-			if (tex.handle)
-				return tex.handle;
+			if (tex.handle) return tex.handle;
 			return buf.handle;
 		}
 

@@ -24,10 +24,8 @@ namespace sp {
 
 		// { listSize, indirect_x, indirect_y, indirect_z }
 		GLsizei indirectBufferSize = sizeof(GLuint) * 4 * VoxelMipLevels;
-		if (!indirectBufferCurrent)
-			indirectBufferCurrent.Create();
-		if (!indirectBufferPrevious)
-			indirectBufferPrevious.Create();
+		if (!indirectBufferCurrent) indirectBufferCurrent.Create();
+		if (!indirectBufferPrevious) indirectBufferPrevious.Create();
 		if (indirectBufferCurrent.size != indirectBufferSize || indirectBufferPrevious.size != indirectBufferSize) {
 			indirectBufferCurrent.Data(indirectBufferSize, nullptr, GL_DYNAMIC_COPY);
 			indirectBufferPrevious.Data(indirectBufferSize, nullptr, GL_DYNAMIC_COPY);
@@ -104,10 +102,8 @@ namespace sp {
 			voxelData.voxelOverflow->GetTexture().BindImage(5, GL_WRITE_ONLY, 2);
 
 			shadowMap->GetTexture().Bind(4);
-			if (mirrorShadowMap)
-				mirrorShadowMap->GetTexture().Bind(5);
-			if (menuGuiTarget)
-				menuGuiTarget->GetTexture().Bind(6); // TODO(xthexder): bind correct light gel
+			if (mirrorShadowMap) mirrorShadowMap->GetTexture().Bind(5);
+			if (menuGuiTarget) menuGuiTarget->GetTexture().Bind(6); // TODO(xthexder): bind correct light gel
 			voxelData.radiance->GetTexture().Bind(7);
 			voxelData.radianceMips->GetTexture().Bind(8);
 			mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
@@ -184,8 +180,7 @@ namespace sp {
 						voxelData.fragmentListCurrent->GetTexture().BindImage(1, GL_WRITE_ONLY, i + 1);
 					}
 					if (i > 0) {
-						if (i > 1)
-							voxelData.radianceMips->GetTexture().BindImage(4, GL_READ_ONLY, i - 2, GL_TRUE, 0);
+						if (i > 1) voxelData.radianceMips->GetTexture().BindImage(4, GL_READ_ONLY, i - 2, GL_TRUE, 0);
 						else
 							voxelData.radiance->GetTexture().BindImage(4, GL_READ_ONLY, 0, GL_TRUE, 0);
 						voxelData.radianceMips->GetTexture().BindImage(5, GL_WRITE_ONLY, i - 1, GL_TRUE, 0);

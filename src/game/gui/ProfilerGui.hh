@@ -15,10 +15,8 @@ namespace sp {
 		virtual ~ProfilerGui() {}
 
 		void Add() {
-			if (timer->lastCompleteFrame.results.empty())
-				return;
-			if (CVarProfileCPU.Get() != 1 && CVarProfileGPU.Get() != 1)
-				return;
+			if (timer->lastCompleteFrame.results.empty()) return;
+			if (CVarProfileCPU.Get() != 1 && CVarProfileGPU.Get() != 1) return;
 
 			ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize;
 			frameCount++;
@@ -63,11 +61,9 @@ namespace sp {
 			while (offset < results.size()) {
 				auto result = results[offset++];
 
-				if (result.depth < depth)
-					return offset - 1;
+				if (result.depth < depth) return offset - 1;
 
-				if (result.depth > depth)
-					continue;
+				if (result.depth > depth) continue;
 
 				ImGui::PushID(offset);
 

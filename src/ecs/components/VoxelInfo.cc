@@ -25,8 +25,7 @@ namespace ecs {
 		voxelInfo->gridMax = glm::vec3(0);
 		int areaIndex = 0;
 		for (Entity ent : em.EntitiesWith<VoxelArea>()) {
-			if (areaIndex >= sp::MAX_VOXEL_AREAS)
-				break;
+			if (areaIndex >= sp::MAX_VOXEL_AREAS) break;
 
 			auto area = ent.Get<VoxelArea>();
 			if (!areaIndex) {

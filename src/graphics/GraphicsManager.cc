@@ -44,27 +44,21 @@ namespace sp {
 			glm::ivec2 size;
 			ss >> size.x >> size.y;
 
-			if (size.x > 0 && size.y > 0) {
-				CVarWindowSize.Set(size);
-			}
+			if (size.x > 0 && size.y > 0) { CVarWindowSize.Set(size); }
 		}
 
 		glfwSetErrorCallback(glfwErrorCallback);
 
-		if (!glfwInit()) {
-			throw "glfw failed";
-		}
+		if (!glfwInit()) { throw "glfw failed"; }
 	}
 
 	GraphicsManager::~GraphicsManager() {
-		if (context)
-			ReleaseContext();
+		if (context) ReleaseContext();
 		glfwTerminate();
 	}
 
 	void GraphicsManager::CreateContext() {
-		if (context)
-			throw "already an active context";
+		if (context) throw "already an active context";
 
 		if (useBasic) {
 			context = new BasicRenderer(game);
@@ -77,17 +71,13 @@ namespace sp {
 		context->CreateWindow(CVarWindowSize.Get());
 
 		profilerGui = new ProfilerGui(&context->Timer);
-		if (game->debugGui) {
-			game->debugGui->Attach(profilerGui);
-		}
+		if (game->debugGui) { game->debugGui->Attach(profilerGui); }
 	}
 
 	void GraphicsManager::ReleaseContext() {
-		if (!context)
-			throw "no active context";
+		if (!context) throw "no active context";
 
-		if (profilerGui)
-			delete profilerGui;
+		if (profilerGui) delete profilerGui;
 
 		delete context;
 	}
@@ -101,10 +91,8 @@ namespace sp {
 	}
 
 	bool GraphicsManager::Frame() {
-		if (!context)
-			throw "no active context";
-		if (!HasActiveContext())
-			return false;
+		if (!context) throw "no active context";
+		if (!HasActiveContext()) return false;
 
 		ecs::View pancakeView;                             // Only support a single pancakeView (2D window)
 		vector<std::pair<ecs::View, ecs::XRView>> xrViews; // Support many xrViews
@@ -210,13 +198,14 @@ namespace sp {
 	 * This View will be used when rendering from the player's viewpoint
 	 */
 	void GraphicsManager::SetPlayerView(vector<ecs::Entity> entities) {
-		for (auto entity : entities) { ecs::ValidateView(entity); }
+		for (auto entity : entities) {
+			ecs::ValidateView(entity);
+		}
 		playerViews = entities;
 	}
 
 	void GraphicsManager::RenderLoading() {
-		if (!context)
-			return;
+		if (!context) return;
 
 		if (playerViews.size() > 0) {
 			for (size_t i = 0; i < playerViews.size(); i++) {

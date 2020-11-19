@@ -22,8 +22,7 @@ namespace sp {
 	}
 
 	Texture &Texture::Delete() {
-		if (handle && !assigned)
-			glDeleteTextures(1, &handle);
+		if (handle && !assigned) glDeleteTextures(1, &handle);
 		handle = 0;
 		target = 0;
 		return *this;
@@ -53,27 +52,23 @@ namespace sp {
 
 	Texture &Texture::Filter(GLenum minFilter, GLenum magFilter, float anisotropy) {
 		Assert(handle, "null texture handle");
-		if (target == GL_TEXTURE_2D_MULTISAMPLE)
-			return *this;
+		if (target == GL_TEXTURE_2D_MULTISAMPLE) return *this;
 
 		glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, minFilter);
 		glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, magFilter);
 
-		if (anisotropy > 0.0f)
-			glTextureParameterf(handle, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
+		if (anisotropy > 0.0f) glTextureParameterf(handle, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
 
 		return *this;
 	}
 
 	Texture &Texture::Wrap(GLenum wrapS, GLenum wrapT, GLenum wrapR) {
 		Assert(handle, "null texture handle");
-		if (target == GL_TEXTURE_2D_MULTISAMPLE)
-			return *this;
+		if (target == GL_TEXTURE_2D_MULTISAMPLE) return *this;
 
 		glTextureParameteri(handle, GL_TEXTURE_WRAP_S, wrapS);
 		glTextureParameteri(handle, GL_TEXTURE_WRAP_T, wrapT);
-		if (target == GL_TEXTURE_3D)
-			glTextureParameteri(handle, GL_TEXTURE_WRAP_R, wrapR);
+		if (target == GL_TEXTURE_3D) glTextureParameteri(handle, GL_TEXTURE_WRAP_R, wrapR);
 		return *this;
 	}
 
@@ -99,10 +94,10 @@ namespace sp {
 
 	int CalculateMipmapLevels(int width, int height, int depth) {
 		int dim = std::max(std::max(width, height), depth);
-		if (dim <= 0)
-			return 1;
+		if (dim <= 0) return 1;
 		int cmp = 31;
-		while (!(dim >> cmp)) cmp--;
+		while (!(dim >> cmp))
+			cmp--;
 		return cmp + 1;
 	}
 
@@ -111,9 +106,7 @@ namespace sp {
 		Assert(width && height, "texture size must be set before storage format");
 		Assert(!assigned, "do not call Storage() on assigned textures");
 
-		if (levels == FullyMipmap) {
-			levels = CalculateMipmapLevels(width, height, depth);
-		}
+		if (levels == FullyMipmap) { levels = CalculateMipmapLevels(width, height, depth); }
 
 		this->format = format;
 		this->levels = levels;
@@ -150,15 +143,12 @@ namespace sp {
 		Assert(level < levels, "setting texture data for invalid level");
 		Assert(format.Valid(), "setting texture data without format specified");
 
-		if (subWidth == 0)
-			subWidth = width;
-		if (subHeight == 0)
-			subHeight = height;
+		if (subWidth == 0) subWidth = width;
+		if (subHeight == 0) subHeight = height;
 
 		glTextureSubImage2D(handle, level, xoffset, yoffset, subWidth, subHeight, format.format, format.type, pixels);
 
-		if (genMipmap && levels > 1 && level == 0)
-			GenMipmap();
+		if (genMipmap && levels > 1 && level == 0) GenMipmap();
 
 		return *this;
 	}
@@ -171,10 +161,8 @@ namespace sp {
 		Assert(level < levels, "setting texture data for invalid level");
 		Assert(format.Valid(), "setting texture data without format specified");
 
-		if (subWidth == 0)
-			subWidth = width;
-		if (subHeight == 0)
-			subHeight = height;
+		if (subWidth == 0) subWidth = width;
+		if (subHeight == 0) subHeight = height;
 
 		glTextureSubImage3D(handle,
 			level,
@@ -188,15 +176,13 @@ namespace sp {
 			format.type,
 			pixels);
 
-		if (genMipmap && level == 0)
-			GenMipmap();
+		if (genMipmap && level == 0) GenMipmap();
 
 		return *this;
 	}
 
 	Texture &Texture::GenMipmap() {
-		if (levels > 1)
-			glGenerateTextureMipmap(handle);
+		if (levels > 1) glGenerateTextureMipmap(handle);
 		return *this;
 	}
 

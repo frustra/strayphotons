@@ -36,8 +36,7 @@ namespace sp {
 	}
 
 	size_t byteStrideForAccessor(int componentType, size_t componentCount, size_t existingByteStride) {
-		if (existingByteStride)
-			return existingByteStride;
+		if (existingByteStride) return existingByteStride;
 
 		size_t componentWidth = 0;
 
@@ -68,8 +67,7 @@ namespace sp {
 
 	Model::Attribute GetPrimitiveAttribute(
 		shared_ptr<tinygltf::Model> model, tinygltf::Primitive *p, string attribute) {
-		if (!p->attributes.count(attribute))
-			return Model::Attribute();
+		if (!p->attributes.count(attribute)) return Model::Attribute();
 		auto accessor = model->accessors[p->attributes[attribute]];
 		auto bufView = model->bufferViews[accessor.bufferView];
 
@@ -95,20 +93,20 @@ namespace sp {
 	Model::Model(const std::string &name, shared_ptr<tinygltf::Model> model) : name(name), model(model) {
 		int defaultScene = 0;
 
-		if (model->defaultScene != -1) {
-			defaultScene = model->defaultScene;
-		}
+		if (model->defaultScene != -1) { defaultScene = model->defaultScene; }
 
-		for (int node : model->scenes[defaultScene].nodes) { AddNode(node, glm::mat4()); }
+		for (int node : model->scenes[defaultScene].nodes) {
+			AddNode(node, glm::mat4());
+		}
 	}
 
 	Model::~Model() {
 		Debugf("Destroying model %s (prepared: %d)", name, !!glModel);
-		for (auto primitive : primitives) { delete primitive; }
-
-		if (!!asset) {
-			asset->manager->UnregisterModel(*this);
+		for (auto primitive : primitives) {
+			delete primitive;
 		}
+
+		if (!!asset) { asset->manager->UnregisterModel(*this); }
 	}
 
 	bool Model::HasBuffer(int index) {
@@ -214,7 +212,9 @@ namespace sp {
 			}
 		}
 
-		for (int childNodeIndex : model->nodes[nodeIndex].children) { AddNode(childNodeIndex, matrix); }
+		for (int childNodeIndex : model->nodes[nodeIndex].children) {
+			AddNode(childNodeIndex, matrix);
+		}
 	}
 
 	// Returns a vector of the GLTF node indexes that are present in the "joints"
@@ -223,16 +223,16 @@ namespace sp {
 		vector<int> nodes;
 
 		// TODO: deal with GLTFs that have more than one skin
-		for (int node : model->skins[0].joints) { nodes.push_back(node); }
+		for (int node : model->skins[0].joints) {
+			nodes.push_back(node);
+		}
 
 		return nodes;
 	}
 
 	int Model::FindNodeByName(std::string name) {
 		for (int i = 0; i < model->nodes.size(); i++) {
-			if (model->nodes[i].name == name) {
-				return i;
-			}
+			if (model->nodes[i].name == name) { return i; }
 		}
 		return -1;
 	}
@@ -257,18 +257,14 @@ namespace sp {
 			glPrimitive.metallicRoughnessTex = LoadTexture(primitive->materialIndex, MetallicRoughness);
 			glPrimitive.heightTex = LoadTexture(primitive->materialIndex, Height);
 
-			if (!glPrimitive.baseColorTex)
-				glPrimitive.baseColorTex = &defaultMat.baseColorTex;
-			if (!glPrimitive.metallicRoughnessTex)
-				glPrimitive.metallicRoughnessTex = &defaultMat.metallicRoughnessTex;
-			if (!glPrimitive.heightTex)
-				glPrimitive.heightTex = &defaultMat.heightTex;
+			if (!glPrimitive.baseColorTex) glPrimitive.baseColorTex = &defaultMat.baseColorTex;
+			if (!glPrimitive.metallicRoughnessTex) glPrimitive.metallicRoughnessTex = &defaultMat.metallicRoughnessTex;
+			if (!glPrimitive.heightTex) glPrimitive.heightTex = &defaultMat.heightTex;
 
 			glCreateVertexArrays(1, &glPrimitive.vertexBufferHandle);
 			for (int i = 0; i < std::size(primitive->attributes); i++) {
 				auto *attr = &primitive->attributes[i];
-				if (attr->componentCount == 0)
-					continue;
+				if (attr->componentCount == 0) continue;
 				glEnableVertexArrayAttrib(glPrimitive.vertexBufferHandle, i);
 
 				if (attr->componentType == GL_UNSIGNED_SHORT) {
@@ -298,9 +294,15 @@ namespace sp {
 	}
 
 	GLModel::~GLModel() {
-		for (auto primitive : primitives) { glDeleteVertexArrays(1, &primitive.vertexBufferHandle); }
-		for (auto buf : buffers) { glDeleteBuffers(1, &buf.second); }
-		for (auto tex : textures) { tex.second.Delete(); }
+		for (auto primitive : primitives) {
+			glDeleteVertexArrays(1, &primitive.vertexBufferHandle);
+		}
+		for (auto buf : buffers) {
+			glDeleteBuffers(1, &buf.second);
+		}
+		for (auto tex : textures) {
+			tex.second.Delete();
+		}
 	}
 
 	void GLModel::AddPrimitive(Primitive prim) {
@@ -313,14 +315,11 @@ namespace sp {
 			glBindVertexArray(primitive.vertexBufferHandle);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive.indexBufferHandle);
 
-			if (primitive.baseColorTex)
-				primitive.baseColorTex->Bind(0);
+			if (primitive.baseColorTex) primitive.baseColorTex->Bind(0);
 
-			if (primitive.metallicRoughnessTex)
-				primitive.metallicRoughnessTex->Bind(1);
+			if (primitive.metallicRoughnessTex) primitive.metallicRoughnessTex->Bind(1);
 
-			if (primitive.heightTex)
-				primitive.heightTex->Bind(3);
+			if (primitive.heightTex) primitive.heightTex->Bind(3);
 
 			shader->SetParams(view, modelMat, primitive.parent->matrix);
 
@@ -337,8 +336,7 @@ namespace sp {
 	}
 
 	GLuint GLModel::LoadBuffer(int index) {
-		if (buffers.count(index))
-			return buffers[index];
+		if (buffers.count(index)) return buffers[index];
 
 		auto buffer = model->model->buffers[index];
 		GLuint handle;
@@ -397,8 +395,7 @@ namespace sp {
 		}
 
 		// Test if we have already cached this texture
-		if (textures.count(name))
-			return &textures[name];
+		if (textures.count(name)) return &textures[name];
 
 		// Need to create a texture for this Material / Type combo
 		if (textureIndex != -1) {
@@ -489,7 +486,9 @@ namespace sp {
 			return tex;
 		} else if (factor.size() > 0) {
 			unsigned char data[4];
-			for (size_t i = 0; i < 4; i++) { data[i] = 255 * factor.at(std::min(factor.size() - 1, i)); }
+			for (size_t i = 0; i < 4; i++) {
+				data[i] = 255 * factor.at(std::min(factor.size() - 1, i));
+			}
 
 			// Create a single pixel texture based on the factor data provided
 			return &textures[name]

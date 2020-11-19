@@ -21,8 +21,7 @@
 namespace sp {
 	static void GLAPIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
 		const GLchar *message, const void *user) {
-		if (type == GL_DEBUG_TYPE_OTHER)
-			return;
+		if (type == GL_DEBUG_TYPE_OTHER) return;
 		Debugf("[GL 0x%X] 0x%X: %s", id, type, message);
 	}
 
@@ -39,8 +38,7 @@ namespace sp {
 	GraphicsContext::~GraphicsContext() {
 		delete GlobalShaders;
 
-		if (window)
-			glfwDestroyWindow(window);
+		if (window) glfwDestroyWindow(window);
 	}
 
 	void GraphicsContext::CreateWindow(glm::ivec2 initialSize) {
@@ -146,8 +144,7 @@ namespace sp {
 	}
 
 	const vector<glm::ivec2> &GraphicsContext::MonitorModes() {
-		if (!monitorModes.empty())
-			return monitorModes;
+		if (!monitorModes.empty()) return monitorModes;
 
 		int count;
 		const GLFWvidmode *modes = glfwGetVideoModes(glfwGetPrimaryMonitor(), &count);
@@ -168,21 +165,15 @@ namespace sp {
 
 	const glm::ivec2 GraphicsContext::CurrentMode() {
 		const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-		if (mode != NULL) {
-			return glm::ivec2(mode->width, mode->height);
-		}
+		if (mode != NULL) { return glm::ivec2(mode->width, mode->height); }
 		return glm::ivec2(0);
 	}
 
 	void GraphicsContext::DisableCursor() {
-		if (glfwActionSource) {
-			glfwActionSource->DisableCursor();
-		}
+		if (glfwActionSource) { glfwActionSource->DisableCursor(); }
 	}
 
 	void GraphicsContext::EnableCursor() {
-		if (glfwActionSource) {
-			glfwActionSource->EnableCursor();
-		}
+		if (glfwActionSource) { glfwActionSource->EnableCursor(); }
 	}
 } // namespace sp

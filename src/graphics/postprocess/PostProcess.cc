@@ -200,9 +200,7 @@ namespace sp {
 		context.MirrorSceneData = targets.mirrorSceneData;
 		context.LastOutput = context.GBuffer0;
 
-		if (targets.shadowMap) {
-			context.ShadowMap = context.AddPass<ProxyProcessPass>(targets.shadowMap);
-		}
+		if (targets.shadowMap) { context.ShadowMap = context.AddPass<ProxyProcessPass>(targets.shadowMap); }
 
 		if (targets.mirrorShadowMap) {
 			context.MirrorShadowMap = context.AddPass<ProxyProcessPass>(targets.mirrorShadowMap);
@@ -217,17 +215,11 @@ namespace sp {
 			context.MirrorIndexStencil = context.AddPass<ProxyProcessPass>(targets.mirrorIndexStencil);
 		}
 
-		if (targets.lightingGel) {
-			context.LightingGel = context.AddPass<ProxyProcessPass>(targets.lightingGel);
-		}
+		if (targets.lightingGel) { context.LightingGel = context.AddPass<ProxyProcessPass>(targets.lightingGel); }
 
-		if (CVarSSAOEnabled.Get()) {
-			AddSSAO(context);
-		}
+		if (CVarSSAOEnabled.Get()) { AddSSAO(context); }
 
-		if (CVarLightingEnabled.Get() && targets.shadowMap != nullptr) {
-			AddLighting(context, targets.voxelData);
-		}
+		if (CVarLightingEnabled.Get() && targets.shadowMap != nullptr) { AddLighting(context, targets.voxelData); }
 
 		auto linearLuminosity = context.LastOutput;
 
@@ -241,9 +233,7 @@ namespace sp {
 			AddMenu(context);
 		}
 
-		if (CVarBloomEnabled.Get()) {
-			AddBloom(context);
-		}
+		if (CVarBloomEnabled.Get()) { AddBloom(context); }
 
 		if (CVarTonemapEnabled.Get()) {
 			auto tonemap = context.AddPass<Tonemap>();
@@ -251,9 +241,7 @@ namespace sp {
 			context.LastOutput = tonemap;
 		}
 
-		if (CVarAntiAlias.Get() == 1) {
-			AddSMAA(context, linearLuminosity);
-		}
+		if (CVarAntiAlias.Get() == 1) { AddSMAA(context, linearLuminosity); }
 
 		if (!renderToTexture && (!game->menuGui || game->menuGui->RenderMode() == MenuRenderMode::None)) {
 			auto crosshair = context.AddPass<Crosshair>();
@@ -301,8 +289,7 @@ namespace sp {
 	}
 
 	ProcessPassOutput *ProcessPassOutputRef::GetOutput() {
-		if (pass == nullptr)
-			return nullptr;
+		if (pass == nullptr) return nullptr;
 		return pass->GetOutput(outputIndex);
 	}
 
@@ -311,20 +298,17 @@ namespace sp {
 			// Propagate dependencies.
 			for (uint32 id = 0;; id++) {
 				ProcessPassOutputRef *depend = pass->GetAllDependencies(id);
-				if (!depend)
-					break;
+				if (!depend) break;
 
 				auto dependOutput = depend->GetOutput();
 
-				if (dependOutput)
-					dependOutput->AddDependency();
+				if (dependOutput) dependOutput->AddDependency();
 			}
 
 			// Calculate render target descriptions.
 			for (uint32 id = 0;; id++) {
 				ProcessPassOutput *output = pass->GetOutput(id);
-				if (!output)
-					break;
+				if (!output) break;
 
 				output->TargetDesc = pass->GetOutputDesc(id);
 			}
@@ -334,15 +318,12 @@ namespace sp {
 		for (auto pass : passes) {
 			RenderPhase phase(pass->Name());
 
-			if (phase.name != "ProxyTarget") {
-				phase.StartTimer(renderer->Timer);
-			}
+			if (phase.name != "ProxyTarget") { phase.StartTimer(renderer->Timer); }
 
 			// Set up inputs.
 			for (uint32 id = 0;; id++) {
 				ProcessPassOutputRef *input = pass->GetInput(id);
-				if (!input)
-					break;
+				if (!input) break;
 
 				auto inputOutput = input->GetOutput();
 
@@ -358,13 +339,11 @@ namespace sp {
 			// Release dependencies.
 			for (uint32 id = 0;; id++) {
 				ProcessPassOutputRef *depend = pass->GetAllDependencies(id);
-				if (!depend)
-					break;
+				if (!depend) break;
 
 				auto dependOutput = depend->GetOutput();
 
-				if (dependOutput)
-					dependOutput->ReleaseDependency();
+				if (dependOutput) dependOutput->ReleaseDependency();
 			}
 		}
 	}

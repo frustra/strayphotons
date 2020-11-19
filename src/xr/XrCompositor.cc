@@ -22,7 +22,6 @@ void XrCompositor::CreateRenderTargetTexture(RenderTarget::Ref renderTarget, con
 			.Storage(desc.format, desc.levels)
 			.Attachment(desc.attachment);
 
-		if (desc.depthCompare)
-			renderTarget->tex.Compare();
+		if (desc.depthCompare) renderTarget->tex.Compare();
 	}
 }

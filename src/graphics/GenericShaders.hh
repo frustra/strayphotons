@@ -52,7 +52,8 @@ namespace sp {
 		void SetFactor(int components, double *factor) {
 			Set("components", components);
 			glm::vec4 glFactor;
-			for (int i = 0; i < components; i++) glFactor[i] = (float)factor[i];
+			for (int i = 0; i < components; i++)
+				glFactor[i] = (float)factor[i];
 			Set("factor", glFactor);
 		}
 	};

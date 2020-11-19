@@ -35,15 +35,15 @@ namespace sp {
 	}
 
 	ShaderManager::~ShaderManager() {
-		for (auto cached : pipelineCache) glDeleteProgramPipelines(1, &cached.second);
+		for (auto cached : pipelineCache)
+			glDeleteProgramPipelines(1, &cached.second);
 	}
 
 	void ShaderManager::CompileAll(ShaderSet *shaders) {
 		for (auto shaderType : ShaderTypes()) {
 			auto input = LoadShader(shaderType);
 			auto output = CompileShader(input);
-			if (!output)
-				continue;
+			if (!output) continue;
 
 			output->shaderType = shaderType;
 			auto shader = shaderType->newInstance(output);
@@ -176,13 +176,10 @@ namespace sp {
 				uint32 unit = std::stoul(integers[0]);
 				lineNumber = std::stoi(integers[1]);
 
-				if (unit < input.units.size()) {
-					unitName = input.units[unit];
-				}
+				if (unit < input.units.size()) { unitName = input.units[unit]; }
 			}
 
-			if (newline)
-				output << std::endl;
+			if (newline) output << std::endl;
 			newline = true;
 
 			if (input.units[0] == unitName || input.units[0] == "") {

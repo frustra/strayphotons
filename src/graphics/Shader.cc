@@ -13,7 +13,9 @@ namespace sp {
 		: type(compileOutput->shaderType), program(compileOutput->program), compileOutput(compileOutput) {}
 
 	Shader::~Shader() {
-		for (auto b : buffers) { glDeleteBuffers(1, &b->handle); }
+		for (auto b : buffers) {
+			glDeleteBuffers(1, &b->handle);
+		}
 	}
 
 	Shader::Uniform &Shader::LookupUniform(string name) {
@@ -51,9 +53,7 @@ namespace sp {
 
 	void Shader::BindBuffers() {
 		for (auto b : buffers) {
-			if (b->index != -1 && b->size > 0) {
-				glBindBufferRange(b->target, b->index, b->handle, 0, b->size);
-			}
+			if (b->index != -1 && b->size > 0) { glBindBufferRange(b->target, b->index, b->handle, 0, b->size); }
 		}
 	}
 } // namespace sp

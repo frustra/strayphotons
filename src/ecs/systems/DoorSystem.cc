@@ -14,13 +14,9 @@ namespace ecs {
 
 			SlideDoor::State state = door->GetState(entities);
 			if (receiver->IsTriggered()) {
-				if (state != SlideDoor::State::OPENED && state != SlideDoor::State::OPENING) {
-					door->Open(entities);
-				}
+				if (state != SlideDoor::State::OPENED && state != SlideDoor::State::OPENING) { door->Open(entities); }
 			} else {
-				if (state != SlideDoor::State::CLOSED && state != SlideDoor::State::CLOSING) {
-					door->Close(entities);
-				}
+				if (state != SlideDoor::State::CLOSED && state != SlideDoor::State::CLOSING) { door->Close(entities); }
 			}
 		}
 		return true;

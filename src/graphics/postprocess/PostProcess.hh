@@ -68,8 +68,7 @@ namespace sp {
 		PostProcessPass() {}
 
 		ProcessPassOutput *GetOutput(uint32 id) {
-			if (id >= outputCount)
-				return nullptr;
+			if (id >= outputCount) return nullptr;
 			return &outputs[id];
 		}
 
@@ -84,21 +83,18 @@ namespace sp {
 		}
 
 		ProcessPassOutputRef *GetInput(uint32 id) {
-			if (id >= inputCount)
-				return nullptr;
+			if (id >= inputCount) return nullptr;
 			return &inputs[id];
 		}
 
 		ProcessPassOutputRef *GetDependency(uint32 id) {
-			if (id >= dependencyCount)
-				return nullptr;
+			if (id >= dependencyCount) return nullptr;
 			return &dependencies[id];
 		}
 
 		ProcessPassOutputRef *GetAllDependencies(uint32 id) {
 			auto ref = GetInput(id);
-			if (ref)
-				return ref;
+			if (ref) return ref;
 			return GetDependency(id - inputCount);
 		}
 
@@ -139,7 +135,8 @@ namespace sp {
 		}
 
 		~PostProcessingContext() {
-			for (auto pass : passes) delete pass;
+			for (auto pass : passes)
+				delete pass;
 		}
 
 		Renderer *renderer;

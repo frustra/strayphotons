@@ -33,8 +33,7 @@ namespace sp {
 			glBindVertexArray(glPrimitive.vertexBufferHandle);
 			for (int i = 0; i < std::size(primitive->attributes); i++) {
 				auto *attr = &primitive->attributes[i];
-				if (attr->componentCount == 0)
-					continue;
+				if (attr->componentCount == 0) continue;
 
 				auto attribBuffer = comp->model->GetBuffer(attr->bufferIndex);
 				GLuint attribBufferHandle;
@@ -57,9 +56,7 @@ namespace sp {
 
 	void BasicRenderer::DrawRenderable(ecs::Handle<ecs::Renderable> comp) {
 		for (auto primitive : comp->model->primitives) {
-			if (!primitiveMap.count(primitive)) {
-				PrepareRenderable(comp);
-			}
+			if (!primitiveMap.count(primitive)) { PrepareRenderable(comp); }
 
 			auto glPrimitive = primitiveMap[primitive];
 			glBindVertexArray(glPrimitive.vertexBufferHandle);

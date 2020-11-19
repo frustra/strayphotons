@@ -22,7 +22,9 @@ namespace ecs {
 				picojson::array &subSecond = subTransform.second.get<picojson::array>();
 				if (subSecond.at(0).is<picojson::array>()) {
 					// multiple rotations were given
-					for (picojson::value &r : subSecond) { rotations.push_back(&r); }
+					for (picojson::value &r : subSecond) {
+						rotations.push_back(&r);
+					}
 				} else {
 					// a single rotation was given
 					rotations.push_back(&subTransform.second);

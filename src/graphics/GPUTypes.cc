@@ -11,9 +11,7 @@ namespace sp {
 		int lightNum = 0;
 		for (auto entity : manager.EntitiesWith<ecs::Light>()) {
 			auto light = entity.Get<ecs::Light>();
-			if (!light->on) {
-				continue;
-			}
+			if (!light->on) { continue; }
 
 			if (entity.Has<ecs::View>()) {
 				auto view = entity.Get<ecs::View>();
@@ -31,8 +29,7 @@ namespace sp {
 				data->illuminance = light->illuminance;
 				data->gelId = light->gelId;
 				lightNum++;
-				if (lightNum >= MAX_LIGHTS)
-					break;
+				if (lightNum >= MAX_LIGHTS) break;
 				data++;
 			}
 		}
@@ -56,8 +53,7 @@ namespace sp {
 			data->plane = glm::vec4(mirrorNormal, d);
 
 			mirrorNum++;
-			if (mirrorNum >= MAX_MIRRORS)
-				break;
+			if (mirrorNum >= MAX_MIRRORS) break;
 			data++;
 		}
 		return mirrorNum;

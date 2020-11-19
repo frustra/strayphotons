@@ -18,9 +18,7 @@ namespace ecs {
 			} else if (param.first == "outputTo") {
 				for (auto entName : param.second.get<picojson::array>()) {
 					sensor->outputTo.emplace_back(entName.get<string>(), [dst](NamedEntity &ent) {
-						if (!ent->Has<SignalReceiver>()) {
-							return false;
-						}
+						if (!ent->Has<SignalReceiver>()) { return false; }
 						auto receiver = ent->Get<SignalReceiver>();
 						receiver->AttachSignal(dst);
 						return true;

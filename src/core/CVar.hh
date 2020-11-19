@@ -47,8 +47,7 @@ namespace sp {
 		}
 
 		inline VarType Get(bool setClean) {
-			if (setClean)
-				dirty = false;
+			if (setClean) dirty = false;
 
 			return value;
 		}
@@ -65,8 +64,7 @@ namespace sp {
 		}
 
 		void SetFromString(const string &newValue) {
-			if (newValue.size() == 0)
-				return;
+			if (newValue.size() == 0) return;
 
 			std::stringstream in(newValue);
 			in >> value;
@@ -101,9 +99,7 @@ namespace sp {
 					VarType v;
 					in >> v;
 					values[i] = v;
-					if (value == values[i]) {
-						target = (i + 1) % count;
-					}
+					if (value == values[i]) { target = (i + 1) % count; }
 				}
 				value = values[target];
 			}

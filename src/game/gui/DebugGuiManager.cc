@@ -17,8 +17,7 @@ namespace sp {
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 
 		static ConsoleGui console;
-		if (consoleOpen)
-			console.Add();
+		if (consoleOpen) console.Add();
 		GuiManager::DefineWindows();
 
 		ImGui::PopStyleVar();
@@ -34,9 +33,7 @@ namespace sp {
 		io.MouseDrawCursor = false;
 
 		if (input != nullptr) {
-			if (input->IsPressed(INPUT_ACTION_TOGGLE_CONSOLE)) {
-				ToggleConsole();
-			}
+			if (input->IsPressed(INPUT_ACTION_TOGGLE_CONSOLE)) { ToggleConsole(); }
 
 			if (Focused() && !input->FocusLocked(focusPriority)) {
 				io.MouseDown[0] = input->IsDown(INPUT_ACTION_MOUSE_BASE + "/button_left");
@@ -60,8 +57,7 @@ namespace sp {
 				const CharEvents *chars;
 				if (input->GetActionValue(INPUT_ACTION_KEYBOARD_CHARS, &chars)) {
 					for (auto &ch : *chars) {
-						if (ch > 0 && ch < 0x10000)
-							io.AddInputCharacter(ch);
+						if (ch > 0 && ch < 0x10000) io.AddInputCharacter(ch);
 					}
 				}
 			}
@@ -74,11 +70,9 @@ namespace sp {
 		auto gfxContext = game->graphics.GetContext();
 		if (consoleOpen) {
 			input->LockFocus(true, focusPriority);
-			if (gfxContext)
-				gfxContext->EnableCursor();
+			if (gfxContext) gfxContext->EnableCursor();
 		} else {
-			if (gfxContext)
-				gfxContext->DisableCursor();
+			if (gfxContext) gfxContext->DisableCursor();
 			input->LockFocus(false, focusPriority);
 		}
 	}

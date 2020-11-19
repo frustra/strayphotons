@@ -25,10 +25,8 @@ namespace sp {
 
 		inline static const char *basename(const char *file) {
 			const char *r;
-			if ((r = strrchr(file, '/')))
-				return r + 1;
-			if ((r = strrchr(file, '\\')))
-				return r + 1;
+			if ((r = strrchr(file, '/'))) return r + 1;
+			if ((r = strrchr(file, '\\'))) return r + 1;
 			return file;
 		}
 
@@ -46,17 +44,14 @@ namespace sp {
 		template<typename... T>
 		inline static void writeFormatter(Level lvl, const std::string &fmt, T &&... t) {
 			// #ifdef PACKAGE_RELEASE
-			if (lvl == logging::Level::Debug)
-				return;
+			if (lvl == logging::Level::Debug) return;
 			// #endif
 			int size = std::snprintf(nullptr, 0, fmt.c_str(), std::forward<T>(t)...);
 			std::unique_ptr<char[]> buf(new char[size + 1]);
 			std::snprintf(buf.get(), size + 1, fmt.c_str(), std::forward<T>(t)...);
 			std::cerr << buf.get();
 
-			if (lvl != logging::Level::Debug) {
-				GlobalLogOutput(lvl, string(buf.get(), buf.get() + size));
-			}
+			if (lvl != logging::Level::Debug) { GlobalLogOutput(lvl, string(buf.get(), buf.get() + size)); }
 		}
 
 		template<typename... T>

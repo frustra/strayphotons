@@ -8,8 +8,7 @@ namespace sp {
 	}
 
 	RenderBuffer &RenderBuffer::Delete() {
-		if (handle)
-			glDeleteRenderbuffers(1, &handle);
+		if (handle) glDeleteRenderbuffers(1, &handle);
 		handle = 0;
 		return *this;
 	}

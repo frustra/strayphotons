@@ -23,9 +23,7 @@ namespace ecs {
 	void SignalReceiver::AttachSignal(Entity signaller, float startSig) {
 		Entity::Id eId = signaller.GetId();
 
-		if (this->signallers.count(eId) > 0) {
-			return;
-		}
+		if (this->signallers.count(eId) > 0) { return; }
 
 		auto handler = [&](Entity e, const SignalChange &sig) {
 			this->signallers.at(e.GetId()).signal = sig.signal;
@@ -36,9 +34,7 @@ namespace ecs {
 
 	void SignalReceiver::DetachSignal(Entity signaller) {
 		Entity::Id eId = signaller.GetId();
-		if (this->signallers.count(eId) <= 0) {
-			return;
-		}
+		if (this->signallers.count(eId) <= 0) { return; }
 
 		this->signallers[eId].sub.Unsubscribe();
 		this->signallers.erase(eId);

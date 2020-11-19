@@ -29,16 +29,12 @@ OpenVrSystem::~OpenVrSystem() {
 	// Tracking / compositor uses the vrSystem pointer. Must destroy it first
 	trackingCompositor.reset();
 
-	if (IsInitialized()) {
-		Deinit();
-	}
+	if (IsInitialized()) { Deinit(); }
 }
 
 void OpenVrSystem::Init() {
 	// Already initialized
-	if (vrSystem) {
-		return;
-	}
+	if (vrSystem) { return; }
 
 	vr::EVRInitError err = vr::VRInitError_None;
 	vrSystem = vr::VR_Init(&err, vr::VRApplication_Scene);
@@ -71,9 +67,7 @@ bool OpenVrSystem::IsInitialized() {
 
 void OpenVrSystem::Deinit() {
 	// Not initialized yet
-	if (!vrSystem) {
-		throw std::runtime_error("OpenVR not yet initialized");
-	}
+	if (!vrSystem) { throw std::runtime_error("OpenVR not yet initialized"); }
 
 	vr::VR_Shutdown();
 	vrSystem = nullptr;

@@ -40,7 +40,8 @@ namespace sp {
 
 	uint32 Uint32Log2(uint32 v) {
 		uint32 r = 0;
-		while (v >>= 1) r++;
+		while (v >>= 1)
+			r++;
 		return r;
 	}
 

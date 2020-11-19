@@ -38,8 +38,7 @@ namespace sp {
 				.Storage(desc.format, desc.levels)
 				.Attachment(desc.attachment);
 
-			if (desc.depthCompare)
-				ptr->tex.Compare();
+			if (desc.depthCompare) ptr->tex.Compare();
 		}
 
 		pool.push_back(ptr);
@@ -55,9 +54,7 @@ namespace sp {
 				// No external references.
 				if (elem->unusedFrames++ > 4) {
 					// Swap with back.
-					if (i < pool.size() - 1) {
-						pool[i] = std::move(pool.back());
-					}
+					if (i < pool.size() - 1) { pool[i] = std::move(pool.back()); }
 					pool.pop_back();
 					removed = true;
 					FreeFramebuffersWithAttachment(elem);
@@ -66,9 +63,7 @@ namespace sp {
 				elem->unusedFrames = 0;
 			}
 
-			if (!removed) {
-				i++;
-			}
+			if (!removed) { i++; }
 		}
 	}
 
@@ -84,9 +79,7 @@ namespace sp {
 		FramebufferState key(numAttachments, attachments, depthStencilAttachment);
 
 		auto cached = framebufferCache.find(key);
-		if (cached != framebufferCache.end()) {
-			return cached->second;
-		}
+		if (cached != framebufferCache.end()) { return cached->second; }
 
 		Debugf("Creating new framebuffer");
 
