@@ -147,7 +147,7 @@ namespace sp {
 			game->menuGui->OpenPauseMenu();
 		} else if (input->IsPressed(INPUT_ACTION_SPAWN_DEBUG)) {
 			// Spawn dodecahedron
-			auto entity = game->entityManager.NewEntity();
+			auto entity = CreateGameLogicEntity();
 			auto model = GAssets.LoadModel("dodecahedron");
 			entity.Assign<ecs::Renderable>(model);
 			entity.Assign<ecs::Transform>(glm::vec3(0, 5, 0));
@@ -434,7 +434,7 @@ namespace sp {
 		if (trackedObjectHandle.connected) {
 			// Make sure object is valid
 			if (!xrObject.Valid()) {
-				xrObject = game->entityManager.NewEntity();
+				xrObject = CreateGameLogicEntity();
 				xrObject.Assign<ecs::Name>(entityName);
 			}
 
@@ -474,7 +474,7 @@ namespace sp {
 
 			if (active) {
 				if (!boneEntity.Valid()) {
-					boneEntity = game->entityManager.NewEntity();
+					boneEntity = CreateGameLogicEntity();
 					boneEntity.Assign<ecs::Name>(entityName);
 				}
 
@@ -513,7 +513,7 @@ namespace sp {
 		if (active) {
 			// Make sure object is valid
 			if (!xrObject.Valid()) {
-				xrObject = game->entityManager.NewEntity();
+				xrObject = CreateGameLogicEntity();
 				xrObject.Assign<ecs::Name>(entityName);
 			}
 
@@ -552,7 +552,7 @@ namespace sp {
 
 		// Make sure object is valid
 		if (!xrObject.Valid()) {
-			xrObject = game->entityManager.NewEntity();
+			xrObject = CreateGameLogicEntity();
 			xrObject.Assign<ecs::Name>(entityName);
 		}
 
@@ -637,7 +637,7 @@ namespace sp {
 	void GameLogic::LoadScene(string name) {
 		game->graphics.RenderLoading();
 		game->physics.StopSimulation();
-		game->entityManager.DestroyAll();
+		game->entityManager.DestroyAllWith<ecs::Creator>(ecs::Creator::GAME_LOGIC);
 
 		if (scene != nullptr) {
 			for (auto &line : scene->unloadExecList) {
@@ -646,7 +646,7 @@ namespace sp {
 		}
 
 		scene.reset();
-		scene = GAssets.LoadScene(name, &game->entityManager, game->physics);
+		scene = GAssets.LoadScene(name, &game->entityManager, game->physics, ecs::Creator::GAME_LOGIC);
 		if (!scene) {
 			game->physics.StartSimulation();
 			return;
@@ -687,7 +687,7 @@ namespace sp {
 				// Create a VR origin if one does not already exist
 				ecs::Entity vrOrigin = game->entityManager.EntityWith<ecs::Name>("vr-origin");
 				if (!vrOrigin.Valid()) {
-					vrOrigin = game->entityManager.NewEntity();
+					vrOrigin = CreateGameLogicEntity();
 					// Use AssignKey so we can find this entity by name later
 					vrOrigin.Assign<ecs::Name>("vr-origin");
 				}
@@ -708,7 +708,7 @@ namespace sp {
 				// for mixed reality capture
 				// TODO: add a CVar to allow 3rd eye rendering
 				for (unsigned int i = 0; i < xrSystem->GetCompositor()->GetNumViews(true /* minimum */); i++) {
-					ecs::Entity viewEntity = game->entityManager.NewEntity();
+					ecs::Entity viewEntity = CreateGameLogicEntity();
 					auto ecsView = viewEntity.Assign<ecs::View>();
 					xrSystem->GetCompositor()->PopulateView(i, ecsView);
 
@@ -736,7 +736,7 @@ namespace sp {
 		}
 
 		// Create flashlight entity
-		flashlight = game->entityManager.NewEntity();
+		flashlight = CreateGameLogicEntity();
 		auto transform = flashlight.Assign<ecs::Transform>(glm::vec3(0, -0.3, 0));
 		transform->SetParent(player);
 		auto light = flashlight.Assign<ecs::Light>();
@@ -884,5 +884,19 @@ namespace sp {
 		} else {
 			ent.Get<ecs::SlideDoor>()->Close(game->entityManager);
 		}
+	}
+
+	/**
+	 * @brief Helper function used when creating new entities that belong to
+	 * 		  GameLogic. Using this function ensures that the correct ecs::Creator
+	 * 		  attribute is added to each entity that is owned by GameLogic, and
+	 *		  therefore it gets destroyed on scene unload.
+	 *
+	 * @return ecs::Entity A new Entity with the ecs::Creator::GAME_LOGIC Key added.
+	 */
+	inline ecs::Entity GameLogic::CreateGameLogicEntity() {
+		auto newEntity = game->entityManager.NewEntity();
+		newEntity.Assign<ecs::Creator>(ecs::Creator::GAME_LOGIC);
+		return newEntity;
 	}
 } // namespace sp
