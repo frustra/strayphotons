@@ -4,7 +4,7 @@
 
 #include <PxActor.h>
 #include <PxRigidDynamic.h>
-#include <ecs/Components.hh>
+#include <ecs/Ecs.hh>
 #include <ecs/NamedEntity.hh>
 #include <glm/glm.hpp>
 
@@ -14,7 +14,7 @@ namespace sp {
 
 namespace ecs {
 	struct Physics {
-		Physics() {}
+		Physics() : model(nullptr) {}
 		Physics(shared_ptr<sp::Model> model, sp::PhysxActorDesc desc) : model(model), desc(desc) {}
 		Physics(physx::PxRigidActor *actor, shared_ptr<sp::Model> model, sp::PhysxActorDesc desc)
 			: actor(actor), model(model), desc(desc) {}

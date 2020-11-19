@@ -8,26 +8,12 @@
 #include "core/Console.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
-#include "ecs/components/Barrier.hh"
-#include "ecs/components/Controller.hh"
-#include "ecs/components/Interact.hh"
-#include "ecs/components/Light.hh"
-#include "ecs/components/LightSensor.hh"
-#include "ecs/components/Physics.hh"
-#include "ecs/components/Renderable.hh"
-#include "ecs/components/SignalReceiver.hh"
-#include "ecs/components/SlideDoor.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/TriggerArea.hh"
-#include "ecs/components/Triggerable.h"
-#include "ecs/components/View.hh"
-#include "ecs/components/VoxelInfo.hh"
-#include "ecs/components/XRView.hh"
 #include "physx/PhysxUtils.hh"
 #include "xr/XrSystemFactory.hh"
 
 #include <cmath>
 #include <cxxopts.hpp>
+#include <ecs/Components.hh>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
@@ -135,9 +121,7 @@ namespace sp {
 	}
 
 	void GameLogic::Init(Script *startupScript) {
-		if (game->options.count("map")) {
-			LoadScene(game->options["map"].as<string>());
-		}
+		if (game->options.count("map")) { LoadScene(game->options["map"].as<string>()); }
 
 		if (startupScript != nullptr) {
 			startupScript->Exec();
@@ -157,8 +141,7 @@ namespace sp {
 	GameLogic::~GameLogic() {}
 
 	void GameLogic::HandleInput() {
-		if (input->FocusLocked())
-			return;
+		if (input->FocusLocked()) return;
 
 		if (game->menuGui && input->IsPressed(INPUT_ACTION_OPEN_MENU)) {
 			game->menuGui->OpenPauseMenu();
@@ -173,9 +156,7 @@ namespace sp {
 			desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
 			auto actor = game->physics.CreateActor(model, desc, entity);
 
-			if (actor) {
-				entity.Assign<ecs::Physics>(actor, model, desc);
-			}
+			if (actor) { entity.Assign<ecs::Physics>(actor, model, desc); }
 		} else if (input->IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
 			// Toggle flashlight following player
 			if (flashlight.Valid()) {
@@ -199,15 +180,11 @@ namespace sp {
 	}
 
 	bool GameLogic::Frame(double dtSinceLastFrame) {
-		if (input != nullptr) {
-			HandleInput();
-		}
+		if (input != nullptr) { HandleInput(); }
 
-		if (!scene)
-			return true;
+		if (!scene) return true;
 		ecs::Entity player = GetPlayer();
-		if (!player.Valid())
-			return true;
+		if (!player.Valid()) return true;
 
 		for (auto entity : game->entityManager.EntitiesWith<ecs::TriggerArea>()) {
 			auto area = entity.Get<ecs::TriggerArea>();
@@ -226,15 +203,13 @@ namespace sp {
 			}
 		}
 
-		if (!scene)
-			return true;
+		if (!scene) return true;
 
 		ecs::Entity sun = game->entityManager.EntityWith<ecs::Name>("sun");
 		if (sun.Valid()) {
 			if (CVarSunPosition.Get() == 0) {
 				sunPos += dtSinceLastFrame * (0.05 + std::abs(sin(sunPos) * 0.1));
-				if (sunPos > M_PI / 2.0)
-					sunPos = -M_PI / 2.0;
+				if (sunPos > M_PI / 2.0) sunPos = -M_PI / 2.0;
 			} else {
 				sunPos = CVarSunPosition.Get();
 			}
@@ -305,7 +280,6 @@ namespace sp {
 							if (laserPointer.Valid()) {
 								auto transform = laserPointer.Get<ecs::Transform>();
 								auto parent = xrObject;
-								auto parentTransform = ctrl;
 
 								transform->SetPosition(glm::vec3(0, 0, 0));
 								transform->SetRotate(glm::quat());
@@ -430,12 +404,9 @@ namespace sp {
 			}
 		}
 
-		if (!humanControlSystem.Frame(dtSinceLastFrame))
-			return false;
-		if (!lightGunSystem.Frame(dtSinceLastFrame))
-			return false;
-		if (!doorSystem.Frame(dtSinceLastFrame))
-			return false;
+		if (!humanControlSystem.Frame(dtSinceLastFrame)) return false;
+		if (!lightGunSystem.Frame(dtSinceLastFrame)) return false;
+		if (!doorSystem.Frame(dtSinceLastFrame)) return false;
 
 		return true;
 	}
@@ -464,12 +435,10 @@ namespace sp {
 			// Make sure object is valid
 			if (!xrObject.Valid()) {
 				xrObject = game->entityManager.NewEntity();
-				xrObject.AssignKey<ecs::Name>(entityName);
+				xrObject.Assign<ecs::Name>(entityName);
 			}
 
-			if (!xrObject.Has<ecs::Transform>()) {
-				xrObject.Assign<ecs::Transform>();
-			}
+			if (!xrObject.Has<ecs::Transform>()) { xrObject.Assign<ecs::Transform>(); }
 
 			if (!xrObject.Has<ecs::Renderable>()) {
 				auto renderable = xrObject.Assign<ecs::Renderable>();
@@ -479,9 +448,7 @@ namespace sp {
 				Assert((bool)(renderable->model), "Failed to load skeleton model");
 
 				// Rendering an XR HMD model from the viewpoint of an XRView is a bad idea
-				if (trackedObjectHandle.type == xr::HMD) {
-					renderable->xrExcluded = true;
-				}
+				if (trackedObjectHandle.type == xr::HMD) { renderable->xrExcluded = true; }
 			}
 
 			// Mark the XR HMD as being able to activate TriggerAreas
@@ -489,9 +456,7 @@ namespace sp {
 				xrObject.Assign<ecs::Triggerable>();
 			}
 		} else {
-			if (xrObject.Valid()) {
-				xrObject.Destroy();
-			}
+			if (xrObject.Valid()) { xrObject.Destroy(); }
 		}
 
 		return xrObject;
@@ -510,12 +475,10 @@ namespace sp {
 			if (active) {
 				if (!boneEntity.Valid()) {
 					boneEntity = game->entityManager.NewEntity();
-					boneEntity.AssignKey<ecs::Name>(entityName);
+					boneEntity.Assign<ecs::Name>(entityName);
 				}
 
-				if (!boneEntity.Has<ecs::Transform>()) {
-					boneEntity.Assign<ecs::Transform>();
-				}
+				if (!boneEntity.Has<ecs::Transform>()) { boneEntity.Assign<ecs::Transform>(); }
 
 				if (!boneEntity.Has<ecs::InteractController>()) {
 					auto interact = boneEntity.Assign<ecs::InteractController>();
@@ -535,9 +498,7 @@ namespace sp {
 				ctrl->SetPosition(xrObjectPos * glm::vec4(bone.pos.x, bone.pos.y, bone.pos.z, 1));
 				ctrl->SetRotate(glm::toMat4(bone.rot) * glm::mat4(glm::mat3(xrObjectPos)));
 			} else {
-				if (boneEntity.Valid()) {
-					boneEntity.Destroy();
-				}
+				if (boneEntity.Valid()) { boneEntity.Destroy(); }
 			}
 		}
 	}
@@ -553,12 +514,10 @@ namespace sp {
 			// Make sure object is valid
 			if (!xrObject.Valid()) {
 				xrObject = game->entityManager.NewEntity();
-				xrObject.AssignKey<ecs::Name>(entityName);
+				xrObject.Assign<ecs::Name>(entityName);
 			}
 
-			if (!xrObject.Has<ecs::Transform>()) {
-				xrObject.Assign<ecs::Transform>();
-			}
+			if (!xrObject.Has<ecs::Transform>()) { xrObject.Assign<ecs::Transform>(); }
 
 			if (!xrObject.Has<ecs::InteractController>()) {
 				auto interact = xrObject.Assign<ecs::InteractController>();
@@ -581,9 +540,7 @@ namespace sp {
 		}
 		// Completely destroy inactive input sources so that resources are freed (if possible)
 		else {
-			if (xrObject.Valid()) {
-				xrObject.Destroy();
-			}
+			if (xrObject.Valid()) { xrObject.Destroy(); }
 		}
 
 		return xrObject;
@@ -596,12 +553,10 @@ namespace sp {
 		// Make sure object is valid
 		if (!xrObject.Valid()) {
 			xrObject = game->entityManager.NewEntity();
-			xrObject.AssignKey<ecs::Name>(entityName);
+			xrObject.Assign<ecs::Name>(entityName);
 		}
 
-		if (!xrObject.Has<ecs::Transform>()) {
-			xrObject.Assign<ecs::Transform>();
-		}
+		if (!xrObject.Has<ecs::Transform>()) { xrObject.Assign<ecs::Transform>(); }
 
 		if (!xrObject.Has<ecs::Renderable>()) {
 			auto renderable = xrObject.Assign<ecs::Renderable>();
@@ -685,7 +640,9 @@ namespace sp {
 		game->entityManager.DestroyAll();
 
 		if (scene != nullptr) {
-			for (auto &line : scene->unloadExecList) { GetConsoleManager().ParseAndExecute(line); }
+			for (auto &line : scene->unloadExecList) {
+				GetConsoleManager().ParseAndExecute(line);
+			}
 		}
 
 		scene.reset();
@@ -732,7 +689,7 @@ namespace sp {
 				if (!vrOrigin.Valid()) {
 					vrOrigin = game->entityManager.NewEntity();
 					// Use AssignKey so we can find this entity by name later
-					vrOrigin.AssignKey<ecs::Name>("vr-origin");
+					vrOrigin.Assign<ecs::Name>("vr-origin");
 				}
 
 				// Add a transform to the VR origin if one does not already exist
@@ -774,21 +731,29 @@ namespace sp {
 
 		game->graphics.SetPlayerView(viewEntities);
 
-		for (auto &line : scene->autoExecList) { GetConsoleManager().ParseAndExecute(line); }
+		for (auto &line : scene->autoExecList) {
+			GetConsoleManager().ParseAndExecute(line);
+		}
 
 		// Create flashlight entity
 		flashlight = game->entityManager.NewEntity();
-		auto transform = flashlight.Assign<ecs::Transform>(glm::vec3(0, -0.3, 0));
-		transform->SetParent(player);
-		auto light = flashlight.Assign<ecs::Light>();
-		light->tint = glm::vec3(1.0);
-		light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
-		light->intensity = CVarFlashlight.Get(true);
-		light->on = CVarFlashlightOn.Get(true);
-		auto view = flashlight.Assign<ecs::View>();
-		view->fov = light->spotAngle * 2.0f;
-		view->extents = glm::vec2(CVarFlashlightResolution.Get(true));
-		view->clip = glm::vec2(0.1, 64);
+		{
+			auto transform = flashlight.Assign<ecs::Transform>(glm::vec3(0, -0.3, 0));
+			transform->SetParent(player);
+		}
+		{
+			auto light = flashlight.Assign<ecs::Light>();
+			light->tint = glm::vec3(1.0);
+			light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
+			light->intensity = CVarFlashlight.Get(true);
+			light->on = CVarFlashlightOn.Get(true);
+		}
+		{
+			auto view = flashlight.Assign<ecs::View>();
+			view->fov = glm::radians(CVarFlashlightAngle.Get(true)) * 2.0f;
+			view->extents = glm::vec2(CVarFlashlightResolution.Get(true));
+			view->clip = glm::vec2(0.1, 64);
+		}
 
 		// Make sure all objects are in the correct physx state before restarting simulation
 		game->physics.LogicFrame(game->entityManager);
@@ -821,16 +786,13 @@ namespace sp {
 	string entityName(ecs::Entity ent) {
 		string name = ent.ToString();
 
-		if (ent.Has<ecs::Name>()) {
-			name += " (" + *ent.Get<ecs::Name>() + ")";
-		}
+		if (ent.Has<ecs::Name>()) { name += " (" + *ent.Get<ecs::Name>() + ")"; }
 		return name;
 	}
 
 	void GameLogic::PrintDebug() {
 		Logf("Currently loaded scene: %s", scene ? scene->name : "none");
-		if (!scene)
-			return;
+		if (!scene) return;
 		auto player = GetPlayer();
 		if (player && player.Has<ecs::Transform>() && player.Has<ecs::HumanController>()) {
 			auto transform = player.Get<ecs::Transform>();
@@ -888,39 +850,27 @@ namespace sp {
 
 	void GameLogic::OpenBarrier(string name) {
 		auto ent = game->entityManager.EntityWith<ecs::Name>(name);
-		if (!ent.Valid()) {
-			return Logf("%s not found", name);
-		}
+		if (!ent.Valid()) { return Logf("%s not found", name); }
 
-		if (!ent.Has<ecs::Barrier>()) {
-			return Logf("%s is not a barrier", name);
-		}
+		if (!ent.Has<ecs::Barrier>()) { return Logf("%s is not a barrier", name); }
 
 		ecs::Barrier::Open(ent, game->physics);
 	}
 
 	void GameLogic::CloseBarrier(string name) {
 		auto ent = game->entityManager.EntityWith<ecs::Name>(name);
-		if (!ent.Valid()) {
-			return Logf("%s not found", name);
-		}
+		if (!ent.Valid()) { return Logf("%s not found", name); }
 
-		if (!ent.Has<ecs::Barrier>()) {
-			return Logf("%s is not a barrier", name);
-		}
+		if (!ent.Has<ecs::Barrier>()) { return Logf("%s is not a barrier", name); }
 
 		ecs::Barrier::Close(ent, game->physics);
 	}
 
 	void GameLogic::OpenDoor(string name) {
 		auto ent = game->entityManager.EntityWith<ecs::Name>(name);
-		if (!ent.Valid()) {
-			return Logf("%s not found", name);
-		}
+		if (!ent.Valid()) { return Logf("%s not found", name); }
 
-		if (!ent.Has<ecs::SlideDoor>()) {
-			return Logf("%s is not a door", name);
-		}
+		if (!ent.Has<ecs::SlideDoor>()) { return Logf("%s is not a door", name); }
 
 		if (ent.Has<ecs::SignalReceiver>()) {
 			ent.Get<ecs::SignalReceiver>()->SetOffset(1.0f);
@@ -931,13 +881,9 @@ namespace sp {
 
 	void GameLogic::CloseDoor(string name) {
 		auto ent = game->entityManager.EntityWith<ecs::Name>(name);
-		if (!ent.Valid()) {
-			return Logf("%s not found", name);
-		}
+		if (!ent.Valid()) { return Logf("%s not found", name); }
 
-		if (!ent.Has<ecs::SlideDoor>()) {
-			return Logf("%s is not a door", name);
-		}
+		if (!ent.Has<ecs::SlideDoor>()) { return Logf("%s is not a door", name); }
 
 		if (ent.Has<ecs::SignalReceiver>()) {
 			ent.Get<ecs::SignalReceiver>()->SetOffset(-1.0f);

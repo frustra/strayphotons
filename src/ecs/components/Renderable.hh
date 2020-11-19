@@ -2,7 +2,7 @@
 
 #include "assets/Model.hh"
 
-#include <ecs/Components.hh>
+#include <ecs/Ecs.hh>
 
 namespace ecs {
 	struct Renderable {

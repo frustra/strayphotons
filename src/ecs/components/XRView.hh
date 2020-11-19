@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ecs/Components.hh>
+#include <ecs/Ecs.hh>
 
 namespace ecs {
 	struct XRView {

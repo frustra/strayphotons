@@ -4,7 +4,7 @@
 #include "graphics/Texture.hh"
 #include "physx/PhysxManager.hh"
 
-#include <Ecs.hh>
+#include <ecs/Ecs.hh>
 #include <map>
 #include <picojson/picojson.h>
 #include <string>

@@ -1,10 +1,11 @@
 #pragma once
 
 #include "core/CVar.hh"
-#include "ecs/Entity.hh"
 #include "ecs/components/View.hh"
 #include "game/gui/ProfilerGui.hh"
 #include "graphics/Graphics.hh"
+
+#include <ecs/Ecs.hh>
 
 namespace sp {
 	class Game;

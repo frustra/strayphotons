@@ -12,7 +12,7 @@ extern "C" {
 #include "core/Logging.hh"
 #include "ecs/Components.hh"
 
-#include <Ecs.hh>
+#include <ecs/Ecs.hh>
 
 #if !(__APPLE__)
 	#include <filesystem>
@@ -83,8 +83,7 @@ namespace sp {
 		std::ifstream stream;
 
 #ifdef PACKAGE_RELEASE
-		if (tarIndex.size() == 0)
-			UpdateTarIndex();
+		if (tarIndex.size() == 0) UpdateTarIndex();
 
 		stream.open(ASSETS_TAR, std::ios::in | std::ios::binary);
 
@@ -131,15 +130,13 @@ namespace sp {
 
 	bool AssetManager::InputStream(const std::string &path, std::ifstream &stream, size_t *size) {
 #ifdef PACKAGE_RELEASE
-		if (tarIndex.size() == 0)
-			UpdateTarIndex();
+		if (tarIndex.size() == 0) UpdateTarIndex();
 
 		stream.open(ASSETS_TAR, std::ios::in | std::ios::binary);
 
 		if (stream && tarIndex.count(path)) {
 			auto indexData = tarIndex[path];
-			if (size)
-				*size = indexData.second;
+			if (size) *size = indexData.second;
 			stream.seekg(indexData.first, std::ios::beg);
 			return true;
 		}
@@ -214,8 +211,7 @@ namespace sp {
 
 			// Check if there is a .glb version of the model and prefer that
 			shared_ptr<Asset> asset = Load("models/" + name + "/" + name + ".glb");
-			if (!asset)
-				asset = Load("models/" + name + ".glb");
+			if (!asset) asset = Load("models/" + name + ".glb");
 
 			// Found a GLB
 			if (asset) {
@@ -236,8 +232,7 @@ namespace sp {
 #endif
 			} else {
 				asset = Load("models/" + name + "/" + name + ".gltf");
-				if (!asset)
-					asset = Load("models/" + name + ".gltf");
+				if (!asset) asset = Load("models/" + name + ".gltf");
 
 #ifdef PACKAGE_RELEASE
 				ret = gltfLoader.LoadASCIIFromString(gltfModel.get(),
@@ -311,22 +306,19 @@ namespace sp {
 			ecs::Entity entity = em->NewEntity();
 			auto ent = value.get<picojson::object>();
 			for (auto comp : ent) {
-				if (comp.first[0] == '_')
-					continue;
+				if (comp.first[0] == '_') continue;
 
 				auto componentType = ecs::LookupComponent(comp.first);
 				if (componentType != nullptr) {
 					bool result = componentType->LoadEntity(entity, comp.second);
-					if (!result) {
-						throw std::runtime_error("Failed to load component type: " + comp.first);
-					}
+					if (!result) { throw std::runtime_error("Failed to load component type: " + comp.first); }
 				} else {
 					Errorf("Unknown component, ignoring: %s", comp.first);
 				}
 			}
 			if (ent.count("_name")) {
 				auto name = ent["_name"].get<string>();
-				entity.AssignKey<ecs::Name>(name);
+				entity.Assign<ecs::Name>(name);
 			}
 			scene->entities.push_back(entity);
 		}
@@ -346,7 +338,9 @@ namespace sp {
 		vector<string> lines;
 
 		string line;
-		while (std::getline(ss, line, '\n')) { lines.emplace_back(std::move(line)); }
+		while (std::getline(ss, line, '\n')) {
+			lines.emplace_back(std::move(line));
+		}
 
 		return make_shared<Script>(path, asset, std::move(lines));
 	}

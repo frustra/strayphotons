@@ -1,7 +1,6 @@
 #pragma once
 
-#include <Ecs.hh>
-#include <ecs/Components.hh>
+#include <ecs/Ecs.hh>
 #include <glm/glm.hpp>
 
 namespace sp {

@@ -244,14 +244,6 @@ set (_physx_libraries
 	PhysXPvdSDK
 )
 
-# Change glomerate to use robin hood hashing
-if(MSVC)
-	list(APPEND SP_TARGET_OPTIONS /FIrobin_hood.h -DGLOMERATE_MAP_TYPE=robin_hood::unordered_flat_map)
-else()
-    # GCC or Clang
-	list(APPEND SP_TARGET_OPTIONS -include robin_hood.h -DGLOMERATE_MAP_TYPE=robin_hood::unordered_flat_map)
-endif()
-
 target_compile_options(${PROJECT_LIB} PRIVATE ${SP_TARGET_OPTIONS})
 target_compile_options(${PROJECT_EXE} PRIVATE ${SP_TARGET_OPTIONS})
 target_compile_options(${PROJECT_TEST_EXE} PRIVATE ${SP_TARGET_OPTIONS})
@@ -267,7 +259,7 @@ target_link_libraries(
 		murmurhash
 		robin_hood
 		tinygltf
-		glomerate
+		Tecs
 		glm
 		cxxopts
 		OpenGL::GL

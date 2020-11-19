@@ -1,9 +1,7 @@
 #include "ecs/components/SlideDoor.hh"
 
-#include "ecs/components/Animation.hh"
-#include "ecs/components/Transform.hh"
-
 #include <assets/AssetHelpers.hh>
+#include <ecs/Components.hh>
 #include <picojson/picojson.h>
 
 namespace ecs {
@@ -28,21 +26,15 @@ namespace ecs {
 	}
 
 	void SlideDoor::ValidateDoor(EntityManager &em) {
-		if (!left.Load(em) || !right.Load(em)) {
-			throw std::runtime_error("door panel is no longer valid");
-		}
-		if (!left->Has<Animation>()) {
-			SetAnimation(left, LeftDirection(left));
-		}
-		if (!right->Has<Animation>()) {
-			SetAnimation(right, -LeftDirection(right));
-		}
+		if (!left.Load(em) || !right.Load(em)) { throw std::runtime_error("door panel is no longer valid"); }
+		if (!left->Has<Animation>()) { SetAnimation(left, LeftDirection(left)); }
+		if (!right->Has<Animation>()) { SetAnimation(right, -LeftDirection(right)); }
 	}
 
 	SlideDoor::State SlideDoor::GetState(EntityManager &em) {
 		ValidateDoor(em);
 		auto lPanel = left->Get<Animation>();
-		auto rPanel = right->Get<Animation>();
+		// auto rPanel = right->Get<Animation>();
 
 		SlideDoor::State state;
 		if (lPanel->curState == 1 && lPanel->nextState < 0) {
@@ -61,30 +53,36 @@ namespace ecs {
 	void SlideDoor::Open(EntityManager &em) {
 		ValidateDoor(em);
 
-		auto lPanel = left->Get<Animation>();
-		auto rPanel = right->Get<Animation>();
-		lPanel->AnimateToState(1);
-		rPanel->AnimateToState(1);
+		{
+			auto lPanel = left->Get<Animation>();
+			lPanel->AnimateToState(1);
+		}
+		{
+			auto rPanel = right->Get<Animation>();
+			rPanel->AnimateToState(1);
+		}
 	}
 
 	void SlideDoor::Close(EntityManager &em) {
 		ValidateDoor(em);
 
-		auto lPanel = left->Get<Animation>();
-		auto rPanel = right->Get<Animation>();
-		lPanel->AnimateToState(0);
-		rPanel->AnimateToState(0);
+		{
+			auto lPanel = left->Get<Animation>();
+			lPanel->AnimateToState(0);
+		}
+		{
+			auto rPanel = right->Get<Animation>();
+			rPanel->AnimateToState(0);
+		}
 	}
 
 	void SlideDoor::SetAnimation(NamedEntity &panel, glm::vec3 openDir) {
-		if (!panel->Valid() || !panel->Has<Transform>() || panel->Has<Animation>()) {
-			return;
-		}
+		if (!panel->Valid() || !panel->Has<Transform>() || panel->Has<Animation>()) { return; }
 
-		auto transform = panel->Get<Transform>();
+		auto transform = *panel->Get<Transform>();
 		Animation animation;
 		float panelWidth = this->width / 2;
-		glm::vec3 panelPos = transform->GetPosition();
+		glm::vec3 panelPos = transform.GetPosition();
 		glm::vec3 animatePos = panelPos + panelWidth * openDir;
 
 		animation.states.resize(2);
@@ -92,14 +90,14 @@ namespace ecs {
 
 		// closed
 		Animation::State closeState;
-		closeState.scale = transform->GetScaleVec();
+		closeState.scale = transform.GetScaleVec();
 		closeState.pos = panelPos;
 		animation.states[0] = closeState;
 		animation.animationTimes[0] = this->openTime;
 
 		// open
 		Animation::State openState;
-		openState.scale = transform->GetScaleVec();
+		openState.scale = transform.GetScaleVec();
 		openState.pos = animatePos;
 		animation.states[1] = openState;
 		animation.animationTimes[1] = this->openTime;
@@ -110,7 +108,7 @@ namespace ecs {
 	}
 
 	glm::vec3 SlideDoor::LeftDirection(NamedEntity &panel) {
-		Assert(panel->Valid() && panel->Has<Transform>());
+		sp::Assert(panel->Valid() && panel->Has<Transform>(), "Panel must have valid transform");
 		auto transform = panel->Get<Transform>();
 		return glm::normalize(glm::cross(this->forward, transform->GetUp()));
 	}

@@ -1,90 +1,212 @@
 #pragma once
 
-#include "ecs/NamedEntity.hh"
-
-#include <Ecs.hh>
-#include <cstring>
-#include <map>
-#include <string>
-
-namespace picojson {
-	class value;
-}
+#include <Tecs.hh>
+#include <ecs/Ecs.hh>
+#include <ecs/NamedEntity.hh>
+#include <ecs/components/Animation.hh>
+#include <ecs/components/Barrier.hh>
+#include <ecs/components/Controller.hh>
+#include <ecs/components/Interact.hh>
+#include <ecs/components/Light.hh>
+#include <ecs/components/LightGun.hh>
+#include <ecs/components/LightSensor.hh>
+#include <ecs/components/Mirror.hh>
+#include <ecs/components/Physics.hh>
+#include <ecs/components/Renderable.hh>
+#include <ecs/components/SignalReceiver.hh>
+#include <ecs/components/SlideDoor.hh>
+#include <ecs/components/Transform.hh>
+#include <ecs/components/TriggerArea.hh>
+#include <ecs/components/Triggerable.h>
+#include <ecs/components/View.hh>
+#include <ecs/components/VoxelInfo.hh>
+#include <ecs/components/XRView.hh>
 
 namespace ecs {
-	class ComponentBase {
-	public:
-		ComponentBase(const char *name) : name(name) {}
+	template<typename T, typename... Args>
+	Handle<T> Entity::Assign(Args... args) {
+		auto lock = em->tecs.StartTransaction<Tecs::AddRemove>();
+		return Handle<T>(lock, e.Set<T>(lock, args...));
+	}
 
-		virtual bool LoadEntity(Entity &dst, picojson::value &src) = 0;
-		virtual bool SaveEntity(picojson::value &dst, Entity &src) = 0;
-		virtual void Register(EntityManager &em) = 0;
+	template<typename T>
+	bool Entity::Has() {
+		auto lock = em->tecs.StartTransaction<Tecs::Read<T>>();
+		return e.Has<T>(lock);
+	}
 
-		const char *name;
-	};
+	template<typename T>
+	Handle<T> Entity::Get() {
+		auto lock = em->tecs.StartTransaction<Tecs::Write<T>>();
+		return Handle<T>(lock, e.Get<T>(lock));
+	}
 
-	void RegisterComponent(const char *name, ComponentBase *comp);
-	ComponentBase *LookupComponent(const std::string name);
+	template<typename Event>
+	Subscription Entity::Subscribe(std::function<void(Entity, const Event &)> callback) {
+		if (em == nullptr) { throw runtime_error("Cannot subscribe to events on NULL entity"); }
+		return em->Subscribe(callback, this->e.id);
+	}
 
-	template<typename CompType>
-	class Component : public ComponentBase {
-	public:
-		Component(const char *name) : ComponentBase(name) {
-			auto existing = dynamic_cast<Component<CompType> *>(LookupComponent(std::string(name)));
-			if (existing == nullptr) {
-				RegisterComponent(name, this);
-			} else if (*this != *existing) {
-				throw std::runtime_error("Duplicate component type registered: " + std::string(name));
+	template<typename Event>
+	void Entity::Emit(const Event &event) {
+		em->Emit(this->e.id, event);
+	}
+
+	template<typename T, typename... Tn>
+	std::vector<Entity> EntityManager::EntitiesWith() {
+		auto lock = tecs.StartTransaction<Tecs::Read<T, Tn...>>();
+
+		auto &entities = lock.template EntitiesWith<T>();
+		std::vector<Entity> result;
+		for (auto e : entities) {
+			if (!e.template Has<T, Tn...>(lock)) continue;
+			result.emplace_back(this, e);
+		}
+		return result;
+	}
+
+	template<typename T>
+	Entity EntityManager::EntityWith(const T &value) {
+		auto lock = tecs.template StartTransaction<Tecs::Read<T>>();
+
+		for (auto e : lock.template EntitiesWith<T>()) {
+			if (e.template Get<T>(lock) == value) return Entity(this, e);
+		}
+		return Entity();
+	}
+
+	template<typename Event>
+	Subscription EntityManager::Subscribe(std::function<void(const Event &e)> callback) {
+		// TODO-cs: this shares a lot of code in common with
+		// Subscribe(function<void(Entity, const Event &)>), find a way
+		// to eliminate the duplicate code.
+		std::type_index eventType = typeid(Event);
+
+		uint32 nonEntityEventIndex;
+
+		try {
+			nonEntityEventIndex = eventTypeToNonEntityEventIndex.at(eventType);
+		}
+		// Non-Entity Event never seen before, add it to the collection
+		catch (const std::out_of_range &e) {
+			registerNonEntityEventType<Event>();
+			nonEntityEventIndex = eventTypeToNonEntityEventIndex.at(eventType);
+		}
+
+		std::lock_guard<std::recursive_mutex> lock(signalLock);
+		auto &signal = nonEntityEventSignals.at(nonEntityEventIndex);
+		auto connection = signal.insert(signal.end(), *reinterpret_cast<GenericCallback *>(&callback));
+
+		return Subscription(this, &signal, connection);
+	}
+
+	template<typename Event>
+	Subscription EntityManager::Subscribe(std::function<void(Entity, const Event &)> callback) {
+		std::type_index eventType = typeid(Event);
+
+		uint32 eventIndex;
+
+		try {
+			eventIndex = eventTypeToEventIndex.at(eventType);
+		}
+		// Event never seen before, add it to the collection
+		catch (const std::out_of_range &e) {
+			registerEventType<Event>();
+			eventIndex = eventTypeToEventIndex.at(eventType);
+		}
+
+		std::lock_guard<std::recursive_mutex> lock(signalLock);
+		auto &signal = eventSignals.at(eventIndex);
+		auto connection = signal.insert(signal.end(), *reinterpret_cast<GenericEntityCallback *>(&callback));
+
+		return Subscription(this, &signal, connection);
+	}
+
+	template<typename Event>
+	Subscription EntityManager::Subscribe(std::function<void(Entity, const Event &e)> callback, Entity::Id entity) {
+		auto &signal = entityEventSignals[entity][typeid(Event)];
+		auto connection = signal.insert(signal.end(), *reinterpret_cast<GenericEntityCallback *>(&callback));
+		return Subscription(this, &signal, connection);
+	}
+
+	template<typename Event>
+	void EntityManager::Emit(Entity::Id e, const Event &event) {
+		std::type_index eventType = typeid(Event);
+		Entity entity(this, e);
+
+		std::lock_guard<std::recursive_mutex> lock(signalLock);
+
+		// signal the generic Event subscribers
+		if (eventTypeToEventIndex.count(eventType) > 0) {
+			auto eventIndex = eventTypeToEventIndex.at(eventType);
+			auto &signal = eventSignals.at(eventIndex);
+			auto connection = signal.begin();
+			while (connection != signal.end()) {
+				auto callback = (*reinterpret_cast<std::function<void(Entity, const Event &)> *>(&(*connection)));
+				connection++;
+				callback(entity, event);
 			}
 		}
 
-		bool LoadEntity(Entity &dst, picojson::value &src) override {
-			std::cerr << "Calling undefined LoadEntity on type: " << name << std::endl;
-			return false;
-		}
-
-		bool SaveEntity(picojson::value &dst, Entity &src) override {
-			std::cerr << "Calling undefined SaveEntity on type: " << name << std::endl;
-			return false;
-		}
-
-		virtual void Register(EntityManager &em) override {
-			em.RegisterComponentType<CompType>();
-		}
-
-		bool operator==(const Component<CompType> &other) const {
-			return strcmp(name, other.name) == 0;
-		}
-
-		bool operator!=(const Component<CompType> &other) const {
-			return !(*this == other);
-		}
-	};
-
-	template<typename KeyType>
-	class KeyedComponent : public Component<KeyType> {
-	public:
-		KeyedComponent(const char *name) : ComponentBase(name) {
-			auto existing = dynamic_cast<KeyedComponent<KeyType> *>(LookupComponent(std::string(name)));
-			if (existing == nullptr) {
-				RegisterComponent(name, this);
-			} else if (*this != *existing) {
-				throw std::runtime_error("Duplicate component type registered: " + std::string(name));
+		// now signal the entity-specific Event subscribers
+		if (entityEventSignals.count(e) > 0) {
+			if (entityEventSignals[e].count(eventType) > 0) {
+				auto &signal = entityEventSignals[e][typeid(Event)];
+				auto connection = signal.begin();
+				while (connection != signal.end()) {
+					auto callback = (*reinterpret_cast<std::function<void(Entity, const Event &)> *>(&(*connection)));
+					connection++;
+					callback(entity, event);
+				}
 			}
 		}
+	}
 
-		void Register(EntityManager &em) override {
-			em.RegisterKeyedComponentType<KeyType>();
+	template<typename Event>
+	void EntityManager::Emit(const Event &event) {
+		std::type_index eventType = typeid(Event);
+
+		std::lock_guard<std::recursive_mutex> lock(signalLock);
+
+		if (eventTypeToNonEntityEventIndex.count(eventType) > 0) {
+			auto eventIndex = eventTypeToNonEntityEventIndex.at(eventType);
+			auto &signal = nonEntityEventSignals.at(eventIndex);
+			auto connection = signal.begin();
+			while (connection != signal.end()) {
+				auto callback = (*reinterpret_cast<std::function<void(const Event &)> *>(&(*connection)));
+				connection++;
+				callback(event);
+			}
+		}
+	}
+
+	template<typename Event>
+	void EntityManager::registerEventType() {
+		std::type_index eventType = typeid(Event);
+
+		if (eventTypeToEventIndex.count(eventType) != 0) {
+			std::stringstream ss;
+			ss << "event type " << string(eventType.name()) << " is already registered";
+			throw std::runtime_error(ss.str());
 		}
 
-		bool operator==(const KeyedComponent<KeyType> &other) const {
-			return strcmp(this->name, other.name) == 0;
+		uint32 eventIndex = eventSignals.size();
+		eventTypeToEventIndex[eventType] = eventIndex;
+		eventSignals.push_back({});
+	}
+
+	template<typename Event>
+	void EntityManager::registerNonEntityEventType() {
+		std::type_index eventType = typeid(Event);
+
+		if (eventTypeToNonEntityEventIndex.count(eventType) != 0) {
+			std::stringstream ss;
+			ss << "event type " << string(eventType.name()) << " is already registered";
+			throw std::runtime_error(ss.str());
 		}
 
-		bool operator!=(const KeyedComponent<KeyType> &other) const {
-			return !(*this == other);
-		}
-	};
-
-	void RegisterComponents(EntityManager &em);
+		uint32 nonEntityEventIndex = nonEntityEventSignals.size();
+		eventTypeToNonEntityEventIndex[eventType] = nonEntityEventIndex;
+		nonEntityEventSignals.push_back({});
+	}
 } // namespace ecs

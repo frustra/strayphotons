@@ -1,10 +1,8 @@
 #include "ecs/components/View.hh"
 
-#include "Ecs.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/XRView.hh"
-
 #include <assets/AssetHelpers.hh>
+#include <ecs/Components.hh>
+#include <ecs/Ecs.hh>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -46,23 +44,20 @@ namespace ecs {
 		}
 	}
 
-	Handle<View> UpdateViewCache(Entity entity, float fov) {
+	void UpdateViewCache(Entity entity, View &view, float fov) {
 		ValidateView(entity);
 
-		auto view = entity.Get<View>();
-		view->aspect = (float)view->extents.x / (float)view->extents.y;
+		view.aspect = (float)view.extents.x / (float)view.extents.y;
 
 		if (!entity.Has<ecs::XRView>()) {
-			view->projMat = glm::perspective(fov > 0.0 ? fov : view->fov, view->aspect, view->clip[0], view->clip[1]);
+			view.projMat = glm::perspective(fov > 0.0 ? fov : view.fov, view.aspect, view.clip[0], view.clip[1]);
 
-			auto transform = entity.Get<Transform>();
-			view->invViewMat = transform->GetGlobalTransform(*entity.GetManager());
+			auto transform = *entity.Get<Transform>();
+			view.invViewMat = transform.GetGlobalTransform(*entity.GetManager());
 		}
 
-		view->invProjMat = glm::inverse(view->projMat);
-		view->viewMat = glm::inverse(view->invViewMat);
-
-		return view;
+		view.invProjMat = glm::inverse(view.projMat);
+		view.viewMat = glm::inverse(view.invViewMat);
 	}
 
 	void View::SetProjMat(float _fov, glm::vec2 _clip, glm::ivec2 _extents) {

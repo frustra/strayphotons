@@ -2,7 +2,7 @@
 
 #include "physx/PhysxManager.hh"
 
-#include <Ecs.hh>
+#include <ecs/Ecs.hh>
 
 namespace sp {
 	class InputManager;

@@ -4,7 +4,7 @@
 #include "ecs/components/Transform.hh"
 #include "physx/PhysxUtils.hh"
 
-#include <Ecs.hh>
+#include <ecs/Ecs.hh>
 #include <glm/glm.hpp>
 
 namespace ecs {

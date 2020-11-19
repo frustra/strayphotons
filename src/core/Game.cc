@@ -2,13 +2,13 @@
 
 #include "core/Console.hh"
 #include "core/Logging.hh"
-#include "ecs/Components.hh"
-#include "ecs/components/Physics.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <Common.hh>
 #include <assets/Script.hh>
 #include <cxxopts.hpp>
+#include <ecs/Components.hh>
+#include <ecs/Ecs.hh>
 #include <glm/glm.hpp>
 
 namespace sp {
@@ -45,8 +45,7 @@ namespace sp {
 				auto phys = ent.Get<ecs::Physics>();
 				if (phys->actor) {
 					auto rigidBody = phys->actor->is<physx::PxRigidDynamic>();
-					if (rigidBody)
-						physics.RemoveConstraints(rigidBody);
+					if (rigidBody) physics.RemoveConstraints(rigidBody);
 					physics.RemoveActor(phys->actor);
 				}
 				phys->model = nullptr;
@@ -64,10 +63,8 @@ namespace sp {
 			lastFrameTime = chrono_clock::now();
 
 			while (!triggeredExit) {
-				if (ShouldStop())
-					break;
-				if (!Frame())
-					break;
+				if (ShouldStop()) break;
+				if (!Frame()) break;
 			}
 			return exitCode;
 		} catch (char const *err) {
@@ -84,14 +81,10 @@ namespace sp {
 		double dt = (double)(frameTime - lastFrameTime).count();
 		dt /= chrono_clock::duration(std::chrono::seconds(1)).count();
 
-		if (!logic.Frame(dt))
-			return false;
-		if (!graphics.Frame())
-			return false;
-		if (!physics.LogicFrame(entityManager))
-			return false;
-		if (!animation.Frame(dt))
-			return false;
+		if (!logic.Frame(dt)) return false;
+		if (!graphics.Frame()) return false;
+		if (!physics.LogicFrame(entityManager)) return false;
+		if (!animation.Frame(dt)) return false;
 
 		lastFrameTime = frameTime;
 		return true;

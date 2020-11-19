@@ -1,9 +1,8 @@
 #pragma once
 
-#include "Ecs.hh"
 #include "graphics/GPUTypes.hh"
 
-#include <ecs/Components.hh>
+#include <ecs/Ecs.hh>
 #include <glm/glm.hpp>
 
 namespace ecs {

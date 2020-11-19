@@ -2,8 +2,7 @@
 
 #include "Common.hh"
 
-#include <Ecs.hh>
-#include <ecs/Components.hh>
+#include <ecs/Ecs.hh>
 #include <limits>
 #include <map>
 

@@ -1,8 +1,7 @@
 #include "ecs/components/Transform.hh"
 
-#include "Ecs.hh"
-
 #include <assets/AssetHelpers.hh>
+#include <ecs/Components.hh>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -22,7 +21,9 @@ namespace ecs {
 				picojson::array &subSecond = subTransform.second.get<picojson::array>();
 				if (subSecond.at(0).is<picojson::array>()) {
 					// multiple rotations were given
-					for (picojson::value &r : subSecond) { rotations.push_back(&r); }
+					for (picojson::value &r : subSecond) {
+						rotations.push_back(&r);
+					}
 				} else {
 					// a single rotation was given
 					rotations.push_back(&subTransform.second);
@@ -77,13 +78,13 @@ namespace ecs {
 			sp::Assert(this->parent->Has<Transform>(),
 				"cannot be relative to something that does not have a Transform");
 
-			auto parentTransform = this->parent->Get<Transform>();
+			auto parentTransform = *this->parent->Get<Transform>();
 
-			if (this->cacheCount != this->changeCount || this->parentCacheCount != parentTransform->changeCount) {
-				glm::mat4 parentModel = parentTransform->GetGlobalTransform(em);
+			if (this->cacheCount != this->changeCount || this->parentCacheCount != parentTransform.changeCount) {
+				glm::mat4 parentModel = parentTransform.GetGlobalTransform(em);
 				this->cachedTransform = parentModel * this->translate * GetRotateMatrix() * this->scale;
 				this->cacheCount = this->changeCount;
-				this->parentCacheCount = parentTransform->changeCount;
+				this->parentCacheCount = parentTransform.changeCount;
 			}
 		} else if (this->cacheCount != this->changeCount) {
 			this->cachedTransform = this->translate * GetRotateMatrix() * this->scale;
@@ -99,7 +100,8 @@ namespace ecs {
 			sp::Assert(this->parent->Has<Transform>(),
 				"cannot be relative to something that does not have a Transform");
 
-			model = this->parent->Get<Transform>()->GetGlobalRotation(em);
+			auto parentTransform = *this->parent->Get<Transform>();
+			model = parentTransform.GetGlobalRotation(em);
 		}
 
 		return model * this->rotate;

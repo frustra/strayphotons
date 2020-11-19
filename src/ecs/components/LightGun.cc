@@ -1,6 +1,7 @@
 #include "ecs/components/LightGun.hh"
 
 #include <assets/AssetHelpers.hh>
+#include <ecs/Components.hh>
 #include <picojson/picojson.h>
 
 namespace ecs {

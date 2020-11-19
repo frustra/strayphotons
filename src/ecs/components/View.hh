@@ -2,8 +2,7 @@
 
 #include "graphics/Graphics.hh"
 
-#include <Ecs.hh>
-#include <ecs/Components.hh>
+#include <ecs/Ecs.hh>
 #include <glm/glm.hpp>
 
 namespace ecs {
@@ -63,5 +62,5 @@ namespace ecs {
 	bool Component<View>::LoadEntity(Entity &dst, picojson::value &src);
 
 	void ValidateView(ecs::Entity viewEntity);
-	ecs::Handle<ecs::View> UpdateViewCache(ecs::Entity entity, float fov = 0.0);
+	void UpdateViewCache(ecs::Entity entity, ecs::View &view, float fov = 0.0);
 } // namespace ecs

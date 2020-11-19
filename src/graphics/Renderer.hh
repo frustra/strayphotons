@@ -6,8 +6,8 @@
 #include "graphics/GraphicsContext.hh"
 #include "graphics/Texture.hh"
 
-#include <Ecs.hh>
 #include <PxPhysicsAPI.h>
+#include <ecs/Ecs.hh>
 #include <functional>
 #include <glm/glm.hpp>
 

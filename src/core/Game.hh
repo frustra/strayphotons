@@ -8,8 +8,8 @@
 #include "physx/PhysxManager.hh"
 
 #include <Common.hh>
-#include <Ecs.hh>
 #include <chrono>
+#include <ecs/Ecs.hh>
 #include <game/input/InputManager.hh>
 
 namespace cxxopts {

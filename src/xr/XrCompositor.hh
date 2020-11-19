@@ -1,8 +1,9 @@
 #pragma once
 
-#include "ecs/Entity.hh"
 #include "ecs/components/View.hh"
 #include "graphics/RenderTarget.hh"
+
+#include <ecs/Ecs.hh>
 
 namespace sp {
 	namespace xr {
@@ -36,7 +37,7 @@ namespace sp {
 
 			// Updates a provided ecs::View entity with the properties required to render from the perspective of
 			// a particular XR view.
-			virtual void PopulateView(size_t view, ecs::Handle<ecs::View> ecsView) = 0;
+			virtual void PopulateView(size_t view, ecs::Handle<ecs::View> &ecsView) = 0;
 
 			// Submit a RenderTarget to the compositing system to be displayed to the user.
 			// TODO: in theory, the XrCompositor should be able to keep track of which RT

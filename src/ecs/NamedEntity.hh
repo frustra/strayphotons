@@ -3,6 +3,10 @@
 #include "Ecs.hh"
 #include "core/Logging.hh"
 
+#include <functional>
+#include <ostream>
+#include <sstream>
+
 namespace ecs {
 	typedef std::string Name;
 
@@ -20,17 +24,7 @@ namespace ecs {
 
 		NamedEntity &Load(EntityManager &em) {
 			if (!this->name.empty() && !this->ent.Valid()) {
-				for (auto ent : em.EntitiesWith<ecs::Name>(this->name)) {
-					if (this->ent.Valid()) {
-						std::stringstream ss;
-						ss << *this;
-						Errorf("NamedEntity has multiple matches: %s", ss.str());
-						this->name = "";
-						break;
-					} else {
-						this->ent = ent;
-					}
-				}
+				this->ent = em.EntityWith<ecs::Name>(this->name);
 				if (!this->ent.Valid()) {
 					std::stringstream ss;
 					ss << *this;

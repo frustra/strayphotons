@@ -5,12 +5,6 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/PerfTimer.hh"
-#include "ecs/components/Light.hh"
-#include "ecs/components/Mirror.hh"
-#include "ecs/components/Renderable.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/View.hh"
-#include "ecs/components/VoxelInfo.hh"
 #include "graphics/GPUTypes.hh"
 #include "graphics/GenericShaders.hh"
 #include "graphics/GuiRenderer.hh"
@@ -26,6 +20,7 @@
 #include "xr/XrAction.hh"
 
 #include <cxxopts.hpp>
+#include <ecs/Components.hh>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/transform.hpp>
@@ -42,10 +37,8 @@ namespace sp {
 	}
 
 	Renderer::~Renderer() {
-		if (ShaderControl)
-			delete ShaderControl;
-		if (RTPool)
-			delete RTPool;
+		if (ShaderControl) delete ShaderControl;
+		if (RTPool) delete RTPool;
 	}
 
 	const int MAX_MIRROR_RECURSION = 10;
@@ -85,12 +78,8 @@ namespace sp {
 		// glEnable(GL_FRAMEBUFFER_SRGB);
 
 		RTPool = new RenderTargetPool();
-		if (game->debugGui) {
-			debugGuiRenderer = make_shared<GuiRenderer>(*this, game->debugGui.get());
-		}
-		if (game->menuGui) {
-			menuGuiRenderer = make_shared<GuiRenderer>(*this, game->menuGui.get());
-		}
+		if (game->debugGui) { debugGuiRenderer = make_shared<GuiRenderer>(*this, game->debugGui.get()); }
+		if (game->menuGui) { menuGuiRenderer = make_shared<GuiRenderer>(*this, game->menuGui.get()); }
 
 		ShaderControl = new ShaderManager(GlobalShaders);
 		ShaderManager::SetDefine("MAX_LIGHTS", std::to_string(MAX_LIGHTS));
@@ -123,9 +112,7 @@ namespace sp {
 			RenderTargetDesc menuDesc(PF_RGBA8, view.extents);
 			menuDesc.levels = Texture::FullyMipmap;
 			menuDesc.anisotropy = 4.0;
-			if (!menuGuiTarget || menuGuiTarget->GetDesc() != menuDesc) {
-				menuGuiTarget = RTPool->Get(menuDesc);
-			}
+			if (!menuGuiTarget || menuGuiTarget->GetDesc() != menuDesc) { menuGuiTarget = RTPool->Get(menuDesc); }
 
 			SetRenderTarget(menuGuiTarget, nullptr);
 			PrepareForView(view);
@@ -149,20 +136,18 @@ namespace sp {
 				bulb->emissive = light->on ? light->intensity * light->tint * 0.1f : glm::vec3(0.0f);
 			}
 
-			if (!light->on) {
-				continue;
-			}
+			if (!light->on) { continue; }
 
 			if (entity.Has<ecs::View>()) {
-				auto view = ecs::UpdateViewCache(entity, light->spotAngle * 2.0f);
+				auto view = entity.Get<ecs::View>();
+				ecs::UpdateViewCache(entity, *view, light->spotAngle * 2.0f);
 				light->mapOffset = glm::vec4(renderTargetSize.x, 0, view->extents.x, view->extents.y);
 				light->lightId = lightCount++;
 				view->offset = glm::ivec2(light->mapOffset);
 				view->clearMode = 0;
 
 				renderTargetSize.x += view->extents.x;
-				if (view->extents.y > renderTargetSize.y)
-					renderTargetSize.y = view->extents.y;
+				if (view->extents.y > renderTargetSize.y) renderTargetSize.y = view->extents.y;
 			}
 		}
 
@@ -173,9 +158,7 @@ namespace sp {
 		}
 
 		RenderTargetDesc shadowDesc(PF_R32F, glm::max(glm::ivec2(1), renderTargetSize));
-		if (!shadowMap || shadowMap->GetDesc() != shadowDesc) {
-			shadowMap = RTPool->Get(shadowDesc);
-		}
+		if (!shadowMap || shadowMap->GetDesc() != shadowDesc) { shadowMap = RTPool->Get(shadowDesc); }
 
 		if (!mirrorVisData) {
 			// int count[4];
@@ -198,8 +181,7 @@ namespace sp {
 				GL_DYNAMIC_COPY);
 		}
 
-		if (lightCount == 0)
-			return;
+		if (lightCount == 0) return;
 
 		if (CVarEnableShadows.Get()) {
 			auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH16, renderTargetSize, true));
@@ -217,9 +199,7 @@ namespace sp {
 
 			for (auto entity : game->entityManager.EntitiesWith<ecs::Light>()) {
 				auto light = entity.Get<ecs::Light>();
-				if (!light->on) {
-					continue;
-				}
+				if (!light->on) { continue; }
 
 				if (entity.Has<ecs::View>()) {
 					light->mapOffset /= glm::vec4(renderTargetSize, renderTargetSize);
@@ -288,8 +268,7 @@ namespace sp {
 				basicView.offset = glm::ivec2(0);
 				basicView.extents = glm::ivec2(mapResolution);
 
-				if (bounce > 0)
-					basicView.clearMode = 0;
+				if (bounce > 0) basicView.clearMode = 0;
 
 				ShaderControl->BindPipeline<MirrorMapVS, MirrorMapGS, MirrorMapFS>(GlobalShaders);
 
@@ -342,8 +321,7 @@ namespace sp {
 		voxelData.radiance->GetTexture().Bind(0);
 		voxelData.radianceMips->GetTexture().Bind(1);
 		shadowMap->GetTexture().Bind(2);
-		if (mirrorShadowMap)
-			mirrorShadowMap->GetTexture().Bind(3);
+		if (mirrorShadowMap) mirrorShadowMap->GetTexture().Bind(3);
 
 		ShaderControl->BindPipeline<LightSensorUpdateCS>(GlobalShaders);
 		glDispatchCompute(1, 1, 1);
@@ -384,9 +362,7 @@ namespace sp {
 		targets.mirrorSceneData = mirrorSceneData;
 		targets.lightingGel = menuGuiTarget;
 
-		if (finalOutput) {
-			targets.finalOutput = finalOutput;
-		}
+		if (finalOutput) { targets.finalOutput = finalOutput; }
 
 		{
 			RenderPhase phase("PlayerView", Timer);
@@ -548,9 +524,7 @@ namespace sp {
 					}
 				});
 
-				if (bounce == 0 && CVarShowVoxels.Get() > 0) {
-					DrawGridDebug(view, sceneVS);
-				}
+				if (bounce == 0 && CVarShowVoxels.Get() > 0) { DrawGridDebug(view, sceneVS); }
 
 				glDepthFunc(GL_LESS);
 				glDepthMask(GL_TRUE);
@@ -568,21 +542,17 @@ namespace sp {
 
 		PostProcessing::Process(this, game, view, targets);
 
-		if (!finalOutput) {
-			debugGuiRenderer->Render(view);
-		}
+		if (!finalOutput) { debugGuiRenderer->Render(view); }
 
 		// AssertGLOK("Renderer::RenderFrame");
 	}
 
 	void Renderer::PrepareForView(const ecs::View &view) {
-		if (view.blend)
-			glEnable(GL_BLEND);
+		if (view.blend) glEnable(GL_BLEND);
 		else
 			glDisable(GL_BLEND);
 
-		if (view.stencil)
-			glEnable(GL_STENCIL_TEST);
+		if (view.stencil) glEnable(GL_STENCIL_TEST);
 		else
 			glDisable(GL_STENCIL_TEST);
 
@@ -601,12 +571,10 @@ namespace sp {
 		RenderPhase phase("ForwardPass", Timer);
 		PrepareForView(view);
 
-		if (CVarRenderWireframe.Get())
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		if (CVarRenderWireframe.Get()) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>()) {
-			if (ent.Has<ecs::Mirror>())
-				continue;
+			if (ent.Has<ecs::Mirror>()) continue;
 			DrawEntity(view, shader, ent, preDraw);
 		}
 
@@ -620,8 +588,7 @@ namespace sp {
 			DrawPhysxLines(view, shader, lines.Vector(), preDraw);
 		}
 
-		if (CVarRenderWireframe.Get())
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		if (CVarRenderWireframe.Get()) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 
 	static void addLine(
@@ -656,8 +623,7 @@ namespace sp {
 	void Renderer::DrawPhysxLines(const ecs::View &view, SceneShader *shader, const vector<physx::PxDebugLine> &lines,
 		const PreDrawFunc &preDraw) {
 		ecs::Entity nullEnt;
-		if (preDraw)
-			preDraw(nullEnt);
+		if (preDraw) preDraw(nullEnt);
 
 		vector<SceneVertex> vertices(6 * lines.size());
 		for (auto &line : lines) {
@@ -682,24 +648,18 @@ namespace sp {
 
 	void Renderer::DrawEntity(
 		const ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw) {
-		auto comp = ent.Get<ecs::Renderable>();
-		if (comp->hidden) {
-			return;
-		}
+		auto compRead = *ent.Get<ecs::Renderable>();
+		if (compRead.model) { return; }
 
 		// Don't render XR-excluded entities from XR views
-		if (view.viewType == ecs::View::VIEW_TYPE_XR && comp->xrExcluded) {
-			return;
-		}
+		if (view.viewType == ecs::View::VIEW_TYPE_XR && compRead.xrExcluded) { return; }
 
 		glm::mat4 modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform(game->entityManager);
 
-		if (preDraw)
-			preDraw(ent);
+		if (preDraw) preDraw(ent);
 
-		if (!comp->model->glModel) {
-			comp->model->glModel = make_shared<GLModel>(comp->model.get(), this);
-		}
+		auto comp = ent.Get<ecs::Renderable>();
+		if (!comp->model->glModel) { comp->model->glModel = make_shared<GLModel>(comp->model.get(), this); }
 		comp->model->glModel->Draw(shader,
 			modelMat,
 			view,
@@ -763,10 +723,11 @@ namespace sp {
 	void Renderer::ExpireRenderables() {
 		int expiredCount = 0;
 		for (auto &pair : renderableGCQueue) {
-			if (pair.second-- < 0)
-				expiredCount++;
+			if (pair.second-- < 0) expiredCount++;
 		}
-		while (expiredCount-- > 0) { renderableGCQueue.pop_front(); }
+		while (expiredCount-- > 0) {
+			renderableGCQueue.pop_front();
+		}
 	}
 
 	void Renderer::BeginFrame() {
@@ -787,8 +748,7 @@ namespace sp {
 				CVarVoxelGridSize.Get(),
 				CVarVoxelSuperSample.Get(),
 				game->entityManager);
-			if (CVarUpdateVoxels.Get())
-				RenderVoxelGrid();
+			if (CVarUpdateVoxels.Get()) RenderVoxelGrid();
 			UpdateLightSensors();
 			break;
 		}

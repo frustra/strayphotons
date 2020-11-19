@@ -9,14 +9,15 @@
 #include "graphics/ShaderManager.hh"
 #include "graphics/Texture.hh"
 
-#include <Ecs.hh>
+#include <ecs/Ecs.hh>
+#include <vector>
 
 namespace sp {
 	class LightSensorUpdateCS : public Shader {
 		SHADER_TYPE(LightSensorUpdateCS);
 		LightSensorUpdateCS(shared_ptr<ShaderCompileOutput> compileOutput);
 
-		void SetSensors(ecs::EntityManager::EntityCollection &sensors);
+		void SetSensors(std::vector<ecs::Entity> &sensors);
 		void SetLightData(int count, GLLightData *data);
 		void SetVoxelInfo(GLVoxelInfo *data);
 		void StartReadback();

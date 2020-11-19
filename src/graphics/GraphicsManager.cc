@@ -4,15 +4,13 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/PerfTimer.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/View.hh"
-#include "ecs/components/XRView.hh"
 #include "graphics/GuiRenderer.hh"
 #include "graphics/RenderTargetPool.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/basic_renderer/BasicRenderer.hh"
 
 #include <cxxopts.hpp>
+#include <ecs/Components.hh>
 #include <iostream>
 #include <system_error>
 
@@ -44,27 +42,21 @@ namespace sp {
 			glm::ivec2 size;
 			ss >> size.x >> size.y;
 
-			if (size.x > 0 && size.y > 0) {
-				CVarWindowSize.Set(size);
-			}
+			if (size.x > 0 && size.y > 0) { CVarWindowSize.Set(size); }
 		}
 
 		glfwSetErrorCallback(glfwErrorCallback);
 
-		if (!glfwInit()) {
-			throw "glfw failed";
-		}
+		if (!glfwInit()) { throw "glfw failed"; }
 	}
 
 	GraphicsManager::~GraphicsManager() {
-		if (context)
-			ReleaseContext();
+		if (context) ReleaseContext();
 		glfwTerminate();
 	}
 
 	void GraphicsManager::CreateContext() {
-		if (context)
-			throw "already an active context";
+		if (context) throw "already an active context";
 
 		if (useBasic) {
 			context = new BasicRenderer(game);
@@ -77,17 +69,13 @@ namespace sp {
 		context->CreateWindow(CVarWindowSize.Get());
 
 		profilerGui = new ProfilerGui(&context->Timer);
-		if (game->debugGui) {
-			game->debugGui->Attach(profilerGui);
-		}
+		if (game->debugGui) { game->debugGui->Attach(profilerGui); }
 	}
 
 	void GraphicsManager::ReleaseContext() {
-		if (!context)
-			throw "no active context";
+		if (!context) throw "no active context";
 
-		if (profilerGui)
-			delete profilerGui;
+		if (profilerGui) delete profilerGui;
 
 		delete context;
 	}
@@ -101,10 +89,8 @@ namespace sp {
 	}
 
 	bool GraphicsManager::Frame() {
-		if (!context)
-			throw "no active context";
-		if (!HasActiveContext())
-			return false;
+		if (!context) throw "no active context";
+		if (!HasActiveContext()) return false;
 
 		ecs::View pancakeView;                             // Only support a single pancakeView (2D window)
 		vector<std::pair<ecs::View, ecs::XRView>> xrViews; // Support many xrViews
@@ -119,10 +105,12 @@ namespace sp {
 					view->SetProjMat(glm::radians(CVarFieldOfView.Get()), view->GetClip(), CVarWindowSize.Get());
 					view->scale = CVarWindowScale.Get();
 
-					pancakeView = *ecs::UpdateViewCache(playerViews[i]);
+					ecs::UpdateViewCache(playerViews[i], *view);
+
+					pancakeView = *view;
 				} else if (view->viewType == ecs::View::VIEW_TYPE_XR && playerViews[i].Has<ecs::XRView>()) {
-					xrViews.push_back(
-						std::make_pair(*ecs::UpdateViewCache(playerViews[i]), *playerViews[i].Get<ecs::XRView>()));
+					ecs::UpdateViewCache(playerViews[i], *view);
+					xrViews.push_back(std::make_pair(*view, *playerViews[i].Get<ecs::XRView>()));
 				}
 			}
 		} else {
@@ -210,13 +198,14 @@ namespace sp {
 	 * This View will be used when rendering from the player's viewpoint
 	 */
 	void GraphicsManager::SetPlayerView(vector<ecs::Entity> entities) {
-		for (auto entity : entities) { ecs::ValidateView(entity); }
+		for (auto entity : entities) {
+			ecs::ValidateView(entity);
+		}
 		playerViews = entities;
 	}
 
 	void GraphicsManager::RenderLoading() {
-		if (!context)
-			return;
+		if (!context) return;
 
 		if (playerViews.size() > 0) {
 			for (size_t i = 0; i < playerViews.size(); i++) {
@@ -228,11 +217,11 @@ namespace sp {
 					view->SetProjMat(glm::radians(CVarFieldOfView.Get()), view->GetClip(), CVarWindowSize.Get());
 					view->scale = CVarWindowScale.Get();
 
-					ecs::View pancakeView = *ecs::UpdateViewCache(playerViews[i]);
-					pancakeView.blend = true;
-					pancakeView.clearMode = 0;
+					ecs::UpdateViewCache(playerViews[i], *view);
+					view->blend = true;
+					view->clearMode = 0;
 
-					context->RenderLoading(pancakeView);
+					context->RenderLoading(*view);
 				}
 			}
 		}

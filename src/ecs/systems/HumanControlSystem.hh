@@ -3,7 +3,7 @@
 #include "ecs/components/Controller.hh"
 #include "physx/PhysxManager.hh"
 
-#include <Ecs.hh>
+#include <ecs/Ecs.hh>
 #include <game/input/InputManager.hh>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>

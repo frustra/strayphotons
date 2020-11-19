@@ -1,6 +1,7 @@
 #include "ecs/components/VoxelInfo.hh"
 
 #include <assets/AssetHelpers.hh>
+#include <ecs/Components.hh>
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <picojson/picojson.h>
@@ -25,8 +26,7 @@ namespace ecs {
 		voxelInfo->gridMax = glm::vec3(0);
 		int areaIndex = 0;
 		for (Entity ent : em.EntitiesWith<VoxelArea>()) {
-			if (areaIndex >= sp::MAX_VOXEL_AREAS)
-				break;
+			if (areaIndex >= sp::MAX_VOXEL_AREAS) break;
 
 			auto area = ent.Get<VoxelArea>();
 			if (!areaIndex) {

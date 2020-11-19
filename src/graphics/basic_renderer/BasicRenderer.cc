@@ -19,7 +19,7 @@ namespace sp {
 
 	BasicRenderer::~BasicRenderer() {}
 
-	void BasicRenderer::PrepareRenderable(ecs::Handle<ecs::Renderable> comp) {
+	void BasicRenderer::PrepareRenderable(ecs::Handle<ecs::Renderable> &comp) {
 		for (auto primitive : comp->model->primitives) {
 			auto indexBuffer = comp->model->GetBuffer(primitive->indexBuffer.bufferIndex);
 
@@ -33,8 +33,7 @@ namespace sp {
 			glBindVertexArray(glPrimitive.vertexBufferHandle);
 			for (int i = 0; i < std::size(primitive->attributes); i++) {
 				auto *attr = &primitive->attributes[i];
-				if (attr->componentCount == 0)
-					continue;
+				if (attr->componentCount == 0) continue;
 
 				auto attribBuffer = comp->model->GetBuffer(attr->bufferIndex);
 				GLuint attribBufferHandle;
@@ -55,11 +54,9 @@ namespace sp {
 		}
 	}
 
-	void BasicRenderer::DrawRenderable(ecs::Handle<ecs::Renderable> comp) {
+	void BasicRenderer::DrawRenderable(ecs::Handle<ecs::Renderable> &comp) {
 		for (auto primitive : comp->model->primitives) {
-			if (!primitiveMap.count(primitive)) {
-				PrepareRenderable(comp);
-			}
+			if (!primitiveMap.count(primitive)) { PrepareRenderable(comp); }
 
 			auto glPrimitive = primitiveMap[primitive];
 			glBindVertexArray(glPrimitive.vertexBufferHandle);
@@ -176,7 +173,8 @@ namespace sp {
 
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>()) {
 			auto comp = ent.Get<ecs::Renderable>();
-			auto modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform(game->entityManager);
+			auto transform = *ent.Get<ecs::Transform>();
+			auto modelMat = transform.GetGlobalTransform(game->entityManager);
 			auto mvp = view.projMat * view.viewMat * modelMat;
 
 			glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));

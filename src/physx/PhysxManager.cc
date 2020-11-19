@@ -6,15 +6,12 @@
 #include "core/CFunc.hh"
 #include "core/CVar.hh"
 #include "core/Logging.hh"
-#include "ecs/components/Controller.hh"
-#include "ecs/components/Interact.hh"
-#include "ecs/components/Physics.hh"
-#include "ecs/components/Transform.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <Common.hh>
 #include <PxScene.h>
 #include <chrono>
+#include <ecs/Components.hh>
 #include <fstream>
 
 namespace sp {
@@ -75,27 +72,20 @@ namespace sp {
 		Unlock();
 		DestroyPhysxScene();
 
-		if (pxCooking)
-			pxCooking->release();
-		if (physics)
-			physics->release();
+		if (pxCooking) pxCooking->release();
+		if (physics) physics->release();
 #if !defined(PACKAGE_RELEASE)
-		if (pxPvd)
-			pxPvd->release();
-		if (pxPvdTransport)
-			pxPvdTransport->release();
+		if (pxPvd) pxPvd->release();
+		if (pxPvdTransport) pxPvdTransport->release();
 #endif
-		if (pxFoundation)
-			pxFoundation->release();
+		if (pxFoundation) pxFoundation->release();
 	}
 
 	void PhysxManager::Frame(double timeStep) {
 		bool hadResults = false;
 
 		while (resultsPending) {
-			if (!simulate) {
-				return;
-			}
+			if (!simulate) { return; }
 
 			hadResults = true;
 			Lock();
@@ -110,16 +100,15 @@ namespace sp {
 			std::this_thread::sleep_for(std::chrono::milliseconds(2));
 		}
 
-		if (!hadResults)
-			Lock();
+		if (!hadResults) Lock();
 
 		for (auto constraint = constraints.begin(); constraint != constraints.end();) {
-			auto transform = constraint->parent.Get<ecs::Transform>();
+			auto transform = *constraint->parent.Get<ecs::Transform>();
 			auto pose = constraint->child->getGlobalPose();
-			auto rotate = transform->GetRotate();
+			auto rotate = transform.GetRotate();
 			auto invRotate = glm::inverse(rotate);
 
-			auto targetPos = transform->GetPosition() + rotate * PxVec3ToGlmVec3P(constraint->offset);
+			auto targetPos = transform.GetPosition() + rotate * PxVec3ToGlmVec3P(constraint->offset);
 			auto currentPos = pose.transform(constraint->child->getCMassLocalPose().transform(physx::PxVec3(0.0)));
 			auto deltaPos = GlmVec3ToPxVec3(targetPos) - currentPos;
 
@@ -177,19 +166,14 @@ namespace sp {
 					dynamicActor->wakeUp();
 				}
 
-				if (n < buffer.size())
-					break;
+				if (n < buffer.size()) break;
 
 				startIndex += n;
 			}
 		}
 
-		if (CVarShowShapes.Changed()) {
-			ToggleDebug(CVarShowShapes.Get(true));
-		}
-		if (CVarShowShapes.Get()) {
-			CacheDebugLines();
-		}
+		if (CVarShowShapes.Changed()) { ToggleDebug(CVarShowShapes.Get(true)); }
+		if (CVarShowShapes.Get()) { CacheDebugLines(); }
 
 		scene->simulate((PxReal)timeStep, nullptr, scratchBlock.data(), scratchBlock.size());
 
@@ -204,24 +188,22 @@ namespace sp {
 
 			for (ecs::Entity ent : manager.EntitiesWith<ecs::Physics, ecs::Transform>()) {
 				auto ph = ent.Get<ecs::Physics>();
-				auto transform = ent.Get<ecs::Transform>();
 
-				if (!ph->actor && ph->model) {
-					ph->actor = CreateActor(ph->model, ph->desc, ent);
-				}
+				if (!ph->actor && ph->model) { ph->actor = CreateActor(ph->model, ph->desc, ent); }
 
-				if (ph->actor && transform->ClearDirty()) {
+				if (ph->actor && ent.Get<ecs::Transform>()->ClearDirty()) {
 					if (!gotLock) {
 						Lock();
 						gotLock = true;
 					}
 
-					auto position = transform->GetGlobalTransform(manager) * glm::vec4(0, 0, 0, 1);
-					auto rotate = transform->GetGlobalRotation(manager);
+					auto transform = *ent.Get<ecs::Transform>();
+					auto position = transform.GetGlobalTransform(manager) * glm::vec4(0, 0, 0, 1);
+					auto rotate = transform.GetGlobalRotation(manager);
 
 					auto lastScale = ph->scale;
 					auto newScale = glm::vec3(
-						glm::inverse(rotate) * (transform->GetGlobalTransform(manager) * glm::vec4(1, 1, 1, 0)));
+						glm::inverse(rotate) * (transform.GetGlobalTransform(manager) * glm::vec4(1, 1, 1, 0)));
 					if (lastScale != newScale) {
 						auto n = ph->actor->getNbShapes();
 						vector<physx::PxShape *> shapes(n);
@@ -242,8 +224,7 @@ namespace sp {
 				}
 			}
 
-			if (gotLock)
-				Unlock();
+			if (gotLock) Unlock();
 		}
 
 		{
@@ -254,8 +235,7 @@ namespace sp {
 				auto ph = ent.Get<ecs::Physics>();
 				auto transform = ent.Get<ecs::Transform>();
 
-				if (!ph->desc.dynamic)
-					continue;
+				if (!ph->desc.dynamic) continue;
 
 				Assert(!transform->HasParent(manager), "Dynamic physics objects must have no parent");
 
@@ -354,8 +334,7 @@ namespace sp {
 			while (!exiting) {
 				auto frameStart = chrono_clock::now();
 
-				if (simulate)
-					Frame(1.0 / rate);
+				if (simulate) Frame(1.0 / rate);
 
 				std::this_thread::sleep_until(frameStart + chrono_clock::duration(std::chrono::seconds(1)) / rate);
 			}
@@ -395,9 +374,7 @@ namespace sp {
 	}
 
 	ConvexHullSet *PhysxManager::GetCachedConvexHulls(std::string name) {
-		if (cache.count(name)) {
-			return cache[name];
-		}
+		if (cache.count(name)) { return cache[name]; }
 
 		return nullptr;
 	}
@@ -406,11 +383,9 @@ namespace sp {
 		ConvexHullSet *set;
 
 		std::string name = model->name;
-		if (decomposeHull)
-			name += "-decompose";
+		if (decomposeHull) name += "-decompose";
 
-		if ((set = GetCachedConvexHulls(name)))
-			return set;
+		if ((set = GetCachedConvexHulls(name))) return set;
 
 		if ((set = LoadCollisionCache(model, decomposeHull))) {
 			cache[name] = set;
@@ -507,11 +482,9 @@ namespace sp {
 			shape->setSimulationFilterData(data);
 		}
 
-		if (desc.dynamic) {
-			PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidDynamic *>(actor), desc.density);
-		}
+		if (desc.dynamic) { PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidDynamic *>(actor), desc.density); }
 
-		actor->userData = reinterpret_cast<void *>((size_t)entity.GetId().GetId());
+		actor->userData = reinterpret_cast<void *>((size_t)entity.GetId());
 
 		scene->addActor(*actor);
 		Unlock();
@@ -526,7 +499,7 @@ namespace sp {
 	}
 
 	ecs::Entity::Id PhysxManager::GetEntityId(const physx::PxActor &actor) const {
-		return ecs::Entity::Id(static_cast<ecs::eid_t>((size_t)actor.userData));
+		return (size_t)actor.userData;
 	}
 
 	void ControllerHitReport::onShapeHit(const physx::PxControllerShapeHit &hit) {
@@ -547,8 +520,7 @@ namespace sp {
 
 	PxCapsuleController *PhysxManager::CreateController(PxVec3 pos, float radius, float height, float density) {
 		Lock();
-		if (!manager)
-			manager = PxCreateControllerManager(*scene, true);
+		if (!manager) manager = PxCreateControllerManager(*scene, true);
 
 		// Capsule controller description will want to be data driven
 		PxCapsuleControllerDesc desc;
@@ -630,9 +602,7 @@ namespace sp {
 
 		bool status = scene->raycast(origin, dir, distance, hit);
 
-		if (controllerActor) {
-			scene->addActor(*controllerActor);
-		}
+		if (controllerActor) { scene->addActor(*controllerActor); }
 
 		scene->unlockRead();
 		Unlock();
@@ -696,9 +666,7 @@ namespace sp {
 		constraint.rotationOffset = rotationOffset;
 		constraint.rotation = PxVec3(0);
 
-		if (parent.Has<ecs::Transform>()) {
-			constraints.emplace_back(constraint);
-		}
+		if (parent.Has<ecs::Transform>()) { constraints.emplace_back(constraint); }
 		Unlock();
 	}
 
@@ -764,8 +732,7 @@ namespace sp {
 		std::ifstream in;
 
 		std::string name = "cache/collision/" + model->name;
-		if (decomposeHull)
-			name += "-decompose";
+		if (decomposeHull) name += "-decompose";
 
 		if (GAssets.InputStream(name, in)) {
 			uint32 magic;
@@ -835,8 +802,7 @@ namespace sp {
 	void PhysxManager::SaveCollisionCache(Model *model, ConvexHullSet *set, bool decomposeHull) {
 		std::ofstream out;
 		std::string name = "cache/collision/" + model->name;
-		if (decomposeHull)
-			name += "-decompose";
+		if (decomposeHull) name += "-decompose";
 
 		if (GAssets.OutputStream(name, out)) {
 			out.write((char *)&hullCacheMagic, 4);

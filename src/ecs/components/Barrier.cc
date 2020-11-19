@@ -1,14 +1,12 @@
 #include "ecs/components/Barrier.hh"
 
-#include "Ecs.hh"
 #include "assets/AssetManager.hh"
-#include "ecs/components/Physics.hh"
-#include "ecs/components/Renderable.hh"
-#include "ecs/components/Transform.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <assets/AssetHelpers.hh>
+#include <ecs/Components.hh>
+#include <ecs/Ecs.hh>
 #include <picojson/picojson.h>
 
 namespace ecs {
@@ -17,9 +15,7 @@ namespace ecs {
 		auto barrier = dst.Assign<Barrier>();
 
 		for (auto param : src.get<picojson::object>()) {
-			if (param.first == "isOpen") {
-				barrier->isOpen = param.second.get<bool>();
-			}
+			if (param.first == "isOpen") { barrier->isOpen = param.second.get<bool>(); }
 		}
 
 		if (sp::ParametersExist(src, {"translate", "scale"})) {

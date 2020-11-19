@@ -2,11 +2,11 @@
 
 #include "core/Console.hh"
 #include "core/Logging.hh"
-#include "ecs/components/Renderable.hh"
-#include "ecs/components/VoxelInfo.hh"
 #include "ecs/events/SignalChange.hh"
 
 #include <cmath>
+#include <ecs/Components.hh>
+#include <vector>
 
 namespace sp {
 	LightSensorUpdateCS::LightSensorUpdateCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput) {
@@ -19,21 +19,22 @@ namespace sp {
 		readBackBuf.Create().Data(readBackSize, nullptr, GL_STREAM_READ);
 	}
 
-	void LightSensorUpdateCS::SetSensors(ecs::EntityManager::EntityCollection &sensors) {
+	void LightSensorUpdateCS::SetSensors(std::vector<ecs::Entity> &sensors) {
 		int N = 0;
 		GLLightSensorData data[MAX_SENSORS + 1];
 
 		for (auto entity : sensors) {
 			auto sensor = entity.Get<ecs::LightSensor>();
-			auto transform = entity.Get<ecs::Transform>();
+			auto transform = *entity.Get<ecs::Transform>();
 			auto id = entity.GetId();
 
 			GLLightSensorData &s = data[N++];
-			auto mat = transform->GetGlobalTransform(*entity.GetManager());
+			auto mat = transform.GetGlobalTransform(*entity.GetManager());
 			s.position = mat * glm::vec4(sensor->position, 1);
 			s.direction = glm::normalize(glm::mat3(mat) * sensor->direction);
-			s.id0 = (float)id.Index();
-			s.id1 = (float)id.Generation();
+			// TODO: Fix this so it doesn't lose precision
+			s.id0 = (float)id; //.Index();
+							   // s.id1 = (float)id.Generation();
 		}
 
 		*(uint32 *)&data[MAX_SENSORS] = N;
@@ -63,7 +64,9 @@ namespace sp {
 		}
 
 		while (buf[0] == 1.0f) {
-			ecs::Entity::Id eid((ecs::eid_t)buf[1], (ecs::gen_t)buf[2]);
+			// TODO: Fix this to read full precision
+			// ecs::Entity::Id eid((ecs::eid_t)buf[1], (ecs::gen_t)buf[2]);
+			ecs::Entity::Id eid((size_t)buf[1]);
 
 			buf += 4;
 			glm::vec3 lum(buf[0], buf[1], buf[2]);
@@ -76,14 +79,14 @@ namespace sp {
 				auto prev = sensor->illuminance;
 				sensor->illuminance = lum;
 
-				for (auto output : sensor->outputTo) { output.Load(manager); }
+				for (auto output : sensor->outputTo) {
+					output.Load(manager);
+				}
 
 				bool allTriggered = true;
 
 				for (auto trigger : triggers) {
-					if (!trigger(lum)) {
-						allTriggered = false;
-					}
+					if (!trigger(lum)) { allTriggered = false; }
 
 					if (trigger(lum) && !trigger(prev)) {
 						ecs::SignalChange sig(trigger.onSignal);
