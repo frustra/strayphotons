@@ -65,6 +65,26 @@ namespace ecs {
 		em->Emit(this->e.id, event);
 	}
 
+	template<typename T>
+	void EntityManager::DestroyAllWith(const T &value) {
+		std::vector<Tecs::Entity> removeList;
+		{
+			auto lock = tecs.StartTransaction<Tecs::Read<T>>();
+			for (auto e : lock.template EntitiesWith<T>()) {
+				if (e.template Get<T>(lock) == value) { removeList.push_back(e); }
+			}
+		}
+		for (auto e : removeList) {
+			Emit(e.id, EntityDestruction());
+		}
+		{
+			auto lock = tecs.StartTransaction<Tecs::AddRemove>();
+			for (auto e : removeList) {
+				e.Destroy(lock);
+			}
+		}
+	}
+
 	template<typename T, typename... Tn>
 	std::vector<Entity> EntityManager::EntitiesWith() {
 		auto lock = tecs.StartTransaction<Tecs::Read<T, Tn...>>();
