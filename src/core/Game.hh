@@ -6,6 +6,7 @@
 #include "game/gui/MenuGuiManager.hh"
 #include "graphics/GraphicsManager.hh"
 #include "physx/PhysxManager.hh"
+#include "xr/XrManager.hh"
 
 #include <Common.hh>
 #include <chrono>
@@ -41,6 +42,7 @@ namespace sp {
 		GameLogic logic;
 		PhysxManager physics;
 		ecs::AnimationSystem animation;
+		xr::XrManager xr;
 
 	private:
 		chrono_clock::time_point lastFrameTime;

@@ -9,6 +9,7 @@
 #include "graphics/Renderer.hh"
 #include "graphics/basic_renderer/BasicRenderer.hh"
 
+#include <algorithm>
 #include <cxxopts.hpp>
 #include <ecs/EcsImpl.hh>
 #include <iostream>
@@ -126,7 +127,7 @@ namespace sp {
 
 			// Always render XR content first, since this allows the compositor to immediately start work rendering to
 			// the HMD Only attempt to render if we have an active XR System
-			if (game->logic.GetXrSystem()) {
+			if (game->xr.GetXrSystem()) {
 				RenderPhase xrPhase("XrViews", context->Timer);
 
 				// TODO: Should not have to do this on every frame...
@@ -138,18 +139,18 @@ namespace sp {
 				{
 					RenderPhase xrPhase("XrWaitFrame", context->Timer);
 					// Wait for the XR system to be ready to accept a new frame
-					game->logic.GetXrSystem()->GetCompositor()->WaitFrame();
+					game->xr.GetXrSystem()->GetCompositor()->WaitFrame();
 				}
 
 				// Tell the XR system we are about to begin rendering
-				game->logic.GetXrSystem()->GetCompositor()->BeginFrame();
+				game->xr.GetXrSystem()->GetCompositor()->BeginFrame();
 
 				// Render all the XR views at the same time
 				for (size_t i = 0; i < xrViews.size(); i++) {
 					RenderPhase xrPhase("XrView", context->Timer);
 
 					static glm::mat4 viewPose;
-					game->logic.GetXrSystem()->GetTracking()->GetPredictedViewPose(xrViews[i].second.viewId, viewPose);
+					game->xr.GetXrSystem()->GetTracking()->GetPredictedViewPose(xrViews[i].second.viewId, viewPose);
 
 					// Calculate the view pose relative to the current vrOrigin
 					viewPose = glm::transpose(viewPose * vrOriginMat4);
@@ -158,14 +159,14 @@ namespace sp {
 					xrViews[i].first.SetInvViewMat(viewPose);
 
 					RenderTarget::Ref viewOutputTexture =
-						game->logic.GetXrSystem()->GetCompositor()->GetRenderTarget(xrViews[i].second.viewId);
+						game->xr.GetXrSystem()->GetCompositor()->GetRenderTarget(xrViews[i].second.viewId);
 
 					context->RenderPass(xrViews[i].first, viewOutputTexture);
 
-					game->logic.GetXrSystem()->GetCompositor()->SubmitView(xrViews[i].second.viewId, viewOutputTexture);
+					game->xr.GetXrSystem()->GetCompositor()->SubmitView(xrViews[i].second.viewId, viewOutputTexture);
 				}
 
-				game->logic.GetXrSystem()->GetCompositor()->EndFrame();
+				game->xr.GetXrSystem()->GetCompositor()->EndFrame();
 			}
 
 			// Render the 2D pancake view
@@ -192,14 +193,21 @@ namespace sp {
 		return true;
 	}
 
-	/**
-	 * This View will be used when rendering from the player's viewpoint
-	 */
-	void GraphicsManager::SetPlayerView(vector<ecs::Entity> entities) {
+	void GraphicsManager::AddPlayerView(vector<ecs::Entity> entities) {
 		for (auto entity : entities) {
-			ecs::ValidateView(entity);
+			AddPlayerView(entity);
 		}
-		playerViews = entities;
+	}
+
+	void GraphicsManager::AddPlayerView(ecs::Entity entity) {
+		ecs::ValidateView(entity);
+
+		// On destruction of this ecs::Entity, remove the playerView from
+		entity.Subscribe<ecs::EntityDestruction>([&](ecs::Entity entity, const ecs::EntityDestruction &event) -> void {
+			playerViews.erase(std::remove(playerViews.begin(), playerViews.end(), entity));
+		});
+
+		playerViews.push_back(entity);
 	}
 
 	void GraphicsManager::RenderLoading() {

@@ -26,7 +26,9 @@ namespace sp {
 		void ReloadContext();
 		bool HasActiveContext();
 
-		void SetPlayerView(vector<ecs::Entity> entities);
+		void AddPlayerView(vector<ecs::Entity> entities);
+		void AddPlayerView(ecs::Entity entity);
+
 		void RenderLoading();
 
 		bool Frame();

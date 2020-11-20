@@ -14,7 +14,7 @@
 namespace sp {
 	Game::Game(cxxopts::ParseResult &options, Script *startupScript)
 		: options(options), startupScript(startupScript), graphics(this), logic(this), physics(),
-		  animation(entityManager) {
+		  animation(entityManager), xr(this) {
 		debugGui = std::make_unique<DebugGuiManager>(this);
 		menuGui = std::make_unique<MenuGuiManager>(this);
 	}
@@ -78,6 +78,7 @@ namespace sp {
 		dt /= chrono_clock::duration(std::chrono::seconds(1)).count();
 
 		if (!logic.Frame(dt)) return false;
+		if (!xr.Frame(dt)) return false;
 		if (!graphics.Frame()) return false;
 		if (!physics.LogicFrame(entityManager)) return false;
 		if (!animation.Frame(dt)) return false;
