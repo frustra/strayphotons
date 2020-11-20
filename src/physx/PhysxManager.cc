@@ -198,7 +198,6 @@ namespace sp {
 						gotLock = true;
 					}
 
-					auto transform = ent.Get<ecs::Transform>();
 					auto position = transform->GetGlobalTransform(manager) * glm::vec4(0, 0, 0, 1);
 					auto rotate = transform->GetGlobalRotation(manager);
 

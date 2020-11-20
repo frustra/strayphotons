@@ -173,8 +173,7 @@ namespace sp {
 
 		for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>()) {
 			auto comp = ent.Get<ecs::Renderable>();
-			auto transform = ent.Get<ecs::Transform>();
-			auto modelMat = transform->GetGlobalTransform(game->entityManager);
+			auto modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform(game->entityManager);
 			auto mvp = view.projMat * view.viewMat * modelMat;
 
 			glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));

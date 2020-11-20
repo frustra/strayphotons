@@ -43,6 +43,7 @@ namespace ecs {
 			bool rotating = false;
 
 			auto controller = entity.Get<ecs::HumanController>();
+
 			if (input != nullptr) {
 				if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_FORWARD)) { inputMovement += glm::vec3(0, 0, -1); }
 
@@ -73,8 +74,6 @@ namespace ecs {
 				if (input->IsPressed(INPUT_ACTION_PLAYER_INTERACT)) { Interact(entity, dtSinceLastFrame); }
 
 				if (input->IsDown(INPUT_ACTION_PLAYER_INTERACT_ROTATE)) { rotating = true; }
-
-				auto controller = entity.Get<ecs::HumanController>();
 
 				// Handle mouse controls
 				const glm::vec2 *cursorPos, *cursorPosPrev;
