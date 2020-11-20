@@ -73,7 +73,7 @@ namespace sp {
 			buf += 4;
 
 			ecs::Entity sensorEnt(&manager, eid);
-			if (sensorEnt.Valid()) {
+			if (sensorEnt.Valid() && sensorEnt.Has<ecs::LightSensor>()) {
 				auto sensor = sensorEnt.Get<ecs::LightSensor>();
 				auto triggers = sensor->triggers;
 				auto prev = sensor->illuminance;
