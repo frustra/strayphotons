@@ -6,6 +6,7 @@
 #include <ecs/components/Animation.hh>
 #include <ecs/components/Barrier.hh>
 #include <ecs/components/Controller.hh>
+#include <ecs/components/Creator.hh>
 #include <ecs/components/Interact.hh>
 #include <ecs/components/Light.hh>
 #include <ecs/components/LightGun.hh>
