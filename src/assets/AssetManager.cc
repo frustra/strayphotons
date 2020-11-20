@@ -13,6 +13,7 @@ extern "C" {
 
 #include <ecs/Components.hh>
 #include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 
 #if !(__APPLE__)
 	#include <filesystem>
