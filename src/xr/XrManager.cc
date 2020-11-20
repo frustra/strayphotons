@@ -5,7 +5,8 @@
 #include "core/Console.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
-#include "ecs/Components.hh"
+#include "ecs/Ecs.hh"
+#include "ecs/EcsImpl.hh"
 #include "physx/PhysxUtils.hh"
 #include "xr/XrSystemFactory.hh"
 
