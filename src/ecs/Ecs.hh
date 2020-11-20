@@ -20,7 +20,7 @@ namespace ecs {
 
 	class Animation;
 	struct Barrier;
-	enum Creator;
+	enum class Creator;
 	class HumanController;
 	struct InteractController;
 	struct Light;

@@ -5,7 +5,7 @@
 #include <ecs/Ecs.hh>
 
 namespace ecs {
-	enum Creator { GAME_LOGIC };
+	enum class Creator { GAME_LOGIC };
 
 	static Component<Creator> ComponentCreator("creator");
 } // namespace ecs
