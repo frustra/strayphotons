@@ -41,6 +41,8 @@ namespace sp {
 	private:
 		InputManager *input;
 		robin_hood::unordered_flat_map<std::string, robin_hood::unordered_flat_set<std::string>> actionBindings;
+
+		friend class InputManager;
 	};
 
 	template<class T>

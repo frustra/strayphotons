@@ -14,7 +14,11 @@ namespace sp {
 		funcs.Register(this, "bind", "Bind a key to a command", &InputManager::BindKey);
 	}
 
-	InputManager::~InputManager() {}
+	InputManager::~InputManager() {
+		for (auto source : sources) {
+			if (source != nullptr) { source->input = nullptr; }
+		}
+	}
 
 	bool InputManager::IsDown(std::string actionPath) {
 		const bool *value;
