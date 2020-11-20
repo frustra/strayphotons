@@ -79,9 +79,6 @@ for file in ../assets/scripts/tests/*.txt; do
     mkdir -p $output_path
     for file in screenshots/*.png; do
         mv $file $output_path
-        echo "$BUILDKITE_ARTIFACT_UPLOAD_DESTINATION"
-        echo "$BUILDKITE_S3_DEFAULT_REGION"
-        echo "$BUILDKITE_S3_DEFAULT_REGION" | cut -c -5
         buildkite-agent artifact upload "$output_path/${file##*/}"
         inline_image "artifact://$output_path/${file##*/}" "$output_path/${file##*/}"
     done
