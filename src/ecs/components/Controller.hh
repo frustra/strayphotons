@@ -3,7 +3,7 @@
 #include "Common.hh"
 
 #include <characterkinematic/PxCapsuleController.h>
-#include <ecs/Ecs.hh>
+#include <ecs/Components.hh>
 #include <functional>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>

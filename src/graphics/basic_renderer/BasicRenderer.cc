@@ -4,7 +4,7 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 
-#include <ecs/Components.hh>
+#include <ecs/EcsImpl.hh>
 
 // clang-format off
 // GLFW must be included after glew.h (Graphics.hh)

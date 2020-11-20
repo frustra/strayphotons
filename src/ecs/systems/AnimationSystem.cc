@@ -4,8 +4,8 @@
 #include "physx/PhysxUtils.hh"
 
 #include <PxPhysicsAPI.h>
-#include <ecs/Components.hh>
 #include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 
 namespace ecs {
 	AnimationSystem::AnimationSystem(ecs::EntityManager &entities) : entities(entities) {}

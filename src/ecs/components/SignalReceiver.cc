@@ -3,7 +3,7 @@
 #include "ecs/events/SignalChange.hh"
 
 #include <assets/AssetHelpers.hh>
-#include <ecs/Components.hh>
+#include <ecs/EcsImpl.hh>
 #include <picojson/picojson.h>
 
 namespace ecs {

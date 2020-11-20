@@ -2,10 +2,13 @@
 
 #include "graphics/Graphics.hh"
 
-#include <ecs/Ecs.hh>
+#include <ecs/Components.hh>
 #include <glm/glm.hpp>
 
 namespace ecs {
+	template<typename>
+	class Handle;
+
 	class View {
 	public:
 		enum ViewType {
@@ -61,6 +64,6 @@ namespace ecs {
 	template<>
 	bool Component<View>::LoadEntity(Entity &dst, picojson::value &src);
 
-	void ValidateView(ecs::Entity viewEntity);
-	ecs::Handle<ecs::View> UpdateViewCache(ecs::Entity entity, float fov = 0.0);
+	void ValidateView(Entity viewEntity);
+	Handle<ecs::View> UpdateViewCache(Entity entity, float fov = 0.0);
 } // namespace ecs

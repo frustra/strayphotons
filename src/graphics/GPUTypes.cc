@@ -1,6 +1,6 @@
 #include "GPUTypes.hh"
 
-#include <ecs/Components.hh>
+#include <ecs/EcsImpl.hh>
 
 namespace sp {
 	int FillLightData(GLLightData *data, ecs::EntityManager &manager) {

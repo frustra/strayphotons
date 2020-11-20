@@ -4,8 +4,8 @@
 #include "physx/PhysxUtils.hh"
 
 #include <PxPhysicsAPI.h>
-#include <ecs/Components.hh>
 #include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 #include <game/GameLogic.hh>
 #include <game/input/InputManager.hh>
 

@@ -10,9 +10,10 @@ extern "C" {
 #include "assets/Scene.hh"
 #include "assets/Script.hh"
 #include "core/Logging.hh"
-#include "ecs/Components.hh"
 
+#include <ecs/Components.hh>
 #include <ecs/Ecs.hh>
+// #include <ecs/EcsImpl.hh>
 
 #if !(__APPLE__)
 	#include <filesystem>

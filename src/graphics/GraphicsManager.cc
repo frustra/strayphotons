@@ -10,7 +10,7 @@
 #include "graphics/basic_renderer/BasicRenderer.hh"
 
 #include <cxxopts.hpp>
-#include <ecs/Components.hh>
+#include <ecs/EcsImpl.hh>
 #include <iostream>
 #include <system_error>
 

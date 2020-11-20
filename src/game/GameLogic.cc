@@ -13,7 +13,7 @@
 
 #include <cmath>
 #include <cxxopts.hpp>
-#include <ecs/Components.hh>
+#include <ecs/EcsImpl.hh>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>

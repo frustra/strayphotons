@@ -1,7 +1,7 @@
 #include "ecs/components/VoxelInfo.hh"
 
 #include <assets/AssetHelpers.hh>
-#include <ecs/Components.hh>
+#include <ecs/EcsImpl.hh>
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <picojson/picojson.h>

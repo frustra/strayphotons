@@ -11,7 +11,7 @@
 #include <Common.hh>
 #include <PxScene.h>
 #include <chrono>
-#include <ecs/Components.hh>
+#include <ecs/EcsImpl.hh>
 #include <fstream>
 
 namespace sp {

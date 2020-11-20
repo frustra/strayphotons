@@ -2,7 +2,7 @@
 
 #include "Common.hh"
 
-#include <ecs/Ecs.hh>
+#include <ecs/Components.hh>
 
 namespace ecs {
 	class LightGun {

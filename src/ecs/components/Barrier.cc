@@ -5,8 +5,8 @@
 #include "physx/PhysxUtils.hh"
 
 #include <assets/AssetHelpers.hh>
-#include <ecs/Components.hh>
 #include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 #include <picojson/picojson.h>
 
 namespace ecs {

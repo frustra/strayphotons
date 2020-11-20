@@ -2,7 +2,7 @@
 
 #include <assets/AssetHelpers.hh>
 #include <assets/AssetManager.hh>
-#include <ecs/Components.hh>
+#include <ecs/EcsImpl.hh>
 #include <picojson/picojson.h>
 
 namespace ecs {

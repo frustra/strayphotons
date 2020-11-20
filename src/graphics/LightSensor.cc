@@ -5,7 +5,7 @@
 #include "ecs/events/SignalChange.hh"
 
 #include <cmath>
-#include <ecs/Components.hh>
+#include <ecs/EcsImpl.hh>
 #include <vector>
 
 namespace sp {

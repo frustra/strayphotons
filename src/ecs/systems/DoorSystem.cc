@@ -2,8 +2,8 @@
 
 #include "core/Logging.hh"
 
-#include <ecs/Components.hh>
 #include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 
 namespace ecs {
 	DoorSystem::DoorSystem(ecs::EntityManager &em) : entities(em) {}

@@ -4,7 +4,7 @@
 #include "physx/PhysxManager.hh"
 
 #include <PxRigidDynamic.h>
-#include <ecs/Ecs.hh>
+#include <ecs/Components.hh>
 
 namespace ecs {
 	struct InteractController {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ecs/Ecs.hh>
+#include <ecs/Components.hh>
 #include <glm/glm.hpp>
 
 namespace sp {
@@ -8,6 +8,8 @@ namespace sp {
 }
 
 namespace ecs {
+	class EntityManager;
+
 	struct Barrier {
 		bool isOpen = false;
 
@@ -15,7 +17,7 @@ namespace ecs {
 		 * Creates a barrier that starts closed.
 		 */
 		static Entity Create(
-			const glm::vec3 &pos, const glm::vec3 &dimensions, sp::PhysxManager &px, ecs::EntityManager &em);
+			const glm::vec3 &pos, const glm::vec3 &dimensions, sp::PhysxManager &px, EntityManager &em);
 
 		static void Close(Entity e, sp::PhysxManager &px);
 		static void Open(Entity e, sp::PhysxManager &px);

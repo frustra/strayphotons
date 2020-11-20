@@ -2,8 +2,8 @@
 
 #include "physx/PhysxUtils.hh"
 
-#include <ecs/Components.hh>
 #include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 #include <glm/glm.hpp>
 
 namespace ecs {

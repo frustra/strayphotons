@@ -9,8 +9,8 @@
 #include <PxRigidActor.h>
 #include <PxScene.h>
 #include <cmath>
-#include <ecs/Components.hh>
 #include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 #include <game/input/InputManager.hh>
 #include <glm/glm.hpp>
 #include <sstream>

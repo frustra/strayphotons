@@ -1,7 +1,7 @@
 #include "ecs/components/Transform.hh"
 
 #include <assets/AssetHelpers.hh>
-#include <ecs/Components.hh>
+#include <ecs/EcsImpl.hh>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>

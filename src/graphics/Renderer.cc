@@ -20,7 +20,7 @@
 #include "xr/XrAction.hh"
 
 #include <cxxopts.hpp>
-#include <ecs/Components.hh>
+#include <ecs/EcsImpl.hh>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/transform.hpp>

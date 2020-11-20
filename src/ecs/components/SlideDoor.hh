@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ecs/Ecs.hh>
+#include <ecs/Components.hh>
 #include <ecs/NamedEntity.hh>
 #include <glm/glm.hpp>
 

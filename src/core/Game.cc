@@ -7,18 +7,14 @@
 #include <Common.hh>
 #include <assets/Script.hh>
 #include <cxxopts.hpp>
-#include <ecs/Components.hh>
 #include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 #include <glm/glm.hpp>
 
 namespace sp {
 	Game::Game(cxxopts::ParseResult &options, Script *startupScript)
 		: options(options), startupScript(startupScript), graphics(this), logic(this), physics(),
 		  animation(entityManager) {
-		// pre-register all of our component types so that errors do not arise if they
-		// are queried for before an instance is ever created
-		ecs::RegisterComponents(entityManager);
-
 		debugGui = std::make_unique<DebugGuiManager>(this);
 		menuGui = std::make_unique<MenuGuiManager>(this);
 	}
