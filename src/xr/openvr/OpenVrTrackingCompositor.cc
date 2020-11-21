@@ -85,7 +85,7 @@ RenderTarget::Ref OpenVrTrackingCompositor::GetRenderTarget(size_t view) {
 	return viewRenderTargets[view];
 }
 
-void OpenVrTrackingCompositor::PopulateView(size_t view, ecs::Handle<ecs::View> ecsView) {
+void OpenVrTrackingCompositor::PopulateView(size_t view, ecs::Handle<ecs::View> &ecsView) {
 	uint32_t vrWidth, vrHeight;
 	GetRecommendedRenderTargetSize(vrWidth, vrHeight);
 

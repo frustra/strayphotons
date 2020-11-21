@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Ecs.hh"
 #include "graphics/GPUTypes.hh"
 
 #include <ecs/Components.hh>

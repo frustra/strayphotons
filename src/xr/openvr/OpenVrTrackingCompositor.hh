@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ecs/EntityManager.hh"
 #include "xr/XrCompositor.hh"
 #include "xr/XrTracking.hh"
 
+#include <ecs/Ecs.hh>
 #include <openvr.h>
 
 namespace sp {
@@ -27,7 +27,7 @@ namespace sp {
 			void GetRecommendedRenderTargetSize(uint32_t &width, uint32_t &height);
 			glm::mat4 GetViewProjectionMatrix(size_t view, float nearZ, float farZ);
 			RenderTarget::Ref GetRenderTarget(size_t view);
-			void PopulateView(size_t view, ecs::Handle<ecs::View> ecsView);
+			void PopulateView(size_t view, ecs::Handle<ecs::View> &ecsView);
 			void SubmitView(size_t view, RenderTarget::Ref rt);
 			void WaitFrame();
 			void BeginFrame();

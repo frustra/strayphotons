@@ -8,7 +8,7 @@
 #include "xr/XrAction.hh"
 #include "xr/XrSystem.hh"
 
-#include <Ecs.hh>
+#include <ecs/Ecs.hh>
 
 namespace sp {
 	class Game;

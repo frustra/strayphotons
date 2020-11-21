@@ -2,7 +2,7 @@
 
 #include "Common.hh"
 
-#include <Ecs.hh>
+#include <ecs/Ecs.hh>
 #include <unordered_map>
 
 namespace sp {

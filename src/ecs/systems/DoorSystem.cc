@@ -1,8 +1,9 @@
 #include "ecs/systems/DoorSystem.hh"
 
 #include "core/Logging.hh"
-#include "ecs/components/SignalReceiver.hh"
-#include "ecs/components/SlideDoor.hh"
+
+#include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 
 namespace ecs {
 	DoorSystem::DoorSystem(ecs::EntityManager &em) : entities(em) {}

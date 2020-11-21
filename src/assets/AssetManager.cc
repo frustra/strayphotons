@@ -10,9 +10,9 @@ extern "C" {
 #include "assets/Scene.hh"
 #include "assets/Script.hh"
 #include "core/Logging.hh"
-#include "ecs/Components.hh"
 
-#include <Ecs.hh>
+#include <ecs/Components.hh>
+#include <ecs/Ecs.hh>
 
 #if !(__APPLE__)
 	#include <filesystem>
@@ -318,7 +318,7 @@ namespace sp {
 			}
 			if (ent.count("_name")) {
 				auto name = ent["_name"].get<string>();
-				entity.AssignKey<ecs::Name>(name);
+				entity.Assign<ecs::Name>(name);
 			}
 			scene->entities.push_back(entity);
 		}

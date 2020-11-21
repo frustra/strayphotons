@@ -6,11 +6,12 @@
 #include "core/CFunc.hh"
 #include "threading/MutexedVector.hh"
 
-#include <Ecs.hh>
 #include <PxPhysicsAPI.h>
+#include <ecs/Ecs.hh>
 #include <extensions/PxDefaultAllocator.h>
 #include <extensions/PxDefaultErrorCallback.h>
 #include <functional>
+#include <list>
 #include <thread>
 #include <unordered_map>
 

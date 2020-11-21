@@ -1,10 +1,8 @@
 #include "ecs/components/View.hh"
 
-#include "Ecs.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/XRView.hh"
-
 #include <assets/AssetHelpers.hh>
+#include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>

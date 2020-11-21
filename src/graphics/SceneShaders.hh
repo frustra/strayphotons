@@ -8,7 +8,7 @@
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
 
-#include <Ecs.hh>
+#include <ecs/Ecs.hh>
 
 namespace sp {
 	class SceneShader : public Shader {

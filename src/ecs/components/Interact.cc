@@ -1,10 +1,9 @@
 #include "ecs/components/Interact.hh"
 
-#include "ecs/components/Controller.hh"
-#include "ecs/components/Transform.hh"
 #include "physx/PhysxUtils.hh"
 
-#include <Ecs.hh>
+#include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 #include <glm/glm.hpp>
 
 namespace ecs {

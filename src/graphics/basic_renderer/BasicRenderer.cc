@@ -3,8 +3,8 @@
 #include "core/CVar.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/View.hh"
+
+#include <ecs/EcsImpl.hh>
 
 // clang-format off
 // GLFW must be included after glew.h (Graphics.hh)
@@ -19,7 +19,7 @@ namespace sp {
 
 	BasicRenderer::~BasicRenderer() {}
 
-	void BasicRenderer::PrepareRenderable(ecs::Handle<ecs::Renderable> comp) {
+	void BasicRenderer::PrepareRenderable(ecs::Handle<ecs::Renderable> &comp) {
 		for (auto primitive : comp->model->primitives) {
 			auto indexBuffer = comp->model->GetBuffer(primitive->indexBuffer.bufferIndex);
 
@@ -54,7 +54,7 @@ namespace sp {
 		}
 	}
 
-	void BasicRenderer::DrawRenderable(ecs::Handle<ecs::Renderable> comp) {
+	void BasicRenderer::DrawRenderable(ecs::Handle<ecs::Renderable> &comp) {
 		for (auto primitive : comp->model->primitives) {
 			if (!primitiveMap.count(primitive)) { PrepareRenderable(comp); }
 

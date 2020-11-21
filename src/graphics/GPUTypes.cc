@@ -1,10 +1,6 @@
 #include "GPUTypes.hh"
 
-#include "ecs/components/Light.hh"
-#include "ecs/components/Mirror.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/View.hh"
-#include "ecs/components/VoxelInfo.hh"
+#include <ecs/EcsImpl.hh>
 
 namespace sp {
 	int FillLightData(GLLightData *data, ecs::EntityManager &manager) {

@@ -72,3 +72,5 @@ foreach(test_type unit integration)
 	COMMENT "Run ${test_type} tests")
 
 endforeach(test_type)
+
+add_subdirectory(benchmark)

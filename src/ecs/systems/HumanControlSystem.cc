@@ -4,14 +4,13 @@
 #include "Common.hh"
 #include "core/CVar.hh"
 #include "core/Logging.hh"
-#include "ecs/components/Interact.hh"
-#include "ecs/components/Physics.hh"
-#include "ecs/components/Transform.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <PxRigidActor.h>
 #include <PxScene.h>
 #include <cmath>
+#include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 #include <game/input/InputManager.hh>
 #include <glm/glm.hpp>
 #include <sstream>

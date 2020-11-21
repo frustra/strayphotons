@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Ecs.hh>
+#include <ecs/Ecs.hh>
 
 namespace ecs {
 	class DoorSystem {

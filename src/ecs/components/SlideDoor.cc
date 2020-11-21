@@ -1,9 +1,7 @@
 #include "ecs/components/SlideDoor.hh"
 
-#include "ecs/components/Animation.hh"
-#include "ecs/components/Transform.hh"
-
 #include <assets/AssetHelpers.hh>
+#include <ecs/EcsImpl.hh>
 #include <picojson/picojson.h>
 
 namespace ecs {
@@ -102,7 +100,7 @@ namespace ecs {
 	}
 
 	glm::vec3 SlideDoor::LeftDirection(NamedEntity &panel) {
-		Assert(panel->Valid() && panel->Has<Transform>());
+		sp::Assert(panel->Valid() && panel->Has<Transform>(), "Panel must have valid transform");
 		auto transform = panel->Get<Transform>();
 		return glm::normalize(glm::cross(this->forward, transform->GetUp()));
 	}

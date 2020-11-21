@@ -1,14 +1,11 @@
 #include "ecs/systems/LightGunSystem.hh"
 
 #include "core/Logging.hh"
-#include "ecs/components/Controller.hh"
-#include "ecs/components/Light.hh"
-#include "ecs/components/LightGun.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/View.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <PxPhysicsAPI.h>
+#include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 #include <game/GameLogic.hh>
 #include <game/input/InputManager.hh>
 

@@ -4,15 +4,13 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/PerfTimer.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/View.hh"
-#include "ecs/components/XRView.hh"
 #include "graphics/GuiRenderer.hh"
 #include "graphics/RenderTargetPool.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/basic_renderer/BasicRenderer.hh"
 
 #include <cxxopts.hpp>
+#include <ecs/EcsImpl.hh>
 #include <iostream>
 #include <system_error>
 

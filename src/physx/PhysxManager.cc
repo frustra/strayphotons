@@ -6,15 +6,12 @@
 #include "core/CFunc.hh"
 #include "core/CVar.hh"
 #include "core/Logging.hh"
-#include "ecs/components/Controller.hh"
-#include "ecs/components/Interact.hh"
-#include "ecs/components/Physics.hh"
-#include "ecs/components/Transform.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <Common.hh>
 #include <PxScene.h>
 #include <chrono>
+#include <ecs/EcsImpl.hh>
 #include <fstream>
 
 namespace sp {
@@ -487,7 +484,7 @@ namespace sp {
 
 		if (desc.dynamic) { PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidDynamic *>(actor), desc.density); }
 
-		actor->userData = reinterpret_cast<void *>((size_t)entity.GetId().GetId());
+		actor->userData = reinterpret_cast<void *>((size_t)entity.GetId());
 
 		scene->addActor(*actor);
 		Unlock();
@@ -502,7 +499,7 @@ namespace sp {
 	}
 
 	ecs::Entity::Id PhysxManager::GetEntityId(const physx::PxActor &actor) const {
-		return ecs::Entity::Id(static_cast<ecs::eid_t>((size_t)actor.userData));
+		return (size_t)actor.userData;
 	}
 
 	void ControllerHitReport::onShapeHit(const physx::PxControllerShapeHit &hit) {

@@ -8,26 +8,12 @@
 #include "core/Console.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
-#include "ecs/components/Barrier.hh"
-#include "ecs/components/Controller.hh"
-#include "ecs/components/Interact.hh"
-#include "ecs/components/Light.hh"
-#include "ecs/components/LightSensor.hh"
-#include "ecs/components/Physics.hh"
-#include "ecs/components/Renderable.hh"
-#include "ecs/components/SignalReceiver.hh"
-#include "ecs/components/SlideDoor.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/TriggerArea.hh"
-#include "ecs/components/Triggerable.h"
-#include "ecs/components/View.hh"
-#include "ecs/components/VoxelInfo.hh"
-#include "ecs/components/XRView.hh"
 #include "physx/PhysxUtils.hh"
 #include "xr/XrSystemFactory.hh"
 
 #include <cmath>
 #include <cxxopts.hpp>
+#include <ecs/EcsImpl.hh>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
@@ -294,7 +280,6 @@ namespace sp {
 							if (laserPointer.Valid()) {
 								auto transform = laserPointer.Get<ecs::Transform>();
 								auto parent = xrObject;
-								auto parentTransform = ctrl;
 
 								transform->SetPosition(glm::vec3(0, 0, 0));
 								transform->SetRotate(glm::quat());
@@ -450,7 +435,7 @@ namespace sp {
 			// Make sure object is valid
 			if (!xrObject.Valid()) {
 				xrObject = game->entityManager.NewEntity();
-				xrObject.AssignKey<ecs::Name>(entityName);
+				xrObject.Assign<ecs::Name>(entityName);
 			}
 
 			if (!xrObject.Has<ecs::Transform>()) { xrObject.Assign<ecs::Transform>(); }
@@ -490,7 +475,7 @@ namespace sp {
 			if (active) {
 				if (!boneEntity.Valid()) {
 					boneEntity = game->entityManager.NewEntity();
-					boneEntity.AssignKey<ecs::Name>(entityName);
+					boneEntity.Assign<ecs::Name>(entityName);
 				}
 
 				if (!boneEntity.Has<ecs::Transform>()) { boneEntity.Assign<ecs::Transform>(); }
@@ -529,7 +514,7 @@ namespace sp {
 			// Make sure object is valid
 			if (!xrObject.Valid()) {
 				xrObject = game->entityManager.NewEntity();
-				xrObject.AssignKey<ecs::Name>(entityName);
+				xrObject.Assign<ecs::Name>(entityName);
 			}
 
 			if (!xrObject.Has<ecs::Transform>()) { xrObject.Assign<ecs::Transform>(); }
@@ -568,7 +553,7 @@ namespace sp {
 		// Make sure object is valid
 		if (!xrObject.Valid()) {
 			xrObject = game->entityManager.NewEntity();
-			xrObject.AssignKey<ecs::Name>(entityName);
+			xrObject.Assign<ecs::Name>(entityName);
 		}
 
 		if (!xrObject.Has<ecs::Transform>()) { xrObject.Assign<ecs::Transform>(); }
@@ -704,7 +689,7 @@ namespace sp {
 				if (!vrOrigin.Valid()) {
 					vrOrigin = game->entityManager.NewEntity();
 					// Use AssignKey so we can find this entity by name later
-					vrOrigin.AssignKey<ecs::Name>("vr-origin");
+					vrOrigin.Assign<ecs::Name>("vr-origin");
 				}
 
 				// Add a transform to the VR origin if one does not already exist

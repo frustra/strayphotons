@@ -1,24 +1,22 @@
 #pragma once
 
-#include "ecs/NamedEntity.hh"
-
-#include <Ecs.hh>
 #include <cstring>
-#include <map>
-#include <string>
+#include <iostream>
+#include <stdexcept>
 
 namespace picojson {
 	class value;
 }
 
 namespace ecs {
+	class Entity;
+
 	class ComponentBase {
 	public:
 		ComponentBase(const char *name) : name(name) {}
 
 		virtual bool LoadEntity(Entity &dst, picojson::value &src) = 0;
 		virtual bool SaveEntity(picojson::value &dst, Entity &src) = 0;
-		virtual void Register(EntityManager &em) = 0;
 
 		const char *name;
 	};
@@ -48,10 +46,6 @@ namespace ecs {
 			return false;
 		}
 
-		virtual void Register(EntityManager &em) override {
-			em.RegisterComponentType<CompType>();
-		}
-
 		bool operator==(const Component<CompType> &other) const {
 			return strcmp(name, other.name) == 0;
 		}
@@ -60,31 +54,4 @@ namespace ecs {
 			return !(*this == other);
 		}
 	};
-
-	template<typename KeyType>
-	class KeyedComponent : public Component<KeyType> {
-	public:
-		KeyedComponent(const char *name) : ComponentBase(name) {
-			auto existing = dynamic_cast<KeyedComponent<KeyType> *>(LookupComponent(std::string(name)));
-			if (existing == nullptr) {
-				RegisterComponent(name, this);
-			} else if (*this != *existing) {
-				throw std::runtime_error("Duplicate component type registered: " + std::string(name));
-			}
-		}
-
-		void Register(EntityManager &em) override {
-			em.RegisterKeyedComponentType<KeyType>();
-		}
-
-		bool operator==(const KeyedComponent<KeyType> &other) const {
-			return strcmp(this->name, other.name) == 0;
-		}
-
-		bool operator!=(const KeyedComponent<KeyType> &other) const {
-			return !(*this == other);
-		}
-	};
-
-	void RegisterComponents(EntityManager &em);
-} // namespace ecs
+}; // namespace ecs

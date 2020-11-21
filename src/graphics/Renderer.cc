@@ -5,12 +5,6 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/PerfTimer.hh"
-#include "ecs/components/Light.hh"
-#include "ecs/components/Mirror.hh"
-#include "ecs/components/Renderable.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/View.hh"
-#include "ecs/components/VoxelInfo.hh"
 #include "graphics/GPUTypes.hh"
 #include "graphics/GenericShaders.hh"
 #include "graphics/GuiRenderer.hh"
@@ -26,6 +20,7 @@
 #include "xr/XrAction.hh"
 
 #include <cxxopts.hpp>
+#include <ecs/EcsImpl.hh>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/transform.hpp>

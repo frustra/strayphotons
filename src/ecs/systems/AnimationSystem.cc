@@ -1,12 +1,11 @@
 #include "ecs/systems/AnimationSystem.hh"
 
 #include "core/Logging.hh"
-#include "ecs/components/Animation.hh"
-#include "ecs/components/Renderable.hh"
-#include "ecs/components/Transform.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <PxPhysicsAPI.h>
+#include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 
 namespace ecs {
 	AnimationSystem::AnimationSystem(ecs::EntityManager &entities) : entities(entities) {}
@@ -20,9 +19,9 @@ namespace ecs {
 
 			if (animation->nextState < 0) { continue; }
 
-			Assert((uint32)animation->nextState < animation->states.size(), "invalid next state");
-			Assert((uint32)animation->curState < animation->states.size(), "invalid current state");
-			Assert(animation->curState >= 0, "curState not set during an animation");
+			sp::Assert((uint32)animation->nextState < animation->states.size(), "invalid next state");
+			sp::Assert((uint32)animation->curState < animation->states.size(), "invalid current state");
+			sp::Assert(animation->curState >= 0, "curState not set during an animation");
 
 			auto &curState = animation->states[animation->curState];
 			auto &nextState = animation->states[animation->nextState];
