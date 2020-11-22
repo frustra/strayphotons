@@ -37,25 +37,6 @@ namespace ecs {
 		}
 	}
 
-	void EntityManager::DestroyAllWithOwner(const ecs::OwnerType &value) {
-		std::vector<Tecs::Entity> removeList;
-		{
-			auto lock = tecs.StartTransaction<Tecs::Read<ecs::Owner>>();
-			for (auto e : lock.EntitiesWith<ecs::Owner>()) {
-				if (e.Get<ecs::Owner>(lock).type == value) { removeList.push_back(e); }
-			}
-		}
-		for (auto e : removeList) {
-			Emit(e.id, EntityDestruction());
-		}
-		{
-			auto lock = tecs.StartTransaction<Tecs::AddRemove>();
-			for (auto e : removeList) {
-				e.Destroy(lock);
-			}
-		}
-	}
-
 	Subscription::Subscription() {}
 
 	Subscription::Subscription(

@@ -162,7 +162,8 @@ namespace ecs {
 
 		Entity NewEntity();
 		void DestroyAll();
-		void DestroyAllWithOwner(const ecs::OwnerType &value);
+		template<typename T>
+		void DestroyAllWith(const T &value);
 		template<typename T, typename... Tn>
 		std::vector<Entity> EntitiesWith();
 		template<typename T>

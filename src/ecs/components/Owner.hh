@@ -10,6 +10,9 @@ namespace ecs {
 		Owner(){};
 		Owner(OwnerType type) : type(type){};
 		~Owner(){};
+		inline bool operator==(const Owner &other) const {
+			return type == other.type;
+		}
 
 		size_t id;
 		OwnerType type;
