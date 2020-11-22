@@ -29,30 +29,30 @@ typedef uint64_t uint64;
 typedef int64_t int64;
 
 namespace sp {
-	void Assert(bool condition, const string &message);
-	void DebugBreak();
+    void Assert(bool condition, const string &message);
+    void DebugBreak();
 
-	uint32 CeilToPowerOfTwo(uint32 v);
-	uint32 Uint32Log2(uint32 v);
+    uint32 CeilToPowerOfTwo(uint32 v);
+    uint32 Uint32Log2(uint32 v);
 
-	class NonCopyable {
-	public:
-		NonCopyable &operator=(const NonCopyable &) = delete;
-		NonCopyable(const NonCopyable &) = delete;
-		NonCopyable() = default;
-	};
+    class NonCopyable {
+    public:
+        NonCopyable &operator=(const NonCopyable &) = delete;
+        NonCopyable(const NonCopyable &) = delete;
+        NonCopyable() = default;
+    };
 
-	// Boost replacement functions
-	template<typename T>
-	void hash_combine(std::size_t &seed, const T &val) {
-		seed ^= std::hash<T>()(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-	}
+    // Boost replacement functions
+    template<typename T>
+    void hash_combine(std::size_t &seed, const T &val) {
+        seed ^= std::hash<T>()(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
 
-	bool starts_with(const string &str, const string &prefix);
-	bool ends_with(const string &str, const string &suffix);
-	string to_lower_copy(const string &str);
-	string to_upper_copy(const string &str);
-	void trim(string &str);
-	void trim_left(string &str);
-	void trim_right(string &str);
+    bool starts_with(const string &str, const string &prefix);
+    bool ends_with(const string &str, const string &suffix);
+    string to_lower_copy(const string &str);
+    string to_upper_copy(const string &str);
+    void trim(string &str);
+    void trim_left(string &str);
+    void trim_right(string &str);
 } // namespace sp

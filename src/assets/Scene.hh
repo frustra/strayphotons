@@ -6,19 +6,19 @@
 #include <unordered_map>
 
 namespace sp {
-	class Asset;
+    class Asset;
 
-	class Scene : public NonCopyable {
-	public:
-		Scene(const string &name, shared_ptr<Asset> asset);
-		~Scene() {}
+    class Scene : public NonCopyable {
+    public:
+        Scene(const string &name, shared_ptr<Asset> asset);
+        ~Scene() {}
 
-		const string name;
-		vector<ecs::Entity> entities;
+        const string name;
+        vector<ecs::Entity> entities;
 
-		vector<string> autoExecList, unloadExecList;
+        vector<string> autoExecList, unloadExecList;
 
-	private:
-		shared_ptr<Asset> asset;
-	};
+    private:
+        shared_ptr<Asset> asset;
+    };
 } // namespace sp

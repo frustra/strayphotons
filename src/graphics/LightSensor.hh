@@ -13,23 +13,23 @@
 #include <vector>
 
 namespace sp {
-	class LightSensorUpdateCS : public Shader {
-		SHADER_TYPE(LightSensorUpdateCS);
-		LightSensorUpdateCS(shared_ptr<ShaderCompileOutput> compileOutput);
+    class LightSensorUpdateCS : public Shader {
+        SHADER_TYPE(LightSensorUpdateCS);
+        LightSensorUpdateCS(shared_ptr<ShaderCompileOutput> compileOutput);
 
-		void SetSensors(std::vector<ecs::Entity> &sensors);
-		void SetLightData(int count, GLLightData *data);
-		void SetVoxelInfo(GLVoxelInfo *data);
-		void StartReadback();
-		void UpdateValues(ecs::EntityManager &manager);
+        void SetSensors(std::vector<ecs::Entity> &sensors);
+        void SetLightData(int count, GLLightData *data);
+        void SetVoxelInfo(GLVoxelInfo *data);
+        void StartReadback();
+        void UpdateValues(ecs::EntityManager &manager);
 
-		static const int MAX_SENSORS = 32;
+        static const int MAX_SENSORS = 32;
 
-		Texture outputTex;
+        Texture outputTex;
 
-	private:
-		UniformBuffer sensorData, lightData, voxelInfo;
-		Buffer readBackBuf;
-		size_t readBackSize;
-	};
+    private:
+        UniformBuffer sensorData, lightData, voxelInfo;
+        Buffer readBackBuf;
+        size_t readBackSize;
+    };
 } // namespace sp

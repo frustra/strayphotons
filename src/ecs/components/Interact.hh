@@ -7,12 +7,12 @@
 #include <ecs/Components.hh>
 
 namespace ecs {
-	struct InteractController {
-		void PickUpObject(ecs::Entity entity);
+    struct InteractController {
+        void PickUpObject(ecs::Entity entity);
 
-		physx::PxRigidDynamic *target = nullptr;
-		sp::PhysxManager *manager;
-	};
+        physx::PxRigidDynamic *target = nullptr;
+        sp::PhysxManager *manager;
+    };
 
-	static Component<InteractController> ComponentInteractController("interact_controller");
+    static Component<InteractController> ComponentInteractController("interact_controller");
 } // namespace ecs

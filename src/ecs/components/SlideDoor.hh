@@ -5,27 +5,27 @@
 #include <glm/glm.hpp>
 
 namespace ecs {
-	class SlideDoor {
-	public:
-		enum State { CLOSED, OPENED, OPENING, CLOSING };
+    class SlideDoor {
+    public:
+        enum State { CLOSED, OPENED, OPENING, CLOSING };
 
-		SlideDoor::State GetState(EntityManager &em);
-		void Close(EntityManager &em);
-		void Open(EntityManager &em);
-		void ValidateDoor(EntityManager &em);
-		void SetAnimation(NamedEntity &panel, glm::vec3 openDir);
-		glm::vec3 LeftDirection(NamedEntity &panel);
+        SlideDoor::State GetState(EntityManager &em);
+        void Close(EntityManager &em);
+        void Open(EntityManager &em);
+        void ValidateDoor(EntityManager &em);
+        void SetAnimation(NamedEntity &panel, glm::vec3 openDir);
+        glm::vec3 LeftDirection(NamedEntity &panel);
 
-		NamedEntity left;
-		NamedEntity right;
+        NamedEntity left;
+        NamedEntity right;
 
-		float width = 1.0f;
-		float openTime = 0.5f;
-		glm::vec3 forward = glm::vec3(0, 0, -1);
-	};
+        float width = 1.0f;
+        float openTime = 0.5f;
+        glm::vec3 forward = glm::vec3(0, 0, -1);
+    };
 
-	static Component<SlideDoor> ComponentSlideDoor("slideDoor"); // TODO: Rename this
+    static Component<SlideDoor> ComponentSlideDoor("slideDoor"); // TODO: Rename this
 
-	template<>
-	bool Component<SlideDoor>::LoadEntity(Entity &dst, picojson::value &src);
+    template<>
+    bool Component<SlideDoor>::LoadEntity(Entity &dst, picojson::value &src);
 } // namespace ecs

@@ -10,5 +10,5 @@
 #include <glm/gtc/type_ptr.hpp>
 
 namespace sp {
-	void AssertGLOK(string message);
+    void AssertGLOK(string message);
 }

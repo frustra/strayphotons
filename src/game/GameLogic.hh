@@ -9,44 +9,44 @@
 #include <ecs/Ecs.hh>
 
 namespace sp {
-	class Game;
-	class Scene;
-	class Script;
-	class InputManager;
+    class Game;
+    class Scene;
+    class Script;
+    class InputManager;
 
-	class GameLogic {
-	public:
-		GameLogic(Game *game);
-		~GameLogic();
+    class GameLogic {
+    public:
+        GameLogic(Game *game);
+        ~GameLogic();
 
-		void Init(Script *startupScript = nullptr);
-		void HandleInput();
-		bool Frame(double dtSinceLastFrame);
+        void Init(Script *startupScript = nullptr);
+        void HandleInput();
+        bool Frame(double dtSinceLastFrame);
 
-		void LoadScene(string name);
-		void ReloadScene(string arg);
-		void PrintDebug();
+        void LoadScene(string name);
+        void ReloadScene(string arg);
+        void PrintDebug();
 
-		void OpenBarrier(string name);
-		void CloseBarrier(string name);
+        void OpenBarrier(string name);
+        void CloseBarrier(string name);
 
-		void OpenDoor(string name);
-		void CloseDoor(string name);
+        void OpenDoor(string name);
+        void CloseDoor(string name);
 
-		ecs::Entity GetPlayer();
+        ecs::Entity GetPlayer();
 
-	private:
-		ecs::Entity CreateGameLogicEntity();
+    private:
+        ecs::Entity CreateGameLogicEntity();
 
-	private:
-		Game *game;
-		InputManager *input = nullptr;
-		ecs::HumanControlSystem humanControlSystem;
-		ecs::LightGunSystem lightGunSystem;
-		ecs::DoorSystem doorSystem;
-		shared_ptr<Scene> scene;
-		ecs::Entity flashlight;
-		float sunPos;
-		CFuncCollection funcs;
-	};
+    private:
+        Game *game;
+        InputManager *input = nullptr;
+        ecs::HumanControlSystem humanControlSystem;
+        ecs::LightGunSystem lightGunSystem;
+        ecs::DoorSystem doorSystem;
+        shared_ptr<Scene> scene;
+        ecs::Entity flashlight;
+        float sunPos;
+        CFuncCollection funcs;
+    };
 } // namespace sp
