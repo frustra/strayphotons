@@ -20,6 +20,8 @@ namespace ecs {
 
 	class Animation;
 	struct Barrier;
+	struct Owner;
+	enum class OwnerType;
 	class HumanController;
 	struct InteractController;
 	struct Light;
@@ -38,9 +40,9 @@ namespace ecs {
 	struct VoxelInfo;
 	struct XRView;
 
-	using ECS = Tecs::ECS<Name, Barrier, Animation, HumanController, InteractController, Light, LightGun, LightSensor,
-		Mirror, Physics, Renderable, SignalReceiver, SlideDoor, Transform, TriggerArea, Triggerable, View, VoxelArea,
-		VoxelInfo, XRView>;
+	using ECS = Tecs::ECS<Name, Barrier, Owner, Animation, HumanController, InteractController, Light, LightGun,
+		LightSensor, Mirror, Physics, Renderable, SignalReceiver, SlideDoor, Transform, TriggerArea, Triggerable, View,
+		VoxelArea, VoxelInfo, XRView>;
 
 	class EntityManager;
 	class Subscription;
@@ -160,6 +162,8 @@ namespace ecs {
 
 		Entity NewEntity();
 		void DestroyAll();
+		template<typename T>
+		void DestroyAllWith(const T &value);
 		template<typename T, typename... Tn>
 		std::vector<Entity> EntitiesWith();
 		template<typename T>

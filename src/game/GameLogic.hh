@@ -52,6 +52,9 @@ namespace sp {
 		ecs::Entity GetLaserPointer();
 
 	private:
+		ecs::Entity CreateGameLogicEntity();
+
+	private:
 		Game *game;
 		InputManager *input = nullptr;
 		ecs::HumanControlSystem humanControlSystem;
