@@ -106,6 +106,7 @@ namespace sp {
     }
 
     Texture &Texture::Storage(GLPixelFormat format, GLsizei levels) {
+        Assert(format.Valid(), "invalid texture format");
         Assert(handle, "null texture handle");
         Assert(width && height, "texture size must be set before storage format");
         Assert(!assigned, "do not call Storage() on assigned textures");
@@ -214,9 +215,22 @@ namespace sp {
 
         Size(w, h);
 
-        PixelFormat fmt = comp == 1 ? PF_R8
-                                    : comp == 2 ? PF_RG8 : comp == 3 ? PF_RGB8 : comp == 4 ? PF_RGBA8 : PF_INVALID;
-        Storage(fmt, levels);
+        switch (comp) {
+        case 1:
+            Storage(PF_R8, levels);
+            break;
+        case 2:
+            Storage(PF_RG8, levels);
+            break;
+        case 3:
+            Storage(PF_RGB8, levels);
+            break;
+        case 4:
+            Storage(PF_RGBA8, levels);
+            break;
+        default:
+            Storage(PF_INVALID, levels);
+        }
         Image2D(data);
         stbi_image_free(data);
 
