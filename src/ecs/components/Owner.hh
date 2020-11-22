@@ -5,7 +5,7 @@
 #include <ecs/Ecs.hh>
 
 namespace ecs {
-	enum class OwnerType { GAME_LOGIC };
+	enum class OwnerType { GAME_LOGIC, XR_MANAGER };
 	struct Owner {
 		Owner(){};
 		Owner(OwnerType type) : type(type){};

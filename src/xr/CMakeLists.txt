@@ -6,4 +6,5 @@ target_sources(
         XrCompositor.cc
         XrSystemFactory.cc
         XrAction.cc
+        XrManager.cc
 )

@@ -5,8 +5,6 @@
 #include "ecs/systems/DoorSystem.hh"
 #include "ecs/systems/HumanControlSystem.hh"
 #include "ecs/systems/LightGunSystem.hh"
-#include "xr/XrAction.hh"
-#include "xr/XrSystem.hh"
 
 #include <ecs/Ecs.hh>
 
@@ -28,7 +26,6 @@ namespace sp {
 		void LoadScene(string name);
 		void ReloadScene(string arg);
 		void PrintDebug();
-		void SetVrOrigin();
 
 		void OpenBarrier(string name);
 		void CloseBarrier(string name);
@@ -37,19 +34,6 @@ namespace sp {
 		void CloseDoor(string name);
 
 		ecs::Entity GetPlayer();
-
-		shared_ptr<xr::XrSystem> GetXrSystem();
-		void InitXrActions();
-
-		ecs::Entity ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &handle);
-		ecs::Entity UpdateXrActionEntity(xr::XrActionPtr action, bool active);
-
-		void UpdateSkeletonDebugHand(
-			xr::XrActionPtr action, glm::mat4 xrObjectPos, std::vector<xr::XrBoneData> &boneData, bool active);
-
-		void ComputeBonePositions(std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output);
-
-		ecs::Entity GetLaserPointer();
 
 	private:
 		ecs::Entity CreateGameLogicEntity();
@@ -63,25 +47,6 @@ namespace sp {
 		shared_ptr<Scene> scene;
 		ecs::Entity flashlight;
 		float sunPos;
-
-		xr::XrSystemPtr xrSystem;
-		xr::XrActionSetPtr gameActionSet;
-
-		// Actions we use in game navigation
-		xr::XrActionPtr teleportAction;
-		xr::XrActionPtr grabAction;
-
-		// Actions for the raw input device pose
-		xr::XrActionPtr leftHandAction;
-		xr::XrActionPtr rightHandAction;
-
-		// Actions for the skeleton pose
-		xr::XrActionPtr leftHandSkeletonAction;
-		xr::XrActionPtr rightHandSkeletonAction;
-
-		bool xrTeleported = false;
-		bool xrGrabbed = false;
-
 		CFuncCollection funcs;
 	};
 } // namespace sp
