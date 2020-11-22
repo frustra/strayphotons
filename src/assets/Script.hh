@@ -3,19 +3,19 @@
 #include <Common.hh>
 
 namespace sp {
-	class Asset;
+    class Asset;
 
-	class Script : public NonCopyable {
-	public:
-		Script(const string &path, shared_ptr<Asset> asset, vector<string> &&lines);
-		~Script() {}
+    class Script : public NonCopyable {
+    public:
+        Script(const string &path, shared_ptr<Asset> asset, vector<string> &&lines);
+        ~Script() {}
 
-		void Exec();
+        void Exec();
 
-		const string path;
+        const string path;
 
-	private:
-		shared_ptr<Asset> asset;
-		vector<string> lines;
-	};
+    private:
+        shared_ptr<Asset> asset;
+        vector<string> lines;
+    };
 } // namespace sp

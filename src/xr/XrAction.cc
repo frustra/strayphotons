@@ -7,31 +7,31 @@ using namespace xr;
 using namespace std;
 
 XrActionSet::XrActionSet(string name, string description) : actionSetName(name), actionSetDescription(description) {
-	// No other initialization needed
+    // No other initialization needed
 }
 
 void XrActionSet::AddAction(shared_ptr<XrAction> action) {
-	registeredActions[action->GetName()] = action;
+    registeredActions[action->GetName()] = action;
 }
 
 std::map<std::string, std::shared_ptr<XrAction>> &XrActionSet::GetActionMap() {
-	return registeredActions;
+    return registeredActions;
 }
 
 XrAction::XrAction(string name, XrActionType type) : actionName(name), actionType(type){};
 
 void XrAction::AddSuggestedBinding(string interactionProfile, string path) {
-	suggestedBindings[interactionProfile].push_back(path);
+    suggestedBindings[interactionProfile].push_back(path);
 }
 
 map<string, vector<string>> &XrAction::GetSuggestedBindings() {
-	return suggestedBindings;
+    return suggestedBindings;
 };
 
 string XrAction::GetName() {
-	return actionName;
+    return actionName;
 };
 
 XrActionType XrAction::GetActionType() {
-	return actionType;
+    return actionType;
 };

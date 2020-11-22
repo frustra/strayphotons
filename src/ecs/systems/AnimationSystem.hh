@@ -5,19 +5,19 @@
 #include <ecs/Ecs.hh>
 
 namespace sp {
-	class InputManager;
+    class InputManager;
 }
 
 namespace ecs {
-	class AnimationSystem {
-	public:
-		AnimationSystem(EntityManager &entities);
+    class AnimationSystem {
+    public:
+        AnimationSystem(EntityManager &entities);
 
-		~AnimationSystem();
+        ~AnimationSystem();
 
-		bool Frame(float dtSinceLastFrame);
+        bool Frame(float dtSinceLastFrame);
 
-	private:
-		EntityManager &entities;
-	};
+    private:
+        EntityManager &entities;
+    };
 } // namespace ecs

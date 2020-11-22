@@ -4,27 +4,29 @@
 #include <glm/glm.hpp>
 
 namespace sp {
-	class PhysxManager;
+    class PhysxManager;
 }
 
 namespace ecs {
-	class EntityManager;
+    class EntityManager;
 
-	struct Barrier {
-		bool isOpen = false;
+    struct Barrier {
+        bool isOpen = false;
 
-		/**
-		 * Creates a barrier that starts closed.
-		 */
-		static Entity Create(
-			const glm::vec3 &pos, const glm::vec3 &dimensions, sp::PhysxManager &px, EntityManager &em);
+        /**
+         * Creates a barrier that starts closed.
+         */
+        static Entity Create(const glm::vec3 &pos,
+                             const glm::vec3 &dimensions,
+                             sp::PhysxManager &px,
+                             EntityManager &em);
 
-		static void Close(Entity e, sp::PhysxManager &px);
-		static void Open(Entity e, sp::PhysxManager &px);
-	};
+        static void Close(Entity e, sp::PhysxManager &px);
+        static void Open(Entity e, sp::PhysxManager &px);
+    };
 
-	static Component<Barrier> ComponentBarrier("barrier");
+    static Component<Barrier> ComponentBarrier("barrier");
 
-	template<>
-	bool Component<Barrier>::LoadEntity(Entity &dst, picojson::value &src);
+    template<>
+    bool Component<Barrier>::LoadEntity(Entity &dst, picojson::value &src);
 } // namespace ecs

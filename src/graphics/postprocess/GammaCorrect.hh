@@ -3,18 +3,18 @@
 #include "PostProcess.hh"
 
 namespace sp {
-	class GammaCorrect : public PostProcessPass<1, 1> {
-	public:
-		void Process(const PostProcessingContext *context);
+    class GammaCorrect : public PostProcessPass<1, 1> {
+    public:
+        void Process(const PostProcessingContext *context);
 
-		RenderTargetDesc GetOutputDesc(uint32 id) {
-			auto desc = GetInput(0)->GetOutput()->TargetDesc;
-			desc.format = PF_RGBA8;
-			return desc;
-		}
+        RenderTargetDesc GetOutputDesc(uint32 id) {
+            auto desc = GetInput(0)->GetOutput()->TargetDesc;
+            desc.format = PF_RGBA8;
+            return desc;
+        }
 
-		string Name() {
-			return "GammaCorrect";
-		}
-	};
+        string Name() {
+            return "GammaCorrect";
+        }
+    };
 } // namespace sp

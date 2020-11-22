@@ -4,13 +4,13 @@
 #include <glm/glm.hpp>
 
 namespace ecs {
-	struct Mirror {
-		glm::vec2 size;
-		int mirrorId;
-	};
+    struct Mirror {
+        glm::vec2 size;
+        int mirrorId;
+    };
 
-	static Component<Mirror> ComponentMirror("mirror");
+    static Component<Mirror> ComponentMirror("mirror");
 
-	template<>
-	bool Component<Mirror>::LoadEntity(Entity &dst, picojson::value &src);
+    template<>
+    bool Component<Mirror>::LoadEntity(Entity &dst, picojson::value &src);
 } // namespace ecs

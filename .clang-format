@@ -4,10 +4,11 @@ ColumnLimit: 120
 Language: Cpp
 TabWidth: 4
 IndentWidth: 4
-UseTab: ForContinuationAndIndentation
+UseTab: Never
 NamespaceIndentation: All
 AccessModifierOffset: -4
-AlignAfterOpenBracket: DontAlign
+AlignTrailingComments: false
+AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: Empty
 AllowShortFunctionsOnASingleLine: Empty
@@ -17,5 +18,8 @@ AlwaysBreakTemplateDeclarations: true
 IndentPPDirectives: BeforeHash
 IncludeBlocks: Regroup
 BinPackArguments: false
-AllowAllArgumentsOnNextLine: false
+BinPackParameters: false
+PenaltyReturnTypeOnItsOwnLine: 1000
+PenaltyBreakAssignment: 100
+PenaltyBreakBeforeFirstCallParameter: 0
 SpaceAfterTemplateKeyword: false
