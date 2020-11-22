@@ -14,16 +14,16 @@ namespace sp {
         void Add() {
             ImGuiIO &io = ImGui::GetIO();
 
-            ImGuiWindowFlags flags =
-                ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
+            ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+                                     ImGuiWindowFlags_NoTitleBar;
 
             ImGui::SetNextWindowPos(ImVec2(0, 0));
             ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, 400.0f));
 
             ImGui::Begin("Console", nullptr, flags);
             {
-                const float footer_height_to_reserve =
-                    ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+                const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y +
+                                                       ImGui::GetFrameHeightWithSpacing();
                 ImGui::BeginChild("ScrollingRegion",
                                   ImVec2(0, -footer_height_to_reserve),
                                   false,
@@ -49,8 +49,12 @@ namespace sp {
                                              ImGuiInputTextFlags_CallbackHistory;
 
                 bool reclaim_focus = ImGui::IsWindowAppearing();
-                if (ImGui::InputText(
-                        "##CommandInput", inputBuf, sizeof(inputBuf), iflags, CommandEditStub, (void *)this)) {
+                if (ImGui::InputText("##CommandInput",
+                                     inputBuf,
+                                     sizeof(inputBuf),
+                                     iflags,
+                                     CommandEditStub,
+                                     (void *)this)) {
                     string line(inputBuf);
                     auto &console = GetConsoleManager();
                     console.AddHistory(line);

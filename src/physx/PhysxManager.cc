@@ -212,8 +212,8 @@ namespace sp {
                         for (uint32 i = 0; i < n; i++) {
                             physx::PxConvexMeshGeometry geom;
                             if (shapes[i]->getConvexMeshGeometry(geom)) {
-                                geom.scale =
-                                    physx::PxMeshScale(GlmVec3ToPxVec3(newScale), physx::PxQuat(physx::PxIdentity));
+                                geom.scale = physx::PxMeshScale(GlmVec3ToPxVec3(newScale),
+                                                                physx::PxQuat(physx::PxIdentity));
                                 shapes[i]->setGeometry(geom);
                             } else
                                 Assert(false, "Physx geometry type not implemented");
@@ -589,8 +589,11 @@ namespace sp {
         return height;
     }
 
-    bool PhysxManager::RaycastQuery(
-        ecs::Entity &entity, const PxVec3 origin, const PxVec3 dir, const float distance, PxRaycastBuffer &hit) {
+    bool PhysxManager::RaycastQuery(ecs::Entity &entity,
+                                    const PxVec3 origin,
+                                    const PxVec3 dir,
+                                    const float distance,
+                                    PxRaycastBuffer &hit) {
         Lock();
         scene->lockRead();
 
@@ -636,8 +639,8 @@ namespace sp {
         shape->getCapsuleGeometry(capsuleGeometry);
 
         scene->removeActor(*actor);
-        physx::PxQueryFilterData filterData =
-            physx::PxQueryFilterData(physx::PxQueryFlag::eANY_HIT | PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC);
+        physx::PxQueryFilterData filterData = physx::PxQueryFilterData(physx::PxQueryFlag::eANY_HIT |
+                                                                       PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC);
         physx::PxTransform pose = actor->getGlobalPose();
         pose.p += translation;
         bool overlapFound = scene->overlap(capsuleGeometry, pose, hit, filterData);

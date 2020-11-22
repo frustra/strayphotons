@@ -32,8 +32,13 @@ namespace sp {
         Assert(size >= 0, "region offset is greater than size");
         // Bug in Nvidia Optimus driver, glClearNamedBufferSubData does not operate as expected.
         glBindBuffer(GL_COPY_READ_BUFFER, handle);
-        glClearBufferSubData(
-            GL_COPY_READ_BUFFER, format.internalFormat, offset, size, format.format, format.type, data);
+        glClearBufferSubData(GL_COPY_READ_BUFFER,
+                             format.internalFormat,
+                             offset,
+                             size,
+                             format.format,
+                             format.type,
+                             data);
         // glClearNamedBufferSubData(handle, format.internalFormat, offset, size, format.format, format.type, data);
         return *this;
     }

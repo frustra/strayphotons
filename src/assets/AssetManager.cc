@@ -238,11 +238,19 @@ namespace sp {
                 if (!asset) asset = Load("models/" + name + ".gltf");
 
 #ifdef PACKAGE_RELEASE
-                ret = gltfLoader.LoadASCIIFromString(
-                    gltfModel.get(), &err, &warn, asset->CharBuffer(), asset->Size(), "models/" + name);
+                ret = gltfLoader.LoadASCIIFromString(gltfModel.get(),
+                                                     &err,
+                                                     &warn,
+                                                     asset->CharBuffer(),
+                                                     asset->Size(),
+                                                     "models/" + name);
 #else
-                ret = gltfLoader.LoadASCIIFromString(
-                    gltfModel.get(), &err, &warn, asset->CharBuffer(), asset->Size(), ASSETS_DIR + "models/" + name);
+                ret = gltfLoader.LoadASCIIFromString(gltfModel.get(),
+                                                     &err,
+                                                     &warn,
+                                                     asset->CharBuffer(),
+                                                     asset->Size(),
+                                                     ASSETS_DIR + "models/" + name);
 #endif
             }
 

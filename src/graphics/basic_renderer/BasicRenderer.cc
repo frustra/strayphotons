@@ -41,8 +41,12 @@ namespace sp {
                 glBindBuffer(GL_ARRAY_BUFFER, attribBufferHandle);
                 glBufferData(GL_ARRAY_BUFFER, attribBuffer.size(), attribBuffer.data(), GL_STATIC_DRAW);
 
-                glVertexAttribPointer(
-                    i, attr->componentCount, attr->componentType, GL_FALSE, attr->byteStride, (void *)attr->byteOffset);
+                glVertexAttribPointer(i,
+                                      attr->componentCount,
+                                      attr->componentType,
+                                      GL_FALSE,
+                                      attr->byteStride,
+                                      (void *)attr->byteOffset);
                 glEnableVertexAttribArray(i);
             }
 

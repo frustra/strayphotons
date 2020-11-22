@@ -77,8 +77,13 @@ namespace sp {
         // params.m_resolution = 1000000;
         // params.m_convexhullDownsampling = 8;
 
-        bool res = interfaceVHACD->Compute(
-            points, pointStride, posAttrib.components, indices, 3, indexAttrib.components / 3, params);
+        bool res = interfaceVHACD->Compute(points,
+                                           pointStride,
+                                           posAttrib.components,
+                                           indices,
+                                           3,
+                                           indexAttrib.components / 3,
+                                           params);
         Assert(res, "building convex decomposition");
 
         for (uint32 i = 0; i < interfaceVHACD->GetNConvexHulls(); i++) {

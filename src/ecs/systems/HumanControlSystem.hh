@@ -41,8 +41,12 @@ namespace ecs {
         void Teleport(ecs::Entity entity, glm::vec3 position, glm::quat rotation = glm::quat());
 
     private:
-        glm::vec3 CalculatePlayerVelocity(
-            ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint, bool crouch);
+        glm::vec3 CalculatePlayerVelocity(ecs::Entity entity,
+                                          double dtSinceLastFrame,
+                                          glm::vec3 inDirection,
+                                          bool jump,
+                                          bool sprint,
+                                          bool crouch);
         void MoveEntity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 velocity);
 
         /**

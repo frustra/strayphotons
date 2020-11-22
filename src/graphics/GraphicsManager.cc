@@ -158,8 +158,8 @@ namespace sp {
                     // Move the view to the appropriate place
                     xrViews[i].first.SetInvViewMat(viewPose);
 
-                    RenderTarget::Ref viewOutputTexture =
-                        game->xr.GetXrSystem()->GetCompositor()->GetRenderTarget(xrViews[i].second.viewId);
+                    RenderTarget::Ref viewOutputTexture = game->xr.GetXrSystem()->GetCompositor()->GetRenderTarget(
+                        xrViews[i].second.viewId);
 
                     context->RenderPass(xrViews[i].first, viewOutputTexture);
 

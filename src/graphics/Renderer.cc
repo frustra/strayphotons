@@ -590,8 +590,11 @@ namespace sp {
         if (CVarRenderWireframe.Get()) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
-    static void addLine(
-        const ecs::View &view, vector<SceneVertex> &vertices, glm::vec3 start, glm::vec3 end, float lineWidth) {
+    static void addLine(const ecs::View &view,
+                        vector<SceneVertex> &vertices,
+                        glm::vec3 start,
+                        glm::vec3 end,
+                        float lineWidth) {
         glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
         glm::vec3 lineDir = glm::normalize(end - start);
 
@@ -671,10 +674,10 @@ namespace sp {
 
     void Renderer::DrawGridDebug(const ecs::View &view, SceneShader *shader) {
         int gridSize = CVarVoxelGridSize.Get() >> (CVarShowVoxels.Get() - 1);
-        glm::vec3 min =
-            voxelData.info.voxelGridCenter - (voxelData.info.voxelSize * (float)(voxelData.info.gridSize / 2));
-        glm::vec3 max =
-            voxelData.info.voxelGridCenter + (voxelData.info.voxelSize * (float)(voxelData.info.gridSize / 2));
+        glm::vec3 min = voxelData.info.voxelGridCenter -
+                        (voxelData.info.voxelSize * (float)(voxelData.info.gridSize / 2));
+        glm::vec3 max = voxelData.info.voxelGridCenter +
+                        (voxelData.info.voxelSize * (float)(voxelData.info.gridSize / 2));
 
         vector<SceneVertex> vertices;
         for (int a = 0; a <= gridSize; a++) {
@@ -746,8 +749,10 @@ namespace sp {
         RenderShadowMaps();
 
         for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::VoxelInfo>()) {
-            voxelData.info = *ecs::UpdateVoxelInfoCache(
-                ent, CVarVoxelGridSize.Get(), CVarVoxelSuperSample.Get(), game->entityManager);
+            voxelData.info = *ecs::UpdateVoxelInfoCache(ent,
+                                                        CVarVoxelGridSize.Get(),
+                                                        CVarVoxelSuperSample.Get(),
+                                                        game->entityManager);
             if (CVarUpdateVoxels.Get()) RenderVoxelGrid();
             UpdateLightSensors();
             break;

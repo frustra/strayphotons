@@ -32,8 +32,9 @@ void OpenVrActionSet::Sync() {
     activeActionSet.ulActionSet = handle;
     activeActionSet.ulRestrictedToDevice = vr::k_ulInvalidInputValueHandle;
 
-    vr::EVRInputError inputError =
-        vr::VRInput()->UpdateActionState(&activeActionSet, sizeof(vr::VRActiveActionSet_t), 1);
+    vr::EVRInputError inputError = vr::VRInput()->UpdateActionState(&activeActionSet,
+                                                                    sizeof(vr::VRActiveActionSet_t),
+                                                                    1);
 
     if (inputError != vr::EVRInputError::VRInputError_None) { Errorf("Failed to sync OpenVR actions"); }
 }
@@ -157,8 +158,9 @@ bool OpenVrAction::GetPoseActionValueForNextFrame(std::string subpath, glm::mat4
 
 bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool withController) {
     vr::InputSkeletalActionData_t data;
-    vr::EVRInputError inputError =
-        vr::VRInput()->GetSkeletalActionData(handle, &data, sizeof(vr::InputSkeletalActionData_t));
+    vr::EVRInputError inputError = vr::VRInput()->GetSkeletalActionData(handle,
+                                                                        &data,
+                                                                        sizeof(vr::InputSkeletalActionData_t));
 
     if (inputError != vr::EVRInputError::VRInputError_None) {
         throw std::runtime_error("Failed to get skeletal action data");
@@ -311,11 +313,11 @@ bool OpenVrAction::ComputeBoneLookupTable(std::shared_ptr<XrModel> xrModel) {
     // For each joint in the model (pulled from the GLTF "joints" array...)
     for (int i = 0; i < jointNodes.size(); i++) {
         // Get the steamVrBone that corresponds to this joint
-        auto steamVrBone =
-            std::find(steamVrBoneNames.begin(),
-                      steamVrBoneNames.end(),
-                      model->GetNodeName(jointNodes[i]) // This is translation #2: GLTF Node Index -> GLTF Node Name
-            );
+        auto steamVrBone = std::find(
+            steamVrBoneNames.begin(),
+            steamVrBoneNames.end(),
+            model->GetNodeName(jointNodes[i]) // This is translation #2: GLTF Node Index -> GLTF Node Name
+        );
 
         if (steamVrBone == steamVrBoneNames.end()) {
             // TODO: there might be a way to handle bones in the model that don't have a matching

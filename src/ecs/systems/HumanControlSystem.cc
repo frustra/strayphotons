@@ -90,8 +90,8 @@ namespace ecs {
                         controller->pitch -= cursorDiff.y * sensitivity;
 
                         const float feps = std::numeric_limits<float>::epsilon();
-                        controller->pitch =
-                            std::max(-((float)M_PI_2 - feps), std::min(controller->pitch, (float)M_PI_2 - feps));
+                        controller->pitch = std::max(-((float)M_PI_2 - feps),
+                                                     std::min(controller->pitch, (float)M_PI_2 - feps));
 
                         auto transform = entity.Get<ecs::Transform>();
                         transform->SetRotate(
@@ -173,8 +173,12 @@ namespace ecs {
         }
     }
 
-    glm::vec3 HumanControlSystem::CalculatePlayerVelocity(
-        ecs::Entity entity, double dtSinceLastFrame, glm::vec3 inDirection, bool jump, bool sprint, bool crouch) {
+    glm::vec3 HumanControlSystem::CalculatePlayerVelocity(ecs::Entity entity,
+                                                          double dtSinceLastFrame,
+                                                          glm::vec3 inDirection,
+                                                          bool jump,
+                                                          bool sprint,
+                                                          bool crouch) {
         if (!entity.Has<ecs::Transform>()) { throw std::invalid_argument("entity must have a Transform component"); }
 
         auto noclip = CVarNoClip.Get();
@@ -223,8 +227,9 @@ namespace ecs {
                 physics->TeleportController(controller->pxController, GlmVec3ToPxExtendedVec3(prevPosition + disp));
                 controller->onGround = true;
             } else {
-                controller->onGround =
-                    physics->MoveController(controller->pxController, dtSinceLastFrame, GlmVec3ToPxVec3(disp));
+                controller->onGround = physics->MoveController(controller->pxController,
+                                                               dtSinceLastFrame,
+                                                               GlmVec3ToPxVec3(disp));
             }
             auto newPosition = PxExtendedVec3ToGlmVec3P(controller->pxController->getPosition());
             // Don't accelerate more than our current velocity

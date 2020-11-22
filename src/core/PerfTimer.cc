@@ -110,8 +110,8 @@ namespace sp {
                 auto lastCpuElapsed = lastCompleteFrame.results[front.resultIndex].cpuElapsed;
                 GLuint64 lastGpuElapsed = lastCompleteFrame.results[front.resultIndex].gpuElapsed;
                 if (result.cpuElapsed < lastCpuElapsed) {
-                    result.cpuElapsed =
-                        chrono_clock::duration(std::max(result.cpuElapsed.count(), lastCpuElapsed.count() * 99 / 100));
+                    result.cpuElapsed = chrono_clock::duration(
+                        std::max(result.cpuElapsed.count(), lastCpuElapsed.count() * 99 / 100));
                 }
                 if (result.gpuElapsed < lastGpuElapsed) {
                     result.gpuElapsed = std::max(result.gpuElapsed, lastGpuElapsed * 99 / 100);

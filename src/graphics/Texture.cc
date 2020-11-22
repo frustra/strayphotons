@@ -39,8 +39,12 @@ namespace sp {
         glBindImageTexture(binding, handle, level, layered, layer, access, format.internalFormat);
     }
 
-    void Texture::BindImageConvert(
-        GLuint binding, GLPixelFormat bindFormat, GLenum access, GLint level, GLboolean layered, GLint layer) const {
+    void Texture::BindImageConvert(GLuint binding,
+                                   GLPixelFormat bindFormat,
+                                   GLenum access,
+                                   GLint level,
+                                   GLboolean layered,
+                                   GLint layer) const {
         Assert(handle, "null texture handle");
         Assert(format.Valid(), "binding texture without format specified");
         glBindImageTexture(binding, handle, level, layered, layer, access, bindFormat.internalFormat);
@@ -210,8 +214,8 @@ namespace sp {
 
         Size(w, h);
 
-        PixelFormat fmt =
-            comp == 1 ? PF_R8 : comp == 2 ? PF_RG8 : comp == 3 ? PF_RGB8 : comp == 4 ? PF_RGBA8 : PF_INVALID;
+        PixelFormat fmt = comp == 1 ? PF_R8
+                                    : comp == 2 ? PF_RG8 : comp == 3 ? PF_RGB8 : comp == 4 ? PF_RGBA8 : PF_INVALID;
         Storage(fmt, levels);
         Image2D(data);
         stbi_image_free(data);

@@ -196,15 +196,15 @@ namespace sp {
                     if (inverseBindMatrixAccessor != -1) {
                         int bufferView = model->accessors[inverseBindMatrixAccessor].bufferView;
                         int buffer = model->bufferViews[bufferView].buffer;
-                        int byteStride =
-                            model->accessors[inverseBindMatrixAccessor].ByteStride(model->bufferViews[bufferView]);
+                        int byteStride = model->accessors[inverseBindMatrixAccessor].ByteStride(
+                            model->bufferViews[bufferView]);
                         int byteOffset = model->accessors[inverseBindMatrixAccessor].byteOffset +
                                          model->bufferViews[bufferView].byteOffset;
 
                         int dataOffset = byteOffset + (i * byteStride);
 
-                        inverseBindMatrixForJoint[model->skins[skinId].joints[i]] =
-                            glm::make_mat4((float *)((uintptr_t)model->buffers[buffer].data.data() + dataOffset));
+                        inverseBindMatrixForJoint[model->skins[skinId].joints[i]] = glm::make_mat4(
+                            (float *)((uintptr_t)model->buffers[buffer].data.data() + dataOffset));
                     } else {
                         // If no inv bind matrix is supplied by the model, GLTF standard says use a 4x4 identity matrix
                         inverseBindMatrixForJoint[model->skins[skinId].joints[i]] = glm::mat4(1.0f);
@@ -269,11 +269,18 @@ namespace sp {
                 glEnableVertexArrayAttrib(glPrimitive.vertexBufferHandle, i);
 
                 if (attr->componentType == GL_UNSIGNED_SHORT) {
-                    glVertexArrayAttribIFormat(
-                        glPrimitive.vertexBufferHandle, i, attr->componentCount, attr->componentType, 0);
+                    glVertexArrayAttribIFormat(glPrimitive.vertexBufferHandle,
+                                               i,
+                                               attr->componentCount,
+                                               attr->componentType,
+                                               0);
                 } else {
-                    glVertexArrayAttribFormat(
-                        glPrimitive.vertexBufferHandle, i, attr->componentCount, attr->componentType, GL_FALSE, 0);
+                    glVertexArrayAttribFormat(glPrimitive.vertexBufferHandle,
+                                              i,
+                                              attr->componentCount,
+                                              attr->componentType,
+                                              GL_FALSE,
+                                              0);
                 }
 
                 glVertexArrayVertexBuffer(glPrimitive.vertexBufferHandle,
@@ -303,8 +310,11 @@ namespace sp {
         primitives.push_back(prim);
     }
 
-    void GLModel::Draw(
-        SceneShader *shader, glm::mat4 modelMat, const ecs::View &view, int boneCount, glm::mat4 *boneData) {
+    void GLModel::Draw(SceneShader *shader,
+                       glm::mat4 modelMat,
+                       const ecs::View &view,
+                       int boneCount,
+                       glm::mat4 *boneData) {
         for (auto primitive : primitives) {
             glBindVertexArray(primitive.vertexBufferHandle);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive.indexBufferHandle);
@@ -360,8 +370,10 @@ namespace sp {
         case MetallicRoughness:
             name += std::to_string(material.pbrMetallicRoughness.metallicRoughnessTexture.index) + "_METALICROUGHNESS";
             textureIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
-            factor = {
-                0.0, material.pbrMetallicRoughness.roughnessFactor, material.pbrMetallicRoughness.metallicFactor, 0.0};
+            factor = {0.0,
+                      material.pbrMetallicRoughness.roughnessFactor,
+                      material.pbrMetallicRoughness.metallicFactor,
+                      0.0};
             break;
 
         case Height:

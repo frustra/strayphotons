@@ -251,8 +251,10 @@ namespace sp {
         }
 
         if (CVarViewGBuffer.Get() > 0 && (!game->menuGui || game->menuGui->RenderMode() == MenuRenderMode::None)) {
-            auto viewGBuf = context.AddPass<ViewGBuffer>(
-                CVarViewGBuffer.Get(), CVarViewGBufferSource.Get(), CVarVoxelMip.Get(), targets.voxelData);
+            auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(),
+                                                         CVarViewGBufferSource.Get(),
+                                                         CVarVoxelMip.Get(),
+                                                         targets.voxelData);
             viewGBuf->SetInput(0, context.GBuffer0);
             viewGBuf->SetInput(1, context.GBuffer1);
             viewGBuf->SetInput(2, context.GBuffer2);

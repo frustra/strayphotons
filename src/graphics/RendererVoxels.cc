@@ -172,8 +172,10 @@ namespace sp {
                     voxelData.fragmentListCurrent->GetTexture().BindImage(0, GL_READ_ONLY, i);
                     voxelData.voxelCounters->GetTexture().BindImage(2, GL_WRITE_ONLY, i);
                     if (i < voxelData.radianceMips->GetDesc().levels) {
-                        indirectBufferCurrent.Bind(
-                            GL_ATOMIC_COUNTER_BUFFER, 1, sizeof(GLuint) * 4 * (i + 1), sizeof(GLuint) * 4);
+                        indirectBufferCurrent.Bind(GL_ATOMIC_COUNTER_BUFFER,
+                                                   1,
+                                                   sizeof(GLuint) * 4 * (i + 1),
+                                                   sizeof(GLuint) * 4);
                         voxelData.voxelCounters->GetTexture().BindImage(3, GL_READ_WRITE, i + 1);
                         voxelData.fragmentListCurrent->GetTexture().BindImage(1, GL_WRITE_ONLY, i + 1);
                     }

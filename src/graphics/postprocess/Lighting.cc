@@ -112,8 +112,12 @@ namespace sp {
             if (!readBackBuf) { readBackBuf.Create().Data(sizeof(uint32) * Bins, nullptr, GL_STREAM_READ); }
 
             readBackBuf.Bind(GL_PIXEL_PACK_BUFFER);
-            glGetTextureImage(
-                target->GetTexture().handle, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, sizeof(uint32) * Bins, 0);
+            glGetTextureImage(target->GetTexture().handle,
+                              0,
+                              GL_RED_INTEGER,
+                              GL_UNSIGNED_INT,
+                              sizeof(uint32) * Bins,
+                              0);
         }
 
     private:
@@ -297,8 +301,8 @@ namespace sp {
                 double ev100 = std::log2(luminance * 100.0 / 12.5) - CVarExposureComp.Get();
                 double newExposure = autoKeyComp / (1.2 * std::pow(2.0, ev100));
 
-                float alpha =
-                    newExposure < r->Exposure ? CVarEyeAdaptationUpRate.Get() : CVarEyeAdaptationDownRate.Get();
+                float alpha = newExposure < r->Exposure ? CVarEyeAdaptationUpRate.Get()
+                                                        : CVarEyeAdaptationDownRate.Get();
                 alpha = std::max(std::min(alpha, 0.9999f), 0.0001f);
 
                 double blended = r->Exposure * (1.0f - alpha) + newExposure * alpha;

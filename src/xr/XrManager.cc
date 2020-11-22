@@ -22,8 +22,10 @@ namespace sp::xr {
     static CVar<int> CVarSkeletons("xr.Skeletons", 1, "XR Skeleton mode (0: none, 1: normal, 2: debug)");
 
     XrManager::XrManager(Game *game) : game(game) {
-        funcs.Register(
-            this, "setvrorigin", "Move the VR origin to the current player position", &XrManager::SetVrOrigin);
+        funcs.Register(this,
+                       "setvrorigin",
+                       "Move the VR origin to the current player position",
+                       &XrManager::SetVrOrigin);
 
         funcs.Register(this, "reloadxrsystem", "Reload the state of the XR subsystem", &XrManager::LoadXrSystem);
     }
@@ -44,12 +46,13 @@ namespace sp::xr {
                 // Mapping of Pose Actions to Subpaths. Needed so we can tell which-hand-did-what for the hand pose
                 // linked actions
                 vector<std::pair<xr::XrActionPtr, string>> controllerPoseActions = {
-                    {leftHandAction, xr::SubpathLeftHand}, {rightHandAction, xr::SubpathRightHand}};
+                    {leftHandAction, xr::SubpathLeftHand},
+                    {rightHandAction, xr::SubpathRightHand}};
 
                 for (auto controllerAction : controllerPoseActions) {
                     glm::mat4 xrObjectPos;
-                    bool active =
-                        controllerAction.first->GetPoseActionValueForNextFrame(controllerAction.second, xrObjectPos);
+                    bool active = controllerAction.first->GetPoseActionValueForNextFrame(controllerAction.second,
+                                                                                         xrObjectPos);
                     ecs::Entity xrObject = UpdateXrActionEntity(controllerAction.first, active && CVarController.Get());
 
                     if (xrObject.Valid()) {
@@ -93,10 +96,10 @@ namespace sp::xr {
                             bool status = game->physics.RaycastQuery(xrObject, origin, dir, maxDistance, hit);
 
                             if (status && hit.block.distance > 0.5) {
-                                auto headPos =
-                                    glm::vec3(xrObjectPos * glm::vec4(0, 0, 0, 1)) - vrOriginTransform->GetPosition();
-                                auto newPos =
-                                    PxVec3ToGlmVec3P(origin + dir * std::max(0.0, hit.block.distance - 0.5)) - headPos;
+                                auto headPos = glm::vec3(xrObjectPos * glm::vec4(0, 0, 0, 1)) -
+                                               vrOriginTransform->GetPosition();
+                                auto newPos = PxVec3ToGlmVec3P(origin + dir * std::max(0.0, hit.block.distance - 0.5)) -
+                                              headPos;
                                 vrOriginTransform->SetPosition(
                                     glm::vec3(newPos.x, vrOriginTransform->GetPosition().y, newPos.z));
                             }
@@ -170,8 +173,9 @@ namespace sp::xr {
                         }
 
                         // Update the state of the "normal" skeleton entity (the RenderModel provided by the XR Runtime)
-                        ecs::Entity handSkeleton =
-                            UpdateXrActionEntity(action, CVarSkeletons.Get() == SkeletonMode::SkeletonNormal);
+                        ecs::Entity handSkeleton = UpdateXrActionEntity(
+                            action,
+                            CVarSkeletons.Get() == SkeletonMode::SkeletonNormal);
                         if (handSkeleton.Valid()) {
                             auto hand = handSkeleton.Get<ecs::Renderable>();
 
@@ -186,8 +190,10 @@ namespace sp::xr {
 
                         // TODO: this checks the state of ~30 entities by name.
                         // Optimize this into separate functions for setup, teardown, and position updates. #39
-                        UpdateSkeletonDebugHand(
-                            action, xrObjectPos, boneData, CVarSkeletons.Get() == SkeletonMode::SkeletonDebug);
+                        UpdateSkeletonDebugHand(action,
+                                                xrObjectPos,
+                                                boneData,
+                                                CVarSkeletons.Get() == SkeletonMode::SkeletonDebug);
                     }
                 }
             }
@@ -254,14 +260,14 @@ namespace sp::xr {
                                              "/user/hand/right/input/grip/pose");
 
         // Create LeftHand Skeleton action
-        leftHandSkeletonAction =
-            gameActionSet->CreateAction(xr::LeftHandSkeletonActionName, xr::XrActionType::Skeleton);
+        leftHandSkeletonAction = gameActionSet->CreateAction(xr::LeftHandSkeletonActionName,
+                                                             xr::XrActionType::Skeleton);
 
         // TODO: add suggested bindings for real XR backends when OpenXR supports skeletons
 
         // Create RightHand Skeleton action
-        rightHandSkeletonAction =
-            gameActionSet->CreateAction(xr::RightHandSkeletonActionName, xr::XrActionType::Skeleton);
+        rightHandSkeletonAction = gameActionSet->CreateAction(xr::RightHandSkeletonActionName,
+                                                              xr::XrActionType::Skeleton);
 
         // TODO: add suggested bindings for real XR backends when OpenXR supports skeletons
     }

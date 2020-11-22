@@ -100,8 +100,10 @@ std::string OpenVrModel::ModelName(vr::TrackedDeviceIndex_t deviceIndex) {
         vr::VRSystem()->GetStringTrackedDeviceProperty(deviceIndex, vr::Prop_RenderModelName_String, NULL, 0);
     std::shared_ptr<char[]> modelNameStr(new char[modelNameLength]);
 
-    vr::VRSystem()->GetStringTrackedDeviceProperty(
-        deviceIndex, vr::Prop_RenderModelName_String, modelNameStr.get(), modelNameLength);
+    vr::VRSystem()->GetStringTrackedDeviceProperty(deviceIndex,
+                                                   vr::Prop_RenderModelName_String,
+                                                   modelNameStr.get(),
+                                                   modelNameLength);
 
     return std::string(modelNameStr.get());
 }
@@ -151,8 +153,10 @@ std::string OpenVrSkeleton::ModelName(std::string skeletonAction) {
         vr::VRResources()->GetResourceFullPath(handResource, xr::openvr::HandModelResourceDir, NULL, 0);
 
     std::shared_ptr<char[]> modelPathStr(new char[modelPathLen]);
-    vr::VRResources()->GetResourceFullPath(
-        handResource, xr::openvr::HandModelResourceDir, modelPathStr.get(), modelPathLen);
+    vr::VRResources()->GetResourceFullPath(handResource,
+                                           xr::openvr::HandModelResourceDir,
+                                           modelPathStr.get(),
+                                           modelPathLen);
 
     return std::string(modelPathStr.get());
 }

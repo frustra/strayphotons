@@ -25,8 +25,11 @@ namespace sp {
         Texture &Delete();
 
         void Bind(GLuint binding) const;
-        void BindImage(
-            GLuint binding, GLenum access, GLint level = 0, GLboolean layered = false, GLint layer = 0) const;
+        void BindImage(GLuint binding,
+                       GLenum access,
+                       GLint level = 0,
+                       GLboolean layered = false,
+                       GLint layer = 0) const;
         void BindImageConvert(GLuint binding,
                               GLPixelFormat bindFormat,
                               GLenum access,
@@ -45,8 +48,11 @@ namespace sp {
 
         Texture &Storage(GLPixelFormat format, GLsizei levels = 1);
         Texture &Storage(PixelFormat format, GLsizei levels = 1);
-        Texture &Storage(
-            GLenum internalFormat, GLenum format, GLenum type, GLsizei levels = 1, bool preferSRGB = false);
+        Texture &Storage(GLenum internalFormat,
+                         GLenum format,
+                         GLenum type,
+                         GLsizei levels = 1,
+                         bool preferSRGB = false);
         Texture &Image2D(const void *pixels,
                          GLint level = 0,
                          GLsizei subWidth = 0,

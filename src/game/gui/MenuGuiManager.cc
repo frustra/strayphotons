@@ -141,14 +141,16 @@ namespace sp {
         static ImVec2 logoSize(logoTex.width * 0.5, logoTex.height * 0.5);
 
         if (selectedScreen == MenuScreen::Splash) {
-            ImGui::SetNextWindowPos(
-                ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+            ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+                                    ImGuiCond_Always,
+                                    ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuSplash", nullptr, flags);
             ImGui::Text("Press Enter");
             ImGui::End();
         } else if (selectedScreen == MenuScreen::Main) {
-            ImGui::SetNextWindowPos(
-                ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+            ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+                                    ImGuiCond_Always,
+                                    ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuMain", nullptr, flags);
 
             ImGui::Image((void *)(uintptr_t)logoTex.handle, logoSize);
@@ -168,8 +170,9 @@ namespace sp {
 
             ImGui::End();
         } else if (selectedScreen == MenuScreen::SceneSelect) {
-            ImGui::SetNextWindowPos(
-                ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+            ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+                                    ImGuiCond_Always,
+                                    ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuSceneSelect", nullptr, flags);
 
             ImGui::Image((void *)(uintptr_t)logoTex.handle, logoSize);
@@ -204,8 +207,9 @@ namespace sp {
 
             ImGui::End();
         } else if (selectedScreen == MenuScreen::Options) {
-            ImGui::SetNextWindowPos(
-                ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+            ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+                                    ImGuiCond_Always,
+                                    ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuOptions", nullptr, flags);
 
             ImGui::Image((void *)(uintptr_t)logoTex.handle, logoSize);
@@ -285,8 +289,9 @@ namespace sp {
 
             ImGui::End();
         } else if (selectedScreen == MenuScreen::Credits) {
-            ImGui::SetNextWindowPos(
-                ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+            ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+                                    ImGuiCond_Always,
+                                    ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuCredits", nullptr, flags);
 
             static Texture frLogoTex = GAssets.LoadTexture("logos/credits-frustra.png");
