@@ -270,7 +270,7 @@ namespace sp {
 	}
 
 	shared_ptr<Scene> AssetManager::LoadScene(
-		const std::string &name, ecs::EntityManager *em, PhysxManager &px, ecs::Creator creator) {
+		const std::string &name, ecs::EntityManager *em, PhysxManager &px, ecs::Owner owner) {
 		Logf("Loading scene: %s", name);
 
 		shared_ptr<Asset> asset = Load("scenes/" + name + ".json");
@@ -306,7 +306,7 @@ namespace sp {
 		auto entityList = root.get<picojson::object>()["entities"];
 		for (auto value : entityList.get<picojson::array>()) {
 			ecs::Entity entity = em->NewEntity();
-			entity.Assign<ecs::Creator>(creator);
+			entity.Assign<ecs::Owner>(owner);
 			auto ent = value.get<picojson::object>();
 			for (auto comp : ent) {
 				if (comp.first[0] == '_') continue;

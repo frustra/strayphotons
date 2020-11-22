@@ -637,7 +637,7 @@ namespace sp {
 	void GameLogic::LoadScene(string name) {
 		game->graphics.RenderLoading();
 		game->physics.StopSimulation();
-		game->entityManager.DestroyAllWith<ecs::Creator>(ecs::Creator::GAME_LOGIC);
+		game->entityManager.DestroyAllWithOwner(ecs::OwnerType::GAME_LOGIC);
 
 		if (scene != nullptr) {
 			for (auto &line : scene->unloadExecList) {
@@ -646,7 +646,7 @@ namespace sp {
 		}
 
 		scene.reset();
-		scene = GAssets.LoadScene(name, &game->entityManager, game->physics, ecs::Creator::GAME_LOGIC);
+		scene = GAssets.LoadScene(name, &game->entityManager, game->physics, ecs::Owner(ecs::OwnerType::GAME_LOGIC));
 		if (!scene) {
 			game->physics.StartSimulation();
 			return;
@@ -896,7 +896,7 @@ namespace sp {
 	 */
 	inline ecs::Entity GameLogic::CreateGameLogicEntity() {
 		auto newEntity = game->entityManager.NewEntity();
-		newEntity.Assign<ecs::Creator>(ecs::Creator::GAME_LOGIC);
+		newEntity.Assign<ecs::Owner>(ecs::Owner(ecs::OwnerType::GAME_LOGIC));
 		return newEntity;
 	}
 } // namespace sp

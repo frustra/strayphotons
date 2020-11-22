@@ -6,12 +6,12 @@
 #include <ecs/components/Animation.hh>
 #include <ecs/components/Barrier.hh>
 #include <ecs/components/Controller.hh>
-#include <ecs/components/Creator.hh>
 #include <ecs/components/Interact.hh>
 #include <ecs/components/Light.hh>
 #include <ecs/components/LightGun.hh>
 #include <ecs/components/LightSensor.hh>
 #include <ecs/components/Mirror.hh>
+#include <ecs/components/Owner.hh>
 #include <ecs/components/Physics.hh>
 #include <ecs/components/Renderable.hh>
 #include <ecs/components/SignalReceiver.hh>
@@ -63,26 +63,6 @@ namespace ecs {
 	template<typename Event>
 	void Entity::Emit(const Event &event) {
 		em->Emit(this->e.id, event);
-	}
-
-	template<typename T>
-	void EntityManager::DestroyAllWith(const T &value) {
-		std::vector<Tecs::Entity> removeList;
-		{
-			auto lock = tecs.StartTransaction<Tecs::Read<T>>();
-			for (auto e : lock.template EntitiesWith<T>()) {
-				if (e.template Get<T>(lock) == value) { removeList.push_back(e); }
-			}
-		}
-		for (auto e : removeList) {
-			Emit(e.id, EntityDestruction());
-		}
-		{
-			auto lock = tecs.StartTransaction<Tecs::AddRemove>();
-			for (auto e : removeList) {
-				e.Destroy(lock);
-			}
-		}
 	}
 
 	template<typename T, typename... Tn>
