@@ -21,7 +21,6 @@ namespace ecs {
     class Animation;
     struct Barrier;
     struct Owner;
-    enum class OwnerType;
     class HumanController;
     struct InteractController;
     struct Light;
@@ -61,6 +60,14 @@ namespace ecs {
                           VoxelArea,
                           VoxelInfo,
                           XRView>;
+
+    template<typename... Permissions>
+    using Lock = Tecs::Lock<ECS, Permissions...>;
+    template<typename... Components>
+    using Read = Tecs::Read<Components...>;
+    template<typename... Components>
+    using Write = Tecs::Write<Components...>;
+    using AddRemove = Tecs::AddRemove;
 
     class EntityManager;
     class Subscription;
@@ -200,13 +207,14 @@ namespace ecs {
         template<typename Event>
         void Emit(const Event &event);
 
+        ECS tecs;
+
     private:
         template<typename Event>
         void registerEventType();
         template<typename Event>
         void registerNonEntityEventType();
 
-        ECS tecs;
         std::recursive_mutex signalLock;
 
         typedef std::list<GenericEntityCallback> GenericSignal;
