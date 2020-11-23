@@ -11,11 +11,9 @@
 
 namespace ecs {
     template<>
-    bool Component<Barrier>::LoadEntity(Entity &dst, picojson::value &src) {
-        auto barrier = dst.Assign<Barrier>();
-
+    bool Component<Barrier>::Load(Barrier &barrier, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
-            if (param.first == "isOpen") { barrier->isOpen = param.second.get<bool>(); }
+            if (param.first == "isOpen") { barrier.isOpen = param.second.get<bool>(); }
         }
 
         if (sp::ParametersExist(src, {"translate", "scale"})) {
@@ -35,7 +33,7 @@ namespace ecs {
             // ecs::Barrier::Create(translate, scale, px, *em);
         }
 
-        if (barrier->isOpen) {
+        if (barrier.isOpen) {
             Errorf("Deserialization of open barrier component not currently supported.");
             return false;
             // if (!dst.Has<Physics>() || !dst.Has<Renderable>())

@@ -6,20 +6,18 @@
 
 namespace ecs {
     template<>
-    bool Component<SlideDoor>::LoadEntity(Entity &dst, picojson::value &src) {
-        auto slideDoor = dst.Assign<SlideDoor>();
-
+    bool Component<SlideDoor>::Load(SlideDoor &slideDoor, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "left") {
-                slideDoor->left = NamedEntity(param.second.get<string>());
+                slideDoor.left = NamedEntity(param.second.get<string>());
             } else if (param.first == "right") {
-                slideDoor->right = NamedEntity(param.second.get<string>());
+                slideDoor.right = NamedEntity(param.second.get<string>());
             } else if (param.first == "width") {
-                slideDoor->width = param.second.get<double>();
+                slideDoor.width = param.second.get<double>();
             } else if (param.first == "openTime") {
-                slideDoor->openTime = param.second.get<double>();
+                slideDoor.openTime = param.second.get<double>();
             } else if (param.first == "forward") {
-                slideDoor->forward = sp::MakeVec3(param.second);
+                slideDoor.forward = sp::MakeVec3(param.second);
             }
         }
         return true;

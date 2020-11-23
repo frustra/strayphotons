@@ -29,5 +29,5 @@ namespace ecs {
     static Component<Physics> ComponentPhysics("physics");
 
     template<>
-    bool Component<Physics>::LoadEntity(Entity &dst, picojson::value &src);
+    bool Component<Physics>::Load(Physics &dst, const picojson::value &src);
 } // namespace ecs

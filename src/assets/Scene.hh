@@ -14,7 +14,7 @@ namespace sp {
         ~Scene() {}
 
         const string name;
-        vector<ecs::Entity> entities;
+        vector<Tecs::Entity> entities;
 
         vector<string> autoExecList, unloadExecList;
 

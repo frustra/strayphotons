@@ -13,5 +13,5 @@ namespace ecs {
     static Component<TriggerArea> ComponentTriggerArea("triggerarea"); // TODO: Rename this
 
     template<>
-    bool Component<TriggerArea>::LoadEntity(Entity &dst, picojson::value &src);
+    bool Component<TriggerArea>::Load(TriggerArea &dst, const picojson::value &src);
 } // namespace ecs

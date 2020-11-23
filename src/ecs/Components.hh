@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstring>
+#include <ecs/Ecs.hh>
 #include <iostream>
 #include <stdexcept>
 
@@ -8,15 +9,18 @@ namespace picojson {
     class value;
 }
 
-namespace ecs {
-    class Entity;
+namespace Tecs {
+    struct Entity;
+}
 
+namespace ecs {
     class ComponentBase {
-    public:
+    protected:
         ComponentBase(const char *name) : name(name) {}
 
-        virtual bool LoadEntity(Entity &dst, picojson::value &src) = 0;
-        virtual bool SaveEntity(picojson::value &dst, Entity &src) = 0;
+    public:
+        virtual bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) = 0;
+        virtual bool SaveEntity(Lock<AddRemove> lock, picojson::value &dst, const Tecs::Entity &src) = 0;
 
         const char *name;
     };
@@ -36,14 +40,24 @@ namespace ecs {
             }
         }
 
-        bool LoadEntity(Entity &dst, picojson::value &src) override {
-            std::cerr << "Calling undefined LoadEntity on type: " << name << std::endl;
+        bool Load(CompType &dst, const picojson::value &src) {
+            std::cerr << "Calling undefined Load on type: " << name << std::endl;
             return false;
         }
 
-        bool SaveEntity(picojson::value &dst, Entity &src) override {
-            std::cerr << "Calling undefined SaveEntity on type: " << name << std::endl;
+        bool Save(picojson::value &dst, const CompType &src) {
+            std::cerr << "Calling undefined Save on type: " << name << std::endl;
             return false;
+        }
+
+        bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) override {
+            auto &comp = dst.Set<CompType>(lock);
+            return Load(comp, src);
+        }
+
+        bool SaveEntity(Lock<AddRemove> lock, picojson::value &dst, const Tecs::Entity &src) override {
+            const auto &comp = src.Get<CompType>(lock);
+            return Save(dst, comp);
         }
 
         bool operator==(const Component<CompType> &other) const {

@@ -37,7 +37,7 @@ namespace sp {
         Texture LoadTexture(const std::string &path, GLsizei levels = Texture::FullyMipmap);
         shared_ptr<Model> LoadModel(const std::string &name);
         shared_ptr<Scene> LoadScene(const std::string &name,
-                                    ecs::EntityManager *em,
+                                    ecs::Lock<ecs::AddRemove> lock,
                                     PhysxManager &px,
                                     ecs::Owner owner);
         shared_ptr<Script> LoadScript(const std::string &path);

@@ -8,26 +8,20 @@
 
 namespace ecs {
     template<>
-    bool Component<LightSensor>::LoadEntity(Entity &dst, picojson::value &src) {
-        auto sensor = dst.Assign<LightSensor>();
+    bool Component<LightSensor>::Load(LightSensor &sensor, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "translate") {
-                sensor->position = sp::MakeVec3(param.second);
+                sensor.position = sp::MakeVec3(param.second);
             } else if (param.first == "direction") {
-                sensor->direction = sp::MakeVec3(param.second);
+                sensor.direction = sp::MakeVec3(param.second);
             } else if (param.first == "outputTo") {
                 for (auto entName : param.second.get<picojson::array>()) {
-                    sensor->outputTo.emplace_back(entName.get<string>(), [dst](NamedEntity &ent) {
-                        if (!ent->Has<SignalReceiver>()) { return false; }
-                        auto receiver = ent->Get<SignalReceiver>();
-                        receiver->AttachSignal(dst);
-                        return true;
-                    });
+                    sensor.outputTo.emplace_back(entName.get<string>());
                 }
             } else if (param.first == "onColor") {
-                sensor->onColor = sp::MakeVec3(param.second);
+                sensor.onColor = sp::MakeVec3(param.second);
             } else if (param.first == "offColor") {
-                sensor->offColor = sp::MakeVec3(param.second);
+                sensor.offColor = sp::MakeVec3(param.second);
             } else if (param.first == "triggers") {
                 for (auto trigger : param.second.get<picojson::array>()) {
                     ecs::LightSensor::Trigger tr;
@@ -44,7 +38,7 @@ namespace ecs {
                             tr.offSignal = param.second.get<double>();
                         }
                     }
-                    sensor->triggers.push_back(tr);
+                    sensor.triggers.push_back(tr);
                 }
             }
         }

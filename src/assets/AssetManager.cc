@@ -272,7 +272,7 @@ namespace sp {
     }
 
     shared_ptr<Scene> AssetManager::LoadScene(const std::string &name,
-                                              ecs::EntityManager *em,
+                                              ecs::Lock<ecs::AddRemove> lock,
                                               PhysxManager &px,
                                               ecs::Owner owner) {
         Logf("Loading scene: %s", name);
@@ -309,15 +309,15 @@ namespace sp {
 
         auto entityList = root.get<picojson::object>()["entities"];
         for (auto value : entityList.get<picojson::array>()) {
-            ecs::Entity entity = em->NewEntity();
-            entity.Assign<ecs::Owner>(owner);
+            Tecs::Entity entity = lock.NewEntity();
+            entity.Set<ecs::Owner>(lock, owner);
             auto ent = value.get<picojson::object>();
             for (auto comp : ent) {
                 if (comp.first[0] == '_') continue;
 
                 auto componentType = ecs::LookupComponent(comp.first);
                 if (componentType != nullptr) {
-                    bool result = componentType->LoadEntity(entity, comp.second);
+                    bool result = componentType->LoadEntity(lock, entity, comp.second);
                     if (!result) { throw std::runtime_error("Failed to load component type: " + comp.first); }
                 } else {
                     Errorf("Unknown component, ignoring: %s", comp.first);
@@ -325,7 +325,7 @@ namespace sp {
             }
             if (ent.count("_name")) {
                 auto name = ent["_name"].get<string>();
-                entity.Assign<ecs::Name>(name);
+                entity.Set<ecs::Name>(lock, name);
             }
             scene->entities.push_back(entity);
         }

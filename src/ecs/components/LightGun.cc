@@ -6,8 +6,7 @@
 
 namespace ecs {
     template<>
-    bool Component<LightGun>::LoadEntity(Entity &dst, picojson::value &src) {
-        dst.Assign<LightGun>();
+    bool Component<LightGun>::Load(LightGun &dst, const picojson::value &src) {
         return true;
     }
 

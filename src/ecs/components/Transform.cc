@@ -9,13 +9,12 @@
 
 namespace ecs {
     template<>
-    bool Component<Transform>::LoadEntity(Entity &dst, picojson::value &src) {
-        auto transform = dst.Assign<ecs::Transform>();
+    bool Component<Transform>::Load(Transform &transform, const picojson::value &src) {
         for (auto subTransform : src.get<picojson::object>()) {
             if (subTransform.first == "parent") {
-                transform->SetParent(NamedEntity(subTransform.second.get<string>()));
+                transform.SetParent(NamedEntity(subTransform.second.get<string>()));
             } else if (subTransform.first == "scale") {
-                transform->Scale(sp::MakeVec3(subTransform.second));
+                transform.Scale(sp::MakeVec3(subTransform.second));
             } else if (subTransform.first == "rotate") {
                 vector<picojson::value *> rotations;
                 picojson::array &subSecond = subTransform.second.get<picojson::array>();
@@ -31,10 +30,10 @@ namespace ecs {
 
                 for (picojson::value *r : rotations) {
                     auto n = sp::MakeVec4(*r);
-                    transform->Rotate(glm::radians(n[0]), {n[1], n[2], n[3]});
+                    transform.Rotate(glm::radians(n[0]), {n[1], n[2], n[3]});
                 }
             } else if (subTransform.first == "translate") {
-                transform->Translate(sp::MakeVec3(subTransform.second));
+                transform.Translate(sp::MakeVec3(subTransform.second));
             }
         }
         return true;

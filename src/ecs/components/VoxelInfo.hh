@@ -6,6 +6,8 @@
 #include <glm/glm.hpp>
 
 namespace ecs {
+    class Entity;
+
     struct VoxelArea {
         glm::vec3 min, max;
     };
@@ -22,7 +24,7 @@ namespace ecs {
     static Component<VoxelInfo> ComponentVoxelInfo("voxel_info");
 
     template<>
-    bool Component<VoxelArea>::LoadEntity(Entity &dst, picojson::value &src);
+    bool Component<VoxelArea>::Load(VoxelArea &dst, const picojson::value &src);
 
     Handle<VoxelInfo> UpdateVoxelInfoCache(Entity entity, int gridSize, float superSampleScale, EntityManager &em);
 } // namespace ecs

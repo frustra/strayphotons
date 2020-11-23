@@ -15,5 +15,5 @@ namespace ecs {
     static Component<LightGun> ComponentLightGun("lightGun");
 
     template<>
-    bool Component<LightGun>::LoadEntity(Entity &dst, picojson::value &src);
+    bool Component<LightGun>::Load(LightGun &dst, const picojson::value &src);
 } // namespace ecs

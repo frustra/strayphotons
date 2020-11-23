@@ -79,21 +79,29 @@ namespace sp {
                 auto prev = sensor->illuminance;
                 sensor->illuminance = lum;
 
-                for (auto output : sensor->outputTo) {
-                    output.Load(manager);
-                }
-
                 bool allTriggered = true;
 
                 for (auto trigger : triggers) {
                     if (!trigger(lum)) { allTriggered = false; }
 
                     if (trigger(lum) && !trigger(prev)) {
+                        for (auto output : sensor->outputTo) {
+                            auto &ent = output.Load(manager);
+                            if (ent && ent->Has<ecs::SignalReceiver>()) {
+                                ent->Get<ecs::SignalReceiver>()->SetSignal(eid, trigger.onSignal);
+                            }
+                        }
                         ecs::SignalChange sig(trigger.onSignal);
                         sensorEnt.Emit(sig);
                         GetConsoleManager().QueueParseAndExecute(trigger.oncmd);
                     }
                     if (!trigger(lum) && trigger(prev)) {
+                        for (auto output : sensor->outputTo) {
+                            auto &ent = output.Load(manager);
+                            if (ent && ent->Has<ecs::SignalReceiver>()) {
+                                ent->Get<ecs::SignalReceiver>()->SetSignal(eid, trigger.offSignal);
+                            }
+                        }
                         ecs::SignalChange sig(trigger.offSignal);
                         sensorEnt.Emit(sig);
                         GetConsoleManager().QueueParseAndExecute(trigger.offcmd);

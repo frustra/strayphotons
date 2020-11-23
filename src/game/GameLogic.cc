@@ -177,7 +177,10 @@ namespace sp {
         }
 
         scene.reset();
-        scene = GAssets.LoadScene(name, &game->entityManager, game->physics, ecs::OwnerType::GAME_LOGIC);
+        {
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
+            scene = GAssets.LoadScene(name, lock, game->physics, ecs::OwnerType::GAME_LOGIC);
+        }
         if (!scene) {
             game->physics.StartSimulation();
             return;

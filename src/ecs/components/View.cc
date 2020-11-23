@@ -10,22 +10,21 @@
 
 namespace ecs {
     template<>
-    bool Component<View>::LoadEntity(Entity &dst, picojson::value &src) {
-        auto view = dst.Assign<View>();
+    bool Component<View>::Load(View &view, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "fov") {
-                view->fov = glm::radians(param.second.get<double>());
+                view.fov = glm::radians(param.second.get<double>());
             } else {
                 if (param.first == "extents") {
-                    view->extents = sp::MakeVec2(param.second);
+                    view.extents = sp::MakeVec2(param.second);
                 } else if (param.first == "clip") {
-                    view->clip = sp::MakeVec2(param.second);
+                    view.clip = sp::MakeVec2(param.second);
                 } else if (param.first == "offset") {
-                    view->offset = sp::MakeVec2(param.second);
+                    view.offset = sp::MakeVec2(param.second);
                 } else if (param.first == "clear") {
-                    view->clearColor = glm::vec4(sp::MakeVec3(param.second), 1.0f);
+                    view.clearColor = glm::vec4(sp::MakeVec3(param.second), 1.0f);
                 } else if (param.first == "sky") {
-                    view->skyIlluminance = param.second.get<double>();
+                    view.skyIlluminance = param.second.get<double>();
                 }
             }
         }

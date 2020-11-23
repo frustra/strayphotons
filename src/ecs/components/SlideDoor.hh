@@ -27,5 +27,5 @@ namespace ecs {
     static Component<SlideDoor> ComponentSlideDoor("slideDoor"); // TODO: Rename this
 
     template<>
-    bool Component<SlideDoor>::LoadEntity(Entity &dst, picojson::value &src);
+    bool Component<SlideDoor>::Load(SlideDoor &dst, const picojson::value &src);
 } // namespace ecs

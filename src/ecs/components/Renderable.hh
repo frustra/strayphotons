@@ -18,5 +18,5 @@ namespace ecs {
     static Component<Renderable> ComponentRenderable("renderable");
 
     template<>
-    bool Component<Renderable>::LoadEntity(Entity &dst, picojson::value &src);
+    bool Component<Renderable>::Load(Renderable &dst, const picojson::value &src);
 } // namespace ecs

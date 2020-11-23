@@ -8,44 +8,29 @@
 
 namespace ecs {
     template<>
-    bool Component<SignalReceiver>::LoadEntity(Entity &dst, picojson::value &src) {
-        auto receiver = dst.Assign<SignalReceiver>();
-
+    bool Component<SignalReceiver>::Load(SignalReceiver &receiver, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "amplifier") {
-                receiver->SetAmplifier(param.second.get<double>());
+                receiver.SetAmplifier(param.second.get<double>());
             } else if (param.first == "offset") {
-                receiver->SetOffset(param.second.get<double>());
+                receiver.SetOffset(param.second.get<double>());
             }
         }
         return true;
     }
 
-    void SignalReceiver::AttachSignal(Entity signaller, float startSig) {
-        Entity::Id eId = signaller.GetId();
-
-        if (this->signallers.count(eId) > 0) { return; }
-
-        auto handler = [&](Entity e, const SignalChange &sig) {
-            this->signallers.at(e.GetId()).signal = sig.signal;
-        };
-
-        this->signallers[eId] = {signaller.Subscribe<SignalChange>(handler), startSig};
+    void SignalReceiver::SetSignal(Tecs::Entity signaller, float signal) {
+        this->signallers[signaller] = signal;
     }
 
-    void SignalReceiver::DetachSignal(Entity signaller) {
-        Entity::Id eId = signaller.GetId();
-        if (this->signallers.count(eId) <= 0) { return; }
-
-        this->signallers[eId].sub.Unsubscribe();
-        this->signallers.erase(eId);
+    void SignalReceiver::RemoveSignal(Tecs::Entity signaller) {
+        this->signallers.erase(signaller);
     }
 
     float SignalReceiver::GetSignal() const {
         float signal = 0;
         for (auto &kv : this->signallers) {
-            const SignalReceiver::Input &inputSig = kv.second;
-            signal += inputSig.signal;
+            signal += kv.second;
         }
 
         return this->amplifier * signal + this->offset;

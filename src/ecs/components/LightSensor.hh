@@ -40,5 +40,5 @@ namespace ecs {
     static Component<LightSensor> ComponentLightSensor("lightsensor"); // TODO: rename this
 
     template<>
-    bool Component<LightSensor>::LoadEntity(Entity &dst, picojson::value &src);
+    bool Component<LightSensor>::Load(LightSensor &dst, const picojson::value &src);
 } // namespace ecs
