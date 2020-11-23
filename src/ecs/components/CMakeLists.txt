@@ -13,6 +13,7 @@ target_sources(
         Mirror.cc
         Physics.cc
         Renderable.cc
+        Script.cc
         SignalReceiver.cc
         SlideDoor.cc
         Transform.cc

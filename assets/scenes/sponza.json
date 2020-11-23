@@ -1477,6 +1477,12 @@
 					0,
 					0
 				]
+			},
+			"script": {
+				"onTick": "sun",
+				"parameters": {
+					"sun_position": 0.2
+				}
 			}
 		}
 	]

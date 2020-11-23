@@ -274,6 +274,12 @@
 			"transform": {
 				"translate": [7, 35, 0],
 				"rotate": [-90, 1, 0, 0]
+			},
+			"script": {
+				"onTick": "sun",
+				"parameters": {
+					"sun_position": 0.2
+				}
 			}
 		}
 	]

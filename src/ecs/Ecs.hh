@@ -29,6 +29,7 @@ namespace ecs {
     struct Mirror;
     struct Physics;
     struct Renderable;
+    class Script;
     class SignalReceiver;
     class SlideDoor;
     class Transform;
@@ -51,6 +52,7 @@ namespace ecs {
                           Mirror,
                           Physics,
                           Renderable,
+                          Script,
                           SignalReceiver,
                           SlideDoor,
                           Transform,

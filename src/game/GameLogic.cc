@@ -106,6 +106,11 @@ namespace sp {
         ecs::Entity player = GetPlayer();
         if (!player.Valid()) return true;
 
+        for (auto entity : game->entityManager.EntitiesWith<ecs::Script>()) {
+            auto script = entity.Get<ecs::Script>();
+            script->OnTick(dtSinceLastFrame, game->entityManager.tecs);
+        }
+
         for (auto entity : game->entityManager.EntitiesWith<ecs::TriggerArea>()) {
             auto area = entity.Get<ecs::TriggerArea>();
 
@@ -126,19 +131,9 @@ namespace sp {
         if (!scene) return true;
 
         ecs::Entity sun = game->entityManager.EntityWith<ecs::Name>("sun");
-        if (sun.Valid()) {
-            if (CVarSunPosition.Get() == 0) {
-                sunPos += dtSinceLastFrame * (0.05 + std::abs(sin(sunPos) * 0.1));
-                if (sunPos > M_PI / 2.0) sunPos = -M_PI / 2.0;
-            } else {
-                sunPos = CVarSunPosition.Get();
-            }
-
-            auto transform = sun.Get<ecs::Transform>();
-            transform->SetRotate(glm::mat4());
-            transform->Rotate(glm::radians(-90.0), glm::vec3(1, 0, 0));
-            transform->Rotate(sunPos, glm::vec3(0, 1, 0));
-            transform->SetPosition(glm::vec3(sin(sunPos) * 40.0, cos(sunPos) * 40.0, 0));
+        if (sun.Valid() && sun.Has<ecs::Script>()) {
+            auto script = sun.Get<ecs::Script>();
+            script->SetParam("sun_position", CVarSunPosition.Get());
         }
 
         if (CVarFlashlight.Changed()) {

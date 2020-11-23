@@ -13,6 +13,7 @@
 #include <ecs/components/Owner.hh>
 #include <ecs/components/Physics.hh>
 #include <ecs/components/Renderable.hh>
+#include <ecs/components/Script.hh>
 #include <ecs/components/SignalReceiver.hh>
 #include <ecs/components/SlideDoor.hh>
 #include <ecs/components/Transform.hh>
