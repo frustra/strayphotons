@@ -16,7 +16,8 @@
 		<%- include('prefab/airlock', {
 			name: 'airlock2',
 			translate: [10.5, 0, -3],
-			rotate: [-90, 0, 1, 0]
+			rotate: [-90, 0, 1, 0],
+			input_signal: "sensor2"
 		}) %>,
 		{
 			"triggerarea": {
@@ -45,7 +46,8 @@
 		<%- include('prefab/slide_door', {
 			name: 'door1',
 			translate: [6, 0.0, 1.5],
-			rotate: [0, 0, 1, 0]
+			rotate: [0, 0, 1, 0],
+			input_name: "sensor1"
 		}) %>,
 
 		<%- include('prefab/spotlight', {
@@ -56,19 +58,12 @@
 			translate: [3, 0.5, 0.2],
 			rotate: [[180, 0, 1, 0]]
 		}) %>,
-		<%- include('prefab/lightsensor',
+		<%- include('prefab/light_sensor',
 		{
 			name: "sensor1",
-			type: "light",
 			translate: [-2.9, 1, 7.5],
 			rotate: [90, 0, 1, 0],
-			triggers: [
-				{
-					illuminance: [0.15, 0.15, 0.15],
-					oncmd: "g.OpenDoor door1",
-					offcmd: "g.CloseDoor door1"
-				}
-			]
+			trigger: 0.15
 		}) %>,
 		<%- include("prefab/cube", {
 			name: "mirrorcube1",
@@ -90,19 +85,12 @@
 			translate: [11.8, 0.5, 1.5],
 			rotate: [[90, 0, 1, 0]]
 		}) %>,
-		<%- include('prefab/lightsensor',
+		<%- include('prefab/light_sensor',
 		{
 			name: "sensor2",
-			type: "light",
 			translate: [11.9, 1, 7.5],
 			rotate: [-90, 0, 1, 0],
-			triggers: [
-				{
-					illuminance: [0.015, 0.015, 0.015],
-					oncmd: "g.OpenDoor airlock2-in",
-					offcmd: "g.CloseDoor airlock2-in"
-				}
-			]
+			trigger: 0.015
 		}) %>,
 		<%- include("prefab/cube", {
 			name: "mirrorcube2",

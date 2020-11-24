@@ -39,18 +39,19 @@ namespace ecs {
         auto lPanel = left.Get<Animation>(lock);
         // auto rPanel = right.Get<Animation>(lock);
 
-        SlideDoor::State state;
-        if (lPanel.curState == 1 && lPanel.nextState < 0) {
-            state = SlideDoor::State::OPENED;
-        } else if (lPanel.curState == 1 && lPanel.nextState >= 0) {
-            state = SlideDoor::State::CLOSING;
-        } else if (lPanel.curState == 0 && lPanel.nextState < 0) {
-            state = SlideDoor::State::CLOSED;
-        } else {
-            state = SlideDoor::State::OPENING;
-        }
+        // SlideDoor::State state;
+        // if (lPanel.curState == 1 && lPanel.nextState < 0) {
+        //     state = SlideDoor::State::OPENED;
+        // } else if (lPanel.curState == 1 && lPanel.nextState >= 0) {
+        //     state = SlideDoor::State::CLOSING;
+        // } else if (lPanel.curState == 0 && lPanel.nextState < 0) {
+        //     state = SlideDoor::State::CLOSED;
+        // } else {
+        //     state = SlideDoor::State::OPENING;
+        // }
 
-        return state;
+        // return state;
+        return SlideDoor::State::CLOSED;
     }
 
     void SlideDoor::Open(Lock<Write<Animation>> lock) const {

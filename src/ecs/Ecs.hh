@@ -30,7 +30,7 @@ namespace ecs {
     struct Physics;
     struct Renderable;
     class Script;
-    class SignalReceiver;
+    class SignalOutput;
     class SlideDoor;
     class Transform;
     struct TriggerArea;
@@ -53,7 +53,7 @@ namespace ecs {
                           Physics,
                           Renderable,
                           Script,
-                          SignalReceiver,
+                          SignalOutput,
                           SlideDoor,
                           Transform,
                           TriggerArea,

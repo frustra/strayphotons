@@ -74,40 +74,7 @@ namespace sp {
             ecs::Entity sensorEnt(&manager, eid);
             if (sensorEnt.Valid() && sensorEnt.Has<ecs::LightSensor>()) {
                 auto sensor = sensorEnt.Get<ecs::LightSensor>();
-                auto triggers = sensor->triggers;
-                auto prev = sensor->illuminance;
                 sensor->illuminance = lum;
-
-                bool allTriggered = true;
-
-                for (auto trigger : triggers) {
-                    if (!trigger(lum)) { allTriggered = false; }
-
-                    if (trigger(lum) && !trigger(prev)) {
-                        for (auto &ent : sensor->outputTo) {
-                            ecs::Entity e(&manager, ent);
-                            if (ent && e.Has<ecs::SignalReceiver>()) {
-                                e.Get<ecs::SignalReceiver>()->SetSignal(eid, trigger.onSignal);
-                            }
-                        }
-                        GetConsoleManager().QueueParseAndExecute(trigger.oncmd);
-                    }
-                    if (!trigger(lum) && trigger(prev)) {
-                        for (auto &ent : sensor->outputTo) {
-                            ecs::Entity e(&manager, ent);
-                            if (ent && e.Has<ecs::SignalReceiver>()) {
-                                e.Get<ecs::SignalReceiver>()->SetSignal(eid, trigger.offSignal);
-                            }
-                        }
-                        GetConsoleManager().QueueParseAndExecute(trigger.offcmd);
-                    }
-                }
-
-                // add emissiveness to sensor when it is active
-                if (sensorEnt.Has<ecs::Renderable>()) {
-                    auto renderable = sensorEnt.Get<ecs::Renderable>();
-                    renderable->emissive = allTriggered ? sensor->onColor : sensor->offColor;
-                }
             }
         }
         readBackBuf.Unmap();

@@ -47,22 +47,15 @@
 			]
 		}) %>,
 
-		<%- include('prefab/lightsensor',
+		<%- include('prefab/light_sensor',
 		{
 			name: "sensor1",
-			type: "light",
 			outputTo: ["airlock2-in"],
 			translate: [11.9, 0.7, 1.5],
 			rotate: [-90, 0, 1, 0],
-			triggers: [
-				{
-					illuminance: [0.10, 0.10, 0.10],
-					onSignal: 0.5,
-					offSignal: 0.0
-				}
-			]
+			trigger: 0.10
 		}) %>,
-		<%- include('prefab/lightsensor',
+		<%- include('prefab/light_sensor',
 		{
 			name: "sensor2",
 			type: "light",

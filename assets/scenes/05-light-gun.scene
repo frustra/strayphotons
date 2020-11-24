@@ -169,7 +169,8 @@
 		<%- include('prefab/slide_door', {
 			name: 'door1',
 			translate: [6, 0, 7],
-			rotate: [90, 0, 1, 0]
+			rotate: [90, 0, 1, 0],
+			input_name: "sensor1"
 		}) %>,
 		{
 			"_name": "0.25 wall left of barrier",
@@ -247,34 +248,22 @@
 		},
 		<%- include('prefab/slide_door', {
 			name: 'door2',
-			"translate": [7, 0, 5]
+			translate: [7, 0, 5],
+			input_name: "sensor2"
 		}) %>,
-		<%- include('prefab/lightsensor',
+		<%- include('prefab/light_sensor',
 		{
 			name: "sensor2",
-			type: "light",
 			translate: [6, 1.05, 3],
 			rotate: [180, 0, 1, 0],
-			triggers: [
-				{
-					illuminance: [0.5, 0.25, 0.25],
-					oncmd: "g.OpenDoor door2",
-					offcmd: "g.CloseDoor door2"
-				}
-			]
+			trigger: 0.25
 		}) %>,
-		<%- include('prefab/lightsensor',
+		<%- include('prefab/light_sensor',
 		{
 			name: "sensor1",
 			type: "light",
 			translate: [6, 2.85, 7],
-			triggers: [
-				{
-					illuminance: [0.5, 0.3, 0.3],
-					oncmd: "g.OpenDoor door1",
-					offcmd: "g.CloseDoor door1"
-				}
-			]
+			trigger: 0.3
 		}) %>,
 		{
 			"_name": "player",

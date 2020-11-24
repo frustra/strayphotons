@@ -14,7 +14,7 @@ target_sources(
         Physics.cc
         Renderable.cc
         Script.cc
-        SignalReceiver.cc
+        SignalOutput.cc
         SlideDoor.cc
         Transform.cc
         TriggerArea.cc

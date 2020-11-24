@@ -8,47 +8,50 @@
 #include <ecs/EcsImpl.hh>
 
 namespace ecs {
-    AnimationSystem::AnimationSystem(ecs::EntityManager &entities) : entities(entities) {}
+    AnimationSystem::AnimationSystem(ecs::ECS &ecs) : ecs(ecs) {}
 
     AnimationSystem::~AnimationSystem() {}
 
     bool AnimationSystem::Frame(float dtSinceLastFrame) {
-        for (auto ent : entities.EntitiesWith<Animation, Transform>()) {
-            auto animation = ent.Get<Animation>();
-            auto transform = ent.Get<Transform>();
+        auto lock = ecs.StartTransaction<Write<Animation, Transform, Renderable>>();
+        for (auto ent : lock.EntitiesWith<Animation>()) {
+            if (!ent.Has<Animation, Transform>(lock)) continue;
 
-            if (animation->nextState < 0) { continue; }
+            auto &animation = ent.Get<Animation>(lock);
+            auto &transform = ent.Get<Transform>(lock);
 
-            sp::Assert((uint32)animation->nextState < animation->states.size(), "invalid next state");
-            sp::Assert((uint32)animation->curState < animation->states.size(), "invalid current state");
-            sp::Assert(animation->curState >= 0, "curState not set during an animation");
+            if (animation.prevState < 0 || animation.curState < 0 || animation.curState == animation.prevState) {
+                continue;
+            }
 
-            auto &curState = animation->states[animation->curState];
-            auto &nextState = animation->states[animation->nextState];
+            sp::Assert(animation.curState < animation.states.size(), "invalid current state");
+            sp::Assert(animation.prevState < animation.states.size(), "invalid previous state");
 
-            glm::vec3 dPos = nextState.pos - curState.pos;
-            glm::vec3 dScale = nextState.scale - curState.scale;
+            auto &prevState = animation.states[animation.prevState];
+            auto &curState = animation.states[animation.curState];
 
-            float distToTarget = glm::length(transform->GetPosition() - nextState.pos);
+            glm::vec3 dPos = curState.pos - prevState.pos;
+            glm::vec3 dScale = curState.scale - prevState.scale;
+
+            float distToTarget = glm::length(transform.GetPosition() - curState.pos);
             float completion = 1.0f - distToTarget / glm::length(dPos);
 
-            float duration = animation->animationTimes[animation->nextState];
+            float duration = animation.animationTimes[animation.curState];
             float target = completion + dtSinceLastFrame / duration;
 
             if (distToTarget < 1e-4f || target >= 1.0f || std::isnan(target) || std::isinf(target)) {
-                animation->curState = animation->nextState;
-                animation->nextState = -1;
-                transform->SetPosition(nextState.pos);
-                transform->SetScale(nextState.scale);
+                animation.prevState = animation.curState;
+                transform.SetPosition(curState.pos);
+                transform.SetScale(curState.scale);
 
-                if (ent.Has<ecs::Renderable>()) { ent.Get<ecs::Renderable>()->hidden = nextState.hidden; }
+                if (ent.Has<Renderable>(lock)) { ent.Get<Renderable>(lock).hidden = curState.hidden; }
             } else {
-                transform->SetPosition(curState.pos + target * dPos);
-                transform->SetScale(curState.scale + target * dScale);
+                transform.SetPosition(prevState.pos + target * dPos);
+                transform.SetScale(prevState.scale + target * dScale);
 
                 // ensure the entity is visible during the animation
                 // when coming from a state that was hidden
-                if (ent.Has<ecs::Renderable>()) { ent.Get<ecs::Renderable>()->hidden = false; }
+                if (ent.Has<Renderable>(lock)) { ent.Get<Renderable>(lock).hidden = false; }
             }
         }
 

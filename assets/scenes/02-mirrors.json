@@ -61,7 +61,7 @@
 						"translate": [
 							0,
 							0,
-							1.4
+							1
 						]
 					}
 				]
@@ -99,7 +99,7 @@
 						"translate": [
 							0,
 							0,
-							-1.4
+							-1
 						],
 						"rotate": [
 							180,
@@ -114,14 +114,6 @@
 				"model": "door-panel",
 				"dynamic": false
 			}
-		},
-		{
-			"_name": "airlock1-out",
-			"slideDoor": {
-				"left": "airlock1-out-left",
-				"right": "airlock1-out-right"
-			},
-			"signalReceiver": {}
 		},
 		{
 			"_name": "airlock1-in-root",
@@ -155,7 +147,7 @@
 						"translate": [
 							0,
 							0,
-							1.4
+							1
 						]
 					}
 				]
@@ -193,7 +185,7 @@
 						"translate": [
 							0,
 							0,
-							-1.4
+							-1
 						],
 						"rotate": [
 							180,
@@ -208,14 +200,6 @@
 				"model": "door-panel",
 				"dynamic": false
 			}
-		},
-		{
-			"_name": "airlock1-in",
-			"slideDoor": {
-				"left": "airlock1-in-left",
-				"right": "airlock1-in-right"
-			},
-			"signalReceiver": {}
 		},
 		{
 			"light": {
@@ -305,7 +289,7 @@
 						"translate": [
 							0,
 							0,
-							1.4
+							1
 						]
 					}
 				]
@@ -343,7 +327,7 @@
 						"translate": [
 							0,
 							0,
-							-1.4
+							-1
 						],
 						"rotate": [
 							180,
@@ -360,14 +344,6 @@
 			}
 		},
 		{
-			"_name": "airlock2-out",
-			"slideDoor": {
-				"left": "airlock2-out-left",
-				"right": "airlock2-out-right"
-			},
-			"signalReceiver": {}
-		},
-		{
 			"_name": "airlock2-in-root",
 			"transform": {
 				"parent": "airlock2",
@@ -378,6 +354,14 @@
 				]
 			},
 			"renderable": "door-frame",
+			"script": {
+				"onTick": "slide_door",
+				"parameters": {
+					"input": "sensor2",
+					"left": "airlock2-in-left",
+					"right": "airlock2-in-right"
+				}
+			},
 			"physics": {
 				"model": "door-frame",
 				"dynamic": false
@@ -399,7 +383,7 @@
 						"translate": [
 							0,
 							0,
-							1.4
+							1
 						]
 					}
 				]
@@ -437,7 +421,7 @@
 						"translate": [
 							0,
 							0,
-							-1.4
+							-1
 						],
 						"rotate": [
 							180,
@@ -452,14 +436,6 @@
 				"model": "door-panel",
 				"dynamic": false
 			}
-		},
-		{
-			"_name": "airlock2-in",
-			"slideDoor": {
-				"left": "airlock2-in-left",
-				"right": "airlock2-in-right"
-			},
-			"signalReceiver": {}
 		},
 		{
 			"light": {
@@ -1273,6 +1249,14 @@
 				]
 			},
 			"renderable": "door-frame",
+			"script": {
+				"onTick": "slide_door",
+				"parameters": {
+					"input": "sensor1",
+					"left": "door1-left",
+					"right": "door1-right"
+				}
+			},
 			"physics": {
 				"model": "door-frame",
 				"dynamic": false
@@ -1294,7 +1278,7 @@
 						"translate": [
 							0,
 							0,
-							1.4
+							1
 						]
 					}
 				]
@@ -1332,7 +1316,7 @@
 						"translate": [
 							0,
 							0,
-							-1.4
+							-1
 						],
 						"rotate": [
 							180,
@@ -1347,14 +1331,6 @@
 				"model": "door-panel",
 				"dynamic": false
 			}
-		},
-		{
-			"_name": "door1",
-			"slideDoor": {
-				"left": "door1-left",
-				"right": "door1-right"
-			},
-			"signalReceiver": {}
 		},
 		{
 			"_name": "light1",
@@ -1444,7 +1420,7 @@
 					0.015
 				]
 			},
-			"lightsensor": {
+			"light_sensor": {
 				"translate": [
 					0,
 					0,
@@ -1454,23 +1430,19 @@
 					0,
 					0,
 					1
-				],
-				"onColor": [
-					0,
-					1,
-					0
-				],
-				"triggers": [
-					{
-						"illuminance": [
-							0.15,
-							0.15,
-							0.15
-						],
-						"oncmd": "g.OpenDoor door1",
-						"offcmd": "g.CloseDoor door1"
-					}
 				]
+			},
+			"signal_output": {
+				"light_value_r": 0,
+				"light_value_g": 0,
+				"light_value_b": 0,
+				"enabled": false
+			},
+			"script": {
+				"onTick": "light_sensor",
+				"parameters": {
+					"trigger_level": 0.15
+				}
 			}
 		},
 		{
@@ -1920,7 +1892,7 @@
 					0.015
 				]
 			},
-			"lightsensor": {
+			"light_sensor": {
 				"translate": [
 					0,
 					0,
@@ -1930,23 +1902,19 @@
 					0,
 					0,
 					1
-				],
-				"onColor": [
-					0,
-					1,
-					0
-				],
-				"triggers": [
-					{
-						"illuminance": [
-							0.015,
-							0.015,
-							0.015
-						],
-						"oncmd": "g.OpenDoor airlock2-in",
-						"offcmd": "g.CloseDoor airlock2-in"
-					}
 				]
+			},
+			"signal_output": {
+				"light_value_r": 0,
+				"light_value_g": 0,
+				"light_value_b": 0,
+				"enabled": false
+			},
+			"script": {
+				"onTick": "light_sensor",
+				"parameters": {
+					"trigger_level": 0.015
+				}
 			}
 		},
 		{

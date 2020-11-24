@@ -113,11 +113,16 @@
 		},
 		{
 			"_name": "airlock1-out",
-			"slideDoor": {
+			"slide_door": {
 				"left": "airlock1-out-left",
 				"right": "airlock1-out-right"
 			},
-			"signalReceiver": {}
+			"script": {
+				"onTick": "door_handler",
+				"parameters": {
+					"sun_position": 0.2
+				}
+			}
 		},
 		{
 			"_name": "airlock1-in-root",
@@ -207,11 +212,16 @@
 		},
 		{
 			"_name": "airlock1-in",
-			"slideDoor": {
+			"slide_door": {
 				"left": "airlock1-in-left",
 				"right": "airlock1-in-right"
 			},
-			"signalReceiver": {}
+			"script": {
+				"onTick": "door_handler",
+				"parameters": {
+					"sun_position": 0.2
+				}
+			}
 		},
 		{
 			"light": {
@@ -357,11 +367,16 @@
 		},
 		{
 			"_name": "airlock2-out",
-			"slideDoor": {
+			"slide_door": {
 				"left": "airlock2-out-left",
 				"right": "airlock2-out-right"
 			},
-			"signalReceiver": {}
+			"script": {
+				"onTick": "door_handler",
+				"parameters": {
+					"sun_position": 0.2
+				}
+			}
 		},
 		{
 			"_name": "airlock2-in-root",
@@ -451,11 +466,16 @@
 		},
 		{
 			"_name": "airlock2-in",
-			"slideDoor": {
+			"slide_door": {
 				"left": "airlock2-in-left",
 				"right": "airlock2-in-right"
 			},
-			"signalReceiver": {}
+			"script": {
+				"onTick": "door_handler",
+				"parameters": {
+					"sun_position": 0.2
+				}
+			}
 		},
 		{
 			"light": {
@@ -1853,6 +1873,9 @@
 						"offSignal": 0
 					}
 				]
+			},
+			"signaloutput": {
+				"light_value": 0
 			}
 		},
 		{
@@ -1917,6 +1940,9 @@
 						"offSignal": 0
 					}
 				]
+			},
+			"signaloutput": {
+				"light_value": 0
 			}
 		},
 		{

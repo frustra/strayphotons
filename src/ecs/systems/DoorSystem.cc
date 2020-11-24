@@ -8,13 +8,13 @@ namespace ecs {
     DoorSystem::DoorSystem(ecs::ECS &ecs) : ecs(ecs) {}
 
     bool DoorSystem::Frame(float dtSinceLastFrame) {
-        auto lock = ecs.StartTransaction<Read<SlideDoor, SignalReceiver>, Write<Animation>>();
+        auto lock = ecs.StartTransaction<Read<SlideDoor, SignalOutput>, Write<Animation>>();
         for (Tecs::Entity ent : lock.EntitiesWith<SlideDoor>()) {
-            auto &receiver = ent.Get<SignalReceiver>(lock);
+            auto &signal = ent.Get<SignalOutput>(lock);
             auto &door = ent.Get<SlideDoor>(lock);
 
             SlideDoor::State state = door.GetState(lock);
-            if (receiver.IsTriggered()) {
+            if (signal.GetSignal("enabled") > 0) {
                 if (state != SlideDoor::State::OPENED && state != SlideDoor::State::OPENING) { door.Open(lock); }
             } else {
                 if (state != SlideDoor::State::CLOSED && state != SlideDoor::State::CLOSING) { door.Close(lock); }

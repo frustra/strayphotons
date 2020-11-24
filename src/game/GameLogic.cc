@@ -270,11 +270,14 @@ namespace sp {
             Logf("Light sensor %s: %f %f %f", name, i.r, i.g, i.b);
         }
 
-        for (auto ent : game->entityManager.EntitiesWith<ecs::SignalReceiver>()) {
-            auto receiver = ent.Get<ecs::SignalReceiver>();
+        for (auto ent : game->entityManager.EntitiesWith<ecs::SignalOutput>()) {
+            auto output = ent.Get<ecs::SignalOutput>();
             string name = entityName(ent);
 
-            Logf("Signal receiver %s: %.2f", name, receiver->GetSignal());
+            Logf("Signal output %s:", name);
+            for (auto &[signalName, value] : output->GetSignals()) {
+                Logf("  %s: %.2f", signalName, value);
+            }
         }
     }
 
@@ -301,44 +304,44 @@ namespace sp {
     }
 
     void GameLogic::OpenDoor(string name) {
-        auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name, ecs::SlideDoor>,
-                                                              ecs::Write<ecs::Animation, ecs::SignalReceiver>>();
-        for (auto ent : lock.EntitiesWith<ecs::Name>()) {
-            if (ent.Get<ecs::Name>(lock) == name) {
-                if (!ent.Has<ecs::SlideDoor>(lock)) {
-                    Logf("%s is not a door", name);
-                    return;
-                }
+        // auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name, ecs::SlideDoor>,
+        //                                                       ecs::Write<ecs::Animation, ecs::SignalReceiver>>();
+        // for (auto ent : lock.EntitiesWith<ecs::Name>()) {
+        //     if (ent.Get<ecs::Name>(lock) == name) {
+        //         if (!ent.Has<ecs::SlideDoor>(lock)) {
+        //             Logf("%s is not a door", name);
+        //             return;
+        //         }
 
-                if (ent.Has<ecs::SignalReceiver>(lock)) {
-                    ent.Get<ecs::SignalReceiver>(lock).SetOffset(1.0f);
-                } else {
-                    ent.Get<ecs::SlideDoor>(lock).Open(lock);
-                }
-                return;
-            }
-        }
+        //         if (ent.Has<ecs::SignalReceiver>(lock)) {
+        //             ent.Get<ecs::SignalReceiver>(lock).SetOffset(1.0f);
+        //         } else {
+        //             ent.Get<ecs::SlideDoor>(lock).Open(lock);
+        //         }
+        //         return;
+        //     }
+        // }
         Logf("%s not found", name);
     }
 
     void GameLogic::CloseDoor(string name) {
-        auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name, ecs::SlideDoor>,
-                                                              ecs::Write<ecs::Animation, ecs::SignalReceiver>>();
-        for (auto ent : lock.EntitiesWith<ecs::Name>()) {
-            if (ent.Get<ecs::Name>(lock) == name) {
-                if (!ent.Has<ecs::SlideDoor>(lock)) {
-                    Logf("%s is not a door", name);
-                    return;
-                }
+        // auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name, ecs::SlideDoor>,
+        //                                                       ecs::Write<ecs::Animation, ecs::SignalReceiver>>();
+        // for (auto ent : lock.EntitiesWith<ecs::Name>()) {
+        //     if (ent.Get<ecs::Name>(lock) == name) {
+        //         if (!ent.Has<ecs::SlideDoor>(lock)) {
+        //             Logf("%s is not a door", name);
+        //             return;
+        //         }
 
-                if (ent.Has<ecs::SignalReceiver>(lock)) {
-                    ent.Get<ecs::SignalReceiver>(lock).SetOffset(-1.0f);
-                } else {
-                    ent.Get<ecs::SlideDoor>(lock).Close(lock);
-                }
-                return;
-            }
-        }
+        //         if (ent.Has<ecs::SignalReceiver>(lock)) {
+        //             ent.Get<ecs::SignalReceiver>(lock).SetOffset(-1.0f);
+        //         } else {
+        //             ent.Get<ecs::SlideDoor>(lock).Close(lock);
+        //         }
+        //         return;
+        //     }
+        // }
         Logf("%s not found", name);
     }
 
