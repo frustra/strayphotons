@@ -191,7 +191,7 @@ namespace sp {
                 auto ph = ent.Get<ecs::Physics>();
                 auto transform = ent.Get<ecs::Transform>();
 
-                if (!ph->actor && ph->model) { ph->actor = CreateActor(ph->model, ph->desc, ent); }
+                if (!ph->actor && ph->model) { ph->actor = CreateActor(ph->model, ph->desc, ent.GetId()); }
 
                 if (ph->actor && transform->ClearDirty()) {
                     if (!gotLock) {
@@ -439,7 +439,7 @@ namespace sp {
         Unlock();
     }
 
-    PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PhysxActorDesc desc, const ecs::Entity &entity) {
+    PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PhysxActorDesc desc, const Tecs::Entity &entity) {
         Lock();
         PxRigidActor *actor;
 
@@ -485,7 +485,7 @@ namespace sp {
 
         if (desc.dynamic) { PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidDynamic *>(actor), desc.density); }
 
-        actor->userData = reinterpret_cast<void *>((size_t)entity.GetId());
+        actor->userData = reinterpret_cast<void *>((size_t)entity.id);
 
         scene->addActor(*actor);
         Unlock();

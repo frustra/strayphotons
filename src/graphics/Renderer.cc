@@ -213,7 +213,7 @@ namespace sp {
                     shadowMapFS->SetClip(view->clip);
                     shadowMapFS->SetLight(light->lightId);
                     ForwardPass(*view, shadowMapVS, [&](ecs::Entity &ent) {
-                        if (ent.Has<ecs::Mirror>()) {
+                        if (ent && ent.Has<ecs::Mirror>()) {
                             auto mirror = ent.Get<ecs::Mirror>();
                             shadowMapFS->SetMirrorId(mirror->mirrorId);
                         } else {
@@ -284,7 +284,7 @@ namespace sp {
                 ForwardPass(basicView, mirrorMapVS, [&](ecs::Entity &ent) {
                     if (bounce == recursion - 1) {
                         // Don't mark mirrors on last pass.
-                    } else if (ent.Has<ecs::Mirror>()) {
+                    } else if (ent && ent.Has<ecs::Mirror>()) {
                         auto mirror = ent.Get<ecs::Mirror>();
                         mirrorMapFS->SetMirrorId(mirror->mirrorId);
                     } else {
@@ -507,7 +507,7 @@ namespace sp {
                     if (bounce == recursion) {
                         // Don't mark mirrors on last pass.
                         glStencilMask(0);
-                    } else if (ent.Has<ecs::Mirror>()) {
+                    } else if (ent && ent.Has<ecs::Mirror>()) {
                         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
                         glStencilMask(thisStencilBit);
                         auto mirror = ent.Get<ecs::Mirror>();
@@ -518,7 +518,7 @@ namespace sp {
                         sceneFS->SetMirrorId(-1);
                     }
 
-                    if (ent.Has<ecs::Renderable>()) {
+                    if (ent && ent.Has<ecs::Renderable>()) {
                         auto renderable = ent.Get<ecs::Renderable>();
                         sceneFS->SetEmissive(renderable->emissive);
                     }

@@ -28,5 +28,5 @@ namespace ecs {
     static Component<SignalReceiver> ComponentSignalReceiver("signalReceiver"); // TODO: Rename this
 
     template<>
-    bool Component<SignalReceiver>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
+    bool Component<SignalReceiver>::Load(Lock<Read<ecs::Name>> lock, SignalReceiver &dst, const picojson::value &src);
 } // namespace ecs

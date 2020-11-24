@@ -65,8 +65,10 @@ namespace ecs {
     using Lock = Tecs::Lock<ECS, Permissions...>;
     template<typename... Components>
     using Read = Tecs::Read<Components...>;
+    using ReadAll = Tecs::ReadAll;
     template<typename... Components>
     using Write = Tecs::Write<Components...>;
+    using WriteAll = Tecs::WriteAll;
     using AddRemove = Tecs::AddRemove;
 
     class EntityManager;

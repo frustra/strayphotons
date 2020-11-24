@@ -21,8 +21,8 @@
 namespace sp {
     GameLogic::GameLogic(Game *game)
         : game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input, &game->physics),
-          lightGunSystem(&game->entityManager, &game->input, &game->physics, this), doorSystem(game->entityManager),
-          sunPos(0) {
+          lightGunSystem(&game->entityManager, &game->input, &game->physics, this),
+          doorSystem(game->entityManager.tecs), sunPos(0) {
         funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
         funcs.Register(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
         funcs.Register(this, "printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
@@ -74,7 +74,7 @@ namespace sp {
 
             PhysxActorDesc desc;
             desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
-            auto actor = game->physics.CreateActor(model, desc, entity);
+            auto actor = game->physics.CreateActor(model, desc, entity.GetId());
 
             if (actor) { entity.Assign<ecs::Physics>(actor, model, desc); }
         } else if (input->IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
@@ -306,29 +306,45 @@ namespace sp {
     }
 
     void GameLogic::OpenDoor(string name) {
-        auto ent = game->entityManager.EntityWith<ecs::Name>(name);
-        if (!ent.Valid()) { return Logf("%s not found", name); }
+        auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name, ecs::SlideDoor>,
+                                                              ecs::Write<ecs::Animation, ecs::SignalReceiver>>();
+        for (auto ent : lock.EntitiesWith<ecs::Name>()) {
+            if (ent.Get<ecs::Name>(lock) == name) {
+                if (!ent.Has<ecs::SlideDoor>(lock)) {
+                    Logf("%s is not a door", name);
+                    return;
+                }
 
-        if (!ent.Has<ecs::SlideDoor>()) { return Logf("%s is not a door", name); }
-
-        if (ent.Has<ecs::SignalReceiver>()) {
-            ent.Get<ecs::SignalReceiver>()->SetOffset(1.0f);
-        } else {
-            ent.Get<ecs::SlideDoor>()->Open(game->entityManager);
+                if (ent.Has<ecs::SignalReceiver>(lock)) {
+                    ent.Get<ecs::SignalReceiver>(lock).SetOffset(1.0f);
+                } else {
+                    ent.Get<ecs::SlideDoor>(lock).Open(lock);
+                }
+                return;
+            }
         }
+        Logf("%s not found", name);
     }
 
     void GameLogic::CloseDoor(string name) {
-        auto ent = game->entityManager.EntityWith<ecs::Name>(name);
-        if (!ent.Valid()) { return Logf("%s not found", name); }
+        auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name, ecs::SlideDoor>,
+                                                              ecs::Write<ecs::Animation, ecs::SignalReceiver>>();
+        for (auto ent : lock.EntitiesWith<ecs::Name>()) {
+            if (ent.Get<ecs::Name>(lock) == name) {
+                if (!ent.Has<ecs::SlideDoor>(lock)) {
+                    Logf("%s is not a door", name);
+                    return;
+                }
 
-        if (!ent.Has<ecs::SlideDoor>()) { return Logf("%s is not a door", name); }
-
-        if (ent.Has<ecs::SignalReceiver>()) {
-            ent.Get<ecs::SignalReceiver>()->SetOffset(-1.0f);
-        } else {
-            ent.Get<ecs::SlideDoor>()->Close(game->entityManager);
+                if (ent.Has<ecs::SignalReceiver>(lock)) {
+                    ent.Get<ecs::SignalReceiver>(lock).SetOffset(-1.0f);
+                } else {
+                    ent.Get<ecs::SlideDoor>(lock).Close(lock);
+                }
+                return;
+            }
         }
+        Logf("%s not found", name);
     }
 
     /**

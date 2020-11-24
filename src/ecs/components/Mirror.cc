@@ -6,8 +6,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Mirror>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
-        auto &mirror = dst.Set<Mirror>(lock);
+    bool Component<Mirror>::Load(Lock<Read<ecs::Name>> lock, Mirror &mirror, const picojson::value &src) {
         mirror.size = sp::MakeVec2(src);
         return true;
     }

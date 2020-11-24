@@ -10,8 +10,7 @@
 
 namespace ecs {
     template<>
-    bool Component<View>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
-        auto &view = dst.Set<View>(lock);
+    bool Component<View>::Load(Lock<Read<ecs::Name>> lock, View &view, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "fov") {
                 view.fov = glm::radians(param.second.get<double>());

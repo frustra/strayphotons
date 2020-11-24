@@ -1,14 +1,8 @@
 #pragma once
-#include "ecs/components/Light.hh"
-#include "ecs/components/LightSensor.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/View.hh"
-#include "ecs/components/VoxelInfo.hh"
-#include "graphics/GPUTypes.hh"
-#include "graphics/Shader.hh"
-#include "graphics/ShaderManager.hh"
-
 #include <ecs/Ecs.hh>
+#include <graphics/GPUTypes.hh>
+#include <graphics/Shader.hh>
+#include <graphics/ShaderManager.hh>
 
 namespace sp {
     class SceneShader : public Shader {

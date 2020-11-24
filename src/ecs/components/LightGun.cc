@@ -6,8 +6,7 @@
 
 namespace ecs {
     template<>
-    bool Component<LightGun>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
-        dst.Set<LightGun>(lock);
+    bool Component<LightGun>::Load(Lock<Read<ecs::Name>> lock, LightGun &dst, const picojson::value &src) {
         return true;
     }
 

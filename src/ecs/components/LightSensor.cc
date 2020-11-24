@@ -8,8 +8,7 @@
 
 namespace ecs {
     template<>
-    bool Component<LightSensor>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
-        auto &sensor = dst.Set<LightSensor>(lock);
+    bool Component<LightSensor>::Load(Lock<Read<ecs::Name>> lock, LightSensor &sensor, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "translate") {
                 sensor.position = sp::MakeVec3(param.second);

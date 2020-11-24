@@ -9,8 +9,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Transform>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
-        auto &transform = dst.Set<Transform>(lock);
+    bool Component<Transform>::Load(Lock<Read<ecs::Name>> lock, Transform &transform, const picojson::value &src) {
         for (auto subTransform : src.get<picojson::object>()) {
             if (subTransform.first == "parent") {
                 auto parentName = subTransform.second.get<string>();

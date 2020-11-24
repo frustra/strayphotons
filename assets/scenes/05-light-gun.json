@@ -311,11 +311,6 @@
 					6,
 					0,
 					7
-				],
-				"scale": [
-					1,
-					1,
-					1
 				]
 			},
 			"renderable": "door-frame",
@@ -329,6 +324,21 @@
 			"renderable": "door-panel",
 			"transform": {
 				"parent": "door1-root"
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							1.4
+						]
+					}
+				]
 			},
 			"physics": {
 				"model": "door-panel",
@@ -347,6 +357,33 @@
 					0
 				]
 			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							-1.4
+						],
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					}
+				]
+			},
 			"physics": {
 				"model": "door-panel",
 				"dynamic": false
@@ -356,14 +393,7 @@
 			"_name": "door1",
 			"slideDoor": {
 				"left": "door1-left",
-				"right": "door1-right",
-				"width": 1.4,
-				"openTime": 0.5,
-				"forward": [
-					1,
-					0,
-					0
-				]
+				"right": "door1-right"
 			},
 			"signalReceiver": {}
 		},
@@ -440,18 +470,18 @@
 			}
 		},
 		{
-			"_name": "right of barrier2",
+			"_name": "right of door2",
 			"renderable": "wall-1x1",
 			"transform": {
 				"scale": [
 					1,
 					4,
-					1.5
+					1.2
 				],
 				"translate": [
 					7,
 					0,
-					5.5
+					5.8
 				]
 			},
 			"physics": {
@@ -460,13 +490,13 @@
 			}
 		},
 		{
-			"_name": "left of barrier2",
+			"_name": "left of door2",
 			"renderable": "wall-1x1",
 			"transform": {
 				"scale": [
 					1,
 					4,
-					1.5
+					1.2
 				],
 				"translate": [
 					7,
@@ -480,18 +510,18 @@
 			}
 		},
 		{
-			"_name": "above barrier2",
+			"_name": "above door2",
 			"renderable": "wall-1x1",
 			"transform": {
 				"scale": [
 					1,
-					2,
-					1
+					1.5,
+					1.6
 				],
 				"translate": [
 					7,
-					2,
-					4.5
+					2.5,
+					4.2
 				]
 			},
 			"physics": {
@@ -500,36 +530,97 @@
 			}
 		},
 		{
-			"_name": "barrier2",
-			"renderable": "door-hex-1x2",
+			"_name": "door2-root",
 			"transform": {
 				"translate": [
 					7,
 					0,
-					4.5
+					5
 				]
 			},
+			"renderable": "door-frame",
 			"physics": {
-				"model": "door-hex-1x2",
+				"model": "door-frame",
 				"dynamic": false
-			},
-			"barrier": {
-				"isOpen": false
 			}
 		},
 		{
-			"renderable": "door-hex-frame-1x2",
+			"_name": "door2-left",
+			"renderable": "door-panel",
 			"transform": {
-				"translate": [
-					7,
-					0,
-					4.5
+				"parent": "door2-root"
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							1.4
+						]
+					}
 				]
 			},
 			"physics": {
-				"model": "door-hex-frame-1x2",
+				"model": "door-panel",
 				"dynamic": false
 			}
+		},
+		{
+			"_name": "door2-right",
+			"renderable": "door-panel",
+			"transform": {
+				"parent": "door2-root",
+				"rotate": [
+					180,
+					0,
+					1,
+					0
+				]
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							-1.4
+						],
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					}
+				]
+			},
+			"physics": {
+				"model": "door-panel",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "door2",
+			"slideDoor": {
+				"left": "door2-left",
+				"right": "door2-right"
+			},
+			"signalReceiver": {}
 		},
 		{
 			"_name": "sensor2_plate",
@@ -586,8 +677,8 @@
 							0.25,
 							0.25
 						],
-						"oncmd": "g.OpenBarrier barrier2",
-						"offcmd": "g.CloseBarrier barrier2"
+						"oncmd": "g.OpenDoor door2",
+						"offcmd": "g.CloseDoor door2"
 					}
 				]
 			}
