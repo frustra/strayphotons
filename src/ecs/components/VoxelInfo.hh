@@ -22,7 +22,7 @@ namespace ecs {
     static Component<VoxelInfo> ComponentVoxelInfo("voxel_info");
 
     template<>
-    bool Component<VoxelArea>::LoadEntity(Entity &dst, picojson::value &src);
+    bool Component<VoxelArea>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
 
     Handle<VoxelInfo> UpdateVoxelInfoCache(Entity entity, int gridSize, float superSampleScale, EntityManager &em);
 } // namespace ecs

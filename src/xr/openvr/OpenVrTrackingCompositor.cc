@@ -5,6 +5,7 @@
 #include "xr/openvr/OpenVrModel.hh"
 #include "xr/openvr/OpenVrSystem.hh"
 
+#include <core/Logging.hh>
 #include <memory>
 #include <stdexcept>
 

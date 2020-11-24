@@ -1,27 +1,34 @@
-#include "ecs/components/Light.hh"
+#include "Light.hh"
 
 #include <assets/AssetHelpers.hh>
+#include <ecs/EcsImpl.hh>
 #include <picojson/picojson.h>
 
 namespace ecs {
     template<>
-    bool Component<Light>::LoadEntity(Entity &dst, picojson::value &src) {
-        auto light = dst.Assign<ecs::Light>();
+    bool Component<Light>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
+        auto &light = dst.Set<Light>(lock);
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "intensity") {
-                light->intensity = param.second.get<double>();
+                light.intensity = param.second.get<double>();
             } else if (param.first == "illuminance") {
-                light->illuminance = param.second.get<double>();
+                light.illuminance = param.second.get<double>();
             } else if (param.first == "spotAngle") {
-                light->spotAngle = glm::radians(param.second.get<double>());
+                light.spotAngle = glm::radians(param.second.get<double>());
             } else if (param.first == "tint") {
-                light->tint = sp::MakeVec3(param.second);
+                light.tint = sp::MakeVec3(param.second);
             } else if (param.first == "gel") {
-                light->gelId = param.second.get<bool>() ? 1 : 0;
+                light.gelId = param.second.get<bool>() ? 1 : 0;
             } else if (param.first == "on") {
-                light->on = param.second.get<bool>();
+                light.on = param.second.get<bool>();
             } else if (param.first == "bulb") {
-                light->bulb = param.second.get<string>();
+                auto bulbName = param.second.get<string>();
+                for (auto ent : lock.EntitiesWith<Name>()) {
+                    if (ent.Get<Name>(lock) == bulbName) {
+                        light.bulb = ent;
+                        break;
+                    }
+                }
             }
         }
         return true;

@@ -13,5 +13,5 @@ namespace sp {
     /**
      * Returns true if all the specified parameters are present
      */
-    bool ParametersExist(picojson::value &json, vector<string> reqParams);
+    bool ParametersExist(const picojson::value &json, vector<string> reqParams);
 } // namespace sp

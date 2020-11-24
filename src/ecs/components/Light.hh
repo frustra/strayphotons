@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ecs/Components.hh>
-#include <ecs/NamedEntity.hh>
+#include <ecs/Ecs.hh>
 #include <glm/glm.hpp>
 
 namespace ecs {
@@ -12,11 +12,11 @@ namespace ecs {
         int gelId;
         int lightId;
         bool on = true;
-        NamedEntity bulb;
+        Tecs::Entity bulb;
     };
 
     static Component<Light> ComponentLight("light");
 
     template<>
-    bool Component<Light>::LoadEntity(Entity &dst, picojson::value &src);
+    bool Component<Light>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
 } // namespace ecs

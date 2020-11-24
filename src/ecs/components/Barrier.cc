@@ -1,21 +1,20 @@
 #include "ecs/components/Barrier.hh"
 
-#include "assets/AssetManager.hh"
-#include "physx/PhysxManager.hh"
-#include "physx/PhysxUtils.hh"
-
 #include <assets/AssetHelpers.hh>
+#include <assets/AssetManager.hh>
+#include <core/Logging.hh>
 #include <ecs/Ecs.hh>
 #include <ecs/EcsImpl.hh>
+#include <physx/PhysxManager.hh>
+#include <physx/PhysxUtils.hh>
 #include <picojson/picojson.h>
 
 namespace ecs {
     template<>
-    bool Component<Barrier>::LoadEntity(Entity &dst, picojson::value &src) {
-        auto barrier = dst.Assign<Barrier>();
-
+    bool Component<Barrier>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
+        auto &barrier = dst.Set<Barrier>(lock);
         for (auto param : src.get<picojson::object>()) {
-            if (param.first == "isOpen") { barrier->isOpen = param.second.get<bool>(); }
+            if (param.first == "isOpen") { barrier.isOpen = param.second.get<bool>(); }
         }
 
         if (sp::ParametersExist(src, {"translate", "scale"})) {
@@ -35,7 +34,7 @@ namespace ecs {
             // ecs::Barrier::Create(translate, scale, px, *em);
         }
 
-        if (barrier->isOpen) {
+        if (barrier.isOpen) {
             Errorf("Deserialization of open barrier component not currently supported.");
             return false;
             // if (!dst.Has<Physics>() || !dst.Has<Renderable>())

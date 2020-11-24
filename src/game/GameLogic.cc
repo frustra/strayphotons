@@ -88,11 +88,11 @@ namespace sp {
                         transform->SetPosition(transform->GetGlobalTransform(game->entityManager) *
                                                glm::vec4(0, 0, 0, 1));
                         transform->SetRotate(playerTransform->GetGlobalRotation(game->entityManager));
-                        transform->SetParent(ecs::Entity());
+                        transform->SetParent(Tecs::Entity());
                     } else {
                         transform->SetPosition(glm::vec3(0, -0.3, 0));
                         transform->SetRotate(glm::quat());
-                        transform->SetParent(player);
+                        transform->SetParent(player.GetId());
                     }
                 }
             }
@@ -177,7 +177,10 @@ namespace sp {
         }
 
         scene.reset();
-        scene = GAssets.LoadScene(name, &game->entityManager, game->physics, ecs::OwnerType::GAME_LOGIC);
+        {
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
+            scene = GAssets.LoadScene(name, lock, game->physics, ecs::OwnerType::GAME_LOGIC);
+        }
         if (!scene) {
             game->physics.StartSimulation();
             return;
@@ -199,7 +202,7 @@ namespace sp {
         // Create flashlight entity
         flashlight = CreateGameLogicEntity();
         auto transform = flashlight.Assign<ecs::Transform>(glm::vec3(0, -0.3, 0));
-        transform->SetParent(player);
+        transform->SetParent(player.GetId());
         auto light = flashlight.Assign<ecs::Light>();
         light->tint = glm::vec3(1.0);
         light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstring>
+#include <ecs/Ecs.hh>
 #include <iostream>
 #include <stdexcept>
 
@@ -9,14 +10,12 @@ namespace picojson {
 }
 
 namespace ecs {
-    class Entity;
-
     class ComponentBase {
     public:
         ComponentBase(const char *name) : name(name) {}
 
-        virtual bool LoadEntity(Entity &dst, picojson::value &src) = 0;
-        virtual bool SaveEntity(picojson::value &dst, Entity &src) = 0;
+        virtual bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) = 0;
+        virtual bool SaveEntity(Lock<AddRemove> lock, picojson::value &dst, const Tecs::Entity &src) = 0;
 
         const char *name;
     };
@@ -36,12 +35,12 @@ namespace ecs {
             }
         }
 
-        bool LoadEntity(Entity &dst, picojson::value &src) override {
+        bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) override {
             std::cerr << "Calling undefined LoadEntity on type: " << name << std::endl;
             return false;
         }
 
-        bool SaveEntity(picojson::value &dst, Entity &src) override {
+        bool SaveEntity(Lock<AddRemove> lock, picojson::value &dst, const Tecs::Entity &src) override {
             std::cerr << "Calling undefined SaveEntity on type: " << name << std::endl;
             return false;
         }

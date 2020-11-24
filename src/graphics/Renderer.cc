@@ -131,9 +131,10 @@ namespace sp {
         for (auto entity : game->entityManager.EntitiesWith<ecs::Light>()) {
             auto light = entity.Get<ecs::Light>();
 
-            if (light->bulb.Load(game->entityManager)) {
-                auto bulb = light->bulb->Get<ecs::Renderable>();
-                bulb->emissive = light->on ? light->intensity * light->tint * 0.1f : glm::vec3(0.0f);
+            if (light->bulb) {
+                auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Renderable>>();
+                auto &bulb = light->bulb.Get<ecs::Renderable>(lock);
+                bulb.emissive = light->on ? light->intensity * light->tint * 0.1f : glm::vec3(0.0f);
             }
 
             if (!light->on) { continue; }

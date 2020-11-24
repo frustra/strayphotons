@@ -5,8 +5,8 @@
 #include <PxActor.h>
 #include <PxRigidDynamic.h>
 #include <ecs/Components.hh>
-#include <ecs/NamedEntity.hh>
 #include <glm/glm.hpp>
+#include <memory>
 
 namespace sp {
     class Model;
@@ -15,12 +15,12 @@ namespace sp {
 namespace ecs {
     struct Physics {
         Physics() {}
-        Physics(shared_ptr<sp::Model> model, sp::PhysxActorDesc desc) : model(model), desc(desc) {}
-        Physics(physx::PxRigidActor *actor, shared_ptr<sp::Model> model, sp::PhysxActorDesc desc)
+        Physics(std::shared_ptr<sp::Model> model, sp::PhysxActorDesc desc) : model(model), desc(desc) {}
+        Physics(physx::PxRigidActor *actor, std::shared_ptr<sp::Model> model, sp::PhysxActorDesc desc)
             : actor(actor), model(model), desc(desc) {}
 
         physx::PxRigidActor *actor = nullptr;
-        shared_ptr<sp::Model> model;
+        std::shared_ptr<sp::Model> model;
         sp::PhysxActorDesc desc;
 
         glm::vec3 scale = glm::vec3(1.0);
@@ -29,5 +29,5 @@ namespace ecs {
     static Component<Physics> ComponentPhysics("physics");
 
     template<>
-    bool Component<Physics>::LoadEntity(Entity &dst, picojson::value &src);
+    bool Component<Physics>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
 } // namespace ecs

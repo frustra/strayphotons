@@ -10,16 +10,8 @@
 namespace ecs {
     class SignalReceiver {
     public:
-        struct Input {
-            Subscription sub;
-            float signal;
-        };
-
-        /**
-         * Each signaller can only be attached once.
-         */
-        void AttachSignal(Entity signaller, float startSig = 0);
-        void DetachSignal(Entity signaller);
+        void SetSignal(Tecs::Entity signaller, float signal = 0);
+        void RemoveSignal(Tecs::Entity signaller);
         float GetSignal() const;
         bool IsTriggered() const;
         void SetAmplifier(float amp);
@@ -28,7 +20,7 @@ namespace ecs {
     private:
         float amplifier = 1.0f;
         float offset = 0.0f;
-        std::map<Entity::Id, Input> signallers;
+        std::map<Tecs::Entity, float> signallers;
 
         static const float TRIGGER_TOLERANCE;
     };
@@ -36,5 +28,5 @@ namespace ecs {
     static Component<SignalReceiver> ComponentSignalReceiver("signalReceiver"); // TODO: Rename this
 
     template<>
-    bool Component<SignalReceiver>::LoadEntity(Entity &dst, picojson::value &src);
+    bool Component<SignalReceiver>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
 } // namespace ecs

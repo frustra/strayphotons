@@ -32,7 +32,7 @@ namespace sp {
         return ret;
     }
 
-    bool ParametersExist(picojson::value &json, vector<string> reqParams) {
+    bool ParametersExist(const picojson::value &json, vector<string> reqParams) {
         vector<bool> found(reqParams.size(), false);
 
         for (auto param : json.get<picojson::object>()) {

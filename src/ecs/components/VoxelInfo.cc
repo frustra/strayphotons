@@ -8,13 +8,13 @@
 
 namespace ecs {
     template<>
-    bool Component<VoxelArea>::LoadEntity(Entity &dst, picojson::value &src) {
-        auto voxelArea = dst.Assign<VoxelArea>();
+    bool Component<VoxelArea>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
+        auto &voxelArea = dst.Set<VoxelArea>(lock);
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "min") {
-                voxelArea->min = sp::MakeVec3(param.second);
+                voxelArea.min = sp::MakeVec3(param.second);
             } else if (param.first == "max") {
-                voxelArea->max = sp::MakeVec3(param.second);
+                voxelArea.max = sp::MakeVec3(param.second);
             }
         }
         return true;

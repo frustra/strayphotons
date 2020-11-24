@@ -2,7 +2,6 @@
 
 #include "core/Console.hh"
 #include "core/Logging.hh"
-#include "ecs/events/SignalChange.hh"
 
 #include <cmath>
 #include <ecs/EcsImpl.hh>
@@ -79,23 +78,27 @@ namespace sp {
                 auto prev = sensor->illuminance;
                 sensor->illuminance = lum;
 
-                for (auto output : sensor->outputTo) {
-                    output.Load(manager);
-                }
-
                 bool allTriggered = true;
 
                 for (auto trigger : triggers) {
                     if (!trigger(lum)) { allTriggered = false; }
 
                     if (trigger(lum) && !trigger(prev)) {
-                        ecs::SignalChange sig(trigger.onSignal);
-                        sensorEnt.Emit(sig);
+                        for (auto &ent : sensor->outputTo) {
+                            ecs::Entity e(&manager, ent);
+                            if (ent && e.Has<ecs::SignalReceiver>()) {
+                                e.Get<ecs::SignalReceiver>()->SetSignal(eid, trigger.onSignal);
+                            }
+                        }
                         GetConsoleManager().QueueParseAndExecute(trigger.oncmd);
                     }
                     if (!trigger(lum) && trigger(prev)) {
-                        ecs::SignalChange sig(trigger.offSignal);
-                        sensorEnt.Emit(sig);
+                        for (auto &ent : sensor->outputTo) {
+                            ecs::Entity e(&manager, ent);
+                            if (ent && e.Has<ecs::SignalReceiver>()) {
+                                e.Get<ecs::SignalReceiver>()->SetSignal(eid, trigger.offSignal);
+                            }
+                        }
                         GetConsoleManager().QueueParseAndExecute(trigger.offcmd);
                     }
                 }
