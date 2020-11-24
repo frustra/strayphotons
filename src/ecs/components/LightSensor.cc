@@ -8,7 +8,8 @@
 
 namespace ecs {
     template<>
-    bool Component<LightSensor>::Load(LightSensor &sensor, const picojson::value &src) {
+    bool Component<LightSensor>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
+        auto &sensor = dst.Set<LightSensor>(lock);
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "translate") {
                 sensor.position = sp::MakeVec3(param.second);
@@ -16,7 +17,13 @@ namespace ecs {
                 sensor.direction = sp::MakeVec3(param.second);
             } else if (param.first == "outputTo") {
                 for (auto entName : param.second.get<picojson::array>()) {
-                    sensor.outputTo.emplace_back(entName.get<string>());
+                    auto outputName = entName.get<string>();
+                    for (auto ent : lock.EntitiesWith<Name>()) {
+                        if (ent.Get<Name>(lock) == outputName) {
+                            sensor.outputTo.emplace_back(ent);
+                            break;
+                        }
+                    }
                 }
             } else if (param.first == "onColor") {
                 sensor.onColor = sp::MakeVec3(param.second);

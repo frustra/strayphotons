@@ -3,7 +3,7 @@
 #include "Common.hh"
 
 #include <ecs/Components.hh>
-#include <ecs/NamedEntity.hh>
+#include <ecs/Ecs.hh>
 #include <glm/glm.hpp>
 
 namespace ecs {
@@ -27,7 +27,7 @@ namespace ecs {
         glm::vec3 offColor = {0, 0, 0};
 
         vector<Trigger> triggers;
-        vector<NamedEntity> outputTo;
+        vector<Tecs::Entity> outputTo;
 
         // Updated automatically.
         glm::vec3 illuminance;
@@ -40,5 +40,5 @@ namespace ecs {
     static Component<LightSensor> ComponentLightSensor("lightsensor"); // TODO: rename this
 
     template<>
-    bool Component<LightSensor>::Load(LightSensor &dst, const picojson::value &src);
+    bool Component<LightSensor>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
 } // namespace ecs

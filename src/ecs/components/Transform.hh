@@ -3,7 +3,7 @@
 #include "Common.hh"
 
 #include <ecs/Components.hh>
-#include <ecs/NamedEntity.hh>
+#include <ecs/Ecs.hh>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
@@ -16,8 +16,7 @@ namespace ecs {
             SetPosition(pos);
         }
 
-        void SetParent(ecs::Entity ent);
-        void SetParent(ecs::NamedEntity ent);
+        void SetParent(Tecs::Entity ent);
         bool HasParent(EntityManager &em);
 
         /**
@@ -79,7 +78,7 @@ namespace ecs {
         bool ClearDirty();
 
     private:
-        ecs::NamedEntity parent;
+        Tecs::Entity parent;
 
         glm::mat4 translate = glm::identity<glm::mat4>();
         glm::mat4 scale = glm::identity<glm::mat4>();
@@ -96,5 +95,5 @@ namespace ecs {
     static Component<Transform> ComponentTransform("transform");
 
     template<>
-    bool Component<Transform>::Load(Transform &dst, const picojson::value &src);
+    bool Component<Transform>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
 } // namespace ecs

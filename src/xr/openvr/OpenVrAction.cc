@@ -1,4 +1,5 @@
 #include <core/CVar.hh>
+#include <core/Logging.hh>
 #include <stdexcept>
 #include <xr/openvr/OpenVrAction.hh>
 #include <xr/openvr/OpenVrModel.hh>

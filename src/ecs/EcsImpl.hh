@@ -2,7 +2,6 @@
 
 #include <Tecs.hh>
 #include <ecs/Ecs.hh>
-#include <ecs/NamedEntity.hh>
 #include <ecs/components/Animation.hh>
 #include <ecs/components/Barrier.hh>
 #include <ecs/components/Controller.hh>

@@ -9,10 +9,17 @@
 
 namespace ecs {
     template<>
-    bool Component<Transform>::Load(Transform &transform, const picojson::value &src) {
+    bool Component<Transform>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
+        auto &transform = dst.Set<Transform>(lock);
         for (auto subTransform : src.get<picojson::object>()) {
             if (subTransform.first == "parent") {
-                transform.SetParent(NamedEntity(subTransform.second.get<string>()));
+                auto parentName = subTransform.second.get<string>();
+                for (auto ent : lock.EntitiesWith<Name>()) {
+                    if (ent.Get<Name>(lock) == parentName) {
+                        transform.SetParent(ent);
+                        break;
+                    }
+                }
             } else if (subTransform.first == "scale") {
                 transform.Scale(sp::MakeVec3(subTransform.second));
             } else if (subTransform.first == "rotate") {
@@ -39,45 +46,22 @@ namespace ecs {
         return true;
     }
 
-    void Transform::SetParent(ecs::Entity ent) {
-        if (!ent.Valid()) {
-            this->parent = ecs::NamedEntity();
-            return;
-        }
-
-        if (!ent.Has<Transform>()) {
-            std::stringstream ss;
-            ss << "Cannot set placement relative to " << ent << " because it does not have a placement.";
-            throw std::runtime_error(ss.str());
-        }
-
-        this->parent = NamedEntity(ent);
-        this->parentCacheCount = 0;
-        this->dirty = true;
-    }
-
-    void Transform::SetParent(ecs::NamedEntity ent) {
-        if (ent && !ent->Has<Transform>()) {
-            std::stringstream ss;
-            ss << "Cannot set placement relative to " << ent << " because it does not have a placement.";
-            throw std::runtime_error(ss.str());
-        }
-
+    void Transform::SetParent(Tecs::Entity ent) {
         this->parent = ent;
         this->parentCacheCount = 0;
         this->dirty = true;
     }
 
     bool Transform::HasParent(EntityManager &em) {
-        return this->parent.Load(em);
+        return this->parent && Entity(&em, this->parent).Has<Transform>();
     }
 
     glm::mat4 Transform::GetGlobalTransform(EntityManager &em) {
-        if (this->parent.Load(em)) {
-            sp::Assert(this->parent->Has<Transform>(),
+        if (this->parent) {
+            sp::Assert(Entity(&em, this->parent).Has<Transform>(),
                        "cannot be relative to something that does not have a Transform");
 
-            auto parentTransform = this->parent->Get<Transform>();
+            auto parentTransform = Entity(&em, this->parent).Get<Transform>();
 
             if (this->cacheCount != this->changeCount || this->parentCacheCount != parentTransform->changeCount) {
                 glm::mat4 parentModel = parentTransform->GetGlobalTransform(em);
@@ -95,11 +79,11 @@ namespace ecs {
     glm::quat Transform::GetGlobalRotation(EntityManager &em) {
         glm::quat model = glm::identity<glm::quat>();
 
-        if (this->parent.Load(em)) {
-            sp::Assert(this->parent->Has<Transform>(),
+        if (this->parent) {
+            sp::Assert(Entity(&em, this->parent).Has<Transform>(),
                        "cannot be relative to something that does not have a Transform");
 
-            model = this->parent->Get<Transform>()->GetGlobalRotation(em);
+            model = Entity(&em, this->parent).Get<Transform>()->GetGlobalRotation(em);
         }
 
         return model * this->rotate;

@@ -6,7 +6,8 @@
 
 namespace ecs {
     template<>
-    bool Component<TriggerArea>::Load(TriggerArea &area, const picojson::value &src) {
+    bool Component<TriggerArea>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
+        auto &area = dst.Set<TriggerArea>(lock);
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "min") {
                 area.boundsMin = sp::MakeVec3(param.second);
