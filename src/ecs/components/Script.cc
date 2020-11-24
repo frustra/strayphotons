@@ -1,21 +1,22 @@
 #include "Script.hh"
 
+#include <core/Logging.hh>
 #include <ecs/EcsImpl.hh>
 #include <glm/glm.hpp>
 #include <picojson/picojson.h>
 
 namespace ecs {
     template<>
-    bool Component<Script>::LoadEntity(Entity &dst, picojson::value &src) {
-        auto script = dst.Assign<Script>();
+    bool Component<Script>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
+        auto &script = dst.Set<Script>(lock);
 
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "onTick") {
                 auto scriptName = param.second.get<std::string>();
                 if (scriptName == "sun") {
-                    script->AddOnTick([dst](ECS &ecs, double dtSinceLastFrame) {
+                    script.AddOnTick([dst](ECS &ecs, double dtSinceLastFrame) {
                         static double sunPos = 0.0;
-                        Tecs::Entity sun = dst.GetId();
+                        const Tecs::Entity &sun = dst;
                         auto lock = ecs.StartTransaction<Read<Script>, Write<Transform>>();
                         if (sun && sun.Has<Transform>(lock)) {
                             auto &scriptComp = sun.Get<Script>(lock);
@@ -40,7 +41,7 @@ namespace ecs {
                 }
             } else if (param.first == "parameters") {
                 for (auto scriptParam : param.second.get<picojson::object>()) {
-                    script->SetParam(scriptParam.first, scriptParam.second.get<double>());
+                    script.SetParam(scriptParam.first, scriptParam.second.get<double>());
                 }
             }
         }

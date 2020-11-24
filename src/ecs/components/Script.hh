@@ -40,5 +40,5 @@ namespace ecs {
     static Component<Script> ComponentScript("script");
 
     template<>
-    bool Component<Script>::LoadEntity(Entity &dst, picojson::value &src);
+    bool Component<Script>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
 } // namespace ecs
