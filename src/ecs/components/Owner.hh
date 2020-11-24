@@ -3,7 +3,7 @@
 #include <ecs/Components.hh>
 
 namespace ecs {
-    enum class OwnerType { INVALID, GAME_LOGIC, XR_MANAGER };
+    enum class OwnerType { INVALID = 0, GAME_LOGIC, XR_MANAGER };
 
     struct Owner {
         Owner() : id(0), type(OwnerType::INVALID) {}
