@@ -12,5 +12,5 @@ namespace ecs {
     static Component<Mirror> ComponentMirror("mirror");
 
     template<>
-    bool Component<Mirror>::Load(Mirror &dst, const picojson::value &src);
+    bool Component<Mirror>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
 } // namespace ecs

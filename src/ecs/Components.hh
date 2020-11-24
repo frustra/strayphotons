@@ -40,24 +40,14 @@ namespace ecs {
             }
         }
 
-        bool Load(CompType &dst, const picojson::value &src) {
-            std::cerr << "Calling undefined Load on type: " << name << std::endl;
-            return false;
-        }
-
-        bool Save(picojson::value &dst, const CompType &src) {
+        bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) override {
             std::cerr << "Calling undefined Save on type: " << name << std::endl;
             return false;
         }
 
-        bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) override {
-            auto &comp = dst.Set<CompType>(lock);
-            return Load(comp, src);
-        }
-
         bool SaveEntity(Lock<AddRemove> lock, picojson::value &dst, const Tecs::Entity &src) override {
-            const auto &comp = src.Get<CompType>(lock);
-            return Save(dst, comp);
+            std::cerr << "Calling undefined Save on type: " << name << std::endl;
+            return false;
         }
 
         bool operator==(const Component<CompType> &other) const {

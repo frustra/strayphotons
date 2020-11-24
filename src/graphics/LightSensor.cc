@@ -85,10 +85,10 @@ namespace sp {
                     if (!trigger(lum)) { allTriggered = false; }
 
                     if (trigger(lum) && !trigger(prev)) {
-                        for (auto output : sensor->outputTo) {
-                            auto &ent = output.Load(manager);
-                            if (ent && ent->Has<ecs::SignalReceiver>()) {
-                                ent->Get<ecs::SignalReceiver>()->SetSignal(eid, trigger.onSignal);
+                        for (auto &ent : sensor->outputTo) {
+                            ecs::Entity e(&manager, ent);
+                            if (ent && e.Has<ecs::SignalReceiver>()) {
+                                e.Get<ecs::SignalReceiver>()->SetSignal(eid, trigger.onSignal);
                             }
                         }
                         ecs::SignalChange sig(trigger.onSignal);
@@ -96,10 +96,10 @@ namespace sp {
                         GetConsoleManager().QueueParseAndExecute(trigger.oncmd);
                     }
                     if (!trigger(lum) && trigger(prev)) {
-                        for (auto output : sensor->outputTo) {
-                            auto &ent = output.Load(manager);
-                            if (ent && ent->Has<ecs::SignalReceiver>()) {
-                                ent->Get<ecs::SignalReceiver>()->SetSignal(eid, trigger.offSignal);
+                        for (auto &ent : sensor->outputTo) {
+                            ecs::Entity e(&manager, ent);
+                            if (ent && e.Has<ecs::SignalReceiver>()) {
+                                e.Get<ecs::SignalReceiver>()->SetSignal(eid, trigger.offSignal);
                             }
                         }
                         ecs::SignalChange sig(trigger.offSignal);

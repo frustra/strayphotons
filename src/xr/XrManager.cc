@@ -77,7 +77,7 @@ namespace sp::xr {
 
                                 transform->SetPosition(glm::vec3(0, 0, 0));
                                 transform->SetRotate(glm::quat());
-                                transform->SetParent(parent);
+                                transform->SetParent(parent.GetId());
                             }
                         }
 

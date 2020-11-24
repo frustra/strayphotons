@@ -1,11 +1,13 @@
-#include "ecs/components/Light.hh"
+#include "Light.hh"
 
 #include <assets/AssetHelpers.hh>
+#include <ecs/EcsImpl.hh>
 #include <picojson/picojson.h>
 
 namespace ecs {
     template<>
-    bool Component<Light>::Load(Light &light, const picojson::value &src) {
+    bool Component<Light>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
+        auto &light = dst.Set<Light>(lock);
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "intensity") {
                 light.intensity = param.second.get<double>();
@@ -20,7 +22,13 @@ namespace ecs {
             } else if (param.first == "on") {
                 light.on = param.second.get<bool>();
             } else if (param.first == "bulb") {
-                light.bulb = param.second.get<string>();
+                auto bulbName = param.second.get<string>();
+                for (auto ent : lock.EntitiesWith<Name>()) {
+                    if (ent.Get<Name>(lock) == bulbName) {
+                        light.bulb = ent;
+                        break;
+                    }
+                }
             }
         }
         return true;

@@ -307,11 +307,32 @@ namespace sp {
             }
         }
 
+        std::unordered_map<std::string, Tecs::Entity> namedEntities;
+
         auto entityList = root.get<picojson::object>()["entities"];
+        // Find all named entities first so they can be referenced.
         for (auto value : entityList.get<picojson::array>()) {
-            Tecs::Entity entity = lock.NewEntity();
-            entity.Set<ecs::Owner>(lock, owner);
             auto ent = value.get<picojson::object>();
+
+            if (ent.count("_name")) {
+                Tecs::Entity entity = lock.NewEntity();
+                auto name = ent["_name"].get<string>();
+                entity.Set<ecs::Name>(lock, name);
+                namedEntities.emplace(name, entity);
+            }
+        }
+
+        for (auto value : entityList.get<picojson::array>()) {
+            auto ent = value.get<picojson::object>();
+
+            Tecs::Entity entity;
+            if (ent.count("_name")) {
+                entity = namedEntities[ent["_name"].get<string>()];
+            } else {
+                entity = lock.NewEntity();
+            }
+
+            entity.Set<ecs::Owner>(lock, owner);
             for (auto comp : ent) {
                 if (comp.first[0] == '_') continue;
 
@@ -322,10 +343,6 @@ namespace sp {
                 } else {
                     Errorf("Unknown component, ignoring: %s", comp.first);
                 }
-            }
-            if (ent.count("_name")) {
-                auto name = ent["_name"].get<string>();
-                entity.Set<ecs::Name>(lock, name);
             }
             scene->entities.push_back(entity);
         }

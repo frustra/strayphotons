@@ -8,7 +8,8 @@
 
 namespace ecs {
     template<>
-    bool Component<SignalReceiver>::Load(SignalReceiver &receiver, const picojson::value &src) {
+    bool Component<SignalReceiver>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
+        auto &receiver = dst.Set<SignalReceiver>(lock);
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "amplifier") {
                 receiver.SetAmplifier(param.second.get<double>());

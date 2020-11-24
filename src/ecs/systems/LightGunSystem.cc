@@ -32,8 +32,6 @@ namespace ecs {
 
         if (input != nullptr) {
             for (auto ent : entities->EntitiesWith<LightGun, Transform>()) {
-                auto gun = ent.Get<LightGun>();
-
                 if (input->IsPressed(sp::INPUT_ACTION_PRIMARY_TRIGGER)) {
                     ShootLight(ent);
                 } else if (input->IsPressed(sp::INPUT_ACTION_SECONDARY_TRIGGER)) {
@@ -68,7 +66,6 @@ namespace ecs {
         }
 
         auto lightGun = gun.Get<LightGun>();
-        auto transform = gun.Get<Transform>();
         if (lightGun->hasLight) return;
 
         Entity hitEntity = EntityRaycast(gun);
@@ -101,7 +98,6 @@ namespace ecs {
         }
 
         auto lightGun = gun.Get<LightGun>();
-        auto transform = gun.Get<Transform>();
         if (!lightGun->hasLight) return;
 
         Entity hitEntity = EntityRaycast(gun);
