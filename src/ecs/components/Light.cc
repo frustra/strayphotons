@@ -6,8 +6,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Light>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
-        auto &light = dst.Set<Light>(lock);
+    bool Component<Light>::Load(Lock<Read<ecs::Name>> lock, Light &light, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "intensity") {
                 light.intensity = param.second.get<double>();

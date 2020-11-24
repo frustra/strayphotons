@@ -18,5 +18,5 @@ namespace ecs {
     static Component<Light> ComponentLight("light");
 
     template<>
-    bool Component<Light>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
+    bool Component<Light>::Load(Lock<Read<ecs::Name>> lock, Light &dst, const picojson::value &src);
 } // namespace ecs

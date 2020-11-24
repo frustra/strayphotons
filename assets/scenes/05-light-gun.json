@@ -311,11 +311,6 @@
 					6,
 					0,
 					7
-				],
-				"scale": [
-					1,
-					1,
-					1
 				]
 			},
 			"renderable": "door-frame",
@@ -329,6 +324,21 @@
 			"renderable": "door-panel",
 			"transform": {
 				"parent": "door1-root"
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							1.4
+						]
+					}
+				]
 			},
 			"physics": {
 				"model": "door-panel",
@@ -347,6 +357,33 @@
 					0
 				]
 			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							-1.4
+						],
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					}
+				]
+			},
 			"physics": {
 				"model": "door-panel",
 				"dynamic": false
@@ -356,14 +393,7 @@
 			"_name": "door1",
 			"slideDoor": {
 				"left": "door1-left",
-				"right": "door1-right",
-				"width": 1.4,
-				"openTime": 0.5,
-				"forward": [
-					1,
-					0,
-					0
-				]
+				"right": "door1-right"
 			},
 			"signalReceiver": {}
 		},

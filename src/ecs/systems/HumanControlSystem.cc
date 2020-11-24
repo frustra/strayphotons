@@ -248,7 +248,6 @@ namespace ecs {
     }
 
     bool HumanControlSystem::ResizeEntity(ecs::Entity entity, float height, bool fromTop) {
-        auto transform = entity.Get<ecs::Transform>();
         auto controller = entity.Get<HumanController>();
 
         physx::PxCapsuleController *pxController = controller->pxController;
@@ -274,7 +273,6 @@ namespace ecs {
 
     bool HumanControlSystem::InteractRotate(ecs::Entity entity, double dt, glm::vec2 dCursor) {
         auto interact = entity.Get<ecs::InteractController>();
-        auto transform = entity.Get<ecs::Transform>();
         if (interact->target) {
             auto rotation = glm::vec3(dCursor.y, dCursor.x, 0) * (float)(CVarCursorSensitivity.Get() * 0.1 * dt);
             physics->RotateConstraint(entity, interact->target, GlmVec3ToPxVec3(rotation));

@@ -63,7 +63,7 @@ namespace ecs {
     static Component<View> ComponentView("view");
 
     template<>
-    bool Component<View>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
+    bool Component<View>::Load(Lock<Read<ecs::Name>> lock, View &dst, const picojson::value &src);
 
     void ValidateView(Entity viewEntity);
     Handle<ecs::View> UpdateViewCache(Entity entity, float fov = 0.0);

@@ -37,11 +37,6 @@
 					0,
 					0,
 					0
-				],
-				"scale": [
-					1,
-					1,
-					1
 				]
 			},
 			"renderable": "door-frame",
@@ -55,6 +50,21 @@
 			"renderable": "door-panel",
 			"transform": {
 				"parent": "airlock1-out-root"
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							1.4
+						]
+					}
+				]
 			},
 			"physics": {
 				"model": "door-panel",
@@ -73,6 +83,33 @@
 					0
 				]
 			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							-1.4
+						],
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					}
+				]
+			},
 			"physics": {
 				"model": "door-panel",
 				"dynamic": false
@@ -82,14 +119,7 @@
 			"_name": "airlock1-out",
 			"slideDoor": {
 				"left": "airlock1-out-left",
-				"right": "airlock1-out-right",
-				"width": 1.4,
-				"openTime": 0.5,
-				"forward": [
-					1,
-					0,
-					0
-				]
+				"right": "airlock1-out-right"
 			},
 			"signalReceiver": {}
 		},
@@ -101,11 +131,6 @@
 					3,
 					0,
 					0
-				],
-				"scale": [
-					1,
-					1,
-					1
 				]
 			},
 			"renderable": "door-frame",
@@ -119,6 +144,21 @@
 			"renderable": "door-panel",
 			"transform": {
 				"parent": "airlock1-in-root"
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							1.4
+						]
+					}
+				]
 			},
 			"physics": {
 				"model": "door-panel",
@@ -137,6 +177,33 @@
 					0
 				]
 			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							-1.4
+						],
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					}
+				]
+			},
 			"physics": {
 				"model": "door-panel",
 				"dynamic": false
@@ -146,14 +213,7 @@
 			"_name": "airlock1-in",
 			"slideDoor": {
 				"left": "airlock1-in-left",
-				"right": "airlock1-in-right",
-				"width": 1.4,
-				"openTime": 0.5,
-				"forward": [
-					1,
-					0,
-					0
-				]
+				"right": "airlock1-in-right"
 			},
 			"signalReceiver": {}
 		},
@@ -221,11 +281,6 @@
 					0,
 					0,
 					0
-				],
-				"scale": [
-					1,
-					1,
-					1
 				]
 			},
 			"renderable": "door-frame",
@@ -239,6 +294,21 @@
 			"renderable": "door-panel",
 			"transform": {
 				"parent": "airlock2-out-root"
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							1.4
+						]
+					}
+				]
 			},
 			"physics": {
 				"model": "door-panel",
@@ -257,6 +327,33 @@
 					0
 				]
 			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							-1.4
+						],
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					}
+				]
+			},
 			"physics": {
 				"model": "door-panel",
 				"dynamic": false
@@ -266,14 +363,7 @@
 			"_name": "airlock2-out",
 			"slideDoor": {
 				"left": "airlock2-out-left",
-				"right": "airlock2-out-right",
-				"width": 1.4,
-				"openTime": 0.5,
-				"forward": [
-					1,
-					0,
-					0
-				]
+				"right": "airlock2-out-right"
 			},
 			"signalReceiver": {}
 		},
@@ -285,11 +375,6 @@
 					3,
 					0,
 					0
-				],
-				"scale": [
-					1,
-					1,
-					1
 				]
 			},
 			"renderable": "door-frame",
@@ -303,6 +388,21 @@
 			"renderable": "door-panel",
 			"transform": {
 				"parent": "airlock2-in-root"
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							1.4
+						]
+					}
+				]
 			},
 			"physics": {
 				"model": "door-panel",
@@ -321,6 +421,33 @@
 					0
 				]
 			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							-1.4
+						],
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					}
+				]
+			},
 			"physics": {
 				"model": "door-panel",
 				"dynamic": false
@@ -330,14 +457,7 @@
 			"_name": "airlock2-in",
 			"slideDoor": {
 				"left": "airlock2-in-left",
-				"right": "airlock2-in-right",
-				"width": 1.4,
-				"openTime": 0.5,
-				"forward": [
-					1,
-					0,
-					0
-				]
+				"right": "airlock2-in-right"
 			},
 			"signalReceiver": {}
 		},
@@ -1150,11 +1270,6 @@
 					6,
 					0,
 					1.5
-				],
-				"scale": [
-					1,
-					1,
-					1
 				]
 			},
 			"renderable": "door-frame",
@@ -1168,6 +1283,21 @@
 			"renderable": "door-panel",
 			"transform": {
 				"parent": "door1-root"
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							1.4
+						]
+					}
+				]
 			},
 			"physics": {
 				"model": "door-panel",
@@ -1186,6 +1316,33 @@
 					0
 				]
 			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							-1.4
+						],
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					}
+				]
+			},
 			"physics": {
 				"model": "door-panel",
 				"dynamic": false
@@ -1195,14 +1352,7 @@
 			"_name": "door1",
 			"slideDoor": {
 				"left": "door1-left",
-				"right": "door1-right",
-				"width": 1.4,
-				"openTime": 0.5,
-				"forward": [
-					1,
-					0,
-					0
-				]
+				"right": "door1-right"
 			},
 			"signalReceiver": {}
 		},

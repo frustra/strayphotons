@@ -5,10 +5,10 @@
 namespace ecs {
     class DoorSystem {
     public:
-        DoorSystem(EntityManager &entities);
+        DoorSystem(ecs::ECS &ecs);
         bool Frame(float dtSinceLastFrame);
 
     private:
-        EntityManager &entities;
+        ecs::ECS &ecs;
     };
 } // namespace ecs

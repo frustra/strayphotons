@@ -3,8 +3,7 @@
 	"transform": {
 		<% if (locals.parent) { %>"parent": <%= parent %>,<% } %>
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
-		"translate": <%= translate %>,
-		"scale": [1, 1, 1]
+		"translate": <%= translate %>
 	},
 	"renderable": "door-frame",
 	"physics": {
@@ -18,6 +17,15 @@
 	"transform": {
 		"parent": <%= name + '-root' %>
 	},
+	"animation": {
+		"states": [
+			{"delay": 0.5},
+			{
+				"delay": 0.5,
+				"translate": [0, 0, 1.4]
+			}
+		]
+	},
 	"physics": {
 		"model": "door-panel",
 		"dynamic": false
@@ -30,6 +38,19 @@
 		"parent": <%= name + '-root' %>,
 		"rotate": [180, 0, 1, 0]
 	},
+	"animation": {
+		"states": [
+			{
+				"delay": 0.5,
+				"rotate": [180, 0, 1, 0]
+			},
+			{
+				"delay": 0.5,
+				"translate": [0, 0, -1.4],
+				"rotate": [180, 0, 1, 0]
+			}
+		]
+	},
 	"physics": {
 		"model": "door-panel",
 		"dynamic": false
@@ -39,10 +60,7 @@
 	"_name": <%= name %>,
 	"slideDoor": {
 		"left": <%= name + '-left' %>,
-		"right": <%= name + '-right' %>,
-		"width": 1.4,
-		"openTime": 0.5,
-		"forward": [1, 0, 0]
+		"right": <%= name + '-right' %>
 	},
 	"signalReceiver": {}
 }

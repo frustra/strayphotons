@@ -5,27 +5,23 @@
 #include <glm/glm.hpp>
 
 namespace ecs {
+    class Animation;
+
     class SlideDoor {
     public:
         enum State { CLOSED, OPENED, OPENING, CLOSING };
 
-        SlideDoor::State GetState(EntityManager &em);
-        void Close(EntityManager &em);
-        void Open(EntityManager &em);
-        void ValidateDoor(EntityManager &em);
-        void SetAnimation(Entity panel, glm::vec3 openDir);
-        glm::vec3 LeftDirection(Entity panel);
+        SlideDoor::State GetState(Lock<Read<Animation>> lock) const;
+        void Close(Lock<Write<Animation>> lock) const;
+        void Open(Lock<Write<Animation>> lock) const;
+        void ValidateDoor(Lock<Read<Animation>> lock) const;
 
         Tecs::Entity left;
         Tecs::Entity right;
-
-        float width = 1.0f;
-        float openTime = 0.5f;
-        glm::vec3 forward = glm::vec3(0, 0, -1);
     };
 
     static Component<SlideDoor> ComponentSlideDoor("slideDoor"); // TODO: Rename this
 
     template<>
-    bool Component<SlideDoor>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
+    bool Component<SlideDoor>::Load(Lock<Read<ecs::Name>> lock, SlideDoor &dst, const picojson::value &src);
 } // namespace ecs

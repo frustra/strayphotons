@@ -8,8 +8,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Renderable>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
-        auto &r = dst.Set<Renderable>(lock);
+    bool Component<Renderable>::Load(Lock<Read<ecs::Name>> lock, Renderable &r, const picojson::value &src) {
         if (src.is<string>()) {
             r.model = sp::GAssets.LoadModel(src.get<string>());
         } else {

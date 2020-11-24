@@ -7,8 +7,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Physics>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
-        auto &physics = dst.Set<Physics>(lock);
+    bool Component<Physics>::Load(Lock<Read<ecs::Name>> lock, Physics &physics, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "model") {
                 physics.model = sp::GAssets.LoadModel(param.second.get<string>());

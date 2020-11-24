@@ -15,7 +15,7 @@ namespace ecs {
         ComponentBase(const char *name) : name(name) {}
 
         virtual bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) = 0;
-        virtual bool SaveEntity(Lock<AddRemove> lock, picojson::value &dst, const Tecs::Entity &src) = 0;
+        virtual bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Tecs::Entity &src) = 0;
 
         const char *name;
     };
@@ -36,12 +36,22 @@ namespace ecs {
         }
 
         bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) override {
-            std::cerr << "Calling undefined LoadEntity on type: " << name << std::endl;
+            auto &comp = dst.Set<CompType>(lock);
+            return Load(lock, comp, src);
+        }
+
+        bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Tecs::Entity &src) override {
+            auto &comp = src.Get<CompType>(lock);
+            return Save(lock, dst, comp);
+        }
+
+        static bool Load(Lock<Read<ecs::Name>> lock, CompType &dst, const picojson::value &src) {
+            std::cerr << "Calling undefined Load on Compoent type: " << typeid(CompType).name() << std::endl;
             return false;
         }
 
-        bool SaveEntity(Lock<AddRemove> lock, picojson::value &dst, const Tecs::Entity &src) override {
-            std::cerr << "Calling undefined SaveEntity on type: " << name << std::endl;
+        static bool Save(Lock<Read<ecs::Name>> lock, picojson::value &dst, const CompType &src) {
+            std::cerr << "Calling undefined Save on Compoent type: " << typeid(CompType).name() << std::endl;
             return false;
         }
 

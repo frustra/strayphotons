@@ -11,8 +11,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Barrier>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
-        auto &barrier = dst.Set<Barrier>(lock);
+    bool Component<Barrier>::Load(Lock<Read<ecs::Name>> lock, Barrier &barrier, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "isOpen") { barrier.isOpen = param.second.get<bool>(); }
         }

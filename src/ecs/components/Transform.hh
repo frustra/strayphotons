@@ -95,5 +95,5 @@ namespace ecs {
     static Component<Transform> ComponentTransform("transform");
 
     template<>
-    bool Component<Transform>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
+    bool Component<Transform>::Load(Lock<Read<ecs::Name>> lock, Transform &dst, const picojson::value &src);
 } // namespace ecs

@@ -28,5 +28,5 @@ namespace ecs {
     static Component<Barrier> ComponentBarrier("barrier");
 
     template<>
-    bool Component<Barrier>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
+    bool Component<Barrier>::Load(Lock<Read<ecs::Name>> lock, Barrier &dst, const picojson::value &src);
 } // namespace ecs
