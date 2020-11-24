@@ -318,6 +318,7 @@ namespace sp {
                 Tecs::Entity entity = lock.NewEntity();
                 auto name = ent["_name"].get<string>();
                 entity.Set<ecs::Name>(lock, name);
+                if (namedEntities.count(name) != 0) { throw std::runtime_error("Duplicate entity name: " + name); }
                 namedEntities.emplace(name, entity);
             }
         }

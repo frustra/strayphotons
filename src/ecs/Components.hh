@@ -9,16 +9,11 @@ namespace picojson {
     class value;
 }
 
-namespace Tecs {
-    struct Entity;
-}
-
 namespace ecs {
     class ComponentBase {
-    protected:
+    public:
         ComponentBase(const char *name) : name(name) {}
 
-    public:
         virtual bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) = 0;
         virtual bool SaveEntity(Lock<AddRemove> lock, picojson::value &dst, const Tecs::Entity &src) = 0;
 
