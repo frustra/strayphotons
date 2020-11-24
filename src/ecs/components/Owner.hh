@@ -1,15 +1,14 @@
 #pragma once
 
-#include "Common.hh"
-
-#include <ecs/Ecs.hh>
+#include <ecs/Components.hh>
 
 namespace ecs {
-    enum class OwnerType { GAME_LOGIC, XR_MANAGER };
+    enum class OwnerType { INVALID, GAME_LOGIC, XR_MANAGER };
+
     struct Owner {
-        Owner(){};
-        Owner(OwnerType type) : type(type){};
-        ~Owner(){};
+        Owner() : id(0), type(OwnerType::INVALID) {}
+        Owner(OwnerType type) : id(0), type(type) {}
+
         inline bool operator==(const Owner &other) const {
             return type == other.type;
         }
