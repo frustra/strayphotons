@@ -68,7 +68,7 @@ namespace ecs {
         desc.dynamic = true;
         desc.kinematic = true;
 
-        auto actor = px.CreateActor(model, desc, barrier);
+        auto actor = px.CreateActor(model, desc, barrier.GetId());
         barrier.Assign<Physics>(actor, model, desc);
         barrier.Assign<Barrier>();
 

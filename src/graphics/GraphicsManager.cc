@@ -203,9 +203,10 @@ namespace sp {
         ecs::ValidateView(entity);
 
         // On destruction of this ecs::Entity, remove the playerView from
-        entity.Subscribe<ecs::EntityDestruction>([&](ecs::Entity entity, const ecs::EntityDestruction &event) -> void {
-            playerViews.erase(std::remove(playerViews.begin(), playerViews.end(), entity));
-        });
+        entity.Subscribe<ecs::EntityDestruction>(
+            [this](ecs::Entity entity, const ecs::EntityDestruction &event) -> void {
+                playerViews.erase(std::remove(playerViews.begin(), playerViews.end(), entity));
+            });
 
         playerViews.push_back(entity);
     }

@@ -74,7 +74,7 @@ namespace sp {
 
             PhysxActorDesc desc;
             desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
-            auto actor = game->physics.CreateActor(model, desc, entity);
+            auto actor = game->physics.CreateActor(model, desc, entity.GetId());
 
             if (actor) { entity.Assign<ecs::Physics>(actor, model, desc); }
         } else if (input->IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {

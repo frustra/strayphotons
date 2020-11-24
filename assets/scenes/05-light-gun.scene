@@ -210,11 +210,11 @@
 			}
 		},
 		{
-			"_name": "right of barrier2",
+			"_name": "right of door2",
 			"renderable": "wall-1x1",
 			"transform": {
-				"scale": [1, 4, 1.5],
-				"translate": [7, 0, 5.5]
+				"scale": [1, 4, 1.2],
+				"translate": [7, 0, 5.8]
 			},
 			"physics": {
 				"model": "wall-1x1",
@@ -222,10 +222,10 @@
 			}
 		},
 		{
-			"_name": "left of barrier2",
+			"_name": "left of door2",
 			"renderable": "wall-1x1",
 			"transform": {
-				"scale": [1, 4, 1.5],
+				"scale": [1, 4, 1.2],
 				"translate": [7, 0, 3]
 			},
 			"physics": {
@@ -234,41 +234,21 @@
 			}
 		},
 		{
-			"_name": "above barrier2",
+			"_name": "above door2",
 			"renderable": "wall-1x1",
 			"transform": {
-				"scale": [1, 2, 1],
-				"translate": [7, 2, 4.5]
+				"scale": [1, 1.5, 1.6],
+				"translate": [7, 2.5, 4.2]
 			},
 			"physics": {
 				"model": "wall-1x1",
 				"dynamic": false
 			}
 		},
-		{
-			"_name": "barrier2",
-			"renderable": "door-hex-1x2",
-			"transform": {
-				"translate": [7, 0, 4.5]
-			},
-			"physics": {
-				"model": "door-hex-1x2",
-				"dynamic": false
-			},
-			"barrier": {
-				"isOpen": false
-			}
-		},
-		{
-			"renderable": "door-hex-frame-1x2",
-			"transform": {
-				"translate": [7, 0, 4.5]
-			},
-			"physics": {
-				"model": "door-hex-frame-1x2",
-				"dynamic": false
-			}
-		},
+		<%- include('prefab/slide_door', {
+			name: 'door2',
+			"translate": [7, 0, 5]
+		}) %>,
 		<%- include('prefab/lightsensor',
 		{
 			name: "sensor2",
@@ -278,8 +258,8 @@
 			triggers: [
 				{
 					illuminance: [0.5, 0.25, 0.25],
-					oncmd: "g.OpenBarrier barrier2",
-					offcmd: "g.CloseBarrier barrier2"
+					oncmd: "g.OpenDoor door2",
+					offcmd: "g.CloseDoor door2"
 				}
 			]
 		}) %>,
