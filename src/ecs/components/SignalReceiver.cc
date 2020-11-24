@@ -1,7 +1,5 @@
 #include "ecs/components/SignalReceiver.hh"
 
-#include "ecs/events/SignalChange.hh"
-
 #include <assets/AssetHelpers.hh>
 #include <ecs/EcsImpl.hh>
 #include <picojson/picojson.h>

@@ -6,8 +6,6 @@
 #include <glm/glm.hpp>
 
 namespace ecs {
-    class Entity;
-
     struct VoxelArea {
         glm::vec3 min, max;
     };

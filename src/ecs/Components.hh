@@ -41,12 +41,12 @@ namespace ecs {
         }
 
         bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) override {
-            std::cerr << "Calling undefined Save on type: " << name << std::endl;
+            std::cerr << "Calling undefined LoadEntity on type: " << name << std::endl;
             return false;
         }
 
         bool SaveEntity(Lock<AddRemove> lock, picojson::value &dst, const Tecs::Entity &src) override {
-            std::cerr << "Calling undefined Save on type: " << name << std::endl;
+            std::cerr << "Calling undefined SaveEntity on type: " << name << std::endl;
             return false;
         }
 

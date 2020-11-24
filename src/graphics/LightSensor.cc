@@ -2,7 +2,6 @@
 
 #include "core/Console.hh"
 #include "core/Logging.hh"
-#include "ecs/events/SignalChange.hh"
 
 #include <cmath>
 #include <ecs/EcsImpl.hh>
@@ -91,8 +90,6 @@ namespace sp {
                                 e.Get<ecs::SignalReceiver>()->SetSignal(eid, trigger.onSignal);
                             }
                         }
-                        ecs::SignalChange sig(trigger.onSignal);
-                        sensorEnt.Emit(sig);
                         GetConsoleManager().QueueParseAndExecute(trigger.oncmd);
                     }
                     if (!trigger(lum) && trigger(prev)) {
@@ -102,8 +99,6 @@ namespace sp {
                                 e.Get<ecs::SignalReceiver>()->SetSignal(eid, trigger.offSignal);
                             }
                         }
-                        ecs::SignalChange sig(trigger.offSignal);
-                        sensorEnt.Emit(sig);
                         GetConsoleManager().QueueParseAndExecute(trigger.offcmd);
                     }
                 }
