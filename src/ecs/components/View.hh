@@ -50,12 +50,12 @@ namespace ecs {
 
         // private:
         // Required parameters.
-        glm::ivec2 extents;
-        glm::vec2 clip; // {near, far}
-        float fov;
+        glm::ivec2 extents = {0, 0};
+        glm::vec2 clip = {0, 0}; // {near, far}
+        float fov = 0.0f;
 
         // Updated automatically.
-        float aspect;
+        float aspect = 1.0f;
         glm::mat4 projMat, invProjMat;
         glm::mat4 viewMat, invViewMat;
     };
