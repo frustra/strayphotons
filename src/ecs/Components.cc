@@ -19,6 +19,6 @@ namespace ecs {
 
         try {
             return GComponentList->at(name);
-        } catch (std::out_of_range) { return nullptr; }
+        } catch (std::out_of_range &) { return nullptr; }
     }
 } // namespace ecs
