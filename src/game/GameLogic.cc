@@ -14,6 +14,7 @@
 #include <cmath>
 #include <cxxopts.hpp>
 #include <ecs/EcsImpl.hh>
+#include <ecs/Signals.hh>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
@@ -21,16 +22,14 @@
 namespace sp {
     GameLogic::GameLogic(Game *game)
         : game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input, &game->physics),
-          lightGunSystem(&game->entityManager, &game->input, &game->physics, this),
-          doorSystem(game->entityManager.tecs), sunPos(0) {
+          lightGunSystem(&game->entityManager, &game->input, &game->physics, this) {
         funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
         funcs.Register(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
         funcs.Register(this, "printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
 
         funcs.Register(this, "g.OpenBarrier", "Open barrier by name", &GameLogic::OpenBarrier);
         funcs.Register(this, "g.CloseBarrier", "Close barrier by name", &GameLogic::CloseBarrier);
-        funcs.Register(this, "g.OpenDoor", "Open door by name", &GameLogic::OpenDoor);
-        funcs.Register(this, "g.CloseDoor", "Open door by name", &GameLogic::CloseDoor);
+        funcs.Register(this, "setsignal", "Set a signal value by entity name", &GameLogic::SetSignal);
     }
 
     static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
@@ -155,7 +154,6 @@ namespace sp {
 
         if (!humanControlSystem.Frame(dtSinceLastFrame)) return false;
         if (!lightGunSystem.Frame(dtSinceLastFrame)) return false;
-        if (!doorSystem.Frame(dtSinceLastFrame)) return false;
 
         return true;
     }
@@ -303,46 +301,28 @@ namespace sp {
         ecs::Barrier::Close(ent, game->physics);
     }
 
-    void GameLogic::OpenDoor(string name) {
-        // auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name, ecs::SlideDoor>,
-        //                                                       ecs::Write<ecs::Animation, ecs::SignalReceiver>>();
-        // for (auto ent : lock.EntitiesWith<ecs::Name>()) {
-        //     if (ent.Get<ecs::Name>(lock) == name) {
-        //         if (!ent.Has<ecs::SlideDoor>(lock)) {
-        //             Logf("%s is not a door", name);
-        //             return;
-        //         }
+    void GameLogic::SetSignal(string args) {
+        std::stringstream stream(args);
+        std::string signalStr;
+        double value;
+        stream >> signalStr;
+        stream >> value;
 
-        //         if (ent.Has<ecs::SignalReceiver>(lock)) {
-        //             ent.Get<ecs::SignalReceiver>(lock).SetOffset(1.0f);
-        //         } else {
-        //             ent.Get<ecs::SlideDoor>(lock).Open(lock);
-        //         }
-        //         return;
-        //     }
-        // }
-        Logf("%s not found", name);
-    }
+        auto [entityName, signalName] = ecs::ParseSignal(signalStr);
 
-    void GameLogic::CloseDoor(string name) {
-        // auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name, ecs::SlideDoor>,
-        //                                                       ecs::Write<ecs::Animation, ecs::SignalReceiver>>();
-        // for (auto ent : lock.EntitiesWith<ecs::Name>()) {
-        //     if (ent.Get<ecs::Name>(lock) == name) {
-        //         if (!ent.Has<ecs::SlideDoor>(lock)) {
-        //             Logf("%s is not a door", name);
-        //             return;
-        //         }
+        auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
+        auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
+        if (!entity) {
+            Logf("Signal entity %s not found", entityName);
+            return;
+        }
+        if (!entity.Has<ecs::SignalOutput>(lock)) {
+            Logf("%s is not a signal output", entityName);
+            return;
+        }
 
-        //         if (ent.Has<ecs::SignalReceiver>(lock)) {
-        //             ent.Get<ecs::SignalReceiver>(lock).SetOffset(-1.0f);
-        //         } else {
-        //             ent.Get<ecs::SlideDoor>(lock).Close(lock);
-        //         }
-        //         return;
-        //     }
-        // }
-        Logf("%s not found", name);
+        auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
+        signalComp.SetSignal(signalName, value);
     }
 
     /**

@@ -31,7 +31,6 @@ namespace ecs {
     struct Renderable;
     class Script;
     class SignalOutput;
-    class SlideDoor;
     class Transform;
     struct TriggerArea;
     struct Triggerable;
@@ -54,7 +53,6 @@ namespace ecs {
                           Renderable,
                           Script,
                           SignalOutput,
-                          SlideDoor,
                           Transform,
                           TriggerArea,
                           Triggerable,

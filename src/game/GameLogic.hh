@@ -2,7 +2,6 @@
 
 #include "Common.hh"
 #include "core/CFunc.hh"
-#include "ecs/systems/DoorSystem.hh"
 #include "ecs/systems/HumanControlSystem.hh"
 #include "ecs/systems/LightGunSystem.hh"
 
@@ -32,6 +31,7 @@ namespace sp {
 
         void OpenDoor(string name);
         void CloseDoor(string name);
+        void SetSignal(string name);
 
         ecs::Entity GetPlayer();
 
@@ -43,10 +43,8 @@ namespace sp {
         InputManager *input = nullptr;
         ecs::HumanControlSystem humanControlSystem;
         ecs::LightGunSystem lightGunSystem;
-        ecs::DoorSystem doorSystem;
         shared_ptr<Scene> scene;
         ecs::Entity flashlight;
-        float sunPos;
         CFuncCollection funcs;
     };
 } // namespace sp

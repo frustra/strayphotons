@@ -2,7 +2,7 @@
 	"autoexec": [
 		"r.MirrorRecursion 2",
 		"r.MirrorMapResolution 1024",
-		"wait 1000 g.OpenDoor airlock1-out",
+		"wait 1000 setsignal airlock1-out-signal 1",
 		"r.LightAttenuation 0.15"
 	],
 	"unloadexec": [
@@ -18,13 +18,14 @@
 		<%- include('prefab/airlock', {
 			name: 'airlock2',
 			translate: [7.5, 0, 12],
-			rotate: [90, 0, 1, 0]
+			rotate: [90, 0, 1, 0],
+			in_signal: "sensor2"
 		}) %>,
 		{
 			"triggerarea": {
 				"min": [6, 0, 9],
 				"max": [9, 2, 11.5],
-				"command": "g.CloseDoor airlock2-in; wait 1000 loadscene 04-symmetry"
+				"command": "setsignal airlock2-in-signal.force-close 1; wait 1000 loadscene 04-symmetry"
 			}
 		},
 		<%- include("prefab/floor", {
@@ -47,7 +48,8 @@
 		<%- include('prefab/slide_door', {
 			name: 'door1',
 			translate: [6, 0.0, 1.5],
-			rotate: [0, 0, 1, 0]
+			rotate: [0, 0, 1, 0],
+			input_signal: "sensor1"
 		}) %>,
 
 		<%- include('prefab/spotlight', {

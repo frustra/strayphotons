@@ -1,7 +1,7 @@
 {
 	"autoexec": [
 		"r.MirrorRecursion 1",
-		"wait 1000 g.OpenDoor airlock1-out",
+		"wait 1000 setsignal airlock1-out-signal 1",
 		"r.LightAttenuation 0.15"
 	],
 	"unloadexec": [
@@ -17,13 +17,13 @@
 			name: 'airlock2',
 			translate: [10.5, 0, -3],
 			rotate: [-90, 0, 1, 0],
-			input_signal: "sensor2"
+			in_signal: "sensor2"
 		}) %>,
 		{
 			"triggerarea": {
 				"min": [10, 0, -2.5],
 				"max": [12, 2, 0],
-				"command": "g.CloseDoor airlock2-in; wait 1000 loadscene 03-dark"
+				"command": "setsignal airlock2-in-signal.force-close 1; wait 1000 loadscene 03-dark"
 			}
 		},
 		<%- include("prefab/floor", {
@@ -47,7 +47,7 @@
 			name: 'door1',
 			translate: [6, 0.0, 1.5],
 			rotate: [0, 0, 1, 0],
-			input_name: "sensor1"
+			input_signal: "sensor1"
 		}) %>,
 
 		<%- include('prefab/spotlight', {

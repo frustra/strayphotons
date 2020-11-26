@@ -4,6 +4,7 @@
 #include <ecs/Ecs.hh>
 #include <functional>
 #include <robin_hood.h>
+#include <variant>
 #include <vector>
 
 namespace ecs {
@@ -19,22 +20,27 @@ namespace ecs {
             }
         }
 
-        void SetParam(std::string name, double value) {
+        using ParameterType = typename std::variant<bool, double, std::string>;
+
+        template<typename T>
+        void SetParam(std::string name, T &&value) {
             scriptParameters[name] = value;
         }
 
-        double GetParam(std::string name) const {
+        template<typename T>
+        T GetParam(std::string name) const {
             auto itr = scriptParameters.find(name);
             if (itr == scriptParameters.end()) {
-                return 0.0;
+                return T();
             } else {
-                return itr->second;
+                return std::get<T>(itr->second);
             }
         }
 
     private:
         std::vector<std::function<void(ECS &, double)>> onTickCallbacks;
-        robin_hood::unordered_flat_map<std::string, double> scriptParameters;
+
+        robin_hood::unordered_flat_map<std::string, ParameterType> scriptParameters;
     };
 
     static Component<Script> ComponentScript("script");

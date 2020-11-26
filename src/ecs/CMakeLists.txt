@@ -6,4 +6,5 @@ target_sources(
     PRIVATE
         Components.cc
         Ecs.cc
+        Signals.cc
 )

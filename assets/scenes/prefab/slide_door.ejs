@@ -1,38 +1,51 @@
 {
-	"_name": <%= name + '-root' %>,
+	"_name": <%= name %>,
 	"transform": {
 		<% if (locals.parent) { %>"parent": <%= parent %>,<% } %>
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
 		"translate": <%= translate %>
 	},
 	"renderable": "door-frame",
-	<% if (locals.input_name) { %>
 	"script": {
 		"onTick": "slide_door",
 		"parameters": {
-			"input": <%= input_name %>,
+			"input": <%= name + '-signal' %>,
 			"left": <%= name + '-left' %>,
 			"right": <%= name + '-right' %>
 		}
 	},
-	<% } %>
 	"physics": {
 		"model": "door-frame",
 		"dynamic": false
 	}
 },
 {
+	"_name": <%= name + '-signal' %>,
+	"signal_output": {
+		"value": false,
+		"force-close": false
+	},
+	"script": {
+		"onTick": "combinator",
+		"parameters": {
+			"operation": "not_if",
+			"input_a": <%= locals.input_signal || (name + '-signal') %>,
+			"input_b": <%= name + '-signal.force-close' %>
+		}
+	}
+},
+{
 	"_name": <%= name + '-left' %>,
 	"renderable": "door-panel",
 	"transform": {
-		"parent": <%= name + '-root' %>
+		"parent": <%= name %>
 	},
 	"animation": {
 		"states": [
 			{"delay": 0.5},
 			{
 				"delay": 0.5,
-				"translate": [0, 0, 1.0]
+				"translate": [0, 0, 0.8]
 			}
 		]
 	},
@@ -45,7 +58,7 @@
 	"_name": <%= name + '-right' %>,
 	"renderable": "door-panel",
 	"transform": {
-		"parent": <%= name + '-root' %>,
+		"parent": <%= name %>,
 		"rotate": [180, 0, 1, 0]
 	},
 	"animation": {
@@ -56,7 +69,7 @@
 			},
 			{
 				"delay": 0.5,
-				"translate": [0, 0, -1.0],
+				"translate": [0, 0, -0.8],
 				"rotate": [180, 0, 1, 0]
 			}
 		]

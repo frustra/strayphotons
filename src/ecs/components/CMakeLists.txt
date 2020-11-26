@@ -15,7 +15,6 @@ target_sources(
         Renderable.cc
         Script.cc
         SignalOutput.cc
-        SlideDoor.cc
         Transform.cc
         TriggerArea.cc
         View.cc

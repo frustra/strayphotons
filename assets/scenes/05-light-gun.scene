@@ -170,7 +170,7 @@
 			name: 'door1',
 			translate: [6, 0, 7],
 			rotate: [90, 0, 1, 0],
-			input_name: "sensor1"
+			input_signal: "sensor1"
 		}) %>,
 		{
 			"_name": "0.25 wall left of barrier",
@@ -249,7 +249,7 @@
 		<%- include('prefab/slide_door', {
 			name: 'door2',
 			translate: [7, 0, 5],
-			input_name: "sensor2"
+			input_signal: "sensor2"
 		}) %>,
 		<%- include('prefab/light_sensor',
 		{

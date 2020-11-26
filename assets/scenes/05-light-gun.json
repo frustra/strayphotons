@@ -299,7 +299,7 @@
 			}
 		},
 		{
-			"_name": "door1-root",
+			"_name": "door1",
 			"transform": {
 				"rotate": [
 					90,
@@ -317,7 +317,7 @@
 			"script": {
 				"onTick": "slide_door",
 				"parameters": {
-					"input": "sensor1",
+					"input": "door1-signal",
 					"left": "door1-left",
 					"right": "door1-right"
 				}
@@ -328,10 +328,25 @@
 			}
 		},
 		{
+			"_name": "door1-signal",
+			"signal_output": {
+				"value": false,
+				"force-close": false
+			},
+			"script": {
+				"onTick": "combinator",
+				"parameters": {
+					"operation": "not_if",
+					"input_a": "sensor1",
+					"input_b": "door1-signal.force-close"
+				}
+			}
+		},
+		{
 			"_name": "door1-left",
 			"renderable": "door-panel",
 			"transform": {
-				"parent": "door1-root"
+				"parent": "door1"
 			},
 			"animation": {
 				"states": [
@@ -343,7 +358,7 @@
 						"translate": [
 							0,
 							0,
-							1
+							0.8
 						]
 					}
 				]
@@ -357,7 +372,7 @@
 			"_name": "door1-right",
 			"renderable": "door-panel",
 			"transform": {
-				"parent": "door1-root",
+				"parent": "door1",
 				"rotate": [
 					180,
 					0,
@@ -381,7 +396,7 @@
 						"translate": [
 							0,
 							0,
-							-1
+							-0.8
 						],
 						"rotate": [
 							180,
@@ -530,7 +545,7 @@
 			}
 		},
 		{
-			"_name": "door2-root",
+			"_name": "door2",
 			"transform": {
 				"translate": [
 					7,
@@ -542,7 +557,7 @@
 			"script": {
 				"onTick": "slide_door",
 				"parameters": {
-					"input": "sensor2",
+					"input": "door2-signal",
 					"left": "door2-left",
 					"right": "door2-right"
 				}
@@ -553,10 +568,25 @@
 			}
 		},
 		{
+			"_name": "door2-signal",
+			"signal_output": {
+				"value": false,
+				"force-close": false
+			},
+			"script": {
+				"onTick": "combinator",
+				"parameters": {
+					"operation": "not_if",
+					"input_a": "sensor2",
+					"input_b": "door2-signal.force-close"
+				}
+			}
+		},
+		{
 			"_name": "door2-left",
 			"renderable": "door-panel",
 			"transform": {
-				"parent": "door2-root"
+				"parent": "door2"
 			},
 			"animation": {
 				"states": [
@@ -568,7 +598,7 @@
 						"translate": [
 							0,
 							0,
-							1
+							0.8
 						]
 					}
 				]
@@ -582,7 +612,7 @@
 			"_name": "door2-right",
 			"renderable": "door-panel",
 			"transform": {
-				"parent": "door2-root",
+				"parent": "door2",
 				"rotate": [
 					180,
 					0,
@@ -606,7 +636,7 @@
 						"translate": [
 							0,
 							0,
-							-1
+							-0.8
 						],
 						"rotate": [
 							180,
@@ -670,7 +700,7 @@
 				"light_value_r": 0,
 				"light_value_g": 0,
 				"light_value_b": 0,
-				"enabled": false
+				"value": false
 			},
 			"script": {
 				"onTick": "light_sensor",
@@ -721,7 +751,7 @@
 				"light_value_r": 0,
 				"light_value_g": 0,
 				"light_value_b": 0,
-				"enabled": false
+				"value": false
 			},
 			"script": {
 				"onTick": "light_sensor",
