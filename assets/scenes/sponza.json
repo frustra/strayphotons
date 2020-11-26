@@ -1479,10 +1479,11 @@
 				]
 			},
 			"script": {
-				"onTick": "sun",
-				"parameters": {
-					"sun_position": 0.2
-				}
+				"onTick": "sun"
+			},
+			"signal_output": {
+				"position": 0.2,
+				"fix_position": true
 			}
 		}
 	]

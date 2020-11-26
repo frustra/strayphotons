@@ -11,7 +11,7 @@ namespace ecs {
     class SignalOutput {
     public:
         void SetSignal(const std::string &name, double value);
-        void RemoveSignal(const std::string &name);
+        void ClearSignal(const std::string &name);
         const double &GetSignal(const std::string &name) const;
         const std::map<std::string, double> &GetSignals() const;
 

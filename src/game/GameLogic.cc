@@ -21,8 +21,7 @@
 
 namespace sp {
     GameLogic::GameLogic(Game *game)
-        : game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input, &game->physics),
-          lightGunSystem(&game->entityManager, &game->input, &game->physics, this) {
+        : game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input, &game->physics) {
         funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
         funcs.Register(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
         funcs.Register(this, "printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
@@ -30,9 +29,10 @@ namespace sp {
                        "setsignal",
                        "Set a signal value (setsignal <entity>.<signal> <value>)",
                        &GameLogic::SetSignal);
-
-        funcs.Register(this, "g.OpenBarrier", "Open barrier by name", &GameLogic::OpenBarrier);
-        funcs.Register(this, "g.CloseBarrier", "Close barrier by name", &GameLogic::CloseBarrier);
+        funcs.Register(this,
+                       "clearsignal",
+                       "Clear a signal value (clearsignal <entity>.<signal>)",
+                       &GameLogic::ClearSignal);
     }
 
     static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
@@ -40,7 +40,6 @@ namespace sp {
     static CVar<string> CVarFlashlightParent("r.FlashlightParent", "player", "Flashlight parent entity name");
     static CVar<float> CVarFlashlightAngle("r.FlashlightAngle", 20, "Flashlight spot angle");
     static CVar<int> CVarFlashlightResolution("r.FlashlightResolution", 512, "Flashlight shadow map resolution");
-    static CVar<float> CVarSunPosition("g.SunPosition", 0.2, "Sun angle");
 
     void GameLogic::Init(Script *startupScript) {
         if (game->options.count("map")) { LoadScene(game->options["map"].as<string>()); }
@@ -132,12 +131,6 @@ namespace sp {
 
         if (!scene) return true;
 
-        ecs::Entity sun = game->entityManager.EntityWith<ecs::Name>("sun");
-        if (sun.Valid() && sun.Has<ecs::Script>()) {
-            auto script = sun.Get<ecs::Script>();
-            script->SetParam("sun_position", CVarSunPosition.Get());
-        }
-
         if (CVarFlashlight.Changed()) {
             auto light = flashlight.Get<ecs::Light>();
             light->intensity = CVarFlashlight.Get(true);
@@ -156,7 +149,6 @@ namespace sp {
         }
 
         if (!humanControlSystem.Frame(dtSinceLastFrame)) return false;
-        if (!lightGunSystem.Frame(dtSinceLastFrame)) return false;
 
         return true;
     }
@@ -286,24 +278,6 @@ namespace sp {
         return game->entityManager.EntityWith<ecs::Name>("player");
     }
 
-    void GameLogic::OpenBarrier(string name) {
-        auto ent = game->entityManager.EntityWith<ecs::Name>(name);
-        if (!ent.Valid()) { return Logf("%s not found", name); }
-
-        if (!ent.Has<ecs::Barrier>()) { return Logf("%s is not a barrier", name); }
-
-        ecs::Barrier::Open(ent, game->physics);
-    }
-
-    void GameLogic::CloseBarrier(string name) {
-        auto ent = game->entityManager.EntityWith<ecs::Name>(name);
-        if (!ent.Valid()) { return Logf("%s not found", name); }
-
-        if (!ent.Has<ecs::Barrier>()) { return Logf("%s is not a barrier", name); }
-
-        ecs::Barrier::Close(ent, game->physics);
-    }
-
     void GameLogic::SetSignal(string args) {
         std::stringstream stream(args);
         std::string signalStr;
@@ -326,6 +300,23 @@ namespace sp {
 
         auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
         signalComp.SetSignal(signalName, value);
+    }
+
+    void GameLogic::ClearSignal(string args) {
+        std::stringstream stream(args);
+        std::string signalStr;
+        double value;
+        stream >> signalStr;
+        stream >> value;
+
+        auto [entName, signalName] = ecs::ParseSignal(signalStr);
+
+        auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
+        auto entity = ecs::EntityWith<ecs::Name>(lock, entName);
+        if (entity && entity.Has<ecs::SignalOutput>(lock)) {
+            auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
+            signalComp.ClearSignal(signalName);
+        }
     }
 
     /**

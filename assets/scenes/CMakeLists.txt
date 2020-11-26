@@ -18,7 +18,6 @@ set(SCENES_INPUT
     02-mirrors
     03-dark
     04-symmetry
-    05-light-gun
     sponza
 )
 

@@ -3,11 +3,9 @@
 #include <Tecs.hh>
 #include <ecs/Ecs.hh>
 #include <ecs/components/Animation.hh>
-#include <ecs/components/Barrier.hh>
 #include <ecs/components/Controller.hh>
 #include <ecs/components/Interact.hh>
 #include <ecs/components/Light.hh>
-#include <ecs/components/LightGun.hh>
 #include <ecs/components/LightSensor.hh>
 #include <ecs/components/Mirror.hh>
 #include <ecs/components/Owner.hh>

@@ -19,14 +19,12 @@ namespace ecs {
     typedef std::string Name;
 
     class Animation;
-    struct Barrier;
-    struct Owner;
     class HumanController;
     struct InteractController;
     struct Light;
-    class LightGun;
     class LightSensor;
     struct Mirror;
+    struct Owner;
     struct Physics;
     struct Renderable;
     class Script;
@@ -40,15 +38,13 @@ namespace ecs {
     struct XRView;
 
     using ECS = Tecs::ECS<Name,
-                          Barrier,
-                          Owner,
                           Animation,
                           HumanController,
                           InteractController,
                           Light,
-                          LightGun,
                           LightSensor,
                           Mirror,
+                          Owner,
                           Physics,
                           Renderable,
                           Script,

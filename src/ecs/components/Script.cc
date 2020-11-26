@@ -16,20 +16,19 @@ namespace ecs {
                 auto scriptName = param.second.get<std::string>();
                 if (scriptName == "sun") {
                     script.AddOnTick([dst](ECS &ecs, double dtSinceLastFrame) {
-                        static double sunPos = 0.0;
                         const Tecs::Entity &sun = dst;
-                        auto lock = ecs.StartTransaction<Read<Script>, Write<Transform>>();
-                        if (sun && sun.Has<Transform>(lock)) {
-                            auto &scriptComp = sun.Get<Script>(lock);
-                            auto sunPosParam = scriptComp.GetParam<double>("sun_position");
-                            if (sunPosParam == 0) {
+                        auto lock = ecs.StartTransaction<Write<Transform, SignalOutput>>();
+                        if (sun && sun.Has<Transform, SignalOutput>(lock)) {
+                            auto &transform = sun.Get<Transform>(lock);
+                            auto &signalComp = sun.Get<SignalOutput>(lock);
+
+                            auto sunPos = signalComp.GetSignal("position");
+                            if (signalComp.GetSignal("fix_position") == 0.0) {
                                 sunPos += dtSinceLastFrame * (0.05 + std::abs(sin(sunPos) * 0.1));
                                 if (sunPos > M_PI / 2.0) sunPos = -M_PI / 2.0;
-                            } else {
-                                sunPos = sunPosParam;
+                                signalComp.SetSignal("position", sunPos);
                             }
 
-                            auto &transform = sun.Get<ecs::Transform>(lock);
                             transform.SetRotate(glm::mat4());
                             transform.Rotate(glm::radians(-90.0), glm::vec3(1, 0, 0));
                             transform.Rotate(sunPos, glm::vec3(0, 1, 0));

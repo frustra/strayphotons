@@ -21,7 +21,7 @@ namespace ecs {
         signals[name] = value;
     }
 
-    void SignalOutput::RemoveSignal(const std::string &name) {
+    void SignalOutput::ClearSignal(const std::string &name) {
         signals.erase(name);
     }
 
