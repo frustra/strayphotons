@@ -18,31 +18,54 @@
 				"model": "box",
 				"dynamic": false
 			},
-			"lightsensor": {
+			"light_sensor": {
 				"translate": [0, 0, -1],
 				"direction": [0, 0, -1],
-				"triggers": [
-					{
-						"illuminance": [1, 1, 1],
-						"oncmd": "g.OpenBarrier barrier1",
-						"offcmd": "g.CloseBarrier barrier1"
-					}
-				]
+				"trigger": 1
+			},
+			"signal_output": {
+				"light_value_r": 0.0,
+				"light_value_g": 0.0,
+				"light_value_b": 0.0,
+				"value": false
+			},
+			"script": {
+				"onTick": "light_sensor",
+				"parameters": {
+					"trigger_level": 1
+				}
 			}
 		},
 		{
-			"_name": "barrier1",
-			"barrier": {
-				"isOpen": false
-			},
+			"_name": "door1",
 			"renderable": "box",
 			"transform": {
-				"scale": [1, 2, 0.1],
-				"translate": [-2.5, 1, 0]
+				"scale": [0.1, 1, 0.1],
+				"translate": [0, -1, 0]
+			},
+			"script": {
+				"onTick": "slide_door",
+				"parameters": {
+					"input": "sensor1",
+					"left": "door1"
+				}
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"translate": [0, -1, 0]
+					},
+					{
+						"delay": 0.5,
+						"scale": [0.1, 1, 0.1],
+						"translate": [0, 0.5, 0]
+					}
+				]
 			},
 			"physics": {
 				"model": "box",
-				"kinematic": true
+				"dynamic": false
 			}
 		},
 		{
