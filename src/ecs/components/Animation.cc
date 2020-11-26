@@ -35,6 +35,7 @@ namespace ecs {
             }
         }
         if (animation.curState < 0) animation.curState = 0;
+        animation.prevState = animation.curState;
         return true;
     }
 
@@ -44,9 +45,9 @@ namespace ecs {
             ss << "\"" << i << "\" is an invalid state for this Animation with " << states.size() << " states";
             throw std::runtime_error(ss.str());
         }
+        if (i == curState) return;
 
-        if (nextState >= 0) curState = nextState;
-
-        nextState = i;
+        prevState = curState;
+        curState = i;
     }
 } // namespace ecs

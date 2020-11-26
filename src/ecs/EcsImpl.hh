@@ -3,18 +3,16 @@
 #include <Tecs.hh>
 #include <ecs/Ecs.hh>
 #include <ecs/components/Animation.hh>
-#include <ecs/components/Barrier.hh>
 #include <ecs/components/Controller.hh>
 #include <ecs/components/Interact.hh>
 #include <ecs/components/Light.hh>
-#include <ecs/components/LightGun.hh>
 #include <ecs/components/LightSensor.hh>
 #include <ecs/components/Mirror.hh>
 #include <ecs/components/Owner.hh>
 #include <ecs/components/Physics.hh>
 #include <ecs/components/Renderable.hh>
-#include <ecs/components/SignalReceiver.hh>
-#include <ecs/components/SlideDoor.hh>
+#include <ecs/components/Script.hh>
+#include <ecs/components/SignalOutput.hh>
 #include <ecs/components/Transform.hh>
 #include <ecs/components/TriggerArea.hh>
 #include <ecs/components/Triggerable.hh>
@@ -240,5 +238,13 @@ namespace ecs {
         uint32 nonEntityEventIndex = nonEntityEventSignals.size();
         eventTypeToNonEntityEventIndex[eventType] = nonEntityEventIndex;
         nonEntityEventSignals.push_back({});
+    }
+
+    template<typename T>
+    static Tecs::Entity EntityWith(Lock<Read<T>> lock, const T &value) {
+        for (auto e : lock.template EntitiesWith<T>()) {
+            if (e.template Get<T>(lock) == value) return e;
+        }
+        return Tecs::Entity();
     }
 } // namespace ecs

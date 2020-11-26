@@ -14,12 +14,14 @@
 	name: name + '-out',
 	translate: [0, 0, 0],
 	rotate: 0,
+	input_signal: locals.out_signal,
 	parent: name
 }) %>,
 <%- include('slide_door', {
 	name: name + '-in',
 	translate: [3, 0, 0],
 	rotate: 0,
+	input_signal: locals.in_signal,
 	parent: name
 }) %>,
 {

@@ -22,22 +22,17 @@
 				"max": [4, 7, 4]
 			}
 		},
-		<%- include('prefab/lightsensor',
+		<%- include('prefab/light_sensor',
 		{
 			name: "sensor1",
 			type: "dark",
 			translate: [-3.5, 0.7, -5.8],
-			triggers: [
-				{
-					illuminance: [0.01, 0.01, 0.01],
-					oncmd: "g.CloseDoor airlock1-in",
-					offcmd: "g.OpenDoor airlock1-in"
-				}
-			]
+			trigger: -0.01
 		}) %>,
 		<%- include('prefab/airlock', {
 			name: 'airlock1',
-			translate: [-8.1, 0.6, -7]
+			translate: [-8.1, 0.6, -7],
+			in_signal: "sensor1"
 		}) %>,
 		{
 			"_comment": "airlock",
@@ -186,7 +181,7 @@
 			"triggerarea": {
 				"min": [-7, 0, -8],
 				"max": [-5.5, 3.5, -6],
-				"command": "g.CloseDoor airlock1-in; wait 1000 loadscene 02-mirrors"
+				"command": "setsignal airlock1-in-signal.force-close 1; wait 1000 loadscene 02-mirrors"
 			}
 		}
 	]

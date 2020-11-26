@@ -1477,6 +1477,13 @@
 					0,
 					0
 				]
+			},
+			"script": {
+				"onTick": "sun"
+			},
+			"signal_output": {
+				"position": 0.2,
+				"fix_position": true
 			}
 		}
 	]

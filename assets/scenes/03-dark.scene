@@ -2,7 +2,7 @@
 	"autoexec": [
 		"r.MirrorRecursion 2",
 		"r.MirrorMapResolution 1024",
-		"wait 1000 g.OpenDoor airlock1-out",
+		"wait 1000 setsignal airlock1-out-signal 1",
 		"r.LightAttenuation 0.15"
 	],
 	"unloadexec": [
@@ -18,13 +18,14 @@
 		<%- include('prefab/airlock', {
 			name: 'airlock2',
 			translate: [7.5, 0, 12],
-			rotate: [90, 0, 1, 0]
+			rotate: [90, 0, 1, 0],
+			in_signal: "sensor2"
 		}) %>,
 		{
 			"triggerarea": {
 				"min": [6, 0, 9],
 				"max": [9, 2, 11.5],
-				"command": "g.CloseDoor airlock2-in; wait 1000 loadscene 04-symmetry"
+				"command": "setsignal airlock2-in-signal.force-close 1; wait 1000 loadscene 04-symmetry"
 			}
 		},
 		<%- include("prefab/floor", {
@@ -47,7 +48,8 @@
 		<%- include('prefab/slide_door', {
 			name: 'door1',
 			translate: [6, 0.0, 1.5],
-			rotate: [0, 0, 1, 0]
+			rotate: [0, 0, 1, 0],
+			input_signal: "sensor1"
 		}) %>,
 
 		<%- include('prefab/spotlight', {
@@ -58,19 +60,12 @@
 			translate: [3, 0.5, 0.2],
 			rotate: [[180, 0, 1, 0]]
 		}) %>,
-		<%- include('prefab/lightsensor',
+		<%- include('prefab/light_sensor',
 		{
 			name: "sensor1",
-			type: "light",
 			translate: [-2.9, 1, 7.5],
 			rotate: [90, 0, 1, 0],
-			triggers: [
-				{
-					illuminance: [0.2, 0.2, 0.2],
-					oncmd: "g.OpenDoor door1",
-					offcmd: "g.CloseDoor door1"
-				}
-			]
+			trigger: 0.2
 		}) %>,
 		<%- include("prefab/cube", {
 			name: "mirrorcube1",
@@ -96,19 +91,12 @@
 			translate: [7.5, 3.8, 1.5],
 			rotate: [[90, 0, 1, 0], [-55, 1, 0, 0]]
 		}) %>,
-		<%- include('prefab/lightsensor',
+		<%- include('prefab/light_sensor',
 		{
 			name: "sensor2",
-			type: "light",
 			translate: [10.5, 1, 8.9],
 			rotate: [180, 0, 1, 0],
-			triggers: [
-				{
-					illuminance: [0.1, 0.1, 0.1],
-					oncmd: "g.OpenDoor airlock2-in",
-					offcmd: "g.CloseDoor airlock2-in"
-				}
-			]
+			trigger: 0.1
 		}) %>,
 		<%- include("prefab/cube", {
 			name: "mirrorcube2",

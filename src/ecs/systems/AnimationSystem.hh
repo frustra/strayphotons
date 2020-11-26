@@ -11,13 +11,13 @@ namespace sp {
 namespace ecs {
     class AnimationSystem {
     public:
-        AnimationSystem(EntityManager &entities);
+        AnimationSystem(ecs::ECS &ecs);
 
         ~AnimationSystem();
 
         bool Frame(float dtSinceLastFrame);
 
     private:
-        EntityManager &entities;
+        ecs::ECS &ecs;
     };
 } // namespace ecs
