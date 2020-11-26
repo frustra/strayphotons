@@ -26,10 +26,13 @@ namespace sp {
         funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
         funcs.Register(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
         funcs.Register(this, "printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
+        funcs.Register(this,
+                       "setsignal",
+                       "Set a signal value (setsignal <entity>.<signal> <value>)",
+                       &GameLogic::SetSignal);
 
         funcs.Register(this, "g.OpenBarrier", "Open barrier by name", &GameLogic::OpenBarrier);
         funcs.Register(this, "g.CloseBarrier", "Close barrier by name", &GameLogic::CloseBarrier);
-        funcs.Register(this, "setsignal", "Set a signal value by entity name", &GameLogic::SetSignal);
     }
 
     static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
