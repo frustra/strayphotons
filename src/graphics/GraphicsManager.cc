@@ -131,10 +131,14 @@ namespace sp {
                 RenderPhase xrPhase("XrViews", context->Timer);
 
                 // TODO: Should not have to do this on every frame...
-                ecs::Entity vrOrigin = game->entityManager.EntityWith<ecs::Name>("vr-origin");
+                glm::mat4 vrOrigin;
+                {
+                    auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name, ecs::Transform>>();
+                    auto vrOriginEntity = ecs::EntityWith<ecs::Name>(lock, "vr-origin");
 
-                auto vrOriginTransform = vrOrigin.Get<ecs::Transform>();
-                auto vrOriginMat4 = glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager));
+                    auto &vrOriginTransform = vrOriginEntity.Get<ecs::Transform>(lock);
+                    vrOrigin = glm::transpose(vrOriginTransform.GetGlobalTransform(lock));
+                }
 
                 {
                     RenderPhase xrPhase("XrWaitFrame", context->Timer);
@@ -153,7 +157,7 @@ namespace sp {
                     game->xr.GetXrSystem()->GetTracking()->GetPredictedViewPose(xrViews[i].second.viewId, viewPose);
 
                     // Calculate the view pose relative to the current vrOrigin
-                    viewPose = glm::transpose(viewPose * vrOriginMat4);
+                    viewPose = glm::transpose(viewPose * vrOrigin);
 
                     // Move the view to the appropriate place
                     xrViews[i].first.SetInvViewMat(viewPose);

@@ -17,27 +17,28 @@ namespace ecs {
         }
 
         void SetParent(Tecs::Entity ent);
-        bool HasParent(EntityManager &em);
+        bool HasParent(Lock<Read<Transform>> lock) const;
+        void UpdateCachedTransform(Lock<Write<Transform>> lock);
 
         /**
          * Return the transformation matrix including all parent transforms.
          */
-        glm::mat4 GetGlobalTransform(EntityManager &em);
+        glm::mat4 GetGlobalTransform(Lock<Read<Transform>> lock) const;
 
         /**
          * Returns the same as GetGlobalTransform() but only includes rotation components.
          */
-        glm::quat GetGlobalRotation(EntityManager &em);
+        glm::quat GetGlobalRotation(Lock<Read<Transform>> lock) const;
 
         /**
          * Get position including any transforms this is relative to
          */
-        glm::vec3 GetGlobalPosition(EntityManager &em);
+        glm::vec3 GetGlobalPosition(Lock<Read<Transform>> lock) const;
 
         /**
          * Get forward vector including any transforms this is relative to
          */
-        glm::vec3 GetGlobalForward(EntityManager &em);
+        glm::vec3 GetGlobalForward(Lock<Read<Transform>> lock) const;
 
         /**
          * Change the local position by an amount in the local x, y, z planes

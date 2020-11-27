@@ -185,30 +185,28 @@ namespace sp {
     bool PhysxManager::LogicFrame(ecs::EntityManager &manager) {
         {
             // Sync transforms to physx
-            bool gotLock = false;
+            Lock();
 
-            for (ecs::Entity ent : manager.EntitiesWith<ecs::Physics, ecs::Transform>()) {
-                auto ph = ent.Get<ecs::Physics>();
-                auto transform = ent.Get<ecs::Transform>();
+            auto lock = manager.tecs.StartTransaction<ecs::Write<ecs::Physics, ecs::Transform>>();
+            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
+                if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
 
-                if (!ph->actor && ph->model) { ph->actor = CreateActor(ph->model, ph->desc, ent.GetId()); }
+                auto &ph = ent.Get<ecs::Physics>(lock);
+                auto &transform = ent.Get<ecs::Transform>(lock);
 
-                if (ph->actor && transform->ClearDirty()) {
-                    if (!gotLock) {
-                        Lock();
-                        gotLock = true;
-                    }
+                if (!ph.actor && ph.model) { ph.actor = CreateActor(ph.model, ph.desc, ent); }
 
-                    auto position = transform->GetGlobalTransform(manager) * glm::vec4(0, 0, 0, 1);
-                    auto rotate = transform->GetGlobalRotation(manager);
+                if (ph.actor && transform.ClearDirty()) {
+                    auto position = transform.GetGlobalTransform(lock) * glm::vec4(0, 0, 0, 1);
+                    auto rotate = transform.GetGlobalRotation(lock);
 
-                    auto lastScale = ph->scale;
+                    auto lastScale = ph.scale;
                     auto newScale = glm::vec3(glm::inverse(rotate) *
-                                              (transform->GetGlobalTransform(manager) * glm::vec4(1, 1, 1, 0)));
+                                              (transform.GetGlobalTransform(lock) * glm::vec4(1, 1, 1, 0)));
                     if (lastScale != newScale) {
-                        auto n = ph->actor->getNbShapes();
+                        auto n = ph.actor->getNbShapes();
                         vector<physx::PxShape *> shapes(n);
-                        ph->actor->getShapes(&shapes[0], n);
+                        ph.actor->getShapes(&shapes[0], n);
                         for (uint32 i = 0; i < n; i++) {
                             physx::PxConvexMeshGeometry geom;
                             if (shapes[i]->getConvexMeshGeometry(geom)) {
@@ -221,30 +219,33 @@ namespace sp {
                     }
 
                     physx::PxTransform newPose(GlmVec3ToPxVec3(position), GlmQuatToPxQuat(rotate));
-                    ph->actor->setGlobalPose(newPose);
+                    ph.actor->setGlobalPose(newPose);
                 }
             }
 
-            if (gotLock) Unlock();
+            Unlock();
         }
 
         {
             // Sync transforms from physx
             ReadLock();
 
-            for (ecs::Entity ent : manager.EntitiesWith<ecs::Physics, ecs::Transform>()) {
-                auto ph = ent.Get<ecs::Physics>();
-                auto transform = ent.Get<ecs::Transform>();
+            auto lock = manager.tecs.StartTransaction<ecs::Read<ecs::Physics>, ecs::Write<ecs::Transform>>();
+            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
+                if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
 
-                if (!ph->desc.dynamic) continue;
+                auto &ph = ent.Get<ecs::Physics>(lock);
+                auto &transform = ent.Get<ecs::Transform>(lock);
 
-                Assert(!transform->HasParent(manager), "Dynamic physics objects must have no parent");
+                if (!ph.desc.dynamic) continue;
 
-                if (ph->actor) {
-                    auto pose = ph->actor->getGlobalPose();
-                    transform->SetPosition(PxVec3ToGlmVec3P(pose.p));
-                    transform->SetRotate(PxQuatToGlmQuat(pose.q));
-                    transform->ClearDirty();
+                Assert(!transform.HasParent(lock), "Dynamic physics objects must have no parent");
+
+                if (ph.actor) {
+                    auto pose = ph.actor->getGlobalPose();
+                    transform.SetPosition(PxVec3ToGlmVec3P(pose.p));
+                    transform.SetRotate(PxQuatToGlmQuat(pose.q));
+                    transform.ClearDirty();
                 }
             }
 

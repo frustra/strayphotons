@@ -51,50 +51,66 @@ namespace ecs {
         this->dirty = true;
     }
 
-    bool Transform::HasParent(EntityManager &em) {
-        return this->parent && Entity(&em, this->parent).Has<Transform>();
+    bool Transform::HasParent(Lock<Read<Transform>> lock) const {
+        return this->parent && this->parent.Has<Transform>(lock);
     }
 
-    glm::mat4 Transform::GetGlobalTransform(EntityManager &em) {
+    void Transform::UpdateCachedTransform(Lock<Write<Transform>> lock) {
         if (this->parent) {
-            sp::Assert(Entity(&em, this->parent).Has<Transform>(),
+            sp::Assert(this->parent.Has<Transform>(lock),
                        "cannot be relative to something that does not have a Transform");
 
-            auto parentTransform = Entity(&em, this->parent).Get<Transform>();
+            auto &parentTransform = this->parent.Get<Transform>(lock);
 
-            if (this->cacheCount != this->changeCount || this->parentCacheCount != parentTransform->changeCount) {
-                glm::mat4 parentModel = parentTransform->GetGlobalTransform(em);
+            if (this->cacheCount != this->changeCount || this->parentCacheCount != parentTransform.changeCount) {
+                glm::mat4 parentModel = parentTransform.GetGlobalTransform(lock);
                 this->cachedTransform = parentModel * this->translate * GetRotateMatrix() * this->scale;
                 this->cacheCount = this->changeCount;
-                this->parentCacheCount = parentTransform->changeCount;
+                this->parentCacheCount = parentTransform.changeCount;
             }
         } else if (this->cacheCount != this->changeCount) {
             this->cachedTransform = this->translate * GetRotateMatrix() * this->scale;
             this->cacheCount = this->changeCount;
         }
+    }
+
+    glm::mat4 Transform::GetGlobalTransform(Lock<Read<Transform>> lock) const {
+        if (this->parent) {
+            sp::Assert(this->parent.Has<Transform>(lock),
+                       "cannot be relative to something that does not have a Transform");
+
+            auto &parentTransform = this->parent.Get<Transform>(lock);
+
+            if (this->cacheCount != this->changeCount || this->parentCacheCount != parentTransform.changeCount) {
+                glm::mat4 parentModel = parentTransform.GetGlobalTransform(lock);
+                return parentModel * this->translate * GetRotateMatrix() * this->scale;
+            }
+        } else if (this->cacheCount != this->changeCount) {
+            return this->translate * GetRotateMatrix() * this->scale;
+        }
         return this->cachedTransform;
     }
 
-    glm::quat Transform::GetGlobalRotation(EntityManager &em) {
+    glm::quat Transform::GetGlobalRotation(Lock<Read<Transform>> lock) const {
         glm::quat model = glm::identity<glm::quat>();
 
         if (this->parent) {
-            sp::Assert(Entity(&em, this->parent).Has<Transform>(),
+            sp::Assert(this->parent.Has<Transform>(lock),
                        "cannot be relative to something that does not have a Transform");
 
-            model = Entity(&em, this->parent).Get<Transform>()->GetGlobalRotation(em);
+            model = this->parent.Get<Transform>(lock).GetGlobalRotation(lock);
         }
 
         return model * this->rotate;
     }
 
-    glm::vec3 Transform::GetGlobalPosition(EntityManager &em) {
-        return GetGlobalTransform(em) * glm::vec4(0, 0, 0, 1);
+    glm::vec3 Transform::GetGlobalPosition(Lock<Read<Transform>> lock) const {
+        return GetGlobalTransform(lock) * glm::vec4(0, 0, 0, 1);
     }
 
-    glm::vec3 Transform::GetGlobalForward(EntityManager &em) {
+    glm::vec3 Transform::GetGlobalForward(Lock<Read<Transform>> lock) const {
         glm::vec3 forward = glm::vec3(0, 0, -1);
-        return GetGlobalRotation(em) * forward;
+        return GetGlobalRotation(lock) * forward;
     }
 
     void Transform::Translate(glm::vec3 xyz) {

@@ -661,7 +661,11 @@ namespace sp {
         // Don't render XR-excluded entities from XR views
         if (view.viewType == ecs::View::VIEW_TYPE_XR && comp->xrExcluded) { return; }
 
-        glm::mat4 modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform(game->entityManager);
+        glm::mat4 modelMat;
+        {
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Transform>>();
+            modelMat = ent.GetEntity().Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+        }
 
         if (preDraw) preDraw(ent);
 
