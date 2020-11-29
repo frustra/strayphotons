@@ -6,6 +6,9 @@
 #include <glm/glm.hpp>
 #include <picojson/picojson.h>
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 namespace ecs {
     template<>
     bool Component<Script>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) {
