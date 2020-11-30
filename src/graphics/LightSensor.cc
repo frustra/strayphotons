@@ -24,11 +24,15 @@ namespace sp {
 
         for (auto entity : sensors) {
             auto sensor = entity.Get<ecs::LightSensor>();
-            auto transform = entity.Get<ecs::Transform>();
             auto id = entity.GetId();
 
             GLLightSensorData &s = data[N++];
-            auto mat = transform->GetGlobalTransform(*entity.GetManager());
+            glm::mat4 mat;
+            {
+                auto lock = entity.GetManager()->tecs.StartTransaction<ecs::Read<ecs::Transform>>();
+                auto &transform = entity.GetEntity().Get<ecs::Transform>(lock);
+                mat = transform.GetGlobalTransform(lock);
+            }
             s.position = mat * glm::vec4(sensor->position, 1);
             s.direction = glm::normalize(glm::mat3(mat) * sensor->direction);
             // TODO: Fix this so it doesn't lose precision

@@ -56,8 +56,12 @@ namespace sp::xr {
                     ecs::Entity xrObject = UpdateXrActionEntity(controllerAction.first, active && CVarController.Get());
 
                     if (xrObject.Valid()) {
-                        xrObjectPos = glm::transpose(
-                            xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
+                        {
+                            auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Transform>>();
+                            auto &vrOriginTransformTecs = vrOrigin.GetEntity().Get<ecs::Transform>(lock);
+                            xrObjectPos = glm::transpose(
+                                xrObjectPos * glm::transpose(vrOriginTransformTecs.GetGlobalTransform(lock)));
+                        }
 
                         auto ctrl = xrObject.Get<ecs::Transform>();
                         ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
@@ -133,9 +137,12 @@ namespace sp::xr {
                         glm::mat4 xrObjectPos;
 
                         if (xrSystem->GetTracking()->GetPredictedObjectPose(trackedObjectHandle, xrObjectPos)) {
-                            xrObjectPos = glm::transpose(
-                                xrObjectPos *
-                                glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
+                            {
+                                auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Transform>>();
+                                auto &vrOriginTransformTecs = vrOrigin.GetEntity().Get<ecs::Transform>(lock);
+                                xrObjectPos = glm::transpose(
+                                    xrObjectPos * glm::transpose(vrOriginTransformTecs.GetGlobalTransform(lock)));
+                            }
 
                             auto ctrl = xrObject.Get<ecs::Transform>();
                             ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
@@ -158,8 +165,12 @@ namespace sp::xr {
                             continue;
                         }
 
-                        xrObjectPos = glm::transpose(
-                            xrObjectPos * glm::transpose(vrOriginTransform->GetGlobalTransform(game->entityManager)));
+                        {
+                            auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Transform>>();
+                            auto &vrOriginTransformTecs = vrOrigin.GetEntity().Get<ecs::Transform>(lock);
+                            xrObjectPos = glm::transpose(
+                                xrObjectPos * glm::transpose(vrOriginTransformTecs.GetGlobalTransform(lock)));
+                        }
 
                         // Get the bone data (optionally with or without an attached controller)
                         vector<xr::XrBoneData> boneData;
@@ -305,14 +316,16 @@ namespace sp::xr {
 
                 // Add a transform to the VR origin if one does not already exist
                 if (!vrOrigin.Has<ecs::Transform>()) {
-                    auto transform = vrOrigin.Assign<ecs::Transform>();
+                    vrOrigin.Assign<ecs::Transform>();
                     auto player = game->logic.GetPlayer();
 
                     if (player.Valid() && player.Has<ecs::Transform>()) {
-                        auto playerTransform = player.Get<ecs::Transform>();
-                        transform->SetPosition(playerTransform->GetGlobalPosition(game->entityManager) -
-                                               glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
-                        transform->SetRotate(playerTransform->GetRotate());
+                        auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Transform>>();
+                        auto &transform = vrOrigin.GetEntity().Get<ecs::Transform>(lock);
+                        auto &playerTransform = player.GetEntity().Get<ecs::Transform>(lock);
+                        transform.SetPosition(playerTransform.GetGlobalPosition(lock) -
+                                              glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
+                        transform.SetRotate(playerTransform.GetRotate());
                     }
                 }
 
@@ -571,14 +584,15 @@ namespace sp::xr {
     void XrManager::SetVrOrigin() {
         if (CVarConnectXR.Get()) {
             Logf("Resetting VR Origin");
-            auto vrOrigin = game->entityManager.EntityWith<ecs::Name>("vr-origin");
-            auto player = game->logic.GetPlayer();
-            if (vrOrigin && vrOrigin.Has<ecs::Transform>() && player && player.Has<ecs::Transform>()) {
-                auto vrTransform = vrOrigin.Get<ecs::Transform>();
-                auto playerTransform = player.Get<ecs::Transform>();
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
+            auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, "vr-origin");
+            auto player = game->logic.GetPlayer().GetEntity();
+            if (vrOrigin && vrOrigin.Has<ecs::Transform>(lock) && player && player.Has<ecs::Transform>(lock)) {
+                auto &vrTransform = vrOrigin.Get<ecs::Transform>(lock);
+                auto &playerTransform = player.Get<ecs::Transform>(lock);
 
-                vrTransform->SetPosition(playerTransform->GetGlobalPosition(game->entityManager) -
-                                         glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
+                vrTransform.SetPosition(playerTransform.GetGlobalPosition(lock) -
+                                        glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
             }
         }
     }

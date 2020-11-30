@@ -80,21 +80,25 @@ namespace sp {
             if (actor) { entity.Assign<ecs::Physics>(actor, model, desc); }
         } else if (input->IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
             // Toggle flashlight following player
-            if (flashlight.Valid()) {
-                auto transform = flashlight.Get<ecs::Transform>();
-                auto player = game->entityManager.EntityWith<ecs::Name>(CVarFlashlightParent.Get());
-                if (player && player.Has<ecs::Transform>()) {
-                    auto playerTransform = player.Get<ecs::Transform>();
-                    if (transform->HasParent(game->entityManager)) {
-                        transform->SetPosition(transform->GetGlobalTransform(game->entityManager) *
-                                               glm::vec4(0, 0, 0, 1));
-                        transform->SetRotate(playerTransform->GetGlobalRotation(game->entityManager));
-                        transform->SetParent(Tecs::Entity());
+
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
+            if (flashlight && flashlight.Has<ecs::Transform>(lock)) {
+                auto &transform = flashlight.Get<ecs::Transform>(lock);
+
+                auto player = ecs::EntityWith<ecs::Name>(lock, CVarFlashlightParent.Get());
+                if (player && player.Has<ecs::Transform>(lock)) {
+                    auto &playerTransform = player.Get<ecs::Transform>(lock);
+
+                    if (transform.HasParent(lock)) {
+                        transform.SetPosition(transform.GetGlobalTransform(lock) * glm::vec4(0, 0, 0, 1));
+                        transform.SetRotate(playerTransform.GetGlobalRotation(lock));
+                        transform.SetParent(Tecs::Entity());
                     } else {
-                        transform->SetPosition(glm::vec3(0, -0.3, 0));
-                        transform->SetRotate(glm::quat());
-                        transform->SetParent(player.GetId());
+                        transform.SetPosition(glm::vec3(0, -0.3, 0));
+                        transform.SetRotate(glm::quat());
+                        transform.SetParent(player);
                     }
+                    transform.UpdateCachedTransform(lock);
                 }
             }
         }
@@ -132,19 +136,19 @@ namespace sp {
         if (!scene) return true;
 
         if (CVarFlashlight.Changed()) {
-            auto light = flashlight.Get<ecs::Light>();
+            auto light = ecs::Entity(&game->entityManager, flashlight).Get<ecs::Light>();
             light->intensity = CVarFlashlight.Get(true);
         }
         if (CVarFlashlightOn.Changed()) {
-            auto light = flashlight.Get<ecs::Light>();
+            auto light = ecs::Entity(&game->entityManager, flashlight).Get<ecs::Light>();
             light->on = CVarFlashlightOn.Get(true);
         }
         if (CVarFlashlightAngle.Changed()) {
-            auto light = flashlight.Get<ecs::Light>();
+            auto light = ecs::Entity(&game->entityManager, flashlight).Get<ecs::Light>();
             light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
         }
         if (CVarFlashlightResolution.Changed()) {
-            auto view = flashlight.Get<ecs::View>();
+            auto view = ecs::Entity(&game->entityManager, flashlight).Get<ecs::View>();
             view->SetProjMat(view->GetFov(), view->GetClip(), glm::ivec2(CVarFlashlightResolution.Get(true)));
         }
 
@@ -188,7 +192,7 @@ namespace sp {
         }
 
         // Create flashlight entity
-        flashlight = CreateGameLogicEntity();
+        auto flashlight = CreateGameLogicEntity();
         auto transform = flashlight.Assign<ecs::Transform>(glm::vec3(0, -0.3, 0));
         transform->SetParent(player.GetId());
         auto light = flashlight.Assign<ecs::Light>();
@@ -200,6 +204,8 @@ namespace sp {
         view->fov = light->spotAngle * 2.0f;
         view->extents = glm::vec2(CVarFlashlightResolution.Get(true));
         view->clip = glm::vec2(0.1, 64);
+
+        this->flashlight = flashlight.GetEntity();
 
         // Make sure all objects are in the correct physx state before restarting simulation
         game->physics.LogicFrame(game->entityManager);

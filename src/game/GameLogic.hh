@@ -38,7 +38,7 @@ namespace sp {
         InputManager *input = nullptr;
         ecs::HumanControlSystem humanControlSystem;
         shared_ptr<Scene> scene;
-        ecs::Entity flashlight;
+        Tecs::Entity flashlight;
         CFuncCollection funcs;
     };
 } // namespace sp

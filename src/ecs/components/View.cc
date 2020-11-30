@@ -46,20 +46,23 @@ namespace ecs {
     Handle<View> UpdateViewCache(Entity entity, float fov) {
         ValidateView(entity);
 
-        auto view = entity.Get<View>();
-        view->aspect = (float)view->extents.x / (float)view->extents.y;
+        auto e = entity.GetEntity();
+        auto lock = entity.GetManager()->tecs.StartTransaction<Read<Transform>, Write<View>>();
 
-        if (!entity.Has<ecs::XRView>()) {
-            view->projMat = glm::perspective(fov > 0.0 ? fov : view->fov, view->aspect, view->clip[0], view->clip[1]);
+        auto &view = e.Get<View>(lock);
+        view.aspect = (float)view.extents.x / (float)view.extents.y;
 
-            auto transform = entity.Get<Transform>();
-            view->invViewMat = transform->GetGlobalTransform(*entity.GetManager());
+        if (!e.Has<ecs::XRView>(lock)) {
+            view.projMat = glm::perspective(fov > 0.0 ? fov : view.fov, view.aspect, view.clip[0], view.clip[1]);
+
+            auto &transform = e.Get<Transform>(lock);
+            view.invViewMat = transform.GetGlobalTransform(lock);
         }
 
-        view->invProjMat = glm::inverse(view->projMat);
-        view->viewMat = glm::inverse(view->invViewMat);
+        view.invProjMat = glm::inverse(view.projMat);
+        view.viewMat = glm::inverse(view.invViewMat);
 
-        return view;
+        return Handle<View>(entity.GetManager()->tecs, e);
     }
 
     void View::SetProjMat(float _fov, glm::vec2 _clip, glm::ivec2 _extents) {

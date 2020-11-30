@@ -19,9 +19,9 @@ namespace sp {
 
     BasicRenderer::~BasicRenderer() {}
 
-    void BasicRenderer::PrepareRenderable(ecs::Handle<ecs::Renderable> &comp) {
-        for (auto primitive : comp->model->primitives) {
-            auto indexBuffer = comp->model->GetBuffer(primitive->indexBuffer.bufferIndex);
+    void BasicRenderer::PrepareRenderable(const ecs::Renderable &comp) {
+        for (auto primitive : comp.model->primitives) {
+            auto indexBuffer = comp.model->GetBuffer(primitive->indexBuffer.bufferIndex);
 
             GLModel::Primitive glPrimitive;
 
@@ -35,7 +35,7 @@ namespace sp {
                 auto *attr = &primitive->attributes[i];
                 if (attr->componentCount == 0) continue;
 
-                auto attribBuffer = comp->model->GetBuffer(attr->bufferIndex);
+                auto attribBuffer = comp.model->GetBuffer(attr->bufferIndex);
                 GLuint attribBufferHandle;
                 glGenBuffers(1, &attribBufferHandle);
                 glBindBuffer(GL_ARRAY_BUFFER, attribBufferHandle);
@@ -54,8 +54,8 @@ namespace sp {
         }
     }
 
-    void BasicRenderer::DrawRenderable(ecs::Handle<ecs::Renderable> &comp) {
-        for (auto primitive : comp->model->primitives) {
+    void BasicRenderer::DrawRenderable(const ecs::Renderable &comp) {
+        for (auto primitive : comp.model->primitives) {
             if (!primitiveMap.count(primitive)) { PrepareRenderable(comp); }
 
             auto glPrimitive = primitiveMap[primitive];
@@ -171,9 +171,12 @@ namespace sp {
 
         auto mvpLoc = glGetUniformLocation(sceneProgram, "mvpMatrix");
 
-        for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>()) {
-            auto comp = ent.Get<ecs::Renderable>();
-            auto modelMat = ent.Get<ecs::Transform>()->GetGlobalTransform(game->entityManager);
+        auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Renderable, ecs::Transform>>();
+        for (auto ent : lock.EntitiesWith<ecs::Renderable>()) {
+            if (!ent.Has<ecs::Transform>(lock)) continue;
+
+            auto &comp = ent.Get<ecs::Renderable>(lock);
+            auto modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
             auto mvp = view.projMat * view.viewMat * modelMat;
 
             glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));

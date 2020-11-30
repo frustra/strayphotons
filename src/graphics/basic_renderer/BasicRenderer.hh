@@ -22,8 +22,8 @@ namespace sp {
         void EndFrame();
 
     private:
-        void PrepareRenderable(ecs::Handle<ecs::Renderable> &comp);
-        void DrawRenderable(ecs::Handle<ecs::Renderable> &comp);
+        void PrepareRenderable(const ecs::Renderable &comp);
+        void DrawRenderable(const ecs::Renderable &comp);
 
         GLuint sceneProgram;
         std::map<Model::Primitive *, GLModel::Primitive> primitiveMap;

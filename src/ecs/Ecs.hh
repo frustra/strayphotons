@@ -90,6 +90,10 @@ namespace ecs {
 
         using Id = decltype(Tecs::Entity::id);
 
+        Tecs::Entity GetEntity() const {
+            return e;
+        }
+
         Id GetId() const {
             return e.id;
         }
