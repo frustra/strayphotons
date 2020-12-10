@@ -76,7 +76,6 @@ namespace ecs {
     using Removed = Tecs::Removed<T>;
 
     class EntityManager;
-    class Subscription;
 
     template<typename T>
     class Handle {
@@ -176,6 +175,5 @@ namespace ecs {
 
     private:
         friend class Entity;
-        friend class Subscription;
     };
 }; // namespace ecs
