@@ -81,6 +81,7 @@ namespace sp {
         shared_ptr<GuiRenderer> debugGuiRenderer;
         shared_ptr<GuiRenderer> menuGuiRenderer;
 
+        ecs::Observer<ecs::Removed<ecs::Renderable>> renderableRemoval;
         std::deque<std::pair<shared_ptr<Model>, int>> renderableGCQueue;
 
         CFuncCollection funcs;

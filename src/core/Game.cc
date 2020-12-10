@@ -13,7 +13,7 @@
 
 namespace sp {
     Game::Game(cxxopts::ParseResult &options, Script *startupScript)
-        : options(options), startupScript(startupScript), graphics(this), logic(this), physics(),
+        : options(options), startupScript(startupScript), graphics(this), logic(this), physics(this),
           animation(entityManager.tecs), xr(this) {
         debugGui = std::make_unique<DebugGuiManager>(this);
         menuGui = std::make_unique<MenuGuiManager>(this);
@@ -35,22 +35,6 @@ namespace sp {
                 GetConsoleManager().ParseAndExecute(cvarline);
             }
         }
-
-        entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction &d) {
-            if (ent.Has<ecs::Physics>()) {
-                auto phys = ent.Get<ecs::Physics>();
-                if (phys->actor) {
-                    auto rigidBody = phys->actor->is<physx::PxRigidDynamic>();
-                    if (rigidBody) physics.RemoveConstraints(rigidBody);
-                    physics.RemoveActor(phys->actor);
-                }
-                phys->model = nullptr;
-            }
-            if (ent.Has<ecs::HumanController>()) {
-                auto controller = ent.Get<ecs::HumanController>();
-                physics.RemoveController(controller->pxController);
-            }
-        });
 
         try {
             graphics.CreateContext();
@@ -80,7 +64,7 @@ namespace sp {
         if (!logic.Frame(dt)) return false;
         if (!xr.Frame(dt)) return false;
         if (!graphics.Frame()) return false;
-        if (!physics.LogicFrame(entityManager)) return false;
+        if (!physics.LogicFrame()) return false;
         if (!animation.Frame(dt)) return false;
 
         lastFrameTime = frameTime;

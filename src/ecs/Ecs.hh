@@ -66,6 +66,14 @@ namespace ecs {
     using Write = Tecs::Write<Components...>;
     using WriteAll = Tecs::WriteAll;
     using AddRemove = Tecs::AddRemove;
+    template<typename Event>
+    using Observer = Tecs::Observer<ECS, Event>;
+    using EntityAdded = Tecs::EntityAdded;
+    using EntityRemoved = Tecs::EntityRemoved;
+    template<typename T>
+    using Added = Tecs::Added<T>;
+    template<typename T>
+    using Removed = Tecs::Removed<T>;
 
     class EntityManager;
     class Subscription;
@@ -129,12 +137,6 @@ namespace ecs {
 
         void Destroy();
 
-        template<typename Event>
-        Subscription Subscribe(std::function<void(Entity, const Event &)> callback);
-
-        template<typename Event>
-        void Emit(const Event &event);
-
         inline std::string ToString() const {
             if (this->Valid()) {
                 return "Entity(" + std::to_string(e.id) + ")";
@@ -157,34 +159,6 @@ namespace ecs {
         EntityManager *em = nullptr;
     };
 
-    typedef std::function<void(Entity, void *)> GenericEntityCallback;
-    typedef std::function<void(void *)> GenericCallback;
-
-    class EntityDestruction {};
-
-    class Subscription {
-    public:
-        Subscription();
-        Subscription(EntityManager *manaager,
-                     std::list<GenericEntityCallback> *list,
-                     std::list<GenericEntityCallback>::iterator &c);
-        Subscription(EntityManager *manaager,
-                     std::list<GenericCallback> *list,
-                     std::list<GenericCallback>::iterator &c);
-        Subscription(const Subscription &other) = default;
-
-        bool IsActive() const;
-
-        void Unsubscribe();
-
-    private:
-        EntityManager *manager = nullptr;
-        std::list<GenericEntityCallback> *entityConnectionList = nullptr;
-        std::list<GenericEntityCallback>::iterator entityConnection;
-        std::list<GenericCallback> *connectionList = nullptr;
-        std::list<GenericCallback>::iterator connection;
-    };
-
     class EntityManager {
     public:
         EntityManager();
@@ -198,39 +172,9 @@ namespace ecs {
         template<typename T>
         Entity EntityWith(const T &value);
 
-        template<typename Event>
-        Subscription Subscribe(std::function<void(const Event &e)> callback);
-        template<typename Event>
-        Subscription Subscribe(std::function<void(Entity, const Event &)> callback);
-        template<typename Event>
-        Subscription Subscribe(std::function<void(Entity, const Event &e)> callback, Entity::Id entity);
-        template<typename Event>
-        void Emit(Entity::Id e, const Event &event);
-        template<typename Event>
-        void Emit(const Event &event);
-
         ECS tecs;
 
     private:
-        template<typename Event>
-        void registerEventType();
-        template<typename Event>
-        void registerNonEntityEventType();
-
-        std::recursive_mutex signalLock;
-
-        typedef std::list<GenericEntityCallback> GenericSignal;
-        std::vector<GenericSignal> eventSignals;
-
-        robin_hood::unordered_flat_map<std::type_index, uint32_t> eventTypeToEventIndex;
-        robin_hood::unordered_flat_map<std::type_index, uint32_t> eventTypeToNonEntityEventIndex;
-
-        typedef std::list<GenericCallback> NonEntitySignal;
-        std::vector<NonEntitySignal> nonEntityEventSignals;
-
-        typedef robin_hood::unordered_flat_map<std::type_index, GenericSignal> SignalMap;
-        robin_hood::unordered_flat_map<Entity::Id, SignalMap> entityEventSignals;
-
         friend class Entity;
         friend class Subscription;
     };

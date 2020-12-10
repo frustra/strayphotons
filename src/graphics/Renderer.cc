@@ -93,16 +93,10 @@ namespace sp {
             UpdateShaders(true);
         });
 
-        game->entityManager.Subscribe<ecs::EntityDestruction>([&](ecs::Entity ent, const ecs::EntityDestruction &d) {
-            if (ent.Has<ecs::Renderable>()) {
-                auto renderable = ent.Get<ecs::Renderable>();
-                if (renderable->model->glModel) {
-                    // Keep GLModel objects around for at least 5 frames after destruction
-                    renderableGCQueue.push_back({renderable->model, 5});
-                }
-                renderable->model = nullptr;
-            }
-        });
+        {
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
+            renderableRemoval = lock.Watch<ecs::Removed<ecs::Renderable>>();
+        }
 
         AssertGLOK("Renderer::Prepare");
     }
@@ -766,6 +760,15 @@ namespace sp {
 
     void Renderer::EndFrame() {
         RTPool->TickFrame();
+
+        auto lock = game->entityManager.tecs.StartTransaction<>();
+        ecs::Removed<ecs::Renderable> removedRenderable;
+        while (renderableRemoval.Poll(lock, removedRenderable)) {
+            if (removedRenderable.component.model->glModel) {
+                // Keep GLModel objects around for at least 5 frames after destruction
+                renderableGCQueue.push_back({removedRenderable.component.model, 5});
+            }
+        }
     }
 
     void Renderer::SetRenderTargets(size_t attachmentCount, RenderTarget::Ref *attachments, RenderTarget::Ref depth) {
