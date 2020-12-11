@@ -44,6 +44,7 @@ namespace sp {
         Game *game = nullptr;
         ProfilerGui *profilerGui = nullptr;
 
+        ecs::Observer<ecs::Removed<ecs::View>> viewRemoval;
         vector<ecs::Entity> playerViews;
 
         double lastFrameEnd = 0, fpsTimer = 0;

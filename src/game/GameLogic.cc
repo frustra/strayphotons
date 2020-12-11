@@ -208,7 +208,7 @@ namespace sp {
         this->flashlight = flashlight.GetEntity();
 
         // Make sure all objects are in the correct physx state before restarting simulation
-        game->physics.LogicFrame(game->entityManager);
+        game->physics.LogicFrame();
         game->physics.StartSimulation();
     }
 

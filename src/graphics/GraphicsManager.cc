@@ -71,6 +71,11 @@ namespace sp {
 
         profilerGui = new ProfilerGui(&context->Timer);
         if (game->debugGui) { game->debugGui->Attach(profilerGui); }
+
+        {
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
+            viewRemoval = lock.Watch<ecs::Removed<ecs::View>>();
+        }
     }
 
     void GraphicsManager::ReleaseContext() {
@@ -92,6 +97,17 @@ namespace sp {
     bool GraphicsManager::Frame() {
         if (!context) throw "no active context";
         if (!HasActiveContext()) return false;
+
+        {
+            auto lock = game->entityManager.tecs.StartTransaction<>();
+            ecs::Removed<ecs::View> removedView;
+            while (viewRemoval.Poll(lock, removedView)) {
+                playerViews.erase(std::remove(playerViews.begin(),
+                                              playerViews.end(),
+                                              ecs::Entity(&game->entityManager, removedView.entity)),
+                                  playerViews.end());
+            }
+        }
 
         ecs::View pancakeView; // Only support a single pancakeView (2D window)
         vector<std::pair<ecs::View, ecs::XRView>> xrViews; // Support many xrViews
@@ -205,12 +221,6 @@ namespace sp {
 
     void GraphicsManager::AddPlayerView(ecs::Entity entity) {
         ecs::ValidateView(entity);
-
-        // On destruction of this ecs::Entity, remove the playerView from
-        entity.Subscribe<ecs::EntityDestruction>(
-            [this](ecs::Entity entity, const ecs::EntityDestruction &event) -> void {
-                playerViews.erase(std::remove(playerViews.begin(), playerViews.end(), entity));
-            });
 
         playerViews.push_back(entity);
     }

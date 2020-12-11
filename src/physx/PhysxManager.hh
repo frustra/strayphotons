@@ -16,6 +16,7 @@
 #include <unordered_map>
 
 namespace sp {
+    class Game;
     class Model;
     class PhysxManager;
 
@@ -43,11 +44,11 @@ namespace sp {
         typedef std::list<PhysxConstraint> ConstraintList;
 
     public:
-        PhysxManager();
+        PhysxManager(Game *game);
         ~PhysxManager();
 
         void Frame(double timeStep);
-        bool LogicFrame(ecs::EntityManager &manager);
+        bool LogicFrame();
         void StartThread();
         void StartSimulation();
         void StopSimulation();
@@ -148,6 +149,8 @@ namespace sp {
         ConvexHullSet *LoadCollisionCache(Model *model, bool decomposeHull);
         void SaveCollisionCache(Model *model, ConvexHullSet *set, bool decomposeHull);
 
+        Game *game;
+
         physx::PxFoundation *pxFoundation = nullptr;
         physx::PxPhysics *physics = nullptr;
         physx::PxDefaultCpuDispatcher *dispatcher = nullptr;
@@ -165,6 +168,9 @@ namespace sp {
         bool debug = false;
 
         std::thread thread;
+
+        ecs::Observer<ecs::Removed<ecs::Physics>> physicsRemoval;
+        ecs::Observer<ecs::Removed<ecs::HumanController>> humanControllerRemoval;
 
         ConstraintList constraints;
 

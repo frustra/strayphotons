@@ -51,34 +51,11 @@ namespace ecs {
         return Handle<T>(em->tecs, e);
     }
 
-    template<typename Event>
-    Subscription Entity::Subscribe(std::function<void(Entity, const Event &)> callback) {
-        if (em == nullptr) { throw runtime_error("Cannot subscribe to events on NULL entity"); }
-        return em->Subscribe(callback, this->e.id);
-    }
-
-    template<typename Event>
-    void Entity::Emit(const Event &event) {
-        em->Emit(this->e.id, event);
-    }
-
     template<typename T>
     void EntityManager::DestroyAllWith(const T &value) {
-        std::vector<Tecs::Entity> removeList;
-        {
-            auto lock = tecs.StartTransaction<Tecs::Read<T>>();
-            for (auto e : lock.template EntitiesWith<T>()) {
-                if (e.template Get<T>(lock) == value) { removeList.push_back(e); }
-            }
-        }
-        for (auto e : removeList) {
-            Emit(e.id, EntityDestruction());
-        }
-        {
-            auto lock = tecs.StartTransaction<Tecs::AddRemove>();
-            for (auto e : removeList) {
-                e.Destroy(lock);
-            }
+        auto lock = tecs.StartTransaction<Tecs::AddRemove>();
+        for (auto e : lock.template EntitiesWith<T>()) {
+            if (e.template Get<T>(lock) == value) { e.Destroy(lock); }
         }
     }
 
@@ -103,141 +80,6 @@ namespace ecs {
             if (e.template Get<T>(lock) == value) return Entity(this, e);
         }
         return Entity();
-    }
-
-    template<typename Event>
-    Subscription EntityManager::Subscribe(std::function<void(const Event &e)> callback) {
-        // TODO-cs: this shares a lot of code in common with
-        // Subscribe(function<void(Entity, const Event &)>), find a way
-        // to eliminate the duplicate code.
-        std::type_index eventType = typeid(Event);
-
-        uint32 nonEntityEventIndex;
-
-        try {
-            nonEntityEventIndex = eventTypeToNonEntityEventIndex.at(eventType);
-        }
-        // Non-Entity Event never seen before, add it to the collection
-        catch (const std::out_of_range &e) {
-            registerNonEntityEventType<Event>();
-            nonEntityEventIndex = eventTypeToNonEntityEventIndex.at(eventType);
-        }
-
-        std::lock_guard<std::recursive_mutex> lock(signalLock);
-        auto &signal = nonEntityEventSignals.at(nonEntityEventIndex);
-        auto connection = signal.insert(signal.end(), *reinterpret_cast<GenericCallback *>(&callback));
-
-        return Subscription(this, &signal, connection);
-    }
-
-    template<typename Event>
-    Subscription EntityManager::Subscribe(std::function<void(Entity, const Event &)> callback) {
-        std::type_index eventType = typeid(Event);
-
-        uint32 eventIndex;
-
-        try {
-            eventIndex = eventTypeToEventIndex.at(eventType);
-        }
-        // Event never seen before, add it to the collection
-        catch (const std::out_of_range &e) {
-            registerEventType<Event>();
-            eventIndex = eventTypeToEventIndex.at(eventType);
-        }
-
-        std::lock_guard<std::recursive_mutex> lock(signalLock);
-        auto &signal = eventSignals.at(eventIndex);
-        auto connection = signal.insert(signal.end(), *reinterpret_cast<GenericEntityCallback *>(&callback));
-
-        return Subscription(this, &signal, connection);
-    }
-
-    template<typename Event>
-    Subscription EntityManager::Subscribe(std::function<void(Entity, const Event &e)> callback, Entity::Id entity) {
-        auto &signal = entityEventSignals[entity][typeid(Event)];
-        auto connection = signal.insert(signal.end(), *reinterpret_cast<GenericEntityCallback *>(&callback));
-        return Subscription(this, &signal, connection);
-    }
-
-    template<typename Event>
-    void EntityManager::Emit(Entity::Id e, const Event &event) {
-        std::type_index eventType = typeid(Event);
-        Entity entity(this, e);
-
-        std::lock_guard<std::recursive_mutex> lock(signalLock);
-
-        // signal the generic Event subscribers
-        if (eventTypeToEventIndex.count(eventType) > 0) {
-            auto eventIndex = eventTypeToEventIndex.at(eventType);
-            auto &signal = eventSignals.at(eventIndex);
-            auto connection = signal.begin();
-            while (connection != signal.end()) {
-                auto callback = (*reinterpret_cast<std::function<void(Entity, const Event &)> *>(&(*connection)));
-                connection++;
-                callback(entity, event);
-            }
-        }
-
-        // now signal the entity-specific Event subscribers
-        if (entityEventSignals.count(e) > 0) {
-            if (entityEventSignals[e].count(eventType) > 0) {
-                auto &signal = entityEventSignals[e][typeid(Event)];
-                auto connection = signal.begin();
-                while (connection != signal.end()) {
-                    auto callback = (*reinterpret_cast<std::function<void(Entity, const Event &)> *>(&(*connection)));
-                    connection++;
-                    callback(entity, event);
-                }
-            }
-        }
-    }
-
-    template<typename Event>
-    void EntityManager::Emit(const Event &event) {
-        std::type_index eventType = typeid(Event);
-
-        std::lock_guard<std::recursive_mutex> lock(signalLock);
-
-        if (eventTypeToNonEntityEventIndex.count(eventType) > 0) {
-            auto eventIndex = eventTypeToNonEntityEventIndex.at(eventType);
-            auto &signal = nonEntityEventSignals.at(eventIndex);
-            auto connection = signal.begin();
-            while (connection != signal.end()) {
-                auto callback = (*reinterpret_cast<std::function<void(const Event &)> *>(&(*connection)));
-                connection++;
-                callback(event);
-            }
-        }
-    }
-
-    template<typename Event>
-    void EntityManager::registerEventType() {
-        std::type_index eventType = typeid(Event);
-
-        if (eventTypeToEventIndex.count(eventType) != 0) {
-            std::stringstream ss;
-            ss << "event type " << string(eventType.name()) << " is already registered";
-            throw std::runtime_error(ss.str());
-        }
-
-        uint32 eventIndex = eventSignals.size();
-        eventTypeToEventIndex[eventType] = eventIndex;
-        eventSignals.push_back({});
-    }
-
-    template<typename Event>
-    void EntityManager::registerNonEntityEventType() {
-        std::type_index eventType = typeid(Event);
-
-        if (eventTypeToNonEntityEventIndex.count(eventType) != 0) {
-            std::stringstream ss;
-            ss << "event type " << string(eventType.name()) << " is already registered";
-            throw std::runtime_error(ss.str());
-        }
-
-        uint32 nonEntityEventIndex = nonEntityEventSignals.size();
-        eventTypeToNonEntityEventIndex[eventType] = nonEntityEventIndex;
-        nonEntityEventSignals.push_back({});
     }
 
     template<typename T>
