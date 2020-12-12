@@ -1,10 +1,9 @@
 #include "NetworkComponentSystem.hh"
 
-#include <ecs/components/Network.hh>
-#include <ecs/components/Transform.hh>
+#include <ecs/EcsImpl.hh>
 
 namespace ecs {
-	NetworkComponentSystem::NetworkComponentSystem(EntityManager &entities) : entities(entities) {}
-	NetworkComponentSystem::~NetworkComponentSystem() {}
+    NetworkComponentSystem::NetworkComponentSystem(EntityManager &entities) : entities(entities) {}
+    NetworkComponentSystem::~NetworkComponentSystem() {}
 
 } // namespace ecs

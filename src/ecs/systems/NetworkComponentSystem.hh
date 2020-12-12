@@ -1,14 +1,14 @@
 #pragma once
 
-#include <Ecs.hh>
+#include <ecs/Ecs.hh>
 
 namespace ecs {
-	class NetworkComponentSystem {
-	public:
-		NetworkComponentSystem(EntityManager &entities);
-		~NetworkComponentSystem();
+    class NetworkComponentSystem {
+    public:
+        NetworkComponentSystem(EntityManager &entities);
+        ~NetworkComponentSystem();
 
-	private:
-		EntityManager &entities;
-	};
+    private:
+        EntityManager &entities;
+    };
 } // namespace ecs

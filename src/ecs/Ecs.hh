@@ -24,6 +24,7 @@ namespace ecs {
     struct Light;
     class LightSensor;
     struct Mirror;
+    struct Network;
     struct Owner;
     struct Physics;
     struct Renderable;
@@ -44,6 +45,7 @@ namespace ecs {
                           Light,
                           LightSensor,
                           Mirror,
+                          Network,
                           Owner,
                           Physics,
                           Renderable,
