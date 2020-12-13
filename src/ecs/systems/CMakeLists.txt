@@ -5,5 +5,4 @@ target_sources(
     PRIVATE
         AnimationSystem.cc
         HumanControlSystem.cc
-        NetworkComponentSystem.cc
 )

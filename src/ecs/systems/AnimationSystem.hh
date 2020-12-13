@@ -4,10 +4,6 @@
 
 #include <ecs/Ecs.hh>
 
-namespace sp {
-    class InputManager;
-}
-
 namespace ecs {
     class AnimationSystem {
     public:

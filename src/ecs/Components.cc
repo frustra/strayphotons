@@ -7,7 +7,7 @@ namespace ecs {
     typedef std::map<std::string, ComponentBase *> ComponentList;
     ComponentList *GComponentList;
 
-    void RegisterComponent(const char *name, ComponentBase *comp) {
+    void RegisterComponent(const std::string name, ComponentBase *comp) {
         if (GComponentList == nullptr) GComponentList = new ComponentList();
         if (GComponentList->count(name) > 0)
             throw std::runtime_error("Duplicate component registration: " + std::string(name));

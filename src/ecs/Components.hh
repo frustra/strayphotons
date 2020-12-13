@@ -12,26 +12,26 @@ namespace picojson {
 namespace ecs {
     class ComponentBase {
     public:
-        ComponentBase(const char *name) : name(name) {}
+        ComponentBase(const std::string name) : name(name) {}
 
         virtual bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) = 0;
         virtual bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Tecs::Entity &src) = 0;
 
-        const char *name;
+        const std::string name;
     };
 
-    void RegisterComponent(const char *name, ComponentBase *comp);
+    void RegisterComponent(const std::string name, ComponentBase *comp);
     ComponentBase *LookupComponent(const std::string name);
 
     template<typename CompType>
     class Component : public ComponentBase {
     public:
-        Component(const char *name) : ComponentBase(name) {
-            auto existing = dynamic_cast<Component<CompType> *>(LookupComponent(std::string(name)));
+        Component(const std::string name) : ComponentBase(name) {
+            auto existing = dynamic_cast<Component<CompType> *>(LookupComponent(name));
             if (existing == nullptr) {
                 RegisterComponent(name, this);
             } else if (*this != *existing) {
-                throw std::runtime_error("Duplicate component type registered: " + std::string(name));
+                throw std::runtime_error("Duplicate component type registered: " + name);
             }
         }
 
@@ -65,11 +65,13 @@ namespace ecs {
             return false;
         }
 
-        bool operator==(const Component<CompType> &other) const {
-            return strcmp(name, other.name) == 0;
+        template<typename T>
+        bool operator==(const Component<T> &other) const {
+            return name == other.name;
         }
 
-        bool operator!=(const Component<CompType> &other) const {
+        template<typename T>
+        bool operator!=(const Component<T> &other) const {
             return !(*this == other);
         }
     };

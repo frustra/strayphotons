@@ -78,6 +78,15 @@ namespace ecs {
 
         bool ClearDirty();
 
+        bool operator==(const Transform &other) const {
+            return parent == other.parent && translate == other.translate && scale == other.scale &&
+                   rotate == other.rotate;
+        }
+
+        bool operator!=(const Transform &other) const {
+            return !(*this == other);
+        }
+
     private:
         Tecs::Entity parent;
 

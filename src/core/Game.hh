@@ -37,10 +37,11 @@ namespace sp {
         std::unique_ptr<DebugGuiManager> debugGui = nullptr;
         std::unique_ptr<MenuGuiManager> menuGui = nullptr;
 
+        ecs::EntityManager entityManager;
+
         GraphicsManager graphics;
         NetworkManager network;
         InputManager input;
-        ecs::EntityManager entityManager;
         GameLogic logic;
         PhysxManager physics;
         ecs::AnimationSystem animation;

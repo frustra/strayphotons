@@ -1,12 +1,15 @@
 #pragma once
 
-#include <Common.hh>
+#include "Physics.hh"
+#include "Renderable.hh"
+#include "Transform.hh"
+
 #include <ecs/Components.hh>
 #include <ecs/Ecs.hh>
+#include <variant>
+#include <vector>
 
 namespace ecs {
-    typedef uint64_t UserId;
-
     // Placeholder policies for now, these will evolve over time.
     enum NetworkPolicy {
         NETWORK_POLICY_NONE = 0, // No updates are sent.
@@ -15,9 +18,20 @@ namespace ecs {
         NETWORK_POLICY_LAZY, // Updates can be dropped as long as they remain in order.
     };
 
+    using ReadNetworkCompoenents = ecs::Read<ecs::Network, ecs::Renderable, ecs::Transform, ecs::Physics>;
+
+    struct NetworkedComponent {
+        NetworkedComponent(ComponentBase *component = nullptr, NetworkPolicy policy = NETWORK_POLICY_NONE)
+            : component(component), policy(policy) {}
+
+        ComponentBase *component = nullptr;
+        NetworkPolicy policy;
+        bool initialized = false;
+        std::variant<std::monostate, ecs::Renderable, ecs::Transform, ecs::Physics> lastUpdate;
+    };
+
     struct Network {
-        UserId owner;
-        std::vector<std::tuple<std::string, NetworkPolicy>> components;
+        std::vector<NetworkedComponent> components;
     };
 
     static Component<Network> ComponentNetwork("network");

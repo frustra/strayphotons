@@ -25,11 +25,9 @@
                 "dynamic": false
             },
             "network": {
-                "components": {
-                    "renderable": "static",
-                    "transform": "static",
-                    "physics": "static"
-                }
+                "renderable": "static",
+                "transform": "static",
+                "physics": "static"
             }
         },
 		<% }); %>
@@ -62,11 +60,9 @@
 				}
 			},
             "network": {
-                "components": {
-                    "renderable": "static",
-                    "transform": "static",
-                    "physics": "static"
-                }
+                "renderable": "static",
+                "transform": "static",
+                "physics": "static"
             }
 		},
 		{
@@ -101,11 +97,9 @@
 				"dynamic": false
 			},
             "network": {
-                "components": {
-                    "renderable": "static",
-                    "transform": "strict",
-                    "physics": "static"
-                }
+                "renderable": "static",
+                "transform": "strict",
+                "physics": "static"
             }
 		},
         {
@@ -118,11 +112,9 @@
                 "model": "duck"
             },
             "network": {
-                "components": {
-                    "renderable": "static",
-                    "transform": "strict",
-                    "physics": "static"
-                }
+                "renderable": "static",
+                "transform": "strict",
+                "physics": "static"
             }
         },
         {
@@ -134,10 +126,8 @@
                 "rotate": [-180, 0, 1, 0]
             },
             "network": {
-                "components": {
-                    "renderable": "static",
-                    "transform": "static"
-                }
+                "renderable": "static",
+                "transform": "static"
             }
         },
         {
@@ -149,11 +139,9 @@
                 "model": "mcube"
             },
             "network": {
-                "components": {
-                    "renderable": "static",
-                    "transform": "lazy",
-                    "physics": "static"
-                }
+                "renderable": "static",
+                "transform": "lazy",
+                "physics": "static"
             }
         },
         {
@@ -165,11 +153,9 @@
                 "model": "pbr-cube"
             },
             "network": {
-                "components": {
-                    "renderable": "static",
-                    "transform": "strict",
-                    "physics": "static"
-                }
+                "renderable": "static",
+                "transform": "strict",
+                "physics": "static"
             }
         },
         {
@@ -181,11 +167,9 @@
                 "model": "box"
             },
             "network": {
-                "components": {
-                    "renderable": "static",
-                    "transform": "lazy",
-                    "physics": "static"
-                }
+                "renderable": "static",
+                "transform": "lazy",
+                "physics": "static"
             }
         },
         {
@@ -197,11 +181,9 @@
                 "model": "dodecahedron"
             },
             "network": {
-                "components": {
-                    "renderable": "static",
-                    "transform": "strict",
-                    "physics": "static"
-                }
+                "renderable": "static",
+                "transform": "strict",
+                "physics": "static"
             }
         },
         {
@@ -232,11 +214,9 @@
                 "rotate": [-50, 1, -1, 0]
             },
             "network": {
-                "components": {
-                    "light": "static",
-                    "view": "none",
-                    "transform": "static"
-                }
+                "light": "static",
+                "view": "none",
+                "transform": "static"
             }
         },
         {
@@ -254,11 +234,9 @@
                 "rotate": [-130, 1, 0, 0]
             },
             "network": {
-                "components": {
-                    "light": "static",
-                    "view": "none",
-                    "transform": "static"
-                }
+                "light": "static",
+                "view": "none",
+                "transform": "static"
             }
         }
     ]
