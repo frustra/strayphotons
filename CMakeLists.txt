@@ -273,6 +273,7 @@ target_link_libraries(
 		OpenGL::GL
 		picojson
 		libprotobuf
+		cppzmq
 )
 
 target_link_libraries(

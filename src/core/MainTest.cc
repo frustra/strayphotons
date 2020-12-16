@@ -89,7 +89,10 @@ int main(int argc, char **argv)
 #ifdef CATCH_GLOBAL_EXCEPTIONS
     catch (const char *err) {
         Errorf("terminating with exception: %s", err);
-    } catch (const std::exception &ex) { Errorf("terminating with exception: %s", ex.what()); }
+    }
+    catch (const std::exception &ex) {
+        Errorf("terminating with exception: %s", ex.what());
+    }
 #endif
     return -1;
 }

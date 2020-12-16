@@ -61,3 +61,6 @@
 [submodule "ext/protobuf"]
 	path = ext/protobuf
 	url = https://github.com/protocolbuffers/protobuf
+[submodule "ext/cppzmq"]
+	path = ext/cppzmq
+	url = https://github.com/zeromq/cppzmq
