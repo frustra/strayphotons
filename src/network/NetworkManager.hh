@@ -14,7 +14,10 @@ namespace sp {
         void Connect(std::string args);
         void Disconnect();
 
-        void UpdateEntity(ecs::Lock<ecs::ReadNetworkCompoenents> lock, Tecs::Entity e, ecs::Network &network);
+        void UpdateEntity(ecs::Lock<ecs::ReadNetworkCompoenents> lock,
+                          Tecs::Entity e,
+                          ecs::Network &network,
+                          bool create = false);
 
         bool Frame();
 

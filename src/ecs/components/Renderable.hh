@@ -29,4 +29,6 @@ namespace ecs {
 
     template<>
     bool Component<Renderable>::Load(Lock<Read<ecs::Name>> lock, Renderable &dst, const picojson::value &src);
+    template<>
+    bool Component<Renderable>::Save(picojson::value &dst, const Renderable &src);
 } // namespace ecs

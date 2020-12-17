@@ -18,7 +18,7 @@ namespace ecs {
         NETWORK_POLICY_LAZY, // Updates can be dropped as long as they remain in order.
     };
 
-    using ReadNetworkCompoenents = ecs::Read<ecs::Network, ecs::Renderable, ecs::Transform, ecs::Physics>;
+    using ReadNetworkCompoenents = ecs::Read<ecs::Name, ecs::Network, ecs::Renderable, ecs::Transform, ecs::Physics>;
 
     struct NetworkedComponent {
         NetworkedComponent(ComponentBase *component = nullptr, NetworkPolicy policy = NETWORK_POLICY_NONE)

@@ -38,4 +38,6 @@ namespace ecs {
 
     template<>
     bool Component<Physics>::Load(Lock<Read<ecs::Name>> lock, Physics &dst, const picojson::value &src);
+    template<>
+    bool Component<Physics>::Save(picojson::value &dst, const Physics &src);
 } // namespace ecs

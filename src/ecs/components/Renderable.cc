@@ -30,4 +30,10 @@ namespace ecs {
         if (glm::length(r.emissive) == 0.0f && glm::length(r.voxelEmissive) > 0.0f) { r.emissive = r.voxelEmissive; }
         return true;
     }
+
+    template<>
+    bool Component<Renderable>::Save(picojson::value &dst, const Renderable &src) {
+        if (src.model) { dst.set(src.model->name); }
+        return true;
+    }
 } // namespace ecs

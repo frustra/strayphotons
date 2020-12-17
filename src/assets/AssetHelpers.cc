@@ -1,5 +1,6 @@
 #include "AssetHelpers.hh"
 
+#include <glm/glm.hpp>
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
@@ -14,22 +15,46 @@ namespace sp {
         }
     }
 
-    glm::vec2 MakeVec2(picojson::value val) {
+    glm::vec2 MakeVec2(picojson::value src) {
         glm::vec2 ret;
-        MakeVec(2, val, (float *)&ret);
+        MakeVec(2, src, (float *)&ret);
         return ret;
     }
 
-    glm::vec3 MakeVec3(picojson::value val) {
+    glm::vec3 MakeVec3(picojson::value src) {
         glm::vec3 ret;
-        MakeVec(3, val, (float *)&ret);
+        MakeVec(3, src, (float *)&ret);
         return ret;
     }
 
-    glm::vec4 MakeVec4(picojson::value val) {
+    glm::vec4 MakeVec4(picojson::value src) {
         glm::vec4 ret;
-        MakeVec(4, val, (float *)&ret);
+        MakeVec(4, src, (float *)&ret);
         return ret;
+    }
+
+    picojson::value MakeVec2(glm::vec2 src) {
+        picojson::array ret(2);
+        for (size_t i = 0; i < ret.size(); i++) {
+            ret[i] = picojson::value(src[i]);
+        }
+        return picojson::value(ret);
+    }
+
+    picojson::value MakeVec3(glm::vec3 src) {
+        picojson::array ret(3);
+        for (size_t i = 0; i < ret.size(); i++) {
+            ret[i] = picojson::value(src[i]);
+        }
+        return picojson::value(ret);
+    }
+
+    picojson::value MakeVec4(glm::vec4 src) {
+        picojson::array ret(4);
+        for (size_t i = 0; i < ret.size(); i++) {
+            ret[i] = picojson::value(src[i]);
+        }
+        return picojson::value(ret);
     }
 
     bool ParametersExist(const picojson::value &json, vector<string> reqParams) {

@@ -42,7 +42,7 @@ namespace ecs {
 
         bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Tecs::Entity &src) override {
             auto &comp = src.Get<CompType>(lock);
-            return Save(lock, dst, comp);
+            return Save(dst, comp);
         }
 
         static bool Load(Lock<Read<ecs::Name>> lock, CompType &dst, const picojson::value &src) {
@@ -50,7 +50,7 @@ namespace ecs {
             return false;
         }
 
-        static bool Save(Lock<Read<ecs::Name>> lock, picojson::value &dst, const CompType &src) {
+        static bool Save(picojson::value &dst, const CompType &src) {
             std::cerr << "Calling undefined Save(json) on Compoent type: " << typeid(CompType).name() << std::endl;
             return false;
         }
@@ -60,7 +60,7 @@ namespace ecs {
             return false;
         }
 
-        static bool Save(Lock<Read<ecs::Name>> lock /*, protobuf &dst*/, const CompType &src) {
+        static bool Save(/*protobuf &dst, */ const CompType &src) {
             std::cerr << "Calling undefined Save(protobuf) on Compoent type: " << typeid(CompType).name() << std::endl;
             return false;
         }

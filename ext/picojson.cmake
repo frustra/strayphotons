@@ -6,3 +6,9 @@ target_include_directories(
         ./
         ./picojson
 )
+
+target_compile_definitions(
+    picojson
+    INTERFACE 
+        PICOJSON_USE_INT64
+)
