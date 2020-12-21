@@ -26,8 +26,8 @@ namespace sp {
         void ReloadContext();
         bool HasActiveContext();
 
-        void AddPlayerView(vector<ecs::Entity> entities);
         void AddPlayerView(ecs::Entity entity);
+        void AddPlayerView(Tecs::Entity entity);
 
         void RenderLoading();
 

@@ -128,47 +128,68 @@ namespace ecs {
         return true;
     }
 
-    ecs::Handle<HumanController> HumanControlSystem::AssignController(ecs::Entity entity, sp::PhysxManager &px) {
-        if (entity.Has<HumanController>()) {
+    HumanController &HumanControlSystem::AssignController(ecs::Lock<ecs::AddRemove> lock,
+                                                          Tecs::Entity entity,
+                                                          sp::PhysxManager &px) {
+        if (entity.Has<HumanController>(lock)) {
             std::stringstream ss;
-            ss << "entity " << entity << " cannot be assigned a new HumanController because it already has one.";
+            ss << "entity " << entity.id << " cannot be assigned a new HumanController because it already has one.";
             throw std::invalid_argument(ss.str());
         }
-        auto transform = entity.Get<ecs::Transform>();
-        glm::quat rotation = transform->GetRotate();
+        auto &transform = entity.Get<ecs::Transform>(lock);
+        glm::quat rotation = transform.GetRotate();
 
-        auto controller = entity.Assign<HumanController>();
-        controller->SetRotate(rotation);
+        auto &controller = entity.Set<HumanController>(lock);
+        controller.SetRotate(rotation);
 
-        auto interact = entity.Assign<InteractController>();
-        interact->manager = &px;
+        auto &interact = entity.Set<InteractController>(lock);
+        interact.manager = &px;
 
         // Offset the capsule position so the camera is at the top
-        physx::PxVec3 pos = GlmVec3ToPxVec3(transform->GetPosition() - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT / 2, 0));
-        controller->pxController = px.CreateController(pos, ecs::PLAYER_RADIUS, ecs::PLAYER_CAPSULE_HEIGHT, 0.5f);
-        controller->pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
+        physx::PxVec3 pos = GlmVec3ToPxVec3(transform.GetPosition() - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT / 2, 0));
+        controller.pxController = px.CreateController(pos, ecs::PLAYER_RADIUS, ecs::PLAYER_CAPSULE_HEIGHT, 0.5f);
+        controller.pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
 
         return controller;
     }
 
-    void HumanControlSystem::Teleport(ecs::Entity entity, glm::vec3 position, glm::quat rotation) {
-        if (!entity.Has<ecs::Transform>()) { throw std::invalid_argument("entity must have a Transform component"); }
-        if (!entity.Has<ecs::HumanController>()) {
-            throw std::invalid_argument("entity must have a HumanController component");
+    void HumanControlSystem::Teleport(ecs::Lock<ecs::Write<ecs::Transform, ecs::HumanController>> lock,
+                                      Tecs::Entity entity,
+                                      glm::vec3 position) {
+        if (!entity.Has<ecs::Transform, ecs::HumanController>(lock)) {
+            throw std::invalid_argument("entity must have a Transform and HumanController component");
         }
 
-        auto controller = entity.Get<ecs::HumanController>();
-        auto transform = entity.Get<ecs::Transform>();
-        transform->SetPosition(position);
-        if (rotation != glm::quat()) {
-            transform->SetRotate(rotation);
-            controller->SetRotate(rotation);
-        }
+        auto &controller = entity.Get<ecs::HumanController>(lock);
+        auto &transform = entity.Get<ecs::Transform>(lock);
+        transform.SetPosition(position);
 
-        if (controller->pxController) {
+        if (controller.pxController) {
             // Offset the capsule position so the camera is at the top
-            float capsuleHeight = physics->GetCapsuleHeight(controller->pxController);
-            physics->TeleportController(controller->pxController,
+            float capsuleHeight = physics->GetCapsuleHeight(controller.pxController);
+            physics->TeleportController(controller.pxController,
+                                        GlmVec3ToPxExtendedVec3(position - glm::vec3(0, capsuleHeight / 2, 0)));
+        }
+    }
+
+    void HumanControlSystem::Teleport(ecs::Lock<ecs::Write<ecs::Transform, ecs::HumanController>> lock,
+                                      Tecs::Entity entity,
+                                      glm::vec3 position,
+                                      glm::quat rotation) {
+        if (!entity.Has<ecs::Transform, ecs::HumanController>(lock)) {
+            throw std::invalid_argument("entity must have a Transform and HumanController component");
+        }
+
+        auto &controller = entity.Get<ecs::HumanController>(lock);
+        auto &transform = entity.Get<ecs::Transform>(lock);
+        transform.SetPosition(position);
+        transform.SetRotate(rotation);
+        controller.SetRotate(rotation);
+
+        if (controller.pxController) {
+            // Offset the capsule position so the camera is at the top
+            float capsuleHeight = physics->GetCapsuleHeight(controller.pxController);
+            physics->TeleportController(controller.pxController,
                                         GlmVec3ToPxExtendedVec3(position - glm::vec3(0, capsuleHeight / 2, 0)));
         }
     }

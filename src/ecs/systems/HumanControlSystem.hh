@@ -33,12 +33,18 @@ namespace ecs {
         /**
          * Assigns a default HumanController to the given entity.
          */
-        ecs::Handle<HumanController> AssignController(ecs::Entity entity, sp::PhysxManager &px);
+        HumanController &AssignController(ecs::Lock<ecs::AddRemove> lock, Tecs::Entity entity, sp::PhysxManager &px);
 
         /**
          * Teleports the entity and properly syncs to physx.
          */
-        void Teleport(ecs::Entity entity, glm::vec3 position, glm::quat rotation = glm::quat());
+        void Teleport(ecs::Lock<ecs::Write<ecs::Transform, ecs::HumanController>> lock,
+                      Tecs::Entity entity,
+                      glm::vec3 position);
+        void Teleport(ecs::Lock<ecs::Write<ecs::Transform, ecs::HumanController>> lock,
+                      Tecs::Entity entity,
+                      glm::vec3 position,
+                      glm::quat rotation);
 
     private:
         glm::vec3 CalculatePlayerVelocity(ecs::Entity entity,

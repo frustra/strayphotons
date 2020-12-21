@@ -21,6 +21,7 @@ namespace sp {
         void HandleInput();
         bool Frame(double dtSinceLastFrame);
 
+        void ResetPlayer();
         void LoadScene(string name);
         void ReloadScene(string arg);
         void PrintDebug();
@@ -28,16 +29,16 @@ namespace sp {
         void SetSignal(string args);
         void ClearSignal(string args);
 
-        ecs::Entity GetPlayer();
-
-    private:
-        ecs::Entity CreateGameLogicEntity();
+        Tecs::Entity GetPlayer() {
+            return player;
+        }
 
     private:
         Game *game;
         InputManager *input = nullptr;
         ecs::HumanControlSystem humanControlSystem;
         shared_ptr<Scene> scene;
+        Tecs::Entity player;
         Tecs::Entity flashlight;
         CFuncCollection funcs;
     };
