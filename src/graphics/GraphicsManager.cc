@@ -213,16 +213,14 @@ namespace sp {
         return true;
     }
 
-    void GraphicsManager::AddPlayerView(vector<ecs::Entity> entities) {
-        for (auto entity : entities) {
-            AddPlayerView(entity);
-        }
-    }
-
     void GraphicsManager::AddPlayerView(ecs::Entity entity) {
         ecs::ValidateView(entity);
 
         playerViews.push_back(entity);
+    }
+
+    void GraphicsManager::AddPlayerView(Tecs::Entity entity) {
+        playerViews.push_back(ecs::Entity(&game->entityManager, entity));
     }
 
     void GraphicsManager::RenderLoading() {

@@ -5,6 +5,17 @@
 #include <typeindex>
 
 namespace ecs {
+    std::string ToString(Lock<Read<Name>> lock, Tecs::Entity e) {
+        if (lock.Exists(e)) {
+            if (e.Has<Name>(lock)) {
+                return e.Get<Name>(lock) + "(" + std::to_string(e.id) + ")";
+            } else {
+                return "Entity(" + std::to_string(e.id) + ")";
+            }
+        } else {
+            return "Entity(NULL)";
+        }
+    }
     void Entity::Destroy() {
         auto lock = em->tecs.StartTransaction<Tecs::AddRemove>();
         e.Destroy(lock);

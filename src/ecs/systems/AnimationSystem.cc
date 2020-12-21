@@ -20,9 +20,7 @@ namespace ecs {
             auto &animation = ent.Get<Animation>(lock);
             auto &transform = ent.Get<Transform>(lock);
 
-            if (animation.prevState < 0 || animation.curState < 0 || animation.curState == animation.prevState) {
-                continue;
-            }
+            if (animation.curState == animation.prevState) continue;
 
             sp::Assert(animation.curState < animation.states.size(), "invalid current state");
             sp::Assert(animation.prevState < animation.states.size(), "invalid previous state");
