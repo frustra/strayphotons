@@ -161,7 +161,6 @@ namespace sp {
     }
 
     void GameLogic::ResetPlayer() {
-        std::cout << "Player reset" << std::endl;
         auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
         if (player) {
             auto &view = player.Set<ecs::View>(lock);
@@ -224,17 +223,11 @@ namespace sp {
                 if (name == "player" && e != player) {
                     name = "player-spwan";
                     if (e.Has<ecs::Transform>(lock)) {
-                        std::cout << "Spawn pos: " << glm::to_string(e.Get<ecs::Transform>(lock).GetPosition())
-                                  << std::endl;
-                        std::cout << "Old pos: " << glm::to_string(player.Get<ecs::Transform>(lock).GetPosition())
-                                  << std::endl;
                         auto &spawnTransform = e.Get<ecs::Transform>(lock);
                         humanControlSystem.Teleport(lock,
                                                     player,
                                                     spawnTransform.GetPosition(),
                                                     spawnTransform.GetRotate());
-                        std::cout << "New pos: " << glm::to_string(player.Get<ecs::Transform>(lock).GetPosition())
-                                  << std::endl;
                     }
                 }
             }
