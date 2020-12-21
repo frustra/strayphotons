@@ -75,6 +75,8 @@ namespace ecs {
     template<typename T>
     using Removed = Tecs::Removed<T>;
 
+    std::string ToString(Lock<Read<Name>> lock, Tecs::Entity e);
+
     class EntityManager;
 
     template<typename T>

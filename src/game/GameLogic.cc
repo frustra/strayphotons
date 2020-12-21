@@ -1,4 +1,3 @@
-#define _USE_MATH_DEFINES
 #include "game/GameLogic.hh"
 
 #include "assets/AssetManager.hh"
@@ -8,15 +7,17 @@
 #include "core/Console.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
+#include "ecs/Signals.hh"
 #include "physx/PhysxUtils.hh"
 #include "xr/XrSystemFactory.hh"
 
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <cxxopts.hpp>
-#include <ecs/EcsImpl.hh>
-#include <ecs/Signals.hh>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/transform.hpp>
 
 namespace sp {
@@ -42,6 +43,8 @@ namespace sp {
     static CVar<int> CVarFlashlightResolution("r.FlashlightResolution", 512, "Flashlight shadow map resolution");
 
     void GameLogic::Init(Script *startupScript) {
+        ResetPlayer();
+
         if (game->options.count("map")) { LoadScene(game->options["map"].as<string>()); }
 
         if (startupScript != nullptr) {
@@ -68,16 +71,18 @@ namespace sp {
             game->menuGui->OpenPauseMenu();
         } else if (input->IsPressed(INPUT_ACTION_SPAWN_DEBUG)) {
             // Spawn dodecahedron
-            auto entity = CreateGameLogicEntity();
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
+            auto entity = lock.NewEntity();
+            entity.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GAME_LOGIC);
             auto model = GAssets.LoadModel("dodecahedron");
-            entity.Assign<ecs::Renderable>(model);
-            entity.Assign<ecs::Transform>(glm::vec3(0, 5, 0));
+            entity.Set<ecs::Renderable>(lock, model);
+            entity.Set<ecs::Transform>(lock, glm::vec3(0, 5, 0));
 
             PhysxActorDesc desc;
             desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
-            auto actor = game->physics.CreateActor(model, desc, entity.GetId());
+            auto actor = game->physics.CreateActor(model, desc, entity);
 
-            if (actor) { entity.Assign<ecs::Physics>(actor, model, desc); }
+            if (actor) { entity.Set<ecs::Physics>(lock, actor, model, desc); }
         } else if (input->IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
             // Toggle flashlight following player
 
@@ -108,8 +113,6 @@ namespace sp {
         if (input != nullptr) { HandleInput(); }
 
         if (!scene) return true;
-        ecs::Entity player = GetPlayer();
-        if (!player.Valid()) return true;
 
         for (auto entity : game->entityManager.EntitiesWith<ecs::Script>()) {
             auto script = entity.Get<ecs::Script>();
@@ -157,10 +160,53 @@ namespace sp {
         return true;
     }
 
+    void GameLogic::ResetPlayer() {
+        std::cout << "Player reset" << std::endl;
+        auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
+        if (player) {
+            auto &view = player.Set<ecs::View>(lock);
+            view.clip = glm::vec2(0.1, 256);
+
+            humanControlSystem.Teleport(lock, player, glm::vec3(), glm::quat());
+            player.Set<ecs::VoxelInfo>(lock);
+        } else {
+            player = lock.NewEntity();
+            player.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GAME_LOGIC);
+            player.Set<ecs::Name>(lock, "player");
+            auto &view = player.Set<ecs::View>(lock);
+            view.clip = glm::vec2(0.1, 256);
+
+            humanControlSystem.AssignController(lock, player, game->physics);
+            player.Set<ecs::VoxelInfo>(lock);
+
+            // Mark the player as being able to activate trigger areas
+            player.Set<ecs::Triggerable>(lock);
+
+            game->graphics.AddPlayerView(player);
+        }
+
+        if (flashlight) flashlight.Destroy(lock);
+        {
+            flashlight = lock.NewEntity();
+            flashlight.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GAME_LOGIC);
+            auto &transform = flashlight.Set<ecs::Transform>(lock, glm::vec3(0, -0.3, 0));
+            transform.SetParent(player);
+            auto &light = flashlight.Set<ecs::Light>(lock);
+            light.tint = glm::vec3(1.0);
+            light.spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
+            light.intensity = CVarFlashlight.Get(true);
+            light.on = CVarFlashlightOn.Get(true);
+            auto &view = flashlight.Set<ecs::View>(lock);
+            view.fov = light.spotAngle * 2.0f;
+            view.extents = glm::vec2(CVarFlashlightResolution.Get(true));
+            view.clip = glm::vec2(0.1, 64);
+        }
+    }
+
     void GameLogic::LoadScene(string name) {
         game->graphics.RenderLoading();
         game->physics.StopSimulation();
-        game->entityManager.DestroyAllWith<ecs::Owner>(ecs::OwnerType::GAME_LOGIC);
+        game->entityManager.DestroyAllWith<ecs::Owner>(ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
 
         if (scene != nullptr) {
             for (auto &line : scene->unloadExecList) {
@@ -171,41 +217,36 @@ namespace sp {
         scene.reset();
         {
             auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
-            scene = GAssets.LoadScene(name, lock, game->physics, ecs::OwnerType::GAME_LOGIC);
+            scene = GAssets.LoadScene(name, lock, game->physics, ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
+
+            for (auto e : lock.EntitiesWith<ecs::Name>()) {
+                auto &name = e.Get<ecs::Name>(lock);
+                if (name == "player" && e != player) {
+                    name = "player-spwan";
+                    if (e.Has<ecs::Transform>(lock)) {
+                        std::cout << "Spawn pos: " << glm::to_string(e.Get<ecs::Transform>(lock).GetPosition())
+                                  << std::endl;
+                        std::cout << "Old pos: " << glm::to_string(player.Get<ecs::Transform>(lock).GetPosition())
+                                  << std::endl;
+                        auto &spawnTransform = e.Get<ecs::Transform>(lock);
+                        humanControlSystem.Teleport(lock,
+                                                    player,
+                                                    spawnTransform.GetPosition(),
+                                                    spawnTransform.GetRotate());
+                        std::cout << "New pos: " << glm::to_string(player.Get<ecs::Transform>(lock).GetPosition())
+                                  << std::endl;
+                    }
+                }
+            }
         }
         if (!scene) {
             game->physics.StartSimulation();
             return;
         }
 
-        ecs::Entity player = GetPlayer();
-        humanControlSystem.AssignController(player, game->physics);
-        player.Assign<ecs::VoxelInfo>();
-
-        // Mark the player as being able to activate trigger areas
-        player.Assign<ecs::Triggerable>();
-
-        game->graphics.AddPlayerView(player);
-
         for (auto &line : scene->autoExecList) {
             GetConsoleManager().ParseAndExecute(line);
         }
-
-        // Create flashlight entity
-        auto flashlight = CreateGameLogicEntity();
-        auto transform = flashlight.Assign<ecs::Transform>(glm::vec3(0, -0.3, 0));
-        transform->SetParent(player.GetId());
-        auto light = flashlight.Assign<ecs::Light>();
-        light->tint = glm::vec3(1.0);
-        light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
-        light->intensity = CVarFlashlight.Get(true);
-        light->on = CVarFlashlightOn.Get(true);
-        auto view = flashlight.Assign<ecs::View>();
-        view->fov = light->spotAngle * 2.0f;
-        view->extents = glm::vec2(CVarFlashlightResolution.Get(true));
-        view->clip = glm::vec2(0.1, 64);
-
-        this->flashlight = flashlight.GetEntity();
 
         // Make sure all objects are in the correct physx state before restarting simulation
         game->physics.LogicFrame();
@@ -214,74 +255,59 @@ namespace sp {
 
     void GameLogic::ReloadScene(string arg) {
         if (scene) {
-            auto player = GetPlayer();
             if (arg == "reset") {
+                ResetPlayer();
                 LoadScene(scene->name);
-            } else if (player && player.Has<ecs::Transform>()) {
-                // Store the player position and set it back on the new player entity
-                auto transform = player.Get<ecs::Transform>();
-                auto position = transform->GetPosition();
-                auto rotation = transform->GetRotate();
-
+            } else {
+                ecs::Transform oldTransform;
+                {
+                    auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Transform>>();
+                    if (player && player.Has<ecs::Transform>(lock)) { oldTransform = player.Get<ecs::Transform>(lock); }
+                }
                 LoadScene(scene->name);
-
-                if (scene) {
-                    player = GetPlayer();
-                    if (player && player.Has<ecs::HumanController>()) {
-                        humanControlSystem.Teleport(player, position, rotation);
+                {
+                    auto lock =
+                        game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Transform, ecs::HumanController>>();
+                    if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
+                        humanControlSystem.Teleport(lock, player, oldTransform.GetPosition(), oldTransform.GetRotate());
                     }
                 }
             }
         }
     }
 
-    string entityName(ecs::Entity ent) {
-        string name = ent.ToString();
-
-        if (ent.Has<ecs::Name>()) { name += " (" + *ent.Get<ecs::Name>() + ")"; }
-        return name;
-    }
-
     void GameLogic::PrintDebug() {
         Logf("Currently loaded scene: %s", scene ? scene->name : "none");
         if (!scene) return;
-        auto player = GetPlayer();
-        if (player && player.Has<ecs::Transform>() && player.Has<ecs::HumanController>()) {
-            auto transform = player.Get<ecs::Transform>();
-            auto controller = player.Get<ecs::HumanController>();
-            auto position = transform->GetPosition();
-            auto pxFeet = controller->pxController->getFootPosition();
+        auto lock = game->entityManager.tecs.StartTransaction<
+            ecs::Read<ecs::Name, ecs::Transform, ecs::HumanController, ecs::LightSensor, ecs::SignalOutput>>();
+        if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
+            auto &transform = player.Get<ecs::Transform>(lock);
+            auto &controller = player.Get<ecs::HumanController>(lock);
+            auto position = transform.GetPosition();
+            auto pxFeet = controller.pxController->getFootPosition();
             Logf("Player position: [%f, %f, %f], feet: %f", position.x, position.y, position.z, pxFeet.y);
-            Logf("Player velocity: [%f, %f, %f]",
-                 controller->velocity.x,
-                 controller->velocity.y,
-                 controller->velocity.z);
-            Logf("Player on ground: %s", controller->onGround ? "true" : "false");
+            Logf("Player velocity: [%f, %f, %f]", controller.velocity.x, controller.velocity.y, controller.velocity.z);
+            Logf("Player on ground: %s", controller.onGround ? "true" : "false");
         } else {
             Logf("Scene has no valid player");
         }
 
-        for (auto ent : game->entityManager.EntitiesWith<ecs::LightSensor>()) {
-            auto sensor = ent.Get<ecs::LightSensor>();
-            auto i = sensor->illuminance;
-            string name = entityName(ent);
+        for (auto ent : lock.EntitiesWith<ecs::LightSensor>()) {
+            auto &sensor = ent.Get<ecs::LightSensor>(lock);
+            auto &i = sensor.illuminance;
 
-            Logf("Light sensor %s: %f %f %f", name, i.r, i.g, i.b);
+            Logf("Light sensor %s: %f %f %f", ecs::ToString(lock, ent), i.r, i.g, i.b);
         }
 
-        for (auto ent : game->entityManager.EntitiesWith<ecs::SignalOutput>()) {
-            auto output = ent.Get<ecs::SignalOutput>();
-            string name = entityName(ent);
+        for (auto ent : lock.EntitiesWith<ecs::SignalOutput>()) {
+            auto &output = ent.Get<ecs::SignalOutput>(lock);
 
-            Logf("Signal output %s:", name);
-            for (auto &[signalName, value] : output->GetSignals()) {
+            Logf("Signal output %s:", ecs::ToString(lock, ent));
+            for (auto &[signalName, value] : output.GetSignals()) {
                 Logf("  %s: %.2f", signalName, value);
             }
         }
-    }
-
-    ecs::Entity GameLogic::GetPlayer() {
-        return game->entityManager.EntityWith<ecs::Name>("player");
     }
 
     void GameLogic::SetSignal(string args) {
@@ -323,19 +349,5 @@ namespace sp {
             auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
             signalComp.ClearSignal(signalName);
         }
-    }
-
-    /**
-     * @brief Helper function used when creating new entities that belong to
-     * 		  GameLogic. Using this function ensures that the correct ecs::Creator
-     * 		  attribute is added to each entity that is owned by GameLogic, and
-     *		  therefore it gets destroyed on scene unload.
-     *
-     * @return ecs::Entity A new Entity with the ecs::Creator::GAME_LOGIC Key added.
-     */
-    inline ecs::Entity GameLogic::CreateGameLogicEntity() {
-        auto newEntity = game->entityManager.NewEntity();
-        newEntity.Assign<ecs::Owner>(ecs::OwnerType::GAME_LOGIC);
-        return newEntity;
     }
 } // namespace sp

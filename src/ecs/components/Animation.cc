@@ -39,15 +39,15 @@ namespace ecs {
         return true;
     }
 
-    void Animation::AnimateToState(uint32 i) {
-        if (i > states.size()) {
+    void Animation::AnimateToState(size_t state) {
+        if (state >= states.size()) {
             std::stringstream ss;
-            ss << "\"" << i << "\" is an invalid state for this Animation with " << states.size() << " states";
+            ss << "\"" << state << "\" is an invalid state for this Animation with " << states.size() << " states";
             throw std::runtime_error(ss.str());
         }
-        if (i == curState) return;
+        if (state == curState) return;
 
         prevState = curState;
-        curState = i;
+        curState = state;
     }
 } // namespace ecs

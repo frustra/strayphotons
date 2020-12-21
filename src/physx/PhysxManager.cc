@@ -1,16 +1,17 @@
-#define _USE_MATH_DEFINES
 #include "physx/PhysxManager.hh"
 
-#include <Common.hh>
+#include "Common.hh"
+#include "assets/AssetManager.hh"
+#include "assets/Model.hh"
+#include "core/CFunc.hh"
+#include "core/CVar.hh"
+#include "core/Game.hh"
+#include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
+
+#define _USE_MATH_DEFINES
 #include <PxScene.h>
-#include <assets/AssetManager.hh>
-#include <assets/Model.hh>
 #include <chrono>
-#include <core/CFunc.hh>
-#include <core/CVar.hh>
-#include <core/Game.hh>
-#include <core/Logging.hh>
-#include <ecs/EcsImpl.hh>
 #include <fstream>
 #include <physx/PhysxUtils.hh>
 
@@ -218,6 +219,7 @@ namespace sp {
                 if (!ph.actor && ph.model) { ph.actor = CreateActor(ph.model, ph.desc, ent); }
 
                 if (ph.actor && transform.ClearDirty()) {
+                    transform.UpdateCachedTransform(lock);
                     auto position = transform.GetGlobalTransform(lock) * glm::vec4(0, 0, 0, 1);
                     auto rotate = transform.GetGlobalRotation(lock);
 

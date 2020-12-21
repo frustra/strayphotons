@@ -317,7 +317,7 @@ namespace sp::xr {
                 // Add a transform to the VR origin if one does not already exist
                 if (!vrOrigin.Has<ecs::Transform>()) {
                     vrOrigin.Assign<ecs::Transform>();
-                    auto player = game->logic.GetPlayer();
+                    auto player = ecs::Entity(&game->entityManager, game->logic.GetPlayer());
 
                     if (player.Valid() && player.Has<ecs::Transform>()) {
                         auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Transform>>();
@@ -586,7 +586,7 @@ namespace sp::xr {
             Logf("Resetting VR Origin");
             auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
             auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, "vr-origin");
-            auto player = game->logic.GetPlayer().GetEntity();
+            auto player = game->logic.GetPlayer();
             if (vrOrigin && vrOrigin.Has<ecs::Transform>(lock) && player && player.Has<ecs::Transform>(lock)) {
                 auto &vrTransform = vrOrigin.Get<ecs::Transform>(lock);
                 auto &playerTransform = player.Get<ecs::Transform>(lock);
@@ -611,7 +611,7 @@ namespace sp::xr {
      */
     inline ecs::Entity XrManager::CreateXrEntity() {
         auto newEntity = game->entityManager.NewEntity();
-        newEntity.Assign<ecs::Owner>(ecs::OwnerType::XR_MANAGER);
+        newEntity.Assign<ecs::Owner>(ecs::Owner::SystemId::XR_MANAGER);
         return newEntity;
     }
 }; // namespace sp::xr
