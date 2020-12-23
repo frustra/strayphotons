@@ -5,9 +5,7 @@
 #include <ecs/Signals.hh>
 #include <glm/glm.hpp>
 #include <picojson/picojson.h>
-
-#define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 
 namespace ecs {
     template<>

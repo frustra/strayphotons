@@ -57,7 +57,7 @@
 	url = git@github.com:frustra/glfw.git
 [submodule "ext/Tecs"]
 	path = ext/Tecs
-	url = git@github.com:xthexder/Tecs.git
+	url = https://github.com/xthexder/Tecs.git
 [submodule "ext/protobuf"]
 	path = ext/protobuf
 	url = https://github.com/protocolbuffers/protobuf

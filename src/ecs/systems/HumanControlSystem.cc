@@ -1,4 +1,3 @@
-#define _USE_MATH_DEFINES
 #include "ecs/systems/HumanControlSystem.hh"
 
 #include "Common.hh"

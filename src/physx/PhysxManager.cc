@@ -9,7 +9,6 @@
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
-#define _USE_MATH_DEFINES
 #include <PxScene.h>
 #include <chrono>
 #include <fstream>
