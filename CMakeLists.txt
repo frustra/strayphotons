@@ -190,6 +190,7 @@ if (MSVC)
 			UNICODE 
 			_UNICODE
 			NOMINMAX
+			_USE_MATH_DEFINES
 	)
 endif()
 

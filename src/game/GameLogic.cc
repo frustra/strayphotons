@@ -12,7 +12,6 @@
 #include "physx/PhysxUtils.hh"
 #include "xr/XrSystemFactory.hh"
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
