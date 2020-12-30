@@ -8,6 +8,7 @@
 #include <glm/gtx/string_cast.hpp>
 #include <network/protocol/Protocol.pb.h>
 #include <picojson/picojson.h>
+#include <zmq_addon.hpp>
 
 namespace sp {
     NetworkManager::NetworkManager(Game *game) : game(game), ecs(game->entityManager.tecs) {
@@ -34,8 +35,10 @@ namespace sp {
     }
 
     void NetworkManager::Connect(std::string args) {
-        client = zmq::socket_t(ctx, zmq::socket_type::req);
+        client = zmq::socket_t(ctx, zmq::socket_type::dealer);
         client.connect("tcp://127.0.0.1:8000");
+        
+        client.send(zmq::str_buffer("HELLO"));
     }
 
     void NetworkManager::Disconnect() {
@@ -91,21 +94,56 @@ namespace sp {
         }
         if (server && updated) {
             auto str = picojson::value(msg).serialize();
-            server.send(zmq::buffer(str), zmq::send_flags::dontwait);
+            for (auto &peer : peers) {
+                std::array<zmq::const_buffer, 2> send_msgs = {
+                    zmq::buffer(peer),
+                    zmq::buffer(str)
+                };
+                if (!zmq::send_multipart(server, send_msgs)) {
+                    Errorf("Server failed to send message");
+                }
+            }
         }
     }
 
     bool NetworkManager::Frame() {
-        auto lock = ecs.StartTransaction<ecs::ReadNetworkCompoenents, ecs::Write<ecs::Network>>();
-        ecs::Added<ecs::Network> addedNetwork;
-        while (networkAddition.Poll(lock, addedNetwork)) {
-            auto &e = addedNetwork.entity;
-            auto &network = e.Get<ecs::Network>(lock);
-            UpdateEntity(lock, e, network, true);
+        if (server) {
+            std::vector<zmq::message_t> recv_msgs;
+            const auto ret = zmq::recv_multipart(server, std::back_inserter(recv_msgs), zmq::recv_flags::dontwait);
+            if (ret && recv_msgs.size() > 1) {
+                peers.emplace_back(recv_msgs[0].to_string());
+                Logf("Server received: %s", recv_msgs[1].to_string());
+            }
+            try {
+                auto lock = ecs.StartTransaction<ecs::ReadNetworkCompoenents, ecs::Write<ecs::Network>>();
+                ecs::Added<ecs::Network> addedNetwork;
+                while (networkAddition.Poll(lock, addedNetwork)) {
+                    auto &e = addedNetwork.entity;
+                    if (e.Has<ecs::Network>(lock)) {
+                        auto &network = e.Get<ecs::Network>(lock);
+                        UpdateEntity(lock, e, network, true);
+                    }
+                }
+                for (auto e : lock.EntitiesWith<ecs::Network>()) {
+                    auto &network = e.Get<ecs::Network>(lock);
+                    UpdateEntity(lock, e, network);
+                }
+            } catch (zmq::error_t &err) {
+                Errorf("Network error (server): %s", err.what());
+                server.close();
+            }
         }
-        for (auto e : lock.EntitiesWith<ecs::Network>()) {
-            auto &network = e.Get<ecs::Network>(lock);
-            UpdateEntity(lock, e, network);
+        if (client) {
+            try {
+                zmq::message_t msg;
+                auto result = client.recv(msg, zmq::recv_flags::dontwait);
+                if (result) {
+                    Logf("%s", msg.to_string());
+                }
+            } catch (zmq::error_t &err) {
+                Errorf("Network error (client): %s", err.what());
+                client.close();
+            }
         }
         return true;
     }

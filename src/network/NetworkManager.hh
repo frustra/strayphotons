@@ -3,6 +3,7 @@
 #include <ecs/Ecs.hh>
 #include <ecs/components/Network.hh>
 #include <zmq.hpp>
+#include <vector>
 
 namespace sp {
     class Game;
@@ -30,6 +31,7 @@ namespace sp {
         zmq::context_t ctx;
         zmq::socket_t server;
         zmq::socket_t client;
+        std::vector<std::string> peers;
 
         ecs::Observer<ecs::Added<ecs::Network>> networkAddition;
         ecs::Observer<ecs::Removed<ecs::Network>> networkRemoval;
