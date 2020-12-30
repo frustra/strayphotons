@@ -1,7 +1,6 @@
 #include "NetworkManager.hh"
 
 #include <Common.hh>
-#include <arpa/inet.h>
 #include <core/Logging.hh>
 #include <ecs/Components.hh>
 #include <ecs/EcsImpl.hh>

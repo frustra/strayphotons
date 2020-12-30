@@ -64,3 +64,6 @@
 [submodule "ext/cppzmq"]
 	path = ext/cppzmq
 	url = https://github.com/zeromq/cppzmq
+[submodule "ext/libzmq"]
+	path = ext/libzmq
+	url = https://github.com/zeromq/libzmq.git
