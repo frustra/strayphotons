@@ -5,9 +5,11 @@
 #include <zmq.hpp>
 
 namespace sp {
+    class Game;
+
     class NetworkManager {
     public:
-        NetworkManager(ecs::ECS &ecs);
+        NetworkManager(Game *game);
 
         void StartServer(std::string args);
         void StopServer();
@@ -22,10 +24,12 @@ namespace sp {
         bool Frame();
 
     private:
+        Game *game;
         ecs::ECS &ecs;
 
         zmq::context_t ctx;
         zmq::socket_t server;
+        zmq::socket_t client;
 
         ecs::Observer<ecs::Added<ecs::Network>> networkAddition;
         ecs::Observer<ecs::Removed<ecs::Network>> networkRemoval;

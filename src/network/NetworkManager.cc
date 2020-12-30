@@ -1,6 +1,7 @@
 #include "NetworkManager.hh"
 
 #include <Common.hh>
+#include <core/Game.hh>
 #include <core/Logging.hh>
 #include <ecs/Components.hh>
 #include <ecs/EcsImpl.hh>
@@ -9,7 +10,7 @@
 #include <picojson/picojson.h>
 
 namespace sp {
-    NetworkManager::NetworkManager(ecs::ECS &ecs) : ecs(ecs) {
+    NetworkManager::NetworkManager(Game *game) : game(game), ecs(game->entityManager.tecs) {
         auto lock = ecs.StartTransaction<ecs::AddRemove>();
         networkAddition = lock.Watch<ecs::Added<ecs::Network>>();
         networkRemoval = lock.Watch<ecs::Removed<ecs::Network>>();
@@ -24,15 +25,22 @@ namespace sp {
     }
 
     void NetworkManager::StartServer(std::string args) {
-        server = zmq::socket_t(ctx, zmq::socket_type::push);
+        server = zmq::socket_t(ctx, zmq::socket_type::router);
         server.bind("tcp://127.0.0.1:8000");
     }
 
     void NetworkManager::StopServer() {
         if (server) { server.close(); }
     }
-    void NetworkManager::Connect(std::string args) {}
-    void NetworkManager::Disconnect() {}
+
+    void NetworkManager::Connect(std::string args) {
+        client = zmq::socket_t(ctx, zmq::socket_type::req);
+        client.connect("tcp://127.0.0.1:8000");
+    }
+
+    void NetworkManager::Disconnect() {
+        if (client) { client.close(); }
+    }
 
     void NetworkManager::UpdateEntity(ecs::Lock<ecs::ReadNetworkCompoenents> lock,
                                       Tecs::Entity e,

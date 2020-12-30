@@ -13,7 +13,7 @@
 
 namespace sp {
     Game::Game(cxxopts::ParseResult &options, Script *startupScript)
-        : options(options), startupScript(startupScript), graphics(this), network(entityManager.tecs), logic(this),
+        : options(options), startupScript(startupScript), graphics(this), network(this), logic(this),
           physics(this), animation(entityManager.tecs), xr(this) {
         debugGui = std::make_unique<DebugGuiManager>(this);
         menuGui = std::make_unique<MenuGuiManager>(this);
