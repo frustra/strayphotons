@@ -67,3 +67,6 @@
 [submodule "ext/libzmq"]
 	path = ext/libzmq
 	url = https://github.com/zeromq/libzmq.git
+[submodule "ext/kissnet"]
+	path = ext/kissnet
+	url = https://github.com/Ybalrid/kissnet.git

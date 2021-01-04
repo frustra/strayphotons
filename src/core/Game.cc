@@ -10,13 +10,15 @@
 #include <ecs/Ecs.hh>
 #include <ecs/EcsImpl.hh>
 #include <glm/glm.hpp>
+#include <network/NetworkManager.hh>
 
 namespace sp {
     Game::Game(cxxopts::ParseResult &options, Script *startupScript)
-        : options(options), startupScript(startupScript), graphics(this), network(this), logic(this),
+        : options(options), startupScript(startupScript), graphics(this), logic(this),
           physics(this), animation(entityManager.tecs), xr(this) {
         debugGui = std::make_unique<DebugGuiManager>(this);
         menuGui = std::make_unique<MenuGuiManager>(this);
+        network = std::make_unique<NetworkManager>(this);
     }
 
     Game::~Game() {}
@@ -66,7 +68,7 @@ namespace sp {
         if (!graphics.Frame()) return false;
         if (!physics.LogicFrame()) return false;
         if (!animation.Frame(dt)) return false;
-        if (!network.Frame()) return false;
+        if (network && !network->Frame()) return false;
 
         lastFrameTime = frameTime;
         return true;

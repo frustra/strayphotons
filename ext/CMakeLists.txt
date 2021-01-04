@@ -25,14 +25,15 @@ add_subdirectory(Tecs)
 add_subdirectory(robin-hood-hashing)
 
 # ZeroMq must be included before the C++ headers
-include(libzmq.cmake)
-include(cppzmq.cmake)
+# include(libzmq.cmake)
+# include(cppzmq.cmake)
 
 # These projects require more configuration that is encapsulated their own CMake files
 include(PhysX.cmake)
 include(glfw.cmake)
 include(glfw-egl.cmake)
 include(imgui.cmake)
+include(kissnet.cmake)
 include(glew.cmake)
 include(linenoise.cmake)
 include(openvr.cmake)

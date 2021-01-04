@@ -5,7 +5,6 @@
 #include "game/gui/DebugGuiManager.hh"
 #include "game/gui/MenuGuiManager.hh"
 #include "graphics/GraphicsManager.hh"
-#include "network/NetworkManager.hh"
 #include "physx/PhysxManager.hh"
 #include "xr/XrManager.hh"
 
@@ -13,6 +12,7 @@
 #include <chrono>
 #include <ecs/Ecs.hh>
 #include <game/input/InputManager.hh>
+#include <memory>
 
 namespace cxxopts {
     class ParseResult;
@@ -20,6 +20,7 @@ namespace cxxopts {
 
 namespace sp {
     class Script;
+    class NetworkManager;
 
     class Game {
     public:
@@ -40,7 +41,7 @@ namespace sp {
         ecs::EntityManager entityManager;
 
         GraphicsManager graphics;
-        NetworkManager network;
+        std::unique_ptr<NetworkManager> network;
         InputManager input;
         GameLogic logic;
         PhysxManager physics;

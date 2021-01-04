@@ -274,7 +274,7 @@ target_link_libraries(
 		OpenGL::GL
 		picojson
 		libprotobuf
-		cppzmq
+		kissnet
 )
 
 target_link_libraries(

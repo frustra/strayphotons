@@ -2,8 +2,9 @@
 
 #include <ecs/Ecs.hh>
 #include <ecs/components/Network.hh>
-#include <zmq.hpp>
 #include <vector>
+#include <kissnet.hpp>
+#include <network/ServerHandler.hh>
 
 namespace sp {
     class Game;
@@ -12,15 +13,8 @@ namespace sp {
     public:
         NetworkManager(Game *game);
 
-        void StartServer(std::string args);
-        void StopServer();
         void Connect(std::string args);
         void Disconnect();
-
-        void UpdateEntity(ecs::Lock<ecs::ReadNetworkCompoenents> lock,
-                          Tecs::Entity e,
-                          ecs::Network &network,
-                          bool create = false);
 
         bool Frame();
 
@@ -28,13 +22,9 @@ namespace sp {
         Game *game;
         ecs::ECS &ecs;
 
-        zmq::context_t ctx;
-        zmq::socket_t server;
-        zmq::socket_t client;
-        std::vector<std::string> peers;
+        ServerHandler server;
 
-        ecs::Observer<ecs::Added<ecs::Network>> networkAddition;
-        ecs::Observer<ecs::Removed<ecs::Network>> networkRemoval;
+        std::vector<kissnet::tcp_socket> clients;
 
         CFuncCollection funcs;
     };
