@@ -20,7 +20,10 @@ namespace cxxopts {
 
 namespace sp {
     class Script;
-    class NetworkManager;
+
+    namespace network {
+        class NetworkManager;
+    };
 
     class Game {
     public:
@@ -41,7 +44,7 @@ namespace sp {
         ecs::EntityManager entityManager;
 
         GraphicsManager graphics;
-        std::unique_ptr<NetworkManager> network;
+        std::unique_ptr<network::NetworkManager> network;
         InputManager input;
         GameLogic logic;
         PhysxManager physics;

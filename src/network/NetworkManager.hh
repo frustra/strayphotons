@@ -2,30 +2,32 @@
 
 #include <ecs/Ecs.hh>
 #include <ecs/components/Network.hh>
-#include <vector>
 #include <kissnet.hpp>
 #include <network/ServerHandler.hh>
+#include <vector>
 
 namespace sp {
     class Game;
 
-    class NetworkManager {
-    public:
-        NetworkManager(Game *game);
+    namespace network {
+        class NetworkManager {
+        public:
+            NetworkManager(Game *game);
 
-        void Connect(std::string args);
-        void Disconnect();
+            void Connect(std::string args);
+            void Disconnect();
 
-        bool Frame();
+            bool Frame();
 
-    private:
-        Game *game;
-        ecs::ECS &ecs;
+        private:
+            Game *game;
+            ecs::ECS &ecs;
 
-        ServerHandler server;
+            ServerHandler server;
 
-        std::vector<kissnet::tcp_socket> clients;
+            std::vector<kissnet::tcp_socket> clients;
 
-        CFuncCollection funcs;
-    };
+            CFuncCollection funcs;
+        };
+    }; // namespace network
 } // namespace sp
