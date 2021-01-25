@@ -1,5 +1,5 @@
 #include "Api.hh"
-#include "main.rs.h"
+#include "Screen.h"
 #include "graphics/postprocess/PostProcess.hh"
 
 class Api::impl {

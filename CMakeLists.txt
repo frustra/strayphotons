@@ -277,7 +277,7 @@ target_link_libraries(
 		cxxopts
 		OpenGL::GL
 		picojson
-		screen
+		screen-rs
 )
 
 target_link_libraries(
