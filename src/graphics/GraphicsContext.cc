@@ -5,6 +5,7 @@
 #include "core/PerfTimer.hh"
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
+#include "ext/screen/src/screen.h" // FIXME: add population to cmake
 
 #include <algorithm>
 #include <ecs/systems/HumanControlSystem.hh>
@@ -113,6 +114,8 @@ namespace sp {
             glfwActionSource->BindAction(INPUT_ACTION_RESET_SCENE, INPUT_ACTION_KEYBOARD_KEYS + "/f6");
             glfwActionSource->BindAction(INPUT_ACTION_RELOAD_SHADERS, INPUT_ACTION_KEYBOARD_KEYS + "/f7");
         }
+
+        screen::new_screen(1920, 1080);
 
         Prepare();
     }
