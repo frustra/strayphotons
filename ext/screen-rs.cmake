@@ -30,6 +30,7 @@ target_link_libraries(
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/src)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../graphics/postprocess)
 
 add_custom_target(screen_lib ALL
     COMMENT "Compiling screen module"

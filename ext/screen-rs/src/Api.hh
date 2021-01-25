@@ -1,4 +1,5 @@
 #pragma once
+#include "cxx.h"
 #include <memory>
 
 namespace sp {
@@ -6,7 +7,7 @@ namespace sp {
 class Api {
 public:
   Api();
-  void draw(uint8_t &buf, size_t size);
+  void draw(rust::Slice<uint8_t>, size_t size) const;
 
 private:
   class impl;
