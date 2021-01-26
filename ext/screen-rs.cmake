@@ -17,15 +17,17 @@ else()
     set(SCREEN_LIB "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libscreen_rs.a")
 endif()
 
+set(SCREEN_LIB_D "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libscreen_rs.d")
 set(SCREEN_CXX "${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/src/Api.cc")
 
 add_library(screen-rs STATIC ${SCREEN_CXX})
 
 target_link_libraries(
     screen-rs
-    pthread
-    dl
-    ${SCREEN_LIB}
+        pthread
+        dl
+        ${SCREEN_LIB}
+        ${SCREEN_LIB_D}
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/src)
