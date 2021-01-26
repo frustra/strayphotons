@@ -11,6 +11,4 @@ fn main() {
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/Api.cc");
     println!("cargo:rerun-if-changed=include/Api.hh");
-    println!("cargo:rerun-if-changed=src/Screen.cc");
-    println!("cargo:rerun-if-changed=include/Screen.hh");
 }

@@ -23,8 +23,8 @@ else()
 endif()
 
 set(SCREEN_LIB_D "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libscreen_rs.d")
-set(SCREEN_CXX "${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/src/Screen.cc")
-set(SCREEN_HXX "${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/src/Screen.hh")
+set(SCREEN_CXX "${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/target/cxxbridge/screen-rs/src/lib.rs.cc")
+set(SCREEN_HXX "${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/target/cxxbridge/screen-rs/src/lib.rs.h")
 
 add_library(screen-rs STATIC ${SCREEN_LIB})
 
@@ -39,6 +39,8 @@ set_target_properties(screen-rs PROPERTIES LINKER_LANGUAGE CXX)
 add_custom_target(screen_lib ALL
     COMMENT "Compiling screen module"
     OUTPUT ${SCREEN_CXX}
+    COMMAND cargo install cxxbridge-cmd
+    COMMAND cxxbridge --header --output "${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/target/cxxbridge/rust/cxx.h"
     COMMAND CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}/cargo/ RUSTFLAGS="${RUST_FLAGS}" ${CARGO_CMD}
     COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/screen-rs/src/lib.rs.cc ${SCREEN_CXX}
     COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/screen-rs/src/lib.rs.h ${SCREEN_HXX}
