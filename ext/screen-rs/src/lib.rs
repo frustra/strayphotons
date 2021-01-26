@@ -9,6 +9,7 @@ use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
 use winit_input_helper::WinitInputHelper;
+use winit::platform::unix::EventLoopExtUnix;
 
 #[cxx::bridge(namespace = "sp")]
 mod ffi {
@@ -38,7 +39,7 @@ mod ffi {
 pub fn new_screen(width: u32, height: u32) {
     thread::spawn(move||{
         env_logger::init();
-        let event_loop = EventLoop::new();
+        let event_loop: EventLoop<()> = EventLoop::new_any_thread();
         let mut input = WinitInputHelper::new();
         let window = {
             let size = LogicalSize::new(width as f64, height as f64);
@@ -59,7 +60,7 @@ pub fn new_screen(width: u32, height: u32) {
         let client = ffi::connect();
         client.set_frame(pixels.get_frame());
 
-        event_loop.run(move |event, _, control_flow| {
+        /*event_loop.run(move |event: Event<'_, T>, _, control_flow| {
             // Draw the current frame
             if let Event::RedrawRequested(_) = event {
                 if pixels
@@ -89,6 +90,6 @@ pub fn new_screen(width: u32, height: u32) {
                 //world.update();
                 window.request_redraw();
             }
-        });
+        });*/
     });
 }
