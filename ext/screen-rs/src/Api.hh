@@ -8,8 +8,8 @@ class Api {
 public:
   Api();
   void set_frame(rust::Slice<uint8_t> slice) const;
-  const uint8_t* get_frame();
-  size_t get_size();
+  static const uint8_t* get_frame();
+  static size_t get_size();
 
 private:
   class impl;

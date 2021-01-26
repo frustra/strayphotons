@@ -22,7 +22,6 @@ else()
     set(SCREEN_LIB "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libscreen_rs.a")
 endif()
 
-#set(SCREEN_LIB_D "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libscreen_rs.d")
 set(SCREEN_CXX "${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/target/cxxbridge/screen-rs/src/lib.rs.cc")
 set(SCREEN_HXX "${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/target/cxxbridge/screen-rs/src/lib.rs.h")
 
@@ -30,6 +29,7 @@ add_library(screen-rs STATIC ${SCREEN_LIB})
 
 target_link_libraries(
     screen-rs
+        ${SCREEN_LIB}
 )
 
 set_target_properties(screen-rs PROPERTIES LINKER_LANGUAGE CXX)
@@ -46,7 +46,7 @@ add_custom_target(screen_lib ALL
     COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/screen-rs/src/lib.rs.cc ${SCREEN_CXX}
     COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/screen-rs/src/lib.rs.h ${SCREEN_HXX}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/screen-rs
-    BYPRODUCTS ${SCREEN_LIB} ${SCREEN_LIB_D})
+    BYPRODUCTS ${SCREEN_LIB})
 
 add_dependencies(${PROJECT_LIB} screen_lib)
 

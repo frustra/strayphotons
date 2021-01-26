@@ -13,6 +13,7 @@ option(SP_NO_MODEL_COMPILE "Disable the model compiler, which needs Node.js" off
 
 option (ENABLE_SCREEN_RS "Enable remote screen sessions" on)
 if (ENABLE_SCREEN_RS)
+	include_directories(${CMAKE_SOURCE_DIR}/ext/screen-rs/src)
 	include_directories(${CMAKE_SOURCE_DIR}/ext/screen-rs/target/cxxbridge/screen-rs/src)
 endif()
 

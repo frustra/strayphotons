@@ -158,10 +158,11 @@ namespace sp {
         }
     });
 
-    inline void GetFrame(Texture &tex, uint8 &buf, size_t size)
+    inline void GetFrame(Texture &tex, const uint8_t* buf, size_t size)
     {
+        Assert(buf != nullptr, "NULL Frame Buffer!");
         glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-        glGetTextureImage(tex.handle, 0, GL_RGBA, GL_UNSIGNED_BYTE, size, &buf);
+        glGetTextureImage(tex.handle, 0, GL_RGBA, GL_UNSIGNED_BYTE, size, (void*)buf);
     }
 
     void SaveScreenshot(string path, Texture &tex) {
@@ -177,7 +178,7 @@ namespace sp {
 
         size_t size = tex.width * tex.height * 4;
         uint8 *buf = new uint8[size], *flipped = new uint8[size];
-        GetFrame(tex, *buf, size);
+        GetFrame(tex, buf, size);
 
         for (int y = 0; y < tex.height; y++) {
             memcpy(flipped + tex.width * (tex.height - y - 1) * 4, buf + tex.width * y * 4, tex.width * 4);
