@@ -12,9 +12,9 @@ set(RUST_FLAGS "-Clinker-plugin-lto" "-Clinker=clang-11" "-Clink-arg=-fuse-ld=ll
 endif()
 
 if (WIN32)
-    set(SCREEN_LIB "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libscreen-rs.dll")
+    set(SCREEN_LIB "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libscreen_rs.dll")
 else()
-    set(SCREEN_LIB "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libscreen-rs.a")
+    set(SCREEN_LIB "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libscreen_rs.a")
 endif()
 
 set(SCREEN_CXX "${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/src/Api.cc")
@@ -23,10 +23,9 @@ add_library(screen-rs STATIC ${SCREEN_CXX})
 
 target_link_libraries(
     screen-rs
-    STATIC
-        pthread
-        dl
-        ${SCREEN_LIB}
+    pthread
+    dl
+    ${SCREEN_LIB}
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/src)
