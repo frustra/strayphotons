@@ -164,6 +164,9 @@ namespace sp {
     };
 
     namespace PostProcessing {
+#if defined (ENABLE_SCREEN_RS)
+        void DrawFrame();
+#endif
         void Process(Renderer *renderer, sp::Game *game, ecs::View view, const EngineRenderTargets &targets);
     }
 } // namespace sp

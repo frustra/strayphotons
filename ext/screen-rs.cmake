@@ -26,9 +26,9 @@ endif()
 
 set(SCREEN_LIB_D "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libscreen_rs.d")
 set(SCREEN_CXX "${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/src/Screen.cc")
-set(API_CXX "${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/src/Api.cc")
+set(SCREEN_HXX "${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/src/Screen.hh")
 
-add_library(screen-rs STATIC ${API_CXX})
+add_library(screen-rs STATIC ${SCREEN_LIB})
 
 target_link_libraries(
     screen-rs
@@ -38,11 +38,14 @@ target_link_libraries(
         ${SCREEN_LIB_D}
 )
 
+set_target_properties(screen-rs PROPERTIES LINKER_LANGUAGE CXX)
+
 add_custom_target(screen_lib ALL
     COMMENT "Compiling screen module"
+    OUTPUT ${SCREEN_CXX}
     COMMAND CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}/cargo/ RUSTFLAGS="${RUST_FLAGS}" ${CARGO_CMD}
     COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/screen-rs/src/lib.rs.cc ${SCREEN_CXX}
-    COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/screen-rs/src/lib.rs.h ${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/src/Screen.h
+    COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/screen-rs/src/lib.rs.h ${SCREEN_HXX}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/screen-rs
     BYPRODUCTS ${SCREEN_LIB} ${SCREEN_LIB_D})
 

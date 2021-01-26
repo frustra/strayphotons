@@ -188,9 +188,10 @@ namespace sp {
     static PostProcessingContext context;
 
 #if defined (ENABLE_SCREEN_RS)
-    void PostProcessing::DrawFrame(uint8 &buf, size_t size) {
+#include <Api.hh>
+    void PostProcessing::DrawFrame() {
         Texture tex = context.LastOutput.GetOutput()->TargetRef->GetTexture();
-        GetFrame(tex, buf, size);
+        GetFrame(tex, Api::get_frame(), Api::get_size());
     }
 #endif
 
@@ -298,6 +299,10 @@ namespace sp {
             SaveScreenshot(ScreenshotPath, lastOutput->TargetRef->GetTexture());
             ScreenshotPath = "";
         }
+
+#if defined (ENABLE_SCREEN_RS)
+        DrawFrame()
+#endif
 
         lastOutput->ReleaseDependency();
     }

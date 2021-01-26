@@ -26,7 +26,7 @@ mod ffi {
         type Api;
 
         fn connect() -> UniquePtr<Api>;
-        fn draw(&self, buf: &mut [u8], size: usize);
+        fn set_frame(&self, buf: &mut [u8]);
     }
 
     #[namespace = "screen"]
@@ -57,10 +57,11 @@ pub fn new_screen(width: u32, height: u32) {
         };
 
         let client = ffi::connect();
+        client.set_frame(pixels.get_frame());
+
         event_loop.run(move |event, _, control_flow| {
             // Draw the current frame
             if let Event::RedrawRequested(_) = event {
-                client.draw(pixels.get_frame(), (width * height * 4) as usize); // FIXME: determine size.
                 if pixels
                     .render()
                     .map_err(|e| error!("pixels.render() failed: {}", e))
