@@ -29,6 +29,7 @@ add_library(screen-rs STATIC ${SCREEN_LIB})
 
 target_link_libraries(
     screen-rs
+        rt
         ${SCREEN_LIB}
 )
 

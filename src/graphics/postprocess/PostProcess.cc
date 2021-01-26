@@ -196,7 +196,11 @@ namespace sp {
 #include <Api.hh>
     void PostProcessing::DrawFrame() {
         Texture tex = context.LastOutput.GetOutput()->TargetRef->GetTexture();
-        GetFrame(tex, Api::get_frame(), Api::get_size());
+        const uint8_t* frame = Api::get_frame();
+        size_t size = Api::get_size();
+        if (frame != nullptr && size > 0) {
+            GetFrame(tex, frame, size);
+        }
     }
 #endif
 

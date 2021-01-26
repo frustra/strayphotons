@@ -6,6 +6,7 @@
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
 
+#define ENABLE_SCREEN_RS // FIXME
 #if defined(ENABLE_SCREEN_RS)
 #include <lib.rs.h>
 #endif
@@ -117,7 +118,8 @@ namespace sp {
             glfwActionSource->BindAction(INPUT_ACTION_RESET_SCENE, INPUT_ACTION_KEYBOARD_KEYS + "/f6");
             glfwActionSource->BindAction(INPUT_ACTION_RELOAD_SHADERS, INPUT_ACTION_KEYBOARD_KEYS + "/f7");
         }
-
+        
+        Logf("Pre-Screen");
 #if defined(ENABLE_SCREEN_RS)
         Logf("New Screen");
         screen::new_screen(1920, 1080);
