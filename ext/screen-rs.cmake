@@ -14,8 +14,6 @@ include_directories(${CMAKE_SOURCE_DIR}/src/graphics/postprocess)
 
 if(ENABLE_LTO)
     set(RUST_FLAGS "-Clinker-plugin-lto" "-Clinker=clang" "-Clink-arg=-fuse-ld=lld")
-else()
-    set(RUST_FLAGS "-Clinker=clang")
 endif()
 
 if (WIN32)
@@ -32,8 +30,6 @@ add_library(screen-rs STATIC ${SCREEN_LIB})
 
 target_link_libraries(
     screen-rs
-        pthread
-        dl
         ${SCREEN_LIB}
         ${SCREEN_LIB_D}
 )

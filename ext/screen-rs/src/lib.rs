@@ -4,7 +4,7 @@
 use std::thread;
 use log::error;
 use pixels::{Pixels, SurfaceTexture};
-use winit::dpi::LogicalSize; // FIXME: Get physical size
+use winit::dpi::LogicalSize;
 use winit::event::{Event, VirtualKeyCode};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::WindowBuilder;
@@ -12,7 +12,7 @@ use winit_input_helper::WinitInputHelper;
 
 #[cxx::bridge(namespace = "sp")]
 mod ffi {
-    /*#[namespace = "shared"]
+    /*#[namespace = "shared"] // FIXME: Remove
     struct Screen {
         height: u32,
         width: u32,
