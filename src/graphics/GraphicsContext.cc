@@ -5,7 +5,10 @@
 #include "core/PerfTimer.hh"
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
+
+#if defined(ENABLE_SCREEN_RS)
 #include <Screen.h>
+#endif
 
 #include <algorithm>
 #include <ecs/systems/HumanControlSystem.hh>
@@ -115,7 +118,9 @@ namespace sp {
             glfwActionSource->BindAction(INPUT_ACTION_RELOAD_SHADERS, INPUT_ACTION_KEYBOARD_KEYS + "/f7");
         }
 
+#if defined(XRSYSTEM_OPENVR)
         screen::new_screen(1920, 1080);
+#endif
 
         Prepare();
     }

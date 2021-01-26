@@ -1,7 +1,7 @@
 # Absolute, bare-minimum version is CMake 3.13.
 # Attempting to downgrade to anything less (Ubuntu 18.04 still ships with CMake 3.10.2)
 # will result in CMake compile errors in the ext directory.
-cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 project(sp VERSION 0.1)
 
 set(SP_VERSION_MAJOR "${CMAKE_PROJECT_VERSION_MAJOR}")
@@ -11,7 +11,12 @@ set(SP_VERSION "${SP_VERSION_MAJOR}.${SP_VERSION_MINOR}")
 option(SP_PACKAGE_RELEASE "Build packaged release" off)
 option(SP_NO_MODEL_COMPILE "Disable the model compiler, which needs Node.js" off)
 
-option(ENABLE_LTO "Enable cross language linking time optimization" OFF)
+option (ENABLE_SCREEN_RS "Enable remote screen sessions" off)
+if (ENABLE_SCREEN_RS)
+	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ext/screen-rs/src)
+endif()
+
+option(ENABLE_LTO "Enable cross language linking time optimization" off)
 if(ENABLE_LTO)
   include(CheckIPOSupported)
   check_ipo_supported(RESULT supported OUTPUT error)
@@ -138,8 +143,6 @@ target_include_directories(
 	PRIVATE
 		src
 )
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ext/screen-rs/src)
 
 add_subdirectory(src)
 
@@ -279,8 +282,15 @@ target_link_libraries(
 		cxxopts
 		OpenGL::GL
 		picojson
+)
+
+if (ENABLE_SCREEN_RS)
+target_link_libraries(
+	${PROJECT_LIB}
+	PUBLIC
 		screen-rs
 )
+endif()
 
 target_link_libraries(
 	${PROJECT_EXE}

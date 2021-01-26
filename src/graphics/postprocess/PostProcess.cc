@@ -187,10 +187,12 @@ namespace sp {
 
     static PostProcessingContext context;
 
+#if defined (ENABLE_SCREEN_RS)
     void PostProcessing::DrawFrame(uint8 &buf, size_t size) {
         Texture tex = context.LastOutput.GetOutput()->TargetRef->GetTexture();
         GetFrame(tex, buf, size);
     }
+#endif
 
     void PostProcessing::Process(Renderer *renderer,
                                  sp::Game *game,

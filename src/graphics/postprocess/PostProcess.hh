@@ -164,7 +164,6 @@ namespace sp {
     };
 
     namespace PostProcessing {
-        void DrawFrame(uint8 &buf, size_t size);
         void Process(Renderer *renderer, sp::Game *game, ecs::View view, const EngineRenderTargets &targets);
     }
 } // namespace sp

@@ -7,7 +7,7 @@ namespace sp {
 class Api {
 public:
   Api();
-  void draw(rust::Slice<uint8_t>, size_t size) const;
+  void draw(rust::Slice<const uint8_t> slice, size_t size) const;
 
 private:
   class impl;
@@ -15,5 +15,9 @@ private:
 };
 
 std::unique_ptr<Api> connect();
+
+namespace PostProcessing {
+  void DrawFrame(uint8 &buf, size_t size);
+}
 
 } // namespace sp

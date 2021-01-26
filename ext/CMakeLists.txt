@@ -35,4 +35,7 @@ include(glomerate.cmake)
 include(murmurhash.cmake)
 include(vhacd.cmake)
 include(picojson.cmake)
-include(screen-rs.cmake)
+
+if(ENABLE_SCREEN_RS)
+    include(screen-rs.cmake)
+endif()

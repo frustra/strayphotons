@@ -21,7 +21,8 @@ mod ffi {
     }*/
 
     unsafe extern "C++" {
-        include!("Api.hh");
+        include!("screen-rs/src/Api.hh");
+
         type Api;
 
         fn connect() -> UniquePtr<Api>;
