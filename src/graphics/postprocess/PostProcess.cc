@@ -18,6 +18,10 @@
 #include "graphics/postprocess/SSAO.hh"
 #include "graphics/postprocess/ViewGBuffer.hh"
 
+#if defined(ENABLE_SCREEN_RS)
+#include <lib.rs.h>
+#endif
+
 #include <filesystem>
 #include <stb_image_write.h>
 
@@ -301,7 +305,7 @@ namespace sp {
         }
 
 #if defined (ENABLE_SCREEN_RS)
-        DrawFrame()
+        DrawFrame();
 #endif
 
         lastOutput->ReleaseDependency();

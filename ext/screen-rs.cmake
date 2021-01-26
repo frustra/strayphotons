@@ -22,7 +22,7 @@ else()
     set(SCREEN_LIB "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libscreen_rs.a")
 endif()
 
-set(SCREEN_LIB_D "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libscreen_rs.d")
+#set(SCREEN_LIB_D "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/libscreen_rs.d")
 set(SCREEN_CXX "${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/target/cxxbridge/screen-rs/src/lib.rs.cc")
 set(SCREEN_HXX "${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/target/cxxbridge/screen-rs/src/lib.rs.h")
 
@@ -30,11 +30,12 @@ add_library(screen-rs STATIC ${SCREEN_LIB})
 
 target_link_libraries(
     screen-rs
-        ${SCREEN_LIB}
-        ${SCREEN_LIB_D}
 )
 
 set_target_properties(screen-rs PROPERTIES LINKER_LANGUAGE CXX)
+
+find_program(CXXBRIDGE cxxbridge REQUIRED PATHS $ENV{HOME}/.cargo/bin)
+message(STATUS "Using cxxbridge: ${CXXBRIDGE}")
 
 add_custom_target(screen_lib ALL
     COMMENT "Compiling screen module"

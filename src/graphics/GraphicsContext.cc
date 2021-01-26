@@ -7,7 +7,7 @@
 #include "graphics/ShaderManager.hh"
 
 #if defined(ENABLE_SCREEN_RS)
-#include <Screen.h>
+#include <lib.rs.h>
 #endif
 
 #include <algorithm>
@@ -118,7 +118,8 @@ namespace sp {
             glfwActionSource->BindAction(INPUT_ACTION_RELOAD_SHADERS, INPUT_ACTION_KEYBOARD_KEYS + "/f7");
         }
 
-#if defined(XRSYSTEM_OPENVR)
+#if defined(ENABLE_SCREEN_RS)
+        Logf("New Screen");
         screen::new_screen(1920, 1080);
 #endif
 
