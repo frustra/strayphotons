@@ -1,10 +1,10 @@
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 set(CARGO_CMD cargo build --verbose)
-set(TARGET_DIR "debug")
+set(CARGO_TARGET_DIR "debug")
 else ()
 set(CARGO_CMD cargo build --release --verbose)
-set(TARGET_DIR "release")
+set(CARGO_TARGET_DIR "release")
 endif ()
 
 if(ENABLE_LTO)
@@ -30,6 +30,7 @@ target_link_libraries(
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/screen-rs/src)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../graphics)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../graphics/postprocess)
 
 add_custom_target(screen_lib ALL

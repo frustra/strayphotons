@@ -5,7 +5,7 @@
 #include "core/PerfTimer.hh"
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
-#include "ext/screen/src/screen.h" // FIXME: add population to cmake
+#include <Screen.h>
 
 #include <algorithm>
 #include <ecs/systems/HumanControlSystem.hh>
