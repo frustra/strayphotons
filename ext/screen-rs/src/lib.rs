@@ -5,10 +5,11 @@ use std::thread;
 use log::error;
 use pixels::{Pixels, SurfaceTexture};
 use winit::dpi::LogicalSize;
-use winit::event::{Event, VirtualKeyCode};
-use winit::event_loop::{ControlFlow, EventLoop};
+//use winit::event::{Event, VirtualKeyCode};
+//use winit::event_loop::ControlFlow;
+use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
-use winit_input_helper::WinitInputHelper;
+//use winit_input_helper::WinitInputHelper;
 use winit::platform::unix::EventLoopExtUnix;
 
 #[cxx::bridge(namespace = "sp")]
@@ -32,15 +33,15 @@ mod ffi {
 
     #[namespace = "screen"]
     extern "Rust" {
-        fn new_screen(width: u32, height: u32);
+        unsafe fn new_screen(width: u32, height: u32);
     }
 }
 
-pub fn new_screen(width: u32, height: u32) {
+pub unsafe fn new_screen(width: u32, height: u32) {
     thread::spawn(move||{
         env_logger::init();
         let event_loop: EventLoop<()> = EventLoop::new_any_thread();
-        let mut input = WinitInputHelper::new();
+        //let mut input = WinitInputHelper::new();
         let window = {
             let size = LogicalSize::new(width as f64, height as f64);
             WindowBuilder::new()
@@ -59,7 +60,7 @@ pub fn new_screen(width: u32, height: u32) {
 
         let client = ffi::connect();
         client.set_frame(pixels.get_frame());
-        pixels.render();
+        let _err = pixels.render();
         window.request_redraw();
 
         /*event_loop.run(move |event: Event<'_, T>, _, control_flow| {
