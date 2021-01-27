@@ -122,7 +122,7 @@ namespace sp {
         Logf("Pre-Screen");
 #if defined(ENABLE_SCREEN_RS)
         Logf("New Screen");
-        screen::new_screen(1920, 1080);
+        screen::new_screen(initialSize.x, initialSize.y);
 #endif
 
         Prepare();

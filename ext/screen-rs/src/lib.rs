@@ -59,6 +59,8 @@ pub fn new_screen(width: u32, height: u32) {
 
         let client = ffi::connect();
         client.set_frame(pixels.get_frame());
+        pixels.render();
+        window.request_redraw();
 
         /*event_loop.run(move |event: Event<'_, T>, _, control_flow| {
             // Draw the current frame
