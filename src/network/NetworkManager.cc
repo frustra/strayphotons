@@ -17,6 +17,8 @@ namespace sp {
         }
 
         void NetworkManager::Connect(std::string args) {
+            game->logic.UnloadScene();
+            game->entityManager.DestroyAllWith<ecs::Owner>(ecs::Owner(ecs::Owner::OwnerType::PLAYER, 1));
             // client = zmq::socket_t(ctx, zmq::socket_type::dealer);
             // client.connect("tcp://127.0.0.1:8000");
 
@@ -24,6 +26,7 @@ namespace sp {
         }
 
         void NetworkManager::Disconnect() {
+            game->entityManager.DestroyAllWith<ecs::Owner>(ecs::Owner(ecs::Owner::OwnerType::PLAYER, 1));
             // if (client) { client.close(); }
         }
 

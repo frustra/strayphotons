@@ -107,6 +107,53 @@ namespace sp {
             // }
         }
 
+        /*void ServerHandler::ReceiveMessage() {
+            zmq::message_t msg;
+            auto result = client.recv(msg, zmq::recv_flags::dontwait);
+            if (result) {
+                picojson::value root;
+                string err = picojson::parse(root, msg.to_string());
+                if (!err.empty()) {
+                    Logf("%s", msg.to_string());
+                    Errorf(err);
+                } else {
+                    auto ent = root.get<picojson::object>();
+                    
+                    if (ent.count("_name")) {
+                        Tecs::Entity entity = lock.NewEntity();
+                        auto name = ent["_name"].get<string>();
+                        entity.Set<ecs::Name>(lock, name);
+                        if (namedEntities.count(name) != 0) { throw std::runtime_error("Duplicate entity name: " + name); }
+                        namedEntities.emplace(name, entity);
+                    }
+                    for (auto param : ent) {
+                        if (param.first == "fov") {
+                            view.fov = glm::radians(param.second.get<double>());
+                        } else {
+                            if (param.first == "extents") {
+                                view.extents = sp::MakeVec2(param.second);
+                            } else if (param.first == "clip") {
+                                view.clip = sp::MakeVec2(param.second);
+                            } else if (param.first == "offset") {
+                                view.offset = sp::MakeVec2(param.second);
+                            } else if (param.first == "clear") {
+                                view.clearColor = glm::vec4(sp::MakeVec3(param.second), 1.0f);
+                            } else if (param.first == "sky") {
+                                view.skyIlluminance = param.second.get<double>();
+                            }
+                        }
+                    }
+                    auto autoExecList = root.get<picojson::object>()["autoexec"];
+                    if (autoExecList.is<picojson::array>()) {
+                        for (auto value : autoExecList.get<picojson::array>()) {
+                            auto line = value.get<string>();
+                            scene->autoExecList.push_back(line);
+                        }
+                    }
+                }
+            }
+        }*/
+
         void ServerHandler::ListenerThread() {
             server = kissnet::tcp_socket({"127.0.0.1", 8000});
             server.bind();
