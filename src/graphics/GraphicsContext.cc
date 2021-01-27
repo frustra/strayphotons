@@ -6,7 +6,6 @@
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
 
-#define ENABLE_SCREEN_RS // FIXME
 #if defined(ENABLE_SCREEN_RS)
 #include <lib.rs.h>
 #endif

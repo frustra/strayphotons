@@ -11,6 +11,7 @@ use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
 //use winit_input_helper::WinitInputHelper;
 use winit::platform::unix::EventLoopExtUnix;
+// use winit::platform::windows::EventLoopExtWindows;
 
 #[cxx::bridge(namespace = "sp")]
 mod ffi {
@@ -23,7 +24,7 @@ mod ffi {
     }*/
 
     unsafe extern "C++" {
-        include!("screen-rs/src/Api.hh");
+        include!("Api.hh");
 
         type Api;
 

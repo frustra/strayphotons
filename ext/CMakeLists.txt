@@ -20,6 +20,7 @@ add_subdirectory(cxxopts)
 
 add_subdirectory(Tecs)
 add_subdirectory(robin-hood-hashing)
+add_subdirectory(screen-rs)
 
 # These projects require more configuration that is encapsulated their own CMake files
 include(PhysX.cmake)
@@ -35,7 +36,3 @@ include(glomerate.cmake)
 include(murmurhash.cmake)
 include(vhacd.cmake)
 include(picojson.cmake)
-
-if(ENABLE_SCREEN_RS)
-    include(screen-rs.cmake)
-endif()

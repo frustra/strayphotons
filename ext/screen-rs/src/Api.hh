@@ -1,5 +1,5 @@
 #pragma once
-#include "../target/cxxbridge/rust/cxx.h"
+#include <rust/cxx.h>
 #include <memory>
 
 namespace sp {

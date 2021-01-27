@@ -1,5 +1,5 @@
 #include "Api.hh"
-#include "../target/cxxbridge/screen-rs/src/lib.rs.h"
+#include <screen-rs/src/lib.rs.h>
 
 namespace sp {
 

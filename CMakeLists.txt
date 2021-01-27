@@ -11,11 +11,7 @@ set(SP_VERSION "${SP_VERSION_MAJOR}.${SP_VERSION_MINOR}")
 option(SP_PACKAGE_RELEASE "Build packaged release" off)
 option(SP_NO_MODEL_COMPILE "Disable the model compiler, which needs Node.js" off)
 
-option (ENABLE_SCREEN_RS "Enable remote screen sessions" on)
-if (ENABLE_SCREEN_RS)
-	include_directories(${CMAKE_SOURCE_DIR}/ext/screen-rs/src)
-	include_directories(${CMAKE_SOURCE_DIR}/ext/screen-rs/target/cxxbridge/screen-rs/src)
-endif()
+option(ENABLE_SCREEN_RS "Enable remote screen sessions" on)
 
 option(ENABLE_LTO "Enable cross language linking time optimization" off)
 if(ENABLE_LTO)
