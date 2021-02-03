@@ -11,6 +11,14 @@ namespace sp {
     class Game;
 
     namespace network {
+        struct Peer {
+            kissnet::tcp_socket socket;
+            BufferedSocketInput input;
+            BufferedSocketOutput output;
+
+            Peer(kissnet::tcp_socket &&sock) : socket(std::move(sock)), input(socket), output(socket) {}
+        };
+
         class ServerHandler {
         public:
             ServerHandler(Game *game);
@@ -30,12 +38,11 @@ namespace sp {
             Game *game;
             ecs::ECS &ecs;
 
-            std::atomic_bool listening = false;
+            std::atomic_bool running = false;
             std::thread listenerThread;
             std::thread writerThread;
 
             kissnet::tcp_socket server;
-            typedef std::tuple<kissnet::tcp_socket, BufferedSocketInput, BufferedSocketOutput> Peer;
             std::vector<Peer> peers;
 
             ecs::Observer<ecs::Added<ecs::Network>> networkAddition;

@@ -1,6 +1,12 @@
 syntax = "proto3";
 
 message Message {
-	int32 id = 1;
-	string data = 2;
+	enum Action {
+		PING = 0;
+		CREATE_ENTITY = 1;
+		UPDATE_ENTITY = 2;
+	}
+	Action action = 1;
+	uint64 id = 2;
+	string data = 3;
 }

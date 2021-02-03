@@ -26,9 +26,10 @@ namespace sp {
         }
 
         void ServerHandler::StartServer(std::string args) {
-            bool previous = listening.exchange(true);
+            bool previous = running.exchange(true);
             if (!previous) {
                 listenerThread = std::thread(&ServerHandler::ListenerThread, this);
+                writerThread = std::thread(&ServerHandler::WriterThread, this);
             } else {
                 auto endpoint = server.get_bind_loc();
                 Errorf("Server is already running at: %s:%d", endpoint.address, endpoint.port);
@@ -36,9 +37,10 @@ namespace sp {
         }
 
         void ServerHandler::StopServer() {
-            bool previous = listening.exchange(false);
+            bool previous = running.exchange(false);
             if (previous) {
-                if (server) server.close();
+                Logf("Stopping server...");
+                if (writerThread.joinable()) writerThread.join();
                 if (listenerThread.joinable()) listenerThread.join();
             } else {
                 Errorf("No server is currently running");
@@ -51,8 +53,8 @@ namespace sp {
                                          bool create) {
             bool updated = create;
             picojson::object msg;
-            msg["_action"] = picojson::value(create ? "create" : "update");
-            msg["_id"] = picojson::value((int64_t)e.id);
+            // msg["_action"] = picojson::value(create ? "create" : "update");
+            // msg["_id"] = picojson::value((int64_t)e.id);
             if (e.Has<ecs::Name>(lock)) { msg["_name"] = picojson::value(e.Get<ecs::Name>(lock)); }
             for (auto &networkComponent : network.components) {
                 if (networkComponent.component->name == "renderable" && e.Has<ecs::Renderable>(lock)) {
@@ -93,18 +95,23 @@ namespace sp {
                     }
                 }
             }
-            // if (updated) {
-            //     auto str = picojson::value(msg).serialize();
-            //     for (auto &peer : peers) {
-            //         std::array<zmq::const_buffer, 2> send_msgs = {
-            //             zmq::buffer(peer),
-            //             zmq::buffer(str)
-            //         };
-            //         if (!zmq::send_multipart(server, send_msgs)) {
-            //             Errorf("Server failed to send message");
-            //         }
-            //     }
-            // }
+            if (updated) {
+                auto str = picojson::value(msg).serialize();
+                for (auto &peer : peers) {
+                    // std::array<zmq::const_buffer, 2> send_msgs = {
+                    //     zmq::buffer(peer),
+                    //     zmq::buffer(str)
+                    // };
+                    // if (!zmq::send_multipart(server, send_msgs)) {
+                    //     Errorf("Server failed to send message");
+                    // }
+                    Message msg;
+                    msg.set_action(create ? Message_Action_CREATE_ENTITY : Message_Action_UPDATE_ENTITY);
+                    msg.set_id(e.id);
+                    msg.set_data(str);
+                    google::protobuf::util::SerializeDelimitedToZeroCopyStream(msg, &peer.output);
+                }
+            }
         }
 
         /*void ServerHandler::ReceiveMessage() {
@@ -158,40 +165,59 @@ namespace sp {
             server = kissnet::tcp_socket({"127.0.0.1", 8000});
             server.bind();
             server.listen();
+            server.set_non_blocking(true);
 
-            while (listening && server) {
+            while (running && server) {
                 auto client = server.accept();
                 if (client) {
-                    auto output = BufferedSocketOutput(client);
+                    auto &peer = peers.emplace_back(std::move(client));
+
                     Message msg;
+                    msg.set_action(Message_Action_PING);
                     msg.set_id(42);
                     msg.set_data("Hello World");
-                    google::protobuf::util::SerializeDelimitedToZeroCopyStream(msg, &output);
-                    std::cout << "Flush: " << output.FlushBuffer() << std::endl;
-
-                    // std::string msg = "Hello World\r\n";
-                    // client.send(reinterpret_cast<const std::byte *>(msg.c_str()), msg.size());
-                    client.close();
+                    google::protobuf::util::SerializeDelimitedToZeroCopyStream(msg, &peer.output);
                 }
+
+                for (auto &[socket, input, output] : peers) {
+                    output.FlushBuffer();
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
+            Logf("Disconnecting peers...");
+            for (auto &[socket, input, output] : peers) {
+                // Flush remaining buffer
+                output.Close();
+                while (output.FlushBuffer())
+                    ;
+                // Close the TCP socket
+                socket.close();
+            }
+            peers.clear();
+            server.close();
+            Logf("Server listener shutdown.");
         }
 
         void ServerHandler::WriterThread() {
-            if (server) {
-                auto lock = ecs.StartTransaction<ecs::ReadNetworkCompoenents, ecs::Write<ecs::Network>>();
-                ecs::Added<ecs::Network> addedNetwork;
-                while (networkAddition.Poll(lock, addedNetwork)) {
-                    auto &e = addedNetwork.entity;
-                    if (e.Has<ecs::Network>(lock)) {
+            while (running && server) {
+                {
+                    auto lock = ecs.StartTransaction<ecs::ReadNetworkCompoenents, ecs::Write<ecs::Network>>();
+                    ecs::Added<ecs::Network> addedNetwork;
+                    while (networkAddition.Poll(lock, addedNetwork)) {
+                        auto &e = addedNetwork.entity;
+                        if (e.Has<ecs::Network>(lock)) {
+                            auto &network = e.Get<ecs::Network>(lock);
+                            UpdateEntity(lock, e, network, true);
+                        }
+                    }
+                    for (auto e : lock.EntitiesWith<ecs::Network>()) {
                         auto &network = e.Get<ecs::Network>(lock);
-                        UpdateEntity(lock, e, network, true);
+                        UpdateEntity(lock, e, network);
                     }
                 }
-                for (auto e : lock.EntitiesWith<ecs::Network>()) {
-                    auto &network = e.Get<ecs::Network>(lock);
-                    UpdateEntity(lock, e, network);
-                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
+            Logf("Server writer shutdown.");
         }
     }; // namespace network
 }; // namespace sp

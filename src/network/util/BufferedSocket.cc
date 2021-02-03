@@ -59,8 +59,10 @@ namespace sp {
                 *size = inputOffset - outputOffset;
                 if ((int)maxSize < *size) *size = maxSize;
                 *data = pool[buffer[blockIndex]].second.data() + blockOffset;
+                outputOffset += *size;
                 return true;
             } else {
+                *size = 0;
                 return !endOfStream;
             }
         }
@@ -147,6 +149,10 @@ namespace sp {
                 }
             }
             return false;
+        }
+
+        void BufferedSocketOutput::Close() {
+            stream.CloseInput();
         }
     } // namespace network
 } // namespace sp

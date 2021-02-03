@@ -6,6 +6,7 @@
 
 namespace sp {
     namespace network {
+        // TODO(xthexder): Make sure this is thread-safe & tested.
         class BufferedStream {
         public:
             BufferedStream();
@@ -44,6 +45,7 @@ namespace sp {
         class BufferedSocketInput : public google::protobuf::io::ZeroCopyInputStream {
         public:
             BufferedSocketInput(kissnet::tcp_socket &socket) : socket(socket) {}
+            BufferedSocketInput(BufferedSocketInput &&other) : socket(other.socket), stream(std::move(other.stream)) {}
 
             bool Next(const void **data, int *size) override;
 
@@ -69,6 +71,8 @@ namespace sp {
             BufferedSocketOutput(kissnet::tcp_socket &socket) : socket(socket) {
                 socket.set_non_blocking(true);
             }
+            BufferedSocketOutput(BufferedSocketOutput &&other)
+                : socket(other.socket), stream(std::move(other.stream)) {}
 
             bool Next(void **data, int *size) override {
                 return stream.NextInput(reinterpret_cast<std::byte **>(data), size);
@@ -91,6 +95,7 @@ namespace sp {
             }
 
             bool FlushBuffer();
+            void Close();
 
         private:
             kissnet::tcp_socket &socket;
