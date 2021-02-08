@@ -54,7 +54,7 @@
 	url = https://github.com/AnalyticalGraphicsInc/gltf-pipeline.git
 [submodule "ext/glfw"]
 	path = ext/glfw
-	url = git@github.com:frustra/glfw.git
+	url = https://github.com/frustra/glfw.git
 [submodule "ext/Tecs"]
 	path = ext/Tecs
 	url = https://github.com/xthexder/Tecs.git
