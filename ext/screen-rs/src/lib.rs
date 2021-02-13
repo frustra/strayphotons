@@ -2,7 +2,7 @@
 //#![forbid(unsafe_code)]
 
 use std::thread;
-use log::error;
+// use log::error;
 use pixels::{Pixels, SurfaceTexture};
 use winit::dpi::LogicalSize;
 //use winit::event::{Event, VirtualKeyCode};
@@ -10,8 +10,10 @@ use winit::dpi::LogicalSize;
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
 //use winit_input_helper::WinitInputHelper;
+#[cfg(unix)]
 use winit::platform::unix::EventLoopExtUnix;
-// use winit::platform::windows::EventLoopExtWindows;
+#[cfg(windows)]
+use winit::platform::windows::EventLoopExtWindows;
 
 #[cxx::bridge(namespace = "sp")]
 mod ffi {
