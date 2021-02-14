@@ -35,3 +35,16 @@ buildModels:
       long: Don't run the model compiler if a model has changed. Don't check in uncompiled models!
       settings: 
         SP_NO_MODEL_COMPILE: on
+buildRust:
+  default: yes
+  choices:
+    yes:
+      short: With Rust
+      long: Build and link against rust modules
+      settings:
+        SP_BUILD_RUST: on
+    no:
+      short: Without Rust
+      long: Don't build any rust modules
+      settings:
+        SP_BUILD_RUST: off

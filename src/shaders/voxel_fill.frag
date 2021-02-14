@@ -84,6 +84,10 @@ void main()
 	if (lightAttenuation > 0) {
 		vec3 directDiffuseColor = baseColor.rgb - baseColor.rgb * metalness;
 		vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, inNormal, vec2(0));
+		// Hacky bug fix: For some reason this will occasionally return NaN and poison the whole voxel grid.
+		if (any(isnan(indirectDiffuse))) {
+			indirectDiffuse = vec3(0.0);
+		}
 		pixelLuminance += indirectDiffuse * directDiffuseColor * lightAttenuation * smoothstep(0.0, 0.1, length(indirectDiffuse));
 	}
 

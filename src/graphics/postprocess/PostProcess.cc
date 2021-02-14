@@ -18,10 +18,6 @@
 #include "graphics/postprocess/SSAO.hh"
 #include "graphics/postprocess/ViewGBuffer.hh"
 
-#if defined(ENABLE_SCREEN_RS)
-#include <lib.rs.h>
-#endif
-
 #include <filesystem>
 #include <stb_image_write.h>
 
@@ -192,18 +188,6 @@ namespace sp {
 
     static PostProcessingContext context;
 
-#if defined (ENABLE_SCREEN_RS)
-#include <Api.hh>
-    void PostProcessing::DrawFrame() {
-        Texture tex = context.LastOutput.GetOutput()->TargetRef->GetTexture();
-        const uint8_t* frame = Api::get_frame();
-        size_t size = Api::get_size();
-        if (frame != nullptr && size > 0) {
-            GetFrame(tex, frame, size);
-        }
-    }
-#endif
-
     void PostProcessing::Process(Renderer *renderer,
                                  sp::Game *game,
                                  ecs::View view,
@@ -308,10 +292,6 @@ namespace sp {
             SaveScreenshot(ScreenshotPath, lastOutput->TargetRef->GetTexture());
             ScreenshotPath = "";
         }
-
-#if defined (ENABLE_SCREEN_RS)
-        DrawFrame();
-#endif
 
         lastOutput->ReleaseDependency();
     }

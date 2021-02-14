@@ -10,8 +10,7 @@ set(SP_VERSION "${SP_VERSION_MAJOR}.${SP_VERSION_MINOR}")
 
 option(SP_PACKAGE_RELEASE "Build packaged release" off)
 option(SP_NO_MODEL_COMPILE "Disable the model compiler, which needs Node.js" off)
-
-option(ENABLE_SCREEN_RS "Enable remote screen sessions" on)
+option(SP_BUILD_RUST "Build and link against rust modules" on)
 
 option(ENABLE_LTO "Enable cross language linking time optimization" off)
 if(ENABLE_LTO)
@@ -26,10 +25,10 @@ if(ENABLE_LTO)
   endif()
 endif()
 
-if (CMAKE_BUILD_TYPE MATCHES Release)
+if(CMAKE_BUILD_TYPE MATCHES Release)
 	message(STATUS "sp target is Release")
 	set(SP_DEBUG 0)
-elseif (CMAKE_BUILD_TYPE MATCHES Debug)
+elseif(CMAKE_BUILD_TYPE MATCHES Debug)
 	message(STATUS "sp target is Debug")
 	set(SP_DEBUG 1)
 else()
@@ -38,7 +37,7 @@ else()
 	set(SP_DEBUG 1)
 endif()
 
-if (SP_PACKAGE_RELEASE)
+if(SP_PACKAGE_RELEASE)
 	message(STATUS "Enabling build for packaged release")
 endif()
 
@@ -50,7 +49,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ## Setup compiler flags for various build types
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 	set(CMAKE_CXX_FLAGS 				"/MP /wd4800 /wd4189 /EHsc")
 	set(CMAKE_CXX_FLAGS_RELEASE 		"/MD /O2")
@@ -236,6 +235,22 @@ if(XRSYSTEM_OPENVR)
 	)
 endif()
 
+if(SP_BUILD_RUST)
+	add_subdirectory(rust)
+	
+	target_compile_definitions(
+		${PROJECT_LIB}
+		PRIVATE
+			RUST_CXX
+	)
+
+	target_link_libraries(
+		${PROJECT_LIB}
+		PRIVATE
+			sp-rust
+	)
+endif()
+
 ## END COMPILE DEFINITIONS ##
 
 if (SP_PACKAGE_RELEASE)
@@ -280,20 +295,6 @@ target_link_libraries(
 		OpenGL::GL
 		picojson
 )
-
-if (ENABLE_SCREEN_RS)
-target_compile_definitions(
-	${PROJECT_LIB}
-	PRIVATE
-	ENABLE_SCREEN_RS
-)
-
-target_link_libraries(
-	${PROJECT_LIB}
-	PUBLIC
-		screen-rs
-)
-endif()
 
 target_link_libraries(
 	${PROJECT_EXE}

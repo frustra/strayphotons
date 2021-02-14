@@ -6,10 +6,6 @@
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
 
-#if defined(ENABLE_SCREEN_RS)
-#include <lib.rs.h>
-#endif
-
 #include <algorithm>
 #include <ecs/systems/HumanControlSystem.hh>
 #include <game/input/GlfwActionSource.hh>
@@ -117,12 +113,6 @@ namespace sp {
             glfwActionSource->BindAction(INPUT_ACTION_RESET_SCENE, INPUT_ACTION_KEYBOARD_KEYS + "/f6");
             glfwActionSource->BindAction(INPUT_ACTION_RELOAD_SHADERS, INPUT_ACTION_KEYBOARD_KEYS + "/f7");
         }
-        
-        Logf("Pre-Screen");
-#if defined(ENABLE_SCREEN_RS)
-        Logf("New Screen");
-        screen::new_screen(initialSize.x, initialSize.y);
-#endif
 
         Prepare();
     }
