@@ -1,7 +1,7 @@
 Stray Photons
 =============
 
-Build setup
+Build setup [![Build status](https://badge.buildkite.com/6ad6424eb4ac47ecf0738dfa96d3f011019a39d7b6066c363e.svg)](https://buildkite.com/frustra/strayphotons)
 -----------
 
 ### Install latest graphics drivers
