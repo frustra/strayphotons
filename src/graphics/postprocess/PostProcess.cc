@@ -154,13 +154,6 @@ namespace sp {
         }
     });
 
-    inline void GetFrame(Texture &tex, const uint8_t* buf, size_t size)
-    {
-        Assert(buf != nullptr, "NULL Frame Buffer!");
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-        glGetTextureImage(tex.handle, 0, GL_RGBA, GL_UNSIGNED_BYTE, size, (void*)buf);
-    }
-
     void SaveScreenshot(string path, Texture &tex) {
         auto base = std::filesystem::absolute("screenshots");
         if (!std::filesystem::is_directory(base)) {
@@ -174,7 +167,8 @@ namespace sp {
 
         size_t size = tex.width * tex.height * 4;
         uint8 *buf = new uint8[size], *flipped = new uint8[size];
-        GetFrame(tex, buf, size);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+        glGetTextureImage(tex.handle, 0, GL_RGBA, GL_UNSIGNED_BYTE, size, buf);
 
         for (int y = 0; y < tex.height; y++) {
             memcpy(flipped + tex.width * (tex.height - y - 1) * 4, buf + tex.width * y * 4, tex.width * 4);
@@ -186,8 +180,6 @@ namespace sp {
         delete[] flipped;
     }
 
-    static PostProcessingContext context;
-
     void PostProcessing::Process(Renderer *renderer,
                                  sp::Game *game,
                                  ecs::View view,
@@ -196,6 +188,7 @@ namespace sp {
 
         bool renderToTexture = (targets.finalOutput != nullptr);
 
+        PostProcessingContext context;
         context.renderer = renderer;
         context.game = game;
         context.view = view;

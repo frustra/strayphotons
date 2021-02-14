@@ -237,7 +237,7 @@ endif()
 
 if(SP_BUILD_RUST)
 	add_subdirectory(rust)
-	
+
 	target_compile_definitions(
 		${PROJECT_LIB}
 		PRIVATE
