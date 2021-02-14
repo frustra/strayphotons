@@ -14,12 +14,6 @@ using namespace std;
 #ifdef _WIN32
     #include <direct.h>
     #define os_getcwd _getcwd
-
-// Instruct NVidia GPU to render this app on optimus-enabled machines (laptops with two GPUs)
-extern "C" {
-_declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
-}
-
 #else
     #include <unistd.h>
     #define os_getcwd getcwd

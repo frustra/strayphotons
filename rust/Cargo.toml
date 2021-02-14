@@ -1,0 +1,16 @@
+[package]
+name = "sp-rust"
+version = "0.1.0"
+authors = ["xthexder"]
+
+[profile.dev]
+opt-level = 2
+
+[dependencies]
+cxx = "1.0"
+
+[build-dependencies]
+cxx-build = "1.0"
+
+[lib]
+crate-type = ["staticlib"]

@@ -11,6 +11,10 @@
 #include <ecs/EcsImpl.hh>
 #include <glm/glm.hpp>
 
+#if RUST_CXX
+#include <lib.rs.h>
+#endif
+
 namespace sp {
     Game::Game(cxxopts::ParseResult &options, Script *startupScript)
         : options(options), startupScript(startupScript), graphics(this), logic(this), physics(this),
@@ -35,6 +39,10 @@ namespace sp {
                 GetConsoleManager().ParseAndExecute(cvarline);
             }
         }
+
+#if RUST_CXX
+        sp::rust::print_hello();
+#endif
 
         try {
             graphics.CreateContext();

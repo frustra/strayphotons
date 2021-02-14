@@ -1,4 +1,3 @@
-
 # Absolute, bare-minimum version is CMake 3.13.
 # Attempting to downgrade to anything less (Ubuntu 18.04 still ships with CMake 3.10.2)
 # will result in CMake compile errors in the ext directory.
@@ -11,11 +10,25 @@ set(SP_VERSION "${SP_VERSION_MAJOR}.${SP_VERSION_MINOR}")
 
 option(SP_PACKAGE_RELEASE "Build packaged release" off)
 option(SP_NO_MODEL_COMPILE "Disable the model compiler, which needs Node.js" off)
+option(SP_BUILD_RUST "Build and link against rust modules" on)
 
-if (CMAKE_BUILD_TYPE MATCHES Release)
+option(ENABLE_LTO "Enable cross language linking time optimization" off)
+if(ENABLE_LTO)
+  include(CheckIPOSupported)
+  check_ipo_supported(RESULT supported OUTPUT error)
+  if(supported)
+      message(STATUS "IPO / LTO enabled")
+      set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+      add_link_options(-fuse-ld=lld)
+  else()
+      message(STATUS "IPO / LTO not supported: <${error}>")
+  endif()
+endif()
+
+if(CMAKE_BUILD_TYPE MATCHES Release)
 	message(STATUS "sp target is Release")
 	set(SP_DEBUG 0)
-elseif (CMAKE_BUILD_TYPE MATCHES Debug)
+elseif(CMAKE_BUILD_TYPE MATCHES Debug)
 	message(STATUS "sp target is Debug")
 	set(SP_DEBUG 1)
 else()
@@ -24,7 +37,7 @@ else()
 	set(SP_DEBUG 1)
 endif()
 
-if (SP_PACKAGE_RELEASE)
+if(SP_PACKAGE_RELEASE)
 	message(STATUS "Enabling build for packaged release")
 endif()
 
@@ -36,7 +49,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ## Setup compiler flags for various build types
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 	set(CMAKE_CXX_FLAGS 				"/MP /wd4800 /wd4189 /EHsc")
 	set(CMAKE_CXX_FLAGS_RELEASE 		"/MD /O2")
@@ -164,7 +177,7 @@ if (SP_PACKAGE_RELEASE)
 		DEPENDS
 			${_glb_assets_full}
 			${_shaders_assets_full}
-		WORKING_DIRECTORY 
+		WORKING_DIRECTORY
 			${CMAKE_CURRENT_LIST_DIR}/assets
 	)
 
@@ -186,8 +199,8 @@ if (MSVC)
 	target_compile_definitions(
 		${PROJECT_LIB}
 		PUBLIC
-			_CRT_SECURE_NO_WARNINGS 
-			UNICODE 
+			_CRT_SECURE_NO_WARNINGS
+			UNICODE
 			_UNICODE
 			NOMINMAX
 			_USE_MATH_DEFINES
@@ -197,13 +210,13 @@ endif()
 if (SP_DEBUG)
 	target_compile_definitions(
 		${PROJECT_LIB}
-		PUBLIC	
+		PUBLIC
 			_DEBUG
 	)
 else()
 	target_compile_definitions(
 		${PROJECT_LIB}
-		PUBLIC	
+		PUBLIC
 			NDEBUG
 	)
 endif()
@@ -219,6 +232,22 @@ if(XRSYSTEM_OPENVR)
 		${PROJECT_LIB}
 		PRIVATE
 			openvr
+	)
+endif()
+
+if(SP_BUILD_RUST)
+	add_subdirectory(rust)
+
+	target_compile_definitions(
+		${PROJECT_LIB}
+		PRIVATE
+			RUST_CXX
+	)
+
+	target_link_libraries(
+		${PROJECT_LIB}
+		PRIVATE
+			sp-rust
 	)
 endif()
 
@@ -252,7 +281,7 @@ target_compile_options(${PROJECT_TEST_EXE} PRIVATE ${SP_TARGET_OPTIONS})
 target_link_libraries(
 	${PROJECT_LIB}
 	PUBLIC
-		${_physx_libraries} 
+		${_physx_libraries}
 		GLEW
 		vhacd
 		ImGui
