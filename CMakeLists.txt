@@ -12,19 +12,6 @@ option(SP_PACKAGE_RELEASE "Build packaged release" off)
 option(SP_NO_MODEL_COMPILE "Disable the model compiler, which needs Node.js" off)
 option(SP_BUILD_RUST "Build and link against rust modules" on)
 
-option(ENABLE_LTO "Enable cross language linking time optimization" off)
-if(ENABLE_LTO)
-  include(CheckIPOSupported)
-  check_ipo_supported(RESULT supported OUTPUT error)
-  if(supported)
-      message(STATUS "IPO / LTO enabled")
-      set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-      add_link_options(-fuse-ld=lld)
-  else()
-      message(STATUS "IPO / LTO not supported: <${error}>")
-  endif()
-endif()
-
 if(CMAKE_BUILD_TYPE MATCHES Release)
 	message(STATUS "sp target is Release")
 	set(SP_DEBUG 0)
@@ -219,6 +206,20 @@ else()
 		PUBLIC
 			NDEBUG
 	)
+
+	include(CheckIPOSupported)
+	check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
+	if(ipo_supported)
+		message(STATUS "IPO / LTO enabled")
+		set_target_properties(
+			${PROJECT_LIB}
+			${PROJECT_EXE}
+			${PROJECT_TEST_EXE}
+			PROPERTIES
+				INTERPROCEDURAL_OPTIMIZATION TRUE)
+	else()
+		message(STATUS "IPO / LTO not supported: <${ipo_error}>")
+	endif()
 endif()
 
 if(XRSYSTEM_OPENVR)
@@ -249,6 +250,10 @@ if(SP_BUILD_RUST)
 		PRIVATE
 			sp-rust
 	)
+	
+	if(ipo_supported)
+		set_target_properties(sp-rust PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+	endif()
 endif()
 
 ## END COMPILE DEFINITIONS ##

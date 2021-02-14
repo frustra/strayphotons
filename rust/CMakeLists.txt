@@ -6,10 +6,6 @@ else ()
     set(CARGO_TARGET_DIR "release")
 endif ()
 
-if(ENABLE_LTO)
-    set(RUST_FLAGS "-Clinker-plugin-lto" "-Clinker=clang" "-Clink-arg=-fuse-ld=lld")
-endif()
-
 if (WIN32)
     set(CXXBRIDGE_LIB "${CMAKE_CURRENT_BINARY_DIR}/cargo/${CARGO_TARGET_DIR}/sp_rust.lib")
 else()
