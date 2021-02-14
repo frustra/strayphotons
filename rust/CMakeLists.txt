@@ -39,5 +39,11 @@ if(WIN32)
     target_link_libraries(sp-rust PRIVATE
         ws2_32
         userenv
+
+        # reqwest / url crate
+        Crypt32
+        Secur32
+        Ncrypt
+        ntdll
     )
 endif()

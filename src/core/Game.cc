@@ -42,6 +42,8 @@ namespace sp {
 
 #if RUST_CXX
         sp::rust::print_hello();
+
+        std::cout << sp::rust::http_get("http://httpbin.org/get").c_str() << std::endl;
 #endif
 
         try {
