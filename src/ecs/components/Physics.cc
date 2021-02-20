@@ -23,4 +23,16 @@ namespace ecs {
         }
         return true;
     }
+
+    template<>
+    bool Component<Physics>::Save(picojson::value &dst, const Physics &src) {
+        picojson::object physics;
+        if (src.model) { physics["model"] = picojson::value(src.model->name); }
+        physics["dynamic"] = picojson::value(src.desc.dynamic);
+        physics["kinematic"] = picojson::value(src.desc.kinematic);
+        physics["decomposeHull"] = picojson::value(src.desc.decomposeHull);
+        physics["density"] = picojson::value(src.desc.density);
+        dst.set<picojson::object>(physics);
+        return true;
+    }
 } // namespace ecs

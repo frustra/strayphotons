@@ -1,3 +1,6 @@
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error")
+endif()
 
 # These projects already have functional CMake scripts that can be used as part of the native build
 add_subdirectory(googletest)
@@ -10,12 +13,17 @@ add_subdirectory(cxxopts)
 add_subdirectory(Tecs)
 add_subdirectory(robin-hood-hashing)
 
+# ZeroMq must be included before the C++ headers
+# include(libzmq.cmake)
+# include(cppzmq.cmake)
+
 # These projects require more configuration that is encapsulated their own CMake files
 include(PhysX.cmake)
 include(glfw.cmake)
 include(glfw-egl.cmake)
 include(glm.cmake)
 include(imgui.cmake)
+include(kissnet.cmake)
 include(glew.cmake)
 include(linenoise.cmake)
 include(openvr.cmake)
@@ -25,3 +33,4 @@ include(glomerate.cmake)
 include(murmurhash.cmake)
 include(vhacd.cmake)
 include(picojson.cmake)
+include(protobuf.cmake)

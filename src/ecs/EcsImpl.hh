@@ -8,6 +8,7 @@
 #include <ecs/components/Light.hh>
 #include <ecs/components/LightSensor.hh>
 #include <ecs/components/Mirror.hh>
+#include <ecs/components/Network.hh>
 #include <ecs/components/Owner.hh>
 #include <ecs/components/Physics.hh>
 #include <ecs/components/Renderable.hh>

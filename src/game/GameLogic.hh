@@ -24,6 +24,7 @@ namespace sp {
         void ResetPlayer();
         void LoadScene(string name);
         void ReloadScene(string arg);
+        void UnloadScene();
         void PrintDebug();
 
         void SetSignal(string args);

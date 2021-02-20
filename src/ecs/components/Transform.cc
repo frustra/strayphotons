@@ -45,6 +45,25 @@ namespace ecs {
         return true;
     }
 
+    template<>
+    bool Component<Transform>::Save(picojson::value &dst, const Transform &src) {
+        picojson::object transform;
+        if (src.parent) { transform["parent"] = picojson::value((int64_t)src.parent.id); }
+        auto scale = src.GetScaleVec();
+        if (scale != glm::vec3(1)) { transform["scale"] = sp::MakeVec3(scale); }
+        auto rotate = src.GetRotate();
+        if (rotate != glm::quat()) {
+            auto angle = glm::degrees(glm::angle(rotate));
+            if (std::isnan(angle)) { angle = 0; }
+            auto axis = glm::axis(rotate);
+            transform["rotate"] = sp::MakeVec4(glm::vec4(angle, axis));
+        }
+        auto position = src.GetPosition();
+        if (position != glm::vec3()) { transform["translate"] = sp::MakeVec3(position); }
+        dst.set<picojson::object>(transform);
+        return true;
+    }
+
     void Transform::SetParent(Tecs::Entity ent) {
         this->parent = ent;
         this->parentCacheCount = 0;

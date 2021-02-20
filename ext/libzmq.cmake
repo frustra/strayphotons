@@ -1,0 +1,4 @@
+set(BUILD_SHARED ON CACHE BOOL "" FORCE)
+set(BUILD_STATIC OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(libzmq ${CMAKE_CURRENT_BINARY_DIR}/libzmq)

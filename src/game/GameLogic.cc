@@ -268,6 +268,21 @@ namespace sp {
         }
     }
 
+    void GameLogic::UnloadScene() {
+        game->graphics.RenderLoading();
+        game->physics.StopSimulation();
+        game->entityManager.DestroyAllWith<ecs::Owner>(ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
+
+        if (scene != nullptr) {
+            for (auto &line : scene->unloadExecList) {
+                GetConsoleManager().ParseAndExecute(line);
+            }
+        }
+
+        scene.reset();
+        game->physics.StartSimulation();
+    }
+
     void GameLogic::PrintDebug() {
         Logf("Currently loaded scene: %s", scene ? scene->name : "none");
         if (!scene) return;

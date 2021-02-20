@@ -38,7 +38,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 ## Setup compiler flags for various build types
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
-	set(CMAKE_CXX_FLAGS 				"/MP /wd4800 /wd4189 /EHsc")
+	set(CMAKE_CXX_FLAGS 				"/MP /wd4800 /wd4189 /wd4506 /EHsc")
 	set(CMAKE_CXX_FLAGS_RELEASE 		"/MD /O2")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"/MDd /O2")
 	set(CMAKE_CXX_FLAGS_DEBUG 			"/MDd /DEBUG /ZI /FC")
@@ -128,6 +128,14 @@ target_include_directories(
 )
 
 add_subdirectory(src)
+
+# The GENERATED flag is not preserved in parent directories,
+# so set it again here https://gitlab.kitware.com/cmake/cmake/-/issues/18399
+set_source_files_properties(
+	src/network/protocol/Protocol.pb.cc
+	src/network/protocol/Protocol.pb.h
+	PROPERTIES GENERATED TRUE
+)
 
 add_subdirectory(assets)
 
@@ -299,6 +307,8 @@ target_link_libraries(
 		cxxopts
 		OpenGL::GL
 		picojson
+		libprotobuf
+		kissnet
 )
 
 target_link_libraries(

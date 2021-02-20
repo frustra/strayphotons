@@ -1,0 +1,243 @@
+{
+    "autoexec": [
+        "r.MirrorRecursion 1",
+        "r.SSAO 1"
+    ],
+    "unloadexec": [
+        "r.SSAO 0"
+    ],
+    "entities": [
+        <% [
+            [0, -5, 0],
+            [10, 5, 0],
+            [0, 5, 10],
+            [0, 5, -10],
+            [-10, 5, 0]
+        ].forEach(function(pos) { %>
+        {
+            "renderable": "box",
+            "transform": {
+                "scale": [10, 10, 10],
+                "translate": <%= pos %>
+            },
+            "physics": {
+                "model": "box",
+                "dynamic": false
+            },
+            "network": {
+                "renderable": "static",
+                "transform": "static",
+                "physics": "static"
+            }
+        },
+		<% }); %>
+		{
+			"_name": "sensor1",
+			"renderable": "box",
+			"transform": {
+				"scale": [0.1, 0.1, 0.1],
+				"translate": [0, 1.05, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			},
+			"light_sensor": {
+				"translate": [0, 0, -1],
+				"direction": [0, 0, -1],
+				"trigger": 1
+			},
+			"signal_output": {
+				"light_value_r": 0.0,
+				"light_value_g": 0.0,
+				"light_value_b": 0.0,
+				"value": false
+			},
+			"script": {
+				"onTick": "light_sensor",
+				"parameters": {
+					"trigger_level": 1
+				}
+			},
+            "network": {
+                "renderable": "static",
+                "transform": "static",
+                "physics": "static"
+            }
+		},
+		{
+			"_name": "door1",
+			"renderable": "box",
+			"transform": {
+				"scale": [0.1, 1, 0.1],
+				"translate": [0, -1, 0]
+			},
+			"script": {
+				"onTick": "slide_door",
+				"parameters": {
+					"input": "sensor1",
+					"left": "door1"
+				}
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"translate": [0, -1, 0]
+					},
+					{
+						"delay": 0.5,
+						"scale": [0.1, 1, 0.1],
+						"translate": [0, 0.5, 0]
+					}
+				]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			},
+            "network": {
+                "renderable": "static",
+                "transform": "strict",
+                "physics": "static"
+            }
+		},
+        {
+            "_name": "duck",
+            "renderable": "duck",
+            "transform": {
+                "translate": [0, 0, -2]
+            },
+            "physics": {
+                "model": "duck"
+            },
+            "network": {
+                "renderable": "static",
+                "transform": "strict",
+                "physics": "static"
+            }
+        },
+        {
+            "mirror": [1, 1],
+            "renderable": "mirror",
+            "transform": {
+                "parent": "duck",
+                "translate": [0, 1, 1],
+                "rotate": [-180, 0, 1, 0]
+            },
+            "network": {
+                "renderable": "static",
+                "transform": "static"
+            }
+        },
+        {
+            "renderable": "mcube",
+            "transform": {
+                "translate": [-0.2, 3, 0.5]
+            },
+            "physics": {
+                "model": "mcube"
+            },
+            "network": {
+                "renderable": "static",
+                "transform": "lazy",
+                "physics": "static"
+            }
+        },
+        {
+            "renderable": "pbr-cube",
+            "transform": {
+                "translate": [0, 1, 1]
+            },
+            "physics": {
+                "model": "pbr-cube"
+            },
+            "network": {
+                "renderable": "static",
+                "transform": "strict",
+                "physics": "static"
+            }
+        },
+        {
+            "renderable": "box",
+            "transform": {
+                "translate": [0.5, 5, 0.5]
+            },
+            "physics": {
+                "model": "box"
+            },
+            "network": {
+                "renderable": "static",
+                "transform": "lazy",
+                "physics": "static"
+            }
+        },
+        {
+            "renderable": "dodecahedron",
+            "transform": {
+                "translate": [3, 10, -0.5]
+            },
+            "physics": {
+                "model": "dodecahedron"
+            },
+            "network": {
+                "renderable": "static",
+                "transform": "strict",
+                "physics": "static"
+            }
+        },
+        {
+            "_name": "player",
+            "view": {
+                "clip": [0.1, 256]
+            },
+            "transform": {
+                "translate": [0, 2, 0]
+            },
+            "voxels": {
+                "min": [-5, -0, -5],
+                "max": [5, 10, 5]
+            }
+        },
+        {
+            "light": {
+                "tint": [1, 0.5, 0.5],
+                "intensity": 300,
+                "spotAngle": 50
+            },
+            "view": {
+                "extents": [2048, 2048],
+                "clip": [5, 50]
+            },
+            "transform": {
+                "translate": [7, 20, 7],
+                "rotate": [-50, 1, -1, 0]
+            },
+            "network": {
+                "light": "static",
+                "view": "none",
+                "transform": "static"
+            }
+        },
+        {
+            "light": {
+                "tint": [1, 1, 1],
+                "intensity": 50,
+                "spotAngle": 50
+            },
+            "view": {
+                "extents": [2048, 2048],
+                "clip": [0.1, 256]
+            },
+            "transform": {
+                "translate": [-7, 20, -7],
+                "rotate": [-130, 1, 0, 0]
+            },
+            "network": {
+                "light": "static",
+                "view": "none",
+                "transform": "static"
+            }
+        }
+    ]
+}

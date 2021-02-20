@@ -10,6 +10,7 @@
 #include <ecs/Ecs.hh>
 #include <ecs/EcsImpl.hh>
 #include <glm/glm.hpp>
+#include <network/NetworkManager.hh>
 
 #if RUST_CXX
 #include <lib.rs.h>
@@ -21,6 +22,7 @@ namespace sp {
           animation(entityManager.tecs), xr(this) {
         debugGui = std::make_unique<DebugGuiManager>(this);
         menuGui = std::make_unique<MenuGuiManager>(this);
+        network = std::make_unique<network::NetworkManager>(this);
     }
 
     Game::~Game() {}
@@ -76,6 +78,7 @@ namespace sp {
         if (!graphics.Frame()) return false;
         if (!physics.LogicFrame()) return false;
         if (!animation.Frame(dt)) return false;
+        if (network && !network->Frame()) return false;
 
         lastFrameTime = frameTime;
         return true;

@@ -24,10 +24,20 @@ namespace ecs {
         sp::PhysxActorDesc desc;
 
         glm::vec3 scale = glm::vec3(1.0);
+
+        bool operator==(const Physics &other) const {
+            return actor == other.actor && model == other.model && desc == other.desc && scale == other.scale;
+        }
+
+        bool operator!=(const Physics &other) const {
+            return !(*this == other);
+        }
     };
 
     static Component<Physics> ComponentPhysics("physics");
 
     template<>
     bool Component<Physics>::Load(Lock<Read<ecs::Name>> lock, Physics &dst, const picojson::value &src);
+    template<>
+    bool Component<Physics>::Save(picojson::value &dst, const Physics &src);
 } // namespace ecs

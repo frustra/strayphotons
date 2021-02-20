@@ -58,3 +58,15 @@
 [submodule "ext/Tecs"]
 	path = ext/Tecs
 	url = https://github.com/xthexder/Tecs.git
+[submodule "ext/protobuf"]
+	path = ext/protobuf
+	url = https://github.com/protocolbuffers/protobuf
+[submodule "ext/cppzmq"]
+	path = ext/cppzmq
+	url = https://github.com/zeromq/cppzmq
+[submodule "ext/libzmq"]
+	path = ext/libzmq
+	url = https://github.com/zeromq/libzmq.git
+[submodule "ext/kissnet"]
+	path = ext/kissnet
+	url = https://github.com/Ybalrid/kissnet.git

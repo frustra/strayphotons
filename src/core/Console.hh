@@ -42,8 +42,10 @@ namespace sp {
 
         void AddLog(logging::Level lvl, const string &line);
 
-        const vector<ConsoleLine> Lines() {
-            return outputLines;
+        inline vector<ConsoleLine> Lines() {
+            const std::lock_guard<std::mutex> lock(outputLock);
+
+            return std::vector<ConsoleLine>(outputLines.begin(), outputLines.end());
         }
 
         void ParseAndExecute(const string line);
@@ -66,6 +68,7 @@ namespace sp {
 
         std::mutex queueLock;
         std::priority_queue<ConsoleInputLine> queuedCommands;
+        std::mutex outputLock;
         vector<ConsoleLine> outputLines;
 
         std::mutex historyLock;

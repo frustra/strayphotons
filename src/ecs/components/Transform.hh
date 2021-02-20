@@ -78,6 +78,15 @@ namespace ecs {
 
         bool ClearDirty();
 
+        bool operator==(const Transform &other) const {
+            return parent == other.parent && translate == other.translate && scale == other.scale &&
+                   rotate == other.rotate;
+        }
+
+        bool operator!=(const Transform &other) const {
+            return !(*this == other);
+        }
+
     private:
         Tecs::Entity parent;
 
@@ -91,10 +100,15 @@ namespace ecs {
         uint32 parentCacheCount = 0;
 
         bool dirty;
+
+        template<typename>
+        friend class Component;
     };
 
     static Component<Transform> ComponentTransform("transform");
 
     template<>
     bool Component<Transform>::Load(Lock<Read<ecs::Name>> lock, Transform &dst, const picojson::value &src);
+    template<>
+    bool Component<Transform>::Save(picojson::value &dst, const Transform &src);
 } // namespace ecs
