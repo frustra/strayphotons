@@ -3,12 +3,19 @@ if(NOT XRSYSTEM_OPENVR)
 endif()
 
 target_sources(
-    ${PROJECT_LIB}
+    ${PROJECT_GRAPHICS_CORE_LIB}
     PRIVATE
         OpenVrModel.cc
         OpenVrSystem.cc
         OpenVrTrackingCompositor.cc
         OpenVrAction.cc
+)
+
+# Need to link against openvr to support this XR backend
+target_link_libraries(
+    ${PROJECT_GRAPHICS_CORE_LIB}
+    PUBLIC
+        openvr
 )
 
 set(_files_to_copy

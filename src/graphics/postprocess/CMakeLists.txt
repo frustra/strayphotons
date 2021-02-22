@@ -1,6 +1,6 @@
 
 target_sources(
-    ${PROJECT_LIB}
+    ${PROJECT_GRAPHICS_CORE_LIB}
     PRIVATE
         Bloom.cc
         Crosshair.cc

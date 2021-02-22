@@ -6,13 +6,13 @@ target_sources(
 )
 
 target_sources(
-    ${PROJECT_EXE}
+    ${PROJECT_GRAPHICS_EGL_LIB}
     PRIVATE
         GlfwActionSource.cc
 )
 
 target_sources(
-    ${PROJECT_TEST_EXE}
+    ${PROJECT_GRAPHICS_OPENGL_LIB}
     PRIVATE
         GlfwActionSource.cc
 )

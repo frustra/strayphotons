@@ -2,7 +2,7 @@ add_subdirectory(basic_renderer)
 add_subdirectory(postprocess)
 
 target_sources(
-    ${PROJECT_LIB}
+    ${PROJECT_GRAPHICS_CORE_LIB}
     PRIVATE
         Buffer.cc
         GenericShaders.cc
@@ -22,7 +22,7 @@ target_sources(
 )
 
 target_sources(
-    ${PROJECT_EXE}
+    ${PROJECT_GRAPHICS_EGL_LIB}
     PRIVATE
         Renderer.cc ## Potentially move into a subfolder like basic_renderer
         GuiRenderer.cc
@@ -31,7 +31,7 @@ target_sources(
 )
 
 target_sources(
-    ${PROJECT_TEST_EXE}
+    ${PROJECT_GRAPHICS_OPENGL_LIB}
     PRIVATE
         Renderer.cc ## Potentially move into a subfolder like basic_renderer
         GuiRenderer.cc
