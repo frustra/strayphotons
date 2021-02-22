@@ -1,5 +1,6 @@
 add_subdirectory(basic_renderer)
 add_subdirectory(voxel_renderer)
+add_subdirectory(glfw_graphics_context)
 add_subdirectory(postprocess)
 
 target_sources(
@@ -11,6 +12,7 @@ target_sources(
         Graphics.cc
         LightSensor.cc
         PixelFormat.cc
+        Renderer.cc
         RenderBuffer.cc
         RenderTarget.cc
         RenderTargetPool.cc
@@ -24,15 +26,11 @@ target_sources(
 target_sources(
     ${PROJECT_GRAPHICS_EGL_LIB}
     PRIVATE
-        GuiRenderer.cc
-        GraphicsContext.cc
         GraphicsManager.cc
 )
 
 target_sources(
     ${PROJECT_GRAPHICS_OPENGL_LIB}
     PRIVATE
-        GuiRenderer.cc
-        GraphicsContext.cc
         GraphicsManager.cc
 )

@@ -7,7 +7,7 @@
 #include "core/PerfTimer.hh"
 #include "graphics/GPUTypes.hh"
 #include "graphics/GenericShaders.hh"
-#include "graphics/GuiRenderer.hh"
+#include "graphics/voxel_renderer/GuiRenderer.hh"
 #include "graphics/LightSensor.hh"
 #include "graphics/RenderTargetPool.hh"
 #include "graphics/SceneShaders.hh"
@@ -31,7 +31,7 @@
 // clang-format on
 
 namespace sp {
-    VoxelRenderer::VoxelRenderer(Game *game) : GraphicsContext(game) {
+    VoxelRenderer::VoxelRenderer(Game *game, GlfwGraphicsContext& context) : Renderer(game), context(context) {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     }
@@ -78,8 +78,8 @@ namespace sp {
         // glEnable(GL_FRAMEBUFFER_SRGB);
 
         RTPool = new RenderTargetPool();
-        if (game->debugGui) { debugGuiRenderer = make_shared<GuiRenderer>(*this, game->debugGui.get()); }
-        if (game->menuGui) { menuGuiRenderer = make_shared<GuiRenderer>(*this, game->menuGui.get()); }
+        if (game->debugGui) { debugGuiRenderer = make_shared<GuiRenderer>(*this, context, game->debugGui.get()); }
+        if (game->menuGui) { menuGuiRenderer = make_shared<GuiRenderer>(*this, context, game->menuGui.get()); }
 
         ShaderControl = new ShaderManager(GlobalShaders);
         ShaderManager::SetDefine("MAX_LIGHTS", std::to_string(MAX_LIGHTS));
@@ -721,7 +721,6 @@ namespace sp {
         ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(GlobalShaders);
         SetDefaultRenderTarget();
         DrawScreenCover(true);
-        glfwSwapBuffers(window);
     }
 
     void VoxelRenderer::ExpireRenderables() {

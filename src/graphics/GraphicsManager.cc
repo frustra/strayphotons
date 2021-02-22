@@ -4,10 +4,12 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/PerfTimer.hh"
-#include "graphics/GuiRenderer.hh"
 #include "graphics/RenderTargetPool.hh"
+#include "graphics/glfw_graphics_context/GlfwGraphicsContext.hh"
 #include "graphics/voxel_renderer/VoxelRenderer.hh"
 #include "graphics/basic_renderer/BasicRenderer.hh"
+
+#include "graphics/Renderer.hh"
 
 #include <algorithm>
 #include <cxxopts.hpp>
@@ -52,42 +54,51 @@ namespace sp {
     }
 
     GraphicsManager::~GraphicsManager() {
-        if (context) ReleaseContext();
+
+        if (renderer) {
+            delete renderer;
+        }
+
+        if (profilerGui) {
+            delete profilerGui;
+        }
+
+        if (context) {
+            delete context;
+        }
+
         glfwTerminate();
     }
 
-    void GraphicsManager::CreateContext() {
-        if (context) throw "already an active context";
+    void GraphicsManager::Init() {
+        if (context) {
+            throw "already an active context";
+        }
+
+        if (renderer) {
+            throw "already an active renderer";
+        }
+
+        context = new GlfwGraphicsContext(game);
 
         if (useBasic) {
-            context = new BasicRenderer(game);
-            context->CreateWindow(CVarWindowSize.Get());
-            return;
+            renderer = new BasicRenderer(game);
+        } else {
+            renderer = new VoxelRenderer(game, *context);
+
+            profilerGui = new ProfilerGui(&renderer->Timer);
+            if (game->debugGui) { 
+                game->debugGui->Attach(profilerGui); 
+            }
+
+            {
+                auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
+                viewRemoval = lock.Watch<ecs::Removed<ecs::View>>();
+            }
         }
 
-        auto renderer = new VoxelRenderer(game);
-        context = renderer;
         context->CreateWindow(CVarWindowSize.Get());
-
-        profilerGui = new ProfilerGui(&context->Timer);
-        if (game->debugGui) { game->debugGui->Attach(profilerGui); }
-
-        {
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
-            viewRemoval = lock.Watch<ecs::Removed<ecs::View>>();
-        }
-    }
-
-    void GraphicsManager::ReleaseContext() {
-        if (!context) throw "no active context";
-
-        if (profilerGui) delete profilerGui;
-
-        delete context;
-    }
-
-    void GraphicsManager::ReloadContext() {
-        // context->Reload();
+        renderer->Prepare();
     }
 
     bool GraphicsManager::HasActiveContext() {
@@ -96,6 +107,7 @@ namespace sp {
 
     bool GraphicsManager::Frame() {
         if (!context) throw "no active context";
+        if (!renderer) throw "no active renderer";
         if (!HasActiveContext()) return false;
 
         {
@@ -134,17 +146,17 @@ namespace sp {
             return false;
         }
 
-        context->Timer.StartFrame();
+        renderer->Timer.StartFrame();
 
         {
-            RenderPhase phase("Frame", context->Timer);
+            RenderPhase phase("Frame", renderer->Timer);
 
-            context->BeginFrame();
+            renderer->BeginFrame();
 
             // Always render XR content first, since this allows the compositor to immediately start work rendering to
             // the HMD Only attempt to render if we have an active XR System
             if (game->xr.GetXrSystem()) {
-                RenderPhase xrPhase("XrViews", context->Timer);
+                RenderPhase xrPhase("XrViews", renderer->Timer);
 
                 // TODO: Should not have to do this on every frame...
                 glm::mat4 vrOrigin;
@@ -157,7 +169,7 @@ namespace sp {
                 }
 
                 {
-                    RenderPhase xrPhase("XrWaitFrame", context->Timer);
+                    RenderPhase xrPhase("XrWaitFrame", renderer->Timer);
                     // Wait for the XR system to be ready to accept a new frame
                     game->xr.GetXrSystem()->GetCompositor()->WaitFrame();
                 }
@@ -167,7 +179,7 @@ namespace sp {
 
                 // Render all the XR views at the same time
                 for (size_t i = 0; i < xrViews.size(); i++) {
-                    RenderPhase xrPhase("XrView", context->Timer);
+                    RenderPhase xrPhase("XrView", renderer->Timer);
 
                     static glm::mat4 viewPose;
                     game->xr.GetXrSystem()->GetTracking()->GetPredictedViewPose(xrViews[i].second.viewId, viewPose);
@@ -181,7 +193,7 @@ namespace sp {
                     RenderTarget::Ref viewOutputTexture = game->xr.GetXrSystem()->GetCompositor()->GetRenderTarget(
                         xrViews[i].second.viewId);
 
-                    context->RenderPass(xrViews[i].first, viewOutputTexture);
+                    renderer->RenderPass(xrViews[i].first, viewOutputTexture);
 
                     game->xr.GetXrSystem()->GetCompositor()->SubmitView(xrViews[i].second.viewId, viewOutputTexture);
                 }
@@ -191,13 +203,13 @@ namespace sp {
 
             // Render the 2D pancake view
             context->ResizeWindow(pancakeView, CVarWindowScale.Get(), CVarWindowFullscreen.Get());
-            context->RenderPass(pancakeView);
+            renderer->RenderPass(pancakeView);
 
-            context->EndFrame();
+            renderer->EndFrame();
         }
 
         glfwSwapBuffers(context->GetWindow());
-        context->Timer.EndFrame();
+        renderer->Timer.EndFrame();
 
         double frameEnd = glfwGetTime();
         fpsTimer += frameEnd - lastFrameEnd;
@@ -224,7 +236,7 @@ namespace sp {
     }
 
     void GraphicsManager::RenderLoading() {
-        if (!context) return;
+        if (!renderer) return;
 
         if (playerViews.size() > 0) {
             for (size_t i = 0; i < playerViews.size(); i++) {
@@ -240,7 +252,8 @@ namespace sp {
                     pancakeView.blend = true;
                     pancakeView.clearMode = 0;
 
-                    context->RenderLoading(pancakeView);
+                    renderer->RenderLoading(pancakeView);
+                    context->SwapBuffers();
                 }
             }
         }

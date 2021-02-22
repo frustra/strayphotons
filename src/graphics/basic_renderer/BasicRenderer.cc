@@ -12,7 +12,7 @@
 // clang-format on
 
 namespace sp {
-    BasicRenderer::BasicRenderer(Game *game) : GraphicsContext(game) {
+    BasicRenderer::BasicRenderer(Game *game) : Renderer(game) {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     }

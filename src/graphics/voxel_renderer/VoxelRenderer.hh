@@ -3,7 +3,7 @@
 #include "core/CFunc.hh"
 #include "ecs/components/VoxelInfo.hh"
 #include "graphics/Buffer.hh"
-#include "graphics/GraphicsContext.hh"
+#include "graphics/Renderer.hh"
 #include "graphics/Texture.hh"
 
 #include <PxPhysicsAPI.h>
@@ -29,35 +29,38 @@ namespace sp {
         ecs::VoxelInfo info;
     };
 
-    class VoxelRenderer : public GraphicsContext {
+    class VoxelRenderer : public Renderer {
     public:
         typedef std::function<void(ecs::Entity &)> PreDrawFunc;
 
-        VoxelRenderer(Game *game);
+        VoxelRenderer(Game *game, GlfwGraphicsContext& context);
         ~VoxelRenderer();
 
+        // Functions inherited from Renderer            
+        void Prepare() override;
+        void BeginFrame() override;
+        void RenderPass(ecs::View view, RenderTarget::Ref finalOutput = nullptr) override;
+        void PrepareForView(const ecs::View &view) override;
+        void RenderLoading(ecs::View view) override;
+        void EndFrame() override;
+
+        // Functions specific to VoxelRenderer
+        // TODO: make all this private and ensure we can still compile
         void UpdateShaders(bool force = false);
-        void Prepare();
         void RenderMainMenu(ecs::View &view, bool renderToGel = false);
         void RenderShadowMaps();
         void PrepareVoxelTextures();
         void RenderVoxelGrid();
         void ReadBackLightSensors();
         void UpdateLightSensors();
-        void BeginFrame();
-        void RenderPass(ecs::View view, RenderTarget::Ref finalOutput = nullptr);
-        void PrepareForView(const ecs::View &view);
         void ForwardPass(const ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw = {});
         void DrawEntity(const ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw = {});
-        void RenderLoading(ecs::View view);
         void ExpireRenderables();
         void DrawPhysxLines(const ecs::View &view,
                             SceneShader *shader,
                             const vector<physx::PxDebugLine> &lines,
                             const PreDrawFunc &preDraw);
         void DrawGridDebug(const ecs::View &view, SceneShader *shader);
-        void EndFrame();
-
         void SetRenderTarget(shared_ptr<RenderTarget> attachment0, shared_ptr<RenderTarget> depth);
         void SetRenderTargets(size_t attachmentCount,
                               shared_ptr<RenderTarget> *attachments,
@@ -85,5 +88,7 @@ namespace sp {
         std::deque<std::pair<shared_ptr<Model>, int>> renderableGCQueue;
 
         CFuncCollection funcs;
+
+        GlfwGraphicsContext& context;
     };
 } // namespace sp

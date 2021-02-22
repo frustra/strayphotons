@@ -2,14 +2,14 @@
 
 #include "assets/Model.hh"
 #include "ecs/components/Renderable.hh"
-#include "graphics/GraphicsContext.hh"
+#include "graphics/Renderer.hh"
 
 #include <glm/glm.hpp>
 
 namespace sp {
     class Game;
 
-    class BasicRenderer : public GraphicsContext {
+    class BasicRenderer : public Renderer {
     public:
         BasicRenderer(Game *game);
         ~BasicRenderer();

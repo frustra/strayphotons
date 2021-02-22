@@ -1,16 +1,17 @@
 #pragma once
 
-#include "Texture.hh"
-#include "VertexBuffer.hh"
+#include "graphics/Texture.hh"
+#include "graphics/VertexBuffer.hh"
 #include "ecs/components/View.hh"
 
 namespace sp {
     class VoxelRenderer;
+    class GlfwGraphicsContext;
     class GuiManager;
 
     class GuiRenderer {
     public:
-        GuiRenderer(VoxelRenderer &renderer, GuiManager *manager);
+        GuiRenderer(VoxelRenderer& renderer, GlfwGraphicsContext& context, GuiManager *manager);
         ~GuiRenderer();
         void Render(ecs::View view);
 
@@ -19,7 +20,8 @@ namespace sp {
         Texture fontTex;
         double lastTime = 0.0;
 
-        VoxelRenderer &parent;
-        GuiManager *manager;
+        GlfwGraphicsContext& context;
+        VoxelRenderer& parent;
+        GuiManager* manager;
     };
 } // namespace sp

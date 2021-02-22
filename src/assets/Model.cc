@@ -246,7 +246,7 @@ namespace sp {
         return model->nodes[node].name;
     }
 
-    GLModel::GLModel(Model *model, GraphicsContext *context) : model(model), context(context) {
+    GLModel::GLModel(Model *model, Renderer *renderer) : model(model), renderer(renderer) {
         static BasicMaterial defaultMat;
 
         for (auto primitive : model->primitives) {
@@ -472,7 +472,7 @@ namespace sp {
                      .Storage(GL_RGBA, format, type, Texture::FullyMipmap, false) // textureType == BaseColor)
                      .Image2D(img.image.data(), 0, 0, 0, 0, 0, false);
 
-            if (VoxelRenderer *r = dynamic_cast<VoxelRenderer *>(context)) {
+            if (VoxelRenderer *r = dynamic_cast<VoxelRenderer *>(renderer)) {
                 r->GlobalShaders->Get<TextureFactorCS>()->SetFactor(std::min(img.component, (int)factor.size()),
                                                                     factor.data());
                 tex->BindImageConvert(0, GLPixelFormat::PixelFormatMapping(PF_RGBA8), GL_READ_WRITE);

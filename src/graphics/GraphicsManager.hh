@@ -10,7 +10,8 @@
 namespace sp {
     class Game;
     class GuiRenderer;
-    class GraphicsContext;
+    class GlfwGraphicsContext;
+    class Renderer;
 
     extern CVar<glm::ivec2> CVarWindowSize;
     extern CVar<float> CVarFieldOfView;
@@ -21,9 +22,7 @@ namespace sp {
         GraphicsManager(Game *game);
         ~GraphicsManager();
 
-        void CreateContext();
-        void ReleaseContext();
-        void ReloadContext();
+        void Init();
         bool HasActiveContext();
 
         void AddPlayerView(ecs::Entity entity);
@@ -33,16 +32,21 @@ namespace sp {
 
         bool Frame();
 
-        GraphicsContext *GetContext() {
+        GlfwGraphicsContext *GetContext() {
             return context;
+        }
+
+        Renderer* GetRenderer() {
+            return renderer;
         }
 
     private:
         bool useBasic = false;
 
-        GraphicsContext *context = nullptr;
-        Game *game = nullptr;
-        ProfilerGui *profilerGui = nullptr;
+        GlfwGraphicsContext* context = nullptr;
+        Renderer* renderer = nullptr;
+        Game* game = nullptr;
+        ProfilerGui* profilerGui = nullptr;
 
         ecs::Observer<ecs::Removed<ecs::View>> viewRemoval;
         vector<ecs::Entity> playerViews;

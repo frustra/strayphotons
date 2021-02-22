@@ -18,10 +18,10 @@ namespace sp {
     class InputManager;
     class RenderTarget;
 
-    class GraphicsContext {
+    class GlfwGraphicsContext {
     public:
-        GraphicsContext(Game *game);
-        virtual ~GraphicsContext();
+        GlfwGraphicsContext(Game *game);
+        virtual ~GlfwGraphicsContext();
 
         void CreateWindow(glm::ivec2 initialSize = {640, 480});
         bool ShouldClose();
@@ -30,22 +30,14 @@ namespace sp {
         const vector<glm::ivec2> &MonitorModes();
         const glm::ivec2 CurrentMode();
 
-        virtual void Prepare() = 0;
-        virtual void BeginFrame() = 0;
-        virtual void RenderPass(ecs::View view, RenderTarget::Ref finalOutput = nullptr) = 0;
-        virtual void PrepareForView(const ecs::View &view) = 0;
-        virtual void RenderLoading(ecs::View view) = 0;
-        virtual void EndFrame() = 0;
-
-        ShaderSet *GlobalShaders;
-        PerfTimer Timer;
-
         GLFWwindow *GetWindow() {
             return window;
         }
 
         void DisableCursor();
         void EnableCursor();
+
+        void SwapBuffers();
 
     private:
         glm::ivec2 prevWindowSize, prevWindowPos;

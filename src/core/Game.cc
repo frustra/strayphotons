@@ -45,7 +45,7 @@ namespace sp {
 #endif
 
         try {
-            graphics.CreateContext();
+            graphics.Init();
             logic.Init(startupScript);
 
             lastFrameTime = chrono_clock::now();

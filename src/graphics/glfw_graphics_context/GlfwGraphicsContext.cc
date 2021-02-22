@@ -1,4 +1,4 @@
-#include "graphics/GraphicsContext.hh"
+#include "graphics/glfw_graphics_context/GlfwGraphicsContext.hh"
 
 #include "core/Game.hh"
 #include "core/Logging.hh"
@@ -30,23 +30,19 @@ namespace sp {
         Debugf("[GL 0x%X] 0x%X: %s", id, type, message);
     }
 
-    GraphicsContext::GraphicsContext(Game *game) : game(game), input(&game->input) {
+    GlfwGraphicsContext::GlfwGraphicsContext(Game *game) : game(game), input(&game->input) {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-
-        GlobalShaders = new ShaderSet();
     }
 
-    GraphicsContext::~GraphicsContext() {
-        delete GlobalShaders;
-
+    GlfwGraphicsContext::~GlfwGraphicsContext() {
         if (window) glfwDestroyWindow(window);
     }
 
-    void GraphicsContext::CreateWindow(glm::ivec2 initialSize) {
+    void GlfwGraphicsContext::CreateWindow(glm::ivec2 initialSize) {
         // Create window and surface
         window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
         Assert(window, "glfw window creation failed");
@@ -113,19 +109,17 @@ namespace sp {
             glfwActionSource->BindAction(INPUT_ACTION_RESET_SCENE, INPUT_ACTION_KEYBOARD_KEYS + "/f6");
             glfwActionSource->BindAction(INPUT_ACTION_RELOAD_SHADERS, INPUT_ACTION_KEYBOARD_KEYS + "/f7");
         }
-
-        Prepare();
     }
 
-    void GraphicsContext::SetTitle(string title) {
+    void GlfwGraphicsContext::SetTitle(string title) {
         glfwSetWindowTitle(window, title.c_str());
     }
 
-    bool GraphicsContext::ShouldClose() {
+    bool GlfwGraphicsContext::ShouldClose() {
         return !!glfwWindowShouldClose(window);
     }
 
-    void GraphicsContext::ResizeWindow(ecs::View &view, double scale, int fullscreen) {
+    void GlfwGraphicsContext::ResizeWindow(ecs::View &view, double scale, int fullscreen) {
         glm::ivec2 scaled = glm::dvec2(view.extents) * scale;
 
         if (prevFullscreen != fullscreen) {
@@ -148,7 +142,7 @@ namespace sp {
         windowScale = scale;
     }
 
-    const vector<glm::ivec2> &GraphicsContext::MonitorModes() {
+    const vector<glm::ivec2> &GlfwGraphicsContext::MonitorModes() {
         if (!monitorModes.empty()) return monitorModes;
 
         int count;
@@ -168,17 +162,21 @@ namespace sp {
         return monitorModes;
     }
 
-    const glm::ivec2 GraphicsContext::CurrentMode() {
+    const glm::ivec2 GlfwGraphicsContext::CurrentMode() {
         const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         if (mode != NULL) { return glm::ivec2(mode->width, mode->height); }
         return glm::ivec2(0);
     }
 
-    void GraphicsContext::DisableCursor() {
+    void GlfwGraphicsContext::DisableCursor() {
         if (glfwActionSource) { glfwActionSource->DisableCursor(); }
     }
 
-    void GraphicsContext::EnableCursor() {
+    void GlfwGraphicsContext::EnableCursor() {
         if (glfwActionSource) { glfwActionSource->EnableCursor(); }
+    }
+
+    void GlfwGraphicsContext::SwapBuffers() {
+        glfwSwapBuffers(window);
     }
 } // namespace sp

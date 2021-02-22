@@ -1,8 +1,9 @@
 #include "GuiRenderer.hh"
 
-#include "GenericShaders.hh"
+#include "graphics/GenericShaders.hh"
 #include "graphics/voxel_renderer/VoxelRenderer.hh"
-#include "ShaderManager.hh"
+#include "graphics/glfw_graphics_context/GlfwGraphicsContext.hh"
+#include "graphics/ShaderManager.hh"
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "core/PerfTimer.hh"
@@ -22,12 +23,15 @@
 // clang-format on
 
 namespace sp {
-    GuiRenderer::GuiRenderer(VoxelRenderer &renderer, GuiManager *manager) : parent(renderer), manager(manager) {
+    GuiRenderer::GuiRenderer(
+        VoxelRenderer& renderer, 
+        GlfwGraphicsContext& context, 
+        GuiManager *manager) : parent(renderer), context(context), manager(manager) {
         manager->SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
 
 #ifdef _WIN32
-        io.ImeWindowHandle = glfwGetWin32Window(renderer.GetWindow());
+        io.ImeWindowHandle = glfwGetWin32Window(context.GetWindow());
 #endif
 
         io.IniFilename = nullptr;
