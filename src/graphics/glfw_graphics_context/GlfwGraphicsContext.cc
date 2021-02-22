@@ -42,7 +42,7 @@ namespace sp {
         Errorf("GLFW returned %d: %s", error, message);
     }
 
-    GlfwGraphicsContext::GlfwGraphicsContext(Game *game) : game(game), input(&game->input) {
+    GlfwGraphicsContext::GlfwGraphicsContext(Game *game) : GraphicsContext(game), input(&game->input) {
         glfwSetErrorCallback(glfwErrorCallback);
 
         if (!glfwInit()) { throw "glfw failed"; }

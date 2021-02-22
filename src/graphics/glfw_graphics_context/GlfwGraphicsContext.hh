@@ -3,6 +3,7 @@
 #include "Common.hh"
 #include "ecs/components/View.hh"
 #include "graphics/Graphics.hh"
+#include "graphics/GraphicsContext.hh"
 #include "graphics/RenderTarget.hh"
 
 #include <core/PerfTimer.hh>
@@ -18,25 +19,25 @@ namespace sp {
     class InputManager;
     class RenderTarget;
 
-    class GlfwGraphicsContext {
+    class GlfwGraphicsContext : public GraphicsContext {
     public:
         GlfwGraphicsContext(Game *game);
-        ~GlfwGraphicsContext();
+        virtual ~GlfwGraphicsContext();
 
         // Potential GraphicsContext function implementations
-        void Init();
-        bool ShouldClose();
-        void BeginFrame();
-        void SwapBuffers();
-        void PopulatePancakeView(ecs::View& view);
-        void PrepareForView(ecs::View& view);
-        void EndFrame();
+        void Init() override;
+        bool ShouldClose() override;
+        void BeginFrame() override;
+        void SwapBuffers() override;
+        void PopulatePancakeView(ecs::View& view) override;
+        void PrepareForView(ecs::View& view) override;
+        void EndFrame() override;
 
         // These functions are acceptable in the base GraphicsContext class, 
         // but really shouldn't needed. They should be replaced with a generic "Settings" API
         // that allows modules to populate a Settings / Options menu entry
-        const vector<glm::ivec2> &MonitorModes();
-        const glm::ivec2 CurrentMode();
+        const vector<glm::ivec2> &MonitorModes() override;
+        const glm::ivec2 CurrentMode() override;
 
         // Specific to GlfwGraphicsContext
         GLFWwindow *GetWindow() {
@@ -58,10 +59,7 @@ namespace sp {
         vector<glm::ivec2> monitorModes;
         double lastFrameEnd = 0, fpsTimer = 0;
         int frameCounter = 0;
-
-    protected:
         GLFWwindow *window = nullptr;
-        Game *game;
         InputManager *input = nullptr;
         std::unique_ptr<GlfwActionSource> glfwActionSource = nullptr;
     };

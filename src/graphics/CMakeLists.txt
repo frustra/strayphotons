@@ -10,6 +10,7 @@ target_sources(
         GenericShaders.cc
         GPUTypes.cc
         Graphics.cc
+        GraphicsContext.cc
         LightSensor.cc
         PixelFormat.cc
         Renderer.cc
