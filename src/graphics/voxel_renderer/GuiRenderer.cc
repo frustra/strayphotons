@@ -31,6 +31,7 @@ namespace sp {
         ImGuiIO &io = ImGui::GetIO();
 
 #ifdef _WIN32
+        // TODO: Dynamic-cast here to determine if the GraphicsContext is actually a GlfwGraphicsContext
         io.ImeWindowHandle = glfwGetWin32Window(context.GetWindow());
 #endif
 
