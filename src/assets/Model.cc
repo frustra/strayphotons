@@ -4,7 +4,7 @@
 #include "assets/AssetManager.hh"
 #include "core/Logging.hh"
 #include "graphics/GenericShaders.hh"
-#include "graphics/Renderer.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
@@ -472,7 +472,7 @@ namespace sp {
                      .Storage(GL_RGBA, format, type, Texture::FullyMipmap, false) // textureType == BaseColor)
                      .Image2D(img.image.data(), 0, 0, 0, 0, 0, false);
 
-            if (Renderer *r = dynamic_cast<Renderer *>(context)) {
+            if (VoxelRenderer *r = dynamic_cast<VoxelRenderer *>(context)) {
                 r->GlobalShaders->Get<TextureFactorCS>()->SetFactor(std::min(img.component, (int)factor.size()),
                                                                     factor.data());
                 tex->BindImageConvert(0, GLPixelFormat::PixelFormatMapping(PF_RGBA8), GL_READ_WRITE);

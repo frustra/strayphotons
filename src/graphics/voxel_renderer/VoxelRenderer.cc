@@ -1,4 +1,4 @@
-#include "graphics/Renderer.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 
 #include "assets/AssetManager.hh"
 #include "core/CVar.hh"
@@ -31,12 +31,12 @@
 // clang-format on
 
 namespace sp {
-    Renderer::Renderer(Game *game) : GraphicsContext(game) {
+    VoxelRenderer::VoxelRenderer(Game *game) : GraphicsContext(game) {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     }
 
-    Renderer::~Renderer() {
+    VoxelRenderer::~VoxelRenderer() {
         if (ShaderControl) delete ShaderControl;
         if (RTPool) delete RTPool;
     }
@@ -55,7 +55,7 @@ namespace sp {
     static CVar<bool> CVarEnablePCF("r.EnablePCF", true, "Enable smooth shadow sampling");
     static CVar<bool> CVarEnableBumpMap("r.EnableBumpMap", true, "Enable bump mapping");
 
-    void Renderer::UpdateShaders(bool force) {
+    void VoxelRenderer::UpdateShaders(bool force) {
         if (force || CVarVoxelGridSize.Changed() || CVarVoxelSuperSample.Changed() || CVarEnableShadows.Changed() ||
             CVarEnablePCF.Changed() || CVarEnableBumpMap.Changed()) {
             int voxelGridSize = CVarVoxelGridSize.Get(true);
@@ -69,7 +69,7 @@ namespace sp {
         }
     }
 
-    void Renderer::Prepare() {
+    void VoxelRenderer::Prepare() {
         Assert(GLEW_ARB_compute_shader, "ARB_compute_shader required");
         Assert(GLEW_ARB_direct_state_access, "ARB_direct_state_access required");
         Assert(GLEW_ARB_multi_bind, "ARB_multi_bind required");
@@ -101,7 +101,7 @@ namespace sp {
         AssertGLOK("Renderer::Prepare");
     }
 
-    void Renderer::RenderMainMenu(ecs::View &view, bool renderToGel) {
+    void VoxelRenderer::RenderMainMenu(ecs::View &view, bool renderToGel) {
         if (renderToGel) {
             RenderTargetDesc menuDesc(PF_RGBA8, view.extents);
             menuDesc.levels = Texture::FullyMipmap;
@@ -117,7 +117,7 @@ namespace sp {
         }
     }
 
-    void Renderer::RenderShadowMaps() {
+    void VoxelRenderer::RenderShadowMaps() {
         RenderPhase phase("ShadowMaps", Timer);
 
         glm::ivec2 renderTargetSize(0, 0);
@@ -290,11 +290,11 @@ namespace sp {
         }
     }
 
-    void Renderer::ReadBackLightSensors() {
+    void VoxelRenderer::ReadBackLightSensors() {
         GlobalShaders->Get<LightSensorUpdateCS>()->UpdateValues(game->entityManager);
     }
 
-    void Renderer::UpdateLightSensors() {
+    void VoxelRenderer::UpdateLightSensors() {
         RenderPhase phase("UpdateLightSensors", Timer);
         auto shader = GlobalShaders->Get<LightSensorUpdateCS>();
 
@@ -323,7 +323,7 @@ namespace sp {
         shader->StartReadback();
     }
 
-    void Renderer::RenderPass(ecs::View view, RenderTarget::Ref finalOutput) {
+    void VoxelRenderer::RenderPass(ecs::View view, RenderTarget::Ref finalOutput) {
         RenderPhase phase("RenderPass", Timer);
 
         if (!mirrorSceneData) {
@@ -541,7 +541,7 @@ namespace sp {
         // AssertGLOK("Renderer::RenderFrame");
     }
 
-    void Renderer::PrepareForView(const ecs::View &view) {
+    void VoxelRenderer::PrepareForView(const ecs::View &view) {
         if (view.blend) glEnable(GL_BLEND);
         else
             glDisable(GL_BLEND);
@@ -561,7 +561,7 @@ namespace sp {
         }
     }
 
-    void Renderer::ForwardPass(const ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw) {
+    void VoxelRenderer::ForwardPass(const ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw) {
         RenderPhase phase("ForwardPass", Timer);
         PrepareForView(view);
 
@@ -617,7 +617,7 @@ namespace sp {
         addVertex(pos0 - widthVec);
     }
 
-    void Renderer::DrawPhysxLines(const ecs::View &view,
+    void VoxelRenderer::DrawPhysxLines(const ecs::View &view,
                                   SceneShader *shader,
                                   const vector<physx::PxDebugLine> &lines,
                                   const PreDrawFunc &preDraw) {
@@ -645,7 +645,7 @@ namespace sp {
         glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
     }
 
-    void Renderer::DrawEntity(const ecs::View &view,
+    void VoxelRenderer::DrawEntity(const ecs::View &view,
                               SceneShader *shader,
                               ecs::Entity &ent,
                               const PreDrawFunc &preDraw) {
@@ -671,7 +671,7 @@ namespace sp {
                                    comp->model->bones.size() > 0 ? comp->model->bones.data() : NULL);
     }
 
-    void Renderer::DrawGridDebug(const ecs::View &view, SceneShader *shader) {
+    void VoxelRenderer::DrawGridDebug(const ecs::View &view, SceneShader *shader) {
         int gridSize = CVarVoxelGridSize.Get() >> (CVarShowVoxels.Get() - 1);
         glm::vec3 min = voxelData.info.voxelGridCenter -
                         (voxelData.info.voxelSize * (float)(voxelData.info.gridSize / 2));
@@ -708,7 +708,7 @@ namespace sp {
         glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
     }
 
-    void Renderer::RenderLoading(ecs::View view) {
+    void VoxelRenderer::RenderLoading(ecs::View view) {
         auto screenResolution = view.extents;
         view.extents = glm::ivec2(192 / 2, 80 / 2);
         view.offset = glm::ivec2(screenResolution / 2) - view.extents / 2;
@@ -724,7 +724,7 @@ namespace sp {
         glfwSwapBuffers(window);
     }
 
-    void Renderer::ExpireRenderables() {
+    void VoxelRenderer::ExpireRenderables() {
         int expiredCount = 0;
         for (auto &pair : renderableGCQueue) {
             if (pair.second-- < 0) expiredCount++;
@@ -734,7 +734,7 @@ namespace sp {
         }
     }
 
-    void Renderer::BeginFrame() {
+    void VoxelRenderer::BeginFrame() {
         ExpireRenderables();
         UpdateShaders();
         ReadBackLightSensors();
@@ -758,7 +758,7 @@ namespace sp {
         }
     }
 
-    void Renderer::EndFrame() {
+    void VoxelRenderer::EndFrame() {
         RTPool->TickFrame();
 
         auto lock = game->entityManager.tecs.StartTransaction<>();
@@ -771,16 +771,16 @@ namespace sp {
         }
     }
 
-    void Renderer::SetRenderTargets(size_t attachmentCount, RenderTarget::Ref *attachments, RenderTarget::Ref depth) {
+    void VoxelRenderer::SetRenderTargets(size_t attachmentCount, RenderTarget::Ref *attachments, RenderTarget::Ref depth) {
         GLuint fb = RTPool->GetFramebuffer(attachmentCount, attachments, depth);
         glBindFramebuffer(GL_FRAMEBUFFER, fb);
     }
 
-    void Renderer::SetRenderTarget(RenderTarget::Ref attachment0, RenderTarget::Ref depth) {
+    void VoxelRenderer::SetRenderTarget(RenderTarget::Ref attachment0, RenderTarget::Ref depth) {
         SetRenderTargets(1, &attachment0, depth);
     }
 
-    void Renderer::SetDefaultRenderTarget() {
+    void VoxelRenderer::SetDefaultRenderTarget() {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 } // namespace sp

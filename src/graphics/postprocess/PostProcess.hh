@@ -5,10 +5,10 @@
 #include "ecs/components/View.hh"
 #include "ecs/components/VoxelInfo.hh"
 #include "graphics/RenderTargetPool.hh"
-#include "graphics/Renderer.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 
 namespace sp {
-    class Renderer;
+    class VoxelRenderer;
     class PostProcessPassBase;
     class PostProcessingContext;
 
@@ -139,7 +139,7 @@ namespace sp {
                 delete pass;
         }
 
-        Renderer *renderer;
+        VoxelRenderer *renderer;
         sp::Game *game;
         ecs::View view;
 
@@ -164,6 +164,6 @@ namespace sp {
     };
 
     namespace PostProcessing {
-        void Process(Renderer *renderer, sp::Game *game, ecs::View view, const EngineRenderTargets &targets);
+        void Process(VoxelRenderer *renderer, sp::Game *game, ecs::View view, const EngineRenderTargets &targets);
     }
 } // namespace sp

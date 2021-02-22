@@ -29,12 +29,12 @@ namespace sp {
         ecs::VoxelInfo info;
     };
 
-    class Renderer : public GraphicsContext {
+    class VoxelRenderer : public GraphicsContext {
     public:
         typedef std::function<void(ecs::Entity &)> PreDrawFunc;
 
-        Renderer(Game *game);
-        ~Renderer();
+        VoxelRenderer(Game *game);
+        ~VoxelRenderer();
 
         void UpdateShaders(bool force = false);
         void Prepare();

@@ -6,7 +6,7 @@
 #include "core/PerfTimer.hh"
 #include "graphics/GuiRenderer.hh"
 #include "graphics/RenderTargetPool.hh"
-#include "graphics/Renderer.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 #include "graphics/basic_renderer/BasicRenderer.hh"
 
 #include <algorithm>
@@ -65,7 +65,7 @@ namespace sp {
             return;
         }
 
-        auto renderer = new Renderer(game);
+        auto renderer = new VoxelRenderer(game);
         context = renderer;
         context->CreateWindow(CVarWindowSize.Get());
 

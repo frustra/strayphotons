@@ -5,12 +5,12 @@
 #include "ecs/components/View.hh"
 
 namespace sp {
-    class Renderer;
+    class VoxelRenderer;
     class GuiManager;
 
     class GuiRenderer {
     public:
-        GuiRenderer(Renderer &renderer, GuiManager *manager);
+        GuiRenderer(VoxelRenderer &renderer, GuiManager *manager);
         ~GuiRenderer();
         void Render(ecs::View view);
 
@@ -19,7 +19,7 @@ namespace sp {
         Texture fontTex;
         double lastTime = 0.0;
 
-        Renderer &parent;
+        VoxelRenderer &parent;
         GuiManager *manager;
     };
 } // namespace sp

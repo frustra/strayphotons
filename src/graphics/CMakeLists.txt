@@ -1,4 +1,5 @@
 add_subdirectory(basic_renderer)
+add_subdirectory(voxel_renderer)
 add_subdirectory(postprocess)
 
 target_sources(
@@ -11,7 +12,6 @@ target_sources(
         LightSensor.cc
         PixelFormat.cc
         RenderBuffer.cc
-        RendererVoxels.cc
         RenderTarget.cc
         RenderTargetPool.cc
         SceneShaders.cc
@@ -24,7 +24,6 @@ target_sources(
 target_sources(
     ${PROJECT_GRAPHICS_EGL_LIB}
     PRIVATE
-        Renderer.cc ## Potentially move into a subfolder like basic_renderer
         GuiRenderer.cc
         GraphicsContext.cc
         GraphicsManager.cc
@@ -33,7 +32,6 @@ target_sources(
 target_sources(
     ${PROJECT_GRAPHICS_OPENGL_LIB}
     PRIVATE
-        Renderer.cc ## Potentially move into a subfolder like basic_renderer
         GuiRenderer.cc
         GraphicsContext.cc
         GraphicsManager.cc

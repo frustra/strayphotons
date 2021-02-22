@@ -7,7 +7,7 @@
 #include "graphics/Buffer.hh"
 #include "graphics/GPUTypes.hh"
 #include "graphics/GenericShaders.hh"
-#include "graphics/Renderer.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/Util.hh"
 
@@ -60,7 +60,7 @@ namespace sp {
 
         LumiHistogramCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput) {}
 
-        RenderTarget::Ref GetTarget(Renderer *r) {
+        RenderTarget::Ref GetTarget(VoxelRenderer *r) {
             if (!target) { target = r->RTPool->Get(RenderTargetDesc(PF_R32UI, {Bins, 1})); }
             return target;
         }

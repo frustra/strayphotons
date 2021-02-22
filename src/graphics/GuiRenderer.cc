@@ -1,7 +1,7 @@
 #include "GuiRenderer.hh"
 
 #include "GenericShaders.hh"
-#include "Renderer.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 #include "ShaderManager.hh"
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
@@ -22,7 +22,7 @@
 // clang-format on
 
 namespace sp {
-    GuiRenderer::GuiRenderer(Renderer &renderer, GuiManager *manager) : parent(renderer), manager(manager) {
+    GuiRenderer::GuiRenderer(VoxelRenderer &renderer, GuiManager *manager) : parent(renderer), manager(manager) {
         manager->SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
 

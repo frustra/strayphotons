@@ -5,7 +5,7 @@
 #include "core/PerfTimer.hh"
 #include "graphics/GenericShaders.hh"
 #include "graphics/RenderTargetPool.hh"
-#include "graphics/Renderer.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/Util.hh"
 #include "graphics/postprocess/Bloom.hh"
@@ -180,7 +180,7 @@ namespace sp {
         delete[] flipped;
     }
 
-    void PostProcessing::Process(Renderer *renderer,
+    void PostProcessing::Process(VoxelRenderer *renderer,
                                  sp::Game *game,
                                  ecs::View view,
                                  const EngineRenderTargets &targets) {
