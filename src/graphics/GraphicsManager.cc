@@ -17,11 +17,6 @@
 #include <iostream>
 #include <system_error>
 
-// clang-format off
-// GLFW must be included after glew.h (Graphics.hh)
-#include <GLFW/glfw3.h>
-// clang-format on
-
 namespace sp {
     GraphicsManager::GraphicsManager(Game *game) : game(game) {
         if (game->options.count("basic-renderer")) {
