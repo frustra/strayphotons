@@ -50,8 +50,6 @@ namespace sp {
 
         ecs::Observer<ecs::Removed<ecs::View>> viewRemoval;
         vector<ecs::Entity> playerViews;
-
-        double lastFrameEnd = 0, fpsTimer = 0;
-        int frameCounter = 0;
+        
     };
 } // namespace sp

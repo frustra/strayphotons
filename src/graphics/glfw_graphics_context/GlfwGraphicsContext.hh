@@ -23,6 +23,15 @@ namespace sp {
         GlfwGraphicsContext(Game *game);
         virtual ~GlfwGraphicsContext();
 
+        // Potential GraphicsContext function implementations
+        void Init();
+        void BeginFrame();
+        void SwapBuffers();
+        void PopulatePancakeView(ecs::View& view);
+        void PrepareForView(ecs::View& view);
+        void EndFrame();
+
+        // Specific to GlfwGraphicsContext
         void CreateWindow(glm::ivec2 initialSize = {640, 480});
         bool ShouldClose();
         void SetTitle(string title);
@@ -37,13 +46,13 @@ namespace sp {
         void DisableCursor();
         void EnableCursor();
 
-        void SwapBuffers();
-
     private:
         glm::ivec2 prevWindowSize, prevWindowPos;
         int prevFullscreen = 0;
         double windowScale = 1.0;
         vector<glm::ivec2> monitorModes;
+        double lastFrameEnd = 0, fpsTimer = 0;
+        int frameCounter = 0;
 
     protected:
         GLFWwindow *window = nullptr;

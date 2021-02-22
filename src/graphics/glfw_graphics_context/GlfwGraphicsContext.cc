@@ -13,12 +13,20 @@
 #include <iostream>
 #include <string>
 
+#include <cxxopts.hpp>
+
 // clang-format off
 // GLFW must be included after glew.h (Graphics.hh)
 #include <GLFW/glfw3.h>
 // clang-format on
 
 namespace sp {
+
+    CVar<glm::ivec2> CVarWindowSize("r.Size", {1280, 720}, "Window height");
+    CVar<float> CVarWindowScale("r.Scale", 1.0f, "Scale framebuffer");
+    CVar<float> CVarFieldOfView("r.FieldOfView", 60, "Camera field of view");
+    CVar<int> CVarWindowFullscreen("r.Fullscreen", false, "Fullscreen window (0: window, 1: fullscreen)");
+
     static void GLAPIENTRY DebugCallback(GLenum source,
                                          GLenum type,
                                          GLuint id,
@@ -30,16 +38,40 @@ namespace sp {
         Debugf("[GL 0x%X] 0x%X: %s", id, type, message);
     }
 
+    static void glfwErrorCallback(int error, const char *message) {
+        Errorf("GLFW returned %d: %s", error, message);
+    }
+
     GlfwGraphicsContext::GlfwGraphicsContext(Game *game) : game(game), input(&game->input) {
+        glfwSetErrorCallback(glfwErrorCallback);
+
+        if (!glfwInit()) { throw "glfw failed"; }
+
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+
+        if (game->options.count("size")) {
+            std::istringstream ss(game->options["size"].as<string>());
+            glm::ivec2 size;
+            ss >> size.x >> size.y;
+
+            if (size.x > 0 && size.y > 0) { CVarWindowSize.Set(size); }
+        }
     }
 
     GlfwGraphicsContext::~GlfwGraphicsContext() {
-        if (window) glfwDestroyWindow(window);
+        if (window) {
+            glfwDestroyWindow(window);
+        }
+
+        glfwTerminate();
+    }
+
+    void GlfwGraphicsContext::Init() {
+        CreateWindow(CVarWindowSize.Get());
     }
 
     void GlfwGraphicsContext::CreateWindow(glm::ivec2 initialSize) {
@@ -178,5 +210,36 @@ namespace sp {
 
     void GlfwGraphicsContext::SwapBuffers() {
         glfwSwapBuffers(window);
+    }
+
+    void GlfwGraphicsContext::PopulatePancakeView(ecs::View& view) {
+        Assert(view.viewType == ecs::View::VIEW_TYPE_PANCAKE, "cannot populate pancake view settings on a non-pancake view");
+
+        view.SetProjMat(glm::radians(CVarFieldOfView.Get()), view.GetClip(), CVarWindowSize.Get());
+        view.scale = CVarWindowScale.Get();
+    }
+
+    void GlfwGraphicsContext::PrepareForView(ecs::View& view) {
+        if (view.viewType == ecs::View::VIEW_TYPE_PANCAKE) {
+            ResizeWindow(view, CVarWindowScale.Get(), CVarWindowFullscreen.Get());
+        }
+    }
+
+    void GlfwGraphicsContext::BeginFrame() {
+        // Do nothing for now
+    }
+
+    void GlfwGraphicsContext::EndFrame() {
+        double frameEnd = glfwGetTime();
+        fpsTimer += frameEnd - lastFrameEnd;
+        frameCounter++;
+
+        if (fpsTimer > 1.0) {
+            SetTitle("STRAY PHOTONS (" + std::to_string(frameCounter) + " FPS)");
+            frameCounter = 0;
+            fpsTimer = 0;
+        }
+
+        lastFrameEnd = frameEnd;
     }
 } // namespace sp

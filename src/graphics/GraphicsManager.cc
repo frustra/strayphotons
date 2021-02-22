@@ -23,15 +23,6 @@
 // clang-format on
 
 namespace sp {
-    CVar<glm::ivec2> CVarWindowSize("r.Size", {1280, 720}, "Window height");
-    CVar<float> CVarWindowScale("r.Scale", 1.0f, "Scale framebuffer");
-    CVar<float> CVarFieldOfView("r.FieldOfView", 60, "Camera field of view");
-    CVar<int> CVarWindowFullscreen("r.Fullscreen", false, "Fullscreen window (0: window, 1: fullscreen)");
-
-    static void glfwErrorCallback(int error, const char *message) {
-        Errorf("GLFW returned %d: %s", error, message);
-    }
-
     GraphicsManager::GraphicsManager(Game *game) : game(game) {
         if (game->options.count("basic-renderer")) {
             Logf("Graphics starting up (basic renderer)");
@@ -39,18 +30,6 @@ namespace sp {
         } else {
             Logf("Graphics starting up (full renderer)");
         }
-
-        if (game->options.count("size")) {
-            std::istringstream ss(game->options["size"].as<string>());
-            glm::ivec2 size;
-            ss >> size.x >> size.y;
-
-            if (size.x > 0 && size.y > 0) { CVarWindowSize.Set(size); }
-        }
-
-        glfwSetErrorCallback(glfwErrorCallback);
-
-        if (!glfwInit()) { throw "glfw failed"; }
     }
 
     GraphicsManager::~GraphicsManager() {
@@ -66,8 +45,6 @@ namespace sp {
         if (context) {
             delete context;
         }
-
-        glfwTerminate();
     }
 
     void GraphicsManager::Init() {
@@ -97,7 +74,7 @@ namespace sp {
             }
         }
 
-        context->CreateWindow(CVarWindowSize.Get());
+        context->Init();
         renderer->Prepare();
     }
 
@@ -131,8 +108,7 @@ namespace sp {
                 if (view->viewType == ecs::View::VIEW_TYPE_PANCAKE) {
                     // This claims to be a PancakeView, so we can update it
                     // with the screen geometry
-                    view->SetProjMat(glm::radians(CVarFieldOfView.Get()), view->GetClip(), CVarWindowSize.Get());
-                    view->scale = CVarWindowScale.Get();
+                    context->PopulatePancakeView(*view);
 
                     pancakeView = *ecs::UpdateViewCache(playerViews[i]);
                 } else if (view->viewType == ecs::View::VIEW_TYPE_XR && playerViews[i].Has<ecs::XRView>()) {
@@ -202,26 +178,16 @@ namespace sp {
             }
 
             // Render the 2D pancake view
-            context->ResizeWindow(pancakeView, CVarWindowScale.Get(), CVarWindowFullscreen.Get());
+            context->PrepareForView(pancakeView);
             renderer->RenderPass(pancakeView);
 
             renderer->EndFrame();
         }
 
-        glfwSwapBuffers(context->GetWindow());
+        context->SwapBuffers();
         renderer->Timer.EndFrame();
-
-        double frameEnd = glfwGetTime();
-        fpsTimer += frameEnd - lastFrameEnd;
-        frameCounter++;
-
-        if (fpsTimer > 1.0) {
-            context->SetTitle("STRAY PHOTONS (" + std::to_string(frameCounter) + " FPS)");
-            frameCounter = 0;
-            fpsTimer = 0;
-        }
-
-        lastFrameEnd = frameEnd;
+        context->EndFrame();
+        
         return true;
     }
 
@@ -245,8 +211,7 @@ namespace sp {
                 if (view->viewType == ecs::View::VIEW_TYPE_PANCAKE) {
                     // This claims to be a PancakeView, so we can update it
                     // with the screen geometry
-                    view->SetProjMat(glm::radians(CVarFieldOfView.Get()), view->GetClip(), CVarWindowSize.Get());
-                    view->scale = CVarWindowScale.Get();
+                    context->PopulatePancakeView(*view);
 
                     ecs::View pancakeView = *ecs::UpdateViewCache(playerViews[i]);
                     pancakeView.blend = true;
