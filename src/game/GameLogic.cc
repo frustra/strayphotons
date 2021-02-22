@@ -162,8 +162,7 @@ namespace sp {
     void GameLogic::ResetPlayer() {
         auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
         if (player) {
-            auto &view = player.Set<ecs::View>(lock);
-            view.clip = glm::vec2(0.1, 256);
+            player.Set<ecs::View>(lock);
 
             humanControlSystem.Teleport(lock, player, glm::vec3(), glm::quat());
             player.Set<ecs::VoxelInfo>(lock);
@@ -171,8 +170,7 @@ namespace sp {
             player = lock.NewEntity();
             player.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GAME_LOGIC);
             player.Set<ecs::Name>(lock, "player");
-            auto &view = player.Set<ecs::View>(lock);
-            view.clip = glm::vec2(0.1, 256);
+            player.Set<ecs::View>(lock);
 
             humanControlSystem.AssignController(lock, player, game->physics);
             player.Set<ecs::VoxelInfo>(lock);

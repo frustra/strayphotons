@@ -219,6 +219,7 @@ namespace sp {
 
         view.SetProjMat(glm::radians(CVarFieldOfView.Get()), view.GetClip(), CVarWindowSize.Get());
         view.scale = CVarWindowScale.Get();
+        view.clip = glm::vec2(0.1, 256);
     }
 
     void GlfwGraphicsContext::PrepareForView(ecs::View& view) {
