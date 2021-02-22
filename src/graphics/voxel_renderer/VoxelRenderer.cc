@@ -25,15 +25,8 @@
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/transform.hpp>
 
-// clang-format off
-// GLFW must be included after glew.h (Graphics.hh)
-#include <GLFW/glfw3.h>
-// clang-format on
-
 namespace sp {
     VoxelRenderer::VoxelRenderer(Game *game, GlfwGraphicsContext& context) : Renderer(game), context(context) {
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     }
 
     VoxelRenderer::~VoxelRenderer() {
