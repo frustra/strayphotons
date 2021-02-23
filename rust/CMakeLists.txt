@@ -46,4 +46,11 @@ if(WIN32)
         Ncrypt
         ntdll
     )
+elseif(UNIX)
+    find_package(OpenSSL REQUIRED)
+
+    target_link_libraries(sp-rust PRIVATE
+        # reqwest / url crate
+        OpenSSL::SSL
+    )
 endif()
