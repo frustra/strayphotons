@@ -46,6 +46,7 @@ namespace sp {
         std::thread rustLib([] {
             sp::rust::print_hello();
         });
+        rustLib.detach();
 
         std::cout << sp::rust::http_get("https://cdn.frustra.org/check").c_str() << std::endl;
 #endif
