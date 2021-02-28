@@ -114,7 +114,7 @@ namespace sp {
         return model->buffers.size() > index;
     }
 
-    vector<unsigned char> Model::GetBuffer(int index) {
+    const vector<unsigned char>& Model::GetBuffer(int index) {
         return model->buffers[index].data;
     }
 

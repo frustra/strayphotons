@@ -61,7 +61,7 @@ namespace sp {
         vector<Primitive *> primitives;
 
         bool HasBuffer(int index);
-        vector<unsigned char> GetBuffer(int index);
+        const vector<unsigned char>& GetBuffer(int index);
         Hash128 HashBuffer(int index);
 
         int FindNodeByName(string name);
