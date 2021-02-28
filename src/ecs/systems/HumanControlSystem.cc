@@ -3,6 +3,7 @@
 #include "Common.hh"
 #include "core/CVar.hh"
 #include "core/Logging.hh"
+#include "core/Math.h"
 #include "physx/PhysxUtils.hh"
 
 #include <PxRigidActor.h>
@@ -83,14 +84,14 @@ namespace ecs {
                     if (!rotating || !InteractRotate(entity, dtSinceLastFrame, cursorDiff)) {
                         float sensitivity = CVarCursorSensitivity.Get() * 0.001;
                         controller->yaw -= cursorDiff.x * sensitivity;
-                        if (controller->yaw > 2.0f * M_PI) { controller->yaw -= 2.0f * M_PI; }
-                        if (controller->yaw < 0) { controller->yaw += 2.0f * M_PI; }
+                        if (controller->yaw > 2.0f * sp::math::kPi) { controller->yaw -= 2.0f * sp::math::kPi; }
+                        if (controller->yaw < 0) { controller->yaw += 2.0f * sp::math::kPi; }
 
                         controller->pitch -= cursorDiff.y * sensitivity;
 
                         const float feps = std::numeric_limits<float>::epsilon();
-                        controller->pitch = std::max(-((float)M_PI_2 - feps),
-                                                     std::min(controller->pitch, (float)M_PI_2 - feps));
+                        controller->pitch = std::max(-(sp::math::kPi_2 - feps),
+                                                     std::min(controller->pitch, sp::math::kPi_2 - feps));
 
                         auto transform = entity.Get<ecs::Transform>();
                         transform->SetRotate(
