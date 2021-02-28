@@ -15,6 +15,7 @@
 #include "graphics/ShaderManager.hh"
 #include "graphics/Util.hh"
 #include "graphics/postprocess/PostProcess.hh"
+#include "graphics/opengl/GLView.hh"
 #include "physx/PhysxUtils.hh"
 #include "threading/MutexedVector.hh"
 #include "xr/XrAction.hh"
@@ -131,7 +132,7 @@ namespace sp {
                 light->mapOffset = glm::vec4(renderTargetSize.x, 0, view->extents.x, view->extents.y);
                 light->lightId = lightCount++;
                 view->offset = glm::ivec2(light->mapOffset);
-                view->clearMode = 0;
+                view->clearMode = ecs::ClearMode::None;
 
                 renderTargetSize.x += view->extents.x;
                 if (view->extents.y > renderTargetSize.y) renderTargetSize.y = view->extents.y;
@@ -255,7 +256,7 @@ namespace sp {
                 basicView.offset = glm::ivec2(0);
                 basicView.extents = glm::ivec2(mapResolution);
 
-                if (bounce > 0) basicView.clearMode = 0;
+                if (bounce > 0) { basicView.clearMode = ecs::ClearMode::None; }
 
                 ShaderControl->BindPipeline<MirrorMapVS, MirrorMapGS, MirrorMapFS>(GlobalShaders);
 
@@ -379,7 +380,7 @@ namespace sp {
 
             ecs::View forwardPassView = view;
             forwardPassView.offset = glm::ivec2();
-            forwardPassView.clearMode = 0;
+            forwardPassView.clearMode = ecs::ClearMode::None;
 
             glBindFramebuffer(GL_FRAMEBUFFER, fb0);
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -443,10 +444,10 @@ namespace sp {
                 }
 
                 if (bounce == 0) {
-                    forwardPassView.clearMode |= GL_STENCIL_BUFFER_BIT;
+                    forwardPassView.clearMode |= ecs::ClearMode::StencilBuffer;
                     sceneGS->SetRenderMirrors(false);
                 } else {
-                    forwardPassView.clearMode &= ~GL_STENCIL_BUFFER_BIT;
+                    forwardPassView.clearMode &= ~(ecs::ClearMode::StencilBuffer);
                     {
                         RenderPhase phase("MatrixGen", Timer);
 
@@ -548,9 +549,9 @@ namespace sp {
         glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
         glScissor(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
 
-        if (view.clearMode != 0) {
+        if (view.clearMode != ecs::ClearMode::None) {
             glClearColor(view.clearColor.r, view.clearColor.g, view.clearColor.b, view.clearColor.a);
-            glClear(view.clearMode);
+            glClear(getClearMode(view));
         }
     }
 
@@ -733,7 +734,7 @@ namespace sp {
 
         if (game->menuGui && game->menuGui->RenderMode() == MenuRenderMode::Gel) {
             ecs::View menuView({1280, 1280});
-            menuView.clearMode = GL_COLOR_BUFFER_BIT;
+            menuView.clearMode = ecs::ClearMode::ColorBuffer;
             RenderMainMenu(menuView, true);
         }
 

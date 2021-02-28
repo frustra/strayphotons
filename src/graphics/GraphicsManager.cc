@@ -4,12 +4,14 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/PerfTimer.hh"
+
+#include "graphics/GraphicsContext.hh"
+#include "graphics/Renderer.hh"
+
 #include "graphics/RenderTargetPool.hh"
 #include "graphics/glfw_graphics_context/GlfwGraphicsContext.hh"
 #include "graphics/voxel_renderer/VoxelRenderer.hh"
 #include "graphics/basic_renderer/BasicRenderer.hh"
-
-#include "graphics/Renderer.hh"
 
 #include <algorithm>
 #include <cxxopts.hpp>
@@ -210,7 +212,7 @@ namespace sp {
 
                     ecs::View pancakeView = *ecs::UpdateViewCache(playerViews[i]);
                     pancakeView.blend = true;
-                    pancakeView.clearMode = 0;
+                    pancakeView.clearMode = ecs::ClearMode::None;
 
                     renderer->RenderLoading(pancakeView);
                     context->SwapBuffers();

@@ -4,6 +4,8 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 
+#include "graphics/opengl/GLView.hh"
+
 #include <ecs/EcsImpl.hh>
 
 // clang-format off
@@ -194,9 +196,10 @@ namespace sp {
         glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
         glScissor(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
 
-        if (view.clearMode != 0) {
+        if (view.clearMode != ecs::ClearMode::None) {
+            // Construct desired glClear() command
             glClearColor(view.clearColor.r, view.clearColor.g, view.clearColor.b, view.clearColor.a);
-            glClear(view.clearMode);
+            glClear(getClearMode(view));
         }
     }
 

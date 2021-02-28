@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics/Graphics.hh"
+#include <bitset>
 
 #include <ecs/Components.hh>
 #include <glm/glm.hpp>
@@ -9,6 +9,23 @@ namespace ecs {
     class Entity;
     template<typename>
     class Handle;
+
+    using ClearModeStorage = std::bitset<4>;
+    using ClearModeValue = const std::bitset<4>;
+
+    // Define an enum type we can use on generic Views for describing the view clear mode.
+    // This helps decouple the core of the engine from a particular graphics backend.
+    namespace ClearMode {
+        ClearModeValue None                      (0);
+        ClearModeValue ColorBuffer          (1 << 0);
+        ClearModeValue DepthBuffer          (1 << 1);
+        ClearModeValue AccumulationBuffer   (1 << 2);
+        ClearModeValue StencilBuffer        (1 << 3);
+
+        static bool hasClearMode(const ClearModeStorage& storage, ClearModeValue& value) {
+            return (storage & value) == value;
+        }
+    };
 
     class View {
     public:
@@ -38,7 +55,7 @@ namespace ecs {
         // Optional parameters;
         glm::ivec2 offset = {0, 0};
         // TODO(any): Maybe remove color clear once we have interior spaces
-        GLbitfield clearMode = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+        ClearModeStorage clearMode = (ClearMode::ColorBuffer | ClearMode::DepthBuffer);
         glm::vec4 clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
         bool stencil = false;
         bool blend = false;
