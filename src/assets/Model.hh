@@ -1,11 +1,7 @@
 #pragma once
 
 #include "Common.hh"
-#include "graphics/Buffer.hh"
-#include "graphics/Graphics.hh"
-#include "graphics/SceneShaders.hh"
 #include "graphics/Texture.hh"
-#include "graphics/VertexBuffer.hh"
 
 #include <array>
 #include <tinygltf/tiny_gltf.h>
@@ -80,15 +76,6 @@ namespace sp {
         // TODO: support more than one "skin" in a GLTF
         std::map<int, glm::mat4> inverseBindMatrixForJoint;
         int rootBone;
-    };
-
-    class BasicModel : public Model {
-    public:
-        BasicModel(const string &name) : Model(name){};
-
-        std::map<string, BasicMaterial> basicMaterials;
-        std::map<string, VertexBuffer> vbos;
-        std::map<string, Buffer> ibos;
     };
 
     struct BasicMaterial {
