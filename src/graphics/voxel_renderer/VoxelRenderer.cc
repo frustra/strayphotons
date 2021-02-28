@@ -16,6 +16,7 @@
 #include "graphics/Util.hh"
 #include "graphics/postprocess/PostProcess.hh"
 #include "graphics/opengl/GLView.hh"
+#include "graphics/opengl/GLModel.hh"
 #include "physx/PhysxUtils.hh"
 #include "threading/MutexedVector.hh"
 #include "xr/XrAction.hh"

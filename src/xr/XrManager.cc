@@ -7,6 +7,7 @@
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "graphics/opengl/GLModel.hh"
 #include "physx/PhysxUtils.hh"
 #include "xr/XrSystemFactory.hh"
 

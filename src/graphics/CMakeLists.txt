@@ -1,6 +1,11 @@
 add_subdirectory(basic_renderer)
 add_subdirectory(voxel_renderer)
 add_subdirectory(glfw_graphics_context)
+
+# Add the OpenGL implementations of core graphics types
+add_subdirectory(opengl)
+
+# Add all the postprocessing code
 add_subdirectory(postprocess)
 
 target_sources(

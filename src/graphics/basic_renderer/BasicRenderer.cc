@@ -5,6 +5,7 @@
 #include "core/Logging.hh"
 
 #include "graphics/opengl/GLView.hh"
+#include "graphics/opengl/GLModel.hh"
 
 #include <ecs/EcsImpl.hh>
 

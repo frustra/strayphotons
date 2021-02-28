@@ -91,35 +91,6 @@ namespace sp {
         std::map<string, Buffer> ibos;
     };
 
-    class GLModel : public NonCopyable {
-    public:
-        GLModel(Model *model, Renderer *renderer);
-        ~GLModel();
-
-        struct Primitive {
-            Model::Primitive *parent;
-            GLuint vertexBufferHandle;
-            GLuint indexBufferHandle;
-            GLuint weightsBufferHandle;
-            GLuint jointsBufferHandle;
-            Texture *baseColorTex, *metallicRoughnessTex, *heightTex;
-        };
-
-        void Draw(SceneShader *shader, glm::mat4 modelMat, const ecs::View &view, int boneCount, glm::mat4 *boneData);
-
-        void AddPrimitive(Primitive prim);
-
-    private:
-        GLuint LoadBuffer(int index);
-        Texture *LoadTexture(int materialIndex, TextureType type);
-
-        Model *model;
-        Renderer *renderer;
-        std::map<int, GLuint> buffers;
-        std::map<std::string, Texture> textures;
-        vector<Primitive> primitives;
-    };
-
     struct BasicMaterial {
         Texture baseColorTex, metallicRoughnessTex, heightTex;
 
