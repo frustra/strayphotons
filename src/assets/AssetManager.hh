@@ -34,7 +34,7 @@ namespace sp {
         std::string ExpandFilePath(const std::string &filepath, void *user_data);
 
         shared_ptr<Asset> Load(const std::string &path);
-        Texture LoadTexture(const std::string &path, GLsizei levels = Texture::FullyMipmap);
+        GLTexture LoadTexture(const std::string &path, GLsizei levels = GLTexture::FullyMipmap);
         shared_ptr<Model> LoadModel(const std::string &name);
         shared_ptr<Scene> LoadScene(const std::string &name,
                                     ecs::Lock<ecs::AddRemove> lock,

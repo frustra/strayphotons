@@ -61,7 +61,7 @@ namespace sp {
     IMPLEMENT_SHADER_TYPE(SSAOBlurFS, "ssao_blur.frag", Fragment);
 
     struct SSAONoiseTexture {
-        Texture tex;
+        GLTexture tex;
 
         SSAONoiseTexture(int kernelWidth) {
             int samples = kernelWidth * kernelWidth;

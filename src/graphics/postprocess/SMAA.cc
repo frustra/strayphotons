@@ -97,8 +97,8 @@ namespace sp {
             return;
         }
 
-        static Texture areaTex = GAssets.LoadTexture("textures/smaa/AreaTex.tga", 1);
-        static Texture searchTex = GAssets.LoadTexture("textures/smaa/SearchTex.tga", 1);
+        static GLTexture areaTex = GAssets.LoadTexture("textures/smaa/AreaTex.tga", 1);
+        static GLTexture searchTex = GAssets.LoadTexture("textures/smaa/SearchTex.tga", 1);
 
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);

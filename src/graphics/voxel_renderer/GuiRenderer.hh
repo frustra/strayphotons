@@ -17,7 +17,7 @@ namespace sp {
 
     private:
         VertexBuffer vertices, indices;
-        Texture fontTex;
+        GLTexture fontTex;
         double lastTime = 0.0;
 
         GlfwGraphicsContext& context;

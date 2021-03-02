@@ -197,10 +197,10 @@ namespace sp {
         return asset;
     }
 
-    Texture AssetManager::LoadTexture(const std::string &path, GLsizei levels) {
+    GLTexture AssetManager::LoadTexture(const std::string &path, GLsizei levels) {
         auto asset = Load(path);
         Assert(asset != nullptr, "Texture asset not found");
-        return Texture().Create().LoadFromAsset(asset, levels);
+        return GLTexture().Create().LoadFromAsset(asset, levels);
     }
 
     shared_ptr<Model> AssetManager::LoadModel(const std::string &name) {

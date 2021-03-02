@@ -114,7 +114,7 @@ namespace sp {
         return handle;
     }
 
-    Texture *GLModel::LoadTexture(int materialIndex, TextureType textureType) {
+    GLTexture *GLModel::LoadTexture(int materialIndex, TextureType textureType) {
         auto &material = model->model->materials[materialIndex];
 
         string name = std::to_string(materialIndex) + "_";
@@ -227,13 +227,13 @@ namespace sp {
             // 	}
             // }
 
-            Texture *tex =
+            GLTexture *tex =
                 &textures[name]
                      .Create()
                      .Filter(minFilter, magFilter, 4.0)
                      .Wrap(wrapS, wrapT)
                      .Size(img.width, img.height)
-                     .Storage(GL_RGBA, format, type, Texture::FullyMipmap, false) // textureType == BaseColor)
+                     .Storage(GL_RGBA, format, type, GLTexture::FullyMipmap, false) // textureType == BaseColor)
                      .Image2D(img.image.data(), 0, 0, 0, 0, 0, false);
 
             if (VoxelRenderer *r = dynamic_cast<VoxelRenderer *>(renderer)) {

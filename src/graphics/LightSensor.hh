@@ -25,7 +25,7 @@ namespace sp {
 
         static const int MAX_SENSORS = 32;
 
-        Texture outputTex;
+        GLTexture outputTex;
 
     private:
         UniformBuffer sensorData, lightData, voxelInfo;

@@ -100,7 +100,7 @@ namespace sp {
     void VoxelRenderer::RenderMainMenu(ecs::View &view, bool renderToGel) {
         if (renderToGel) {
             RenderTargetDesc menuDesc(PF_RGBA8, view.extents);
-            menuDesc.levels = Texture::FullyMipmap;
+            menuDesc.levels = GLTexture::FullyMipmap;
             menuDesc.anisotropy = 4.0;
             if (!menuGuiTarget || menuGuiTarget->GetDesc() != menuDesc) { menuGuiTarget = RTPool->Get(menuDesc); }
 
@@ -711,7 +711,7 @@ namespace sp {
 
         PrepareForView(view);
 
-        static Texture loadingTex = GAssets.LoadTexture("logos/loading.png");
+        static GLTexture loadingTex = GAssets.LoadTexture("logos/loading.png");
         loadingTex.Bind(0);
 
         ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(GlobalShaders);

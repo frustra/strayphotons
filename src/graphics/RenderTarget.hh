@@ -98,7 +98,7 @@ namespace sp {
         RenderTarget(RenderTargetDesc desc);
         ~RenderTarget();
 
-        Texture &GetTexture() {
+        GLTexture &GetTexture() {
             Assert(tex.handle, "target is a renderbuffer");
             return tex;
         }
@@ -128,7 +128,7 @@ namespace sp {
 
     private:
         RenderTargetDesc desc;
-        Texture tex;
+        GLTexture tex;
         RenderBuffer buf;
 
         int unusedFrames = 0;
