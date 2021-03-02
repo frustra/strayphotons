@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Graphics.hh"
-#include "PixelFormat.hh"
+#include "graphics/Graphics.hh"
+#include "graphics/PixelFormat.hh"
 
 namespace sp {
     class Asset;

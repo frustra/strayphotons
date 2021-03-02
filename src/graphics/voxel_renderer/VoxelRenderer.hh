@@ -4,7 +4,7 @@
 #include "ecs/components/VoxelInfo.hh"
 #include "graphics/Buffer.hh"
 #include "graphics/Renderer.hh"
-#include "graphics/Texture.hh"
+#include "graphics/opengl/GLTexture.hh"
 
 #include <PxPhysicsAPI.h>
 #include <ecs/Ecs.hh>

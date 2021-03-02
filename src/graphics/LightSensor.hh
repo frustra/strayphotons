@@ -7,7 +7,7 @@
 #include "graphics/GPUTypes.hh"
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
-#include "graphics/Texture.hh"
+#include "graphics/opengl/GLTexture.hh"
 
 #include <ecs/Ecs.hh>
 #include <vector>

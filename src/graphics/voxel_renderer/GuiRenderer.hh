@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics/Texture.hh"
+#include "graphics/opengl/GLTexture.hh"
 #include "graphics/VertexBuffer.hh"
 #include "ecs/components/View.hh"
 

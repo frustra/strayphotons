@@ -4,7 +4,7 @@
 #include "graphics/Graphics.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/SceneShaders.hh"
-#include "graphics/Texture.hh"
+#include "graphics/opengl/GLTexture.hh"
 #include "assets/Model.hh"
 
 #include <map>

@@ -1,4 +1,4 @@
-#include "Texture.hh"
+#include "GLTexture.hh"
 
 #include "assets/Asset.hh"
 

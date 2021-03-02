@@ -5,7 +5,7 @@
 #include "core/Console.hh"
 #include "core/Logging.hh"
 #include "graphics/GraphicsManager.hh"
-#include "graphics/Texture.hh"
+#include "graphics/opengl/GLTexture.hh"
 
 #include <core/Game.hh>
 #include <game/input/InputManager.hh>

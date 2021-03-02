@@ -25,7 +25,6 @@ target_sources(
         SceneShaders.cc
         Shader.cc
         ShaderManager.cc
-        Texture.cc
         Util.cc
 )
 

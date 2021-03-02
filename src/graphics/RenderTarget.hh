@@ -2,7 +2,7 @@
 
 #include "Common.hh"
 #include "RenderBuffer.hh"
-#include "Texture.hh"
+#include "graphics/opengl/GLTexture.hh"
 
 #include <cstring>
 #include <glm/glm.hpp>
