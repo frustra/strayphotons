@@ -5,6 +5,7 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/PerfTimer.hh"
+#include "ecs/components/View.hh"
 #include "graphics/GPUTypes.hh"
 #include "graphics/GenericShaders.hh"
 #include "graphics/voxel_renderer/GuiRenderer.hh"

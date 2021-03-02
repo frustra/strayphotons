@@ -22,9 +22,7 @@ namespace ecs {
         ClearModeValue AccumulationBuffer   (1 << 2);
         ClearModeValue StencilBuffer        (1 << 3);
 
-        static bool hasClearMode(const ClearModeStorage& storage, ClearModeValue& value) {
-            return (storage & value) == value;
-        }
+        bool hasClearMode(const ClearModeStorage& storage, ClearModeValue& value);
     };
 
     class View {

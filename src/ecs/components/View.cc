@@ -9,6 +9,13 @@
 #include <picojson/picojson.h>
 
 namespace ecs {
+
+    namespace ClearMode {
+        bool hasClearMode(const ClearModeStorage& storage, ClearModeValue& value) {
+            return (storage & value) == value;
+        }
+    };
+
     template<>
     bool Component<View>::Load(Lock<Read<ecs::Name>> lock, View &view, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
