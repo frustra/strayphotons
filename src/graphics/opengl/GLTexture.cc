@@ -237,6 +237,41 @@ namespace sp {
         return *this;
     }
 
+    GLTexture &GLTexture::LoadFromTexture(TexturePtr texture, GLsizei levels) {
+        Assert(handle, "null texture handle");
+        Assert(texture != nullptr, "loading asset from null asset");
+
+        int w = texture->GetWidth();
+        int h = texture->GetHeight();
+        int comp = texture->GetComponents();
+        uint8_t* data = texture->GetImage().get();
+
+        Assert(data, "unknown image format");
+        Assert(w > 0 && h > 0, "unknown image format");
+
+        Size(w, h);
+
+        switch (comp) {
+        case 1:
+            Storage(PF_R8, levels);
+            break;
+        case 2:
+            Storage(PF_RG8, levels);
+            break;
+        case 3:
+            Storage(PF_RGB8, levels);
+            break;
+        case 4:
+            Storage(PF_RGBA8, levels);
+            break;
+        default:
+            Storage(PF_INVALID, levels);
+        }
+        Image2D(data);
+
+        return *this;
+    }
+
     GLTexture &GLTexture::Attachment(GLenum attachment) {
         this->attachment = attachment;
         return *this;

@@ -1,11 +1,10 @@
 #pragma once
 
+#include "assets/Texture.hh"
 #include "graphics/Graphics.hh"
 #include "graphics/PixelFormat.hh"
-
 namespace sp {
     class Asset;
-
     struct GLTexture {
         // Passing levels = FullyMipmap indicates storage
         // should be allocated for all possible downsamples.
@@ -72,6 +71,7 @@ namespace sp {
         GLTexture &GenMipmap();
 
         GLTexture &LoadFromAsset(shared_ptr<Asset> asset, GLsizei levels = FullyMipmap);
+        GLTexture &LoadFromTexture(TexturePtr texture, GLsizei levels = FullyMipmap);
         GLTexture &Attachment(GLenum attachment);
 
         bool operator==(const GLTexture &other) const {

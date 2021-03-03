@@ -711,7 +711,7 @@ namespace sp {
 
         PrepareForView(view);
 
-        static GLTexture loadingTex = GAssets.LoadTexture("logos/loading.png");
+        static GLTexture loadingTex = GLTexture().Create().LoadFromTexture(GAssets.LoadTexture2("logos/loading.png"));
         loadingTex.Bind(0);
 
         ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(GlobalShaders);
