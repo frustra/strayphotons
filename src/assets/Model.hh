@@ -11,7 +11,6 @@ namespace sp {
     class Asset;
     class GLModel;
     class Renderer;
-    struct BasicMaterial;
 
     typedef std::array<uint32, 4> Hash128;
 
@@ -76,42 +75,5 @@ namespace sp {
         // TODO: support more than one "skin" in a GLTF
         std::map<int, glm::mat4> inverseBindMatrixForJoint;
         int rootBone;
-    };
-
-    struct BasicMaterial {
-        GLTexture baseColorTex, metallicRoughnessTex, heightTex;
-
-        BasicMaterial(unsigned char *baseColor = nullptr,
-                      unsigned char *metallicRoughness = nullptr,
-                      unsigned char *bump = nullptr) {
-            unsigned char baseColorDefault[4] = {255, 255, 255, 255};
-            unsigned char metallicRoughnessDefault[4] = {0, 255, 0, 0}; // Roughness = G channel, Metallic = B channel
-            unsigned char bumpDefault[4] = {127, 127, 127, 255};
-
-            if (!baseColor) baseColor = baseColorDefault;
-            if (!metallicRoughness) metallicRoughness = metallicRoughnessDefault;
-            if (!bump) bump = bumpDefault;
-
-            baseColorTex.Create()
-                .Filter(GL_NEAREST, GL_NEAREST)
-                .Wrap(GL_REPEAT, GL_REPEAT)
-                .Size(1, 1)
-                .Storage(PF_RGB8)
-                .Image2D(baseColor);
-
-            metallicRoughnessTex.Create()
-                .Filter(GL_NEAREST, GL_NEAREST)
-                .Wrap(GL_REPEAT, GL_REPEAT)
-                .Size(1, 1)
-                .Storage(PF_R8)
-                .Image2D(metallicRoughness);
-
-            heightTex.Create()
-                .Filter(GL_NEAREST, GL_NEAREST)
-                .Wrap(GL_REPEAT, GL_REPEAT)
-                .Size(1, 1)
-                .Storage(PF_R8)
-                .Image2D(bump);
-        }
     };
 } // namespace sp
