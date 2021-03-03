@@ -198,13 +198,7 @@ namespace sp {
         return asset;
     }
 
-    GLTexture AssetManager::LoadTexture(const std::string &path, GLsizei levels) {
-        auto asset = Load(path);
-        Assert(asset != nullptr, "Texture asset not found");
-        return GLTexture().Create().LoadFromAsset(asset, levels);
-    }
-
-    TexturePtr AssetManager::LoadTexture2(const std::string &path) {
+    TexturePtr AssetManager::LoadTexture(const std::string &path) {
         auto asset = Load(path);
         Assert(asset != nullptr, "Texture asset not found");
 

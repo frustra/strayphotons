@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Common.hh"
-#include "graphics/opengl/GLTexture.hh"
 #include "physx/PhysxManager.hh"
 #include "assets/Texture.hh"
 
@@ -35,8 +34,7 @@ namespace sp {
         std::string ExpandFilePath(const std::string &filepath, void *user_data);
 
         shared_ptr<Asset> Load(const std::string &path);
-        GLTexture LoadTexture(const std::string &path, GLsizei levels = GLTexture::FullyMipmap);
-        TexturePtr LoadTexture2(const std::string &path);
+        TexturePtr LoadTexture(const std::string &path);
         shared_ptr<Model> LoadModel(const std::string &name);
         shared_ptr<Scene> LoadScene(const std::string &name,
                                     ecs::Lock<ecs::AddRemove> lock,
