@@ -10,7 +10,7 @@
 
 namespace sp {
 
-    GLModel::GLModel(Model *model, Renderer *renderer) : model(model), renderer(renderer) {
+    GLModel::GLModel(Model *model, Renderer *renderer) : NativeModel(model, renderer) {
         static BasicMaterial defaultMat;
 
         for (auto primitive : model->primitives) {
@@ -106,7 +106,7 @@ namespace sp {
     GLuint GLModel::LoadBuffer(int index) {
         if (buffers.count(index)) return buffers[index];
 
-        auto buffer = model->model->buffers[index];
+        auto buffer = model->GetModel()->buffers[index];
         GLuint handle;
         glCreateBuffers(1, &handle);
         glNamedBufferData(handle, buffer.data.size(), buffer.data.data(), GL_STATIC_DRAW);
@@ -115,7 +115,7 @@ namespace sp {
     }
 
     GLTexture *GLModel::LoadTexture(int materialIndex, TextureType textureType) {
-        auto &material = model->model->materials[materialIndex];
+        auto &material = model->GetModel()->materials[materialIndex];
 
         string name = std::to_string(materialIndex) + "_";
         int textureIndex = -1;
@@ -167,8 +167,8 @@ namespace sp {
 
         // Need to create a texture for this Material / Type combo
         if (textureIndex != -1) {
-            tinygltf::Texture texture = model->model->textures[textureIndex];
-            tinygltf::Image img = model->model->images[texture.source];
+            tinygltf::Texture texture = model->GetModel()->textures[textureIndex];
+            tinygltf::Image img = model->GetModel()->images[texture.source];
 
             GLenum minFilter = GL_LINEAR_MIPMAP_LINEAR;
             GLenum magFilter = GL_LINEAR;
@@ -176,7 +176,7 @@ namespace sp {
             GLenum wrapT = GL_REPEAT;
 
             if (texture.sampler != -1) {
-                tinygltf::Sampler sampler = model->model->samplers[texture.sampler];
+                tinygltf::Sampler sampler = model->GetModel()->samplers[texture.sampler];
 
                 minFilter = sampler.minFilter > 0 ? sampler.minFilter : GL_LINEAR_MIPMAP_LINEAR;
                 magFilter = sampler.magFilter > 0 ? sampler.magFilter : GL_LINEAR;

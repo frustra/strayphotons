@@ -3,8 +3,6 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "core/Logging.hh"
-#include "graphics/GenericShaders.hh"
-#include "graphics/voxel_renderer/VoxelRenderer.hh"
 
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
@@ -102,7 +100,7 @@ namespace sp {
     }
 
     Model::~Model() {
-        Debugf("Destroying model %s (prepared: %d)", name, !!glModel);
+        Debugf("Destroying model %s (prepared: %d)", name, !!nativeModel);
         for (auto primitive : primitives) {
             delete primitive;
         }

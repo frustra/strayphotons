@@ -587,8 +587,9 @@ namespace sp::xr {
             sourcePrim->indexBuffer.components = indexData.size();
             sourcePrim->indexBuffer.componentType = GL_UNSIGNED_SHORT;
 
-            renderable->model->glModel = make_shared<GLModel>(renderable->model.get(), game->graphics.GetRenderer());
-            renderable->model->glModel->AddPrimitive(prim);
+            renderable->model->nativeModel = make_shared<GLModel>(renderable->model.get(),
+                                                                  game->graphics.GetRenderer());
+            renderable->model->nativeModel->AddPrimitive(prim);
         }
 
         return xrObject;

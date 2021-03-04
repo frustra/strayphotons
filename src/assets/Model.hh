@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.hh"
-#include "graphics/opengl/GLTexture.hh"
+#include "graphics/NativeModel.hh"
 
 #include <array>
 #include <tinygltf/tiny_gltf.h>
@@ -9,7 +9,6 @@
 namespace sp {
     // Forward declarations
     class Asset;
-    class GLModel;
     class Renderer;
 
     typedef std::array<uint32, 4> Hash128;
@@ -23,7 +22,6 @@ namespace sp {
     };
 
     class Model : public NonCopyable {
-        friend GLModel;
 
     public:
         Model(const string &name) : name(name){};
@@ -52,7 +50,7 @@ namespace sp {
         };
 
         const string name;
-        shared_ptr<GLModel> glModel;
+        shared_ptr<NativeModel> nativeModel;
         vector<Primitive *> primitives;
 
         bool HasBuffer(int index);
@@ -63,6 +61,10 @@ namespace sp {
         string GetNodeName(int node);
         glm::mat4 GetInvBindPoseForNode(int nodeIndex);
         vector<int> GetJointNodes();
+
+        shared_ptr<const tinygltf::Model> GetModel() {
+            return model;
+        }
 
         vector<glm::mat4> bones;
 
