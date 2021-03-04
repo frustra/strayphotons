@@ -5,12 +5,11 @@
 #include "graphics/Renderer.hh"
 #include "graphics/SceneShaders.hh"
 #include "graphics/Texture.hh"
+#include "assets/Model.hh"
 
 #include <map>
 
 namespace sp {
-    class Model;
-    struct Model::Primitive;
     enum TextureType;
 
     class GLModel : public NonCopyable {
