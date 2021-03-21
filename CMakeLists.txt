@@ -76,20 +76,23 @@ find_package(OpenGL REQUIRED)
 # Some external projects (like OpenVR and fmod) require it to be used in their install() calls
 set(PROJECT_INSTALL sp)
 
+# Root name for all libraries that will be part of this project
+set(PROJECT_BASE_NAME strayphotons)
+
 # The absolute bare minimum core of the engine. Contains Tecs and GameLogic modules.
 # All other modules / libraries depend on this core
-set(PROJECT_LIB strayphotons-core)
+set(PROJECT_LIB ${PROJECT_BASE_NAME}-core)
 
 # Core library for OpenGL-based graphics subsystem
 # Note: this does not get linked into a static lib directly, instead
 # it gets consumed by either the -opengl or -egl versions
-set(PROJECT_GRAPHICS_CORE_LIB strayphotons-graphics-core)
+set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core)
 
 # Library for OpenGL-based graphics using OpenGL 4.0
-set(PROJECT_GRAPHICS_OPENGL_LIB strayphotons-graphics-opengl)
+set(PROJECT_GRAPHICS_OPENGL_LIB ${PROJECT_BASE_NAME}-graphics-opengl)
 
 # Library for OpenGL-based graphics using EGL
-set(PROJECT_GRAPHICS_EGL_LIB strayphotons-graphics-egl)
+set(PROJECT_GRAPHICS_EGL_LIB ${PROJECT_BASE_NAME}-graphics-egl)
 
 set(PROJECT_EXE sp)
 set(PROJECT_TEST_EXE sp-test)
