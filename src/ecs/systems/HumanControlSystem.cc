@@ -89,8 +89,8 @@ namespace ecs {
                         controller->pitch -= cursorDiff.y * sensitivity;
 
                         const float feps = std::numeric_limits<float>::epsilon();
-                        controller->pitch = std::max(-(M_PI_2 - feps),
-                                                     std::min(controller->pitch, M_PI_2 - feps));
+                        controller->pitch = std::max(-((float)M_PI_2 - feps),
+                                                     std::min(controller->pitch, (float)M_PI_2 - feps));
 
                         auto transform = entity.Get<ecs::Transform>();
                         transform->SetRotate(
