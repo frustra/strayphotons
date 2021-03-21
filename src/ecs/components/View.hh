@@ -77,24 +77,24 @@ namespace ecs {
     // Note: must be declared outside the scope of the View class or the compiler gets confused.
     // Note: cannot be moved above View because C++ doesn't support scoped forward declarations.
     using ClearMode_t = std::underlying_type<View::ClearMode>::type;
-    inline View::ClearMode operator | (View::ClearMode t1, View::ClearMode t2) {
-        return static_cast<View::ClearMode>(static_cast<ClearMode_t>(t1) | static_cast<ClearMode_t>(t2));
+    inline View::ClearMode operator | (View::ClearMode lhs, View::ClearMode rhs) {
+        return static_cast<View::ClearMode>(static_cast<ClearMode_t>(lhs) | static_cast<ClearMode_t>(rhs));
     }
 
-    inline View::ClearMode operator & (View::ClearMode t1, View::ClearMode t2) {
-        return static_cast<View::ClearMode>(static_cast<ClearMode_t>(t1) & static_cast<ClearMode_t>(t2));
+    inline View::ClearMode operator & (View::ClearMode lhs, View::ClearMode rhs) {
+        return static_cast<View::ClearMode>(static_cast<ClearMode_t>(lhs) & static_cast<ClearMode_t>(rhs));
     }
 
-    inline View::ClearMode operator |= (View::ClearMode t1, View::ClearMode t2) {
-        return static_cast<View::ClearMode>(static_cast<ClearMode_t>(t1) | static_cast<ClearMode_t>(t2));
+    inline View::ClearMode operator |= (View::ClearMode& lhs, View::ClearMode rhs) {
+        return lhs = static_cast<View::ClearMode>(static_cast<ClearMode_t>(lhs) | static_cast<ClearMode_t>(rhs));
     }
 
-    inline View::ClearMode operator &= (View::ClearMode t1, View::ClearMode t2) {
-        return static_cast<View::ClearMode>(static_cast<ClearMode_t>(t1) & static_cast<ClearMode_t>(t2));
+    inline View::ClearMode operator &= (View::ClearMode& lhs, View::ClearMode rhs) {
+        return lhs = static_cast<View::ClearMode>(static_cast<ClearMode_t>(lhs) & static_cast<ClearMode_t>(rhs));
     }
 
-    inline View::ClearMode operator ~ (View::ClearMode t1) {
-        return static_cast<View::ClearMode>(~static_cast<ClearMode_t>(t1));
+    inline View::ClearMode operator ~ (View::ClearMode lhs) {
+        return static_cast<View::ClearMode>(~static_cast<ClearMode_t>(lhs));
     }
 
     static Component<View> ComponentView("view");
