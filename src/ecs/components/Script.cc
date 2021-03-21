@@ -1,7 +1,6 @@
 #include "Script.hh"
 
 #include <core/Logging.hh>
-#include <core/Math.h>
 #include <ecs/EcsImpl.hh>
 #include <ecs/Signals.hh>
 #include <glm/glm.hpp>
@@ -27,7 +26,7 @@ namespace ecs {
                             auto sunPos = signalComp.GetSignal("position");
                             if (signalComp.GetSignal("fix_position") == 0.0) {
                                 sunPos += dtSinceLastFrame * (0.05 + std::abs(sin(sunPos) * 0.1));
-                                if (sunPos > sp::math::kPi / 2.0) sunPos = -sp::math::kPi / 2.0;
+                                if (sunPos > M_PI_2) sunPos = -M_PI_2;
                                 signalComp.SetSignal("position", sunPos);
                             }
 

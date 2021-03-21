@@ -7,13 +7,13 @@
 #include "core/CVar.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
-#include "core/Math.h"
 #include "ecs/EcsImpl.hh"
 
 #include <PxScene.h>
 #include <chrono>
 #include <fstream>
 #include <physx/PhysxUtils.hh>
+#include <cmath>
 
 namespace sp {
     using namespace physx;
@@ -128,7 +128,7 @@ namespace sp {
             auto currentRotate = PxQuatToGlmQuat(pose.q);
             auto deltaRotate = targetRotate * glm::inverse(currentRotate);
 
-            if (glm::angle(deltaRotate) > sp::math::kPi_2) {
+            if (glm::angle(deltaRotate) > M_PI_2) {
                 constraint->rotationOffset = GlmQuatToPxQuat(invRotate * currentRotate);
             }
 
