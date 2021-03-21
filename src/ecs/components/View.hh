@@ -1,7 +1,5 @@
 #pragma once
 
-#include <bitset>
-
 #include <ecs/Components.hh>
 #include <glm/glm.hpp>
 
@@ -10,27 +8,25 @@ namespace ecs {
     template<typename>
     class Handle;
 
-    using ClearModeStorage = std::bitset<4>;
-    using ClearModeValue = const std::bitset<4>;
-
-    // Define an enum type we can use on generic Views for describing the view clear mode.
-    // This helps decouple the core of the engine from a particular graphics backend.
-    namespace ClearMode {
-        ClearModeValue None                      (0);
-        ClearModeValue ColorBuffer          (1 << 0);
-        ClearModeValue DepthBuffer          (1 << 1);
-        ClearModeValue AccumulationBuffer   (1 << 2);
-        ClearModeValue StencilBuffer        (1 << 3);
-
-        bool hasClearMode(const ClearModeStorage& storage, ClearModeValue& value);
-    };
-
     class View {
     public:
         enum ViewType {
             VIEW_TYPE_PANCAKE,
             VIEW_TYPE_XR,
             VIEW_TYPE_LIGHT,
+        };
+
+        // Define an enum type we can use on generic Views for describing the view clear mode.
+        // This helps decouple the core of the engine from a particular graphics backend.
+        //
+        // NOTE: The ClearMode enum values are used as bit-flags! Ensure that any values added to this enum
+        // are represented by a single unique bit.
+        enum ClearMode { 
+            None                = (0), 
+            ColorBuffer         = (1 << 0), 
+            DepthBuffer         = (1 << 1), 
+            AccumulationBuffer  = (1 << 2), 
+            StencilBuffer       = (1 << 3), 
         };
 
         View() {}
@@ -50,10 +46,12 @@ namespace ecs {
         glm::mat4 GetViewMat();
         glm::mat4 GetInvViewMat();
 
+        bool HasClearMode(ClearMode mode) const;
+
         // Optional parameters;
         glm::ivec2 offset = {0, 0};
         // TODO(any): Maybe remove color clear once we have interior spaces
-        ClearModeStorage clearMode = (ClearMode::ColorBuffer | ClearMode::DepthBuffer);
+        ClearMode clearMode = (ClearMode) (ClearMode::ColorBuffer | ClearMode::DepthBuffer);
         glm::vec4 clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
         bool stencil = false;
         bool blend = false;
@@ -74,6 +72,30 @@ namespace ecs {
         glm::mat4 projMat, invProjMat;
         glm::mat4 viewMat, invViewMat;
     };
+
+    // Define some helpful operators for working with the ClearMode bit flags
+    // Note: must be declared outside the scope of the View class or the compiler gets confused.
+    // Note: cannot be moved above View because C++ doesn't support scoped forward declarations.
+    using ClearMode_t = std::underlying_type<View::ClearMode>::type;
+    inline View::ClearMode operator | (View::ClearMode t1, View::ClearMode t2) {
+        return static_cast<View::ClearMode>(static_cast<ClearMode_t>(t1) | static_cast<ClearMode_t>(t2));
+    }
+
+    inline View::ClearMode operator & (View::ClearMode t1, View::ClearMode t2) {
+        return static_cast<View::ClearMode>(static_cast<ClearMode_t>(t1) & static_cast<ClearMode_t>(t2));
+    }
+
+    inline View::ClearMode operator |= (View::ClearMode t1, View::ClearMode t2) {
+        return static_cast<View::ClearMode>(static_cast<ClearMode_t>(t1) | static_cast<ClearMode_t>(t2));
+    }
+
+    inline View::ClearMode operator &= (View::ClearMode t1, View::ClearMode t2) {
+        return static_cast<View::ClearMode>(static_cast<ClearMode_t>(t1) & static_cast<ClearMode_t>(t2));
+    }
+
+    inline View::ClearMode operator ~ (View::ClearMode t1) {
+        return static_cast<View::ClearMode>(~static_cast<ClearMode_t>(t1));
+    }
 
     static Component<View> ComponentView("view");
 

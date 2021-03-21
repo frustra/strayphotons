@@ -7,19 +7,19 @@ namespace sp {
 
     static GLbitfield getClearMode(const ecs::View& view) {
         GLbitfield clearMode = 0;
-        if (ecs::ClearMode::hasClearMode(view.clearMode, ecs::ClearMode::ColorBuffer)) {
+        if (view.HasClearMode(ecs::View::ClearMode::ColorBuffer)) {
             clearMode |= GL_COLOR_BUFFER_BIT;
         }
 
-        if (ecs::ClearMode::hasClearMode(view.clearMode, ecs::ClearMode::DepthBuffer)) {
+        if (view.HasClearMode(ecs::View::ClearMode::DepthBuffer)) {
             clearMode |= GL_DEPTH_BUFFER_BIT;
         }
 
-        if (ecs::ClearMode::hasClearMode(view.clearMode, ecs::ClearMode::AccumulationBuffer)) {
+        if (view.HasClearMode(ecs::View::ClearMode::AccumulationBuffer)) {
             clearMode |= GL_ACCUM_BUFFER_BIT;
         }
 
-        if (ecs::ClearMode::hasClearMode(view.clearMode, ecs::ClearMode::StencilBuffer)) {
+        if (view.HasClearMode(ecs::View::ClearMode::StencilBuffer)) {
             clearMode |= GL_STENCIL_BUFFER_BIT;
         }
 
