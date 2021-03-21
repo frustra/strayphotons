@@ -31,7 +31,8 @@ namespace sp {
         ImGuiIO &io = ImGui::GetIO();
 
 #ifdef _WIN32
-        // TODO: Dynamic-cast here to determine if the GraphicsContext is actually a GlfwGraphicsContext
+        // TODO: Ideally, GuiRenderer should not depend on being passed a GlfwGraphicsContext: it should be able to accept
+        // an arbitrary GraphicsContext, and work with it.
         io.ImeWindowHandle = glfwGetWin32Window(context.GetWindow());
 #endif
 
