@@ -3,6 +3,7 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/PerfTimer.hh"
+#include "graphics/Graphics.hh"
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
 
