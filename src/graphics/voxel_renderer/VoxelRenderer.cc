@@ -134,7 +134,7 @@ namespace sp {
                 light->mapOffset = glm::vec4(renderTargetSize.x, 0, view->extents.x, view->extents.y);
                 light->lightId = lightCount++;
                 view->offset = glm::ivec2(light->mapOffset);
-                view->clearMode.clear();
+                view->clearMode.reset();
 
                 renderTargetSize.x += view->extents.x;
                 if (view->extents.y > renderTargetSize.y) renderTargetSize.y = view->extents.y;
@@ -258,7 +258,7 @@ namespace sp {
                 basicView.offset = glm::ivec2(0);
                 basicView.extents = glm::ivec2(mapResolution);
 
-                if (bounce > 0) { basicView.clearMode.clear(); }
+                if (bounce > 0) { basicView.clearMode.reset(); }
 
                 ShaderControl->BindPipeline<MirrorMapVS, MirrorMapGS, MirrorMapFS>(GlobalShaders);
 
@@ -382,7 +382,7 @@ namespace sp {
 
             ecs::View forwardPassView = view;
             forwardPassView.offset = glm::ivec2();
-            forwardPassView.clearMode.clear();
+            forwardPassView.clearMode.reset();
 
             glBindFramebuffer(GL_FRAMEBUFFER, fb0);
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -446,10 +446,10 @@ namespace sp {
                 }
 
                 if (bounce == 0) {
-                    forwardPassView.clearMode.StencilBuffer = true;
+                    forwardPassView.clearMode[ecs::View::ClearMode::CLEAR_MODE_STENCIL_BUFFER] = true;
                     sceneGS->SetRenderMirrors(false);
                 } else {
-                    forwardPassView.clearMode.StencilBuffer = false;
+                    forwardPassView.clearMode[ecs::View::ClearMode::CLEAR_MODE_STENCIL_BUFFER] = false;
                     {
                         RenderPhase phase("MatrixGen", Timer);
 
@@ -736,8 +736,8 @@ namespace sp {
 
         if (game->menuGui && game->menuGui->RenderMode() == MenuRenderMode::Gel) {
             ecs::View menuView({1280, 1280});
-            menuView.clearMode.clear();
-            menuView.clearMode.ColorBuffer = true;
+            menuView.clearMode.reset();
+            menuView.clearMode[ecs::View::ClearMode::CLEAR_MODE_COLOR_BUFFER] = true;
             RenderMainMenu(menuView, true);
         }
 

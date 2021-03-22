@@ -3,6 +3,8 @@
 #include <ecs/Components.hh>
 #include <glm/glm.hpp>
 
+#include <bitset>
+
 namespace ecs {
     class Entity;
     template<typename>
@@ -18,43 +20,16 @@ namespace ecs {
 
         // Define a struct (built from bitfields) that can be used to store clear modes independent of any 
         // graphics backend.
-        struct ClearMode { 
-            bool ColorBuffer        : 1;
-            bool DepthBuffer        : 1;
-            bool AccumulationBuffer : 1; 
-            bool StencilBuffer      : 1;
 
-            ClearMode& setColorBuffer(bool val) {
-                ColorBuffer = val;
-                return *this;
-            }
-
-            ClearMode& setDepthBuffer(bool val) {
-                DepthBuffer = val;
-                return *this;
-            }
-
-            ClearMode& setAccumulationBuffer(bool val) {
-                AccumulationBuffer = val;
-                return *this;
-            }
-
-            ClearMode& setStencilBuffer(bool val) {
-                StencilBuffer = val;
-                return *this;
-            }
-
-            void clear() {
-                ColorBuffer = false;
-                DepthBuffer = false;
-                AccumulationBuffer = false;
-                StencilBuffer = false;
-            }
-
-            bool any() const {
-                return ColorBuffer | DepthBuffer | AccumulationBuffer | StencilBuffer;
-            }
+        enum ClearMode { 
+            CLEAR_MODE_COLOR_BUFFER = 0,
+            CLEAR_MODE_DEPTH_BUFFER,
+            CLEAR_MODE_ACCUMULATION_BUFFER,
+            CLEAR_MODE_STENCIL_BUFFER,
+            CLEAR_MODE_COUNT,
         };
+
+        using ClearModeBitset = std::bitset<CLEAR_MODE_COUNT>;
 
         View() {}
         View(glm::ivec2 extents) : extents(extents) {}
@@ -76,7 +51,7 @@ namespace ecs {
         // Optional parameters;
         glm::ivec2 offset = {0, 0};
         // TODO(any): Maybe remove color clear once we have interior spaces
-        ClearMode clearMode = ClearMode().setColorBuffer(true).setDepthBuffer(true);
+        ClearModeBitset clearMode = ClearModeBitset().set(CLEAR_MODE_COLOR_BUFFER, true).set(CLEAR_MODE_DEPTH_BUFFER, true);
         glm::vec4 clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
         bool stencil = false;
         bool blend = false;
