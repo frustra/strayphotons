@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics/GraphicsContext.hh"
+#include "graphics/glfw_graphics_context/GlfwGraphicsContext.hh"
 #include "graphics/Shader.hh"
 
 #include <unordered_map>

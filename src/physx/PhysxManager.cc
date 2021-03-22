@@ -13,6 +13,7 @@
 #include <chrono>
 #include <fstream>
 #include <physx/PhysxUtils.hh>
+#include <cmath>
 
 namespace sp {
     using namespace physx;

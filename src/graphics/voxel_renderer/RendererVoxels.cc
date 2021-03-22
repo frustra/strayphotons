@@ -1,7 +1,7 @@
 #include "core/Game.hh"
 #include "core/PerfTimer.hh"
 #include "graphics/RenderTargetPool.hh"
-#include "graphics/Renderer.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 #include "graphics/SceneShaders.hh"
 
 #include <atomic>
@@ -15,7 +15,7 @@ namespace sp {
         printGfxDebug = true;
     });
 
-    void Renderer::PrepareVoxelTextures() {
+    void VoxelRenderer::PrepareVoxelTextures() {
         auto VoxelGridSize = voxelData.info.gridSize;
         auto VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize * CVarMaxVoxelFill.Get();
 
@@ -63,7 +63,7 @@ namespace sp {
         radianceMipsDesc.Prepare(RTPool, voxelData.radianceMips, true);
     }
 
-    void Renderer::RenderVoxelGrid() {
+    void VoxelRenderer::RenderVoxelGrid() {
         RenderPhase phase("VoxelGrid", Timer);
 
         PrepareVoxelTextures();
@@ -80,7 +80,7 @@ namespace sp {
         ortho.viewMat = glm::translate(ortho.viewMat, -voxelData.info.voxelGridCenter);
         ortho.projMat = glm::mat4();
         ortho.extents = glm::ivec2(VoxelGridSize * voxelData.info.superSampleScale);
-        ortho.clearMode = 0;
+        ortho.clearMode.reset();
 
         auto renderTarget = RTPool->Get(RenderTargetDesc(PF_R8, ortho.extents));
         SetRenderTarget(renderTarget, nullptr);

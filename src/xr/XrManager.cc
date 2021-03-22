@@ -1,12 +1,16 @@
 #include "xr/XrManager.hh"
 
 #include "assets/AssetManager.hh"
+#include "assets/Model.hh"
 #include "core/CVar.hh"
 #include "core/Console.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "graphics/Buffer.hh"
+#include "graphics/VertexBuffer.hh"
+#include "graphics/opengl/GLModel.hh"
 #include "physx/PhysxUtils.hh"
 #include "xr/XrSystemFactory.hh"
 
@@ -20,6 +24,15 @@ namespace sp::xr {
 
     enum SkeletonMode { SkeletonDisabled = 0, SkeletonNormal = 1, SkeletonDebug = 2 };
     static CVar<int> CVarSkeletons("xr.Skeletons", 1, "XR Skeleton mode (0: none, 1: normal, 2: debug)");
+
+    class BasicModel : public Model {
+        public:
+            BasicModel(const string &name) : Model(name){};
+
+            std::map<string, BasicMaterial> basicMaterials;
+            std::map<string, VertexBuffer> vbos;
+            std::map<string, Buffer> ibos;
+    };
 
     XrManager::XrManager(Game *game) : game(game) {
         funcs.Register(this,
@@ -574,7 +587,7 @@ namespace sp::xr {
             sourcePrim->indexBuffer.components = indexData.size();
             sourcePrim->indexBuffer.componentType = GL_UNSIGNED_SHORT;
 
-            renderable->model->glModel = make_shared<GLModel>(renderable->model.get(), game->graphics.GetContext());
+            renderable->model->glModel = make_shared<GLModel>(renderable->model.get(), game->graphics.GetRenderer());
             renderable->model->glModel->AddPrimitive(prim);
         }
 

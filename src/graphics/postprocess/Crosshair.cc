@@ -2,7 +2,7 @@
 
 #include "core/CVar.hh"
 #include "graphics/GenericShaders.hh"
-#include "graphics/Renderer.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/Util.hh"
 

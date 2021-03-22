@@ -2,8 +2,10 @@
 
 #include "Common.hh"
 #include "core/Logging.hh"
-#include "tiny_gltf.h"
+#include "graphics/opengl/GLModel.hh"
 #include "xr/XrAction.hh"
+
+#include "tiny_gltf.h"
 
 #include <filesystem>
 #include <stdexcept>

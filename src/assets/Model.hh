@@ -1,11 +1,7 @@
 #pragma once
 
 #include "Common.hh"
-#include "graphics/Buffer.hh"
-#include "graphics/Graphics.hh"
-#include "graphics/SceneShaders.hh"
 #include "graphics/Texture.hh"
-#include "graphics/VertexBuffer.hh"
 
 #include <array>
 #include <tinygltf/tiny_gltf.h>
@@ -14,7 +10,7 @@ namespace sp {
     // Forward declarations
     class Asset;
     class GLModel;
-    class GraphicsContext;
+    class Renderer;
     struct BasicMaterial;
 
     typedef std::array<uint32, 4> Hash128;
@@ -61,7 +57,7 @@ namespace sp {
         vector<Primitive *> primitives;
 
         bool HasBuffer(int index);
-        vector<unsigned char> GetBuffer(int index);
+        const vector<unsigned char>& GetBuffer(int index);
         Hash128 HashBuffer(int index);
 
         int FindNodeByName(string name);
@@ -80,44 +76,6 @@ namespace sp {
         // TODO: support more than one "skin" in a GLTF
         std::map<int, glm::mat4> inverseBindMatrixForJoint;
         int rootBone;
-    };
-
-    class BasicModel : public Model {
-    public:
-        BasicModel(const string &name) : Model(name){};
-
-        std::map<string, BasicMaterial> basicMaterials;
-        std::map<string, VertexBuffer> vbos;
-        std::map<string, Buffer> ibos;
-    };
-
-    class GLModel : public NonCopyable {
-    public:
-        GLModel(Model *model, GraphicsContext *context);
-        ~GLModel();
-
-        struct Primitive {
-            Model::Primitive *parent;
-            GLuint vertexBufferHandle;
-            GLuint indexBufferHandle;
-            GLuint weightsBufferHandle;
-            GLuint jointsBufferHandle;
-            Texture *baseColorTex, *metallicRoughnessTex, *heightTex;
-        };
-
-        void Draw(SceneShader *shader, glm::mat4 modelMat, const ecs::View &view, int boneCount, glm::mat4 *boneData);
-
-        void AddPrimitive(Primitive prim);
-
-    private:
-        GLuint LoadBuffer(int index);
-        Texture *LoadTexture(int materialIndex, TextureType type);
-
-        Model *model;
-        GraphicsContext *context;
-        std::map<int, GLuint> buffers;
-        std::map<std::string, Texture> textures;
-        vector<Primitive> primitives;
     };
 
     struct BasicMaterial {

@@ -9,6 +9,7 @@
 #include <picojson/picojson.h>
 
 namespace ecs {
+
     template<>
     bool Component<View>::Load(Lock<Read<ecs::Name>> lock, View &view, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
@@ -112,4 +113,5 @@ namespace ecs {
     glm::mat4 View::GetInvViewMat() {
         return invViewMat;
     }
+
 } // namespace ecs

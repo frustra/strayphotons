@@ -4,7 +4,7 @@
 
 #include <core/Game.hh>
 #include <game/input/InputManager.hh>
-#include <graphics/GraphicsContext.hh>
+#include <graphics/glfw_graphics_context/GlfwGraphicsContext.hh>
 #include <imgui/imgui.h>
 
 namespace sp {

@@ -76,13 +76,43 @@ find_package(OpenGL REQUIRED)
 # Some external projects (like OpenVR and fmod) require it to be used in their install() calls
 set(PROJECT_INSTALL sp)
 
-# split into lib and exe so tests can link against lib
-set(PROJECT_LIB strayphotons)
+# Root name for all libraries that will be part of this project
+set(PROJECT_BASE_NAME strayphotons)
+
+# The absolute bare minimum core of the engine. Contains Tecs and GameLogic modules.
+# All other modules / libraries depend on this core
+set(PROJECT_LIB ${PROJECT_BASE_NAME}-core)
+
+# Core library for OpenGL-based graphics subsystem
+# Note: this does not get linked into a static lib directly, instead
+# it gets consumed by either the -opengl or -egl versions
+set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core)
+
+# Library for OpenGL-based graphics using OpenGL 4.0
+set(PROJECT_GRAPHICS_OPENGL_LIB ${PROJECT_BASE_NAME}-graphics-opengl)
+
+# Library for OpenGL-based graphics using EGL
+set(PROJECT_GRAPHICS_EGL_LIB ${PROJECT_BASE_NAME}-graphics-egl)
+
 set(PROJECT_EXE sp)
 set(PROJECT_TEST_EXE sp-test)
 
 # Core StrayPhotons lib. Contains all game code.
 add_library(${PROJECT_LIB} STATIC)
+
+# StrayPhotons graphics lib. Contains all graphics-related code.
+# Note: this lib is an OBJECT lib, and doesn't actually produce a functional
+# static library that can be linked into an executable.
+# This target must first be linked against OpenGL or EGL
+# to produce a static library.
+# Link executables against either PROJECT_GRAPHICS_OPENGL_LIB or PROJECT_GRAPHICS_EGL_LIB
+add_library(${PROJECT_GRAPHICS_CORE_LIB} OBJECT)
+
+# Implementation of the graphics module that links against real OpenGL
+add_library(${PROJECT_GRAPHICS_OPENGL_LIB} STATIC)
+
+# Implementation of the graphics module that links against EGL
+add_library(${PROJECT_GRAPHICS_EGL_LIB} STATIC)
 
 # Exe Shim that loads StrayPhotons lib on desktop platforms
 add_executable(${PROJECT_EXE})
@@ -111,19 +141,7 @@ cmake_policy(SET CMP0076 NEW)
 
 target_include_directories(
 	${PROJECT_LIB}
-	PRIVATE
-		src
-)
-
-target_include_directories(
-	${PROJECT_EXE}
-	PRIVATE
-		src
-)
-
-target_include_directories(
-	${PROJECT_TEST_EXE}
-	PRIVATE
+	PUBLIC
 		src
 )
 
@@ -222,20 +240,6 @@ else()
 	endif()
 endif()
 
-if(XRSYSTEM_OPENVR)
-	target_compile_definitions(
-		${PROJECT_LIB}
-		PRIVATE
-			XRSYSTEM_OPENVR
-	)
-
-	target_link_libraries(
-		${PROJECT_LIB}
-		PRIVATE
-			openvr
-	)
-endif()
-
 if(SP_BUILD_RUST)
 	add_subdirectory(rust)
 
@@ -301,18 +305,38 @@ target_link_libraries(
 		picojson
 )
 
+# The graphics core lib depends on the core StrayPhotons library,
+# but should not depend on anything else
+target_link_libraries(
+	${PROJECT_GRAPHICS_CORE_LIB}	
+	PUBLIC
+		${PROJECT_LIB}
+)
+
+target_link_libraries(
+	${PROJECT_GRAPHICS_OPENGL_LIB} 
+	PUBLIC
+		${PROJECT_GRAPHICS_CORE_LIB}
+		glfw)
+
+target_link_libraries(
+	${PROJECT_GRAPHICS_EGL_LIB}
+	PUBLIC
+		${PROJECT_GRAPHICS_CORE_LIB}
+		glfw-egl)
+
 target_link_libraries(
 	${PROJECT_EXE}
 	PRIVATE
 		${PROJECT_LIB}
-		glfw
+		${PROJECT_GRAPHICS_OPENGL_LIB}
 )
 
 target_link_libraries(
 	${PROJECT_TEST_EXE}
 	PRIVATE
 		${PROJECT_LIB}
-		glfw-egl
+		${PROJECT_GRAPHICS_EGL_LIB}
 )
 
 if(UNIX)
@@ -350,6 +374,8 @@ install(
 		${PROJECT_EXE}
 		${PROJECT_TEST_EXE}
 		${PROJECT_LIB}
+		${PROJECT_GRAPHICS_EGL_LIB}
+		${PROJECT_GRAPHICS_OPENGL_LIB}
 		${_physx_libraries}
 	RUNTIME DESTINATION
 		bin
