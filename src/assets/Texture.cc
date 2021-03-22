@@ -10,10 +10,10 @@
 namespace sp {
 
     Texture::Texture(StbImagePtr i, int w, int h, int c) :
-        image(i),
         width(w),
         height(h),
-        components(c) {
+        components(c),
+        image(i) {
 
     }
 
