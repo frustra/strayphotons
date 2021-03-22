@@ -210,17 +210,6 @@ if (MSVC)
 			NOMINMAX
 			_USE_MATH_DEFINES
 	)
-
-	target_compile_definitions(
-		${PROJECT_LIB}
-		PUBLIC
-			_CRT_SECURE_NO_WARNINGS
-			UNICODE
-			_UNICODE
-			NOMINMAX
-			_USE_MATH_DEFINES
-	)
-
 endif()
 
 if (SP_DEBUG)
