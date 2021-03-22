@@ -199,7 +199,7 @@ namespace sp {
         glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
         glScissor(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
 
-        if (view.clearMode != ecs::View::ClearMode::None) {
+        if (view.clearMode.any()) {
             // Construct desired glClear() command
             glClearColor(view.clearColor.r, view.clearColor.g, view.clearColor.b, view.clearColor.a);
             glClear(getClearMode(view));

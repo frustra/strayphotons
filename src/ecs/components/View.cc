@@ -114,7 +114,4 @@ namespace ecs {
         return invViewMat;
     }
 
-    bool View::HasClearMode(ClearMode mode) const {
-        return (clearMode & mode) == mode;
-    }
 } // namespace ecs

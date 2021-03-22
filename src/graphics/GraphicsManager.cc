@@ -212,7 +212,7 @@ namespace sp {
 
                     ecs::View pancakeView = *ecs::UpdateViewCache(playerViews[i]);
                     pancakeView.blend = true;
-                    pancakeView.clearMode = ecs::View::ClearMode::None;
+                    pancakeView.clearMode.clear();
 
                     renderer->RenderLoading(pancakeView);
                     context->SwapBuffers();

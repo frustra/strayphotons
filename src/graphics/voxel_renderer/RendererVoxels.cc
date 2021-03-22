@@ -80,7 +80,7 @@ namespace sp {
         ortho.viewMat = glm::translate(ortho.viewMat, -voxelData.info.voxelGridCenter);
         ortho.projMat = glm::mat4();
         ortho.extents = glm::ivec2(VoxelGridSize * voxelData.info.superSampleScale);
-        ortho.clearMode = ecs::View::ClearMode::None;
+        ortho.clearMode.clear();
 
         auto renderTarget = RTPool->Get(RenderTargetDesc(PF_R8, ortho.extents));
         SetRenderTarget(renderTarget, nullptr);
