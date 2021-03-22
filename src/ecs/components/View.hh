@@ -18,9 +18,8 @@ namespace ecs {
             VIEW_TYPE_LIGHT,
         };
 
-        // Define a struct (built from bitfields) that can be used to store clear modes independent of any 
+        // Define a std::bitset and a corresponding enum that can be used to store clear modes independent of any 
         // graphics backend.
-
         enum ClearMode { 
             CLEAR_MODE_COLOR_BUFFER = 0,
             CLEAR_MODE_DEPTH_BUFFER,
