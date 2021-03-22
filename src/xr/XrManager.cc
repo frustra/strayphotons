@@ -582,14 +582,13 @@ namespace sp::xr {
             ibo.Create().Data(indexData.size() * sizeof(uint16_t), indexData.data());
             prim.indexBufferHandle = ibo.handle;
 
-            sourcePrim->drawMode = GL_TRIANGLES;
+            sourcePrim->drawMode = Model::DrawMode::Triangles;
             sourcePrim->indexBuffer.byteOffset = 0;
             sourcePrim->indexBuffer.components = indexData.size();
             sourcePrim->indexBuffer.componentType = GL_UNSIGNED_SHORT;
-
-            renderable->model->nativeModel = make_shared<GLModel>(renderable->model.get(),
-                                                                  game->graphics.GetRenderer());
-            renderable->model->nativeModel->AddPrimitive(prim);
+            shared_ptr<GLModel> glModel = make_shared<GLModel>(renderable->model.get(), game->graphics.GetRenderer());
+            glModel->AddPrimitive(prim);
+            renderable->model->nativeModel = glModel;
         }
 
         return xrObject;

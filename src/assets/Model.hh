@@ -46,16 +46,16 @@ namespace sp {
         enum class DrawMode {
             Points = TINYGLTF_MODE_POINTS,
             Line = TINYGLTF_MODE_LINE,
-            Loop = TINYGLTF_MODE_LINE_LOOP,
-            Strip = TINYGLTF_MODE_LINE_STRIP,
+            LineLoop = TINYGLTF_MODE_LINE_LOOP,
+            LineStrip = TINYGLTF_MODE_LINE_STRIP,
             Triangles = TINYGLTF_MODE_TRIANGLES,
-            Strip = TINYGLTF_MODE_TRIANGLE_STRIP,
-            Fan = TINYGLTF_MODE_TRIANGLE_FAN,
+            TriangleStrip = TINYGLTF_MODE_TRIANGLE_STRIP,
+            TriangleFan = TINYGLTF_MODE_TRIANGLE_FAN,
         };
 
         struct Primitive {
             glm::mat4 matrix;
-            int drawMode;
+            DrawMode drawMode;
             Attribute indexBuffer;
             int materialIndex;
             std::array<Attribute, 5> attributes;

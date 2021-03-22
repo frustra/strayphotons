@@ -36,6 +36,8 @@ namespace sp {
 
         void AddPrimitive(GLModel::Primitive prim);
 
+        static GLenum GetDrawMode(Model::DrawMode mode);
+
     private:
         GLuint LoadBuffer(int index);
         GLTexture *LoadTexture(int materialIndex, TextureType type);

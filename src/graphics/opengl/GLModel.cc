@@ -17,6 +17,7 @@ namespace sp {
             GLModel::Primitive glPrimitive;
             glPrimitive.parent = primitive;
             glPrimitive.indexBufferHandle = LoadBuffer(primitive->indexBuffer.bufferIndex);
+            glPrimitive.drawMode = GetDrawMode(primitive->drawMode);
 
             glPrimitive.baseColorTex = LoadTexture(primitive->materialIndex, BaseColor);
             glPrimitive.metallicRoughnessTex = LoadTexture(primitive->materialIndex, MetallicRoughness);
@@ -96,7 +97,7 @@ namespace sp {
                 shader->SetBoneData(boneCount, boneData);
             }
 
-            glDrawElements(primitive.parent->drawMode,
+            glDrawElements(primitive.drawMode,
                            primitive.parent->indexBuffer.components,
                            primitive.parent->indexBuffer.componentType,
                            (char *)primitive.parent->indexBuffer.byteOffset);
@@ -269,6 +270,31 @@ namespace sp {
         }
 
         return NULL;
+    }
+
+    GLenum GLModel::GetDrawMode(Model::DrawMode mode) {
+        switch (mode) {
+        case Model::DrawMode::Points:
+            return GL_POINTS;
+
+        case Model::DrawMode::Line:
+            return GL_LINES;
+
+        case Model::DrawMode::LineLoop:
+            return GL_LINE_LOOP;
+
+        case Model::DrawMode::LineStrip:
+            return GL_LINE_STRIP;
+
+        case Model::DrawMode::Triangles:
+            return GL_TRIANGLES;
+
+        case Model::DrawMode::TriangleStrip:
+            return GL_TRIANGLE_STRIP;
+
+        case Model::DrawMode::TriangleFan:
+            return GL_TRIANGLE_FAN;
+        }
     }
 
 }; // namespace sp

@@ -26,7 +26,10 @@ namespace sp {
         for (auto primitive : comp.model->primitives) {
             auto indexBuffer = comp.model->GetBuffer(primitive->indexBuffer.bufferIndex);
 
+            // TODO: this entire section seems uneccessary... GLModels are constructed for all models...?
             GLModel::Primitive glPrimitive;
+
+            glPrimitive.drawMode = GLModel::GetDrawMode(primitive->drawMode);
 
             glGenBuffers(1, &glPrimitive.indexBufferHandle);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glPrimitive.indexBufferHandle);
@@ -65,7 +68,7 @@ namespace sp {
             glBindVertexArray(glPrimitive.vertexBufferHandle);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glPrimitive.indexBufferHandle);
 
-            glDrawElements(primitive->drawMode,
+            glDrawElements(glPrimitive.drawMode,
                            primitive->indexBuffer.components,
                            primitive->indexBuffer.componentType,
                            (char *)primitive->indexBuffer.byteOffset);

@@ -41,7 +41,7 @@ OpenVrModel::OpenVrModel(std::string name, vr::RenderModel_t *vrModel, vr::Rende
     ibo.Create().Data(vrModel->unTriangleCount * 3 * sizeof(uint16), vrModel->rIndexData);
     prim.indexBufferHandle = ibo.handle;
 
-    sourcePrim.drawMode = GL_TRIANGLES;
+    sourcePrim.drawMode = Model::DrawMode::Triangles;
     sourcePrim.indexBuffer.byteOffset = 0;
     sourcePrim.indexBuffer.components = vrModel->unTriangleCount * 3;
     sourcePrim.indexBuffer.componentType = GL_UNSIGNED_SHORT;
