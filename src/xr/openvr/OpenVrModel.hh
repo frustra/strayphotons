@@ -2,6 +2,7 @@
 
 #include "graphics/Buffer.hh"
 #include "graphics/VertexBuffer.hh"
+#include "graphics/opengl/GLTexture.hh"
 #include "xr/XrModel.hh"
 
 #include <openvr.h>

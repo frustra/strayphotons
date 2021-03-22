@@ -3,6 +3,7 @@
 #include "Common.hh"
 #include "core/Logging.hh"
 #include "graphics/opengl/GLModel.hh"
+#include "graphics/opengl/GLTexture.hh"
 #include "tiny_gltf.h"
 #include "xr/XrAction.hh"
 

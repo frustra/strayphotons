@@ -672,7 +672,9 @@ namespace sp {
 
         if (preDraw) preDraw(lock, ent);
 
-        if (!comp.model->nativeModel) { comp.model->nativeModel = make_shared<GLModel>(comp.model.get(), this); }
+        if (!comp.model->nativeModel) {
+            comp.model->nativeModel = make_shared<GLModel>(comp.model.get(), static_cast<Renderer *>(this));
+        }
         comp.model->nativeModel->Draw(shader,
                                       modelMat,
                                       view,

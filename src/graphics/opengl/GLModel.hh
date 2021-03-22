@@ -25,6 +25,7 @@ namespace sp {
             GLuint weightsBufferHandle;
             GLuint jointsBufferHandle;
             GLTexture *baseColorTex, *metallicRoughnessTex, *heightTex;
+            GLenum drawMode;
         };
 
         void Draw(SceneShader *shader,

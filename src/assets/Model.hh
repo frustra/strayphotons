@@ -1,15 +1,17 @@
 #pragma once
 
 #include "Common.hh"
-#include "graphics/NativeModel.hh"
+#include "glm/glm.hpp"
 
 #include <array>
 #include <tinygltf/tiny_gltf.h>
 
 namespace sp {
+
     // Forward declarations
     class Asset;
     class Renderer;
+    class NativeModel;
 
     typedef std::array<uint32, 4> Hash128;
 
@@ -39,6 +41,16 @@ namespace sp {
             size_t componentCount;
             size_t components;
             int bufferIndex;
+        };
+
+        enum class DrawMode {
+            Points = TINYGLTF_MODE_POINTS,
+            Line = TINYGLTF_MODE_LINE,
+            Loop = TINYGLTF_MODE_LINE_LOOP,
+            Strip = TINYGLTF_MODE_LINE_STRIP,
+            Triangles = TINYGLTF_MODE_TRIANGLES,
+            Strip = TINYGLTF_MODE_TRIANGLE_STRIP,
+            Fan = TINYGLTF_MODE_TRIANGLE_FAN,
         };
 
         struct Primitive {
