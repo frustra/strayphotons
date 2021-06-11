@@ -33,10 +33,9 @@ pub async fn print_hello() {
 
 pub fn http_get(url: String) -> String {
     let res = reqwest::blocking::get(url::Url::parse(&url).ok().unwrap());
-    if res.is_ok() {
-        let content = res.ok().unwrap().text();
-        if content.is_ok() {
-            return content.ok().unwrap();
+    if let Ok(response) = res {
+        if let Ok(text) = response.text() {
+            return text;
         } else {
             return "no content".to_string();
         }
