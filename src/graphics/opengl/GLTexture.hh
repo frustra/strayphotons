@@ -1,12 +1,11 @@
 #pragma once
 
-#include "Graphics.hh"
-#include "PixelFormat.hh"
-
+#include "assets/Texture.hh"
+#include "graphics/Graphics.hh"
+#include "graphics/PixelFormat.hh"
 namespace sp {
     class Asset;
-
-    struct Texture {
+    struct GLTexture {
         // Passing levels = FullyMipmap indicates storage
         // should be allocated for all possible downsamples.
         enum { FullyMipmap = -1 };
@@ -20,9 +19,9 @@ namespace sp {
         // For color attachments, must be GL_COLOR_ATTACHMENT0.
         GLenum attachment;
 
-        Texture &Create(GLenum target = GL_TEXTURE_2D);
-        Texture &Assign(GLenum target, GLuint handle);
-        Texture &Delete();
+        GLTexture &Create(GLenum target = GL_TEXTURE_2D);
+        GLTexture &Assign(GLenum target, GLuint handle);
+        GLTexture &Delete();
 
         void Bind(GLuint binding) const;
         void BindImage(GLuint binding,
@@ -38,29 +37,29 @@ namespace sp {
                               GLint layer = 0) const;
         void Clear(const void *data, GLint level = 0) const;
 
-        Texture &Filter(GLenum minFilter = GL_LINEAR, GLenum magFilter = GL_LINEAR, float anisotropy = 0.0f);
-        Texture &Wrap(GLenum wrapS = GL_CLAMP_TO_EDGE,
+        GLTexture &Filter(GLenum minFilter = GL_LINEAR, GLenum magFilter = GL_LINEAR, float anisotropy = 0.0f);
+        GLTexture &Wrap(GLenum wrapS = GL_CLAMP_TO_EDGE,
                       GLenum wrapT = GL_CLAMP_TO_EDGE,
                       GLenum wrapR = GL_CLAMP_TO_EDGE);
-        Texture &BorderColor(glm::vec4 borderColor);
-        Texture &Compare(GLenum mode = GL_COMPARE_REF_TO_TEXTURE, GLenum func = GL_LEQUAL);
-        Texture &Size(GLsizei width, GLsizei height, GLsizei depth = 1);
+        GLTexture &BorderColor(glm::vec4 borderColor);
+        GLTexture &Compare(GLenum mode = GL_COMPARE_REF_TO_TEXTURE, GLenum func = GL_LEQUAL);
+        GLTexture &Size(GLsizei width, GLsizei height, GLsizei depth = 1);
 
-        Texture &Storage(GLPixelFormat format, GLsizei levels = 1);
-        Texture &Storage(PixelFormat format, GLsizei levels = 1);
-        Texture &Storage(GLenum internalFormat,
+        GLTexture &Storage(GLPixelFormat format, GLsizei levels = 1);
+        GLTexture &Storage(PixelFormat format, GLsizei levels = 1);
+        GLTexture &Storage(GLenum internalFormat,
                          GLenum format,
                          GLenum type,
                          GLsizei levels = 1,
                          bool preferSRGB = false);
-        Texture &Image2D(const void *pixels,
+        GLTexture &Image2D(const void *pixels,
                          GLint level = 0,
                          GLsizei subWidth = 0,
                          GLsizei subHeight = 0,
                          GLsizei xoffset = 0,
                          GLsizei yoffset = 0,
                          bool genMipmap = true);
-        Texture &Image3D(const void *pixels,
+        GLTexture &Image3D(const void *pixels,
                          GLint level = 0,
                          GLsizei subWidth = 0,
                          GLsizei subHeight = 0,
@@ -69,16 +68,17 @@ namespace sp {
                          GLsizei yoffset = 0,
                          GLsizei zoffset = 0,
                          bool genMipmap = true);
-        Texture &GenMipmap();
+        GLTexture &GenMipmap();
 
-        Texture &LoadFromAsset(shared_ptr<Asset> asset, GLsizei levels = FullyMipmap);
-        Texture &Attachment(GLenum attachment);
+        GLTexture &LoadFromAsset(shared_ptr<Asset> asset, GLsizei levels = FullyMipmap);
+        GLTexture &LoadFromTexture(TexturePtr texture, GLsizei levels = FullyMipmap);
+        GLTexture &Attachment(GLenum attachment);
 
-        bool operator==(const Texture &other) const {
+        bool operator==(const GLTexture &other) const {
             return other.handle == handle;
         }
 
-        bool operator!=(const Texture &other) const {
+        bool operator!=(const GLTexture &other) const {
             return !(*this == other);
         }
     };

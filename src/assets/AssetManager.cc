@@ -9,6 +9,7 @@ extern "C" {
 #include "assets/Model.hh"
 #include "assets/Scene.hh"
 #include "assets/Script.hh"
+#include "assets/Texture.hh"
 #include "core/Logging.hh"
 
 #include <ecs/Components.hh>
@@ -197,10 +198,11 @@ namespace sp {
         return asset;
     }
 
-    Texture AssetManager::LoadTexture(const std::string &path, GLsizei levels) {
+    TexturePtr AssetManager::LoadTexture(const std::string &path) {
         auto asset = Load(path);
         Assert(asset != nullptr, "Texture asset not found");
-        return Texture().Create().LoadFromAsset(asset, levels);
+
+        return Texture::LoadFromAsset(asset);
     }
 
     shared_ptr<Model> AssetManager::LoadModel(const std::string &name) {

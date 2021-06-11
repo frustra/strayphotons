@@ -4,7 +4,7 @@
 #include "graphics/Graphics.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/SceneShaders.hh"
-#include "graphics/Texture.hh"
+#include "graphics/opengl/GLTexture.hh"
 #include "assets/Model.hh"
 
 #include <map>
@@ -23,7 +23,7 @@ namespace sp {
             GLuint indexBufferHandle;
             GLuint weightsBufferHandle;
             GLuint jointsBufferHandle;
-            Texture *baseColorTex, *metallicRoughnessTex, *heightTex;
+            GLTexture *baseColorTex, *metallicRoughnessTex, *heightTex;
         };
 
         void Draw(SceneShader *shader, glm::mat4 modelMat, const ecs::View &view, int boneCount, glm::mat4 *boneData);
@@ -32,12 +32,12 @@ namespace sp {
 
     private:
         GLuint LoadBuffer(int index);
-        Texture *LoadTexture(int materialIndex, TextureType type);
+        GLTexture *LoadTexture(int materialIndex, TextureType type);
 
         Model *model;
         Renderer *renderer;
         std::map<int, GLuint> buffers;
-        std::map<std::string, Texture> textures;
+        std::map<std::string, GLTexture> textures;
         vector<GLModel::Primitive> primitives;
     };
 };

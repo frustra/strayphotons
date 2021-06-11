@@ -26,7 +26,7 @@ namespace sp {
             // OpenVrModels can onyl be created using OpenVrModel::LoadOpenVRModel()
             OpenVrModel(std::string name, vr::RenderModel_t *vrModel, vr::RenderModel_TextureMap_t *vrTex);
 
-            Texture baseColorTex, metallicRoughnessTex, heightTex;
+            GLTexture baseColorTex, metallicRoughnessTex, heightTex;
             VertexBuffer vbo;
             Buffer ibo;
             Model::Primitive sourcePrim;

@@ -31,7 +31,7 @@ namespace sp {
         auto size = CVarCrosshairDotSize.Get();
         auto offset = view.extents / 2 - glm::ivec2(size / 2);
 
-        static Texture tex1, tex2;
+        static GLTexture tex1, tex2;
 
         if (!tex1.handle) {
             static unsigned char color[4] = {255, 255, 235, 50};

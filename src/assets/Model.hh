@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common.hh"
-#include "graphics/Texture.hh"
+#include "graphics/opengl/GLTexture.hh"
 
 #include <array>
 #include <tinygltf/tiny_gltf.h>
@@ -79,7 +79,7 @@ namespace sp {
     };
 
     struct BasicMaterial {
-        Texture baseColorTex, metallicRoughnessTex, heightTex;
+        GLTexture baseColorTex, metallicRoughnessTex, heightTex;
 
         BasicMaterial(unsigned char *baseColor = nullptr,
                       unsigned char *metallicRoughness = nullptr,

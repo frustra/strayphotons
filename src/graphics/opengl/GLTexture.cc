@@ -1,4 +1,4 @@
-#include "Texture.hh"
+#include "GLTexture.hh"
 
 #include "assets/Asset.hh"
 
@@ -6,14 +6,14 @@
 #include <stb_image.h>
 
 namespace sp {
-    Texture &Texture::Create(GLenum target) {
+    GLTexture &GLTexture::Create(GLenum target) {
         Assert(!handle, "texture cannot be recreated");
         this->target = target;
         glCreateTextures(target, 1, &handle);
         return Filter().Wrap();
     }
 
-    Texture &Texture::Assign(GLenum target, GLuint handle) {
+    GLTexture &GLTexture::Assign(GLenum target, GLuint handle) {
         Assert(!this->handle, "texture cannot be recreated");
         this->target = target;
         this->handle = handle;
@@ -21,25 +21,25 @@ namespace sp {
         return *this;
     }
 
-    Texture &Texture::Delete() {
+    GLTexture &GLTexture::Delete() {
         if (handle && !assigned) glDeleteTextures(1, &handle);
         handle = 0;
         target = 0;
         return *this;
     }
 
-    void Texture::Bind(GLuint binding) const {
+    void GLTexture::Bind(GLuint binding) const {
         Assert(handle, "null texture handle");
         glBindTextures(binding, 1, &handle);
     }
 
-    void Texture::BindImage(GLuint binding, GLenum access, GLint level, GLboolean layered, GLint layer) const {
+    void GLTexture::BindImage(GLuint binding, GLenum access, GLint level, GLboolean layered, GLint layer) const {
         Assert(handle, "null texture handle");
         Assert(format.Valid(), "binding texture without format specified");
         glBindImageTexture(binding, handle, level, layered, layer, access, format.internalFormat);
     }
 
-    void Texture::BindImageConvert(GLuint binding,
+    void GLTexture::BindImageConvert(GLuint binding,
                                    GLPixelFormat bindFormat,
                                    GLenum access,
                                    GLint level,
@@ -50,11 +50,11 @@ namespace sp {
         glBindImageTexture(binding, handle, level, layered, layer, access, bindFormat.internalFormat);
     }
 
-    void Texture::Clear(const void *data, GLint level) const {
+    void GLTexture::Clear(const void *data, GLint level) const {
         glClearTexImage(handle, level, format.format, format.type, data);
     }
 
-    Texture &Texture::Filter(GLenum minFilter, GLenum magFilter, float anisotropy) {
+    GLTexture &GLTexture::Filter(GLenum minFilter, GLenum magFilter, float anisotropy) {
         Assert(handle, "null texture handle");
         if (target == GL_TEXTURE_2D_MULTISAMPLE) return *this;
 
@@ -66,7 +66,7 @@ namespace sp {
         return *this;
     }
 
-    Texture &Texture::Wrap(GLenum wrapS, GLenum wrapT, GLenum wrapR) {
+    GLTexture &GLTexture::Wrap(GLenum wrapS, GLenum wrapT, GLenum wrapR) {
         Assert(handle, "null texture handle");
         if (target == GL_TEXTURE_2D_MULTISAMPLE) return *this;
 
@@ -76,20 +76,20 @@ namespace sp {
         return *this;
     }
 
-    Texture &Texture::BorderColor(glm::vec4 borderColor) {
+    GLTexture &GLTexture::BorderColor(glm::vec4 borderColor) {
         Assert(handle, "null texture handle");
         glTextureParameterfv(handle, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(borderColor));
         return *this;
     }
 
-    Texture &Texture::Compare(GLenum mode, GLenum func) {
+    GLTexture &GLTexture::Compare(GLenum mode, GLenum func) {
         Assert(handle, "null texture handle");
         glTextureParameteri(handle, GL_TEXTURE_COMPARE_MODE, mode);
         glTextureParameteri(handle, GL_TEXTURE_COMPARE_FUNC, func);
         return *this;
     }
 
-    Texture &Texture::Size(GLsizei width, GLsizei height, GLsizei depth) {
+    GLTexture &GLTexture::Size(GLsizei width, GLsizei height, GLsizei depth) {
         this->width = width;
         this->height = height;
         this->depth = depth;
@@ -105,7 +105,7 @@ namespace sp {
         return cmp + 1;
     }
 
-    Texture &Texture::Storage(GLPixelFormat format, GLsizei levels) {
+    GLTexture &GLTexture::Storage(GLPixelFormat format, GLsizei levels) {
         Assert(format.Valid(), "invalid texture format");
         Assert(handle, "null texture handle");
         Assert(width && height, "texture size must be set before storage format");
@@ -132,15 +132,15 @@ namespace sp {
         return *this;
     }
 
-    Texture &Texture::Storage(PixelFormat format, GLsizei levels) {
+    GLTexture &GLTexture::Storage(PixelFormat format, GLsizei levels) {
         return Storage(GLPixelFormat::PixelFormatMapping(format), levels);
     }
 
-    Texture &Texture::Storage(GLenum internalFormat, GLenum format, GLenum type, GLsizei levels, bool preferSRGB) {
+    GLTexture &GLTexture::Storage(GLenum internalFormat, GLenum format, GLenum type, GLsizei levels, bool preferSRGB) {
         return Storage(GLPixelFormat(internalFormat, format, type, preferSRGB), levels);
     }
 
-    Texture &Texture::Image2D(const void *pixels,
+    GLTexture &GLTexture::Image2D(const void *pixels,
                               GLint level,
                               GLsizei subWidth,
                               GLsizei subHeight,
@@ -163,7 +163,7 @@ namespace sp {
         return *this;
     }
 
-    Texture &Texture::Image3D(const void *pixels,
+    GLTexture &GLTexture::Image3D(const void *pixels,
                               GLint level,
                               GLsizei subWidth,
                               GLsizei subHeight,
@@ -198,12 +198,12 @@ namespace sp {
         return *this;
     }
 
-    Texture &Texture::GenMipmap() {
+    GLTexture &GLTexture::GenMipmap() {
         if (levels > 1) glGenerateTextureMipmap(handle);
         return *this;
     }
 
-    Texture &Texture::LoadFromAsset(shared_ptr<Asset> asset, GLsizei levels) {
+    GLTexture &GLTexture::LoadFromAsset(shared_ptr<Asset> asset, GLsizei levels) {
         Assert(handle, "null texture handle");
         Assert(asset != nullptr, "loading asset from null asset");
 
@@ -237,7 +237,42 @@ namespace sp {
         return *this;
     }
 
-    Texture &Texture::Attachment(GLenum attachment) {
+    GLTexture &GLTexture::LoadFromTexture(TexturePtr texture, GLsizei levels) {
+        Assert(handle, "null texture handle");
+        Assert(texture != nullptr, "loading asset from null asset");
+
+        int w = texture->GetWidth();
+        int h = texture->GetHeight();
+        int comp = texture->GetComponents();
+        uint8_t* data = texture->GetImage().get();
+
+        Assert(data, "unknown image format");
+        Assert(w > 0 && h > 0, "unknown image format");
+
+        Size(w, h);
+
+        switch (comp) {
+        case 1:
+            Storage(PF_R8, levels);
+            break;
+        case 2:
+            Storage(PF_RG8, levels);
+            break;
+        case 3:
+            Storage(PF_RGB8, levels);
+            break;
+        case 4:
+            Storage(PF_RGBA8, levels);
+            break;
+        default:
+            Storage(PF_INVALID, levels);
+        }
+        Image2D(data);
+
+        return *this;
+    }
+
+    GLTexture &GLTexture::Attachment(GLenum attachment) {
         this->attachment = attachment;
         return *this;
     }

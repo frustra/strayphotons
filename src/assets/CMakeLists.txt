@@ -8,4 +8,5 @@ target_sources(
         Model.cc
         Scene.cc
         Script.cc
+        Texture.cc
 )

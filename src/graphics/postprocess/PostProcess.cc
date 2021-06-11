@@ -154,7 +154,7 @@ namespace sp {
         }
     });
 
-    void SaveScreenshot(string path, Texture &tex) {
+    void SaveScreenshot(string path, GLTexture &tex) {
         auto base = std::filesystem::absolute("screenshots");
         if (!std::filesystem::is_directory(base)) {
             if (!std::filesystem::create_directory(base)) {

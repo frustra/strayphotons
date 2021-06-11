@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Common.hh"
-#include "graphics/Texture.hh"
 #include "physx/PhysxManager.hh"
+#include "assets/Texture.hh"
 
 #include <ecs/Ecs.hh>
 #include <map>
@@ -34,7 +34,7 @@ namespace sp {
         std::string ExpandFilePath(const std::string &filepath, void *user_data);
 
         shared_ptr<Asset> Load(const std::string &path);
-        Texture LoadTexture(const std::string &path, GLsizei levels = Texture::FullyMipmap);
+        TexturePtr LoadTexture(const std::string &path);
         shared_ptr<Model> LoadModel(const std::string &name);
         shared_ptr<Scene> LoadScene(const std::string &name,
                                     ecs::Lock<ecs::AddRemove> lock,

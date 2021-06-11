@@ -1,6 +1,6 @@
 #pragma once
 
-#include "graphics/Texture.hh"
+#include "graphics/opengl/GLTexture.hh"
 #include "graphics/VertexBuffer.hh"
 #include "ecs/components/View.hh"
 
@@ -17,7 +17,7 @@ namespace sp {
 
     private:
         VertexBuffer vertices, indices;
-        Texture fontTex;
+        GLTexture fontTex;
         double lastTime = 0.0;
 
         GlfwGraphicsContext& context;
