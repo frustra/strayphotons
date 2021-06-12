@@ -186,30 +186,33 @@ namespace sp {
             mirrorVisData.Clear(PF_R32UI, 0);
             mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 
-            for (auto entity : game->entityManager.EntitiesWith<ecs::Light>()) {
-                auto light = entity.Get<ecs::Light>();
-                if (!light->on) { continue; }
+            {
+                auto lock = game->entityManager.tecs.StartTransaction<ecs::ReadAll, ecs::Write<ecs::Light>>();
+                for (auto &entity : lock.EntitiesWith<ecs::Light>()) {
+                    auto &light = entity.Get<ecs::Light>(lock);
+                    if (!light.on) { continue; }
 
-                if (entity.Has<ecs::View>()) {
-                    light->mapOffset /= glm::vec4(renderTargetSize, renderTargetSize);
+                    if (entity.Has<ecs::View>(lock)) {
+                        light.mapOffset /= glm::vec4(renderTargetSize, renderTargetSize);
 
-                    ecs::Handle<ecs::View> view = entity.Get<ecs::View>();
+                        auto &view = entity.Get<ecs::View>(lock);
 
-                    ShaderControl->BindPipeline<ShadowMapVS, ShadowMapFS>(GlobalShaders);
+                        ShaderControl->BindPipeline<ShadowMapVS, ShadowMapFS>(GlobalShaders);
 
-                    auto shadowMapVS = GlobalShaders->Get<ShadowMapVS>();
-                    auto shadowMapFS = GlobalShaders->Get<ShadowMapFS>();
-                    shadowMapFS->SetClip(view->clip);
-                    shadowMapFS->SetLight(light->lightId);
-                    ForwardPass(*view, shadowMapVS, [&](ecs::Entity &ent) {
-                        if (ent && ent.Has<ecs::Mirror>()) {
-                            auto mirror = ent.Get<ecs::Mirror>();
-                            shadowMapFS->SetMirrorId(mirror->mirrorId);
-                        } else {
-                            shadowMapFS->SetMirrorId(-1);
-                        }
-                    });
-                    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                        auto shadowMapVS = GlobalShaders->Get<ShadowMapVS>();
+                        auto shadowMapFS = GlobalShaders->Get<ShadowMapFS>();
+                        shadowMapFS->SetClip(view.clip);
+                        shadowMapFS->SetLight(light.lightId);
+                        ForwardPass(view, shadowMapVS, lock, [&](ecs::Lock<ecs::ReadAll> lock, Tecs::Entity &ent) {
+                            if (ent && ent.Has<ecs::Mirror>(lock)) {
+                                auto &mirror = ent.Get<ecs::Mirror>(lock);
+                                shadowMapFS->SetMirrorId(mirror.mirrorId);
+                            } else {
+                                shadowMapFS->SetMirrorId(-1);
+                            }
+                        });
+                        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+                    }
                 }
             }
         }
@@ -270,16 +273,19 @@ namespace sp {
                 shadowMap->GetTexture().Bind(4);
                 mirrorShadowMap->GetTexture().Bind(5);
 
-                ForwardPass(basicView, mirrorMapVS, [&](ecs::Entity &ent) {
-                    if (bounce == recursion - 1) {
-                        // Don't mark mirrors on last pass.
-                    } else if (ent && ent.Has<ecs::Mirror>()) {
-                        auto mirror = ent.Get<ecs::Mirror>();
-                        mirrorMapFS->SetMirrorId(mirror->mirrorId);
-                    } else {
-                        mirrorMapFS->SetMirrorId(-1);
-                    }
-                });
+                {
+                    auto lock = game->entityManager.tecs.StartTransaction<ecs::ReadAll>();
+                    ForwardPass(basicView, mirrorMapVS, lock, [&](ecs::Lock<ecs::ReadAll> lock, Tecs::Entity &ent) {
+                        if (bounce == recursion - 1) {
+                            // Don't mark mirrors on last pass.
+                        } else if (ent && ent.Has<ecs::Mirror>(lock)) {
+                            auto &mirror = ent.Get<ecs::Mirror>(lock);
+                            mirrorMapFS->SetMirrorId(mirror.mirrorId);
+                        } else {
+                            mirrorMapFS->SetMirrorId(-1);
+                        }
+                    });
+                }
                 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             }
         }
@@ -492,26 +498,29 @@ namespace sp {
                 glDepthFunc(GL_LESS);
                 glDepthMask(GL_FALSE);
 
-                ForwardPass(forwardPassView, sceneVS, [&](ecs::Entity &ent) {
-                    if (bounce == recursion) {
-                        // Don't mark mirrors on last pass.
-                        glStencilMask(0);
-                    } else if (ent && ent.Has<ecs::Mirror>()) {
-                        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-                        glStencilMask(thisStencilBit);
-                        auto mirror = ent.Get<ecs::Mirror>();
-                        sceneFS->SetMirrorId(mirror->mirrorId);
-                    } else {
-                        glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
-                        glStencilMask(thisStencilBit);
-                        sceneFS->SetMirrorId(-1);
-                    }
+                {
+                    auto lock = game->entityManager.tecs.StartTransaction<ecs::ReadAll>();
+                    ForwardPass(forwardPassView, sceneVS, lock, [&](ecs::Lock<ecs::ReadAll> lock, Tecs::Entity &ent) {
+                        if (bounce == recursion) {
+                            // Don't mark mirrors on last pass.
+                            glStencilMask(0);
+                        } else if (ent && ent.Has<ecs::Mirror>(lock)) {
+                            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+                            glStencilMask(thisStencilBit);
+                            auto &mirror = ent.Get<ecs::Mirror>(lock);
+                            sceneFS->SetMirrorId(mirror.mirrorId);
+                        } else {
+                            glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
+                            glStencilMask(thisStencilBit);
+                            sceneFS->SetMirrorId(-1);
+                        }
 
-                    if (ent && ent.Has<ecs::Renderable>()) {
-                        auto renderable = ent.Get<ecs::Renderable>();
-                        sceneFS->SetEmissive(renderable->emissive);
-                    }
-                });
+                        if (ent && ent.Has<ecs::Renderable>(lock)) {
+                            auto &renderable = ent.Get<ecs::Renderable>(lock);
+                            sceneFS->SetEmissive(renderable.emissive);
+                        }
+                    });
+                }
 
                 if (bounce == 0 && CVarShowVoxels.Get() > 0) { DrawGridDebug(view, sceneVS); }
 
@@ -556,25 +565,32 @@ namespace sp {
         }
     }
 
-    void VoxelRenderer::ForwardPass(const ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw) {
+    void VoxelRenderer::ForwardPass(const ecs::View &view,
+                                    SceneShader *shader,
+                                    ecs::Lock<ecs::ReadAll> lock,
+                                    const PreDrawFunc &preDraw) {
         RenderPhase phase("ForwardPass", Timer);
         PrepareForView(view);
 
         if (CVarRenderWireframe.Get()) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-        for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform>()) {
-            if (ent.Has<ecs::Mirror>()) continue;
-            DrawEntity(view, shader, ent, preDraw);
+        for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
+            if (ent.Has<ecs::Renderable, ecs::Transform>(lock)) {
+                if (ent.Has<ecs::Mirror>(lock)) continue;
+                DrawEntity(view, shader, lock, ent, preDraw);
+            }
         }
 
-        for (ecs::Entity ent : game->entityManager.EntitiesWith<ecs::Renderable, ecs::Transform, ecs::Mirror>()) {
-            DrawEntity(view, shader, ent, preDraw);
+        for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
+            if (ent.Has<ecs::Renderable, ecs::Transform, ecs::Mirror>(lock)) {
+                DrawEntity(view, shader, lock, ent, preDraw);
+            }
         }
 
         if (game->physics.IsDebugEnabled()) {
             RenderPhase phase("PhysxBounds", Timer);
             MutexedVector<physx::PxDebugLine> lines = game->physics.GetDebugLines();
-            DrawPhysxLines(view, shader, lines.Vector(), preDraw);
+            DrawPhysxLines(view, shader, lines.Vector(), lock, preDraw);
         }
 
         if (CVarRenderWireframe.Get()) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -615,9 +631,10 @@ namespace sp {
     void VoxelRenderer::DrawPhysxLines(const ecs::View &view,
                                        SceneShader *shader,
                                        const vector<physx::PxDebugLine> &lines,
+                                       ecs::Lock<ecs::ReadAll> lock,
                                        const PreDrawFunc &preDraw) {
-        ecs::Entity nullEnt;
-        if (preDraw) preDraw(nullEnt);
+        Tecs::Entity nullEnt;
+        if (preDraw) preDraw(lock, nullEnt);
 
         vector<SceneVertex> vertices(6 * lines.size());
         for (auto &line : lines) {
@@ -642,28 +659,25 @@ namespace sp {
 
     void VoxelRenderer::DrawEntity(const ecs::View &view,
                                    SceneShader *shader,
-                                   ecs::Entity &ent,
+                                   ecs::Lock<ecs::ReadAll> lock,
+                                   Tecs::Entity &ent,
                                    const PreDrawFunc &preDraw) {
-        auto comp = ent.Get<ecs::Renderable>();
-        if (comp->hidden) { return; }
+        auto &comp = ent.Get<ecs::Renderable>(lock);
+        if (comp.hidden) { return; }
 
         // Don't render XR-excluded entities from XR views
-        if (view.viewType == ecs::View::VIEW_TYPE_XR && comp->xrExcluded) { return; }
+        if (view.viewType == ecs::View::VIEW_TYPE_XR && comp.xrExcluded) { return; }
 
-        glm::mat4 modelMat;
-        {
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Transform>>();
-            modelMat = ent.GetEntity().Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-        }
+        glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
 
-        if (preDraw) preDraw(ent);
+        if (preDraw) preDraw(lock, ent);
 
-        if (!comp->model->glModel) { comp->model->glModel = make_shared<GLModel>(comp->model.get(), this); }
-        comp->model->glModel->Draw(shader,
-                                   modelMat,
-                                   view,
-                                   comp->model->bones.size(),
-                                   comp->model->bones.size() > 0 ? comp->model->bones.data() : NULL);
+        if (!comp.model->glModel) { comp.model->glModel = make_shared<GLModel>(comp.model.get(), this); }
+        comp.model->glModel->Draw(shader,
+                                  modelMat,
+                                  view,
+                                  comp.model->bones.size(),
+                                  comp.model->bones.size() > 0 ? comp.model->bones.data() : NULL);
     }
 
     void VoxelRenderer::DrawGridDebug(const ecs::View &view, SceneShader *shader) {

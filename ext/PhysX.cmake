@@ -33,6 +33,8 @@ elseif (UNIX)
 
     set(TARGET_BUILD_PLATFORM linux)
 
+    add_compile_options(-Wno-error=nonnull -Wno-error=mismatched-new-delete -Wno-error=array-bounds -Wno-error=stringop-overread)
+
     set(CMAKE_SYSTEM_NAME Linux)
     set(CMAKE_SYSTEM_VERSION 1)
     set(CMAKE_SYSROOT ${LINUX_ROOT})
