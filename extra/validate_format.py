@@ -10,7 +10,7 @@ import subprocess
 include_paths = ["src/", "tests/"]
 include_extenions = [".cc", ".hh", ".cpp", ".hpp"]
 version_pattern = re.compile("version ([0-9]+\.[0-9]+)\.[0-9]+")
-allowed_clangformat_versions = ["6.0", "10.0", "11.0"]
+allowed_clangformat_versions = ["12.0"]
 
 def run_clang_format(filepath, fix):
     if fix:
