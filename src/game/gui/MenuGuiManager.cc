@@ -292,8 +292,9 @@ namespace sp {
                                     ImGuiCond_Always,
                                     ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuCredits", nullptr, flags);
-        
-            static GLTexture frLogoTex = GLTexture().Create().LoadFromTexture(GAssets.LoadTexture("logos/credits-frustra.png"));
+
+            static GLTexture frLogoTex = GLTexture().Create().LoadFromTexture(
+                GAssets.LoadTexture("logos/credits-frustra.png"));
             static ImVec2 frLogoSize(frLogoTex.width * 0.5, frLogoTex.height * 0.5);
 
             ImGui::BeginChild("CreditScroller", ImVec2(600, 600), false, ImGuiWindowFlags_NoScrollbar);

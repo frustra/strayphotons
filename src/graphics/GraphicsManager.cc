@@ -4,14 +4,12 @@
 #include "core/Game.hh"
 #include "core/Logging.hh"
 #include "core/PerfTimer.hh"
-
 #include "graphics/GraphicsContext.hh"
-#include "graphics/Renderer.hh"
-
 #include "graphics/RenderTargetPool.hh"
+#include "graphics/Renderer.hh"
+#include "graphics/basic_renderer/BasicRenderer.hh"
 #include "graphics/glfw_graphics_context/GlfwGraphicsContext.hh"
 #include "graphics/voxel_renderer/VoxelRenderer.hh"
-#include "graphics/basic_renderer/BasicRenderer.hh"
 
 #include <algorithm>
 #include <cxxopts.hpp>
@@ -31,27 +29,17 @@ namespace sp {
 
     GraphicsManager::~GraphicsManager() {
 
-        if (renderer) {
-            delete renderer;
-        }
+        if (renderer) { delete renderer; }
 
-        if (profilerGui) {
-            delete profilerGui;
-        }
+        if (profilerGui) { delete profilerGui; }
 
-        if (context) {
-            delete context;
-        }
+        if (context) { delete context; }
     }
 
     void GraphicsManager::Init() {
-        if (context) {
-            throw "already an active context";
-        }
+        if (context) { throw "already an active context"; }
 
-        if (renderer) {
-            throw "already an active renderer";
-        }
+        if (renderer) { throw "already an active renderer"; }
 
         context = new GlfwGraphicsContext(game);
 
@@ -61,9 +49,7 @@ namespace sp {
             renderer = new VoxelRenderer(game, *context);
 
             profilerGui = new ProfilerGui(&renderer->Timer);
-            if (game->debugGui) { 
-                game->debugGui->Attach(profilerGui); 
-            }
+            if (game->debugGui) { game->debugGui->Attach(profilerGui); }
 
             {
                 auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
@@ -184,7 +170,7 @@ namespace sp {
         context->SwapBuffers();
         renderer->Timer.EndFrame();
         context->EndFrame();
-        
+
         return true;
     }
 

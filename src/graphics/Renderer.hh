@@ -1,17 +1,17 @@
 #pragma once
 
 #include <Common.hh>
+#include <core/Game.hh>
+#include <core/PerfTimer.hh>
 #include <ecs/components/View.hh>
 #include <graphics/RenderTarget.hh>
 #include <graphics/Shader.hh>
-#include <core/PerfTimer.hh>
-#include <core/Game.hh>
 
 namespace sp {
 
     class Renderer {
     public:
-        Renderer(Game* g);
+        Renderer(Game *g);
         virtual ~Renderer();
 
         virtual void Prepare() = 0;
@@ -27,6 +27,6 @@ namespace sp {
         PerfTimer Timer;
 
     protected:
-        Game* game;
+        Game *game;
     };
 } // namespace sp

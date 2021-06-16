@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Common.hh" // For NonCopyable
+#include "assets/Model.hh"
 #include "graphics/Graphics.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/SceneShaders.hh"
 #include "graphics/opengl/GLTexture.hh"
-#include "assets/Model.hh"
 
 #include <map>
 
@@ -40,4 +40,4 @@ namespace sp {
         std::map<std::string, GLTexture> textures;
         vector<GLModel::Primitive> primitives;
     };
-};
+}; // namespace sp

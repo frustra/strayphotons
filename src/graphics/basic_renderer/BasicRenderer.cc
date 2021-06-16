@@ -3,11 +3,9 @@
 #include "core/CVar.hh"
 #include "core/Game.hh"
 #include "core/Logging.hh"
-
 #include "ecs/components/View.hh"
-
-#include "graphics/opengl/GLView.hh"
 #include "graphics/opengl/GLModel.hh"
+#include "graphics/opengl/GLView.hh"
 
 #include <ecs/EcsImpl.hh>
 

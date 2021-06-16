@@ -1,8 +1,8 @@
 #include "core/Game.hh"
 #include "core/PerfTimer.hh"
 #include "graphics/RenderTargetPool.hh"
-#include "graphics/voxel_renderer/VoxelRenderer.hh"
 #include "graphics/SceneShaders.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 
 #include <atomic>
 

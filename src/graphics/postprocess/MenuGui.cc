@@ -1,9 +1,9 @@
 #include "MenuGui.hh"
 
 #include "graphics/GenericShaders.hh"
-#include "graphics/voxel_renderer/VoxelRenderer.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/Util.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 
 namespace sp {
     void RenderMenuGui::Process(const PostProcessingContext *context) {

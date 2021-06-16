@@ -3,9 +3,8 @@
 #include "Common.hh"
 #include "core/Logging.hh"
 #include "graphics/opengl/GLModel.hh"
-#include "xr/XrAction.hh"
-
 #include "tiny_gltf.h"
+#include "xr/XrAction.hh"
 
 #include <filesystem>
 #include <stdexcept>

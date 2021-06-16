@@ -12,7 +12,7 @@
 #include <glm/glm.hpp>
 
 #if RUST_CXX
-#include <lib.rs.h>
+    #include <lib.rs.h>
 #endif
 
 namespace sp {

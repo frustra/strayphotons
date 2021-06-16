@@ -1,7 +1,7 @@
 #pragma once
 
-#include "graphics/glfw_graphics_context/GlfwGraphicsContext.hh"
 #include "graphics/Shader.hh"
+#include "graphics/glfw_graphics_context/GlfwGraphicsContext.hh"
 
 #include <unordered_map>
 

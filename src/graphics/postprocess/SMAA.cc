@@ -3,9 +3,9 @@
 #include "assets/AssetManager.hh"
 #include "core/CVar.hh"
 #include "graphics/GenericShaders.hh"
-#include "graphics/voxel_renderer/VoxelRenderer.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/Util.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 
 //#define DISABLE_SMAA
 
@@ -97,8 +97,12 @@ namespace sp {
             return;
         }
 
-        static GLTexture areaTex = GLTexture().Create().LoadFromTexture(GAssets.LoadTexture("textures/smaa/AreaTex.tga"), 1);
-        static GLTexture searchTex = GLTexture().Create().LoadFromTexture(GAssets.LoadTexture("textures/smaa/SearchTex.tga"), 1);
+        static GLTexture areaTex = GLTexture().Create().LoadFromTexture(
+            GAssets.LoadTexture("textures/smaa/AreaTex.tga"),
+            1);
+        static GLTexture searchTex = GLTexture().Create().LoadFromTexture(
+            GAssets.LoadTexture("textures/smaa/SearchTex.tga"),
+            1);
 
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);

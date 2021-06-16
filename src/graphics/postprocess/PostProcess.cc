@@ -5,7 +5,6 @@
 #include "core/PerfTimer.hh"
 #include "graphics/GenericShaders.hh"
 #include "graphics/RenderTargetPool.hh"
-#include "graphics/voxel_renderer/VoxelRenderer.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/Util.hh"
 #include "graphics/postprocess/Bloom.hh"
@@ -17,6 +16,7 @@
 #include "graphics/postprocess/SMAA.hh"
 #include "graphics/postprocess/SSAO.hh"
 #include "graphics/postprocess/ViewGBuffer.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 
 #include <filesystem>
 #include <stb_image_write.h>

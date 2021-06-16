@@ -1,8 +1,8 @@
 #pragma once
 
-#include "xr/XrModel.hh"
-#include "graphics/VertexBuffer.hh"
 #include "graphics/Buffer.hh"
+#include "graphics/VertexBuffer.hh"
+#include "xr/XrModel.hh"
 
 #include <openvr.h>
 

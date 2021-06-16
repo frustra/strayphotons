@@ -1,10 +1,8 @@
 #pragma once
 
 #include "core/CVar.hh"
-
 #include "ecs/Ecs.hh"
 #include "ecs/components/View.hh"
-
 #include "game/gui/ProfilerGui.hh"
 
 namespace sp {
@@ -36,20 +34,19 @@ namespace sp {
             return context;
         }
 
-        Renderer* GetRenderer() {
+        Renderer *GetRenderer() {
             return renderer;
         }
 
     private:
         bool useBasic = false;
 
-        GlfwGraphicsContext* context = nullptr;
-        Renderer* renderer = nullptr;
-        Game* game = nullptr;
-        ProfilerGui* profilerGui = nullptr;
+        GlfwGraphicsContext *context = nullptr;
+        Renderer *renderer = nullptr;
+        Game *game = nullptr;
+        ProfilerGui *profilerGui = nullptr;
 
         ecs::Observer<ecs::Removed<ecs::View>> viewRemoval;
         vector<ecs::Entity> playerViews;
-        
     };
 } // namespace sp

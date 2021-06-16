@@ -1,11 +1,11 @@
 #include "Script.hh"
 
+#include <cmath>
 #include <core/Logging.hh>
 #include <ecs/EcsImpl.hh>
 #include <ecs/Signals.hh>
 #include <glm/glm.hpp>
 #include <picojson/picojson.h>
-#include <cmath>
 
 namespace ecs {
     template<>

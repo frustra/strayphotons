@@ -8,16 +8,16 @@
 #include "ecs/components/View.hh"
 #include "graphics/GPUTypes.hh"
 #include "graphics/GenericShaders.hh"
-#include "graphics/voxel_renderer/GuiRenderer.hh"
 #include "graphics/LightSensor.hh"
 #include "graphics/RenderTargetPool.hh"
 #include "graphics/SceneShaders.hh"
 #include "graphics/Shader.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/Util.hh"
-#include "graphics/postprocess/PostProcess.hh"
-#include "graphics/opengl/GLView.hh"
 #include "graphics/opengl/GLModel.hh"
+#include "graphics/opengl/GLView.hh"
+#include "graphics/postprocess/PostProcess.hh"
+#include "graphics/voxel_renderer/GuiRenderer.hh"
 #include "physx/PhysxUtils.hh"
 #include "threading/MutexedVector.hh"
 #include "xr/XrAction.hh"
@@ -29,8 +29,7 @@
 #include <glm/gtx/transform.hpp>
 
 namespace sp {
-    VoxelRenderer::VoxelRenderer(Game *game, GlfwGraphicsContext& context) : Renderer(game), context(context) {
-    }
+    VoxelRenderer::VoxelRenderer(Game *game, GlfwGraphicsContext &context) : Renderer(game), context(context) {}
 
     VoxelRenderer::~VoxelRenderer() {
         if (ShaderControl) delete ShaderControl;
@@ -614,9 +613,9 @@ namespace sp {
     }
 
     void VoxelRenderer::DrawPhysxLines(const ecs::View &view,
-                                  SceneShader *shader,
-                                  const vector<physx::PxDebugLine> &lines,
-                                  const PreDrawFunc &preDraw) {
+                                       SceneShader *shader,
+                                       const vector<physx::PxDebugLine> &lines,
+                                       const PreDrawFunc &preDraw) {
         ecs::Entity nullEnt;
         if (preDraw) preDraw(nullEnt);
 
@@ -642,9 +641,9 @@ namespace sp {
     }
 
     void VoxelRenderer::DrawEntity(const ecs::View &view,
-                              SceneShader *shader,
-                              ecs::Entity &ent,
-                              const PreDrawFunc &preDraw) {
+                                   SceneShader *shader,
+                                   ecs::Entity &ent,
+                                   const PreDrawFunc &preDraw) {
         auto comp = ent.Get<ecs::Renderable>();
         if (comp->hidden) { return; }
 
@@ -767,7 +766,9 @@ namespace sp {
         }
     }
 
-    void VoxelRenderer::SetRenderTargets(size_t attachmentCount, RenderTarget::Ref *attachments, RenderTarget::Ref depth) {
+    void VoxelRenderer::SetRenderTargets(size_t attachmentCount,
+                                         RenderTarget::Ref *attachments,
+                                         RenderTarget::Ref depth) {
         GLuint fb = RTPool->GetFramebuffer(attachmentCount, attachments, depth);
         glBindFramebuffer(GL_FRAMEBUFFER, fb);
     }

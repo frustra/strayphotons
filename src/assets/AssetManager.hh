@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Common.hh"
-#include "physx/PhysxManager.hh"
 #include "assets/Texture.hh"
+#include "physx/PhysxManager.hh"
 
 #include <ecs/Ecs.hh>
 #include <map>

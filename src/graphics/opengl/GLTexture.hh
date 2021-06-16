@@ -39,8 +39,8 @@ namespace sp {
 
         GLTexture &Filter(GLenum minFilter = GL_LINEAR, GLenum magFilter = GL_LINEAR, float anisotropy = 0.0f);
         GLTexture &Wrap(GLenum wrapS = GL_CLAMP_TO_EDGE,
-                      GLenum wrapT = GL_CLAMP_TO_EDGE,
-                      GLenum wrapR = GL_CLAMP_TO_EDGE);
+                        GLenum wrapT = GL_CLAMP_TO_EDGE,
+                        GLenum wrapR = GL_CLAMP_TO_EDGE);
         GLTexture &BorderColor(glm::vec4 borderColor);
         GLTexture &Compare(GLenum mode = GL_COMPARE_REF_TO_TEXTURE, GLenum func = GL_LEQUAL);
         GLTexture &Size(GLsizei width, GLsizei height, GLsizei depth = 1);
@@ -48,26 +48,26 @@ namespace sp {
         GLTexture &Storage(GLPixelFormat format, GLsizei levels = 1);
         GLTexture &Storage(PixelFormat format, GLsizei levels = 1);
         GLTexture &Storage(GLenum internalFormat,
-                         GLenum format,
-                         GLenum type,
-                         GLsizei levels = 1,
-                         bool preferSRGB = false);
+                           GLenum format,
+                           GLenum type,
+                           GLsizei levels = 1,
+                           bool preferSRGB = false);
         GLTexture &Image2D(const void *pixels,
-                         GLint level = 0,
-                         GLsizei subWidth = 0,
-                         GLsizei subHeight = 0,
-                         GLsizei xoffset = 0,
-                         GLsizei yoffset = 0,
-                         bool genMipmap = true);
+                           GLint level = 0,
+                           GLsizei subWidth = 0,
+                           GLsizei subHeight = 0,
+                           GLsizei xoffset = 0,
+                           GLsizei yoffset = 0,
+                           bool genMipmap = true);
         GLTexture &Image3D(const void *pixels,
-                         GLint level = 0,
-                         GLsizei subWidth = 0,
-                         GLsizei subHeight = 0,
-                         GLsizei subDepth = 0,
-                         GLsizei xoffset = 0,
-                         GLsizei yoffset = 0,
-                         GLsizei zoffset = 0,
-                         bool genMipmap = true);
+                           GLint level = 0,
+                           GLsizei subWidth = 0,
+                           GLsizei subHeight = 0,
+                           GLsizei subDepth = 0,
+                           GLsizei xoffset = 0,
+                           GLsizei yoffset = 0,
+                           GLsizei zoffset = 0,
+                           bool genMipmap = true);
         GLTexture &GenMipmap();
 
         GLTexture &LoadFromAsset(shared_ptr<Asset> asset, GLsizei levels = FullyMipmap);

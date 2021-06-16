@@ -42,7 +42,7 @@ namespace sp {
         }
 
         template<typename... T>
-        inline static void writeFormatter(Level lvl, const std::string &fmt, T &&... t) {
+        inline static void writeFormatter(Level lvl, const std::string &fmt, T &&...t) {
             // #ifdef PACKAGE_RELEASE
             if (lvl == logging::Level::Debug) return;
             // #endif
@@ -55,7 +55,7 @@ namespace sp {
         }
 
         template<typename... T>
-        inline static void writeLog(Level lvl, const char *file, int line, const std::string &fmt, T &&... t) {
+        inline static void writeLog(Level lvl, const char *file, int line, const std::string &fmt, T &&...t) {
 #ifdef SP_VERBOSE_LOGGING
             writeFormatter(lvl, fmt + "  (%s:%d)\n", convert(std::forward<T>(t))..., basename(file), line);
 #else

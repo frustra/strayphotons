@@ -7,9 +7,9 @@
 #include "graphics/Buffer.hh"
 #include "graphics/GPUTypes.hh"
 #include "graphics/GenericShaders.hh"
-#include "graphics/voxel_renderer/VoxelRenderer.hh"
 #include "graphics/ShaderManager.hh"
 #include "graphics/Util.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 
 namespace sp {
     // clang-format off

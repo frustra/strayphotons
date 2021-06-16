@@ -1,12 +1,12 @@
 #include "GuiRenderer.hh"
 
-#include "graphics/GenericShaders.hh"
-#include "graphics/voxel_renderer/VoxelRenderer.hh"
-#include "graphics/glfw_graphics_context/GlfwGraphicsContext.hh"
-#include "graphics/ShaderManager.hh"
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "core/PerfTimer.hh"
+#include "graphics/GenericShaders.hh"
+#include "graphics/ShaderManager.hh"
+#include "graphics/glfw_graphics_context/GlfwGraphicsContext.hh"
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 
 #include <algorithm>
 #include <game/gui/GuiManager.hh>
@@ -23,16 +23,14 @@
 // clang-format on
 
 namespace sp {
-    GuiRenderer::GuiRenderer(
-        VoxelRenderer& renderer, 
-        GlfwGraphicsContext& context, 
-        GuiManager *manager) : context(context), parent(renderer), manager(manager) {
+    GuiRenderer::GuiRenderer(VoxelRenderer &renderer, GlfwGraphicsContext &context, GuiManager *manager)
+        : context(context), parent(renderer), manager(manager) {
         manager->SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
 
 #ifdef _WIN32
-        // TODO: Ideally, GuiRenderer should not depend on being passed a GlfwGraphicsContext: it should be able to accept
-        // an arbitrary GraphicsContext, and work with it.
+        // TODO: Ideally, GuiRenderer should not depend on being passed a GlfwGraphicsContext: it should be able to
+        // accept an arbitrary GraphicsContext, and work with it.
         io.ImeWindowHandle = glfwGetWin32Window(context.GetWindow());
 #endif
 

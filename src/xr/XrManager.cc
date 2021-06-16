@@ -26,12 +26,12 @@ namespace sp::xr {
     static CVar<int> CVarSkeletons("xr.Skeletons", 1, "XR Skeleton mode (0: none, 1: normal, 2: debug)");
 
     class BasicModel : public Model {
-        public:
-            BasicModel(const string &name) : Model(name){};
+    public:
+        BasicModel(const string &name) : Model(name){};
 
-            std::map<string, BasicMaterial> basicMaterials;
-            std::map<string, VertexBuffer> vbos;
-            std::map<string, Buffer> ibos;
+        std::map<string, BasicMaterial> basicMaterials;
+        std::map<string, VertexBuffer> vbos;
+        std::map<string, Buffer> ibos;
     };
 
     XrManager::XrManager(Game *game) : game(game) {

@@ -17,11 +17,11 @@ namespace sp {
         virtual bool ShouldClose() = 0;
         virtual void BeginFrame() = 0;
         virtual void SwapBuffers() = 0;
-        virtual void PopulatePancakeView(ecs::View& view) = 0;
-        virtual void PrepareForView(ecs::View& view) = 0;
+        virtual void PopulatePancakeView(ecs::View &view) = 0;
+        virtual void PrepareForView(ecs::View &view) = 0;
         virtual void EndFrame() = 0;
 
-        // These functions are acceptable in the base GraphicsContext class, 
+        // These functions are acceptable in the base GraphicsContext class,
         // but really shouldn't needed. They should be replaced with a generic "Settings" API
         // that allows modules to populate a Settings / Options menu entry
         //

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "assets/Model.hh"
-#include "graphics/opengl/GLModel.hh"
 #include "ecs/components/Renderable.hh"
 #include "graphics/Renderer.hh"
+#include "graphics/opengl/GLModel.hh"
 
 #include <glm/glm.hpp>
 

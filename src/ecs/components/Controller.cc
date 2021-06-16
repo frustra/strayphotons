@@ -1,9 +1,7 @@
 #include "ecs/components/Controller.hh"
 
-#include <limits>
 #include <cmath> // For M_PI
-
-
+#include <limits>
 
 namespace ecs {
     void HumanController::SetRotate(const glm::quat &rotation) {

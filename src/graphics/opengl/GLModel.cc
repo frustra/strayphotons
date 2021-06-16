@@ -1,12 +1,12 @@
 #include "graphics/opengl/GLModel.hh"
 
-#include "graphics/GenericShaders.hh"
 #include "core/Logging.hh"
+#include "graphics/GenericShaders.hh"
 
 // Ideally this header should not be needed, but we use it
 // to dynamic_cast() our renderer to see if it's the VoxelRenderer for feature detection.
 // TODO: add feature detection API to Renderer interface?
-#include "graphics/voxel_renderer/VoxelRenderer.hh" 
+#include "graphics/voxel_renderer/VoxelRenderer.hh"
 
 namespace sp {
 
@@ -271,4 +271,4 @@ namespace sp {
         return NULL;
     }
 
-};
+}; // namespace sp

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "graphics/opengl/GLTexture.hh"
-#include "graphics/VertexBuffer.hh"
 #include "ecs/components/View.hh"
+#include "graphics/VertexBuffer.hh"
+#include "graphics/opengl/GLTexture.hh"
 
 namespace sp {
     class VoxelRenderer;
@@ -11,7 +11,7 @@ namespace sp {
 
     class GuiRenderer {
     public:
-        GuiRenderer(VoxelRenderer& renderer, GlfwGraphicsContext& context, GuiManager *manager);
+        GuiRenderer(VoxelRenderer &renderer, GlfwGraphicsContext &context, GuiManager *manager);
         ~GuiRenderer();
         void Render(ecs::View view);
 
@@ -20,8 +20,8 @@ namespace sp {
         GLTexture fontTex;
         double lastTime = 0.0;
 
-        GlfwGraphicsContext& context;
-        VoxelRenderer& parent;
-        GuiManager* manager;
+        GlfwGraphicsContext &context;
+        VoxelRenderer &parent;
+        GuiManager *manager;
     };
 } // namespace sp

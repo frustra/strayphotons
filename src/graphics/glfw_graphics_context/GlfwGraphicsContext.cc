@@ -8,13 +8,12 @@
 #include "graphics/ShaderManager.hh"
 
 #include <algorithm>
+#include <cxxopts.hpp>
 #include <ecs/systems/HumanControlSystem.hh>
 #include <game/input/GlfwActionSource.hh>
 #include <game/input/InputManager.hh>
 #include <iostream>
 #include <string>
-
-#include <cxxopts.hpp>
 
 // clang-format off
 // GLFW must be included after glew.h (Graphics.hh)
@@ -66,9 +65,7 @@ namespace sp {
     }
 
     GlfwGraphicsContext::~GlfwGraphicsContext() {
-        if (window) {
-            glfwDestroyWindow(window);
-        }
+        if (window) { glfwDestroyWindow(window); }
 
         glfwTerminate();
     }
@@ -215,14 +212,15 @@ namespace sp {
         glfwSwapBuffers(window);
     }
 
-    void GlfwGraphicsContext::PopulatePancakeView(ecs::View& view) {
-        Assert(view.viewType == ecs::View::VIEW_TYPE_PANCAKE, "cannot populate pancake view settings on a non-pancake view");
+    void GlfwGraphicsContext::PopulatePancakeView(ecs::View &view) {
+        Assert(view.viewType == ecs::View::VIEW_TYPE_PANCAKE,
+               "cannot populate pancake view settings on a non-pancake view");
 
         view.SetProjMat(glm::radians(CVarFieldOfView.Get()), view.GetClip(), CVarWindowSize.Get());
         view.scale = CVarWindowScale.Get();
     }
 
-    void GlfwGraphicsContext::PrepareForView(ecs::View& view) {
+    void GlfwGraphicsContext::PrepareForView(ecs::View &view) {
         if (view.viewType == ecs::View::VIEW_TYPE_PANCAKE) {
             ResizeWindow(view, CVarWindowScale.Get(), CVarWindowFullscreen.Get());
         }

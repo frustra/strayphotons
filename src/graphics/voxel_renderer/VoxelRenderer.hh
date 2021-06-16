@@ -33,10 +33,10 @@ namespace sp {
     public:
         typedef std::function<void(ecs::Entity &)> PreDrawFunc;
 
-        VoxelRenderer(Game *game, GlfwGraphicsContext& context);
+        VoxelRenderer(Game *game, GlfwGraphicsContext &context);
         ~VoxelRenderer();
 
-        // Functions inherited from Renderer            
+        // Functions inherited from Renderer
         void Prepare() override;
         void BeginFrame() override;
         void RenderPass(ecs::View view, RenderTarget::Ref finalOutput = nullptr) override;
@@ -89,6 +89,6 @@ namespace sp {
 
         CFuncCollection funcs;
 
-        GlfwGraphicsContext& context;
+        GlfwGraphicsContext &context;
     };
 } // namespace sp
