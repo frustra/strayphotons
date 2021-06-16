@@ -3,7 +3,7 @@
 #include "xr/XrModel.hh"
 
 #include <glm/glm.hpp>
-#include <glm/vec2.hpp>
+#include <glm/gtc/quaternion.hpp> // Required for glm::quat
 #include <map>
 #include <memory>
 #include <string>

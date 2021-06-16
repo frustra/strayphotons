@@ -19,6 +19,7 @@ namespace sp {
     class SceneShader;
     class Model;
     class GuiRenderer;
+    class GlfwGraphicsContext;
 
     struct VoxelData {
         shared_ptr<RenderTarget> voxelCounters;

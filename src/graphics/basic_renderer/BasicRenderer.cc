@@ -28,6 +28,8 @@ namespace sp {
 
             GLModel::Primitive glPrimitive;
 
+            glPrimitive.drawMode = GLModel::GetDrawMode(primitive->drawMode);
+
             glGenBuffers(1, &glPrimitive.indexBufferHandle);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glPrimitive.indexBufferHandle);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBuffer.size(), indexBuffer.data(), GL_STATIC_DRAW);
@@ -65,7 +67,7 @@ namespace sp {
             glBindVertexArray(glPrimitive.vertexBufferHandle);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glPrimitive.indexBufferHandle);
 
-            glDrawElements(primitive->drawMode,
+            glDrawElements(glPrimitive.drawMode,
                            primitive->indexBuffer.components,
                            primitive->indexBuffer.componentType,
                            (char *)primitive->indexBuffer.byteOffset);

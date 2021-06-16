@@ -35,7 +35,7 @@ namespace sp {
         Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "position must be float type");
 
         auto indexAttrib = prim->indexBuffer;
-        Assert(prim->drawMode == GL_TRIANGLES, "primitive draw mode must be triangles");
+        Assert(prim->drawMode == Model::DrawMode::Triangles, "primitive draw mode must be triangles");
         Assert(indexAttrib.componentCount == 1, "index buffer must be a single component");
 
         set->bufferIndexes.insert(posAttrib.bufferIndex);
@@ -152,7 +152,7 @@ namespace sp {
         Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "position must be float type");
 
         auto indexAttrib = prim->indexBuffer;
-        Assert(prim->drawMode == GL_TRIANGLES, "primitive draw mode must be triangles");
+        Assert(prim->drawMode == Model::DrawMode::Triangles, "primitive draw mode must be triangles");
         Assert(indexAttrib.componentCount == 1, "index buffer must be a single component");
 
         set->bufferIndexes.insert(posAttrib.bufferIndex);

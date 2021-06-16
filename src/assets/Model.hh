@@ -1,17 +1,17 @@
 #pragma once
 
 #include "Common.hh"
-#include "graphics/opengl/GLTexture.hh"
+#include "glm/glm.hpp"
 
 #include <array>
 #include <tinygltf/tiny_gltf.h>
 
 namespace sp {
+
     // Forward declarations
     class Asset;
-    class GLModel;
     class Renderer;
-    struct BasicMaterial;
+    class NativeModel;
 
     typedef std::array<uint32, 4> Hash128;
 
@@ -24,7 +24,6 @@ namespace sp {
     };
 
     class Model : public NonCopyable {
-        friend GLModel;
 
     public:
         Model(const string &name) : name(name){};
@@ -44,16 +43,26 @@ namespace sp {
             int bufferIndex;
         };
 
+        enum class DrawMode {
+            Points = TINYGLTF_MODE_POINTS,
+            Line = TINYGLTF_MODE_LINE,
+            LineLoop = TINYGLTF_MODE_LINE_LOOP,
+            LineStrip = TINYGLTF_MODE_LINE_STRIP,
+            Triangles = TINYGLTF_MODE_TRIANGLES,
+            TriangleStrip = TINYGLTF_MODE_TRIANGLE_STRIP,
+            TriangleFan = TINYGLTF_MODE_TRIANGLE_FAN,
+        };
+
         struct Primitive {
             glm::mat4 matrix;
-            int drawMode;
+            DrawMode drawMode;
             Attribute indexBuffer;
             int materialIndex;
             std::array<Attribute, 5> attributes;
         };
 
         const string name;
-        shared_ptr<GLModel> glModel;
+        shared_ptr<NativeModel> nativeModel;
         vector<Primitive *> primitives;
 
         bool HasBuffer(int index);
@@ -64,6 +73,10 @@ namespace sp {
         string GetNodeName(int node);
         glm::mat4 GetInvBindPoseForNode(int nodeIndex);
         vector<int> GetJointNodes();
+
+        shared_ptr<const tinygltf::Model> GetModel() {
+            return model;
+        }
 
         vector<glm::mat4> bones;
 
@@ -76,42 +89,5 @@ namespace sp {
         // TODO: support more than one "skin" in a GLTF
         std::map<int, glm::mat4> inverseBindMatrixForJoint;
         int rootBone;
-    };
-
-    struct BasicMaterial {
-        GLTexture baseColorTex, metallicRoughnessTex, heightTex;
-
-        BasicMaterial(unsigned char *baseColor = nullptr,
-                      unsigned char *metallicRoughness = nullptr,
-                      unsigned char *bump = nullptr) {
-            unsigned char baseColorDefault[4] = {255, 255, 255, 255};
-            unsigned char metallicRoughnessDefault[4] = {0, 255, 0, 0}; // Roughness = G channel, Metallic = B channel
-            unsigned char bumpDefault[4] = {127, 127, 127, 255};
-
-            if (!baseColor) baseColor = baseColorDefault;
-            if (!metallicRoughness) metallicRoughness = metallicRoughnessDefault;
-            if (!bump) bump = bumpDefault;
-
-            baseColorTex.Create()
-                .Filter(GL_NEAREST, GL_NEAREST)
-                .Wrap(GL_REPEAT, GL_REPEAT)
-                .Size(1, 1)
-                .Storage(PF_RGB8)
-                .Image2D(baseColor);
-
-            metallicRoughnessTex.Create()
-                .Filter(GL_NEAREST, GL_NEAREST)
-                .Wrap(GL_REPEAT, GL_REPEAT)
-                .Size(1, 1)
-                .Storage(PF_R8)
-                .Image2D(metallicRoughness);
-
-            heightTex.Create()
-                .Filter(GL_NEAREST, GL_NEAREST)
-                .Wrap(GL_REPEAT, GL_REPEAT)
-                .Size(1, 1)
-                .Storage(PF_R8)
-                .Image2D(bump);
-        }
     };
 } // namespace sp

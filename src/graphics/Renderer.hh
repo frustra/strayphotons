@@ -8,6 +8,7 @@
 #include <graphics/Shader.hh>
 
 namespace sp {
+    class Game;
 
     class Renderer {
     public:

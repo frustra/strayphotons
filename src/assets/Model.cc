@@ -3,8 +3,6 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "core/Logging.hh"
-#include "graphics/GenericShaders.hh"
-#include "graphics/voxel_renderer/VoxelRenderer.hh"
 
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
@@ -102,7 +100,7 @@ namespace sp {
     }
 
     Model::~Model() {
-        Debugf("Destroying model %s (prepared: %d)", name, !!glModel);
+        Debugf("Destroying model %s (prepared: %d)", name, !!nativeModel);
         for (auto primitive : primitives) {
             delete primitive;
         }
@@ -134,20 +132,22 @@ namespace sp {
                 auto iAcc = model->accessors[primitive.indices];
                 auto iBufView = model->bufferViews[iAcc.bufferView];
 
-                int mode = -1;
+                DrawMode mode = DrawMode::Triangles;
                 if (primitive.mode == TINYGLTF_MODE_TRIANGLES) {
-                    mode = GL_TRIANGLES;
+                    mode = DrawMode::Triangles;
                 } else if (primitive.mode == TINYGLTF_MODE_TRIANGLE_STRIP) {
-                    mode = GL_TRIANGLE_STRIP;
+                    mode = DrawMode::TriangleStrip;
                 } else if (primitive.mode == TINYGLTF_MODE_TRIANGLE_FAN) {
-                    mode = GL_TRIANGLE_FAN;
+                    mode = DrawMode::TriangleFan;
                 } else if (primitive.mode == TINYGLTF_MODE_POINTS) {
-                    mode = GL_POINTS;
+                    mode = DrawMode::Points;
                 } else if (primitive.mode == TINYGLTF_MODE_LINE) {
-                    mode = GL_LINES;
+                    mode = DrawMode::Line;
                 } else if (primitive.mode == TINYGLTF_MODE_LINE_LOOP) {
-                    mode = GL_LINE_LOOP;
-                };
+                    mode = DrawMode::LineLoop;
+                } else if (primitive.mode == TINYGLTF_MODE_LINE_STRIP) {
+                    mode = DrawMode::LineStrip;
+                }
 
                 Assert(iAcc.type == TINYGLTF_TYPE_SCALAR, "index buffer type must be scalar");
 

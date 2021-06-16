@@ -672,12 +672,14 @@ namespace sp {
 
         if (preDraw) preDraw(lock, ent);
 
-        if (!comp.model->glModel) { comp.model->glModel = make_shared<GLModel>(comp.model.get(), this); }
-        comp.model->glModel->Draw(shader,
-                                  modelMat,
-                                  view,
-                                  comp.model->bones.size(),
-                                  comp.model->bones.size() > 0 ? comp.model->bones.data() : NULL);
+        if (!comp.model->nativeModel) {
+            comp.model->nativeModel = make_shared<GLModel>(comp.model.get(), static_cast<Renderer *>(this));
+        }
+        comp.model->nativeModel->Draw(shader,
+                                      modelMat,
+                                      view,
+                                      comp.model->bones.size(),
+                                      comp.model->bones.size() > 0 ? comp.model->bones.data() : NULL);
     }
 
     void VoxelRenderer::DrawGridDebug(const ecs::View &view, SceneShader *shader) {
@@ -773,7 +775,7 @@ namespace sp {
         auto lock = game->entityManager.tecs.StartTransaction<>();
         ecs::Removed<ecs::Renderable> removedRenderable;
         while (renderableRemoval.Poll(lock, removedRenderable)) {
-            if (removedRenderable.component.model->glModel) {
+            if (removedRenderable.component.model->nativeModel) {
                 // Keep GLModel objects around for at least 5 frames after destruction
                 renderableGCQueue.push_back({removedRenderable.component.model, 5});
             }

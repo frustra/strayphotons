@@ -3,6 +3,7 @@
 #include "Common.hh" // For NonCopyable
 #include "assets/Model.hh"
 #include "graphics/Graphics.hh"
+#include "graphics/NativeModel.hh"
 #include "graphics/Renderer.hh"
 #include "graphics/SceneShaders.hh"
 #include "graphics/opengl/GLTexture.hh"
@@ -12,7 +13,7 @@
 namespace sp {
     enum TextureType;
 
-    class GLModel : public NonCopyable {
+    class GLModel : public NonCopyable, public NativeModel {
     public:
         GLModel(Model *model, Renderer *renderer);
         ~GLModel();
@@ -24,18 +25,23 @@ namespace sp {
             GLuint weightsBufferHandle;
             GLuint jointsBufferHandle;
             GLTexture *baseColorTex, *metallicRoughnessTex, *heightTex;
+            GLenum drawMode;
         };
 
-        void Draw(SceneShader *shader, glm::mat4 modelMat, const ecs::View &view, int boneCount, glm::mat4 *boneData);
+        void Draw(SceneShader *shader,
+                  glm::mat4 modelMat,
+                  const ecs::View &view,
+                  int boneCount,
+                  glm::mat4 *boneData) override;
 
         void AddPrimitive(GLModel::Primitive prim);
+
+        static GLenum GetDrawMode(Model::DrawMode mode);
 
     private:
         GLuint LoadBuffer(int index);
         GLTexture *LoadTexture(int materialIndex, TextureType type);
 
-        Model *model;
-        Renderer *renderer;
         std::map<int, GLuint> buffers;
         std::map<std::string, GLTexture> textures;
         vector<GLModel::Primitive> primitives;
