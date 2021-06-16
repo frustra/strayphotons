@@ -26,7 +26,6 @@ namespace sp {
         for (auto primitive : comp.model->primitives) {
             auto indexBuffer = comp.model->GetBuffer(primitive->indexBuffer.bufferIndex);
 
-            // TODO: this entire section seems uneccessary... GLModels are constructed for all models...?
             GLModel::Primitive glPrimitive;
 
             glPrimitive.drawMode = GLModel::GetDrawMode(primitive->drawMode);

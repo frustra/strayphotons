@@ -294,13 +294,10 @@ namespace sp {
 
         case Model::DrawMode::TriangleFan:
             return GL_TRIANGLE_FAN;
-        }
 
-        // Older versions of Clang don't understant this code can never run,
-        // since Model::DrawMode is an enum class, and the switch() statement is required
-        // to cover all possible values...
-        Assert(false, "Unknown Model::DrawMode");
-        return GL_TRIANGLES; // Assume GL_TRIANGLES? It's the most common...
+        default:
+            Assert(false, "Unknown Model::DrawMode");
+        }
     }
 
 }; // namespace sp
