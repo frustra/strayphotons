@@ -5,6 +5,8 @@
 #include "graphics/voxel_renderer/VoxelRenderer.hh"
 
 #include <atomic>
+#include <ecs/Ecs.hh>
+#include <ecs/EcsImpl.hh>
 
 namespace sp {
     static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.5, "Light attenuation for voxel bounces");
@@ -114,7 +116,10 @@ namespace sp {
             voxelFillFS->SetVoxelInfo(&voxelInfo);
             voxelFillFS->SetLightAttenuation(CVarLightAttenuation.Get());
 
-            ForwardPass(ortho, GlobalShaders->Get<VoxelFillVS>());
+            {
+                auto lock = game->entityManager.tecs.StartTransaction<ecs::ReadAll>();
+                ForwardPass(ortho, GlobalShaders->Get<VoxelFillVS>(), lock);
+            }
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT |
                             GL_COMMAND_BARRIER_BIT);
         }

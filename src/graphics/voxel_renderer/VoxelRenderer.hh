@@ -31,7 +31,7 @@ namespace sp {
 
     class VoxelRenderer : public Renderer {
     public:
-        typedef std::function<void(ecs::Entity &)> PreDrawFunc;
+        typedef std::function<void(ecs::Lock<ecs::ReadAll>, Tecs::Entity &)> PreDrawFunc;
 
         VoxelRenderer(Game *game, GlfwGraphicsContext &context);
         ~VoxelRenderer();
@@ -53,12 +53,20 @@ namespace sp {
         void RenderVoxelGrid();
         void ReadBackLightSensors();
         void UpdateLightSensors();
-        void ForwardPass(const ecs::View &view, SceneShader *shader, const PreDrawFunc &preDraw = {});
-        void DrawEntity(const ecs::View &view, SceneShader *shader, ecs::Entity &ent, const PreDrawFunc &preDraw = {});
+        void ForwardPass(const ecs::View &view,
+                         SceneShader *shader,
+                         ecs::Lock<ecs::ReadAll> lock,
+                         const PreDrawFunc &preDraw = {});
+        void DrawEntity(const ecs::View &view,
+                        SceneShader *shader,
+                        ecs::Lock<ecs::ReadAll> lock,
+                        Tecs::Entity &ent,
+                        const PreDrawFunc &preDraw = {});
         void ExpireRenderables();
         void DrawPhysxLines(const ecs::View &view,
                             SceneShader *shader,
                             const vector<physx::PxDebugLine> &lines,
+                            ecs::Lock<ecs::ReadAll> lock,
                             const PreDrawFunc &preDraw);
         void DrawGridDebug(const ecs::View &view, SceneShader *shader);
         void SetRenderTarget(shared_ptr<RenderTarget> attachment0, shared_ptr<RenderTarget> depth);
