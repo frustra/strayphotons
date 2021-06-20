@@ -96,7 +96,7 @@ d68914109658ec1fc4fd09d8a954fe7f    models/duck/duckCM.png
 45df0c6862b1206c45c47457bb806f7e    models/duck/screenshot/screenshot.png
 9b03d8fd268344f700e686181e3ac717    models/ground-1x1x1/ground-1x1x1.bin
 4f757bb55168b03046859109677cab92    models/ground-1x1x1/ground-1x1x1.gltf
-61a9e7634f199d58a92496c9af3b4757    models/ground-1x1x1/ground-1x1x1.obj
+2455b2d3987f10df36114a9f0c7d1955    models/ground-1x1x1/ground-1x1x1.obj
 906e709f5c7d32fbe0348eea66b68384    models/ground-3x3/Concrete_Base_Color.png
 545c184c43bbe4f24a630bc7684f3e82    models/ground-3x3/Concrete_Height.png
 15fb776ee0fb324ed0d7e6570548e3fc    models/ground-3x3/Concrete_Roughness.png
@@ -247,7 +247,7 @@ b442bd0c1836565ae7c5f6c93a56c6d5    models/sponza/8783994986360286082.jpg
 11d83b9570c18d0eef1616606301e0b2    models/spotlight-01/spotlight-01.obj
 ec23e7dd6ff7a8e00388e218ad38dad4    models/wall-1x1/wall-1x1.bin
 3551a233b2ca61e8b5c908029ac721b9    models/wall-1x1/wall-1x1.gltf
-9d946ac2d505fab16b077fa31ef06262    models/wall-1x1/wall-1x1.obj
+1b7a4e83f50ca1773c502abb368566a0    models/wall-1x1/wall-1x1.obj
 ee896700b836ec174fec03faacfa2582    models/wall-4-corner/Material_Base_Color.png
 7d195931ad3224da9c7de89ac8deba8c    models/wall-4-corner/Material_Height.png
 92fd5a97af2a69c5bd17fe71ac7f3795    models/wall-4-corner/Material_Roughness.png

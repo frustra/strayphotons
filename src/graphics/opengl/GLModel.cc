@@ -28,7 +28,7 @@ namespace sp {
             if (!glPrimitive.heightTex) glPrimitive.heightTex = &defaultMat.heightTex;
 
             glCreateVertexArrays(1, &glPrimitive.vertexBufferHandle);
-            for (int i = 0; i < std::size(primitive->attributes); i++) {
+            for (size_t i = 0; i < std::size(primitive->attributes); i++) {
                 auto *attr = &primitive->attributes[i];
                 if (attr->componentCount == 0) continue;
                 glEnableVertexArrayAttrib(glPrimitive.vertexBufferHandle, i);
@@ -297,6 +297,7 @@ namespace sp {
 
         default:
             Assert(false, "Unknown Model::DrawMode");
+            return GL_TRIANGLES;
         }
     }
 
