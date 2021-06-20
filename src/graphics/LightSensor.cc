@@ -18,15 +18,21 @@ namespace sp {
         readBackBuf.Create().Data(readBackSize, nullptr, GL_STREAM_READ);
     }
 
+#pragma pack(push, 1)
+    struct GLSensorDataBuffer {
+        uint32_t sensorCount = 0;
+        GLLightSensorData sensors[LightSensorUpdateCS::MAX_SENSORS];
+    };
+#pragma pack(pop)
+
     void LightSensorUpdateCS::SetSensors(std::vector<ecs::Entity> &sensors) {
-        int N = 0;
-        GLLightSensorData data[MAX_SENSORS + 1];
+        GLSensorDataBuffer data = { 0 };
 
         for (auto entity : sensors) {
             auto sensor = entity.Get<ecs::LightSensor>();
             auto id = entity.GetId();
 
-            GLLightSensorData &s = data[N++];
+            GLLightSensorData &s = data.sensors[data.sensorCount++];
             glm::mat4 mat;
             {
                 auto lock = entity.GetManager()->tecs.StartTransaction<ecs::Read<ecs::Transform>>();
@@ -40,9 +46,7 @@ namespace sp {
             // s.id1 = (float)id.Generation();
         }
 
-        *(uint32 *)&data[MAX_SENSORS] = N;
-
-        BufferData(sensorData, sizeof(GLLightSensorData) * MAX_SENSORS + sizeof(uint32), &data[0]);
+        BufferData(sensorData, sizeof(GLSensorDataBuffer), &data);
     }
 
     void LightSensorUpdateCS::SetLightData(int count, GLLightData *data) {

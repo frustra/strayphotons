@@ -101,7 +101,7 @@ void OpenVrTrackingCompositor::SubmitView(size_t view, RenderTarget::Ref rt) {
     vr::EVREye eyeType = (view == 0) ? vr::Eye_Left : vr::Eye_Right;
 
     // TODO: use XrCompositor::Submit(), don't do this in the render function
-    vr::Texture_t vrTexture = {(void *)rt->GetTexture().handle, vr::TextureType_OpenGL, vr::ColorSpace_Linear};
+    vr::Texture_t vrTexture = {(void *)(size_t)rt->GetTexture().handle, vr::TextureType_OpenGL, vr::ColorSpace_Linear};
     vr::VRCompositor()->Submit(eyeType, &vrTexture);
 }
 
@@ -162,11 +162,11 @@ std::shared_ptr<XrModel> OpenVrTrackingCompositor::GetTrackedObjectModel(const T
 vr::TrackedDeviceIndex_t OpenVrTrackingCompositor::GetOpenVrIndexFromHandle(const TrackedObjectHandle &handle) {
     // Work out which model to load
     vr::TrackedDeviceIndex_t deviceIndex = vr::k_unTrackedDeviceIndexInvalid;
-    vr::ETrackedDeviceClass desiredClass = vr::TrackedDeviceClass_Invalid;
+    // vr::ETrackedDeviceClass desiredClass = vr::TrackedDeviceClass_Invalid;
     vr::ETrackedControllerRole desiredRole = vr::TrackedControllerRole_Invalid;
 
     if (handle.type == CONTROLLER) {
-        desiredClass = vr::TrackedDeviceClass_Controller;
+        // desiredClass = vr::TrackedDeviceClass_Controller;
 
         if (handle.hand == LEFT) {
             desiredRole = vr::TrackedControllerRole_LeftHand;

@@ -5,7 +5,7 @@ set(BUILD_SHARED_LIBS off)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "8.0.0")
-        add_compile_options(-Wno-error=stringop-overflow=)
+        add_compile_options(-Wno-error=stringop-overflow= -Wno-error=sign-compare -Wno-error=class-memaccess)
     endif()
 endif()
 

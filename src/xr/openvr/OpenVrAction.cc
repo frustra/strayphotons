@@ -208,7 +208,7 @@ bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool w
     // do nothing.
     bones.resize(modelBoneData.size());
 
-    for (int i = 0; i < modelBoneData.size(); i++) {
+    for (size_t i = 0; i < modelBoneData.size(); i++) {
         bones[i].pos = glm::vec3(boneTransforms[modelBoneData[i].steamVrBoneIndex].position.v[0],
                                  boneTransforms[modelBoneData[i].steamVrBoneIndex].position.v[1],
                                  boneTransforms[modelBoneData[i].steamVrBoneIndex].position.v[2]);
@@ -313,7 +313,7 @@ bool OpenVrAction::ComputeBoneLookupTable(std::shared_ptr<XrModel> xrModel) {
     std::vector<std::string> steamVrBoneNames = GetSteamVRBoneNames();
 
     // For each joint in the model (pulled from the GLTF "joints" array...)
-    for (int i = 0; i < jointNodes.size(); i++) {
+    for (size_t i = 0; i < jointNodes.size(); i++) {
         // Get the steamVrBone that corresponds to this joint
         auto steamVrBone = std::find(
             steamVrBoneNames.begin(),
@@ -351,7 +351,7 @@ std::vector<std::string> OpenVrAction::GetSteamVRBoneNames() {
     std::vector<std::string> boneNames;
     boneNames.resize(boneCount);
 
-    for (int i = 0; i < boneCount; i++) {
+    for (size_t i = 0; i < boneCount; i++) {
         boneNames[i].resize(vr::k_unMaxBoneNameLength);
         vr::VRInput()->GetBoneName(handle, i, &boneNames[i].front(), vr::k_unMaxBoneNameLength);
         boneNames[i].erase(boneNames[i].find('\0'));

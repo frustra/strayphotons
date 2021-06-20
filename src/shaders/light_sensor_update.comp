@@ -10,8 +10,8 @@ layout (binding = 3) uniform sampler2DArray mirrorShadowMap;
 layout (binding = 0, rgba32f) writeonly uniform image2D values;
 
 layout (binding = 0, std140) uniform LightSensorData {
-	LightSensor sensors[MAX_LIGHT_SENSORS];
 	uint sensorCount;
+	LightSensor sensors[MAX_LIGHT_SENSORS];
 };
 
 uniform int lightCount = 0;

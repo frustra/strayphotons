@@ -35,7 +35,7 @@ elseif (UNIX)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "11.0.0")
-            add_compile_options(-Wno-error=nonnull -Wno-error=mismatched-new-delete -Wno-error=stringop-overread)
+            add_compile_options(-Wno-error=restrict -Wno-error=nonnull -Wno-error=mismatched-new-delete -Wno-error=stringop-overread -Wno-error=class-memaccess)
         endif()
         if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "10.0.0")
             add_compile_options(-Wno-error=array-bounds)

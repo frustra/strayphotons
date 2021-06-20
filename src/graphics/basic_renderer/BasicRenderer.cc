@@ -36,7 +36,7 @@ namespace sp {
 
             glGenVertexArrays(1, &glPrimitive.vertexBufferHandle);
             glBindVertexArray(glPrimitive.vertexBufferHandle);
-            for (int i = 0; i < std::size(primitive->attributes); i++) {
+            for (size_t i = 0; i < std::size(primitive->attributes); i++) {
                 auto *attr = &primitive->attributes[i];
                 if (attr->componentCount == 0) continue;
 

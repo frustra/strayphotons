@@ -45,7 +45,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
-	set(CMAKE_CXX_FLAGS 				"-fpermissive -Wall -Wno-unused-local-typedefs -Werror -Wno-error=sign-compare -Wno-error=restrict -Wno-error=catch-value= -Wno-error=format-security -Wno-error=strict-aliasing -Wno-error=parentheses -Wno-error=class-memaccess -Wno-error=int-to-pointer-cast -Wno-error=unused-but-set-variable -Wno-error=unused-result -Wno-error=maybe-uninitialized -Wno-error=unused-variable")
+	set(CMAKE_CXX_FLAGS 				"-Wall -Werror")
 	set(CMAKE_CXX_FLAGS_RELEASE 		"-O3")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"-g3 -ggdb3 -Og")
 	set(CMAKE_CXX_FLAGS_DEBUG 			"-g3 -ggdb3 -O0")

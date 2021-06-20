@@ -108,15 +108,15 @@ namespace sp {
         if (!!asset) { asset->manager->UnregisterModel(*this); }
     }
 
-    bool Model::HasBuffer(int index) {
+    bool Model::HasBuffer(size_t index) {
         return model->buffers.size() > index;
     }
 
-    const vector<unsigned char> &Model::GetBuffer(int index) {
+    const vector<unsigned char> &Model::GetBuffer(size_t index) {
         return model->buffers[index].data;
     }
 
-    Hash128 Model::HashBuffer(int index) {
+    Hash128 Model::HashBuffer(size_t index) {
         Hash128 output;
         auto buffer = GetBuffer(index);
         MurmurHash3_x86_128(buffer.data(), buffer.size(), 0, output.data());
@@ -192,7 +192,7 @@ namespace sp {
                     }
                 }
 
-                for (int i = 0; i < model->skins[skinId].joints.size(); i++) {
+                for (size_t i = 0; i < model->skins[skinId].joints.size(); i++) {
                     if (inverseBindMatrixAccessor != -1) {
                         int bufferView = model->accessors[inverseBindMatrixAccessor].bufferView;
                         int buffer = model->bufferViews[bufferView].buffer;
@@ -232,7 +232,7 @@ namespace sp {
     }
 
     int Model::FindNodeByName(std::string name) {
-        for (int i = 0; i < model->nodes.size(); i++) {
+        for (size_t i = 0; i < model->nodes.size(); i++) {
             if (model->nodes[i].name == name) { return i; }
         }
         return -1;

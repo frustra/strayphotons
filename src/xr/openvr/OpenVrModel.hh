@@ -11,9 +11,9 @@ namespace sp {
     namespace xr {
         namespace openvr {
             // TODO: Use system-independent paths for SteamVR model loading. #42
-            static const char *HandModelResourceDir = "rendermodels\\vr_glove\\";
-            static const char *LeftHandModelResource = "vr_glove_left_model.glb";
-            static const char *RightHandModelResource = "vr_glove_right_model.glb";
+            static const char * const HandModelResourceDir = "rendermodels\\vr_glove\\";
+            static const char * const LeftHandModelResource = "vr_glove_left_model.glb";
+            static const char * const RightHandModelResource = "vr_glove_right_model.glb";
         }; // namespace openvr
 
         class OpenVrModel : public XrModel {

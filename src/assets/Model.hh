@@ -65,9 +65,9 @@ namespace sp {
         shared_ptr<NativeModel> nativeModel;
         vector<Primitive *> primitives;
 
-        bool HasBuffer(int index);
-        const vector<unsigned char> &GetBuffer(int index);
-        Hash128 HashBuffer(int index);
+        bool HasBuffer(size_t index);
+        const vector<unsigned char> &GetBuffer(size_t index);
+        Hash128 HashBuffer(size_t index);
 
         int FindNodeByName(string name);
         string GetNodeName(int node);

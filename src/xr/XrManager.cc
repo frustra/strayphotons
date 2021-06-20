@@ -308,7 +308,7 @@ namespace sp::xr {
                 if (xrSystem) {
                     try {
                         xrSystem->Init();
-                    } catch (std::exception e) {
+                    } catch (std::exception &e) {
                         Errorf("XR Runtime threw error on initialization! Error: %s", e.what());
                         xrSystem.reset();
                     }
@@ -374,7 +374,7 @@ namespace sp::xr {
         // Resize the output vector to match the number of joints the GLTF will reference
         output.resize(boneData.size());
 
-        for (int i = 0; i < boneData.size(); i++) {
+        for (size_t i = 0; i < boneData.size(); i++) {
             xr::XrBoneData &bone = boneData[i];
 
             glm::mat4 rot_mat = glm::mat4_cast(bone.rot);
@@ -426,7 +426,7 @@ namespace sp::xr {
                                             glm::mat4 xrObjectPos,
                                             vector<xr::XrBoneData> &boneData,
                                             bool active) {
-        for (int i = 0; i < boneData.size(); i++) {
+        for (size_t i = 0; i < boneData.size(); i++) {
             xr::XrBoneData &bone = boneData[i];
             string entityName = string("xr-skeleton-debug-bone-") + action->GetName() + std::to_string(i);
 
