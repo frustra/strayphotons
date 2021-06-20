@@ -52,7 +52,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
-	set(CMAKE_CXX_FLAGS 				"-fpermissive -Wall -Wno-unused-local-typedefs -Werror -Wno-sign-compare -Wno-unused-private-field -Wno-delete-non-abstract-non-virtual-dtor -Wno-int-to-void-pointer-cast -Wno-error=unused-variable")
+	set(CMAKE_CXX_FLAGS 				"-Wall -Werror")
 	set(CMAKE_CXX_FLAGS_RELEASE 		"-O3")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"-g3 -ggdb3 -Og")
 	set(CMAKE_CXX_FLAGS_DEBUG 			"-g3 -ggdb3 -O0")

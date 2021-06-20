@@ -26,7 +26,7 @@ namespace sp {
 #pragma pack(pop)
 
     void LightSensorUpdateCS::SetSensors(std::vector<ecs::Entity> &sensors) {
-        GLSensorDataBuffer data = { 0 };
+        GLSensorDataBuffer data = {0};
 
         for (auto entity : sensors) {
             auto sensor = entity.Get<ecs::LightSensor>();
