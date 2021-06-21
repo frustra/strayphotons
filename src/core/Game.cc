@@ -56,7 +56,7 @@ namespace sp {
             }
             return exitCode;
         } catch (char const *err) {
-            Errorf(err);
+            Errorf("%s", err);
             return 1;
         }
     }

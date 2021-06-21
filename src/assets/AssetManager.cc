@@ -290,7 +290,7 @@ namespace sp {
         picojson::value root;
         string err = picojson::parse(root, asset->String());
         if (!err.empty()) {
-            Errorf(err);
+            Errorf("%s", err);
             return nullptr;
         }
 
