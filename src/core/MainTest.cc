@@ -12,14 +12,7 @@ using namespace std;
 #include <assets/Script.hh>
 #include <cstdio>
 #include <cxxopts.hpp>
-
-#ifdef _WIN32
-    #include <direct.h>
-    #define os_getcwd _getcwd
-#else
-    #include <unistd.h>
-    #define os_getcwd getcwd
-#endif
+#include <filesystem>
 
 //#define CATCH_GLOBAL_EXCEPTIONS
 
@@ -66,9 +59,7 @@ int main(int argc, char **argv)
             return 0;
         }
 
-        char cwd[FILENAME_MAX];
-        os_getcwd(cwd, FILENAME_MAX);
-        Logf("Starting in directory: %s", cwd);
+        Logf("Starting in directory: %s", std::filesystem::current_path());
 
         string scriptPath = optionsResult["script-file"].as<string>();
         auto script = sp::GAssets.LoadScript(scriptPath);

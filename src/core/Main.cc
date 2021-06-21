@@ -10,14 +10,7 @@ using namespace std;
 
 #include <cstdio>
 #include <cxxopts.hpp>
-
-#ifdef _WIN32
-    #include <direct.h>
-    #define os_getcwd _getcwd
-#else
-    #include <unistd.h>
-    #define os_getcwd getcwd
-#endif
+#include <filesystem>
 
 //#define CATCH_GLOBAL_EXCEPTIONS
 
@@ -55,9 +48,7 @@ int main(int argc, char **argv)
             return 0;
         }
 
-        char cwd[FILENAME_MAX];
-        os_getcwd(cwd, FILENAME_MAX);
-        Logf("Starting in directory: %s", cwd);
+        Logf("Starting in directory: %s", std::filesystem::current_path());
 
         sp::Game game(optionsResult);
         game.Start();
