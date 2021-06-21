@@ -24,7 +24,7 @@
 
 namespace sp {
     GuiRenderer::GuiRenderer(VoxelRenderer &renderer, GlfwGraphicsContext &context, GuiManager *manager)
-        : context(context), parent(renderer), manager(manager) {
+        : parent(renderer), manager(manager) {
         manager->SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
 

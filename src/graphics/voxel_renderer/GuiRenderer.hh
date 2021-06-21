@@ -20,7 +20,6 @@ namespace sp {
         GLTexture fontTex;
         double lastTime = 0.0;
 
-        GlfwGraphicsContext &context;
         VoxelRenderer &parent;
         GuiManager *manager;
     };

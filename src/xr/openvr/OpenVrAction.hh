@@ -8,7 +8,7 @@
 
 namespace sp {
     namespace xr {
-        class OpenVrActionSet : public XrActionSet, public std::enable_shared_from_this<OpenVrActionSet> {
+        class OpenVrActionSet final : public XrActionSet, public std::enable_shared_from_this<OpenVrActionSet> {
         public:
             // Inherited from XrActionSet
             OpenVrActionSet(std::string setName, std::string description);
@@ -26,7 +26,7 @@ namespace sp {
             vr::VRActionSetHandle_t handle;
         };
 
-        class OpenVrAction : public XrAction {
+        class OpenVrAction final : public XrAction {
         public:
             vr::VRActionHandle_t GetHandle() {
                 return handle;

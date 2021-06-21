@@ -13,7 +13,7 @@
 namespace sp {
     enum TextureType;
 
-    class GLModel : public NonCopyable, public NativeModel {
+    class GLModel final : public NonCopyable, public NativeModel {
     public:
         GLModel(Model *model, Renderer *renderer);
         ~GLModel();

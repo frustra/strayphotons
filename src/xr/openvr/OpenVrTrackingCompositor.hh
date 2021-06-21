@@ -12,7 +12,7 @@ namespace sp {
         // In OpenVR, the tracking and compositor are too interlinked to separate cleanly.
         // This class implements both the XrTracking and XrCompositor functionality so that
         // state can be shared between tracking and compositor code.
-        class OpenVrTrackingCompositor : public XrTracking, public XrCompositor {
+        class OpenVrTrackingCompositor final : public XrTracking, public XrCompositor {
         public:
             OpenVrTrackingCompositor(vr::IVRSystem *vrs);
 

@@ -14,7 +14,7 @@ namespace sp {
     /**
      * Glfw input source. Provides mouse and keyboard actions.
      */
-    class GlfwActionSource : public ActionSource {
+    class GlfwActionSource final : public ActionSource {
     public:
         GlfwActionSource(InputManager &inputManager, GLFWwindow &window);
         ~GlfwActionSource() {}

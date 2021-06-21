@@ -108,7 +108,6 @@ namespace sp {
 
     private:
         vector<RenderTarget::Ref> pool;
-        int64 nextRenderTargetID = 0;
 
         std::unordered_map<FramebufferState, GLuint, FramebufferStateHasher> framebufferCache;
     };

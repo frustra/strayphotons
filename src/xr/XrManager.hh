@@ -58,9 +58,6 @@ namespace sp {
             // Actions for the skeleton pose
             xr::XrActionPtr leftHandSkeletonAction;
             xr::XrActionPtr rightHandSkeletonAction;
-
-            bool xrTeleported = false;
-            bool xrGrabbed = false;
         };
     } // namespace xr
 } // namespace sp

@@ -304,8 +304,10 @@ namespace sp {
         int lightCount = FillLightData(&lightData[0], game->entityManager);
         FillVoxelInfo(&voxelInfo, voxelData.info);
 
-        auto sensorCollection = game->entityManager.EntitiesWith<ecs::LightSensor>();
-        shader->SetSensors(sensorCollection);
+        {
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::LightSensor, ecs::Transform>>();
+            shader->SetSensors(lock);
+        }
         shader->SetLightData(lightCount, lightData);
         shader->SetVoxelInfo(&voxelInfo);
 

@@ -18,35 +18,27 @@ namespace sp {
         readBackBuf.Create().Data(readBackSize, nullptr, GL_STREAM_READ);
     }
 
-#pragma pack(push, 1)
-    struct GLSensorDataBuffer {
-        uint32_t sensorCount = 0;
-        GLLightSensorData sensors[LightSensorUpdateCS::MAX_SENSORS];
-    };
-#pragma pack(pop)
+    void LightSensorUpdateCS::SetSensors(ecs::Lock<ecs::Read<ecs::LightSensor, ecs::Transform>> lock) {
+        int count = 0;
+        GLLightSensorData data[MAX_SENSORS];
 
-    void LightSensorUpdateCS::SetSensors(std::vector<ecs::Entity> &sensors) {
-        GLSensorDataBuffer data = {0};
+        for (auto &entity : lock.EntitiesWith<ecs::LightSensor>()) {
+            if (!entity.Has<ecs::LightSensor, ecs::Transform>(lock)) continue;
 
-        for (auto entity : sensors) {
-            auto sensor = entity.Get<ecs::LightSensor>();
-            auto id = entity.GetId();
+            auto &sensor = entity.Get<ecs::LightSensor>(lock);
+            auto &transform = entity.Get<ecs::Transform>(lock);
 
-            GLLightSensorData &s = data.sensors[data.sensorCount++];
-            glm::mat4 mat;
-            {
-                auto lock = entity.GetManager()->tecs.StartTransaction<ecs::Read<ecs::Transform>>();
-                auto &transform = entity.GetEntity().Get<ecs::Transform>(lock);
-                mat = transform.GetGlobalTransform(lock);
-            }
-            s.position = mat * glm::vec4(sensor->position, 1);
-            s.direction = glm::normalize(glm::mat3(mat) * sensor->direction);
+            GLLightSensorData &s = data[count++];
+            glm::mat4 mat = transform.GetGlobalTransform(lock);
+            s.position = mat * glm::vec4(sensor.position, 1);
+            s.direction = glm::normalize(glm::mat3(mat) * sensor.direction);
             // TODO: Fix this so it doesn't lose precision
-            s.id0 = (float)id; //.Index();
+            s.id0 = (float)entity.id; //.Index();
             // s.id1 = (float)id.Generation();
         }
 
-        BufferData(sensorData, sizeof(GLSensorDataBuffer), &data);
+        Set("sensorCount", count);
+        BufferData(sensorData, sizeof(GLLightSensorData) * count, &data[0]);
     }
 
     void LightSensorUpdateCS::SetLightData(int count, GLLightData *data) {
