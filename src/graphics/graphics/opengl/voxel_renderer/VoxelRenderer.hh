@@ -11,7 +11,7 @@
 #include <glm/glm.hpp>
 
 namespace physx {
-    class PxDebugLine;
+    struct PxDebugLine;
 }
 
 namespace sp {

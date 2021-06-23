@@ -7,7 +7,7 @@
 namespace sp {
     class Asset;
 
-    struct GLTexture : public GpuTexture {
+    struct GLTexture final : public GpuTexture {
         // Passing levels = FullyMipmap indicates storage
         // should be allocated for all possible downsamples.
         enum { FullyMipmap = -1 };

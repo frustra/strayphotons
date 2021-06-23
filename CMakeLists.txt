@@ -270,19 +270,21 @@ target_compile_options(${PROJECT_EXE} PRIVATE ${SP_TARGET_OPTIONS})
 # target_compile_options(${PROJECT_HEADLESS_EXE} PRIVATE ${SP_TARGET_OPTIONS})
 target_compile_options(${PROJECT_TEST_EXE} PRIVATE ${SP_TARGET_OPTIONS})
 
-target_link_libraries(
-	${PROJECT_LIB}
-	PUBLIC
-		${PROJECT_CORE_LIB}
-		${PROJECT_GRAPHICS_CORE_LIB}
-		${_physx_libraries}
-		GLEW
-		vhacd
-		ImGui
-		robin_hood
-		glm
-		cxxopts
-		OpenGL::GL
+target_link_libraries(${PROJECT_LIB} PUBLIC
+	${PROJECT_CORE_LIB}
+	${PROJECT_GRAPHICS_CORE_LIB}
+	${_physx_libraries}
+	GLEW
+	vhacd
+	ImGui
+	robin_hood
+	glm
+	cxxopts
+	OpenGL::GL
+)
+
+target_include_directories(${PROJECT_LIB} PRIVATE
+	$<TARGET_PROPERTY:glfw,INCLUDE_DIRECTORIES>
 )
 
 target_link_libraries(

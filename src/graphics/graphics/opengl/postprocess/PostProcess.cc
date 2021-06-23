@@ -242,25 +242,25 @@ namespace sp {
 
         if (CVarAntiAlias.Get() == 1) { AddSMAA(context, linearLuminosity); }
 
-        // if (!renderToTexture && (!game->menuGui || game->menuGui->RenderMode() == MenuRenderMode::None)) {
-        //     auto crosshair = context.AddPass<Crosshair>();
-        //     crosshair->SetInput(0, context.LastOutput);
-        //     context.LastOutput = crosshair;
-        // }
+        if (!renderToTexture /* && (!game->menuGui || game->menuGui->RenderMode() == MenuRenderMode::None)*/) {
+            auto crosshair = context.AddPass<Crosshair>();
+            crosshair->SetInput(0, context.LastOutput);
+            context.LastOutput = crosshair;
+        }
 
-        // if (CVarViewGBuffer.Get() > 0 && (!game->menuGui || game->menuGui->RenderMode() == MenuRenderMode::None)) {
-        //     auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(),
-        //                                                  CVarViewGBufferSource.Get(),
-        //                                                  CVarVoxelMip.Get(),
-        //                                                  targets.voxelData);
-        //     viewGBuf->SetInput(0, context.GBuffer0);
-        //     viewGBuf->SetInput(1, context.GBuffer1);
-        //     viewGBuf->SetInput(2, context.GBuffer2);
-        //     viewGBuf->SetInput(3, context.GBuffer3);
-        //     viewGBuf->SetInput(4, context.VoxelRadiance);
-        //     viewGBuf->SetInput(5, context.VoxelRadianceMips);
-        //     context.LastOutput = viewGBuf;
-        // }
+        if (CVarViewGBuffer.Get() > 0 /* && (!game->menuGui || game->menuGui->RenderMode() == MenuRenderMode::None)*/) {
+            auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(),
+                                                         CVarViewGBufferSource.Get(),
+                                                         CVarVoxelMip.Get(),
+                                                         targets.voxelData);
+            viewGBuf->SetInput(0, context.GBuffer0);
+            viewGBuf->SetInput(1, context.GBuffer1);
+            viewGBuf->SetInput(2, context.GBuffer2);
+            viewGBuf->SetInput(3, context.GBuffer3);
+            viewGBuf->SetInput(4, context.VoxelRadiance);
+            viewGBuf->SetInput(5, context.VoxelRadianceMips);
+            context.LastOutput = viewGBuf;
+        }
 
         auto lastOutput = context.LastOutput.GetOutput();
         lastOutput->AddDependency();

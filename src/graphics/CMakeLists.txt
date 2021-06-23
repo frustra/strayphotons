@@ -19,17 +19,19 @@ target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB} PRIVATE
 target_link_libraries(${PROJECT_GRAPHICS_HEADLESS_LIB} INTERFACE
 	${PROJECT_GRAPHICS_CORE_LIB}
 )
-target_link_libraries(${PROJECT_GRAPHICS_EGL_LIB} PRIVATE
-    ${PROJECT_CORE_LIB}
-    ${PROJECT_GRAPHICS_CORE_LIB}
-    # ${PROJECT_LIB} # TODO: Remove this dependency
-    glfw-egl
+target_link_libraries(${PROJECT_GRAPHICS_EGL_LIB}
+    PRIVATE
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GRAPHICS_CORE_LIB}
+    PUBLIC
+        glfw-egl
 )
-target_link_libraries(${PROJECT_GRAPHICS_OPENGL_LIB} PRIVATE
-    ${PROJECT_CORE_LIB}
-    ${PROJECT_GRAPHICS_CORE_LIB}
-    # ${PROJECT_LIB} # TODO: Remove this dependency
-    glfw
+target_link_libraries(${PROJECT_GRAPHICS_OPENGL_LIB}
+    PRIVATE
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GRAPHICS_CORE_LIB}
+    PUBLIC
+        glfw
 )
 
 add_subdirectory(graphics)

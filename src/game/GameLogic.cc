@@ -169,15 +169,10 @@ namespace sp {
             player = lock.NewEntity();
             player.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GAME_LOGIC);
             player.Set<ecs::Name>(lock, "player");
-            auto transform = player.Set<ecs::Transform>(lock, glm::vec3(0));
-            auto quat1 = transform.GetRotate();
-            Logf("Rotation1: %f, %f, %f, %f", quat1.x, quat1.y, quat1.z, quat1.w);
+            player.Set<ecs::Transform>(lock, glm::vec3(0));
 
             auto &view = player.Set<ecs::View>(lock);
             view.clip = glm::vec2(0.1, 256);
-
-            auto quat2 = player.Get<ecs::Transform>(lock).GetRotate();
-            Logf("Rotation2: %f, %f, %f, %f", quat2.x, quat2.y, quat2.z, quat2.w);
 
             game->humanControlSystem.AssignController(lock, player, game->physics);
             player.Set<ecs::VoxelInfo>(lock);

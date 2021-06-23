@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace ecs {
-    struct View;
+    class View;
 }
 
 namespace sp {

@@ -3,6 +3,7 @@ set(PROJECT_CORE_LIB ${PROJECT_BASE_NAME}-core CACHE INTERNAL "Library containin
 add_library(${PROJECT_CORE_LIB} STATIC)
 
 target_link_libraries(${PROJECT_CORE_LIB} PUBLIC
+    glm
     microtar
     murmurhash
     picojson
