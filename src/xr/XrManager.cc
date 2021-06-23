@@ -131,7 +131,7 @@ namespace sp::xr {
 
                         if (grab) {
                             Logf("grab on subpath %s", controllerAction.second);
-                            interact->PickUpObject(xrObject);
+                            game->humanControlSystem.Interact(xrObject);
                         } else if (let_go) {
                             Logf("Let go on subpath %s", controllerAction.second);
                             if (interact->target) {

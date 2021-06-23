@@ -1,22 +1,27 @@
+set(PROJECT_CORE_LIB ${PROJECT_BASE_NAME}-core CACHE INTERNAL "Library containing core components such as the ECS and asset loading")
 
-target_sources(
-    ${PROJECT_LIB}
-    PRIVATE
-        Console.cc
-        PerfTimer.cc
+add_library(${PROJECT_CORE_LIB} STATIC)
+
+target_link_libraries(${PROJECT_CORE_LIB} PUBLIC
+    microtar
+    murmurhash
+    picojson
+    robin_hood
+    Tecs
+    tinygltf
 )
 
-target_sources(
-    ${PROJECT_EXE}
-    PRIVATE
-        Main.cc
-        Game.cc
+if (NOT WIN32)
+    target_link_libraries(${PROJECT_CORE_LIB} PRIVATE
+        linenoise
+    )
+endif()
+
+target_include_directories(${PROJECT_CORE_LIB} PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-
-target_sources(
-    ${PROJECT_TEST_EXE}
-    PRIVATE
-        MainTest.cc
-        Game.cc
-)
+add_subdirectory(assets)
+add_subdirectory(core)
+add_subdirectory(ecs)
+add_subdirectory(input)

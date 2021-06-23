@@ -1,11 +1,9 @@
 #pragma once
 
-#include "Common.hh"
-
-#include <game/gui/GuiManager.hh>
+#include "game/gui/GuiManager.hh"
 
 namespace sp {
-    class Game;
+    class GraphicsManager;
     class InputManager;
 
     enum class MenuScreen { Splash, Main, Options, SceneSelect, Credits };
@@ -14,7 +12,7 @@ namespace sp {
 
     class MenuGuiManager : public GuiManager {
     public:
-        MenuGuiManager(Game *game);
+        MenuGuiManager(GraphicsManager &graphics, InputManager &input);
         virtual ~MenuGuiManager() {}
 
         void BeforeFrame() override;
@@ -29,7 +27,7 @@ namespace sp {
     private:
         MenuScreen selectedScreen = MenuScreen::Splash;
 
-        uint64 framesSinceOpened = 0;
+        uint64_t framesSinceOpened = 0;
         float creditsScroll = 0.0f;
     };
 } // namespace sp

@@ -1,16 +1,15 @@
-#include "game/GameLogic.hh"
+#include "GameLogic.hh"
 
+#include "Game.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Scene.hh"
 #include "assets/Script.hh"
 #include "core/CVar.hh"
 #include "core/Console.hh"
-#include "core/Game.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/Signals.hh"
 #include "physx/PhysxUtils.hh"
-#include "xr/XrSystemFactory.hh"
 
 #include <cmath>
 #include <cxxopts.hpp>
@@ -20,8 +19,7 @@
 #include <glm/gtx/transform.hpp>
 
 namespace sp {
-    GameLogic::GameLogic(Game *game)
-        : game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input, &game->physics) {
+    GameLogic::GameLogic(Game *game) : game(game), input(&game->input) {
         funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
         funcs.Register(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
         funcs.Register(this, "printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
@@ -77,8 +75,8 @@ namespace sp {
             entity.Set<ecs::Renderable>(lock, model);
             entity.Set<ecs::Transform>(lock, glm::vec3(0, 5, 0));
 
-            PhysxActorDesc desc;
-            desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
+            ecs::PhysxActorDesc desc;
+            desc.transform = glm::translate(glm::vec3(0, 5, 0));
             auto actor = game->physics.CreateActor(model, desc, entity);
 
             if (actor) { entity.Set<ecs::Physics>(lock, actor, model, desc); }
@@ -154,7 +152,7 @@ namespace sp {
             view->SetProjMat(view->GetFov(), view->GetClip(), glm::ivec2(CVarFlashlightResolution.Get(true)));
         }
 
-        if (!humanControlSystem.Frame(dtSinceLastFrame)) return false;
+        if (!game->humanControlSystem.Frame(dtSinceLastFrame)) return false;
 
         return true;
     }
@@ -165,16 +163,23 @@ namespace sp {
             auto &view = player.Set<ecs::View>(lock);
             view.clip = glm::vec2(0.1, 256);
 
-            humanControlSystem.Teleport(lock, player, glm::vec3(), glm::quat());
+            game->humanControlSystem.Teleport(lock, player, glm::vec3(), glm::quat());
             player.Set<ecs::VoxelInfo>(lock);
         } else {
             player = lock.NewEntity();
             player.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GAME_LOGIC);
             player.Set<ecs::Name>(lock, "player");
+            auto transform = player.Set<ecs::Transform>(lock, glm::vec3(0));
+            auto quat1 = transform.GetRotate();
+            Logf("Rotation1: %f, %f, %f, %f", quat1.x, quat1.y, quat1.z, quat1.w);
+
             auto &view = player.Set<ecs::View>(lock);
             view.clip = glm::vec2(0.1, 256);
 
-            humanControlSystem.AssignController(lock, player, game->physics);
+            auto quat2 = player.Get<ecs::Transform>(lock).GetRotate();
+            Logf("Rotation2: %f, %f, %f, %f", quat2.x, quat2.y, quat2.z, quat2.w);
+
+            game->humanControlSystem.AssignController(lock, player, game->physics);
             player.Set<ecs::VoxelInfo>(lock);
 
             // Mark the player as being able to activate trigger areas
@@ -223,10 +228,10 @@ namespace sp {
                     name = "player-spwan";
                     if (e.Has<ecs::Transform>(lock)) {
                         auto &spawnTransform = e.Get<ecs::Transform>(lock);
-                        humanControlSystem.Teleport(lock,
-                                                    player,
-                                                    spawnTransform.GetPosition(),
-                                                    spawnTransform.GetRotate());
+                        game->humanControlSystem.Teleport(lock,
+                                                          player,
+                                                          spawnTransform.GetPosition(),
+                                                          spawnTransform.GetRotate());
                     }
                 }
             }
@@ -261,7 +266,10 @@ namespace sp {
                     auto lock =
                         game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Transform, ecs::HumanController>>();
                     if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
-                        humanControlSystem.Teleport(lock, player, oldTransform.GetPosition(), oldTransform.GetRotate());
+                        game->humanControlSystem.Teleport(lock,
+                                                          player,
+                                                          oldTransform.GetPosition(),
+                                                          oldTransform.GetRotate());
                     }
                 }
             }

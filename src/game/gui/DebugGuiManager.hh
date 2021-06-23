@@ -3,12 +3,12 @@
 #include <game/gui/GuiManager.hh>
 
 namespace sp {
-    class Game;
+    class GraphicsContext;
     class InputManager;
 
     class DebugGuiManager : public GuiManager {
     public:
-        DebugGuiManager(Game *game) : GuiManager(game, FOCUS_OVERLAY) {}
+        DebugGuiManager(GraphicsManager &graphics, InputManager &input) : GuiManager(graphics, input, FOCUS_OVERLAY) {}
         virtual ~DebugGuiManager() {}
 
         void BeforeFrame() override;

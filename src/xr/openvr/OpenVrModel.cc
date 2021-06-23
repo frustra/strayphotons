@@ -1,15 +1,15 @@
 #include "xr/openvr/OpenVrModel.hh"
 
-#include "Common.hh"
+#include "core/Common.hh"
 #include "core/Logging.hh"
 #include "graphics/opengl/GLModel.hh"
 #include "graphics/opengl/GLTexture.hh"
-#include "tiny_gltf.h"
 #include "xr/XrAction.hh"
 
 #include <filesystem>
 #include <stdexcept>
 #include <thread>
+#include <tiny_gltf.h>
 
 using namespace sp;
 using namespace xr;

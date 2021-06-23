@@ -1,10 +1,8 @@
 #pragma once
 
-#include "Common.hh"
 #include "core/CFunc.hh"
+#include "ecs/Ecs.hh"
 #include "xr/XrSystem.hh"
-
-#include <ecs/Ecs.hh>
 
 namespace sp {
 

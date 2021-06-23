@@ -1,9 +1,9 @@
 #include "GuiManager.hh"
 
 #include "ConsoleGui.hh"
+#include "core/input/InputManager.hh"
+#include "game/Game.hh"
 
-#include <core/Game.hh>
-#include <game/input/InputManager.hh>
 #include <imgui/imgui.h>
 
 // clang-format off
@@ -12,20 +12,9 @@
 // clang-format on
 
 namespace sp {
-    GuiManager::GuiManager(Game *game, const FocusLevel focusPriority) : focusPriority(focusPriority), game(game) {
+    GuiManager::GuiManager(GraphicsManager &graphics, InputManager &input, const FocusLevel focusPriority)
+        : focusPriority(focusPriority), graphics(graphics), input(input) {
         imCtx = ImGui::CreateContext();
-
-        if (game != nullptr) { GuiManager::BindInput(game->input); }
-    }
-
-    GuiManager::~GuiManager() {
-        SetGuiContext();
-        ImGui::DestroyContext(imCtx);
-        imCtx = nullptr;
-    }
-
-    void GuiManager::BindInput(InputManager &inputManager) {
-        input = &inputManager;
 
         SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
@@ -52,6 +41,12 @@ namespace sp {
         io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
     }
 
+    GuiManager::~GuiManager() {
+        SetGuiContext();
+        ImGui::DestroyContext(imCtx);
+        imCtx = nullptr;
+    }
+
     void GuiManager::SetGuiContext() {
         ImGui::SetCurrentContext(imCtx);
     }
@@ -61,7 +56,7 @@ namespace sp {
         ImGuiIO &io = ImGui::GetIO();
 
         const KeyEvents *keys, *keysPrev;
-        if (input->GetActionDelta(INPUT_ACTION_KEYBOARD_KEYS, &keys, &keysPrev)) {
+        if (input.GetActionDelta(INPUT_ACTION_KEYBOARD_KEYS, &keys, &keysPrev)) {
             if (keysPrev != nullptr) {
                 for (auto &key : *keysPrev) {
                     io.KeysDown[key] = false;

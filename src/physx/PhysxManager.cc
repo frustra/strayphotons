@@ -1,19 +1,19 @@
-#include "physx/PhysxManager.hh"
+#include "PhysxManager.hh"
 
-#include "Common.hh"
+#include "PhysxUtils.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Model.hh"
 #include "core/CFunc.hh"
 #include "core/CVar.hh"
-#include "core/Game.hh"
+#include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Game.hh"
 
 #include <PxScene.h>
 #include <chrono>
 #include <cmath>
 #include <fstream>
-#include <physx/PhysxUtils.hh>
 
 namespace sp {
     using namespace physx;
@@ -464,19 +464,21 @@ namespace sp {
         Unlock();
     }
 
-    PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model, PhysxActorDesc desc, const Tecs::Entity &entity) {
+    PxRigidActor *PhysxManager::CreateActor(shared_ptr<Model> model,
+                                            ecs::PhysxActorDesc &desc,
+                                            const Tecs::Entity &entity) {
         Lock();
         PxRigidActor *actor;
 
         if (desc.dynamic) {
-            actor = physics->createRigidDynamic(desc.transform);
+            actor = physics->createRigidDynamic(GlmMat4ToPxTransform(desc.transform));
 
             if (desc.kinematic) {
                 auto rigidBody = static_cast<physx::PxRigidBody *>(actor);
                 rigidBody->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
             }
         } else {
-            actor = physics->createRigidStatic(desc.transform);
+            actor = physics->createRigidStatic(GlmMat4ToPxTransform(desc.transform));
         }
 
         PxMaterial *mat = physics->createMaterial(0.6f, 0.5f, 0.0f);
@@ -501,7 +503,10 @@ namespace sp {
             PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
             PxConvexMesh *pxhull = physics->createConvexMesh(input);
 
-            auto shape = PxRigidActorExt::createExclusiveShape(*actor, PxConvexMeshGeometry(pxhull, desc.scale), *mat);
+            auto shape = PxRigidActorExt::createExclusiveShape(
+                *actor,
+                PxConvexMeshGeometry(pxhull, physx::PxMeshScale(GlmVec3ToPxVec3(desc.scale))),
+                *mat);
             PxFilterData data;
             data.word0 = PhysxCollisionGroup::WORLD;
             shape->setQueryFilterData(data);

@@ -81,41 +81,20 @@ set(PROJECT_BASE_NAME strayphotons)
 
 # The absolute bare minimum core of the engine. Contains Tecs and GameLogic modules.
 # All other modules / libraries depend on this core
-set(PROJECT_LIB ${PROJECT_BASE_NAME}-core)
-
-# Core library for OpenGL-based graphics subsystem
-# Note: this does not get linked into a static lib directly, instead
-# it gets consumed by either the -opengl or -egl versions
-set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core)
-
-# Library for OpenGL-based graphics using OpenGL 4.0
-set(PROJECT_GRAPHICS_OPENGL_LIB ${PROJECT_BASE_NAME}-graphics-opengl)
-
-# Library for OpenGL-based graphics using EGL
-set(PROJECT_GRAPHICS_EGL_LIB ${PROJECT_BASE_NAME}-graphics-egl)
+set(PROJECT_LIB ${PROJECT_BASE_NAME})
 
 set(PROJECT_EXE sp)
+# set(PROJECT_HEADLESS_EXE sp-headless)
 set(PROJECT_TEST_EXE sp-test)
 
 # Core StrayPhotons lib. Contains all game code.
-add_library(${PROJECT_LIB} STATIC)
-
-# StrayPhotons graphics lib. Contains all graphics-related code.
-# Note: this lib is an OBJECT lib, and doesn't actually produce a functional
-# static library that can be linked into an executable.
-# This target must first be linked against OpenGL or EGL
-# to produce a static library.
-# Link executables against either PROJECT_GRAPHICS_OPENGL_LIB or PROJECT_GRAPHICS_EGL_LIB
-add_library(${PROJECT_GRAPHICS_CORE_LIB} OBJECT)
-
-# Implementation of the graphics module that links against real OpenGL
-add_library(${PROJECT_GRAPHICS_OPENGL_LIB} STATIC)
-
-# Implementation of the graphics module that links against EGL
-add_library(${PROJECT_GRAPHICS_EGL_LIB} STATIC)
+add_library(${PROJECT_LIB} OBJECT)
 
 # Exe Shim that loads StrayPhotons lib on desktop platforms
 add_executable(${PROJECT_EXE})
+
+# Exe Shim that loads StrayPhotons lib without graphics
+# add_executable(${PROJECT_HEADLESS_EXE})
 
 # Exe Shim that loads StrayPhotons lib for CI testing purposes
 add_executable(${PROJECT_TEST_EXE})
@@ -196,6 +175,7 @@ if (SP_PACKAGE_RELEASE)
 
 	# Make the exe depend on having the tar
 	add_dependencies(${PROJECT_EXE} assets_tar)
+	# add_dependencies(${PROJECT_HEADLESS_EXE} assets_tar)
 	add_dependencies(${PROJECT_TEST_EXE} assets_tar)
 
 endif()
@@ -232,6 +212,7 @@ else()
 		set_target_properties(
 			${PROJECT_LIB}
 			${PROJECT_EXE}
+			# ${PROJECT_HEADLESS_EXE}
 			${PROJECT_TEST_EXE}
 			PROPERTIES
 				INTERPROCEDURAL_OPTIMIZATION TRUE)
@@ -265,6 +246,7 @@ endif()
 if (SP_PACKAGE_RELEASE)
 	if (MSVC)
 		set_target_properties(${PROJECT_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
+		# set_target_properties(${PROJECT_HEADLESS_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 		set_target_properties(${PROJECT_TEST_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 		set_target_properties(${PROJECT_LIB} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 	else()
@@ -285,45 +267,23 @@ set (_physx_libraries
 
 target_compile_options(${PROJECT_LIB} PRIVATE ${SP_TARGET_OPTIONS})
 target_compile_options(${PROJECT_EXE} PRIVATE ${SP_TARGET_OPTIONS})
+# target_compile_options(${PROJECT_HEADLESS_EXE} PRIVATE ${SP_TARGET_OPTIONS})
 target_compile_options(${PROJECT_TEST_EXE} PRIVATE ${SP_TARGET_OPTIONS})
 
 target_link_libraries(
 	${PROJECT_LIB}
 	PUBLIC
+		${PROJECT_CORE_LIB}
+		${PROJECT_GRAPHICS_CORE_LIB}
 		${_physx_libraries}
 		GLEW
 		vhacd
 		ImGui
-		microtar
-		murmurhash
 		robin_hood
-		tinygltf
-		Tecs
 		glm
 		cxxopts
 		OpenGL::GL
-		picojson
 )
-
-# The graphics core lib depends on the core StrayPhotons library,
-# but should not depend on anything else
-target_link_libraries(
-	${PROJECT_GRAPHICS_CORE_LIB}	
-	PUBLIC
-		${PROJECT_LIB}
-)
-
-target_link_libraries(
-	${PROJECT_GRAPHICS_OPENGL_LIB} 
-	PUBLIC
-		${PROJECT_GRAPHICS_CORE_LIB}
-		glfw)
-
-target_link_libraries(
-	${PROJECT_GRAPHICS_EGL_LIB}
-	PUBLIC
-		${PROJECT_GRAPHICS_CORE_LIB}
-		glfw-egl)
 
 target_link_libraries(
 	${PROJECT_EXE}
@@ -331,6 +291,13 @@ target_link_libraries(
 		${PROJECT_LIB}
 		${PROJECT_GRAPHICS_OPENGL_LIB}
 )
+
+# target_link_libraries(
+# 	${PROJECT_HEADLESS_EXE}
+# 	PRIVATE
+# 		${PROJECT_LIB}
+# 		${PROJECT_GRAPHICS_HEADLESS_LIB}
+# )
 
 target_link_libraries(
 	${PROJECT_TEST_EXE}
@@ -344,14 +311,6 @@ if(UNIX)
 		${PROJECT_LIB}
 		PRIVATE
 			pthread
-	)
-endif()
-
-if (NOT WIN32)
-	target_link_libraries(
-		${PROJECT_LIB}
-		PRIVATE
-			linenoise
 	)
 endif()
 
@@ -372,10 +331,12 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT s
 install(
 	TARGETS
 		${PROJECT_EXE}
+		# ${PROJECT_HEADLESS_EXE}
 		${PROJECT_TEST_EXE}
 		${PROJECT_LIB}
 		${PROJECT_GRAPHICS_EGL_LIB}
 		${PROJECT_GRAPHICS_OPENGL_LIB}
+		${PROJECT_GRAPHICS_HEADLESS_LIB}
 		${_physx_libraries}
 	RUNTIME DESTINATION
 		bin

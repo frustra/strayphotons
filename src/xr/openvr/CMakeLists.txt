@@ -3,7 +3,7 @@ if(NOT XRSYSTEM_OPENVR)
 endif()
 
 target_sources(
-    ${PROJECT_GRAPHICS_CORE_LIB}
+    ${PROJECT_LIB}
     PRIVATE
         OpenVrModel.cc
         OpenVrSystem.cc
@@ -13,7 +13,7 @@ target_sources(
 
 # Need to link against openvr to support this XR backend
 target_link_libraries(
-    ${PROJECT_GRAPHICS_CORE_LIB}
+    ${PROJECT_LIB}
     PUBLIC
         openvr
 )

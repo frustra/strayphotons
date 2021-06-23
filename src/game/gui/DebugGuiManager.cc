@@ -1,10 +1,9 @@
 #include "DebugGuiManager.hh"
 
 #include "ConsoleGui.hh"
+#include "core/input/InputManager.hh"
+#include "graphics/GraphicsManager.hh"
 
-#include <core/Game.hh>
-#include <game/input/InputManager.hh>
-#include <graphics/glfw_graphics_context/GlfwGraphicsContext.hh>
 #include <imgui/imgui.h>
 
 namespace sp {
@@ -32,33 +31,31 @@ namespace sp {
         ImGuiIO &io = ImGui::GetIO();
         io.MouseDrawCursor = false;
 
-        if (input != nullptr) {
-            if (input->IsPressed(INPUT_ACTION_TOGGLE_CONSOLE)) { ToggleConsole(); }
+        if (input.IsPressed(INPUT_ACTION_TOGGLE_CONSOLE)) { ToggleConsole(); }
 
-            if (Focused() && !input->FocusLocked(focusPriority)) {
-                io.MouseDown[0] = input->IsDown(INPUT_ACTION_MOUSE_BASE + "/button_left");
-                io.MouseDown[1] = input->IsDown(INPUT_ACTION_MOUSE_BASE + "/button_right");
-                io.MouseDown[2] = input->IsDown(INPUT_ACTION_MOUSE_BASE + "/button_middle");
+        if (Focused() && !input.FocusLocked(focusPriority)) {
+            io.MouseDown[0] = input.IsDown(INPUT_ACTION_MOUSE_BASE + "/button_left");
+            io.MouseDown[1] = input.IsDown(INPUT_ACTION_MOUSE_BASE + "/button_right");
+            io.MouseDown[2] = input.IsDown(INPUT_ACTION_MOUSE_BASE + "/button_middle");
 
-                const glm::vec2 *scrollOffset, *scrollOffsetPrev;
-                if (input->GetActionDelta(INPUT_ACTION_MOUSE_SCROLL, &scrollOffset, &scrollOffsetPrev)) {
-                    if (scrollOffsetPrev != nullptr) {
-                        io.MouseWheel = scrollOffset->y - scrollOffsetPrev->y;
-                    } else {
-                        io.MouseWheel = scrollOffset->y;
-                    }
+            const glm::vec2 *scrollOffset, *scrollOffsetPrev;
+            if (input.GetActionDelta(INPUT_ACTION_MOUSE_SCROLL, &scrollOffset, &scrollOffsetPrev)) {
+                if (scrollOffsetPrev != nullptr) {
+                    io.MouseWheel = scrollOffset->y - scrollOffsetPrev->y;
+                } else {
+                    io.MouseWheel = scrollOffset->y;
                 }
+            }
 
-                const glm::vec2 *mousePos;
-                if (input->GetActionValue(INPUT_ACTION_MOUSE_CURSOR, &mousePos)) {
-                    io.MousePos = ImVec2(mousePos->x, mousePos->y);
-                }
+            const glm::vec2 *mousePos;
+            if (input.GetActionValue(INPUT_ACTION_MOUSE_CURSOR, &mousePos)) {
+                io.MousePos = ImVec2(mousePos->x, mousePos->y);
+            }
 
-                const CharEvents *chars;
-                if (input->GetActionValue(INPUT_ACTION_KEYBOARD_CHARS, &chars)) {
-                    for (auto &ch : *chars) {
-                        if (ch > 0 && ch < 0x10000) io.AddInputCharacter(ch);
-                    }
+            const CharEvents *chars;
+            if (input.GetActionValue(INPUT_ACTION_KEYBOARD_CHARS, &chars)) {
+                for (auto &ch : *chars) {
+                    if (ch > 0 && ch < 0x10000) io.AddInputCharacter(ch);
                 }
             }
         }
@@ -67,13 +64,12 @@ namespace sp {
     void DebugGuiManager::ToggleConsole() {
         consoleOpen = !consoleOpen;
 
-        auto gfxContext = game->graphics.GetContext();
         if (consoleOpen) {
-            input->LockFocus(true, focusPriority);
-            if (gfxContext) gfxContext->EnableCursor();
+            input.LockFocus(true, focusPriority);
+            graphics.EnableCursor();
         } else {
-            if (gfxContext) gfxContext->DisableCursor();
-            input->LockFocus(false, focusPriority);
+            graphics.DisableCursor();
+            input.LockFocus(false, focusPriority);
         }
     }
 } // namespace sp

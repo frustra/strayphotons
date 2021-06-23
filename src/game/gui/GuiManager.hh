@@ -1,19 +1,14 @@
 #pragma once
 
+#include "core/input/InputManager.hh"
+
 #include <glm/glm.hpp>
 #include <vector>
-
 struct ImGuiContext;
 
 namespace sp {
-    /**
-     * Set of defined focus level priorities.
-     * A higher number has priority over lower numbers.
-     */
-    enum FocusLevel { FOCUS_GAME = 1, FOCUS_MENU = 10, FOCUS_OVERLAY = 1000 };
 
-    class Game;
-    class InputManager;
+    class GraphicsManager;
 
     class GuiRenderable {
     public:
@@ -22,9 +17,8 @@ namespace sp {
 
     class GuiManager {
     public:
-        GuiManager(Game *game, const FocusLevel focusPriority = FOCUS_GAME);
+        GuiManager(GraphicsManager &graphics, InputManager &input, const FocusLevel focusPriority = FOCUS_GAME);
         virtual ~GuiManager();
-        void BindInput(InputManager &inputManager);
         void Attach(GuiRenderable *component);
         void SetGuiContext();
 
@@ -33,8 +27,8 @@ namespace sp {
 
     protected:
         const FocusLevel focusPriority;
-        Game *game = nullptr;
-        InputManager *input = nullptr;
+        GraphicsManager &graphics;
+        InputManager &input;
 
     private:
         std::vector<GuiRenderable *> components;

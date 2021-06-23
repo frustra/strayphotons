@@ -1,7 +1,7 @@
 // Project Headers
-#include "xr/openvr/OpenVrSystem.hh"
+#include "OpenVrSystem.hh"
 
-#include "Common.hh"
+#include "core/Common.hh"
 #include "xr/openvr/OpenVrModel.hh"
 
 // OpenVR headers

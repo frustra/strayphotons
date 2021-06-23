@@ -1,10 +1,10 @@
 add_subdirectory(openvr)
 
 target_sources(
-    ${PROJECT_GRAPHICS_CORE_LIB}
+    ${PROJECT_LIB}
     PRIVATE
         XrCompositor.cc
+        XrManager.cc
         XrSystemFactory.cc
         XrAction.cc
-        XrManager.cc
 )

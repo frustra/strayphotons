@@ -1,19 +1,22 @@
 #pragma once
 
-#include "Common.hh"
 #include "ConvexHull.hh"
-#include "PhysxActorDesc.hh"
 #include "core/CFunc.hh"
+#include "core/Common.hh"
+#include "ecs/Ecs.hh"
 #include "threading/MutexedVector.hh"
 
 #include <PxPhysicsAPI.h>
-#include <ecs/Ecs.hh>
 #include <extensions/PxDefaultAllocator.h>
 #include <extensions/PxDefaultErrorCallback.h>
 #include <functional>
 #include <list>
 #include <thread>
 #include <unordered_map>
+
+namespace ecs {
+    struct PhysxActorDesc;
+}
 
 namespace sp {
     class Game;
@@ -70,7 +73,9 @@ namespace sp {
         /**
          * Create an actor and bind the entity's Id to the actor's userData
          */
-        physx::PxRigidActor *CreateActor(shared_ptr<Model> model, PhysxActorDesc desc, const Tecs::Entity &entity);
+        physx::PxRigidActor *CreateActor(shared_ptr<Model> model,
+                                         ecs::PhysxActorDesc &desc,
+                                         const Tecs::Entity &entity);
 
         void RemoveActor(physx::PxRigidActor *actor);
 

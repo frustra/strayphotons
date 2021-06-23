@@ -1,19 +1,18 @@
 #pragma once
 
-#include "core/CVar.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/components/View.hh"
-#include "game/gui/ProfilerGui.hh"
+
+#include <glm/glm.hpp>
+#include <memory>
+#include <vector>
 
 namespace sp {
     class Game;
-    class GuiRenderer;
     class GlfwGraphicsContext;
     class Renderer;
-
-    extern CVar<glm::ivec2> CVarWindowSize;
-    extern CVar<float> CVarFieldOfView;
-    extern CVar<int> CVarWindowFullscreen;
+    class ProfilerGui;
+    class GlfwActionSource;
 
     class GraphicsManager {
     public:
@@ -30,9 +29,10 @@ namespace sp {
 
         bool Frame();
 
-        GlfwGraphicsContext *GetContext() {
-            return context;
-        }
+        GlfwGraphicsContext *GetContext();
+
+        void DisableCursor();
+        void EnableCursor();
 
         Renderer *GetRenderer() {
             return renderer;
@@ -42,11 +42,12 @@ namespace sp {
         bool useBasic = false;
 
         GlfwGraphicsContext *context = nullptr;
+        GlfwActionSource *glfwActionSource = nullptr;
         Renderer *renderer = nullptr;
         Game *game = nullptr;
         ProfilerGui *profilerGui = nullptr;
 
         ecs::Observer<ecs::Removed<ecs::View>> viewRemoval;
-        vector<ecs::Entity> playerViews;
+        std::vector<ecs::Entity> playerViews;
     };
 } // namespace sp

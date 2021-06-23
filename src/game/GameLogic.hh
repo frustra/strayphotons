@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Common.hh"
 #include "core/CFunc.hh"
-#include "ecs/systems/HumanControlSystem.hh"
+#include "ecs/Ecs.hh"
+#include "game/systems/HumanControlSystem.hh"
 
-#include <ecs/Ecs.hh>
+#include <memory>
 
 namespace sp {
     class Game;
@@ -36,8 +36,7 @@ namespace sp {
     private:
         Game *game;
         InputManager *input = nullptr;
-        ecs::HumanControlSystem humanControlSystem;
-        shared_ptr<Scene> scene;
+        std::shared_ptr<Scene> scene;
         Tecs::Entity player;
         Tecs::Entity flashlight;
         CFuncCollection funcs;

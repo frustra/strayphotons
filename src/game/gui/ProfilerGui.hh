@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core/PerfTimer.hh"
+#include "game/gui/GuiManager.hh"
+#include "graphics/opengl/PerfTimer.hh"
 
-#include <game/gui/GuiManager.hh>
 #include <imgui/imgui.h>
 #include <sstream>
 
