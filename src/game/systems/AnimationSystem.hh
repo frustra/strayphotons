@@ -1,8 +1,6 @@
 #pragma once
 
-#include "physx/PhysxManager.hh"
-
-#include <ecs/Ecs.hh>
+#include "ecs/Ecs.hh"
 
 namespace sp {
     class InputManager;

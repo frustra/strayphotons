@@ -1,11 +1,8 @@
 #include "AnimationSystem.hh"
 
 #include "core/Logging.hh"
-#include "physx/PhysxUtils.hh"
-
-#include <PxPhysicsAPI.h>
-#include <ecs/Ecs.hh>
-#include <ecs/EcsImpl.hh>
+#include "ecs/Ecs.hh"
+#include "ecs/EcsImpl.hh"
 
 namespace sp {
     AnimationSystem::AnimationSystem(ecs::ECS &ecs) : ecs(ecs) {}

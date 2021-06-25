@@ -2,7 +2,6 @@
 
 #include "ecs/Ecs.hh"
 #include "input/InputManager.hh"
-#include "physx/PhysxManager.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -18,6 +17,8 @@ namespace sp {
     static const std::string INPUT_ACTION_PLAYER_MOVE_SPRINT = INPUT_ACTION_PLAYER_BASE + "/sprint";
     static const std::string INPUT_ACTION_PLAYER_INTERACT = INPUT_ACTION_PLAYER_BASE + "/interact";
     static const std::string INPUT_ACTION_PLAYER_INTERACT_ROTATE = INPUT_ACTION_PLAYER_BASE + "/interact_rotate";
+
+    class PhysxManager;
 
     class HumanControlSystem {
     public:

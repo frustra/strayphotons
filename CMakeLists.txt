@@ -186,15 +186,7 @@ if (MSVC)
 	)
 endif()
 
-if (SP_DEBUG)
-	target_compile_definitions(${PROJECT_LIB} INTERFACE
-		_DEBUG
-	)
-else()
-	target_compile_definitions(${PROJECT_LIB} INTERFACE
-		NDEBUG
-	)
-
+if (NOT SP_DEBUG)
 	include(CheckIPOSupported)
 	check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
 	if(ipo_supported)
@@ -234,33 +226,15 @@ if (SP_PACKAGE_RELEASE)
 		set_target_properties(${PROJECT_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 		set_target_properties(${PROJECT_HEADLESS_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 		set_target_properties(${PROJECT_TEST_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
-		set_target_properties(${PROJECT_LIB} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 	else()
 		set_target_properties(${PROJECT_EXE} PROPERTIES INSTALL_RPATH "\$ORIGIN")
 		set_target_properties(${PROJECT_EXE} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	endif()
 endif()
 
-set (_physx_libraries
-	PhysX
-	PhysXCharacterKinematic
-	PhysXCommon
-	PhysXCooking
-	PhysXExtensions
-	PhysXFoundation
-	PhysXPvdSDK
-)
-
-target_compile_options(${PROJECT_LIB} PRIVATE ${SP_TARGET_OPTIONS})
 target_compile_options(${PROJECT_EXE} PRIVATE ${SP_TARGET_OPTIONS})
 target_compile_options(${PROJECT_HEADLESS_EXE} PRIVATE ${SP_TARGET_OPTIONS})
 target_compile_options(${PROJECT_TEST_EXE} PRIVATE ${SP_TARGET_OPTIONS})
-
-target_link_libraries(${PROJECT_LIB} INTERFACE
-	${_physx_libraries}
-	vhacd
-	cxxopts
-)
 
 target_link_libraries(${PROJECT_EXE} PRIVATE
 	${PROJECT_LIB}
@@ -269,6 +243,7 @@ target_link_libraries(${PROJECT_EXE} PRIVATE
 	${PROJECT_GRAPHICS_OPENGL_LIB}
 	${PROJECT_INPUT_CORE_LIB}
 	${PROJECT_INPUT_GLFW_LIB}
+	${PROJECT_PHYSICS_PHYSX_LIB}
 )
 
 target_link_libraries(${PROJECT_HEADLESS_EXE} PRIVATE
@@ -277,6 +252,7 @@ target_link_libraries(${PROJECT_HEADLESS_EXE} PRIVATE
 	${PROJECT_GRAPHICS_CORE_LIB}
 	${PROJECT_GRAPHICS_HEADLESS_LIB}
 	${PROJECT_INPUT_CORE_LIB}
+	${PROJECT_PHYSICS_PHYSX_LIB}
 )
 
 target_link_libraries(${PROJECT_TEST_EXE} PRIVATE
@@ -286,6 +262,11 @@ target_link_libraries(${PROJECT_TEST_EXE} PRIVATE
 	${PROJECT_GRAPHICS_EGL_LIB}
 	${PROJECT_INPUT_CORE_LIB}
 	${PROJECT_INPUT_GLFW_LIB}
+	${PROJECT_PHYSICS_PHYSX_LIB}
+)
+
+target_link_libraries(${PROJECT_LIB} INTERFACE
+	cxxopts
 )
 
 if(UNIX)
@@ -311,11 +292,7 @@ install(
 		${PROJECT_EXE}
 		${PROJECT_HEADLESS_EXE}
 		${PROJECT_TEST_EXE}
-		${PROJECT_LIB}
-		${PROJECT_GRAPHICS_EGL_LIB}
-		${PROJECT_GRAPHICS_OPENGL_LIB}
-		${PROJECT_GRAPHICS_HEADLESS_LIB}
-		${_physx_libraries}
+		# ${_physx_libraries}
 	RUNTIME DESTINATION
 		bin
 	ARCHIVE	DESTINATION

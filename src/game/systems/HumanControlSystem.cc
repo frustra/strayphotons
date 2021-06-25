@@ -6,6 +6,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "input/InputManager.hh"
+#include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <PxRigidActor.h>
