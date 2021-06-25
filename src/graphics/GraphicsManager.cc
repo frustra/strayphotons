@@ -46,13 +46,12 @@ namespace sp {
     void GraphicsManager::Init() {
 #ifdef SP_GRAPHICS_SUPPORT_GL
         if (context) { throw "already an active context"; }
-
         if (renderer) { throw "already an active renderer"; }
 
         context = new GlfwGraphicsContext();
+        context->Init();
 
         GLFWwindow *window = static_cast<GlfwGraphicsContext *>(context)->GetWindow();
-
         if (window != nullptr) {
             glfwActionSource = new GlfwActionSource(game->input, *window);
 
@@ -106,7 +105,6 @@ namespace sp {
             }
         }
 
-        context->Init();
         renderer->Prepare();
 #endif
     }

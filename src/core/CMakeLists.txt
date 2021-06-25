@@ -1,5 +1,3 @@
-set(PROJECT_CORE_LIB ${PROJECT_BASE_NAME}-core CACHE INTERNAL "Library containing core components such as the ECS and asset loading")
-
 add_library(${PROJECT_CORE_LIB} STATIC)
 
 target_link_libraries(${PROJECT_CORE_LIB} PUBLIC
