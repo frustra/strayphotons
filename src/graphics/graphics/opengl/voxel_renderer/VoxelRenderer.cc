@@ -4,7 +4,6 @@
 #include "core/CVar.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/components/View.hh"
 #include "graphics/opengl/GLModel.hh"
 #include "graphics/opengl/GLView.hh"
 #include "graphics/opengl/GPUTypes.hh"
@@ -17,6 +16,8 @@
 #include "graphics/opengl/Shader.hh"
 #include "graphics/opengl/ShaderManager.hh"
 #include "graphics/opengl/VertexBuffer.hh"
+#include "graphics/opengl/gui/DebugGuiManager.hh"
+#include "graphics/opengl/gui/MenuGuiManager.hh"
 #include "graphics/opengl/postprocess/PostProcess.hh"
 #include "input/glfw/GlfwActionSource.hh"
 
@@ -72,10 +73,6 @@ namespace sp {
 
         RTPool = new RenderTargetPool();
 
-        // TODO: Fix GUI renderer
-        // if (game->debugGui) { debugGuiRenderer = make_shared<GuiRenderer>(*this, context, game->debugGui.get()); }
-        // if (game->menuGui) { menuGuiRenderer = make_shared<GuiRenderer>(*this, context, game->menuGui.get()); }
-
         ShaderControl = new ShaderManager(GlobalShaders);
         ShaderManager::SetDefine("MAX_LIGHTS", std::to_string(MAX_LIGHTS));
         ShaderManager::SetDefine("MAX_MIRRORS", std::to_string(MAX_MIRRORS));
@@ -96,6 +93,14 @@ namespace sp {
         AssertGLOK("Renderer::Prepare");
     }
 
+    void VoxelRenderer::PrepareGuis(DebugGuiManager *debugGui, MenuGuiManager *menuGui) {
+        if (debugGui) { debugGuiRenderer = make_shared<GuiRenderer>(*this, context, debugGui); }
+        if (menuGui) {
+            this->menuGui = menuGui;
+            menuGuiRenderer = make_shared<GuiRenderer>(*this, context, menuGui);
+        }
+    }
+
     void VoxelRenderer::RenderMainMenu(ecs::View &view, bool renderToGel) {
         if (renderToGel) {
             RenderTargetDesc menuDesc(PF_RGBA8, view.extents);
@@ -105,10 +110,10 @@ namespace sp {
 
             SetRenderTarget(menuGuiTarget.get(), nullptr);
             PrepareForView(view);
-            // menuGuiRenderer->Render(view);
+            menuGuiRenderer->Render(view);
             menuGuiTarget->GetTexture().GenMipmap();
         } else {
-            // menuGuiRenderer->Render(view);
+            menuGuiRenderer->Render(view);
         }
     }
 
@@ -542,7 +547,7 @@ namespace sp {
 
         PostProcessing::Process(this, ecs, view, targets);
 
-        // if (!finalOutput) { debugGuiRenderer->Render(view); }
+        if (!finalOutput) { debugGuiRenderer->Render(view); }
 
         // AssertGLOK("Renderer::RenderFrame");
     }
@@ -756,12 +761,12 @@ namespace sp {
         UpdateShaders();
         ReadBackLightSensors();
 
-        // if (game->menuGui && game->menuGui->RenderMode() == MenuRenderMode::Gel) {
-        //     ecs::View menuView({1280, 1280});
-        //     menuView.clearMode.reset();
-        //     menuView.clearMode[ecs::View::ClearMode::CLEAR_MODE_COLOR_BUFFER] = true;
-        //     RenderMainMenu(menuView, true);
-        // }
+        if (menuGui && menuGui->RenderMode() == MenuRenderMode::Gel) {
+            ecs::View menuView({1280, 1280});
+            menuView.clearMode.reset();
+            menuView.clearMode[ecs::View::ClearMode::CLEAR_MODE_COLOR_BUFFER] = true;
+            RenderMainMenu(menuView, true);
+        }
 
         RenderShadowMaps();
 

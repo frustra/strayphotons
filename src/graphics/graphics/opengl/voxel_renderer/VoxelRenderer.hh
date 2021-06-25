@@ -6,6 +6,8 @@
 #include "graphics/core/Renderer.hh"
 #include "graphics/opengl/GLBuffer.hh"
 #include "graphics/opengl/GLTexture.hh"
+#include "graphics/opengl/gui/GuiRenderer.hh"
+#include "graphics/opengl/gui/MenuGuiManager.hh"
 
 #include <functional>
 #include <glm/glm.hpp>
@@ -21,9 +23,9 @@ namespace sp {
     class ShaderManager;
     class SceneShader;
     class Model;
-    class GuiRenderer;
     class GraphicsContext;
     class GlfwGraphicsContext;
+    class DebugGuiManager;
 
     struct VoxelData {
         shared_ptr<GLRenderTarget> voxelCounters;
@@ -50,7 +52,7 @@ namespace sp {
         void EndFrame() override;
 
         // Functions specific to VoxelRenderer
-        // TODO: make all this private and ensure we can still compile
+        void PrepareGuis(DebugGuiManager *debugGui, MenuGuiManager *menuGui);
         void UpdateShaders(bool force = false);
         void RenderMainMenu(ecs::View &view, bool renderToGel = false);
         void RenderShadowMaps();
@@ -78,6 +80,10 @@ namespace sp {
         void SetRenderTargets(size_t attachmentCount, GLRenderTarget **attachments, GLRenderTarget *depth);
         void SetDefaultRenderTarget();
 
+        MenuRenderMode GetMenuRenderMode() const {
+            return menuGui ? menuGui->RenderMode() : MenuRenderMode::None;
+        }
+
         static void DrawScreenCover(bool flipped = false);
 
         ShaderManager *ShaderControl = nullptr;
@@ -96,8 +102,9 @@ namespace sp {
         GLBuffer mirrorVisData;
         GLBuffer mirrorSceneData;
 
-        // shared_ptr<GuiRenderer> debugGuiRenderer;
-        // shared_ptr<GuiRenderer> menuGuiRenderer;
+        std::shared_ptr<GuiRenderer> debugGuiRenderer;
+        std::shared_ptr<GuiRenderer> menuGuiRenderer;
+        MenuGuiManager *menuGui = nullptr;
 
         ecs::Observer<ecs::Removed<ecs::Renderable>> renderableRemoval;
         std::deque<std::pair<shared_ptr<Model>, int>> renderableGCQueue;

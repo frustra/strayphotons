@@ -118,30 +118,30 @@ namespace sp {
         context.LastOutput = blending;
     }
 
-    // static void AddMenu(PostProcessingContext &context) {
-    //     auto blurY1 = context.AddPass<BloomBlur>(glm::ivec2(0, 1), 2, 1.0f);
-    //     blurY1->SetInput(0, context.LastOutput);
+    static void AddMenu(PostProcessingContext &context) {
+        auto blurY1 = context.AddPass<BloomBlur>(glm::ivec2(0, 1), 2, 1.0f);
+        blurY1->SetInput(0, context.LastOutput);
 
-    //     auto blurX1 = context.AddPass<BloomBlur>(glm::ivec2(1, 0), 2);
-    //     blurX1->SetInput(0, blurY1);
+        auto blurX1 = context.AddPass<BloomBlur>(glm::ivec2(1, 0), 2);
+        blurX1->SetInput(0, blurY1);
 
-    //     auto blurY2 = context.AddPass<BloomBlur>(glm::ivec2(0, 1), 1);
-    //     blurY2->SetInput(0, blurX1);
+        auto blurY2 = context.AddPass<BloomBlur>(glm::ivec2(0, 1), 1);
+        blurY2->SetInput(0, blurX1);
 
-    //     auto blurX2 = context.AddPass<BloomBlur>(glm::ivec2(1, 0), 2);
-    //     blurX2->SetInput(0, blurY2);
+        auto blurX2 = context.AddPass<BloomBlur>(glm::ivec2(1, 0), 2);
+        blurX2->SetInput(0, blurY2);
 
-    //     auto blurY3 = context.AddPass<BloomBlur>(glm::ivec2(0, 1), 1);
-    //     blurY3->SetInput(0, blurX2);
+        auto blurY3 = context.AddPass<BloomBlur>(glm::ivec2(0, 1), 1);
+        blurY3->SetInput(0, blurX2);
 
-    //     auto blurX3 = context.AddPass<BloomBlur>(glm::ivec2(1, 0), 1, FLT_MAX, 0.2f);
-    //     blurX3->SetInput(0, blurY3);
+        auto blurX3 = context.AddPass<BloomBlur>(glm::ivec2(1, 0), 1, FLT_MAX, 0.2f);
+        blurX3->SetInput(0, blurY3);
 
-    //     auto menu = context.AddPass<RenderMenuGui>();
-    //     menu->SetInput(0, context.LastOutput);
-    //     menu->SetInput(1, blurX3);
-    //     context.LastOutput = menu;
-    // }
+        auto menu = context.AddPass<RenderMenuGui>();
+        menu->SetInput(0, context.LastOutput);
+        menu->SetInput(1, blurX3);
+        context.LastOutput = menu;
+    }
 
     static string ScreenshotPath;
 
@@ -229,9 +229,7 @@ namespace sp {
         }
 
         // TODO: Update gui rendering to use the ECS
-        // if (!renderToTexture && game->menuGui && game->menuGui->RenderMode() == MenuRenderMode::Pause) {
-        //     AddMenu(context);
-        // }
+        if (!renderToTexture && renderer->GetMenuRenderMode() == MenuRenderMode::Pause) { AddMenu(context); }
 
         if (CVarBloomEnabled.Get()) { AddBloom(context); }
 
@@ -243,13 +241,13 @@ namespace sp {
 
         if (CVarAntiAlias.Get() == 1) { AddSMAA(context, linearLuminosity); }
 
-        if (!renderToTexture /* && (!game->menuGui || game->menuGui->RenderMode() == MenuRenderMode::None)*/) {
+        if (!renderToTexture && renderer->GetMenuRenderMode() == MenuRenderMode::None) {
             auto crosshair = context.AddPass<Crosshair>();
             crosshair->SetInput(0, context.LastOutput);
             context.LastOutput = crosshair;
         }
 
-        if (CVarViewGBuffer.Get() > 0 /* && (!game->menuGui || game->menuGui->RenderMode() == MenuRenderMode::None)*/) {
+        if (CVarViewGBuffer.Get() > 0 && (renderer->GetMenuRenderMode() == MenuRenderMode::None)) {
             auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(),
                                                          CVarViewGBufferSource.Get(),
                                                          CVarVoxelMip.Get(),

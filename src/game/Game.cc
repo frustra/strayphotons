@@ -44,12 +44,11 @@ namespace sp {
 #endif
 
         try {
-            graphics.Init();
-
 #ifdef SP_GRAPHICS_SUPPORT_GL
             debugGui = std::make_unique<DebugGuiManager>(this->graphics, this->input);
             menuGui = std::make_unique<MenuGuiManager>(this->graphics, this->input);
 #endif
+            graphics.Init();
 
             logic.Init(startupScript);
 

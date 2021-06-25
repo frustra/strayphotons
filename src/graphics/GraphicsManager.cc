@@ -103,6 +103,8 @@ namespace sp {
                 auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
                 viewRemoval = lock.Watch<ecs::Removed<ecs::View>>();
             }
+
+            static_cast<VoxelRenderer *>(renderer)->PrepareGuis(game->debugGui.get(), game->menuGui.get());
         }
 
         renderer->Prepare();
