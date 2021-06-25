@@ -38,7 +38,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 ## Setup compiler flags for various build types
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
-	set(CMAKE_CXX_FLAGS 				"/MP /wd4800 /wd4189 /EHsc")
+	set(CMAKE_CXX_FLAGS 				"/MP /EHsc") # /Wall /WX") # /wd4800 /wd4189
 	set(CMAKE_CXX_FLAGS_RELEASE 		"/MD /O2")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"/MDd /O2")
 	set(CMAKE_CXX_FLAGS_DEBUG 			"/MDd /DEBUG /ZI /FC")
@@ -177,7 +177,7 @@ if (SP_PACKAGE_RELEASE)
 endif()
 
 if (MSVC)
-	target_compile_definitions(${PROJECT_LIB} INTERFACE
+	target_compile_definitions(${PROJECT_CORE_LIB} PUBLIC
 		_CRT_SECURE_NO_WARNINGS
 		UNICODE
 		_UNICODE
@@ -222,7 +222,7 @@ endif()
 ## END COMPILE DEFINITIONS ##
 
 if (SP_PACKAGE_RELEASE)
-	if (MSVC)
+	if (WIN32)
 		set_target_properties(${PROJECT_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 		set_target_properties(${PROJECT_HEADLESS_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 		set_target_properties(${PROJECT_TEST_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")

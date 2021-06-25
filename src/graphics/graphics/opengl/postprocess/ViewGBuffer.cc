@@ -38,8 +38,8 @@ namespace sp {
         GLVoxelInfo voxelInfo;
         FillVoxelInfo(&voxelInfo, voxelData.info);
 
-        r->GlobalShaders->Get<ViewGBufferFS>()->SetParameters(mode, source, level, context->view);
-        r->GlobalShaders->Get<ViewGBufferFS>()->SetVoxelInfo(&voxelInfo);
+        r->shaders.Get<ViewGBufferFS>()->SetParameters(mode, source, level, context->view);
+        r->shaders.Get<ViewGBufferFS>()->SetVoxelInfo(&voxelInfo);
 
         r->SetRenderTarget(dest.get(), nullptr);
         r->ShaderControl->BindPipeline<BasicPostVS, ViewGBufferFS>();

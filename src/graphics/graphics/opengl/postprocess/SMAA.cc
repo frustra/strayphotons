@@ -70,8 +70,8 @@ namespace sp {
         auto stencil = outputs[1].AllocateTarget(context);
 
 #ifndef DISABLE_SMAA
-        r->GlobalShaders->Get<SMAAEdgeDetectionVS>()->SetViewParams(context->view);
-        r->GlobalShaders->Get<SMAAEdgeDetectionFS>()->SetViewParams(context->view);
+        r->shaders.Get<SMAAEdgeDetectionVS>()->SetViewParams(context->view);
+        r->shaders.Get<SMAAEdgeDetectionFS>()->SetViewParams(context->view);
 
         r->SetRenderTarget(dest.get(), stencil.get());
         r->ShaderControl->BindPipeline<SMAAEdgeDetectionVS, SMAAEdgeDetectionFS>();
@@ -98,10 +98,10 @@ namespace sp {
         }
 
         static shared_ptr<GpuTexture> areaTex = context->renderer->context.LoadTexture(
-            GAssets.LoadImage("textures/smaa/AreaTex.tga"),
+            GAssets.LoadImageByPath("textures/smaa/AreaTex.tga"),
             false);
         static shared_ptr<GpuTexture> searchTex = context->renderer->context.LoadTexture(
-            GAssets.LoadImage("textures/smaa/SearchTex.tga"),
+            GAssets.LoadImageByPath("textures/smaa/SearchTex.tga"),
             false);
         static GLTexture *glAreaTex = dynamic_cast<GLTexture *>(areaTex.get());
         static GLTexture *glSearchTex = dynamic_cast<GLTexture *>(searchTex.get());
@@ -112,8 +112,8 @@ namespace sp {
         auto dest = outputs[0].AllocateTarget(context);
         auto stencil = dependencies[0].GetOutput()->TargetRef;
 
-        r->GlobalShaders->Get<SMAABlendingWeightsVS>()->SetViewParams(context->view);
-        r->GlobalShaders->Get<SMAABlendingWeightsFS>()->SetViewParams(context->view);
+        r->shaders.Get<SMAABlendingWeightsVS>()->SetViewParams(context->view);
+        r->shaders.Get<SMAABlendingWeightsFS>()->SetViewParams(context->view);
 
         r->SetRenderTarget(dest.get(), stencil.get());
         r->ShaderControl->BindPipeline<SMAABlendingWeightsVS, SMAABlendingWeightsFS>();
@@ -147,8 +147,8 @@ namespace sp {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
 
-        r->GlobalShaders->Get<SMAABlendingVS>()->SetViewParams(context->view);
-        r->GlobalShaders->Get<SMAABlendingFS>()->SetViewParams(context->view);
+        r->shaders.Get<SMAABlendingVS>()->SetViewParams(context->view);
+        r->shaders.Get<SMAABlendingFS>()->SetViewParams(context->view);
 
         r->SetRenderTarget(dest.get(), nullptr);
         r->ShaderControl->BindPipeline<SMAABlendingVS, SMAABlendingFS>();

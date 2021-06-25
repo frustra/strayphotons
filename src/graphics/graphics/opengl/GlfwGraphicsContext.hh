@@ -11,7 +11,6 @@ struct GLFWwindow;
 
 namespace sp {
     class Device;
-    class ShaderSet;
 
     class GlfwGraphicsContext : public GraphicsContext {
     public:
@@ -42,10 +41,9 @@ namespace sp {
 
     private:
         void SetTitle(string title);
-        void CreateWindow(glm::ivec2 initialSize = {640, 480});
+        void CreateGlfwWindow(glm::ivec2 initialSize = {640, 480});
         void ResizeWindow(ecs::View &frameBufferView, double scale, int fullscreen);
 
-    private:
         glm::ivec2 prevWindowSize, prevWindowPos;
         int prevFullscreen = 0;
         double windowScale = 1.0;

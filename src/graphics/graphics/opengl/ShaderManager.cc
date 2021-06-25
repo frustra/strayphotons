@@ -39,7 +39,7 @@ namespace sp {
             glDeleteProgramPipelines(1, &cached.second);
     }
 
-    void ShaderManager::CompileAll(ShaderSet *shaders) {
+    void ShaderManager::CompileAll(ShaderSet &shaders) {
         for (auto shaderType : ShaderTypes()) {
             auto input = LoadShader(shaderType);
             auto output = CompileShader(input);
@@ -48,7 +48,7 @@ namespace sp {
             output->shaderType = shaderType;
             auto shader = shaderType->newInstance(output);
             shared_ptr<Shader> shaderPtr(shader);
-            shaders->shaders[shaderType] = shaderPtr;
+            shaders.shaders[shaderType] = shaderPtr;
         }
     }
 
@@ -192,11 +192,11 @@ namespace sp {
         return output.str();
     }
 
-    void ShaderManager::BindPipeline(const ShaderSet *shaders, vector<ShaderMeta *> shaderMetaTypes) {
+    void ShaderManager::BindPipeline(vector<ShaderMeta *> shaderMetaTypes) {
         size_t hash = 0;
 
         for (auto shaderMeta : shaderMetaTypes) {
-            auto shader = shaders->Get(shaderMeta);
+            auto shader = shaders.Get(shaderMeta);
             hash_combine(hash, shader->GLProgram());
             shader->BindBuffers();
         }
@@ -211,7 +211,7 @@ namespace sp {
         glGenProgramPipelines(1, &pipeline);
 
         for (auto shaderMeta : shaderMetaTypes) {
-            auto shader = shaders->Get(shaderMeta);
+            auto shader = shaders.Get(shaderMeta);
             glUseProgramStages(pipeline, shaderMeta->GLStageBits(), shader->GLProgram());
         }
 

@@ -66,7 +66,7 @@ namespace sp {
     }
 
     void VoxelRenderer::RenderVoxelGrid() {
-        RenderPhase phase("VoxelGrid", Timer);
+        RenderPhase phase("VoxelGrid", timer);
 
         PrepareVoxelTextures();
 
@@ -93,7 +93,7 @@ namespace sp {
         int lightCount = FillLightData(&lightData[0], ecs);
 
         {
-            RenderPhase phase("Fill", Timer);
+            RenderPhase phase("Fill", timer);
 
             indirectBufferCurrent.Bind(GL_ATOMIC_COUNTER_BUFFER, 0);
             voxelData.voxelCounters->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
@@ -110,22 +110,22 @@ namespace sp {
             voxelData.radianceMips->GetTexture().Bind(8);
             mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 
-            ShaderControl->BindPipeline<VoxelFillVS, VoxelFillGS, VoxelFillFS>(GlobalShaders);
-            auto voxelFillFS = GlobalShaders->Get<VoxelFillFS>();
+            ShaderControl->BindPipeline<VoxelFillVS, VoxelFillGS, VoxelFillFS>();
+            auto voxelFillFS = shaders.Get<VoxelFillFS>();
             voxelFillFS->SetLightData(lightCount, &lightData[0]);
             voxelFillFS->SetVoxelInfo(&voxelInfo);
             voxelFillFS->SetLightAttenuation(CVarLightAttenuation.Get());
 
             {
                 auto lock = ecs.tecs.StartTransaction<ecs::ReadAll>();
-                ForwardPass(ortho, GlobalShaders->Get<VoxelFillVS>(), lock);
+                ForwardPass(ortho, shaders.Get<VoxelFillVS>(), lock);
             }
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT |
                             GL_COMMAND_BARRIER_BIT);
         }
 
         {
-            RenderPhase phase("Merge", Timer);
+            RenderPhase phase("Merge", timer);
 
             indirectBufferCurrent.Bind(GL_DISPATCH_INDIRECT_BUFFER);
 
@@ -135,8 +135,8 @@ namespace sp {
                 voxelData.radiance->GetTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
                 voxelData.voxelOverflow->GetTexture().BindImage(1, GL_READ_ONLY, i);
 
-                ShaderControl->BindPipeline<VoxelMergeCS>(GlobalShaders);
-                GlobalShaders->Get<VoxelMergeCS>()->SetLevel(i);
+                ShaderControl->BindPipeline<VoxelMergeCS>();
+                shaders.Get<VoxelMergeCS>()->SetLevel(i);
                 glDispatchComputeIndirect(sizeof(GLuint) * 4 * (i + 1) + sizeof(GLuint));
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
             }
@@ -147,11 +147,11 @@ namespace sp {
         }
 
         {
-            RenderPhase phase("Mipmap", Timer);
+            RenderPhase phase("Mipmap", timer);
 
             for (uint32 i = 0; i <= voxelData.radianceMips->GetDesc().levels; i++) {
                 {
-                    RenderPhase subPhase("Clear", Timer);
+                    RenderPhase subPhase("Clear", timer);
 
                     indirectBufferPrevious.Bind(GL_DISPATCH_INDIRECT_BUFFER);
                     indirectBufferPrevious.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint));
@@ -163,14 +163,14 @@ namespace sp {
                         voxelData.radianceMips->GetTexture().BindImage(2, GL_WRITE_ONLY, i - 1, GL_TRUE, 0);
                     }
 
-                    ShaderControl->BindPipeline<VoxelClearCS>(GlobalShaders);
-                    GlobalShaders->Get<VoxelClearCS>()->SetLevel(i);
+                    ShaderControl->BindPipeline<VoxelClearCS>();
+                    shaders.Get<VoxelClearCS>()->SetLevel(i);
                     glDispatchComputeIndirect(sizeof(GLuint) * 4 * i + sizeof(GLuint));
                     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
                 }
 
                 {
-                    RenderPhase subPhase("MipmapLevel", Timer);
+                    RenderPhase subPhase("MipmapLevel", timer);
 
                     indirectBufferCurrent.Bind(GL_DISPATCH_INDIRECT_BUFFER);
                     indirectBufferCurrent.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint) * 4);
@@ -191,8 +191,8 @@ namespace sp {
                         voxelData.radianceMips->GetTexture().BindImage(5, GL_WRITE_ONLY, i - 1, GL_TRUE, 0);
                     }
 
-                    ShaderControl->BindPipeline<VoxelMipmapCS>(GlobalShaders);
-                    auto voxelMipmapCS = GlobalShaders->Get<VoxelMipmapCS>();
+                    ShaderControl->BindPipeline<VoxelMipmapCS>();
+                    auto voxelMipmapCS = shaders.Get<VoxelMipmapCS>();
                     voxelMipmapCS->SetVoxelInfo(&voxelInfo);
                     voxelMipmapCS->SetLevel(i);
 
@@ -217,7 +217,7 @@ namespace sp {
         }
 
         {
-            RenderPhase phase("Swap", Timer);
+            RenderPhase phase("Swap", timer);
 
             GLBuffer tmp = indirectBufferPrevious;
             indirectBufferPrevious = indirectBufferCurrent;

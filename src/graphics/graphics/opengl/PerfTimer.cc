@@ -2,6 +2,7 @@
 
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "graphics/opengl/Graphics.hh"
 
 namespace sp {
     CVar<bool> CVarProfileCPU("r.ProfileCPU", false, "Display CPU frame timing");

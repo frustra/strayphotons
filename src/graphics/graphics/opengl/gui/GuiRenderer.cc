@@ -94,7 +94,7 @@ namespace sp {
     GuiRenderer::~GuiRenderer() {}
 
     void GuiRenderer::Render(ecs::View view) {
-        RenderPhase phase("GuiRender", parent.Timer);
+        RenderPhase phase("GuiRender", parent.timer);
 
         manager->SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
@@ -118,7 +118,7 @@ namespace sp {
 
         glViewport(view.offset.x, view.offset.y, extents.x, extents.y);
 
-        parent.GlobalShaders->Get<BasicOrthoVS>()->SetViewport(extents.x, extents.y);
+        parent.shaders.Get<BasicOrthoVS>()->SetViewport(extents.x, extents.y);
         parent.ShaderControl->BindPipeline<BasicOrthoVS, BasicOrthoFS>();
 
         glEnable(GL_BLEND);

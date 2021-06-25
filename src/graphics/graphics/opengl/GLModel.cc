@@ -238,8 +238,8 @@ namespace sp {
                      .Image2D(img.image.data(), 0, 0, 0, 0, 0, false);
 
             if (VoxelRenderer *r = dynamic_cast<VoxelRenderer *>(renderer)) {
-                r->GlobalShaders->Get<TextureFactorCS>()->SetFactor(std::min(img.component, (int)factor.size()),
-                                                                    factor.data());
+                r->shaders.Get<TextureFactorCS>()->SetFactor(std::min(img.component, (int)factor.size()),
+                                                             factor.data());
                 tex->BindImageConvert(0, GLPixelFormat::PixelFormatMapping(PF_RGBA8), GL_READ_WRITE);
 
                 r->ShaderControl->BindPipeline<TextureFactorCS>();

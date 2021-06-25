@@ -88,7 +88,7 @@ namespace sp {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
 
-        r->GlobalShaders->Get<SSAOPass0FS>()->SetViewParams(context->view);
+        r->shaders.Get<SSAOPass0FS>()->SetViewParams(context->view);
 
         r->SetRenderTarget(dest.get(), nullptr);
         r->ShaderControl->BindPipeline<BasicPostVS, SSAOPass0FS>();
@@ -113,7 +113,7 @@ namespace sp {
             else
                 samplePattern.y = 1.0f / (float)extent.y;
 
-            r->GlobalShaders->Get<SSAOBlurFS>()->SetParameters(samplePattern, context->view);
+            r->shaders.Get<SSAOBlurFS>()->SetParameters(samplePattern, context->view);
 
             r->ShaderControl->BindPipeline<BasicPostVS, SSAOBlurFS>();
         } else {

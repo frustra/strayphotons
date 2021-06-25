@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Graphics.hh"
 #include "core/Common.hh"
+#include "graphics/opengl/Graphics.hh"
 
 #include <robin_hood.h>
 

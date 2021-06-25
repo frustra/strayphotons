@@ -14,23 +14,27 @@ target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB} PRIVATE
 target_link_libraries(${PROJECT_GRAPHICS_HEADLESS_LIB} INTERFACE
 	${PROJECT_GRAPHICS_CORE_LIB}
 )
-target_link_libraries(${PROJECT_GRAPHICS_EGL_LIB} PRIVATE
-    ${PROJECT_CORE_LIB}
-    ${PROJECT_GRAPHICS_CORE_LIB}
-    ${PROJECT_INPUT_CORE_LIB}
-    GLEW
-    glfw-egl
-    ImGui
-    OpenGL::GL
+target_link_libraries(${PROJECT_GRAPHICS_EGL_LIB}
+    PRIVATE
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GRAPHICS_CORE_LIB}
+        ${PROJECT_INPUT_CORE_LIB}
+    PUBLIC
+        GLEW
+        glfw-egl
+        ImGui
+        OpenGL::GL
 )
-target_link_libraries(${PROJECT_GRAPHICS_OPENGL_LIB} PRIVATE
-    ${PROJECT_CORE_LIB}
-    ${PROJECT_GRAPHICS_CORE_LIB}
-    ${PROJECT_INPUT_CORE_LIB}
-    GLEW
-    glfw
-    ImGui
-    OpenGL::GL
+target_link_libraries(${PROJECT_GRAPHICS_OPENGL_LIB}
+    PRIVATE
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GRAPHICS_CORE_LIB}
+        ${PROJECT_INPUT_CORE_LIB}
+    PUBLIC
+        GLEW
+        glfw
+        ImGui
+        OpenGL::GL
 )
 
 target_compile_definitions(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC

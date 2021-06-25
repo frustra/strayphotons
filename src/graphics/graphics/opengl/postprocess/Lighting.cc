@@ -45,7 +45,7 @@ namespace sp {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
 
-        r->GlobalShaders->Get<TonemapFS>()->SetParams();
+        r->shaders.Get<TonemapFS>()->SetParams();
         r->SetRenderTarget(dest.get(), nullptr);
         r->ShaderControl->BindPipeline<BasicPostVS, TonemapFS>();
 
@@ -139,7 +139,7 @@ namespace sp {
         const int downsample = 2; // Calculate histograms with N times fewer workgroups.
 
         auto r = context->renderer;
-        auto shader = r->GlobalShaders->Get<LumiHistogramCS>();
+        auto shader = r->shaders.Get<LumiHistogramCS>();
         auto histTex = shader->GetTarget(r);
 
         r->SetRenderTarget(histTex.get(), nullptr);
@@ -254,7 +254,7 @@ namespace sp {
         int mirrorCount = FillMirrorData(&mirrorData[0], context->ecs);
         FillVoxelInfo(&voxelInfo, voxelData.info);
 
-        auto shader = r->GlobalShaders->Get<VoxelLightingFS>();
+        auto shader = r->shaders.Get<VoxelLightingFS>();
         shader->SetLightData(lightCount, &lightData[0]);
         shader->SetMirrorData(mirrorCount, &mirrorData[0]);
         shader->SetViewParams(context->view);
@@ -276,8 +276,8 @@ namespace sp {
     void VoxelLightingDiffuse::Process(const PostProcessingContext *context) {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
-        auto shader = r->GlobalShaders->Get<VoxelLightingDiffuseFS>();
-        auto lumishader = r->GlobalShaders->Get<LumiHistogramCS>();
+        auto shader = r->shaders.Get<VoxelLightingDiffuseFS>();
+        auto lumishader = r->shaders.Get<LumiHistogramCS>();
 
         GLVoxelInfo voxelInfo;
         FillVoxelInfo(&voxelInfo, voxelData.info);

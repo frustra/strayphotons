@@ -2,6 +2,10 @@
 
 #include "ecs/Ecs.hh"
 
+#ifdef SP_GRAPHICS_SUPPORT_GL
+    #include "graphics/opengl/PerfTimer.hh"
+#endif
+
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>
@@ -46,6 +50,7 @@ namespace sp {
         bool useBasic = false;
         GlfwActionSource *glfwActionSource = nullptr;
         ProfilerGui *profilerGui = nullptr;
+        PerfTimer timer;
 #endif
 
         ecs::Observer<ecs::Removed<ecs::View>> viewRemoval;

@@ -185,7 +185,7 @@ namespace sp {
                                  ecs::EntityManager &ecs,
                                  ecs::View view,
                                  const EngineRenderTargets &targets) {
-        RenderPhase phase("PostProcessing", renderer->Timer);
+        RenderPhase phase("PostProcessing", renderer->timer);
 
         bool renderToTexture = (targets.finalOutput != nullptr);
 
@@ -316,7 +316,7 @@ namespace sp {
         for (auto pass : passes) {
             RenderPhase phase(pass->Name());
 
-            if (phase.name != "ProxyTarget") { phase.StartTimer(renderer->Timer); }
+            if (phase.name != "ProxyTarget") { phase.StartTimer(renderer->timer); }
 
             // Set up inputs.
             for (uint32 id = 0;; id++) {

@@ -14,18 +14,18 @@ namespace sp {
         static void SetDefine(string name, bool value = true);
         static std::unordered_map<string, string> &DefineVars();
 
-        ShaderManager(ShaderSet *shaders) : activeShaders(shaders) {}
+        ShaderManager(ShaderSet &shaders) : shaders(shaders) {}
         ~ShaderManager();
-        void CompileAll(ShaderSet *shaders = nullptr);
+        void CompileAll(ShaderSet &shaders);
 
-        void BindPipeline(const ShaderSet *shaders, vector<ShaderMeta *> shaderMetaTypes);
+        void BindPipeline(vector<ShaderMeta *> shaderMetaTypes);
 
         template<typename... ShaderTypes>
-        void BindPipeline(const ShaderSet *shaders = nullptr) {
-            BindPipeline(shaders == nullptr ? activeShaders : shaders, {&ShaderTypes::MetaType...});
+        void BindPipeline() {
+            BindPipeline({&ShaderTypes::MetaType...});
         }
 
-        const ShaderSet *activeShaders;
+        const ShaderSet &shaders;
 
     private:
         ShaderCompileInput LoadShader(ShaderMeta *shaderType);

@@ -54,10 +54,10 @@ namespace sp {
     }
 
     void GlfwGraphicsContext::Init() {
-        CreateWindow(CVarWindowSize.Get());
+        CreateGlfwWindow(CVarWindowSize.Get());
     }
 
-    void GlfwGraphicsContext::CreateWindow(glm::ivec2 initialSize) {
+    void GlfwGraphicsContext::CreateGlfwWindow(glm::ivec2 initialSize) {
         // Create window and surface
         window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
         Assert(window, "glfw window creation failed");

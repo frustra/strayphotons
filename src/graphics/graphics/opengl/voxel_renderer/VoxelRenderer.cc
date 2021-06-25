@@ -27,8 +27,8 @@
 #include <vector>
 
 namespace sp {
-    VoxelRenderer::VoxelRenderer(ecs::EntityManager &ecs, GlfwGraphicsContext &context)
-        : Renderer(ecs), context(context) {}
+    VoxelRenderer::VoxelRenderer(ecs::EntityManager &ecs, GlfwGraphicsContext &context, PerfTimer &timer)
+        : Renderer(ecs), context(context), timer(timer) {}
 
     VoxelRenderer::~VoxelRenderer() {
         if (ShaderControl) delete ShaderControl;
@@ -59,7 +59,7 @@ namespace sp {
             ShaderManager::SetDefine("SHADOWS_ENABLED", CVarEnableShadows.Get(true));
             ShaderManager::SetDefine("PCF_ENABLED", CVarEnablePCF.Get(true));
             ShaderManager::SetDefine("BUMP_MAP_ENABLED", CVarEnableBumpMap.Get(true));
-            ShaderControl->CompileAll(GlobalShaders);
+            ShaderControl->CompileAll(shaders);
         }
     }
 
@@ -73,7 +73,7 @@ namespace sp {
 
         RTPool = new RenderTargetPool();
 
-        ShaderControl = new ShaderManager(GlobalShaders);
+        ShaderControl = new ShaderManager(shaders);
         ShaderManager::SetDefine("MAX_LIGHTS", std::to_string(MAX_LIGHTS));
         ShaderManager::SetDefine("MAX_MIRRORS", std::to_string(MAX_MIRRORS));
         ShaderManager::SetDefine("MAX_MIRROR_RECURSION", std::to_string(MAX_MIRROR_RECURSION));
@@ -118,7 +118,7 @@ namespace sp {
     }
 
     void VoxelRenderer::RenderShadowMaps() {
-        RenderPhase phase("ShadowMaps", Timer);
+        RenderPhase phase("ShadowMaps", timer);
 
         glm::ivec2 renderTargetSize(0, 0);
         int lightCount = 0;
@@ -202,10 +202,10 @@ namespace sp {
 
                         auto &view = entity.Get<ecs::View>(lock);
 
-                        ShaderControl->BindPipeline<ShadowMapVS, ShadowMapFS>(GlobalShaders);
+                        ShaderControl->BindPipeline<ShadowMapVS, ShadowMapFS>();
 
-                        auto shadowMapVS = GlobalShaders->Get<ShadowMapVS>();
-                        auto shadowMapFS = GlobalShaders->Get<ShadowMapFS>();
+                        auto shadowMapVS = shaders.Get<ShadowMapVS>();
+                        auto shadowMapFS = shaders.Get<ShadowMapFS>();
                         shadowMapFS->SetClip(view.clip);
                         shadowMapFS->SetLight(light.lightId);
                         ForwardPass(view, shadowMapVS, lock, [&](ecs::Lock<ecs::ReadAll> lock, Tecs::Entity &ent) {
@@ -241,20 +241,20 @@ namespace sp {
 
         for (int bounce = 0; bounce < recursion; bounce++) {
             {
-                RenderPhase phase("MatrixGen", Timer);
+                RenderPhase phase("MatrixGen", timer);
 
-                auto mirrorMapCS = GlobalShaders->Get<MirrorMapCS>();
+                auto mirrorMapCS = shaders.Get<MirrorMapCS>();
 
                 mirrorMapCS->SetLightData(lightDataCount, &lightData[0]);
                 mirrorMapCS->SetMirrorData(mirrorDataCount, &mirrorData[0]);
 
-                ShaderControl->BindPipeline<MirrorMapCS>(GlobalShaders);
+                ShaderControl->BindPipeline<MirrorMapCS>();
                 glDispatchCompute(1, 1, 1);
                 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             }
 
             {
-                RenderPhase phase("MirrorMaps", Timer);
+                RenderPhase phase("MirrorMaps", timer);
 
                 RenderTargetDesc depthDesc(PF_DEPTH16, mirrorMapResolution);
                 depthDesc.textureArray = true;
@@ -267,10 +267,10 @@ namespace sp {
 
                 if (bounce > 0) { basicView.clearMode.reset(); }
 
-                ShaderControl->BindPipeline<MirrorMapVS, MirrorMapGS, MirrorMapFS>(GlobalShaders);
+                ShaderControl->BindPipeline<MirrorMapVS, MirrorMapGS, MirrorMapFS>();
 
-                auto mirrorMapFS = GlobalShaders->Get<MirrorMapFS>();
-                auto mirrorMapVS = GlobalShaders->Get<MirrorMapVS>();
+                auto mirrorMapFS = shaders.Get<MirrorMapFS>();
+                auto mirrorMapVS = shaders.Get<MirrorMapVS>();
 
                 mirrorMapFS->SetLightData(lightDataCount, &lightData[0]);
                 mirrorMapFS->SetMirrorId(-1);
@@ -297,12 +297,12 @@ namespace sp {
     }
 
     void VoxelRenderer::ReadBackLightSensors() {
-        GlobalShaders->Get<LightSensorUpdateCS>()->UpdateValues(ecs);
+        shaders.Get<LightSensorUpdateCS>()->UpdateValues(ecs);
     }
 
     void VoxelRenderer::UpdateLightSensors() {
-        RenderPhase phase("UpdateLightSensors", Timer);
-        auto shader = GlobalShaders->Get<LightSensorUpdateCS>();
+        RenderPhase phase("UpdateLightSensors", timer);
+        auto shader = shaders.Get<LightSensorUpdateCS>();
 
         GLLightData lightData[MAX_LIGHTS];
         GLVoxelInfo voxelInfo;
@@ -325,14 +325,14 @@ namespace sp {
         shadowMap->GetTexture().Bind(2);
         if (mirrorShadowMap) mirrorShadowMap->GetTexture().Bind(3);
 
-        ShaderControl->BindPipeline<LightSensorUpdateCS>(GlobalShaders);
+        ShaderControl->BindPipeline<LightSensorUpdateCS>();
         glDispatchCompute(1, 1, 1);
 
         shader->StartReadback();
     }
 
     void VoxelRenderer::RenderPass(ecs::View view, RenderTarget *finalOutput) {
-        RenderPhase phase("RenderPass", Timer);
+        RenderPhase phase("RenderPass", timer);
 
         if (!mirrorSceneData) {
             // int count[4];
@@ -367,7 +367,7 @@ namespace sp {
         if (finalOutput) { targets.finalOutput = finalOutput; }
 
         {
-            RenderPhase phase("PlayerView", Timer);
+            RenderPhase phase("PlayerView", timer);
 
             auto mirrorIndexStencil0 = RTPool->Get({PF_R32UI, view.extents});
             auto mirrorIndexStencil1 = RTPool->Get({PF_R32UI, view.extents});
@@ -415,9 +415,9 @@ namespace sp {
             GLMirrorData mirrorData[MAX_MIRRORS];
             int mirrorDataCount = FillMirrorData(&mirrorData[0], ecs);
 
-            auto sceneVS = GlobalShaders->Get<SceneVS>();
-            auto sceneGS = GlobalShaders->Get<SceneGS>();
-            auto sceneFS = GlobalShaders->Get<SceneFS>();
+            auto sceneVS = shaders.Get<SceneVS>();
+            auto sceneGS = shaders.Get<SceneGS>();
+            auto sceneFS = shaders.Get<SceneFS>();
 
             sceneGS->SetParams(forwardPassView, {}, {});
 
@@ -429,7 +429,7 @@ namespace sp {
 
             for (int bounce = 0; bounce <= recursion; bounce++) {
                 if (bounce > 0) {
-                    RenderPhase phase("StencilCopy", Timer);
+                    RenderPhase phase("StencilCopy", timer);
 
                     int prevStencilBit = 1 << ((bounce - 1) % 8);
                     glStencilFunc(GL_EQUAL, 0xff, ~prevStencilBit);
@@ -443,7 +443,7 @@ namespace sp {
                         SetRenderTarget(mirrorIndexStencil1.get(), nullptr);
                     }
 
-                    ShaderControl->BindPipeline<BasicPostVS, CopyStencilFS>(GlobalShaders);
+                    ShaderControl->BindPipeline<BasicPostVS, CopyStencilFS>();
                     VoxelRenderer::DrawScreenCover();
                 }
 
@@ -463,17 +463,17 @@ namespace sp {
                 } else {
                     forwardPassView.clearMode[ecs::View::ClearMode::CLEAR_MODE_STENCIL_BUFFER] = false;
                     {
-                        RenderPhase phase("MatrixGen", Timer);
+                        RenderPhase phase("MatrixGen", timer);
 
-                        GlobalShaders->Get<MirrorSceneCS>()->SetMirrorData(mirrorDataCount, &mirrorData[0]);
+                        shaders.Get<MirrorSceneCS>()->SetMirrorData(mirrorDataCount, &mirrorData[0]);
 
-                        ShaderControl->BindPipeline<MirrorSceneCS>(GlobalShaders);
+                        ShaderControl->BindPipeline<MirrorSceneCS>();
                         glDispatchCompute(1, 1, 1);
                         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
                     }
 
                     {
-                        RenderPhase phase("DepthClear", Timer);
+                        RenderPhase phase("DepthClear", timer);
                         glDepthFunc(GL_ALWAYS);
                         glDisable(GL_CULL_FACE);
                         glEnable(GL_STENCIL_TEST);
@@ -482,7 +482,7 @@ namespace sp {
                         glStencilFunc(GL_EQUAL, 0xff, 0xff);
                         glStencilMask(0);
 
-                        ShaderControl->BindPipeline<SceneDepthClearVS, SceneDepthClearFS>(GlobalShaders);
+                        ShaderControl->BindPipeline<SceneDepthClearVS, SceneDepthClearFS>();
                         VoxelRenderer::DrawScreenCover();
 
                         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -500,7 +500,7 @@ namespace sp {
 
                 sceneFS->SetMirrorId(-1);
 
-                ShaderControl->BindPipeline<SceneVS, SceneGS, SceneFS>(GlobalShaders);
+                ShaderControl->BindPipeline<SceneVS, SceneGS, SceneFS>();
 
                 glDepthFunc(GL_LESS);
                 glDepthMask(GL_FALSE);
@@ -576,7 +576,7 @@ namespace sp {
                                     SceneShader *shader,
                                     ecs::Lock<ecs::ReadAll> lock,
                                     const PreDrawFunc &preDraw) {
-        RenderPhase phase("ForwardPass", Timer);
+        RenderPhase phase("ForwardPass", timer);
         PrepareForView(view);
 
         if (CVarRenderWireframe.Get()) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -596,7 +596,7 @@ namespace sp {
 
         // TODO: Move debug lines to ECS
         /*if (game->physics.IsDebugEnabled()) {
-            RenderPhase phase("PhysxBounds", Timer);
+            RenderPhase phase("PhysxBounds", timer);
             MutexedVector<physx::PxDebugLine> lines = game->physics.GetDebugLines();
             DrawPhysxLines(view, shader, lines.Vector(), lock, preDraw);
         }*/
@@ -735,13 +735,13 @@ namespace sp {
 
         PrepareForView(view);
 
-        static shared_ptr<GpuTexture> loadingTex = context.LoadTexture(GAssets.LoadImage("logos/loading.png"));
+        static shared_ptr<GpuTexture> loadingTex = context.LoadTexture(GAssets.LoadImageByPath("logos/loading.png"));
         static GLTexture *glLoadingTex = dynamic_cast<GLTexture *>(loadingTex.get());
         Assert(glLoadingTex != nullptr, "Failed to load VoxelRenderer glLoadingTex");
 
         glLoadingTex->Bind(0);
 
-        ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>(GlobalShaders);
+        ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>();
         SetDefaultRenderTarget();
         VoxelRenderer::DrawScreenCover(true);
     }

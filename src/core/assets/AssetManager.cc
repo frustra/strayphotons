@@ -197,7 +197,7 @@ namespace sp {
         return asset;
     }
 
-    shared_ptr<Image> AssetManager::LoadImage(const std::string &path) {
+    shared_ptr<Image> AssetManager::LoadImageByPath(const std::string &path) {
         auto asset = Load(path);
         Assert(asset != nullptr, "Image asset not found");
 

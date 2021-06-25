@@ -6,13 +6,16 @@
 #include "game/Game.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/core/Renderer.hh"
-#include "graphics/opengl/GlfwGraphicsContext.hh"
-#include "graphics/opengl/PerfTimer.hh"
-#include "graphics/opengl/RenderTargetPool.hh"
-#include "graphics/opengl/basic_renderer/BasicRenderer.hh"
-#include "graphics/opengl/gui/ProfilerGui.hh"
-#include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
-#include "input/glfw/GlfwActionSource.hh"
+
+#ifdef SP_GRAPHICS_SUPPORT_GL
+    #include "graphics/opengl/GlfwGraphicsContext.hh"
+    #include "graphics/opengl/PerfTimer.hh"
+    #include "graphics/opengl/RenderTargetPool.hh"
+    #include "graphics/opengl/basic_renderer/BasicRenderer.hh"
+    #include "graphics/opengl/gui/ProfilerGui.hh"
+    #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
+    #include "input/glfw/GlfwActionSource.hh"
+#endif
 
 #include <algorithm>
 #include <cxxopts.hpp>
@@ -48,10 +51,11 @@ namespace sp {
         if (context) { throw "already an active context"; }
         if (renderer) { throw "already an active renderer"; }
 
-        context = new GlfwGraphicsContext();
+        GlfwGraphicsContext *glfwContext = new GlfwGraphicsContext();
+        context = glfwContext;
         context->Init();
 
-        GLFWwindow *window = static_cast<GlfwGraphicsContext *>(context)->GetWindow();
+        GLFWwindow *window = glfwContext->GetWindow();
         if (window != nullptr) {
             glfwActionSource = new GlfwActionSource(game->input, *window);
 
@@ -94,9 +98,10 @@ namespace sp {
         if (useBasic) {
             renderer = new BasicRenderer(game->entityManager);
         } else {
-            renderer = new VoxelRenderer(game->entityManager, *static_cast<GlfwGraphicsContext *>(context));
+            VoxelRenderer *voxelRenderer = new VoxelRenderer(game->entityManager, *glfwContext, timer);
+            renderer = voxelRenderer;
 
-            profilerGui = new ProfilerGui(&renderer->Timer);
+            profilerGui = new ProfilerGui(timer);
             if (game->debugGui) { game->debugGui->Attach(profilerGui); }
 
             {
@@ -104,7 +109,7 @@ namespace sp {
                 viewRemoval = lock.Watch<ecs::Removed<ecs::View>>();
             }
 
-            static_cast<VoxelRenderer *>(renderer)->PrepareGuis(game->debugGui.get(), game->menuGui.get());
+            voxelRenderer->PrepareGuis(game->debugGui.get(), game->menuGui.get());
         }
 
         renderer->Prepare();
@@ -158,17 +163,17 @@ namespace sp {
         }
 
 #ifdef SP_GRAPHICS_SUPPORT_GL
-        renderer->Timer.StartFrame();
+        timer.StartFrame();
 
         {
-            RenderPhase phase("Frame", renderer->Timer);
+            RenderPhase phase("Frame", timer);
 
             renderer->BeginFrame();
 
             // Always render XR content first, since this allows the compositor to immediately start work rendering to
             // the HMD Only attempt to render if we have an active XR System
             /*if (game->xr.GetXrSystem()) {
-                RenderPhase xrPhase("XrViews", renderer->Timer);
+                RenderPhase xrPhase("XrViews", timer);
 
                 // TODO: Should not have to do this on every frame...
                 glm::mat4 vrOrigin;
@@ -181,7 +186,7 @@ namespace sp {
                 }
 
                 {
-                    RenderPhase xrPhase("XrWaitFrame", renderer->Timer);
+                    RenderPhase xrPhase("XrWaitFrame", timer);
                     // Wait for the XR system to be ready to accept a new frame
                     game->xr.GetXrSystem()->GetCompositor()->WaitFrame();
                 }
@@ -191,7 +196,7 @@ namespace sp {
 
                 // Render all the XR views at the same time
                 for (size_t i = 0; i < xrViews.size(); i++) {
-                    RenderPhase xrPhase("XrView", renderer->Timer);
+                    RenderPhase xrPhase("XrView", timer);
 
                     static glm::mat4 viewPose;
                     game->xr.GetXrSystem()->GetTracking()->GetPredictedViewPose(xrViews[i].second.viewId, viewPose);
@@ -221,7 +226,7 @@ namespace sp {
         }
 
         context->SwapBuffers();
-        renderer->Timer.EndFrame();
+        timer.EndFrame();
         context->EndFrame();
 #endif
 

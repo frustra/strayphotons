@@ -11,11 +11,11 @@ namespace sp {
     public:
         static const uint64 numFrameTimes = 32, sampleFrameTimeEvery = 10;
 
-        ProfilerGui(PerfTimer *timer) : timer(timer), cpuFrameTimes(), gpuFrameTimes() {}
+        ProfilerGui(PerfTimer &timer) : timer(timer), cpuFrameTimes(), gpuFrameTimes() {}
         virtual ~ProfilerGui() {}
 
         void Add() {
-            if (timer->lastCompleteFrame.results.empty()) return;
+            if (timer.lastCompleteFrame.results.empty()) return;
             if (CVarProfileCPU.Get() != 1 && CVarProfileGPU.Get() != 1) return;
 
             ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize;
@@ -25,7 +25,7 @@ namespace sp {
                 ImGui::Begin("CpuProfiler", nullptr, flags);
 
                 if (frameCount % sampleFrameTimeEvery == 1) {
-                    auto root = timer->lastCompleteFrame.results[0];
+                    auto root = timer.lastCompleteFrame.results[0];
 
                     memmove(cpuFrameTimes, cpuFrameTimes + 1, (numFrameTimes - 1) * sizeof(*cpuFrameTimes));
                     cpuFrameTimes[numFrameTimes - 1] =
@@ -33,7 +33,7 @@ namespace sp {
                 }
 
                 ImGui::PlotLines("##frameTimes", cpuFrameTimes, numFrameTimes);
-                AddResults(timer->lastCompleteFrame.results, false);
+                AddResults(timer.lastCompleteFrame.results, false);
 
                 ImGui::End();
             }
@@ -42,7 +42,7 @@ namespace sp {
                 ImGui::Begin("GpuProfiler", nullptr, flags);
 
                 if (frameCount % sampleFrameTimeEvery == 1) {
-                    auto root = timer->lastCompleteFrame.results[0];
+                    auto root = timer.lastCompleteFrame.results[0];
                     double elapsed = (double)root.gpuElapsed / 1000000.0;
 
                     memmove(gpuFrameTimes, gpuFrameTimes + 1, (numFrameTimes - 1) * sizeof(*gpuFrameTimes));
@@ -50,7 +50,7 @@ namespace sp {
                 }
 
                 ImGui::PlotLines("##frameTimes", gpuFrameTimes, numFrameTimes);
-                AddResults(timer->lastCompleteFrame.results, true);
+                AddResults(timer.lastCompleteFrame.results, true);
 
                 ImGui::End();
             }
@@ -86,7 +86,7 @@ namespace sp {
             return offset;
         }
 
-        PerfTimer *timer;
+        PerfTimer &timer;
         float cpuFrameTimes[numFrameTimes];
         float gpuFrameTimes[numFrameTimes];
         uint64 frameCount = 0;

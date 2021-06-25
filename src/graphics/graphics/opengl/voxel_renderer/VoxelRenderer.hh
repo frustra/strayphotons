@@ -6,6 +6,8 @@
 #include "graphics/core/Renderer.hh"
 #include "graphics/opengl/GLBuffer.hh"
 #include "graphics/opengl/GLTexture.hh"
+#include "graphics/opengl/PerfTimer.hh"
+#include "graphics/opengl/Shader.hh"
 #include "graphics/opengl/gui/GuiRenderer.hh"
 #include "graphics/opengl/gui/MenuGuiManager.hh"
 
@@ -40,7 +42,7 @@ namespace sp {
     public:
         typedef std::function<void(ecs::Lock<ecs::ReadAll>, Tecs::Entity &)> PreDrawFunc;
 
-        VoxelRenderer(ecs::EntityManager &ecs, GlfwGraphicsContext &context);
+        VoxelRenderer(ecs::EntityManager &ecs, GlfwGraphicsContext &context, PerfTimer &timer);
         ~VoxelRenderer();
 
         // Functions inherited from Renderer
@@ -92,6 +94,8 @@ namespace sp {
         float Exposure = 1.0f;
 
         GlfwGraphicsContext &context;
+        ShaderSet shaders;
+        PerfTimer &timer;
 
     private:
         shared_ptr<GLRenderTarget> shadowMap;
