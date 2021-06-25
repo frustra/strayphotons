@@ -3,7 +3,7 @@
 #include "core/Common.hh"
 #include "core/Console.hh"
 #include "core/Logging.hh"
-#include "graphics/opengl/GlfwGraphicsContext.hh"
+#include "graphics/core/GraphicsContext.hh"
 
 #include <algorithm>
 #include <stdexcept>

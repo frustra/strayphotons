@@ -2,20 +2,27 @@ if(NOT XRSYSTEM_OPENVR)
     return()
 endif()
 
-target_sources(
-    ${PROJECT_LIB}
-    PRIVATE
-        OpenVrModel.cc
-        OpenVrSystem.cc
-        OpenVrTrackingCompositor.cc
-        OpenVrAction.cc
+target_sources(${PROJECT_EXE} PRIVATE
+    OpenVrModel.cc
+    OpenVrSystem.cc
+    OpenVrTrackingCompositor.cc
+    OpenVrAction.cc
 )
 
+target_sources(${PROJECT_TEST_EXE} PRIVATE
+    OpenVrModel.cc
+    OpenVrSystem.cc
+    OpenVrTrackingCompositor.cc
+    OpenVrAction.cc
+)
+
+
 # Need to link against openvr to support this XR backend
-target_link_libraries(
-    ${PROJECT_LIB}
-    PUBLIC
-        openvr
+target_link_libraries(${PROJECT_EXE} PUBLIC
+    openvr
+)
+target_link_libraries(${PROJECT_TEST_EXE} PUBLIC
+    openvr
 )
 
 set(_files_to_copy
@@ -50,6 +57,7 @@ foreach(_file ${_files_to_copy})
             ${CMAKE_CURRENT_LIST_DIR}/${_file}
     )
 
-    add_dependencies(${PROJECT_LIB} ${_file}-runtime-copy)
+    add_dependencies(${PROJECT_EXE} ${_file}-runtime-copy)
+    add_dependencies(${PROJECT_TEST_EXE} ${_file}-runtime-copy)
 
 endforeach()

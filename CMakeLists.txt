@@ -84,17 +84,17 @@ set(PROJECT_BASE_NAME strayphotons)
 set(PROJECT_LIB ${PROJECT_BASE_NAME})
 
 set(PROJECT_EXE sp)
-# set(PROJECT_HEADLESS_EXE sp-headless)
+set(PROJECT_HEADLESS_EXE sp-headless)
 set(PROJECT_TEST_EXE sp-test)
 
 # Core StrayPhotons lib. Contains all game code.
-add_library(${PROJECT_LIB} OBJECT)
+add_library(${PROJECT_LIB} INTERFACE)
 
 # Exe Shim that loads StrayPhotons lib on desktop platforms
 add_executable(${PROJECT_EXE})
 
 # Exe Shim that loads StrayPhotons lib without graphics
-# add_executable(${PROJECT_HEADLESS_EXE})
+add_executable(${PROJECT_HEADLESS_EXE})
 
 # Exe Shim that loads StrayPhotons lib for CI testing purposes
 add_executable(${PROJECT_TEST_EXE})
@@ -118,23 +118,19 @@ endif()
 # Tell CMake to convert all relative paths in subdirectories to absolute paths
 cmake_policy(SET CMP0076 NEW)
 
-target_include_directories(
-	${PROJECT_LIB}
-	PUBLIC
-		src
-)
-
+add_subdirectory(assets)
+add_subdirectory(shaders)
 add_subdirectory(src)
 
-add_subdirectory(assets)
+target_include_directories(${PROJECT_LIB} INTERFACE
+	src
+)
 
 ## COMPILE DEFINITIONS ##
 
 if (SP_PACKAGE_RELEASE)
-	target_compile_definitions(
-		${PROJECT_LIB}
-		PUBLIC
-			PACKAGE_RELEASE
+	target_compile_definitions(${PROJECT_LIB} INTERFACE
+		PACKAGE_RELEASE
 	)
 
 	# No way around using file(GLOB) here without
@@ -147,11 +143,11 @@ if (SP_PACKAGE_RELEASE)
 	file(GLOB_RECURSE _glb_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}/assets" CONFIGURE_DEPENDS "assets/models/*.glb")
 	file(GLOB_RECURSE _glb_assets_full "assets/models/*.glb")
 
-	file(GLOB_RECURSE _shaders_assets_full CONFIGURE_DEPENDS "src/shaders/*")
+	file(GLOB_RECURSE _shaders_assets_full CONFIGURE_DEPENDS "shaders/*")
 
 	add_custom_command(
 		COMMAND
-			${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/src/shaders ${CMAKE_CURRENT_LIST_DIR}/assets/shaders
+			${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/shaders ${CMAKE_CURRENT_LIST_DIR}/assets/shaders
 		COMMAND
 			${CMAKE_COMMAND} -E tar c ${PROJECT_OUTPUT_DIR}/${_asset_filename} -- cache fonts logos scenes textures shaders ${_glb_assets}
 		COMMAND
@@ -175,34 +171,28 @@ if (SP_PACKAGE_RELEASE)
 
 	# Make the exe depend on having the tar
 	add_dependencies(${PROJECT_EXE} assets_tar)
-	# add_dependencies(${PROJECT_HEADLESS_EXE} assets_tar)
+	add_dependencies(${PROJECT_HEADLESS_EXE} assets_tar)
 	add_dependencies(${PROJECT_TEST_EXE} assets_tar)
 
 endif()
 
 if (MSVC)
-	target_compile_definitions(
-		${PROJECT_LIB}
-		PUBLIC
-			_CRT_SECURE_NO_WARNINGS
-			UNICODE
-			_UNICODE
-			NOMINMAX
-			_USE_MATH_DEFINES
+	target_compile_definitions(${PROJECT_LIB} INTERFACE
+		_CRT_SECURE_NO_WARNINGS
+		UNICODE
+		_UNICODE
+		NOMINMAX
+		_USE_MATH_DEFINES
 	)
 endif()
 
 if (SP_DEBUG)
-	target_compile_definitions(
-		${PROJECT_LIB}
-		PUBLIC
-			_DEBUG
+	target_compile_definitions(${PROJECT_LIB} INTERFACE
+		_DEBUG
 	)
 else()
-	target_compile_definitions(
-		${PROJECT_LIB}
-		PUBLIC
-			NDEBUG
+	target_compile_definitions(${PROJECT_LIB} INTERFACE
+		NDEBUG
 	)
 
 	include(CheckIPOSupported)
@@ -212,7 +202,7 @@ else()
 		set_target_properties(
 			${PROJECT_LIB}
 			${PROJECT_EXE}
-			# ${PROJECT_HEADLESS_EXE}
+			${PROJECT_HEADLESS_EXE}
 			${PROJECT_TEST_EXE}
 			PROPERTIES
 				INTERPROCEDURAL_OPTIMIZATION TRUE)
@@ -224,16 +214,12 @@ endif()
 if(SP_BUILD_RUST)
 	add_subdirectory(rust)
 
-	target_compile_definitions(
-		${PROJECT_LIB}
-		PRIVATE
-			RUST_CXX
+	target_compile_definitions(${PROJECT_LIB} INTERFACE
+		RUST_CXX
 	)
 
-	target_link_libraries(
-		${PROJECT_LIB}
-		PRIVATE
-			sp-rust
+	target_link_libraries(${PROJECT_LIB} INTERFACE
+		sp-rust
 	)
 	
 	if(ipo_supported)
@@ -246,7 +232,7 @@ endif()
 if (SP_PACKAGE_RELEASE)
 	if (MSVC)
 		set_target_properties(${PROJECT_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
-		# set_target_properties(${PROJECT_HEADLESS_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
+		set_target_properties(${PROJECT_HEADLESS_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 		set_target_properties(${PROJECT_TEST_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 		set_target_properties(${PROJECT_LIB} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
 	else()
@@ -267,52 +253,47 @@ set (_physx_libraries
 
 target_compile_options(${PROJECT_LIB} PRIVATE ${SP_TARGET_OPTIONS})
 target_compile_options(${PROJECT_EXE} PRIVATE ${SP_TARGET_OPTIONS})
-# target_compile_options(${PROJECT_HEADLESS_EXE} PRIVATE ${SP_TARGET_OPTIONS})
+target_compile_options(${PROJECT_HEADLESS_EXE} PRIVATE ${SP_TARGET_OPTIONS})
 target_compile_options(${PROJECT_TEST_EXE} PRIVATE ${SP_TARGET_OPTIONS})
 
-target_link_libraries(${PROJECT_LIB} PUBLIC
+target_link_libraries(${PROJECT_LIB} INTERFACE
 	${PROJECT_CORE_LIB}
 	${PROJECT_GRAPHICS_CORE_LIB}
+	${PROJECT_INPUT_CORE_LIB}
 	${_physx_libraries}
-	GLEW
+	# GLEW
 	vhacd
-	ImGui
-	robin_hood
-	glm
+	# ImGui
+	# robin_hood
+	# glm
 	cxxopts
-	OpenGL::GL
+	# OpenGL::GL
 )
 
-target_include_directories(${PROJECT_LIB} PRIVATE
-	$<TARGET_PROPERTY:glfw,INCLUDE_DIRECTORIES>
-)
-
-target_link_libraries(
-	${PROJECT_EXE}
-	PRIVATE
-		${PROJECT_LIB}
-		${PROJECT_GRAPHICS_OPENGL_LIB}
-)
-
-# target_link_libraries(
-# 	${PROJECT_HEADLESS_EXE}
-# 	PRIVATE
-# 		${PROJECT_LIB}
-# 		${PROJECT_GRAPHICS_HEADLESS_LIB}
+# target_include_directories(${PROJECT_LIB} PRIVATE
+# 	$<TARGET_PROPERTY:glfw,INCLUDE_DIRECTORIES>
 # )
 
-target_link_libraries(
-	${PROJECT_TEST_EXE}
-	PRIVATE
-		${PROJECT_LIB}
-		${PROJECT_GRAPHICS_EGL_LIB}
+target_link_libraries(${PROJECT_EXE} PRIVATE
+	${PROJECT_LIB}
+	${PROJECT_GRAPHICS_OPENGL_LIB}
+	${PROJECT_INPUT_GLFW_LIB}
+)
+
+target_link_libraries(${PROJECT_HEADLESS_EXE} PRIVATE
+	${PROJECT_LIB}
+	${PROJECT_GRAPHICS_HEADLESS_LIB}
+)
+
+target_link_libraries(${PROJECT_TEST_EXE} PRIVATE
+	${PROJECT_LIB}
+	${PROJECT_GRAPHICS_EGL_LIB}
+	${PROJECT_INPUT_GLFW_LIB}
 )
 
 if(UNIX)
-	target_link_libraries(
-		${PROJECT_LIB}
-		PRIVATE
-			pthread
+	target_link_libraries(${PROJECT_LIB} INTERFACE
+		pthread
 	)
 endif()
 
@@ -321,10 +302,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 		message(FATAL_ERROR "Requires GCC >8.0")
 	endif()
 
-	target_link_libraries(
-		${PROJECT_LIB}
-		PRIVATE
-			stdc++fs
+	target_link_libraries(${PROJECT_LIB} INTERFACE
+		stdc++fs
 	)
 endif()
 
@@ -333,7 +312,7 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT s
 install(
 	TARGETS
 		${PROJECT_EXE}
-		# ${PROJECT_HEADLESS_EXE}
+		${PROJECT_HEADLESS_EXE}
 		${PROJECT_TEST_EXE}
 		${PROJECT_LIB}
 		${PROJECT_GRAPHICS_EGL_LIB}
@@ -359,9 +338,9 @@ install(
 
 install(
 	DIRECTORY
-		src/shaders/
+		shaders/
 	DESTINATION
-		src/shaders
+		shaders
 	COMPONENT
 		${PROJECT_INSTALL}
 )

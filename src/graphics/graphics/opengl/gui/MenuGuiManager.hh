@@ -1,6 +1,6 @@
 #pragma once
 
-#include "game/gui/GuiManager.hh"
+#include "graphics/opengl/gui/GuiManager.hh"
 
 namespace sp {
     class GraphicsManager;

@@ -2,7 +2,7 @@
 
 #include "assets/Model.hh"
 #include "ecs/components/View.hh"
-#include "graphics/opengl/Renderer.hh"
+#include "graphics/core/Renderer.hh"
 
 #include <glm/glm.hpp>
 

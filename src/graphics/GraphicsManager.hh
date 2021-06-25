@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
-#include "ecs/components/View.hh"
 
 #include <glm/glm.hpp>
 #include <memory>
@@ -9,7 +8,7 @@
 
 namespace sp {
     class Game;
-    class GlfwGraphicsContext;
+    class GraphicsContext;
     class Renderer;
     class ProfilerGui;
     class GlfwActionSource;
@@ -29,7 +28,7 @@ namespace sp {
 
         bool Frame();
 
-        GlfwGraphicsContext *GetContext();
+        GraphicsContext *GetContext();
 
         void DisableCursor();
         void EnableCursor();
@@ -39,13 +38,15 @@ namespace sp {
         }
 
     private:
-        bool useBasic = false;
-
-        GlfwGraphicsContext *context = nullptr;
-        GlfwActionSource *glfwActionSource = nullptr;
+        GraphicsContext *context = nullptr;
         Renderer *renderer = nullptr;
         Game *game = nullptr;
+
+#ifdef SP_GRAPHICS_SUPPORT_GL
+        bool useBasic = false;
+        GlfwActionSource *glfwActionSource = nullptr;
         ProfilerGui *profilerGui = nullptr;
+#endif
 
         ecs::Observer<ecs::Removed<ecs::View>> viewRemoval;
         std::vector<ecs::Entity> playerViews;

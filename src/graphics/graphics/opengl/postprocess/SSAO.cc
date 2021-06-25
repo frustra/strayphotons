@@ -90,7 +90,7 @@ namespace sp {
 
         r->GlobalShaders->Get<SSAOPass0FS>()->SetViewParams(context->view);
 
-        r->SetRenderTarget(dest, nullptr);
+        r->SetRenderTarget(dest.get(), nullptr);
         r->ShaderControl->BindPipeline<BasicPostVS, SSAOPass0FS>();
 
         noiseTex.tex.Bind(3);
@@ -120,7 +120,7 @@ namespace sp {
             r->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>();
         }
 
-        r->SetRenderTarget(dest, nullptr);
+        r->SetRenderTarget(dest.get(), nullptr);
         auto desc = dest->GetDesc();
         glViewport(0, 0, desc.extent.x, desc.extent.y);
         VoxelRenderer::DrawScreenCover();

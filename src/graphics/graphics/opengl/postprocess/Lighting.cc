@@ -46,7 +46,7 @@ namespace sp {
         auto dest = outputs[0].AllocateTarget(context);
 
         r->GlobalShaders->Get<TonemapFS>()->SetParams();
-        r->SetRenderTarget(dest, nullptr);
+        r->SetRenderTarget(dest.get(), nullptr);
         r->ShaderControl->BindPipeline<BasicPostVS, TonemapFS>();
 
         VoxelRenderer::DrawScreenCover();
@@ -59,7 +59,7 @@ namespace sp {
 
         LumiHistogramCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput) {}
 
-        RenderTarget::Ref GetTarget(VoxelRenderer *r) {
+        std::shared_ptr<GLRenderTarget> GetTarget(VoxelRenderer *r) {
             if (!target) { target = r->RTPool->Get(RenderTargetDesc(PF_R32UI, {Bins, 1})); }
             return target;
         }
@@ -120,7 +120,7 @@ namespace sp {
         }
 
     private:
-        shared_ptr<RenderTarget> target;
+        shared_ptr<GLRenderTarget> target;
         GLBuffer readBackBuf;
     };
 
@@ -142,7 +142,7 @@ namespace sp {
         auto shader = r->GlobalShaders->Get<LumiHistogramCS>();
         auto histTex = shader->GetTarget(r);
 
-        r->SetRenderTarget(histTex, nullptr);
+        r->SetRenderTarget(histTex.get(), nullptr);
         glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -158,7 +158,7 @@ namespace sp {
 
         if (CVarDrawHistogram.Get()) {
             auto dest = outputs[0].AllocateTarget(context);
-            r->SetRenderTarget(dest, nullptr);
+            r->SetRenderTarget(dest.get(), nullptr);
             r->ShaderControl->BindPipeline<BasicPostVS, RenderHistogramFS>();
             VoxelRenderer::DrawScreenCover();
         } else {
@@ -262,7 +262,7 @@ namespace sp {
         shader->SetVoxelInfo(&voxelInfo, diffuseDownsample);
         shader->SetExposure(r->Exposure);
 
-        r->SetRenderTarget(dest, nullptr);
+        r->SetRenderTarget(dest.get(), nullptr);
         r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingFS>();
 
         VoxelRenderer::DrawScreenCover();
@@ -314,7 +314,7 @@ namespace sp {
         shader->SetExposure(r->Exposure);
 
         glViewport(0, 0, outputs[0].TargetDesc.extent[0], outputs[0].TargetDesc.extent[1]);
-        r->SetRenderTarget(dest, nullptr);
+        r->SetRenderTarget(dest.get(), nullptr);
         r->ShaderControl->BindPipeline<BasicPostVS, VoxelLightingDiffuseFS>();
 
         VoxelRenderer::DrawScreenCover();

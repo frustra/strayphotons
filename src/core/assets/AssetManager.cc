@@ -34,7 +34,7 @@ namespace sp {
 
     const std::string ASSETS_DIR = "../assets/";
     const std::string ASSETS_TAR = "./assets.spdata";
-    const std::string SHADERS_DIR = "../src/";
+    const std::string SHADERS_DIR = "../";
 
     AssetManager::AssetManager() {
         fs = {

@@ -3,8 +3,8 @@
 #include "assets/Model.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/components/Renderable.hh"
+#include "graphics/core/Renderer.hh"
 #include "graphics/opengl/GLModel.hh"
-#include "graphics/opengl/Renderer.hh"
 
 #include <glm/glm.hpp>
 
@@ -18,7 +18,7 @@ namespace sp {
 
         void Prepare();
         void BeginFrame();
-        void RenderPass(ecs::View view, RenderTarget::Ref finalOutput = nullptr);
+        void RenderPass(ecs::View view, RenderTarget *finalOutput = nullptr);
         void PrepareForView(const ecs::View &view);
         void RenderLoading(ecs::View view);
         void EndFrame();

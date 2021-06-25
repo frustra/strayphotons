@@ -1,13 +1,15 @@
 #pragma once
 
 #include "RenderBuffer.hh"
+#include "graphics/core/RenderTarget.hh"
 #include "graphics/opengl/GLTexture.hh"
 
 #include <cstring>
 #include <glm/glm.hpp>
+#include <memory>
 
 namespace sp {
-    class RenderTarget;
+    class GLRenderTarget;
     class RenderTargetPool;
 
     namespace xr {
@@ -64,7 +66,7 @@ namespace sp {
         }
 
         void Prepare(RenderTargetPool *rtPool,
-                     shared_ptr<RenderTarget> &target,
+                     std::shared_ptr<GLRenderTarget> &target,
                      bool clear = false,
                      const void *data = nullptr);
 
@@ -90,12 +92,10 @@ namespace sp {
         }
     };
 
-    class RenderTarget {
+    class GLRenderTarget : public RenderTarget {
     public:
-        typedef shared_ptr<RenderTarget> Ref;
-
-        RenderTarget(RenderTargetDesc desc);
-        ~RenderTarget();
+        GLRenderTarget(RenderTargetDesc desc);
+        ~GLRenderTarget();
 
         GLTexture &GetTexture() {
             Assert(tex.handle, "target is a renderbuffer");
@@ -107,21 +107,21 @@ namespace sp {
             return buf;
         }
 
-        GLuint GetHandle() {
+        GLuint GetHandle() const {
             Assert(tex.handle || buf.handle, "render target must have an underlying target");
             if (tex.handle) return tex.handle;
             return buf.handle;
         }
 
-        RenderTargetDesc GetDesc() {
+        const RenderTargetDesc &GetDesc() const {
             return desc;
         }
 
-        bool operator==(const RenderTarget &other) const {
+        bool operator==(const GLRenderTarget &other) const {
             return other.desc == desc && other.tex == tex && other.buf == buf;
         }
 
-        bool operator!=(const RenderTarget &other) const {
+        bool operator!=(const GLRenderTarget &other) const {
             return !(*this == other);
         }
 

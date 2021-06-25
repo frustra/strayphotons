@@ -28,7 +28,7 @@ namespace sp {
 
         r->GlobalShaders->Get<BloomHighpassFS>()->SetScale(CVarBloomScale.Get());
 
-        r->SetRenderTarget(dest, nullptr);
+        r->SetRenderTarget(dest.get(), nullptr);
         r->ShaderControl->BindPipeline<BasicPostVS, BloomHighpassFS>();
 
         auto desc = dest->GetDesc();
@@ -59,7 +59,7 @@ namespace sp {
         shader->SetDirection(direction);
         shader->SetClip(clip, scale);
 
-        r->SetRenderTarget(dest, nullptr);
+        r->SetRenderTarget(dest.get(), nullptr);
         r->ShaderControl->BindPipeline<BasicPostVS, BloomBlurFS>();
 
         auto desc = dest->GetDesc();
@@ -85,7 +85,7 @@ namespace sp {
 
         r->GlobalShaders->Get<BloomCombineFS>()->SetWeights(CVarBloomWeight1.Get(), CVarBloomWeight2.Get());
 
-        r->SetRenderTarget(dest, nullptr);
+        r->SetRenderTarget(dest.get(), nullptr);
         r->ShaderControl->BindPipeline<BasicPostVS, BloomCombineFS>();
 
         auto desc = dest->GetDesc();

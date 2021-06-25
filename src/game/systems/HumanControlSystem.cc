@@ -3,9 +3,9 @@
 #include "core/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
-#include "core/input/InputManager.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "input/InputManager.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <PxRigidActor.h>

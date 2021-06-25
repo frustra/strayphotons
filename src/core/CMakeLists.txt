@@ -25,4 +25,3 @@ target_include_directories(${PROJECT_CORE_LIB} PUBLIC
 add_subdirectory(assets)
 add_subdirectory(core)
 add_subdirectory(ecs)
-add_subdirectory(input)

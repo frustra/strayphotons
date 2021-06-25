@@ -1,12 +1,9 @@
 #pragma once
 
-#include "core/CVar.hh"
 #include "core/Common.hh"
 #include "ecs/components/View.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/opengl/Graphics.hh"
-#include "graphics/opengl/PerfTimer.hh"
-#include "graphics/opengl/RenderTarget.hh"
 
 #include <string>
 
@@ -15,12 +12,6 @@ struct GLFWwindow;
 namespace sp {
     class Device;
     class ShaderSet;
-    class RenderTarget;
-
-    extern CVar<glm::ivec2> CVarWindowSize;
-    extern CVar<float> CVarWindowScale;
-    extern CVar<float> CVarFieldOfView;
-    extern CVar<int> CVarWindowFullscreen;
 
     class GlfwGraphicsContext : public GraphicsContext {
     public:

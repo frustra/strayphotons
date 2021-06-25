@@ -1,11 +1,11 @@
-#include "RenderTarget.hh"
+#include "GLRenderTarget.hh"
 
 #include "core/Logging.hh"
 #include "graphics/opengl/RenderTargetPool.hh"
 
 namespace sp {
     void RenderTargetDesc::Prepare(RenderTargetPool *rtPool,
-                                   shared_ptr<RenderTarget> &target,
+                                   std::shared_ptr<GLRenderTarget> &target,
                                    bool clear,
                                    const void *data) {
         if (!target || target->GetDesc() != *this) {
@@ -19,9 +19,9 @@ namespace sp {
         }
     }
 
-    RenderTarget::RenderTarget(RenderTargetDesc desc) : desc(desc) {}
+    GLRenderTarget::GLRenderTarget(RenderTargetDesc desc) : desc(desc) {}
 
-    RenderTarget::~RenderTarget() {
+    GLRenderTarget::~GLRenderTarget() {
         tex.Delete();
     }
 } // namespace sp

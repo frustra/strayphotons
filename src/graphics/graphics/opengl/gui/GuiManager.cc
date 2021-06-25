@@ -1,8 +1,7 @@
 #include "GuiManager.hh"
 
 #include "ConsoleGui.hh"
-#include "core/input/InputManager.hh"
-#include "game/Game.hh"
+#include "input/InputManager.hh"
 
 #include <imgui/imgui.h>
 

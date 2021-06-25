@@ -15,7 +15,7 @@ namespace sp {
 
         blurred->GetTexture().Bind(0);
         r->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>();
-        r->SetRenderTarget(dest, nullptr);
+        r->SetRenderTarget(dest.get(), nullptr);
         VoxelRenderer::DrawScreenCover();
 
         auto view = context->view;

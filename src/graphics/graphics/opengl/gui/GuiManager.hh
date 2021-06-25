@@ -1,9 +1,10 @@
 #pragma once
 
-#include "core/input/InputManager.hh"
+#include "input/InputManager.hh"
 
 #include <glm/glm.hpp>
 #include <vector>
+
 struct ImGuiContext;
 
 namespace sp {

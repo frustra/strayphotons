@@ -6,6 +6,7 @@
 #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
 
 #include <atomic>
+#include <memory>
 
 namespace sp {
     static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.5, "Light attenuation for voxel bounces");
@@ -84,7 +85,7 @@ namespace sp {
         ortho.clearMode.reset();
 
         auto renderTarget = RTPool->Get(RenderTargetDesc(PF_R8, ortho.extents));
-        SetRenderTarget(renderTarget, nullptr);
+        SetRenderTarget(renderTarget.get(), nullptr);
 
         GLVoxelInfo voxelInfo;
         FillVoxelInfo(&voxelInfo, voxelData.info);
@@ -222,7 +223,7 @@ namespace sp {
             indirectBufferPrevious = indirectBufferCurrent;
             indirectBufferCurrent = tmp;
 
-            shared_ptr<RenderTarget> tmp2 = voxelData.fragmentListPrevious;
+            std::shared_ptr<GLRenderTarget> tmp2 = voxelData.fragmentListPrevious;
             voxelData.fragmentListPrevious = voxelData.fragmentListCurrent;
             voxelData.fragmentListCurrent = tmp2;
 

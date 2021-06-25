@@ -3,9 +3,10 @@
 #include "core/Logging.hh"
 
 #include <algorithm>
+#include <memory>
 
 namespace sp {
-    RenderTarget::Ref RenderTargetPool::Get(const RenderTargetDesc desc) {
+    std::shared_ptr<GLRenderTarget> RenderTargetPool::Get(const RenderTargetDesc desc) {
         for (size_t i = 0; i < pool.size(); i++) {
             auto elem = pool[i];
 
@@ -15,7 +16,7 @@ namespace sp {
             }
         }
 
-        auto ptr = make_shared<RenderTarget>(desc);
+        auto ptr = make_shared<GLRenderTarget>(desc);
 
         if (desc.renderBuffer) {
             Assert(desc.extent.z == 1, "renderbuffers can't be 3D");
@@ -57,7 +58,7 @@ namespace sp {
                     if (i < pool.size() - 1) { pool[i] = std::move(pool.back()); }
                     pool.pop_back();
                     removed = true;
-                    FreeFramebuffersWithAttachment(elem);
+                    FreeFramebuffersWithAttachment(elem.get());
                 }
             } else {
                 elem->unusedFrames = 0;
@@ -75,8 +76,8 @@ namespace sp {
     }
 
     GLuint RenderTargetPool::GetFramebuffer(uint32 numAttachments,
-                                            RenderTarget::Ref *attachments,
-                                            RenderTarget::Ref depthStencilAttachment) {
+                                            GLRenderTarget **attachments,
+                                            GLRenderTarget *depthStencilAttachment) {
         FramebufferState key(numAttachments, attachments, depthStencilAttachment);
 
         auto cached = framebufferCache.find(key);
@@ -124,7 +125,7 @@ namespace sp {
         return newFB;
     }
 
-    void RenderTargetPool::FreeFramebuffersWithAttachment(RenderTarget::Ref attachment) {
+    void RenderTargetPool::FreeFramebuffersWithAttachment(GLRenderTarget *attachment) {
         for (auto it = framebufferCache.begin(); it != framebufferCache.end();) {
             bool found = false;
             auto &key = it->first;

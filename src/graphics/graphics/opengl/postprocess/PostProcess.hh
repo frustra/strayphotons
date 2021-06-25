@@ -4,8 +4,11 @@
 #include "ecs/Ecs.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/VoxelInfo.hh"
+#include "graphics/opengl/GLRenderTarget.hh"
 #include "graphics/opengl/RenderTargetPool.hh"
 #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
+
+#include <memory>
 
 namespace sp {
     class VoxelRenderer;
@@ -16,7 +19,7 @@ namespace sp {
     class ProcessPassOutput {
     public:
         RenderTargetDesc TargetDesc;
-        RenderTarget::Ref TargetRef;
+        std::shared_ptr<GLRenderTarget> TargetRef;
 
         void AddDependency() {
             dependencies++;
@@ -29,7 +32,7 @@ namespace sp {
             }
         }
 
-        RenderTarget::Ref AllocateTarget(const PostProcessingContext *context);
+        std::shared_ptr<GLRenderTarget> AllocateTarget(const PostProcessingContext *context);
 
     private:
         size_t dependencies = 0;
@@ -100,7 +103,7 @@ namespace sp {
         }
 
     protected:
-        void SetOutputTarget(uint32 id, RenderTarget::Ref target) {
+        void SetOutputTarget(uint32 id, std::shared_ptr<GLRenderTarget> &target) {
             outputs[id].TargetRef = target;
         }
 
@@ -113,14 +116,14 @@ namespace sp {
     };
 
     struct EngineRenderTargets {
-        RenderTarget::Ref gBuffer0, gBuffer1, gBuffer2, gBuffer3;
-        RenderTarget::Ref shadowMap, mirrorShadowMap;
-        RenderTarget::Ref mirrorIndexStencil, lightingGel;
+        std::shared_ptr<GLRenderTarget> gBuffer0, gBuffer1, gBuffer2, gBuffer3;
+        std::shared_ptr<GLRenderTarget> shadowMap, mirrorShadowMap;
+        std::shared_ptr<GLRenderTarget> mirrorIndexStencil, lightingGel;
         VoxelData voxelData;
         GLBuffer mirrorVisData;
         GLBuffer mirrorSceneData;
 
-        RenderTarget::Ref finalOutput;
+        RenderTarget *finalOutput = nullptr;
     };
 
     class PostProcessingContext {

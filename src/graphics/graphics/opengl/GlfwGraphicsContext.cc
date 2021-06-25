@@ -1,6 +1,7 @@
 #include "GlfwGraphicsContext.hh"
 
 #include "core/Logging.hh"
+#include "graphics/opengl/GLTexture.hh"
 #include "graphics/opengl/Graphics.hh"
 #include "graphics/opengl/PerfTimer.hh"
 #include "graphics/opengl/Shader.hh"
@@ -16,11 +17,6 @@
 // clang-format on
 
 namespace sp {
-
-    CVar<glm::ivec2> CVarWindowSize("r.Size", {1280, 720}, "Window height");
-    CVar<float> CVarWindowScale("r.Scale", 1.0f, "Scale framebuffer");
-    CVar<float> CVarFieldOfView("r.FieldOfView", 60, "Camera field of view");
-    CVar<int> CVarWindowFullscreen("r.Fullscreen", false, "Fullscreen window (0: window, 1: fullscreen)");
 
     static void GLAPIENTRY DebugCallback(GLenum source,
                                          GLenum type,

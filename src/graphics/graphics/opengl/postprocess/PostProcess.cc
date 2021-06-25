@@ -3,6 +3,7 @@
 #include "core/CFunc.hh"
 #include "core/CVar.hh"
 #include "ecs/Ecs.hh"
+#include "graphics/opengl/GLRenderTarget.hh"
 #include "graphics/opengl/GenericShaders.hh"
 #include "graphics/opengl/PerfTimer.hh"
 #include "graphics/opengl/RenderTargetPool.hh"
@@ -268,7 +269,7 @@ namespace sp {
         context.ProcessAllPasses();
 
         if (renderToTexture) {
-            renderer->SetRenderTarget(targets.finalOutput, nullptr);
+            renderer->SetRenderTarget((GLRenderTarget *)targets.finalOutput, nullptr);
         } else {
             renderer->SetDefaultRenderTarget();
         }
@@ -347,7 +348,7 @@ namespace sp {
         }
     }
 
-    RenderTarget::Ref ProcessPassOutput::AllocateTarget(const PostProcessingContext *context) {
+    std::shared_ptr<GLRenderTarget> ProcessPassOutput::AllocateTarget(const PostProcessingContext *context) {
         if (TargetRef == nullptr) {
             TargetRef = context->renderer->RTPool->Get(TargetDesc);
             // Debugf("Reserve target %d", TargetRef->GetID());

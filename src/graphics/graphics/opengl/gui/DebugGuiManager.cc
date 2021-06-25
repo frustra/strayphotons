@@ -1,8 +1,8 @@
 #include "DebugGuiManager.hh"
 
-#include "ConsoleGui.hh"
-#include "core/input/InputManager.hh"
-#include "graphics/GraphicsManager.hh"
+#include "GraphicsManager.hh"
+#include "graphics/opengl/gui/ConsoleGui.hh"
+#include "input/InputManager.hh"
 
 #include <imgui/imgui.h>
 

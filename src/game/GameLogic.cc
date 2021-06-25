@@ -64,9 +64,12 @@ namespace sp {
     void GameLogic::HandleInput() {
         if (input->FocusLocked()) return;
 
+#ifdef SP_GRAPHICS_SUPPORT_GL
         if (game->menuGui && input->IsPressed(INPUT_ACTION_OPEN_MENU)) {
             game->menuGui->OpenPauseMenu();
-        } else if (input->IsPressed(INPUT_ACTION_SPAWN_DEBUG)) {
+        } else
+#endif
+            if (input->IsPressed(INPUT_ACTION_SPAWN_DEBUG)) {
             // Spawn dodecahedron
             auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
             auto entity = lock.NewEntity();

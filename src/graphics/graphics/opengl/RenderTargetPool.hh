@@ -1,8 +1,8 @@
 #pragma once
 
-#include "RenderTarget.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "graphics/opengl/GLRenderTarget.hh"
 
 #include <unordered_map>
 
@@ -13,7 +13,7 @@ namespace sp {
         GLuint tex = 0;
         GLuint buf = 0;
 
-        RenderTargetHandle &operator=(const RenderTarget::Ref &other) {
+        RenderTargetHandle &operator=(GLRenderTarget *other) {
             if (!other) return *this;
             if (other->GetDesc().renderBuffer) {
                 buf = other->GetHandle();
@@ -35,13 +35,13 @@ namespace sp {
             return !(*this == other);
         }
 
-        bool operator==(const RenderTarget::Ref &other) const {
+        bool operator==(GLRenderTarget *&other) const {
             if (!other) return tex == 0 && buf == 0;
             if (other->GetDesc().renderBuffer) { return tex == 0 && buf == other->GetHandle(); }
             return buf == 0 && tex == other->GetHandle();
         }
 
-        bool operator!=(const RenderTarget::Ref &other) const {
+        bool operator!=(GLRenderTarget *&other) const {
             return !(*this == other);
         }
     };
@@ -51,9 +51,7 @@ namespace sp {
         RenderTargetHandle Attachments[MaxFramebufferAttachments];
         RenderTargetHandle DepthStencilAttachment;
 
-        FramebufferState(uint32 numAttachments,
-                         RenderTarget::Ref *attachments,
-                         RenderTarget::Ref depthStencilAttachment)
+        FramebufferState(uint32 numAttachments, GLRenderTarget **attachments, GLRenderTarget *depthStencilAttachment)
             : NumAttachments(numAttachments) {
             Assert(numAttachments <= MaxFramebufferAttachments, "exceeded maximum framebuffer attachment count");
 
@@ -97,17 +95,17 @@ namespace sp {
 
     class RenderTargetPool {
     public:
-        RenderTarget::Ref Get(const RenderTargetDesc desc);
+        std::shared_ptr<GLRenderTarget> Get(const RenderTargetDesc desc);
         void TickFrame();
         ~RenderTargetPool();
 
         GLuint GetFramebuffer(uint32 numAttachments,
-                              RenderTarget::Ref *attachments,
-                              RenderTarget::Ref depthStencilAttachment);
-        void FreeFramebuffersWithAttachment(RenderTarget::Ref attachment);
+                              GLRenderTarget **attachments,
+                              GLRenderTarget *depthStencilAttachment);
+        void FreeFramebuffersWithAttachment(GLRenderTarget *attachment);
 
     private:
-        vector<RenderTarget::Ref> pool;
+        std::vector<std::shared_ptr<GLRenderTarget>> pool;
 
         std::unordered_map<FramebufferState, GLuint, FramebufferStateHasher> framebufferCache;
     };

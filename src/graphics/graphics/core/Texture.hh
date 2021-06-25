@@ -22,6 +22,7 @@ namespace sp {
     class Texture : public NonCopyable {
     public:
         Texture(std::shared_ptr<Image> source) : cpu(source) {}
+        Texture(std::shared_ptr<GpuTexture> source) : gpu(source) {}
 
     private:
         std::shared_ptr<Image> cpu;

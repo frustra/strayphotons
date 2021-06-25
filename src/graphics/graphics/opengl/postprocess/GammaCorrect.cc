@@ -17,7 +17,7 @@ namespace sp {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
 
-        r->SetRenderTarget(dest, nullptr);
+        r->SetRenderTarget(dest.get(), nullptr);
         r->ShaderControl->BindPipeline<BasicPostVS, GammaCorrectFS>();
 
         VoxelRenderer::DrawScreenCover();

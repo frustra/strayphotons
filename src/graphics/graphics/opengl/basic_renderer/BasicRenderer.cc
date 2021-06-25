@@ -162,7 +162,7 @@ namespace sp {
         AssertGLOK("BasicRenderer::Prepare");
     }
 
-    void BasicRenderer::RenderPass(ecs::View view, RenderTarget::Ref finalOutput) {
+    void BasicRenderer::RenderPass(ecs::View view, RenderTarget *finalOutput) {
         Assert(!finalOutput, "Basic renderer does not support XR rendering");
 
         glEnable(GL_CULL_FACE);

@@ -1,6 +1,8 @@
 target_sources(
-    ${PROJECT_CORE_LIB}
+    ${PROJECT_INPUT_CORE_LIB}
     PRIVATE
         ActionSource.cc
         InputManager.cc
 )
+
+add_subdirectory(glfw)

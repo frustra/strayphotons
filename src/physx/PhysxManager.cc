@@ -8,7 +8,6 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "game/Game.hh"
 
 #include <PxScene.h>
 #include <chrono>
@@ -23,7 +22,7 @@ namespace sp {
     static CVar<bool> CVarPropJumping("x.PropJumping", false, "Disable player collision with held object");
     // clang-format on
 
-    PhysxManager::PhysxManager(Game *game) : game(game) {
+    PhysxManager::PhysxManager(ecs::EntityManager &ecs) : ecs(ecs) {
         Logf("PhysX %d.%d.%d starting up",
              PX_PHYSICS_VERSION_MAJOR,
              PX_PHYSICS_VERSION_MINOR,
@@ -50,7 +49,7 @@ namespace sp {
         CreatePhysxScene();
 
         {
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs.tecs.StartTransaction<ecs::AddRemove>();
             physicsRemoval = lock.Watch<ecs::Removed<ecs::Physics>>();
             humanControllerRemoval = lock.Watch<ecs::Removed<ecs::HumanController>>();
         }
@@ -191,25 +190,25 @@ namespace sp {
 
     bool PhysxManager::LogicFrame() {
         {
-            auto lock = game->entityManager.tecs.StartTransaction<>();
+            auto lock = ecs.tecs.StartTransaction<>();
             ecs::Removed<ecs::Physics> removedPhysics;
-            while (game->physics.physicsRemoval.Poll(lock, removedPhysics)) {
+            while (physicsRemoval.Poll(lock, removedPhysics)) {
                 if (removedPhysics.component.actor) {
                     auto rigidBody = removedPhysics.component.actor->is<physx::PxRigidDynamic>();
-                    if (rigidBody) game->physics.RemoveConstraints(rigidBody);
-                    game->physics.RemoveActor(removedPhysics.component.actor);
+                    if (rigidBody) RemoveConstraints(rigidBody);
+                    RemoveActor(removedPhysics.component.actor);
                 }
             }
             ecs::Removed<ecs::HumanController> removedHumanController;
-            while (game->physics.humanControllerRemoval.Poll(lock, removedHumanController)) {
-                game->physics.RemoveController(removedHumanController.component.pxController);
+            while (humanControllerRemoval.Poll(lock, removedHumanController)) {
+                RemoveController(removedHumanController.component.pxController);
             }
         }
         {
             // Sync transforms to physx
             Lock();
 
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Physics, ecs::Transform>>();
+            auto lock = ecs.tecs.StartTransaction<ecs::Write<ecs::Physics, ecs::Transform>>();
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
 
@@ -253,8 +252,7 @@ namespace sp {
             // Sync transforms from physx
             ReadLock();
 
-            auto lock =
-                game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Physics>, ecs::Write<ecs::Transform>>();
+            auto lock = ecs.tecs.StartTransaction<ecs::Read<ecs::Physics>, ecs::Write<ecs::Transform>>();
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
 

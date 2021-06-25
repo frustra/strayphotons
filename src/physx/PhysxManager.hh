@@ -4,24 +4,41 @@
 #include "core/CFunc.hh"
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
-#include "threading/MutexedVector.hh"
 
 #include <PxPhysicsAPI.h>
 #include <extensions/PxDefaultAllocator.h>
 #include <extensions/PxDefaultErrorCallback.h>
 #include <functional>
 #include <list>
+#include <mutex>
 #include <thread>
 #include <unordered_map>
+#include <vector>
 
 namespace ecs {
     struct PhysxActorDesc;
 }
 
 namespace sp {
-    class Game;
     class Model;
     class PhysxManager;
+
+    template<typename T>
+    class MutexedVector {
+    public:
+        MutexedVector(std::vector<T> &vec, std::mutex &m) : vec(vec), lock(m) {}
+        MutexedVector(MutexedVector &&vec) = default;
+        MutexedVector(MutexedVector &vec) = delete;
+        ~MutexedVector() {}
+
+        std::vector<T> &Vector() {
+            return vec;
+        }
+
+    private:
+        std::vector<T> &vec;
+        std::unique_lock<std::mutex> lock;
+    };
 
     struct PhysxConstraint {
         ecs::Entity parent;
@@ -47,7 +64,7 @@ namespace sp {
         typedef std::list<PhysxConstraint> ConstraintList;
 
     public:
-        PhysxManager(Game *game);
+        PhysxManager(ecs::EntityManager &ecs);
         ~PhysxManager();
 
         void Frame(double timeStep);
@@ -154,7 +171,7 @@ namespace sp {
         ConvexHullSet *LoadCollisionCache(Model *model, bool decomposeHull);
         void SaveCollisionCache(Model *model, ConvexHullSet *set, bool decomposeHull);
 
-        Game *game;
+        ecs::EntityManager &ecs;
 
         physx::PxFoundation *pxFoundation = nullptr;
         physx::PxPhysics *physics = nullptr;

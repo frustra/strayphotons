@@ -4,6 +4,7 @@ target_sources(${PROJECT_GRAPHICS_EGL_LIB} PRIVATE
     GLBuffer.cc
     GlfwGraphicsContext.cc
     GLModel.cc
+    GLRenderTarget.cc
     GLTexture.cc
     GPUTypes.cc
     Graphics.cc
@@ -11,8 +12,6 @@ target_sources(${PROJECT_GRAPHICS_EGL_LIB} PRIVATE
     PerfTimer.cc
     PixelFormat.cc
     RenderBuffer.cc
-    Renderer.cc
-    RenderTarget.cc
     RenderTargetPool.cc
     SceneShaders.cc
     Shader.cc
@@ -24,6 +23,7 @@ target_sources(${PROJECT_GRAPHICS_OPENGL_LIB} PRIVATE
     GLBuffer.cc
     GlfwGraphicsContext.cc
     GLModel.cc
+    GLRenderTarget.cc
     GLTexture.cc
     GPUTypes.cc
     Graphics.cc
@@ -31,8 +31,6 @@ target_sources(${PROJECT_GRAPHICS_OPENGL_LIB} PRIVATE
     PerfTimer.cc
     PixelFormat.cc
     RenderBuffer.cc
-    Renderer.cc
-    RenderTarget.cc
     RenderTargetPool.cc
     SceneShaders.cc
     Shader.cc
@@ -40,6 +38,6 @@ target_sources(${PROJECT_GRAPHICS_OPENGL_LIB} PRIVATE
 )
 
 add_subdirectory(basic_renderer)
-add_subdirectory(input)
+add_subdirectory(gui)
 add_subdirectory(postprocess)
 add_subdirectory(voxel_renderer)

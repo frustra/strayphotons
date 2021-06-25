@@ -18,7 +18,7 @@
 
 namespace sp {
     Game::Game(cxxopts::ParseResult &options, Script *startupScript)
-        : options(options), startupScript(startupScript), graphics(this), logic(this), physics(this),
+        : options(options), startupScript(startupScript), graphics(this), logic(this), physics(this->entityManager),
           animation(entityManager.tecs), humanControlSystem(&this->entityManager, &this->input, &this->physics)
     /*, xr(this)*/ {}
 
@@ -46,8 +46,10 @@ namespace sp {
         try {
             graphics.Init();
 
+#ifdef SP_GRAPHICS_SUPPORT_GL
             debugGui = std::make_unique<DebugGuiManager>(this->graphics, this->input);
             menuGui = std::make_unique<MenuGuiManager>(this->graphics, this->input);
+#endif
 
             logic.Init(startupScript);
 

@@ -41,7 +41,7 @@ namespace sp {
         r->GlobalShaders->Get<ViewGBufferFS>()->SetParameters(mode, source, level, context->view);
         r->GlobalShaders->Get<ViewGBufferFS>()->SetVoxelInfo(&voxelInfo);
 
-        r->SetRenderTarget(dest, nullptr);
+        r->SetRenderTarget(dest.get(), nullptr);
         r->ShaderControl->BindPipeline<BasicPostVS, ViewGBufferFS>();
 
         VoxelRenderer::DrawScreenCover();

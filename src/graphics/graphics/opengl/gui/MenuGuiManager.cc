@@ -1,13 +1,13 @@
 #include "MenuGuiManager.hh"
 
+#include "GraphicsManager.hh"
 #include "assets/AssetManager.hh"
 #include "core/CVar.hh"
 #include "core/Console.hh"
 #include "core/Logging.hh"
-#include "core/input/InputManager.hh"
-#include "graphics/GraphicsManager.hh"
 #include "graphics/core/Texture.hh"
 #include "graphics/opengl/GlfwGraphicsContext.hh"
+#include "input/InputManager.hh"
 
 #include <imgui/imgui.h>
 #include <sstream>

@@ -1,10 +1,9 @@
 #pragma once
 
-#include "ecs/components/Controller.hh"
+#include "ecs/Ecs.hh"
+#include "input/InputManager.hh"
 #include "physx/PhysxManager.hh"
 
-#include <core/input/InputManager.hh>
-#include <ecs/Ecs.hh>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <string>

@@ -2,10 +2,10 @@
 
 #include "assets/Model.hh"
 #include "core/Common.hh"
+#include "graphics/core/NativeModel.hh"
+#include "graphics/core/Renderer.hh"
 #include "graphics/opengl/GLTexture.hh"
 #include "graphics/opengl/Graphics.hh"
-#include "graphics/opengl/NativeModel.hh"
-#include "graphics/opengl/Renderer.hh"
 #include "graphics/opengl/SceneShaders.hh"
 
 #include <map>

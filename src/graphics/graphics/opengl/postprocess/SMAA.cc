@@ -73,7 +73,7 @@ namespace sp {
         r->GlobalShaders->Get<SMAAEdgeDetectionVS>()->SetViewParams(context->view);
         r->GlobalShaders->Get<SMAAEdgeDetectionFS>()->SetViewParams(context->view);
 
-        r->SetRenderTarget(dest, stencil);
+        r->SetRenderTarget(dest.get(), stencil.get());
         r->ShaderControl->BindPipeline<SMAAEdgeDetectionVS, SMAAEdgeDetectionFS>();
 
         glEnable(GL_STENCIL_TEST);
@@ -115,7 +115,7 @@ namespace sp {
         r->GlobalShaders->Get<SMAABlendingWeightsVS>()->SetViewParams(context->view);
         r->GlobalShaders->Get<SMAABlendingWeightsFS>()->SetViewParams(context->view);
 
-        r->SetRenderTarget(dest, stencil);
+        r->SetRenderTarget(dest.get(), stencil.get());
         r->ShaderControl->BindPipeline<SMAABlendingWeightsVS, SMAABlendingWeightsFS>();
 
         glAreaTex->Bind(1);
@@ -150,7 +150,7 @@ namespace sp {
         r->GlobalShaders->Get<SMAABlendingVS>()->SetViewParams(context->view);
         r->GlobalShaders->Get<SMAABlendingFS>()->SetViewParams(context->view);
 
-        r->SetRenderTarget(dest, nullptr);
+        r->SetRenderTarget(dest.get(), nullptr);
         r->ShaderControl->BindPipeline<SMAABlendingVS, SMAABlendingFS>();
 
         VoxelRenderer::DrawScreenCover();

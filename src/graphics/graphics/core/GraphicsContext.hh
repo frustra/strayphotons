@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/CVar.hh"
+
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
@@ -12,6 +14,11 @@ namespace ecs {
 namespace sp {
     class GpuTexture;
     class Image;
+
+    extern CVar<glm::ivec2> CVarWindowSize;
+    extern CVar<float> CVarWindowScale;
+    extern CVar<float> CVarFieldOfView;
+    extern CVar<int> CVarWindowFullscreen;
 
     class GraphicsContext {
     public:

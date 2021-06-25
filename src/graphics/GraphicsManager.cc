@@ -4,15 +4,15 @@
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Game.hh"
-#include "game/gui/ProfilerGui.hh"
 #include "graphics/core/GraphicsContext.hh"
+#include "graphics/core/Renderer.hh"
 #include "graphics/opengl/GlfwGraphicsContext.hh"
 #include "graphics/opengl/PerfTimer.hh"
 #include "graphics/opengl/RenderTargetPool.hh"
-#include "graphics/opengl/Renderer.hh"
 #include "graphics/opengl/basic_renderer/BasicRenderer.hh"
-#include "graphics/opengl/input/GlfwActionSource.hh"
+#include "graphics/opengl/gui/ProfilerGui.hh"
 #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
+#include "input/glfw/GlfwActionSource.hh"
 
 #include <algorithm>
 #include <cxxopts.hpp>
@@ -21,15 +21,18 @@
 
 namespace sp {
     GraphicsManager::GraphicsManager(Game *game) : game(game) {
+#ifdef SP_GRAPHICS_SUPPORT_GL
         if (game->options.count("basic-renderer")) {
             Logf("Graphics starting up (basic renderer)");
             useBasic = true;
         } else {
             Logf("Graphics starting up (full renderer)");
         }
+#endif
     }
 
     GraphicsManager::~GraphicsManager() {
+#ifdef SP_GRAPHICS_SUPPORT_GL
         if (renderer) { delete renderer; }
 
         if (profilerGui) { delete profilerGui; }
@@ -37,15 +40,18 @@ namespace sp {
         if (glfwActionSource) { delete glfwActionSource; }
 
         if (context) { delete context; }
+#endif
     }
 
     void GraphicsManager::Init() {
+#ifdef SP_GRAPHICS_SUPPORT_GL
         if (context) { throw "already an active context"; }
 
         if (renderer) { throw "already an active renderer"; }
 
         context = new GlfwGraphicsContext();
-        GLFWwindow *window = context->GetWindow();
+
+        GLFWwindow *window = static_cast<GlfwGraphicsContext *>(context)->GetWindow();
 
         if (window != nullptr) {
             glfwActionSource = new GlfwActionSource(game->input, *window);
@@ -75,6 +81,7 @@ namespace sp {
             glfwActionSource->BindAction(INPUT_ACTION_RESET_SCENE, INPUT_ACTION_KEYBOARD_KEYS + "/f6");
             glfwActionSource->BindAction(INPUT_ACTION_RELOAD_SHADERS, INPUT_ACTION_KEYBOARD_KEYS + "/f7");
         }
+#endif
 
         if (game->options.count("size")) {
             std::istringstream ss(game->options["size"].as<string>());
@@ -84,10 +91,11 @@ namespace sp {
             if (size.x > 0 && size.y > 0) { CVarWindowSize.Set(size); }
         }
 
+#ifdef SP_GRAPHICS_SUPPORT_GL
         if (useBasic) {
             renderer = new BasicRenderer(game->entityManager);
         } else {
-            renderer = new VoxelRenderer(game->entityManager, *context);
+            renderer = new VoxelRenderer(game->entityManager, *static_cast<GlfwGraphicsContext *>(context));
 
             profilerGui = new ProfilerGui(&renderer->Timer);
             if (game->debugGui) { game->debugGui->Attach(profilerGui); }
@@ -100,6 +108,7 @@ namespace sp {
 
         context->Init();
         renderer->Prepare();
+#endif
     }
 
     bool GraphicsManager::HasActiveContext() {
@@ -107,9 +116,11 @@ namespace sp {
     }
 
     bool GraphicsManager::Frame() {
+#ifdef SP_GRAPHICS_SUPPORT_GL
         if (!context) throw "no active context";
         if (!renderer) throw "no active renderer";
         if (!HasActiveContext()) return false;
+#endif
 
         {
             auto lock = game->entityManager.tecs.StartTransaction<>();
@@ -146,6 +157,7 @@ namespace sp {
             return false;
         }
 
+#ifdef SP_GRAPHICS_SUPPORT_GL
         renderer->Timer.StartFrame();
 
         {
@@ -211,20 +223,25 @@ namespace sp {
         context->SwapBuffers();
         renderer->Timer.EndFrame();
         context->EndFrame();
+#endif
 
         return true;
     }
 
-    GlfwGraphicsContext *GraphicsManager::GetContext() {
+    GraphicsContext *GraphicsManager::GetContext() {
         return context;
     }
 
     void GraphicsManager::DisableCursor() {
+#ifdef SP_GRAPHICS_SUPPORT_GL
         if (glfwActionSource) { glfwActionSource->DisableCursor(); }
+#endif
     }
 
     void GraphicsManager::EnableCursor() {
+#ifdef SP_GRAPHICS_SUPPORT_GL
         if (glfwActionSource) { glfwActionSource->EnableCursor(); }
+#endif
     }
 
     void GraphicsManager::AddPlayerView(ecs::Entity entity) {

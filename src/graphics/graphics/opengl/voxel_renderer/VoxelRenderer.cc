@@ -17,8 +17,8 @@
 #include "graphics/opengl/Shader.hh"
 #include "graphics/opengl/ShaderManager.hh"
 #include "graphics/opengl/VertexBuffer.hh"
-#include "graphics/opengl/input/GlfwActionSource.hh"
 #include "graphics/opengl/postprocess/PostProcess.hh"
+#include "input/glfw/GlfwActionSource.hh"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/component_wise.hpp>
@@ -71,6 +71,7 @@ namespace sp {
         // glEnable(GL_FRAMEBUFFER_SRGB);
 
         RTPool = new RenderTargetPool();
+
         // TODO: Fix GUI renderer
         // if (game->debugGui) { debugGuiRenderer = make_shared<GuiRenderer>(*this, context, game->debugGui.get()); }
         // if (game->menuGui) { menuGuiRenderer = make_shared<GuiRenderer>(*this, context, game->menuGui.get()); }
@@ -102,7 +103,7 @@ namespace sp {
             menuDesc.anisotropy = 4.0;
             if (!menuGuiTarget || menuGuiTarget->GetDesc() != menuDesc) { menuGuiTarget = RTPool->Get(menuDesc); }
 
-            SetRenderTarget(menuGuiTarget, nullptr);
+            SetRenderTarget(menuGuiTarget.get(), nullptr);
             PrepareForView(view);
             // menuGuiRenderer->Render(view);
             menuGuiTarget->GetTexture().GenMipmap();
@@ -173,7 +174,7 @@ namespace sp {
 
         if (CVarEnableShadows.Get()) {
             auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH16, renderTargetSize, true));
-            SetRenderTarget(shadowMap, depthTarget);
+            SetRenderTarget(shadowMap.get(), depthTarget.get());
 
             glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
             glDisable(GL_SCISSOR_TEST);
@@ -253,7 +254,7 @@ namespace sp {
                 RenderTargetDesc depthDesc(PF_DEPTH16, mirrorMapResolution);
                 depthDesc.textureArray = true;
                 auto depthTarget = RTPool->Get(depthDesc);
-                SetRenderTarget(mirrorShadowMap, depthTarget);
+                SetRenderTarget(mirrorShadowMap.get(), depthTarget.get());
 
                 ecs::View basicView;
                 basicView.offset = glm::ivec2(0);
@@ -325,7 +326,7 @@ namespace sp {
         shader->StartReadback();
     }
 
-    void VoxelRenderer::RenderPass(ecs::View view, RenderTarget::Ref finalOutput) {
+    void VoxelRenderer::RenderPass(ecs::View view, RenderTarget *finalOutput) {
         RenderPhase phase("RenderPass", Timer);
 
         if (!mirrorSceneData) {
@@ -368,19 +369,19 @@ namespace sp {
 
             const int attachmentCount = 5;
 
-            RenderTarget::Ref attachments[attachmentCount] = {
-                targets.gBuffer0,
-                targets.gBuffer1,
-                targets.gBuffer2,
-                targets.gBuffer3,
-                mirrorIndexStencil0,
+            GLRenderTarget *attachments[attachmentCount] = {
+                targets.gBuffer0.get(),
+                targets.gBuffer1.get(),
+                targets.gBuffer2.get(),
+                targets.gBuffer3.get(),
+                mirrorIndexStencil0.get(),
             };
 
             auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH24_STENCIL8, view.extents, true));
 
-            GLuint fb0 = RTPool->GetFramebuffer(attachmentCount, attachments, depthTarget);
-            attachments[attachmentCount - 1] = mirrorIndexStencil1;
-            GLuint fb1 = RTPool->GetFramebuffer(attachmentCount, attachments, depthTarget);
+            GLuint fb0 = RTPool->GetFramebuffer(attachmentCount, &attachments[0], depthTarget.get());
+            attachments[attachmentCount - 1] = mirrorIndexStencil1.get();
+            GLuint fb1 = RTPool->GetFramebuffer(attachmentCount, &attachments[0], depthTarget.get());
 
             glEnable(GL_CULL_FACE);
             glEnable(GL_DEPTH_TEST);
@@ -431,10 +432,10 @@ namespace sp {
 
                     if (bounce % 2 == 0) {
                         mirrorIndexStencil1->GetTexture().Bind(0);
-                        SetRenderTarget(mirrorIndexStencil0, nullptr);
+                        SetRenderTarget(mirrorIndexStencil0.get(), nullptr);
                     } else {
                         mirrorIndexStencil0->GetTexture().Bind(0);
-                        SetRenderTarget(mirrorIndexStencil1, nullptr);
+                        SetRenderTarget(mirrorIndexStencil1.get(), nullptr);
                     }
 
                     ShaderControl->BindPipeline<BasicPostVS, CopyStencilFS>(GlobalShaders);
@@ -785,14 +786,12 @@ namespace sp {
         }
     }
 
-    void VoxelRenderer::SetRenderTargets(size_t attachmentCount,
-                                         RenderTarget::Ref *attachments,
-                                         RenderTarget::Ref depth) {
+    void VoxelRenderer::SetRenderTargets(size_t attachmentCount, GLRenderTarget **attachments, GLRenderTarget *depth) {
         GLuint fb = RTPool->GetFramebuffer(attachmentCount, attachments, depth);
         glBindFramebuffer(GL_FRAMEBUFFER, fb);
     }
 
-    void VoxelRenderer::SetRenderTarget(RenderTarget::Ref attachment0, RenderTarget::Ref depth) {
+    void VoxelRenderer::SetRenderTarget(GLRenderTarget *attachment0, GLRenderTarget *depth) {
         SetRenderTargets(1, &attachment0, depth);
     }
 

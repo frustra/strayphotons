@@ -2,10 +2,12 @@
 
 #include "PostProcess.hh"
 
+#include <memory>
+
 namespace sp {
     class ProxyProcessPass : public PostProcessPass<0, 1> {
     public:
-        ProxyProcessPass(RenderTarget::Ref input) : input(input) {
+        ProxyProcessPass(std::shared_ptr<GLRenderTarget> input) : input(input) {
             Assert(input != nullptr, "null proxy pass input");
         }
 
@@ -22,6 +24,6 @@ namespace sp {
         }
 
     private:
-        RenderTarget::Ref input;
+        std::shared_ptr<GLRenderTarget> input;
     };
 } // namespace sp
