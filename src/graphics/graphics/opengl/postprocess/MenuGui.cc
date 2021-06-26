@@ -13,7 +13,7 @@ namespace sp {
 
         glViewport(0, 0, target->GetDesc().extent.x, target->GetDesc().extent.y);
 
-        blurred->GetTexture().Bind(0);
+        blurred->GetGLTexture().Bind(0);
         r->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>();
         r->SetRenderTarget(dest.get(), nullptr);
         VoxelRenderer::DrawScreenCover();

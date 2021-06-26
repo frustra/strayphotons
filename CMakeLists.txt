@@ -63,6 +63,7 @@ else()
 
 endif()
 
+set(PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PROJECT_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
 # Put RUNTIME and LIBRARY outputs into a folder where we can run them without installing
@@ -106,13 +107,6 @@ if((CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64") OR (CMAKE_SYSTEM_PROCESSOR STREQU
 	set(ARM ON)
 else()
 	set(ARM OFF)
-endif()
-
-## OpenVR is supported on Windows, Linux, and MacOS, but not on ARM
-if(NOT ARM)
-	if((WIN32 OR UNIX) OR APPLE)
-		set(XRSYSTEM_OPENVR ON)
-	endif()
 endif()
 
 # Tell CMake to convert all relative paths in subdirectories to absolute paths
@@ -184,6 +178,9 @@ if (MSVC)
 		NOMINMAX
 		_USE_MATH_DEFINES
 	)
+
+	# fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
+	target_compile_options(${PROJECT_CORE_LIB} PUBLIC /bigobj)
 endif()
 
 if (NOT SP_DEBUG)
@@ -244,6 +241,7 @@ target_link_libraries(${PROJECT_EXE} PRIVATE
 	${PROJECT_INPUT_CORE_LIB}
 	${PROJECT_INPUT_GLFW_LIB}
 	${PROJECT_PHYSICS_PHYSX_LIB}
+	${PROJECT_XR_OPENVR_LIB}
 )
 
 target_link_libraries(${PROJECT_HEADLESS_EXE} PRIVATE
@@ -263,6 +261,7 @@ target_link_libraries(${PROJECT_TEST_EXE} PRIVATE
 	${PROJECT_INPUT_CORE_LIB}
 	${PROJECT_INPUT_GLFW_LIB}
 	${PROJECT_PHYSICS_PHYSX_LIB}
+	${PROJECT_XR_OPENVR_LIB}
 )
 
 target_link_libraries(${PROJECT_LIB} INTERFACE

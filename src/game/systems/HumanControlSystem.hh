@@ -22,7 +22,7 @@ namespace sp {
 
     class HumanControlSystem {
     public:
-        HumanControlSystem(ecs::EntityManager *entities, InputManager *input, PhysxManager *physics);
+        HumanControlSystem(ecs::ECS &ecs, InputManager *input, PhysxManager *physics);
         ~HumanControlSystem();
 
         /**
@@ -49,29 +49,41 @@ namespace sp {
         /**
          * Pick up the object that the player is looking at and make it move at to a fixed location relative to camera
          */
-        void Interact(ecs::Entity entity);
+        void Interact(
+            ecs::Lock<ecs::Read<ecs::HumanController>, ecs::Write<ecs::Transform, ecs::InteractController>> lock,
+            Tecs::Entity entity);
 
     private:
-        glm::vec3 CalculatePlayerVelocity(ecs::Entity entity,
+        glm::vec3 CalculatePlayerVelocity(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,
+                                          Tecs::Entity entity,
                                           double dtSinceLastFrame,
                                           glm::vec3 inDirection,
                                           bool jump,
                                           bool sprint,
                                           bool crouch);
-        void MoveEntity(ecs::Entity entity, double dtSinceLastFrame, glm::vec3 velocity);
+        void MoveEntity(ecs::Lock<ecs::Write<ecs::Transform, ecs::HumanController>> lock,
+                        Tecs::Entity entity,
+                        double dtSinceLastFrame,
+                        glm::vec3 velocity);
 
         /**
          * Resize entity used for crouching and uncrouching. Can perform overlap checks to make sure resize is valid
          */
-        bool ResizeEntity(ecs::Entity entity, float height, bool overlapCheck);
+        bool ResizeEntity(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
+                          Tecs::Entity entity,
+                          float height,
+                          bool overlapCheck);
 
         /**
          * Rotate the object the player is currently holding, using mouse input.
          * Returns true if there is currently a target.
          */
-        bool InteractRotate(ecs::Entity entity, double dt, glm::vec2 dCursor);
+        bool InteractRotate(ecs::Lock<ecs::Read<ecs::InteractController>> lock,
+                            Tecs::Entity entity,
+                            double dt,
+                            glm::vec2 dCursor);
 
-        ecs::EntityManager *entities = nullptr;
+        ecs::ECS &ecs;
         InputManager *input = nullptr;
         PhysxManager *physics = nullptr;
     };

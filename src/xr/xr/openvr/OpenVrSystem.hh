@@ -11,7 +11,7 @@ namespace sp {
     namespace xr {
         class OpenVrSystem : public XrSystem {
         public:
-            OpenVrSystem();
+            OpenVrSystem(GlfwGraphicsContext &context);
             ~OpenVrSystem();
 
             void Init();
@@ -29,7 +29,8 @@ namespace sp {
             std::shared_ptr<XrActionSet> GetActionSet(std::string setName);
 
         private:
-            vr::IVRSystem *vrSystem;
+            GlfwGraphicsContext &context;
+            vr::IVRSystem *vrSystem = nullptr;
             std::shared_ptr<OpenVrTrackingCompositor> trackingCompositor;
             std::map<std::string, std::shared_ptr<OpenVrActionSet>> actionSets;
         };

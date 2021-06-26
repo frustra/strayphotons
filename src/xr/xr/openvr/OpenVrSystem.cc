@@ -21,7 +21,7 @@ using namespace sp;
 using namespace xr;
 namespace fs = std::filesystem;
 
-OpenVrSystem::OpenVrSystem() : vrSystem(nullptr) {
+OpenVrSystem::OpenVrSystem(GlfwGraphicsContext &context) : context(context) {
     // No init at this time
 }
 
@@ -45,7 +45,7 @@ void OpenVrSystem::Init() {
     }
 
     // Initialize the tracking / compositor subsystem
-    trackingCompositor = make_shared<OpenVrTrackingCompositor>(vrSystem);
+    trackingCompositor = make_shared<OpenVrTrackingCompositor>(context, vrSystem);
 
     // Initialize SteamVR Input subsystem
     fs::path cwd = fs::current_path();

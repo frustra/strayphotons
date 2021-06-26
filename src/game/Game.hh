@@ -7,11 +7,14 @@
 #include "graphics/GraphicsManager.hh"
 #include "input/InputManager.hh"
 #include "physx/PhysxManager.hh"
-// #include "xr/XrManager.hh"
 
 #ifdef SP_GRAPHICS_SUPPORT_GL
     #include "graphics/opengl/gui/DebugGuiManager.hh"
     #include "graphics/opengl/gui/MenuGuiManager.hh"
+#endif
+
+#ifdef SP_XR_SUPPORT
+    #include "xr/XrManager.hh"
 #endif
 
 #include <chrono>
@@ -49,7 +52,9 @@ namespace sp {
         PhysxManager physics;
         AnimationSystem animation;
         HumanControlSystem humanControlSystem;
-        // xr::XrManager xr;
+#ifdef SP_XR_SUPPORT
+        xr::XrManager xr;
+#endif
 
     private:
         chrono_clock::time_point lastFrameTime;

@@ -7,6 +7,7 @@
 #include <openvr.h>
 
 namespace sp {
+    class GlfwGraphicsContext;
 
     namespace xr {
         // In OpenVR, the tracking and compositor are too interlinked to separate cleanly.
@@ -14,7 +15,7 @@ namespace sp {
         // state can be shared between tracking and compositor code.
         class OpenVrTrackingCompositor final : public XrTracking, public XrCompositor {
         public:
-            OpenVrTrackingCompositor(vr::IVRSystem *vrs);
+            OpenVrTrackingCompositor(GlfwGraphicsContext &context, vr::IVRSystem *vrs);
 
             // XrTracking functions
             bool GetPredictedViewPose(size_t view, glm::mat4 &viewPose);
@@ -26,9 +27,9 @@ namespace sp {
             size_t GetNumViews(bool minimum = true);
             void GetRecommendedRenderTargetSize(uint32_t &width, uint32_t &height);
             glm::mat4 GetViewProjectionMatrix(size_t view, float nearZ, float farZ);
-            RenderTarget::Ref GetRenderTarget(size_t view);
+            RenderTarget *GetRenderTarget(size_t view);
             void PopulateView(size_t view, ecs::Handle<ecs::View> &ecsView);
-            void SubmitView(size_t view, RenderTarget::Ref rt);
+            void SubmitView(size_t view, GpuTexture *tex);
             void WaitFrame();
             void BeginFrame();
             void EndFrame();

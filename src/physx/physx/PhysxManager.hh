@@ -41,7 +41,7 @@ namespace sp {
     };
 
     struct PhysxConstraint {
-        ecs::Entity parent;
+        Tecs::Entity parent;
         physx::PxRigidDynamic *child;
         physx::PxVec3 offset, rotation;
         physx::PxQuat rotationOffset;
@@ -64,7 +64,7 @@ namespace sp {
         typedef std::list<PhysxConstraint> ConstraintList;
 
     public:
-        PhysxManager(ecs::EntityManager &ecs);
+        PhysxManager(ecs::ECS &ecs);
         ~PhysxManager();
 
         void Frame(double timeStep);
@@ -77,12 +77,13 @@ namespace sp {
         void ReadLock();
         void ReadUnlock();
 
-        void CreateConstraint(ecs::Entity parent,
+        void CreateConstraint(ecs::Lock<> lock,
+                              Tecs::Entity parent,
                               physx::PxRigidDynamic *child,
                               physx::PxVec3 offset,
                               physx::PxQuat rotationOffset);
-        void RotateConstraint(ecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 rotation);
-        void RemoveConstraint(ecs::Entity parent, physx::PxRigidDynamic *child);
+        void RotateConstraint(Tecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 rotation);
+        void RemoveConstraint(Tecs::Entity parent, physx::PxRigidDynamic *child);
         void RemoveConstraints(physx::PxRigidDynamic *child);
 
         ConvexHullSet *GetCachedConvexHulls(std::string name);
@@ -117,7 +118,8 @@ namespace sp {
 
         float GetCapsuleHeight(physx::PxCapsuleController *controller);
 
-        bool RaycastQuery(ecs::Entity &entity,
+        bool RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
+                          Tecs::Entity entity,
                           const physx::PxVec3 origin,
                           const physx::PxVec3 dir,
                           const float distance,
@@ -171,7 +173,7 @@ namespace sp {
         ConvexHullSet *LoadCollisionCache(Model *model, bool decomposeHull);
         void SaveCollisionCache(Model *model, ConvexHullSet *set, bool decomposeHull);
 
-        ecs::EntityManager &ecs;
+        ecs::ECS &ecs;
 
         physx::PxFoundation *pxFoundation = nullptr;
         physx::PxPhysics *physics = nullptr;

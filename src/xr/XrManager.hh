@@ -5,7 +5,6 @@
 #include "xr/XrSystem.hh"
 
 namespace sp {
-
     class Game;
 
     namespace xr {

@@ -6,7 +6,7 @@
 #include <memory>
 
 namespace sp {
-    std::shared_ptr<GLRenderTarget> RenderTargetPool::Get(const RenderTargetDesc desc) {
+    std::shared_ptr<GLRenderTarget> RenderTargetPool::Get(const RenderTargetDesc &desc) {
         for (size_t i = 0; i < pool.size(); i++) {
             auto elem = pool[i];
 
@@ -89,7 +89,7 @@ namespace sp {
         glCreateFramebuffers(1, &newFB);
 
         for (uint32 i = 0; i < numAttachments; i++) {
-            auto tex = attachments[i]->GetTexture();
+            auto tex = attachments[i]->GetGLTexture();
             Assert(tex.attachment == GL_COLOR_ATTACHMENT0, "attachment is not a color attachment");
             glNamedFramebufferTexture(newFB, GL_COLOR_ATTACHMENT0 + i, tex.handle, 0);
         }
@@ -102,7 +102,7 @@ namespace sp {
                        "attachment is not a depth attachment");
                 glNamedFramebufferRenderbuffer(newFB, atc, GL_RENDERBUFFER, buf.handle);
             } else {
-                auto tex = depthStencilAttachment->GetTexture();
+                auto tex = depthStencilAttachment->GetGLTexture();
                 auto atc = tex.attachment;
                 Assert(atc == GL_DEPTH_ATTACHMENT || atc == GL_STENCIL_ATTACHMENT || atc == GL_DEPTH_STENCIL_ATTACHMENT,
                        "attachment is not a depth attachment");

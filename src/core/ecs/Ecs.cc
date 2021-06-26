@@ -19,6 +19,7 @@ namespace ecs {
     void Entity::Destroy() {
         auto lock = em->tecs.StartTransaction<Tecs::AddRemove>();
         e.Destroy(lock);
+        e = Tecs::Entity();
     }
 
     EntityManager::EntityManager() {}

@@ -170,9 +170,10 @@ namespace sp {
 
             renderer->BeginFrame();
 
+    #ifdef SP_XR_SUPPORT
             // Always render XR content first, since this allows the compositor to immediately start work rendering to
             // the HMD Only attempt to render if we have an active XR System
-            /*if (game->xr.GetXrSystem()) {
+            if (game->xr.GetXrSystem()) {
                 RenderPhase xrPhase("XrViews", timer);
 
                 // TODO: Should not have to do this on every frame...
@@ -207,16 +208,18 @@ namespace sp {
                     // Move the view to the appropriate place
                     xrViews[i].first.SetInvViewMat(viewPose);
 
-                    RenderTarget::Ref viewOutputTexture = game->xr.GetXrSystem()->GetCompositor()->GetRenderTarget(
+                    RenderTarget *viewOutputTexture = game->xr.GetXrSystem()->GetCompositor()->GetRenderTarget(
                         xrViews[i].second.viewId);
 
                     renderer->RenderPass(xrViews[i].first, viewOutputTexture);
 
-                    game->xr.GetXrSystem()->GetCompositor()->SubmitView(xrViews[i].second.viewId, viewOutputTexture);
+                    game->xr.GetXrSystem()->GetCompositor()->SubmitView(xrViews[i].second.viewId,
+                                                                        viewOutputTexture->GetTexture());
                 }
 
                 game->xr.GetXrSystem()->GetCompositor()->EndFrame();
-            }*/
+            }
+    #endif
 
             // Render the 2D pancake view
             context->PrepareForView(pancakeView);

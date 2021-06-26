@@ -5,6 +5,7 @@
 #include "ecs/Ecs.hh"
 #include "graphics/opengl/GLRenderTarget.hh"
 #include "graphics/opengl/GenericShaders.hh"
+#include "graphics/opengl/GlfwGraphicsContext.hh"
 #include "graphics/opengl/PerfTimer.hh"
 #include "graphics/opengl/RenderTargetPool.hh"
 #include "graphics/opengl/ShaderManager.hh"
@@ -275,11 +276,11 @@ namespace sp {
 
         glViewport(view.offset.x, view.offset.y, view.extents.x * view.scale, view.extents.y * view.scale);
 
-        lastOutput->TargetRef->GetTexture().Bind(0);
+        lastOutput->TargetRef->GetGLTexture().Bind(0);
         VoxelRenderer::DrawScreenCover();
 
         if (!ScreenshotPath.empty()) {
-            SaveScreenshot(ScreenshotPath, lastOutput->TargetRef->GetTexture());
+            SaveScreenshot(ScreenshotPath, lastOutput->TargetRef->GetGLTexture());
             ScreenshotPath = "";
         }
 
@@ -327,7 +328,7 @@ namespace sp {
 
                 if (inputOutput) {
                     Assert(!!inputOutput->TargetRef, "post processing input is destroyed");
-                    inputOutput->TargetRef->GetTexture().Bind(id);
+                    inputOutput->TargetRef->GetGLTexture().Bind(id);
                 }
             }
 
@@ -348,7 +349,7 @@ namespace sp {
 
     std::shared_ptr<GLRenderTarget> ProcessPassOutput::AllocateTarget(const PostProcessingContext *context) {
         if (TargetRef == nullptr) {
-            TargetRef = context->renderer->RTPool->Get(TargetDesc);
+            TargetRef = context->renderer->context.GetRenderTarget(TargetDesc);
             // Debugf("Reserve target %d", TargetRef->GetID());
         }
         return TargetRef;

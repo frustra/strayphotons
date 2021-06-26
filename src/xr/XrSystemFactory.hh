@@ -6,11 +6,13 @@
 #include <memory>
 
 namespace sp {
+    class GraphicsContext;
+
     namespace xr {
 
         class XrSystemFactory {
         public:
-            XrSystemFactory();
+            XrSystemFactory(GraphicsContext *context);
 
             // This function picks the "best" XR system based on the current execution environment.
             // In many cases, this returns a NULL pointer

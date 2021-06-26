@@ -22,7 +22,7 @@ namespace sp {
     static CVar<bool> CVarPropJumping("x.PropJumping", false, "Disable player collision with held object");
     // clang-format on
 
-    PhysxManager::PhysxManager(ecs::EntityManager &ecs) : ecs(ecs) {
+    PhysxManager::PhysxManager(ecs::ECS &ecs) : ecs(ecs) {
         Logf("PhysX %d.%d.%d starting up",
              PX_PHYSICS_VERSION_MAJOR,
              PX_PHYSICS_VERSION_MINOR,
@@ -49,7 +49,7 @@ namespace sp {
         CreatePhysxScene();
 
         {
-            auto lock = ecs.tecs.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs.StartTransaction<ecs::AddRemove>();
             physicsRemoval = lock.Watch<ecs::Removed<ecs::Physics>>();
             humanControllerRemoval = lock.Watch<ecs::Removed<ecs::HumanController>>();
         }
@@ -109,53 +109,58 @@ namespace sp {
 
         if (!hadResults) Lock();
 
-        for (auto constraint = constraints.begin(); constraint != constraints.end();) {
-            auto transform = constraint->parent.Get<ecs::Transform>();
-            auto pose = constraint->child->getGlobalPose();
-            auto rotate = transform->GetRotate();
-            auto invRotate = glm::inverse(rotate);
+        {
+            auto lock = ecs.StartTransaction<ecs::Read<ecs::Transform>, ecs::Write<ecs::InteractController>>();
 
-            auto targetPos = transform->GetPosition() + rotate * PxVec3ToGlmVec3P(constraint->offset);
-            auto currentPos = pose.transform(constraint->child->getCMassLocalPose().transform(physx::PxVec3(0.0)));
-            auto deltaPos = GlmVec3ToPxVec3(targetPos) - currentPos;
+            for (auto constraint = constraints.begin(); constraint != constraints.end();) {
+                auto &transform = constraint->parent.Get<ecs::Transform>(lock);
+                auto pose = constraint->child->getGlobalPose();
+                auto rotate = transform.GetRotate();
+                auto invRotate = glm::inverse(rotate);
 
-            auto upAxis = GlmVec3ToPxVec3(invRotate * glm::vec3(0, 1, 0));
-            constraint->rotationOffset = PxQuat(constraint->rotation.y, upAxis) * constraint->rotationOffset;
-            constraint->rotationOffset = PxQuat(constraint->rotation.x, PxVec3(1, 0, 0)) * constraint->rotationOffset;
+                auto targetPos = transform.GetPosition() + rotate * PxVec3ToGlmVec3P(constraint->offset);
+                auto currentPos = pose.transform(constraint->child->getCMassLocalPose().transform(physx::PxVec3(0.0)));
+                auto deltaPos = GlmVec3ToPxVec3(targetPos) - currentPos;
 
-            auto targetRotate = rotate * PxQuatToGlmQuat(constraint->rotationOffset);
-            auto currentRotate = PxQuatToGlmQuat(pose.q);
-            auto deltaRotate = targetRotate * glm::inverse(currentRotate);
+                auto upAxis = GlmVec3ToPxVec3(invRotate * glm::vec3(0, 1, 0));
+                constraint->rotationOffset = PxQuat(constraint->rotation.y, upAxis) * constraint->rotationOffset;
+                constraint->rotationOffset = PxQuat(constraint->rotation.x, PxVec3(1, 0, 0)) *
+                                             constraint->rotationOffset;
 
-            if (glm::angle(deltaRotate) > M_PI_2) {
-                constraint->rotationOffset = GlmQuatToPxQuat(invRotate * currentRotate);
-            }
+                auto targetRotate = rotate * PxQuatToGlmQuat(constraint->rotationOffset);
+                auto currentRotate = PxQuatToGlmQuat(pose.q);
+                auto deltaRotate = targetRotate * glm::inverse(currentRotate);
 
-            if (deltaPos.magnitude() < 2.0) {
-                constraint->child->setAngularVelocity(
-                    GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate)).multiply(PxVec3(40.0)));
-                constraint->rotation = PxVec3(0); // Don't continue to rotate
-
-                auto clampRatio = std::min(0.5f, deltaPos.magnitude()) / (deltaPos.magnitude() + 0.00001);
-                constraint->child->setLinearVelocity(deltaPos.multiply(PxVec3(20.0 * clampRatio)));
-                constraint++;
-            } else {
-                // Remove the constraint if the distance is too far
-                if (constraint->parent.Has<ecs::InteractController>()) {
-                    constraint->parent.Get<ecs::InteractController>()->target = nullptr;
+                if (glm::angle(deltaRotate) > M_PI_2) {
+                    constraint->rotationOffset = GlmQuatToPxQuat(invRotate * currentRotate);
                 }
 
-                physx::PxU32 nShapes = constraint->child->getNbShapes();
-                vector<physx::PxShape *> shapes(nShapes);
-                constraint->child->getShapes(shapes.data(), nShapes);
+                if (deltaPos.magnitude() < 2.0) {
+                    constraint->child->setAngularVelocity(
+                        GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate)).multiply(PxVec3(40.0)));
+                    constraint->rotation = PxVec3(0); // Don't continue to rotate
 
-                PxFilterData data;
-                data.word0 = PhysxCollisionGroup::WORLD;
-                for (uint32 i = 0; i < nShapes; ++i) {
-                    shapes[i]->setQueryFilterData(data);
-                    shapes[i]->setSimulationFilterData(data);
+                    auto clampRatio = std::min(0.5f, deltaPos.magnitude()) / (deltaPos.magnitude() + 0.00001);
+                    constraint->child->setLinearVelocity(deltaPos.multiply(PxVec3(20.0 * clampRatio)));
+                    constraint++;
+                } else {
+                    // Remove the constraint if the distance is too far
+                    if (constraint->parent.Has<ecs::InteractController>(lock)) {
+                        constraint->parent.Get<ecs::InteractController>(lock).target = nullptr;
+                    }
+
+                    physx::PxU32 nShapes = constraint->child->getNbShapes();
+                    vector<physx::PxShape *> shapes(nShapes);
+                    constraint->child->getShapes(shapes.data(), nShapes);
+
+                    PxFilterData data;
+                    data.word0 = PhysxCollisionGroup::WORLD;
+                    for (uint32 i = 0; i < nShapes; ++i) {
+                        shapes[i]->setQueryFilterData(data);
+                        shapes[i]->setSimulationFilterData(data);
+                    }
+                    constraint = constraints.erase(constraint);
                 }
-                constraint = constraints.erase(constraint);
             }
         }
 
@@ -190,7 +195,7 @@ namespace sp {
 
     bool PhysxManager::LogicFrame() {
         {
-            auto lock = ecs.tecs.StartTransaction<>();
+            auto lock = ecs.StartTransaction<>();
             ecs::Removed<ecs::Physics> removedPhysics;
             while (physicsRemoval.Poll(lock, removedPhysics)) {
                 if (removedPhysics.component.actor) {
@@ -208,7 +213,7 @@ namespace sp {
             // Sync transforms to physx
             Lock();
 
-            auto lock = ecs.tecs.StartTransaction<ecs::Write<ecs::Physics, ecs::Transform>>();
+            auto lock = ecs.StartTransaction<ecs::Write<ecs::Physics, ecs::Transform>>();
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
 
@@ -252,7 +257,7 @@ namespace sp {
             // Sync transforms from physx
             ReadLock();
 
-            auto lock = ecs.tecs.StartTransaction<ecs::Read<ecs::Physics>, ecs::Write<ecs::Transform>>();
+            auto lock = ecs.StartTransaction<ecs::Read<ecs::Physics>, ecs::Write<ecs::Transform>>();
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
 
@@ -617,7 +622,8 @@ namespace sp {
         return height;
     }
 
-    bool PhysxManager::RaycastQuery(ecs::Entity &entity,
+    bool PhysxManager::RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
+                                    Tecs::Entity entity,
                                     const PxVec3 origin,
                                     const PxVec3 dir,
                                     const float distance,
@@ -626,9 +632,9 @@ namespace sp {
         scene->lockRead();
 
         physx::PxRigidDynamic *controllerActor = nullptr;
-        if (entity.Has<ecs::HumanController>()) {
-            auto controller = entity.Get<ecs::HumanController>();
-            controllerActor = controller->pxController->getActor();
+        if (entity.Has<ecs::HumanController>(lock)) {
+            auto &controller = entity.Get<ecs::HumanController>(lock);
+            controllerActor = controller.pxController->getActor();
             scene->removeActor(*controllerActor);
         }
 
@@ -677,7 +683,8 @@ namespace sp {
         return overlapFound;
     }
 
-    void PhysxManager::CreateConstraint(ecs::Entity parent,
+    void PhysxManager::CreateConstraint(ecs::Lock<> lock,
+                                        Tecs::Entity parent,
                                         PxRigidDynamic *child,
                                         PxVec3 offset,
                                         PxQuat rotationOffset) {
@@ -700,11 +707,11 @@ namespace sp {
         constraint.rotationOffset = rotationOffset;
         constraint.rotation = PxVec3(0);
 
-        if (parent.Has<ecs::Transform>()) { constraints.emplace_back(constraint); }
+        if (parent.Has<ecs::Transform>(lock)) { constraints.emplace_back(constraint); }
         Unlock();
     }
 
-    void PhysxManager::RotateConstraint(ecs::Entity parent, PxRigidDynamic *child, PxVec3 rotation) {
+    void PhysxManager::RotateConstraint(Tecs::Entity parent, PxRigidDynamic *child, PxVec3 rotation) {
         Lock();
         for (auto it = constraints.begin(); it != constraints.end();) {
             if (it->parent == parent && it->child == child) {
@@ -715,7 +722,7 @@ namespace sp {
         Unlock();
     }
 
-    void PhysxManager::RemoveConstraint(ecs::Entity parent, physx::PxRigidDynamic *child) {
+    void PhysxManager::RemoveConstraint(Tecs::Entity parent, physx::PxRigidDynamic *child) {
         Lock();
         physx::PxU32 nShapes = child->getNbShapes();
         vector<physx::PxShape *> shapes(nShapes);

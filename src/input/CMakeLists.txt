@@ -5,12 +5,11 @@ target_include_directories(${PROJECT_INPUT_CORE_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(${PROJECT_INPUT_CORE_LIB} PRIVATE
+target_link_libraries(${PROJECT_INPUT_CORE_LIB} PUBLIC
     ${PROJECT_CORE_LIB}
 )
 
-target_link_libraries(${PROJECT_INPUT_GLFW_LIB} PRIVATE
-    ${PROJECT_CORE_LIB}
+target_link_libraries(${PROJECT_INPUT_GLFW_LIB} PUBLIC
     ${PROJECT_INPUT_CORE_LIB}
     ${PROJECT_GRAPHICS_CORE_LIB}
     glfw

@@ -4,6 +4,7 @@
 #include "ecs/components/View.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/opengl/Graphics.hh"
+#include "graphics/opengl/RenderTargetPool.hh"
 
 #include <string>
 
@@ -37,12 +38,30 @@ namespace sp {
             return window;
         }
 
-        shared_ptr<GpuTexture> LoadTexture(shared_ptr<Image> image, bool genMipmap = true) override;
+        template<typename... Args>
+        std::shared_ptr<GLRenderTarget> GetRenderTarget(Args... args) {
+            return rtPool.Get(RenderTargetDesc(args...));
+        }
+
+        template<>
+        std::shared_ptr<GLRenderTarget> GetRenderTarget<const RenderTargetDesc &>(const RenderTargetDesc &desc) {
+            return rtPool.Get(desc);
+        }
+
+        GLuint GetFramebuffer(uint32 numAttachments,
+                              GLRenderTarget **attachments,
+                              GLRenderTarget *depthStencilAttachment) {
+            return rtPool.GetFramebuffer(numAttachments, attachments, depthStencilAttachment);
+        }
+
+        std::shared_ptr<GpuTexture> LoadTexture(shared_ptr<Image> image, bool genMipmap = true) override;
 
     private:
         void SetTitle(string title);
         void CreateGlfwWindow(glm::ivec2 initialSize = {640, 480});
         void ResizeWindow(ecs::View &frameBufferView, double scale, int fullscreen);
+
+        RenderTargetPool rtPool;
 
         glm::ivec2 prevWindowSize, prevWindowPos;
         int prevFullscreen = 0;

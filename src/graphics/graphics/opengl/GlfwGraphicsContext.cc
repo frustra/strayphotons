@@ -64,6 +64,8 @@ namespace sp {
 
         glfwMakeContextCurrent(window);
 
+        glfwSwapInterval(0);
+
         glewExperimental = GL_TRUE;
         Assert(glewInit() == GLEW_OK, "glewInit failed");
         glGetError();
@@ -175,6 +177,8 @@ namespace sp {
     }
 
     void GlfwGraphicsContext::EndFrame() {
+        rtPool.TickFrame();
+
         double frameEnd = glfwGetTime();
         fpsTimer += frameEnd - lastFrameEnd;
         frameCounter++;

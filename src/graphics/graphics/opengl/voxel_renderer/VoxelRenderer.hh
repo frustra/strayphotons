@@ -89,7 +89,6 @@ namespace sp {
         static void DrawScreenCover(bool flipped = false);
 
         ShaderManager *ShaderControl = nullptr;
-        RenderTargetPool *RTPool = nullptr;
 
         float Exposure = 1.0f;
 

@@ -32,7 +32,6 @@ namespace sp {
 
     VoxelRenderer::~VoxelRenderer() {
         if (ShaderControl) delete ShaderControl;
-        if (RTPool) delete RTPool;
     }
 
     const int MAX_MIRROR_RECURSION = 10;
@@ -67,11 +66,9 @@ namespace sp {
         Assert(GLEW_ARB_compute_shader, "ARB_compute_shader required");
         Assert(GLEW_ARB_direct_state_access, "ARB_direct_state_access required");
         Assert(GLEW_ARB_multi_bind, "ARB_multi_bind required");
-        Assert(!RTPool, "Renderer already prepared");
+        Assert(!ShaderControl, "Renderer already prepared");
 
         // glEnable(GL_FRAMEBUFFER_SRGB);
-
-        RTPool = new RenderTargetPool();
 
         ShaderControl = new ShaderManager(shaders);
         ShaderManager::SetDefine("MAX_LIGHTS", std::to_string(MAX_LIGHTS));
@@ -106,12 +103,14 @@ namespace sp {
             RenderTargetDesc menuDesc(PF_RGBA8, view.extents);
             menuDesc.levels = GLTexture::FullyMipmap;
             menuDesc.anisotropy = 4.0;
-            if (!menuGuiTarget || menuGuiTarget->GetDesc() != menuDesc) { menuGuiTarget = RTPool->Get(menuDesc); }
+            if (!menuGuiTarget || menuGuiTarget->GetDesc() != menuDesc) {
+                menuGuiTarget = context.GetRenderTarget(menuDesc);
+            }
 
             SetRenderTarget(menuGuiTarget.get(), nullptr);
             PrepareForView(view);
             menuGuiRenderer->Render(view);
-            menuGuiTarget->GetTexture().GenMipmap();
+            menuGuiTarget->GetGLTexture().GenMipmap();
         } else {
             menuGuiRenderer->Render(view);
         }
@@ -152,7 +151,7 @@ namespace sp {
         }
 
         RenderTargetDesc shadowDesc(PF_R32F, glm::max(glm::ivec2(1), renderTargetSize));
-        if (!shadowMap || shadowMap->GetDesc() != shadowDesc) { shadowMap = RTPool->Get(shadowDesc); }
+        if (!shadowMap || shadowMap->GetDesc() != shadowDesc) { shadowMap = context.GetRenderTarget(shadowDesc); }
 
         if (!mirrorVisData) {
             // int count[4];
@@ -178,7 +177,7 @@ namespace sp {
         if (lightCount == 0) return;
 
         if (CVarEnableShadows.Get()) {
-            auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH16, renderTargetSize, true));
+            auto depthTarget = context.GetRenderTarget(PF_DEPTH16, renderTargetSize, true);
             SetRenderTarget(shadowMap.get(), depthTarget.get());
 
             glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
@@ -236,7 +235,7 @@ namespace sp {
         RenderTargetDesc mirrorMapDesc(PF_R32F, mirrorMapResolution);
         mirrorMapDesc.textureArray = true;
         if (!mirrorShadowMap || mirrorShadowMap->GetDesc() != mirrorMapDesc) {
-            mirrorShadowMap = RTPool->Get(mirrorMapDesc);
+            mirrorShadowMap = context.GetRenderTarget(mirrorMapDesc);
         }
 
         for (int bounce = 0; bounce < recursion; bounce++) {
@@ -258,7 +257,7 @@ namespace sp {
 
                 RenderTargetDesc depthDesc(PF_DEPTH16, mirrorMapResolution);
                 depthDesc.textureArray = true;
-                auto depthTarget = RTPool->Get(depthDesc);
+                auto depthTarget = context.GetRenderTarget(depthDesc);
                 SetRenderTarget(mirrorShadowMap.get(), depthTarget.get());
 
                 ecs::View basicView;
@@ -275,8 +274,8 @@ namespace sp {
                 mirrorMapFS->SetLightData(lightDataCount, &lightData[0]);
                 mirrorMapFS->SetMirrorId(-1);
 
-                shadowMap->GetTexture().Bind(4);
-                mirrorShadowMap->GetTexture().Bind(5);
+                shadowMap->GetGLTexture().Bind(4);
+                mirrorShadowMap->GetGLTexture().Bind(5);
 
                 {
                     auto lock = ecs.tecs.StartTransaction<ecs::ReadAll>();
@@ -320,10 +319,10 @@ namespace sp {
         shader->outputTex.BindImage(0, GL_WRITE_ONLY);
 
         mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
-        voxelData.radiance->GetTexture().Bind(0);
-        voxelData.radianceMips->GetTexture().Bind(1);
-        shadowMap->GetTexture().Bind(2);
-        if (mirrorShadowMap) mirrorShadowMap->GetTexture().Bind(3);
+        voxelData.radiance->GetGLTexture().Bind(0);
+        voxelData.radianceMips->GetGLTexture().Bind(1);
+        shadowMap->GetGLTexture().Bind(2);
+        if (mirrorShadowMap) mirrorShadowMap->GetGLTexture().Bind(3);
 
         ShaderControl->BindPipeline<LightSensorUpdateCS>();
         glDispatchCompute(1, 1, 1);
@@ -353,10 +352,10 @@ namespace sp {
         mirrorSceneData.Clear(PF_R32UI, 0);
 
         EngineRenderTargets targets;
-        targets.gBuffer0 = RTPool->Get({PF_RGBA8, view.extents});
-        targets.gBuffer1 = RTPool->Get({PF_RGBA16F, view.extents});
-        targets.gBuffer2 = RTPool->Get({PF_RGBA16F, view.extents});
-        targets.gBuffer3 = RTPool->Get({PF_RGBA8, view.extents});
+        targets.gBuffer0 = context.GetRenderTarget(PF_RGBA8, view.extents);
+        targets.gBuffer1 = context.GetRenderTarget(PF_RGBA16F, view.extents);
+        targets.gBuffer2 = context.GetRenderTarget(PF_RGBA16F, view.extents);
+        targets.gBuffer3 = context.GetRenderTarget(PF_RGBA8, view.extents);
         targets.shadowMap = shadowMap;
         targets.mirrorShadowMap = mirrorShadowMap;
         targets.voxelData = voxelData;
@@ -369,8 +368,8 @@ namespace sp {
         {
             RenderPhase phase("PlayerView", timer);
 
-            auto mirrorIndexStencil0 = RTPool->Get({PF_R32UI, view.extents});
-            auto mirrorIndexStencil1 = RTPool->Get({PF_R32UI, view.extents});
+            auto mirrorIndexStencil0 = context.GetRenderTarget(PF_R32UI, view.extents);
+            auto mirrorIndexStencil1 = context.GetRenderTarget(PF_R32UI, view.extents);
 
             const int attachmentCount = 5;
 
@@ -382,11 +381,11 @@ namespace sp {
                 mirrorIndexStencil0.get(),
             };
 
-            auto depthTarget = RTPool->Get(RenderTargetDesc(PF_DEPTH24_STENCIL8, view.extents, true));
+            auto depthTarget = context.GetRenderTarget(PF_DEPTH24_STENCIL8, view.extents, true);
 
-            GLuint fb0 = RTPool->GetFramebuffer(attachmentCount, &attachments[0], depthTarget.get());
+            GLuint fb0 = context.GetFramebuffer(attachmentCount, &attachments[0], depthTarget.get());
             attachments[attachmentCount - 1] = mirrorIndexStencil1.get();
-            GLuint fb1 = RTPool->GetFramebuffer(attachmentCount, &attachments[0], depthTarget.get());
+            GLuint fb1 = context.GetFramebuffer(attachmentCount, &attachments[0], depthTarget.get());
 
             glEnable(GL_CULL_FACE);
             glEnable(GL_DEPTH_TEST);
@@ -436,10 +435,10 @@ namespace sp {
                     glStencilMask(0);
 
                     if (bounce % 2 == 0) {
-                        mirrorIndexStencil1->GetTexture().Bind(0);
+                        mirrorIndexStencil1->GetGLTexture().Bind(0);
                         SetRenderTarget(mirrorIndexStencil0.get(), nullptr);
                     } else {
-                        mirrorIndexStencil0->GetTexture().Bind(0);
+                        mirrorIndexStencil0->GetGLTexture().Bind(0);
                         SetRenderTarget(mirrorIndexStencil1.get(), nullptr);
                     }
 
@@ -449,11 +448,11 @@ namespace sp {
 
                 if (bounce % 2 == 0) {
                     glBindFramebuffer(GL_FRAMEBUFFER, fb0);
-                    mirrorIndexStencil1->GetTexture().Bind(4);
+                    mirrorIndexStencil1->GetGLTexture().Bind(4);
                     targets.mirrorIndexStencil = mirrorIndexStencil0;
                 } else {
                     glBindFramebuffer(GL_FRAMEBUFFER, fb1);
-                    mirrorIndexStencil0->GetTexture().Bind(4);
+                    mirrorIndexStencil0->GetGLTexture().Bind(4);
                     targets.mirrorIndexStencil = mirrorIndexStencil1;
                 }
 
@@ -779,8 +778,6 @@ namespace sp {
     }
 
     void VoxelRenderer::EndFrame() {
-        RTPool->TickFrame();
-
         auto lock = ecs.tecs.StartTransaction<>();
         ecs::Removed<ecs::Renderable> removedRenderable;
         while (renderableRemoval.Poll(lock, removedRenderable)) {
@@ -792,7 +789,7 @@ namespace sp {
     }
 
     void VoxelRenderer::SetRenderTargets(size_t attachmentCount, GLRenderTarget **attachments, GLRenderTarget *depth) {
-        GLuint fb = RTPool->GetFramebuffer(attachmentCount, attachments, depth);
+        GLuint fb = context.GetFramebuffer(attachmentCount, attachments, depth);
         glBindFramebuffer(GL_FRAMEBUFFER, fb);
     }
 

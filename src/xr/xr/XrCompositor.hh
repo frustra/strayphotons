@@ -1,11 +1,13 @@
 #pragma once
 
-#include "ecs/components/View.hh"
-#include "graphics/RenderTarget.hh"
+#include "ecs/Ecs.hh"
 
-#include <ecs/Ecs.hh>
+#include <glm/glm.hpp>
 
 namespace sp {
+    class GpuTexture;
+    class RenderTarget;
+
     namespace xr {
 
         // This class encapsulates all functions required to render a frame to the HMD.
@@ -33,15 +35,15 @@ namespace sp {
             // compositor would like this View rendered to.
             // This can be statically allocated, or part of a swapchain on some systems.
             // This is guaranteed to only be called once per frame, per view.
-            virtual RenderTarget::Ref GetRenderTarget(size_t view) = 0;
+            virtual RenderTarget *GetRenderTarget(size_t view) = 0;
 
             // Updates a provided ecs::View entity with the properties required to render from the perspective of
             // a particular XR view.
             virtual void PopulateView(size_t view, ecs::Handle<ecs::View> &ecsView) = 0;
 
-            // Submit a RenderTarget to the compositing system to be displayed to the user.
+            // Submit a GpuTexture to the compositing system to be displayed to the user.
             // TODO: in theory, the XrCompositor should be able to keep track of which RT
-            virtual void SubmitView(size_t view, RenderTarget::Ref rt) = 0;
+            virtual void SubmitView(size_t view, GpuTexture *tex) = 0;
 
             // This function is used to synchronize the engine framerate with the display timing
             // for the XR device. This must be called EXACTLY ONCE per frame. This function will block
@@ -63,11 +65,6 @@ namespace sp {
             virtual void EndFrame() = 0;
 
         protected:
-            // Only XrCompositor is a friend of RenderTarget, so XrCompositor must provide standardized functions for
-            // manipulating the texture inside the RenderTarget on behalf of the derived class. You could override
-            // this.. but it wouldn't really get you anywhere.
-            void CreateRenderTargetTexture(RenderTarget::Ref renderTarget, const RenderTargetDesc desc);
-
             // TODO: for systems where the glTexture comes from the XR runtime itself, instead
             // of just allowing it to be generated automatically.
             // void AssignRenderTargetTexture(RenderTarget::Ref renderTarget, const RenderTargetDesc, GLuint texHandle);

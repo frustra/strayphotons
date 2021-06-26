@@ -18,9 +18,14 @@
 
 namespace sp {
     Game::Game(cxxopts::ParseResult &options, Script *startupScript)
-        : options(options), startupScript(startupScript), graphics(this), logic(this), physics(this->entityManager),
-          animation(entityManager.tecs), humanControlSystem(&this->entityManager, &this->input, &this->physics)
-    /*, xr(this)*/ {}
+        : options(options), startupScript(startupScript), graphics(this), logic(this), physics(entityManager.tecs),
+          animation(entityManager.tecs), humanControlSystem(entityManager.tecs, &this->input, &this->physics)
+#ifdef SP_XR_SUPPORT
+          ,
+          xr(this)
+#endif
+    {
+    }
 
     Game::~Game() {}
 
@@ -74,7 +79,9 @@ namespace sp {
         dt /= chrono_clock::duration(std::chrono::seconds(1)).count();
 
         if (!logic.Frame(dt)) return false;
-        // if (!xr.Frame(dt)) return false;
+#ifdef SP_XR_SUPPORT
+        if (!xr.Frame(dt)) return false;
+#endif
         if (!graphics.Frame()) return false;
         if (!physics.LogicFrame()) return false;
         if (!animation.Frame(dt)) return false;

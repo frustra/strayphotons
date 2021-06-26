@@ -1,22 +1,36 @@
-add_subdirectory(openvr)
+add_library(${PROJECT_XR_CORE_LIB} STATIC)
+add_library(${PROJECT_XR_OPENVR_LIB} STATIC)
 
-target_sources(${PROJECT_EXE} PRIVATE
-    XrCompositor.cc
-    XrManager.cc
-    XrSystemFactory.cc
-    XrAction.cc
+target_include_directories(${PROJECT_XR_CORE_LIB} PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_sources(${PROJECT_HEADLESS_EXE} PRIVATE
-    XrCompositor.cc
+target_link_libraries(${PROJECT_XR_CORE_LIB} PUBLIC
+    ${PROJECT_CORE_LIB}
+)
+
+target_link_libraries(${PROJECT_XR_OPENVR_LIB} PUBLIC
+    ${PROJECT_XR_CORE_LIB}
+    ${PROJECT_INPUT_CORE_LIB}
+    ${PROJECT_GRAPHICS_OPENGL_LIB}
+    openvr
+)
+
+target_compile_definitions(${PROJECT_XR_CORE_LIB} PUBLIC
+    SP_XR_SUPPORT
+)
+target_compile_definitions(${PROJECT_XR_OPENVR_LIB} PUBLIC
+    SP_XR_SUPPORT_OPENVR
+)
+
+add_subdirectory(xr)
+
+target_sources(${PROJECT_EXE} PRIVATE
     XrManager.cc
     XrSystemFactory.cc
-    XrAction.cc
 )
 
 target_sources(${PROJECT_TEST_EXE} PRIVATE
-    XrCompositor.cc
     XrManager.cc
     XrSystemFactory.cc
-    XrAction.cc
 )

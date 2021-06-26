@@ -7,6 +7,7 @@
 #include "graphics/opengl/GLBuffer.hh"
 #include "graphics/opengl/GPUTypes.hh"
 #include "graphics/opengl/GenericShaders.hh"
+#include "graphics/opengl/GlfwGraphicsContext.hh"
 #include "graphics/opengl/ShaderManager.hh"
 #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
 
@@ -60,7 +61,7 @@ namespace sp {
         LumiHistogramCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput) {}
 
         std::shared_ptr<GLRenderTarget> GetTarget(VoxelRenderer *r) {
-            if (!target) { target = r->RTPool->Get(RenderTargetDesc(PF_R32UI, {Bins, 1})); }
+            if (!target) { target = r->context.GetRenderTarget(PF_R32UI, glm::ivec2(Bins, 1)); }
             return target;
         }
 
@@ -111,7 +112,7 @@ namespace sp {
             if (!readBackBuf) { readBackBuf.Create().Data(sizeof(uint32) * Bins, nullptr, GL_STREAM_READ); }
 
             readBackBuf.Bind(GL_PIXEL_PACK_BUFFER);
-            glGetTextureImage(target->GetTexture().handle,
+            glGetTextureImage(target->GetGLTexture().handle,
                               0,
                               GL_RED_INTEGER,
                               GL_UNSIGNED_INT,
@@ -147,7 +148,7 @@ namespace sp {
         glClear(GL_COLOR_BUFFER_BIT);
 
         r->ShaderControl->BindPipeline<LumiHistogramCS>();
-        histTex->GetTexture().BindImage(0, GL_READ_WRITE);
+        histTex->GetGLTexture().BindImage(0, GL_READ_WRITE);
 
         auto extents = GetInput(0)->GetOutput()->TargetDesc.extent / downsample;
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

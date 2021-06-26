@@ -1,7 +1,8 @@
 #include "xr/openvr/OpenVrTrackingCompositor.hh"
 
 #include "ecs/components/View.hh"
-#include "graphics/RenderTarget.hh"
+#include "graphics/core/RenderTarget.hh"
+#include "graphics/opengl/GlfwGraphicsContext.hh"
 #include "xr/openvr/OpenVrModel.hh"
 #include "xr/openvr/OpenVrSystem.hh"
 
@@ -16,7 +17,7 @@
 using namespace sp;
 using namespace xr;
 
-OpenVrTrackingCompositor::OpenVrTrackingCompositor(vr::IVRSystem *vrs) : vrSystem(vrs) {
+OpenVrTrackingCompositor::OpenVrTrackingCompositor(GlfwGraphicsContext &context, vr::IVRSystem *vrs) : vrSystem(vrs) {
     if (vrs == nullptr) { throw std::runtime_error("Cannot initialize OpenVrTrackingCompositor with NULL IVRSystem"); }
 
     uint32_t vrWidth, vrHeight;
@@ -24,16 +25,8 @@ OpenVrTrackingCompositor::OpenVrTrackingCompositor(vr::IVRSystem *vrs) : vrSyste
 
     Logf("OpenVr Render Target Size: %d x %d", vrWidth, vrHeight);
 
-    // Reserve enough space in the vector for all our views
-    viewRenderTargets.resize(GetNumViews());
-
     for (size_t i = 0; i < GetNumViews(); i++) {
-        const RenderTargetDesc desc = RenderTargetDesc(PF_SRGB8_A8, glm::ivec2(vrWidth, vrHeight));
-
-        // Create a render target for this XR View
-        viewRenderTargets[i] = std::make_shared<RenderTarget>(RenderTarget(desc));
-
-        CreateRenderTargetTexture(viewRenderTargets[i], desc);
+        viewRenderTargets.emplace_back(std::move(context.GetRenderTarget(PF_SRGB8_A8, glm::ivec2(vrWidth, vrHeight))));
     }
 }
 
@@ -82,8 +75,8 @@ bool OpenVrTrackingCompositor::GetPredictedObjectPose(const TrackedObjectHandle 
     return true;
 }
 
-RenderTarget::Ref OpenVrTrackingCompositor::GetRenderTarget(size_t view) {
-    return viewRenderTargets[view];
+RenderTarget *OpenVrTrackingCompositor::GetRenderTarget(size_t view) {
+    return viewRenderTargets[view].get();
 }
 
 void OpenVrTrackingCompositor::PopulateView(size_t view, ecs::Handle<ecs::View> &ecsView) {
@@ -96,12 +89,15 @@ void OpenVrTrackingCompositor::PopulateView(size_t view, ecs::Handle<ecs::View> 
     ecsView->viewType = ecs::View::VIEW_TYPE_XR;
 }
 
-void OpenVrTrackingCompositor::SubmitView(size_t view, RenderTarget::Ref rt) {
+void OpenVrTrackingCompositor::SubmitView(size_t view, GpuTexture *tex) {
     // TODO: helper function that verifies "eye" is a sane value and returns vr::Eye_XXXX based on the value.
     vr::EVREye eyeType = (view == 0) ? vr::Eye_Left : vr::Eye_Right;
 
+    GLTexture *glTex = dynamic_cast<GLTexture *>(tex);
+    Assert(glTex, "OpenVR only supports GL textures");
+
     // TODO: use XrCompositor::Submit(), don't do this in the render function
-    vr::Texture_t vrTexture = {(void *)(size_t)rt->GetTexture().handle, vr::TextureType_OpenGL, vr::ColorSpace_Linear};
+    vr::Texture_t vrTexture = {(void *)(size_t)glTex->handle, vr::TextureType_OpenGL, vr::ColorSpace_Linear};
     vr::VRCompositor()->Submit(eyeType, &vrTexture);
 }
 

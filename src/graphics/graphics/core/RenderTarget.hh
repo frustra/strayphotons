@@ -3,5 +3,10 @@
 #include <memory>
 
 namespace sp {
-    class RenderTarget {};
+    class GpuTexture;
+
+    class RenderTarget {
+    public:
+        virtual GpuTexture *GetTexture() = 0;
+    };
 } // namespace sp

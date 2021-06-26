@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/CVar.hh"
+#include "graphics/core/RenderTarget.hh"
 
 #include <glm/glm.hpp>
 #include <memory>

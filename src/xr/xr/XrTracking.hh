@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Tecs_entity.hh"
 #include "xr/XrModel.hh"
 
 #include <glm/glm.hpp> // For glm::mat4

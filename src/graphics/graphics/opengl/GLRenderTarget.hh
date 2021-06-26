@@ -11,6 +11,7 @@
 namespace sp {
     class GLRenderTarget;
     class RenderTargetPool;
+    class GlfwGraphicsContext;
 
     namespace xr {
         class XrCompositor;
@@ -65,7 +66,7 @@ namespace sp {
             return *this;
         }
 
-        void Prepare(RenderTargetPool *rtPool,
+        void Prepare(GlfwGraphicsContext &context,
                      std::shared_ptr<GLRenderTarget> &target,
                      bool clear = false,
                      const void *data = nullptr);
@@ -97,7 +98,12 @@ namespace sp {
         GLRenderTarget(RenderTargetDesc desc);
         ~GLRenderTarget();
 
-        GLTexture &GetTexture() {
+        GpuTexture *GetTexture() override {
+            Assert(tex.handle, "target is a renderbuffer");
+            return &tex;
+        }
+
+        GLTexture &GetGLTexture() {
             Assert(tex.handle, "target is a renderbuffer");
             return tex;
         }

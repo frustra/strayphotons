@@ -95,7 +95,7 @@ namespace sp {
 
     class RenderTargetPool {
     public:
-        std::shared_ptr<GLRenderTarget> Get(const RenderTargetDesc desc);
+        std::shared_ptr<GLRenderTarget> Get(const RenderTargetDesc &desc);
         void TickFrame();
         ~RenderTargetPool();
 

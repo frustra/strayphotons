@@ -4,13 +4,13 @@
 #include "assets/Model.hh"
 #include "core/CVar.hh"
 #include "core/Console.hh"
-#include "core/Game.hh"
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
-#include "graphics/Buffer.hh"
-#include "graphics/VertexBuffer.hh"
+#include "game/Game.hh"
+#include "graphics/opengl/GLBuffer.hh"
 #include "graphics/opengl/GLModel.hh"
+#include "graphics/opengl/VertexBuffer.hh"
 #include "physx/PhysxUtils.hh"
 #include "xr/XrSystemFactory.hh"
 
@@ -31,7 +31,7 @@ namespace sp::xr {
 
         std::map<string, BasicMaterial> basicMaterials;
         std::map<string, VertexBuffer> vbos;
-        std::map<string, Buffer> ibos;
+        std::map<string, GLBuffer> ibos;
     };
 
     XrManager::XrManager(Game *game) : game(game) {
@@ -50,9 +50,7 @@ namespace sp::xr {
         if (xrSystem) {
             ecs::Entity vrOrigin = game->entityManager.EntityWith<ecs::Name>("vr-origin");
 
-            if (vrOrigin.Valid()) {
-                auto vrOriginTransform = vrOrigin.Get<ecs::Transform>();
-
+            if (vrOrigin) {
                 // TODO: support other action sets
                 gameActionSet->Sync();
 
@@ -69,16 +67,19 @@ namespace sp::xr {
                     ecs::Entity xrObject = UpdateXrActionEntity(controllerAction.first, active && CVarController.Get());
 
                     if (xrObject.Valid()) {
+                        ecs::Transform ctrl;
                         {
-                            auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Transform>>();
+                            auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Transform>>();
+
                             auto &vrOriginTransformTecs = vrOrigin.GetEntity().Get<ecs::Transform>(lock);
                             xrObjectPos = glm::transpose(
                                 xrObjectPos * glm::transpose(vrOriginTransformTecs.GetGlobalTransform(lock)));
-                        }
 
-                        auto ctrl = xrObject.Get<ecs::Transform>();
-                        ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
-                        ctrl->SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
+                            auto &ctrlTransform = xrObject.GetEntity().Get<ecs::Transform>(lock);
+                            ctrlTransform.SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
+                            ctrlTransform.SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
+                            ctrl = ctrlTransform;
+                        }
 
                         if (controllerAction.first == rightHandAction) {
                             // TODO: make this bound to the "dominant user hand", or pick the last hand the user tried
@@ -104,38 +105,55 @@ namespace sp::xr {
                         if (teleport) {
                             Logf("Teleport on subpath %s", controllerAction.second);
 
-                            auto origin = GlmVec3ToPxVec3(ctrl->GetPosition());
-                            auto dir = GlmVec3ToPxVec3(ctrl->GetForward());
+                            auto origin = GlmVec3ToPxVec3(ctrl.GetPosition());
+                            auto dir = GlmVec3ToPxVec3(ctrl.GetForward());
                             dir.normalizeSafe();
                             physx::PxReal maxDistance = 10.0f;
 
-                            physx::PxRaycastBuffer hit;
-                            bool status = game->physics.RaycastQuery(xrObject, origin, dir, maxDistance, hit);
+                            {
+                                auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::HumanController>,
+                                                                                      ecs::Write<ecs::Transform>>();
 
-                            if (status && hit.block.distance > 0.5) {
-                                auto headPos = glm::vec3(xrObjectPos * glm::vec4(0, 0, 0, 1)) -
-                                               vrOriginTransform->GetPosition();
-                                auto newPos = PxVec3ToGlmVec3P(origin + dir * std::max(0.0, hit.block.distance - 0.5)) -
-                                              headPos;
-                                vrOriginTransform->SetPosition(
-                                    glm::vec3(newPos.x, vrOriginTransform->GetPosition().y, newPos.z));
+                                physx::PxRaycastBuffer hit;
+                                bool status = game->physics.RaycastQuery(lock,
+                                                                         xrObject.GetEntity(),
+                                                                         origin,
+                                                                         dir,
+                                                                         maxDistance,
+                                                                         hit);
+
+                                if (status && hit.block.distance > 0.5) {
+
+                                    auto &vrOriginTransform = vrOrigin.GetEntity().Get<ecs::Transform>(lock);
+
+                                    auto headPos = glm::vec3(xrObjectPos * glm::vec4(0, 0, 0, 1)) -
+                                                   vrOriginTransform.GetPosition();
+                                    auto newPos = PxVec3ToGlmVec3P(origin +
+                                                                   dir * std::max(0.0, hit.block.distance - 0.5)) -
+                                                  headPos;
+                                    vrOriginTransform.SetPosition(
+                                        glm::vec3(newPos.x, vrOriginTransform.GetPosition().y, newPos.z));
+                                }
                             }
                         }
 
-                        auto interact = xrObject.Get<ecs::InteractController>();
                         bool grab = false;
                         bool let_go = false;
-
                         grabAction->GetRisingEdgeActionValue(controllerAction.second, grab);
                         grabAction->GetFallingEdgeActionValue(controllerAction.second, let_go);
 
                         if (grab) {
+                            auto lock = game->entityManager.tecs
+                                            .StartTransaction<ecs::Read<ecs::HumanController>,
+                                                              ecs::Write<ecs::Transform, ecs::InteractController>>();
+
                             Logf("grab on subpath %s", controllerAction.second);
-                            game->humanControlSystem.Interact(xrObject);
+                            game->humanControlSystem.Interact(lock, xrObject.GetEntity());
                         } else if (let_go) {
                             Logf("Let go on subpath %s", controllerAction.second);
+                            auto interact = xrObject.Get<ecs::InteractController>();
                             if (interact->target) {
-                                interact->manager->RemoveConstraint(xrObject, interact->target);
+                                interact->manager->RemoveConstraint(xrObject.GetEntity(), interact->target);
                                 interact->target = nullptr;
                             }
                         }
@@ -150,16 +168,15 @@ namespace sp::xr {
                         glm::mat4 xrObjectPos;
 
                         if (xrSystem->GetTracking()->GetPredictedObjectPose(trackedObjectHandle, xrObjectPos)) {
-                            {
-                                auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Transform>>();
-                                auto &vrOriginTransformTecs = vrOrigin.GetEntity().Get<ecs::Transform>(lock);
-                                xrObjectPos = glm::transpose(
-                                    xrObjectPos * glm::transpose(vrOriginTransformTecs.GetGlobalTransform(lock)));
-                            }
+                            auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Transform>>();
 
-                            auto ctrl = xrObject.Get<ecs::Transform>();
-                            ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
-                            ctrl->SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
+                            auto &vrOriginTransformTecs = vrOrigin.GetEntity().Get<ecs::Transform>(lock);
+                            xrObjectPos = glm::transpose(
+                                xrObjectPos * glm::transpose(vrOriginTransformTecs.GetGlobalTransform(lock)));
+
+                            auto &ctrl = xrObject.GetEntity().Get<ecs::Transform>(lock);
+                            ctrl.SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
+                            ctrl.SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
                         }
                     }
                 }
@@ -302,7 +319,7 @@ namespace sp::xr {
             // No xrSystem loaded but CVarConnectXR indicates we should try to load one.
             if (!xrSystem) {
                 // TODO: refactor this so that xrSystemFactory.GetBestXrSystem() returns a TypeTrait
-                xr::XrSystemFactory xrSystemFactory;
+                xr::XrSystemFactory xrSystemFactory(game->graphics.GetContext());
                 xrSystem = xrSystemFactory.GetBestXrSystem();
 
                 if (xrSystem) {
@@ -564,7 +581,7 @@ namespace sp::xr {
             VertexBuffer &vbo = model->vbos["beam"];
 
             model->ibos.try_emplace("beam");
-            Buffer &ibo = model->ibos["beam"];
+            GLBuffer &ibo = model->ibos["beam"];
 
             const vector<uint16_t> indexData = {0, 1, 2, 3, 4, 5, 2, 1, 0, 5, 4, 3};
 

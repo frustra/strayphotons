@@ -1,8 +1,8 @@
 #pragma once
 
-#include "graphics/Buffer.hh"
-#include "graphics/VertexBuffer.hh"
+#include "graphics/opengl/GLBuffer.hh"
 #include "graphics/opengl/GLTexture.hh"
+#include "graphics/opengl/VertexBuffer.hh"
 #include "xr/XrModel.hh"
 
 #include <openvr.h>
@@ -29,7 +29,7 @@ namespace sp {
 
             GLTexture baseColorTex, metallicRoughnessTex, heightTex;
             VertexBuffer vbo;
-            Buffer ibo;
+            GLBuffer ibo;
             Model::Primitive sourcePrim;
         };
 
