@@ -85,7 +85,7 @@ namespace sp {
         ortho.extents = glm::ivec2(VoxelGridSize * voxelData.info.superSampleScale);
         ortho.clearMode.reset();
 
-        auto renderTarget = context.GetRenderTarget(PF_R8, ortho.extents);
+        auto renderTarget = context.GetRenderTarget({PF_R8, ortho.extents});
         SetRenderTarget(renderTarget.get(), nullptr);
 
         GLVoxelInfo voxelInfo;

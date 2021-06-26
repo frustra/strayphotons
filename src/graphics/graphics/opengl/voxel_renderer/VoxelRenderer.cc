@@ -177,7 +177,7 @@ namespace sp {
         if (lightCount == 0) return;
 
         if (CVarEnableShadows.Get()) {
-            auto depthTarget = context.GetRenderTarget(PF_DEPTH16, renderTargetSize, true);
+            auto depthTarget = context.GetRenderTarget({PF_DEPTH16, renderTargetSize, true});
             SetRenderTarget(shadowMap.get(), depthTarget.get());
 
             glViewport(0, 0, renderTargetSize.x, renderTargetSize.y);
@@ -352,10 +352,10 @@ namespace sp {
         mirrorSceneData.Clear(PF_R32UI, 0);
 
         EngineRenderTargets targets;
-        targets.gBuffer0 = context.GetRenderTarget(PF_RGBA8, view.extents);
-        targets.gBuffer1 = context.GetRenderTarget(PF_RGBA16F, view.extents);
-        targets.gBuffer2 = context.GetRenderTarget(PF_RGBA16F, view.extents);
-        targets.gBuffer3 = context.GetRenderTarget(PF_RGBA8, view.extents);
+        targets.gBuffer0 = context.GetRenderTarget({PF_RGBA8, view.extents});
+        targets.gBuffer1 = context.GetRenderTarget({PF_RGBA16F, view.extents});
+        targets.gBuffer2 = context.GetRenderTarget({PF_RGBA16F, view.extents});
+        targets.gBuffer3 = context.GetRenderTarget({PF_RGBA8, view.extents});
         targets.shadowMap = shadowMap;
         targets.mirrorShadowMap = mirrorShadowMap;
         targets.voxelData = voxelData;
@@ -368,8 +368,8 @@ namespace sp {
         {
             RenderPhase phase("PlayerView", timer);
 
-            auto mirrorIndexStencil0 = context.GetRenderTarget(PF_R32UI, view.extents);
-            auto mirrorIndexStencil1 = context.GetRenderTarget(PF_R32UI, view.extents);
+            auto mirrorIndexStencil0 = context.GetRenderTarget({PF_R32UI, view.extents});
+            auto mirrorIndexStencil1 = context.GetRenderTarget({PF_R32UI, view.extents});
 
             const int attachmentCount = 5;
 
@@ -381,7 +381,7 @@ namespace sp {
                 mirrorIndexStencil0.get(),
             };
 
-            auto depthTarget = context.GetRenderTarget(PF_DEPTH24_STENCIL8, view.extents, true);
+            auto depthTarget = context.GetRenderTarget({PF_DEPTH24_STENCIL8, view.extents, true});
 
             GLuint fb0 = context.GetFramebuffer(attachmentCount, &attachments[0], depthTarget.get());
             attachments[attachmentCount - 1] = mirrorIndexStencil1.get();

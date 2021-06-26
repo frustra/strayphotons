@@ -38,13 +38,7 @@ namespace sp {
             return window;
         }
 
-        template<typename... Args>
-        std::shared_ptr<GLRenderTarget> GetRenderTarget(Args... args) {
-            return rtPool.Get(RenderTargetDesc(args...));
-        }
-
-        template<>
-        std::shared_ptr<GLRenderTarget> GetRenderTarget<const RenderTargetDesc &>(const RenderTargetDesc &desc) {
+        std::shared_ptr<GLRenderTarget> GetRenderTarget(const RenderTargetDesc &desc) {
             return rtPool.Get(desc);
         }
 

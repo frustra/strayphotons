@@ -61,7 +61,7 @@ namespace sp {
         LumiHistogramCS(shared_ptr<ShaderCompileOutput> compileOutput) : Shader(compileOutput) {}
 
         std::shared_ptr<GLRenderTarget> GetTarget(VoxelRenderer *r) {
-            if (!target) { target = r->context.GetRenderTarget(PF_R32UI, glm::ivec2(Bins, 1)); }
+            if (!target) { target = r->context.GetRenderTarget({PF_R32UI, glm::ivec2(Bins, 1)}); }
             return target;
         }
 
