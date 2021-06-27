@@ -109,7 +109,7 @@ if (WIN32)
                     ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_physx_target}-uptodate
             )
 
-            add_dependencies(${PROJECT_LIB} ${_physx_target}-dll-copy)
+            add_dependencies(${PROJECT_COMMON_EXE} ${_physx_target}-dll-copy)
 
         endif()
     endforeach()

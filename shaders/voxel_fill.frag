@@ -39,6 +39,7 @@ layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inTexCoord;
 layout (location = 2) in flat int inDirection;
 
+// TODO: This uniform gets optimized out if r.Lighting = 0, causing the SetUniform to fail.
 uniform int lightCount = 0;
 
 layout(binding = 0, std140) uniform GLLightData {

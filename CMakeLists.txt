@@ -80,25 +80,11 @@ set(PROJECT_INSTALL sp)
 # Root name for all libraries that will be part of this project
 set(PROJECT_BASE_NAME strayphotons)
 
-# The absolute bare minimum core of the engine. Contains Tecs and GameLogic modules.
-# All other modules / libraries depend on this core
-set(PROJECT_LIB ${PROJECT_BASE_NAME})
-
-set(PROJECT_EXE sp)
-set(PROJECT_HEADLESS_EXE sp-headless)
-set(PROJECT_TEST_EXE sp-test)
-
-# Core StrayPhotons lib. Contains all game code.
-add_library(${PROJECT_LIB} INTERFACE)
-
-# Exe Shim that loads StrayPhotons lib on desktop platforms
-add_executable(${PROJECT_EXE})
-
-# Exe Shim that loads StrayPhotons lib without graphics
-add_executable(${PROJECT_HEADLESS_EXE})
-
-# Exe Shim that loads StrayPhotons lib for CI testing purposes
-add_executable(${PROJECT_TEST_EXE})
+# Interface library that is applied to all module configurations
+set(PROJECT_COMMON_EXE ${PROJECT_BASE_NAME})
+add_library(${PROJECT_COMMON_EXE} INTERFACE)
+target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE cxxopts)
+target_include_directories(${PROJECT_COMMON_EXE} INTERFACE src)
 
 # Build all external dependencies
 add_subdirectory(ext)
@@ -116,16 +102,33 @@ add_subdirectory(assets)
 add_subdirectory(shaders)
 add_subdirectory(src)
 
-target_include_directories(${PROJECT_LIB} INTERFACE
-	src
-)
+if(UNIX)
+	target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
+		pthread
+	)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+	if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 8.0)
+		message(FATAL_ERROR "Requires GCC >8.0")
+	endif()
+
+	target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
+		stdc++fs
+	)
+endif()
 
 ## COMPILE DEFINITIONS ##
 
-if (SP_PACKAGE_RELEASE)
-	target_compile_definitions(${PROJECT_LIB} INTERFACE
-		PACKAGE_RELEASE
-	)
+if(SP_PACKAGE_RELEASE)
+	target_compile_definitions(${PROJECT_COMMON_EXE} INTERFACE PACKAGE_RELEASE)
+	
+	if (WIN32)
+		set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
+	else()
+		set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES INSTALL_RPATH "\$ORIGIN")
+		set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+	endif()
 
 	# No way around using file(GLOB) here without
 	# manually listing every file to be included
@@ -162,39 +165,19 @@ if (SP_PACKAGE_RELEASE)
 
 	# Make the TAR generation depend on having up-to-date models
 	add_dependencies(assets_tar compiled-scenes)
-
-	# Make the exe depend on having the tar
-	add_dependencies(${PROJECT_EXE} assets_tar)
-	add_dependencies(${PROJECT_HEADLESS_EXE} assets_tar)
-	add_dependencies(${PROJECT_TEST_EXE} assets_tar)
-
+	
+	# Make the exe depend on having the asset tar bundle
+	add_dependencies(${PROJECT_COMMON_EXE} assets_tar)
 endif()
 
-if (MSVC)
-	target_compile_definitions(${PROJECT_CORE_LIB} PUBLIC
-		_CRT_SECURE_NO_WARNINGS
-		UNICODE
-		_UNICODE
-		NOMINMAX
-		_USE_MATH_DEFINES
-	)
-
-	# fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
-	target_compile_options(${PROJECT_CORE_LIB} PUBLIC /bigobj)
-endif()
-
-if (NOT SP_DEBUG)
+if(NOT SP_DEBUG)
 	include(CheckIPOSupported)
 	check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
 	if(ipo_supported)
 		message(STATUS "IPO / LTO enabled")
-		set_target_properties(
-			${PROJECT_LIB}
-			${PROJECT_EXE}
-			${PROJECT_HEADLESS_EXE}
-			${PROJECT_TEST_EXE}
-			PROPERTIES
-				INTERPROCEDURAL_OPTIMIZATION TRUE)
+		set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES
+			INTERPROCEDURAL_OPTIMIZATION TRUE
+		)
 	else()
 		message(STATUS "IPO / LTO not supported: <${ipo_error}>")
 	endif()
@@ -203,11 +186,11 @@ endif()
 if(SP_BUILD_RUST)
 	add_subdirectory(rust)
 
-	target_compile_definitions(${PROJECT_LIB} INTERFACE
+	target_compile_definitions(${PROJECT_COMMON_EXE} INTERFACE
 		RUST_CXX
 	)
 
-	target_link_libraries(${PROJECT_LIB} INTERFACE
+	target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
 		sp-rust
 	)
 	
@@ -218,105 +201,9 @@ endif()
 
 ## END COMPILE DEFINITIONS ##
 
-if (SP_PACKAGE_RELEASE)
-	if (WIN32)
-		set_target_properties(${PROJECT_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
-		set_target_properties(${PROJECT_HEADLESS_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
-		set_target_properties(${PROJECT_TEST_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
-	else()
-		set_target_properties(${PROJECT_EXE} PROPERTIES INSTALL_RPATH "\$ORIGIN")
-		set_target_properties(${PROJECT_EXE} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	endif()
-endif()
-
-target_compile_options(${PROJECT_EXE} PRIVATE ${SP_TARGET_OPTIONS})
-target_compile_options(${PROJECT_HEADLESS_EXE} PRIVATE ${SP_TARGET_OPTIONS})
-target_compile_options(${PROJECT_TEST_EXE} PRIVATE ${SP_TARGET_OPTIONS})
-
-target_link_libraries(${PROJECT_EXE} PRIVATE
-	${PROJECT_LIB}
-	${PROJECT_CORE_LIB}
-	${PROJECT_GRAPHICS_CORE_LIB}
-	${PROJECT_GRAPHICS_OPENGL_LIB}
-	${PROJECT_INPUT_CORE_LIB}
-	${PROJECT_INPUT_GLFW_LIB}
-	# ${PROJECT_PHYSICS_PHYSX_LIB}
-	${PROJECT_XR_OPENVR_LIB}
-)
-
-target_link_libraries(${PROJECT_HEADLESS_EXE} PRIVATE
-	${PROJECT_LIB}
-	${PROJECT_CORE_LIB}
-	${PROJECT_GRAPHICS_CORE_LIB}
-	${PROJECT_GRAPHICS_HEADLESS_LIB}
-	${PROJECT_INPUT_CORE_LIB}
-	# ${PROJECT_PHYSICS_PHYSX_LIB}
-)
-
-target_link_libraries(${PROJECT_TEST_EXE} PRIVATE
-	${PROJECT_LIB}
-	${PROJECT_CORE_LIB}
-	${PROJECT_GRAPHICS_CORE_LIB}
-	${PROJECT_GRAPHICS_EGL_LIB}
-	${PROJECT_INPUT_CORE_LIB}
-	${PROJECT_INPUT_GLFW_LIB}
-	# ${PROJECT_PHYSICS_PHYSX_LIB}
-	${PROJECT_XR_OPENVR_LIB}
-)
-
-target_link_libraries(${PROJECT_LIB} INTERFACE
-	cxxopts
-)
-
-if(UNIX)
-	target_link_libraries(${PROJECT_LIB} INTERFACE
-		pthread
-	)
-endif()
-
-if(CMAKE_COMPILER_IS_GNUCXX)
-	if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 8.0)
-		message(FATAL_ERROR "Requires GCC >8.0")
-	endif()
-
-	target_link_libraries(${PROJECT_LIB} INTERFACE
-		stdc++fs
-	)
-endif()
+target_compile_options(${PROJECT_COMMON_EXE} INTERFACE ${SP_TARGET_OPTIONS})
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT sp)
-
-install(
-	TARGETS
-		${PROJECT_EXE}
-		${PROJECT_HEADLESS_EXE}
-		${PROJECT_TEST_EXE}
-		# ${_physx_libraries}
-	RUNTIME DESTINATION
-		bin
-	ARCHIVE	DESTINATION
-		bin
-	COMPONENT
-		${PROJECT_INSTALL}
-)
-
-install(
-	DIRECTORY
-		assets/
-	DESTINATION
-		assets
-	COMPONENT
-		${PROJECT_INSTALL}
-)
-
-install(
-	DIRECTORY
-		shaders/
-	DESTINATION
-		shaders
-	COMPONENT
-		${PROJECT_INSTALL}
-)
 
 ################################################
 # Build tests

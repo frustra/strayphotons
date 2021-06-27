@@ -8,6 +8,11 @@ using namespace std;
 #include "Game.hh"
 #include "core/Logging.hh"
 
+#ifdef SP_TEST_MODE
+    #include "assets/AssetManager.hh"
+    #include "assets/Script.hh"
+#endif
+
 #include <cstdio>
 #include <cxxopts.hpp>
 #include <filesystem>
@@ -26,7 +31,12 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmd
 int main(int argc, char **argv)
 #endif
 {
+#ifdef SP_TEST_MODE
+    cxxopts::Options options("STRAYPHOTONS-TEST", "");
+    options.positional_help("/path/to/script.txt]");
+#else
     cxxopts::Options options("STRAYPHOTONS", "");
+#endif
 
     // clang-format off
     options.add_options()
@@ -34,8 +44,15 @@ int main(int argc, char **argv)
         ("m,map", "Initial scene to load", value<string>())
         ("basic-renderer", "Use minimal debug renderer", value<bool>())
         ("size", "Initial window size", value<string>())
+#ifdef SP_TEST_MODE
+        ("script-file", "", value<string>())
+#endif
         ("cvar", "Set cvar to initial value", value<vector<string>>());
     // clang-format on
+
+#ifdef SP_TEST_MODE
+    options.parse_positional({"script-file"});
+#endif
 
 #ifdef CATCH_GLOBAL_EXCEPTIONS
     try
@@ -48,11 +65,29 @@ int main(int argc, char **argv)
             return 0;
         }
 
+#ifdef SP_TEST_MODE
+        if (!optionsResult.count("script-file")) {
+            Logf("Script file required argument.");
+            return 0;
+        }
+#endif
+
         Logf("Starting in directory: %s", std::filesystem::current_path().string());
 
+#ifdef SP_TEST_MODE
+        string scriptPath = optionsResult["script-file"].as<string>();
+        auto script = sp::GAssets.LoadScript(scriptPath);
+        if (!script) {
+            Errorf("Script file not found: %s", scriptPath);
+            return 0;
+        }
+
+        sp::Game game(optionsResult, script.get());
+        return game.Start();
+#else
         sp::Game game(optionsResult);
-        game.Start();
-        return 0;
+        return game.Start();
+#endif
     }
 #ifdef CATCH_GLOBAL_EXCEPTIONS
     catch (const char *err) {

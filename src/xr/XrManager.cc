@@ -1,4 +1,6 @@
-#include "xr/XrManager.hh"
+#ifdef SP_XR_SUPPORT
+
+#include "XrManager.hh"
 
 #include "assets/AssetManager.hh"
 #include "assets/Model.hh"
@@ -8,10 +10,11 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Game.hh"
+#include "xr/XrSystemFactory.hh"
+
 #include "graphics/opengl/GLBuffer.hh"
 #include "graphics/opengl/GLModel.hh"
 #include "graphics/opengl/VertexBuffer.hh"
-#include "xr/XrSystemFactory.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -127,7 +130,8 @@ namespace sp::xr {
 
                                     auto headPos = glm::vec3(xrObjectPos * glm::vec4(0, 0, 0, 1)) -
                                                    vrOriginTransform.GetPosition();
-                                    auto newPos = (origin + dir * std::max(0.0, hit.block.distance - 0.5)) - headPos;
+                                    auto newPos = origin - headPos;
+                                    newPos += dir * float(std::max(0.0, hit.block.distance - 0.5));
                                     vrOriginTransform.SetPosition(
                                         glm::vec3(newPos.x, vrOriginTransform.GetPosition().y, newPos.z));
                                 }
@@ -647,3 +651,5 @@ namespace sp::xr {
         return newEntity;
     }
 }; // namespace sp::xr
+
+#endif

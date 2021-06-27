@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef SP_XR_SUPPORT
+
 #include "xr/XrSystem.hh"
 
 #include <list>
@@ -24,3 +26,5 @@ namespace sp {
 
     } // namespace xr
 } // namespace sp
+
+#endif

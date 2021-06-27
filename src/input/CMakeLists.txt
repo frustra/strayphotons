@@ -15,4 +15,11 @@ target_link_libraries(${PROJECT_INPUT_GLFW_LIB} PUBLIC
     glfw
 )
 
+target_compile_definitions(${PROJECT_INPUT_CORE_LIB} PUBLIC
+    SP_INPUT_SUPPORT
+)
+target_compile_definitions(${PROJECT_INPUT_GLFW_LIB} PUBLIC
+    SP_INPUT_SUPPORT_GLFW
+)
+
 add_subdirectory(input)

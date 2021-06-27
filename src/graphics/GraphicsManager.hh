@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef SP_GRAPHICS_SUPPORT
+
 #include "ecs/Ecs.hh"
 
 #ifdef SP_GRAPHICS_SUPPORT_GL
@@ -57,3 +59,5 @@ namespace sp {
         std::vector<ecs::Entity> playerViews;
     };
 } // namespace sp
+
+#endif

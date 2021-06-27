@@ -1,4 +1,4 @@
-#include "xr/XrAction.hh"
+#include "XrAction.hh"
 
 #include <stdexcept>
 

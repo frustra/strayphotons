@@ -25,12 +25,7 @@ target_compile_definitions(${PROJECT_XR_OPENVR_LIB} PUBLIC
 
 add_subdirectory(xr)
 
-target_sources(${PROJECT_EXE} PRIVATE
-    XrManager.cc
-    XrSystemFactory.cc
-)
-
-target_sources(${PROJECT_TEST_EXE} PRIVATE
+add_module_sources(
     XrManager.cc
     XrSystemFactory.cc
 )

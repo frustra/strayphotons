@@ -20,8 +20,9 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
           graphics(this),
 #endif
-#ifdef SP_PHYISCS_SUPPORT_PHYSX
-          physics(entityManager.tecs), humanControlSystem(entityManager.tecs, &this->input, &this->physics),
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+          physics(entityManager.tecs),
+          humanControlSystem(entityManager.tecs, &this->input, &this->physics),
 #endif
           animation(entityManager.tecs),
 #ifdef SP_XR_SUPPORT
@@ -52,11 +53,13 @@ namespace sp {
 #endif
 
         try {
+#ifdef SP_GRAPHICS_SUPPORT
 #ifdef SP_GRAPHICS_SUPPORT_GL
             debugGui = std::make_unique<DebugGuiManager>(this->graphics, this->input);
             menuGui = std::make_unique<MenuGuiManager>(this->graphics, this->input);
 #endif
             graphics.Init();
+#endif
 
             logic.Init(startupScript);
 
@@ -74,7 +77,10 @@ namespace sp {
     }
 
     bool Game::Frame() {
+#ifdef SP_INPUT_SUPPORT
         input.BeginFrame();
+#endif
+
         GetConsoleManager().Update(startupScript);
 
         auto frameTime = chrono_clock::now();
@@ -88,7 +94,7 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
         if (!graphics.Frame()) return false;
 #endif
-#ifdef SP_PHYISCS_SUPPORT_PHYSX
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
         if (!humanControlSystem.Frame(dt)) return false;
         if (!physics.LogicFrame()) return false;
 #endif
@@ -99,6 +105,10 @@ namespace sp {
     }
 
     bool Game::ShouldStop() {
+#ifdef SP_GRAPHICS_SUPPORT
         return !graphics.HasActiveContext();
+#else
+        return false;
+#endif
     }
 } // namespace sp

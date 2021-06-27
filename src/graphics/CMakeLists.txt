@@ -1,5 +1,4 @@
 add_library(${PROJECT_GRAPHICS_CORE_LIB} STATIC)
-add_library(${PROJECT_GRAPHICS_HEADLESS_LIB} INTERFACE)
 add_library(${PROJECT_GRAPHICS_EGL_LIB} STATIC)
 add_library(${PROJECT_GRAPHICS_OPENGL_LIB} STATIC)
 
@@ -11,9 +10,6 @@ target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
     ${PROJECT_CORE_LIB}
 )
 
-target_link_libraries(${PROJECT_GRAPHICS_HEADLESS_LIB} INTERFACE
-	${PROJECT_GRAPHICS_CORE_LIB}
-)
 target_link_libraries(${PROJECT_GRAPHICS_EGL_LIB} PUBLIC
     ${PROJECT_GRAPHICS_CORE_LIB}
     ${PROJECT_INPUT_CORE_LIB}
@@ -34,9 +30,6 @@ target_link_libraries(${PROJECT_GRAPHICS_OPENGL_LIB} PUBLIC
 target_compile_definitions(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
     SP_GRAPHICS_SUPPORT
 )
-target_compile_definitions(${PROJECT_GRAPHICS_HEADLESS_LIB} INTERFACE
-    SP_GRAPHICS_SUPPORT_HEADLESS
-)
 target_compile_definitions(${PROJECT_GRAPHICS_EGL_LIB} PUBLIC
     SP_GRAPHICS_SUPPORT_GL
 )
@@ -46,14 +39,6 @@ target_compile_definitions(${PROJECT_GRAPHICS_OPENGL_LIB} PUBLIC
 
 add_subdirectory(graphics)
 
-target_sources(${PROJECT_EXE} PRIVATE
-    GraphicsManager.cc
-)
-
-target_sources(${PROJECT_HEADLESS_EXE} PRIVATE
-    GraphicsManager.cc
-)
-
-target_sources(${PROJECT_TEST_EXE} PRIVATE
+add_module_sources(
     GraphicsManager.cc
 )

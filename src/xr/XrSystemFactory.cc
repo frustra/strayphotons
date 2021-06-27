@@ -1,3 +1,5 @@
+#ifdef SP_XR_SUPPORT
+
 #include "XrSystemFactory.hh"
 
 #include "graphics/core/GraphicsContext.hh"
@@ -33,3 +35,5 @@ std::shared_ptr<XrSystem> XrSystemFactory::GetBestXrSystem() {
 
     return selectedXrSystem;
 }
+
+#endif

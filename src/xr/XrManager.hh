@@ -1,7 +1,10 @@
 #pragma once
 
+#ifdef SP_XR_SUPPORT
+
 #include "core/CFunc.hh"
 #include "ecs/Ecs.hh"
+
 #include "xr/XrSystem.hh"
 
 namespace sp {
@@ -58,3 +61,5 @@ namespace sp {
         };
     } // namespace xr
 } // namespace sp
+
+#endif

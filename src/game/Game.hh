@@ -3,8 +3,11 @@
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
 #include "game/GameLogic.hh"
-#include "game/systems/AnimationSystem.hh"
-#include "input/InputManager.hh"
+#include "systems/AnimationSystem.hh"
+
+#ifdef SP_INPUT_SUPPORT
+    #include "input/InputManager.hh"
+#endif
 
 #ifdef SP_GRAPHICS_SUPPORT
     #include "graphics/GraphicsManager.hh"
@@ -17,6 +20,7 @@
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
     #include "physx/PhysxManager.hh"
+    #include "physx/HumanControlSystem.hh"
 #endif
 
 #ifdef SP_XR_SUPPORT
@@ -55,7 +59,9 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
         GraphicsManager graphics;
 #endif
+#ifdef SP_INPUT_SUPPORT
         InputManager input;
+#endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
         PhysxManager physics;
         HumanControlSystem humanControlSystem;

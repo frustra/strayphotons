@@ -18,7 +18,7 @@
 #include <glm/gtx/transform.hpp>
 
 namespace sp {
-    GameLogic::GameLogic(Game *game) : game(game), input(&game->input) {
+    GameLogic::GameLogic(Game *game) : game(game) {
         funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
         funcs.Register(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
         funcs.Register(this, "printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
@@ -49,26 +49,27 @@ namespace sp {
             LoadScene("menu");
         }
 
-        if (input != nullptr) {
-            input->BindCommand(INPUT_ACTION_SET_VR_ORIGIN, "setvrorigin");
-            input->BindCommand(INPUT_ACTION_RELOAD_SCENE, "reloadscene");
-            input->BindCommand(INPUT_ACTION_RESET_SCENE, "reloadscene reset");
-            input->BindCommand(INPUT_ACTION_RELOAD_SHADERS, "reloadshaders");
-            input->BindCommand(INPUT_ACTION_TOGGLE_FLASHLIGH, "toggle r.FlashlightOn");
-        }
+#ifdef SP_INPUT_SUPPORT
+        game->input.BindCommand(INPUT_ACTION_SET_VR_ORIGIN, "setvrorigin");
+        game->input.BindCommand(INPUT_ACTION_RELOAD_SCENE, "reloadscene");
+        game->input.BindCommand(INPUT_ACTION_RESET_SCENE, "reloadscene reset");
+        game->input.BindCommand(INPUT_ACTION_RELOAD_SHADERS, "reloadshaders");
+        game->input.BindCommand(INPUT_ACTION_TOGGLE_FLASHLIGH, "toggle r.FlashlightOn");
+#endif
     }
 
     GameLogic::~GameLogic() {}
 
+#ifdef SP_INPUT_SUPPORT
     void GameLogic::HandleInput() {
-        if (input->FocusLocked()) return;
+        if (game->input.FocusLocked()) return;
 
 #ifdef SP_GRAPHICS_SUPPORT_GL
-        if (game->menuGui && input->IsPressed(INPUT_ACTION_OPEN_MENU)) {
+        if (game->menuGui && game->input.IsPressed(INPUT_ACTION_OPEN_MENU)) {
             game->menuGui->OpenPauseMenu();
         } else
 #endif
-            if (input->IsPressed(INPUT_ACTION_SPAWN_DEBUG)) {
+            if (game->input.IsPressed(INPUT_ACTION_SPAWN_DEBUG)) {
             // Spawn dodecahedron
             auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
             auto entity = lock.NewEntity();
@@ -84,7 +85,7 @@ namespace sp {
 
             if (actor) { entity.Set<ecs::Physics>(lock, actor, model, desc); }
 #endif
-        } else if (input->IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
+        } else if (game->input.IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
             // Toggle flashlight following player
 
             auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
@@ -109,9 +110,12 @@ namespace sp {
             }
         }
     }
+#endif
 
     bool GameLogic::Frame(double dtSinceLastFrame) {
-        if (input != nullptr) { HandleInput(); }
+#ifdef SP_INPUT_SUPPORT
+        HandleInput();
+#endif
 
         if (!scene) return true;
 
@@ -186,7 +190,9 @@ namespace sp {
             // Mark the player as being able to activate trigger areas
             player.Set<ecs::Triggerable>(lock);
 
+#ifdef SP_GRAPHICS_SUPPORT
             game->graphics.AddPlayerView(player);
+#endif
         }
 
         if (flashlight) flashlight.Destroy(lock);
@@ -208,7 +214,9 @@ namespace sp {
     }
 
     void GameLogic::LoadScene(string name) {
+#ifdef SP_GRAPHICS_SUPPORT
         game->graphics.RenderLoading();
+#endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
         game->physics.StopSimulation();
 #endif

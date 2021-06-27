@@ -1,19 +1,8 @@
-add_subdirectory(systems)
+add_library(${PROJECT_GAME_TEST_LIB} INTERFACE)
+target_compile_definitions(${PROJECT_GAME_TEST_LIB} INTERFACE SP_TEST_MODE)
 
-target_sources(${PROJECT_EXE} PRIVATE
+add_module_sources(
     Game.cc
     GameLogic.cc
     Main.cc
-)
-
-target_sources(${PROJECT_HEADLESS_EXE} PRIVATE
-    Game.cc
-    GameLogic.cc
-    MainTest.cc
-)
-
-target_sources(${PROJECT_TEST_EXE} PRIVATE
-    Game.cc
-    GameLogic.cc
-    MainTest.cc
 )

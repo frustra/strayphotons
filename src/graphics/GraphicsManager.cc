@@ -1,3 +1,5 @@
+#ifdef SP_GRAPHICS_SUPPORT
+
 #include "GraphicsManager.hh"
 
 #include "core/CVar.hh"
@@ -293,3 +295,5 @@ namespace sp {
         // TODO: clear the XR scene to drop back to the compositor while we load
     }
 } // namespace sp
+
+#endif
