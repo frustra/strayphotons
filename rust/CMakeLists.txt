@@ -28,24 +28,26 @@ add_custom_command(COMMENT "Run cxxbridge codegen"
 
 add_library(sp-rust STATIC ${CXXBRIDGE_CC})
 
-target_include_directories(
-    sp-rust
+target_include_directories(sp-rust
     PUBLIC
         ${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/sp-rust/src
     PRIVATE
         ${PROJECT_ROOT_DIR}/src/core
 )
 
-target_link_libraries(
-    sp-rust
-    PRIVATE
-        ${CXXBRIDGE_LIB}
-        Tecs
+target_link_libraries(sp-rust PRIVATE
+    ${CXXBRIDGE_LIB}
+    Tecs
 )
 
 if(WIN32)
     target_link_libraries(sp-rust PRIVATE
         ws2_32
         userenv
+    )
+elseif(UNIX)
+    target_link_libraries(sp-rust PRIVATE
+        pthread
+        dl
     )
 endif()
