@@ -9,7 +9,6 @@
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/Signals.hh"
-#include "physx/PhysxUtils.hh"
 
 #include <cmath>
 #include <cxxopts.hpp>
@@ -78,11 +77,13 @@ namespace sp {
             entity.Set<ecs::Renderable>(lock, model);
             entity.Set<ecs::Transform>(lock, glm::vec3(0, 5, 0));
 
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
             ecs::PhysxActorDesc desc;
             desc.transform = glm::translate(glm::vec3(0, 5, 0));
             auto actor = game->physics.CreateActor(model, desc, entity);
 
             if (actor) { entity.Set<ecs::Physics>(lock, actor, model, desc); }
+#endif
         } else if (input->IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
             // Toggle flashlight following player
 
@@ -155,8 +156,6 @@ namespace sp {
             view->SetProjMat(view->GetFov(), view->GetClip(), glm::ivec2(CVarFlashlightResolution.Get(true)));
         }
 
-        if (!game->humanControlSystem.Frame(dtSinceLastFrame)) return false;
-
         return true;
     }
 
@@ -166,7 +165,9 @@ namespace sp {
             auto &view = player.Set<ecs::View>(lock);
             view.clip = glm::vec2(0.1, 256);
 
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
             game->humanControlSystem.Teleport(lock, player, glm::vec3(), glm::quat());
+#endif
             player.Set<ecs::VoxelInfo>(lock);
         } else {
             player = lock.NewEntity();
@@ -177,7 +178,9 @@ namespace sp {
             auto &view = player.Set<ecs::View>(lock);
             view.clip = glm::vec2(0.1, 256);
 
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
             game->humanControlSystem.AssignController(lock, player, game->physics);
+#endif
             player.Set<ecs::VoxelInfo>(lock);
 
             // Mark the player as being able to activate trigger areas
@@ -206,7 +209,9 @@ namespace sp {
 
     void GameLogic::LoadScene(string name) {
         game->graphics.RenderLoading();
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
         game->physics.StopSimulation();
+#endif
         game->entityManager.DestroyAllWith<ecs::Owner>(ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
 
         if (scene != nullptr) {
@@ -218,8 +223,9 @@ namespace sp {
         scene.reset();
         {
             auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
-            scene = GAssets.LoadScene(name, lock, game->physics, ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
+            scene = GAssets.LoadScene(name, lock, ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
 
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
             for (auto e : lock.EntitiesWith<ecs::Name>()) {
                 auto &name = e.Get<ecs::Name>(lock);
                 if (name == "player" && e != player) {
@@ -233,9 +239,12 @@ namespace sp {
                     }
                 }
             }
+#endif
         }
         if (!scene) {
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
             game->physics.StartSimulation();
+#endif
             return;
         }
 
@@ -243,9 +252,11 @@ namespace sp {
             GetConsoleManager().ParseAndExecute(line);
         }
 
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
         // Make sure all objects are in the correct physx state before restarting simulation
         game->physics.LogicFrame();
         game->physics.StartSimulation();
+#endif
     }
 
     void GameLogic::ReloadScene(string arg) {
@@ -260,6 +271,7 @@ namespace sp {
                     if (player && player.Has<ecs::Transform>(lock)) { oldTransform = player.Get<ecs::Transform>(lock); }
                 }
                 LoadScene(scene->name);
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
                 {
                     auto lock =
                         game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Transform, ecs::HumanController>>();
@@ -270,6 +282,7 @@ namespace sp {
                                                           oldTransform.GetRotate());
                     }
                 }
+#endif
             }
         }
     }
@@ -283,8 +296,12 @@ namespace sp {
             auto &transform = player.Get<ecs::Transform>(lock);
             auto &controller = player.Get<ecs::HumanController>(lock);
             auto position = transform.GetPosition();
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
             auto pxFeet = controller.pxController->getFootPosition();
             Logf("Player position: [%f, %f, %f], feet: %f", position.x, position.y, position.z, pxFeet.y);
+#else
+            Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
+#endif
             Logf("Player velocity: [%f, %f, %f]", controller.velocity.x, controller.velocity.y, controller.velocity.z);
             Logf("Player on ground: %s", controller.onGround ? "true" : "false");
         } else {

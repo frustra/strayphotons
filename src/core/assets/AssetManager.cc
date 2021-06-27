@@ -277,7 +277,6 @@ namespace sp {
 
     shared_ptr<Scene> AssetManager::LoadScene(const std::string &name,
                                               ecs::Lock<ecs::AddRemove> lock,
-                                              PhysxManager &px,
                                               ecs::Owner owner) {
         Logf("Loading scene: %s", name);
 

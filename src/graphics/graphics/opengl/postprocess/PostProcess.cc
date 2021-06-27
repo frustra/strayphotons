@@ -165,7 +165,7 @@ namespace sp {
             }
         }
         auto fullPath = std::filesystem::weakly_canonical(base / path);
-        Logf("Saving screenshot to: %s", fullPath.c_str());
+        Logf("Saving screenshot to: %s", fullPath.string());
 
         size_t size = tex.width * tex.height * 4;
         uint8 *buf = new uint8[size], *flipped = new uint8[size];
@@ -176,7 +176,7 @@ namespace sp {
             memcpy(flipped + tex.width * (tex.height - y - 1) * 4, buf + tex.width * y * 4, tex.width * 4);
         }
 
-        stbi_write_png((const char *)fullPath.c_str(), tex.width, tex.height, 4, flipped, 0);
+        stbi_write_png((const char *)fullPath.string().c_str(), tex.width, tex.height, 4, flipped, 0);
 
         delete[] buf;
         delete[] flipped;

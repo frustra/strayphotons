@@ -120,8 +120,8 @@ namespace sp {
 
         bool RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
                           Tecs::Entity entity,
-                          const physx::PxVec3 origin,
-                          const physx::PxVec3 dir,
+                          glm::vec3 origin,
+                          glm::vec3 dir,
                           const float distance,
                           physx::PxRaycastBuffer &hit);
 

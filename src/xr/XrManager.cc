@@ -11,7 +11,6 @@
 #include "graphics/opengl/GLBuffer.hh"
 #include "graphics/opengl/GLModel.hh"
 #include "graphics/opengl/VertexBuffer.hh"
-#include "physx/PhysxUtils.hh"
 #include "xr/XrSystemFactory.hh"
 
 #include <glm/glm.hpp>
@@ -99,15 +98,15 @@ namespace sp::xr {
                             }
                         }
 
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
                         bool teleport = false;
                         teleportAction->GetRisingEdgeActionValue(controllerAction.second, teleport);
 
                         if (teleport) {
                             Logf("Teleport on subpath %s", controllerAction.second);
 
-                            auto origin = GlmVec3ToPxVec3(ctrl.GetPosition());
-                            auto dir = GlmVec3ToPxVec3(ctrl.GetForward());
-                            dir.normalizeSafe();
+                            auto origin = ctrl.GetPosition();
+                            auto dir = glm::normalize(ctrl.GetForward());
                             physx::PxReal maxDistance = 10.0f;
 
                             {
@@ -128,9 +127,7 @@ namespace sp::xr {
 
                                     auto headPos = glm::vec3(xrObjectPos * glm::vec4(0, 0, 0, 1)) -
                                                    vrOriginTransform.GetPosition();
-                                    auto newPos = PxVec3ToGlmVec3P(origin +
-                                                                   dir * std::max(0.0, hit.block.distance - 0.5)) -
-                                                  headPos;
+                                    auto newPos = (origin + dir * std::max(0.0, hit.block.distance - 0.5)) - headPos;
                                     vrOriginTransform.SetPosition(
                                         glm::vec3(newPos.x, vrOriginTransform.GetPosition().y, newPos.z));
                                 }
@@ -157,6 +154,7 @@ namespace sp::xr {
                                 interact->target = nullptr;
                             }
                         }
+#endif
                     }
                 }
 
@@ -457,10 +455,12 @@ namespace sp::xr {
 
                 if (!boneEntity.Has<ecs::Transform>()) { boneEntity.Assign<ecs::Transform>(); }
 
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
                 if (!boneEntity.Has<ecs::InteractController>()) {
                     auto interact = boneEntity.Assign<ecs::InteractController>();
                     interact->manager = &game->physics;
                 }
+#endif
 
                 if (!boneEntity.Has<ecs::Renderable>()) {
                     auto model = GAssets.LoadModel("box");
@@ -496,10 +496,12 @@ namespace sp::xr {
 
             if (!xrObject.Has<ecs::Transform>()) { xrObject.Assign<ecs::Transform>(); }
 
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
             if (!xrObject.Has<ecs::InteractController>()) {
                 auto interact = xrObject.Assign<ecs::InteractController>();
                 interact->manager = &game->physics;
             }
+#endif
 
             // XrAction models might take many frames to load.
             // We constantly re-check the state of this entity while it's active

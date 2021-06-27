@@ -6,8 +6,6 @@
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
-#include "graphics/core/GraphicsContext.hh"
-#include "physx/PhysxUtils.hh"
 
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -18,13 +16,18 @@
 
 namespace sp {
     Game::Game(cxxopts::ParseResult &options, Script *startupScript)
-        : options(options), startupScript(startupScript), graphics(this), logic(this), physics(entityManager.tecs),
-          animation(entityManager.tecs), humanControlSystem(entityManager.tecs, &this->input, &this->physics)
-#ifdef SP_XR_SUPPORT
-          ,
-          xr(this)
+        : options(options), startupScript(startupScript),
+#ifdef SP_GRAPHICS_SUPPORT
+          graphics(this),
 #endif
-    {
+#ifdef SP_PHYISCS_SUPPORT_PHYSX
+          physics(entityManager.tecs), humanControlSystem(entityManager.tecs, &this->input, &this->physics),
+#endif
+          animation(entityManager.tecs),
+#ifdef SP_XR_SUPPORT
+          xr(this),
+#endif
+          logic(this) {
     }
 
     Game::~Game() {}
@@ -82,8 +85,13 @@ namespace sp {
 #ifdef SP_XR_SUPPORT
         if (!xr.Frame(dt)) return false;
 #endif
+#ifdef SP_GRAPHICS_SUPPORT
         if (!graphics.Frame()) return false;
+#endif
+#ifdef SP_PHYISCS_SUPPORT_PHYSX
+        if (!humanControlSystem.Frame(dt)) return false;
         if (!physics.LogicFrame()) return false;
+#endif
         if (!animation.Frame(dt)) return false;
 
         lastFrameTime = frameTime;

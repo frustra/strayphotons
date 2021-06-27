@@ -4,13 +4,19 @@
 #include "ecs/Ecs.hh"
 #include "game/GameLogic.hh"
 #include "game/systems/AnimationSystem.hh"
-#include "graphics/GraphicsManager.hh"
 #include "input/InputManager.hh"
-#include "physx/PhysxManager.hh"
+
+#ifdef SP_GRAPHICS_SUPPORT
+    #include "graphics/GraphicsManager.hh"
+#endif
 
 #ifdef SP_GRAPHICS_SUPPORT_GL
     #include "graphics/opengl/gui/DebugGuiManager.hh"
     #include "graphics/opengl/gui/MenuGuiManager.hh"
+#endif
+
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+    #include "physx/PhysxManager.hh"
 #endif
 
 #ifdef SP_XR_SUPPORT
@@ -46,15 +52,19 @@ namespace sp {
         std::unique_ptr<MenuGuiManager> menuGui = nullptr;
 #endif
 
+#ifdef SP_GRAPHICS_SUPPORT
         GraphicsManager graphics;
+#endif
         InputManager input;
-        GameLogic logic;
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
         PhysxManager physics;
-        AnimationSystem animation;
         HumanControlSystem humanControlSystem;
+#endif
+        AnimationSystem animation;
 #ifdef SP_XR_SUPPORT
         xr::XrManager xr;
 #endif
+        GameLogic logic;
 
     private:
         chrono_clock::time_point lastFrameTime;

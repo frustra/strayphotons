@@ -21,6 +21,10 @@ target_link_libraries(${PROJECT_PHYSICS_PHYSX_LIB}
         PhysXPvdSDK
 )
 
+target_compile_definitions(${PROJECT_PHYSICS_PHYSX_LIB} PUBLIC
+    SP_PHYSICS_SUPPORT_PHYSX
+)
+
 if (SP_DEBUG)
 	target_compile_definitions(${PROJECT_PHYSICS_PHYSX_LIB} PUBLIC
 		_DEBUG

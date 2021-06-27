@@ -319,12 +319,9 @@ namespace sp {
             return;
         }
 
-        physx::PxVec3 origin = GlmVec3ToPxVec3(transform.GetPosition());
+        glm::vec3 origin = transform.GetPosition();
+        glm::vec3 dir = glm::normalize(transform.GetForward());
 
-        glm::vec3 rotate = transform.GetForward();
-
-        physx::PxVec3 dir = GlmVec3ToPxVec3(rotate);
-        dir.normalizeSafe();
         physx::PxReal maxDistance = 2.0f;
 
         physx::PxRaycastBuffer hit;
@@ -337,9 +334,9 @@ namespace sp {
                 if (dynamic && !dynamic->getRigidBodyFlags().isSet(physx::PxRigidBodyFlag::eKINEMATIC)) {
                     interact.target = dynamic;
                     auto pose = dynamic->getGlobalPose();
-                    auto currentPos = pose.transform(dynamic->getCMassLocalPose().transform(physx::PxVec3(0.0)));
+                    auto currentPos = PxVec3ToGlmVec3P(pose.transform(dynamic->getCMassLocalPose().transform(physx::PxVec3(0.0))));
                     auto invRotate = glm::inverse(transform.GetRotate());
-                    auto offset = invRotate * (PxVec3ToGlmVec3P(currentPos - origin) + glm::vec3(0, 0.1, 0));
+                    auto offset = invRotate * (currentPos - origin + glm::vec3(0, 0.1, 0));
                     physics->CreateConstraint(lock,
                                               entity,
                                               dynamic,

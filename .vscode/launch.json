@@ -38,6 +38,17 @@
             ]
         },
         {
+            "name": "StrayPhotons Test (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/sp-test.exe",
+            "args": ["tests/hello-world.txt"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
             "name": "StrayPhotons Test (gdb)",
             "type": "cppdbg",
             "request": "launch",

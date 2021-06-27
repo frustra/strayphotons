@@ -2,7 +2,6 @@
 
 #include "core/CFunc.hh"
 #include "ecs/Ecs.hh"
-#include "game/systems/HumanControlSystem.hh"
 
 #include <memory>
 

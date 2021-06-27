@@ -624,8 +624,8 @@ namespace sp {
 
     bool PhysxManager::RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
                                     Tecs::Entity entity,
-                                    const PxVec3 origin,
-                                    const PxVec3 dir,
+                                    glm::vec3 origin,
+                                    glm::vec3 dir,
                                     const float distance,
                                     PxRaycastBuffer &hit) {
         Lock();
@@ -638,7 +638,7 @@ namespace sp {
             scene->removeActor(*controllerActor);
         }
 
-        bool status = scene->raycast(origin, dir, distance, hit);
+        bool status = scene->raycast(GlmVec3ToPxVec3(origin), GlmVec3ToPxVec3(dir), distance, hit);
 
         if (controllerActor) { scene->addActor(*controllerActor); }
 
