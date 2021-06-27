@@ -225,21 +225,23 @@ namespace sp {
             auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
             scene = GAssets.LoadScene(name, lock, ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
 
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
             for (auto e : lock.EntitiesWith<ecs::Name>()) {
                 auto &name = e.Get<ecs::Name>(lock);
                 if (name == "player" && e != player) {
                     name = "player-spwan";
                     if (e.Has<ecs::Transform>(lock)) {
                         auto &spawnTransform = e.Get<ecs::Transform>(lock);
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
                         game->humanControlSystem.Teleport(lock,
                                                           player,
                                                           spawnTransform.GetPosition(),
                                                           spawnTransform.GetRotate());
+#else
+                        player.Set<ecs::Transform>(lock, spawnTransform);
+#endif
                     }
                 }
             }
-#endif
         }
         if (!scene) {
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
