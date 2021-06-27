@@ -2,10 +2,10 @@
 
 #ifdef SP_XR_SUPPORT
 
-#include "xr/XrSystem.hh"
+    #include "xr/XrSystem.hh"
 
-#include <list>
-#include <memory>
+    #include <list>
+    #include <memory>
 
 namespace sp {
     class GraphicsContext;

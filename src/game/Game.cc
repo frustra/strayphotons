@@ -21,8 +21,7 @@ namespace sp {
           graphics(this),
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-          physics(entityManager.tecs),
-          humanControlSystem(entityManager.tecs, &this->input, &this->physics),
+          physics(entityManager.tecs), humanControlSystem(entityManager.tecs, &this->input, &this->physics),
 #endif
           animation(entityManager.tecs),
 #ifdef SP_XR_SUPPORT
@@ -54,10 +53,10 @@ namespace sp {
 
         try {
 #ifdef SP_GRAPHICS_SUPPORT
-#ifdef SP_GRAPHICS_SUPPORT_GL
+    #ifdef SP_GRAPHICS_SUPPORT_GL
             debugGui = std::make_unique<DebugGuiManager>(this->graphics, this->input);
             menuGui = std::make_unique<MenuGuiManager>(this->graphics, this->input);
-#endif
+    #endif
             graphics.Init();
 #endif
 

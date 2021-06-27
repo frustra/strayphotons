@@ -2,15 +2,15 @@
 
 #ifdef SP_GRAPHICS_SUPPORT
 
-#include "ecs/Ecs.hh"
+    #include "ecs/Ecs.hh"
 
-#ifdef SP_GRAPHICS_SUPPORT_GL
-    #include "graphics/opengl/PerfTimer.hh"
-#endif
+    #ifdef SP_GRAPHICS_SUPPORT_GL
+        #include "graphics/opengl/PerfTimer.hh"
+    #endif
 
-#include <glm/glm.hpp>
-#include <memory>
-#include <vector>
+    #include <glm/glm.hpp>
+    #include <memory>
+    #include <vector>
 
 namespace sp {
     class Game;
@@ -48,12 +48,12 @@ namespace sp {
         Renderer *renderer = nullptr;
         Game *game = nullptr;
 
-#ifdef SP_GRAPHICS_SUPPORT_GL
+    #ifdef SP_GRAPHICS_SUPPORT_GL
         bool useBasic = false;
         GlfwActionSource *glfwActionSource = nullptr;
         ProfilerGui *profilerGui = nullptr;
         PerfTimer timer;
-#endif
+    #endif
 
         ecs::Observer<ecs::Removed<ecs::View>> viewRemoval;
         std::vector<ecs::Entity> playerViews;

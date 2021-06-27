@@ -334,7 +334,8 @@ namespace sp {
                 if (dynamic && !dynamic->getRigidBodyFlags().isSet(physx::PxRigidBodyFlag::eKINEMATIC)) {
                     interact.target = dynamic;
                     auto pose = dynamic->getGlobalPose();
-                    auto currentPos = PxVec3ToGlmVec3P(pose.transform(dynamic->getCMassLocalPose().transform(physx::PxVec3(0.0))));
+                    auto currentPos = PxVec3ToGlmVec3P(
+                        pose.transform(dynamic->getCMassLocalPose().transform(physx::PxVec3(0.0))));
                     auto invRotate = glm::inverse(transform.GetRotate());
                     auto offset = invRotate * (currentPos - origin + glm::vec3(0, 0.1, 0));
                     physics->CreateConstraint(lock,

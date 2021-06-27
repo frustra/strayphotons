@@ -1,24 +1,23 @@
 #ifdef SP_XR_SUPPORT
 
-#include "XrManager.hh"
+    #include "XrManager.hh"
 
-#include "assets/AssetManager.hh"
-#include "assets/Model.hh"
-#include "core/CVar.hh"
-#include "core/Console.hh"
-#include "core/Logging.hh"
-#include "ecs/Ecs.hh"
-#include "ecs/EcsImpl.hh"
-#include "game/Game.hh"
-#include "xr/XrSystemFactory.hh"
+    #include "assets/AssetManager.hh"
+    #include "assets/Model.hh"
+    #include "core/CVar.hh"
+    #include "core/Console.hh"
+    #include "core/Logging.hh"
+    #include "ecs/Ecs.hh"
+    #include "ecs/EcsImpl.hh"
+    #include "game/Game.hh"
+    #include "graphics/opengl/GLBuffer.hh"
+    #include "graphics/opengl/GLModel.hh"
+    #include "graphics/opengl/VertexBuffer.hh"
+    #include "xr/XrSystemFactory.hh"
 
-#include "graphics/opengl/GLBuffer.hh"
-#include "graphics/opengl/GLModel.hh"
-#include "graphics/opengl/VertexBuffer.hh"
-
-#include <glm/glm.hpp>
-#include <glm/gtx/quaternion.hpp>
-#include <glm/gtx/transform.hpp>
+    #include <glm/glm.hpp>
+    #include <glm/gtx/quaternion.hpp>
+    #include <glm/gtx/transform.hpp>
 
 namespace sp::xr {
     static CVar<bool> CVarConnectXR("xr.Connect", true, "Connect to a supported XR Runtime");
@@ -101,7 +100,7 @@ namespace sp::xr {
                             }
                         }
 
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
+    #ifdef SP_PHYSICS_SUPPORT_PHYSX
                         bool teleport = false;
                         teleportAction->GetRisingEdgeActionValue(controllerAction.second, teleport);
 
@@ -158,7 +157,7 @@ namespace sp::xr {
                                 interact->target = nullptr;
                             }
                         }
-#endif
+    #endif
                     }
                 }
 
@@ -459,12 +458,12 @@ namespace sp::xr {
 
                 if (!boneEntity.Has<ecs::Transform>()) { boneEntity.Assign<ecs::Transform>(); }
 
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
+    #ifdef SP_PHYSICS_SUPPORT_PHYSX
                 if (!boneEntity.Has<ecs::InteractController>()) {
                     auto interact = boneEntity.Assign<ecs::InteractController>();
                     interact->manager = &game->physics;
                 }
-#endif
+    #endif
 
                 if (!boneEntity.Has<ecs::Renderable>()) {
                     auto model = GAssets.LoadModel("box");
@@ -500,12 +499,12 @@ namespace sp::xr {
 
             if (!xrObject.Has<ecs::Transform>()) { xrObject.Assign<ecs::Transform>(); }
 
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
+    #ifdef SP_PHYSICS_SUPPORT_PHYSX
             if (!xrObject.Has<ecs::InteractController>()) {
                 auto interact = xrObject.Assign<ecs::InteractController>();
                 interact->manager = &game->physics;
             }
-#endif
+    #endif
 
             // XrAction models might take many frames to load.
             // We constantly re-check the state of this entity while it's active

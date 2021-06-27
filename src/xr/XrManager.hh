@@ -2,10 +2,9 @@
 
 #ifdef SP_XR_SUPPORT
 
-#include "core/CFunc.hh"
-#include "ecs/Ecs.hh"
-
-#include "xr/XrSystem.hh"
+    #include "core/CFunc.hh"
+    #include "ecs/Ecs.hh"
+    #include "xr/XrSystem.hh"
 
 namespace sp {
     class Game;

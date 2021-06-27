@@ -19,8 +19,8 @@
 #endif
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-    #include "physx/PhysxManager.hh"
     #include "physx/HumanControlSystem.hh"
+    #include "physx/PhysxManager.hh"
 #endif
 
 #ifdef SP_XR_SUPPORT

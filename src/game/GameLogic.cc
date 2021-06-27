@@ -64,11 +64,11 @@ namespace sp {
     void GameLogic::HandleInput() {
         if (game->input.FocusLocked()) return;
 
-#ifdef SP_GRAPHICS_SUPPORT_GL
+    #ifdef SP_GRAPHICS_SUPPORT_GL
         if (game->menuGui && game->input.IsPressed(INPUT_ACTION_OPEN_MENU)) {
             game->menuGui->OpenPauseMenu();
         } else
-#endif
+    #endif
             if (game->input.IsPressed(INPUT_ACTION_SPAWN_DEBUG)) {
             // Spawn dodecahedron
             auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
@@ -78,13 +78,13 @@ namespace sp {
             entity.Set<ecs::Renderable>(lock, model);
             entity.Set<ecs::Transform>(lock, glm::vec3(0, 5, 0));
 
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
+    #ifdef SP_PHYSICS_SUPPORT_PHYSX
             ecs::PhysxActorDesc desc;
             desc.transform = glm::translate(glm::vec3(0, 5, 0));
             auto actor = game->physics.CreateActor(model, desc, entity);
 
             if (actor) { entity.Set<ecs::Physics>(lock, actor, model, desc); }
-#endif
+    #endif
         } else if (game->input.IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
             // Toggle flashlight following player
 

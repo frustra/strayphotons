@@ -1,47 +1,47 @@
 #ifdef SP_GRAPHICS_SUPPORT
 
-#include "GraphicsManager.hh"
+    #include "GraphicsManager.hh"
 
-#include "core/CVar.hh"
-#include "core/Logging.hh"
-#include "ecs/EcsImpl.hh"
-#include "game/Game.hh"
-#include "graphics/core/GraphicsContext.hh"
-#include "graphics/core/Renderer.hh"
+    #include "core/CVar.hh"
+    #include "core/Logging.hh"
+    #include "ecs/EcsImpl.hh"
+    #include "game/Game.hh"
+    #include "graphics/core/GraphicsContext.hh"
+    #include "graphics/core/Renderer.hh"
 
-#ifdef SP_GRAPHICS_SUPPORT_GL
-    #include "graphics/opengl/GlfwGraphicsContext.hh"
-    #include "graphics/opengl/PerfTimer.hh"
-    #include "graphics/opengl/RenderTargetPool.hh"
-    #include "graphics/opengl/basic_renderer/BasicRenderer.hh"
-    #include "graphics/opengl/gui/ProfilerGui.hh"
-    #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
-    #include "input/glfw/GlfwActionSource.hh"
-#endif
+    #ifdef SP_GRAPHICS_SUPPORT_GL
+        #include "graphics/opengl/GlfwGraphicsContext.hh"
+        #include "graphics/opengl/PerfTimer.hh"
+        #include "graphics/opengl/RenderTargetPool.hh"
+        #include "graphics/opengl/basic_renderer/BasicRenderer.hh"
+        #include "graphics/opengl/gui/ProfilerGui.hh"
+        #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
+        #include "input/glfw/GlfwActionSource.hh"
+    #endif
 
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-    #include "physx/HumanControlSystem.hh"
-#endif
+    #ifdef SP_PHYSICS_SUPPORT_PHYSX
+        #include "physx/HumanControlSystem.hh"
+    #endif
 
-#include <algorithm>
-#include <cxxopts.hpp>
-#include <iostream>
-#include <system_error>
+    #include <algorithm>
+    #include <cxxopts.hpp>
+    #include <iostream>
+    #include <system_error>
 
 namespace sp {
     GraphicsManager::GraphicsManager(Game *game) : game(game) {
-#ifdef SP_GRAPHICS_SUPPORT_GL
+    #ifdef SP_GRAPHICS_SUPPORT_GL
         if (game->options.count("basic-renderer")) {
             Logf("Graphics starting up (basic renderer)");
             useBasic = true;
         } else {
             Logf("Graphics starting up (full renderer)");
         }
-#endif
+    #endif
     }
 
     GraphicsManager::~GraphicsManager() {
-#ifdef SP_GRAPHICS_SUPPORT_GL
+    #ifdef SP_GRAPHICS_SUPPORT_GL
         if (renderer) { delete renderer; }
 
         if (profilerGui) { delete profilerGui; }
@@ -49,11 +49,11 @@ namespace sp {
         if (glfwActionSource) { delete glfwActionSource; }
 
         if (context) { delete context; }
-#endif
+    #endif
     }
 
     void GraphicsManager::Init() {
-#ifdef SP_GRAPHICS_SUPPORT_GL
+    #ifdef SP_GRAPHICS_SUPPORT_GL
         if (context) { throw "already an active context"; }
         if (renderer) { throw "already an active renderer"; }
 
@@ -65,8 +65,8 @@ namespace sp {
         if (window != nullptr) {
             glfwActionSource = new GlfwActionSource(game->input, *window);
 
-            // TODO: Expose some sort of configuration for these.
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
+                // TODO: Expose some sort of configuration for these.
+        #ifdef SP_PHYSICS_SUPPORT_PHYSX
             glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_FORWARD, INPUT_ACTION_KEYBOARD_KEYS + "/w");
             glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_BACKWARD, INPUT_ACTION_KEYBOARD_KEYS + "/s");
             glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_LEFT, INPUT_ACTION_KEYBOARD_KEYS + "/a");
@@ -76,7 +76,7 @@ namespace sp {
             glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_SPRINT, INPUT_ACTION_KEYBOARD_KEYS + "/shift_left");
             glfwActionSource->BindAction(INPUT_ACTION_PLAYER_INTERACT, INPUT_ACTION_KEYBOARD_KEYS + "/e");
             glfwActionSource->BindAction(INPUT_ACTION_PLAYER_INTERACT_ROTATE, INPUT_ACTION_KEYBOARD_KEYS + "/r");
-#endif
+        #endif
 
             glfwActionSource->BindAction(INPUT_ACTION_OPEN_MENU, INPUT_ACTION_KEYBOARD_KEYS + "/escape");
             glfwActionSource->BindAction(INPUT_ACTION_TOGGLE_CONSOLE, INPUT_ACTION_KEYBOARD_KEYS + "/backtick");
@@ -92,7 +92,7 @@ namespace sp {
             glfwActionSource->BindAction(INPUT_ACTION_RESET_SCENE, INPUT_ACTION_KEYBOARD_KEYS + "/f6");
             glfwActionSource->BindAction(INPUT_ACTION_RELOAD_SHADERS, INPUT_ACTION_KEYBOARD_KEYS + "/f7");
         }
-#endif
+    #endif
 
         if (game->options.count("size")) {
             std::istringstream ss(game->options["size"].as<string>());
@@ -102,7 +102,7 @@ namespace sp {
             if (size.x > 0 && size.y > 0) { CVarWindowSize.Set(size); }
         }
 
-#ifdef SP_GRAPHICS_SUPPORT_GL
+    #ifdef SP_GRAPHICS_SUPPORT_GL
         if (useBasic) {
             renderer = new BasicRenderer(game->entityManager);
         } else {
@@ -121,7 +121,7 @@ namespace sp {
         }
 
         renderer->Prepare();
-#endif
+    #endif
     }
 
     bool GraphicsManager::HasActiveContext() {
@@ -129,11 +129,11 @@ namespace sp {
     }
 
     bool GraphicsManager::Frame() {
-#ifdef SP_GRAPHICS_SUPPORT_GL
+    #ifdef SP_GRAPHICS_SUPPORT_GL
         if (!context) throw "no active context";
         if (!renderer) throw "no active renderer";
         if (!HasActiveContext()) return false;
-#endif
+    #endif
 
         {
             auto lock = game->entityManager.tecs.StartTransaction<>();
@@ -170,7 +170,7 @@ namespace sp {
             return false;
         }
 
-#ifdef SP_GRAPHICS_SUPPORT_GL
+    #ifdef SP_GRAPHICS_SUPPORT_GL
         timer.StartFrame();
 
         {
@@ -178,7 +178,7 @@ namespace sp {
 
             renderer->BeginFrame();
 
-    #ifdef SP_XR_SUPPORT
+        #ifdef SP_XR_SUPPORT
             // Always render XR content first, since this allows the compositor to immediately start work rendering to
             // the HMD Only attempt to render if we have an active XR System
             if (game->xr.GetXrSystem()) {
@@ -227,7 +227,7 @@ namespace sp {
 
                 game->xr.GetXrSystem()->GetCompositor()->EndFrame();
             }
-    #endif
+        #endif
 
             // Render the 2D pancake view
             context->PrepareForView(pancakeView);
@@ -239,7 +239,7 @@ namespace sp {
         context->SwapBuffers();
         timer.EndFrame();
         context->EndFrame();
-#endif
+    #endif
 
         return true;
     }
@@ -249,15 +249,15 @@ namespace sp {
     }
 
     void GraphicsManager::DisableCursor() {
-#ifdef SP_GRAPHICS_SUPPORT_GL
+    #ifdef SP_GRAPHICS_SUPPORT_GL
         if (glfwActionSource) { glfwActionSource->DisableCursor(); }
-#endif
+    #endif
     }
 
     void GraphicsManager::EnableCursor() {
-#ifdef SP_GRAPHICS_SUPPORT_GL
+    #ifdef SP_GRAPHICS_SUPPORT_GL
         if (glfwActionSource) { glfwActionSource->EnableCursor(); }
-#endif
+    #endif
     }
 
     void GraphicsManager::AddPlayerView(ecs::Entity entity) {
