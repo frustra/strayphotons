@@ -14,28 +14,20 @@ namespace physx {
 }
 
 namespace ecs {
-    struct PhysxActorDesc {
-        bool dynamic = true;
-        bool kinematic = false; // only dynamic actors can be kinematic
-        bool decomposeHull = false;
-
-        // Initial values
-        glm::mat4 transform = glm::mat4(1);
-        glm::vec3 scale = glm::vec3(1);
-        float density = 1.0f;
-    };
-
     struct Physics {
         Physics() {}
-        Physics(std::shared_ptr<sp::Model> model, PhysxActorDesc desc) : model(model), desc(desc) {}
-        Physics(physx::PxRigidActor *actor, std::shared_ptr<sp::Model> model, PhysxActorDesc desc)
-            : actor(actor), model(model), desc(desc) {}
+        Physics(std::shared_ptr<sp::Model> model, bool dynamic = false, float density = 1.0f) : model(model), dynamic(dynamic), density(density) {}
 
-        physx::PxRigidActor *actor = nullptr;
         std::shared_ptr<sp::Model> model;
-        PhysxActorDesc desc;
 
-        glm::vec3 scale = glm::vec3(1.0);
+        bool dynamic;
+        bool kinematic = false; // only dynamic actors can be kinematic
+        bool decomposeHull = false;
+        float density;
+
+        // For use by PhysxManager only
+        physx::PxRigidActor *actor = nullptr;
+        glm::vec3 scale = glm::vec3(1.0); // Current scale of physics model according to PhysX
     };
 
     static Component<Physics> ComponentPhysics("physics");

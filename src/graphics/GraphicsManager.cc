@@ -20,7 +20,7 @@
     #endif
 
     #ifdef SP_PHYSICS_SUPPORT_PHYSX
-        #include "physx/HumanControlSystem.hh"
+        // #include "physx/HumanControlSystem.hh"
     #endif
 
     #include <algorithm>
@@ -67,15 +67,15 @@ namespace sp {
 
                 // TODO: Expose some sort of configuration for these.
         #ifdef SP_PHYSICS_SUPPORT_PHYSX
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_FORWARD, INPUT_ACTION_KEYBOARD_KEYS + "/w");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_BACKWARD, INPUT_ACTION_KEYBOARD_KEYS + "/s");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_LEFT, INPUT_ACTION_KEYBOARD_KEYS + "/a");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_RIGHT, INPUT_ACTION_KEYBOARD_KEYS + "/d");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_JUMP, INPUT_ACTION_KEYBOARD_KEYS + "/space");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_CROUCH, INPUT_ACTION_KEYBOARD_KEYS + "/control_left");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_SPRINT, INPUT_ACTION_KEYBOARD_KEYS + "/shift_left");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_INTERACT, INPUT_ACTION_KEYBOARD_KEYS + "/e");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_INTERACT_ROTATE, INPUT_ACTION_KEYBOARD_KEYS + "/r");
+            // glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_FORWARD, INPUT_ACTION_KEYBOARD_KEYS + "/w");
+            // glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_BACKWARD, INPUT_ACTION_KEYBOARD_KEYS + "/s");
+            // glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_LEFT, INPUT_ACTION_KEYBOARD_KEYS + "/a");
+            // glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_RIGHT, INPUT_ACTION_KEYBOARD_KEYS + "/d");
+            // glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_JUMP, INPUT_ACTION_KEYBOARD_KEYS + "/space");
+            // glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_CROUCH, INPUT_ACTION_KEYBOARD_KEYS + "/control_left");
+            // glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_SPRINT, INPUT_ACTION_KEYBOARD_KEYS + "/shift_left");
+            // glfwActionSource->BindAction(INPUT_ACTION_PLAYER_INTERACT, INPUT_ACTION_KEYBOARD_KEYS + "/e");
+            // glfwActionSource->BindAction(INPUT_ACTION_PLAYER_INTERACT_ROTATE, INPUT_ACTION_KEYBOARD_KEYS + "/r");
         #endif
 
             glfwActionSource->BindAction(INPUT_ACTION_OPEN_MENU, INPUT_ACTION_KEYBOARD_KEYS + "/escape");

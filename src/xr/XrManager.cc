@@ -101,6 +101,7 @@ namespace sp::xr {
                         }
 
     #ifdef SP_PHYSICS_SUPPORT_PHYSX
+    /*
                         bool teleport = false;
                         teleportAction->GetRisingEdgeActionValue(controllerAction.second, teleport);
 
@@ -157,6 +158,7 @@ namespace sp::xr {
                                 interact->target = nullptr;
                             }
                         }
+                        */
     #endif
                     }
                 }

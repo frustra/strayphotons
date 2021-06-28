@@ -79,11 +79,7 @@ namespace sp {
             entity.Set<ecs::Transform>(lock, glm::vec3(0, 5, 0));
 
     #ifdef SP_PHYSICS_SUPPORT_PHYSX
-            ecs::PhysxActorDesc desc;
-            desc.transform = glm::translate(glm::vec3(0, 5, 0));
-            auto actor = game->physics.CreateActor(model, desc, entity);
-
-            if (actor) { entity.Set<ecs::Physics>(lock, actor, model, desc); }
+            entity.Set<ecs::Physics>(lock, model);
     #endif
         } else if (game->input.IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
             // Toggle flashlight following player
@@ -170,7 +166,7 @@ namespace sp {
             view.clip = glm::vec2(0.1, 256);
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-            game->humanControlSystem.Teleport(lock, player, glm::vec3(), glm::quat());
+            // game->humanControlSystem.Teleport(lock, player, glm::vec3(), glm::quat());
 #endif
             player.Set<ecs::VoxelInfo>(lock);
         } else {
@@ -183,7 +179,7 @@ namespace sp {
             view.clip = glm::vec2(0.1, 256);
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-            game->humanControlSystem.AssignController(lock, player, game->physics);
+            // game->humanControlSystem.AssignController(lock, player, game->physics);
 #endif
             player.Set<ecs::VoxelInfo>(lock);
 
@@ -240,10 +236,10 @@ namespace sp {
                     if (e.Has<ecs::Transform>(lock)) {
                         auto &spawnTransform = e.Get<ecs::Transform>(lock);
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-                        game->humanControlSystem.Teleport(lock,
-                                                          player,
-                                                          spawnTransform.GetPosition(),
-                                                          spawnTransform.GetRotate());
+                        // game->humanControlSystem.Teleport(lock,
+                        //                                   player,
+                        //                                   spawnTransform.GetPosition(),
+                        //                                   spawnTransform.GetRotate());
 #else
                         player.Set<ecs::Transform>(lock, spawnTransform);
 #endif
@@ -251,20 +247,14 @@ namespace sp {
                 }
             }
         }
-        if (!scene) {
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-            game->physics.StartSimulation();
-#endif
-            return;
-        }
 
-        for (auto &line : scene->autoExecList) {
-            GetConsoleManager().ParseAndExecute(line);
+        if (scene) {
+            for (auto &line : scene->autoExecList) {
+                GetConsoleManager().ParseAndExecute(line);
+            }
         }
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-        // Make sure all objects are in the correct physx state before restarting simulation
-        game->physics.LogicFrame();
         game->physics.StartSimulation();
 #endif
     }
@@ -286,10 +276,10 @@ namespace sp {
                     auto lock =
                         game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Transform, ecs::HumanController>>();
                     if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
-                        game->humanControlSystem.Teleport(lock,
-                                                          player,
-                                                          oldTransform.GetPosition(),
-                                                          oldTransform.GetRotate());
+                        // game->humanControlSystem.Teleport(lock,
+                        //                                   player,
+                        //                                   oldTransform.GetPosition(),
+                        //                                   oldTransform.GetRotate());
                     }
                 }
 #endif

@@ -23,23 +23,6 @@ namespace sp {
     class Model;
     class PhysxManager;
 
-    template<typename T>
-    class MutexedVector {
-    public:
-        MutexedVector(std::vector<T> &vec, std::mutex &m) : vec(vec), lock(m) {}
-        MutexedVector(MutexedVector &&vec) = default;
-        MutexedVector(MutexedVector &vec) = delete;
-        ~MutexedVector() {}
-
-        std::vector<T> &Vector() {
-            return vec;
-        }
-
-    private:
-        std::vector<T> &vec;
-        std::unique_lock<std::mutex> lock;
-    };
-
     struct PhysxConstraint {
         Tecs::Entity parent;
         physx::PxRigidDynamic *child;
@@ -67,15 +50,12 @@ namespace sp {
         PhysxManager(ecs::ECS &ecs);
         ~PhysxManager();
 
-        void Frame(double timeStep);
-        bool LogicFrame();
         void StartThread();
         void StartSimulation();
         void StopSimulation();
-        void Lock();
-        void Unlock();
-        void ReadLock();
-        void ReadUnlock();
+
+    private:
+        void AsyncFrame();
 
         void CreateConstraint(ecs::Lock<> lock,
                               Tecs::Entity parent,
@@ -88,13 +68,7 @@ namespace sp {
 
         ConvexHullSet *GetCachedConvexHulls(std::string name);
 
-        /**
-         * Create an actor and bind the entity's Id to the actor's userData
-         */
-        physx::PxRigidActor *CreateActor(shared_ptr<Model> model,
-                                         ecs::PhysxActorDesc &desc,
-                                         const Tecs::Entity &entity);
-
+        void UpdateActor(ecs::Lock<ecs::Write<ecs::Physics>, ecs::Read<ecs::Transform>> lock, Tecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
 
         physx::PxCapsuleController *CreateController(physx::PxVec3 pos, float radius, float height, float density);
@@ -139,30 +113,10 @@ namespace sp {
          */
         void Translate(physx::PxRigidDynamic *actor, const physx::PxVec3 &transform);
 
-        /**
-         * Collisions between this actor's shapes and other physx objects
-         * will be enabled (default).
-         */
-        void EnableCollisions(physx::PxRigidActor *actor);
-
-        /**
-         * Collisions between this actor's shapes and other physx objects
-         * will be disabled.
-         */
-        void DisableCollisions(physx::PxRigidActor *actor);
-
-        /**
-         * Enable or disable collisions for an actor.
-         */
-        void ToggleCollisions(physx::PxRigidActor *actor, bool enabled);
+        void EnableCollisions(physx::PxRigidActor *actor, bool enabled);
 
         void ToggleDebug(bool enabled);
         bool IsDebugEnabled() const;
-
-        /**
-         * Get the lines for the bounds of all physx objects
-         */
-        MutexedVector<physx::PxDebugLine> GetDebugLines();
 
     private:
         void CreatePhysxScene();
@@ -175,6 +129,9 @@ namespace sp {
 
         ecs::ECS &ecs;
 
+        std::atomic_bool simulate = false;
+        std::atomic_bool exiting = false;
+
         physx::PxFoundation *pxFoundation = nullptr;
         physx::PxPhysics *physics = nullptr;
         physx::PxDefaultCpuDispatcher *dispatcher = nullptr;
@@ -183,11 +140,12 @@ namespace sp {
         physx::PxCooking *pxCooking = nullptr;
         physx::PxControllerManager *manager = nullptr;
 
+#if !defined(PACKAGE_RELEASE)
         physx::PxPvd *pxPvd = nullptr;
         physx::PxPvdTransport *pxPvdTransport = nullptr;
+#endif
 
         physx::PxScene *scene = nullptr;
-        bool simulate = false, exiting = false, resultsPending = false;
         vector<uint8_t> scratchBlock;
         bool debug = false;
 
@@ -199,9 +157,6 @@ namespace sp {
         ConstraintList constraints;
 
         std::unordered_map<string, ConvexHullSet *> cache;
-
-        vector<physx::PxDebugLine> debugLines;
-        std::mutex debugLinesMutex;
 
         CFuncCollection funcs;
     };
