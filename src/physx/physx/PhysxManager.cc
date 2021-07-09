@@ -455,10 +455,8 @@ namespace sp {
                 shape->setQueryFilterData(data);
                 shape->setSimulationFilterData(data);
             }
-            
-            if (ph.dynamic) {
-                PxRigidBodyExt::updateMassAndInertia(*ph.actor->is<PxRigidDynamic>(), ph.density);
-            }
+
+            if (ph.dynamic) { PxRigidBodyExt::updateMassAndInertia(*ph.actor->is<PxRigidDynamic>(), ph.density); }
 
             ps.scene->addActor(*ph.actor);
         }
