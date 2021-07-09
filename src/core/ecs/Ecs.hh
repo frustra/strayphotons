@@ -25,6 +25,7 @@ namespace ecs {
     struct Mirror;
     struct Owner;
     struct Physics;
+    struct PhysicsScene;
     struct Renderable;
     class Script;
     class SignalOutput;
@@ -45,6 +46,7 @@ namespace ecs {
                           Mirror,
                           Owner,
                           Physics,
+                          PhysicsScene,
                           Renderable,
                           Script,
                           SignalOutput,

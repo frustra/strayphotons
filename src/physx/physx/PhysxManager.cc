@@ -48,12 +48,15 @@ namespace sp {
 
         scratchBlock.resize(0x1000000); // 16MiB
 
-        CreatePhysxScene();
-
+        auto scene = CreatePhysxScene();
         {
             auto lock = ecs.StartTransaction<ecs::AddRemove>();
             physicsRemoval = lock.Watch<ecs::Removed<ecs::Physics>>();
             humanControllerRemoval = lock.Watch<ecs::Removed<ecs::HumanController>>();
+
+            lock.Init<ecs::PhysicsScene>(std::shared_ptr<PxScene>(scene, [](PxScene *s) {
+                s->release();
+            }));
         }
 
         StartThread();
@@ -77,9 +80,9 @@ namespace sp {
             manager->purgeControllers();
             manager->release();
         }
-        if (scene) {
-            scene->release();
-            scene = nullptr;
+        {
+            auto lock = ecs.StartTransaction<ecs::AddRemove>();
+            lock.Unset<ecs::PhysicsScene>();
         }
         if (dispatcher) {
             dispatcher->release();
@@ -140,13 +143,16 @@ namespace sp {
     void PhysxManager::AsyncFrame() {
         // Wake up all actors and update the scene if gravity is changed.
         if (CVarGravity.Changed()) {
-            scene->setGravity(PxVec3(0.f, CVarGravity.Get(true), 0.f));
+            auto lock = ecs.StartTransaction<ecs::Write<ecs::PhysicsScene>>();
+            auto &ps = lock.Get<ecs::PhysicsScene>();
+
+            ps.scene->setGravity(PxVec3(0.f, CVarGravity.Get(true), 0.f));
 
             vector<PxActor *> buffer(256, nullptr);
             size_t startIndex = 0;
 
             while (true) {
-                size_t n = scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC, &buffer[0], buffer.size(), startIndex);
+                size_t n = ps.scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC, &buffer[0], buffer.size(), startIndex);
 
                 for (size_t i = 0; i < n; i++) {
                     buffer[i]->is<PxRigidDynamic>()->wakeUp();
@@ -158,22 +164,25 @@ namespace sp {
             }
         }
 
-        if (CVarShowShapes.Changed()) { ToggleDebug(CVarShowShapes.Get(true)); }
+        if (CVarShowShapes.Changed()) {
+            auto lock = ecs.StartTransaction<ecs::Write<ecs::PhysicsScene>>();
+
+            ToggleDebug(lock, CVarShowShapes.Get(true));
+        }
         // if (CVarShowShapes.Get()) { CacheDebugLines(); }
 
         { // Sync ECS state to physx
-            auto lock = ecs.StartTransaction<ecs::Write<ecs::Physics, ecs::Transform, ecs::InteractController>>();
+            auto lock = ecs.StartTransaction<
+                ecs::Write<ecs::Physics, ecs::PhysicsScene, ecs::Transform, ecs::InteractController>>();
 
             // Delete actors for removed entities
             ecs::Removed<ecs::Physics> removedPhysics;
             while (physicsRemoval.Poll(lock, removedPhysics)) {
-                if (removedPhysics.component.actor) {
-                    RemoveActor(removedPhysics.component.actor);
-                }
+                if (removedPhysics.component.actor) { RemoveActor(lock, removedPhysics.component.actor); }
             }
             ecs::Removed<ecs::HumanController> removedHumanController;
             while (humanControllerRemoval.Poll(lock, removedHumanController)) {
-                RemoveController(removedHumanController.component.pxController);
+                RemoveController(lock, removedHumanController.component.pxController);
             }
 
             // Update actors with latest entity data
@@ -182,7 +191,7 @@ namespace sp {
 
                 UpdateActor(lock, ent);
             }
-            
+
             // Update constraint forces
             for (auto constraint = constraints.begin(); constraint != constraints.end();) {
                 auto &transform = constraint->parent.Get<ecs::Transform>(lock);
@@ -236,9 +245,16 @@ namespace sp {
             }
         }
 
-        // Simulate 1 physics frame (blocking)
-        scene->simulate(PxReal(1.0 / CVarPhysicsFrameRate.Get()), nullptr, scratchBlock.data(), scratchBlock.size());
-        scene->fetchResults(true);
+        { // Simulate 1 physics frame (blocking)
+            auto lock = ecs.StartTransaction<ecs::Write<ecs::PhysicsScene>>();
+            auto &ps = lock.Get<ecs::PhysicsScene>();
+
+            ps.scene->simulate(PxReal(1.0 / CVarPhysicsFrameRate.Get()),
+                               nullptr,
+                               scratchBlock.data(),
+                               scratchBlock.size());
+            ps.scene->fetchResults(true);
+        }
 
         { // Sync ECS state from physx
             auto lock = ecs.StartTransaction<ecs::Read<ecs::Physics>, ecs::Write<ecs::Transform>>();
@@ -258,14 +274,14 @@ namespace sp {
                     transform.SetPosition(PxVec3ToGlmVec3P(pose.p));
                     transform.SetRotate(PxQuatToGlmQuat(pose.q));
                     transform.ClearDirty();
-                    
+
                     transform.UpdateCachedTransform(lock);
                 }
             }
         }
     }
 
-    void PhysxManager::CreatePhysxScene() {
+    PxScene *PhysxManager::CreatePhysxScene() {
         PxSceneDesc sceneDesc(physics->getTolerancesScale());
 
         sceneDesc.gravity = PxVec3(0.f, CVarGravity.Get(true), 0.f);
@@ -280,7 +296,7 @@ namespace sp {
         dispatcher = PxDefaultCpuDispatcherCreate(1);
         sceneDesc.cpuDispatcher = dispatcher;
 
-        scene = physics->createScene(sceneDesc);
+        auto scene = physics->createScene(sceneDesc);
         Assert(scene, "creating PhysX scene");
 
         PxMaterial *groundMat = physics->createMaterial(0.6f, 0.5f, 0.0f);
@@ -294,14 +310,16 @@ namespace sp {
         shape->setSimulationFilterData(data);
 
         scene->addActor(*groundPlane);
+        return scene;
     }
 
-    void PhysxManager::ToggleDebug(bool enabled) {
+    void PhysxManager::ToggleDebug(ecs::Lock<ecs::Write<ecs::PhysicsScene>> lock, bool enabled) {
         debug = enabled;
         float scale = (enabled ? 1.0f : 0.0f);
 
-        scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, scale);
-        scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, scale);
+        auto &ps = lock.Get<ecs::PhysicsScene>();
+        ps.scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, scale);
+        ps.scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, scale);
     }
 
     bool PhysxManager::IsDebugEnabled() const {
@@ -350,7 +368,9 @@ namespace sp {
         return set;
     }
 
-    void PhysxManager::Translate(PxRigidDynamic *actor, const PxVec3 &transform) {
+    void PhysxManager::Translate(ecs::Lock<ecs::Write<ecs::PhysicsScene>> lock,
+                                 PxRigidDynamic *actor,
+                                 const PxVec3 &transform) {
         PxRigidBodyFlags flags = actor->getRigidBodyFlags();
         if (!flags.isSet(PxRigidBodyFlag::eKINEMATIC)) {
             throw std::runtime_error("cannot translate a non-kinematic actor");
@@ -361,7 +381,9 @@ namespace sp {
         actor->setKinematicTarget(pose);
     }
 
-    void PhysxManager::EnableCollisions(PxRigidActor *actor, bool enabled) {
+    void PhysxManager::EnableCollisions(ecs::Lock<ecs::Write<ecs::PhysicsScene>> lock,
+                                        PxRigidActor *actor,
+                                        bool enabled) {
         PxU32 nShapes = actor->getNbShapes();
         vector<PxShape *> shapes(nShapes);
         actor->getShapes(shapes.data(), nShapes);
@@ -372,8 +394,11 @@ namespace sp {
         }
     }
 
-    void PhysxManager::UpdateActor(ecs::Lock<ecs::Write<ecs::Physics>, ecs::Read<ecs::Transform>> lock, Tecs::Entity &e) {
+    void PhysxManager::UpdateActor(
+        ecs::Lock<ecs::Write<ecs::Physics, ecs::PhysicsScene>, ecs::Read<ecs::Transform>> lock,
+        Tecs::Entity &e) {
         auto &ph = e.Get<ecs::Physics>(lock);
+        auto &ps = lock.Get<ecs::PhysicsScene>();
         auto &transform = e.Get<ecs::Transform>(lock);
 
         if (!ph.model) return;
@@ -381,25 +406,22 @@ namespace sp {
         auto globalTransform = transform.GetGlobalTransform(lock);
         auto globalRotation = transform.GetGlobalRotation(lock);
         auto scale = glm::vec3(glm::inverse(globalRotation) * (globalTransform * glm::vec4(1, 1, 1, 0)));
-        
-        auto pxTransform = PxTransform(GlmVec3ToPxVec3(globalTransform * glm::vec4(0, 0, 0, 1)), GlmQuatToPxQuat(globalRotation));
+
+        auto pxTransform = PxTransform(GlmVec3ToPxVec3(globalTransform * glm::vec4(0, 0, 0, 1)),
+                                       GlmQuatToPxQuat(globalRotation));
 
         if (!ph.actor) {
             if (ph.dynamic) {
                 Assert(!transform.HasParent(lock), "Dynamic physics objects must have no parent");
 
-                ph.actor = physics->createRigidDynamic(PxTransform(PxVec3(0, 0, 0)));
+                ph.actor = physics->createRigidDynamic(pxTransform);
 
-                PxRigidBodyExt::updateMassAndInertia(*ph.actor->is<PxRigidDynamic>(), ph.density);
-
-                if (ph.kinematic) {
-                    ph.actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-                }
+                if (ph.kinematic) { ph.actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true); }
             } else {
-                ph.actor = physics->createRigidStatic(PxTransform(PxVec3(0, 0, 0)));
+                ph.actor = physics->createRigidStatic(pxTransform);
             }
             Assert(ph.actor, "Physx did not return valid PxRigidActor");
-            
+
             ph.actor->userData = reinterpret_cast<void *>((size_t)e.id);
 
             PxMaterial *mat = physics->createMaterial(0.6f, 0.5f, 0.0f);
@@ -424,18 +446,23 @@ namespace sp {
                 PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
                 PxConvexMesh *pxhull = physics->createConvexMesh(input);
 
-                auto shape = PxRigidActorExt::createExclusiveShape(*ph.actor, PxConvexMeshGeometry(pxhull, PxMeshScale(GlmVec3ToPxVec3(scale))), *mat);
+                auto shape = PxRigidActorExt::createExclusiveShape(
+                    *ph.actor,
+                    PxConvexMeshGeometry(pxhull, PxMeshScale(GlmVec3ToPxVec3(scale))),
+                    *mat);
                 PxFilterData data;
                 data.word0 = PhysxCollisionGroup::WORLD;
                 shape->setQueryFilterData(data);
                 shape->setSimulationFilterData(data);
             }
             
-            ph.actor->setGlobalPose(pxTransform);
+            if (ph.dynamic) {
+                PxRigidBodyExt::updateMassAndInertia(*ph.actor->is<PxRigidDynamic>(), ph.density);
+            }
 
-            scene->addActor(*ph.actor);
+            ps.scene->addActor(*ph.actor);
         }
-        
+
         if (transform.IsDirty()) {
             if (ph.scale != scale) {
                 auto n = ph.actor->getNbShapes();
@@ -457,12 +484,14 @@ namespace sp {
         }
     }
 
-    void PhysxManager::RemoveActor(PxRigidActor *actor) {
+    void PhysxManager::RemoveActor(ecs::Lock<ecs::Write<ecs::PhysicsScene>> lock, PxRigidActor *actor) {
         if (actor) {
+            auto &ps = lock.Get<ecs::PhysicsScene>();
+
             auto rigidBody = actor->is<PxRigidDynamic>();
             if (rigidBody) RemoveConstraints(rigidBody);
 
-            scene->removeActor(*actor);
+            ps.scene->removeActor(*actor);
             actor->release();
         }
     }
@@ -485,8 +514,13 @@ namespace sp {
         }
     }
 
-    PxCapsuleController *PhysxManager::CreateController(PxVec3 pos, float radius, float height, float density) {
-        if (!manager) manager = PxCreateControllerManager(*scene, true);
+    PxCapsuleController *PhysxManager::CreateController(ecs::Lock<ecs::Write<ecs::PhysicsScene>> lock,
+                                                        PxVec3 pos,
+                                                        float radius,
+                                                        float height,
+                                                        float density) {
+        auto &ps = lock.Get<ecs::PhysicsScene>();
+        if (!manager) manager = PxCreateControllerManager(*ps.scene, true);
 
         // Capsule controller description will want to be data driven
         PxCapsuleControllerDesc desc;
@@ -501,7 +535,8 @@ namespace sp {
         desc.userData = new glm::vec3(0);
 
         PxController *controller = manager->createController(desc);
-        Assert(controller->getType() == PxControllerShapeType::eCAPSULE, "Physx did not create a valid PxCapsuleController");
+        Assert(controller->getType() == PxControllerShapeType::eCAPSULE,
+               "Physx did not create a valid PxCapsuleController");
 
         PxShape *shape;
         controller->getActor()->getShapes(&shape, 1);
@@ -513,7 +548,10 @@ namespace sp {
         return static_cast<PxCapsuleController *>(controller);
     }
 
-    bool PhysxManager::MoveController(PxController *controller, double dt, PxVec3 displacement) {
+    bool PhysxManager::MoveController(ecs::Lock<ecs::Write<ecs::PhysicsScene>> lock,
+                                      PxController *controller,
+                                      double dt,
+                                      PxVec3 displacement) {
         PxFilterData data;
         data.word0 = CVarPropJumping.Get() ? PhysxCollisionGroup::WORLD : PhysxCollisionGroup::PLAYER;
         PxControllerFilters filters(&data);
@@ -522,11 +560,16 @@ namespace sp {
         return flags & PxControllerCollisionFlag::eCOLLISION_DOWN;
     }
 
-    void PhysxManager::TeleportController(PxController *controller, PxExtendedVec3 position) {
+    void PhysxManager::TeleportController(ecs::Lock<ecs::Write<ecs::PhysicsScene>> lock,
+                                          PxController *controller,
+                                          PxExtendedVec3 position) {
         controller->setPosition(position);
     }
 
-    void PhysxManager::ResizeController(PxController *controller, const float height, bool fromTop) {
+    void PhysxManager::ResizeController(ecs::Lock<ecs::Write<ecs::PhysicsScene>> lock,
+                                        PxController *controller,
+                                        const float height,
+                                        bool fromTop) {
         auto currentHeight = ((PxCapsuleController *)controller)->getHeight();
         auto currentPos = controller->getFootPosition();
         controller->resize(height);
@@ -536,67 +579,70 @@ namespace sp {
         }
     }
 
-    void PhysxManager::RemoveController(PxController *controller) {
+    void PhysxManager::RemoveController(ecs::Lock<ecs::Write<ecs::PhysicsScene>> lock, PxController *controller) {
         controller->release();
     }
 
-    float PhysxManager::GetCapsuleHeight(PxCapsuleController *controller) {
-        float height = controller->getHeight();
-        return height;
-    }
-
-    bool PhysxManager::RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
+    bool PhysxManager::RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>, ecs::Write<ecs::PhysicsScene>> lock,
                                     Tecs::Entity entity,
                                     glm::vec3 origin,
                                     glm::vec3 dir,
                                     const float distance,
                                     PxRaycastBuffer &hit) {
-        scene->lockRead();
+        auto &ps = lock.Get<ecs::PhysicsScene>();
 
         PxRigidDynamic *controllerActor = nullptr;
         if (entity.Has<ecs::HumanController>(lock)) {
             auto &controller = entity.Get<ecs::HumanController>(lock);
             controllerActor = controller.pxController->getActor();
-            scene->removeActor(*controllerActor);
+            ps.scene->removeActor(*controllerActor);
         }
 
-        bool status = scene->raycast(GlmVec3ToPxVec3(origin), GlmVec3ToPxVec3(dir), distance, hit);
+        bool status = ps.scene->raycast(GlmVec3ToPxVec3(origin), GlmVec3ToPxVec3(dir), distance, hit);
 
-        if (controllerActor) { scene->addActor(*controllerActor); }
-
-        scene->unlockRead();
+        if (controllerActor) { ps.scene->addActor(*controllerActor); }
 
         return status;
     }
 
-    bool PhysxManager::SweepQuery(PxRigidDynamic *actor, const PxVec3 dir, const float distance) {
+    bool PhysxManager::SweepQuery(ecs::Lock<ecs::Write<ecs::PhysicsScene>> lock,
+                                  PxRigidDynamic *actor,
+                                  const PxVec3 dir,
+                                  const float distance) {
         PxShape *shape;
         actor->getShapes(&shape, 1);
 
         PxCapsuleGeometry capsuleGeometry;
         shape->getCapsuleGeometry(capsuleGeometry);
 
-        scene->removeActor(*actor);
+        auto &ps = lock.Get<ecs::PhysicsScene>();
+
+        ps.scene->removeActor(*actor);
         PxSweepBuffer hit;
-        bool status = scene->sweep(capsuleGeometry, actor->getGlobalPose(), dir, distance, hit);
-        scene->addActor(*actor);
+        bool status = ps.scene->sweep(capsuleGeometry, actor->getGlobalPose(), dir, distance, hit);
+        ps.scene->addActor(*actor);
         return status;
     }
 
-    bool PhysxManager::OverlapQuery(PxRigidDynamic *actor, PxVec3 translation, PxOverlapBuffer &hit) {
+    bool PhysxManager::OverlapQuery(ecs::Lock<ecs::Write<ecs::PhysicsScene>> lock,
+                                    PxRigidDynamic *actor,
+                                    PxVec3 translation,
+                                    PxOverlapBuffer &hit) {
         PxShape *shape;
         actor->getShapes(&shape, 1);
 
         PxCapsuleGeometry capsuleGeometry;
         shape->getCapsuleGeometry(capsuleGeometry);
 
-        scene->removeActor(*actor);
-        PxQueryFilterData filterData = PxQueryFilterData(PxQueryFlag::eANY_HIT |
-                                                                       PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC);
+        auto &ps = lock.Get<ecs::PhysicsScene>();
+
+        ps.scene->removeActor(*actor);
+        PxQueryFilterData filterData = PxQueryFilterData(PxQueryFlag::eANY_HIT | PxQueryFlag::eSTATIC |
+                                                         PxQueryFlag::eDYNAMIC);
         PxTransform pose = actor->getGlobalPose();
         pose.p += translation;
-        bool overlapFound = scene->overlap(capsuleGeometry, pose, hit, filterData);
-        scene->addActor(*actor);
+        bool overlapFound = ps.scene->overlap(capsuleGeometry, pose, hit, filterData);
+        ps.scene->addActor(*actor);
 
         return overlapFound;
     }

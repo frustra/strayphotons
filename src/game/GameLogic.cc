@@ -79,7 +79,7 @@ namespace sp {
             entity.Set<ecs::Transform>(lock, glm::vec3(0, 5, 0));
 
     #ifdef SP_PHYSICS_SUPPORT_PHYSX
-            entity.Set<ecs::Physics>(lock, model);
+            entity.Set<ecs::Physics>(lock, model, true);
     #endif
         } else if (game->input.IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
             // Toggle flashlight following player
@@ -166,7 +166,7 @@ namespace sp {
             view.clip = glm::vec2(0.1, 256);
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-            // game->humanControlSystem.Teleport(lock, player, glm::vec3(), glm::quat());
+            game->humanControlSystem.Teleport(lock, player, glm::vec3(), glm::quat());
 #endif
             player.Set<ecs::VoxelInfo>(lock);
         } else {
@@ -179,7 +179,7 @@ namespace sp {
             view.clip = glm::vec2(0.1, 256);
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-            // game->humanControlSystem.AssignController(lock, player, game->physics);
+            game->humanControlSystem.AssignController(lock, player, game->physics);
 #endif
             player.Set<ecs::VoxelInfo>(lock);
 
@@ -236,10 +236,10 @@ namespace sp {
                     if (e.Has<ecs::Transform>(lock)) {
                         auto &spawnTransform = e.Get<ecs::Transform>(lock);
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-                        // game->humanControlSystem.Teleport(lock,
-                        //                                   player,
-                        //                                   spawnTransform.GetPosition(),
-                        //                                   spawnTransform.GetRotate());
+                        game->humanControlSystem.Teleport(lock,
+                                                          player,
+                                                          spawnTransform.GetPosition(),
+                                                          spawnTransform.GetRotate());
 #else
                         player.Set<ecs::Transform>(lock, spawnTransform);
 #endif
@@ -274,12 +274,13 @@ namespace sp {
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
                 {
                     auto lock =
-                        game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Transform, ecs::HumanController>>();
+                        game->entityManager.tecs
+                            .StartTransaction<ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::HumanController>>();
                     if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
-                        // game->humanControlSystem.Teleport(lock,
-                        //                                   player,
-                        //                                   oldTransform.GetPosition(),
-                        //                                   oldTransform.GetRotate());
+                        game->humanControlSystem.Teleport(lock,
+                                                          player,
+                                                          oldTransform.GetPosition(),
+                                                          oldTransform.GetRotate());
                     }
                 }
 #endif
