@@ -1,19 +1,23 @@
 #pragma once
 
-#include "core/CVar.hh"
-#include "ecs/Ecs.hh"
-#include "ecs/components/View.hh"
-#include "game/gui/ProfilerGui.hh"
+#ifdef SP_GRAPHICS_SUPPORT
+
+    #include "ecs/Ecs.hh"
+
+    #ifdef SP_GRAPHICS_SUPPORT_GL
+        #include "graphics/opengl/PerfTimer.hh"
+    #endif
+
+    #include <glm/glm.hpp>
+    #include <memory>
+    #include <vector>
 
 namespace sp {
     class Game;
-    class GuiRenderer;
-    class GlfwGraphicsContext;
+    class GraphicsContext;
     class Renderer;
-
-    extern CVar<glm::ivec2> CVarWindowSize;
-    extern CVar<float> CVarFieldOfView;
-    extern CVar<int> CVarWindowFullscreen;
+    class ProfilerGui;
+    class GlfwActionSource;
 
     class GraphicsManager {
     public:
@@ -30,23 +34,30 @@ namespace sp {
 
         bool Frame();
 
-        GlfwGraphicsContext *GetContext() {
-            return context;
-        }
+        GraphicsContext *GetContext();
+
+        void DisableCursor();
+        void EnableCursor();
 
         Renderer *GetRenderer() {
             return renderer;
         }
 
     private:
-        bool useBasic = false;
-
-        GlfwGraphicsContext *context = nullptr;
+        GraphicsContext *context = nullptr;
         Renderer *renderer = nullptr;
         Game *game = nullptr;
+
+    #ifdef SP_GRAPHICS_SUPPORT_GL
+        bool useBasic = false;
+        GlfwActionSource *glfwActionSource = nullptr;
         ProfilerGui *profilerGui = nullptr;
+        PerfTimer timer;
+    #endif
 
         ecs::Observer<ecs::Removed<ecs::View>> viewRemoval;
-        vector<ecs::Entity> playerViews;
+        std::vector<ecs::Entity> playerViews;
     };
 } // namespace sp
+
+#endif

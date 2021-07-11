@@ -1,16 +1,20 @@
 #pragma once
 
-#include "xr/XrSystem.hh"
+#ifdef SP_XR_SUPPORT
 
-#include <list>
-#include <memory>
+    #include "xr/XrSystem.hh"
+
+    #include <list>
+    #include <memory>
 
 namespace sp {
+    class GraphicsContext;
+
     namespace xr {
 
         class XrSystemFactory {
         public:
-            XrSystemFactory();
+            XrSystemFactory(GraphicsContext *context);
 
             // This function picks the "best" XR system based on the current execution environment.
             // In many cases, this returns a NULL pointer
@@ -22,3 +26,5 @@ namespace sp {
 
     } // namespace xr
 } // namespace sp
+
+#endif

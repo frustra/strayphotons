@@ -1,22 +1,42 @@
+add_library(${PROJECT_CORE_LIB} STATIC)
 
-target_sources(
-    ${PROJECT_LIB}
-    PRIVATE
-        Console.cc
-        PerfTimer.cc
+target_link_libraries(${PROJECT_CORE_LIB} PUBLIC
+    glm
+    microtar
+    murmurhash
+    picojson
+    robin_hood
+    Tecs
+    tinygltf
 )
 
-target_sources(
-    ${PROJECT_EXE}
-    PRIVATE
-        Main.cc
-        Game.cc
+if(WIN32)
+    # Disable warnings for warning C4506: no definition for inline function 'bool ecs::Component<...>::Load()'
+    target_compile_options(${PROJECT_CORE_LIB} PUBLIC
+        /wd4506
+    )
+
+	target_compile_definitions(${PROJECT_CORE_LIB} PUBLIC
+		_CRT_SECURE_NO_WARNINGS
+		UNICODE
+		_UNICODE
+		NOMINMAX
+		_USE_MATH_DEFINES
+	)
+    
+    # fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
+    target_compile_options(${PROJECT_CORE_LIB} PUBLIC /bigobj)
+else()
+    target_link_libraries(${PROJECT_CORE_LIB} PRIVATE
+        linenoise
+    )
+endif()
+
+target_include_directories(${PROJECT_CORE_LIB} PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-
-target_sources(
-    ${PROJECT_TEST_EXE}
-    PRIVATE
-        MainTest.cc
-        Game.cc
-)
+add_subdirectory(assets)
+add_subdirectory(core)
+add_subdirectory(ecs)
+add_subdirectory(systems)

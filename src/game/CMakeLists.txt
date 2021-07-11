@@ -1,8 +1,8 @@
-add_subdirectory(gui)
-add_subdirectory(input)
+add_library(${PROJECT_GAME_TEST_LIB} INTERFACE)
+target_compile_definitions(${PROJECT_GAME_TEST_LIB} INTERFACE SP_TEST_MODE)
 
-target_sources(
-    ${PROJECT_LIB}
-    PRIVATE
-        GameLogic.cc
+add_module_sources(
+    Game.cc
+    GameLogic.cc
+    Main.cc
 )

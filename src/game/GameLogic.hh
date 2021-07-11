@@ -1,16 +1,14 @@
 #pragma once
 
-#include "Common.hh"
 #include "core/CFunc.hh"
-#include "ecs/systems/HumanControlSystem.hh"
+#include "ecs/Ecs.hh"
 
-#include <ecs/Ecs.hh>
+#include <memory>
 
 namespace sp {
     class Game;
     class Scene;
     class Script;
-    class InputManager;
 
     class GameLogic {
     public:
@@ -18,7 +16,9 @@ namespace sp {
         ~GameLogic();
 
         void Init(Script *startupScript = nullptr);
+#ifdef SP_INPUT_SUPPORT
         void HandleInput();
+#endif
         bool Frame(double dtSinceLastFrame);
 
         void ResetPlayer();
@@ -35,9 +35,7 @@ namespace sp {
 
     private:
         Game *game;
-        InputManager *input = nullptr;
-        ecs::HumanControlSystem humanControlSystem;
-        shared_ptr<Scene> scene;
+        std::shared_ptr<Scene> scene;
         Tecs::Entity player;
         Tecs::Entity flashlight;
         CFuncCollection funcs;

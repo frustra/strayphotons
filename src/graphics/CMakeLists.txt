@@ -1,41 +1,44 @@
-add_subdirectory(basic_renderer)
-add_subdirectory(voxel_renderer)
-add_subdirectory(glfw_graphics_context)
+add_library(${PROJECT_GRAPHICS_CORE_LIB} STATIC)
+add_library(${PROJECT_GRAPHICS_EGL_LIB} STATIC)
+add_library(${PROJECT_GRAPHICS_OPENGL_LIB} STATIC)
 
-# Add the OpenGL implementations of core graphics types
-add_subdirectory(opengl)
+target_include_directories(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
-# Add all the postprocessing code
-add_subdirectory(postprocess)
+target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
+    ${PROJECT_CORE_LIB}
+)
 
-target_sources(
+target_link_libraries(${PROJECT_GRAPHICS_EGL_LIB} PUBLIC
     ${PROJECT_GRAPHICS_CORE_LIB}
-    PRIVATE
-        Buffer.cc
-        GenericShaders.cc
-        GPUTypes.cc
-        Graphics.cc
-        GraphicsContext.cc
-        LightSensor.cc
-        PixelFormat.cc
-        Renderer.cc
-        RenderBuffer.cc
-        RenderTarget.cc
-        RenderTargetPool.cc
-        SceneShaders.cc
-        Shader.cc
-        ShaderManager.cc
-        Util.cc
+    ${PROJECT_INPUT_CORE_LIB}
+    GLEW
+    glfw-egl
+    ImGui
+    OpenGL::GL
+)
+target_link_libraries(${PROJECT_GRAPHICS_OPENGL_LIB} PUBLIC
+    ${PROJECT_GRAPHICS_CORE_LIB}
+    ${PROJECT_INPUT_CORE_LIB}
+    GLEW
+    glfw
+    ImGui
+    OpenGL::GL
 )
 
-target_sources(
-    ${PROJECT_GRAPHICS_EGL_LIB}
-    PRIVATE
-        GraphicsManager.cc
+target_compile_definitions(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
+    SP_GRAPHICS_SUPPORT
+)
+target_compile_definitions(${PROJECT_GRAPHICS_EGL_LIB} PUBLIC
+    SP_GRAPHICS_SUPPORT_GL
+)
+target_compile_definitions(${PROJECT_GRAPHICS_OPENGL_LIB} PUBLIC
+    SP_GRAPHICS_SUPPORT_GL
 )
 
-target_sources(
-    ${PROJECT_GRAPHICS_OPENGL_LIB}
-    PRIVATE
-        GraphicsManager.cc
+add_subdirectory(graphics)
+
+add_module_sources(
+    GraphicsManager.cc
 )

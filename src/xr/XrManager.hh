@@ -1,13 +1,12 @@
 #pragma once
 
-#include "Common.hh"
-#include "core/CFunc.hh"
-#include "xr/XrSystem.hh"
+#ifdef SP_XR_SUPPORT
 
-#include <ecs/Ecs.hh>
+    #include "core/CFunc.hh"
+    #include "ecs/Ecs.hh"
+    #include "xr/XrSystem.hh"
 
 namespace sp {
-
     class Game;
 
     namespace xr {
@@ -61,3 +60,5 @@ namespace sp {
         };
     } // namespace xr
 } // namespace sp
+
+#endif

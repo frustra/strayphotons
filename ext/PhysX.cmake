@@ -57,7 +57,7 @@ elseif (UNIX)
 elseif (MSVC)
 
     set(TARGET_BUILD_PLATFORM windows)
-    set(NV_USE_STATIC_WINCRT FALSE)
+    set(NV_USE_STATIC_WINCRT FALSE CACHE BOOL "Force PhysX to build DLLs" FORCE)
 
     if (SP_DEBUG)
         set(NV_USE_DEBUG_WINCRT TRUE CACHE BOOL "Force PhysX to use Debug WINCRT" FORCE)
@@ -109,7 +109,7 @@ if (WIN32)
                     ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_physx_target}-uptodate
             )
 
-            add_dependencies(${PROJECT_LIB} ${_physx_target}-dll-copy)
+            add_dependencies(${PROJECT_COMMON_EXE} ${_physx_target}-dll-copy)
 
         endif()
     endforeach()

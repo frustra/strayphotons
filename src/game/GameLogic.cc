@@ -1,16 +1,14 @@
-#include "game/GameLogic.hh"
+#include "GameLogic.hh"
 
+#include "Game.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Scene.hh"
 #include "assets/Script.hh"
 #include "core/CVar.hh"
 #include "core/Console.hh"
-#include "core/Game.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/Signals.hh"
-#include "physx/PhysxUtils.hh"
-#include "xr/XrSystemFactory.hh"
 
 #include <cmath>
 #include <cxxopts.hpp>
@@ -20,8 +18,7 @@
 #include <glm/gtx/transform.hpp>
 
 namespace sp {
-    GameLogic::GameLogic(Game *game)
-        : game(game), input(&game->input), humanControlSystem(&game->entityManager, &game->input, &game->physics) {
+    GameLogic::GameLogic(Game *game) : game(game) {
         funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
         funcs.Register(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
         funcs.Register(this, "printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
@@ -52,23 +49,27 @@ namespace sp {
             LoadScene("menu");
         }
 
-        if (input != nullptr) {
-            input->BindCommand(INPUT_ACTION_SET_VR_ORIGIN, "setvrorigin");
-            input->BindCommand(INPUT_ACTION_RELOAD_SCENE, "reloadscene");
-            input->BindCommand(INPUT_ACTION_RESET_SCENE, "reloadscene reset");
-            input->BindCommand(INPUT_ACTION_RELOAD_SHADERS, "reloadshaders");
-            input->BindCommand(INPUT_ACTION_TOGGLE_FLASHLIGH, "toggle r.FlashlightOn");
-        }
+#ifdef SP_INPUT_SUPPORT
+        game->input.BindCommand(INPUT_ACTION_SET_VR_ORIGIN, "setvrorigin");
+        game->input.BindCommand(INPUT_ACTION_RELOAD_SCENE, "reloadscene");
+        game->input.BindCommand(INPUT_ACTION_RESET_SCENE, "reloadscene reset");
+        game->input.BindCommand(INPUT_ACTION_RELOAD_SHADERS, "reloadshaders");
+        game->input.BindCommand(INPUT_ACTION_TOGGLE_FLASHLIGH, "toggle r.FlashlightOn");
+#endif
     }
 
     GameLogic::~GameLogic() {}
 
+#ifdef SP_INPUT_SUPPORT
     void GameLogic::HandleInput() {
-        if (input->FocusLocked()) return;
+        if (game->input.FocusLocked()) return;
 
-        if (game->menuGui && input->IsPressed(INPUT_ACTION_OPEN_MENU)) {
+    #ifdef SP_GRAPHICS_SUPPORT_GL
+        if (game->menuGui && game->input.IsPressed(INPUT_ACTION_OPEN_MENU)) {
             game->menuGui->OpenPauseMenu();
-        } else if (input->IsPressed(INPUT_ACTION_SPAWN_DEBUG)) {
+        } else
+    #endif
+            if (game->input.IsPressed(INPUT_ACTION_SPAWN_DEBUG)) {
             // Spawn dodecahedron
             auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
             auto entity = lock.NewEntity();
@@ -77,12 +78,14 @@ namespace sp {
             entity.Set<ecs::Renderable>(lock, model);
             entity.Set<ecs::Transform>(lock, glm::vec3(0, 5, 0));
 
-            PhysxActorDesc desc;
-            desc.transform = physx::PxTransform(physx::PxVec3(0, 5, 0));
+    #ifdef SP_PHYSICS_SUPPORT_PHYSX
+            ecs::PhysxActorDesc desc;
+            desc.transform = glm::translate(glm::vec3(0, 5, 0));
             auto actor = game->physics.CreateActor(model, desc, entity);
 
             if (actor) { entity.Set<ecs::Physics>(lock, actor, model, desc); }
-        } else if (input->IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
+    #endif
+        } else if (game->input.IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
             // Toggle flashlight following player
 
             auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
@@ -107,9 +110,12 @@ namespace sp {
             }
         }
     }
+#endif
 
     bool GameLogic::Frame(double dtSinceLastFrame) {
-        if (input != nullptr) { HandleInput(); }
+#ifdef SP_INPUT_SUPPORT
+        HandleInput();
+#endif
 
         if (!scene) return true;
 
@@ -154,8 +160,6 @@ namespace sp {
             view->SetProjMat(view->GetFov(), view->GetClip(), glm::ivec2(CVarFlashlightResolution.Get(true)));
         }
 
-        if (!humanControlSystem.Frame(dtSinceLastFrame)) return false;
-
         return true;
     }
 
@@ -165,22 +169,30 @@ namespace sp {
             auto &view = player.Set<ecs::View>(lock);
             view.clip = glm::vec2(0.1, 256);
 
-            humanControlSystem.Teleport(lock, player, glm::vec3(), glm::quat());
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+            game->humanControlSystem.Teleport(lock, player, glm::vec3(), glm::quat());
+#endif
             player.Set<ecs::VoxelInfo>(lock);
         } else {
             player = lock.NewEntity();
             player.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GAME_LOGIC);
             player.Set<ecs::Name>(lock, "player");
+            player.Set<ecs::Transform>(lock, glm::vec3(0));
+
             auto &view = player.Set<ecs::View>(lock);
             view.clip = glm::vec2(0.1, 256);
 
-            humanControlSystem.AssignController(lock, player, game->physics);
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+            game->humanControlSystem.AssignController(lock, player, game->physics);
+#endif
             player.Set<ecs::VoxelInfo>(lock);
 
             // Mark the player as being able to activate trigger areas
             player.Set<ecs::Triggerable>(lock);
 
+#ifdef SP_GRAPHICS_SUPPORT
             game->graphics.AddPlayerView(player);
+#endif
         }
 
         if (flashlight) flashlight.Destroy(lock);
@@ -202,8 +214,12 @@ namespace sp {
     }
 
     void GameLogic::LoadScene(string name) {
+#ifdef SP_GRAPHICS_SUPPORT
         game->graphics.RenderLoading();
+#endif
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
         game->physics.StopSimulation();
+#endif
         game->entityManager.DestroyAllWith<ecs::Owner>(ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
 
         if (scene != nullptr) {
@@ -215,7 +231,7 @@ namespace sp {
         scene.reset();
         {
             auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
-            scene = GAssets.LoadScene(name, lock, game->physics, ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
+            scene = GAssets.LoadScene(name, lock, ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
 
             for (auto e : lock.EntitiesWith<ecs::Name>()) {
                 auto &name = e.Get<ecs::Name>(lock);
@@ -223,16 +239,22 @@ namespace sp {
                     name = "player-spwan";
                     if (e.Has<ecs::Transform>(lock)) {
                         auto &spawnTransform = e.Get<ecs::Transform>(lock);
-                        humanControlSystem.Teleport(lock,
-                                                    player,
-                                                    spawnTransform.GetPosition(),
-                                                    spawnTransform.GetRotate());
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+                        game->humanControlSystem.Teleport(lock,
+                                                          player,
+                                                          spawnTransform.GetPosition(),
+                                                          spawnTransform.GetRotate());
+#else
+                        player.Set<ecs::Transform>(lock, spawnTransform);
+#endif
                     }
                 }
             }
         }
         if (!scene) {
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
             game->physics.StartSimulation();
+#endif
             return;
         }
 
@@ -240,9 +262,11 @@ namespace sp {
             GetConsoleManager().ParseAndExecute(line);
         }
 
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
         // Make sure all objects are in the correct physx state before restarting simulation
         game->physics.LogicFrame();
         game->physics.StartSimulation();
+#endif
     }
 
     void GameLogic::ReloadScene(string arg) {
@@ -257,13 +281,18 @@ namespace sp {
                     if (player && player.Has<ecs::Transform>(lock)) { oldTransform = player.Get<ecs::Transform>(lock); }
                 }
                 LoadScene(scene->name);
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
                 {
                     auto lock =
                         game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Transform, ecs::HumanController>>();
                     if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
-                        humanControlSystem.Teleport(lock, player, oldTransform.GetPosition(), oldTransform.GetRotate());
+                        game->humanControlSystem.Teleport(lock,
+                                                          player,
+                                                          oldTransform.GetPosition(),
+                                                          oldTransform.GetRotate());
                     }
                 }
+#endif
             }
         }
     }
@@ -277,8 +306,12 @@ namespace sp {
             auto &transform = player.Get<ecs::Transform>(lock);
             auto &controller = player.Get<ecs::HumanController>(lock);
             auto position = transform.GetPosition();
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
             auto pxFeet = controller.pxController->getFootPosition();
             Logf("Player position: [%f, %f, %f], feet: %f", position.x, position.y, position.z, pxFeet.y);
+#else
+            Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
+#endif
             Logf("Player velocity: [%f, %f, %f]", controller.velocity.x, controller.velocity.y, controller.velocity.z);
             Logf("Player on ground: %s", controller.onGround ? "true" : "false");
         } else {

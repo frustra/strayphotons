@@ -1,5 +1,5 @@
 add_executable(sp-ecs-benchmark benchmark.cc)
-target_link_libraries(sp-ecs-benchmark ${PROJECT_LIB} glomerate robin_hood)
+target_link_libraries(sp-ecs-benchmark ${PROJECT_CORE_LIB} glomerate robin_hood)
 
 # Change glomerate to use robin hood hashing
 if(MSVC)
