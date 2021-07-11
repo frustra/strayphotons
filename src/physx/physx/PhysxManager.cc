@@ -54,7 +54,7 @@ namespace sp {
             physicsRemoval = lock.Watch<ecs::Removed<ecs::Physics>>();
             humanControllerRemoval = lock.Watch<ecs::Removed<ecs::HumanController>>();
 
-            lock.Init<ecs::PhysicsScene>(std::shared_ptr<PxScene>(scene, [](PxScene *s) {
+            lock.Set<ecs::PhysicsScene>(std::shared_ptr<PxScene>(scene, [](PxScene *s) {
                 s->release();
             }));
         }
