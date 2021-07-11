@@ -213,9 +213,6 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
         game->graphics.RenderLoading();
 #endif
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-        game->physics.StopSimulation();
-#endif
         game->entityManager.DestroyAllWith<ecs::Owner>(ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
 
         if (scene != nullptr) {
@@ -253,10 +250,6 @@ namespace sp {
                 GetConsoleManager().ParseAndExecute(line);
             }
         }
-
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-        game->physics.StartSimulation();
-#endif
     }
 
     void GameLogic::ReloadScene(string arg) {
