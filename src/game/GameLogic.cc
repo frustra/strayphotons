@@ -79,11 +79,7 @@ namespace sp {
             entity.Set<ecs::Transform>(lock, glm::vec3(0, 5, 0));
 
     #ifdef SP_PHYSICS_SUPPORT_PHYSX
-            ecs::PhysxActorDesc desc;
-            desc.transform = glm::translate(glm::vec3(0, 5, 0));
-            auto actor = game->physics.CreateActor(model, desc, entity);
-
-            if (actor) { entity.Set<ecs::Physics>(lock, actor, model, desc); }
+            entity.Set<ecs::Physics>(lock, model, true);
     #endif
         } else if (game->input.IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
             // Toggle flashlight following player
@@ -217,9 +213,6 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
         game->graphics.RenderLoading();
 #endif
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-        game->physics.StopSimulation();
-#endif
         game->entityManager.DestroyAllWith<ecs::Owner>(ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
 
         if (scene != nullptr) {
@@ -251,22 +244,12 @@ namespace sp {
                 }
             }
         }
-        if (!scene) {
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-            game->physics.StartSimulation();
-#endif
-            return;
-        }
 
-        for (auto &line : scene->autoExecList) {
-            GetConsoleManager().ParseAndExecute(line);
+        if (scene) {
+            for (auto &line : scene->autoExecList) {
+                GetConsoleManager().ParseAndExecute(line);
+            }
         }
-
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-        // Make sure all objects are in the correct physx state before restarting simulation
-        game->physics.LogicFrame();
-        game->physics.StartSimulation();
-#endif
     }
 
     void GameLogic::ReloadScene(string arg) {
@@ -284,7 +267,8 @@ namespace sp {
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
                 {
                     auto lock =
-                        game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Transform, ecs::HumanController>>();
+                        game->entityManager.tecs
+                            .StartTransaction<ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::HumanController>>();
                     if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
                         game->humanControlSystem.Teleport(lock,
                                                           player,

@@ -112,8 +112,9 @@ namespace sp::xr {
                             physx::PxReal maxDistance = 10.0f;
 
                             {
-                                auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::HumanController>,
-                                                                                      ecs::Write<ecs::Transform>>();
+                                auto lock = game->entityManager.tecs
+                                                .StartTransaction<ecs::Read<ecs::HumanController>,
+                                                                  ecs::Write<ecs::PhysicsScene, ecs::Transform>>();
 
                                 physx::PxRaycastBuffer hit;
                                 bool status = game->physics.RaycastQuery(lock,
@@ -143,9 +144,9 @@ namespace sp::xr {
                         grabAction->GetFallingEdgeActionValue(controllerAction.second, let_go);
 
                         if (grab) {
-                            auto lock = game->entityManager.tecs
-                                            .StartTransaction<ecs::Read<ecs::HumanController>,
-                                                              ecs::Write<ecs::Transform, ecs::InteractController>>();
+                            auto lock = game->entityManager.tecs.StartTransaction<
+                                ecs::Read<ecs::HumanController>,
+                                ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::InteractController>>();
 
                             Logf("grab on subpath %s", controllerAction.second);
                             game->humanControlSystem.Interact(lock, xrObject.GetEntity());

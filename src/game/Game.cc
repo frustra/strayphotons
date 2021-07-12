@@ -95,7 +95,6 @@ namespace sp {
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
         if (!humanControlSystem.Frame(dt)) return false;
-        if (!physics.LogicFrame()) return false;
 #endif
         if (!animation.Frame(dt)) return false;
 

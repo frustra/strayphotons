@@ -12,13 +12,13 @@ namespace ecs {
             if (param.first == "model") {
                 physics.model = sp::GAssets.LoadModel(param.second.get<string>());
             } else if (param.first == "dynamic") {
-                physics.desc.dynamic = param.second.get<bool>();
+                physics.dynamic = param.second.get<bool>();
             } else if (param.first == "kinematic") {
-                physics.desc.kinematic = param.second.get<bool>();
+                physics.kinematic = param.second.get<bool>();
             } else if (param.first == "decomposeHull") {
-                physics.desc.decomposeHull = param.second.get<bool>();
+                physics.decomposeHull = param.second.get<bool>();
             } else if (param.first == "density") {
-                physics.desc.density = param.second.get<double>();
+                physics.density = param.second.get<double>();
             }
         }
         return true;

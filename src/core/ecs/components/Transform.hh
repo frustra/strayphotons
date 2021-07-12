@@ -74,6 +74,7 @@ namespace ecs {
         glm::mat4 GetScale() const;
         glm::vec3 GetScaleVec() const;
 
+        bool IsDirty() const;
         bool ClearDirty();
 
     private:

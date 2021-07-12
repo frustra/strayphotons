@@ -207,6 +207,10 @@ namespace ecs {
         return this->scale * glm::vec4(1, 1, 1, 0);
     }
 
+    bool Transform::IsDirty() const {
+        return this->dirty;
+    }
+
     bool Transform::ClearDirty() {
         bool tmp = this->dirty;
         this->dirty = false;

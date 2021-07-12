@@ -38,10 +38,10 @@ namespace sp {
         /**
          * Teleports the entity and properly syncs to physx.
          */
-        void Teleport(ecs::Lock<ecs::Write<ecs::Transform, ecs::HumanController>> lock,
+        void Teleport(ecs::Lock<ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::HumanController>> lock,
                       Tecs::Entity entity,
                       glm::vec3 position);
-        void Teleport(ecs::Lock<ecs::Write<ecs::Transform, ecs::HumanController>> lock,
+        void Teleport(ecs::Lock<ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::HumanController>> lock,
                       Tecs::Entity entity,
                       glm::vec3 position,
                       glm::quat rotation);
@@ -49,9 +49,9 @@ namespace sp {
         /**
          * Pick up the object that the player is looking at and make it move at to a fixed location relative to camera
          */
-        void Interact(
-            ecs::Lock<ecs::Read<ecs::HumanController>, ecs::Write<ecs::Transform, ecs::InteractController>> lock,
-            Tecs::Entity entity);
+        void Interact(ecs::Lock<ecs::Read<ecs::HumanController>,
+                                ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::InteractController>> lock,
+                      Tecs::Entity entity);
 
     private:
         glm::vec3 CalculatePlayerVelocity(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,
@@ -61,7 +61,7 @@ namespace sp {
                                           bool jump,
                                           bool sprint,
                                           bool crouch);
-        void MoveEntity(ecs::Lock<ecs::Write<ecs::Transform, ecs::HumanController>> lock,
+        void MoveEntity(ecs::Lock<ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::HumanController>> lock,
                         Tecs::Entity entity,
                         double dtSinceLastFrame,
                         glm::vec3 velocity);
@@ -69,7 +69,7 @@ namespace sp {
         /**
          * Resize entity used for crouching and uncrouching. Can perform overlap checks to make sure resize is valid
          */
-        bool ResizeEntity(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
+        bool ResizeEntity(ecs::Lock<ecs::Write<ecs::PhysicsScene>, ecs::Read<ecs::HumanController>> lock,
                           Tecs::Entity entity,
                           float height,
                           bool overlapCheck);
