@@ -2,7 +2,7 @@
 format_valid=0
 echo -e "--- Running \033[33mclang-format check\033[0m :clipboard:"
 if ! ./extra/validate_format.py; then
-    echo "^^^ +++"
+    echo -e "^^^ +++"
     echo -e "\033[31mclang-format validation failed\033[0m"
     format_valid=1
 fi
@@ -26,8 +26,8 @@ fi
 
 echo -e "--- Running \033[33mcmake configure\033[0m :video_game:"
 if ! cmake -DCMAKE_BUILD_TYPE=Release -S . -B ./build -GNinja; then
-    echo "^^^ +++"
-    echo "\033[31mCMake Configure failed\033[0m"
+    echo -e "\n^^^ +++"
+    echo -e "\033[31mCMake Configure failed\033[0m"
     exit 1
 fi
 
@@ -46,8 +46,8 @@ fi
 
 echo -e "--- Running \033[33mcmake build\033[0m :rocket:"
 if ! cmake --build ./build --config Release --target all; then
-    echo "\n^^^ +++"
-    echo "\033[31mCMake Build failed\033[0m"
+    echo -e "\n^^^ +++"
+    echo -e "\033[31mCMake Build failed\033[0m"
     exit 1
 fi
 
@@ -57,7 +57,7 @@ cd bin
 ./sp-unit-tests
 result=$?
 if [ $result -ne 0 ]; then
-    echo "^^^ +++"
+    echo -e "\n^^^ +++"
     echo -e "\033[31mTest failed with response code: $result\033[0m"
     success=$result
 else
@@ -68,7 +68,7 @@ echo -e "--- Running \033[33mintegration tests\033[0m :clipboard:"
 ./sp-integration-tests
 result=$?
 if [ $result -ne 0 ]; then
-    echo "^^^ +++"
+    echo -e "\n^^^ +++"
     echo -e "\033[31mTest failed with response code: $result\033[0m"
     success=$result
 else
