@@ -32,7 +32,7 @@ namespace testing {
     }
 
     template<typename Ta, typename Tb>
-    static inline void AssertEqual(Ta a, Tb b, const std::string message) {
+    inline void AssertEqual(Ta a, Tb b, const std::string message) {
         if (!(a == b)) {
             std::stringstream ss;
             ss << "Assertion failed: " << message << " (" << a << " != " << b << ")" << std::endl;
@@ -42,9 +42,9 @@ namespace testing {
     }
 
     template<>
-    static inline void AssertEqual<ecs::Event::EventData, ecs::Event::EventData>(ecs::Event::EventData a,
-                                                                                 ecs::Event::EventData b,
-                                                                                 const std::string message) {
+    inline void AssertEqual<ecs::Event::EventData, ecs::Event::EventData>(ecs::Event::EventData a,
+                                                                          ecs::Event::EventData b,
+                                                                          const std::string message) {
         if (!(a == b)) {
             std::stringstream ss;
             ss << "Assertion failed: " << message << " (";
@@ -84,7 +84,7 @@ namespace testing {
     }
 
     template<>
-    static inline void AssertEqual<glm::vec3, glm::vec3>(glm::vec3 a, glm::vec3 b, const std::string message) {
+    inline void AssertEqual<glm::vec3, glm::vec3>(glm::vec3 a, glm::vec3 b, const std::string message) {
         if (!(a == b)) {
             std::stringstream ss;
             ss << "Assertion failed: " << message << " (" << glm::to_string(a) << " != " << glm::to_string(b) << ")"

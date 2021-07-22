@@ -34,7 +34,7 @@ namespace ecs {
         }
 
         bool Add(const std::string binding, const Event &event) {
-            auto &queue = events.find(binding);
+            auto queue = events.find(binding);
             if (queue != events.end()) {
                 queue->second.emplace(event);
                 return true;
@@ -43,7 +43,7 @@ namespace ecs {
         }
 
         bool Poll(const std::string binding, Event &eventOut) {
-            auto &queue = events.find(binding);
+            auto queue = events.find(binding);
             if (queue != events.end() && !queue->second.empty()) {
                 eventOut = queue->second.front();
                 queue->second.pop();

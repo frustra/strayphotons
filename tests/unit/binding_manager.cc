@@ -24,7 +24,7 @@ namespace BindingManagerTest {
             player = lock.NewEntity();
             player.Set<ecs::Name>(lock, "player");
             auto &eventInput = player.Set<ecs::EventInput>(lock, TEST_EVENT_ACTION1, TEST_EVENT_ACTION2);
-            AssertEqual(eventInput.events.size(), 2, "EventInput did not save correctly");
+            AssertEqual(eventInput.events.size(), 2u, "EventInput did not save correctly");
         }
         { // Send some test events
             auto lock = ecs.tecs.StartTransaction<ecs::Write<ecs::EventInput>>();
