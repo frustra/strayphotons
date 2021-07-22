@@ -12,6 +12,32 @@
 #include <string>
 #include <vector>
 
+static inline std::ostream &operator<<(std::ostream &out, const glm::vec2 &v) {
+    return out << glm::to_string(v);
+}
+
+static inline std::ostream &operator<<(std::ostream &out, const glm::vec3 &v) {
+    return out << glm::to_string(v);
+}
+
+static inline std::ostream &operator<<(std::ostream &out, const ecs::Event::EventData &v) {
+    std::visit(
+        [&](auto &&arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, glm::vec2>) {
+                out << "glm::" << glm::to_string(arg);
+            } else if constexpr (std::is_same_v<T, Tecs::Entity>) {
+                out << "Entity(" << arg.id << ")";
+            } else if constexpr (std::is_same_v<T, std::string>) {
+                out << "\"" << arg << "\"";
+            } else {
+                out << typeid(arg).name() << "(" << arg << ")";
+            }
+        },
+        v);
+    return out;
+}
+
 namespace testing {
     extern std::vector<std::function<void()>> registeredTests;
 
@@ -134,29 +160,3 @@ namespace testing {
         MultiTimer *parent = nullptr;
     };
 } // namespace testing
-
-static inline std::ostream &operator<<(std::ostream &out, const glm::vec2 &v) {
-    return out << glm::to_string(v);
-}
-
-static inline std::ostream &operator<<(std::ostream &out, const glm::vec3 &v) {
-    return out << glm::to_string(v);
-}
-
-static inline std::ostream &operator<<(std::ostream &out, const ecs::Event::EventData &v) {
-    std::visit(
-        [&](auto &&arg) {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, glm::vec2>) {
-                out << "glm::" << glm::to_string(arg);
-            } else if constexpr (std::is_same_v<T, Tecs::Entity>) {
-                out << "Entity(" << arg.id << ")";
-            } else if constexpr (std::is_same_v<T, std::string>) {
-                out << "\"" << arg << "\"";
-            } else {
-                out << typeid(arg).name() << "(" << arg << ")";
-            }
-        },
-        v);
-    return out;
-}
