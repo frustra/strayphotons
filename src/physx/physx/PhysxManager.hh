@@ -32,13 +32,10 @@ namespace sp {
 
     class ControllerHitReport : public physx::PxUserControllerHitReport {
     public:
-        ControllerHitReport(PhysxManager *manager) : manager(manager) {}
+        ControllerHitReport() {}
         void onShapeHit(const physx::PxControllerShapeHit &hit);
         void onControllerHit(const physx::PxControllersHit &hit) {}
         void onObstacleHit(const physx::PxControllerObstacleHit &hit) {}
-
-    private:
-        PhysxManager *manager;
     };
 
     enum PhysxCollisionGroup { HELD_OBJECT = 1, PLAYER = 2, WORLD = 3, NOCLIP = 4 };

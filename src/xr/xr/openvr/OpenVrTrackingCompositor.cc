@@ -26,8 +26,7 @@ OpenVrTrackingCompositor::OpenVrTrackingCompositor(GlfwGraphicsContext &context,
     Logf("OpenVr Render Target Size: %d x %d", vrWidth, vrHeight);
 
     for (size_t i = 0; i < GetNumViews(); i++) {
-        viewRenderTargets.emplace_back(
-            std::move(context.GetRenderTarget({PF_SRGB8_A8, glm::ivec2(vrWidth, vrHeight)})));
+        viewRenderTargets.emplace_back(context.GetRenderTarget({PF_SRGB8_A8, glm::ivec2(vrWidth, vrHeight)}));
     }
 }
 

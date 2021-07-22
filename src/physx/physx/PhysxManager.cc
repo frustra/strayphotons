@@ -529,7 +529,7 @@ namespace sp {
         desc.density = density;
         desc.material = physics->createMaterial(0.3f, 0.3f, 0.3f);
         desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
-        desc.reportCallback = new ControllerHitReport(this);
+        desc.reportCallback = new ControllerHitReport();
         desc.userData = new glm::vec3(0);
 
         PxController *controller = manager->createController(desc);

@@ -9,7 +9,7 @@
 namespace sp {
 
     namespace xr {
-        class OpenVrSystem : public XrSystem {
+        class OpenVrSystem final : public XrSystem {
         public:
             OpenVrSystem(GlfwGraphicsContext &context);
             ~OpenVrSystem();
