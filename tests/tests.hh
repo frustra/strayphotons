@@ -26,7 +26,7 @@ namespace testing {
         if (!condition) {
             std::stringstream ss;
             ss << "Assertion failed: " << message << std::endl;
-            std::cout << ss.str() << std::flush;
+            std::cerr << ss.str() << std::flush;
             throw std::runtime_error(message);
         }
     }
@@ -36,60 +36,7 @@ namespace testing {
         if (!(a == b)) {
             std::stringstream ss;
             ss << "Assertion failed: " << message << " (" << a << " != " << b << ")" << std::endl;
-            std::cout << ss.str() << std::flush;
-            throw std::runtime_error(message);
-        }
-    }
-
-    template<>
-    inline void AssertEqual<ecs::Event::EventData, ecs::Event::EventData>(ecs::Event::EventData a,
-                                                                          ecs::Event::EventData b,
-                                                                          const std::string message) {
-        if (!(a == b)) {
-            std::stringstream ss;
-            ss << "Assertion failed: " << message << " (";
-            std::visit(
-                [&](auto &&arg) {
-                    using T = std::decay_t<decltype(arg)>;
-                    if constexpr (std::is_same_v<T, glm::vec2>) {
-                        ss << "glm::vec2(" << glm::to_string(arg) << ")";
-                    } else if constexpr (std::is_same_v<T, Tecs::Entity>) {
-                        ss << "Entity(" << arg.id << ")";
-                    } else if constexpr (std::is_same_v<T, std::string>) {
-                        ss << "\"" << arg << "\"";
-                    } else {
-                        ss << typeid(arg).name() << "(" << arg << ")";
-                    }
-                },
-                a);
-            ss << " != ";
-            std::visit(
-                [&](auto &&arg) {
-                    using T = std::decay_t<decltype(arg)>;
-                    if constexpr (std::is_same_v<T, glm::vec2>) {
-                        ss << "glm::vec2(" << glm::to_string(arg) << ")";
-                    } else if constexpr (std::is_same_v<T, Tecs::Entity>) {
-                        ss << "Entity(" << arg.id << ")";
-                    } else if constexpr (std::is_same_v<T, std::string>) {
-                        ss << "\"" << arg << "\"";
-                    } else {
-                        ss << typeid(arg).name() << "(" << arg << ")";
-                    }
-                },
-                b);
-            ss << ")" << std::endl;
-            std::cout << ss.str() << std::flush;
-            throw std::runtime_error(message);
-        }
-    }
-
-    template<>
-    inline void AssertEqual<glm::vec3, glm::vec3>(glm::vec3 a, glm::vec3 b, const std::string message) {
-        if (!(a == b)) {
-            std::stringstream ss;
-            ss << "Assertion failed: " << message << " (" << glm::to_string(a) << " != " << glm::to_string(b) << ")"
-               << std::endl;
-            std::cout << ss.str() << std::flush;
+            std::cerr << ss.str() << std::flush;
             throw std::runtime_error(message);
         }
     }
@@ -187,3 +134,29 @@ namespace testing {
         MultiTimer *parent = nullptr;
     };
 } // namespace testing
+
+static inline std::ostream &operator<<(std::ostream &out, const glm::vec2 &v) {
+    return out << glm::to_string(v);
+}
+
+static inline std::ostream &operator<<(std::ostream &out, const glm::vec3 &v) {
+    return out << glm::to_string(v);
+}
+
+static inline std::ostream &operator<<(std::ostream &out, const ecs::Event::EventData &v) {
+    std::visit(
+        [&](auto &&arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, glm::vec2>) {
+                out << "glm::" << glm::to_string(arg);
+            } else if constexpr (std::is_same_v<T, Tecs::Entity>) {
+                out << "Entity(" << arg.id << ")";
+            } else if constexpr (std::is_same_v<T, std::string>) {
+                out << "\"" << arg << "\"";
+            } else {
+                out << typeid(arg).name() << "(" << arg << ")";
+            }
+        },
+        v);
+    return out;
+}

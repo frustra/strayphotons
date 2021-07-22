@@ -20,5 +20,7 @@ int main(int argc, char **argv) {
         test();
     }
 
+    std::cout << std::flush;
+    std::cerr << std::flush;
     return 0;
 }

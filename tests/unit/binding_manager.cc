@@ -18,7 +18,8 @@ namespace BindingManagerTest {
         ecs::EntityManager ecs;
 
         Tecs::Entity player;
-        { // Add player with EventInput component
+        {
+            Timer t("Add player with EventInput component");
             auto lock = ecs.tecs.StartTransaction<ecs::AddRemove>();
 
             player = lock.NewEntity();
@@ -26,7 +27,8 @@ namespace BindingManagerTest {
             auto &eventInput = player.Set<ecs::EventInput>(lock, TEST_EVENT_ACTION1, TEST_EVENT_ACTION2);
             AssertEqual(eventInput.events.size(), 2u, "EventInput did not save correctly");
         }
-        { // Send some test events
+        {
+            Timer t("Send some test events");
             auto lock = ecs.tecs.StartTransaction<ecs::Write<ecs::EventInput>>();
 
             auto &events = player.Get<ecs::EventInput>(lock);
@@ -38,7 +40,8 @@ namespace BindingManagerTest {
             testEvent2.data = 'b';
             events.Add(TEST_EVENT_ACTION2, testEvent2);
         }
-        { // Read the test events
+        {
+            Timer t("Read the test events");
             auto lock = ecs.tecs.StartTransaction<ecs::Write<ecs::EventInput>>();
 
             auto &events = player.Get<ecs::EventInput>(lock);
