@@ -7,7 +7,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Physics.cc
     Renderable.cc
     Script.cc
-    SignalOutput.cc
+    Signals.cc
     Transform.cc
     TriggerArea.cc
     View.cc

@@ -201,6 +201,13 @@ namespace sp {
             interact.manager = &game->physics;
 #endif
 
+#ifdef SP_INPUT_SUPPORT
+            player.Set<ecs::EventInput>(lock,
+                                        INPUT_ACTION_OPEN_MENU,
+                                        INPUT_ACTION_SPAWN_DEBUG,
+                                        INPUT_ACTION_DROP_FLASHLIGH);
+#endif
+
             // Mark the player as being able to activate trigger areas
             player.Set<ecs::Triggerable>(lock);
 
