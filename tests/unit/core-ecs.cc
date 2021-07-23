@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include <tests.hh>
 
-namespace CoreEcsTest {
+namespace CoreEcsTests {
     using namespace testing;
 
     void TryAddRemove() {
@@ -36,4 +36,4 @@ namespace CoreEcsTest {
     }
 
     Test test(&TryAddRemove);
-} // namespace CoreEcsTest
+} // namespace CoreEcsTests

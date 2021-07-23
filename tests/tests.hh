@@ -20,12 +20,20 @@ static inline std::ostream &operator<<(std::ostream &out, const glm::vec3 &v) {
     return out << glm::to_string(v);
 }
 
+static inline std::ostream &operator<<(std::ostream &out, const Tecs::Entity &v) {
+    if (v) {
+        return out << "Entity(" << v.id << ")";
+    } else {
+        return out << "Entity(void)";
+    }
+}
+
 static inline std::ostream &operator<<(std::ostream &out, const ecs::Event::EventData &v) {
     std::visit(
         [&](auto &&arg) {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, glm::vec2>) {
-                out << "glm::" << glm::to_string(arg);
+                out << glm::to_string(arg);
             } else if constexpr (std::is_same_v<T, Tecs::Entity>) {
                 out << "Entity(" << arg.id << ")";
             } else if constexpr (std::is_same_v<T, std::string>) {
@@ -36,6 +44,11 @@ static inline std::ostream &operator<<(std::ostream &out, const ecs::Event::Even
         },
         v);
     return out;
+}
+
+template<typename Ta, typename Tb>
+inline std::ostream &operator<<(std::ostream &out, const std::pair<Ta, Tb> &v) {
+    return out << "(" << v.first << ", " << v.second << ")";
 }
 
 namespace testing {

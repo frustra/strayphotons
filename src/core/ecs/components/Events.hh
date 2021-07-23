@@ -1,9 +1,11 @@
 #pragma once
 
+#include <core/Common.hh>
 #include <ecs/Components.hh>
 #include <glm/glm.hpp>
 #include <queue>
 #include <robin_hood.h>
+#include <set>
 #include <string>
 #include <variant>
 
@@ -22,7 +24,7 @@ namespace ecs {
     };
 
     struct EventInput {
-        robin_hood::unordered_flat_map<std::string, std::queue<Event>> events;
+        robin_hood::unordered_map<std::string, std::queue<Event>> events;
 
         EventInput() {}
 
@@ -33,26 +35,34 @@ namespace ecs {
             }
         }
 
-        bool Add(const std::string binding, const Event &event) {
-            auto queue = events.find(binding);
-            if (queue != events.end()) {
-                queue->second.emplace(event);
-                return true;
-            }
-            return false;
+        bool Add(const std::string binding, const Event &event);
+        bool Poll(const std::string binding, Event &eventOut);
+    };
+
+    class EventBindings {
+    public:
+        EventBindings() {}
+
+        using Binding = typename std::pair<Tecs::Entity, std::string>;
+        using BindingList = typename std::vector<Binding>;
+
+        void Bind(std::string source, Tecs::Entity target, std::string dest);
+        void Unbind(std::string source, Tecs::Entity target, std::string dest);
+        void UnbindSource(std::string source);
+        void UnbindTarget(Tecs::Entity target);
+        void UnbindDest(Tecs::Entity target, std::string dest);
+
+        const BindingList *Lookup(std::string source) const;
+        void SendEvent(Lock<Write<EventInput>> lock, const Event &event) const;
+        template<typename... Args>
+        void SendEvent(Lock<Write<EventInput>> lock, Args... args) const {
+            SendEvent(lock, Event(args...));
         }
 
-        bool Poll(const std::string binding, Event &eventOut) {
-            auto queue = events.find(binding);
-            if (queue != events.end() && !queue->second.empty()) {
-                eventOut = queue->second.front();
-                queue->second.pop();
-                return true;
-            }
-            eventOut = Event();
-            return false;
-        }
+    private:
+        robin_hood::unordered_map<std::string, BindingList> sourceToDest;
     };
 
     static Component<EventInput> ComponentEventInput("event_input");
+    static Component<EventBindings> ComponentEventBindings("event_bindings");
 } // namespace ecs

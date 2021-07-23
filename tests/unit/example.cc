@@ -1,6 +1,6 @@
 #include <tests.hh>
 
-namespace ExampleTest {
+namespace ExampleTests {
     using namespace testing;
 
     void ExampleTest() {
@@ -9,4 +9,4 @@ namespace ExampleTest {
 
     // Register the test
     Test test(&ExampleTest);
-} // namespace ExampleTest
+} // namespace ExampleTests

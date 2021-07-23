@@ -21,6 +21,7 @@ namespace ecs {
     class HumanController;
     struct InteractController;
     struct EventInput;
+    class EventBindings;
     struct Light;
     class LightSensor;
     struct Mirror;
@@ -42,6 +43,7 @@ namespace ecs {
                           HumanController,
                           InteractController,
                           EventInput,
+                          EventBindings,
                           Light,
                           LightSensor,
                           Mirror,
