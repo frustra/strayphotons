@@ -61,9 +61,9 @@ namespace EventBindingTests {
             auto lock = ecs.tecs.StartTransaction<ecs::Read<ecs::EventBindings>, ecs::Write<ecs::EventInput>>();
 
             auto &bindings = player.Get<ecs::EventBindings>(lock);
-            bindings.SendEvent(lock, TEST_SOURCE_BUTTON, 42);
-            bindings.SendEvent(lock, TEST_SOURCE_KEY, 'a');
-            bindings.SendEvent(lock, TEST_SOURCE_KEY, 'b');
+            bindings.SendEvent(lock, TEST_SOURCE_BUTTON, player, 42);
+            bindings.SendEvent(lock, TEST_SOURCE_KEY, player, 'a');
+            bindings.SendEvent(lock, TEST_SOURCE_KEY, player, 'b');
         }
         {
             Timer t("Read the test events");

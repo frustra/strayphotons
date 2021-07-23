@@ -54,9 +54,12 @@ namespace ecs {
 
         const BindingList *Lookup(std::string source) const;
         void SendEvent(Lock<Write<EventInput>> lock, const Event &event) const;
-        template<typename... Args>
-        void SendEvent(Lock<Write<EventInput>> lock, Args... args) const {
-            SendEvent(lock, Event(args...));
+        template<typename T>
+        inline void SendEvent(Lock<Write<EventInput>> lock,
+                              const std::string &name,
+                              Tecs::Entity &source,
+                              T data) const {
+            SendEvent(lock, Event(name, source, data));
         }
 
     private:
