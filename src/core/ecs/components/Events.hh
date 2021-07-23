@@ -35,8 +35,9 @@ namespace ecs {
             }
         }
 
-        bool Add(const std::string binding, const Event &event);
-        bool Poll(const std::string binding, Event &eventOut);
+        void Register(const std::string &binding);
+        bool Add(const std::string &binding, const Event &event);
+        bool Poll(const std::string &binding, Event &eventOut);
     };
 
     class EventBindings {
@@ -68,4 +69,9 @@ namespace ecs {
 
     static Component<EventInput> ComponentEventInput("event_input");
     static Component<EventBindings> ComponentEventBindings("event_bindings");
+
+    template<>
+    bool Component<EventInput>::Load(Lock<Read<ecs::Name>> lock, EventInput &dst, const picojson::value &src);
+    template<>
+    bool Component<EventBindings>::Load(Lock<Read<ecs::Name>> lock, EventBindings &dst, const picojson::value &src);
 } // namespace ecs

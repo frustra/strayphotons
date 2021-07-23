@@ -1,7 +1,54 @@
 #include "Events.hh"
 
+#include <picojson/picojson.h>
+
 namespace ecs {
-    bool EventInput::Add(const std::string binding, const Event &event) {
+    template<>
+    bool Component<EventInput>::Load(Lock<Read<ecs::Name>> lock, EventInput &input, const picojson::value &src) {
+        for (auto event : src.get<picojson::array>()) {
+            input.Register(event.get<std::string>());
+        }
+        return true;
+    }
+
+    template<>
+    bool Component<EventBindings>::Load(Lock<Read<ecs::Name>> lock,
+                                        EventBindings &bindings,
+                                        const picojson::value &src) {
+        for (auto bind : src.get<picojson::object>()) {
+            Tecs::Entity target;
+            std::string targetEvent;
+            for (auto dest : bind.second.get<picojson::object>()) {
+                picojson::array targetList;
+                if (dest.second.is<std::string>()) {
+                    targetList.emplace_back(dest.second);
+                } else if (dest.second.is<picojson::array>()) {
+                    targetList = dest.second.get<picojson::array>();
+                } else {
+                    sp::Assert(false, "Invalid event target");
+                }
+                for (auto target : targetList) {
+                    auto targetName = target.get<std::string>();
+                    bool found = false;
+                    for (auto ent : lock.EntitiesWith<Name>()) {
+                        if (ent.Get<Name>(lock) == targetName) {
+                            bindings.Bind(bind.first, ent, dest.first);
+                            found = true;
+                            break;
+                        }
+                    }
+                    sp::Assert(found, "Couldn't find target entity");
+                }
+            }
+        }
+        return true;
+    }
+
+    void EventInput::Register(const std::string &binding) {
+        events.emplace(binding, std::queue<Event>());
+    }
+
+    bool EventInput::Add(const std::string &binding, const Event &event) {
         auto queue = events.find(binding);
         if (queue != events.end()) {
             queue->second.emplace(event);
@@ -10,7 +57,7 @@ namespace ecs {
         return false;
     }
 
-    bool EventInput::Poll(const std::string binding, Event &eventOut) {
+    bool EventInput::Poll(const std::string &binding, Event &eventOut) {
         auto queue = events.find(binding);
         if (queue != events.end() && !queue->second.empty()) {
             eventOut = queue->second.front();
