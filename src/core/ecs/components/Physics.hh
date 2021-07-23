@@ -14,6 +14,7 @@ namespace sp {
 namespace physx {
     class PxRigidActor;
     class PxScene;
+    class PxControllerManager;
 } // namespace physx
 
 namespace ecs {
@@ -34,11 +35,15 @@ namespace ecs {
         glm::vec3 scale = glm::vec3(1.0); // Current scale of physics model according to PhysX
     };
 
-    struct PhysicsScene {
+    struct PhysicsState {
+        std::shared_ptr<physx::PxControllerManager> controllerManager; // Must be deconstructed before scene
         std::shared_ptr<physx::PxScene> scene;
 
-        PhysicsScene() {}
-        PhysicsScene(std::shared_ptr<physx::PxScene> scene) : scene(scene) {}
+        PhysicsState() {}
+        PhysicsState(std::shared_ptr<physx::PxScene> scene) : scene(scene) {}
+        PhysicsState(std::shared_ptr<physx::PxScene> scene,
+                     std::shared_ptr<physx::PxControllerManager> controllerManager)
+            : controllerManager(controllerManager), scene(scene) {}
     };
 
     static Component<Physics> ComponentPhysics("physics");
@@ -48,4 +53,4 @@ namespace ecs {
 } // namespace ecs
 
 template<>
-struct Tecs::is_global_component<ecs::PhysicsScene> : std::true_type {};
+struct Tecs::is_global_component<ecs::PhysicsState> : std::true_type {};

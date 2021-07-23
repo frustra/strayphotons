@@ -82,7 +82,7 @@
             "name": "StrayPhotons Headless (gdb)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/sp-test",
+            "program": "${workspaceFolder}/bin/sp-headless",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",

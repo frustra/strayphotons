@@ -41,8 +41,7 @@ namespace ecs {
         // pxCapsuleController handles movement and physx simulation
         physx::PxCapsuleController *pxController;
 
-        float capsuleHeight;
-        float height;
+        float height = ecs::PLAYER_CAPSULE_HEIGHT;
 
         bool onGround = false;
         glm::vec3 velocity = glm::vec3(0);

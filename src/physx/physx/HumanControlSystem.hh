@@ -31,26 +31,10 @@ namespace sp {
         bool Frame(double dtSinceLastFrame);
 
         /**
-         * Assigns a default HumanController to the given entity.
-         */
-        ecs::HumanController &AssignController(ecs::Lock<ecs::AddRemove> lock, Tecs::Entity entity, PhysxManager &px);
-
-        /**
-         * Teleports the entity and properly syncs to physx.
-         */
-        void Teleport(ecs::Lock<ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::HumanController>> lock,
-                      Tecs::Entity entity,
-                      glm::vec3 position);
-        void Teleport(ecs::Lock<ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::HumanController>> lock,
-                      Tecs::Entity entity,
-                      glm::vec3 position,
-                      glm::quat rotation);
-
-        /**
          * Pick up the object that the player is looking at and make it move at to a fixed location relative to camera
          */
         void Interact(ecs::Lock<ecs::Read<ecs::HumanController>,
-                                ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::InteractController>> lock,
+                                ecs::Write<ecs::PhysicsState, ecs::Transform, ecs::InteractController>> lock,
                       Tecs::Entity entity);
 
     private:
@@ -61,18 +45,10 @@ namespace sp {
                                           bool jump,
                                           bool sprint,
                                           bool crouch);
-        void MoveEntity(ecs::Lock<ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::HumanController>> lock,
+        void MoveEntity(ecs::Lock<ecs::Write<ecs::PhysicsState, ecs::Transform, ecs::HumanController>> lock,
                         Tecs::Entity entity,
                         double dtSinceLastFrame,
                         glm::vec3 velocity);
-
-        /**
-         * Resize entity used for crouching and uncrouching. Can perform overlap checks to make sure resize is valid
-         */
-        bool ResizeEntity(ecs::Lock<ecs::Write<ecs::PhysicsScene>, ecs::Read<ecs::HumanController>> lock,
-                          Tecs::Entity entity,
-                          float height,
-                          bool overlapCheck);
 
         /**
          * Rotate the object the player is currently holding, using mouse input.
