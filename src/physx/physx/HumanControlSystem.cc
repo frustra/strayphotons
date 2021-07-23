@@ -120,7 +120,8 @@ namespace sp {
                 auto targetHeight = crouching ? ecs::PLAYER_CAPSULE_CROUCH_HEIGHT : ecs::PLAYER_CAPSULE_HEIGHT;
                 if (fabs(targetHeight - currentHeight) > 0.1) {
                     // If player is in the air, resize from the top to implement crouch-jumping.
-                    controller.height = currentHeight + (targetHeight - currentHeight) * (controller.onGround ? 0.1 : 1.0);
+                    controller.height = currentHeight +
+                                        (targetHeight - currentHeight) * (controller.onGround ? 0.1 : 1.0);
                 }
 
                 auto velocity = CalculatePlayerVelocity(lock,
