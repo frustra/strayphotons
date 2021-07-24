@@ -1,7 +1,5 @@
-# Absolute, bare-minimum version is CMake 3.13.
-# Attempting to downgrade to anything less (Ubuntu 18.04 still ships with CMake 3.10.2)
-# will result in CMake compile errors in the ext directory.
-cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+# CMAKE_MSVC_RUNTIME_LIBRARY was added in 3.15, it is required to statically link correctly.
+cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 project(sp VERSION 0.1)
 
 set(SP_VERSION_MAJOR "${CMAKE_PROJECT_VERSION_MAJOR}")
@@ -38,10 +36,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 ## Setup compiler flags for various build types
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
+	# TODO: Enable warnings as errors on MSVC
 	set(CMAKE_CXX_FLAGS 				"/MP /EHsc") # /Wall /WX") # /wd4800 /wd4189
-	set(CMAKE_CXX_FLAGS_RELEASE 		"/MD /O2")
-	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"/MDd /O2")
-	set(CMAKE_CXX_FLAGS_DEBUG 			"/MDd /DEBUG /ZI /FC")
+	set(CMAKE_CXX_FLAGS_RELEASE 		"/MT /O2")
+	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"/MTd /O2")
+	set(CMAKE_CXX_FLAGS_DEBUG 			"/MTd /DEBUG /ZI /FC")
+
+	# Force targets to be built using static linking
+	if(SP_DEBUG)
+		set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreadedDebug)
+	else()
+		set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)
+	endif()
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
@@ -69,6 +75,13 @@ set(PROJECT_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 # Put RUNTIME and LIBRARY outputs into a folder where we can run them without installing
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
+
+# For multi-config builds (e.g. msvc)
+foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
+    string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_OUTPUT_DIR})
+	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_OUTPUT_DIR})
+endforeach()
 
 find_package(OpenGL REQUIRED)
 

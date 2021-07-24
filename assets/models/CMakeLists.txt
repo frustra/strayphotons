@@ -23,7 +23,7 @@ add_custom_command(
     COMMAND
         ${NPM_EXE} install
     OUTPUT
-        ${PROJECT_SOURCE_DIR}/ext/obj2gltf/node_modules
+        ${PROJECT_SOURCE_DIR}/ext/obj2gltf/bin/obj2gltf.js
     WORKING_DIRECTORY
         ${PROJECT_SOURCE_DIR}/ext/obj2gltf
 )
@@ -32,7 +32,7 @@ add_custom_command(
     COMMAND
         ${NPM_EXE} install
     OUTPUT
-        ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/node_modules
+        ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/bin/gltf-pipeline.js
     WORKING_DIRECTORY
         ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline
 )
