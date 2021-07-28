@@ -26,7 +26,7 @@ namespace ecs {
     struct Owner;
     struct Physics;
     struct PhysicsState;
-    struct Renderable;
+    class Renderable;
     class Script;
     class SignalOutput;
     class Transform;

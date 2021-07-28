@@ -585,7 +585,7 @@ namespace sp {
         }
 
         if (transform.IsDirty()) {
-            controller.SetRotate(rotation);
+            // controller.SetRotate(rotation);
             controller.pxController->setPosition(pxPosition);
         }
 
@@ -603,7 +603,7 @@ namespace sp {
             physx::PxOverlapBuffer hit;
             physx::PxRigidDynamic *actor = controller.pxController->getActor();
 
-            if (!OverlapQuery(lock, actor, physx::PxVec3(0), hit)) {
+            if (OverlapQuery(lock, actor, physx::PxVec3(0), hit)) {
                 // Revert to current height, since we collided with something
                 controller.pxController->resize(currentHeight);
                 controller.pxController->setFootPosition(currentPos);

@@ -54,9 +54,6 @@ namespace sp {
         ProfilerGui *profilerGui = nullptr;
         PerfTimer timer;
     #endif
-
-        ecs::Observer<ecs::Removed<ecs::View>> viewRemoval;
-        std::vector<ecs::Entity> playerViews;
     };
 } // namespace sp
 

@@ -191,6 +191,7 @@ namespace sp {
             Assert(!!player, "Player scene doesn't contain an entity named player");
 
             if (!player.Has<ecs::Transform>(lock)) { player.Set<ecs::Transform>(lock, glm::vec3(0)); }
+            if (!player.Has<ecs::View>(lock)) { player.Set<ecs::View>(lock, glm::vec3(0)); }
             player.Set<ecs::HumanController>(lock);
 #ifdef SP_PHYSICS_SUPPORT
             auto &interact = player.Set<ecs::InteractController>(lock);

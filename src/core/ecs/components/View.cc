@@ -44,6 +44,8 @@ namespace ecs {
         }
     }
 
+    // TODO: Add dirty flag, and only calculate the matrix if fov/extents/clip change.
+    // Also use Tecs / A View reference
     Handle<View> UpdateViewCache(Entity entity, float fov) {
         ValidateView(entity);
 

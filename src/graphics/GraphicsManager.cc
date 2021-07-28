@@ -112,11 +112,6 @@ namespace sp {
             profilerGui = new ProfilerGui(timer);
             if (game->debugGui) { game->debugGui->Attach(profilerGui); }
 
-            {
-                auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
-                viewRemoval = lock.Watch<ecs::Removed<ecs::View>>();
-            }
-
             voxelRenderer->PrepareGuis(game->debugGui.get(), game->menuGui.get());
         }
 
@@ -135,15 +130,10 @@ namespace sp {
         if (!HasActiveContext()) return false;
     #endif
 
-        {
-            auto lock = game->entityManager.tecs.StartTransaction<>();
-            ecs::Removed<ecs::View> removedView;
-            while (viewRemoval.Poll(lock, removedView)) {
-                playerViews.erase(std::remove(playerViews.begin(),
-                                              playerViews.end(),
-                                              ecs::Entity(&game->entityManager, removedView.entity)),
-                                  playerViews.end());
-            }
+        auto &windowEntity = context->GetActiveView();
+        if (windowEntity) {
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::View>>();
+            if (windowEntity.Has<ecs::View>(lock)) { context->PrepareWindow(windowEntity.Get<ecs::View>(lock)); }
         }
 
         ecs::View pancakeView; // Only support a single pancakeView (2D window)
@@ -230,7 +220,16 @@ namespace sp {
         #endif
 
             // Render the 2D pancake view
-            context->PrepareForView(pancakeView);
+            if (pancakeView.viewType == ecs::View::VIEW_TYPE_CAMERA) {
+
+            } else {
+                Errorf("Player view is not a Camera view.");
+            }
+
+            view.SetProjMat(glm::radians(CVarFieldOfView.Get()), view.GetClip(), CVarWindowSize.Get());
+            view.scale = CVarWindowScale.Get();
+            ResizeWindow(view, CVarWindowScale.Get(), CVarWindowFullscreen.Get());
+            context->PrepareWindow(pancakeView);
             renderer->RenderPass(pancakeView);
 
             renderer->EndFrame();

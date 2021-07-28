@@ -105,27 +105,30 @@ namespace sp {
         return !!glfwWindowShouldClose(window);
     }
 
-    void GlfwGraphicsContext::ResizeWindow(ecs::View &view, double scale, int fullscreen) {
-        glm::ivec2 scaled = glm::dvec2(view.extents) * scale;
+    void GlfwGraphicsContext::PrepareWindowView(ecs::View &view) {
+        glm::ivec2 scaled = glm::dvec2(CVarWindowSize.Get()) * (double)CVarWindowScale.Get();
 
-        if (prevFullscreen != fullscreen) {
-            if (fullscreen == 0) {
-                glfwSetWindowMonitor(window, nullptr, prevWindowPos.x, prevWindowPos.y, scaled.x, scaled.y, 0);
-            } else if (fullscreen == 1) {
-                glfwGetWindowPos(window, &prevWindowPos.x, &prevWindowPos.y);
+        if (glfwFullscreen != CVarWindowFullscreen.Get()) {
+            if (CVarWindowFullscreen.Get() == 0) {
+                glfwSetWindowMonitor(window, nullptr, storedWindowPos.x, storedWindowPos.y, scaled.x, scaled.y, 0);
+                glfwFullscreen = 0;
+            } else if (CVarWindowFullscreen.Get() == 1) {
+                glfwGetWindowPos(window, &storedWindowPos.x, &storedWindowPos.y);
                 glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, scaled.x, scaled.y, 60);
+                glfwFullscreen = 1;
             }
-        } else if (prevWindowSize != view.extents || windowScale != scale) {
-            if (fullscreen) {
+        } else if (glfwWindowSize != scaled) {
+            if (CVarWindowFullscreen.Get()) {
                 glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, scaled.x, scaled.y, 60);
             } else {
                 glfwSetWindowSize(window, scaled.x, scaled.y);
             }
+
+            glfwWindowSize = scaled;
         }
 
-        prevFullscreen = fullscreen;
-        prevWindowSize = view.extents;
-        windowScale = scale;
+        view.extents = CVarWindowSize.Get();
+        view.fov = glm::radians(CVarFieldOfView.Get());
     }
 
     const vector<glm::ivec2> &GlfwGraphicsContext::MonitorModes() {
@@ -156,20 +159,6 @@ namespace sp {
 
     void GlfwGraphicsContext::SwapBuffers() {
         glfwSwapBuffers(window);
-    }
-
-    void GlfwGraphicsContext::PopulatePancakeView(ecs::View &view) {
-        Assert(view.viewType == ecs::View::VIEW_TYPE_PANCAKE,
-               "cannot populate pancake view settings on a non-pancake view");
-
-        view.SetProjMat(glm::radians(CVarFieldOfView.Get()), view.GetClip(), CVarWindowSize.Get());
-        view.scale = CVarWindowScale.Get();
-    }
-
-    void GlfwGraphicsContext::PrepareForView(ecs::View &view) {
-        if (view.viewType == ecs::View::VIEW_TYPE_PANCAKE) {
-            ResizeWindow(view, CVarWindowScale.Get(), CVarWindowFullscreen.Get());
-        }
     }
 
     void GlfwGraphicsContext::BeginFrame() {

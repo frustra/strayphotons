@@ -12,9 +12,10 @@ namespace ecs {
     class View {
     public:
         enum ViewType {
-            VIEW_TYPE_PANCAKE,
-            VIEW_TYPE_XR,
-            VIEW_TYPE_LIGHT,
+            VIEW_TYPE_UNKNOWN = 0,
+            VIEW_TYPE_CAMERA,
+            VIEW_TYPE_EYE, // XR / Stereo views
+            VIEW_TYPE_SHADOW_MAP,
         };
 
         // Define a std::bitset and a corresponding enum that can be used to store clear modes independent of any
@@ -30,7 +31,7 @@ namespace ecs {
         using ClearModeBitset = std::bitset<CLEAR_MODE_COUNT>;
 
         View() {}
-        View(glm::ivec2 extents) : extents(extents) {}
+        View(glm::ivec2 extents, float fov, ViewType viewType = VIEW_TYPE_CAMERA) : extents(extents) {}
 
         // When setting these parameters, View needs to recompute some internal params
         void SetProjMat(glm::mat4 proj);
@@ -55,17 +56,15 @@ namespace ecs {
         bool stencil = false;
         bool blend = false;
         float skyIlluminance = 0.0f;
-        float scale = 1.0f;
 
-        // For XR Views
-        ViewType viewType = VIEW_TYPE_PANCAKE;
+        glm::vec2 clip = {0.1, 256}; // {near, far}
 
-        // private:
         // Required parameters.
         glm::ivec2 extents = {0, 0};
-        glm::vec2 clip = {0, 0}; // {near, far}
         float fov = 0.0f;
+        ViewType viewType = VIEW_TYPE_UNKNOWN;
 
+    private:
         // Updated automatically.
         float aspect = 1.0f;
         glm::mat4 projMat, invProjMat;

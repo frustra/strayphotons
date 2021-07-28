@@ -23,8 +23,6 @@ namespace sp {
         bool ShouldClose() override;
         void BeginFrame() override;
         void SwapBuffers() override;
-        void PopulatePancakeView(ecs::View &view) override;
-        void PrepareForView(ecs::View &view) override;
         void EndFrame() override;
 
         // These functions are acceptable in the base GraphicsContext class,
@@ -53,13 +51,13 @@ namespace sp {
     private:
         void SetTitle(string title);
         void CreateGlfwWindow(glm::ivec2 initialSize = {640, 480});
-        void ResizeWindow(ecs::View &frameBufferView, double scale, int fullscreen);
+        void PrepareWindowView(ecs::View &frameBufferView);
 
         RenderTargetPool rtPool;
 
-        glm::ivec2 prevWindowSize, prevWindowPos;
-        int prevFullscreen = 0;
-        double windowScale = 1.0;
+        glm::ivec2 glfwWindowSize;
+        glm::ivec2 storedWindowPos; // Remember window location when returning from fullscreen
+        int glfwFullscreen = 0;
         vector<glm::ivec2> monitorModes;
         double lastFrameEnd = 0, fpsTimer = 0;
         int frameCounter = 0;

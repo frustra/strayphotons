@@ -368,13 +368,12 @@ namespace sp::xr {
                 for (unsigned int i = 0; i < xrSystem->GetCompositor()->GetNumViews(true /* minimum */); i++) {
                     ecs::Entity viewEntity = CreateXrEntity();
                     auto ecsView = viewEntity.Assign<ecs::View>();
+                    ecsView->viewType = ecs::View::VIEW_TYPE_XR;
                     xrSystem->GetCompositor()->PopulateView(i, ecsView);
 
                     // Mark this as an XR View
                     auto ecsXrView = viewEntity.Assign<ecs::XRView>();
                     ecsXrView->viewId = i;
-
-                    game->graphics.AddPlayerView(viewEntity);
                 }
 
                 // TODO: test this re-initializes correctly
