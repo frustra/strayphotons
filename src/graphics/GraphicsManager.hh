@@ -15,9 +15,12 @@
 namespace sp {
     class Game;
     class GraphicsContext;
-    class Renderer;
     class ProfilerGui;
     class GlfwActionSource;
+
+    #ifdef SP_GRAPHICS_SUPPORT_GL
+    class VoxelRenderer;
+    #endif
 
     class GraphicsManager {
     public:
@@ -26,9 +29,6 @@ namespace sp {
 
         void Init();
         bool HasActiveContext();
-
-        void AddPlayerView(ecs::Entity entity);
-        void AddPlayerView(Tecs::Entity entity);
 
         void RenderLoading();
 
@@ -39,17 +39,12 @@ namespace sp {
         void DisableCursor();
         void EnableCursor();
 
-        Renderer *GetRenderer() {
-            return renderer;
-        }
-
     private:
         GraphicsContext *context = nullptr;
-        Renderer *renderer = nullptr;
         Game *game = nullptr;
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
-        bool useBasic = false;
+        VoxelRenderer *renderer = nullptr;
         GlfwActionSource *glfwActionSource = nullptr;
         ProfilerGui *profilerGui = nullptr;
         PerfTimer timer;

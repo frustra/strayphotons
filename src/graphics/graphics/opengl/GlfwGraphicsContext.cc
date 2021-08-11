@@ -106,7 +106,7 @@ namespace sp {
     }
 
     void GlfwGraphicsContext::PrepareWindowView(ecs::View &view) {
-        glm::ivec2 scaled = glm::dvec2(CVarWindowSize.Get()) * (double)CVarWindowScale.Get();
+        glm::ivec2 scaled = glm::vec2(CVarWindowSize.Get()) * CVarWindowScale.Get();
 
         if (glfwFullscreen != CVarWindowFullscreen.Get()) {
             if (CVarWindowFullscreen.Get() == 0) {

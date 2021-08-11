@@ -368,7 +368,7 @@ namespace sp::xr {
                 for (unsigned int i = 0; i < xrSystem->GetCompositor()->GetNumViews(true /* minimum */); i++) {
                     ecs::Entity viewEntity = CreateXrEntity();
                     auto ecsView = viewEntity.Assign<ecs::View>();
-                    ecsView->viewType = ecs::View::VIEW_TYPE_XR;
+                    ecsView->viewType = ecs::View::VIEW_TYPE_EYE;
                     xrSystem->GetCompositor()->PopulateView(i, ecsView);
 
                     // Mark this as an XR View
@@ -424,7 +424,9 @@ namespace sp::xr {
                 Assert((bool)(renderable->model), "Failed to load skeleton model");
 
                 // Rendering an XR HMD model from the viewpoint of an XRView is a bad idea
-                if (trackedObjectHandle.type == xr::HMD) { renderable->xrExcluded = true; }
+                if (trackedObjectHandle.type == xr::HMD) {
+                    renderable->visibility[ecs::Renderable::VISIBILE_DIRECT_EYE] = false;
+                }
             }
 
             // Mark the XR HMD as being able to activate TriggerAreas
@@ -608,9 +610,9 @@ namespace sp::xr {
             sourcePrim->indexBuffer.byteOffset = 0;
             sourcePrim->indexBuffer.components = indexData.size();
             sourcePrim->indexBuffer.componentType = GL_UNSIGNED_SHORT;
-            shared_ptr<GLModel> glModel = make_shared<GLModel>(renderable->model.get(), game->graphics.GetRenderer());
-            glModel->AddPrimitive(prim);
-            renderable->model->nativeModel = glModel;
+            // TODO(xthexder): Fix this
+            // shared_ptr<GLModel> glModel = make_shared<GLModel>(renderable->model.get(),
+            // game->graphics.GetRenderer()); glModel->AddPrimitive(prim); renderable->model->nativeModel = glModel;
         }
 
         return xrObject;

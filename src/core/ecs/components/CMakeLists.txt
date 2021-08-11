@@ -12,5 +12,5 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Transform.cc
     TriggerArea.cc
     View.cc
-    VoxelInfo.cc
+    VoxelArea.cc
 )

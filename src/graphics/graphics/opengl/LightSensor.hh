@@ -1,9 +1,6 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
-#include "ecs/components/LightSensor.hh"
-#include "ecs/components/Transform.hh"
-#include "ecs/components/VoxelInfo.hh"
 #include "graphics/opengl/GLBuffer.hh"
 #include "graphics/opengl/GLTexture.hh"
 #include "graphics/opengl/GPUTypes.hh"
@@ -21,7 +18,7 @@ namespace sp {
         void SetLightData(int count, GLLightData *data);
         void SetVoxelInfo(GLVoxelInfo *data);
         void StartReadback();
-        void UpdateValues(ecs::EntityManager &manager);
+        void UpdateValues(ecs::Lock<ecs::Write<ecs::LightSensor>> lock);
 
         static const int MAX_SENSORS = 32;
 

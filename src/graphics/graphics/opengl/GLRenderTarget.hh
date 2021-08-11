@@ -93,7 +93,7 @@ namespace sp {
         }
     };
 
-    class GLRenderTarget : public RenderTarget {
+    class GLRenderTarget final : public RenderTarget {
     public:
         GLRenderTarget(RenderTargetDesc desc);
         ~GLRenderTarget();

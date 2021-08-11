@@ -5,7 +5,7 @@
 #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
 
 namespace sp {
-    void RenderMenuGui::Process(const PostProcessingContext *context) {
+    void RenderMenuGui::Process(PostProcessLock lock, const PostProcessingContext *context) {
         auto r = context->renderer;
         auto target = GetInput(0)->GetOutput()->TargetRef;
         auto blurred = GetInput(1)->GetOutput()->TargetRef;

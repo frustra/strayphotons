@@ -5,12 +5,7 @@
 #include <glm/glm.hpp>
 
 namespace ecs {
-    class Entity;
-    template<typename>
-    class Handle;
-
-    class View {
-    public:
+    struct View {
         enum ViewType {
             VIEW_TYPE_UNKNOWN = 0,
             VIEW_TYPE_CAMERA,
@@ -31,24 +26,12 @@ namespace ecs {
         using ClearModeBitset = std::bitset<CLEAR_MODE_COUNT>;
 
         View() {}
-        View(glm::ivec2 extents, float fov, ViewType viewType = VIEW_TYPE_CAMERA) : extents(extents) {}
-
-        // When setting these parameters, View needs to recompute some internal params
-        void SetProjMat(glm::mat4 proj);
-        void SetProjMat(float _fov, glm::vec2 _clip, glm::ivec2 _extents);
-        void SetInvViewMat(glm::mat4 invView);
-
-        glm::ivec2 GetExtents();
-        glm::vec2 GetClip();
-        float GetFov();
-
-        glm::mat4 GetProjMat();
-        glm::mat4 GetInvProjMat();
-        glm::mat4 GetViewMat();
-        glm::mat4 GetInvViewMat();
+        View(glm::ivec2 extents, float fov = 0.0f, glm::vec2 clip = {0.1, 256}, ViewType viewType = VIEW_TYPE_CAMERA)
+            : extents(extents), fov(fov), clip(clip), viewType(viewType) {}
 
         // Optional parameters;
         glm::ivec2 offset = {0, 0};
+
         // TODO(any): Maybe remove color clear once we have interior spaces
         ClearModeBitset clearMode =
             ClearModeBitset().set(CLEAR_MODE_COLOR_BUFFER, true).set(CLEAR_MODE_DEPTH_BUFFER, true);
@@ -57,15 +40,15 @@ namespace ecs {
         bool blend = false;
         float skyIlluminance = 0.0f;
 
-        glm::vec2 clip = {0.1, 256}; // {near, far}
-
         // Required parameters.
         glm::ivec2 extents = {0, 0};
         float fov = 0.0f;
+        glm::vec2 clip = {0.1, 256}; // {near, far}
         ViewType viewType = VIEW_TYPE_UNKNOWN;
 
-    private:
-        // Updated automatically.
+        void UpdateMatrixCache(Lock<Read<Transform>> lock, Tecs::Entity e);
+
+        // Matrix cache
         float aspect = 1.0f;
         glm::mat4 projMat, invProjMat;
         glm::mat4 viewMat, invViewMat;
@@ -75,7 +58,4 @@ namespace ecs {
 
     template<>
     bool Component<View>::Load(Lock<Read<ecs::Name>> lock, View &dst, const picojson::value &src);
-
-    void ValidateView(Entity viewEntity);
-    Handle<ecs::View> UpdateViewCache(Entity entity, float fov = 0.0);
 } // namespace ecs

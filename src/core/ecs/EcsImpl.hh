@@ -18,7 +18,7 @@
 #include <ecs/components/TriggerArea.hh>
 #include <ecs/components/Triggerable.hh>
 #include <ecs/components/View.hh>
-#include <ecs/components/VoxelInfo.hh>
+#include <ecs/components/VoxelArea.hh>
 #include <ecs/components/XRView.hh>
 
 namespace ecs {

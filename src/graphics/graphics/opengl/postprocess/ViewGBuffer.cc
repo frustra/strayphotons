@@ -31,12 +31,12 @@ namespace sp {
 
     IMPLEMENT_SHADER_TYPE(ViewGBufferFS, "view_gbuffer.frag", Fragment);
 
-    void ViewGBuffer::Process(const PostProcessingContext *context) {
+    void ViewGBuffer::Process(PostProcessLock lock, const PostProcessingContext *context) {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
 
         GLVoxelInfo voxelInfo;
-        FillVoxelInfo(&voxelInfo, voxelData.info);
+        FillVoxelInfo(&voxelInfo, voxelContext);
 
         r->shaders.Get<ViewGBufferFS>()->SetParameters(mode, source, level, context->view);
         r->shaders.Get<ViewGBufferFS>()->SetVoxelInfo(&voxelInfo);

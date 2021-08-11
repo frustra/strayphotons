@@ -3,7 +3,6 @@
 #include "assets/Model.hh"
 #include "core/Common.hh"
 #include "graphics/core/NativeModel.hh"
-#include "graphics/core/Renderer.hh"
 #include "graphics/opengl/GLTexture.hh"
 #include "graphics/opengl/Graphics.hh"
 #include "graphics/opengl/SceneShaders.hh"
@@ -12,10 +11,11 @@
 
 namespace sp {
     enum TextureType;
+    class VoxelRenderer;
 
     class GLModel final : public NonCopyable, public NativeModel {
     public:
-        GLModel(Model *model, Renderer *renderer);
+        GLModel(Model *model, VoxelRenderer *renderer);
         ~GLModel();
 
         struct Primitive {
@@ -41,6 +41,8 @@ namespace sp {
     private:
         GLuint LoadBuffer(int index);
         GLTexture *LoadTexture(int materialIndex, TextureType type);
+
+        VoxelRenderer *renderer;
 
         std::map<int, GLuint> buffers;
         std::map<std::string, GLTexture> textures;

@@ -52,7 +52,7 @@ namespace sp {
             return value;
         }
 
-        void Set(VarType &newValue) {
+        void Set(const VarType &newValue) {
             value = newValue;
             dirty = true;
         }

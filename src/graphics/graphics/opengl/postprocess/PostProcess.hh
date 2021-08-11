@@ -2,8 +2,6 @@
 
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
-#include "ecs/components/View.hh"
-#include "ecs/components/VoxelInfo.hh"
 #include "graphics/opengl/GLRenderTarget.hh"
 #include "graphics/opengl/RenderTargetPool.hh"
 #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
@@ -15,6 +13,8 @@ namespace sp {
     class PostProcessPassBase;
     class PostProcessingContext;
     class Game;
+
+    using PostProcessLock = typename ecs::Lock<ecs::Read<ecs::Light, ecs::View, ecs::Mirror, ecs::Transform>>;
 
     class ProcessPassOutput {
     public:
@@ -54,7 +54,7 @@ namespace sp {
     public:
         virtual ~PostProcessPassBase() {}
 
-        virtual void Process(const PostProcessingContext *context) = 0;
+        virtual void Process(PostProcessLock lock, const PostProcessingContext *context) = 0;
         virtual RenderTargetDesc GetOutputDesc(uint32 id) = 0;
 
         virtual ProcessPassOutput *GetOutput(uint32 id) = 0;
@@ -119,7 +119,7 @@ namespace sp {
         std::shared_ptr<GLRenderTarget> gBuffer0, gBuffer1, gBuffer2, gBuffer3;
         std::shared_ptr<GLRenderTarget> shadowMap, mirrorShadowMap;
         std::shared_ptr<GLRenderTarget> mirrorIndexStencil, lightingGel;
-        VoxelData voxelData;
+        VoxelContext voxelContext;
         GLBuffer mirrorVisData;
         GLBuffer mirrorSceneData;
 
@@ -128,7 +128,7 @@ namespace sp {
 
     class PostProcessingContext {
     public:
-        void ProcessAllPasses();
+        void ProcessAllPasses(PostProcessLock lock);
 
         template<typename PassType, typename... ArgTypes>
         PassType *AddPass(ArgTypes... args) {
@@ -138,8 +138,7 @@ namespace sp {
             return pass;
         }
 
-        PostProcessingContext(VoxelRenderer *renderer, ecs::EntityManager &ecs, ecs::View view)
-            : renderer(renderer), ecs(ecs), view(view) {}
+        PostProcessingContext(VoxelRenderer *renderer, const ecs::View &view) : renderer(renderer), view(view) {}
 
         ~PostProcessingContext() {
             for (auto pass : passes)
@@ -147,8 +146,7 @@ namespace sp {
         }
 
         VoxelRenderer *renderer;
-        ecs::EntityManager &ecs;
-        ecs::View view;
+        const ecs::View &view;
 
         ProcessPassOutputRef LastOutput;
         ProcessPassOutputRef GBuffer0;
@@ -172,8 +170,8 @@ namespace sp {
 
     namespace PostProcessing {
         void Process(VoxelRenderer *renderer,
-                     ecs::EntityManager &ecs,
-                     ecs::View view,
+                     PostProcessLock lock,
+                     const ecs::View &view,
                      const EngineRenderTargets &targets);
     }
 } // namespace sp

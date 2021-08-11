@@ -42,7 +42,7 @@ namespace sp {
 
     IMPLEMENT_SHADER_TYPE(TonemapFS, "tonemap.frag", Fragment);
 
-    void Tonemap::Process(const PostProcessingContext *context) {
+    void Tonemap::Process(PostProcessLock lock, const PostProcessingContext *context) {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
 
@@ -135,7 +135,7 @@ namespace sp {
 
     IMPLEMENT_SHADER_TYPE(RenderHistogramFS, "render_histogram.frag", Fragment);
 
-    void LumiHistogram::Process(const PostProcessingContext *context) {
+    void LumiHistogram::Process(PostProcessLock lock, const PostProcessingContext *context) {
         const int wgsize = 16;
         const int downsample = 2; // Calculate histograms with N times fewer workgroups.
 
@@ -238,7 +238,7 @@ namespace sp {
 
     IMPLEMENT_SHADER_TYPE(VoxelLightingDiffuseFS, "voxel_lighting_diffuse.frag", Fragment);
 
-    void VoxelLighting::Process(const PostProcessingContext *context) {
+    void VoxelLighting::Process(PostProcessLock lock, const PostProcessingContext *context) {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
 
@@ -251,9 +251,9 @@ namespace sp {
         GLLightData lightData[MAX_LIGHTS];
         GLMirrorData mirrorData[MAX_MIRRORS];
         GLVoxelInfo voxelInfo;
-        int lightCount = FillLightData(&lightData[0], context->ecs);
-        int mirrorCount = FillMirrorData(&mirrorData[0], context->ecs);
-        FillVoxelInfo(&voxelInfo, voxelData.info);
+        int lightCount = FillLightData(&lightData[0], lock);
+        int mirrorCount = FillMirrorData(&mirrorData[0], lock);
+        FillVoxelInfo(&voxelInfo, voxelContext);
 
         auto shader = r->shaders.Get<VoxelLightingFS>();
         shader->SetLightData(lightCount, &lightData[0]);
@@ -269,19 +269,19 @@ namespace sp {
         VoxelRenderer::DrawScreenCover();
     }
 
-    VoxelLightingDiffuse::VoxelLightingDiffuse(VoxelData voxelData) : voxelData(voxelData) {
+    VoxelLightingDiffuse::VoxelLightingDiffuse(VoxelContext voxelContext) : voxelContext(voxelContext) {
         downsample = CVarVoxelDiffuseDownsample.Get();
         if (downsample < 1) downsample = 1;
     }
 
-    void VoxelLightingDiffuse::Process(const PostProcessingContext *context) {
+    void VoxelLightingDiffuse::Process(PostProcessLock lock, const PostProcessingContext *context) {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
         auto shader = r->shaders.Get<VoxelLightingDiffuseFS>();
         auto lumishader = r->shaders.Get<LumiHistogramCS>();
 
         GLVoxelInfo voxelInfo;
-        FillVoxelInfo(&voxelInfo, voxelData.info);
+        FillVoxelInfo(&voxelInfo, voxelContext);
 
         shader->SetViewParams(context->view);
         shader->SetVoxelInfo(&voxelInfo, downsample);

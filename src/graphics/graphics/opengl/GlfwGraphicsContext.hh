@@ -48,10 +48,11 @@ namespace sp {
 
         std::shared_ptr<GpuTexture> LoadTexture(shared_ptr<Image> image, bool genMipmap = true) override;
 
+        void PrepareWindowView(ecs::View &view) override;
+
     private:
         void SetTitle(string title);
         void CreateGlfwWindow(glm::ivec2 initialSize = {640, 480});
-        void PrepareWindowView(ecs::View &frameBufferView);
 
         RenderTargetPool rtPool;
 

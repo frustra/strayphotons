@@ -99,9 +99,7 @@ namespace sp {
         manager->SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
 
-        auto extents = glm::ivec2(glm::vec2(view.extents) * view.scale);
-
-        io.DisplaySize = ImVec2((float)extents.x, (float)extents.y);
+        io.DisplaySize = ImVec2(view.extents.x, view.extents.y);
 
         double currTime = glfwGetTime();
         io.DeltaTime = lastTime > 0.0 ? (float)(currTime - lastTime) : 1.0f / 60.0f;
@@ -116,9 +114,9 @@ namespace sp {
 
         drawData->ScaleClipRects(io.DisplayFramebufferScale);
 
-        glViewport(view.offset.x, view.offset.y, extents.x, extents.y);
+        glViewport(view.offset.x, view.offset.y, view.extents.x, view.extents.y);
 
-        parent.shaders.Get<BasicOrthoVS>()->SetViewport(extents.x, extents.y);
+        parent.shaders.Get<BasicOrthoVS>()->SetViewport(view.extents.x, view.extents.y);
         parent.ShaderControl->BindPipeline<BasicOrthoVS, BasicOrthoFS>();
 
         glEnable(GL_BLEND);
@@ -146,7 +144,7 @@ namespace sp {
                     glBindTextures(0, 1, &texID);
 
                     glScissor((int)pcmd.ClipRect.x,
-                              (int)(extents.y - pcmd.ClipRect.w),
+                              (int)(view.extents.y - pcmd.ClipRect.w),
                               (int)(pcmd.ClipRect.z - pcmd.ClipRect.x),
                               (int)(pcmd.ClipRect.w - pcmd.ClipRect.y));
 

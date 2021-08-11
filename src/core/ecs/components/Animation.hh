@@ -14,10 +14,7 @@ namespace ecs {
             glm::vec3 scale;
 
             State() {}
-            State(glm::vec3 pos, glm::vec3 scale, bool hidden = false) : pos(pos), scale(scale), hidden(hidden) {}
-
-            // if model should be hidden upon reaching this state
-            bool hidden = false;
+            State(glm::vec3 pos, glm::vec3 scale) : pos(pos), scale(scale) {}
         };
 
         std::vector<State> states;

@@ -5,8 +5,7 @@
 #include <ecs/Components.hh>
 
 namespace ecs {
-    class Renderable {
-    public:
+    struct Renderable {
         enum Visibility {
             VISIBILE_DIRECT_CAMERA = 0,
             VISIBILE_DIRECT_EYE = 0,
@@ -20,7 +19,6 @@ namespace ecs {
         Renderable() {}
         Renderable(shared_ptr<sp::Model> model) : model(model) {}
 
-    private:
         shared_ptr<sp::Model> model;
         VisibilityMask visibility = VisibilityMask().set();
         glm::vec3 emissive = {0.0f, 0.0f, 0.0f};

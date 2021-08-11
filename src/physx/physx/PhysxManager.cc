@@ -553,7 +553,7 @@ namespace sp {
         // Offset the capsule position so the camera (transform origin) is at the top
         auto capsuleHeight = controller.pxController ? controller.pxController->getHeight() : controller.height;
         auto pxPosition = GlmVec3ToPxExtendedVec3(position - glm::vec3(0, capsuleHeight / 2, 0));
-        auto rotation = transform.GetGlobalRotation(lock);
+        // auto rotation = transform.GetGlobalRotation(lock);
 
         if (!controller.pxController) {
             // Capsule controller description will want to be data driven

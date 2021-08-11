@@ -10,7 +10,6 @@ namespace sp {
 
     // Forward declarations
     class Asset;
-    class Renderer;
     class NativeModel;
 
     typedef std::array<uint32, 4> Hash128;

@@ -5,7 +5,7 @@
 namespace sp {
     class Tonemap : public PostProcessPass<1, 1> {
     public:
-        void Process(const PostProcessingContext *context);
+        void Process(PostProcessLock lock, const PostProcessingContext *context);
 
         RenderTargetDesc GetOutputDesc(uint32 id) {
             auto desc = GetInput(0)->GetOutput()->TargetDesc;
@@ -20,7 +20,7 @@ namespace sp {
 
     class LumiHistogram : public PostProcessPass<1, 1> {
     public:
-        void Process(const PostProcessingContext *context);
+        void Process(PostProcessLock lock, const PostProcessingContext *context);
 
         RenderTargetDesc GetOutputDesc(uint32 id) {
             return GetInput(0)->GetOutput()->TargetDesc;
@@ -33,9 +33,10 @@ namespace sp {
 
     class VoxelLighting : public PostProcessPass<12, 1> {
     public:
-        VoxelLighting(VoxelData voxelData, bool ssaoEnabled) : voxelData(voxelData), ssaoEnabled(ssaoEnabled) {}
+        VoxelLighting(VoxelContext voxelContext, bool ssaoEnabled)
+            : voxelContext(voxelContext), ssaoEnabled(ssaoEnabled) {}
 
-        void Process(const PostProcessingContext *context);
+        void Process(PostProcessLock lock, const PostProcessingContext *context);
 
         RenderTargetDesc GetOutputDesc(uint32 id) {
             auto desc = GetInput(0)->GetOutput()->TargetDesc;
@@ -48,15 +49,15 @@ namespace sp {
         }
 
     private:
-        VoxelData voxelData;
+        VoxelContext voxelContext;
         bool ssaoEnabled;
     };
 
     class VoxelLightingDiffuse : public PostProcessPass<5, 1> {
     public:
-        VoxelLightingDiffuse(VoxelData voxelData);
+        VoxelLightingDiffuse(VoxelContext voxelContext);
 
-        void Process(const PostProcessingContext *context);
+        void Process(PostProcessLock lock, const PostProcessingContext *context);
 
         RenderTargetDesc GetOutputDesc(uint32 id) {
             auto desc = GetInput(0)->GetOutput()->TargetDesc;
@@ -71,7 +72,7 @@ namespace sp {
         }
 
     private:
-        VoxelData voxelData;
+        VoxelContext voxelContext;
         int downsample = 1;
     };
 } // namespace sp

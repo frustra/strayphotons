@@ -3,13 +3,14 @@
 #include "core/CVar.hh"
 #include "graphics/core/RenderTarget.hh"
 
+#include <Tecs.hh>
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace ecs {
-    class View;
+    struct View;
 }
 
 namespace sp {
@@ -40,7 +41,7 @@ namespace sp {
             return activeView;
         }
 
-        virtual void PrepareWindow(ecs::View &view) = 0;
+        virtual void PrepareWindowView(ecs::View &view) = 0;
 
         // These functions are acceptable in the base GraphicsContext class,
         // but really shouldn't needed. They should be replaced with a generic "Settings" API

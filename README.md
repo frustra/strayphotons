@@ -30,7 +30,6 @@ To create a debug build, use `make windows` and set the target to `Debug`.
 ### Running
 
 - Unix: `./run.sh --map <map> --cvar "key val"`
-  - On Mac, the `--basic-renderer` flag is required.
 
 - Windows: set command line arguments in Visual Studio via Debug->sp Properties->Debugging.
 

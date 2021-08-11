@@ -24,7 +24,7 @@ namespace sp {
         VoxelRenderer::DrawScreenCover();
     }
 
-    void Crosshair::Process(const PostProcessingContext *context) {
+    void Crosshair::Process(PostProcessLock lock, const PostProcessingContext *context) {
         auto view = context->view;
         auto spread = CVarCrosshairSpread.Get();
         auto size = CVarCrosshairDotSize.Get();

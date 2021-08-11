@@ -2,8 +2,8 @@
 
 #include "core/CFunc.hh"
 #include "ecs/Ecs.hh"
-#include "ecs/components/VoxelInfo.hh"
-#include "graphics/core/Renderer.hh"
+#include "ecs/components/VoxelArea.hh"
+#include "graphics/core/RenderTarget.hh"
 #include "graphics/opengl/GLBuffer.hh"
 #include "graphics/opengl/GLTexture.hh"
 #include "graphics/opengl/PerfTimer.hh"
@@ -29,53 +29,70 @@ namespace sp {
     class GlfwGraphicsContext;
     class DebugGuiManager;
 
-    struct VoxelData {
+    struct VoxelContext {
         shared_ptr<GLRenderTarget> voxelCounters;
         shared_ptr<GLRenderTarget> fragmentListCurrent, fragmentListPrevious;
         shared_ptr<GLRenderTarget> voxelOverflow;
         shared_ptr<GLRenderTarget> radiance;
         shared_ptr<GLRenderTarget> radianceMips;
-        ecs::VoxelInfo info;
+
+        int gridSize;
+        float superSampleScale;
+        float voxelSize;
+        glm::vec3 voxelGridCenter;
+        glm::vec3 gridMin, gridMax;
+        ecs::VoxelArea areas[MAX_VOXEL_AREAS];
+
+        void UpdateCache(ecs::Lock<ecs::Read<ecs::VoxelArea>> lock);
     };
 
-    class VoxelRenderer : public Renderer {
+    class VoxelRenderer {
     public:
-        typedef std::function<void(ecs::Lock<ecs::ReadAll>, Tecs::Entity &)> PreDrawFunc;
+        using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::View, ecs::Transform>,
+                                            ecs::Write<ecs::Mirror>>;
+        typedef std::function<void(DrawLock, Tecs::Entity &)> PreDrawFunc;
 
-        VoxelRenderer(ecs::EntityManager &ecs, GlfwGraphicsContext &context, PerfTimer &timer);
+        VoxelRenderer(ecs::Lock<ecs::AddRemove> lock, GlfwGraphicsContext &context, PerfTimer &timer);
         ~VoxelRenderer();
 
         // Functions inherited from Renderer
-        void Prepare() override;
-        void BeginFrame() override;
-        void RenderPass(ecs::View view, RenderTarget *finalOutput = nullptr) override;
-        void PrepareForView(const ecs::View &view) override;
-        void RenderLoading(ecs::View view) override;
-        void EndFrame() override;
+        void Prepare();
+        // clang-format off
+        void BeginFrame(ecs::Lock<ecs::Read<ecs::Transform>,
+                                  ecs::Write<ecs::Renderable,
+                                             ecs::View,
+                                             ecs::Light,
+                                             ecs::LightSensor,
+                                             ecs::Mirror,
+                                             ecs::VoxelArea>> lock);
+        // clang-format on
+        void RenderPass(const ecs::View &view, DrawLock lock, RenderTarget *finalOutput = nullptr);
+        void PrepareForView(const ecs::View &view);
+        void RenderLoading(const ecs::View &view);
+        void EndFrame();
 
         // Functions specific to VoxelRenderer
         void PrepareGuis(DebugGuiManager *debugGui, MenuGuiManager *menuGui);
         void UpdateShaders(bool force = false);
         void RenderMainMenu(ecs::View &view, bool renderToGel = false);
-        void RenderShadowMaps();
+        void RenderShadowMaps(
+            ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::Mirror>> lock);
         void PrepareVoxelTextures();
-        void RenderVoxelGrid();
-        void ReadBackLightSensors();
-        void UpdateLightSensors();
-        void ForwardPass(const ecs::View &view,
-                         SceneShader *shader,
-                         ecs::Lock<ecs::ReadAll> lock,
-                         const PreDrawFunc &preDraw = {});
+        void RenderVoxelGrid(
+            ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform, ecs::View, ecs::Light>, ecs::Write<ecs::Mirror>> lock);
+        void ReadBackLightSensors(ecs::Lock<ecs::Write<ecs::LightSensor>> lock);
+        void UpdateLightSensors(ecs::Lock<ecs::Read<ecs::LightSensor, ecs::Light, ecs::View, ecs::Transform>> lock);
+        void ForwardPass(const ecs::View &view, SceneShader *shader, DrawLock lock, const PreDrawFunc &preDraw = {});
         void DrawEntity(const ecs::View &view,
                         SceneShader *shader,
-                        ecs::Lock<ecs::ReadAll> lock,
+                        DrawLock lock,
                         Tecs::Entity &ent,
                         const PreDrawFunc &preDraw = {});
         void ExpireRenderables();
         void DrawPhysxLines(const ecs::View &view,
                             SceneShader *shader,
                             const vector<physx::PxDebugLine> &lines,
-                            ecs::Lock<ecs::ReadAll> lock,
+                            DrawLock lock,
                             const PreDrawFunc &preDraw);
         void DrawGridDebug(const ecs::View &view, SceneShader *shader);
         void SetRenderTarget(GLRenderTarget *attachment0, GLRenderTarget *depth);
@@ -101,7 +118,7 @@ namespace sp {
         shared_ptr<GLRenderTarget> mirrorShadowMap;
         shared_ptr<GLRenderTarget> menuGuiTarget;
         GLBuffer indirectBufferCurrent, indirectBufferPrevious;
-        VoxelData voxelData;
+        VoxelContext voxelContext;
         GLBuffer mirrorVisData;
         GLBuffer mirrorSceneData;
 
@@ -114,4 +131,16 @@ namespace sp {
 
         CFuncCollection funcs;
     };
+
+    extern CVar<bool> CVarRenderWireframe;
+    extern CVar<bool> CVarUpdateVoxels;
+    extern CVar<int> CVarMirrorRecursion;
+    extern CVar<int> CVarMirrorMapResolution;
+
+    extern CVar<int> CVarVoxelGridSize;
+    extern CVar<int> CVarShowVoxels;
+    extern CVar<float> CVarVoxelSuperSample;
+    extern CVar<bool> CVarEnableShadows;
+    extern CVar<bool> CVarEnablePCF;
+    extern CVar<bool> CVarEnableBumpMap;
 } // namespace sp

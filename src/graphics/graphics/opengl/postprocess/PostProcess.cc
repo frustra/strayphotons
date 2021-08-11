@@ -52,15 +52,15 @@ namespace sp {
         context.AoBuffer = ssaoBlurY;
     }
 
-    static void AddLighting(PostProcessingContext &context, VoxelData voxelData) {
-        auto indirectDiffuse = context.AddPass<VoxelLightingDiffuse>(voxelData);
+    static void AddLighting(PostProcessingContext &context, VoxelContext voxelContext) {
+        auto indirectDiffuse = context.AddPass<VoxelLightingDiffuse>(voxelContext);
         indirectDiffuse->SetInput(0, context.GBuffer0);
         indirectDiffuse->SetInput(1, context.GBuffer1);
         indirectDiffuse->SetInput(2, context.GBuffer2);
         indirectDiffuse->SetInput(3, context.VoxelRadiance);
         indirectDiffuse->SetInput(4, context.VoxelRadianceMips);
 
-        auto lighting = context.AddPass<VoxelLighting>(voxelData, CVarSSAOEnabled.Get());
+        auto lighting = context.AddPass<VoxelLighting>(voxelContext, CVarSSAOEnabled.Get());
         lighting->SetInput(0, context.GBuffer0);
         lighting->SetInput(1, context.GBuffer1);
         lighting->SetInput(2, context.GBuffer2);
@@ -183,14 +183,14 @@ namespace sp {
     }
 
     void PostProcessing::Process(VoxelRenderer *renderer,
-                                 ecs::EntityManager &ecs,
-                                 ecs::View view,
+                                 PostProcessLock lock,
+                                 const ecs::View &view,
                                  const EngineRenderTargets &targets) {
         RenderPhase phase("PostProcessing", renderer->timer);
 
         bool renderToTexture = (targets.finalOutput != nullptr);
 
-        PostProcessingContext context(renderer, ecs, view);
+        PostProcessingContext context(renderer, view);
 
         context.GBuffer0 = context.AddPass<ProxyProcessPass>(targets.gBuffer0);
         context.GBuffer1 = context.AddPass<ProxyProcessPass>(targets.gBuffer1);
@@ -206,9 +206,9 @@ namespace sp {
             context.MirrorShadowMap = context.AddPass<ProxyProcessPass>(targets.mirrorShadowMap);
         }
 
-        if (targets.voxelData.radiance && targets.voxelData.radianceMips) {
-            context.VoxelRadiance = context.AddPass<ProxyProcessPass>(targets.voxelData.radiance);
-            context.VoxelRadianceMips = context.AddPass<ProxyProcessPass>(targets.voxelData.radianceMips);
+        if (targets.voxelContext.radiance && targets.voxelContext.radianceMips) {
+            context.VoxelRadiance = context.AddPass<ProxyProcessPass>(targets.voxelContext.radiance);
+            context.VoxelRadianceMips = context.AddPass<ProxyProcessPass>(targets.voxelContext.radianceMips);
         }
 
         if (targets.mirrorIndexStencil) {
@@ -219,7 +219,7 @@ namespace sp {
 
         if (CVarSSAOEnabled.Get()) { AddSSAO(context); }
 
-        if (CVarLightingEnabled.Get() && targets.shadowMap != nullptr) { AddLighting(context, targets.voxelData); }
+        if (CVarLightingEnabled.Get() && targets.shadowMap != nullptr) { AddLighting(context, targets.voxelContext); }
 
         auto linearLuminosity = context.LastOutput;
 
@@ -252,7 +252,7 @@ namespace sp {
             auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(),
                                                          CVarViewGBufferSource.Get(),
                                                          CVarVoxelMip.Get(),
-                                                         targets.voxelData);
+                                                         targets.voxelContext);
             viewGBuf->SetInput(0, context.GBuffer0);
             viewGBuf->SetInput(1, context.GBuffer1);
             viewGBuf->SetInput(2, context.GBuffer2);
@@ -265,7 +265,7 @@ namespace sp {
         auto lastOutput = context.LastOutput.GetOutput();
         lastOutput->AddDependency();
 
-        context.ProcessAllPasses();
+        context.ProcessAllPasses(lock);
 
         if (renderToTexture) {
             renderer->SetRenderTarget((GLRenderTarget *)targets.finalOutput, nullptr);
@@ -274,7 +274,10 @@ namespace sp {
         }
         renderer->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>();
 
-        glViewport(view.offset.x, view.offset.y, view.extents.x * view.scale, view.extents.y * view.scale);
+        glViewport(view.offset.x,
+                   view.offset.y,
+                   view.extents.x * CVarWindowScale.Get(),
+                   view.extents.y * CVarWindowScale.Get());
 
         lastOutput->TargetRef->GetGLTexture().Bind(0);
         VoxelRenderer::DrawScreenCover();
@@ -292,7 +295,7 @@ namespace sp {
         return pass->GetOutput(outputIndex);
     }
 
-    void PostProcessingContext::ProcessAllPasses() {
+    void PostProcessingContext::ProcessAllPasses(PostProcessLock lock) {
         for (auto pass : passes) {
             // Propagate dependencies.
             for (uint32 id = 0;; id++) {
@@ -333,7 +336,7 @@ namespace sp {
             }
 
             // Debugf("Process %s", pass->Name());
-            pass->Process(this);
+            pass->Process(lock, this);
 
             // Release dependencies.
             for (uint32 id = 0;; id++) {

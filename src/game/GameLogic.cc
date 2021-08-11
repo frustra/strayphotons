@@ -10,6 +10,10 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/Signals.hh"
 
+#ifdef SP_GRAPHICS_SUPPORT
+    #include "graphics/core/GraphicsContext.hh"
+#endif
+
 #include <cmath>
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -140,20 +144,20 @@ namespace sp {
         if (!scene) return true;
 
         if (CVarFlashlight.Changed()) {
-            auto light = ecs::Entity(&game->entityManager, flashlight).Get<ecs::Light>();
-            light->intensity = CVarFlashlight.Get(true);
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Light>>();
+            flashlight.Get<ecs::Light>(lock).intensity = CVarFlashlight.Get(true);
         }
         if (CVarFlashlightOn.Changed()) {
-            auto light = ecs::Entity(&game->entityManager, flashlight).Get<ecs::Light>();
-            light->on = CVarFlashlightOn.Get(true);
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Light>>();
+            flashlight.Get<ecs::Light>(lock).on = CVarFlashlightOn.Get(true);
         }
         if (CVarFlashlightAngle.Changed()) {
-            auto light = ecs::Entity(&game->entityManager, flashlight).Get<ecs::Light>();
-            light->spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Light>>();
+            flashlight.Get<ecs::Light>(lock).spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
         }
         if (CVarFlashlightResolution.Changed()) {
-            auto view = ecs::Entity(&game->entityManager, flashlight).Get<ecs::View>();
-            view->SetProjMat(view->GetFov(), view->GetClip(), glm::ivec2(CVarFlashlightResolution.Get(true)));
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::View>>();
+            flashlight.Get<ecs::View>(lock).extents = glm::ivec2(CVarFlashlightResolution.Get(true));
         }
 
         return true;
@@ -191,20 +195,17 @@ namespace sp {
             Assert(!!player, "Player scene doesn't contain an entity named player");
 
             if (!player.Has<ecs::Transform>(lock)) { player.Set<ecs::Transform>(lock, glm::vec3(0)); }
-            if (!player.Has<ecs::View>(lock)) { player.Set<ecs::View>(lock, glm::vec3(0)); }
             player.Set<ecs::HumanController>(lock);
 #ifdef SP_PHYSICS_SUPPORT
             auto &interact = player.Set<ecs::InteractController>(lock);
             interact.manager = &game->physics;
 #endif
-            player.Set<ecs::VoxelInfo>(lock);
 
             // Mark the player as being able to activate trigger areas
             player.Set<ecs::Triggerable>(lock);
 
 #ifdef SP_GRAPHICS_SUPPORT
-            // TODO: Have renderer auto-detect player views
-            game->graphics.AddPlayerView(player);
+            game->graphics.GetContext()->AttachView(player);
 #endif
 
             if (playerScene) {
