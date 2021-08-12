@@ -286,6 +286,7 @@ namespace sp {
                 SetRenderTarget(mirrorShadowMap.get(), depthTarget.get());
 
                 ecs::View basicView;
+                basicView.viewType = ecs::View::VIEW_TYPE_LIGHTING;
                 basicView.offset = glm::ivec2(0);
                 basicView.extents = glm::ivec2(mapResolution);
 
@@ -697,7 +698,7 @@ namespace sp {
         case ecs::View::VIEW_TYPE_EYE:
             if (!comp.visibility[ecs::Renderable::VISIBILE_DIRECT_EYE]) return;
             break;
-        case ecs::View::VIEW_TYPE_SHADOW_MAP:
+        case ecs::View::VIEW_TYPE_LIGHTING:
             if (!comp.visibility[ecs::Renderable::VISIBILE_LIGHTING]) return;
             break;
         default:
@@ -789,6 +790,7 @@ namespace sp {
 
         if (menuGui && menuGui->RenderMode() == MenuRenderMode::Gel) {
             ecs::View menuView({1280, 1280});
+            menuView.viewType = ecs::View::VIEW_TYPE_UI;
             menuView.clearMode.reset();
             menuView.clearMode[ecs::View::ClearMode::CLEAR_MODE_COLOR_BUFFER] = true;
             RenderMainMenu(menuView, true);

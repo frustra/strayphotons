@@ -36,7 +36,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 ## Setup compiler flags for various build types
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
-	set(CMAKE_CXX_FLAGS 				"/MP /EHsc /Wall /WX") # /wd4800 /wd4189
+	set(CMAKE_CXX_FLAGS 				"/MP /EHsc") # /Wall /WX /wd4800 /wd4189
 	set(CMAKE_CXX_FLAGS_RELEASE 		"/MT /O2")
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"/MTd /O2")
 	set(CMAKE_CXX_FLAGS_DEBUG 			"/MTd /DEBUG /ZI /FC")

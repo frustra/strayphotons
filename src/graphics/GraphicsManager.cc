@@ -125,8 +125,8 @@ namespace sp {
         std::vector<ecs::View> shadowViews;
         std::vector<std::pair<ecs::View, ecs::XRView>> xrViews;
         {
-            auto lock = game->entityManager.tecs
-                            .StartTransaction<ecs::Read<ecs::Transform, ecs::XRView>, ecs::Write<ecs::View>>();
+            auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Transform, ecs::Light, ecs::XRView>,
+                                                                  ecs::Write<ecs::View>>();
 
             auto &windowEntity = context->GetActiveView();
             if (windowEntity) {
@@ -134,6 +134,13 @@ namespace sp {
                     auto &windowView = windowEntity.Get<ecs::View>(lock);
                     windowView.viewType = ecs::View::VIEW_TYPE_CAMERA;
                     context->PrepareWindowView(windowView);
+                }
+            }
+
+            for (auto &e : lock.EntitiesWith<ecs::Light>()) {
+                if (e.Has<ecs::Light, ecs::View>(lock)) {
+                    auto &view = e.Get<ecs::View>(lock);
+                    view.viewType = ecs::View::VIEW_TYPE_LIGHTING;
                 }
             }
 
@@ -145,7 +152,7 @@ namespace sp {
                         cameraViews.emplace_back(view);
                     } else if (view.viewType == ecs::View::VIEW_TYPE_EYE && e.Has<ecs::XRView>(lock)) {
                         xrViews.emplace_back(view, e.Get<ecs::XRView>(lock));
-                    } else if (view.viewType == ecs::View::VIEW_TYPE_SHADOW_MAP) {
+                    } else if (view.viewType == ecs::View::VIEW_TYPE_LIGHTING) {
                         shadowViews.emplace_back(view);
                     }
                 }

@@ -196,7 +196,7 @@ namespace sp {
 
             if (!player.Has<ecs::Transform>(lock)) { player.Set<ecs::Transform>(lock, glm::vec3(0)); }
             player.Set<ecs::HumanController>(lock);
-#ifdef SP_PHYSICS_SUPPORT
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
             auto &interact = player.Set<ecs::InteractController>(lock);
             interact.manager = &game->physics;
 #endif
@@ -236,7 +236,7 @@ namespace sp {
             for (auto e : lock.EntitiesWith<ecs::Name>()) {
                 auto &name = e.Get<ecs::Name>(lock);
                 if (name == "player" && e != player) {
-                    name = "player-spwan";
+                    name = "player-spawn";
                     if (e.Has<ecs::Transform>(lock)) {
                         auto &spawnTransform = e.Get<ecs::Transform>(lock);
                         player.Set<ecs::Transform>(lock, spawnTransform);

@@ -10,7 +10,8 @@ namespace ecs {
             VIEW_TYPE_UNKNOWN = 0,
             VIEW_TYPE_CAMERA,
             VIEW_TYPE_EYE, // XR / Stereo views
-            VIEW_TYPE_SHADOW_MAP,
+            VIEW_TYPE_LIGHTING,
+            VIEW_TYPE_UI,
         };
 
         // Define a std::bitset and a corresponding enum that can be used to store clear modes independent of any
