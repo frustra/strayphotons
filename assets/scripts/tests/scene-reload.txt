@@ -4,3 +4,4 @@ wait 200 reloadscene
 wait 300 reloadscene reset
 wait 400 reloadscene
 wait 500 reloadscene
+wait 1000 screenshot reloaded-scene.png
