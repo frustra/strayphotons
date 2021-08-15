@@ -1,19 +1,13 @@
 #pragma once
 
+#include "ecs/Components.hh"
+#include "ecs/components/Renderable.hh"
+
 #include <bitset>
-#include <ecs/Components.hh>
 #include <glm/glm.hpp>
 
 namespace ecs {
     struct View {
-        enum ViewType {
-            VIEW_TYPE_UNKNOWN = 0,
-            VIEW_TYPE_CAMERA,
-            VIEW_TYPE_EYE, // XR / Stereo views
-            VIEW_TYPE_LIGHTING,
-            VIEW_TYPE_UI,
-        };
-
         // Define a std::bitset and a corresponding enum that can be used to store clear modes independent of any
         // graphics backend.
         enum ClearMode {
@@ -27,8 +21,11 @@ namespace ecs {
         using ClearModeBitset = std::bitset<CLEAR_MODE_COUNT>;
 
         View() {}
-        View(glm::ivec2 extents, float fov = 0.0f, glm::vec2 clip = {0.1, 256}, ViewType viewType = VIEW_TYPE_CAMERA)
-            : extents(extents), fov(fov), clip(clip), viewType(viewType) {}
+        View(glm::ivec2 extents,
+             float fov = 0.0f,
+             glm::vec2 clip = {0.1, 256},
+             Renderable::VisibilityMask mask = Renderable::VisibilityMask())
+            : extents(extents), fov(fov), clip(clip), visibilityMask(mask) {}
 
         // Optional parameters;
         glm::ivec2 offset = {0, 0};
@@ -45,7 +42,7 @@ namespace ecs {
         glm::ivec2 extents = {0, 0};
         float fov = 0.0f;
         glm::vec2 clip = {0.1, 256}; // {near, far}
-        ViewType viewType = VIEW_TYPE_UNKNOWN;
+        Renderable::VisibilityMask visibilityMask;
 
         void UpdateMatrixCache(Lock<Read<Transform>> lock, Tecs::Entity e);
 

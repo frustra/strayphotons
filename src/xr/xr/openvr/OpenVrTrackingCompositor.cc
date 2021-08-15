@@ -86,7 +86,7 @@ void OpenVrTrackingCompositor::PopulateView(size_t view, ecs::Handle<ecs::View> 
     ecsView->extents = {vrWidth, vrHeight};
     ecsView->clip = {0.1, 256};
     ecsView->projMat = glm::transpose(GetViewProjectionMatrix(view, ecsView->clip.x, ecsView->clip.y));
-    ecsView->viewType = ecs::View::VIEW_TYPE_EYE;
+    ecsView->visibilityMask.set(ecs::Renderable::VISIBILE_DIRECT_EYE);
 }
 
 void OpenVrTrackingCompositor::SubmitView(size_t view, GpuTexture *tex) {

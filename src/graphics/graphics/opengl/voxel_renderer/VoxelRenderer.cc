@@ -286,9 +286,9 @@ namespace sp {
                 SetRenderTarget(mirrorShadowMap.get(), depthTarget.get());
 
                 ecs::View basicView;
-                basicView.viewType = ecs::View::VIEW_TYPE_LIGHTING;
-                basicView.offset = glm::ivec2(0);
                 basicView.extents = glm::ivec2(mapResolution);
+                basicView.visibilityMask.set(ecs::Renderable::VISIBILE_REFLECTED);
+                basicView.visibilityMask.set(ecs::Renderable::VISIBILE_LIGHTING_SHADOW);
 
                 if (bounce > 0) { basicView.clearMode.reset(); }
 
@@ -690,20 +690,10 @@ namespace sp {
                                    const PreDrawFunc &preDraw) {
         auto &comp = ent.Get<ecs::Renderable>(lock);
 
-        // Filter entities based on view type and renderable visibility
-        switch (view.viewType) {
-        case ecs::View::VIEW_TYPE_CAMERA:
-            if (!comp.visibility[ecs::Renderable::VISIBILE_DIRECT_CAMERA]) return;
-            break;
-        case ecs::View::VIEW_TYPE_EYE:
-            if (!comp.visibility[ecs::Renderable::VISIBILE_DIRECT_EYE]) return;
-            break;
-        case ecs::View::VIEW_TYPE_LIGHTING:
-            if (!comp.visibility[ecs::Renderable::VISIBILE_LIGHTING]) return;
-            break;
-        default:
-            return;
-        }
+        // Filter entities that aren't members of all layers in the view's visibility mask.
+        ecs::Renderable::VisibilityMask mask = comp.visibility;
+        mask &= view.visibilityMask;
+        if (mask != view.visibilityMask) return;
 
         glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
 
@@ -790,7 +780,6 @@ namespace sp {
 
         if (menuGui && menuGui->RenderMode() == MenuRenderMode::Gel) {
             ecs::View menuView({1280, 1280});
-            menuView.viewType = ecs::View::VIEW_TYPE_UI;
             menuView.clearMode.reset();
             menuView.clearMode[ecs::View::ClearMode::CLEAR_MODE_COLOR_BUFFER] = true;
             RenderMainMenu(menuView, true);

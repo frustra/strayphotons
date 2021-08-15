@@ -10,7 +10,8 @@ namespace ecs {
             VISIBILE_DIRECT_CAMERA = 0,
             VISIBILE_DIRECT_EYE = 0,
             VISIBILE_REFLECTED,
-            VISIBILE_LIGHTING,
+            VISIBILE_LIGHTING_SHADOW,
+            VISIBILE_LIGHTING_VOXEL,
             VISIBILITY_COUNT,
         };
 

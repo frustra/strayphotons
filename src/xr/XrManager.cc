@@ -368,7 +368,7 @@ namespace sp::xr {
                 for (unsigned int i = 0; i < xrSystem->GetCompositor()->GetNumViews(true /* minimum */); i++) {
                     ecs::Entity viewEntity = CreateXrEntity();
                     auto ecsView = viewEntity.Assign<ecs::View>();
-                    ecsView->viewType = ecs::View::VIEW_TYPE_EYE;
+                    ecsView->visibilityMask.set(ecs::Renderable::VISIBILE_DIRECT_EYE);
                     xrSystem->GetCompositor()->PopulateView(i, ecsView);
 
                     // Mark this as an XR View

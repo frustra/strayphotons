@@ -132,7 +132,7 @@ namespace sp {
             if (windowEntity) {
                 if (windowEntity.Has<ecs::View>(lock)) {
                     auto &windowView = windowEntity.Get<ecs::View>(lock);
-                    windowView.viewType = ecs::View::VIEW_TYPE_CAMERA;
+                    windowView.visibilityMask.set(ecs::Renderable::VISIBILE_DIRECT_CAMERA);
                     context->PrepareWindowView(windowView);
                 }
             }
@@ -140,21 +140,19 @@ namespace sp {
             for (auto &e : lock.EntitiesWith<ecs::Light>()) {
                 if (e.Has<ecs::Light, ecs::View>(lock)) {
                     auto &view = e.Get<ecs::View>(lock);
-                    view.viewType = ecs::View::VIEW_TYPE_LIGHTING;
+                    view.visibilityMask.set(ecs::Renderable::VISIBILE_LIGHTING_SHADOW);
                 }
             }
 
             for (auto &e : lock.EntitiesWith<ecs::View>()) {
                 auto &view = e.Get<ecs::View>(lock);
-                if (view.viewType != ecs::View::VIEW_TYPE_UNKNOWN) {
-                    view.UpdateMatrixCache(lock, e);
-                    if (view.viewType == ecs::View::VIEW_TYPE_CAMERA) {
-                        cameraViews.emplace_back(view);
-                    } else if (view.viewType == ecs::View::VIEW_TYPE_EYE && e.Has<ecs::XRView>(lock)) {
-                        xrViews.emplace_back(view, e.Get<ecs::XRView>(lock));
-                    } else if (view.viewType == ecs::View::VIEW_TYPE_LIGHTING) {
-                        shadowViews.emplace_back(view);
-                    }
+                view.UpdateMatrixCache(lock, e);
+                if (view.visibilityMask[ecs::Renderable::VISIBILE_DIRECT_CAMERA]) {
+                    cameraViews.emplace_back(view);
+                } else if (view.visibilityMask[ecs::Renderable::VISIBILE_DIRECT_EYE] && e.Has<ecs::XRView>(lock)) {
+                    xrViews.emplace_back(view, e.Get<ecs::XRView>(lock));
+                } else if (view.visibilityMask[ecs::Renderable::VISIBILE_LIGHTING_SHADOW]) {
+                    shadowViews.emplace_back(view);
                 }
             }
         }

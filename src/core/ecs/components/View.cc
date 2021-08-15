@@ -33,15 +33,17 @@ namespace ecs {
     }
 
     void View::UpdateMatrixCache(Lock<Read<Transform>> lock, Tecs::Entity e) {
-        this->aspect = (float)this->extents.x / (float)this->extents.y;
+        if (this->fov > 0 && (this->extents.x != 0 || this->extents.y != 0)) {
+            this->aspect = (float)this->extents.x / (float)this->extents.y;
 
-        this->projMat = glm::perspective(this->fov, this->aspect, this->clip[0], this->clip[1]);
+            this->projMat = glm::perspective(this->fov, this->aspect, this->clip[0], this->clip[1]);
 
-        auto &transform = e.Get<Transform>(lock);
-        this->invViewMat = transform.GetGlobalTransform(lock);
+            auto &transform = e.Get<Transform>(lock);
+            this->invViewMat = transform.GetGlobalTransform(lock);
 
-        this->invProjMat = glm::inverse(this->projMat);
-        this->viewMat = glm::inverse(this->invViewMat);
+            this->invProjMat = glm::inverse(this->projMat);
+            this->viewMat = glm::inverse(this->invViewMat);
+        }
     }
 
 } // namespace ecs
