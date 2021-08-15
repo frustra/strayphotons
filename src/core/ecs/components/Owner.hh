@@ -5,7 +5,7 @@
 namespace ecs {
     struct Owner {
         enum SystemId { INVALID = 0, GAME_LOGIC, XR_MANAGER };
-        enum class OwnerType { INVALID = 0, SYSTEM, PLAYER };
+        enum class OwnerType { INVALID = 0, SYSTEM, PLAYER, SCENE };
 
         Owner() : id(0), type(OwnerType::INVALID) {}
         Owner(SystemId id) : id(id), type(OwnerType::SYSTEM) {}

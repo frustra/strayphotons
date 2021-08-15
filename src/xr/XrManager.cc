@@ -114,7 +114,7 @@ namespace sp::xr {
                             {
                                 auto lock = game->entityManager.tecs
                                                 .StartTransaction<ecs::Read<ecs::HumanController>,
-                                                                  ecs::Write<ecs::PhysicsScene, ecs::Transform>>();
+                                                                  ecs::Write<ecs::PhysicsState, ecs::Transform>>();
 
                                 physx::PxRaycastBuffer hit;
                                 bool status = game->physics.RaycastQuery(lock,
@@ -146,7 +146,7 @@ namespace sp::xr {
                         if (grab) {
                             auto lock = game->entityManager.tecs.StartTransaction<
                                 ecs::Read<ecs::HumanController>,
-                                ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::InteractController>>();
+                                ecs::Write<ecs::PhysicsState, ecs::Transform, ecs::InteractController>>();
 
                             Logf("grab on subpath %s", controllerAction.second);
                             game->humanControlSystem.Interact(lock, xrObject.GetEntity());

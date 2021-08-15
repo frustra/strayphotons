@@ -35,7 +35,7 @@ namespace sp {
 
         {
             auto lock = ecs.StartTransaction<
-                ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::HumanController, ecs::InteractController>>();
+                ecs::Write<ecs::PhysicsState, ecs::Transform, ecs::HumanController, ecs::InteractController>>();
 
             for (Tecs::Entity entity : lock.EntitiesWith<ecs::HumanController>()) {
                 if (!entity.Has<ecs::Transform>(lock)) continue;
@@ -120,8 +120,8 @@ namespace sp {
                 auto targetHeight = crouching ? ecs::PLAYER_CAPSULE_CROUCH_HEIGHT : ecs::PLAYER_CAPSULE_HEIGHT;
                 if (fabs(targetHeight - currentHeight) > 0.1) {
                     // If player is in the air, resize from the top to implement crouch-jumping.
-                    auto newHeight = currentHeight + (targetHeight - currentHeight) * (controller.onGround ? 0.1 : 1.0);
-                    ResizeEntity(lock, entity, newHeight, !controller.onGround);
+                    controller.height = currentHeight +
+                                        (targetHeight - currentHeight) * (controller.onGround ? 0.1 : 1.0);
                 }
 
                 auto velocity = CalculatePlayerVelocity(lock,
@@ -136,76 +136,6 @@ namespace sp {
         }
 
         return true;
-    }
-
-    ecs::HumanController &HumanControlSystem::AssignController(ecs::Lock<ecs::AddRemove> lock,
-                                                               Tecs::Entity entity,
-                                                               PhysxManager &px) {
-        if (entity.Has<ecs::HumanController>(lock)) {
-            std::stringstream ss;
-            ss << "entity " << entity.id << " cannot be assigned a new HumanController because it already has one.";
-            throw std::invalid_argument(ss.str());
-        }
-        auto &transform = entity.Get<ecs::Transform>(lock);
-        glm::quat rotation = transform.GetRotate();
-
-        auto &controller = entity.Set<ecs::HumanController>(lock);
-        controller.SetRotate(rotation);
-
-        auto &interact = entity.Set<ecs::InteractController>(lock);
-        interact.manager = &px;
-
-        // Offset the capsule position so the camera is at the top
-        physx::PxVec3 pos = GlmVec3ToPxVec3(transform.GetPosition() - glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT / 2, 0));
-        controller.pxController = px.CreateController(lock, pos, ecs::PLAYER_RADIUS, ecs::PLAYER_CAPSULE_HEIGHT, 0.5f);
-        controller.pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
-
-        return controller;
-    }
-
-    void HumanControlSystem::Teleport(
-        ecs::Lock<ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::HumanController>> lock,
-        Tecs::Entity entity,
-        glm::vec3 position) {
-        if (!entity.Has<ecs::Transform, ecs::HumanController>(lock)) {
-            throw std::invalid_argument("entity must have a Transform and HumanController component");
-        }
-
-        auto &controller = entity.Get<ecs::HumanController>(lock);
-        auto &transform = entity.Get<ecs::Transform>(lock);
-        transform.SetPosition(position);
-
-        if (controller.pxController) {
-            // Offset the capsule position so the camera is at the top
-            float capsuleHeight = controller.pxController->getHeight();
-            physics->TeleportController(lock,
-                                        controller.pxController,
-                                        GlmVec3ToPxExtendedVec3(position - glm::vec3(0, capsuleHeight / 2, 0)));
-        }
-    }
-
-    void HumanControlSystem::Teleport(
-        ecs::Lock<ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::HumanController>> lock,
-        Tecs::Entity entity,
-        glm::vec3 position,
-        glm::quat rotation) {
-        if (!entity.Has<ecs::Transform, ecs::HumanController>(lock)) {
-            throw std::invalid_argument("entity must have a Transform and HumanController component");
-        }
-
-        auto &controller = entity.Get<ecs::HumanController>(lock);
-        auto &transform = entity.Get<ecs::Transform>(lock);
-        transform.SetPosition(position);
-        transform.SetRotate(rotation);
-        controller.SetRotate(rotation);
-
-        if (controller.pxController) {
-            // Offset the capsule position so the camera is at the top
-            float capsuleHeight = controller.pxController->getHeight();
-            physics->TeleportController(lock,
-                                        controller.pxController,
-                                        GlmVec3ToPxExtendedVec3(position - glm::vec3(0, capsuleHeight / 2, 0)));
-        }
     }
 
     glm::vec3 HumanControlSystem::CalculatePlayerVelocity(
@@ -256,7 +186,7 @@ namespace sp {
     }
 
     void HumanControlSystem::MoveEntity(
-        ecs::Lock<ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::HumanController>> lock,
+        ecs::Lock<ecs::Write<ecs::PhysicsState, ecs::Transform, ecs::HumanController>> lock,
         Tecs::Entity entity,
         double dtSinceLastFrame,
         glm::vec3 velocity) {
@@ -267,9 +197,7 @@ namespace sp {
             auto disp = velocity * (float)dtSinceLastFrame;
             auto prevPosition = PxExtendedVec3ToGlmVec3P(controller.pxController->getPosition());
             if (CVarNoClip.Get()) {
-                physics->TeleportController(lock,
-                                            controller.pxController,
-                                            GlmVec3ToPxExtendedVec3(prevPosition + disp));
+                transform.SetPosition(prevPosition + disp);
                 controller.onGround = true;
             } else {
                 controller.onGround =
@@ -291,32 +219,9 @@ namespace sp {
         }
     }
 
-    bool HumanControlSystem::ResizeEntity(
-        ecs::Lock<ecs::Write<ecs::PhysicsScene>, ecs::Read<ecs::HumanController>> lock,
-        Tecs::Entity entity,
-        float height,
-        bool fromTop) {
-        auto &controller = entity.Get<ecs::HumanController>(lock);
-
-        physx::PxCapsuleController *pxController = controller.pxController;
-        if (pxController) {
-            float oldHeight = pxController->getHeight();
-            physics->ResizeController(lock, pxController, height, fromTop);
-
-            physx::PxOverlapBuffer hit;
-            physx::PxRigidDynamic *actor = pxController->getActor();
-
-            bool valid = !physics->OverlapQuery(lock, actor, physx::PxVec3(0), hit);
-
-            if (!valid) { physics->ResizeController(lock, pxController, oldHeight, fromTop); }
-            return valid;
-        }
-        return false;
-    }
-
     void HumanControlSystem::Interact(
         ecs::Lock<ecs::Read<ecs::HumanController>,
-                  ecs::Write<ecs::PhysicsScene, ecs::Transform, ecs::InteractController>> lock,
+                  ecs::Write<ecs::PhysicsState, ecs::Transform, ecs::InteractController>> lock,
         Tecs::Entity entity) {
         auto &interact = entity.Get<ecs::InteractController>(lock);
         auto &transform = entity.Get<ecs::Transform>(lock);

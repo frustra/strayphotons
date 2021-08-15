@@ -21,7 +21,7 @@ namespace sp {
 #endif
         bool Frame(double dtSinceLastFrame);
 
-        void ResetPlayer();
+        void LoadPlayer();
         void LoadScene(string name);
         void ReloadScene(string arg);
         void PrintDebug();
@@ -35,7 +35,7 @@ namespace sp {
 
     private:
         Game *game;
-        std::shared_ptr<Scene> scene;
+        std::shared_ptr<Scene> scene, playerScene;
         Tecs::Entity player;
         Tecs::Entity flashlight;
         CFuncCollection funcs;
