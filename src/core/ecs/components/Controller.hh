@@ -26,18 +26,6 @@ namespace ecs {
 
     class HumanController {
     public:
-        /**
-         * Set pitch and yaw from this quaternion.
-         * Roll is not set to maintain the FPS perspective.
-         */
-        void SetRotate(const glm::quat &rotation);
-
-        // overrides ecs::Transform::rotate for an FPS-style orientation
-        // until quaternions make sense to me (which will never happen)
-        float pitch = 0;
-        float yaw = 0;
-        float roll = 0;
-
         // pxCapsuleController handles movement and physx simulation
         physx::PxCapsuleController *pxController;
 

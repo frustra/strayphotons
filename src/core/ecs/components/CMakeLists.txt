@@ -1,7 +1,6 @@
 
 target_sources(${PROJECT_CORE_LIB} PRIVATE
     Animation.cc
-    Controller.cc
     Light.cc
     LightSensor.cc
     Mirror.cc
