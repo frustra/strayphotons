@@ -1,4 +1,4 @@
-#include "SignalOutput.hh"
+#include "Signals.hh"
 
 #include <assets/AssetHelpers.hh>
 #include <ecs/EcsImpl.hh>

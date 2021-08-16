@@ -5,6 +5,7 @@
 #include <Tecs.hh>
 #include <ecs/components/Animation.hh>
 #include <ecs/components/Controller.hh>
+#include <ecs/components/Events.hh>
 #include <ecs/components/Interact.hh>
 #include <ecs/components/Light.hh>
 #include <ecs/components/LightSensor.hh>
@@ -13,7 +14,7 @@
 #include <ecs/components/Physics.hh>
 #include <ecs/components/Renderable.hh>
 #include <ecs/components/Script.hh>
-#include <ecs/components/SignalOutput.hh>
+#include <ecs/components/Signals.hh>
 #include <ecs/components/Transform.hh>
 #include <ecs/components/TriggerArea.hh>
 #include <ecs/components/Triggerable.hh>

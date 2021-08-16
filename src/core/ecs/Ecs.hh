@@ -20,6 +20,8 @@ namespace ecs {
     class Animation;
     class HumanController;
     struct InteractController;
+    struct EventInput;
+    class EventBindings;
     struct Light;
     class LightSensor;
     struct Mirror;
@@ -40,6 +42,8 @@ namespace ecs {
                           Animation,
                           HumanController,
                           InteractController,
+                          EventInput,
+                          EventBindings,
                           Light,
                           LightSensor,
                           Mirror,
