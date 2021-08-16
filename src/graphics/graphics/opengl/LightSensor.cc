@@ -55,7 +55,7 @@ namespace sp {
         glGetTextureImage(outputTex.handle, 0, GL_RGBA, GL_FLOAT, readBackSize, 0);
     }
 
-    void LightSensorUpdateCS::UpdateValues(ecs::EntityManager &manager) {
+    void LightSensorUpdateCS::UpdateValues(ecs::Lock<ecs::Write<ecs::LightSensor>> lock) {
         float *buf = (float *)readBackBuf.Map(GL_READ_ONLY);
         if (buf == nullptr) {
             Errorf("Missed readback of light sensor buffer");
@@ -65,16 +65,15 @@ namespace sp {
         while (buf[0] == 1.0f) {
             // TODO: Fix this to read full precision
             // ecs::Entity::Id eid((ecs::eid_t)buf[1], (ecs::gen_t)buf[2]);
-            ecs::Entity::Id eid((size_t)buf[1]);
+            Tecs::Entity entity((size_t)buf[1]);
 
             buf += 4;
             glm::vec3 lum(buf[0], buf[1], buf[2]);
             buf += 4;
 
-            ecs::Entity sensorEnt(&manager, eid);
-            if (sensorEnt.Valid() && sensorEnt.Has<ecs::LightSensor>()) {
-                auto sensor = sensorEnt.Get<ecs::LightSensor>();
-                sensor->illuminance = lum;
+            if (entity && entity.Has<ecs::LightSensor>(lock)) {
+                auto &sensor = entity.Get<ecs::LightSensor>(lock);
+                sensor.illuminance = lum;
             }
         }
         readBackBuf.Unmap();

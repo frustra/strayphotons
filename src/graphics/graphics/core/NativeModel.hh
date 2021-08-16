@@ -2,23 +2,15 @@
 
 #include "assets/Model.hh"
 #include "ecs/components/View.hh"
-#include "graphics/core/Renderer.hh"
 
 #include <glm/glm.hpp>
 
 namespace sp {
     class SceneShader;
 
-    /**
-     * @brief Interface of a "native" model, that can be used by a Renderer
-     *        to draw on screen.
-     *
-     *        This class must never depend on graphics-backend-specific types (like GLuint)
-     *        so that it can be compiled into the headless / core engine.
-     */
     class NativeModel {
     public:
-        NativeModel(Model *m, Renderer *r) : model(m), renderer(r) {}
+        NativeModel(Model *m) : model(m) {}
         ~NativeModel() = default;
 
         virtual void Draw(SceneShader *shader,
@@ -29,6 +21,5 @@ namespace sp {
 
     protected:
         Model *model;
-        Renderer *renderer;
     };
 }; // namespace sp

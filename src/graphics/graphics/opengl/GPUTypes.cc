@@ -1,10 +1,10 @@
 #include "GPUTypes.hh"
 
 #include <ecs/EcsImpl.hh>
+#include <graphics/opengl/voxel_renderer/VoxelRenderer.hh>
 
 namespace sp {
-    int FillLightData(GLLightData *data, ecs::EntityManager &manager) {
-        auto lock = manager.tecs.StartTransaction<ecs::Read<ecs::Light, ecs::View, ecs::Transform>>();
+    int FillLightData(GLLightData *data, ecs::Lock<ecs::Read<ecs::Light, ecs::View, ecs::Transform>> lock) {
         int lightNum = 0;
         for (auto entity : lock.EntitiesWith<ecs::Light>()) {
             if (!entity.Has<ecs::Light, ecs::View, ecs::Transform>(lock)) continue;
@@ -33,8 +33,7 @@ namespace sp {
         return lightNum;
     }
 
-    int FillMirrorData(GLMirrorData *data, ecs::EntityManager &manager) {
-        auto lock = manager.tecs.StartTransaction<ecs::Read<ecs::Mirror, ecs::Transform>>();
+    int FillMirrorData(GLMirrorData *data, ecs::Lock<ecs::Read<ecs::Mirror, ecs::Transform>> lock) {
         int mirrorNum = 0;
         for (auto entity : lock.EntitiesWith<ecs::Mirror>()) {
             if (!entity.Has<ecs::Mirror, ecs::Transform>(lock)) continue;
@@ -59,7 +58,7 @@ namespace sp {
         return mirrorNum;
     }
 
-    void FillVoxelInfo(GLVoxelInfo *data, ecs::VoxelInfo &source) {
+    void FillVoxelInfo(GLVoxelInfo *data, VoxelContext &source) {
         data->voxelSize = source.voxelSize;
         data->voxelGridCenter = source.voxelGridCenter;
         for (int i = 0; i < MAX_VOXEL_AREAS; i++) {

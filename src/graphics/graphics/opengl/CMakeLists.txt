@@ -37,7 +37,6 @@ target_sources(${PROJECT_GRAPHICS_OPENGL_LIB} PRIVATE
     ShaderManager.cc
 )
 
-add_subdirectory(basic_renderer)
 add_subdirectory(gui)
 add_subdirectory(postprocess)
 add_subdirectory(voxel_renderer)

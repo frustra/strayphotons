@@ -1,4 +1,5 @@
 loadscene menu
 # TODO: BUG: First menu frame is black
-# Wait until the next frame to take the screenshot
-wait 0 screenshot menu.png
+screenshot menu.png
+# Wait until a future frame to take the screenshot
+wait 100 screenshot menu-delayed.png

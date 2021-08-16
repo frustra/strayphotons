@@ -19,7 +19,7 @@ namespace sp {
     });
 
     void VoxelRenderer::PrepareVoxelTextures() {
-        auto VoxelGridSize = voxelData.info.gridSize;
+        auto VoxelGridSize = CVarVoxelGridSize.Get();
         auto VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize * CVarMaxVoxelFill.Get();
 
         glm::ivec3 gridDimensions = glm::ivec3(VoxelGridSize, VoxelGridSize, VoxelGridSize);
@@ -40,21 +40,21 @@ namespace sp {
 
         RenderTargetDesc listDesc(PF_RGB10_A2UI, glm::ivec2(8192, ceil(VoxelListSize / 8192.0)));
         listDesc.levels = VoxelMipLevels;
-        listDesc.Prepare(context, voxelData.fragmentListCurrent);
-        listDesc.Prepare(context, voxelData.fragmentListPrevious);
+        listDesc.Prepare(context, voxelContext.fragmentListCurrent);
+        listDesc.Prepare(context, voxelContext.fragmentListPrevious);
 
         RenderTargetDesc counterDesc(PF_R32UI, gridDimensions);
         counterDesc.levels = VoxelMipLevels;
-        counterDesc.Prepare(context, voxelData.voxelCounters, true);
+        counterDesc.Prepare(context, voxelContext.voxelCounters, true);
 
         RenderTargetDesc overflowDesc(PF_RGBA16F, glm::ivec2(8192, ceil(VoxelListSize / 8192.0)));
         overflowDesc.levels = VoxelMipLevels;
-        overflowDesc.Prepare(context, voxelData.voxelOverflow);
+        overflowDesc.Prepare(context, voxelContext.voxelOverflow);
 
         RenderTargetDesc radianceDesc(PF_RGBA16F, gridDimensions);
         radianceDesc.Wrap(GL_CLAMP_TO_BORDER);
         radianceDesc.borderColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        radianceDesc.Prepare(context, voxelData.radiance, true);
+        radianceDesc.Prepare(context, voxelContext.radiance, true);
 
         auto mipSize = gridDimensions / 2;
         mipSize.x *= MAX_VOXEL_AREAS;
@@ -63,10 +63,11 @@ namespace sp {
         radianceMipsDesc.levels = VoxelMipLevels - 1;
         radianceMipsDesc.Wrap(GL_CLAMP_TO_BORDER);
         radianceMipsDesc.borderColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        radianceMipsDesc.Prepare(context, voxelData.radianceMips, true);
+        radianceMipsDesc.Prepare(context, voxelContext.radianceMips, true);
     }
 
-    void VoxelRenderer::RenderVoxelGrid() {
+    void VoxelRenderer::RenderVoxelGrid(
+        ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform, ecs::View, ecs::Light>, ecs::Write<ecs::Mirror>> lock) {
         RenderPhase phase("VoxelGrid", timer);
 
         PrepareVoxelTextures();
@@ -76,39 +77,40 @@ namespace sp {
         glDisable(GL_DEPTH_TEST);
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-        auto VoxelGridSize = voxelData.info.gridSize;
+        auto VoxelGridSize = CVarVoxelGridSize.Get();
 
         ecs::View ortho;
-        ortho.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * voxelData.info.voxelSize)));
-        ortho.viewMat = glm::translate(ortho.viewMat, -voxelData.info.voxelGridCenter);
+        ortho.visibilityMask.set(ecs::Renderable::VISIBILE_LIGHTING_VOXEL);
+        ortho.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * voxelContext.voxelSize)));
+        ortho.viewMat = glm::translate(ortho.viewMat, -voxelContext.voxelGridCenter);
         ortho.projMat = glm::mat4();
-        ortho.extents = glm::ivec2(VoxelGridSize * voxelData.info.superSampleScale);
+        ortho.extents = glm::ivec2(VoxelGridSize * CVarVoxelSuperSample.Get());
         ortho.clearMode.reset();
 
         auto renderTarget = context.GetRenderTarget({PF_R8, ortho.extents});
         SetRenderTarget(renderTarget.get(), nullptr);
 
         GLVoxelInfo voxelInfo;
-        FillVoxelInfo(&voxelInfo, voxelData.info);
+        FillVoxelInfo(&voxelInfo, voxelContext);
         GLLightData lightData[MAX_LIGHTS];
-        int lightCount = FillLightData(&lightData[0], ecs);
+        int lightCount = FillLightData(&lightData[0], lock);
 
         {
             RenderPhase phase("Fill", timer);
 
             indirectBufferCurrent.Bind(GL_ATOMIC_COUNTER_BUFFER, 0);
-            voxelData.voxelCounters->GetGLTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
-            voxelData.fragmentListCurrent->GetGLTexture().BindImage(1, GL_WRITE_ONLY, 0);
-            voxelData.radiance->GetGLTexture().BindImage(2, GL_WRITE_ONLY, 0, GL_TRUE, 0);
-            voxelData.voxelOverflow->GetGLTexture().BindImage(3, GL_WRITE_ONLY, 0);
-            voxelData.voxelOverflow->GetGLTexture().BindImage(4, GL_WRITE_ONLY, 1);
-            voxelData.voxelOverflow->GetGLTexture().BindImage(5, GL_WRITE_ONLY, 2);
+            voxelContext.voxelCounters->GetGLTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
+            voxelContext.fragmentListCurrent->GetGLTexture().BindImage(1, GL_WRITE_ONLY, 0);
+            voxelContext.radiance->GetGLTexture().BindImage(2, GL_WRITE_ONLY, 0, GL_TRUE, 0);
+            voxelContext.voxelOverflow->GetGLTexture().BindImage(3, GL_WRITE_ONLY, 0);
+            voxelContext.voxelOverflow->GetGLTexture().BindImage(4, GL_WRITE_ONLY, 1);
+            voxelContext.voxelOverflow->GetGLTexture().BindImage(5, GL_WRITE_ONLY, 2);
 
             shadowMap->GetGLTexture().Bind(4);
             if (mirrorShadowMap) mirrorShadowMap->GetGLTexture().Bind(5);
             if (menuGuiTarget) menuGuiTarget->GetGLTexture().Bind(6); // TODO(xthexder): bind correct light gel
-            voxelData.radiance->GetGLTexture().Bind(7);
-            voxelData.radianceMips->GetGLTexture().Bind(8);
+            voxelContext.radiance->GetGLTexture().Bind(7);
+            voxelContext.radianceMips->GetGLTexture().Bind(8);
             mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 
             ShaderControl->BindPipeline<VoxelFillVS, VoxelFillGS, VoxelFillFS>();
@@ -117,10 +119,7 @@ namespace sp {
             voxelFillFS->SetVoxelInfo(&voxelInfo);
             voxelFillFS->SetLightAttenuation(CVarLightAttenuation.Get());
 
-            {
-                auto lock = ecs.tecs.StartTransaction<ecs::ReadAll>();
-                ForwardPass(ortho, shaders.Get<VoxelFillVS>(), lock);
-            }
+            ForwardPass(ortho, shaders.Get<VoxelFillVS>(), lock);
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT |
                             GL_COMMAND_BARRIER_BIT);
         }
@@ -133,8 +132,8 @@ namespace sp {
             // TODO(xthexder): Make last bucket sequencial to eliminate flickering
             for (uint32 i = 0; i < 3; i++) {
                 indirectBufferCurrent.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * (i + 1), sizeof(GLuint));
-                voxelData.radiance->GetGLTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
-                voxelData.voxelOverflow->GetGLTexture().BindImage(1, GL_READ_ONLY, i);
+                voxelContext.radiance->GetGLTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
+                voxelContext.voxelOverflow->GetGLTexture().BindImage(1, GL_READ_ONLY, i);
 
                 ShaderControl->BindPipeline<VoxelMergeCS>();
                 shaders.Get<VoxelMergeCS>()->SetLevel(i);
@@ -150,18 +149,18 @@ namespace sp {
         {
             RenderPhase phase("Mipmap", timer);
 
-            for (uint32 i = 0; i <= voxelData.radianceMips->GetDesc().levels; i++) {
+            for (uint32 i = 0; i <= voxelContext.radianceMips->GetDesc().levels; i++) {
                 {
                     RenderPhase subPhase("Clear", timer);
 
                     indirectBufferPrevious.Bind(GL_DISPATCH_INDIRECT_BUFFER);
                     indirectBufferPrevious.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint));
-                    voxelData.fragmentListPrevious->GetGLTexture().BindImage(0, GL_READ_ONLY, i);
-                    voxelData.voxelCounters->GetGLTexture().BindImage(1, GL_READ_ONLY, i);
+                    voxelContext.fragmentListPrevious->GetGLTexture().BindImage(0, GL_READ_ONLY, i);
+                    voxelContext.voxelCounters->GetGLTexture().BindImage(1, GL_READ_ONLY, i);
                     if (i == 0) {
-                        voxelData.radiance->GetGLTexture().BindImage(2, GL_WRITE_ONLY, 0, GL_TRUE, 0);
+                        voxelContext.radiance->GetGLTexture().BindImage(2, GL_WRITE_ONLY, 0, GL_TRUE, 0);
                     } else {
-                        voxelData.radianceMips->GetGLTexture().BindImage(2, GL_WRITE_ONLY, i - 1, GL_TRUE, 0);
+                        voxelContext.radianceMips->GetGLTexture().BindImage(2, GL_WRITE_ONLY, i - 1, GL_TRUE, 0);
                     }
 
                     ShaderControl->BindPipeline<VoxelClearCS>();
@@ -175,21 +174,22 @@ namespace sp {
 
                     indirectBufferCurrent.Bind(GL_DISPATCH_INDIRECT_BUFFER);
                     indirectBufferCurrent.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint) * 4);
-                    voxelData.fragmentListCurrent->GetGLTexture().BindImage(0, GL_READ_ONLY, i);
-                    voxelData.voxelCounters->GetGLTexture().BindImage(2, GL_WRITE_ONLY, i);
-                    if (i < voxelData.radianceMips->GetDesc().levels) {
+                    voxelContext.fragmentListCurrent->GetGLTexture().BindImage(0, GL_READ_ONLY, i);
+                    voxelContext.voxelCounters->GetGLTexture().BindImage(2, GL_WRITE_ONLY, i);
+                    if (i < voxelContext.radianceMips->GetDesc().levels) {
                         indirectBufferCurrent.Bind(GL_ATOMIC_COUNTER_BUFFER,
                                                    1,
                                                    sizeof(GLuint) * 4 * (i + 1),
                                                    sizeof(GLuint) * 4);
-                        voxelData.voxelCounters->GetGLTexture().BindImage(3, GL_READ_WRITE, i + 1);
-                        voxelData.fragmentListCurrent->GetGLTexture().BindImage(1, GL_WRITE_ONLY, i + 1);
+                        voxelContext.voxelCounters->GetGLTexture().BindImage(3, GL_READ_WRITE, i + 1);
+                        voxelContext.fragmentListCurrent->GetGLTexture().BindImage(1, GL_WRITE_ONLY, i + 1);
                     }
                     if (i > 0) {
-                        if (i > 1) voxelData.radianceMips->GetGLTexture().BindImage(4, GL_READ_ONLY, i - 2, GL_TRUE, 0);
+                        if (i > 1)
+                            voxelContext.radianceMips->GetGLTexture().BindImage(4, GL_READ_ONLY, i - 2, GL_TRUE, 0);
                         else
-                            voxelData.radiance->GetGLTexture().BindImage(4, GL_READ_ONLY, 0, GL_TRUE, 0);
-                        voxelData.radianceMips->GetGLTexture().BindImage(5, GL_WRITE_ONLY, i - 1, GL_TRUE, 0);
+                            voxelContext.radiance->GetGLTexture().BindImage(4, GL_READ_ONLY, 0, GL_TRUE, 0);
+                        voxelContext.radianceMips->GetGLTexture().BindImage(5, GL_WRITE_ONLY, i - 1, GL_TRUE, 0);
                     }
 
                     ShaderControl->BindPipeline<VoxelMipmapCS>();
@@ -224,9 +224,9 @@ namespace sp {
             indirectBufferPrevious = indirectBufferCurrent;
             indirectBufferCurrent = tmp;
 
-            std::shared_ptr<GLRenderTarget> tmp2 = voxelData.fragmentListPrevious;
-            voxelData.fragmentListPrevious = voxelData.fragmentListCurrent;
-            voxelData.fragmentListCurrent = tmp2;
+            std::shared_ptr<GLRenderTarget> tmp2 = voxelContext.fragmentListPrevious;
+            voxelContext.fragmentListPrevious = voxelContext.fragmentListCurrent;
+            voxelContext.fragmentListCurrent = tmp2;
 
             GLuint listData[] = {0, 0, 1, 1};
             indirectBufferCurrent.Clear(PF_RGBA32UI, listData);

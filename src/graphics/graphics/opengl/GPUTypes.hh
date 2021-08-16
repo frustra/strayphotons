@@ -5,11 +5,9 @@
 
 #include <glm/glm.hpp>
 
-namespace ecs {
-    struct VoxelInfo;
-}
-
 namespace sp {
+    struct VoxelContext;
+
     struct GLLightData {
         glm::vec3 position;
         float spotAngleCos;
@@ -67,7 +65,7 @@ namespace sp {
 
     static_assert(sizeof(GLVoxelInfo) == (1 + 2 * MAX_VOXEL_AREAS) * 4 * sizeof(float), "GLVoxelInfo size incorrect");
 
-    int FillLightData(GLLightData *data, ecs::EntityManager &manager);
-    int FillMirrorData(GLMirrorData *data, ecs::EntityManager &manager);
-    void FillVoxelInfo(GLVoxelInfo *data, ecs::VoxelInfo &source);
+    int FillLightData(GLLightData *data, ecs::Lock<ecs::Read<ecs::Light, ecs::View, ecs::Transform>> lock);
+    int FillMirrorData(GLMirrorData *data, ecs::Lock<ecs::Read<ecs::Mirror, ecs::Transform>> lock);
+    void FillVoxelInfo(GLVoxelInfo *data, VoxelContext &source);
 } // namespace sp

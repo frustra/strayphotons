@@ -5,7 +5,7 @@
 namespace sp {
     class SMAAEdgeDetection : public PostProcessPass<1, 2> {
     public:
-        void Process(const PostProcessingContext *context);
+        void Process(PostProcessLock lock, const PostProcessingContext *context);
 
         RenderTargetDesc GetOutputDesc(uint32 id) {
             auto desc = GetInput(0)->GetOutput()->TargetDesc;
@@ -26,7 +26,7 @@ namespace sp {
 
     class SMAABlendingWeights : public PostProcessPass<1, 1, 1> {
     public:
-        void Process(const PostProcessingContext *context);
+        void Process(PostProcessLock lock, const PostProcessingContext *context);
 
         RenderTargetDesc GetOutputDesc(uint32 id) {
             // RGBA8 from edge detection.
@@ -40,7 +40,7 @@ namespace sp {
 
     class SMAABlending : public PostProcessPass<2, 1> {
     public:
-        void Process(const PostProcessingContext *context);
+        void Process(PostProcessLock lock, const PostProcessingContext *context);
 
         RenderTargetDesc GetOutputDesc(uint32 id) {
             return GetInput(0)->GetOutput()->TargetDesc;

@@ -553,7 +553,6 @@ namespace sp {
         // Offset the capsule position so the camera (transform origin) is at the top
         auto capsuleHeight = controller.pxController ? controller.pxController->getHeight() : controller.height;
         auto pxPosition = GlmVec3ToPxExtendedVec3(position - glm::vec3(0, capsuleHeight / 2, 0));
-        auto rotation = transform.GetGlobalRotation(lock);
 
         if (!controller.pxController) {
             // Capsule controller description will want to be data driven
@@ -584,10 +583,7 @@ namespace sp {
             controller.pxController = static_cast<PxCapsuleController *>(pxController);
         }
 
-        if (transform.IsDirty()) {
-            controller.SetRotate(rotation);
-            controller.pxController->setPosition(pxPosition);
-        }
+        if (transform.IsDirty()) { controller.pxController->setPosition(pxPosition); }
 
         float currentHeight = controller.pxController->getHeight();
         if (currentHeight != controller.height) {
@@ -603,7 +599,7 @@ namespace sp {
             physx::PxOverlapBuffer hit;
             physx::PxRigidDynamic *actor = controller.pxController->getActor();
 
-            if (!OverlapQuery(lock, actor, physx::PxVec3(0), hit)) {
+            if (OverlapQuery(lock, actor, physx::PxVec3(0), hit)) {
                 // Revert to current height, since we collided with something
                 controller.pxController->resize(currentHeight);
                 controller.pxController->setFootPosition(currentPos);

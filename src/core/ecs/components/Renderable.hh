@@ -6,13 +6,23 @@
 
 namespace ecs {
     struct Renderable {
+        enum Visibility {
+            VISIBILE_DIRECT_CAMERA = 0,
+            VISIBILE_DIRECT_EYE = 0,
+            VISIBILE_REFLECTED,
+            VISIBILE_LIGHTING_SHADOW,
+            VISIBILE_LIGHTING_VOXEL,
+            VISIBILITY_COUNT,
+        };
+
+        using VisibilityMask = std::bitset<VISIBILITY_COUNT>;
+
         Renderable() {}
         Renderable(shared_ptr<sp::Model> model) : model(model) {}
+
         shared_ptr<sp::Model> model;
-        bool hidden = false;
-        bool xrExcluded = false; // Do not render this on XR Views
+        VisibilityMask visibility = VisibilityMask().set();
         glm::vec3 emissive = {0.0f, 0.0f, 0.0f};
-        glm::vec3 voxelEmissive = {0.0f, 0.0f, 0.0f};
     };
 
     static Component<Renderable> ComponentRenderable("renderable");

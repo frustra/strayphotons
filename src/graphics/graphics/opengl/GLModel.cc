@@ -2,15 +2,11 @@
 
 #include "core/Logging.hh"
 #include "graphics/opengl/GenericShaders.hh"
-
-// Ideally this header should not be needed, but we use it
-// to dynamic_cast() our renderer to see if it's the VoxelRenderer for feature detection.
-// TODO: add feature detection API to Renderer interface?
 #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
 
 namespace sp {
 
-    GLModel::GLModel(Model *model, Renderer *renderer) : NativeModel(model, renderer) {
+    GLModel::GLModel(Model *model, VoxelRenderer *renderer) : NativeModel(model), renderer(renderer) {
         static BasicMaterial defaultMat;
 
         for (auto primitive : model->primitives) {
@@ -237,12 +233,12 @@ namespace sp {
                      .Storage(GL_RGBA, format, type, GLTexture::FullyMipmap, false) // textureType == BaseColor)
                      .Image2D(img.image.data(), 0, 0, 0, 0, 0, false);
 
-            if (VoxelRenderer *r = dynamic_cast<VoxelRenderer *>(renderer)) {
-                r->shaders.Get<TextureFactorCS>()->SetFactor(std::min(img.component, (int)factor.size()),
-                                                             factor.data());
+            if (renderer) {
+                renderer->shaders.Get<TextureFactorCS>()->SetFactor(std::min(img.component, (int)factor.size()),
+                                                                    factor.data());
                 tex->BindImageConvert(0, GLPixelFormat::PixelFormatMapping(PF_RGBA8), GL_READ_WRITE);
 
-                r->ShaderControl->BindPipeline<TextureFactorCS>();
+                renderer->ShaderControl->BindPipeline<TextureFactorCS>();
                 // Divide image size by 16 work grounds, rounding up.
                 glDispatchCompute((img.width + 15) / 16, (img.height + 15) / 16, 1);
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

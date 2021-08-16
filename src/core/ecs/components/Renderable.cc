@@ -13,10 +13,9 @@ namespace ecs {
             r.model = sp::GAssets.LoadModel(src.get<string>());
         } else {
             for (auto param : src.get<picojson::object>()) {
-                if (param.first == "emissive") {
-                    r.emissive = sp::MakeVec3(param.second);
-                } else if (param.first == "light") {
-                    r.voxelEmissive = sp::MakeVec3(param.second);
+                if (param.first == "visibility") {
+                    // TODO
+                    // r.visibility = param.second;
                 } else if (param.first == "model") {
                     r.model = sp::GAssets.LoadModel(param.second.get<string>());
                 }
@@ -27,7 +26,6 @@ namespace ecs {
             return false;
         }
 
-        if (glm::length(r.emissive) == 0.0f && glm::length(r.voxelEmissive) > 0.0f) { r.emissive = r.voxelEmissive; }
         return true;
     }
 } // namespace ecs

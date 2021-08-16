@@ -13,7 +13,7 @@ namespace sp {
 
     IMPLEMENT_SHADER_TYPE(GammaCorrectFS, "gamma_correct.frag", Fragment);
 
-    void GammaCorrect::Process(const PostProcessingContext *context) {
+    void GammaCorrect::Process(PostProcessLock lock, const PostProcessingContext *context) {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
 

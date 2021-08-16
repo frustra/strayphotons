@@ -32,9 +32,8 @@ namespace ecs {
     class Transform;
     struct TriggerArea;
     struct Triggerable;
-    class View;
+    struct View;
     struct VoxelArea;
-    struct VoxelInfo;
     struct XRView;
 
     using ECS = Tecs::ECS<Name,
@@ -55,7 +54,6 @@ namespace ecs {
                           Triggerable,
                           View,
                           VoxelArea,
-                          VoxelInfo,
                           XRView>;
 
     template<typename... Permissions>

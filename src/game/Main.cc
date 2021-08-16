@@ -42,7 +42,6 @@ int main(int argc, char **argv)
     options.add_options()
         ("h,help", "Display help")
         ("m,map", "Initial scene to load", value<string>())
-        ("basic-renderer", "Use minimal debug renderer", value<bool>())
         ("size", "Initial window size", value<string>())
 #ifdef SP_TEST_MODE
         ("script-file", "", value<string>())

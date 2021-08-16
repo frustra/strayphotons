@@ -87,19 +87,31 @@ namespace sp {
                         if (cursorPosPrev != nullptr) { cursorDiff -= *cursorPosPrev; }
                         if (!rotating || !InteractRotate(lock, entity, dtSinceLastFrame, cursorDiff)) {
                             float sensitivity = CVarCursorSensitivity.Get() * 0.001;
-                            controller.yaw -= cursorDiff.x * sensitivity;
-                            if (controller.yaw > 2.0f * M_PI) { controller.yaw -= 2.0f * M_PI; }
-                            if (controller.yaw < 0) { controller.yaw += 2.0f * M_PI; }
-
-                            controller.pitch -= cursorDiff.y * sensitivity;
-
-                            const float feps = std::numeric_limits<float>::epsilon();
-                            controller.pitch = std::max(-((float)M_PI_2 - feps),
-                                                        std::min(controller.pitch, (float)M_PI_2 - feps));
 
                             auto &transform = entity.Get<ecs::Transform>(lock);
-                            transform.SetRotate(
-                                glm::quat(glm::vec3(controller.pitch, controller.yaw, controller.roll)));
+                            auto rotation = transform.GetRotate();
+                            // Determine current pitch/yaw
+                            float pitch = glm::pitch(rotation);
+                            if (pitch > M_PI) pitch -= M_PI * 2;
+
+                            float yaw = glm::yaw(rotation);
+
+                            if (std::abs(glm::roll(rotation)) > std::numeric_limits<float>::epsilon()) {
+                                pitch += (pitch > 0) ? -M_PI : M_PI;
+                                yaw = M_PI - yaw;
+                            }
+
+                            // Update pitch/yaw
+                            yaw -= cursorDiff.x * sensitivity;
+                            if (yaw > 2.0f * M_PI) { yaw -= 2.0f * M_PI; }
+                            if (yaw < 0) { yaw += 2.0f * M_PI; }
+
+                            pitch -= cursorDiff.y * sensitivity;
+
+                            const float feps = std::numeric_limits<float>::epsilon();
+                            pitch = std::max(-((float)M_PI_2 - feps), std::min(pitch, (float)M_PI_2 - feps));
+
+                            transform.SetRotate(glm::quat(glm::vec3(pitch, yaw, 0)));
                         }
                     }
                 }

@@ -5,7 +5,7 @@
 namespace sp {
     class BloomHighpass : public PostProcessPass<1, 1> {
     public:
-        void Process(const PostProcessingContext *context);
+        void Process(PostProcessLock lock, const PostProcessingContext *context);
 
         RenderTargetDesc GetOutputDesc(uint32 id) {
             auto desc = GetInput(0)->GetOutput()->TargetDesc;
@@ -24,7 +24,7 @@ namespace sp {
         BloomBlur(glm::ivec2 direction, int downsample = 1, float clip = FLT_MAX, float scale = 1.0f)
             : direction(direction), downsample(downsample), clip(clip), scale(scale) {}
 
-        void Process(const PostProcessingContext *context);
+        void Process(PostProcessLock lock, const PostProcessingContext *context);
 
         RenderTargetDesc GetOutputDesc(uint32 id) {
             auto desc = GetInput(0)->GetOutput()->TargetDesc;
@@ -44,7 +44,7 @@ namespace sp {
 
     class BloomCombine : public PostProcessPass<3, 1> {
     public:
-        void Process(const PostProcessingContext *context);
+        void Process(PostProcessLock lock, const PostProcessingContext *context);
 
         RenderTargetDesc GetOutputDesc(uint32 id) {
             return GetInput(0)->GetOutput()->TargetDesc;

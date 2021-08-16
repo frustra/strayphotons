@@ -82,7 +82,7 @@ namespace sp {
         }
     };
 
-    void SSAOPass0::Process(const PostProcessingContext *context) {
+    void SSAOPass0::Process(PostProcessLock lock, const PostProcessingContext *context) {
         static SSAONoiseTexture noiseTex(5);
 
         auto r = context->renderer;
@@ -100,7 +100,7 @@ namespace sp {
         VoxelRenderer::DrawScreenCover();
     }
 
-    void SSAOBlur::Process(const PostProcessingContext *context) {
+    void SSAOBlur::Process(PostProcessLock lock, const PostProcessingContext *context) {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
 

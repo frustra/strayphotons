@@ -10,7 +10,7 @@ namespace sp {
     AnimationSystem::~AnimationSystem() {}
 
     bool AnimationSystem::Frame(float dtSinceLastFrame) {
-        auto lock = ecs.StartTransaction<ecs::Write<ecs::Animation, ecs::Transform, ecs::Renderable>>();
+        auto lock = ecs.StartTransaction<ecs::Write<ecs::Animation, ecs::Transform>>();
         for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
             if (!ent.Has<ecs::Animation, ecs::Transform>(lock)) continue;
 
@@ -38,15 +38,9 @@ namespace sp {
                 animation.prevState = animation.curState;
                 transform.SetPosition(curState.pos);
                 transform.SetScale(curState.scale);
-
-                if (ent.Has<ecs::Renderable>(lock)) { ent.Get<ecs::Renderable>(lock).hidden = curState.hidden; }
             } else {
                 transform.SetPosition(prevState.pos + target * dPos);
                 transform.SetScale(prevState.scale + target * dScale);
-
-                // ensure the entity is visible during the animation
-                // when coming from a state that was hidden
-                if (ent.Has<ecs::Renderable>(lock)) { ent.Get<ecs::Renderable>(lock).hidden = false; }
             }
         }
 

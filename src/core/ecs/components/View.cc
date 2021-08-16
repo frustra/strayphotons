@@ -32,86 +32,18 @@ namespace ecs {
         return true;
     }
 
-    void ValidateView(Entity viewEntity) {
-        if (!viewEntity.Valid()) {
-            throw std::runtime_error("view entity is not valid because the entity has been deleted");
-        }
-        if (!viewEntity.Has<View>()) {
-            throw std::runtime_error("view entity is not valid because it has no View component");
-        }
-        if (!viewEntity.Has<ecs::XRView>() && !viewEntity.Has<Transform>()) {
-            throw std::runtime_error("view entity is not valid because it has no Transform component");
-        }
-    }
+    void View::UpdateMatrixCache(Lock<Read<Transform>> lock, Tecs::Entity e) {
+        if (this->fov > 0 && (this->extents.x != 0 || this->extents.y != 0)) {
+            this->aspect = (float)this->extents.x / (float)this->extents.y;
 
-    Handle<View> UpdateViewCache(Entity entity, float fov) {
-        ValidateView(entity);
-
-        auto e = entity.GetEntity();
-        auto lock = entity.GetManager()->tecs.StartTransaction<Read<Transform>, Write<View>>();
-
-        auto &view = e.Get<View>(lock);
-        view.aspect = (float)view.extents.x / (float)view.extents.y;
-
-        if (!e.Has<ecs::XRView>(lock)) {
-            view.projMat = glm::perspective(fov > 0.0 ? fov : view.fov, view.aspect, view.clip[0], view.clip[1]);
+            this->projMat = glm::perspective(this->fov, this->aspect, this->clip[0], this->clip[1]);
 
             auto &transform = e.Get<Transform>(lock);
-            view.invViewMat = transform.GetGlobalTransform(lock);
+            this->invViewMat = transform.GetGlobalTransform(lock);
+
+            this->invProjMat = glm::inverse(this->projMat);
+            this->viewMat = glm::inverse(this->invViewMat);
         }
-
-        view.invProjMat = glm::inverse(view.projMat);
-        view.viewMat = glm::inverse(view.invViewMat);
-
-        return Handle<View>(entity.GetManager()->tecs, e);
-    }
-
-    void View::SetProjMat(float _fov, glm::vec2 _clip, glm::ivec2 _extents) {
-        extents = _extents;
-        fov = _fov;
-        clip = _clip;
-
-        aspect = (float)extents.x / (float)extents.y;
-
-        SetProjMat(glm::perspective(fov, aspect, clip[0], clip[1]));
-    }
-
-    void View::SetProjMat(glm::mat4 proj) {
-        projMat = proj;
-        invProjMat = glm::inverse(projMat);
-    }
-
-    void View::SetInvViewMat(glm::mat4 invView) {
-        invViewMat = invView;
-        viewMat = glm::inverse(invViewMat);
-    }
-
-    glm::ivec2 View::GetExtents() {
-        return extents;
-    }
-
-    glm::vec2 View::GetClip() {
-        return clip;
-    }
-
-    float View::GetFov() {
-        return fov;
-    }
-
-    glm::mat4 View::GetProjMat() {
-        return projMat;
-    }
-
-    glm::mat4 View::GetInvProjMat() {
-        return invProjMat;
-    }
-
-    glm::mat4 View::GetViewMat() {
-        return viewMat;
-    }
-
-    glm::mat4 View::GetInvViewMat() {
-        return invViewMat;
     }
 
 } // namespace ecs

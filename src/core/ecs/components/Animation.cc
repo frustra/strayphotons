@@ -12,14 +12,9 @@ namespace ecs {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "states") {
                 for (auto state : param.second.get<picojson::array>()) {
-                    bool hidden = false;
                     double delay = 1.0;
                     for (auto stateParam : state.get<picojson::object>()) {
-                        if (stateParam.first == "hidden") {
-                            hidden = stateParam.second.get<bool>();
-                        } else if (stateParam.first == "delay") {
-                            delay = stateParam.second.get<double>();
-                        }
+                        if (stateParam.first == "delay") { delay = stateParam.second.get<double>(); }
                     }
 
                     Transform animationState;
@@ -27,7 +22,7 @@ namespace ecs {
                         throw std::runtime_error("Couldn't parse animation state as Transform");
                         return false;
                     }
-                    animation.states.emplace_back(animationState.GetPosition(), animationState.GetScaleVec(), hidden);
+                    animation.states.emplace_back(animationState.GetPosition(), animationState.GetScaleVec());
                     animation.animationTimes.emplace_back(delay);
                 }
             } else if (param.first == "defaultState") {

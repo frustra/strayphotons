@@ -22,7 +22,7 @@ namespace sp {
 
     IMPLEMENT_SHADER_TYPE(BloomHighpassFS, "bloom_highpass.frag", Fragment);
 
-    void BloomHighpass::Process(const PostProcessingContext *context) {
+    void BloomHighpass::Process(PostProcessLock lock, const PostProcessingContext *context) {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
 
@@ -51,7 +51,7 @@ namespace sp {
 
     IMPLEMENT_SHADER_TYPE(BloomBlurFS, "bloom_blur.frag", Fragment);
 
-    void BloomBlur::Process(const PostProcessingContext *context) {
+    void BloomBlur::Process(PostProcessLock lock, const PostProcessingContext *context) {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
 
@@ -79,7 +79,7 @@ namespace sp {
 
     IMPLEMENT_SHADER_TYPE(BloomCombineFS, "bloom_combine.frag", Fragment);
 
-    void BloomCombine::Process(const PostProcessingContext *context) {
+    void BloomCombine::Process(PostProcessLock lock, const PostProcessingContext *context) {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
 

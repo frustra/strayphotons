@@ -64,7 +64,7 @@ namespace sp {
     IMPLEMENT_SHADER_TYPE(SMAABlendingFS, "smaa/blending.frag", Fragment);
 #endif
 
-    void SMAAEdgeDetection::Process(const PostProcessingContext *context) {
+    void SMAAEdgeDetection::Process(PostProcessLock lock, const PostProcessingContext *context) {
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);
         auto stencil = outputs[1].AllocateTarget(context);
@@ -90,7 +90,7 @@ namespace sp {
 #endif
     }
 
-    void SMAABlendingWeights::Process(const PostProcessingContext *context) {
+    void SMAABlendingWeights::Process(PostProcessLock lock, const PostProcessingContext *context) {
 #ifndef DISABLE_SMAA
         if (CVarSMAADebug.Get() >= 2) {
             SetOutputTarget(0, GetInput(0)->GetOutput()->TargetRef);
@@ -137,7 +137,7 @@ namespace sp {
 #endif
     }
 
-    void SMAABlending::Process(const PostProcessingContext *context) {
+    void SMAABlending::Process(PostProcessLock lock, const PostProcessingContext *context) {
 #ifndef DISABLE_SMAA
         if (CVarSMAADebug.Get() >= 1) {
             SetOutputTarget(0, GetInput(1)->GetOutput()->TargetRef);

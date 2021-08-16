@@ -11,7 +11,7 @@ namespace sp {
             Assert(input != nullptr, "null proxy pass input");
         }
 
-        void Process(const PostProcessingContext *context) {
+        void Process(PostProcessLock lock, const PostProcessingContext *context) {
             SetOutputTarget(0, input);
         }
 

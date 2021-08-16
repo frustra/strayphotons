@@ -368,13 +368,12 @@ namespace sp::xr {
                 for (unsigned int i = 0; i < xrSystem->GetCompositor()->GetNumViews(true /* minimum */); i++) {
                     ecs::Entity viewEntity = CreateXrEntity();
                     auto ecsView = viewEntity.Assign<ecs::View>();
+                    ecsView->visibilityMask.set(ecs::Renderable::VISIBILE_DIRECT_EYE);
                     xrSystem->GetCompositor()->PopulateView(i, ecsView);
 
                     // Mark this as an XR View
                     auto ecsXrView = viewEntity.Assign<ecs::XRView>();
                     ecsXrView->viewId = i;
-
-                    game->graphics.AddPlayerView(viewEntity);
                 }
 
                 // TODO: test this re-initializes correctly
@@ -425,7 +424,9 @@ namespace sp::xr {
                 Assert((bool)(renderable->model), "Failed to load skeleton model");
 
                 // Rendering an XR HMD model from the viewpoint of an XRView is a bad idea
-                if (trackedObjectHandle.type == xr::HMD) { renderable->xrExcluded = true; }
+                if (trackedObjectHandle.type == xr::HMD) {
+                    renderable->visibility[ecs::Renderable::VISIBILE_DIRECT_EYE] = false;
+                }
             }
 
             // Mark the XR HMD as being able to activate TriggerAreas
@@ -576,42 +577,42 @@ namespace sp::xr {
             addVertex(pos0 - widthVec);
 
             // Create the data for the GPU
-            unsigned char baseColor[4] = {255, 0, 0, 255};
+            // unsigned char baseColor[4] = {255, 0, 0, 255};
 
-            model->basicMaterials["red_laser"] = BasicMaterial(baseColor);
-            BasicMaterial &mat = model->basicMaterials["red_laser"];
+            // model->basicMaterials["red_laser"] = BasicMaterial(baseColor);
+            // BasicMaterial &mat = model->basicMaterials["red_laser"];
 
-            GLModel::Primitive prim;
+            // GLModel::Primitive prim;
 
-            model->vbos.try_emplace("beam");
-            VertexBuffer &vbo = model->vbos["beam"];
+            // model->vbos.try_emplace("beam");
+            // VertexBuffer &vbo = model->vbos["beam"];
 
-            model->ibos.try_emplace("beam");
-            GLBuffer &ibo = model->ibos["beam"];
+            // model->ibos.try_emplace("beam");
+            // GLBuffer &ibo = model->ibos["beam"];
 
-            const vector<uint16_t> indexData = {0, 1, 2, 3, 4, 5, 2, 1, 0, 5, 4, 3};
+            // const vector<uint16_t> indexData = {0, 1, 2, 3, 4, 5, 2, 1, 0, 5, 4, 3};
 
             // Model class will delete this on destruction
-            Model::Primitive *sourcePrim = new Model::Primitive;
+            // Model::Primitive *sourcePrim = new Model::Primitive;
 
-            prim.parent = sourcePrim;
-            prim.baseColorTex = &mat.baseColorTex;
-            prim.metallicRoughnessTex = &mat.metallicRoughnessTex;
-            prim.heightTex = &mat.heightTex;
+            // prim.parent = sourcePrim;
+            // prim.baseColorTex = &mat.baseColorTex;
+            // prim.metallicRoughnessTex = &mat.metallicRoughnessTex;
+            // prim.heightTex = &mat.heightTex;
 
-            vbo.SetElementsVAO(vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
-            prim.vertexBufferHandle = vbo.VAO();
+            // vbo.SetElementsVAO(vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
+            // prim.vertexBufferHandle = vbo.VAO();
 
-            ibo.Create().Data(indexData.size() * sizeof(uint16_t), indexData.data());
-            prim.indexBufferHandle = ibo.handle;
+            // ibo.Create().Data(indexData.size() * sizeof(uint16_t), indexData.data());
+            // prim.indexBufferHandle = ibo.handle;
 
-            sourcePrim->drawMode = Model::DrawMode::Triangles;
-            sourcePrim->indexBuffer.byteOffset = 0;
-            sourcePrim->indexBuffer.components = indexData.size();
-            sourcePrim->indexBuffer.componentType = GL_UNSIGNED_SHORT;
-            shared_ptr<GLModel> glModel = make_shared<GLModel>(renderable->model.get(), game->graphics.GetRenderer());
-            glModel->AddPrimitive(prim);
-            renderable->model->nativeModel = glModel;
+            // sourcePrim->drawMode = Model::DrawMode::Triangles;
+            // sourcePrim->indexBuffer.byteOffset = 0;
+            // sourcePrim->indexBuffer.components = indexData.size();
+            // sourcePrim->indexBuffer.componentType = GL_UNSIGNED_SHORT;
+            // TODO(xthexder): Fix this
+            // shared_ptr<GLModel> glModel = make_shared<GLModel>(renderable->model.get(),
+            // game->graphics.GetRenderer()); glModel->AddPrimitive(prim); renderable->model->nativeModel = glModel;
         }
 
         return xrObject;

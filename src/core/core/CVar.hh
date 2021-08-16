@@ -42,17 +42,17 @@ namespace sp {
         CVar(const string &name, const VarType &initial, const string &description)
             : CVarBase(name, description), value(initial) {}
 
-        inline VarType Get() {
+        inline const VarType &Get() const {
             return value;
         }
 
-        inline VarType Get(bool setClean) {
+        inline const VarType &Get(bool setClean) {
             if (setClean) dirty = false;
 
             return value;
         }
 
-        void Set(VarType newValue) {
+        void Set(const VarType &newValue) {
             value = newValue;
             dirty = true;
         }
