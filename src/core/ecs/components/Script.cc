@@ -16,9 +16,8 @@ namespace ecs {
             if (param.first == "onTick") {
                 auto scriptName = param.second.get<std::string>();
                 if (scriptName == "sun") {
-                    script.AddOnTick([dst](double dtSinceLastFrame) {
+                    script.AddOnTick([dst](ecs::Lock<ecs::WriteAll> lock, double dtSinceLastFrame) {
                         const Tecs::Entity &sun = dst;
-                        auto lock = ecs::World.StartTransaction<Write<Transform, SignalOutput>>();
                         if (sun && sun.Has<Transform, SignalOutput>(lock)) {
                             auto &transform = sun.Get<Transform>(lock);
                             auto &signalComp = sun.Get<SignalOutput>(lock);
@@ -37,10 +36,8 @@ namespace ecs {
                         }
                     });
                 } else if (scriptName == "light_sensor") {
-                    script.AddOnTick([dst](double dtSinceLastFrame) {
+                    script.AddOnTick([dst](ecs::Lock<ecs::WriteAll> lock, double dtSinceLastFrame) {
                         const Tecs::Entity &sensor = dst;
-                        auto lock =
-                            ecs::World.StartTransaction<Read<Script, LightSensor>, Write<SignalOutput, Renderable>>();
                         if (sensor && sensor.Has<Script, LightSensor, SignalOutput>(lock)) {
                             auto &scriptComp = sensor.Get<Script>(lock);
                             auto &sensorComp = sensor.Get<LightSensor>(lock);
@@ -67,9 +64,8 @@ namespace ecs {
                         }
                     });
                 } else if (scriptName == "slide_door") {
-                    script.AddOnTick([dst](double dtSinceLastFrame) {
+                    script.AddOnTick([dst](ecs::Lock<ecs::WriteAll> lock, double dtSinceLastFrame) {
                         const Tecs::Entity &door = dst;
-                        auto lock = ecs::World.StartTransaction<Read<Name, Script, SignalOutput>, Write<Animation>>();
                         if (door && door.Has<Script>(lock)) {
                             auto &scriptComp = door.Get<Script>(lock);
 
@@ -93,9 +89,8 @@ namespace ecs {
                         }
                     });
                 } else if (scriptName == "combinator") {
-                    script.AddOnTick([dst](double dtSinceLastFrame) {
+                    script.AddOnTick([dst](ecs::Lock<ecs::WriteAll> lock, double dtSinceLastFrame) {
                         const Tecs::Entity &combinator = dst;
-                        auto lock = ecs::World.StartTransaction<Read<Name, Script>, Write<SignalOutput>>();
                         if (combinator && combinator.Has<Script, SignalOutput>(lock)) {
                             auto &scriptComp = combinator.Get<Script>(lock);
 

@@ -26,7 +26,8 @@ namespace sp {
 
     public:
         Model(const string &name) : name(name){};
-        Model(const string &name, shared_ptr<Asset> asset, shared_ptr<tinygltf::Model> model) : Model(name, model) {
+        Model(const string &name, shared_ptr<const Asset> asset, shared_ptr<tinygltf::Model> model)
+            : Model(name, model) {
             this->asset = asset;
         };
         Model(const string &name, shared_ptr<tinygltf::Model> model);
@@ -62,7 +63,7 @@ namespace sp {
 
         const string name;
         shared_ptr<NativeModel> nativeModel;
-        vector<Primitive *> primitives;
+        vector<Primitive> primitives;
 
         bool HasBuffer(size_t index);
         const vector<unsigned char> &GetBuffer(size_t index);
@@ -83,7 +84,7 @@ namespace sp {
         void AddNode(int nodeIndex, glm::mat4 parentMatrix);
 
         shared_ptr<tinygltf::Model> model;
-        shared_ptr<Asset> asset;
+        shared_ptr<const Asset> asset;
 
         // TODO: support more than one "skin" in a GLTF
         std::map<int, glm::mat4> inverseBindMatrixForJoint;

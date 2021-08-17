@@ -37,7 +37,7 @@ namespace sp {
 
         io.IniFilename = nullptr;
 
-        std::pair<shared_ptr<Asset>, float> fontAssets[] = {
+        std::pair<shared_ptr<const Asset>, float> fontAssets[] = {
             std::make_pair(GAssets.Load("fonts/DroidSans.ttf"), 16.0f),
             std::make_pair(GAssets.Load("fonts/3270Medium.ttf"), 32.0f),
             std::make_pair(GAssets.Load("fonts/3270Medium.ttf"), 25.0f),
@@ -57,8 +57,8 @@ namespace sp {
             auto &asset = pair.first;
             Assert(asset != nullptr, "Failed to load gui font");
             ImFontConfig cfg;
-            cfg.FontData = (void *)asset->Buffer();
-            cfg.FontDataSize = asset->Size();
+            cfg.FontData = (void *)asset->buffer.data();
+            cfg.FontDataSize = asset->buffer.size();
             cfg.FontDataOwnedByAtlas = false;
             cfg.SizePixels = pair.second;
             cfg.GlyphRanges = &glyphRanges[0];

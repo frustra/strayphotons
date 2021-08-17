@@ -32,14 +32,11 @@ namespace sp {
         bool FileExists(const std::string &abs_filename, void *user_data);
         std::string ExpandFilePath(const std::string &filepath, void *user_data);
 
-        shared_ptr<Asset> Load(const std::string &path);
+        shared_ptr<const Asset> Load(const std::string &path);
         shared_ptr<Image> LoadImageByPath(const std::string &path);
         shared_ptr<Model> LoadModel(const std::string &name);
         shared_ptr<Scene> LoadScene(const std::string &name, ecs::Lock<ecs::AddRemove> lock, ecs::Owner owner);
         shared_ptr<Script> LoadScript(const std::string &path);
-
-        void Unregister(const Asset &asset);
-        void UnregisterModel(const Model &model);
 
     private:
         void UpdateTarIndex();

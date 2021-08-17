@@ -9,46 +9,46 @@ namespace sp {
     GLModel::GLModel(Model *model, VoxelRenderer *renderer) : NativeModel(model), renderer(renderer) {
         static BasicMaterial defaultMat;
 
-        for (auto primitive : model->primitives) {
+        for (auto &primitive : model->primitives) {
             GLModel::Primitive glPrimitive;
-            glPrimitive.parent = primitive;
-            glPrimitive.indexBufferHandle = LoadBuffer(primitive->indexBuffer.bufferIndex);
-            glPrimitive.drawMode = GetDrawMode(primitive->drawMode);
+            glPrimitive.parent = &primitive;
+            glPrimitive.indexBufferHandle = LoadBuffer(primitive.indexBuffer.bufferIndex);
+            glPrimitive.drawMode = GetDrawMode(primitive.drawMode);
 
-            glPrimitive.baseColorTex = LoadTexture(primitive->materialIndex, BaseColor);
-            glPrimitive.metallicRoughnessTex = LoadTexture(primitive->materialIndex, MetallicRoughness);
-            glPrimitive.heightTex = LoadTexture(primitive->materialIndex, Height);
+            glPrimitive.baseColorTex = LoadTexture(primitive.materialIndex, BaseColor);
+            glPrimitive.metallicRoughnessTex = LoadTexture(primitive.materialIndex, MetallicRoughness);
+            glPrimitive.heightTex = LoadTexture(primitive.materialIndex, Height);
 
             if (!glPrimitive.baseColorTex) glPrimitive.baseColorTex = &defaultMat.baseColorTex;
             if (!glPrimitive.metallicRoughnessTex) glPrimitive.metallicRoughnessTex = &defaultMat.metallicRoughnessTex;
             if (!glPrimitive.heightTex) glPrimitive.heightTex = &defaultMat.heightTex;
 
             glCreateVertexArrays(1, &glPrimitive.vertexBufferHandle);
-            for (size_t i = 0; i < std::size(primitive->attributes); i++) {
-                auto *attr = &primitive->attributes[i];
-                if (attr->componentCount == 0) continue;
+            for (size_t i = 0; i < std::size(primitive.attributes); i++) {
+                auto &attr = primitive.attributes[i];
+                if (attr.componentCount == 0) continue;
                 glEnableVertexArrayAttrib(glPrimitive.vertexBufferHandle, i);
 
-                if (attr->componentType == GL_UNSIGNED_SHORT) {
+                if (attr.componentType == GL_UNSIGNED_SHORT) {
                     glVertexArrayAttribIFormat(glPrimitive.vertexBufferHandle,
                                                i,
-                                               attr->componentCount,
-                                               attr->componentType,
+                                               attr.componentCount,
+                                               attr.componentType,
                                                0);
                 } else {
                     glVertexArrayAttribFormat(glPrimitive.vertexBufferHandle,
                                               i,
-                                              attr->componentCount,
-                                              attr->componentType,
+                                              attr.componentCount,
+                                              attr.componentType,
                                               GL_FALSE,
                                               0);
                 }
 
                 glVertexArrayVertexBuffer(glPrimitive.vertexBufferHandle,
                                           i,
-                                          LoadBuffer(attr->bufferIndex),
-                                          attr->byteOffset,
-                                          attr->byteStride);
+                                          LoadBuffer(attr.bufferIndex),
+                                          attr.byteOffset,
+                                          attr.byteStride);
             }
 
             AddPrimitive(glPrimitive);
@@ -67,7 +67,7 @@ namespace sp {
         }
     }
 
-    void GLModel::AddPrimitive(GLModel::Primitive prim) {
+    void GLModel::AddPrimitive(GLModel::Primitive &prim) {
         primitives.push_back(prim);
     }
 

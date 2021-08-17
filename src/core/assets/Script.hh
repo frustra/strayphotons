@@ -7,7 +7,7 @@ namespace sp {
 
     class Script : public NonCopyable {
     public:
-        Script(const string &path, shared_ptr<Asset> asset, vector<string> &&lines);
+        Script(const string &path, shared_ptr<const Asset> asset, vector<string> &&lines);
         ~Script() {}
 
         void Exec();
@@ -15,7 +15,7 @@ namespace sp {
         const string path;
 
     private:
-        shared_ptr<Asset> asset;
+        shared_ptr<const Asset> asset;
         vector<string> lines;
     };
 } // namespace sp
