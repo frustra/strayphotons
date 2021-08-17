@@ -203,7 +203,14 @@ namespace sp {
             }
             Assert(!!player, "Player scene doesn't contain an entity named player");
 
-            if (!player.Has<ecs::Transform>(lock)) { player.Set<ecs::Transform>(lock, glm::vec3(0)); }
+            auto spawn = ecs::EntityWith<ecs::Name>(lock, "player-spawn");
+            if (spawn.Has<ecs::Transform>(lock)) {
+                auto &spawnTransform = spawn.Get<ecs::Transform>(lock);
+                player.Set<ecs::Transform>(lock, spawnTransform);
+            } else if (!player.Has<ecs::Transform>(lock)) {
+                player.Set<ecs::Transform>(lock, glm::vec3(0));
+            }
+
             player.Set<ecs::HumanController>(lock);
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
             auto &interact = player.Set<ecs::InteractController>(lock);
@@ -260,6 +267,7 @@ namespace sp {
                         auto &spawnTransform = e.Get<ecs::Transform>(lock);
                         player.Set<ecs::Transform>(lock, spawnTransform);
                     }
+                    break;
                 }
             }
         }
@@ -277,6 +285,7 @@ namespace sp {
                 LoadPlayer();
                 LoadScene(scene->name);
             } else {
+                // TODO: Fix this to not respawn the player
                 LoadScene(scene->name);
             }
         }
