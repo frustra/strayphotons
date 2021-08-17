@@ -28,10 +28,7 @@ namespace sp {
 
     namespace logging {
         void GlobalLogOutput(Level lvl, const string &line) {
-            static std::mutex mut;
-            mut.lock();
             GetConsoleManager().AddLog(lvl, line);
-            mut.unlock();
         }
     } // namespace logging
 
@@ -103,6 +100,7 @@ namespace sp {
     }
 
     void ConsoleManager::AddLog(logging::Level lvl, const string &line) {
+        std::lock_guard lock(linesLock);
         outputLines.push_back({lvl, line});
     }
 

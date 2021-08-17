@@ -43,6 +43,7 @@ namespace sp {
         void AddLog(logging::Level lvl, const string &line);
 
         const vector<ConsoleLine> Lines() {
+            std::lock_guard lock(linesLock);
             return outputLines;
         }
 
@@ -65,6 +66,8 @@ namespace sp {
 
         std::mutex queueLock;
         std::priority_queue<ConsoleInputLine> queuedCommands;
+
+        std::mutex linesLock;
         vector<ConsoleLine> outputLines;
 
         std::mutex historyLock;
