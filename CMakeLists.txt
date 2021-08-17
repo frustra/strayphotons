@@ -1,5 +1,5 @@
-# CMAKE_MSVC_RUNTIME_LIBRARY was added in 3.15, it is required to statically link correctly.
-cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
+# INTERPROCEDURAL_OPTIMIZATION works in 3.20
+cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 project(sp VERSION 0.1)
 
 set(SP_VERSION_MAJOR "${CMAKE_PROJECT_VERSION_MAJOR}")
