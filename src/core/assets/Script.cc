@@ -6,7 +6,7 @@
 #include <iostream>
 
 namespace sp {
-    Script::Script(const string &path, shared_ptr<Asset> asset, vector<string> &&lines)
+    Script::Script(const string &path, shared_ptr<const Asset> asset, vector<string> &&lines)
         : path(path), asset(asset), lines(std::move(lines)) {}
 
     void Script::Exec() {

@@ -172,10 +172,11 @@ namespace sp {
         return !!stream;
     }
 
-    shared_ptr<Asset> AssetManager::Load(const std::string &path) {
+    shared_ptr<const Asset> AssetManager::Load(const std::string &path) {
         AssetMap::iterator it = loadedAssets.find(path);
         shared_ptr<Asset> asset;
 
+        // TODO: Clean up expired assets periodically
         if (it != loadedAssets.end()) { asset = it->second.lock(); }
 
         if (!asset) {
@@ -183,11 +184,11 @@ namespace sp {
             size_t size;
 
             if (InputStream(path, in, &size)) {
-                uint8 *buffer = new uint8[size];
-                in.read((char *)buffer, size);
+                asset = make_shared<Asset>(path);
+                asset->buffer.resize(size);
+                in.read((char *)asset->buffer.data(), size);
                 in.close();
 
-                asset = make_shared<Asset>(this, path, buffer, size);
                 loadedAssets[path] = weak_ptr<Asset>(asset);
             } else {
                 return nullptr;
@@ -208,7 +209,10 @@ namespace sp {
         ModelMap::iterator it = loadedModels.find(name);
         shared_ptr<Model> model;
 
-        if (it == loadedModels.end() || it->second.expired()) {
+        // TODO: Clean up expired models periodically
+        if (it != loadedModels.end()) { model = it->second.lock(); }
+
+        if (!model) {
             Logf("Loading model: %s", name);
 
             auto gltfModel = make_shared<tinygltf::Model>();
@@ -217,7 +221,7 @@ namespace sp {
             bool ret = false;
 
             // Check if there is a .glb version of the model and prefer that
-            shared_ptr<Asset> asset = Load("models/" + name + "/" + name + ".glb");
+            shared_ptr<const Asset> asset = Load("models/" + name + "/" + name + ".glb");
             if (!asset) asset = Load("models/" + name + ".glb");
 
             // Found a GLB
@@ -226,15 +230,15 @@ namespace sp {
                 ret = gltfLoader.LoadBinaryFromMemory(gltfModel.get(),
                                                       &err,
                                                       &warn,
-                                                      (const unsigned char *)asset->CharBuffer(),
-                                                      asset->Size(),
+                                                      asset->buffer.data(),
+                                                      asset->buffer.size(),
                                                       "models/" + name);
 #else
                 ret = gltfLoader.LoadBinaryFromMemory(gltfModel.get(),
                                                       &err,
                                                       &warn,
-                                                      (const unsigned char *)asset->CharBuffer(),
-                                                      asset->Size(),
+                                                      asset->buffer.data(),
+                                                      asset->buffer.size(),
                                                       ASSETS_DIR + "models/" + name);
 #endif
             } else {
@@ -245,15 +249,15 @@ namespace sp {
                 ret = gltfLoader.LoadASCIIFromString(gltfModel.get(),
                                                      &err,
                                                      &warn,
-                                                     asset->CharBuffer(),
-                                                     asset->Size(),
+                                                     (char *)asset->buffer.data(),
+                                                     asset->buffer.size(),
                                                      "models/" + name);
 #else
                 ret = gltfLoader.LoadASCIIFromString(gltfModel.get(),
                                                      &err,
                                                      &warn,
-                                                     asset->CharBuffer(),
-                                                     asset->Size(),
+                                                     (char *)asset->buffer.data(),
+                                                     asset->buffer.size(),
                                                      ASSETS_DIR + "models/" + name);
 #endif
             }
@@ -268,8 +272,6 @@ namespace sp {
 
             model = make_shared<Model>(name, asset, gltfModel);
             loadedModels[name] = weak_ptr<Model>(model);
-        } else {
-            model = it->second.lock();
         }
 
         return model;
@@ -280,7 +282,7 @@ namespace sp {
                                               ecs::Owner owner) {
         Logf("Loading scene: %s", name);
 
-        shared_ptr<Asset> asset = Load("scenes/" + name + ".json");
+        shared_ptr<const Asset> asset = Load("scenes/" + name + ".json");
         if (!asset) {
             Logf("Scene not found");
             return nullptr;
@@ -356,7 +358,7 @@ namespace sp {
     shared_ptr<Script> AssetManager::LoadScript(const std::string &path) {
         Logf("Loading script: %s", path);
 
-        shared_ptr<Asset> asset = Load("scripts/" + path);
+        shared_ptr<const Asset> asset = Load("scripts/" + path);
         if (!asset) {
             Logf("Script not found");
             return nullptr;
@@ -371,13 +373,5 @@ namespace sp {
         }
 
         return make_shared<Script>(path, asset, std::move(lines));
-    }
-
-    void AssetManager::Unregister(const Asset &asset) {
-        loadedAssets.erase(asset.path);
-    }
-
-    void AssetManager::UnregisterModel(const Model &model) {
-        loadedModels.erase(model.name);
     }
 } // namespace sp

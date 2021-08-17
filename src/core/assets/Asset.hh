@@ -2,25 +2,24 @@
 
 #include "core/Common.hh"
 
+#include <vector>
+
 namespace sp {
     class AssetManager;
 
     class Asset : public NonCopyable {
     public:
-        Asset(AssetManager *manager, const string &path, uint8 *buffer, size_t size);
-        ~Asset();
+        Asset(const string &path) : path(path) {}
 
-        const string String();
-        const uint8 *Buffer();
-        const char *CharBuffer();
-        int Size();
+        std::string String() const {
+            return std::string((char *)buffer.data(), buffer.size());
+        }
 
-        AssetManager *manager;
+        const char *CharBuffer() const {
+            return (char *)buffer.data();
+        }
 
         const string path;
-
-    private:
-        uint8 *buffer = nullptr;
-        size_t size = 0;
+        std::vector<uint8_t> buffer;
     };
 } // namespace sp

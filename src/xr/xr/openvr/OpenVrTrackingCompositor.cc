@@ -79,14 +79,14 @@ RenderTarget *OpenVrTrackingCompositor::GetRenderTarget(size_t view) {
     return viewRenderTargets[view].get();
 }
 
-void OpenVrTrackingCompositor::PopulateView(size_t view, ecs::Handle<ecs::View> &ecsView) {
+void OpenVrTrackingCompositor::PopulateView(size_t view, ecs::View &ecsView) {
     uint32_t vrWidth, vrHeight;
     GetRecommendedRenderTargetSize(vrWidth, vrHeight);
 
-    ecsView->extents = {vrWidth, vrHeight};
-    ecsView->clip = {0.1, 256};
-    ecsView->projMat = glm::transpose(GetViewProjectionMatrix(view, ecsView->clip.x, ecsView->clip.y));
-    ecsView->visibilityMask.set(ecs::Renderable::VISIBILE_DIRECT_EYE);
+    ecsView.extents = {vrWidth, vrHeight};
+    ecsView.clip = {0.1, 256};
+    ecsView.projMat = glm::transpose(GetViewProjectionMatrix(view, ecsView.clip.x, ecsView.clip.y));
+    ecsView.visibilityMask.set(ecs::Renderable::VISIBILE_DIRECT_EYE);
 }
 
 void OpenVrTrackingCompositor::SubmitView(size_t view, GpuTexture *tex) {

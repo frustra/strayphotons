@@ -10,13 +10,13 @@
 namespace ecs {
     class Script {
     public:
-        void AddOnTick(std::function<void(ECS &, double)> callback) {
+        void AddOnTick(std::function<void(ecs::Lock<ecs::WriteAll>, double)> callback) {
             onTickCallbacks.emplace_back(callback);
         }
 
-        void OnTick(double dtSinceLastFrame, ECS &ecs) {
+        void OnTick(ecs::Lock<ecs::WriteAll> lock, double dtSinceLastFrame) {
             for (auto &callback : onTickCallbacks) {
-                callback(ecs, dtSinceLastFrame);
+                callback(lock, dtSinceLastFrame);
             }
         }
 
@@ -38,7 +38,7 @@ namespace ecs {
         }
 
     private:
-        std::vector<std::function<void(ECS &, double)>> onTickCallbacks;
+        std::vector<std::function<void(ecs::Lock<ecs::WriteAll>, double)>> onTickCallbacks;
 
         robin_hood::unordered_flat_map<std::string, ParameterType> scriptParameters;
     };

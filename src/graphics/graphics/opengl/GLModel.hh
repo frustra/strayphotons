@@ -34,7 +34,7 @@ namespace sp {
                   int boneCount,
                   glm::mat4 *boneData) override;
 
-        void AddPrimitive(GLModel::Primitive prim);
+        void AddPrimitive(GLModel::Primitive &prim);
 
         static GLenum GetDrawMode(Model::DrawMode mode);
 

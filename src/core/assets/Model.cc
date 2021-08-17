@@ -101,11 +101,6 @@ namespace sp {
 
     Model::~Model() {
         Debugf("Destroying model %s (prepared: %d)", name, !!nativeModel);
-        for (auto primitive : primitives) {
-            delete primitive;
-        }
-
-        if (!!asset) { asset->manager->UnregisterModel(*this); }
     }
 
     bool Model::HasBuffer(size_t index) {
@@ -151,22 +146,22 @@ namespace sp {
 
                 Assert(iAcc.type == TINYGLTF_TYPE_SCALAR, "index buffer type must be scalar");
 
-                primitives.push_back(new Primitive{matrix,
-                                                   mode,
-                                                   Attribute{iAcc.byteOffset + iBufView.byteOffset,
-                                                             iAcc.ByteStride(iBufView),
-                                                             iAcc.componentType,
-                                                             1,
-                                                             iAcc.count,
-                                                             iBufView.buffer},
-                                                   primitive.material,
-                                                   {
-                                                       GetPrimitiveAttribute(model, &primitive, "POSITION"),
-                                                       GetPrimitiveAttribute(model, &primitive, "NORMAL"),
-                                                       GetPrimitiveAttribute(model, &primitive, "TEXCOORD_0"),
-                                                       GetPrimitiveAttribute(model, &primitive, "WEIGHTS_0"),
-                                                       GetPrimitiveAttribute(model, &primitive, "JOINTS_0"),
-                                                   }});
+                primitives.emplace_back(Primitive{matrix,
+                                                  mode,
+                                                  Attribute{iAcc.byteOffset + iBufView.byteOffset,
+                                                            iAcc.ByteStride(iBufView),
+                                                            iAcc.componentType,
+                                                            1,
+                                                            iAcc.count,
+                                                            iBufView.buffer},
+                                                  primitive.material,
+                                                  {
+                                                      GetPrimitiveAttribute(model, &primitive, "POSITION"),
+                                                      GetPrimitiveAttribute(model, &primitive, "NORMAL"),
+                                                      GetPrimitiveAttribute(model, &primitive, "TEXCOORD_0"),
+                                                      GetPrimitiveAttribute(model, &primitive, "WEIGHTS_0"),
+                                                      GetPrimitiveAttribute(model, &primitive, "JOINTS_0"),
+                                                  }});
             }
 
             // Must have a mesh to have a skin

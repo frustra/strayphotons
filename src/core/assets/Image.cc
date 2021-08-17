@@ -6,11 +6,15 @@
 #include <stb_image.h>
 
 namespace sp {
-    Image::Image(std::shared_ptr<Asset> asset) {
+    Image::Image(std::shared_ptr<const Asset> asset) {
         Assert(asset != nullptr, "loading Image from null asset");
 
-        uint8_t *data =
-            stbi_load_from_memory(asset->Buffer(), asset->Size(), &this->width, &this->height, &this->components, 0);
+        uint8_t *data = stbi_load_from_memory(asset->buffer.data(),
+                                              asset->buffer.size(),
+                                              &this->width,
+                                              &this->height,
+                                              &this->components,
+                                              0);
 
         Assert(data, "unknown image format");
         Assert(this->width > 0 && this->height > 0, "unknown image format");

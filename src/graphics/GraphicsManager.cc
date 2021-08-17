@@ -97,7 +97,7 @@ namespace sp {
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
         {
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
             renderer = new VoxelRenderer(lock, *glfwContext, timer);
         }
 
@@ -125,8 +125,8 @@ namespace sp {
         std::vector<ecs::View> shadowViews;
         std::vector<std::pair<ecs::View, ecs::XRView>> xrViews;
         {
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Transform, ecs::Light, ecs::XRView>,
-                                                                  ecs::Write<ecs::View>>();
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Transform, ecs::Light, ecs::XRView>,
+                                                    ecs::Write<ecs::View>>();
 
             auto &windowEntity = context->GetActiveView();
             if (windowEntity) {
@@ -163,7 +163,7 @@ namespace sp {
         {
             RenderPhase phase("Frame", timer);
 
-            auto lock = game->entityManager.tecs.StartTransaction<
+            auto lock = ecs::World.StartTransaction<
                 ecs::Read<ecs::Name, ecs::Transform>,
                 ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>>();
             renderer->BeginFrame(lock);
@@ -250,7 +250,7 @@ namespace sp {
     void GraphicsManager::RenderLoading() {
         if (!renderer) return;
 
-        auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::View>>();
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::View>>();
 
         auto &windowEntity = context->GetActiveView();
         if (windowEntity && windowEntity.Has<ecs::View>(lock)) {

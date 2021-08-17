@@ -13,7 +13,7 @@ namespace sp {
      */
     class Image : public NonCopyable {
     public:
-        Image(shared_ptr<Asset> asset);
+        Image(shared_ptr<const Asset> asset);
 
         int GetWidth() {
             return width;

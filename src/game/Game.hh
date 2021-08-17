@@ -49,8 +49,6 @@ namespace sp {
         cxxopts::ParseResult &options;
         Script *startupScript = nullptr;
 
-        ecs::EntityManager entityManager;
-
 #ifdef SP_GRAPHICS_SUPPORT_GL
         std::unique_ptr<DebugGuiManager> debugGui = nullptr;
         std::unique_ptr<MenuGuiManager> menuGui = nullptr;

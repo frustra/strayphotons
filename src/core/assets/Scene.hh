@@ -10,7 +10,7 @@ namespace sp {
 
     class Scene : public NonCopyable {
     public:
-        Scene(const string &name, shared_ptr<Asset> asset);
+        Scene(const string &name, shared_ptr<const Asset> asset);
         ~Scene() {}
 
         const string name;
@@ -19,6 +19,6 @@ namespace sp {
         vector<string> autoExecList, unloadExecList;
 
     private:
-        shared_ptr<Asset> asset;
+        shared_ptr<const Asset> asset;
     };
 } // namespace sp

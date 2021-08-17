@@ -44,7 +44,7 @@ namespace sp {
         typedef std::list<PhysxConstraint> ConstraintList;
 
     public:
-        PhysxManager(ecs::ECS &ecs);
+        PhysxManager();
         ~PhysxManager();
 
         void StartThread();
@@ -88,12 +88,6 @@ namespace sp {
             ecs::Lock<ecs::Write<ecs::HumanController, ecs::PhysicsState>, ecs::Read<ecs::Transform>> lock,
             Tecs::Entity &e);
 
-        /**
-         * Get the Entity associated with this actor.
-         * Returns the NULL Entity Id if one doesn't exist.
-         */
-        ecs::Entity::Id GetEntityId(const physx::PxActor &actor) const;
-
         bool SweepQuery(ecs::Lock<ecs::Write<ecs::PhysicsState>> lock,
                         physx::PxRigidDynamic *actor,
                         const physx::PxVec3 dir,
@@ -127,8 +121,6 @@ namespace sp {
         ConvexHullSet *BuildConvexHulls(Model *model, bool decomposeHull);
         ConvexHullSet *LoadCollisionCache(Model *model, bool decomposeHull);
         void SaveCollisionCache(Model *model, ConvexHullSet *set, bool decomposeHull);
-
-        ecs::ECS &ecs;
 
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;

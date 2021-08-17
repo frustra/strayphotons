@@ -28,7 +28,7 @@ namespace sp {
             void GetRecommendedRenderTargetSize(uint32_t &width, uint32_t &height);
             glm::mat4 GetViewProjectionMatrix(size_t view, float nearZ, float farZ);
             RenderTarget *GetRenderTarget(size_t view);
-            void PopulateView(size_t view, ecs::Handle<ecs::View> &ecsView);
+            void PopulateView(size_t view, ecs::View &ecsView);
             void SubmitView(size_t view, GpuTexture *tex);
             void WaitFrame();
             void BeginFrame();

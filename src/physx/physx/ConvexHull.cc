@@ -219,13 +219,13 @@ namespace sp {
     }
 
     void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set, Model *model, bool decompHull) {
-        for (auto prim : model->primitives) {
+        for (auto &prim : model->primitives) {
             if (!decompHull) {
                 // Use points for a single hull without decomposing.
-                buildConvexHullForPrimitive(set, model, prim);
+                buildConvexHullForPrimitive(set, model, &prim);
             } else {
                 // Break primitive into one or more convex hulls.
-                decomposeConvexHullsForPrimitive(set, model, prim);
+                decomposeConvexHullsForPrimitive(set, model, &prim);
             }
         }
     }

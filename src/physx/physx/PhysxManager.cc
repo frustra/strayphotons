@@ -24,7 +24,7 @@ namespace sp {
     static CVar<int> CVarPhysicsFrameRate("x.PhysicsFrameRate", 120, "Physics updates per second");
     // clang-format on
 
-    PhysxManager::PhysxManager(ecs::ECS &ecs) : ecs(ecs) {
+    PhysxManager::PhysxManager() {
         Logf("PhysX %d.%d.%d starting up",
              PX_PHYSICS_VERSION_MAJOR,
              PX_PHYSICS_VERSION_MINOR,
@@ -68,7 +68,7 @@ namespace sp {
         }
 
         {
-            auto lock = ecs.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
             lock.Unset<ecs::PhysicsState>();
         }
         if (dispatcher) {
@@ -130,7 +130,7 @@ namespace sp {
     void PhysxManager::AsyncFrame() {
         // Wake up all actors and update the scene if gravity is changed.
         if (CVarGravity.Changed()) {
-            auto lock = ecs.StartTransaction<ecs::Write<ecs::PhysicsState>>();
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::PhysicsState>>();
             auto &ps = lock.Get<ecs::PhysicsState>();
 
             ps.scene->setGravity(PxVec3(0.f, CVarGravity.Get(true), 0.f));
@@ -152,18 +152,18 @@ namespace sp {
         }
 
         if (CVarShowShapes.Changed()) {
-            auto lock = ecs.StartTransaction<ecs::Write<ecs::PhysicsState>>();
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::PhysicsState>>();
 
             ToggleDebug(lock, CVarShowShapes.Get(true));
         }
         // if (CVarShowShapes.Get()) { CacheDebugLines(); }
 
         { // Sync ECS state to physx
-            auto lock = ecs.StartTransaction<ecs::Write<ecs::Physics,
-                                                        ecs::PhysicsState,
-                                                        ecs::Transform,
-                                                        ecs::HumanController,
-                                                        ecs::InteractController>>();
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::Physics,
+                                                               ecs::PhysicsState,
+                                                               ecs::Transform,
+                                                               ecs::HumanController,
+                                                               ecs::InteractController>>();
 
             // Delete actors for removed entities
             ecs::Removed<ecs::Physics> removedPhysics;
@@ -247,7 +247,7 @@ namespace sp {
         }
 
         { // Simulate 1 physics frame (blocking)
-            auto lock = ecs.StartTransaction<ecs::Write<ecs::PhysicsState>>();
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::PhysicsState>>();
             auto &ps = lock.Get<ecs::PhysicsState>();
 
             ps.scene->simulate(PxReal(1.0 / CVarPhysicsFrameRate.Get()),
@@ -258,7 +258,7 @@ namespace sp {
         }
 
         { // Sync ECS state from physx
-            auto lock = ecs.StartTransaction<ecs::Read<ecs::Physics>, ecs::Write<ecs::Transform>>();
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Physics>, ecs::Write<ecs::Transform>>();
 
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
@@ -322,7 +322,7 @@ namespace sp {
         scene->addActor(*groundPlane);
 
         {
-            auto lock = ecs.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
             physicsRemoval = lock.Watch<ecs::Removed<ecs::Physics>>();
             humanControllerRemoval = lock.Watch<ecs::Removed<ecs::HumanController>>();
 
@@ -509,10 +509,6 @@ namespace sp {
             ps.scene->removeActor(*actor);
             actor->release();
         }
-    }
-
-    ecs::Entity::Id PhysxManager::GetEntityId(const PxActor &actor) const {
-        return (size_t)actor.userData;
     }
 
     void ControllerHitReport::onShapeHit(const PxControllerShapeHit &hit) {

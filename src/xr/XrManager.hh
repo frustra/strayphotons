@@ -22,8 +22,8 @@ namespace sp {
         private:
             void InitXrActions();
 
-            ecs::Entity ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &handle);
-            ecs::Entity UpdateXrActionEntity(xr::XrActionPtr action, bool active);
+            Tecs::Entity ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &handle);
+            Tecs::Entity UpdateXrActionEntity(xr::XrActionPtr action, bool active);
 
             void UpdateSkeletonDebugHand(xr::XrActionPtr action,
                                          glm::mat4 xrObjectPos,
@@ -32,10 +32,10 @@ namespace sp {
 
             void ComputeBonePositions(std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output);
 
-            ecs::Entity GetLaserPointer();
+            Tecs::Entity GetLaserPointer();
             void SetVrOrigin();
 
-            ecs::Entity CreateXrEntity();
+            Tecs::Entity CreateXrEntity();
 
             void LoadXrSystem();
 

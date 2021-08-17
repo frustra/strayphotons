@@ -22,8 +22,8 @@ namespace sp {
     static CVar<float> CVarCrouchSpeed("p.CrouchSpeed", 1.5, "Player crouching movement speed (m/s)");
     static CVar<float> CVarCursorSensitivity("p.CursorSensitivity", 1.0, "Mouse cursor sensitivity");
 
-    HumanControlSystem::HumanControlSystem(ecs::ECS &ecs, InputManager *input, PhysxManager *physics)
-        : ecs(ecs), input(input), physics(physics) {}
+    HumanControlSystem::HumanControlSystem(InputManager *input, PhysxManager *physics)
+        : input(input), physics(physics) {}
 
     HumanControlSystem::~HumanControlSystem() {}
 
@@ -34,7 +34,7 @@ namespace sp {
         auto noclip = CVarNoClip.Get(true);
 
         {
-            auto lock = ecs.StartTransaction<
+            auto lock = ecs::World.StartTransaction<
                 ecs::Write<ecs::PhysicsState, ecs::Transform, ecs::HumanController, ecs::InteractController>>();
 
             for (Tecs::Entity entity : lock.EntitiesWith<ecs::HumanController>()) {
