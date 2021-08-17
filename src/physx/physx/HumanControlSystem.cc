@@ -88,12 +88,11 @@ namespace sp {
                         if (!rotating || !InteractRotate(lock, entity, dtSinceLastFrame, cursorDiff)) {
                             float sensitivity = CVarCursorSensitivity.Get() * 0.001;
 
-                            auto &transform = entity.Get<ecs::Transform>(lock);
-                            auto rotation = transform.GetRotate();
-
                             // Apply pitch/yaw rotations
-                            rotation = glm::quat(glm::vec3(0, -cursorDiff.x * sensitivity, 0)) * rotation *
-                                       glm::quat(glm::vec3(-cursorDiff.y * sensitivity, 0, 0));
+                            auto &transform = entity.Get<ecs::Transform>(lock);
+                            auto rotation = glm::quat(glm::vec3(0, -cursorDiff.x * sensitivity, 0)) *
+                                            transform.GetRotate() *
+                                            glm::quat(glm::vec3(-cursorDiff.y * sensitivity, 0, 0));
 
                             auto up = rotation * glm::vec3(0, 1, 0);
                             if (up.y < 0) {
