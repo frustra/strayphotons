@@ -80,6 +80,17 @@ namespace testing {
         }
     }
 
+    template<>
+    inline void AssertEqual<float, float>(float a, float b, const std::string message) {
+        float feps = std::numeric_limits<float>::epsilon();
+        if (!(a - feps < b && a + feps > b)) {
+            std::stringstream ss;
+            ss << "Assertion failed: " << message << " (" << a << " != " << b << ")" << std::endl;
+            std::cerr << ss.str() << std::flush;
+            throw std::runtime_error(message);
+        }
+    }
+
     class MultiTimer {
     public:
         MultiTimer(const MultiTimer &) = delete;
