@@ -6,12 +6,12 @@
 
 namespace sp {
     class VoxelRenderer;
-    class GlfwGraphicsContext;
+    class GraphicsContext;
     class GuiManager;
 
     class GuiRenderer {
     public:
-        GuiRenderer(VoxelRenderer &renderer, GlfwGraphicsContext &context, GuiManager *manager);
+        GuiRenderer(VoxelRenderer &renderer, GraphicsContext &context, GuiManager *manager);
         ~GuiRenderer();
         void Render(ecs::View view);
 

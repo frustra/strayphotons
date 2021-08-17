@@ -14,27 +14,16 @@
 #include <algorithm>
 #include <imgui/imgui.h>
 
-// clang-format off
 // GLFW must be included after glew.h (Graphics.hh)
 #include <GLFW/glfw3.h>
-#ifdef _WIN32
-	#define GLFW_EXPOSE_NATIVE_WIN32
-	#include <glfw/glfw3native.h>
-#endif
-// clang-format on
 
 namespace sp {
-    GuiRenderer::GuiRenderer(VoxelRenderer &renderer, GlfwGraphicsContext &context, GuiManager *manager)
+    GuiRenderer::GuiRenderer(VoxelRenderer &renderer, GraphicsContext &context, GuiManager *manager)
         : parent(renderer), manager(manager) {
         manager->SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
 
-#ifdef _WIN32
-        // TODO: Ideally, GuiRenderer should not depend on being passed a GlfwGraphicsContext: it should be able to
-        // accept an arbitrary GraphicsContext, and work with it.
-        io.ImeWindowHandle = glfwGetWin32Window(context.GetWindow());
-#endif
-
+        io.ImeWindowHandle = context.Win32WindowHandle();
         io.IniFilename = nullptr;
 
         std::pair<shared_ptr<const Asset>, float> fontAssets[] = {
