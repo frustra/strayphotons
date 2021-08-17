@@ -90,28 +90,22 @@ namespace sp {
 
                             auto &transform = entity.Get<ecs::Transform>(lock);
                             auto rotation = transform.GetRotate();
-                            // Determine current pitch/yaw
-                            float pitch = glm::pitch(rotation);
-                            if (pitch > M_PI) pitch -= M_PI * 2;
 
-                            float yaw = glm::yaw(rotation);
+                            // Apply pitch/yaw rotations
+                            rotation = glm::quat(glm::vec3(0, -cursorDiff.x * sensitivity, 0)) * rotation *
+                                       glm::quat(glm::vec3(-cursorDiff.y * sensitivity, 0, 0));
 
-                            if (std::abs(glm::roll(rotation)) > std::numeric_limits<float>::epsilon()) {
-                                pitch += (pitch > 0) ? -M_PI : M_PI;
-                                yaw = M_PI - yaw;
+                            auto up = rotation * glm::vec3(0, 1, 0);
+                            if (up.y < 0) {
+                                // Camera is turning upside-down, reset it
+                                up.y = 0;
+                                auto right = rotation * glm::vec3(1, 0, 0);
+                                right.y = 0;
+                                glm::vec3 forward = glm::cross(right, up);
+                                rotation = glm::quat_cast(
+                                    glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
                             }
-
-                            // Update pitch/yaw
-                            yaw -= cursorDiff.x * sensitivity;
-                            if (yaw > 2.0f * M_PI) { yaw -= 2.0f * M_PI; }
-                            if (yaw < 0) { yaw += 2.0f * M_PI; }
-
-                            pitch -= cursorDiff.y * sensitivity;
-
-                            const float feps = std::numeric_limits<float>::epsilon();
-                            pitch = std::max(-((float)M_PI_2 - feps), std::min(pitch, (float)M_PI_2 - feps));
-
-                            transform.SetRotate(glm::quat(glm::vec3(pitch, yaw, 0)));
+                            transform.SetRotate(rotation);
                         }
                     }
                 }
@@ -208,14 +202,15 @@ namespace sp {
         if (controller.pxController) {
             auto disp = velocity * (float)dtSinceLastFrame;
             auto prevPosition = PxExtendedVec3ToGlmVec3P(controller.pxController->getPosition());
+            glm::vec3 newPosition;
             if (CVarNoClip.Get()) {
-                transform.SetPosition(prevPosition + disp);
+                newPosition = prevPosition + disp;
                 controller.onGround = true;
             } else {
                 controller.onGround =
                     physics->MoveController(lock, controller.pxController, dtSinceLastFrame, GlmVec3ToPxVec3(disp));
+                newPosition = PxExtendedVec3ToGlmVec3P(controller.pxController->getPosition());
             }
-            auto newPosition = PxExtendedVec3ToGlmVec3P(controller.pxController->getPosition());
             // Don't accelerate more than our current velocity
             auto velocityPosition = glm::min(prevPosition + glm::abs(disp), newPosition);
             velocityPosition = glm::max(prevPosition - glm::abs(disp), velocityPosition);
