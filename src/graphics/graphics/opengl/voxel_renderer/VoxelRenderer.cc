@@ -794,7 +794,7 @@ namespace sp {
 
     void VoxelRenderer::EndFrame() {
         // TODO(xthexder): Use a residency list instead of Observers
-        // auto lock = ecs.tecs.StartTransaction<>();
+        // auto lock = ecs::World.StartTransaction<>();
         // ecs::Removed<ecs::Renderable> removedRenderable;
         // while (renderableRemoval.Poll(lock, removedRenderable)) {
         //     if (removedRenderable.component.model->nativeModel) {

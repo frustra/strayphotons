@@ -21,9 +21,8 @@ namespace sp {
           graphics(this),
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-          physics(entityManager.tecs), humanControlSystem(entityManager.tecs, &this->input, &this->physics),
+          humanControlSystem(&this->input, &this->physics),
 #endif
-          animation(entityManager.tecs),
 #ifdef SP_XR_SUPPORT
           xr(this),
 #endif

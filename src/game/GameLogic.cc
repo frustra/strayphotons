@@ -75,7 +75,7 @@ namespace sp {
     #endif
             if (game->input.IsPressed(INPUT_ACTION_SPAWN_DEBUG)) {
             // Spawn dodecahedron
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
             auto entity = lock.NewEntity();
             entity.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GAME_LOGIC);
             auto model = GAssets.LoadModel("dodecahedron");
@@ -88,7 +88,7 @@ namespace sp {
         } else if (game->input.IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
             // Toggle flashlight following player
 
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
             if (flashlight && flashlight.Has<ecs::Transform>(lock)) {
                 auto &transform = flashlight.Get<ecs::Transform>(lock);
 
@@ -119,44 +119,44 @@ namespace sp {
 
         if (!scene) return true;
 
-        for (auto entity : game->entityManager.EntitiesWith<ecs::Script>()) {
-            auto script = entity.Get<ecs::Script>();
-            script->OnTick(dtSinceLastFrame, game->entityManager.tecs);
-        }
+        // for (auto entity : game->entityManager.EntitiesWith<ecs::Script>()) {
+        //     auto script = entity.Get<ecs::Script>();
+        //     script->OnTick(dtSinceLastFrame);
+        // }
 
-        for (auto entity : game->entityManager.EntitiesWith<ecs::TriggerArea>()) {
-            auto area = entity.Get<ecs::TriggerArea>();
+        // for (auto entity : game->entityManager.EntitiesWith<ecs::TriggerArea>()) {
+        //     auto area = entity.Get<ecs::TriggerArea>();
 
-            for (auto triggerableEntity : game->entityManager.EntitiesWith<ecs::Triggerable>()) {
-                auto transform = triggerableEntity.Get<ecs::Transform>();
-                auto entityPos = transform->GetPosition();
-                if (entityPos.x > area->boundsMin.x && entityPos.y > area->boundsMin.y &&
-                    entityPos.z > area->boundsMin.z && entityPos.x < area->boundsMax.x &&
-                    entityPos.y < area->boundsMax.y && entityPos.z < area->boundsMax.z && !area->triggered) {
-                    area->triggered = true;
-                    Debugf("Entity at: %f %f %f", entityPos.x, entityPos.y, entityPos.z);
-                    Logf("Triggering event: %s", area->command);
-                    GetConsoleManager().QueueParseAndExecute(area->command);
-                }
-            }
-        }
+        //     for (auto triggerableEntity : game->entityManager.EntitiesWith<ecs::Triggerable>()) {
+        //         auto transform = triggerableEntity.Get<ecs::Transform>();
+        //         auto entityPos = transform->GetPosition();
+        //         if (entityPos.x > area->boundsMin.x && entityPos.y > area->boundsMin.y &&
+        //             entityPos.z > area->boundsMin.z && entityPos.x < area->boundsMax.x &&
+        //             entityPos.y < area->boundsMax.y && entityPos.z < area->boundsMax.z && !area->triggered) {
+        //             area->triggered = true;
+        //             Debugf("Entity at: %f %f %f", entityPos.x, entityPos.y, entityPos.z);
+        //             Logf("Triggering event: %s", area->command);
+        //             GetConsoleManager().QueueParseAndExecute(area->command);
+        //         }
+        //     }
+        // }
 
         if (!scene) return true;
 
         if (CVarFlashlight.Changed()) {
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Light>>();
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::Light>>();
             flashlight.Get<ecs::Light>(lock).intensity = CVarFlashlight.Get(true);
         }
         if (CVarFlashlightOn.Changed()) {
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Light>>();
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::Light>>();
             flashlight.Get<ecs::Light>(lock).on = CVarFlashlightOn.Get(true);
         }
         if (CVarFlashlightAngle.Changed()) {
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Light>>();
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::Light>>();
             flashlight.Get<ecs::Light>(lock).spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
         }
         if (CVarFlashlightResolution.Changed()) {
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::View>>();
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::View>>();
             flashlight.Get<ecs::View>(lock).extents = glm::ivec2(CVarFlashlightResolution.Get(true));
         }
 
@@ -164,7 +164,10 @@ namespace sp {
     }
 
     void GameLogic::LoadPlayer() {
-        game->entityManager.DestroyAllWith<ecs::Owner>(ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
+        {
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            ecs::DestroyAllWith<ecs::Owner>(lock, ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
+        }
 
         if (playerScene != nullptr) {
             for (auto &line : playerScene->unloadExecList) {
@@ -176,7 +179,7 @@ namespace sp {
         player = Tecs::Entity();
 
         {
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
             playerScene = GAssets.LoadScene("player", lock, ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0));
 
             for (auto e : lock.EntitiesWith<ecs::Name>()) {
@@ -227,7 +230,10 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
         game->graphics.RenderLoading();
 #endif
-        game->entityManager.DestroyAllWith<ecs::Owner>(ecs::Owner(ecs::Owner::OwnerType::SCENE, 0));
+        {
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            ecs::DestroyAllWith<ecs::Owner>(lock, ecs::Owner(ecs::Owner::OwnerType::SCENE, 0));
+        }
 
         if (scene != nullptr) {
             for (auto &line : scene->unloadExecList) {
@@ -237,7 +243,7 @@ namespace sp {
 
         scene.reset();
         {
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
             scene = GAssets.LoadScene(name, lock, ecs::Owner(ecs::Owner::OwnerType::SCENE, 0));
 
             for (auto e : lock.EntitiesWith<ecs::Name>()) {
@@ -273,7 +279,7 @@ namespace sp {
     void GameLogic::PrintDebug() {
         Logf("Currently loaded scene: %s", scene ? scene->name : "none");
         if (!scene) return;
-        auto lock = game->entityManager.tecs.StartTransaction<
+        auto lock = ecs::World.StartTransaction<
             ecs::Read<ecs::Name, ecs::Transform, ecs::HumanController, ecs::LightSensor, ecs::SignalOutput>>();
         if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
             auto &transform = player.Get<ecs::Transform>(lock);
@@ -317,7 +323,7 @@ namespace sp {
 
         auto [entityName, signalName] = ecs::ParseSignal(signalStr);
 
-        auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
         auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
         if (!entity) {
             Logf("Signal entity %s not found", entityName);
@@ -341,7 +347,7 @@ namespace sp {
 
         auto [entName, signalName] = ecs::ParseSignal(signalStr);
 
-        auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
         auto entity = ecs::EntityWith<ecs::Name>(lock, entName);
         if (entity && entity.Has<ecs::SignalOutput>(lock)) {
             auto &signalComp = entity.Get<ecs::SignalOutput>(lock);

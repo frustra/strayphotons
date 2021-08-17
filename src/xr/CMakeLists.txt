@@ -26,6 +26,6 @@ target_compile_definitions(${PROJECT_XR_OPENVR_LIB} PUBLIC
 add_subdirectory(xr)
 
 add_module_sources(
-    XrManager.cc
+    # XrManager.cc
     XrSystemFactory.cc
 )

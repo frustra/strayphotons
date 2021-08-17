@@ -5,6 +5,8 @@
 #include <typeindex>
 
 namespace ecs {
+    ECS World;
+
     std::string ToString(Lock<Read<Name>> lock, Tecs::Entity e) {
         if (lock.Exists(e)) {
             if (e.Has<Name>(lock)) {
@@ -14,25 +16,6 @@ namespace ecs {
             }
         } else {
             return "Entity(NULL)";
-        }
-    }
-    void Entity::Destroy() {
-        auto lock = em->tecs.StartTransaction<Tecs::AddRemove>();
-        e.Destroy(lock);
-        e = Tecs::Entity();
-    }
-
-    EntityManager::EntityManager() {}
-
-    Entity EntityManager::NewEntity() {
-        auto lock = tecs.StartTransaction<Tecs::AddRemove>();
-        return Entity(this, lock.NewEntity());
-    }
-
-    void EntityManager::DestroyAll() {
-        auto lock = tecs.StartTransaction<Tecs::AddRemove>();
-        for (auto e : lock.Entities()) {
-            e.Destroy(lock);
         }
     }
 } // namespace ecs

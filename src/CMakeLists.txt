@@ -24,7 +24,7 @@ add_module_configuration(
 		${PROJECT_GRAPHICS_OPENGL_LIB}
 		${PROJECT_INPUT_GLFW_LIB}
 		${PROJECT_PHYSICS_PHYSX_LIB}
-		${PROJECT_XR_OPENVR_LIB}
+		# ${PROJECT_XR_OPENVR_LIB}
 )
 
 # EGL-based executable used for CI testing purposes
@@ -35,7 +35,7 @@ add_module_configuration(
 		${PROJECT_CORE_LIB}
 		${PROJECT_GRAPHICS_EGL_LIB}
 		${PROJECT_INPUT_GLFW_LIB}
-		${PROJECT_XR_OPENVR_LIB}
+		# ${PROJECT_XR_OPENVR_LIB}
 )
 
 # Headless test executable

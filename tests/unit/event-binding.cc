@@ -15,12 +15,10 @@ namespace EventBindingTests {
     const std::string TEST_SIGNAL_ACTION = "test_action";
 
     void TrySendEvent() {
-        ecs::EntityManager ecs;
-
         Tecs::Entity player, hand;
         {
             Timer t("Create a basic scene with EventBindings and EventInput components");
-            auto lock = ecs.tecs.StartTransaction<ecs::AddRemove>();
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
 
             player = lock.NewEntity();
             player.Set<ecs::Name>(lock, "player");
@@ -37,7 +35,7 @@ namespace EventBindingTests {
         }
         {
             Timer t("Try reading some bindings");
-            auto lock = ecs.tecs.StartTransaction<ecs::Read<ecs::EventBindings>>();
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::EventBindings>>();
 
             auto &bindings = player.Get<ecs::EventBindings>(lock);
             auto targets = bindings.Lookup(TEST_SOURCE_BUTTON);
@@ -58,7 +56,7 @@ namespace EventBindingTests {
         }
         {
             Timer t("Send some test events");
-            auto lock = ecs.tecs.StartTransaction<ecs::Read<ecs::EventBindings>, ecs::Write<ecs::EventInput>>();
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::EventBindings>, ecs::Write<ecs::EventInput>>();
 
             auto &bindings = player.Get<ecs::EventBindings>(lock);
             bindings.SendEvent(lock, TEST_SOURCE_BUTTON, player, 42);
@@ -67,7 +65,7 @@ namespace EventBindingTests {
         }
         {
             Timer t("Read the test events");
-            auto lock = ecs.tecs.StartTransaction<ecs::Write<ecs::EventInput>>();
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::EventInput>>();
 
             ecs::Event event;
             auto &playerEvents = player.Get<ecs::EventInput>(lock);

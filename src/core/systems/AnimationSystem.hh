@@ -7,13 +7,8 @@ namespace sp {
 
     class AnimationSystem {
     public:
-        AnimationSystem(ecs::ECS &ecs);
-
-        ~AnimationSystem();
+        AnimationSystem() {}
 
         bool Frame(float dtSinceLastFrame);
-
-    private:
-        ecs::ECS &ecs;
     };
 } // namespace sp

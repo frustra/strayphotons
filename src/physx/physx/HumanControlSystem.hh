@@ -22,7 +22,7 @@ namespace sp {
 
     class HumanControlSystem {
     public:
-        HumanControlSystem(ecs::ECS &ecs, InputManager *input, PhysxManager *physics);
+        HumanControlSystem(InputManager *input, PhysxManager *physics);
         ~HumanControlSystem();
 
         /**
@@ -59,7 +59,6 @@ namespace sp {
                             double dt,
                             glm::vec2 dCursor);
 
-        ecs::ECS &ecs;
         InputManager *input = nullptr;
         PhysxManager *physics = nullptr;
     };

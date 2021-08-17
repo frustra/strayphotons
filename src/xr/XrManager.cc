@@ -70,7 +70,7 @@ namespace sp::xr {
                     if (xrObject.Valid()) {
                         ecs::Transform ctrl;
                         {
-                            auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Transform>>();
+                            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::Transform>>();
 
                             auto &vrOriginTransformTecs = vrOrigin.GetEntity().Get<ecs::Transform>(lock);
                             xrObjectPos = glm::transpose(
@@ -112,9 +112,9 @@ namespace sp::xr {
                             physx::PxReal maxDistance = 10.0f;
 
                             {
-                                auto lock = game->entityManager.tecs
-                                                .StartTransaction<ecs::Read<ecs::HumanController>,
-                                                                  ecs::Write<ecs::PhysicsState, ecs::Transform>>();
+                                auto lock =
+                                    ecs::World.StartTransaction<ecs::Read<ecs::HumanController>,
+                                                                ecs::Write<ecs::PhysicsState, ecs::Transform>>();
 
                                 physx::PxRaycastBuffer hit;
                                 bool status = game->physics.RaycastQuery(lock,
@@ -144,7 +144,7 @@ namespace sp::xr {
                         grabAction->GetFallingEdgeActionValue(controllerAction.second, let_go);
 
                         if (grab) {
-                            auto lock = game->entityManager.tecs.StartTransaction<
+                            auto lock = ecs::World.StartTransaction<
                                 ecs::Read<ecs::HumanController>,
                                 ecs::Write<ecs::PhysicsState, ecs::Transform, ecs::InteractController>>();
 
@@ -170,7 +170,7 @@ namespace sp::xr {
                         glm::mat4 xrObjectPos;
 
                         if (xrSystem->GetTracking()->GetPredictedObjectPose(trackedObjectHandle, xrObjectPos)) {
-                            auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Transform>>();
+                            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::Transform>>();
 
                             auto &vrOriginTransformTecs = vrOrigin.GetEntity().Get<ecs::Transform>(lock);
                             xrObjectPos = glm::transpose(
@@ -198,7 +198,7 @@ namespace sp::xr {
                         }
 
                         {
-                            auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Transform>>();
+                            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Transform>>();
                             auto &vrOriginTransformTecs = vrOrigin.GetEntity().Get<ecs::Transform>(lock);
                             xrObjectPos = glm::transpose(
                                 xrObjectPos * glm::transpose(vrOriginTransformTecs.GetGlobalTransform(lock)));
@@ -352,7 +352,7 @@ namespace sp::xr {
                     auto player = ecs::Entity(&game->entityManager, game->logic.GetPlayer());
 
                     if (player.Valid() && player.Has<ecs::Transform>()) {
-                        auto lock = game->entityManager.tecs.StartTransaction<ecs::Write<ecs::Transform>>();
+                        auto lock = ecs::World.StartTransaction<ecs::Write<ecs::Transform>>();
                         auto &transform = vrOrigin.GetEntity().Get<ecs::Transform>(lock);
                         auto &playerTransform = player.GetEntity().Get<ecs::Transform>(lock);
                         transform.SetPosition(playerTransform.GetGlobalPosition(lock) -
@@ -621,7 +621,7 @@ namespace sp::xr {
     void XrManager::SetVrOrigin() {
         if (CVarConnectXR.Get()) {
             Logf("Resetting VR Origin");
-            auto lock = game->entityManager.tecs.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
             auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, "vr-origin");
             auto player = game->logic.GetPlayer();
             if (vrOrigin && vrOrigin.Has<ecs::Transform>(lock) && player && player.Has<ecs::Transform>(lock)) {
