@@ -135,7 +135,7 @@ namespace sp {
 
         int CommandEditCallback(ImGuiTextEditCallbackData *data) {
             if (data->EventFlag == ImGuiInputTextFlags_CallbackCompletion) {
-                if (completionSelectedIndex >= 0 && completionSelectedIndex < completionEntries.size()) {
+                if (completionSelectedIndex >= 0 && completionSelectedIndex < (int)completionEntries.size()) {
                     string line = completionEntries[completionSelectedIndex];
                     if (line[line.size() - 1] != ' ') line += " ";
 
@@ -153,7 +153,7 @@ namespace sp {
                         completionPopupVisible = true;
                     }
                 } else if (data->EventKey == ImGuiKey_UpArrow) {
-                    if (completionSelectedIndex < completionEntries.size() - 1) {
+                    if (completionSelectedIndex < (int)completionEntries.size() - 1) {
                         completionSelectedIndex++;
                         completionSelectionChanged = true;
                     }
@@ -169,7 +169,7 @@ namespace sp {
                 }
 
                 if (completionMode == COMPLETION_HISTORY && completionSelectedIndex >= 0 &&
-                    completionSelectedIndex < completionEntries.size())
+                    completionSelectedIndex < (int)completionEntries.size())
                     SetInput(data, completionEntries[completionSelectedIndex].c_str(), true);
             }
             return 0;
