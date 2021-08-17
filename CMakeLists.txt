@@ -83,8 +83,6 @@ foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_OUTPUT_DIR})
 endforeach()
 
-find_package(OpenGL REQUIRED)
-
 # This variable contains the component name used in calls to install() for the core stray photons
 # installation
 # Some external projects (like OpenVR and fmod) require it to be used in their install() calls

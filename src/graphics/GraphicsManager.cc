@@ -16,6 +16,10 @@
         #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
         #include "input/glfw/GlfwInputHandler.hh"
     #endif
+    #ifdef SP_GRAPHICS_SUPPORT_VK
+        #include "graphics/vulkan/VulkanGraphicsContext.hh"
+        #include "input/glfw/GlfwActionSource.hh"
+    #endif
 
     #ifdef SP_PHYSICS_SUPPORT_PHYSX
         #include "physx/HumanControlSystem.hh"
@@ -42,17 +46,23 @@ namespace sp {
     }
 
     void GraphicsManager::Init() {
-    #ifdef SP_GRAPHICS_SUPPORT_GL
         if (context) { throw "already an active context"; }
-        if (renderer) { throw "already an active renderer"; }
 
+    #if SP_GRAPHICS_SUPPORT_GL
         GlfwGraphicsContext *glfwContext = new GlfwGraphicsContext();
         context = glfwContext;
-        context->Init();
 
         GLFWwindow *window = glfwContext->GetWindow();
-        if (window != nullptr) game->glfwInputHandler = std::make_unique<GlfwInputHandler>(*window);
     #endif
+
+    #if SP_GRAPHICS_SUPPORT_VK
+        VulkanGraphicsContext *vkContext = new VulkanGraphicsContext();
+        context = vkContext;
+
+        GLFWwindow *window = vkContext->GetWindow();
+    #endif
+
+        if (window != nullptr) game->glfwInputHandler = std::make_unique<GlfwInputHandler>(*window);
 
         if (game->options.count("size")) {
             std::istringstream ss(game->options["size"].as<string>());
@@ -63,6 +73,8 @@ namespace sp {
         }
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
+        if (renderer) { throw "already an active renderer"; }
+
         {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
             renderer = new VoxelRenderer(lock, *glfwContext, timer);
@@ -204,6 +216,7 @@ namespace sp {
     }
 
     void GraphicsManager::RenderLoading() {
+    #ifdef SP_GRAPHICS_SUPPORT_GL
         if (!renderer) return;
 
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::View>>();
@@ -218,7 +231,8 @@ namespace sp {
             context->SwapBuffers();
         }
 
-        // TODO: clear the XR scene to drop back to the compositor while we load
+    // TODO: clear the XR scene to drop back to the compositor while we load
+    #endif
     }
 } // namespace sp
 

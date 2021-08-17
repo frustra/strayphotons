@@ -27,11 +27,13 @@ namespace sp {
         GraphicsContext() {}
         virtual ~GraphicsContext() {}
 
-        virtual void Init() = 0;
         virtual bool ShouldClose() = 0;
         virtual void BeginFrame() = 0;
         virtual void SwapBuffers() = 0;
         virtual void EndFrame() = 0;
+
+        virtual void DisableCursor() {}
+        virtual void EnableCursor() {}
 
         void AttachView(Tecs::Entity e) {
             activeView = e;

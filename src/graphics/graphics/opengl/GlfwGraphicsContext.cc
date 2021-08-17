@@ -48,20 +48,9 @@ namespace sp {
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    }
 
-    GlfwGraphicsContext::~GlfwGraphicsContext() {
-        if (window) { glfwDestroyWindow(window); }
-
-        glfwTerminate();
-    }
-
-    void GlfwGraphicsContext::Init() {
-        CreateGlfwWindow(CVarWindowSize.Get());
-    }
-
-    void GlfwGraphicsContext::CreateGlfwWindow(glm::ivec2 initialSize) {
         // Create window and surface
+        auto initialSize = CVarWindowSize.Get();
         window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
         Assert(window, "glfw window creation failed");
 
@@ -98,6 +87,12 @@ namespace sp {
         float maxAnisotropy;
         glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
         Debugf("Maximum anisotropy: %f", maxAnisotropy);
+    }
+
+    GlfwGraphicsContext::~GlfwGraphicsContext() {
+        if (window) { glfwDestroyWindow(window); }
+
+        glfwTerminate();
     }
 
     void GlfwGraphicsContext::SetTitle(string title) {
@@ -190,6 +185,14 @@ namespace sp {
         }
 
         lastFrameEnd = frameEnd;
+    }
+
+    void GlfwGraphicsContext::DisableCursor() {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+
+    void GlfwGraphicsContext::EnableCursor() {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
     shared_ptr<GpuTexture> GlfwGraphicsContext::LoadTexture(shared_ptr<Image> image, bool genMipmap) {
