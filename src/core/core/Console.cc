@@ -181,18 +181,17 @@ namespace sp {
         if (history.size() == 0 || history[history.size() - 1] != input) { history.push_back(input); }
     }
 
-    string ConsoleManager::GetHistory(size_t index) {
+    vector<string> ConsoleManager::AllHistory(size_t maxEntries) {
+        maxEntries = std::max(maxEntries, history.size());
+        vector<string> results;
+        if (maxEntries == 0) return results;
+
         std::lock_guard lock(historyLock);
-        if (index > 0 && index <= history.size()) { return history[history.size() - index]; }
-        return "";
-    }
-
-    string ConsoleManager::AutoComplete(const string &input) {
-        auto it = cvars.upper_bound(to_lower_copy(input));
-        if (it == cvars.end()) return input;
-
-        auto cvar = it->second;
-        return cvar->GetName() + " ";
+        results.reserve(maxEntries);
+        for (int i = history.size() - 1; i >= 0 && results.size() < maxEntries; i--) {
+            results.push_back(history[i]);
+        }
+        return results;
     }
 
     vector<string> ConsoleManager::AllCompletions(const string &rawInput) {

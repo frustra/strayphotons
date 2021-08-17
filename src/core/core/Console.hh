@@ -52,8 +52,7 @@ namespace sp {
                                   chrono_clock::time_point wait_util = chrono_clock::now(),
                                   std::condition_variable *handled = nullptr);
         void AddHistory(const string &input);
-        string GetHistory(size_t index);
-        string AutoComplete(const string &input);
+        vector<string> AllHistory(size_t maxEntries);
         vector<string> AllCompletions(const string &input);
 
         const std::map<string, CVarBase *> CVars() {

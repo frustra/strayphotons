@@ -17,8 +17,11 @@ namespace sp {
             ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
                                      ImGuiWindowFlags_NoTitleBar;
 
+            if (completionPopupVisible) flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+
             ImGui::SetNextWindowPos(ImVec2(0, 0));
             ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, 400.0f));
+            ImVec2 popupPos;
 
             ImGui::Begin("Console", nullptr, flags);
             {
@@ -48,7 +51,7 @@ namespace sp {
                                              ImGuiInputTextFlags_CallbackCompletion |
                                              ImGuiInputTextFlags_CallbackHistory;
 
-                bool reclaim_focus = ImGui::IsWindowAppearing();
+                bool reclaimFocus = ImGui::IsWindowAppearing();
                 if (ImGui::InputText("##CommandInput",
                                      inputBuf,
                                      sizeof(inputBuf),
@@ -56,18 +59,66 @@ namespace sp {
                                      CommandEditStub,
                                      (void *)this)) {
                     string line(inputBuf);
-                    auto &console = GetConsoleManager();
-                    console.AddHistory(line);
-                    console.QueueParseAndExecute(line);
-                    inputBuf[0] = '\0';
-                    historyOffset = 0;
-                    reclaim_focus = true;
+                    if (!line.empty()) {
+                        auto &console = GetConsoleManager();
+                        console.AddHistory(line);
+                        console.QueueParseAndExecute(line);
+                        inputBuf[0] = '\0';
+                        completionMode = COMPLETION_NONE;
+                    }
+                    reclaimFocus = true;
                 }
 
+                if (ImGui::IsItemEdited() && !skipEditCheck) {
+                    string line(inputBuf);
+                    if (!line.empty()) {
+                        completionEntries = GetConsoleManager().AllCompletions(line);
+                        completionMode = COMPLETION_INPUT;
+                    } else {
+                        completionEntries.clear();
+                        completionMode = COMPLETION_NONE;
+                    }
+                    completionPopupVisible = !completionEntries.empty();
+                    completionSelectedIndex = 0;
+                    completionSelectionChanged = true;
+                }
+                skipEditCheck = false;
+
                 ImGui::SetItemDefaultFocus();
-                if (reclaim_focus) ImGui::SetKeyboardFocusHere(-1);
+                if (reclaimFocus) ImGui::SetKeyboardFocusHere(-1);
+
+                popupPos = ImGui::GetItemRectMin();
             }
             ImGui::End();
+
+            if (completionPopupVisible) {
+                ImGuiWindowFlags popupFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                              ImGuiWindowFlags_NoMove | ImGuiWindowFlags_HorizontalScrollbar |
+                                              ImGuiWindowFlags_NoSavedSettings;
+
+                ImVec2 size = {400, 200};
+                size.y = std::min(size.y, 12 + completionEntries.size() * ImGui::GetTextLineHeightWithSpacing());
+
+                ImGui::SetNextWindowPos({popupPos.x, popupPos.y - size.y});
+                ImGui::SetNextWindowSize(size);
+                ImGui::Begin("completion_popup", nullptr, popupFlags);
+                ImGui::PushAllowKeyboardFocus(false);
+
+                for (int index = completionEntries.size() - 1; index >= 0; index--) {
+                    bool active = completionSelectedIndex == index;
+
+                    if (ImGui::Selectable(completionEntries[index].c_str(), active)) {
+                        completionSelectedIndex = index;
+                    }
+                    if (active && completionSelectionChanged) {
+                        ImGui::SetScrollHere();
+                        completionSelectionChanged = false;
+                    }
+                }
+
+                ImGui::PopAllowKeyboardFocus();
+                ImGui::End();
+            }
         }
 
         static int CommandEditStub(ImGuiTextEditCallbackData *data) {
@@ -75,51 +126,65 @@ namespace sp {
             return c->CommandEditCallback(data);
         }
 
+        void SetInput(ImGuiTextEditCallbackData *data, const char *str, bool skipEditCheck) {
+            int newLength = snprintf(data->Buf, (size_t)data->BufSize, "%s", str);
+            data->CursorPos = data->SelectionStart = data->SelectionEnd = data->BufTextLen = newLength;
+            data->BufDirty = true;
+            this->skipEditCheck = skipEditCheck;
+        }
+
         int CommandEditCallback(ImGuiTextEditCallbackData *data) {
             if (data->EventFlag == ImGuiInputTextFlags_CallbackCompletion) {
-                string line(data->Buf);
-                line = GetConsoleManager().AutoComplete(line);
+                if (completionSelectedIndex >= 0 && completionSelectedIndex < completionEntries.size()) {
+                    string line = completionEntries[completionSelectedIndex];
+                    if (line[line.size() - 1] != ' ') line += " ";
 
-                int newLength = snprintf(data->Buf, (size_t)data->BufSize, "%s", line.c_str());
-                data->CursorPos = data->SelectionStart = data->SelectionEnd = data->BufTextLen = newLength;
-                data->BufDirty = true;
-                historyOffset = 0;
+                    SetInput(data, line.c_str(), true);
+                    completionPopupVisible = false;
+                    completionSelectedIndex = -1;
+                }
             } else if (data->EventFlag == ImGuiInputTextFlags_CallbackHistory) {
-                int pos = historyOffset;
-
-                if (data->EventKey == ImGuiKey_UpArrow) pos++;
-                if (data->EventKey == ImGuiKey_DownArrow) pos--;
-
-                if (pos != historyOffset) {
-                    if (pos > 0) {
-                        if (historyOffset == 0) {
-                            memcpy(newInputBuf, inputBuf, sizeof(inputBuf));
-                            newInputCursorOffset = data->CursorPos;
-                        }
-
-                        auto line = GetConsoleManager().GetHistory(pos);
-                        if (!line.empty()) {
-                            int newLength = snprintf(data->Buf, (size_t)data->BufSize, "%s", line.c_str());
-                            data->CursorPos = data->SelectionStart = data->SelectionEnd = data->BufTextLen = newLength;
-                            data->BufDirty = true;
-                            historyOffset = pos;
-                        }
-                    } else if (pos == 0) {
-                        int newLength = snprintf(data->Buf, (size_t)data->BufSize, "%s", newInputBuf);
-                        data->BufTextLen = newLength;
-                        data->CursorPos = data->SelectionStart = data->SelectionEnd = newInputCursorOffset;
-                        data->BufDirty = true;
-                        historyOffset = pos;
+                if (completionMode == COMPLETION_NONE) {
+                    completionEntries = GetConsoleManager().AllHistory(128);
+                    if (!completionEntries.empty()) {
+                        completionMode = COMPLETION_HISTORY;
+                        completionSelectedIndex = 0;
+                        completionSelectionChanged = true;
+                        completionPopupVisible = true;
+                    }
+                } else if (data->EventKey == ImGuiKey_UpArrow) {
+                    if (completionSelectedIndex < completionEntries.size() - 1) {
+                        completionSelectedIndex++;
+                        completionSelectionChanged = true;
+                    }
+                } else if (data->EventKey == ImGuiKey_DownArrow) {
+                    if (completionSelectedIndex > 0) {
+                        completionSelectedIndex--;
+                        completionSelectionChanged = true;
+                    } else if (completionMode == COMPLETION_HISTORY) {
+                        SetInput(data, "", false);
+                        completionMode = COMPLETION_NONE;
+                        completionPopupVisible = false;
                     }
                 }
+
+                if (completionMode == COMPLETION_HISTORY && completionSelectedIndex >= 0 &&
+                    completionSelectedIndex < completionEntries.size())
+                    SetInput(data, completionEntries[completionSelectedIndex].c_str(), true);
             }
             return 0;
         }
 
     private:
+        enum CompletionMode { COMPLETION_NONE, COMPLETION_INPUT, COMPLETION_HISTORY };
+
         float lastScrollMaxY = 0.0f;
-        char inputBuf[1024], newInputBuf[1024];
-        int historyOffset = 0;
-        int newInputCursorOffset = 0;
+        char inputBuf[1024];
+        bool skipEditCheck = false;
+
+        CompletionMode completionMode = COMPLETION_NONE;
+        bool completionPopupVisible = false, completionSelectionChanged = false;
+        vector<string> completionEntries;
+        int completionSelectedIndex = 0;
     };
 } // namespace sp
