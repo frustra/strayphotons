@@ -49,9 +49,10 @@ namespace sp {
 
                 ImGuiInputTextFlags iflags = ImGuiInputTextFlags_EnterReturnsTrue |
                                              ImGuiInputTextFlags_CallbackCompletion |
-                                             ImGuiInputTextFlags_CallbackHistory;
+                                             ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackAlways;
 
-                bool reclaimFocus = ImGui::IsWindowAppearing();
+                reclaimInputFocus |= ImGui::IsWindowAppearing();
+
                 if (ImGui::InputText("##CommandInput",
                                      inputBuf,
                                      sizeof(inputBuf),
@@ -67,7 +68,7 @@ namespace sp {
                         completionMode = COMPLETION_NONE;
                         completionPopupVisible = false;
                     }
-                    reclaimFocus = true;
+                    reclaimInputFocus = true;
                 }
 
                 if (ImGui::IsItemEdited() && !skipEditCheck) {
@@ -86,7 +87,10 @@ namespace sp {
                 skipEditCheck = false;
 
                 ImGui::SetItemDefaultFocus();
-                if (reclaimFocus) ImGui::SetKeyboardFocusHere(-1);
+                if (reclaimInputFocus) {
+                    ImGui::SetKeyboardFocusHere(-1);
+                    reclaimInputFocus = false;
+                }
 
                 popupPos = ImGui::GetItemRectMin();
             }
@@ -110,6 +114,8 @@ namespace sp {
 
                     if (ImGui::Selectable(completionEntries[index].c_str(), active)) {
                         completionSelectedIndex = index;
+                        syncInputFromCompletion = true;
+                        reclaimInputFocus = true;
                     }
                     if (active && completionSelectionChanged) {
                         ImGui::SetScrollHere();
@@ -135,7 +141,8 @@ namespace sp {
         }
 
         int CommandEditCallback(ImGuiTextEditCallbackData *data) {
-            if (data->EventFlag == ImGuiInputTextFlags_CallbackCompletion) {
+            if ((data->EventFlag == ImGuiInputTextFlags_CallbackAlways && syncInputFromCompletion) ||
+                data->EventFlag == ImGuiInputTextFlags_CallbackCompletion) {
                 if (completionSelectedIndex >= 0 && completionSelectedIndex < (int)completionEntries.size()) {
                     string line = completionEntries[completionSelectedIndex];
                     if (line[line.size() - 1] != ' ') line += " ";
@@ -144,6 +151,7 @@ namespace sp {
                     completionPopupVisible = false;
                     completionSelectedIndex = -1;
                 }
+                syncInputFromCompletion = false;
             } else if (data->EventFlag == ImGuiInputTextFlags_CallbackHistory) {
                 if (completionMode == COMPLETION_NONE) {
                     completionEntries = GetConsoleManager().AllHistory(128);
@@ -181,10 +189,10 @@ namespace sp {
 
         float lastScrollMaxY = 0.0f;
         char inputBuf[1024];
-        bool skipEditCheck = false;
+        bool skipEditCheck = false, reclaimInputFocus = false;
 
         CompletionMode completionMode = COMPLETION_NONE;
-        bool completionPopupVisible = false, completionSelectionChanged = false;
+        bool completionPopupVisible = false, completionSelectionChanged = false, syncInputFromCompletion = false;
         vector<string> completionEntries;
         int completionSelectedIndex = 0;
     };
