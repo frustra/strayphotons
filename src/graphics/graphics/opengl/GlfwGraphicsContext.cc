@@ -11,10 +11,12 @@
 #include <iostream>
 #include <string>
 
-// clang-format off
 // GLFW must be included after glew.h (Graphics.hh)
 #include <GLFW/glfw3.h>
-// clang-format on
+#ifdef _WIN32
+    #define GLFW_EXPOSE_NATIVE_WIN32
+    #include <glfw/glfw3native.h>
+#endif
 
 namespace sp {
 
@@ -185,5 +187,13 @@ namespace sp {
         auto tex = make_shared<GLTexture>();
         tex->Create().LoadFromImage(image, genMipmap ? GLTexture::FullyMipmap : 1);
         return tex;
+    }
+
+    void *GlfwGraphicsContext::Win32WindowHandle() {
+#ifdef _WIN32
+        return glfwGetWin32Window(GetWindow());
+#else
+        return nullptr;
+#endif
     }
 } // namespace sp

@@ -54,6 +54,11 @@ namespace sp {
 
         virtual std::shared_ptr<GpuTexture> LoadTexture(std::shared_ptr<Image> image, bool genMipmap = true) = 0;
 
+        // Returns the window HWND, if it exists. On non-Windows platforms this returns nullptr.
+        virtual void *Win32WindowHandle() {
+            return nullptr;
+        }
+
     protected:
         Tecs::Entity activeView;
     };

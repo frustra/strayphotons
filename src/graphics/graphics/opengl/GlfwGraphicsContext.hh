@@ -36,6 +36,8 @@ namespace sp {
             return window;
         }
 
+        void *Win32WindowHandle() override;
+
         std::shared_ptr<GLRenderTarget> GetRenderTarget(const RenderTargetDesc &desc) {
             return rtPool.Get(desc);
         }
