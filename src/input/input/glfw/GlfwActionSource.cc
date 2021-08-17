@@ -139,8 +139,8 @@ namespace sp {
         auto ctx = static_cast<GlfwActionSource *>(glfwGetWindowUserPointer(window));
 
         std::lock_guard lock(ctx->dataLock);
-        ctx->mouseScroll.x = (float)xOffset;
-        ctx->mouseScroll.y = (float)yOffset;
+        ctx->mouseScroll.x += (float)xOffset;
+        ctx->mouseScroll.y += (float)yOffset;
     }
 
     void GlfwActionSource::DisableCursor() {
