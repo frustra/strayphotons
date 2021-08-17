@@ -65,6 +65,7 @@ namespace sp {
                         console.QueueParseAndExecute(line);
                         inputBuf[0] = '\0';
                         completionMode = COMPLETION_NONE;
+                        completionPopupVisible = false;
                     }
                     reclaimFocus = true;
                 }
