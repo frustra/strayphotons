@@ -7,11 +7,11 @@
 namespace ecs {
     struct Renderable {
         enum Visibility {
-            VISIBILE_DIRECT_CAMERA = 0,
-            VISIBILE_DIRECT_EYE = 0,
-            VISIBILE_REFLECTED,
-            VISIBILE_LIGHTING_SHADOW,
-            VISIBILE_LIGHTING_VOXEL,
+            VISIBLE_DIRECT_CAMERA = 0,
+            VISIBLE_DIRECT_EYE = 0,
+            VISIBLE_REFLECTED,
+            VISIBLE_LIGHTING_SHADOW,
+            VISIBLE_LIGHTING_VOXEL,
             VISIBILITY_COUNT,
         };
 

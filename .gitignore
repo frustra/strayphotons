@@ -16,3 +16,4 @@
 /vendor/lib
 /strayphotons
 /strayphotons.zip
+/shaders/**/*.spv

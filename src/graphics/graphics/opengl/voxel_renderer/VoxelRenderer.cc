@@ -286,8 +286,8 @@ namespace sp {
 
                 ecs::View basicView;
                 basicView.extents = glm::ivec2(mapResolution);
-                basicView.visibilityMask.set(ecs::Renderable::VISIBILE_REFLECTED);
-                basicView.visibilityMask.set(ecs::Renderable::VISIBILE_LIGHTING_SHADOW);
+                basicView.visibilityMask.set(ecs::Renderable::VISIBLE_REFLECTED);
+                basicView.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
 
                 if (bounce > 0) { basicView.clearMode.reset(); }
 

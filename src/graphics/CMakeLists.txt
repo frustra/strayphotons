@@ -48,6 +48,7 @@ target_compile_definitions(${PROJECT_GRAPHICS_OPENGL_LIB} PUBLIC
 )
 target_compile_definitions(${PROJECT_GRAPHICS_VULKAN_LIB} PUBLIC
     SP_GRAPHICS_SUPPORT_VK
+    VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 )
 
 add_subdirectory(graphics)

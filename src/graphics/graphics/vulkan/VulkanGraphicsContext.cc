@@ -10,6 +10,12 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+// temporary for shader access, shaders should be compiled somewhere else later
+#include "assets/Asset.hh"
+#include "assets/AssetManager.hh"
+
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+
 namespace sp {
     static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                         VkDebugUtilsMessageTypeFlagsEXT messageTypes,
@@ -50,6 +56,8 @@ namespace sp {
         if (!glfwInit()) { throw "glfw failed"; }
 
         Assert(glfwVulkanSupported(), "Vulkan not supported");
+
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
@@ -100,44 +108,47 @@ namespace sp {
                                           layers.data(),
                                           extensions.size(),
                                           extensions.data());
-#if SP_DEBUG
+
         vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
-        debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
-                                    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-                                    vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
-                                    vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
         debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
                                 vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
                                 vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
+
+        debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
+                                    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
+#if SP_DEBUG
+        debugInfo.messageSeverity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
+                                     vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
+#endif
         debugInfo.pfnUserCallback = &VulkanDebugCallback;
         debugInfo.pUserData = this;
         createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo;
-#endif
+
         instance = vk::createInstanceUnique(createInfo);
-        dispatcher = vk::DispatchLoaderDynamic(*instance, vkGetInstanceProcAddr);
-#if SP_DEBUG
-        debugMessenger = instance->createDebugUtilsMessengerEXTUnique(debugInfo, nullptr, dispatcher);
-#endif
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(*instance);
+        debugMessenger = instance->createDebugUtilsMessengerEXTUnique(debugInfo, nullptr);
 
         vk::SurfaceKHR glfwSurface;
         auto result = glfwCreateWindowSurface(*instance, window, nullptr, (VkSurfaceKHR *)&glfwSurface);
         Assert(result == VK_SUCCESS, "Failed to create window surface");
-        surface.reset(std::move(glfwSurface));
 
-        auto physicalDevices = instance->enumeratePhysicalDevices(dispatcher);
+        vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderDynamic> deleter(*instance);
+        surface = vk::UniqueSurfaceKHR(std::move(glfwSurface), deleter);
+
+        auto physicalDevices = instance->enumeratePhysicalDevices();
         // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
         vk::PhysicalDevice physicalDevice;
         for (auto &dev : physicalDevices) {
             // TODO: Check device extension support
-            auto properties = dev.getProperties(dispatcher);
-            // auto features = device.getFeatures(dispatcher);
+            auto properties = dev.getProperties();
+            // auto features = device.getFeatures();
             Logf("Using graphics device: %s", properties.deviceName);
             physicalDevice = dev;
             break;
         }
         Assert(physicalDevice, "No suitable graphics device found!");
 
-        auto queueFamilies = physicalDevice.getQueueFamilyProperties(dispatcher);
+        auto queueFamilies = physicalDevice.getQueueFamilyProperties();
         std::optional<uint32_t> graphicsQueueFamily;
         for (uint32_t i = 0; i < queueFamilies.size(); i++) {
             if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics) {
@@ -149,7 +160,7 @@ namespace sp {
 
         std::optional<uint32_t> presentQueueFamily;
         for (uint32_t i = 0; i < queueFamilies.size(); i++) {
-            if (physicalDevice.getSurfaceSupportKHR(i, *surface, dispatcher)) {
+            if (physicalDevice.getSurfaceSupportKHR(i, *surface)) {
                 presentQueueFamily = i;
                 break;
             }
@@ -177,13 +188,16 @@ namespace sp {
         deviceInfo.ppEnabledExtensionNames = deviceExtensions.data();
         deviceInfo.enabledLayerCount = layers.size();
         deviceInfo.ppEnabledLayerNames = layers.data();
-        device = physicalDevice.createDeviceUnique(deviceInfo, nullptr, dispatcher);
-        graphicsQueue = device->getQueue(graphicsQueueFamily.value(), 0, dispatcher);
-        presentQueue = device->getQueue(presentQueueFamily.value(), 0, dispatcher);
 
-        auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface, dispatcher);
-        auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface, dispatcher);
-        auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface, dispatcher);
+        device = physicalDevice.createDeviceUnique(deviceInfo, nullptr);
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(*device);
+
+        graphicsQueue = device->getQueue(graphicsQueueFamily.value(), 0);
+        presentQueue = device->getQueue(presentQueueFamily.value(), 0);
+
+        auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
+        auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
+        auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
         // TODO: Actually validate surface capabilities/formats/present modes are available
 
         vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
@@ -223,10 +237,207 @@ namespace sp {
         swapChainInfo.presentMode = presentMode;
         swapChainInfo.clipped = true;
         swapChainInfo.oldSwapchain = nullptr;
-        swapChain = device->createSwapchainKHRUnique(swapChainInfo, nullptr, dispatcher);
+        swapChain = device->createSwapchainKHRUnique(swapChainInfo, nullptr);
+
+        swapChainImages = device->getSwapchainImagesKHR(*swapChain);
+        swapChainImageFormat = swapChainInfo.imageFormat;
+        swapChainExtent = swapChainInfo.imageExtent;
+
+        swapChainImageViews.clear();
+        for (size_t i = 0; i < swapChainImages.size(); i++) {
+            vk::ImageViewCreateInfo createInfo;
+            createInfo.image = swapChainImages[i];
+            createInfo.viewType = vk::ImageViewType::e2D;
+            createInfo.format = swapChainImageFormat;
+            createInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+            createInfo.subresourceRange.baseMipLevel = 0;
+            createInfo.subresourceRange.levelCount = 1;
+            createInfo.subresourceRange.baseArrayLayer = 0;
+            createInfo.subresourceRange.layerCount = 1;
+            swapChainImageViews.emplace_back(device->createImageViewUnique(createInfo));
+        }
+
+        /// very temporary code to build a test pipeline
+
+        auto vertShaderAsset = GAssets.Load("shaders/vulkan/bin/test.vert.spv");
+        vk::ShaderModuleCreateInfo vertShaderCreateInfo;
+        vertShaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(vertShaderAsset->CharBuffer());
+        vertShaderCreateInfo.codeSize = vertShaderAsset->buffer.size();
+        auto vertShaderModule = device->createShaderModuleUnique(vertShaderCreateInfo);
+
+        auto fragShaderAsset = GAssets.Load("shaders/vulkan/bin/test.frag.spv");
+        vk::ShaderModuleCreateInfo fragShaderCreateInfo;
+        fragShaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(fragShaderAsset->CharBuffer());
+        fragShaderCreateInfo.codeSize = fragShaderAsset->buffer.size();
+        auto fragShaderModule = device->createShaderModuleUnique(fragShaderCreateInfo);
+
+        vk::PipelineShaderStageCreateInfo vertShaderStageInfo;
+        vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
+        vertShaderStageInfo.module = *vertShaderModule;
+        vertShaderStageInfo.pName = "main";
+
+        vk::PipelineShaderStageCreateInfo fragShaderStageInfo;
+        fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
+        fragShaderStageInfo.module = *fragShaderModule;
+        fragShaderStageInfo.pName = "main";
+
+        std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
+
+        vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
+        vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
+        inputAssembly.topology = vk::PrimitiveTopology::eTriangleList;
+
+        vk::Viewport viewport;
+        viewport.width = swapChainExtent.width;
+        viewport.height = swapChainExtent.height;
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+
+        vk::Rect2D scissor;
+        scissor.extent = swapChainExtent;
+
+        vk::PipelineViewportStateCreateInfo viewportState;
+        viewportState.viewportCount = 1;
+        viewportState.pViewports = &viewport;
+        viewportState.scissorCount = 1;
+        viewportState.pScissors = &scissor;
+
+        vk::PipelineRasterizationStateCreateInfo rasterizer;
+        rasterizer.polygonMode = vk::PolygonMode::eFill;
+        rasterizer.depthClampEnable = VK_FALSE;
+        rasterizer.rasterizerDiscardEnable = VK_FALSE;
+        rasterizer.lineWidth = 1.0f;
+        rasterizer.cullMode = vk::CullModeFlagBits::eBack;
+        rasterizer.frontFace = vk::FrontFace::eClockwise;
+
+        vk::PipelineColorBlendAttachmentState colorBlendAttachment;
+        colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+                                              vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+
+        vk::PipelineColorBlendStateCreateInfo colorBlending;
+        colorBlending.attachmentCount = 1;
+        colorBlending.pAttachments = &colorBlendAttachment;
+
+        vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
+        pipelineLayout = device->createPipelineLayoutUnique(pipelineLayoutInfo);
+
+        vk::AttachmentDescription colorAttachment;
+        colorAttachment.format = swapChainImageFormat;
+        colorAttachment.samples = vk::SampleCountFlagBits::e1;
+        colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+        colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+        colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eClear;
+        colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eStore;
+        colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
+        colorAttachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+
+        vk::AttachmentReference colorAttachmentRef;
+        colorAttachmentRef.attachment = 0;
+        colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+        vk::SubpassDescription subpass;
+        subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &colorAttachmentRef;
+
+        vk::SubpassDependency dependency;
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+        dependency.srcAccessMask = vk::AccessFlagBits::eNoneKHR;
+        dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+        dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+
+        vk::RenderPassCreateInfo renderPassInfo;
+        renderPassInfo.attachmentCount = 1;
+        renderPassInfo.pAttachments = &colorAttachment;
+        renderPassInfo.subpassCount = 1;
+        renderPassInfo.pSubpasses = &subpass;
+        renderPassInfo.dependencyCount = 1;
+        renderPassInfo.pDependencies = &dependency;
+
+        renderPass = device->createRenderPassUnique(renderPassInfo);
+
+        vk::PipelineMultisampleStateCreateInfo multisampling;
+        multisampling.sampleShadingEnable = false;
+        multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
+
+        vk::GraphicsPipelineCreateInfo pipelineInfo;
+        pipelineInfo.stageCount = 2;
+        pipelineInfo.pStages = shaderStages.data();
+        pipelineInfo.pVertexInputState = &vertexInputInfo;
+        pipelineInfo.pInputAssemblyState = &inputAssembly;
+        pipelineInfo.pViewportState = &viewportState;
+        pipelineInfo.pRasterizationState = &rasterizer;
+        pipelineInfo.pMultisampleState = &multisampling;
+        pipelineInfo.pDepthStencilState = nullptr;
+        pipelineInfo.pColorBlendState = &colorBlending;
+        pipelineInfo.layout = *pipelineLayout;
+        pipelineInfo.renderPass = *renderPass;
+        pipelineInfo.subpass = 0;
+
+        auto pipelinesResult = device->createGraphicsPipelinesUnique({}, {pipelineInfo});
+        Assert(pipelinesResult.result == vk::Result::eSuccess, "creating pipelines");
+        graphicsPipeline = std::move(pipelinesResult.value[0]);
+
+        swapChainFramebuffers.clear();
+        for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+            vk::ImageView attachments[] = {*swapChainImageViews[i]};
+
+            vk::FramebufferCreateInfo framebufferInfo{};
+            framebufferInfo.renderPass = *renderPass;
+            framebufferInfo.attachmentCount = 1;
+            framebufferInfo.pAttachments = attachments;
+            framebufferInfo.width = swapChainExtent.width;
+            framebufferInfo.height = swapChainExtent.height;
+            framebufferInfo.layers = 1;
+
+            swapChainFramebuffers.push_back(device->createFramebufferUnique(framebufferInfo));
+        }
+
+        vk::CommandPoolCreateInfo poolInfo;
+        poolInfo.queueFamilyIndex = *graphicsQueueFamily;
+
+        commandPool = device->createCommandPoolUnique(poolInfo);
+
+        vk::CommandBufferAllocateInfo allocInfo;
+        allocInfo.commandPool = *commandPool;
+        allocInfo.level = vk::CommandBufferLevel::ePrimary;
+        allocInfo.commandBufferCount = (uint32_t)swapChainFramebuffers.size();
+
+        commandBuffers = device->allocateCommandBuffers(allocInfo);
+
+        for (size_t i = 0; i < commandBuffers.size(); i++) {
+            vk::CommandBufferBeginInfo beginInfo;
+            auto &commands = commandBuffers[i];
+            commands.begin(beginInfo);
+
+            vk::RenderPassBeginInfo renderPassInfo;
+            renderPassInfo.renderPass = *renderPass;
+            renderPassInfo.framebuffer = *swapChainFramebuffers[i];
+            renderPassInfo.renderArea.extent = swapChainExtent;
+
+            vk::ClearColorValue color(std::array{0.0f, 1.0f, 0.0f, 1.0f});
+            vk::ClearValue clearColor(color);
+            renderPassInfo.clearValueCount = 1;
+            renderPassInfo.pClearValues = &clearColor;
+
+            commands.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+            commands.bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline);
+            commands.draw(3, 1, 0, 0);
+            commands.endRenderPass();
+            commands.end();
+        }
+
+        vk::SemaphoreCreateInfo semaphoreInfo;
+        imageAvailableSem = device->createSemaphoreUnique(semaphoreInfo);
+        renderCompleteSem = device->createSemaphoreUnique(semaphoreInfo);
+
+        /// end very temporary code
     }
 
     VulkanGraphicsContext::~VulkanGraphicsContext() {
+        if (device) { vkDeviceWaitIdle(*device); }
         if (window) { glfwDestroyWindow(window); }
 
         glfwTerminate();
@@ -293,11 +504,42 @@ namespace sp {
     }
 
     void VulkanGraphicsContext::SwapBuffers() {
-        glfwSwapBuffers(window);
+        vk::Semaphore signalSemaphores[] = {*renderCompleteSem};
+        vk::PresentInfoKHR presentInfo;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+
+        vk::SwapchainKHR swapChains[] = {*swapChain};
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapChains;
+        presentInfo.pImageIndices = &imageIndex;
+
+        auto presentResult = presentQueue.presentKHR(presentInfo);
+        Assert(presentResult == vk::Result::eSuccess, "present");
+
+        // TODO: allow multiple frames in flight to fill GPU, see
+        // https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Frames-in-flight
+        presentQueue.waitIdle();
     }
 
     void VulkanGraphicsContext::BeginFrame() {
-        // Do nothing for now1
+        imageIndex = device->acquireNextImageKHR(*swapChain, UINT64_MAX, *imageAvailableSem, nullptr);
+
+        vk::SubmitInfo submitInfo;
+
+        vk::Semaphore waitSemaphores[] = {*imageAvailableSem};
+        vk::Semaphore signalSemaphores[] = {*renderCompleteSem};
+        vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
+
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
+
+        graphicsQueue.submit({submitInfo});
     }
 
     void VulkanGraphicsContext::EndFrame() {
