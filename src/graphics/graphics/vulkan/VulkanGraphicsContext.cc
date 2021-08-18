@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <optional>
 #include <string>
 
 #define GLFW_INCLUDE_VULKAN
@@ -13,49 +14,30 @@ namespace sp {
     static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                         VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                         const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-                                        void *pUserData) {
-        std::cerr << vk::to_string(static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(messageSeverity)) << ": "
-                  << vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes)) << ":\n";
-        std::cerr << "\t"
-                  << "messageIDName   = <" << pCallbackData->pMessageIdName << ">\n";
-        std::cerr << "\t"
-                  << "messageIdNumber = " << pCallbackData->messageIdNumber << "\n";
-        std::cerr << "\t"
-                  << "message         = <" << pCallbackData->pMessage << ">\n";
-        if (0 < pCallbackData->queueLabelCount) {
-            std::cerr << "\t"
-                      << "Queue Labels:\n";
-            for (uint8_t i = 0; i < pCallbackData->queueLabelCount; i++) {
-                std::cerr << "\t\t"
-                          << "labelName = <" << pCallbackData->pQueueLabels[i].pLabelName << ">\n";
-            }
+                                        void *pGraphicsContext) {
+        switch (messageSeverity) {
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+            Errorf("Vulkan Error %s: %s",
+                   vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes)),
+                   pCallbackData->pMessage);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+            Logf("Vulkan Warning %s: %s",
+                 vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes)),
+                 pCallbackData->pMessage);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+            Logf("Vulkan Info %s: %s",
+                 vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes)),
+                 pCallbackData->pMessage);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+            Debugf("Vulkan Verbose %s: %s",
+                   vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes)),
+                   pCallbackData->pMessage);
+            break;
         }
-        if (0 < pCallbackData->cmdBufLabelCount) {
-            std::cerr << "\t"
-                      << "CommandBuffer Labels:\n";
-            for (uint8_t i = 0; i < pCallbackData->cmdBufLabelCount; i++) {
-                std::cerr << "\t\t"
-                          << "labelName = <" << pCallbackData->pCmdBufLabels[i].pLabelName << ">\n";
-            }
-        }
-        if (0 < pCallbackData->objectCount) {
-            std::cerr << "\t"
-                      << "Objects:\n";
-            for (uint8_t i = 0; i < pCallbackData->objectCount; i++) {
-                std::cerr << "\t\t"
-                          << "Object " << i << "\n";
-                std::cerr << "\t\t\t"
-                          << "objectType   = "
-                          << vk::to_string(static_cast<vk::ObjectType>(pCallbackData->pObjects[i].objectType)) << "\n";
-                std::cerr << "\t\t\t"
-                          << "objectHandle = " << pCallbackData->pObjects[i].objectHandle << "\n";
-                if (pCallbackData->pObjects[i].pObjectName) {
-                    std::cerr << "\t\t\t"
-                              << "objectName   = <" << pCallbackData->pObjects[i].pObjectName << ">\n";
-                }
-            }
-        }
-        return VK_TRUE;
+        return VK_FALSE;
     }
 
     static void glfwErrorCallback(int error, const char *message) {
@@ -75,22 +57,32 @@ namespace sp {
         // Disable OpenGL context creation
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        uint32_t requiredExtensionCount = 0;
-        auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
-
-        std::vector<const char *> extensions;
-        for (uint32_t i = 0; i < requiredExtensionCount; i++) {
-            extensions.emplace_back(requiredExtensions[i]);
-        }
-        // extensions.emplace_back("VK_KHR_surface");
-        // extensions.emplace_back("VK_KHR_get_surface_capabilities2");
-
         auto availableExtensions = vk::enumerateInstanceExtensionProperties();
         Logf("Available Vulkan extensions: %u", availableExtensions.size());
         for (auto &ext : availableExtensions) {
-            extensions.emplace_back(ext.extensionName);
-            Logf("\t%s %u", ext.extensionName, ext.specVersion);
+            Logf("\t%s", ext.extensionName);
         }
+
+        auto availableLayers = vk::enumerateInstanceLayerProperties();
+        Logf("Available Vulkan layers: %u", availableLayers.size());
+        for (auto &layer : availableLayers) {
+            Logf("\t%s %s", layer.layerName, layer.description);
+        }
+
+        std::vector<const char *> extensions, layers;
+        uint32_t requiredExtensionCount = 0;
+        auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
+        for (uint32_t i = 0; i < requiredExtensionCount; i++) {
+            extensions.emplace_back(requiredExtensions[i]);
+            Logf("Required extension: %s", requiredExtensions[i]);
+        }
+        extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+#if SP_DEBUG
+        Logf("Running with vulkan validation layers");
+        layers.emplace_back("VK_LAYER_KHRONOS_validation");
+#endif
+
+        std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
         // Create window and surface
         auto initialSize = CVarWindowSize.Get();
@@ -104,12 +96,11 @@ namespace sp {
                                             VK_API_VERSION_1_2);
         vk::InstanceCreateInfo createInfo(vk::InstanceCreateFlags(),
                                           &applicationInfo,
-                                          0,
-                                          nullptr,
+                                          layers.size(),
+                                          layers.data(),
                                           extensions.size(),
                                           extensions.data());
-        instance = vk::createInstance(createInfo);
-        auto dispatcher = vk::DispatchLoaderDynamic(instance, &glfwGetInstanceProcAddress);
+#if SP_DEBUG
         vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
         debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
                                     vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
@@ -119,21 +110,120 @@ namespace sp {
                                 vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
                                 vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
         debugInfo.pfnUserCallback = &VulkanDebugCallback;
-        instance.createDebugUtilsMessengerEXT(debugInfo, nullptr, dispatcher);
-        vk::DisplaySurfaceCreateInfoKHR surfaceInfo;
-        vk::SurfaceKHR surface = instance.createDisplayPlaneSurfaceKHR(surfaceInfo, nullptr, dispatcher);
-        Assert(surface, "Failed to create window surface");
-        // auto result = glfwCreateWindowSurface(instance, window, nullptr, (VkSurfaceKHR *)&surface);
-        // Assert(result == VK_SUCCESS, "Failed to create window surface");
+        debugInfo.pUserData = this;
+        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo;
+#endif
+        instance = vk::createInstanceUnique(createInfo);
+        dispatcher = vk::DispatchLoaderDynamic(*instance, vkGetInstanceProcAddr);
+#if SP_DEBUG
+        debugMessenger = instance->createDebugUtilsMessengerEXTUnique(debugInfo, nullptr, dispatcher);
+#endif
 
-        // vk::InstanceCreateInfo createInfo("hello");
-        // instance = vk::raii::Instance(context, );
-        // instance = vk::raii::su::makeInstance(context, "STRAY PHOTONS", "sp-engine");
-        // #if SP_DEBUG
-        //         vk::raii::DebugUtilsMessengerEXT debugUtilsMessenger(instance,
-        //         vk::su::makeDebugUtilsMessengerCreateInfoEXT());
-        // #endif
-        //         physicalDevice = std::move(vk::raii::PhysicalDevices(instance).front());
+        vk::SurfaceKHR glfwSurface;
+        auto result = glfwCreateWindowSurface(*instance, window, nullptr, (VkSurfaceKHR *)&glfwSurface);
+        Assert(result == VK_SUCCESS, "Failed to create window surface");
+        surface.reset(std::move(glfwSurface));
+
+        auto physicalDevices = instance->enumeratePhysicalDevices(dispatcher);
+        // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
+        vk::PhysicalDevice physicalDevice;
+        for (auto &dev : physicalDevices) {
+            // TODO: Check device extension support
+            auto properties = dev.getProperties(dispatcher);
+            // auto features = device.getFeatures(dispatcher);
+            Logf("Using graphics device: %s", properties.deviceName);
+            physicalDevice = dev;
+            break;
+        }
+        Assert(physicalDevice, "No suitable graphics device found!");
+
+        auto queueFamilies = physicalDevice.getQueueFamilyProperties(dispatcher);
+        std::optional<uint32_t> graphicsQueueFamily;
+        for (uint32_t i = 0; i < queueFamilies.size(); i++) {
+            if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics) {
+                graphicsQueueFamily = i;
+                break;
+            }
+        }
+        Assert(graphicsQueueFamily.has_value(), "Couldn't find a Graphics queue family");
+
+        std::optional<uint32_t> presentQueueFamily;
+        for (uint32_t i = 0; i < queueFamilies.size(); i++) {
+            if (physicalDevice.getSurfaceSupportKHR(i, *surface, dispatcher)) {
+                presentQueueFamily = i;
+                break;
+            }
+        }
+        Assert(presentQueueFamily.has_value(), "Couldn't find a Present queue family");
+
+        std::set<uint32_t> uniqueQueueFamilies = {graphicsQueueFamily.value(), presentQueueFamily.value()};
+        std::vector<vk::DeviceQueueCreateInfo> queueInfos;
+        float queuePriority = 1.0f;
+        for (auto queueFamily : uniqueQueueFamilies) {
+            vk::DeviceQueueCreateInfo queueInfo;
+            queueInfo.queueFamilyIndex = graphicsQueueFamily.value();
+            queueInfo.queueCount = 1;
+            queueInfo.pQueuePriorities = &queuePriority;
+            queueInfos.push_back(queueInfo);
+        }
+
+        vk::PhysicalDeviceFeatures deviceFeatures;
+
+        vk::DeviceCreateInfo deviceInfo;
+        deviceInfo.queueCreateInfoCount = queueInfos.size();
+        deviceInfo.pQueueCreateInfos = queueInfos.data();
+        deviceInfo.pEnabledFeatures = &deviceFeatures;
+        deviceInfo.enabledExtensionCount = deviceExtensions.size();
+        deviceInfo.ppEnabledExtensionNames = deviceExtensions.data();
+        deviceInfo.enabledLayerCount = layers.size();
+        deviceInfo.ppEnabledLayerNames = layers.data();
+        device = physicalDevice.createDeviceUnique(deviceInfo, nullptr, dispatcher);
+        graphicsQueue = device->getQueue(graphicsQueueFamily.value(), 0, dispatcher);
+        presentQueue = device->getQueue(presentQueueFamily.value(), 0, dispatcher);
+
+        auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface, dispatcher);
+        auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface, dispatcher);
+        auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface, dispatcher);
+        // TODO: Actually validate surface capabilities/formats/present modes are available
+
+        vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
+        for (auto &mode : presentModes) {
+            if (mode == vk::PresentModeKHR::eMailbox) {
+                presentMode = vk::PresentModeKHR::eMailbox;
+                break;
+            }
+        }
+        vk::SurfaceFormatKHR surfaceFormat = surfaceFormats[0];
+        for (auto &format : surfaceFormats) {
+            if (format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
+                surfaceFormat = format;
+                break;
+            }
+        }
+        vk::SwapchainCreateInfoKHR swapChainInfo;
+        swapChainInfo.surface = *surface;
+        swapChainInfo.minImageCount = surfaceCapabilities.minImageCount + 1;
+        swapChainInfo.imageFormat = surfaceFormat.format;
+        swapChainInfo.imageColorSpace = surfaceFormat.colorSpace;
+        // TODO: Check capabilities.currentExtent is valid and correctly handles high dpi
+        swapChainInfo.imageExtent = surfaceCapabilities.currentExtent;
+        swapChainInfo.imageArrayLayers = 1;
+        // TODO: use vk::ImageUsageFlagBits::eTransferDst for rendering from another texture
+        swapChainInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
+        if (graphicsQueueFamily != presentQueueFamily) {
+            uint32_t queueFamilyIndices[] = {graphicsQueueFamily.value(), presentQueueFamily.value()};
+            swapChainInfo.imageSharingMode = vk::SharingMode::eConcurrent;
+            swapChainInfo.queueFamilyIndexCount = 2;
+            swapChainInfo.pQueueFamilyIndices = queueFamilyIndices;
+        } else {
+            swapChainInfo.imageSharingMode = vk::SharingMode::eExclusive;
+        }
+        swapChainInfo.preTransform = surfaceCapabilities.currentTransform;
+        swapChainInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+        swapChainInfo.presentMode = presentMode;
+        swapChainInfo.clipped = true;
+        swapChainInfo.oldSwapchain = nullptr;
+        swapChain = device->createSwapchainKHRUnique(swapChainInfo, nullptr, dispatcher);
     }
 
     VulkanGraphicsContext::~VulkanGraphicsContext() {

@@ -38,6 +38,20 @@
             ]
         },
         {
+            "name": "StrayPhotons Vulkan (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/sp-vk.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin",
+            "environment": [],
+            "externalConsole": false,
+            "sourceFileMap": {
+                "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
+            }
+        },
+        {
             "name": "StrayPhotons Vulkan (gdb)",
             "type": "cppdbg",
             "request": "launch",

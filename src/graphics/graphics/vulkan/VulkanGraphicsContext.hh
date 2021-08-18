@@ -41,8 +41,14 @@ namespace sp {
     private:
         void SetTitle(string title);
 
-        vk::Instance instance;
-        vk::PhysicalDevice physicalDevice;
+        vk::UniqueInstance instance;
+        vk::DispatchLoaderDynamic dispatcher;
+        vk::UniqueHandle<vk::DebugUtilsMessengerEXT, vk::DispatchLoaderDynamic> debugMessenger;
+        vk::UniqueHandle<vk::SurfaceKHR, vk::DispatchLoaderDynamic> surface;
+        vk::UniqueHandle<vk::Device, vk::DispatchLoaderDynamic> device;
+        vk::Queue graphicsQueue;
+        vk::Queue presentQueue;
+        vk::UniqueHandle<vk::SwapchainKHR, vk::DispatchLoaderDynamic> swapChain;
 
         glm::ivec2 glfwWindowSize;
         glm::ivec2 storedWindowPos; // Remember window location when returning from fullscreen

@@ -32,9 +32,9 @@ target_link_libraries(${PROJECT_GRAPHICS_OPENGL_LIB} PUBLIC
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_LIB} PUBLIC
     ${PROJECT_GRAPHICS_CORE_LIB}
     ${PROJECT_INPUT_CORE_LIB}
-    glfw-egl
+    glfw
     ImGui
-    vulkan
+    Vulkan::Vulkan
 )
 
 target_compile_definitions(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
