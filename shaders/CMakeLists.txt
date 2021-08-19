@@ -1,7 +1,20 @@
 ## TODO: move shader install() into this folder
 
 set(SHADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vulkan) # TODO: delete special vulkan subfolder
-file(GLOB SHADERS ${SHADER_DIR}/*.vert ${SHADER_DIR}/*.frag ${SHADER_DIR}/*.comp ${SHADER_DIR}/*.geom ${SHADER_DIR}/*.tesc ${SHADER_DIR}/*.tese ${SHADER_DIR}/*.mesh ${SHADER_DIR}/*.task ${SHADER_DIR}/*.rgen ${SHADER_DIR}/*.rchit ${SHADER_DIR}/*.rmiss)
+
+file(GLOB SHADERS
+    ${SHADER_DIR}/*.vert
+    ${SHADER_DIR}/*.frag
+    ${SHADER_DIR}/*.comp
+    ${SHADER_DIR}/*.geom
+    ${SHADER_DIR}/*.tesc
+    ${SHADER_DIR}/*.tese
+    ${SHADER_DIR}/*.mesh
+    ${SHADER_DIR}/*.task
+    ${SHADER_DIR}/*.rgen
+    ${SHADER_DIR}/*.rchit
+    ${SHADER_DIR}/*.rmiss
+)
 
 find_package(Vulkan REQUIRED)
 
