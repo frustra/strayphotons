@@ -17,8 +17,6 @@
 namespace sp {
     GlfwActionSource::GlfwActionSource(InputManager &inputManager, GLFWwindow &glfwWindow)
         : ActionSource(inputManager), window(&glfwWindow) {
-        DisableCursor();
-
         // store a pointer to this GlfwInputManager since we must provide static functions
         glfwSetWindowUserPointer(window, this);
 
@@ -141,13 +139,5 @@ namespace sp {
         std::lock_guard lock(ctx->dataLock);
         ctx->mouseScroll.x += (float)xOffset;
         ctx->mouseScroll.y += (float)yOffset;
-    }
-
-    void GlfwActionSource::DisableCursor() {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    }
-
-    void GlfwActionSource::EnableCursor() {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 } // namespace sp

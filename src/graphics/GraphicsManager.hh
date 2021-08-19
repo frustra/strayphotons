@@ -35,7 +35,6 @@ namespace sp {
         bool Frame();
 
         GraphicsContext *GetContext();
-
         void DisableCursor();
         void EnableCursor();
 

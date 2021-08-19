@@ -31,6 +31,8 @@ namespace sp {
         ImGuiIO &io = ImGui::GetIO();
         io.MouseDrawCursor = false;
 
+        // TODO: Use signals/events
+        /*
         if (input.IsPressed(INPUT_ACTION_TOGGLE_CONSOLE)) { ToggleConsole(); }
 
         if (Focused() && !input.FocusLocked(focusPriority)) {
@@ -58,18 +60,18 @@ namespace sp {
                     if (ch > 0 && ch < 0x10000) io.AddInputCharacter(ch);
                 }
             }
-        }
+        }*/
     }
 
     void DebugGuiManager::ToggleConsole() {
         consoleOpen = !consoleOpen;
 
         if (consoleOpen) {
-            input.LockFocus(true, focusPriority);
+            // input.LockFocus(true, focusPriority);
             graphics.EnableCursor();
         } else {
             graphics.DisableCursor();
-            input.LockFocus(false, focusPriority);
+            // input.LockFocus(false, focusPriority);
         }
     }
 } // namespace sp

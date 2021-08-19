@@ -9,14 +9,49 @@
     ],
     "entities": [
         {
+            "_name": "mouse"
+        },
+        {
+            "_name": "keyboard",
+            "event_bindings": {
+                "/keyboard/key_space": { "/action/jump": "player" },
+                "/keyboard/key_e": { "/action/interact": "player" },
+                "/keyboard/key_escape": { "/action/open_menu": "player" },
+                "/keyboard/key_backtick": { "/action/toggle_console": "player" },
+                "/keyboard/key_q": { "/action/spawn_debug": "player" },
+                "/keyboard/key_f1": { "/action/set_vr_origin": "player" },
+                "/keyboard/key_f5": { "/action/reload_scene": "player" },
+                "/keyboard/key_f6": { "/action/reset_scene": "player" },
+                "/keyboard/key_f7": { "/action/reload_shaders": "player" },
+                "/keyboard/key_f": { "/action/toggle": "flashlight" },
+                "/keyboard/key_p": { "/action/place": "flashlight" }
+            }
+        },
+        {
             "_name": "player",
             "view": {
                 "clip": [0.1, 256]
             },
             "transform": {},
-            "event_input": ["/action/spawn_debug"],
-            "event_bindings": {
-                "/input/keyboard/key/f": { "/action/toggle": "flashlight" }
+            "event_input": [
+                "/action/jump",
+                "/action/interact",
+                "/action/open_menu",
+                "/action/toggle_console",
+                "/action/spawn_debug",
+                "/action/set_vr_origin",
+                "/action/reload_scene",
+                "/action/reset_scene",
+                "/action/reload_shaders"
+            ],
+            "signal_bindings": {
+                "move_forward": { "key_w": "keyboard" },
+                "move_left": { "key_a": "keyboard" },
+                "move_right": { "key_d": "keyboard" },
+                "move_back": { "key_s": "keyboard" },
+                "move_crouch": { "key_control_left": "keyboard" },
+                "move_sprint": { "key_shift_left": "keyboard" },
+                "interact_rotate": { "key_r": "keyboard" }
             }
         },
         {

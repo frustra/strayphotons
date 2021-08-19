@@ -17,8 +17,7 @@ namespace sp {
     static CVar<int> CVarMenuDisplay("g.MenuDisplay", 0, "Display pause menu");
     static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
 
-    MenuGuiManager::MenuGuiManager(GraphicsManager &graphics, InputManager &input)
-        : GuiManager(graphics, input, FOCUS_MENU) {
+    MenuGuiManager::MenuGuiManager(GraphicsManager &graphics) : GuiManager(graphics, FOCUS_MENU) {
         SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
         io.MousePos = ImVec2(200, 200);
@@ -32,7 +31,8 @@ namespace sp {
 
         ImGuiIO &io = ImGui::GetIO();
 
-        input.LockFocus(Focused(), focusPriority);
+        // TODO: use signals/events
+        /*input.LockFocus(Focused(), focusPriority);
 
         if (Focused() && !input.FocusLocked(focusPriority)) {
             if (framesSinceOpened > 1 && input.IsPressed(INPUT_ACTION_MENU_BACK)) {
@@ -77,7 +77,7 @@ namespace sp {
                     }
                 }
             }
-        }
+        }*/
 
         io.MouseDrawCursor = selectedScreen != MenuScreen::Splash && RenderMode() == MenuRenderMode::Gel;
         io.MouseDrawCursor = io.MouseDrawCursor || CVarMenuDebugCursor.Get();
@@ -379,13 +379,13 @@ namespace sp {
             selectedScreen = MenuScreen::Main;
 
             CVarMenuFocused.Set(true);
-            input.LockFocus(true, focusPriority);
+            // input.LockFocus(true, focusPriority);
             framesSinceOpened = 0;
         }
     }
 
     void MenuGuiManager::CloseMenu() {
-        if (!input.FocusLocked(focusPriority) && RenderMode() != MenuRenderMode::Gel) { graphics.DisableCursor(); }
+        // if (!input.FocusLocked(focusPriority) && RenderMode() != MenuRenderMode::Gel) { graphics.DisableCursor(); }
 
         if (RenderMode() == MenuRenderMode::Pause) {
             SetRenderMode(MenuRenderMode::None);
@@ -393,7 +393,7 @@ namespace sp {
         }
 
         CVarMenuFocused.Set(false);
-        input.LockFocus(false, focusPriority);
+        // input.LockFocus(false, focusPriority);
         framesSinceOpened = 0;
     }
 } // namespace sp

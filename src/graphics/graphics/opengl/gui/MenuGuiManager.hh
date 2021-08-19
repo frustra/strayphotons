@@ -12,7 +12,7 @@ namespace sp {
 
     class MenuGuiManager : public GuiManager {
     public:
-        MenuGuiManager(GraphicsManager &graphics, InputManager &input);
+        MenuGuiManager(GraphicsManager &graphics);
         virtual ~MenuGuiManager() {}
 
         void BeforeFrame() override;

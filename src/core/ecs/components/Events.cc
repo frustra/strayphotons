@@ -1,5 +1,7 @@
 #include "Events.hh"
 
+#include "core/Logging.hh"
+
 #include <picojson/picojson.h>
 
 namespace ecs {
@@ -29,15 +31,7 @@ namespace ecs {
                 }
                 for (auto target : targetList) {
                     auto targetName = target.get<std::string>();
-                    bool found = false;
-                    for (auto ent : lock.EntitiesWith<Name>()) {
-                        if (ent.Get<Name>(lock) == targetName) {
-                            bindings.Bind(bind.first, ent, dest.first);
-                            found = true;
-                            break;
-                        }
-                    }
-                    sp::Assert(found, "Couldn't find target entity");
+                    bindings.Bind(bind.first, NamedEntity(targetName), dest.first);
                 }
             }
         }
@@ -49,6 +43,9 @@ namespace ecs {
     }
 
     bool EventInput::Add(const std::string &binding, const Event &event) {
+        // std::stringstream ss;
+        // ss << event.data;
+        // Debugf("[%s] Queuing event %s from %s: %s", binding, event.name, event.source.Name(), ss.str());
         auto queue = events.find(binding);
         if (queue != events.end()) {
             queue->second.emplace(event);
@@ -68,7 +65,7 @@ namespace ecs {
         return false;
     }
 
-    void EventBindings::Bind(std::string source, Tecs::Entity target, std::string dest) {
+    void EventBindings::Bind(std::string source, NamedEntity target, std::string dest) {
         auto list = sourceToDest.find(source);
         if (list != sourceToDest.end()) {
             list->second.emplace_back(target, dest);
@@ -77,7 +74,7 @@ namespace ecs {
         }
     }
 
-    void EventBindings::Unbind(std::string source, Tecs::Entity target, std::string dest) {
+    void EventBindings::Unbind(std::string source, NamedEntity target, std::string dest) {
         auto list = sourceToDest.find(source);
         if (list != sourceToDest.end()) {
             auto binding = list->second.begin();
@@ -95,7 +92,7 @@ namespace ecs {
         sourceToDest.erase(source);
     }
 
-    void EventBindings::UnbindTarget(Tecs::Entity target) {
+    void EventBindings::UnbindTarget(NamedEntity target) {
         for (auto &list : sourceToDest) {
             auto binding = list.second.begin();
             while (binding != list.second.end()) {
@@ -108,7 +105,7 @@ namespace ecs {
         }
     }
 
-    void EventBindings::UnbindDest(Tecs::Entity target, std::string dest) {
+    void EventBindings::UnbindDest(NamedEntity target, std::string dest) {
         for (auto &list : sourceToDest) {
             auto binding = list.second.begin();
             while (binding != list.second.end()) {
@@ -121,18 +118,23 @@ namespace ecs {
         }
     }
 
-    const EventBindings::BindingList *EventBindings::Lookup(std::string source) const {
+    const EventBindings::BindingList *EventBindings::Lookup(const std::string source) const {
         auto list = sourceToDest.find(source);
         if (list != sourceToDest.end()) { return &list->second; }
         return nullptr;
     }
 
-    void EventBindings::SendEvent(Lock<Write<EventInput>> lock, const Event &event) const {
+    void EventBindings::SendEvent(Lock<Read<Name>, Write<EventInput>> lock, const Event &event) const {
         auto list = sourceToDest.find(event.name);
         if (list != sourceToDest.end()) {
             for (auto &binding : list->second) {
-                auto &eventInput = binding.first.Get<EventInput>(lock);
-                eventInput.Add(binding.second, event);
+                auto ent = binding.first.Get(lock);
+                if (ent.Has<EventInput>(lock)) {
+                    auto &eventInput = ent.Get<EventInput>(lock);
+                    eventInput.Add(binding.second, event);
+                } else {
+                    Errorf("Tried to send event to missing entity: %s", binding.first.Name());
+                }
             }
         }
     }

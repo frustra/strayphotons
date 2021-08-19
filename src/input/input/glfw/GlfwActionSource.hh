@@ -36,9 +36,6 @@ namespace sp {
          */
         glm::vec2 ImmediateCursor() const;
 
-        void DisableCursor();
-        void EnableCursor();
-
         static void KeyInputCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
         static void CharInputCallback(GLFWwindow *window, unsigned int ch);

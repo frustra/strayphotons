@@ -159,6 +159,14 @@ namespace sp {
         return glm::ivec2(0);
     }
 
+    void GlfwGraphicsContext::DisableCursor() {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+
+    void GlfwGraphicsContext::EnableCursor() {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
     void GlfwGraphicsContext::SwapBuffers() {
         glfwSwapBuffers(window);
     }

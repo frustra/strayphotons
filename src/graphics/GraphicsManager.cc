@@ -14,7 +14,7 @@
         #include "graphics/opengl/RenderTargetPool.hh"
         #include "graphics/opengl/gui/ProfilerGui.hh"
         #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
-        #include "input/glfw/GlfwActionSource.hh"
+        #include "input/glfw/GlfwInputHandler.hh"
     #endif
 
     #ifdef SP_PHYSICS_SUPPORT_PHYSX
@@ -55,36 +55,7 @@ namespace sp {
         context->Init();
 
         GLFWwindow *window = glfwContext->GetWindow();
-        if (window != nullptr) {
-            glfwActionSource = new GlfwActionSource(game->input, *window);
-
-                // TODO: Expose some sort of configuration for these.
-        #ifdef SP_PHYSICS_SUPPORT_PHYSX
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_FORWARD, INPUT_ACTION_KEYBOARD_KEYS + "/w");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_BACKWARD, INPUT_ACTION_KEYBOARD_KEYS + "/s");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_LEFT, INPUT_ACTION_KEYBOARD_KEYS + "/a");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_RIGHT, INPUT_ACTION_KEYBOARD_KEYS + "/d");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_JUMP, INPUT_ACTION_KEYBOARD_KEYS + "/space");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_CROUCH, INPUT_ACTION_KEYBOARD_KEYS + "/control_left");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_MOVE_SPRINT, INPUT_ACTION_KEYBOARD_KEYS + "/shift_left");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_INTERACT, INPUT_ACTION_KEYBOARD_KEYS + "/e");
-            glfwActionSource->BindAction(INPUT_ACTION_PLAYER_INTERACT_ROTATE, INPUT_ACTION_KEYBOARD_KEYS + "/r");
-        #endif
-
-            glfwActionSource->BindAction(INPUT_ACTION_OPEN_MENU, INPUT_ACTION_KEYBOARD_KEYS + "/escape");
-            glfwActionSource->BindAction(INPUT_ACTION_TOGGLE_CONSOLE, INPUT_ACTION_KEYBOARD_KEYS + "/backtick");
-            glfwActionSource->BindAction(INPUT_ACTION_MENU_ENTER, INPUT_ACTION_KEYBOARD_KEYS + "/enter");
-            glfwActionSource->BindAction(INPUT_ACTION_MENU_BACK, INPUT_ACTION_KEYBOARD_KEYS + "/escape");
-
-            glfwActionSource->BindAction(INPUT_ACTION_SPAWN_DEBUG, INPUT_ACTION_KEYBOARD_KEYS + "/q");
-            glfwActionSource->BindAction(INPUT_ACTION_TOGGLE_FLASHLIGH, INPUT_ACTION_KEYBOARD_KEYS + "/f");
-            glfwActionSource->BindAction(INPUT_ACTION_DROP_FLASHLIGH, INPUT_ACTION_KEYBOARD_KEYS + "/p");
-
-            glfwActionSource->BindAction(INPUT_ACTION_SET_VR_ORIGIN, INPUT_ACTION_KEYBOARD_KEYS + "/f1");
-            glfwActionSource->BindAction(INPUT_ACTION_RELOAD_SCENE, INPUT_ACTION_KEYBOARD_KEYS + "/f5");
-            glfwActionSource->BindAction(INPUT_ACTION_RESET_SCENE, INPUT_ACTION_KEYBOARD_KEYS + "/f6");
-            glfwActionSource->BindAction(INPUT_ACTION_RELOAD_SHADERS, INPUT_ACTION_KEYBOARD_KEYS + "/f7");
-        }
+        if (window != nullptr) game->glfwInputHandler = std::make_unique<GlfwInputHandler>(*window);
     #endif
 
         if (game->options.count("size")) {
@@ -169,8 +140,8 @@ namespace sp {
             renderer->BeginFrame(lock);
 
         #ifdef SP_XR_SUPPORT
-            // Always render XR content first, since this allows the compositor to immediately start work rendering to
-            // the HMD Only attempt to render if we have an active XR System
+            // Always render XR content first, since this allows the compositor to immediately start work rendering
+            // to the HMD Only attempt to render if we have an active XR System
             if (game->xr.GetXrSystem()) {
                 RenderPhase xrPhase("XrViews", timer);
 
@@ -236,15 +207,11 @@ namespace sp {
     }
 
     void GraphicsManager::DisableCursor() {
-    #ifdef SP_GRAPHICS_SUPPORT_GL
-        if (glfwActionSource) { glfwActionSource->DisableCursor(); }
-    #endif
+        if (context != nullptr) context->DisableCursor();
     }
 
     void GraphicsManager::EnableCursor() {
-    #ifdef SP_GRAPHICS_SUPPORT_GL
-        if (glfwActionSource) { glfwActionSource->EnableCursor(); }
-    #endif
+        if (context != nullptr) context->EnableCursor();
     }
 
     void GraphicsManager::RenderLoading() {

@@ -11,8 +11,8 @@
 // clang-format on
 
 namespace sp {
-    GuiManager::GuiManager(GraphicsManager &graphics, InputManager &input, const FocusLevel focusPriority)
-        : focusPriority(focusPriority), graphics(graphics), input(input) {
+    GuiManager::GuiManager(GraphicsManager &graphics, const FocusLevel focusPriority)
+        : focusPriority(focusPriority), graphics(graphics) {
         imCtx = ImGui::CreateContext();
 
         SetGuiContext();
@@ -54,7 +54,8 @@ namespace sp {
         SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
 
-        const KeyEvents *keys, *keysPrev;
+        // TODO: Use signals
+        /*const KeyEvents *keys, *keysPrev;
         if (input.GetActionDelta(INPUT_ACTION_KEYBOARD_KEYS, &keys, &keysPrev)) {
             if (keysPrev != nullptr) {
                 for (auto &key : *keysPrev) {
@@ -69,7 +70,7 @@ namespace sp {
             io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT] || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
             io.KeyAlt = io.KeysDown[GLFW_KEY_LEFT_ALT] || io.KeysDown[GLFW_KEY_RIGHT_ALT];
             io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER] || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
-        };
+        };*/
     }
 
     void GuiManager::DefineWindows() {

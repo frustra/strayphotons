@@ -8,7 +8,7 @@ namespace sp {
 
     class DebugGuiManager : public GuiManager {
     public:
-        DebugGuiManager(GraphicsManager &graphics, InputManager &input) : GuiManager(graphics, input, FOCUS_OVERLAY) {}
+        DebugGuiManager(GraphicsManager &graphics) : GuiManager(graphics, FOCUS_OVERLAY) {}
         virtual ~DebugGuiManager() {}
 
         void BeforeFrame() override;

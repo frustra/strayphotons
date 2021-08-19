@@ -31,6 +31,7 @@ namespace ecs {
     struct Renderable;
     class Script;
     class SignalOutput;
+    class SignalBindings;
     class Transform;
     struct TriggerArea;
     struct Triggerable;
@@ -53,6 +54,7 @@ namespace ecs {
                           Renderable,
                           Script,
                           SignalOutput,
+                          SignalBindings,
                           Transform,
                           TriggerArea,
                           Triggerable,
@@ -89,3 +91,11 @@ namespace ecs {
     void DestroyAllWith(Lock<AddRemove> lock, const T &value);
 
 }; // namespace ecs
+
+static inline std::ostream &operator<<(std::ostream &out, const Tecs::Entity &v) {
+    if (v) {
+        return out << "Entity(" << v.id << ")";
+    } else {
+        return out << "Entity(void)";
+    }
+}

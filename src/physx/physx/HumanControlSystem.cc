@@ -22,13 +22,9 @@ namespace sp {
     static CVar<float> CVarCrouchSpeed("p.CrouchSpeed", 1.5, "Player crouching movement speed (m/s)");
     static CVar<float> CVarCursorSensitivity("p.CursorSensitivity", 1.0, "Mouse cursor sensitivity");
 
-    HumanControlSystem::HumanControlSystem(InputManager *input, PhysxManager *physics)
-        : input(input), physics(physics) {}
-
-    HumanControlSystem::~HumanControlSystem() {}
-
     bool HumanControlSystem::Frame(double dtSinceLastFrame) {
-        if (input != nullptr && input->FocusLocked()) return true;
+        // TODO: Use event / signal bindings
+        /*if (input != nullptr && input->FocusLocked()) return true;
 
         bool noclipChanged = CVarNoClip.Changed();
         auto noclip = CVarNoClip.Get(true);
@@ -138,7 +134,7 @@ namespace sp {
                                                         crouching);
                 MoveEntity(lock, entity, dtSinceLastFrame, velocity);
             }
-        }
+        }*/
 
         return true;
     }

@@ -21,7 +21,7 @@ namespace sp {
           graphics(this),
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-          humanControlSystem(&this->input, &this->physics),
+          humanControlSystem(&this->physics),
 #endif
 #ifdef SP_XR_SUPPORT
           xr(this),
@@ -53,8 +53,8 @@ namespace sp {
         try {
 #ifdef SP_GRAPHICS_SUPPORT
     #ifdef SP_GRAPHICS_SUPPORT_GL
-            debugGui = std::make_unique<DebugGuiManager>(this->graphics, this->input);
-            menuGui = std::make_unique<MenuGuiManager>(this->graphics, this->input);
+            debugGui = std::make_unique<DebugGuiManager>(this->graphics);
+            menuGui = std::make_unique<MenuGuiManager>(this->graphics);
     #endif
             graphics.Init();
 #endif
@@ -75,16 +75,15 @@ namespace sp {
     }
 
     bool Game::Frame() {
-#ifdef SP_INPUT_SUPPORT
-        input.BeginFrame();
-#endif
-
         GetConsoleManager().Update(startupScript);
 
         auto frameTime = chrono_clock::now();
         double dt = (double)(frameTime - lastFrameTime).count();
         dt /= chrono_clock::duration(std::chrono::seconds(1)).count();
 
+#ifdef SP_INPUT_SUPPORT_GLFW
+        if (glfwInputHandler) glfwInputHandler->Frame();
+#endif
         if (!logic.Frame(dt)) return false;
 #ifdef SP_XR_SUPPORT
         if (!xr.Frame(dt)) return false;

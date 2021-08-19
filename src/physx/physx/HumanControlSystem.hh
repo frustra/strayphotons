@@ -22,8 +22,8 @@ namespace sp {
 
     class HumanControlSystem {
     public:
-        HumanControlSystem(InputManager *input, PhysxManager *physics);
-        ~HumanControlSystem();
+        HumanControlSystem(PhysxManager *physics) : physics(physics) {}
+        ~HumanControlSystem() {}
 
         /**
          * Call this once per frame
@@ -59,7 +59,6 @@ namespace sp {
                             double dt,
                             glm::vec2 dCursor);
 
-        InputManager *input = nullptr;
         PhysxManager *physics = nullptr;
     };
 } // namespace sp

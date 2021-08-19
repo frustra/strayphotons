@@ -18,7 +18,7 @@ namespace sp {
 
     class GuiManager {
     public:
-        GuiManager(GraphicsManager &graphics, InputManager &input, const FocusLevel focusPriority = FOCUS_GAME);
+        GuiManager(GraphicsManager &graphics, const FocusLevel focusPriority = FOCUS_GAME);
         virtual ~GuiManager();
         void Attach(GuiRenderable *component);
         void SetGuiContext();
@@ -29,7 +29,6 @@ namespace sp {
     protected:
         const FocusLevel focusPriority;
         GraphicsManager &graphics;
-        InputManager &input;
 
     private:
         std::vector<GuiRenderable *> components;

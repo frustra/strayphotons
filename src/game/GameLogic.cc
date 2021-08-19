@@ -54,11 +54,11 @@ namespace sp {
         }
 
 #ifdef SP_INPUT_SUPPORT
-        game->input.BindCommand(INPUT_ACTION_SET_VR_ORIGIN, "setvrorigin");
-        game->input.BindCommand(INPUT_ACTION_RELOAD_SCENE, "reloadscene");
-        game->input.BindCommand(INPUT_ACTION_RESET_SCENE, "reloadscene reset");
-        game->input.BindCommand(INPUT_ACTION_RELOAD_SHADERS, "reloadshaders");
-        game->input.BindCommand(INPUT_ACTION_TOGGLE_FLASHLIGH, "toggle r.FlashlightOn");
+        // game->input.BindCommand(INPUT_ACTION_SET_VR_ORIGIN, "setvrorigin");
+        // game->input.BindCommand(INPUT_ACTION_RELOAD_SCENE, "reloadscene");
+        // game->input.BindCommand(INPUT_ACTION_RESET_SCENE, "reloadscene reset");
+        // game->input.BindCommand(INPUT_ACTION_RELOAD_SHADERS, "reloadshaders");
+        // game->input.BindCommand(INPUT_ACTION_TOGGLE_FLASHLIGH, "toggle r.FlashlightOn");
 #endif
     }
 
@@ -66,7 +66,8 @@ namespace sp {
 
 #ifdef SP_INPUT_SUPPORT
     void GameLogic::HandleInput() {
-        if (game->input.FocusLocked()) return;
+        // TODO: Use player event bindings
+        /*if (game->input.FocusLocked()) return;
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
         if (game->menuGui && game->input.IsPressed(INPUT_ACTION_OPEN_MENU)) {
@@ -108,7 +109,7 @@ namespace sp {
                     transform.UpdateCachedTransform(lock);
                 }
             }
-        }
+        }*/
     }
 #endif
 
