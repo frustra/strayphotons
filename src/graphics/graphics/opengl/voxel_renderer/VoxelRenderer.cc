@@ -19,7 +19,6 @@
 #include "graphics/opengl/gui/DebugGuiManager.hh"
 #include "graphics/opengl/gui/MenuGuiManager.hh"
 #include "graphics/opengl/postprocess/PostProcess.hh"
-#include "input/glfw/GlfwActionSource.hh"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/component_wise.hpp>

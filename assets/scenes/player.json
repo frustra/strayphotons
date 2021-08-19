@@ -9,14 +9,22 @@
     ],
     "entities": [
         {
-            "_name": "mouse"
+            "_name": "mouse",
+            "event_bindings": {
+                "/mouse/scroll": { "/action/menu/scroll": "player" },
+                "/mouse/move": { "/action/camera_rotate": "player"}
+            }
         },
         {
             "_name": "keyboard",
             "event_bindings": {
-                "/keyboard/key_space": { "/action/jump": "player" },
+                "/keyboard/key_escape": {
+                    "/action/menu/open": "player",
+                    "/action/menu/back": "player"
+                },
+                "/keyboard/key_enter": { "/action/menu/enter": "player" },
+                "/keyboard/characters": { "/action/menu/text_input": "player" },
                 "/keyboard/key_e": { "/action/interact": "player" },
-                "/keyboard/key_escape": { "/action/open_menu": "player" },
                 "/keyboard/key_backtick": { "/action/toggle_console": "player" },
                 "/keyboard/key_q": { "/action/spawn_debug": "player" },
                 "/keyboard/key_f1": { "/action/set_vr_origin": "player" },
@@ -34,10 +42,14 @@
             },
             "transform": {},
             "event_input": [
-                "/action/jump",
-                "/action/interact",
-                "/action/open_menu",
+                "/action/menu/open",
+                "/action/menu/back",
+                "/action/menu/enter",
+                "/action/menu/scroll",
+                "/action/menu/text_input",
                 "/action/toggle_console",
+                "/action/camera_rotate",
+                "/action/interact",
                 "/action/spawn_debug",
                 "/action/set_vr_origin",
                 "/action/reload_scene",
@@ -45,12 +57,18 @@
                 "/action/reload_shaders"
             ],
             "signal_bindings": {
+                "menu_button_left": { "mouse_button_left": "mouse" },
+                "menu_button_right": { "mouse_button_right": "mouse" },
+                "menu_button_middle": { "mouse_button_middle": "mouse" },
+                "menu_cursor_x": { "mouse_cursor_x": "mouse" },
+                "menu_cursor_y": { "mouse_cursor_y": "mouse" },
                 "move_forward": { "key_w": "keyboard" },
                 "move_left": { "key_a": "keyboard" },
                 "move_right": { "key_d": "keyboard" },
                 "move_back": { "key_s": "keyboard" },
-                "move_crouch": { "key_control_left": "keyboard" },
-                "move_sprint": { "key_shift_left": "keyboard" },
+                "move_crouch": { "key_left_control": "keyboard" },
+                "move_jump": { "key_space": "keyboard" },
+                "move_sprint": { "key_left_shift": "keyboard" },
                 "interact_rotate": { "key_r": "keyboard" }
             }
         },

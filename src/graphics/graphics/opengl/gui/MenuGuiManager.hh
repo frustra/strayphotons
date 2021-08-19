@@ -4,7 +4,6 @@
 
 namespace sp {
     class GraphicsManager;
-    class InputManager;
 
     enum class MenuScreen { Splash, Main, Options, SceneSelect, Credits };
 
@@ -27,7 +26,6 @@ namespace sp {
     private:
         MenuScreen selectedScreen = MenuScreen::Splash;
 
-        uint64_t framesSinceOpened = 0;
         float creditsScroll = 0.0f;
     };
 } // namespace sp

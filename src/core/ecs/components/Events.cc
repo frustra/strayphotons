@@ -39,19 +39,25 @@ namespace ecs {
     }
 
     void EventInput::Register(const std::string &binding) {
+        Logf("Registering event queue: %s", binding);
         events.emplace(binding, std::queue<Event>());
     }
 
     bool EventInput::Add(const std::string &binding, const Event &event) {
-        // std::stringstream ss;
-        // ss << event.data;
-        // Debugf("[%s] Queuing event %s from %s: %s", binding, event.name, event.source.Name(), ss.str());
         auto queue = events.find(binding);
         if (queue != events.end()) {
+            std::stringstream ss;
+            ss << event.data;
+            Debugf("[%s] Queuing event %s from %s: %s", binding, event.name, event.source.Name(), ss.str());
             queue->second.emplace(event);
             return true;
         }
         return false;
+    }
+
+    bool EventInput::HasEvents(const std::string &binding) const {
+        auto queue = events.find(binding);
+        return queue != events.end() && !queue->second.empty();
     }
 
     bool EventInput::Poll(const std::string &binding, Event &eventOut) {
@@ -60,6 +66,16 @@ namespace ecs {
             eventOut = queue->second.front();
             queue->second.pop();
             return true;
+        }
+        eventOut = Event();
+        return false;
+    }
+
+    bool EventInput::Poll(Lock<Write<EventInput>> lock, Tecs::Entity ent, const std::string &binding, Event &eventOut) {
+        auto &readInput = ent.GetPrevious<EventInput>(lock);
+        if (readInput.HasEvents(binding)) {
+            auto &writeInput = ent.Get<EventInput>(lock);
+            return writeInput.Poll(binding, eventOut);
         }
         eventOut = Event();
         return false;

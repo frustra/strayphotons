@@ -5,10 +5,12 @@
 #include "core/CVar.hh"
 #include "core/Console.hh"
 #include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
 #include "graphics/core/Texture.hh"
 #include "graphics/opengl/GlfwGraphicsContext.hh"
-#include "input/InputManager.hh"
+#include "input/BindingNames.hh"
 
+#include <glm/glm.hpp>
 #include <imgui/imgui.h>
 #include <sstream>
 
@@ -16,68 +18,66 @@ namespace sp {
     static CVar<bool> CVarMenuFocused("g.MenuFocused", false, "Focus input on menu");
     static CVar<int> CVarMenuDisplay("g.MenuDisplay", 0, "Display pause menu");
     static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
+    static CVar<glm::vec2> CVarMenuCursorScaling("g.MenuCursorScaling",
+                                                 glm::vec2(1.435f, 0.805f),
+                                                 "Scaling factor for menu cursor position");
 
-    MenuGuiManager::MenuGuiManager(GraphicsManager &graphics) : GuiManager(graphics, FOCUS_MENU) {
+    // TODO: Fix focus
+    MenuGuiManager::MenuGuiManager(GraphicsManager &graphics) : GuiManager(graphics /*, FOCUS_MENU*/) {
         SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
-        io.MousePos = ImVec2(200, 200);
+
+        graphics.DisableCursor();
     }
 
     void MenuGuiManager::BeforeFrame() {
         GuiManager::BeforeFrame();
 
         ImGui::StyleColorsClassic();
-        framesSinceOpened++;
 
         ImGuiIO &io = ImGui::GetIO();
 
-        // TODO: use signals/events
-        /*input.LockFocus(Focused(), focusPriority);
+        // TODO: fix input focus
+        // input.LockFocus(Focused(), focusPriority);
 
-        if (Focused() && !input.FocusLocked(focusPriority)) {
-            if (framesSinceOpened > 1 && input.IsPressed(INPUT_ACTION_MENU_BACK)) {
-                if (selectedScreen == MenuScreen::Main && RenderMode() == MenuRenderMode::Pause) { CloseMenu(); }
+        // if (Focused() && !input.FocusLocked(focusPriority))
+        {
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput>,
+                                                    ecs::Write<ecs::EventInput>>();
 
-                selectedScreen = MenuScreen::Main;
-            }
-            if (selectedScreen == MenuScreen::Splash) {
-                if (input.IsPressed(INPUT_ACTION_MENU_ENTER)) { selectedScreen = MenuScreen::Main; }
-            }
+            auto player = playerEntity.Get(lock);
+            if (player.Has<ecs::EventInput>(lock)) {
+                ecs::Event event;
+                while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_MENU_BACK, event)) {
+                    if (selectedScreen == MenuScreen::Main && RenderMode() == MenuRenderMode::Pause) {
+                        CloseMenu();
 
-            io.MouseDown[0] = input.IsDown(INPUT_ACTION_MOUSE_BASE + "/button_left");
-            io.MouseDown[1] = input.IsDown(INPUT_ACTION_MOUSE_BASE + "/button_right");
-            io.MouseDown[2] = input.IsDown(INPUT_ACTION_MOUSE_BASE + "/button_middle");
+                        while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_MENU_OPEN, event)) {}
+                    }
 
-            const glm::vec2 *scrollOffset, *scrollOffsetPrev;
-            if (input.GetActionDelta(INPUT_ACTION_MOUSE_SCROLL, &scrollOffset, &scrollOffsetPrev)) {
-                if (scrollOffsetPrev != nullptr) {
-                    io.MouseWheel = scrollOffset->y - scrollOffsetPrev->y;
-                } else {
-                    io.MouseWheel = scrollOffset->y;
+                    selectedScreen = MenuScreen::Main;
+                }
+                while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_MENU_ENTER, event)) {
+                    if (selectedScreen == MenuScreen::Splash) selectedScreen = MenuScreen::Main;
                 }
             }
 
-            if (selectedScreen != MenuScreen::Splash) {
+            if (player.Has<ecs::SignalBindings>(lock)) {
+                auto &bindings = player.Get<ecs::SignalBindings>(lock);
                 if (RenderMode() == MenuRenderMode::Gel) {
-                    const glm::vec2 *cursorPos, *cursorPosPrev;
-                    if (input.GetActionDelta(sp::INPUT_ACTION_MOUSE_CURSOR, &cursorPos, &cursorPosPrev)) {
-                        glm::vec2 cursorDiff = *cursorPos;
-                        if (cursorPosPrev != nullptr) { cursorDiff -= *cursorPosPrev; }
-
-                        // TODO: Configure this scale
-                        cursorDiff *= 2.0f;
-                        io.MousePos.x = std::max(std::min(io.MousePos.x + cursorDiff.x, io.DisplaySize.x), 0.0f);
-                        io.MousePos.y = std::max(std::min(io.MousePos.y + cursorDiff.y, io.DisplaySize.y), 0.0f);
-                    }
-                } else {
-                    // auto guiCursorPos = input->ImmediateCursor();
-                    const glm::vec2 *mousePos;
-                    if (input.GetActionValue(INPUT_ACTION_MOUSE_CURSOR, &mousePos)) {
-                        io.MousePos = ImVec2(mousePos->x, mousePos->y);
-                    }
+                    auto windowSize = CVarWindowSize.Get();
+                    auto cursorScaling = CVarMenuCursorScaling.Get();
+                    io.MousePos.x = io.MousePos.x / (float)windowSize.x * io.DisplaySize.x;
+                    io.MousePos.y = io.MousePos.y / (float)windowSize.y * io.DisplaySize.y;
+                    io.MousePos.x = io.MousePos.x * cursorScaling.x -
+                                    io.DisplaySize.x * (cursorScaling.x - 1.0f) * 0.5f;
+                    io.MousePos.y = io.MousePos.y * cursorScaling.y -
+                                    io.DisplaySize.y * (cursorScaling.y - 1.0f) * 0.5f;
+                    io.MousePos.x = std::max(std::min(io.MousePos.x, io.DisplaySize.x), 0.0f);
+                    io.MousePos.y = std::max(std::min(io.MousePos.y, io.DisplaySize.y), 0.0f);
                 }
             }
-        }*/
+        }
 
         io.MouseDrawCursor = selectedScreen != MenuScreen::Splash && RenderMode() == MenuRenderMode::Gel;
         io.MouseDrawCursor = io.MouseDrawCursor || CVarMenuDebugCursor.Get();
@@ -380,7 +380,6 @@ namespace sp {
 
             CVarMenuFocused.Set(true);
             // input.LockFocus(true, focusPriority);
-            framesSinceOpened = 0;
         }
     }
 
@@ -394,6 +393,5 @@ namespace sp {
 
         CVarMenuFocused.Set(false);
         // input.LockFocus(false, focusPriority);
-        framesSinceOpened = 0;
     }
 } // namespace sp

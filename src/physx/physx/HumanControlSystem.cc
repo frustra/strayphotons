@@ -5,7 +5,7 @@
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
-#include "input/InputManager.hh"
+#include "input/BindingNames.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 
@@ -23,15 +23,19 @@ namespace sp {
     static CVar<float> CVarCursorSensitivity("p.CursorSensitivity", 1.0, "Mouse cursor sensitivity");
 
     bool HumanControlSystem::Frame(double dtSinceLastFrame) {
-        // TODO: Use event / signal bindings
-        /*if (input != nullptr && input->FocusLocked()) return true;
+        // TODO: Handle focus
+        // if (input != nullptr && input->FocusLocked()) return true;
 
         bool noclipChanged = CVarNoClip.Changed();
         auto noclip = CVarNoClip.Get(true);
 
         {
-            auto lock = ecs::World.StartTransaction<
-                ecs::Write<ecs::PhysicsState, ecs::Transform, ecs::HumanController, ecs::InteractController>>();
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings>,
+                                                    ecs::Write<ecs::EventInput,
+                                                               ecs::PhysicsState,
+                                                               ecs::Transform,
+                                                               ecs::HumanController,
+                                                               ecs::InteractController>>();
 
             for (Tecs::Entity entity : lock.EntitiesWith<ecs::HumanController>()) {
                 if (!entity.Has<ecs::Transform>(lock)) continue;
@@ -45,16 +49,24 @@ namespace sp {
 
                 auto &controller = entity.Get<ecs::HumanController>(lock);
 
-                if (input != nullptr) {
-                    if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_FORWARD)) { inputMovement += glm::vec3(0, 0, -1); }
+                if (entity.Has<ecs::SignalBindings>(lock)) {
+                    auto &signalBindings = entity.Get<ecs::SignalBindings>(lock);
 
-                    if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_BACKWARD)) { inputMovement += glm::vec3(0, 0, 1); }
+                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_MOVE_FORWARD)) {
+                        inputMovement += glm::vec3(0, 0, -1);
+                    }
 
-                    if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_LEFT)) { inputMovement += glm::vec3(-1, 0, 0); }
+                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_MOVE_BACK)) { inputMovement += glm::vec3(0, 0, 1); }
 
-                    if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_RIGHT)) { inputMovement += glm::vec3(1, 0, 0); }
+                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_MOVE_LEFT)) {
+                        inputMovement += glm::vec3(-1, 0, 0);
+                    }
 
-                    if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_JUMP)) {
+                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_MOVE_RIGHT)) {
+                        inputMovement += glm::vec3(1, 0, 0);
+                    }
+
+                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_MOVE_JUMP)) {
                         if (noclip) {
                             inputMovement += glm::vec3(0, 1, 0);
                         } else {
@@ -62,7 +74,7 @@ namespace sp {
                         }
                     }
 
-                    if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_CROUCH)) {
+                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_MOVE_CROUCH)) {
                         if (noclip) {
                             inputMovement += glm::vec3(0, -1, 0);
                         } else {
@@ -70,17 +82,19 @@ namespace sp {
                         }
                     }
 
-                    if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_SPRINT)) { sprinting = true; }
+                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_MOVE_SPRINT)) { sprinting = true; }
 
-                    if (input->IsPressed(INPUT_ACTION_PLAYER_INTERACT)) { Interact(lock, entity); }
+                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_INTERACT_ROTATE)) { rotating = true; }
+                }
 
-                    if (input->IsDown(INPUT_ACTION_PLAYER_INTERACT_ROTATE)) { rotating = true; }
+                if (entity.Has<ecs::EventInput>(lock)) {
+                    ecs::Event event;
+                    while (ecs::EventInput::Poll(lock, entity, INPUT_EVENT_INTERACT, event)) {
+                        Interact(lock, entity);
+                    }
 
-                    // Handle mouse controls
-                    const glm::vec2 *cursorPos, *cursorPosPrev;
-                    if (input->GetActionDelta(INPUT_ACTION_MOUSE_CURSOR, &cursorPos, &cursorPosPrev)) {
-                        glm::vec2 cursorDiff = *cursorPos;
-                        if (cursorPosPrev != nullptr) { cursorDiff -= *cursorPosPrev; }
+                    while (ecs::EventInput::Poll(lock, entity, INPUT_EVENT_CAMERA_ROTATE, event)) {
+                        auto cursorDiff = std::get<glm::vec2>(event.data);
                         if (!rotating || !InteractRotate(lock, entity, dtSinceLastFrame, cursorDiff)) {
                             float sensitivity = CVarCursorSensitivity.Get() * 0.001;
 
@@ -134,7 +148,7 @@ namespace sp {
                                                         crouching);
                 MoveEntity(lock, entity, dtSinceLastFrame, velocity);
             }
-        }*/
+        }
 
         return true;
     }

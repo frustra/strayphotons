@@ -1,28 +1,19 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/NamedEntity.hh"
 
 #include <glm/glm.hpp>
 
 struct GLFWwindow;
 
 namespace sp {
-    static const std::string INPUT_EVENT_KEYBOARD_KEY = "/keyboard/key"; // int
-    static const std::string INPUT_EVENT_KEYBOARD_CHARACTERS = "/keyboard/characters"; // char
-    static const std::string INPUT_EVENT_MOUSE_CLICK = "/mouse/click"; // glm::vec2?
-    static const std::string INPUT_EVENT_MOUSE_SCROLL = "/mouse/scroll"; // glm::vec2
-
-    static const std::string INPUT_SIGNAL_KEYBOARD_KEY = "keyboard_key";
-    static const std::string INPUT_SIGNAL_MOUSE_BUTTON_LEFT = "mouse_button_left";
-    static const std::string INPUT_SIGNAL_MOUSE_BUTTON_MIDDLE = "mouse_button_middle";
-    static const std::string INPUT_SIGNAL_MOUSE_BUTTON_RIGHT = "mouse_button_right";
-    static const std::string INPUT_SIGNAL_MOUSE_CURSOR_X = "mouse_cursor_x";
-    static const std::string INPUT_SIGNAL_MOUSE_CURSOR_Y = "mouse_cursor_y";
-
     class GlfwInputHandler {
     public:
         GlfwInputHandler(GLFWwindow &window);
         ~GlfwInputHandler() {}
+
+        void UpdateEntities();
 
         void Frame();
 
@@ -40,8 +31,11 @@ namespace sp {
 
     private:
         GLFWwindow *window = nullptr;
-        Tecs::Entity keyboardEntity;
-        Tecs::Entity mouseEntity;
+
+        ecs::NamedEntity keyboardEntity;
+        ecs::NamedEntity mouseEntity;
+
+        glm::vec2 prevMousePos;
 
         // clang-format off
         ecs::Lock<ecs::Read<ecs::Name, ecs::EventBindings, ecs::SignalBindings>,

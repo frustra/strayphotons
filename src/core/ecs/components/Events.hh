@@ -6,6 +6,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <iostream>
 #include <queue>
 #include <robin_hood.h>
 #include <set>
@@ -24,7 +25,27 @@ namespace ecs {
 
         template<typename T>
         Event(const std::string &name, const NamedEntity &source, T data) : name(name), source(source), data(data) {}
+
+        friend std::ostream &operator<<(std::ostream &out, const EventData &v);
     };
+
+    static inline std::ostream &operator<<(std::ostream &out, const Event::EventData &v) {
+        std::visit(
+            [&](auto &&arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, glm::vec2>) {
+                    out << glm::to_string(arg);
+                } else if constexpr (std::is_same_v<T, Tecs::Entity>) {
+                    out << "Entity(" << arg.id << ")";
+                } else if constexpr (std::is_same_v<T, std::string>) {
+                    out << "\"" << arg << "\"";
+                } else {
+                    out << typeid(arg).name() << "(" << arg << ")";
+                }
+            },
+            v);
+        return out;
+    }
 
     struct EventInput {
         robin_hood::unordered_map<std::string, std::queue<Event>> events;
@@ -34,13 +55,16 @@ namespace ecs {
         template<class... Args>
         EventInput(const Args &...eventList) {
             for (auto &event : {eventList...}) {
-                events.emplace(event, std::queue<Event>());
+                Register(event);
             }
         }
 
         void Register(const std::string &binding);
         bool Add(const std::string &binding, const Event &event);
+        bool HasEvents(const std::string &binding) const;
         bool Poll(const std::string &binding, Event &eventOut);
+
+        static bool Poll(Lock<Write<EventInput>> lock, Tecs::Entity ent, const std::string &binding, Event &eventOut);
     };
 
     class EventBindings {
@@ -78,21 +102,3 @@ namespace ecs {
     template<>
     bool Component<EventBindings>::Load(Lock<Read<ecs::Name>> lock, EventBindings &dst, const picojson::value &src);
 } // namespace ecs
-
-static inline std::ostream &operator<<(std::ostream &out, const ecs::Event::EventData &v) {
-    std::visit(
-        [&](auto &&arg) {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, glm::vec2>) {
-                out << glm::to_string(arg);
-            } else if constexpr (std::is_same_v<T, Tecs::Entity>) {
-                out << "Entity(" << arg.id << ")";
-            } else if constexpr (std::is_same_v<T, std::string>) {
-                out << "\"" << arg << "\"";
-            } else {
-                out << typeid(arg).name() << "(" << arg << ")";
-            }
-        },
-        v);
-    return out;
-}

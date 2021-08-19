@@ -115,8 +115,8 @@ namespace sp {
         string keyName;
         stream >> keyName;
 
-        auto it = UserBindingNames.find(to_upper_copy(keyName));
-        if (it != UserBindingNames.end()) {
+        auto it = UserBindingAliases.find(to_lower_copy(keyName));
+        if (it != UserBindingAliases.end()) {
             string command;
             std::getline(stream, command);
             trim(command);

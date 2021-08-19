@@ -39,7 +39,7 @@ namespace ecs {
                 }
                 for (auto origin : originList) {
                     auto originName = origin.get<std::string>();
-                    bindings.Bind(source.first, NamedEntity(originName), bind.first);
+                    bindings.Bind(bind.first, NamedEntity(originName), source.first);
                 }
             }
         }
@@ -67,6 +67,7 @@ namespace ecs {
     }
 
     void SignalBindings::Bind(std::string name, NamedEntity origin, std::string source) {
+        Debugf("Binding %s to %s on %s", name, source, origin.Name());
         auto list = destToSource.find(name);
         if (list != destToSource.end()) {
             list->second.emplace_back(origin, source);

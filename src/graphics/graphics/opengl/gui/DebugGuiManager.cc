@@ -1,8 +1,9 @@
 #include "DebugGuiManager.hh"
 
 #include "GraphicsManager.hh"
+#include "ecs/EcsImpl.hh"
 #include "graphics/opengl/gui/ConsoleGui.hh"
-#include "input/InputManager.hh"
+#include "input/BindingNames.hh"
 
 #include <imgui/imgui.h>
 
@@ -31,36 +32,20 @@ namespace sp {
         ImGuiIO &io = ImGui::GetIO();
         io.MouseDrawCursor = false;
 
-        // TODO: Use signals/events
-        /*
-        if (input.IsPressed(INPUT_ACTION_TOGGLE_CONSOLE)) { ToggleConsole(); }
+        // TODO: Handle focus
+        // if (Focused() && !input.FocusLocked(focusPriority))
+        {
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput>,
+                                                    ecs::Write<ecs::EventInput>>();
 
-        if (Focused() && !input.FocusLocked(focusPriority)) {
-            io.MouseDown[0] = input.IsDown(INPUT_ACTION_MOUSE_BASE + "/button_left");
-            io.MouseDown[1] = input.IsDown(INPUT_ACTION_MOUSE_BASE + "/button_right");
-            io.MouseDown[2] = input.IsDown(INPUT_ACTION_MOUSE_BASE + "/button_middle");
-
-            const glm::vec2 *scrollOffset, *scrollOffsetPrev;
-            if (input.GetActionDelta(INPUT_ACTION_MOUSE_SCROLL, &scrollOffset, &scrollOffsetPrev)) {
-                if (scrollOffsetPrev != nullptr) {
-                    io.MouseWheel = scrollOffset->y - scrollOffsetPrev->y;
-                } else {
-                    io.MouseWheel = scrollOffset->y;
+            auto player = playerEntity.Get(lock);
+            if (player.Has<ecs::EventInput>(lock)) {
+                ecs::Event event;
+                while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_TOGGLE_CONSOLE, event)) {
+                    ToggleConsole();
                 }
             }
-
-            const glm::vec2 *mousePos;
-            if (input.GetActionValue(INPUT_ACTION_MOUSE_CURSOR, &mousePos)) {
-                io.MousePos = ImVec2(mousePos->x, mousePos->y);
-            }
-
-            const CharEvents *chars;
-            if (input.GetActionValue(INPUT_ACTION_KEYBOARD_CHARS, &chars)) {
-                for (auto &ch : *chars) {
-                    if (ch > 0 && ch < 0x10000) io.AddInputCharacter(ch);
-                }
-            }
-        }*/
+        }
     }
 
     void DebugGuiManager::ToggleConsole() {

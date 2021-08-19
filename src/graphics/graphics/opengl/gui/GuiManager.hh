@@ -1,6 +1,6 @@
 #pragma once
 
-#include "input/InputManager.hh"
+#include "ecs/NamedEntity.hh"
 
 #include <glm/glm.hpp>
 #include <vector>
@@ -18,7 +18,8 @@ namespace sp {
 
     class GuiManager {
     public:
-        GuiManager(GraphicsManager &graphics, const FocusLevel focusPriority = FOCUS_GAME);
+        // TODO: Fix focus
+        GuiManager(GraphicsManager &graphics /*, const FocusLevel focusPriority = FOCUS_GAME*/);
         virtual ~GuiManager();
         void Attach(GuiRenderable *component);
         void SetGuiContext();
@@ -27,8 +28,11 @@ namespace sp {
         virtual void DefineWindows();
 
     protected:
-        const FocusLevel focusPriority;
+        // const FocusLevel focusPriority;
         GraphicsManager &graphics;
+
+        ecs::NamedEntity playerEntity;
+        ecs::NamedEntity keyboardEntity;
 
     private:
         std::vector<GuiRenderable *> components;

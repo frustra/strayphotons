@@ -1,23 +1,12 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
-#include "input/InputManager.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <string>
 
 namespace sp {
-    static const std::string INPUT_ACTION_PLAYER_MOVE_FORWARD = INPUT_ACTION_PLAYER_BASE + "/move_forward";
-    static const std::string INPUT_ACTION_PLAYER_MOVE_BACKWARD = INPUT_ACTION_PLAYER_BASE + "/move_backward";
-    static const std::string INPUT_ACTION_PLAYER_MOVE_LEFT = INPUT_ACTION_PLAYER_BASE + "/move_left";
-    static const std::string INPUT_ACTION_PLAYER_MOVE_RIGHT = INPUT_ACTION_PLAYER_BASE + "/move_right";
-    static const std::string INPUT_ACTION_PLAYER_MOVE_JUMP = INPUT_ACTION_PLAYER_BASE + "/jump";
-    static const std::string INPUT_ACTION_PLAYER_MOVE_CROUCH = INPUT_ACTION_PLAYER_BASE + "/crouch";
-    static const std::string INPUT_ACTION_PLAYER_MOVE_SPRINT = INPUT_ACTION_PLAYER_BASE + "/sprint";
-    static const std::string INPUT_ACTION_PLAYER_INTERACT = INPUT_ACTION_PLAYER_BASE + "/interact";
-    static const std::string INPUT_ACTION_PLAYER_INTERACT_ROTATE = INPUT_ACTION_PLAYER_BASE + "/interact_rotate";
-
     class PhysxManager;
 
     class HumanControlSystem {

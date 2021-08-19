@@ -5,6 +5,7 @@
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/core/GraphicsContext.hh"
+#include "input/BindingNames.hh"
 
 #include <algorithm>
 #include <glm/glm.hpp>
@@ -26,25 +27,52 @@ namespace sp {
         glfwSetMouseButtonCallback(window, MouseButtonCallback);
         glfwSetCursorPosCallback(window, MouseMoveCallback);
 
-        {
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-            keyboardEntity = lock.NewEntity();
-            keyboardEntity.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GLFW_INPUT);
-            keyboardEntity.Set<ecs::Name>(lock, "keyboard");
-            keyboardEntity.Set<ecs::SignalOutput>(lock);
-            mouseEntity = lock.NewEntity();
-            mouseEntity.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GLFW_INPUT);
-            mouseEntity.Set<ecs::Name>(lock, "mouse");
-            mouseEntity.Set<ecs::SignalOutput>(lock);
+        keyboardEntity = ecs::NamedEntity("keyboard");
+        mouseEntity = ecs::NamedEntity("mouse");
+    }
+
+    void GlfwInputHandler::UpdateEntities() {
+        Logf("Updating keyboard/mouse entities");
+        auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+
+        auto keyboard = keyboardEntity.Get(lock);
+        if (!keyboard) {
+            Logf("Creating new keyboard entity");
+            keyboard = lock.NewEntity();
+            keyboard.Set<ecs::Owner>(lock, ecs::Owner::OwnerType::PLAYER, 0);
+            keyboard.Set<ecs::Name>(lock, "keyboard");
+            keyboardEntity = ecs::NamedEntity("keyboard", keyboard);
         }
+        keyboard.Get<ecs::EventBindings>(lock);
+        keyboard.Get<ecs::SignalOutput>(lock);
+
+        auto mouse = mouseEntity.Get(lock);
+        if (!mouse) {
+            Logf("Creating new mouse entity");
+            mouse = lock.NewEntity();
+            mouse.Set<ecs::Owner>(lock, ecs::Owner::OwnerType::PLAYER, 0);
+            mouse.Set<ecs::Name>(lock, "mouse");
+            mouseEntity = ecs::NamedEntity("mouse", mouse);
+        }
+        mouse.Get<ecs::EventBindings>(lock);
+        mouse.Get<ecs::SignalOutput>(lock);
     }
 
     void GlfwInputHandler::Frame() {
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::EventBindings, ecs::SignalBindings>,
-                                                ecs::Write<ecs::EventInput, ecs::SignalOutput>>();
-        frameLock = &lock;
-        glfwPollEvents();
-        frameLock = nullptr;
+        bool updateRequired = false;
+        {
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::EventBindings, ecs::SignalBindings>,
+                                                    ecs::Write<ecs::EventInput, ecs::SignalOutput>>();
+            auto keyboard = keyboardEntity.Get(lock);
+            auto mouse = mouseEntity.Get(lock);
+            updateRequired = !keyboard.Has<ecs::EventBindings, ecs::SignalOutput>(lock) ||
+                             !mouse.Has<ecs::EventBindings, ecs::SignalOutput>(lock);
+
+            frameLock = &lock;
+            glfwPollEvents();
+            frameLock = nullptr;
+        }
+        if (updateRequired) UpdateEntities();
     }
 
     glm::vec2 GlfwInputHandler::ImmediateCursor() const {
@@ -65,22 +93,27 @@ namespace sp {
         Assert(ctx->frameLock != nullptr, "KeyInputCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
-        std::string eventName = INPUT_EVENT_KEYBOARD_KEY + "_" + GlfwKeyNames.at(key);
-        for (auto entity : lock.EntitiesWith<ecs::EventBindings>()) {
-            auto &bindings = entity.Get<ecs::EventBindings>(lock);
-            bindings.SendEvent(lock, eventName, ecs::NamedEntity("keyboard", ctx->keyboardEntity), key);
+        auto keyboard = ctx->keyboardEntity.Get(lock);
+        if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+            if (keyboard.Has<ecs::EventBindings>(lock)) {
+                std::string eventName = INPUT_EVENT_KEYBOARD_KEY + "_" + GlfwKeyNames.at(key);
+                auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
+                bindings.SendEvent(lock, eventName, ctx->keyboardEntity, key);
+            }
         }
 
-        std::string signalName = INPUT_SIGNAL_KEYBOARD_KEY + "_" + GlfwKeyNames.at(key);
-        auto &signalOutput = ctx->keyboardEntity.Get<ecs::SignalOutput>(lock);
-        switch (action) {
-        case GLFW_PRESS:
-        case GLFW_REPEAT:
-            signalOutput.SetSignal(signalName, 1.0);
-            break;
-        case GLFW_RELEASE:
-            signalOutput.ClearSignal(signalName);
-            break;
+        if (keyboard.Has<ecs::SignalOutput>(lock)) {
+            std::string signalName = KeycodeSignalLookup.at(key);
+            auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
+            switch (action) {
+            case GLFW_PRESS:
+            case GLFW_REPEAT:
+                signalOutput.SetSignal(signalName, 1.0);
+                break;
+            case GLFW_RELEASE:
+                signalOutput.ClearSignal(signalName);
+                break;
+            }
         }
     }
 
@@ -89,13 +122,11 @@ namespace sp {
         Assert(ctx->frameLock != nullptr, "CharInputCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
-        for (auto entity : lock.EntitiesWith<ecs::EventBindings>()) {
-            auto &bindings = entity.Get<ecs::EventBindings>(lock);
+        auto keyboard = ctx->keyboardEntity.Get(lock);
+        if (keyboard.Has<ecs::EventBindings>(lock)) {
+            auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
             // TODO: Handle unicode somehow?
-            bindings.SendEvent(lock,
-                               INPUT_EVENT_KEYBOARD_CHARACTERS,
-                               ecs::NamedEntity("keyboard", ctx->keyboardEntity),
-                               (char)ch);
+            bindings.SendEvent(lock, INPUT_EVENT_KEYBOARD_CHARACTERS, ctx->keyboardEntity, (char)ch);
         }
     }
 
@@ -104,9 +135,19 @@ namespace sp {
         Assert(ctx->frameLock != nullptr, "MouseMoveCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
-        auto &signalOutput = ctx->mouseEntity.Get<ecs::SignalOutput>(lock);
-        signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_CURSOR_X, xPos);
-        signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_CURSOR_Y, yPos);
+        auto mouse = ctx->mouseEntity.Get(lock);
+        if (mouse.Has<ecs::EventBindings>(lock)) {
+            auto &bindings = mouse.Get<ecs::EventBindings>(lock);
+            glm::vec2 mousePos(xPos, yPos);
+            bindings.SendEvent(lock, INPUT_EVENT_MOUSE_MOVE, ctx->mouseEntity, mousePos - ctx->prevMousePos);
+            ctx->prevMousePos = mousePos;
+        }
+
+        if (mouse.Has<ecs::SignalOutput>(lock)) {
+            auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
+            signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_CURSOR_X, xPos);
+            signalOutput.SetSignal(INPUT_SIGNAL_MOUSE_CURSOR_Y, yPos);
+        }
     }
 
     void GlfwInputHandler::MouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
@@ -114,28 +155,28 @@ namespace sp {
         Assert(ctx->frameLock != nullptr, "MouseButtonCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
-        for (auto entity : lock.EntitiesWith<ecs::EventBindings>()) {
-            auto &bindings = entity.Get<ecs::EventBindings>(lock);
-            bindings.SendEvent(lock,
-                               INPUT_EVENT_MOUSE_CLICK,
-                               ecs::NamedEntity("mouse", ctx->mouseEntity),
-                               ctx->ImmediateCursor());
+        auto mouse = ctx->mouseEntity.Get(lock);
+        if (mouse.Has<ecs::EventBindings>(lock)) {
+            auto &bindings = mouse.Get<ecs::EventBindings>(lock);
+            bindings.SendEvent(lock, INPUT_EVENT_MOUSE_CLICK, ctx->mouseEntity, ctx->ImmediateCursor());
         }
 
-        std::string signalName;
-        if (button == GLFW_MOUSE_BUTTON_LEFT) {
-            signalName = INPUT_SIGNAL_MOUSE_BUTTON_LEFT;
-        } else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-            signalName = INPUT_SIGNAL_MOUSE_BUTTON_MIDDLE;
-        } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-            signalName = INPUT_SIGNAL_MOUSE_BUTTON_RIGHT;
-        }
+        if (mouse.Has<ecs::SignalOutput>(lock)) {
+            std::string signalName;
+            if (button == GLFW_MOUSE_BUTTON_LEFT) {
+                signalName = INPUT_SIGNAL_MOUSE_BUTTON_LEFT;
+            } else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+                signalName = INPUT_SIGNAL_MOUSE_BUTTON_MIDDLE;
+            } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+                signalName = INPUT_SIGNAL_MOUSE_BUTTON_RIGHT;
+            }
 
-        auto &signalOutput = ctx->mouseEntity.Get<ecs::SignalOutput>(lock);
-        if (action == GLFW_PRESS) {
-            signalOutput.SetSignal(signalName, 1.0);
-        } else {
-            signalOutput.ClearSignal(signalName);
+            auto &signalOutput = mouse.Get<ecs::SignalOutput>(lock);
+            if (action == GLFW_PRESS) {
+                signalOutput.SetSignal(signalName, 1.0);
+            } else {
+                signalOutput.ClearSignal(signalName);
+            }
         }
     }
 
@@ -144,12 +185,10 @@ namespace sp {
         Assert(ctx->frameLock != nullptr, "MouseScrollCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
-        for (auto entity : lock.EntitiesWith<ecs::EventBindings>()) {
-            auto &bindings = entity.Get<ecs::EventBindings>(lock);
-            bindings.SendEvent(lock,
-                               INPUT_EVENT_MOUSE_SCROLL,
-                               ecs::NamedEntity("mouse", ctx->mouseEntity),
-                               glm::vec2(xOffset, yOffset));
+        auto mouse = ctx->mouseEntity.Get(lock);
+        if (mouse.Has<ecs::EventBindings>(lock)) {
+            auto &bindings = mouse.Get<ecs::EventBindings>(lock);
+            bindings.SendEvent(lock, INPUT_EVENT_MOUSE_SCROLL, ctx->mouseEntity, glm::vec2(xOffset, yOffset));
         }
     }
 } // namespace sp

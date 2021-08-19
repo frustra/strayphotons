@@ -10,6 +10,10 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/Signals.hh"
 
+#ifdef SP_INPUT_SUPPORT
+    #include "input/BindingNames.hh"
+#endif
+
 #ifdef SP_GRAPHICS_SUPPORT
     #include "graphics/core/GraphicsContext.hh"
 #endif
@@ -20,6 +24,8 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/transform.hpp>
+#include <sstream>
+#include <string>
 
 namespace sp {
     GameLogic::GameLogic(Game *game) : game(game) {
@@ -66,16 +72,33 @@ namespace sp {
 
 #ifdef SP_INPUT_SUPPORT
     void GameLogic::HandleInput() {
-        // TODO: Use player event bindings
-        /*if (game->input.FocusLocked()) return;
+        // TODO: Fix input focus
+        // if (game->input.FocusLocked()) return;
 
+        bool spawnDebug = false;
+        bool placeFlashlight = false;
+        {
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::EventInput>>();
+
+            ecs::Event event;
+            if (player.Has<ecs::EventInput>(lock)) {
+                bool openMenu = false;
+                while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_MENU_OPEN, event)) {
+                    openMenu = true;
+                }
     #ifdef SP_GRAPHICS_SUPPORT_GL
-        if (game->menuGui && game->input.IsPressed(INPUT_ACTION_OPEN_MENU)) {
-            game->menuGui->OpenPauseMenu();
-        } else
+                if (game->menuGui && openMenu && game->menuGui->RenderMode() == MenuRenderMode::None) {
+                    while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_MENU_BACK, event)) {}
+                    game->menuGui->OpenPauseMenu();
+                }
     #endif
-            if (game->input.IsPressed(INPUT_ACTION_SPAWN_DEBUG)) {
-            // Spawn dodecahedron
+                if (ecs::EventInput::Poll(lock, player, INPUT_EVENT_SPAWN_DEBUG, event)) spawnDebug = true;
+                if (ecs::EventInput::Poll(lock, flashlight, INPUT_EVENT_PLACE_FLASHLIGHT, event))
+                    placeFlashlight = true;
+            }
+        }
+
+        if (spawnDebug) { // Spawn dodecahedron
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
             auto entity = lock.NewEntity();
             entity.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GAME_LOGIC);
@@ -86,9 +109,9 @@ namespace sp {
     #ifdef SP_PHYSICS_SUPPORT_PHYSX
             entity.Set<ecs::Physics>(lock, model, true);
     #endif
-        } else if (game->input.IsPressed(INPUT_ACTION_DROP_FLASHLIGH)) {
-            // Toggle flashlight following player
+        }
 
+        if (placeFlashlight) { // Toggle flashlight following player
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
             if (flashlight && flashlight.Has<ecs::Transform>(lock)) {
                 auto &transform = flashlight.Get<ecs::Transform>(lock);
@@ -109,7 +132,7 @@ namespace sp {
                     transform.UpdateCachedTransform(lock);
                 }
             }
-        }*/
+        }
     }
 #endif
 
@@ -219,10 +242,8 @@ namespace sp {
 #endif
 
 #ifdef SP_INPUT_SUPPORT
-            player.Set<ecs::EventInput>(lock,
-                                        INPUT_ACTION_OPEN_MENU,
-                                        INPUT_ACTION_SPAWN_DEBUG,
-                                        INPUT_ACTION_DROP_FLASHLIGH);
+            auto &eventInput = player.Get<ecs::EventInput>(lock);
+            eventInput.Register(INPUT_EVENT_MENU_OPEN);
 #endif
 
             // Mark the player as being able to activate trigger areas

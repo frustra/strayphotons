@@ -4,11 +4,11 @@
 
 namespace sp {
     class GraphicsContext;
-    class InputManager;
 
     class DebugGuiManager : public GuiManager {
     public:
-        DebugGuiManager(GraphicsManager &graphics) : GuiManager(graphics, FOCUS_OVERLAY) {}
+        // TODO: Fix focus
+        DebugGuiManager(GraphicsManager &graphics) : GuiManager(graphics /*, FOCUS_OVERLAY*/) {}
         virtual ~DebugGuiManager() {}
 
         void BeforeFrame() override;

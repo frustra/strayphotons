@@ -60,7 +60,7 @@ namespace sp {
         {GLFW_KEY_GRAVE_ACCENT, "backtick"},
         {GLFW_KEY_ESCAPE, "escape"},
         {GLFW_KEY_ENTER, "enter"},
-        {GLFW_KEY_TAB, "tag"},
+        {GLFW_KEY_TAB, "tab"},
         {GLFW_KEY_BACKSPACE, "backspace"},
         {GLFW_KEY_INSERT, "insert"},
         {GLFW_KEY_DELETE, "delete"},
