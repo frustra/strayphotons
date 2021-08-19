@@ -136,7 +136,7 @@ namespace ecs {
         case CombineOperator::MULTIPLY: {
             std::optional<double> output;
             for (auto &signal : *bindingList) {
-                auto &origin = signal.first.Get(lock);
+                auto origin = signal.first.Get(lock);
                 if (origin.Has<SignalOutput>(lock)) {
                     auto &signalOutput = origin.Get<SignalOutput>(lock);
                     auto val = signalOutput.GetSignal(signal.second);
@@ -164,7 +164,7 @@ namespace ecs {
         case CombineOperator::BINARY_OR: {
             std::optional<bool> output;
             for (auto &signal : *bindingList) {
-                auto &origin = signal.first.Get(lock);
+                auto origin = signal.first.Get(lock);
                 if (origin.Has<SignalOutput>(lock)) {
                     auto &signalOutput = origin.Get<SignalOutput>(lock);
                     bool val = signalOutput.GetSignal(signal.second) >= 0.5;

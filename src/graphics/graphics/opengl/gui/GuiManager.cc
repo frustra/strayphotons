@@ -52,10 +52,10 @@ namespace sp {
 
     void GuiManager::BeforeFrame() {
         SetGuiContext();
-        ImGuiIO &io = ImGui::GetIO();
-
         // TODO: Use signals
-        /*const KeyEvents *keys, *keysPrev;
+        /*ImGuiIO &io = ImGui::GetIO();
+
+        const KeyEvents *keys, *keysPrev;
         if (input.GetActionDelta(INPUT_ACTION_KEYBOARD_KEYS, &keys, &keysPrev)) {
             if (keysPrev != nullptr) {
                 for (auto &key : *keysPrev) {
