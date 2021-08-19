@@ -39,8 +39,6 @@ namespace sp {
 
         if (profilerGui) { delete profilerGui; }
 
-        if (glfwActionSource) { delete glfwActionSource; }
-
         if (context) { delete context; }
     #endif
     }

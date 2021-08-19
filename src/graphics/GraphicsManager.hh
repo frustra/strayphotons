@@ -16,7 +16,6 @@ namespace sp {
     class Game;
     class GraphicsContext;
     class ProfilerGui;
-    class GlfwActionSource;
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
     class VoxelRenderer;
@@ -44,7 +43,6 @@ namespace sp {
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
         VoxelRenderer *renderer = nullptr;
-        GlfwActionSource *glfwActionSource = nullptr;
         ProfilerGui *profilerGui = nullptr;
         PerfTimer timer;
     #endif
