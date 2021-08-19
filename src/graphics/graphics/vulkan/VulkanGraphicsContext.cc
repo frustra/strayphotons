@@ -137,7 +137,6 @@ namespace sp {
 
         auto physicalDevices = instance->enumeratePhysicalDevices();
         // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
-        vk::PhysicalDevice physicalDevice;
         for (auto &dev : physicalDevices) {
             // TODO: Check device extension support
             auto properties = dev.getProperties();
@@ -149,30 +148,32 @@ namespace sp {
         Assert(physicalDevice, "No suitable graphics device found!");
 
         auto queueFamilies = physicalDevice.getQueueFamilyProperties();
-        std::optional<uint32_t> graphicsQueueFamily;
+        bool hasGraphicsQueueFamily = false;
         for (uint32_t i = 0; i < queueFamilies.size(); i++) {
             if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics) {
                 graphicsQueueFamily = i;
+                hasGraphicsQueueFamily = true;
                 break;
             }
         }
-        Assert(graphicsQueueFamily.has_value(), "Couldn't find a Graphics queue family");
+        Assert(hasGraphicsQueueFamily, "Couldn't find a Graphics queue family");
 
-        std::optional<uint32_t> presentQueueFamily;
+        bool hasPresentQueueFamily = false;
         for (uint32_t i = 0; i < queueFamilies.size(); i++) {
             if (physicalDevice.getSurfaceSupportKHR(i, *surface)) {
                 presentQueueFamily = i;
+                hasPresentQueueFamily = true;
                 break;
             }
         }
-        Assert(presentQueueFamily.has_value(), "Couldn't find a Present queue family");
+        Assert(hasPresentQueueFamily, "Couldn't find a Present queue family");
 
-        std::set<uint32_t> uniqueQueueFamilies = {graphicsQueueFamily.value(), presentQueueFamily.value()};
+        std::set<uint32_t> uniqueQueueFamilies = {graphicsQueueFamily, presentQueueFamily};
         std::vector<vk::DeviceQueueCreateInfo> queueInfos;
         float queuePriority = 1.0f;
         for (auto queueFamily : uniqueQueueFamilies) {
             vk::DeviceQueueCreateInfo queueInfo;
-            queueInfo.queueFamilyIndex = graphicsQueueFamily.value();
+            queueInfo.queueFamilyIndex = queueFamily;
             queueInfo.queueCount = 1;
             queueInfo.pQueuePriorities = &queuePriority;
             queueInfos.push_back(queueInfo);
@@ -192,9 +193,26 @@ namespace sp {
         device = physicalDevice.createDeviceUnique(deviceInfo, nullptr);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(*device);
 
-        graphicsQueue = device->getQueue(graphicsQueueFamily.value(), 0);
-        presentQueue = device->getQueue(presentQueueFamily.value(), 0);
+        graphicsQueue = device->getQueue(graphicsQueueFamily, 0);
+        presentQueue = device->getQueue(presentQueueFamily, 0);
 
+        vk::SemaphoreCreateInfo semaphoreInfo;
+        imageAvailableSem = device->createSemaphoreUnique(semaphoreInfo);
+        renderCompleteSem = device->createSemaphoreUnique(semaphoreInfo);
+
+        CreateSwapchain();
+        CreateTestPipeline();
+    }
+
+    VulkanGraphicsContext::~VulkanGraphicsContext() {
+        if (device) { vkDeviceWaitIdle(*device); }
+        if (window) { glfwDestroyWindow(window); }
+
+        glfwTerminate();
+    }
+
+    // Releases old swapchain after creating a new one
+    void VulkanGraphicsContext::CreateSwapchain() {
         auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
         auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
         auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
@@ -214,50 +232,57 @@ namespace sp {
                 break;
             }
         }
-        vk::SwapchainCreateInfoKHR swapChainInfo;
-        swapChainInfo.surface = *surface;
-        swapChainInfo.minImageCount = surfaceCapabilities.minImageCount + 1;
-        swapChainInfo.imageFormat = surfaceFormat.format;
-        swapChainInfo.imageColorSpace = surfaceFormat.colorSpace;
+
+        vk::SwapchainCreateInfoKHR swapchainInfo;
+        swapchainInfo.surface = *surface;
+        swapchainInfo.minImageCount = surfaceCapabilities.minImageCount + 1;
+        swapchainInfo.imageFormat = surfaceFormat.format;
+        swapchainInfo.imageColorSpace = surfaceFormat.colorSpace;
         // TODO: Check capabilities.currentExtent is valid and correctly handles high dpi
-        swapChainInfo.imageExtent = surfaceCapabilities.currentExtent;
-        swapChainInfo.imageArrayLayers = 1;
+        swapchainInfo.imageExtent = surfaceCapabilities.currentExtent;
+        swapchainInfo.imageArrayLayers = 1;
         // TODO: use vk::ImageUsageFlagBits::eTransferDst for rendering from another texture
-        swapChainInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
+        swapchainInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
         if (graphicsQueueFamily != presentQueueFamily) {
-            uint32_t queueFamilyIndices[] = {graphicsQueueFamily.value(), presentQueueFamily.value()};
-            swapChainInfo.imageSharingMode = vk::SharingMode::eConcurrent;
-            swapChainInfo.queueFamilyIndexCount = 2;
-            swapChainInfo.pQueueFamilyIndices = queueFamilyIndices;
+            // we need to manage image data coherency between queues ourselves if we use concurrent sharing
+            /*uint32_t queueFamilyIndices[] = {graphicsQueueFamily, presentQueueFamily};
+            swapchainInfo.imageSharingMode = vk::SharingMode::eConcurrent;
+            swapchainInfo.queueFamilyIndexCount = 2;
+            swapchainInfo.pQueueFamilyIndices = queueFamilyIndices;*/
+            throw "graphics queue and present queue need to be from the same queue family";
         } else {
-            swapChainInfo.imageSharingMode = vk::SharingMode::eExclusive;
+            swapchainInfo.imageSharingMode = vk::SharingMode::eExclusive;
         }
-        swapChainInfo.preTransform = surfaceCapabilities.currentTransform;
-        swapChainInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-        swapChainInfo.presentMode = presentMode;
-        swapChainInfo.clipped = true;
-        swapChainInfo.oldSwapchain = nullptr;
-        swapChain = device->createSwapchainKHRUnique(swapChainInfo, nullptr);
+        swapchainInfo.preTransform = surfaceCapabilities.currentTransform;
+        swapchainInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+        swapchainInfo.presentMode = presentMode;
+        swapchainInfo.clipped = true;
+        swapchainInfo.oldSwapchain = *swapchain;
 
-        swapChainImages = device->getSwapchainImagesKHR(*swapChain);
-        swapChainImageFormat = swapChainInfo.imageFormat;
-        swapChainExtent = swapChainInfo.imageExtent;
+        auto newSwapchain = device->createSwapchainKHRUnique(swapchainInfo, nullptr);
+        swapchainImageViews.clear();
+        swapchain.swap(std::move(newSwapchain));
 
-        swapChainImageViews.clear();
-        for (size_t i = 0; i < swapChainImages.size(); i++) {
+        swapchainImages = device->getSwapchainImagesKHR(*swapchain);
+        swapchainImageFormat = swapchainInfo.imageFormat;
+        swapchainExtent = swapchainInfo.imageExtent;
+
+        for (size_t i = 0; i < swapchainImages.size(); i++) {
             vk::ImageViewCreateInfo createInfo;
-            createInfo.image = swapChainImages[i];
+            createInfo.image = swapchainImages[i];
             createInfo.viewType = vk::ImageViewType::e2D;
-            createInfo.format = swapChainImageFormat;
+            createInfo.format = swapchainImageFormat;
             createInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
             createInfo.subresourceRange.baseMipLevel = 0;
             createInfo.subresourceRange.levelCount = 1;
             createInfo.subresourceRange.baseArrayLayer = 0;
             createInfo.subresourceRange.layerCount = 1;
-            swapChainImageViews.emplace_back(device->createImageViewUnique(createInfo));
+            swapchainImageViews.emplace_back(device->createImageViewUnique(createInfo));
         }
+    }
 
-        /// very temporary code to build a test pipeline
+    void VulkanGraphicsContext::CreateTestPipeline() {
+        // very temporary code to build a test pipeline
 
         auto vertShaderAsset = GAssets.Load("shaders/vulkan/bin/test.vert.spv");
         vk::ShaderModuleCreateInfo vertShaderCreateInfo;
@@ -288,13 +313,13 @@ namespace sp {
         inputAssembly.topology = vk::PrimitiveTopology::eTriangleList;
 
         vk::Viewport viewport;
-        viewport.width = swapChainExtent.width;
-        viewport.height = swapChainExtent.height;
+        viewport.width = swapchainExtent.width;
+        viewport.height = swapchainExtent.height;
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
 
         vk::Rect2D scissor;
-        scissor.extent = swapChainExtent;
+        scissor.extent = swapchainExtent;
 
         vk::PipelineViewportStateCreateInfo viewportState;
         viewportState.viewportCount = 1;
@@ -322,7 +347,7 @@ namespace sp {
         pipelineLayout = device->createPipelineLayoutUnique(pipelineLayoutInfo);
 
         vk::AttachmentDescription colorAttachment;
-        colorAttachment.format = swapChainImageFormat;
+        colorAttachment.format = swapchainImageFormat;
         colorAttachment.samples = vk::SampleCountFlagBits::e1;
         colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
         colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
@@ -380,30 +405,30 @@ namespace sp {
         Assert(pipelinesResult.result == vk::Result::eSuccess, "creating pipelines");
         graphicsPipeline = std::move(pipelinesResult.value[0]);
 
-        swapChainFramebuffers.clear();
-        for (size_t i = 0; i < swapChainImageViews.size(); i++) {
-            vk::ImageView attachments[] = {*swapChainImageViews[i]};
+        swapchainFramebuffers.clear();
+        for (size_t i = 0; i < swapchainImageViews.size(); i++) {
+            vk::ImageView attachments[] = {*swapchainImageViews[i]};
 
             vk::FramebufferCreateInfo framebufferInfo{};
             framebufferInfo.renderPass = *renderPass;
             framebufferInfo.attachmentCount = 1;
             framebufferInfo.pAttachments = attachments;
-            framebufferInfo.width = swapChainExtent.width;
-            framebufferInfo.height = swapChainExtent.height;
+            framebufferInfo.width = swapchainExtent.width;
+            framebufferInfo.height = swapchainExtent.height;
             framebufferInfo.layers = 1;
 
-            swapChainFramebuffers.push_back(device->createFramebufferUnique(framebufferInfo));
+            swapchainFramebuffers.push_back(device->createFramebufferUnique(framebufferInfo));
         }
 
         vk::CommandPoolCreateInfo poolInfo;
-        poolInfo.queueFamilyIndex = *graphicsQueueFamily;
+        poolInfo.queueFamilyIndex = graphicsQueueFamily;
 
         commandPool = device->createCommandPoolUnique(poolInfo);
 
         vk::CommandBufferAllocateInfo allocInfo;
         allocInfo.commandPool = *commandPool;
         allocInfo.level = vk::CommandBufferLevel::ePrimary;
-        allocInfo.commandBufferCount = (uint32_t)swapChainFramebuffers.size();
+        allocInfo.commandBufferCount = (uint32_t)swapchainFramebuffers.size();
 
         commandBuffers = device->allocateCommandBuffers(allocInfo);
 
@@ -414,8 +439,8 @@ namespace sp {
 
             vk::RenderPassBeginInfo renderPassInfo;
             renderPassInfo.renderPass = *renderPass;
-            renderPassInfo.framebuffer = *swapChainFramebuffers[i];
-            renderPassInfo.renderArea.extent = swapChainExtent;
+            renderPassInfo.framebuffer = *swapchainFramebuffers[i];
+            renderPassInfo.renderArea.extent = swapchainExtent;
 
             vk::ClearColorValue color(std::array{0.0f, 1.0f, 0.0f, 1.0f});
             vk::ClearValue clearColor(color);
@@ -428,19 +453,18 @@ namespace sp {
             commands.endRenderPass();
             commands.end();
         }
-
-        vk::SemaphoreCreateInfo semaphoreInfo;
-        imageAvailableSem = device->createSemaphoreUnique(semaphoreInfo);
-        renderCompleteSem = device->createSemaphoreUnique(semaphoreInfo);
-
-        /// end very temporary code
     }
 
-    VulkanGraphicsContext::~VulkanGraphicsContext() {
-        if (device) { vkDeviceWaitIdle(*device); }
-        if (window) { glfwDestroyWindow(window); }
+    void VulkanGraphicsContext::RecreateSwapchain() {
+        // Created by CreateTestPipeline
+        swapchainFramebuffers.clear();
+        commandBuffers.clear();
+        graphicsPipeline.reset();
+        pipelineLayout.reset();
+        renderPass.reset();
 
-        glfwTerminate();
+        CreateSwapchain();
+        CreateTestPipeline();
     }
 
     void VulkanGraphicsContext::SetTitle(string title) {
@@ -503,27 +527,14 @@ namespace sp {
         return glm::ivec2(0);
     }
 
-    void VulkanGraphicsContext::SwapBuffers() {
-        vk::Semaphore signalSemaphores[] = {*renderCompleteSem};
-        vk::PresentInfoKHR presentInfo;
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
-
-        vk::SwapchainKHR swapChains[] = {*swapChain};
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = &imageIndex;
-
-        auto presentResult = presentQueue.presentKHR(presentInfo);
-        Assert(presentResult == vk::Result::eSuccess, "present");
-
-        // TODO: allow multiple frames in flight to fill GPU, see
-        // https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Frames-in-flight
-        presentQueue.waitIdle();
-    }
-
     void VulkanGraphicsContext::BeginFrame() {
-        imageIndex = device->acquireNextImageKHR(*swapChain, UINT64_MAX, *imageAvailableSem, nullptr);
+        try {
+            auto acquireResult = device->acquireNextImageKHR(*swapchain, UINT64_MAX, *imageAvailableSem, nullptr);
+            imageIndex = acquireResult.value;
+        } catch (vk::OutOfDateKHRError) {
+            RecreateSwapchain();
+            return BeginFrame();
+        }
 
         vk::SubmitInfo submitInfo;
 
@@ -540,6 +551,27 @@ namespace sp {
         submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
 
         graphicsQueue.submit({submitInfo});
+    }
+
+    void VulkanGraphicsContext::SwapBuffers() {
+        vk::Semaphore signalSemaphores[] = {*renderCompleteSem};
+        vk::PresentInfoKHR presentInfo;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+
+        vk::SwapchainKHR swapchains[] = {*swapchain};
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapchains;
+        presentInfo.pImageIndices = &imageIndex;
+
+        try {
+            auto presentResult = presentQueue.presentKHR(presentInfo);
+            if (presentResult == vk::Result::eSuboptimalKHR) RecreateSwapchain();
+        } catch (vk::OutOfDateKHRError) { RecreateSwapchain(); }
+
+        // TODO: allow multiple frames in flight to fill GPU, see
+        // https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Frames-in-flight
+        presentQueue.waitIdle();
     }
 
     void VulkanGraphicsContext::EndFrame() {

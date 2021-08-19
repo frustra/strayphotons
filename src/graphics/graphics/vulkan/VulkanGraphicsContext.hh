@@ -41,18 +41,24 @@ namespace sp {
     private:
         void SetTitle(string title);
 
+        void CreateSwapchain();
+        void CreateTestPipeline();
+        void RecreateSwapchain();
+
         vk::UniqueInstance instance;
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;
         vk::UniqueSurfaceKHR surface;
+        vk::PhysicalDevice physicalDevice;
         vk::UniqueDevice device;
-        vk::Queue graphicsQueue;
-        vk::Queue presentQueue;
 
-        vk::UniqueSwapchainKHR swapChain;
-        vector<vk::Image> swapChainImages;
-        vk::Format swapChainImageFormat;
-        vk::Extent2D swapChainExtent;
-        vector<vk::UniqueImageView> swapChainImageViews;
+        uint32_t graphicsQueueFamily, presentQueueFamily;
+        vk::Queue graphicsQueue, presentQueue;
+
+        vk::UniqueSwapchainKHR swapchain;
+        vector<vk::Image> swapchainImages;
+        vk::Format swapchainImageFormat;
+        vk::Extent2D swapchainExtent;
+        vector<vk::UniqueImageView> swapchainImageViews;
         vk::UniqueCommandPool commandPool;
         vector<vk::CommandBuffer> commandBuffers;
 
@@ -60,7 +66,7 @@ namespace sp {
         vk::UniqueRenderPass renderPass;
         vk::UniquePipelineLayout pipelineLayout;
         vk::UniquePipeline graphicsPipeline;
-        vector<vk::UniqueFramebuffer> swapChainFramebuffers;
+        vector<vk::UniqueFramebuffer> swapchainFramebuffers;
 
         vk::UniqueSemaphore imageAvailableSem, renderCompleteSem;
 
