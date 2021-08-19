@@ -20,10 +20,10 @@ namespace ecs {
         EventData data;
 
         Event() {}
-        Event(const std::string &name, NamedEntity &source) : name(name), source(source), data(true) {}
+        Event(const std::string &name, const NamedEntity &source) : name(name), source(source), data(true) {}
 
         template<typename T>
-        Event(const std::string &name, NamedEntity &source, T data) : name(name), source(source), data(data) {}
+        Event(const std::string &name, const NamedEntity &source, T data) : name(name), source(source), data(data) {}
     };
 
     struct EventInput {
@@ -61,7 +61,7 @@ namespace ecs {
         template<typename T>
         inline void SendEvent(Lock<Read<Name>, Write<EventInput>> lock,
                               const std::string &name,
-                              NamedEntity &source,
+                              const NamedEntity &source,
                               T data) const {
             SendEvent(lock, Event(name, source, data));
         }
