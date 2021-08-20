@@ -25,9 +25,9 @@ namespace ecs {
 
         template<typename T>
         Event(const std::string &name, const NamedEntity &source, T data) : name(name), source(source), data(data) {}
-
-        friend std::ostream &operator<<(std::ostream &out, const EventData &v);
     };
+
+    std::ostream &operator<<(std::ostream &out, const Event::EventData &v);
 
     struct EventInput {
         robin_hood::unordered_map<std::string, std::queue<Event>> events;

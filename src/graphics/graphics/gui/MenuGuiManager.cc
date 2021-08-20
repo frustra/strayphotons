@@ -6,8 +6,8 @@
 #include "core/Console.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "graphics/core/Texture.hh"
 #include "graphics/core/GraphicsContext.hh"
+#include "graphics/core/Texture.hh"
 #include "input/core/BindingNames.hh"
 
 #include <glm/glm.hpp>
@@ -25,7 +25,6 @@ namespace sp {
     // TODO: Fix focus
     MenuGuiManager::MenuGuiManager(GraphicsManager &graphics) : GuiManager(graphics /*, FOCUS_MENU*/) {
         SetGuiContext();
-        ImGuiIO &io = ImGui::GetIO();
 
         graphics.DisableCursor();
     }
@@ -62,20 +61,15 @@ namespace sp {
                 }
             }
 
-            if (player.Has<ecs::SignalBindings>(lock)) {
-                auto &bindings = player.Get<ecs::SignalBindings>(lock);
-                if (RenderMode() == MenuRenderMode::Gel) {
-                    auto windowSize = CVarWindowSize.Get();
-                    auto cursorScaling = CVarMenuCursorScaling.Get();
-                    io.MousePos.x = io.MousePos.x / (float)windowSize.x * io.DisplaySize.x;
-                    io.MousePos.y = io.MousePos.y / (float)windowSize.y * io.DisplaySize.y;
-                    io.MousePos.x = io.MousePos.x * cursorScaling.x -
-                                    io.DisplaySize.x * (cursorScaling.x - 1.0f) * 0.5f;
-                    io.MousePos.y = io.MousePos.y * cursorScaling.y -
-                                    io.DisplaySize.y * (cursorScaling.y - 1.0f) * 0.5f;
-                    io.MousePos.x = std::max(std::min(io.MousePos.x, io.DisplaySize.x), 0.0f);
-                    io.MousePos.y = std::max(std::min(io.MousePos.y, io.DisplaySize.y), 0.0f);
-                }
+            if (RenderMode() == MenuRenderMode::Gel) {
+                auto windowSize = CVarWindowSize.Get();
+                auto cursorScaling = CVarMenuCursorScaling.Get();
+                io.MousePos.x = io.MousePos.x / (float)windowSize.x * io.DisplaySize.x;
+                io.MousePos.y = io.MousePos.y / (float)windowSize.y * io.DisplaySize.y;
+                io.MousePos.x = io.MousePos.x * cursorScaling.x - io.DisplaySize.x * (cursorScaling.x - 1.0f) * 0.5f;
+                io.MousePos.y = io.MousePos.y * cursorScaling.y - io.DisplaySize.y * (cursorScaling.y - 1.0f) * 0.5f;
+                io.MousePos.x = std::max(std::min(io.MousePos.x, io.DisplaySize.x), 0.0f);
+                io.MousePos.y = std::max(std::min(io.MousePos.y, io.DisplaySize.y), 0.0f);
             }
         }
 
