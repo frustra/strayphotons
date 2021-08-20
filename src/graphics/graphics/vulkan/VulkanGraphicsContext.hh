@@ -62,14 +62,17 @@ namespace sp {
         vk::UniqueCommandPool commandPool;
         vector<vk::CommandBuffer> commandBuffers;
 
+        std::vector<vk::UniqueSemaphore> imageAvailableSemaphores, renderCompleteSemaphores;
+        std::vector<vk::UniqueFence> inFlightFences; // one per inflight frame
+        std::vector<vk::Fence> imagesInFlight; // one per swapchain image
+
         // test pipeline
         vk::UniqueRenderPass renderPass;
         vk::UniquePipelineLayout pipelineLayout;
         vk::UniquePipeline graphicsPipeline;
         vector<vk::UniqueFramebuffer> swapchainFramebuffers;
 
-        vk::UniqueSemaphore imageAvailableSem, renderCompleteSem;
-
+        size_t currentFrame = 0;
         uint32_t imageIndex; // index of the swapchain currently being rendered
 
         glm::ivec2 glfwWindowSize;

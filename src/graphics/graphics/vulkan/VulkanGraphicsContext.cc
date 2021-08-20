@@ -17,6 +17,9 @@
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace sp {
+    const int MAX_FRAMES_IN_FLIGHT = 2;
+    const int FENCE_WAIT_TIME = 1e10; // nanoseconds, assume deadlock after this time
+
     static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                         VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                         const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
@@ -84,13 +87,12 @@ namespace sp {
             extensions.emplace_back(requiredExtensions[i]);
             Logf("Required extension: %s", requiredExtensions[i]);
         }
+        extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #if SP_DEBUG
         Logf("Running with vulkan validation layers");
         layers.emplace_back("VK_LAYER_KHRONOS_validation");
 #endif
-
-        std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
         // Create window and surface
         auto initialSize = CVarWindowSize.Get();
@@ -179,12 +181,38 @@ namespace sp {
             queueInfos.push_back(queueInfo);
         }
 
-        vk::PhysicalDeviceFeatures deviceFeatures;
+        vk::PhysicalDeviceFeatures availableFeatures = physicalDevice.getFeatures();
+        Assert(availableFeatures.multiViewport, "device must support multiViewport");
+        Assert(availableFeatures.fillModeNonSolid, "device must support fillModeNonSolid");
+        Assert(availableFeatures.wideLines, "device must support wideLines");
+        Assert(availableFeatures.largePoints, "device must support largePoints");
+        Assert(availableFeatures.geometryShader, "device must support geometryShader");
+
+        vk::PhysicalDeviceFeatures enabledFeatures;
+        enabledFeatures.multiViewport = true;
+        enabledFeatures.fillModeNonSolid = true;
+        enabledFeatures.wideLines = true;
+        enabledFeatures.largePoints = true;
+        enabledFeatures.geometryShader = true;
+
+        vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_MULTIVIEW_EXTENSION_NAME};
+        auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+
+        for (auto requiredExtension : deviceExtensions) {
+            bool found = false;
+            for (auto &availableExtension : availableDeviceExtensions) {
+                if (strncmp(requiredExtension, availableExtension.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+            Assert(found, string("device must have extension ") + requiredExtension);
+        }
 
         vk::DeviceCreateInfo deviceInfo;
         deviceInfo.queueCreateInfoCount = queueInfos.size();
         deviceInfo.pQueueCreateInfos = queueInfos.data();
-        deviceInfo.pEnabledFeatures = &deviceFeatures;
+        deviceInfo.pEnabledFeatures = &enabledFeatures;
         deviceInfo.enabledExtensionCount = deviceExtensions.size();
         deviceInfo.ppEnabledExtensionNames = deviceExtensions.data();
         deviceInfo.enabledLayerCount = layers.size();
@@ -197,8 +225,14 @@ namespace sp {
         presentQueue = device->getQueue(presentQueueFamily, 0);
 
         vk::SemaphoreCreateInfo semaphoreInfo;
-        imageAvailableSem = device->createSemaphoreUnique(semaphoreInfo);
-        renderCompleteSem = device->createSemaphoreUnique(semaphoreInfo);
+        vk::FenceCreateInfo fenceInfo;
+        fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            imageAvailableSemaphores.push_back(std::move(device->createSemaphoreUnique(semaphoreInfo)));
+            renderCompleteSemaphores.push_back(std::move(device->createSemaphoreUnique(semaphoreInfo)));
+            inFlightFences.push_back(std::move(device->createFenceUnique(fenceInfo)));
+        }
 
         CreateSwapchain();
         CreateTestPipeline();
@@ -216,7 +250,6 @@ namespace sp {
         auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
         auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
         auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
-        // TODO: Actually validate surface capabilities/formats/present modes are available
 
         vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
         for (auto &mode : presentModes) {
@@ -225,13 +258,20 @@ namespace sp {
                 break;
             }
         }
+
         vk::SurfaceFormatKHR surfaceFormat = surfaceFormats[0];
         for (auto &format : surfaceFormats) {
-            if (format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
-                surfaceFormat = format;
-                break;
+            if (format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
+                if (format.format == vk::Format::eB8G8R8A8Srgb) {
+                    surfaceFormat = format;
+                    break;
+                } else if (format.format == vk::Format::eR8G8B8A8Srgb) {
+                    surfaceFormat = format;
+                    break;
+                }
             }
         }
+        Assert(surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear, "surface must support sRGB");
 
         vk::SwapchainCreateInfoKHR swapchainInfo;
         swapchainInfo.surface = *surface;
@@ -279,6 +319,8 @@ namespace sp {
             createInfo.subresourceRange.layerCount = 1;
             swapchainImageViews.emplace_back(device->createImageViewUnique(createInfo));
         }
+
+        imagesInFlight.resize(swapchainImages.size());
     }
 
     void VulkanGraphicsContext::CreateTestPipeline() {
@@ -456,6 +498,8 @@ namespace sp {
     }
 
     void VulkanGraphicsContext::RecreateSwapchain() {
+        vkDeviceWaitIdle(*device);
+
         // Created by CreateTestPipeline
         swapchainFramebuffers.clear();
         commandBuffers.clear();
@@ -528,36 +572,47 @@ namespace sp {
     }
 
     void VulkanGraphicsContext::BeginFrame() {
+        auto fence = *inFlightFences[currentFrame];
+        auto result = device->waitForFences({fence}, true, FENCE_WAIT_TIME);
+        Assert(result == vk::Result::eSuccess, "timed out waiting for fence");
+
+        auto imageAvailableSem = *imageAvailableSemaphores[currentFrame];
+        auto renderCompleteSem = *renderCompleteSemaphores[currentFrame];
+
         try {
-            auto acquireResult = device->acquireNextImageKHR(*swapchain, UINT64_MAX, *imageAvailableSem, nullptr);
+            auto acquireResult = device->acquireNextImageKHR(*swapchain, UINT64_MAX, imageAvailableSem, nullptr);
             imageIndex = acquireResult.value;
         } catch (vk::OutOfDateKHRError) {
             RecreateSwapchain();
             return BeginFrame();
         }
 
-        vk::SubmitInfo submitInfo;
+        if (imagesInFlight[imageIndex]) {
+            result = device->waitForFences({imagesInFlight[imageIndex]}, true, FENCE_WAIT_TIME);
+            Assert(result == vk::Result::eSuccess, "timed out waiting for fence");
+        }
+        imagesInFlight[imageIndex] = *inFlightFences[currentFrame];
 
-        vk::Semaphore waitSemaphores[] = {*imageAvailableSem};
-        vk::Semaphore signalSemaphores[] = {*renderCompleteSem};
+        vk::SubmitInfo submitInfo;
         vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
         submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitSemaphores = &imageAvailableSem;
         submitInfo.pWaitDstStageMask = waitStages;
         submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
+        submitInfo.pSignalSemaphores = &renderCompleteSem;
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
 
-        graphicsQueue.submit({submitInfo});
+        device->resetFences({fence});
+        graphicsQueue.submit({submitInfo}, fence);
     }
 
     void VulkanGraphicsContext::SwapBuffers() {
-        vk::Semaphore signalSemaphores[] = {*renderCompleteSem};
+        vk::Semaphore renderCompleteSem = *renderCompleteSemaphores[currentFrame];
         vk::PresentInfoKHR presentInfo;
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
+        presentInfo.pWaitSemaphores = &renderCompleteSem;
 
         vk::SwapchainKHR swapchains[] = {*swapchain};
         presentInfo.swapchainCount = 1;
@@ -569,9 +624,7 @@ namespace sp {
             if (presentResult == vk::Result::eSuboptimalKHR) RecreateSwapchain();
         } catch (vk::OutOfDateKHRError) { RecreateSwapchain(); }
 
-        // TODO: allow multiple frames in flight to fill GPU, see
-        // https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Frames-in-flight
-        presentQueue.waitIdle();
+        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
     void VulkanGraphicsContext::EndFrame() {
