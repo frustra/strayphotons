@@ -82,11 +82,11 @@ namespace sp {
 
             ecs::Event event;
             if (player.Has<ecs::EventInput>(lock)) {
+    #ifdef SP_GRAPHICS_SUPPORT_GL
                 bool openMenu = false;
                 while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_MENU_OPEN, event)) {
                     openMenu = true;
                 }
-    #ifdef SP_GRAPHICS_SUPPORT_GL
                 if (game->menuGui && openMenu && game->menuGui->RenderMode() == MenuRenderMode::None) {
                     while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_MENU_BACK, event)) {}
                     game->menuGui->OpenPauseMenu();
