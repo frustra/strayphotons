@@ -20,13 +20,9 @@ namespace sp {
         glm::vec2 ImmediateCursor() const;
 
         static void KeyInputCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
-
         static void CharInputCallback(GLFWwindow *window, unsigned int ch);
-
         static void MouseMoveCallback(GLFWwindow *window, double xPos, double yPos);
-
         static void MouseButtonCallback(GLFWwindow *window, int button, int actions, int mods);
-
         static void MouseScrollCallback(GLFWwindow *window, double xOffset, double yOffset);
 
     private:

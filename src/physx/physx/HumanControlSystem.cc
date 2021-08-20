@@ -18,14 +18,14 @@
 
 namespace sp {
     static CVar<bool> CVarNoClip("p.NoClip", false, "Disable player clipping");
+    static CVar<bool> CVarPausePlayerPhysics("p.PausePlayerPhysics", false, "Disable player physics update");
     static CVar<float> CVarMovementSpeed("p.MovementSpeed", 3.0, "Player walking movement speed (m/s)");
     static CVar<float> CVarSprintSpeed("p.SprintSpeed", 6.0, "Player sprinting movement speed (m/s)");
     static CVar<float> CVarCrouchSpeed("p.CrouchSpeed", 1.5, "Player crouching movement speed (m/s)");
     static CVar<float> CVarCursorSensitivity("p.CursorSensitivity", 1.0, "Mouse cursor sensitivity");
 
     bool HumanControlSystem::Frame(double dtSinceLastFrame) {
-        // TODO: Handle focus
-        // if (input != nullptr && input->FocusLocked()) return true;
+        if (CVarPausePlayerPhysics.Get()) return true;
 
         bool noclipChanged = CVarNoClip.Changed();
         auto noclip = CVarNoClip.Get(true);

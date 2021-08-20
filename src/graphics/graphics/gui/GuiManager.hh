@@ -18,8 +18,7 @@ namespace sp {
 
     class GuiManager {
     public:
-        // TODO: Fix focus
-        GuiManager(GraphicsManager &graphics /*, const FocusLevel focusPriority = FOCUS_GAME*/);
+        GuiManager(GraphicsManager &graphics);
         virtual ~GuiManager();
         void Attach(GuiRenderable *component);
         void SetGuiContext();
@@ -28,7 +27,6 @@ namespace sp {
         virtual void DefineWindows();
 
     protected:
-        // const FocusLevel focusPriority;
         GraphicsManager &graphics;
 
         ecs::NamedEntity playerEntity;

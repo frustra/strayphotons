@@ -72,9 +72,6 @@ namespace sp {
 
 #ifdef SP_INPUT_SUPPORT
     void GameLogic::HandleInput() {
-        // TODO: Fix input focus
-        // if (game->input.FocusLocked()) return;
-
         bool spawnDebug = false;
         bool placeFlashlight = false;
         {

@@ -17,7 +17,6 @@ namespace sp {
         void BeforeFrame() override;
         void DefineWindows() override;
 
-        bool Focused();
         MenuRenderMode RenderMode();
         void SetRenderMode(MenuRenderMode mode);
         void OpenPauseMenu();

@@ -15,15 +15,13 @@
 #include <sstream>
 
 namespace sp {
-    static CVar<bool> CVarMenuFocused("g.MenuFocused", false, "Focus input on menu");
     static CVar<int> CVarMenuDisplay("g.MenuDisplay", 0, "Display pause menu");
     static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
     static CVar<glm::vec2> CVarMenuCursorScaling("g.MenuCursorScaling",
                                                  glm::vec2(1.435f, 0.805f),
                                                  "Scaling factor for menu cursor position");
 
-    // TODO: Fix focus
-    MenuGuiManager::MenuGuiManager(GraphicsManager &graphics) : GuiManager(graphics /*, FOCUS_MENU*/) {
+    MenuGuiManager::MenuGuiManager(GraphicsManager &graphics) : GuiManager(graphics) {
         SetGuiContext();
 
         graphics.DisableCursor();
@@ -36,10 +34,6 @@ namespace sp {
 
         ImGuiIO &io = ImGui::GetIO();
 
-        // TODO: fix input focus
-        // input.LockFocus(Focused(), focusPriority);
-
-        // if (Focused() && !input.FocusLocked(focusPriority))
         {
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput>,
                                                     ecs::Write<ecs::EventInput>>();
@@ -148,7 +142,12 @@ namespace sp {
 
             ImGui::Image((void *)logoTex->GetHandle(), logoSize);
 
-            if (ImGui::Button(RenderMode() == MenuRenderMode::Pause ? "Resume" : "Start Game")) { CloseMenu(); }
+            if (ImGui::Button(RenderMode() == MenuRenderMode::Pause ? "Resume" : "Start Game")) {
+                if (RenderMode() == MenuRenderMode::Gel) {
+                    GetConsoleManager().QueueParseAndExecute("p.PausePlayerPhysics 0");
+                }
+                CloseMenu();
+            }
 
             if (ImGui::Button("Scene Select")) { selectedScreen = MenuScreen::SceneSelect; }
 
@@ -347,10 +346,6 @@ namespace sp {
         ImGui::PopStyleColor(8);
     }
 
-    bool MenuGuiManager::Focused() {
-        return CVarMenuFocused.Get();
-    }
-
     MenuRenderMode MenuGuiManager::RenderMode() {
         switch (CVarMenuDisplay.Get()) {
         case 1:
@@ -367,25 +362,37 @@ namespace sp {
 
     void MenuGuiManager::OpenPauseMenu() {
         if (RenderMode() == MenuRenderMode::None) {
-            graphics.EnableCursor();
-
             SetRenderMode(MenuRenderMode::Pause);
             selectedScreen = MenuScreen::Main;
 
-            CVarMenuFocused.Set(true);
-            // input.LockFocus(true, focusPriority);
+            {
+                auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+
+                if (lock.Has<ecs::FocusLock>()) {
+                    auto &focusLock = lock.Get<ecs::FocusLock>();
+
+                    focusLock.AcquireFocus(ecs::FocusLayer::MENU);
+                    graphics.EnableCursor();
+                }
+            }
         }
     }
 
     void MenuGuiManager::CloseMenu() {
-        // if (!input.FocusLocked(focusPriority) && RenderMode() != MenuRenderMode::Gel) { graphics.DisableCursor(); }
-
         if (RenderMode() == MenuRenderMode::Pause) {
             SetRenderMode(MenuRenderMode::None);
             selectedScreen = MenuScreen::Main;
         }
 
-        CVarMenuFocused.Set(false);
-        // input.LockFocus(false, focusPriority);
+        {
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+
+            if (lock.Has<ecs::FocusLock>()) {
+                auto &focusLock = lock.Get<ecs::FocusLock>();
+
+                graphics.DisableCursor();
+                focusLock.ReleaseFocus(ecs::FocusLayer::MENU);
+            }
+        }
     }
 } // namespace sp
