@@ -60,11 +60,11 @@ namespace sp {
         }
 
 #ifdef SP_INPUT_SUPPORT
-        // game->input.BindCommand(INPUT_ACTION_SET_VR_ORIGIN, "setvrorigin");
-        // game->input.BindCommand(INPUT_ACTION_RELOAD_SCENE, "reloadscene");
-        // game->input.BindCommand(INPUT_ACTION_RESET_SCENE, "reloadscene reset");
-        // game->input.BindCommand(INPUT_ACTION_RELOAD_SHADERS, "reloadshaders");
-        // game->input.BindCommand(INPUT_ACTION_TOGGLE_FLASHLIGH, "toggle r.FlashlightOn");
+        {
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+
+            lock.Set<ecs::FocusLock>();
+        }
 #endif
     }
 
@@ -92,9 +92,13 @@ namespace sp {
                     game->menuGui->OpenPauseMenu();
                 }
     #endif
-                if (ecs::EventInput::Poll(lock, player, INPUT_EVENT_SPAWN_DEBUG, event)) spawnDebug = true;
-                if (ecs::EventInput::Poll(lock, flashlight, INPUT_EVENT_PLACE_FLASHLIGHT, event))
+                if (ecs::EventInput::Poll(lock, player, INPUT_EVENT_SPAWN_DEBUG, event)) { spawnDebug = true; }
+                if (ecs::EventInput::Poll(lock, flashlight, INPUT_EVENT_FLASHLIGHT_TOGGLE, event)) {
+                    CVarFlashlightOn.Set(!CVarFlashlightOn.Get());
+                }
+                if (ecs::EventInput::Poll(lock, flashlight, INPUT_EVENT_FLASHLIGHT_PLACE, event)) {
                     placeFlashlight = true;
+                }
             }
         }
 

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ecs/components/Events.hh"
-
 #include <algorithm>
 #include <chrono>
 #include <functional>

@@ -22,6 +22,8 @@ namespace ecs {
     struct InteractController;
     struct EventInput;
     class EventBindings;
+    enum class FocusLayer : uint8_t;
+    class FocusLock;
     struct Light;
     class LightSensor;
     struct Mirror;
@@ -45,6 +47,8 @@ namespace ecs {
                           InteractController,
                           EventInput,
                           EventBindings,
+                          FocusLayer,
+                          FocusLock,
                           Light,
                           LightSensor,
                           Mirror,

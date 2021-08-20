@@ -19,16 +19,15 @@ namespace sp {
     static const std::string INPUT_SIGNAL_MOUSE_CURSOR_Y = "mouse_cursor_y";
 
     // Menu
-    static const std::string INPUT_EVENT_TOGGLE_CONSOLE = "/action/toggle_console"; // bool
+    static const std::string INPUT_EVENT_TOGGLE_CONSOLE = "/action/console/toggle"; // bool
     static const std::string INPUT_EVENT_MENU_OPEN = "/action/menu/open"; // bool
     static const std::string INPUT_EVENT_MENU_BACK = "/action/menu/back"; // bool
     static const std::string INPUT_EVENT_MENU_ENTER = "/action/menu/enter"; // bool
     static const std::string INPUT_EVENT_MENU_SCROLL = "/action/menu/scroll"; // glm::vec2
     static const std::string INPUT_EVENT_MENU_TEXT_INPUT = "/action/menu/text_input"; // char
 
-    static const std::string INPUT_SIGNAL_MENU_BUTTON_LEFT = "menu_button_left";
-    static const std::string INPUT_SIGNAL_MENU_BUTTON_MIDDLE = "menu_button_middle";
-    static const std::string INPUT_SIGNAL_MENU_BUTTON_RIGHT = "menu_button_right";
+    static const std::string INPUT_SIGNAL_MENU_PRIMARY_TRIGGER = "menu_primary_trigger";
+    static const std::string INPUT_SIGNAL_MENU_SECONDARY_TRIGGER = "menu_secondary_trigger";
     static const std::string INPUT_SIGNAL_MENU_CURSOR_X = "menu_cursor_x";
     static const std::string INPUT_SIGNAL_MENU_CURSOR_Y = "menu_cursor_y";
 
@@ -44,6 +43,11 @@ namespace sp {
 
     static const std::string INPUT_EVENT_CAMERA_ROTATE = "/action/camera_rotate"; // glm::vec2
     static const std::string INPUT_EVENT_INTERACT = "/action/interact"; // bool
+    static const std::string INPUT_EVENT_TELEPORT = "/action/teleport"; // bool
+    static const std::string INPUT_EVENT_FLASHLIGHT_TOGGLE = "/action/flashlight/toggle"; // bool
+    static const std::string INPUT_EVENT_FLASHLIGHT_PLACE = "/action/flashlight/place"; // bool
+
+    // Other
+    static const std::string INPUT_EVENT_RUN_COMMAND = "/action/run_command"; // string
     static const std::string INPUT_EVENT_SPAWN_DEBUG = "/action/spawn_debug"; // bool
-    static const std::string INPUT_EVENT_PLACE_FLASHLIGHT = "/action/place"; // bool
 } // namespace sp

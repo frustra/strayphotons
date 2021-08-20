@@ -58,8 +58,9 @@ namespace sp {
     void GlfwInputHandler::Frame() {
         bool updateRequired = false;
         {
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::EventBindings, ecs::SignalBindings>,
-                                                    ecs::Write<ecs::EventInput, ecs::SignalOutput>>();
+            auto lock = ecs::World.StartTransaction<
+                ecs::Read<ecs::Name, ecs::EventBindings, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
+                ecs::Write<ecs::EventInput, ecs::SignalOutput>>();
             auto keyboard = keyboardEntity.Get(lock);
             auto mouse = mouseEntity.Get(lock);
             updateRequired = !keyboard.Has<ecs::EventBindings, ecs::SignalOutput>(lock) ||

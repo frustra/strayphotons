@@ -37,7 +37,9 @@ namespace ecs {
         void UnbindSource(NamedEntity origin, std::string source);
 
         const BindingList *Lookup(const std::string name) const;
-        double GetSignal(Lock<Read<Name, SignalOutput>> lock, const std::string &name) const;
+        static double GetSignal(Lock<Read<Name, SignalOutput, SignalBindings, FocusLayer, FocusLock>> lock,
+                                Tecs::Entity ent,
+                                const std::string &name);
 
         CombineOperator operation;
 

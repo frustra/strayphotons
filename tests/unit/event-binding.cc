@@ -7,6 +7,8 @@
 namespace EventBindingTests {
     using namespace testing;
 
+    ecs::ECS World;
+
     const std::string TEST_SOURCE_BUTTON = "/device1/button";
     const std::string TEST_SOURCE_KEY = "/device2/key";
     const std::string TEST_EVENT_ACTION1 = "/test/action1";
@@ -16,7 +18,7 @@ namespace EventBindingTests {
         Tecs::Entity player, hand;
         {
             Timer t("Create a basic scene with EventBindings and EventInput components");
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            auto lock = World.StartTransaction<ecs::AddRemove>();
 
             player = lock.NewEntity();
             player.Set<ecs::Name>(lock, "player");
@@ -34,7 +36,7 @@ namespace EventBindingTests {
         }
         {
             Timer t("Try reading some bindings");
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::EventBindings>>();
+            auto lock = World.StartTransaction<ecs::Read<ecs::EventBindings>>();
 
             auto &bindings = player.Get<ecs::EventBindings>(lock);
             auto targets = bindings.Lookup(TEST_SOURCE_BUTTON);
@@ -57,7 +59,8 @@ namespace EventBindingTests {
         {
             Timer t("Send some test events");
             auto lock =
-                ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::EventBindings>, ecs::Write<ecs::EventInput>>();
+                World.StartTransaction<ecs::Read<ecs::Name, ecs::EventBindings, ecs::FocusLayer, ecs::FocusLock>,
+                                       ecs::Write<ecs::EventInput>>();
 
             auto &bindings = player.Get<ecs::EventBindings>(lock);
             bindings.SendEvent(lock, TEST_SOURCE_BUTTON, ecs::NamedEntity("player", player), 42);
@@ -66,7 +69,7 @@ namespace EventBindingTests {
         }
         {
             Timer t("Read the test events");
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::EventInput>>();
+            auto lock = World.StartTransaction<ecs::Write<ecs::EventInput>>();
 
             ecs::Event event;
             auto &playerEvents = player.Get<ecs::EventInput>(lock);

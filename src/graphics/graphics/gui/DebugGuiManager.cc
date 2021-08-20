@@ -32,31 +32,35 @@ namespace sp {
         ImGuiIO &io = ImGui::GetIO();
         io.MouseDrawCursor = false;
 
-        // TODO: Handle focus
-        // if (Focused() && !input.FocusLocked(focusPriority))
+        bool toggleConsole = false;
         {
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput>,
-                                                    ecs::Write<ecs::EventInput>>();
+            auto lock = ecs::World.StartTransaction<
+                ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput, ecs::FocusLayer, ecs::FocusLock>,
+                ecs::Write<ecs::EventInput>>();
 
             auto player = playerEntity.Get(lock);
             if (player.Has<ecs::EventInput>(lock)) {
                 ecs::Event event;
                 while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_TOGGLE_CONSOLE, event)) {
-                    ToggleConsole();
+                    toggleConsole = !toggleConsole;
                 }
             }
         }
-    }
+        if (toggleConsole) {
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
 
-    void DebugGuiManager::ToggleConsole() {
-        consoleOpen = !consoleOpen;
+            if (lock.Has<ecs::FocusLock>()) {
+                auto &focusLock = lock.Get<ecs::FocusLock>();
+                consoleOpen = !consoleOpen;
 
-        if (consoleOpen) {
-            // input.LockFocus(true, focusPriority);
-            graphics.EnableCursor();
-        } else {
-            graphics.DisableCursor();
-            // input.LockFocus(false, focusPriority);
+                if (consoleOpen) {
+                    focusLock.AcquireFocus(ecs::FocusLayer::OVERLAY);
+                    graphics.EnableCursor();
+                } else {
+                    graphics.DisableCursor();
+                    focusLock.ReleaseFocus(ecs::FocusLayer::OVERLAY);
+                }
+            }
         }
     }
 } // namespace sp

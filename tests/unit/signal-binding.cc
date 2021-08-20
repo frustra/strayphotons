@@ -7,8 +7,8 @@
 namespace SignalBindingTests {
     using namespace testing;
 
-    const std::string TEST_SOURCE_BUTTON = "/device1/button";
-    const std::string TEST_SOURCE_KEY = "/device2/key";
+    const std::string TEST_SOURCE_BUTTON = "device1_button";
+    const std::string TEST_SOURCE_KEY = "device2_key";
     const std::string TEST_SIGNAL_ACTION1 = "test_action1";
     const std::string TEST_SIGNAL_ACTION2 = "test_action2";
     const std::string TEST_SIGNAL_ACTION3 = "test_action3";
@@ -69,41 +69,38 @@ namespace SignalBindingTests {
         }
         {
             Timer t("Try reading some signals");
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput>>();
+            auto lock = ecs::World.StartTransaction<
+                ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput, ecs::FocusLayer, ecs::FocusLock>>();
 
-            auto &playerBindings = player.Get<ecs::SignalBindings>(lock);
-            double val = playerBindings.GetSignal(lock, TEST_SIGNAL_ACTION1);
+            double val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION1);
             AssertEqual(val, 2.0, "Expected signal to match key source");
-            val = playerBindings.GetSignal(lock, TEST_SIGNAL_ACTION2);
+            val = ecs::SignalBindings::GetSignal(lock, player, TEST_SIGNAL_ACTION2);
             AssertEqual(val, 3.0, "Expected signal to match key source + button source");
-            val = playerBindings.GetSignal(lock, "foo");
+            val = ecs::SignalBindings::GetSignal(lock, player, "foo");
             AssertEqual(val, 0.0, "Expected unbound signal to have 0 value");
 
-            auto &handBindings = hand.Get<ecs::SignalBindings>(lock);
-            val = handBindings.GetSignal(lock, TEST_SIGNAL_ACTION1);
+            val = ecs::SignalBindings::GetSignal(lock, hand, TEST_SIGNAL_ACTION1);
             AssertEqual(val, 1.0, "Expected signal to match button source");
-            val = handBindings.GetSignal(lock, TEST_SIGNAL_ACTION3);
+            val = ecs::SignalBindings::GetSignal(lock, hand, TEST_SIGNAL_ACTION3);
             AssertEqual(val, 0.0, "Expected binding to missing entity to read as 0");
-            val = handBindings.GetSignal(lock, "foo");
+            val = ecs::SignalBindings::GetSignal(lock, hand, "foo");
             AssertEqual(val, 0.0, "Expected unbound signal to have 0 value");
         }
         {
             Timer t("Add the missing unknown entity");
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
 
-            auto &handBindings = hand.Get<ecs::SignalBindings>(lock);
-
             unknown = lock.NewEntity();
             unknown.Set<ecs::Name>(lock, "unknown");
-            double val = handBindings.GetSignal(lock, TEST_SIGNAL_ACTION3);
+            double val = ecs::SignalBindings::GetSignal(lock, hand, TEST_SIGNAL_ACTION3);
             AssertEqual(val, 0.0, "Expected binding to invalid entity to read as 0");
 
             auto &signalOutput = unknown.Set<ecs::SignalOutput>(lock);
-            val = handBindings.GetSignal(lock, TEST_SIGNAL_ACTION3);
+            val = ecs::SignalBindings::GetSignal(lock, hand, TEST_SIGNAL_ACTION3);
             AssertEqual(val, 0.0, "Expected binding to missing signal to read as 0");
 
             signalOutput.SetSignal(TEST_SOURCE_BUTTON, 5.0);
-            val = handBindings.GetSignal(lock, TEST_SIGNAL_ACTION3);
+            val = ecs::SignalBindings::GetSignal(lock, hand, TEST_SIGNAL_ACTION3);
             AssertEqual(val, 5.0, "Expected binding to return signal value");
         }
     }

@@ -11,6 +11,7 @@
 
 #include <PxRigidActor.h>
 #include <PxScene.h>
+#include <algorithm>
 #include <cmath>
 #include <glm/glm.hpp>
 #include <sstream>
@@ -30,12 +31,13 @@ namespace sp {
         auto noclip = CVarNoClip.Get(true);
 
         {
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings>,
-                                                    ecs::Write<ecs::EventInput,
-                                                               ecs::PhysicsState,
-                                                               ecs::Transform,
-                                                               ecs::HumanController,
-                                                               ecs::InteractController>>();
+            auto lock = ecs::World.StartTransaction<
+                ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
+                ecs::Write<ecs::EventInput,
+                           ecs::PhysicsState,
+                           ecs::Transform,
+                           ecs::HumanController,
+                           ecs::InteractController>>();
 
             for (Tecs::Entity entity : lock.EntitiesWith<ecs::HumanController>()) {
                 if (!entity.Has<ecs::Transform>(lock)) continue;
@@ -49,43 +51,24 @@ namespace sp {
 
                 auto &controller = entity.Get<ecs::HumanController>(lock);
 
-                if (entity.Has<ecs::SignalBindings>(lock)) {
-                    auto &signalBindings = entity.Get<ecs::SignalBindings>(lock);
+                inputMovement.z -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_FORWARD);
+                inputMovement.z += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_BACK);
+                inputMovement.x -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_LEFT);
+                inputMovement.x += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RIGHT);
 
-                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_MOVE_FORWARD)) {
-                        inputMovement += glm::vec3(0, 0, -1);
-                    }
-
-                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_MOVE_BACK)) { inputMovement += glm::vec3(0, 0, 1); }
-
-                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_MOVE_LEFT)) {
-                        inputMovement += glm::vec3(-1, 0, 0);
-                    }
-
-                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_MOVE_RIGHT)) {
-                        inputMovement += glm::vec3(1, 0, 0);
-                    }
-
-                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_MOVE_JUMP)) {
-                        if (noclip) {
-                            inputMovement += glm::vec3(0, 1, 0);
-                        } else {
-                            jumping = true;
-                        }
-                    }
-
-                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_MOVE_CROUCH)) {
-                        if (noclip) {
-                            inputMovement += glm::vec3(0, -1, 0);
-                        } else {
-                            crouching = true;
-                        }
-                    }
-
-                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_MOVE_SPRINT)) { sprinting = true; }
-
-                    if (signalBindings.GetSignal(lock, INPUT_SIGNAL_INTERACT_ROTATE)) { rotating = true; }
+                if (noclip) {
+                    inputMovement.y -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_JUMP);
+                    inputMovement.y += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_CROUCH);
+                } else {
+                    jumping = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_JUMP) >= 0.5;
+                    crouching = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_CROUCH) >= 0.5;
                 }
+                sprinting = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_SPRINT) >= 0.5;
+                rotating = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_INTERACT_ROTATE) >= 0.5;
+
+                inputMovement.x = std::clamp(inputMovement.x, -1.0f, 1.0f);
+                inputMovement.y = std::clamp(inputMovement.y, -1.0f, 1.0f);
+                inputMovement.z = std::clamp(inputMovement.z, -1.0f, 1.0f);
 
                 if (entity.Has<ecs::EventInput>(lock)) {
                     ecs::Event event;

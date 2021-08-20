@@ -7,18 +7,11 @@ namespace sp {
 
     class DebugGuiManager : public GuiManager {
     public:
-        // TODO: Fix focus
-        DebugGuiManager(GraphicsManager &graphics) : GuiManager(graphics /*, FOCUS_OVERLAY*/) {}
+        DebugGuiManager(GraphicsManager &graphics) : GuiManager(graphics) {}
         virtual ~DebugGuiManager() {}
 
         void BeforeFrame() override;
         void DefineWindows() override;
-
-        bool Focused() {
-            return consoleOpen;
-        }
-
-        void ToggleConsole();
 
     private:
         bool consoleOpen = false;

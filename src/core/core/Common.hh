@@ -50,6 +50,8 @@ namespace sp {
 
     bool starts_with(const string &str, const string &prefix);
     bool ends_with(const string &str, const string &suffix);
+    string to_lower(string &str);
+    string to_upper(string &str);
     string to_lower_copy(const string &str);
     string to_upper_copy(const string &str);
     void trim(string &str);

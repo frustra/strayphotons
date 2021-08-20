@@ -54,8 +54,9 @@ namespace sp {
         ImGuiIO &io = ImGui::GetIO();
 
         {
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput>,
-                                                    ecs::Write<ecs::EventInput>>();
+            auto lock = ecs::World.StartTransaction<
+                ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput, ecs::FocusLayer, ecs::FocusLock>,
+                ecs::Write<ecs::EventInput>>();
 
             auto keyboard = keyboardEntity.Get(lock);
             if (keyboard.Has<ecs::SignalOutput>(lock)) {
@@ -94,15 +95,11 @@ namespace sp {
                 }
             }
 
-            if (player.Has<ecs::SignalBindings>(lock)) {
-                auto &bindings = player.Get<ecs::SignalBindings>(lock);
-                io.MouseDown[0] = bindings.GetSignal(lock, INPUT_SIGNAL_MENU_BUTTON_LEFT) >= 0.5;
-                io.MouseDown[1] = bindings.GetSignal(lock, INPUT_SIGNAL_MENU_BUTTON_RIGHT) >= 0.5;
-                io.MouseDown[2] = bindings.GetSignal(lock, INPUT_SIGNAL_MENU_BUTTON_MIDDLE) >= 0.5;
+            io.MouseDown[0] = ecs::SignalBindings::GetSignal(lock, player, INPUT_SIGNAL_MENU_PRIMARY_TRIGGER) >= 0.5;
+            io.MouseDown[1] = ecs::SignalBindings::GetSignal(lock, player, INPUT_SIGNAL_MENU_SECONDARY_TRIGGER) >= 0.5;
 
-                io.MousePos.x = bindings.GetSignal(lock, INPUT_SIGNAL_MENU_CURSOR_X);
-                io.MousePos.y = bindings.GetSignal(lock, INPUT_SIGNAL_MENU_CURSOR_Y);
-            }
+            io.MousePos.x = ecs::SignalBindings::GetSignal(lock, player, INPUT_SIGNAL_MENU_CURSOR_X);
+            io.MousePos.y = ecs::SignalBindings::GetSignal(lock, player, INPUT_SIGNAL_MENU_CURSOR_Y);
         }
     }
 

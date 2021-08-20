@@ -126,11 +126,23 @@ namespace ecs {
         return nullptr;
     }
 
-    double SignalBindings::GetSignal(Lock<Read<Name, SignalOutput>> lock, const std::string &name) const {
-        auto bindingList = Lookup(name);
+    double SignalBindings::GetSignal(Lock<Read<Name, SignalOutput, SignalBindings, FocusLayer, FocusLock>> lock,
+                                     Tecs::Entity ent,
+                                     const std::string &name) {
+        if (!ent.Has<SignalBindings>(lock)) return 0.0;
+
+        const FocusLock *focusLock = nullptr;
+        if (lock.Has<FocusLock>()) focusLock = &lock.Get<FocusLock>();
+        if (focusLock && ent.Has<FocusLayer>(lock)) {
+            auto &layer = ent.Get<FocusLayer>(lock);
+            if (!focusLock->HasFocus(layer)) return 0.0;
+        }
+
+        auto &bindings = ent.Get<SignalBindings>(lock);
+        auto bindingList = bindings.Lookup(name);
         if (bindingList == nullptr) return 0.0;
 
-        switch (operation) {
+        switch (bindings.operation) {
         case CombineOperator::ADD:
         case CombineOperator::MIN:
         case CombineOperator::MAX:
@@ -141,7 +153,7 @@ namespace ecs {
                 if (origin.Has<SignalOutput>(lock)) {
                     auto &signalOutput = origin.Get<SignalOutput>(lock);
                     auto val = signalOutput.GetSignal(signal.second);
-                    switch (operation) {
+                    switch (bindings.operation) {
                     case CombineOperator::ADD:
                         output = output.value_or(0.0) + val;
                         break;
@@ -169,7 +181,7 @@ namespace ecs {
                 if (origin.Has<SignalOutput>(lock)) {
                     auto &signalOutput = origin.Get<SignalOutput>(lock);
                     bool val = signalOutput.GetSignal(signal.second) >= 0.5;
-                    switch (operation) {
+                    switch (bindings.operation) {
                     case CombineOperator::BINARY_AND:
                         output = output.value_or(true) && val;
                         break;

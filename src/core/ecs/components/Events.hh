@@ -3,6 +3,7 @@
 #include "core/Common.hh"
 #include "ecs/Components.hh"
 #include "ecs/NamedEntity.hh"
+#include "ecs/components/Focus.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -63,9 +64,9 @@ namespace ecs {
         void UnbindDest(NamedEntity target, std::string dest);
 
         const BindingList *Lookup(const std::string source) const;
-        void SendEvent(Lock<Read<Name>, Write<EventInput>> lock, const Event &event) const;
+        void SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock, const Event &event) const;
         template<typename T>
-        inline void SendEvent(Lock<Read<Name>, Write<EventInput>> lock,
+        inline void SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock,
                               const std::string &name,
                               const NamedEntity &source,
                               T data) const {

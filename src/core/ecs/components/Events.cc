@@ -2,6 +2,7 @@
 
 #include "core/Logging.hh"
 
+#include <optional>
 #include <picojson/picojson.h>
 
 namespace ecs {
@@ -158,11 +159,18 @@ namespace ecs {
         return nullptr;
     }
 
-    void EventBindings::SendEvent(Lock<Read<Name>, Write<EventInput>> lock, const Event &event) const {
+    void EventBindings::SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock,
+                                  const Event &event) const {
+        const FocusLock *focusLock = nullptr;
+        if (lock.Has<FocusLock>()) focusLock = &lock.Get<FocusLock>();
         auto list = sourceToDest.find(event.name);
         if (list != sourceToDest.end()) {
             for (auto &binding : list->second) {
                 auto ent = binding.first.Get(lock);
+                if (focusLock && ent.Has<FocusLayer>(lock)) {
+                    auto &layer = ent.Get<FocusLayer>(lock);
+                    if (!focusLock->HasFocus(layer)) continue;
+                }
                 if (ent.Has<EventInput>(lock)) {
                     auto &eventInput = ent.Get<EventInput>(lock);
                     eventInput.Add(binding.second, event);

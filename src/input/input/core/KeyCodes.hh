@@ -6,6 +6,7 @@
 namespace sp {
     // Keycodes matching GLFW keys
     enum KeyCode : int {
+        KEY_INVALID = 0,
         KEY_SPACE = 32,
         KEY_APOSTROPHE = 39,
         KEY_COMMA = 44,

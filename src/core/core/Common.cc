@@ -58,6 +58,20 @@ namespace sp {
         }
     }
 
+    string to_lower(string &str) {
+        std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
+            return std::tolower(c);
+        });
+        return str;
+    }
+
+    string to_upper(string &str) {
+        std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
+            return std::toupper(c);
+        });
+        return str;
+    }
+
     string to_lower_copy(const string &str) {
         string out(str);
         std::transform(str.begin(), str.end(), out.begin(), [](unsigned char c) {
