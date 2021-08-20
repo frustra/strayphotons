@@ -2,8 +2,8 @@
 
 #include "GraphicsManager.hh"
 #include "ecs/EcsImpl.hh"
-#include "graphics/opengl/gui/ConsoleGui.hh"
-#include "input/BindingNames.hh"
+#include "graphics/gui/ConsoleGui.hh"
+#include "input/core/BindingNames.hh"
 
 #include <imgui/imgui.h>
 

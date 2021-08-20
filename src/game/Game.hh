@@ -7,11 +7,8 @@
 
 #ifdef SP_GRAPHICS_SUPPORT
     #include "graphics/GraphicsManager.hh"
-#endif
-
-#ifdef SP_GRAPHICS_SUPPORT_GL
-    #include "graphics/opengl/gui/DebugGuiManager.hh"
-    #include "graphics/opengl/gui/MenuGuiManager.hh"
+    #include "graphics/gui/DebugGuiManager.hh"
+    #include "graphics/gui/MenuGuiManager.hh"
 #endif
 
 #ifdef SP_INPUT_SUPPORT_GLFW
@@ -51,13 +48,11 @@ namespace sp {
         cxxopts::ParseResult &options;
         Script *startupScript = nullptr;
 
-#ifdef SP_GRAPHICS_SUPPORT_GL
-        std::unique_ptr<DebugGuiManager> debugGui = nullptr;
-        std::unique_ptr<MenuGuiManager> menuGui = nullptr;
-#endif
-
 #ifdef SP_GRAPHICS_SUPPORT
         GraphicsManager graphics;
+
+        std::unique_ptr<DebugGuiManager> debugGui = nullptr;
+        std::unique_ptr<MenuGuiManager> menuGui = nullptr;
 #endif
 #ifdef SP_INPUT_SUPPORT_GLFW
         std::unique_ptr<GlfwInputHandler> glfwInputHandler;

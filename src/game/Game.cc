@@ -52,10 +52,9 @@ namespace sp {
 
         try {
 #ifdef SP_GRAPHICS_SUPPORT
-    #ifdef SP_GRAPHICS_SUPPORT_GL
             debugGui = std::make_unique<DebugGuiManager>(this->graphics);
             menuGui = std::make_unique<MenuGuiManager>(this->graphics);
-    #endif
+
             graphics.Init();
 #endif
 

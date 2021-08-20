@@ -7,8 +7,8 @@
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/core/Texture.hh"
-#include "graphics/opengl/GlfwGraphicsContext.hh"
-#include "input/BindingNames.hh"
+#include "graphics/core/GraphicsContext.hh"
+#include "input/core/BindingNames.hh"
 
 #include <glm/glm.hpp>
 #include <imgui/imgui.h>

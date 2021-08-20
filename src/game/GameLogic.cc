@@ -11,7 +11,7 @@
 #include "ecs/Signals.hh"
 
 #ifdef SP_INPUT_SUPPORT
-    #include "input/BindingNames.hh"
+    #include "input/core/BindingNames.hh"
 #endif
 
 #ifdef SP_GRAPHICS_SUPPORT

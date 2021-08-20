@@ -18,21 +18,21 @@
         {
             "_name": "keyboard",
             "event_bindings": {
-                "/keyboard/key_escape": {
+                "/keyboard/characters": { "/action/menu/text_input": "player" },
+                "/keyboard/key/escape": {
                     "/action/menu/open": "player",
                     "/action/menu/back": "player"
                 },
-                "/keyboard/key_enter": { "/action/menu/enter": "player" },
-                "/keyboard/characters": { "/action/menu/text_input": "player" },
-                "/keyboard/key_e": { "/action/interact": "player" },
-                "/keyboard/key_backtick": { "/action/toggle_console": "player" },
-                "/keyboard/key_q": { "/action/spawn_debug": "player" },
-                "/keyboard/key_f1": { "/action/set_vr_origin": "player" },
-                "/keyboard/key_f5": { "/action/reload_scene": "player" },
-                "/keyboard/key_f6": { "/action/reset_scene": "player" },
-                "/keyboard/key_f7": { "/action/reload_shaders": "player" },
-                "/keyboard/key_f": { "/action/toggle": "flashlight" },
-                "/keyboard/key_p": { "/action/place": "flashlight" }
+                "/keyboard/key/enter": { "/action/menu/enter": "player" },
+                "/keyboard/key/e": { "/action/interact": "player" },
+                "/keyboard/key/backtick": { "/action/toggle_console": "player" },
+                "/keyboard/key/q": { "/action/spawn_debug": "player" },
+                "/keyboard/key/f1": { "/action/set_vr_origin": "player" },
+                "/keyboard/key/f5": { "/action/reload_scene": "player" },
+                "/keyboard/key/f6": { "/action/reset_scene": "player" },
+                "/keyboard/key/f7": { "/action/reload_shaders": "player" },
+                "/keyboard/key/f": { "/action/toggle": "flashlight" },
+                "/keyboard/key/p": { "/action/place": "flashlight" }
             }
         },
         {

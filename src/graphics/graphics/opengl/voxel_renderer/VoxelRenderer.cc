@@ -4,6 +4,8 @@
 #include "core/CVar.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "graphics/gui/DebugGuiManager.hh"
+#include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/opengl/GLModel.hh"
 #include "graphics/opengl/GLView.hh"
 #include "graphics/opengl/GPUTypes.hh"
@@ -16,8 +18,6 @@
 #include "graphics/opengl/Shader.hh"
 #include "graphics/opengl/ShaderManager.hh"
 #include "graphics/opengl/VertexBuffer.hh"
-#include "graphics/opengl/gui/DebugGuiManager.hh"
-#include "graphics/opengl/gui/MenuGuiManager.hh"
 #include "graphics/opengl/postprocess/PostProcess.hh"
 
 #include <glm/gtc/matrix_transform.hpp>

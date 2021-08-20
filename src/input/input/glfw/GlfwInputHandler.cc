@@ -5,17 +5,14 @@
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/core/GraphicsContext.hh"
-#include "input/BindingNames.hh"
+#include "input/core/BindingNames.hh"
+#include "input/core/KeyCodes.hh"
+#include "input/glfw/GlfwKeyCodes.hh"
 
+#include <GLFW/glfw3.h>
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <stdexcept>
-
-// clang-format off
-// GLFW must be included after glew.h (Graphics.hh)
-#include "GlfwBindingNames.hh"
-#include <GLFW/glfw3.h>
-// clang-format on
 
 namespace sp {
     GlfwInputHandler::GlfwInputHandler(GLFWwindow &glfwWindow) : window(&glfwWindow) {
@@ -93,17 +90,20 @@ namespace sp {
         Assert(ctx->frameLock != nullptr, "KeyInputCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
+        auto keyCode = GlfwKeyMapping.find(key);
+        Assert(keyCode != GlfwKeyMapping.end(), "Unknown glfw keycode mapping " + std::to_string(key));
+
         auto keyboard = ctx->keyboardEntity.Get(lock);
-        if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+        if (action == GLFW_PRESS) {
             if (keyboard.Has<ecs::EventBindings>(lock)) {
-                std::string eventName = INPUT_EVENT_KEYBOARD_KEY + "_" + GlfwKeyNames.at(key);
+                std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + KeycodeNameLookup.at(keyCode->second);
                 auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
-                bindings.SendEvent(lock, eventName, ctx->keyboardEntity, key);
+                bindings.SendEvent(lock, eventName, ctx->keyboardEntity, true);
             }
         }
 
         if (keyboard.Has<ecs::SignalOutput>(lock)) {
-            std::string signalName = KeycodeSignalLookup.at(key);
+            std::string signalName = INPUT_SIGNAL_KEYBOARD_KEY_BASE + KeycodeNameLookup.at(keyCode->second);
             auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
             switch (action) {
             case GLFW_PRESS:

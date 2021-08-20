@@ -38,6 +38,24 @@ namespace ecs {
         return true;
     }
 
+    std::ostream &operator<<(std::ostream &out, const Event::EventData &v) {
+        std::visit(
+            [&](auto &&arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, glm::vec2>) {
+                    out << glm::to_string(arg);
+                } else if constexpr (std::is_same_v<T, Tecs::Entity>) {
+                    out << "Entity(" << arg.id << ")";
+                } else if constexpr (std::is_same_v<T, std::string>) {
+                    out << "\"" << arg << "\"";
+                } else {
+                    out << typeid(arg).name() << "(" << arg << ")";
+                }
+            },
+            v);
+        return out;
+    }
+
     void EventInput::Register(const std::string &binding) {
         Logf("Registering event queue: %s", binding);
         events.emplace(binding, std::queue<Event>());

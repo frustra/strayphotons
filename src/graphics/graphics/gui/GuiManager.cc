@@ -2,14 +2,10 @@
 
 #include "ConsoleGui.hh"
 #include "ecs/EcsImpl.hh"
-#include "input/BindingNames.hh"
+#include "input/core/BindingNames.hh"
+#include "input/core/KeyCodes.hh"
 
 #include <imgui/imgui.h>
-
-// clang-format off
-// GLFW must be included after glew.h (Graphics.hh)
-#include <GLFW/glfw3.h>
-// clang-format on
 
 namespace sp {
     GuiManager::GuiManager(GraphicsManager &graphics /*, const FocusLevel focusPriority*/)
@@ -19,26 +15,25 @@ namespace sp {
         SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
 
-        // TODO: Set this mapping without requiring GLFW include.
-        io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
-        io.KeyMap[ImGuiKey_LeftArrow] = GLFW_KEY_LEFT;
-        io.KeyMap[ImGuiKey_RightArrow] = GLFW_KEY_RIGHT;
-        io.KeyMap[ImGuiKey_UpArrow] = GLFW_KEY_UP;
-        io.KeyMap[ImGuiKey_DownArrow] = GLFW_KEY_DOWN;
-        io.KeyMap[ImGuiKey_PageUp] = GLFW_KEY_PAGE_UP;
-        io.KeyMap[ImGuiKey_PageDown] = GLFW_KEY_PAGE_DOWN;
-        io.KeyMap[ImGuiKey_Home] = GLFW_KEY_HOME;
-        io.KeyMap[ImGuiKey_End] = GLFW_KEY_END;
-        io.KeyMap[ImGuiKey_Delete] = GLFW_KEY_DELETE;
-        io.KeyMap[ImGuiKey_Backspace] = GLFW_KEY_BACKSPACE;
-        io.KeyMap[ImGuiKey_Enter] = GLFW_KEY_ENTER;
-        io.KeyMap[ImGuiKey_Escape] = GLFW_KEY_ESCAPE;
-        io.KeyMap[ImGuiKey_A] = GLFW_KEY_A;
-        io.KeyMap[ImGuiKey_C] = GLFW_KEY_C;
-        io.KeyMap[ImGuiKey_V] = GLFW_KEY_V;
-        io.KeyMap[ImGuiKey_X] = GLFW_KEY_X;
-        io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
-        io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
+        io.KeyMap[ImGuiKey_Tab] = KEY_TAB;
+        io.KeyMap[ImGuiKey_LeftArrow] = KEY_LEFT_ARROW;
+        io.KeyMap[ImGuiKey_RightArrow] = KEY_RIGHT_ARROW;
+        io.KeyMap[ImGuiKey_UpArrow] = KEY_UP_ARROW;
+        io.KeyMap[ImGuiKey_DownArrow] = KEY_DOWN_ARROW;
+        io.KeyMap[ImGuiKey_PageUp] = KEY_PAGE_UP;
+        io.KeyMap[ImGuiKey_PageDown] = KEY_PAGE_DOWN;
+        io.KeyMap[ImGuiKey_Home] = KEY_HOME;
+        io.KeyMap[ImGuiKey_End] = KEY_END;
+        io.KeyMap[ImGuiKey_Delete] = KEY_DELETE;
+        io.KeyMap[ImGuiKey_Backspace] = KEY_BACKSPACE;
+        io.KeyMap[ImGuiKey_Enter] = KEY_ENTER;
+        io.KeyMap[ImGuiKey_Escape] = KEY_ESCAPE;
+        io.KeyMap[ImGuiKey_A] = KEY_A;
+        io.KeyMap[ImGuiKey_C] = KEY_C;
+        io.KeyMap[ImGuiKey_V] = KEY_V;
+        io.KeyMap[ImGuiKey_X] = KEY_X;
+        io.KeyMap[ImGuiKey_Y] = KEY_Y;
+        io.KeyMap[ImGuiKey_Z] = KEY_Z;
 
         playerEntity = ecs::NamedEntity("player");
         keyboardEntity = ecs::NamedEntity("keyboard");
@@ -66,15 +61,15 @@ namespace sp {
             if (keyboard.Has<ecs::SignalOutput>(lock)) {
                 auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
                 for (int keyCode = KEY_SPACE; keyCode < KEY_BACKTICK; keyCode++) {
-                    auto signalName = KeycodeSignalLookup.find(keyCode);
-                    if (signalName != KeycodeSignalLookup.end()) {
-                        io.KeysDown[keyCode] = signalOutput.GetSignal(signalName->second);
+                    auto keyName = KeycodeNameLookup.find(keyCode);
+                    if (keyName != KeycodeNameLookup.end()) {
+                        io.KeysDown[keyCode] = signalOutput.GetSignal(INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName->second);
                     }
                 }
                 for (int keyCode = KEY_ESCAPE; keyCode < KEY_RIGHT_SUPER; keyCode++) {
-                    auto signalName = KeycodeSignalLookup.find(keyCode);
-                    if (signalName != KeycodeSignalLookup.end()) {
-                        io.KeysDown[keyCode] = signalOutput.GetSignal(signalName->second);
+                    auto keyName = KeycodeNameLookup.find(keyCode);
+                    if (keyName != KeycodeNameLookup.end()) {
+                        io.KeysDown[keyCode] = signalOutput.GetSignal(INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName->second);
                     }
                 }
 

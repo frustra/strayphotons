@@ -6,7 +6,7 @@
 #include "graphics/opengl/GlfwGraphicsContext.hh"
 #include "graphics/opengl/PerfTimer.hh"
 #include "graphics/opengl/ShaderManager.hh"
-#include "graphics/opengl/gui/GuiManager.hh"
+#include "graphics/gui/GuiManager.hh"
 #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
 
 #include <algorithm>
