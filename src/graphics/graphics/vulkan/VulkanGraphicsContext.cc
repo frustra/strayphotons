@@ -24,26 +24,19 @@ namespace sp {
                                         VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                         const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
                                         void *pGraphicsContext) {
+        auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes));
         switch (messageSeverity) {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            Errorf("Vulkan Error %s: %s",
-                   vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes)),
-                   pCallbackData->pMessage);
+            Errorf("Vulkan Error %s: %s", typeStr, pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            Logf("Vulkan Warning %s: %s",
-                 vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes)),
-                 pCallbackData->pMessage);
+            Logf("Vulkan Warning %s: %s", typeStr, pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-            Logf("Vulkan Info %s: %s",
-                 vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes)),
-                 pCallbackData->pMessage);
+            Logf("Vulkan Info %s: %s", typeStr, pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-            Debugf("Vulkan Verbose %s: %s",
-                   vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes)),
-                   pCallbackData->pMessage);
+            Debugf("Vulkan Verbose %s: %s", typeStr, pCallbackData->pMessage);
             break;
         }
         return VK_FALSE;
@@ -181,24 +174,12 @@ namespace sp {
             queueInfos.push_back(queueInfo);
         }
 
-        vk::PhysicalDeviceFeatures availableFeatures = physicalDevice.getFeatures();
-        Assert(availableFeatures.multiViewport, "device must support multiViewport");
-        Assert(availableFeatures.fillModeNonSolid, "device must support fillModeNonSolid");
-        Assert(availableFeatures.wideLines, "device must support wideLines");
-        Assert(availableFeatures.largePoints, "device must support largePoints");
-        Assert(availableFeatures.geometryShader, "device must support geometryShader");
+        vector<const char *> enabledDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                                                        VK_KHR_MULTIVIEW_EXTENSION_NAME};
 
-        vk::PhysicalDeviceFeatures enabledFeatures;
-        enabledFeatures.multiViewport = true;
-        enabledFeatures.fillModeNonSolid = true;
-        enabledFeatures.wideLines = true;
-        enabledFeatures.largePoints = true;
-        enabledFeatures.geometryShader = true;
-
-        vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_MULTIVIEW_EXTENSION_NAME};
         auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
 
-        for (auto requiredExtension : deviceExtensions) {
+        for (auto requiredExtension : enabledDeviceExtensions) {
             bool found = false;
             for (auto &availableExtension : availableDeviceExtensions) {
                 if (strncmp(requiredExtension, availableExtension.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0) {
@@ -209,12 +190,35 @@ namespace sp {
             Assert(found, string("device must have extension ") + requiredExtension);
         }
 
+        vk::PhysicalDeviceFeatures2 deviceFeatures2;
+        auto &availableDeviceFeatures = deviceFeatures2.features;
+
+        vk::PhysicalDeviceMultiviewFeatures availableMultiviewFeatures;
+        deviceFeatures2.pNext = &availableMultiviewFeatures;
+
+        physicalDevice.getFeatures2KHR(&deviceFeatures2);
+
+        Assert(availableDeviceFeatures.multiViewport, "device must support multiViewport");
+        Assert(availableDeviceFeatures.fillModeNonSolid, "device must support fillModeNonSolid");
+        Assert(availableDeviceFeatures.wideLines, "device must support wideLines");
+        Assert(availableDeviceFeatures.largePoints, "device must support largePoints");
+        Assert(availableDeviceFeatures.geometryShader, "device must support geometryShader");
+        Assert(availableMultiviewFeatures.multiview, "device must support multiview");
+        Assert(availableMultiviewFeatures.multiviewGeometryShader, "device must support multiviewGeometryShader");
+
+        vk::PhysicalDeviceFeatures enabledDeviceFeatures;
+        enabledDeviceFeatures.multiViewport = true;
+        enabledDeviceFeatures.fillModeNonSolid = true;
+        enabledDeviceFeatures.wideLines = true;
+        enabledDeviceFeatures.largePoints = true;
+        enabledDeviceFeatures.geometryShader = true;
+
         vk::DeviceCreateInfo deviceInfo;
         deviceInfo.queueCreateInfoCount = queueInfos.size();
         deviceInfo.pQueueCreateInfos = queueInfos.data();
-        deviceInfo.pEnabledFeatures = &enabledFeatures;
-        deviceInfo.enabledExtensionCount = deviceExtensions.size();
-        deviceInfo.ppEnabledExtensionNames = deviceExtensions.data();
+        deviceInfo.pEnabledFeatures = &enabledDeviceFeatures;
+        deviceInfo.enabledExtensionCount = enabledDeviceExtensions.size();
+        deviceInfo.ppEnabledExtensionNames = enabledDeviceExtensions.data();
         deviceInfo.enabledLayerCount = layers.size();
         deviceInfo.ppEnabledLayerNames = layers.data();
 
