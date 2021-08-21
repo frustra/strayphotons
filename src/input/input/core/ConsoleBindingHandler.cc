@@ -59,7 +59,7 @@ namespace sp {
 
                 auto keyboard = keyboardEntity.Get(lock);
                 if (keyboard.Has<ecs::EventBindings>(lock)) {
-                    auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
+                    // auto &bindings = keyboard.Get<ecs::EventBindings>(lock);
 
                     Logf("Binding %s to command: %s", keyName, command);
                     // TODO: Fix command binding
