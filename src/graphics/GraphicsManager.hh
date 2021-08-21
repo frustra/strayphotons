@@ -21,6 +21,10 @@ namespace sp {
     class VoxelRenderer;
     #endif
 
+    #ifdef SP_GRAPHICS_SUPPORT_VK
+    class VulkanRenderer;
+    #endif
+
     class GraphicsManager {
     public:
         GraphicsManager(Game *game);
@@ -43,6 +47,10 @@ namespace sp {
         VoxelRenderer *renderer = nullptr;
         std::shared_ptr<ProfilerGui> profilerGui;
         PerfTimer timer;
+    #endif
+
+    #ifdef SP_GRAPHICS_SUPPORT_VK
+        VulkanRenderer *renderer = nullptr;
     #endif
     };
 } // namespace sp

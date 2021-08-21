@@ -38,6 +38,65 @@ namespace sp {
             return window;
         }
 
+        vk::Fence CurrentFrameFence() {
+            return *inFlightFences[currentFrame];
+        }
+
+        vk::Semaphore CurrentFrameImageAvailableSemaphore() {
+            return *imageAvailableSemaphores[currentFrame];
+        }
+
+        vk::Semaphore CurrentFrameRenderCompleteSemaphore() {
+            return *renderCompleteSemaphores[currentFrame];
+        }
+
+        vk::Device &Device() {
+            return *device;
+        }
+
+        vk::Queue GraphicsQueue() {
+            return graphicsQueue;
+        }
+
+        vk::Fence ResetCurrentFrameFence() {
+            auto fence = CurrentFrameFence();
+            device->resetFences({fence});
+            return fence;
+        }
+
+        uint32_t CurrentSwapchainImageIndex() {
+            return imageIndex;
+        }
+
+        uint32_t SwapchainVersion() {
+            // incremented when the swapchain changes, any dependent pipelines need to be recreated
+            return swapchainVersion;
+        }
+
+        vector<vk::UniqueCommandBuffer> CreateCommandBuffers(
+            uint32_t count,
+            vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary) {
+
+            vk::CommandBufferAllocateInfo allocInfo;
+            allocInfo.commandPool = *graphicsCommandPool;
+            allocInfo.level = vk::CommandBufferLevel::ePrimary;
+            allocInfo.commandBufferCount = count;
+
+            return device->allocateCommandBuffersUnique(allocInfo);
+        }
+
+        vk::Format SwapchainImageFormat() {
+            return swapchainImageFormat;
+        }
+
+        vector<vk::ImageView> SwapchainImageViews() {
+            vector<vk::ImageView> output;
+            for (auto &imageView : swapchainImageViews) {
+                output.push_back(*imageView);
+            }
+            return output;
+        }
+
     private:
         void SetTitle(string title);
 
@@ -54,23 +113,18 @@ namespace sp {
         uint32_t graphicsQueueFamily, presentQueueFamily;
         vk::Queue graphicsQueue, presentQueue;
 
+        vk::UniqueCommandPool graphicsCommandPool;
+
+        uint32_t swapchainVersion = 0;
         vk::UniqueSwapchainKHR swapchain;
         vector<vk::Image> swapchainImages;
         vk::Format swapchainImageFormat;
         vk::Extent2D swapchainExtent;
         vector<vk::UniqueImageView> swapchainImageViews;
-        vk::UniqueCommandPool commandPool;
-        vector<vk::CommandBuffer> commandBuffers;
 
         std::vector<vk::UniqueSemaphore> imageAvailableSemaphores, renderCompleteSemaphores;
         std::vector<vk::UniqueFence> inFlightFences; // one per inflight frame
         std::vector<vk::Fence> imagesInFlight; // one per swapchain image
-
-        // test pipeline
-        vk::UniqueRenderPass renderPass;
-        vk::UniquePipelineLayout pipelineLayout;
-        vk::UniquePipeline graphicsPipeline;
-        vector<vk::UniqueFramebuffer> swapchainFramebuffers;
 
         size_t currentFrame = 0;
         uint32_t imageIndex; // index of the swapchain currently being rendered

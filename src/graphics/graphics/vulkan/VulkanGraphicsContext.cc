@@ -10,15 +10,11 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-// temporary for shader access, shaders should be compiled somewhere else later
-#include "assets/Asset.hh"
-#include "assets/AssetManager.hh"
-
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace sp {
     const int MAX_FRAMES_IN_FLIGHT = 2;
-    const int FENCE_WAIT_TIME = 1e10; // nanoseconds, assume deadlock after this time
+    const uint64_t FENCE_WAIT_TIME = 1e10; // nanoseconds, assume deadlock after this time
 
     static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                         VkDebugUtilsMessageTypeFlagsEXT messageTypes,
@@ -37,6 +33,8 @@ namespace sp {
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
             Debugf("Vulkan Verbose %s: %s", typeStr, pCallbackData->pMessage);
+            break;
+        default:
             break;
         }
         return VK_FALSE;
@@ -228,6 +226,11 @@ namespace sp {
         graphicsQueue = device->getQueue(graphicsQueueFamily, 0);
         presentQueue = device->getQueue(presentQueueFamily, 0);
 
+        vk::CommandPoolCreateInfo poolInfo;
+        poolInfo.queueFamilyIndex = graphicsQueueFamily;
+        poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+        graphicsCommandPool = device->createCommandPoolUnique(poolInfo);
+
         vk::SemaphoreCreateInfo semaphoreInfo;
         vk::FenceCreateInfo fenceInfo;
         fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
@@ -239,7 +242,6 @@ namespace sp {
         }
 
         CreateSwapchain();
-        CreateTestPipeline();
     }
 
     VulkanGraphicsContext::~VulkanGraphicsContext() {
@@ -306,6 +308,7 @@ namespace sp {
         auto newSwapchain = device->createSwapchainKHRUnique(swapchainInfo, nullptr);
         swapchainImageViews.clear();
         swapchain.swap(std::move(newSwapchain));
+        swapchainVersion++;
 
         swapchainImages = device->getSwapchainImagesKHR(*swapchain);
         swapchainImageFormat = swapchainInfo.imageFormat;
@@ -327,192 +330,9 @@ namespace sp {
         imagesInFlight.resize(swapchainImages.size());
     }
 
-    void VulkanGraphicsContext::CreateTestPipeline() {
-        // very temporary code to build a test pipeline
-
-        auto vertShaderAsset = GAssets.Load("shaders/vulkan/bin/test.vert.spv");
-        vk::ShaderModuleCreateInfo vertShaderCreateInfo;
-        vertShaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(vertShaderAsset->CharBuffer());
-        vertShaderCreateInfo.codeSize = vertShaderAsset->buffer.size();
-        auto vertShaderModule = device->createShaderModuleUnique(vertShaderCreateInfo);
-
-        auto fragShaderAsset = GAssets.Load("shaders/vulkan/bin/test.frag.spv");
-        vk::ShaderModuleCreateInfo fragShaderCreateInfo;
-        fragShaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(fragShaderAsset->CharBuffer());
-        fragShaderCreateInfo.codeSize = fragShaderAsset->buffer.size();
-        auto fragShaderModule = device->createShaderModuleUnique(fragShaderCreateInfo);
-
-        vk::PipelineShaderStageCreateInfo vertShaderStageInfo;
-        vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-        vertShaderStageInfo.module = *vertShaderModule;
-        vertShaderStageInfo.pName = "main";
-
-        vk::PipelineShaderStageCreateInfo fragShaderStageInfo;
-        fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-        fragShaderStageInfo.module = *fragShaderModule;
-        fragShaderStageInfo.pName = "main";
-
-        std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
-
-        vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
-        vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
-        inputAssembly.topology = vk::PrimitiveTopology::eTriangleList;
-
-        vk::Viewport viewport;
-        viewport.width = swapchainExtent.width;
-        viewport.height = swapchainExtent.height;
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-
-        vk::Rect2D scissor;
-        scissor.extent = swapchainExtent;
-
-        vk::PipelineViewportStateCreateInfo viewportState;
-        viewportState.viewportCount = 1;
-        viewportState.pViewports = &viewport;
-        viewportState.scissorCount = 1;
-        viewportState.pScissors = &scissor;
-
-        vk::PipelineRasterizationStateCreateInfo rasterizer;
-        rasterizer.polygonMode = vk::PolygonMode::eFill;
-        rasterizer.depthClampEnable = VK_FALSE;
-        rasterizer.rasterizerDiscardEnable = VK_FALSE;
-        rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = vk::CullModeFlagBits::eBack;
-        rasterizer.frontFace = vk::FrontFace::eClockwise;
-
-        vk::PipelineColorBlendAttachmentState colorBlendAttachment;
-        colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-                                              vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-
-        vk::PipelineColorBlendStateCreateInfo colorBlending;
-        colorBlending.attachmentCount = 1;
-        colorBlending.pAttachments = &colorBlendAttachment;
-
-        vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
-        pipelineLayout = device->createPipelineLayoutUnique(pipelineLayoutInfo);
-
-        vk::AttachmentDescription colorAttachment;
-        colorAttachment.format = swapchainImageFormat;
-        colorAttachment.samples = vk::SampleCountFlagBits::e1;
-        colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-        colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-        colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eClear;
-        colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eStore;
-        colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
-        colorAttachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
-
-        vk::AttachmentReference colorAttachmentRef;
-        colorAttachmentRef.attachment = 0;
-        colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-        vk::SubpassDescription subpass;
-        subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &colorAttachmentRef;
-
-        vk::SubpassDependency dependency;
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-        dependency.srcAccessMask = vk::AccessFlagBits::eNoneKHR;
-        dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-        dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-
-        vk::RenderPassCreateInfo renderPassInfo;
-        renderPassInfo.attachmentCount = 1;
-        renderPassInfo.pAttachments = &colorAttachment;
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;
-        renderPassInfo.dependencyCount = 1;
-        renderPassInfo.pDependencies = &dependency;
-
-        renderPass = device->createRenderPassUnique(renderPassInfo);
-
-        vk::PipelineMultisampleStateCreateInfo multisampling;
-        multisampling.sampleShadingEnable = false;
-        multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
-
-        vk::GraphicsPipelineCreateInfo pipelineInfo;
-        pipelineInfo.stageCount = 2;
-        pipelineInfo.pStages = shaderStages.data();
-        pipelineInfo.pVertexInputState = &vertexInputInfo;
-        pipelineInfo.pInputAssemblyState = &inputAssembly;
-        pipelineInfo.pViewportState = &viewportState;
-        pipelineInfo.pRasterizationState = &rasterizer;
-        pipelineInfo.pMultisampleState = &multisampling;
-        pipelineInfo.pDepthStencilState = nullptr;
-        pipelineInfo.pColorBlendState = &colorBlending;
-        pipelineInfo.layout = *pipelineLayout;
-        pipelineInfo.renderPass = *renderPass;
-        pipelineInfo.subpass = 0;
-
-        auto pipelinesResult = device->createGraphicsPipelinesUnique({}, {pipelineInfo});
-        Assert(pipelinesResult.result == vk::Result::eSuccess, "creating pipelines");
-        graphicsPipeline = std::move(pipelinesResult.value[0]);
-
-        swapchainFramebuffers.clear();
-        for (size_t i = 0; i < swapchainImageViews.size(); i++) {
-            vk::ImageView attachments[] = {*swapchainImageViews[i]};
-
-            vk::FramebufferCreateInfo framebufferInfo{};
-            framebufferInfo.renderPass = *renderPass;
-            framebufferInfo.attachmentCount = 1;
-            framebufferInfo.pAttachments = attachments;
-            framebufferInfo.width = swapchainExtent.width;
-            framebufferInfo.height = swapchainExtent.height;
-            framebufferInfo.layers = 1;
-
-            swapchainFramebuffers.push_back(device->createFramebufferUnique(framebufferInfo));
-        }
-
-        vk::CommandPoolCreateInfo poolInfo;
-        poolInfo.queueFamilyIndex = graphicsQueueFamily;
-
-        commandPool = device->createCommandPoolUnique(poolInfo);
-
-        vk::CommandBufferAllocateInfo allocInfo;
-        allocInfo.commandPool = *commandPool;
-        allocInfo.level = vk::CommandBufferLevel::ePrimary;
-        allocInfo.commandBufferCount = (uint32_t)swapchainFramebuffers.size();
-
-        commandBuffers = device->allocateCommandBuffers(allocInfo);
-
-        for (size_t i = 0; i < commandBuffers.size(); i++) {
-            vk::CommandBufferBeginInfo beginInfo;
-            auto &commands = commandBuffers[i];
-            commands.begin(beginInfo);
-
-            vk::RenderPassBeginInfo renderPassInfo;
-            renderPassInfo.renderPass = *renderPass;
-            renderPassInfo.framebuffer = *swapchainFramebuffers[i];
-            renderPassInfo.renderArea.extent = swapchainExtent;
-
-            vk::ClearColorValue color(std::array{0.0f, 1.0f, 0.0f, 1.0f});
-            vk::ClearValue clearColor(color);
-            renderPassInfo.clearValueCount = 1;
-            renderPassInfo.pClearValues = &clearColor;
-
-            commands.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-            commands.bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline);
-            commands.draw(3, 1, 0, 0);
-            commands.endRenderPass();
-            commands.end();
-        }
-    }
-
     void VulkanGraphicsContext::RecreateSwapchain() {
         vkDeviceWaitIdle(*device);
-
-        // Created by CreateTestPipeline
-        swapchainFramebuffers.clear();
-        commandBuffers.clear();
-        graphicsPipeline.reset();
-        pipelineLayout.reset();
-        renderPass.reset();
-
         CreateSwapchain();
-        CreateTestPipeline();
     }
 
     void VulkanGraphicsContext::SetTitle(string title) {
@@ -545,7 +365,7 @@ namespace sp {
             glfwWindowSize = scaled;
         }
 
-        view.extents = CVarWindowSize.Get();
+        view.extents = {swapchainExtent.width, swapchainExtent.height};
         view.fov = glm::radians(CVarFieldOfView.Get());
     }
 
@@ -576,17 +396,14 @@ namespace sp {
     }
 
     void VulkanGraphicsContext::BeginFrame() {
-        auto fence = *inFlightFences[currentFrame];
-        auto result = device->waitForFences({fence}, true, FENCE_WAIT_TIME);
+        auto result = device->waitForFences({CurrentFrameFence()}, true, FENCE_WAIT_TIME);
         Assert(result == vk::Result::eSuccess, "timed out waiting for fence");
 
-        auto imageAvailableSem = *imageAvailableSemaphores[currentFrame];
-        auto renderCompleteSem = *renderCompleteSemaphores[currentFrame];
-
         try {
-            auto acquireResult = device->acquireNextImageKHR(*swapchain, UINT64_MAX, imageAvailableSem, nullptr);
+            auto acquireResult =
+                device->acquireNextImageKHR(*swapchain, UINT64_MAX, CurrentFrameImageAvailableSemaphore(), nullptr);
             imageIndex = acquireResult.value;
-        } catch (vk::OutOfDateKHRError) {
+        } catch (const vk::OutOfDateKHRError &) {
             RecreateSwapchain();
             return BeginFrame();
         }
@@ -596,24 +413,10 @@ namespace sp {
             Assert(result == vk::Result::eSuccess, "timed out waiting for fence");
         }
         imagesInFlight[imageIndex] = *inFlightFences[currentFrame];
-
-        vk::SubmitInfo submitInfo;
-        vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
-
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = &imageAvailableSem;
-        submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = &renderCompleteSem;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
-
-        device->resetFences({fence});
-        graphicsQueue.submit({submitInfo}, fence);
     }
 
     void VulkanGraphicsContext::SwapBuffers() {
-        vk::Semaphore renderCompleteSem = *renderCompleteSemaphores[currentFrame];
+        vk::Semaphore renderCompleteSem = CurrentFrameRenderCompleteSemaphore();
         vk::PresentInfoKHR presentInfo;
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = &renderCompleteSem;
@@ -626,7 +429,7 @@ namespace sp {
         try {
             auto presentResult = presentQueue.presentKHR(presentInfo);
             if (presentResult == vk::Result::eSuboptimalKHR) RecreateSwapchain();
-        } catch (vk::OutOfDateKHRError) { RecreateSwapchain(); }
+        } catch (const vk::OutOfDateKHRError &) { RecreateSwapchain(); }
 
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }

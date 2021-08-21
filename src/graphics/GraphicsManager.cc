@@ -18,6 +18,7 @@
     #endif
     #ifdef SP_GRAPHICS_SUPPORT_VK
         #include "graphics/vulkan/VulkanGraphicsContext.hh"
+        #include "graphics/vulkan/VulkanRenderer.hh"
         #include "input/glfw/GlfwActionSource.hh"
     #endif
 
@@ -38,11 +39,8 @@ namespace sp {
     }
 
     GraphicsManager::~GraphicsManager() {
-    #ifdef SP_GRAPHICS_SUPPORT_GL
-        if (renderer) { delete renderer; }
-    #endif
-
     #if SP_GRAPHICS_SUPPORT_GL || SP_GRAPHICS_SUPPORT_VK
+        if (renderer) { delete renderer; }
         if (context) { delete context; }
     #endif
     }
@@ -89,6 +87,17 @@ namespace sp {
 
         renderer->Prepare();
     #endif
+
+    #ifdef SP_GRAPHICS_SUPPORT_VK
+        if (renderer) { throw "already an active renderer"; }
+
+        {
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            renderer = new VulkanRenderer(lock, *vkContext);
+        }
+
+        renderer->Prepare();
+    #endif
     }
 
     bool GraphicsManager::HasActiveContext() {
@@ -99,9 +108,6 @@ namespace sp {
     #if SP_GRAPHICS_SUPPORT_GL || SP_GRAPHICS_SUPPORT_VK
         if (!context) throw "no active context";
         if (!HasActiveContext()) return false;
-    #endif
-
-    #ifdef SP_GRAPHICS_SUPPORT_GL
         if (!renderer) throw "no active renderer";
     #endif
 
@@ -214,8 +220,26 @@ namespace sp {
     #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
+        // timer.StartFrame();
         context->BeginFrame();
+
+        {
+            // RenderPhase phase("Frame", timer);
+
+            auto lock =
+                ecs::World
+                    .StartTransaction<ecs::Read<ecs::Name, ecs::Transform, ecs::Renderable, ecs::View, ecs::Mirror>>();
+            renderer->BeginFrame(lock);
+
+            for (auto &view : cameraViews) {
+                renderer->RenderPass(view, lock);
+            }
+
+            renderer->EndFrame();
+        }
+
         context->SwapBuffers();
+        // timer.EndFrame();
         context->EndFrame();
     #endif
 
