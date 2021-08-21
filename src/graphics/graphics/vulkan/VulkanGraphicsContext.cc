@@ -307,7 +307,7 @@ namespace sp {
 
         auto newSwapchain = device->createSwapchainKHRUnique(swapchainInfo, nullptr);
         swapchainImageViews.clear();
-        swapchain.swap(std::move(newSwapchain));
+        swapchain.swap(newSwapchain);
         swapchainVersion++;
 
         swapchainImages = device->getSwapchainImagesKHR(*swapchain);
