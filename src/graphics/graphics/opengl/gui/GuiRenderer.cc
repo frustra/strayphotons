@@ -2,14 +2,12 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
+#include "graphics/gui/GuiManager.hh"
 #include "graphics/opengl/GenericShaders.hh"
 #include "graphics/opengl/GlfwGraphicsContext.hh"
 #include "graphics/opengl/PerfTimer.hh"
 #include "graphics/opengl/ShaderManager.hh"
-#include "graphics/opengl/gui/GuiManager.hh"
 #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
-#include "input/InputManager.hh"
-#include "input/glfw/GlfwActionSource.hh"
 
 #include <algorithm>
 #include <imgui/imgui.h>

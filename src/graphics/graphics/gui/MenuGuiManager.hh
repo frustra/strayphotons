@@ -1,10 +1,9 @@
 #pragma once
 
-#include "graphics/opengl/gui/GuiManager.hh"
+#include "graphics/gui/GuiManager.hh"
 
 namespace sp {
     class GraphicsManager;
-    class InputManager;
 
     enum class MenuScreen { Splash, Main, Options, SceneSelect, Credits };
 
@@ -12,22 +11,21 @@ namespace sp {
 
     class MenuGuiManager : public GuiManager {
     public:
-        MenuGuiManager(GraphicsManager &graphics, InputManager &input);
+        MenuGuiManager(GraphicsManager &graphics);
         virtual ~MenuGuiManager() {}
 
         void BeforeFrame() override;
         void DefineWindows() override;
 
-        bool Focused();
-        MenuRenderMode RenderMode();
+        MenuRenderMode RenderMode() const;
+        bool MenuOpen() const;
         void SetRenderMode(MenuRenderMode mode);
-        void OpenPauseMenu();
-        void CloseMenu();
 
     private:
+        GraphicsManager &graphics;
+
         MenuScreen selectedScreen = MenuScreen::Splash;
 
-        uint64_t framesSinceOpened = 0;
         float creditsScroll = 0.0f;
     };
 } // namespace sp

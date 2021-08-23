@@ -16,7 +16,6 @@ namespace sp {
     class Game;
     class GraphicsContext;
     class ProfilerGui;
-    class GlfwActionSource;
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
     class VoxelRenderer;
@@ -36,17 +35,13 @@ namespace sp {
 
         GraphicsContext *GetContext();
 
-        void DisableCursor();
-        void EnableCursor();
-
     private:
         GraphicsContext *context = nullptr;
         Game *game = nullptr;
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
         VoxelRenderer *renderer = nullptr;
-        GlfwActionSource *glfwActionSource = nullptr;
-        ProfilerGui *profilerGui = nullptr;
+        std::shared_ptr<ProfilerGui> profilerGui;
         PerfTimer timer;
     #endif
     };

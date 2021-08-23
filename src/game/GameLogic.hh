@@ -22,12 +22,16 @@ namespace sp {
         bool Frame(double dtSinceLastFrame);
 
         void LoadPlayer();
-        void LoadScene(string name);
-        void ReloadScene(string arg);
+        void LoadScene(std::string name);
+        void ReloadScene(std::string arg);
         void PrintDebug();
 
-        void SetSignal(string args);
-        void ClearSignal(string args);
+        void PrintFocus();
+        void AcquireFocus(std::string args);
+        void ReleaseFocus(std::string args);
+
+        void SetSignal(std::string args);
+        void ClearSignal(std::string args);
 
         Tecs::Entity GetPlayer() {
             return player;

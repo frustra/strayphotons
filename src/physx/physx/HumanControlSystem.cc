@@ -5,37 +5,39 @@
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
-#include "input/InputManager.hh"
+#include "input/core/BindingNames.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 
 #include <PxRigidActor.h>
 #include <PxScene.h>
+#include <algorithm>
 #include <cmath>
 #include <glm/glm.hpp>
 #include <sstream>
 
 namespace sp {
     static CVar<bool> CVarNoClip("p.NoClip", false, "Disable player clipping");
+    static CVar<bool> CVarPausePlayerPhysics("p.PausePlayerPhysics", false, "Disable player physics update");
     static CVar<float> CVarMovementSpeed("p.MovementSpeed", 3.0, "Player walking movement speed (m/s)");
     static CVar<float> CVarSprintSpeed("p.SprintSpeed", 6.0, "Player sprinting movement speed (m/s)");
     static CVar<float> CVarCrouchSpeed("p.CrouchSpeed", 1.5, "Player crouching movement speed (m/s)");
     static CVar<float> CVarCursorSensitivity("p.CursorSensitivity", 1.0, "Mouse cursor sensitivity");
 
-    HumanControlSystem::HumanControlSystem(InputManager *input, PhysxManager *physics)
-        : input(input), physics(physics) {}
-
-    HumanControlSystem::~HumanControlSystem() {}
-
     bool HumanControlSystem::Frame(double dtSinceLastFrame) {
-        if (input != nullptr && input->FocusLocked()) return true;
+        if (CVarPausePlayerPhysics.Get()) return true;
 
         bool noclipChanged = CVarNoClip.Changed();
         auto noclip = CVarNoClip.Get(true);
 
         {
             auto lock = ecs::World.StartTransaction<
-                ecs::Write<ecs::PhysicsState, ecs::Transform, ecs::HumanController, ecs::InteractController>>();
+                ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
+                ecs::Write<ecs::EventInput,
+                           ecs::PhysicsState,
+                           ecs::Transform,
+                           ecs::HumanController,
+                           ecs::InteractController>>();
 
             for (Tecs::Entity entity : lock.EntitiesWith<ecs::HumanController>()) {
                 if (!entity.Has<ecs::Transform>(lock)) continue;
@@ -49,42 +51,33 @@ namespace sp {
 
                 auto &controller = entity.Get<ecs::HumanController>(lock);
 
-                if (input != nullptr) {
-                    if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_FORWARD)) { inputMovement += glm::vec3(0, 0, -1); }
+                inputMovement.z -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_FORWARD);
+                inputMovement.z += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_BACK);
+                inputMovement.x -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_LEFT);
+                inputMovement.x += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RIGHT);
 
-                    if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_BACKWARD)) { inputMovement += glm::vec3(0, 0, 1); }
+                if (noclip) {
+                    inputMovement.y -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_JUMP);
+                    inputMovement.y += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_CROUCH);
+                } else {
+                    jumping = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_JUMP) >= 0.5;
+                    crouching = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_CROUCH) >= 0.5;
+                }
+                sprinting = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_SPRINT) >= 0.5;
+                rotating = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_INTERACT_ROTATE) >= 0.5;
 
-                    if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_LEFT)) { inputMovement += glm::vec3(-1, 0, 0); }
+                inputMovement.x = std::clamp(inputMovement.x, -1.0f, 1.0f);
+                inputMovement.y = std::clamp(inputMovement.y, -1.0f, 1.0f);
+                inputMovement.z = std::clamp(inputMovement.z, -1.0f, 1.0f);
 
-                    if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_RIGHT)) { inputMovement += glm::vec3(1, 0, 0); }
-
-                    if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_JUMP)) {
-                        if (noclip) {
-                            inputMovement += glm::vec3(0, 1, 0);
-                        } else {
-                            jumping = true;
-                        }
+                if (entity.Has<ecs::EventInput>(lock)) {
+                    ecs::Event event;
+                    while (ecs::EventInput::Poll(lock, entity, INPUT_EVENT_INTERACT, event)) {
+                        Interact(lock, entity);
                     }
 
-                    if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_CROUCH)) {
-                        if (noclip) {
-                            inputMovement += glm::vec3(0, -1, 0);
-                        } else {
-                            crouching = true;
-                        }
-                    }
-
-                    if (input->IsDown(INPUT_ACTION_PLAYER_MOVE_SPRINT)) { sprinting = true; }
-
-                    if (input->IsPressed(INPUT_ACTION_PLAYER_INTERACT)) { Interact(lock, entity); }
-
-                    if (input->IsDown(INPUT_ACTION_PLAYER_INTERACT_ROTATE)) { rotating = true; }
-
-                    // Handle mouse controls
-                    const glm::vec2 *cursorPos, *cursorPosPrev;
-                    if (input->GetActionDelta(INPUT_ACTION_MOUSE_CURSOR, &cursorPos, &cursorPosPrev)) {
-                        glm::vec2 cursorDiff = *cursorPos;
-                        if (cursorPosPrev != nullptr) { cursorDiff -= *cursorPosPrev; }
+                    while (ecs::EventInput::Poll(lock, entity, INPUT_EVENT_CAMERA_ROTATE, event)) {
+                        auto cursorDiff = std::get<glm::vec2>(event.data);
                         if (!rotating || !InteractRotate(lock, entity, dtSinceLastFrame, cursorDiff)) {
                             float sensitivity = CVarCursorSensitivity.Get() * 0.001;
 

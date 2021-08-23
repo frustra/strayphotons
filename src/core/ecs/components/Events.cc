@@ -1,5 +1,8 @@
 #include "Events.hh"
 
+#include "core/Logging.hh"
+
+#include <optional>
 #include <picojson/picojson.h>
 
 namespace ecs {
@@ -29,23 +32,43 @@ namespace ecs {
                 }
                 for (auto target : targetList) {
                     auto targetName = target.get<std::string>();
-                    bool found = false;
-                    for (auto ent : lock.EntitiesWith<Name>()) {
-                        if (ent.Get<Name>(lock) == targetName) {
-                            bindings.Bind(bind.first, ent, dest.first);
-                            found = true;
-                            break;
-                        }
-                    }
-                    sp::Assert(found, "Couldn't find target entity");
+                    bindings.Bind(bind.first, NamedEntity(targetName), dest.first);
                 }
             }
         }
         return true;
     }
 
+    std::ostream &operator<<(std::ostream &out, const Event::EventData &v) {
+        std::visit(
+            [&](auto &&arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, glm::vec2>) {
+                    out << glm::to_string(arg);
+                } else if constexpr (std::is_same_v<T, Tecs::Entity>) {
+                    out << "Entity(" << arg.id << ")";
+                } else if constexpr (std::is_same_v<T, std::string>) {
+                    out << "\"" << arg << "\"";
+                } else {
+                    out << typeid(arg).name() << "(" << arg << ")";
+                }
+            },
+            v);
+        return out;
+    }
+
     void EventInput::Register(const std::string &binding) {
+        Debugf("Registering event queue: %s", binding);
         events.emplace(binding, std::queue<Event>());
+    }
+
+    bool EventInput::IsRegistered(const std::string &binding) const {
+        return events.count(binding) > 0;
+    }
+
+    void EventInput::Unregister(const std::string &binding) {
+        Debugf("Unregistering event queue: %s", binding);
+        events.erase(binding);
     }
 
     bool EventInput::Add(const std::string &binding, const Event &event) {
@@ -55,6 +78,11 @@ namespace ecs {
             return true;
         }
         return false;
+    }
+
+    bool EventInput::HasEvents(const std::string &binding) const {
+        auto queue = events.find(binding);
+        return queue != events.end() && !queue->second.empty();
     }
 
     bool EventInput::Poll(const std::string &binding, Event &eventOut) {
@@ -68,7 +96,17 @@ namespace ecs {
         return false;
     }
 
-    void EventBindings::Bind(std::string source, Tecs::Entity target, std::string dest) {
+    bool EventInput::Poll(Lock<Write<EventInput>> lock, Tecs::Entity ent, const std::string &binding, Event &eventOut) {
+        auto &readInput = ent.GetPrevious<EventInput>(lock);
+        if (readInput.HasEvents(binding)) {
+            auto &writeInput = ent.Get<EventInput>(lock);
+            return writeInput.Poll(binding, eventOut);
+        }
+        eventOut = Event();
+        return false;
+    }
+
+    void EventBindings::Bind(std::string source, NamedEntity target, std::string dest) {
         auto list = sourceToDest.find(source);
         if (list != sourceToDest.end()) {
             list->second.emplace_back(target, dest);
@@ -77,7 +115,7 @@ namespace ecs {
         }
     }
 
-    void EventBindings::Unbind(std::string source, Tecs::Entity target, std::string dest) {
+    void EventBindings::Unbind(std::string source, NamedEntity target, std::string dest) {
         auto list = sourceToDest.find(source);
         if (list != sourceToDest.end()) {
             auto binding = list->second.begin();
@@ -95,7 +133,7 @@ namespace ecs {
         sourceToDest.erase(source);
     }
 
-    void EventBindings::UnbindTarget(Tecs::Entity target) {
+    void EventBindings::UnbindTarget(NamedEntity target) {
         for (auto &list : sourceToDest) {
             auto binding = list.second.begin();
             while (binding != list.second.end()) {
@@ -108,7 +146,7 @@ namespace ecs {
         }
     }
 
-    void EventBindings::UnbindDest(Tecs::Entity target, std::string dest) {
+    void EventBindings::UnbindDest(NamedEntity target, std::string dest) {
         for (auto &list : sourceToDest) {
             auto binding = list.second.begin();
             while (binding != list.second.end()) {
@@ -121,18 +159,30 @@ namespace ecs {
         }
     }
 
-    const EventBindings::BindingList *EventBindings::Lookup(std::string source) const {
+    const EventBindings::BindingList *EventBindings::Lookup(const std::string source) const {
         auto list = sourceToDest.find(source);
         if (list != sourceToDest.end()) { return &list->second; }
         return nullptr;
     }
 
-    void EventBindings::SendEvent(Lock<Write<EventInput>> lock, const Event &event) const {
+    void EventBindings::SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock,
+                                  const Event &event) const {
+        const FocusLock *focusLock = nullptr;
+        if (lock.Has<FocusLock>()) focusLock = &lock.Get<FocusLock>();
         auto list = sourceToDest.find(event.name);
         if (list != sourceToDest.end()) {
             for (auto &binding : list->second) {
-                auto &eventInput = binding.first.Get<EventInput>(lock);
-                eventInput.Add(binding.second, event);
+                auto ent = binding.first.Get(lock);
+                if (focusLock && ent.Has<FocusLayer>(lock)) {
+                    auto &layer = ent.Get<FocusLayer>(lock);
+                    if (!focusLock->HasPrimaryFocus(layer)) continue;
+                }
+                if (ent.Has<EventInput>(lock)) {
+                    auto &eventInput = ent.Get<EventInput>(lock);
+                    eventInput.Add(binding.second, event);
+                } else {
+                    Errorf("Tried to send event to missing entity: %s", binding.first.Name());
+                }
             }
         }
     }

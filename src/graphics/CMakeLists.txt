@@ -8,11 +8,11 @@ target_include_directories(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
 
 target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
     ${PROJECT_CORE_LIB}
+    ${PROJECT_INPUT_CORE_LIB}
 )
 
 target_link_libraries(${PROJECT_GRAPHICS_EGL_LIB} PUBLIC
     ${PROJECT_GRAPHICS_CORE_LIB}
-    ${PROJECT_INPUT_CORE_LIB}
     GLEW
     glfw-egl
     ImGui
@@ -20,7 +20,6 @@ target_link_libraries(${PROJECT_GRAPHICS_EGL_LIB} PUBLIC
 )
 target_link_libraries(${PROJECT_GRAPHICS_OPENGL_LIB} PUBLIC
     ${PROJECT_GRAPHICS_CORE_LIB}
-    ${PROJECT_INPUT_CORE_LIB}
     GLEW
     glfw
     ImGui

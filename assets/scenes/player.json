@@ -4,19 +4,63 @@
         "bind f1 setvrorigin",
         "bind f5 reloadscene",
         "bind f6 reloadscene reset",
-        "bind f7 reloadshaders",
-        "bind f toggle r.FlashlightOn"
+        "bind f7 reloadshaders"
     ],
     "entities": [
+        {
+            "_name": "mouse",
+            "event_bindings": {
+                "/mouse/scroll": {
+                    "/action/menu/scroll": ["menu_gui", "debug_gui"]
+                },
+                "/mouse/move": { "/action/camera_rotate": "player"}
+            }
+        },
+        {
+            "_name": "keyboard",
+            "event_bindings": {
+                "/keyboard/key/backtick": { "/action/console/toggle": "debug_gui" },
+                "/keyboard/characters": { "/action/menu/text_input": "debug_gui" },
+                "/keyboard/key/escape": {
+                    "/action/menu/open": "menu_gui",
+                    "/action/menu/back": "menu_gui"
+                },
+                "/keyboard/key/enter": { "/action/menu/enter": "menu_gui" },
+                "/keyboard/key/e": { "/action/interact": "player" },
+                "/keyboard/key/q": { "/action/spawn_debug": "player" },
+                "/keyboard/key/f": { "/action/flashlight/toggle": "flashlight" },
+                "/keyboard/key/p": { "/action/flashlight/place": "flashlight" }
+            }
+        },
         {
             "_name": "player",
             "view": {
                 "clip": [0.1, 256]
             },
             "transform": {},
-            "event_input": ["/action/spawn_debug"],
-            "event_bindings": {
-                "/input/keyboard/key/f": { "/action/toggle": "flashlight" }
+            "focus": "GAME",
+            "event_input": [
+                "/action/camera_rotate",
+                "/action/interact",
+                "/action/spawn_debug",
+                "/action/set_vr_origin",
+                "/action/reload_scene",
+                "/action/reset_scene",
+                "/action/reload_shaders"
+            ],
+            "signal_bindings": {
+                "menu_primary_trigger": { "mouse_button_left": "mouse" },
+                "menu_secondary_trigger": { "mouse_button_right": "mouse" },
+                "menu_cursor_x": { "mouse_cursor_x": "mouse" },
+                "menu_cursor_y": { "mouse_cursor_y": "mouse" },
+                "move_forward": { "key_w": "keyboard" },
+                "move_left": { "key_a": "keyboard" },
+                "move_right": { "key_d": "keyboard" },
+                "move_back": { "key_s": "keyboard" },
+                "move_crouch": { "key_left_control": "keyboard" },
+                "move_jump": { "key_space": "keyboard" },
+                "move_sprint": { "key_left_shift": "keyboard" },
+                "interact_rotate": { "key_r": "keyboard" }
             }
         },
         {
@@ -35,9 +79,10 @@
                 "extents": [512, 512],
                 "clip": [0.1, 64]
             },
+            "focus": "GAME",
             "event_input": [
-                "/action/toggle",
-                "/action/place"
+                "/action/flashlight/toggle",
+                "/action/flashlight/place"
             ]
         }
     ]

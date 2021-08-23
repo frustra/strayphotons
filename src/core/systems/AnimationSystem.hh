@@ -3,8 +3,6 @@
 #include "ecs/Ecs.hh"
 
 namespace sp {
-    class InputManager;
-
     class AnimationSystem {
     public:
         AnimationSystem() {}

@@ -1,4 +1,4 @@
-set(TINYGLTF_BUILD_EXAMPLES OFF CACHE BOOL "Disable TinyGLTF building examples" FORCE)
+set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF CACHE BOOL "Disable TinyGLTF building examples" FORCE)
 add_subdirectory(tinygltf)
 
 add_library(tinygltf INTERFACE)

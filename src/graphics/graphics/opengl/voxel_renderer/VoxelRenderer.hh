@@ -4,12 +4,12 @@
 #include "ecs/Ecs.hh"
 #include "ecs/components/VoxelArea.hh"
 #include "graphics/core/RenderTarget.hh"
+#include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/opengl/GLBuffer.hh"
 #include "graphics/opengl/GLTexture.hh"
 #include "graphics/opengl/PerfTimer.hh"
 #include "graphics/opengl/Shader.hh"
 #include "graphics/opengl/gui/GuiRenderer.hh"
-#include "graphics/opengl/gui/MenuGuiManager.hh"
 
 #include <functional>
 #include <glm/glm.hpp>
