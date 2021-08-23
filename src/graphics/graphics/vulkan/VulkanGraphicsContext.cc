@@ -15,6 +15,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 namespace sp {
     const int MAX_FRAMES_IN_FLIGHT = 2;
     const uint64_t FENCE_WAIT_TIME = 1e10; // nanoseconds, assume deadlock after this time
+    const uint32_t VULKAN_API_VERSION = VK_API_VERSION_1_2;
 
     static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                         VkDebugUtilsMessageTypeFlagsEXT messageTypes,
@@ -94,7 +95,8 @@ namespace sp {
                                             VK_MAKE_VERSION(1, 0, 0),
                                             "Stray Photons",
                                             VK_MAKE_VERSION(1, 0, 0),
-                                            VK_API_VERSION_1_2);
+                                            VULKAN_API_VERSION);
+
         vk::InstanceCreateInfo createInfo(vk::InstanceCreateFlags(),
                                           &applicationInfo,
                                           layers.size(),
@@ -123,7 +125,7 @@ namespace sp {
 
         vk::SurfaceKHR glfwSurface;
         auto result = glfwCreateWindowSurface(*instance, window, nullptr, (VkSurfaceKHR *)&glfwSurface);
-        Assert(result == VK_SUCCESS, "Failed to create window surface");
+        AssertVKSuccess(result, "creating window surface");
 
         vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderDynamic> deleter(*instance);
         surface = vk::UniqueSurfaceKHR(std::move(glfwSurface), deleter);
@@ -173,7 +175,8 @@ namespace sp {
         }
 
         vector<const char *> enabledDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-                                                        VK_KHR_MULTIVIEW_EXTENSION_NAME};
+                                                        VK_KHR_MULTIVIEW_EXTENSION_NAME,
+                                                        VK_EXT_MEMORY_BUDGET_EXTENSION_NAME};
 
         auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
 
@@ -241,6 +244,16 @@ namespace sp {
             inFlightFences.push_back(std::move(device->createFenceUnique(fenceInfo)));
         }
 
+        VmaAllocatorCreateInfo allocatorInfo = {};
+        allocatorInfo.vulkanApiVersion = VULKAN_API_VERSION;
+        allocatorInfo.physicalDevice = physicalDevice;
+        allocatorInfo.device = *device;
+        allocatorInfo.instance = *instance;
+        allocatorInfo.frameInUseCount = MAX_FRAMES_IN_FLIGHT;
+        allocatorInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
+
+        Assert(vmaCreateAllocator(&allocatorInfo, &allocator) == VK_SUCCESS, "allocator init failed");
+
         CreateSwapchain();
     }
 
@@ -249,6 +262,8 @@ namespace sp {
         if (window) { glfwDestroyWindow(window); }
 
         glfwTerminate();
+
+        vmaDestroyAllocator(allocator);
     }
 
     // Releases old swapchain after creating a new one
@@ -397,7 +412,7 @@ namespace sp {
 
     void VulkanGraphicsContext::BeginFrame() {
         auto result = device->waitForFences({CurrentFrameFence()}, true, FENCE_WAIT_TIME);
-        Assert(result == vk::Result::eSuccess, "timed out waiting for fence");
+        AssertVKSuccess(result, "timed out waiting for fence");
 
         try {
             auto acquireResult =
@@ -410,9 +425,11 @@ namespace sp {
 
         if (imagesInFlight[imageIndex]) {
             result = device->waitForFences({imagesInFlight[imageIndex]}, true, FENCE_WAIT_TIME);
-            Assert(result == vk::Result::eSuccess, "timed out waiting for fence");
+            AssertVKSuccess(result, "timed out waiting for fence");
         }
         imagesInFlight[imageIndex] = *inFlightFences[currentFrame];
+
+        vmaSetCurrentFrameIndex(allocator, frameCounter);
     }
 
     void VulkanGraphicsContext::SwapBuffers() {
@@ -435,13 +452,16 @@ namespace sp {
     }
 
     void VulkanGraphicsContext::EndFrame() {
+        frameCounter++;
+        if (frameCounter == UINT32_MAX) frameCounter = 0;
+
         double frameEnd = glfwGetTime();
         fpsTimer += frameEnd - lastFrameEnd;
-        frameCounter++;
+        frameCounterThisSecond++;
 
         if (fpsTimer > 1.0) {
-            SetTitle("STRAY PHOTONS (" + std::to_string(frameCounter) + " FPS)");
-            frameCounter = 0;
+            SetTitle("STRAY PHOTONS (" + std::to_string(frameCounterThisSecond) + " FPS)");
+            frameCounterThisSecond = 0;
             fpsTimer = 0;
         }
 
@@ -459,5 +479,16 @@ namespace sp {
     std::shared_ptr<GpuTexture> VulkanGraphicsContext::LoadTexture(shared_ptr<Image> image, bool genMipmap) {
         // TODO
         return nullptr;
+    }
+
+    VulkanUniqueBuffer VulkanGraphicsContext::AllocateBuffer(vk::DeviceSize size,
+                                                             vk::BufferUsageFlags usage,
+                                                             VmaMemoryUsage residency) {
+        vk::BufferCreateInfo bufferInfo;
+        bufferInfo.size = size;
+        bufferInfo.usage = usage;
+        VmaAllocationCreateInfo allocInfo = {};
+        allocInfo.usage = residency;
+        return VulkanUniqueBuffer(bufferInfo, allocInfo, allocator);
     }
 } // namespace sp

@@ -1,15 +1,46 @@
 #include "VulkanRenderer.hh"
 
+#include "VertexBuffer.hh"
 #include "VulkanGraphicsContext.hh"
 #include "ecs/EcsImpl.hh"
+#include "graphics/core/NativeModel.hh"
 
 // temporary for shader access, shaders should be compiled somewhere else later
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 
+#include <vk_mem_alloc.h>
+
 namespace sp {
+    struct TestVertex {
+        glm::vec2 pos;
+        glm::vec3 color;
+
+        static vulkan::VertexInputInfo InputInfo() {
+            vulkan::VertexInputInfo info(0, sizeof(TestVertex));
+            info.PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(TestVertex, pos));
+            info.PushAttribute(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(TestVertex, color));
+            return info;
+        }
+    };
+
+    std::vector<TestVertex> makeTestVertices() {
+        static std::vector<TestVertex> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+                                                   {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+                                                   {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+        vertices[0].color.r += 0.001f;
+        if (vertices[0].color.r > 1.0f) vertices[0].color.r = 0;
+        return vertices;
+    }
+
     VulkanRenderer::VulkanRenderer(ecs::Lock<ecs::AddRemove> lock, VulkanGraphicsContext &context)
-        : context(context), device(context.Device()){};
+        : context(context), device(context.Device()) {
+
+        auto vertices = makeTestVertices();
+        vertexBuffer = context.AllocateBuffer(sizeof(vertices[0]) * vertices.size(),
+                                              vk::BufferUsageFlagBits::eVertexBuffer,
+                                              VMA_MEMORY_USAGE_CPU_TO_GPU);
+    }
 
     VulkanRenderer::~VulkanRenderer() {
         device.waitIdle();
@@ -18,6 +49,12 @@ namespace sp {
     void VulkanRenderer::RenderPass(const ecs::View &view, DrawLock lock, RenderTarget *finalOutput) {
         uint32_t w = view.extents.x, h = view.extents.y;
         vk::Extent2D extent = {w, h};
+
+        auto vertices = makeTestVertices();
+        void *data;
+        vertexBuffer.Map(&data);
+        memcpy(data, vertices.data(), vertexBuffer.Size());
+        vertexBuffer.Unmap();
 
         if (pipelineSwapchainVersion != context.SwapchainVersion()) {
             // TODO hash input state and create pipeline when it changes, there are a lot more inputs than just the
@@ -45,6 +82,8 @@ namespace sp {
 
         commands.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
         commands.bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline);
+
+        commands.bindVertexBuffers(0, {vertexBuffer.Get()}, {0});
         commands.draw(3, 1, 0, 0);
 
         ecs::View forwardPassView = view;
@@ -107,7 +146,6 @@ namespace sp {
 
         std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = {vertShaderStageInfo, fragShaderStageInfo};
 
-        vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
         vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
         inputAssembly.topology = vk::PrimitiveTopology::eTriangleList;
 
@@ -186,10 +224,12 @@ namespace sp {
         multisampling.sampleShadingEnable = false;
         multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
 
+        auto vertexInputInfo = TestVertex::InputInfo();
+
         vk::GraphicsPipelineCreateInfo pipelineInfo;
         pipelineInfo.stageCount = 2;
         pipelineInfo.pStages = shaderStages.data();
-        pipelineInfo.pVertexInputState = &vertexInputInfo;
+        pipelineInfo.pVertexInputState = &vertexInputInfo.PipelineInputInfo();
         pipelineInfo.pInputAssemblyState = &inputAssembly;
         pipelineInfo.pViewportState = &viewportState;
         pipelineInfo.pRasterizationState = &rasterizer;
@@ -201,7 +241,7 @@ namespace sp {
         pipelineInfo.subpass = 0;
 
         auto pipelinesResult = device.createGraphicsPipelinesUnique({}, {pipelineInfo});
-        Assert(pipelinesResult.result == vk::Result::eSuccess, "creating pipelines");
+        AssertVKSuccess(pipelinesResult.result, "creating pipelines");
         graphicsPipeline = std::move(pipelinesResult.value[0]);
 
         auto imageViews = context.SwapchainImageViews();
@@ -223,6 +263,15 @@ namespace sp {
         commandBuffers = context.CreateCommandBuffers(swapchainFramebuffers.size());
     }
 
+    class VulkanModel final : public NonCopyable, public NativeModel {
+    public:
+        VulkanModel(Model *model, VulkanRenderer *renderer) : NativeModel(model) {
+            for (auto &primitive : model->primitives) {}
+        }
+
+        void AppendDrawCommands(vk::CommandBuffer &commands, glm::mat4 modelMat, const ecs::View &view) {}
+    };
+
     void VulkanRenderer::DrawEntity(vk::CommandBuffer &commands,
                                     const ecs::View &view,
                                     DrawLock lock,
@@ -235,13 +284,14 @@ namespace sp {
         mask &= view.visibilityMask;
         if (mask != view.visibilityMask) return;
 
-        // glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+        glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
 
         if (preDraw) preDraw(lock, ent);
 
-        /*if (!comp.model->nativeModel) { comp.model->nativeModel = make_shared<GLModel>(comp.model.get(),
-        this); } comp.model->nativeModel->Draw(shader, modelMat, view, comp.model->bones.size(),
-                                      comp.model->bones.size() > 0 ? comp.model->bones.data() : NULL);*/
+        if (!comp.model->nativeModel) { comp.model->nativeModel = make_shared<VulkanModel>(comp.model.get(), this); };
+
+        auto vkModel = static_cast<VulkanModel *>(comp.model->nativeModel.get());
+        vkModel->AppendDrawCommands(commands, modelMat, view); // TODO pass and use comp.model->bones
     }
 
     void VulkanRenderer::EndFrame() {

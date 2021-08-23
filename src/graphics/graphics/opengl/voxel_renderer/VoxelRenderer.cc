@@ -699,11 +699,14 @@ namespace sp {
         if (preDraw) preDraw(lock, ent);
 
         if (!comp.model->nativeModel) { comp.model->nativeModel = make_shared<GLModel>(comp.model.get(), this); }
-        comp.model->nativeModel->Draw(shader,
-                                      modelMat,
-                                      view,
-                                      comp.model->bones.size(),
-                                      comp.model->bones.size() > 0 ? comp.model->bones.data() : NULL);
+
+        auto nativeModel = comp.model->nativeModel.get();
+        auto glModel = static_cast<GLModel *>(nativeModel);
+        glModel->Draw(shader,
+                      modelMat,
+                      view,
+                      comp.model->bones.size(),
+                      comp.model->bones.size() > 0 ? comp.model->bones.data() : NULL);
     }
 
     void VoxelRenderer::DrawGridDebug(const ecs::View &view, SceneShader *shader) {

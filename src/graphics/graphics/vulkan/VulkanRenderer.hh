@@ -1,5 +1,6 @@
 #pragma once
 
+#include "VulkanMemory.hh"
 #include "core/CFunc.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
@@ -54,5 +55,7 @@ namespace sp {
         vk::UniquePipelineLayout pipelineLayout;
         vk::UniquePipeline graphicsPipeline;
         vector<vk::UniqueFramebuffer> swapchainFramebuffers;
+
+        VulkanUniqueBuffer vertexBuffer;
     };
 } // namespace sp

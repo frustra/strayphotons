@@ -1,5 +1,6 @@
 #pragma once
 
+#include "VulkanMemory.hh"
 #include "ecs/components/View.hh"
 #include "graphics/core/GraphicsContext.hh"
 
@@ -97,6 +98,8 @@ namespace sp {
             return output;
         }
 
+        VulkanUniqueBuffer AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
+
     private:
         void SetTitle(string title);
 
@@ -109,6 +112,8 @@ namespace sp {
         vk::UniqueSurfaceKHR surface;
         vk::PhysicalDevice physicalDevice;
         vk::UniqueDevice device;
+
+        VmaAllocator allocator = VK_NULL_HANDLE;
 
         uint32_t graphicsQueueFamily, presentQueueFamily;
         vk::Queue graphicsQueue, presentQueue;
@@ -134,7 +139,7 @@ namespace sp {
         int glfwFullscreen = 0;
         std::vector<glm::ivec2> monitorModes;
         double lastFrameEnd = 0, fpsTimer = 0;
-        int frameCounter = 0;
+        uint32 frameCounter = 0, frameCounterThisSecond = 0;
         GLFWwindow *window = nullptr;
     };
 } // namespace sp
