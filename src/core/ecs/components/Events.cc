@@ -58,7 +58,7 @@ namespace ecs {
     }
 
     void EventInput::Register(const std::string &binding) {
-        Logf("Registering event queue: %s", binding);
+        Debugf("Registering event queue: %s", binding);
         events.emplace(binding, std::queue<Event>());
     }
 
@@ -67,16 +67,13 @@ namespace ecs {
     }
 
     void EventInput::Unregister(const std::string &binding) {
-        Logf("Unregistering event queue: %s", binding);
+        Debugf("Unregistering event queue: %s", binding);
         events.erase(binding);
     }
 
     bool EventInput::Add(const std::string &binding, const Event &event) {
         auto queue = events.find(binding);
         if (queue != events.end()) {
-            std::stringstream ss;
-            ss << event.data;
-            Debugf("[%s] Queuing event %s from %s: %s", binding, event.name, event.source.Name(), ss.str());
             queue->second.emplace(event);
             return true;
         }
