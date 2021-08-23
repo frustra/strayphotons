@@ -46,14 +46,35 @@ namespace ecs {
         return true;
     }
 
+    std::ostream &operator<<(std::ostream &out, const SignalBindings::CombineOperator &v) {
+        switch (v) {
+        case SignalBindings::CombineOperator::ADD:
+            return out << "CombineOperator::ADD";
+        case SignalBindings::CombineOperator::MIN:
+            return out << "CombineOperator::MIN";
+        case SignalBindings::CombineOperator::MAX:
+            return out << "CombineOperator::MAX";
+        case SignalBindings::CombineOperator::MULTIPLY:
+            return out << "CombineOperator::MULTIPLY";
+        case SignalBindings::CombineOperator::BINARY_AND:
+            return out << "CombineOperator::BINARY_AND";
+        case SignalBindings::CombineOperator::BINARY_OR:
+            return out << "CombineOperator::BINARY_OR";
+        default:
+            return out << "CombineOperator::INVALID";
+        }
+    }
+
     void SignalOutput::SetSignal(const std::string &name, double value) {
-        // Debugf("Setting signal \"%s\" to: %f", name, value);
         signals[name] = value;
     }
 
     void SignalOutput::ClearSignal(const std::string &name) {
-        // Debugf("Clearing signal \"%s\"", name);
         signals.erase(name);
+    }
+
+    bool SignalOutput::HasSignal(const std::string &name) const {
+        return signals.count(name) > 0;
     }
 
     double SignalOutput::GetSignal(const std::string &name) const {
@@ -66,23 +87,33 @@ namespace ecs {
         return signals;
     }
 
-    void SignalBindings::Bind(std::string name, NamedEntity origin, std::string source) {
-        Debugf("Binding %s to %s on %s", name, source, origin.Name());
+    void SignalBindings::SetCombineOperation(const std::string &name, CombineOperator operation) {
         auto list = destToSource.find(name);
         if (list != destToSource.end()) {
-            list->second.emplace_back(origin, source);
+            list->second.operation = operation;
         } else {
-            destToSource.emplace(name, std::initializer_list<Binding>{Binding(origin, source)});
+            destToSource.emplace(name, BindingList{operation});
         }
     }
 
-    void SignalBindings::Unbind(std::string name, NamedEntity origin, std::string source) {
+    void SignalBindings::Bind(const std::string &name, NamedEntity origin, std::string source) {
+        Debugf("Binding %s to %s on %s", name, source, origin.Name());
         auto list = destToSource.find(name);
         if (list != destToSource.end()) {
-            auto binding = list->second.begin();
-            while (binding != list->second.end()) {
+            list->second.sources.emplace_back(origin, source);
+        } else {
+            destToSource.emplace(name, BindingList{{Binding(origin, source)}});
+        }
+    }
+
+    void SignalBindings::Unbind(const std::string &name, NamedEntity origin, std::string source) {
+        auto list = destToSource.find(name);
+        if (list != destToSource.end()) {
+            auto &sources = list->second.sources;
+            auto binding = sources.begin();
+            while (binding != sources.end()) {
                 if (binding->first == origin && binding->second == source) {
-                    binding = list->second.erase(binding);
+                    binding = sources.erase(binding);
                 } else {
                     binding++;
                 }
@@ -90,16 +121,17 @@ namespace ecs {
         }
     }
 
-    void SignalBindings::UnbindAll(std::string name) {
+    void SignalBindings::UnbindAll(const std::string &name) {
         destToSource.erase(name);
     }
 
     void SignalBindings::UnbindOrigin(NamedEntity origin) {
         for (auto &list : destToSource) {
-            auto binding = list.second.begin();
-            while (binding != list.second.end()) {
+            auto &sources = list.second.sources;
+            auto binding = sources.begin();
+            while (binding != sources.end()) {
                 if (binding->first == origin) {
-                    binding = list.second.erase(binding);
+                    binding = sources.erase(binding);
                 } else {
                     binding++;
                 }
@@ -109,10 +141,11 @@ namespace ecs {
 
     void SignalBindings::UnbindSource(NamedEntity origin, std::string source) {
         for (auto &list : destToSource) {
-            auto binding = list.second.begin();
-            while (binding != list.second.end()) {
+            auto &sources = list.second.sources;
+            auto binding = sources.begin();
+            while (binding != sources.end()) {
                 if (binding->first == origin && binding->second == source) {
-                    binding = list.second.erase(binding);
+                    binding = sources.erase(binding);
                 } else {
                     binding++;
                 }
@@ -128,47 +161,56 @@ namespace ecs {
 
     double SignalBindings::GetSignal(Lock<Read<Name, SignalOutput, SignalBindings, FocusLayer, FocusLock>> lock,
                                      Tecs::Entity ent,
-                                     const std::string &name) {
-        if (!ent.Has<SignalBindings>(lock)) return 0.0;
-
-        const FocusLock *focusLock = nullptr;
-        if (lock.Has<FocusLock>()) focusLock = &lock.Get<FocusLock>();
-        if (focusLock && ent.Has<FocusLayer>(lock)) {
-            auto &layer = ent.Get<FocusLayer>(lock);
-            if (!focusLock->HasFocus(layer)) return 0.0;
+                                     const std::string &name,
+                                     size_t depth) {
+        if (depth > MAX_SIGNAL_BINDING_DEPTH) {
+            Errorf("Max signal binding depth exceeded: %s", name);
+            return 0.0f;
         }
+
+        if (depth == 0) {
+            const FocusLock *focusLock = nullptr;
+            if (lock.Has<FocusLock>()) focusLock = &lock.Get<FocusLock>();
+            if (focusLock && ent.Has<FocusLayer>(lock)) {
+                auto &layer = ent.Get<FocusLayer>(lock);
+                if (!focusLock->HasPrimaryFocus(layer)) return 0.0;
+            }
+        }
+
+        if (ent.Has<SignalOutput>(lock)) {
+            auto &signalOutput = ent.Get<SignalOutput>(lock);
+            if (signalOutput.HasSignal(name)) return signalOutput.GetSignal(name);
+        }
+        if (!ent.Has<SignalBindings>(lock)) return 0.0;
 
         auto &bindings = ent.Get<SignalBindings>(lock);
         auto bindingList = bindings.Lookup(name);
         if (bindingList == nullptr) return 0.0;
 
-        switch (bindings.operation) {
+        switch (bindingList->operation) {
         case CombineOperator::ADD:
         case CombineOperator::MIN:
         case CombineOperator::MAX:
         case CombineOperator::MULTIPLY: {
             std::optional<double> output;
-            for (auto &signal : *bindingList) {
+            for (auto &signal : bindingList->sources) {
                 auto origin = signal.first.Get(lock);
-                if (origin.Has<SignalOutput>(lock)) {
-                    auto &signalOutput = origin.Get<SignalOutput>(lock);
-                    auto val = signalOutput.GetSignal(signal.second);
-                    switch (bindings.operation) {
-                    case CombineOperator::ADD:
-                        output = output.value_or(0.0) + val;
-                        break;
-                    case CombineOperator::MIN:
-                        output = std::min(output.value_or(val), val);
-                        break;
-                    case CombineOperator::MAX:
-                        output = std::max(output.value_or(val), val);
-                        break;
-                    case CombineOperator::MULTIPLY:
-                        output = output.value_or(1.0) * val;
-                        break;
-                    default:
-                        sp::Assert(false, "Bad signal combine operator");
-                    }
+                auto val = SignalBindings::GetSignal(lock, origin, signal.second, depth + 1);
+                switch (bindingList->operation) {
+                case CombineOperator::ADD:
+                    output = output.value_or(0.0) + val;
+                    break;
+                case CombineOperator::MIN:
+                    output = std::min(output.value_or(val), val);
+                    break;
+                case CombineOperator::MAX:
+                    output = std::max(output.value_or(val), val);
+                    break;
+                case CombineOperator::MULTIPLY:
+                    output = output.value_or(1.0) * val;
+                    break;
+                default:
+                    sp::Assert(false, "Bad signal combine operator");
                 }
             }
             return output.value_or(0.0);
@@ -176,21 +218,18 @@ namespace ecs {
         case CombineOperator::BINARY_AND:
         case CombineOperator::BINARY_OR: {
             std::optional<bool> output;
-            for (auto &signal : *bindingList) {
+            for (auto &signal : bindingList->sources) {
                 auto origin = signal.first.Get(lock);
-                if (origin.Has<SignalOutput>(lock)) {
-                    auto &signalOutput = origin.Get<SignalOutput>(lock);
-                    bool val = signalOutput.GetSignal(signal.second) >= 0.5;
-                    switch (bindings.operation) {
-                    case CombineOperator::BINARY_AND:
-                        output = output.value_or(true) && val;
-                        break;
-                    case CombineOperator::BINARY_OR:
-                        output = output.value_or(false) || val;
-                        break;
-                    default:
-                        sp::Assert(false, "Bad signal combine operator");
-                    }
+                bool val = SignalBindings::GetSignal(lock, origin, signal.second, depth + 1) >= 0.5;
+                switch (bindingList->operation) {
+                case CombineOperator::BINARY_AND:
+                    output = output.value_or(true) && val;
+                    break;
+                case CombineOperator::BINARY_OR:
+                    output = output.value_or(false) || val;
+                    break;
+                default:
+                    sp::Assert(false, "Bad signal combine operator");
                 }
             }
             return output.value_or(false) ? 1.0 : 0.0;

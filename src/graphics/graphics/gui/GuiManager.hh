@@ -1,8 +1,11 @@
 #pragma once
 
+#include "ecs/Ecs.hh"
 #include "ecs/NamedEntity.hh"
+#include "ecs/components/Focus.hh"
 
 #include <glm/glm.hpp>
+#include <memory>
 #include <vector>
 
 struct ImGuiContext;
@@ -18,22 +21,22 @@ namespace sp {
 
     class GuiManager {
     public:
-        GuiManager(GraphicsManager &graphics);
+        GuiManager(const std::string &name, ecs::FocusLayer layer = ecs::FocusLayer::GAME);
         virtual ~GuiManager();
-        void Attach(GuiRenderable *component);
+        void Attach(const std::shared_ptr<GuiRenderable> &component);
         void SetGuiContext();
 
         virtual void BeforeFrame();
         virtual void DefineWindows();
 
     protected:
-        GraphicsManager &graphics;
-
-        ecs::NamedEntity playerEntity;
+        ecs::NamedEntity guiEntity;
         ecs::NamedEntity keyboardEntity;
 
+        ecs::FocusLayer focusLayer;
+
     private:
-        std::vector<GuiRenderable *> components;
+        std::vector<std::shared_ptr<GuiRenderable>> components;
         ImGuiContext *imCtx = nullptr;
     };
 } // namespace sp

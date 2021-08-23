@@ -21,10 +21,23 @@ namespace sp {
                                                  glm::vec2(1.435f, 0.805f),
                                                  "Scaling factor for menu cursor position");
 
-    MenuGuiManager::MenuGuiManager(GraphicsManager &graphics) : GuiManager(graphics) {
-        SetGuiContext();
+    MenuGuiManager::MenuGuiManager(GraphicsManager &graphics)
+        : GuiManager("menu_gui", MenuOpen() ? ecs::FocusLayer::MENU : ecs::FocusLayer::GAME), graphics(graphics) {
+        {
+            auto lock =
+                ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput, ecs::FocusLock>>();
 
-        graphics.DisableCursor();
+            auto gui = guiEntity.Get(lock);
+            Assert(gui.Has<ecs::EventInput>(lock), "Expected menu_gui to start with an EventInput");
+
+            auto &eventInput = gui.Get<ecs::EventInput>(lock);
+            if (MenuOpen()) {
+                eventInput.Register(INPUT_EVENT_MENU_BACK);
+                eventInput.Register(INPUT_EVENT_MENU_ENTER);
+            } else {
+                eventInput.Register(INPUT_EVENT_MENU_OPEN);
+            }
+        }
     }
 
     void MenuGuiManager::BeforeFrame() {
@@ -34,28 +47,59 @@ namespace sp {
 
         ImGuiIO &io = ImGui::GetIO();
 
+        bool focusChanged = false;
         {
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput>,
-                                                    ecs::Write<ecs::EventInput>>();
+            auto lock = ecs::World.StartTransaction<
+                ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput, ecs::FocusLayer, ecs::FocusLock>,
+                ecs::Write<ecs::EventInput>>();
 
-            auto player = playerEntity.Get(lock);
-            if (player.Has<ecs::EventInput>(lock)) {
+            auto gui = guiEntity.Get(lock);
+            if (gui.Has<ecs::EventInput>(lock)) {
                 ecs::Event event;
-                while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_MENU_BACK, event)) {
-                    if (selectedScreen == MenuScreen::Main && RenderMode() == MenuRenderMode::Pause) {
-                        CloseMenu();
-
-                        while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_MENU_OPEN, event)) {}
-                    }
-
+                while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_MENU_OPEN, event)) {
                     selectedScreen = MenuScreen::Main;
+                    SetRenderMode(MenuRenderMode::Pause);
                 }
-                while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_MENU_ENTER, event)) {
+                while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_MENU_BACK, event)) {
+                    if (selectedScreen == MenuScreen::Main) {
+                        if (RenderMode() == MenuRenderMode::Pause) SetRenderMode(MenuRenderMode::None);
+                    } else {
+                        selectedScreen = MenuScreen::Main;
+                    }
+                }
+                while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_MENU_ENTER, event)) {
                     if (selectedScreen == MenuScreen::Splash) selectedScreen = MenuScreen::Main;
+                }
+
+                auto &prevInput = gui.GetPrevious<ecs::EventInput>(lock);
+                if (MenuOpen()) {
+                    if (!prevInput.IsRegistered(INPUT_EVENT_MENU_BACK)) {
+                        gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_BACK);
+                    }
+                    if (!prevInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) {
+                        gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_ENTER);
+                    }
+                    if (prevInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) {
+                        gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_OPEN);
+                    }
+                } else {
+                    if (prevInput.IsRegistered(INPUT_EVENT_MENU_BACK)) {
+                        gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_BACK);
+                    }
+                    if (prevInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) {
+                        gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_ENTER);
+                    }
+                    if (!prevInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) {
+                        gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_OPEN);
+                    }
                 }
             }
 
-            if (RenderMode() == MenuRenderMode::Gel) {
+            auto newFocusLayer = MenuOpen() ? ecs::FocusLayer::MENU : ecs::FocusLayer::GAME;
+            focusChanged = focusLayer != newFocusLayer;
+            focusLayer = newFocusLayer;
+
+            if (MenuOpen() && RenderMode() == MenuRenderMode::Gel) {
                 auto windowSize = CVarWindowSize.Get();
                 auto cursorScaling = CVarMenuCursorScaling.Get();
                 io.MousePos.x = io.MousePos.x / (float)windowSize.x * io.DisplaySize.x;
@@ -69,6 +113,20 @@ namespace sp {
 
         io.MouseDrawCursor = selectedScreen != MenuScreen::Splash && RenderMode() == MenuRenderMode::Gel;
         io.MouseDrawCursor = io.MouseDrawCursor || CVarMenuDebugCursor.Get();
+
+        if (focusChanged) {
+            auto lock =
+                ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::FocusLayer, ecs::FocusLock>>();
+
+            auto gui = guiEntity.Get(lock);
+            if (gui.Has<ecs::FocusLayer>(lock)) gui.Set<ecs::FocusLayer>(lock, focusLayer);
+            auto &focusLock = lock.Get<ecs::FocusLock>();
+            if (MenuOpen()) {
+                focusLock.AcquireFocus(ecs::FocusLayer::MENU);
+            } else {
+                focusLock.ReleaseFocus(ecs::FocusLayer::MENU);
+            }
+        }
     }
 
     static bool StringVectorGetter(void *data, int idx, const char **out_text) {
@@ -146,7 +204,7 @@ namespace sp {
                 if (RenderMode() == MenuRenderMode::Gel) {
                     GetConsoleManager().QueueParseAndExecute("p.PausePlayerPhysics 0");
                 }
-                CloseMenu();
+                SetRenderMode(MenuRenderMode::None);
             }
 
             if (ImGui::Button("Scene Select")) { selectedScreen = MenuScreen::SceneSelect; }
@@ -176,7 +234,8 @@ namespace sp {
 
 #define LEVEL_BUTTON(name, file)                                                                                       \
     if (ImGui::Button(name)) {                                                                                         \
-        CloseMenu();                                                                                                   \
+        SetRenderMode(MenuRenderMode::None);                                                                           \
+        selectedScreen = MenuScreen::Main;                                                                             \
         GetConsoleManager().QueueParseAndExecute("loadscene " file);                                                   \
     }
 
@@ -346,7 +405,7 @@ namespace sp {
         ImGui::PopStyleColor(8);
     }
 
-    MenuRenderMode MenuGuiManager::RenderMode() {
+    MenuRenderMode MenuGuiManager::RenderMode() const {
         switch (CVarMenuDisplay.Get()) {
         case 1:
             return MenuRenderMode::Pause;
@@ -356,43 +415,17 @@ namespace sp {
         return MenuRenderMode::None;
     }
 
+    bool MenuGuiManager::MenuOpen() const {
+        switch (RenderMode()) {
+        case MenuRenderMode::Pause:
+        case MenuRenderMode::Gel:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     void MenuGuiManager::SetRenderMode(MenuRenderMode mode) {
         CVarMenuDisplay.Set((int)mode);
-    }
-
-    void MenuGuiManager::OpenPauseMenu() {
-        if (RenderMode() == MenuRenderMode::None) {
-            SetRenderMode(MenuRenderMode::Pause);
-            selectedScreen = MenuScreen::Main;
-
-            {
-                auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
-
-                if (lock.Has<ecs::FocusLock>()) {
-                    auto &focusLock = lock.Get<ecs::FocusLock>();
-
-                    focusLock.AcquireFocus(ecs::FocusLayer::MENU);
-                    graphics.EnableCursor();
-                }
-            }
-        }
-    }
-
-    void MenuGuiManager::CloseMenu() {
-        if (RenderMode() == MenuRenderMode::Pause) {
-            SetRenderMode(MenuRenderMode::None);
-            selectedScreen = MenuScreen::Main;
-        }
-
-        {
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
-
-            if (lock.Has<ecs::FocusLock>()) {
-                auto &focusLock = lock.Get<ecs::FocusLock>();
-
-                graphics.DisableCursor();
-                focusLock.ReleaseFocus(ecs::FocusLayer::MENU);
-            }
-        }
     }
 } // namespace sp

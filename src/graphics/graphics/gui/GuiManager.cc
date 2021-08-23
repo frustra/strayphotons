@@ -8,8 +8,7 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    GuiManager::GuiManager(GraphicsManager &graphics /*, const FocusLevel focusPriority*/)
-        : /*focusPriority(focusPriority),*/ graphics(graphics) {
+    GuiManager::GuiManager(const std::string &name, ecs::FocusLayer layer) : focusLayer(layer) {
         imCtx = ImGui::CreateContext();
 
         SetGuiContext();
@@ -35,8 +34,27 @@ namespace sp {
         io.KeyMap[ImGuiKey_Y] = KEY_Y;
         io.KeyMap[ImGuiKey_Z] = KEY_Z;
 
-        playerEntity = ecs::NamedEntity("player");
-        keyboardEntity = ecs::NamedEntity("keyboard");
+        {
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+
+            auto ent = lock.NewEntity();
+            ent.Set<ecs::Name>(lock, name);
+            ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GUI_MANAGER);
+            ent.Set<ecs::FocusLayer>(lock, layer);
+            ent.Set<ecs::EventInput>(lock, INPUT_EVENT_MENU_SCROLL, INPUT_EVENT_MENU_TEXT_INPUT);
+            auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
+            signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER,
+                                ecs::NamedEntity("player"),
+                                INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);
+            signalBindings.Bind(INPUT_SIGNAL_MENU_SECONDARY_TRIGGER,
+                                ecs::NamedEntity("player"),
+                                INPUT_SIGNAL_MENU_SECONDARY_TRIGGER);
+            signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_X, ecs::NamedEntity("player"), INPUT_SIGNAL_MENU_CURSOR_X);
+            signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_Y, ecs::NamedEntity("player"), INPUT_SIGNAL_MENU_CURSOR_Y);
+
+            guiEntity = ecs::NamedEntity(name, ent);
+            keyboardEntity = ecs::NamedEntity("keyboard");
+        }
     }
 
     GuiManager::~GuiManager() {
@@ -58,19 +76,27 @@ namespace sp {
                 ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput, ecs::FocusLayer, ecs::FocusLock>,
                 ecs::Write<ecs::EventInput>>();
 
+            bool hasFocus = true;
+            if (lock.Has<ecs::FocusLock>()) {
+                auto &focusLock = lock.Get<ecs::FocusLock>();
+                hasFocus = focusLock.HasPrimaryFocus(focusLayer);
+            }
+
             auto keyboard = keyboardEntity.Get(lock);
             if (keyboard.Has<ecs::SignalOutput>(lock)) {
                 auto &signalOutput = keyboard.Get<ecs::SignalOutput>(lock);
                 for (int keyCode = KEY_SPACE; keyCode < KEY_BACKTICK; keyCode++) {
                     auto keyName = KeycodeNameLookup.find(keyCode);
                     if (keyName != KeycodeNameLookup.end()) {
-                        io.KeysDown[keyCode] = signalOutput.GetSignal(INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName->second);
+                        io.KeysDown[keyCode] = hasFocus &&
+                                               signalOutput.GetSignal(INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName->second);
                     }
                 }
                 for (int keyCode = KEY_ESCAPE; keyCode < KEY_RIGHT_SUPER; keyCode++) {
                     auto keyName = KeycodeNameLookup.find(keyCode);
                     if (keyName != KeycodeNameLookup.end()) {
-                        io.KeysDown[keyCode] = signalOutput.GetSignal(INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName->second);
+                        io.KeysDown[keyCode] = hasFocus &&
+                                               signalOutput.GetSignal(INPUT_SIGNAL_KEYBOARD_KEY_BASE + keyName->second);
                     }
                 }
 
@@ -82,34 +108,36 @@ namespace sp {
 
             io.MouseWheel = 0.0f;
             io.MouseWheelH = 0.0f;
-            auto player = playerEntity.Get(lock);
-            if (player.Has<ecs::EventInput>(lock)) {
-                ecs::Event event;
-                while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_MENU_SCROLL, event)) {
-                    auto &scroll = std::get<glm::vec2>(event.data);
-                    io.MouseWheel += scroll.y;
-                    io.MouseWheelH += scroll.x;
+            if (hasFocus) {
+                auto gui = guiEntity.Get(lock);
+                if (gui.Has<ecs::EventInput>(lock)) {
+                    ecs::Event event;
+                    while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_MENU_SCROLL, event)) {
+                        auto &scroll = std::get<glm::vec2>(event.data);
+                        io.MouseWheel += scroll.y;
+                        io.MouseWheelH += scroll.x;
+                    }
+                    while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_MENU_TEXT_INPUT, event)) {
+                        io.AddInputCharacter(std::get<char>(event.data));
+                    }
                 }
-                while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_MENU_TEXT_INPUT, event)) {
-                    io.AddInputCharacter(std::get<char>(event.data));
-                }
+
+                io.MouseDown[0] = ecs::SignalBindings::GetSignal(lock, gui, INPUT_SIGNAL_MENU_PRIMARY_TRIGGER) >= 0.5;
+                io.MouseDown[1] = ecs::SignalBindings::GetSignal(lock, gui, INPUT_SIGNAL_MENU_SECONDARY_TRIGGER) >= 0.5;
+
+                io.MousePos.x = ecs::SignalBindings::GetSignal(lock, gui, INPUT_SIGNAL_MENU_CURSOR_X);
+                io.MousePos.y = ecs::SignalBindings::GetSignal(lock, gui, INPUT_SIGNAL_MENU_CURSOR_Y);
             }
-
-            io.MouseDown[0] = ecs::SignalBindings::GetSignal(lock, player, INPUT_SIGNAL_MENU_PRIMARY_TRIGGER) >= 0.5;
-            io.MouseDown[1] = ecs::SignalBindings::GetSignal(lock, player, INPUT_SIGNAL_MENU_SECONDARY_TRIGGER) >= 0.5;
-
-            io.MousePos.x = ecs::SignalBindings::GetSignal(lock, player, INPUT_SIGNAL_MENU_CURSOR_X);
-            io.MousePos.y = ecs::SignalBindings::GetSignal(lock, player, INPUT_SIGNAL_MENU_CURSOR_Y);
         }
     }
 
     void GuiManager::DefineWindows() {
-        for (auto component : components) {
+        for (auto &component : components) {
             component->Add();
         }
     }
 
-    void GuiManager::Attach(GuiRenderable *component) {
-        components.push_back(component);
+    void GuiManager::Attach(const std::shared_ptr<GuiRenderable> &component) {
+        components.emplace_back(component);
     }
 } // namespace sp

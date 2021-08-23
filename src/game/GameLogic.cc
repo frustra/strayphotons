@@ -32,6 +32,9 @@ namespace sp {
         funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
         funcs.Register(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
         funcs.Register(this, "printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
+        funcs.Register(this, "printfocus", "Print the current focus lock state", &GameLogic::PrintFocus);
+        funcs.Register(this, "acquirefocus", "Acquire focus for the specified layer", &GameLogic::AcquireFocus);
+        funcs.Register(this, "releasefocus", "Release focus for the specified layer", &GameLogic::ReleaseFocus);
         funcs.Register(this,
                        "setsignal",
                        "Set a signal value (setsignal <entity>.<signal> <value>)",
@@ -49,6 +52,12 @@ namespace sp {
     static CVar<int> CVarFlashlightResolution("r.FlashlightResolution", 512, "Flashlight shadow map resolution");
 
     void GameLogic::Init(Script *startupScript) {
+#ifdef SP_INPUT_SUPPORT
+        {
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            lock.Set<ecs::FocusLock>();
+        }
+#endif
         LoadPlayer();
 
         if (game->options.count("map")) { LoadScene(game->options["map"].as<string>()); }
@@ -57,21 +66,23 @@ namespace sp {
             startupScript->Exec();
         } else if (!game->options.count("map")) {
             LoadScene("menu");
-        }
-
 #ifdef SP_INPUT_SUPPORT
-        {
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-
-            lock.Set<ecs::FocusLock>();
-        }
+            {
+                auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+                lock.Get<ecs::FocusLock>().AcquireFocus(ecs::FocusLayer::MENU);
+            }
 #endif
+        }
     }
 
     GameLogic::~GameLogic() {}
 
 #ifdef SP_INPUT_SUPPORT
     void GameLogic::HandleInput() {
+    #ifdef SP_GRAPHICS_SUPPORT
+        if (game->menuGui && !game->menuGui->MenuOpen()) { game->menuGui->BeforeFrame(); }
+    #endif
+
         bool spawnDebug = false;
         bool placeFlashlight = false;
         {
@@ -79,16 +90,6 @@ namespace sp {
 
             ecs::Event event;
             if (player.Has<ecs::EventInput>(lock)) {
-    #ifdef SP_GRAPHICS_SUPPORT_GL
-                bool openMenu = false;
-                while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_MENU_OPEN, event)) {
-                    openMenu = true;
-                }
-                if (game->menuGui && openMenu && game->menuGui->RenderMode() == MenuRenderMode::None) {
-                    while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_MENU_BACK, event)) {}
-                    game->menuGui->OpenPauseMenu();
-                }
-    #endif
                 if (ecs::EventInput::Poll(lock, player, INPUT_EVENT_SPAWN_DEBUG, event)) { spawnDebug = true; }
                 if (ecs::EventInput::Poll(lock, flashlight, INPUT_EVENT_FLASHLIGHT_TOGGLE, event)) {
                     CVarFlashlightOn.Set(!CVarFlashlightOn.Get());
@@ -262,7 +263,7 @@ namespace sp {
         }
     }
 
-    void GameLogic::LoadScene(string name) {
+    void GameLogic::LoadScene(std::string name) {
 #ifdef SP_GRAPHICS_SUPPORT
         game->graphics.RenderLoading();
 #endif
@@ -302,7 +303,7 @@ namespace sp {
         }
     }
 
-    void GameLogic::ReloadScene(string arg) {
+    void GameLogic::ReloadScene(std::string arg) {
         if (scene) {
             if (arg == "reset") {
                 LoadPlayer();
@@ -317,8 +318,14 @@ namespace sp {
     void GameLogic::PrintDebug() {
         Logf("Currently loaded scene: %s", scene ? scene->name : "none");
         if (!scene) return;
-        auto lock = ecs::World.StartTransaction<
-            ecs::Read<ecs::Name, ecs::Transform, ecs::HumanController, ecs::LightSensor, ecs::SignalOutput>>();
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
+                                                          ecs::Transform,
+                                                          ecs::HumanController,
+                                                          ecs::LightSensor,
+                                                          ecs::SignalOutput,
+                                                          ecs::EventInput,
+                                                          ecs::FocusLayer,
+                                                          ecs::FocusLock>>();
         if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
             auto &transform = player.Get<ecs::Transform>(lock);
             auto &controller = player.Get<ecs::HumanController>(lock);
@@ -350,9 +357,83 @@ namespace sp {
                 Logf("  %s: %.2f", signalName, value);
             }
         }
+
+        auto &focusLock = lock.Get<ecs::FocusLock>();
+        for (auto ent : lock.EntitiesWith<ecs::EventInput>()) {
+            auto &input = ent.Get<ecs::EventInput>(lock);
+
+            if (ent.Has<ecs::FocusLayer>(lock)) {
+                auto &layer = ent.Get<ecs::FocusLayer>(lock);
+                std::stringstream ss;
+                ss << layer;
+                if (focusLock.HasPrimaryFocus(layer)) {
+                    Logf("Event input %s: (has primary focus: %s)", ecs::ToString(lock, ent), ss.str());
+                } else if (focusLock.HasFocus(layer)) {
+                    Logf("Event input %s: (has focus: %s)", ecs::ToString(lock, ent), ss.str());
+                } else {
+                    Logf("Event input %s: (no focus: %s)", ecs::ToString(lock, ent), ss.str());
+                }
+            } else {
+                Logf("Event input %s: (no focus layer)", ecs::ToString(lock, ent));
+            }
+            for (auto &[eventName, queue] : input.events) {
+                if (queue.empty()) {
+                    Logf("  %s: empty", eventName);
+                } else {
+                    Logf("  %s: %u events", eventName, queue.size());
+                }
+            }
+        }
     }
 
-    void GameLogic::SetSignal(string args) {
+    void GameLogic::PrintFocus() {
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::FocusLock>>();
+
+        if (lock.Has<ecs::FocusLock>()) {
+            auto &focusLock = lock.Get<ecs::FocusLock>();
+            std::stringstream ss;
+            ss << "Active focus layers: " << focusLock;
+            Logf(ss.str());
+        } else {
+            Errorf("World does not have a FocusLock");
+        }
+    }
+
+    void GameLogic::AcquireFocus(std::string args) {
+        std::stringstream stream(args);
+        ecs::FocusLayer layer;
+        stream >> layer;
+        if (layer != ecs::FocusLayer::NEVER && layer != ecs::FocusLayer::ALWAYS) {
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+
+            if (lock.Has<ecs::FocusLock>()) {
+                if (!lock.Get<ecs::FocusLock>().AcquireFocus(layer)) {
+                    std::stringstream ss;
+                    ss << layer;
+                    Logf("Failed to acquire focus layer: %s", ss.str());
+                }
+            } else {
+                Errorf("World does not have a FocusLock");
+            }
+        }
+    }
+
+    void GameLogic::ReleaseFocus(std::string args) {
+        std::stringstream stream(args);
+        ecs::FocusLayer layer;
+        stream >> layer;
+        if (layer != ecs::FocusLayer::NEVER && layer != ecs::FocusLayer::ALWAYS) {
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+
+            if (lock.Has<ecs::FocusLock>()) {
+                lock.Get<ecs::FocusLock>().ReleaseFocus(layer);
+            } else {
+                Errorf("World does not have a FocusLock");
+            }
+        }
+    }
+
+    void GameLogic::SetSignal(std::string args) {
         std::stringstream stream(args);
         std::string signalStr;
         double value;
@@ -376,7 +457,7 @@ namespace sp {
         signalComp.SetSignal(signalName, value);
     }
 
-    void GameLogic::ClearSignal(string args) {
+    void GameLogic::ClearSignal(std::string args) {
         std::stringstream stream(args);
         std::string signalStr;
         double value;

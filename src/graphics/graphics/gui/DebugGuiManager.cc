@@ -1,6 +1,5 @@
 #include "DebugGuiManager.hh"
 
-#include "GraphicsManager.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/gui/ConsoleGui.hh"
 #include "input/core/BindingNames.hh"
@@ -8,6 +7,16 @@
 #include <imgui/imgui.h>
 
 namespace sp {
+    DebugGuiManager::DebugGuiManager() : GuiManager("debug_gui", ecs::FocusLayer::ALWAYS) {
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput>>();
+
+        auto gui = guiEntity.Get(lock);
+        Assert(gui.Has<ecs::EventInput>(lock), "Expected debug_gui to start with an EventInput");
+
+        auto &eventInput = gui.Get<ecs::EventInput>(lock);
+        eventInput.Register(INPUT_EVENT_TOGGLE_CONSOLE);
+    }
+
     void DebugGuiManager::DefineWindows() {
         SetGuiContext();
         ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0.0f, 0.0f, 0.0f, 0.8f));
@@ -32,34 +41,44 @@ namespace sp {
         ImGuiIO &io = ImGui::GetIO();
         io.MouseDrawCursor = false;
 
-        bool toggleConsole = false;
+        bool focusChanged = false;
         {
             auto lock = ecs::World.StartTransaction<
                 ecs::Read<ecs::Name, ecs::SignalBindings, ecs::SignalOutput, ecs::FocusLayer, ecs::FocusLock>,
                 ecs::Write<ecs::EventInput>>();
 
-            auto player = playerEntity.Get(lock);
-            if (player.Has<ecs::EventInput>(lock)) {
+            auto gui = guiEntity.Get(lock);
+            if (gui.Has<ecs::EventInput>(lock)) {
                 ecs::Event event;
-                while (ecs::EventInput::Poll(lock, player, INPUT_EVENT_TOGGLE_CONSOLE, event)) {
-                    toggleConsole = !toggleConsole;
+                while (ecs::EventInput::Poll(lock, gui, INPUT_EVENT_TOGGLE_CONSOLE, event)) {
+                    consoleOpen = !consoleOpen;
+                }
+
+                auto &prevInput = gui.GetPrevious<ecs::EventInput>(lock);
+                if (consoleOpen) {
+                    if (!prevInput.IsRegistered(INPUT_EVENT_MENU_TEXT_INPUT)) {
+                        gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_TEXT_INPUT);
+                    }
+                } else {
+                    if (prevInput.IsRegistered(INPUT_EVENT_MENU_TEXT_INPUT)) {
+                        gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_TEXT_INPUT);
+                    }
                 }
             }
-        }
-        if (toggleConsole) {
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
 
             if (lock.Has<ecs::FocusLock>()) {
                 auto &focusLock = lock.Get<ecs::FocusLock>();
-                consoleOpen = !consoleOpen;
+                focusChanged = focusLock.HasFocus(ecs::FocusLayer::OVERLAY) != consoleOpen;
+            }
+        }
+        if (focusChanged) {
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
 
-                if (consoleOpen) {
-                    focusLock.AcquireFocus(ecs::FocusLayer::OVERLAY);
-                    graphics.EnableCursor();
-                } else {
-                    graphics.DisableCursor();
-                    focusLock.ReleaseFocus(ecs::FocusLayer::OVERLAY);
-                }
+            auto &focusLock = lock.Get<ecs::FocusLock>();
+            if (consoleOpen) {
+                focusLock.AcquireFocus(ecs::FocusLayer::OVERLAY);
+            } else {
+                focusLock.ReleaseFocus(ecs::FocusLayer::OVERLAY);
             }
         }
     }

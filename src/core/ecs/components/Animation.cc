@@ -2,7 +2,6 @@
 
 #include <core/Logging.hh>
 #include <ecs/EcsImpl.hh>
-#include <ecs/components/Transform.hh>
 #include <picojson/picojson.h>
 #include <sstream>
 

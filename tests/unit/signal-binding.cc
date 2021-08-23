@@ -43,29 +43,42 @@ namespace SignalBindingTests {
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::SignalBindings, ecs::SignalOutput>>();
 
             auto &playerBindings = player.Get<ecs::SignalBindings>(lock);
-            auto sources = playerBindings.Lookup(TEST_SIGNAL_ACTION1);
-            Assert(sources != nullptr, "Expected action1 signal to have bindings");
-            AssertEqual(sources->size(), 1u, "Unexpected binding count");
-            AssertEqual(sources->begin()->first, "player", "Expected action1 to be bound on player");
-            AssertEqual(sources->begin()->second, TEST_SOURCE_KEY, "Expected action1 to be bound to key source");
+            auto bindingList = playerBindings.Lookup(TEST_SIGNAL_ACTION1);
+            Assert(bindingList != nullptr, "Expected action1 signal to have bindings");
+            AssertEqual(bindingList->operation,
+                        ecs::SignalBindings::CombineOperator::ADD,
+                        "Expected default combine operator");
+            AssertEqual(bindingList->sources.size(), 1u, "Unexpected binding count");
+            AssertEqual(bindingList->sources.begin()->first, "player", "Expected action1 to be bound on player");
+            AssertEqual(bindingList->sources.begin()->second,
+                        TEST_SOURCE_KEY,
+                        "Expected action1 to be bound to key source");
 
-            sources = playerBindings.Lookup(TEST_SIGNAL_ACTION2);
-            Assert(sources != nullptr, "Expected action2 signal to have bindings");
-            auto it = sources->begin();
+            bindingList = playerBindings.Lookup(TEST_SIGNAL_ACTION2);
+            Assert(bindingList != nullptr, "Expected action1 signal to have bindings");
+            AssertEqual(bindingList->operation,
+                        ecs::SignalBindings::CombineOperator::ADD,
+                        "Expected default combine operator");
+            auto it = bindingList->sources.begin();
             AssertEqual(it->first, "player", "Expected action2 to be bound on player");
             AssertEqual(it->second, TEST_SOURCE_KEY, "Expected action2 to be bound to key source");
             it++;
             AssertEqual(it->first, "player", "Expected action2 to be bound on player");
             AssertEqual(it->second, TEST_SOURCE_BUTTON, "Expected action2 to be bound to button source");
             it++;
-            Assert(it == sources->end(), "Expected action2 to have no more bindings");
+            Assert(it == bindingList->sources.end(), "Expected action2 to have no more bindings");
 
             auto &handBindings = hand.Get<ecs::SignalBindings>(lock);
-            sources = handBindings.Lookup(TEST_SIGNAL_ACTION3);
-            Assert(sources != nullptr, "Expected action3 signal to have bindings");
-            AssertEqual(sources->size(), 1u, "Unexpected binding count");
-            AssertEqual(sources->begin()->first, "unknown", "Expected action3 to be bound on unknown");
-            AssertEqual(sources->begin()->second, TEST_SOURCE_BUTTON, "Expected action3 to be bound to button source");
+            bindingList = handBindings.Lookup(TEST_SIGNAL_ACTION3);
+            Assert(bindingList != nullptr, "Expected action1 signal to have bindings");
+            AssertEqual(bindingList->operation,
+                        ecs::SignalBindings::CombineOperator::ADD,
+                        "Expected default combine operator");
+            AssertEqual(bindingList->sources.size(), 1u, "Unexpected binding count");
+            AssertEqual(bindingList->sources.begin()->first, "unknown", "Expected action3 to be bound on unknown");
+            AssertEqual(bindingList->sources.begin()->second,
+                        TEST_SOURCE_BUTTON,
+                        "Expected action3 to be bound to button source");
         }
         {
             Timer t("Try reading some signals");

@@ -7,7 +7,7 @@ namespace sp {
 
     class DebugGuiManager : public GuiManager {
     public:
-        DebugGuiManager(GraphicsManager &graphics) : GuiManager(graphics) {}
+        DebugGuiManager();
         virtual ~DebugGuiManager() {}
 
         void BeforeFrame() override;

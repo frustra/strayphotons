@@ -27,6 +27,57 @@ namespace ecs {
         return true;
     }
 
+    std::ostream &operator<<(std::ostream &out, const FocusLayer &v) {
+        switch (v) {
+        case FocusLayer::NEVER:
+            return out << "FocusLayer::NEVER";
+        case FocusLayer::GAME:
+            return out << "FocusLayer::GAME";
+        case FocusLayer::MENU:
+            return out << "FocusLayer::MENU";
+        case FocusLayer::OVERLAY:
+            return out << "FocusLayer::OVERLAY";
+        case FocusLayer::ALWAYS:
+            return out << "FocusLayer::ALWAYS";
+        default:
+            return out << "FocusLayer::INVALID";
+        }
+    }
+
+    std::istream &operator>>(std::istream &in, FocusLayer &v) {
+        std::string layer;
+        in >> layer;
+        sp::to_upper(layer);
+        if (layer == "NEVER") {
+            v = FocusLayer::NEVER;
+        } else if (layer == "GAME") {
+            v = FocusLayer::GAME;
+        } else if (layer == "MENU") {
+            v = FocusLayer::MENU;
+        } else if (layer == "OVERLAY") {
+            v = FocusLayer::OVERLAY;
+        } else if (layer == "ALWAYS") {
+            v = FocusLayer::ALWAYS;
+        } else {
+            Errorf("Invalid FocusLayer name: %s", layer);
+            v = FocusLayer::NEVER;
+        }
+        return in;
+    }
+
+    std::ostream &operator<<(std::ostream &out, const FocusLock &v) {
+        bool first = true;
+        for (size_t i = static_cast<size_t>(FocusLayer::NEVER); i < static_cast<size_t>(FocusLayer::ALWAYS); i++) {
+            auto layer = static_cast<FocusLayer>(i);
+            if (v.HasFocus(layer)) {
+                if (!first) out << " ";
+                out << layer;
+                first = false;
+            }
+        }
+        return out;
+    }
+
     FocusLock::FocusLock(FocusLayer layer) {
         if (layer != FocusLayer::NEVER && layer != FocusLayer::ALWAYS) { AcquireFocus(layer); }
     }
@@ -41,10 +92,10 @@ namespace ecs {
         }
 
         size_t index = static_cast<size_t>(layer) - 1;
+        layers.set(index);
         for (size_t i = index + 1; i < layers.size(); i++) {
             if (layers.test(i)) return false;
         }
-        layers.set(index);
         return true;
     }
 
@@ -60,7 +111,7 @@ namespace ecs {
         layers.reset(static_cast<size_t>(layer) - 1);
     }
 
-    bool FocusLock::HasFocus(FocusLayer layer) const {
+    bool FocusLock::HasPrimaryFocus(FocusLayer layer) const {
         if (layer == FocusLayer::NEVER) return false;
         if (layer == FocusLayer::ALWAYS) return true;
 
@@ -69,5 +120,19 @@ namespace ecs {
             if (layers.test(i)) return false;
         }
         return layers.test(index);
+    }
+
+    bool FocusLock::HasFocus(FocusLayer layer) const {
+        if (layer == FocusLayer::NEVER) return false;
+        if (layer == FocusLayer::ALWAYS) return true;
+
+        return layers.test(static_cast<size_t>(layer) - 1);
+    }
+
+    FocusLayer FocusLock::PrimaryFocus() const {
+        for (size_t i = layers.size() - 1; i >= 0; i--) {
+            if (layers.test(i)) return static_cast<FocusLayer>(i + 1);
+        }
+        return FocusLayer::NEVER;
     }
 } // namespace ecs

@@ -10,21 +10,23 @@
         {
             "_name": "mouse",
             "event_bindings": {
-                "/mouse/scroll": { "/action/menu/scroll": "player" },
+                "/mouse/scroll": {
+                    "/action/menu/scroll": ["menu_gui", "debug_gui"]
+                },
                 "/mouse/move": { "/action/camera_rotate": "player"}
             }
         },
         {
             "_name": "keyboard",
             "event_bindings": {
-                "/keyboard/characters": { "/action/menu/text_input": "player" },
+                "/keyboard/key/backtick": { "/action/console/toggle": "debug_gui" },
+                "/keyboard/characters": { "/action/menu/text_input": "debug_gui" },
                 "/keyboard/key/escape": {
-                    "/action/menu/open": "player",
-                    "/action/menu/back": "player"
+                    "/action/menu/open": "menu_gui",
+                    "/action/menu/back": "menu_gui"
                 },
-                "/keyboard/key/enter": { "/action/menu/enter": "player" },
+                "/keyboard/key/enter": { "/action/menu/enter": "menu_gui" },
                 "/keyboard/key/e": { "/action/interact": "player" },
-                "/keyboard/key/backtick": { "/action/console/toggle": "player" },
                 "/keyboard/key/q": { "/action/spawn_debug": "player" },
                 "/keyboard/key/f": { "/action/flashlight/toggle": "flashlight" },
                 "/keyboard/key/p": { "/action/flashlight/place": "flashlight" }
@@ -38,12 +40,6 @@
             "transform": {},
             "focus": "GAME",
             "event_input": [
-                "/action/menu/open",
-                "/action/menu/back",
-                "/action/menu/enter",
-                "/action/menu/scroll",
-                "/action/menu/text_input",
-                "/action/console/toggle",
                 "/action/camera_rotate",
                 "/action/interact",
                 "/action/spawn_debug",

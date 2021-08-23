@@ -37,8 +37,6 @@ namespace sp {
     #ifdef SP_GRAPHICS_SUPPORT_GL
         if (renderer) { delete renderer; }
 
-        if (profilerGui) { delete profilerGui; }
-
         if (context) { delete context; }
     #endif
     }
@@ -70,7 +68,7 @@ namespace sp {
             renderer = new VoxelRenderer(lock, *glfwContext, timer);
         }
 
-        profilerGui = new ProfilerGui(timer);
+        profilerGui = std::make_shared<ProfilerGui>(timer);
         if (game->debugGui) { game->debugGui->Attach(profilerGui); }
 
         renderer->PrepareGuis(game->debugGui.get(), game->menuGui.get());
@@ -128,6 +126,7 @@ namespace sp {
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
         timer.StartFrame();
+        context->BeginFrame();
 
         {
             RenderPhase phase("Frame", timer);
@@ -202,14 +201,6 @@ namespace sp {
 
     GraphicsContext *GraphicsManager::GetContext() {
         return context;
-    }
-
-    void GraphicsManager::DisableCursor() {
-        if (context != nullptr) context->DisableCursor();
-    }
-
-    void GraphicsManager::EnableCursor() {
-        if (context != nullptr) context->EnableCursor();
     }
 
     void GraphicsManager::RenderLoading() {

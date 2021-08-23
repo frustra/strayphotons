@@ -34,8 +34,6 @@ namespace sp {
         bool Frame();
 
         GraphicsContext *GetContext();
-        void DisableCursor();
-        void EnableCursor();
 
     private:
         GraphicsContext *context = nullptr;
@@ -43,7 +41,7 @@ namespace sp {
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
         VoxelRenderer *renderer = nullptr;
-        ProfilerGui *profilerGui = nullptr;
+        std::shared_ptr<ProfilerGui> profilerGui;
         PerfTimer timer;
     #endif
     };

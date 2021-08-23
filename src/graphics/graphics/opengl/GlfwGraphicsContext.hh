@@ -31,9 +31,6 @@ namespace sp {
         const vector<glm::ivec2> &MonitorModes() override;
         const glm::ivec2 CurrentMode() override;
 
-        void DisableCursor() override;
-        void EnableCursor() override;
-
         // Specific to GlfwGraphicsContext
         GLFWwindow *GetWindow() {
             return window;

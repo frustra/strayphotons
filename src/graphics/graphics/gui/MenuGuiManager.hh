@@ -17,12 +17,13 @@ namespace sp {
         void BeforeFrame() override;
         void DefineWindows() override;
 
-        MenuRenderMode RenderMode();
+        MenuRenderMode RenderMode() const;
+        bool MenuOpen() const;
         void SetRenderMode(MenuRenderMode mode);
-        void OpenPauseMenu();
-        void CloseMenu();
 
     private:
+        GraphicsManager &graphics;
+
         MenuScreen selectedScreen = MenuScreen::Splash;
 
         float creditsScroll = 0.0f;

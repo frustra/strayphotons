@@ -43,6 +43,8 @@ namespace ecs {
         }
 
         void Register(const std::string &binding);
+        bool IsRegistered(const std::string &binding) const;
+        void Unregister(const std::string &binding);
         bool Add(const std::string &binding, const Event &event);
         bool HasEvents(const std::string &binding) const;
         bool Poll(const std::string &binding, Event &eventOut);

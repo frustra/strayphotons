@@ -62,6 +62,15 @@ namespace ecs {
         events.emplace(binding, std::queue<Event>());
     }
 
+    bool EventInput::IsRegistered(const std::string &binding) const {
+        return events.count(binding) > 0;
+    }
+
+    void EventInput::Unregister(const std::string &binding) {
+        Logf("Unregistering event queue: %s", binding);
+        events.erase(binding);
+    }
+
     bool EventInput::Add(const std::string &binding, const Event &event) {
         auto queue = events.find(binding);
         if (queue != events.end()) {
@@ -169,7 +178,7 @@ namespace ecs {
                 auto ent = binding.first.Get(lock);
                 if (focusLock && ent.Has<FocusLayer>(lock)) {
                     auto &layer = ent.Get<FocusLayer>(lock);
-                    if (!focusLock->HasFocus(layer)) continue;
+                    if (!focusLock->HasPrimaryFocus(layer)) continue;
                 }
                 if (ent.Has<EventInput>(lock)) {
                     auto &eventInput = ent.Get<EventInput>(lock);

@@ -1,6 +1,7 @@
 #include "GlfwGraphicsContext.hh"
 
 #include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
 #include "graphics/opengl/GLTexture.hh"
 #include "graphics/opengl/Graphics.hh"
 #include "graphics/opengl/PerfTimer.hh"
@@ -159,20 +160,20 @@ namespace sp {
         return glm::ivec2(0);
     }
 
-    void GlfwGraphicsContext::DisableCursor() {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    }
-
-    void GlfwGraphicsContext::EnableCursor() {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    }
-
     void GlfwGraphicsContext::SwapBuffers() {
         glfwSwapBuffers(window);
     }
 
     void GlfwGraphicsContext::BeginFrame() {
-        // Do nothing for now
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::FocusLock>>();
+        if (lock.Has<ecs::FocusLock>()) {
+            auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
+            if (layer == ecs::FocusLayer::GAME) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            } else {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
+        }
     }
 
     void GlfwGraphicsContext::EndFrame() {
