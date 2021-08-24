@@ -24,9 +24,6 @@ namespace sp {
         void SwapBuffers() override;
         void EndFrame() override;
 
-        void DisableCursor() override;
-        void EnableCursor() override;
-
         // These functions are acceptable in the base GraphicsContext class,
         // but really shouldn't needed. They should be replaced with a generic "Settings" API
         // that allows modules to populate a Settings / Options menu entry

@@ -1,6 +1,7 @@
 #include "VulkanGraphicsContext.hh"
 
 #include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
 
 #include <algorithm>
 #include <iostream>
@@ -410,7 +411,21 @@ namespace sp {
         return glm::ivec2(0);
     }
 
+    void VulkanGraphicsContext::UpdateInputModeFromFocus() {
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::FocusLock>>();
+        if (lock.Has<ecs::FocusLock>()) {
+            auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
+            if (layer == ecs::FocusLayer::GAME) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            } else {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
+        }
+    }
+
     void VulkanGraphicsContext::BeginFrame() {
+        UpdateInputModeFromFocus();
+
         auto result = device->waitForFences({CurrentFrameFence()}, true, FENCE_WAIT_TIME);
         AssertVKSuccess(result, "timed out waiting for fence");
 
@@ -466,14 +481,6 @@ namespace sp {
         }
 
         lastFrameEnd = frameEnd;
-    }
-
-    void VulkanGraphicsContext::DisableCursor() {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    }
-
-    void VulkanGraphicsContext::EnableCursor() {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
     std::shared_ptr<GpuTexture> VulkanGraphicsContext::LoadTexture(shared_ptr<Image> image, bool genMipmap) {

@@ -187,14 +187,6 @@ namespace sp {
         lastFrameEnd = frameEnd;
     }
 
-    void GlfwGraphicsContext::DisableCursor() {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    }
-
-    void GlfwGraphicsContext::EnableCursor() {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    }
-
     shared_ptr<GpuTexture> GlfwGraphicsContext::LoadTexture(shared_ptr<Image> image, bool genMipmap) {
         auto tex = make_shared<GLTexture>();
         tex->Create().LoadFromImage(image, genMipmap ? GLTexture::FullyMipmap : 1);

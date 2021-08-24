@@ -19,7 +19,6 @@
     #ifdef SP_GRAPHICS_SUPPORT_VK
         #include "graphics/vulkan/VulkanGraphicsContext.hh"
         #include "graphics/vulkan/VulkanRenderer.hh"
-        #include "input/glfw/GlfwActionSource.hh"
     #endif
 
     #ifdef SP_PHYSICS_SUPPORT_PHYSX
