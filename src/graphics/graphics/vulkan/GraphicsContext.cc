@@ -1,4 +1,4 @@
-#include "VulkanGraphicsContext.hh"
+#include "GraphicsContext.hh"
 
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
@@ -13,7 +13,7 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
-namespace sp {
+namespace sp::vulkan {
     const int MAX_FRAMES_IN_FLIGHT = 2;
     const uint64_t FENCE_WAIT_TIME = 1e10; // nanoseconds, assume deadlock after this time
     const uint32_t VULKAN_API_VERSION = VK_API_VERSION_1_2;
@@ -46,7 +46,7 @@ namespace sp {
         Errorf("GLFW returned %d: %s", error, message);
     }
 
-    VulkanGraphicsContext::VulkanGraphicsContext() {
+    GraphicsContext::GraphicsContext() {
         glfwSetErrorCallback(glfwErrorCallback);
 
         if (!glfwInit()) { throw "glfw failed"; }
@@ -258,7 +258,7 @@ namespace sp {
         CreateSwapchain();
     }
 
-    VulkanGraphicsContext::~VulkanGraphicsContext() {
+    GraphicsContext::~GraphicsContext() {
         if (device) { vkDeviceWaitIdle(*device); }
         if (window) { glfwDestroyWindow(window); }
 
@@ -268,7 +268,7 @@ namespace sp {
     }
 
     // Releases old swapchain after creating a new one
-    void VulkanGraphicsContext::CreateSwapchain() {
+    void GraphicsContext::CreateSwapchain() {
         auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
         auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
         auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
@@ -346,20 +346,20 @@ namespace sp {
         imagesInFlight.resize(swapchainImages.size());
     }
 
-    void VulkanGraphicsContext::RecreateSwapchain() {
+    void GraphicsContext::RecreateSwapchain() {
         vkDeviceWaitIdle(*device);
         CreateSwapchain();
     }
 
-    void VulkanGraphicsContext::SetTitle(string title) {
+    void GraphicsContext::SetTitle(string title) {
         glfwSetWindowTitle(window, title.c_str());
     }
 
-    bool VulkanGraphicsContext::ShouldClose() {
+    bool GraphicsContext::ShouldClose() {
         return !!glfwWindowShouldClose(window);
     }
 
-    void VulkanGraphicsContext::PrepareWindowView(ecs::View &view) {
+    void GraphicsContext::PrepareWindowView(ecs::View &view) {
         glm::ivec2 scaled = glm::vec2(CVarWindowSize.Get()) * CVarWindowScale.Get();
 
         if (glfwFullscreen != CVarWindowFullscreen.Get()) {
@@ -385,7 +385,7 @@ namespace sp {
         view.fov = glm::radians(CVarFieldOfView.Get());
     }
 
-    const vector<glm::ivec2> &VulkanGraphicsContext::MonitorModes() {
+    const vector<glm::ivec2> &GraphicsContext::MonitorModes() {
         if (!monitorModes.empty()) return monitorModes;
 
         int count;
@@ -405,13 +405,13 @@ namespace sp {
         return monitorModes;
     }
 
-    const glm::ivec2 VulkanGraphicsContext::CurrentMode() {
+    const glm::ivec2 GraphicsContext::CurrentMode() {
         const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         if (mode != NULL) { return glm::ivec2(mode->width, mode->height); }
         return glm::ivec2(0);
     }
 
-    void VulkanGraphicsContext::UpdateInputModeFromFocus() {
+    void GraphicsContext::UpdateInputModeFromFocus() {
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::FocusLock>>();
         if (lock.Has<ecs::FocusLock>()) {
             auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
@@ -423,7 +423,7 @@ namespace sp {
         }
     }
 
-    void VulkanGraphicsContext::BeginFrame() {
+    void GraphicsContext::BeginFrame() {
         UpdateInputModeFromFocus();
 
         auto result = device->waitForFences({CurrentFrameFence()}, true, FENCE_WAIT_TIME);
@@ -447,7 +447,7 @@ namespace sp {
         vmaSetCurrentFrameIndex(allocator, frameCounter);
     }
 
-    void VulkanGraphicsContext::SwapBuffers() {
+    void GraphicsContext::SwapBuffers() {
         vk::Semaphore renderCompleteSem = CurrentFrameRenderCompleteSemaphore();
         vk::PresentInfoKHR presentInfo;
         presentInfo.waitSemaphoreCount = 1;
@@ -466,7 +466,7 @@ namespace sp {
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
-    void VulkanGraphicsContext::EndFrame() {
+    void GraphicsContext::EndFrame() {
         frameCounter++;
         if (frameCounter == UINT32_MAX) frameCounter = 0;
 
@@ -483,19 +483,19 @@ namespace sp {
         lastFrameEnd = frameEnd;
     }
 
-    std::shared_ptr<GpuTexture> VulkanGraphicsContext::LoadTexture(shared_ptr<Image> image, bool genMipmap) {
+    std::shared_ptr<GpuTexture> GraphicsContext::LoadTexture(shared_ptr<Image> image, bool genMipmap) {
         // TODO
         return nullptr;
     }
 
-    VulkanUniqueBuffer VulkanGraphicsContext::AllocateBuffer(vk::DeviceSize size,
-                                                             vk::BufferUsageFlags usage,
-                                                             VmaMemoryUsage residency) {
+    UniqueBuffer GraphicsContext::AllocateBuffer(vk::DeviceSize size,
+                                                 vk::BufferUsageFlags usage,
+                                                 VmaMemoryUsage residency) {
         vk::BufferCreateInfo bufferInfo;
         bufferInfo.size = size;
         bufferInfo.usage = usage;
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
-        return VulkanUniqueBuffer(bufferInfo, allocInfo, allocator);
+        return UniqueBuffer(bufferInfo, allocInfo, allocator);
     }
-} // namespace sp
+} // namespace sp::vulkan

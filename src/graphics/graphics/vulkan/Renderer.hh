@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanMemory.hh"
+#include "Memory.hh"
 #include "core/CFunc.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
@@ -12,16 +12,18 @@
 namespace sp {
     class Game;
     class Model;
-    class GraphicsContext;
-    class VulkanGraphicsContext;
+} // namespace sp
 
-    class VulkanRenderer {
+namespace sp::vulkan {
+    class GraphicsContext;
+
+    class Renderer {
     public:
         using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::View, ecs::Transform>>;
         typedef std::function<void(DrawLock, Tecs::Entity &)> PreDrawFunc;
 
-        VulkanRenderer(ecs::Lock<ecs::AddRemove> lock, VulkanGraphicsContext &context);
-        ~VulkanRenderer();
+        Renderer(ecs::Lock<ecs::AddRemove> lock, GraphicsContext &context);
+        ~Renderer();
 
         void Prepare(){};
         void BeginFrame(ecs::Lock<ecs::Read<ecs::Transform>> lock){};
@@ -40,7 +42,7 @@ namespace sp {
 
         float Exposure = 1.0f;
 
-        VulkanGraphicsContext &context;
+        GraphicsContext &context;
         vk::Device &device;
 
     private:
@@ -56,6 +58,6 @@ namespace sp {
         vk::UniquePipeline graphicsPipeline;
         vector<vk::UniqueFramebuffer> swapchainFramebuffers;
 
-        VulkanUniqueBuffer vertexBuffer;
+        UniqueBuffer vertexBuffer;
     };
-} // namespace sp
+} // namespace sp::vulkan

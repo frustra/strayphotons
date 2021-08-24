@@ -1,19 +1,19 @@
-#include "VulkanMemory.hh"
+#include "Memory.hh"
 
 #include "core/Common.hh"
 
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
 
-namespace sp {
-    VulkanUniqueBuffer::VulkanUniqueBuffer() : VulkanUniqueMemory(VK_NULL_HANDLE) {
+namespace sp::vulkan {
+    UniqueBuffer::UniqueBuffer() : UniqueMemory(VK_NULL_HANDLE) {
         Release();
     }
 
-    VulkanUniqueBuffer::VulkanUniqueBuffer(vk::BufferCreateInfo bufferInfo,
-                                           VmaAllocationCreateInfo allocInfo,
-                                           VmaAllocator allocator)
-        : VulkanUniqueMemory(allocator), bufferInfo(bufferInfo) {
+    UniqueBuffer::UniqueBuffer(vk::BufferCreateInfo bufferInfo,
+                               VmaAllocationCreateInfo allocInfo,
+                               VmaAllocator allocator)
+        : UniqueMemory(allocator), bufferInfo(bufferInfo) {
 
         VkBufferCreateInfo vkBufferInfo = bufferInfo;
         VkBuffer vkBuffer;
@@ -23,11 +23,11 @@ namespace sp {
         buffer = vkBuffer;
     }
 
-    VulkanUniqueBuffer::~VulkanUniqueBuffer() {
+    UniqueBuffer::~UniqueBuffer() {
         Destroy();
     }
 
-    VulkanUniqueBuffer &VulkanUniqueBuffer::operator=(VulkanUniqueBuffer &&other) {
+    UniqueBuffer &UniqueBuffer::operator=(UniqueBuffer &&other) {
         Destroy();
         allocator = other.allocator;
         allocation = other.allocation;
@@ -37,25 +37,25 @@ namespace sp {
         return *this;
     }
 
-    void VulkanUniqueBuffer::Destroy() {
+    void UniqueBuffer::Destroy() {
         if (allocator != VK_NULL_HANDLE) {
             vmaDestroyBuffer(allocator, buffer, allocation);
             Release();
         }
     }
 
-    void VulkanUniqueBuffer::Release() {
+    void UniqueBuffer::Release() {
         allocator = VK_NULL_HANDLE;
         allocation = VK_NULL_HANDLE;
         buffer = VK_NULL_HANDLE;
         bufferInfo = vk::BufferCreateInfo();
     }
 
-    vk::Result VulkanUniqueMemory::Map(void **data) {
+    vk::Result UniqueMemory::Map(void **data) {
         return static_cast<vk::Result>(vmaMapMemory(allocator, allocation, data));
     }
 
-    void VulkanUniqueMemory::Unmap() {
+    void UniqueMemory::Unmap() {
         vmaUnmapMemory(allocator, allocation);
     }
-} // namespace sp
+} // namespace sp::vulkan

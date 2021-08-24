@@ -22,7 +22,9 @@ namespace sp {
     #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
-    class VulkanRenderer;
+    namespace vulkan {
+        class Renderer;
+    }
     #endif
 
     class GraphicsManager {
@@ -50,7 +52,7 @@ namespace sp {
     #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
-        VulkanRenderer *renderer = nullptr;
+        vulkan::Renderer *renderer = nullptr;
     #endif
     };
 } // namespace sp

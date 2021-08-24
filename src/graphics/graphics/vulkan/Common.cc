@@ -2,7 +2,7 @@
 
 #include "core/Common.hh"
 
-namespace sp {
+namespace sp::vulkan {
     void AssertVKSuccess(vk::Result result, std::string message) {
         if (result == vk::Result::eSuccess) return;
         Assert(false, message + " (" + vk::to_string(result) + ")");

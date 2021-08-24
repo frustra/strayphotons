@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanMemory.hh"
+#include "Memory.hh"
 #include "ecs/components/View.hh"
 #include "graphics/core/GraphicsContext.hh"
 
@@ -10,11 +10,11 @@
 
 struct GLFWwindow;
 
-namespace sp {
-    class VulkanGraphicsContext final : public GraphicsContext {
+namespace sp::vulkan {
+    class GraphicsContext final : public sp::GraphicsContext {
     public:
-        VulkanGraphicsContext();
-        virtual ~VulkanGraphicsContext();
+        GraphicsContext();
+        virtual ~GraphicsContext();
 
         // Potential GraphicsContext function implementations
         bool ShouldClose() override;
@@ -97,7 +97,7 @@ namespace sp {
             return output;
         }
 
-        VulkanUniqueBuffer AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
+        UniqueBuffer AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
 
     private:
         void SetTitle(string title);
@@ -141,4 +141,4 @@ namespace sp {
         uint32 frameCounter = 0, frameCounterThisSecond = 0;
         GLFWwindow *window = nullptr;
     };
-} // namespace sp
+} // namespace sp::vulkan

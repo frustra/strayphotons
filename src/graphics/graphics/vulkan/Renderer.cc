@@ -1,7 +1,6 @@
-#include "VulkanRenderer.hh"
-
+#include "GraphicsContext.hh"
+#include "Renderer.hh"
 #include "VertexBuffer.hh"
-#include "VulkanGraphicsContext.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/core/NativeModel.hh"
 
@@ -11,13 +10,13 @@
 
 #include <vk_mem_alloc.h>
 
-namespace sp {
+namespace sp::vulkan {
     struct TestVertex {
         glm::vec2 pos;
         glm::vec3 color;
 
-        static vulkan::VertexInputInfo InputInfo() {
-            vulkan::VertexInputInfo info(0, sizeof(TestVertex));
+        static VertexInputInfo InputInfo() {
+            VertexInputInfo info(0, sizeof(TestVertex));
             info.PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(TestVertex, pos));
             info.PushAttribute(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(TestVertex, color));
             return info;
@@ -33,7 +32,7 @@ namespace sp {
         return vertices;
     }
 
-    VulkanRenderer::VulkanRenderer(ecs::Lock<ecs::AddRemove> lock, VulkanGraphicsContext &context)
+    Renderer::Renderer(ecs::Lock<ecs::AddRemove> lock, GraphicsContext &context)
         : context(context), device(context.Device()) {
 
         auto vertices = makeTestVertices();
@@ -42,11 +41,11 @@ namespace sp {
                                               VMA_MEMORY_USAGE_CPU_TO_GPU);
     }
 
-    VulkanRenderer::~VulkanRenderer() {
+    Renderer::~Renderer() {
         device.waitIdle();
     }
 
-    void VulkanRenderer::RenderPass(const ecs::View &view, DrawLock lock, RenderTarget *finalOutput) {
+    void Renderer::RenderPass(const ecs::View &view, DrawLock lock, RenderTarget *finalOutput) {
         uint32_t w = view.extents.x, h = view.extents.y;
         vk::Extent2D extent = {w, h};
 
@@ -93,10 +92,10 @@ namespace sp {
         commands.end();
     }
 
-    void VulkanRenderer::ForwardPass(vk::CommandBuffer &commands,
-                                     ecs::View &view,
-                                     DrawLock lock,
-                                     const PreDrawFunc &preDraw) {
+    void Renderer::ForwardPass(vk::CommandBuffer &commands,
+                               ecs::View &view,
+                               DrawLock lock,
+                               const PreDrawFunc &preDraw) {
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (ent.Has<ecs::Renderable, ecs::Transform>(lock)) {
                 if (ent.Has<ecs::Mirror>(lock)) continue;
@@ -111,7 +110,7 @@ namespace sp {
         }
     }
 
-    void VulkanRenderer::CleanupPipeline() {
+    void Renderer::CleanupPipeline() {
         swapchainFramebuffers.clear();
         commandBuffers.clear();
         graphicsPipeline.reset();
@@ -119,7 +118,7 @@ namespace sp {
         renderPass.reset();
     }
 
-    void VulkanRenderer::CreatePipeline(vk::Extent2D extent) {
+    void Renderer::CreatePipeline(vk::Extent2D extent) {
         // very temporary code to build a test pipeline
 
         auto vertShaderAsset = GAssets.Load("shaders/vulkan/bin/test.vert.spv");
@@ -265,18 +264,18 @@ namespace sp {
 
     class VulkanModel final : public NonCopyable, public NativeModel {
     public:
-        VulkanModel(Model *model, VulkanRenderer *renderer) : NativeModel(model) {
+        VulkanModel(Model *model, Renderer *renderer) : NativeModel(model) {
             for (auto &primitive : model->primitives) {}
         }
 
         void AppendDrawCommands(vk::CommandBuffer &commands, glm::mat4 modelMat, const ecs::View &view) {}
     };
 
-    void VulkanRenderer::DrawEntity(vk::CommandBuffer &commands,
-                                    const ecs::View &view,
-                                    DrawLock lock,
-                                    Tecs::Entity &ent,
-                                    const PreDrawFunc &preDraw) {
+    void Renderer::DrawEntity(vk::CommandBuffer &commands,
+                              const ecs::View &view,
+                              DrawLock lock,
+                              Tecs::Entity &ent,
+                              const PreDrawFunc &preDraw) {
         auto &comp = ent.Get<ecs::Renderable>(lock);
 
         // Filter entities that aren't members of all layers in the view's visibility mask.
@@ -294,7 +293,7 @@ namespace sp {
         vkModel->AppendDrawCommands(commands, modelMat, view); // TODO pass and use comp.model->bones
     }
 
-    void VulkanRenderer::EndFrame() {
+    void Renderer::EndFrame() {
         vk::SubmitInfo submitInfo;
         vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
 
@@ -314,4 +313,4 @@ namespace sp {
         context.GraphicsQueue().submit({submitInfo}, context.ResetCurrentFrameFence());
     }
 
-} // namespace sp
+} // namespace sp::vulkan

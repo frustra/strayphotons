@@ -17,8 +17,8 @@
         #include "input/glfw/GlfwInputHandler.hh"
     #endif
     #ifdef SP_GRAPHICS_SUPPORT_VK
-        #include "graphics/vulkan/VulkanGraphicsContext.hh"
-        #include "graphics/vulkan/VulkanRenderer.hh"
+        #include "graphics/vulkan/GraphicsContext.hh"
+        #include "graphics/vulkan/Renderer.hh"
     #endif
 
     #ifdef SP_PHYSICS_SUPPORT_PHYSX
@@ -55,7 +55,7 @@ namespace sp {
     #endif
 
     #if SP_GRAPHICS_SUPPORT_VK
-        VulkanGraphicsContext *vkContext = new VulkanGraphicsContext();
+        vulkan::GraphicsContext *vkContext = new vulkan::GraphicsContext();
         context = vkContext;
 
         GLFWwindow *window = vkContext->GetWindow();
@@ -92,7 +92,7 @@ namespace sp {
 
         {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-            renderer = new VulkanRenderer(lock, *vkContext);
+            renderer = new vulkan::Renderer(lock, *vkContext);
         }
 
         renderer->Prepare();
