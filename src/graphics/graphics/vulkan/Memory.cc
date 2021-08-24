@@ -1,9 +1,7 @@
+#define VMA_IMPLEMENTATION
 #include "Memory.hh"
 
 #include "core/Common.hh"
-
-#define VMA_IMPLEMENTATION
-#include "vk_mem_alloc.h"
 
 namespace sp::vulkan {
     UniqueBuffer::UniqueBuffer() : UniqueMemory(VK_NULL_HANDLE) {

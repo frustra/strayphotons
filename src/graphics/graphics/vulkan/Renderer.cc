@@ -1,5 +1,6 @@
-#include "GraphicsContext.hh"
 #include "Renderer.hh"
+
+#include "GraphicsContext.hh"
 #include "VertexBuffer.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/core/NativeModel.hh"
@@ -7,8 +8,6 @@
 // temporary for shader access, shaders should be compiled somewhere else later
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
-
-#include <vk_mem_alloc.h>
 
 namespace sp::vulkan {
     struct TestVertex {
@@ -265,7 +264,7 @@ namespace sp::vulkan {
     class VulkanModel final : public NonCopyable, public NativeModel {
     public:
         VulkanModel(Model *model, Renderer *renderer) : NativeModel(model) {
-            for (auto &primitive : model->primitives) {}
+            // for (auto &primitive : model->primitives) {}
         }
 
         void AppendDrawCommands(vk::CommandBuffer &commands, glm::mat4 modelMat, const ecs::View &view) {}

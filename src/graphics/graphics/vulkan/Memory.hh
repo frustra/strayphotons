@@ -2,7 +2,25 @@
 
 #include "Common.hh"
 
+#ifdef __clang__
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wunused-variable"
+#endif
+
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wunused-variable"
+#endif
+
 #include <vk_mem_alloc.h>
+
+#ifdef __GNUC__
+    #pragma GCC diagnostic pop
+#endif
+
+#ifdef __clang__
+    #pragma clang diagnostic pop
+#endif
 
 namespace sp::vulkan {
     struct UniqueMemory {
