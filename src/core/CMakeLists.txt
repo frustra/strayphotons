@@ -16,13 +16,13 @@ if(WIN32)
         /wd4506
     )
 
-	target_compile_definitions(${PROJECT_CORE_LIB} PUBLIC
-		_CRT_SECURE_NO_WARNINGS
-		UNICODE
-		_UNICODE
-		NOMINMAX
-		_USE_MATH_DEFINES
-	)
+    target_compile_definitions(${PROJECT_CORE_LIB} PUBLIC
+        _CRT_SECURE_NO_WARNINGS
+        UNICODE
+        _UNICODE
+        NOMINMAX
+        _USE_MATH_DEFINES
+    )
     
     # fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
     target_compile_options(${PROJECT_CORE_LIB} PUBLIC /bigobj)

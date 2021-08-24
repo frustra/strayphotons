@@ -1,7 +1,3 @@
-
-# These projects already have functional CMake scripts that can be used as part of the native build
-add_subdirectory(googletest)
-
 # No need to build the CXXOPTS tests
 set(CXXOPTS_BUILD_TESTS OFF CACHE BOOL "Disable CXXOPTS Test Suite" FORCE)
 set(CXXOPTS_BUILD_EXAMPLES OFF CACHE BOOL "Disable CXXOPTS Examples" FORCE)

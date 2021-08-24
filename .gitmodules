@@ -1,33 +1,18 @@
-[submodule "ext/glm"]
-	path = ext/glm
-	url = https://github.com/g-truc/glm.git
-[submodule "ext/luabridge"]
-	path = ext/luabridge
-	url = https://github.com/frustra/LuaBridge.git
-[submodule "ext/luajit"]
-	path = ext/luajit
-	url = https://github.com/frustra/luajit-2.0.git
-[submodule "ext/Vulkan-LoaderAndValidationLayers"]
-	path = ext/Vulkan-LoaderAndValidationLayers
-	url = https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers.git
-[submodule "ext/googletest"]
-	path = ext/googletest
-	url = https://github.com/google/googletest.git
-[submodule "ext/tinygltfloader"]
-	path = ext/tinygltfloader
-	url = https://github.com/frustra/tinygltfloader.git
-[submodule "ext/physx"]
-	path = ext/physx
-	url = https://github.com/NVIDIAGameWorks/PhysX.git
-[submodule "ext/imgui"]
-	path = ext/imgui
-	url = https://github.com/frustra/imgui.git
-[submodule "ext/glomerate"]
-	path = ext/glomerate
-	url = https://github.com/frustra/glomerate.git
 [submodule "ext/cxxopts"]
 	path = ext/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
+[submodule "ext/glfw"]
+	path = ext/glfw
+	url = https://github.com/frustra/glfw.git
+[submodule "ext/glm"]
+	path = ext/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "ext/gltf-pipeline"]
+	path = ext/gltf-pipeline
+	url = https://github.com/AnalyticalGraphicsInc/gltf-pipeline.git
+[submodule "ext/imgui"]
+	path = ext/imgui
+	url = https://github.com/frustra/imgui.git
 [submodule "ext/linenoise"]
 	path = ext/linenoise
 	url = https://github.com/frustra/linenoise.git
@@ -40,21 +25,21 @@
 [submodule "ext/openvr"]
 	path = ext/openvr
 	url = https://github.com/ValveSoftware/openvr.git
-[submodule "ext/robin-hood-hashing"]
-	path = ext/robin-hood-hashing
-	url = https://github.com/martinus/robin-hood-hashing
-[submodule "ext/tinygltf"]
-	path = ext/tinygltf
-	url = https://github.com/syoyo/tinygltf.git
+[submodule "ext/physx"]
+	path = ext/physx
+	url = https://github.com/NVIDIAGameWorks/PhysX.git
 [submodule "ext/picojson"]
 	path = ext/picojson
 	url = https://github.com/kazuho/picojson.git
-[submodule "ext/gltf-pipeline"]
-	path = ext/gltf-pipeline
-	url = https://github.com/AnalyticalGraphicsInc/gltf-pipeline.git
-[submodule "ext/glfw"]
-	path = ext/glfw
-	url = https://github.com/frustra/glfw.git
+[submodule "ext/robin-hood-hashing"]
+	path = ext/robin-hood-hashing
+	url = https://github.com/martinus/robin-hood-hashing
 [submodule "ext/Tecs"]
 	path = ext/Tecs
 	url = https://github.com/xthexder/Tecs.git
+[submodule "ext/tinygltf"]
+	path = ext/tinygltf
+	url = https://github.com/syoyo/tinygltf.git
+[submodule "ext/tinygltfloader"]
+	path = ext/tinygltfloader
+	url = https://github.com/frustra/tinygltfloader.git

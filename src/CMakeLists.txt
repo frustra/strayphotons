@@ -18,41 +18,41 @@ include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
 
 # Default desktop build
 add_module_configuration(
-	NAME sp
-	LINK_LIBRARIES
-		${PROJECT_CORE_LIB}
-		${PROJECT_GRAPHICS_OPENGL_LIB}
-		${PROJECT_INPUT_GLFW_LIB}
-		${PROJECT_PHYSICS_PHYSX_LIB}
-		# ${PROJECT_XR_OPENVR_LIB}
+    NAME sp
+    LINK_LIBRARIES
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GRAPHICS_OPENGL_LIB}
+        ${PROJECT_INPUT_GLFW_LIB}
+        ${PROJECT_PHYSICS_PHYSX_LIB}
+        # ${PROJECT_XR_OPENVR_LIB}
 )
 
 # EGL-based executable used for CI testing purposes
 add_module_configuration(
-	NAME sp-test
-	LINK_LIBRARIES
+    NAME sp-test
+    LINK_LIBRARIES
         ${PROJECT_GAME_TEST_LIB}
-		${PROJECT_CORE_LIB}
-		${PROJECT_GRAPHICS_EGL_LIB}
-		${PROJECT_INPUT_GLFW_LIB}
-		# ${PROJECT_XR_OPENVR_LIB}
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GRAPHICS_EGL_LIB}
+        ${PROJECT_INPUT_GLFW_LIB}
+        # ${PROJECT_XR_OPENVR_LIB}
 )
 
 # Headless test executable
 add_module_configuration(
-	NAME sp-headless
-	LINK_LIBRARIES
-		${PROJECT_CORE_LIB}
-		${PROJECT_INPUT_CORE_LIB}
-		${PROJECT_PHYSICS_PHYSX_LIB}
+    NAME sp-headless
+    LINK_LIBRARIES
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_INPUT_CORE_LIB}
+        ${PROJECT_PHYSICS_PHYSX_LIB}
 )
 
 # Minimal cli interface
 add_module_configuration(
-	NAME sp-cli
-	LINK_LIBRARIES
+    NAME sp-cli
+    LINK_LIBRARIES
         ${PROJECT_GAME_TEST_LIB}
-		${PROJECT_CORE_LIB}
+        ${PROJECT_CORE_LIB}
 )
 
 add_subdirectory(core)

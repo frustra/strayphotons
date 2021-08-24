@@ -29,13 +29,13 @@ target_compile_definitions(${PROJECT_PHYSICS_PHYSX_LIB}
 )
 
 if (SP_DEBUG)
-	target_compile_definitions(${PROJECT_PHYSICS_PHYSX_LIB} PUBLIC
-		_DEBUG
-	)
+    target_compile_definitions(${PROJECT_PHYSICS_PHYSX_LIB} PUBLIC
+        _DEBUG
+    )
 else()
-	target_compile_definitions(${PROJECT_PHYSICS_PHYSX_LIB} PUBLIC
-		NDEBUG
-	)
+    target_compile_definitions(${PROJECT_PHYSICS_PHYSX_LIB} PUBLIC
+        NDEBUG
+    )
 endif()
 
 add_subdirectory(physx)

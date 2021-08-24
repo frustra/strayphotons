@@ -11,19 +11,19 @@ option(SP_NO_MODEL_COMPILE "Disable the model compiler, which needs Node.js" off
 option(SP_BUILD_RUST "Build and link against rust modules" on)
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
-	message(STATUS "sp target is Release")
-	set(SP_DEBUG 0)
+    message(STATUS "sp target is Release")
+    set(SP_DEBUG 0)
 elseif(CMAKE_BUILD_TYPE MATCHES Debug)
-	message(STATUS "sp target is Debug")
-	set(SP_DEBUG 1)
+    message(STATUS "sp target is Debug")
+    set(SP_DEBUG 1)
 else()
-	message(STATUS "sp target is default, using Debug")
-	set(CMAKE_BUILD_TYPE Debug)
-	set(SP_DEBUG 1)
+    message(STATUS "sp target is default, using Debug")
+    set(CMAKE_BUILD_TYPE Debug)
+    set(SP_DEBUG 1)
 endif()
 
 if(SP_PACKAGE_RELEASE)
-	message(STATUS "Enabling build for packaged release")
+    message(STATUS "Enabling build for packaged release")
 endif()
 
 # Tell cmake to export a compile_commands.json file
@@ -36,36 +36,36 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 ## Setup compiler flags for various build types
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
-	# TODO: Enable warnings as errors on MSVC
-	set(CMAKE_CXX_FLAGS 				"/MP /EHsc") # /Wall /WX") # /wd4800 /wd4189
-	set(CMAKE_CXX_FLAGS_RELEASE 		"/MT /O2")
-	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"/MTd /O2")
-	set(CMAKE_CXX_FLAGS_DEBUG 			"/MTd /DEBUG /ZI /FC")
+    # TODO: Enable warnings as errors on MSVC
+    set(CMAKE_CXX_FLAGS 				"/MP /EHsc") # /Wall /WX") # /wd4800 /wd4189
+    set(CMAKE_CXX_FLAGS_RELEASE 		"/MT /O2")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"/MTd /O2")
+    set(CMAKE_CXX_FLAGS_DEBUG 			"/MTd /DEBUG /ZI /FC")
 
-	# Force targets to be built using static linking
-	if(SP_DEBUG)
-		set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreadedDebug)
-	else()
-		set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)
-	endif()
+    # Force targets to be built using static linking
+    if(SP_DEBUG)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreadedDebug)
+    else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)
+    endif()
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
-	set(CMAKE_CXX_FLAGS 				"-Wall -Werror -Werror=format-security")
-	set(CMAKE_CXX_FLAGS_RELEASE 		"-O3")
-	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"-g3 -ggdb3 -Og")
-	set(CMAKE_CXX_FLAGS_DEBUG 			"-g3 -ggdb3 -O0")
+    set(CMAKE_CXX_FLAGS 				"-Wall -Werror -Werror=format-security")
+    set(CMAKE_CXX_FLAGS_RELEASE 		"-O3")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"-g3 -ggdb3 -Og")
+    set(CMAKE_CXX_FLAGS_DEBUG 			"-g3 -ggdb3 -O0")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
-	set(CMAKE_CXX_FLAGS 				"-Wall -Werror -Wformat-security")
-	set(CMAKE_CXX_FLAGS_RELEASE 		"-O3")
-	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"-g3 -ggdb3 -Og")
-	set(CMAKE_CXX_FLAGS_DEBUG 			"-g3 -ggdb3 -O0")
+    set(CMAKE_CXX_FLAGS 				"-Wall -Werror -Wformat-security")
+    set(CMAKE_CXX_FLAGS_RELEASE 		"-O3")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"-g3 -ggdb3 -Og")
+    set(CMAKE_CXX_FLAGS_DEBUG 			"-g3 -ggdb3 -O0")
 
 else()
 
-	message(FATAL_ERROR "Unknown CXX compiler ${CMAKE_CXX_COMPILER_ID}")
+    message(FATAL_ERROR "Unknown CXX compiler ${CMAKE_CXX_COMPILER_ID}")
 
 endif()
 
@@ -79,8 +79,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 # For multi-config builds (e.g. msvc)
 foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
     string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_OUTPUT_DIR})
-	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_OUTPUT_DIR})
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_OUTPUT_DIR})
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_OUTPUT_DIR})
 endforeach()
 
 find_package(OpenGL REQUIRED)
@@ -103,9 +103,9 @@ target_include_directories(${PROJECT_COMMON_EXE} INTERFACE src)
 add_subdirectory(ext)
 
 if((CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64") OR (CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64"))
-	set(ARM ON)
+    set(ARM ON)
 else()
-	set(ARM OFF)
+    set(ARM OFF)
 endif()
 
 # Tell CMake to convert all relative paths in subdirectories to absolute paths
@@ -116,100 +116,100 @@ add_subdirectory(shaders)
 add_subdirectory(src)
 
 if(UNIX)
-	target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
-		pthread
-	)
+    target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
+        pthread
+    )
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-	if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 8.0)
-		message(FATAL_ERROR "Requires GCC >8.0")
-	endif()
+    if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 8.0)
+        message(FATAL_ERROR "Requires GCC >8.0")
+    endif()
 
-	target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
-		stdc++fs
-	)
+    target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
+        stdc++fs
+    )
 endif()
 
 ## COMPILE DEFINITIONS ##
 
 if(SP_PACKAGE_RELEASE)
-	target_compile_definitions(${PROJECT_COMMON_EXE} INTERFACE PACKAGE_RELEASE)
-	
-	if (WIN32)
-		set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
-	else()
-		set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES INSTALL_RPATH "\$ORIGIN")
-		set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	endif()
+    target_compile_definitions(${PROJECT_COMMON_EXE} INTERFACE PACKAGE_RELEASE)
+    
+    if (WIN32)
+        set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
+    else()
+        set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES INSTALL_RPATH "\$ORIGIN")
+        set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+    endif()
 
-	# No way around using file(GLOB) here without
-	# manually listing every file to be included
-	# in the assets.spdata file
-	#
-	# When adding entirely new assets, CMake will need
-	# to be re-run
-	set(_asset_filename assets.spdata)
-	file(GLOB_RECURSE _glb_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}/assets" CONFIGURE_DEPENDS "assets/models/*.glb")
-	file(GLOB_RECURSE _glb_assets_full "assets/models/*.glb")
+    # No way around using file(GLOB) here without
+    # manually listing every file to be included
+    # in the assets.spdata file
+    #
+    # When adding entirely new assets, CMake will need
+    # to be re-run
+    set(_asset_filename assets.spdata)
+    file(GLOB_RECURSE _glb_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}/assets" CONFIGURE_DEPENDS "assets/models/*.glb")
+    file(GLOB_RECURSE _glb_assets_full "assets/models/*.glb")
 
-	file(GLOB_RECURSE _shaders_assets_full CONFIGURE_DEPENDS "shaders/*")
+    file(GLOB_RECURSE _shaders_assets_full CONFIGURE_DEPENDS "shaders/*")
 
-	add_custom_command(
-		COMMAND
-			${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/shaders ${CMAKE_CURRENT_LIST_DIR}/assets/shaders
-		COMMAND
-			${CMAKE_COMMAND} -E tar c ${PROJECT_OUTPUT_DIR}/${_asset_filename} -- cache fonts logos scenes textures shaders ${_glb_assets}
-		COMMAND
-			${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_LIST_DIR}/assets/shaders
-		OUTPUT
-			${PROJECT_OUTPUT_DIR}/${_asset_filename}
-		DEPENDS
-			${_glb_assets_full}
-			${_shaders_assets_full}
-		WORKING_DIRECTORY
-			${CMAKE_CURRENT_LIST_DIR}/assets
-	)
+    add_custom_command(
+        COMMAND
+            ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/shaders ${CMAKE_CURRENT_LIST_DIR}/assets/shaders
+        COMMAND
+            ${CMAKE_COMMAND} -E tar c ${PROJECT_OUTPUT_DIR}/${_asset_filename} -- cache fonts logos scenes textures shaders ${_glb_assets}
+        COMMAND
+            ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_LIST_DIR}/assets/shaders
+        OUTPUT
+            ${PROJECT_OUTPUT_DIR}/${_asset_filename}
+        DEPENDS
+            ${_glb_assets_full}
+            ${_shaders_assets_full}
+        WORKING_DIRECTORY
+            ${CMAKE_CURRENT_LIST_DIR}/assets
+    )
 
-	add_custom_target(assets_tar DEPENDS ${PROJECT_OUTPUT_DIR}/${_asset_filename})
+    add_custom_target(assets_tar DEPENDS ${PROJECT_OUTPUT_DIR}/${_asset_filename})
 
-	# Make the TAR generation depend on having up-to-date models
-	add_dependencies(assets_tar models)
+    # Make the TAR generation depend on having up-to-date models
+    add_dependencies(assets_tar models)
 
-	# Make the TAR generation depend on having up-to-date models
-	add_dependencies(assets_tar compiled-scenes)
-	
-	# Make the exe depend on having the asset tar bundle
-	add_dependencies(${PROJECT_COMMON_EXE} assets_tar)
+    # Make the TAR generation depend on having up-to-date models
+    add_dependencies(assets_tar compiled-scenes)
+    
+    # Make the exe depend on having the asset tar bundle
+    add_dependencies(${PROJECT_COMMON_EXE} assets_tar)
 endif()
 
 if(NOT SP_DEBUG)
-	include(CheckIPOSupported)
-	check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
-	if(ipo_supported)
-		message(STATUS "IPO / LTO enabled")
-		set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES
-			INTERPROCEDURAL_OPTIMIZATION TRUE
-		)
-	else()
-		message(STATUS "IPO / LTO not supported: <${ipo_error}>")
-	endif()
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
+    if(ipo_supported)
+        message(STATUS "IPO / LTO enabled")
+        set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES
+            INTERPROCEDURAL_OPTIMIZATION TRUE
+        )
+    else()
+        message(STATUS "IPO / LTO not supported: <${ipo_error}>")
+    endif()
 endif()
 
 if(SP_BUILD_RUST)
-	add_subdirectory(rust)
+    add_subdirectory(rust)
 
-	target_compile_definitions(${PROJECT_COMMON_EXE} INTERFACE
-		RUST_CXX
-	)
+    target_compile_definitions(${PROJECT_COMMON_EXE} INTERFACE
+        RUST_CXX
+    )
 
-	target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
-		sp-rust
-	)
-	
-	if(ipo_supported)
-		set_target_properties(sp-rust PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
-	endif()
+    target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
+        sp-rust
+    )
+    
+    if(ipo_supported)
+        set_target_properties(sp-rust PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+    endif()
 endif()
 
 ## END COMPILE DEFINITIONS ##

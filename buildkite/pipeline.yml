@@ -1,6 +1,0 @@
-steps:
-  - command: 
-    - "./ci-build.sh"
-    label: "Build"
-    agents:
-    - "opengl=1"
