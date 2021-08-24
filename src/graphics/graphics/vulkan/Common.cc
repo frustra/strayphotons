@@ -11,4 +11,4 @@ namespace sp::vulkan {
     void AssertVKSuccess(VkResult result, std::string message) {
         AssertVKSuccess(static_cast<vk::Result>(result), message);
     }
-} // namespace sp
+} // namespace sp::vulkan
