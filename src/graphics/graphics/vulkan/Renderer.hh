@@ -5,6 +5,7 @@
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
 
+#include <robin_hood.h>
 #include <functional>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.hpp>
@@ -16,6 +17,7 @@ namespace sp {
 
 namespace sp::vulkan {
     class GraphicsContext;
+    class VulkanModel;
 
     class Renderer {
     public:
@@ -42,6 +44,10 @@ namespace sp::vulkan {
 
         float Exposure = 1.0f;
 
+        vk::PipelineLayout PipelineLayout() {
+            return *pipelineLayout;
+        }
+
         GraphicsContext &context;
         vk::Device &device;
 
@@ -59,5 +65,7 @@ namespace sp::vulkan {
         vector<vk::UniqueFramebuffer> swapchainFramebuffers;
 
         UniqueBuffer vertexBuffer;
+
+        robin_hood::unordered_map<string, shared_ptr<VulkanModel>> models;
     };
 } // namespace sp::vulkan

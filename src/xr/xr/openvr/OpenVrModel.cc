@@ -43,7 +43,7 @@ OpenVrModel::OpenVrModel(std::string name, vr::RenderModel_t *vrModel, vr::Rende
 
     sourcePrim.drawMode = Model::DrawMode::Triangles;
     sourcePrim.indexBuffer.byteOffset = 0;
-    sourcePrim.indexBuffer.components = vrModel->unTriangleCount * 3;
+    sourcePrim.indexBuffer.componentCount = vrModel->unTriangleCount * 3;
     sourcePrim.indexBuffer.componentType = GL_UNSIGNED_SHORT;
 
     shared_ptr<GLModel> glModel = make_shared<GLModel>(this, nullptr);

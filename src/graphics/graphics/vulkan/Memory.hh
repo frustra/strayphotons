@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.hh"
+#include "core/Common.hh"
 
 #ifdef __clang__
     #pragma clang diagnostic push
@@ -23,7 +24,7 @@
 #endif
 
 namespace sp::vulkan {
-    struct UniqueMemory {
+    struct UniqueMemory : public NonCopyable {
         UniqueMemory() = delete;
         UniqueMemory(VmaAllocator allocator) : allocator(allocator) {}
         vk::Result Map(void **data);
@@ -37,10 +38,10 @@ namespace sp::vulkan {
     struct UniqueBuffer : public UniqueMemory {
         UniqueBuffer();
         UniqueBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator);
+        UniqueBuffer(UniqueBuffer &&other);
         ~UniqueBuffer();
         void Destroy();
 
-        UniqueBuffer &operator=(UniqueBuffer const &) = delete;
         UniqueBuffer &operator=(UniqueBuffer &&other);
 
         vk::Buffer Get() {

@@ -1,7 +1,8 @@
 #include "Renderer.hh"
 
 #include "GraphicsContext.hh"
-#include "VertexBuffer.hh"
+#include "Vertex.hh"
+#include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/core/NativeModel.hh"
 
@@ -10,49 +11,20 @@
 #include "assets/AssetManager.hh"
 
 namespace sp::vulkan {
-    struct TestVertex {
-        glm::vec2 pos;
-        glm::vec3 color;
-
-        static VertexInputInfo InputInfo() {
-            VertexInputInfo info(0, sizeof(TestVertex));
-            info.PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(TestVertex, pos));
-            info.PushAttribute(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(TestVertex, color));
-            return info;
-        }
-    };
-
-    std::vector<TestVertex> makeTestVertices() {
-        static std::vector<TestVertex> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-                                                   {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-                                                   {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
-        vertices[0].color.r += 0.001f;
-        if (vertices[0].color.r > 1.0f) vertices[0].color.r = 0;
-        return vertices;
-    }
-
     Renderer::Renderer(ecs::Lock<ecs::AddRemove> lock, GraphicsContext &context)
-        : context(context), device(context.Device()) {
-
-        auto vertices = makeTestVertices();
-        vertexBuffer = context.AllocateBuffer(sizeof(vertices[0]) * vertices.size(),
-                                              vk::BufferUsageFlagBits::eVertexBuffer,
-                                              VMA_MEMORY_USAGE_CPU_TO_GPU);
-    }
+        : context(context), device(context.Device()) {}
 
     Renderer::~Renderer() {
         device.waitIdle();
     }
 
+    struct MeshPushConstants {
+        glm::mat4 transform;
+    };
+
     void Renderer::RenderPass(const ecs::View &view, DrawLock lock, RenderTarget *finalOutput) {
         uint32_t w = view.extents.x, h = view.extents.y;
         vk::Extent2D extent = {w, h};
-
-        auto vertices = makeTestVertices();
-        void *data;
-        vertexBuffer.Map(&data);
-        memcpy(data, vertices.data(), vertexBuffer.Size());
-        vertexBuffer.Unmap();
 
         if (pipelineSwapchainVersion != context.SwapchainVersion()) {
             // TODO hash input state and create pipeline when it changes, there are a lot more inputs than just the
@@ -81,8 +53,8 @@ namespace sp::vulkan {
         commands.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
         commands.bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline);
 
-        commands.bindVertexBuffers(0, {vertexBuffer.Get()}, {0});
-        commands.draw(3, 1, 0, 0);
+        // commands.bindVertexBuffers(0, {vertexBuffer.Get()}, {0});
+        // commands.draw(3, 1, 0, 0);
 
         ecs::View forwardPassView = view;
         ForwardPass(commands, forwardPassView, lock, [&](auto lock, Tecs::Entity &ent) {});
@@ -118,8 +90,6 @@ namespace sp::vulkan {
     }
 
     void Renderer::CreatePipeline(vk::Extent2D extent) {
-        // very temporary code to build a test pipeline
-
         auto vertShaderAsset = GAssets.Load("shaders/vulkan/bin/test.vert.spv");
         vk::ShaderModuleCreateInfo vertShaderCreateInfo;
         vertShaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(vertShaderAsset->CharBuffer());
@@ -149,7 +119,9 @@ namespace sp::vulkan {
 
         vk::Viewport viewport;
         viewport.width = extent.width;
-        viewport.height = extent.height;
+        viewport.height = -(float)extent.height;
+        viewport.x = 0;
+        viewport.y = extent.height;
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
 
@@ -178,7 +150,14 @@ namespace sp::vulkan {
         colorBlending.attachmentCount = 1;
         colorBlending.pAttachments = &colorBlendAttachment;
 
+        vk::PushConstantRange pushConstantRange;
+        pushConstantRange.offset = 0;
+        pushConstantRange.size = sizeof(MeshPushConstants);
+        pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
+
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
+        pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
         pipelineLayout = device.createPipelineLayoutUnique(pipelineLayoutInfo);
 
         vk::AttachmentDescription colorAttachment;
@@ -222,7 +201,7 @@ namespace sp::vulkan {
         multisampling.sampleShadingEnable = false;
         multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
 
-        auto vertexInputInfo = TestVertex::InputInfo();
+        auto vertexInputInfo = SceneVertex::InputInfo();
 
         vk::GraphicsPipelineCreateInfo pipelineInfo;
         pipelineInfo.stageCount = 2;
@@ -261,13 +240,139 @@ namespace sp::vulkan {
         commandBuffers = context.CreateCommandBuffers(swapchainFramebuffers.size());
     }
 
-    class VulkanModel final : public NonCopyable, public NativeModel {
+    class VulkanModel final : public NonCopyable {
     public:
-        VulkanModel(Model *model, Renderer *renderer) : NativeModel(model) {
-            // for (auto &primitive : model->primitives) {}
+        struct Primitive : public NonCopyable {
+            UniqueBuffer indexBuffer;
+            vk::IndexType indexType = vk::IndexType::eNoneKHR;
+            size_t indexCount;
+
+            UniqueBuffer vertexBuffer;
+            glm::mat4 transform;
+        };
+
+        VulkanModel(Model *model, Renderer *renderer) : renderer(renderer), modelName(model->name) {
+            vector<SceneVertex> vertices;
+
+            // TODO: cache the output somewhere. Keeping the conversion code in
+            // the engine will be useful for any dynamic loading in the future,
+            // but we don't want to do it every time a model is loaded.
+            for (auto &primitive : model->primitives) {
+                // TODO: this implementation assumes a lot about the model format,
+                // and asserts the assumptions. It would be better to support more
+                // kinds of inputs, and convert the data rather than just failing.
+                Assert(primitive.drawMode == Model::DrawMode::Triangles, "draw mode must be Triangles");
+
+                auto &p = *primitives.emplace_back(make_shared<Primitive>());
+                auto &buffers = model->GetModel()->buffers;
+
+                switch (primitive.indexBuffer.componentType) {
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+                    p.indexType = vk::IndexType::eUint32;
+                    Assert(primitive.indexBuffer.byteStride == 4, "index buffer must be tightly packed");
+                    break;
+                case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+                    p.indexType = vk::IndexType::eUint16;
+                    Assert(primitive.indexBuffer.byteStride == 2, "index buffer must be tightly packed");
+                    break;
+                }
+                Assert(p.indexType != vk::IndexType::eNoneKHR, "unimplemented vertex index type");
+
+                auto &indexBuffer = buffers[primitive.indexBuffer.bufferIndex];
+                size_t indexBufferSize = primitive.indexBuffer.componentCount * primitive.indexBuffer.byteStride;
+                Assert(primitive.indexBuffer.byteOffset + indexBufferSize <= indexBuffer.data.size(),
+                       "indexes overflow buffer");
+
+                p.indexBuffer = renderer->context.AllocateBuffer(indexBufferSize,
+                                                                 vk::BufferUsageFlagBits::eIndexBuffer,
+                                                                 VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+                void *data;
+                p.indexBuffer.Map(&data);
+                memcpy(data, &indexBuffer.data[primitive.indexBuffer.byteOffset], indexBufferSize);
+                p.indexBuffer.Unmap();
+
+                p.indexCount = primitive.indexBuffer.componentCount;
+
+                auto &posAttr = primitive.attributes[0];
+                auto &normalAttr = primitive.attributes[1];
+                auto &uvAttr = primitive.attributes[2];
+
+                if (posAttr.componentCount) {
+                    Assert(posAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT,
+                           "position attribute must be a float vector");
+                    Assert(posAttr.componentFields == 3, "position attribute must be a vec3");
+                }
+                if (normalAttr.componentCount) {
+                    Assert(normalAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT,
+                           "normal attribute must be a float vector");
+                    Assert(normalAttr.componentFields == 3, "normal attribute must be a vec3");
+                }
+                if (uvAttr.componentCount) {
+                    Assert(uvAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT,
+                           "uv attribute must be a float vector");
+                    Assert(uvAttr.componentFields == 2, "uv attribute must be a vec2");
+                }
+
+                vertices.resize(posAttr.componentCount);
+
+                for (size_t i = 0; i < posAttr.componentCount; i++) {
+                    SceneVertex &vertex = vertices[i];
+
+                    memcpy(&vertex.position,
+                           &buffers[posAttr.bufferIndex].data[posAttr.byteOffset + i * posAttr.byteStride],
+                           sizeof(vertex.position));
+
+                    if (normalAttr.componentCount) {
+                        memcpy(&vertex.normal,
+                               &buffers[normalAttr.bufferIndex].data[normalAttr.byteOffset + i * normalAttr.byteStride],
+                               sizeof(vertex.normal));
+                    }
+
+                    if (uvAttr.componentCount) {
+                        memcpy(&vertex.uv,
+                               &buffers[uvAttr.bufferIndex].data[uvAttr.byteOffset + i * uvAttr.byteStride],
+                               sizeof(vertex.uv));
+                    }
+                }
+
+                size_t vertexBufferSize = vertices.size() * sizeof(vertices[0]);
+                p.vertexBuffer = renderer->context.AllocateBuffer(vertexBufferSize,
+                                                                  vk::BufferUsageFlagBits::eVertexBuffer,
+                                                                  VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+                p.vertexBuffer.Map(&data);
+                memcpy(data, vertices.data(), vertexBufferSize);
+                p.vertexBuffer.Unmap();
+            }
         }
 
-        void AppendDrawCommands(vk::CommandBuffer &commands, glm::mat4 modelMat, const ecs::View &view) {}
+        VulkanModel::~VulkanModel() {
+            Debugf("Destroying VulkanModel %s", modelName);
+        }
+
+        void AppendDrawCommands(vk::CommandBuffer &commands, glm::mat4 modelMat, const ecs::View &view) {
+            for (auto &primitivePtr : primitives) {
+                auto &primitive = *primitivePtr;
+                MeshPushConstants constants;
+                constants.transform = view.projMat * view.viewMat * modelMat * primitive.transform;
+
+                commands.pushConstants(renderer->PipelineLayout(),
+                                       vk::ShaderStageFlagBits::eVertex,
+                                       0,
+                                       sizeof(MeshPushConstants),
+                                       &constants);
+
+                commands.bindIndexBuffer(primitive.indexBuffer.Get(), 0, primitive.indexType);
+                commands.bindVertexBuffers(0, {primitive.vertexBuffer.Get()}, {0});
+                commands.draw(primitive.indexCount, 1, 0, 0);
+            }
+        }
+
+    private:
+        vector<shared_ptr<Primitive>> primitives;
+        Renderer *renderer;
+        string modelName;
     };
 
     void Renderer::DrawEntity(vk::CommandBuffer &commands,
@@ -286,10 +391,13 @@ namespace sp::vulkan {
 
         if (preDraw) preDraw(lock, ent);
 
-        if (!comp.model->nativeModel) { comp.model->nativeModel = make_shared<VulkanModel>(comp.model.get(), this); };
+        auto model = models[comp.model->name];
+        if (!model) {
+            model = make_shared<VulkanModel>(comp.model.get(), this);
+            models[comp.model->name] = model;
+        }
 
-        auto vkModel = static_cast<VulkanModel *>(comp.model->nativeModel.get());
-        vkModel->AppendDrawCommands(commands, modelMat, view); // TODO pass and use comp.model->bones
+        model->AppendDrawCommands(commands, modelMat, view); // TODO pass and use comp.model->bones
     }
 
     void Renderer::EndFrame() {

@@ -21,6 +21,10 @@ namespace sp::vulkan {
         buffer = vkBuffer;
     }
 
+    UniqueBuffer::UniqueBuffer(UniqueBuffer &&other) : UniqueMemory(other.allocator) {
+        *this = std::move(other);
+    }
+
     UniqueBuffer::~UniqueBuffer() {
         Destroy();
     }
