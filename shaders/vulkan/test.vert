@@ -7,13 +7,24 @@ layout(location = 2) in vec2 inTexCoord;
 out gl_PerVertex {
     vec4 gl_Position;
 };
-layout(location = 0) out vec3 color;
+
+layout(location = 0) out vec3 viewPos;
+layout(location = 1) out vec3 viewNormal;
+layout(location = 2) out vec3 color;
 
 layout(push_constant) uniform PushConstants {
-    mat4 transform;
+    mat4 model;
+    mat4 view;
+    mat4 projection;
 } constants;
 
 void main() {
-    gl_Position = constants.transform * vec4(inPosition, 1.0);
-    color = vec3(inTexCoord, 1.0);//(inNormal + vec3(1)) * 0.5;
+    vec4 viewPos4 = constants.view * constants.model * vec4(inPosition, 1.0);
+    viewPos = vec3(viewPos4) / viewPos4.w;
+    gl_Position = constants.projection * viewPos4;
+
+    mat3 rotation = mat3(constants.view * constants.model);
+    viewNormal = rotation * inNormal;
+
+    color = (viewNormal + vec3(1)) * 0.5;
 }

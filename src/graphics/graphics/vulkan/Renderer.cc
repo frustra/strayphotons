@@ -19,7 +19,9 @@ namespace sp::vulkan {
     }
 
     struct MeshPushConstants {
-        glm::mat4 transform;
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 projection;
     };
 
     void Renderer::RenderPass(const ecs::View &view, DrawLock lock, RenderTarget *finalOutput) {
@@ -409,7 +411,9 @@ namespace sp::vulkan {
             for (auto &primitivePtr : primitives) {
                 auto &primitive = *primitivePtr;
                 MeshPushConstants constants;
-                constants.transform = view.projMat * view.viewMat * modelMat * primitive.transform;
+                constants.projection = view.projMat;
+                constants.view = view.viewMat;
+                constants.model = modelMat * primitive.transform;
 
                 commands.pushConstants(renderer->PipelineLayout(),
                                        vk::ShaderStageFlagBits::eVertex,
