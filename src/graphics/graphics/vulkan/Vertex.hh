@@ -52,7 +52,7 @@ namespace sp::vulkan {
         glm::vec3 position;
         glm::vec2 uv;
 
-        static VertexInputInfo &InputInfo() {
+        static VertexInputInfo InputInfo() {
             VertexInputInfo info(0, sizeof(TextureVertex));
             info.PushAttribute(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(TextureVertex, position));
             info.PushAttribute(2, 0, vk::Format::eR32G32Sfloat, offsetof(TextureVertex, uv));

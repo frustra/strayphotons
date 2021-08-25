@@ -5,9 +5,9 @@
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
 
-#include <robin_hood.h>
 #include <functional>
 #include <glm/glm.hpp>
+#include <robin_hood.h>
 #include <vulkan/vulkan.hpp>
 
 namespace sp {
@@ -63,6 +63,8 @@ namespace sp::vulkan {
         vk::UniquePipelineLayout pipelineLayout;
         vk::UniquePipeline graphicsPipeline;
         vector<vk::UniqueFramebuffer> swapchainFramebuffers;
+        UniqueImage depthImage;
+        vk::UniqueImageView depthImageView;
 
         UniqueBuffer vertexBuffer;
 

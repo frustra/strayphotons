@@ -45,16 +45,16 @@ namespace sp::vulkan {
 
         // TODO hook up view to renderpass info
         std::array<float, 4> colorArr = {0.0f, 1.0f, 0.0f, 1.0f};
-        vk::ClearColorValue color(colorArr);
-        vk::ClearValue clearColor(color);
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = &clearColor;
+        std::array<vk::ClearValue, 2> clearValues;
+        clearValues[0].color = {colorArr};
+        clearValues[1].depthStencil.depth = 1.0f;
+        clearValues[1].depthStencil.stencil = 0.0f;
+
+        renderPassInfo.clearValueCount = clearValues.size();
+        renderPassInfo.pClearValues = clearValues.data();
 
         commands.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
         commands.bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline);
-
-        // commands.bindVertexBuffers(0, {vertexBuffer.Get()}, {0});
-        // commands.draw(3, 1, 0, 0);
 
         ecs::View forwardPassView = view;
         ForwardPass(commands, forwardPassView, lock, [&](auto lock, Tecs::Entity &ent) {});
@@ -82,6 +82,8 @@ namespace sp::vulkan {
     }
 
     void Renderer::CleanupPipeline() {
+        depthImageView.reset();
+        depthImage.Destroy();
         swapchainFramebuffers.clear();
         commandBuffers.clear();
         graphicsPipeline.reset();
@@ -160,6 +162,15 @@ namespace sp::vulkan {
         pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
         pipelineLayout = device.createPipelineLayoutUnique(pipelineLayoutInfo);
 
+        vk::ImageCreateInfo depthImageInfo;
+        depthImageInfo.imageType = vk::ImageType::e2D;
+        depthImageInfo.format = vk::Format::eD24UnormS8Uint;
+        depthImageInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+        depthImageInfo.extent = vk::Extent3D(extent.width, extent.height, 1);
+        depthImageInfo.mipLevels = 1;
+        depthImageInfo.arrayLayers = 1;
+        depthImageInfo.samples = vk::SampleCountFlagBits::e1;
+
         vk::AttachmentDescription colorAttachment;
         colorAttachment.format = context.SwapchainImageFormat();
         colorAttachment.samples = vk::SampleCountFlagBits::e1;
@@ -170,26 +181,46 @@ namespace sp::vulkan {
         colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
         colorAttachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
 
+        vk::AttachmentDescription depthAttachment;
+        depthAttachment.format = depthImageInfo.format;
+        depthAttachment.samples = vk::SampleCountFlagBits::e1;
+        depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+        depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+        depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+        depthAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+        depthAttachment.initialLayout = vk::ImageLayout::eUndefined;
+        depthAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
         vk::AttachmentReference colorAttachmentRef;
         colorAttachmentRef.attachment = 0;
         colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+        vk::AttachmentReference depthAttachmentRef;
+        depthAttachmentRef.attachment = 1;
+        depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
         vk::SubpassDescription subpass;
         subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorAttachmentRef;
+        subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
         vk::SubpassDependency dependency;
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
         dependency.dstSubpass = 0;
-        dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+        dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput |
+                                  vk::PipelineStageFlagBits::eEarlyFragmentTests;
         dependency.srcAccessMask = vk::AccessFlagBits::eNoneKHR;
-        dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-        dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+        dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput |
+                                  vk::PipelineStageFlagBits::eEarlyFragmentTests;
+        dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite |
+                                   vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+
+        std::array<vk::AttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
 
         vk::RenderPassCreateInfo renderPassInfo;
-        renderPassInfo.attachmentCount = 1;
-        renderPassInfo.pAttachments = &colorAttachment;
+        renderPassInfo.attachmentCount = attachments.size();
+        renderPassInfo.pAttachments = attachments.data();
         renderPassInfo.subpassCount = 1;
         renderPassInfo.pSubpasses = &subpass;
         renderPassInfo.dependencyCount = 1;
@@ -201,6 +232,15 @@ namespace sp::vulkan {
         multisampling.sampleShadingEnable = false;
         multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
 
+        vk::PipelineDepthStencilStateCreateInfo depthStencil;
+        depthStencil.depthTestEnable = true;
+        depthStencil.depthWriteEnable = true;
+        depthStencil.depthCompareOp = vk::CompareOp::eLess;
+        depthStencil.depthBoundsTestEnable = false;
+        depthStencil.minDepthBounds = 0.0f;
+        depthStencil.maxDepthBounds = 1.0f;
+        depthStencil.stencilTestEnable = false;
+
         auto vertexInputInfo = SceneVertex::InputInfo();
 
         vk::GraphicsPipelineCreateInfo pipelineInfo;
@@ -211,7 +251,7 @@ namespace sp::vulkan {
         pipelineInfo.pViewportState = &viewportState;
         pipelineInfo.pRasterizationState = &rasterizer;
         pipelineInfo.pMultisampleState = &multisampling;
-        pipelineInfo.pDepthStencilState = nullptr;
+        pipelineInfo.pDepthStencilState = &depthStencil;
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.layout = *pipelineLayout;
         pipelineInfo.renderPass = *renderPass;
@@ -221,15 +261,29 @@ namespace sp::vulkan {
         AssertVKSuccess(pipelinesResult.result, "creating pipelines");
         graphicsPipeline = std::move(pipelinesResult.value[0]);
 
+        depthImage = context.AllocateImage(depthImageInfo, VMA_MEMORY_USAGE_GPU_ONLY);
+
+        vk::ImageViewCreateInfo depthImageViewInfo;
+        depthImageViewInfo.format = depthImageInfo.format;
+        depthImageViewInfo.image = *depthImage;
+        depthImageViewInfo.viewType = vk::ImageViewType::e2D;
+        depthImageViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+        depthImageViewInfo.subresourceRange.baseMipLevel = 0;
+        depthImageViewInfo.subresourceRange.levelCount = 1;
+        depthImageViewInfo.subresourceRange.baseArrayLayer = 0;
+        depthImageViewInfo.subresourceRange.layerCount = 1;
+
+        depthImageView = device.createImageViewUnique(depthImageViewInfo);
+
         auto imageViews = context.SwapchainImageViews();
         swapchainFramebuffers.clear();
         for (size_t i = 0; i < imageViews.size(); i++) {
-            vk::ImageView attachments[] = {imageViews[i]};
+            std::array<vk::ImageView, 2> attachments = {imageViews[i], *depthImageView};
 
             vk::FramebufferCreateInfo framebufferInfo{};
             framebufferInfo.renderPass = *renderPass;
-            framebufferInfo.attachmentCount = 1;
-            framebufferInfo.pAttachments = attachments;
+            framebufferInfo.attachmentCount = attachments.size();
+            framebufferInfo.pAttachments = attachments.data();
             framebufferInfo.width = extent.width;
             framebufferInfo.height = extent.height;
             framebufferInfo.layers = 1;
@@ -363,8 +417,8 @@ namespace sp::vulkan {
                                        sizeof(MeshPushConstants),
                                        &constants);
 
-                commands.bindIndexBuffer(primitive.indexBuffer.Get(), 0, primitive.indexType);
-                commands.bindVertexBuffers(0, {primitive.vertexBuffer.Get()}, {0});
+                commands.bindIndexBuffer(*primitive.indexBuffer, 0, primitive.indexType);
+                commands.bindVertexBuffers(0, {*primitive.vertexBuffer}, {0});
                 commands.draw(primitive.indexCount, 1, 0, 0);
             }
         }

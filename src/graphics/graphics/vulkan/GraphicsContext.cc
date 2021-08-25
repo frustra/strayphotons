@@ -498,4 +498,10 @@ namespace sp::vulkan {
         allocInfo.usage = residency;
         return UniqueBuffer(bufferInfo, allocInfo, allocator);
     }
+
+    UniqueImage GraphicsContext::AllocateImage(vk::ImageCreateInfo info, VmaMemoryUsage residency) {
+        VmaAllocationCreateInfo allocInfo = {};
+        allocInfo.usage = residency;
+        return UniqueImage(info, allocInfo, allocator);
+    }
 } // namespace sp::vulkan

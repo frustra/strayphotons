@@ -44,6 +44,10 @@ namespace sp::vulkan {
 
         UniqueBuffer &operator=(UniqueBuffer &&other);
 
+        vk::Buffer operator*() {
+            return buffer;
+        }
+
         vk::Buffer Get() {
             return buffer;
         }
@@ -57,5 +61,29 @@ namespace sp::vulkan {
 
         vk::BufferCreateInfo bufferInfo;
         vk::Buffer buffer;
+    };
+
+    struct UniqueImage : public UniqueMemory {
+        UniqueImage();
+        UniqueImage(vk::ImageCreateInfo imageInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator);
+        UniqueImage(UniqueImage &&other);
+        ~UniqueImage();
+        void Destroy();
+
+        UniqueImage &operator=(UniqueImage &&other);
+
+        vk::Image operator*() {
+            return image;
+        }
+
+        vk::Image Get() {
+            return image;
+        }
+
+    protected:
+        void Release();
+
+        vk::ImageCreateInfo imageInfo;
+        vk::Image image;
     };
 } // namespace sp::vulkan

@@ -4,6 +4,14 @@
 #include "core/Common.hh"
 
 namespace sp::vulkan {
+    vk::Result UniqueMemory::Map(void **data) {
+        return static_cast<vk::Result>(vmaMapMemory(allocator, allocation, data));
+    }
+
+    void UniqueMemory::Unmap() {
+        vmaUnmapMemory(allocator, allocation);
+    }
+
     UniqueBuffer::UniqueBuffer() : UniqueMemory(VK_NULL_HANDLE) {
         Release();
     }
@@ -53,11 +61,50 @@ namespace sp::vulkan {
         bufferInfo = vk::BufferCreateInfo();
     }
 
-    vk::Result UniqueMemory::Map(void **data) {
-        return static_cast<vk::Result>(vmaMapMemory(allocator, allocation, data));
+    UniqueImage::UniqueImage() : UniqueMemory(VK_NULL_HANDLE) {
+        Release();
     }
 
-    void UniqueMemory::Unmap() {
-        vmaUnmapMemory(allocator, allocation);
+    UniqueImage::UniqueImage(vk::ImageCreateInfo imageInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator)
+        : UniqueMemory(allocator), imageInfo(imageInfo) {
+
+        VkImageCreateInfo vkImageInfo = imageInfo;
+        VkImage vkImage;
+
+        auto result = vmaCreateImage(allocator, &vkImageInfo, &allocInfo, &vkImage, &allocation, nullptr);
+        AssertVKSuccess(result, "creating image");
+        image = vkImage;
+    }
+
+    UniqueImage::UniqueImage(UniqueImage &&other) : UniqueMemory(other.allocator) {
+        *this = std::move(other);
+    }
+
+    UniqueImage::~UniqueImage() {
+        Destroy();
+    }
+
+    UniqueImage &UniqueImage::operator=(UniqueImage &&other) {
+        Destroy();
+        allocator = other.allocator;
+        allocation = other.allocation;
+        image = other.image;
+        imageInfo = other.imageInfo;
+        other.Release();
+        return *this;
+    }
+
+    void UniqueImage::Destroy() {
+        if (allocator != VK_NULL_HANDLE) {
+            vmaDestroyImage(allocator, image, allocation);
+            Release();
+        }
+    }
+
+    void UniqueImage::Release() {
+        allocator = VK_NULL_HANDLE;
+        allocation = VK_NULL_HANDLE;
+        image = VK_NULL_HANDLE;
+        imageInfo = vk::ImageCreateInfo();
     }
 } // namespace sp::vulkan

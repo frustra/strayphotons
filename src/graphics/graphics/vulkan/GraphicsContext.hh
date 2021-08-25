@@ -98,6 +98,7 @@ namespace sp::vulkan {
         }
 
         UniqueBuffer AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
+        UniqueImage AllocateImage(vk::ImageCreateInfo info, VmaMemoryUsage residency);
 
     private:
         void SetTitle(string title);
