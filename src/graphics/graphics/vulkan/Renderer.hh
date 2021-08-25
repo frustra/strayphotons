@@ -18,7 +18,7 @@ namespace sp {
 
 namespace sp::vulkan {
     class GraphicsContext;
-    class VulkanModel;
+    class Model;
 
     class Renderer {
     public:
@@ -69,6 +69,6 @@ namespace sp::vulkan {
 
         UniqueBuffer vertexBuffer;
 
-        PreservingMap<VulkanModel> activeModels;
+        PreservingMap<Model> activeModels;
     };
 } // namespace sp::vulkan

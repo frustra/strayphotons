@@ -2,6 +2,7 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_LIB} PRIVATE
     Common.cc
     GraphicsContext.cc
     Memory.cc
+    Model.cc
     Renderer.cc
 )
 
