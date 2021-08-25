@@ -64,7 +64,7 @@ namespace sp {
         };
 
         const string name;
-        shared_ptr<NativeModel> nativeModel;
+        shared_ptr<NativeModel> nativeModel; // DEPRECATED, renderers should own the native model
         vector<Primitive> primitives;
 
         bool HasBuffer(size_t index);
