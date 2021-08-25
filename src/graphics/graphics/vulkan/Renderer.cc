@@ -142,7 +142,7 @@ namespace sp::vulkan {
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.lineWidth = 1.0f;
         rasterizer.cullMode = vk::CullModeFlagBits::eBack;
-        rasterizer.frontFace = vk::FrontFace::eClockwise;
+        rasterizer.frontFace = vk::FrontFace::eCounterClockwise;
 
         vk::PipelineColorBlendAttachmentState colorBlendAttachment;
         colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
@@ -419,7 +419,7 @@ namespace sp::vulkan {
 
                 commands.bindIndexBuffer(*primitive.indexBuffer, 0, primitive.indexType);
                 commands.bindVertexBuffers(0, {*primitive.vertexBuffer}, {0});
-                commands.draw(primitive.indexCount, 1, 0, 0);
+                commands.drawIndexed(primitive.indexCount, 1, 0, 0, 0);
             }
         }
 
