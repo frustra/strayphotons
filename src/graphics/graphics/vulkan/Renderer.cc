@@ -375,20 +375,17 @@ namespace sp::vulkan {
                 for (size_t i = 0; i < posAttr.componentCount; i++) {
                     SceneVertex &vertex = vertices[i];
 
-                    memcpy(&vertex.position,
-                           &buffers[posAttr.bufferIndex].data[posAttr.byteOffset + i * posAttr.byteStride],
-                           sizeof(vertex.position));
+                    vertex.position = reinterpret_cast<const glm::vec3 &>(
+                        buffers[posAttr.bufferIndex].data[posAttr.byteOffset + i * posAttr.byteStride]);
 
                     if (normalAttr.componentCount) {
-                        memcpy(&vertex.normal,
-                               &buffers[normalAttr.bufferIndex].data[normalAttr.byteOffset + i * normalAttr.byteStride],
-                               sizeof(vertex.normal));
+                        vertex.normal = reinterpret_cast<const glm::vec3 &>(
+                            buffers[normalAttr.bufferIndex].data[normalAttr.byteOffset + i * normalAttr.byteStride]);
                     }
 
                     if (uvAttr.componentCount) {
-                        memcpy(&vertex.uv,
-                               &buffers[uvAttr.bufferIndex].data[uvAttr.byteOffset + i * uvAttr.byteStride],
-                               sizeof(vertex.uv));
+                        vertex.uv = reinterpret_cast<const glm::vec2 &>(
+                            buffers[uvAttr.bufferIndex].data[uvAttr.byteOffset + i * uvAttr.byteStride]);
                     }
                 }
 
@@ -403,7 +400,7 @@ namespace sp::vulkan {
             }
         }
 
-        VulkanModel::~VulkanModel() {
+        ~VulkanModel() {
             Debugf("Destroying VulkanModel %s", modelName);
         }
 
