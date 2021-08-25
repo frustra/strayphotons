@@ -16,6 +16,10 @@
         #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
         #include "input/glfw/GlfwInputHandler.hh"
     #endif
+    #ifdef SP_GRAPHICS_SUPPORT_VK
+        #include "graphics/vulkan/GraphicsContext.hh"
+        #include "graphics/vulkan/Renderer.hh"
+    #endif
 
     #ifdef SP_PHYSICS_SUPPORT_PHYSX
         #include "physx/HumanControlSystem.hh"
@@ -34,25 +38,30 @@ namespace sp {
     }
 
     GraphicsManager::~GraphicsManager() {
-    #ifdef SP_GRAPHICS_SUPPORT_GL
+    #if SP_GRAPHICS_SUPPORT_GL || SP_GRAPHICS_SUPPORT_VK
         if (renderer) { delete renderer; }
-
         if (context) { delete context; }
     #endif
     }
 
     void GraphicsManager::Init() {
-    #ifdef SP_GRAPHICS_SUPPORT_GL
         if (context) { throw "already an active context"; }
-        if (renderer) { throw "already an active renderer"; }
 
+    #if SP_GRAPHICS_SUPPORT_GL
         GlfwGraphicsContext *glfwContext = new GlfwGraphicsContext();
         context = glfwContext;
-        context->Init();
 
         GLFWwindow *window = glfwContext->GetWindow();
-        if (window != nullptr) game->glfwInputHandler = std::make_unique<GlfwInputHandler>(*window);
     #endif
+
+    #if SP_GRAPHICS_SUPPORT_VK
+        vulkan::GraphicsContext *vkContext = new vulkan::GraphicsContext();
+        context = vkContext;
+
+        GLFWwindow *window = vkContext->GetWindow();
+    #endif
+
+        if (window != nullptr) game->glfwInputHandler = std::make_unique<GlfwInputHandler>(*window);
 
         if (game->options.count("size")) {
             std::istringstream ss(game->options["size"].as<string>());
@@ -63,6 +72,8 @@ namespace sp {
         }
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
+        if (renderer) { throw "already an active renderer"; }
+
         {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
             renderer = new VoxelRenderer(lock, *glfwContext, timer);
@@ -75,6 +86,17 @@ namespace sp {
 
         renderer->Prepare();
     #endif
+
+    #ifdef SP_GRAPHICS_SUPPORT_VK
+        if (renderer) { throw "already an active renderer"; }
+
+        {
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            renderer = new vulkan::Renderer(lock, *vkContext);
+        }
+
+        renderer->Prepare();
+    #endif
     }
 
     bool GraphicsManager::HasActiveContext() {
@@ -82,10 +104,10 @@ namespace sp {
     }
 
     bool GraphicsManager::Frame() {
-    #ifdef SP_GRAPHICS_SUPPORT_GL
+    #if SP_GRAPHICS_SUPPORT_GL || SP_GRAPHICS_SUPPORT_VK
         if (!context) throw "no active context";
-        if (!renderer) throw "no active renderer";
         if (!HasActiveContext()) return false;
+        if (!renderer) throw "no active renderer";
     #endif
 
         std::vector<ecs::View> cameraViews;
@@ -99,7 +121,7 @@ namespace sp {
             if (windowEntity) {
                 if (windowEntity.Has<ecs::View>(lock)) {
                     auto &windowView = windowEntity.Get<ecs::View>(lock);
-                    windowView.visibilityMask.set(ecs::Renderable::VISIBILE_DIRECT_CAMERA);
+                    windowView.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_CAMERA);
                     context->PrepareWindowView(windowView);
                 }
             }
@@ -107,18 +129,18 @@ namespace sp {
             for (auto &e : lock.EntitiesWith<ecs::Light>()) {
                 if (e.Has<ecs::Light, ecs::View>(lock)) {
                     auto &view = e.Get<ecs::View>(lock);
-                    view.visibilityMask.set(ecs::Renderable::VISIBILE_LIGHTING_SHADOW);
+                    view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
                 }
             }
 
             for (auto &e : lock.EntitiesWith<ecs::View>()) {
                 auto &view = e.Get<ecs::View>(lock);
                 view.UpdateMatrixCache(lock, e);
-                if (view.visibilityMask[ecs::Renderable::VISIBILE_DIRECT_CAMERA]) {
+                if (view.visibilityMask[ecs::Renderable::VISIBLE_DIRECT_CAMERA]) {
                     cameraViews.emplace_back(view);
-                } else if (view.visibilityMask[ecs::Renderable::VISIBILE_DIRECT_EYE] && e.Has<ecs::XRView>(lock)) {
+                } else if (view.visibilityMask[ecs::Renderable::VISIBLE_DIRECT_EYE] && e.Has<ecs::XRView>(lock)) {
                     xrViews.emplace_back(view, e.Get<ecs::XRView>(lock));
-                } else if (view.visibilityMask[ecs::Renderable::VISIBILE_LIGHTING_SHADOW]) {
+                } else if (view.visibilityMask[ecs::Renderable::VISIBLE_LIGHTING_SHADOW]) {
                     shadowViews.emplace_back(view);
                 }
             }
@@ -196,6 +218,30 @@ namespace sp {
         context->EndFrame();
     #endif
 
+    #ifdef SP_GRAPHICS_SUPPORT_VK
+        // timer.StartFrame();
+        context->BeginFrame();
+
+        {
+            // RenderPhase phase("Frame", timer);
+
+            auto lock =
+                ecs::World
+                    .StartTransaction<ecs::Read<ecs::Name, ecs::Transform, ecs::Renderable, ecs::View, ecs::Mirror>>();
+            renderer->BeginFrame(lock);
+
+            for (auto &view : cameraViews) {
+                renderer->RenderPass(view, lock);
+            }
+
+            renderer->EndFrame();
+        }
+
+        context->SwapBuffers();
+        // timer.EndFrame();
+        context->EndFrame();
+    #endif
+
         return true;
     }
 
@@ -204,6 +250,7 @@ namespace sp {
     }
 
     void GraphicsManager::RenderLoading() {
+    #ifdef SP_GRAPHICS_SUPPORT_GL
         if (!renderer) return;
 
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::View>>();
@@ -218,7 +265,8 @@ namespace sp {
             context->SwapBuffers();
         }
 
-        // TODO: clear the XR scene to drop back to the compositor while we load
+    // TODO: clear the XR scene to drop back to the compositor while we load
+    #endif
     }
 } // namespace sp
 

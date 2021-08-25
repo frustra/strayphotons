@@ -28,11 +28,7 @@ namespace sp {
             GLenum drawMode;
         };
 
-        void Draw(SceneShader *shader,
-                  glm::mat4 modelMat,
-                  const ecs::View &view,
-                  int boneCount,
-                  glm::mat4 *boneData) override;
+        void Draw(SceneShader *shader, glm::mat4 modelMat, const ecs::View &view, int boneCount, glm::mat4 *boneData);
 
         void AddPrimitive(GLModel::Primitive &prim);
 

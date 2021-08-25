@@ -11,7 +11,7 @@ namespace sp {
     class GlfwInputHandler {
     public:
         GlfwInputHandler(GLFWwindow &window);
-        ~GlfwInputHandler() {}
+        ~GlfwInputHandler();
 
         void UpdateEntities();
 

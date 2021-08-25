@@ -26,19 +26,19 @@ namespace sp {
             glCreateVertexArrays(1, &glPrimitive.vertexBufferHandle);
             for (size_t i = 0; i < std::size(primitive.attributes); i++) {
                 auto &attr = primitive.attributes[i];
-                if (attr.componentCount == 0) continue;
+                if (attr.componentFields == 0) continue;
                 glEnableVertexArrayAttrib(glPrimitive.vertexBufferHandle, i);
 
                 if (attr.componentType == GL_UNSIGNED_SHORT) {
                     glVertexArrayAttribIFormat(glPrimitive.vertexBufferHandle,
                                                i,
-                                               attr.componentCount,
+                                               attr.componentFields,
                                                attr.componentType,
                                                0);
                 } else {
                     glVertexArrayAttribFormat(glPrimitive.vertexBufferHandle,
                                               i,
-                                              attr.componentCount,
+                                              attr.componentFields,
                                               attr.componentType,
                                               GL_FALSE,
                                               0);
@@ -94,7 +94,7 @@ namespace sp {
             }
 
             glDrawElements(primitive.drawMode,
-                           primitive.parent->indexBuffer.components,
+                           primitive.parent->indexBuffer.componentCount,
                            primitive.parent->indexBuffer.componentType,
                            (char *)primitive.parent->indexBuffer.byteOffset);
         }

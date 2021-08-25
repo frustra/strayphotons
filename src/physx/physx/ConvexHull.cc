@@ -31,12 +31,12 @@ namespace sp {
         set->decomposed = true;
 
         auto posAttrib = prim->attributes[0];
-        Assert(posAttrib.componentCount == 3, "position must be vec3");
+        Assert(posAttrib.componentFields == 3, "position must be vec3");
         Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "position must be float type");
 
         auto indexAttrib = prim->indexBuffer;
         Assert(prim->drawMode == Model::DrawMode::Triangles, "primitive draw mode must be triangles");
-        Assert(indexAttrib.componentCount == 1, "index buffer must be a single component");
+        Assert(indexAttrib.componentFields == 1, "index buffer must be a single component");
 
         set->bufferIndexes.insert(posAttrib.bufferIndex);
         set->bufferIndexes.insert(indexAttrib.bufferIndex);
@@ -53,9 +53,9 @@ namespace sp {
             // indices is already compatible
             break;
         case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-            indicesCopy = new int[indexAttrib.components];
+            indicesCopy = new int[indexAttrib.componentCount];
 
-            for (uint32 i = 0; i < indexAttrib.components; i++) {
+            for (uint32 i = 0; i < indexAttrib.componentCount; i++) {
                 indicesCopy[i] = (int)((const uint16 *)indices)[i];
             }
 
@@ -79,10 +79,10 @@ namespace sp {
 
         bool res = interfaceVHACD->Compute(points,
                                            pointStride,
-                                           posAttrib.components,
+                                           posAttrib.componentCount,
                                            indices,
                                            3,
-                                           indexAttrib.components / 3,
+                                           indexAttrib.componentCount / 3,
                                            params);
         Assert(res, "building convex decomposition");
 
@@ -148,12 +148,12 @@ namespace sp {
         set->decomposed = false;
 
         auto posAttrib = prim->attributes[0];
-        Assert(posAttrib.componentCount == 3, "position must be vec3");
+        Assert(posAttrib.componentFields == 3, "position must be vec3");
         Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "position must be float type");
 
         auto indexAttrib = prim->indexBuffer;
         Assert(prim->drawMode == Model::DrawMode::Triangles, "primitive draw mode must be triangles");
-        Assert(indexAttrib.componentCount == 1, "index buffer must be a single component");
+        Assert(indexAttrib.componentFields == 1, "index buffer must be a single component");
 
         set->bufferIndexes.insert(posAttrib.bufferIndex);
         set->bufferIndexes.insert(indexAttrib.bufferIndex);
@@ -168,7 +168,7 @@ namespace sp {
         std::unordered_set<uint32> visitedIndexes;
         vector<glm::vec3> finalPoints;
 
-        for (uint32 i = 0; i < indexAttrib.components; i++) {
+        for (uint32 i = 0; i < indexAttrib.componentCount; i++) {
             uint32 index = 0;
 
             switch (indexAttrib.componentType) {

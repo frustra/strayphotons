@@ -35,11 +35,13 @@ namespace sp {
         virtual ~Model();
 
         struct Attribute {
-            size_t byteOffset;
+            size_t vertexByteOffset;
+            size_t bufferByteOffset;
+            size_t byteOffset; // equal to vertexByteOffset + bufferByteOffset
             int byteStride;
             int componentType;
+            size_t componentFields;
             size_t componentCount;
-            size_t components;
             int bufferIndex;
         };
 

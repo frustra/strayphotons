@@ -16,10 +16,12 @@ if(CMAKE_BUILD_TYPE MATCHES Release)
 elseif(CMAKE_BUILD_TYPE MATCHES Debug)
     message(STATUS "sp target is Debug")
     set(SP_DEBUG 1)
+    add_compile_definitions(SP_DEBUG=1)
 else()
     message(STATUS "sp target is default, using Debug")
     set(CMAKE_BUILD_TYPE Debug)
     set(SP_DEBUG 1)
+    add_compile_definitions(SP_DEBUG=1)
 endif()
 
 if(SP_PACKAGE_RELEASE)
@@ -82,8 +84,6 @@ foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_OUTPUT_DIR})
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_OUTPUT_DIR})
 endforeach()
-
-find_package(OpenGL REQUIRED)
 
 # This variable contains the component name used in calls to install() for the core stray photons
 # installation

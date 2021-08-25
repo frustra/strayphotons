@@ -286,8 +286,8 @@ namespace sp {
 
                 ecs::View basicView;
                 basicView.extents = glm::ivec2(mapResolution);
-                basicView.visibilityMask.set(ecs::Renderable::VISIBILE_REFLECTED);
-                basicView.visibilityMask.set(ecs::Renderable::VISIBILE_LIGHTING_SHADOW);
+                basicView.visibilityMask.set(ecs::Renderable::VISIBLE_REFLECTED);
+                basicView.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
 
                 if (bounce > 0) { basicView.clearMode.reset(); }
 
@@ -699,11 +699,14 @@ namespace sp {
         if (preDraw) preDraw(lock, ent);
 
         if (!comp.model->nativeModel) { comp.model->nativeModel = make_shared<GLModel>(comp.model.get(), this); }
-        comp.model->nativeModel->Draw(shader,
-                                      modelMat,
-                                      view,
-                                      comp.model->bones.size(),
-                                      comp.model->bones.size() > 0 ? comp.model->bones.data() : NULL);
+
+        auto nativeModel = comp.model->nativeModel.get();
+        auto glModel = static_cast<GLModel *>(nativeModel);
+        glModel->Draw(shader,
+                      modelMat,
+                      view,
+                      comp.model->bones.size(),
+                      comp.model->bones.size() > 0 ? comp.model->bones.data() : NULL);
     }
 
     void VoxelRenderer::DrawGridDebug(const ecs::View &view, SceneShader *shader) {

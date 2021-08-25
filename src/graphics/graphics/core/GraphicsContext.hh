@@ -27,7 +27,6 @@ namespace sp {
         GraphicsContext() {}
         virtual ~GraphicsContext() {}
 
-        virtual void Init() = 0;
         virtual bool ShouldClose() = 0;
         virtual void BeginFrame() = 0;
         virtual void SwapBuffers() = 0;

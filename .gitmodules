@@ -43,3 +43,6 @@
 [submodule "ext/tinygltfloader"]
 	path = ext/tinygltfloader
 	url = https://github.com/frustra/tinygltfloader.git
+[submodule "ext/VulkanMemoryAllocator"]
+	path = ext/VulkanMemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator

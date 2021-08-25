@@ -13,13 +13,12 @@ struct GLFWwindow;
 namespace sp {
     class Device;
 
-    class GlfwGraphicsContext : public GraphicsContext {
+    class GlfwGraphicsContext final : public GraphicsContext {
     public:
         GlfwGraphicsContext();
         virtual ~GlfwGraphicsContext();
 
         // Potential GraphicsContext function implementations
-        void Init() override;
         bool ShouldClose() override;
         void BeginFrame() override;
         void SwapBuffers() override;
@@ -54,7 +53,6 @@ namespace sp {
 
     private:
         void SetTitle(string title);
-        void CreateGlfwWindow(glm::ivec2 initialSize = {640, 480});
 
         RenderTargetPool rtPool;
 

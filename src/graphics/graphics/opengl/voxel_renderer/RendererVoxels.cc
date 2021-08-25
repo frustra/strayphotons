@@ -80,7 +80,7 @@ namespace sp {
         auto VoxelGridSize = CVarVoxelGridSize.Get();
 
         ecs::View ortho;
-        ortho.visibilityMask.set(ecs::Renderable::VISIBILE_LIGHTING_VOXEL);
+        ortho.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_VOXEL);
         ortho.viewMat = glm::scale(glm::mat4(), glm::vec3(2.0 / (VoxelGridSize * voxelContext.voxelSize)));
         ortho.viewMat = glm::translate(ortho.viewMat, -voxelContext.voxelGridCenter);
         ortho.projMat = glm::mat4();

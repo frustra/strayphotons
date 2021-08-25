@@ -28,6 +28,16 @@ namespace sp {
         mouseEntity = ecs::NamedEntity("mouse");
     }
 
+    GlfwInputHandler::~GlfwInputHandler() {
+        glfwSetKeyCallback(window, nullptr);
+        glfwSetCharCallback(window, nullptr);
+        glfwSetScrollCallback(window, nullptr);
+        glfwSetMouseButtonCallback(window, nullptr);
+        glfwSetCursorPosCallback(window, nullptr);
+
+        glfwSetWindowUserPointer(window, nullptr);
+    }
+
     void GlfwInputHandler::UpdateEntities() {
         Logf("Updating keyboard/mouse entities");
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();

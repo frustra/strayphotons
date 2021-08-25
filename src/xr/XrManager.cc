@@ -368,7 +368,7 @@ namespace sp::xr {
                 for (unsigned int i = 0; i < xrSystem->GetCompositor()->GetNumViews(true /* minimum */); i++) {
                     ecs::Entity viewEntity = CreateXrEntity();
                     auto ecsView = viewEntity.Assign<ecs::View>();
-                    ecsView->visibilityMask.set(ecs::Renderable::VISIBILE_DIRECT_EYE);
+                    ecsView->visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_EYE);
                     xrSystem->GetCompositor()->PopulateView(i, ecsView);
 
                     // Mark this as an XR View
@@ -425,7 +425,7 @@ namespace sp::xr {
 
                 // Rendering an XR HMD model from the viewpoint of an XRView is a bad idea
                 if (trackedObjectHandle.type == xr::HMD) {
-                    renderable->visibility[ecs::Renderable::VISIBILE_DIRECT_EYE] = false;
+                    renderable->visibility[ecs::Renderable::VISIBLE_DIRECT_EYE] = false;
                 }
             }
 

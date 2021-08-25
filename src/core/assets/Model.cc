@@ -33,36 +33,6 @@ namespace sp {
         return out;
     }
 
-    size_t byteStrideForAccessor(int componentType, size_t componentCount, size_t existingByteStride) {
-        if (existingByteStride) return existingByteStride;
-
-        size_t componentWidth = 0;
-
-        switch (componentType) {
-        case TINYGLTF_COMPONENT_TYPE_BYTE:
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-            componentWidth = 1;
-            break;
-        case TINYGLTF_COMPONENT_TYPE_SHORT:
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-            componentWidth = 2;
-            break;
-        case TINYGLTF_COMPONENT_TYPE_INT:
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-        case TINYGLTF_COMPONENT_TYPE_FLOAT:
-            componentWidth = 4;
-            break;
-        case TINYGLTF_COMPONENT_TYPE_DOUBLE:
-            componentWidth = 8;
-            break;
-        default:
-            Assert(false, "invalid component type");
-            break;
-        }
-
-        return componentCount * componentWidth;
-    }
-
     Model::Attribute GetPrimitiveAttribute(shared_ptr<tinygltf::Model> model,
                                            tinygltf::Primitive *p,
                                            string attribute) {
@@ -81,7 +51,9 @@ namespace sp {
             componentCount = 4;
         }
 
-        return Model::Attribute{accessor.byteOffset + bufView.byteOffset,
+        return Model::Attribute{accessor.byteOffset,
+                                bufView.byteOffset,
+                                accessor.byteOffset + bufView.byteOffset,
                                 accessor.ByteStride(bufView),
                                 accessor.componentType,
                                 componentCount,
@@ -120,10 +92,11 @@ namespace sp {
 
     void Model::AddNode(int nodeIndex, glm::mat4 parentMatrix) {
         glm::mat4 matrix = parentMatrix * GetNodeMatrix(&model->nodes[nodeIndex]);
+        auto &node = model->nodes[nodeIndex];
 
         // Meshes are optional on nodes
-        if (model->nodes[nodeIndex].mesh != -1) {
-            for (auto primitive : model->meshes[model->nodes[nodeIndex].mesh].primitives) {
+        if (node.mesh != -1) {
+            for (auto primitive : model->meshes[node.mesh].primitives) {
                 auto iAcc = model->accessors[primitive.indices];
                 auto iBufView = model->bufferViews[iAcc.bufferView];
 
@@ -148,7 +121,9 @@ namespace sp {
 
                 primitives.emplace_back(Primitive{matrix,
                                                   mode,
-                                                  Attribute{iAcc.byteOffset + iBufView.byteOffset,
+                                                  Attribute{iAcc.byteOffset,
+                                                            iBufView.byteOffset,
+                                                            iAcc.byteOffset + iBufView.byteOffset,
                                                             iAcc.ByteStride(iBufView),
                                                             iAcc.componentType,
                                                             1,
@@ -165,8 +140,8 @@ namespace sp {
             }
 
             // Must have a mesh to have a skin
-            if (model->nodes[nodeIndex].skin != -1) {
-                int skinId = model->nodes[nodeIndex].skin;
+            if (node.skin != -1) {
+                int skinId = node.skin;
                 int inverseBindMatrixAccessor = model->skins[skinId].inverseBindMatrices;
 
                 rootBone = model->skins[skinId].skeleton;
@@ -208,7 +183,7 @@ namespace sp {
             }
         }
 
-        for (int childNodeIndex : model->nodes[nodeIndex].children) {
+        for (int childNodeIndex : node.children) {
             AddNode(childNodeIndex, matrix);
         }
     }
