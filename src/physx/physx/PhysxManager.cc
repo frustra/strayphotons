@@ -363,10 +363,10 @@ namespace sp {
         return nullptr;
     }
 
-    ConvexHullSet *PhysxManager::BuildConvexHulls(const Model *model, bool decomposeHull) {
+    ConvexHullSet *PhysxManager::BuildConvexHulls(const Model &model, bool decomposeHull) {
         ConvexHullSet *set;
 
-        std::string name = model->name;
+        std::string name = model.name;
         if (decomposeHull) name += "-decompose";
 
         if ((set = GetCachedConvexHulls(name))) return set;
@@ -443,7 +443,7 @@ namespace sp {
 
             PxMaterial *mat = pxPhysics->createMaterial(0.6f, 0.5f, 0.0f);
 
-            auto decomposition = BuildConvexHulls(ph.model.get(), ph.decomposeHull);
+            auto decomposition = BuildConvexHulls(*ph.model.get(), ph.decomposeHull);
 
             for (auto hull : decomposition->hulls) {
                 PxConvexMeshDesc convexDesc;
@@ -747,10 +747,10 @@ namespace sp {
     // Increment if the Collision Cache format ever changes
     const uint32 hullCacheMagic = 0xc042;
 
-    ConvexHullSet *PhysxManager::LoadCollisionCache(const Model *model, bool decomposeHull) {
+    ConvexHullSet *PhysxManager::LoadCollisionCache(const Model &model, bool decomposeHull) {
         std::ifstream in;
 
-        std::string name = "cache/collision/" + model->name;
+        std::string name = "cache/collision/" + model.name;
         if (decomposeHull) name += "-decompose";
 
         if (GAssets.InputStream(name, in)) {
@@ -781,7 +781,7 @@ namespace sp {
 
                 int bufferIndex = std::stoi(name);
 
-                if (!model->HasBuffer(bufferIndex) || model->HashBuffer(bufferIndex) != hash) {
+                if (!model.HasBuffer(bufferIndex) || model.HashBuffer(bufferIndex) != hash) {
                     Logf("Ignoring outdated collision cache for %s", name);
                     in.close();
                     return nullptr;
@@ -818,9 +818,9 @@ namespace sp {
         return nullptr;
     }
 
-    void PhysxManager::SaveCollisionCache(const Model *model, ConvexHullSet *set, bool decomposeHull) {
+    void PhysxManager::SaveCollisionCache(const Model &model, ConvexHullSet *set, bool decomposeHull) {
         std::ofstream out;
-        std::string name = "cache/collision/" + model->name;
+        std::string name = "cache/collision/" + model.name;
         if (decomposeHull) name += "-decompose";
 
         if (GAssets.OutputStream(name, out)) {
@@ -830,7 +830,7 @@ namespace sp {
             out.write((char *)&bufferCount, 4);
 
             for (int bufferIndex : set->bufferIndexes) {
-                Hash128 hash = model->HashBuffer(bufferIndex);
+                Hash128 hash = model.HashBuffer(bufferIndex);
                 string bufferName = std::to_string(bufferIndex);
                 uint32 nameLen = bufferName.length();
                 Assert(nameLen <= 256, "hull cache buffer name too long on write");

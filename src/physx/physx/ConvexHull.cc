@@ -27,24 +27,24 @@ namespace sp {
         };
     };
 
-    void decomposeConvexHullsForPrimitive(ConvexHullSet *set, const Model *model, const Model::Primitive *prim) {
+    void decomposeConvexHullsForPrimitive(ConvexHullSet *set, const Model &model, const Model::Primitive &prim) {
         set->decomposed = true;
 
-        auto posAttrib = prim->attributes[0];
+        auto posAttrib = prim.attributes[0];
         Assert(posAttrib.componentFields == 3, "position must be vec3");
         Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "position must be float type");
 
-        auto indexAttrib = prim->indexBuffer;
-        Assert(prim->drawMode == Model::DrawMode::Triangles, "primitive draw mode must be triangles");
+        auto indexAttrib = prim.indexBuffer;
+        Assert(prim.drawMode == Model::DrawMode::Triangles, "primitive draw mode must be triangles");
         Assert(indexAttrib.componentFields == 1, "index buffer must be a single component");
 
         set->bufferIndexes.insert(posAttrib.bufferIndex);
         set->bufferIndexes.insert(indexAttrib.bufferIndex);
 
-        auto pbuffer = model->GetBuffer(posAttrib.bufferIndex);
+        auto pbuffer = model.GetBuffer(posAttrib.bufferIndex);
         auto points = (const float *)(pbuffer.data() + posAttrib.byteOffset);
 
-        auto ibuffer = model->GetBuffer(indexAttrib.bufferIndex);
+        auto ibuffer = model.GetBuffer(indexAttrib.bufferIndex);
         auto indices = (const int *)(ibuffer.data() + indexAttrib.byteOffset);
         int *indicesCopy = nullptr;
 
@@ -144,24 +144,24 @@ namespace sp {
         }
     }
 
-    void buildConvexHullForPrimitive(ConvexHullSet *set, const Model *model, const Model::Primitive *prim) {
+    void buildConvexHullForPrimitive(ConvexHullSet *set, const Model &model, const Model::Primitive &prim) {
         set->decomposed = false;
 
-        auto posAttrib = prim->attributes[0];
+        auto posAttrib = prim.attributes[0];
         Assert(posAttrib.componentFields == 3, "position must be vec3");
         Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "position must be float type");
 
-        auto indexAttrib = prim->indexBuffer;
-        Assert(prim->drawMode == Model::DrawMode::Triangles, "primitive draw mode must be triangles");
+        auto indexAttrib = prim.indexBuffer;
+        Assert(prim.drawMode == Model::DrawMode::Triangles, "primitive draw mode must be triangles");
         Assert(indexAttrib.componentFields == 1, "index buffer must be a single component");
 
         set->bufferIndexes.insert(posAttrib.bufferIndex);
         set->bufferIndexes.insert(indexAttrib.bufferIndex);
 
-        auto pbuffer = model->GetBuffer(posAttrib.bufferIndex);
+        auto pbuffer = model.GetBuffer(posAttrib.bufferIndex);
         auto points = pbuffer.data() + posAttrib.byteOffset;
 
-        auto ibuffer = model->GetBuffer(indexAttrib.bufferIndex);
+        auto ibuffer = model.GetBuffer(indexAttrib.bufferIndex);
         auto indices = ibuffer.data() + indexAttrib.byteOffset;
 
         std::unordered_set<glm::ivec3> visitedPoints;
@@ -186,7 +186,7 @@ namespace sp {
             auto tri = (float *)(points + index * posAttrib.byteStride);
 
             glm::vec4 temp({tri[0], tri[1], tri[2], 1.0});
-            temp = prim->matrix * temp;
+            temp = prim.matrix * temp;
             glm::ivec3 lowResPoint({temp.x * 1e6, temp.y * 1e6, temp.z * 1e6});
 
             if (visitedIndexes.count(index)) continue;
@@ -218,14 +218,14 @@ namespace sp {
         Logf("Adding simple hull, %d points, %d triangles", hull.pointCount, hull.triangleCount);
     }
 
-    void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set, const Model *model, bool decompHull) {
-        for (auto &prim : model->primitives) {
+    void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set, const Model &model, bool decompHull) {
+        for (auto &prim : model.primitives) {
             if (!decompHull) {
                 // Use points for a single hull without decomposing.
-                buildConvexHullForPrimitive(set, model, &prim);
+                buildConvexHullForPrimitive(set, model, prim);
             } else {
                 // Break primitive into one or more convex hulls.
-                decomposeConvexHullsForPrimitive(set, model, &prim);
+                decomposeConvexHullsForPrimitive(set, model, prim);
             }
         }
     }
