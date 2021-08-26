@@ -1,11 +1,13 @@
 #pragma once
 
 #include "core/CFunc.hh"
+#include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/components/VoxelArea.hh"
 #include "graphics/core/RenderTarget.hh"
 #include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/opengl/GLBuffer.hh"
+#include "graphics/opengl/GLModel.hh"
 #include "graphics/opengl/GLTexture.hh"
 #include "graphics/opengl/PerfTimer.hh"
 #include "graphics/opengl/Shader.hh"
@@ -52,7 +54,7 @@ namespace sp {
                                             ecs::Write<ecs::Mirror>>;
         typedef std::function<void(DrawLock, Tecs::Entity &)> PreDrawFunc;
 
-        VoxelRenderer(ecs::Lock<ecs::AddRemove> lock, GlfwGraphicsContext &context, PerfTimer &timer);
+        VoxelRenderer(GlfwGraphicsContext &context, PerfTimer &timer);
         ~VoxelRenderer();
 
         // Functions inherited from Renderer
@@ -88,7 +90,6 @@ namespace sp {
                         DrawLock lock,
                         Tecs::Entity &ent,
                         const PreDrawFunc &preDraw = {});
-        void ExpireRenderables();
         void DrawPhysxLines(const ecs::View &view,
                             SceneShader *shader,
                             const vector<physx::PxDebugLine> &lines,
@@ -114,6 +115,8 @@ namespace sp {
         PerfTimer &timer;
 
     private:
+        PreservingMap<GLModel> activeModels;
+
         shared_ptr<GLRenderTarget> shadowMap;
         shared_ptr<GLRenderTarget> mirrorShadowMap;
         shared_ptr<GLRenderTarget> menuGuiTarget;
@@ -125,9 +128,6 @@ namespace sp {
         std::shared_ptr<GuiRenderer> debugGuiRenderer;
         std::shared_ptr<GuiRenderer> menuGuiRenderer;
         MenuGuiManager *menuGui = nullptr;
-
-        ecs::Observer<ecs::Removed<ecs::Renderable>> renderableRemoval;
-        std::deque<std::pair<shared_ptr<Model>, int>> renderableGCQueue;
 
         CFuncCollection funcs;
     };

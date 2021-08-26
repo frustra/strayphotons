@@ -363,7 +363,7 @@ namespace sp {
         return nullptr;
     }
 
-    ConvexHullSet *PhysxManager::BuildConvexHulls(Model *model, bool decomposeHull) {
+    ConvexHullSet *PhysxManager::BuildConvexHulls(const Model *model, bool decomposeHull) {
         ConvexHullSet *set;
 
         std::string name = model->name;
@@ -747,7 +747,7 @@ namespace sp {
     // Increment if the Collision Cache format ever changes
     const uint32 hullCacheMagic = 0xc042;
 
-    ConvexHullSet *PhysxManager::LoadCollisionCache(Model *model, bool decomposeHull) {
+    ConvexHullSet *PhysxManager::LoadCollisionCache(const Model *model, bool decomposeHull) {
         std::ifstream in;
 
         std::string name = "cache/collision/" + model->name;
@@ -818,7 +818,7 @@ namespace sp {
         return nullptr;
     }
 
-    void PhysxManager::SaveCollisionCache(Model *model, ConvexHullSet *set, bool decomposeHull) {
+    void PhysxManager::SaveCollisionCache(const Model *model, ConvexHullSet *set, bool decomposeHull) {
         std::ofstream out;
         std::string name = "cache/collision/" + model->name;
         if (decomposeHull) name += "-decompose";

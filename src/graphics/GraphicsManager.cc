@@ -74,10 +74,7 @@ namespace sp {
     #ifdef SP_GRAPHICS_SUPPORT_GL
         if (renderer) { throw "already an active renderer"; }
 
-        {
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-            renderer = new VoxelRenderer(lock, *glfwContext, timer);
-        }
+        renderer = new VoxelRenderer(*glfwContext, timer);
 
         profilerGui = std::make_shared<ProfilerGui>(timer);
         if (game->debugGui) { game->debugGui->Attach(profilerGui); }

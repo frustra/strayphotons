@@ -4,7 +4,6 @@
 #include "Vertex.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "graphics/core/NativeModel.hh"
 
 // temporary for shader access, shaders should be compiled somewhere else later
 #include "assets/Asset.hh"
@@ -307,7 +306,8 @@ namespace sp::vulkan {
             glm::mat4 transform;
         };
 
-        VulkanModel(Model *model, Renderer *renderer) : renderer(renderer), modelName(model->name) {
+        VulkanModel(const std::shared_ptr<const sp::Model> &model, Renderer *renderer)
+            : renderer(renderer), modelName(model->name), sourceModel(model) {
             vector<SceneVertex> vertices;
 
             // TODO: cache the output somewhere. Keeping the conversion code in
@@ -428,6 +428,8 @@ namespace sp::vulkan {
         vector<shared_ptr<Primitive>> primitives;
         Renderer *renderer;
         string modelName;
+
+        std::shared_ptr<const sp::Model> sourceModel;
     };
 
     void Renderer::DrawEntity(vk::CommandBuffer &commands,
@@ -446,10 +448,10 @@ namespace sp::vulkan {
 
         if (preDraw) preDraw(lock, ent);
 
-        auto model = models[comp.model->name];
+        auto model = activeModels.Load(comp.model->name);
         if (!model) {
-            model = make_shared<VulkanModel>(comp.model.get(), this);
-            models[comp.model->name] = model;
+            model = std::make_shared<VulkanModel>(comp.model, this);
+            activeModels.Register(comp.model->name, model);
         }
 
         model->AppendDrawCommands(commands, modelMat, view); // TODO pass and use comp.model->bones
@@ -473,6 +475,8 @@ namespace sp::vulkan {
         submitInfo.pCommandBuffers = &buffer;
 
         context.GraphicsQueue().submit({submitInfo}, context.ResetCurrentFrameFence());
+
+        activeModels.Tick();
     }
 
 } // namespace sp::vulkan

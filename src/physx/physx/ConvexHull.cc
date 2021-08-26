@@ -27,7 +27,7 @@ namespace sp {
         };
     };
 
-    void decomposeConvexHullsForPrimitive(ConvexHullSet *set, Model *model, Model::Primitive *prim) {
+    void decomposeConvexHullsForPrimitive(ConvexHullSet *set, const Model *model, const Model::Primitive *prim) {
         set->decomposed = true;
 
         auto posAttrib = prim->attributes[0];
@@ -144,7 +144,7 @@ namespace sp {
         }
     }
 
-    void buildConvexHullForPrimitive(ConvexHullSet *set, Model *model, Model::Primitive *prim) {
+    void buildConvexHullForPrimitive(ConvexHullSet *set, const Model *model, const Model::Primitive *prim) {
         set->decomposed = false;
 
         auto posAttrib = prim->attributes[0];
@@ -218,7 +218,7 @@ namespace sp {
         Logf("Adding simple hull, %d points, %d triangles", hull.pointCount, hull.triangleCount);
     }
 
-    void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set, Model *model, bool decompHull) {
+    void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set, const Model *model, bool decompHull) {
         for (auto &prim : model->primitives) {
             if (!decompHull) {
                 // Use points for a single hull without decomposing.

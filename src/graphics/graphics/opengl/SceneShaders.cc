@@ -15,7 +15,7 @@ namespace sp {
         Set("boneCount", 0);
     }
 
-    void SceneShader::SetBoneData(int count, glm::mat4 *bones) {
+    void SceneShader::SetBoneData(size_t count, const glm::mat4 *bones) {
         Set("boneCount", count);
         BufferData(boneData, sizeof(glm::mat4) * count, bones);
     }

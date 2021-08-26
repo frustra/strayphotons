@@ -18,9 +18,9 @@ namespace ecs {
         using VisibilityMask = std::bitset<VISIBILITY_COUNT>;
 
         Renderable() {}
-        Renderable(shared_ptr<sp::Model> model) : model(model) {}
+        Renderable(std::shared_ptr<const sp::Model> model) : model(model) {}
 
-        shared_ptr<sp::Model> model;
+        std::shared_ptr<const sp::Model> model;
         VisibilityMask visibility = VisibilityMask().set();
         glm::vec3 emissive = {0.0f, 0.0f, 0.0f};
     };

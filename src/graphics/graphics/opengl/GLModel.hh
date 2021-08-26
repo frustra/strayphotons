@@ -2,7 +2,6 @@
 
 #include "assets/Model.hh"
 #include "core/Common.hh"
-#include "graphics/core/NativeModel.hh"
 #include "graphics/opengl/GLTexture.hh"
 #include "graphics/opengl/Graphics.hh"
 #include "graphics/opengl/SceneShaders.hh"
@@ -13,13 +12,14 @@ namespace sp {
     enum TextureType;
     class VoxelRenderer;
 
-    class GLModel final : public NonCopyable, public NativeModel {
+    class GLModel final : public NonCopyable {
     public:
-        GLModel(Model *model, VoxelRenderer *renderer);
+        GLModel(const std::shared_ptr<const Model> &model, VoxelRenderer *renderer);
         ~GLModel();
 
-        struct Primitive {
-            Model::Primitive *parent;
+        struct Primitive : public Model::Primitive {
+            Primitive(const Model::Primitive &parent) : Model::Primitive(parent) {}
+
             GLuint vertexBufferHandle;
             GLuint indexBufferHandle;
             GLuint weightsBufferHandle;
@@ -28,7 +28,11 @@ namespace sp {
             GLenum drawMode;
         };
 
-        void Draw(SceneShader *shader, glm::mat4 modelMat, const ecs::View &view, int boneCount, glm::mat4 *boneData);
+        void Draw(SceneShader *shader,
+                  glm::mat4 modelMat,
+                  const ecs::View &view,
+                  size_t boneCount,
+                  const glm::mat4 *boneData) const;
 
         void AddPrimitive(GLModel::Primitive &prim);
 
@@ -43,5 +47,7 @@ namespace sp {
         std::map<int, GLuint> buffers;
         std::map<std::string, GLTexture> textures;
         vector<GLModel::Primitive> primitives;
+
+        std::shared_ptr<const Model> model;
     };
 }; // namespace sp

@@ -10,7 +10,6 @@ namespace sp {
 
     // Forward declarations
     class Asset;
-    class NativeModel;
 
     typedef std::array<uint32, 4> Hash128;
 
@@ -64,19 +63,18 @@ namespace sp {
         };
 
         const string name;
-        shared_ptr<NativeModel> nativeModel; // DEPRECATED, renderers should own the native model
         vector<Primitive> primitives;
 
-        bool HasBuffer(size_t index);
-        const vector<unsigned char> &GetBuffer(size_t index);
-        Hash128 HashBuffer(size_t index);
+        bool HasBuffer(size_t index) const;
+        const std::vector<unsigned char> &GetBuffer(size_t index) const;
+        Hash128 HashBuffer(size_t index) const;
 
-        int FindNodeByName(string name);
-        string GetNodeName(int node);
-        glm::mat4 GetInvBindPoseForNode(int nodeIndex);
-        vector<int> GetJointNodes();
+        int FindNodeByName(string name) const;
+        string GetNodeName(int node) const;
+        glm::mat4 GetInvBindPoseForNode(int nodeIndex) const;
+        std::vector<int> GetJointNodes() const;
 
-        shared_ptr<const tinygltf::Model> GetModel() {
+        std::shared_ptr<const tinygltf::Model> GetModel() const {
             return model;
         }
 
@@ -85,8 +83,8 @@ namespace sp {
     private:
         void AddNode(int nodeIndex, glm::mat4 parentMatrix);
 
-        shared_ptr<tinygltf::Model> model;
-        shared_ptr<const Asset> asset;
+        std::shared_ptr<tinygltf::Model> model;
+        std::shared_ptr<const Asset> asset;
 
         // TODO: support more than one "skin" in a GLTF
         std::map<int, glm::mat4> inverseBindMatrixForJoint;

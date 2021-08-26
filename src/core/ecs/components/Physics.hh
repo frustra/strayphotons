@@ -20,10 +20,10 @@ namespace physx {
 namespace ecs {
     struct Physics {
         Physics() {}
-        Physics(std::shared_ptr<sp::Model> model, bool dynamic = true, float density = 1.0f)
+        Physics(std::shared_ptr<const sp::Model> model, bool dynamic = true, float density = 1.0f)
             : model(model), dynamic(dynamic), density(density) {}
 
-        std::shared_ptr<sp::Model> model;
+        std::shared_ptr<const sp::Model> model;
 
         bool dynamic = true;
         bool kinematic = false; // only dynamic actors can be kinematic
