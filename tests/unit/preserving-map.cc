@@ -3,6 +3,8 @@
 
 #include <memory>
 #include <tests.hh>
+#include <thread>
+#include <vector>
 
 namespace PreservingMapTests {
     using namespace testing;

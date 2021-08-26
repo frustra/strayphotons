@@ -15,9 +15,11 @@ namespace sp {
     static_assert(sizeof(chrono_clock::rep) <= sizeof(uint64_t), "Chrono Clock time point is larger than uint64_t");
     static_assert(ATOMIC_LLONG_LOCK_FREE == 2, "std::atomic_int64_t is not lock-free");
 
-    template<typename T, size_t PreserveAgeMilliseconds = 10000>
+    template<typename T, int64_t PreserveAgeMilliseconds = 10000>
     class PreservingMap : public NonCopyable {
     private:
+        static_assert(PreserveAgeMilliseconds > 0, "PreserveAgeMilliseconds must be positive");
+
         struct TimedValue {
             TimedValue() {}
             TimedValue(const std::shared_ptr<T> &value)

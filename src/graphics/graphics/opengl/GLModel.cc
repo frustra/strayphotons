@@ -6,7 +6,8 @@
 
 namespace sp {
 
-    GLModel::GLModel(const std::shared_ptr<const Model> &model, VoxelRenderer *renderer) : renderer(renderer), model(model) {
+    GLModel::GLModel(const std::shared_ptr<const Model> &model, VoxelRenderer *renderer)
+        : renderer(renderer), model(model) {
         static BasicMaterial defaultMat;
 
         for (auto &primitive : model->primitives) {

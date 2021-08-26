@@ -3,6 +3,7 @@
 #include <mutex>
 #include <shared_mutex>
 #include <tests.hh>
+#include <thread>
 
 namespace LockFreeMutexTests {
     using namespace testing;
