@@ -26,10 +26,7 @@
 #include <vector>
 
 namespace sp {
-    VoxelRenderer::VoxelRenderer(ecs::Lock<ecs::AddRemove> lock, GlfwGraphicsContext &context, PerfTimer &timer)
-        : context(context), timer(timer) {
-        renderableRemoval = lock.Watch<ecs::Removed<ecs::Renderable>>();
-    }
+    VoxelRenderer::VoxelRenderer(GlfwGraphicsContext &context, PerfTimer &timer) : context(context), timer(timer) {}
 
     VoxelRenderer::~VoxelRenderer() {
         if (ShaderControl) delete ShaderControl;
@@ -698,15 +695,13 @@ namespace sp {
 
         if (preDraw) preDraw(lock, ent);
 
-        if (!comp.model->nativeModel) { comp.model->nativeModel = make_shared<GLModel>(comp.model.get(), this); }
+        auto model = activeModels.Load(comp.model->name);
+        if (!model) {
+            model = std::make_shared<GLModel>(comp.model, this);
+            activeModels.Register(comp.model->name, model);
+        }
 
-        auto nativeModel = comp.model->nativeModel.get();
-        auto glModel = static_cast<GLModel *>(nativeModel);
-        glModel->Draw(shader,
-                      modelMat,
-                      view,
-                      comp.model->bones.size(),
-                      comp.model->bones.size() > 0 ? comp.model->bones.data() : NULL);
+        model->Draw(shader, modelMat, view, comp.model->bones.size(), comp.model->bones.data());
     }
 
     void VoxelRenderer::DrawGridDebug(const ecs::View &view, SceneShader *shader) {
@@ -762,21 +757,10 @@ namespace sp {
         VoxelRenderer::DrawScreenCover(true);
     }
 
-    void VoxelRenderer::ExpireRenderables() {
-        int expiredCount = 0;
-        for (auto &pair : renderableGCQueue) {
-            if (pair.second-- < 0) expiredCount++;
-        }
-        while (expiredCount-- > 0) {
-            renderableGCQueue.pop_front();
-        }
-    }
-
     void VoxelRenderer::BeginFrame(
         ecs::Lock<ecs::Read<ecs::Transform>,
                   ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>>
             lock) {
-        ExpireRenderables();
         UpdateShaders();
         ReadBackLightSensors(lock);
 
@@ -795,15 +779,7 @@ namespace sp {
     }
 
     void VoxelRenderer::EndFrame() {
-        // TODO(xthexder): Use a residency list instead of Observers
-        // auto lock = ecs::World.StartTransaction<>();
-        // ecs::Removed<ecs::Renderable> removedRenderable;
-        // while (renderableRemoval.Poll(lock, removedRenderable)) {
-        //     if (removedRenderable.component.model->nativeModel) {
-        //         // Keep GLModel objects around for at least 5 frames after destruction
-        //         renderableGCQueue.push_back({removedRenderable.component.model, 5});
-        //     }
-        // }
+        activeModels.Tick();
     }
 
     void VoxelRenderer::SetRenderTargets(size_t attachmentCount, GLRenderTarget **attachments, GLRenderTarget *depth) {

@@ -2,6 +2,7 @@
 
 #include "Memory.hh"
 #include "core/CFunc.hh"
+#include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
 
@@ -68,6 +69,6 @@ namespace sp::vulkan {
 
         UniqueBuffer vertexBuffer;
 
-        robin_hood::unordered_map<string, shared_ptr<VulkanModel>> models;
+        PreservingMap<VulkanModel> activeModels;
     };
 } // namespace sp::vulkan

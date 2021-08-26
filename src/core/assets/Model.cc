@@ -72,18 +72,18 @@ namespace sp {
     }
 
     Model::~Model() {
-        Debugf("Destroying model %s (prepared: %d)", name, !!nativeModel);
+        Debugf("Destroying model %s", name);
     }
 
-    bool Model::HasBuffer(size_t index) {
+    bool Model::HasBuffer(size_t index) const {
         return model->buffers.size() > index;
     }
 
-    const vector<unsigned char> &Model::GetBuffer(size_t index) {
+    const vector<unsigned char> &Model::GetBuffer(size_t index) const {
         return model->buffers[index].data;
     }
 
-    Hash128 Model::HashBuffer(size_t index) {
+    Hash128 Model::HashBuffer(size_t index) const {
         Hash128 output;
         auto buffer = GetBuffer(index);
         MurmurHash3_x86_128(buffer.data(), buffer.size(), 0, output.data());
@@ -190,8 +190,8 @@ namespace sp {
 
     // Returns a vector of the GLTF node indexes that are present in the "joints"
     // array of the GLTF skin.
-    vector<int> Model::GetJointNodes() {
-        vector<int> nodes;
+    std::vector<int> Model::GetJointNodes() const {
+        std::vector<int> nodes;
 
         // TODO: deal with GLTFs that have more than one skin
         for (int node : model->skins[0].joints) {
@@ -201,18 +201,18 @@ namespace sp {
         return nodes;
     }
 
-    int Model::FindNodeByName(std::string name) {
+    int Model::FindNodeByName(std::string name) const {
         for (size_t i = 0; i < model->nodes.size(); i++) {
             if (model->nodes[i].name == name) { return i; }
         }
         return -1;
     }
 
-    glm::mat4 Model::GetInvBindPoseForNode(int nodeIndex) {
-        return inverseBindMatrixForJoint[nodeIndex];
+    glm::mat4 Model::GetInvBindPoseForNode(int nodeIndex) const {
+        return inverseBindMatrixForJoint.at(nodeIndex);
     }
 
-    string Model::GetNodeName(int node) {
+    std::string Model::GetNodeName(int node) const {
         return model->nodes[node].name;
     }
 } // namespace sp

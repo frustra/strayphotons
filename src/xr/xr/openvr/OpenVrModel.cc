@@ -27,8 +27,7 @@ OpenVrModel::OpenVrModel(std::string name, vr::RenderModel_t *vrModel, vr::Rende
         .Storage(PF_RGBA8)
         .Image2D(vrTex->rubTextureMapData);
 
-    GLModel::Primitive prim;
-    prim.parent = &sourcePrim;
+    GLModel::Primitive prim(sourcePrim);
     prim.baseColorTex = &baseColorTex;
     prim.metallicRoughnessTex = &metallicRoughnessTex;
     prim.heightTex = &heightTex;
@@ -46,9 +45,9 @@ OpenVrModel::OpenVrModel(std::string name, vr::RenderModel_t *vrModel, vr::Rende
     sourcePrim.indexBuffer.componentCount = vrModel->unTriangleCount * 3;
     sourcePrim.indexBuffer.componentType = GL_UNSIGNED_SHORT;
 
-    shared_ptr<GLModel> glModel = make_shared<GLModel>(this, nullptr);
-    glModel->AddPrimitive(prim);
-    nativeModel = glModel;
+    // shared_ptr<GLModel> glModel = make_shared<GLModel>(this, nullptr);
+    // glModel->AddPrimitive(prim);
+    // nativeModel = glModel;
 }
 
 OpenVrModel::~OpenVrModel() {

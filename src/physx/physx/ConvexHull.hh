@@ -25,6 +25,6 @@ namespace sp {
 
     namespace ConvexHullBuilding {
         // Builds convex hull set for a model without caching
-        void BuildConvexHulls(ConvexHullSet *set, Model *model, bool decompHull);
+        void BuildConvexHulls(ConvexHullSet *set, const Model &model, bool decompHull);
     } // namespace ConvexHullBuilding
 } // namespace sp

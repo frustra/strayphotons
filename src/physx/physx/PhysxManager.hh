@@ -118,9 +118,9 @@ namespace sp {
         void DestroyPhysxScene();
         void CacheDebugLines();
 
-        ConvexHullSet *BuildConvexHulls(Model *model, bool decomposeHull);
-        ConvexHullSet *LoadCollisionCache(Model *model, bool decomposeHull);
-        void SaveCollisionCache(Model *model, ConvexHullSet *set, bool decomposeHull);
+        ConvexHullSet *BuildConvexHulls(const Model &model, bool decomposeHull);
+        ConvexHullSet *LoadCollisionCache(const Model &model, bool decomposeHull);
+        void SaveCollisionCache(const Model &model, ConvexHullSet *set, bool decomposeHull);
 
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;

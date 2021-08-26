@@ -1,10 +1,11 @@
+#include "AssetManager.hh"
+
 extern "C" {
 #include <microtar.h>
 }
 
 #include "assets/Asset.hh"
 #include "assets/AssetHelpers.hh"
-#include "assets/AssetManager.hh"
 #include "assets/Image.hh"
 #include "assets/Model.hh"
 #include "assets/Scene.hh"
@@ -201,7 +202,7 @@ namespace sp {
         return make_shared<Image>(asset);
     }
 
-    shared_ptr<Model> AssetManager::LoadModel(const std::string &name) {
+    shared_ptr<const Model> AssetManager::LoadModel(const std::string &name) {
         ModelMap::iterator it = loadedModels.find(name);
         shared_ptr<Model> model;
 

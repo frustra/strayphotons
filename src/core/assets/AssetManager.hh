@@ -34,7 +34,7 @@ namespace sp {
 
         shared_ptr<const Asset> Load(const std::string &path);
         shared_ptr<Image> LoadImageByPath(const std::string &path);
-        shared_ptr<Model> LoadModel(const std::string &name);
+        shared_ptr<const Model> LoadModel(const std::string &name);
         shared_ptr<Scene> LoadScene(const std::string &name, ecs::Lock<ecs::AddRemove> lock, ecs::Owner owner);
         shared_ptr<Script> LoadScript(const std::string &path);
 

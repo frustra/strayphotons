@@ -6,12 +6,12 @@
 
 namespace sp {
 
-    GLModel::GLModel(Model *model, VoxelRenderer *renderer) : NativeModel(model), renderer(renderer) {
+    GLModel::GLModel(const std::shared_ptr<const Model> &model, VoxelRenderer *renderer)
+        : renderer(renderer), model(model) {
         static BasicMaterial defaultMat;
 
         for (auto &primitive : model->primitives) {
-            GLModel::Primitive glPrimitive;
-            glPrimitive.parent = &primitive;
+            GLModel::Primitive glPrimitive(primitive);
             glPrimitive.indexBufferHandle = LoadBuffer(primitive.indexBuffer.bufferIndex);
             glPrimitive.drawMode = GetDrawMode(primitive.drawMode);
 
@@ -74,8 +74,8 @@ namespace sp {
     void GLModel::Draw(SceneShader *shader,
                        glm::mat4 modelMat,
                        const ecs::View &view,
-                       int boneCount,
-                       glm::mat4 *boneData) {
+                       size_t boneCount,
+                       const glm::mat4 *boneData) const {
         for (auto primitive : primitives) {
             glBindVertexArray(primitive.vertexBufferHandle);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive.indexBufferHandle);
@@ -86,7 +86,7 @@ namespace sp {
 
             if (primitive.heightTex) primitive.heightTex->Bind(3);
 
-            shader->SetParams(view, modelMat, primitive.parent->matrix);
+            shader->SetParams(view, modelMat, primitive.matrix);
 
             if (boneCount > 0) {
                 // TODO: upload vec3 and quat instead of a mat4 to save memory bw
@@ -94,9 +94,9 @@ namespace sp {
             }
 
             glDrawElements(primitive.drawMode,
-                           primitive.parent->indexBuffer.componentCount,
-                           primitive.parent->indexBuffer.componentType,
-                           (char *)primitive.parent->indexBuffer.byteOffset);
+                           primitive.indexBuffer.componentCount,
+                           primitive.indexBuffer.componentType,
+                           (char *)primitive.indexBuffer.byteOffset);
         }
     }
 
