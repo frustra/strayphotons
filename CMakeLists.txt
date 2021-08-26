@@ -26,6 +26,7 @@ endif()
 
 if(SP_PACKAGE_RELEASE)
     message(STATUS "Enabling build for packaged release")
+    add_compile_definitions(SP_PACKAGE_RELEASE=1)
 endif()
 
 # Tell cmake to export a compile_commands.json file
@@ -99,6 +100,18 @@ add_library(${PROJECT_COMMON_EXE} INTERFACE)
 target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE cxxopts)
 target_include_directories(${PROJECT_COMMON_EXE} INTERFACE src)
 
+if(UNIX)
+    target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE pthread)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+    if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 8.0)
+        message(FATAL_ERROR "Requires GCC >8.0")
+    endif()
+
+    target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE stdc++fs)
+endif()
+
 # Build all external dependencies
 add_subdirectory(ext)
 
@@ -115,72 +128,11 @@ add_subdirectory(assets)
 add_subdirectory(shaders)
 add_subdirectory(src)
 
-if(UNIX)
-    target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
-        pthread
-    )
-endif()
-
-if(CMAKE_COMPILER_IS_GNUCXX)
-    if(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 8.0)
-        message(FATAL_ERROR "Requires GCC >8.0")
-    endif()
-
-    target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE
-        stdc++fs
-    )
-endif()
-
-## COMPILE DEFINITIONS ##
-
 if(SP_PACKAGE_RELEASE)
-    target_compile_definitions(${PROJECT_COMMON_EXE} INTERFACE PACKAGE_RELEASE)
-    
-    if (WIN32)
-        set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS")
-    else()
+    if(UNIX)
         set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES INSTALL_RPATH "\$ORIGIN")
         set_target_properties(${PROJECT_COMMON_EXE} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
     endif()
-
-    # No way around using file(GLOB) here without
-    # manually listing every file to be included
-    # in the assets.spdata file
-    #
-    # When adding entirely new assets, CMake will need
-    # to be re-run
-    set(_asset_filename assets.spdata)
-    file(GLOB_RECURSE _glb_assets RELATIVE "${CMAKE_CURRENT_LIST_DIR}/assets" CONFIGURE_DEPENDS "assets/models/*.glb")
-    file(GLOB_RECURSE _glb_assets_full "assets/models/*.glb")
-
-    file(GLOB_RECURSE _shaders_assets_full CONFIGURE_DEPENDS "shaders/*")
-
-    add_custom_command(
-        COMMAND
-            ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/shaders ${CMAKE_CURRENT_LIST_DIR}/assets/shaders
-        COMMAND
-            ${CMAKE_COMMAND} -E tar c ${PROJECT_OUTPUT_DIR}/${_asset_filename} -- cache fonts logos scenes textures shaders ${_glb_assets}
-        COMMAND
-            ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_LIST_DIR}/assets/shaders
-        OUTPUT
-            ${PROJECT_OUTPUT_DIR}/${_asset_filename}
-        DEPENDS
-            ${_glb_assets_full}
-            ${_shaders_assets_full}
-        WORKING_DIRECTORY
-            ${CMAKE_CURRENT_LIST_DIR}/assets
-    )
-
-    add_custom_target(assets_tar DEPENDS ${PROJECT_OUTPUT_DIR}/${_asset_filename})
-
-    # Make the TAR generation depend on having up-to-date models
-    add_dependencies(assets_tar models)
-
-    # Make the TAR generation depend on having up-to-date models
-    add_dependencies(assets_tar compiled-scenes)
-    
-    # Make the exe depend on having the asset tar bundle
-    add_dependencies(${PROJECT_COMMON_EXE} assets_tar)
 endif()
 
 if(NOT SP_DEBUG)
@@ -211,10 +163,6 @@ if(SP_BUILD_RUST)
         set_target_properties(sp-rust PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
     endif()
 endif()
-
-## END COMPILE DEFINITIONS ##
-
-target_compile_options(${PROJECT_COMMON_EXE} INTERFACE ${SP_TARGET_OPTIONS})
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT sp)
 

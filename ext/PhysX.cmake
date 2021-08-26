@@ -9,20 +9,7 @@ set(NV_USE_GAMEWORKS_OUTPUT_DIRS ON CACHE BOOL "Use newer output structure" FORC
 set(ENV{PM_CMakeModules_PATH} ${CMAKE_CURRENT_LIST_DIR}/physx/externals/cmakemodules)
 set(ENV{PM_PxShared_PATH} ${CMAKE_CURRENT_LIST_DIR}/physx/pxshared)
 
-if (APPLE)
-
-    # TODO: harmonize with top level cmake flags
-    set(TARGET_BUILD_PLATFORM mac)
-    set(OUR_PHYSX_CXX_FLAGS_FOR_APPLE "-faligned-allocation -Wno-atomic-implicit-seq-cst")
-
-    set(PHYSX_CXX_FLAGS_DEBUG "-O0 -g ${OUR_PHYSX_CXX_FLAGS_FOR_APPLE}" CACHE INTERNAL "" FORCE)
-    set(PHYSX_CXX_FLAGS_CHECKED "-O3 -g ${OUR_PHYSX_CXX_FLAGS_FOR_APPLE}" CACHE INTERNAL "" FORCE)
-    set(PHYSX_CXX_FLAGS_PROFILE "-O3 -g ${OUR_PHYSX_CXX_FLAGS_FOR_APPLE}" CACHE INTERNAL "" FORCE)
-    set(PHYSX_CXX_FLAGS_RELEASE "-O3 -g ${OUR_PHYSX_CXX_FLAGS_FOR_APPLE}" CACHE INTERNAL "" FORCE)
-    set(NV_FORCE_64BIT_SUFFIX TRUE)
-    set(NV_FORCE_32BIT_SUFFIX FALSE)
-
-elseif (UNIX)
+if (UNIX)
 
     set(TARGET_BUILD_PLATFORM linux)
 

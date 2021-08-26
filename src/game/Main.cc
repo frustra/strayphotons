@@ -1,4 +1,4 @@
-#if defined(_WIN32) && defined(PACKAGE_RELEASE)
+#if defined(_WIN32) && defined(SP_PACKAGE_RELEASE)
     #include <windows.h>
 #endif
 
@@ -21,7 +21,7 @@ using namespace std;
 
 using cxxopts::value;
 
-#if defined(_WIN32) && defined(PACKAGE_RELEASE)
+#if defined(_WIN32) && defined(SP_PACKAGE_RELEASE)
     #define ARGC_NAME __argc
     #define ARGV_NAME __argv
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)

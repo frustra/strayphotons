@@ -132,8 +132,8 @@ namespace sp {
         physx::PxDefaultAllocator defaultAllocatorCallback;
         physx::PxCooking *pxCooking = nullptr;
 
-#if !defined(PACKAGE_RELEASE)
         physx::PxPvd *pxPvd = nullptr;
+#ifndef SP_PACKAGE_RELEASE
         physx::PxPvdTransport *pxPvdTransport = nullptr;
 #endif
 

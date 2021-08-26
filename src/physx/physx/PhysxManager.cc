@@ -33,7 +33,7 @@ namespace sp {
 
         PxTolerancesScale scale;
 
-#if !defined(PACKAGE_RELEASE)
+#ifndef SP_PACKAGE_RELEASE
         pxPvd = PxCreatePvd(*pxFoundation);
         pxPvdTransport = PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
         pxPvd->connect(*pxPvdTransport, PxPvdInstrumentationFlag::eALL);
@@ -84,7 +84,7 @@ namespace sp {
             pxPhysics->release();
             pxPhysics = nullptr;
         }
-#if !defined(PACKAGE_RELEASE)
+#if !defined(SP_PACKAGE_RELEASE)
         if (pxPvd) {
             pxPvd->release();
             pxPvd = nullptr;

@@ -38,9 +38,9 @@ namespace sp {
 
         template<typename... T>
         inline static void writeFormatter(Level lvl, const std::string &fmt, T &&...t) {
-            // #ifdef PACKAGE_RELEASE
-            // if (lvl == logging::Level::Debug) return;
-            // #endif
+#ifdef SP_PACKAGE_RELEASE
+            if (lvl == logging::Level::Debug) return;
+#endif
             int size = std::snprintf(nullptr, 0, fmt.c_str(), std::forward<T>(t)...);
             std::unique_ptr<char[]> buf(new char[size + 1]);
             std::snprintf(buf.get(), size + 1, fmt.c_str(), std::forward<T>(t)...);

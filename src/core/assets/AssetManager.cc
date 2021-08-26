@@ -15,9 +15,7 @@ extern "C" {
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 
-#if !(__APPLE__)
-    #include <filesystem>
-#endif
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <utility>
@@ -88,7 +86,7 @@ namespace sp {
                                      void * /* user_data */) {
         std::ifstream stream;
 
-#ifdef PACKAGE_RELEASE
+#ifdef SP_PACKAGE_RELEASE
         if (tarIndex.size() == 0) UpdateTarIndex();
 
         stream.open(ASSETS_TAR, std::ios::in | std::ios::binary);
@@ -135,7 +133,7 @@ namespace sp {
     }
 
     bool AssetManager::InputStream(const std::string &path, std::ifstream &stream, size_t *size) {
-#ifdef PACKAGE_RELEASE
+#ifdef SP_PACKAGE_RELEASE
         if (tarIndex.size() == 0) UpdateTarIndex();
 
         stream.open(ASSETS_TAR, std::ios::in | std::ios::binary);
@@ -163,10 +161,8 @@ namespace sp {
     }
 
     bool AssetManager::OutputStream(const std::string &path, std::ofstream &stream) {
-#if !(__APPLE__)
         std::filesystem::path p(ASSETS_DIR + path);
         std::filesystem::create_directories(p.parent_path());
-#endif
 
         stream.open(ASSETS_DIR + path, std::ios::out | std::ios::binary);
         return !!stream;
@@ -226,7 +222,7 @@ namespace sp {
 
             // Found a GLB
             if (asset) {
-#ifdef PACKAGE_RELEASE
+#ifdef SP_PACKAGE_RELEASE
                 ret = gltfLoader.LoadBinaryFromMemory(gltfModel.get(),
                                                       &err,
                                                       &warn,
@@ -245,7 +241,7 @@ namespace sp {
                 asset = Load("models/" + name + "/" + name + ".gltf");
                 if (!asset) asset = Load("models/" + name + ".gltf");
 
-#ifdef PACKAGE_RELEASE
+#ifdef SP_PACKAGE_RELEASE
                 ret = gltfLoader.LoadASCIIFromString(gltfModel.get(),
                                                      &err,
                                                      &warn,

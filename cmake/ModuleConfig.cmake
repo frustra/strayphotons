@@ -15,7 +15,11 @@ function(add_module_configuration)
         message(FATAL_ERROR "All arguments are required for add_module_configuration. Missing: ${ARG_KEYWORDS_MISSING_VALUES}")
     endif()
 
-    add_executable(${ARG_NAME})
+    if(SP_PACKAGE_RELEASE)
+        add_executable(${ARG_NAME} WIN32)
+    else()
+        add_executable(${ARG_NAME})
+    endif()
 
     target_link_libraries(${ARG_NAME} PRIVATE
         ${PROJECT_COMMON_EXE}
