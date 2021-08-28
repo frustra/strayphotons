@@ -5,8 +5,6 @@
 #include "graphics/opengl/PixelFormat.hh"
 
 namespace sp {
-    class Asset;
-
     struct GLTexture final : public GpuTexture {
         // Passing levels = FullyMipmap indicates storage
         // should be allocated for all possible downsamples.
@@ -72,7 +70,7 @@ namespace sp {
                            bool genMipmap = true);
         GLTexture &GenMipmap();
 
-        GLTexture &LoadFromImage(shared_ptr<Image> image, GLsizei levels = FullyMipmap);
+        GLTexture &LoadFromImage(std::shared_ptr<const Image> image, GLsizei levels = FullyMipmap);
         GLTexture &Attachment(GLenum attachment);
 
         bool operator==(const GLTexture &other) const {

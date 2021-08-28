@@ -8,6 +8,9 @@
 // temporary for shader access, shaders should be compiled somewhere else later
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
+#include "assets/Model.hh"
+
+#include <tiny_gltf.h>
 
 namespace sp::vulkan {
     Renderer::Renderer(ecs::Lock<ecs::AddRemove> lock, GraphicsContext &context)
@@ -94,15 +97,19 @@ namespace sp::vulkan {
 
     void Renderer::CreatePipeline(vk::Extent2D extent) {
         auto vertShaderAsset = GAssets.Load("shaders/vulkan/bin/test.vert.spv");
+        Assert(vertShaderAsset != nullptr, "Test vertex shader asset is missing");
+        vertShaderAsset->WaitUntilValid();
         vk::ShaderModuleCreateInfo vertShaderCreateInfo;
-        vertShaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(vertShaderAsset->CharBuffer());
-        vertShaderCreateInfo.codeSize = vertShaderAsset->buffer.size();
+        vertShaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(vertShaderAsset->Buffer());
+        vertShaderCreateInfo.codeSize = vertShaderAsset->BufferSize();
         auto vertShaderModule = device.createShaderModuleUnique(vertShaderCreateInfo);
 
         auto fragShaderAsset = GAssets.Load("shaders/vulkan/bin/test.frag.spv");
+        Assert(fragShaderAsset != nullptr, "Test fragment shader asset is missing");
+        fragShaderAsset->WaitUntilValid();
         vk::ShaderModuleCreateInfo fragShaderCreateInfo;
-        fragShaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(fragShaderAsset->CharBuffer());
-        fragShaderCreateInfo.codeSize = fragShaderAsset->buffer.size();
+        fragShaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(fragShaderAsset->Buffer());
+        fragShaderCreateInfo.codeSize = fragShaderAsset->BufferSize();
         auto fragShaderModule = device.createShaderModuleUnique(fragShaderCreateInfo);
 
         vk::PipelineShaderStageCreateInfo vertShaderStageInfo;
@@ -313,14 +320,14 @@ namespace sp::vulkan {
             // TODO: cache the output somewhere. Keeping the conversion code in
             // the engine will be useful for any dynamic loading in the future,
             // but we don't want to do it every time a model is loaded.
-            for (auto &primitive : model->primitives) {
+            for (auto &primitive : model->Primitives()) {
                 // TODO: this implementation assumes a lot about the model format,
                 // and asserts the assumptions. It would be better to support more
                 // kinds of inputs, and convert the data rather than just failing.
                 Assert(primitive.drawMode == Model::DrawMode::Triangles, "draw mode must be Triangles");
 
                 auto &p = *primitives.emplace_back(make_shared<Primitive>());
-                auto &buffers = model->GetModel()->buffers;
+                auto &buffers = model->GetGltfModel()->buffers;
 
                 switch (primitive.indexBuffer.componentType) {
                 case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
@@ -375,8 +382,9 @@ namespace sp::vulkan {
                 for (size_t i = 0; i < posAttr.componentCount; i++) {
                     SceneVertex &vertex = vertices[i];
 
-                    vertex.position = reinterpret_cast<const glm::vec3 &>(
+                    glm::vec3 primitivePos = reinterpret_cast<const glm::vec3 &>(
                         buffers[posAttr.bufferIndex].data[posAttr.byteOffset + i * posAttr.byteStride]);
+                    vertex.position = glm::vec3(primitive.matrix * glm::vec4(primitivePos, 1.0));
 
                     if (normalAttr.componentCount) {
                         vertex.normal = reinterpret_cast<const glm::vec3 &>(
@@ -438,6 +446,7 @@ namespace sp::vulkan {
                               Tecs::Entity &ent,
                               const PreDrawFunc &preDraw) {
         auto &comp = ent.Get<ecs::Renderable>(lock);
+        if (!comp.model || !comp.model->Valid()) return;
 
         // Filter entities that aren't members of all layers in the view's visibility mask.
         ecs::Renderable::VisibilityMask mask = comp.visibility;

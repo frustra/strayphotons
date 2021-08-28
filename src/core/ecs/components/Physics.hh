@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assets/Asset.hh"
 #include "ecs/Components.hh"
 
 #include <Tecs.hh>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Memory.hh"
+#include "assets/Asset.hh"
 #include "core/CFunc.hh"
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
@@ -69,6 +70,6 @@ namespace sp::vulkan {
 
         UniqueBuffer vertexBuffer;
 
-        PreservingMap<VulkanModel> activeModels;
+        PreservingMap<std::string, VulkanModel> activeModels;
     };
 } // namespace sp::vulkan

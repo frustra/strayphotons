@@ -132,9 +132,11 @@ std::shared_ptr<XrModel> OpenVrSkeleton::LoadOpenVrSkeleton(std::string skeleton
         return nullptr;
     }
 
-    std::shared_ptr<XrModel> xrModel = std::shared_ptr<OpenVrSkeleton>(new OpenVrSkeleton(modelPathStr, gltfModel));
+    // TODO
+    // std::shared_ptr<XrModel> xrModel = std::shared_ptr<OpenVrSkeleton>(new OpenVrSkeleton(modelPathStr, gltfModel));
 
-    return xrModel;
+    // return xrModel;
+    return nullptr;
 }
 
 // Standardized logic for determining the model path for a particular skeleton. We use this to:

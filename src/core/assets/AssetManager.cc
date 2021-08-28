@@ -10,7 +10,6 @@ extern "C" {
 #include "assets/Model.hh"
 #include "assets/Scene.hh"
 #include "assets/Script.hh"
-#include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
@@ -28,6 +27,11 @@ extern "C" {
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
+#ifdef LoadImage
+    // I hate windows.h
+    #undef LoadImage
+#endif
+
 namespace sp {
     AssetManager GAssets;
 
@@ -36,30 +40,69 @@ namespace sp {
     const std::string SHADERS_DIR = "../";
 
     AssetManager::AssetManager() {
-        fs = {
-            [](const std::string &abs_filename, void *user_data) -> bool {
-                return GAssets.FileExists(abs_filename, user_data);
+        gltfLoaderCallbacks = std::make_unique<tinygltf::FsCallbacks>(tinygltf::FsCallbacks{
+            // FileExists
+            [](const std::string &abs_filename, void *userdata) -> bool {
+                return true;
             },
 
-            [](const std::string &filepath, void *user_data) -> std::string {
-                return GAssets.ExpandFilePath(filepath, user_data);
+            // ExpandFilePath
+            [](const std::string &filepath, void *userdata) -> std::string {
+                return filepath;
             },
 
-            [](std::vector<unsigned char> *out, std::string *err, const std::string &path, void *user_data) -> bool {
-                return GAssets.ReadWholeFile(out, err, path, user_data);
+            // ReadWholeFile
+            [](std::vector<unsigned char> *out, std::string *err, const std::string &path, void *userdata) -> bool {
+                std::ifstream in;
+                size_t size;
+
+                AssetManager *manager = static_cast<AssetManager *>(userdata);
+                if (manager->InputStream(path, in, &size)) {
+                    out->resize(size);
+                    in.read((char *)out->data(), size);
+                    in.close();
+                    return true;
+                }
+                return false;
             },
 
             nullptr, // WriteFile callback, not supported
-            nullptr // Fs callback user data
-        };
+            this // Fs callback user data
+        });
 
-        gltfLoader.SetFsCallbacks(fs);
+#ifdef SP_PACKAGE_RELEASE
+        UpdateTarIndex();
+#endif
+
+        running = true;
+        cleanupThread = std::thread([this] {
+            while (this->running) {
+                {
+                    std::lock_guard lock(completedMutex);
+                    for (auto it = completedTasks.begin(); it != completedTasks.end();) {
+                        if (it->wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                            it = completedTasks.erase(it);
+                        } else {
+                            it++;
+                        }
+                    }
+                }
+                loadedModels.Tick();
+                loadedAssets.Tick();
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+        });
+    }
+
+    AssetManager::~AssetManager() {
+        running = false;
+        cleanupThread.join();
     }
 
     void AssetManager::UpdateTarIndex() {
         mtar_t tar;
         if (mtar_open(&tar, ASSETS_TAR.c_str(), "r") != MTAR_ESUCCESS) {
-            Errorf("Failed to build asset index");
+            Errorf("Failed to open asset bundle at: %s", ASSETS_TAR);
             return;
         }
 
@@ -73,70 +116,8 @@ namespace sp {
         mtar_close(&tar);
     }
 
-    std::string AssetManager::ExpandFilePath(const std::string &filepath, void * /* user_data */) {
-        return filepath;
-    }
-
-    bool AssetManager::FileExists(const std::string &abs_filename, void * /* user_data */) {
-        return true;
-    }
-
-    bool AssetManager::ReadWholeFile(std::vector<unsigned char> *out,
-                                     std::string *err,
-                                     const std::string &path,
-                                     void * /* user_data */) {
-        std::ifstream stream;
-
-#ifdef SP_PACKAGE_RELEASE
-        if (tarIndex.size() == 0) UpdateTarIndex();
-
-        stream.open(ASSETS_TAR, std::ios::in | std::ios::binary);
-
-        if (stream && tarIndex.count(path)) {
-            // Get the start and end location of the requested file in the tarIndex
-            auto indexData = tarIndex[path];
-
-            // Move the stream head to the start location of the file in the tarIndex
-            stream.seekg(indexData.first, std::ios::beg);
-
-            // Resize the output vector to match the size of the file to be read
-            out->resize(indexData.second, '\0');
-
-            // Copy bytes from the file into the output buffer
-            stream.read(reinterpret_cast<char *>(&out->at(0)), static_cast<std::streamsize>(indexData.second));
-            stream.close();
-            return true;
-        }
-#else
-        stream.open(path, std::ios::in | std::ios::binary);
-
-        if (stream) {
-            // Move the head to the end of the file
-            stream.seekg(0, std::ios::end);
-
-            // Get the head position (since we're at the end, this is the filesize)
-            size_t fileSize = stream.tellg();
-
-            // Move back to the beginning
-            stream.seekg(0, std::ios::beg);
-
-            // Make output buffer fit the file
-            out->resize(fileSize, '\0');
-
-            // Copy bytes from the file into the output buffer
-            stream.read(reinterpret_cast<char *>(&out->at(0)), static_cast<std::streamsize>(fileSize));
-            stream.close();
-
-            return true;
-        }
-#endif
-        return false;
-    }
-
     bool AssetManager::InputStream(const std::string &path, std::ifstream &stream, size_t *size) {
 #ifdef SP_PACKAGE_RELEASE
-        if (tarIndex.size() == 0) UpdateTarIndex();
-
         stream.open(ASSETS_TAR, std::ios::in | std::ios::binary);
 
         if (stream && tarIndex.count(path)) {
@@ -148,7 +129,7 @@ namespace sp {
 
         return false;
 #else
-        string filename = (starts_with(path, "shaders/") ? SHADERS_DIR : ASSETS_DIR) + path;
+        std::string filename = (starts_with(path, "shaders/") ? SHADERS_DIR : ASSETS_DIR) + path;
         stream.open(filename, std::ios::in | std::ios::binary);
 
         if (size && stream) {
@@ -169,109 +150,120 @@ namespace sp {
         return !!stream;
     }
 
-    shared_ptr<const Asset> AssetManager::Load(const std::string &path) {
-        AssetMap::iterator it = loadedAssets.find(path);
-        shared_ptr<Asset> asset;
+    std::shared_ptr<const Asset> AssetManager::Load(const std::string &path) {
+        Assert(!path.empty(), "AssetManager::Load called with empty path");
 
-        // TODO: Clean up expired assets periodically
-        if (it != loadedAssets.end()) { asset = it->second.lock(); }
-
+        auto asset = loadedAssets.Load(path);
         if (!asset) {
-            std::ifstream in;
-            size_t size;
+            {
+                std::lock_guard lock(assetMutex);
+                // Check again in case an inflight asset just completed on another thread
+                asset = loadedAssets.Load(path);
+                if (asset) return asset;
 
-            if (InputStream(path, in, &size)) {
-                asset = make_shared<Asset>(path);
-                asset->buffer.resize(size);
-                in.read((char *)asset->buffer.data(), size);
-                in.close();
+                asset = std::make_shared<Asset>(path);
+                loadedAssets.Register(path, asset);
+            }
+            {
+                std::lock_guard lock(completedMutex);
+                completedTasks.emplace_back(std::async(std::launch::async, [this, path, asset] {
+                    Debugf("Loading asset: %s", path);
+                    std::ifstream in;
+                    size_t size;
 
-                loadedAssets[path] = weak_ptr<Asset>(asset);
-            } else {
-                return nullptr;
+                    if (InputStream(path, in, &size)) {
+                        asset->buffer.resize(size);
+                        in.read((char *)asset->buffer.data(), size);
+                        in.close();
+
+                        asset->valid.test_and_set();
+                        asset->valid.notify_all();
+                    }
+                }));
             }
         }
 
         return asset;
     }
 
-    shared_ptr<Image> AssetManager::LoadImageByPath(const std::string &path) {
-        auto asset = Load(path);
-        Assert(asset != nullptr, "Image asset not found");
-
-        return make_shared<Image>(asset);
+    std::string findModel(const std::string &name) {
+        std::string path;
+#ifdef SP_PACKAGE_RELEASE
+        path = "models/" + name + "/" + name + ".glb";
+        if (tarIndex.count(path) > 0) return path;
+        path = "models/" + name + ".glb";
+        if (tarIndex.count(path) > 0) return path;
+        path = "models/" + name + "/" + name + ".gltf";
+        if (tarIndex.count(path) > 0) return path;
+        path = "models/" + name + ".gltf";
+        if (tarIndex.count(path) > 0) return path;
+#else
+        std::error_code ec;
+        path = "models/" + name + "/" + name + ".glb";
+        if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
+        path = "models/" + name + ".glb";
+        if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
+        path = "models/" + name + "/" + name + ".gltf";
+        if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
+        path = "models/" + name + ".gltf";
+        if (std::filesystem::is_regular_file(ASSETS_DIR + path, ec)) return path;
+#endif
+        return "";
     }
 
-    shared_ptr<const Model> AssetManager::LoadModel(const std::string &name) {
-        ModelMap::iterator it = loadedModels.find(name);
-        shared_ptr<Model> model;
+    std::shared_ptr<const Model> AssetManager::LoadModel(const std::string &name) {
+        Assert(!name.empty(), "AssetManager::LoadModel called with empty name");
 
-        // TODO: Clean up expired models periodically
-        if (it != loadedModels.end()) { model = it->second.lock(); }
-
+        auto model = loadedModels.Load(name);
         if (!model) {
-            Logf("Loading model: %s", name);
+            {
+                std::lock_guard lock(modelMutex);
+                // Check again in case an inflight model just completed on another thread
+                model = loadedModels.Load(name);
+                if (model) return model;
 
-            auto gltfModel = make_shared<tinygltf::Model>();
-            std::string err;
-            std::string warn;
-            bool ret = false;
-
-            // Check if there is a .glb version of the model and prefer that
-            shared_ptr<const Asset> asset = Load("models/" + name + "/" + name + ".glb");
-            if (!asset) asset = Load("models/" + name + ".glb");
-
-            // Found a GLB
-            if (asset) {
-#ifdef SP_PACKAGE_RELEASE
-                ret = gltfLoader.LoadBinaryFromMemory(gltfModel.get(),
-                                                      &err,
-                                                      &warn,
-                                                      asset->buffer.data(),
-                                                      asset->buffer.size(),
-                                                      "models/" + name);
-#else
-                ret = gltfLoader.LoadBinaryFromMemory(gltfModel.get(),
-                                                      &err,
-                                                      &warn,
-                                                      asset->buffer.data(),
-                                                      asset->buffer.size(),
-                                                      ASSETS_DIR + "models/" + name);
-#endif
-            } else {
-                asset = Load("models/" + name + "/" + name + ".gltf");
-                if (!asset) asset = Load("models/" + name + ".gltf");
-
-#ifdef SP_PACKAGE_RELEASE
-                ret = gltfLoader.LoadASCIIFromString(gltfModel.get(),
-                                                     &err,
-                                                     &warn,
-                                                     (char *)asset->buffer.data(),
-                                                     asset->buffer.size(),
-                                                     "models/" + name);
-#else
-                ret = gltfLoader.LoadASCIIFromString(gltfModel.get(),
-                                                     &err,
-                                                     &warn,
-                                                     (char *)asset->buffer.data(),
-                                                     asset->buffer.size(),
-                                                     ASSETS_DIR + "models/" + name);
-#endif
+                model = std::make_shared<Model>(name);
+                loadedModels.Register(name, model);
             }
+            {
+                std::lock_guard lock(completedMutex);
+                completedTasks.emplace_back(std::async(std::launch::async, [this, name, model] {
+                    std::string path = findModel(name);
+                    Assert(!path.empty(), "Model not found: " + name);
 
-            Assert(asset != nullptr, "Model asset not found");
-
-            if (!err.empty()) {
-                throw std::runtime_error(err);
-            } else if (!ret) {
-                throw std::runtime_error("Failed to parse glTF");
+                    auto asset = Load(path);
+                    model->PopulateFromAsset(asset, gltfLoaderCallbacks.get());
+                }));
             }
-
-            model = make_shared<Model>(name, asset, gltfModel);
-            loadedModels[name] = weak_ptr<Model>(model);
         }
 
         return model;
+    }
+
+    std::shared_ptr<const Image> AssetManager::LoadImage(const std::string &path) {
+        Assert(!path.empty(), "AssetManager::LoadImage called with empty path");
+
+        auto image = loadedImages.Load(path);
+        if (!image) {
+            {
+                std::lock_guard lock(imageMutex);
+                // Check again in case an inflight image just completed on another thread
+                image = loadedImages.Load(path);
+                if (image) return image;
+
+                image = std::make_shared<Image>();
+                loadedImages.Register(path, image);
+            }
+            {
+                std::lock_guard lock(completedMutex);
+                completedTasks.emplace_back(std::async(std::launch::async, [this, path, image] {
+                    auto asset = Load(path);
+                    image->PopulateFromAsset(asset);
+                }));
+            }
+        }
+
+        return image;
     }
 
     shared_ptr<Scene> AssetManager::LoadScene(const std::string &name,
@@ -279,11 +271,12 @@ namespace sp {
                                               ecs::Owner owner) {
         Logf("Loading scene: %s", name);
 
-        shared_ptr<const Asset> asset = Load("scenes/" + name + ".json");
+        std::shared_ptr<const Asset> asset = Load("scenes/" + name + ".json");
         if (!asset) {
             Logf("Scene not found");
             return nullptr;
         }
+        asset->WaitUntilValid();
         picojson::value root;
         string err = picojson::parse(root, asset->String());
         if (!err.empty()) {
@@ -355,11 +348,12 @@ namespace sp {
     shared_ptr<Script> AssetManager::LoadScript(const std::string &path) {
         Logf("Loading script: %s", path);
 
-        shared_ptr<const Asset> asset = Load("scripts/" + path);
+        std::shared_ptr<const Asset> asset = Load("scripts/" + path);
         if (!asset) {
             Logf("Script not found");
             return nullptr;
         }
+        asset->WaitUntilValid();
 
         std::stringstream ss(asset->String());
         vector<string> lines;

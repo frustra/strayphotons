@@ -1,5 +1,6 @@
 #include "GlfwGraphicsContext.hh"
 
+#include "assets/Image.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/opengl/GLTexture.hh"
@@ -187,8 +188,10 @@ namespace sp {
         lastFrameEnd = frameEnd;
     }
 
-    shared_ptr<GpuTexture> GlfwGraphicsContext::LoadTexture(shared_ptr<Image> image, bool genMipmap) {
-        auto tex = make_shared<GLTexture>();
+    shared_ptr<GpuTexture> GlfwGraphicsContext::LoadTexture(std::shared_ptr<const Image> image, bool genMipmap) {
+        Assert(image != nullptr, "Loading texture from null image");
+        image->WaitUntilValid();
+        auto tex = std::make_shared<GLTexture>();
         tex->Create().LoadFromImage(image, genMipmap ? GLTexture::FullyMipmap : 1);
         return tex;
     }

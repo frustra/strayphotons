@@ -181,8 +181,8 @@ namespace sp {
                                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
                                  ImGuiWindowFlags_AlwaysAutoResize;
 
-        static shared_ptr<GpuTexture> logoTex = graphics.GetContext()->LoadTexture(
-            GAssets.LoadImageByPath("logos/sp-menu.png"));
+        static shared_ptr<const GpuTexture> logoTex = graphics.GetContext()->LoadTexture(
+            GAssets.LoadImage("logos/sp-menu.png"));
         static ImVec2 logoSize(logoTex->GetWidth() * 0.5, logoTex->GetHeight() * 0.5);
 
         if (selectedScreen == MenuScreen::Splash) {
@@ -344,8 +344,8 @@ namespace sp {
                                     ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuCredits", nullptr, flags);
 
-            static shared_ptr<GpuTexture> frLogoTex = graphics.GetContext()->LoadTexture(
-                GAssets.LoadImageByPath("logos/credits-frustra.png"));
+            static std::shared_ptr<GpuTexture> frLogoTex = graphics.GetContext()->LoadTexture(
+                GAssets.LoadImage("logos/credits-frustra.png"));
             static ImVec2 frLogoSize(frLogoTex->GetWidth() * 0.5, frLogoTex->GetHeight() * 0.5);
 
             ImGui::BeginChild("CreditScroller", ImVec2(600, 600), false, ImGuiWindowFlags_NoScrollbar);

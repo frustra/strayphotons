@@ -6,11 +6,12 @@
 #include <stb_image.h>
 
 namespace sp {
-    Image::Image(std::shared_ptr<const Asset> asset) {
-        Assert(asset != nullptr, "loading Image from null asset");
+    void Image::PopulateFromAsset(std::shared_ptr<const Asset> asset) {
+        Assert(asset != nullptr, "Loading Image from null asset");
+        asset->WaitUntilValid();
 
-        uint8_t *data = stbi_load_from_memory(asset->buffer.data(),
-                                              asset->buffer.size(),
+        uint8_t *data = stbi_load_from_memory(asset->Buffer(),
+                                              asset->BufferSize(),
                                               &this->width,
                                               &this->height,
                                               &this->components,
@@ -23,5 +24,8 @@ namespace sp {
         this->image = std::shared_ptr<uint8_t>(data, [](uint8_t *ptr) {
             stbi_image_free((void *)ptr);
         });
+
+        this->valid.test_and_set();
+        this->valid.notify_all();
     }
 } // namespace sp

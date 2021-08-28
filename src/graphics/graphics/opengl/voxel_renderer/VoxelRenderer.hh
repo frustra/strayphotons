@@ -115,7 +115,7 @@ namespace sp {
         PerfTimer &timer;
 
     private:
-        PreservingMap<GLModel> activeModels;
+        PreservingMap<std::string, GLModel> activeModels;
 
         shared_ptr<GLRenderTarget> shadowMap;
         shared_ptr<GLRenderTarget> mirrorShadowMap;

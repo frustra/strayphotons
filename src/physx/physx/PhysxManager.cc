@@ -418,7 +418,7 @@ namespace sp {
         auto &ps = lock.Get<ecs::PhysicsState>();
         auto &transform = e.Get<ecs::Transform>(lock);
 
-        if (!ph.model) return;
+        if (!ph.model || !ph.model->Valid()) return;
 
         auto globalTransform = transform.GetGlobalTransform(lock);
         auto globalRotation = transform.GetGlobalRotation(lock);

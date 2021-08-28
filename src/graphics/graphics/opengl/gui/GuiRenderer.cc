@@ -24,10 +24,10 @@ namespace sp {
         io.ImeWindowHandle = context.Win32WindowHandle();
         io.IniFilename = nullptr;
 
-        std::pair<shared_ptr<const Asset>, float> fontAssets[] = {
-            std::make_pair(GAssets.Load("fonts/DroidSans.ttf"), 16.0f),
-            std::make_pair(GAssets.Load("fonts/3270Medium.ttf"), 32.0f),
-            std::make_pair(GAssets.Load("fonts/3270Medium.ttf"), 25.0f),
+        std::pair<std::string, float> fontAssets[] = {
+            {"fonts/DroidSans.ttf", 16.0f},
+            {"fonts/3270Medium.ttf", 32.0f},
+            {"fonts/3270Medium.ttf", 25.0f},
         };
 
         io.Fonts->AddFontDefault(nullptr);
@@ -40,16 +40,17 @@ namespace sp {
             0,
         };
 
-        for (auto &pair : fontAssets) {
-            auto &asset = pair.first;
-            Assert(asset != nullptr, "Failed to load gui font");
+        for (auto &[path, pixelSize] : fontAssets) {
+            auto asset = GAssets.Load(path);
+            Assert(asset != nullptr, "Failed to load gui font: " + path);
+            asset->WaitUntilValid();
             ImFontConfig cfg;
-            cfg.FontData = (void *)asset->buffer.data();
-            cfg.FontDataSize = asset->buffer.size();
+            cfg.FontData = (void *)asset->Buffer();
+            cfg.FontDataSize = asset->BufferSize();
             cfg.FontDataOwnedByAtlas = false;
-            cfg.SizePixels = pair.second;
+            cfg.SizePixels = pixelSize;
             cfg.GlyphRanges = &glyphRanges[0];
-            memcpy(cfg.Name, asset->path.c_str(), std::min(sizeof(cfg.Name), asset->path.length()));
+            memcpy(cfg.Name, path.c_str(), std::min(sizeof(cfg.Name), path.length()));
             io.Fonts->AddFont(&cfg);
         }
 

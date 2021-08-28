@@ -1,8 +1,13 @@
 #pragma once
 
-#include "assets/Model.hh"
+#include "assets/Asset.hh"
 
 #include <ecs/Components.hh>
+#include <glm/glm.hpp>
+
+namespace sp {
+    class Model;
+}
 
 namespace ecs {
     struct Renderable {

@@ -4,13 +4,15 @@
 #include "graphics/opengl/GenericShaders.hh"
 #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
 
+#include <tiny_gltf.h>
+
 namespace sp {
 
     GLModel::GLModel(const std::shared_ptr<const Model> &model, VoxelRenderer *renderer)
         : renderer(renderer), model(model) {
         static BasicMaterial defaultMat;
 
-        for (auto &primitive : model->primitives) {
+        for (auto &primitive : model->Primitives()) {
             GLModel::Primitive glPrimitive(primitive);
             glPrimitive.indexBufferHandle = LoadBuffer(primitive.indexBuffer.bufferIndex);
             glPrimitive.drawMode = GetDrawMode(primitive.drawMode);
@@ -103,16 +105,16 @@ namespace sp {
     GLuint GLModel::LoadBuffer(int index) {
         if (buffers.count(index)) return buffers[index];
 
-        auto buffer = model->GetModel()->buffers[index];
+        auto buffer = model->GetBuffer(index);
         GLuint handle;
         glCreateBuffers(1, &handle);
-        glNamedBufferData(handle, buffer.data.size(), buffer.data.data(), GL_STATIC_DRAW);
+        glNamedBufferData(handle, buffer.size(), buffer.data(), GL_STATIC_DRAW);
         buffers[index] = handle;
         return handle;
     }
 
     GLTexture *GLModel::LoadTexture(int materialIndex, TextureType textureType) {
-        auto &material = model->GetModel()->materials[materialIndex];
+        auto &material = model->GetGltfModel()->materials[materialIndex];
 
         string name = std::to_string(materialIndex) + "_";
         int textureIndex = -1;
@@ -164,8 +166,8 @@ namespace sp {
 
         // Need to create a texture for this Material / Type combo
         if (textureIndex != -1) {
-            tinygltf::Texture texture = model->GetModel()->textures[textureIndex];
-            tinygltf::Image img = model->GetModel()->images[texture.source];
+            tinygltf::Texture texture = model->GetGltfModel()->textures[textureIndex];
+            tinygltf::Image img = model->GetGltfModel()->images[texture.source];
 
             GLenum minFilter = GL_LINEAR_MIPMAP_LINEAR;
             GLenum magFilter = GL_LINEAR;
@@ -173,7 +175,7 @@ namespace sp {
             GLenum wrapT = GL_REPEAT;
 
             if (texture.sampler != -1) {
-                tinygltf::Sampler sampler = model->GetModel()->samplers[texture.sampler];
+                tinygltf::Sampler sampler = model->GetGltfModel()->samplers[texture.sampler];
 
                 minFilter = sampler.minFilter > 0 ? sampler.minFilter : GL_LINEAR_MIPMAP_LINEAR;
                 magFilter = sampler.magFilter > 0 ? sampler.magFilter : GL_LINEAR;

@@ -51,7 +51,7 @@ namespace sp {
         virtual const std::vector<glm::ivec2> &MonitorModes() = 0;
         virtual const glm::ivec2 CurrentMode() = 0;
 
-        virtual std::shared_ptr<GpuTexture> LoadTexture(std::shared_ptr<Image> image, bool genMipmap = true) = 0;
+        virtual std::shared_ptr<GpuTexture> LoadTexture(std::shared_ptr<const Image> image, bool genMipmap = true) = 0;
 
         // Returns the window HWND, if it exists. On non-Windows platforms this returns nullptr.
         virtual void *Win32WindowHandle() {

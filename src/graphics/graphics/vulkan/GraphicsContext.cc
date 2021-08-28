@@ -483,7 +483,7 @@ namespace sp::vulkan {
         lastFrameEnd = frameEnd;
     }
 
-    std::shared_ptr<GpuTexture> GraphicsContext::LoadTexture(shared_ptr<Image> image, bool genMipmap) {
+    std::shared_ptr<GpuTexture> GraphicsContext::LoadTexture(std::shared_ptr<const Image> image, bool genMipmap) {
         // TODO
         return nullptr;
     }

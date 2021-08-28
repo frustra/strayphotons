@@ -685,6 +685,7 @@ namespace sp {
                                    Tecs::Entity &ent,
                                    const PreDrawFunc &preDraw) {
         auto &comp = ent.Get<ecs::Renderable>(lock);
+        if (!comp.model || !comp.model->Valid()) return;
 
         // Filter entities that aren't members of all layers in the view's visibility mask.
         ecs::Renderable::VisibilityMask mask = comp.visibility;
@@ -701,7 +702,7 @@ namespace sp {
             activeModels.Register(comp.model->name, model);
         }
 
-        model->Draw(shader, modelMat, view, comp.model->bones.size(), comp.model->bones.data());
+        model->Draw(shader, modelMat, view, comp.model->Bones().size(), comp.model->Bones().data());
     }
 
     void VoxelRenderer::DrawGridDebug(const ecs::View &view, SceneShader *shader) {
@@ -746,7 +747,7 @@ namespace sp {
 
         PrepareForView(view);
 
-        static shared_ptr<GpuTexture> loadingTex = context.LoadTexture(GAssets.LoadImageByPath("logos/loading.png"));
+        static std::shared_ptr<GpuTexture> loadingTex = context.LoadTexture(GAssets.LoadImage("logos/loading.png"));
         static GLTexture *glLoadingTex = dynamic_cast<GLTexture *>(loadingTex.get());
         Assert(glLoadingTex != nullptr, "Failed to load VoxelRenderer glLoadingTex");
 
