@@ -1,7 +1,5 @@
 #pragma once
 
-#include "assets/Asset.hh"
-
 #include <ecs/Components.hh>
 #include <glm/glm.hpp>
 

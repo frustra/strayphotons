@@ -382,9 +382,8 @@ namespace sp::vulkan {
                 for (size_t i = 0; i < posAttr.componentCount; i++) {
                     SceneVertex &vertex = vertices[i];
 
-                    glm::vec3 primitivePos = reinterpret_cast<const glm::vec3 &>(
+                    vertex.position = reinterpret_cast<const glm::vec3 &>(
                         buffers[posAttr.bufferIndex].data[posAttr.byteOffset + i * posAttr.byteStride]);
-                    vertex.position = glm::vec3(primitive.matrix * glm::vec4(primitivePos, 1.0));
 
                     if (normalAttr.componentCount) {
                         vertex.normal = reinterpret_cast<const glm::vec3 &>(

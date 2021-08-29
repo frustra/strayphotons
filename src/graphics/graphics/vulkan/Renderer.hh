@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Memory.hh"
-#include "assets/Asset.hh"
 #include "core/CFunc.hh"
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"

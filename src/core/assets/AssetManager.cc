@@ -78,10 +78,10 @@ namespace sp {
         cleanupThread = std::thread([this] {
             while (this->running) {
                 {
-                    std::lock_guard lock(completedMutex);
-                    for (auto it = completedTasks.begin(); it != completedTasks.end();) {
+                    std::lock_guard lock(taskMutex);
+                    for (auto it = runningTasks.begin(); it != runningTasks.end();) {
                         if (it->wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                            it = completedTasks.erase(it);
+                            it = runningTasks.erase(it);
                         } else {
                             it++;
                         }
@@ -165,8 +165,8 @@ namespace sp {
                 loadedAssets.Register(path, asset);
             }
             {
-                std::lock_guard lock(completedMutex);
-                completedTasks.emplace_back(std::async(std::launch::async, [this, path, asset] {
+                std::lock_guard lock(taskMutex);
+                runningTasks.emplace_back(std::async(std::launch::async, [this, path, asset] {
                     Debugf("Loading asset: %s", path);
                     std::ifstream in;
                     size_t size;
@@ -226,8 +226,8 @@ namespace sp {
                 loadedModels.Register(name, model);
             }
             {
-                std::lock_guard lock(completedMutex);
-                completedTasks.emplace_back(std::async(std::launch::async, [this, name, model] {
+                std::lock_guard lock(taskMutex);
+                runningTasks.emplace_back(std::async(std::launch::async, [this, name, model] {
                     std::string path = findModel(name);
                     Assert(!path.empty(), "Model not found: " + name);
 
@@ -255,8 +255,8 @@ namespace sp {
                 loadedImages.Register(path, image);
             }
             {
-                std::lock_guard lock(completedMutex);
-                completedTasks.emplace_back(std::async(std::launch::async, [this, path, image] {
+                std::lock_guard lock(taskMutex);
+                runningTasks.emplace_back(std::async(std::launch::async, [this, path, image] {
                     auto asset = Load(path);
                     image->PopulateFromAsset(asset);
                 }));

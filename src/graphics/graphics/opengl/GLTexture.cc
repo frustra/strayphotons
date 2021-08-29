@@ -206,6 +206,7 @@ namespace sp {
     GLTexture &GLTexture::LoadFromImage(std::shared_ptr<const Image> image, GLsizei levels) {
         Assert(handle, "null texture handle");
         Assert(image != nullptr, "loading GLTexture from null image");
+        image->WaitUntilValid();
 
         int w = image->GetWidth();
         int h = image->GetHeight();

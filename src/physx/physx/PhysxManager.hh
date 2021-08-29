@@ -4,6 +4,7 @@
 #include "core/CFunc.hh"
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
+#include "physx/HumanControlSystem.hh"
 
 #include <PxPhysicsAPI.h>
 #include <extensions/PxDefaultAllocator.h>
@@ -144,6 +145,8 @@ namespace sp {
 
         ecs::Observer<ecs::Removed<ecs::Physics>> physicsRemoval;
         ecs::Observer<ecs::Removed<ecs::HumanController>> humanControllerRemoval;
+
+        HumanControlSystem humanControlSystem;
 
         ConstraintList constraints;
 

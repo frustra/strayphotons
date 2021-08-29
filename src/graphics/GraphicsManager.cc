@@ -2,7 +2,6 @@
 
     #include "GraphicsManager.hh"
 
-    #include "assets/AssetManager.hh"
     #include "core/CVar.hh"
     #include "core/Logging.hh"
     #include "ecs/EcsImpl.hh"
@@ -113,7 +112,7 @@ namespace sp {
         std::vector<std::pair<ecs::View, ecs::XRView>> xrViews;
         {
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Transform, ecs::Light, ecs::XRView>,
-                                                    ecs::Write<ecs::View, ecs::Renderable>>();
+                                                    ecs::Write<ecs::View>>();
 
             auto &windowEntity = context->GetActiveView();
             if (windowEntity) {

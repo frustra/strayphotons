@@ -24,8 +24,8 @@ namespace sp {
     static CVar<float> CVarCrouchSpeed("p.CrouchSpeed", 1.5, "Player crouching movement speed (m/s)");
     static CVar<float> CVarCursorSensitivity("p.CursorSensitivity", 1.0, "Mouse cursor sensitivity");
 
-    bool HumanControlSystem::Frame(double dtSinceLastFrame) {
-        if (CVarPausePlayerPhysics.Get()) return true;
+    void HumanControlSystem::Frame(double dtSinceLastFrame) {
+        // if (CVarPausePlayerPhysics.Get()) return;
 
         bool noclipChanged = CVarNoClip.Changed();
         auto noclip = CVarNoClip.Get(true);
@@ -48,8 +48,6 @@ namespace sp {
                 bool sprinting = false;
                 bool crouching = false;
                 bool rotating = false;
-
-                auto &controller = entity.Get<ecs::HumanController>(lock);
 
                 inputMovement.z -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_FORWARD);
                 inputMovement.z += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_BACK);
@@ -102,6 +100,9 @@ namespace sp {
                     }
                 }
 
+                auto &controller = entity.Get<ecs::HumanController>(lock);
+                if (!controller.pxController) continue;
+
                 // Move the player
                 if (noclipChanged) {
                     physics->EnableCollisions(lock, controller.pxController->getActor(), !noclip);
@@ -132,8 +133,6 @@ namespace sp {
                 MoveEntity(lock, entity, dtSinceLastFrame, velocity);
             }
         }
-
-        return true;
     }
 
     glm::vec3 HumanControlSystem::CalculatePlayerVelocity(

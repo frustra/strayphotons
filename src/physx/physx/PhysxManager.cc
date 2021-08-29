@@ -24,7 +24,7 @@ namespace sp {
     static CVar<int> CVarPhysicsFrameRate("x.PhysicsFrameRate", 120, "Physics updates per second");
     // clang-format on
 
-    PhysxManager::PhysxManager() {
+    PhysxManager::PhysxManager() : humanControlSystem(this) {
         Logf("PhysX %d.%d.%d starting up",
              PX_PHYSICS_VERSION_MAJOR,
              PX_PHYSICS_VERSION_MINOR,
@@ -177,20 +177,26 @@ namespace sp {
                 }
             }
 
-            // Update controllers with latest entity data
-            for (auto ent : lock.EntitiesWith<ecs::HumanController>()) {
-                if (!ent.Has<ecs::HumanController, ecs::Transform>(lock)) continue;
-
-                UpdateController(lock, ent);
-            }
-
             // Update actors with latest entity data
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
                 // Controllers take priority over actors
                 if (ent.Has<ecs::HumanController>(lock)) continue;
 
+                auto &ph = ent.Get<ecs::Physics>(lock);
+                if (ph.model && !ph.model->Valid()) {
+                    // Not all actors are ready, skip this frame.
+                    return;
+                }
+
                 UpdateActor(lock, ent);
+            }
+
+            // Update controllers with latest entity data
+            for (auto ent : lock.EntitiesWith<ecs::HumanController>()) {
+                if (!ent.Has<ecs::HumanController, ecs::Transform>(lock)) continue;
+
+                UpdateController(lock, ent);
             }
 
             // Update constraint forces
@@ -280,6 +286,8 @@ namespace sp {
                 }
             }
         }
+
+        humanControlSystem.Frame(1.0 / CVarPhysicsFrameRate.Get());
     }
 
     void PhysxManager::CreatePhysxScene() {

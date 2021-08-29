@@ -17,7 +17,7 @@ namespace sp {
         /**
          * Call this once per frame
          */
-        bool Frame(double dtSinceLastFrame);
+        void Frame(double dtSinceLastFrame);
 
         /**
          * Pick up the object that the player is looking at and make it move at to a fixed location relative to camera

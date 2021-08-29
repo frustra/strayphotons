@@ -46,8 +46,8 @@ namespace sp {
         std::atomic_bool running;
         std::thread cleanupThread;
 
-        std::mutex completedMutex;
-        std::vector<std::future<void>> completedTasks;
+        std::mutex taskMutex;
+        std::vector<std::future<void>> runningTasks;
 
         std::mutex assetMutex;
         std::mutex modelMutex;
