@@ -1,6 +1,7 @@
 #include "Model.hh"
 
-#include "GraphicsContext.hh"
+#include "CommandContext.hh"
+#include "DeviceContext.hh"
 #include "Renderer.hh"
 #include "Vertex.hh"
 #include "assets/Model.hh"
@@ -8,7 +9,7 @@
 #include "ecs/EcsImpl.hh"
 
 namespace sp::vulkan {
-    Model::Model(sp::Model *model, Renderer *renderer) : renderer(renderer), modelName(model->name) {
+    Model::Model(const sp::Model *model, Renderer *renderer) : renderer(renderer), modelName(model->name) {
         vector<SceneVertex> vertices;
 
         // TODO: cache the output somewhere. Keeping the conversion code in
@@ -21,6 +22,7 @@ namespace sp::vulkan {
             Assert(primitive.drawMode == sp::Model::DrawMode::Triangles, "draw mode must be Triangles");
 
             auto &p = *primitives.emplace_back(make_shared<Primitive>());
+            p.transform = primitive.matrix;
             auto &buffers = model->GetModel()->buffers;
 
             switch (primitive.indexBuffer.componentType) {
@@ -40,9 +42,9 @@ namespace sp::vulkan {
             Assert(primitive.indexBuffer.byteOffset + indexBufferSize <= indexBuffer.data.size(),
                    "indexes overflow buffer");
 
-            p.indexBuffer = renderer->context.AllocateBuffer(indexBufferSize,
-                                                             vk::BufferUsageFlagBits::eIndexBuffer,
-                                                             VMA_MEMORY_USAGE_CPU_TO_GPU);
+            p.indexBuffer = renderer->device.AllocateBuffer(indexBufferSize,
+                                                            vk::BufferUsageFlagBits::eIndexBuffer,
+                                                            VMA_MEMORY_USAGE_CPU_TO_GPU);
 
             void *data;
             p.indexBuffer.Map(&data);
@@ -90,9 +92,9 @@ namespace sp::vulkan {
             }
 
             size_t vertexBufferSize = vertices.size() * sizeof(vertices[0]);
-            p.vertexBuffer = renderer->context.AllocateBuffer(vertexBufferSize,
-                                                              vk::BufferUsageFlagBits::eVertexBuffer,
-                                                              VMA_MEMORY_USAGE_CPU_TO_GPU);
+            p.vertexBuffer = renderer->device.AllocateBuffer(vertexBufferSize,
+                                                             vk::BufferUsageFlagBits::eVertexBuffer,
+                                                             VMA_MEMORY_USAGE_CPU_TO_GPU);
 
             p.vertexBuffer.Map(&data);
             memcpy(data, vertices.data(), vertexBufferSize);
@@ -104,7 +106,7 @@ namespace sp::vulkan {
         Debugf("Destroying vulkan::Model %s", modelName);
     }
 
-    void Model::AppendDrawCommands(vk::CommandBuffer &commands, glm::mat4 modelMat, const ecs::View &view) {
+    void Model::AppendDrawCommands(CommandContext &cmd, glm::mat4 modelMat, const ecs::View &view) {
         for (auto &primitivePtr : primitives) {
             auto &primitive = *primitivePtr;
             MeshPushConstants constants;
@@ -112,15 +114,11 @@ namespace sp::vulkan {
             constants.view = view.viewMat;
             constants.model = modelMat * primitive.transform;
 
-            commands.pushConstants(renderer->PipelineLayout(),
-                                   vk::ShaderStageFlagBits::eVertex,
-                                   0,
-                                   sizeof(MeshPushConstants),
-                                   &constants);
+            cmd.PushConstants(&constants, 0, sizeof(MeshPushConstants));
 
-            commands.bindIndexBuffer(*primitive.indexBuffer, 0, primitive.indexType);
-            commands.bindVertexBuffers(0, {*primitive.vertexBuffer}, {0});
-            commands.drawIndexed(primitive.indexCount, 1, 0, 0, 0);
+            cmd->bindIndexBuffer(*primitive.indexBuffer, 0, primitive.indexType);
+            cmd->bindVertexBuffers(0, {*primitive.vertexBuffer}, {0});
+            cmd.DrawIndexed(primitive.indexCount, 1, 0, 0, 0);
         }
     }
 } // namespace sp::vulkan

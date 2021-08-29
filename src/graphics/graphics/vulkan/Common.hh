@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/Common.hh"
+
 #include <string>
 #include <vulkan/vulkan.hpp>
 
@@ -9,6 +11,11 @@
 #include <glm/gtc/type_ptr.hpp>
 
 namespace sp::vulkan {
+    typedef uint32 ShaderHandle;
+
+    class CommandContext;
+    typedef shared_ptr<CommandContext> CommandContextPtr;
+
     void AssertVKSuccess(vk::Result result, std::string message);
     void AssertVKSuccess(VkResult result, std::string message);
 } // namespace sp::vulkan

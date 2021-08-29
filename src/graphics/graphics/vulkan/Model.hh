@@ -33,10 +33,10 @@ namespace sp::vulkan {
             glm::mat4 transform;
         };
 
-        Model(sp::Model *model, Renderer *renderer);
+        Model(const sp::Model *model, Renderer *renderer);
         ~Model();
 
-        void AppendDrawCommands(vk::CommandBuffer &commands, glm::mat4 modelMat, const ecs::View &view);
+        void AppendDrawCommands(CommandContext &commands, glm::mat4 modelMat, const ecs::View &view);
 
     private:
         vector<shared_ptr<Primitive>> primitives;

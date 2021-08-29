@@ -9,6 +9,7 @@ using std::weak_ptr;
 #include <vector>
 using std::vector;
 
+#include <array>
 #include <string>
 using std::string;
 
@@ -42,12 +43,10 @@ namespace sp {
         NonCopyable() = default;
     };
 
-    // Boost replacement functions
-    template<typename T>
-    void hash_combine(std::size_t &seed, const T &val) {
-        seed ^= std::hash<T>()(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    }
+    typedef std::array<uint64, 2> Hash128;
+    typedef uint64 Hash64;
 
+    // Boost replacement functions
     bool starts_with(const string &str, const string &prefix);
     bool ends_with(const string &str, const string &suffix);
     string to_lower(string &str);

@@ -1,9 +1,14 @@
 target_sources(${PROJECT_GRAPHICS_VULKAN_LIB} PRIVATE
+    CommandContext.cc
     Common.cc
-    GraphicsContext.cc
+    DeviceContext.cc
+    Image.cc
     Memory.cc
     Model.cc
+    Pipeline.cc
     Renderer.cc
+    RenderPass.cc
+    UniqueID.cc
 )
 
-target_link_libraries(${PROJECT_GRAPHICS_VULKAN_LIB} PUBLIC VulkanMemoryAllocator)
+target_link_libraries(${PROJECT_GRAPHICS_VULKAN_LIB} PUBLIC VulkanMemoryAllocator SPIRV-Reflect)
