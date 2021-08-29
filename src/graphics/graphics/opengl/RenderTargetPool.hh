@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/Common.hh"
+#include "core/Hashing.hh"
 #include "core/Logging.hh"
 #include "graphics/opengl/GLRenderTarget.hh"
 
@@ -76,8 +77,8 @@ namespace sp {
     };
 
     struct FramebufferStateHasher {
-        size_t operator()(const FramebufferState &key) const {
-            size_t hash = 0;
+        uint64 operator()(const FramebufferState &key) const {
+            uint64 hash = 0;
 
             hash_combine(hash, key.NumAttachments);
 

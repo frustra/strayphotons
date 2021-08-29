@@ -19,6 +19,8 @@ namespace sp {
             return (char *)buffer.data();
         }
 
+        Hash128 Hash() const;
+
         const string path;
         std::vector<uint8_t> buffer;
     };

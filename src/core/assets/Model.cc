@@ -14,7 +14,10 @@ namespace sp {
         glm::mat4 out(1.0);
 
         if (node->matrix.size() == 16) {
-            std::copy(node->matrix.begin(), node->matrix.end(), glm::value_ptr(out));
+            auto outPtr = glm::value_ptr(out);
+            for (auto value : node->matrix) {
+                *(outPtr++) = (float)value;
+            }
         } else {
             if (node->translation.size() == 3) {
                 out = glm::translate(out, glm::vec3(node->translation[0], node->translation[1], node->translation[2]));

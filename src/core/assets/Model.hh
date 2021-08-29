@@ -11,8 +11,6 @@ namespace sp {
     // Forward declarations
     class Asset;
 
-    typedef std::array<uint32, 4> Hash128;
-
     enum TextureType {
         BaseColor,
         MetallicRoughness,

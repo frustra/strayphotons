@@ -2,6 +2,7 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
+#include "core/Hashing.hh"
 #include "core/Logging.hh"
 
 #include <fstream>
