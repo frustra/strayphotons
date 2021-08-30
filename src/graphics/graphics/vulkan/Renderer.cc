@@ -87,7 +87,7 @@ namespace sp::vulkan {
         auto renderCompleteSem = device.CurrentFrameRenderCompleteSemaphore();
 
         auto commands = commandContexts[device.CurrentSwapchainImageIndex()];
-        auto commandBuffer = commands->GetCommandBuffer();
+        const vk::CommandBuffer commandBuffer = commands->GetCommandBuffer();
 
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = &imageAvailableSem;

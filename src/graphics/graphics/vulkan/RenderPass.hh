@@ -108,9 +108,10 @@ namespace sp::vulkan {
         }
     };
 
-    class RenderPass : public NonCopyable {
+    class RenderPass : public WrappedUniqueHandle<vk::RenderPass> {
     public:
         RenderPass(DeviceContext &device, const RenderPassInfo &info);
+<<<<<<< HEAD
 
         vk::RenderPass operator*() const {
             return Get();
@@ -122,22 +123,16 @@ namespace sp::vulkan {
 
     private:
         vk::UniqueRenderPass renderPass;
+=======
+>>>>>>> origin/master
     };
 
-    class Framebuffer : public NonCopyable {
+    class Framebuffer : public WrappedUniqueHandle<vk::Framebuffer> {
     public:
         Framebuffer(DeviceContext &device, const RenderPassInfo &info);
 
-        vk::Framebuffer operator*() const {
-            return Get();
-        }
-
-        vk::Framebuffer Get() const {
-            return *framebuffer;
-        }
-
         vk::RenderPass GetRenderPass() const {
-            return renderPass->Get();
+            return **renderPass;
         }
 
         vk::Extent2D Extent() const {
@@ -145,7 +140,6 @@ namespace sp::vulkan {
         }
 
     private:
-        vk::UniqueFramebuffer framebuffer;
         shared_ptr<RenderPass> renderPass;
         vk::Extent2D extent;
     };

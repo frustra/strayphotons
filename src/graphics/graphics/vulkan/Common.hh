@@ -18,4 +18,24 @@ namespace sp::vulkan {
 
     void AssertVKSuccess(vk::Result result, std::string message);
     void AssertVKSuccess(VkResult result, std::string message);
+
+    template<typename T>
+    class WrappedUniqueHandle : public NonCopyable {
+    public:
+        T Get() const {
+            return *uniqueHandle;
+        }
+
+        T operator*() const {
+            return *uniqueHandle;
+        }
+
+        T *operator->() {
+            T &t = *uniqueHandle;
+            return &t;
+        }
+
+    protected:
+        vk::UniqueHandle<T, vk::DispatchLoaderDynamic> uniqueHandle;
+    };
 } // namespace sp::vulkan
