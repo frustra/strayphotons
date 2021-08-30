@@ -93,7 +93,6 @@ namespace sp {
         io.DeltaTime = lastTime > 0.0 ? (float)(currTime - lastTime) : 1.0f / 60.0f;
         lastTime = currTime;
 
-        manager->BeforeFrame();
         ImGui::NewFrame();
         manager->DefineWindows();
         ImGui::Render();

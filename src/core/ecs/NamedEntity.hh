@@ -13,28 +13,9 @@ namespace ecs {
             return name;
         }
 
-        const Tecs::Entity &Get(Lock<Read<ecs::Name>> lock) {
-            if (name.empty()) {
-                ent = Tecs::Entity();
-            } else {
-                if (ent.Has<ecs::Name>(lock)) {
-                    if (ent.Get<ecs::Name>(lock) == name) return ent;
-                }
-                ent = EntityWith<ecs::Name>(lock, name);
-            }
-            return ent;
-        }
+        const Tecs::Entity &Get(Lock<Read<ecs::Name>> lock);
 
-        Tecs::Entity Get(Lock<Read<ecs::Name>> lock) const {
-            if (name.empty()) {
-                return Tecs::Entity();
-            } else {
-                if (ent.Has<ecs::Name>(lock)) {
-                    if (ent.Get<ecs::Name>(lock) == name) return ent;
-                }
-                return EntityWith<ecs::Name>(lock, name);
-            }
-        }
+        Tecs::Entity Get(Lock<Read<ecs::Name>> lock) const;
 
         bool operator==(const NamedEntity &other) const {
             return !name.empty() && name == other.name;

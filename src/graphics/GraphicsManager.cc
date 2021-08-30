@@ -107,6 +107,9 @@ namespace sp {
         if (!renderer) throw "no active renderer";
     #endif
 
+        if (game->debugGui) game->debugGui->BeforeFrame();
+        if (game->menuGui) game->menuGui->BeforeFrame();
+
         std::vector<ecs::View> cameraViews;
         std::vector<ecs::View> shadowViews;
         std::vector<std::pair<ecs::View, ecs::XRView>> xrViews;

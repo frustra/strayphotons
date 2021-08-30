@@ -15,7 +15,9 @@ namespace sp {
         }
 
         void WaitUntilValid() const {
-            valid.wait(false);
+            while (!valid.test()) {
+                valid.wait(false);
+            }
         }
 
         std::string String() const {

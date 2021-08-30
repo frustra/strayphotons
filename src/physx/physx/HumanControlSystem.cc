@@ -25,7 +25,7 @@ namespace sp {
     static CVar<float> CVarCursorSensitivity("p.CursorSensitivity", 1.0, "Mouse cursor sensitivity");
 
     void HumanControlSystem::Frame(double dtSinceLastFrame) {
-        // if (CVarPausePlayerPhysics.Get()) return;
+        if (CVarPausePlayerPhysics.Get()) return;
 
         bool noclipChanged = CVarNoClip.Changed();
         auto noclip = CVarNoClip.Get(true);
@@ -33,11 +33,7 @@ namespace sp {
         {
             auto lock = ecs::World.StartTransaction<
                 ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
-                ecs::Write<ecs::EventInput,
-                           ecs::PhysicsState,
-                           ecs::Transform,
-                           ecs::HumanController,
-                           ecs::InteractController>>();
+                ecs::Write<ecs::EventInput, ecs::Transform, ecs::HumanController, ecs::InteractController>>();
 
             for (Tecs::Entity entity : lock.EntitiesWith<ecs::HumanController>()) {
                 if (!entity.Has<ecs::Transform>(lock)) continue;
@@ -76,7 +72,7 @@ namespace sp {
 
                     while (ecs::EventInput::Poll(lock, entity, INPUT_EVENT_CAMERA_ROTATE, event)) {
                         auto cursorDiff = std::get<glm::vec2>(event.data);
-                        if (!rotating || !InteractRotate(lock, entity, dtSinceLastFrame, cursorDiff)) {
+                        if (!rotating || !InteractRotate(lock, entity, cursorDiff)) {
                             float sensitivity = CVarCursorSensitivity.Get() * 0.001;
 
                             // Apply pitch/yaw rotations
@@ -88,14 +84,14 @@ namespace sp {
                             auto up = rotation * glm::vec3(0, 1, 0);
                             if (up.y < 0) {
                                 // Camera is turning upside-down, reset it
-                                up.y = 0;
                                 auto right = rotation * glm::vec3(1, 0, 0);
                                 right.y = 0;
+                                up.y = 0;
                                 glm::vec3 forward = glm::cross(right, up);
                                 rotation = glm::quat_cast(
                                     glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
                             }
-                            transform.SetRotate(rotation);
+                            transform.SetRotate(rotation, false);
                         }
                     }
                 }
@@ -105,7 +101,7 @@ namespace sp {
 
                 // Move the player
                 if (noclipChanged) {
-                    physics->EnableCollisions(lock, controller.pxController->getActor(), !noclip);
+                    physics->EnableCollisions(controller.pxController->getActor(), !noclip);
 
                     physx::PxShape *shape;
                     controller.pxController->getActor()->getShapes(&shape, 1);
@@ -182,12 +178,12 @@ namespace sp {
         return controller.velocity;
     }
 
-    void HumanControlSystem::MoveEntity(
-        ecs::Lock<ecs::Write<ecs::PhysicsState, ecs::Transform, ecs::HumanController>> lock,
-        Tecs::Entity entity,
-        double dtSinceLastFrame,
-        glm::vec3 velocity) {
+    void HumanControlSystem::MoveEntity(ecs::Lock<ecs::Write<ecs::Transform, ecs::HumanController>> lock,
+                                        Tecs::Entity entity,
+                                        double dtSinceLastFrame,
+                                        glm::vec3 velocity) {
         auto &transform = entity.Get<ecs::Transform>(lock);
+        if (transform.IsDirty()) return;
         auto &controller = entity.Get<ecs::HumanController>(lock);
 
         if (controller.pxController) {
@@ -198,8 +194,9 @@ namespace sp {
                 newPosition = prevPosition + disp;
                 controller.onGround = true;
             } else {
-                controller.onGround =
-                    physics->MoveController(lock, controller.pxController, dtSinceLastFrame, GlmVec3ToPxVec3(disp));
+                controller.onGround = physics->MoveController(controller.pxController,
+                                                              dtSinceLastFrame,
+                                                              GlmVec3ToPxVec3(disp));
                 newPosition = PxExtendedVec3ToGlmVec3P(controller.pxController->getPosition());
             }
             // Don't accelerate more than our current velocity
@@ -218,8 +215,7 @@ namespace sp {
     }
 
     void HumanControlSystem::Interact(
-        ecs::Lock<ecs::Read<ecs::HumanController>,
-                  ecs::Write<ecs::PhysicsState, ecs::Transform, ecs::InteractController>> lock,
+        ecs::Lock<ecs::Read<ecs::HumanController>, ecs::Write<ecs::Transform, ecs::InteractController>> lock,
         Tecs::Entity entity) {
         auto &interact = entity.Get<ecs::InteractController>(lock);
         auto &transform = entity.Get<ecs::Transform>(lock);
@@ -261,11 +257,10 @@ namespace sp {
 
     bool HumanControlSystem::InteractRotate(ecs::Lock<ecs::Read<ecs::InteractController>> lock,
                                             Tecs::Entity entity,
-                                            double dt,
                                             glm::vec2 dCursor) {
         auto &interact = entity.Get<ecs::InteractController>(lock);
         if (interact.target) {
-            auto rotation = glm::vec3(dCursor.y, dCursor.x, 0) * (float)(CVarCursorSensitivity.Get() * 0.1 * dt);
+            auto rotation = glm::vec3(dCursor.y, dCursor.x, 0) * (float)(CVarCursorSensitivity.Get() * 0.01);
             physics->RotateConstraint(entity, interact.target, GlmVec3ToPxVec3(rotation));
             return true;
         }

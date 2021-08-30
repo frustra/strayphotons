@@ -36,9 +36,6 @@ if(UNIX)
 
 elseif(WIN32)
 
-    # Downgrade to C++17 for PhysX
-    set(CMAKE_CXX_STANDARD 17)
-
     set(TARGET_BUILD_PLATFORM windows)
     set(NV_USE_STATIC_WINCRT ON CACHE BOOL "Enable PhysX static lib generation" FORCE)
 

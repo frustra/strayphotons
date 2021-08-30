@@ -240,9 +240,9 @@ namespace sp::vulkan {
         fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            imageAvailableSemaphores.push_back(std::move(device->createSemaphoreUnique(semaphoreInfo)));
-            renderCompleteSemaphores.push_back(std::move(device->createSemaphoreUnique(semaphoreInfo)));
-            inFlightFences.push_back(std::move(device->createFenceUnique(fenceInfo)));
+            imageAvailableSemaphores.push_back(device->createSemaphoreUnique(semaphoreInfo));
+            renderCompleteSemaphores.push_back(device->createSemaphoreUnique(semaphoreInfo));
+            inFlightFences.push_back(device->createFenceUnique(fenceInfo));
         }
 
         VmaAllocatorCreateInfo allocatorInfo = {};

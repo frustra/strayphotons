@@ -6,6 +6,7 @@
 
 #include <atomic>
 #include <memory>
+#include <mutex>
 #include <robin_hood.h>
 #include <shared_mutex>
 #include <string>
@@ -56,12 +57,7 @@ namespace sp {
 
                 for (auto &key : cleanupList) {
                     auto it = storage.find(key);
-                    if (it != storage.end() && it->second.value.use_count() == 1) {
-                        auto age = chrono_clock::now() - chrono_clock::time_point(std::chrono::steady_clock::duration(
-                                                             it->second.last_use.load()));
-                        auto ageMs = std::chrono::duration_cast<std::chrono::milliseconds>(age).count();
-                        storage.erase(it);
-                    }
+                    if (it != storage.end() && it->second.value.use_count() == 1) storage.erase(it);
                 }
             }
         }

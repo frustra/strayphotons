@@ -1,3 +1,6 @@
+# Downgrade external packages to C++17
+set(CMAKE_CXX_STANDARD 17)
+
 # No need to build the CXXOPTS tests
 set(CXXOPTS_BUILD_TESTS OFF CACHE BOOL "Disable CXXOPTS Test Suite" FORCE)
 set(CXXOPTS_BUILD_EXAMPLES OFF CACHE BOOL "Disable CXXOPTS Examples" FORCE)

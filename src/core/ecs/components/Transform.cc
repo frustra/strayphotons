@@ -141,10 +141,10 @@ namespace ecs {
         return this->translate;
     }
 
-    void Transform::SetPosition(glm::vec3 pos) {
+    void Transform::SetPosition(glm::vec3 pos, bool setDirty) {
         this->translate = glm::column(this->translate, 3, glm::vec4(pos.x, pos.y, pos.z, 1.f));
         this->changeCount++;
-        this->dirty = true;
+        if (setDirty) this->dirty = true;
     }
 
     glm::vec3 Transform::GetPosition() const {
@@ -167,16 +167,16 @@ namespace ecs {
         return -GetLeft();
     }
 
-    void Transform::SetRotate(glm::mat4 mat) {
+    void Transform::SetRotate(glm::mat4 mat, bool setDirty) {
         this->rotate = mat;
         this->changeCount++;
-        this->dirty = true;
+        if (setDirty) this->dirty = true;
     }
 
-    void Transform::SetRotate(glm::quat quat) {
+    void Transform::SetRotate(glm::quat quat, bool setDirty) {
         this->rotate = quat;
         this->changeCount++;
-        this->dirty = true;
+        if (setDirty) this->dirty = true;
     }
 
     glm::quat Transform::GetRotate() const {
