@@ -35,6 +35,8 @@ namespace sp {
             return buffer.size();
         }
 
+        Hash128 Hash() const;
+
         const std::string path;
 
     private:

@@ -1,5 +1,11 @@
-#include "GraphicsContext.hh"
+#include "DeviceContext.hh"
 
+#include "CommandContext.hh"
+#include "Pipeline.hh"
+#include "RenderPass.hh"
+#include "assets/Asset.hh"
+#include "assets/AssetManager.hh"
+#include "core/CFunc.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
@@ -21,7 +27,7 @@ namespace sp::vulkan {
     static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                         VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                         const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-                                        void *pGraphicsContext) {
+                                        void *pContext) {
         auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes));
         switch (messageSeverity) {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
@@ -46,7 +52,7 @@ namespace sp::vulkan {
         Errorf("GLFW returned %d: %s", error, message);
     }
 
-    GraphicsContext::GraphicsContext() {
+    DeviceContext::DeviceContext() {
         glfwSetErrorCallback(glfwErrorCallback);
 
         if (!glfwInit()) { throw "glfw failed"; }
@@ -233,7 +239,7 @@ namespace sp::vulkan {
         vk::CommandPoolCreateInfo poolInfo;
         poolInfo.queueFamilyIndex = graphicsQueueFamily;
         poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-        graphicsCommandPool = device->createCommandPoolUnique(poolInfo);
+        renderThreadCommandPool = device->createCommandPoolUnique(poolInfo);
 
         vk::SemaphoreCreateInfo semaphoreInfo;
         vk::FenceCreateInfo fenceInfo;
@@ -255,20 +261,36 @@ namespace sp::vulkan {
 
         Assert(vmaCreateAllocator(&allocatorInfo, &allocator) == VK_SUCCESS, "allocator init failed");
 
+        pipelinePool.reset(new PipelineManager(*this));
+        renderPassPool.reset(new RenderPassManager(*this));
+        framebufferPool.reset(new FramebufferManager(*this));
+
+        funcs.reset(new CFuncCollection);
+        funcs->Register("reloadshaders", "Recompile any changed shaders", [&]() {
+            ReloadShaders();
+        });
+
         CreateSwapchain();
     }
 
-    GraphicsContext::~GraphicsContext() {
+    DeviceContext::~DeviceContext() {
         if (device) { vkDeviceWaitIdle(*device); }
         if (window) { glfwDestroyWindow(window); }
 
         glfwTerminate();
 
+        {
+            // TODO: these will be allocated from a pool later and not need to be manually cleaned up
+            // The image needs to be destroyed before VMA
+            depthImageView.reset();
+            depthImage.Destroy();
+        }
+
         vmaDestroyAllocator(allocator);
     }
 
     // Releases old swapchain after creating a new one
-    void GraphicsContext::CreateSwapchain() {
+    void DeviceContext::CreateSwapchain() {
         auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
         auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
         auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
@@ -323,43 +345,66 @@ namespace sp::vulkan {
 
         auto newSwapchain = device->createSwapchainKHRUnique(swapchainInfo, nullptr);
         swapchainImageViews.clear();
+        swapchainImageViewInfos.clear();
         swapchain.swap(newSwapchain);
         swapchainVersion++;
 
         swapchainImages = device->getSwapchainImagesKHR(*swapchain);
-        swapchainImageFormat = swapchainInfo.imageFormat;
         swapchainExtent = swapchainInfo.imageExtent;
 
         for (size_t i = 0; i < swapchainImages.size(); i++) {
             vk::ImageViewCreateInfo createInfo;
             createInfo.image = swapchainImages[i];
             createInfo.viewType = vk::ImageViewType::e2D;
-            createInfo.format = swapchainImageFormat;
+            createInfo.format = swapchainInfo.imageFormat;
             createInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
             createInfo.subresourceRange.baseMipLevel = 0;
             createInfo.subresourceRange.levelCount = 1;
             createInfo.subresourceRange.baseArrayLayer = 0;
             createInfo.subresourceRange.layerCount = 1;
+            swapchainImageViewInfos.push_back(createInfo);
             swapchainImageViews.emplace_back(device->createImageViewUnique(createInfo));
         }
 
         imagesInFlight.resize(swapchainImages.size());
+
+        depthImageView.reset();
+
+        vk::ImageCreateInfo depthImageInfo;
+        depthImageInfo.imageType = vk::ImageType::e2D;
+        depthImageInfo.format = vk::Format::eD24UnormS8Uint;
+        depthImageInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+        depthImageInfo.extent = vk::Extent3D(swapchainExtent.width, swapchainExtent.height, 1);
+        depthImageInfo.mipLevels = 1;
+        depthImageInfo.arrayLayers = 1;
+        depthImageInfo.samples = vk::SampleCountFlagBits::e1;
+        depthImage = AllocateImage(depthImageInfo, VMA_MEMORY_USAGE_GPU_ONLY);
+
+        depthImageViewInfo.format = depthImageInfo.format;
+        depthImageViewInfo.image = *depthImage;
+        depthImageViewInfo.viewType = vk::ImageViewType::e2D;
+        depthImageViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+        depthImageViewInfo.subresourceRange.baseMipLevel = 0;
+        depthImageViewInfo.subresourceRange.levelCount = 1;
+        depthImageViewInfo.subresourceRange.baseArrayLayer = 0;
+        depthImageViewInfo.subresourceRange.layerCount = 1;
+        depthImageView = device->createImageViewUnique(depthImageViewInfo);
     }
 
-    void GraphicsContext::RecreateSwapchain() {
+    void DeviceContext::RecreateSwapchain() {
         vkDeviceWaitIdle(*device);
         CreateSwapchain();
     }
 
-    void GraphicsContext::SetTitle(string title) {
+    void DeviceContext::SetTitle(string title) {
         glfwSetWindowTitle(window, title.c_str());
     }
 
-    bool GraphicsContext::ShouldClose() {
+    bool DeviceContext::ShouldClose() {
         return !!glfwWindowShouldClose(window);
     }
 
-    void GraphicsContext::PrepareWindowView(ecs::View &view) {
+    void DeviceContext::PrepareWindowView(ecs::View &view) {
         glm::ivec2 scaled = glm::vec2(CVarWindowSize.Get()) * CVarWindowScale.Get();
 
         if (glfwFullscreen != CVarWindowFullscreen.Get()) {
@@ -385,7 +430,7 @@ namespace sp::vulkan {
         view.fov = glm::radians(CVarFieldOfView.Get());
     }
 
-    const vector<glm::ivec2> &GraphicsContext::MonitorModes() {
+    const vector<glm::ivec2> &DeviceContext::MonitorModes() {
         if (!monitorModes.empty()) return monitorModes;
 
         int count;
@@ -405,13 +450,13 @@ namespace sp::vulkan {
         return monitorModes;
     }
 
-    const glm::ivec2 GraphicsContext::CurrentMode() {
+    const glm::ivec2 DeviceContext::CurrentMode() {
         const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         if (mode != NULL) { return glm::ivec2(mode->width, mode->height); }
         return glm::ivec2(0);
     }
 
-    void GraphicsContext::UpdateInputModeFromFocus() {
+    void DeviceContext::UpdateInputModeFromFocus() {
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::FocusLock>>();
         if (lock.Has<ecs::FocusLock>()) {
             auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
@@ -423,7 +468,7 @@ namespace sp::vulkan {
         }
     }
 
-    void GraphicsContext::BeginFrame() {
+    void DeviceContext::BeginFrame() {
         UpdateInputModeFromFocus();
 
         auto result = device->waitForFences({CurrentFrameFence()}, true, FENCE_WAIT_TIME);
@@ -447,7 +492,7 @@ namespace sp::vulkan {
         vmaSetCurrentFrameIndex(allocator, frameCounter);
     }
 
-    void GraphicsContext::SwapBuffers() {
+    void DeviceContext::SwapBuffers() {
         vk::Semaphore renderCompleteSem = CurrentFrameRenderCompleteSemaphore();
         vk::PresentInfoKHR presentInfo;
         presentInfo.waitSemaphoreCount = 1;
@@ -466,7 +511,7 @@ namespace sp::vulkan {
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
-    void GraphicsContext::EndFrame() {
+    void DeviceContext::EndFrame() {
         frameCounter++;
         if (frameCounter == UINT32_MAX) frameCounter = 0;
 
@@ -483,14 +528,29 @@ namespace sp::vulkan {
         lastFrameEnd = frameEnd;
     }
 
-    std::shared_ptr<GpuTexture> GraphicsContext::LoadTexture(std::shared_ptr<const Image> image, bool genMipmap) {
+    shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const Image> image, bool genMipmap) {
         // TODO
         return nullptr;
     }
 
-    UniqueBuffer GraphicsContext::AllocateBuffer(vk::DeviceSize size,
-                                                 vk::BufferUsageFlags usage,
-                                                 VmaMemoryUsage residency) {
+    vector<vk::UniqueCommandBuffer> DeviceContext::AllocateCommandBuffers(uint32_t count,
+                                                                          vk::CommandBufferLevel level) {
+
+        vk::CommandBufferAllocateInfo allocInfo;
+        allocInfo.commandPool = *renderThreadCommandPool;
+        allocInfo.level = vk::CommandBufferLevel::ePrimary;
+        allocInfo.commandBufferCount = count;
+
+        return device->allocateCommandBuffersUnique(allocInfo);
+    }
+
+    CommandContextPtr DeviceContext::CreateCommandContext() {
+        return make_shared<CommandContext>(*this);
+    }
+
+    UniqueBuffer DeviceContext::AllocateBuffer(vk::DeviceSize size,
+                                               vk::BufferUsageFlags usage,
+                                               VmaMemoryUsage residency) {
         vk::BufferCreateInfo bufferInfo;
         bufferInfo.size = size;
         bufferInfo.usage = usage;
@@ -499,9 +559,86 @@ namespace sp::vulkan {
         return UniqueBuffer(bufferInfo, allocInfo, allocator);
     }
 
-    UniqueImage GraphicsContext::AllocateImage(vk::ImageCreateInfo info, VmaMemoryUsage residency) {
+    UniqueImage DeviceContext::AllocateImage(vk::ImageCreateInfo info, VmaMemoryUsage residency) {
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
         return UniqueImage(info, allocInfo, allocator);
+    }
+
+    ShaderHandle DeviceContext::LoadShader(const string &name) {
+        ShaderHandle &handle = shaderHandles[name];
+        if (handle) return handle;
+
+        auto shader = shaders.emplace_back(CreateShader(name, {}));
+        handle = static_cast<ShaderHandle>(shaders.size());
+        return handle;
+    }
+
+    shared_ptr<Shader> DeviceContext::CreateShader(const string &name, Hash64 compareHash) {
+        auto asset = GAssets.Load("shaders/vulkan/bin/" + name + ".spv");
+        if (!asset) {
+            Assert(false, "could not load shader: " + name);
+            return nullptr;
+        }
+        asset->WaitUntilValid();
+
+        auto newHash = Hash128To64(asset->Hash());
+        if (compareHash == newHash) return nullptr;
+
+        vk::ShaderModuleCreateInfo shaderCreateInfo;
+        shaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(asset->Buffer());
+        shaderCreateInfo.codeSize = asset->BufferSize();
+
+        auto shaderModule = device->createShaderModuleUnique(shaderCreateInfo);
+
+        auto reflection = spv_reflect::ShaderModule(asset->BufferSize(), asset->Buffer());
+        if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS) {
+            Assert(false, "could not parse shader: " + name + " error: " + std::to_string(reflection.GetResult()));
+        }
+
+        return make_shared<Shader>(name, std::move(shaderModule), std::move(reflection), newHash);
+    }
+
+    shared_ptr<Shader> DeviceContext::GetShader(ShaderHandle handle) const {
+        if (handle == 0 || shaders.size() < (size_t)handle) return nullptr;
+
+        return shaders[handle - 1];
+    }
+
+    void DeviceContext::ReloadShaders() {
+        for (size_t i = 0; i < shaders.size(); i++) {
+            auto &currentShader = shaders[i];
+            auto newShader = CreateShader(currentShader->name, currentShader->hash);
+            if (newShader) { shaders[i] = newShader; }
+        }
+    }
+
+    shared_ptr<Pipeline> DeviceContext::GetGraphicsPipeline(const PipelineCompileInput &input) {
+        return pipelinePool->GetGraphicsPipeline(input);
+    }
+
+    RenderPassInfo DeviceContext::SwapchainRenderPassInfo(bool depth, bool stencil) {
+        ImageView view(*swapchainImageViews[imageIndex], swapchainImageViewInfos[imageIndex], swapchainExtent);
+        view.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
+
+        std::array<float, 4> clearColor = {0.0f, 1.0f, 0.0f, 1.0f};
+
+        RenderPassInfo info;
+        info.PushColorAttachment(view, LoadOp::Clear, StoreOp::Store, clearColor);
+
+        if (depth) {
+            ImageView depthView(*depthImageView, depthImageViewInfo, swapchainExtent);
+            info.SetDepthStencilAttachment(depthView, LoadOp::Clear, StoreOp::DontCare);
+        }
+
+        return info;
+    }
+
+    shared_ptr<RenderPass> DeviceContext::GetRenderPass(const RenderPassInfo &info) {
+        return renderPassPool->GetRenderPass(info);
+    }
+
+    shared_ptr<Framebuffer> DeviceContext::GetFramebuffer(const RenderPassInfo &info) {
+        return framebufferPool->GetFramebuffer(info);
     }
 } // namespace sp::vulkan

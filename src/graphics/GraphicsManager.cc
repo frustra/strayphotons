@@ -17,7 +17,7 @@
         #include "input/glfw/GlfwInputHandler.hh"
     #endif
     #ifdef SP_GRAPHICS_SUPPORT_VK
-        #include "graphics/vulkan/GraphicsContext.hh"
+        #include "graphics/vulkan/DeviceContext.hh"
         #include "graphics/vulkan/Renderer.hh"
     #endif
 
@@ -55,7 +55,7 @@ namespace sp {
     #endif
 
     #if SP_GRAPHICS_SUPPORT_VK
-        vulkan::GraphicsContext *vkContext = new vulkan::GraphicsContext();
+        vulkan::DeviceContext *vkContext = new vulkan::DeviceContext();
         context = vkContext;
 
         GLFWwindow *window = vkContext->GetWindow();
