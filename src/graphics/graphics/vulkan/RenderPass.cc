@@ -3,7 +3,7 @@
 #include "DeviceContext.hh"
 
 namespace sp::vulkan {
-    RenderPass::RenderPass(DeviceContext &device, const RenderPassInfo &info) : device(device) {
+    RenderPass::RenderPass(DeviceContext &device, const RenderPassInfo &info) {
         uint32 attachmentCount = 0;
         vk::AttachmentDescription attachments[MAX_COLOR_ATTACHMENTS + 1] = {};
         vk::AttachmentReference colorAttachmentRefs[MAX_COLOR_ATTACHMENTS];
@@ -95,7 +95,7 @@ namespace sp::vulkan {
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        renderPass = device->createRenderPassUnique(renderPassInfo);
+        uniqueHandle = device->createRenderPassUnique(renderPassInfo);
     }
 
     Framebuffer::Framebuffer(DeviceContext &device, const RenderPassInfo &info) {
@@ -128,7 +128,7 @@ namespace sp::vulkan {
         framebufferInfo.height = extent.height;
         framebufferInfo.layers = 1;
 
-        framebuffer = device->createFramebufferUnique(framebufferInfo);
+        uniqueHandle = device->createFramebufferUnique(framebufferInfo);
     }
 
     RenderPassManager::RenderPassManager(DeviceContext &device) : device(device) {}
