@@ -111,20 +111,6 @@ namespace sp::vulkan {
     class RenderPass : public WrappedUniqueHandle<vk::RenderPass> {
     public:
         RenderPass(DeviceContext &device, const RenderPassInfo &info);
-<<<<<<< HEAD
-
-        vk::RenderPass operator*() const {
-            return Get();
-        }
-
-        vk::RenderPass Get() const {
-            return *renderPass;
-        }
-
-    private:
-        vk::UniqueRenderPass renderPass;
-=======
->>>>>>> origin/master
     };
 
     class Framebuffer : public WrappedUniqueHandle<vk::Framebuffer> {

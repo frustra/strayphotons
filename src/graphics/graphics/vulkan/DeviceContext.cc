@@ -70,13 +70,13 @@ namespace sp::vulkan {
         auto availableExtensions = vk::enumerateInstanceExtensionProperties();
         Logf("Available Vulkan extensions: %u", availableExtensions.size());
         for (auto &ext : availableExtensions) {
-            Logf("\t%s", ext.extensionName);
+            Logf("\t%s", ext.extensionName.data());
         }
 
         auto availableLayers = vk::enumerateInstanceLayerProperties();
         Logf("Available Vulkan layers: %u", availableLayers.size());
         for (auto &layer : availableLayers) {
-            Logf("\t%s %s", layer.layerName, layer.description);
+            Logf("\t%s %s", layer.layerName.data(), layer.description.data());
         }
 
         std::vector<const char *> extensions, layers;
