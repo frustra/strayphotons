@@ -10,6 +10,7 @@
 
 #define GLM_FORCE_CXX11
 #include <glm/gtx/hash.hpp>
+#include <tiny_gltf.h>
 #include <unordered_set>
 
 namespace sp {
@@ -219,7 +220,7 @@ namespace sp {
     }
 
     void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set, const Model &model, bool decompHull) {
-        for (auto &prim : model.primitives) {
+        for (auto &prim : model.Primitives()) {
             if (!decompHull) {
                 // Use points for a single hull without decomposing.
                 buildConvexHullForPrimitive(set, model, prim);

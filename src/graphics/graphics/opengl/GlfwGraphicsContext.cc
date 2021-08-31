@@ -187,8 +187,8 @@ namespace sp {
         lastFrameEnd = frameEnd;
     }
 
-    shared_ptr<GpuTexture> GlfwGraphicsContext::LoadTexture(shared_ptr<Image> image, bool genMipmap) {
-        auto tex = make_shared<GLTexture>();
+    shared_ptr<GpuTexture> GlfwGraphicsContext::LoadTexture(std::shared_ptr<const Image> image, bool genMipmap) {
+        auto tex = std::make_shared<GLTexture>();
         tex->Create().LoadFromImage(image, genMipmap ? GLTexture::FullyMipmap : 1);
         return tex;
     }

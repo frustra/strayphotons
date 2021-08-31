@@ -35,22 +35,8 @@ namespace ecs {
         glm::vec3 scale = glm::vec3(1.0); // Current scale of physics model according to PhysX
     };
 
-    struct PhysicsState {
-        std::shared_ptr<physx::PxControllerManager> controllerManager; // Must be deconstructed before scene
-        std::shared_ptr<physx::PxScene> scene;
-
-        PhysicsState() {}
-        PhysicsState(std::shared_ptr<physx::PxScene> scene) : scene(scene) {}
-        PhysicsState(std::shared_ptr<physx::PxScene> scene,
-                     std::shared_ptr<physx::PxControllerManager> controllerManager)
-            : controllerManager(controllerManager), scene(scene) {}
-    };
-
     static Component<Physics> ComponentPhysics("physics");
 
     template<>
     bool Component<Physics>::Load(Lock<Read<ecs::Name>> lock, Physics &dst, const picojson::value &src);
 } // namespace ecs
-
-template<>
-struct Tecs::is_global_component<ecs::PhysicsState> : std::true_type {};

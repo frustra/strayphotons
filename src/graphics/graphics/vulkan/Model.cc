@@ -8,14 +8,16 @@
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
+#include <tiny_gltf.h>
+
 namespace sp::vulkan {
-    Model::Model(const sp::Model *model, Renderer *renderer) : renderer(renderer), modelName(model->name) {
+    Model::Model(const sp::Model &model, DeviceContext &device) : modelName(model.name) {
         vector<SceneVertex> vertices;
 
         // TODO: cache the output somewhere. Keeping the conversion code in
         // the engine will be useful for any dynamic loading in the future,
         // but we don't want to do it every time a model is loaded.
-        for (auto &primitive : model->primitives) {
+        for (auto &primitive : model.Primitives()) {
             // TODO: this implementation assumes a lot about the model format,
             // and asserts the assumptions. It would be better to support more
             // kinds of inputs, and convert the data rather than just failing.
@@ -23,7 +25,7 @@ namespace sp::vulkan {
 
             auto &p = *primitives.emplace_back(make_shared<Primitive>());
             p.transform = primitive.matrix;
-            auto &buffers = model->GetModel()->buffers;
+            auto &buffers = model.GetGltfModel()->buffers;
 
             switch (primitive.indexBuffer.componentType) {
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
@@ -42,9 +44,9 @@ namespace sp::vulkan {
             Assert(primitive.indexBuffer.byteOffset + indexBufferSize <= indexBuffer.data.size(),
                    "indexes overflow buffer");
 
-            p.indexBuffer = renderer->device.AllocateBuffer(indexBufferSize,
-                                                            vk::BufferUsageFlagBits::eIndexBuffer,
-                                                            VMA_MEMORY_USAGE_CPU_TO_GPU);
+            p.indexBuffer = device.AllocateBuffer(indexBufferSize,
+                                                  vk::BufferUsageFlagBits::eIndexBuffer,
+                                                  VMA_MEMORY_USAGE_CPU_TO_GPU);
 
             void *data;
             p.indexBuffer.Map(&data);
@@ -92,9 +94,9 @@ namespace sp::vulkan {
             }
 
             size_t vertexBufferSize = vertices.size() * sizeof(vertices[0]);
-            p.vertexBuffer = renderer->device.AllocateBuffer(vertexBufferSize,
-                                                             vk::BufferUsageFlagBits::eVertexBuffer,
-                                                             VMA_MEMORY_USAGE_CPU_TO_GPU);
+            p.vertexBuffer = device.AllocateBuffer(vertexBufferSize,
+                                                   vk::BufferUsageFlagBits::eVertexBuffer,
+                                                   VMA_MEMORY_USAGE_CPU_TO_GPU);
 
             p.vertexBuffer.Map(&data);
             memcpy(data, vertices.data(), vertexBufferSize);

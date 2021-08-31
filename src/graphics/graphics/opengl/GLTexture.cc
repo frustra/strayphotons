@@ -203,14 +203,15 @@ namespace sp {
         return *this;
     }
 
-    GLTexture &GLTexture::LoadFromImage(shared_ptr<Image> image, GLsizei levels) {
+    GLTexture &GLTexture::LoadFromImage(std::shared_ptr<const Image> image, GLsizei levels) {
         Assert(handle, "null texture handle");
         Assert(image != nullptr, "loading GLTexture from null image");
+        image->WaitUntilValid();
 
         int w = image->GetWidth();
         int h = image->GetHeight();
         int comp = image->GetComponents();
-        uint8_t *data = image->GetImage().get();
+        const uint8_t *data = image->GetImage().get();
 
         Assert(data, "unknown image format");
         Assert(w > 0 && h > 0, "unknown image format");

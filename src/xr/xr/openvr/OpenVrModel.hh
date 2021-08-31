@@ -40,7 +40,7 @@ namespace sp {
 
         private:
             // OpenVrSkeletons can only be created using OpenVrSkeleton::LoadOpenVrSkeleton()
-            OpenVrSkeleton(const string &name, shared_ptr<tinygltf::Model> model) : XrModel(name, model){};
+            OpenVrSkeleton(const string &name) : XrModel(name){};
         };
 
     } // namespace xr

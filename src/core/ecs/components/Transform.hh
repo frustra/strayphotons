@@ -56,7 +56,7 @@ namespace ecs {
 
         void SetTranslate(glm::mat4 mat);
         glm::mat4 GetTranslate() const;
-        void SetPosition(glm::vec3 pos);
+        void SetPosition(glm::vec3 pos, bool setDirty = true);
         glm::vec3 GetPosition() const;
 
         glm::vec3 GetUp() const;
@@ -64,8 +64,8 @@ namespace ecs {
         glm::vec3 GetLeft() const;
         glm::vec3 GetRight() const;
 
-        void SetRotate(glm::mat4 mat);
-        void SetRotate(glm::quat quat);
+        void SetRotate(glm::mat4 mat, bool setDirty = true);
+        void SetRotate(glm::quat quat, bool setDirty = true);
         glm::quat GetRotate() const;
         glm::mat4 GetRotateMatrix() const;
 

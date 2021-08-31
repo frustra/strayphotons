@@ -10,11 +10,6 @@
 #include <functional>
 #include <robin_hood.h>
 
-namespace sp {
-    class Game;
-    class Model;
-} // namespace sp
-
 namespace sp::vulkan {
     class DeviceContext;
     class Model;
@@ -49,6 +44,6 @@ namespace sp::vulkan {
         UniqueBuffer vertexBuffer;
         vector<CommandContextPtr> commandContexts;
 
-        PreservingMap<Model> activeModels;
+        PreservingMap<string, Model> activeModels;
     };
 } // namespace sp::vulkan

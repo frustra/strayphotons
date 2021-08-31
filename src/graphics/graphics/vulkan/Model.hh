@@ -14,7 +14,7 @@ namespace sp {
 } // namespace sp
 
 namespace sp::vulkan {
-    class Renderer;
+    class DeviceContext;
 
     struct MeshPushConstants {
         glm::mat4 model;
@@ -33,14 +33,13 @@ namespace sp::vulkan {
             glm::mat4 transform;
         };
 
-        Model(const sp::Model *model, Renderer *renderer);
+        Model(const sp::Model &model, DeviceContext &device);
         ~Model();
 
         void AppendDrawCommands(CommandContext &commands, glm::mat4 modelMat, const ecs::View &view);
 
     private:
         vector<shared_ptr<Primitive>> primitives;
-        Renderer *renderer;
         string modelName;
     };
 } // namespace sp::vulkan

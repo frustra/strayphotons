@@ -16,7 +16,6 @@
 #endif
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-    #include "physx/HumanControlSystem.hh"
     #include "physx/PhysxManager.hh"
 #endif
 
@@ -59,7 +58,6 @@ namespace sp {
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
         PhysxManager physics;
-        HumanControlSystem humanControlSystem;
 #endif
         AnimationSystem animation;
 #ifdef SP_XR_SUPPORT

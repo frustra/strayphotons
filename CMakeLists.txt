@@ -32,8 +32,8 @@ endif()
 # Tell cmake to export a compile_commands.json file
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
-# Tell cmake we need C++17
-set(CMAKE_CXX_STANDARD 17)
+# Tell cmake we need C++20
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ## Setup compiler flags for various build types
@@ -54,14 +54,14 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
-    set(CMAKE_CXX_FLAGS 				"-Wall -Werror -Werror=format-security")
+    set(CMAKE_CXX_FLAGS 				"-Wall -Werror -Werror=format-security -Wno-volatile")
     set(CMAKE_CXX_FLAGS_RELEASE 		"-O3")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"-g3 -ggdb3 -Og")
     set(CMAKE_CXX_FLAGS_DEBUG 			"-g3 -ggdb3 -O0")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
-    set(CMAKE_CXX_FLAGS 				"-Wall -Werror -Wformat-security")
+    set(CMAKE_CXX_FLAGS 				"-Wall -Werror -Wformat-security -Wno-deprecated-volatile")
     set(CMAKE_CXX_FLAGS_RELEASE 		"-O3")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"-g3 -ggdb3 -Og")
     set(CMAKE_CXX_FLAGS_DEBUG 			"-g3 -ggdb3 -O0")

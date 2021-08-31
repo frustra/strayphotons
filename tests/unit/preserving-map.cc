@@ -9,7 +9,7 @@
 namespace PreservingMapTests {
     using namespace testing;
 
-    sp::PreservingMap<int, 100> map;
+    sp::PreservingMap<std::string, int, 100> map;
 
     void TestPreservingMap() {
         {

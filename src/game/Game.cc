@@ -20,9 +20,6 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
           graphics(this),
 #endif
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-          humanControlSystem(&this->physics),
-#endif
 #ifdef SP_XR_SUPPORT
           xr(this),
 #endif
@@ -89,9 +86,6 @@ namespace sp {
 #endif
 #ifdef SP_GRAPHICS_SUPPORT
         if (!graphics.Frame()) return false;
-#endif
-#ifdef SP_PHYSICS_SUPPORT_PHYSX
-        if (!humanControlSystem.Frame(dt)) return false;
 #endif
         if (!animation.Frame(dt)) return false;
 

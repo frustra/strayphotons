@@ -4,6 +4,7 @@
 #include "core/CFunc.hh"
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
+#include "physx/HumanControlSystem.hh"
 
 #include <PxPhysicsAPI.h>
 #include <extensions/PxDefaultAllocator.h>
@@ -51,12 +52,9 @@ namespace sp {
         void StartSimulation();
         void StopSimulation();
 
-        bool MoveController(ecs::Lock<ecs::Write<ecs::PhysicsState>> lock,
-                            physx::PxController *controller,
-                            double dt,
-                            physx::PxVec3 displacement);
+        bool MoveController(physx::PxController *controller, double dt, physx::PxVec3 displacement);
 
-        void EnableCollisions(ecs::Lock<ecs::Write<ecs::PhysicsState>> lock, physx::PxRigidActor *actor, bool enabled);
+        void EnableCollisions(physx::PxRigidActor *actor, bool enabled);
 
         void CreateConstraint(ecs::Lock<> lock,
                               Tecs::Entity parent,
@@ -66,7 +64,7 @@ namespace sp {
         void RotateConstraint(Tecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 rotation);
         void RemoveConstraint(Tecs::Entity parent, physx::PxRigidDynamic *child);
 
-        bool RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>, ecs::Write<ecs::PhysicsState>> lock,
+        bool RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
                           Tecs::Entity entity,
                           glm::vec3 origin,
                           glm::vec3 dir,
@@ -80,37 +78,26 @@ namespace sp {
 
         ConvexHullSet *GetCachedConvexHulls(std::string name);
 
-        void UpdateActor(ecs::Lock<ecs::Write<ecs::Physics, ecs::PhysicsState>, ecs::Read<ecs::Transform>> lock,
-                         Tecs::Entity &e);
-        void RemoveActor(ecs::Lock<ecs::Write<ecs::PhysicsState>> lock, physx::PxRigidActor *actor);
+        void UpdateActor(ecs::Lock<ecs::Write<ecs::Physics, ecs::Transform>> lock, Tecs::Entity &e);
+        void RemoveActor(physx::PxRigidActor *actor);
 
-        void UpdateController(
-            ecs::Lock<ecs::Write<ecs::HumanController, ecs::PhysicsState>, ecs::Read<ecs::Transform>> lock,
-            Tecs::Entity &e);
+        void UpdateController(ecs::Lock<ecs::Write<ecs::HumanController, ecs::Transform>> lock, Tecs::Entity &e);
 
-        bool SweepQuery(ecs::Lock<ecs::Write<ecs::PhysicsState>> lock,
-                        physx::PxRigidDynamic *actor,
-                        const physx::PxVec3 dir,
-                        const float distance);
+        bool SweepQuery(physx::PxRigidDynamic *actor, const physx::PxVec3 dir, const float distance);
 
         /**
          * Checks scene for an overlapping hit in the shape
          * Will return true if a hit is found and false otherwise
          */
-        bool OverlapQuery(ecs::Lock<ecs::Write<ecs::PhysicsState>> lock,
-                          physx::PxRigidDynamic *actor,
-                          physx::PxVec3 translation,
-                          physx::PxOverlapBuffer &hit);
+        bool OverlapQuery(physx::PxRigidDynamic *actor, physx::PxVec3 translation, physx::PxOverlapBuffer &hit);
 
         /**
          * Translates a kinematic @actor by @transform.
          * Throws a runtime_error if @actor is not kinematic
          */
-        void Translate(ecs::Lock<ecs::Write<ecs::PhysicsState>> lock,
-                       physx::PxRigidDynamic *actor,
-                       const physx::PxVec3 &transform);
+        void Translate(physx::PxRigidDynamic *actor, const physx::PxVec3 &transform);
 
-        void ToggleDebug(ecs::Lock<ecs::Write<ecs::PhysicsState>> lock, bool enabled);
+        void ToggleDebug(bool enabled);
         bool IsDebugEnabled() const;
 
     private:
@@ -124,6 +111,9 @@ namespace sp {
 
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;
+
+        std::shared_ptr<physx::PxControllerManager> controllerManager; // Must be deconstructed before scene
+        std::shared_ptr<physx::PxScene> scene;
 
         physx::PxFoundation *pxFoundation = nullptr;
         physx::PxPhysics *pxPhysics = nullptr;
@@ -144,6 +134,8 @@ namespace sp {
 
         ecs::Observer<ecs::Removed<ecs::Physics>> physicsRemoval;
         ecs::Observer<ecs::Removed<ecs::HumanController>> humanControllerRemoval;
+
+        HumanControlSystem humanControlSystem;
 
         ConstraintList constraints;
 

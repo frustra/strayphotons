@@ -49,7 +49,7 @@ namespace sp::vulkan {
         const std::vector<glm::ivec2> &MonitorModes() override;
         const glm::ivec2 CurrentMode() override;
 
-        shared_ptr<GpuTexture> LoadTexture(shared_ptr<Image> image, bool genMipmap = true) override;
+        shared_ptr<GpuTexture> LoadTexture(shared_ptr<const Image> image, bool genMipmap = true) override;
 
         void PrepareWindowView(ecs::View &view) override;
 

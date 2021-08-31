@@ -4,6 +4,7 @@
 #include "DeviceContext.hh"
 #include "Model.hh"
 #include "Vertex.hh"
+#include "assets/Model.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
@@ -58,6 +59,7 @@ namespace sp::vulkan {
                               Tecs::Entity &ent,
                               const PreDrawFunc &preDraw) {
         auto &comp = ent.Get<ecs::Renderable>(lock);
+        if (!comp.model || !comp.model->Valid()) return;
 
         // Filter entities that aren't members of all layers in the view's visibility mask.
         ecs::Renderable::VisibilityMask mask = comp.visibility;
@@ -70,7 +72,7 @@ namespace sp::vulkan {
 
         auto model = activeModels.Load(comp.model->name);
         if (!model) {
-            model = make_shared<Model>(comp.model.get(), this);
+            model = make_shared<Model>(*comp.model, device);
             activeModels.Register(comp.model->name, model);
         }
 

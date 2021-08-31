@@ -70,13 +70,13 @@ namespace sp::vulkan {
         auto availableExtensions = vk::enumerateInstanceExtensionProperties();
         Logf("Available Vulkan extensions: %u", availableExtensions.size());
         for (auto &ext : availableExtensions) {
-            Logf("\t%s", ext.extensionName);
+            Logf("\t%s", ext.extensionName.data());
         }
 
         auto availableLayers = vk::enumerateInstanceLayerProperties();
         Logf("Available Vulkan layers: %u", availableLayers.size());
         for (auto &layer : availableLayers) {
-            Logf("\t%s %s", layer.layerName, layer.description);
+            Logf("\t%s %s", layer.layerName.data(), layer.description.data());
         }
 
         std::vector<const char *> extensions, layers;
@@ -528,7 +528,7 @@ namespace sp::vulkan {
         lastFrameEnd = frameEnd;
     }
 
-    shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<Image> image, bool genMipmap) {
+    shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const Image> image, bool genMipmap) {
         // TODO
         return nullptr;
     }
@@ -580,17 +580,18 @@ namespace sp::vulkan {
             Assert(false, "could not load shader: " + name);
             return nullptr;
         }
+        asset->WaitUntilValid();
 
         auto newHash = Hash128To64(asset->Hash());
         if (compareHash == newHash) return nullptr;
 
         vk::ShaderModuleCreateInfo shaderCreateInfo;
-        shaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(asset->CharBuffer());
-        shaderCreateInfo.codeSize = asset->buffer.size();
+        shaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(asset->Buffer());
+        shaderCreateInfo.codeSize = asset->BufferSize();
 
         auto shaderModule = device->createShaderModuleUnique(shaderCreateInfo);
 
-        auto reflection = spv_reflect::ShaderModule(asset->buffer.size(), asset->CharBuffer());
+        auto reflection = spv_reflect::ShaderModule(asset->BufferSize(), asset->Buffer());
         if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS) {
             Assert(false, "could not parse shader: " + name + " error: " + std::to_string(reflection.GetResult()));
         }

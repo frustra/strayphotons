@@ -96,6 +96,7 @@ namespace sp {
     string ShaderManager::LoadShader(ShaderCompileInput &input, string name) {
         auto asset = GAssets.Load("shaders/" + name);
         Assert(asset != nullptr, "Shader asset not found");
+        asset->WaitUntilValid();
         input.units.push_back(name);
         return ProcessShaderSource(input, asset->String());
     }

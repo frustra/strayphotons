@@ -97,11 +97,11 @@ namespace sp {
             return;
         }
 
-        static shared_ptr<GpuTexture> areaTex = context->renderer->context.LoadTexture(
-            GAssets.LoadImageByPath("textures/smaa/AreaTex.tga"),
+        static std::shared_ptr<GpuTexture> areaTex = context->renderer->context.LoadTexture(
+            GAssets.LoadImage("textures/smaa/AreaTex.tga"),
             false);
-        static shared_ptr<GpuTexture> searchTex = context->renderer->context.LoadTexture(
-            GAssets.LoadImageByPath("textures/smaa/SearchTex.tga"),
+        static std::shared_ptr<GpuTexture> searchTex = context->renderer->context.LoadTexture(
+            GAssets.LoadImage("textures/smaa/SearchTex.tga"),
             false);
         static GLTexture *glAreaTex = dynamic_cast<GLTexture *>(areaTex.get());
         static GLTexture *glSearchTex = dynamic_cast<GLTexture *>(searchTex.get());

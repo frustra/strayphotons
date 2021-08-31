@@ -79,10 +79,6 @@ namespace sp {
 
 #ifdef SP_INPUT_SUPPORT
     void GameLogic::HandleInput() {
-    #ifdef SP_GRAPHICS_SUPPORT
-        if (game->menuGui && !game->menuGui->MenuOpen()) { game->menuGui->BeforeFrame(); }
-    #endif
-
         bool spawnDebug = false;
         bool placeFlashlight = false;
         {
@@ -284,7 +280,10 @@ namespace sp {
                     name = "player-spawn";
                     if (e.Has<ecs::Transform>(lock)) {
                         auto &spawnTransform = e.Get<ecs::Transform>(lock);
-                        player.Set<ecs::Transform>(lock, spawnTransform);
+                        auto &playerTransform = player.Get<ecs::Transform>(lock);
+                        playerTransform.SetTranslate(spawnTransform.GetTranslate());
+                        playerTransform.SetRotate(spawnTransform.GetRotate());
+                        playerTransform.UpdateCachedTransform(lock);
                     }
                     break;
                 }

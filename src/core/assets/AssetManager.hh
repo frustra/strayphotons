@@ -1,13 +1,19 @@
 #pragma once
 
-#include "core/Common.hh"
+#include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 
-#include <map>
-#include <picojson/picojson.h>
+#include <atomic>
+#include <future>
+#include <mutex>
+#include <robin_hood.h>
 #include <string>
-#include <tiny_gltf.h>
-#include <unordered_map>
+#include <thread>
+#include <vector>
+
+namespace tinygltf {
+    class FsCallbacks;
+}
 
 namespace sp {
     class Asset;
@@ -16,39 +22,48 @@ namespace sp {
     class Script;
     class Image;
 
-    typedef std::unordered_map<std::string, weak_ptr<Asset>> AssetMap;
-    typedef std::unordered_map<std::string, weak_ptr<Model>> ModelMap;
-    typedef std::unordered_map<std::string, std::pair<size_t, size_t>> TarIndex;
-
     class AssetManager {
     public:
         AssetManager();
+        ~AssetManager();
 
-        bool InputStream(const std::string &path, std::ifstream &stream, size_t *size = nullptr);
-        bool OutputStream(const std::string &path, std::ofstream &stream);
+        std::shared_ptr<const Asset> Load(const std::string &path);
+        std::shared_ptr<const Model> LoadModel(const std::string &name);
+        std::shared_ptr<const Image> LoadImage(const std::string &path);
 
-        // TinyGLTF filesystem functions
-        bool ReadWholeFile(std::vector<unsigned char> *out, std::string *err, const std::string &path, void *user_data);
-        bool FileExists(const std::string &abs_filename, void *user_data);
-        std::string ExpandFilePath(const std::string &filepath, void *user_data);
-
-        shared_ptr<const Asset> Load(const std::string &path);
-        shared_ptr<Image> LoadImageByPath(const std::string &path);
-        shared_ptr<const Model> LoadModel(const std::string &name);
-        shared_ptr<Scene> LoadScene(const std::string &name, ecs::Lock<ecs::AddRemove> lock, ecs::Owner owner);
-        shared_ptr<Script> LoadScript(const std::string &path);
+        std::shared_ptr<Scene> LoadScene(const std::string &name, ecs::Lock<ecs::AddRemove> lock, ecs::Owner owner);
+        std::shared_ptr<Script> LoadScript(const std::string &path);
 
     private:
         void UpdateTarIndex();
 
-    private:
-        std::string base;
-        AssetMap loadedAssets;
-        ModelMap loadedModels;
-        TarIndex tarIndex;
+        bool InputStream(const std::string &path, std::ifstream &stream, size_t *size = nullptr);
+        bool OutputStream(const std::string &path, std::ofstream &stream);
 
-        tinygltf::TinyGLTF gltfLoader;
-        tinygltf::FsCallbacks fs;
+        static bool ReadWholeFile(std::vector<unsigned char> *out,
+                                  std::string *err,
+                                  const std::string &path,
+                                  void *userdata);
+
+        // TODO: Update PhysxManager to use Asset object for collision model cache
+        friend class PhysxManager;
+
+        std::atomic_bool running;
+        std::thread cleanupThread;
+
+        std::mutex taskMutex;
+        std::vector<std::future<void>> runningTasks;
+
+        std::mutex assetMutex;
+        std::mutex modelMutex;
+        std::mutex imageMutex;
+
+        PreservingMap<std::string, Asset> loadedAssets;
+        PreservingMap<std::string, Model> loadedModels;
+        PreservingMap<std::string, Image> loadedImages;
+
+        std::unique_ptr<tinygltf::FsCallbacks> gltfLoaderCallbacks;
+        robin_hood::unordered_flat_map<std::string, std::pair<size_t, size_t>> tarIndex;
     };
 
     extern AssetManager GAssets;

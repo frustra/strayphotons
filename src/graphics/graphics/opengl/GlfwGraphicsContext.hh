@@ -47,7 +47,7 @@ namespace sp {
             return rtPool.GetFramebuffer(numAttachments, attachments, depthStencilAttachment);
         }
 
-        std::shared_ptr<GpuTexture> LoadTexture(shared_ptr<Image> image, bool genMipmap = true) override;
+        std::shared_ptr<GpuTexture> LoadTexture(std::shared_ptr<const Image> image, bool genMipmap = true) override;
 
         void PrepareWindowView(ecs::View &view) override;
 
