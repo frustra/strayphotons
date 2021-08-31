@@ -39,6 +39,23 @@ namespace sp {
     const std::string ASSETS_TAR = "./assets.spdata";
     const std::string SHADERS_DIR = "../";
 
+    bool AssetManager::ReadWholeFile(std::vector<unsigned char> *out,
+                                     std::string *err,
+                                     const std::string &path,
+                                     void *userdata) {
+        std::ifstream in;
+        size_t size;
+
+        AssetManager *manager = static_cast<AssetManager *>(userdata);
+        if (manager->InputStream(path, in, &size)) {
+            out->resize(size);
+            in.read((char *)out->data(), size);
+            in.close();
+            return true;
+        }
+        return false;
+    }
+
     AssetManager::AssetManager() {
         gltfLoaderCallbacks = std::make_unique<tinygltf::FsCallbacks>(tinygltf::FsCallbacks{
             // FileExists
@@ -51,20 +68,8 @@ namespace sp {
                 return filepath;
             },
 
-            // ReadWholeFile
-            [](std::vector<unsigned char> *out, std::string *err, const std::string &path, void *userdata) -> bool {
-                std::ifstream in;
-                size_t size;
-
-                AssetManager *manager = static_cast<AssetManager *>(userdata);
-                if (manager->InputStream(path, in, &size)) {
-                    out->resize(size);
-                    in.read((char *)out->data(), size);
-                    in.close();
-                    return true;
-                }
-                return false;
-            },
+            // ReadWholeFilehtop
+            &AssetManager::ReadWholeFile,
 
             nullptr, // WriteFile callback, not supported
             this // Fs callback user data
@@ -178,6 +183,8 @@ namespace sp {
 
                         asset->valid.test_and_set();
                         asset->valid.notify_all();
+                    } else {
+                        Assert(false, "Asset does not exist: " + path);
                     }
                 }));
             }

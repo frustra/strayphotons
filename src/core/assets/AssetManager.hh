@@ -40,6 +40,11 @@ namespace sp {
         bool InputStream(const std::string &path, std::ifstream &stream, size_t *size = nullptr);
         bool OutputStream(const std::string &path, std::ofstream &stream);
 
+        static bool ReadWholeFile(std::vector<unsigned char> *out,
+                                  std::string *err,
+                                  const std::string &path,
+                                  void *userdata);
+
         // TODO: Update PhysxManager to use Asset object for collision model cache
         friend class PhysxManager;
 
