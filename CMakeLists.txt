@@ -54,7 +54,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
-    set(CMAKE_CXX_FLAGS 				"-Wall -Werror -Werror=format-security")
+    set(CMAKE_CXX_FLAGS 				"-Wall -Werror -Werror=format-security -Wno-volatile")
     set(CMAKE_CXX_FLAGS_RELEASE 		"-O3")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"-g3 -ggdb3 -Og")
     set(CMAKE_CXX_FLAGS_DEBUG 			"-g3 -ggdb3 -O0")

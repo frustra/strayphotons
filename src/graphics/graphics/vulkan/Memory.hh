@@ -12,7 +12,6 @@
 #ifdef __GNUC__
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wunused-variable"
-    #pragma GCC diagnostic ignored "-Wnullability-completeness"
 #endif
 
 #include <vk_mem_alloc.h>
