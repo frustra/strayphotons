@@ -35,6 +35,10 @@ namespace sp::vulkan {
         using DirtyBits = CommandContextFlags::DirtyBits;
 
         CommandContext(DeviceContext &device);
+        ~CommandContext();
+
+        // A CommandContext MUST be submitted to the device or abandoned before destroying the object.
+        void Abandon();
 
         void BeginRenderPass(const RenderPassInfo &info);
         void EndRenderPass();
@@ -66,13 +70,14 @@ namespace sp::vulkan {
 
         void FlushGraphicsState();
 
-        vk::CommandBuffer *operator->() {
-            return &GetCommandBuffer();
-        }
-
-        vk::CommandBuffer &GetCommandBuffer() {
+        vk::CommandBuffer &Raw() {
             return *cmd;
         }
+
+    protected:
+        friend class DeviceContext;
+        void Begin();
+        void End();
 
     private:
         bool TestDirty(DirtyFlags flags) {
@@ -88,6 +93,8 @@ namespace sp::vulkan {
         void SetDirty(DirtyFlags flags) {
             dirty |= flags;
         }
+
+        bool recording = false, abandoned = false;
 
         vk::UniqueCommandBuffer cmd;
         vk::Viewport viewport;

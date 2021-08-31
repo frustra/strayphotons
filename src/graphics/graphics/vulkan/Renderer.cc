@@ -16,29 +16,24 @@ namespace sp::vulkan {
     }
 
     void Renderer::RenderPass(const ecs::View &view, DrawLock lock, RenderTarget *finalOutput) {
-        // TODO: don't expose the image index, just return a temporary CommandContext from an internal pool
-        auto swapchainImageIndex = device.CurrentSwapchainImageIndex();
-        if (swapchainImageIndex >= commandContexts.size()) commandContexts.resize(swapchainImageIndex + 1);
+        auto cmd = device.GetCommandContext();
+        cmd->BeginRenderPass(device.SwapchainRenderPassInfo(true));
+        cmd->SetDefaultOpaqueState();
 
-        auto &commandsPtr = commandContexts[swapchainImageIndex];
-        if (!commandsPtr) commandsPtr = device.CreateCommandContext();
-        auto &commands = *commandsPtr;
-
-        commands.BeginRenderPass(device.SwapchainRenderPassInfo(true));
-        commands.SetDefaultOpaqueState();
-
-        commands.SetShader(ShaderStage::Vertex, "test.vert");
-        commands.SetShader(ShaderStage::Fragment, "test.frag");
-
-        // TODO hook up view to renderpass
+        cmd->SetShader(ShaderStage::Vertex, "test.vert");
+        cmd->SetShader(ShaderStage::Fragment, "test.frag");
 
         ecs::View forwardPassView = view;
-        ForwardPass(commands, forwardPassView, lock, [&](auto lock, Tecs::Entity &ent) {});
+        ForwardPass(cmd, forwardPassView, lock, [&](auto lock, Tecs::Entity &ent) {});
 
-        commands.EndRenderPass();
+        cmd->EndRenderPass();
+        device.Submit(cmd);
     }
 
-    void Renderer::ForwardPass(CommandContext &commands, ecs::View &view, DrawLock lock, const PreDrawFunc &preDraw) {
+    void Renderer::ForwardPass(const CommandContextPtr &commands,
+                               ecs::View &view,
+                               DrawLock lock,
+                               const PreDrawFunc &preDraw) {
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (ent.Has<ecs::Renderable, ecs::Transform>(lock)) {
                 if (ent.Has<ecs::Mirror>(lock)) continue;
@@ -53,7 +48,7 @@ namespace sp::vulkan {
         }
     }
 
-    void Renderer::DrawEntity(CommandContext &commands,
+    void Renderer::DrawEntity(const CommandContextPtr &commands,
                               const ecs::View &view,
                               DrawLock lock,
                               Tecs::Entity &ent,
@@ -80,26 +75,6 @@ namespace sp::vulkan {
     }
 
     void Renderer::EndFrame() {
-        vk::SubmitInfo submitInfo;
-        vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
-
-        auto imageAvailableSem = device.CurrentFrameImageAvailableSemaphore();
-        auto renderCompleteSem = device.CurrentFrameRenderCompleteSemaphore();
-
-        auto commands = commandContexts[device.CurrentSwapchainImageIndex()];
-        const vk::CommandBuffer commandBuffer = commands->GetCommandBuffer();
-
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = &imageAvailableSem;
-        submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = &renderCompleteSem;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
-
-        device.GraphicsQueue().submit({submitInfo}, device.ResetCurrentFrameFence());
-
         activeModels.Tick();
     }
-
 } // namespace sp::vulkan

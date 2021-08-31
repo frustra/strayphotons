@@ -27,8 +27,12 @@ namespace sp::vulkan {
         void RenderPass(const ecs::View &view, DrawLock lock, RenderTarget *finalOutput = nullptr);
         void EndFrame();
 
-        void ForwardPass(CommandContext &commands, ecs::View &view, DrawLock lock, const PreDrawFunc &preDraw = {});
-        void DrawEntity(CommandContext &commands,
+        void ForwardPass(const CommandContextPtr &commands,
+                         ecs::View &view,
+                         DrawLock lock,
+                         const PreDrawFunc &preDraw = {});
+
+        void DrawEntity(const CommandContextPtr &commands,
                         const ecs::View &view,
                         DrawLock lock,
                         Tecs::Entity &ent,
@@ -40,9 +44,6 @@ namespace sp::vulkan {
 
     private:
         CFuncCollection funcs;
-
-        UniqueBuffer vertexBuffer;
-        vector<CommandContextPtr> commandContexts;
 
         PreservingMap<string, Model> activeModels;
     };

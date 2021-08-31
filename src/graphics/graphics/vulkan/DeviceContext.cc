@@ -20,7 +20,6 @@
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace sp::vulkan {
-    const int MAX_FRAMES_IN_FLIGHT = 2;
     const uint64_t FENCE_WAIT_TIME = 1e10; // nanoseconds, assume deadlock after this time
     const uint32_t VULKAN_API_VERSION = VK_API_VERSION_1_2;
 
@@ -244,10 +243,10 @@ namespace sp::vulkan {
         vk::FenceCreateInfo fenceInfo;
         fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
 
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            imageAvailableSemaphores.push_back(device->createSemaphoreUnique(semaphoreInfo));
-            renderCompleteSemaphores.push_back(device->createSemaphoreUnique(semaphoreInfo));
-            inFlightFences.push_back(device->createFenceUnique(fenceInfo));
+        for (auto &frame : perFrame) {
+            frame.imageAvailableSemaphore = device->createSemaphoreUnique(semaphoreInfo);
+            frame.renderCompleteSemaphore = device->createSemaphoreUnique(semaphoreInfo);
+            frame.inFlightFence = device->createFenceUnique(fenceInfo);
         }
 
         VmaAllocatorCreateInfo allocatorInfo = {};
@@ -343,15 +342,18 @@ namespace sp::vulkan {
         swapchainInfo.oldSwapchain = *swapchain;
 
         auto newSwapchain = device->createSwapchainKHRUnique(swapchainInfo, nullptr);
-        swapchainImageViews.clear();
-        swapchainImageViewInfos.clear();
+        perSwapchainImage.clear();
         swapchain.swap(newSwapchain);
         swapchainVersion++;
 
-        swapchainImages = device->getSwapchainImagesKHR(*swapchain);
+        auto swapchainImages = device->getSwapchainImagesKHR(*swapchain);
         swapchainExtent = swapchainInfo.imageExtent;
+        perSwapchainImage.resize(swapchainImages.size());
 
         for (size_t i = 0; i < swapchainImages.size(); i++) {
+            auto &perSCI = perSwapchainImage[i];
+            perSCI.image = swapchainImages[i];
+
             vk::ImageViewCreateInfo createInfo;
             createInfo.image = swapchainImages[i];
             createInfo.viewType = vk::ImageViewType::e2D;
@@ -361,11 +363,9 @@ namespace sp::vulkan {
             createInfo.subresourceRange.levelCount = 1;
             createInfo.subresourceRange.baseArrayLayer = 0;
             createInfo.subresourceRange.layerCount = 1;
-            swapchainImageViewInfos.push_back(createInfo);
-            swapchainImageViews.emplace_back(device->createImageViewUnique(createInfo));
+            perSCI.imageViewInfo = createInfo;
+            perSCI.imageView = device->createImageViewUnique(createInfo);
         }
-
-        imagesInFlight.resize(swapchainImages.size());
 
         depthImageView.reset();
 
@@ -470,29 +470,29 @@ namespace sp::vulkan {
     void DeviceContext::BeginFrame() {
         UpdateInputModeFromFocus();
 
-        auto result = device->waitForFences({CurrentFrameFence()}, true, FENCE_WAIT_TIME);
+        auto result = device->waitForFences({*Frame().inFlightFence}, true, FENCE_WAIT_TIME);
         AssertVKSuccess(result, "timed out waiting for fence");
 
         try {
             auto acquireResult =
-                device->acquireNextImageKHR(*swapchain, UINT64_MAX, CurrentFrameImageAvailableSemaphore(), nullptr);
-            imageIndex = acquireResult.value;
+                device->acquireNextImageKHR(*swapchain, UINT64_MAX, *Frame().imageAvailableSemaphore, nullptr);
+            swapchainImageIndex = acquireResult.value;
         } catch (const vk::OutOfDateKHRError &) {
             RecreateSwapchain();
             return BeginFrame();
         }
 
-        if (imagesInFlight[imageIndex]) {
-            result = device->waitForFences({imagesInFlight[imageIndex]}, true, FENCE_WAIT_TIME);
+        if (SwapchainImage().inFlightFence) {
+            result = device->waitForFences({SwapchainImage().inFlightFence}, true, FENCE_WAIT_TIME);
             AssertVKSuccess(result, "timed out waiting for fence");
         }
-        imagesInFlight[imageIndex] = *inFlightFences[currentFrame];
+        SwapchainImage().inFlightFence = *Frame().inFlightFence;
 
         vmaSetCurrentFrameIndex(allocator, frameCounter);
     }
 
     void DeviceContext::SwapBuffers() {
-        vk::Semaphore renderCompleteSem = CurrentFrameRenderCompleteSemaphore();
+        vk::Semaphore renderCompleteSem = *Frame().renderCompleteSemaphore;
         vk::PresentInfoKHR presentInfo;
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = &renderCompleteSem;
@@ -500,14 +500,14 @@ namespace sp::vulkan {
         vk::SwapchainKHR swapchains[] = {*swapchain};
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapchains;
-        presentInfo.pImageIndices = &imageIndex;
+        presentInfo.pImageIndices = &swapchainImageIndex;
 
         try {
             auto presentResult = presentQueue.presentKHR(presentInfo);
             if (presentResult == vk::Result::eSuboptimalKHR) RecreateSwapchain();
         } catch (const vk::OutOfDateKHRError &) { RecreateSwapchain(); }
 
-        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+        frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
     void DeviceContext::EndFrame() {
@@ -543,8 +543,46 @@ namespace sp::vulkan {
         return device->allocateCommandBuffersUnique(allocInfo);
     }
 
-    CommandContextPtr DeviceContext::CreateCommandContext() {
-        return make_shared<CommandContext>(*this);
+    CommandContextPtr DeviceContext::GetCommandContext() {
+        // TODO: should be queue local, and thread local eventually
+        CommandContextPtr cmd;
+        auto &freeCmd = Frame().freeCommandContexts;
+        if (!freeCmd.empty()) {
+            cmd = freeCmd.back();
+            freeCmd.pop_back();
+        } else {
+            cmd = make_shared<CommandContext>(*this);
+        }
+        cmd->Begin();
+        return cmd;
+    }
+
+    void DeviceContext::Submit(CommandContextPtr &cmdArg) {
+        CommandContextPtr cmd = cmdArg;
+        cmdArg.reset();
+        cmd->End();
+
+        vk::SubmitInfo submitInfo;
+        vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
+
+        auto imageAvailableSem = *Frame().imageAvailableSemaphore;
+        auto renderCompleteSem = *Frame().renderCompleteSemaphore;
+
+        const vk::CommandBuffer commandBuffer = cmd->Raw();
+
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = &imageAvailableSem;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &renderCompleteSem;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        auto frameFence = *Frame().inFlightFence;
+        device->resetFences({frameFence});
+        graphicsQueue.submit({submitInfo}, frameFence);
+
+        Frame().freeCommandContexts.push_back(cmd);
     }
 
     UniqueBuffer DeviceContext::AllocateBuffer(vk::DeviceSize size,
@@ -617,7 +655,7 @@ namespace sp::vulkan {
     }
 
     RenderPassInfo DeviceContext::SwapchainRenderPassInfo(bool depth, bool stencil) {
-        ImageView view(*swapchainImageViews[imageIndex], swapchainImageViewInfos[imageIndex], swapchainExtent);
+        ImageView view(*SwapchainImage().imageView, SwapchainImage().imageViewInfo, swapchainExtent);
         view.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
 
         std::array<float, 4> clearColor = {0.0f, 1.0f, 0.0f, 1.0f};

@@ -8,6 +8,10 @@ namespace sp::vulkan {
         cmd = std::move(buffers[0]);
     }
 
+    CommandContext::~CommandContext() {
+        Assert(!recording, "dangling command context");
+    }
+
     void CommandContext::SetDefaultOpaqueState() {
         SetDepthTest(true, true);
         SetStencilTest(false);
@@ -34,9 +38,6 @@ namespace sp::vulkan {
 
         dirty = ~DirtyFlags();
         currentPipeline = VK_NULL_HANDLE;
-
-        vk::CommandBufferBeginInfo beginInfo;
-        cmd->begin(beginInfo);
 
         vk::ClearValue clearValues[MAX_COLOR_ATTACHMENTS + 1];
         size_t clearCount = 0;
@@ -66,11 +67,32 @@ namespace sp::vulkan {
         Assert(!!framebuffer, "render pass not started");
 
         cmd->endRenderPass();
-        cmd->end();
 
         pipelineState.renderPass = VK_NULL_HANDLE;
         framebuffer.reset();
         renderPass.reset();
+    }
+
+    void CommandContext::Begin() {
+        Assert(!recording, "command buffer already recording");
+        vk::CommandBufferBeginInfo beginInfo;
+        beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+        cmd->begin(beginInfo);
+        recording = true;
+    }
+
+    void CommandContext::End() {
+        Assert(recording, "command buffer not recording");
+        cmd->end();
+        recording = false;
+    }
+
+    void CommandContext::Abandon() {
+        if (recording) {
+            cmd->end();
+            recording = false;
+            abandoned = true;
+        }
     }
 
     void CommandContext::Draw(uint32 vertexes, uint32 instances, int32 firstVertex, uint32 firstInstance) {

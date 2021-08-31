@@ -36,7 +36,7 @@ namespace sp::vulkan {
         Model(const sp::Model &model, DeviceContext &device);
         ~Model();
 
-        void AppendDrawCommands(CommandContext &commands, glm::mat4 modelMat, const ecs::View &view);
+        void AppendDrawCommands(const CommandContextPtr &commands, glm::mat4 modelMat, const ecs::View &view);
 
     private:
         vector<shared_ptr<Primitive>> primitives;
