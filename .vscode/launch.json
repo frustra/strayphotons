@@ -38,14 +38,6 @@
             ]
         },
         {
-            "name": "StrayPhotons (lldb)",
-            "type": "lldb",
-            "request": "launch",
-            "program": "${workspaceFolder}/bin/sp",
-            "args": [],
-            "cwd": "${workspaceFolder}/bin"
-        },
-        {
             "name": "StrayPhotons Vulkan (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
