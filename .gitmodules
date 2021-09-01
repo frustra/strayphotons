@@ -27,7 +27,7 @@
 	url = https://github.com/ValveSoftware/openvr.git
 [submodule "ext/physx"]
 	path = ext/physx
-	url = https://github.com/NVIDIAGameWorks/PhysX.git
+	url = git@github.com:frustra/physx-bins.git
 [submodule "ext/picojson"]
 	path = ext/picojson
 	url = https://github.com/kazuho/picojson.git
