@@ -8,20 +8,9 @@ if ! ./extra/validate_format.py; then
 fi
 
 mkdir -p build
-if [ -n "$BUILDKITE_ORGANIZATION_SLUG" ]; then
+if [ -n "$CI_CACHE_DIRECTORY" ]; then
     echo -e "--- Restoring assets cache"
-    ASSET_CACHE_PATH=/tmp/buildkite-cache/${BUILDKITE_ORGANIZATION_SLUG}/${BUILDKITE_PIPELINE_SLUG}/sp-assets-cache
-    if [ -d ${ASSET_CACHE_PATH} ]; then
-        while IFS="" read -r line || [ -n "$line" ]; do
-            hash=$(echo $line | awk '{print $1}')
-            file=$(echo $line | awk '{print $2}')
-            if [ -f ${ASSET_CACHE_PATH}/${hash} ]; then
-                echo "Restoring assets/$file"
-                mkdir -p assets/${file%/*}
-                cp ${ASSET_CACHE_PATH}/${hash} assets/${file}
-            fi
-        done < assets/asset-list.txt
-    fi
+    ./assets/cache-assets.py --restore
 fi
 
 echo -e "--- Running \033[33mcmake configure\033[0m :video_game:"
@@ -31,17 +20,9 @@ if ! cmake -DCMAKE_BUILD_TYPE=Release -S . -B ./build -GNinja; then
     exit 1
 fi
 
-if [ -n "$ASSET_CACHE_PATH" ]; then
+if [ -n "$CI_CACHE_DIRECTORY" ]; then
     echo -e "--- Saving assets cache"
-
-    mkdir -p ${ASSET_CACHE_PATH}
-    while IFS="" read -r line || [ -n "$line" ]; do
-        file=$(echo $line | awk '{print $2}')
-        if [ -f assets/${file} ]; then
-            hash=$(md5sum assets/${file} | awk '{print $1}')
-            cp assets/${file} ${ASSET_CACHE_PATH}/${hash}
-        fi
-    done < assets/asset-list.txt
+    ./assets/cache-assets.py --save
 fi
 
 echo -e "--- Running \033[33mcmake build\033[0m :rocket:"
