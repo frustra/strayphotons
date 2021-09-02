@@ -3,10 +3,8 @@
 #include "DeviceContext.hh"
 
 namespace sp::vulkan {
-    CommandContext::CommandContext(DeviceContext &device) : device(device) {
-        auto buffers = device.AllocateCommandBuffers(1);
-        cmd = std::move(buffers[0]);
-    }
+    CommandContext::CommandContext(DeviceContext &device, vk::UniqueCommandBuffer cmd, CommandContextType type)
+        : device(device), cmd(std::move(cmd)), type(type) {}
 
     CommandContext::~CommandContext() {
         Assert(!recording, "dangling command context");
@@ -14,27 +12,23 @@ namespace sp::vulkan {
 
     void CommandContext::SetDefaultOpaqueState() {
         SetDepthTest(true, true);
+        SetDepthRange(0.0f, 1.0f);
         SetStencilTest(false);
         SetBlending(false);
+        SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha);
+        SetCullMode(vk::CullModeFlagBits::eBack);
     }
 
     void CommandContext::BeginRenderPass(const RenderPassInfo &info) {
         Assert(!framebuffer, "render pass already started");
 
         framebuffer = device.GetFramebuffer(info);
-        pipelineState.renderPass = framebuffer->GetRenderPass();
+        pipelineInput.renderPass = framebuffer->GetRenderPass();
 
         renderPass = device.GetRenderPass(info);
 
-        scissor = vk::Rect2D{{0, 0}, framebuffer->Extent()};
-
-        // Negative height sets viewport coordinates to OpenGL style
-        viewport = vk::Viewport{0.0f,
-                                (float)scissor.extent.height,
-                                (float)scissor.extent.width,
-                                -(float)scissor.extent.height,
-                                0.0f,
-                                1.0f};
+        viewport = vk::Rect2D{{0, 0}, framebuffer->Extent()};
+        scissor = viewport;
 
         dirty = ~DirtyFlags();
         currentPipeline = VK_NULL_HANDLE;
@@ -68,7 +62,7 @@ namespace sp::vulkan {
 
         cmd->endRenderPass();
 
-        pipelineState.renderPass = VK_NULL_HANDLE;
+        pipelineInput.renderPass = VK_NULL_HANDLE;
         framebuffer.reset();
         renderPass.reset();
     }
@@ -109,14 +103,21 @@ namespace sp::vulkan {
         cmd->drawIndexed(indexes, instances, firstIndex, vertexOffset, firstInstance);
     }
 
+    void CommandContext::SetShaders(const string &vertName, const string &fragName) {
+        SetShader(ShaderStage::Vertex, vertName);
+        SetShader(ShaderStage::Fragment, fragName);
+        SetShader(ShaderStage::Geometry, 0);
+        SetShader(ShaderStage::Compute, 0);
+    }
+
     void CommandContext::SetShader(ShaderStage stage, ShaderHandle handle) {
-        auto &slot = pipelineState.state.values.shaders[(size_t)stage];
+        auto &slot = pipelineInput.state.shaders[(size_t)stage];
         if (slot == handle) return;
         slot = handle;
         SetDirty(DirtyBits::Pipeline);
     }
 
-    void CommandContext::SetShader(ShaderStage stage, string name) {
+    void CommandContext::SetShader(ShaderStage stage, const string &name) {
         SetShader(stage, device.LoadShader(name));
     }
 
@@ -128,7 +129,7 @@ namespace sp::vulkan {
 
     void CommandContext::FlushGraphicsState() {
         if (ResetDirty(DirtyBits::Pipeline)) {
-            auto pipeline = device.GetGraphicsPipeline(pipelineState);
+            auto pipeline = device.GetGraphicsPipeline(pipelineInput);
             if (pipeline != currentPipeline) { cmd->bindPipeline(vk::PipelineBindPoint::eGraphics, **pipeline); }
             currentPipeline = pipeline;
         }
@@ -143,8 +144,21 @@ namespace sp::vulkan {
             }
         }
 
-        if (ResetDirty(DirtyBits::Viewport)) { cmd->setViewport(0, 1, &viewport); }
+        if (ResetDirty(DirtyBits::Viewport)) {
+            // Negative height sets viewport coordinates to OpenGL style (Y up)
+            vk::Viewport vp = {(float)viewport.offset.x,
+                               (float)(framebuffer->Extent().height - viewport.offset.y),
+                               (float)viewport.extent.width,
+                               -(float)viewport.extent.height,
+                               minDepth,
+                               maxDepth};
+            cmd->setViewport(0, 1, &vp);
+        }
 
-        if (ResetDirty(DirtyBits::Scissor)) { cmd->setScissor(0, 1, &scissor); }
+        if (ResetDirty(DirtyBits::Scissor)) {
+            vk::Rect2D sc = scissor;
+            sc.offset.y = framebuffer->Extent().height - sc.offset.y - sc.extent.height;
+            cmd->setScissor(0, 1, &sc);
+        }
     }
 } // namespace sp::vulkan

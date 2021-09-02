@@ -109,6 +109,8 @@ namespace sp::vulkan {
     }
 
     void Model::AppendDrawCommands(const CommandContextPtr &cmd, glm::mat4 modelMat, const ecs::View &view) {
+        cmd->SetVertexLayout(SceneVertex::Layout());
+
         for (auto &primitivePtr : primitives) {
             auto &primitive = *primitivePtr;
             MeshPushConstants constants;

@@ -24,7 +24,7 @@ namespace sp::vulkan {
 
         void Prepare(){};
         void BeginFrame(ecs::Lock<ecs::Read<ecs::Transform>> lock){};
-        void RenderPass(const ecs::View &view, DrawLock lock, RenderTarget *finalOutput = nullptr);
+        void RenderPass(const CommandContextPtr &cmd, const ecs::View &view, DrawLock lock);
         void EndFrame();
 
         void ForwardPass(const CommandContextPtr &commands,

@@ -16,6 +16,10 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#ifdef _WIN32
+    #define GLFW_EXPOSE_NATIVE_WIN32
+    #include <glfw/glfw3native.h>
+#endif
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -118,8 +122,7 @@ namespace sp::vulkan {
         debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
                                     vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
 #if SP_DEBUG
-        debugInfo.messageSeverity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
-                                     vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose;
+        debugInfo.messageSeverity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
 #endif
         debugInfo.pfnUserCallback = &VulkanDebugCallback;
         debugInfo.pUserData = this;
@@ -147,35 +150,60 @@ namespace sp::vulkan {
         }
         Assert(physicalDevice, "No suitable graphics device found!");
 
+        std::array<uint32, QUEUE_TYPES_COUNT> queueIndex;
         auto queueFamilies = physicalDevice.getQueueFamilyProperties();
-        bool hasGraphicsQueueFamily = false;
-        for (uint32_t i = 0; i < queueFamilies.size(); i++) {
-            if (queueFamilies[i].queueFlags & vk::QueueFlagBits::eGraphics) {
-                graphicsQueueFamily = i;
-                hasGraphicsQueueFamily = true;
-                break;
+        vector<uint32> queuesUsedCount(queueFamilies.size());
+        vector<vector<float>> queuePriority(queueFamilies.size());
+
+        const auto findQueue = [&](QueueType queueType,
+                                   vk::QueueFlags require,
+                                   vk::QueueFlags deny,
+                                   float priority,
+                                   bool surfaceSupport = false) {
+            for (uint32_t i = 0; i < queueFamilies.size(); i++) {
+                auto &props = queueFamilies[i];
+                if (props.queueFlags & deny) continue;
+                if (surfaceSupport && !physicalDevice.getSurfaceSupportKHR(i, *surface)) continue;
+                if (queuesUsedCount[i] >= props.queueCount) continue;
+                if (!(props.queueFlags & require)) continue;
+
+                queueFamilyIndex[queueType] = i;
+                queueIndex[queueType] = queuesUsedCount[i]++;
+                queuePriority[i].push_back(priority);
+                return true;
+            }
+            return false;
+        };
+
+        if (!findQueue(QUEUE_TYPE_GRAPHICS, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, {}, 1.0f, true))
+            Assert(false, "could not find a supported graphics queue family");
+
+        if (!findQueue(QUEUE_TYPE_COMPUTE, vk::QueueFlagBits::eCompute, {}, 0.5f)) {
+            // must be only one queue that supports compute, fall back to it
+            queueFamilyIndex[QUEUE_TYPE_COMPUTE] = queueFamilyIndex[QUEUE_TYPE_GRAPHICS];
+            queueIndex[QUEUE_TYPE_COMPUTE] = queueIndex[QUEUE_TYPE_GRAPHICS];
+        }
+
+        if (!findQueue(QUEUE_TYPE_TRANSFER,
+                       vk::QueueFlagBits::eTransfer,
+                       vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
+                       0.3f)) {
+            // no queues support only transfer, fall back to a compute queue that also supports transfer
+            if (!findQueue(QUEUE_TYPE_TRANSFER, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics, 0.3f)) {
+                // fall back to the main compute queue
+                queueFamilyIndex[QUEUE_TYPE_TRANSFER] = queueFamilyIndex[QUEUE_TYPE_COMPUTE];
+                queueIndex[QUEUE_TYPE_TRANSFER] = queueIndex[QUEUE_TYPE_COMPUTE];
             }
         }
-        Assert(hasGraphicsQueueFamily, "Couldn't find a Graphics queue family");
 
-        bool hasPresentQueueFamily = false;
-        for (uint32_t i = 0; i < queueFamilies.size(); i++) {
-            if (physicalDevice.getSurfaceSupportKHR(i, *surface)) {
-                presentQueueFamily = i;
-                hasPresentQueueFamily = true;
-                break;
-            }
-        }
-        Assert(hasPresentQueueFamily, "Couldn't find a Present queue family");
-
-        std::set<uint32_t> uniqueQueueFamilies = {graphicsQueueFamily, presentQueueFamily};
         std::vector<vk::DeviceQueueCreateInfo> queueInfos;
-        float queuePriority = 1.0f;
-        for (auto queueFamily : uniqueQueueFamilies) {
+        for (uint32 i = 0; i < queueFamilies.size(); i++) {
+            if (queuesUsedCount[i] == 0) continue;
+
             vk::DeviceQueueCreateInfo queueInfo;
-            queueInfo.queueFamilyIndex = queueFamily;
-            queueInfo.queueCount = 1;
-            queueInfo.pQueuePriorities = &queuePriority;
+            queueInfo.queueFamilyIndex = i;
+            queueInfo.queueCount = queuesUsedCount[i];
+            queueInfo.pQueuePriorities = queuePriority[i].data();
             queueInfos.push_back(queueInfo);
         }
 
@@ -209,6 +237,7 @@ namespace sp::vulkan {
         Assert(availableDeviceFeatures.wideLines, "device must support wideLines");
         Assert(availableDeviceFeatures.largePoints, "device must support largePoints");
         Assert(availableDeviceFeatures.geometryShader, "device must support geometryShader");
+        Assert(availableDeviceFeatures.samplerAnisotropy, "device must support anisotropic sampling");
         Assert(availableMultiviewFeatures.multiview, "device must support multiview");
         Assert(availableMultiviewFeatures.multiviewGeometryShader, "device must support multiviewGeometryShader");
 
@@ -218,6 +247,7 @@ namespace sp::vulkan {
         enabledDeviceFeatures.wideLines = true;
         enabledDeviceFeatures.largePoints = true;
         enabledDeviceFeatures.geometryShader = true;
+        enabledDeviceFeatures.samplerAnisotropy = true;
 
         vk::DeviceCreateInfo deviceInfo;
         deviceInfo.queueCreateInfoCount = queueInfos.size();
@@ -231,22 +261,25 @@ namespace sp::vulkan {
         device = physicalDevice.createDeviceUnique(deviceInfo, nullptr);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(*device);
 
-        graphicsQueue = device->getQueue(graphicsQueueFamily, 0);
-        presentQueue = device->getQueue(presentQueueFamily, 0);
-
-        vk::CommandPoolCreateInfo poolInfo;
-        poolInfo.queueFamilyIndex = graphicsQueueFamily;
-        poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-        renderThreadCommandPool = device->createCommandPoolUnique(poolInfo);
+        for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
+            queues[queueType] = device->getQueue(queueFamilyIndex[queueType], queueIndex[queueType]);
+        }
 
         vk::SemaphoreCreateInfo semaphoreInfo;
         vk::FenceCreateInfo fenceInfo;
         fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
 
-        for (auto &frame : perFrame) {
+        for (auto &frame : frameContexts) {
             frame.imageAvailableSemaphore = device->createSemaphoreUnique(semaphoreInfo);
             frame.renderCompleteSemaphore = device->createSemaphoreUnique(semaphoreInfo);
             frame.inFlightFence = device->createFenceUnique(fenceInfo);
+
+            for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
+                vk::CommandPoolCreateInfo poolInfo;
+                poolInfo.queueFamilyIndex = queueFamilyIndex[queueType];
+                poolInfo.flags = vk::CommandPoolCreateFlagBits::eTransient;
+                frame.commandContexts[queueType].commandPool = device->createCommandPoolUnique(poolInfo);
+            }
         }
 
         VmaAllocatorCreateInfo allocatorInfo = {};
@@ -259,11 +292,11 @@ namespace sp::vulkan {
 
         Assert(vmaCreateAllocator(&allocatorInfo, &allocator) == VK_SUCCESS, "allocator init failed");
 
-        pipelinePool.reset(new PipelineManager(*this));
-        renderPassPool.reset(new RenderPassManager(*this));
-        framebufferPool.reset(new FramebufferManager(*this));
+        pipelinePool = make_unique<PipelineManager>(*this);
+        renderPassPool = make_unique<RenderPassManager>(*this);
+        framebufferPool = make_unique<FramebufferManager>(*this);
 
-        funcs.reset(new CFuncCollection);
+        funcs = make_unique<CFuncCollection>();
         funcs->Register("reloadshaders", "Recompile any changed shaders", [&]() {
             ReloadShaders();
         });
@@ -325,16 +358,7 @@ namespace sp::vulkan {
         swapchainInfo.imageArrayLayers = 1;
         // TODO: use vk::ImageUsageFlagBits::eTransferDst for rendering from another texture
         swapchainInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
-        if (graphicsQueueFamily != presentQueueFamily) {
-            // we need to manage image data coherency between queues ourselves if we use concurrent sharing
-            /*uint32_t queueFamilyIndices[] = {graphicsQueueFamily, presentQueueFamily};
-            swapchainInfo.imageSharingMode = vk::SharingMode::eConcurrent;
-            swapchainInfo.queueFamilyIndexCount = 2;
-            swapchainInfo.pQueueFamilyIndices = queueFamilyIndices;*/
-            throw "graphics queue and present queue need to be from the same queue family";
-        } else {
-            swapchainInfo.imageSharingMode = vk::SharingMode::eExclusive;
-        }
+        swapchainInfo.imageSharingMode = vk::SharingMode::eExclusive;
         swapchainInfo.preTransform = surfaceCapabilities.currentTransform;
         swapchainInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
         swapchainInfo.presentMode = presentMode;
@@ -342,16 +366,16 @@ namespace sp::vulkan {
         swapchainInfo.oldSwapchain = *swapchain;
 
         auto newSwapchain = device->createSwapchainKHRUnique(swapchainInfo, nullptr);
-        perSwapchainImage.clear();
+        swapchainImageContexts.clear();
         swapchain.swap(newSwapchain);
         swapchainVersion++;
 
         auto swapchainImages = device->getSwapchainImagesKHR(*swapchain);
         swapchainExtent = swapchainInfo.imageExtent;
-        perSwapchainImage.resize(swapchainImages.size());
+        swapchainImageContexts.resize(swapchainImages.size());
 
         for (size_t i = 0; i < swapchainImages.size(); i++) {
-            auto &perSCI = perSwapchainImage[i];
+            auto &perSCI = swapchainImageContexts[i];
             perSCI.image = swapchainImages[i];
 
             vk::ImageViewCreateInfo createInfo;
@@ -482,6 +506,12 @@ namespace sp::vulkan {
             return BeginFrame();
         }
 
+        for (auto &pool : Frame().commandContexts) {
+            // Resets all command buffers in the pool, so they can be recorded and used again.
+            if (pool.nextIndex > 0) device->resetCommandPool(*pool.commandPool);
+            pool.nextIndex = 0;
+        }
+
         if (SwapchainImage().inFlightFence) {
             result = device->waitForFences({SwapchainImage().inFlightFence}, true, FENCE_WAIT_TIME);
             AssertVKSuccess(result, "timed out waiting for fence");
@@ -503,7 +533,7 @@ namespace sp::vulkan {
         presentInfo.pImageIndices = &swapchainImageIndex;
 
         try {
-            auto presentResult = presentQueue.presentKHR(presentInfo);
+            auto presentResult = queues[QUEUE_TYPE_GRAPHICS].presentKHR(presentInfo);
             if (presentResult == vk::Result::eSuboptimalKHR) RecreateSwapchain();
         } catch (const vk::OutOfDateKHRError &) { RecreateSwapchain(); }
 
@@ -532,26 +562,22 @@ namespace sp::vulkan {
         return nullptr;
     }
 
-    vector<vk::UniqueCommandBuffer> DeviceContext::AllocateCommandBuffers(uint32_t count,
-                                                                          vk::CommandBufferLevel level) {
-
-        vk::CommandBufferAllocateInfo allocInfo;
-        allocInfo.commandPool = *renderThreadCommandPool;
-        allocInfo.level = vk::CommandBufferLevel::ePrimary;
-        allocInfo.commandBufferCount = count;
-
-        return device->allocateCommandBuffersUnique(allocInfo);
-    }
-
-    CommandContextPtr DeviceContext::GetCommandContext() {
-        // TODO: should be queue local, and thread local eventually
+    CommandContextPtr DeviceContext::GetCommandContext(CommandContextType type) {
+        // TODO(multithread): should segregate command contexts by thread
         CommandContextPtr cmd;
-        auto &freeCmd = Frame().freeCommandContexts;
-        if (!freeCmd.empty()) {
-            cmd = freeCmd.back();
-            freeCmd.pop_back();
+        auto &pool = Frame().commandContexts[QueueType(type)];
+        if (pool.nextIndex < pool.list.size()) {
+            cmd = pool.list[pool.nextIndex++];
         } else {
-            cmd = make_shared<CommandContext>(*this);
+            vk::CommandBufferAllocateInfo allocInfo;
+            allocInfo.commandPool = *pool.commandPool;
+            allocInfo.level = vk::CommandBufferLevel::ePrimary;
+            allocInfo.commandBufferCount = 1;
+            auto buffers = device->allocateCommandBuffersUnique(allocInfo);
+
+            cmd = make_shared<CommandContext>(*this, std::move(buffers[0]), type);
+            pool.list.push_back(cmd);
+            pool.nextIndex++;
         }
         cmd->Begin();
         return cmd;
@@ -559,6 +585,7 @@ namespace sp::vulkan {
 
     void DeviceContext::Submit(CommandContextPtr &cmdArg) {
         CommandContextPtr cmd = cmdArg;
+        // Invalidate caller's reference, this CommandContext is unusable until a subsequent frame.
         cmdArg.reset();
         cmd->End();
 
@@ -580,9 +607,9 @@ namespace sp::vulkan {
 
         auto frameFence = *Frame().inFlightFence;
         device->resetFences({frameFence});
-        graphicsQueue.submit({submitInfo}, frameFence);
 
-        Frame().freeCommandContexts.push_back(cmd);
+        auto &queue = queues[QueueType(cmd->GetType())];
+        queue.submit({submitInfo}, frameFence);
     }
 
     UniqueBuffer DeviceContext::AllocateBuffer(vk::DeviceSize size,
@@ -596,7 +623,7 @@ namespace sp::vulkan {
         return UniqueBuffer(bufferInfo, allocInfo, allocator);
     }
 
-    UniqueImage DeviceContext::AllocateImage(vk::ImageCreateInfo info, VmaMemoryUsage residency) {
+    UniqueImage DeviceContext::AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency) {
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
         return UniqueImage(info, allocInfo, allocator);
@@ -677,5 +704,13 @@ namespace sp::vulkan {
 
     shared_ptr<Framebuffer> DeviceContext::GetFramebuffer(const RenderPassInfo &info) {
         return framebufferPool->GetFramebuffer(info);
+    }
+
+    void *DeviceContext::Win32WindowHandle() {
+#ifdef _WIN32
+        return glfwGetWin32Window(GetWindow());
+#else
+        return nullptr;
+#endif
     }
 } // namespace sp::vulkan

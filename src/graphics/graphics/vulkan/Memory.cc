@@ -107,4 +107,8 @@ namespace sp::vulkan {
         image = VK_NULL_HANDLE;
         imageInfo = vk::ImageCreateInfo();
     }
+
+    vk::DeviceSize UniqueImage::Size() {
+        return allocation->GetSize();
+    }
 } // namespace sp::vulkan

@@ -15,9 +15,7 @@ namespace sp::vulkan {
         device->waitIdle();
     }
 
-    void Renderer::RenderPass(const ecs::View &view, DrawLock lock, RenderTarget *finalOutput) {
-        auto cmd = device.GetCommandContext();
-        cmd->BeginRenderPass(device.SwapchainRenderPassInfo(true));
+    void Renderer::RenderPass(const CommandContextPtr &cmd, const ecs::View &view, DrawLock lock) {
         cmd->SetDefaultOpaqueState();
 
         cmd->SetShader(ShaderStage::Vertex, "test.vert");
@@ -25,9 +23,6 @@ namespace sp::vulkan {
 
         ecs::View forwardPassView = view;
         ForwardPass(cmd, forwardPassView, lock, [&](auto lock, Tecs::Entity &ent) {});
-
-        cmd->EndRenderPass();
-        device.Submit(cmd);
     }
 
     void Renderer::ForwardPass(const CommandContextPtr &commands,

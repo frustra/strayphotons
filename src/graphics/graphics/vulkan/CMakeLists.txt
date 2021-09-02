@@ -2,6 +2,7 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_LIB} PRIVATE
     CommandContext.cc
     Common.cc
     DeviceContext.cc
+    GuiRenderer.cc
     Image.cc
     Memory.cc
     Model.cc

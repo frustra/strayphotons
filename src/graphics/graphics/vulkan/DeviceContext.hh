@@ -55,15 +55,11 @@ namespace sp::vulkan {
 
         void PrepareWindowView(ecs::View &view) override;
 
-        vector<vk::UniqueCommandBuffer> AllocateCommandBuffers(
-            uint32 count,
-            vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary);
-
-        CommandContextPtr GetCommandContext();
+        CommandContextPtr GetCommandContext(CommandContextType type = CommandContextType::General);
         void Submit(CommandContextPtr &cmd); // releases *cmd back to the DeviceContext and resets cmd
 
         UniqueBuffer AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
-        UniqueImage AllocateImage(vk::ImageCreateInfo info, VmaMemoryUsage residency);
+        UniqueImage AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency);
 
         RenderPassInfo SwapchainRenderPassInfo(bool depth = false, bool stencil = false);
 
@@ -79,9 +75,7 @@ namespace sp::vulkan {
             return window;
         }
 
-        vk::Queue GraphicsQueue() {
-            return graphicsQueue;
-        }
+        void *Win32WindowHandle() override;
 
         uint32 SwapchainVersion() {
             // incremented when the swapchain changes, any dependent pipelines need to be recreated
@@ -90,6 +84,10 @@ namespace sp::vulkan {
 
         UniqueID NextUniqueID() {
             return ++lastUniqueID;
+        }
+
+        const vk::PhysicalDeviceLimits &Limits() const {
+            return physicalDeviceProperties.limits;
         }
 
     private:
@@ -105,6 +103,7 @@ namespace sp::vulkan {
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;
         vk::UniqueSurfaceKHR surface;
         vk::PhysicalDevice physicalDevice;
+        vk::PhysicalDeviceProperties physicalDeviceProperties;
         vk::UniqueDevice device;
 
         unique_ptr<PipelineManager> pipelinePool;
@@ -113,17 +112,15 @@ namespace sp::vulkan {
 
         VmaAllocator allocator = VK_NULL_HANDLE;
 
-        uint32 graphicsQueueFamily, presentQueueFamily;
-        vk::Queue graphicsQueue, presentQueue;
-
-        vk::UniqueCommandPool renderThreadCommandPool; // TODO: multiple threads need their own pools and free list
+        std::array<vk::Queue, QUEUE_TYPES_COUNT> queues;
+        std::array<uint32, QUEUE_TYPES_COUNT> queueFamilyIndex;
 
         uint32 swapchainVersion = 0;
         vk::UniqueSwapchainKHR swapchain;
         vk::Extent2D swapchainExtent;
 
-        struct PerSwapchainImage {
-            vk::Fence inFlightFence; // points at a fence owned by PerFrame
+        struct SwapchainImageContext {
+            vk::Fence inFlightFence; // points at a fence owned by FrameContext
             vk::Image image;
 
             // TODO: store custom image abstraction
@@ -131,25 +128,35 @@ namespace sp::vulkan {
             vk::UniqueImageView imageView;
         };
 
-        std::vector<PerSwapchainImage> perSwapchainImage;
+        vector<SwapchainImageContext> swapchainImageContexts;
         uint32 swapchainImageIndex;
 
-        PerSwapchainImage &SwapchainImage() {
-            return perSwapchainImage[swapchainImageIndex];
+        SwapchainImageContext &SwapchainImage() {
+            return swapchainImageContexts[swapchainImageIndex];
         }
 
-        struct PerFrame {
+        struct CommandContextPool {
+            vk::UniqueCommandPool commandPool;
+            vector<CommandContextPtr> list;
+            size_t nextIndex = 0;
+        };
+
+        struct FrameContext {
             vk::UniqueSemaphore imageAvailableSemaphore, renderCompleteSemaphore;
             vk::UniqueFence inFlightFence;
 
-            vector<CommandContextPtr> freeCommandContexts;
+            // Stores all command contexts created for this frame, so they can be reused in later frames
+            // TODO: multiple threads need their own pools
+            std::array<CommandContextPool, QUEUE_TYPES_COUNT> commandContexts;
+
+            void BeginFrame();
         };
 
-        std::array<PerFrame, MAX_FRAMES_IN_FLIGHT> perFrame;
+        std::array<FrameContext, MAX_FRAMES_IN_FLIGHT> frameContexts;
         uint32 frameIndex = 0;
 
-        PerFrame &Frame() {
-            return perFrame[frameIndex];
+        FrameContext &Frame() {
+            return frameContexts[frameIndex];
         }
 
         vk::ImageViewCreateInfo depthImageViewInfo;

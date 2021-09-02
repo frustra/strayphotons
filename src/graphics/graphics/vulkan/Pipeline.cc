@@ -69,12 +69,18 @@ namespace sp::vulkan {
     }
 
     shared_ptr<Pipeline> PipelineManager::GetGraphicsPipeline(const PipelineCompileInput &compile) {
-        ShaderSet shaders = FetchShaders(device, compile.state.values.shaders);
+        ShaderSet shaders = FetchShaders(device, compile.state.shaders);
 
         PipelineKey key;
         key.input.state = compile.state;
         key.input.renderPass = compile.renderPass;
         key.input.shaderHashes = GetShaderHashes(shaders);
+
+        if (!key.input.state.blendEnable) {
+            key.input.state.blendOp = vk::BlendOp::eAdd;
+            key.input.state.dstBlendFactor = vk::BlendFactor::eZero;
+            key.input.state.srcBlendFactor = vk::BlendFactor::eZero;
+        }
 
         auto &pipelineMapValue = pipelines[key];
         if (!pipelineMapValue) {
@@ -90,7 +96,7 @@ namespace sp::vulkan {
                        shared_ptr<PipelineLayout> layout)
         : layout(layout) {
 
-        auto &state = compile.state.values;
+        auto &state = compile.state;
 
         std::array<vk::PipelineShaderStageCreateInfo, (size_t)ShaderStage::Count> shaderStages;
         size_t stageCount = 0;
@@ -126,12 +132,20 @@ namespace sp::vulkan {
         rasterizer.depthClampEnable = VK_FALSE;
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.lineWidth = 1.0f;
-        rasterizer.cullMode = vk::CullModeFlagBits::eBack;
+        rasterizer.cullMode = state.cullMode;
         rasterizer.frontFace = vk::FrontFace::eCounterClockwise;
 
         // TODO: support multiple attachments
         vk::PipelineColorBlendAttachmentState colorBlendAttachment;
-        colorBlendAttachment.blendEnable = state.blendEnable; // TODO: if blendEnable, pass other blending parameters
+        colorBlendAttachment.blendEnable = state.blendEnable;
+        if (state.blendEnable) {
+            colorBlendAttachment.colorBlendOp = state.blendOp;
+            colorBlendAttachment.alphaBlendOp = state.blendOp;
+            colorBlendAttachment.srcColorBlendFactor = state.srcBlendFactor;
+            colorBlendAttachment.srcAlphaBlendFactor = state.srcBlendFactor;
+            colorBlendAttachment.dstColorBlendFactor = state.dstBlendFactor;
+            colorBlendAttachment.dstAlphaBlendFactor = state.dstBlendFactor;
+        }
         colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
                                               vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 
@@ -152,12 +166,16 @@ namespace sp::vulkan {
         depthStencil.maxDepthBounds = 1.0f;
         depthStencil.stencilTestEnable = state.stencilTest;
 
-        auto vertexInputInfo = SceneVertex::InputInfo(); // TODO: load from compile input
+        vk::PipelineVertexInputStateCreateInfo VertexLayout;
+        VertexLayout.vertexBindingDescriptionCount = state.vertexLayout.bindingCount;
+        VertexLayout.pVertexBindingDescriptions = state.vertexLayout.bindings.data();
+        VertexLayout.vertexAttributeDescriptionCount = state.vertexLayout.attributeCount;
+        VertexLayout.pVertexAttributeDescriptions = state.vertexLayout.attributes.data();
 
         vk::GraphicsPipelineCreateInfo pipelineInfo;
         pipelineInfo.stageCount = stageCount;
         pipelineInfo.pStages = shaderStages.data();
-        pipelineInfo.pVertexInputState = &vertexInputInfo.PipelineInputInfo();
+        pipelineInfo.pVertexInputState = &VertexLayout;
         pipelineInfo.pInputAssemblyState = &inputAssembly;
         pipelineInfo.pViewportState = &viewportState;
         pipelineInfo.pRasterizationState = &rasterizer;

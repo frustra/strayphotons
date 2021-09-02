@@ -3,6 +3,7 @@
 #include "Common.hh"
 #include "SPIRV-Reflect/spirv_reflect.h"
 #include "Shader.hh"
+#include "Vertex.hh"
 #include "core/Hashing.hh"
 
 #include <robin_hood.h>
@@ -11,26 +12,27 @@ namespace sp::vulkan {
     class DeviceContext;
     class Model;
 
-    union PipelineStaticState {
-        struct {
-            ShaderHandleSet shaders;
-            unsigned depthWrite : 1;
-            unsigned depthTest : 1;
-            unsigned blendEnable : 1;
-            unsigned stencilTest : 1;
-        } values;
-
-        uint64 words[(sizeof(values) + sizeof(uint64) - 1) / sizeof(uint64)] = {0};
+    struct PipelineStaticState {
+        ShaderHandleSet shaders;
+        VertexLayout vertexLayout;
+        vk::CullModeFlags cullMode;
+        vk::BlendOp blendOp;
+        vk::BlendFactor srcBlendFactor;
+        vk::BlendFactor dstBlendFactor;
+        unsigned depthWrite : 1;
+        unsigned depthTest : 1;
+        unsigned blendEnable : 1;
+        unsigned stencilTest : 1;
     };
 
     struct PipelineCompileInput {
+        PipelineCompileInput() {
+            // Ensure the object is entirely zero for hashing, even if there are unaligned members.
+            std::memset(&state, 0, sizeof(state));
+        }
+
         PipelineStaticState state;
         vk::RenderPass renderPass; // TODO: use wrapper type to introspect attachments
-    };
-
-    struct PipelineDynamicState {
-        vk::Viewport viewport;
-        vk::Rect2D scissor;
     };
 
     class PipelineLayout {

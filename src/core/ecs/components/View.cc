@@ -26,6 +26,9 @@ namespace ecs {
                     view.clearColor = glm::vec4(sp::MakeVec3(param.second), 1.0f);
                 } else if (param.first == "sky") {
                     view.skyIlluminance = param.second.get<double>();
+                } else if (param.first == "visibility") {
+                    auto &value = param.second.get<string>();
+                    if (value == "camera") { view.visibilityMask.set(Renderable::Visibility::VISIBLE_DIRECT_CAMERA); }
                 }
             }
         }

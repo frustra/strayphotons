@@ -28,14 +28,19 @@ struct vk::FlagTraits<sp::vulkan::CommandContextFlags::DirtyBits> {
 namespace sp::vulkan {
     class DeviceContext;
     class Model;
+    struct VertexLayout;
 
     class CommandContext : public NonCopyable {
     public:
         using DirtyFlags = CommandContextFlags::DirtyFlags;
         using DirtyBits = CommandContextFlags::DirtyBits;
 
-        CommandContext(DeviceContext &device);
+        CommandContext(DeviceContext &device, vk::UniqueCommandBuffer cmd, CommandContextType type);
         ~CommandContext();
+
+        CommandContextType GetType() {
+            return type;
+        }
 
         // A CommandContext MUST be submitted to the device or abandoned before destroying the object.
         void Abandon();
@@ -46,26 +51,91 @@ namespace sp::vulkan {
         void Draw(uint32 vertexes, uint32 instances, int32 firstVertex, uint32 firstInstance);
         void DrawIndexed(uint32 indexes, uint32 instances, uint32 firstIndex, int32 vertexOffset, uint32 firstInstance);
 
+        void SetShaders(const string &vertexName, const string &fragName);
         void SetShader(ShaderStage stage, ShaderHandle handle);
-        void SetShader(ShaderStage stage, string name);
+        void SetShader(ShaderStage stage, const string &name);
         void PushConstants(const void *data, VkDeviceSize offset, VkDeviceSize range);
 
         void SetDefaultOpaqueState();
 
+        void SetVertexLayout(const VertexLayout &layout) {
+            if (layout != pipelineInput.state.vertexLayout) {
+                pipelineInput.state.vertexLayout = layout;
+                SetDirty(DirtyBits::Pipeline);
+            }
+        }
+
+        void SetScissor(const vk::Rect2D &newScissor) {
+            if (scissor != newScissor) {
+                scissor = newScissor;
+                SetDirty(DirtyBits::Scissor);
+            }
+        }
+
+        void ClearScissor() {
+            vk::Rect2D framebufferExtents = {{0, 0}, framebuffer->Extent()};
+            SetScissor(framebufferExtents);
+        }
+
+        vk::Extent2D GetFramebufferExtent() const {
+            if (!framebuffer) return {};
+            return framebuffer->Extent();
+        }
+
+        vk::Rect2D GetViewport() const {
+            return viewport;
+        }
+
+        void SetViewport(const vk::Rect2D &newViewport) {
+            if (viewport != newViewport) {
+                viewport = newViewport;
+                SetDirty(DirtyBits::Viewport);
+            }
+        }
+
+        void SetDepthRange(float minDepth, float maxDepth) {
+            minDepth = minDepth;
+            maxDepth = maxDepth;
+            SetDirty(DirtyBits::Viewport);
+        }
+
         void SetDepthTest(bool test, bool write) {
-            pipelineState.state.values.depthTest = test;
-            pipelineState.state.values.depthWrite = write;
-            SetDirty(DirtyBits::Pipeline);
+            if (test != pipelineInput.state.depthTest || write != pipelineInput.state.depthWrite) {
+                pipelineInput.state.depthTest = test;
+                pipelineInput.state.depthWrite = write;
+                SetDirty(DirtyBits::Pipeline);
+            }
         }
 
         void SetStencilTest(bool test) {
-            pipelineState.state.values.stencilTest = test;
-            SetDirty(DirtyBits::Pipeline);
+            if (test != pipelineInput.state.stencilTest) {
+                pipelineInput.state.stencilTest = test;
+                SetDirty(DirtyBits::Pipeline);
+            }
         }
 
-        void SetBlending(bool enable) {
-            pipelineState.state.values.blendEnable = enable;
-            SetDirty(DirtyBits::Pipeline);
+        void SetCullMode(vk::CullModeFlags mode) {
+            if (mode != pipelineInput.state.cullMode) {
+                pipelineInput.state.cullMode = mode;
+                SetDirty(DirtyBits::Pipeline);
+            }
+        }
+
+        void SetBlending(bool enable, vk::BlendOp blendOp = vk::BlendOp::eAdd) {
+            if (!enable) blendOp = vk::BlendOp::eAdd;
+            if (enable != pipelineInput.state.blendEnable || blendOp != pipelineInput.state.blendOp) {
+                pipelineInput.state.blendEnable = enable;
+                pipelineInput.state.blendOp = blendOp;
+                SetDirty(DirtyBits::Pipeline);
+            }
+        }
+
+        void SetBlendFunc(vk::BlendFactor srcFactor, vk::BlendFactor dstFactor) {
+            if (srcFactor != pipelineInput.state.srcBlendFactor || dstFactor != pipelineInput.state.dstBlendFactor) {
+                pipelineInput.state.srcBlendFactor = srcFactor;
+                pipelineInput.state.dstBlendFactor = dstFactor;
+                SetDirty(DirtyBits::Pipeline);
+            }
         }
 
         void FlushGraphicsState();
@@ -94,15 +164,17 @@ namespace sp::vulkan {
             dirty |= flags;
         }
 
+        DeviceContext &device;
+        vk::UniqueCommandBuffer cmd;
+        CommandContextType type;
+
         bool recording = false, abandoned = false;
 
-        vk::UniqueCommandBuffer cmd;
-        vk::Viewport viewport;
+        vk::Rect2D viewport;
+        float minDepth = 0.0f, maxDepth = 1.0f;
         vk::Rect2D scissor;
 
-        PipelineCompileInput pipelineState;
-        PipelineDynamicState dynamicState;
-        DeviceContext &device;
+        PipelineCompileInput pipelineInput;
 
         shared_ptr<Pipeline> currentPipeline;
 
