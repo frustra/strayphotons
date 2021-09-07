@@ -10,6 +10,7 @@
     #include <linenoise.h>
 #endif
 
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <mutex>
@@ -186,9 +187,7 @@ namespace sp {
 
         std::lock_guard lock(historyLock);
         results.reserve(maxEntries);
-        for (int i = history.size() - 1; i >= 0 && results.size() < maxEntries; i--) {
-            results.push_back(history[i]);
-        }
+        std::reverse_copy(history.begin(), history.end(), results.begin());
         return results;
     }
 

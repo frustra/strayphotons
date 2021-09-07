@@ -53,7 +53,7 @@ namespace sp::vulkan {
             memcpy(data, &indexBuffer.data[primitive.indexBuffer.byteOffset], indexBufferSize);
             p.indexBuffer.Unmap();
 
-            p.indexCount = primitive.indexBuffer.componentCount;
+            p.indexCount = (uint32_t)primitive.indexBuffer.componentCount;
 
             auto &posAttr = primitive.attributes[0];
             auto &normalAttr = primitive.attributes[1];

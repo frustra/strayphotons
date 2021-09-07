@@ -14,6 +14,11 @@
     #pragma GCC diagnostic ignored "-Wunused-variable"
 #endif
 
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable : 4127 4324)
+#endif
+
 #include <vk_mem_alloc.h>
 
 #ifdef __GNUC__
@@ -22,6 +27,10 @@
 
 #ifdef __clang__
     #pragma clang diagnostic pop
+#endif
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
 #endif
 
 namespace sp::vulkan {

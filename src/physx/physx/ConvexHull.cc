@@ -46,21 +46,21 @@ namespace sp {
         auto points = (const float *)(pbuffer.data() + posAttrib.byteOffset);
 
         auto ibuffer = model.GetBuffer(indexAttrib.bufferIndex);
-        auto indices = (const int *)(ibuffer.data() + indexAttrib.byteOffset);
-        int *indicesCopy = nullptr;
+        auto indices = (const uint32_t *)(ibuffer.data() + indexAttrib.byteOffset);
+        uint32_t *indicesCopy = nullptr;
 
         switch (indexAttrib.componentType) {
         case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
             // indices is already compatible
             break;
         case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-            indicesCopy = new int[indexAttrib.componentCount];
+            indicesCopy = new uint32_t[indexAttrib.componentCount];
 
             for (uint32 i = 0; i < indexAttrib.componentCount; i++) {
-                indicesCopy[i] = (int)((const uint16 *)indices)[i];
+                indicesCopy[i] = (uint32_t)((const uint16 *)indices)[i];
             }
 
-            indices = (const int *)indicesCopy;
+            indices = indicesCopy;
             break;
         default:
             Assert(false, "invalid index component type");
@@ -70,7 +70,7 @@ namespace sp {
         static VHACDCallback vhacdCallback;
 
         auto interfaceVHACD = VHACD::CreateVHACD();
-        int pointStride = posAttrib.byteStride / sizeof(float);
+        Assert(posAttrib.byteStride == sizeof(float) * 3, "Unsupported point stride for VHACD");
 
         VHACD::IVHACD::Parameters params;
         params.m_callback = &vhacdCallback;
@@ -78,13 +78,8 @@ namespace sp {
         // params.m_resolution = 1000000;
         // params.m_convexhullDownsampling = 8;
 
-        bool res = interfaceVHACD->Compute(points,
-                                           pointStride,
-                                           posAttrib.componentCount,
-                                           indices,
-                                           3,
-                                           indexAttrib.componentCount / 3,
-                                           params);
+        bool res =
+            interfaceVHACD->Compute(points, posAttrib.componentCount, indices, indexAttrib.componentCount / 3, params);
         Assert(res, "building convex decomposition");
 
         for (uint32 i = 0; i < interfaceVHACD->GetNConvexHulls(); i++) {
@@ -96,8 +91,8 @@ namespace sp {
             hull.pointCount = ihull.m_nPoints;
             hull.pointByteStride = sizeof(float) * 3;
 
-            for (uint32 i = 0; i < ihull.m_nPoints * 3; i++) {
-                hull.points[i] = (float)ihull.m_points[i];
+            for (uint32 j = 0; j < ihull.m_nPoints * 3; j++) {
+                hull.points[j] = (float)ihull.m_points[j];
             }
 
             hull.triangles = new int[ihull.m_nTriangles * 3];
@@ -120,20 +115,20 @@ namespace sp {
         const size_t nV = mesh.GetNVertices();
 
         hull.points = new float[nV * 3];
-        hull.pointCount = nV;
+        hull.pointCount = (uint32_t)nV;
         hull.pointByteStride = sizeof(float) * 3;
 
         for (size_t v = 0; v < nV; v++) {
             auto &pos = mesh.GetVertices().GetData().m_pos;
-            hull.points[v * 3 + 0] = pos[0];
-            hull.points[v * 3 + 1] = pos[1];
-            hull.points[v * 3 + 2] = pos[2];
+            hull.points[v * 3 + 0] = (float)pos[0];
+            hull.points[v * 3 + 1] = (float)pos[1];
+            hull.points[v * 3 + 2] = (float)pos[2];
             mesh.GetVertices().GetData().m_id = v;
             mesh.GetVertices().Next();
         }
 
         hull.triangles = new int[nT * 3];
-        hull.triangleCount = nT;
+        hull.triangleCount = (uint32_t)nT;
         hull.triangleByteStride = sizeof(int) * 3;
 
         for (size_t f = 0; f < nT; f++) {
@@ -201,7 +196,7 @@ namespace sp {
         }
 
         btConvexHullComputer chc;
-        chc.compute((float *)&finalPoints[0], sizeof(glm::vec3), finalPoints.size(), -1, -1);
+        chc.compute((float *)&finalPoints[0], sizeof(glm::vec3), (int)finalPoints.size(), -1, -1);
 
         VHACD::ICHull icc;
 

@@ -21,7 +21,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace sp::vulkan {
     const int MAX_FRAMES_IN_FLIGHT = 2;
-    const uint64_t FENCE_WAIT_TIME = 1e10; // nanoseconds, assume deadlock after this time
+    const uint64_t FENCE_WAIT_TIME = 10000000000; // nanoseconds, assume deadlock after this time
     const uint32_t VULKAN_API_VERSION = VK_API_VERSION_1_2;
 
     static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -106,9 +106,9 @@ namespace sp::vulkan {
 
         vk::InstanceCreateInfo createInfo(vk::InstanceCreateFlags(),
                                           &applicationInfo,
-                                          layers.size(),
+                                          (uint32_t)layers.size(),
                                           layers.data(),
-                                          extensions.size(),
+                                          (uint32_t)extensions.size(),
                                           extensions.data());
 
         vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
@@ -139,13 +139,12 @@ namespace sp::vulkan {
 
         auto physicalDevices = instance->enumeratePhysicalDevices();
         // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
-        for (auto &dev : physicalDevices) {
+        if (physicalDevices.size() > 0) {
             // TODO: Check device extension support
-            auto properties = dev.getProperties();
+            auto properties = physicalDevices.front().getProperties();
             // auto features = device.getFeatures();
             Logf("Using graphics device: %s", properties.deviceName);
-            physicalDevice = dev;
-            break;
+            physicalDevice = physicalDevices.front();
         }
         Assert(physicalDevice, "No suitable graphics device found!");
 
@@ -222,12 +221,12 @@ namespace sp::vulkan {
         enabledDeviceFeatures.geometryShader = true;
 
         vk::DeviceCreateInfo deviceInfo;
-        deviceInfo.queueCreateInfoCount = queueInfos.size();
+        deviceInfo.queueCreateInfoCount = (uint32_t)queueInfos.size();
         deviceInfo.pQueueCreateInfos = queueInfos.data();
         deviceInfo.pEnabledFeatures = &enabledDeviceFeatures;
-        deviceInfo.enabledExtensionCount = enabledDeviceExtensions.size();
+        deviceInfo.enabledExtensionCount = (uint32_t)enabledDeviceExtensions.size();
         deviceInfo.ppEnabledExtensionNames = enabledDeviceExtensions.data();
-        deviceInfo.enabledLayerCount = layers.size();
+        deviceInfo.enabledLayerCount = (uint32_t)layers.size();
         deviceInfo.ppEnabledLayerNames = layers.data();
 
         device = physicalDevice.createDeviceUnique(deviceInfo, nullptr);

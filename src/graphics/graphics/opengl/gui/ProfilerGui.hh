@@ -57,7 +57,7 @@ namespace sp {
         }
 
     private:
-        size_t AddResults(const vector<TimeResult> &results, bool gpuTime, size_t offset = 0, int depth = 1) {
+        size_t AddResults(const vector<TimeResult> &results, bool gpuTime, size_t offset = 0, size_t depth = 1) {
             while (offset < results.size()) {
                 auto result = results[offset++];
 
@@ -67,7 +67,6 @@ namespace sp {
 
                 ImGui::PushID(offset);
 
-                int depth = result.depth;
                 double elapsed = gpuTime
                                      ? (double)result.gpuElapsed / 1000000.0
                                      : std::chrono::duration_cast<std::chrono::milliseconds>(result.cpuElapsed).count();
@@ -77,7 +76,7 @@ namespace sp {
                                       "%s %.2fms",
                                       result.name.c_str(),
                                       elapsed)) {
-                    offset = AddResults(results, gpuTime, offset, depth + 1);
+                    offset = AddResults(results, gpuTime, offset, result.depth + 1);
                     ImGui::TreePop();
                 }
 

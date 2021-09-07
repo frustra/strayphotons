@@ -97,7 +97,7 @@ namespace sp {
                             const PreDrawFunc &preDraw);
         void DrawGridDebug(const ecs::View &view, SceneShader *shader);
         void SetRenderTarget(GLRenderTarget *attachment0, GLRenderTarget *depth);
-        void SetRenderTargets(size_t attachmentCount, GLRenderTarget **attachments, GLRenderTarget *depth);
+        void SetRenderTargets(uint32_t attachmentCount, GLRenderTarget **attachments, GLRenderTarget *depth);
         void SetDefaultRenderTarget();
 
         MenuRenderMode GetMenuRenderMode() const {

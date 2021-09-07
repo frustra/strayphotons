@@ -39,7 +39,7 @@ namespace sp::vulkan {
         cmd->begin(beginInfo);
 
         vk::ClearValue clearValues[MAX_COLOR_ATTACHMENTS + 1];
-        size_t clearCount = 0;
+        uint32_t clearCount = 0;
 
         for (uint32 i = 0; i < info.state.colorAttachmentCount; i++) {
             if (info.state.ShouldClear(i)) {

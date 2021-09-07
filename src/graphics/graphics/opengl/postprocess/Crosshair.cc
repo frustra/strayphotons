@@ -8,10 +8,10 @@
 #include <random>
 
 namespace sp {
-    static CVar<float> CVarCrosshairSpread("r.CrosshairSpread", 10.0f, "Distance between crosshair dots");
-    static CVar<float> CVarCrosshairDotSize("r.CrosshairDotSize", 2.0f, "Size of crosshair dots");
+    static CVar<int> CVarCrosshairSpread("r.CrosshairSpread", 10, "Distance between crosshair dots");
+    static CVar<int> CVarCrosshairDotSize("r.CrosshairDotSize", 2, "Size of crosshair dots");
 
-    static void drawDots(glm::ivec2 offset, float spread, float size) {
+    static void drawDots(glm::ivec2 offset, GLint spread, GLsizei size) {
         glViewport(offset.x, offset.y, size, size);
         VoxelRenderer::DrawScreenCover();
         glViewport(offset.x + spread, offset.y, size, size);

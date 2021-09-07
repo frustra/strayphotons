@@ -71,7 +71,7 @@ namespace sp {
         this->gridSize = CVarVoxelGridSize.Get();
         this->superSampleScale = CVarVoxelSuperSample.Get();
         this->voxelGridCenter = (this->gridMin + this->gridMax) * glm::vec3(0.5);
-        this->voxelSize = glm::compMax(this->gridMax - this->gridMin + glm::vec3(0.1)) / this->gridSize;
+        this->voxelSize = glm::compMax(this->gridMax - this->gridMin + glm::vec3(0.1f)) / this->gridSize;
     }
 
     void VoxelRenderer::UpdateShaders(bool force) {
@@ -261,7 +261,7 @@ namespace sp {
 
         for (int bounce = 0; bounce < recursion; bounce++) {
             {
-                RenderPhase phase("MatrixGen", timer);
+                RenderPhase subPhase("MatrixGen", timer);
 
                 auto mirrorMapCS = shaders.Get<MirrorMapCS>();
 
@@ -274,7 +274,7 @@ namespace sp {
             }
 
             {
-                RenderPhase phase("MirrorMaps", timer);
+                RenderPhase subPhase("MirrorMaps", timer);
 
                 RenderTargetDesc depthDesc(PF_DEPTH16, mirrorMapResolution);
                 depthDesc.textureArray = true;
@@ -383,7 +383,7 @@ namespace sp {
         if (finalOutput) { targets.finalOutput = finalOutput; }
 
         {
-            RenderPhase phase("PlayerView", timer);
+            RenderPhase subPhase("PlayerView", timer);
 
             auto mirrorIndexStencil0 = context.GetRenderTarget({PF_R32UI, view.extents});
             auto mirrorIndexStencil1 = context.GetRenderTarget({PF_R32UI, view.extents});
@@ -445,7 +445,7 @@ namespace sp {
 
             for (int bounce = 0; bounce <= recursion; bounce++) {
                 if (bounce > 0) {
-                    RenderPhase phase("StencilCopy", timer);
+                    RenderPhase subViewPhase("StencilCopy", timer);
 
                     int prevStencilBit = 1 << ((bounce - 1) % 8);
                     glStencilFunc(GL_EQUAL, 0xff, ~prevStencilBit);
@@ -479,7 +479,7 @@ namespace sp {
                 } else {
                     forwardPassView.clearMode[ecs::View::ClearMode::CLEAR_MODE_STENCIL_BUFFER] = false;
                     {
-                        RenderPhase phase("MatrixGen", timer);
+                        RenderPhase subViewPhase("MatrixGen", timer);
 
                         shaders.Get<MirrorSceneCS>()->SetMirrorData(mirrorDataCount, &mirrorData[0]);
 
@@ -489,7 +489,7 @@ namespace sp {
                     }
 
                     {
-                        RenderPhase phase("DepthClear", timer);
+                        RenderPhase subViewPhase("DepthClear", timer);
                         glDepthFunc(GL_ALWAYS);
                         glDisable(GL_CULL_FACE);
                         glEnable(GL_STENCIL_TEST);
@@ -511,7 +511,7 @@ namespace sp {
 
                 int thisStencilBit = 1 << (bounce % 8);
                 glStencilFunc(GL_EQUAL, 0xff, ~thisStencilBit);
-                glStencilMask(~0); // for forward pass clearMode
+                glStencilMask(~(GLuint)0); // for forward pass clearMode
                 glFrontFace(bounce % 2 == 0 ? GL_CCW : GL_CW);
 
                 sceneFS->SetMirrorId(-1);
@@ -730,7 +730,7 @@ namespace sp {
         static BasicMaterial mat(baseColor);
 
         static VertexBuffer vbo;
-        vbo.SetElementsVAO(vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
+        vbo.SetElementsVAO((GLsizei)vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
         vbo.BindVAO();
 
         mat.baseColorTex.Bind(0);
@@ -783,7 +783,9 @@ namespace sp {
         activeModels.Tick();
     }
 
-    void VoxelRenderer::SetRenderTargets(size_t attachmentCount, GLRenderTarget **attachments, GLRenderTarget *depth) {
+    void VoxelRenderer::SetRenderTargets(uint32_t attachmentCount,
+                                         GLRenderTarget **attachments,
+                                         GLRenderTarget *depth) {
         GLuint fb = context.GetFramebuffer(attachmentCount, attachments, depth);
         glBindFramebuffer(GL_FRAMEBUFFER, fb);
     }

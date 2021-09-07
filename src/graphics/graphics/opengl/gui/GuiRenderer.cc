@@ -44,9 +44,11 @@ namespace sp {
             auto asset = GAssets.Load(path);
             Assert(asset != nullptr, "Failed to load gui font: " + path);
             asset->WaitUntilValid();
+
+            Assert(asset->BufferSize() <= INT_MAX, "Buffer size overflows int");
             ImFontConfig cfg;
             cfg.FontData = (void *)asset->Buffer();
-            cfg.FontDataSize = asset->BufferSize();
+            cfg.FontDataSize = (int)asset->BufferSize();
             cfg.FontDataOwnedByAtlas = false;
             cfg.SizePixels = pixelSize;
             cfg.GlyphRanges = &glyphRanges[0];

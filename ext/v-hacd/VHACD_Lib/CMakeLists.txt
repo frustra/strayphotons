@@ -15,11 +15,12 @@ if(OPENMP_FOUND)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 set(LIB_TYPE "STATIC" CACHE STRING "STATIC, SHARED or MODULE?")
-#message("[VHACD] \t LIB_TYPE " ${LIB_TYPE})
-add_library(vhacd ${PROJECT_CPP_FILES} ${PROJECT_C_FILES} ${PROJECT_INC_FILES} ${PROJECT_INL_FILES} ${PROJECT_CL_FILES})
+message("[VHACD] \t LIB_TYPE " ${LIB_TYPE})
+add_library(vhacd ${LIB_TYPE} ${PROJECT_CPP_FILES} ${PROJECT_C_FILES} ${PROJECT_INC_FILES} ${PROJECT_INL_FILES} ${PROJECT_CL_FILES})
 
 if (OpenCL_FOUND)
-    target_include_directories(vhacd PRIVATE "${OpenCL_INCLUDE_DIRS}")
+    target_include_directories(vhacd PRIVATE "${OpenCL_INCLUDE_DIR}")
+    target_link_libraries(vhacd PRIVATE "${OpenCL_LIBRARY}")
     target_compile_definitions(vhacd PRIVATE -DOPENCL_FOUND=1 )
     target_compile_definitions(vhacd PRIVATE -DOPENCL_CL_FILES="${PROJECT_CL_FILES}" )
 endif()
@@ -31,7 +32,7 @@ target_include_directories(vhacd PUBLIC
   )
 
 
-#message("[VHACD] \t -> CMAKE_INSTALL_PREFIX " ${CMAKE_INSTALL_PREFIX})
+message("[VHACD] \t -> CMAKE_INSTALL_PREFIX " ${CMAKE_INSTALL_PREFIX})
 install(TARGETS vhacd EXPORT vhacd-targets DESTINATION lib)
 install(FILES ${PROJECT_INC_FILES} DESTINATION include)
 install(FILES ${PROJECT_INL_FILES} DESTINATION include)
@@ -71,4 +72,3 @@ install(
   COMPONENT
     Devel
 )
-

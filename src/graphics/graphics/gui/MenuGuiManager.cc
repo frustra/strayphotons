@@ -183,7 +183,7 @@ namespace sp {
 
         static shared_ptr<GpuTexture> logoTex = graphics.GetContext()->LoadTexture(
             GAssets.LoadImage("logos/sp-menu.png"));
-        static ImVec2 logoSize(logoTex->GetWidth() * 0.5, logoTex->GetHeight() * 0.5);
+        static ImVec2 logoSize(logoTex->GetWidth() * 0.5f, logoTex->GetHeight() * 0.5f);
 
         if (selectedScreen == MenuScreen::Splash) {
             ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
@@ -346,7 +346,7 @@ namespace sp {
 
             static shared_ptr<GpuTexture> frLogoTex = graphics.GetContext()->LoadTexture(
                 GAssets.LoadImage("logos/credits-frustra.png"));
-            static ImVec2 frLogoSize(frLogoTex->GetWidth() * 0.5, frLogoTex->GetHeight() * 0.5);
+            static ImVec2 frLogoSize(frLogoTex->GetWidth() * 0.5f, frLogoTex->GetHeight() * 0.5f);
 
             ImGui::BeginChild("CreditScroller", ImVec2(600, 600), false, ImGuiWindowFlags_NoScrollbar);
             ImGui::SetScrollY(creditsScroll);

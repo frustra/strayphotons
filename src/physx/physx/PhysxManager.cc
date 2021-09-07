@@ -131,12 +131,13 @@ namespace sp {
             scene->setGravity(PxVec3(0.f, CVarGravity.Get(true), 0.f));
 
             vector<PxActor *> buffer(256, nullptr);
-            size_t startIndex = 0;
+            uint32_t startIndex = 0;
 
             while (true) {
-                size_t n = scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC, &buffer[0], buffer.size(), startIndex);
+                uint32_t n =
+                    scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC, &buffer[0], (uint32_t)buffer.size(), startIndex);
 
-                for (size_t i = 0; i < n; i++) {
+                for (uint32_t i = 0; i < n; i++) {
                     buffer[i]->is<PxRigidDynamic>()->wakeUp();
                 }
 
@@ -216,8 +217,8 @@ namespace sp {
                         GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate)).multiply(PxVec3(40.0)));
                     constraint->rotation = PxVec3(0); // Don't continue to rotate
 
-                    auto clampRatio = std::min(0.5f, deltaPos.magnitude()) / (deltaPos.magnitude() + 0.00001);
-                    constraint->child->setLinearVelocity(deltaPos.multiply(PxVec3(20.0 * clampRatio)));
+                    auto clampRatio = std::min(0.5f, deltaPos.magnitude()) / (deltaPos.magnitude() + 0.00001f);
+                    constraint->child->setLinearVelocity(deltaPos.multiply(PxVec3(20.0f * clampRatio)));
                     constraint++;
                 } else {
                     // Remove the constraint if the distance is too far
@@ -246,7 +247,7 @@ namespace sp {
             scene->simulate(PxReal(1.0 / CVarPhysicsFrameRate.Get()),
                             nullptr,
                             scratchBlock.data(),
-                            scratchBlock.size());
+                            (uint32_t)scratchBlock.size());
             scene->fetchResults(true);
         }
 
@@ -358,9 +359,11 @@ namespace sp {
         std::string name = model.name;
         if (decomposeHull) name += "-decompose";
 
-        if ((set = GetCachedConvexHulls(name))) return set;
+        set = GetCachedConvexHulls(name);
+        if (set) return set;
 
-        if ((set = LoadCollisionCache(model, decomposeHull))) {
+        set = LoadCollisionCache(model, decomposeHull);
+        if (set) {
             cache[name] = set;
             return set;
         }
@@ -429,7 +432,7 @@ namespace sp {
 
             for (auto hull : decomposition->hulls) {
                 PxConvexMeshDesc convexDesc;
-                convexDesc.points.count = hull.pointCount;
+                convexDesc.points.count = (uint32_t)hull.pointCount;
                 convexDesc.points.stride = hull.pointByteStride;
                 convexDesc.points.data = hull.points;
                 convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
@@ -498,10 +501,11 @@ namespace sp {
             glm::vec3 *velocity = (glm::vec3 *)hit.controller->getUserData();
             auto magnitude = glm::length(*velocity);
             if (magnitude > 0.0001) {
-                PxRigidBodyExt::addForceAtPos(*dynamic,
-                                              hit.dir.multiply(PxVec3(magnitude * ecs::PLAYER_PUSH_FORCE)),
-                                              PxVec3(hit.worldPos.x, hit.worldPos.y, hit.worldPos.z),
-                                              PxForceMode::eIMPULSE);
+                PxRigidBodyExt::addForceAtPos(
+                    *dynamic,
+                    hit.dir.multiply(PxVec3(magnitude * ecs::PLAYER_PUSH_FORCE)),
+                    PxVec3((float)hit.worldPos.x, (float)hit.worldPos.y, (float)hit.worldPos.z),
+                    PxForceMode::eIMPULSE);
             }
         }
     }
@@ -510,7 +514,7 @@ namespace sp {
         PxFilterData data;
         data.word0 = CVarPropJumping.Get() ? PhysxCollisionGroup::WORLD : PhysxCollisionGroup::PLAYER;
         PxControllerFilters filters(&data);
-        auto flags = controller->move(displacement, 0, dt, filters);
+        auto flags = controller->move(displacement, 0, (float)dt, filters);
 
         return flags & PxControllerCollisionFlag::eCOLLISION_DOWN;
     }
@@ -717,14 +721,14 @@ namespace sp {
     ConvexHullSet *PhysxManager::LoadCollisionCache(const Model &model, bool decomposeHull) {
         std::ifstream in;
 
-        std::string name = "cache/collision/" + model.name;
-        if (decomposeHull) name += "-decompose";
+        std::string path = "cache/collision/" + model.name;
+        if (decomposeHull) path += "-decompose";
 
-        if (GAssets.InputStream(name, in)) {
+        if (GAssets.InputStream(path, in)) {
             uint32 magic;
             in.read((char *)&magic, 4);
             if (magic != hullCacheMagic) {
-                Logf("Ignoring outdated collision cache format for %s", name);
+                Logf("Ignoring outdated collision cache format for %s", path);
                 in.close();
                 return nullptr;
             }
@@ -793,13 +797,13 @@ namespace sp {
         if (GAssets.OutputStream(name, out)) {
             out.write((char *)&hullCacheMagic, 4);
 
-            int32 bufferCount = set->bufferIndexes.size();
+            int32 bufferCount = (int32_t)set->bufferIndexes.size();
             out.write((char *)&bufferCount, 4);
 
             for (int bufferIndex : set->bufferIndexes) {
                 Hash128 hash = model.HashBuffer(bufferIndex);
                 string bufferName = std::to_string(bufferIndex);
-                uint32 nameLen = bufferName.length();
+                uint32 nameLen = (uint32_t)bufferName.length();
                 Assert(nameLen <= 256, "hull cache buffer name too long on write");
 
                 out.write((char *)&nameLen, 4);
@@ -807,7 +811,7 @@ namespace sp {
                 out.write((char *)hash.data(), sizeof(hash));
             }
 
-            int32 hullCount = set->hulls.size();
+            int32 hullCount = (int32_t)set->hulls.size();
             out.write((char *)&hullCount, 4);
 
             for (auto hull : set->hulls) {

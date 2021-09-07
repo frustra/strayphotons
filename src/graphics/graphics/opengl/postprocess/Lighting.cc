@@ -306,8 +306,7 @@ namespace sp {
                 alpha = std::max(std::min(alpha, 0.9999f), 0.0001f);
 
                 double blended = r->Exposure * (1.0f - alpha) + newExposure * alpha;
-                blended = std::max(std::min(blended, (double)CVarExposureMax.Get()), (double)CVarExposureMin.Get());
-                r->Exposure = blended;
+                r->Exposure = std::max(std::min((float)blended, CVarExposureMax.Get()), CVarExposureMin.Get());
             }
         }
 

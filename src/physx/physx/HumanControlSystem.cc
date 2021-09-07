@@ -45,14 +45,14 @@ namespace sp {
                 bool crouching = false;
                 bool rotating = false;
 
-                inputMovement.z -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_FORWARD);
-                inputMovement.z += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_BACK);
-                inputMovement.x -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_LEFT);
-                inputMovement.x += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RIGHT);
+                inputMovement.z -= (float)ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_FORWARD);
+                inputMovement.z += (float)ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_BACK);
+                inputMovement.x -= (float)ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_LEFT);
+                inputMovement.x += (float)ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RIGHT);
 
                 if (noclip) {
-                    inputMovement.y += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_JUMP);
-                    inputMovement.y -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_CROUCH);
+                    inputMovement.y += (float)ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_JUMP);
+                    inputMovement.y -= (float)ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_CROUCH);
                 } else {
                     jumping = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_JUMP) >= 0.5;
                     crouching = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_CROUCH) >= 0.5;
@@ -73,7 +73,7 @@ namespace sp {
                     while (ecs::EventInput::Poll(lock, entity, INPUT_EVENT_CAMERA_ROTATE, event)) {
                         auto cursorDiff = std::get<glm::vec2>(event.data);
                         if (!rotating || !InteractRotate(lock, entity, cursorDiff)) {
-                            float sensitivity = CVarCursorSensitivity.Get() * 0.001;
+                            float sensitivity = CVarCursorSensitivity.Get() * 0.001f;
 
                             // Apply pitch/yaw rotations
                             auto &transform = entity.Get<ecs::Transform>(lock);
@@ -116,7 +116,7 @@ namespace sp {
                 if (fabs(targetHeight - currentHeight) > 0.1) {
                     // If player is in the air, resize from the top to implement crouch-jumping.
                     controller.height = currentHeight +
-                                        (targetHeight - currentHeight) * (controller.onGround ? 0.1 : 1.0);
+                                        (targetHeight - currentHeight) * (controller.onGround ? 0.1f : 1.0f);
                 }
 
                 auto velocity = CalculatePlayerVelocity(lock,
@@ -167,12 +167,12 @@ namespace sp {
         }
         if (controller.onGround) {
             controller.velocity.x = movement.x;
-            controller.velocity.y -= 0.01; // Always try moving down so that onGround detection is more consistent.
+            controller.velocity.y -= 0.01f; // Always try moving down so that onGround detection is more consistent.
             if (jump) controller.velocity.y = ecs::PLAYER_JUMP_VELOCITY;
             controller.velocity.z = movement.z;
         } else {
             controller.velocity += movement * ecs::PLAYER_AIR_STRAFE * (float)dtSinceLastFrame;
-            controller.velocity.y -= ecs::PLAYER_GRAVITY * dtSinceLastFrame;
+            controller.velocity.y -= ecs::PLAYER_GRAVITY * (float)dtSinceLastFrame;
         }
 
         return controller.velocity;
@@ -205,8 +205,8 @@ namespace sp {
 
             // Update the velocity based on what happened in physx
             controller.velocity = (velocityPosition - prevPosition) / (float)dtSinceLastFrame;
-            glm::vec3 *velocity = (glm::vec3 *)controller.pxController->getUserData();
-            *velocity = CVarNoClip.Get() ? glm::vec3(0) : controller.velocity;
+            glm::vec3 *controllerVelocity = (glm::vec3 *)controller.pxController->getUserData();
+            *controllerVelocity = CVarNoClip.Get() ? glm::vec3(0) : controller.velocity;
 
             // Offset the capsule position so the camera is at the top
             float capsuleHeight = controller.pxController->getHeight();

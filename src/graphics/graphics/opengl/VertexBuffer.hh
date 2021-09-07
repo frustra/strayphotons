@@ -70,14 +70,14 @@ namespace sp {
         }
 
         template<typename T>
-        VertexBuffer &SetElements(size_t n, T *buffer, GLenum usage = GL_STATIC_DRAW) {
+        VertexBuffer &SetElements(GLsizei n, T *buffer, GLenum usage = GL_STATIC_DRAW) {
             elements = n;
             glNamedBufferData(vbo, n * sizeof(T), buffer, usage);
             return *this;
         }
 
         template<typename T>
-        VertexBuffer &SetElementsVAO(size_t n, T *buffer, GLenum usage = GL_STATIC_DRAW) {
+        VertexBuffer &SetElementsVAO(GLsizei n, T *buffer, GLenum usage = GL_STATIC_DRAW) {
             elements = n;
 
             if (vbo == 0) Create();
@@ -129,7 +129,7 @@ namespace sp {
             return vbo != 0;
         }
 
-        size_t Elements() const {
+        GLsizei Elements() const {
             return elements;
         }
 
@@ -143,6 +143,6 @@ namespace sp {
 
     private:
         GLuint vbo = 0, vao = 0;
-        size_t elements = 0;
+        GLsizei elements = 0;
     };
 } // namespace sp

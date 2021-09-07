@@ -330,7 +330,7 @@ bool OpenVrAction::ComputeBoneLookupTable(std::shared_ptr<XrModel> xrModel) {
         }
 
         // SteamVR Bone Index is the position in the steamVrBoneNames vector.
-        modelBoneData[i].steamVrBoneIndex = std::distance(steamVrBoneNames.begin(), steamVrBone);
+        modelBoneData[i].steamVrBoneIndex = (vr::BoneIndex_t)std::distance(steamVrBoneNames.begin(), steamVrBone);
 
         // Store the inverse bind pose for this node, taken from the GLTF
         modelBoneData[i].inverseBindPose = model->GetInvBindPoseForNode(jointNodes[i]);
@@ -353,7 +353,7 @@ std::vector<std::string> OpenVrAction::GetSteamVRBoneNames() {
 
     for (size_t i = 0; i < boneCount; i++) {
         boneNames[i].resize(vr::k_unMaxBoneNameLength);
-        vr::VRInput()->GetBoneName(handle, i, &boneNames[i].front(), vr::k_unMaxBoneNameLength);
+        vr::VRInput()->GetBoneName(handle, (vr::BoneIndex_t)i, &boneNames[i].front(), vr::k_unMaxBoneNameLength);
         boneNames[i].erase(boneNames[i].find('\0'));
     }
 

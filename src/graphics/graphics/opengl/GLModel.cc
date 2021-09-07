@@ -26,7 +26,7 @@ namespace sp {
             if (!glPrimitive.heightTex) glPrimitive.heightTex = &defaultMat.heightTex;
 
             glCreateVertexArrays(1, &glPrimitive.vertexBufferHandle);
-            for (size_t i = 0; i < std::size(primitive.attributes); i++) {
+            for (GLuint i = 0; i < primitive.attributes.size(); i++) {
                 auto &attr = primitive.attributes[i];
                 if (attr.componentFields == 0) continue;
                 glEnableVertexArrayAttrib(glPrimitive.vertexBufferHandle, i);
@@ -252,9 +252,9 @@ namespace sp {
 
             return tex;
         } else if (factor.size() > 0) {
-            unsigned char data[4];
+            uint8_t data[4];
             for (size_t i = 0; i < 4; i++) {
-                data[i] = 255 * factor.at(std::min(factor.size() - 1, i));
+                data[i] = (uint8_t)(255.0 * factor.at(std::min(factor.size() - 1, i)));
             }
 
             // Create a single pixel texture based on the factor data provided
