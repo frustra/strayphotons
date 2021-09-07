@@ -167,7 +167,7 @@ namespace sp {
         auto fullPath = std::filesystem::weakly_canonical(base / path);
         Logf("Saving screenshot to: %s", fullPath.string());
 
-        size_t size = tex.width * tex.height * 4;
+        GLsizei size = tex.width * tex.height * 4;
         uint8 *buf = new uint8[size], *flipped = new uint8[size];
         glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
         glGetTextureImage(tex.handle, 0, GL_RGBA, GL_UNSIGNED_BYTE, size, buf);

@@ -19,7 +19,6 @@ namespace ecs {
                                         EventBindings &bindings,
                                         const picojson::value &src) {
         for (auto bind : src.get<picojson::object>()) {
-            Tecs::Entity target;
             std::string targetEvent;
             for (auto dest : bind.second.get<picojson::object>()) {
                 picojson::array targetList;

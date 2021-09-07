@@ -8,7 +8,7 @@
 #include <map>
 
 namespace tinygltf {
-    class FsCallbacks;
+    struct FsCallbacks;
     class Model;
 } // namespace tinygltf
 
@@ -75,7 +75,6 @@ namespace sp {
         const std::vector<unsigned char> &GetBuffer(size_t index) const;
         Hash128 HashBuffer(size_t index) const;
 
-        int FindNodeByName(std::string name) const;
         std::string GetNodeName(int node) const;
         glm::mat4 GetInvBindPoseForNode(int nodeIndex) const;
         std::vector<int> GetJointNodes() const;

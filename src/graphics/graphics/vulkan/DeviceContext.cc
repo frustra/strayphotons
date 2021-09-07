@@ -139,13 +139,12 @@ namespace sp::vulkan {
 
         auto physicalDevices = instance->enumeratePhysicalDevices();
         // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
-        for (auto &dev : physicalDevices) {
+        if (physicalDevices.size() > 0) {
             // TODO: Check device extension support
-            auto properties = dev.getProperties();
+            auto properties = physicalDevices.front().getProperties();
             // auto features = device.getFeatures();
             Logf("Using graphics device: %s", properties.deviceName);
-            physicalDevice = dev;
-            break;
+            physicalDevice = physicalDevices.front();
         }
         Assert(physicalDevice, "No suitable graphics device found!");
 

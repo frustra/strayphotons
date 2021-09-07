@@ -105,7 +105,7 @@ namespace sp {
         std::istringstream lines(src);
         string line;
         std::ostringstream output;
-        int linesProcessed = 0, currUnit = input.units.size() - 1;
+        size_t linesProcessed = 0, currUnit = input.units.size() - 1;
 
         while (std::getline(lines, line)) {
             linesProcessed++;
@@ -127,7 +127,7 @@ namespace sp {
             tokens >> command;
 
             if (command == "import") {
-                int nextUnit = input.units.size();
+                size_t nextUnit = input.units.size();
 
                 string importPath;
                 std::getline(tokens, importPath);

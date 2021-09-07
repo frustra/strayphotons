@@ -11,8 +11,7 @@ namespace sp {
         Assert(values.size() == N, "incorrect array size");
 
         for (size_t i = 0; i < values.size(); i++) {
-            double v = values[i].get<double>();
-            ret[i] = v;
+            ret[i] = (float)values[i].get<double>();
         }
     }
 

@@ -27,6 +27,6 @@ namespace sp {
     private:
         UniformBuffer sensorData, lightData, voxelInfo;
         GLBuffer readBackBuf;
-        size_t readBackSize;
+        GLsizei readBackSize;
     };
 } // namespace sp

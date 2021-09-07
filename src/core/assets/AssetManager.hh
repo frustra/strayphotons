@@ -12,7 +12,7 @@
 #include <vector>
 
 namespace tinygltf {
-    class FsCallbacks;
+    struct FsCallbacks;
 }
 
 namespace sp {

@@ -134,9 +134,9 @@ namespace sp {
             size_t startIndex = 0;
 
             while (true) {
-                size_t n = scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC, &buffer[0], buffer.size(), startIndex);
+                uint32_t n = scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC, &buffer[0], buffer.size(), startIndex);
 
-                for (size_t i = 0; i < n; i++) {
+                for (uint32_t i = 0; i < n; i++) {
                     buffer[i]->is<PxRigidDynamic>()->wakeUp();
                 }
 
@@ -358,9 +358,11 @@ namespace sp {
         std::string name = model.name;
         if (decomposeHull) name += "-decompose";
 
-        if ((set = GetCachedConvexHulls(name))) return set;
+        set = GetCachedConvexHulls(name);
+        if (set) return set;
 
-        if ((set = LoadCollisionCache(model, decomposeHull))) {
+        set = LoadCollisionCache(model, decomposeHull);
+        if (set) {
             cache[name] = set;
             return set;
         }
@@ -717,14 +719,14 @@ namespace sp {
     ConvexHullSet *PhysxManager::LoadCollisionCache(const Model &model, bool decomposeHull) {
         std::ifstream in;
 
-        std::string name = "cache/collision/" + model.name;
-        if (decomposeHull) name += "-decompose";
+        std::string path = "cache/collision/" + model.name;
+        if (decomposeHull) path += "-decompose";
 
-        if (GAssets.InputStream(name, in)) {
+        if (GAssets.InputStream(path, in)) {
             uint32 magic;
             in.read((char *)&magic, 4);
             if (magic != hullCacheMagic) {
-                Logf("Ignoring outdated collision cache format for %s", name);
+                Logf("Ignoring outdated collision cache format for %s", path);
                 in.close();
                 return nullptr;
             }

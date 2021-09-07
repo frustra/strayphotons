@@ -105,7 +105,7 @@ namespace sp {
             result.cpuElapsed = front.cpuEnd - front.cpuStart;
             result.gpuElapsed = gpuEnd - gpuStart;
 
-            if (front.resultIndex < (int)lastCompleteFrame.results.size()) {
+            if (front.resultIndex < lastCompleteFrame.results.size()) {
                 // Smooth out the graph by applying a high-watermark filter.
                 auto lastCpuElapsed = lastCompleteFrame.results[front.resultIndex].cpuElapsed;
                 GLuint64 lastGpuElapsed = lastCompleteFrame.results[front.resultIndex].gpuElapsed;

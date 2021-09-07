@@ -205,8 +205,8 @@ namespace sp {
 
             // Update the velocity based on what happened in physx
             controller.velocity = (velocityPosition - prevPosition) / (float)dtSinceLastFrame;
-            glm::vec3 *velocity = (glm::vec3 *)controller.pxController->getUserData();
-            *velocity = CVarNoClip.Get() ? glm::vec3(0) : controller.velocity;
+            glm::vec3 *controllerVelocity = (glm::vec3 *)controller.pxController->getUserData();
+            *controllerVelocity = CVarNoClip.Get() ? glm::vec3(0) : controller.velocity;
 
             // Offset the capsule position so the camera is at the top
             float capsuleHeight = controller.pxController->getHeight();
@@ -260,7 +260,7 @@ namespace sp {
                                             glm::vec2 dCursor) {
         auto &interact = entity.Get<ecs::InteractController>(lock);
         if (interact.target) {
-            auto rotation = glm::vec3(dCursor.y, dCursor.x, 0) * (float)(CVarCursorSensitivity.Get() * 0.01);
+            auto rotation = glm::vec3(dCursor.y, dCursor.x, 0) * CVarCursorSensitivity.Get() * 0.01f;
             physics->RotateConstraint(entity, interact.target, GlmVec3ToPxVec3(rotation));
             return true;
         }

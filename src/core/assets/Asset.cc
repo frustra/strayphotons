@@ -5,7 +5,8 @@
 namespace sp {
     Hash128 Asset::Hash() const {
         Hash128 output;
-        MurmurHash3_x86_128(buffer.data(), buffer.size(), 0, output.data());
+        Assert(buffer.size() <= INT_MAX, "Buffer size overflows int");
+        MurmurHash3_x86_128(buffer.data(), (int)buffer.size(), 0, output.data());
         return output;
     }
 } // namespace sp

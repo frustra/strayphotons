@@ -40,11 +40,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 ## Setup compiler flags for various build types
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
-    # TODO: Enable warnings as errors on MSVC
-    set(CMAKE_CXX_FLAGS 				"/MP /EHsc") # /Wall /WX") # /wd4800 /wd4189
-    set(CMAKE_CXX_FLAGS_RELEASE 		"/MT /O2")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"/MTd /O2")
-    set(CMAKE_CXX_FLAGS_DEBUG 			"/MTd /DEBUG /ZI /FC")
+    # warning C4100: '*': unreferenced formal parameter
+    # warning C4201: nonstandard extension used: nameless struct/union
+    # warning C4244: '=': conversion from '*' to '*', possible loss of data
+    # warning C4267: 'argument': conversion from '*' to '*', possible loss of data
+    # warning C4305: 'argument': truncation from '*' to '*'
+    # warning C4458: declaration of '*' hides class member
+    set(CMAKE_CXX_FLAGS                 "/MP /EHsc /W4 /WX /wd4100 /wd4201 /wd4244 /wd4267 /wd4305 /wd4458")
+    set(CMAKE_CXX_FLAGS_RELEASE         "/MT /O2")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "/MTd /O2")
+    set(CMAKE_CXX_FLAGS_DEBUG           "/MTd /DEBUG /ZI /FC")
 
     # Force targets to be built using static linking
     if(SP_DEBUG)
@@ -55,17 +60,17 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
-    set(CMAKE_CXX_FLAGS 				"-Wall -Werror -Werror=format-security -Wno-volatile")
-    set(CMAKE_CXX_FLAGS_RELEASE 		"-O3")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"-g3 -ggdb3 -Og")
-    set(CMAKE_CXX_FLAGS_DEBUG 			"-g3 -ggdb3 -O0")
+    set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Werror=format-security -Wno-volatile")
+    set(CMAKE_CXX_FLAGS_RELEASE         "-O3")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g3 -ggdb3 -Og")
+    set(CMAKE_CXX_FLAGS_DEBUG           "-g3 -ggdb3 -O0")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
-    set(CMAKE_CXX_FLAGS 				"-Wall -Werror -Wformat-security -Wno-deprecated-volatile")
-    set(CMAKE_CXX_FLAGS_RELEASE 		"-O3")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO 	"-g3 -ggdb3 -Og")
-    set(CMAKE_CXX_FLAGS_DEBUG 			"-g3 -ggdb3 -O0")
+    set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Wformat-security -Wno-deprecated-volatile")
+    set(CMAKE_CXX_FLAGS_RELEASE         "-O3")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g3 -ggdb3 -Og")
+    set(CMAKE_CXX_FLAGS_DEBUG           "-g3 -ggdb3 -O0")
 
 else()
 

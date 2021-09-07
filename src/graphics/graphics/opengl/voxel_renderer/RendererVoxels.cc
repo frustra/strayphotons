@@ -23,7 +23,7 @@ namespace sp {
         auto VoxelListSize = VoxelGridSize * VoxelGridSize * VoxelGridSize * CVarMaxVoxelFill.Get();
 
         glm::ivec3 gridDimensions = glm::ivec3(VoxelGridSize, VoxelGridSize, VoxelGridSize);
-        auto VoxelMipLevels = ceil(log2(VoxelGridSize));
+        uint32_t VoxelMipLevels = ceil(log2(VoxelGridSize));
 
         // { listSize, indirect_x, indirect_y, indirect_z }
         GLsizei indirectBufferSize = sizeof(GLuint) * 4 * VoxelMipLevels;
@@ -96,7 +96,7 @@ namespace sp {
         int lightCount = FillLightData(&lightData[0], lock);
 
         {
-            RenderPhase phase("Fill", timer);
+            RenderPhase subPhase("Fill", timer);
 
             indirectBufferCurrent.Bind(GL_ATOMIC_COUNTER_BUFFER, 0);
             voxelContext.voxelCounters->GetGLTexture().BindImage(0, GL_READ_WRITE, 0, GL_TRUE, 0);
@@ -125,7 +125,7 @@ namespace sp {
         }
 
         {
-            RenderPhase phase("Merge", timer);
+            RenderPhase subPhase("Merge", timer);
 
             indirectBufferCurrent.Bind(GL_DISPATCH_INDIRECT_BUFFER);
 
@@ -147,11 +147,11 @@ namespace sp {
         }
 
         {
-            RenderPhase phase("Mipmap", timer);
+            RenderPhase subPhase("Mipmap", timer);
 
-            for (uint32 i = 0; i <= voxelContext.radianceMips->GetDesc().levels; i++) {
+            for (GLint i = 0; i <= voxelContext.radianceMips->GetDesc().levels; i++) {
                 {
-                    RenderPhase subPhase("Clear", timer);
+                    RenderPhase subMipPhase("Clear", timer);
 
                     indirectBufferPrevious.Bind(GL_DISPATCH_INDIRECT_BUFFER);
                     indirectBufferPrevious.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint));
@@ -170,7 +170,7 @@ namespace sp {
                 }
 
                 {
-                    RenderPhase subPhase("MipmapLevel", timer);
+                    RenderPhase subMipPhase("MipmapLevel", timer);
 
                     indirectBufferCurrent.Bind(GL_DISPATCH_INDIRECT_BUFFER);
                     indirectBufferCurrent.Bind(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint) * 4 * i, sizeof(GLuint) * 4);
@@ -218,7 +218,7 @@ namespace sp {
         }
 
         {
-            RenderPhase phase("Swap", timer);
+            RenderPhase subPhase("Swap", timer);
 
             GLBuffer tmp = indirectBufferPrevious;
             indirectBufferPrevious = indirectBufferCurrent;

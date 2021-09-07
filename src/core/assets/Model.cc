@@ -84,7 +84,8 @@ namespace sp {
         Assert(valid.test(), "Hashing buffer on invalid model");
         Hash128 output;
         auto buffer = GetBuffer(index);
-        MurmurHash3_x86_128(buffer.data(), buffer.size(), 0, output.data());
+        Assert(buffer.size() <= INT_MAX, "Buffer size overflows max int");
+        MurmurHash3_x86_128(buffer.data(), (int)buffer.size(), 0, output.data());
         return output;
     }
 
@@ -100,14 +101,6 @@ namespace sp {
         }
 
         return nodes;
-    }
-
-    int Model::FindNodeByName(std::string name) const {
-        Assert(valid.test(), "Finding joint nodes on invalid model");
-        for (size_t i = 0; i < model->nodes.size(); i++) {
-            if (model->nodes[i].name == name) { return i; }
-        }
-        return -1;
     }
 
     glm::mat4 Model::GetInvBindPoseForNode(int nodeIndex) const {
@@ -141,20 +134,21 @@ namespace sp {
             tinygltf::FsCallbacks fs = {};
             gltfLoader.SetFsCallbacks(fs);
         }
+        Assert(asset->BufferSize() <= UINT_MAX, "Buffer size overflows max uint");
         if (ends_with(asset->path, ".gltf")) {
             ret = gltfLoader.LoadASCIIFromString(gltfModel.get(),
                                                  &err,
                                                  &warn,
                                                  (char *)asset->Buffer(),
-                                                 asset->BufferSize(),
+                                                 (uint32_t)asset->BufferSize(),
                                                  baseDir);
         } else {
             // Assume GLB model
             ret = gltfLoader.LoadBinaryFromMemory(gltfModel.get(),
                                                   &err,
                                                   &warn,
-                                                  (unsigned char *)asset->Buffer(),
-                                                  asset->BufferSize(),
+                                                  asset->Buffer(),
+                                                  (uint32_t)asset->BufferSize(),
                                                   baseDir);
         }
 
@@ -251,13 +245,13 @@ namespace sp {
                         int buffer = model->bufferViews[bufferView].buffer;
                         int byteStride = model->accessors[inverseBindMatrixAccessor].ByteStride(
                             model->bufferViews[bufferView]);
-                        int byteOffset = model->accessors[inverseBindMatrixAccessor].byteOffset +
-                                         model->bufferViews[bufferView].byteOffset;
+                        size_t byteOffset = model->accessors[inverseBindMatrixAccessor].byteOffset +
+                                            model->bufferViews[bufferView].byteOffset;
 
-                        int dataOffset = byteOffset + (i * byteStride);
+                        size_t dataOffset = byteOffset + (i * byteStride);
 
                         inverseBindMatrixForJoint[model->skins[skinId].joints[i]] = glm::make_mat4(
-                            (float *)((uintptr_t)model->buffers[buffer].data.data() + dataOffset));
+                            reinterpret_cast<const float *>(&model->buffers[buffer].data[dataOffset]));
                     } else {
                         // If no inv bind matrix is supplied by the model, GLTF standard says use a 4x4 identity matrix
                         inverseBindMatrixForJoint[model->skins[skinId].joints[i]] = glm::mat4(1.0f);

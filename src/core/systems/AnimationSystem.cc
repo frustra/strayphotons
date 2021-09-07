@@ -5,7 +5,7 @@
 #include "ecs/EcsImpl.hh"
 
 namespace sp {
-    bool AnimationSystem::Frame(float dtSinceLastFrame) {
+    bool AnimationSystem::Frame(double dtSinceLastFrame) {
         auto lock = ecs::World.StartTransaction<ecs::Write<ecs::Animation, ecs::Transform>>();
         for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
             if (!ent.Has<ecs::Animation, ecs::Transform>(lock)) continue;

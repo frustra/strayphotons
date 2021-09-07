@@ -73,7 +73,7 @@ namespace sp {
 
         PixelFormat format;
         glm::ivec3 extent = {0, 0, 0};
-        uint32_t levels = 1;
+        GLsizei levels = 1;
         bool depthCompare = false;
         bool multiSample = false;
         bool textureArray = false;

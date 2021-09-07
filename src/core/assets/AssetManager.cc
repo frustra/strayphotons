@@ -273,12 +273,12 @@ namespace sp {
         return image;
     }
 
-    shared_ptr<Scene> AssetManager::LoadScene(const std::string &name,
+    shared_ptr<Scene> AssetManager::LoadScene(const std::string &sceneName,
                                               ecs::Lock<ecs::AddRemove> lock,
                                               ecs::Owner owner) {
-        Logf("Loading scene: %s", name);
+        Logf("Loading scene: %s", sceneName);
 
-        std::shared_ptr<const Asset> asset = Load("scenes/" + name + ".json");
+        std::shared_ptr<const Asset> asset = Load("scenes/" + sceneName + ".json");
         if (!asset) {
             Logf("Scene not found");
             return nullptr;
@@ -291,7 +291,7 @@ namespace sp {
             return nullptr;
         }
 
-        shared_ptr<Scene> scene = make_shared<Scene>(name, asset);
+        shared_ptr<Scene> scene = make_shared<Scene>(sceneName, asset);
 
         auto autoExecList = root.get<picojson::object>()["autoexec"];
         if (autoExecList.is<picojson::array>()) {

@@ -7,6 +7,6 @@ namespace sp {
     public:
         AnimationSystem() {}
 
-        bool Frame(float dtSinceLastFrame);
+        bool Frame(double dtSinceLastFrame);
     };
 } // namespace sp

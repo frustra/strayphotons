@@ -261,7 +261,7 @@ namespace sp {
 
         for (int bounce = 0; bounce < recursion; bounce++) {
             {
-                RenderPhase phase("MatrixGen", timer);
+                RenderPhase subPhase("MatrixGen", timer);
 
                 auto mirrorMapCS = shaders.Get<MirrorMapCS>();
 
@@ -274,7 +274,7 @@ namespace sp {
             }
 
             {
-                RenderPhase phase("MirrorMaps", timer);
+                RenderPhase subPhase("MirrorMaps", timer);
 
                 RenderTargetDesc depthDesc(PF_DEPTH16, mirrorMapResolution);
                 depthDesc.textureArray = true;
@@ -383,7 +383,7 @@ namespace sp {
         if (finalOutput) { targets.finalOutput = finalOutput; }
 
         {
-            RenderPhase phase("PlayerView", timer);
+            RenderPhase subPhase("PlayerView", timer);
 
             auto mirrorIndexStencil0 = context.GetRenderTarget({PF_R32UI, view.extents});
             auto mirrorIndexStencil1 = context.GetRenderTarget({PF_R32UI, view.extents});
@@ -445,7 +445,7 @@ namespace sp {
 
             for (int bounce = 0; bounce <= recursion; bounce++) {
                 if (bounce > 0) {
-                    RenderPhase phase("StencilCopy", timer);
+                    RenderPhase subViewPhase("StencilCopy", timer);
 
                     int prevStencilBit = 1 << ((bounce - 1) % 8);
                     glStencilFunc(GL_EQUAL, 0xff, ~prevStencilBit);
@@ -479,7 +479,7 @@ namespace sp {
                 } else {
                     forwardPassView.clearMode[ecs::View::ClearMode::CLEAR_MODE_STENCIL_BUFFER] = false;
                     {
-                        RenderPhase phase("MatrixGen", timer);
+                        RenderPhase subViewPhase("MatrixGen", timer);
 
                         shaders.Get<MirrorSceneCS>()->SetMirrorData(mirrorDataCount, &mirrorData[0]);
 
@@ -489,7 +489,7 @@ namespace sp {
                     }
 
                     {
-                        RenderPhase phase("DepthClear", timer);
+                        RenderPhase subViewPhase("DepthClear", timer);
                         glDepthFunc(GL_ALWAYS);
                         glDisable(GL_CULL_FACE);
                         glEnable(GL_STENCIL_TEST);
@@ -511,7 +511,7 @@ namespace sp {
 
                 int thisStencilBit = 1 << (bounce % 8);
                 glStencilFunc(GL_EQUAL, 0xff, ~thisStencilBit);
-                glStencilMask(~0); // for forward pass clearMode
+                glStencilMask(~0u); // for forward pass clearMode
                 glFrontFace(bounce % 2 == 0 ? GL_CCW : GL_CW);
 
                 sceneFS->SetMirrorId(-1);

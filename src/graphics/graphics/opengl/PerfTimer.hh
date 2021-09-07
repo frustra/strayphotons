@@ -14,7 +14,7 @@ namespace sp {
 
     struct TimeResult {
         string name;
-        int depth = 0;
+        size_t depth = 0;
         chrono_clock::duration cpuElapsed;
         uint64 gpuElapsed = 0;
     };
@@ -22,7 +22,7 @@ namespace sp {
     struct TimeQuery {
         chrono_clock::time_point cpuStart, cpuEnd;
         GLuint glQueries[2];
-        int resultIndex;
+        size_t resultIndex;
     };
 
     class FrameTiming {

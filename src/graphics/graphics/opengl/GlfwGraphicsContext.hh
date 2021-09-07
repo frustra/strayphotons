@@ -41,7 +41,7 @@ namespace sp {
             return rtPool.Get(desc);
         }
 
-        GLuint GetFramebuffer(uint32 numAttachments,
+        GLuint GetFramebuffer(uint32_t numAttachments,
                               GLRenderTarget **attachments,
                               GLRenderTarget *depthStencilAttachment) {
             return rtPool.GetFramebuffer(numAttachments, attachments, depthStencilAttachment);

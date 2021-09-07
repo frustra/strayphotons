@@ -13,7 +13,7 @@ namespace sp {
             target = context.GetRenderTarget(*this);
 
             if (clear) {
-                for (uint32 i = 0; i < this->levels; i++) {
+                for (GLint i = 0; i < this->levels; i++) {
                     target->GetGLTexture().Clear(data, i);
                 }
             }

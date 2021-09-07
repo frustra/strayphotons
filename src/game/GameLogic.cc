@@ -254,7 +254,7 @@ namespace sp {
         }
     }
 
-    void GameLogic::LoadScene(std::string name) {
+    void GameLogic::LoadScene(std::string sceneName) {
 #ifdef SP_GRAPHICS_SUPPORT
         game->graphics.RenderLoading();
 #endif
@@ -272,7 +272,7 @@ namespace sp {
         scene.reset();
         {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-            scene = GAssets.LoadScene(name, lock, ecs::Owner(ecs::Owner::OwnerType::SCENE, 0));
+            scene = GAssets.LoadScene(sceneName, lock, ecs::Owner(ecs::Owner::OwnerType::SCENE, 0));
 
             for (auto e : lock.EntitiesWith<ecs::Name>()) {
                 auto &name = e.Get<ecs::Name>(lock);
