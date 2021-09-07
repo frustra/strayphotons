@@ -5,7 +5,7 @@ set(BUILD_SHARED_LIBS off)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "8.0.0")
-        add_compile_options(-Wno-unknown-pragmas -Wno-misleading-indentation -Wno-strict-aliasing)
+        add_compile_options(-Wno-stringop-overflow -Wno-class-memaccess -Wno-unused-result -Wno-maybe-uninitialized -Wno-unknown-pragmas -Wno-misleading-indentation -Wno-strict-aliasing)
     endif()
 endif()
 
