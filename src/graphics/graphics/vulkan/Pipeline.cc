@@ -28,16 +28,20 @@ namespace sp::vulkan {
         return hashes;
     }
 
-    shared_ptr<PipelineLayout> PipelineManager::GetPipelineLayout(const ShaderSet &shaders) {
+    shared_ptr<PipelineLayout> PipelineManager::GetPipelineLayout(const ShaderSet &shaders,
+                                                                  const vk::DescriptorSetLayout &descriptorSetLayout) {
         PipelineLayoutKey key;
-        key.input = GetShaderHashes(shaders);
+        key.input.shaderHashes = GetShaderHashes(shaders);
+        key.input.descriptorSetLayout = descriptorSetLayout;
 
         auto &mapValue = pipelineLayouts[key];
-        if (!mapValue) { mapValue = make_shared<PipelineLayout>(device, shaders); }
+        if (!mapValue) { mapValue = make_shared<PipelineLayout>(device, shaders, descriptorSetLayout); }
         return mapValue;
     }
 
-    PipelineLayout::PipelineLayout(DeviceContext &device, const ShaderSet &shaders) {
+    PipelineLayout::PipelineLayout(DeviceContext &device,
+                                   const ShaderSet &shaders,
+                                   const vk::DescriptorSetLayout &descriptorSetLayout) {
         uint32 count;
 
         // TODO: implement other fields on vk::PipelineLayoutCreateInfo
@@ -65,6 +69,10 @@ namespace sp::vulkan {
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
         pipelineLayoutInfo.pushConstantRangeCount = pushConstantRange.stageFlags ? 1 : 0;
         pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+        if (descriptorSetLayout) {
+            pipelineLayoutInfo.setLayoutCount = 1;
+            pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+        }
         layout = device->createPipelineLayoutUnique(pipelineLayoutInfo);
     }
 
@@ -84,7 +92,7 @@ namespace sp::vulkan {
 
         auto &pipelineMapValue = pipelines[key];
         if (!pipelineMapValue) {
-            auto layout = GetPipelineLayout(shaders);
+            auto layout = GetPipelineLayout(shaders, compile.state.descriptorSetLayout);
             pipelineMapValue = make_shared<Pipeline>(device, shaders, compile, layout);
         }
         return pipelineMapValue;

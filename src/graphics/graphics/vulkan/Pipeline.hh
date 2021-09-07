@@ -23,6 +23,8 @@ namespace sp::vulkan {
         unsigned depthTest : 1;
         unsigned blendEnable : 1;
         unsigned stencilTest : 1;
+
+        vk::DescriptorSetLayout descriptorSetLayout;
     };
 
     struct PipelineCompileInput {
@@ -37,7 +39,9 @@ namespace sp::vulkan {
 
     class PipelineLayout {
     public:
-        PipelineLayout(DeviceContext &device, const ShaderSet &shaders);
+        PipelineLayout(DeviceContext &device,
+                       const ShaderSet &shaders,
+                       const vk::DescriptorSetLayout &descriptorSetLayout);
 
         vk::PipelineLayout operator*() const {
             return Get();
@@ -81,7 +85,8 @@ namespace sp::vulkan {
         PipelineManager(DeviceContext &device);
 
         shared_ptr<Pipeline> GetGraphicsPipeline(const PipelineCompileInput &compile);
-        shared_ptr<PipelineLayout> GetPipelineLayout(const ShaderSet &shaders);
+        shared_ptr<PipelineLayout> GetPipelineLayout(const ShaderSet &shaders,
+                                                     const vk::DescriptorSetLayout &descriptorSetLayout);
 
         struct PipelineKeyData {
             ShaderHashSet shaderHashes;
@@ -89,13 +94,15 @@ namespace sp::vulkan {
             PipelineStaticState state;
         };
 
+        struct PipelineLayoutKeyData {
+            ShaderHashSet shaderHashes;
+            vk::DescriptorSetLayout descriptorSetLayout;
+        };
+
         using PipelineKey = HashKey<PipelineKeyData>;
-        using PipelineLayoutKey = HashKey<ShaderHashSet>;
+        using PipelineLayoutKey = HashKey<PipelineLayoutKeyData>;
 
     private:
-        shared_ptr<Pipeline> CreateGraphicsPipeline(const ShaderSet &shaders, const PipelineCompileInput &compile);
-        shared_ptr<PipelineLayout> CreatePipelineLayout(const ShaderSet &shaders);
-
         DeviceContext &device;
         vk::UniquePipelineCache pipelineCache;
 

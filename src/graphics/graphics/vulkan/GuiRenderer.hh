@@ -27,5 +27,14 @@ namespace sp::vulkan {
         unique_ptr<VertexLayout> vertexLayout;
         UniqueBuffer vertexBuffer, indexBuffer;
         UniqueImage fontImage;
+        vk::UniqueImageView fontView;
+
+        // TODO: get rid of all these
+        UniqueBuffer fontBuf;
+        vk::UniqueSemaphore transferComplete, graphicsTransitionComplete;
+        vk::UniqueSampler fontSampler;
+        vk::UniqueDescriptorSetLayout descriptorSetLayout;
+        vk::UniqueDescriptorPool descriptorPool;
+        vector<vk::DescriptorSet> descriptorSets;
     };
 } // namespace sp::vulkan

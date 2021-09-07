@@ -56,7 +56,12 @@ namespace sp::vulkan {
         void PrepareWindowView(ecs::View &view) override;
 
         CommandContextPtr GetCommandContext(CommandContextType type = CommandContextType::General);
-        void Submit(CommandContextPtr &cmd); // releases *cmd back to the DeviceContext and resets cmd
+
+        // Releases *cmd back to the DeviceContext and resets cmd
+        void Submit(CommandContextPtr &cmd,
+                    vk::ArrayProxy<const vk::Semaphore> signalSemaphores = {},
+                    vk::ArrayProxy<const vk::Semaphore> waitSemaphores = {},
+                    vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {});
 
         UniqueBuffer AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
         UniqueImage AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency);
@@ -90,6 +95,10 @@ namespace sp::vulkan {
             return physicalDeviceProperties.limits;
         }
 
+        uint32 QueueFamilyIndex(CommandContextType type) {
+            return queueFamilyIndex[QueueType(type)];
+        }
+
     private:
         void SetTitle(string title);
 
@@ -114,6 +123,7 @@ namespace sp::vulkan {
 
         std::array<vk::Queue, QUEUE_TYPES_COUNT> queues;
         std::array<uint32, QUEUE_TYPES_COUNT> queueFamilyIndex;
+        vk::Extent3D imageTransferGranularity;
 
         uint32 swapchainVersion = 0;
         vk::UniqueSwapchainKHR swapchain;

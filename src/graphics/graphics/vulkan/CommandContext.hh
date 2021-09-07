@@ -15,6 +15,7 @@ namespace sp::vulkan::CommandContextFlags {
         Scissor = 1 << 1,
         PushConstants = 1 << 2,
         Pipeline = 1 << 3,
+        DescriptorSets = 1 << 4,
     };
 
     using DirtyFlags = vk::Flags<DirtyBits>;
@@ -35,7 +36,7 @@ namespace sp::vulkan {
         using DirtyFlags = CommandContextFlags::DirtyFlags;
         using DirtyBits = CommandContextFlags::DirtyBits;
 
-        CommandContext(DeviceContext &device, vk::UniqueCommandBuffer cmd, CommandContextType type);
+        CommandContext(DeviceContext &device, vk::UniqueCommandBuffer cmd, CommandContextType type) noexcept;
         ~CommandContext();
 
         CommandContextType GetType() {
@@ -138,16 +139,45 @@ namespace sp::vulkan {
             }
         }
 
+        bool WritesToSwapchain() {
+            return writesToSwapchain;
+        }
+
         void FlushGraphicsState();
 
         vk::CommandBuffer &Raw() {
             return *cmd;
         }
 
+        // TODO: delete
+        shared_ptr<Pipeline> GetPipeline() {
+            return currentPipeline;
+        }
+
+        void BindDescriptorSets(vk::PipelineBindPoint bindPoint,
+                                vk::DescriptorSet sets,
+                                vk::DescriptorSetLayout layout) {
+            auto index = VkPipelineBindPoint(bindPoint);
+            Assert(index < 2, "unsupported bind point");
+
+            if (sets != descriptorSets[index]) {
+                descriptorSets[index] = sets;
+                SetDirty(DirtyBits::DescriptorSets);
+            }
+            if (layout != pipelineInput.state.descriptorSetLayout) {
+                pipelineInput.state.descriptorSetLayout = layout;
+                SetDirty(DirtyBits::Pipeline);
+            }
+        }
+
     protected:
         friend class DeviceContext;
         void Begin();
         void End();
+
+        vk::UniqueCommandBuffer &RawRef() {
+            return cmd;
+        }
 
     private:
         bool TestDirty(DirtyFlags flags) {
@@ -178,8 +208,12 @@ namespace sp::vulkan {
 
         shared_ptr<Pipeline> currentPipeline;
 
+        std::array<vk::DescriptorSetLayout, 2> descriptorSetLayouts;
+        std::array<vk::DescriptorSet, 2> descriptorSets;
+
         shared_ptr<RenderPass> renderPass;
         shared_ptr<Framebuffer> framebuffer;
+        bool writesToSwapchain = false;
 
         DirtyFlags dirty;
 

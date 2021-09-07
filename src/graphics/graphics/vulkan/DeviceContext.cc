@@ -7,10 +7,12 @@
 #include "assets/AssetManager.hh"
 #include "core/CFunc.hh"
 #include "core/Logging.hh"
+#include "core/StackVector.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <algorithm>
 #include <iostream>
+#include <new>
 #include <optional>
 #include <string>
 
@@ -162,10 +164,10 @@ namespace sp::vulkan {
                                    bool surfaceSupport = false) {
             for (uint32_t i = 0; i < queueFamilies.size(); i++) {
                 auto &props = queueFamilies[i];
+                if (!(props.queueFlags & require)) continue;
                 if (props.queueFlags & deny) continue;
                 if (surfaceSupport && !physicalDevice.getSurfaceSupportKHR(i, *surface)) continue;
                 if (queuesUsedCount[i] >= props.queueCount) continue;
-                if (!(props.queueFlags & require)) continue;
 
                 queueFamilyIndex[queueType] = i;
                 queueIndex[queueType] = queuesUsedCount[i]++;
@@ -195,6 +197,9 @@ namespace sp::vulkan {
                 queueIndex[QUEUE_TYPE_TRANSFER] = queueIndex[QUEUE_TYPE_COMPUTE];
             }
         }
+
+        imageTransferGranularity = queueFamilies[queueFamilyIndex[QUEUE_TYPE_TRANSFER]].minImageTransferGranularity;
+        Assert(imageTransferGranularity.depth <= 1, "transfer queue doesn't support 2D images");
 
         std::vector<vk::DeviceQueueCreateInfo> queueInfos;
         for (uint32 i = 0; i < queueFamilies.size(); i++) {
@@ -506,17 +511,17 @@ namespace sp::vulkan {
             return BeginFrame();
         }
 
-        for (auto &pool : Frame().commandContexts) {
-            // Resets all command buffers in the pool, so they can be recorded and used again.
-            if (pool.nextIndex > 0) device->resetCommandPool(*pool.commandPool);
-            pool.nextIndex = 0;
-        }
-
         if (SwapchainImage().inFlightFence) {
             result = device->waitForFences({SwapchainImage().inFlightFence}, true, FENCE_WAIT_TIME);
             AssertVKSuccess(result, "timed out waiting for fence");
         }
         SwapchainImage().inFlightFence = *Frame().inFlightFence;
+
+        for (auto &pool : Frame().commandContexts) {
+            // Resets all command buffers in the pool, so they can be recorded and used again.
+            if (pool.nextIndex > 0) device->resetCommandPool(*pool.commandPool);
+            pool.nextIndex = 0;
+        }
 
         vmaSetCurrentFrameIndex(allocator, frameCounter);
     }
@@ -568,6 +573,11 @@ namespace sp::vulkan {
         auto &pool = Frame().commandContexts[QueueType(type)];
         if (pool.nextIndex < pool.list.size()) {
             cmd = pool.list[pool.nextIndex++];
+
+            // Reset cmd to default state
+            auto buffer = std::move(cmd->RawRef());
+            cmd->~CommandContext();
+            new (cmd.get()) CommandContext(*this, std::move(buffer), type);
         } else {
             vk::CommandBufferAllocateInfo allocInfo;
             allocInfo.commandPool = *pool.commandPool;
@@ -583,33 +593,51 @@ namespace sp::vulkan {
         return cmd;
     }
 
-    void DeviceContext::Submit(CommandContextPtr &cmdArg) {
+    void DeviceContext::Submit(CommandContextPtr &cmdArg,
+                               vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
+                               vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
+                               vk::ArrayProxy<const vk::PipelineStageFlags> waitStages) {
         CommandContextPtr cmd = cmdArg;
         // Invalidate caller's reference, this CommandContext is unusable until a subsequent frame.
         cmdArg.reset();
         cmd->End();
 
-        vk::SubmitInfo submitInfo;
-        vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
+        Assert(waitSemaphores.size() == waitStages.size(), "must have exactly one wait stage per wait semaphore");
 
-        auto imageAvailableSem = *Frame().imageAvailableSemaphore;
-        auto renderCompleteSem = *Frame().renderCompleteSemaphore;
+        StackVector<vk::Semaphore, 8> signalSemArray;
+        signalSemArray.push(signalSemaphores.data(), signalSemaphores.size());
+
+        StackVector<vk::Semaphore, 8> waitSemArray;
+        waitSemArray.push(waitSemaphores.data(), waitSemaphores.size());
+
+        StackVector<vk::PipelineStageFlags, 8> waitStageArray;
+        waitStageArray.push(waitStages.data(), waitStages.size());
+
+        if (cmd->WritesToSwapchain()) {
+            waitStageArray.push(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+            waitSemArray.push(*Frame().imageAvailableSemaphore);
+            signalSemArray.push(*Frame().renderCompleteSemaphore);
+        }
 
         const vk::CommandBuffer commandBuffer = cmd->Raw();
 
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = &imageAvailableSem;
-        submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = &renderCompleteSem;
+        vk::SubmitInfo submitInfo;
+        submitInfo.waitSemaphoreCount = waitSemArray.size();
+        submitInfo.pWaitSemaphores = waitSemArray.data();
+        submitInfo.pWaitDstStageMask = waitStageArray.data();
+        submitInfo.signalSemaphoreCount = signalSemArray.size();
+        submitInfo.pSignalSemaphores = signalSemArray.data();
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
 
-        auto frameFence = *Frame().inFlightFence;
-        device->resetFences({frameFence});
+        vk::Fence fence = VK_NULL_HANDLE;
+        if (cmd->WritesToSwapchain()) {
+            fence = *Frame().inFlightFence;
+            device->resetFences({fence});
+        }
 
         auto &queue = queues[QueueType(cmd->GetType())];
-        queue.submit({submitInfo}, frameFence);
+        queue.submit({submitInfo}, fence);
     }
 
     UniqueBuffer DeviceContext::AllocateBuffer(vk::DeviceSize size,

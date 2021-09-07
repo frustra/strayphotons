@@ -3,7 +3,7 @@
 #include "DeviceContext.hh"
 
 namespace sp::vulkan {
-    CommandContext::CommandContext(DeviceContext &device, vk::UniqueCommandBuffer cmd, CommandContextType type)
+    CommandContext::CommandContext(DeviceContext &device, vk::UniqueCommandBuffer cmd, CommandContextType type) noexcept
         : device(device), cmd(std::move(cmd)), type(type) {}
 
     CommandContext::~CommandContext() {
@@ -41,6 +41,7 @@ namespace sp::vulkan {
                 clearValues[i].color = info.clearColors[i];
                 clearCount = i + 1;
             }
+            if (info.colorAttachments[i].IsSwapchain()) writesToSwapchain = true;
         }
 
         if (info.HasDepthStencil() && info.state.ShouldClear(RenderPassState::DEPTH_STENCIL_INDEX)) {
@@ -159,6 +160,14 @@ namespace sp::vulkan {
             vk::Rect2D sc = scissor;
             sc.offset.y = framebuffer->Extent().height - sc.offset.y - sc.extent.height;
             cmd->setScissor(0, 1, &sc);
+        }
+
+        if (ResetDirty(DirtyBits::DescriptorSets)) {
+            for (size_t i = 0; i < descriptorSets.size(); i++) {
+                if (!descriptorSets[i]) continue;
+                vk::PipelineBindPoint bindPoint = vk::PipelineBindPoint(i);
+                cmd->bindDescriptorSets(bindPoint, **pipelineLayout, 0, {descriptorSets[i]}, {});
+            }
         }
     }
 } // namespace sp::vulkan
