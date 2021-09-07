@@ -71,7 +71,7 @@ namespace sp {
         this->gridSize = CVarVoxelGridSize.Get();
         this->superSampleScale = CVarVoxelSuperSample.Get();
         this->voxelGridCenter = (this->gridMin + this->gridMax) * glm::vec3(0.5);
-        this->voxelSize = glm::compMax(this->gridMax - this->gridMin + glm::vec3(0.1f)) / this->gridSize;
+        this->voxelSize = glm::compMax(this->gridMax - this->gridMin + glm::vec3(0.1)) / this->gridSize;
     }
 
     void VoxelRenderer::UpdateShaders(bool force) {
@@ -511,7 +511,7 @@ namespace sp {
 
                 int thisStencilBit = 1 << (bounce % 8);
                 glStencilFunc(GL_EQUAL, 0xff, ~thisStencilBit);
-                glStencilMask(~(GLuint)0); // for forward pass clearMode
+                glStencilMask(~0u); // for forward pass clearMode
                 glFrontFace(bounce % 2 == 0 ? GL_CCW : GL_CW);
 
                 sceneFS->SetMirrorId(-1);
@@ -730,7 +730,7 @@ namespace sp {
         static BasicMaterial mat(baseColor);
 
         static VertexBuffer vbo;
-        vbo.SetElementsVAO((GLsizei)vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
+        vbo.SetElementsVAO(vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
         vbo.BindVAO();
 
         mat.baseColorTex.Bind(0);
@@ -783,9 +783,7 @@ namespace sp {
         activeModels.Tick();
     }
 
-    void VoxelRenderer::SetRenderTargets(uint32_t attachmentCount,
-                                         GLRenderTarget **attachments,
-                                         GLRenderTarget *depth) {
+    void VoxelRenderer::SetRenderTargets(size_t attachmentCount, GLRenderTarget **attachments, GLRenderTarget *depth) {
         GLuint fb = context.GetFramebuffer(attachmentCount, attachments, depth);
         glBindFramebuffer(GL_FRAMEBUFFER, fb);
     }

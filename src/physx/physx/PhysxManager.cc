@@ -131,7 +131,7 @@ namespace sp {
             scene->setGravity(PxVec3(0.f, CVarGravity.Get(true), 0.f));
 
             vector<PxActor *> buffer(256, nullptr);
-            uint32_t startIndex = 0;
+            size_t startIndex = 0;
 
             while (true) {
                 uint32_t n =
@@ -217,8 +217,8 @@ namespace sp {
                         GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate)).multiply(PxVec3(40.0)));
                     constraint->rotation = PxVec3(0); // Don't continue to rotate
 
-                    auto clampRatio = std::min(0.5f, deltaPos.magnitude()) / (deltaPos.magnitude() + 0.00001f);
-                    constraint->child->setLinearVelocity(deltaPos.multiply(PxVec3(20.0f * clampRatio)));
+                    auto clampRatio = std::min(0.5f, deltaPos.magnitude()) / (deltaPos.magnitude() + 0.00001);
+                    constraint->child->setLinearVelocity(deltaPos.multiply(PxVec3(20.0 * clampRatio)));
                     constraint++;
                 } else {
                     // Remove the constraint if the distance is too far
@@ -247,7 +247,7 @@ namespace sp {
             scene->simulate(PxReal(1.0 / CVarPhysicsFrameRate.Get()),
                             nullptr,
                             scratchBlock.data(),
-                            (uint32_t)scratchBlock.size());
+                            scratchBlock.size());
             scene->fetchResults(true);
         }
 
@@ -432,7 +432,7 @@ namespace sp {
 
             for (auto hull : decomposition->hulls) {
                 PxConvexMeshDesc convexDesc;
-                convexDesc.points.count = (uint32_t)hull.pointCount;
+                convexDesc.points.count = hull.pointCount;
                 convexDesc.points.stride = hull.pointByteStride;
                 convexDesc.points.data = hull.points;
                 convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
@@ -501,11 +501,10 @@ namespace sp {
             glm::vec3 *velocity = (glm::vec3 *)hit.controller->getUserData();
             auto magnitude = glm::length(*velocity);
             if (magnitude > 0.0001) {
-                PxRigidBodyExt::addForceAtPos(
-                    *dynamic,
-                    hit.dir.multiply(PxVec3(magnitude * ecs::PLAYER_PUSH_FORCE)),
-                    PxVec3((float)hit.worldPos.x, (float)hit.worldPos.y, (float)hit.worldPos.z),
-                    PxForceMode::eIMPULSE);
+                PxRigidBodyExt::addForceAtPos(*dynamic,
+                                              hit.dir.multiply(PxVec3(magnitude * ecs::PLAYER_PUSH_FORCE)),
+                                              PxVec3(hit.worldPos.x, hit.worldPos.y, hit.worldPos.z),
+                                              PxForceMode::eIMPULSE);
             }
         }
     }
@@ -514,7 +513,7 @@ namespace sp {
         PxFilterData data;
         data.word0 = CVarPropJumping.Get() ? PhysxCollisionGroup::WORLD : PhysxCollisionGroup::PLAYER;
         PxControllerFilters filters(&data);
-        auto flags = controller->move(displacement, 0, (float)dt, filters);
+        auto flags = controller->move(displacement, 0, dt, filters);
 
         return flags & PxControllerCollisionFlag::eCOLLISION_DOWN;
     }
@@ -797,13 +796,13 @@ namespace sp {
         if (GAssets.OutputStream(name, out)) {
             out.write((char *)&hullCacheMagic, 4);
 
-            int32 bufferCount = (int32_t)set->bufferIndexes.size();
+            int32 bufferCount = set->bufferIndexes.size();
             out.write((char *)&bufferCount, 4);
 
             for (int bufferIndex : set->bufferIndexes) {
                 Hash128 hash = model.HashBuffer(bufferIndex);
                 string bufferName = std::to_string(bufferIndex);
-                uint32 nameLen = (uint32_t)bufferName.length();
+                uint32 nameLen = bufferName.length();
                 Assert(nameLen <= 256, "hull cache buffer name too long on write");
 
                 out.write((char *)&nameLen, 4);
@@ -811,7 +810,7 @@ namespace sp {
                 out.write((char *)hash.data(), sizeof(hash));
             }
 
-            int32 hullCount = (int32_t)set->hulls.size();
+            int32 hullCount = set->hulls.size();
             out.write((char *)&hullCount, 4);
 
             for (auto hull : set->hulls) {

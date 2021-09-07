@@ -93,7 +93,7 @@ namespace sp::vulkan {
         auto &state = compile.state.values;
 
         std::array<vk::PipelineShaderStageCreateInfo, (size_t)ShaderStage::Count> shaderStages;
-        uint32_t stageCount = 0;
+        size_t stageCount = 0;
 
         for (size_t i = 0; i < (size_t)ShaderStage::Count; i++) {
             auto &shader = shaders[i];

@@ -27,7 +27,7 @@ namespace sp::vulkan {
         struct Primitive : public NonCopyable {
             UniqueBuffer indexBuffer;
             vk::IndexType indexType = vk::IndexType::eNoneKHR;
-            uint32_t indexCount;
+            size_t indexCount;
 
             UniqueBuffer vertexBuffer;
             glm::mat4 transform;

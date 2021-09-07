@@ -45,7 +45,7 @@ namespace sp::vulkan {
         vk::PipelineVertexInputStateCreateInfo pipelineInputInfo;
         std::array<vk::VertexInputBindingDescription, MAX_VERTEX_INPUT_BINDINGS> bindings;
         std::array<vk::VertexInputAttributeDescription, MAX_VERTEX_ATTRIBUTES> attributes;
-        uint32_t bindingCount = 0, attributeCount = 0;
+        size_t bindingCount = 0, attributeCount = 0;
     };
 
     struct TextureVertex {

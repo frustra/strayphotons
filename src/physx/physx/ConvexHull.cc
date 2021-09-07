@@ -115,20 +115,20 @@ namespace sp {
         const size_t nV = mesh.GetNVertices();
 
         hull.points = new float[nV * 3];
-        hull.pointCount = (uint32_t)nV;
+        hull.pointCount = nV;
         hull.pointByteStride = sizeof(float) * 3;
 
         for (size_t v = 0; v < nV; v++) {
             auto &pos = mesh.GetVertices().GetData().m_pos;
-            hull.points[v * 3 + 0] = (float)pos[0];
-            hull.points[v * 3 + 1] = (float)pos[1];
-            hull.points[v * 3 + 2] = (float)pos[2];
+            hull.points[v * 3 + 0] = pos[0];
+            hull.points[v * 3 + 1] = pos[1];
+            hull.points[v * 3 + 2] = pos[2];
             mesh.GetVertices().GetData().m_id = v;
             mesh.GetVertices().Next();
         }
 
         hull.triangles = new int[nT * 3];
-        hull.triangleCount = (uint32_t)nT;
+        hull.triangleCount = nT;
         hull.triangleByteStride = sizeof(int) * 3;
 
         for (size_t f = 0; f < nT; f++) {
@@ -196,7 +196,7 @@ namespace sp {
         }
 
         btConvexHullComputer chc;
-        chc.compute((float *)&finalPoints[0], sizeof(glm::vec3), (int)finalPoints.size(), -1, -1);
+        chc.compute((float *)&finalPoints[0], sizeof(glm::vec3), finalPoints.size(), -1, -1);
 
         VHACD::ICHull icc;
 

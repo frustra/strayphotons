@@ -45,14 +45,14 @@ namespace sp {
                 bool crouching = false;
                 bool rotating = false;
 
-                inputMovement.z -= (float)ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_FORWARD);
-                inputMovement.z += (float)ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_BACK);
-                inputMovement.x -= (float)ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_LEFT);
-                inputMovement.x += (float)ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RIGHT);
+                inputMovement.z -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_FORWARD);
+                inputMovement.z += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_BACK);
+                inputMovement.x -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_LEFT);
+                inputMovement.x += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RIGHT);
 
                 if (noclip) {
-                    inputMovement.y += (float)ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_JUMP);
-                    inputMovement.y -= (float)ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_CROUCH);
+                    inputMovement.y += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_JUMP);
+                    inputMovement.y -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_CROUCH);
                 } else {
                     jumping = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_JUMP) >= 0.5;
                     crouching = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_CROUCH) >= 0.5;
@@ -73,7 +73,7 @@ namespace sp {
                     while (ecs::EventInput::Poll(lock, entity, INPUT_EVENT_CAMERA_ROTATE, event)) {
                         auto cursorDiff = std::get<glm::vec2>(event.data);
                         if (!rotating || !InteractRotate(lock, entity, cursorDiff)) {
-                            float sensitivity = CVarCursorSensitivity.Get() * 0.001f;
+                            float sensitivity = CVarCursorSensitivity.Get() * 0.001;
 
                             // Apply pitch/yaw rotations
                             auto &transform = entity.Get<ecs::Transform>(lock);
@@ -116,7 +116,7 @@ namespace sp {
                 if (fabs(targetHeight - currentHeight) > 0.1) {
                     // If player is in the air, resize from the top to implement crouch-jumping.
                     controller.height = currentHeight +
-                                        (targetHeight - currentHeight) * (controller.onGround ? 0.1f : 1.0f);
+                                        (targetHeight - currentHeight) * (controller.onGround ? 0.1 : 1.0);
                 }
 
                 auto velocity = CalculatePlayerVelocity(lock,
@@ -167,12 +167,12 @@ namespace sp {
         }
         if (controller.onGround) {
             controller.velocity.x = movement.x;
-            controller.velocity.y -= 0.01f; // Always try moving down so that onGround detection is more consistent.
+            controller.velocity.y -= 0.01; // Always try moving down so that onGround detection is more consistent.
             if (jump) controller.velocity.y = ecs::PLAYER_JUMP_VELOCITY;
             controller.velocity.z = movement.z;
         } else {
             controller.velocity += movement * ecs::PLAYER_AIR_STRAFE * (float)dtSinceLastFrame;
-            controller.velocity.y -= ecs::PLAYER_GRAVITY * (float)dtSinceLastFrame;
+            controller.velocity.y -= ecs::PLAYER_GRAVITY * dtSinceLastFrame;
         }
 
         return controller.velocity;
@@ -260,7 +260,7 @@ namespace sp {
                                             glm::vec2 dCursor) {
         auto &interact = entity.Get<ecs::InteractController>(lock);
         if (interact.target) {
-            auto rotation = glm::vec3(dCursor.y, dCursor.x, 0) * (float)(CVarCursorSensitivity.Get() * 0.01);
+            auto rotation = glm::vec3(dCursor.y, dCursor.x, 0) * CVarCursorSensitivity.Get() * 0.01f;
             physics->RotateConstraint(entity, interact.target, GlmVec3ToPxVec3(rotation));
             return true;
         }

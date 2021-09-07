@@ -21,7 +21,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace sp::vulkan {
     const int MAX_FRAMES_IN_FLIGHT = 2;
-    const uint64_t FENCE_WAIT_TIME = 10000000000; // nanoseconds, assume deadlock after this time
+    const uint64_t FENCE_WAIT_TIME = 1e10; // nanoseconds, assume deadlock after this time
     const uint32_t VULKAN_API_VERSION = VK_API_VERSION_1_2;
 
     static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -106,9 +106,9 @@ namespace sp::vulkan {
 
         vk::InstanceCreateInfo createInfo(vk::InstanceCreateFlags(),
                                           &applicationInfo,
-                                          (uint32_t)layers.size(),
+                                          layers.size(),
                                           layers.data(),
-                                          (uint32_t)extensions.size(),
+                                          extensions.size(),
                                           extensions.data());
 
         vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
@@ -221,12 +221,12 @@ namespace sp::vulkan {
         enabledDeviceFeatures.geometryShader = true;
 
         vk::DeviceCreateInfo deviceInfo;
-        deviceInfo.queueCreateInfoCount = (uint32_t)queueInfos.size();
+        deviceInfo.queueCreateInfoCount = queueInfos.size();
         deviceInfo.pQueueCreateInfos = queueInfos.data();
         deviceInfo.pEnabledFeatures = &enabledDeviceFeatures;
-        deviceInfo.enabledExtensionCount = (uint32_t)enabledDeviceExtensions.size();
+        deviceInfo.enabledExtensionCount = enabledDeviceExtensions.size();
         deviceInfo.ppEnabledExtensionNames = enabledDeviceExtensions.data();
-        deviceInfo.enabledLayerCount = (uint32_t)layers.size();
+        deviceInfo.enabledLayerCount = layers.size();
         deviceInfo.ppEnabledLayerNames = layers.data();
 
         device = physicalDevice.createDeviceUnique(deviceInfo, nullptr);
