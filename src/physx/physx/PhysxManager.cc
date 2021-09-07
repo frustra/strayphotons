@@ -134,8 +134,7 @@ namespace sp {
             size_t startIndex = 0;
 
             while (true) {
-                uint32_t n =
-                    scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC, &buffer[0], (uint32_t)buffer.size(), startIndex);
+                uint32_t n = scene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC, &buffer[0], buffer.size(), startIndex);
 
                 for (uint32_t i = 0; i < n; i++) {
                     buffer[i]->is<PxRigidDynamic>()->wakeUp();
