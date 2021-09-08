@@ -52,6 +52,50 @@ namespace LockFreeMutexTests {
             AssertEqual(locked.load(), false, "Shared lock acquired before exclusive lock was released");
             worker.join();
         }
+        {
+            Timer t("Test continuous overlapping shared locks");
+
+            std::thread blockingThread;
+            std::vector<std::thread> readThreads;
+            {
+                for (size_t i = 0; i < 10; i++) {
+                    // Start 10 overlapping shared lock threads
+                    readThreads.emplace_back([i] {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(10 * i));
+                        mutex.lock_shared();
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        mutex.unlock_shared();
+                    });
+                }
+
+                std::atomic_bool exclusiveAcquired = false;
+                blockingThread = std::thread([&exclusiveAcquired] {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    // Try to acquire an exclusive lock while continous shared locks are active
+                    mutex.lock();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    mutex.unlock();
+                    exclusiveAcquired = true;
+                });
+
+                while (!exclusiveAcquired) {
+                    // Cycle through each shared lock and restart the thread when it completes
+                    for (auto &thread : readThreads) {
+                        thread.join();
+                        thread = std::thread([] {
+                            mutex.lock_shared();
+                            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                            mutex.unlock_shared();
+                        });
+                    }
+                }
+            }
+
+            blockingThread.join();
+            for (auto &thread : readThreads) {
+                thread.join();
+            }
+        }
     }
 
     Test test(&TestLockFreeMutex);
