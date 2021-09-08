@@ -90,6 +90,8 @@ namespace sp::vulkan {
             return image;
         }
 
+        vk::DeviceSize Size();
+
     protected:
         void Release();
 

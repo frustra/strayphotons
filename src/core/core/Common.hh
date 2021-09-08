@@ -2,6 +2,7 @@
 
 #include <memory>
 using std::make_shared;
+using std::make_unique;
 using std::shared_ptr;
 using std::unique_ptr;
 using std::weak_ptr;
@@ -35,6 +36,17 @@ namespace sp {
 
     uint32 CeilToPowerOfTwo(uint32 v);
     uint32 Uint32Log2(uint32 v);
+
+    template<typename T>
+    void ForEachBit(uint32 value, const T &func) {
+        uint32 bit = 1, index = 0;
+        while (value) {
+            if (value & bit) func(index);
+            value &= ~bit;
+            bit <<= 1;
+            index++;
+        }
+    }
 
     class NonCopyable {
     public:

@@ -8,11 +8,15 @@
 namespace sp::vulkan {
     const int MAX_VERTEX_ATTRIBUTES = 5, MAX_VERTEX_INPUT_BINDINGS = 5;
 
-    struct VertexInputInfo {
-        VertexInputInfo() {}
+    struct VertexLayout {
+        VertexLayout() {}
 
-        VertexInputInfo(uint32 binding, uint32 stride, vk::VertexInputRate inputRate = vk::VertexInputRate::eVertex) {
+        VertexLayout(uint32 binding, uint32 stride, vk::VertexInputRate inputRate = vk::VertexInputRate::eVertex) {
             PushBinding(binding, stride, inputRate);
+        }
+
+        VertexLayout(uint32 binding, size_t stride, vk::VertexInputRate inputRate = vk::VertexInputRate::eVertex) {
+            PushBinding(binding, (uint32)stride, inputRate);
         }
 
         void PushAttribute(uint32 location, uint32 binding, vk::Format format, uint32 offset) {
@@ -33,16 +37,14 @@ namespace sp::vulkan {
             bindings[bindingCount++] = binding;
         }
 
-        const vk::PipelineVertexInputStateCreateInfo &PipelineInputInfo() {
-            pipelineInputInfo.vertexBindingDescriptionCount = bindingCount;
-            pipelineInputInfo.pVertexBindingDescriptions = bindings.data();
-            pipelineInputInfo.vertexAttributeDescriptionCount = attributeCount;
-            pipelineInputInfo.pVertexAttributeDescriptions = attributes.data();
-            return pipelineInputInfo;
+        bool operator==(const VertexLayout &other) const {
+            return std::memcmp(this, &other, sizeof(VertexLayout)) == 0;
         }
 
-    private:
-        vk::PipelineVertexInputStateCreateInfo pipelineInputInfo;
+        bool operator!=(const VertexLayout &other) const {
+            return !(*this == other);
+        }
+
         std::array<vk::VertexInputBindingDescription, MAX_VERTEX_INPUT_BINDINGS> bindings;
         std::array<vk::VertexInputAttributeDescription, MAX_VERTEX_ATTRIBUTES> attributes;
         size_t bindingCount = 0, attributeCount = 0;
@@ -52,10 +54,13 @@ namespace sp::vulkan {
         glm::vec3 position;
         glm::vec2 uv;
 
-        static VertexInputInfo InputInfo() {
-            VertexInputInfo info(0, sizeof(TextureVertex));
-            info.PushAttribute(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(TextureVertex, position));
-            info.PushAttribute(2, 0, vk::Format::eR32G32Sfloat, offsetof(TextureVertex, uv));
+        static VertexLayout Layout() {
+            static VertexLayout info;
+            if (!info.bindingCount) {
+                info.PushBinding(0, sizeof(TextureVertex));
+                info.PushAttribute(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(TextureVertex, position));
+                info.PushAttribute(2, 0, vk::Format::eR32G32Sfloat, offsetof(TextureVertex, uv));
+            }
             return info;
         }
     };
@@ -65,11 +70,14 @@ namespace sp::vulkan {
         glm::vec3 normal;
         glm::vec2 uv;
 
-        static VertexInputInfo InputInfo() {
-            VertexInputInfo info(0, sizeof(SceneVertex));
-            info.PushAttribute(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(SceneVertex, position));
-            info.PushAttribute(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(SceneVertex, normal));
-            info.PushAttribute(2, 0, vk::Format::eR32G32Sfloat, offsetof(SceneVertex, uv));
+        static VertexLayout Layout() {
+            static VertexLayout info;
+            if (!info.bindingCount) {
+                info.PushBinding(0, sizeof(SceneVertex));
+                info.PushAttribute(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(SceneVertex, position));
+                info.PushAttribute(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(SceneVertex, normal));
+                info.PushAttribute(2, 0, vk::Format::eR32G32Sfloat, offsetof(SceneVertex, uv));
+            }
             return info;
         }
     };
@@ -78,10 +86,13 @@ namespace sp::vulkan {
         glm::vec2 position;
         glm::vec3 color;
 
-        static VertexInputInfo InputInfo() {
-            VertexInputInfo info(0, sizeof(ColorVertex2D));
-            info.PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(ColorVertex2D, position));
-            info.PushAttribute(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(ColorVertex2D, color));
+        static VertexLayout Layout() {
+            static VertexLayout info;
+            if (!info.bindingCount) {
+                info.PushBinding(0, sizeof(ColorVertex2D));
+                info.PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(ColorVertex2D, position));
+                info.PushAttribute(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(ColorVertex2D, color));
+            }
             return info;
         }
     };

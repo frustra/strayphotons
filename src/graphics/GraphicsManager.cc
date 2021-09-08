@@ -17,8 +17,11 @@
         #include "input/glfw/GlfwInputHandler.hh"
     #endif
     #ifdef SP_GRAPHICS_SUPPORT_VK
+        #include "graphics/vulkan/CommandContext.hh"
         #include "graphics/vulkan/DeviceContext.hh"
+        #include "graphics/vulkan/GuiRenderer.hh"
         #include "graphics/vulkan/Renderer.hh"
+        #include "graphics/vulkan/Vertex.hh"
     #endif
 
     #ifdef SP_PHYSICS_SUPPORT_PHYSX
@@ -35,33 +38,31 @@ namespace sp {
     #ifdef SP_GRAPHICS_SUPPORT_GL
         Logf("Graphics starting up (OpenGL)");
     #endif
-    }
-
-    GraphicsManager::~GraphicsManager() {
-    #if SP_GRAPHICS_SUPPORT_GL || SP_GRAPHICS_SUPPORT_VK
-        if (renderer) { delete renderer; }
-        if (context) { delete context; }
+    #ifdef SP_GRAPHICS_SUPPORT_VK
+        Logf("Graphics starting up (Vulkan)");
     #endif
     }
+
+    GraphicsManager::~GraphicsManager() {}
 
     void GraphicsManager::Init() {
         if (context) { throw "already an active context"; }
 
     #if SP_GRAPHICS_SUPPORT_GL
-        GlfwGraphicsContext *glfwContext = new GlfwGraphicsContext();
-        context = glfwContext;
+        auto glfwContext = new GlfwGraphicsContext();
+        context.reset(glfwContext);
 
         GLFWwindow *window = glfwContext->GetWindow();
     #endif
 
     #if SP_GRAPHICS_SUPPORT_VK
-        vulkan::DeviceContext *vkContext = new vulkan::DeviceContext();
-        context = vkContext;
+        auto vkContext = new vulkan::DeviceContext();
+        context.reset(vkContext);
 
         GLFWwindow *window = vkContext->GetWindow();
     #endif
 
-        if (window != nullptr) game->glfwInputHandler = std::make_unique<GlfwInputHandler>(*window);
+        if (window != nullptr) game->glfwInputHandler = make_unique<GlfwInputHandler>(*window);
 
         if (game->options.count("size")) {
             std::istringstream ss(game->options["size"].as<string>());
@@ -74,9 +75,9 @@ namespace sp {
     #ifdef SP_GRAPHICS_SUPPORT_GL
         if (renderer) { throw "already an active renderer"; }
 
-        renderer = new VoxelRenderer(*glfwContext, timer);
+        renderer = make_unique<VoxelRenderer>(*glfwContext, timer);
 
-        profilerGui = std::make_shared<ProfilerGui>(timer);
+        profilerGui = make_shared<ProfilerGui>(timer);
         if (game->debugGui) { game->debugGui->Attach(profilerGui); }
 
         renderer->PrepareGuis(game->debugGui.get(), game->menuGui.get());
@@ -89,10 +90,12 @@ namespace sp {
 
         {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-            renderer = new vulkan::Renderer(lock, *vkContext);
+            renderer = make_unique<vulkan::Renderer>(lock, *vkContext);
         }
 
         renderer->Prepare();
+
+        debugGuiRenderer = make_unique<vulkan::GuiRenderer>(*vkContext, *game->debugGui.get());
     #endif
     }
 
@@ -224,16 +227,24 @@ namespace sp {
 
         {
             // RenderPhase phase("Frame", timer);
+            auto &device = *((vulkan::DeviceContext *)context.get());
 
             auto lock =
                 ecs::World
                     .StartTransaction<ecs::Read<ecs::Name, ecs::Transform, ecs::Renderable, ecs::View, ecs::Mirror>>();
             renderer->BeginFrame(lock);
 
+            auto cmd = device.GetCommandContext();
+            cmd->BeginRenderPass(device.SwapchainRenderPassInfo(true));
+
             for (auto &view : cameraViews) {
-                renderer->RenderPass(view, lock);
+                renderer->RenderPass(cmd, view, lock);
             }
 
+            debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd->GetFramebufferExtent()});
+
+            cmd->EndRenderPass();
+            device.Submit(cmd);
             renderer->EndFrame();
         }
 
@@ -246,7 +257,7 @@ namespace sp {
     }
 
     GraphicsContext *GraphicsManager::GetContext() {
-        return context;
+        return context.get();
     }
 
     void GraphicsManager::RenderLoading() {

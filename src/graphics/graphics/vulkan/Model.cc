@@ -108,7 +108,9 @@ namespace sp::vulkan {
         Debugf("Destroying vulkan::Model %s", modelName);
     }
 
-    void Model::AppendDrawCommands(CommandContext &cmd, glm::mat4 modelMat, const ecs::View &view) {
+    void Model::AppendDrawCommands(const CommandContextPtr &cmd, glm::mat4 modelMat, const ecs::View &view) {
+        cmd->SetVertexLayout(SceneVertex::Layout());
+
         for (auto &primitivePtr : primitives) {
             auto &primitive = *primitivePtr;
             MeshPushConstants constants;
@@ -116,11 +118,11 @@ namespace sp::vulkan {
             constants.view = view.viewMat;
             constants.model = modelMat * primitive.transform;
 
-            cmd.PushConstants(&constants, 0, sizeof(MeshPushConstants));
+            cmd->PushConstants(&constants, 0, sizeof(MeshPushConstants));
 
-            cmd->bindIndexBuffer(*primitive.indexBuffer, 0, primitive.indexType);
-            cmd->bindVertexBuffers(0, {*primitive.vertexBuffer}, {0});
-            cmd.DrawIndexed(primitive.indexCount, 1, 0, 0, 0);
+            cmd->Raw().bindIndexBuffer(*primitive.indexBuffer, 0, primitive.indexType);
+            cmd->Raw().bindVertexBuffers(0, {*primitive.vertexBuffer}, {0});
+            cmd->DrawIndexed(primitive.indexCount, 1, 0, 0, 0);
         }
     }
 } // namespace sp::vulkan

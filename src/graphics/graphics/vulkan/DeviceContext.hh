@@ -16,6 +16,8 @@ namespace sp {
 }
 
 namespace sp::vulkan {
+    const int MAX_FRAMES_IN_FLIGHT = 2;
+
     class Pipeline;
     class PipelineManager;
     struct PipelineCompileInput;
@@ -53,14 +55,16 @@ namespace sp::vulkan {
 
         void PrepareWindowView(ecs::View &view) override;
 
-        vector<vk::UniqueCommandBuffer> AllocateCommandBuffers(
-            uint32_t count,
-            vk::CommandBufferLevel level = vk::CommandBufferLevel::ePrimary);
+        CommandContextPtr GetCommandContext(CommandContextType type = CommandContextType::General);
 
-        CommandContextPtr CreateCommandContext();
+        // Releases *cmd back to the DeviceContext and resets cmd
+        void Submit(CommandContextPtr &cmd,
+                    vk::ArrayProxy<const vk::Semaphore> signalSemaphores = {},
+                    vk::ArrayProxy<const vk::Semaphore> waitSemaphores = {},
+                    vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {});
 
         UniqueBuffer AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
-        UniqueImage AllocateImage(vk::ImageCreateInfo info, VmaMemoryUsage residency);
+        UniqueImage AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency);
 
         RenderPassInfo SwapchainRenderPassInfo(bool depth = false, bool stencil = false);
 
@@ -76,47 +80,23 @@ namespace sp::vulkan {
             return window;
         }
 
-        vk::Fence CurrentFrameFence() {
-            return *inFlightFences[currentFrame];
-        }
+        void *Win32WindowHandle() override;
 
-        vk::Semaphore CurrentFrameImageAvailableSemaphore() {
-            return *imageAvailableSemaphores[currentFrame];
-        }
-
-        vk::Semaphore CurrentFrameRenderCompleteSemaphore() {
-            return *renderCompleteSemaphores[currentFrame];
-        }
-
-        vk::Queue GraphicsQueue() {
-            return graphicsQueue;
-        }
-
-        vk::Fence ResetCurrentFrameFence() {
-            auto fence = CurrentFrameFence();
-            device->resetFences({fence});
-            return fence;
-        }
-
-        uint32_t CurrentSwapchainImageIndex() {
-            return imageIndex;
-        }
-
-        uint32_t SwapchainVersion() {
+        uint32 SwapchainVersion() {
             // incremented when the swapchain changes, any dependent pipelines need to be recreated
             return swapchainVersion;
         }
 
-        vector<vk::ImageView> SwapchainImageViews() {
-            vector<vk::ImageView> output;
-            for (auto &imageView : swapchainImageViews) {
-                output.push_back(*imageView);
-            }
-            return output;
-        }
-
         UniqueID NextUniqueID() {
             return ++lastUniqueID;
+        }
+
+        const vk::PhysicalDeviceLimits &Limits() const {
+            return physicalDeviceProperties.limits;
+        }
+
+        uint32 QueueFamilyIndex(CommandContextType type) {
+            return queueFamilyIndex[QueueType(type)];
         }
 
     private:
@@ -132,6 +112,7 @@ namespace sp::vulkan {
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;
         vk::UniqueSurfaceKHR surface;
         vk::PhysicalDevice physicalDevice;
+        vk::PhysicalDeviceProperties physicalDeviceProperties;
         vk::UniqueDevice device;
 
         unique_ptr<PipelineManager> pipelinePool;
@@ -140,24 +121,53 @@ namespace sp::vulkan {
 
         VmaAllocator allocator = VK_NULL_HANDLE;
 
-        uint32_t graphicsQueueFamily, presentQueueFamily;
-        vk::Queue graphicsQueue, presentQueue;
+        std::array<vk::Queue, QUEUE_TYPES_COUNT> queues;
+        std::array<uint32, QUEUE_TYPES_COUNT> queueFamilyIndex;
+        vk::Extent3D imageTransferGranularity;
 
-        vk::UniqueCommandPool renderThreadCommandPool; // TODO: multiple threads need their own pools
-
-        uint32_t swapchainVersion = 0;
+        uint32 swapchainVersion = 0;
         vk::UniqueSwapchainKHR swapchain;
-        vector<vk::Image> swapchainImages;
         vk::Extent2D swapchainExtent;
-        vector<vk::ImageViewCreateInfo> swapchainImageViewInfos;
-        vector<vk::UniqueImageView> swapchainImageViews;
 
-        std::vector<vk::UniqueSemaphore> imageAvailableSemaphores, renderCompleteSemaphores;
-        std::vector<vk::UniqueFence> inFlightFences; // one per inflight frame
-        std::vector<vk::Fence> imagesInFlight; // one per swapchain image
+        struct SwapchainImageContext {
+            vk::Fence inFlightFence; // points at a fence owned by FrameContext
+            vk::Image image;
 
-        size_t currentFrame = 0;
-        uint32_t imageIndex; // index of the swapchain currently being rendered
+            // TODO: store custom image abstraction
+            vk::ImageViewCreateInfo imageViewInfo;
+            vk::UniqueImageView imageView;
+        };
+
+        vector<SwapchainImageContext> swapchainImageContexts;
+        uint32 swapchainImageIndex;
+
+        SwapchainImageContext &SwapchainImage() {
+            return swapchainImageContexts[swapchainImageIndex];
+        }
+
+        struct CommandContextPool {
+            vk::UniqueCommandPool commandPool;
+            vector<CommandContextPtr> list;
+            size_t nextIndex = 0;
+        };
+
+        struct FrameContext {
+            vk::UniqueSemaphore imageAvailableSemaphore, renderCompleteSemaphore;
+            vk::UniqueFence inFlightFence;
+
+            // Stores all command contexts created for this frame, so they can be reused in later frames
+            // TODO: multiple threads need their own pools
+            std::array<CommandContextPool, QUEUE_TYPES_COUNT> commandContexts;
+
+            void BeginFrame();
+        };
+
+        std::array<FrameContext, MAX_FRAMES_IN_FLIGHT> frameContexts;
+        uint32 frameIndex = 0;
+
+        FrameContext &Frame() {
+            return frameContexts[frameIndex];
+        }
 
         vk::ImageViewCreateInfo depthImageViewInfo;
         UniqueImage depthImage; // TODO: move to render target pool
