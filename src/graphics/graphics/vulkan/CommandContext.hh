@@ -15,7 +15,6 @@ namespace sp::vulkan::CommandContextFlags {
         Scissor = 1 << 1,
         PushConstants = 1 << 2,
         Pipeline = 1 << 3,
-        DescriptorSets = 1 << 4,
     };
 
     using DirtyFlags = vk::Flags<DirtyBits>;
@@ -139,35 +138,37 @@ namespace sp::vulkan {
             }
         }
 
+        void SetSampler(uint32 set, uint32 binding, const vk::Sampler &sampler) {
+            Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
+            Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
+            auto &image = shaderData.sets[set].bindings[binding].image;
+            image.sampler = sampler;
+            SetDescriptorDirty(set);
+        }
+
+        void SetTexture(uint32 set, uint32 binding, const vk::ImageView &view) {
+            Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
+            Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
+            auto &image = shaderData.sets[set].bindings[binding].image;
+            image.imageView = view;
+            image.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            SetDescriptorDirty(set);
+        }
+
+        void SetTexture(uint32 set, uint32 binding, const vk::ImageView &view, const vk::Sampler &sampler) {
+            SetTexture(set, binding, view);
+            SetSampler(set, binding, sampler);
+        }
+
         bool WritesToSwapchain() {
             return writesToSwapchain;
         }
 
+        void FlushDescriptorSets();
         void FlushGraphicsState();
 
         vk::CommandBuffer &Raw() {
             return *cmd;
-        }
-
-        // TODO: delete
-        shared_ptr<Pipeline> GetPipeline() {
-            return currentPipeline;
-        }
-
-        void BindDescriptorSets(vk::PipelineBindPoint bindPoint,
-                                vk::DescriptorSet sets,
-                                vk::DescriptorSetLayout layout) {
-            auto index = VkPipelineBindPoint(bindPoint);
-            Assert(index < 2, "unsupported bind point");
-
-            if (sets != descriptorSets[index]) {
-                descriptorSets[index] = sets;
-                SetDirty(DirtyBits::DescriptorSets);
-            }
-            if (layout != pipelineInput.state.descriptorSetLayout) {
-                pipelineInput.state.descriptorSetLayout = layout;
-                SetDirty(DirtyBits::Pipeline);
-            }
         }
 
     protected:
@@ -194,6 +195,20 @@ namespace sp::vulkan {
             dirty |= flags;
         }
 
+        bool TestDescriptorDirty(uint32 set) {
+            return static_cast<bool>(dirtyDescriptorSets & (1 << set));
+        }
+
+        bool ResetDescriptorDirty(uint32 set) {
+            bool ret = TestDescriptorDirty(set);
+            dirtyDescriptorSets &= ~(1 << set);
+            return ret;
+        }
+
+        void SetDescriptorDirty(uint32 set) {
+            dirtyDescriptorSets |= (1 << set);
+        }
+
         DeviceContext &device;
         vk::UniqueCommandBuffer cmd;
         CommandContextType type;
@@ -205,17 +220,14 @@ namespace sp::vulkan {
         vk::Rect2D scissor;
 
         PipelineCompileInput pipelineInput;
-
         shared_ptr<Pipeline> currentPipeline;
-
-        std::array<vk::DescriptorSetLayout, 2> descriptorSetLayouts;
-        std::array<vk::DescriptorSet, 2> descriptorSets;
 
         shared_ptr<RenderPass> renderPass;
         shared_ptr<Framebuffer> framebuffer;
         bool writesToSwapchain = false;
 
         DirtyFlags dirty;
+        uint32 dirtyDescriptorSets = 0;
 
         ShaderDataBindings shaderData;
     };

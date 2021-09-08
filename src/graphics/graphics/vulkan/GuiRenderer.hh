@@ -32,7 +32,7 @@ namespace sp::vulkan {
         // TODO: get rid of all these
         UniqueBuffer fontBuf;
         vk::UniqueSemaphore transferComplete, graphicsTransitionComplete;
-        vk::UniqueSampler fontSampler;
+        vk::UniqueSampler linearSampler;
         vk::UniqueDescriptorSetLayout descriptorSetLayout;
         vk::UniqueDescriptorPool descriptorPool;
         vector<vk::DescriptorSet> descriptorSets;

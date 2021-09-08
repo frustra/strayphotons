@@ -31,6 +31,7 @@ namespace sp::vulkan {
         scissor = viewport;
 
         dirty = ~DirtyFlags();
+        dirtyDescriptorSets = ~0;
         currentPipeline = VK_NULL_HANDLE;
 
         vk::ClearValue clearValues[MAX_COLOR_ATTACHMENTS + 1];
@@ -128,6 +129,18 @@ namespace sp::vulkan {
         SetDirty(DirtyBits::PushConstants);
     }
 
+    void CommandContext::FlushDescriptorSets() {
+        auto layout = currentPipeline->GetLayout();
+
+        for (uint32 set = 0; set < MAX_BOUND_DESCRIPTOR_SETS; set++) {
+            if (!ResetDescriptorDirty(set)) continue;
+            if (!layout->HasDescriptorSet(set)) continue;
+
+            auto descriptorSet = layout->GetFilledDescriptorSet(set, shaderData.sets[set]);
+            cmd->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, **layout, set, {descriptorSet}, nullptr);
+        }
+    }
+
     void CommandContext::FlushGraphicsState() {
         if (ResetDirty(DirtyBits::Pipeline)) {
             auto pipeline = device.GetGraphicsPipeline(pipelineInput);
@@ -136,9 +149,10 @@ namespace sp::vulkan {
         }
 
         auto pipelineLayout = currentPipeline->GetLayout();
+        auto &layoutInfo = pipelineLayout->Info();
 
         if (ResetDirty(DirtyBits::PushConstants)) {
-            auto &range = pipelineLayout->pushConstantRange;
+            auto &range = layoutInfo.pushConstantRange;
             if (range.stageFlags) {
                 Assert(range.offset == 0, "push constant range must start at 0");
                 cmd->pushConstants(**pipelineLayout, range.stageFlags, 0, range.size, shaderData.pushConstants);
@@ -162,12 +176,6 @@ namespace sp::vulkan {
             cmd->setScissor(0, 1, &sc);
         }
 
-        if (ResetDirty(DirtyBits::DescriptorSets)) {
-            for (size_t i = 0; i < descriptorSets.size(); i++) {
-                if (!descriptorSets[i]) continue;
-                vk::PipelineBindPoint bindPoint = vk::PipelineBindPoint(i);
-                cmd->bindDescriptorSets(bindPoint, **pipelineLayout, 0, {descriptorSets[i]}, {});
-            }
-        }
+        FlushDescriptorSets();
     }
 } // namespace sp::vulkan

@@ -5,7 +5,10 @@
 #include "core/Hashing.hh"
 
 namespace sp::vulkan {
-    const size_t MAX_PUSH_CONSTANT_SIZE = 512;
+    const uint32 MAX_PUSH_CONSTANT_SIZE = 512;
+    const uint32 MAX_BOUND_DESCRIPTOR_SETS = 2;
+    const uint32 MAX_BINDINGS_PER_DESCRIPTOR_SET = 32;
+    const uint32 MAX_DESCRIPTOR_SETS_PER_POOL = 16;
 
     class DeviceContext;
     class Model;
@@ -47,7 +50,22 @@ namespace sp::vulkan {
     typedef std::array<ShaderHandle, (size_t)ShaderStage::Count> ShaderHandleSet;
     typedef std::array<Hash64, (size_t)ShaderStage::Count> ShaderHashSet;
 
+    struct DescriptorBinding {
+        union {
+            // Uses C API structs to allow for default initialization
+            VkDescriptorBufferInfo buffer;
+            VkBufferView buffer_view;
+            VkDescriptorImageInfo image;
+        };
+        vk::DeviceSize offset;
+    };
+
+    struct DescriptorSetBindings {
+        DescriptorBinding bindings[MAX_BINDINGS_PER_DESCRIPTOR_SET];
+    };
+
     struct ShaderDataBindings {
         uint8 pushConstants[MAX_PUSH_CONSTANT_SIZE];
+        DescriptorSetBindings sets[MAX_BOUND_DESCRIPTOR_SETS];
     };
 } // namespace sp::vulkan

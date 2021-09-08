@@ -9,8 +9,8 @@
 #include "assets/AssetManager.hh"
 #include "graphics/gui/GuiManager.hh"
 
+#include <GLFW/glfw3.h>
 #include <algorithm>
-#include <glfw/glfw3.h>
 #include <imgui/imgui.h>
 
 namespace sp::vulkan {
@@ -55,8 +55,6 @@ namespace sp::vulkan {
         vertexLayout->PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(ImDrawVert, pos));
         vertexLayout->PushAttribute(1, 0, vk::Format::eR32G32Sfloat, offsetof(ImDrawVert, uv));
         vertexLayout->PushAttribute(2, 0, vk::Format::eR8G8B8A8Unorm, offsetof(ImDrawVert, col));
-
-        // io.Fonts->TexID = (void *)(intptr_t)*fontImage;
     }
 
     void GuiRenderer::Render(const CommandContextPtr &cmd, vk::Rect2D viewport) {
@@ -71,7 +69,7 @@ namespace sp::vulkan {
             vk::ImageCreateInfo fontImageInfo;
             fontImageInfo.imageType = vk::ImageType::e2D;
             fontImageInfo.extent = vk::Extent3D{(uint32)fontWidth, (uint32)fontHeight, 1};
-            fontImageInfo.format = vk::Format::eR8G8B8A8Sint;
+            fontImageInfo.format = vk::Format::eR8G8B8A8Unorm;
             fontImageInfo.mipLevels = 1;
             fontImageInfo.arrayLayers = 1;
             fontImageInfo.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
@@ -171,7 +169,7 @@ namespace sp::vulkan {
             vk::ImageViewCreateInfo fontViewInfo;
             fontViewInfo.image = *fontImage;
             fontViewInfo.viewType = vk::ImageViewType::e2D;
-            fontViewInfo.format = vk::Format::eR8G8B8A8Unorm;
+            fontViewInfo.format = fontImageInfo.format;
             fontViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
             fontViewInfo.subresourceRange.baseMipLevel = 0;
             fontViewInfo.subresourceRange.levelCount = 1;
@@ -179,6 +177,9 @@ namespace sp::vulkan {
             fontViewInfo.subresourceRange.layerCount = 1;
             fontView = device->createImageViewUnique(fontViewInfo);
 
+            io.Fonts->TexID = (ImTextureID)VkImageView(*fontView);
+
+            // TODO: make a convenience factory of common samplers
             vk::SamplerCreateInfo samplerInfo;
             samplerInfo.magFilter = vk::Filter::eLinear;
             samplerInfo.minFilter = vk::Filter::eLinear;
@@ -186,55 +187,7 @@ namespace sp::vulkan {
             samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
             samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
             samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
-            fontSampler = device->createSamplerUnique(samplerInfo);
-
-            vk::DescriptorSetLayoutBinding samplerLayoutBinding;
-            samplerLayoutBinding.binding = 0;
-            samplerLayoutBinding.descriptorCount = 1;
-            samplerLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-            samplerLayoutBinding.pImmutableSamplers = nullptr;
-            samplerLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
-
-            vk::DescriptorSetLayoutCreateInfo layoutInfo;
-            layoutInfo.bindingCount = 1;
-            layoutInfo.pBindings = &samplerLayoutBinding;
-
-            descriptorSetLayout = device->createDescriptorSetLayoutUnique(layoutInfo);
-
-            vk::DescriptorPoolSize samplerPoolSize;
-            samplerPoolSize.type = vk::DescriptorType::eCombinedImageSampler;
-            samplerPoolSize.descriptorCount = 3;
-
-            vk::DescriptorPoolCreateInfo poolInfo;
-            poolInfo.poolSizeCount = 1;
-            poolInfo.pPoolSizes = &samplerPoolSize;
-            poolInfo.maxSets = 3;
-            descriptorPool = device->createDescriptorPoolUnique(poolInfo);
-
-            vector<vk::DescriptorSetLayout> layouts(3, *descriptorSetLayout);
-            vk::DescriptorSetAllocateInfo allocInfo;
-            allocInfo.descriptorPool = *descriptorPool;
-            allocInfo.descriptorSetCount = 3;
-            allocInfo.pSetLayouts = layouts.data();
-
-            descriptorSets = device->allocateDescriptorSets(allocInfo);
-
-            for (size_t i = 0; i < 3; i++) {
-                vk::DescriptorImageInfo imageInfo;
-                imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-                imageInfo.imageView = *fontView;
-                imageInfo.sampler = *fontSampler;
-
-                std::array<vk::WriteDescriptorSet, 1> descriptorWrites;
-                descriptorWrites[0].dstSet = descriptorSets[i];
-                descriptorWrites[0].dstBinding = 0;
-                descriptorWrites[0].dstArrayElement = 0;
-                descriptorWrites[0].descriptorType = vk::DescriptorType::eCombinedImageSampler;
-                descriptorWrites[0].descriptorCount = 1;
-                descriptorWrites[0].pImageInfo = &imageInfo;
-
-                device->updateDescriptorSets(descriptorWrites, {});
-            }
+            linearSampler = device->createSamplerUnique(samplerInfo);
         }
 
         io.DisplaySize = ImVec2(viewport.extent.width, viewport.extent.height);
@@ -295,7 +248,6 @@ namespace sp::vulkan {
         cmd->SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha);
 
         cmd->SetShaders("basic_ortho.vert", "basic_ortho.frag");
-        cmd->BindDescriptorSets(vk::PipelineBindPoint::eGraphics, descriptorSets[0], *descriptorSetLayout);
 
         glm::mat4 proj = MakeOrthographicProjection(viewport);
         cmd->PushConstants(&proj, 0, sizeof(proj));
@@ -312,8 +264,8 @@ namespace sp::vulkan {
                 if (pcmd.UserCallback) {
                     pcmd.UserCallback(cmdList, &pcmd);
                 } else {
-                    /*auto texID = (GLuint)(intptr_t)pcmd.TextureId;
-                    glBindTextures(0, 1, &texID);*/
+                    auto texture = (VkImageView)pcmd.TextureId;
+                    cmd->SetTexture(0, 0, texture, *linearSampler);
 
                     auto clipRect = pcmd.ClipRect;
                     clipRect.x -= drawData->DisplayPos.x;
@@ -332,10 +284,5 @@ namespace sp::vulkan {
         }
 
         cmd->ClearScissor();
-        /*
-        glDisable(GL_BLEND);
-        */
-
-        cmd->BindDescriptorSets(vk::PipelineBindPoint::eGraphics, VK_NULL_HANDLE, VK_NULL_HANDLE);
     }
 } // namespace sp::vulkan
