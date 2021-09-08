@@ -97,6 +97,8 @@ namespace sp {
     }
 
     void GlfwInputHandler::KeyInputCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+        if (key == GLFW_KEY_UNKNOWN) return;
+
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
         Assert(ctx->frameLock != nullptr, "KeyInputCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
