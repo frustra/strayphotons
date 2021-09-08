@@ -56,7 +56,7 @@ namespace sp {
         return false;
     }
 
-    AssetManager::AssetManager() {
+    AssetManager::AssetManager() : RegisteredThread("AssetCleanup", std::chrono::milliseconds(100)) {
         gltfLoaderCallbacks = std::make_unique<tinygltf::FsCallbacks>(tinygltf::FsCallbacks{
             // FileExists
             [](const std::string &abs_filename, void *userdata) -> bool {
@@ -79,29 +79,22 @@ namespace sp {
         UpdateTarIndex();
 #endif
 
-        running = true;
-        cleanupThread = std::thread([this] {
-            while (this->running) {
-                {
-                    std::lock_guard lock(taskMutex);
-                    for (auto it = runningTasks.begin(); it != runningTasks.end();) {
-                        if (it->wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                            it = runningTasks.erase(it);
-                        } else {
-                            it++;
-                        }
-                    }
-                }
-                loadedModels.Tick();
-                loadedAssets.Tick();
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            }
-        });
+        StartThread();
     }
 
-    AssetManager::~AssetManager() {
-        running = false;
-        cleanupThread.join();
+    void AssetManager::Frame() {
+        {
+            std::lock_guard lock(taskMutex);
+            for (auto it = runningTasks.begin(); it != runningTasks.end();) {
+                if (it->wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                    it = runningTasks.erase(it);
+                } else {
+                    it++;
+                }
+            }
+        }
+        loadedModels.Tick();
+        loadedAssets.Tick();
     }
 
     void AssetManager::UpdateTarIndex() {
