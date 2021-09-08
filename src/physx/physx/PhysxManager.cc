@@ -21,10 +21,9 @@ namespace sp {
     static CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
     static CVar<bool> CVarShowShapes("x.ShowShapes", false, "Show (1) or hide (0) the outline of physx collision shapes");
     static CVar<bool> CVarPropJumping("x.PropJumping", false, "Disable player collision with held object");
-    static CVar<int> CVarPhysicsFrameRate("x.PhysicsFrameRate", 120, "Physics updates per second");
     // clang-format on
 
-    PhysxManager::PhysxManager() : humanControlSystem(this) {
+    PhysxManager::PhysxManager() : RegisteredThread("PhysX", 120.0), humanControlSystem(this) {
         Logf("PhysX %d.%d.%d starting up",
              PX_PHYSICS_VERSION_MAJOR,
              PX_PHYSICS_VERSION_MINOR,
@@ -49,14 +48,11 @@ namespace sp {
         scratchBlock.resize(0x1000000); // 16MiB
 
         CreatePhysxScene();
-
         StartThread();
-        StartSimulation();
     }
 
     PhysxManager::~PhysxManager() {
-        exiting = true;
-        thread.join();
+        StopThread();
 
         for (auto val : cache) {
             auto hulSet = val.second;
@@ -98,34 +94,7 @@ namespace sp {
         }
     }
 
-    void PhysxManager::StartThread() {
-        thread = std::thread([&] {
-            auto frameEnd = chrono_clock::now();
-            while (!exiting) {
-                auto frameDuration = chrono_clock::duration(std::chrono::seconds(1)) / CVarPhysicsFrameRate.Get();
-                frameEnd += frameDuration;
-                auto frameStart = chrono_clock::now();
-                if (frameStart >= frameEnd) {
-                    // Falling behind, reset target frame end time.
-                    frameEnd = frameStart + frameDuration;
-                }
-
-                if (simulate) AsyncFrame();
-
-                std::this_thread::sleep_until(frameEnd);
-            }
-        });
-    }
-
-    void PhysxManager::StartSimulation() {
-        simulate = true;
-    }
-
-    void PhysxManager::StopSimulation() {
-        simulate = false;
-    }
-
-    void PhysxManager::AsyncFrame() {
+    void PhysxManager::Frame() {
         // Wake up all actors and update the scene if gravity is changed.
         if (CVarGravity.Changed()) {
             scene->setGravity(PxVec3(0.f, CVarGravity.Get(true), 0.f));
@@ -240,10 +209,10 @@ namespace sp {
             }
         }
 
-        humanControlSystem.Frame(1.0 / CVarPhysicsFrameRate.Get());
+        humanControlSystem.Frame(std::chrono::nanoseconds(this->interval).count() / 1e9);
 
         { // Simulate 1 physics frame (blocking)
-            scene->simulate(PxReal(1.0 / CVarPhysicsFrameRate.Get()),
+            scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
                             nullptr,
                             scratchBlock.data(),
                             scratchBlock.size());

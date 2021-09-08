@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/PreservingMap.hh"
+#include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 
 #include <atomic>
@@ -22,10 +23,9 @@ namespace sp {
     class Script;
     class Image;
 
-    class AssetManager {
+    class AssetManager : public RegisteredThread {
     public:
         AssetManager();
-        ~AssetManager();
 
         std::shared_ptr<const Asset> Load(const std::string &path);
         std::shared_ptr<const Model> LoadModel(const std::string &name);
@@ -35,6 +35,8 @@ namespace sp {
         std::shared_ptr<Script> LoadScript(const std::string &path);
 
     private:
+        void Frame() override;
+
         void UpdateTarIndex();
 
         bool InputStream(const std::string &path, std::ifstream &stream, size_t *size = nullptr);
@@ -47,9 +49,6 @@ namespace sp {
 
         // TODO: Update PhysxManager to use Asset object for collision model cache
         friend class PhysxManager;
-
-        std::atomic_bool running;
-        std::thread cleanupThread;
 
         std::mutex taskMutex;
         std::vector<std::future<void>> runningTasks;

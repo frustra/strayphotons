@@ -24,10 +24,6 @@
         #include "graphics/vulkan/Vertex.hh"
     #endif
 
-    #ifdef SP_PHYSICS_SUPPORT_PHYSX
-        #include "physx/HumanControlSystem.hh"
-    #endif
-
     #include <algorithm>
     #include <cxxopts.hpp>
     #include <iostream>

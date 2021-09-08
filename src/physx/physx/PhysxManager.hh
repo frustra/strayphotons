@@ -3,6 +3,7 @@
 #include "ConvexHull.hh"
 #include "core/CFunc.hh"
 #include "core/Common.hh"
+#include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "physx/HumanControlSystem.hh"
 
@@ -41,16 +42,12 @@ namespace sp {
 
     enum PhysxCollisionGroup { HELD_OBJECT = 1, PLAYER = 2, WORLD = 3, NOCLIP = 4 };
 
-    class PhysxManager {
+    class PhysxManager : public RegisteredThread {
         typedef std::list<PhysxConstraint> ConstraintList;
 
     public:
         PhysxManager();
-        ~PhysxManager();
-
-        void StartThread();
-        void StartSimulation();
-        void StopSimulation();
+        virtual ~PhysxManager() override;
 
         bool MoveController(physx::PxController *controller, double dt, physx::PxVec3 displacement);
 
@@ -72,7 +69,7 @@ namespace sp {
                           physx::PxRaycastBuffer &hit);
 
     private:
-        void AsyncFrame();
+        void Frame() override;
 
         void RemoveConstraints(physx::PxRigidDynamic *child);
 
@@ -129,8 +126,6 @@ namespace sp {
 
         vector<uint8_t> scratchBlock;
         bool debug = false;
-
-        std::thread thread;
 
         ecs::Observer<ecs::Removed<ecs::Physics>> physicsRemoval;
         ecs::Observer<ecs::Removed<ecs::HumanController>> humanControllerRemoval;

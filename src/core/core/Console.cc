@@ -10,6 +10,8 @@
     #include <linenoise.h>
 #endif
 
+#include "core/RegisteredThread.hh"
+
 #include <algorithm>
 #include <chrono>
 #include <iostream>
