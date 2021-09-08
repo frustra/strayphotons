@@ -45,8 +45,9 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # warning C4244: '=': conversion from '*' to '*', possible loss of data
     # warning C4267: 'argument': conversion from '*' to '*', possible loss of data
     # warning C4305: 'argument': truncation from '*' to '*'
+    # warning C4389: '!=': signed/unsigned mismatch
     # warning C4458: declaration of '*' hides class member
-    set(CMAKE_CXX_FLAGS                 "/MP /EHsc /W4 /WX /wd4100 /wd4201 /wd4244 /wd4267 /wd4305 /wd4458")
+    set(CMAKE_CXX_FLAGS                 "/MP /EHsc /W4 /WX /wd4100 /wd4201 /wd4244 /wd4267 /wd4305 /wd4389 /wd4458")
     set(CMAKE_CXX_FLAGS_RELEASE         "/MT /O2")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "/MTd /O2")
     set(CMAKE_CXX_FLAGS_DEBUG           "/MTd /DEBUG /ZI /FC")

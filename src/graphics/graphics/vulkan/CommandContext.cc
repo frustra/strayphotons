@@ -31,7 +31,7 @@ namespace sp::vulkan {
         scissor = viewport;
 
         dirty = ~DirtyFlags();
-        dirtyDescriptorSets = ~0;
+        dirtyDescriptorSets = ~0u;
         currentPipeline = VK_NULL_HANDLE;
 
         vk::ClearValue clearValues[MAX_COLOR_ATTACHMENTS + 1];
