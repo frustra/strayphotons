@@ -315,6 +315,7 @@ namespace sp {
     }
 
     void VoxelRenderer::ReadBackLightSensors(ecs::Lock<ecs::Write<ecs::LightSensor>> lock) {
+        RenderPhase phase("ReadBackLightSensors", timer);
         shaders.Get<LightSensorUpdateCS>()->UpdateValues(lock);
     }
 
@@ -762,6 +763,8 @@ namespace sp {
         ecs::Lock<ecs::Read<ecs::Transform>,
                   ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>>
             lock) {
+        RenderPhase phase("BeginFrame", timer);
+
         UpdateShaders();
         ReadBackLightSensors(lock);
 

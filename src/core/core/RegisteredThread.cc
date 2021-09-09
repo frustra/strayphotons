@@ -82,4 +82,8 @@ namespace sp {
     double RegisteredThread::GetFrameRate() const {
         return 1e9 / (double)averageFrameTimeNs.load();
     }
+
+    std::thread::id RegisteredThread::GetThreadId() const {
+        return thread.get_id();
+    }
 } // namespace sp

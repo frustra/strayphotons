@@ -33,6 +33,8 @@ namespace sp {
         void SetSignal(std::string args);
         void ClearSignal(std::string args);
 
+        void TraceTecs(std::string args);
+
         Tecs::Entity GetPlayer() {
             return player;
         }
