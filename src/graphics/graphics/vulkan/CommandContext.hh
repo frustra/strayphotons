@@ -138,27 +138,10 @@ namespace sp::vulkan {
             }
         }
 
-        void SetSampler(uint32 set, uint32 binding, const vk::Sampler &sampler) {
-            Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
-            Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
-            auto &image = shaderData.sets[set].bindings[binding].image;
-            image.sampler = sampler;
-            SetDescriptorDirty(set);
-        }
-
-        void SetTexture(uint32 set, uint32 binding, const vk::ImageView &view) {
-            Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
-            Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
-            auto &image = shaderData.sets[set].bindings[binding].image;
-            image.imageView = view;
-            image.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            SetDescriptorDirty(set);
-        }
-
-        void SetTexture(uint32 set, uint32 binding, const vk::ImageView &view, const vk::Sampler &sampler) {
-            SetTexture(set, binding, view);
-            SetSampler(set, binding, sampler);
-        }
+        void SetTexture(uint32 set, uint32 binding, const vk::ImageView &view, SamplerType samplerType);
+        void SetTexture(uint32 set, uint32 binding, const vk::ImageView &view, const vk::Sampler &sampler);
+        void SetTexture(uint32 set, uint32 binding, const vk::ImageView &view);
+        void SetSampler(uint32 set, uint32 binding, const vk::Sampler &sampler);
 
         bool WritesToSwapchain() {
             return writesToSwapchain;

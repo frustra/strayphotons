@@ -10,7 +10,7 @@ namespace sp {
 
 namespace sp::vulkan {
     class DeviceContext;
-    struct UniqueBuffer;
+    struct Buffer;
     struct VertexLayout;
 
     class GuiRenderer : public NonCopyable {
@@ -25,16 +25,11 @@ namespace sp::vulkan {
         GuiManager &manager;
 
         unique_ptr<VertexLayout> vertexLayout;
-        UniqueBuffer vertexBuffer, indexBuffer;
-        UniqueImage fontImage;
-        vk::UniqueImageView fontView;
+        BufferPtr vertexBuffer, indexBuffer;
+        ImageViewPtr fontView;
 
         // TODO: get rid of all these
-        UniqueBuffer fontBuf;
+        BufferPtr fontBuf;
         vk::UniqueSemaphore transferComplete, graphicsTransitionComplete;
-        vk::UniqueSampler linearSampler;
-        vk::UniqueDescriptorSetLayout descriptorSetLayout;
-        vk::UniqueDescriptorPool descriptorPool;
-        vector<vk::DescriptorSet> descriptorSets;
     };
 } // namespace sp::vulkan

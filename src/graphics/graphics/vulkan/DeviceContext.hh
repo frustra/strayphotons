@@ -51,8 +51,6 @@ namespace sp::vulkan {
         const std::vector<glm::ivec2> &MonitorModes() override;
         const glm::ivec2 CurrentMode() override;
 
-        shared_ptr<GpuTexture> LoadTexture(shared_ptr<const Image> image, bool genMipmap = true) override;
-
         void PrepareWindowView(ecs::View &view) override;
 
         CommandContextPtr GetCommandContext(CommandContextType type = CommandContextType::General);
@@ -63,8 +61,15 @@ namespace sp::vulkan {
                     vk::ArrayProxy<const vk::Semaphore> waitSemaphores = {},
                     vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {});
 
-        UniqueBuffer AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
-        UniqueImage AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency);
+        BufferPtr AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
+        ImagePtr AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency);
+        ImagePtr CreateImage(vk::ImageCreateInfo createInfo,
+                             const uint8 *initialData = nullptr,
+                             size_t initialDataSize = 0);
+        ImageViewPtr CreateImageView(ImageViewCreateInfo info);
+        vk::Sampler GetSampler(SamplerType type);
+
+        shared_ptr<GpuTexture> LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
 
         RenderPassInfo SwapchainRenderPassInfo(bool depth = false, bool stencil = false);
 
@@ -75,6 +80,8 @@ namespace sp::vulkan {
         shared_ptr<Pipeline> GetGraphicsPipeline(const PipelineCompileInput &input);
         shared_ptr<RenderPass> GetRenderPass(const RenderPassInfo &info);
         shared_ptr<Framebuffer> GetFramebuffer(const RenderPassInfo &info);
+
+        vk::Semaphore GetEmptySemaphore();
 
         GLFWwindow *GetWindow() {
             return window;
@@ -115,6 +122,8 @@ namespace sp::vulkan {
         vk::PhysicalDeviceProperties physicalDeviceProperties;
         vk::UniqueDevice device;
 
+        vector<vk::UniqueSemaphore> semaphores;
+
         unique_ptr<PipelineManager> pipelinePool;
         unique_ptr<RenderPassManager> renderPassPool;
         unique_ptr<FramebufferManager> framebufferPool;
@@ -131,11 +140,7 @@ namespace sp::vulkan {
 
         struct SwapchainImageContext {
             vk::Fence inFlightFence; // points at a fence owned by FrameContext
-            vk::Image image;
-
-            // TODO: store custom image abstraction
-            vk::ImageViewCreateInfo imageViewInfo;
-            vk::UniqueImageView imageView;
+            ImageViewPtr imageView;
         };
 
         vector<SwapchainImageContext> swapchainImageContexts;
@@ -169,12 +174,12 @@ namespace sp::vulkan {
             return frameContexts[frameIndex];
         }
 
-        vk::ImageViewCreateInfo depthImageViewInfo;
-        UniqueImage depthImage; // TODO: move to render target pool
-        vk::UniqueImageView depthImageView;
+        ImageViewPtr depthImageView; // TODO: move to render target pool
 
         robin_hood::unordered_map<string, ShaderHandle> shaderHandles;
         vector<shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1
+
+        robin_hood::unordered_map<SamplerType, vk::UniqueSampler> samplers;
 
         glm::ivec2 glfwWindowSize;
         glm::ivec2 storedWindowPos; // Remember window location when returning from fullscreen

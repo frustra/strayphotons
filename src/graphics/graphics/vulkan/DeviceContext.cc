@@ -5,6 +5,7 @@
 #include "RenderPass.hh"
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
+#include "assets/Image.hh"
 #include "core/CFunc.hh"
 #include "core/Logging.hh"
 #include "core/StackVector.hh"
@@ -319,7 +320,6 @@ namespace sp::vulkan {
             // TODO: these will be allocated from a pool later and not need to be manually cleaned up
             // The image needs to be destroyed before VMA
             depthImageView.reset();
-            depthImage.Destroy();
         }
 
         vmaDestroyAllocator(allocator);
@@ -380,23 +380,11 @@ namespace sp::vulkan {
         swapchainImageContexts.resize(swapchainImages.size());
 
         for (size_t i = 0; i < swapchainImages.size(); i++) {
-            auto &perSCI = swapchainImageContexts[i];
-            perSCI.image = swapchainImages[i];
-
-            vk::ImageViewCreateInfo createInfo;
-            createInfo.image = swapchainImages[i];
-            createInfo.viewType = vk::ImageViewType::e2D;
-            createInfo.format = swapchainInfo.imageFormat;
-            createInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-            createInfo.subresourceRange.baseMipLevel = 0;
-            createInfo.subresourceRange.levelCount = 1;
-            createInfo.subresourceRange.baseArrayLayer = 0;
-            createInfo.subresourceRange.layerCount = 1;
-            perSCI.imageViewInfo = createInfo;
-            perSCI.imageView = device->createImageViewUnique(createInfo);
+            ImageViewCreateInfo imageViewInfo;
+            imageViewInfo.image = make_shared<Image>(swapchainImages[i], swapchainInfo.imageFormat, swapchainExtent);
+            imageViewInfo.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
+            swapchainImageContexts[i].imageView = CreateImageView(imageViewInfo);
         }
-
-        depthImageView.reset();
 
         vk::ImageCreateInfo depthImageInfo;
         depthImageInfo.imageType = vk::ImageType::e2D;
@@ -406,17 +394,10 @@ namespace sp::vulkan {
         depthImageInfo.mipLevels = 1;
         depthImageInfo.arrayLayers = 1;
         depthImageInfo.samples = vk::SampleCountFlagBits::e1;
-        depthImage = AllocateImage(depthImageInfo, VMA_MEMORY_USAGE_GPU_ONLY);
 
-        depthImageViewInfo.format = depthImageInfo.format;
-        depthImageViewInfo.image = *depthImage;
-        depthImageViewInfo.viewType = vk::ImageViewType::e2D;
-        depthImageViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
-        depthImageViewInfo.subresourceRange.baseMipLevel = 0;
-        depthImageViewInfo.subresourceRange.levelCount = 1;
-        depthImageViewInfo.subresourceRange.baseArrayLayer = 0;
-        depthImageViewInfo.subresourceRange.layerCount = 1;
-        depthImageView = device->createImageViewUnique(depthImageViewInfo);
+        ImageViewCreateInfo imageViewInfo;
+        imageViewInfo.image = AllocateImage(depthImageInfo, VMA_MEMORY_USAGE_GPU_ONLY);
+        depthImageView = CreateImageView(imageViewInfo);
     }
 
     void DeviceContext::RecreateSwapchain() {
@@ -562,11 +543,6 @@ namespace sp::vulkan {
         lastFrameEnd = frameEnd;
     }
 
-    shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const Image> image, bool genMipmap) {
-        // TODO
-        return nullptr;
-    }
-
     CommandContextPtr DeviceContext::GetCommandContext(CommandContextType type) {
         // TODO(multithread): should segregate command contexts by thread
         CommandContextPtr cmd;
@@ -640,21 +616,186 @@ namespace sp::vulkan {
         queue.submit({submitInfo}, fence);
     }
 
-    UniqueBuffer DeviceContext::AllocateBuffer(vk::DeviceSize size,
-                                               vk::BufferUsageFlags usage,
-                                               VmaMemoryUsage residency) {
+    BufferPtr DeviceContext::AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency) {
         vk::BufferCreateInfo bufferInfo;
         bufferInfo.size = size;
         bufferInfo.usage = usage;
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
-        return UniqueBuffer(bufferInfo, allocInfo, allocator);
+        return make_shared<Buffer>(bufferInfo, allocInfo, allocator);
     }
 
-    UniqueImage DeviceContext::AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency) {
+    ImagePtr DeviceContext::AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency) {
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
-        return UniqueImage(info, allocInfo, allocator);
+        return make_shared<Image>(info, allocInfo, allocator);
+    }
+
+    ImagePtr DeviceContext::CreateImage(vk::ImageCreateInfo createInfo,
+                                        const uint8 *initialData,
+                                        size_t initialDataSize) {
+        if (!initialData || initialDataSize == 0) return AllocateImage(createInfo, VMA_MEMORY_USAGE_GPU_ONLY);
+
+        createInfo.usage |= vk::ImageUsageFlagBits::eTransferDst;
+        auto image = AllocateImage(createInfo, VMA_MEMORY_USAGE_GPU_ONLY);
+
+        auto stagingBuf = AllocateBuffer(initialDataSize,
+                                         vk::BufferUsageFlagBits::eTransferSrc,
+                                         VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+        uint8 *stagingBufData;
+        stagingBuf->Map((void **)&stagingBufData);
+        std::copy(initialData, initialData + initialDataSize, stagingBufData);
+        stagingBuf->Unmap();
+
+        auto transferCmd = GetCommandContext(CommandContextType::TransferAsync);
+
+        vk::ImageMemoryBarrier barrier1;
+        barrier1.oldLayout = vk::ImageLayout::eUndefined;
+        barrier1.newLayout = vk::ImageLayout::eTransferDstOptimal;
+        barrier1.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier1.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier1.image = *image;
+        barrier1.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        barrier1.subresourceRange.baseMipLevel = 0;
+        barrier1.subresourceRange.levelCount = 1;
+        barrier1.subresourceRange.baseArrayLayer = 0;
+        barrier1.subresourceRange.layerCount = 1;
+        barrier1.srcAccessMask = {};
+        barrier1.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+        transferCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
+                                           vk::PipelineStageFlagBits::eTransfer,
+                                           {},
+                                           {},
+                                           {},
+                                           {barrier1});
+
+        vk::BufferImageCopy region;
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+        region.imageSubresource.aspectMask = FormatToAspectFlags(createInfo.format);
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+        region.imageOffset = vk::Offset3D{0, 0, 0};
+        region.imageExtent = createInfo.extent;
+
+        transferCmd->Raw().copyBufferToImage(*stagingBuf, *image, vk::ImageLayout::eTransferDstOptimal, {region});
+
+        vk::ImageMemoryBarrier barrier2;
+        barrier2.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+        barrier2.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        barrier2.srcQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync);
+        barrier2.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::General);
+        barrier2.image = *image;
+        barrier2.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        barrier2.subresourceRange.baseMipLevel = 0;
+        barrier2.subresourceRange.levelCount = 1;
+        barrier2.subresourceRange.baseArrayLayer = 0;
+        barrier2.subresourceRange.layerCount = 1;
+        barrier2.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+        barrier2.dstAccessMask = {};
+
+        transferCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                           vk::PipelineStageFlagBits::eBottomOfPipe,
+                                           {},
+                                           {},
+                                           {},
+                                           {barrier2});
+
+        auto transferComplete = GetEmptySemaphore();
+        Submit(transferCmd, {transferComplete});
+
+        auto graphicsCmd = GetCommandContext();
+
+        vk::ImageMemoryBarrier barrier3 = barrier2;
+        barrier3.srcAccessMask = {};
+        barrier3.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+        graphicsCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eFragmentShader,
+                                           vk::PipelineStageFlagBits::eFragmentShader,
+                                           {},
+                                           {},
+                                           {},
+                                           {barrier3});
+
+        Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eFragmentShader});
+        return image;
+    }
+
+    ImageViewPtr DeviceContext::CreateImageView(ImageViewCreateInfo info) {
+        if (info.format == vk::Format::eUndefined) info.format = info.image->Format();
+
+        vk::ImageViewCreateInfo createInfo;
+        createInfo.image = *info.image;
+        createInfo.format = info.format;
+        createInfo.viewType = info.viewType;
+        createInfo.components = info.mapping;
+        createInfo.subresourceRange.aspectMask = FormatToAspectFlags(info.format);
+        createInfo.subresourceRange.baseMipLevel = info.baseMipLevel;
+        createInfo.subresourceRange.levelCount = info.mipLevelCount;
+        createInfo.subresourceRange.baseArrayLayer = info.baseArrayLayer;
+        createInfo.subresourceRange.layerCount = info.arrayLayerCount;
+        return make_shared<ImageView>(device->createImageViewUnique(createInfo), info);
+    }
+
+    shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {
+        image->WaitUntilValid();
+
+        vk::ImageCreateInfo createInfo;
+        createInfo.extent.width = image->GetWidth();
+        createInfo.extent.height = image->GetHeight();
+        createInfo.extent.depth = 1;
+        Assert(createInfo.extent.width > 0 && createInfo.extent.height > 0, "image has zero size");
+
+        createInfo.mipLevels = genMipmap ? CalculateMipmapLevels(createInfo.extent) : 1;
+
+        switch (image->GetComponents()) {
+        case 1:
+            createInfo.format = vk::Format::eR8Srgb;
+            break;
+        case 2:
+            createInfo.format = vk::Format::eR8G8Srgb;
+            break;
+        case 3:
+            createInfo.format = vk::Format::eR8G8B8Srgb;
+            break;
+        case 4:
+            createInfo.format = vk::Format::eR8G8B8A8Srgb;
+            break;
+        default:
+            Assert(false, "invalid image format");
+        }
+
+        const uint8_t *data = image->GetImage().get();
+        Assert(data, "missing image data");
+
+        ImageViewCreateInfo viewInfo;
+        viewInfo.image = CreateImage(createInfo, data, image->ByteSize());
+        return CreateImageView(viewInfo);
+    }
+
+    vk::Sampler DeviceContext::GetSampler(SamplerType type) {
+        auto &sampler = samplers[type];
+        if (sampler) return *sampler;
+
+        vk::SamplerCreateInfo samplerInfo;
+
+        switch (type) {
+        case SamplerType::Bilinear:
+            samplerInfo.magFilter = vk::Filter::eLinear;
+            samplerInfo.minFilter = vk::Filter::eLinear;
+            break;
+        }
+
+        samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+        samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+        samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
+        samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
+        sampler = device->createSamplerUnique(samplerInfo);
+        return *sampler;
     }
 
     ShaderHandle DeviceContext::LoadShader(const string &name) {
@@ -710,18 +851,12 @@ namespace sp::vulkan {
     }
 
     RenderPassInfo DeviceContext::SwapchainRenderPassInfo(bool depth, bool stencil) {
-        ImageView view(*SwapchainImage().imageView, SwapchainImage().imageViewInfo, swapchainExtent);
-        view.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
-
         std::array<float, 4> clearColor = {0.0f, 1.0f, 0.0f, 1.0f};
 
         RenderPassInfo info;
-        info.PushColorAttachment(view, LoadOp::Clear, StoreOp::Store, clearColor);
+        info.PushColorAttachment(SwapchainImage().imageView, LoadOp::Clear, StoreOp::Store, clearColor);
 
-        if (depth) {
-            ImageView depthView(*depthImageView, depthImageViewInfo, swapchainExtent);
-            info.SetDepthStencilAttachment(depthView, LoadOp::Clear, StoreOp::DontCare);
-        }
+        if (depth) info.SetDepthStencilAttachment(depthImageView, LoadOp::Clear, StoreOp::DontCare);
 
         return info;
     }
@@ -732,6 +867,12 @@ namespace sp::vulkan {
 
     shared_ptr<Framebuffer> DeviceContext::GetFramebuffer(const RenderPassInfo &info) {
         return framebufferPool->GetFramebuffer(info);
+    }
+
+    vk::Semaphore DeviceContext::GetEmptySemaphore() {
+        vk::SemaphoreCreateInfo semCreateInfo;
+        semaphores.push_back(device->createSemaphoreUnique(semCreateInfo));
+        return *semaphores.back();
     }
 
     void *DeviceContext::Win32WindowHandle() {

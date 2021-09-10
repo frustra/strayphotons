@@ -1,6 +1,25 @@
 #include "Image.hh"
 
 namespace sp::vulkan {
+    Image::Image() : UniqueMemory(VK_NULL_HANDLE) {}
+
+    Image::Image(vk::ImageCreateInfo imageInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator)
+        : UniqueMemory(allocator), format(imageInfo.format), extent(imageInfo.extent) {
+
+        VkImageCreateInfo vkImageInfo = imageInfo;
+        VkImage vkImage;
+
+        auto result = vmaCreateImage(allocator, &vkImageInfo, &allocInfo, &vkImage, &allocation, nullptr);
+        AssertVKSuccess(result, "creating image");
+        image = vkImage;
+    }
+
+    Image::~Image() {
+        if (allocator != VK_NULL_HANDLE && allocation != VK_NULL_HANDLE) {
+            vmaDestroyImage(allocator, image, allocation);
+        }
+    }
+
     vk::ImageAspectFlags FormatToAspectFlags(vk::Format format) {
         switch (format) {
         case vk::Format::eUndefined:
@@ -22,5 +41,14 @@ namespace sp::vulkan {
         default:
             return vk::ImageAspectFlagBits::eColor;
         }
+    }
+
+    uint32 CalculateMipmapLevels(vk::Extent3D extent) {
+        uint32 dim = std::max(std::max(extent.width, extent.height), extent.depth);
+        if (dim <= 0) return 1;
+        uint32 cmp = 31;
+        while (!(dim >> cmp))
+            cmp--;
+        return cmp + 1;
     }
 } // namespace sp::vulkan

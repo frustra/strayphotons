@@ -24,13 +24,13 @@ namespace sp::vulkan {
 
             colorAttachment.finalLayout = vk::ImageLayout::eUndefined;
 
-            if (info.colorAttachments[i].IsSwapchain()) {
+            if (info.colorAttachments[i]->IsSwapchain()) {
                 if (colorAttachment.loadOp == vk::AttachmentLoadOp::eLoad) {
-                    colorAttachment.initialLayout = info.colorAttachments[i].swapchainLayout;
+                    colorAttachment.initialLayout = info.colorAttachments[i]->SwapchainLayout();
                 } else {
                     colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
                 }
-                colorAttachment.finalLayout = info.colorAttachments[i].swapchainLayout;
+                colorAttachment.finalLayout = info.colorAttachments[i]->SwapchainLayout();
             } else {
                 colorAttachment.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
             }
@@ -106,22 +106,22 @@ namespace sp::vulkan {
         uint32 attachmentCount = info.state.colorAttachmentCount;
 
         for (uint32 i = 0; i < info.state.colorAttachmentCount; i++) {
-            auto &image = info.colorAttachments[i];
-            attachments[i] = image.view;
-            extent.width = std::min(extent.width, image.extent.width);
-            extent.height = std::min(extent.width, image.extent.height);
+            auto &image = *info.colorAttachments[i];
+            attachments[i] = image;
+            extent.width = std::min(extent.width, image.Extent().width);
+            extent.height = std::min(extent.width, image.Extent().height);
         }
 
         if (info.HasDepthStencil()) {
             attachmentCount++;
-            auto &image = info.depthStencilAttachment;
-            attachments[info.state.colorAttachmentCount] = image.view;
-            extent.width = std::min(extent.width, image.extent.width);
-            extent.height = std::min(extent.width, image.extent.height);
+            auto &image = *info.depthStencilAttachment;
+            attachments[info.state.colorAttachmentCount] = image;
+            extent.width = std::min(extent.width, image.Extent().width);
+            extent.height = std::min(extent.width, image.Extent().height);
         }
 
         vk::FramebufferCreateInfo framebufferInfo;
-        framebufferInfo.renderPass = **renderPass;
+        framebufferInfo.renderPass = *renderPass;
         framebufferInfo.attachmentCount = attachmentCount;
         framebufferInfo.pAttachments = attachments;
         framebufferInfo.width = extent.width;
@@ -148,17 +148,19 @@ namespace sp::vulkan {
         key.input.renderPass = info.state;
 
         for (uint32 i = 0; i < info.state.colorAttachmentCount; i++) {
-            auto &image = info.colorAttachments[i];
-            Assert(image.view, "render pass is missing a color image");
-            key.input.imageViews[i] = image.view;
-            key.input.extents[i].width = image.extent.width;
-            key.input.extents[i].height = image.extent.height;
+            auto image = info.colorAttachments[i];
+            Assert(!!image, "render pass is missing a color image");
+            key.input.imageViews[i] = *image;
+
+            auto extent = image->Extent();
+            key.input.extents[i].width = extent.width;
+            key.input.extents[i].height = extent.height;
         }
 
         if (info.HasDepthStencil()) {
-            auto &image = info.depthStencilAttachment.view;
-            Assert(image, "render pass is missing depth image");
-            key.input.imageViews[MAX_COLOR_ATTACHMENTS] = image;
+            auto image = info.depthStencilAttachment;
+            Assert(!!image, "render pass is missing depth image");
+            key.input.imageViews[MAX_COLOR_ATTACHMENTS] = *image;
         }
 
         auto &fb = framebuffers[key];

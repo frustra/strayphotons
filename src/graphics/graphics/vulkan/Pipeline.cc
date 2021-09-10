@@ -297,7 +297,7 @@ namespace sp::vulkan {
         pipelineInfo.pDepthStencilState = &depthStencil;
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pDynamicState = &dynamicState;
-        pipelineInfo.layout = **layout;
+        pipelineInfo.layout = *layout;
         pipelineInfo.renderPass = compile.renderPass;
         pipelineInfo.subpass = 0;
 

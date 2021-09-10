@@ -45,6 +45,11 @@ namespace sp {
             return image;
         }
 
+        size_t ByteSize() const {
+            // stbi_load_from_memory returns 8 bits per channel
+            return width * height * components;
+        }
+
     private:
         void PopulateFromAsset(std::shared_ptr<const Asset> asset);
 

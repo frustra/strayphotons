@@ -14,7 +14,13 @@ namespace sp::vulkan {
     typedef uint32 ShaderHandle;
 
     class CommandContext;
+    struct Buffer;
+    struct Image;
+    struct ImageView;
     typedef shared_ptr<CommandContext> CommandContextPtr;
+    typedef shared_ptr<Buffer> BufferPtr;
+    typedef shared_ptr<Image> ImagePtr;
+    typedef shared_ptr<ImageView> ImageViewPtr;
 
     void AssertVKSuccess(vk::Result result, std::string message);
     void AssertVKSuccess(VkResult result, std::string message);
@@ -25,7 +31,10 @@ namespace sp::vulkan {
         General = QUEUE_TYPE_GRAPHICS,
         ComputeAsync = QUEUE_TYPE_COMPUTE,
         TransferAsync = QUEUE_TYPE_TRANSFER,
-        Count
+    };
+
+    enum class SamplerType {
+        Bilinear,
     };
 
     template<typename T>
@@ -42,6 +51,10 @@ namespace sp::vulkan {
         T *operator->() {
             T &t = *uniqueHandle;
             return &t;
+        }
+
+        operator T() const {
+            return *uniqueHandle;
         }
 
     protected:

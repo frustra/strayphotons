@@ -25,11 +25,11 @@ namespace sp::vulkan {
     class Model final : public NonCopyable {
     public:
         struct Primitive : public NonCopyable {
-            UniqueBuffer indexBuffer;
+            BufferPtr indexBuffer;
             vk::IndexType indexType = vk::IndexType::eNoneKHR;
             size_t indexCount;
 
-            UniqueBuffer vertexBuffer;
+            BufferPtr vertexBuffer;
             glm::mat4 transform;
         };
 

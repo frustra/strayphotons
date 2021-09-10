@@ -42,7 +42,7 @@ namespace sp::vulkan {
                 clearValues[i].color = info.clearColors[i];
                 clearCount = i + 1;
             }
-            if (info.colorAttachments[i].IsSwapchain()) writesToSwapchain = true;
+            if (info.colorAttachments[i]->IsSwapchain()) writesToSwapchain = true;
         }
 
         if (info.HasDepthStencil() && info.state.ShouldClear(RenderPassState::DEPTH_STENCIL_INDEX)) {
@@ -51,8 +51,8 @@ namespace sp::vulkan {
         }
 
         vk::RenderPassBeginInfo renderPassBeginInfo;
-        renderPassBeginInfo.renderPass = **renderPass;
-        renderPassBeginInfo.framebuffer = **framebuffer;
+        renderPassBeginInfo.renderPass = *renderPass;
+        renderPassBeginInfo.framebuffer = *framebuffer;
         renderPassBeginInfo.renderArea = scissor;
         renderPassBeginInfo.clearValueCount = clearCount;
         renderPassBeginInfo.pClearValues = clearValues;
@@ -129,6 +129,32 @@ namespace sp::vulkan {
         SetDirty(DirtyBits::PushConstants);
     }
 
+    void CommandContext::SetSampler(uint32 set, uint32 binding, const vk::Sampler &sampler) {
+        Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
+        Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
+        auto &image = shaderData.sets[set].bindings[binding].image;
+        image.sampler = sampler;
+        SetDescriptorDirty(set);
+    }
+
+    void CommandContext::SetTexture(uint32 set, uint32 binding, const vk::ImageView &view) {
+        Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
+        Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
+        auto &image = shaderData.sets[set].bindings[binding].image;
+        image.imageView = view;
+        image.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        SetDescriptorDirty(set);
+    }
+
+    void CommandContext::SetTexture(uint32 set, uint32 binding, const vk::ImageView &view, const vk::Sampler &sampler) {
+        SetTexture(set, binding, view);
+        SetSampler(set, binding, sampler);
+    }
+
+    void CommandContext::SetTexture(uint32 set, uint32 binding, const vk::ImageView &view, SamplerType samplerType) {
+        SetTexture(set, binding, view, device.GetSampler(samplerType));
+    }
+
     void CommandContext::FlushDescriptorSets() {
         auto layout = currentPipeline->GetLayout();
 
@@ -137,14 +163,14 @@ namespace sp::vulkan {
             if (!layout->HasDescriptorSet(set)) continue;
 
             auto descriptorSet = layout->GetFilledDescriptorSet(set, shaderData.sets[set]);
-            cmd->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, **layout, set, {descriptorSet}, nullptr);
+            cmd->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *layout, set, {descriptorSet}, nullptr);
         }
     }
 
     void CommandContext::FlushGraphicsState() {
         if (ResetDirty(DirtyBits::Pipeline)) {
             auto pipeline = device.GetGraphicsPipeline(pipelineInput);
-            if (pipeline != currentPipeline) { cmd->bindPipeline(vk::PipelineBindPoint::eGraphics, **pipeline); }
+            if (pipeline != currentPipeline) { cmd->bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline); }
             currentPipeline = pipeline;
         }
 
@@ -155,7 +181,7 @@ namespace sp::vulkan {
             auto &range = layoutInfo.pushConstantRange;
             if (range.stageFlags) {
                 Assert(range.offset == 0, "push constant range must start at 0");
-                cmd->pushConstants(**pipelineLayout, range.stageFlags, 0, range.size, shaderData.pushConstants);
+                cmd->pushConstants(*pipelineLayout, range.stageFlags, 0, range.size, shaderData.pushConstants);
             }
         }
 

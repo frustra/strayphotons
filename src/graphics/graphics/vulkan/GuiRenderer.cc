@@ -61,7 +61,7 @@ namespace sp::vulkan {
         manager.SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
 
-        if (!transferComplete) {
+        if (!fontView) {
             uint8 *fontData;
             int fontWidth, fontHeight;
             io.Fonts->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
@@ -72,122 +72,13 @@ namespace sp::vulkan {
             fontImageInfo.format = vk::Format::eR8G8B8A8Unorm;
             fontImageInfo.mipLevels = 1;
             fontImageInfo.arrayLayers = 1;
-            fontImageInfo.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-            fontImage = device.AllocateImage(fontImageInfo, VMA_MEMORY_USAGE_GPU_ONLY);
+            fontImageInfo.usage = vk::ImageUsageFlagBits::eSampled;
 
-            size_t fontBufSize = fontWidth * fontHeight * 4;
+            ImageViewCreateInfo fontViewInfo;
+            fontViewInfo.image = device.CreateImage(fontImageInfo, fontData, fontWidth * fontHeight * 4);
+            fontView = device.CreateImageView(fontViewInfo);
 
-            fontBuf = device.AllocateBuffer(fontBufSize,
-                                            vk::BufferUsageFlagBits::eTransferSrc,
-                                            VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-            uint8 *fontBufData;
-            fontBuf.Map((void **)&fontBufData);
-            memcpy(fontBufData, fontData, fontBufSize);
-            fontBuf.Unmap();
-
-            auto transferCmd = device.GetCommandContext(CommandContextType::TransferAsync);
-
-            vk::ImageMemoryBarrier barrier1;
-            barrier1.oldLayout = vk::ImageLayout::eUndefined;
-            barrier1.newLayout = vk::ImageLayout::eTransferDstOptimal;
-            barrier1.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier1.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier1.image = *fontImage;
-            barrier1.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-            barrier1.subresourceRange.baseMipLevel = 0;
-            barrier1.subresourceRange.levelCount = 1;
-            barrier1.subresourceRange.baseArrayLayer = 0;
-            barrier1.subresourceRange.layerCount = 1;
-            barrier1.srcAccessMask = {};
-            barrier1.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-
-            transferCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
-                                               vk::PipelineStageFlagBits::eTransfer,
-                                               {},
-                                               {},
-                                               {},
-                                               {barrier1});
-
-            vk::BufferImageCopy region;
-            region.bufferOffset = 0;
-            region.bufferRowLength = 0;
-            region.bufferImageHeight = 0;
-            region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-            region.imageSubresource.mipLevel = 0;
-            region.imageSubresource.baseArrayLayer = 0;
-            region.imageSubresource.layerCount = 1;
-            region.imageOffset = vk::Offset3D{0, 0, 0};
-            region.imageExtent = vk::Extent3D{(uint32)fontWidth, (uint32)fontHeight, 1};
-
-            transferCmd->Raw().copyBufferToImage(*fontBuf, *fontImage, vk::ImageLayout::eTransferDstOptimal, {region});
-
-            vk::ImageMemoryBarrier barrier2;
-            barrier2.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-            barrier2.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-            barrier2.srcQueueFamilyIndex = device.QueueFamilyIndex(CommandContextType::TransferAsync);
-            barrier2.dstQueueFamilyIndex = device.QueueFamilyIndex(CommandContextType::General);
-            barrier2.image = *fontImage;
-            barrier2.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-            barrier2.subresourceRange.baseMipLevel = 0;
-            barrier2.subresourceRange.levelCount = 1;
-            barrier2.subresourceRange.baseArrayLayer = 0;
-            barrier2.subresourceRange.layerCount = 1;
-            barrier2.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-            barrier2.dstAccessMask = {};
-
-            transferCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
-                                               vk::PipelineStageFlagBits::eBottomOfPipe,
-                                               {},
-                                               {},
-                                               {},
-                                               {barrier2});
-
-            vk::SemaphoreCreateInfo semCreateInfo;
-            transferComplete = device->createSemaphoreUnique(semCreateInfo);
-            device.Submit(transferCmd, {*transferComplete});
-
-            auto graphicsCmd = device.GetCommandContext();
-
-            vk::ImageMemoryBarrier barrier3 = barrier2;
-            barrier3.srcAccessMask = {};
-            barrier3.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-
-            graphicsCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eFragmentShader,
-                                               vk::PipelineStageFlagBits::eFragmentShader,
-                                               {},
-                                               {},
-                                               {},
-                                               {barrier3});
-
-            graphicsTransitionComplete = device->createSemaphoreUnique(semCreateInfo);
-            device.Submit(graphicsCmd,
-                          {*graphicsTransitionComplete},
-                          {*transferComplete},
-                          {vk::PipelineStageFlagBits::eFragmentShader});
-
-            vk::ImageViewCreateInfo fontViewInfo;
-            fontViewInfo.image = *fontImage;
-            fontViewInfo.viewType = vk::ImageViewType::e2D;
-            fontViewInfo.format = fontImageInfo.format;
-            fontViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-            fontViewInfo.subresourceRange.baseMipLevel = 0;
-            fontViewInfo.subresourceRange.levelCount = 1;
-            fontViewInfo.subresourceRange.baseArrayLayer = 0;
-            fontViewInfo.subresourceRange.layerCount = 1;
-            fontView = device->createImageViewUnique(fontViewInfo);
-
-            io.Fonts->TexID = (ImTextureID)VkImageView(*fontView);
-
-            // TODO: make a convenience factory of common samplers
-            vk::SamplerCreateInfo samplerInfo;
-            samplerInfo.magFilter = vk::Filter::eLinear;
-            samplerInfo.minFilter = vk::Filter::eLinear;
-            samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
-            samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
-            samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
-            samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
-            linearSampler = device->createSamplerUnique(samplerInfo);
+            io.Fonts->TexID = (ImTextureID)(fontView.get());
         }
 
         io.DisplaySize = ImVec2(viewport.extent.width, viewport.extent.height);
@@ -211,14 +102,14 @@ namespace sp::vulkan {
         }
 
         totalVtxSize = CeilToPowerOfTwo(totalVtxSize);
-        if (totalVtxSize > vertexBuffer.Size()) {
+        if (!vertexBuffer || totalVtxSize > vertexBuffer->Size()) {
             vertexBuffer = device.AllocateBuffer(totalVtxSize,
                                                  vk::BufferUsageFlagBits::eVertexBuffer,
                                                  VMA_MEMORY_USAGE_CPU_TO_GPU);
         }
 
         totalIdxSize = CeilToPowerOfTwo(totalIdxSize);
-        if (totalIdxSize > indexBuffer.Size()) {
+        if (!indexBuffer || totalIdxSize > indexBuffer->Size()) {
             indexBuffer = device.AllocateBuffer(totalIdxSize,
                                                 vk::BufferUsageFlagBits::eIndexBuffer,
                                                 VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -228,8 +119,8 @@ namespace sp::vulkan {
 
         ImDrawVert *vtxData;
         ImDrawIdx *idxData;
-        vertexBuffer.Map((void **)&vtxData);
-        indexBuffer.Map((void **)&idxData);
+        vertexBuffer->Map((void **)&vtxData);
+        indexBuffer->Map((void **)&idxData);
         for (int i = 0; i < drawData->CmdListsCount; i++) {
             const auto cmdList = drawData->CmdLists[i];
             std::copy(cmdList->VtxBuffer.begin(), cmdList->VtxBuffer.end(), vtxData);
@@ -237,8 +128,8 @@ namespace sp::vulkan {
             std::copy(cmdList->IdxBuffer.begin(), cmdList->IdxBuffer.end(), idxData);
             idxData += cmdList->IdxBuffer.size();
         }
-        indexBuffer.Unmap();
-        vertexBuffer.Unmap();
+        indexBuffer->Unmap();
+        vertexBuffer->Unmap();
 
         cmd->SetViewport(viewport);
         cmd->SetVertexLayout(*vertexLayout);
@@ -264,8 +155,8 @@ namespace sp::vulkan {
                 if (pcmd.UserCallback) {
                     pcmd.UserCallback(cmdList, &pcmd);
                 } else {
-                    auto texture = (VkImageView)pcmd.TextureId;
-                    cmd->SetTexture(0, 0, texture, *linearSampler);
+                    auto texture = (ImageView *)pcmd.TextureId;
+                    cmd->SetTexture(0, 0, *texture, SamplerType::Bilinear);
 
                     auto clipRect = pcmd.ClipRect;
                     clipRect.x -= drawData->DisplayPos.x;
