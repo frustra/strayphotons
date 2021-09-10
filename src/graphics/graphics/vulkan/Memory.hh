@@ -36,66 +36,35 @@
 namespace sp::vulkan {
     struct UniqueMemory : public NonCopyable {
         UniqueMemory() = delete;
-        UniqueMemory(VmaAllocator allocator) : allocator(allocator) {}
+        UniqueMemory(VmaAllocator allocator) : allocator(allocator), allocation(nullptr) {}
         vk::Result Map(void **data);
         void Unmap();
+        vk::DeviceSize ByteSize() const;
 
     protected:
         VmaAllocator allocator;
         VmaAllocation allocation;
     };
 
-    struct UniqueBuffer : public UniqueMemory {
-        UniqueBuffer();
-        UniqueBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator);
-        UniqueBuffer(UniqueBuffer &&other);
-        ~UniqueBuffer();
-        void Destroy();
+    struct Buffer : public UniqueMemory {
+        Buffer();
+        Buffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator);
+        ~Buffer();
 
-        UniqueBuffer &operator=(UniqueBuffer &&other);
-
-        vk::Buffer operator*() {
+        vk::Buffer operator*() const {
             return buffer;
         }
 
-        vk::Buffer Get() {
+        operator vk::Buffer() const {
             return buffer;
         }
 
-        vk::DeviceSize Size() {
+        vk::DeviceSize Size() const {
             return bufferInfo.size;
         }
 
-    protected:
-        void Release();
-
+    private:
         vk::BufferCreateInfo bufferInfo;
         vk::Buffer buffer;
-    };
-
-    struct UniqueImage : public UniqueMemory {
-        UniqueImage();
-        UniqueImage(vk::ImageCreateInfo imageInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator);
-        UniqueImage(UniqueImage &&other);
-        ~UniqueImage();
-        void Destroy();
-
-        UniqueImage &operator=(UniqueImage &&other);
-
-        vk::Image operator*() {
-            return image;
-        }
-
-        vk::Image Get() {
-            return image;
-        }
-
-        vk::DeviceSize Size();
-
-    protected:
-        void Release();
-
-        vk::ImageCreateInfo imageInfo;
-        vk::Image image;
     };
 } // namespace sp::vulkan

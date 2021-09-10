@@ -319,7 +319,6 @@ namespace sp::vulkan {
             // TODO: these will be allocated from a pool later and not need to be manually cleaned up
             // The image needs to be destroyed before VMA
             depthImageView.reset();
-            depthImage.Destroy();
         }
 
         vmaDestroyAllocator(allocator);
@@ -380,23 +379,11 @@ namespace sp::vulkan {
         swapchainImageContexts.resize(swapchainImages.size());
 
         for (size_t i = 0; i < swapchainImages.size(); i++) {
-            auto &perSCI = swapchainImageContexts[i];
-            perSCI.image = swapchainImages[i];
-
-            vk::ImageViewCreateInfo createInfo;
-            createInfo.image = swapchainImages[i];
-            createInfo.viewType = vk::ImageViewType::e2D;
-            createInfo.format = swapchainInfo.imageFormat;
-            createInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-            createInfo.subresourceRange.baseMipLevel = 0;
-            createInfo.subresourceRange.levelCount = 1;
-            createInfo.subresourceRange.baseArrayLayer = 0;
-            createInfo.subresourceRange.layerCount = 1;
-            perSCI.imageViewInfo = createInfo;
-            perSCI.imageView = device->createImageViewUnique(createInfo);
+            ImageViewCreateInfo imageViewInfo;
+            imageViewInfo.image = make_shared<Image>(swapchainImages[i], swapchainInfo.imageFormat, swapchainExtent);
+            imageViewInfo.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
+            swapchainImageContexts[i].imageView = CreateImageView(imageViewInfo);
         }
-
-        depthImageView.reset();
 
         vk::ImageCreateInfo depthImageInfo;
         depthImageInfo.imageType = vk::ImageType::e2D;
@@ -406,17 +393,10 @@ namespace sp::vulkan {
         depthImageInfo.mipLevels = 1;
         depthImageInfo.arrayLayers = 1;
         depthImageInfo.samples = vk::SampleCountFlagBits::e1;
-        depthImage = AllocateImage(depthImageInfo, VMA_MEMORY_USAGE_GPU_ONLY);
 
-        depthImageViewInfo.format = depthImageInfo.format;
-        depthImageViewInfo.image = *depthImage;
-        depthImageViewInfo.viewType = vk::ImageViewType::e2D;
-        depthImageViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
-        depthImageViewInfo.subresourceRange.baseMipLevel = 0;
-        depthImageViewInfo.subresourceRange.levelCount = 1;
-        depthImageViewInfo.subresourceRange.baseArrayLayer = 0;
-        depthImageViewInfo.subresourceRange.layerCount = 1;
-        depthImageView = device->createImageViewUnique(depthImageViewInfo);
+        ImageViewCreateInfo imageViewInfo;
+        imageViewInfo.image = AllocateImage(depthImageInfo, VMA_MEMORY_USAGE_GPU_ONLY);
+        depthImageView = CreateImageView(imageViewInfo);
     }
 
     void DeviceContext::RecreateSwapchain() {
@@ -562,7 +542,7 @@ namespace sp::vulkan {
         lastFrameEnd = frameEnd;
     }
 
-    shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const Image> image, bool genMipmap) {
+    shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {
         // TODO
         return nullptr;
     }
@@ -640,21 +620,35 @@ namespace sp::vulkan {
         queue.submit({submitInfo}, fence);
     }
 
-    UniqueBuffer DeviceContext::AllocateBuffer(vk::DeviceSize size,
-                                               vk::BufferUsageFlags usage,
-                                               VmaMemoryUsage residency) {
+    BufferPtr DeviceContext::AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency) {
         vk::BufferCreateInfo bufferInfo;
         bufferInfo.size = size;
         bufferInfo.usage = usage;
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
-        return UniqueBuffer(bufferInfo, allocInfo, allocator);
+        return make_shared<Buffer>(bufferInfo, allocInfo, allocator);
     }
 
-    UniqueImage DeviceContext::AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency) {
+    ImagePtr DeviceContext::AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency) {
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
-        return UniqueImage(info, allocInfo, allocator);
+        return make_shared<Image>(info, allocInfo, allocator);
+    }
+
+    ImageViewPtr DeviceContext::CreateImageView(ImageViewCreateInfo info) {
+        if (info.format == vk::Format::eUndefined) info.format = info.image->Format();
+
+        vk::ImageViewCreateInfo createInfo;
+        createInfo.image = *info.image;
+        createInfo.format = info.format;
+        createInfo.viewType = info.viewType;
+        createInfo.components = info.mapping;
+        createInfo.subresourceRange.aspectMask = FormatToAspectFlags(info.format);
+        createInfo.subresourceRange.baseMipLevel = info.baseMipLevel;
+        createInfo.subresourceRange.levelCount = info.mipLevelCount;
+        createInfo.subresourceRange.baseArrayLayer = info.baseArrayLayer;
+        createInfo.subresourceRange.layerCount = info.arrayLayerCount;
+        return make_shared<ImageView>(device->createImageViewUnique(createInfo), info);
     }
 
     ShaderHandle DeviceContext::LoadShader(const string &name) {
@@ -710,18 +704,12 @@ namespace sp::vulkan {
     }
 
     RenderPassInfo DeviceContext::SwapchainRenderPassInfo(bool depth, bool stencil) {
-        ImageView view(*SwapchainImage().imageView, SwapchainImage().imageViewInfo, swapchainExtent);
-        view.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
-
         std::array<float, 4> clearColor = {0.0f, 1.0f, 0.0f, 1.0f};
 
         RenderPassInfo info;
-        info.PushColorAttachment(view, LoadOp::Clear, StoreOp::Store, clearColor);
+        info.PushColorAttachment(SwapchainImage().imageView, LoadOp::Clear, StoreOp::Store, clearColor);
 
-        if (depth) {
-            ImageView depthView(*depthImageView, depthImageViewInfo, swapchainExtent);
-            info.SetDepthStencilAttachment(depthView, LoadOp::Clear, StoreOp::DontCare);
-        }
+        if (depth) info.SetDepthStencilAttachment(depthImageView, LoadOp::Clear, StoreOp::DontCare);
 
         return info;
     }

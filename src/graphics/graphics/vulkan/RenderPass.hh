@@ -67,13 +67,13 @@ namespace sp::vulkan {
 
     struct RenderPassInfo {
         RenderPassState state;
-        ImageView colorAttachments[MAX_COLOR_ATTACHMENTS] = {};
-        ImageView depthStencilAttachment = {};
+        ImageViewPtr colorAttachments[MAX_COLOR_ATTACHMENTS] = {};
+        ImageViewPtr depthStencilAttachment;
 
         vk::ClearColorValue clearColors[MAX_COLOR_ATTACHMENTS] = {};
         vk::ClearDepthStencilValue clearDepthStencil = {1.0f, 0};
 
-        void PushColorAttachment(const ImageView &view,
+        void PushColorAttachment(const ImageViewPtr &view,
                                  LoadOp loadOp,
                                  StoreOp storeOp,
                                  vk::ClearColorValue clear = {}) {
@@ -83,22 +83,22 @@ namespace sp::vulkan {
         }
 
         void SetColorAttachment(uint32 index,
-                                const ImageView &view,
+                                const ImageViewPtr &view,
                                 LoadOp loadOp,
                                 StoreOp storeOp,
                                 vk::ClearColorValue clear = {}) {
             state.SetLoadStore(index, loadOp, storeOp);
-            state.colorFormats[index] = view.info.format;
+            state.colorFormats[index] = view->Format();
             clearColors[index] = clear;
             colorAttachments[index] = view;
         }
 
-        void SetDepthStencilAttachment(const ImageView &view,
+        void SetDepthStencilAttachment(const ImageViewPtr &view,
                                        LoadOp loadOp,
                                        StoreOp storeOp,
                                        vk::ClearDepthStencilValue clear = {1.0f, 0}) {
             state.SetLoadStore(RenderPassState::DEPTH_STENCIL_INDEX, loadOp, storeOp);
-            state.depthStencilFormat = view.info.format;
+            state.depthStencilFormat = view->Format();
             clearDepthStencil = clear;
             depthStencilAttachment = view;
         }
@@ -118,7 +118,7 @@ namespace sp::vulkan {
         Framebuffer(DeviceContext &device, const RenderPassInfo &info);
 
         vk::RenderPass GetRenderPass() const {
-            return **renderPass;
+            return *renderPass;
         }
 
         vk::Extent2D Extent() const {

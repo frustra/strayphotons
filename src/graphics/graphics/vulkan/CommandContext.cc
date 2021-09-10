@@ -42,7 +42,7 @@ namespace sp::vulkan {
                 clearValues[i].color = info.clearColors[i];
                 clearCount = i + 1;
             }
-            if (info.colorAttachments[i].IsSwapchain()) writesToSwapchain = true;
+            if (info.colorAttachments[i]->IsSwapchain()) writesToSwapchain = true;
         }
 
         if (info.HasDepthStencil() && info.state.ShouldClear(RenderPassState::DEPTH_STENCIL_INDEX)) {
@@ -51,8 +51,8 @@ namespace sp::vulkan {
         }
 
         vk::RenderPassBeginInfo renderPassBeginInfo;
-        renderPassBeginInfo.renderPass = **renderPass;
-        renderPassBeginInfo.framebuffer = **framebuffer;
+        renderPassBeginInfo.renderPass = *renderPass;
+        renderPassBeginInfo.framebuffer = *framebuffer;
         renderPassBeginInfo.renderArea = scissor;
         renderPassBeginInfo.clearValueCount = clearCount;
         renderPassBeginInfo.pClearValues = clearValues;
@@ -137,14 +137,14 @@ namespace sp::vulkan {
             if (!layout->HasDescriptorSet(set)) continue;
 
             auto descriptorSet = layout->GetFilledDescriptorSet(set, shaderData.sets[set]);
-            cmd->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, **layout, set, {descriptorSet}, nullptr);
+            cmd->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *layout, set, {descriptorSet}, nullptr);
         }
     }
 
     void CommandContext::FlushGraphicsState() {
         if (ResetDirty(DirtyBits::Pipeline)) {
             auto pipeline = device.GetGraphicsPipeline(pipelineInput);
-            if (pipeline != currentPipeline) { cmd->bindPipeline(vk::PipelineBindPoint::eGraphics, **pipeline); }
+            if (pipeline != currentPipeline) { cmd->bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline); }
             currentPipeline = pipeline;
         }
 
@@ -155,7 +155,7 @@ namespace sp::vulkan {
             auto &range = layoutInfo.pushConstantRange;
             if (range.stageFlags) {
                 Assert(range.offset == 0, "push constant range must start at 0");
-                cmd->pushConstants(**pipelineLayout, range.stageFlags, 0, range.size, shaderData.pushConstants);
+                cmd->pushConstants(*pipelineLayout, range.stageFlags, 0, range.size, shaderData.pushConstants);
             }
         }
 

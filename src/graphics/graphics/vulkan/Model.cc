@@ -49,9 +49,9 @@ namespace sp::vulkan {
                                                   VMA_MEMORY_USAGE_CPU_TO_GPU);
 
             void *data;
-            p.indexBuffer.Map(&data);
+            p.indexBuffer->Map(&data);
             memcpy(data, &indexBuffer.data[primitive.indexBuffer.byteOffset], indexBufferSize);
-            p.indexBuffer.Unmap();
+            p.indexBuffer->Unmap();
 
             p.indexCount = primitive.indexBuffer.componentCount;
 
@@ -98,9 +98,9 @@ namespace sp::vulkan {
                                                    vk::BufferUsageFlagBits::eVertexBuffer,
                                                    VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-            p.vertexBuffer.Map(&data);
+            p.vertexBuffer->Map(&data);
             memcpy(data, vertices.data(), vertexBufferSize);
-            p.vertexBuffer.Unmap();
+            p.vertexBuffer->Unmap();
         }
     }
 

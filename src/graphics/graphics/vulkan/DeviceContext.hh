@@ -51,7 +51,7 @@ namespace sp::vulkan {
         const std::vector<glm::ivec2> &MonitorModes() override;
         const glm::ivec2 CurrentMode() override;
 
-        shared_ptr<GpuTexture> LoadTexture(shared_ptr<const Image> image, bool genMipmap = true) override;
+        shared_ptr<GpuTexture> LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
 
         void PrepareWindowView(ecs::View &view) override;
 
@@ -63,8 +63,9 @@ namespace sp::vulkan {
                     vk::ArrayProxy<const vk::Semaphore> waitSemaphores = {},
                     vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {});
 
-        UniqueBuffer AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
-        UniqueImage AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency);
+        BufferPtr AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
+        ImagePtr AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency);
+        ImageViewPtr CreateImageView(ImageViewCreateInfo info);
 
         RenderPassInfo SwapchainRenderPassInfo(bool depth = false, bool stencil = false);
 
@@ -131,11 +132,7 @@ namespace sp::vulkan {
 
         struct SwapchainImageContext {
             vk::Fence inFlightFence; // points at a fence owned by FrameContext
-            vk::Image image;
-
-            // TODO: store custom image abstraction
-            vk::ImageViewCreateInfo imageViewInfo;
-            vk::UniqueImageView imageView;
+            ImageViewPtr imageView;
         };
 
         vector<SwapchainImageContext> swapchainImageContexts;
@@ -169,9 +166,7 @@ namespace sp::vulkan {
             return frameContexts[frameIndex];
         }
 
-        vk::ImageViewCreateInfo depthImageViewInfo;
-        UniqueImage depthImage; // TODO: move to render target pool
-        vk::UniqueImageView depthImageView;
+        ImageViewPtr depthImageView; // TODO: move to render target pool
 
         robin_hood::unordered_map<string, ShaderHandle> shaderHandles;
         vector<shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1

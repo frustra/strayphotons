@@ -82,9 +82,9 @@ namespace sp::vulkan {
                                             VMA_MEMORY_USAGE_CPU_TO_GPU);
 
             uint8 *fontBufData;
-            fontBuf.Map((void **)&fontBufData);
+            fontBuf->Map((void **)&fontBufData);
             memcpy(fontBufData, fontData, fontBufSize);
-            fontBuf.Unmap();
+            fontBuf->Unmap();
 
             auto transferCmd = device.GetCommandContext(CommandContextType::TransferAsync);
 
@@ -166,18 +166,11 @@ namespace sp::vulkan {
                           {*transferComplete},
                           {vk::PipelineStageFlagBits::eFragmentShader});
 
-            vk::ImageViewCreateInfo fontViewInfo;
-            fontViewInfo.image = *fontImage;
-            fontViewInfo.viewType = vk::ImageViewType::e2D;
-            fontViewInfo.format = fontImageInfo.format;
-            fontViewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-            fontViewInfo.subresourceRange.baseMipLevel = 0;
-            fontViewInfo.subresourceRange.levelCount = 1;
-            fontViewInfo.subresourceRange.baseArrayLayer = 0;
-            fontViewInfo.subresourceRange.layerCount = 1;
-            fontView = device->createImageViewUnique(fontViewInfo);
+            ImageViewCreateInfo fontViewInfo;
+            fontViewInfo.image = fontImage;
+            fontView = device.CreateImageView(fontViewInfo);
 
-            io.Fonts->TexID = (ImTextureID)VkImageView(*fontView);
+            io.Fonts->TexID = (ImTextureID)(fontView.get());
 
             // TODO: make a convenience factory of common samplers
             vk::SamplerCreateInfo samplerInfo;
@@ -211,14 +204,14 @@ namespace sp::vulkan {
         }
 
         totalVtxSize = CeilToPowerOfTwo(totalVtxSize);
-        if (totalVtxSize > vertexBuffer.Size()) {
+        if (!vertexBuffer || totalVtxSize > vertexBuffer->Size()) {
             vertexBuffer = device.AllocateBuffer(totalVtxSize,
                                                  vk::BufferUsageFlagBits::eVertexBuffer,
                                                  VMA_MEMORY_USAGE_CPU_TO_GPU);
         }
 
         totalIdxSize = CeilToPowerOfTwo(totalIdxSize);
-        if (totalIdxSize > indexBuffer.Size()) {
+        if (!indexBuffer || totalIdxSize > indexBuffer->Size()) {
             indexBuffer = device.AllocateBuffer(totalIdxSize,
                                                 vk::BufferUsageFlagBits::eIndexBuffer,
                                                 VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -228,8 +221,8 @@ namespace sp::vulkan {
 
         ImDrawVert *vtxData;
         ImDrawIdx *idxData;
-        vertexBuffer.Map((void **)&vtxData);
-        indexBuffer.Map((void **)&idxData);
+        vertexBuffer->Map((void **)&vtxData);
+        indexBuffer->Map((void **)&idxData);
         for (int i = 0; i < drawData->CmdListsCount; i++) {
             const auto cmdList = drawData->CmdLists[i];
             std::copy(cmdList->VtxBuffer.begin(), cmdList->VtxBuffer.end(), vtxData);
@@ -237,8 +230,8 @@ namespace sp::vulkan {
             std::copy(cmdList->IdxBuffer.begin(), cmdList->IdxBuffer.end(), idxData);
             idxData += cmdList->IdxBuffer.size();
         }
-        indexBuffer.Unmap();
-        vertexBuffer.Unmap();
+        indexBuffer->Unmap();
+        vertexBuffer->Unmap();
 
         cmd->SetViewport(viewport);
         cmd->SetVertexLayout(*vertexLayout);
@@ -264,8 +257,8 @@ namespace sp::vulkan {
                 if (pcmd.UserCallback) {
                     pcmd.UserCallback(cmdList, &pcmd);
                 } else {
-                    auto texture = (VkImageView)pcmd.TextureId;
-                    cmd->SetTexture(0, 0, texture, *linearSampler);
+                    auto texture = (ImageView *)pcmd.TextureId;
+                    cmd->SetTexture(0, 0, *texture, *linearSampler);
 
                     auto clipRect = pcmd.ClipRect;
                     clipRect.x -= drawData->DisplayPos.x;

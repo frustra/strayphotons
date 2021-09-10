@@ -61,7 +61,7 @@ namespace sp::vulkan {
         vector<vk::DescriptorPoolSize> sizes;
         vk::UniqueDescriptorSetLayout descriptorSetLayout;
 
-        robin_hood::unordered_flat_map<Hash64, vk::DescriptorSet> filledSets;
+        robin_hood::unordered_map<Hash64, vk::DescriptorSet> filledSets;
         vector<vk::DescriptorSet> freeSets;
         vector<vk::UniqueDescriptorPool> usedPools;
     };

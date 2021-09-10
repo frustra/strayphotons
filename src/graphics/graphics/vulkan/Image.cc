@@ -1,6 +1,25 @@
 #include "Image.hh"
 
 namespace sp::vulkan {
+    Image::Image() : UniqueMemory(VK_NULL_HANDLE) {}
+
+    Image::Image(vk::ImageCreateInfo imageInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator)
+        : UniqueMemory(allocator), format(imageInfo.format), extent(imageInfo.extent) {
+
+        VkImageCreateInfo vkImageInfo = imageInfo;
+        VkImage vkImage;
+
+        auto result = vmaCreateImage(allocator, &vkImageInfo, &allocInfo, &vkImage, &allocation, nullptr);
+        AssertVKSuccess(result, "creating image");
+        image = vkImage;
+    }
+
+    Image::~Image() {
+        if (allocator != VK_NULL_HANDLE && allocation != VK_NULL_HANDLE) {
+            vmaDestroyImage(allocator, image, allocation);
+        }
+    }
+
     vk::ImageAspectFlags FormatToAspectFlags(vk::Format format) {
         switch (format) {
         case vk::Format::eUndefined:
