@@ -13,7 +13,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "externalConsole": false,
+            "console": "integratedTerminal",
             "sourceFileMap": {
                 "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
             }
@@ -27,7 +27,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "externalConsole": false,
+            "console": "integratedTerminal",
             "MIMode": "gdb",
             "setupCommands": [
                 {
@@ -46,7 +46,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "externalConsole": false,
+            "console": "integratedTerminal",
             "sourceFileMap": {
                 "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
             }
@@ -60,7 +60,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "externalConsole": false,
+            "console": "integratedTerminal",
             "MIMode": "gdb",
             "setupCommands": [
                 {
@@ -79,7 +79,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "externalConsole": false
+            "console": "integratedTerminal",
         },
         {
             "name": "StrayPhotons Test (gdb)",
@@ -90,7 +90,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "externalConsole": false,
+            "console": "integratedTerminal",
             "MIMode": "gdb",
             "setupCommands": [
                 {
@@ -109,7 +109,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "externalConsole": false
+            "console": "integratedTerminal",
         },
         {
             "name": "StrayPhotons Headless (gdb)",
@@ -120,7 +120,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "externalConsole": false,
+            "console": "integratedTerminal",
             "MIMode": "gdb",
             "setupCommands": [
                 {
@@ -139,7 +139,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "externalConsole": false
+            "console": "integratedTerminal",
         },
         {
             "name": "Unit Tests (gdb)",
@@ -150,7 +150,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "externalConsole": false,
+            "console": "integratedTerminal",
             "MIMode": "gdb",
             "setupCommands": [
                 {
@@ -169,7 +169,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "externalConsole": false
+            "console": "integratedTerminal",
         },
         {
             "name": "Integration Tests (gdb)",
@@ -180,7 +180,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "externalConsole": false,
+            "console": "integratedTerminal",
             "MIMode": "gdb",
             "setupCommands": [
                 {
