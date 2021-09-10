@@ -31,7 +31,10 @@ namespace sp::vulkan {
         General = QUEUE_TYPE_GRAPHICS,
         ComputeAsync = QUEUE_TYPE_COMPUTE,
         TransferAsync = QUEUE_TYPE_TRANSFER,
-        Count
+    };
+
+    enum class SamplerType {
+        Bilinear,
     };
 
     template<typename T>

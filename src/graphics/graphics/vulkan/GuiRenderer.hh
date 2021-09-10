@@ -26,15 +26,10 @@ namespace sp::vulkan {
 
         unique_ptr<VertexLayout> vertexLayout;
         BufferPtr vertexBuffer, indexBuffer;
-        ImagePtr fontImage;
         ImageViewPtr fontView;
 
         // TODO: get rid of all these
         BufferPtr fontBuf;
         vk::UniqueSemaphore transferComplete, graphicsTransitionComplete;
-        vk::UniqueSampler linearSampler;
-        vk::UniqueDescriptorSetLayout descriptorSetLayout;
-        vk::UniqueDescriptorPool descriptorPool;
-        vector<vk::DescriptorSet> descriptorSets;
     };
 } // namespace sp::vulkan

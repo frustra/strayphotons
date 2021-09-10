@@ -635,6 +635,100 @@ namespace sp::vulkan {
         return make_shared<Image>(info, allocInfo, allocator);
     }
 
+    ImagePtr DeviceContext::CreateImage(vk::ImageCreateInfo createInfo,
+                                        const uint8 *initialData,
+                                        size_t initialDataSize) {
+        if (!initialData || initialDataSize == 0) return AllocateImage(createInfo, VMA_MEMORY_USAGE_GPU_ONLY);
+
+        createInfo.usage |= vk::ImageUsageFlagBits::eTransferDst;
+        auto image = AllocateImage(createInfo, VMA_MEMORY_USAGE_GPU_ONLY);
+
+        auto stagingBuf = AllocateBuffer(initialDataSize,
+                                         vk::BufferUsageFlagBits::eTransferSrc,
+                                         VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+        uint8 *stagingBufData;
+        stagingBuf->Map((void **)&stagingBufData);
+        std::copy(initialData, initialData + initialDataSize, stagingBufData);
+        stagingBuf->Unmap();
+
+        auto transferCmd = GetCommandContext(CommandContextType::TransferAsync);
+
+        vk::ImageMemoryBarrier barrier1;
+        barrier1.oldLayout = vk::ImageLayout::eUndefined;
+        barrier1.newLayout = vk::ImageLayout::eTransferDstOptimal;
+        barrier1.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier1.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier1.image = *image;
+        barrier1.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        barrier1.subresourceRange.baseMipLevel = 0;
+        barrier1.subresourceRange.levelCount = 1;
+        barrier1.subresourceRange.baseArrayLayer = 0;
+        barrier1.subresourceRange.layerCount = 1;
+        barrier1.srcAccessMask = {};
+        barrier1.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+        transferCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
+                                           vk::PipelineStageFlagBits::eTransfer,
+                                           {},
+                                           {},
+                                           {},
+                                           {barrier1});
+
+        vk::BufferImageCopy region;
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+        region.imageSubresource.aspectMask = FormatToAspectFlags(createInfo.format);
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+        region.imageOffset = vk::Offset3D{0, 0, 0};
+        region.imageExtent = createInfo.extent;
+
+        transferCmd->Raw().copyBufferToImage(*stagingBuf, *image, vk::ImageLayout::eTransferDstOptimal, {region});
+
+        vk::ImageMemoryBarrier barrier2;
+        barrier2.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+        barrier2.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        barrier2.srcQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync);
+        barrier2.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::General);
+        barrier2.image = *image;
+        barrier2.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        barrier2.subresourceRange.baseMipLevel = 0;
+        barrier2.subresourceRange.levelCount = 1;
+        barrier2.subresourceRange.baseArrayLayer = 0;
+        barrier2.subresourceRange.layerCount = 1;
+        barrier2.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+        barrier2.dstAccessMask = {};
+
+        transferCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                           vk::PipelineStageFlagBits::eBottomOfPipe,
+                                           {},
+                                           {},
+                                           {},
+                                           {barrier2});
+
+        auto transferComplete = GetEmptySemaphore();
+        Submit(transferCmd, {transferComplete});
+
+        auto graphicsCmd = GetCommandContext();
+
+        vk::ImageMemoryBarrier barrier3 = barrier2;
+        barrier3.srcAccessMask = {};
+        barrier3.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+        graphicsCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eFragmentShader,
+                                           vk::PipelineStageFlagBits::eFragmentShader,
+                                           {},
+                                           {},
+                                           {},
+                                           {barrier3});
+
+        Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eFragmentShader});
+        return image;
+    }
+
     ImageViewPtr DeviceContext::CreateImageView(ImageViewCreateInfo info) {
         if (info.format == vk::Format::eUndefined) info.format = info.image->Format();
 
@@ -649,6 +743,27 @@ namespace sp::vulkan {
         createInfo.subresourceRange.baseArrayLayer = info.baseArrayLayer;
         createInfo.subresourceRange.layerCount = info.arrayLayerCount;
         return make_shared<ImageView>(device->createImageViewUnique(createInfo), info);
+    }
+
+    vk::Sampler DeviceContext::GetSampler(SamplerType type) {
+        auto &sampler = samplers[type];
+        if (sampler) return *sampler;
+
+        vk::SamplerCreateInfo samplerInfo;
+
+        switch (type) {
+        case SamplerType::Bilinear:
+            samplerInfo.magFilter = vk::Filter::eLinear;
+            samplerInfo.minFilter = vk::Filter::eLinear;
+            break;
+        }
+
+        samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+        samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+        samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
+        samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
+        sampler = device->createSamplerUnique(samplerInfo);
+        return *sampler;
     }
 
     ShaderHandle DeviceContext::LoadShader(const string &name) {
@@ -720,6 +835,12 @@ namespace sp::vulkan {
 
     shared_ptr<Framebuffer> DeviceContext::GetFramebuffer(const RenderPassInfo &info) {
         return framebufferPool->GetFramebuffer(info);
+    }
+
+    vk::Semaphore DeviceContext::GetEmptySemaphore() {
+        vk::SemaphoreCreateInfo semCreateInfo;
+        semaphores.push_back(device->createSemaphoreUnique(semCreateInfo));
+        return *semaphores.back();
     }
 
     void *DeviceContext::Win32WindowHandle() {

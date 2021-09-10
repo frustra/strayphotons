@@ -65,7 +65,11 @@ namespace sp::vulkan {
 
         BufferPtr AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
         ImagePtr AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency);
+        ImagePtr CreateImage(vk::ImageCreateInfo createInfo,
+                             const uint8 *initialData = nullptr,
+                             size_t initialDataSize = 0);
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
+        vk::Sampler GetSampler(SamplerType type);
 
         RenderPassInfo SwapchainRenderPassInfo(bool depth = false, bool stencil = false);
 
@@ -76,6 +80,8 @@ namespace sp::vulkan {
         shared_ptr<Pipeline> GetGraphicsPipeline(const PipelineCompileInput &input);
         shared_ptr<RenderPass> GetRenderPass(const RenderPassInfo &info);
         shared_ptr<Framebuffer> GetFramebuffer(const RenderPassInfo &info);
+
+        vk::Semaphore GetEmptySemaphore();
 
         GLFWwindow *GetWindow() {
             return window;
@@ -115,6 +121,8 @@ namespace sp::vulkan {
         vk::PhysicalDevice physicalDevice;
         vk::PhysicalDeviceProperties physicalDeviceProperties;
         vk::UniqueDevice device;
+
+        vector<vk::UniqueSemaphore> semaphores;
 
         unique_ptr<PipelineManager> pipelinePool;
         unique_ptr<RenderPassManager> renderPassPool;
@@ -170,6 +178,8 @@ namespace sp::vulkan {
 
         robin_hood::unordered_map<string, ShaderHandle> shaderHandles;
         vector<shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1
+
+        robin_hood::unordered_map<SamplerType, vk::UniqueSampler> samplers;
 
         glm::ivec2 glfwWindowSize;
         glm::ivec2 storedWindowPos; // Remember window location when returning from fullscreen
