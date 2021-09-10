@@ -35,7 +35,7 @@ namespace ecs {
                 } else if (source.second.is<picojson::array>()) {
                     originList = source.second.get<picojson::array>();
                 } else {
-                    sp::Assert(false, "Invalid signal source");
+                    sp::Abort("Invalid signal source");
                 }
                 for (auto origin : originList) {
                     auto originName = origin.get<std::string>();
@@ -210,7 +210,7 @@ namespace ecs {
                     output = output.value_or(1.0) * val;
                     break;
                 default:
-                    sp::Assert(false, "Bad signal combine operator");
+                    sp::Abort("Bad signal combine operator");
                 }
             }
             return output.value_or(0.0);
@@ -229,13 +229,13 @@ namespace ecs {
                     output = output.value_or(false) || val;
                     break;
                 default:
-                    sp::Assert(false, "Bad signal combine operator");
+                    sp::Abort("Bad signal combine operator");
                 }
             }
             return output.value_or(false) ? 1.0 : 0.0;
         } break;
         default:
-            sp::Assert(false, "Bad signal combine operator");
+            sp::Abort("Bad signal combine operator");
             return 0.0;
         }
     }

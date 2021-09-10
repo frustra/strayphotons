@@ -294,7 +294,7 @@ namespace sp {
             return GL_TRIANGLE_FAN;
 
         default:
-            Assert(false, "Unknown Model::DrawMode");
+            Abort("Unknown Model::DrawMode");
             return GL_TRIANGLES;
         }
     }

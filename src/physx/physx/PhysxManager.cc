@@ -442,7 +442,7 @@ namespace sp {
                         geom.scale = PxMeshScale(GlmVec3ToPxVec3(scale));
                         shapes[i]->setGeometry(geom);
                     } else {
-                        Assert(false, "Physx geometry type not implemented");
+                        Abort("Physx geometry type not implemented");
                     }
                 }
                 ph.scale = scale;

@@ -135,12 +135,12 @@ namespace sp {
 
         template<typename ValueType>
         void Set(Uniform &u, const ValueType &v) {
-            Assert(false, "unimplemented uniform type");
+            Abort("unimplemented uniform type");
         }
 
         template<typename ValueType>
         void Set(Uniform &u, const ValueType v[], GLsizei count) {
-            Assert(false, "unimplemented uniform type");
+            Abort("unimplemented uniform type");
         }
 
     private:

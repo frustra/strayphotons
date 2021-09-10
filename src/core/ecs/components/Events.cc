@@ -27,7 +27,7 @@ namespace ecs {
                 } else if (dest.second.is<picojson::array>()) {
                     targetList = dest.second.get<picojson::array>();
                 } else {
-                    sp::Assert(false, "Invalid event target");
+                    sp::Abort("Invalid event target");
                 }
                 for (auto target : targetList) {
                     auto targetName = target.get<std::string>();

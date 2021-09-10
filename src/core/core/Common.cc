@@ -15,12 +15,10 @@
 #endif
 
 namespace sp {
-    void Assert(bool condition, const string &message) {
-        if (!condition) {
-            Errorf("assertion failed: %s", message);
-            os_break();
-            throw std::runtime_error(message);
-        }
+    void Abort(const string &message) {
+        Errorf("assertion failed: %s", message);
+        os_break();
+        throw std::runtime_error(message);
     }
 
     void DebugBreak() {

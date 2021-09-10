@@ -63,7 +63,7 @@ namespace sp {
             indices = indicesCopy;
             break;
         default:
-            Assert(false, "invalid index component type");
+            Abort("invalid index component type");
             break;
         }
 
@@ -175,7 +175,7 @@ namespace sp {
                 index = *(const uint16 *)(indices + i * indexAttrib.byteStride);
                 break;
             default:
-                Assert(false, "invalid index component type");
+                Abort("invalid index component type");
                 break;
             }
 

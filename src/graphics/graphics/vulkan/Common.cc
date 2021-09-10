@@ -5,7 +5,7 @@
 namespace sp::vulkan {
     void AssertVKSuccess(vk::Result result, std::string message) {
         if (result == vk::Result::eSuccess) return;
-        Assert(false, message + " (" + vk::to_string(result) + ")");
+        Abort(message + " (" + vk::to_string(result) + ")");
     }
 
     void AssertVKSuccess(VkResult result, std::string message) {
