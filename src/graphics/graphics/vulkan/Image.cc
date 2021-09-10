@@ -42,4 +42,13 @@ namespace sp::vulkan {
             return vk::ImageAspectFlagBits::eColor;
         }
     }
+
+    uint32 CalculateMipmapLevels(vk::Extent3D extent) {
+        uint32 dim = std::max(std::max(extent.width, extent.height), extent.depth);
+        if (dim <= 0) return 1;
+        uint32 cmp = 31;
+        while (!(dim >> cmp))
+            cmp--;
+        return cmp + 1;
+    }
 } // namespace sp::vulkan

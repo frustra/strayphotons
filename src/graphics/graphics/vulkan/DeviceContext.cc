@@ -5,6 +5,7 @@
 #include "RenderPass.hh"
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
+#include "assets/Image.hh"
 #include "core/CFunc.hh"
 #include "core/Logging.hh"
 #include "core/StackVector.hh"
@@ -542,11 +543,6 @@ namespace sp::vulkan {
         lastFrameEnd = frameEnd;
     }
 
-    shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {
-        // TODO
-        return nullptr;
-    }
-
     CommandContextPtr DeviceContext::GetCommandContext(CommandContextType type) {
         // TODO(multithread): should segregate command contexts by thread
         CommandContextPtr cmd;
@@ -743,6 +739,42 @@ namespace sp::vulkan {
         createInfo.subresourceRange.baseArrayLayer = info.baseArrayLayer;
         createInfo.subresourceRange.layerCount = info.arrayLayerCount;
         return make_shared<ImageView>(device->createImageViewUnique(createInfo), info);
+    }
+
+    shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {
+        image->WaitUntilValid();
+
+        vk::ImageCreateInfo createInfo;
+        createInfo.extent.width = image->GetWidth();
+        createInfo.extent.height = image->GetHeight();
+        createInfo.extent.depth = 1;
+        Assert(createInfo.extent.width > 0 && createInfo.extent.height > 0, "image has zero size");
+
+        createInfo.mipLevels = genMipmap ? CalculateMipmapLevels(createInfo.extent) : 1;
+
+        switch (image->GetComponents()) {
+        case 1:
+            createInfo.format = vk::Format::eR8Srgb;
+            break;
+        case 2:
+            createInfo.format = vk::Format::eR8G8Srgb;
+            break;
+        case 3:
+            createInfo.format = vk::Format::eR8G8B8Srgb;
+            break;
+        case 4:
+            createInfo.format = vk::Format::eR8G8B8A8Srgb;
+            break;
+        default:
+            Assert(false, "invalid image format");
+        }
+
+        const uint8_t *data = image->GetImage().get();
+        Assert(data, "missing image data");
+
+        ImageViewCreateInfo viewInfo;
+        viewInfo.image = CreateImage(createInfo, data, image->ByteSize());
+        return CreateImageView(viewInfo);
     }
 
     vk::Sampler DeviceContext::GetSampler(SamplerType type) {

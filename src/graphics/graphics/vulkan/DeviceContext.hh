@@ -51,8 +51,6 @@ namespace sp::vulkan {
         const std::vector<glm::ivec2> &MonitorModes() override;
         const glm::ivec2 CurrentMode() override;
 
-        shared_ptr<GpuTexture> LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
-
         void PrepareWindowView(ecs::View &view) override;
 
         CommandContextPtr GetCommandContext(CommandContextType type = CommandContextType::General);
@@ -70,6 +68,8 @@ namespace sp::vulkan {
                              size_t initialDataSize = 0);
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
         vk::Sampler GetSampler(SamplerType type);
+
+        shared_ptr<GpuTexture> LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
 
         RenderPassInfo SwapchainRenderPassInfo(bool depth = false, bool stencil = false);
 
