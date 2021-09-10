@@ -70,15 +70,13 @@ namespace sp::vulkan {
             fontImageInfo.imageType = vk::ImageType::e2D;
             fontImageInfo.extent = vk::Extent3D{(uint32)fontWidth, (uint32)fontHeight, 1};
             fontImageInfo.format = vk::Format::eR8G8B8A8Unorm;
-            fontImageInfo.mipLevels = 1;
-            fontImageInfo.arrayLayers = 1;
             fontImageInfo.usage = vk::ImageUsageFlagBits::eSampled;
 
             ImageViewCreateInfo fontViewInfo;
-            fontViewInfo.image = device.CreateImage(fontImageInfo, fontData, fontWidth * fontHeight * 4);
-            fontView = device.CreateImageView(fontViewInfo);
+            fontViewInfo.defaultSampler = device.GetSampler(SamplerType::BilinearClamp);
+            fontView = device.CreateImageAndView(fontImageInfo, fontViewInfo, fontData, fontWidth * fontHeight * 4);
 
-            io.Fonts->TexID = (ImTextureID)(fontView.get());
+            io.Fonts->TexID = (ImTextureID)(fontView->GetHandle());
         }
 
         io.DisplaySize = ImVec2(viewport.extent.width, viewport.extent.height);
@@ -155,8 +153,8 @@ namespace sp::vulkan {
                 if (pcmd.UserCallback) {
                     pcmd.UserCallback(cmdList, &pcmd);
                 } else {
-                    auto texture = (ImageView *)pcmd.TextureId;
-                    cmd->SetTexture(0, 0, *texture, SamplerType::Bilinear);
+                    auto texture = ImageView::FromHandle((uintptr_t)pcmd.TextureId);
+                    cmd->SetTexture(0, 0, texture);
 
                     auto clipRect = pcmd.ClipRect;
                     clipRect.x -= drawData->DisplayPos.x;

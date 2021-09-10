@@ -62,6 +62,7 @@ namespace sp::vulkan {
         uint32_t mipLevelCount = VK_REMAINING_MIP_LEVELS; // all mips after the base level are included
         uint32_t baseArrayLayer = 0;
         uint32_t arrayLayerCount = VK_REMAINING_ARRAY_LAYERS; // all layers after the base layer are included
+        vk::Sampler defaultSampler = VK_NULL_HANDLE;
     };
 
     struct ImageView : public WrappedUniqueHandle<vk::ImageView>, public GpuTexture {
@@ -93,8 +94,8 @@ namespace sp::vulkan {
             return info.swapchainLayout != vk::ImageLayout::eUndefined;
         }
 
-        virtual uintptr_t GetHandle() const override {
-            return uintptr_t(this);
+        vk::Sampler DefaultSampler() const {
+            return info.defaultSampler;
         }
 
         virtual int GetWidth() const override {
@@ -105,11 +106,21 @@ namespace sp::vulkan {
             return extent.height;
         }
 
+        virtual uintptr_t GetHandle() const override {
+            return reinterpret_cast<uintptr_t>(this);
+        }
+
+        static ImageView *FromHandle(uintptr_t handle) {
+            return reinterpret_cast<ImageView *>(handle);
+        }
+
     private:
         ImageViewCreateInfo info;
         vk::Extent3D extent;
     };
 
+    vk::Format FormatFromTraits(uint32 components, uint32 bits, bool preferSrgb, bool logErrors = true);
     vk::ImageAspectFlags FormatToAspectFlags(vk::Format format);
     uint32 CalculateMipmapLevels(vk::Extent3D extent);
+    vk::SamplerCreateInfo GLSamplerToVKSampler(int minFilter, int magFilter, int wrapS, int wrapT, int wrapR);
 } // namespace sp::vulkan

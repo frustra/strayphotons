@@ -183,13 +183,11 @@ namespace sp {
     }
 
     vector<string> ConsoleManager::AllHistory(size_t maxEntries) {
-        maxEntries = std::max(maxEntries, history.size());
-        vector<string> results;
-        if (maxEntries == 0) return results;
+        maxEntries = std::min(maxEntries, history.size());
+        if (maxEntries == 0) return {};
 
         std::lock_guard lock(historyLock);
-        results.reserve(maxEntries);
-        std::reverse_copy(history.begin(), history.end(), results.begin());
+        vector<string> results(history.rbegin(), history.rbegin() + maxEntries);
         return results;
     }
 

@@ -137,6 +137,17 @@ namespace sp::vulkan {
         SetDescriptorDirty(set);
     }
 
+    void CommandContext::SetTexture(uint32 set, uint32 binding, const ImageViewPtr &view) {
+        SetTexture(set, binding, view.get());
+    }
+
+    void CommandContext::SetTexture(uint32 set, uint32 binding, const ImageView *view) {
+        SetTexture(set, binding, *view);
+
+        auto defaultSampler = view->DefaultSampler();
+        if (defaultSampler) SetSampler(set, binding, defaultSampler);
+    }
+
     void CommandContext::SetTexture(uint32 set, uint32 binding, const vk::ImageView &view) {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");

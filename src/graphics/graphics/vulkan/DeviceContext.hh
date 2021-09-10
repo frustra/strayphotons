@@ -63,11 +63,17 @@ namespace sp::vulkan {
 
         BufferPtr AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
         ImagePtr AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency);
+
         ImagePtr CreateImage(vk::ImageCreateInfo createInfo,
                              const uint8 *initialData = nullptr,
                              size_t initialDataSize = 0);
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
+        ImageViewPtr CreateImageAndView(const vk::ImageCreateInfo &imageInfo,
+                                        ImageViewCreateInfo viewInfo, // image field is filled in automatically
+                                        const uint8 *initialData = nullptr,
+                                        size_t initialDataSize = 0);
         vk::Sampler GetSampler(SamplerType type);
+        vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
 
         shared_ptr<GpuTexture> LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
 
@@ -123,6 +129,7 @@ namespace sp::vulkan {
         vk::UniqueDevice device;
 
         vector<vk::UniqueSemaphore> semaphores;
+        vector<BufferPtr> inFlightBuffers;
 
         unique_ptr<PipelineManager> pipelinePool;
         unique_ptr<RenderPassManager> renderPassPool;
@@ -179,7 +186,10 @@ namespace sp::vulkan {
         robin_hood::unordered_map<string, ShaderHandle> shaderHandles;
         vector<shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1
 
-        robin_hood::unordered_map<SamplerType, vk::UniqueSampler> samplers;
+        robin_hood::unordered_map<SamplerType, vk::UniqueSampler> namedSamplers;
+
+        using SamplerKey = HashKey<VkSamplerCreateInfo>;
+        robin_hood::unordered_map<SamplerKey, vk::UniqueSampler, SamplerKey::Hasher> adhocSamplers;
 
         glm::ivec2 glfwWindowSize;
         glm::ivec2 storedWindowPos; // Remember window location when returning from fullscreen

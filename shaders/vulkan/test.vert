@@ -11,6 +11,7 @@ out gl_PerVertex {
 layout(location = 0) out vec3 viewPos;
 layout(location = 1) out vec3 viewNormal;
 layout(location = 2) out vec3 color;
+layout(location = 3) out vec2 outTexCoord;
 
 layout(push_constant) uniform PushConstants {
     mat4 model;
@@ -25,6 +26,6 @@ void main() {
 
     mat3 rotation = mat3(constants.view * constants.model);
     viewNormal = rotation * inNormal;
-
+    outTexCoord = inTexCoord;
     color = (viewNormal + vec3(1)) * 0.5;
 }

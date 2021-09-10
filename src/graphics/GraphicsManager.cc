@@ -39,7 +39,12 @@ namespace sp {
     #endif
     }
 
-    GraphicsManager::~GraphicsManager() {}
+    GraphicsManager::~GraphicsManager() {
+    #if SP_GRAPHICS_SUPPORT_VK
+        auto &device = *dynamic_cast<vulkan::DeviceContext *>(context.get());
+        device->waitIdle();
+    #endif
+    }
 
     void GraphicsManager::Init() {
         if (context) { throw "already an active context"; }
@@ -223,7 +228,7 @@ namespace sp {
 
         {
             // RenderPhase phase("Frame", timer);
-            auto &device = *((vulkan::DeviceContext *)context.get());
+            auto &device = *dynamic_cast<vulkan::DeviceContext *>(context.get());
 
             auto lock =
                 ecs::World

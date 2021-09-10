@@ -307,8 +307,7 @@ namespace sp::vulkan {
     }
 
     shared_ptr<DescriptorPool> PipelineManager::GetDescriptorPool(const DescriptorSetLayoutInfo &layout) {
-        DescriptorPoolKey key;
-        key.input = layout;
+        DescriptorPoolKey key(layout);
         auto &mapValue = descriptorPools[key];
         if (!mapValue) { mapValue = make_shared<DescriptorPool>(device, layout); }
         return mapValue;
