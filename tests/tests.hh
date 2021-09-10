@@ -24,6 +24,10 @@ inline std::ostream &operator<<(std::ostream &out, const std::pair<Ta, Tb> &v) {
     return out << "(" << v.first << ", " << v.second << ")";
 }
 
+#ifdef Assert
+    #undef Assert
+#endif
+
 namespace testing {
     extern std::vector<std::function<void()>> registeredTests;
 

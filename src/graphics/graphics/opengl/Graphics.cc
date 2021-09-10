@@ -7,7 +7,7 @@ namespace sp {
         auto err = glGetError();
         if (err) {
             Errorf("OpenGL error %d", err);
-            Assert(false, "OpenGL error at " + message);
+            Abort("OpenGL error at " + message);
         }
     }
 } // namespace sp

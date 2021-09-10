@@ -179,7 +179,7 @@ namespace sp::vulkan {
         };
 
         if (!findQueue(QUEUE_TYPE_GRAPHICS, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, {}, 1.0f, true))
-            Assert(false, "could not find a supported graphics queue family");
+            Abort("could not find a supported graphics queue family");
 
         if (!findQueue(QUEUE_TYPE_COMPUTE, vk::QueueFlagBits::eCompute, {}, 0.5f)) {
             // must be only one queue that supports compute, fall back to it
@@ -842,7 +842,7 @@ namespace sp::vulkan {
     shared_ptr<Shader> DeviceContext::CreateShader(const string &name, Hash64 compareHash) {
         auto asset = GAssets.Load("shaders/vulkan/bin/" + name + ".spv");
         if (!asset) {
-            Assert(false, "could not load shader: " + name);
+            Abort("could not load shader: " + name);
             return nullptr;
         }
         asset->WaitUntilValid();
@@ -858,7 +858,7 @@ namespace sp::vulkan {
 
         auto reflection = spv_reflect::ShaderModule(asset->BufferSize(), asset->Buffer());
         if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS) {
-            Assert(false, "could not parse shader: " + name + " error: " + std::to_string(reflection.GetResult()));
+            Abort("could not parse shader: " + name + " error: " + std::to_string(reflection.GetResult()));
         }
 
         return make_shared<Shader>(name, std::move(shaderModule), std::move(reflection), newHash);

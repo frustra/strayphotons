@@ -116,7 +116,7 @@ namespace sp::vulkan {
                         Assert(desc->image.dim != SpvDimBuffer, "sampled buffers are unimplemented");
                         setInfo.sampledImagesMask |= (1 << binding);
                     } else {
-                        Assert(false, "unsupported SpvReflectDescriptorType " + std::to_string(type));
+                        Abort("unsupported SpvReflectDescriptorType " + std::to_string(type));
                     }
                 }
             }

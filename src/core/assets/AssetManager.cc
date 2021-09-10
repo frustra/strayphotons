@@ -177,7 +177,7 @@ namespace sp {
                         asset->valid.test_and_set();
                         asset->valid.notify_all();
                     } else {
-                        Assert(false, "Asset does not exist: " + path);
+                        Abort("Asset does not exist: " + path);
                     }
                 }));
             }

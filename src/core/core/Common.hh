@@ -30,8 +30,11 @@ typedef int32_t int32;
 typedef uint64_t uint64;
 typedef int64_t int64;
 
+#define Assert(condition, message)                                                                                     \
+    if (!(condition)) ::sp::Abort(message);
+
 namespace sp {
-    void Assert(bool condition, const string &message);
+    void Abort(const string &message);
     void DebugBreak();
 
     uint32 CeilToPowerOfTwo(uint32 v);

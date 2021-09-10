@@ -57,8 +57,7 @@ namespace ecs {
 
     void Transform::UpdateCachedTransform(Lock<Write<Transform>> lock) {
         if (this->parent) {
-            sp::Assert(this->parent.Has<Transform>(lock),
-                       "cannot be relative to something that does not have a Transform");
+            Assert(this->parent.Has<Transform>(lock), "cannot be relative to something that does not have a Transform");
 
             auto &parentTransform = this->parent.Get<Transform>(lock);
 
@@ -76,8 +75,7 @@ namespace ecs {
 
     glm::mat4 Transform::GetGlobalTransform(Lock<Read<Transform>> lock) const {
         if (this->parent) {
-            sp::Assert(this->parent.Has<Transform>(lock),
-                       "cannot be relative to something that does not have a Transform");
+            Assert(this->parent.Has<Transform>(lock), "cannot be relative to something that does not have a Transform");
 
             auto &parentTransform = this->parent.Get<Transform>(lock);
 
@@ -95,9 +93,7 @@ namespace ecs {
         glm::quat model = glm::identity<glm::quat>();
 
         if (this->parent) {
-            sp::Assert(this->parent.Has<Transform>(lock),
-                       "cannot be relative to something that does not have a Transform");
-
+            Assert(this->parent.Has<Transform>(lock), "cannot be relative to something that does not have a Transform");
             model = this->parent.Get<Transform>(lock).GetGlobalRotation(lock);
         }
 
