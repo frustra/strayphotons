@@ -42,6 +42,9 @@ namespace sp::vulkan {
         void BeginFrame() override;
         void SwapBuffers() override;
         void EndFrame() override;
+        void WaitIdle() override {
+            device->waitIdle();
+        }
 
         void UpdateInputModeFromFocus();
 
@@ -89,12 +92,6 @@ namespace sp::vulkan {
 
         vk::Semaphore GetEmptySemaphore();
 
-        GLFWwindow *GetWindow() {
-            return window;
-        }
-
-        void *Win32WindowHandle() override;
-
         uint32 SwapchainVersion() {
             // incremented when the swapchain changes, any dependent pipelines need to be recreated
             return swapchainVersion;
@@ -111,6 +108,12 @@ namespace sp::vulkan {
         uint32 QueueFamilyIndex(CommandContextType type) {
             return queueFamilyIndex[QueueType(type)];
         }
+
+        GLFWwindow *GetWindow() {
+            return window;
+        }
+
+        void *Win32WindowHandle() override;
 
     private:
         void SetTitle(string title);

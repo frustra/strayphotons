@@ -31,6 +31,7 @@ namespace sp {
         virtual void BeginFrame() = 0;
         virtual void SwapBuffers() = 0;
         virtual void EndFrame() = 0;
+        virtual void WaitIdle() {}
 
         void AttachView(Tecs::Entity e) {
             activeView = e;

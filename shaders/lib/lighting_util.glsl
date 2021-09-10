@@ -1,6 +1,8 @@
 #ifndef LIGHTING_UTIL_GLSL_INCLUDED
 #define LIGHTING_UTIL_GLSL_INCLUDED
 
+#include "util.glsl"
+
 #define LOW_DETAIL_LIGHT 0
 #define HIGH_DETAIL_LIGHT 1
 #define CUBE_MAP_LIGHT 2

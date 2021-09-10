@@ -112,6 +112,7 @@ namespace sp {
 
             if (starts_with(line, "#version")) {
                 output << line << std::endl;
+                output << "#define SP_GLSL_COMPILER 1" << std::endl;
                 for (auto define : DefineVars()) {
                     output << "#define " << define.first << " " << define.second << std::endl;
                 }
