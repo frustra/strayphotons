@@ -94,14 +94,19 @@ namespace sp {
     }
 
     string ShaderManager::LoadShader(ShaderCompileInput &input, string name) {
-        auto asset = GAssets.Load("shaders/" + name);
+        string filePath = "shaders/" + name;
+        auto asset = GAssets.Load(filePath);
         Assert(asset != nullptr, "Shader asset not found");
         asset->WaitUntilValid();
         input.units.push_back(name);
-        return ProcessShaderSource(input, asset->String());
+
+        string relativePath;
+        auto dirIndex = name.rfind('/');
+        if (dirIndex != string::npos) relativePath = name.substr(0, dirIndex);
+        return ProcessShaderSource(input, asset->String(), relativePath);
     }
 
-    string ShaderManager::ProcessShaderSource(ShaderCompileInput &input, string src) {
+    string ShaderManager::ProcessShaderSource(ShaderCompileInput &input, const string &src, const string &path) {
         std::istringstream lines(src);
         string line;
         std::ostringstream output;
@@ -115,6 +120,18 @@ namespace sp {
                 for (auto define : DefineVars()) {
                     output << "#define " << define.first << " " << define.second << std::endl;
                 }
+                output << "#line " << (linesProcessed + 1) << " " << currUnit << std::endl;
+                continue;
+            } else if (starts_with(line, "#include ")) {
+                trim(line);
+                string importPath = path + "/" + line.substr(10, line.length() - 11);
+                string importSrc = LoadShader(input, importPath);
+
+                size_t nextUnit = input.units.size();
+                output << "//start " << line << std::endl;
+                output << "#line 1 " << nextUnit << std::endl;
+                output << importSrc << std::endl;
+                output << "//end " << line << std::endl;
                 output << "#line " << (linesProcessed + 1) << " " << currUnit << std::endl;
                 continue;
             } else if (line[0] != '#' || line[1] != '#') {

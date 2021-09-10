@@ -40,10 +40,7 @@ namespace sp {
     }
 
     GraphicsManager::~GraphicsManager() {
-    #if SP_GRAPHICS_SUPPORT_VK
-        auto &device = *dynamic_cast<vulkan::DeviceContext *>(context.get());
-        device->waitIdle();
-    #endif
+        if (context) context->WaitIdle();
     }
 
     void GraphicsManager::Init() {
