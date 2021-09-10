@@ -311,7 +311,7 @@ namespace sp::vulkan {
     }
 
     DeviceContext::~DeviceContext() {
-        if (device) { vkDeviceWaitIdle(*device); }
+        if (device) { device->waitIdle(); }
         if (window) { glfwDestroyWindow(window); }
 
         glfwTerminate();
@@ -396,7 +396,7 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::RecreateSwapchain() {
-        vkDeviceWaitIdle(*device);
+        device->waitIdle();
         CreateSwapchain();
     }
 
