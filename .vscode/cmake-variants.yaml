@@ -5,6 +5,10 @@ buildType:
       short: Debug
       long: Emit debug information
       buildType: Debug
+    relWithDebInfo:
+      short: RelWithDebInfo
+      long: Optimize and emit debug information
+      buildType: RelWithDebInfo
     release:
       short: Release
       long: Optimize generated code
