@@ -138,6 +138,8 @@ namespace sp::vulkan {
             }
         }
 
+        void SetTexture(uint32 set, uint32 binding, const ImageViewPtr &view); // uses view's default sampler
+        void SetTexture(uint32 set, uint32 binding, const ImageView *view); // uses view's default sampler
         void SetTexture(uint32 set, uint32 binding, const vk::ImageView &view, SamplerType samplerType);
         void SetTexture(uint32 set, uint32 binding, const vk::ImageView &view, const vk::Sampler &sampler);
         void SetTexture(uint32 set, uint32 binding, const vk::ImageView &view);

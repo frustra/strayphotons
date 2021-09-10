@@ -62,6 +62,7 @@ namespace sp::vulkan {
         uint32_t mipLevelCount = VK_REMAINING_MIP_LEVELS; // all mips after the base level are included
         uint32_t baseArrayLayer = 0;
         uint32_t arrayLayerCount = VK_REMAINING_ARRAY_LAYERS; // all layers after the base layer are included
+        vk::Sampler defaultSampler = VK_NULL_HANDLE;
     };
 
     struct ImageView : public WrappedUniqueHandle<vk::ImageView>, public GpuTexture {
@@ -93,6 +94,10 @@ namespace sp::vulkan {
             return info.swapchainLayout != vk::ImageLayout::eUndefined;
         }
 
+        vk::Sampler DefaultSampler() const {
+            return info.defaultSampler;
+        }
+
         virtual int GetWidth() const override {
             return extent.width;
         }
@@ -117,4 +122,5 @@ namespace sp::vulkan {
     vk::Format FormatFromTraits(uint32 components, uint32 bits, bool preferSrgb, bool logErrors = true);
     vk::ImageAspectFlags FormatToAspectFlags(vk::Format format);
     uint32 CalculateMipmapLevels(vk::Extent3D extent);
+    vk::SamplerCreateInfo GLSamplerToVKSampler(int minFilter, int magFilter, int wrapS, int wrapT, int wrapR);
 } // namespace sp::vulkan

@@ -17,47 +17,49 @@ namespace sp::vulkan {
         // TODO: cache the output somewhere. Keeping the conversion code in
         // the engine will be useful for any dynamic loading in the future,
         // but we don't want to do it every time a model is loaded.
-        for (auto &primitive : model.Primitives()) {
+        for (auto &assetPrimitive : model.Primitives()) {
             // TODO: this implementation assumes a lot about the model format,
             // and asserts the assumptions. It would be better to support more
             // kinds of inputs, and convert the data rather than just failing.
-            Assert(primitive.drawMode == sp::Model::DrawMode::Triangles, "draw mode must be Triangles");
+            Assert(assetPrimitive.drawMode == sp::Model::DrawMode::Triangles, "draw mode must be Triangles");
 
-            auto &p = *primitives.emplace_back(make_shared<Primitive>());
-            p.transform = primitive.matrix;
+            auto vkPrimitivePtr = make_shared<Primitive>();
+            auto &vkPrimitive = *vkPrimitivePtr;
+
+            vkPrimitive.transform = assetPrimitive.matrix;
             auto &buffers = model.GetGltfModel()->buffers;
 
-            switch (primitive.indexBuffer.componentType) {
+            switch (assetPrimitive.indexBuffer.componentType) {
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-                p.indexType = vk::IndexType::eUint32;
-                Assert(primitive.indexBuffer.byteStride == 4, "index buffer must be tightly packed");
+                vkPrimitive.indexType = vk::IndexType::eUint32;
+                Assert(assetPrimitive.indexBuffer.byteStride == 4, "index buffer must be tightly packed");
                 break;
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                p.indexType = vk::IndexType::eUint16;
-                Assert(primitive.indexBuffer.byteStride == 2, "index buffer must be tightly packed");
+                vkPrimitive.indexType = vk::IndexType::eUint16;
+                Assert(assetPrimitive.indexBuffer.byteStride == 2, "index buffer must be tightly packed");
                 break;
             }
-            Assert(p.indexType != vk::IndexType::eNoneKHR, "unimplemented vertex index type");
+            Assert(vkPrimitive.indexType != vk::IndexType::eNoneKHR, "unimplemented vertex index type");
 
-            auto &indexBuffer = buffers[primitive.indexBuffer.bufferIndex];
-            size_t indexBufferSize = primitive.indexBuffer.componentCount * primitive.indexBuffer.byteStride;
-            Assert(primitive.indexBuffer.byteOffset + indexBufferSize <= indexBuffer.data.size(),
+            auto &indexBuffer = buffers[assetPrimitive.indexBuffer.bufferIndex];
+            size_t indexBufferSize = assetPrimitive.indexBuffer.componentCount * assetPrimitive.indexBuffer.byteStride;
+            Assert(assetPrimitive.indexBuffer.byteOffset + indexBufferSize <= indexBuffer.data.size(),
                    "indexes overflow buffer");
 
-            p.indexBuffer = device.AllocateBuffer(indexBufferSize,
-                                                  vk::BufferUsageFlagBits::eIndexBuffer,
-                                                  VMA_MEMORY_USAGE_CPU_TO_GPU);
+            vkPrimitive.indexBuffer = device.AllocateBuffer(indexBufferSize,
+                                                            vk::BufferUsageFlagBits::eIndexBuffer,
+                                                            VMA_MEMORY_USAGE_CPU_TO_GPU);
 
             void *data;
-            p.indexBuffer->Map(&data);
-            memcpy(data, &indexBuffer.data[primitive.indexBuffer.byteOffset], indexBufferSize);
-            p.indexBuffer->Unmap();
+            vkPrimitive.indexBuffer->Map(&data);
+            memcpy(data, &indexBuffer.data[assetPrimitive.indexBuffer.byteOffset], indexBufferSize);
+            vkPrimitive.indexBuffer->Unmap();
 
-            p.indexCount = primitive.indexBuffer.componentCount;
+            vkPrimitive.indexCount = assetPrimitive.indexBuffer.componentCount;
 
-            auto &posAttr = primitive.attributes[0];
-            auto &normalAttr = primitive.attributes[1];
-            auto &uvAttr = primitive.attributes[2];
+            auto &posAttr = assetPrimitive.attributes[0];
+            auto &normalAttr = assetPrimitive.attributes[1];
+            auto &uvAttr = assetPrimitive.attributes[2];
 
             if (posAttr.componentCount) {
                 Assert(posAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT,
@@ -94,16 +96,18 @@ namespace sp::vulkan {
             }
 
             size_t vertexBufferSize = vertices.size() * sizeof(vertices[0]);
-            p.vertexBuffer = device.AllocateBuffer(vertexBufferSize,
-                                                   vk::BufferUsageFlagBits::eVertexBuffer,
-                                                   VMA_MEMORY_USAGE_CPU_TO_GPU);
+            vkPrimitive.vertexBuffer = device.AllocateBuffer(vertexBufferSize,
+                                                             vk::BufferUsageFlagBits::eVertexBuffer,
+                                                             VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-            p.vertexBuffer->Map(&data);
+            vkPrimitive.vertexBuffer->Map(&data);
             memcpy(data, vertices.data(), vertexBufferSize);
-            p.vertexBuffer->Unmap();
+            vkPrimitive.vertexBuffer->Unmap();
 
-            p.baseColor = LoadTexture(device, model, primitive.materialIndex, BaseColor);
-            p.metallicRoughness = LoadTexture(device, model, primitive.materialIndex, MetallicRoughness);
+            vkPrimitive.baseColor = LoadTexture(device, model, assetPrimitive.materialIndex, BaseColor);
+            vkPrimitive.metallicRoughness = LoadTexture(device, model, assetPrimitive.materialIndex, MetallicRoughness);
+
+            primitives.emplace_back(vkPrimitivePtr);
         }
     }
 
@@ -117,13 +121,13 @@ namespace sp::vulkan {
         for (auto &primitivePtr : primitives) {
             auto &primitive = *primitivePtr;
             MeshPushConstants constants;
-            constants.projection = view.projMat;
+            constants.projection = view.projMat; // TODO: move projection and view to a uniform
             constants.view = view.viewMat;
             constants.model = modelMat * primitive.transform;
 
             cmd->PushConstants(&constants, 0, sizeof(MeshPushConstants));
 
-            if (primitive.baseColor) cmd->SetTexture(0, 0, *primitive.baseColor, SamplerType::Bilinear);
+            if (primitive.baseColor) cmd->SetTexture(0, 0, primitive.baseColor);
 
             cmd->Raw().bindIndexBuffer(*primitive.indexBuffer, 0, primitive.indexType);
             cmd->Raw().bindVertexBuffers(0, {*primitive.vertexBuffer}, {0});
@@ -200,28 +204,15 @@ namespace sp::vulkan {
             imageInfo.format = vk::Format::eR8G8B8A8Unorm;
             imageInfo.extent = vk::Extent3D(1, 1, 1);
 
-            // TODO: set sampler to NEAREST, REPEAT
-            auto imageView = device.CreateImageAndView(imageInfo, data, sizeof(data));
+            ImageViewCreateInfo viewInfo;
+            viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
+            auto imageView = device.CreateImageAndView(imageInfo, viewInfo, data, sizeof(data));
             textures[name] = imageView;
             return imageView;
         }
 
         tinygltf::Texture texture = gltfModel->textures[textureIndex];
         tinygltf::Image img = gltfModel->images[texture.source];
-
-        // TODO: set sampler
-        int minFilter = TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR;
-        int magFilter = TINYGLTF_TEXTURE_FILTER_LINEAR;
-        int wrapS = TINYGLTF_TEXTURE_WRAP_REPEAT;
-        int wrapT = TINYGLTF_TEXTURE_WRAP_REPEAT;
-
-        if (texture.sampler != -1) {
-            tinygltf::Sampler sampler = gltfModel->samplers[texture.sampler];
-            if (sampler.minFilter > 0) minFilter = sampler.minFilter;
-            if (sampler.magFilter > 0) magFilter = sampler.magFilter;
-            wrapS = sampler.wrapS;
-            wrapT = sampler.wrapT;
-        }
 
         vk::ImageCreateInfo imageInfo;
         imageInfo.imageType = vk::ImageType::e2D;
@@ -238,9 +229,25 @@ namespace sp::vulkan {
 
         imageInfo.extent = vk::Extent3D(img.width, img.height, 1);
         imageInfo.mipLevels = 1; // CalculateMipmapLevels(imageInfo.extent);
-        auto imageView = device.CreateImageAndView(imageInfo, img.image.data(), img.image.size());
 
-        device->waitIdle();
+        ImageViewCreateInfo viewInfo;
+        if (texture.sampler == -1) {
+            viewInfo.defaultSampler = device.GetSampler(SamplerType::TrilinearTiled);
+        } else {
+            auto &sampler = gltfModel->samplers[texture.sampler];
+            int minFilter = sampler.minFilter > 0 ? sampler.minFilter : TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR;
+            int magFilter = sampler.magFilter > 0 ? sampler.magFilter : TINYGLTF_TEXTURE_FILTER_LINEAR;
+
+            auto samplerInfo = GLSamplerToVKSampler(minFilter, magFilter, sampler.wrapS, sampler.wrapT, sampler.wrapR);
+            if (samplerInfo.mipmapMode == vk::SamplerMipmapMode::eLinear) {
+                samplerInfo.anisotropyEnable = true;
+                samplerInfo.maxAnisotropy = 4.0f;
+            }
+            viewInfo.defaultSampler = device.GetSampler(samplerInfo);
+        }
+
+        auto imageView = device.CreateImageAndView(imageInfo, viewInfo, img.image.data(), img.image.size());
+
         textures[name] = imageView;
         return imageView;
     }

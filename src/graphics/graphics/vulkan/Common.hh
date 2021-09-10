@@ -34,7 +34,12 @@ namespace sp::vulkan {
     };
 
     enum class SamplerType {
-        Bilinear,
+        BilinearClamp,
+        BilinearTiled,
+        TrilinearClamp,
+        TrilinearTiled,
+        NearestClamp,
+        NearestTiled,
     };
 
     template<typename T>

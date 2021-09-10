@@ -134,8 +134,7 @@ namespace sp::vulkan {
     RenderPassManager::RenderPassManager(DeviceContext &device) : device(device) {}
 
     shared_ptr<RenderPass> RenderPassManager::GetRenderPass(const RenderPassInfo &info) {
-        RenderPassKey key;
-        key.input = info.state;
+        RenderPassKey key(info.state);
         auto &pass = renderPasses[key];
         if (!pass) pass = make_shared<RenderPass>(device, info);
         return pass;

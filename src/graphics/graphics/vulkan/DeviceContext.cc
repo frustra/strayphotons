@@ -392,7 +392,7 @@ namespace sp::vulkan {
         depthImageInfo.format = vk::Format::eD24UnormS8Uint;
         depthImageInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
         depthImageInfo.extent = vk::Extent3D(swapchainExtent.width, swapchainExtent.height, 1);
-        depthImageView = CreateImageAndView(depthImageInfo);
+        depthImageView = CreateImageAndView(depthImageInfo, {});
     }
 
     void DeviceContext::RecreateSwapchain() {
@@ -741,12 +741,11 @@ namespace sp::vulkan {
         return make_shared<ImageView>(device->createImageViewUnique(createInfo), info);
     }
 
-    ImageViewPtr DeviceContext::CreateImageAndView(const vk::ImageCreateInfo &createInfo,
+    ImageViewPtr DeviceContext::CreateImageAndView(const vk::ImageCreateInfo &imageInfo,
+                                                   ImageViewCreateInfo viewInfo,
                                                    const uint8 *initialData,
                                                    size_t initialDataSize) {
-
-        ImageViewCreateInfo viewInfo;
-        viewInfo.image = CreateImage(createInfo, initialData, initialDataSize);
+        viewInfo.image = CreateImage(imageInfo, initialData, initialDataSize);
         return CreateImageView(viewInfo);
     }
 
@@ -770,23 +769,64 @@ namespace sp::vulkan {
     }
 
     vk::Sampler DeviceContext::GetSampler(SamplerType type) {
-        auto &sampler = samplers[type];
+        auto &sampler = namedSamplers[type];
         if (sampler) return *sampler;
 
         vk::SamplerCreateInfo samplerInfo;
 
         switch (type) {
-        case SamplerType::Bilinear:
+        case SamplerType::BilinearClamp:
+        case SamplerType::BilinearTiled:
+        case SamplerType::TrilinearClamp:
+        case SamplerType::TrilinearTiled:
             samplerInfo.magFilter = vk::Filter::eLinear;
             samplerInfo.minFilter = vk::Filter::eLinear;
             break;
+        case SamplerType::NearestClamp:
+        case SamplerType::NearestTiled:
+            samplerInfo.magFilter = vk::Filter::eNearest;
+            samplerInfo.minFilter = vk::Filter::eNearest;
+            break;
         }
 
-        samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
-        samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
-        samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
+        switch (type) {
+        case SamplerType::TrilinearClamp:
+        case SamplerType::TrilinearTiled:
+            samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
+            samplerInfo.maxAnisotropy = 4.0f;
+            samplerInfo.anisotropyEnable = true;
+            break;
+        default:
+            samplerInfo.mipmapMode = vk::SamplerMipmapMode::eNearest;
+        }
+
+        switch (type) {
+        case SamplerType::BilinearTiled:
+        case SamplerType::TrilinearTiled:
+        case SamplerType::NearestTiled:
+            samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+            samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+            samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
+            break;
+        default:
+            samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+            samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+            samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+        }
+
         samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
         sampler = device->createSamplerUnique(samplerInfo);
+        return *sampler;
+    }
+
+    vk::Sampler DeviceContext::GetSampler(const vk::SamplerCreateInfo &info) {
+        Assert(info.pNext == 0, "sampler info pNext can't be set");
+
+        SamplerKey key(info);
+        auto &sampler = adhocSamplers[key];
+        if (sampler) return *sampler;
+
+        sampler = device->createSamplerUnique(info);
         return *sampler;
     }
 

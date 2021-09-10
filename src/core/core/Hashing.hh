@@ -20,6 +20,7 @@ namespace sp {
     template<typename T>
     union HashKey {
         HashKey() {}
+        HashKey(const T &input) : input(input) {}
 
         T input;
         uint64 words[(sizeof(input) + sizeof(uint64) - 1) / sizeof(uint64)] = {0};
