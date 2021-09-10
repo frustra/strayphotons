@@ -101,6 +101,9 @@ namespace sp::vulkan {
             p.vertexBuffer->Map(&data);
             memcpy(data, vertices.data(), vertexBufferSize);
             p.vertexBuffer->Unmap();
+
+            p.baseColor = LoadTexture(device, model, primitive.materialIndex, BaseColor);
+            p.metallicRoughness = LoadTexture(device, model, primitive.materialIndex, MetallicRoughness);
         }
     }
 
@@ -120,9 +123,125 @@ namespace sp::vulkan {
 
             cmd->PushConstants(&constants, 0, sizeof(MeshPushConstants));
 
+            if (primitive.baseColor) cmd->SetTexture(0, 0, *primitive.baseColor, SamplerType::Bilinear);
+
             cmd->Raw().bindIndexBuffer(*primitive.indexBuffer, 0, primitive.indexType);
             cmd->Raw().bindVertexBuffers(0, {*primitive.vertexBuffer}, {0});
             cmd->DrawIndexed(primitive.indexCount, 1, 0, 0, 0);
         }
+    }
+
+    ImageViewPtr Model::LoadTexture(DeviceContext &device,
+                                    const sp::Model &model,
+                                    int materialIndex,
+                                    TextureType type) {
+        auto &gltfModel = model.GetGltfModel();
+        auto &material = gltfModel->materials[materialIndex];
+
+        string name = std::to_string(materialIndex) + "_";
+        int textureIndex = -1;
+        std::vector<double> factor;
+
+        switch (type) {
+        case BaseColor:
+            name += std::to_string(material.pbrMetallicRoughness.baseColorTexture.index) + "_BASE";
+            textureIndex = material.pbrMetallicRoughness.baseColorTexture.index;
+            factor = material.pbrMetallicRoughness.baseColorFactor;
+            break;
+
+        // gltf2.0 uses a combined texture for metallic roughness.
+        // Roughness = G channel, Metallic = B channel.
+        // R and A channels are not used / should be ignored.
+        case MetallicRoughness:
+            name += std::to_string(material.pbrMetallicRoughness.metallicRoughnessTexture.index) + "_METALICROUGHNESS";
+            textureIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
+            factor = {0.0,
+                      material.pbrMetallicRoughness.roughnessFactor,
+                      material.pbrMetallicRoughness.metallicFactor,
+                      0.0};
+            break;
+
+        case Height:
+            name += std::to_string(material.normalTexture.index) + "_HEIGHT";
+            textureIndex = material.normalTexture.index;
+            // factor not supported for height textures
+            break;
+
+        case Occlusion:
+            name += std::to_string(material.occlusionTexture.index) + "_OCCLUSION";
+            textureIndex = material.occlusionTexture.index;
+            // factor not supported for occlusion textures
+            break;
+
+        case Emissive:
+            name += std::to_string(material.occlusionTexture.index) + "_EMISSIVE";
+            textureIndex = material.emissiveTexture.index;
+            factor = material.emissiveFactor;
+            break;
+
+        default:
+            return NULL;
+        }
+
+        if (textures.count(name)) return textures[name];
+
+        if (textureIndex == -1) {
+            if (factor.size() == 0) return nullptr;
+
+            uint8_t data[4];
+            for (size_t i = 0; i < 4; i++) {
+                data[i] = (uint8_t)(255.0 * factor.at(std::min(factor.size() - 1, i)));
+            }
+
+            // Create a single pixel texture based on the factor data provided
+            vk::ImageCreateInfo imageInfo;
+            imageInfo.imageType = vk::ImageType::e2D;
+            imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
+            imageInfo.format = vk::Format::eR8G8B8A8Unorm;
+            imageInfo.extent = vk::Extent3D(1, 1, 1);
+
+            // TODO: set sampler to NEAREST, REPEAT
+            auto imageView = device.CreateImageAndView(imageInfo, data, sizeof(data));
+            textures[name] = imageView;
+            return imageView;
+        }
+
+        tinygltf::Texture texture = gltfModel->textures[textureIndex];
+        tinygltf::Image img = gltfModel->images[texture.source];
+
+        // TODO: set sampler
+        int minFilter = TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR;
+        int magFilter = TINYGLTF_TEXTURE_FILTER_LINEAR;
+        int wrapS = TINYGLTF_TEXTURE_WRAP_REPEAT;
+        int wrapT = TINYGLTF_TEXTURE_WRAP_REPEAT;
+
+        if (texture.sampler != -1) {
+            tinygltf::Sampler sampler = gltfModel->samplers[texture.sampler];
+            if (sampler.minFilter > 0) minFilter = sampler.minFilter;
+            if (sampler.magFilter > 0) magFilter = sampler.magFilter;
+            wrapS = sampler.wrapS;
+            wrapT = sampler.wrapT;
+        }
+
+        vk::ImageCreateInfo imageInfo;
+        imageInfo.imageType = vk::ImageType::e2D;
+        imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
+        imageInfo.format = FormatFromTraits(img.component, img.bits, true);
+
+        if (imageInfo.format == vk::Format::eUndefined) {
+            Errorf("Failed to load image at index %d: invalid format with components=%d and bits=%d",
+                   texture.source,
+                   img.component,
+                   img.bits);
+            return nullptr;
+        }
+
+        imageInfo.extent = vk::Extent3D(img.width, img.height, 1);
+        imageInfo.mipLevels = 1; // CalculateMipmapLevels(imageInfo.extent);
+        auto imageView = device.CreateImageAndView(imageInfo, img.image.data(), img.image.size());
+
+        device->waitIdle();
+        textures[name] = imageView;
+        return imageView;
     }
 } // namespace sp::vulkan

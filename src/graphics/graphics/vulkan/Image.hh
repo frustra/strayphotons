@@ -93,10 +93,6 @@ namespace sp::vulkan {
             return info.swapchainLayout != vk::ImageLayout::eUndefined;
         }
 
-        virtual uintptr_t GetHandle() const override {
-            return uintptr_t(this);
-        }
-
         virtual int GetWidth() const override {
             return extent.width;
         }
@@ -105,11 +101,20 @@ namespace sp::vulkan {
             return extent.height;
         }
 
+        virtual uintptr_t GetHandle() const override {
+            return reinterpret_cast<uintptr_t>(this);
+        }
+
+        static ImageView *FromHandle(uintptr_t handle) {
+            return reinterpret_cast<ImageView *>(handle);
+        }
+
     private:
         ImageViewCreateInfo info;
         vk::Extent3D extent;
     };
 
+    vk::Format FormatFromTraits(uint32 components, uint32 bits, bool preferSrgb, bool logErrors = true);
     vk::ImageAspectFlags FormatToAspectFlags(vk::Format format);
     uint32 CalculateMipmapLevels(vk::Extent3D extent);
 } // namespace sp::vulkan

@@ -320,6 +320,7 @@ namespace sp::vulkan {
             // TODO: these will be allocated from a pool later and not need to be manually cleaned up
             // The image needs to be destroyed before VMA
             depthImageView.reset();
+            inFlightBuffers.clear();
         }
 
         vmaDestroyAllocator(allocator);
@@ -391,13 +392,7 @@ namespace sp::vulkan {
         depthImageInfo.format = vk::Format::eD24UnormS8Uint;
         depthImageInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
         depthImageInfo.extent = vk::Extent3D(swapchainExtent.width, swapchainExtent.height, 1);
-        depthImageInfo.mipLevels = 1;
-        depthImageInfo.arrayLayers = 1;
-        depthImageInfo.samples = vk::SampleCountFlagBits::e1;
-
-        ImageViewCreateInfo imageViewInfo;
-        imageViewInfo.image = AllocateImage(depthImageInfo, VMA_MEMORY_USAGE_GPU_ONLY);
-        depthImageView = CreateImageView(imageViewInfo);
+        depthImageView = CreateImageAndView(depthImageInfo);
     }
 
     void DeviceContext::RecreateSwapchain() {
@@ -634,6 +629,9 @@ namespace sp::vulkan {
     ImagePtr DeviceContext::CreateImage(vk::ImageCreateInfo createInfo,
                                         const uint8 *initialData,
                                         size_t initialDataSize) {
+        if (!createInfo.mipLevels) createInfo.mipLevels = 1;
+        if (!createInfo.arrayLayers) createInfo.arrayLayers = 1;
+
         if (!initialData || initialDataSize == 0) return AllocateImage(createInfo, VMA_MEMORY_USAGE_GPU_ONLY);
 
         createInfo.usage |= vk::ImageUsageFlagBits::eTransferDst;
@@ -722,6 +720,8 @@ namespace sp::vulkan {
                                            {barrier3});
 
         Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eFragmentShader});
+
+        inFlightBuffers.push_back(stagingBuf);
         return image;
     }
 
@@ -741,33 +741,25 @@ namespace sp::vulkan {
         return make_shared<ImageView>(device->createImageViewUnique(createInfo), info);
     }
 
+    ImageViewPtr DeviceContext::CreateImageAndView(const vk::ImageCreateInfo &createInfo,
+                                                   const uint8 *initialData,
+                                                   size_t initialDataSize) {
+
+        ImageViewCreateInfo viewInfo;
+        viewInfo.image = CreateImage(createInfo, initialData, initialDataSize);
+        return CreateImageView(viewInfo);
+    }
+
     shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {
         image->WaitUntilValid();
 
         vk::ImageCreateInfo createInfo;
-        createInfo.extent.width = image->GetWidth();
-        createInfo.extent.height = image->GetHeight();
-        createInfo.extent.depth = 1;
+        createInfo.extent = vk::Extent3D(image->GetWidth(), image->GetHeight(), 1);
         Assert(createInfo.extent.width > 0 && createInfo.extent.height > 0, "image has zero size");
 
         createInfo.mipLevels = genMipmap ? CalculateMipmapLevels(createInfo.extent) : 1;
-
-        switch (image->GetComponents()) {
-        case 1:
-            createInfo.format = vk::Format::eR8Srgb;
-            break;
-        case 2:
-            createInfo.format = vk::Format::eR8G8Srgb;
-            break;
-        case 3:
-            createInfo.format = vk::Format::eR8G8B8Srgb;
-            break;
-        case 4:
-            createInfo.format = vk::Format::eR8G8B8A8Srgb;
-            break;
-        default:
-            Assert(false, "invalid image format");
-        }
+        createInfo.format = FormatFromTraits(image->GetComponents(), 8, true);
+        Assert(createInfo.format != vk::Format::eUndefined, "invalid image format");
 
         const uint8_t *data = image->GetImage().get();
         Assert(data, "missing image data");

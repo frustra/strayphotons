@@ -1,5 +1,7 @@
 #include "Image.hh"
 
+#include "core/Logging.hh"
+
 namespace sp::vulkan {
     Image::Image() : UniqueMemory(VK_NULL_HANDLE) {}
 
@@ -18,6 +20,30 @@ namespace sp::vulkan {
         if (allocator != VK_NULL_HANDLE && allocation != VK_NULL_HANDLE) {
             vmaDestroyImage(allocator, image, allocation);
         }
+    }
+
+    vk::Format FormatFromTraits(uint32 components, uint32 bits, bool preferSrgb, bool logErrors) {
+        if (bits != 8 && bits != 16) {
+            if (logErrors) Errorf("can't infer format with bits=%d", bits);
+            return vk::Format::eUndefined;
+        }
+
+        if (components == 4) {
+            if (bits == 16) return vk::Format::eR16G16B16A16Snorm;
+            return preferSrgb ? vk::Format::eR8G8B8A8Srgb : vk::Format::eR8G8B8A8Snorm;
+        } else if (components == 3) {
+            if (bits == 16) return vk::Format::eR16G16B16Snorm;
+            return preferSrgb ? vk::Format::eR8G8B8Srgb : vk::Format::eR8G8B8Snorm;
+        } else if (components == 2) {
+            if (bits == 16) return vk::Format::eR16G16Snorm;
+            return preferSrgb ? vk::Format::eR8G8Srgb : vk::Format::eR8G8Snorm;
+        } else if (components == 1) {
+            if (bits == 16) return vk::Format::eR16Snorm;
+            return preferSrgb ? vk::Format::eR8Srgb : vk::Format::eR8Snorm;
+        } else {
+            if (logErrors) Errorf("can't infer format with components=%d", components);
+        }
+        return vk::Format::eUndefined;
     }
 
     vk::ImageAspectFlags FormatToAspectFlags(vk::Format format) {

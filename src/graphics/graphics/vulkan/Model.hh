@@ -2,16 +2,13 @@
 
 #include "Common.hh"
 #include "Memory.hh"
+#include "assets/Model.hh"
 #include "ecs/Ecs.hh"
 
 #include <functional>
 #include <glm/glm.hpp>
 #include <robin_hood.h>
 #include <vulkan/vulkan.hpp>
-
-namespace sp {
-    class Model;
-} // namespace sp
 
 namespace sp::vulkan {
     class DeviceContext;
@@ -31,6 +28,8 @@ namespace sp::vulkan {
 
             BufferPtr vertexBuffer;
             glm::mat4 transform;
+
+            ImageViewPtr baseColor, metallicRoughness;
         };
 
         Model(const sp::Model &model, DeviceContext &device);
@@ -39,6 +38,9 @@ namespace sp::vulkan {
         void AppendDrawCommands(const CommandContextPtr &commands, glm::mat4 modelMat, const ecs::View &view);
 
     private:
+        ImageViewPtr LoadTexture(DeviceContext &device, const sp::Model &model, int materialIndex, TextureType type);
+
+        robin_hood::unordered_map<string, ImageViewPtr> textures;
         vector<shared_ptr<Primitive>> primitives;
         string modelName;
     };

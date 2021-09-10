@@ -1,11 +1,14 @@
 #version 450
 
+layout(binding = 0) uniform sampler2D tex;
+
 layout(location = 0) in vec3 viewPos;
 layout(location = 1) in vec3 viewNormal;
 layout(location = 2) in vec3 color;
+layout(location = 3) in vec2 inTexCoord;
+
 layout(location = 0) out vec4 outColor;
 
-const vec3 diffuseColor = vec3(1.0, 0.7, 0.7);
 const vec3 specColor = vec3(1.0, 1.0, 1.0);
 
 void main() {
@@ -22,6 +25,7 @@ void main() {
     float specAngle = max(dot(halfDir, normal), 0.0);
     float specPower = pow(specAngle, 16);
 
+    vec3 diffuseColor = texture(tex, inTexCoord).rgb;
     vec3 colorLinear = diffuseColor * diffusePower / distance + specColor * specPower / distance;
     outColor = vec4(colorLinear * 10, 1.0);
 }

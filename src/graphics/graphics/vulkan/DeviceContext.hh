@@ -63,10 +63,14 @@ namespace sp::vulkan {
 
         BufferPtr AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
         ImagePtr AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency);
+
         ImagePtr CreateImage(vk::ImageCreateInfo createInfo,
                              const uint8 *initialData = nullptr,
                              size_t initialDataSize = 0);
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
+        ImageViewPtr CreateImageAndView(const vk::ImageCreateInfo &createInfo,
+                                        const uint8 *initialData = nullptr,
+                                        size_t initialDataSize = 0);
         vk::Sampler GetSampler(SamplerType type);
 
         shared_ptr<GpuTexture> LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
@@ -123,6 +127,7 @@ namespace sp::vulkan {
         vk::UniqueDevice device;
 
         vector<vk::UniqueSemaphore> semaphores;
+        vector<BufferPtr> inFlightBuffers;
 
         unique_ptr<PipelineManager> pipelinePool;
         unique_ptr<RenderPassManager> renderPassPool;
