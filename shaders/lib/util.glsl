@@ -37,12 +37,7 @@ float linstep(float low, float high, float v) {
 	return clamp((v - low) / (high - low), 0.0, 1.0);
 }
 
-#ifdef SP_GLSL_COMPILER
-##import lib/spatial_util
-##import lib/color_util
-#else
 #include "spatial_util.glsl"
 #include "color_util.glsl"
-#endif
 
 #endif
