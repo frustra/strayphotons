@@ -109,6 +109,8 @@ target_include_directories(${PROJECT_COMMON_EXE} INTERFACE src)
 
 if(UNIX)
     target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE pthread)
+elseif(WIN32)
+    target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE winmm)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX)

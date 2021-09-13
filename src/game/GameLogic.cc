@@ -510,65 +510,8 @@ namespace sp {
                                                       "WriteUnlock"};
 
             std::ofstream traceFile("tecs-trace.csv");
-            auto start = std::chrono::steady_clock::now();
-            bool first = true;
-            for (auto &[component, events] : trace) {
-                if (first) {
-                    first = false;
-                } else {
-                    traceFile << ",";
-                }
-                traceFile << component << " Event," << component << " Thread Id," << component << " TimeUs";
-                if (events.size() > 0 && events[0].time < start) start = events[0].time;
-            }
-            traceFile << std::endl;
-
-            bool done = false;
-            std::vector<int> indexes(trace.size());
-            while (!done) {
-                done = true;
-                std::thread::id minThread;
-                auto minTimestamp = std::chrono::steady_clock::now();
-                for (size_t i = 0; i < trace.size(); i++) {
-                    if (indexes[i] < trace[i].second.size()) {
-                        auto &event = trace[i].second[indexes[i]];
-                        if (event.time < minTimestamp) {
-                            minThread = event.thread;
-                            minTimestamp = event.time;
-                        }
-                    }
-                }
-
-                first = true;
-                for (size_t i = 0; i < trace.size(); i++) {
-                    if (first) {
-                        first = false;
-                    } else {
-                        traceFile << ",";
-                    }
-
-                    if (indexes[i] < trace[i].second.size()) {
-                        auto &event = trace[i].second[indexes[i]];
-                        if (event.thread == minThread &&
-                            std::abs(std::chrono::nanoseconds(event.time - minTimestamp).count()) < 10000) {
-                            std::stringstream ss;
-                            ss << event.thread;
-                            std::string threadName = ss.str();
-                            if (threadNames.count(event.thread) > 0) threadName = threadNames.at(event.thread);
-                            traceFile
-                                << eventTypeNames[(int)event.type] << "," << threadName << ","
-                                << std::chrono::duration_cast<std::chrono::microseconds>(event.time - start).count();
-                            indexes[i]++;
-                        } else {
-                            traceFile << ",,";
-                        }
-                        done = false;
-                    } else {
-                        traceFile << ",,";
-                    }
-                }
-                traceFile << std::endl;
-            }
+            trace.SaveToCSV(traceFile);
+            traceFile.close();
 
             Logf("Tecs performance trace complete");
             tracing = false;

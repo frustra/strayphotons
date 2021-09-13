@@ -1,4 +1,4 @@
-#if defined(_WIN32) && defined(SP_PACKAGE_RELEASE)
+#ifdef _WIN32
     #include <windows.h>
 #endif
 
@@ -16,6 +16,7 @@ using namespace std;
 #include <cstdio>
 #include <cxxopts.hpp>
 #include <filesystem>
+#include <memory>
 
 //#define CATCH_GLOBAL_EXCEPTIONS
 
@@ -51,6 +52,15 @@ int main(int argc, char **argv)
 
 #ifdef SP_TEST_MODE
     options.parse_positional({"script-file"});
+#endif
+
+#ifdef _WIN32
+    // Increase thread scheduler resolution from default of 15ms
+    timeBeginPeriod(1);
+    std::shared_ptr<UINT> timePeriodReset(new UINT(1), [](UINT *period) {
+        timeEndPeriod(*period);
+        delete period;
+    });
 #endif
 
 #ifdef CATCH_GLOBAL_EXCEPTIONS
