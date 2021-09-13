@@ -499,16 +499,6 @@ namespace sp {
             std::this_thread::sleep_for(std::chrono::milliseconds(timeMs));
             auto trace = ecs::World.StopTrace();
 
-            static const std::array eventTypeNames = {"Invalid",
-                                                      "ReadLockWait",
-                                                      "ReadLock",
-                                                      "ReadUnlock",
-                                                      "WriteLockWait",
-                                                      "WriteLock",
-                                                      "CommitLockWait",
-                                                      "CommitLock",
-                                                      "WriteUnlock"};
-
             std::ofstream traceFile("tecs-trace.csv");
             trace.SaveToCSV(traceFile);
             traceFile.close();

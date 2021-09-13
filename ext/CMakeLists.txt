@@ -1,7 +1,6 @@
 # Downgrade external packages to C++17
 set(CMAKE_CXX_STANDARD 17)
 
-add_subdirectory(Tecs)
 add_subdirectory(robin-hood-hashing)
 add_subdirectory(physx)
 
@@ -18,6 +17,7 @@ include(murmurhash.cmake)
 include(openvr.cmake)
 include(picojson.cmake)
 include(SPIRV-Reflect.cmake)
+include(Tecs.cmake)
 include(tinygltf.cmake)
 include(vhacd.cmake)
 include(VulkanMemoryAllocator.cmake)

@@ -1,0 +1,3 @@
+
+set(TECS_ENABLE_PERFORMANCE_TRACING ON CACHE BOOL "" FORCE)
+add_subdirectory(Tecs)
