@@ -20,7 +20,7 @@ void main() {
     distance = distance * distance;
     lightDir = normalize(lightDir);
 
-    float diffusePower = max(dot(lightDir, normal), 0.0);
+    float diffusePower = max(dot(lightDir, normal), 0.0) * 4;
     vec3 viewDir = normalize(-viewPos);
     vec3 halfDir = normalize(lightDir + viewDir);
     float specAngle = max(dot(halfDir, normal), 0.0);
@@ -36,5 +36,5 @@ void main() {
     vec3 specColor = vec3(roughness);
 
     vec3 colorLinear = baseColor.rgb * diffusePower / distance + specColor * specPower / distance;
-    outColor = vec4(colorLinear * 10, 1.0);
+    outColor = vec4(colorLinear * 4, 1.0);
 }

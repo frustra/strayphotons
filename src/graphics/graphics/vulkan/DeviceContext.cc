@@ -628,11 +628,17 @@ namespace sp::vulkan {
 
     ImagePtr DeviceContext::CreateImage(vk::ImageCreateInfo createInfo,
                                         const uint8 *initialData,
-                                        size_t initialDataSize) {
-        if (!createInfo.mipLevels) createInfo.mipLevels = 1;
+                                        size_t initialDataSize,
+                                        bool genMipmap) {
+        if (!createInfo.mipLevels) createInfo.mipLevels = genMipmap ? CalculateMipmapLevels(createInfo.extent) : 1;
         if (!createInfo.arrayLayers) createInfo.arrayLayers = 1;
 
-        if (!initialData || initialDataSize == 0) return AllocateImage(createInfo, VMA_MEMORY_USAGE_GPU_ONLY);
+        if (!initialData || initialDataSize == 0) {
+            Assert(!genMipmap, "must pass initial data to generate a mipmap");
+            return AllocateImage(createInfo, VMA_MEMORY_USAGE_GPU_ONLY);
+        }
+
+        Assert(!genMipmap || createInfo.mipLevels > 1, "can't generate mipmap for a single level image");
 
         createInfo.usage |= vk::ImageUsageFlagBits::eTransferDst;
         auto image = AllocateImage(createInfo, VMA_MEMORY_USAGE_GPU_ONLY);
@@ -656,7 +662,7 @@ namespace sp::vulkan {
         barrier1.image = *image;
         barrier1.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         barrier1.subresourceRange.baseMipLevel = 0;
-        barrier1.subresourceRange.levelCount = 1;
+        barrier1.subresourceRange.levelCount = genMipmap ? 1 : createInfo.mipLevels;
         barrier1.subresourceRange.baseArrayLayer = 0;
         barrier1.subresourceRange.layerCount = 1;
         barrier1.srcAccessMask = {};
@@ -682,15 +688,15 @@ namespace sp::vulkan {
 
         transferCmd->Raw().copyBufferToImage(*stagingBuf, *image, vk::ImageLayout::eTransferDstOptimal, {region});
 
-        vk::ImageMemoryBarrier barrier2;
+        vk::ImageMemoryBarrier barrier2; // prepare the image for mipmapping, or for sampling
         barrier2.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-        barrier2.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        barrier2.newLayout = genMipmap ? vk::ImageLayout::eTransferSrcOptimal : vk::ImageLayout::eShaderReadOnlyOptimal;
         barrier2.srcQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync);
         barrier2.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::General);
         barrier2.image = *image;
         barrier2.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         barrier2.subresourceRange.baseMipLevel = 0;
-        barrier2.subresourceRange.levelCount = 1;
+        barrier2.subresourceRange.levelCount = genMipmap ? 1 : createInfo.mipLevels;
         barrier2.subresourceRange.baseArrayLayer = 0;
         barrier2.subresourceRange.layerCount = 1;
         barrier2.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
@@ -712,15 +718,92 @@ namespace sp::vulkan {
         barrier3.srcAccessMask = {};
         barrier3.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
-        graphicsCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eFragmentShader,
-                                           vk::PipelineStageFlagBits::eFragmentShader,
-                                           {},
-                                           {},
-                                           {},
-                                           {barrier3});
+        auto graphicsBarrierStages = genMipmap ? vk::PipelineStageFlagBits::eTransfer
+                                               : vk::PipelineStageFlagBits::eFragmentShader;
+        graphicsCmd->Raw().pipelineBarrier(graphicsBarrierStages, graphicsBarrierStages, {}, {}, {}, {barrier3});
 
-        Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eFragmentShader});
+        if (genMipmap) {
+            vk::ImageMemoryBarrier barrier4;
+            barrier4.oldLayout = vk::ImageLayout::eUndefined;
+            barrier4.newLayout = vk::ImageLayout::eTransferDstOptimal;
+            barrier4.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier4.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier4.image = *image;
+            barrier4.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+            barrier4.subresourceRange.baseMipLevel = 1;
+            barrier4.subresourceRange.levelCount = createInfo.mipLevels - 1;
+            barrier4.subresourceRange.baseArrayLayer = 0;
+            barrier4.subresourceRange.layerCount = 1;
+            barrier4.srcAccessMask = {};
+            barrier4.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 
+            graphicsCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                               vk::PipelineStageFlagBits::eTransfer,
+                                               {},
+                                               {},
+                                               {},
+                                               {barrier4});
+
+            vk::ImageMemoryBarrier barrier5;
+            barrier5.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+            barrier5.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+            barrier5.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier5.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier5.image = *image;
+            barrier5.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+            barrier5.subresourceRange.levelCount = 1;
+            barrier5.subresourceRange.baseArrayLayer = 0;
+            barrier5.subresourceRange.layerCount = 1;
+            barrier5.srcAccessMask = {};
+            barrier5.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+            vk::Offset3D currentExtent = {(int32)createInfo.extent.width,
+                                          (int32)createInfo.extent.height,
+                                          (int32)createInfo.extent.depth};
+
+            for (uint32 i = 1; i < createInfo.mipLevels; i++) {
+                auto prevMipExtent = currentExtent;
+                currentExtent.x = std::max(currentExtent.x >> 1, 1);
+                currentExtent.y = std::max(currentExtent.y >> 1, 1);
+                currentExtent.z = std::max(currentExtent.z >> 1, 1);
+
+                vk::ImageBlit blit;
+                blit.srcSubresource = {vk::ImageAspectFlagBits::eColor, i - 1, 0, 1};
+                blit.srcOffsets[0] = vk::Offset3D();
+                blit.srcOffsets[1] = prevMipExtent;
+                blit.dstSubresource = {vk::ImageAspectFlagBits::eColor, i, 0, 1};
+                blit.dstOffsets[0] = vk::Offset3D();
+                blit.dstOffsets[1] = currentExtent;
+
+                graphicsCmd->Raw().blitImage(*image,
+                                             vk::ImageLayout::eTransferSrcOptimal,
+                                             *image,
+                                             vk::ImageLayout::eTransferDstOptimal,
+                                             {blit},
+                                             vk::Filter::eLinear);
+
+                barrier5.subresourceRange.baseMipLevel = i;
+                graphicsCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                                   vk::PipelineStageFlagBits::eTransfer,
+                                                   {},
+                                                   {},
+                                                   {},
+                                                   {barrier5});
+            }
+
+            barrier4.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+            barrier4.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+            barrier4.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+            barrier4.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+            graphicsCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                               vk::PipelineStageFlagBits::eFragmentShader,
+                                               {},
+                                               {},
+                                               {},
+                                               {barrier4});
+        }
+
+        Submit(graphicsCmd, {}, {transferComplete}, {graphicsBarrierStages});
         inFlightBuffers.push_back(stagingBuf);
         return image;
     }
@@ -744,8 +827,9 @@ namespace sp::vulkan {
     ImageViewPtr DeviceContext::CreateImageAndView(const vk::ImageCreateInfo &imageInfo,
                                                    ImageViewCreateInfo viewInfo,
                                                    const uint8 *initialData,
-                                                   size_t initialDataSize) {
-        viewInfo.image = CreateImage(imageInfo, initialData, initialDataSize);
+                                                   size_t initialDataSize,
+                                                   bool genMipmap) {
+        viewInfo.image = CreateImage(imageInfo, initialData, initialDataSize, genMipmap);
         return CreateImageView(viewInfo);
     }
 
@@ -795,6 +879,8 @@ namespace sp::vulkan {
             samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
             samplerInfo.maxAnisotropy = 4.0f;
             samplerInfo.anisotropyEnable = true;
+            samplerInfo.minLod = 0;
+            samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
             break;
         default:
             samplerInfo.mipmapMode = vk::SamplerMipmapMode::eNearest;

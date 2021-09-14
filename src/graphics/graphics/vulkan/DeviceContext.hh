@@ -69,12 +69,14 @@ namespace sp::vulkan {
 
         ImagePtr CreateImage(vk::ImageCreateInfo createInfo,
                              const uint8 *initialData = nullptr,
-                             size_t initialDataSize = 0);
+                             size_t initialDataSize = 0,
+                             bool genMipmap = false);
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
         ImageViewPtr CreateImageAndView(const vk::ImageCreateInfo &imageInfo,
                                         ImageViewCreateInfo viewInfo, // image field is filled in automatically
                                         const uint8 *initialData = nullptr,
-                                        size_t initialDataSize = 0);
+                                        size_t initialDataSize = 0,
+                                        bool genMipmap = false);
         vk::Sampler GetSampler(SamplerType type);
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
 

@@ -138,7 +138,10 @@ namespace sp::vulkan {
     }
 
     void CommandContext::SetTexture(uint32 set, uint32 binding, const ImageViewPtr &view) {
-        SetTexture(set, binding, view.get());
+        SetTexture(set, binding, *view.get());
+
+        auto defaultSampler = view->DefaultSampler();
+        if (defaultSampler) SetSampler(set, binding, defaultSampler);
     }
 
     void CommandContext::SetTexture(uint32 set, uint32 binding, const ImageView *view) {
