@@ -27,9 +27,5 @@ namespace sp::vulkan {
         unique_ptr<VertexLayout> vertexLayout;
         BufferPtr vertexBuffer, indexBuffer;
         ImageViewPtr fontView;
-
-        // TODO: get rid of all these
-        BufferPtr fontBuf;
-        vk::UniqueSemaphore transferComplete, graphicsTransitionComplete;
     };
 } // namespace sp::vulkan

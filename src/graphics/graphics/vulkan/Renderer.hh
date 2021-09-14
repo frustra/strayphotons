@@ -14,6 +14,11 @@ namespace sp::vulkan {
     class DeviceContext;
     class Model;
 
+    struct ViewStateUniforms {
+        glm::mat4 view;
+        glm::mat4 projection;
+    };
+
     class Renderer {
     public:
         using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::View, ecs::Transform>>;
@@ -22,8 +27,8 @@ namespace sp::vulkan {
         Renderer(ecs::Lock<ecs::AddRemove> lock, DeviceContext &context);
         ~Renderer();
 
-        void Prepare(){};
-        void BeginFrame(ecs::Lock<ecs::Read<ecs::Transform>> lock){};
+        void Prepare() {}
+        void BeginFrame(ecs::Lock<ecs::Read<ecs::Transform>> lock) {}
         void RenderPass(const CommandContextPtr &cmd, const ecs::View &view, DrawLock lock);
         void EndFrame();
 
@@ -44,6 +49,8 @@ namespace sp::vulkan {
 
     private:
         CFuncCollection funcs;
+
+        BufferPtr viewStateUniformBuffer;
 
         PreservingMap<string, Model> activeModels;
     };

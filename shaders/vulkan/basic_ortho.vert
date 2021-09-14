@@ -9,7 +9,6 @@ layout(location = 1) out vec4 outColor;
 
 layout(push_constant) uniform PushConstants {
     mat4 projMat;
-	float foo;
 } constants;
 
 out gl_PerVertex

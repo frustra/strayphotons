@@ -9,7 +9,11 @@
 #include "ecs/EcsImpl.hh"
 
 namespace sp::vulkan {
-    Renderer::Renderer(ecs::Lock<ecs::AddRemove> lock, DeviceContext &device) : device(device) {}
+    Renderer::Renderer(ecs::Lock<ecs::AddRemove> lock, DeviceContext &device) : device(device) {
+        viewStateUniformBuffer = device.AllocateBuffer(sizeof(ViewStateUniforms),
+                                                       vk::BufferUsageFlagBits::eUniformBuffer,
+                                                       VMA_MEMORY_USAGE_CPU_TO_GPU);
+    }
 
     Renderer::~Renderer() {
         device->waitIdle();
@@ -25,25 +29,33 @@ namespace sp::vulkan {
         ForwardPass(cmd, forwardPassView, lock, [&](auto lock, Tecs::Entity &ent) {});
     }
 
-    void Renderer::ForwardPass(const CommandContextPtr &commands,
+    void Renderer::ForwardPass(const CommandContextPtr &cmd,
                                ecs::View &view,
                                DrawLock lock,
                                const PreDrawFunc &preDraw) {
+        ViewStateUniforms *viewState;
+        viewStateUniformBuffer->Map((void **)&viewState);
+        viewState->view = view.viewMat;
+        viewState->projection = view.projMat;
+        viewStateUniformBuffer->Unmap();
+
+        cmd->SetUniformBuffer(0, 10, viewStateUniformBuffer);
+
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (ent.Has<ecs::Renderable, ecs::Transform>(lock)) {
                 if (ent.Has<ecs::Mirror>(lock)) continue;
-                DrawEntity(commands, view, lock, ent, preDraw);
+                DrawEntity(cmd, view, lock, ent, preDraw);
             }
         }
 
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (ent.Has<ecs::Renderable, ecs::Transform, ecs::Mirror>(lock)) {
-                DrawEntity(commands, view, lock, ent, preDraw);
+                DrawEntity(cmd, view, lock, ent, preDraw);
             }
         }
     }
 
-    void Renderer::DrawEntity(const CommandContextPtr &commands,
+    void Renderer::DrawEntity(const CommandContextPtr &cmd,
                               const ecs::View &view,
                               DrawLock lock,
                               Tecs::Entity &ent,
@@ -66,7 +78,7 @@ namespace sp::vulkan {
             activeModels.Register(comp.model->name, model);
         }
 
-        model->AppendDrawCommands(commands, modelMat, view); // TODO pass and use comp.model->bones
+        model->AppendDrawCommands(cmd, modelMat); // TODO pass and use comp.model->bones
     }
 
     void Renderer::EndFrame() {

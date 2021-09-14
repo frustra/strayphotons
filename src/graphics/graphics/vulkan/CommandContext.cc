@@ -169,6 +169,16 @@ namespace sp::vulkan {
         SetTexture(set, binding, view, device.GetSampler(samplerType));
     }
 
+    void CommandContext::SetUniformBuffer(uint32 set, uint32 binding, const BufferPtr &buffer) {
+        Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
+        Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
+        auto &bufferBinding = shaderData.sets[set].bindings[binding].buffer;
+        bufferBinding.buffer = **buffer;
+        bufferBinding.offset = 0;
+        bufferBinding.range = buffer->Size();
+        SetDescriptorDirty(set);
+    }
+
     void CommandContext::FlushDescriptorSets() {
         auto layout = currentPipeline->GetLayout();
 

@@ -25,7 +25,7 @@ namespace sp::vulkan {
 
     class DeviceContext final : public sp::GraphicsContext {
     public:
-        DeviceContext();
+        DeviceContext(bool enableValidationLayers = false);
         virtual ~DeviceContext();
 
         // Access the underlying Vulkan device via the arrow operator

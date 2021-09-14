@@ -78,7 +78,7 @@ namespace sp {
             pxPhysics->release();
             pxPhysics = nullptr;
         }
-#if !defined(SP_PACKAGE_RELEASE)
+#ifndef SP_PACKAGE_RELEASE
         if (pxPvd) {
             pxPvd->release();
             pxPvd = nullptr;

@@ -15,16 +15,19 @@ layout(location = 3) out vec2 outTexCoord;
 
 layout(push_constant) uniform PushConstants {
     mat4 model;
-    mat4 view;
-    mat4 projection;
 } constants;
 
-void main() {
-    vec4 viewPos4 = constants.view * constants.model * vec4(inPosition, 1.0);
-    viewPos = vec3(viewPos4) / viewPos4.w;
-    gl_Position = constants.projection * viewPos4;
+layout(binding = 10) uniform ViewState {
+    mat4 view;
+    mat4 projection;
+} viewState;
 
-    mat3 rotation = mat3(constants.view * constants.model);
+void main() {
+    vec4 viewPos4 = viewState.view * constants.model * vec4(inPosition, 1.0);
+    viewPos = vec3(viewPos4) / viewPos4.w;
+    gl_Position = viewState.projection * viewPos4;
+
+    mat3 rotation = mat3(viewState.view * constants.model);
     viewNormal = rotation * inNormal;
     outTexCoord = inTexCoord;
     color = (viewNormal + vec3(1)) * 0.5;

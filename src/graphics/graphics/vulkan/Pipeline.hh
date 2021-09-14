@@ -32,6 +32,7 @@ namespace sp::vulkan {
 
     struct DescriptorSetLayoutInfo {
         uint32 sampledImagesMask = 0;
+        uint32 uniformBuffersMask = 0;
         uint8 descriptorCount[MAX_BINDINGS_PER_DESCRIPTOR_SET]; // usually 1, can be higher for array bindings
         vk::ShaderStageFlags stages[MAX_BINDINGS_PER_DESCRIPTOR_SET];
         uint32 lastBinding = 0;

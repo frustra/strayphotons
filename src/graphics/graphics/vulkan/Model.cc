@@ -116,14 +116,12 @@ namespace sp::vulkan {
         Debugf("Destroying vulkan::Model %s", modelName);
     }
 
-    void Model::AppendDrawCommands(const CommandContextPtr &cmd, glm::mat4 modelMat, const ecs::View &view) {
+    void Model::AppendDrawCommands(const CommandContextPtr &cmd, glm::mat4 modelMat) {
         cmd->SetVertexLayout(SceneVertex::Layout());
 
         for (auto &primitivePtr : primitives) {
             auto &primitive = *primitivePtr;
             MeshPushConstants constants;
-            constants.projection = view.projMat; // TODO: move projection and view to a uniform
-            constants.view = view.viewMat;
             constants.model = modelMat * primitive.transform;
 
             cmd->PushConstants(&constants, 0, sizeof(MeshPushConstants));
