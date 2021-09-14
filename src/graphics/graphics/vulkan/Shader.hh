@@ -5,7 +5,7 @@
 #include "core/Hashing.hh"
 
 namespace sp::vulkan {
-    const uint32 MAX_PUSH_CONSTANT_SIZE = 512;
+    const uint32 MAX_PUSH_CONSTANT_SIZE = 128;
     const uint32 MAX_BOUND_DESCRIPTOR_SETS = 2;
     const uint32 MAX_BINDINGS_PER_DESCRIPTOR_SET = 32;
     const uint32 MAX_DESCRIPTOR_SETS_PER_POOL = 16;
