@@ -38,5 +38,4 @@ namespace ecs {
     bool Component<FocusLayer>::Load(Lock<Read<ecs::Name>> lock, FocusLayer &dst, const picojson::value &src);
 } // namespace ecs
 
-template<>
-struct Tecs::is_global_component<ecs::FocusLock> : std::true_type {};
+TECS_GLOBAL_COMPONENT(ecs::FocusLock);

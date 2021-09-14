@@ -44,26 +44,28 @@ namespace sp {
             size_t frameIndex = 0;
 
             auto frameEnd = chrono_clock::now();
-            auto previousFrameStart = frameEnd - this->interval;
+            auto previousFrameEnd = frameEnd;
             while (!this->exiting) {
-                auto frameStart = chrono_clock::now();
+                this->Frame();
+
+                auto realFrameEnd = chrono_clock::now();
 
                 // Calculate frame rate using a 10-frame rolling window
-                previousFrames[frameIndex] = frameStart - previousFrameStart;
+                auto frameDelta = realFrameEnd - previousFrameEnd;
+                previousFrames[frameIndex] = frameDelta;
                 frameIndex = (frameIndex + 1) % previousFrames.size();
-                previousFrameStart = frameStart;
+                previousFrameEnd = realFrameEnd;
                 auto totalFrameTime = std::accumulate(previousFrames.begin(),
                                                       previousFrames.end(),
                                                       chrono_clock::duration::zero());
                 this->averageFrameTimeNs = std::chrono::nanoseconds(totalFrameTime).count() / previousFrames.size();
 
-                this->Frame();
-
                 if (this->interval.count() > 0) {
                     frameEnd += this->interval;
-                    if (frameStart >= frameEnd) {
+
+                    if (realFrameEnd >= frameEnd) {
                         // Falling behind, reset target frame end time.
-                        frameEnd = frameStart;
+                        frameEnd = realFrameEnd;
                     }
 
                     std::this_thread::sleep_until(frameEnd);
@@ -81,5 +83,9 @@ namespace sp {
 
     double RegisteredThread::GetFrameRate() const {
         return 1e9 / (double)averageFrameTimeNs.load();
+    }
+
+    std::thread::id RegisteredThread::GetThreadId() const {
+        return thread.get_id();
     }
 } // namespace sp

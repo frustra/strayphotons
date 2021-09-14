@@ -157,6 +157,7 @@ namespace sp {
 
     void GlfwGraphicsContext::SwapBuffers() {
         glfwSwapBuffers(window);
+        glFinish();
     }
 
     void GlfwGraphicsContext::BeginFrame() {

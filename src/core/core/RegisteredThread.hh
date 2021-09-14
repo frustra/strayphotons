@@ -14,6 +14,7 @@ namespace sp {
         virtual ~RegisteredThread();
 
         double GetFrameRate() const;
+        std::thread::id GetThreadId() const;
 
         const std::string threadName;
         const chrono_clock::duration interval;

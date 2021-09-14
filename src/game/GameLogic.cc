@@ -18,14 +18,18 @@
     #include "graphics/core/GraphicsContext.hh"
 #endif
 
+#include <atomic>
+#include <chrono>
 #include <cmath>
 #include <cxxopts.hpp>
+#include <fstream>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/transform.hpp>
 #include <sstream>
 #include <string>
+#include <thread>
 
 namespace sp {
     GameLogic::GameLogic(Game *game) : game(game) {
@@ -43,6 +47,7 @@ namespace sp {
                        "clearsignal",
                        "Clear a signal value (clearsignal <entity>.<signal>)",
                        &GameLogic::ClearSignal);
+        funcs.Register(this, "tracetecs", "Save an ECS performance trace (tracetecs <time_ms>)", &GameLogic::TraceTecs);
     }
 
     static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
@@ -454,9 +459,7 @@ namespace sp {
     void GameLogic::ClearSignal(std::string args) {
         std::stringstream stream(args);
         std::string signalStr;
-        double value;
         stream >> signalStr;
-        stream >> value;
 
         auto [entName, signalName] = ecs::ParseSignal(signalStr);
 
@@ -466,5 +469,43 @@ namespace sp {
             auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
             signalComp.ClearSignal(signalName);
         }
+    }
+
+    void GameLogic::TraceTecs(std::string args) {
+        std::stringstream stream(args);
+        size_t timeMs = 0;
+        stream >> timeMs;
+
+        if (timeMs == 0) {
+            Logf("Trace time must be specified in milliseconds.");
+            return;
+        }
+
+        static std::atomic_bool tracing(false);
+        bool current = tracing;
+        if (current || !tracing.compare_exchange_strong(current, true)) {
+            Logf("A performance trace is already in progress");
+            return;
+        }
+
+        std::map<std::thread::id, std::string> threadNames;
+        threadNames[std::this_thread::get_id()] = "Main";
+        for (auto registeredThread : GetRegisteredThreads()) {
+            threadNames[registeredThread->GetThreadId()] = registeredThread->threadName;
+        }
+
+        std::thread thread([timeMs, threadNames] {
+            ecs::World.StartTrace();
+            std::this_thread::sleep_for(std::chrono::milliseconds(timeMs));
+            auto trace = ecs::World.StopTrace();
+
+            std::ofstream traceFile("tecs-trace.csv");
+            trace.SaveToCSV(traceFile);
+            traceFile.close();
+
+            Logf("Tecs performance trace complete");
+            tracing = false;
+        });
+        thread.detach();
     }
 } // namespace sp
