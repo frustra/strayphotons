@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 {
 #ifdef SP_TEST_MODE
     cxxopts::Options options("STRAYPHOTONS-TEST", "");
-    options.positional_help("/path/to/script.txt]");
+    options.positional_help("/path/to/script.txt");
 #else
     cxxopts::Options options("STRAYPHOTONS", "");
 #endif

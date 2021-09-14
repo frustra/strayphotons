@@ -2,63 +2,27 @@
 
 #ifdef SP_XR_SUPPORT
 
-    #include "core/CFunc.hh"
-    #include "ecs/Ecs.hh"
     #include "xr/XrSystem.hh"
+
+    #include <memory>
 
 namespace sp {
     class Game;
+}
 
-    namespace xr {
-        class XrManager {
-        public:
-            XrManager(Game *game);
-            ~XrManager();
+namespace sp::xr {
 
-            bool Frame(double dtSinceLastFrame);
+    class XrManager {
+    public:
+        XrManager(sp::Game *game) : game(game) {}
 
-            xr::XrSystemPtr GetXrSystem();
+        std::shared_ptr<XrSystem> LoadXrSystem();
 
-        private:
-            void InitXrActions();
+    private:
+        sp::Game *game = nullptr;
+        std::shared_ptr<XrSystem> xrSystem;
+    };
 
-            Tecs::Entity ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &handle);
-            Tecs::Entity UpdateXrActionEntity(xr::XrActionPtr action, bool active);
-
-            void UpdateSkeletonDebugHand(xr::XrActionPtr action,
-                                         glm::mat4 xrObjectPos,
-                                         std::vector<xr::XrBoneData> &boneData,
-                                         bool active);
-
-            void ComputeBonePositions(std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output);
-
-            Tecs::Entity GetLaserPointer();
-            void SetVrOrigin();
-
-            Tecs::Entity CreateXrEntity();
-
-            void LoadXrSystem();
-
-        private:
-            Game *game;
-            CFuncCollection funcs;
-
-            xr::XrSystemPtr xrSystem;
-            xr::XrActionSetPtr gameActionSet;
-
-            // Actions we use in game navigation
-            xr::XrActionPtr teleportAction;
-            xr::XrActionPtr grabAction;
-
-            // Actions for the raw input device pose
-            xr::XrActionPtr leftHandAction;
-            xr::XrActionPtr rightHandAction;
-
-            // Actions for the skeleton pose
-            xr::XrActionPtr leftHandSkeletonAction;
-            xr::XrActionPtr rightHandSkeletonAction;
-        };
-    } // namespace xr
-} // namespace sp
+} // namespace sp::xr
 
 #endif
