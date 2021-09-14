@@ -640,7 +640,7 @@ namespace sp::vulkan {
 
         Assert(!genMipmap || createInfo.mipLevels > 1, "can't generate mipmap for a single level image");
 
-        createInfo.usage |= vk::ImageUsageFlagBits::eTransferDst;
+        createInfo.usage |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
         auto image = AllocateImage(createInfo, VMA_MEMORY_USAGE_GPU_ONLY);
 
         auto stagingBuf = AllocateBuffer(initialDataSize,
@@ -662,7 +662,7 @@ namespace sp::vulkan {
         barrier1.image = *image;
         barrier1.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
         barrier1.subresourceRange.baseMipLevel = 0;
-        barrier1.subresourceRange.levelCount = genMipmap ? 1 : createInfo.mipLevels;
+        barrier1.subresourceRange.levelCount = createInfo.mipLevels;
         barrier1.subresourceRange.baseArrayLayer = 0;
         barrier1.subresourceRange.layerCount = 1;
         barrier1.srcAccessMask = {};
@@ -716,7 +716,7 @@ namespace sp::vulkan {
 
         vk::ImageMemoryBarrier barrier3 = barrier2;
         barrier3.srcAccessMask = {};
-        barrier3.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+        barrier3.dstAccessMask = genMipmap ? vk::AccessFlagBits::eTransferRead : vk::AccessFlagBits::eShaderRead;
 
         auto graphicsBarrierStages = genMipmap ? vk::PipelineStageFlagBits::eTransfer
                                                : vk::PipelineStageFlagBits::eFragmentShader;
@@ -842,7 +842,6 @@ namespace sp::vulkan {
         createInfo.extent = vk::Extent3D(image->GetWidth(), image->GetHeight(), 1);
         Assert(createInfo.extent.width > 0 && createInfo.extent.height > 0, "image has zero size");
 
-        createInfo.mipLevels = genMipmap ? CalculateMipmapLevels(createInfo.extent) : 1;
         createInfo.format = FormatFromTraits(image->GetComponents(), 8, true);
         Assert(createInfo.format != vk::Format::eUndefined, "invalid image format");
 
@@ -850,8 +849,8 @@ namespace sp::vulkan {
         Assert(data, "missing image data");
 
         ImageViewCreateInfo viewInfo;
-        viewInfo.image = CreateImage(createInfo, data, image->ByteSize());
-        return CreateImageView(viewInfo);
+        viewInfo.defaultSampler = GetSampler(SamplerType::TrilinearTiled);
+        return CreateImageAndView(createInfo, viewInfo, data, image->ByteSize(), genMipmap);
     }
 
     vk::Sampler DeviceContext::GetSampler(SamplerType type) {
