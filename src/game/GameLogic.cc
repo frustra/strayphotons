@@ -499,6 +499,10 @@ namespace sp {
             std::this_thread::sleep_for(std::chrono::milliseconds(timeMs));
             auto trace = ecs::World.StopTrace();
 
+            for (auto &[id, name] : threadNames) {
+                trace.SetThreadName(name, id);
+            }
+
             std::ofstream traceFile("tecs-trace.csv");
             trace.SaveToCSV(traceFile);
             traceFile.close();
