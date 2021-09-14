@@ -117,9 +117,15 @@ namespace sp::vulkan {
         case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_LINEAR:
         case TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR:
             info.mipmapMode = vk::SamplerMipmapMode::eLinear;
+            info.minLod = 0;
+            info.maxLod = VK_LOD_CLAMP_NONE;
             break;
-        default:
+        case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST:
+        case TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_NEAREST:
+            info.minLod = 0;
+            info.maxLod = VK_LOD_CLAMP_NONE;
             info.mipmapMode = vk::SamplerMipmapMode::eNearest;
+            break;
         }
 
         info.addressModeU = GLWrapToVKAddressMode(wrapS);

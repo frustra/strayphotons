@@ -230,7 +230,6 @@ namespace sp::vulkan {
         }
 
         imageInfo.extent = vk::Extent3D(img.width, img.height, 1);
-        imageInfo.mipLevels = 1; // CalculateMipmapLevels(imageInfo.extent);
 
         ImageViewCreateInfo viewInfo;
         if (texture.sampler == -1) {
@@ -243,12 +242,12 @@ namespace sp::vulkan {
             auto samplerInfo = GLSamplerToVKSampler(minFilter, magFilter, sampler.wrapS, sampler.wrapT, sampler.wrapR);
             if (samplerInfo.mipmapMode == vk::SamplerMipmapMode::eLinear) {
                 samplerInfo.anisotropyEnable = true;
-                samplerInfo.maxAnisotropy = 4.0f;
+                samplerInfo.maxAnisotropy = 8.0f;
             }
             viewInfo.defaultSampler = device.GetSampler(samplerInfo);
         }
 
-        auto imageView = device.CreateImageAndView(imageInfo, viewInfo, img.image.data(), img.image.size());
+        auto imageView = device.CreateImageAndView(imageInfo, viewInfo, img.image.data(), img.image.size(), true);
 
         textures[name] = imageView;
         return imageView;
