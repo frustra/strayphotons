@@ -115,6 +115,8 @@ namespace sp::vulkan {
                     if (type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
                         Assert(desc->image.dim != SpvDimBuffer, "sampled buffers are unimplemented");
                         setInfo.sampledImagesMask |= (1 << binding);
+                    } else if (type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+                        setInfo.uniformBuffersMask |= (1 << binding);
                     } else {
                         Abort("unsupported SpvReflectDescriptorType " + std::to_string(type));
                     }
@@ -131,16 +133,24 @@ namespace sp::vulkan {
             uint32 entryCount = 0;
 
             auto &setInfo = info.descriptorSets[set];
-            ForEachBit(setInfo.sampledImagesMask, [&](uint32 binding) {
+            auto setEntry = [&](uint32 binding, vk::DescriptorType type, size_t structOffset) {
                 Assert(entryCount < MAX_BINDINGS_PER_DESCRIPTOR_SET, "too many descriptors");
                 auto &entry = entries[entryCount++];
-                entry.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+                entry.descriptorType = type;
                 entry.dstBinding = binding;
                 entry.dstArrayElement = 0;
                 entry.descriptorCount = setInfo.descriptorCount[binding];
 
-                entry.offset = sizeof(DescriptorBinding) * binding + offsetof(DescriptorBinding, image);
+                entry.offset = sizeof(DescriptorBinding) * binding + structOffset;
                 entry.stride = sizeof(DescriptorBinding);
+            };
+
+            ForEachBit(setInfo.sampledImagesMask, [&](uint32 binding) {
+                setEntry(binding, vk::DescriptorType::eCombinedImageSampler, offsetof(DescriptorBinding, image));
+            });
+
+            ForEachBit(setInfo.uniformBuffersMask, [&](uint32 binding) {
+                setEntry(binding, vk::DescriptorType::eUniformBuffer, offsetof(DescriptorBinding, buffer));
             });
 
             vk::DescriptorUpdateTemplateCreateInfo createInfo;
@@ -172,6 +182,15 @@ namespace sp::vulkan {
                 // TODO: use UniqueID to avoid collisions upon pointer reuse
                 hash_combine(hash, bindings[binding + i].image.sampler);
                 hash_combine(hash, bindings[binding + i].image.imageLayout);
+            }
+        });
+
+        ForEachBit(setLayout.uniformBuffersMask, [&](uint32 binding) {
+            for (uint32 i = 0; i < setLayout.descriptorCount[binding]; i++) {
+                // TODO: use UniqueID to avoid collisions upon pointer reuse
+                hash_combine(hash, bindings[binding + i].buffer.buffer);
+                hash_combine(hash, bindings[binding + i].buffer.offset);
+                hash_combine(hash, bindings[binding + i].buffer.range);
             }
         });
 
@@ -318,11 +337,20 @@ namespace sp::vulkan {
 
         for (uint32 binding = 0; binding < layoutInfo.lastBinding + 1; binding++) {
             auto bindingBit = 1 << binding;
-            auto type = vk::DescriptorType(VK_DESCRIPTOR_TYPE_MAX_ENUM);
+            vk::DescriptorType type;
+            int count = 0;
 
-            if (layoutInfo.sampledImagesMask & bindingBit) { type = vk::DescriptorType::eCombinedImageSampler; }
+            if (layoutInfo.sampledImagesMask & bindingBit) {
+                type = vk::DescriptorType::eCombinedImageSampler;
+                count++;
+            }
+            if (layoutInfo.uniformBuffersMask & bindingBit) {
+                type = vk::DescriptorType::eUniformBuffer;
+                count++;
+            }
 
-            if (type != vk::DescriptorType(VK_DESCRIPTOR_TYPE_MAX_ENUM)) {
+            if (count > 0) {
+                Assert(count == 1, "Overlapping descriptor binding index: " + std::to_string(binding));
                 bindings.emplace_back(binding,
                                       type,
                                       layoutInfo.descriptorCount[binding],

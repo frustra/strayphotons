@@ -54,7 +54,9 @@ namespace sp {
     #endif
 
     #if SP_GRAPHICS_SUPPORT_VK
-        auto vkContext = new vulkan::DeviceContext();
+        bool enableValidationLayers = game->options.count("with-validation-layers") > 0;
+
+        auto vkContext = new vulkan::DeviceContext(enableValidationLayers);
         context.reset(vkContext);
 
         GLFWwindow *window = vkContext->GetWindow();

@@ -15,8 +15,6 @@ namespace sp::vulkan {
 
     struct MeshPushConstants {
         glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 projection;
     };
 
     class Model final : public NonCopyable {
@@ -35,7 +33,7 @@ namespace sp::vulkan {
         Model(const sp::Model &model, DeviceContext &device);
         ~Model();
 
-        void AppendDrawCommands(const CommandContextPtr &commands, glm::mat4 modelMat, const ecs::View &view);
+        void AppendDrawCommands(const CommandContextPtr &commands, glm::mat4 modelMat);
 
     private:
         ImageViewPtr LoadTexture(DeviceContext &device, const sp::Model &model, int materialIndex, TextureType type);
