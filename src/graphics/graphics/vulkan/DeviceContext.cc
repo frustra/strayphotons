@@ -795,6 +795,8 @@ namespace sp::vulkan {
             barrier4.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
             barrier4.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
             barrier4.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+            barrier4.subresourceRange.baseMipLevel = 0;
+            barrier4.subresourceRange.levelCount = createInfo.mipLevels;
             graphicsCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
                                                vk::PipelineStageFlagBits::eFragmentShader,
                                                {},
