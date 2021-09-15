@@ -32,10 +32,7 @@ namespace sp::vulkan {
         void RenderPass(const CommandContextPtr &cmd, const ecs::View &view, DrawLock lock);
         void EndFrame();
 
-        void ForwardPass(const CommandContextPtr &cmd,
-                         ecs::View &view,
-                         DrawLock lock,
-                         const PreDrawFunc &preDraw = {});
+        void ForwardPass(const CommandContextPtr &cmd, ecs::View &view, DrawLock lock, const PreDrawFunc &preDraw = {});
 
         void DrawEntity(const CommandContextPtr &cmd,
                         const ecs::View &view,
