@@ -95,7 +95,6 @@ namespace sp::vulkan {
         DeviceContext &device;
         PipelineLayoutInfo info;
         vk::UniqueDescriptorUpdateTemplate descriptorUpdateTemplates[MAX_BOUND_DESCRIPTOR_SETS];
-        vector<vk::DescriptorPoolSize> descriptorPoolSizes[MAX_BOUND_DESCRIPTOR_SETS];
         shared_ptr<DescriptorPool> descriptorPools[MAX_BOUND_DESCRIPTOR_SETS];
     };
 
