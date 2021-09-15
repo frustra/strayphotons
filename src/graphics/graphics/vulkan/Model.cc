@@ -116,7 +116,7 @@ namespace sp::vulkan {
         Debugf("Destroying vulkan::Model %s", modelName);
     }
 
-    void Model::AppendDrawCommands(const CommandContextPtr &cmd, glm::mat4 modelMat) {
+    void Model::Draw(const CommandContextPtr &cmd, glm::mat4 modelMat) {
         cmd->SetVertexLayout(SceneVertex::Layout());
 
         for (auto &primitivePtr : primitives) {

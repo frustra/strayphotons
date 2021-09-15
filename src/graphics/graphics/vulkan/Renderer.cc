@@ -78,7 +78,7 @@ namespace sp::vulkan {
             activeModels.Register(comp.model->name, model);
         }
 
-        model->AppendDrawCommands(cmd, modelMat); // TODO pass and use comp.model->bones
+        model->Draw(cmd, modelMat); // TODO pass and use comp.model->bones
     }
 
     void Renderer::EndFrame() {
