@@ -32,8 +32,6 @@ unix-package-release: build assets
 	cp bin/Release/sp strayphotons/bin/strayphotons
 	cp extra/strayphotons.sh strayphotons
 	cp bin/assets.spdata strayphotons/bin
-	cp ext/fmod/lib/x86_64/libfmod.so.8.11 strayphotons/bin/libfmod.so.8
-	cp ext/fmod/lib/x86_64/libfmodstudio.so.8.11 strayphotons/bin/libfmodstudio.so.8
 
 windows: vs14
 vs14: build
