@@ -16,7 +16,8 @@ namespace sp::vulkan {
         Store,
     };
 
-    struct Image : public UniqueMemory {
+    class Image : public UniqueMemory {
+    public:
         Image();
 
         // Allocates storage for the image, destructor destroys image
@@ -65,7 +66,8 @@ namespace sp::vulkan {
         vk::Sampler defaultSampler = VK_NULL_HANDLE;
     };
 
-    struct ImageView : public WrappedUniqueHandle<vk::ImageView>, public GpuTexture {
+    class ImageView : public WrappedUniqueHandle<vk::ImageView>, public GpuTexture {
+    public:
         ImageView() {}
 
         // Creates a view to an image, retaining a reference to the image while the view is alive

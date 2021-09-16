@@ -34,7 +34,8 @@
 #endif
 
 namespace sp::vulkan {
-    struct UniqueMemory : public NonCopyable {
+    class UniqueMemory : public NonCopyable {
+    public:
         UniqueMemory() = delete;
         UniqueMemory(VmaAllocator allocator) : allocator(allocator), allocation(nullptr) {}
         vk::Result Map(void **data);
@@ -46,7 +47,8 @@ namespace sp::vulkan {
         VmaAllocation allocation;
     };
 
-    struct Buffer : public UniqueMemory {
+    class Buffer : public UniqueMemory {
+    public:
         Buffer();
         Buffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator);
         ~Buffer();

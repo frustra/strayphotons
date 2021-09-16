@@ -41,7 +41,7 @@ namespace sp::vulkan {
         : device(device) {
         ReflectShaders(shaders);
 
-        vk::DescriptorSetLayout layouts[MAX_BOUND_DESCRIPTOR_SETS];
+        vk::DescriptorSetLayout layouts[MAX_BOUND_DESCRIPTOR_SETS] = {};
         uint32 layoutCount = 0;
 
         for (uint32 set = 0; set < MAX_BOUND_DESCRIPTOR_SETS; set++) {

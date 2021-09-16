@@ -14,9 +14,9 @@ namespace sp::vulkan {
     typedef uint32 ShaderHandle;
 
     class CommandContext;
-    struct Buffer;
-    struct Image;
-    struct ImageView;
+    class Buffer;
+    class Image;
+    class ImageView;
     typedef shared_ptr<CommandContext> CommandContextPtr;
     typedef shared_ptr<Buffer> BufferPtr;
     typedef shared_ptr<Image> ImagePtr;

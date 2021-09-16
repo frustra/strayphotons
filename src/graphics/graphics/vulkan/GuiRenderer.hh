@@ -10,7 +10,7 @@ namespace sp {
 
 namespace sp::vulkan {
     class DeviceContext;
-    struct Buffer;
+    class Buffer;
     struct VertexLayout;
 
     class GuiRenderer : public NonCopyable {

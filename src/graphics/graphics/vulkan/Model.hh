@@ -33,7 +33,7 @@ namespace sp::vulkan {
         Model(const sp::Model &model, DeviceContext &device);
         ~Model();
 
-        void AppendDrawCommands(const CommandContextPtr &commands, glm::mat4 modelMat);
+        void Draw(const CommandContextPtr &cmd, glm::mat4 modelMat);
 
     private:
         ImageViewPtr LoadTexture(DeviceContext &device, const sp::Model &model, int materialIndex, TextureType type);
