@@ -149,7 +149,7 @@ std::string OpenVrSkeleton::ModelName(std::string skeletonAction) {
     } else if (skeletonAction == xr::RightHandSkeletonActionName) {
         handResource = xr::openvr::RightHandModelResource;
     } else {
-        throw std::runtime_error("Unknown skeleton hand action");
+        Abort("Unknown skeleton hand action");
     }
 
     // Get the length of the path to the model

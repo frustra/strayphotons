@@ -6,28 +6,37 @@
     #include "game/Game.hh"
 
     #ifdef SP_XR_SUPPORT_OPENVR
-        #include "graphics/opengl/GlfwGraphicsContext.hh"
         #include "xr/openvr/OpenVrSystem.hh"
     #endif
 
 namespace sp::xr {
-    static CVar<bool> CVarXrEnabled("xr.Enabled", true, "Enable the XR/VR system on launch");
+    XrManager::XrManager(Game *game) : game(game) {
+        funcs.Register(this, "reloadxrsystem", "Reload the state of the XR subsystem", &XrManager::LoadXrSystem);
+    }
 
-    std::shared_ptr<XrSystem> XrManager::LoadXrSystem() {
-        if (!xrSystem) {
+    void XrManager::LoadXrSystem() {
     #ifdef SP_XR_SUPPORT_OPENVR
-            GlfwGraphicsContext *glContext = dynamic_cast<GlfwGraphicsContext *>(game->graphics.GetContext());
-            Assert(glContext, "OpenVrSystem requires a GLFW Graphics Context");
-            xrSystem = std::make_shared<OpenVrSystem>(*glContext);
+        xrSystem = std::make_shared<OpenVrSystem>();
+    #else
+        Abort("No XR system defined");
     #endif
-        }
 
         if (!xrSystem->IsHmdPresent()) {
             Logf("No VR HMD is present.");
-            return nullptr;
+            return;
         }
 
-        return xrSystem;
+        try {
+            xrSystem->Init();
+        } catch (std::exception &e) {
+            Errorf("XR Runtime threw error on initialization! Error: %s", e.what());
+            xrSystem.reset();
+        }
+    }
+
+    std::shared_ptr<XrSystem> XrManager::GetXrSystem() {
+        if (xrSystem && xrSystem->IsInitialized()) return xrSystem;
+        return nullptr;
     }
 } // namespace sp::xr
 

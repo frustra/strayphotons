@@ -39,8 +39,6 @@ namespace sp::xr {
                        "setvrorigin",
                        "Move the VR origin to the current player position",
                        &XrManager::SetVrOrigin);
-
-        funcs.Register(this, "reloadxrsystem", "Reload the state of the XR subsystem", &XrManager::LoadXrSystem);
     }
 
     XrManager::~XrManager() {}
@@ -315,75 +313,7 @@ namespace sp::xr {
     }
 
     void XrManager::LoadXrSystem() {
-        // On scene load, check if the status of xrSystem matches the status of CVarConnectXR
-        if (CVarConnectXR.Get()) {
-            // No xrSystem loaded but CVarConnectXR indicates we should try to load one.
-            if (!xrSystem) {
-                // TODO: refactor this so that xrSystemFactory.GetBestXrSystem() returns a TypeTrait
-                xr::XrSystemFactory xrSystemFactory(game->graphics.GetContext());
-                xrSystem = xrSystemFactory.GetBestXrSystem();
-
-                if (xrSystem) {
-                    try {
-                        xrSystem->Init();
-                    } catch (std::exception &e) {
-                        Errorf("XR Runtime threw error on initialization! Error: %s", e.what());
-                        xrSystem.reset();
-                    }
-                } else {
-                    Logf("Failed to load an XR runtime");
-                }
-            }
-
-            // The previous step might have failed to load an XR system, test it is loaded
-            if (xrSystem) {
-                // Create a VR origin if one does not already exist
-                ecs::Entity vrOrigin = game->entityManager.EntityWith<ecs::Name>("vr-origin");
-                if (!vrOrigin.Valid()) {
-                    vrOrigin = CreateXrEntity();
-                    // Use AssignKey so we can find this entity by name later
-                    vrOrigin.Assign<ecs::Name>("vr-origin");
-                }
-
-                // Add a transform to the VR origin if one does not already exist
-                if (!vrOrigin.Has<ecs::Transform>()) {
-                    vrOrigin.Assign<ecs::Transform>();
-                    auto player = ecs::Entity(&game->entityManager, game->logic.GetPlayer());
-
-                    if (player.Valid() && player.Has<ecs::Transform>()) {
-                        auto lock = ecs::World.StartTransaction<ecs::Write<ecs::Transform>>();
-                        auto &transform = vrOrigin.GetEntity().Get<ecs::Transform>(lock);
-                        auto &playerTransform = player.GetEntity().Get<ecs::Transform>(lock);
-                        transform.SetPosition(playerTransform.GetGlobalPosition(lock) -
-                                              glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
-                        transform.SetRotate(playerTransform.GetRotate());
-                    }
-                }
-
-                // Create swapchains for all the views this runtime exposes. Only create the minimum number of views,
-                // since it's unlikely we can render more than the bare minimum. Ex: we don't support 3rd eye rendering
-                // for mixed reality capture
-                // TODO: add a CVar to allow 3rd eye rendering
-                for (unsigned int i = 0; i < xrSystem->GetCompositor()->GetNumViews(true /* minimum */); i++) {
-                    ecs::Entity viewEntity = CreateXrEntity();
-                    auto ecsView = viewEntity.Assign<ecs::View>();
-                    ecsView->visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_EYE);
-                    xrSystem->GetCompositor()->PopulateView(i, ecsView);
-
-                    // Mark this as an XR View
-                    auto ecsXrView = viewEntity.Assign<ecs::XRView>();
-                    ecsXrView->viewId = i;
-                }
-
-                // TODO: test this re-initializes correctly
-                InitXrActions();
-            }
-        }
-        // CVar says XR should be disabled. Ensure xrSystem state matches.
-        else if (xrSystem) {
-            xrSystem->Deinit();
-            xrSystem.reset();
-        }
+        InitXrActions();
     }
 
     // TODO: move this into XrSystem as part of #39

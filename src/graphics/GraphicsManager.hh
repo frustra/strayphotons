@@ -26,6 +26,7 @@ namespace sp {
     namespace vulkan {
         class Renderer;
         class GuiRenderer;
+        struct ImageView;
     } // namespace vulkan
     #endif
 
@@ -54,6 +55,10 @@ namespace sp {
     #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
+        struct {
+            shared_ptr<vulkan::ImageView> color, depth;
+        } vulkanViews[2];
+
         unique_ptr<vulkan::Renderer> renderer;
         unique_ptr<vulkan::GuiRenderer> debugGuiRenderer;
     #endif

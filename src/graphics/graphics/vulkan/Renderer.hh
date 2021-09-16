@@ -50,7 +50,7 @@ namespace sp::vulkan {
     private:
         CFuncCollection funcs;
 
-        BufferPtr viewStateUniformBuffer;
+        BufferPtr viewStateUniformBuffer[3];
 
         PreservingMap<string, Model> activeModels;
     };

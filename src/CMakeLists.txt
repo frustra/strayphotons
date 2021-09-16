@@ -18,15 +18,14 @@ set(PROJECT_GAME_TEST_LIB ${PROJECT_BASE_NAME}-game-test CACHE INTERNAL "Interfa
 include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
 
 # Default desktop build
-add_module_configuration(
-    NAME sp
-    LINK_LIBRARIES
-        ${PROJECT_CORE_LIB}
-        ${PROJECT_GRAPHICS_OPENGL_LIB}
-        ${PROJECT_INPUT_GLFW_LIB}
-        ${PROJECT_PHYSICS_PHYSX_LIB}
-        ${PROJECT_XR_OPENVR_LIB}
-)
+# add_module_configuration(
+#     NAME sp
+#     LINK_LIBRARIES
+#         ${PROJECT_CORE_LIB}
+#         ${PROJECT_GRAPHICS_OPENGL_LIB}
+#         ${PROJECT_INPUT_GLFW_LIB}
+#         ${PROJECT_PHYSICS_PHYSX_LIB}
+# )
 
 # Vulkan desktop build
 add_module_configuration(
@@ -36,34 +35,35 @@ add_module_configuration(
 		${PROJECT_GRAPHICS_VULKAN_LIB}
 		${PROJECT_INPUT_GLFW_LIB}
 		${PROJECT_PHYSICS_PHYSX_LIB}
+        ${PROJECT_XR_OPENVR_LIB}
 )
 
 # EGL-based executable used for CI testing purposes
-add_module_configuration(
-    NAME sp-test
-    LINK_LIBRARIES
-        ${PROJECT_GAME_TEST_LIB}
-        ${PROJECT_CORE_LIB}
-        ${PROJECT_GRAPHICS_EGL_LIB}
-        ${PROJECT_INPUT_GLFW_LIB}
-)
+# add_module_configuration(
+#     NAME sp-test
+#     LINK_LIBRARIES
+#         ${PROJECT_GAME_TEST_LIB}
+#         ${PROJECT_CORE_LIB}
+#         ${PROJECT_GRAPHICS_EGL_LIB}
+#         ${PROJECT_INPUT_GLFW_LIB}
+# )
 
-# Headless test executable
-add_module_configuration(
-    NAME sp-headless
-    LINK_LIBRARIES
-        ${PROJECT_CORE_LIB}
-        ${PROJECT_INPUT_CORE_LIB}
-        ${PROJECT_PHYSICS_PHYSX_LIB}
-)
+# # Headless test executable
+# add_module_configuration(
+#     NAME sp-headless
+#     LINK_LIBRARIES
+#         ${PROJECT_CORE_LIB}
+#         ${PROJECT_INPUT_CORE_LIB}
+#         ${PROJECT_PHYSICS_PHYSX_LIB}
+# )
 
-# Minimal cli interface
-add_module_configuration(
-    NAME sp-cli
-    LINK_LIBRARIES
-        ${PROJECT_GAME_TEST_LIB}
-        ${PROJECT_CORE_LIB}
-)
+# # Minimal cli interface
+# add_module_configuration(
+#     NAME sp-cli
+#     LINK_LIBRARIES
+#         ${PROJECT_GAME_TEST_LIB}
+#         ${PROJECT_CORE_LIB}
+# )
 
 add_subdirectory(core)
 add_subdirectory(game)

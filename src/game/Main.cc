@@ -47,6 +47,9 @@ int main(int argc, char **argv)
 #ifdef SP_TEST_MODE
         ("script-file", "", value<string>())
 #endif
+#ifdef SP_XR_SUPPORT
+        ("no-vr", "Disable automatic XR/VR system loading")
+#endif
 #ifdef SP_GRAPHICS_SUPPORT_VK
         ("with-validation-layers", "Enable Vulkan validation layers")
 #endif

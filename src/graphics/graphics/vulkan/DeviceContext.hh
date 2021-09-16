@@ -37,6 +37,18 @@ namespace sp::vulkan {
             return *device;
         }
 
+        vk::PhysicalDevice &PhysicalDevice() {
+            return physicalDevice;
+        }
+
+        vk::Instance &Instance() {
+            return *instance;
+        }
+
+        vk::Queue &GetQueue(CommandContextType type) {
+            return queues[QueueType(type)];
+        }
+
         // Potential GraphicsContext function implementations
         bool ShouldClose() override;
         void BeginFrame() override;

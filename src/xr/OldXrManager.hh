@@ -41,7 +41,7 @@ namespace sp {
             Game *game;
             CFuncCollection funcs;
 
-            xr::XrSystemPtr xrSystem;
+            std::shared_ptr<XrSystem> xrSystem;
             xr::XrActionSetPtr gameActionSet;
 
             // Actions we use in game navigation

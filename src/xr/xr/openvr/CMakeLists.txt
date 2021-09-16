@@ -1,8 +1,7 @@
 target_sources(${PROJECT_XR_OPENVR_LIB} PRIVATE
-    OpenVrModel.cc
+    # OpenVrModel.cc
     OpenVrSystem.cc
-    OpenVrTrackingCompositor.cc
-    OpenVrAction.cc
+    # OpenVrAction.cc
 )
 
 set(_files_to_copy

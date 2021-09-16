@@ -33,6 +33,7 @@ namespace sp::vulkan {
                 colorAttachment.finalLayout = info.colorAttachments[i]->SwapchainLayout();
             } else {
                 colorAttachment.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
+                colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
             }
 
             vk::AttachmentReference &colorAttachmentRef = colorAttachmentRefs[i];

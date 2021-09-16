@@ -54,6 +54,10 @@ namespace sp {
             menuGui = std::make_unique<MenuGuiManager>(this->graphics);
 
             graphics.Init();
+
+    #ifdef SP_XR_SUPPORT
+            if (options["no-vr"].count() == 0) xr.LoadXrSystem();
+    #endif
 #endif
 
             logic.Init(startupScript);
@@ -82,9 +86,6 @@ namespace sp {
         if (glfwInputHandler) glfwInputHandler->Frame();
 #endif
         if (!logic.Frame(dt)) return false;
-#ifdef SP_XR_SUPPORT
-        if (!xr.Frame(dt)) return false;
-#endif
 #ifdef SP_GRAPHICS_SUPPORT
         if (!graphics.Frame()) return false;
 #endif
