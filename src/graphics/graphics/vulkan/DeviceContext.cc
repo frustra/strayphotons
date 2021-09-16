@@ -970,12 +970,9 @@ namespace sp::vulkan {
     }
 
     RenderPassInfo DeviceContext::SwapchainRenderPassInfo(bool depth, bool stencil) {
-        std::array<float, 4> clearColor = {0.0f, 1.0f, 0.0f, 1.0f};
-
         RenderPassInfo info;
-        info.PushColorAttachment(SwapchainImage().imageView, LoadOp::Clear, StoreOp::Store, clearColor);
+        info.PushColorAttachment(SwapchainImage().imageView, LoadOp::Clear, StoreOp::Store, {0.0f, 1.0f, 0.0f, 1.0f});
         if (depth) info.SetDepthStencilAttachment(depthImageView, LoadOp::Clear, StoreOp::DontCare);
-
         return info;
     }
 

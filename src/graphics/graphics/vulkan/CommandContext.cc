@@ -105,6 +105,29 @@ namespace sp::vulkan {
         cmd->drawIndexed(indexes, instances, firstIndex, vertexOffset, firstInstance);
     }
 
+    void CommandContext::ImageBarrier(const ImagePtr &image,
+                                      vk::ImageLayout oldLayout,
+                                      vk::ImageLayout newLayout,
+                                      vk::PipelineStageFlags srcStages,
+                                      vk::AccessFlags srcAccess,
+                                      vk::PipelineStageFlags dstStages,
+                                      vk::AccessFlags dstAccess) {
+        vk::ImageMemoryBarrier barrier;
+        barrier.image = *image;
+        barrier.oldLayout = oldLayout;
+        barrier.newLayout = newLayout;
+        barrier.srcAccessMask = srcAccess;
+        barrier.dstAccessMask = dstAccess;
+        barrier.subresourceRange.aspectMask = FormatToAspectFlags(image->Format());
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = image->MipLevels();
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = image->ArrayLayers();
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        cmd->pipelineBarrier(srcStages, dstStages, {}, {}, {}, {barrier});
+    }
+
     void CommandContext::SetShaders(const string &vertName, const string &fragName) {
         SetShader(ShaderStage::Vertex, vertName);
         SetShader(ShaderStage::Fragment, fragName);

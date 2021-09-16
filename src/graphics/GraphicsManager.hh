@@ -26,7 +26,7 @@ namespace sp {
     namespace vulkan {
         class Renderer;
         class GuiRenderer;
-        struct ImageView;
+        class ImageView;
     } // namespace vulkan
     #endif
 

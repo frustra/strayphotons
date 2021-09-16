@@ -83,6 +83,11 @@ namespace sp::vulkan {
             SetColorAttachment(index, view, loadOp, storeOp, clear);
         }
 
+        void PushColorAttachment(const ImageViewPtr &view, LoadOp loadOp, StoreOp storeOp, glm::vec4 clear) {
+            std::array<float, 4> clearValues = {clear.r, clear.g, clear.b, clear.a};
+            PushColorAttachment(view, loadOp, storeOp, clearValues);
+        }
+
         void SetColorAttachment(uint32 index,
                                 const ImageViewPtr &view,
                                 LoadOp loadOp,

@@ -51,6 +51,14 @@ namespace sp::vulkan {
         void Draw(uint32 vertexes, uint32 instances, int32 firstVertex, uint32 firstInstance);
         void DrawIndexed(uint32 indexes, uint32 instances, uint32 firstIndex, int32 vertexOffset, uint32 firstInstance);
 
+        void ImageBarrier(const ImagePtr &image,
+                          vk::ImageLayout oldLayout,
+                          vk::ImageLayout newLayout,
+                          vk::PipelineStageFlags srcStages,
+                          vk::AccessFlags srcAccess,
+                          vk::PipelineStageFlags dstStages,
+                          vk::AccessFlags dstAccess);
+
         void SetShaders(const string &vertexName, const string &fragName);
         void SetShader(ShaderStage stage, ShaderHandle handle);
         void SetShader(ShaderStage stage, const string &name);

@@ -241,6 +241,8 @@ namespace sp {
                 for (size_t i = 0; i < xrViews.size(); i++) {
                     auto &view = xrViews[i].first;
 
+                    cmd = device.GetCommandContext();
+
                     if (!vulkanViews[i].color || vulkanViews[i].color->GetWidth() != view.extents.x ||
                         vulkanViews[i].color->GetHeight() != view.extents.y) {
 
@@ -256,75 +258,47 @@ namespace sp {
                         imageInfo.format = vk::Format::eD24UnormS8Uint;
                         imageInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
                         vulkanViews[i].depth = device.CreateImageAndView(imageInfo, {});
+
+                        cmd->ImageBarrier(vulkanViews[i].depth->Image(),
+                                          vk::ImageLayout::eUndefined,
+                                          vk::ImageLayout::eDepthAttachmentOptimal,
+                                          vk::PipelineStageFlagBits::eBottomOfPipe,
+                                          {},
+                                          vk::PipelineStageFlagBits::eEarlyFragmentTests,
+                                          vk::AccessFlagBits::eDepthStencilAttachmentWrite);
                     }
 
-                    cmd = device.GetCommandContext();
-                    vk::ImageMemoryBarrier imageMemoryBarrier;
-                    imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eShaderRead |
-                                                       vk::AccessFlagBits::eTransferRead;
-                    imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-                    imageMemoryBarrier.oldLayout = vk::ImageLayout::eUndefined;
-                    imageMemoryBarrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
-                    imageMemoryBarrier.image = *vulkanViews[i].color->Image();
-                    imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-                    imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
-                    imageMemoryBarrier.subresourceRange.levelCount = 1;
-                    imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-                    imageMemoryBarrier.subresourceRange.layerCount = 1;
-                    imageMemoryBarrier.srcQueueFamilyIndex = device.QueueFamilyIndex(
-                        vulkan::CommandContextType::General);
-                    imageMemoryBarrier.dstQueueFamilyIndex = device.QueueFamilyIndex(
-                        vulkan::CommandContextType::General);
-                    cmd->Raw().pipelineBarrier(
-                        vk::PipelineStageFlagBits::eTransfer | vk::PipelineStageFlagBits::eFragmentShader,
-                        vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                        {},
-                        {},
-                        {},
-                        {imageMemoryBarrier});
+                    cmd->ImageBarrier(vulkanViews[i].color->Image(),
+                                      vk::ImageLayout::eUndefined,
+                                      vk::ImageLayout::eColorAttachmentOptimal,
+                                      vk::PipelineStageFlagBits::eTransfer | vk::PipelineStageFlagBits::eFragmentShader,
+                                      vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eShaderRead,
+                                      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                      vk::AccessFlagBits::eColorAttachmentWrite);
 
-                    imageMemoryBarrier.image = *vulkanViews[i].depth->Image();
-                    imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth |
-                                                                     vk::ImageAspectFlagBits::eStencil;
-                    imageMemoryBarrier.srcAccessMask = {};
-                    imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-                    imageMemoryBarrier.newLayout = vk::ImageLayout::eDepthAttachmentOptimal;
-                    cmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eBottomOfPipe,
-                                               vk::PipelineStageFlagBits::eEarlyFragmentTests,
-                                               {},
-                                               {},
-                                               {},
-                                               {imageMemoryBarrier});
+                    vulkan::RenderPassInfo renderPassInfo;
+                    renderPassInfo.PushColorAttachment(vulkanViews[i].color,
+                                                       vulkan::LoadOp::Clear,
+                                                       vulkan::StoreOp::Store,
+                                                       {0.0f, 1.0f, 0.0f, 1.0f});
 
-                    std::array<float, 4> clearColor = {0.0f, 1.0f, 0.0f, 1.0f};
+                    renderPassInfo.SetDepthStencilAttachment(vulkanViews[i].depth,
+                                                             vulkan::LoadOp::Clear,
+                                                             vulkan::StoreOp::DontCare);
 
-                    vulkan::RenderPassInfo info;
-                    info.PushColorAttachment(vulkanViews[i].color,
-                                             vulkan::LoadOp::Clear,
-                                             vulkan::StoreOp::Store,
-                                             clearColor);
-                    info.SetDepthStencilAttachment(vulkanViews[i].depth,
-                                                   vulkan::LoadOp::Clear,
-                                                   vulkan::StoreOp::DontCare);
-
-                    cmd->BeginRenderPass(info);
+                    cmd->BeginRenderPass(renderPassInfo);
 
                     renderer->RenderPass(cmd, view, lock);
 
                     cmd->EndRenderPass();
 
-                    imageMemoryBarrier.image = *vulkanViews[i].color->Image();
-                    imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-                    imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
-                    imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
-                    imageMemoryBarrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
-                    imageMemoryBarrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
-                    cmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eFragmentShader,
-                                               vk::PipelineStageFlagBits::eTransfer,
-                                               {},
-                                               {},
-                                               {},
-                                               {imageMemoryBarrier});
+                    cmd->ImageBarrier(vulkanViews[i].color->Image(),
+                                      vk::ImageLayout::eColorAttachmentOptimal,
+                                      vk::ImageLayout::eTransferSrcOptimal,
+                                      vk::PipelineStageFlagBits::eFragmentShader,
+                                      vk::AccessFlagBits::eTransferRead,
+                                      vk::PipelineStageFlagBits::eTransfer,
+                                      vk::AccessFlagBits::eTransferRead);
 
                     device.Submit(cmd);
                 }
