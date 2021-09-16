@@ -51,13 +51,15 @@ namespace sp::vulkan {
         void Draw(uint32 vertexes, uint32 instances, int32 firstVertex, uint32 firstInstance);
         void DrawIndexed(uint32 indexes, uint32 instances, uint32 firstIndex, int32 vertexOffset, uint32 firstInstance);
 
-        void ImageBarrier(const ImagePtr &image,
-                          vk::ImageLayout oldLayout,
-                          vk::ImageLayout newLayout,
-                          vk::PipelineStageFlags srcStages,
-                          vk::AccessFlags srcAccess,
-                          vk::PipelineStageFlags dstStages,
-                          vk::AccessFlags dstAccess);
+        void ImageBarrier(
+            const ImagePtr &image,
+            vk::ImageLayout oldLayout, // Transition the image from oldLayout
+            vk::ImageLayout newLayout, // to newLayout,
+            vk::PipelineStageFlags srcStages, // after any image accesses in these stages
+            vk::AccessFlags srcAccess, // of these types (usually writes) are complete and visible.
+            vk::PipelineStageFlags dstStages, // Block work in these stages until the transition is complete,
+            vk::AccessFlags dstAccess // but only block these access types (can be reads or writes).
+        );
 
         void SetShaders(const string &vertexName, const string &fragName);
         void SetShader(ShaderStage stage, ShaderHandle handle);
