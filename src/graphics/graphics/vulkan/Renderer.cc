@@ -43,8 +43,8 @@ namespace sp::vulkan {
         foo = (foo + 1) % 3;
         ViewStateUniforms *viewState;
         viewStateUniformBuffer[foo]->Map((void **)&viewState);
-        viewState->view = view.viewMat;
-        viewState->projection = view.projMat;
+        viewState->view[0] = view.viewMat;
+        viewState->projection[0] = view.projMat;
         viewStateUniformBuffer[foo]->Unmap();
 
         cmd->SetUniformBuffer(0, 10, viewStateUniformBuffer[foo]);

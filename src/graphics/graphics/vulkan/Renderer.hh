@@ -15,8 +15,8 @@ namespace sp::vulkan {
     class Model;
 
     struct ViewStateUniforms {
-        glm::mat4 view;
-        glm::mat4 projection;
+        glm::mat4 view[2];
+        glm::mat4 projection[2];
     };
 
     class Renderer {
@@ -32,12 +32,9 @@ namespace sp::vulkan {
         void RenderPass(const CommandContextPtr &cmd, const ecs::View &view, DrawLock lock);
         void EndFrame();
 
-        void ForwardPass(const CommandContextPtr &commands,
-                         ecs::View &view,
-                         DrawLock lock,
-                         const PreDrawFunc &preDraw = {});
+        void ForwardPass(const CommandContextPtr &cmd, ecs::View &view, DrawLock lock, const PreDrawFunc &preDraw = {});
 
-        void DrawEntity(const CommandContextPtr &commands,
+        void DrawEntity(const CommandContextPtr &cmd,
                         const ecs::View &view,
                         DrawLock lock,
                         Tecs::Entity &ent,

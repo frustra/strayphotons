@@ -239,27 +239,25 @@ namespace sp::vulkan {
 
         physicalDevice.getFeatures2KHR(&deviceFeatures2);
 
-        Assert(availableDeviceFeatures.multiViewport, "device must support multiViewport");
         Assert(availableDeviceFeatures.fillModeNonSolid, "device must support fillModeNonSolid");
         Assert(availableDeviceFeatures.wideLines, "device must support wideLines");
         Assert(availableDeviceFeatures.largePoints, "device must support largePoints");
-        Assert(availableDeviceFeatures.geometryShader, "device must support geometryShader");
         Assert(availableDeviceFeatures.samplerAnisotropy, "device must support anisotropic sampling");
         Assert(availableMultiviewFeatures.multiview, "device must support multiview");
         Assert(availableMultiviewFeatures.multiviewGeometryShader, "device must support multiviewGeometryShader");
 
-        vk::PhysicalDeviceFeatures enabledDeviceFeatures;
-        enabledDeviceFeatures.multiViewport = true;
+        vk::PhysicalDeviceFeatures2 enabledDeviceFeatures2;
+        auto &enabledDeviceFeatures = enabledDeviceFeatures2.features;
         enabledDeviceFeatures.fillModeNonSolid = true;
         enabledDeviceFeatures.wideLines = true;
         enabledDeviceFeatures.largePoints = true;
-        enabledDeviceFeatures.geometryShader = true;
         enabledDeviceFeatures.samplerAnisotropy = true;
+        enabledDeviceFeatures2.pNext = &availableMultiviewFeatures;
 
         vk::DeviceCreateInfo deviceInfo;
         deviceInfo.queueCreateInfoCount = queueInfos.size();
         deviceInfo.pQueueCreateInfos = queueInfos.data();
-        deviceInfo.pEnabledFeatures = &enabledDeviceFeatures;
+        deviceInfo.pNext = &enabledDeviceFeatures2;
         deviceInfo.enabledExtensionCount = enabledDeviceExtensions.size();
         deviceInfo.ppEnabledExtensionNames = enabledDeviceExtensions.data();
         deviceInfo.enabledLayerCount = layers.size();
@@ -639,6 +637,7 @@ namespace sp::vulkan {
             return AllocateImage(createInfo, VMA_MEMORY_USAGE_GPU_ONLY);
         }
 
+        Assert(createInfo.arrayLayers == 1, "can't load initial data into an image array");
         Assert(!genMipmap || createInfo.mipLevels > 1, "can't generate mipmap for a single level image");
 
         createInfo.usage |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
@@ -975,7 +974,6 @@ namespace sp::vulkan {
 
         RenderPassInfo info;
         info.PushColorAttachment(SwapchainImage().imageView, LoadOp::Clear, StoreOp::Store, clearColor);
-
         if (depth) info.SetDepthStencilAttachment(depthImageView, LoadOp::Clear, StoreOp::DontCare);
 
         return info;

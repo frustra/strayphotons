@@ -20,6 +20,7 @@ namespace sp::vulkan {
         uint32 clearAttachments = 0;
         uint32 loadAttachments = 0;
         uint32 storeAttachments = 0;
+        uint32 multiviewAttachments = 0;
 
         static const uint32 DEPTH_STENCIL_INDEX = 31;
 
