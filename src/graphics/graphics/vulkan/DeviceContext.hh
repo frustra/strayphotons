@@ -140,6 +140,8 @@ namespace sp::vulkan {
 
         void *Win32WindowHandle() override;
 
+        VkDebugUtilsMessageTypeFlagsEXT disabledDebugMessages = 0;
+
     private:
         void SetTitle(string title);
 

@@ -33,9 +33,6 @@ if(SP_PACKAGE_RELEASE)
     add_compile_definitions(SP_PACKAGE_RELEASE=1)
 endif()
 
-# Tell cmake to export a compile_commands.json file
-set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
-
 # Tell cmake we need C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

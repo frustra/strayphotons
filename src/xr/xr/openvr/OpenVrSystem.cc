@@ -20,13 +20,7 @@
 #include <thread>
 
 namespace sp::xr {
-    OpenVrSystem::OpenVrSystem() {
-        for (size_t i = 0; i < views.size(); i++) {
-            views[i] = ViewInfo((ecs::XrEye)i);
-        }
-    }
-
-    vr::EVREye mapXrEyeToOpenVr(ecs::XrEye eye) {
+    vr::EVREye MapXrEyeToOpenVr(ecs::XrEye eye) {
         switch (eye) {
         case ecs::XrEye::LEFT:
             return vr::Eye_Left;
@@ -75,22 +69,24 @@ namespace sp::xr {
                 vrOriginEntity = ecs::NamedEntity("vr-origin", vrOrigin);
             }
 
-            for (auto &viewInfo : views) {
-                Tecs::Entity ent = viewInfo.entity.Get(lock);
+            for (size_t i = 0; i < views.size(); i++) {
+                auto &entity = views[i];
+
+                Tecs::Entity ent = entity.Get(lock);
                 if (!ent) {
                     ent = lock.NewEntity();
-                    ent.Set<ecs::Name>(lock, viewInfo.entity.Name());
+                    ent.Set<ecs::Name>(lock, entity.Name());
                     ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
                     ent.Set<ecs::Transform>(lock);
-                    ent.Set<ecs::XRView>(lock, viewInfo.eye);
+                    ent.Set<ecs::XRView>(lock, (ecs::XrEye)i);
 
-                    viewInfo.entity = ecs::NamedEntity(viewInfo.entity.Name(), ent);
+                    entity = ecs::NamedEntity(entity.Name(), ent);
                 }
 
                 auto &view = ent.Set<ecs::View>(lock);
                 view.extents = {vrWidth, vrHeight};
                 view.clip = {0.1, 256};
-                auto projMatrix = vrSystem->GetProjectionMatrix(mapXrEyeToOpenVr(viewInfo.eye),
+                auto projMatrix = vrSystem->GetProjectionMatrix(MapXrEyeToOpenVr((ecs::XrEye)i),
                                                                 view.clip.x,
                                                                 view.clip.y);
                 view.projMat = glm::transpose(glm::make_mat4((float *)projMatrix.m));
@@ -105,19 +101,6 @@ namespace sp::xr {
 
     bool OpenVrSystem::IsHmdPresent() {
         return vr::VR_IsRuntimeInstalled() && vr::VR_IsHmdPresent();
-    }
-
-    RenderTarget *OpenVrSystem::GetRenderTarget(ecs::XrEye eye) {
-        Assert((size_t)eye < views.size(), "OpenVrSystem::GetRenderTarget: Invalid XrEye");
-        return views[(size_t)eye].renderTarget.get();
-    }
-
-    void OpenVrSystem::SubmitView(ecs::XrEye eye, GpuTexture *tex) {
-        //     GLTexture *glTex = dynamic_cast<GLTexture *>(tex);
-        //     Assert(glTex, "OpenVR only supports GL textures");
-
-        //     vr::Texture_t vrTexture = {(void *)(size_t)glTex->handle, vr::TextureType_OpenGL, vr::ColorSpace_Linear};
-        //     vr::VRCompositor()->Submit(mapXrEyeToOpenVr(eye), &vrTexture);
     }
 
     void OpenVrSystem::WaitFrame() {
@@ -154,7 +137,7 @@ namespace sp::xr {
             glm::mat4 hmdPose = glm::mat4(glm::make_mat3x4(
                 (float *)trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking.m));
 
-            vr::HmdMatrix34_t eyePosOvr = vrSystem->GetEyeToHeadTransform(mapXrEyeToOpenVr(eye));
+            vr::HmdMatrix34_t eyePosOvr = vrSystem->GetEyeToHeadTransform(MapXrEyeToOpenVr(eye));
 
             glm::mat4 eyeToHmdPose = glm::mat4(glm::make_mat3x4((float *)eyePosOvr.m));
 

@@ -31,10 +31,13 @@ namespace sp::vulkan {
     const uint32_t VULKAN_API_VERSION = VK_API_VERSION_1_2;
 
     static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                        VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                        VkDebugUtilsMessageTypeFlagsEXT messageType,
                                         const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
                                         void *pContext) {
-        auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes));
+        auto deviceContext = static_cast<DeviceContext *>(pContext);
+        if (messageType & deviceContext->disabledDebugMessages) return VK_FALSE;
+
+        auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
         switch (messageSeverity) {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
             Errorf("Vulkan Error %s: %s", typeStr, pCallbackData->pMessage);

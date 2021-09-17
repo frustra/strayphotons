@@ -161,6 +161,9 @@ namespace sp {
         timer.StartFrame();
         context->BeginFrame();
 
+        GlfwGraphicsContext *glContext = dynamic_cast<GlfwGraphicsContext *>(context.get());
+        Assert(glContext != nullptr, "GraphicsManager::Frame(): GraphicsContext is not a GlfwGraphicsContext");
+
         {
             RenderPhase phase("Frame", timer);
 
@@ -177,20 +180,26 @@ namespace sp {
             if (xrSystem) {
                 RenderPhase xrPhase("XrViews", timer);
 
-                std::vector<RenderTarget *> xrRenderTargets(xrViews.size());
-
+                xrRenderTargets.resize(xrViews.size());
                 for (size_t i = 0; i < xrViews.size(); i++) {
+                    auto &view = xrViews[i].first;
+
                     RenderPhase xrSubPhase("XrView", timer);
 
-                    xrRenderTargets[i] = xrSystem->GetRenderTarget(xrViews[i].second.eye);
+                    RenderTargetDesc desc = {PF_SRGB8_A8, view.extents};
+                    if (!xrRenderTargets[i].renderTarget || xrRenderTargets[i].renderTarget->GetDesc() != desc) {
+                        xrRenderTargets[i].renderTarget = glContext->GetRenderTarget(desc);
+                    }
 
-                    renderer->RenderPass(xrViews[i].first, lock, xrRenderTargets[i]);
+                    renderer->RenderPass(view, lock, xrRenderTargets[i].renderTarget.get());
                 }
 
                 for (size_t i = 0; i < xrViews.size(); i++) {
                     RenderPhase xrSubPhase("XrViewSubmit", timer);
 
-                    xrSystem->SubmitView(xrViews[i].second.eye, xrRenderTargets[i]->GetTexture());
+                    xrSystem->SubmitView(xrViews[i].second.eye,
+                                         context.get(),
+                                         xrRenderTargets[i].renderTarget->GetTexture());
                 }
             }
         #endif
@@ -238,13 +247,14 @@ namespace sp {
 
         #ifdef SP_XR_SUPPORT
             if (xrSystem) {
+                xrRenderTargets.resize(xrViews.size());
                 for (size_t i = 0; i < xrViews.size(); i++) {
                     auto &view = xrViews[i].first;
 
                     cmd = device.GetCommandContext();
 
-                    if (!vulkanViews[i].color || vulkanViews[i].color->GetWidth() != view.extents.x ||
-                        vulkanViews[i].color->GetHeight() != view.extents.y) {
+                    if (!xrRenderTargets[i].color || xrRenderTargets[i].color->GetWidth() != view.extents.x ||
+                        xrRenderTargets[i].color->GetHeight() != view.extents.y) {
 
                         vk::ImageCreateInfo imageInfo;
                         imageInfo.imageType = vk::ImageType::e2D;
@@ -253,13 +263,13 @@ namespace sp {
                         imageInfo.format = vk::Format::eR8G8B8A8Srgb;
                         imageInfo.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled |
                                           vk::ImageUsageFlagBits::eTransferSrc;
-                        vulkanViews[i].color = device.CreateImageAndView(imageInfo, {});
+                        xrRenderTargets[i].color = device.CreateImageAndView(imageInfo, {});
 
                         imageInfo.format = vk::Format::eD24UnormS8Uint;
                         imageInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
-                        vulkanViews[i].depth = device.CreateImageAndView(imageInfo, {});
+                        xrRenderTargets[i].depth = device.CreateImageAndView(imageInfo, {});
 
-                        cmd->ImageBarrier(vulkanViews[i].depth->Image(),
+                        cmd->ImageBarrier(xrRenderTargets[i].depth->Image(),
                                           vk::ImageLayout::eUndefined,
                                           vk::ImageLayout::eDepthAttachmentOptimal,
                                           vk::PipelineStageFlagBits::eBottomOfPipe,
@@ -268,21 +278,21 @@ namespace sp {
                                           vk::AccessFlagBits::eDepthStencilAttachmentWrite);
                     }
 
-                    cmd->ImageBarrier(vulkanViews[i].color->Image(),
+                    cmd->ImageBarrier(xrRenderTargets[i].color->Image(),
                                       vk::ImageLayout::eUndefined,
                                       vk::ImageLayout::eColorAttachmentOptimal,
-                                      vk::PipelineStageFlagBits::eTransfer | vk::PipelineStageFlagBits::eFragmentShader,
-                                      vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eShaderRead,
+                                      vk::PipelineStageFlagBits::eTransfer,
+                                      {},
                                       vk::PipelineStageFlagBits::eColorAttachmentOutput,
                                       vk::AccessFlagBits::eColorAttachmentWrite);
 
                     vulkan::RenderPassInfo renderPassInfo;
-                    renderPassInfo.PushColorAttachment(vulkanViews[i].color,
+                    renderPassInfo.PushColorAttachment(xrRenderTargets[i].color,
                                                        vulkan::LoadOp::Clear,
                                                        vulkan::StoreOp::Store,
                                                        {0.0f, 1.0f, 0.0f, 1.0f});
 
-                    renderPassInfo.SetDepthStencilAttachment(vulkanViews[i].depth,
+                    renderPassInfo.SetDepthStencilAttachment(xrRenderTargets[i].depth,
                                                              vulkan::LoadOp::Clear,
                                                              vulkan::StoreOp::DontCare);
 
@@ -292,42 +302,19 @@ namespace sp {
 
                     cmd->EndRenderPass();
 
-                    cmd->ImageBarrier(vulkanViews[i].color->Image(),
+                    cmd->ImageBarrier(xrRenderTargets[i].color->Image(),
                                       vk::ImageLayout::eColorAttachmentOptimal,
                                       vk::ImageLayout::eTransferSrcOptimal,
-                                      vk::PipelineStageFlagBits::eFragmentShader,
-                                      vk::AccessFlagBits::eTransferRead,
+                                      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                      {},
                                       vk::PipelineStageFlagBits::eTransfer,
                                       vk::AccessFlagBits::eTransferRead);
 
                     device.Submit(cmd);
                 }
 
-                vr::VRTextureBounds_t bounds;
-                bounds.uMin = 0.0f;
-                bounds.uMax = 1.0f;
-                bounds.vMin = 0.0f;
-                bounds.vMax = 1.0f;
-
-                vr::VRVulkanTextureData_t vulkanData;
-                vulkanData.m_pDevice = device.Device();
-                vulkanData.m_pPhysicalDevice = device.PhysicalDevice();
-                vulkanData.m_pInstance = device.Instance();
-                vulkanData.m_pQueue = device.GetQueue(vulkan::CommandContextType::General);
-                vulkanData.m_nQueueFamilyIndex = device.QueueFamilyIndex(vulkan::CommandContextType::General);
-
-                vulkanData.m_nFormat = (uint32)vk::Format::eR8G8B8A8Srgb;
-                vulkanData.m_nSampleCount = 1;
-
-                vr::Texture_t texture = {&vulkanData, vr::TextureType_Vulkan, vr::ColorSpace_Auto};
-
                 for (size_t i = 0; i < xrViews.size(); i++) {
-                    auto &view = xrViews[i].first;
-                    vulkanData.m_nWidth = view.extents.x;
-                    vulkanData.m_nHeight = view.extents.y;
-
-                    vulkanData.m_nImage = (uint64_t)(VkImage)(**vulkanViews[i].color->Image());
-                    vr::VRCompositor()->Submit((vr::EVREye)xrViews[i].second.eye, &texture, &bounds);
+                    xrSystem->SubmitView(xrViews[i].second.eye, context.get(), xrRenderTargets[i].color.get());
                 }
             }
         #endif

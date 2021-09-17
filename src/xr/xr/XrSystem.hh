@@ -11,6 +11,7 @@
 namespace sp {
     class RenderTarget;
     class GpuTexture;
+    class GraphicsContext;
 
     namespace xr {
         // What class of object is being tracked
@@ -50,8 +51,7 @@ namespace sp {
             // virtual bool GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &viewPose) = 0;
             // virtual bool GetPredictedObjectPose(const TrackedObjectHandle &handle, glm::mat4 &objectPose) = 0;
 
-            virtual RenderTarget *GetRenderTarget(ecs::XrEye eye) = 0;
-            virtual void SubmitView(ecs::XrEye eye, GpuTexture *tex) = 0;
+            virtual void SubmitView(ecs::XrEye eye, GraphicsContext *context, GpuTexture *tex) = 0;
             virtual void WaitFrame() = 0;
         };
 

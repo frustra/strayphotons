@@ -5,15 +5,21 @@
 #include "xr/XrSystem.hh"
 // #include "xr/openvr/OpenVrAction.hh"
 
+#include <openvr.h>
+
 namespace vr {
     class IVRSystem;
 }
 
 namespace sp {
+    class GraphicsContext;
+
     namespace xr {
+        vr::EVREye MapXrEyeToOpenVr(ecs::XrEye eye);
+
         class OpenVrSystem final : public XrSystem {
         public:
-            OpenVrSystem();
+            OpenVrSystem() {}
 
             void Init();
             bool IsInitialized();
@@ -28,35 +34,20 @@ namespace sp {
             // std::shared_ptr<XrModel> GetTrackedObjectModel(const TrackedObjectHandle &handle);
 
             // XrCompositor functions
-            RenderTarget *GetRenderTarget(ecs::XrEye eye);
-            void SubmitView(ecs::XrEye eye, GpuTexture *tex);
+            void SubmitView(ecs::XrEye eye, GraphicsContext *context, GpuTexture *tex);
             void WaitFrame();
 
         private:
             // vr::TrackedDeviceIndex_t GetOpenVrIndexFromHandle(const TrackedObjectHandle &handle);
 
-            struct ViewInfo {
-                ecs::XrEye eye;
-                ecs::NamedEntity entity;
-                std::shared_ptr<RenderTarget> renderTarget;
-
-                ViewInfo() {}
-                ViewInfo(ecs::XrEye eye) : eye(eye) {
-                    if (eye == ecs::XrEye::LEFT) {
-                        entity = ecs::NamedEntity("vr-eye-left");
-                    } else if (eye == ecs::XrEye::RIGHT) {
-                        entity = ecs::NamedEntity("vr-eye-right");
-                    } else {
-                        Abort("Unknown XrEye enum: " + std::to_string((size_t)eye));
-                    }
-                }
-            };
-
             std::shared_ptr<vr::IVRSystem> vrSystem;
             // std::map<std::string, std::shared_ptr<OpenVrActionSet>> actionSets;
 
             ecs::NamedEntity vrOriginEntity;
-            std::array<ViewInfo, (size_t)ecs::XrEye::EYE_COUNT> views;
+            std::array<ecs::NamedEntity, (size_t)ecs::XrEye::EYE_COUNT> views = {
+                ecs::NamedEntity("vr-eye-left"),
+                ecs::NamedEntity("vr-eye-right"),
+            };
         };
 
     } // namespace xr

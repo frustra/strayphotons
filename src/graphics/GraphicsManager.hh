@@ -6,6 +6,7 @@
     #include "ecs/Ecs.hh"
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
+        #include "graphics/opengl/GLRenderTarget.hh"
         #include "graphics/opengl/PerfTimer.hh"
     #endif
 
@@ -55,12 +56,21 @@ namespace sp {
     #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
-        struct {
-            shared_ptr<vulkan::ImageView> color, depth;
-        } vulkanViews[2];
-
         unique_ptr<vulkan::Renderer> renderer;
         unique_ptr<vulkan::GuiRenderer> debugGuiRenderer;
+    #endif
+
+    #ifdef SP_XR_SUPPORT
+        struct XrRenderTarget {
+        #ifdef SP_GRAPHICS_SUPPORT_GL
+            shared_ptr<GLRenderTarget> renderTarget;
+        #endif
+        #ifdef SP_GRAPHICS_SUPPORT_VK
+            shared_ptr<vulkan::ImageView> color, depth;
+        #endif
+        };
+
+        std::vector<XrRenderTarget> xrRenderTargets;
     #endif
     };
 } // namespace sp
