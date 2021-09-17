@@ -111,7 +111,8 @@ namespace sp::vulkan {
                                       vk::PipelineStageFlags srcStages,
                                       vk::AccessFlags srcAccess,
                                       vk::PipelineStageFlags dstStages,
-                                      vk::AccessFlags dstAccess) {
+                                      vk::AccessFlags dstAccess,
+                                      const ImageBarrierInfo &options) {
         vk::ImageMemoryBarrier barrier;
         barrier.image = *image;
         barrier.oldLayout = oldLayout;
@@ -119,13 +120,23 @@ namespace sp::vulkan {
         barrier.srcAccessMask = srcAccess;
         barrier.dstAccessMask = dstAccess;
         barrier.subresourceRange.aspectMask = FormatToAspectFlags(image->Format());
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = image->MipLevels();
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = image->ArrayLayers();
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.subresourceRange.baseMipLevel = options.baseMipLevel;
+        barrier.subresourceRange.levelCount = options.mipLevelCount ? options.mipLevelCount : image->MipLevels();
+        barrier.subresourceRange.baseArrayLayer = options.baseArrayLayer;
+        barrier.subresourceRange.layerCount = options.arrayLayerCount ? options.arrayLayerCount : image->ArrayLayers();
+        barrier.srcQueueFamilyIndex = options.srcQueueFamilyIndex;
+        barrier.dstQueueFamilyIndex = options.dstQueueFamilyIndex;
         cmd->pipelineBarrier(srcStages, dstStages, {}, {}, {}, {barrier});
+
+        if (options.trackImageLayout) {
+            Assert(
+                !options.baseMipLevel && !options.mipLevelCount && !options.baseArrayLayer && !options.arrayLayerCount,
+                "can't track image layout when specifying a subresource range");
+            Assert(
+                oldLayout == vk::ImageLayout::eUndefined || oldLayout == image->LastLayout(),
+                "image had layout: " + vk::to_string(image->LastLayout()) + ", expected: " + vk::to_string(oldLayout));
+            image->SetLayout(newLayout);
+        }
     }
 
     void CommandContext::SetShaders(const string &vertName, const string &fragName) {

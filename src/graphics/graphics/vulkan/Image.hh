@@ -56,11 +56,20 @@ namespace sp::vulkan {
             return arrayLayers;
         }
 
+        vk::ImageLayout LastLayout() const {
+            return lastLayout;
+        }
+
+        void SetLayout(vk::ImageLayout currentLayout) {
+            lastLayout = currentLayout;
+        }
+
     private:
         vk::Image image;
         vk::Format format;
         vk::Extent3D extent;
         uint32 mipLevels = 0, arrayLayers = 0;
+        vk::ImageLayout lastLayout = vk::ImageLayout::eUndefined;
     };
 
     struct ImageViewCreateInfo {

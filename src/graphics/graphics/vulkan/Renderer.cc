@@ -41,11 +41,10 @@ namespace sp::vulkan {
                                const PreDrawFunc &preDraw) {
         static size_t foo = 0;
         foo = (foo + 1) % 3;
-        ViewStateUniforms *viewState;
-        viewStateUniformBuffer[foo]->Map((void **)&viewState);
-        viewState->view[0] = view.viewMat;
-        viewState->projection[0] = view.projMat;
-        viewStateUniformBuffer[foo]->Unmap();
+        ViewStateUniforms viewState;
+        viewState.view[0] = view.viewMat;
+        viewState.projection[0] = view.projMat;
+        viewStateUniformBuffer[foo]->CopyFrom(&viewState, 1);
 
         cmd->SetUniformBuffer(0, 10, viewStateUniformBuffer[foo]);
 

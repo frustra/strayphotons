@@ -42,6 +42,15 @@ namespace sp::vulkan {
         void Unmap();
         vk::DeviceSize ByteSize() const;
 
+        template<typename T>
+        void CopyFrom(const T *srcData, size_t srcCount, size_t dstOffset = 0) {
+            Assert(sizeof(T) * (dstOffset + srcCount) <= ByteSize(), "UniqueMemory overflow");
+            T *dstData;
+            Map((void **)&dstData);
+            std::copy(srcData, srcData + srcCount, dstData + dstOffset);
+            Unmap();
+        }
+
     protected:
         VmaAllocator allocator;
         VmaAllocation allocation;
