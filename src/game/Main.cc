@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 {
 #ifdef SP_TEST_MODE
     cxxopts::Options options("STRAYPHOTONS-TEST", "");
-    options.positional_help("/path/to/script.txt]");
+    options.positional_help("/path/to/script.txt");
 #else
     cxxopts::Options options("STRAYPHOTONS", "");
 #endif
@@ -46,6 +46,9 @@ int main(int argc, char **argv)
         ("size", "Initial window size", value<string>())
 #ifdef SP_TEST_MODE
         ("script-file", "", value<string>())
+#endif
+#ifdef SP_XR_SUPPORT
+        ("no-vr", "Disable automatic XR/VR system loading")
 #endif
 #ifdef SP_GRAPHICS_SUPPORT_VK
         ("with-validation-layers", "Enable Vulkan validation layers")

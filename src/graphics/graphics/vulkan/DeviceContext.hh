@@ -37,6 +37,18 @@ namespace sp::vulkan {
             return *device;
         }
 
+        vk::PhysicalDevice &PhysicalDevice() {
+            return physicalDevice;
+        }
+
+        vk::Instance &Instance() {
+            return *instance;
+        }
+
+        vk::Queue &GetQueue(CommandContextType type) {
+            return queues[QueueType(type)];
+        }
+
         // Potential GraphicsContext function implementations
         bool ShouldClose() override;
         void BeginFrame() override;
@@ -62,20 +74,31 @@ namespace sp::vulkan {
         void Submit(CommandContextPtr &cmd,
                     vk::ArrayProxy<const vk::Semaphore> signalSemaphores = {},
                     vk::ArrayProxy<const vk::Semaphore> waitSemaphores = {},
-                    vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {});
+                    vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {},
+                    vk::Fence fence = {});
 
         BufferPtr AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
-        ImagePtr AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency);
 
+        template<typename T>
+        BufferPtr CreateBuffer(const T *srcData,
+                               size_t srcCount,
+                               vk::BufferUsageFlags usage,
+                               VmaMemoryUsage residency) {
+            auto buf = AllocateBuffer(sizeof(T) * srcCount, usage, residency);
+            buf->CopyFrom(srcData, srcCount);
+            return buf;
+        }
+
+        ImagePtr AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency);
         ImagePtr CreateImage(vk::ImageCreateInfo createInfo,
-                             const uint8 *initialData = nullptr,
-                             size_t initialDataSize = 0,
+                             const uint8 *srcData = nullptr,
+                             size_t srcDataSize = 0,
                              bool genMipmap = false);
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
         ImageViewPtr CreateImageAndView(const vk::ImageCreateInfo &imageInfo,
                                         ImageViewCreateInfo viewInfo, // image field is filled in automatically
-                                        const uint8 *initialData = nullptr,
-                                        size_t initialDataSize = 0,
+                                        const uint8 *srcData = nullptr,
+                                        size_t srcDataSize = 0,
                                         bool genMipmap = false);
         vk::Sampler GetSampler(SamplerType type);
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
@@ -117,12 +140,16 @@ namespace sp::vulkan {
 
         void *Win32WindowHandle() override;
 
+        VkDebugUtilsMessageTypeFlagsEXT disabledDebugMessages = 0;
+
     private:
         void SetTitle(string title);
 
         void CreateSwapchain();
         void CreateTestPipeline();
         void RecreateSwapchain();
+
+        void PrepareResourcesForFrame();
 
         shared_ptr<Shader> CreateShader(const string &name, Hash64 compareHash);
 
@@ -134,7 +161,6 @@ namespace sp::vulkan {
         vk::UniqueDevice device;
 
         vector<vk::UniqueSemaphore> semaphores;
-        vector<BufferPtr> inFlightBuffers;
 
         unique_ptr<PipelineManager> pipelinePool;
         unique_ptr<RenderPassManager> renderPassPool;
@@ -168,6 +194,11 @@ namespace sp::vulkan {
             size_t nextIndex = 0;
         };
 
+        struct InFlightBuffer {
+            vk::UniqueFence fence;
+            BufferPtr buffer;
+        };
+
         struct FrameContext {
             vk::UniqueSemaphore imageAvailableSemaphore, renderCompleteSemaphore;
             vk::UniqueFence inFlightFence;
@@ -176,7 +207,7 @@ namespace sp::vulkan {
             // TODO: multiple threads need their own pools
             std::array<CommandContextPool, QUEUE_TYPES_COUNT> commandContexts;
 
-            void BeginFrame();
+            vector<InFlightBuffer> inFlightBuffers;
         };
 
         std::array<FrameContext, MAX_FRAMES_IN_FLIGHT> frameContexts;

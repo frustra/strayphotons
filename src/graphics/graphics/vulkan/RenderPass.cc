@@ -33,6 +33,7 @@ namespace sp::vulkan {
                 colorAttachment.finalLayout = info.colorAttachments[i]->SwapchainLayout();
             } else {
                 colorAttachment.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
+                colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
             }
 
             vk::AttachmentReference &colorAttachmentRef = colorAttachmentRefs[i];
@@ -94,6 +95,14 @@ namespace sp::vulkan {
         renderPassInfo.pSubpasses = &subpass;
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
+
+        vk::RenderPassMultiviewCreateInfo multiviewInfo;
+        if (state.multiviewAttachments) {
+            multiviewInfo.pViewMasks = &state.multiviewAttachments;
+            multiviewInfo.subpassCount = renderPassInfo.subpassCount;
+            Assert(multiviewInfo.subpassCount == 1, "need to update this code, pViewMasks needs to be an array");
+            renderPassInfo.pNext = &multiviewInfo;
+        }
 
         uniqueHandle = device->createRenderPassUnique(renderPassInfo);
     }

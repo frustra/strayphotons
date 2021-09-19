@@ -105,6 +105,40 @@ namespace sp::vulkan {
         cmd->drawIndexed(indexes, instances, firstIndex, vertexOffset, firstInstance);
     }
 
+    void CommandContext::ImageBarrier(const ImagePtr &image,
+                                      vk::ImageLayout oldLayout,
+                                      vk::ImageLayout newLayout,
+                                      vk::PipelineStageFlags srcStages,
+                                      vk::AccessFlags srcAccess,
+                                      vk::PipelineStageFlags dstStages,
+                                      vk::AccessFlags dstAccess,
+                                      const ImageBarrierInfo &options) {
+        vk::ImageMemoryBarrier barrier;
+        barrier.image = *image;
+        barrier.oldLayout = oldLayout;
+        barrier.newLayout = newLayout;
+        barrier.srcAccessMask = srcAccess;
+        barrier.dstAccessMask = dstAccess;
+        barrier.subresourceRange.aspectMask = FormatToAspectFlags(image->Format());
+        barrier.subresourceRange.baseMipLevel = options.baseMipLevel;
+        barrier.subresourceRange.levelCount = options.mipLevelCount ? options.mipLevelCount : image->MipLevels();
+        barrier.subresourceRange.baseArrayLayer = options.baseArrayLayer;
+        barrier.subresourceRange.layerCount = options.arrayLayerCount ? options.arrayLayerCount : image->ArrayLayers();
+        barrier.srcQueueFamilyIndex = options.srcQueueFamilyIndex;
+        barrier.dstQueueFamilyIndex = options.dstQueueFamilyIndex;
+        cmd->pipelineBarrier(srcStages, dstStages, {}, {}, {}, {barrier});
+
+        if (options.trackImageLayout) {
+            Assert(
+                !options.baseMipLevel && !options.mipLevelCount && !options.baseArrayLayer && !options.arrayLayerCount,
+                "can't track image layout when specifying a subresource range");
+            Assert(
+                oldLayout == vk::ImageLayout::eUndefined || oldLayout == image->LastLayout(),
+                "image had layout: " + vk::to_string(image->LastLayout()) + ", expected: " + vk::to_string(oldLayout));
+            image->SetLayout(newLayout);
+        }
+    }
+
     void CommandContext::SetShaders(const string &vertName, const string &fragName) {
         SetShader(ShaderStage::Vertex, vertName);
         SetShader(ShaderStage::Fragment, fragName);

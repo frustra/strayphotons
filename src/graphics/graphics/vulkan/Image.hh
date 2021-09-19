@@ -25,10 +25,11 @@ namespace sp::vulkan {
         ~Image();
 
         // Creates an image reference, destructor does not destroy the image
-        Image(vk::Image image, vk::Format format, vk::Extent3D extent)
-            : UniqueMemory(VK_NULL_HANDLE), image(image), format(format), extent(extent) {}
+        Image(vk::Image image, vk::Format format, vk::Extent3D extent, uint32 mipLevels = 1, uint32 arrayLayers = 1)
+            : UniqueMemory(VK_NULL_HANDLE), image(image), format(format), extent(extent), mipLevels(mipLevels),
+              arrayLayers(arrayLayers) {}
 
-        Image(vk::Image image, vk::Format format, vk::Extent2D extent)
+        Image(vk::Image image, vk::Format format, vk::Extent2D extent, uint32 mipLevels = 1, uint32 arrayLayers = 1)
             : Image(image, format, vk::Extent3D(extent, 1)) {}
 
         vk::Image operator*() const {
@@ -47,10 +48,28 @@ namespace sp::vulkan {
             return extent;
         }
 
+        uint32 MipLevels() const {
+            return mipLevels;
+        }
+
+        uint32 ArrayLayers() const {
+            return arrayLayers;
+        }
+
+        vk::ImageLayout LastLayout() const {
+            return lastLayout;
+        }
+
+        void SetLayout(vk::ImageLayout currentLayout) {
+            lastLayout = currentLayout;
+        }
+
     private:
         vk::Image image;
         vk::Format format;
         vk::Extent3D extent;
+        uint32 mipLevels = 0, arrayLayers = 0;
+        vk::ImageLayout lastLayout = vk::ImageLayout::eUndefined;
     };
 
     struct ImageViewCreateInfo {

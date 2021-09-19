@@ -10,9 +10,15 @@
 
 namespace sp::vulkan {
     Renderer::Renderer(ecs::Lock<ecs::AddRemove> lock, DeviceContext &device) : device(device) {
-        viewStateUniformBuffer = device.AllocateBuffer(sizeof(ViewStateUniforms),
-                                                       vk::BufferUsageFlagBits::eUniformBuffer,
-                                                       VMA_MEMORY_USAGE_CPU_TO_GPU);
+        viewStateUniformBuffer[0] = device.AllocateBuffer(sizeof(ViewStateUniforms),
+                                                          vk::BufferUsageFlagBits::eUniformBuffer,
+                                                          VMA_MEMORY_USAGE_CPU_TO_GPU);
+        viewStateUniformBuffer[1] = device.AllocateBuffer(sizeof(ViewStateUniforms),
+                                                          vk::BufferUsageFlagBits::eUniformBuffer,
+                                                          VMA_MEMORY_USAGE_CPU_TO_GPU);
+        viewStateUniformBuffer[2] = device.AllocateBuffer(sizeof(ViewStateUniforms),
+                                                          vk::BufferUsageFlagBits::eUniformBuffer,
+                                                          VMA_MEMORY_USAGE_CPU_TO_GPU);
     }
 
     Renderer::~Renderer() {
@@ -33,13 +39,14 @@ namespace sp::vulkan {
                                ecs::View &view,
                                DrawLock lock,
                                const PreDrawFunc &preDraw) {
-        ViewStateUniforms *viewState;
-        viewStateUniformBuffer->Map((void **)&viewState);
-        viewState->view = view.viewMat;
-        viewState->projection = view.projMat;
-        viewStateUniformBuffer->Unmap();
+        static size_t foo = 0;
+        foo = (foo + 1) % 3;
+        ViewStateUniforms viewState;
+        viewState.view[0] = view.viewMat;
+        viewState.projection[0] = view.projMat;
+        viewStateUniformBuffer[foo]->CopyFrom(&viewState, 1);
 
-        cmd->SetUniformBuffer(0, 10, viewStateUniformBuffer);
+        cmd->SetUniformBuffer(0, 10, viewStateUniformBuffer[foo]);
 
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (ent.Has<ecs::Renderable, ecs::Transform>(lock)) {

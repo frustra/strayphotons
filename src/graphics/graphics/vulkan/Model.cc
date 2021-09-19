@@ -46,14 +46,10 @@ namespace sp::vulkan {
             Assert(assetPrimitive.indexBuffer.byteOffset + indexBufferSize <= indexBuffer.data.size(),
                    "indexes overflow buffer");
 
-            vkPrimitive.indexBuffer = device.AllocateBuffer(indexBufferSize,
-                                                            vk::BufferUsageFlagBits::eIndexBuffer,
-                                                            VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-            void *data;
-            vkPrimitive.indexBuffer->Map(&data);
-            memcpy(data, &indexBuffer.data[assetPrimitive.indexBuffer.byteOffset], indexBufferSize);
-            vkPrimitive.indexBuffer->Unmap();
+            vkPrimitive.indexBuffer = device.CreateBuffer(&indexBuffer.data[assetPrimitive.indexBuffer.byteOffset],
+                                                          indexBufferSize,
+                                                          vk::BufferUsageFlagBits::eIndexBuffer,
+                                                          VMA_MEMORY_USAGE_CPU_TO_GPU);
 
             vkPrimitive.indexCount = assetPrimitive.indexBuffer.componentCount;
 
@@ -95,14 +91,10 @@ namespace sp::vulkan {
                 }
             }
 
-            size_t vertexBufferSize = vertices.size() * sizeof(vertices[0]);
-            vkPrimitive.vertexBuffer = device.AllocateBuffer(vertexBufferSize,
-                                                             vk::BufferUsageFlagBits::eVertexBuffer,
-                                                             VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-            vkPrimitive.vertexBuffer->Map(&data);
-            memcpy(data, vertices.data(), vertexBufferSize);
-            vkPrimitive.vertexBuffer->Unmap();
+            vkPrimitive.vertexBuffer = device.CreateBuffer(vertices.data(),
+                                                           vertices.size(),
+                                                           vk::BufferUsageFlagBits::eVertexBuffer,
+                                                           VMA_MEMORY_USAGE_CPU_TO_GPU);
 
             vkPrimitive.baseColor = LoadTexture(device, model, assetPrimitive.materialIndex, BaseColor);
             vkPrimitive.metallicRoughness = LoadTexture(device, model, assetPrimitive.materialIndex, MetallicRoughness);

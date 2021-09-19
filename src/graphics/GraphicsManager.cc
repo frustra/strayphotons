@@ -1,5 +1,4 @@
 #ifdef SP_GRAPHICS_SUPPORT
-
     #include "GraphicsManager.hh"
 
     #include "core/CVar.hh"
@@ -20,6 +19,7 @@
         #include "graphics/vulkan/CommandContext.hh"
         #include "graphics/vulkan/DeviceContext.hh"
         #include "graphics/vulkan/GuiRenderer.hh"
+        #include "graphics/vulkan/Image.hh"
         #include "graphics/vulkan/Renderer.hh"
         #include "graphics/vulkan/Vertex.hh"
     #endif
@@ -28,6 +28,10 @@
     #include <cxxopts.hpp>
     #include <iostream>
     #include <system_error>
+
+    #ifdef SP_XR_SUPPORT
+        #include <openvr.h>
+    #endif
 
 namespace sp {
     GraphicsManager::GraphicsManager(Game *game) : game(game) {
@@ -149,9 +153,16 @@ namespace sp {
             }
         }
 
+    #ifdef SP_XR_SUPPORT
+        auto xrSystem = game->xr.GetXrSystem();
+    #endif
+
     #ifdef SP_GRAPHICS_SUPPORT_GL
         timer.StartFrame();
         context->BeginFrame();
+
+        GlfwGraphicsContext *glContext = dynamic_cast<GlfwGraphicsContext *>(context.get());
+        Assert(glContext != nullptr, "GraphicsManager::Frame(): GraphicsContext is not a GlfwGraphicsContext");
 
         {
             RenderPhase phase("Frame", timer);
@@ -161,62 +172,50 @@ namespace sp {
                 ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>>();
             renderer->BeginFrame(lock);
 
-        #ifdef SP_XR_SUPPORT
-            // Always render XR content first, since this allows the compositor to immediately start work rendering
-            // to the HMD Only attempt to render if we have an active XR System
-            if (game->xr.GetXrSystem()) {
-                RenderPhase xrPhase("XrViews", timer);
-
-                // TODO: Should not have to do this on every frame...
-                auto vrOriginEntity = ecs::EntityWith<ecs::Name>(lock, "vr-origin");
-
-                auto &vrOriginTransform = vrOriginEntity.Get<ecs::Transform>(lock);
-                glm::mat4 vrOrigin = glm::transpose(vrOriginTransform.GetGlobalTransform(lock));
-
-                {
-                    RenderPhase xrPhase("XrWaitFrame", timer);
-                    // Wait for the XR system to be ready to accept a new frame
-                    game->xr.GetXrSystem()->GetCompositor()->WaitFrame();
-                }
-
-                // Tell the XR system we are about to begin rendering
-                game->xr.GetXrSystem()->GetCompositor()->BeginFrame();
-
-                // Render all the XR views at the same time
-                for (size_t i = 0; i < xrViews.size(); i++) {
-                    RenderPhase xrPhase("XrView", timer);
-
-                    static glm::mat4 viewPose;
-                    game->xr.GetXrSystem()->GetTracking()->GetPredictedViewPose(xrViews[i].second.viewId, viewPose);
-
-                    // Calculate the view pose relative to the current vrOrigin
-                    viewPose = glm::transpose(viewPose * vrOrigin);
-
-                    // Move the view to the appropriate place
-                    // TODO(xthexder): Fix XR view positioning
-                    // xrViews[i].first.SetInvViewMat(viewPose);
-
-                    RenderTarget *viewOutputTexture = game->xr.GetXrSystem()->GetCompositor()->GetRenderTarget(
-                        xrViews[i].second.viewId);
-
-                    renderer->RenderPass(xrViews[i].first, lock, viewOutputTexture);
-
-                    game->xr.GetXrSystem()->GetCompositor()->SubmitView(xrViews[i].second.viewId,
-                                                                        viewOutputTexture->GetTexture());
-                }
-
-                game->xr.GetXrSystem()->GetCompositor()->EndFrame();
-            }
-        #endif
-
             for (auto &view : cameraViews) {
                 renderer->RenderPass(view, lock);
             }
+
+        #ifdef SP_XR_SUPPORT
+            if (xrSystem) {
+                RenderPhase xrPhase("XrViews", timer);
+
+                xrRenderTargets.resize(xrViews.size());
+                for (size_t i = 0; i < xrViews.size(); i++) {
+                    auto &view = xrViews[i].first;
+
+                    RenderPhase xrSubPhase("XrView", timer);
+
+                    RenderTargetDesc desc = {PF_SRGB8_A8, view.extents};
+                    if (!xrRenderTargets[i].renderTarget || xrRenderTargets[i].renderTarget->GetDesc() != desc) {
+                        xrRenderTargets[i].renderTarget = glContext->GetRenderTarget(desc);
+                    }
+
+                    renderer->RenderPass(view, lock, xrRenderTargets[i].renderTarget.get());
+                }
+
+                for (size_t i = 0; i < xrViews.size(); i++) {
+                    RenderPhase xrSubPhase("XrViewSubmit", timer);
+
+                    xrSystem->SubmitView(xrViews[i].second.eye,
+                                         context.get(),
+                                         xrRenderTargets[i].renderTarget->GetTexture());
+                }
+            }
+        #endif
 
             renderer->EndFrame();
         }
 
         context->SwapBuffers();
+
+        #ifdef SP_XR_SUPPORT
+        if (xrSystem) {
+            RenderPhase xrPhase("XrWaitFrame", timer);
+            xrSystem->WaitFrame();
+        }
+        #endif
+
         timer.EndFrame();
         context->EndFrame();
     #endif
@@ -245,10 +244,90 @@ namespace sp {
 
             cmd->EndRenderPass();
             device.Submit(cmd);
+
+        #ifdef SP_XR_SUPPORT
+            if (xrSystem) {
+                xrRenderTargets.resize(xrViews.size());
+                for (size_t i = 0; i < xrViews.size(); i++) {
+                    auto &view = xrViews[i].first;
+
+                    cmd = device.GetCommandContext();
+
+                    if (!xrRenderTargets[i].color || xrRenderTargets[i].color->GetWidth() != view.extents.x ||
+                        xrRenderTargets[i].color->GetHeight() != view.extents.y) {
+
+                        vk::ImageCreateInfo imageInfo;
+                        imageInfo.imageType = vk::ImageType::e2D;
+                        imageInfo.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
+
+                        imageInfo.format = vk::Format::eR8G8B8A8Srgb;
+                        imageInfo.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled |
+                                          vk::ImageUsageFlagBits::eTransferSrc;
+                        xrRenderTargets[i].color = device.CreateImageAndView(imageInfo, {});
+
+                        imageInfo.format = vk::Format::eD24UnormS8Uint;
+                        imageInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+                        xrRenderTargets[i].depth = device.CreateImageAndView(imageInfo, {});
+
+                        cmd->ImageBarrier(xrRenderTargets[i].depth->Image(),
+                                          vk::ImageLayout::eUndefined,
+                                          vk::ImageLayout::eDepthAttachmentOptimal,
+                                          vk::PipelineStageFlagBits::eBottomOfPipe,
+                                          {},
+                                          vk::PipelineStageFlagBits::eEarlyFragmentTests,
+                                          vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+                    }
+
+                    cmd->ImageBarrier(xrRenderTargets[i].color->Image(),
+                                      vk::ImageLayout::eUndefined,
+                                      vk::ImageLayout::eColorAttachmentOptimal,
+                                      vk::PipelineStageFlagBits::eTransfer,
+                                      {},
+                                      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                      vk::AccessFlagBits::eColorAttachmentWrite);
+
+                    vulkan::RenderPassInfo renderPassInfo;
+                    renderPassInfo.PushColorAttachment(xrRenderTargets[i].color,
+                                                       vulkan::LoadOp::Clear,
+                                                       vulkan::StoreOp::Store,
+                                                       {0.0f, 1.0f, 0.0f, 1.0f});
+
+                    renderPassInfo.SetDepthStencilAttachment(xrRenderTargets[i].depth,
+                                                             vulkan::LoadOp::Clear,
+                                                             vulkan::StoreOp::DontCare);
+
+                    cmd->BeginRenderPass(renderPassInfo);
+
+                    renderer->RenderPass(cmd, view, lock);
+
+                    cmd->EndRenderPass();
+
+                    cmd->ImageBarrier(xrRenderTargets[i].color->Image(),
+                                      vk::ImageLayout::eColorAttachmentOptimal,
+                                      vk::ImageLayout::eTransferSrcOptimal,
+                                      vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                      {},
+                                      vk::PipelineStageFlagBits::eTransfer,
+                                      vk::AccessFlagBits::eTransferRead);
+
+                    device.Submit(cmd);
+                }
+
+                for (size_t i = 0; i < xrViews.size(); i++) {
+                    xrSystem->SubmitView(xrViews[i].second.eye, context.get(), xrRenderTargets[i].color.get());
+                }
+            }
+        #endif
+
             renderer->EndFrame();
         }
 
         context->SwapBuffers();
+
+        #ifdef SP_XR_SUPPORT
+        if (xrSystem) xrSystem->WaitFrame();
+        #endif
+
         // timer.EndFrame();
         context->EndFrame();
     #endif

@@ -1,38 +1,53 @@
 #pragma once
 
+#include "ecs/NamedEntity.hh"
+#include "ecs/components/XRView.hh"
 #include "xr/XrSystem.hh"
-#include "xr/openvr/OpenVrAction.hh"
-#include "xr/openvr/OpenVrTrackingCompositor.hh"
+// #include "xr/openvr/OpenVrAction.hh"
 
 #include <openvr.h>
 
+namespace vr {
+    class IVRSystem;
+}
+
 namespace sp {
+    class GraphicsContext;
 
     namespace xr {
+        vr::EVREye MapXrEyeToOpenVr(ecs::XrEye eye);
+
         class OpenVrSystem final : public XrSystem {
         public:
-            OpenVrSystem(GlfwGraphicsContext &context);
-            ~OpenVrSystem();
+            OpenVrSystem() {}
 
             void Init();
-
             bool IsInitialized();
-
-            void Deinit();
-
             bool IsHmdPresent();
 
-            std::shared_ptr<XrTracking> GetTracking();
+            // std::shared_ptr<XrActionSet> GetActionSet(std::string setName);
 
-            std::shared_ptr<XrCompositor> GetCompositor();
+            // XrTracking functions
+            // bool GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &viewPose);
+            // bool GetPredictedObjectPose(const TrackedObjectHandle &handle, glm::mat4 &objectPose);
+            // std::vector<TrackedObjectHandle> GetTrackedObjectHandles();
+            // std::shared_ptr<XrModel> GetTrackedObjectModel(const TrackedObjectHandle &handle);
 
-            std::shared_ptr<XrActionSet> GetActionSet(std::string setName);
+            // XrCompositor functions
+            void SubmitView(ecs::XrEye eye, GraphicsContext *context, GpuTexture *tex);
+            void WaitFrame();
 
         private:
-            GlfwGraphicsContext &context;
-            vr::IVRSystem *vrSystem = nullptr;
-            std::shared_ptr<OpenVrTrackingCompositor> trackingCompositor;
-            std::map<std::string, std::shared_ptr<OpenVrActionSet>> actionSets;
+            // vr::TrackedDeviceIndex_t GetOpenVrIndexFromHandle(const TrackedObjectHandle &handle);
+
+            std::shared_ptr<vr::IVRSystem> vrSystem;
+            // std::map<std::string, std::shared_ptr<OpenVrActionSet>> actionSets;
+
+            ecs::NamedEntity vrOriginEntity;
+            std::array<ecs::NamedEntity, (size_t)ecs::XrEye::EYE_COUNT> views = {
+                ecs::NamedEntity("vr-eye-left"),
+                ecs::NamedEntity("vr-eye-right"),
+            };
         };
 
     } // namespace xr

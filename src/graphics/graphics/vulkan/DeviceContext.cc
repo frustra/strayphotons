@@ -31,10 +31,13 @@ namespace sp::vulkan {
     const uint32_t VULKAN_API_VERSION = VK_API_VERSION_1_2;
 
     static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                        VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                        VkDebugUtilsMessageTypeFlagsEXT messageType,
                                         const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
                                         void *pContext) {
-        auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes));
+        auto deviceContext = static_cast<DeviceContext *>(pContext);
+        if (messageType & deviceContext->disabledDebugMessages) return VK_FALSE;
+
+        auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
         switch (messageSeverity) {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
             Errorf("Vulkan Error %s: %s", typeStr, pCallbackData->pMessage);
@@ -239,27 +242,25 @@ namespace sp::vulkan {
 
         physicalDevice.getFeatures2KHR(&deviceFeatures2);
 
-        Assert(availableDeviceFeatures.multiViewport, "device must support multiViewport");
         Assert(availableDeviceFeatures.fillModeNonSolid, "device must support fillModeNonSolid");
         Assert(availableDeviceFeatures.wideLines, "device must support wideLines");
         Assert(availableDeviceFeatures.largePoints, "device must support largePoints");
-        Assert(availableDeviceFeatures.geometryShader, "device must support geometryShader");
         Assert(availableDeviceFeatures.samplerAnisotropy, "device must support anisotropic sampling");
         Assert(availableMultiviewFeatures.multiview, "device must support multiview");
         Assert(availableMultiviewFeatures.multiviewGeometryShader, "device must support multiviewGeometryShader");
 
-        vk::PhysicalDeviceFeatures enabledDeviceFeatures;
-        enabledDeviceFeatures.multiViewport = true;
+        vk::PhysicalDeviceFeatures2 enabledDeviceFeatures2;
+        auto &enabledDeviceFeatures = enabledDeviceFeatures2.features;
         enabledDeviceFeatures.fillModeNonSolid = true;
         enabledDeviceFeatures.wideLines = true;
         enabledDeviceFeatures.largePoints = true;
-        enabledDeviceFeatures.geometryShader = true;
         enabledDeviceFeatures.samplerAnisotropy = true;
+        enabledDeviceFeatures2.pNext = &availableMultiviewFeatures;
 
         vk::DeviceCreateInfo deviceInfo;
         deviceInfo.queueCreateInfoCount = queueInfos.size();
         deviceInfo.pQueueCreateInfos = queueInfos.data();
-        deviceInfo.pEnabledFeatures = &enabledDeviceFeatures;
+        deviceInfo.pNext = &enabledDeviceFeatures2;
         deviceInfo.enabledExtensionCount = enabledDeviceExtensions.size();
         deviceInfo.ppEnabledExtensionNames = enabledDeviceExtensions.data();
         deviceInfo.enabledLayerCount = layers.size();
@@ -321,7 +322,10 @@ namespace sp::vulkan {
             // TODO: these will be allocated from a pool later and not need to be manually cleaned up
             // The image needs to be destroyed before VMA
             depthImageView.reset();
-            inFlightBuffers.clear();
+
+            for (auto &fc : frameContexts) {
+                fc.inFlightBuffers.clear();
+            }
         }
 
         vmaDestroyAllocator(allocator);
@@ -493,14 +497,24 @@ namespace sp::vulkan {
             AssertVKSuccess(result, "timed out waiting for fence");
         }
         SwapchainImage().inFlightFence = *Frame().inFlightFence;
+        PrepareResourcesForFrame();
+        vmaSetCurrentFrameIndex(allocator, frameCounter);
+    }
 
+    void DeviceContext::PrepareResourcesForFrame() {
         for (auto &pool : Frame().commandContexts) {
             // Resets all command buffers in the pool, so they can be recorded and used again.
             if (pool.nextIndex > 0) device->resetCommandPool(*pool.commandPool);
             pool.nextIndex = 0;
         }
 
-        vmaSetCurrentFrameIndex(allocator, frameCounter);
+        auto &bufs = Frame().inFlightBuffers;
+        bufs.erase(std::remove_if(bufs.begin(),
+                                  bufs.end(),
+                                  [&](auto &buf) {
+                                      return device->getFenceStatus(*buf.fence) == vk::Result::eSuccess;
+                                  }),
+                   bufs.end());
     }
 
     void DeviceContext::SwapBuffers() {
@@ -568,7 +582,8 @@ namespace sp::vulkan {
     void DeviceContext::Submit(CommandContextPtr &cmdArg,
                                vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
                                vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
-                               vk::ArrayProxy<const vk::PipelineStageFlags> waitStages) {
+                               vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
+                               vk::Fence fence) {
         CommandContextPtr cmd = cmdArg;
         // Invalidate caller's reference, this CommandContext is unusable until a subsequent frame.
         cmdArg.reset();
@@ -602,8 +617,8 @@ namespace sp::vulkan {
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
 
-        vk::Fence fence = VK_NULL_HANDLE;
         if (cmd->WritesToSwapchain()) {
+            Assert(!fence, "can't use custom fence on submission to swapchain");
             fence = *Frame().inFlightFence;
             device->resetFences({fence});
         }
@@ -628,53 +643,35 @@ namespace sp::vulkan {
     }
 
     ImagePtr DeviceContext::CreateImage(vk::ImageCreateInfo createInfo,
-                                        const uint8 *initialData,
-                                        size_t initialDataSize,
+                                        const uint8 *srcData,
+                                        size_t srcDataSize,
                                         bool genMipmap) {
         if (!createInfo.mipLevels) createInfo.mipLevels = genMipmap ? CalculateMipmapLevels(createInfo.extent) : 1;
         if (!createInfo.arrayLayers) createInfo.arrayLayers = 1;
 
-        if (!initialData || initialDataSize == 0) {
+        if (!srcData || srcDataSize == 0) {
             Assert(!genMipmap, "must pass initial data to generate a mipmap");
             return AllocateImage(createInfo, VMA_MEMORY_USAGE_GPU_ONLY);
         }
 
+        Assert(createInfo.arrayLayers == 1, "can't load initial data into an image array");
         Assert(!genMipmap || createInfo.mipLevels > 1, "can't generate mipmap for a single level image");
 
         createInfo.usage |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
         auto image = AllocateImage(createInfo, VMA_MEMORY_USAGE_GPU_ONLY);
 
-        auto stagingBuf = AllocateBuffer(initialDataSize,
-                                         vk::BufferUsageFlagBits::eTransferSrc,
-                                         VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-        uint8 *stagingBufData;
-        stagingBuf->Map((void **)&stagingBufData);
-        std::copy(initialData, initialData + initialDataSize, stagingBufData);
-        stagingBuf->Unmap();
+        auto stagingBuf =
+            CreateBuffer(srcData, srcDataSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
         auto transferCmd = GetCommandContext(CommandContextType::TransferAsync);
 
-        vk::ImageMemoryBarrier barrier1;
-        barrier1.oldLayout = vk::ImageLayout::eUndefined;
-        barrier1.newLayout = vk::ImageLayout::eTransferDstOptimal;
-        barrier1.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier1.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier1.image = *image;
-        barrier1.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-        barrier1.subresourceRange.baseMipLevel = 0;
-        barrier1.subresourceRange.levelCount = createInfo.mipLevels;
-        barrier1.subresourceRange.baseArrayLayer = 0;
-        barrier1.subresourceRange.layerCount = 1;
-        barrier1.srcAccessMask = {};
-        barrier1.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-
-        transferCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe,
-                                           vk::PipelineStageFlagBits::eTransfer,
-                                           {},
-                                           {},
-                                           {},
-                                           {barrier1});
+        transferCmd->ImageBarrier(image,
+                                  vk::ImageLayout::eUndefined,
+                                  vk::ImageLayout::eTransferDstOptimal,
+                                  vk::PipelineStageFlagBits::eTopOfPipe,
+                                  {},
+                                  vk::PipelineStageFlagBits::eTransfer,
+                                  vk::AccessFlagBits::eTransferWrite);
 
         vk::BufferImageCopy region;
         region.bufferOffset = 0;
@@ -689,125 +686,116 @@ namespace sp::vulkan {
 
         transferCmd->Raw().copyBufferToImage(*stagingBuf, *image, vk::ImageLayout::eTransferDstOptimal, {region});
 
-        vk::ImageMemoryBarrier barrier2; // prepare the image for mipmapping, or for sampling
-        barrier2.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-        barrier2.newLayout = genMipmap ? vk::ImageLayout::eTransferSrcOptimal : vk::ImageLayout::eShaderReadOnlyOptimal;
-        barrier2.srcQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync);
-        barrier2.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::General);
-        barrier2.image = *image;
-        barrier2.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-        barrier2.subresourceRange.baseMipLevel = 0;
-        barrier2.subresourceRange.levelCount = genMipmap ? 1 : createInfo.mipLevels;
-        barrier2.subresourceRange.baseArrayLayer = 0;
-        barrier2.subresourceRange.layerCount = 1;
-        barrier2.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-        barrier2.dstAccessMask = {};
+        ImageBarrierInfo transferToGeneral;
+        transferToGeneral.trackImageLayout = false;
+        transferToGeneral.srcQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync),
+        transferToGeneral.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::General);
+        if (genMipmap) transferToGeneral.mipLevelCount = 1;
 
-        transferCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
-                                           vk::PipelineStageFlagBits::eBottomOfPipe,
-                                           {},
-                                           {},
-                                           {},
-                                           {barrier2});
+        transferCmd->ImageBarrier(
+            image,
+            vk::ImageLayout::eTransferDstOptimal,
+            genMipmap ? vk::ImageLayout::eTransferSrcOptimal : vk::ImageLayout::eShaderReadOnlyOptimal,
+            vk::PipelineStageFlagBits::eTransfer,
+            {},
+            vk::PipelineStageFlagBits::eBottomOfPipe,
+            vk::AccessFlagBits::eTransferWrite,
+            transferToGeneral);
 
         auto transferComplete = GetEmptySemaphore();
-        Submit(transferCmd, {transferComplete});
+        Frame().inFlightBuffers.emplace_back(device->createFenceUnique({}), stagingBuf);
+        Submit(transferCmd, {transferComplete}, {}, {}, *Frame().inFlightBuffers.back().fence);
 
         auto graphicsCmd = GetCommandContext();
 
-        vk::ImageMemoryBarrier barrier3 = barrier2;
-        barrier3.srcAccessMask = {};
-        barrier3.dstAccessMask = genMipmap ? vk::AccessFlagBits::eTransferRead : vk::AccessFlagBits::eShaderRead;
+        if (!genMipmap) {
+            transferToGeneral.trackImageLayout = true;
+            graphicsCmd->ImageBarrier(image,
+                                      vk::ImageLayout::eTransferDstOptimal,
+                                      vk::ImageLayout::eShaderReadOnlyOptimal,
+                                      vk::PipelineStageFlagBits::eFragmentShader,
+                                      {},
+                                      vk::PipelineStageFlagBits::eFragmentShader,
+                                      vk::AccessFlagBits::eShaderRead,
+                                      transferToGeneral);
 
-        auto graphicsBarrierStages = genMipmap ? vk::PipelineStageFlagBits::eTransfer
-                                               : vk::PipelineStageFlagBits::eFragmentShader;
-        graphicsCmd->Raw().pipelineBarrier(graphicsBarrierStages, graphicsBarrierStages, {}, {}, {}, {barrier3});
-
-        if (genMipmap) {
-            vk::ImageMemoryBarrier barrier4;
-            barrier4.oldLayout = vk::ImageLayout::eUndefined;
-            barrier4.newLayout = vk::ImageLayout::eTransferDstOptimal;
-            barrier4.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier4.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier4.image = *image;
-            barrier4.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-            barrier4.subresourceRange.baseMipLevel = 1;
-            barrier4.subresourceRange.levelCount = createInfo.mipLevels - 1;
-            barrier4.subresourceRange.baseArrayLayer = 0;
-            barrier4.subresourceRange.layerCount = 1;
-            barrier4.srcAccessMask = {};
-            barrier4.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-
-            graphicsCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
-                                               vk::PipelineStageFlagBits::eTransfer,
-                                               {},
-                                               {},
-                                               {},
-                                               {barrier4});
-
-            vk::ImageMemoryBarrier barrier5;
-            barrier5.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-            barrier5.newLayout = vk::ImageLayout::eTransferSrcOptimal;
-            barrier5.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier5.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier5.image = *image;
-            barrier5.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-            barrier5.subresourceRange.levelCount = 1;
-            barrier5.subresourceRange.baseArrayLayer = 0;
-            barrier5.subresourceRange.layerCount = 1;
-            barrier5.srcAccessMask = {};
-            barrier5.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-
-            vk::Offset3D currentExtent = {(int32)createInfo.extent.width,
-                                          (int32)createInfo.extent.height,
-                                          (int32)createInfo.extent.depth};
-
-            for (uint32 i = 1; i < createInfo.mipLevels; i++) {
-                auto prevMipExtent = currentExtent;
-                currentExtent.x = std::max(currentExtent.x >> 1, 1);
-                currentExtent.y = std::max(currentExtent.y >> 1, 1);
-                currentExtent.z = std::max(currentExtent.z >> 1, 1);
-
-                vk::ImageBlit blit;
-                blit.srcSubresource = {vk::ImageAspectFlagBits::eColor, i - 1, 0, 1};
-                blit.srcOffsets[0] = vk::Offset3D();
-                blit.srcOffsets[1] = prevMipExtent;
-                blit.dstSubresource = {vk::ImageAspectFlagBits::eColor, i, 0, 1};
-                blit.dstOffsets[0] = vk::Offset3D();
-                blit.dstOffsets[1] = currentExtent;
-
-                graphicsCmd->Raw().blitImage(*image,
-                                             vk::ImageLayout::eTransferSrcOptimal,
-                                             *image,
-                                             vk::ImageLayout::eTransferDstOptimal,
-                                             {blit},
-                                             vk::Filter::eLinear);
-
-                barrier5.subresourceRange.baseMipLevel = i;
-                graphicsCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
-                                                   vk::PipelineStageFlagBits::eTransfer,
-                                                   {},
-                                                   {},
-                                                   {},
-                                                   {barrier5});
-            }
-
-            barrier4.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
-            barrier4.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-            barrier4.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-            barrier4.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-            barrier4.subresourceRange.baseMipLevel = 0;
-            barrier4.subresourceRange.levelCount = createInfo.mipLevels;
-            graphicsCmd->Raw().pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
-                                               vk::PipelineStageFlagBits::eFragmentShader,
-                                               {},
-                                               {},
-                                               {},
-                                               {barrier4});
+            Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eFragmentShader});
+            return image;
         }
 
-        Submit(graphicsCmd, {}, {transferComplete}, {graphicsBarrierStages});
-        inFlightBuffers.push_back(stagingBuf);
+        graphicsCmd->ImageBarrier(image,
+                                  vk::ImageLayout::eTransferDstOptimal,
+                                  vk::ImageLayout::eTransferSrcOptimal,
+                                  vk::PipelineStageFlagBits::eTransfer,
+                                  {},
+                                  vk::PipelineStageFlagBits::eTransfer,
+                                  vk::AccessFlagBits::eTransferRead,
+                                  transferToGeneral);
+
+        ImageBarrierInfo transferMips;
+        transferMips.trackImageLayout = false;
+        transferMips.baseMipLevel = 1;
+        transferMips.mipLevelCount = createInfo.mipLevels - 1;
+
+        graphicsCmd->ImageBarrier(image,
+                                  vk::ImageLayout::eUndefined,
+                                  vk::ImageLayout::eTransferDstOptimal,
+                                  vk::PipelineStageFlagBits::eTransfer,
+                                  {},
+                                  vk::PipelineStageFlagBits::eTransfer,
+                                  vk::AccessFlagBits::eTransferWrite,
+                                  transferMips);
+
+        vk::Offset3D currentExtent = {(int32)createInfo.extent.width,
+                                      (int32)createInfo.extent.height,
+                                      (int32)createInfo.extent.depth};
+
+        transferMips.mipLevelCount = 1;
+
+        for (uint32 i = 1; i < createInfo.mipLevels; i++) {
+            auto prevMipExtent = currentExtent;
+            currentExtent.x = std::max(currentExtent.x >> 1, 1);
+            currentExtent.y = std::max(currentExtent.y >> 1, 1);
+            currentExtent.z = std::max(currentExtent.z >> 1, 1);
+
+            vk::ImageBlit blit;
+            blit.srcSubresource = {vk::ImageAspectFlagBits::eColor, i - 1, 0, 1};
+            blit.srcOffsets[0] = vk::Offset3D();
+            blit.srcOffsets[1] = prevMipExtent;
+            blit.dstSubresource = {vk::ImageAspectFlagBits::eColor, i, 0, 1};
+            blit.dstOffsets[0] = vk::Offset3D();
+            blit.dstOffsets[1] = currentExtent;
+
+            graphicsCmd->Raw().blitImage(*image,
+                                         vk::ImageLayout::eTransferSrcOptimal,
+                                         *image,
+                                         vk::ImageLayout::eTransferDstOptimal,
+                                         {blit},
+                                         vk::Filter::eLinear);
+
+            transferMips.baseMipLevel = i;
+            graphicsCmd->ImageBarrier(image,
+                                      vk::ImageLayout::eTransferDstOptimal,
+                                      vk::ImageLayout::eTransferSrcOptimal,
+                                      vk::PipelineStageFlagBits::eTransfer,
+                                      {},
+                                      vk::PipelineStageFlagBits::eTransfer,
+                                      vk::AccessFlagBits::eTransferWrite,
+                                      transferMips);
+        }
+
+        // Each mip has now been transitioned to TransferSrc.
+        image->SetLayout(vk::ImageLayout::eTransferSrcOptimal);
+
+        graphicsCmd->ImageBarrier(image,
+                                  vk::ImageLayout::eTransferSrcOptimal,
+                                  vk::ImageLayout::eShaderReadOnlyOptimal,
+                                  vk::PipelineStageFlagBits::eTransfer,
+                                  vk::AccessFlagBits::eTransferWrite,
+                                  vk::PipelineStageFlagBits::eFragmentShader,
+                                  vk::AccessFlagBits::eShaderRead);
+
+        Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eTransfer});
         return image;
     }
 
@@ -829,10 +817,10 @@ namespace sp::vulkan {
 
     ImageViewPtr DeviceContext::CreateImageAndView(const vk::ImageCreateInfo &imageInfo,
                                                    ImageViewCreateInfo viewInfo,
-                                                   const uint8 *initialData,
-                                                   size_t initialDataSize,
+                                                   const uint8 *srcData,
+                                                   size_t srcDataSize,
                                                    bool genMipmap) {
-        viewInfo.image = CreateImage(imageInfo, initialData, initialDataSize, genMipmap);
+        viewInfo.image = CreateImage(imageInfo, srcData, srcDataSize, genMipmap);
         return CreateImageView(viewInfo);
     }
 
@@ -971,13 +959,9 @@ namespace sp::vulkan {
     }
 
     RenderPassInfo DeviceContext::SwapchainRenderPassInfo(bool depth, bool stencil) {
-        std::array<float, 4> clearColor = {0.0f, 1.0f, 0.0f, 1.0f};
-
         RenderPassInfo info;
-        info.PushColorAttachment(SwapchainImage().imageView, LoadOp::Clear, StoreOp::Store, clearColor);
-
+        info.PushColorAttachment(SwapchainImage().imageView, LoadOp::Clear, StoreOp::Store, {0.0f, 1.0f, 0.0f, 1.0f});
         if (depth) info.SetDepthStencilAttachment(depthImageView, LoadOp::Clear, StoreOp::DontCare);
-
         return info;
     }
 

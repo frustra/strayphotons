@@ -18,9 +18,7 @@ static CVar<bool> CVarBindPose("r.BindPose", false, "Feed the SteamVR bind pose 
 OpenVrActionSet::OpenVrActionSet(std::string setName, std::string description) : XrActionSet(setName, description) {
     vr::EVRInputError inputError = vr::VRInput()->GetActionSetHandle(setName.c_str(), &handle);
 
-    if (inputError != vr::EVRInputError::VRInputError_None) {
-        throw std::runtime_error("Failed to initialize OpenVr action set");
-    }
+    if (inputError != vr::EVRInputError::VRInputError_None) Abort("Failed to initialize OpenVr action set");
 }
 
 std::shared_ptr<XrAction> OpenVrActionSet::CreateAction(std::string name, XrActionType type) {
@@ -48,13 +46,13 @@ OpenVrAction::OpenVrAction(std::string name, XrActionType type, std::shared_ptr<
     vr::EVRInputError inputError = vr::VRInput()->GetActionHandle(name.c_str(), &handle);
 
     if (inputError != vr::EVRInputError::VRInputError_None || handle == vr::k_ulInvalidActionHandle) {
-        throw std::runtime_error("Failed to get OpenVR action handle");
+        Abort("Failed to get OpenVR action handle");
     }
 
     // If we are a skeleton action, we _must_ be one of the two supported Skeleton actions
     if (type == xr::Skeleton) {
         if (name != xr::LeftHandSkeletonActionName && name != xr::RightHandSkeletonActionName) {
-            throw std::runtime_error("Unknown skeleton action name");
+            Abort("Unknown skeleton action name");
         }
     }
 
@@ -133,9 +131,7 @@ bool OpenVrAction::GetPoseActionValueForNextFrame(std::string subpath, glm::mat4
     if (!subpath.empty()) {
         inputError = vr::VRInput()->GetInputSourceHandle(subpath.c_str(), &inputHandle);
 
-        if (inputError != vr::EVRInputError::VRInputError_None) {
-            throw std::runtime_error("Failed to get subpath for action");
-        }
+        if (inputError != vr::EVRInputError::VRInputError_None) Abort("Failed to get subpath for action");
     }
 
     vr::InputPoseActionData_t data;
@@ -147,7 +143,7 @@ bool OpenVrAction::GetPoseActionValueForNextFrame(std::string subpath, glm::mat4
 
     if (inputError != vr::EVRInputError::VRInputError_None) {
         // TODO: consider not throwing here
-        throw std::runtime_error("Failed to get pose data for device");
+        Abort("Failed to get pose data for device");
     }
 
     if (!data.bActive) { return false; }
@@ -164,9 +160,7 @@ bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool w
                                                                         &data,
                                                                         sizeof(vr::InputSkeletalActionData_t));
 
-    if (inputError != vr::EVRInputError::VRInputError_None) {
-        throw std::runtime_error("Failed to get skeletal action data");
-    }
+    if (inputError != vr::EVRInputError::VRInputError_None) Abort("Failed to get skeletal action data");
 
     // No active skeleton available
     if (!data.bActive) { return false; }
@@ -174,9 +168,7 @@ bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool w
     uint32_t boneCount = 0;
     inputError = vr::VRInput()->GetBoneCount(handle, &boneCount);
 
-    if (inputError != vr::EVRInputError::VRInputError_None) {
-        throw std::runtime_error("Failed to get skeletal action data");
-    }
+    if (inputError != vr::EVRInputError::VRInputError_None) Abort("Failed to get skeletal action data");
 
     std::vector<vr::VRBoneTransform_t> boneTransforms;
     boneTransforms.resize(boneCount);
@@ -198,9 +190,7 @@ bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool w
             boneCount);
     }
 
-    if (inputError != vr::EVRInputError::VRInputError_None) {
-        throw std::runtime_error("Failed to get skeletal action data");
-    }
+    if (inputError != vr::EVRInputError::VRInputError_None) Abort("Failed to get skeletal action data");
 
     // Make the output vector big enough to hold all the bones
     // for the model that we've previously provided to the application.

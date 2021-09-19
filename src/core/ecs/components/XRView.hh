@@ -3,8 +3,17 @@
 #include <ecs/Components.hh>
 
 namespace ecs {
+    enum class XrEye : size_t {
+        LEFT = 0,
+        RIGHT,
+        EYE_COUNT,
+    };
+
     struct XRView {
-        int viewId;
+        XrEye eye;
+
+        XRView() : eye(XrEye::EYE_COUNT) {}
+        XRView(XrEye eye) : eye(eye) {}
     };
 
     static Component<XRView> ComponentXRView("xrview");

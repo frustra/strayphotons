@@ -8,7 +8,8 @@ namespace sp::vulkan {
     Image::Image() : UniqueMemory(VK_NULL_HANDLE) {}
 
     Image::Image(vk::ImageCreateInfo imageInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator)
-        : UniqueMemory(allocator), format(imageInfo.format), extent(imageInfo.extent) {
+        : UniqueMemory(allocator), format(imageInfo.format), extent(imageInfo.extent), mipLevels(imageInfo.mipLevels),
+          arrayLayers(imageInfo.arrayLayers) {
 
         VkImageCreateInfo vkImageInfo = imageInfo;
         VkImage vkImage;

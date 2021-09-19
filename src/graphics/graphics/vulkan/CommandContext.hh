@@ -25,6 +25,19 @@ struct vk::FlagTraits<sp::vulkan::CommandContextFlags::DirtyBits> {
     enum : sp::vulkan::CommandContextFlags::DirtyFlags::MaskType { allFlags = ~0 };
 };
 
+struct ImageBarrierInfo {
+    uint32 baseMipLevel = 0;
+    uint32 mipLevelCount = 0; // default: use all levels
+    uint32 baseArrayLayer = 0;
+    uint32 arrayLayerCount = 0; // default: use all layers
+    uint32 srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    uint32 dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+    // false skips checking and saving the image layout,
+    // caller must set the image's layout before passing the image to other code
+    bool trackImageLayout = true;
+};
+
 namespace sp::vulkan {
     class DeviceContext;
     class Model;
@@ -50,6 +63,16 @@ namespace sp::vulkan {
 
         void Draw(uint32 vertexes, uint32 instances, int32 firstVertex, uint32 firstInstance);
         void DrawIndexed(uint32 indexes, uint32 instances, uint32 firstIndex, int32 vertexOffset, uint32 firstInstance);
+
+        void ImageBarrier(
+            const ImagePtr &image,
+            vk::ImageLayout oldLayout, // Transition the image from oldLayout
+            vk::ImageLayout newLayout, // to newLayout,
+            vk::PipelineStageFlags srcStages, // ensuring any image accesses in these stages
+            vk::AccessFlags srcAccess, // of these types (usually writes) are complete and visible.
+            vk::PipelineStageFlags dstStages, // Block work in these stages until the transition is complete,
+            vk::AccessFlags dstAccess, // but only block these access types (can be reads or writes).
+            const ImageBarrierInfo &options = {});
 
         void SetShaders(const string &vertexName, const string &fragName);
         void SetShader(ShaderStage stage, ShaderHandle handle);

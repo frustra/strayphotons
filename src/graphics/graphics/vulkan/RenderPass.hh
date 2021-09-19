@@ -20,6 +20,7 @@ namespace sp::vulkan {
         uint32 clearAttachments = 0;
         uint32 loadAttachments = 0;
         uint32 storeAttachments = 0;
+        uint32 multiviewAttachments = 0;
 
         static const uint32 DEPTH_STENCIL_INDEX = 31;
 
@@ -80,6 +81,11 @@ namespace sp::vulkan {
             Assert(state.colorAttachmentCount < MAX_COLOR_ATTACHMENTS, "too many color attachments");
             uint32 index = state.colorAttachmentCount++;
             SetColorAttachment(index, view, loadOp, storeOp, clear);
+        }
+
+        void PushColorAttachment(const ImageViewPtr &view, LoadOp loadOp, StoreOp storeOp, glm::vec4 clear) {
+            std::array<float, 4> clearValues = {clear.r, clear.g, clear.b, clear.a};
+            PushColorAttachment(view, loadOp, storeOp, clearValues);
         }
 
         void SetColorAttachment(uint32 index,

@@ -3,62 +3,35 @@
 #ifdef SP_XR_SUPPORT
 
     #include "core/CFunc.hh"
-    #include "ecs/Ecs.hh"
     #include "xr/XrSystem.hh"
+
+    #include <memory>
 
 namespace sp {
     class Game;
+}
 
-    namespace xr {
-        class XrManager {
-        public:
-            XrManager(Game *game);
-            ~XrManager();
+namespace sp::xr {
 
-            bool Frame(double dtSinceLastFrame);
+    class XrManager {
+    public:
+        XrManager(sp::Game *game);
 
-            xr::XrSystemPtr GetXrSystem();
+        void LoadXrSystem();
 
-        private:
-            void InitXrActions();
+        std::shared_ptr<XrSystem> GetXrSystem();
 
-            Tecs::Entity ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &handle);
-            Tecs::Entity UpdateXrActionEntity(xr::XrActionPtr action, bool active);
+    #ifdef SP_GRAPHICS_SUPPORT_VK
 
-            void UpdateSkeletonDebugHand(xr::XrActionPtr action,
-                                         glm::mat4 xrObjectPos,
-                                         std::vector<xr::XrBoneData> &boneData,
-                                         bool active);
+    #endif
 
-            void ComputeBonePositions(std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output);
+    private:
+        sp::Game *game = nullptr;
+        CFuncCollection funcs;
 
-            Tecs::Entity GetLaserPointer();
-            void SetVrOrigin();
+        std::shared_ptr<XrSystem> xrSystem;
+    };
 
-            Tecs::Entity CreateXrEntity();
-
-            void LoadXrSystem();
-
-        private:
-            Game *game;
-            CFuncCollection funcs;
-
-            xr::XrSystemPtr xrSystem;
-            xr::XrActionSetPtr gameActionSet;
-
-            // Actions we use in game navigation
-            xr::XrActionPtr teleportAction;
-            xr::XrActionPtr grabAction;
-
-            // Actions for the raw input device pose
-            xr::XrActionPtr leftHandAction;
-            xr::XrActionPtr rightHandAction;
-
-            // Actions for the skeleton pose
-            xr::XrActionPtr leftHandSkeletonAction;
-            xr::XrActionPtr rightHandSkeletonAction;
-        };
-    } // namespace xr
-} // namespace sp
+} // namespace sp::xr
 
 #endif

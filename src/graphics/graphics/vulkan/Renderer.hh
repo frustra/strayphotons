@@ -15,8 +15,8 @@ namespace sp::vulkan {
     class Model;
 
     struct ViewStateUniforms {
-        glm::mat4 view;
-        glm::mat4 projection;
+        glm::mat4 view[2];
+        glm::mat4 projection[2];
     };
 
     class Renderer {
@@ -47,7 +47,7 @@ namespace sp::vulkan {
     private:
         CFuncCollection funcs;
 
-        BufferPtr viewStateUniformBuffer;
+        BufferPtr viewStateUniformBuffer[3];
 
         PreservingMap<string, Model> activeModels;
     };
