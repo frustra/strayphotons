@@ -9,13 +9,7 @@ namespace sp {
 
     class GpuTexture {
     public:
-        enum class HandleType {
-            OpenGL,
-            Vulkan,
-        };
-
         virtual uintptr_t GetHandle() const = 0;
-        virtual HandleType GetHandleType() const = 0;
         virtual int GetWidth() const = 0;
         virtual int GetHeight() const = 0;
     };

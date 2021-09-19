@@ -7,7 +7,6 @@
 namespace sp::xr {
     void OpenVrSystem::SubmitView(ecs::XrEye eye, GraphicsContext *context, GpuTexture *tex) {
         Assert(tex != nullptr, "TranslateTexture: null GpuTexture");
-        Assert(tex->GetHandleType() == GpuTexture::HandleType::OpenGL, "TranslateTexture: GpuTexture type != OpenGL");
 
         GLTexture *glTex = dynamic_cast<GLTexture *>(tex);
         Assert(glTex != nullptr, "TranslateTexture: GpuTexture is not a GLTexture");

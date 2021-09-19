@@ -86,10 +86,6 @@ namespace sp {
             return handle;
         }
 
-        HandleType GetHandleType() const override {
-            return HandleType::OpenGL;
-        }
-
         int GetWidth() const override {
             return width;
         }

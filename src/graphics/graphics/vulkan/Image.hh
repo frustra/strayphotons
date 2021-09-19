@@ -135,10 +135,6 @@ namespace sp::vulkan {
             return reinterpret_cast<ImageView *>(handle);
         }
 
-        HandleType GetHandleType() const override {
-            return HandleType::Vulkan;
-        }
-
     private:
         ImageViewCreateInfo info;
         vk::Extent3D extent;
