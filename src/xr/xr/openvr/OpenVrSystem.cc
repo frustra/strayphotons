@@ -121,27 +121,31 @@ namespace sp::xr {
         }
 
         return actionSets[setName];
-    }
+    }*/
 
-    bool OpenVrSystem::GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &viewPose) {
-        static vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
-        vr::EVRCompositorError error =
-            vr::VRCompositor()->GetLastPoses(trackedDevicePoses, vr::k_unMaxTrackedDeviceCount, NULL, 0);
+    bool OpenVrSystem::GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) {
+        float secondsSinceLastVsync;
+        vrSystem->GetTimeSinceLastVsync(&secondsSinceLastVsync, NULL);
 
-        if (error != vr::EVRCompositorError::VRCompositorError_None) {
-            Errorf("Failed to get view pose");
-            return false;
-        }
+        float displayFrequency = vrSystem->GetFloatTrackedDeviceProperty(vr::k_unTrackedDeviceIndex_Hmd,
+                                                                         vr::Prop_DisplayFrequency_Float);
+        float vSyncToPhotons = vrSystem->GetFloatTrackedDeviceProperty(vr::k_unTrackedDeviceIndex_Hmd,
+                                                                       vr::Prop_SecondsFromVsyncToPhotons_Float);
+
+        vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
+        vrSystem->GetDeviceToAbsoluteTrackingPose(vr::TrackingUniverseOrigin::TrackingUniverseStanding,
+                                                  (1.0f / displayFrequency) - secondsSinceLastVsync + vSyncToPhotons,
+                                                  trackedDevicePoses,
+                                                  vr::k_unMaxTrackedDeviceCount);
 
         if (trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid) {
             glm::mat4 hmdPose = glm::mat4(glm::make_mat3x4(
                 (float *)trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking.m));
 
             vr::HmdMatrix34_t eyePosOvr = vrSystem->GetEyeToHeadTransform(MapXrEyeToOpenVr(eye));
-
             glm::mat4 eyeToHmdPose = glm::mat4(glm::make_mat3x4((float *)eyePosOvr.m));
 
-            viewPose = eyeToHmdPose * hmdPose;
+            invViewMat = glm::transpose(eyeToHmdPose * hmdPose);
 
             return true;
         }
@@ -149,7 +153,7 @@ namespace sp::xr {
         return false;
     }
 
-    bool OpenVrSystem::GetPredictedObjectPose(const TrackedObjectHandle &handle, glm::mat4 &objectPose) {
+    /*bool OpenVrSystem::GetPredictedObjectPose(const TrackedObjectHandle &handle, glm::mat4 &objectPose) {
         // Work out which model to load
         vr::TrackedDeviceIndex_t deviceIndex = GetOpenVrIndexFromHandle(handle);
 
