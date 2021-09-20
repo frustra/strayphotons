@@ -188,8 +188,8 @@ namespace sp {
                     RenderPhase xrSubPhase("XrView", timer);
 
                     RenderTargetDesc desc = {PF_SRGB8_A8, view.extents};
-                    if (!xrRenderTargets[i].renderTarget || xrRenderTargets[i].renderTarget->GetDesc() != desc) {
-                        xrRenderTargets[i].renderTarget = glContext->GetRenderTarget(desc);
+                    if (!xrRenderTargets[i] || xrRenderTargets[i]->GetDesc() != desc) {
+                        xrRenderTargets[i] = glContext->GetRenderTarget(desc);
                     }
 
                     glm::mat4 invViewMat;
@@ -198,13 +198,13 @@ namespace sp {
                         view.invViewMat = invViewMat;
                     }
 
-                    renderer->RenderPass(view, lock, xrRenderTargets[i].renderTarget.get());
+                    renderer->RenderPass(view, lock, xrRenderTargets[i].get());
                 }
 
                 for (size_t i = 0; i < xrViews.size(); i++) {
                     RenderPhase xrSubPhase("XrViewSubmit", timer);
 
-                    xrSystem->SubmitView(xrViews[i].second.eye, xrRenderTargets[i].renderTarget->GetTexture());
+                    xrSystem->SubmitView(xrViews[i].second.eye, xrRenderTargets[i]->GetTexture());
                 }
             }
         #endif
@@ -233,7 +233,7 @@ namespace sp {
             // RenderPhase phase("Frame", timer);
             auto &device = *dynamic_cast<vulkan::DeviceContext *>(context.get());
 
-            viewStateUniformBuffers.resize(1 + xrViews.size());
+            viewStateUniformBuffers.resize(1 + (xrViews.empty() ? 0 : 1));
             for (auto &bufferPtr : viewStateUniformBuffers) {
                 if (!bufferPtr) {
                     bufferPtr = device.AllocateBuffer(sizeof(vulkan::ViewStateUniforms),
@@ -270,86 +270,90 @@ namespace sp {
             }
 
         #ifdef SP_XR_SUPPORT
-            if (xrSystem) {
-                xrRenderTargets.resize(xrViews.size());
-                for (size_t i = 0; i < xrViews.size(); i++) {
-                    auto &view = xrViews[i].first;
+            if (xrSystem && xrViews.size() > 0) {
+                auto cmd = device.GetCommandContext();
+                auto &firstView = xrViews[0].first;
 
-                    auto cmd = device.GetCommandContext();
+                if (!xrColor || xrColor->Image()->ArrayLayers() != xrViews.size() ||
+                    xrColor->Extent() != vk::Extent3D(firstView.extents.x, firstView.extents.y, 1)) {
 
-                    if (!xrRenderTargets[i].color || xrRenderTargets[i].color->GetWidth() != view.extents.x ||
-                        xrRenderTargets[i].color->GetHeight() != view.extents.y) {
-
-                        vk::ImageCreateInfo imageInfo;
-                        imageInfo.imageType = vk::ImageType::e2D;
-                        imageInfo.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
-
-                        imageInfo.format = vk::Format::eR8G8B8A8Srgb;
-                        imageInfo.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled |
-                                          vk::ImageUsageFlagBits::eTransferSrc;
-                        xrRenderTargets[i].color = device.CreateImageAndView(imageInfo, {});
-
-                        imageInfo.format = vk::Format::eD24UnormS8Uint;
-                        imageInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
-                        xrRenderTargets[i].depth = device.CreateImageAndView(imageInfo, {});
-
-                        cmd->ImageBarrier(xrRenderTargets[i].depth->Image(),
-                                          vk::ImageLayout::eUndefined,
-                                          vk::ImageLayout::eDepthAttachmentOptimal,
-                                          vk::PipelineStageFlagBits::eBottomOfPipe,
-                                          {},
-                                          vk::PipelineStageFlagBits::eEarlyFragmentTests,
-                                          vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+                    for (auto &view : xrViews) {
+                        Assert(view.first.extents == firstView.extents, "all XR views must have the same extents");
                     }
 
-                    cmd->ImageBarrier(xrRenderTargets[i].color->Image(),
+                    vk::ImageCreateInfo imageInfo;
+                    imageInfo.imageType = vk::ImageType::e2D;
+                    imageInfo.extent = vk::Extent3D(firstView.extents.x, firstView.extents.y, 1);
+                    imageInfo.arrayLayers = xrViews.size();
+
+                    imageInfo.format = vk::Format::eR8G8B8A8Srgb;
+                    imageInfo.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled |
+                                      vk::ImageUsageFlagBits::eTransferSrc;
+                    xrColor = device.CreateImageAndView(imageInfo, {});
+
+                    imageInfo.format = vk::Format::eD24UnormS8Uint;
+                    imageInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+                    xrDepth = device.CreateImageAndView(imageInfo, {});
+
+                    cmd->ImageBarrier(xrDepth->Image(),
                                       vk::ImageLayout::eUndefined,
-                                      vk::ImageLayout::eColorAttachmentOptimal,
-                                      vk::PipelineStageFlagBits::eTransfer,
+                                      vk::ImageLayout::eDepthAttachmentOptimal,
+                                      vk::PipelineStageFlagBits::eBottomOfPipe,
                                       {},
-                                      vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                      vk::AccessFlagBits::eColorAttachmentWrite);
-
-                    vulkan::RenderPassInfo renderPassInfo;
-                    renderPassInfo.PushColorAttachment(xrRenderTargets[i].color,
-                                                       vulkan::LoadOp::Clear,
-                                                       vulkan::StoreOp::Store,
-                                                       {0.0f, 1.0f, 0.0f, 1.0f});
-
-                    renderPassInfo.SetDepthStencilAttachment(xrRenderTargets[i].depth,
-                                                             vulkan::LoadOp::Clear,
-                                                             vulkan::StoreOp::DontCare);
-
-                    cmd->BeginRenderPass(renderPassInfo);
-
-                    cmd->SetUniformBuffer(0, 10, *currentViewState);
-
-                    renderer->RenderPass(cmd, view, lock);
-
-                    cmd->EndRenderPass();
-
-                    cmd->ImageBarrier(xrRenderTargets[i].color->Image(),
-                                      vk::ImageLayout::eColorAttachmentOptimal,
-                                      vk::ImageLayout::eTransferSrcOptimal,
-                                      vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                      {},
-                                      vk::PipelineStageFlagBits::eTransfer,
-                                      vk::AccessFlagBits::eTransferRead);
-
-                    glm::mat4 invViewMat;
-                    if (xrSystem->GetPredictedViewPose(xrViews[i].second.eye, invViewMat)) {
-                        vulkan::ViewStateUniforms viewState;
-                        viewState.view[0] = glm::inverse(invViewMat);
-                        viewState.projection[0] = view.projMat;
-                        (*currentViewState)->CopyFrom(&viewState, 1);
-                    }
-                    currentViewState++;
-
-                    device.Submit(cmd);
+                                      vk::PipelineStageFlagBits::eEarlyFragmentTests,
+                                      vk::AccessFlagBits::eDepthStencilAttachmentWrite);
                 }
 
+                cmd->ImageBarrier(xrColor->Image(),
+                                  vk::ImageLayout::eUndefined,
+                                  vk::ImageLayout::eColorAttachmentOptimal,
+                                  vk::PipelineStageFlagBits::eTransfer,
+                                  {},
+                                  vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                  vk::AccessFlagBits::eColorAttachmentWrite);
+
+                vulkan::RenderPassInfo renderPassInfo;
+                renderPassInfo.state.multiviewAttachments = 0b11;
+                renderPassInfo.state.multiviewCorrelations = 0b11;
+                renderPassInfo.PushColorAttachment(xrColor,
+                                                   vulkan::LoadOp::Clear,
+                                                   vulkan::StoreOp::Store,
+                                                   {0.0f, 1.0f, 0.0f, 1.0f});
+
+                renderPassInfo.SetDepthStencilAttachment(xrDepth, vulkan::LoadOp::Clear, vulkan::StoreOp::DontCare);
+
+                cmd->BeginRenderPass(renderPassInfo);
+
+                cmd->SetUniformBuffer(0, 10, *currentViewState);
+
+                renderer->RenderPass(cmd, firstView, lock); // TODO: pass individual fields instead of whole view
+
+                cmd->EndRenderPass();
+
+                cmd->ImageBarrier(xrColor->Image(),
+                                  vk::ImageLayout::eColorAttachmentOptimal,
+                                  vk::ImageLayout::eTransferSrcOptimal,
+                                  vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                  {},
+                                  vk::PipelineStageFlagBits::eTransfer,
+                                  vk::AccessFlagBits::eTransferRead);
+
+                glm::mat4 invViewMat;
+                vulkan::ViewStateUniforms viewState;
+
                 for (size_t i = 0; i < xrViews.size(); i++) {
-                    xrSystem->SubmitView(xrViews[i].second.eye, xrRenderTargets[i].color.get());
+                    if (xrSystem->GetPredictedViewPose(xrViews[i].second.eye, invViewMat)) {
+                        viewState.view[i] = glm::inverse(invViewMat);
+                        viewState.projection[i] = xrViews[i].first.projMat;
+                    }
+                }
+                (*currentViewState)->CopyFrom(&viewState, 1);
+                currentViewState++;
+
+                device.Submit(cmd);
+
+                for (size_t i = 0; i < xrViews.size(); i++) {
+                    xrSystem->SubmitView(xrViews[i].second.eye, xrColor.get());
                 }
             }
         #endif
