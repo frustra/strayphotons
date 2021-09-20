@@ -21,7 +21,7 @@ namespace sp {
         public:
             OpenVrSystem() {}
 
-            void Init();
+            void Init(GraphicsContext *context);
             bool IsInitialized();
             bool IsHmdPresent();
 
@@ -32,11 +32,13 @@ namespace sp {
             // std::vector<TrackedObjectHandle> GetTrackedObjectHandles();
             // std::shared_ptr<XrModel> GetTrackedObjectModel(const TrackedObjectHandle &handle);
 
-            void SubmitView(ecs::XrEye eye, GraphicsContext *context, GpuTexture *tex);
+            void SubmitView(ecs::XrEye eye, GpuTexture *tex);
             void WaitFrame();
 
         private:
             // vr::TrackedDeviceIndex_t GetOpenVrIndexFromHandle(const TrackedObjectHandle &handle);
+
+            GraphicsContext *context = nullptr;
 
             std::shared_ptr<vr::IVRSystem> vrSystem;
             // std::map<std::string, std::shared_ptr<OpenVrActionSet>> actionSets;

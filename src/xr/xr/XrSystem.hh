@@ -40,7 +40,7 @@ namespace sp {
 
         class XrSystem {
         public:
-            virtual void Init() = 0;
+            virtual void Init(GraphicsContext *context) = 0;
             virtual bool IsInitialized() = 0;
             virtual bool IsHmdPresent() = 0;
 
@@ -51,7 +51,7 @@ namespace sp {
             virtual bool GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) = 0;
             // virtual bool GetPredictedObjectPose(const TrackedObjectHandle &handle, glm::mat4 &objectPose) = 0;
 
-            virtual void SubmitView(ecs::XrEye eye, GraphicsContext *context, GpuTexture *tex) = 0;
+            virtual void SubmitView(ecs::XrEye eye, GpuTexture *tex) = 0;
             virtual void WaitFrame() = 0;
         };
 

@@ -21,6 +21,9 @@ namespace sp {
     static CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
     static CVar<bool> CVarShowShapes("x.ShowShapes", false, "Show (1) or hide (0) the outline of physx collision shapes");
     static CVar<bool> CVarPropJumping("x.PropJumping", false, "Disable player collision with held object");
+    static CVar<float> CVarMaxVerticalConstraintForce("x.MaxVerticalConstraintForce", 20.0f, "The maximum linear lifting force for constraints");
+    static CVar<float> CVarMaxLateralConstraintForce("x.MaxLateralConstraintForce", 20.0f, "The maximum lateral force for constraints");
+    static CVar<float> CVarMaxConstraintTorque("x.MaxConstraintTorque", 10.0f, "The maximum torque force for constraints");
     // clang-format on
 
     PhysxManager::PhysxManager() : RegisteredThread("PhysX", 120.0), humanControlSystem(this) {
@@ -181,12 +184,71 @@ namespace sp {
                 }
 
                 if (deltaPos.magnitude() < 2.0) {
-                    constraint->child->setAngularVelocity(
-                        GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate)).multiply(PxVec3(40.0)));
-                    constraint->rotation = PxVec3(0); // Don't continue to rotate
 
-                    auto clampRatio = std::min(0.5f, deltaPos.magnitude()) / (deltaPos.magnitude() + 0.00001);
-                    constraint->child->setLinearVelocity(deltaPos.multiply(PxVec3(20.0 * clampRatio)));
+                    { // Apply Torque
+                        auto deltaRotation = GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate));
+
+                        auto maxAcceleration = CVarMaxConstraintTorque.Get() / constraint->child->getMass();
+                        auto deltaTick = maxAcceleration * (float)(this->interval.count() / 1e9);
+                        auto maxVelocity = std::sqrt(2 * maxAcceleration * deltaRotation.magnitude());
+                        maxVelocity = std::max(0.0f, maxVelocity - deltaTick);
+
+                        auto targetVelocity = deltaRotation;
+                        targetVelocity.normalize();
+                        targetVelocity *= maxVelocity;
+                        auto deltaVelocity = targetVelocity - constraint->child->getAngularVelocity();
+
+                        auto force = deltaVelocity * (1e9 / this->interval.count() * constraint->child->getMass());
+                        auto forceClampRatio = std::min(CVarMaxConstraintTorque.Get(), force.magnitude() + 0.00001f) /
+                                               (force.magnitude() + 0.00001f);
+                        constraint->child->addTorque(force * forceClampRatio);
+                        constraint->rotation = PxVec3(0); // Don't continue to rotate
+                    }
+
+                    // constraint->child->setAngularVelocity(GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate)) *
+                    //                                       (1e9 / this->interval.count()));
+                    // constraint->rotation = PxVec3(0); // Don't continue to rotate
+
+                    { // Apply Lateral Force
+                        auto maxAcceleration = CVarMaxLateralConstraintForce.Get() / constraint->child->getMass();
+                        auto deltaTick = maxAcceleration * (float)(this->interval.count() / 1e9);
+                        auto maxVelocity = std::sqrt(2 * maxAcceleration * PxVec2(deltaPos.x, deltaPos.z).magnitude());
+                        maxVelocity = std::max(0.0f, maxVelocity - deltaTick);
+
+                        auto targetVelocity = PxVec3(deltaPos.x, 0, deltaPos.z);
+                        targetVelocity.normalize();
+                        targetVelocity *= maxVelocity;
+                        auto deltaVelocity = targetVelocity - constraint->child->getLinearVelocity();
+                        deltaVelocity.y = 0;
+
+                        auto force = deltaVelocity * (1e9 / this->interval.count() * constraint->child->getMass());
+                        auto forceClampRatio = std::min(CVarMaxLateralConstraintForce.Get(),
+                                                        force.magnitude() + 0.00001f) /
+                                               (force.magnitude() + 0.00001f);
+                        constraint->child->addForce(force * forceClampRatio);
+                    }
+
+                    { // Apply Vertical Force
+                        auto maxAcceleration = CVarMaxVerticalConstraintForce.Get() / constraint->child->getMass();
+                        if (deltaPos.y > 0) {
+                            maxAcceleration -= CVarGravity.Get();
+                        } else {
+                            maxAcceleration += CVarGravity.Get();
+                        }
+                        auto deltaTick = maxAcceleration * (float)(this->interval.count() / 1e9);
+                        auto maxVelocity = std::sqrt(2 * std::max(0.0f, maxAcceleration) * std::abs(deltaPos.y));
+                        maxVelocity = std::max(0.0f, maxVelocity - deltaTick);
+
+                        auto targetVelocity = maxVelocity * (deltaPos.y > 0 ? 1 : -1);
+                        auto deltaVelocity = targetVelocity - constraint->child->getLinearVelocity().y;
+
+                        float force = deltaVelocity * (1e9 / this->interval.count() * constraint->child->getMass());
+                        force -= CVarGravity.Get() * constraint->child->getMass();
+                        auto forceClampRatio = std::min(CVarMaxVerticalConstraintForce.Get(),
+                                                        std::abs(force) + 0.00001f) /
+                                               (std::abs(force) + 0.00001f);
+                        constraint->child->addForce(PxVec3(0, force * forceClampRatio, 0));
+                    }
                     constraint++;
                 } else {
                     // Remove the constraint if the distance is too far

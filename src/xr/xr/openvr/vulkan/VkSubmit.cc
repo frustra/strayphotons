@@ -5,7 +5,7 @@
 #include <openvr.h>
 
 namespace sp::xr {
-    void OpenVrSystem::SubmitView(ecs::XrEye eye, GraphicsContext *context, GpuTexture *tex) {
+    void OpenVrSystem::SubmitView(ecs::XrEye eye, GpuTexture *tex) {
         Assert(context != nullptr, "TranslateTexture: null GraphicsContext");
         Assert(tex != nullptr, "TranslateTexture: null GpuTexture");
 

@@ -204,9 +204,7 @@ namespace sp {
                 for (size_t i = 0; i < xrViews.size(); i++) {
                     RenderPhase xrSubPhase("XrViewSubmit", timer);
 
-                    xrSystem->SubmitView(xrViews[i].second.eye,
-                                         context.get(),
-                                         xrRenderTargets[i].renderTarget->GetTexture());
+                    xrSystem->SubmitView(xrViews[i].second.eye, xrRenderTargets[i].renderTarget->GetTexture());
                 }
             }
         #endif
@@ -351,7 +349,7 @@ namespace sp {
                 }
 
                 for (size_t i = 0; i < xrViews.size(); i++) {
-                    xrSystem->SubmitView(xrViews[i].second.eye, context.get(), xrRenderTargets[i].color.get());
+                    xrSystem->SubmitView(xrViews[i].second.eye, xrRenderTargets[i].color.get());
                 }
             }
         #endif
