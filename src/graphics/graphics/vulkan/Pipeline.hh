@@ -13,7 +13,7 @@ namespace sp::vulkan {
     class Model;
 
     struct PipelineStaticState {
-        ShaderHandleSet shaders;
+        ShaderHandleSet shaders = {};
         VertexLayout vertexLayout;
         vk::CullModeFlags cullMode;
         vk::BlendOp blendOp;

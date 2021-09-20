@@ -4,7 +4,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
-// #include "xr/openvr/OpenVrModel.hh"
+#include "graphics/core/GraphicsContext.hh"
 
 // OpenVR headers
 #include <openvr.h>
@@ -32,14 +32,17 @@ namespace sp::xr {
         }
     }
 
-    void OpenVrSystem::Init() {
+    void OpenVrSystem::Init(GraphicsContext *context) {
         if (vrSystem) return;
+        this->context = context;
 
         vr::EVRInitError err = vr::VRInitError_None;
         auto vrSystemPtr = vr::VR_Init(&err, vr::VRApplication_Scene);
 
         if (err == vr::VRInitError_None) {
-            vrSystem = std::shared_ptr<vr::IVRSystem>(vrSystemPtr, [](auto *ptr) {
+            vrSystem = std::shared_ptr<vr::IVRSystem>(vrSystemPtr, [context](auto *ptr) {
+                Logf("Shutting down OpenVR");
+                context->WaitIdle();
                 vr::VR_Shutdown();
             });
         } else {
