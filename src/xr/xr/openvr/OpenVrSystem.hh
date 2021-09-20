@@ -48,6 +48,9 @@ namespace sp {
                 ecs::NamedEntity("vr-eye-left"),
                 ecs::NamedEntity("vr-eye-right"),
             };
+
+            uint32 frameCountWorkaround = 0;
+            GpuTexture *rightEyeTexture = nullptr;
         };
 
     } // namespace xr

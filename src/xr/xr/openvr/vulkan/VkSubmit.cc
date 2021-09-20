@@ -36,8 +36,21 @@ namespace sp::xr {
         vr::Texture_t texture = {&vulkanData, vr::TextureType_Vulkan, vr::ColorSpace_Auto};
         auto vrEye = MapXrEyeToOpenVr(eye);
 
+        // Work around OpenVR barrier bug: https://github.com/ValveSoftware/openvr/issues/1591
+        if (vrEye == vr::Eye_Right) {
+            if (rightEyeTexture != tex) {
+                rightEyeTexture = tex;
+                frameCountWorkaround = 0;
+            }
+            if (frameCountWorkaround < 4) {
+                vulkanData.m_unArrayIndex = 0;
+                frameCountWorkaround++;
+            }
+        }
+
         // Ignore OpenVR performance warning: https://github.com/ValveSoftware/openvr/issues/818
         device->disabledDebugMessages = VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+
         auto err = vr::VRCompositor()->Submit(vrEye, &texture, 0, vr::Submit_VulkanTextureWithArrayData);
         device->disabledDebugMessages = 0;
         Assert(err == vr::VRCompositorError_None || err == vr::VRCompositorError_DoNotHaveFocus,
