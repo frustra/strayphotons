@@ -821,6 +821,10 @@ namespace sp::vulkan {
                                                    size_t srcDataSize,
                                                    bool genMipmap) {
         viewInfo.image = CreateImage(imageInfo, srcData, srcDataSize, genMipmap);
+        if (viewInfo.arrayLayerCount == VK_REMAINING_ARRAY_LAYERS)
+            viewInfo.arrayLayerCount = viewInfo.image->ArrayLayers() - viewInfo.baseArrayLayer;
+        if (viewInfo.mipLevelCount == VK_REMAINING_MIP_LEVELS)
+            viewInfo.mipLevelCount = viewInfo.image->MipLevels() - viewInfo.baseMipLevel;
         return CreateImageView(viewInfo);
     }
 

@@ -119,6 +119,10 @@ namespace sp::vulkan {
             return info.defaultSampler;
         }
 
+        uint32 BaseArrayLayer() const {
+            return info.baseArrayLayer;
+        }
+
         virtual int GetWidth() const override {
             return extent.width;
         }

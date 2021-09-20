@@ -67,16 +67,13 @@ namespace sp {
     #endif
 
     #ifdef SP_XR_SUPPORT
-        struct XrRenderTarget {
         #ifdef SP_GRAPHICS_SUPPORT_GL
-            shared_ptr<GLRenderTarget> renderTarget;
+        std::vector<shared_ptr<GLRenderTarget>> xrRenderTargets;
         #endif
-        #ifdef SP_GRAPHICS_SUPPORT_VK
-            shared_ptr<vulkan::ImageView> color, depth;
-        #endif
-        };
 
-        std::vector<XrRenderTarget> xrRenderTargets;
+        #ifdef SP_GRAPHICS_SUPPORT_VK
+        shared_ptr<vulkan::ImageView> xrColor, xrDepth;
+        #endif
     #endif
     };
 } // namespace sp

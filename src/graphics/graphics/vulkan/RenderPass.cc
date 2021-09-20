@@ -99,6 +99,7 @@ namespace sp::vulkan {
         vk::RenderPassMultiviewCreateInfo multiviewInfo;
         if (state.multiviewAttachments) {
             multiviewInfo.pViewMasks = &state.multiviewAttachments;
+            multiviewInfo.pCorrelationMasks = &state.multiviewCorrelations;
             multiviewInfo.subpassCount = renderPassInfo.subpassCount;
             Assert(multiviewInfo.subpassCount == 1, "need to update this code, pViewMasks needs to be an array");
             renderPassInfo.pNext = &multiviewInfo;
