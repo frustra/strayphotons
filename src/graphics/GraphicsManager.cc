@@ -27,6 +27,7 @@
     #include <algorithm>
     #include <cxxopts.hpp>
     #include <iostream>
+    #include <optional>
     #include <system_error>
 
     #ifdef SP_XR_SUPPORT
@@ -117,7 +118,7 @@ namespace sp {
         if (game->debugGui) game->debugGui->BeforeFrame();
         if (game->menuGui) game->menuGui->BeforeFrame();
 
-        std::vector<ecs::View> cameraViews;
+        std::optional<ecs::View> windowView;
         std::vector<ecs::View> shadowViews;
         std::vector<std::pair<ecs::View, ecs::XRView>> xrViews;
         {
@@ -127,9 +128,11 @@ namespace sp {
             auto &windowEntity = context->GetActiveView();
             if (windowEntity) {
                 if (windowEntity.Has<ecs::View>(lock)) {
-                    auto &windowView = windowEntity.Get<ecs::View>(lock);
-                    windowView.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_CAMERA);
-                    context->PrepareWindowView(windowView);
+                    auto &view = windowEntity.Get<ecs::View>(lock);
+                    view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_CAMERA);
+                    context->PrepareWindowView(view);
+
+                    windowView = view;
                 }
             }
 
@@ -144,7 +147,7 @@ namespace sp {
                 auto &view = e.Get<ecs::View>(lock);
                 view.UpdateMatrixCache(lock, e);
                 if (view.visibilityMask[ecs::Renderable::VISIBLE_DIRECT_CAMERA]) {
-                    cameraViews.emplace_back(view);
+                    // TODO: Render camera views to textures
                 } else if (view.visibilityMask[ecs::Renderable::VISIBLE_DIRECT_EYE] && e.Has<ecs::XRView>(lock)) {
                     xrViews.emplace_back(view, e.Get<ecs::XRView>(lock));
                 } else if (view.visibilityMask[ecs::Renderable::VISIBLE_LIGHTING_SHADOW]) {
@@ -172,9 +175,7 @@ namespace sp {
                 ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>>();
             renderer->BeginFrame(lock);
 
-            for (auto &view : cameraViews) {
-                renderer->RenderPass(view, lock);
-            }
+            if (windowView) renderer->RenderPass(*windowView, lock);
 
         #ifdef SP_XR_SUPPORT
             if (xrSystem) {
@@ -189,6 +190,12 @@ namespace sp {
                     RenderTargetDesc desc = {PF_SRGB8_A8, view.extents};
                     if (!xrRenderTargets[i].renderTarget || xrRenderTargets[i].renderTarget->GetDesc() != desc) {
                         xrRenderTargets[i].renderTarget = glContext->GetRenderTarget(desc);
+                    }
+
+                    glm::mat4 invViewMat;
+                    if (xrSystem->GetPredictedViewPose(xrViews[i].second.eye, invViewMat)) {
+                        view.viewMat = glm::inverse(invViewMat);
+                        view.invViewMat = invViewMat;
                     }
 
                     renderer->RenderPass(view, lock, xrRenderTargets[i].renderTarget.get());
@@ -228,22 +235,41 @@ namespace sp {
             // RenderPhase phase("Frame", timer);
             auto &device = *dynamic_cast<vulkan::DeviceContext *>(context.get());
 
+            viewStateUniformBuffers.resize(1 + xrViews.size());
+            for (auto &bufferPtr : viewStateUniformBuffers) {
+                if (!bufferPtr) {
+                    bufferPtr = device.AllocateBuffer(sizeof(vulkan::ViewStateUniforms),
+                                                      vk::BufferUsageFlagBits::eUniformBuffer,
+                                                      VMA_MEMORY_USAGE_CPU_TO_GPU);
+                }
+            }
+            auto currentViewState = viewStateUniformBuffers.begin();
+
             auto lock =
                 ecs::World
                     .StartTransaction<ecs::Read<ecs::Name, ecs::Transform, ecs::Renderable, ecs::View, ecs::Mirror>>();
             renderer->BeginFrame(lock);
 
-            auto cmd = device.GetCommandContext();
-            cmd->BeginRenderPass(device.SwapchainRenderPassInfo(true));
+            if (windowView) {
+                auto cmd = device.GetCommandContext();
+                cmd->BeginRenderPass(device.SwapchainRenderPassInfo(true));
 
-            for (auto &view : cameraViews) {
-                renderer->RenderPass(cmd, view, lock);
+                cmd->SetUniformBuffer(0, 10, *currentViewState);
+
+                renderer->RenderPass(cmd, *windowView, lock);
+
+                debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd->GetFramebufferExtent()});
+
+                cmd->EndRenderPass();
+
+                vulkan::ViewStateUniforms viewState;
+                viewState.view[0] = windowView->viewMat;
+                viewState.projection[0] = windowView->projMat;
+                (*currentViewState)->CopyFrom(&viewState, 1);
+                currentViewState++;
+
+                device.Submit(cmd);
             }
-
-            debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd->GetFramebufferExtent()});
-
-            cmd->EndRenderPass();
-            device.Submit(cmd);
 
         #ifdef SP_XR_SUPPORT
             if (xrSystem) {
@@ -251,7 +277,7 @@ namespace sp {
                 for (size_t i = 0; i < xrViews.size(); i++) {
                     auto &view = xrViews[i].first;
 
-                    cmd = device.GetCommandContext();
+                    auto cmd = device.GetCommandContext();
 
                     if (!xrRenderTargets[i].color || xrRenderTargets[i].color->GetWidth() != view.extents.x ||
                         xrRenderTargets[i].color->GetHeight() != view.extents.y) {
@@ -298,6 +324,8 @@ namespace sp {
 
                     cmd->BeginRenderPass(renderPassInfo);
 
+                    cmd->SetUniformBuffer(0, 10, *currentViewState);
+
                     renderer->RenderPass(cmd, view, lock);
 
                     cmd->EndRenderPass();
@@ -309,6 +337,15 @@ namespace sp {
                                       {},
                                       vk::PipelineStageFlagBits::eTransfer,
                                       vk::AccessFlagBits::eTransferRead);
+
+                    glm::mat4 invViewMat;
+                    if (xrSystem->GetPredictedViewPose(xrViews[i].second.eye, invViewMat)) {
+                        vulkan::ViewStateUniforms viewState;
+                        viewState.view[0] = glm::inverse(invViewMat);
+                        viewState.projection[0] = view.projMat;
+                        (*currentViewState)->CopyFrom(&viewState, 1);
+                    }
+                    currentViewState++;
 
                     device.Submit(cmd);
                 }

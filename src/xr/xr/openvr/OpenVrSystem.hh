@@ -27,13 +27,11 @@ namespace sp {
 
             // std::shared_ptr<XrActionSet> GetActionSet(std::string setName);
 
-            // XrTracking functions
-            // bool GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &viewPose);
+            bool GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat);
             // bool GetPredictedObjectPose(const TrackedObjectHandle &handle, glm::mat4 &objectPose);
             // std::vector<TrackedObjectHandle> GetTrackedObjectHandles();
             // std::shared_ptr<XrModel> GetTrackedObjectModel(const TrackedObjectHandle &handle);
 
-            // XrCompositor functions
             void SubmitView(ecs::XrEye eye, GraphicsContext *context, GpuTexture *tex);
             void WaitFrame();
 
