@@ -119,7 +119,7 @@ namespace sp::vulkan {
             auto &image = *info.colorAttachments[i];
             attachments[i] = image;
             extent.width = std::min(extent.width, image.Extent().width);
-            extent.height = std::min(extent.width, image.Extent().height);
+            extent.height = std::min(extent.height, image.Extent().height);
         }
 
         if (info.HasDepthStencil()) {
@@ -127,7 +127,7 @@ namespace sp::vulkan {
             auto &image = *info.depthStencilAttachment;
             attachments[info.state.colorAttachmentCount] = image;
             extent.width = std::min(extent.width, image.Extent().width);
-            extent.height = std::min(extent.width, image.Extent().height);
+            extent.height = std::min(extent.height, image.Extent().height);
         }
 
         vk::FramebufferCreateInfo framebufferInfo;
