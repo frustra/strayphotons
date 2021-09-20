@@ -10,6 +10,10 @@
         #include "graphics/opengl/PerfTimer.hh"
     #endif
 
+    #ifdef SP_GRAPHICS_SUPPORT_VK
+        #include "graphics/vulkan/Common.hh"
+    #endif
+
     #include <glm/glm.hpp>
     #include <memory>
     #include <vector>
@@ -58,6 +62,8 @@ namespace sp {
     #ifdef SP_GRAPHICS_SUPPORT_VK
         unique_ptr<vulkan::Renderer> renderer;
         unique_ptr<vulkan::GuiRenderer> debugGuiRenderer;
+
+        std::vector<vulkan::BufferPtr> viewStateUniformBuffers;
     #endif
 
     #ifdef SP_XR_SUPPORT
