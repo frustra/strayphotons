@@ -21,6 +21,7 @@
         #include "graphics/vulkan/GuiRenderer.hh"
         #include "graphics/vulkan/Image.hh"
         #include "graphics/vulkan/Renderer.hh"
+        #include "graphics/vulkan/Screenshot.hh"
         #include "graphics/vulkan/Vertex.hh"
     #endif
 
@@ -47,6 +48,18 @@ namespace sp {
     GraphicsManager::~GraphicsManager() {
         if (context) context->WaitIdle();
     }
+
+    static string ScreenshotVRPath;
+
+    CFunc<string> CFuncQueueScreenshotVR("screenshotvr", "Save left eye screenshot to <path>", [](string path) {
+        if (ScreenshotVRPath.empty()) {
+            ScreenshotVRPath = path;
+        } else {
+            Logf("Can't save multiple screenshots on the same frame: %s, already saving %s",
+                 path.c_str(),
+                 ScreenshotVRPath.c_str());
+        }
+    });
 
     void GraphicsManager::Init() {
         if (context) { throw "already an active context"; }
@@ -354,6 +367,11 @@ namespace sp {
 
                 for (size_t i = 0; i < xrViews.size(); i++) {
                     xrSystem->SubmitView(xrViews[i].second.eye, xrColor.get());
+                }
+
+                if (ScreenshotVRPath.size()) {
+                    vulkan::WriteScreenshot(device, ScreenshotVRPath, xrColor);
+                    ScreenshotVRPath = "";
                 }
             }
         #endif
