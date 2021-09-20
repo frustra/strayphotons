@@ -190,7 +190,7 @@ namespace sp {
 
                         auto maxAcceleration = CVarMaxConstraintTorque.Get() / constraint->child->getMass();
                         auto deltaTick = maxAcceleration * (float)(this->interval.count() / 1e9);
-                        auto maxVelocity = std::sqrtf(2 * maxAcceleration * deltaRotation.magnitude());
+                        auto maxVelocity = std::sqrt(2 * maxAcceleration * deltaRotation.magnitude());
                         maxVelocity = std::max(0.0f, maxVelocity - deltaTick);
 
                         auto targetVelocity = deltaRotation;
@@ -212,7 +212,7 @@ namespace sp {
                     { // Apply Lateral Force
                         auto maxAcceleration = CVarMaxLateralConstraintForce.Get() / constraint->child->getMass();
                         auto deltaTick = maxAcceleration * (float)(this->interval.count() / 1e9);
-                        auto maxVelocity = std::sqrtf(2 * maxAcceleration * PxVec2(deltaPos.x, deltaPos.z).magnitude());
+                        auto maxVelocity = std::sqrt(2 * maxAcceleration * PxVec2(deltaPos.x, deltaPos.z).magnitude());
                         maxVelocity = std::max(0.0f, maxVelocity - deltaTick);
 
                         auto targetVelocity = PxVec3(deltaPos.x, 0, deltaPos.z);
@@ -236,7 +236,7 @@ namespace sp {
                             maxAcceleration += CVarGravity.Get();
                         }
                         auto deltaTick = maxAcceleration * (float)(this->interval.count() / 1e9);
-                        auto maxVelocity = std::sqrtf(2 * std::max(0.0f, maxAcceleration) * std::abs(deltaPos.y));
+                        auto maxVelocity = std::sqrt(2 * std::max(0.0f, maxAcceleration) * std::abs(deltaPos.y));
                         maxVelocity = std::max(0.0f, maxVelocity - deltaTick);
 
                         auto targetVelocity = maxVelocity * (deltaPos.y > 0 ? 1 : -1);
