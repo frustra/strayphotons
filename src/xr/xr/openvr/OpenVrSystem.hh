@@ -1,9 +1,9 @@
 #pragma once
 
+#include "core/RegisteredThread.hh"
 #include "ecs/NamedEntity.hh"
 #include "ecs/components/XRView.hh"
 #include "xr/XrSystem.hh"
-// #include "xr/openvr/OpenVrAction.hh"
 
 #include <openvr.h>
 
@@ -17,9 +17,10 @@ namespace sp {
     namespace xr {
         vr::EVREye MapXrEyeToOpenVr(ecs::XrEye eye);
 
-        class OpenVrSystem final : public XrSystem {
+        class OpenVrSystem final : public XrSystem, RegisteredThread {
         public:
-            OpenVrSystem() {}
+            OpenVrSystem() : RegisteredThread("OpenVR", 120.0) {}
+            ~OpenVrSystem();
 
             void Init(GraphicsContext *context);
             bool IsInitialized();
@@ -36,6 +37,7 @@ namespace sp {
             void WaitFrame();
 
         private:
+            void Frame() override;
             // vr::TrackedDeviceIndex_t GetOpenVrIndexFromHandle(const TrackedObjectHandle &handle);
 
             GraphicsContext *context = nullptr;
@@ -48,6 +50,8 @@ namespace sp {
                 ecs::NamedEntity("vr-eye-left"),
                 ecs::NamedEntity("vr-eye-right"),
             };
+
+            std::array<ecs::NamedEntity, vr::k_unMaxTrackedDeviceCount> trackedDevices = {};
 
             uint32 frameCountWorkaround = 0;
             GpuTexture *rightEyeTexture = nullptr;
