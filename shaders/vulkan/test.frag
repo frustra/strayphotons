@@ -28,6 +28,7 @@ void main() {
 
     vec4 baseColor = texture(baseColorTex, inTexCoord);
     if (baseColor.a < 0.5) discard;
+    if (dot(-viewPos, normal) <= 0) discard;
 
     vec4 metallicRoughnessSample = texture(metallicRoughnessTex, inTexCoord);
     float roughness = metallicRoughnessSample.g;
