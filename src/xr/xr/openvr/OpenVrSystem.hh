@@ -45,7 +45,7 @@ namespace sp {
             std::shared_ptr<vr::IVRSystem> vrSystem;
             // std::map<std::string, std::shared_ptr<OpenVrActionSet>> actionSets;
 
-            ecs::NamedEntity vrOriginEntity;
+            ecs::NamedEntity vrOriginEntity = ecs::NamedEntity("vr-origin");
             std::array<ecs::NamedEntity, (size_t)ecs::XrEye::EYE_COUNT> views = {
                 ecs::NamedEntity("vr-eye-left"),
                 ecs::NamedEntity("vr-eye-right"),

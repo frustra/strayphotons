@@ -72,6 +72,7 @@ namespace sp::xr {
 
             Tecs::Entity vrOrigin = vrOriginEntity.Get(lock);
             if (!vrOrigin) {
+                Logf("Creating vr-origin");
                 vrOrigin = lock.NewEntity();
                 vrOrigin.Set<ecs::Name>(lock, "vr-origin");
                 vrOrigin.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
@@ -387,29 +388,29 @@ namespace sp::xr {
         if (error != vr::VRCompositorError_None) return;
 
         bool entitiesChanged = false;
+        std::array<std::string, vr::k_unMaxTrackedDeviceCount> deviceNames;
         for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
-            if (!vrSystem->IsTrackedDeviceConnected(i)) continue;
-            std::string deviceName = "";
-            auto deviceClass = vrSystem->GetTrackedDeviceClass(i);
-            switch (deviceClass) {
-            case vr::TrackedDeviceClass_HMD:
-                deviceName = "vr-hmd" + std::to_string(i);
-                break;
-            case vr::TrackedDeviceClass_Controller:
-                deviceName = "vr-controller" + std::to_string(i);
-                break;
-            case vr::TrackedDeviceClass_GenericTracker:
-                deviceName = "vr-tracker" + std::to_string(i);
-                break;
-            case vr::TrackedDeviceClass_TrackingReference:
-            case vr::TrackedDeviceClass_DisplayRedirect:
-            case vr::TrackedDeviceClass_Invalid:
-                break;
+            if (vrSystem->IsTrackedDeviceConnected(i)) {
+                auto deviceClass = vrSystem->GetTrackedDeviceClass(i);
+                switch (deviceClass) {
+                case vr::TrackedDeviceClass_HMD:
+                    deviceNames[i] = "vr-hmd" + std::to_string(i);
+                    break;
+                case vr::TrackedDeviceClass_Controller:
+                    deviceNames[i] = "vr-controller" + std::to_string(i);
+                    break;
+                case vr::TrackedDeviceClass_GenericTracker:
+                    deviceNames[i] = "vr-tracker" + std::to_string(i);
+                    break;
+                case vr::TrackedDeviceClass_TrackingReference:
+                case vr::TrackedDeviceClass_DisplayRedirect:
+                case vr::TrackedDeviceClass_Invalid:
+                    break;
+                }
+            } else {
+                deviceNames[i] = "";
             }
-            if (trackedDevices[i].Name() != deviceName) {
-                trackedDevices[i] = ecs::NamedEntity(deviceName);
-                entitiesChanged = true;
-            }
+            if (trackedDevices[i].Name() != deviceNames[i]) entitiesChanged = true;
         }
         if (entitiesChanged) {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
@@ -417,21 +418,27 @@ namespace sp::xr {
             Tecs::Entity vrOrigin = vrOriginEntity.Get(lock);
             Assert(vrOrigin, "VR Origin entity missing");
 
-            for (auto &namedEntity : trackedDevices) {
-                if (namedEntity.Name().empty()) continue;
-
+            for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
+                auto &namedEntity = trackedDevices[i];
                 Tecs::Entity ent = namedEntity.Get(lock);
-                if (!ent) {
-                    ent = lock.NewEntity();
-                    ent.Set<ecs::Name>(lock, namedEntity.Name());
-                    ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
-                    auto model = GAssets.LoadModel("box");
-                    ent.Set<ecs::Renderable>(lock, model);
-                    auto &transform = ent.Set<ecs::Transform>(lock);
-                    transform.SetParent(vrOrigin);
-                    transform.SetScale(glm::vec3(0.01f));
 
-                    namedEntity = ecs::NamedEntity(namedEntity.Name(), ent);
+                auto &targetName = deviceNames[i];
+                if (namedEntity.Name() != targetName) {
+                    if (ent) {
+                        ent.Destroy(lock);
+                        ent = Tecs::Entity();
+                    }
+                    if (!targetName.empty()) {
+                        ent = lock.NewEntity();
+                        ent.Set<ecs::Name>(lock, targetName);
+                        ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
+                        auto model = GAssets.LoadModel("box");
+                        ent.Set<ecs::Renderable>(lock, model);
+                        auto &transform = ent.Set<ecs::Transform>(lock);
+                        transform.SetParent(vrOrigin);
+                        transform.SetScale(glm::vec3(0.01f));
+                    }
+                    namedEntity = ecs::NamedEntity(targetName, ent);
                 }
             }
         }

@@ -64,6 +64,12 @@
             }
         },
         {
+            "_name": "vr-origin",
+            "transform": {
+                "parent": "player"
+            }
+        },
+        {
             "_name": "flashlight",
             "transform": {
                 "parent": "player",

@@ -207,8 +207,8 @@ namespace sp {
 
                     glm::mat4 invViewMat;
                     if (xrSystem->GetPredictedViewPose(xrViews[i].second.eye, invViewMat)) {
-                        view.viewMat = glm::inverse(invViewMat);
-                        view.invViewMat = invViewMat;
+                        view.viewMat = glm::inverse(invViewMat) * view.viewMat;
+                        view.invViewMat = view.invViewMat * invViewMat;
                     }
 
                     renderer->RenderPass(view, lock, xrRenderTargets[i].get());
@@ -356,7 +356,7 @@ namespace sp {
 
                 for (size_t i = 0; i < xrViews.size(); i++) {
                     if (xrSystem->GetPredictedViewPose(xrViews[i].second.eye, invViewMat)) {
-                        viewState.view[i] = glm::inverse(invViewMat);
+                        viewState.view[i] = glm::inverse(invViewMat) * xrViews[i].first.viewMat;
                         viewState.projection[i] = xrViews[i].first.projMat;
                     }
                 }

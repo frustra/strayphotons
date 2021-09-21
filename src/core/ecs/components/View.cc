@@ -40,13 +40,12 @@ namespace ecs {
             this->aspect = (float)this->extents.x / (float)this->extents.y;
 
             this->projMat = glm::perspective(this->fov, this->aspect, this->clip[0], this->clip[1]);
-
-            auto &transform = e.Get<Transform>(lock);
-            this->invViewMat = transform.GetGlobalTransform(lock);
-
             this->invProjMat = glm::inverse(this->projMat);
-            this->viewMat = glm::inverse(this->invViewMat);
         }
+
+        auto &transform = e.Get<Transform>(lock);
+        this->invViewMat = transform.GetGlobalTransform(lock);
+        this->viewMat = glm::inverse(this->invViewMat);
     }
 
 } // namespace ecs
