@@ -90,8 +90,13 @@ namespace sp::vulkan {
         ImageView() {}
 
         // Creates a view to an image, retaining a reference to the image while the view is alive
-        ImageView(vk::UniqueImageView &&view, const ImageViewCreateInfo &info = {})
-            : info(info), extent(info.image->Extent()) {
+        ImageView(vk::UniqueImageView &&view, const ImageViewCreateInfo &info = {}) : info(info) {
+            extent = info.image->Extent();
+            for (uint32 i = 0; i < info.baseMipLevel; i++) {
+                extent.width = (extent.width + 1) / 2;
+                extent.height = (extent.height + 1) / 2;
+                extent.depth = (extent.depth + 1) / 2;
+            }
             uniqueHandle = std::move(view);
         }
 
@@ -117,6 +122,10 @@ namespace sp::vulkan {
 
         vk::Sampler DefaultSampler() const {
             return info.defaultSampler;
+        }
+
+        uint32 BaseMipLevel() const {
+            return info.baseMipLevel;
         }
 
         uint32 BaseArrayLayer() const {
@@ -146,6 +155,8 @@ namespace sp::vulkan {
 
     vk::Format FormatFromTraits(uint32 components, uint32 bits, bool preferSrgb, bool logErrors = true);
     vk::ImageAspectFlags FormatToAspectFlags(vk::Format format);
+    uint32 FormatComponentCount(vk::Format format);
+    uint32 FormatByteSize(vk::Format format);
     uint32 CalculateMipmapLevels(vk::Extent3D extent);
     vk::SamplerCreateInfo GLSamplerToVKSampler(int minFilter, int magFilter, int wrapS, int wrapT, int wrapR);
 } // namespace sp::vulkan

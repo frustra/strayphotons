@@ -9,6 +9,7 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_LIB} PRIVATE
     Pipeline.cc
     Renderer.cc
     RenderPass.cc
+    Screenshot.cc
     UniqueID.cc
 )
 
