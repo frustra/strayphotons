@@ -24,6 +24,14 @@ namespace sp {
             return offset;
         }
 
+        T *begin() {
+            return values.data();
+        }
+
+        T *end() {
+            return begin() + offset;
+        }
+
     private:
         size_t offset = 0;
         std::array<T, MaxSize> values;

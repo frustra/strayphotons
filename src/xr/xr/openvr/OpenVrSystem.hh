@@ -54,7 +54,7 @@ namespace sp {
             std::array<ecs::NamedEntity, vr::k_unMaxTrackedDeviceCount> trackedDevices = {};
 
             uint32 frameCountWorkaround = 0;
-            GpuTexture *rightEyeTexture = nullptr;
+            int width = 0, height = 0;
         };
 
     } // namespace xr

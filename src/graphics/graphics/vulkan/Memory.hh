@@ -34,16 +34,22 @@
 #endif
 
 namespace sp::vulkan {
+    enum BufferType { BUFFER_TYPE_UNIFORM, BUFFER_TYPES_COUNT };
+
     class UniqueMemory : public NonCopyable {
     public:
         UniqueMemory() = delete;
         UniqueMemory(VmaAllocator allocator) : allocator(allocator), allocation(nullptr) {}
+        virtual ~UniqueMemory() = default;
+
+        vk::Result MapPersistent(void **data = nullptr);
         vk::Result Map(void **data);
         void Unmap();
+        void UnmapPersistent();
         vk::DeviceSize ByteSize() const;
 
         template<typename T>
-        void CopyFrom(const T *srcData, size_t srcCount, size_t dstOffset = 0) {
+        void CopyFrom(const T *srcData, size_t srcCount = 1, size_t dstOffset = 0) {
             Assert(sizeof(T) * (dstOffset + srcCount) <= ByteSize(), "UniqueMemory overflow");
             T *dstData;
             Map((void **)&dstData);
@@ -54,6 +60,7 @@ namespace sp::vulkan {
     protected:
         VmaAllocator allocator;
         VmaAllocation allocation;
+        void *persistentMap = nullptr;
     };
 
     class Buffer : public UniqueMemory {

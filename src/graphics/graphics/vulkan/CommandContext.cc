@@ -213,6 +213,12 @@ namespace sp::vulkan {
         SetDescriptorDirty(set);
     }
 
+    BufferPtr CommandContext::AllocUniformBuffer(uint32 set, uint32 binding, vk::DeviceSize size) {
+        auto buffer = device.GetFramePooledBuffer(BUFFER_TYPE_UNIFORM, size);
+        SetUniformBuffer(set, binding, buffer);
+        return buffer;
+    }
+
     void CommandContext::FlushDescriptorSets() {
         auto layout = currentPipeline->GetLayout();
 

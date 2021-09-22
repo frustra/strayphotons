@@ -118,7 +118,9 @@
         "xtree": "cpp",
         "xutility": "cpp",
         "coroutine": "cpp",
-        "resumable": "cpp"
+        "resumable": "cpp",
+        "xmemory0": "cpp",
+        "xthread": "cpp"
     },
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,

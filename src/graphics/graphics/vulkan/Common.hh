@@ -13,14 +13,17 @@
 namespace sp::vulkan {
     typedef uint32 ShaderHandle;
 
+    class DeviceContext;
     class CommandContext;
     class Buffer;
     class Image;
     class ImageView;
+    class RenderTarget;
     typedef shared_ptr<CommandContext> CommandContextPtr;
     typedef shared_ptr<Buffer> BufferPtr;
     typedef shared_ptr<Image> ImagePtr;
     typedef shared_ptr<ImageView> ImageViewPtr;
+    typedef shared_ptr<RenderTarget> RenderTargetPtr;
 
     void AssertVKSuccess(vk::Result result, std::string message);
     void AssertVKSuccess(VkResult result, std::string message);

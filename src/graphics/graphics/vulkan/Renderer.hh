@@ -11,7 +11,6 @@
 #include <robin_hood.h>
 
 namespace sp::vulkan {
-    class DeviceContext;
     class Model;
 
     struct ViewStateUniforms {
@@ -29,12 +28,12 @@ namespace sp::vulkan {
 
         void Prepare() {}
         void BeginFrame(ecs::Lock<ecs::Read<ecs::Transform>> lock) {}
-        void RenderPass(const CommandContextPtr &cmd, const ecs::View &view, DrawLock lock);
+        void RenderPass(CommandContext &cmd, const ecs::View &view, DrawLock lock);
         void EndFrame();
 
-        void ForwardPass(const CommandContextPtr &cmd, ecs::View &view, DrawLock lock, const PreDrawFunc &preDraw = {});
+        void ForwardPass(CommandContext &cmd, ecs::View &view, DrawLock lock, const PreDrawFunc &preDraw = {});
 
-        void DrawEntity(const CommandContextPtr &cmd,
+        void DrawEntity(CommandContext &cmd,
                         const ecs::View &view,
                         DrawLock lock,
                         Tecs::Entity &ent,

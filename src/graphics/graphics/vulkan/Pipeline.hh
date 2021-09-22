@@ -9,7 +9,6 @@
 #include <robin_hood.h>
 
 namespace sp::vulkan {
-    class DeviceContext;
     class Model;
 
     struct PipelineStaticState {

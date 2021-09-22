@@ -22,6 +22,7 @@ namespace sp::vulkan {
 
     Image::~Image() {
         if (allocator != VK_NULL_HANDLE && allocation != VK_NULL_HANDLE) {
+            UnmapPersistent();
             vmaDestroyImage(allocator, image, allocation);
         }
     }

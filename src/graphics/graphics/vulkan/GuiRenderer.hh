@@ -9,8 +9,6 @@ namespace sp {
 } // namespace sp
 
 namespace sp::vulkan {
-    class DeviceContext;
-    class Buffer;
     struct VertexLayout;
 
     class GuiRenderer : public NonCopyable {

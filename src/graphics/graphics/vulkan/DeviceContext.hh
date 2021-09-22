@@ -21,7 +21,9 @@ namespace sp::vulkan {
     class Pipeline;
     class PipelineManager;
     struct PipelineCompileInput;
-    struct Shader;
+    class Shader;
+    struct RenderTargetDesc;
+    class RenderTargetManager;
 
     class DeviceContext final : public sp::GraphicsContext {
     public:
@@ -89,6 +91,8 @@ namespace sp::vulkan {
             return buf;
         }
 
+        BufferPtr GetFramePooledBuffer(BufferType type, vk::DeviceSize size);
+
         ImagePtr AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency);
         ImagePtr CreateImage(vk::ImageCreateInfo createInfo,
                              const uint8 *srcData = nullptr,
@@ -103,6 +107,8 @@ namespace sp::vulkan {
         vk::Sampler GetSampler(SamplerType type);
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
 
+        RenderTargetPtr GetRenderTarget(const RenderTargetDesc &desc);
+
         shared_ptr<GpuTexture> LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
 
         RenderPassInfo SwapchainRenderPassInfo(bool depth = false, bool stencil = false);
@@ -116,11 +122,6 @@ namespace sp::vulkan {
         shared_ptr<Framebuffer> GetFramebuffer(const RenderPassInfo &info);
 
         vk::Semaphore GetEmptySemaphore();
-
-        uint32 SwapchainVersion() {
-            // incremented when the swapchain changes, any dependent pipelines need to be recreated
-            return swapchainVersion;
-        }
 
         UniqueID NextUniqueID() {
             return ++lastUniqueID;
@@ -142,6 +143,8 @@ namespace sp::vulkan {
 
         VkDebugUtilsMessageTypeFlagsEXT disabledDebugMessages = 0;
 
+        static void DeleteAllocator(VmaAllocator allocator);
+
     private:
         void SetTitle(string title);
 
@@ -160,19 +163,19 @@ namespace sp::vulkan {
         vk::PhysicalDeviceProperties physicalDeviceProperties;
         vk::UniqueDevice device;
 
+        unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
+
         vector<vk::UniqueSemaphore> semaphores;
 
         unique_ptr<PipelineManager> pipelinePool;
+        unique_ptr<RenderTargetManager> renderTargetPool;
         unique_ptr<RenderPassManager> renderPassPool;
         unique_ptr<FramebufferManager> framebufferPool;
-
-        VmaAllocator allocator = VK_NULL_HANDLE;
 
         std::array<vk::Queue, QUEUE_TYPES_COUNT> queues;
         std::array<uint32, QUEUE_TYPES_COUNT> queueFamilyIndex;
         vk::Extent3D imageTransferGranularity;
 
-        uint32 swapchainVersion = 0;
         vk::UniqueSwapchainKHR swapchain;
         vk::Extent2D swapchainExtent;
 
@@ -195,8 +198,14 @@ namespace sp::vulkan {
         };
 
         struct InFlightBuffer {
-            vk::UniqueFence fence;
             BufferPtr buffer;
+            vk::UniqueFence fence;
+        };
+
+        struct PooledBuffer {
+            BufferPtr buffer;
+            vk::DeviceSize size;
+            bool used;
         };
 
         struct FrameContext {
@@ -208,6 +217,7 @@ namespace sp::vulkan {
             std::array<CommandContextPool, QUEUE_TYPES_COUNT> commandContexts;
 
             vector<InFlightBuffer> inFlightBuffers;
+            std::array<vector<PooledBuffer>, BUFFER_TYPES_COUNT> bufferPools;
         };
 
         std::array<FrameContext, MAX_FRAMES_IN_FLIGHT> frameContexts;

@@ -4,12 +4,30 @@
 #include "core/Common.hh"
 
 namespace sp::vulkan {
+    vk::Result UniqueMemory::MapPersistent(void **data) {
+        auto result = vk::Result::eSuccess;
+        if (!persistentMap) result = Map(&persistentMap);
+        if (data) *data = persistentMap;
+        return result;
+    }
+
     vk::Result UniqueMemory::Map(void **data) {
+        if (persistentMap) {
+            *data = persistentMap;
+            return vk::Result::eSuccess;
+        }
         return static_cast<vk::Result>(vmaMapMemory(allocator, allocation, data));
     }
 
     void UniqueMemory::Unmap() {
-        vmaUnmapMemory(allocator, allocation);
+        if (!persistentMap) vmaUnmapMemory(allocator, allocation);
+    }
+
+    void UniqueMemory::UnmapPersistent() {
+        if (persistentMap) {
+            vmaUnmapMemory(allocator, allocation);
+            persistentMap = nullptr;
+        }
     }
 
     vk::DeviceSize UniqueMemory::ByteSize() const {
@@ -33,6 +51,7 @@ namespace sp::vulkan {
 
     Buffer::~Buffer() {
         if (allocator != VK_NULL_HANDLE && allocation != VK_NULL_HANDLE) {
+            UnmapPersistent();
             vmaDestroyBuffer(allocator, buffer, allocation);
         }
     }

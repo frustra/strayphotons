@@ -108,22 +108,22 @@ namespace sp::vulkan {
         Debugf("Destroying vulkan::Model %s", modelName);
     }
 
-    void Model::Draw(const CommandContextPtr &cmd, glm::mat4 modelMat) {
-        cmd->SetVertexLayout(SceneVertex::Layout());
+    void Model::Draw(CommandContext &cmd, glm::mat4 modelMat) {
+        cmd.SetVertexLayout(SceneVertex::Layout());
 
         for (auto &primitivePtr : primitives) {
             auto &primitive = *primitivePtr;
             MeshPushConstants constants;
             constants.model = modelMat * primitive.transform;
 
-            cmd->PushConstants(&constants, 0, sizeof(MeshPushConstants));
+            cmd.PushConstants(&constants, 0, sizeof(MeshPushConstants));
 
-            if (primitive.baseColor) cmd->SetTexture(0, 0, primitive.baseColor);
-            if (primitive.metallicRoughness) cmd->SetTexture(0, 1, primitive.metallicRoughness);
+            if (primitive.baseColor) cmd.SetTexture(0, 0, primitive.baseColor);
+            if (primitive.metallicRoughness) cmd.SetTexture(0, 1, primitive.metallicRoughness);
 
-            cmd->Raw().bindIndexBuffer(*primitive.indexBuffer, 0, primitive.indexType);
-            cmd->Raw().bindVertexBuffers(0, {*primitive.vertexBuffer}, {0});
-            cmd->DrawIndexed(primitive.indexCount, 1, 0, 0, 0);
+            cmd.Raw().bindIndexBuffer(*primitive.indexBuffer, 0, primitive.indexType);
+            cmd.Raw().bindVertexBuffers(0, {*primitive.vertexBuffer}, {0});
+            cmd.DrawIndexed(primitive.indexCount, 1, 0, 0, 0);
         }
     }
 
