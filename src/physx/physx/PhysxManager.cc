@@ -163,7 +163,7 @@ namespace sp {
             for (auto constraint = constraints.begin(); constraint != constraints.end();) {
                 auto &transform = constraint->parent.Get<ecs::Transform>(lock);
                 auto pose = constraint->child->getGlobalPose();
-                auto rotate = transform.GetRotate();
+                auto rotate = transform.GetRotation();
                 auto invRotate = glm::inverse(rotate);
 
                 auto targetPos = transform.GetPosition() + rotate * PxVec3ToGlmVec3P(constraint->offset);
@@ -297,7 +297,7 @@ namespace sp {
                 if (ph.actor && !transform.IsDirty()) {
                     auto pose = ph.actor->getGlobalPose();
                     transform.SetPosition(PxVec3ToGlmVec3P(pose.p), false);
-                    transform.SetRotate(PxQuatToGlmQuat(pose.q), false);
+                    transform.SetRotation(PxQuatToGlmQuat(pose.q), false);
 
                     transform.UpdateCachedTransform(lock);
                 }

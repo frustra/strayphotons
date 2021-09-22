@@ -75,7 +75,7 @@ namespace sp::xr {
 
                             auto &ctrlTransform = xrObject.GetEntity().Get<ecs::Transform>(lock);
                             ctrlTransform.SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
-                            ctrlTransform.SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
+                            ctrlTransform.SetRotation(glm::quat_cast(glm::mat3(xrObjectPos)));
                             ctrl = ctrlTransform;
                         }
 
@@ -92,7 +92,7 @@ namespace sp::xr {
                                 auto parent = xrObject;
 
                                 transform->SetPosition(glm::vec3(0, 0, 0));
-                                transform->SetRotate(glm::quat());
+                                transform->SetRotation(glm::quat());
                                 transform->SetParent(parent.GetId());
                             }
                         }
@@ -175,7 +175,7 @@ namespace sp::xr {
 
                             auto &ctrl = xrObject.GetEntity().Get<ecs::Transform>(lock);
                             ctrl.SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
-                            ctrl.SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
+                            ctrl.SetRotation(glm::quat_cast(glm::mat3(xrObjectPos)));
                         }
                     }
                 }
@@ -225,7 +225,7 @@ namespace sp::xr {
 
                             // Extract just the position from the mat4
                             ctrl->SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
-                            ctrl->SetRotate(glm::mat4(glm::mat3(xrObjectPos)));
+                            ctrl->SetRotation(glm::quat_cast(glm::mat3(xrObjectPos)));
                         }
 
                         // TODO: this checks the state of ~30 entities by name.
@@ -407,7 +407,7 @@ namespace sp::xr {
                 auto ctrl = boneEntity.Get<ecs::Transform>();
                 ctrl->SetScale(glm::vec3(0.01f));
                 ctrl->SetPosition(xrObjectPos * glm::vec4(bone.pos.x, bone.pos.y, bone.pos.z, 1));
-                ctrl->SetRotate(glm::toMat4(bone.rot) * glm::mat4(glm::mat3(xrObjectPos)));
+                ctrl->SetRotation(bone.rot * glm::quat_cast(glm::mat3(xrObjectPos)));
             } else {
                 if (boneEntity.Valid()) { boneEntity.Destroy(); }
             }

@@ -29,7 +29,7 @@ namespace ecs {
                                 signalComp.SetSignal("position", sunPos);
                             }
 
-                            transform.SetRotate(glm::mat4());
+                            transform.SetRotation(glm::quat());
                             transform.Rotate(glm::radians(-90.0), glm::vec3(1, 0, 0));
                             transform.Rotate(sunPos, glm::vec3(0, 1, 0));
                             transform.SetPosition(glm::vec3(sin(sunPos) * 40.0, cos(sunPos) * 40.0, 0));

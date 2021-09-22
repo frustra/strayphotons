@@ -125,11 +125,11 @@ namespace sp {
 
                     if (transform.HasParent(lock)) {
                         transform.SetPosition(transform.GetGlobalTransform(lock) * glm::vec4(0, 0, 0, 1));
-                        transform.SetRotate(playerTransform.GetGlobalRotation(lock));
+                        transform.SetRotation(playerTransform.GetGlobalRotation(lock));
                         transform.SetParent(Tecs::Entity());
                     } else {
                         transform.SetPosition(glm::vec3(0, -0.3, 0));
-                        transform.SetRotate(glm::quat());
+                        transform.SetRotation(glm::quat());
                         transform.SetParent(player);
                     }
                     transform.UpdateCachedTransform(lock);
@@ -286,8 +286,8 @@ namespace sp {
                     if (e.Has<ecs::Transform>(lock)) {
                         auto &spawnTransform = e.Get<ecs::Transform>(lock);
                         auto &playerTransform = player.Get<ecs::Transform>(lock);
-                        playerTransform.SetTranslate(spawnTransform.GetTranslate());
-                        playerTransform.SetRotate(spawnTransform.GetRotate());
+                        playerTransform.SetPosition(spawnTransform.GetPosition());
+                        playerTransform.SetRotation(spawnTransform.GetRotation());
                         playerTransform.UpdateCachedTransform(lock);
                     }
                     break;
