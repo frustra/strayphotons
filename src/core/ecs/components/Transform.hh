@@ -10,13 +10,14 @@ namespace ecs {
     public:
         Transform() : dirty(false) {}
         Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>())
-            : rotate(orientation), dirty(false) {
-            SetPosition(pos);
+            : rotation(orientation), dirty(false) {
+            SetPosition(pos, false);
         }
 
         void SetParent(Tecs::Entity ent);
         bool HasParent(Lock<Read<Transform>> lock) const;
         void UpdateCachedTransform(Lock<Write<Transform>> lock);
+        bool IsCacheUpToDate(Lock<Read<Transform>> lock) const;
 
         /**
          * Return the transformation matrix including all parent transforms.
@@ -54,8 +55,6 @@ namespace ecs {
          */
         void Scale(glm::vec3 xyz);
 
-        void SetTranslate(glm::mat4 mat);
-        glm::mat4 GetTranslate() const;
         void SetPosition(glm::vec3 pos, bool setDirty = true);
         glm::vec3 GetPosition() const;
 
@@ -64,15 +63,11 @@ namespace ecs {
         glm::vec3 GetLeft() const;
         glm::vec3 GetRight() const;
 
-        void SetRotate(glm::mat4 mat, bool setDirty = true);
-        void SetRotate(glm::quat quat, bool setDirty = true);
-        glm::quat GetRotate() const;
-        glm::mat4 GetRotateMatrix() const;
+        void SetRotation(glm::quat quat, bool setDirty = true);
+        glm::quat GetRotation() const;
 
-        void SetScale(glm::mat4 mat);
         void SetScale(glm::vec3 xyz);
-        glm::mat4 GetScale() const;
-        glm::vec3 GetScaleVec() const;
+        glm::vec3 GetScale() const;
 
         bool IsDirty() const;
         bool ClearDirty();
@@ -80,11 +75,11 @@ namespace ecs {
     private:
         Tecs::Entity parent;
 
-        glm::mat4 translate = glm::identity<glm::mat4>();
-        glm::mat4 scale = glm::identity<glm::mat4>();
-        glm::quat rotate = glm::identity<glm::quat>();
+        glm::vec3 position = glm::vec3(0);
+        glm::vec3 scale = glm::vec3(1);
+        glm::quat rotation = glm::identity<glm::quat>();
 
-        glm::mat4 cachedTransform = glm::identity<glm::mat4>();
+        glm::mat4x3 cachedTransform = glm::identity<glm::mat4x3>();
         uint32_t changeCount = 1;
         uint32_t cacheCount = 0;
         uint32_t parentCacheCount = 0;

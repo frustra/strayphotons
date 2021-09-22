@@ -78,7 +78,7 @@ namespace sp {
                             // Apply pitch/yaw rotations
                             auto &transform = entity.Get<ecs::Transform>(lock);
                             auto rotation = glm::quat(glm::vec3(0, -cursorDiff.x * sensitivity, 0)) *
-                                            transform.GetRotate() *
+                                            transform.GetRotation() *
                                             glm::quat(glm::vec3(-cursorDiff.y * sensitivity, 0, 0));
 
                             auto up = rotation * glm::vec3(0, 1, 0);
@@ -91,7 +91,7 @@ namespace sp {
                                 rotation = glm::quat_cast(
                                     glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
                             }
-                            transform.SetRotate(rotation, false);
+                            transform.SetRotation(rotation, false);
                         }
                     }
                 }
@@ -147,10 +147,10 @@ namespace sp {
         auto &controller = entity.Get<ecs::HumanController>(lock);
         auto &transform = entity.Get<ecs::Transform>(lock);
 
-        glm::vec3 movement = transform.GetRotate() * glm::vec3(inDirection.x, 0, inDirection.z);
+        glm::vec3 movement = transform.GetRotation() * glm::vec3(inDirection.x, 0, inDirection.z);
 
         if (!noclip) {
-            if (std::abs(movement.y) > 0.999) { movement = transform.GetRotate() * glm::vec3(0, -movement.y, 0); }
+            if (std::abs(movement.y) > 0.999) { movement = transform.GetRotation() * glm::vec3(0, -movement.y, 0); }
             movement.y = 0;
         }
         if (movement != glm::vec3(0)) {
@@ -243,7 +243,7 @@ namespace sp {
                     auto pose = dynamic->getGlobalPose();
                     auto currentPos = PxVec3ToGlmVec3P(
                         pose.transform(dynamic->getCMassLocalPose().transform(physx::PxVec3(0.0))));
-                    auto invRotate = glm::inverse(transform.GetRotate());
+                    auto invRotate = glm::inverse(transform.GetRotation());
                     auto offset = invRotate * (currentPos - origin + glm::vec3(0, 0.1, 0));
                     physics->CreateConstraint(lock,
                                               entity,

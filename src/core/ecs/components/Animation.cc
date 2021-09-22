@@ -22,7 +22,7 @@ namespace ecs {
                         throw std::runtime_error("Couldn't parse animation state as Transform");
                         return false;
                     }
-                    animation.states.emplace_back(animationState.GetPosition(), animationState.GetScaleVec());
+                    animation.states.emplace_back(animationState.GetPosition(), animationState.GetScale());
                     animation.animationTimes.emplace_back(delay);
                 }
             } else if (param.first == "defaultState") {
