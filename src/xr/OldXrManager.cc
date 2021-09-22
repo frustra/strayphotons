@@ -34,12 +34,7 @@ namespace sp::xr {
         std::map<string, GLBuffer> ibos;
     };
 
-    XrManager::XrManager(Game *game) : game(game) {
-        funcs.Register(this,
-                       "setvrorigin",
-                       "Move the VR origin to the current player position",
-                       &XrManager::SetVrOrigin);
-    }
+    XrManager::XrManager(Game *game) : game(game) {}
 
     XrManager::~XrManager() {}
 
@@ -219,80 +214,6 @@ namespace sp::xr {
         }
 
         return true;
-    }
-
-    void XrManager::InitXrActions() {
-        gameActionSet = xrSystem->GetActionSet(xr::GameActionSet);
-
-        // Create teleport action
-        teleportAction = gameActionSet->CreateAction(xr::TeleportActionName, xr::XrActionType::Bool);
-
-        // Suggested bindings for Oculus Touch
-        teleportAction->AddSuggestedBinding("/interaction_profiles/oculus/touch_controller",
-                                            "/user/hand/right/input/a/click");
-
-        // Suggested bindings for Valve Index
-        teleportAction->AddSuggestedBinding("/interaction_profiles/valve/index_controller",
-                                            "/user/hand/right/input/trigger/click");
-
-        // Suggested bindings for HTC Vive
-        teleportAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller",
-                                            "/user/hand/right/input/trackpad/click");
-
-        // Create grab / interract action
-        grabAction = gameActionSet->CreateAction(xr::GrabActionName, xr::XrActionType::Bool);
-
-        // Suggested bindings for Oculus Touch
-        grabAction->AddSuggestedBinding("/interaction_profiles/oculus/touch_controller",
-                                        "/user/hand/left/input/squeeze/value");
-        grabAction->AddSuggestedBinding("/interaction_profiles/oculus/touch_controller",
-                                        "/user/hand/right/input/squeeze/value");
-
-        // Suggested bindings for Valve Index
-        grabAction->AddSuggestedBinding("/interaction_profiles/valve/index_controller",
-                                        "/user/hand/left/input/squeeze/click");
-        grabAction->AddSuggestedBinding("/interaction_profiles/valve/index_controller",
-                                        "/user/hand/right/input/squeeze/click");
-
-        // Suggested bindings for HTC Vive
-        grabAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller",
-                                        "/user/hand/left/input/squeeze/click");
-        grabAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller",
-                                        "/user/hand/right/input/squeeze/click");
-
-        // Create LeftHand Pose action
-        leftHandAction = gameActionSet->CreateAction(xr::LeftHandActionName, xr::XrActionType::Pose);
-        leftHandAction->AddSuggestedBinding("/interaction_profiles/oculus/touch_controller",
-                                            "/user/hand/left/input/grip/pose");
-        leftHandAction->AddSuggestedBinding("/interaction_profiles/valve/index_controller",
-                                            "/user/hand/left/input/grip/pose");
-        leftHandAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller",
-                                            "/user/hand/left/input/grip/pose");
-
-        // Create RightHand Pose action
-        rightHandAction = gameActionSet->CreateAction(xr::RightHandActionName, xr::XrActionType::Pose);
-        rightHandAction->AddSuggestedBinding("/interaction_profiles/oculus/touch_controller",
-                                             "/user/hand/right/input/grip/pose");
-        rightHandAction->AddSuggestedBinding("/interaction_profiles/valve/index_controller",
-                                             "/user/hand/right/input/grip/pose");
-        rightHandAction->AddSuggestedBinding("/interaction_profiles/htc/vive_controller",
-                                             "/user/hand/right/input/grip/pose");
-
-        // Create LeftHand Skeleton action
-        leftHandSkeletonAction = gameActionSet->CreateAction(xr::LeftHandSkeletonActionName,
-                                                             xr::XrActionType::Skeleton);
-
-        // TODO: add suggested bindings for real XR backends when OpenXR supports skeletons
-
-        // Create RightHand Skeleton action
-        rightHandSkeletonAction = gameActionSet->CreateAction(xr::RightHandSkeletonActionName,
-                                                              xr::XrActionType::Skeleton);
-
-        // TODO: add suggested bindings for real XR backends when OpenXR supports skeletons
-    }
-
-    void XrManager::LoadXrSystem() {
-        InitXrActions();
     }
 
     // TODO: move this into XrSystem as part of #39
@@ -524,36 +445,6 @@ namespace sp::xr {
         }
 
         return xrObject;
-    }
-
-    void XrManager::SetVrOrigin() {
-        if (CVarConnectXR.Get()) {
-            Logf("Resetting VR Origin");
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
-            auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, "vr-origin");
-            auto player = game->logic.GetPlayer();
-            if (vrOrigin && vrOrigin.Has<ecs::Transform>(lock) && player && player.Has<ecs::Transform>(lock)) {
-                auto &vrTransform = vrOrigin.Get<ecs::Transform>(lock);
-                auto &playerTransform = player.Get<ecs::Transform>(lock);
-
-                vrTransform.SetPosition(playerTransform.GetGlobalPosition(lock) -
-                                        glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT, 0));
-            }
-        }
-    }
-
-    /**
-     * @brief Helper function used when creating new entities that belong to
-     * 		  GameLogic. Using this function ensures that the correct ecs::Creator
-     * 		  attribute is added to each entity that is owned by GameLogic, and
-     *		  therefore it gets destroyed on scene unload.
-     *
-     * @return ecs::Entity A new Entity with the ecs::Creator::GAME_LOGIC Key added.
-     */
-    inline ecs::Entity XrManager::CreateXrEntity() {
-        auto newEntity = game->entityManager.NewEntity();
-        newEntity.Assign<ecs::Owner>(ecs::Owner::SystemId::XR_MANAGER);
-        return newEntity;
     }
 }; // namespace sp::xr
 

@@ -27,6 +27,7 @@
 
     #include <algorithm>
     #include <cxxopts.hpp>
+    #include <glm/gtc/matrix_access.hpp>
     #include <iostream>
     #include <optional>
     #include <system_error>
@@ -255,12 +256,10 @@ namespace sp {
 
                 cmd->EndRenderPass();
 
-                glm::mat4 transform;
-                if (windowEntity.Has<ecs::Transform>(lock)) {
-                    transform = windowEntity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-                }
+                view.UpdateViewMatrix(lock, windowEntity);
+
                 vulkan::ViewStateUniforms viewState;
-                viewState.view[0] = glm::inverse(transform);
+                viewState.view[0] = view.viewMat;
                 viewState.projection[0] = view.projMat;
                 (*currentViewState)->CopyFrom(&viewState, 1);
                 currentViewState++;
@@ -348,18 +347,15 @@ namespace sp {
 
                 for (size_t i = 0; i < xrViews.size(); i++) {
                     if (!xrViews[i].Has<ecs::View, ecs::XRView>(lock)) continue;
-                    auto &view = xrViews[i].Get<ecs::View>(lock);
+                    auto view = xrViews[i].Get<ecs::View>(lock);
                     auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
 
-                    glm::mat4 transform;
-                    if (xrViews[i].Has<ecs::Transform>(lock)) {
-                        transform = xrViews[i].Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-                    }
+                    view.UpdateViewMatrix(lock, xrViews[i]);
 
                     if (xrSystem->GetPredictedViewPose(eye, xrRenderPoses[i])) {
-                        viewState.view[i] = glm::inverse(transform * xrRenderPoses[i]);
+                        viewState.view[i] = glm::inverse(xrRenderPoses[i]) * view.viewMat;
                     } else {
-                        viewState.view[i] = glm::inverse(transform);
+                        viewState.view[i] = view.viewMat;
                     }
 
                     viewState.projection[i] = view.projMat;
