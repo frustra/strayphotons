@@ -218,12 +218,13 @@ namespace sp {
 
             for (auto &entity : lock.EntitiesWith<ecs::Light>()) {
                 auto &light = entity.Get<ecs::Light>(lock);
-                if (!light.on) { continue; }
+                if (!light.on) continue;
 
                 if (entity.Has<ecs::View>(lock)) {
                     light.mapOffset /= glm::vec4(renderTargetSize, renderTargetSize);
 
                     auto &view = entity.Get<ecs::View>(lock);
+                    view.UpdateViewMatrix(lock, entity);
 
                     ShaderControl->BindPipeline<ShadowMapVS, ShadowMapFS>();
 

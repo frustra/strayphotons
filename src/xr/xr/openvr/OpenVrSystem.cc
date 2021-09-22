@@ -432,8 +432,8 @@ namespace sp::xr {
                     auto pose = glm::transpose(
                         glm::make_mat3x4((float *)trackedDevicePoses[i].mDeviceToAbsoluteTracking.m));
 
-                    transform.SetRotate(glm::mat4(glm::mat3(pose)));
-                    transform.SetTranslate(glm::column(glm::mat4(), 3, glm::vec4(pose[3], 1.0f)));
+                    transform.SetRotation(glm::quat_cast(glm::mat3(pose)));
+                    transform.SetPosition(pose[3]);
                     transform.UpdateCachedTransform(lock);
                 }
             }
