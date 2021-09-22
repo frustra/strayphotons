@@ -210,9 +210,6 @@ namespace sp::xr {
                 break;
             case vr::VREvent_StatusUpdate:
                 switch (event.data.status.statusState) {
-                case vr::VRState_Undefined:
-                    str = "Undefined";
-                    break;
                 case vr::VRState_Off:
                     str = "Off";
                     break;
@@ -236,6 +233,9 @@ namespace sp::xr {
                     break;
                 case vr::VRState_Ready_Alert_Low:
                     str = "Ready_Alert_Low";
+                    break;
+                default:
+                    str = "Undefined";
                     break;
                 }
                 Debugf("[OVREvent] Status updated at %f: %s", event.eventAgeSeconds, str);
@@ -380,6 +380,7 @@ namespace sp::xr {
                 case vr::TrackedDeviceClass_TrackingReference:
                 case vr::TrackedDeviceClass_DisplayRedirect:
                 case vr::TrackedDeviceClass_Invalid:
+                default:
                     break;
                 }
             } else {
