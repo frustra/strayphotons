@@ -127,6 +127,7 @@ namespace sp {
 
         view.extents = CVarWindowSize.Get();
         view.fov = glm::radians(CVarFieldOfView.Get());
+        view.UpdateProjectionMatrix();
     }
 
     const vector<glm::ivec2> &GlfwGraphicsContext::MonitorModes() {

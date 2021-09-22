@@ -1,13 +1,13 @@
-add_library(${PROJECT_XR_CORE_LIB} STATIC)
+add_library(${PROJECT_XR_CORE_LIB} INTERFACE)
 add_library(${PROJECT_XR_OPENVR_LIB} STATIC)
 add_library(${PROJECT_XR_OPENVR_GL_LIB} STATIC)
 add_library(${PROJECT_XR_OPENVR_VK_LIB} STATIC)
 
-target_include_directories(${PROJECT_XR_CORE_LIB} PUBLIC
+target_include_directories(${PROJECT_XR_CORE_LIB} INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(${PROJECT_XR_CORE_LIB} PUBLIC
+target_link_libraries(${PROJECT_XR_CORE_LIB} INTERFACE
     ${PROJECT_CORE_LIB}
 )
 
@@ -28,7 +28,7 @@ target_link_libraries(${PROJECT_XR_OPENVR_VK_LIB} PUBLIC
     ${PROJECT_GRAPHICS_VULKAN_LIB}
 )
 
-target_compile_definitions(${PROJECT_XR_CORE_LIB} PUBLIC
+target_compile_definitions(${PROJECT_XR_CORE_LIB} INTERFACE
     SP_XR_SUPPORT
 )
 target_compile_definitions(${PROJECT_XR_OPENVR_LIB} PUBLIC

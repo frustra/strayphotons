@@ -32,20 +32,25 @@ namespace ecs {
                 }
             }
         }
+        view.UpdateProjectionMatrix();
         return true;
     }
 
-    void View::UpdateMatrixCache(Lock<Read<Transform>> lock, Tecs::Entity e) {
+    void View::UpdateProjectionMatrix() {
         if (this->fov > 0 && (this->extents.x != 0 || this->extents.y != 0)) {
-            this->aspect = (float)this->extents.x / (float)this->extents.y;
+            auto aspect = this->extents.x / (float)this->extents.y;
 
-            this->projMat = glm::perspective(this->fov, this->aspect, this->clip[0], this->clip[1]);
+            this->projMat = glm::perspective(this->fov, aspect, this->clip[0], this->clip[1]);
             this->invProjMat = glm::inverse(this->projMat);
         }
+    }
 
-        auto &transform = e.Get<Transform>(lock);
-        this->invViewMat = transform.GetGlobalTransform(lock);
-        this->viewMat = glm::inverse(this->invViewMat);
+    void View::UpdateViewMatrix(Lock<Read<Transform>> lock, Tecs::Entity e) {
+        if (e.Has<Transform>(lock)) {
+            auto &transform = e.Get<Transform>(lock);
+            this->invViewMat = transform.GetGlobalTransform(lock);
+            this->viewMat = glm::inverse(this->invViewMat);
+        }
     }
 
 } // namespace ecs

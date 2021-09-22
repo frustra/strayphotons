@@ -155,6 +155,7 @@ namespace sp {
 
             if (entity.Has<ecs::View>(lock)) {
                 auto &view = entity.Get<ecs::View>(lock);
+                view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
                 view.fov = light.spotAngle * 2.0f;
                 light.mapOffset = glm::vec4(renderTargetSize.x, 0, view.extents.x, view.extents.y);
                 light.lightId = lightCount++;
@@ -164,7 +165,8 @@ namespace sp {
                 renderTargetSize.x += view.extents.x;
                 if (view.extents.y > renderTargetSize.y) renderTargetSize.y = view.extents.y;
 
-                view.UpdateMatrixCache(lock, entity);
+                view.UpdateProjectionMatrix();
+                view.UpdateViewMatrix(lock, entity);
             }
         }
 

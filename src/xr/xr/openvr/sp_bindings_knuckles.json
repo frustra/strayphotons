@@ -60,6 +60,24 @@
                },
                "mode" : "button",
                "path" : "/user/hand/right/input/trigger"
+            },
+            {
+               "inputs" : {
+                  "position" : {
+                     "output" : "/actions/main/in/movement"
+                  }
+               },
+               "mode" : "joystick",
+               "path" : "/user/hand/left/input/thumbstick"
+            },
+            {
+               "inputs" : {
+                  "position" : {
+                     "output" : "/actions/main/in/movement"
+                  }
+               },
+               "mode" : "joystick",
+               "path" : "/user/hand/right/input/thumbstick"
             }
          ]
       }
@@ -67,7 +85,7 @@
    "category" : "steamvr_input",
    "controller_type" : "knuckles",
    "description" : "A default set of controller bindings for Valve Index controllers",
-   "name" : "My sp configuration for Index Controller",
+   "name" : "Stray Photons configuration for Index Controller",
    "options" : {},
    "simulated_actions" : []
 }

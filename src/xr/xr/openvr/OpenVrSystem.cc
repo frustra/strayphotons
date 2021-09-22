@@ -59,9 +59,8 @@ namespace sp::xr {
 
         // Initialize SteamVR Input subsystem
         auto cwd = std::filesystem::current_path();
-        std::string action_path = std::filesystem::absolute(cwd / "actions.json").string();
-        vr::EVRInputError inputError = vr::VRInput()->SetActionManifestPath(action_path.c_str());
-        Assert(inputError == vr::EVRInputError::VRInputError_None, "Failed to init SteamVR input");
+        std::string actionManifestPath = std::filesystem::absolute(cwd / "actions.json").string();
+        inputBindings = std::make_shared<InputBindings>(*this, actionManifestPath);
 
         uint32_t vrWidth, vrHeight;
         vrSystem->GetRecommendedRenderTargetSize(&vrWidth, &vrHeight);
@@ -124,26 +123,14 @@ namespace sp::xr {
                "WaitGetPoses failed: " + std::to_string((int)error));
     }
 
-    /*std::shared_ptr<XrActionSet> OpenVrSystem::GetActionSet(std::string setName) {
-        if (actionSets.count(setName) == 0) {
-            actionSets[setName] = make_shared<OpenVrActionSet>(setName, "A SteamVr Action Set");
-        }
-
-        return actionSets[setName];
-    }*/
-
     bool OpenVrSystem::GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) {
-        float secondsSinceLastVsync;
-        vrSystem->GetTimeSinceLastVsync(&secondsSinceLastVsync, nullptr);
-
-        float displayFrequency = vrSystem->GetFloatTrackedDeviceProperty(vr::k_unTrackedDeviceIndex_Hmd,
-                                                                         vr::Prop_DisplayFrequency_Float);
+        float frameTimeRemaining = vr::VRCompositor()->GetFrameTimeRemaining();
         float vSyncToPhotons = vrSystem->GetFloatTrackedDeviceProperty(vr::k_unTrackedDeviceIndex_Hmd,
                                                                        vr::Prop_SecondsFromVsyncToPhotons_Float);
 
         vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd + 1];
         vrSystem->GetDeviceToAbsoluteTrackingPose(vr::TrackingUniverseOrigin::TrackingUniverseStanding,
-                                                  (1.0f / displayFrequency) - secondsSinceLastVsync + vSyncToPhotons,
+                                                  frameTimeRemaining + vSyncToPhotons,
                                                   trackedDevicePoses,
                                                   vr::k_unTrackedDeviceIndex_Hmd + 1);
 
@@ -162,65 +149,11 @@ namespace sp::xr {
         return false;
     }
 
-    /*bool OpenVrSystem::GetPredictedObjectPose(const TrackedObjectHandle &handle, glm::mat4 &objectPose) {
-        // Work out which model to load
-        vr::TrackedDeviceIndex_t deviceIndex = GetOpenVrIndexFromHandle(handle);
+    Tecs::Entity OpenVrSystem::GetEntityForDeviceIndex(ecs::Lock<ecs::Read<ecs::Name>> lock, size_t index) {
+        if (index >= trackedDevices.size()) return Tecs::Entity();
 
-        static vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
-        vr::EVRCompositorError error =
-            vr::VRCompositor()->GetLastPoses(NULL, 0, trackedDevicePoses, vr::k_unMaxTrackedDeviceCount);
-
-        if (error != vr::VRCompositorError_None) { return false; }
-
-        if (!trackedDevicePoses[deviceIndex].bPoseIsValid) { return false; }
-
-        glm::mat4 pos = glm::make_mat3x4((float *)trackedDevicePoses[deviceIndex].mDeviceToAbsoluteTracking.m);
-        objectPose = pos;
-
-        return true;
+        return trackedDevices[index].Get(lock);
     }
-
-    std::vector<TrackedObjectHandle> OpenVrSystem::GetTrackedObjectHandles() {
-        // TODO: probably shouldn't run this logic on every frame
-        std::vector<TrackedObjectHandle> connectedDevices = {
-            {HMD, NONE, "xr-hmd", vrSystem->IsTrackedDeviceConnected(vr::k_unTrackedDeviceIndex_Hmd)},
-        };
-
-        return connectedDevices;
-    }
-
-    std::shared_ptr<XrModel> OpenVrSystem::GetTrackedObjectModel(const TrackedObjectHandle &handle) {
-        return OpenVrModel::LoadOpenVrModel(GetOpenVrIndexFromHandle(handle));
-    }
-
-    vr::TrackedDeviceIndex_t OpenVrSystem::GetOpenVrIndexFromHandle(const TrackedObjectHandle &handle) {
-        // Work out which model to load
-        vr::TrackedDeviceIndex_t deviceIndex = vr::k_unTrackedDeviceIndexInvalid;
-        // vr::ETrackedDeviceClass desiredClass = vr::TrackedDeviceClass_Invalid;
-        vr::ETrackedControllerRole desiredRole = vr::TrackedControllerRole_Invalid;
-
-        if (handle.type == CONTROLLER) {
-            // desiredClass = vr::TrackedDeviceClass_Controller;
-
-            if (handle.hand == LEFT) {
-                desiredRole = vr::TrackedControllerRole_LeftHand;
-            } else if (handle.hand == RIGHT) {
-                desiredRole = vr::TrackedControllerRole_RightHand;
-            } else {
-                Errorf("Loading models for ambidextrous controllers not supported");
-                return vr::k_unTrackedDeviceIndexInvalid;
-            }
-
-            deviceIndex = vr::VRSystem()->GetTrackedDeviceIndexForControllerRole(desiredRole);
-        } else if (handle.type == HMD) {
-            deviceIndex = vr::k_unTrackedDeviceIndex_Hmd;
-        } else {
-            Errorf("Loading models for other types not yet supported");
-            return vr::k_unTrackedDeviceIndexInvalid;
-        }
-
-        return deviceIndex;
-    }*/
 
     void OpenVrSystem::Frame() {
         vr::VREvent_t event;
@@ -357,10 +290,10 @@ namespace sp::xr {
                 }
             } break;
             case vr::VREvent_PropertyChanged:
-                Debugf("[OVREvent] Property changed at %f: (%d) %d",
-                       event.eventAgeSeconds,
-                       event.trackedDeviceIndex,
-                       event.data.property.prop);
+                // Debugf("[OVREvent] Property changed at %f: (%d) %d",
+                //        event.eventAgeSeconds,
+                //        event.trackedDeviceIndex,
+                //        event.data.property.prop);
                 break;
             case vr::VREvent_ChaperoneFlushCache:
                 Debugf("[OVREvent] Chaperone cache refresh at %f", event.eventAgeSeconds);
@@ -375,7 +308,49 @@ namespace sp::xr {
                 Debugf("[OVREvent] Chaperone bounds hidden at %f", event.eventAgeSeconds);
                 break;
             case vr::VREvent_IpdChanged:
-                Debugf("[OVREvent] IPD changed at %f: %f", event.eventAgeSeconds, event.data.ipd.ipdMeters);
+                // Debugf("[OVREvent] IPD changed at %f: %f", event.eventAgeSeconds, event.data.ipd.ipdMeters);
+                break;
+            case vr::VREvent_OtherSectionSettingChanged:
+                Debugf("[OVREvent] Settings: Other section changed at %f: %f", event.eventAgeSeconds);
+                break;
+            case vr::VREvent_ApplicationListUpdated:
+                Debugf("[OVREvent] Applications list updated at %f", event.eventAgeSeconds);
+                break;
+            case vr::VREvent_Input_ActionManifestReloaded:
+                Debugf("[OVREvent] Action manifest reloaded at %f", event.eventAgeSeconds);
+                break;
+            case vr::VREvent_ActionBindingReloaded:
+                Debugf("[OVREvent] Action bindings reloaded at %f", event.eventAgeSeconds);
+                break;
+            case vr::VREvent_Input_BindingLoadFailed:
+                Errorf("[OVREvent] Binding load failed at %f", event.eventAgeSeconds);
+                break;
+            case vr::VREvent_Input_BindingLoadSuccessful:
+                Debugf("[OVREvent] Binding load succeeded at %f", event.eventAgeSeconds);
+                break;
+            case vr::VREvent_Input_BindingsUpdated:
+                Debugf("[OVREvent] Bindings updated at %f", event.eventAgeSeconds);
+                break;
+            case vr::VREvent_DesktopViewUpdating:
+                Debugf("[OVREvent] Desktop view updating at %f", event.eventAgeSeconds);
+                break;
+            case vr::VREvent_DesktopViewReady:
+                Debugf("[OVREvent] Desktop view ready at %f", event.eventAgeSeconds);
+                break;
+            case vr::VREvent_ProcessConnected:
+                Debugf("[OVREvent] Process connected at %f: %u", event.eventAgeSeconds, event.data.process.pid);
+                break;
+            case vr::VREvent_ProcessDisconnected:
+                Debugf("[OVREvent] Process disconnected at %f: %u", event.eventAgeSeconds, event.data.process.pid);
+                break;
+            case vr::VREvent_Quit:
+                Logf("[OVREvent] OpenVR quiting at %f", event.eventAgeSeconds);
+                break;
+            case vr::VREvent_ProcessQuit:
+                Debugf("[OVREvent] OpenVR process quitting at %f: %u", event.eventAgeSeconds, event.data.process.pid);
+                break;
+            case vr::VREvent_Compositor_ApplicationNotResponding:
+                Logf("[OVREvent] OpenVR Compositor not responding at %f", event.eventAgeSeconds);
                 break;
             default:
                 Debugf("[OVREvent] Unknown OpenVR event: %d", event.eventType);
@@ -437,6 +412,8 @@ namespace sp::xr {
                         auto &transform = ent.Set<ecs::Transform>(lock);
                         transform.SetParent(vrOrigin);
                         transform.SetScale(glm::vec3(0.01f));
+                        ent.Set<ecs::EventBindings>(lock);
+                        ent.Set<ecs::SignalOutput>(lock);
                     }
                     namedEntity = ecs::NamedEntity(targetName, ent);
                 }
@@ -461,6 +438,7 @@ namespace sp::xr {
                 }
             }
         }
+        if (inputBindings) inputBindings->Frame();
     }
 
 } // namespace sp::xr

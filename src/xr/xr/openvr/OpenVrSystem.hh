@@ -1,9 +1,11 @@
 #pragma once
 
 #include "core/RegisteredThread.hh"
+#include "ecs/Ecs.hh"
 #include "ecs/NamedEntity.hh"
 #include "ecs/components/XRView.hh"
 #include "xr/XrSystem.hh"
+#include "xr/openvr/InputBindings.hh"
 
 #include <openvr.h>
 
@@ -26,24 +28,20 @@ namespace sp {
             bool IsInitialized();
             bool IsHmdPresent();
 
-            // std::shared_ptr<XrActionSet> GetActionSet(std::string setName);
-
             bool GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat);
-            // bool GetPredictedObjectPose(const TrackedObjectHandle &handle, glm::mat4 &objectPose);
-            // std::vector<TrackedObjectHandle> GetTrackedObjectHandles();
-            // std::shared_ptr<XrModel> GetTrackedObjectModel(const TrackedObjectHandle &handle);
 
-            void SubmitView(ecs::XrEye eye, GpuTexture *tex);
+            void SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex);
             void WaitFrame();
+
+            Tecs::Entity GetEntityForDeviceIndex(ecs::Lock<ecs::Read<ecs::Name>> lock, size_t index);
 
         private:
             void Frame() override;
-            // vr::TrackedDeviceIndex_t GetOpenVrIndexFromHandle(const TrackedObjectHandle &handle);
 
             GraphicsContext *context = nullptr;
 
             std::shared_ptr<vr::IVRSystem> vrSystem;
-            // std::map<std::string, std::shared_ptr<OpenVrActionSet>> actionSets;
+            std::shared_ptr<InputBindings> inputBindings;
 
             ecs::NamedEntity vrOriginEntity = ecs::NamedEntity("vr-origin");
             std::array<ecs::NamedEntity, (size_t)ecs::XrEye::EYE_COUNT> views = {

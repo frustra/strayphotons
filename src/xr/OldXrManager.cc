@@ -159,27 +159,6 @@ namespace sp::xr {
                     }
                 }
 
-                // Now move generic tracked objects around (HMD, Vive Pucks, etc..)
-                for (xr::TrackedObjectHandle trackedObjectHandle : xrSystem->GetTracking()->GetTrackedObjectHandles()) {
-                    ecs::Entity xrObject = ValidateAndLoadTrackedObject(trackedObjectHandle);
-
-                    if (xrObject.Valid()) {
-                        glm::mat4 xrObjectPos;
-
-                        if (xrSystem->GetTracking()->GetPredictedObjectPose(trackedObjectHandle, xrObjectPos)) {
-                            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::Transform>>();
-
-                            auto &vrOriginTransformTecs = vrOrigin.GetEntity().Get<ecs::Transform>(lock);
-                            xrObjectPos = glm::transpose(
-                                xrObjectPos * glm::transpose(vrOriginTransformTecs.GetGlobalTransform(lock)));
-
-                            auto &ctrl = xrObject.GetEntity().Get<ecs::Transform>(lock);
-                            ctrl.SetPosition(xrObjectPos * glm::vec4(0, 0, 0, 1));
-                            ctrl.SetRotation(glm::quat_cast(glm::mat3(xrObjectPos)));
-                        }
-                    }
-                }
-
                 if (CVarSkeletons.Get() != SkeletonMode::SkeletonDisabled) {
                     // Now load skeletons
                     for (xr::XrActionPtr action : {leftHandSkeletonAction, rightHandSkeletonAction}) {

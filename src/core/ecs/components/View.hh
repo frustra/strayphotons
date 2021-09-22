@@ -25,7 +25,9 @@ namespace ecs {
              float fov = 0.0f,
              glm::vec2 clip = {0.1, 256},
              Renderable::VisibilityMask mask = Renderable::VisibilityMask())
-            : extents(extents), fov(fov), clip(clip), visibilityMask(mask) {}
+            : extents(extents), fov(fov), clip(clip), visibilityMask(mask) {
+            UpdateProjectionMatrix();
+        }
 
         // Optional parameters;
         glm::ivec2 offset = {0, 0};
@@ -44,10 +46,10 @@ namespace ecs {
         glm::vec2 clip = {0.1, 256}; // {near, far}
         Renderable::VisibilityMask visibilityMask;
 
-        void UpdateMatrixCache(Lock<Read<Transform>> lock, Tecs::Entity e);
+        void UpdateProjectionMatrix();
+        void UpdateViewMatrix(Lock<Read<Transform>> lock, Tecs::Entity e);
 
         // Matrix cache
-        float aspect = 1.0f;
         glm::mat4 projMat, invProjMat;
         glm::mat4 viewMat, invViewMat;
     };
