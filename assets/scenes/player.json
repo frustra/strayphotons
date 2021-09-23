@@ -42,7 +42,7 @@
             "event_input": [
                 "/action/camera_rotate",
                 "/action/interact",
-                "/action/spawn_debug",
+                "/action/spawn_debug"
             ],
             "signal_bindings": {
                 "menu_primary_trigger": { "mouse_button_left": "mouse" },
@@ -50,8 +50,8 @@
                 "menu_cursor_x": { "mouse_cursor_x": "mouse" },
                 "menu_cursor_y": { "mouse_cursor_y": "mouse" },
                 "move_forward": { "key_w": "keyboard" },
-                "move_right": { "key_d": "keyboard" },
                 "move_left": { "key_a": "keyboard" },
+                "move_right": { "key_d": "keyboard" },
                 "move_back": { "key_s": "keyboard" },
                 "move_crouch": { "key_left_control": "keyboard" },
                 "move_jump": { "key_space": "keyboard" },
