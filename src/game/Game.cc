@@ -54,13 +54,13 @@ namespace sp {
             menuGui = std::make_unique<MenuGuiManager>(this->graphics);
 
             graphics.Init();
-
-    #ifdef SP_XR_SUPPORT
-            if (options["no-vr"].count() == 0) xr.LoadXrSystem();
-    #endif
 #endif
 
             logic.Init(startupScript);
+
+#ifdef SP_XR_SUPPORT
+            if (options["no-vr"].count() == 0) xr.LoadXrSystem();
+#endif
 
             lastFrameTime = chrono_clock::now();
 

@@ -5,7 +5,7 @@
 #include <openvr.h>
 
 namespace sp::xr {
-    void OpenVrSystem::SubmitView(ecs::XrEye eye, GpuTexture *tex) {
+    void OpenVrSystem::SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) {
         Assert(context != nullptr, "TranslateTexture: null GraphicsContext");
         Assert(tex != nullptr, "TranslateTexture: null GpuTexture");
 
@@ -33,7 +33,15 @@ namespace sp::xr {
         vulkanData.m_nHeight = tex->GetHeight();
         vulkanData.m_nSampleCount = 1;
 
-        vr::Texture_t texture = {&vulkanData, vr::TextureType_Vulkan, vr::ColorSpace_Auto};
+        vr::VRTextureWithPose_t texture;
+        texture.handle = &vulkanData;
+        texture.eType = vr::TextureType_Vulkan;
+        texture.eColorSpace = vr::ColorSpace_Auto;
+        glm::mat3x4 trackingPose = glm::transpose(viewPose);
+        memcpy((float *)texture.mDeviceToAbsoluteTracking.m,
+               glm::value_ptr(trackingPose),
+               sizeof(texture.mDeviceToAbsoluteTracking.m));
+
         auto vrEye = MapXrEyeToOpenVr(eye);
 
         // Work around OpenVR barrier bug: https://github.com/ValveSoftware/openvr/issues/1591
@@ -51,7 +59,11 @@ namespace sp::xr {
         // Ignore OpenVR performance warning: https://github.com/ValveSoftware/openvr/issues/818
         device->disabledDebugMessages = VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 
-        auto err = vr::VRCompositor()->Submit(vrEye, &texture, 0, vr::Submit_VulkanTextureWithArrayData);
+        auto err = vr::VRCompositor()->Submit(
+            vrEye,
+            &texture,
+            0,
+            (vr::EVRSubmitFlags)(vr::Submit_TextureWithPose | vr::Submit_VulkanTextureWithArrayData));
         device->disabledDebugMessages = 0;
         Assert(err == vr::VRCompositorError_None || err == vr::VRCompositorError_DoNotHaveFocus,
                "VR compositor error: " + std::to_string(err));

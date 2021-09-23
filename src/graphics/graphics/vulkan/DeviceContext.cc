@@ -437,6 +437,7 @@ namespace sp::vulkan {
 
         view.extents = {swapchainExtent.width, swapchainExtent.height};
         view.fov = glm::radians(CVarFieldOfView.Get());
+        view.UpdateProjectionMatrix();
     }
 
     const vector<glm::ivec2> &DeviceContext::MonitorModes() {

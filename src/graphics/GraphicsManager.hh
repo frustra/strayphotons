@@ -74,6 +74,8 @@ namespace sp {
         #ifdef SP_GRAPHICS_SUPPORT_VK
         shared_ptr<vulkan::ImageView> xrColor, xrDepth;
         #endif
+
+        std::vector<glm::mat4> xrRenderPoses;
     #endif
     };
 } // namespace sp

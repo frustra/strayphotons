@@ -44,6 +44,8 @@ namespace ecs {
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, glm::vec2>) {
                     out << glm::to_string(arg);
+                } else if constexpr (std::is_same_v<T, glm::vec3>) {
+                    out << glm::to_string(arg);
                 } else if constexpr (std::is_same_v<T, Tecs::Entity>) {
                     out << "Entity(" << arg.id << ")";
                 } else if constexpr (std::is_same_v<T, std::string>) {

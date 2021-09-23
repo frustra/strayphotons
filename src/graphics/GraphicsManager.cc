@@ -27,6 +27,7 @@
 
     #include <algorithm>
     #include <cxxopts.hpp>
+    #include <glm/gtc/matrix_access.hpp>
     #include <iostream>
     #include <optional>
     #include <system_error>
@@ -131,46 +132,21 @@ namespace sp {
         if (game->debugGui) game->debugGui->BeforeFrame();
         if (game->menuGui) game->menuGui->BeforeFrame();
 
-        std::optional<ecs::View> windowView;
-        std::vector<ecs::View> shadowViews;
-        std::vector<std::pair<ecs::View, ecs::XRView>> xrViews;
-        {
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Transform, ecs::Light, ecs::XRView>,
-                                                    ecs::Write<ecs::View>>();
+        Tecs::Entity windowEntity = context->GetActiveView();
+        if (windowEntity) {
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::View>>();
 
-            auto &windowEntity = context->GetActiveView();
-            if (windowEntity) {
-                if (windowEntity.Has<ecs::View>(lock)) {
-                    auto &view = windowEntity.Get<ecs::View>(lock);
-                    view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_CAMERA);
-                    context->PrepareWindowView(view);
-
-                    windowView = view;
-                }
-            }
-
-            for (auto &e : lock.EntitiesWith<ecs::Light>()) {
-                if (e.Has<ecs::Light, ecs::View>(lock)) {
-                    auto &view = e.Get<ecs::View>(lock);
-                    view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
-                }
-            }
-
-            for (auto &e : lock.EntitiesWith<ecs::View>()) {
-                auto &view = e.Get<ecs::View>(lock);
-                view.UpdateMatrixCache(lock, e);
-                if (view.visibilityMask[ecs::Renderable::VISIBLE_DIRECT_CAMERA]) {
-                    // TODO: Render camera views to textures
-                } else if (view.visibilityMask[ecs::Renderable::VISIBLE_DIRECT_EYE] && e.Has<ecs::XRView>(lock)) {
-                    xrViews.emplace_back(view, e.Get<ecs::XRView>(lock));
-                } else if (view.visibilityMask[ecs::Renderable::VISIBLE_LIGHTING_SHADOW]) {
-                    shadowViews.emplace_back(view);
-                }
+            if (windowEntity.Has<ecs::View>(lock)) {
+                auto &view = windowEntity.Get<ecs::View>(lock);
+                view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_CAMERA);
+                context->PrepareWindowView(view);
             }
         }
 
     #ifdef SP_XR_SUPPORT
         auto xrSystem = game->xr.GetXrSystem();
+
+        if (xrSystem) xrSystem->WaitFrame();
     #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
@@ -184,19 +160,27 @@ namespace sp {
             RenderPhase phase("Frame", timer);
 
             auto lock = ecs::World.StartTransaction<
-                ecs::Read<ecs::Name, ecs::Transform>,
+                ecs::Read<ecs::Name, ecs::Transform, ecs::XRView>,
                 ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>>();
             renderer->BeginFrame(lock);
 
-            if (windowView) renderer->RenderPass(*windowView, lock);
+            if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
+                auto &view = windowEntity.Get<ecs::View>(lock);
+                view.UpdateViewMatrix(lock, windowEntity);
+                renderer->RenderPass(view, lock);
+            }
 
         #ifdef SP_XR_SUPPORT
             if (xrSystem) {
                 RenderPhase xrPhase("XrViews", timer);
 
+                auto xrViews = lock.EntitiesWith<ecs::XRView>();
                 xrRenderTargets.resize(xrViews.size());
+                xrRenderPoses.resize(xrViews.size());
                 for (size_t i = 0; i < xrViews.size(); i++) {
-                    auto &view = xrViews[i].first;
+                    if (!xrViews[i].Has<ecs::View, ecs::XRView>(lock)) continue;
+                    auto &view = xrViews[i].Get<ecs::View>(lock);
+                    auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
 
                     RenderPhase xrSubPhase("XrView", timer);
 
@@ -205,19 +189,21 @@ namespace sp {
                         xrRenderTargets[i] = glContext->GetRenderTarget(desc);
                     }
 
-                    glm::mat4 invViewMat;
-                    if (xrSystem->GetPredictedViewPose(xrViews[i].second.eye, invViewMat)) {
-                        view.viewMat = glm::inverse(invViewMat);
-                        view.invViewMat = invViewMat;
+                    view.UpdateViewMatrix(lock, xrViews[i]);
+                    if (xrSystem->GetPredictedViewPose(eye, xrRenderPoses[i])) {
+                        view.viewMat = glm::inverse(xrRenderPoses[i]) * view.viewMat;
+                        view.invViewMat = view.invViewMat * xrRenderPoses[i];
                     }
 
                     renderer->RenderPass(view, lock, xrRenderTargets[i].get());
                 }
 
                 for (size_t i = 0; i < xrViews.size(); i++) {
+                    if (!xrViews[i].Has<ecs::View, ecs::XRView>(lock)) continue;
                     RenderPhase xrSubPhase("XrViewSubmit", timer);
 
-                    xrSystem->SubmitView(xrViews[i].second.eye, xrRenderTargets[i]->GetTexture());
+                    auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
+                    xrSystem->SubmitView(eye, xrRenderPoses[i], xrRenderTargets[i]->GetTexture());
                 }
             }
         #endif
@@ -226,13 +212,6 @@ namespace sp {
         }
 
         context->SwapBuffers();
-
-        #ifdef SP_XR_SUPPORT
-        if (xrSystem) {
-            RenderPhase xrPhase("XrWaitFrame", timer);
-            xrSystem->WaitFrame();
-        }
-        #endif
 
         timer.EndFrame();
         context->EndFrame();
@@ -246,6 +225,11 @@ namespace sp {
             // RenderPhase phase("Frame", timer);
             auto &device = *dynamic_cast<vulkan::DeviceContext *>(context.get());
 
+            auto lock = ecs::World.StartTransaction<
+                ecs::Read<ecs::Name, ecs::Transform, ecs::Renderable, ecs::View, ecs::XRView, ecs::Mirror>>();
+
+            auto xrViews = lock.EntitiesWith<ecs::XRView>();
+            xrRenderPoses.resize(xrViews.size());
             viewStateUniformBuffers.resize(1 + (xrViews.empty() ? 0 : 1));
             for (auto &bufferPtr : viewStateUniformBuffers) {
                 if (!bufferPtr) {
@@ -256,26 +240,27 @@ namespace sp {
             }
             auto currentViewState = viewStateUniformBuffers.begin();
 
-            auto lock =
-                ecs::World
-                    .StartTransaction<ecs::Read<ecs::Name, ecs::Transform, ecs::Renderable, ecs::View, ecs::Mirror>>();
             renderer->BeginFrame(lock);
 
-            if (windowView) {
+            if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
+                auto view = windowEntity.Get<ecs::View>(lock);
+
                 auto cmd = device.GetCommandContext();
                 cmd->BeginRenderPass(device.SwapchainRenderPassInfo(true));
 
                 cmd->SetUniformBuffer(0, 10, *currentViewState);
 
-                renderer->RenderPass(cmd, *windowView, lock);
+                renderer->RenderPass(cmd, view, lock);
 
                 debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd->GetFramebufferExtent()});
 
                 cmd->EndRenderPass();
 
+                view.UpdateViewMatrix(lock, windowEntity);
+
                 vulkan::ViewStateUniforms viewState;
-                viewState.view[0] = windowView->viewMat;
-                viewState.projection[0] = windowView->projMat;
+                viewState.view[0] = view.viewMat;
+                viewState.projection[0] = view.projMat;
                 (*currentViewState)->CopyFrom(&viewState, 1);
                 currentViewState++;
 
@@ -285,14 +270,21 @@ namespace sp {
         #ifdef SP_XR_SUPPORT
             if (xrSystem && xrViews.size() > 0) {
                 auto cmd = device.GetCommandContext();
-                auto &firstView = xrViews[0].first;
+                ecs::View firstView;
+                for (auto &ent : xrViews) {
+                    if (ent.Has<ecs::View>(lock)) {
+                        auto &view = ent.Get<ecs::View>(lock);
+
+                        if (firstView.extents == glm::ivec2(0)) {
+                            firstView = view;
+                        } else if (firstView.extents != view.extents) {
+                            Abort("All XR views must have the same extents");
+                        }
+                    }
+                }
 
                 if (!xrColor || xrColor->Image()->ArrayLayers() != xrViews.size() ||
                     xrColor->Extent() != vk::Extent3D(firstView.extents.x, firstView.extents.y, 1)) {
-
-                    for (auto &view : xrViews) {
-                        Assert(view.first.extents == firstView.extents, "all XR views must have the same extents");
-                    }
 
                     vk::ImageCreateInfo imageInfo;
                     imageInfo.imageType = vk::ImageType::e2D;
@@ -351,14 +343,22 @@ namespace sp {
                                   vk::PipelineStageFlagBits::eTransfer,
                                   vk::AccessFlagBits::eTransferRead);
 
-                glm::mat4 invViewMat;
                 vulkan::ViewStateUniforms viewState;
 
                 for (size_t i = 0; i < xrViews.size(); i++) {
-                    if (xrSystem->GetPredictedViewPose(xrViews[i].second.eye, invViewMat)) {
-                        viewState.view[i] = glm::inverse(invViewMat);
-                        viewState.projection[i] = xrViews[i].first.projMat;
+                    if (!xrViews[i].Has<ecs::View, ecs::XRView>(lock)) continue;
+                    auto view = xrViews[i].Get<ecs::View>(lock);
+                    auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
+
+                    view.UpdateViewMatrix(lock, xrViews[i]);
+
+                    if (xrSystem->GetPredictedViewPose(eye, xrRenderPoses[i])) {
+                        viewState.view[i] = glm::inverse(xrRenderPoses[i]) * view.viewMat;
+                    } else {
+                        viewState.view[i] = view.viewMat;
                     }
+
+                    viewState.projection[i] = view.projMat;
                 }
                 (*currentViewState)->CopyFrom(&viewState, 1);
                 currentViewState++;
@@ -366,7 +366,8 @@ namespace sp {
                 device.Submit(cmd);
 
                 for (size_t i = 0; i < xrViews.size(); i++) {
-                    xrSystem->SubmitView(xrViews[i].second.eye, xrColor.get());
+                    auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
+                    xrSystem->SubmitView(eye, xrRenderPoses[i], xrColor.get());
                 }
 
                 if (ScreenshotVRPath.size()) {
@@ -380,10 +381,6 @@ namespace sp {
         }
 
         context->SwapBuffers();
-
-        #ifdef SP_XR_SUPPORT
-        if (xrSystem) xrSystem->WaitFrame();
-        #endif
 
         // timer.EndFrame();
         context->EndFrame();

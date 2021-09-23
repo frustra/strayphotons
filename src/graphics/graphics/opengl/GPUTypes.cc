@@ -14,9 +14,9 @@ namespace sp {
 
             auto &view = entity.Get<ecs::View>(lock);
             auto &transform = entity.Get<ecs::Transform>(lock);
-            data->position = transform.GetGlobalTransform(lock) * glm::vec4(0, 0, 0, 1);
+            data->position = transform.GetGlobalPosition(lock);
             data->tint = light.tint;
-            data->direction = glm::mat3(transform.GetGlobalTransform(lock)) * glm::vec3(0, 0, -1);
+            data->direction = transform.GetGlobalForward(lock);
             data->spotAngleCos = cos(light.spotAngle);
             data->proj = view.projMat;
             data->invProj = view.invProjMat;

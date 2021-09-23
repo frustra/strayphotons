@@ -1,6 +1,7 @@
 // Project Headers
 #include "OpenVrSystem.hh"
 
+#include "assets/AssetManager.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
@@ -11,6 +12,7 @@
 
 // GLM headers
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 // System Headers
@@ -32,6 +34,12 @@ namespace sp::xr {
         }
     }
 
+    OpenVrSystem::~OpenVrSystem() {
+        StopThread();
+
+        vrSystem.reset();
+    }
+
     void OpenVrSystem::Init(GraphicsContext *context) {
         if (vrSystem) return;
         this->context = context;
@@ -49,11 +57,12 @@ namespace sp::xr {
             Abort(VR_GetVRInitErrorAsSymbol(err));
         }
 
+        eventHandler = std::make_shared<EventHandler>(vrSystem);
+
         // Initialize SteamVR Input subsystem
         auto cwd = std::filesystem::current_path();
-        std::string action_path = std::filesystem::absolute(cwd / "actions.json").string();
-        vr::EVRInputError inputError = vr::VRInput()->SetActionManifestPath(action_path.c_str());
-        Assert(inputError == vr::EVRInputError::VRInputError_None, "Failed to init SteamVR input");
+        std::string actionManifestPath = std::filesystem::absolute(cwd / "actions.json").string();
+        inputBindings = std::make_shared<InputBindings>(*this, actionManifestPath);
 
         uint32_t vrWidth, vrHeight;
         vrSystem->GetRecommendedRenderTargetSize(&vrWidth, &vrHeight);
@@ -64,6 +73,7 @@ namespace sp::xr {
 
             Tecs::Entity vrOrigin = vrOriginEntity.Get(lock);
             if (!vrOrigin) {
+                Logf("Creating vr-origin");
                 vrOrigin = lock.NewEntity();
                 vrOrigin.Set<ecs::Name>(lock, "vr-origin");
                 vrOrigin.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
@@ -80,8 +90,9 @@ namespace sp::xr {
                     ent = lock.NewEntity();
                     ent.Set<ecs::Name>(lock, entity.Name());
                     ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
-                    ent.Set<ecs::Transform>(lock);
                     ent.Set<ecs::XRView>(lock, (ecs::XrEye)i);
+                    auto &transform = ent.Set<ecs::Transform>(lock);
+                    transform.SetParent(vrOrigin);
 
                     entity = ecs::NamedEntity(entity.Name(), ent);
                 }
@@ -96,6 +107,8 @@ namespace sp::xr {
                 view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_EYE);
             }
         }
+
+        StartThread();
     }
 
     bool OpenVrSystem::IsInitialized() {
@@ -106,40 +119,16 @@ namespace sp::xr {
         return vr::VR_IsRuntimeInstalled() && vr::VR_IsHmdPresent();
     }
 
-    void OpenVrSystem::WaitFrame() {
-        // Throw away, we will use GetLastPoses() to access this in other places
-        static vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
-        vr::EVRCompositorError error =
-            vr::VRCompositor()->WaitGetPoses(trackedDevicePoses, vr::k_unMaxTrackedDeviceCount, NULL, 0);
-
-        if (error != vr::EVRCompositorError::VRCompositorError_None) {
-            // TODO: exception, or warning?
-            Errorf("WaitGetPoses failed: %d", error);
-        }
-    }
-
-    /*std::shared_ptr<XrActionSet> OpenVrSystem::GetActionSet(std::string setName) {
-        if (actionSets.count(setName) == 0) {
-            actionSets[setName] = make_shared<OpenVrActionSet>(setName, "A SteamVr Action Set");
-        }
-
-        return actionSets[setName];
-    }*/
-
     bool OpenVrSystem::GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) {
-        float secondsSinceLastVsync;
-        vrSystem->GetTimeSinceLastVsync(&secondsSinceLastVsync, NULL);
-
-        float displayFrequency = vrSystem->GetFloatTrackedDeviceProperty(vr::k_unTrackedDeviceIndex_Hmd,
-                                                                         vr::Prop_DisplayFrequency_Float);
+        float frameTimeRemaining = vr::VRCompositor()->GetFrameTimeRemaining();
         float vSyncToPhotons = vrSystem->GetFloatTrackedDeviceProperty(vr::k_unTrackedDeviceIndex_Hmd,
                                                                        vr::Prop_SecondsFromVsyncToPhotons_Float);
 
-        vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
+        vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd + 1];
         vrSystem->GetDeviceToAbsoluteTrackingPose(vr::TrackingUniverseOrigin::TrackingUniverseStanding,
-                                                  (1.0f / displayFrequency) - secondsSinceLastVsync + vSyncToPhotons,
+                                                  frameTimeRemaining + vSyncToPhotons,
                                                   trackedDevicePoses,
-                                                  vr::k_unMaxTrackedDeviceCount);
+                                                  vr::k_unTrackedDeviceIndex_Hmd + 1);
 
         if (trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid) {
             glm::mat4 hmdPose = glm::mat4(glm::make_mat3x4(
@@ -156,64 +145,115 @@ namespace sp::xr {
         return false;
     }
 
-    /*bool OpenVrSystem::GetPredictedObjectPose(const TrackedObjectHandle &handle, glm::mat4 &objectPose) {
-        // Work out which model to load
-        vr::TrackedDeviceIndex_t deviceIndex = GetOpenVrIndexFromHandle(handle);
+    void OpenVrSystem::WaitFrame() {
+        vr::EVRCompositorError error = vr::VRCompositor()->WaitGetPoses(nullptr, 0, nullptr, 0);
+        Assert(error == vr::EVRCompositorError::VRCompositorError_None,
+               "WaitGetPoses failed: " + std::to_string((int)error));
+    }
 
-        static vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
+    ecs::NamedEntity OpenVrSystem::GetEntityForDeviceIndex(size_t index) {
+        if (index >= trackedDevices.size()) return ecs::NamedEntity();
+
+        return trackedDevices[index];
+    }
+
+    void OpenVrSystem::Frame() {
+        if (eventHandler) eventHandler->Frame();
+
+        vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
         vr::EVRCompositorError error =
-            vr::VRCompositor()->GetLastPoses(NULL, 0, trackedDevicePoses, vr::k_unMaxTrackedDeviceCount);
+            vr::VRCompositor()->GetLastPoses(trackedDevicePoses, vr::k_unMaxTrackedDeviceCount, NULL, 0);
+        if (error != vr::VRCompositorError_None) return;
 
-        if (error != vr::VRCompositorError_None) { return false; }
-
-        if (!trackedDevicePoses[deviceIndex].bPoseIsValid) { return false; }
-
-        glm::mat4 pos = glm::make_mat3x4((float *)trackedDevicePoses[deviceIndex].mDeviceToAbsoluteTracking.m);
-        objectPose = pos;
-
-        return true;
-    }
-
-    std::vector<TrackedObjectHandle> OpenVrSystem::GetTrackedObjectHandles() {
-        // TODO: probably shouldn't run this logic on every frame
-        std::vector<TrackedObjectHandle> connectedDevices = {
-            {HMD, NONE, "xr-hmd", vrSystem->IsTrackedDeviceConnected(vr::k_unTrackedDeviceIndex_Hmd)},
-        };
-
-        return connectedDevices;
-    }
-
-    std::shared_ptr<XrModel> OpenVrSystem::GetTrackedObjectModel(const TrackedObjectHandle &handle) {
-        return OpenVrModel::LoadOpenVrModel(GetOpenVrIndexFromHandle(handle));
-    }
-
-    vr::TrackedDeviceIndex_t OpenVrSystem::GetOpenVrIndexFromHandle(const TrackedObjectHandle &handle) {
-        // Work out which model to load
-        vr::TrackedDeviceIndex_t deviceIndex = vr::k_unTrackedDeviceIndexInvalid;
-        // vr::ETrackedDeviceClass desiredClass = vr::TrackedDeviceClass_Invalid;
-        vr::ETrackedControllerRole desiredRole = vr::TrackedControllerRole_Invalid;
-
-        if (handle.type == CONTROLLER) {
-            // desiredClass = vr::TrackedDeviceClass_Controller;
-
-            if (handle.hand == LEFT) {
-                desiredRole = vr::TrackedControllerRole_LeftHand;
-            } else if (handle.hand == RIGHT) {
-                desiredRole = vr::TrackedControllerRole_RightHand;
+        bool entitiesChanged = false;
+        std::array<std::string, vr::k_unMaxTrackedDeviceCount> deviceNames;
+        for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
+            if (vrSystem->IsTrackedDeviceConnected(i)) {
+                auto deviceClass = vrSystem->GetTrackedDeviceClass(i);
+                switch (deviceClass) {
+                case vr::TrackedDeviceClass_HMD:
+                    if (i == vr::k_unTrackedDeviceIndex_Hmd) {
+                        deviceNames[i] = "vr-hmd";
+                    } else {
+                        deviceNames[i] = "vr-hmd" + std::to_string(i);
+                    }
+                    break;
+                case vr::TrackedDeviceClass_Controller: {
+                    auto role = vrSystem->GetControllerRoleForTrackedDeviceIndex(i);
+                    if (role == vr::TrackedControllerRole_LeftHand) {
+                        deviceNames[i] = "vr-controller-left";
+                    } else if (role == vr::TrackedControllerRole_RightHand) {
+                        deviceNames[i] = "vr-controller-right";
+                    } else {
+                        deviceNames[i] = "vr-controller" + std::to_string(i);
+                    }
+                } break;
+                case vr::TrackedDeviceClass_GenericTracker:
+                    deviceNames[i] = "vr-tracker" + std::to_string(i);
+                    break;
+                case vr::TrackedDeviceClass_TrackingReference:
+                case vr::TrackedDeviceClass_DisplayRedirect:
+                case vr::TrackedDeviceClass_Invalid:
+                default:
+                    break;
+                }
             } else {
-                Errorf("Loading models for ambidextrous controllers not supported");
-                return vr::k_unTrackedDeviceIndexInvalid;
+                deviceNames[i] = "";
             }
-
-            deviceIndex = vr::VRSystem()->GetTrackedDeviceIndexForControllerRole(desiredRole);
-        } else if (handle.type == HMD) {
-            deviceIndex = vr::k_unTrackedDeviceIndex_Hmd;
-        } else {
-            Errorf("Loading models for other types not yet supported");
-            return vr::k_unTrackedDeviceIndexInvalid;
+            if (trackedDevices[i].Name() != deviceNames[i]) entitiesChanged = true;
         }
+        if (entitiesChanged) {
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
 
-        return deviceIndex;
-    }*/
+            Tecs::Entity vrOrigin = vrOriginEntity.Get(lock);
+            Assert(vrOrigin, "VR Origin entity missing");
+
+            for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
+                auto &namedEntity = trackedDevices[i];
+                Tecs::Entity ent = namedEntity.Get(lock);
+
+                auto &targetName = deviceNames[i];
+                if (namedEntity.Name() != targetName) {
+                    if (ent) {
+                        ent.Destroy(lock);
+                        ent = Tecs::Entity();
+                    }
+                    if (!targetName.empty()) {
+                        ent = lock.NewEntity();
+                        ent.Set<ecs::Name>(lock, targetName);
+                        ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
+                        auto model = GAssets.LoadModel("box");
+                        ent.Set<ecs::Renderable>(lock, model);
+                        auto &transform = ent.Set<ecs::Transform>(lock);
+                        transform.SetParent(vrOrigin);
+                        transform.SetScale(glm::vec3(0.01f));
+                        ent.Set<ecs::EventBindings>(lock);
+                        ent.Set<ecs::SignalOutput>(lock);
+                    }
+                    namedEntity = ecs::NamedEntity(targetName, ent);
+                }
+            }
+        }
+        {
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
+
+            for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
+                auto &namedEntity = trackedDevices[i];
+
+                Tecs::Entity ent = namedEntity.Get(lock);
+                if (ent && ent.Has<ecs::Transform>(lock) && trackedDevicePoses[i].bPoseIsValid) {
+                    auto &transform = ent.Get<ecs::Transform>(lock);
+
+                    auto pose = glm::transpose(
+                        glm::make_mat3x4((float *)trackedDevicePoses[i].mDeviceToAbsoluteTracking.m));
+
+                    transform.SetRotation(glm::quat_cast(glm::mat3(pose)));
+                    transform.SetPosition(pose[3]);
+                    transform.UpdateCachedTransform(lock);
+                }
+            }
+        }
+        if (inputBindings) inputBindings->Frame();
+    }
 
 } // namespace sp::xr

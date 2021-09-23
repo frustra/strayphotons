@@ -42,11 +42,7 @@
             "event_input": [
                 "/action/camera_rotate",
                 "/action/interact",
-                "/action/spawn_debug",
-                "/action/set_vr_origin",
-                "/action/reload_scene",
-                "/action/reset_scene",
-                "/action/reload_shaders"
+                "/action/spawn_debug"
             ],
             "signal_bindings": {
                 "menu_primary_trigger": { "mouse_button_left": "mouse" },

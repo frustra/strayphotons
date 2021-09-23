@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ecs/components/XRView.hh"
-#include "xr/XrAction.hh"
 #include "xr/XrModel.hh"
 
 #include <glm/glm.hpp>
@@ -44,14 +43,9 @@ namespace sp {
             virtual bool IsInitialized() = 0;
             virtual bool IsHmdPresent() = 0;
 
-            // virtual std::shared_ptr<XrActionSet> GetActionSet(std::string setName) = 0;
-
-            // virtual std::vector<TrackedObjectHandle> GetTrackedObjectHandles() = 0;
-            // virtual std::shared_ptr<XrModel> GetTrackedObjectModel(const TrackedObjectHandle &handle) = 0;
             virtual bool GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) = 0;
-            // virtual bool GetPredictedObjectPose(const TrackedObjectHandle &handle, glm::mat4 &objectPose) = 0;
 
-            virtual void SubmitView(ecs::XrEye eye, GpuTexture *tex) = 0;
+            virtual void SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) = 0;
             virtual void WaitFrame() = 0;
         };
 

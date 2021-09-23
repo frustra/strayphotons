@@ -120,8 +120,7 @@ namespace ecs {
     }
 
     glm::vec3 Transform::GetGlobalForward(Lock<Read<Transform>> lock) const {
-        glm::vec3 forward = glm::vec3(0, 0, -1);
-        return GetGlobalRotation(lock) * forward;
+        return GetGlobalRotation(lock) * glm::vec3(0, 0, -1);
     }
 
     void Transform::Translate(glm::vec3 xyz) {

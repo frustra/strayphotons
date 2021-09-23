@@ -18,8 +18,6 @@ namespace sp {
             bool Frame(double dtSinceLastFrame);
 
         private:
-            void InitXrActions();
-
             Tecs::Entity ValidateAndLoadTrackedObject(sp::xr::TrackedObjectHandle &handle);
             Tecs::Entity UpdateXrActionEntity(xr::XrActionPtr action, bool active);
 
@@ -31,11 +29,6 @@ namespace sp {
             void ComputeBonePositions(std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output);
 
             Tecs::Entity GetLaserPointer();
-            void SetVrOrigin();
-
-            Tecs::Entity CreateXrEntity();
-
-            void LoadXrSystem();
 
         private:
             Game *game;
