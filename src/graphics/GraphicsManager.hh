@@ -62,17 +62,11 @@ namespace sp {
     #ifdef SP_GRAPHICS_SUPPORT_VK
         unique_ptr<vulkan::Renderer> renderer;
         unique_ptr<vulkan::GuiRenderer> debugGuiRenderer;
-
-        std::vector<vulkan::BufferPtr> viewStateUniformBuffers;
     #endif
 
     #ifdef SP_XR_SUPPORT
         #ifdef SP_GRAPHICS_SUPPORT_GL
         std::vector<shared_ptr<GLRenderTarget>> xrRenderTargets;
-        #endif
-
-        #ifdef SP_GRAPHICS_SUPPORT_VK
-        shared_ptr<vulkan::ImageView> xrColor, xrDepth;
         #endif
 
         std::vector<glm::mat4> xrRenderPoses;

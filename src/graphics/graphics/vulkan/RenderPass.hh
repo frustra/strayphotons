@@ -9,8 +9,6 @@
 namespace sp::vulkan {
     const size_t MAX_COLOR_ATTACHMENTS = 4;
 
-    class DeviceContext;
-
     struct RenderPassState {
         uint32 colorAttachmentCount = 0;
 

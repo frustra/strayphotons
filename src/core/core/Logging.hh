@@ -30,6 +30,9 @@ namespace sp::logging {
     auto convert(T &&t) {
         if constexpr (std::is_same<std::remove_cv_t<std::remove_reference_t<T>>, std::string>::value) {
             return std::forward<T>(t).c_str();
+        } else if constexpr (std::is_same<std::remove_cv_t<std::remove_reference_t<T>>, std::string_view>::value) {
+            Assert(t.data()[t.size()] == '\0', "string_view is not null terminated");
+            return std::forward<T>(t).data();
         } else {
             return std::forward<T>(t);
         }

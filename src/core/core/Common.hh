@@ -12,7 +12,9 @@ using std::vector;
 
 #include <array>
 #include <string>
+#include <string_view>
 using std::string;
+using std::string_view;
 
 #include <stdexcept>
 using std::invalid_argument;
@@ -60,6 +62,11 @@ namespace sp {
 
     typedef std::array<uint64, 2> Hash128;
     typedef uint64 Hash64;
+
+    template<typename T, typename Func>
+    void erase_if(T &vec, Func f) {
+        vec.erase(std::remove_if(vec.begin(), vec.end(), f), vec.end());
+    }
 
     // Boost replacement functions
     bool starts_with(const string &str, const string &prefix);

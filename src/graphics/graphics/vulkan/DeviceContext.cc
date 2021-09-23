@@ -3,6 +3,7 @@
 #include "CommandContext.hh"
 #include "Pipeline.hh"
 #include "RenderPass.hh"
+#include "RenderTarget.hh"
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Image.hh"
@@ -61,7 +62,11 @@ namespace sp::vulkan {
         Errorf("GLFW returned %d: %s", error, message);
     }
 
-    DeviceContext::DeviceContext(bool enableValidationLayers) {
+    void DeviceContext::DeleteAllocator(VmaAllocator alloc) {
+        if (alloc) vmaDestroyAllocator(alloc);
+    }
+
+    DeviceContext::DeviceContext(bool enableValidationLayers) : allocator(nullptr, DeleteAllocator) {
         glfwSetErrorCallback(glfwErrorCallback);
 
         if (!glfwInit()) { throw "glfw failed"; }
@@ -76,30 +81,41 @@ namespace sp::vulkan {
         // Disable OpenGL context creation
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
+        std::vector<const char *> extensions, layers;
+        bool hasMemoryRequirements2Ext = false, hasDedicatedAllocationExt = false;
+
         auto availableExtensions = vk::enumerateInstanceExtensionProperties();
-        Logf("Available Vulkan extensions: %u", availableExtensions.size());
+        Debugf("Available Vulkan extensions: %u", availableExtensions.size());
         for (auto &ext : availableExtensions) {
-            Logf("\t%s", ext.extensionName.data());
+            string_view name(ext.extensionName.data());
+            Debugf("\t%s", name);
+
+            if (name == VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) {
+                hasMemoryRequirements2Ext = true;
+            } else if (name == VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME) {
+                hasDedicatedAllocationExt = true;
+            } else {
+                continue;
+            }
+            extensions.push_back(name.data());
         }
 
         auto availableLayers = vk::enumerateInstanceLayerProperties();
-        Logf("Available Vulkan layers: %u", availableLayers.size());
+        Debugf("Available Vulkan layers: %u", availableLayers.size());
         for (auto &layer : availableLayers) {
-            Logf("\t%s %s", layer.layerName.data(), layer.description.data());
+            Debugf("\t%s %s", layer.layerName.data(), layer.description.data());
         }
 
-        std::vector<const char *> extensions, layers;
         uint32_t requiredExtensionCount = 0;
         auto requiredExtensions = glfwGetRequiredInstanceExtensions(&requiredExtensionCount);
         for (uint32_t i = 0; i < requiredExtensionCount; i++) {
             extensions.emplace_back(requiredExtensions[i]);
-            Logf("Required extension: %s", requiredExtensions[i]);
         }
         extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
         if (enableValidationLayers) {
-            Logf("Running with vulkan validation layers");
+            Logf("Running with Vulkan validation layer");
             layers.emplace_back("VK_LAYER_KHRONOS_validation");
         }
 
@@ -298,8 +314,15 @@ namespace sp::vulkan {
         allocatorInfo.frameInUseCount = MAX_FRAMES_IN_FLIGHT;
         allocatorInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
 
-        Assert(vmaCreateAllocator(&allocatorInfo, &allocator) == VK_SUCCESS, "allocator init failed");
+        if (hasMemoryRequirements2Ext && hasDedicatedAllocationExt) {
+            allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
+        }
 
+        VmaAllocator alloc;
+        Assert(vmaCreateAllocator(&allocatorInfo, &alloc) == VK_SUCCESS, "allocator init failed");
+        allocator.reset(alloc);
+
+        renderTargetPool = make_unique<RenderTargetManager>(*this);
         pipelinePool = make_unique<PipelineManager>(*this);
         renderPassPool = make_unique<RenderPassManager>(*this);
         framebufferPool = make_unique<FramebufferManager>(*this);
@@ -317,18 +340,6 @@ namespace sp::vulkan {
         if (window) { glfwDestroyWindow(window); }
 
         glfwTerminate();
-
-        {
-            // TODO: these will be allocated from a pool later and not need to be manually cleaned up
-            // The image needs to be destroyed before VMA
-            depthImageView.reset();
-
-            for (auto &fc : frameContexts) {
-                fc.inFlightBuffers.clear();
-            }
-        }
-
-        vmaDestroyAllocator(allocator);
     }
 
     // Releases old swapchain after creating a new one
@@ -379,7 +390,6 @@ namespace sp::vulkan {
         auto newSwapchain = device->createSwapchainKHRUnique(swapchainInfo, nullptr);
         swapchainImageContexts.clear();
         swapchain.swap(newSwapchain);
-        swapchainVersion++;
 
         auto swapchainImages = device->getSwapchainImagesKHR(*swapchain);
         swapchainExtent = swapchainInfo.imageExtent;
@@ -499,7 +509,7 @@ namespace sp::vulkan {
         }
         SwapchainImage().inFlightFence = *Frame().inFlightFence;
         PrepareResourcesForFrame();
-        vmaSetCurrentFrameIndex(allocator, frameCounter);
+        vmaSetCurrentFrameIndex(allocator.get(), frameCounter);
     }
 
     void DeviceContext::PrepareResourcesForFrame() {
@@ -509,13 +519,19 @@ namespace sp::vulkan {
             pool.nextIndex = 0;
         }
 
-        auto &bufs = Frame().inFlightBuffers;
-        bufs.erase(std::remove_if(bufs.begin(),
-                                  bufs.end(),
-                                  [&](auto &buf) {
-                                      return device->getFenceStatus(*buf.fence) == vk::Result::eSuccess;
-                                  }),
-                   bufs.end());
+        erase_if(Frame().inFlightBuffers, [&](auto &buf) {
+            return device->getFenceStatus(*buf.fence) == vk::Result::eSuccess;
+        });
+
+        for (auto &pool : Frame().bufferPools) {
+            erase_if(pool, [&](auto &buf) {
+                if (!buf.used) return true;
+                buf.used = false;
+                return false;
+            });
+        }
+
+        renderTargetPool->TickFrame();
     }
 
     void DeviceContext::SwapBuffers() {
@@ -626,6 +642,11 @@ namespace sp::vulkan {
 
         auto &queue = queues[QueueType(cmd->GetType())];
         queue.submit({submitInfo}, fence);
+
+        for (auto &func : cmd->afterSubmitFuncs) {
+            func();
+        }
+        cmd->afterSubmitFuncs.clear();
     }
 
     BufferPtr DeviceContext::AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency) {
@@ -634,13 +655,40 @@ namespace sp::vulkan {
         bufferInfo.usage = usage;
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
-        return make_shared<Buffer>(bufferInfo, allocInfo, allocator);
+        return make_shared<Buffer>(bufferInfo, allocInfo, allocator.get());
+    }
+
+    BufferPtr DeviceContext::GetFramePooledBuffer(BufferType type, vk::DeviceSize size) {
+        auto &pool = Frame().bufferPools[type];
+        for (auto &buf : pool) {
+            if (!buf.used && buf.size == size) {
+                buf.used = true;
+                return buf.buffer;
+            }
+        }
+
+        vk::BufferUsageFlags usage;
+        VmaMemoryUsage residency;
+        switch (type) {
+        case BUFFER_TYPE_UNIFORM:
+            usage = vk::BufferUsageFlagBits::eUniformBuffer;
+            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            break;
+        default:
+            Abort("unknown buffer type " + std::to_string(type));
+            return {};
+        }
+
+        Debugf("Allocating buffer type %d with size %d", type, size);
+        auto buffer = AllocateBuffer(size, usage, residency);
+        pool.emplace_back(buffer, size, true);
+        return buffer;
     }
 
     ImagePtr DeviceContext::AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency) {
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
-        return make_shared<Image>(info, allocInfo, allocator);
+        return make_shared<Image>(info, allocInfo, allocator.get());
     }
 
     ImagePtr DeviceContext::CreateImage(vk::ImageCreateInfo createInfo,
@@ -704,7 +752,7 @@ namespace sp::vulkan {
             transferToGeneral);
 
         auto transferComplete = GetEmptySemaphore();
-        Frame().inFlightBuffers.emplace_back(device->createFenceUnique({}), stagingBuf);
+        Frame().inFlightBuffers.emplace_back(stagingBuf, device->createFenceUnique({}));
         Submit(transferCmd, {transferComplete}, {}, {}, *Frame().inFlightBuffers.back().fence);
 
         auto graphicsCmd = GetCommandContext();
@@ -909,6 +957,10 @@ namespace sp::vulkan {
 
         sampler = device->createSamplerUnique(info);
         return *sampler;
+    }
+
+    RenderTargetPtr DeviceContext::GetRenderTarget(const RenderTargetDesc &desc) {
+        return renderTargetPool->Get(desc);
     }
 
     ShaderHandle DeviceContext::LoadShader(const string &name) {

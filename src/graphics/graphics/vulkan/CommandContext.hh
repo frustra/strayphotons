@@ -39,7 +39,6 @@ struct ImageBarrierInfo {
 };
 
 namespace sp::vulkan {
-    class DeviceContext;
     class Model;
     struct VertexLayout;
 
@@ -170,6 +169,25 @@ namespace sp::vulkan {
 
         void SetUniformBuffer(uint32 set, uint32 binding, const BufferPtr &buffer);
 
+        // Buffer is stored in a pool for this frame, and reused in later frames.
+        BufferPtr AllocUniformBuffer(uint32 set, uint32 binding, vk::DeviceSize size);
+
+        // Returns a CPU mapped pointer to the GPU buffer, which is valid
+        // at least until the CommandContext is submitted
+        template<typename T>
+        T *AllocUniformData(uint32 set, uint32 binding, uint32 count = 1) {
+            auto buffer = AllocUniformBuffer(set, binding, sizeof(T) * count);
+            T *data;
+            buffer->MapPersistent((void **)&data);
+            return data;
+        }
+
+        template<typename T>
+        void UploadUniformData(uint32 set, uint32 binding, const T *data, uint32 count = 1) {
+            auto buffer = AllocUniformBuffer(set, binding, sizeof(T) * count);
+            buffer->CopyFrom(data, count);
+        }
+
         bool WritesToSwapchain() {
             return writesToSwapchain;
         }
@@ -177,8 +195,17 @@ namespace sp::vulkan {
         void FlushDescriptorSets();
         void FlushGraphicsState();
 
+        template<typename Func>
+        void AfterSubmit(Func func) {
+            afterSubmitFuncs.push_back(func);
+        }
+
         vk::CommandBuffer &Raw() {
             return *cmd;
+        }
+
+        DeviceContext &Device() {
+            return device;
         }
 
     protected:
@@ -240,5 +267,7 @@ namespace sp::vulkan {
         uint32 dirtyDescriptorSets = 0;
 
         ShaderDataBindings shaderData;
+
+        vector<std::function<void()>> afterSubmitFuncs;
     };
 } // namespace sp::vulkan

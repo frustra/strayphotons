@@ -10,7 +10,6 @@ namespace sp::vulkan {
     const uint32 MAX_BINDINGS_PER_DESCRIPTOR_SET = 32;
     const uint32 MAX_DESCRIPTOR_SETS_PER_POOL = 16;
 
-    class DeviceContext;
     class Model;
 
     enum class ShaderStage {
@@ -28,7 +27,8 @@ namespace sp::vulkan {
         vk::ShaderStageFlagBits::eCompute,
     };
 
-    struct Shader : public NonCopyable {
+    class Shader : public NonCopyable {
+    public:
         Shader(const string &name, vk::UniqueShaderModule &&module, spv_reflect::ShaderModule &&reflection, Hash64 hash)
             : name(name), hash(hash), reflection(std::move(reflection)), shaderModule(std::move(module)) {}
 

@@ -15,20 +15,17 @@ namespace sp::vulkan {
         device->waitIdle();
     }
 
-    void Renderer::RenderPass(const CommandContextPtr &cmd, const ecs::View &view, DrawLock lock) {
-        cmd->SetDefaultOpaqueState();
+    void Renderer::RenderPass(CommandContext &cmd, const ecs::View &view, DrawLock lock) {
+        cmd.SetDefaultOpaqueState();
 
-        cmd->SetShader(ShaderStage::Vertex, "test.vert");
-        cmd->SetShader(ShaderStage::Fragment, "test.frag");
+        cmd.SetShader(ShaderStage::Vertex, "test.vert");
+        cmd.SetShader(ShaderStage::Fragment, "test.frag");
 
         ecs::View forwardPassView = view;
         ForwardPass(cmd, forwardPassView, lock, [&](auto lock, Tecs::Entity &ent) {});
     }
 
-    void Renderer::ForwardPass(const CommandContextPtr &cmd,
-                               ecs::View &view,
-                               DrawLock lock,
-                               const PreDrawFunc &preDraw) {
+    void Renderer::ForwardPass(CommandContext &cmd, ecs::View &view, DrawLock lock, const PreDrawFunc &preDraw) {
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (ent.Has<ecs::Renderable, ecs::Transform>(lock)) {
                 if (ent.Has<ecs::Mirror>(lock)) continue;
@@ -43,7 +40,7 @@ namespace sp::vulkan {
         }
     }
 
-    void Renderer::DrawEntity(const CommandContextPtr &cmd,
+    void Renderer::DrawEntity(CommandContext &cmd,
                               const ecs::View &view,
                               DrawLock lock,
                               Tecs::Entity &ent,
