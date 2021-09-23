@@ -34,7 +34,7 @@ namespace sp {
             void SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex);
             void WaitFrame();
 
-            Tecs::Entity GetEntityForDeviceIndex(ecs::Lock<ecs::Read<ecs::Name>> lock, size_t index);
+            ecs::NamedEntity GetEntityForDeviceIndex(size_t index);
 
         private:
             void Frame() override;

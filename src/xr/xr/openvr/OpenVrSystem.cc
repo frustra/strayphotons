@@ -151,10 +151,10 @@ namespace sp::xr {
                "WaitGetPoses failed: " + std::to_string((int)error));
     }
 
-    Tecs::Entity OpenVrSystem::GetEntityForDeviceIndex(ecs::Lock<ecs::Read<ecs::Name>> lock, size_t index) {
-        if (index >= trackedDevices.size()) return Tecs::Entity();
+    ecs::NamedEntity OpenVrSystem::GetEntityForDeviceIndex(size_t index) {
+        if (index >= trackedDevices.size()) return ecs::NamedEntity();
 
-        return trackedDevices[index].Get(lock);
+        return trackedDevices[index];
     }
 
     void OpenVrSystem::Frame() {

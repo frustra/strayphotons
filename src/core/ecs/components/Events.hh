@@ -16,7 +16,7 @@
 
 namespace ecs {
     struct Event {
-        using EventData = std::variant<bool, char, int, double, glm::vec2, NamedEntity, std::string>;
+        using EventData = std::variant<bool, char, int, double, glm::vec2, glm::vec3, NamedEntity, std::string>;
         std::string name;
         NamedEntity source;
         EventData data;

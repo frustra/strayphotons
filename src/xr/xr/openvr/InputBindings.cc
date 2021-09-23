@@ -107,7 +107,9 @@ namespace sp::xr {
     void InputBindings::Frame() {
         std::array<vr::VRInputValueHandle_t, vr::k_unMaxTrackedDeviceCount> origins;
 
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
+        auto lock =
+            ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::FocusLayer, ecs::FocusLock, ecs::EventBindings>,
+                                        ecs::Write<ecs::EventInput, ecs::SignalOutput>>();
 
         for (auto &actionSet : actionSets) {
             vr::VRActiveActionSet_t activeActionSet = {};
@@ -133,11 +135,9 @@ namespace sp::xr {
                                                                           sizeof(originInfo));
                         Assert(error == vr::EVRInputError::VRInputError_None, "Failed to read origin info");
 
-                        Tecs::Entity originEntity = vrSystem.GetEntityForDeviceIndex(lock,
-                                                                                     originInfo.trackedDeviceIndex);
-                        if (originEntity && originEntity.Has<ecs::SignalOutput>(lock)) {
-                            auto &signalOutput = originEntity.Get<ecs::SignalOutput>(lock);
-
+                        ecs::NamedEntity originEntity = vrSystem.GetEntityForDeviceIndex(originInfo.trackedDeviceIndex);
+                        Tecs::Entity entity = originEntity.Get(lock);
+                        if (entity) {
                             vr::InputDigitalActionData_t digitalActionData;
                             vr::InputAnalogActionData_t analogActionData;
                             switch (action.type) {
@@ -149,10 +149,22 @@ namespace sp::xr {
                                 Assert(error == vr::EVRInputError::VRInputError_None,
                                        "Failed to read OpenVR digital action: " + action.name);
 
-                                if (digitalActionData.bActive) {
-                                    signalOutput.SetSignal(action.name, digitalActionData.bState);
-                                } else {
-                                    signalOutput.ClearSignal(action.name);
+                                if (entity.Has<ecs::EventBindings>(lock)) {
+                                    auto &bindings = entity.Get<ecs::EventBindings>(lock);
+
+                                    if (digitalActionData.bActive && digitalActionData.bChanged) {
+                                        bindings.SendEvent(lock, action.name, originEntity, digitalActionData.bState);
+                                    }
+                                }
+
+                                if (entity.Has<ecs::SignalOutput>(lock)) {
+                                    auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);
+
+                                    if (digitalActionData.bActive) {
+                                        signalOutput.SetSignal(action.name, digitalActionData.bState);
+                                    } else {
+                                        signalOutput.ClearSignal(action.name);
+                                    }
                                 }
                                 break;
                             case Action::DataType::Vec1:
@@ -165,22 +177,55 @@ namespace sp::xr {
                                 Assert(error == vr::EVRInputError::VRInputError_None,
                                        "Failed to read OpenVR analog action: " + action.name);
 
-                                if (analogActionData.bActive) {
-                                    switch (action.type) {
-                                    case Action::DataType::Vec3:
-                                        signalOutput.SetSignal(action.name + "_z", analogActionData.z);
-                                    case Action::DataType::Vec2:
-                                        signalOutput.SetSignal(action.name + "_y", analogActionData.y);
-                                    case Action::DataType::Vec1:
-                                        signalOutput.SetSignal(action.name + "_x", analogActionData.x);
-                                        break;
-                                    default:
-                                        break;
+                                if (entity.Has<ecs::EventBindings>(lock)) {
+                                    auto &bindings = entity.Get<ecs::EventBindings>(lock);
+
+                                    if (analogActionData.bActive &&
+                                        (analogActionData.x != 0.0f || analogActionData.y != 0.0f ||
+                                         analogActionData.z != 0.0f)) {
+                                        switch (action.type) {
+                                        case Action::DataType::Vec1:
+                                            bindings.SendEvent(lock, action.name, originEntity, analogActionData.x);
+                                            break;
+                                        case Action::DataType::Vec2:
+                                            bindings.SendEvent(lock,
+                                                               action.name,
+                                                               originEntity,
+                                                               glm::vec2(analogActionData.x, analogActionData.y));
+                                            break;
+                                        case Action::DataType::Vec3:
+                                            bindings.SendEvent(
+                                                lock,
+                                                action.name,
+                                                originEntity,
+                                                glm::vec3(analogActionData.x, analogActionData.y, analogActionData.z));
+                                            break;
+                                        default:
+                                            break;
+                                        }
                                     }
-                                } else {
-                                    signalOutput.ClearSignal(action.name + "_x");
-                                    signalOutput.ClearSignal(action.name + "_y");
-                                    signalOutput.ClearSignal(action.name + "_z");
+                                }
+
+                                if (entity.Has<ecs::SignalOutput>(lock)) {
+                                    auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);
+
+                                    if (analogActionData.bActive) {
+                                        switch (action.type) {
+                                        case Action::DataType::Vec3:
+                                            signalOutput.SetSignal(action.name + "_z", analogActionData.z);
+                                        case Action::DataType::Vec2:
+                                            signalOutput.SetSignal(action.name + "_y", analogActionData.y);
+                                        case Action::DataType::Vec1:
+                                            signalOutput.SetSignal(action.name + "_x", analogActionData.x);
+                                            break;
+                                        default:
+                                            break;
+                                        }
+                                    } else {
+                                        signalOutput.ClearSignal(action.name + "_x");
+                                        signalOutput.ClearSignal(action.name + "_y");
+                                        signalOutput.ClearSignal(action.name + "_z");
+                                    }
                                 }
                                 break;
                             default:
