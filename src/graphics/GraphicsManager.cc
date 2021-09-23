@@ -390,37 +390,37 @@ namespace sp {
                             }
                         });
                     });
-
-                if (ScreenshotPath.size()) {
-                    struct ScreenshotData {
-                        vulkan::RenderGraphResource target;
-                        string path;
-                    };
-                    graph.AddPass<ScreenshotData>(
-                        "Screenshot",
-                        [&](vulkan::RenderGraphPassBuilder &builder, ScreenshotData &data) {
-                            auto resource = builder.GetResourceByName(ScreenshotResource);
-                            if (resource.type != vulkan::RenderGraphResource::Type::RenderTarget) {
-                                Errorf("Can't screenshot \"%s\": invalid resource", ScreenshotResource);
-                            } else {
-                                data.target = builder.Read(resource);
-                                data.path = ScreenshotPath;
-                            }
-                        },
-                        [](vulkan::RenderGraphResources &resources,
-                           vulkan::CommandContext &cmd,
-                           const ScreenshotData &data) {
-                            if (data.target.type == vulkan::RenderGraphResource::Type::RenderTarget) {
-                                auto target = resources.GetRenderTarget(data.target);
-                                vulkan::WriteScreenshot(cmd.Device(), data.path, target->ImageView());
-                            }
-                        });
-                    ScreenshotPath = "";
-                }
-
-                graph.Execute();
             }
         #endif
+
+            if (ScreenshotPath.size()) {
+                struct ScreenshotData {
+                    vulkan::RenderGraphResource target;
+                    string path;
+                };
+                graph.AddPass<ScreenshotData>(
+                    "Screenshot",
+                    [&](vulkan::RenderGraphPassBuilder &builder, ScreenshotData &data) {
+                        auto resource = builder.GetResourceByName(ScreenshotResource);
+                        if (resource.type != vulkan::RenderGraphResource::Type::RenderTarget) {
+                            Errorf("Can't screenshot \"%s\": invalid resource", ScreenshotResource);
+                        } else {
+                            data.target = builder.Read(resource);
+                            data.path = ScreenshotPath;
+                        }
+                    },
+                    [](vulkan::RenderGraphResources &resources,
+                       vulkan::CommandContext &cmd,
+                       const ScreenshotData &data) {
+                        if (data.target.type == vulkan::RenderGraphResource::Type::RenderTarget) {
+                            auto target = resources.GetRenderTarget(data.target);
+                            vulkan::WriteScreenshot(cmd.Device(), data.path, target->ImageView());
+                        }
+                    });
+                ScreenshotPath = "";
+            }
+
+            graph.Execute();
 
             renderer->EndFrame();
         }
