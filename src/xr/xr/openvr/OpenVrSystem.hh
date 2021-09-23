@@ -5,6 +5,7 @@
 #include "ecs/NamedEntity.hh"
 #include "ecs/components/XRView.hh"
 #include "xr/XrSystem.hh"
+#include "xr/openvr/EventHandler.hh"
 #include "xr/openvr/InputBindings.hh"
 
 #include <openvr.h>
@@ -41,6 +42,7 @@ namespace sp {
             GraphicsContext *context = nullptr;
 
             std::shared_ptr<vr::IVRSystem> vrSystem;
+            std::shared_ptr<EventHandler> eventHandler;
             std::shared_ptr<InputBindings> inputBindings;
 
             ecs::NamedEntity vrOriginEntity = ecs::NamedEntity("vr-origin");

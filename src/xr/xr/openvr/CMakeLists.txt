@@ -1,4 +1,5 @@
 target_sources(${PROJECT_XR_OPENVR_LIB} PRIVATE
+    EventHandler.cc
     InputBindings.cc
     OpenVrSystem.cc
 )

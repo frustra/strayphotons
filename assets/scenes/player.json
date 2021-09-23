@@ -53,9 +53,21 @@
                 "menu_secondary_trigger": { "mouse_button_right": "mouse" },
                 "menu_cursor_x": { "mouse_cursor_x": "mouse" },
                 "menu_cursor_y": { "mouse_cursor_y": "mouse" },
-                "move_forward": { "key_w": "keyboard", "move_forward": "vr-hmd0" },
+                "move_forward": {
+                    "key_w": "keyboard",
+                    "/actions/main/in/movement_y": [
+                        "vr-controller-left",
+                        "vr-controller-right"
+                    ]
+                },
+                "move_right": {
+                    "key_d": "keyboard",
+                    "/actions/main/in/movement_x": [
+                        "vr-controller-left",
+                        "vr-controller-right"
+                    ]
+                },
                 "move_left": { "key_a": "keyboard" },
-                "move_right": { "key_d": "keyboard", "move_right": "vr-hmd0" },
                 "move_back": { "key_s": "keyboard" },
                 "move_crouch": { "key_left_control": "keyboard" },
                 "move_jump": { "key_space": "keyboard" },
