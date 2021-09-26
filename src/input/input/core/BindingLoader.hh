@@ -3,7 +3,7 @@
 #include <string>
 
 namespace sp {
-    static const char *InputBindingConfigPath = "input_bindings.json";
+    static const char *const InputBindingConfigPath = "input_bindings.json";
 
     class BindingLoader {
     public:
