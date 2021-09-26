@@ -90,7 +90,6 @@ namespace sp {
 
         /**
          * Translates a kinematic @actor by @transform.
-         * Throws a runtime_error if @actor is not kinematic
          */
         void Translate(physx::PxRigidDynamic *actor, const physx::PxVec3 &transform);
 

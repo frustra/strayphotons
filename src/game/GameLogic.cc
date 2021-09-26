@@ -8,7 +8,6 @@
 #include "core/Console.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/Signals.hh"
 
 #ifdef SP_INPUT_SUPPORT
     #include "input/core/BindingNames.hh"
@@ -56,30 +55,6 @@ namespace sp {
     static CVar<float> CVarFlashlightAngle("r.FlashlightAngle", 20, "Flashlight spot angle");
     static CVar<int> CVarFlashlightResolution("r.FlashlightResolution", 512, "Flashlight shadow map resolution");
 
-    void GameLogic::Init(Script *startupScript) {
-#ifdef SP_INPUT_SUPPORT
-        {
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-            lock.Set<ecs::FocusLock>();
-        }
-#endif
-        LoadPlayer();
-
-        if (game->options.count("map")) { LoadScene(game->options["map"].as<string>()); }
-
-        if (startupScript != nullptr) {
-            startupScript->Exec();
-        } else if (!game->options.count("map")) {
-            LoadScene("menu");
-#ifdef SP_INPUT_SUPPORT
-            {
-                auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
-                lock.Get<ecs::FocusLock>().AcquireFocus(ecs::FocusLayer::MENU);
-            }
-#endif
-        }
-    }
-
     GameLogic::~GameLogic() {}
 
 #ifdef SP_INPUT_SUPPORT
@@ -92,6 +67,8 @@ namespace sp {
             ecs::Event event;
             if (player.Has<ecs::EventInput>(lock)) {
                 if (ecs::EventInput::Poll(lock, player, INPUT_EVENT_SPAWN_DEBUG, event)) { spawnDebug = true; }
+            }
+            if (flashlight.Has<ecs::EventInput>(lock)) {
                 if (ecs::EventInput::Poll(lock, flashlight, INPUT_EVENT_FLASHLIGHT_TOGGLE, event)) {
                     CVarFlashlightOn.Set(!CVarFlashlightOn.Get());
                 }
@@ -432,6 +409,17 @@ namespace sp {
         }
     }
 
+    std::tuple<std::string, std::string> parseSignal(std::string name) {
+        size_t delimiter = name.find_last_of('.');
+        std::string entityName = name;
+        std::string signalName = "value";
+        if (delimiter != std::string::npos) {
+            entityName = name.substr(0, delimiter);
+            signalName = name.substr(delimiter + 1);
+        }
+        return std::make_tuple(entityName, signalName);
+    }
+
     void GameLogic::SetSignal(std::string args) {
         std::stringstream stream(args);
         std::string signalStr;
@@ -439,7 +427,7 @@ namespace sp {
         stream >> signalStr;
         stream >> value;
 
-        auto [entityName, signalName] = ecs::ParseSignal(signalStr);
+        auto [entityName, signalName] = parseSignal(signalStr);
 
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
         auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
@@ -461,7 +449,7 @@ namespace sp {
         std::string signalStr;
         stream >> signalStr;
 
-        auto [entName, signalName] = ecs::ParseSignal(signalStr);
+        auto [entName, signalName] = parseSignal(signalStr);
 
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
         auto entity = ecs::EntityWith<ecs::Name>(lock, entName);

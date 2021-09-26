@@ -64,7 +64,6 @@ namespace sp {
             break;
         default:
             Abort("invalid index component type");
-            break;
         }
 
         static VHACDCallback vhacdCallback;
@@ -176,7 +175,6 @@ namespace sp {
                 break;
             default:
                 Abort("invalid index component type");
-                break;
             }
 
             auto tri = (float *)(points + index * posAttrib.byteStride);

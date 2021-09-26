@@ -31,7 +31,7 @@ namespace sp {
         void Draw(SceneShader *shader,
                   glm::mat4 modelMat,
                   const ecs::View &view,
-                  size_t boneCount,
+                  int boneCount,
                   const glm::mat4 *boneData) const;
 
         void AddPrimitive(GLModel::Primitive &prim);

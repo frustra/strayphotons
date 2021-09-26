@@ -1,7 +1,7 @@
 {
 	"autoexec": [
 		"r.MirrorRecursion 1",
-		"wait 1000 setsignal airlock1-out-signal 1",
+		"wait 1000 setsignal airlock1-out.door_open 1",
 		"r.LightAttenuation 0.15"
 	],
 	"unloadexec": [
@@ -23,7 +23,7 @@
 			"triggerarea": {
 				"min": [10, 0, -2.5],
 				"max": [12, 2, 0],
-				"command": "setsignal airlock2-in-signal.force-close 1; wait 1000 loadscene 03-dark"
+				"command": "setsignal airlock2-in.door_open 0; wait 1000 loadscene 03-dark"
 			}
 		},
 		<%- include("prefab/floor", {

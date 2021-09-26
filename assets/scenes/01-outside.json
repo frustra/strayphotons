@@ -111,33 +111,12 @@
 				]
 			},
 			"renderable": "door-frame",
-			"script": {
-				"onTick": "slide_door",
-				"parameters": {
-					"input": "airlock1-out-signal",
-					"left": "airlock1-out-left",
-					"right": "airlock1-out-right"
-				}
-			},
 			"physics": {
 				"model": "door-frame",
 				"dynamic": false
-			}
-		},
-		{
-			"_name": "airlock1-out-signal",
-			"signal_output": {
-				"value": false,
-				"force-close": false
 			},
-			"script": {
-				"onTick": "combinator",
-				"parameters": {
-					"operation": "not_if",
-					"input_a": "airlock1-out-signal",
-					"input_b": "airlock1-out-signal.force-close"
-				}
-			}
+			"signal_output": {},
+			"signal_bindings": {}
 		},
 		{
 			"_name": "airlock1-out-left",
@@ -159,6 +138,11 @@
 						]
 					}
 				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "airlock1-out"
+				}
 			},
 			"physics": {
 				"model": "door-panel",
@@ -204,6 +188,11 @@
 					}
 				]
 			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "airlock1-out"
+				}
+			},
 			"physics": {
 				"model": "door-panel",
 				"dynamic": false
@@ -220,31 +209,14 @@
 				]
 			},
 			"renderable": "door-frame",
-			"script": {
-				"onTick": "slide_door",
-				"parameters": {
-					"input": "airlock1-in-signal",
-					"left": "airlock1-in-left",
-					"right": "airlock1-in-right"
-				}
-			},
 			"physics": {
 				"model": "door-frame",
 				"dynamic": false
-			}
-		},
-		{
-			"_name": "airlock1-in-signal",
-			"signal_output": {
-				"value": false,
-				"force-close": false
 			},
-			"script": {
-				"onTick": "combinator",
-				"parameters": {
-					"operation": "not_if",
-					"input_a": "sensor1",
-					"input_b": "airlock1-in-signal.force-close"
+			"signal_output": {},
+			"signal_bindings": {
+				"door_open": {
+					"value": "sensor1"
 				}
 			}
 		},
@@ -268,6 +240,11 @@
 						]
 					}
 				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "airlock1-in"
+				}
 			},
 			"physics": {
 				"model": "door-panel",
@@ -312,6 +289,11 @@
 						]
 					}
 				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "airlock1-in"
+				}
 			},
 			"physics": {
 				"model": "door-panel",
@@ -667,7 +649,7 @@
 					3.5,
 					-6
 				],
-				"command": "setsignal airlock1-in-signal.force-close 1; wait 1000 loadscene 02-mirrors"
+				"command": "setsignal airlock1-in.door_open 0; wait 1000 loadscene 02-mirrors"
 			}
 		}
 	]

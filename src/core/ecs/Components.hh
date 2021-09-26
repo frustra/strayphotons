@@ -15,6 +15,7 @@ namespace ecs {
         ComponentBase(const char *name) : name(name) {}
 
         virtual bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) = 0;
+        virtual bool ReloadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) = 0;
         virtual bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Tecs::Entity &src) = 0;
 
         const char *name;
@@ -37,6 +38,11 @@ namespace ecs {
 
         bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) override {
             auto &comp = dst.Set<CompType>(lock);
+            return Load(lock, comp, src);
+        }
+
+        bool ReloadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) override {
+            auto &comp = dst.Get<CompType>(lock);
             return Load(lock, comp, src);
         }
 

@@ -6,32 +6,15 @@
 		"translate": <%= translate %>
 	},
 	"renderable": "door-frame",
-	"script": {
-		"onTick": "slide_door",
-		"parameters": {
-			"input": <%= name + '-signal' %>,
-			"left": <%= name + '-left' %>,
-			"right": <%= name + '-right' %>
-		}
-	},
 	"physics": {
 		"model": "door-frame",
 		"dynamic": false
-	}
-},
-{
-	"_name": <%= name + '-signal' %>,
-	"signal_output": {
-		"value": false,
-		"force-close": false
 	},
-	"script": {
-		"onTick": "combinator",
-		"parameters": {
-			"operation": "not_if",
-			"input_a": <%= locals.input_signal || (name + '-signal') %>,
-			"input_b": <%= name + '-signal.force-close' %>
-		}
+	"signal_output": {},
+	"signal_bindings": {
+		<% if (locals.input_signal) { %>
+		"door_open": { "value": <%= locals.input_signal %> }
+		<% } %>
 	}
 },
 {
@@ -48,6 +31,9 @@
 				"translate": [0, 0, 0.8]
 			}
 		]
+	},
+	"signal_bindings": {
+		"animation_state": { "door_open": <%= name %> }
 	},
 	"physics": {
 		"model": "door-panel",
@@ -73,6 +59,9 @@
 				"rotate": [180, 0, 1, 0]
 			}
 		]
+	},
+	"signal_bindings": {
+		"animation_state": { "door_open": <%= name %> }
 	},
 	"physics": {
 		"model": "door-panel",

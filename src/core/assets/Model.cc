@@ -227,15 +227,15 @@ namespace sp {
                 // as the skin.joints vector (if it exists)
                 if (inverseBindMatrixAccessor != -1) {
                     if (model->accessors[inverseBindMatrixAccessor].count != model->skins[skinId].joints.size()) {
-                        throw std::runtime_error("Invalid GLTF: mismatched inverse bind matrix and skin joints number");
+                        Abort("Invalid GLTF: mismatched inverse bind matrix and skin joints number");
                     }
 
                     if (model->accessors[inverseBindMatrixAccessor].type != TINYGLTF_TYPE_MAT4) {
-                        throw std::runtime_error("Invalid GLTF: inverse bind matrix is not mat4");
+                        Abort("Invalid GLTF: inverse bind matrix is not mat4");
                     }
 
                     if (model->accessors[inverseBindMatrixAccessor].componentType != TINYGLTF_PARAMETER_TYPE_FLOAT) {
-                        throw std::runtime_error("Invalid GLTF: inverse bind matrix is not float");
+                        Abort("Invalid GLTF: inverse bind matrix is not float");
                     }
                 }
 

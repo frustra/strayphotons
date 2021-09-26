@@ -44,6 +44,13 @@ namespace sp {
             }
         }
 
+#ifdef SP_INPUT_SUPPORT
+        {
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            lock.Set<ecs::FocusLock>();
+        }
+#endif
+
 #if RUST_CXX
         sp::rust::print_hello();
 #endif
@@ -56,11 +63,29 @@ namespace sp {
             graphics.Init();
 #endif
 
-            logic.Init(startupScript);
-
 #ifdef SP_XR_SUPPORT
             if (options["no-vr"].count() == 0) xr.LoadXrSystem();
 #endif
+
+            logic.LoadPlayer();
+
+#ifdef SP_INPUT_SUPPORT
+            inputBindingLoader.Load(InputBindingConfigPath);
+#endif
+
+            if (options.count("map")) { logic.LoadScene(options["map"].as<string>()); }
+
+            if (startupScript != nullptr) {
+                startupScript->Exec();
+            } else if (!options.count("map")) {
+                logic.LoadScene("menu");
+#ifdef SP_INPUT_SUPPORT
+                {
+                    auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+                    lock.Get<ecs::FocusLock>().AcquireFocus(ecs::FocusLayer::MENU);
+                }
+#endif
+            }
 
             lastFrameTime = chrono_clock::now();
 

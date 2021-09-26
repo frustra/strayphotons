@@ -3,7 +3,6 @@
 #include <cmath>
 #include <core/Logging.hh>
 #include <ecs/EcsImpl.hh>
-#include <ecs/Signals.hh>
 #include <glm/glm.hpp>
 #include <picojson/picojson.h>
 
@@ -63,60 +62,54 @@ namespace ecs {
                             }
                         }
                     });
-                } else if (scriptName == "slide_door") {
+                } else if (scriptName == "event_multiply") {
                     script.AddOnTick([dst](ecs::Lock<ecs::WriteAll> lock, double dtSinceLastFrame) {
-                        const Tecs::Entity &door = dst;
-                        if (door && door.Has<Script>(lock)) {
-                            auto &scriptComp = door.Get<Script>(lock);
+                        const Tecs::Entity &proxy = dst;
+                        if (proxy && proxy.Has<Name, Script, EventInput, EventBindings>(lock)) {
+                            auto &scriptComp = proxy.Get<Script>(lock);
+                            auto &eventInput = proxy.Get<EventInput>(lock);
+                            auto &eventBindings = proxy.Get<EventBindings>(lock);
 
-                            bool open = FindSignal(lock, scriptComp.GetParam<std::string>("input")) > 0.0;
-
-                            std::string leftPanelName = scriptComp.GetParam<std::string>("left");
-                            if (!leftPanelName.empty()) {
-                                auto leftEnt = ecs::EntityWith<Name>(lock, leftPanelName);
-                                if (leftEnt && leftEnt.Has<Animation>(lock)) {
-                                    leftEnt.Get<Animation>(lock).AnimateToState(open ? 1 : 0);
-                                }
-                            }
-
-                            std::string rightPanelName = scriptComp.GetParam<std::string>("right");
-                            if (!rightPanelName.empty()) {
-                                auto rightEnt = ecs::EntityWith<Name>(lock, rightPanelName);
-                                if (rightEnt && rightEnt.Has<Animation>(lock)) {
-                                    rightEnt.Get<Animation>(lock).AnimateToState(open ? 1 : 0);
-                                }
-                            }
-                        }
-                    });
-                } else if (scriptName == "combinator") {
-                    script.AddOnTick([dst](ecs::Lock<ecs::WriteAll> lock, double dtSinceLastFrame) {
-                        const Tecs::Entity &combinator = dst;
-                        if (combinator && combinator.Has<Script, SignalOutput>(lock)) {
-                            auto &scriptComp = combinator.Get<Script>(lock);
-
-                            double input_a = FindSignal(lock, scriptComp.GetParam<std::string>("input_a"));
-                            double input_b = FindSignal(lock, scriptComp.GetParam<std::string>("input_b"));
-                            auto &output = combinator.Get<SignalOutput>(lock);
-
-                            auto operation = scriptComp.GetParam<std::string>("operation");
-                            if (operation == "if") {
-                                output.SetSignal("value", input_b > 0.0 ? input_a : 0.0);
-                            } else if (operation == "not_if") {
-                                output.SetSignal("value", input_b > 0.0 ? 0.0 : input_a);
-                            } else if (operation == "greater") {
-                                output.SetSignal("value", input_a > input_b ? 1.0 : 0.0);
-                            } else if (operation == "greater_equal") {
-                                output.SetSignal("value", input_a >= input_b ? 1.0 : 0.0);
-                            } else if (operation == "and") {
-                                output.SetSignal("value", (input_a > 0.0 && input_b > 0.0) ? 1.0 : 0.0);
-                            } else if (operation == "or") {
-                                output.SetSignal("value", (input_a > 0.0 || input_b > 0.0) ? 1.0 : 0.0);
-                            } else if (operation == "add") {
-                                output.SetSignal("value", input_a + input_b);
-                            } else if (operation == "substract") {
-                                output.SetSignal("value", input_a - input_b);
-                            } else {
-                                throw std::runtime_error("Unknown combinator operation: " + operation);
+                            Event event;
+                            while (eventInput.Poll("script_input", event)) {
+                                std::visit(
+                                    [&eventBindings, &lock, &event, &scriptComp](auto &&arg) {
+                                        using T = std::decay_t<decltype(arg)>;
+                                        if constexpr (std::is_same_v<T, int>) {
+                                            auto factorParam = scriptComp.GetParam<double>("multiply_factor");
+                                            eventBindings.SendEvent(lock,
+                                                                    "script_output",
+                                                                    event.source,
+                                                                    (int)(arg * factorParam));
+                                        } else if constexpr (std::is_same_v<T, double>) {
+                                            auto factorParam = scriptComp.GetParam<double>("multiply_factor");
+                                            eventBindings.SendEvent(lock,
+                                                                    "script_output",
+                                                                    event.source,
+                                                                    (double)(arg * factorParam));
+                                        } else if constexpr (std::is_same_v<T, glm::vec2>) {
+                                            auto factorParamX = scriptComp.GetParam<double>("multiply_factor_x");
+                                            auto factorParamY = scriptComp.GetParam<double>("multiply_factor_y");
+                                            eventBindings.SendEvent(
+                                                lock,
+                                                "script_output",
+                                                event.source,
+                                                arg * glm::vec2((float)factorParamX, (float)factorParamY));
+                                        } else if constexpr (std::is_same_v<T, glm::vec3>) {
+                                            auto factorParamX = scriptComp.GetParam<double>("multiply_factor_x");
+                                            auto factorParamY = scriptComp.GetParam<double>("multiply_factor_y");
+                                            auto factorParamZ = scriptComp.GetParam<double>("multiply_factor_z");
+                                            eventBindings.SendEvent(lock,
+                                                                    "script_output",
+                                                                    event.source,
+                                                                    arg * glm::vec3((float)factorParamX,
+                                                                                    (float)factorParamY,
+                                                                                    (float)factorParamZ));
+                                        } else {
+                                            sp::Abort("Unsupported event type: " + std::string(typeid(T).name()));
+                                        }
+                                    },
+                                    event.data);
                             }
                         }
                     });

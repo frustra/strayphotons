@@ -15,7 +15,6 @@ namespace sp {
         GameLogic(Game *game);
         ~GameLogic();
 
-        void Init(Script *startupScript = nullptr);
 #ifdef SP_INPUT_SUPPORT
         void HandleInput();
 #endif

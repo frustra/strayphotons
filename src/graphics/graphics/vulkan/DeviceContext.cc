@@ -967,10 +967,7 @@ namespace sp::vulkan {
 
     shared_ptr<Shader> DeviceContext::CreateShader(const string &name, Hash64 compareHash) {
         auto asset = GAssets.Load("shaders/vulkan/bin/" + name + ".spv");
-        if (!asset) {
-            Abort("could not load shader: " + name);
-            return nullptr;
-        }
+        Assert(asset, "could not load shader: " + name);
         asset->WaitUntilValid();
 
         auto newHash = Hash128To64(asset->Hash());
