@@ -14,7 +14,7 @@ namespace sp::vulkan {
     class GuiRenderer : public NonCopyable {
     public:
         GuiRenderer(DeviceContext &device, GuiManager &manager);
-        void Render(const CommandContextPtr &cmd, vk::Rect2D viewport);
+        void Render(CommandContext &cmd, vk::Rect2D viewport);
 
     private:
         double lastTime = 0.0;

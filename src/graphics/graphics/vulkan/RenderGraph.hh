@@ -129,6 +129,8 @@ namespace sp::vulkan {
             return pass->data;
         }
 
+        void SetTargetImageView(string_view name, ImageViewPtr view);
+
         void Execute();
 
     private:

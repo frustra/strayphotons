@@ -240,28 +240,111 @@ namespace sp {
             auto xrViews = lock.EntitiesWith<ecs::XRView>();
             xrRenderPoses.resize(xrViews.size());
 
+            auto renderer = this->renderer.get();
             renderer->BeginFrame(lock);
 
             if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
                 auto view = windowEntity.Get<ecs::View>(lock);
-
-                auto cmd = device.GetCommandContext();
-                cmd->BeginRenderPass(device.SwapchainRenderPassInfo(true));
-
                 view.UpdateViewMatrix(lock, windowEntity);
 
-                vulkan::ViewStateUniforms viewState;
-                viewState.view[0] = view.viewMat;
-                viewState.projection[0] = view.projMat;
-                cmd->UploadUniformData(0, 10, &viewState);
+                struct ForwardPassData {
+                    vulkan::RenderGraphResource gBuffer0, depth;
+                };
 
-                renderer->RenderPass(*cmd, view, lock);
+                auto forwardPassData = graph.AddPass<ForwardPassData>(
+                    "ForwardPass",
+                    [&](vulkan::RenderGraphPassBuilder &builder, ForwardPassData &data) {
+                        vulkan::RenderTargetDesc desc;
+                        desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
 
-                debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd->GetFramebufferExtent()});
+                        desc.format = vk::Format::eR8G8B8A8Srgb;
+                        desc.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled |
+                                     vk::ImageUsageFlagBits::eTransferSrc;
+                        data.gBuffer0 = builder.OutputRenderTarget("GBuffer0", desc);
 
-                cmd->EndRenderPass();
+                        desc.format = vk::Format::eD24UnormS8Uint;
+                        desc.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+                        data.depth = builder.OutputRenderTarget("GBufferDepth", desc);
+                    },
+                    [renderer, view, lock](vulkan::RenderGraphResources &resources,
+                                           vulkan::CommandContext &cmd,
+                                           const ForwardPassData &data) {
+                        auto gBuffer0 = resources.GetRenderTarget(data.gBuffer0)->ImageView();
+                        auto depth = resources.GetRenderTarget(data.depth)->ImageView();
 
-                device.Submit(cmd);
+                        cmd.ImageBarrier(depth->Image(),
+                                         vk::ImageLayout::eUndefined,
+                                         vk::ImageLayout::eDepthAttachmentOptimal,
+                                         vk::PipelineStageFlagBits::eBottomOfPipe,
+                                         {},
+                                         vk::PipelineStageFlagBits::eEarlyFragmentTests,
+                                         vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+
+                        cmd.ImageBarrier(gBuffer0->Image(),
+                                         vk::ImageLayout::eUndefined,
+                                         vk::ImageLayout::eColorAttachmentOptimal,
+                                         vk::PipelineStageFlagBits::eTransfer,
+                                         {},
+                                         vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                         vk::AccessFlagBits::eColorAttachmentWrite);
+
+                        vulkan::RenderPassInfo info;
+                        glm::vec4 clear = {0.0f, 1.0f, 0.0f, 1.0f};
+                        info.PushColorAttachment(gBuffer0, vulkan::LoadOp::Clear, vulkan::StoreOp::Store, clear);
+                        info.SetDepthStencilAttachment(depth, vulkan::LoadOp::Clear, vulkan::StoreOp::DontCare);
+                        cmd.BeginRenderPass(info);
+
+                        vulkan::ViewStateUniforms viewState;
+                        viewState.view[0] = view.viewMat;
+                        viewState.projection[0] = view.projMat;
+                        cmd.UploadUniformData(0, 10, &viewState);
+
+                        renderer->RenderPass(cmd, view, lock);
+
+                        cmd.EndRenderPass();
+                    });
+
+                struct FinalOutputData {
+                    vulkan::RenderGraphResource source;
+                    vulkan::RenderGraphResource target;
+                };
+
+                auto debugGuiRenderer = this->debugGuiRenderer.get();
+                graph.AddPass<FinalOutputData>(
+                    "WindowFinalOutput",
+                    [&](vulkan::RenderGraphPassBuilder &builder, FinalOutputData &data) {
+                        data.source = builder.Read(forwardPassData.gBuffer0);
+
+                        vulkan::RenderTargetDesc desc;
+                        desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
+                        desc.format = vk::Format::eR8G8B8A8Srgb;
+                        desc.usage = vk::ImageUsageFlagBits::eColorAttachment;
+                        data.target = builder.OutputRenderTarget("WindowFinalOutput", desc);
+                    },
+                    [debugGuiRenderer](vulkan::RenderGraphResources &resources,
+                                       vulkan::CommandContext &cmd,
+                                       const FinalOutputData &data) {
+                        auto source = resources.GetRenderTarget(data.source)->ImageView();
+
+                        cmd.ImageBarrier(source->Image(),
+                                         vk::ImageLayout::eColorAttachmentOptimal,
+                                         vk::ImageLayout::eShaderReadOnlyOptimal,
+                                         vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                         vk::AccessFlagBits::eColorAttachmentWrite,
+                                         vk::PipelineStageFlagBits::eFragmentShader,
+                                         vk::AccessFlagBits::eShaderRead);
+
+                        auto color = resources.GetRenderTarget(data.target)->ImageView();
+
+                        vulkan::RenderPassInfo info;
+                        info.PushColorAttachment(color, vulkan::LoadOp::Clear, vulkan::StoreOp::Store, {0, 1, 0, 1});
+                        cmd.BeginRenderPass(info);
+
+                        cmd.DrawScreenCover(source);
+                        debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()});
+
+                        cmd.EndRenderPass();
+                    });
             }
 
         #ifdef SP_XR_SUPPORT
@@ -283,7 +366,6 @@ namespace sp {
                     vulkan::RenderGraphResource color, depth;
                 };
 
-                auto renderer = this->renderer.get();
                 auto xrRenderPosePtr = xrRenderPoses.data();
 
                 auto xrForwardPassData = graph.AddPass<XRForwardPassData>(
@@ -420,6 +502,7 @@ namespace sp {
                 ScreenshotPath = "";
             }
 
+            graph.SetTargetImageView("WindowFinalOutput", device.SwapchainImageView());
             graph.Execute();
 
             renderer->EndFrame();
