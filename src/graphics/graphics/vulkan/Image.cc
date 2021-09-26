@@ -27,6 +27,12 @@ namespace sp::vulkan {
         }
     }
 
+    void Image::SetLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout) {
+        Assert(oldLayout == vk::ImageLayout::eUndefined || oldLayout == lastLayout,
+               "image had layout: " + vk::to_string(lastLayout) + ", expected: " + vk::to_string(oldLayout));
+        lastLayout = newLayout;
+    }
+
     vk::Format FormatFromTraits(uint32 components, uint32 bits, bool preferSrgb, bool logErrors) {
         if (bits != 8 && bits != 16) {
             if (logErrors) Errorf("can't infer format with bits=%d", bits);

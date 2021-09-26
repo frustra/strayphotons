@@ -57,7 +57,7 @@ namespace sp::vulkan {
         vertexLayout->PushAttribute(2, 0, vk::Format::eR8G8B8A8Unorm, offsetof(ImDrawVert, col));
     }
 
-    void GuiRenderer::Render(const CommandContextPtr &cmd, vk::Rect2D viewport) {
+    void GuiRenderer::Render(CommandContext &cmd, vk::Rect2D viewport) {
         manager.SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
 
@@ -129,21 +129,21 @@ namespace sp::vulkan {
         indexBuffer->Unmap();
         vertexBuffer->Unmap();
 
-        cmd->SetViewport(viewport);
-        cmd->SetVertexLayout(*vertexLayout);
-        cmd->SetCullMode(vk::CullModeFlagBits::eNone);
-        cmd->SetDepthTest(false, false);
-        cmd->SetBlending(true, vk::BlendOp::eAdd);
-        cmd->SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha);
+        cmd.SetViewport(viewport);
+        cmd.SetVertexLayout(*vertexLayout);
+        cmd.SetCullMode(vk::CullModeFlagBits::eNone);
+        cmd.SetDepthTest(false, false);
+        cmd.SetBlending(true, vk::BlendOp::eAdd);
+        cmd.SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha);
 
-        cmd->SetShaders("basic_ortho.vert", "basic_ortho.frag");
+        cmd.SetShaders("basic_ortho.vert", "basic_ortho.frag");
 
         glm::mat4 proj = MakeOrthographicProjection(viewport);
-        cmd->PushConstants(&proj, 0, sizeof(proj));
+        cmd.PushConstants(&proj, 0, sizeof(proj));
 
         const vk::IndexType idxType = sizeof(ImDrawIdx) == 2 ? vk::IndexType::eUint16 : vk::IndexType::eUint32;
-        cmd->Raw().bindIndexBuffer(*indexBuffer, 0, idxType);
-        cmd->Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
+        cmd.Raw().bindIndexBuffer(*indexBuffer, 0, idxType);
+        cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
 
         uint32 idxOffset = 0, vtxOffset = 0;
         for (int i = 0; i < drawData->CmdListsCount; i++) {
@@ -154,7 +154,7 @@ namespace sp::vulkan {
                     pcmd.UserCallback(cmdList, &pcmd);
                 } else {
                     auto texture = ImageView::FromHandle((uintptr_t)pcmd.TextureId);
-                    cmd->SetTexture(0, 0, texture);
+                    cmd.SetTexture(0, 0, texture);
 
                     auto clipRect = pcmd.ClipRect;
                     clipRect.x -= drawData->DisplayPos.x;
@@ -162,16 +162,16 @@ namespace sp::vulkan {
                     clipRect.z -= drawData->DisplayPos.x;
                     clipRect.w -= drawData->DisplayPos.y;
 
-                    cmd->SetScissor(vk::Rect2D{{(int32)clipRect.x, (int32)(viewport.extent.height - clipRect.w)},
-                                               {(uint32)(clipRect.z - clipRect.x), (uint32)(clipRect.w - clipRect.y)}});
+                    cmd.SetScissor(vk::Rect2D{{(int32)clipRect.x, (int32)(viewport.extent.height - clipRect.w)},
+                                              {(uint32)(clipRect.z - clipRect.x), (uint32)(clipRect.w - clipRect.y)}});
 
-                    cmd->DrawIndexed(pcmd.ElemCount, 1, idxOffset, vtxOffset, 0);
+                    cmd.DrawIndexed(pcmd.ElemCount, 1, idxOffset, vtxOffset, 0);
                 }
                 idxOffset += pcmd.ElemCount;
             }
             vtxOffset += cmdList->VtxBuffer.size();
         }
 
-        cmd->ClearScissor();
+        cmd.ClearScissor();
     }
 } // namespace sp::vulkan

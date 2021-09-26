@@ -16,8 +16,6 @@ namespace sp::vulkan {
     }
 
     void Renderer::RenderPass(CommandContext &cmd, const ecs::View &view, DrawLock lock) {
-        cmd.SetDefaultOpaqueState();
-
         cmd.SetShader(ShaderStage::Vertex, "test.vert");
         cmd.SetShader(ShaderStage::Fragment, "test.frag");
 

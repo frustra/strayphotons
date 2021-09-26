@@ -43,6 +43,22 @@ namespace sp::vulkan {
         return invalidResource;
     }
 
+    void RenderGraph::SetTargetImageView(string_view name, ImageViewPtr view) {
+        auto &res = resources.GetResourceByName(name);
+        Assert(res.renderTargetDesc.extent == view->Extent(), "image extent mismatch");
+
+        auto resFormat = res.renderTargetDesc.format;
+        auto viewFormat = view->Format();
+        Assert(FormatComponentCount(resFormat) == FormatComponentCount(viewFormat), "image component count mismatch");
+        Assert(FormatByteSize(resFormat) == FormatByteSize(viewFormat), "image component size mismatch");
+
+        Assert(view->BaseArrayLayer() == 0, "view can't target a specific layer");
+        Assert(res.renderTargetDesc.arrayLayers == view->Image()->ArrayLayers(), "image array mismatch");
+
+        resources.ResizeBeforeExecute();
+        resources.renderTargets[res.id] = make_shared<RenderTarget>(res.renderTargetDesc, view, ~0u);
+    }
+
     void RenderGraph::Execute() {
         resources.ResizeBeforeExecute();
 

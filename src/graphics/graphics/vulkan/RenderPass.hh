@@ -116,6 +116,12 @@ namespace sp::vulkan {
     class RenderPass : public WrappedUniqueHandle<vk::RenderPass> {
     public:
         RenderPass(DeviceContext &device, const RenderPassInfo &info);
+
+        // Updates the cached layout of the framebuffer attachment images
+        void RecordImplicitImageLayoutTransitions(const RenderPassInfo &info);
+
+    private:
+        std::array<vk::ImageLayout, MAX_COLOR_ATTACHMENTS + 1> initialLayouts, finalLayouts;
     };
 
     class Framebuffer : public WrappedUniqueHandle<vk::Framebuffer> {

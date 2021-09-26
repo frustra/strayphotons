@@ -104,14 +104,13 @@ namespace sp::vulkan {
                                         const uint8 *srcData = nullptr,
                                         size_t srcDataSize = 0,
                                         bool genMipmap = false);
+        ImageViewPtr SwapchainImageView();
         vk::Sampler GetSampler(SamplerType type);
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
 
         RenderTargetPtr GetRenderTarget(const RenderTargetDesc &desc);
 
         shared_ptr<GpuTexture> LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
-
-        RenderPassInfo SwapchainRenderPassInfo(bool depth = false, bool stencil = false);
 
         ShaderHandle LoadShader(const string &name);
         shared_ptr<Shader> GetShader(ShaderHandle handle) const;
@@ -226,8 +225,6 @@ namespace sp::vulkan {
         FrameContext &Frame() {
             return frameContexts[frameIndex];
         }
-
-        ImageViewPtr depthImageView; // TODO: move to render target pool
 
         robin_hood::unordered_map<string, ShaderHandle> shaderHandles;
         vector<shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1

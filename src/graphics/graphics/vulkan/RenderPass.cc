@@ -40,6 +40,8 @@ namespace sp::vulkan {
             colorAttachmentRef.attachment = i;
             colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
+            initialLayouts[attachmentCount] = colorAttachment.initialLayout;
+            finalLayouts[attachmentCount] = colorAttachment.finalLayout;
             attachmentCount++;
         }
 
@@ -65,6 +67,8 @@ namespace sp::vulkan {
             depthAttachmentRef.attachment = attachmentCount;
             depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
+            initialLayouts[attachmentCount] = depthStencilAttachment.initialLayout;
+            finalLayouts[attachmentCount] = depthStencilAttachment.finalLayout;
             attachmentCount++;
         }
 
@@ -106,6 +110,16 @@ namespace sp::vulkan {
         }
 
         uniqueHandle = device->createRenderPassUnique(renderPassInfo);
+    }
+
+    void RenderPass::RecordImplicitImageLayoutTransitions(const RenderPassInfo &info) {
+        for (uint32 i = 0; i < info.state.colorAttachmentCount; i++) {
+            info.colorAttachments[i]->Image()->SetLayout(initialLayouts[i], finalLayouts[i]);
+        }
+        if (info.HasDepthStencil()) {
+            auto i = info.state.colorAttachmentCount;
+            info.depthStencilAttachment->Image()->SetLayout(initialLayouts[i], finalLayouts[i]);
+        }
     }
 
     Framebuffer::Framebuffer(DeviceContext &device, const RenderPassInfo &info) {

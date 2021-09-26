@@ -5,7 +5,9 @@
 
 namespace sp::vulkan {
     RenderTarget::~RenderTarget() {
-        Debugf("Destroying render target %d, size=%dx%d", poolIndex, desc.extent.width, desc.extent.height);
+        if (poolIndex != ~0u) {
+            Debugf("Destroying render target %d, size=%dx%d", poolIndex, desc.extent.width, desc.extent.height);
+        }
     }
 
     RenderTargetPtr RenderTargetManager::Get(const RenderTargetDesc &desc) {
@@ -25,7 +27,10 @@ namespace sp::vulkan {
         imageInfo.format = desc.format;
         imageInfo.usage = desc.usage;
 
-        auto imageView = device.CreateImageAndView(imageInfo, {});
+        ImageViewCreateInfo viewInfo;
+        viewInfo.defaultSampler = device.GetSampler(SamplerType::BilinearTiled);
+
+        auto imageView = device.CreateImageAndView(imageInfo, viewInfo);
         auto ptr = make_shared<RenderTarget>(desc, imageView, pool.size());
 
         pool.push_back(ptr);

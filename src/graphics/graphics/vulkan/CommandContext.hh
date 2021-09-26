@@ -60,8 +60,13 @@ namespace sp::vulkan {
         void BeginRenderPass(const RenderPassInfo &info);
         void EndRenderPass();
 
-        void Draw(uint32 vertexes, uint32 instances, int32 firstVertex, uint32 firstInstance);
-        void DrawIndexed(uint32 indexes, uint32 instances, uint32 firstIndex, int32 vertexOffset, uint32 firstInstance);
+        void Draw(uint32 vertexes, uint32 instances = 1, int32 firstVertex = 0, uint32 firstInstance = 0);
+        void DrawIndexed(uint32 indexes,
+                         uint32 instances = 1,
+                         uint32 firstIndex = 0,
+                         int32 vertexOffset = 0,
+                         uint32 firstInstance = 0);
+        void DrawScreenCover(const ImageViewPtr &view = nullptr);
 
         void ImageBarrier(
             const ImagePtr &image,
@@ -172,8 +177,7 @@ namespace sp::vulkan {
         // Buffer is stored in a pool for this frame, and reused in later frames.
         BufferPtr AllocUniformBuffer(uint32 set, uint32 binding, vk::DeviceSize size);
 
-        // Returns a CPU mapped pointer to the GPU buffer, which is valid
-        // at least until the CommandContext is submitted
+        // Returns a CPU mapped pointer to the GPU buffer, valid at least until the CommandContext is submitted
         template<typename T>
         T *AllocUniformData(uint32 set, uint32 binding, uint32 count = 1) {
             auto buffer = AllocUniformBuffer(set, binding, sizeof(T) * count);

@@ -60,9 +60,7 @@ namespace sp::vulkan {
             return lastLayout;
         }
 
-        void SetLayout(vk::ImageLayout currentLayout) {
-            lastLayout = currentLayout;
-        }
+        void SetLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
 
     private:
         vk::Image image;

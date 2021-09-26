@@ -359,10 +359,10 @@ namespace sp::vulkan {
         vk::SurfaceFormatKHR surfaceFormat = surfaceFormats[0];
         for (auto &format : surfaceFormats) {
             if (format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
-                if (format.format == vk::Format::eB8G8R8A8Srgb) {
+                if (format.format == vk::Format::eR8G8B8A8Srgb) {
                     surfaceFormat = format;
                     break;
-                } else if (format.format == vk::Format::eR8G8B8A8Srgb) {
+                } else if (format.format == vk::Format::eB8G8R8A8Srgb) {
                     surfaceFormat = format;
                     break;
                 }
@@ -401,13 +401,6 @@ namespace sp::vulkan {
             imageViewInfo.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
             swapchainImageContexts[i].imageView = CreateImageView(imageViewInfo);
         }
-
-        vk::ImageCreateInfo depthImageInfo;
-        depthImageInfo.imageType = vk::ImageType::e2D;
-        depthImageInfo.format = vk::Format::eD24UnormS8Uint;
-        depthImageInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
-        depthImageInfo.extent = vk::Extent3D(swapchainExtent.width, swapchainExtent.height, 1);
-        depthImageView = CreateImageAndView(depthImageInfo, {});
     }
 
     void DeviceContext::RecreateSwapchain() {
@@ -834,7 +827,7 @@ namespace sp::vulkan {
         }
 
         // Each mip has now been transitioned to TransferSrc.
-        image->SetLayout(vk::ImageLayout::eTransferSrcOptimal);
+        image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
 
         graphicsCmd->ImageBarrier(image,
                                   vk::ImageLayout::eTransferSrcOptimal,
@@ -1015,11 +1008,8 @@ namespace sp::vulkan {
         return pipelinePool->GetGraphicsPipeline(input);
     }
 
-    RenderPassInfo DeviceContext::SwapchainRenderPassInfo(bool depth, bool stencil) {
-        RenderPassInfo info;
-        info.PushColorAttachment(SwapchainImage().imageView, LoadOp::Clear, StoreOp::Store, {0.0f, 1.0f, 0.0f, 1.0f});
-        if (depth) info.SetDepthStencilAttachment(depthImageView, LoadOp::Clear, StoreOp::DontCare);
-        return info;
+    ImageViewPtr DeviceContext::SwapchainImageView() {
+        return SwapchainImage().imageView;
     }
 
     shared_ptr<RenderPass> DeviceContext::GetRenderPass(const RenderPassInfo &info) {

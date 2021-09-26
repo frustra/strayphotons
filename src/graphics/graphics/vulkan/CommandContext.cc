@@ -4,7 +4,9 @@
 
 namespace sp::vulkan {
     CommandContext::CommandContext(DeviceContext &device, vk::UniqueCommandBuffer cmd, CommandContextType type) noexcept
-        : device(device), cmd(std::move(cmd)), type(type) {}
+        : device(device), cmd(std::move(cmd)), type(type) {
+        SetDefaultOpaqueState();
+    }
 
     CommandContext::~CommandContext() {
         Assert(!recording, "dangling command context");
@@ -35,28 +37,27 @@ namespace sp::vulkan {
         currentPipeline = VK_NULL_HANDLE;
 
         vk::ClearValue clearValues[MAX_COLOR_ATTACHMENTS + 1];
-        size_t clearCount = 0;
+        uint32 clearValueCount = info.state.colorAttachmentCount;
 
         for (uint32 i = 0; i < info.state.colorAttachmentCount; i++) {
-            if (info.state.ShouldClear(i)) {
-                clearValues[i].color = info.clearColors[i];
-                clearCount = i + 1;
-            }
+            if (info.state.ShouldClear(i)) { clearValues[i].color = info.clearColors[i]; }
             if (info.colorAttachments[i]->IsSwapchain()) writesToSwapchain = true;
         }
 
         if (info.HasDepthStencil() && info.state.ShouldClear(RenderPassState::DEPTH_STENCIL_INDEX)) {
             clearValues[info.state.colorAttachmentCount].depthStencil = info.clearDepthStencil;
-            clearCount = info.state.colorAttachmentCount + 1;
+            clearValueCount = info.state.colorAttachmentCount + 1;
         }
 
         vk::RenderPassBeginInfo renderPassBeginInfo;
         renderPassBeginInfo.renderPass = *renderPass;
         renderPassBeginInfo.framebuffer = *framebuffer;
         renderPassBeginInfo.renderArea = scissor;
-        renderPassBeginInfo.clearValueCount = clearCount;
+        renderPassBeginInfo.clearValueCount = clearValueCount;
         renderPassBeginInfo.pClearValues = clearValues;
         cmd->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+
+        renderPass->RecordImplicitImageLayoutTransitions(info);
     }
 
     void CommandContext::EndRenderPass() {
@@ -105,6 +106,12 @@ namespace sp::vulkan {
         cmd->drawIndexed(indexes, instances, firstIndex, vertexOffset, firstInstance);
     }
 
+    void CommandContext::DrawScreenCover(const ImageViewPtr &view) {
+        if (view) SetTexture(0, 0, view);
+        SetShaders("screen_cover.vert", "screen_cover.frag");
+        Draw(3);
+    }
+
     void CommandContext::ImageBarrier(const ImagePtr &image,
                                       vk::ImageLayout oldLayout,
                                       vk::ImageLayout newLayout,
@@ -132,10 +139,7 @@ namespace sp::vulkan {
             Assert(
                 !options.baseMipLevel && !options.mipLevelCount && !options.baseArrayLayer && !options.arrayLayerCount,
                 "can't track image layout when specifying a subresource range");
-            Assert(
-                oldLayout == vk::ImageLayout::eUndefined || oldLayout == image->LastLayout(),
-                "image had layout: " + vk::to_string(image->LastLayout()) + ", expected: " + vk::to_string(oldLayout));
-            image->SetLayout(newLayout);
+            image->SetLayout(oldLayout, newLayout);
         }
     }
 
