@@ -70,6 +70,10 @@ namespace sp {
             }
         });
 
+    static CVar<string> CVarWindowViewTarget("r.WindowViewTarget",
+                                             "GBuffer0",
+                                             "Render target to view in the primary window");
+
     void GraphicsManager::Init() {
         if (context) { throw "already an active context"; }
 
@@ -303,48 +307,6 @@ namespace sp {
 
                         cmd.EndRenderPass();
                     });
-
-                struct FinalOutputData {
-                    vulkan::RenderGraphResource source;
-                    vulkan::RenderGraphResource target;
-                };
-
-                auto debugGuiRenderer = this->debugGuiRenderer.get();
-                graph.AddPass<FinalOutputData>(
-                    "WindowFinalOutput",
-                    [&](vulkan::RenderGraphPassBuilder &builder, FinalOutputData &data) {
-                        data.source = builder.Read(forwardPassData.gBuffer0);
-
-                        vulkan::RenderTargetDesc desc;
-                        desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
-                        desc.format = vk::Format::eR8G8B8A8Srgb;
-                        desc.usage = vk::ImageUsageFlagBits::eColorAttachment;
-                        data.target = builder.OutputRenderTarget("WindowFinalOutput", desc);
-                    },
-                    [debugGuiRenderer](vulkan::RenderGraphResources &resources,
-                                       vulkan::CommandContext &cmd,
-                                       const FinalOutputData &data) {
-                        auto source = resources.GetRenderTarget(data.source)->ImageView();
-
-                        cmd.ImageBarrier(source->Image(),
-                                         vk::ImageLayout::eColorAttachmentOptimal,
-                                         vk::ImageLayout::eShaderReadOnlyOptimal,
-                                         vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                         vk::AccessFlagBits::eColorAttachmentWrite,
-                                         vk::PipelineStageFlagBits::eFragmentShader,
-                                         vk::AccessFlagBits::eShaderRead);
-
-                        auto color = resources.GetRenderTarget(data.target)->ImageView();
-
-                        vulkan::RenderPassInfo info;
-                        info.PushColorAttachment(color, vulkan::LoadOp::Clear, vulkan::StoreOp::Store, {0, 1, 0, 1});
-                        cmd.BeginRenderPass(info);
-
-                        cmd.DrawScreenCover(source);
-                        debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()});
-
-                        cmd.EndRenderPass();
-                    });
             }
 
         #ifdef SP_XR_SUPPORT
@@ -502,7 +464,53 @@ namespace sp {
                 ScreenshotPath = "";
             }
 
-            graph.SetTargetImageView("WindowFinalOutput", device.SwapchainImageView());
+            if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
+                auto view = windowEntity.Get<ecs::View>(lock);
+                struct FinalOutputData {
+                    vulkan::RenderGraphResource source;
+                    vulkan::RenderGraphResource target;
+                };
+
+                auto debugGuiRenderer = this->debugGuiRenderer.get();
+                graph.AddPass<FinalOutputData>(
+                    "WindowFinalOutput",
+                    [&](vulkan::RenderGraphPassBuilder &builder, FinalOutputData &data) {
+                        data.source = builder.Read(builder.GetResourceByName(CVarWindowViewTarget.Get()));
+
+                        vulkan::RenderTargetDesc desc;
+                        desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
+                        desc.format = vk::Format::eR8G8B8A8Srgb;
+                        desc.usage = vk::ImageUsageFlagBits::eColorAttachment;
+                        data.target = builder.OutputRenderTarget("WindowFinalOutput", desc);
+                    },
+                    [debugGuiRenderer](vulkan::RenderGraphResources &resources,
+                                       vulkan::CommandContext &cmd,
+                                       const FinalOutputData &data) {
+                        auto source = resources.GetRenderTarget(data.source)->ImageView();
+
+                        cmd.ImageBarrier(source->Image(),
+                                         source->Image()->LastLayout(),
+                                         vk::ImageLayout::eShaderReadOnlyOptimal,
+                                         vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                         vk::AccessFlagBits::eColorAttachmentWrite,
+                                         vk::PipelineStageFlagBits::eFragmentShader,
+                                         vk::AccessFlagBits::eShaderRead);
+
+                        auto color = resources.GetRenderTarget(data.target)->ImageView();
+
+                        vulkan::RenderPassInfo info;
+                        info.PushColorAttachment(color, vulkan::LoadOp::Clear, vulkan::StoreOp::Store, {0, 1, 0, 1});
+                        cmd.BeginRenderPass(info);
+
+                        cmd.SetTexture(0, 0, source);
+                        cmd.DrawScreenCover(source);
+                        debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()});
+
+                        cmd.EndRenderPass();
+                    });
+
+                graph.SetTargetImageView("WindowFinalOutput", device.SwapchainImageView());
+            }
             graph.Execute();
 
             renderer->EndFrame();

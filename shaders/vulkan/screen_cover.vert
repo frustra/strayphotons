@@ -19,10 +19,15 @@ vec2 uvs[3] = vec2[](
     vec2(0.5, -1)
 );
 
+vec2 uvsFlipped[3] = vec2[](
+    vec2(-0.5, 0),
+    vec2(1.5, 0),
+    vec2(0.5, 2)
+);
+
 const bool flipped = false;
 
 void main() {
-	outTexCoord = uvs[gl_VertexIndex];
-    if (flipped) outTexCoord.y = 1 - outTexCoord.y;
+    outTexCoord = flipped ? uvsFlipped[gl_VertexIndex] : uvs[gl_VertexIndex];
     gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);
 }
