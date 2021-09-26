@@ -11,6 +11,7 @@
 #define Debugf(...) ::sp::logging::Debug(__FILE__, __LINE__, __VA_ARGS__)
 #define Logf(...) ::sp::logging::Log(__FILE__, __LINE__, __VA_ARGS__)
 #define Errorf(...) ::sp::logging::Error(__FILE__, __LINE__, __VA_ARGS__)
+#define Abortf(...) ::sp::logging::Abort(__FILE__, __LINE__, __VA_ARGS__)
 
 namespace sp::logging {
     enum class Level { Error, Log, Debug };
@@ -86,5 +87,11 @@ namespace sp::logging {
     template<typename... T>
     static void Error(const char *file, int line, const std::string &fmt, T... t) {
         writeLog(Level::Error, file, line, "[err] " + fmt, t...);
+    }
+
+    template<typename... T>
+    [[noreturn]] static void Abort(const char *file, int line, const std::string &fmt, T... t) {
+        writeLog(Level::Error, file, line, "[abort] " + fmt, t...);
+        sp::Abort();
     }
 } // namespace sp::logging

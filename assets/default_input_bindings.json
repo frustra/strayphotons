@@ -19,7 +19,7 @@
             "/keyboard/key/e": { "/action/interact": "player" },
             "/keyboard/key/q": { "/action/spawn_debug": "player" },
             "/keyboard/key/f": { "/action/flashlight/toggle": "flashlight" },
-            "/keyboard/key/p": { "/action/flashlight/place": "flashlight" }
+            "/keyboard/key/p": { "/action/flashlight/grab": "flashlight" }
         }
     },
     "vr-controller-left": {
@@ -29,17 +29,11 @@
     },
     "vr-controller-right": {
         "event_bindings": {
-            "/actions/main/in/movement": { "script_input": "player" },
+            "/actions/main/in/movement": { "/script/joystick_in": "player" },
             "/actions/main/in/grab": { "/action/interact": "player" }
         }
     },
     "player": {
-        "focus": "GAME",
-        "event_input": [
-            "/action/camera_rotate",
-            "/action/interact",
-            "/action/spawn_debug"
-        ],
         "signal_bindings": {
             "menu_primary_trigger": { "mouse_button_left": "mouse" },
             "menu_secondary_trigger": { "mouse_button_right": "mouse" },
@@ -60,12 +54,5 @@
             "move_sprint": { "key_left_shift": "keyboard" },
             "interact_rotate": { "key_r": "keyboard" }
         }
-    },
-    "flashlight": {
-        "focus": "GAME",
-        "event_input": [
-            "/action/flashlight/toggle",
-            "/action/flashlight/place"
-        ]
     }
 }

@@ -8,15 +8,16 @@
 #include <vector>
 
 namespace ecs {
+    using ScriptFunc = std::function<void(ecs::Lock<ecs::WriteAll>, Tecs::Entity, double)>;
     class Script {
     public:
-        void AddOnTick(std::function<void(ecs::Lock<ecs::WriteAll>, double)> callback) {
-            onTickCallbacks.emplace_back(callback);
+        void AddOnTick(ScriptFunc callback) {
+            onTickCallbacks.push_back(callback);
         }
 
-        void OnTick(ecs::Lock<ecs::WriteAll> lock, double dtSinceLastFrame) {
+        void OnTick(ecs::Lock<ecs::WriteAll> lock, Tecs::Entity &ent, double dtSinceLastFrame) {
             for (auto &callback : onTickCallbacks) {
-                callback(lock, dtSinceLastFrame);
+                callback(lock, ent, dtSinceLastFrame);
             }
         }
 
@@ -38,13 +39,15 @@ namespace ecs {
         }
 
     private:
-        std::vector<std::function<void(ecs::Lock<ecs::WriteAll>, double)>> onTickCallbacks;
+        std::vector<ScriptFunc> onTickCallbacks;
 
         robin_hood::unordered_flat_map<std::string, ParameterType> scriptParameters;
     };
 
     static Component<Script> ComponentScript("script");
 
+    extern robin_hood::unordered_node_map<std::string, ScriptFunc> ScriptDefinitions;
+
     template<>
-    bool Component<Script>::LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src);
+    bool Component<Script>::Load(Lock<Read<ecs::Name>> lock, Script &dst, const picojson::value &src);
 } // namespace ecs

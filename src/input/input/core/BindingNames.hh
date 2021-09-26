@@ -44,8 +44,6 @@ namespace sp {
     static const std::string INPUT_EVENT_CAMERA_ROTATE = "/action/camera_rotate"; // glm::vec2
     static const std::string INPUT_EVENT_INTERACT = "/action/interact"; // bool
     static const std::string INPUT_EVENT_TELEPORT = "/action/teleport"; // bool
-    static const std::string INPUT_EVENT_FLASHLIGHT_TOGGLE = "/action/flashlight/toggle"; // bool
-    static const std::string INPUT_EVENT_FLASHLIGHT_PLACE = "/action/flashlight/place"; // bool
 
     // Other
     static const std::string INPUT_EVENT_RUN_COMMAND = "/action/run_command"; // string

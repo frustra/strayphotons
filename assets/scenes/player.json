@@ -14,17 +14,21 @@
             },
             "transform": {},
             "script": {
-                "onTick": "event_multiply",
+                "onTick": "joystick_calibration",
                 "parameters": {
-                    "multiply_factor_x": 20.0,
-                    "multiply_factor_y": -20.0
+                    "scale_x": 20.0,
+                    "scale_y": -20.0
                 }
             },
+            "focus": "GAME",
             "event_input": [
-                "script_input"
+                "/action/camera_rotate",
+                "/action/interact",
+                "/action/spawn_debug",
+                "/script/joystick_in"
             ],
             "event_bindings": {
-                "script_output": { "/action/camera_rotate": "player" }
+                "/script/joystick_out": { "/action/camera_rotate": "player" }
             }
         },
         {
@@ -32,6 +36,19 @@
             "transform": {
                 "parent": "player",
                 "translate": [0, -0.3, 0]
+            },
+            "signal_output": {
+                "on": 0,
+                "angle": 20,
+                "intensity": 100
+            },
+            "focus": "GAME",
+            "event_input": [
+                "/action/flashlight/toggle",
+                "/action/flashlight/grab"
+            ],
+            "script": {
+                "onTick": "flashlight"
             },
             "light": {
                 "tint": [1, 1, 1],

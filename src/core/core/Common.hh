@@ -32,7 +32,7 @@ typedef int64_t int64;
     if (!(condition)) ::sp::Abort(message);
 
 namespace sp {
-    [[noreturn]] void Abort(const string &message);
+    [[noreturn]] void Abort(const string &message = "");
     void DebugBreak();
 
     uint32 CeilToPowerOfTwo(uint32 v);
