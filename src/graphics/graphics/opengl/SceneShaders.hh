@@ -10,7 +10,7 @@ namespace sp {
     public:
         SceneShader(shared_ptr<ShaderCompileOutput> compileOutput);
         void SetParams(const ecs::View &view, glm::mat4 modelMat, glm::mat4 primitiveMat);
-        void SetBoneData(size_t count, const glm::mat4 *bones);
+        void SetBoneData(int count, const glm::mat4 *bones);
 
     private:
         UniformBuffer boneData;

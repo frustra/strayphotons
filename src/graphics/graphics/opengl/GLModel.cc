@@ -76,7 +76,7 @@ namespace sp {
     void GLModel::Draw(SceneShader *shader,
                        glm::mat4 modelMat,
                        const ecs::View &view,
-                       size_t boneCount,
+                       int boneCount,
                        const glm::mat4 *boneData) const {
         for (auto primitive : primitives) {
             glBindVertexArray(primitive.vertexBufferHandle);

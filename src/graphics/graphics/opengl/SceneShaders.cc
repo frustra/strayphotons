@@ -15,10 +15,9 @@ namespace sp {
         Set("boneCount", 0);
     }
 
-    void SceneShader::SetBoneData(size_t count, const glm::mat4 *bones) {
-        // TODO: This is apparently unreachable code?
-        // Set("boneCount", count);
-        // BufferData(boneData, sizeof(glm::mat4) * count, bones);
+    void SceneShader::SetBoneData(int count, const glm::mat4 *bones) {
+        Set("boneCount", count);
+        BufferData(boneData, sizeof(glm::mat4) * count, bones);
     }
 
     void SceneGS::SetRenderMirrors(bool v) {
