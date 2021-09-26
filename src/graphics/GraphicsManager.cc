@@ -255,7 +255,7 @@ namespace sp {
                     vulkan::RenderGraphResource gBuffer0, depth;
                 };
 
-                auto forwardPassData = graph.AddPass<ForwardPassData>(
+                graph.AddPass<ForwardPassData>(
                     "ForwardPass",
                     [&](vulkan::RenderGraphPassBuilder &builder, ForwardPassData &data) {
                         vulkan::RenderTargetDesc desc;
