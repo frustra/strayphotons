@@ -27,7 +27,7 @@ namespace ecs {
 
         template<typename T>
         Event(const std::string &name, const NamedEntity &source, T data) : name(name), source(source), data(data) {}
-        
+
         std::string toString() const;
     };
 
