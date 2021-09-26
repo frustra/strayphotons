@@ -313,7 +313,7 @@ namespace sp {
                 Tecs::Entity entity = lock.NewEntity();
                 auto name = ent["_name"].get<string>();
                 entity.Set<ecs::Name>(lock, name);
-                if (namedEntities.count(name) != 0) { throw std::runtime_error("Duplicate entity name: " + name); }
+                Assert(namedEntities.count(name) == 0, "Duplicate entity name: " + name);
                 namedEntities.emplace(name, entity);
             }
         }
@@ -335,7 +335,7 @@ namespace sp {
                 auto componentType = ecs::LookupComponent(comp.first);
                 if (componentType != nullptr) {
                     bool result = componentType->LoadEntity(lock, entity, comp.second);
-                    if (!result) { throw std::runtime_error("Failed to load component type: " + comp.first); }
+                    Assert(result, "Failed to load component type: " + comp.first);
                 } else {
                     Errorf("Unknown component, ignoring: %s", comp.first);
                 }

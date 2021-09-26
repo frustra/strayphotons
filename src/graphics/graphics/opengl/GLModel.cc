@@ -222,7 +222,7 @@ namespace sp {
             // 	}
             // 	else
             // 	{
-            // 		throw std::runtime_error("Scaling textures that are not GL_UNSIGNED_BYTE is not supported");
+            // 		Abort("Scaling textures that are not GL_UNSIGNED_BYTE is not supported");
             // 	}
             // }
 
@@ -245,7 +245,7 @@ namespace sp {
                 glDispatchCompute((img.width + 15) / 16, (img.height + 15) / 16, 1);
                 glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
             } else {
-                throw std::runtime_error("Scaling textures is not supported");
+                Abort("Scaling textures is not supported");
             }
 
             tex->GenMipmap();
@@ -295,7 +295,6 @@ namespace sp {
 
         default:
             Abort("Unknown Model::DrawMode");
-            return GL_TRIANGLES;
         }
     }
 

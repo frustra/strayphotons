@@ -26,6 +26,8 @@ namespace sp {
 
         keyboardEntity = ecs::NamedEntity("keyboard");
         mouseEntity = ecs::NamedEntity("mouse");
+
+        UpdateEntities();
     }
 
     GlfwInputHandler::~GlfwInputHandler() {
@@ -46,7 +48,7 @@ namespace sp {
         if (!keyboard) {
             Logf("Creating new keyboard entity");
             keyboard = lock.NewEntity();
-            keyboard.Set<ecs::Owner>(lock, ecs::Owner::OwnerType::PLAYER, 0);
+            keyboard.Set<ecs::Owner>(lock, ecs::Owner::SystemId::INPUT_MANAGER);
             keyboard.Set<ecs::Name>(lock, "keyboard");
             keyboardEntity = ecs::NamedEntity("keyboard", keyboard);
         }
@@ -57,7 +59,7 @@ namespace sp {
         if (!mouse) {
             Logf("Creating new mouse entity");
             mouse = lock.NewEntity();
-            mouse.Set<ecs::Owner>(lock, ecs::Owner::OwnerType::PLAYER, 0);
+            mouse.Set<ecs::Owner>(lock, ecs::Owner::SystemId::INPUT_MANAGER);
             mouse.Set<ecs::Name>(lock, "mouse");
             mouseEntity = ecs::NamedEntity("mouse", mouse);
         }

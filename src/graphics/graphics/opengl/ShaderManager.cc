@@ -75,7 +75,7 @@ namespace sp {
             auto err = ProcessError(input, string(infoLog));
             Errorf("%s", err);
 #ifdef SP_PACKAGE_RELEASE
-            throw std::runtime_error(err);
+            Abort(err);
 #else
             return nullptr;
 #endif
@@ -159,7 +159,7 @@ namespace sp {
                 output << "//end " << line << std::endl;
                 output << "#line " << (linesProcessed + 1) << " " << currUnit << std::endl;
             } else {
-                throw runtime_error("invalid shader command " + command + " #" + input.units.back());
+                Abort("invalid shader command " + command + " #" + input.units.back());
             }
         }
 

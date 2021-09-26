@@ -2,7 +2,7 @@
 	"autoexec": [
 		"r.MirrorRecursion 2",
 		"r.MirrorMapResolution 1024",
-		"wait 1000 setsignal airlock1-out-signal 1",
+		"wait 1000 setsignal airlock1-out.door_open 1",
 		"r.LightAttenuation 0.15"
 	],
 	"unloadexec": [
@@ -25,7 +25,7 @@
 			"triggerarea": {
 				"min": [6, 0, 9],
 				"max": [9, 2, 11.5],
-				"command": "setsignal airlock2-in-signal.force-close 1; wait 1000 loadscene 04-symmetry"
+				"command": "setsignal airlock2-in.door_open 0; wait 1000 loadscene 04-symmetry"
 			}
 		},
 		<%- include("prefab/floor", {

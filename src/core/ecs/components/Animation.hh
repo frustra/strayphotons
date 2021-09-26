@@ -8,8 +8,6 @@
 namespace ecs {
     class Animation {
     public:
-        void AnimateToState(size_t state);
-
         struct State {
             glm::vec3 pos;
             glm::vec3 scale;
@@ -19,8 +17,8 @@ namespace ecs {
         };
 
         std::vector<State> states;
-        size_t curState = 0;
-        size_t prevState = 0;
+        size_t targetState = 0;
+        size_t currentState = 0;
 
         /**
          * the time it takes to animate to the given state

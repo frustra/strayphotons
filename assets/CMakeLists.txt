@@ -76,6 +76,7 @@ if(SP_PACKAGE_RELEASE)
             ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../shaders ${CMAKE_CURRENT_LIST_DIR}/shaders
         COMMAND
             ${CMAKE_COMMAND} -E tar c ${PROJECT_OUTPUT_DIR}/${_asset_filename} --
+                default_input_bindings.json
                 cache
                 ${_font_assets}
                 ${_logo_assets}
@@ -88,6 +89,7 @@ if(SP_PACKAGE_RELEASE)
         OUTPUT
             ${PROJECT_OUTPUT_DIR}/${_asset_filename}
         DEPENDS
+            default_input_bindings.json
             ${_glb_assets_full}
             ${_texture_assets_full}
             ${_scene_assets_full}

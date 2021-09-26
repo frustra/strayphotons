@@ -10,7 +10,6 @@ namespace sp {
     const GLPixelFormat GLPixelFormat::PixelFormatMapping(PixelFormat in) {
         switch (in) { PF_DEFINITIONS }
         Abort("invalid PixelFormat");
-        return GLPixelFormat{};
     };
 
 #undef PF_DEF

@@ -11,8 +11,11 @@
     #include "graphics/gui/MenuGuiManager.hh"
 #endif
 
-#ifdef SP_INPUT_SUPPORT_GLFW
-    #include "input/glfw/GlfwInputHandler.hh"
+#ifdef SP_INPUT_SUPPORT
+    #include "input/core/BindingLoader.hh"
+    #ifdef SP_INPUT_SUPPORT_GLFW
+        #include "input/glfw/GlfwInputHandler.hh"
+    #endif
 #endif
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
@@ -53,8 +56,11 @@ namespace sp {
         std::unique_ptr<DebugGuiManager> debugGui = nullptr;
         std::unique_ptr<MenuGuiManager> menuGui = nullptr;
 #endif
-#ifdef SP_INPUT_SUPPORT_GLFW
+#ifdef SP_INPUT_SUPPORT
+        BindingLoader inputBindingLoader;
+    #ifdef SP_INPUT_SUPPORT_GLFW
         std::unique_ptr<GlfwInputHandler> glfwInputHandler;
+    #endif
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
         PhysxManager physics;

@@ -2,7 +2,7 @@
 	"autoexec": [
 		"r.MirrorRecursion 2",
 		"r.MirrorMapResolution 1024",
-		"wait 1000 setsignal airlock1-out-signal 1",
+		"wait 1000 setsignal airlock1-out.door_open 1",
 		"r.LightAttenuation 0.15"
 	],
 	"unloadexec": [
@@ -42,33 +42,12 @@
 				]
 			},
 			"renderable": "door-frame",
-			"script": {
-				"onTick": "slide_door",
-				"parameters": {
-					"input": "airlock1-out-signal",
-					"left": "airlock1-out-left",
-					"right": "airlock1-out-right"
-				}
-			},
 			"physics": {
 				"model": "door-frame",
 				"dynamic": false
-			}
-		},
-		{
-			"_name": "airlock1-out-signal",
-			"signal_output": {
-				"value": false,
-				"force-close": false
 			},
-			"script": {
-				"onTick": "combinator",
-				"parameters": {
-					"operation": "not_if",
-					"input_a": "airlock1-out-signal",
-					"input_b": "airlock1-out-signal.force-close"
-				}
-			}
+			"signal_output": {},
+			"signal_bindings": {}
 		},
 		{
 			"_name": "airlock1-out-left",
@@ -90,6 +69,11 @@
 						]
 					}
 				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "airlock1-out"
+				}
 			},
 			"physics": {
 				"model": "door-panel",
@@ -135,6 +119,11 @@
 					}
 				]
 			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "airlock1-out"
+				}
+			},
 			"physics": {
 				"model": "door-panel",
 				"dynamic": false
@@ -151,33 +140,12 @@
 				]
 			},
 			"renderable": "door-frame",
-			"script": {
-				"onTick": "slide_door",
-				"parameters": {
-					"input": "airlock1-in-signal",
-					"left": "airlock1-in-left",
-					"right": "airlock1-in-right"
-				}
-			},
 			"physics": {
 				"model": "door-frame",
 				"dynamic": false
-			}
-		},
-		{
-			"_name": "airlock1-in-signal",
-			"signal_output": {
-				"value": false,
-				"force-close": false
 			},
-			"script": {
-				"onTick": "combinator",
-				"parameters": {
-					"operation": "not_if",
-					"input_a": "airlock1-in-signal",
-					"input_b": "airlock1-in-signal.force-close"
-				}
-			}
+			"signal_output": {},
+			"signal_bindings": {}
 		},
 		{
 			"_name": "airlock1-in-left",
@@ -199,6 +167,11 @@
 						]
 					}
 				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "airlock1-in"
+				}
 			},
 			"physics": {
 				"model": "door-panel",
@@ -243,6 +216,11 @@
 						]
 					}
 				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "airlock1-in"
+				}
 			},
 			"physics": {
 				"model": "door-panel",
@@ -316,33 +294,12 @@
 				]
 			},
 			"renderable": "door-frame",
-			"script": {
-				"onTick": "slide_door",
-				"parameters": {
-					"input": "airlock2-out-signal",
-					"left": "airlock2-out-left",
-					"right": "airlock2-out-right"
-				}
-			},
 			"physics": {
 				"model": "door-frame",
 				"dynamic": false
-			}
-		},
-		{
-			"_name": "airlock2-out-signal",
-			"signal_output": {
-				"value": false,
-				"force-close": false
 			},
-			"script": {
-				"onTick": "combinator",
-				"parameters": {
-					"operation": "not_if",
-					"input_a": "airlock2-out-signal",
-					"input_b": "airlock2-out-signal.force-close"
-				}
-			}
+			"signal_output": {},
+			"signal_bindings": {}
 		},
 		{
 			"_name": "airlock2-out-left",
@@ -364,6 +321,11 @@
 						]
 					}
 				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "airlock2-out"
+				}
 			},
 			"physics": {
 				"model": "door-panel",
@@ -409,6 +371,11 @@
 					}
 				]
 			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "airlock2-out"
+				}
+			},
 			"physics": {
 				"model": "door-panel",
 				"dynamic": false
@@ -425,31 +392,14 @@
 				]
 			},
 			"renderable": "door-frame",
-			"script": {
-				"onTick": "slide_door",
-				"parameters": {
-					"input": "airlock2-in-signal",
-					"left": "airlock2-in-left",
-					"right": "airlock2-in-right"
-				}
-			},
 			"physics": {
 				"model": "door-frame",
 				"dynamic": false
-			}
-		},
-		{
-			"_name": "airlock2-in-signal",
-			"signal_output": {
-				"value": false,
-				"force-close": false
 			},
-			"script": {
-				"onTick": "combinator",
-				"parameters": {
-					"operation": "not_if",
-					"input_a": "sensor2",
-					"input_b": "airlock2-in-signal.force-close"
+			"signal_output": {},
+			"signal_bindings": {
+				"door_open": {
+					"value": "sensor2"
 				}
 			}
 		},
@@ -473,6 +423,11 @@
 						]
 					}
 				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "airlock2-in"
+				}
 			},
 			"physics": {
 				"model": "door-panel",
@@ -517,6 +472,11 @@
 						]
 					}
 				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "airlock2-in"
+				}
 			},
 			"physics": {
 				"model": "door-panel",
@@ -570,7 +530,7 @@
 					2,
 					11.5
 				],
-				"command": "setsignal airlock2-in-signal.force-close 1; wait 1000 loadscene 04-symmetry"
+				"command": "setsignal airlock2-in.door_open 0; wait 1000 loadscene 04-symmetry"
 			}
 		},
 		{
@@ -1335,31 +1295,14 @@
 				]
 			},
 			"renderable": "door-frame",
-			"script": {
-				"onTick": "slide_door",
-				"parameters": {
-					"input": "door1-signal",
-					"left": "door1-left",
-					"right": "door1-right"
-				}
-			},
 			"physics": {
 				"model": "door-frame",
 				"dynamic": false
-			}
-		},
-		{
-			"_name": "door1-signal",
-			"signal_output": {
-				"value": false,
-				"force-close": false
 			},
-			"script": {
-				"onTick": "combinator",
-				"parameters": {
-					"operation": "not_if",
-					"input_a": "sensor1",
-					"input_b": "door1-signal.force-close"
+			"signal_output": {},
+			"signal_bindings": {
+				"door_open": {
+					"value": "sensor1"
 				}
 			}
 		},
@@ -1383,6 +1326,11 @@
 						]
 					}
 				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "door1"
+				}
 			},
 			"physics": {
 				"model": "door-panel",
@@ -1427,6 +1375,11 @@
 						]
 					}
 				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "door1"
+				}
 			},
 			"physics": {
 				"model": "door-panel",

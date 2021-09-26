@@ -182,8 +182,9 @@ namespace sp::vulkan {
             return false;
         };
 
-        if (!findQueue(QUEUE_TYPE_GRAPHICS, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, {}, 1.0f, true))
+        if (!findQueue(QUEUE_TYPE_GRAPHICS, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, {}, 1.0f, true)) {
             Abort("could not find a supported graphics queue family");
+        }
 
         if (!findQueue(QUEUE_TYPE_COMPUTE, vk::QueueFlagBits::eCompute, {}, 0.5f)) {
             // must be only one queue that supports compute, fall back to it
@@ -922,10 +923,7 @@ namespace sp::vulkan {
 
     shared_ptr<Shader> DeviceContext::CreateShader(const string &name, Hash64 compareHash) {
         auto asset = GAssets.Load("shaders/vulkan/bin/" + name + ".spv");
-        if (!asset) {
-            Abort("could not load shader: " + name);
-            return nullptr;
-        }
+        Assert(asset, "could not load shader: " + name);
         asset->WaitUntilValid();
 
         auto newHash = Hash128To64(asset->Hash());

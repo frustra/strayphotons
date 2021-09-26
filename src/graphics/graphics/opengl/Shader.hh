@@ -55,7 +55,7 @@ namespace sp {
             case ShaderStage::TessEval:
                 return GL_TESS_EVALUATION_SHADER_BIT;
             default:
-                throw std::runtime_error("Unknown shader stage bit");
+                Abort("Unknown shader stage bit");
             }
         }
 
@@ -160,8 +160,7 @@ namespace sp {
 
         shared_ptr<Shader> Get(ShaderMeta *meta) const {
             auto ptr = shaders.find(meta);
-
-            if (ptr == shaders.end()) throw std::runtime_error("shader not loaded: " + meta->name);
+            Assert(ptr != shaders.end(), "shader not loaded: " + meta->name);
 
             return ptr->second;
         }

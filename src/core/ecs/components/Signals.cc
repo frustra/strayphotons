@@ -29,17 +29,37 @@ namespace ecs {
             Tecs::Entity target;
             std::string targetEvent;
             for (auto source : bind.second.get<picojson::object>()) {
-                picojson::array originList;
-                if (source.second.is<std::string>()) {
-                    originList.emplace_back(source.second);
-                } else if (source.second.is<picojson::array>()) {
-                    originList = source.second.get<picojson::array>();
+                if (source.first == "_operator") {
+                    auto operatorName = source.second.get<std::string>();
+                    sp::to_upper(operatorName);
+                    if (operatorName == "ADD") {
+                        bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::ADD);
+                    } else if (operatorName == "MIN") {
+                        bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::MIN);
+                    } else if (operatorName == "MAX") {
+                        bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::MAX);
+                    } else if (operatorName == "MULTIPLY") {
+                        bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::MULTIPLY);
+                    } else if (operatorName == "BINARY_AND") {
+                        bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::BINARY_AND);
+                    } else if (operatorName == "BINARY_OR") {
+                        bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::BINARY_OR);
+                    } else {
+                        sp::Abort("Unknown signal binding combine operator: " + operatorName);
+                    }
                 } else {
-                    sp::Abort("Invalid signal source");
-                }
-                for (auto origin : originList) {
-                    auto originName = origin.get<std::string>();
-                    bindings.Bind(bind.first, NamedEntity(originName), source.first);
+                    picojson::array originList;
+                    if (source.second.is<std::string>()) {
+                        originList.emplace_back(source.second);
+                    } else if (source.second.is<picojson::array>()) {
+                        originList = source.second.get<picojson::array>();
+                    } else {
+                        sp::Abort("Invalid signal binding source: " + bind.first);
+                    }
+                    for (auto origin : originList) {
+                        auto originName = origin.get<std::string>();
+                        bindings.Bind(bind.first, NamedEntity(originName), source.first);
+                    }
                 }
             }
         }
@@ -236,7 +256,6 @@ namespace ecs {
         } break;
         default:
             sp::Abort("Bad signal combine operator");
-            return 0.0;
         }
     }
 } // namespace ecs

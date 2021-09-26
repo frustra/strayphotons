@@ -14,10 +14,6 @@ using std::vector;
 #include <string>
 using std::string;
 
-#include <stdexcept>
-using std::invalid_argument;
-using std::runtime_error;
-
 #include <chrono>
 typedef std::chrono::steady_clock chrono_clock;
 
@@ -34,7 +30,7 @@ typedef int64_t int64;
     if (!(condition)) ::sp::Abort(message);
 
 namespace sp {
-    void Abort(const string &message);
+    [[noreturn]] void Abort(const string &message);
     void DebugBreak();
 
     uint32 CeilToPowerOfTwo(uint32 v);

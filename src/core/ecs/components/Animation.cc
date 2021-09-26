@@ -19,30 +19,18 @@ namespace ecs {
 
                     Transform animationState;
                     if (!Component<Transform>::Load(lock, animationState, state)) {
-                        throw std::runtime_error("Couldn't parse animation state as Transform");
-                        return false;
+                        sp::Abort("Couldn't parse animation state as Transform");
                     }
                     animation.states.emplace_back(animationState.GetPosition(), animationState.GetScale());
                     animation.animationTimes.emplace_back(delay);
                 }
             } else if (param.first == "defaultState") {
-                animation.curState = param.second.get<double>();
+                animation.targetState = param.second.get<double>();
             }
         }
-        if (animation.curState < 0) animation.curState = 0;
-        animation.prevState = animation.curState;
+        if (animation.targetState >= animation.states.size()) animation.targetState = animation.states.size() - 1;
+        if (animation.targetState < 0) animation.targetState = 0;
+        animation.currentState = animation.targetState;
         return true;
-    }
-
-    void Animation::AnimateToState(size_t state) {
-        if (state >= states.size()) {
-            std::stringstream ss;
-            ss << "\"" << state << "\" is an invalid state for this Animation with " << states.size() << " states";
-            throw std::runtime_error(ss.str());
-        }
-        if (state == curState) return;
-
-        prevState = curState;
-        curState = state;
     }
 } // namespace ecs

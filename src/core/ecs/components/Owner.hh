@@ -4,7 +4,7 @@
 
 namespace ecs {
     struct Owner {
-        enum class SystemId : size_t { INVALID = 0, GAME_LOGIC, XR_MANAGER, GUI_MANAGER };
+        enum class SystemId : size_t { INVALID = 0, GAME_LOGIC, INPUT_MANAGER, XR_MANAGER, GUI_MANAGER };
         enum class OwnerType { INVALID = 0, SYSTEM, PLAYER, SCENE };
 
         Owner() : id(0), type(OwnerType::INVALID) {}

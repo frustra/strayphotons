@@ -409,9 +409,7 @@ namespace sp {
 
     void PhysxManager::Translate(PxRigidDynamic *actor, const PxVec3 &transform) {
         PxRigidBodyFlags flags = actor->getRigidBodyFlags();
-        if (!flags.isSet(PxRigidBodyFlag::eKINEMATIC)) {
-            throw std::runtime_error("cannot translate a non-kinematic actor");
-        }
+        Assert(flags.isSet(PxRigidBodyFlag::eKINEMATIC), "cannot translate a non-kinematic actor");
 
         PxTransform pose = actor->getGlobalPose();
         pose.p += transform;

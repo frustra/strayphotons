@@ -30,7 +30,6 @@ namespace sp::xr {
             return vr::Eye_Right;
         default:
             Abort("Unknown XrEye enum: " + std::to_string((size_t)eye));
-            return vr::Eye_Left;
         }
     }
 
