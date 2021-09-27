@@ -277,7 +277,10 @@ namespace sp::vulkan {
 
                     cmd.SetTexture(0, 0, source);
                     cmd.DrawScreenCover(source);
-                    debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()});
+
+                    if (debugGuiRenderer) {
+                        debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()});
+                    }
 
                     cmd.EndRenderPass();
                 });
