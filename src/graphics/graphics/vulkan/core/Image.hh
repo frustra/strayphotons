@@ -126,8 +126,16 @@ namespace sp::vulkan {
             return info.baseMipLevel;
         }
 
+        uint32 MipLevels() const {
+            return info.mipLevelCount;
+        }
+
         uint32 BaseArrayLayer() const {
             return info.baseArrayLayer;
+        }
+
+        uint32 ArrayLayers() const {
+            return info.arrayLayerCount;
         }
 
         virtual int GetWidth() const override {

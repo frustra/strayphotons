@@ -1,6 +1,7 @@
 #include "RenderPass.hh"
 
 #include "DeviceContext.hh"
+#include "core/Logging.hh"
 
 namespace sp::vulkan {
     RenderPass::RenderPass(DeviceContext &device, const RenderPassInfo &info) {
@@ -101,9 +102,11 @@ namespace sp::vulkan {
         renderPassInfo.pDependencies = &dependency;
 
         vk::RenderPassMultiviewCreateInfo multiviewInfo;
-        if (state.multiviewAttachments) {
-            multiviewInfo.pViewMasks = &state.multiviewAttachments;
-            multiviewInfo.pCorrelationMasks = &state.multiviewCorrelations;
+        auto viewMask = state.MultiviewMask();
+        auto correlationMask = state.CorrelationMask();
+        if (viewMask) {
+            multiviewInfo.pViewMasks = &viewMask;
+            multiviewInfo.pCorrelationMasks = &correlationMask;
             multiviewInfo.subpassCount = renderPassInfo.subpassCount;
             Assert(multiviewInfo.subpassCount == 1, "need to update this code, pViewMasks needs to be an array");
             renderPassInfo.pNext = &multiviewInfo;

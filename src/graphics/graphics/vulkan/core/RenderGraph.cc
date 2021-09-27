@@ -53,7 +53,7 @@ namespace sp::vulkan {
         Assert(FormatByteSize(resFormat) == FormatByteSize(viewFormat), "image component size mismatch");
 
         Assert(view->BaseArrayLayer() == 0, "view can't target a specific layer");
-        Assert(res.renderTargetDesc.arrayLayers == view->Image()->ArrayLayers(), "image array mismatch");
+        Assert(res.renderTargetDesc.arrayLayers == view->ArrayLayers(), "image array mismatch");
 
         resources.ResizeBeforeExecute();
         resources.renderTargets[res.id] = make_shared<RenderTarget>(res.renderTargetDesc, view, ~0u);

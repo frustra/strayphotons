@@ -173,8 +173,6 @@ namespace sp::vulkan {
                                      vk::AccessFlagBits::eColorAttachmentWrite);
 
                     RenderPassInfo renderPassInfo;
-                    renderPassInfo.state.multiviewAttachments = 0b11;
-                    renderPassInfo.state.multiviewCorrelations = 0b11;
                     renderPassInfo.PushColorAttachment(xrColor,
                                                        LoadOp::Clear,
                                                        StoreOp::Store,
