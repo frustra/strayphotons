@@ -1,5 +1,5 @@
 #include "graphics/core/Texture.hh"
-#include "graphics/vulkan/DeviceContext.hh"
+#include "graphics/vulkan/core/DeviceContext.hh"
 #include "xr/openvr/OpenVrSystem.hh"
 
 #include <openvr.h>

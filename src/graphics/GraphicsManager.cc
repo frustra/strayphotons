@@ -16,14 +16,14 @@
         #include "input/glfw/GlfwInputHandler.hh"
     #endif
     #ifdef SP_GRAPHICS_SUPPORT_VK
-        #include "graphics/vulkan/CommandContext.hh"
-        #include "graphics/vulkan/DeviceContext.hh"
-        #include "graphics/vulkan/GuiRenderer.hh"
-        #include "graphics/vulkan/Image.hh"
-        #include "graphics/vulkan/RenderGraph.hh"
         #include "graphics/vulkan/Renderer.hh"
-        #include "graphics/vulkan/Screenshot.hh"
-        #include "graphics/vulkan/Vertex.hh"
+        #include "graphics/vulkan/core/CommandContext.hh"
+        #include "graphics/vulkan/core/DeviceContext.hh"
+        #include "graphics/vulkan/core/GuiRenderer.hh"
+        #include "graphics/vulkan/core/Image.hh"
+        #include "graphics/vulkan/core/RenderGraph.hh"
+        #include "graphics/vulkan/core/Screenshot.hh"
+        #include "graphics/vulkan/core/Vertex.hh"
     #endif
 
     #include <algorithm>

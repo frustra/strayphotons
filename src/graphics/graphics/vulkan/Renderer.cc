@@ -1,12 +1,12 @@
 #include "Renderer.hh"
 
-#include "CommandContext.hh"
-#include "DeviceContext.hh"
-#include "Model.hh"
-#include "Vertex.hh"
 #include "assets/Model.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "graphics/vulkan/core/CommandContext.hh"
+#include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/Model.hh"
+#include "graphics/vulkan/core/Vertex.hh"
 
 namespace sp::vulkan {
     Renderer::Renderer(ecs::Lock<ecs::AddRemove> lock, DeviceContext &device) : device(device) {}

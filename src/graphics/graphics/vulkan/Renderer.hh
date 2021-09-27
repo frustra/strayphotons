@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Common.hh"
-#include "Memory.hh"
 #include "core/CFunc.hh"
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
+#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/Memory.hh"
 
 #include <functional>
 #include <robin_hood.h>

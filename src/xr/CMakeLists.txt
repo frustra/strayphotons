@@ -25,7 +25,7 @@ target_link_libraries(${PROJECT_XR_OPENVR_GL_LIB} PUBLIC
 
 target_link_libraries(${PROJECT_XR_OPENVR_VK_LIB} PUBLIC
     ${PROJECT_XR_OPENVR_LIB}
-    ${PROJECT_GRAPHICS_VULKAN_LIB}
+    ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
 )
 
 target_compile_definitions(${PROJECT_XR_CORE_LIB} INTERFACE

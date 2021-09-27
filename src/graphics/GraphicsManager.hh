@@ -11,7 +11,7 @@
     #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
-        #include "graphics/vulkan/Common.hh"
+        #include "graphics/vulkan/core/Common.hh"
     #endif
 
     #include <glm/glm.hpp>
