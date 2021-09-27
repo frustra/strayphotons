@@ -10,8 +10,20 @@
 #include <functional>
 #include <robin_hood.h>
 
+namespace sp {
+    class GuiManager;
+
+#ifdef SP_XR_SUPPORT
+    namespace xr {
+        class XrSystem;
+    }
+#endif
+} // namespace sp
+
 namespace sp::vulkan {
     class Model;
+    class GuiRenderer;
+    class RenderGraph;
 
     struct ViewStateUniforms {
         glm::mat4 view[2];
@@ -23,13 +35,12 @@ namespace sp::vulkan {
         using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::View, ecs::Transform>>;
         typedef std::function<void(DrawLock, Tecs::Entity &)> PreDrawFunc;
 
-        Renderer(ecs::Lock<ecs::AddRemove> lock, DeviceContext &context);
+        Renderer(DeviceContext &context);
         ~Renderer();
 
-        void Prepare() {}
-        void BeginFrame(ecs::Lock<ecs::Read<ecs::Transform>> lock) {}
+        void RenderFrame();
+
         void RenderPass(CommandContext &cmd, const ecs::View &view, DrawLock lock);
-        void EndFrame();
 
         void ForwardPass(CommandContext &cmd, ecs::View &view, DrawLock lock, const PreDrawFunc &preDraw = {});
 
@@ -43,11 +54,29 @@ namespace sp::vulkan {
 
         DeviceContext &device;
 
+        void SetDebugGui(GuiManager &gui);
+
+#ifdef SP_XR_SUPPORT
+        void SetXRSystem(xr::XrSystem *xr) {
+            xrSystem = xr;
+        }
+#endif
+
+        void TriggerScreenshot(const string &path, const string &resource);
+
     private:
+        void AddScreenshotPasses(RenderGraph &graph);
+        void EndFrame();
+
         CFuncCollection funcs;
-
-        BufferPtr viewStateUniformBuffer[3];
-
         PreservingMap<string, Model> activeModels;
+        unique_ptr<GuiRenderer> debugGuiRenderer;
+
+        vector<std::pair<string, string>> pendingScreenshots;
+
+#ifdef SP_XR_SUPPORT
+        xr::XrSystem *xrSystem = nullptr;
+        std::vector<glm::mat4> xrRenderPoses;
+#endif
     };
 } // namespace sp::vulkan
