@@ -37,7 +37,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::RenderFrame() {
-        vulkan::RenderGraph graph(device);
+        RenderGraph graph(device);
         auto renderer = this;
 
         auto lock = ecs::World.StartTransaction<
@@ -52,13 +52,13 @@ namespace sp::vulkan {
             view.UpdateViewMatrix(lock, windowEntity);
 
             struct ForwardPassData {
-                vulkan::RenderGraphResource gBuffer0, depth;
+                RenderGraphResource gBuffer0, depth;
             };
 
             graph.AddPass<ForwardPassData>(
                 "ForwardPass",
-                [&](vulkan::RenderGraphPassBuilder &builder, ForwardPassData &data) {
-                    vulkan::RenderTargetDesc desc;
+                [&](RenderGraphPassBuilder &builder, ForwardPassData &data) {
+                    RenderTargetDesc desc;
                     desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
 
                     desc.format = vk::Format::eR8G8B8A8Srgb;
@@ -70,8 +70,8 @@ namespace sp::vulkan {
                     desc.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
                     data.depth = builder.OutputRenderTarget("GBufferDepth", desc);
                 },
-                [renderer, view, lock](vulkan::RenderGraphResources &resources,
-                                       vulkan::CommandContext &cmd,
+                [renderer, view, lock](RenderGraphResources &resources,
+                                       CommandContext &cmd,
                                        const ForwardPassData &data) {
                     auto gBuffer0 = resources.GetRenderTarget(data.gBuffer0)->ImageView();
                     auto depth = resources.GetRenderTarget(data.depth)->ImageView();
@@ -92,18 +92,19 @@ namespace sp::vulkan {
                                      vk::PipelineStageFlagBits::eColorAttachmentOutput,
                                      vk::AccessFlagBits::eColorAttachmentWrite);
 
-                    vulkan::RenderPassInfo info;
+                    RenderPassInfo info;
                     glm::vec4 clear = {0.0f, 1.0f, 0.0f, 1.0f};
-                    info.PushColorAttachment(gBuffer0, vulkan::LoadOp::Clear, vulkan::StoreOp::Store, clear);
-                    info.SetDepthStencilAttachment(depth, vulkan::LoadOp::Clear, vulkan::StoreOp::DontCare);
+                    info.PushColorAttachment(gBuffer0, LoadOp::Clear, StoreOp::Store, clear);
+                    info.SetDepthStencilAttachment(depth, LoadOp::Clear, StoreOp::DontCare);
                     cmd.BeginRenderPass(info);
 
-                    vulkan::ViewStateUniforms viewState;
+                    ViewStateUniforms viewState;
                     viewState.view[0] = view.viewMat;
                     viewState.projection[0] = view.projMat;
                     cmd.UploadUniformData(0, 10, &viewState);
 
-                    renderer->RenderPass(cmd, view, lock);
+                    cmd.SetShaders("test.vert", "test.frag");
+                    renderer->ForwardPass(cmd, view.visibilityMask, lock, [](auto lock, Tecs::Entity &ent) {});
 
                     cmd.EndRenderPass();
                 });
@@ -125,7 +126,8 @@ namespace sp::vulkan {
             }
 
             struct XRForwardPassData {
-                vulkan::RenderGraphResource color, depth;
+                RenderGraphResource color, depth;
+                ecs::Renderable::VisibilityMask viewMask;
             };
 
             xrRenderPoses.resize(xrViews.size());
@@ -133,8 +135,8 @@ namespace sp::vulkan {
 
             auto xrForwardPassData = graph.AddPass<XRForwardPassData>(
                 "XRForwardPass",
-                [&](vulkan::RenderGraphPassBuilder &builder, XRForwardPassData &data) {
-                    vulkan::RenderTargetDesc targetDesc;
+                [&](RenderGraphPassBuilder &builder, XRForwardPassData &data) {
+                    RenderTargetDesc targetDesc;
                     targetDesc.extent = vk::Extent3D(firstView.extents.x, firstView.extents.y, 1);
                     targetDesc.arrayLayers = xrViews.size();
 
@@ -146,9 +148,11 @@ namespace sp::vulkan {
                     targetDesc.format = vk::Format::eD24UnormS8Uint;
                     targetDesc.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
                     data.depth = builder.OutputRenderTarget("XRDepth", targetDesc);
+
+                    data.viewMask = firstView.visibilityMask;
                 },
-                [renderer, xrViews, xrRenderPosePtr, lock](vulkan::RenderGraphResources &resources,
-                                                           vulkan::CommandContext &cmd,
+                [renderer, xrViews, xrRenderPosePtr, lock](RenderGraphResources &resources,
+                                                           CommandContext &cmd,
                                                            const XRForwardPassData &data) {
                     auto xrColor = resources.GetRenderTarget(data.color)->ImageView();
                     auto xrDepth = resources.GetRenderTarget(data.depth)->ImageView();
@@ -169,22 +173,22 @@ namespace sp::vulkan {
                                      vk::PipelineStageFlagBits::eColorAttachmentOutput,
                                      vk::AccessFlagBits::eColorAttachmentWrite);
 
-                    vulkan::RenderPassInfo renderPassInfo;
+                    RenderPassInfo renderPassInfo;
                     renderPassInfo.state.multiviewAttachments = 0b11;
                     renderPassInfo.state.multiviewCorrelations = 0b11;
                     renderPassInfo.PushColorAttachment(xrColor,
-                                                       vulkan::LoadOp::Clear,
-                                                       vulkan::StoreOp::Store,
+                                                       LoadOp::Clear,
+                                                       StoreOp::Store,
                                                        {0.0f, 1.0f, 0.0f, 1.0f});
 
-                    renderPassInfo.SetDepthStencilAttachment(xrDepth, vulkan::LoadOp::Clear, vulkan::StoreOp::DontCare);
+                    renderPassInfo.SetDepthStencilAttachment(xrDepth, LoadOp::Clear, StoreOp::DontCare);
 
                     cmd.BeginRenderPass(renderPassInfo);
 
-                    auto viewState = cmd.AllocUniformData<vulkan::ViewStateUniforms>(0, 10);
+                    auto viewState = cmd.AllocUniformData<ViewStateUniforms>(0, 10);
 
-                    // TODO: pass individual fields instead of whole view
-                    renderer->RenderPass(cmd, xrViews[0].Get<ecs::View>(lock), lock);
+                    cmd.SetShaders("test.vert", "test.frag");
+                    renderer->ForwardPass(cmd, data.viewMask, lock, [](auto lock, Tecs::Entity &ent) {});
 
                     cmd.EndRenderPass();
 
@@ -206,16 +210,16 @@ namespace sp::vulkan {
                 });
 
             struct XRSubmitData {
-                vulkan::RenderGraphResource color;
+                RenderGraphResource color;
             };
 
             graph.AddPass<XRSubmitData>(
                 "XRSubmit",
-                [&](vulkan::RenderGraphPassBuilder &builder, XRSubmitData &data) {
+                [&](RenderGraphPassBuilder &builder, XRSubmitData &data) {
                     data.color = builder.Read(xrForwardPassData.color);
                 },
-                [renderer, xrViews, xrRenderPosePtr, lock](vulkan::RenderGraphResources &resources,
-                                                           vulkan::CommandContext &cmd,
+                [renderer, xrViews, xrRenderPosePtr, lock](RenderGraphResources &resources,
+                                                           CommandContext &cmd,
                                                            const XRSubmitData &data) {
                     auto xrRenderTarget = resources.GetRenderTarget(data.color);
                     cmd.ImageBarrier(xrRenderTarget->ImageView()->Image(),
@@ -239,25 +243,23 @@ namespace sp::vulkan {
         if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
             auto view = windowEntity.Get<ecs::View>(lock);
             struct FinalOutputData {
-                vulkan::RenderGraphResource source;
-                vulkan::RenderGraphResource target;
+                RenderGraphResource source;
+                RenderGraphResource target;
             };
 
             auto debugGuiRenderer = this->debugGuiRenderer.get();
             graph.AddPass<FinalOutputData>(
                 "WindowFinalOutput",
-                [&](vulkan::RenderGraphPassBuilder &builder, FinalOutputData &data) {
+                [&](RenderGraphPassBuilder &builder, FinalOutputData &data) {
                     data.source = builder.Read(builder.GetResourceByName(CVarWindowViewTarget.Get()));
 
-                    vulkan::RenderTargetDesc desc;
+                    RenderTargetDesc desc;
                     desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
                     desc.format = vk::Format::eR8G8B8A8Srgb;
                     desc.usage = vk::ImageUsageFlagBits::eColorAttachment;
                     data.target = builder.OutputRenderTarget("WindowFinalOutput", desc);
                 },
-                [debugGuiRenderer](vulkan::RenderGraphResources &resources,
-                                   vulkan::CommandContext &cmd,
-                                   const FinalOutputData &data) {
+                [debugGuiRenderer](RenderGraphResources &resources, CommandContext &cmd, const FinalOutputData &data) {
                     auto source = resources.GetRenderTarget(data.source)->ImageView();
 
                     cmd.ImageBarrier(source->Image(),
@@ -270,8 +272,8 @@ namespace sp::vulkan {
 
                     auto color = resources.GetRenderTarget(data.target)->ImageView();
 
-                    vulkan::RenderPassInfo info;
-                    info.PushColorAttachment(color, vulkan::LoadOp::Clear, vulkan::StoreOp::Store, {0, 1, 0, 1});
+                    RenderPassInfo info;
+                    info.PushColorAttachment(color, LoadOp::Clear, StoreOp::Store, {0, 1, 0, 1});
                     cmd.BeginRenderPass(info);
 
                     cmd.SetTexture(0, 0, source);
@@ -294,55 +296,50 @@ namespace sp::vulkan {
             if (screenshotResource.empty()) screenshotResource = "GBuffer0";
 
             struct ScreenshotData {
-                vulkan::RenderGraphResource target;
+                RenderGraphResource target;
                 string path;
             };
             graph.AddPass<ScreenshotData>(
                 "Screenshot",
-                [&](vulkan::RenderGraphPassBuilder &builder, ScreenshotData &data) {
+                [&](RenderGraphPassBuilder &builder, ScreenshotData &data) {
                     auto resource = builder.GetResourceByName(screenshotResource);
-                    if (resource.type != vulkan::RenderGraphResource::Type::RenderTarget) {
+                    if (resource.type != RenderGraphResource::Type::RenderTarget) {
                         Errorf("Can't screenshot \"%s\": invalid resource", screenshotResource);
                     } else {
                         data.target = builder.Read(resource);
                         data.path = screenshotPath;
                     }
                 },
-                [](vulkan::RenderGraphResources &resources, vulkan::CommandContext &cmd, const ScreenshotData &data) {
-                    if (data.target.type == vulkan::RenderGraphResource::Type::RenderTarget) {
+                [](RenderGraphResources &resources, CommandContext &cmd, const ScreenshotData &data) {
+                    if (data.target.type == RenderGraphResource::Type::RenderTarget) {
                         auto target = resources.GetRenderTarget(data.target);
-                        vulkan::WriteScreenshot(cmd.Device(), data.path, target->ImageView());
+                        WriteScreenshot(cmd.Device(), data.path, target->ImageView());
                     }
                 });
         }
         pendingScreenshots.clear();
     }
 
-    void Renderer::RenderPass(CommandContext &cmd, const ecs::View &view, DrawLock lock) {
-        cmd.SetShader(ShaderStage::Vertex, "test.vert");
-        cmd.SetShader(ShaderStage::Fragment, "test.frag");
-
-        ecs::View forwardPassView = view;
-        ForwardPass(cmd, forwardPassView, lock, [&](auto lock, Tecs::Entity &ent) {});
-    }
-
-    void Renderer::ForwardPass(CommandContext &cmd, ecs::View &view, DrawLock lock, const PreDrawFunc &preDraw) {
+    void Renderer::ForwardPass(CommandContext &cmd,
+                               ecs::Renderable::VisibilityMask viewMask,
+                               DrawLock lock,
+                               const PreDrawFunc &preDraw) {
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (ent.Has<ecs::Renderable, ecs::Transform>(lock)) {
                 if (ent.Has<ecs::Mirror>(lock)) continue;
-                DrawEntity(cmd, view, lock, ent, preDraw);
+                DrawEntity(cmd, viewMask, lock, ent, preDraw);
             }
         }
 
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (ent.Has<ecs::Renderable, ecs::Transform, ecs::Mirror>(lock)) {
-                DrawEntity(cmd, view, lock, ent, preDraw);
+                DrawEntity(cmd, viewMask, lock, ent, preDraw);
             }
         }
     }
 
     void Renderer::DrawEntity(CommandContext &cmd,
-                              const ecs::View &view,
+                              ecs::Renderable::VisibilityMask viewMask,
                               DrawLock lock,
                               Tecs::Entity &ent,
                               const PreDrawFunc &preDraw) {
@@ -351,8 +348,8 @@ namespace sp::vulkan {
 
         // Filter entities that aren't members of all layers in the view's visibility mask.
         ecs::Renderable::VisibilityMask mask = comp.visibility;
-        mask &= view.visibilityMask;
-        if (mask != view.visibilityMask) return;
+        mask &= viewMask;
+        if (mask != viewMask) return;
 
         glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
 

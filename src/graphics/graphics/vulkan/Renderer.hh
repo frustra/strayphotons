@@ -3,6 +3,7 @@
 #include "core/CFunc.hh"
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/components/Renderable.hh"
 #include "graphics/core/RenderTarget.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
@@ -40,12 +41,13 @@ namespace sp::vulkan {
 
         void RenderFrame();
 
-        void RenderPass(CommandContext &cmd, const ecs::View &view, DrawLock lock);
-
-        void ForwardPass(CommandContext &cmd, ecs::View &view, DrawLock lock, const PreDrawFunc &preDraw = {});
+        void ForwardPass(CommandContext &cmd,
+                         ecs::Renderable::VisibilityMask viewMask,
+                         DrawLock lock,
+                         const PreDrawFunc &preDraw = {});
 
         void DrawEntity(CommandContext &cmd,
-                        const ecs::View &view,
+                        ecs::Renderable::VisibilityMask viewMask,
                         DrawLock lock,
                         Tecs::Entity &ent,
                         const PreDrawFunc &preDraw = {});
