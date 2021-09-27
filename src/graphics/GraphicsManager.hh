@@ -61,15 +61,13 @@ namespace sp {
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
         unique_ptr<vulkan::Renderer> renderer;
-        unique_ptr<vulkan::GuiRenderer> debugGuiRenderer;
     #endif
 
     #ifdef SP_XR_SUPPORT
         #ifdef SP_GRAPHICS_SUPPORT_GL
         std::vector<shared_ptr<GLRenderTarget>> xrRenderTargets;
-        #endif
-
         std::vector<glm::mat4> xrRenderPoses;
+        #endif
     #endif
     };
 } // namespace sp
