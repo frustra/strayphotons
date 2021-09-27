@@ -7,12 +7,13 @@ IndentWidth: 4
 UseTab: Never
 NamespaceIndentation: All
 AccessModifierOffset: -4
+AlignEscapedNewlines: Left
 AlignTrailingComments: false
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: Empty
 AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: Always
+AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortLambdasOnASingleLine: Empty
 AlwaysBreakTemplateDeclarations: true
 IndentPPDirectives: BeforeHash

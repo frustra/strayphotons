@@ -201,9 +201,11 @@ namespace sp {
             auto cvar = it->second;
             auto name = cvar->GetName();
 
-            if (starts_with(to_lower_copy(name), input)) results.push_back(name);
-            else
+            if (starts_with(to_lower_copy(name), input)) {
+                results.push_back(name);
+            } else {
                 break;
+            }
         }
 
         return results;

@@ -570,13 +570,17 @@ namespace sp {
     }
 
     void VoxelRenderer::PrepareForView(const ecs::View &view) {
-        if (view.blend) glEnable(GL_BLEND);
-        else
+        if (view.blend) {
+            glEnable(GL_BLEND);
+        } else {
             glDisable(GL_BLEND);
+        }
 
-        if (view.stencil) glEnable(GL_STENCIL_TEST);
-        else
+        if (view.stencil) {
+            glEnable(GL_STENCIL_TEST);
+        } else {
             glDisable(GL_STENCIL_TEST);
+        }
 
         glDepthMask(GL_TRUE);
 

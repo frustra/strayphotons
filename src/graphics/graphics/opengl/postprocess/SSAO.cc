@@ -109,9 +109,11 @@ namespace sp {
 
             glm::vec2 samplePattern;
 
-            if (horizontal) samplePattern.x = 1.0f / (float)extent.x;
-            else
+            if (horizontal) {
+                samplePattern.x = 1.0f / (float)extent.x;
+            } else {
                 samplePattern.y = 1.0f / (float)extent.y;
+            }
 
             r->shaders.Get<SSAOBlurFS>()->SetParameters(samplePattern, context->view);
 

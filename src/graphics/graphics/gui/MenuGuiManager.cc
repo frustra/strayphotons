@@ -232,11 +232,11 @@ namespace sp {
 
             ImGui::PushFont(io.Fonts->Fonts[3]);
 
-#define LEVEL_BUTTON(name, file)                                                                                       \
-    if (ImGui::Button(name)) {                                                                                         \
-        SetRenderMode(MenuRenderMode::None);                                                                           \
-        selectedScreen = MenuScreen::Main;                                                                             \
-        GetConsoleManager().QueueParseAndExecute("loadscene " file);                                                   \
+#define LEVEL_BUTTON(name, file)                                     \
+    if (ImGui::Button(name)) {                                       \
+        SetRenderMode(MenuRenderMode::None);                         \
+        selectedScreen = MenuScreen::Main;                           \
+        GetConsoleManager().QueueParseAndExecute("loadscene " file); \
     }
 
             LEVEL_BUTTON("01 - Outside", "01-outside")
@@ -351,12 +351,12 @@ namespace sp {
             ImGui::BeginChild("CreditScroller", ImVec2(600, 600), false, ImGuiWindowFlags_NoScrollbar);
             ImGui::SetScrollY(creditsScroll);
 
-#define CenteredText(str)                                                                                              \
-    {                                                                                                                  \
-        auto size = ImGui::CalcTextSize((str));                                                                        \
-        ImGui::Indent(300.0f - size.x / 2.0f);                                                                         \
-        ImGui::Text((str));                                                                                            \
-        ImGui::Unindent(300.0f - size.x / 2.0f);                                                                       \
+#define CenteredText(str)                        \
+    {                                            \
+        auto size = ImGui::CalcTextSize((str));  \
+        ImGui::Indent(300.0f - size.x / 2.0f);   \
+        ImGui::Text((str));                      \
+        ImGui::Unindent(300.0f - size.x / 2.0f); \
     }
 
             ImGui::Dummy({1, 500});

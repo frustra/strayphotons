@@ -5,16 +5,16 @@
 
 #include <robin_hood.h>
 
-#define SHADER_TYPE(ClassName)                                                                                         \
-public:                                                                                                                \
-    static ShaderMeta MetaType;                                                                                        \
-    static Shader *NewInstance(shared_ptr<ShaderCompileOutput> compileOutput) {                                        \
-        return new ClassName(compileOutput);                                                                           \
+#define SHADER_TYPE(ClassName)                                                  \
+public:                                                                         \
+    static ShaderMeta MetaType;                                                 \
+    static Shader *NewInstance(shared_ptr<ShaderCompileOutput> compileOutput) { \
+        return new ClassName(compileOutput);                                    \
     }
 
-#define IMPLEMENT_SHADER_TYPE(cls, file, stage)                                                                        \
-    ShaderMeta cls::MetaType {                                                                                         \
-        #cls, file, ShaderStage::stage, cls::NewInstance                                                               \
+#define IMPLEMENT_SHADER_TYPE(cls, file, stage)          \
+    ShaderMeta cls::MetaType {                           \
+        #cls, file, ShaderStage::stage, cls::NewInstance \
     }
 
 namespace sp {
@@ -181,34 +181,34 @@ namespace sp {
         glProgramUniform1i(program, u.location, v);
     }
 
-#define DECLARE_SET_SCALAR(UniformSuffix, ValueType, GLType)                                                           \
-    template<>                                                                                                         \
-    inline void Shader::Set<ValueType>(Uniform & u, const ValueType &v) {                                              \
-        glProgramUniform##UniformSuffix(program, u.location, 1, &v);                                                   \
-    }                                                                                                                  \
-    template<>                                                                                                         \
-    inline void Shader::Set<ValueType>(Uniform & u, const ValueType v[], GLsizei count) {                              \
-        glProgramUniform##UniformSuffix(program, u.location, count, (const GLType *)v);                                \
+#define DECLARE_SET_SCALAR(UniformSuffix, ValueType, GLType)                              \
+    template<>                                                                            \
+    inline void Shader::Set<ValueType>(Uniform & u, const ValueType &v) {                 \
+        glProgramUniform##UniformSuffix(program, u.location, 1, &v);                      \
+    }                                                                                     \
+    template<>                                                                            \
+    inline void Shader::Set<ValueType>(Uniform & u, const ValueType v[], GLsizei count) { \
+        glProgramUniform##UniformSuffix(program, u.location, count, (const GLType *)v);   \
     }
 
-#define DECLARE_SET_GLM(UniformSuffix, ValueType, GLType)                                                              \
-    template<>                                                                                                         \
-    inline void Shader::Set<ValueType>(Uniform & u, const ValueType &v) {                                              \
-        glProgramUniform##UniformSuffix(program, u.location, 1, glm::value_ptr(v));                                    \
-    }                                                                                                                  \
-    template<>                                                                                                         \
-    inline void Shader::Set<ValueType>(Uniform & u, const ValueType v[], GLsizei count) {                              \
-        glProgramUniform##UniformSuffix(program, u.location, count, (const GLType *)v);                                \
+#define DECLARE_SET_GLM(UniformSuffix, ValueType, GLType)                                 \
+    template<>                                                                            \
+    inline void Shader::Set<ValueType>(Uniform & u, const ValueType &v) {                 \
+        glProgramUniform##UniformSuffix(program, u.location, 1, glm::value_ptr(v));       \
+    }                                                                                     \
+    template<>                                                                            \
+    inline void Shader::Set<ValueType>(Uniform & u, const ValueType v[], GLsizei count) { \
+        glProgramUniform##UniformSuffix(program, u.location, count, (const GLType *)v);   \
     }
 
-#define DECLARE_SET_GLM_MAT(UniformSuffix, ValueType, GLType)                                                          \
-    template<>                                                                                                         \
-    inline void Shader::Set<ValueType>(Uniform & u, const ValueType &v) {                                              \
-        glProgramUniformMatrix##UniformSuffix(program, u.location, 1, 0, glm::value_ptr(v));                           \
-    }                                                                                                                  \
-    template<>                                                                                                         \
-    inline void Shader::Set<ValueType>(Uniform & u, const ValueType v[], GLsizei count) {                              \
-        glProgramUniformMatrix##UniformSuffix(program, u.location, count, 0, (const GLType *)v);                       \
+#define DECLARE_SET_GLM_MAT(UniformSuffix, ValueType, GLType)                                    \
+    template<>                                                                                   \
+    inline void Shader::Set<ValueType>(Uniform & u, const ValueType &v) {                        \
+        glProgramUniformMatrix##UniformSuffix(program, u.location, 1, 0, glm::value_ptr(v));     \
+    }                                                                                            \
+    template<>                                                                                   \
+    inline void Shader::Set<ValueType>(Uniform & u, const ValueType v[], GLsizei count) {        \
+        glProgramUniformMatrix##UniformSuffix(program, u.location, count, 0, (const GLType *)v); \
     }
 
     DECLARE_SET_SCALAR(1fv, float, GLfloat)
