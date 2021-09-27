@@ -42,7 +42,7 @@ namespace sp {
     }
 
     void GraphicsManager::Init() {
-        if (context) { throw "already an active context"; }
+        Assert(!context, "already have a graphics context");
 
     #if SP_GRAPHICS_SUPPORT_GL
         auto glfwContext = new GlfwGraphicsContext();
@@ -71,7 +71,7 @@ namespace sp {
         }
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
-        if (renderer) { throw "already an active renderer"; }
+        Assert(!renderer, "already have a renderer");
 
         renderer = make_unique<VoxelRenderer>(*glfwContext, timer);
 
@@ -84,7 +84,7 @@ namespace sp {
     #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
-        if (renderer) { throw "already an active renderer"; }
+        Assert(!renderer, "already have an active renderer");
 
         renderer = make_unique<vulkan::Renderer>(*vkContext);
         renderer->SetDebugGui(*game->debugGui.get());
@@ -97,9 +97,9 @@ namespace sp {
 
     bool GraphicsManager::Frame() {
     #if SP_GRAPHICS_SUPPORT_GL || SP_GRAPHICS_SUPPORT_VK
-        if (!context) throw "no active context";
+        Assert(context, "missing graphics context");
         if (!HasActiveContext()) return false;
-        if (!renderer) throw "no active renderer";
+        Assert(renderer, "missing renderer");
     #endif
 
         if (game->debugGui) game->debugGui->BeforeFrame();
@@ -124,6 +124,16 @@ namespace sp {
         #endif
 
         if (xrSystem) xrSystem->WaitFrame();
+    #endif
+
+    #ifdef SP_GRAPHICS_SUPPORT_VK
+        // timer.StartFrame();
+        context->BeginFrame();
+        renderer->RenderFrame();
+        context->SwapBuffers();
+        // timer.EndFrame();
+        context->EndFrame();
+        return true;
     #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
@@ -192,18 +202,8 @@ namespace sp {
 
         timer.EndFrame();
         context->EndFrame();
-    #endif
-
-    #ifdef SP_GRAPHICS_SUPPORT_VK
-        // timer.StartFrame();
-        context->BeginFrame();
-        renderer->RenderFrame();
-        context->SwapBuffers();
-        // timer.EndFrame();
-        context->EndFrame();
-    #endif
-
         return true;
+    #endif
     }
 
     GraphicsContext *GraphicsManager::GetContext() {

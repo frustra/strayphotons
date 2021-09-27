@@ -43,8 +43,6 @@ namespace sp::vulkan {
         auto lock = ecs::World.StartTransaction<
             ecs::Read<ecs::Name, ecs::Transform, ecs::Renderable, ecs::View, ecs::XRView, ecs::Mirror>>();
 
-        auto xrViews = lock.EntitiesWith<ecs::XRView>();
-
         Tecs::Entity windowEntity = device.GetActiveView();
 
         if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
@@ -111,6 +109,7 @@ namespace sp::vulkan {
         }
 
 #ifdef SP_XR_SUPPORT
+        auto xrViews = lock.EntitiesWith<ecs::XRView>();
         if (xrSystem && xrViews.size() > 0) {
             ecs::View firstView;
             for (auto &ent : xrViews) {
@@ -293,7 +292,7 @@ namespace sp::vulkan {
 
     void Renderer::AddScreenshotPasses(RenderGraph &graph) {
         for (auto &[screenshotPath, screenshotResource] : pendingScreenshots) {
-            if (screenshotResource.empty()) screenshotResource = "GBuffer0";
+            if (screenshotResource.empty()) screenshotResource = CVarWindowViewTarget.Get();
 
             struct ScreenshotData {
                 RenderGraphResource target;
