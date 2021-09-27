@@ -2,7 +2,6 @@
 
 #include "CommandContext.hh"
 #include "DeviceContext.hh"
-#include "Renderer.hh"
 #include "Vertex.hh"
 #include "assets/Model.hh"
 #include "core/Logging.hh"

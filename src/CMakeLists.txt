@@ -3,7 +3,9 @@ set(PROJECT_CORE_LIB ${PROJECT_BASE_NAME}-core CACHE INTERNAL "Library containin
 set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core CACHE INTERNAL "Library containing context-independent graphics code")
 set(PROJECT_GRAPHICS_EGL_LIB ${PROJECT_BASE_NAME}-graphics-egl CACHE INTERNAL "Library containing an OpenGL-based graphics implementation using EGL")
 set(PROJECT_GRAPHICS_OPENGL_LIB ${PROJECT_BASE_NAME}-graphics-opengl CACHE INTERNAL "Library containing an OpenGL-based graphics implementation using OpenGL 4.0")
-set(PROJECT_GRAPHICS_VULKAN_LIB ${PROJECT_BASE_NAME}-graphics-vulkan CACHE INTERNAL "Library containing a Vulkan-based graphics implementation")
+set(PROJECT_GRAPHICS_VULKAN_CORE_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-core CACHE INTERNAL "Library containing a Vulkan-based graphics implementation")
+set(PROJECT_GRAPHICS_VULKAN_FLAT_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-flat CACHE INTERNAL "Library containing a Vulkan-based renderer for flat windows")
+set(PROJECT_GRAPHICS_VULKAN_XR_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-xr CACHE INTERNAL "Library containing a Vulkan-based renderer for XR")
 
 set(PROJECT_INPUT_CORE_LIB ${PROJECT_BASE_NAME}-input-core CACHE INTERNAL "Library containing generic user input support")
 set(PROJECT_INPUT_GLFW_LIB ${PROJECT_BASE_NAME}-input-glfw CACHE INTERNAL "Library implementing user input support using GLFW")
@@ -36,7 +38,7 @@ add_module_configuration(
     EXPORT_COMPILE_COMMANDS
 	LINK_LIBRARIES
 		${PROJECT_CORE_LIB}
-		${PROJECT_GRAPHICS_VULKAN_LIB}
+		${PROJECT_GRAPHICS_VULKAN_XR_LIB}
 		${PROJECT_INPUT_GLFW_LIB}
 		${PROJECT_PHYSICS_PHYSX_LIB}
         ${PROJECT_XR_OPENVR_VK_LIB}
