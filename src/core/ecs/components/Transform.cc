@@ -52,6 +52,10 @@ namespace ecs {
         this->dirty = true;
     }
 
+    const Tecs::Entity &Transform::GetParent() const {
+        return this->parent;
+    }
+
     bool Transform::HasParent(Lock<Read<Transform>> lock) const {
         return this->parent && this->parent.Has<Transform>(lock);
     }

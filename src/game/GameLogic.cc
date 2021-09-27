@@ -49,32 +49,17 @@ namespace sp {
         funcs.Register(this, "tracetecs", "Save an ECS performance trace (tracetecs <time_ms>)", &GameLogic::TraceTecs);
     }
 
-    static CVar<float> CVarFlashlight("r.Flashlight", 100, "Flashlight intensity");
-    static CVar<bool> CVarFlashlightOn("r.FlashlightOn", false, "Flashlight on/off");
-    static CVar<string> CVarFlashlightParent("r.FlashlightParent", "player", "Flashlight parent entity name");
-    static CVar<float> CVarFlashlightAngle("r.FlashlightAngle", 20, "Flashlight spot angle");
-    static CVar<int> CVarFlashlightResolution("r.FlashlightResolution", 512, "Flashlight shadow map resolution");
-
     GameLogic::~GameLogic() {}
 
 #ifdef SP_INPUT_SUPPORT
     void GameLogic::HandleInput() {
         bool spawnDebug = false;
-        bool placeFlashlight = false;
         {
             auto lock = ecs::World.StartTransaction<ecs::Write<ecs::EventInput>>();
 
             ecs::Event event;
             if (player.Has<ecs::EventInput>(lock)) {
                 if (ecs::EventInput::Poll(lock, player, INPUT_EVENT_SPAWN_DEBUG, event)) { spawnDebug = true; }
-            }
-            if (flashlight.Has<ecs::EventInput>(lock)) {
-                if (ecs::EventInput::Poll(lock, flashlight, INPUT_EVENT_FLASHLIGHT_TOGGLE, event)) {
-                    CVarFlashlightOn.Set(!CVarFlashlightOn.Get());
-                }
-                if (ecs::EventInput::Poll(lock, flashlight, INPUT_EVENT_FLASHLIGHT_PLACE, event)) {
-                    placeFlashlight = true;
-                }
             }
         }
 
@@ -90,29 +75,6 @@ namespace sp {
             entity.Set<ecs::Physics>(lock, model, true);
     #endif
         }
-
-        if (placeFlashlight) { // Toggle flashlight following player
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
-            if (flashlight && flashlight.Has<ecs::Transform>(lock)) {
-                auto &transform = flashlight.Get<ecs::Transform>(lock);
-
-                auto player = ecs::EntityWith<ecs::Name>(lock, CVarFlashlightParent.Get());
-                if (player && player.Has<ecs::Transform>(lock)) {
-                    auto &playerTransform = player.Get<ecs::Transform>(lock);
-
-                    if (transform.HasParent(lock)) {
-                        transform.SetPosition(transform.GetGlobalTransform(lock) * glm::vec4(0, 0, 0, 1));
-                        transform.SetRotation(playerTransform.GetGlobalRotation(lock));
-                        transform.SetParent(Tecs::Entity());
-                    } else {
-                        transform.SetPosition(glm::vec3(0, -0.3, 0));
-                        transform.SetRotation(glm::quat());
-                        transform.SetParent(player);
-                    }
-                    transform.UpdateCachedTransform(lock);
-                }
-            }
-        }
     }
 #endif
 
@@ -125,12 +87,12 @@ namespace sp {
 
         {
             auto lock = ecs::World.StartTransaction<ecs::WriteAll>();
-            for (auto entity : lock.EntitiesWith<ecs::Script>()) {
+            for (auto &entity : lock.EntitiesWith<ecs::Script>()) {
                 auto &script = entity.Get<ecs::Script>(lock);
-                script.OnTick(lock, dtSinceLastFrame);
+                script.OnTick(lock, entity, dtSinceLastFrame);
             }
 
-            for (auto entity : lock.EntitiesWith<ecs::TriggerArea>()) {
+            for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
                 auto &area = entity.Get<ecs::TriggerArea>(lock);
 
                 if (!area.triggered) {
@@ -152,23 +114,6 @@ namespace sp {
         }
 
         if (!scene) return true;
-
-        if (CVarFlashlight.Changed()) {
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::Light>>();
-            flashlight.Get<ecs::Light>(lock).intensity = CVarFlashlight.Get(true);
-        }
-        if (CVarFlashlightOn.Changed()) {
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::Light>>();
-            flashlight.Get<ecs::Light>(lock).on = CVarFlashlightOn.Get(true);
-        }
-        if (CVarFlashlightAngle.Changed()) {
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::Light>>();
-            flashlight.Get<ecs::Light>(lock).spotAngle = glm::radians(CVarFlashlightAngle.Get(true));
-        }
-        if (CVarFlashlightResolution.Changed()) {
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::View>>();
-            flashlight.Get<ecs::View>(lock).extents = glm::ivec2(CVarFlashlightResolution.Get(true));
-        }
 
         return true;
     }
@@ -199,8 +144,7 @@ namespace sp {
                     if (owner == ecs::Owner(ecs::Owner::OwnerType::PLAYER, 0)) {
                         if (name == "player") {
                             player = e;
-                        } else if (name == "flashlight") {
-                            flashlight = e;
+                            break;
                         }
                     }
                 }

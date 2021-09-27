@@ -16,7 +16,7 @@
 
 namespace sp {
     [[noreturn]] void Abort(const string &message) {
-        Errorf("assertion failed: %s", message);
+        if (!message.empty()) Errorf("assertion failed: %s", message);
         os_break();
         throw std::runtime_error(message);
     }

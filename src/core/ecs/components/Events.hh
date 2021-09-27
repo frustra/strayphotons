@@ -17,6 +17,7 @@
 namespace ecs {
     struct Event {
         using EventData = std::variant<bool, char, int, double, glm::vec2, glm::vec3, NamedEntity, std::string>;
+
         std::string name;
         NamedEntity source;
         EventData data;
@@ -26,6 +27,8 @@ namespace ecs {
 
         template<typename T>
         Event(const std::string &name, const NamedEntity &source, T data) : name(name), source(source), data(data) {}
+
+        std::string toString() const;
     };
 
     std::ostream &operator<<(std::ostream &out, const Event::EventData &v);

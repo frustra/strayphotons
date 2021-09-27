@@ -42,7 +42,6 @@ namespace sp {
         Game *game;
         std::shared_ptr<Scene> scene, playerScene;
         Tecs::Entity player;
-        Tecs::Entity flashlight;
         CFuncCollection funcs;
     };
 } // namespace sp

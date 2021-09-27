@@ -4,6 +4,7 @@
 
 #include <optional>
 #include <picojson/picojson.h>
+#include <sstream>
 
 namespace ecs {
     template<>
@@ -36,6 +37,12 @@ namespace ecs {
             }
         }
         return true;
+    }
+
+    std::string Event::toString() const {
+        std::stringstream ss;
+        ss << this->data;
+        return ss.str();
     }
 
     std::ostream &operator<<(std::ostream &out, const Event::EventData &v) {

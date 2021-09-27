@@ -15,6 +15,7 @@ namespace ecs {
         }
 
         void SetParent(Tecs::Entity ent);
+        const Tecs::Entity &GetParent() const;
         bool HasParent(Lock<Read<Transform>> lock) const;
         void UpdateCachedTransform(Lock<Write<Transform>> lock);
         bool IsCacheUpToDate(Lock<Read<Transform>> lock) const;
