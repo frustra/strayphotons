@@ -49,46 +49,23 @@ namespace sp::vulkan {
             auto view = windowEntity.Get<ecs::View>(lock);
             view.UpdateViewMatrix(lock, windowEntity);
 
-            struct ForwardPassData {
-                RenderGraphResource gBuffer0, depth;
-            };
-
-            graph.AddPass<ForwardPassData>(
+            graph.AddPass(
                 "ForwardPass",
-                [&](RenderGraphPassBuilder &builder, ForwardPassData &data) {
+                [&](RenderGraphPassBuilder &builder) {
                     RenderTargetDesc desc;
                     desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
 
                     desc.format = vk::Format::eR8G8B8A8Srgb;
-                    desc.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled |
-                                 vk::ImageUsageFlagBits::eTransferSrc;
-                    data.gBuffer0 = builder.OutputRenderTarget("GBuffer0", desc);
+                    desc.usage = vk::ImageUsageFlagBits::eColorAttachment;
+                    builder.OutputRenderTarget("GBuffer0", desc);
 
                     desc.format = vk::Format::eD24UnormS8Uint;
                     desc.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
-                    data.depth = builder.OutputRenderTarget("GBufferDepth", desc);
+                    builder.OutputRenderTarget("GBufferDepth", desc);
                 },
-                [renderer, view, lock](RenderGraphResources &resources,
-                                       CommandContext &cmd,
-                                       const ForwardPassData &data) {
-                    auto gBuffer0 = resources.GetRenderTarget(data.gBuffer0)->ImageView();
-                    auto depth = resources.GetRenderTarget(data.depth)->ImageView();
-
-                    cmd.ImageBarrier(depth->Image(),
-                                     vk::ImageLayout::eUndefined,
-                                     vk::ImageLayout::eDepthAttachmentOptimal,
-                                     vk::PipelineStageFlagBits::eBottomOfPipe,
-                                     {},
-                                     vk::PipelineStageFlagBits::eEarlyFragmentTests,
-                                     vk::AccessFlagBits::eDepthStencilAttachmentWrite);
-
-                    cmd.ImageBarrier(gBuffer0->Image(),
-                                     vk::ImageLayout::eUndefined,
-                                     vk::ImageLayout::eColorAttachmentOptimal,
-                                     vk::PipelineStageFlagBits::eTransfer,
-                                     {},
-                                     vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                     vk::AccessFlagBits::eColorAttachmentWrite);
+                [renderer, view, lock](RenderGraphResources &resources, CommandContext &cmd) {
+                    auto gBuffer0 = resources.GetRenderTarget("GBuffer0")->ImageView();
+                    auto depth = resources.GetRenderTarget("GBufferDepth")->ImageView();
 
                     RenderPassInfo info;
                     glm::vec4 clear = {0.0f, 1.0f, 0.0f, 1.0f};
@@ -124,53 +101,29 @@ namespace sp::vulkan {
                 }
             }
 
-            struct XRForwardPassData {
-                RenderGraphResource color, depth;
-                ecs::Renderable::VisibilityMask viewMask;
-            };
-
             xrRenderPoses.resize(xrViews.size());
             auto xrRenderPosePtr = xrRenderPoses.data();
+            auto forwardPassViewMask = firstView.visibilityMask;
 
-            auto xrForwardPassData = graph.AddPass<XRForwardPassData>(
+            graph.AddPass(
                 "XRForwardPass",
-                [&](RenderGraphPassBuilder &builder, XRForwardPassData &data) {
+                [&](RenderGraphPassBuilder &builder) {
                     RenderTargetDesc targetDesc;
                     targetDesc.extent = vk::Extent3D(firstView.extents.x, firstView.extents.y, 1);
                     targetDesc.arrayLayers = xrViews.size();
 
                     targetDesc.format = vk::Format::eR8G8B8A8Srgb;
-                    targetDesc.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled |
-                                       vk::ImageUsageFlagBits::eTransferSrc;
-                    data.color = builder.OutputRenderTarget("XRColor", targetDesc);
+                    targetDesc.usage = vk::ImageUsageFlagBits::eColorAttachment;
+                    builder.OutputRenderTarget("XRColor", targetDesc);
 
                     targetDesc.format = vk::Format::eD24UnormS8Uint;
                     targetDesc.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
-                    data.depth = builder.OutputRenderTarget("XRDepth", targetDesc);
-
-                    data.viewMask = firstView.visibilityMask;
+                    builder.OutputRenderTarget("XRDepth", targetDesc);
                 },
-                [renderer, xrViews, xrRenderPosePtr, lock](RenderGraphResources &resources,
-                                                           CommandContext &cmd,
-                                                           const XRForwardPassData &data) {
-                    auto xrColor = resources.GetRenderTarget(data.color)->ImageView();
-                    auto xrDepth = resources.GetRenderTarget(data.depth)->ImageView();
-
-                    cmd.ImageBarrier(xrDepth->Image(),
-                                     vk::ImageLayout::eUndefined,
-                                     vk::ImageLayout::eDepthAttachmentOptimal,
-                                     vk::PipelineStageFlagBits::eBottomOfPipe,
-                                     {},
-                                     vk::PipelineStageFlagBits::eEarlyFragmentTests,
-                                     vk::AccessFlagBits::eDepthStencilAttachmentWrite);
-
-                    cmd.ImageBarrier(xrColor->Image(),
-                                     vk::ImageLayout::eUndefined,
-                                     vk::ImageLayout::eColorAttachmentOptimal,
-                                     vk::PipelineStageFlagBits::eTransfer,
-                                     {},
-                                     vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                     vk::AccessFlagBits::eColorAttachmentWrite);
+                [renderer, xrViews, xrRenderPosePtr, forwardPassViewMask, lock](RenderGraphResources &resources,
+                                                                                CommandContext &cmd) {
+                    auto xrColor = resources.GetRenderTarget("XRColor")->ImageView();
+                    auto xrDepth = resources.GetRenderTarget("XRDepth")->ImageView();
 
                     RenderPassInfo renderPassInfo;
                     renderPassInfo.state.multiviewAttachments = 0b11;
@@ -187,7 +140,7 @@ namespace sp::vulkan {
                     auto viewState = cmd.AllocUniformData<ViewStateUniforms>(0, 10);
 
                     cmd.SetShaders("test.vert", "test.frag");
-                    renderer->ForwardPass(cmd, data.viewMask, lock, [](auto lock, Tecs::Entity &ent) {});
+                    renderer->ForwardPass(cmd, forwardPassViewMask, lock, [](auto lock, Tecs::Entity &ent) {});
 
                     cmd.EndRenderPass();
 
@@ -208,26 +161,13 @@ namespace sp::vulkan {
                     }
                 });
 
-            struct XRSubmitData {
-                RenderGraphResource color;
-            };
-
-            graph.AddPass<XRSubmitData>(
+            graph.AddPass(
                 "XRSubmit",
-                [&](RenderGraphPassBuilder &builder, XRSubmitData &data) {
-                    data.color = builder.Read(xrForwardPassData.color);
+                [&](RenderGraphPassBuilder &builder) {
+                    builder.TransferRead("XRColor");
                 },
-                [renderer, xrViews, xrRenderPosePtr, lock](RenderGraphResources &resources,
-                                                           CommandContext &cmd,
-                                                           const XRSubmitData &data) {
-                    auto xrRenderTarget = resources.GetRenderTarget(data.color);
-                    cmd.ImageBarrier(xrRenderTarget->ImageView()->Image(),
-                                     vk::ImageLayout::eColorAttachmentOptimal,
-                                     vk::ImageLayout::eTransferSrcOptimal,
-                                     vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                     {},
-                                     vk::PipelineStageFlagBits::eTransfer,
-                                     vk::AccessFlagBits::eTransferRead);
+                [renderer, xrViews, xrRenderPosePtr, lock](RenderGraphResources &resources, CommandContext &cmd) {
+                    auto xrRenderTarget = resources.GetRenderTarget("XRColor");
 
                     cmd.AfterSubmit([renderer, xrRenderTarget, xrViews, xrRenderPosePtr, lock]() {
                         for (size_t i = 0; i < xrViews.size(); i++) {
@@ -241,35 +181,23 @@ namespace sp::vulkan {
 
         if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
             auto view = windowEntity.Get<ecs::View>(lock);
-            struct FinalOutputData {
-                RenderGraphResource source;
-                RenderGraphResource target;
-            };
-
             auto debugGuiRenderer = this->debugGuiRenderer.get();
-            graph.AddPass<FinalOutputData>(
+            auto windowViewTarget = CVarWindowViewTarget.Get();
+
+            graph.AddPass(
                 "WindowFinalOutput",
-                [&](RenderGraphPassBuilder &builder, FinalOutputData &data) {
-                    data.source = builder.Read(builder.GetResourceByName(CVarWindowViewTarget.Get()));
+                [&](RenderGraphPassBuilder &builder) {
+                    builder.ShaderRead(windowViewTarget);
 
                     RenderTargetDesc desc;
                     desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
                     desc.format = vk::Format::eR8G8B8A8Srgb;
                     desc.usage = vk::ImageUsageFlagBits::eColorAttachment;
-                    data.target = builder.OutputRenderTarget("WindowFinalOutput", desc);
+                    builder.OutputRenderTarget("WindowFinalOutput", desc);
                 },
-                [debugGuiRenderer](RenderGraphResources &resources, CommandContext &cmd, const FinalOutputData &data) {
-                    auto source = resources.GetRenderTarget(data.source)->ImageView();
-
-                    cmd.ImageBarrier(source->Image(),
-                                     source->Image()->LastLayout(),
-                                     vk::ImageLayout::eShaderReadOnlyOptimal,
-                                     vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                     vk::AccessFlagBits::eColorAttachmentWrite,
-                                     vk::PipelineStageFlagBits::eFragmentShader,
-                                     vk::AccessFlagBits::eShaderRead);
-
-                    auto color = resources.GetRenderTarget(data.target)->ImageView();
+                [debugGuiRenderer, windowViewTarget](RenderGraphResources &resources, CommandContext &cmd) {
+                    auto source = resources.GetRenderTarget(windowViewTarget)->ImageView();
+                    auto color = resources.GetRenderTarget("WindowFinalOutput")->ImageView();
 
                     RenderPassInfo info;
                     info.PushColorAttachment(color, LoadOp::Clear, StoreOp::Store, {0, 1, 0, 1});
@@ -294,28 +222,24 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddScreenshotPasses(RenderGraph &graph) {
-        for (auto &[screenshotPath, screenshotResource] : pendingScreenshots) {
+        for (auto [screenshotPath, screenshotResource] : pendingScreenshots) {
             if (screenshotResource.empty()) screenshotResource = CVarWindowViewTarget.Get();
 
-            struct ScreenshotData {
-                RenderGraphResource target;
-                string path;
-            };
-            graph.AddPass<ScreenshotData>(
+            graph.AddPass(
                 "Screenshot",
-                [&](RenderGraphPassBuilder &builder, ScreenshotData &data) {
+                [&](RenderGraphPassBuilder &builder) {
                     auto resource = builder.GetResourceByName(screenshotResource);
                     if (resource.type != RenderGraphResource::Type::RenderTarget) {
                         Errorf("Can't screenshot \"%s\": invalid resource", screenshotResource);
                     } else {
-                        data.target = builder.Read(resource);
-                        data.path = screenshotPath;
+                        builder.TransferRead(resource.id);
                     }
                 },
-                [](RenderGraphResources &resources, CommandContext &cmd, const ScreenshotData &data) {
-                    if (data.target.type == RenderGraphResource::Type::RenderTarget) {
-                        auto target = resources.GetRenderTarget(data.target);
-                        WriteScreenshot(cmd.Device(), data.path, target->ImageView());
+                [screenshotPath, screenshotResource](RenderGraphResources &resources, CommandContext &cmd) {
+                    auto &res = resources.GetResourceByName(screenshotResource);
+                    if (res.type == RenderGraphResource::Type::RenderTarget) {
+                        auto target = resources.GetRenderTarget(res.id);
+                        WriteScreenshot(cmd.Device(), screenshotPath, target->ImageView());
                     }
                 });
         }
