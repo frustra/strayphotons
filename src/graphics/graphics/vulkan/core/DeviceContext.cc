@@ -844,6 +844,12 @@ namespace sp::vulkan {
     ImageViewPtr DeviceContext::CreateImageView(ImageViewCreateInfo info) {
         if (info.format == vk::Format::eUndefined) info.format = info.image->Format();
 
+        if (info.arrayLayerCount == VK_REMAINING_ARRAY_LAYERS)
+            info.arrayLayerCount = info.image->ArrayLayers() - info.baseArrayLayer;
+
+        if (info.mipLevelCount == VK_REMAINING_MIP_LEVELS)
+            info.mipLevelCount = info.image->MipLevels() - info.baseMipLevel;
+
         vk::ImageViewCreateInfo createInfo;
         createInfo.image = *info.image;
         createInfo.format = info.format;
@@ -863,10 +869,6 @@ namespace sp::vulkan {
                                                    size_t srcDataSize,
                                                    bool genMipmap) {
         viewInfo.image = CreateImage(imageInfo, srcData, srcDataSize, genMipmap);
-        if (viewInfo.arrayLayerCount == VK_REMAINING_ARRAY_LAYERS)
-            viewInfo.arrayLayerCount = viewInfo.image->ArrayLayers() - viewInfo.baseArrayLayer;
-        if (viewInfo.mipLevelCount == VK_REMAINING_MIP_LEVELS)
-            viewInfo.mipLevelCount = viewInfo.image->MipLevels() - viewInfo.baseMipLevel;
         return CreateImageView(viewInfo);
     }
 

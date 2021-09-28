@@ -126,8 +126,6 @@ namespace sp::vulkan {
                     auto xrDepth = resources.GetRenderTarget("XRDepth")->ImageView();
 
                     RenderPassInfo renderPassInfo;
-                    renderPassInfo.state.multiviewAttachments = 0b11;
-                    renderPassInfo.state.multiviewCorrelations = 0b11;
                     renderPassInfo.PushColorAttachment(xrColor,
                                                        LoadOp::Clear,
                                                        StoreOp::Store,
