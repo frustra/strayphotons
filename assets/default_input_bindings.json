@@ -1,7 +1,6 @@
 {
     "_console": {
         "/keyboard/key/f5": "reloadscene",
-        "/keyboard/key/f6": "reloadscene reset",
         "/keyboard/key/f7": "reloadshaders"
     },
     "mouse": {

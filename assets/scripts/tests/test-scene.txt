@@ -1,0 +1,5 @@
+loadscene test1
+r.Exposure 1.0
+screenshot test-scene1.png
+setsignal flashlight.on 1
+wait 1000 screenshot test-scene2.png

@@ -27,7 +27,7 @@ namespace sp {
     public:
         AssetManager();
 
-        std::shared_ptr<const Asset> Load(const std::string &path);
+        std::shared_ptr<const Asset> Load(const std::string &path, bool reload = false);
         std::shared_ptr<const Model> LoadModel(const std::string &name);
         std::shared_ptr<const Image> LoadImage(const std::string &path);
 

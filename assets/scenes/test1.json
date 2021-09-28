@@ -134,14 +134,22 @@
 			"renderable": "mirror",
 			"transform": {
 				"parent": "duck",
-				"translate": [0, 1, 1],
-				"rotate": [-180, 0, 1, 0]
+				"translate": [1.5, 1, 0],
+				"rotate": [90, 0, 1, 0]
+			}
+		},
+		{
+			"renderable": "occluder",
+			"transform": {
+				"parent": "duck",
+				"translate": [1.5, 1, 0],
+				"rotate": [-90, 0, 1, 0]
 			}
 		},
 		{
 			"renderable": "mcube",
 			"transform": {
-				"translate": [-0.2, 3, 0.5]
+				"translate": [-0.2, 2, 3]
 			},
 			"physics": {
 				"model": "mcube"
@@ -150,7 +158,7 @@
 		{
 			"renderable": "pbr-cube",
 			"transform": {
-				"translate": [0, 1, 1]
+				"translate": [0, 1, 2.5]
 			},
 			"physics": {
 				"model": "pbr-cube"
@@ -159,7 +167,16 @@
 		{
 			"renderable": "box",
 			"transform": {
-				"translate": [0.5, 5, 0.5]
+				"translate": [0.5, 3.5, 2.5]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"renderable": "box",
+			"transform": {
+				"translate": [1, 2.5, 2]
 			},
 			"physics": {
 				"model": "box"
@@ -168,7 +185,7 @@
 		{
 			"renderable": "dodecahedron",
 			"transform": {
-				"translate": [3, 10, -0.5]
+				"translate": [3, 1, -0.5]
 			},
 			"physics": {
 				"model": "dodecahedron"
@@ -180,7 +197,8 @@
 				"clip": [0.1, 256]
 			},
 			"transform": {
-				"translate": [0, 2, 0]
+				"translate": [-3, 1.7, -3],
+				"rotate": [-135, 0, 1, 0]
 			},
 			"voxels": {
 				"min": [-5, -0, -5],
