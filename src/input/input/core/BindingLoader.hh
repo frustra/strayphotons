@@ -1,5 +1,9 @@
 #pragma once
 
+#include "core/CFunc.hh"
+#include "ecs/Ecs.hh"
+#include "ecs/NamedEntity.hh"
+
 #include <string>
 
 namespace sp {
@@ -10,5 +14,17 @@ namespace sp {
         BindingLoader();
 
         void Load(std::string bindingConfigPath);
+        void SetConsoleInputCommand(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::Script, ecs::EventInput>> lock,
+                                    std::string eventName,
+                                    std::string command);
+
+    private:
+        // CFunc
+        void BindKey(string args);
+
+        CFuncCollection funcs;
+
+        ecs::NamedEntity consoleInputEntity;
+        ecs::NamedEntity keyboardEntity;
     };
 } // namespace sp

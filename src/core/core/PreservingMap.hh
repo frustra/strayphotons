@@ -62,11 +62,15 @@ namespace sp {
             }
         }
 
-        void Register(const K &key, const std::shared_ptr<V> &source) {
+        void Register(const K &key, const std::shared_ptr<V> &source, bool allowReplace = false) {
             std::unique_lock lock(mutex);
 
-            bool ok = storage.emplace(key, source).second;
-            Assert(ok, "Tried to register existing value in PreservingMap");
+            auto [it, inserted] = storage.emplace(key, source);
+            if (!inserted) {
+                Assert(allowReplace, "Tried to register existing value in PreservingMap");
+                it->second.last_use = chrono_clock::now().time_since_epoch().count();
+                it->second.value = source;
+            }
         }
 
         std::shared_ptr<V> Load(const K &key) {

@@ -1,4 +1,8 @@
 {
+    "_console": {
+        "/keyboard/key/f5": "reloadscene",
+        "/keyboard/key/f7": "reloadshaders"
+    },
     "mouse": {
         "event_bindings": {
             "/mouse/scroll": {
@@ -19,7 +23,10 @@
             "/keyboard/key/e": { "/action/interact": "player" },
             "/keyboard/key/q": { "/action/spawn_debug": "player" },
             "/keyboard/key/f": { "/action/flashlight/toggle": "flashlight" },
-            "/keyboard/key/p": { "/action/flashlight/grab": "flashlight" }
+            "/keyboard/key/p": { "/action/flashlight/grab": "flashlight" },
+            "/keyboard/key/f5": { "/keyboard/key/f5": "console-input" },
+            "/keyboard/key/f6": { "/keyboard/key/f6": "console-input" },
+            "/keyboard/key/f7": { "/keyboard/key/f7": "console-input" }
         }
     },
     "vr-controller-left": {

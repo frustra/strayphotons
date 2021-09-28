@@ -171,11 +171,11 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
             game->graphics.GetContext()->AttachView(player);
 #endif
+        }
 
-            if (playerScene) {
-                for (auto &line : playerScene->autoExecList) {
-                    GetConsoleManager().ParseAndExecute(line);
-                }
+        if (playerScene) {
+            for (auto &line : playerScene->autoExecList) {
+                GetConsoleManager().ParseAndExecute(line);
             }
         }
     }
@@ -224,15 +224,7 @@ namespace sp {
     }
 
     void GameLogic::ReloadScene(std::string arg) {
-        if (scene) {
-            if (arg == "reset") {
-                LoadPlayer();
-                LoadScene(scene->name);
-            } else {
-                // TODO: Fix this to not respawn the player
-                LoadScene(scene->name);
-            }
-        }
+        if (scene) LoadScene(scene->name);
     }
 
     void GameLogic::PrintDebug() {

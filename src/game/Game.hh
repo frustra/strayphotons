@@ -13,6 +13,7 @@
 
 #ifdef SP_INPUT_SUPPORT
     #include "input/core/BindingLoader.hh"
+
     #ifdef SP_INPUT_SUPPORT_GLFW
         #include "input/glfw/GlfwInputHandler.hh"
     #endif

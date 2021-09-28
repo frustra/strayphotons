@@ -148,19 +148,21 @@ namespace sp {
         return !!stream;
     }
 
-    std::shared_ptr<const Asset> AssetManager::Load(const std::string &path) {
+    std::shared_ptr<const Asset> AssetManager::Load(const std::string &path, bool reload) {
         Assert(!path.empty(), "AssetManager::Load called with empty path");
 
         auto asset = loadedAssets.Load(path);
-        if (!asset) {
+        if (!asset || reload) {
             {
                 std::lock_guard lock(assetMutex);
-                // Check again in case an inflight asset just completed on another thread
-                asset = loadedAssets.Load(path);
-                if (asset) return asset;
+                if (!reload) {
+                    // Check again in case an inflight asset just completed on another thread
+                    asset = loadedAssets.Load(path);
+                    if (asset) return asset;
+                }
 
                 asset = std::make_shared<Asset>(path);
-                loadedAssets.Register(path, asset);
+                loadedAssets.Register(path, asset, true /* allowReplace */);
             }
             {
                 std::lock_guard lock(taskMutex);
@@ -271,7 +273,7 @@ namespace sp {
                                               ecs::Owner owner) {
         Logf("Loading scene: %s", sceneName);
 
-        std::shared_ptr<const Asset> asset = Load("scenes/" + sceneName + ".json");
+        std::shared_ptr<const Asset> asset = Load("scenes/" + sceneName + ".json", true);
         if (!asset) {
             Logf("Scene not found");
             return nullptr;

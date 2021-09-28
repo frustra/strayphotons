@@ -1,10 +1,6 @@
 {
     "autoexec": [
-        "bind v toggle p.NoClip",
-        "bind f1 setvrorigin",
-        "bind f5 reloadscene",
-        "bind f6 reloadscene reset",
-        "bind f7 reloadshaders"
+        "bind v toggle p.NoClip"
     ],
     "entities": [
         {
