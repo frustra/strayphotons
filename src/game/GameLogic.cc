@@ -171,11 +171,11 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
             game->graphics.GetContext()->AttachView(player);
 #endif
+        }
 
-            if (playerScene) {
-                for (auto &line : playerScene->autoExecList) {
-                    GetConsoleManager().ParseAndExecute(line);
-                }
+        if (playerScene) {
+            for (auto &line : playerScene->autoExecList) {
+                GetConsoleManager().ParseAndExecute(line);
             }
         }
     }

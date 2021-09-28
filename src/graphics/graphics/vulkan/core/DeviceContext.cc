@@ -669,7 +669,6 @@ namespace sp::vulkan {
             break;
         default:
             Abort("unknown buffer type " + std::to_string(type));
-            return {};
         }
 
         Debugf("Allocating buffer type %d with size %d", type, size);
