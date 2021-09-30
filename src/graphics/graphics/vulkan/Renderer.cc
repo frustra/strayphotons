@@ -220,7 +220,9 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddScreenshotPasses(RenderGraph &graph) {
-        for (auto [screenshotPath, screenshotResource] : pendingScreenshots) {
+        for (auto &pending : pendingScreenshots) {
+            auto screenshotPath = pending.first;
+            auto screenshotResource = pending.second;
             if (screenshotResource.empty()) screenshotResource = CVarWindowViewTarget.Get();
 
             graph.AddPass(

@@ -1,8 +1,10 @@
-#include "graphics/core/Texture.hh"
-#include "graphics/vulkan/core/DeviceContext.hh"
-#include "xr/openvr/OpenVrSystem.hh"
+#if defined(SP_XR_SUPPORT_OPENVR) && defined(SP_GRAPHICS_SUPPORT_VK)
 
-#include <openvr.h>
+    #include "graphics/core/Texture.hh"
+    #include "graphics/vulkan/core/DeviceContext.hh"
+    #include "xr/openvr/OpenVrSystem.hh"
+
+    #include <openvr.h>
 
 namespace sp::xr {
     void OpenVrSystem::SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) {
@@ -70,3 +72,5 @@ namespace sp::xr {
                "VR compositor error: " + std::to_string(err));
     }
 } // namespace sp::xr
+
+#endif

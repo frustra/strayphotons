@@ -1,3 +1,3 @@
-target_sources(${PROJECT_XR_OPENVR_VK_LIB} PRIVATE
+add_module_sources(
     VkSubmit.cc
 )

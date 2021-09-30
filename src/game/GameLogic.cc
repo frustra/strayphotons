@@ -49,7 +49,9 @@ namespace sp {
         funcs.Register(this, "tracetecs", "Save an ECS performance trace (tracetecs <time_ms>)", &GameLogic::TraceTecs);
     }
 
-    GameLogic::~GameLogic() {}
+    GameLogic::~GameLogic() {
+        (void)game; // Fix unused private field warning for certain configurations
+    }
 
 #ifdef SP_INPUT_SUPPORT
     void GameLogic::HandleInput() {

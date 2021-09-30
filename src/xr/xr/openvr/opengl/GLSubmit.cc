@@ -1,8 +1,10 @@
-#include "graphics/core/Texture.hh"
-#include "graphics/opengl/GLTexture.hh"
-#include "xr/openvr/OpenVrSystem.hh"
+#if defined(SP_XR_SUPPORT_OPENVR) && defined(SP_GRAPHICS_SUPPORT_GL)
 
-#include <openvr.h>
+    #include "graphics/core/Texture.hh"
+    #include "graphics/opengl/GLTexture.hh"
+    #include "xr/openvr/OpenVrSystem.hh"
+
+    #include <openvr.h>
 
 namespace sp::xr {
     void OpenVrSystem::SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) {
@@ -23,3 +25,5 @@ namespace sp::xr {
         vr::VRCompositor()->Submit(MapXrEyeToOpenVr(eye), &texture, 0, vr::EVRSubmitFlags::Submit_TextureWithPose);
     }
 } // namespace sp::xr
+
+#endif

@@ -121,8 +121,8 @@ namespace sp::vulkan {
         }
 
         void SetDepthRange(float minDepth, float maxDepth) {
-            minDepth = minDepth;
-            maxDepth = maxDepth;
+            this->minDepth = minDepth;
+            this->maxDepth = maxDepth;
             SetDirty(DirtyBits::Viewport);
         }
 

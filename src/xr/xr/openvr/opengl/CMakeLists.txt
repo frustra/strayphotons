@@ -1,3 +1,3 @@
-target_sources(${PROJECT_XR_OPENVR_GL_LIB} PRIVATE
+add_module_sources(
     GLSubmit.cc
 )

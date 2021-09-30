@@ -673,7 +673,7 @@ namespace sp::vulkan {
 
         Debugf("Allocating buffer type %d with size %d", type, size);
         auto buffer = AllocateBuffer(size, usage, residency);
-        pool.emplace_back(buffer, size, true);
+        pool.emplace_back(PooledBuffer{buffer, size, true});
         return buffer;
     }
 
@@ -744,7 +744,7 @@ namespace sp::vulkan {
             transferToGeneral);
 
         auto transferComplete = GetEmptySemaphore();
-        Frame().inFlightBuffers.emplace_back(stagingBuf, device->createFenceUnique({}));
+        Frame().inFlightBuffers.emplace_back(InFlightBuffer{stagingBuf, device->createFenceUnique({})});
         Submit(transferCmd, {transferComplete}, {}, {}, *Frame().inFlightBuffers.back().fence);
 
         auto graphicsCmd = GetCommandContext();
