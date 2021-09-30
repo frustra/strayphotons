@@ -197,7 +197,7 @@ namespace sp {
 
     void *GlfwGraphicsContext::Win32WindowHandle() {
 #ifdef _WIN32
-        return glfwGetWin32Window(GetWindow());
+        return window ? glfwGetWin32Window(window) : nullptr;
 #else
         return nullptr;
 #endif
