@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Common.hh"
-#include "Memory.hh"
 #include "assets/Model.hh"
 #include "ecs/Ecs.hh"
+#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/Memory.hh"
 
 #include <functional>
 #include <glm/glm.hpp>

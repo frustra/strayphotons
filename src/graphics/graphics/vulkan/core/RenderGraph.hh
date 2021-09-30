@@ -1,6 +1,8 @@
-#include "Common.hh"
-#include "RenderTarget.hh"
+#pragma once
+
 #include "core/StackVector.hh"
+#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/RenderTarget.hh"
 
 #include <robin_hood.h>
 

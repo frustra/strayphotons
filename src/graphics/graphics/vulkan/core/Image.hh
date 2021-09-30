@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Common.hh"
-#include "Memory.hh"
 #include "graphics/core/Texture.hh"
+#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/Memory.hh"
 
 namespace sp::vulkan {
     enum class LoadOp {

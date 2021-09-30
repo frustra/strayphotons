@@ -1,6 +1,6 @@
 #include "CommandContext.hh"
 
-#include "DeviceContext.hh"
+#include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan {
     CommandContext::CommandContext(DeviceContext &device, vk::UniqueCommandBuffer cmd, CommandContextType type) noexcept

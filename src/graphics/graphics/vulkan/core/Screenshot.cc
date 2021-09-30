@@ -1,8 +1,8 @@
 #include "Screenshot.hh"
 
-#include "CommandContext.hh"
-#include "DeviceContext.hh"
 #include "core/Logging.hh"
+#include "graphics/vulkan/core/CommandContext.hh"
+#include "graphics/vulkan/core/DeviceContext.hh"
 
 #include <filesystem>
 #include <stb_image_write.h>

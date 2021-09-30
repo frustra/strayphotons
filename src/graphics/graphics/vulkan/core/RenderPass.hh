@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Common.hh"
-#include "Image.hh"
 #include "core/Hashing.hh"
+#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/Image.hh"
 
 #include <robin_hood.h>
 

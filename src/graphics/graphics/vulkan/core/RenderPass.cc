@@ -1,7 +1,7 @@
 #include "RenderPass.hh"
 
-#include "DeviceContext.hh"
 #include "core/Logging.hh"
+#include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan {
     RenderPass::RenderPass(DeviceContext &device, const RenderPassInfo &info) {

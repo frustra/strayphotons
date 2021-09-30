@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Common.hh"
-#include "Memory.hh"
-#include "RenderPass.hh"
-#include "UniqueID.hh"
 #include "ecs/components/View.hh"
 #include "graphics/core/GraphicsContext.hh"
+#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/Memory.hh"
+#include "graphics/vulkan/core/RenderPass.hh"
+#include "graphics/vulkan/core/UniqueID.hh"
 
 #include <robin_hood.h>
 
@@ -27,7 +27,7 @@ namespace sp::vulkan {
 
     class DeviceContext final : public sp::GraphicsContext {
     public:
-        DeviceContext(bool enableValidationLayers = false);
+        DeviceContext(bool enableValidationLayers = false, bool enableSwapchain = true);
         virtual ~DeviceContext();
 
         // Access the underlying Vulkan device via the arrow operator

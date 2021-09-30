@@ -1,7 +1,6 @@
 #pragma once
 
-#include "core/Common.hh"
-
+#include <core/Common.hh>
 #include <string>
 #include <vulkan/vulkan.hpp>
 

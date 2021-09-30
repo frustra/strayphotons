@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Common.hh"
-#include "SPIRV-Reflect/spirv_reflect.h"
-#include "Shader.hh"
-#include "Vertex.hh"
 #include "core/Hashing.hh"
+#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/Shader.hh"
+#include "graphics/vulkan/core/Vertex.hh"
 
+#include <SPIRV-Reflect/spirv_reflect.h>
 #include <robin_hood.h>
 
 namespace sp::vulkan {

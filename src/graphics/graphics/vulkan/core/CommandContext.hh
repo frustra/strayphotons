@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Pipeline.hh"
-#include "RenderPass.hh"
 #include "core/Common.hh"
+#include "graphics/vulkan/core/Pipeline.hh"
+#include "graphics/vulkan/core/RenderPass.hh"
 
 #include <functional>
 #include <glm/glm.hpp>
