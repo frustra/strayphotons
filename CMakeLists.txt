@@ -153,7 +153,7 @@ if(NOT SP_DEBUG)
             INTERPROCEDURAL_OPTIMIZATION TRUE
         )
     else()
-        message(STATUS "IPO / LTO not supported: <${ipo_error}>")
+        message(STATUS "IPO / LTO not supported:\n${ipo_error}")
     endif()
 endif()
 

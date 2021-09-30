@@ -83,7 +83,7 @@ namespace sp::vulkan {
         vk::Sampler defaultSampler = VK_NULL_HANDLE;
     };
 
-    class ImageView : public WrappedUniqueHandle<vk::ImageView>, public GpuTexture {
+    class ImageView final : public WrappedUniqueHandle<vk::ImageView>, public GpuTexture {
     public:
         ImageView() {}
 

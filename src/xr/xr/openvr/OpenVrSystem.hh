@@ -25,14 +25,14 @@ namespace sp {
             OpenVrSystem() : RegisteredThread("OpenVR", 120.0) {}
             ~OpenVrSystem();
 
-            void Init(GraphicsContext *context);
-            bool IsInitialized();
-            bool IsHmdPresent();
+            void Init(GraphicsContext *context) override;
+            bool IsInitialized() override;
+            bool IsHmdPresent() override;
 
-            bool GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat);
+            bool GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) override;
 
-            void SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex);
-            void WaitFrame();
+            void SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) override;
+            void WaitFrame() override;
 
             ecs::NamedEntity GetEntityForDeviceIndex(size_t index);
 
