@@ -1,7 +1,7 @@
 #pragma once
 
-#include "graphics/vulkan/core/Common.hh"
 #include "core/Common.hh"
+#include "graphics/vulkan/core/Common.hh"
 
 #ifdef __clang__
     #pragma clang diagnostic push
