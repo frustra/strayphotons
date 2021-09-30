@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Common.hh"
-#include "Memory.hh"
 #include "ecs/components/View.hh"
+#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/Memory.hh"
 
 namespace sp {
     class GuiManager;

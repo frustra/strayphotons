@@ -1,7 +1,7 @@
 #include "Pipeline.hh"
 
-#include "DeviceContext.hh"
-#include "Vertex.hh"
+#include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/Vertex.hh"
 
 namespace sp::vulkan {
 

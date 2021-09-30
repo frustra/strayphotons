@@ -26,6 +26,7 @@
     #include <iostream>
     #include <optional>
     #include <system_error>
+    #include <thread>
 
 namespace sp {
     GraphicsManager::GraphicsManager(Game *game) : game(game) {
@@ -44,17 +45,22 @@ namespace sp {
     void GraphicsManager::Init() {
         Assert(!context, "already have a graphics context");
 
-    #if SP_GRAPHICS_SUPPORT_GL
+    #ifdef SP_GRAPHICS_SUPPORT_GL
         auto glfwContext = new GlfwGraphicsContext();
         context.reset(glfwContext);
 
         GLFWwindow *window = glfwContext->GetWindow();
     #endif
 
-    #if SP_GRAPHICS_SUPPORT_VK
+    #ifdef SP_GRAPHICS_SUPPORT_VK
         bool enableValidationLayers = game->options.count("with-validation-layers") > 0;
 
-        auto vkContext = new vulkan::DeviceContext(enableValidationLayers);
+        #ifdef SP_GRAPHICS_SUPPORT_HEADLESS
+        bool enableSwapchain = false;
+        #else
+        bool enableSwapchain = true;
+        #endif
+        auto vkContext = new vulkan::DeviceContext(enableValidationLayers, enableSwapchain);
         context.reset(vkContext);
 
         GLFWwindow *window = vkContext->GetWindow();
@@ -130,7 +136,12 @@ namespace sp {
         // timer.StartFrame();
         context->BeginFrame();
         renderer->RenderFrame();
+        #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
         context->SwapBuffers();
+        #else
+        // TODO: Configurable headless frame rate
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        #endif
         // timer.EndFrame();
         context->EndFrame();
         return true;

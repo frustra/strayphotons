@@ -4,8 +4,8 @@ set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core CACHE INTERNAL 
 set(PROJECT_GRAPHICS_EGL_LIB ${PROJECT_BASE_NAME}-graphics-egl CACHE INTERNAL "Library containing an OpenGL-based graphics implementation using EGL")
 set(PROJECT_GRAPHICS_OPENGL_LIB ${PROJECT_BASE_NAME}-graphics-opengl CACHE INTERNAL "Library containing an OpenGL-based graphics implementation using OpenGL 4.0")
 set(PROJECT_GRAPHICS_VULKAN_CORE_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-core CACHE INTERNAL "Library containing a Vulkan-based graphics implementation")
-set(PROJECT_GRAPHICS_VULKAN_FLAT_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-flat CACHE INTERNAL "Library containing a Vulkan-based renderer for flat windows")
-set(PROJECT_GRAPHICS_VULKAN_XR_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-xr CACHE INTERNAL "Library containing a Vulkan-based renderer for XR")
+set(PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-headless CACHE INTERNAL "Library for Vulkan-based rendering without a display")
+set(PROJECT_GRAPHICS_VULKAN_XR_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-xr CACHE INTERNAL "Library for Vulkan-based rendering through an XR display")
 
 set(PROJECT_INPUT_CORE_LIB ${PROJECT_BASE_NAME}-input-core CACHE INTERNAL "Library containing generic user input support")
 set(PROJECT_INPUT_GLFW_LIB ${PROJECT_BASE_NAME}-input-glfw CACHE INTERNAL "Library implementing user input support using GLFW")
@@ -32,13 +32,13 @@ add_module_configuration(
 
 # Vulkan desktop build
 add_module_configuration(
-	NAME sp-vk
+    NAME sp-vk
     EXPORT_COMPILE_COMMANDS
-	LINK_LIBRARIES
-		${PROJECT_CORE_LIB}
-		${PROJECT_GRAPHICS_VULKAN_XR_LIB}
-		${PROJECT_INPUT_GLFW_LIB}
-		${PROJECT_PHYSICS_PHYSX_LIB}
+    LINK_LIBRARIES
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GRAPHICS_VULKAN_XR_LIB}
+        ${PROJECT_INPUT_GLFW_LIB}
+        ${PROJECT_PHYSICS_PHYSX_LIB}
         ${PROJECT_XR_OPENVR_LIB}
 )
 
@@ -48,7 +48,7 @@ add_module_configuration(
     LINK_LIBRARIES
         ${PROJECT_GAME_TEST_LIB}
         ${PROJECT_CORE_LIB}
-        ${PROJECT_GRAPHICS_EGL_LIB}
+        ${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB}
         ${PROJECT_INPUT_GLFW_LIB}
 )
 

@@ -3,9 +3,9 @@
 #include "assets/Model.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "graphics/vulkan/GuiRenderer.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
-#include "graphics/vulkan/core/GuiRenderer.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Model.hh"
 #include "graphics/vulkan/core/RenderGraph.hh"
@@ -177,7 +177,8 @@ namespace sp::vulkan {
         }
 #endif
 
-        if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
+        auto swapchainImage = device.SwapchainImageView();
+        if (windowEntity && windowEntity.Has<ecs::View>(lock) && swapchainImage) {
             auto view = windowEntity.Get<ecs::View>(lock);
             auto debugGuiRenderer = this->debugGuiRenderer.get();
             auto windowViewTarget = CVarWindowViewTarget.Get();
@@ -211,7 +212,7 @@ namespace sp::vulkan {
                     cmd.EndRenderPass();
                 });
 
-            graph.SetTargetImageView("WindowFinalOutput", device.SwapchainImageView());
+            graph.SetTargetImageView("WindowFinalOutput", swapchainImage);
         }
 
         AddScreenshotPasses(graph);

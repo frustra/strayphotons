@@ -1,7 +1,7 @@
 #include "RenderTarget.hh"
 
-#include "DeviceContext.hh"
 #include "core/Logging.hh"
+#include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan {
     RenderTarget::~RenderTarget() {

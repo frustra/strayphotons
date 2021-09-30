@@ -1,9 +1,5 @@
 #include "DeviceContext.hh"
 
-#include "CommandContext.hh"
-#include "Pipeline.hh"
-#include "RenderPass.hh"
-#include "RenderTarget.hh"
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Image.hh"
@@ -11,6 +7,10 @@
 #include "core/Logging.hh"
 #include "core/StackVector.hh"
 #include "ecs/EcsImpl.hh"
+#include "graphics/vulkan/core/CommandContext.hh"
+#include "graphics/vulkan/core/Pipeline.hh"
+#include "graphics/vulkan/core/RenderPass.hh"
+#include "graphics/vulkan/core/RenderTarget.hh"
 
 #include <algorithm>
 #include <iostream>
@@ -66,7 +66,8 @@ namespace sp::vulkan {
         if (alloc) vmaDestroyAllocator(alloc);
     }
 
-    DeviceContext::DeviceContext(bool enableValidationLayers) : allocator(nullptr, DeleteAllocator) {
+    DeviceContext::DeviceContext(bool enableValidationLayers, bool enableSwapchain)
+        : allocator(nullptr, DeleteAllocator) {
         glfwSetErrorCallback(glfwErrorCallback);
 
         if (!glfwInit()) { throw "glfw failed"; }
@@ -119,10 +120,12 @@ namespace sp::vulkan {
             layers.emplace_back("VK_LAYER_KHRONOS_validation");
         }
 
-        // Create window and surface
-        auto initialSize = CVarWindowSize.Get();
-        window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
-        Assert(window, "glfw window creation failed");
+        if (enableSwapchain) {
+            // Create window and surface
+            auto initialSize = CVarWindowSize.Get();
+            window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
+            Assert(window, "glfw window creation failed");
+        }
 
         vk::ApplicationInfo applicationInfo("Stray Photons",
                                             VK_MAKE_VERSION(1, 0, 0),
@@ -153,14 +156,16 @@ namespace sp::vulkan {
 
         instance = vk::createInstanceUnique(createInfo);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(*instance);
-        debugMessenger = instance->createDebugUtilsMessengerEXTUnique(debugInfo, nullptr);
+        debugMessenger = instance->createDebugUtilsMessengerEXTUnique(debugInfo);
 
-        vk::SurfaceKHR glfwSurface;
-        auto result = glfwCreateWindowSurface(*instance, window, nullptr, (VkSurfaceKHR *)&glfwSurface);
-        AssertVKSuccess(result, "creating window surface");
+        if (enableSwapchain) {
+            vk::SurfaceKHR glfwSurface;
+            auto result = glfwCreateWindowSurface(*instance, window, nullptr, (VkSurfaceKHR *)&glfwSurface);
+            AssertVKSuccess(result, "creating window surface");
 
-        vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderDynamic> deleter(*instance);
-        surface = vk::UniqueSurfaceKHR(std::move(glfwSurface), deleter);
+            vk::ObjectDestroy<vk::Instance, vk::DispatchLoaderDynamic> deleter(*instance);
+            surface = vk::UniqueSurfaceKHR(std::move(glfwSurface), deleter);
+        }
 
         auto physicalDevices = instance->enumeratePhysicalDevices();
         // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
@@ -168,7 +173,7 @@ namespace sp::vulkan {
             // TODO: Check device extension support
             auto properties = physicalDevices.front().getProperties();
             // auto features = device.getFeatures();
-            Logf("Using graphics device: %s", properties.deviceName);
+            Logf("Using graphics device: %s", properties.deviceName.data());
             physicalDevice = physicalDevices.front();
         }
         Assert(physicalDevice, "No suitable graphics device found!");
@@ -198,7 +203,11 @@ namespace sp::vulkan {
             return false;
         };
 
-        if (!findQueue(QUEUE_TYPE_GRAPHICS, vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, {}, 1.0f, true))
+        if (!findQueue(QUEUE_TYPE_GRAPHICS,
+                       vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
+                       {},
+                       1.0f,
+                       enableSwapchain))
             Abort("could not find a supported graphics queue family");
 
         if (!findQueue(QUEUE_TYPE_COMPUTE, vk::QueueFlagBits::eCompute, {}, 0.5f)) {
@@ -332,7 +341,7 @@ namespace sp::vulkan {
             ReloadShaders();
         });
 
-        CreateSwapchain();
+        if (enableSwapchain) CreateSwapchain();
     }
 
     DeviceContext::~DeviceContext() {
@@ -387,7 +396,7 @@ namespace sp::vulkan {
         swapchainInfo.clipped = true;
         swapchainInfo.oldSwapchain = *swapchain;
 
-        auto newSwapchain = device->createSwapchainKHRUnique(swapchainInfo, nullptr);
+        auto newSwapchain = device->createSwapchainKHRUnique(swapchainInfo);
         swapchainImageContexts.clear();
         swapchain.swap(newSwapchain);
 
@@ -409,36 +418,40 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::SetTitle(string title) {
-        glfwSetWindowTitle(window, title.c_str());
+        if (window) glfwSetWindowTitle(window, title.c_str());
     }
 
     bool DeviceContext::ShouldClose() {
-        return !!glfwWindowShouldClose(window);
+        return window && !!glfwWindowShouldClose(window);
     }
 
     void DeviceContext::PrepareWindowView(ecs::View &view) {
-        glm::ivec2 scaled = glm::vec2(CVarWindowSize.Get()) * CVarWindowScale.Get();
+        if (window) {
+            glm::ivec2 scaled = glm::vec2(CVarWindowSize.Get()) * CVarWindowScale.Get();
 
-        if (glfwFullscreen != CVarWindowFullscreen.Get()) {
-            if (CVarWindowFullscreen.Get() == 0) {
-                glfwSetWindowMonitor(window, nullptr, storedWindowPos.x, storedWindowPos.y, scaled.x, scaled.y, 0);
-                glfwFullscreen = 0;
-            } else if (CVarWindowFullscreen.Get() == 1) {
-                glfwGetWindowPos(window, &storedWindowPos.x, &storedWindowPos.y);
-                glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, scaled.x, scaled.y, 60);
-                glfwFullscreen = 1;
-            }
-        } else if (glfwWindowSize != scaled) {
-            if (CVarWindowFullscreen.Get()) {
-                glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, scaled.x, scaled.y, 60);
-            } else {
-                glfwSetWindowSize(window, scaled.x, scaled.y);
+            if (glfwFullscreen != CVarWindowFullscreen.Get()) {
+                if (CVarWindowFullscreen.Get() == 0) {
+                    glfwSetWindowMonitor(window, nullptr, storedWindowPos.x, storedWindowPos.y, scaled.x, scaled.y, 0);
+                    glfwFullscreen = 0;
+                } else if (CVarWindowFullscreen.Get() == 1) {
+                    glfwGetWindowPos(window, &storedWindowPos.x, &storedWindowPos.y);
+                    glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, scaled.x, scaled.y, 60);
+                    glfwFullscreen = 1;
+                }
+            } else if (glfwWindowSize != scaled) {
+                if (CVarWindowFullscreen.Get()) {
+                    glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, scaled.x, scaled.y, 60);
+                } else {
+                    glfwSetWindowSize(window, scaled.x, scaled.y);
+                }
+
+                glfwWindowSize = scaled;
             }
 
-            glfwWindowSize = scaled;
+            view.extents = {swapchainExtent.width, swapchainExtent.height};
+        } else {
+            view.extents = CVarWindowSize.Get();
         }
-
-        view.extents = {swapchainExtent.width, swapchainExtent.height};
         view.fov = glm::radians(CVarFieldOfView.Get());
         view.UpdateProjectionMatrix();
     }
@@ -470,6 +483,8 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::UpdateInputModeFromFocus() {
+        if (!window) return;
+
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::FocusLock>>();
         if (lock.Has<ecs::FocusLock>()) {
             auto layer = lock.Get<ecs::FocusLock>().PrimaryFocus();
@@ -484,23 +499,25 @@ namespace sp::vulkan {
     void DeviceContext::BeginFrame() {
         UpdateInputModeFromFocus();
 
-        auto result = device->waitForFences({*Frame().inFlightFence}, true, FENCE_WAIT_TIME);
-        AssertVKSuccess(result, "timed out waiting for fence");
-
-        try {
-            auto acquireResult =
-                device->acquireNextImageKHR(*swapchain, UINT64_MAX, *Frame().imageAvailableSemaphore, nullptr);
-            swapchainImageIndex = acquireResult.value;
-        } catch (const vk::OutOfDateKHRError &) {
-            RecreateSwapchain();
-            return BeginFrame();
-        }
-
-        if (SwapchainImage().inFlightFence) {
-            result = device->waitForFences({SwapchainImage().inFlightFence}, true, FENCE_WAIT_TIME);
+        if (swapchain) {
+            auto result = device->waitForFences({*Frame().inFlightFence}, true, FENCE_WAIT_TIME);
             AssertVKSuccess(result, "timed out waiting for fence");
+
+            try {
+                auto acquireResult =
+                    device->acquireNextImageKHR(*swapchain, UINT64_MAX, *Frame().imageAvailableSemaphore, nullptr);
+                swapchainImageIndex = acquireResult.value;
+            } catch (const vk::OutOfDateKHRError &) {
+                RecreateSwapchain();
+                return BeginFrame();
+            }
+
+            if (SwapchainImage().inFlightFence) {
+                result = device->waitForFences({SwapchainImage().inFlightFence}, true, FENCE_WAIT_TIME);
+                AssertVKSuccess(result, "timed out waiting for fence");
+            }
+            SwapchainImage().inFlightFence = *Frame().inFlightFence;
         }
-        SwapchainImage().inFlightFence = *Frame().inFlightFence;
         PrepareResourcesForFrame();
         vmaSetCurrentFrameIndex(allocator.get(), frameCounter);
     }
@@ -542,11 +559,11 @@ namespace sp::vulkan {
             auto presentResult = queues[QUEUE_TYPE_GRAPHICS].presentKHR(presentInfo);
             if (presentResult == vk::Result::eSuboptimalKHR) RecreateSwapchain();
         } catch (const vk::OutOfDateKHRError &) { RecreateSwapchain(); }
-
-        frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
     void DeviceContext::EndFrame() {
+        frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+
         frameCounter++;
         if (frameCounter == UINT32_MAX) frameCounter = 0;
 
@@ -1007,7 +1024,7 @@ namespace sp::vulkan {
     }
 
     ImageViewPtr DeviceContext::SwapchainImageView() {
-        return SwapchainImage().imageView;
+        return swapchain ? SwapchainImage().imageView : nullptr;
     }
 
     shared_ptr<RenderPass> DeviceContext::GetRenderPass(const RenderPassInfo &info) {

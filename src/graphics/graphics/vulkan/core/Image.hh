@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Common.hh"
-#include "Memory.hh"
+#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/Memory.hh"
 #include "graphics/core/Texture.hh"
 
 namespace sp::vulkan {

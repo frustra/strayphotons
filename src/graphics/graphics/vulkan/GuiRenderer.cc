@@ -1,13 +1,13 @@
 #include "GuiRenderer.hh"
 
-#include "CommandContext.hh"
-#include "Common.hh"
-#include "DeviceContext.hh"
-#include "Util.hh"
-#include "Vertex.hh"
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "graphics/gui/GuiManager.hh"
+#include "graphics/vulkan/core/CommandContext.hh"
+#include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/Util.hh"
+#include "graphics/vulkan/core/Vertex.hh"
 
 #include <GLFW/glfw3.h>
 #include <algorithm>

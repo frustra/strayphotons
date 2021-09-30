@@ -1,4 +1,6 @@
-#include "Common.hh"
+#pragma once
+
+#include "graphics/vulkan/core/Common.hh"
 
 namespace sp::vulkan {
     struct RenderTargetDesc {

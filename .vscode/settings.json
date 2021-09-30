@@ -120,7 +120,8 @@
         "coroutine": "cpp",
         "resumable": "cpp",
         "xmemory0": "cpp",
-        "xthread": "cpp"
+        "xthread": "cpp",
+        "numbers": "cpp"
     },
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,
