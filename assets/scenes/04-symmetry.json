@@ -229,14 +229,9 @@
 					1
 				],
 				"intensity": 10,
-				"spotAngle": 60
-			},
-			"view": {
-				"extents": [
-					2048,
-					2048
-				],
-				"clip": [
+				"spotAngle": 60,
+				"shadowMapSize": 11,
+				"shadowMapClip": [
 					0.1,
 					70
 				]
@@ -485,14 +480,9 @@
 					1
 				],
 				"intensity": 10,
-				"spotAngle": 60
-			},
-			"view": {
-				"extents": [
-					2048,
-					2048
-				],
-				"clip": [
+				"spotAngle": 60,
+				"shadowMapSize": 11,
+				"shadowMapClip": [
 					0.1,
 					70
 				]
@@ -2200,14 +2190,9 @@
 				],
 				"intensity": 300,
 				"spotAngle": 12,
-				"bulb": "light1-bulb"
-			},
-			"view": {
-				"extents": [
-					2048,
-					2048
-				],
-				"clip": [
+				"bulb": "light1-bulb",
+				"shadowMapSize": 11,
+				"shadowMapClip": [
 					0.1,
 					70
 				]

@@ -9,6 +9,7 @@
 #include "graphics/opengl/GLBuffer.hh"
 #include "graphics/opengl/GLModel.hh"
 #include "graphics/opengl/GLTexture.hh"
+#include "graphics/opengl/GPUTypes.hh"
 #include "graphics/opengl/PerfTimer.hh"
 #include "graphics/opengl/Shader.hh"
 #include "graphics/opengl/gui/GuiRenderer.hh"
@@ -78,7 +79,7 @@ namespace sp {
         void UpdateShaders(bool force = false);
         void RenderMainMenu(ecs::View &view, bool renderToGel = false);
         void RenderShadowMaps(
-            ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::Mirror>> lock);
+            ecs::Lock<ecs::Read<ecs::Transform, ecs::View, ecs::Light>, ecs::Write<ecs::Renderable, ecs::Mirror>> lock);
         void PrepareVoxelTextures();
         void RenderVoxelGrid(
             ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform, ecs::View, ecs::Light>, ecs::Write<ecs::Mirror>> lock);
@@ -114,6 +115,10 @@ namespace sp {
         ShaderSet shaders;
         PerfTimer &timer;
 
+        const LightingContext &Lighting() const {
+            return lightContext;
+        }
+
     private:
         PreservingMap<std::string, GLModel> activeModels;
 
@@ -128,6 +133,8 @@ namespace sp {
         std::shared_ptr<GuiRenderer> debugGuiRenderer;
         std::shared_ptr<GuiRenderer> menuGuiRenderer;
         MenuGuiManager *menuGui = nullptr;
+
+        LightingContext lightContext;
 
         CFuncCollection funcs;
     };

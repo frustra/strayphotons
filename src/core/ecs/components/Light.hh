@@ -8,11 +8,11 @@ namespace ecs {
     struct Light {
         float spotAngle, intensity, illuminance;
         glm::vec3 tint;
-        glm::vec4 mapOffset;
         int gelId;
-        int lightId;
         bool on = true;
         Tecs::Entity bulb;
+        uint32_t shadowMapSize = 9; // shadow map will have a width and height of 2^shadowMapSize
+        glm::vec2 shadowMapClip = {0.1, 256}; // near and far plane
     };
 
     static Component<Light> ComponentLight("light");

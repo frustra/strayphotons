@@ -1453,14 +1453,9 @@
 					1
 				],
 				"illuminance": 10,
-				"spotAngle": 22
-			},
-			"view": {
-				"extents": [
-					4096,
-					4096
-				],
-				"clip": [
+				"spotAngle": 22,
+				"shadowMapSize": 12,
+				"shadowMapClip": [
 					20,
 					50
 				]

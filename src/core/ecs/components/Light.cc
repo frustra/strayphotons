@@ -28,6 +28,10 @@ namespace ecs {
                         break;
                     }
                 }
+            } else if (param.first == "shadowMapSize") {
+                light.shadowMapSize = (uint32)param.second.get<double>();
+            } else if (param.first == "shadowMapClip") {
+                light.shadowMapClip = sp::MakeVec2(param.second);
             }
         }
         return true;

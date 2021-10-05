@@ -308,14 +308,9 @@
 					1
 				],
 				"intensity": 10,
-				"spotAngle": 60
-			},
-			"view": {
-				"extents": [
-					2048,
-					2048
-				],
-				"clip": [
+				"spotAngle": 60,
+				"shadowMapSize": 11,
+				"shadowMapClip": [
 					0.1,
 					70
 				]
@@ -525,14 +520,9 @@
 					0.5
 				],
 				"intensity": 30,
-				"spotAngle": 25
-			},
-			"view": {
-				"extents": [
-					512,
-					512
-				],
-				"clip": [
+				"spotAngle": 25,
+				"shadowMapSize": 9,
+				"shadowMapClip": [
 					0.1,
 					50
 				]
@@ -568,14 +558,9 @@
 					0.5
 				],
 				"intensity": 20,
-				"spotAngle": 40
-			},
-			"view": {
-				"extents": [
-					2048,
-					2048
-				],
-				"clip": [
+				"spotAngle": 40,
+				"shadowMapSize": 11,
+				"shadowMapClip": [
 					0.1,
 					50
 				]
@@ -611,14 +596,9 @@
 					1
 				],
 				"intensity": 10,
-				"spotAngle": 30
-			},
-			"view": {
-				"extents": [
-					1024,
-					1024
-				],
-				"clip": [
+				"spotAngle": 30,
+				"shadowMapSize": 10,
+				"shadowMapClip": [
 					0.1,
 					50
 				]
