@@ -17,9 +17,8 @@
 #endif
 
 namespace sp::vulkan {
-    static CVar<string> CVarWindowViewTarget("r.WindowViewTarget",
-                                             "GBuffer0",
-                                             "Render target to view in the primary window");
+    static CVar<string> CVarWindowViewTarget("r.WindowViewTarget", "GBuffer0", "Primary window's render target");
+    static CVar<bool> CVarEnableShadows("r.EnableShadows", true, "Enable shadow mapping");
 
     Renderer::Renderer(DeviceContext &device) : device(device) {
         funcs.Register<string>("screenshot",
@@ -42,6 +41,8 @@ namespace sp::vulkan {
 
         auto lock = ecs::World.StartTransaction<
             ecs::Read<ecs::Name, ecs::Transform, ecs::Renderable, ecs::View, ecs::XRView, ecs::Mirror>>();
+
+        RenderShadowMaps(graph, lock);
 
         Tecs::Entity windowEntity = device.GetActiveView();
 
@@ -219,6 +220,8 @@ namespace sp::vulkan {
         graph.Execute();
         EndFrame();
     }
+
+    void Renderer::RenderShadowMaps(RenderGraph &graph, DrawLock lock) {}
 
     void Renderer::AddScreenshotPasses(RenderGraph &graph) {
         for (auto &pending : pendingScreenshots) {

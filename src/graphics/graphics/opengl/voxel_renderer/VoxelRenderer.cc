@@ -8,7 +8,6 @@
 #include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/opengl/GLModel.hh"
 #include "graphics/opengl/GLView.hh"
-#include "graphics/opengl/GPUTypes.hh"
 #include "graphics/opengl/GenericShaders.hh"
 #include "graphics/opengl/GlfwGraphicsContext.hh"
 #include "graphics/opengl/LightSensor.hh"
@@ -138,35 +137,15 @@ namespace sp {
     }
 
     void VoxelRenderer::RenderShadowMaps(
-        ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::Mirror>> lock) {
+        ecs::Lock<ecs::Read<ecs::Transform, ecs::View, ecs::Light>, ecs::Write<ecs::Renderable, ecs::Mirror>> lock) {
         RenderPhase phase("ShadowMaps", timer);
 
-        glm::ivec2 renderTargetSize(0, 0);
-        int lightCount = 0;
         for (auto &entity : lock.EntitiesWith<ecs::Light>()) {
             auto &light = entity.Get<ecs::Light>(lock);
 
             if (light.bulb && light.bulb.Has<ecs::Renderable>(lock)) {
                 auto &bulb = light.bulb.Get<ecs::Renderable>(lock);
                 bulb.emissive = light.on ? light.intensity * light.tint * 0.1f : glm::vec3(0.0f);
-            }
-
-            if (!light.on) continue;
-
-            if (entity.Has<ecs::View>(lock)) {
-                auto &view = entity.Get<ecs::View>(lock);
-                view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
-                view.fov = light.spotAngle * 2.0f;
-                light.mapOffset = glm::vec4(renderTargetSize.x, 0, view.extents.x, view.extents.y);
-                light.lightId = lightCount++;
-                view.offset = glm::ivec2(light.mapOffset);
-                view.clearMode.reset();
-
-                renderTargetSize.x += view.extents.x;
-                if (view.extents.y > renderTargetSize.y) renderTargetSize.y = view.extents.y;
-
-                view.UpdateProjectionMatrix();
-                view.UpdateViewMatrix(lock, entity);
             }
         }
 
@@ -176,7 +155,9 @@ namespace sp {
             mirror.mirrorId = mirrorCount++;
         }
 
-        RenderTargetDesc shadowDesc(PF_R32F, glm::max(glm::ivec2(1), renderTargetSize));
+        FillLightData(lightContext, lock);
+
+        RenderTargetDesc shadowDesc(PF_R32F, glm::max(glm::ivec2(1), lightContext.renderTargetSize));
         if (!shadowMap || shadowMap->GetDesc() != shadowDesc) { shadowMap = context.GetRenderTarget(shadowDesc); }
 
         if (!mirrorVisData) {
@@ -200,7 +181,9 @@ namespace sp {
                 GL_DYNAMIC_COPY);
         }
 
-        if (lightCount == 0) return;
+        if (lightContext.lightCount == 0) return;
+
+        const auto &renderTargetSize = lightContext.renderTargetSize;
 
         if (CVarEnableShadows.Get()) {
             auto depthTarget = context.GetRenderTarget({PF_DEPTH16, renderTargetSize, true});
@@ -216,44 +199,34 @@ namespace sp {
             mirrorVisData.Clear(PF_R32UI, 0);
             mirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
 
-            for (auto &entity : lock.EntitiesWith<ecs::Light>()) {
-                auto &light = entity.Get<ecs::Light>(lock);
-                if (!light.on) continue;
+            for (int lightId = 0; lightId < lightContext.lightCount; lightId++) {
+                auto &view = lightContext.views[lightId];
 
-                if (entity.Has<ecs::View>(lock)) {
-                    light.mapOffset /= glm::vec4(renderTargetSize, renderTargetSize);
+                ShaderControl->BindPipeline<ShadowMapVS, ShadowMapFS>();
 
-                    auto &view = entity.Get<ecs::View>(lock);
-                    view.UpdateViewMatrix(lock, entity);
-
-                    ShaderControl->BindPipeline<ShadowMapVS, ShadowMapFS>();
-
-                    auto shadowMapVS = shaders.Get<ShadowMapVS>();
-                    auto shadowMapFS = shaders.Get<ShadowMapFS>();
-                    shadowMapFS->SetClip(view.clip);
-                    shadowMapFS->SetLight(light.lightId);
-                    ForwardPass(view, shadowMapVS, lock, [&](auto lock, Tecs::Entity &ent) {
-                        if (ent && ent.Has<ecs::Mirror>(lock)) {
-                            auto &mirror = ent.Get<ecs::Mirror>(lock);
-                            shadowMapFS->SetMirrorId(mirror.mirrorId);
-                        } else {
-                            shadowMapFS->SetMirrorId(-1);
-                        }
-                    });
-                    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-                }
+                auto shadowMapVS = shaders.Get<ShadowMapVS>();
+                auto shadowMapFS = shaders.Get<ShadowMapFS>();
+                shadowMapFS->SetClip(view.clip);
+                shadowMapFS->SetLight(lightId);
+                ForwardPass(view, shadowMapVS, lock, [&](auto lock, Tecs::Entity &ent) {
+                    if (ent && ent.Has<ecs::Mirror>(lock)) {
+                        auto &mirror = ent.Get<ecs::Mirror>(lock);
+                        shadowMapFS->SetMirrorId(mirror.mirrorId);
+                    } else {
+                        shadowMapFS->SetMirrorId(-1);
+                    }
+                });
+                glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             }
         }
 
         glDisable(GL_CULL_FACE);
 
-        GLLightData lightData[MAX_LIGHTS];
         GLMirrorData mirrorData[MAX_MIRRORS];
-        int lightDataCount = FillLightData(&lightData[0], lock);
         int mirrorDataCount = FillMirrorData(&mirrorData[0], lock);
         int recursion = mirrorCount == 0 ? 0 : CVarMirrorRecursion.Get();
 
-        int mapCount = lightDataCount * mirrorDataCount * recursion;
+        int mapCount = lightContext.lightCount * mirrorDataCount * recursion;
         auto mapResolution = CVarMirrorMapResolution.Get();
         auto mirrorMapResolution = glm::ivec3(mapResolution, mapResolution, std::max(1, mapCount));
         RenderTargetDesc mirrorMapDesc(PF_R32F, mirrorMapResolution);
@@ -268,7 +241,7 @@ namespace sp {
 
                 auto mirrorMapCS = shaders.Get<MirrorMapCS>();
 
-                mirrorMapCS->SetLightData(lightDataCount, &lightData[0]);
+                mirrorMapCS->SetLightData(lightContext.lightCount, lightContext.glData);
                 mirrorMapCS->SetMirrorData(mirrorDataCount, &mirrorData[0]);
 
                 ShaderControl->BindPipeline<MirrorMapCS>();
@@ -296,7 +269,7 @@ namespace sp {
                 auto mirrorMapFS = shaders.Get<MirrorMapFS>();
                 auto mirrorMapVS = shaders.Get<MirrorMapVS>();
 
-                mirrorMapFS->SetLightData(lightDataCount, &lightData[0]);
+                mirrorMapFS->SetLightData(lightContext.lightCount, lightContext.glData);
                 mirrorMapFS->SetMirrorId(-1);
 
                 shadowMap->GetGLTexture().Bind(4);
@@ -327,13 +300,11 @@ namespace sp {
         RenderPhase phase("UpdateLightSensors", timer);
         auto shader = shaders.Get<LightSensorUpdateCS>();
 
-        GLLightData lightData[MAX_LIGHTS];
         GLVoxelInfo voxelInfo;
-        int lightCount = FillLightData(&lightData[0], lock);
         FillVoxelInfo(&voxelInfo, voxelContext);
 
         shader->SetSensors(lock);
-        shader->SetLightData(lightCount, lightData);
+        shader->SetLightData(lightContext.lightCount, lightContext.glData);
         shader->SetVoxelInfo(&voxelInfo);
 
         shader->outputTex.Clear(0);

@@ -2,6 +2,7 @@
 
 #include "core/Config.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/components/View.hh"
 
 #include <glm/glm.hpp>
 
@@ -28,6 +29,13 @@ namespace sp {
     };
 
     static_assert(sizeof(GLLightData) == 17 * 4 * sizeof(float), "GLLightData size incorrect");
+
+    struct LightingContext {
+        int lightCount = 0;
+        glm::ivec2 renderTargetSize = {};
+        GLLightData glData[MAX_LIGHTS];
+        ecs::View views[MAX_LIGHTS];
+    };
 
     struct GLMirrorData {
         glm::mat4 modelMat;
@@ -65,7 +73,7 @@ namespace sp {
 
     static_assert(sizeof(GLVoxelInfo) == (1 + 2 * MAX_VOXEL_AREAS) * 4 * sizeof(float), "GLVoxelInfo size incorrect");
 
-    int FillLightData(GLLightData *data, ecs::Lock<ecs::Read<ecs::Light, ecs::View, ecs::Transform>> lock);
+    void FillLightData(LightingContext &data, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
     int FillMirrorData(GLMirrorData *data, ecs::Lock<ecs::Read<ecs::Mirror, ecs::Transform>> lock);
     void FillVoxelInfo(GLVoxelInfo *data, VoxelContext &source);
 } // namespace sp

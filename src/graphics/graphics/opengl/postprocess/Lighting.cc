@@ -176,12 +176,12 @@ namespace sp {
             BindBuffer(voxelInfo, 2);
         }
 
-        void SetLightData(int count, GLLightData *data) {
+        void SetLightData(int count, const GLLightData *data) {
             Set("lightCount", count);
             BufferData(lightData, sizeof(GLLightData) * count, data);
         }
 
-        void SetMirrorData(int count, GLMirrorData *data) {
+        void SetMirrorData(int count, const GLMirrorData *data) {
             Set("mirrorCount", count);
             BufferData(mirrorData, sizeof(GLMirrorData) * count, data);
         }
@@ -248,15 +248,15 @@ namespace sp {
         context->MirrorVisData.Bind(GL_SHADER_STORAGE_BUFFER, 0);
         context->MirrorSceneData.Bind(GL_SHADER_STORAGE_BUFFER, 1);
 
-        GLLightData lightData[MAX_LIGHTS];
+        auto &lightContext = context->renderer->Lighting();
+
         GLMirrorData mirrorData[MAX_MIRRORS];
         GLVoxelInfo voxelInfo;
-        int lightCount = FillLightData(&lightData[0], lock);
         int mirrorCount = FillMirrorData(&mirrorData[0], lock);
         FillVoxelInfo(&voxelInfo, voxelContext);
 
         auto shader = r->shaders.Get<VoxelLightingFS>();
-        shader->SetLightData(lightCount, &lightData[0]);
+        shader->SetLightData(lightContext.lightCount, lightContext.glData);
         shader->SetMirrorData(mirrorCount, &mirrorData[0]);
         shader->SetViewParams(context->view);
         shader->SetMode(CVarVoxelLightingMode.Get(), ssaoEnabled);

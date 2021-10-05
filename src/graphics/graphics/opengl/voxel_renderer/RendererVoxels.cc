@@ -92,8 +92,6 @@ namespace sp {
 
         GLVoxelInfo voxelInfo;
         FillVoxelInfo(&voxelInfo, voxelContext);
-        GLLightData lightData[MAX_LIGHTS];
-        int lightCount = FillLightData(&lightData[0], lock);
 
         {
             RenderPhase subPhase("Fill", timer);
@@ -115,7 +113,7 @@ namespace sp {
 
             ShaderControl->BindPipeline<VoxelFillVS, VoxelFillGS, VoxelFillFS>();
             auto voxelFillFS = shaders.Get<VoxelFillFS>();
-            voxelFillFS->SetLightData(lightCount, &lightData[0]);
+            voxelFillFS->SetLightData(lightContext.lightCount, lightContext.glData);
             voxelFillFS->SetVoxelInfo(&voxelInfo);
             voxelFillFS->SetLightAttenuation(CVarLightAttenuation.Get());
 

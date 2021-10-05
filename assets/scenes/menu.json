@@ -95,11 +95,9 @@
 				"tint": [1, 1, 1],
 				"intensity": 300,
 				"spotAngle": 45,
-				"gel": true
-			},
-			"view": {
-				"extents": [1024, 1024],
-				"clip": [0.1, 10]
+				"gel": true,
+				"shadowMapSize": 10,
+				"shadowMapClip": [0.1, 10]
 			},
 			"transform": {
 				"translate": [0, 5, 0]

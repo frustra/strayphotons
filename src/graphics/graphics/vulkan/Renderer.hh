@@ -33,13 +33,15 @@ namespace sp::vulkan {
 
     class Renderer {
     public:
-        using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::View, ecs::Transform>>;
+        using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>>;
         typedef std::function<void(DrawLock, Tecs::Entity &)> PreDrawFunc;
 
         Renderer(DeviceContext &context);
         ~Renderer();
 
         void RenderFrame();
+
+        void RenderShadowMaps(RenderGraph &graph, DrawLock lock);
 
         void ForwardPass(CommandContext &cmd,
                          ecs::Renderable::VisibilityMask viewMask,

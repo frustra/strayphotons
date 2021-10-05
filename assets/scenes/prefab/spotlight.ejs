@@ -6,11 +6,9 @@
 		"tint": <%= tint %>,
 		"intensity": <%= intensity %>,
 		"spotAngle": <%= spotAngle %>,
-		"bulb": <%= name + "-bulb" %>
-	},
-	"view": {
-		"extents": [2048, 2048],
-		"clip": [0.1, 70]
+		"bulb": <%= name + "-bulb" %>,
+		"shadowMapSize": 11,
+		"shadowMapClip": [0.1, 70]
 	},
 	<% if (locals.physics) { %>
 	"physics": {

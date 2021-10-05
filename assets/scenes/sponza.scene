@@ -265,11 +265,9 @@
 			"light": {
 				"tint": [0.9, 0.9, 1],
 				"illuminance": 10,
-				"spotAngle": 22
-			},
-			"view": {
-				"extents": [4096, 4096],
-				"clip": [20, 50]
+				"spotAngle": 22,
+				"shadowMapSize": 12,
+				"shadowMapClip": [20, 50]
 			},
 			"transform": {
 				"translate": [7, 35, 0],
