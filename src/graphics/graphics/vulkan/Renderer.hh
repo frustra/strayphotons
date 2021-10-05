@@ -5,6 +5,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/components/Renderable.hh"
 #include "graphics/core/RenderTarget.hh"
+#include "graphics/vulkan/GPUTypes.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 
@@ -29,11 +30,19 @@ namespace sp::vulkan {
     struct ViewStateUniforms {
         glm::mat4 view[2];
         glm::mat4 projection[2];
+        glm::vec2 clip[2];
+    };
+
+    struct LightingContext {
+        int count = 0;
+        glm::ivec2 renderTargetSize = {};
+        GPULight gpuData[MAX_LIGHTS];
+        ecs::View views[MAX_LIGHTS];
     };
 
     class Renderer {
     public:
-        using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>>;
+        using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::Transform>>;
         typedef std::function<void(DrawLock, Tecs::Entity &)> PreDrawFunc;
 
         Renderer(DeviceContext &context);
@@ -70,6 +79,8 @@ namespace sp::vulkan {
 
     private:
         void AddScreenshotPasses(RenderGraph &graph);
+        void VisualizeBuffer(RenderGraph &graph, string_view name);
+        void LoadLightState(ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
         void EndFrame();
 
         CFuncCollection funcs;
@@ -77,6 +88,8 @@ namespace sp::vulkan {
         unique_ptr<GuiRenderer> debugGuiRenderer;
 
         vector<std::pair<string, string>> pendingScreenshots;
+
+        LightingContext lights;
 
 #ifdef SP_XR_SUPPORT
         xr::XrSystem *xrSystem = nullptr;

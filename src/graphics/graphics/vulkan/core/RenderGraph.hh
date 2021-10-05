@@ -122,10 +122,10 @@ namespace sp::vulkan {
         RenderGraphPassBuilder(RenderGraphResources &resources, RenderGraphPassBase &pass)
             : resources(resources), pass(pass) {}
 
-        void ShaderRead(string_view name) {
-            ShaderRead(resources.GetID(name));
+        const RenderGraphResource &ShaderRead(string_view name) {
+            return ShaderRead(resources.GetID(name));
         }
-        void ShaderRead(uint32 id) {
+        const RenderGraphResource &ShaderRead(uint32 id) {
             auto &resource = resources.GetResourceRef(id);
             resource.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eSampled;
             RenderGraphResourceAccess access = {
@@ -134,12 +134,13 @@ namespace sp::vulkan {
                 vk::ImageLayout::eShaderReadOnlyOptimal,
             };
             pass.AddDependency(access, resource);
+            return resource;
         }
 
-        void TransferRead(string_view name) {
-            TransferRead(resources.GetID(name));
+        const RenderGraphResource &TransferRead(string_view name) {
+            return TransferRead(resources.GetID(name));
         }
-        void TransferRead(uint32 id) {
+        const RenderGraphResource &TransferRead(uint32 id) {
             auto &resource = resources.GetResourceRef(id);
             resource.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eTransferSrc;
             RenderGraphResourceAccess access = {
@@ -148,6 +149,7 @@ namespace sp::vulkan {
                 vk::ImageLayout::eTransferSrcOptimal,
             };
             pass.AddDependency(access, resource);
+            return resource;
         }
 
         RenderGraphResource GetResourceByName(string_view name) {

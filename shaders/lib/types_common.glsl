@@ -39,10 +39,12 @@ struct VoxelArea {
 	vec3 areaMax;
 };
 
+#ifdef MAX_VOXEL_AREAS
 struct VoxelInfo {
 	vec3 center;
 	float size;
 	VoxelArea areas[MAX_VOXEL_AREAS];
 };
+#endif
 
 #endif

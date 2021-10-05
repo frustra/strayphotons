@@ -35,13 +35,62 @@ namespace sp::vulkan {
         device->waitIdle();
     }
 
+    void Renderer::LoadLightState(ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock) {
+        int lightCount = 0;
+        glm::ivec2 renderTargetSize(0, 0);
+        for (auto entity : lock.EntitiesWith<ecs::Light>()) {
+            if (!entity.Has<ecs::Light, ecs::Transform>(lock)) continue;
+
+            auto &light = entity.Get<ecs::Light>(lock);
+            if (!light.on) continue;
+
+            int extent = (int)std::pow(2, light.shadowMapSize);
+
+            auto &transform = entity.Get<ecs::Transform>(lock);
+            auto &view = lights.views[lightCount];
+
+            view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
+            view.extents = {extent, extent};
+            view.fov = light.spotAngle * 2.0f;
+            view.offset = {renderTargetSize.x, 0};
+            view.clearMode.reset();
+            view.clip = light.shadowMapClip;
+            view.UpdateProjectionMatrix();
+            view.UpdateViewMatrix(lock, entity);
+
+            auto &data = lights.gpuData[lightCount];
+            data.position = transform.GetGlobalPosition(lock);
+            data.tint = light.tint;
+            data.direction = transform.GetGlobalForward(lock);
+            data.spotAngleCos = cos(light.spotAngle);
+            data.proj = view.projMat;
+            data.invProj = view.invProjMat;
+            data.view = view.viewMat;
+            data.clip = view.clip;
+            data.mapOffset = {renderTargetSize.x, 0, extent, extent};
+            data.intensity = light.intensity;
+            data.illuminance = light.illuminance;
+            data.gelId = light.gelId;
+
+            renderTargetSize.x += extent;
+            if (extent > renderTargetSize.y) renderTargetSize.y = extent;
+            if (++lightCount >= MAX_LIGHTS) break;
+        }
+        glm::vec4 mapOffsetScale(renderTargetSize, renderTargetSize);
+        for (int i = 0; i < lightCount; i++) {
+            lights.gpuData[i].mapOffset /= mapOffsetScale;
+        }
+        lights.renderTargetSize = renderTargetSize;
+        lights.count = lightCount;
+    }
+
     void Renderer::RenderFrame() {
         RenderGraph graph(device);
-        auto renderer = this;
 
         auto lock = ecs::World.StartTransaction<
-            ecs::Read<ecs::Name, ecs::Transform, ecs::Renderable, ecs::View, ecs::XRView, ecs::Mirror>>();
+            ecs::Read<ecs::Name, ecs::Transform, ecs::Light, ecs::Renderable, ecs::View, ecs::XRView, ecs::Mirror>>();
 
+        LoadLightState(lock);
         RenderShadowMaps(graph, lock);
 
         Tecs::Entity windowEntity = device.GetActiveView();
@@ -64,7 +113,7 @@ namespace sp::vulkan {
                     desc.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
                     builder.OutputRenderTarget("GBufferDepth", desc);
                 },
-                [renderer, view, lock](RenderGraphResources &resources, CommandContext &cmd) {
+                [this, view, lock](RenderGraphResources &resources, CommandContext &cmd) {
                     auto gBuffer0 = resources.GetRenderTarget("GBuffer0")->ImageView();
                     auto depth = resources.GetRenderTarget("GBufferDepth")->ImageView();
 
@@ -80,7 +129,7 @@ namespace sp::vulkan {
                     cmd.UploadUniformData(0, 10, &viewState);
 
                     cmd.SetShaders("test.vert", "test.frag");
-                    renderer->ForwardPass(cmd, view.visibilityMask, lock, [](auto lock, Tecs::Entity &ent) {});
+                    this->ForwardPass(cmd, view.visibilityMask, lock, [](auto lock, Tecs::Entity &ent) {});
 
                     cmd.EndRenderPass();
                 });
@@ -103,7 +152,6 @@ namespace sp::vulkan {
             }
 
             xrRenderPoses.resize(xrViews.size());
-            auto xrRenderPosePtr = xrRenderPoses.data();
             auto forwardPassViewMask = firstView.visibilityMask;
 
             graph.AddPass(
@@ -121,8 +169,7 @@ namespace sp::vulkan {
                     targetDesc.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
                     builder.OutputRenderTarget("XRDepth", targetDesc);
                 },
-                [renderer, xrViews, xrRenderPosePtr, forwardPassViewMask, lock](RenderGraphResources &resources,
-                                                                                CommandContext &cmd) {
+                [this, xrViews, forwardPassViewMask, lock](RenderGraphResources &resources, CommandContext &cmd) {
                     auto xrColor = resources.GetRenderTarget("XRColor")->ImageView();
                     auto xrDepth = resources.GetRenderTarget("XRDepth")->ImageView();
 
@@ -139,7 +186,7 @@ namespace sp::vulkan {
                     auto viewState = cmd.AllocUniformData<ViewStateUniforms>(0, 10);
 
                     cmd.SetShaders("test.vert", "test.frag");
-                    renderer->ForwardPass(cmd, forwardPassViewMask, lock, [](auto lock, Tecs::Entity &ent) {});
+                    this->ForwardPass(cmd, forwardPassViewMask, lock, [](auto lock, Tecs::Entity &ent) {});
 
                     cmd.EndRenderPass();
 
@@ -150,8 +197,8 @@ namespace sp::vulkan {
 
                         view.UpdateViewMatrix(lock, xrViews[i]);
 
-                        if (renderer->xrSystem->GetPredictedViewPose(eye, xrRenderPosePtr[i])) {
-                            viewState->view[i] = glm::inverse(xrRenderPosePtr[i]) * view.viewMat;
+                        if (this->xrSystem->GetPredictedViewPose(eye, this->xrRenderPoses[i])) {
+                            viewState->view[i] = glm::inverse(this->xrRenderPoses[i]) * view.viewMat;
                         } else {
                             viewState->view[i] = view.viewMat;
                         }
@@ -165,13 +212,13 @@ namespace sp::vulkan {
                 [&](RenderGraphPassBuilder &builder) {
                     builder.TransferRead("XRColor");
                 },
-                [renderer, xrViews, xrRenderPosePtr, lock](RenderGraphResources &resources, CommandContext &cmd) {
+                [this, xrViews, lock](RenderGraphResources &resources, CommandContext &cmd) {
                     auto xrRenderTarget = resources.GetRenderTarget("XRColor");
 
-                    cmd.AfterSubmit([renderer, xrRenderTarget, xrViews, xrRenderPosePtr, lock]() {
+                    cmd.AfterSubmit([this, xrRenderTarget, xrViews, lock]() {
                         for (size_t i = 0; i < xrViews.size(); i++) {
                             auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
-                            renderer->xrSystem->SubmitView(eye, xrRenderPosePtr[i], xrRenderTarget->ImageView().get());
+                            this->xrSystem->SubmitView(eye, this->xrRenderPoses[i], xrRenderTarget->ImageView().get());
                         }
                     });
                 });
@@ -181,7 +228,6 @@ namespace sp::vulkan {
         auto swapchainImage = device.SwapchainImageView();
         if (windowEntity && windowEntity.Has<ecs::View>(lock) && swapchainImage) {
             auto view = windowEntity.Get<ecs::View>(lock);
-            auto debugGuiRenderer = this->debugGuiRenderer.get();
             auto windowViewTarget = CVarWindowViewTarget.Get();
 
             graph.AddPass(
@@ -195,7 +241,7 @@ namespace sp::vulkan {
                     desc.usage = vk::ImageUsageFlagBits::eColorAttachment;
                     builder.OutputRenderTarget("WindowFinalOutput", desc);
                 },
-                [debugGuiRenderer, windowViewTarget](RenderGraphResources &resources, CommandContext &cmd) {
+                [this, windowViewTarget](RenderGraphResources &resources, CommandContext &cmd) {
                     auto source = resources.GetRenderTarget(windowViewTarget)->ImageView();
                     auto color = resources.GetRenderTarget("WindowFinalOutput")->ImageView();
 
@@ -206,8 +252,8 @@ namespace sp::vulkan {
                     cmd.SetTexture(0, 0, source);
                     cmd.DrawScreenCover(source);
 
-                    if (debugGuiRenderer) {
-                        debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()});
+                    if (this->debugGuiRenderer) {
+                        this->debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()});
                     }
 
                     cmd.EndRenderPass();
@@ -221,7 +267,57 @@ namespace sp::vulkan {
         EndFrame();
     }
 
-    void Renderer::RenderShadowMaps(RenderGraph &graph, DrawLock lock) {}
+    void Renderer::RenderShadowMaps(RenderGraph &graph, DrawLock lock) {
+        if (lights.count == 0) return;
+
+        graph.AddPass(
+            "ShadowMaps",
+            [&](RenderGraphPassBuilder &builder) {
+                RenderTargetDesc desc;
+                auto extent = glm::max(glm::ivec2(1), lights.renderTargetSize);
+                desc.extent = vk::Extent3D(extent.x, extent.y, 1);
+                desc.format = vk::Format::eR32Sfloat;
+                desc.usage = vk::ImageUsageFlagBits::eColorAttachment;
+                builder.OutputRenderTarget("ShadowMapLinear", desc);
+
+                desc.format = vk::Format::eD16Unorm;
+                desc.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+                builder.OutputRenderTarget("ShadowMapDepth", desc);
+            },
+            [this, lock](RenderGraphResources &resources, CommandContext &cmd) {
+                auto depthLinear = resources.GetRenderTarget("ShadowMapLinear")->ImageView();
+                auto depthNative = resources.GetRenderTarget("ShadowMapDepth")->ImageView();
+
+                RenderPassInfo info;
+                info.PushColorAttachment(depthLinear, LoadOp::Clear, StoreOp::Store);
+                info.SetDepthStencilAttachment(depthNative, LoadOp::Clear, StoreOp::Store);
+                cmd.BeginRenderPass(info);
+
+                cmd.SetShaders("shadow_map.vert", "shadow_map.frag");
+
+                auto &lights = this->lights;
+
+                for (int i = 0; i < lights.count; i++) {
+                    auto &view = lights.views[i];
+                    ViewStateUniforms viewState;
+                    viewState.view[0] = view.viewMat;
+                    viewState.projection[0] = view.projMat;
+                    viewState.clip[0] = view.clip;
+                    cmd.UploadUniformData(0, 10, &viewState);
+
+                    vk::Rect2D viewport;
+                    viewport.extent = vk::Extent2D(view.extents.x, view.extents.y);
+                    viewport.offset = vk::Offset2D(view.offset.x, view.offset.y);
+                    cmd.SetViewport(viewport);
+
+                    this->ForwardPass(cmd, view.visibilityMask, lock, [](auto lock, Tecs::Entity &ent) {});
+                }
+
+                cmd.EndRenderPass();
+            });
+
+        VisualizeBuffer(graph, "ShadowMapLinear");
+    }
 
     void Renderer::AddScreenshotPasses(RenderGraph &graph) {
         for (auto &pending : pendingScreenshots) {
@@ -248,6 +344,43 @@ namespace sp::vulkan {
                 });
         }
         pendingScreenshots.clear();
+    }
+
+    void Renderer::VisualizeBuffer(RenderGraph &graph, string_view name) {
+        string outputName = string("Vis").append(name);
+        graph.AddPass(
+            "VisualizeBuffer",
+            [&](RenderGraphPassBuilder &builder) {
+                auto &res = builder.ShaderRead(name);
+                auto desc = res.renderTargetDesc;
+                desc.format = vk::Format::eR8G8B8A8Srgb;
+                desc.usage = vk::ImageUsageFlagBits::eColorAttachment;
+                builder.OutputRenderTarget(outputName, desc);
+            },
+            [name, outputName](RenderGraphResources &resources, CommandContext &cmd) {
+                auto source = resources.GetRenderTarget(name)->ImageView();
+                auto dest = resources.GetRenderTarget(outputName)->ImageView();
+
+                RenderPassInfo info;
+                info.PushColorAttachment(dest, LoadOp::Clear, StoreOp::Store, {0, 1, 0, 1});
+                cmd.BeginRenderPass(info);
+
+                auto format = source->Format();
+
+                cmd.SetShader(ShaderStage::Vertex, "screen_cover.vert");
+                switch (FormatComponentCount(format)) {
+                case 1:
+                    cmd.SetShader(ShaderStage::Fragment, "visualize_buffer_r32.frag");
+                    break;
+                default:
+                    Abort("unimplemented type for VisualizeBuffer");
+                }
+
+                cmd.SetTexture(0, 0, source);
+                cmd.Draw(3);
+
+                cmd.EndRenderPass();
+            });
     }
 
     void Renderer::ForwardPass(CommandContext &cmd,

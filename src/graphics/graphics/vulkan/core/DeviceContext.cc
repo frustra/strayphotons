@@ -1002,6 +1002,7 @@ namespace sp::vulkan {
             Abort("could not parse shader: " + name + " error: " + std::to_string(reflection.GetResult()));
         }
 
+        Debugf("loaded shader module: %s", name);
         return make_shared<Shader>(name, std::move(shaderModule), std::move(reflection), newHash);
     }
 
