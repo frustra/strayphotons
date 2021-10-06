@@ -17,7 +17,7 @@ namespace sp::vulkan {
         RenderGraphResource() {}
         RenderGraphResource(RenderTargetDesc desc) : type(Type::RenderTarget), renderTargetDesc(desc) {}
 
-        uint32 id = ~0u;
+        RenderGraphResourceID id = ~0u;
         Type type = Type::Undefined;
         union {
             RenderTargetDesc renderTargetDesc;
@@ -46,19 +46,20 @@ namespace sp::vulkan {
     private:
         friend class RenderGraph;
         friend class RenderGraphPassBuilder;
-        uint32 resourceID = ~0u;
+        RenderGraphResourceID resourceID = ~0u;
     };
 
     class RenderGraphResources {
     public:
         RenderGraphResources(DeviceContext &device) : device(device) {}
 
-        RenderTargetPtr GetRenderTarget(uint32 id);
+        RenderTargetPtr GetRenderTarget(RenderGraphResourceID id);
         RenderTargetPtr GetRenderTarget(string_view name);
 
         const RenderGraphResource &GetResourceByName(string_view name) const;
+        const RenderGraphResource &GetResourceByID(RenderGraphResourceID id) const;
 
-        uint32 GetID(string_view name) const {
+        RenderGraphResourceID GetID(string_view name) const {
             Assert(name.data()[name.size()] == '\0', "string_view is not null terminated");
             auto it = names.find(name.data());
             if (it == names.end()) return ~0u;
@@ -70,27 +71,28 @@ namespace sp::vulkan {
         friend class RenderGraphPassBuilder;
 
         void ResizeBeforeExecute();
-        uint32 RefCount(uint32 id);
-        void IncrementRef(uint32 id);
-        void DecrementRef(uint32 id);
+        uint32 RefCount(RenderGraphResourceID id);
+        void IncrementRef(RenderGraphResourceID id);
+        void DecrementRef(RenderGraphResourceID id);
 
         void Register(string_view name, RenderGraphResource &resource) {
-            resource.id = (uint32)resources.size();
+            resource.id = (RenderGraphResourceID)resources.size();
             resources.push_back(resource);
 
+            if (name.empty()) return;
             Assert(name.data()[name.size()] == '\0', "string_view is not null terminated");
             auto &nameID = names[name.data()];
             Assert(!nameID, "resource already registered");
             nameID = resource.id;
         }
 
-        RenderGraphResource &GetResourceRef(uint32 id) {
+        RenderGraphResource &GetResourceRef(RenderGraphResourceID id) {
             Assert(id < resources.size(), "resource ID " + std::to_string(id) + " is invalid");
             return resources[id];
         }
 
         DeviceContext &device;
-        robin_hood::unordered_flat_map<string, uint32> names;
+        robin_hood::unordered_flat_map<string, RenderGraphResourceID> names;
         vector<RenderGraphResource> resources;
 
         // Built during execution
@@ -100,14 +102,36 @@ namespace sp::vulkan {
 
     struct RenderGraphResourceDependency {
         RenderGraphResourceAccess access;
-        uint32 id;
+        RenderGraphResourceID id;
     };
 
-    class RenderGraphPassBase {
+    class RenderGraphExecuteFuncBase {
     public:
-        RenderGraphPassBase(string_view name) : name(name) {}
-        virtual ~RenderGraphPassBase() {}
-        virtual void Execute(RenderGraphResources &resources, CommandContext &cmd) = 0;
+        virtual ~RenderGraphExecuteFuncBase() {}
+        virtual void operator()(RenderGraphResources &resources, CommandContext &cmd) = 0;
+    };
+
+    template<typename ExecuteFunc>
+    class RenderGraphExecuteFunc : public RenderGraphExecuteFuncBase {
+    public:
+        RenderGraphExecuteFunc(ExecuteFunc &executeFunc) : executeFunc(executeFunc) {}
+        ~RenderGraphExecuteFunc() {}
+
+        void operator()(RenderGraphResources &resources, CommandContext &cmd) override {
+            executeFunc(resources, cmd);
+        }
+
+    private:
+        ExecuteFunc executeFunc;
+    };
+
+    class RenderGraphPass {
+    public:
+        RenderGraphPass(string_view name) : name(name) {}
+
+        void Execute(RenderGraphResources &resources, CommandContext &cmd) {
+            if (executeFunc) (*executeFunc)(resources, cmd);
+        }
 
         void AddDependency(const RenderGraphResourceAccess &access, const RenderGraphResource &res) {
             dependencies.push({access, res.id});
@@ -122,34 +146,21 @@ namespace sp::vulkan {
         friend class RenderGraphPassBuilder;
         string_view name;
         StackVector<RenderGraphResourceDependency, 16> dependencies;
-        StackVector<uint32, 16> outputs;
+        StackVector<RenderGraphResourceID, 16> outputs;
         std::array<AttachmentInfo, MAX_COLOR_ATTACHMENTS + 1> attachments;
         bool active = false, required = false;
-    };
-
-    template<typename ExecuteFunc>
-    class RenderGraphPass : public RenderGraphPassBase {
-    public:
-        RenderGraphPass(string_view name, ExecuteFunc &executeFunc)
-            : RenderGraphPassBase(name), executeFunc(executeFunc) {}
-
-        void Execute(RenderGraphResources &resources, CommandContext &cmd) override {
-            executeFunc(resources, cmd);
-        }
-
-    private:
-        ExecuteFunc executeFunc;
+        shared_ptr<RenderGraphExecuteFuncBase> executeFunc = {};
     };
 
     class RenderGraphPassBuilder {
     public:
-        RenderGraphPassBuilder(RenderGraphResources &resources, RenderGraphPassBase &pass)
+        RenderGraphPassBuilder(RenderGraphResources &resources, RenderGraphPass &pass)
             : resources(resources), pass(pass) {}
 
         const RenderGraphResource &ShaderRead(string_view name) {
             return ShaderRead(resources.GetID(name));
         }
-        const RenderGraphResource &ShaderRead(uint32 id) {
+        const RenderGraphResource &ShaderRead(RenderGraphResourceID id) {
             auto &resource = resources.GetResourceRef(id);
             resource.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eSampled;
             RenderGraphResourceAccess access = {
@@ -164,7 +175,7 @@ namespace sp::vulkan {
         const RenderGraphResource &TransferRead(string_view name) {
             return TransferRead(resources.GetID(name));
         }
-        const RenderGraphResource &TransferRead(uint32 id) {
+        const RenderGraphResource &TransferRead(RenderGraphResourceID id) {
             auto &resource = resources.GetResourceRef(id);
             resource.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eTransferSrc;
             RenderGraphResourceAccess access = {
@@ -217,21 +228,48 @@ namespace sp::vulkan {
         }
 
         RenderGraphResources &resources;
-        RenderGraphPassBase &pass;
+        RenderGraphPass &pass;
     };
 
     class RenderGraph {
     public:
         RenderGraph(DeviceContext &device) : device(device), resources(device) {}
 
-        template<typename SetupFunc, typename ExecuteFunc>
-        void AddPass(string_view name, SetupFunc setupFunc, ExecuteFunc executeFunc) {
-            static_assert(sizeof(ExecuteFunc) < 1024, "execute callback must capture less than 1kB");
+        class InitialPassState {
+        public:
+            InitialPassState(RenderGraph &graph, string_view name) : graph(graph), name(name) {}
 
-            auto pass = make_shared<RenderGraphPass<ExecuteFunc>>(name, executeFunc);
-            RenderGraphPassBuilder builder(resources, *pass);
-            setupFunc(builder);
-            passes.push_back(pass);
+            template<typename SetupFunc>
+            InitialPassState &Build(SetupFunc setupFunc) {
+                Assert(passIndex == ~0u, "multiple build calls for the same pass");
+
+                RenderGraphPass pass(name);
+                RenderGraphPassBuilder builder(graph.resources, pass);
+                setupFunc(builder);
+                passIndex = graph.passes.size();
+                graph.passes.push_back(pass);
+                return *this;
+            }
+
+            template<typename ExecuteFunc>
+            InitialPassState &Execute(ExecuteFunc executeFunc) {
+                static_assert(sizeof(ExecuteFunc) < 1024, "execute callback must capture less than 1kB");
+                Assert(passIndex != ~0u, "build must be called before execute");
+
+                auto &pass = graph.passes[passIndex];
+                Assert(!pass.executeFunc, "multiple execution functions for the same pass");
+                pass.executeFunc = make_shared<RenderGraphExecuteFunc<ExecuteFunc>>(executeFunc);
+                return *this;
+            }
+
+        private:
+            RenderGraph &graph;
+            string_view name;
+            uint32 passIndex = ~0u;
+        };
+
+        InitialPassState Pass(string_view name) {
+            return {*this, name};
         }
 
         void SetTargetImageView(string_view name, ImageViewPtr view);
@@ -240,17 +278,18 @@ namespace sp::vulkan {
             RequireResource(resources.GetResourceByName(name).id);
         }
 
-        void RequireResource(uint32 id) {
+        void RequireResource(RenderGraphResourceID id) {
             resources.IncrementRef(id);
         }
 
         void Execute();
 
     private:
-        void AddPassBarriers(CommandContext &cmd, RenderGraphPassBase *pass);
+        friend class InitialPassState;
+        void AddPassBarriers(CommandContext &cmd, RenderGraphPass &pass);
 
         DeviceContext &device;
         RenderGraphResources resources;
-        vector<shared_ptr<RenderGraphPassBase>> passes;
+        vector<RenderGraphPass> passes;
     };
 } // namespace sp::vulkan

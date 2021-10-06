@@ -14,7 +14,7 @@ namespace sp::vulkan {
         return GetRenderTarget(GetID(name));
     }
 
-    RenderTargetPtr RenderGraphResources::GetRenderTarget(uint32 id) {
+    RenderTargetPtr RenderGraphResources::GetRenderTarget(RenderGraphResourceID id) {
         if (id >= resources.size()) return nullptr;
         auto &res = resources[id];
         Assert(res.type == RenderGraphResource::Type::RenderTarget, "resources is not a render target");
@@ -23,17 +23,17 @@ namespace sp::vulkan {
         return target;
     }
 
-    uint32 RenderGraphResources::RefCount(uint32 id) {
+    uint32 RenderGraphResources::RefCount(RenderGraphResourceID id) {
         Assert(id < resources.size(), "id out of range");
         return refCounts[id];
     }
 
-    void RenderGraphResources::IncrementRef(uint32 id) {
+    void RenderGraphResources::IncrementRef(RenderGraphResourceID id) {
         Assert(id < resources.size(), "id out of range");
         ++refCounts[id];
     }
 
-    void RenderGraphResources::DecrementRef(uint32 id) {
+    void RenderGraphResources::DecrementRef(RenderGraphResourceID id) {
         Assert(id < resources.size(), "id out of range");
         if (--refCounts[id] > 0) return;
 
@@ -48,7 +48,10 @@ namespace sp::vulkan {
     }
 
     const RenderGraphResource &RenderGraphResources::GetResourceByName(string_view name) const {
-        auto id = GetID(name);
+        return GetResourceByID(GetID(name));
+    }
+
+    const RenderGraphResource &RenderGraphResources::GetResourceByID(RenderGraphResourceID id) const {
         if (id < resources.size()) return resources[id];
         static RenderGraphResource invalidResource = {};
         return invalidResource;
@@ -76,32 +79,32 @@ namespace sp::vulkan {
         // passes are already sorted by dependency order
         for (auto it = passes.rbegin(); it != passes.rend(); it++) {
             auto &pass = *it;
-            pass->active = pass->required;
-            if (!pass->active) {
-                for (auto &out : pass->outputs) {
+            pass.active = pass.required;
+            if (!pass.active) {
+                for (auto &out : pass.outputs) {
                     if (resources.RefCount(out) > 0) {
-                        pass->active = true;
+                        pass.active = true;
                         break;
                     }
                 }
             }
-            if (!pass->active) continue;
-            for (auto &dep : pass->dependencies) {
+            if (!pass.active) continue;
+            for (auto &dep : pass.dependencies) {
                 resources.IncrementRef(dep.id);
             }
         }
 
         for (auto &pass : passes) {
-            if (!pass->active) continue;
+            if (!pass.active) continue;
 
             auto cmd = device.GetCommandContext();
-            AddPassBarriers(*cmd, pass.get());
+            AddPassBarriers(*cmd, pass);
 
             bool isRenderPass = false;
             RenderPassInfo renderPassInfo;
 
-            for (uint32 i = 0; i < pass->attachments.size(); i++) {
-                auto &attachment = pass->attachments[i];
+            for (uint32 i = 0; i < pass.attachments.size(); i++) {
+                auto &attachment = pass.attachments[i];
                 if (attachment.resourceID == ~0u) continue;
                 isRenderPass = true;
 
@@ -123,19 +126,19 @@ namespace sp::vulkan {
             }
 
             if (isRenderPass) cmd->BeginRenderPass(renderPassInfo);
-            pass->Execute(resources, *cmd);
+            pass.Execute(resources, *cmd);
             if (isRenderPass) cmd->EndRenderPass();
             device.Submit(cmd);
 
-            for (auto &dep : pass->dependencies) {
+            for (auto &dep : pass.dependencies) {
                 resources.DecrementRef(dep.id);
             }
         }
         passes.clear();
     }
 
-    void RenderGraph::AddPassBarriers(CommandContext &cmd, RenderGraphPassBase *pass) {
-        for (auto &dep : pass->dependencies) {
+    void RenderGraph::AddPassBarriers(CommandContext &cmd, RenderGraphPass &pass) {
+        for (auto &dep : pass.dependencies) {
             if (dep.access.layout == vk::ImageLayout::eUndefined) continue;
 
             auto &res = resources.resources[dep.id];
@@ -151,7 +154,7 @@ namespace sp::vulkan {
                              dep.access.access);
         }
 
-        for (auto id : pass->outputs) {
+        for (auto id : pass.outputs) {
             // assume pass doesn't depend on one of its outputs (e.g. blending), TODO: implement
             auto &res = resources.resources[id];
 

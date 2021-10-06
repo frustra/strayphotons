@@ -79,7 +79,7 @@ namespace sp::vulkan {
 
     private:
         void AddScreenshotPasses(RenderGraph &graph);
-        void VisualizeBuffer(RenderGraph &graph, string_view name);
+        RenderGraphResourceID VisualizeBuffer(RenderGraph &graph, RenderGraphResourceID sourceID);
         void LoadLightState(ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
         void EndFrame();
 

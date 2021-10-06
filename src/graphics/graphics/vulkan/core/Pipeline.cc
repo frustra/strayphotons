@@ -1,5 +1,6 @@
 #include "Pipeline.hh"
 
+#include "core/Logging.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Vertex.hh"
 
@@ -209,6 +210,14 @@ namespace sp::vulkan {
         key.input.renderPass = compile.renderPass;
         key.input.shaderHashes = GetShaderHashes(shaders);
 
+        for (size_t s = 0; s < (size_t)ShaderStage::Count; s++) {
+            auto &specInInput = compile.state.specializations[s];
+            auto &specInKey = key.input.state.specializations[s];
+            for (size_t i = 0; i < MAX_SPEC_CONSTANTS; i++) {
+                if (!specInInput.set[i]) Assert(!specInKey.values[i], "specialization provided but not set");
+            }
+        }
+
         if (!key.input.state.blendEnable) {
             key.input.state.blendOp = vk::BlendOp::eAdd;
             key.input.state.dstBlendFactor = vk::BlendFactor::eZero;
@@ -232,16 +241,42 @@ namespace sp::vulkan {
         auto &state = compile.state;
 
         std::array<vk::PipelineShaderStageCreateInfo, (size_t)ShaderStage::Count> shaderStages;
-        size_t stageCount = 0;
+        std::array<vk::SpecializationInfo, (size_t)ShaderStage::Count> shaderSpecialization;
+        vector<vk::SpecializationMapEntry> specializationValues;
+        size_t stageCount = 0, specCount = 0;
 
-        for (size_t i = 0; i < (size_t)ShaderStage::Count; i++) {
-            auto &shader = shaders[i];
+        for (size_t s = 0; s < (size_t)ShaderStage::Count; s++) {
+            if (!shaders[s]) continue;
+            auto &specIn = compile.state.specializations[s];
+            if (specIn.set.any()) specCount += specIn.set.count();
+        }
+
+        specializationValues.reserve(specCount);
+        for (size_t s = 0; s < (size_t)ShaderStage::Count; s++) {
+            auto &shader = shaders[s];
             if (!shader) continue;
 
             auto &stage = shaderStages[stageCount++];
             stage.module = shader->GetModule();
             stage.pName = "main";
-            stage.stage = ShaderStageToFlagBits[i];
+            stage.stage = ShaderStageToFlagBits[s];
+
+            auto &specIn = compile.state.specializations[s];
+            if (specIn.set.any()) {
+                auto &specOut = shaderSpecialization[s];
+                stage.pSpecializationInfo = &specOut;
+
+                specOut.pData = specIn.values.data();
+                specOut.dataSize = sizeof(specIn.values);
+                specOut.pMapEntries = &specializationValues[specializationValues.size()];
+
+                for (size_t i = 0; i < MAX_SPEC_CONSTANTS; i++) {
+                    if (!specIn.set[i]) continue;
+                    specializationValues.emplace_back(i, i * sizeof(uint32), sizeof(uint32));
+                }
+
+                specOut.mapEntryCount = &specializationValues[specializationValues.size()] - specOut.pMapEntries;
+            }
         }
 
         vk::PipelineInputAssemblyStateCreateInfo inputAssembly;

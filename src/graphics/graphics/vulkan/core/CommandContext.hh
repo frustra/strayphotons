@@ -60,6 +60,8 @@ namespace sp::vulkan {
         void BeginRenderPass(const RenderPassInfo &info);
         void EndRenderPass();
 
+        void PushConstants(const void *data, VkDeviceSize offset, VkDeviceSize range);
+
         void Draw(uint32 vertexes, uint32 instances = 1, int32 firstVertex = 0, uint32 firstInstance = 0);
         void DrawIndexed(uint32 indexes,
                          uint32 instances = 1,
@@ -81,7 +83,18 @@ namespace sp::vulkan {
         void SetShaders(const string &vertexName, const string &fragName);
         void SetShader(ShaderStage stage, ShaderHandle handle);
         void SetShader(ShaderStage stage, const string &name);
-        void PushConstants(const void *data, VkDeviceSize offset, VkDeviceSize range);
+
+        void ShaderConstant(ShaderStage stage, uint32 index, uint32 data);
+
+        template<typename T>
+        void ShaderConstant(ShaderStage stage, uint32 index, T data) {
+            static_assert(sizeof(T) == sizeof(uint32), "type must be 4 bytes");
+            ShaderConstant(stage, index, *reinterpret_cast<uint32 *>(&data));
+        }
+
+        void ShaderConstant(ShaderStage stage, uint32 index, bool data) {
+            ShaderConstant(stage, index, (uint32)data);
+        }
 
         void SetDefaultOpaqueState();
 

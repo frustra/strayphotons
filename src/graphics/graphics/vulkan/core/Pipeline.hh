@@ -6,10 +6,16 @@
 #include "graphics/vulkan/core/Vertex.hh"
 
 #include <SPIRV-Reflect/spirv_reflect.h>
+#include <bitset>
 #include <robin_hood.h>
 
 namespace sp::vulkan {
     class Model;
+
+    struct SpecializationData {
+        std::array<uint32, MAX_SPEC_CONSTANTS> values = {};
+        std::bitset<MAX_SPEC_CONSTANTS> set = {};
+    };
 
     struct PipelineStaticState {
         ShaderHandleSet shaders = {};
@@ -22,6 +28,7 @@ namespace sp::vulkan {
         unsigned depthTest : 1;
         unsigned blendEnable : 1;
         unsigned stencilTest : 1;
+        std::array<SpecializationData, (size_t)ShaderStage::Count> specializations = {};
     };
 
     struct PipelineCompileInput {
