@@ -368,10 +368,7 @@ namespace sp::vulkan {
         vk::SurfaceFormatKHR surfaceFormat = surfaceFormats[0];
         for (auto &format : surfaceFormats) {
             if (format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
-                if (format.format == vk::Format::eR8G8B8A8Srgb) {
-                    surfaceFormat = format;
-                    break;
-                } else if (format.format == vk::Format::eB8G8R8A8Srgb) {
+                if (format.format == vk::Format::eB8G8R8A8Srgb) {
                     surfaceFormat = format;
                     break;
                 }

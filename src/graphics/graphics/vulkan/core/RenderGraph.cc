@@ -23,6 +23,11 @@ namespace sp::vulkan {
         return target;
     }
 
+    uint32 RenderGraphResources::RefCount(uint32 id) {
+        Assert(id < resources.size(), "id out of range");
+        return refCounts[id];
+    }
+
     void RenderGraphResources::IncrementRef(uint32 id) {
         Assert(id < resources.size(), "id out of range");
         ++refCounts[id];
@@ -68,16 +73,58 @@ namespace sp::vulkan {
     void RenderGraph::Execute() {
         resources.ResizeBeforeExecute();
 
-        for (auto &pass : passes) {
+        // passes are already sorted by dependency order
+        for (auto it = passes.rbegin(); it != passes.rend(); it++) {
+            auto &pass = *it;
+            pass->active = pass->required;
+            if (!pass->active) {
+                for (auto &out : pass->outputs) {
+                    if (resources.RefCount(out) > 0) {
+                        pass->active = true;
+                        break;
+                    }
+                }
+            }
+            if (!pass->active) continue;
             for (auto &dep : pass->dependencies) {
                 resources.IncrementRef(dep.id);
             }
         }
 
         for (auto &pass : passes) {
+            if (!pass->active) continue;
+
             auto cmd = device.GetCommandContext();
             AddPassBarriers(*cmd, pass.get());
+
+            bool isRenderPass = false;
+            RenderPassInfo renderPassInfo;
+
+            for (uint32 i = 0; i < pass->attachments.size(); i++) {
+                auto &attachment = pass->attachments[i];
+                if (attachment.resourceID == ~0u) continue;
+                isRenderPass = true;
+
+                auto imageView = resources.GetRenderTarget(attachment.resourceID)->ImageView();
+
+                if (i != MAX_COLOR_ATTACHMENTS) {
+                    renderPassInfo.state.colorAttachmentCount = i + 1;
+                    renderPassInfo.SetColorAttachment(i,
+                                                      imageView,
+                                                      attachment.loadOp,
+                                                      attachment.storeOp,
+                                                      attachment.clearColor);
+                } else {
+                    renderPassInfo.SetDepthStencilAttachment(imageView,
+                                                             attachment.loadOp,
+                                                             attachment.storeOp,
+                                                             attachment.clearDepthStencil);
+                }
+            }
+
+            if (isRenderPass) cmd->BeginRenderPass(renderPassInfo);
             pass->Execute(resources, *cmd);
+            if (isRenderPass) cmd->EndRenderPass();
             device.Submit(cmd);
 
             for (auto &dep : pass->dependencies) {

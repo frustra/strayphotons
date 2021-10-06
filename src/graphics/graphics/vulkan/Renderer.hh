@@ -75,7 +75,7 @@ namespace sp::vulkan {
         }
 #endif
 
-        void TriggerScreenshot(const string &path, const string &resource);
+        void QueueScreenshot(const string &path, const string &resource);
 
     private:
         void AddScreenshotPasses(RenderGraph &graph);

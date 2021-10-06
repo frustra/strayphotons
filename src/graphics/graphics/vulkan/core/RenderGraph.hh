@@ -2,6 +2,7 @@
 
 #include "core/StackVector.hh"
 #include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/RenderTarget.hh"
 
 #include <robin_hood.h>
@@ -29,6 +30,25 @@ namespace sp::vulkan {
         vk::ImageLayout layout = vk::ImageLayout::eUndefined;
     };
 
+    struct AttachmentInfo {
+        AttachmentInfo() {}
+        AttachmentInfo(LoadOp loadOp, StoreOp storeOp) : loadOp(loadOp), storeOp(storeOp) {}
+        LoadOp loadOp = LoadOp::DontCare;
+        StoreOp storeOp = StoreOp::DontCare;
+        vk::ClearColorValue clearColor = {};
+        vk::ClearDepthStencilValue clearDepthStencil = {1.0f, 0};
+
+        void SetClearColor(glm::vec4 clear) {
+            std::array<float, 4> clearValues = {clear.r, clear.g, clear.b, clear.a};
+            clearColor = {clearValues};
+        }
+
+    private:
+        friend class RenderGraph;
+        friend class RenderGraphPassBuilder;
+        uint32 resourceID = ~0u;
+    };
+
     class RenderGraphResources {
     public:
         RenderGraphResources(DeviceContext &device) : device(device) {}
@@ -50,6 +70,7 @@ namespace sp::vulkan {
         friend class RenderGraphPassBuilder;
 
         void ResizeBeforeExecute();
+        uint32 RefCount(uint32 id);
         void IncrementRef(uint32 id);
         void DecrementRef(uint32 id);
 
@@ -98,9 +119,12 @@ namespace sp::vulkan {
 
     private:
         friend class RenderGraph;
+        friend class RenderGraphPassBuilder;
         string_view name;
         StackVector<RenderGraphResourceDependency, 16> dependencies;
         StackVector<uint32, 16> outputs;
+        std::array<AttachmentInfo, MAX_COLOR_ATTACHMENTS + 1> attachments;
+        bool active = false, required = false;
     };
 
     template<typename ExecuteFunc>
@@ -163,7 +187,35 @@ namespace sp::vulkan {
             return resource;
         }
 
+        RenderGraphResource OutputColorAttachment(uint32 index,
+                                                  string_view name,
+                                                  RenderTargetDesc desc,
+                                                  const AttachmentInfo &info) {
+            desc.usage |= vk::ImageUsageFlagBits::eColorAttachment;
+            return OutputAttachment(index, name, desc, info);
+        }
+
+        RenderGraphResource OutputDepthAttachment(string_view name, RenderTargetDesc desc, const AttachmentInfo &info) {
+            desc.usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+            return OutputAttachment(MAX_COLOR_ATTACHMENTS, name, desc, info);
+        }
+
+        void RequirePass() {
+            pass.required = true;
+        }
+
     private:
+        RenderGraphResource OutputAttachment(uint32 index,
+                                             string_view name,
+                                             const RenderTargetDesc &desc,
+                                             const AttachmentInfo &info) {
+            auto resource = OutputRenderTarget(name, desc);
+            auto &attachment = pass.attachments[index];
+            attachment = info;
+            attachment.resourceID = resource.id;
+            return resource;
+        }
+
         RenderGraphResources &resources;
         RenderGraphPassBase &pass;
     };
@@ -183,6 +235,14 @@ namespace sp::vulkan {
         }
 
         void SetTargetImageView(string_view name, ImageViewPtr view);
+
+        void RequireResource(string_view name) {
+            RequireResource(resources.GetResourceByName(name).id);
+        }
+
+        void RequireResource(uint32 id) {
+            resources.IncrementRef(id);
+        }
 
         void Execute();
 
