@@ -287,7 +287,7 @@ namespace sp::vulkan {
             auto screenshotResource = pending.second;
             if (screenshotResource.empty()) screenshotResource = CVarWindowViewTarget.Get();
 
-            RenderGraphResourceID sourceID;
+            RenderGraphResourceID sourceID = ~0u;
 
             graph.Pass("Screenshot")
                 .Build([&](RenderGraphPassBuilder &builder) {
@@ -317,7 +317,7 @@ namespace sp::vulkan {
     }
 
     RenderGraphResourceID Renderer::VisualizeBuffer(RenderGraph &graph, RenderGraphResourceID sourceID) {
-        RenderGraphResourceID targetID, outputID;
+        RenderGraphResourceID targetID = ~0u, outputID;
         graph.Pass("VisualizeBuffer")
             .Build([&](RenderGraphPassBuilder &builder) {
                 auto &res = builder.ShaderRead(sourceID);
