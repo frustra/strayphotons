@@ -154,11 +154,25 @@ namespace sp::vulkan {
         auto &slot = pipelineInput.state.shaders[(size_t)stage];
         if (slot == handle) return;
         slot = handle;
+
+        auto &spec = pipelineInput.state.specializations[(size_t)stage];
+        std::fill(spec.values.begin(), spec.values.end(), 0);
+        spec.set.reset();
         SetDirty(DirtyBits::Pipeline);
     }
 
     void CommandContext::SetShader(ShaderStage stage, const string &name) {
         SetShader(stage, device.LoadShader(name));
+    }
+
+    void CommandContext::ShaderConstant(ShaderStage stage, uint32 index, uint32 data) {
+        auto handle = pipelineInput.state.shaders[(size_t)stage];
+        Assert(handle, "no shader bound to set constant");
+
+        auto &spec = pipelineInput.state.specializations[(size_t)stage];
+        spec.values[index] = data;
+        spec.set.set(index, true);
+        SetDirty(DirtyBits::Pipeline);
     }
 
     void CommandContext::PushConstants(const void *data, VkDeviceSize offset, VkDeviceSize range) {
