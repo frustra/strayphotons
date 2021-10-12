@@ -25,22 +25,27 @@ struct vk::FlagTraits<sp::vulkan::CommandContextFlags::DirtyBits> {
     enum : sp::vulkan::CommandContextFlags::DirtyFlags::MaskType { allFlags = ~0 };
 };
 
-struct ImageBarrierInfo {
-    uint32 baseMipLevel = 0;
-    uint32 mipLevelCount = 0; // default: use all levels
-    uint32 baseArrayLayer = 0;
-    uint32 arrayLayerCount = 0; // default: use all layers
-    uint32 srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    uint32 dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-
-    // false skips checking and saving the image layout,
-    // caller must set the image's layout before passing the image to other code
-    bool trackImageLayout = true;
-};
-
 namespace sp::vulkan {
     class Model;
     struct VertexLayout;
+
+    struct ImageBarrierInfo {
+        uint32 baseMipLevel = 0;
+        uint32 mipLevelCount = 0; // default: use all levels
+        uint32 baseArrayLayer = 0;
+        uint32 arrayLayerCount = 0; // default: use all layers
+        uint32 srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        uint32 dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+        // false skips checking and saving the image layout,
+        // caller must set the image's layout before passing the image to other code
+        bool trackImageLayout = true;
+    };
+
+    enum class YDirection {
+        Up,
+        Down,
+    };
 
     class CommandContext : public NonCopyable {
     public:
@@ -126,6 +131,19 @@ namespace sp::vulkan {
             return viewport;
         }
 
+        void SetYDirection(YDirection dir) {
+            if (viewportYDirection != dir) {
+                viewportYDirection = dir;
+                SetDirty(DirtyBits::Viewport);
+
+                if (dir == YDirection::Down) {
+                    SetFrontFaceWinding(vk::FrontFace::eClockwise);
+                } else {
+                    SetFrontFaceWinding(vk::FrontFace::eCounterClockwise);
+                }
+            }
+        }
+
         void SetViewport(const vk::Rect2D &newViewport) {
             if (viewport != newViewport) {
                 viewport = newViewport;
@@ -157,6 +175,13 @@ namespace sp::vulkan {
         void SetCullMode(vk::CullModeFlags mode) {
             if (mode != pipelineInput.state.cullMode) {
                 pipelineInput.state.cullMode = mode;
+                SetDirty(DirtyBits::Pipeline);
+            }
+        }
+
+        void SetFrontFaceWinding(vk::FrontFace winding) {
+            if (winding != pipelineInput.state.frontFaceWinding) {
+                pipelineInput.state.frontFaceWinding = winding;
                 SetDirty(DirtyBits::Pipeline);
             }
         }
@@ -269,6 +294,7 @@ namespace sp::vulkan {
 
         bool recording = false, abandoned = false;
 
+        YDirection viewportYDirection = YDirection::Up;
         vk::Rect2D viewport;
         float minDepth = 0.0f, maxDepth = 1.0f;
         vk::Rect2D scissor;

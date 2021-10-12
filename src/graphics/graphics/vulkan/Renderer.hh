@@ -27,17 +27,33 @@ namespace sp::vulkan {
     class GuiRenderer;
     class RenderGraph;
 
-    struct ViewStateUniforms {
-        glm::mat4 view[2];
-        glm::mat4 projection[2];
-        glm::vec2 clip[2];
+    struct GPUViewState {
+        GPUViewState() {}
+        GPUViewState(const ecs::View &view) {
+            projMat = view.projMat;
+            invProjMat = view.invProjMat;
+            viewMat = view.viewMat;
+            invViewMat = view.invViewMat;
+            clip = view.clip;
+            extents = view.extents;
+        }
+
+        glm::mat4 projMat, invProjMat;
+        glm::mat4 viewMat, invViewMat;
+        glm::vec2 clip, extents;
     };
+    static_assert(sizeof(GPUViewState) % 16 == 0, "std140 alignment");
 
     struct LightingContext {
         int count = 0;
         glm::ivec2 renderTargetSize = {};
-        GPULight gpuData[MAX_LIGHTS];
         ecs::View views[MAX_LIGHTS];
+
+        struct GPUData {
+            GPULight lights[MAX_LIGHTS];
+            int count;
+            float padding[3];
+        } gpuData;
     };
 
     class Renderer {
@@ -88,6 +104,7 @@ namespace sp::vulkan {
         unique_ptr<GuiRenderer> debugGuiRenderer;
 
         vector<std::pair<string, string>> pendingScreenshots;
+        bool listRenderTargets = false;
 
         LightingContext lights;
 

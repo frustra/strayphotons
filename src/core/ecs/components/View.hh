@@ -49,6 +49,16 @@ namespace ecs {
         void UpdateProjectionMatrix();
         void UpdateViewMatrix(Lock<Read<Transform>> lock, Tecs::Entity e);
 
+        void SetProjMat(const glm::mat4 &newProjMat) {
+            projMat = newProjMat;
+            invProjMat = glm::inverse(projMat);
+        }
+
+        void SetViewMat(const glm::mat4 &newViewMat) {
+            viewMat = newViewMat;
+            invViewMat = glm::inverse(viewMat);
+        }
+
         // Matrix cache
         glm::mat4 projMat, invProjMat;
         glm::mat4 viewMat, invViewMat;

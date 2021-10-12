@@ -17,8 +17,10 @@
 #endif
 
 namespace sp::vulkan {
-    static CVar<string> CVarWindowViewTarget("r.WindowViewTarget", "GBuffer0", "Primary window's render target");
-    static CVar<bool> CVarEnableShadows("r.EnableShadows", true, "Enable shadow mapping");
+    static const char *defaultWindowViewTarget = "GBuffer0";
+    static CVar<string> CVarWindowViewTarget("r.WindowViewTarget",
+                                             defaultWindowViewTarget,
+                                             "Primary window's render target");
 
     Renderer::Renderer(DeviceContext &device) : device(device) {
         funcs.Register<string>("screenshot",
@@ -29,6 +31,10 @@ namespace sp::vulkan {
                                    ss >> path >> resource;
                                    QueueScreenshot(path, resource);
                                });
+
+        funcs.Register("listrendertargets", "List all render targets", [&]() {
+            listRenderTargets = true;
+        });
     }
 
     Renderer::~Renderer() {
@@ -58,7 +64,7 @@ namespace sp::vulkan {
             view.UpdateProjectionMatrix();
             view.UpdateViewMatrix(lock, entity);
 
-            auto &data = lights.gpuData[lightCount];
+            auto &data = lights.gpuData.lights[lightCount];
             data.position = transform.GetGlobalPosition(lock);
             data.tint = light.tint;
             data.direction = transform.GetGlobalForward(lock);
@@ -78,10 +84,11 @@ namespace sp::vulkan {
         }
         glm::vec4 mapOffsetScale(renderTargetSize, renderTargetSize);
         for (int i = 0; i < lightCount; i++) {
-            lights.gpuData[i].mapOffset /= mapOffsetScale;
+            lights.gpuData.lights[i].mapOffset /= mapOffsetScale;
         }
         lights.renderTargetSize = renderTargetSize;
         lights.count = lightCount;
+        lights.gpuData.count = lightCount;
     }
 
     void Renderer::RenderFrame() {
@@ -101,6 +108,8 @@ namespace sp::vulkan {
 
             graph.Pass("ForwardPass")
                 .Build([&](RenderGraphPassBuilder &builder) {
+                    builder.ShaderRead("ShadowMapLinear");
+
                     RenderTargetDesc desc;
                     desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
 
@@ -117,13 +126,14 @@ namespace sp::vulkan {
                     builder.OutputDepthAttachment("GBufferDepth", desc, {LoadOp::Clear, StoreOp::DontCare});
                 })
                 .Execute([this, view, lock](RenderGraphResources &resources, CommandContext &cmd) {
-                    ViewStateUniforms viewState;
-                    viewState.view[0] = view.viewMat;
-                    viewState.projection[0] = view.projMat;
-                    cmd.UploadUniformData(0, 10, &viewState);
-
                     cmd.SetShaders("test.vert", "test.frag");
-                    this->ForwardPass(cmd, view.visibilityMask, lock, [](auto lock, Tecs::Entity &ent) {});
+                    cmd.SetTexture(0, 2, resources.GetRenderTarget("ShadowMapLinear")->ImageView());
+                    cmd.UploadUniformData(0, 11, &this->lights.gpuData);
+
+                    GPUViewState views[] = {{view}, {}};
+                    cmd.UploadUniformData(0, 10, views, 2);
+
+                    this->ForwardPass(cmd, view.visibilityMask, lock, {});
                 });
         }
 
@@ -165,25 +175,23 @@ namespace sp::vulkan {
                     builder.OutputDepthAttachment("XRDepth", targetDesc, {LoadOp::Clear, StoreOp::DontCare});
                 })
                 .Execute([this, xrViews, visible, lock](RenderGraphResources &resources, CommandContext &cmd) {
-                    auto viewState = cmd.AllocUniformData<ViewStateUniforms>(0, 10);
-
+                    auto viewState = cmd.AllocUniformData<GPUViewState>(0, 10, 2);
                     cmd.SetShaders("test.vert", "test.frag");
-                    this->ForwardPass(cmd, visible, lock, [](auto lock, Tecs::Entity &ent) {});
+                    cmd.UploadUniformData(0, 11, &this->lights.gpuData);
+                    cmd.SetTexture(0, 2, resources.GetRenderTarget("ShadowMapLinear")->ImageView());
+                    this->ForwardPass(cmd, visible, lock, {});
 
                     for (size_t i = 0; i < xrViews.size(); i++) {
                         if (!xrViews[i].Has<ecs::View, ecs::XRView>(lock)) continue;
-                        auto view = xrViews[i].Get<ecs::View>(lock);
                         auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
-
+                        auto view = xrViews[i].Get<ecs::View>(lock);
                         view.UpdateViewMatrix(lock, xrViews[i]);
 
                         if (this->xrSystem->GetPredictedViewPose(eye, this->xrRenderPoses[i])) {
-                            viewState->view[i] = glm::inverse(this->xrRenderPoses[i]) * view.viewMat;
-                        } else {
-                            viewState->view[i] = view.viewMat;
+                            view.SetViewMat(glm::inverse(this->xrRenderPoses[i]) * view.viewMat);
                         }
 
-                        viewState->projection[i] = view.projMat;
+                        viewState[i] = GPUViewState(view);
                     }
                 });
 
@@ -211,6 +219,14 @@ namespace sp::vulkan {
             graph.Pass("WindowFinalOutput")
                 .Build([&](RenderGraphPassBuilder &builder) {
                     auto res = builder.GetResourceByName(CVarWindowViewTarget.Get());
+                    if (!res) {
+                        Errorf("view target %s does not exist, defaulting to %s",
+                               CVarWindowViewTarget.Get(),
+                               defaultWindowViewTarget);
+                        CVarWindowViewTarget.Set(defaultWindowViewTarget);
+                        res = builder.GetResourceByName(defaultWindowViewTarget);
+                    }
+
                     auto format = res.renderTargetDesc.format;
                     if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4) {
                         sourceID = res.id;
@@ -239,6 +255,22 @@ namespace sp::vulkan {
         }
 
         AddScreenshotPasses(graph);
+
+        if (listRenderTargets) {
+            listRenderTargets = false;
+            auto list = graph.AllRenderTargets();
+            for (const auto &info : list) {
+                auto &extent = info.desc.extent;
+                Logf("%s (%dx%dx%d [%d] %s)",
+                     info.name,
+                     extent.width,
+                     extent.height,
+                     extent.depth,
+                     info.desc.arrayLayers,
+                     vk::to_string(info.desc.format));
+            }
+        }
+
         graph.Execute();
         EndFrame();
     }
@@ -263,16 +295,15 @@ namespace sp::vulkan {
                 auto &lights = this->lights;
                 for (int i = 0; i < lights.count; i++) {
                     auto &view = lights.views[i];
-                    ViewStateUniforms viewState;
-                    viewState.view[0] = view.viewMat;
-                    viewState.projection[0] = view.projMat;
-                    viewState.clip[0] = view.clip;
-                    cmd.UploadUniformData(0, 10, &viewState);
+
+                    GPUViewState views[] = {{view}, {}};
+                    cmd.UploadUniformData(0, 10, views, 2);
 
                     vk::Rect2D viewport;
                     viewport.extent = vk::Extent2D(view.extents.x, view.extents.y);
                     viewport.offset = vk::Offset2D(view.offset.x, view.offset.y);
                     cmd.SetViewport(viewport);
+                    cmd.SetYDirection(YDirection::Down);
 
                     this->ForwardPass(cmd, view.visibilityMask, lock, [](auto lock, Tecs::Entity &ent) {});
                 }

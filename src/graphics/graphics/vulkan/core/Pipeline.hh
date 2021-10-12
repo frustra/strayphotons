@@ -21,6 +21,7 @@ namespace sp::vulkan {
         ShaderHandleSet shaders = {};
         VertexLayout vertexLayout;
         vk::CullModeFlags cullMode;
+        vk::FrontFace frontFaceWinding;
         vk::BlendOp blendOp;
         vk::BlendFactor srcBlendFactor;
         vk::BlendFactor dstBlendFactor;

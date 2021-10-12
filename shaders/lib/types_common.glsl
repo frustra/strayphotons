@@ -1,7 +1,18 @@
 #ifndef TYPES_COMMON_GLSL_INCLUDED
 #define TYPES_COMMON_GLSL_INCLUDED
 
+#ifndef MAX_LIGHTS
+#define MAX_LIGHTS 16
+#endif
+
 const float punctualLightSizeSq = 0.01 * 0.01; // 1cm punctual lights
+
+struct ViewState {
+	mat4 projMat, invProjMat;
+	mat4 viewMat, invViewMat;
+	vec2 clip;
+	vec2 extents;
+};
 
 struct Mirror {
 	mat4 modelMat;

@@ -11,13 +11,10 @@ layout(location = 0) out vec4 outLinearDepth;
 
 #include "../lib/types_common.glsl"
 
-layout(binding = 10) uniform ViewState {
-    mat4 view[2];
-    mat4 projection[2];
-	vec4 clip;
-} viewState;
+layout(binding = 10) uniform ViewStates {
+	ViewState views[2];
+};
 
 void main() {
-	vec2 clip = gl_ViewID_OVR > 0 ? viewState.clip.zw : viewState.clip.xy;
-	outLinearDepth.r = LinearDepth(inViewPos, clip);
+	outLinearDepth.r = LinearDepth(inViewPos, views[gl_ViewID_OVR].clip);
 }

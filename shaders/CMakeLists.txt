@@ -1,6 +1,7 @@
 ## TODO: move shader install() into this folder
 
 set(SHADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vulkan) # TODO: delete special vulkan subfolder
+set(SHADER_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 file(GLOB SHADERS
     ${SHADER_DIR}/*.vert
@@ -16,6 +17,8 @@ file(GLOB SHADERS
     ${SHADER_DIR}/*.rmiss
 )
 
+file(GLOB SHADERS_LIB ${SHADER_LIB_DIR}/*.glsl)
+
 find_package(Vulkan REQUIRED)
 
 foreach(SHADER IN LISTS SHADERS)
@@ -23,7 +26,7 @@ foreach(SHADER IN LISTS SHADERS)
     add_custom_command(
         OUTPUT ${SHADER_DIR}/bin/${FILENAME}.spv
         COMMAND ${Vulkan_GLSLC_EXECUTABLE} -Werror ${SHADER} -o ${SHADER_DIR}/bin/${FILENAME}.spv
-        DEPENDS ${SHADER}
+        DEPENDS ${SHADER} ${SHADERS_LIB}
         COMMENT "Compiling ${FILENAME}"
     )
     list(APPEND SPV_SHADERS ${SHADER_DIR}/bin/${FILENAME}.spv)
