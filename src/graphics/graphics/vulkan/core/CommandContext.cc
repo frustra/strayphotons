@@ -165,10 +165,8 @@ namespace sp::vulkan {
         SetShader(stage, device.LoadShader(name));
     }
 
-    void CommandContext::ShaderConstant(ShaderStage stage, uint32 index, uint32 data) {
-        auto handle = pipelineInput.state.shaders[(size_t)stage];
-        Assert(handle, "no shader bound to set constant");
-
+    void CommandContext::SetShaderConstant(ShaderStage stage, uint32 index, uint32 data) {
+        Assert(pipelineInput.state.shaders[(size_t)stage], "no shader bound to set constant");
         auto &spec = pipelineInput.state.specializations[(size_t)stage];
         spec.values[index] = data;
         spec.set.set(index, true);

@@ -84,16 +84,16 @@ namespace sp::vulkan {
         void SetShader(ShaderStage stage, ShaderHandle handle);
         void SetShader(ShaderStage stage, const string &name);
 
-        void ShaderConstant(ShaderStage stage, uint32 index, uint32 data);
+        void SetShaderConstant(ShaderStage stage, uint32 index, uint32 data);
 
         template<typename T>
-        void ShaderConstant(ShaderStage stage, uint32 index, T data) {
+        void SetShaderConstant(ShaderStage stage, uint32 index, T data) {
             static_assert(sizeof(T) == sizeof(uint32), "type must be 4 bytes");
-            ShaderConstant(stage, index, *reinterpret_cast<uint32 *>(&data));
+            SetShaderConstant(stage, index, *reinterpret_cast<uint32 *>(&data));
         }
 
-        void ShaderConstant(ShaderStage stage, uint32 index, bool data) {
-            ShaderConstant(stage, index, (uint32)data);
+        void SetShaderConstant(ShaderStage stage, uint32 index, bool data) {
+            SetShaderConstant(stage, index, (uint32)data);
         }
 
         void SetDefaultOpaqueState();
