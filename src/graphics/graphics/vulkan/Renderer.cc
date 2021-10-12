@@ -192,15 +192,13 @@ namespace sp::vulkan {
                     builder.TransferRead("XRColor");
                     builder.RequirePass();
                 })
-                .Execute([this, xrViews, lock](RenderGraphResources &resources, CommandContext &cmd) {
+                .Execute([this, xrViews, lock](RenderGraphResources &resources, DeviceContext &device) {
                     auto xrRenderTarget = resources.GetRenderTarget("XRColor");
 
-                    cmd.AfterSubmit([this, xrRenderTarget, xrViews, lock]() {
-                        for (size_t i = 0; i < xrViews.size(); i++) {
-                            auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
-                            this->xrSystem->SubmitView(eye, this->xrRenderPoses[i], xrRenderTarget->ImageView().get());
-                        }
-                    });
+                    for (size_t i = 0; i < xrViews.size(); i++) {
+                        auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
+                        this->xrSystem->SubmitView(eye, this->xrRenderPoses[i], xrRenderTarget->ImageView().get());
+                    }
                 });
         }
 #endif
@@ -305,11 +303,11 @@ namespace sp::vulkan {
                         builder.RequirePass();
                     }
                 })
-                .Execute([screenshotPath, sourceID](RenderGraphResources &resources, CommandContext &cmd) {
+                .Execute([screenshotPath, sourceID](RenderGraphResources &resources, DeviceContext &device) {
                     auto &res = resources.GetResourceByID(sourceID);
                     if (res.type == RenderGraphResource::Type::RenderTarget) {
                         auto target = resources.GetRenderTarget(res.id);
-                        WriteScreenshot(cmd.Device(), screenshotPath, target->ImageView());
+                        WriteScreenshot(device, screenshotPath, target->ImageView());
                     }
                 });
         }
@@ -337,7 +335,7 @@ namespace sp::vulkan {
                 if (comp > 1) {
                     swizzle = 0b11100100; // rgba
                 }
-                cmd.ShaderConstant(ShaderStage::Fragment, 0, swizzle);
+                cmd.SetShaderConstant(ShaderStage::Fragment, 0, swizzle);
 
                 cmd.SetTexture(0, 0, source);
                 cmd.Draw(3);

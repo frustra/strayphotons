@@ -6,6 +6,7 @@
 #include "graphics/vulkan/core/RenderTarget.hh"
 
 #include <robin_hood.h>
+#include <variant>
 
 namespace sp::vulkan {
     struct RenderGraphResource {
@@ -105,33 +106,9 @@ namespace sp::vulkan {
         RenderGraphResourceID id;
     };
 
-    class RenderGraphExecuteFuncBase {
-    public:
-        virtual ~RenderGraphExecuteFuncBase() {}
-        virtual void operator()(RenderGraphResources &resources, CommandContext &cmd) = 0;
-    };
-
-    template<typename ExecuteFunc>
-    class RenderGraphExecuteFunc : public RenderGraphExecuteFuncBase {
-    public:
-        RenderGraphExecuteFunc(ExecuteFunc &executeFunc) : executeFunc(executeFunc) {}
-        ~RenderGraphExecuteFunc() {}
-
-        void operator()(RenderGraphResources &resources, CommandContext &cmd) override {
-            executeFunc(resources, cmd);
-        }
-
-    private:
-        ExecuteFunc executeFunc;
-    };
-
     class RenderGraphPass {
     public:
         RenderGraphPass(string_view name) : name(name) {}
-
-        void Execute(RenderGraphResources &resources, CommandContext &cmd) {
-            if (executeFunc) (*executeFunc)(resources, cmd);
-        }
 
         void AddDependency(const RenderGraphResourceAccess &access, const RenderGraphResource &res) {
             dependencies.push({access, res.id});
@@ -139,6 +116,23 @@ namespace sp::vulkan {
 
         void AddOutput(const RenderGraphResource &res) {
             outputs.push(res.id);
+        }
+
+        bool ExecutesWithCommandContext() const {
+            return executeFunc.index() == 0;
+        }
+        bool ExecutesWithDeviceContext() const {
+            return executeFunc.index() == 1;
+        }
+        void Execute(RenderGraphResources &resources, CommandContext &cmd) const {
+            auto &f = std::get<0>(executeFunc);
+            Assert(f, "execute function with CommandContext not defined");
+            f(resources, cmd);
+        }
+        void Execute(RenderGraphResources &resources, DeviceContext &device) const {
+            auto &f = std::get<1>(executeFunc);
+            Assert(f, "execute function with DeviceContext not defined");
+            f(resources, device);
         }
 
     private:
@@ -149,7 +143,10 @@ namespace sp::vulkan {
         StackVector<RenderGraphResourceID, 16> outputs;
         std::array<AttachmentInfo, MAX_COLOR_ATTACHMENTS + 1> attachments;
         bool active = false, required = false;
-        shared_ptr<RenderGraphExecuteFuncBase> executeFunc = {};
+
+        std::variant<std::function<void(RenderGraphResources &, CommandContext &)>,
+                     std::function<void(RenderGraphResources &, DeviceContext &)>>
+            executeFunc;
     };
 
     class RenderGraphPassBuilder {
@@ -251,14 +248,23 @@ namespace sp::vulkan {
                 return *this;
             }
 
-            template<typename ExecuteFunc>
-            InitialPassState &Execute(ExecuteFunc executeFunc) {
-                static_assert(sizeof(ExecuteFunc) < 1024, "execute callback must capture less than 1kB");
+            InitialPassState &Execute(std::function<void(RenderGraphResources &, CommandContext &)> executeFunc) {
                 Assert(passIndex != ~0u, "build must be called before execute");
 
                 auto &pass = graph.passes[passIndex];
-                Assert(!pass.executeFunc, "multiple execution functions for the same pass");
-                pass.executeFunc = make_shared<RenderGraphExecuteFunc<ExecuteFunc>>(executeFunc);
+                Assert(!hasExecute, "multiple execution functions for the same pass");
+                pass.executeFunc = executeFunc;
+                hasExecute = true;
+                return *this;
+            }
+
+            InitialPassState &Execute(std::function<void(RenderGraphResources &, DeviceContext &)> executeFunc) {
+                Assert(passIndex != ~0u, "build must be called before execute");
+
+                auto &pass = graph.passes[passIndex];
+                Assert(!hasExecute, "multiple execution functions for the same pass");
+                pass.executeFunc = executeFunc;
+                hasExecute = true;
                 return *this;
             }
 
@@ -266,6 +272,7 @@ namespace sp::vulkan {
             RenderGraph &graph;
             string_view name;
             uint32 passIndex = ~0u;
+            bool hasExecute = false;
         };
 
         InitialPassState Pass(string_view name) {

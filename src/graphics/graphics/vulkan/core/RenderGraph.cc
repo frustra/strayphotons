@@ -125,10 +125,20 @@ namespace sp::vulkan {
                 }
             }
 
-            if (isRenderPass) cmd->BeginRenderPass(renderPassInfo);
-            pass.Execute(resources, *cmd);
-            if (isRenderPass) cmd->EndRenderPass();
-            device.Submit(cmd);
+            if (isRenderPass) {
+                cmd->BeginRenderPass(renderPassInfo);
+                pass.Execute(resources, *cmd);
+                cmd->EndRenderPass();
+                device.Submit(cmd);
+            } else if (pass.ExecutesWithDeviceContext()) {
+                device.Submit(cmd);
+                pass.Execute(resources, device);
+            } else if (pass.ExecutesWithCommandContext()) {
+                pass.Execute(resources, *cmd);
+                device.Submit(cmd);
+            } else {
+                Abort("invalid pass");
+            }
 
             for (auto &dep : pass.dependencies) {
                 resources.DecrementRef(dep.id);
