@@ -526,8 +526,8 @@ namespace sp::vulkan {
             pool.nextIndex = 0;
         }
 
-        erase_if(Frame().inFlightBuffers, [&](auto &buf) {
-            return device->getFenceStatus(*buf.fence) == vk::Result::eSuccess;
+        erase_if(Frame().inFlightObjects, [&](auto &entry) {
+            return device->getFenceStatus(*entry.fence) == vk::Result::eSuccess;
         });
 
         for (auto &pool : Frame().bufferPools) {
@@ -691,29 +691,51 @@ namespace sp::vulkan {
         return buffer;
     }
 
-    ImagePtr DeviceContext::AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency) {
+    ImagePtr DeviceContext::AllocateImage(const vk::ImageCreateInfo &info,
+                                          VmaMemoryUsage residency,
+                                          vk::ImageUsageFlags declaredUsage) {
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
-        return make_shared<Image>(info, allocInfo, allocator.get());
+        if (!declaredUsage) declaredUsage = info.usage;
+        return make_shared<Image>(info, allocInfo, allocator.get(), declaredUsage);
     }
 
-    ImagePtr DeviceContext::CreateImage(vk::ImageCreateInfo createInfo,
-                                        const uint8 *srcData,
-                                        size_t srcDataSize,
-                                        bool genMipmap) {
+    ImagePtr DeviceContext::CreateImage(ImageCreateInfo createInfo, const uint8 *srcData, size_t srcDataSize) {
+        bool genMipmap = createInfo.genMipmap;
+        bool genFactor = !createInfo.factor.empty();
+        bool hasSrcData = srcData && srcDataSize;
+        vk::ImageUsageFlags declaredUsage = createInfo.usage;
+        vk::Format factorFormat = createInfo.format;
+
         if (!createInfo.mipLevels) createInfo.mipLevels = genMipmap ? CalculateMipmapLevels(createInfo.extent) : 1;
         if (!createInfo.arrayLayers) createInfo.arrayLayers = 1;
 
-        if (!srcData || srcDataSize == 0) {
+        if (!hasSrcData) {
             Assert(!genMipmap, "must pass initial data to generate a mipmap");
-            return AllocateImage(createInfo, VMA_MEMORY_USAGE_GPU_ONLY);
+        } else {
+            Assert(createInfo.arrayLayers == 1, "can't load initial data into an image array");
+            Assert(!genMipmap || createInfo.mipLevels > 1, "can't generate mipmap for a single level image");
+
+            createInfo.usage |= vk::ImageUsageFlagBits::eTransferDst;
+            if (genMipmap) createInfo.usage |= vk::ImageUsageFlagBits::eTransferSrc;
+            if (genFactor) {
+                createInfo.flags |= vk::ImageCreateFlagBits::eExtendedUsage;
+                createInfo.usage |= vk::ImageUsageFlagBits::eStorage;
+                if (FormatIsSRGB(createInfo.format)) {
+                    factorFormat = FormatSRGBToUnorm(createInfo.format);
+                    createInfo.flags |= vk::ImageCreateFlagBits::eMutableFormat;
+                    createInfo.formats.push_back(createInfo.format);
+                    createInfo.formats.push_back(factorFormat);
+                }
+            }
         }
 
-        Assert(createInfo.arrayLayers == 1, "can't load initial data into an image array");
-        Assert(!genMipmap || createInfo.mipLevels > 1, "can't generate mipmap for a single level image");
+        auto actualCreateInfo = createInfo.GetVkCreateInfo();
+        auto formatInfo = createInfo.GetVkFormatList();
+        if (formatInfo.viewFormatCount > 0) actualCreateInfo.pNext = &formatInfo;
 
-        createInfo.usage |= vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
-        auto image = AllocateImage(createInfo, VMA_MEMORY_USAGE_GPU_ONLY);
+        auto image = AllocateImage(actualCreateInfo, VMA_MEMORY_USAGE_GPU_ONLY, declaredUsage);
+        if (!hasSrcData) return image;
 
         auto stagingBuf =
             CreateBuffer(srcData, srcDataSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -743,30 +765,86 @@ namespace sp::vulkan {
 
         ImageBarrierInfo transferToGeneral;
         transferToGeneral.trackImageLayout = false;
-        transferToGeneral.srcQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync),
+        transferToGeneral.srcQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync);
         transferToGeneral.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::General);
         if (genMipmap) transferToGeneral.mipLevelCount = 1;
 
-        transferCmd->ImageBarrier(
-            image,
-            vk::ImageLayout::eTransferDstOptimal,
-            genMipmap ? vk::ImageLayout::eTransferSrcOptimal : vk::ImageLayout::eShaderReadOnlyOptimal,
-            vk::PipelineStageFlagBits::eTransfer,
-            {},
-            vk::PipelineStageFlagBits::eBottomOfPipe,
-            vk::AccessFlagBits::eTransferWrite,
-            transferToGeneral);
+        ImageBarrierInfo transferToCompute = transferToGeneral;
+        transferToCompute.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::ComputeAsync);
+
+        vk::ImageLayout lastLayout = vk::ImageLayout::eTransferDstOptimal;
+        vk::ImageLayout nextLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        if (genFactor) {
+            nextLayout = vk::ImageLayout::eGeneral;
+        } else if (genMipmap) {
+            nextLayout = vk::ImageLayout::eTransferSrcOptimal;
+        }
+
+        transferCmd->ImageBarrier(image,
+                                  lastLayout,
+                                  nextLayout,
+                                  vk::PipelineStageFlagBits::eTransfer,
+                                  {},
+                                  vk::PipelineStageFlagBits::eBottomOfPipe,
+                                  vk::AccessFlagBits::eTransferWrite,
+                                  genFactor ? transferToCompute : transferToGeneral);
 
         auto transferComplete = GetEmptySemaphore();
-        Frame().inFlightBuffers.emplace_back(InFlightBuffer{stagingBuf, device->createFenceUnique({})});
-        Submit(transferCmd, {transferComplete}, {}, {}, *Frame().inFlightBuffers.back().fence);
+        auto fence = PushInFlightObject(stagingBuf);
+        Submit(transferCmd, {transferComplete}, {}, {}, fence);
+
+        if (genFactor) {
+            auto factorCmd = GetCommandContext(CommandContextType::ComputeAsync);
+            factorCmd->ImageBarrier(image,
+                                    lastLayout,
+                                    vk::ImageLayout::eGeneral,
+                                    vk::PipelineStageFlagBits::eComputeShader,
+                                    {},
+                                    vk::PipelineStageFlagBits::eComputeShader,
+                                    vk::AccessFlagBits::eShaderRead,
+                                    transferToCompute);
+
+            ImageViewCreateInfo factorViewInfo;
+            factorViewInfo.image = image;
+            factorViewInfo.format = factorFormat;
+            factorViewInfo.mipLevelCount = 1;
+            factorViewInfo.usage = vk::ImageUsageFlagBits::eStorage;
+            auto factorView = CreateImageView(factorViewInfo);
+
+            image->SetLayout(lastLayout, vk::ImageLayout::eGeneral);
+            factorCmd->SetComputeShader("texture_factor.comp");
+            factorCmd->SetTexture(0, 0, factorView);
+
+            struct {
+                glm::vec4 factor;
+                int components;
+                bool srgb;
+            } factorPushConstants;
+
+            for (size_t i = 0; i < createInfo.factor.size(); i++) {
+                factorPushConstants.factor[i] = (float)createInfo.factor[i];
+            }
+            factorPushConstants.components = createInfo.factor.size();
+            factorPushConstants.srgb = FormatIsSRGB(createInfo.format);
+            factorCmd->PushConstants(factorPushConstants);
+
+            factorCmd->Dispatch((createInfo.extent.width + 15) / 16, (createInfo.extent.height + 15) / 16, 1);
+
+            auto factorComplete = GetEmptySemaphore();
+            fence = PushInFlightObject(factorView);
+            Submit(factorCmd, {factorComplete}, {transferComplete}, {vk::PipelineStageFlagBits::eComputeShader}, fence);
+
+            transferToGeneral.srcQueueFamilyIndex = transferToCompute.dstQueueFamilyIndex;
+            transferComplete = factorComplete;
+            lastLayout = vk::ImageLayout::eGeneral;
+        }
 
         auto graphicsCmd = GetCommandContext();
 
         if (!genMipmap) {
             transferToGeneral.trackImageLayout = true;
             graphicsCmd->ImageBarrier(image,
-                                      vk::ImageLayout::eTransferDstOptimal,
+                                      lastLayout,
                                       vk::ImageLayout::eShaderReadOnlyOptimal,
                                       vk::PipelineStageFlagBits::eFragmentShader,
                                       {},
@@ -779,7 +857,7 @@ namespace sp::vulkan {
         }
 
         graphicsCmd->ImageBarrier(image,
-                                  vk::ImageLayout::eTransferDstOptimal,
+                                  lastLayout,
                                   vk::ImageLayout::eTransferSrcOptimal,
                                   vk::PipelineStageFlagBits::eTransfer,
                                   {},
@@ -873,34 +951,49 @@ namespace sp::vulkan {
         createInfo.subresourceRange.levelCount = info.mipLevelCount;
         createInfo.subresourceRange.baseArrayLayer = info.baseArrayLayer;
         createInfo.subresourceRange.layerCount = info.arrayLayerCount;
+
+        // By default, pick the same usage passed in sp::vulkan::ImageCreateInfo.
+        if (!info.usage) info.usage = info.image->DeclaredUsage();
+
+        // The actual underlying image usage may have extra flags.
+        auto imageFullUsage = info.image->Usage();
+
+        vk::ImageViewUsageCreateInfo usageCreateInfo;
+        if (info.usage != imageFullUsage) {
+            Assert((info.usage & imageFullUsage) == info.usage, "view usage must be a subset of the image usage");
+            usageCreateInfo.usage = info.usage;
+            createInfo.pNext = &usageCreateInfo;
+        }
+
         return make_shared<ImageView>(device->createImageViewUnique(createInfo), info);
     }
 
-    ImageViewPtr DeviceContext::CreateImageAndView(const vk::ImageCreateInfo &imageInfo,
+    ImageViewPtr DeviceContext::CreateImageAndView(const ImageCreateInfo &imageInfo,
                                                    ImageViewCreateInfo viewInfo,
                                                    const uint8 *srcData,
-                                                   size_t srcDataSize,
-                                                   bool genMipmap) {
-        viewInfo.image = CreateImage(imageInfo, srcData, srcDataSize, genMipmap);
+                                                   size_t srcDataSize) {
+        viewInfo.image = CreateImage(imageInfo, srcData, srcDataSize);
         return CreateImageView(viewInfo);
     }
 
     shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {
         image->WaitUntilValid();
 
-        vk::ImageCreateInfo createInfo;
+        ImageCreateInfo createInfo;
         createInfo.extent = vk::Extent3D(image->GetWidth(), image->GetHeight(), 1);
         Assert(createInfo.extent.width > 0 && createInfo.extent.height > 0, "image has zero size");
 
         createInfo.format = FormatFromTraits(image->GetComponents(), 8, true);
         Assert(createInfo.format != vk::Format::eUndefined, "invalid image format");
 
+        createInfo.genMipmap = genMipmap;
+
         const uint8_t *data = image->GetImage().get();
         Assert(data, "missing image data");
 
         ImageViewCreateInfo viewInfo;
         viewInfo.defaultSampler = GetSampler(SamplerType::TrilinearTiled);
-        return CreateImageAndView(createInfo, viewInfo, data, image->ByteSize(), genMipmap);
+        return CreateImageAndView(createInfo, viewInfo, data, image->ByteSize());
     }
 
     vk::Sampler DeviceContext::GetSampler(SamplerType type) {
@@ -971,12 +1064,14 @@ namespace sp::vulkan {
         return renderTargetPool->Get(desc);
     }
 
-    ShaderHandle DeviceContext::LoadShader(const string &name) {
-        ShaderHandle &handle = shaderHandles[name];
-        if (handle) return handle;
+    ShaderHandle DeviceContext::LoadShader(string_view name) {
+        auto it = shaderHandles.find(name);
+        if (it != shaderHandles.end()) return it->second;
 
-        auto shader = shaders.emplace_back(CreateShader(name, {}));
-        handle = static_cast<ShaderHandle>(shaders.size());
+        string strName(name);
+        auto shader = shaders.emplace_back(CreateShader(strName, {}));
+        auto handle = static_cast<ShaderHandle>(shaders.size());
+        shaderHandles[strName] = handle;
         return handle;
     }
 
@@ -1017,8 +1112,8 @@ namespace sp::vulkan {
         }
     }
 
-    shared_ptr<Pipeline> DeviceContext::GetGraphicsPipeline(const PipelineCompileInput &input) {
-        return pipelinePool->GetGraphicsPipeline(input);
+    shared_ptr<Pipeline> DeviceContext::GetPipeline(const PipelineCompileInput &input) {
+        return pipelinePool->GetPipeline(input);
     }
 
     ImageViewPtr DeviceContext::SwapchainImageView() {

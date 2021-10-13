@@ -66,7 +66,7 @@ namespace sp::vulkan {
             int fontWidth, fontHeight;
             io.Fonts->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
 
-            vk::ImageCreateInfo fontImageInfo;
+            ImageCreateInfo fontImageInfo;
             fontImageInfo.imageType = vk::ImageType::e2D;
             fontImageInfo.extent = vk::Extent3D{(uint32)fontWidth, (uint32)fontHeight, 1};
             fontImageInfo.format = vk::Format::eR8G8B8A8Unorm;
@@ -139,7 +139,7 @@ namespace sp::vulkan {
         cmd.SetShaders("basic_ortho.vert", "basic_ortho.frag");
 
         glm::mat4 proj = MakeOrthographicProjection(viewport);
-        cmd.PushConstants(&proj, 0, sizeof(proj));
+        cmd.PushConstants(proj);
 
         const vk::IndexType idxType = sizeof(ImDrawIdx) == 2 ? vk::IndexType::eUint16 : vk::IndexType::eUint32;
         cmd.Raw().bindIndexBuffer(*indexBuffer, 0, idxType);

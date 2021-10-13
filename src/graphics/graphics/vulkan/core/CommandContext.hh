@@ -62,11 +62,18 @@ namespace sp::vulkan {
         // A CommandContext MUST be submitted to the device or abandoned before destroying the object.
         void Abandon();
 
+        void Reset();
         void BeginRenderPass(const RenderPassInfo &info);
         void EndRenderPass();
 
         void PushConstants(const void *data, VkDeviceSize offset, VkDeviceSize range);
 
+        template<typename T>
+        void PushConstants(const T &data, VkDeviceSize offset = 0) {
+            PushConstants(&data, offset, sizeof(T));
+        }
+
+        void Dispatch(uint32 groupCountX, uint32 groupCountY, uint32 groupCountZ);
         void Draw(uint32 vertexes, uint32 instances = 1, int32 firstVertex = 0, uint32 firstInstance = 0);
         void DrawIndexed(uint32 indexes,
                          uint32 instances = 1,
@@ -85,9 +92,10 @@ namespace sp::vulkan {
             vk::AccessFlags dstAccess, // but only block these access types (can be reads or writes).
             const ImageBarrierInfo &options = {});
 
-        void SetShaders(const string &vertexName, const string &fragName);
-        void SetShader(ShaderStage stage, ShaderHandle handle);
-        void SetShader(ShaderStage stage, const string &name);
+        void SetShaders(string_view vertexName, string_view fragName);
+        void SetComputeShader(string_view name);
+        void SetSingleShader(ShaderStage stage, ShaderHandle handle);
+        void SetSingleShader(ShaderStage stage, string_view name);
 
         void SetShaderConstant(ShaderStage stage, uint32 index, uint32 data);
 
@@ -203,11 +211,12 @@ namespace sp::vulkan {
             }
         }
 
-        void SetTexture(uint32 set, uint32 binding, const ImageViewPtr &view); // uses view's default sampler
-        void SetTexture(uint32 set, uint32 binding, const ImageView *view); // uses view's default sampler
-        void SetTexture(uint32 set, uint32 binding, const vk::ImageView &view, SamplerType samplerType);
-        void SetTexture(uint32 set, uint32 binding, const vk::ImageView &view, const vk::Sampler &sampler);
-        void SetTexture(uint32 set, uint32 binding, const vk::ImageView &view);
+        void SetTexture(uint32 set, uint32 binding, const ImageViewPtr &view);
+        void SetTexture(uint32 set, uint32 binding, const ImageView *view);
+        void SetTexture(uint32 set,
+                        uint32 binding,
+                        const vk::ImageView &view,
+                        vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal);
         void SetSampler(uint32 set, uint32 binding, const vk::Sampler &sampler);
 
         void SetUniformBuffer(uint32 set, uint32 binding, const BufferPtr &buffer);
@@ -234,7 +243,13 @@ namespace sp::vulkan {
             return writesToSwapchain;
         }
 
-        void FlushDescriptorSets();
+        bool IsCompute() const {
+            return pipelineInput.state.shaders[(size_t)ShaderStage::Compute] > 0;
+        }
+
+        void FlushDescriptorSets(vk::PipelineBindPoint bindPoint);
+        void FlushPushConstants();
+        void FlushComputeState();
         void FlushGraphicsState();
 
         template<typename Func>

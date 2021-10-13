@@ -16,13 +16,54 @@ namespace sp::vulkan {
         Store,
     };
 
+    struct ImageCreateInfo {
+        vk::ImageCreateFlags flags = {};
+        vk::ImageType imageType = vk::ImageType::e2D;
+        vk::Format format = vk::Format::eUndefined;
+        vk::Extent3D extent = {};
+        uint32 mipLevels = 1;
+        uint32 arrayLayers = 1;
+        vk::SampleCountFlagBits samples = vk::SampleCountFlagBits::e1;
+        vk::ImageTiling tiling = vk::ImageTiling::eOptimal;
+        vk::ImageUsageFlags usage = {};
+        vk::ImageLayout initialLayout = vk::ImageLayout::eUndefined;
+
+        bool genMipmap = false;
+        std::vector<double> factor;
+        std::vector<vk::Format> formats; // fill only if using eMutableFormat flag
+
+        vk::ImageCreateInfo GetVkCreateInfo() {
+            vk::ImageCreateInfo ci(flags,
+                                   imageType,
+                                   format,
+                                   extent,
+                                   mipLevels,
+                                   arrayLayers,
+                                   samples,
+                                   tiling,
+                                   usage,
+                                   vk::SharingMode::eExclusive,
+                                   {},
+                                   {},
+                                   initialLayout);
+            return ci;
+        }
+
+        vk::ImageFormatListCreateInfo GetVkFormatList() {
+            return {(uint32)formats.size(), formats.data()};
+        }
+    };
+
     class Image : public UniqueMemory {
     public:
         Image();
+        ~Image();
 
         // Allocates storage for the image, destructor destroys image
-        Image(vk::ImageCreateInfo imageInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator);
-        ~Image();
+        Image(vk::ImageCreateInfo imageInfo,
+              VmaAllocationCreateInfo allocInfo,
+              VmaAllocator allocator,
+              vk::ImageUsageFlags declaredUsage);
 
         // Creates an image reference, destructor does not destroy the image
         Image(vk::Image image, vk::Format format, vk::Extent3D extent, uint32 mipLevels = 1, uint32 arrayLayers = 1)
@@ -60,6 +101,16 @@ namespace sp::vulkan {
             return lastLayout;
         }
 
+        vk::ImageUsageFlags Usage() const {
+            return usage;
+        }
+
+        // Creating an image may add usage flags that are used only during image creation.
+        // This returns only the usage flags that will be used outside image creation.
+        vk::ImageUsageFlags DeclaredUsage() const {
+            return declaredUsage;
+        }
+
         void SetLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
 
     private:
@@ -68,6 +119,7 @@ namespace sp::vulkan {
         vk::Extent3D extent;
         uint32 mipLevels = 0, arrayLayers = 0;
         vk::ImageLayout lastLayout = vk::ImageLayout::eUndefined;
+        vk::ImageUsageFlags usage = {}, declaredUsage = {};
     };
 
     struct ImageViewCreateInfo {
@@ -81,6 +133,7 @@ namespace sp::vulkan {
         uint32_t baseArrayLayer = 0;
         uint32_t arrayLayerCount = VK_REMAINING_ARRAY_LAYERS; // all layers after the base layer are included
         vk::Sampler defaultSampler = VK_NULL_HANDLE;
+        vk::ImageUsageFlags usage = {}; // defaults to image's usage
     };
 
     class ImageView final : public WrappedUniqueHandle<vk::ImageView>, public GpuTexture {
@@ -163,6 +216,8 @@ namespace sp::vulkan {
     vk::ImageAspectFlags FormatToAspectFlags(vk::Format format);
     uint32 FormatComponentCount(vk::Format format);
     uint32 FormatByteSize(vk::Format format);
+    bool FormatIsSRGB(vk::Format format);
+    vk::Format FormatSRGBToUnorm(vk::Format format);
     uint32 CalculateMipmapLevels(vk::Extent3D extent);
     vk::SamplerCreateInfo GLSamplerToVKSampler(int minFilter, int magFilter, int wrapS, int wrapT, int wrapR);
 } // namespace sp::vulkan

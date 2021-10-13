@@ -22,20 +22,26 @@ namespace sp::vulkan {
         SetFrontFaceWinding(vk::FrontFace::eCounterClockwise);
     }
 
+    void CommandContext::Reset() {
+        dirty = ~DirtyFlags();
+        dirtyDescriptorSets = ~0u;
+        currentPipeline = VK_NULL_HANDLE;
+        pipelineInput.state.shaders = {};
+        pipelineInput.renderPass = VK_NULL_HANDLE;
+        framebuffer.reset();
+        renderPass.reset();
+    }
+
     void CommandContext::BeginRenderPass(const RenderPassInfo &info) {
+        Reset();
         Assert(!framebuffer, "render pass already started");
 
         framebuffer = device.GetFramebuffer(info);
         pipelineInput.renderPass = framebuffer->GetRenderPass();
-
         renderPass = device.GetRenderPass(info);
 
         viewport = vk::Rect2D{{0, 0}, framebuffer->Extent()};
         scissor = viewport;
-
-        dirty = ~DirtyFlags();
-        dirtyDescriptorSets = ~0u;
-        currentPipeline = VK_NULL_HANDLE;
 
         vk::ClearValue clearValues[MAX_COLOR_ATTACHMENTS + 1];
         uint32 clearValueCount = info.state.colorAttachmentCount;
@@ -65,10 +71,7 @@ namespace sp::vulkan {
         Assert(!!framebuffer, "render pass not started");
 
         cmd->endRenderPass();
-
-        pipelineInput.renderPass = VK_NULL_HANDLE;
-        framebuffer.reset();
-        renderPass.reset();
+        Reset();
     }
 
     void CommandContext::Begin() {
@@ -91,6 +94,11 @@ namespace sp::vulkan {
             recording = false;
             abandoned = true;
         }
+    }
+
+    void CommandContext::Dispatch(uint32 groupCountX, uint32 groupCountY, uint32 groupCountZ) {
+        FlushComputeState();
+        cmd->dispatch(groupCountX, groupCountY, groupCountZ);
     }
 
     void CommandContext::Draw(uint32 vertexes, uint32 instances, int32 firstVertex, uint32 firstInstance) {
@@ -144,14 +152,18 @@ namespace sp::vulkan {
         }
     }
 
-    void CommandContext::SetShaders(const string &vertName, const string &fragName) {
-        SetShader(ShaderStage::Vertex, vertName);
-        SetShader(ShaderStage::Fragment, fragName);
-        SetShader(ShaderStage::Geometry, 0);
-        SetShader(ShaderStage::Compute, 0);
+    void CommandContext::SetShaders(string_view vertName, string_view fragName) {
+        pipelineInput.state.shaders = {};
+        SetSingleShader(ShaderStage::Vertex, vertName);
+        SetSingleShader(ShaderStage::Fragment, fragName);
     }
 
-    void CommandContext::SetShader(ShaderStage stage, ShaderHandle handle) {
+    void CommandContext::SetComputeShader(string_view name) {
+        pipelineInput.state.shaders = {};
+        SetSingleShader(ShaderStage::Compute, name);
+    }
+
+    void CommandContext::SetSingleShader(ShaderStage stage, ShaderHandle handle) {
         auto &slot = pipelineInput.state.shaders[(size_t)stage];
         if (slot == handle) return;
         slot = handle;
@@ -162,8 +174,8 @@ namespace sp::vulkan {
         SetDirty(DirtyBits::Pipeline);
     }
 
-    void CommandContext::SetShader(ShaderStage stage, const string &name) {
-        SetShader(stage, device.LoadShader(name));
+    void CommandContext::SetSingleShader(ShaderStage stage, string_view name) {
+        SetSingleShader(stage, device.LoadShader(name));
     }
 
     void CommandContext::SetShaderConstant(ShaderStage stage, uint32 index, uint32 data) {
@@ -189,35 +201,26 @@ namespace sp::vulkan {
     }
 
     void CommandContext::SetTexture(uint32 set, uint32 binding, const ImageViewPtr &view) {
-        SetTexture(set, binding, *view.get());
+        SetTexture(set, binding, *view.get(), view->Image()->LastLayout());
 
         auto defaultSampler = view->DefaultSampler();
         if (defaultSampler) SetSampler(set, binding, defaultSampler);
     }
 
     void CommandContext::SetTexture(uint32 set, uint32 binding, const ImageView *view) {
-        SetTexture(set, binding, *view);
+        SetTexture(set, binding, *view, view->Image()->LastLayout());
 
         auto defaultSampler = view->DefaultSampler();
         if (defaultSampler) SetSampler(set, binding, defaultSampler);
     }
 
-    void CommandContext::SetTexture(uint32 set, uint32 binding, const vk::ImageView &view) {
+    void CommandContext::SetTexture(uint32 set, uint32 binding, const vk::ImageView &view, vk::ImageLayout layout) {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
         auto &image = shaderData.sets[set].bindings[binding].image;
         image.imageView = view;
-        image.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        image.imageLayout = (VkImageLayout)layout;
         SetDescriptorDirty(set);
-    }
-
-    void CommandContext::SetTexture(uint32 set, uint32 binding, const vk::ImageView &view, const vk::Sampler &sampler) {
-        SetTexture(set, binding, view);
-        SetSampler(set, binding, sampler);
-    }
-
-    void CommandContext::SetTexture(uint32 set, uint32 binding, const vk::ImageView &view, SamplerType samplerType) {
-        SetTexture(set, binding, view, device.GetSampler(samplerType));
     }
 
     void CommandContext::SetUniformBuffer(uint32 set, uint32 binding, const BufferPtr &buffer) {
@@ -236,7 +239,7 @@ namespace sp::vulkan {
         return buffer;
     }
 
-    void CommandContext::FlushDescriptorSets() {
+    void CommandContext::FlushDescriptorSets(vk::PipelineBindPoint bindPoint) {
         auto layout = currentPipeline->GetLayout();
 
         for (uint32 set = 0; set < MAX_BOUND_DESCRIPTOR_SETS; set++) {
@@ -244,17 +247,11 @@ namespace sp::vulkan {
             if (!layout->HasDescriptorSet(set)) continue;
 
             auto descriptorSet = layout->GetFilledDescriptorSet(set, shaderData.sets[set]);
-            cmd->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *layout, set, {descriptorSet}, nullptr);
+            cmd->bindDescriptorSets(bindPoint, *layout, set, {descriptorSet}, nullptr);
         }
     }
 
-    void CommandContext::FlushGraphicsState() {
-        if (ResetDirty(DirtyBits::Pipeline)) {
-            auto pipeline = device.GetGraphicsPipeline(pipelineInput);
-            if (pipeline != currentPipeline) { cmd->bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline); }
-            currentPipeline = pipeline;
-        }
-
+    void CommandContext::FlushPushConstants() {
         auto pipelineLayout = currentPipeline->GetLayout();
         auto &layoutInfo = pipelineLayout->Info();
 
@@ -264,6 +261,25 @@ namespace sp::vulkan {
                 Assert(range.offset == 0, "push constant range must start at 0");
                 cmd->pushConstants(*pipelineLayout, range.stageFlags, 0, range.size, shaderData.pushConstants);
             }
+        }
+    }
+
+    void CommandContext::FlushComputeState() {
+        if (ResetDirty(DirtyBits::Pipeline)) {
+            auto pipeline = device.GetPipeline(pipelineInput);
+            if (pipeline != currentPipeline) { cmd->bindPipeline(vk::PipelineBindPoint::eCompute, *pipeline); }
+            currentPipeline = pipeline;
+        }
+
+        FlushPushConstants();
+        FlushDescriptorSets(vk::PipelineBindPoint::eCompute);
+    }
+
+    void CommandContext::FlushGraphicsState() {
+        if (ResetDirty(DirtyBits::Pipeline)) {
+            auto pipeline = device.GetPipeline(pipelineInput);
+            if (pipeline != currentPipeline) { cmd->bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline); }
+            currentPipeline = pipeline;
         }
 
         if (ResetDirty(DirtyBits::Viewport)) {
@@ -288,6 +304,7 @@ namespace sp::vulkan {
             cmd->setScissor(0, 1, &sc);
         }
 
-        FlushDescriptorSets();
+        FlushPushConstants();
+        FlushDescriptorSets(vk::PipelineBindPoint::eGraphics);
     }
 } // namespace sp::vulkan

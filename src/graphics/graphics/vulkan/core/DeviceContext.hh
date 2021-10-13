@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/Hashing.hh"
 #include "ecs/components/View.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/core/Common.hh"
@@ -8,6 +9,7 @@
 #include "graphics/vulkan/core/UniqueID.hh"
 
 #include <robin_hood.h>
+#include <variant>
 
 struct GLFWwindow;
 
@@ -93,17 +95,15 @@ namespace sp::vulkan {
 
         BufferPtr GetFramePooledBuffer(BufferType type, vk::DeviceSize size);
 
-        ImagePtr AllocateImage(const vk::ImageCreateInfo &info, VmaMemoryUsage residency);
-        ImagePtr CreateImage(vk::ImageCreateInfo createInfo,
-                             const uint8 *srcData = nullptr,
-                             size_t srcDataSize = 0,
-                             bool genMipmap = false);
+        ImagePtr AllocateImage(const vk::ImageCreateInfo &info,
+                               VmaMemoryUsage residency,
+                               vk::ImageUsageFlags declaredUsage = {});
+        ImagePtr CreateImage(ImageCreateInfo createInfo, const uint8 *srcData = nullptr, size_t srcDataSize = 0);
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
-        ImageViewPtr CreateImageAndView(const vk::ImageCreateInfo &imageInfo,
+        ImageViewPtr CreateImageAndView(const ImageCreateInfo &imageInfo,
                                         ImageViewCreateInfo viewInfo, // image field is filled in automatically
                                         const uint8 *srcData = nullptr,
-                                        size_t srcDataSize = 0,
-                                        bool genMipmap = false);
+                                        size_t srcDataSize = 0);
         ImageViewPtr SwapchainImageView();
         vk::Sampler GetSampler(SamplerType type);
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
@@ -112,15 +112,22 @@ namespace sp::vulkan {
 
         shared_ptr<GpuTexture> LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
 
-        ShaderHandle LoadShader(const string &name);
+        ShaderHandle LoadShader(string_view name);
         shared_ptr<Shader> GetShader(ShaderHandle handle) const;
         void ReloadShaders();
 
-        shared_ptr<Pipeline> GetGraphicsPipeline(const PipelineCompileInput &input);
+        shared_ptr<Pipeline> GetPipeline(const PipelineCompileInput &input);
         shared_ptr<RenderPass> GetRenderPass(const RenderPassInfo &info);
         shared_ptr<Framebuffer> GetFramebuffer(const RenderPassInfo &info);
 
         vk::Semaphore GetEmptySemaphore();
+
+        using TemporaryObject = std::variant<BufferPtr, ImageViewPtr>;
+        vk::Fence PushInFlightObject(TemporaryObject object) {
+            auto &objs = Frame().inFlightObjects;
+            objs.emplace_back(object, device->createFenceUnique({}));
+            return *objs.back().fence;
+        }
 
         UniqueID NextUniqueID() {
             return ++lastUniqueID;
@@ -196,8 +203,8 @@ namespace sp::vulkan {
             size_t nextIndex = 0;
         };
 
-        struct InFlightBuffer {
-            BufferPtr buffer;
+        struct InFlightObject {
+            TemporaryObject object;
             vk::UniqueFence fence;
         };
 
@@ -215,7 +222,7 @@ namespace sp::vulkan {
             // TODO: multiple threads need their own pools
             std::array<CommandContextPool, QUEUE_TYPES_COUNT> commandContexts;
 
-            vector<InFlightBuffer> inFlightBuffers;
+            vector<InFlightObject> inFlightObjects;
             std::array<vector<PooledBuffer>, BUFFER_TYPES_COUNT> bufferPools;
         };
 
@@ -226,7 +233,7 @@ namespace sp::vulkan {
             return frameContexts[frameIndex];
         }
 
-        robin_hood::unordered_map<string, ShaderHandle> shaderHandles;
+        robin_hood::unordered_map<string, ShaderHandle, StringHash, StringEqual> shaderHandles;
         vector<shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1
 
         robin_hood::unordered_map<SamplerType, vk::UniqueSampler> namedSamplers;

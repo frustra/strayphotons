@@ -3,6 +3,7 @@
 #include "Common.hh"
 
 #include <cstring>
+#include <robin_hood.h>
 
 namespace sp {
     inline Hash64 Hash128To64(Hash128 input) {
@@ -45,4 +46,34 @@ namespace sp {
         };
     };
 
+    struct StringHash {
+        using is_transparent = void;
+
+        std::size_t operator()(const std::string &key) const {
+            return robin_hood::hash_bytes(key.c_str(), key.size());
+        }
+        std::size_t operator()(std::string_view key) const {
+            return robin_hood::hash_bytes(key.data(), key.size());
+        }
+        std::size_t operator()(const char *key) const {
+            return robin_hood::hash_bytes(key, std::strlen(key));
+        }
+    };
+
+    struct StringEqual {
+        using is_transparent = void;
+
+        bool operator()(std::string_view lhs, const std::string &rhs) const {
+            const std::string_view view = rhs;
+            return lhs == view;
+        }
+
+        bool operator()(const char *lhs, const std::string &rhs) const {
+            return std::strcmp(lhs, rhs.c_str()) == 0;
+        }
+
+        bool operator()(const std::string &lhs, const std::string &rhs) const {
+            return lhs == rhs;
+        }
+    };
 } // namespace sp

@@ -8,9 +8,12 @@
 namespace sp::vulkan {
     Image::Image() : UniqueMemory(VK_NULL_HANDLE) {}
 
-    Image::Image(vk::ImageCreateInfo imageInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator)
+    Image::Image(vk::ImageCreateInfo imageInfo,
+                 VmaAllocationCreateInfo allocInfo,
+                 VmaAllocator allocator,
+                 vk::ImageUsageFlags declaredUsage)
         : UniqueMemory(allocator), format(imageInfo.format), extent(imageInfo.extent), mipLevels(imageInfo.mipLevels),
-          arrayLayers(imageInfo.arrayLayers) {
+          arrayLayers(imageInfo.arrayLayers), usage(imageInfo.usage), declaredUsage(declaredUsage) {
 
         VkImageCreateInfo vkImageInfo = imageInfo;
         VkImage vkImage;
@@ -146,9 +149,11 @@ namespace sp::vulkan {
     struct FormatInfo {
         uint32 sizeBytes;
         uint32 componentCount;
+        bool srgbTransfer = false;
     };
 
-    // Source: https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/v1.2.192/layers/vk_format_utils.cpp
+    // formatTable is based on
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/v1.2.192/layers/vk_format_utils.cpp
     // clang-format off
     const robin_hood::unordered_flat_map<VkFormat, FormatInfo> formatTable = {
         {VK_FORMAT_UNDEFINED,                   {0, 0}},
@@ -168,49 +173,49 @@ namespace sp::vulkan {
         {VK_FORMAT_R8_SSCALED,                  {1, 1}},
         {VK_FORMAT_R8_UINT,                     {1, 1}},
         {VK_FORMAT_R8_SINT,                     {1, 1}},
-        {VK_FORMAT_R8_SRGB,                     {1, 1}},
+        {VK_FORMAT_R8_SRGB,                     {1, 1, true}},
         {VK_FORMAT_R8G8_UNORM,                  {2, 2}},
         {VK_FORMAT_R8G8_SNORM,                  {2, 2}},
         {VK_FORMAT_R8G8_USCALED,                {2, 2}},
         {VK_FORMAT_R8G8_SSCALED,                {2, 2}},
         {VK_FORMAT_R8G8_UINT,                   {2, 2}},
         {VK_FORMAT_R8G8_SINT,                   {2, 2}},
-        {VK_FORMAT_R8G8_SRGB,                   {2, 2}},
+        {VK_FORMAT_R8G8_SRGB,                   {2, 2, true}},
         {VK_FORMAT_R8G8B8_UNORM,                {3, 3}},
         {VK_FORMAT_R8G8B8_SNORM,                {3, 3}},
         {VK_FORMAT_R8G8B8_USCALED,              {3, 3}},
         {VK_FORMAT_R8G8B8_SSCALED,              {3, 3}},
         {VK_FORMAT_R8G8B8_UINT,                 {3, 3}},
         {VK_FORMAT_R8G8B8_SINT,                 {3, 3}},
-        {VK_FORMAT_R8G8B8_SRGB,                 {3, 3}},
+        {VK_FORMAT_R8G8B8_SRGB,                 {3, 3, true}},
         {VK_FORMAT_B8G8R8_UNORM,                {3, 3}},
         {VK_FORMAT_B8G8R8_SNORM,                {3, 3}},
         {VK_FORMAT_B8G8R8_USCALED,              {3, 3}},
         {VK_FORMAT_B8G8R8_SSCALED,              {3, 3}},
         {VK_FORMAT_B8G8R8_UINT,                 {3, 3}},
         {VK_FORMAT_B8G8R8_SINT,                 {3, 3}},
-        {VK_FORMAT_B8G8R8_SRGB,                 {3, 3}},
+        {VK_FORMAT_B8G8R8_SRGB,                 {3, 3, true}},
         {VK_FORMAT_R8G8B8A8_UNORM,              {4, 4}},
         {VK_FORMAT_R8G8B8A8_SNORM,              {4, 4}},
         {VK_FORMAT_R8G8B8A8_USCALED,            {4, 4}},
         {VK_FORMAT_R8G8B8A8_SSCALED,            {4, 4}},
         {VK_FORMAT_R8G8B8A8_UINT,               {4, 4}},
         {VK_FORMAT_R8G8B8A8_SINT,               {4, 4}},
-        {VK_FORMAT_R8G8B8A8_SRGB,               {4, 4}},
+        {VK_FORMAT_R8G8B8A8_SRGB,               {4, 4, true}},
         {VK_FORMAT_B8G8R8A8_UNORM,              {4, 4}},
         {VK_FORMAT_B8G8R8A8_SNORM,              {4, 4}},
         {VK_FORMAT_B8G8R8A8_USCALED,            {4, 4}},
         {VK_FORMAT_B8G8R8A8_SSCALED,            {4, 4}},
         {VK_FORMAT_B8G8R8A8_UINT,               {4, 4}},
         {VK_FORMAT_B8G8R8A8_SINT,               {4, 4}},
-        {VK_FORMAT_B8G8R8A8_SRGB,               {4, 4}},
+        {VK_FORMAT_B8G8R8A8_SRGB,               {4, 4, true}},
         {VK_FORMAT_A8B8G8R8_UNORM_PACK32,       {4, 4}},
         {VK_FORMAT_A8B8G8R8_SNORM_PACK32,       {4, 4}},
         {VK_FORMAT_A8B8G8R8_USCALED_PACK32,     {4, 4}},
         {VK_FORMAT_A8B8G8R8_SSCALED_PACK32,     {4, 4}},
         {VK_FORMAT_A8B8G8R8_UINT_PACK32,        {4, 4}},
         {VK_FORMAT_A8B8G8R8_SINT_PACK32,        {4, 4}},
-        {VK_FORMAT_A8B8G8R8_SRGB_PACK32,        {4, 4}},
+        {VK_FORMAT_A8B8G8R8_SRGB_PACK32,        {4, 4, true}},
         {VK_FORMAT_A2R10G10B10_UNORM_PACK32,    {4, 4}},
         {VK_FORMAT_A2R10G10B10_SNORM_PACK32,    {4, 4}},
         {VK_FORMAT_A2R10G10B10_USCALED_PACK32,  {4, 4}},
@@ -285,13 +290,13 @@ namespace sp::vulkan {
         {VK_FORMAT_D24_UNORM_S8_UINT,           {4, 2}},
         {VK_FORMAT_D32_SFLOAT_S8_UINT,          {8, 2}},
         {VK_FORMAT_BC1_RGB_UNORM_BLOCK,         {8, 4}},
-        {VK_FORMAT_BC1_RGB_SRGB_BLOCK,          {8, 4}},
+        {VK_FORMAT_BC1_RGB_SRGB_BLOCK,          {8, 4, true}},
         {VK_FORMAT_BC1_RGBA_UNORM_BLOCK,        {8, 4}},
-        {VK_FORMAT_BC1_RGBA_SRGB_BLOCK,         {8, 4}},
+        {VK_FORMAT_BC1_RGBA_SRGB_BLOCK,         {8, 4, true}},
         {VK_FORMAT_BC2_UNORM_BLOCK,             {16, 4}},
-        {VK_FORMAT_BC2_SRGB_BLOCK,              {16, 4}},
+        {VK_FORMAT_BC2_SRGB_BLOCK,              {16, 4, true}},
         {VK_FORMAT_BC3_UNORM_BLOCK,             {16, 4}},
-        {VK_FORMAT_BC3_SRGB_BLOCK,              {16, 4}},
+        {VK_FORMAT_BC3_SRGB_BLOCK,              {16, 4, true}},
         {VK_FORMAT_BC4_UNORM_BLOCK,             {8, 4}},
         {VK_FORMAT_BC4_SNORM_BLOCK,             {8, 4}},
         {VK_FORMAT_BC5_UNORM_BLOCK,             {16, 4}},
@@ -299,67 +304,67 @@ namespace sp::vulkan {
         {VK_FORMAT_BC6H_UFLOAT_BLOCK,           {16, 4}},
         {VK_FORMAT_BC6H_SFLOAT_BLOCK,           {16, 4}},
         {VK_FORMAT_BC7_UNORM_BLOCK,             {16, 4}},
-        {VK_FORMAT_BC7_SRGB_BLOCK,              {16, 4}},
+        {VK_FORMAT_BC7_SRGB_BLOCK,              {16, 4, true}},
         {VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK,     {8, 3}},
-        {VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK,      {8, 3}},
+        {VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK,      {8, 3, true}},
         {VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK,   {8, 4}},
-        {VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK,    {8, 4}},
+        {VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK,    {8, 4, true}},
         {VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK,   {16, 4}},
-        {VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK,    {16, 4}},
+        {VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK,    {16, 4, true}},
         {VK_FORMAT_EAC_R11_UNORM_BLOCK,         {8, 1}},
         {VK_FORMAT_EAC_R11_SNORM_BLOCK,         {8, 1}},
         {VK_FORMAT_EAC_R11G11_UNORM_BLOCK,      {16, 2}},
         {VK_FORMAT_EAC_R11G11_SNORM_BLOCK,      {16, 2}},
         {VK_FORMAT_ASTC_4x4_UNORM_BLOCK,        {16, 4}},
-        {VK_FORMAT_ASTC_4x4_SRGB_BLOCK,         {16, 4}},
+        {VK_FORMAT_ASTC_4x4_SRGB_BLOCK,         {16, 4, true}},
         {VK_FORMAT_ASTC_4x4_SFLOAT_BLOCK_EXT,   {16, 4}},
         {VK_FORMAT_ASTC_5x4_UNORM_BLOCK,        {16, 4}},
-        {VK_FORMAT_ASTC_5x4_SRGB_BLOCK,         {16, 4}},
+        {VK_FORMAT_ASTC_5x4_SRGB_BLOCK,         {16, 4, true}},
         {VK_FORMAT_ASTC_5x4_SFLOAT_BLOCK_EXT,   {16, 4}},
         {VK_FORMAT_ASTC_5x5_UNORM_BLOCK,        {16, 4}},
-        {VK_FORMAT_ASTC_5x5_SRGB_BLOCK,         {16, 4}},
+        {VK_FORMAT_ASTC_5x5_SRGB_BLOCK,         {16, 4, true}},
         {VK_FORMAT_ASTC_5x5_SFLOAT_BLOCK_EXT,   {16, 4}},
         {VK_FORMAT_ASTC_6x5_UNORM_BLOCK,        {16, 4}},
-        {VK_FORMAT_ASTC_6x5_SRGB_BLOCK,         {16, 4}},
+        {VK_FORMAT_ASTC_6x5_SRGB_BLOCK,         {16, 4, true}},
         {VK_FORMAT_ASTC_6x5_SFLOAT_BLOCK_EXT,   {16, 4}},
         {VK_FORMAT_ASTC_6x6_UNORM_BLOCK,        {16, 4}},
-        {VK_FORMAT_ASTC_6x6_SRGB_BLOCK,         {16, 4}},
+        {VK_FORMAT_ASTC_6x6_SRGB_BLOCK,         {16, 4, true}},
         {VK_FORMAT_ASTC_6x6_SFLOAT_BLOCK_EXT,   {16, 4}},
         {VK_FORMAT_ASTC_8x5_UNORM_BLOCK,        {16, 4}},
-        {VK_FORMAT_ASTC_8x5_SRGB_BLOCK,         {16, 4}},
+        {VK_FORMAT_ASTC_8x5_SRGB_BLOCK,         {16, 4, true}},
         {VK_FORMAT_ASTC_8x5_SFLOAT_BLOCK_EXT,   {16, 4}},
         {VK_FORMAT_ASTC_8x6_UNORM_BLOCK,        {16, 4}},
-        {VK_FORMAT_ASTC_8x6_SRGB_BLOCK,         {16, 4}},
+        {VK_FORMAT_ASTC_8x6_SRGB_BLOCK,         {16, 4, true}},
         {VK_FORMAT_ASTC_8x6_SFLOAT_BLOCK_EXT,   {16, 4}},
         {VK_FORMAT_ASTC_8x8_UNORM_BLOCK,        {16, 4}},
-        {VK_FORMAT_ASTC_8x8_SRGB_BLOCK,         {16, 4}},
+        {VK_FORMAT_ASTC_8x8_SRGB_BLOCK,         {16, 4, true}},
         {VK_FORMAT_ASTC_8x8_SFLOAT_BLOCK_EXT,   {16, 4}},
         {VK_FORMAT_ASTC_10x5_UNORM_BLOCK,       {16, 4}},
-        {VK_FORMAT_ASTC_10x5_SRGB_BLOCK,        {16, 4}},
+        {VK_FORMAT_ASTC_10x5_SRGB_BLOCK,        {16, 4, true}},
         {VK_FORMAT_ASTC_10x5_SFLOAT_BLOCK_EXT,  {16, 4}},
         {VK_FORMAT_ASTC_10x6_UNORM_BLOCK,       {16, 4}},
-        {VK_FORMAT_ASTC_10x6_SRGB_BLOCK,        {16, 4}},
+        {VK_FORMAT_ASTC_10x6_SRGB_BLOCK,        {16, 4, true}},
         {VK_FORMAT_ASTC_10x6_SFLOAT_BLOCK_EXT,  {16, 4}},
         {VK_FORMAT_ASTC_10x8_UNORM_BLOCK,       {16, 4}},
-        {VK_FORMAT_ASTC_10x8_SRGB_BLOCK,        {16, 4}},
+        {VK_FORMAT_ASTC_10x8_SRGB_BLOCK,        {16, 4, true}},
         {VK_FORMAT_ASTC_10x8_SFLOAT_BLOCK_EXT,  {16, 4}},
         {VK_FORMAT_ASTC_10x10_UNORM_BLOCK,      {16, 4}},
-        {VK_FORMAT_ASTC_10x10_SRGB_BLOCK,       {16, 4}},
+        {VK_FORMAT_ASTC_10x10_SRGB_BLOCK,       {16, 4, true}},
         {VK_FORMAT_ASTC_10x10_SFLOAT_BLOCK_EXT, {16, 4}},
         {VK_FORMAT_ASTC_12x10_UNORM_BLOCK,      {16, 4}},
-        {VK_FORMAT_ASTC_12x10_SRGB_BLOCK,       {16, 4}},
+        {VK_FORMAT_ASTC_12x10_SRGB_BLOCK,       {16, 4, true}},
         {VK_FORMAT_ASTC_12x10_SFLOAT_BLOCK_EXT, {16, 4}},
         {VK_FORMAT_ASTC_12x12_UNORM_BLOCK,      {16, 4}},
-        {VK_FORMAT_ASTC_12x12_SRGB_BLOCK,       {16, 4}},
+        {VK_FORMAT_ASTC_12x12_SRGB_BLOCK,       {16, 4, true}},
         {VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK_EXT, {16, 4}},
         {VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG, {8, 4}},
         {VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG, {8, 4}},
         {VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG, {8, 4}},
         {VK_FORMAT_PVRTC2_4BPP_UNORM_BLOCK_IMG, {8, 4}},
-        {VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG,  {8, 4}},
-        {VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG,  {8, 4}},
-        {VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG,  {8, 4}},
-        {VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG,  {8, 4}},
+        {VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG,  {8, 4, true}},
+        {VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG,  {8, 4, true}},
+        {VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG,  {8, 4, true}},
+        {VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG,  {8, 4, true}},
         // KHR_sampler_YCbCr_conversion extension - single-plane variants
         // 'PACK' formats are normal, uncompressed
         {VK_FORMAT_R10X6_UNORM_PACK16,                          {2, 1}},
@@ -415,5 +420,18 @@ namespace sp::vulkan {
 
     uint32 FormatByteSize(vk::Format format) {
         return formatTable.at((VkFormat)format).sizeBytes;
+    }
+
+    bool FormatIsSRGB(vk::Format format) {
+        return formatTable.at((VkFormat)format).srgbTransfer;
+    }
+
+    vk::Format FormatSRGBToUnorm(vk::Format format) {
+        switch (format) {
+        case vk::Format::eR8G8B8A8Srgb:
+            return vk::Format::eR8G8B8A8Unorm;
+        default:
+            Abort("unimplemented sRGB format " + vk::to_string(format));
+        }
     }
 } // namespace sp::vulkan
