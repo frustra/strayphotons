@@ -55,5 +55,4 @@ namespace ecs {
             this->viewMat = glm::inverse(this->invViewMat);
         }
     }
-
 } // namespace ecs

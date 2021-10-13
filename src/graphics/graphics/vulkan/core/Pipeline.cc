@@ -301,7 +301,7 @@ namespace sp::vulkan {
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.lineWidth = 1.0f;
         rasterizer.cullMode = state.cullMode;
-        rasterizer.frontFace = vk::FrontFace::eCounterClockwise;
+        rasterizer.frontFace = state.frontFaceWinding;
 
         // TODO: support multiple attachments
         vk::PipelineColorBlendAttachmentState colorBlendAttachment;

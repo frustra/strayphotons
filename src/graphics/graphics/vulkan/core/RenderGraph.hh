@@ -18,6 +18,10 @@ namespace sp::vulkan {
         RenderGraphResource() {}
         RenderGraphResource(RenderTargetDesc desc) : type(Type::RenderTarget), renderTargetDesc(desc) {}
 
+        operator bool() const {
+            return type != Type::Undefined;
+        }
+
         RenderGraphResourceID id = ~0u;
         Type type = Type::Undefined;
         union {
@@ -118,21 +122,20 @@ namespace sp::vulkan {
             outputs.push(res.id);
         }
 
-        bool ExecutesWithCommandContext() const {
-            return executeFunc.index() == 0;
+        bool HasExecute() const {
+            return executeFunc.index() > 0;
         }
-        bool ExecutesWithDeviceContext() const {
+        bool ExecutesWithCommandContext() const {
             return executeFunc.index() == 1;
         }
+        bool ExecutesWithDeviceContext() const {
+            return executeFunc.index() == 2;
+        }
         void Execute(RenderGraphResources &resources, CommandContext &cmd) const {
-            auto &f = std::get<0>(executeFunc);
-            Assert(f, "execute function with CommandContext not defined");
-            f(resources, cmd);
+            std::get<1>(executeFunc)(resources, cmd);
         }
         void Execute(RenderGraphResources &resources, DeviceContext &device) const {
-            auto &f = std::get<1>(executeFunc);
-            Assert(f, "execute function with DeviceContext not defined");
-            f(resources, device);
+            std::get<2>(executeFunc)(resources, device);
         }
 
     private:
@@ -144,7 +147,8 @@ namespace sp::vulkan {
         std::array<AttachmentInfo, MAX_COLOR_ATTACHMENTS + 1> attachments;
         bool active = false, required = false;
 
-        std::variant<std::function<void(RenderGraphResources &, CommandContext &)>,
+        std::variant<std::monostate,
+                     std::function<void(RenderGraphResources &, CommandContext &)>,
                      std::function<void(RenderGraphResources &, DeviceContext &)>>
             executeFunc;
     };
@@ -238,8 +242,7 @@ namespace sp::vulkan {
 
             template<typename SetupFunc>
             InitialPassState &Build(SetupFunc setupFunc) {
-                Assert(passIndex == ~0u, "multiple build calls for the same pass");
-
+                Assert(passIndex == ~0u, "multiple Build calls for the same pass");
                 RenderGraphPass pass(name);
                 RenderGraphPassBuilder builder(graph.resources, pass);
                 setupFunc(builder);
@@ -249,22 +252,20 @@ namespace sp::vulkan {
             }
 
             InitialPassState &Execute(std::function<void(RenderGraphResources &, CommandContext &)> executeFunc) {
-                Assert(passIndex != ~0u, "build must be called before execute");
-
+                Assert(passIndex != ~0u, "Build must be called before Execute");
+                Assert(executeFunc, "Execute function must be defined");
                 auto &pass = graph.passes[passIndex];
-                Assert(!hasExecute, "multiple execution functions for the same pass");
+                Assert(!pass.HasExecute(), "multiple Execute functions for the same pass");
                 pass.executeFunc = executeFunc;
-                hasExecute = true;
                 return *this;
             }
 
             InitialPassState &Execute(std::function<void(RenderGraphResources &, DeviceContext &)> executeFunc) {
-                Assert(passIndex != ~0u, "build must be called before execute");
-
+                Assert(passIndex != ~0u, "Build must be called before Execute");
+                Assert(executeFunc, "Execute function must be defined");
                 auto &pass = graph.passes[passIndex];
-                Assert(!hasExecute, "multiple execution functions for the same pass");
+                Assert(!pass.HasExecute(), "multiple Execute functions for the same pass");
                 pass.executeFunc = executeFunc;
-                hasExecute = true;
                 return *this;
             }
 
@@ -272,7 +273,6 @@ namespace sp::vulkan {
             RenderGraph &graph;
             string_view name;
             uint32 passIndex = ~0u;
-            bool hasExecute = false;
         };
 
         InitialPassState Pass(string_view name) {
@@ -290,6 +290,12 @@ namespace sp::vulkan {
         }
 
         void Execute();
+
+        struct RenderTargetInfo {
+            string name;
+            RenderTargetDesc desc;
+        };
+        vector<RenderTargetInfo> AllRenderTargets();
 
     private:
         friend class InitialPassState;

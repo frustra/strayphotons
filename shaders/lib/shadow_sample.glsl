@@ -1,7 +1,7 @@
+#undef TEXTURE_SAMPLER
 #ifdef MIRROR_SAMPLE
 #define TEXTURE_SAMPLER(coord) mirrorShadowMap, vec3(coord, info.index)
 #else
-#undef TEXTURE_SAMPLER
 #define TEXTURE_SAMPLER(coord) shadowMap, coord
 #endif
 

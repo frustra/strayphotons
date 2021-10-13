@@ -1,7 +1,7 @@
 #ifndef HISTOGRAM_COMMON_INCLUDED
 #define HISTOGRAM_COMMON_INCLUDED
 
-##import lib/lighting_util
+#include "lighting_util.glsl"
 
 #define HistogramBins 64
 const float lumMin = -8, lumMax = 4;

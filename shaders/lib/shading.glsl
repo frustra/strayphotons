@@ -1,12 +1,12 @@
-##import lib/lighting_util
-##import lib/spatial_util
+#include "lighting_util.glsl"
+#include "spatial_util.glsl"
 
 #ifdef INCLUDE_MIRRORS
 #define MIRROR_SAMPLE
-##import lib/shadow_sample
+#include "shadow_sample.glsl"
 #undef MIRROR_SAMPLE
 #endif
-##import lib/shadow_sample
+#include "shadow_sample.glsl"
 
 vec3 EvaluateBRDF(vec3 diffuseColor, vec3 specularColor, float roughness, vec3 L, vec3 V, vec3 N) {
 	vec3 H = normalize(V + L);

@@ -19,6 +19,7 @@ namespace sp::vulkan {
         SetBlending(false);
         SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha);
         SetCullMode(vk::CullModeFlagBits::eBack);
+        SetFrontFaceWinding(vk::FrontFace::eCounterClockwise);
     }
 
     void CommandContext::BeginRenderPass(const RenderPassInfo &info) {
@@ -266,13 +267,18 @@ namespace sp::vulkan {
         }
 
         if (ResetDirty(DirtyBits::Viewport)) {
-            // Negative height sets viewport coordinates to OpenGL style (Y up)
             vk::Viewport vp = {(float)viewport.offset.x,
-                               (float)(framebuffer->Extent().height - viewport.offset.y),
+                               (float)viewport.offset.y,
                                (float)viewport.extent.width,
-                               -(float)viewport.extent.height,
+                               (float)viewport.extent.height,
                                minDepth,
                                maxDepth};
+
+            if (viewportYDirection == YDirection::Up) {
+                // Negative height sets viewport coordinates to OpenGL style (Y up)
+                vp.y = framebuffer->Extent().height - vp.y;
+                vp.height = -vp.height;
+            }
             cmd->setViewport(0, 1, &vp);
         }
 

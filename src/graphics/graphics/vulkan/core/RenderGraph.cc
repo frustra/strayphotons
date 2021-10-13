@@ -23,6 +23,15 @@ namespace sp::vulkan {
         return target;
     }
 
+    vector<RenderGraph::RenderTargetInfo> RenderGraph::AllRenderTargets() {
+        vector<RenderTargetInfo> output;
+        for (const auto &[name, id] : resources.names) {
+            const auto &res = resources.resources[id];
+            if (res.type == RenderGraphResource::Type::RenderTarget) output.emplace_back(name, res.renderTargetDesc);
+        }
+        return output;
+    }
+
     uint32 RenderGraphResources::RefCount(RenderGraphResourceID id) {
         Assert(id < resources.size(), "id out of range");
         return refCounts[id];
@@ -96,6 +105,8 @@ namespace sp::vulkan {
 
         for (auto &pass : passes) {
             if (!pass.active) continue;
+
+            Assert(pass.HasExecute(), "pass must have an Execute function");
 
             auto cmd = device.GetCommandContext();
             AddPassBarriers(*cmd, pass);

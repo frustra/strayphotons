@@ -53,18 +53,16 @@ namespace sp {
         Game *game;
         unique_ptr<GraphicsContext> context;
 
-    #ifdef SP_GRAPHICS_SUPPORT_GL
-        unique_ptr<VoxelRenderer> renderer;
-        shared_ptr<ProfilerGui> profilerGui;
-        PerfTimer timer;
-    #endif
-
     #ifdef SP_GRAPHICS_SUPPORT_VK
         unique_ptr<vulkan::Renderer> renderer;
     #endif
 
-    #ifdef SP_XR_SUPPORT
-        #ifdef SP_GRAPHICS_SUPPORT_GL
+    #ifdef SP_GRAPHICS_SUPPORT_GL
+        unique_ptr<VoxelRenderer> renderer;
+        shared_ptr<ProfilerGui> profilerGui;
+        PerfTimer timer;
+
+        #ifdef SP_XR_SUPPORT
         std::vector<shared_ptr<GLRenderTarget>> xrRenderTargets;
         std::vector<glm::mat4> xrRenderPoses;
         #endif
