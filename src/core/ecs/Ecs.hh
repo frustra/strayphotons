@@ -19,6 +19,7 @@ namespace ecs {
 
     class Animation;
     class HumanController;
+    struct CharacterController;
     struct InteractController;
     struct EventInput;
     class EventBindings;
@@ -43,6 +44,7 @@ namespace ecs {
     using ECS = Tecs::ECS<Name,
                           Animation,
                           HumanController,
+                          CharacterController,
                           InteractController,
                           EventInput,
                           EventBindings,

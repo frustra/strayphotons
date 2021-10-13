@@ -61,5 +61,15 @@
             "move_sprint": { "key_left_shift": "keyboard" },
             "interact_rotate": { "key_r": "keyboard" }
         }
+    },
+    "vr-origin": {
+        "signal_bindings": {
+            "move_forward": {
+                "/actions/main/in/movement_y": "vr-controller-right"
+            },
+            "move_right": {
+                "/actions/main/in/movement_x": "vr-controller-right"
+            }
+        }
     }
 }

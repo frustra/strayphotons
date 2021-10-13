@@ -38,6 +38,9 @@ namespace sp {
             for (Tecs::Entity entity : lock.EntitiesWith<ecs::HumanController>()) {
                 if (!entity.Has<ecs::Transform>(lock)) continue;
 
+                auto &controller = entity.Get<ecs::HumanController>(lock);
+                if (!controller.pxController) continue;
+
                 // Handle keyboard controls
                 glm::vec3 inputMovement = glm::vec3(0);
                 bool jumping = false;
@@ -91,13 +94,16 @@ namespace sp {
                                 rotation = glm::quat_cast(
                                     glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
                             }
-                            transform.SetRotation(rotation, false);
+                            auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+                            if (!transform.HasChanged(userData->transformChangeNumber)) {
+                                transform.SetRotation(rotation);
+                                userData->transformChangeNumber = transform.ChangeNumber();
+                            } else {
+                                transform.SetRotation(rotation);
+                            }
                         }
                     }
                 }
-
-                auto &controller = entity.Get<ecs::HumanController>(lock);
-                if (!controller.pxController) continue;
 
                 // Move the player
                 if (noclipChanged) {
@@ -139,9 +145,7 @@ namespace sp {
         bool jump,
         bool sprint,
         bool crouch) {
-        if (!entity.Has<ecs::Transform>(lock)) {
-            throw std::invalid_argument("entity must have a Transform component");
-        }
+        Assert(entity.Has<ecs::Transform>(lock), "Entity must have a Transform component");
 
         auto noclip = CVarNoClip.Get();
         auto &controller = entity.Get<ecs::HumanController>(lock);
@@ -183,10 +187,12 @@ namespace sp {
                                         double dtSinceLastFrame,
                                         glm::vec3 velocity) {
         auto &transform = entity.Get<ecs::Transform>(lock);
-        if (transform.IsDirty()) return;
         auto &controller = entity.Get<ecs::HumanController>(lock);
 
         if (controller.pxController) {
+            auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+            if (transform.HasChanged(userData->transformChangeNumber)) return;
+
             auto disp = velocity * (float)dtSinceLastFrame;
             auto prevPosition = PxExtendedVec3ToGlmVec3P(controller.pxController->getPosition());
             glm::vec3 newPosition;
@@ -205,8 +211,7 @@ namespace sp {
 
             // Update the velocity based on what happened in physx
             controller.velocity = (velocityPosition - prevPosition) / (float)dtSinceLastFrame;
-            glm::vec3 *controllerVelocity = (glm::vec3 *)controller.pxController->getUserData();
-            *controllerVelocity = CVarNoClip.Get() ? glm::vec3(0) : controller.velocity;
+            userData->velocity = CVarNoClip.Get() ? glm::vec3(0) : controller.velocity;
 
             // Offset the capsule position so the camera is at the top
             float capsuleHeight = controller.pxController->getHeight();

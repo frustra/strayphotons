@@ -26,7 +26,8 @@ namespace sp {
     static CVar<float> CVarMaxConstraintTorque("x.MaxConstraintTorque", 10.0f, "The maximum torque force for constraints");
     // clang-format on
 
-    PhysxManager::PhysxManager() : RegisteredThread("PhysX", 120.0), humanControlSystem(this) {
+    PhysxManager::PhysxManager()
+        : RegisteredThread("PhysX", 120.0), humanControlSystem(this), characterControlSystem(*this) {
         Logf("PhysX %d.%d.%d starting up",
              PX_PHYSICS_VERSION_MAJOR,
              PX_PHYSICS_VERSION_MINOR,
@@ -123,7 +124,8 @@ namespace sp {
 
         { // Sync ECS state to physx
             auto lock = ecs::World.StartTransaction<
-                ecs::Write<ecs::Physics, ecs::Transform, ecs::HumanController, ecs::InteractController>>();
+                ecs::Read<ecs::Transform>,
+                ecs::Write<ecs::Physics, ecs::HumanController, ecs::CharacterController, ecs::InteractController>>();
 
             // Delete actors for removed entities
             ecs::Removed<ecs::Physics> removedPhysics;
@@ -136,12 +138,23 @@ namespace sp {
                     removedHumanController.component.pxController->release();
                 }
             }
+            ecs::Removed<ecs::CharacterController> removedCharacterController;
+            while (characterControllerRemoval.Poll(lock, removedCharacterController)) {
+                if (removedCharacterController.component.pxController) {
+                    removedCharacterController.component.pxController->release();
+                }
+            }
 
             // Update controllers with latest entity data
             for (auto ent : lock.EntitiesWith<ecs::HumanController>()) {
                 if (!ent.Has<ecs::HumanController, ecs::Transform>(lock)) continue;
 
                 UpdateController(lock, ent);
+            }
+            for (auto ent : lock.EntitiesWith<ecs::CharacterController>()) {
+                if (!ent.Has<ecs::CharacterController, ecs::Transform>(lock)) continue;
+
+                characterControlSystem.UpdateController(lock, ent);
             }
 
             // Update actors with latest entity data
@@ -272,6 +285,7 @@ namespace sp {
         }
 
         humanControlSystem.Frame(std::chrono::nanoseconds(this->interval).count() / 1e9);
+        characterControlSystem.Frame(std::chrono::nanoseconds(this->interval).count() / 1e9);
 
         { // Simulate 1 physics frame (blocking)
             scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
@@ -288,18 +302,23 @@ namespace sp {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
 
                 auto &ph = ent.Get<ecs::Physics>(lock);
-                auto &transform = ent.Get<ecs::Transform>(lock);
+                auto &readTransform = ent.GetPrevious<ecs::Transform>(lock);
 
                 if (!ph.dynamic) continue;
 
-                Assert(!transform.HasParent(lock), "Dynamic physics objects must have no parent");
+                Assert(!readTransform.HasParent(lock), "Dynamic physics objects must have no parent");
 
-                if (ph.actor && !transform.IsDirty()) {
-                    auto pose = ph.actor->getGlobalPose();
-                    transform.SetPosition(PxVec3ToGlmVec3P(pose.p), false);
-                    transform.SetRotation(PxQuatToGlmQuat(pose.q), false);
+                if (ph.actor) {
+                    auto userData = (ActorUserData *)ph.actor->userData;
+                    if (!readTransform.HasChanged(userData->transformChangeNumber)) {
+                        auto &transform = ent.Get<ecs::Transform>(lock);
+                        auto pose = ph.actor->getGlobalPose();
+                        transform.SetPosition(PxVec3ToGlmVec3P(pose.p));
+                        transform.SetRotation(PxQuatToGlmQuat(pose.q));
 
-                    transform.UpdateCachedTransform(lock);
+                        transform.UpdateCachedTransform(lock);
+                        userData->transformChangeNumber = transform.ChangeNumber();
+                    }
                 }
             }
         }
@@ -348,6 +367,7 @@ namespace sp {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
             physicsRemoval = lock.Watch<ecs::Removed<ecs::Physics>>();
             humanControllerRemoval = lock.Watch<ecs::Removed<ecs::HumanController>>();
+            characterControllerRemoval = lock.Watch<ecs::Removed<ecs::CharacterController>>();
         }
     }
 
@@ -427,7 +447,8 @@ namespace sp {
         }
     }
 
-    void PhysxManager::UpdateActor(ecs::Lock<ecs::Write<ecs::Physics, ecs::Transform>> lock, Tecs::Entity &e) {
+    void PhysxManager::UpdateActor(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock,
+                                   Tecs::Entity &e) {
         auto &ph = e.Get<ecs::Physics>(lock);
         auto &transform = e.Get<ecs::Transform>(lock);
 
@@ -452,7 +473,7 @@ namespace sp {
             }
             Assert(ph.actor, "Physx did not return valid PxRigidActor");
 
-            ph.actor->userData = reinterpret_cast<void *>((size_t)e.id);
+            ph.actor->userData = new ActorUserData(e, transform.ChangeNumber());
 
             PxMaterial *mat = pxPhysics->createMaterial(0.6f, 0.5f, 0.0f);
 
@@ -491,7 +512,8 @@ namespace sp {
             scene->addActor(*ph.actor);
         }
 
-        if (transform.IsDirty()) {
+        auto userData = (ActorUserData *)ph.actor->userData;
+        if (transform.HasChanged(userData->transformChangeNumber)) {
             if (ph.scale != scale) {
                 auto n = ph.actor->getNbShapes();
                 std::vector<PxShape *> shapes(n);
@@ -509,7 +531,7 @@ namespace sp {
             }
 
             ph.actor->setGlobalPose(pxTransform);
-            transform.ClearDirty();
+            userData->transformChangeNumber = transform.ChangeNumber();
         }
     }
 
@@ -526,8 +548,8 @@ namespace sp {
     void ControllerHitReport::onShapeHit(const PxControllerShapeHit &hit) {
         auto dynamic = hit.actor->is<PxRigidDynamic>();
         if (dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
-            glm::vec3 *velocity = (glm::vec3 *)hit.controller->getUserData();
-            auto magnitude = glm::length(*velocity);
+            auto userData = (CharacterControllerUserData *)hit.controller->getUserData();
+            auto magnitude = glm::length(userData->velocity);
             if (magnitude > 0.0001) {
                 PxRigidBodyExt::addForceAtPos(*dynamic,
                                               hit.dir.multiply(PxVec3(magnitude * ecs::PLAYER_PUSH_FORCE)),
@@ -546,7 +568,7 @@ namespace sp {
         return flags & PxControllerCollisionFlag::eCOLLISION_DOWN;
     }
 
-    void PhysxManager::UpdateController(ecs::Lock<ecs::Write<ecs::HumanController, ecs::Transform>> lock,
+    void PhysxManager::UpdateController(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,
                                         Tecs::Entity &e) {
 
         auto &controller = e.Get<ecs::HumanController>(lock);
@@ -568,7 +590,7 @@ namespace sp {
             desc.material = pxPhysics->createMaterial(0.3f, 0.3f, 0.3f);
             desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
             desc.reportCallback = new ControllerHitReport(); // TODO: Does this have to be free'd?
-            desc.userData = new glm::vec3(0); // TODO: Store this on the component
+            desc.userData = new CharacterControllerUserData(transform.ChangeNumber());
 
             auto pxController = controllerManager->createController(desc);
             Assert(pxController->getType() == PxControllerShapeType::eCAPSULE,
@@ -586,9 +608,10 @@ namespace sp {
             controller.pxController = static_cast<PxCapsuleController *>(pxController);
         }
 
-        if (transform.IsDirty()) {
+        auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+        if (transform.HasChanged(userData->transformChangeNumber)) {
             controller.pxController->setPosition(pxPosition);
-            transform.ClearDirty();
+            userData->transformChangeNumber = transform.ChangeNumber();
         }
 
         float currentHeight = controller.pxController->getHeight();

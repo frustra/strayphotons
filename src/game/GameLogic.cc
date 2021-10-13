@@ -154,14 +154,25 @@ namespace sp {
             Assert(!!player, "Player scene doesn't contain an entity named player");
 
             auto spawn = ecs::EntityWith<ecs::Name>(lock, "player-spawn");
+            auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, "vr-origin");
             if (spawn.Has<ecs::Transform>(lock)) {
                 auto &spawnTransform = spawn.Get<ecs::Transform>(lock);
-                player.Set<ecs::Transform>(lock, spawnTransform);
+                auto spawnPosition = spawnTransform.GetGlobalPosition(lock);
+                auto spawnRotation = spawnTransform.GetGlobalRotation(lock);
+                auto &playerTransform = player.Get<ecs::Transform>(lock);
+                playerTransform.SetPosition(spawnPosition);
+                playerTransform.SetRotation(spawnRotation);
+                playerTransform.UpdateCachedTransform(lock);
+                if (vrOrigin) {
+                    auto &vrTransform = vrOrigin.Get<ecs::Transform>(lock);
+                    vrTransform.SetPosition(spawnPosition);
+                    vrTransform.SetRotation(spawnRotation);
+                    vrTransform.UpdateCachedTransform(lock);
+                }
             } else if (!player.Has<ecs::Transform>(lock)) {
                 player.Set<ecs::Transform>(lock, glm::vec3(0));
             }
 
-            player.Set<ecs::HumanController>(lock);
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
             auto &interact = player.Set<ecs::InteractController>(lock);
             interact.manager = &game->physics;
@@ -208,10 +219,20 @@ namespace sp {
                     name = "player-spawn";
                     if (e.Has<ecs::Transform>(lock)) {
                         auto &spawnTransform = e.Get<ecs::Transform>(lock);
+                        auto spawnPosition = spawnTransform.GetGlobalPosition(lock);
+                        auto spawnRotation = spawnTransform.GetGlobalRotation(lock);
                         auto &playerTransform = player.Get<ecs::Transform>(lock);
-                        playerTransform.SetPosition(spawnTransform.GetPosition());
-                        playerTransform.SetRotation(spawnTransform.GetRotation());
+                        playerTransform.SetPosition(spawnPosition);
+                        playerTransform.SetRotation(spawnRotation);
                         playerTransform.UpdateCachedTransform(lock);
+
+                        auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, "vr-origin");
+                        if (vrOrigin) {
+                            auto &vrTransform = vrOrigin.Get<ecs::Transform>(lock);
+                            vrTransform.SetPosition(spawnPosition);
+                            vrTransform.SetRotation(spawnRotation);
+                            vrTransform.UpdateCachedTransform(lock);
+                        }
                     }
                     break;
                 }
@@ -245,8 +266,12 @@ namespace sp {
             auto &controller = player.Get<ecs::HumanController>(lock);
             auto position = transform.GetPosition();
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-            auto pxFeet = controller.pxController->getFootPosition();
-            Logf("Player position: [%f, %f, %f], feet: %f", position.x, position.y, position.z, pxFeet.y);
+            if (controller.pxController) {
+                auto pxFeet = controller.pxController->getFootPosition();
+                Logf("Player position: [%f, %f, %f], feet: %f", position.x, position.y, position.z, pxFeet.y);
+            } else {
+                Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
+            }
 #else
             Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
 #endif

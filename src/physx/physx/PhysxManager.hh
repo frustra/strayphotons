@@ -1,10 +1,10 @@
 #pragma once
 
 #include "ConvexHull.hh"
-#include "core/CFunc.hh"
 #include "core/Common.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
+#include "physx/CharacterControlSystem.hh"
 #include "physx/HumanControlSystem.hh"
 
 #include <PxPhysicsAPI.h>
@@ -30,6 +30,22 @@ namespace sp {
         physx::PxRigidDynamic *child;
         physx::PxVec3 offset, rotation;
         physx::PxQuat rotationOffset;
+    };
+
+    struct ActorUserData {
+        Tecs::Entity entity;
+        uint32_t transformChangeNumber;
+
+        ActorUserData() {}
+        ActorUserData(Tecs::Entity ent, uint32_t changeNumber) : entity(ent), transformChangeNumber(changeNumber) {}
+    };
+
+    struct CharacterControllerUserData {
+        uint32_t transformChangeNumber;
+        glm::vec3 velocity;
+
+        CharacterControllerUserData() {}
+        CharacterControllerUserData(uint32_t changeNumber) : transformChangeNumber(changeNumber) {}
     };
 
     class ControllerHitReport : public physx::PxUserControllerHitReport {
@@ -75,10 +91,11 @@ namespace sp {
 
         ConvexHullSet *GetCachedConvexHulls(std::string name);
 
-        void UpdateActor(ecs::Lock<ecs::Write<ecs::Physics, ecs::Transform>> lock, Tecs::Entity &e);
+        void UpdateActor(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
 
-        void UpdateController(ecs::Lock<ecs::Write<ecs::HumanController, ecs::Transform>> lock, Tecs::Entity &e);
+        void UpdateController(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,
+                              Tecs::Entity &e);
 
         bool SweepQuery(physx::PxRigidDynamic *actor, const physx::PxVec3 dir, const float distance);
 
@@ -128,13 +145,15 @@ namespace sp {
 
         ecs::Observer<ecs::Removed<ecs::Physics>> physicsRemoval;
         ecs::Observer<ecs::Removed<ecs::HumanController>> humanControllerRemoval;
+        ecs::Observer<ecs::Removed<ecs::CharacterController>> characterControllerRemoval;
 
         HumanControlSystem humanControlSystem;
+        CharacterControlSystem characterControlSystem;
 
         ConstraintList constraints;
 
         std::unordered_map<string, ConvexHullSet *> cache;
 
-        CFuncCollection funcs;
+        friend class CharacterControlSystem;
     };
 } // namespace sp

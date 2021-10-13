@@ -49,7 +49,6 @@ namespace ecs {
     void Transform::SetParent(Tecs::Entity ent) {
         this->parent = ent;
         this->parentCacheCount = 0;
-        this->dirty = true;
     }
 
     const Tecs::Entity &Transform::GetParent() const {
@@ -130,25 +129,21 @@ namespace ecs {
     void Transform::Translate(glm::vec3 xyz) {
         this->position += xyz;
         this->changeCount++;
-        this->dirty = true;
     }
 
     void Transform::Rotate(float radians, glm::vec3 axis) {
         this->rotation = glm::rotate(this->rotation, radians, axis);
         this->changeCount++;
-        this->dirty = true;
     }
 
     void Transform::Scale(glm::vec3 xyz) {
         this->scale *= xyz;
         this->changeCount++;
-        this->dirty = true;
     }
 
-    void Transform::SetPosition(glm::vec3 pos, bool setDirty) {
+    void Transform::SetPosition(glm::vec3 pos) {
         this->position = pos;
         this->changeCount++;
-        if (setDirty) this->dirty = true;
     }
 
     glm::vec3 Transform::GetPosition() const {
@@ -171,10 +166,9 @@ namespace ecs {
         return -GetLeft();
     }
 
-    void Transform::SetRotation(glm::quat quat, bool setDirty) {
+    void Transform::SetRotation(glm::quat quat) {
         this->rotation = quat;
         this->changeCount++;
-        if (setDirty) this->dirty = true;
     }
 
     glm::quat Transform::GetRotation() const {
@@ -184,20 +178,17 @@ namespace ecs {
     void Transform::SetScale(glm::vec3 xyz) {
         this->scale = xyz;
         this->changeCount++;
-        this->dirty = true;
     }
 
     glm::vec3 Transform::GetScale() const {
         return this->scale;
     }
 
-    bool Transform::IsDirty() const {
-        return this->dirty;
+    uint32_t Transform::ChangeNumber() const {
+        return this->changeCount;
     }
 
-    bool Transform::ClearDirty() {
-        bool tmp = this->dirty;
-        this->dirty = false;
-        return tmp;
+    bool Transform::HasChanged(uint32_t changeNumber) const {
+        return this->changeCount != changeNumber;
     }
 } // namespace ecs

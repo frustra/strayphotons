@@ -76,10 +76,10 @@ namespace sp::xr {
                 vrOrigin = lock.NewEntity();
                 vrOrigin.Set<ecs::Name>(lock, "vr-origin");
                 vrOrigin.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
-                vrOrigin.Set<ecs::Transform>(lock);
 
                 vrOriginEntity = ecs::NamedEntity("vr-origin", vrOrigin);
             }
+            vrOrigin.Get<ecs::Transform>(lock);
 
             for (size_t i = 0; i < views.size(); i++) {
                 auto &entity = views[i];

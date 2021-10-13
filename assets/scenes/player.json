@@ -25,7 +25,22 @@
             ],
             "event_bindings": {
                 "/script/joystick_out": { "/action/camera_rotate": "player" }
+            },
+            "human_controller": {}
+        },
+        {
+            "_name": "vr-origin",
+            "character_controller": {
+                "input_parent": "vr-hmd",
+                "target": "vr-hmd"
             }
+        },
+        {
+            "transform": {
+                "parent": "vr-origin",
+                "scale": [0.1, 0.1, 0.1]
+            },
+            "renderable": "box"
         },
         {
             "_name": "flashlight",
