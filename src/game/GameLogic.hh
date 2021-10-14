@@ -22,7 +22,8 @@ namespace sp {
 
         void LoadPlayer();
         void LoadScene(std::string name);
-        void ReloadScene(std::string arg);
+        void ReloadScene();
+        void ReloadPlayer();
         void PrintDebug();
 
         void PrintFocus();

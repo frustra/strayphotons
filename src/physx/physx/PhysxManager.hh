@@ -2,6 +2,7 @@
 
 #include "ConvexHull.hh"
 #include "core/Common.hh"
+#include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "physx/CharacterControlSystem.hh"
@@ -34,15 +35,16 @@ namespace sp {
 
     struct ActorUserData {
         Tecs::Entity entity;
-        uint32_t transformChangeNumber;
+        uint32_t transformChangeNumber = 0;
 
         ActorUserData() {}
         ActorUserData(Tecs::Entity ent, uint32_t changeNumber) : entity(ent), transformChangeNumber(changeNumber) {}
     };
 
     struct CharacterControllerUserData {
-        uint32_t transformChangeNumber;
-        glm::vec3 velocity;
+        uint32_t transformChangeNumber = 0;
+        bool onGround = false;
+        glm::vec3 velocity = glm::vec3(0);
 
         CharacterControllerUserData() {}
         CharacterControllerUserData(uint32_t changeNumber) : transformChangeNumber(changeNumber) {}
@@ -96,8 +98,9 @@ namespace sp {
 
         void UpdateController(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,
                               Tecs::Entity &e);
+        void RemoveController(physx::PxCapsuleController *controller);
 
-        bool SweepQuery(physx::PxRigidDynamic *actor, const physx::PxVec3 dir, const float distance);
+        bool SweepQuery(physx::PxRigidDynamic *actor, physx::PxVec3 dir, float distance, physx::PxSweepBuffer &hit);
 
         /**
          * Checks scene for an overlapping hit in the shape
@@ -125,8 +128,9 @@ namespace sp {
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;
 
-        std::shared_ptr<physx::PxControllerManager> controllerManager; // Must be deconstructed before scene
         std::shared_ptr<physx::PxScene> scene;
+        std::unique_ptr<ControllerHitReport> controllerHitReporter;
+        std::shared_ptr<physx::PxControllerManager> controllerManager; // Must be deconstructed before scene
 
         physx::PxFoundation *pxFoundation = nullptr;
         physx::PxPhysics *pxPhysics = nullptr;
@@ -145,7 +149,6 @@ namespace sp {
 
         ecs::Observer<ecs::Removed<ecs::Physics>> physicsRemoval;
         ecs::Observer<ecs::Removed<ecs::HumanController>> humanControllerRemoval;
-        ecs::Observer<ecs::Removed<ecs::CharacterController>> characterControllerRemoval;
 
         HumanControlSystem humanControlSystem;
         CharacterControlSystem characterControlSystem;

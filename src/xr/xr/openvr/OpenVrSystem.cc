@@ -205,50 +205,53 @@ namespace sp::xr {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
 
             Tecs::Entity vrOrigin = vrOriginEntity.Get(lock);
-            Assert(vrOrigin, "VR Origin entity missing");
+            if (vrOrigin) {
+                for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
+                    auto &namedEntity = trackedDevices[i];
+                    Tecs::Entity ent = namedEntity.Get(lock);
 
-            for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
-                auto &namedEntity = trackedDevices[i];
-                Tecs::Entity ent = namedEntity.Get(lock);
-
-                auto &targetName = deviceNames[i];
-                if (namedEntity.Name() != targetName) {
-                    if (ent) {
-                        ent.Destroy(lock);
-                        ent = Tecs::Entity();
+                    auto &targetName = deviceNames[i];
+                    if (namedEntity.Name() != targetName) {
+                        if (ent) {
+                            ent.Destroy(lock);
+                            ent = Tecs::Entity();
+                        }
+                        if (!targetName.empty()) {
+                            ent = lock.NewEntity();
+                            ent.Set<ecs::Name>(lock, targetName);
+                            ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
+                            auto model = GAssets.LoadModel("box");
+                            ent.Set<ecs::Renderable>(lock, model);
+                            auto &transform = ent.Set<ecs::Transform>(lock);
+                            transform.SetParent(vrOrigin);
+                            transform.SetScale(glm::vec3(0.01f));
+                            ent.Set<ecs::EventBindings>(lock);
+                            ent.Set<ecs::SignalOutput>(lock);
+                        }
+                        namedEntity = ecs::NamedEntity(targetName, ent);
                     }
-                    if (!targetName.empty()) {
-                        ent = lock.NewEntity();
-                        ent.Set<ecs::Name>(lock, targetName);
-                        ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
-                        auto model = GAssets.LoadModel("box");
-                        ent.Set<ecs::Renderable>(lock, model);
-                        auto &transform = ent.Set<ecs::Transform>(lock);
-                        transform.SetParent(vrOrigin);
-                        transform.SetScale(glm::vec3(0.01f));
-                        ent.Set<ecs::EventBindings>(lock);
-                        ent.Set<ecs::SignalOutput>(lock);
-                    }
-                    namedEntity = ecs::NamedEntity(targetName, ent);
                 }
             }
         }
         {
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
 
-            for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
-                auto &namedEntity = trackedDevices[i];
+            Tecs::Entity vrOrigin = vrOriginEntity.Get(lock);
+            if (vrOrigin) {
+                for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
+                    auto &namedEntity = trackedDevices[i];
 
-                Tecs::Entity ent = namedEntity.Get(lock);
-                if (ent && ent.Has<ecs::Transform>(lock) && trackedDevicePoses[i].bPoseIsValid) {
-                    auto &transform = ent.Get<ecs::Transform>(lock);
+                    Tecs::Entity ent = namedEntity.Get(lock);
+                    if (ent && ent.Has<ecs::Transform>(lock) && trackedDevicePoses[i].bPoseIsValid) {
+                        auto &transform = ent.Get<ecs::Transform>(lock);
 
-                    auto pose = glm::transpose(
-                        glm::make_mat3x4((float *)trackedDevicePoses[i].mDeviceToAbsoluteTracking.m));
+                        auto pose = glm::transpose(
+                            glm::make_mat3x4((float *)trackedDevicePoses[i].mDeviceToAbsoluteTracking.m));
 
-                    transform.SetRotation(glm::quat_cast(glm::mat3(pose)));
-                    transform.SetPosition(pose[3]);
-                    transform.UpdateCachedTransform(lock);
+                        transform.SetRotation(glm::quat_cast(glm::mat3(pose)));
+                        transform.SetPosition(pose[3]);
+                        transform.UpdateCachedTransform(lock);
+                    }
                 }
             }
         }

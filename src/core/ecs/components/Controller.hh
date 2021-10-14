@@ -32,18 +32,12 @@ namespace ecs {
         physx::PxCapsuleController *pxController;
 
         float height = ecs::PLAYER_CAPSULE_HEIGHT;
-
-        bool onGround = false;
-        glm::vec3 velocity = glm::vec3(0);
     };
 
     struct CharacterController {
-        ecs::NamedEntity inputParent;
         ecs::NamedEntity target;
 
-        bool onGround = false;
-        glm::vec3 velocity = glm::vec3(0);
-        physx::PxCapsuleController *pxController;
+        physx::PxCapsuleController *pxController = nullptr;
     };
 
     static Component<HumanController> ComponentHumanController("human_controller");

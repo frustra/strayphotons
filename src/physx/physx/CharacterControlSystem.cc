@@ -17,136 +17,157 @@
 #include <sstream>
 
 namespace sp {
+    using namespace physx;
+
     static CVar<float> CVarControllerMovementSpeed("p.ControllerMovementSpeed",
                                                    3.0,
                                                    "Character controller movement speed (m/s)");
 
+    CharacterControlSystem::CharacterControlSystem(PhysxManager &manager) : manager(manager) {
+        auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+        additionObserver = lock.Watch<ecs::Added<ecs::CharacterController>>();
+        removalObserver = lock.Watch<ecs::Removed<ecs::CharacterController>>();
+    }
+
     void CharacterControlSystem::Frame(double dtSinceLastFrame) {
         auto lock = ecs::World.StartTransaction<
             ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
-            ecs::Write<ecs::EventInput, ecs::Transform, ecs::CharacterController, ecs::InteractController>>();
+            ecs::Write<ecs::Transform, ecs::CharacterController>>();
+
+        ecs::Removed<ecs::CharacterController> removedEvent;
+        while (removalObserver.Poll(lock, removedEvent)) {
+            if (removedEvent.component.pxController) manager.RemoveController(removedEvent.component.pxController);
+        }
+
+        ecs::Added<ecs::CharacterController> addedEvent;
+        while (additionObserver.Poll(lock, addedEvent)) {
+            if (addedEvent.entity.Has<ecs::CharacterController>(lock)) {
+                auto &controller = addedEvent.entity.Get<ecs::CharacterController>(lock);
+                if (!controller.pxController) {
+                    PxCapsuleControllerDesc desc;
+                    desc.position = PxExtendedVec3(0, 0, 0);
+                    desc.upDirection = PxVec3(0, 1, 0);
+                    desc.radius = ecs::PLAYER_RADIUS;
+                    desc.height = ecs::PLAYER_CAPSULE_HEIGHT;
+                    desc.density = 0.5f;
+                    desc.material = manager.pxPhysics->createMaterial(0.3f, 0.3f, 0.3f);
+                    desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
+                    desc.reportCallback = manager.controllerHitReporter.get();
+                    desc.userData = new CharacterControllerUserData();
+
+                    auto pxController = manager.controllerManager->createController(desc);
+                    Assert(pxController->getType() == PxControllerShapeType::eCAPSULE,
+                           "Physx did not create a valid PxCapsuleController");
+
+                    pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
+
+                    PxShape *shape;
+                    pxController->getActor()->getShapes(&shape, 1);
+                    PxFilterData data;
+                    data.word0 = PhysxCollisionGroup::PLAYER;
+                    shape->setQueryFilterData(data);
+                    shape->setSimulationFilterData(data);
+
+                    controller.pxController = static_cast<PxCapsuleController *>(pxController);
+                }
+            }
+        }
 
         for (Tecs::Entity entity : lock.EntitiesWith<ecs::CharacterController>()) {
-            if (!entity.Has<ecs::Transform>(lock)) continue;
+            if (!entity.Has<ecs::CharacterController, ecs::Transform>(lock)) continue;
 
             auto &controller = entity.Get<ecs::CharacterController>(lock);
             if (!controller.pxController) continue;
 
-            glm::vec3 inputMovement = glm::vec3(0);
-            inputMovement.z -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_FORWARD);
-            inputMovement.z += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_BACK);
-            inputMovement.x -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_LEFT);
-            inputMovement.x += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RIGHT);
-            inputMovement.x = std::clamp(inputMovement.x, -1.0f, 1.0f);
-            inputMovement.z = std::clamp(inputMovement.z, -1.0f, 1.0f);
-
-            glm::vec3 movement = inputMovement;
-            Tecs::Entity inputParent = controller.inputParent.Get(lock);
-            if (inputParent.Has<ecs::Transform>(lock)) {
-                auto &parentTransform = inputParent.Get<ecs::Transform>(lock);
-                auto parentRotation = parentTransform.GetGlobalRotation(lock);
-                movement = parentRotation * inputMovement;
-                if (std::abs(movement.y) > 0.999) { movement = parentRotation * glm::vec3(0, -movement.y, 0); }
-                movement.y = 0;
-            }
-
-            if (movement != glm::vec3(0)) {
-                float speed = CVarControllerMovementSpeed.Get();
-                movement = glm::normalize(movement) * speed;
-            }
-
-            if (controller.onGround) {
-                controller.velocity.x = movement.x;
-                controller.velocity.y -= 0.01; // Always try moving down so that onGround detection is more consistent.
-                controller.velocity.z = movement.z;
-            } else {
-                controller.velocity += movement * ecs::PLAYER_AIR_STRAFE * (float)dtSinceLastFrame;
-                controller.velocity.y -= ecs::PLAYER_GRAVITY * dtSinceLastFrame;
-            }
-
-            MoveEntity(lock, entity, dtSinceLastFrame, controller.velocity);
-        }
-    }
-
-    void CharacterControlSystem::UpdateController(
-        ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::CharacterController>> lock,
-        Tecs::Entity &e) {
-        if (!e.Has<ecs::CharacterController, ecs::Transform>(lock)) return;
-
-        auto &controller = e.Get<ecs::CharacterController>(lock);
-        auto &transform = e.Get<ecs::Transform>(lock);
-
-        auto position = transform.GetGlobalPosition(lock);
-        // Offset the capsule position so the transform origin is at the botttom
-        auto pxPosition = GlmVec3ToPxExtendedVec3(position + glm::vec3(0, ecs::PLAYER_CAPSULE_HEIGHT / 2, 0));
-
-        if (!controller.pxController) {
-            // Capsule controller description will want to be data driven
-            physx::PxCapsuleControllerDesc desc;
-            desc.position = pxPosition;
-            desc.upDirection = physx::PxVec3(0, 1, 0);
-            desc.radius = ecs::PLAYER_RADIUS;
-            desc.height = ecs::PLAYER_CAPSULE_HEIGHT;
-            desc.density = 0.5f;
-            desc.material = manager.pxPhysics->createMaterial(0.3f, 0.3f, 0.3f);
-            desc.climbingMode = physx::PxCapsuleClimbingMode::eCONSTRAINED;
-            desc.reportCallback = new ControllerHitReport(); // TODO: Does this have to be free'd?
-            desc.userData = new CharacterControllerUserData(transform.ChangeNumber());
-
-            auto pxController = manager.controllerManager->createController(desc);
-            Assert(pxController->getType() == physx::PxControllerShapeType::eCAPSULE,
-                   "Physx did not create a valid PxCapsuleController");
-
-            pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
-
-            physx::PxShape *shape;
-            pxController->getActor()->getShapes(&shape, 1);
-            physx::PxFilterData data;
-            data.word0 = PhysxCollisionGroup::PLAYER;
-            shape->setQueryFilterData(data);
-            shape->setSimulationFilterData(data);
-
-            controller.pxController = static_cast<physx::PxCapsuleController *>(pxController);
-        }
-
-        auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
-        if (transform.HasChanged(userData->transformChangeNumber)) {
-            controller.pxController->setPosition(pxPosition);
-            userData->transformChangeNumber = transform.ChangeNumber();
-        }
-    }
-
-    void CharacterControlSystem::MoveEntity(ecs::Lock<ecs::Write<ecs::Transform, ecs::CharacterController>> lock,
-                                            Tecs::Entity entity,
-                                            double dtSinceLastFrame,
-                                            glm::vec3 velocity) {
-        auto &transform = entity.Get<ecs::Transform>(lock);
-        auto &controller = entity.Get<ecs::CharacterController>(lock);
-
-        if (controller.pxController) {
             auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
-            if (transform.HasChanged(userData->transformChangeNumber)) return;
 
-            auto disp = velocity * (float)dtSinceLastFrame;
-            auto prevPosition = PxExtendedVec3ToGlmVec3P(controller.pxController->getPosition());
-            glm::vec3 newPosition;
-            controller.onGround = manager.MoveController(controller.pxController,
-                                                         dtSinceLastFrame,
-                                                         GlmVec3ToPxVec3(disp));
-            newPosition = PxExtendedVec3ToGlmVec3P(controller.pxController->getPosition());
+            auto target = controller.target.Get(lock);
+            if (target && target.Has<ecs::Transform>(lock)) {
+                auto &targetTransform = target.Get<ecs::Transform>(lock);
+                auto &originTransform = entity.Get<ecs::Transform>(lock);
 
-            // Don't accelerate more than our current velocity
-            auto velocityPosition = glm::min(prevPosition + glm::abs(disp), newPosition);
-            velocityPosition = glm::max(prevPosition - glm::abs(disp), velocityPosition);
+                auto targetPosition = targetTransform.GetGlobalPosition(lock);
+                auto originPosition = originTransform.GetGlobalPosition(lock);
+                auto targetHeight = std::max(
+                    0.1f,
+                    targetPosition.y - originPosition.y - controller.pxController->getRadius());
+                targetPosition.y = originPosition.y;
 
-            // Update the velocity based on what happened in physx
-            controller.velocity = (velocityPosition - prevPosition) / (float)dtSinceLastFrame;
-            userData->velocity = controller.velocity;
+                // If the origin moved, teleport the controller
+                if (originTransform.HasChanged(userData->transformChangeNumber)) {
+                    controller.pxController->setHeight(targetHeight);
+                    controller.pxController->setFootPosition(GlmVec3ToPxExtendedVec3(targetPosition));
 
-            // Offset the capsule position so the transform origin is at the bottom
-            float capsuleHeight = controller.pxController->getHeight();
-            transform.SetPosition(newPosition - glm::vec3(0, capsuleHeight / 2, 0));
-            userData->transformChangeNumber = transform.ChangeNumber();
+                    userData->onGround = false;
+                    userData->velocity = glm::vec3(0);
+                    userData->transformChangeNumber = originTransform.ChangeNumber();
+                }
+
+                // Update the capsule height
+                auto currentHeight = controller.pxController->getHeight();
+                if (currentHeight > targetHeight) {
+                    controller.pxController->resize(targetHeight);
+                } else if (currentHeight < targetHeight) {
+                    auto sweepDist = targetHeight - currentHeight;
+
+                    PxSweepBuffer result;
+                    manager.SweepQuery(controller.pxController->getActor(), PxVec3(0, 1, 0), sweepDist, result);
+                    if (result.getNbAnyHits() > 0) {
+                        auto hit = result.getAnyHit(0);
+                        controller.pxController->resize(currentHeight + hit.distance);
+                    } else {
+                        controller.pxController->resize(targetHeight);
+                    }
+                }
+
+                // Update the capsule position to match target
+                auto targetDelta = targetPosition -
+                                   PxExtendedVec3ToGlmVec3P(controller.pxController->getFootPosition());
+                userData->onGround = manager.MoveController(controller.pxController,
+                                                            dtSinceLastFrame,
+                                                            GlmVec3ToPxVec3(targetDelta));
+
+                // Calculate new character velocity
+                glm::vec3 movement = glm::vec3(0);
+                movement.x = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_WORLD_X);
+                movement.z = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_WORLD_Z);
+
+                if (movement != glm::vec3(0)) {
+                    float speed = CVarControllerMovementSpeed.Get();
+                    movement = glm::normalize(movement) * speed;
+                }
+
+                if (userData->onGround) {
+                    userData->velocity.x = movement.x;
+                    userData->velocity.y -=
+                        0.01; // Always try moving down so that onGround detection is more consistent.
+                    userData->velocity.z = movement.z;
+                } else {
+                    userData->velocity += movement * ecs::PLAYER_AIR_STRAFE * (float)dtSinceLastFrame;
+                    userData->velocity.y -= ecs::PLAYER_GRAVITY * dtSinceLastFrame;
+                }
+
+                // Move controller based on velocity and update ECS transform
+                auto disp = userData->velocity * (float)dtSinceLastFrame;
+                auto prevPosition = controller.pxController->getFootPosition();
+                userData->onGround = manager.MoveController(controller.pxController,
+                                                            dtSinceLastFrame,
+                                                            GlmVec3ToPxVec3(disp));
+                auto deltaPos = PxVec3ToGlmVec3P(controller.pxController->getFootPosition() - prevPosition);
+
+                // Update the velocity based on what happened in physx
+                auto physxVelocity = deltaPos / (float)dtSinceLastFrame;
+                auto inputSpeed = glm::length(userData->velocity);
+                if (glm::length(physxVelocity) > inputSpeed) {
+                    // Don't allow the physics simulation to accelerate the character faster than the input speed
+                    userData->velocity = glm::normalize(physxVelocity) * inputSpeed;
+                } else {
+                    userData->velocity = physxVelocity;
+                }
+
+                originTransform.Translate(deltaPos);
+                userData->transformChangeNumber = originTransform.ChangeNumber();
+            }
         }
     }
 } // namespace sp

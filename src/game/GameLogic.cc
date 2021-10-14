@@ -34,6 +34,7 @@ namespace sp {
     GameLogic::GameLogic(Game *game) : game(game) {
         funcs.Register(this, "loadscene", "Load a scene", &GameLogic::LoadScene);
         funcs.Register(this, "reloadscene", "Reload current scene", &GameLogic::ReloadScene);
+        funcs.Register(this, "reloadplayer", "Reload player scene", &GameLogic::ReloadPlayer);
         funcs.Register(this, "printdebug", "Print some debug info about the scene", &GameLogic::PrintDebug);
         funcs.Register(this, "printfocus", "Print the current focus lock state", &GameLogic::PrintFocus);
         funcs.Register(this, "acquirefocus", "Acquire focus for the specified layer", &GameLogic::AcquireFocus);
@@ -246,8 +247,20 @@ namespace sp {
         }
     }
 
-    void GameLogic::ReloadScene(std::string arg) {
+    void GameLogic::ReloadScene() {
         if (scene) LoadScene(scene->name);
+    }
+
+    void GameLogic::ReloadPlayer() {
+        LoadPlayer();
+
+#ifdef SP_XR_SUPPORT
+        if (game->options["no-vr"].count() == 0) game->xr.LoadXrSystem();
+#endif
+
+#ifdef SP_INPUT_SUPPORT
+        game->inputBindingLoader.Load(InputBindingConfigPath);
+#endif
     }
 
     void GameLogic::PrintDebug() {
@@ -263,20 +276,21 @@ namespace sp {
                                                           ecs::FocusLock>>();
         if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
             auto &transform = player.Get<ecs::Transform>(lock);
-            auto &controller = player.Get<ecs::HumanController>(lock);
             auto position = transform.GetPosition();
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
+            auto &controller = player.Get<ecs::HumanController>(lock);
             if (controller.pxController) {
                 auto pxFeet = controller.pxController->getFootPosition();
                 Logf("Player position: [%f, %f, %f], feet: %f", position.x, position.y, position.z, pxFeet.y);
             } else {
                 Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
             }
+            auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+            Logf("Player velocity: [%f, %f, %f]", userData->velocity.x, userData->velocity.y, userData->velocity.z);
+            Logf("Player on ground: %s", userData->onGround ? "true" : "false");
 #else
             Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
 #endif
-            Logf("Player velocity: [%f, %f, %f]", controller.velocity.x, controller.velocity.y, controller.velocity.z);
-            Logf("Player on ground: %s", controller.onGround ? "true" : "false");
         } else {
             Logf("Scene has no valid player");
         }

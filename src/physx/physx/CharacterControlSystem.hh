@@ -11,20 +11,14 @@ namespace sp {
 
     class CharacterControlSystem {
     public:
-        CharacterControlSystem(PhysxManager &manager) : manager(manager) {}
+        CharacterControlSystem(PhysxManager &manager);
         ~CharacterControlSystem() {}
 
         void Frame(double dtSinceLastFrame);
 
-        void UpdateController(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::CharacterController>> lock,
-                              Tecs::Entity &e);
-
     private:
-        void MoveEntity(ecs::Lock<ecs::Write<ecs::Transform, ecs::CharacterController>> lock,
-                        Tecs::Entity entity,
-                        double dtSinceLastFrame,
-                        glm::vec3 velocity);
-
         PhysxManager &manager;
+        ecs::Observer<ecs::Added<ecs::CharacterController>> additionObserver;
+        ecs::Observer<ecs::Removed<ecs::CharacterController>> removalObserver;
     };
 } // namespace sp

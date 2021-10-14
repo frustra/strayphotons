@@ -29,9 +29,28 @@
             "human_controller": {}
         },
         {
+            "_name": "left-hand-input",
+            "script": {
+                "onTick": "relative_movement",
+                "parameters": {
+                    "target": "vr-hmd"
+                }
+            },
+            "signal_output": {}
+        },
+        {
+            "_name": "right-hand-input",
+            "script": {
+                "onTick": "relative_movement",
+                "parameters": {
+                    "target": "vr-controller-right"
+                }
+            },
+            "signal_output": {}
+        },
+        {
             "_name": "vr-origin",
             "character_controller": {
-                "input_parent": "vr-hmd",
                 "target": "vr-hmd"
             }
         },

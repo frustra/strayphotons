@@ -68,6 +68,7 @@ namespace sp {
         }
 
         controllerManager.reset();
+        controllerHitReporter.reset();
         scene.reset();
         if (dispatcher) {
             dispatcher->release();
@@ -124,7 +125,7 @@ namespace sp {
 
         { // Sync ECS state to physx
             auto lock = ecs::World.StartTransaction<
-                ecs::Read<ecs::Transform>,
+                ecs::Read<ecs::Name, ecs::Transform>,
                 ecs::Write<ecs::Physics, ecs::HumanController, ecs::CharacterController, ecs::InteractController>>();
 
             // Delete actors for removed entities
@@ -135,13 +136,7 @@ namespace sp {
             ecs::Removed<ecs::HumanController> removedHumanController;
             while (humanControllerRemoval.Poll(lock, removedHumanController)) {
                 if (removedHumanController.component.pxController) {
-                    removedHumanController.component.pxController->release();
-                }
-            }
-            ecs::Removed<ecs::CharacterController> removedCharacterController;
-            while (characterControllerRemoval.Poll(lock, removedCharacterController)) {
-                if (removedCharacterController.component.pxController) {
-                    removedCharacterController.component.pxController->release();
+                    RemoveController(removedHumanController.component.pxController);
                 }
             }
 
@@ -150,11 +145,6 @@ namespace sp {
                 if (!ent.Has<ecs::HumanController, ecs::Transform>(lock)) continue;
 
                 UpdateController(lock, ent);
-            }
-            for (auto ent : lock.EntitiesWith<ecs::CharacterController>()) {
-                if (!ent.Has<ecs::CharacterController, ecs::Transform>(lock)) continue;
-
-                characterControlSystem.UpdateController(lock, ent);
             }
 
             // Update actors with latest entity data
@@ -345,6 +335,8 @@ namespace sp {
             s->release();
         });
 
+        controllerHitReporter = make_unique<ControllerHitReport>();
+
         auto pxControllerManager = PxCreateControllerManager(*scene);
         controllerManager = std::shared_ptr<PxControllerManager>(pxControllerManager, [](PxControllerManager *m) {
             m->purgeControllers();
@@ -367,7 +359,6 @@ namespace sp {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
             physicsRemoval = lock.Watch<ecs::Removed<ecs::Physics>>();
             humanControllerRemoval = lock.Watch<ecs::Removed<ecs::HumanController>>();
-            characterControllerRemoval = lock.Watch<ecs::Removed<ecs::CharacterController>>();
         }
     }
 
@@ -539,6 +530,10 @@ namespace sp {
         if (actor) {
             auto rigidBody = actor->is<PxRigidDynamic>();
             if (rigidBody) RemoveConstraints(rigidBody);
+            if (actor->userData) {
+                delete (ActorUserData *)actor->userData;
+                actor->userData = nullptr;
+            }
 
             scene->removeActor(*actor);
             actor->release();
@@ -589,7 +584,7 @@ namespace sp {
             desc.density = 0.5f;
             desc.material = pxPhysics->createMaterial(0.3f, 0.3f, 0.3f);
             desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
-            desc.reportCallback = new ControllerHitReport(); // TODO: Does this have to be free'd?
+            desc.reportCallback = controllerHitReporter.get();
             desc.userData = new CharacterControllerUserData(transform.ChangeNumber());
 
             auto pxController = controllerManager->createController(desc);
@@ -618,7 +613,7 @@ namespace sp {
         if (currentHeight != controller.height) {
             auto currentPos = controller.pxController->getFootPosition();
             controller.pxController->resize(controller.height);
-            if (!controller.onGround) {
+            if (!userData->onGround) {
                 // If player is in the air, resize from the top to implement crouch-jumping.
                 auto newPos = currentPos;
                 newPos.y += currentHeight - controller.height;
@@ -633,6 +628,18 @@ namespace sp {
                 controller.pxController->resize(currentHeight);
                 controller.pxController->setFootPosition(currentPos);
             }
+        }
+    }
+
+    void PhysxManager::RemoveController(physx::PxCapsuleController *controller) {
+        if (controller) {
+            auto userData = controller->getUserData();
+            if (userData) {
+                delete (CharacterControllerUserData *)userData;
+                controller->setUserData(nullptr);
+            }
+
+            controller->release();
         }
     }
 
@@ -656,15 +663,16 @@ namespace sp {
         return status;
     }
 
-    bool PhysxManager::SweepQuery(PxRigidDynamic *actor, const PxVec3 dir, const float distance) {
+    bool PhysxManager::SweepQuery(PxRigidDynamic *actor, PxVec3 dir, float distance, PxSweepBuffer &hit) {
         PxShape *shape;
-        actor->getShapes(&shape, 1);
+        auto shapeCount = actor->getShapes(&shape, 1);
+        Assert(shapeCount == 1, "PhysxManager::SweepQuery expected actor to have 1 shape");
 
         PxCapsuleGeometry capsuleGeometry;
-        shape->getCapsuleGeometry(capsuleGeometry);
+        bool validCapsule = shape->getCapsuleGeometry(capsuleGeometry);
+        Assert(validCapsule, "PhysxManager::SweepQuery expected actor to have capsule geometry");
 
         scene->removeActor(*actor);
-        PxSweepBuffer hit;
         bool status = scene->sweep(capsuleGeometry, actor->getGlobalPose(), dir, distance, hit);
         scene->addActor(*actor);
         return status;

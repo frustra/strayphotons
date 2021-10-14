@@ -17,11 +17,7 @@ namespace ecs {
                                               CharacterController &controller,
                                               const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
-            if (param.first == "input_parent") {
-                controller.inputParent = ecs::NamedEntity(param.second.get<string>());
-            } else if (param.first == "target") {
-                controller.target = ecs::NamedEntity(param.second.get<string>());
-            }
+            if (param.first == "target") controller.target = ecs::NamedEntity(param.second.get<string>());
         }
         return true;
     }
