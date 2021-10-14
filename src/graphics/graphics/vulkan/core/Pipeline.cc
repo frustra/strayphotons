@@ -272,10 +272,6 @@ namespace sp::vulkan {
 
                 specOut.pData = specIn.values.data();
                 specOut.dataSize = sizeof(specIn.values);
-<<<<<<< HEAD
-                specOut.mapEntryCount = 0;
-=======
->>>>>>> 0406b29f (Create new CharacterControlSystem)
 
                 specOut.mapEntryCount = 0;
                 for (size_t i = 0; i < MAX_SPEC_CONSTANTS; i++) {

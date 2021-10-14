@@ -30,6 +30,9 @@ namespace sp::vulkan {
         HandleType handle = {};
         vector<SharedHandle<HandleType>> *freeList = nullptr;
         shared_ptr<bool> ptr = {}; // used only for refcounting this object
+
+        template<typename>
+        friend class HandlePool;
     };
 
     template<typename HandleType>
@@ -42,8 +45,9 @@ namespace sp::vulkan {
 
         ~HandlePool() {
             Assert(freeObjects.size() == totalObjects, "some objects weren't freed before the pool");
-            for (auto object : freeObjects) {
+            for (auto &object : freeObjects) {
                 destroyObject(object);
+                object.ptr.reset();
             }
         }
 

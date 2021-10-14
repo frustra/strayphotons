@@ -55,9 +55,9 @@
             }
         },
         {
+            "_name": "player-physics",
             "transform": {
-                "parent": "vr-origin",
-                "scale": [0.1, 0.1, 0.1]
+                "scale": [0.1, 1, 0.1]
             },
             "renderable": "box"
         },
@@ -69,8 +69,8 @@
             },
             "signal_output": {
                 "on": 0,
-                "angle": 20,
-                "intensity": 100
+                "angle": 30,
+                "intensity": 200
             },
             "focus": "GAME",
             "event_input": [

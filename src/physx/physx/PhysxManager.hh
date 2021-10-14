@@ -46,6 +46,9 @@ namespace sp {
         bool onGround = false;
         glm::vec3 velocity = glm::vec3(0);
 
+        glm::vec3 deltaSinceUpdate = glm::vec3(0);
+        chrono_clock::time_point lastUpdate;
+
         CharacterControllerUserData() {}
         CharacterControllerUserData(uint32_t changeNumber) : transformChangeNumber(changeNumber) {}
     };

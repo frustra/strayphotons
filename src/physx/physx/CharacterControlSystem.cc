@@ -19,9 +19,12 @@
 namespace sp {
     using namespace physx;
 
-    static CVar<float> CVarControllerMovementSpeed("p.ControllerMovementSpeed",
-                                                   3.0,
-                                                   "Character controller movement speed (m/s)");
+    static CVar<float> CVarCharacterMovementSpeed("p.CharacterMovementSpeed",
+                                                  3.0,
+                                                  "Character controller movement speed (m/s)");
+    static CVar<float> CVarCharacterUpdateRate("p.CharacterUpdateRate",
+                                               0.3,
+                                               "Character view update frequency (seconds)");
 
     CharacterControlSystem::CharacterControlSystem(PhysxManager &manager) : manager(manager) {
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
@@ -100,6 +103,7 @@ namespace sp {
 
                     userData->onGround = false;
                     userData->velocity = glm::vec3(0);
+                    userData->deltaSinceUpdate = glm::vec3(0);
                     userData->transformChangeNumber = originTransform.ChangeNumber();
                 }
 
@@ -121,7 +125,7 @@ namespace sp {
                 }
 
                 // Update the capsule position to match target
-                auto targetDelta = targetPosition -
+                auto targetDelta = targetPosition + userData->deltaSinceUpdate -
                                    PxExtendedVec3ToGlmVec3P(controller.pxController->getFootPosition());
                 userData->onGround = manager.MoveController(controller.pxController,
                                                             dtSinceLastFrame,
@@ -133,7 +137,7 @@ namespace sp {
                 movement.z = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_WORLD_Z);
 
                 if (movement != glm::vec3(0)) {
-                    float speed = CVarControllerMovementSpeed.Get();
+                    float speed = CVarCharacterMovementSpeed.Get();
                     movement = glm::normalize(movement) * speed;
                 }
 
@@ -165,8 +169,23 @@ namespace sp {
                     userData->velocity = physxVelocity;
                 }
 
-                originTransform.Translate(deltaPos);
-                userData->transformChangeNumber = originTransform.ChangeNumber();
+                userData->deltaSinceUpdate += deltaPos;
+
+                auto now = chrono_clock::now();
+                auto nextUpdate = userData->lastUpdate +
+                                  std::chrono::milliseconds((size_t)(CVarCharacterUpdateRate.Get() * 1000.0f));
+                if (movement == glm::vec3(0) || nextUpdate <= now) {
+                    originTransform.Translate(userData->deltaSinceUpdate);
+                    userData->transformChangeNumber = originTransform.ChangeNumber();
+                    userData->deltaSinceUpdate = glm::vec3(0);
+                    userData->lastUpdate = now;
+                }
+
+                Tecs::Entity physicsBox = ecs::EntityWith<ecs::Name>(lock, "player-physics");
+                if (physicsBox.Has<ecs::Transform>(lock)) {
+                    auto &transform = physicsBox.Get<ecs::Transform>(lock);
+                    transform.SetPosition(PxExtendedVec3ToGlmVec3P(controller.pxController->getFootPosition()));
+                }
             }
         }
     }
