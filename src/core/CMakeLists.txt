@@ -36,6 +36,13 @@ target_include_directories(${PROJECT_CORE_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# _DEBUG/NDEBUG Used by PhysX, must be defined everywhere to enable precompiled headers
+if (SP_DEBUG)
+    target_compile_definitions(${PROJECT_CORE_LIB} PUBLIC _DEBUG)
+else()
+    target_compile_definitions(${PROJECT_CORE_LIB} PUBLIC NDEBUG)
+endif()
+
 add_subdirectory(assets)
 add_subdirectory(core)
 add_subdirectory(ecs)

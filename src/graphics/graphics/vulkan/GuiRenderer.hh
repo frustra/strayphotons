@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ecs/components/View.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 

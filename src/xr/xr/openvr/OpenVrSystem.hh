@@ -3,7 +3,6 @@
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/NamedEntity.hh"
-#include "ecs/components/XRView.hh"
 #include "xr/XrSystem.hh"
 #include "xr/openvr/EventHandler.hh"
 #include "xr/openvr/InputBindings.hh"
