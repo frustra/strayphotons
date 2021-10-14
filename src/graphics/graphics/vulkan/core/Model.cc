@@ -115,7 +115,7 @@ namespace sp::vulkan {
             MeshPushConstants constants;
             constants.model = modelMat * primitive.transform;
 
-            cmd.PushConstants(&constants, 0, sizeof(MeshPushConstants));
+            cmd.PushConstants(constants);
 
             if (primitive.baseColor) cmd.SetTexture(0, 0, primitive.baseColor);
             if (primitive.metallicRoughness) cmd.SetTexture(0, 1, primitive.metallicRoughness);
@@ -136,17 +136,20 @@ namespace sp::vulkan {
         string name = std::to_string(materialIndex) + "_";
         int textureIndex = -1;
         std::vector<double> factor;
+        bool srgb = false;
 
         switch (type) {
         case BaseColor:
             name += std::to_string(material.pbrMetallicRoughness.baseColorTexture.index) + "_BASE";
             textureIndex = material.pbrMetallicRoughness.baseColorTexture.index;
             factor = material.pbrMetallicRoughness.baseColorFactor;
+            srgb = true;
             break;
 
         // gltf2.0 uses a combined texture for metallic roughness.
         // Roughness = G channel, Metallic = B channel.
         // R and A channels are not used / should be ignored.
+        // https://github.com/KhronosGroup/glTF/blob/e5519ce050/specification/2.0/schema/material.pbrMetallicRoughness.schema.json
         case MetallicRoughness:
             name += std::to_string(material.pbrMetallicRoughness.metallicRoughnessTexture.index) + "_METALICROUGHNESS";
             textureIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
@@ -154,6 +157,10 @@ namespace sp::vulkan {
                       material.pbrMetallicRoughness.roughnessFactor,
                       material.pbrMetallicRoughness.metallicFactor,
                       0.0};
+            // The spec says these should be linear, but we have srgb files right now.
+            // This makes sense, since there's no reason to have more precision for lower values.
+            // TODO: reencode as linear
+            srgb = true;
             break;
 
         case Height:
@@ -189,7 +196,7 @@ namespace sp::vulkan {
             }
 
             // Create a single pixel texture based on the factor data provided
-            vk::ImageCreateInfo imageInfo;
+            ImageCreateInfo imageInfo;
             imageInfo.imageType = vk::ImageType::e2D;
             imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
             imageInfo.format = vk::Format::eR8G8B8A8Unorm;
@@ -205,10 +212,11 @@ namespace sp::vulkan {
         tinygltf::Texture texture = gltfModel->textures[textureIndex];
         tinygltf::Image img = gltfModel->images[texture.source];
 
-        vk::ImageCreateInfo imageInfo;
+        ImageCreateInfo imageInfo;
         imageInfo.imageType = vk::ImageType::e2D;
         imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
-        imageInfo.format = FormatFromTraits(img.component, img.bits, true);
+        imageInfo.format = FormatFromTraits(img.component, img.bits, srgb);
+        imageInfo.factor = std::move(factor);
 
         if (imageInfo.format == vk::Format::eUndefined) {
             Errorf("Failed to load image at index %d: invalid format with components=%d and bits=%d",
@@ -236,7 +244,7 @@ namespace sp::vulkan {
             viewInfo.defaultSampler = device.GetSampler(samplerInfo);
         }
 
-        auto imageView = device.CreateImageAndView(imageInfo, viewInfo, img.image.data(), img.image.size(), true);
+        auto imageView = device.CreateImageAndView(imageInfo, viewInfo, img.image.data(), img.image.size());
 
         textures[name] = imageView;
         return imageView;

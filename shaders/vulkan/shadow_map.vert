@@ -13,9 +13,7 @@ layout(push_constant) uniform PushConstants {
 	mat4 model;
 } constants;
 
-layout(binding = 10) uniform ViewStates {
-	ViewState views[2];
-};
+#include "lib/view_states_uniform.glsl"
 
 void main() {
 	outViewPos = vec3(views[gl_ViewID_OVR].viewMat * constants.model * vec4(inPos, 1.0));

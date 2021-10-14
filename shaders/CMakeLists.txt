@@ -17,7 +17,7 @@ file(GLOB SHADERS
     ${SHADER_DIR}/*.rmiss
 )
 
-file(GLOB SHADERS_LIB ${SHADER_LIB_DIR}/*.glsl)
+file(GLOB SHADERS_LIB ${SHADER_LIB_DIR}/*.glsl ${SHADER_DIR}/lib/*.glsl)
 
 find_package(Vulkan REQUIRED)
 

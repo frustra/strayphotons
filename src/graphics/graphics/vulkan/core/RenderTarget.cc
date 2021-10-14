@@ -20,7 +20,7 @@ namespace sp::vulkan {
 
         Debugf("Creating render target %d, size=%dx%d", pool.size(), desc.extent.width, desc.extent.height);
 
-        vk::ImageCreateInfo imageInfo;
+        ImageCreateInfo imageInfo;
         imageInfo.imageType = vk::ImageType::e2D;
         imageInfo.extent = desc.extent;
         imageInfo.arrayLayers = desc.arrayLayers;

@@ -40,6 +40,7 @@ namespace sp::vulkan {
     struct DescriptorSetLayoutInfo {
         uint32 sampledImagesMask = 0;
         uint32 uniformBuffersMask = 0;
+        uint32 storageImagesMask = 0;
         uint8 descriptorCount[MAX_BINDINGS_PER_DESCRIPTOR_SET]; // usually 1, can be higher for array bindings
         vk::ShaderStageFlags stages[MAX_BINDINGS_PER_DESCRIPTOR_SET];
         uint32 lastBinding = 0;
@@ -124,7 +125,7 @@ namespace sp::vulkan {
     public:
         PipelineManager(DeviceContext &device);
 
-        shared_ptr<Pipeline> GetGraphicsPipeline(const PipelineCompileInput &compile);
+        shared_ptr<Pipeline> GetPipeline(const PipelineCompileInput &compile);
         shared_ptr<PipelineLayout> GetPipelineLayout(const ShaderSet &shaders);
         shared_ptr<DescriptorPool> GetDescriptorPool(const DescriptorSetLayoutInfo &layout);
 

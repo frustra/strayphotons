@@ -116,6 +116,8 @@ namespace sp::vulkan {
                     if (type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
                         Assert(desc->image.dim != SpvDimBuffer, "sampled buffers are unimplemented");
                         setInfo.sampledImagesMask |= (1 << binding);
+                    } else if (type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
+                        setInfo.storageImagesMask |= (1 << binding);
                     } else if (type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                         setInfo.uniformBuffersMask |= (1 << binding);
                     } else {
@@ -149,7 +151,9 @@ namespace sp::vulkan {
             ForEachBit(setInfo.sampledImagesMask, [&](uint32 binding) {
                 setEntry(binding, vk::DescriptorType::eCombinedImageSampler, offsetof(DescriptorBinding, image));
             });
-
+            ForEachBit(setInfo.storageImagesMask, [&](uint32 binding) {
+                setEntry(binding, vk::DescriptorType::eStorageImage, offsetof(DescriptorBinding, image));
+            });
             ForEachBit(setInfo.uniformBuffersMask, [&](uint32 binding) {
                 setEntry(binding, vk::DescriptorType::eUniformBuffer, offsetof(DescriptorBinding, buffer));
             });
@@ -176,7 +180,7 @@ namespace sp::vulkan {
         // Hash of the subset of data that is actually accessed by the pipeline.
         Hash64 hash = 0;
 
-        ForEachBit(setLayout.sampledImagesMask, [&](uint32 binding) {
+        ForEachBit(setLayout.sampledImagesMask | setLayout.storageImagesMask, [&](uint32 binding) {
             for (uint32 i = 0; i < setLayout.descriptorCount[binding]; i++) {
                 // TODO: use UniqueID to avoid collisions upon pointer reuse
                 hash_combine(hash, bindings[binding + i].image.imageView);
@@ -202,7 +206,7 @@ namespace sp::vulkan {
         return descriptorSet;
     }
 
-    shared_ptr<Pipeline> PipelineManager::GetGraphicsPipeline(const PipelineCompileInput &compile) {
+    shared_ptr<Pipeline> PipelineManager::GetPipeline(const PipelineCompileInput &compile) {
         ShaderSet shaders = FetchShaders(device, compile.state.shaders);
 
         PipelineKey key;
@@ -268,15 +272,33 @@ namespace sp::vulkan {
 
                 specOut.pData = specIn.values.data();
                 specOut.dataSize = sizeof(specIn.values);
-                specOut.pMapEntries = &specializationValues[specializationValues.size()];
+                specOut.mapEntryCount = 0;
 
                 for (size_t i = 0; i < MAX_SPEC_CONSTANTS; i++) {
                     if (!specIn.set[i]) continue;
                     specializationValues.emplace_back(i, i * sizeof(uint32), sizeof(uint32));
+                    specOut.mapEntryCount++;
                 }
 
-                specOut.mapEntryCount = &specializationValues[specializationValues.size()] - specOut.pMapEntries;
+                specOut.pMapEntries = &specializationValues[specializationValues.size() - specOut.mapEntryCount];
             }
+        }
+
+        if (shaders[(size_t)ShaderStage::Compute]) {
+            vk::ComputePipelineCreateInfo computeInfo;
+            computeInfo.stage = shaderStages[0];
+            computeInfo.layout = *layout;
+
+            /* TODO: implement this if we need very fast shared memory
+            https://www.khronos.org/blog/vulkan-subgroup-tutorial
+            vk::PipelineShaderStageRequiredSubgroupSizeCreateInfoEXT subgroupSizeInfo;
+            computeInfo.stage.pNext = &subgroupSizeInfo;*/
+
+            Assert(computeInfo.stage.stage == vk::ShaderStageFlagBits::eCompute, "multiple bound shaders");
+            auto pipelinesResult = device->createComputePipelineUnique({}, computeInfo);
+            AssertVKSuccess(pipelinesResult.result, "creating pipelines");
+            uniqueHandle = std::move(pipelinesResult.value);
+            return;
         }
 
         vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
@@ -355,9 +377,9 @@ namespace sp::vulkan {
         pipelineInfo.renderPass = compile.renderPass;
         pipelineInfo.subpass = 0;
 
-        auto pipelinesResult = device->createGraphicsPipelinesUnique({}, {pipelineInfo});
+        auto pipelinesResult = device->createGraphicsPipelineUnique({}, {pipelineInfo});
         AssertVKSuccess(pipelinesResult.result, "creating pipelines");
-        uniqueHandle = std::move(pipelinesResult.value[0]);
+        uniqueHandle = std::move(pipelinesResult.value);
     }
 
     shared_ptr<DescriptorPool> PipelineManager::GetDescriptorPool(const DescriptorSetLayoutInfo &layout) {
@@ -377,6 +399,10 @@ namespace sp::vulkan {
 
             if (layoutInfo.sampledImagesMask & bindingBit) {
                 type = vk::DescriptorType::eCombinedImageSampler;
+                count++;
+            }
+            if (layoutInfo.storageImagesMask & bindingBit) {
+                type = vk::DescriptorType::eStorageImage;
                 count++;
             }
             if (layoutInfo.uniformBuffersMask & bindingBit) {

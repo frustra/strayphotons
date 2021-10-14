@@ -16,6 +16,21 @@ vec3 LinearToSRGB(vec3 linear) {
 	);
 }
 
+// Maps a single channel of sRGB color to linear space.
+float SRGBToLinearChannel(float srgb) {
+	if (srgb <= 0.04045) return srgb * (1.0/12.92);
+	return pow(srgb * (1.0/1.055) + 0.0521327, 2.4);
+}
+
+// Maps a linear RGB color to sRGB space.
+vec3 SRGBToLinear(vec3 srgb) {
+	return vec3(
+		SRGBToLinearChannel(srgb.r),
+		SRGBToLinearChannel(srgb.g),
+		SRGBToLinearChannel(srgb.b)
+	);
+}
+
 // Maps a linear RGB color to sRGB space.
 // http://chilliant.blogspot.ca/2012/08/srgb-approximations-for-hlsl.html
 vec3 FastLinearToSRGB(vec3 linear) {

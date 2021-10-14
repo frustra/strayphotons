@@ -17,14 +17,8 @@ layout(location = 3) in vec2 inTexCoord;
 
 layout(location = 0) out vec4 outColor;
 
-layout(binding = 11, std140) uniform LightData {
-	Light lights[MAX_LIGHTS];
-	int lightCount;
-};
-
-layout(binding = 10) uniform ViewStates {
-	ViewState views[2];
-};
+#include "lib/view_states_uniform.glsl"
+#include "lib/light_data_uniform.glsl"
 
 #define SHADOWS_ENABLED 1
 #define USE_PCF 1

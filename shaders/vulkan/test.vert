@@ -19,9 +19,7 @@ layout(push_constant) uniform PushConstants {
 	mat4 modelMat;
 };
 
-layout(binding = 10) uniform ViewStates {
-	ViewState views[2];
-};
+#include "lib/view_states_uniform.glsl"
 
 void main() {
 	ViewState view = views[gl_ViewID_OVR];
