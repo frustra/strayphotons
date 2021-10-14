@@ -67,11 +67,9 @@ namespace sp {
             const std::string_view view = rhs;
             return lhs == view;
         }
-
         bool operator()(const char *lhs, const std::string &rhs) const {
             return std::strcmp(lhs, rhs.c_str()) == 0;
         }
-
         bool operator()(const std::string &lhs, const std::string &rhs) const {
             return lhs == rhs;
         }

@@ -131,6 +131,11 @@
         "editor.insertSpaces": true,
         "editor.tabSize": 4
     },
+    "[glsl]": {
+        "editor.detectIndentation": false,
+        "editor.insertSpaces": false,
+        "editor.tabSize": 4
+    },
     "[cmake]": {
         "editor.detectIndentation": false,
         "editor.insertSpaces": true,

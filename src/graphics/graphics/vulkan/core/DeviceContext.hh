@@ -4,6 +4,7 @@
 #include "ecs/components/View.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/HandlePool.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/UniqueID.hh"
@@ -120,14 +121,11 @@ namespace sp::vulkan {
         shared_ptr<RenderPass> GetRenderPass(const RenderPassInfo &info);
         shared_ptr<Framebuffer> GetFramebuffer(const RenderPassInfo &info);
 
-        vk::Semaphore GetEmptySemaphore();
+        SharedHandle<vk::Fence> GetEmptyFence();
+        SharedHandle<vk::Semaphore> GetEmptySemaphore(SharedHandle<vk::Fence> inUseUntilFence);
 
-        using TemporaryObject = std::variant<BufferPtr, ImageViewPtr>;
-        vk::Fence PushInFlightObject(TemporaryObject object) {
-            auto &objs = Frame().inFlightObjects;
-            objs.emplace_back(object, device->createFenceUnique({}));
-            return *objs.back().fence;
-        }
+        using TemporaryObject = std::variant<BufferPtr, ImageViewPtr, SharedHandle<vk::Semaphore>>;
+        SharedHandle<vk::Fence> PushInFlightObject(TemporaryObject object, SharedHandle<vk::Fence> fence = nullptr);
 
         UniqueID NextUniqueID() {
             return ++lastUniqueID;
@@ -171,8 +169,8 @@ namespace sp::vulkan {
 
         unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
 
-        vector<vk::UniqueSemaphore> semaphores;
-
+        unique_ptr<HandlePool<vk::Fence>> fencePool;
+        unique_ptr<HandlePool<vk::Semaphore>> semaphorePool;
         unique_ptr<PipelineManager> pipelinePool;
         unique_ptr<RenderTargetManager> renderTargetPool;
         unique_ptr<RenderPassManager> renderPassPool;
@@ -205,7 +203,7 @@ namespace sp::vulkan {
 
         struct InFlightObject {
             TemporaryObject object;
-            vk::UniqueFence fence;
+            SharedHandle<vk::Fence> fence;
         };
 
         struct PooledBuffer {
