@@ -38,4 +38,6 @@ else()
     )
 endif()
 
+target_precompile_headers(${PROJECT_PHYSICS_PHYSX_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+
 add_subdirectory(physx)
