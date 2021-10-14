@@ -331,6 +331,25 @@ namespace sp::vulkan {
         Assert(vmaCreateAllocator(&allocatorInfo, &alloc) == VK_SUCCESS, "allocator init failed");
         allocator.reset(alloc);
 
+        semaphorePool = make_unique<HandlePool<vk::Semaphore>>(
+            [&]() {
+                return device->createSemaphore({});
+            },
+            [&](vk::Semaphore sem) {
+                device->destroySemaphore(sem);
+            });
+
+        fencePool = make_unique<HandlePool<vk::Fence>>(
+            [&]() {
+                return device->createFence({});
+            },
+            [&](vk::Fence fence) {
+                device->destroyFence(fence);
+            },
+            [&](vk::Fence fence) {
+                device->resetFences({fence});
+            });
+
         renderTargetPool = make_unique<RenderTargetManager>(*this);
         pipelinePool = make_unique<PipelineManager>(*this);
         renderPassPool = make_unique<RenderPassManager>(*this);
@@ -527,7 +546,7 @@ namespace sp::vulkan {
         }
 
         erase_if(Frame().inFlightObjects, [&](auto &entry) {
-            return device->getFenceStatus(*entry.fence) == vk::Result::eSuccess;
+            return device->getFenceStatus(entry.fence) == vk::Result::eSuccess;
         });
 
         for (auto &pool : Frame().bufferPools) {
@@ -789,8 +808,8 @@ namespace sp::vulkan {
                                   vk::AccessFlagBits::eTransferWrite,
                                   genFactor ? transferToCompute : transferToGeneral);
 
-        auto transferComplete = GetEmptySemaphore();
         auto fence = PushInFlightObject(stagingBuf);
+        auto transferComplete = GetEmptySemaphore(fence);
         Submit(transferCmd, {transferComplete}, {}, {}, fence);
 
         if (genFactor) {
@@ -830,8 +849,9 @@ namespace sp::vulkan {
 
             factorCmd->Dispatch((createInfo.extent.width + 15) / 16, (createInfo.extent.height + 15) / 16, 1);
 
-            auto factorComplete = GetEmptySemaphore();
             fence = PushInFlightObject(factorView);
+            auto factorComplete = GetEmptySemaphore(fence);
+
             Submit(factorCmd, {factorComplete}, {transferComplete}, {vk::PipelineStageFlagBits::eComputeShader}, fence);
 
             transferToGeneral.srcQueueFamilyIndex = transferToCompute.dstQueueFamilyIndex;
@@ -1128,10 +1148,20 @@ namespace sp::vulkan {
         return framebufferPool->GetFramebuffer(info);
     }
 
-    vk::Semaphore DeviceContext::GetEmptySemaphore() {
-        vk::SemaphoreCreateInfo semCreateInfo;
-        semaphores.push_back(device->createSemaphoreUnique(semCreateInfo));
-        return *semaphores.back();
+    SharedHandle<vk::Fence> DeviceContext::GetEmptyFence() {
+        return fencePool->Get();
+    }
+
+    SharedHandle<vk::Semaphore> DeviceContext::GetEmptySemaphore(SharedHandle<vk::Fence> inUseUntilFence) {
+        auto sem = semaphorePool->Get();
+        if (inUseUntilFence) PushInFlightObject(sem, inUseUntilFence);
+        return sem;
+    }
+
+    SharedHandle<vk::Fence> DeviceContext::PushInFlightObject(TemporaryObject object, SharedHandle<vk::Fence> fence) {
+        if (!fence) fence = GetEmptyFence();
+        Frame().inFlightObjects.emplace_back(object, fence);
+        return fence;
     }
 
     void *DeviceContext::Win32WindowHandle() {
