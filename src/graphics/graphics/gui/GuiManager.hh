@@ -2,7 +2,6 @@
 
 #include "ecs/Ecs.hh"
 #include "ecs/NamedEntity.hh"
-#include "ecs/components/Focus.hh"
 
 #include <glm/glm.hpp>
 #include <memory>

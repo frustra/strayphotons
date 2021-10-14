@@ -3,7 +3,6 @@
 #include "core/CFunc.hh"
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
-#include "ecs/components/VoxelArea.hh"
 #include "graphics/core/RenderTarget.hh"
 #include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/opengl/GLBuffer.hh"

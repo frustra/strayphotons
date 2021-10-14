@@ -28,14 +28,6 @@ target_compile_definitions(${PROJECT_PHYSICS_PHYSX_LIB}
         SP_PHYSICS_SUPPORT_PHYSX
 )
 
-if (SP_DEBUG)
-    target_compile_definitions(${PROJECT_PHYSICS_PHYSX_LIB} PUBLIC
-        _DEBUG
-    )
-else()
-    target_compile_definitions(${PROJECT_PHYSICS_PHYSX_LIB} PUBLIC
-        NDEBUG
-    )
-endif()
+target_precompile_headers(${PROJECT_PHYSICS_PHYSX_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(physx)

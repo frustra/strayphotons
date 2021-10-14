@@ -22,4 +22,7 @@ target_compile_definitions(${PROJECT_INPUT_GLFW_LIB} PUBLIC
     SP_INPUT_SUPPORT_GLFW
 )
 
+target_precompile_headers(${PROJECT_INPUT_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+target_precompile_headers(${PROJECT_INPUT_GLFW_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+
 add_subdirectory(input)

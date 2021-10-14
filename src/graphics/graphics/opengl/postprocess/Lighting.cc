@@ -2,8 +2,6 @@
 
 #include "core/CVar.hh"
 #include "core/Logging.hh"
-#include "ecs/components/Light.hh"
-#include "ecs/components/Transform.hh"
 #include "graphics/opengl/GLBuffer.hh"
 #include "graphics/opengl/GPUTypes.hh"
 #include "graphics/opengl/GenericShaders.hh"

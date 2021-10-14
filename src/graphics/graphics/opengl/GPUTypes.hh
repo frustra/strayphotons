@@ -2,7 +2,6 @@
 
 #include "core/Config.hh"
 #include "ecs/Ecs.hh"
-#include "ecs/components/View.hh"
 
 #include <glm/glm.hpp>
 

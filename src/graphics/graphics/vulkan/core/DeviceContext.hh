@@ -1,7 +1,6 @@
 #pragma once
 
 #include "core/Hashing.hh"
-#include "ecs/components/View.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/HandlePool.hh"
@@ -13,6 +12,10 @@
 #include <variant>
 
 struct GLFWwindow;
+
+namespace ecs {
+    struct View;
+}
 
 namespace sp {
     class CFuncCollection;

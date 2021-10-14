@@ -16,7 +16,7 @@
 
 #ifdef _MSC_VER
     #pragma warning(push)
-    #pragma warning(disable : 4127 4324)
+    #pragma warning(disable : 4127 4189 4324)
 #endif
 
 #include <vk_mem_alloc.h>
