@@ -1,4 +1,5 @@
 add_library(${PROJECT_CORE_LIB} STATIC)
+add_library(${PROJECT_CORE_GAME_LIB} STATIC)
 
 target_link_libraries(${PROJECT_CORE_LIB} PUBLIC
     glm
@@ -8,6 +9,10 @@ target_link_libraries(${PROJECT_CORE_LIB} PUBLIC
     robin_hood
     Tecs
     tinygltf
+)
+
+target_link_libraries(${PROJECT_CORE_GAME_LIB} PUBLIC
+    ${PROJECT_CORE_LIB}
 )
 
 if(WIN32)
@@ -46,4 +51,4 @@ endif()
 add_subdirectory(assets)
 add_subdirectory(core)
 add_subdirectory(ecs)
-add_subdirectory(systems)
+add_subdirectory(game)

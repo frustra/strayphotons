@@ -2,8 +2,8 @@
 
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
-#include "game/GameLogic.hh"
-#include "systems/AnimationSystem.hh"
+#include "game/AnimationSystem.hh"
+#include "game/SceneManager.hh"
 
 #ifdef SP_GRAPHICS_SUPPORT
     #include "graphics/GraphicsManager.hh"
@@ -48,6 +48,8 @@ namespace sp {
         void PhysicsUpdate();
         bool ShouldStop();
 
+        void PrintDebug();
+
         cxxopts::ParseResult &options;
         Script *startupScript = nullptr;
 
@@ -70,9 +72,10 @@ namespace sp {
 #ifdef SP_XR_SUPPORT
         xr::XrManager xr;
 #endif
-        GameLogic logic;
+        SceneManager scenes;
 
     private:
         chrono_clock::time_point lastFrameTime;
+        CFuncCollection funcs;
     };
 } // namespace sp

@@ -8,6 +8,10 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 
+#ifdef SP_GRAPHICS_SUPPORT
+    #include "graphics/core/GraphicsContext.hh"
+#endif
+
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
 
@@ -17,14 +21,17 @@
 
 namespace sp {
     Game::Game(cxxopts::ParseResult &options, Script *startupScript)
-        : options(options), startupScript(startupScript),
+        : options(options), startupScript(startupScript)
 #ifdef SP_GRAPHICS_SUPPORT
-          graphics(this),
+          ,
+          graphics(this)
 #endif
 #ifdef SP_XR_SUPPORT
-          xr(this),
+          ,
+          xr(this)
 #endif
-          logic(this) {
+    {
+        funcs.Register(this, "printdebug", "Print some debug info about the scene", &Game::PrintDebug);
     }
 
     Game::~Game() {}
@@ -63,7 +70,11 @@ namespace sp {
             graphics.Init();
 #endif
 
-            logic.LoadPlayer();
+            scenes.LoadPlayer();
+
+#ifdef SP_GRAPHICS_SUPPORT
+            graphics.GetContext()->AttachView(scenes.GetPlayer());
+#endif
 
 #ifdef SP_XR_SUPPORT
             if (options["no-vr"].count() == 0) xr.LoadXrSystem();
@@ -73,12 +84,12 @@ namespace sp {
             inputBindingLoader.Load(InputBindingConfigPath);
 #endif
 
-            if (options.count("map")) { logic.LoadScene(options["map"].as<string>()); }
+            if (options.count("map")) { scenes.LoadScene(options["map"].as<string>()); }
 
             if (startupScript != nullptr) {
                 startupScript->Exec();
             } else if (!options.count("map")) {
-                logic.LoadScene("menu");
+                scenes.LoadScene("menu");
 #ifdef SP_INPUT_SUPPORT
                 {
                     auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
@@ -110,7 +121,7 @@ namespace sp {
 #ifdef SP_INPUT_SUPPORT_GLFW
         if (glfwInputHandler) glfwInputHandler->Frame();
 #endif
-        if (!logic.Frame(dt)) return false;
+        if (!scenes.Frame(dt)) return false;
 #ifdef SP_GRAPHICS_SUPPORT
         if (!graphics.Frame()) return false;
 #endif
@@ -126,5 +137,80 @@ namespace sp {
 #else
         return false;
 #endif
+    }
+
+    void Game::PrintDebug() {
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
+                                                          ecs::Transform,
+                                                          ecs::HumanController,
+                                                          ecs::LightSensor,
+                                                          ecs::SignalOutput,
+                                                          ecs::EventInput,
+                                                          ecs::FocusLayer,
+                                                          ecs::FocusLock>>();
+        auto player = scenes.GetPlayer();
+        if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
+            auto &transform = player.Get<ecs::Transform>(lock);
+            auto position = transform.GetPosition();
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+            auto &controller = player.Get<ecs::HumanController>(lock);
+            if (controller.pxController) {
+                auto pxFeet = controller.pxController->getFootPosition();
+                Logf("Player position: [%f, %f, %f], feet: %f", position.x, position.y, position.z, pxFeet.y);
+            } else {
+                Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
+            }
+            auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+            Logf("Player velocity: [%f, %f, %f]", userData->velocity.x, userData->velocity.y, userData->velocity.z);
+            Logf("Player on ground: %s", userData->onGround ? "true" : "false");
+#else
+            Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
+#endif
+        } else {
+            Logf("Scene has no valid player");
+        }
+
+        for (auto ent : lock.EntitiesWith<ecs::LightSensor>()) {
+            auto &sensor = ent.Get<ecs::LightSensor>(lock);
+            auto &i = sensor.illuminance;
+
+            Logf("Light sensor %s: %f %f %f", ecs::ToString(lock, ent), i.r, i.g, i.b);
+        }
+
+        for (auto ent : lock.EntitiesWith<ecs::SignalOutput>()) {
+            auto &output = ent.Get<ecs::SignalOutput>(lock);
+
+            Logf("Signal output %s:", ecs::ToString(lock, ent));
+            for (auto &[signalName, value] : output.GetSignals()) {
+                Logf("  %s: %.2f", signalName, value);
+            }
+        }
+
+        auto &focusLock = lock.Get<ecs::FocusLock>();
+        for (auto ent : lock.EntitiesWith<ecs::EventInput>()) {
+            auto &input = ent.Get<ecs::EventInput>(lock);
+
+            if (ent.Has<ecs::FocusLayer>(lock)) {
+                auto &layer = ent.Get<ecs::FocusLayer>(lock);
+                std::stringstream ss;
+                ss << layer;
+                if (focusLock.HasPrimaryFocus(layer)) {
+                    Logf("Event input %s: (has primary focus: %s)", ecs::ToString(lock, ent), ss.str());
+                } else if (focusLock.HasFocus(layer)) {
+                    Logf("Event input %s: (has focus: %s)", ecs::ToString(lock, ent), ss.str());
+                } else {
+                    Logf("Event input %s: (no focus: %s)", ecs::ToString(lock, ent), ss.str());
+                }
+            } else {
+                Logf("Event input %s: (no focus layer)", ecs::ToString(lock, ent));
+            }
+            for (auto &[eventName, queue] : input.events) {
+                if (queue.empty()) {
+                    Logf("  %s: empty", eventName);
+                } else {
+                    Logf("  %s: %u events", eventName, queue.size());
+                }
+            }
+        }
     }
 } // namespace sp

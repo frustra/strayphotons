@@ -10,10 +10,9 @@ namespace sp {
     class Scene;
     class Script;
 
-    class GameLogic {
+    class SceneManager {
     public:
-        GameLogic(Game *game);
-        ~GameLogic();
+        SceneManager();
 
 #ifdef SP_INPUT_SUPPORT
         void HandleInput();
@@ -24,23 +23,14 @@ namespace sp {
         void LoadScene(std::string name);
         void ReloadScene();
         void ReloadPlayer();
-        void PrintDebug();
 
-        void PrintFocus();
-        void AcquireFocus(std::string args);
-        void ReleaseFocus(std::string args);
-
-        void SetSignal(std::string args);
-        void ClearSignal(std::string args);
-
-        void TraceTecs(std::string args);
+        void PrintScene();
 
         Tecs::Entity GetPlayer() {
             return player;
         }
 
     private:
-        Game *game;
         std::shared_ptr<Scene> scene, playerScene;
         Tecs::Entity player;
         CFuncCollection funcs;

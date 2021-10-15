@@ -1,7 +1,5 @@
 #include "Console.hh"
 
-#include "Logging.hh"
-
 #ifndef _WIN32
     #define USE_LINENOISE_CLI
 #endif
@@ -10,6 +8,7 @@
     #include <linenoise.h>
 #endif
 
+#include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
 
 #include <algorithm>

@@ -20,13 +20,26 @@
             "event_input": [
                 "/action/camera_rotate",
                 "/action/interact",
-                "/action/spawn_debug",
                 "/script/joystick_in"
             ],
             "event_bindings": {
                 "/script/joystick_out": { "/action/camera_rotate": "player" }
             },
             "human_controller": {}
+        },
+        {
+            "_name": "debug-spawner",
+            "event_input": [
+                "/action/spawn"
+            ],
+            "script": {
+                "onTick": "model_spawner",
+                "parameters": {
+                    "model": "cardboard-box",
+                    "relative_to": "player",
+                    "position_z": -2
+                }
+            }
         },
         {
             "_name": "left-hand-input",

@@ -1,8 +1,11 @@
 // Included directly into Console.cc
 
-#include "Console.hh"
-#include "Logging.hh"
+#include "core/Console.hh"
+#include "core/Logging.hh"
+#include "core/RegisteredThread.hh"
+#include "ecs/Ecs.hh"
 
+#include <fstream>
 #include <sstream>
 
 namespace sp {
@@ -55,4 +58,139 @@ namespace sp {
                                       logging::ConsoleWrite(logging::Level::Log, " > '%s' undefined", cvarName);
                                   }
                               });
+
+    CFunc<void> CFuncPrintFocus("printfocus", "Print the current focus lock state", []() {
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::FocusLock>>();
+
+        if (lock.Has<ecs::FocusLock>()) {
+            auto &focusLock = lock.Get<ecs::FocusLock>();
+            std::stringstream ss;
+            ss << "Active focus layers: " << focusLock;
+            Logf(ss.str());
+        } else {
+            Errorf("World does not have a FocusLock");
+        }
+    });
+
+    CFunc<string> CFuncAcquireFocus("acquirefocus", "Acquire focus for the specified layer", [](std::string args) {
+        std::stringstream stream(args);
+        ecs::FocusLayer layer;
+        stream >> layer;
+        if (layer != ecs::FocusLayer::NEVER && layer != ecs::FocusLayer::ALWAYS) {
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+
+            if (lock.Has<ecs::FocusLock>()) {
+                if (!lock.Get<ecs::FocusLock>().AcquireFocus(layer)) {
+                    std::stringstream ss;
+                    ss << layer;
+                    Logf("Failed to acquire focus layer: %s", ss.str());
+                }
+            } else {
+                Errorf("World does not have a FocusLock");
+            }
+        }
+    });
+
+    CFunc<string> CFuncReleaseFocus("releasefocus", "Release focus for the specified layer", [](std::string args) {
+        std::stringstream stream(args);
+        ecs::FocusLayer layer;
+        stream >> layer;
+        if (layer != ecs::FocusLayer::NEVER && layer != ecs::FocusLayer::ALWAYS) {
+            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+
+            if (lock.Has<ecs::FocusLock>()) {
+                lock.Get<ecs::FocusLock>().ReleaseFocus(layer);
+            } else {
+                Errorf("World does not have a FocusLock");
+            }
+        }
+    });
+
+    CFunc<string> CFuncSetSignal(
+        "setsignal",
+        "Set a signal value (setsignal <entity>.<signal> <value>)",
+        [](std::string args) {
+            std::stringstream stream(args);
+            std::string signalStr;
+            double value;
+            stream >> signalStr;
+            stream >> value;
+
+            auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
+
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
+            auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
+            if (!entity) {
+                Logf("Signal entity %s not found", entityName);
+                return;
+            }
+            if (!entity.Has<ecs::SignalOutput>(lock)) {
+                Logf("%s is not a signal output", entityName);
+                return;
+            }
+
+            auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
+            signalComp.SetSignal(signalName, value);
+        });
+
+    CFunc<string> CFuncClearSignal(
+        "clearsignal",
+        "Clear a signal value (clearsignal <entity>.<signal>)",
+        [](std::string args) {
+            std::stringstream stream(args);
+            std::string signalStr;
+            stream >> signalStr;
+
+            auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
+
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
+            auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
+            if (entity && entity.Has<ecs::SignalOutput>(lock)) {
+                auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
+                signalComp.ClearSignal(signalName);
+            }
+        });
+
+    CFunc<string> CFuncTraceTecs("tracetecs",
+                                 "Save an ECS performance trace (tracetecs <time_ms>)",
+                                 [](std::string args) {
+                                     std::stringstream stream(args);
+                                     size_t timeMs = 0;
+                                     stream >> timeMs;
+
+                                     if (timeMs == 0) {
+                                         Logf("Trace time must be specified in milliseconds.");
+                                         return;
+                                     }
+
+                                     static std::atomic_bool tracing(false);
+                                     bool current = tracing;
+                                     if (current || !tracing.compare_exchange_strong(current, true)) {
+                                         Logf("A performance trace is already in progress");
+                                         return;
+                                     }
+
+                                     std::map<std::thread::id, std::string> threadNames;
+                                     threadNames[std::this_thread::get_id()] = "Main";
+                                     for (auto registeredThread : GetRegisteredThreads()) {
+                                         threadNames[registeredThread->GetThreadId()] = registeredThread->threadName;
+                                     }
+
+                                     std::thread([timeMs, threadNames] {
+                                         ecs::World.StartTrace();
+                                         std::this_thread::sleep_for(std::chrono::milliseconds(timeMs));
+                                         auto trace = ecs::World.StopTrace();
+
+                                         for (auto &thread : threadNames) {
+                                             trace.SetThreadName(thread.second, thread.first);
+                                         }
+
+                                         std::ofstream traceFile("tecs-trace.csv");
+                                         trace.SaveToCSV(traceFile);
+                                         traceFile.close();
+
+                                         Logf("Tecs performance trace complete");
+                                         tracing = false;
+                                     }).detach();
+                                 });
 } // namespace sp

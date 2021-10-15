@@ -1,4 +1,5 @@
 set(PROJECT_CORE_LIB ${PROJECT_BASE_NAME}-core CACHE INTERNAL "Library containing core components such as the ECS and asset loading")
+set(PROJECT_CORE_GAME_LIB ${PROJECT_BASE_NAME}-game CACHE INTERNAL "Library containing game Stray Photons game logic")
 
 set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core CACHE INTERNAL "Library containing context-independent graphics code")
 set(PROJECT_GRAPHICS_EGL_LIB ${PROJECT_BASE_NAME}-graphics-egl CACHE INTERNAL "Library containing an OpenGL-based graphics implementation using EGL")
@@ -24,6 +25,7 @@ add_module_configuration(
     NAME sp
     LINK_LIBRARIES
         ${PROJECT_CORE_LIB}
+        ${PROJECT_CORE_GAME_LIB}
         ${PROJECT_GRAPHICS_OPENGL_LIB}
         ${PROJECT_INPUT_GLFW_LIB}
         ${PROJECT_PHYSICS_PHYSX_LIB}
@@ -36,6 +38,7 @@ add_module_configuration(
     EXPORT_COMPILE_COMMANDS
     LINK_LIBRARIES
         ${PROJECT_CORE_LIB}
+        ${PROJECT_CORE_GAME_LIB}
         ${PROJECT_GRAPHICS_VULKAN_XR_LIB}
         ${PROJECT_INPUT_GLFW_LIB}
         ${PROJECT_PHYSICS_PHYSX_LIB}
@@ -48,25 +51,9 @@ add_module_configuration(
     LINK_LIBRARIES
         ${PROJECT_GAME_TEST_LIB}
         ${PROJECT_CORE_LIB}
+        ${PROJECT_CORE_GAME_LIB}
         ${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB}
         ${PROJECT_INPUT_GLFW_LIB}
-)
-
-# Headless test executable
-add_module_configuration(
-    NAME sp-headless
-    LINK_LIBRARIES
-        ${PROJECT_CORE_LIB}
-        ${PROJECT_INPUT_CORE_LIB}
-        ${PROJECT_PHYSICS_PHYSX_LIB}
-)
-
-# Minimal cli interface
-add_module_configuration(
-    NAME sp-cli
-    LINK_LIBRARIES
-        ${PROJECT_GAME_TEST_LIB}
-        ${PROJECT_CORE_LIB}
 )
 
 add_subdirectory(core)

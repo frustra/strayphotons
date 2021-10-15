@@ -719,24 +719,6 @@ namespace sp {
         glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
     }
 
-    void VoxelRenderer::RenderLoading(const ecs::View &screenView) {
-        auto view = screenView;
-        view.extents = glm::ivec2(192 / 2, 80 / 2);
-        view.offset = glm::ivec2(screenView.extents / 2) - view.extents / 2;
-
-        PrepareForView(view);
-
-        static std::shared_ptr<GpuTexture> loadingTex = context.LoadTexture(GAssets.LoadImage("logos/loading.png"));
-        static GLTexture *glLoadingTex = dynamic_cast<GLTexture *>(loadingTex.get());
-        Assert(glLoadingTex != nullptr, "Failed to load VoxelRenderer glLoadingTex");
-
-        glLoadingTex->Bind(0);
-
-        ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>();
-        SetDefaultRenderTarget();
-        VoxelRenderer::DrawScreenCover(true);
-    }
-
     void VoxelRenderer::BeginFrame(
         ecs::Lock<ecs::Read<ecs::Transform>,
                   ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>>
