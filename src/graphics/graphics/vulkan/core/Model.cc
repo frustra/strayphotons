@@ -233,6 +233,7 @@ namespace sp::vulkan {
         ImageViewCreateInfo viewInfo;
         if (texture.sampler == -1) {
             viewInfo.defaultSampler = device.GetSampler(SamplerType::TrilinearTiled);
+            imageInfo.genMipmap = true;
         } else {
             auto &sampler = gltfModel->samplers[texture.sampler];
             int minFilter = sampler.minFilter > 0 ? sampler.minFilter : TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR;
@@ -244,6 +245,7 @@ namespace sp::vulkan {
                 samplerInfo.maxAnisotropy = 8.0f;
             }
             viewInfo.defaultSampler = device.GetSampler(samplerInfo);
+            imageInfo.genMipmap = (samplerInfo.maxLod > 0);
         }
 
         auto imageView = device.CreateImageAndView(imageInfo, viewInfo, img.image.data(), img.image.size());

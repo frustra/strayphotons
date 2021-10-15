@@ -21,7 +21,7 @@ namespace sp::vulkan {
         vk::ImageType imageType = vk::ImageType::e2D;
         vk::Format format = vk::Format::eUndefined;
         vk::Extent3D extent = {};
-        uint32 mipLevels = 1;
+        uint32 mipLevels = 0; // defaults to 1 if genMipmap is false, defaults to CalculateMipmapLevels otherwise
         uint32 arrayLayers = 1;
         vk::SampleCountFlagBits samples = vk::SampleCountFlagBits::e1;
         vk::ImageTiling tiling = vk::ImageTiling::eOptimal;
