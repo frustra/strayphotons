@@ -38,6 +38,9 @@ namespace sp {
             for (Tecs::Entity entity : lock.EntitiesWith<ecs::HumanController>()) {
                 if (!entity.Has<ecs::Transform>(lock)) continue;
 
+                auto &controller = entity.Get<ecs::HumanController>(lock);
+                if (!controller.pxController) continue;
+
                 // Handle keyboard controls
                 glm::vec3 inputMovement = glm::vec3(0);
                 bool jumping = false;
@@ -91,13 +94,16 @@ namespace sp {
                                 rotation = glm::quat_cast(
                                     glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
                             }
-                            transform.SetRotation(rotation, false);
+                            auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+                            if (!transform.HasChanged(userData->transformChangeNumber)) {
+                                transform.SetRotation(rotation);
+                                userData->transformChangeNumber = transform.ChangeNumber();
+                            } else {
+                                transform.SetRotation(rotation);
+                            }
                         }
                     }
                 }
-
-                auto &controller = entity.Get<ecs::HumanController>(lock);
-                if (!controller.pxController) continue;
 
                 // Move the player
                 if (noclipChanged) {
@@ -114,24 +120,20 @@ namespace sp {
                 auto currentHeight = controller.pxController->getHeight();
                 auto targetHeight = crouching ? ecs::PLAYER_CAPSULE_CROUCH_HEIGHT : ecs::PLAYER_CAPSULE_HEIGHT;
                 if (fabs(targetHeight - currentHeight) > 0.1) {
+                    auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+
                     // If player is in the air, resize from the top to implement crouch-jumping.
                     controller.height = currentHeight +
-                                        (targetHeight - currentHeight) * (controller.onGround ? 0.1 : 1.0);
+                                        (targetHeight - currentHeight) * (userData->onGround ? 0.1 : 1.0);
                 }
 
-                auto velocity = CalculatePlayerVelocity(lock,
-                                                        entity,
-                                                        dtSinceLastFrame,
-                                                        inputMovement,
-                                                        jumping,
-                                                        sprinting,
-                                                        crouching);
-                MoveEntity(lock, entity, dtSinceLastFrame, velocity);
+                UpdatePlayerVelocity(lock, entity, dtSinceLastFrame, inputMovement, jumping, sprinting, crouching);
+                MoveEntity(lock, entity, dtSinceLastFrame);
             }
         }
     }
 
-    glm::vec3 HumanControlSystem::CalculatePlayerVelocity(
+    void HumanControlSystem::UpdatePlayerVelocity(
         ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,
         Tecs::Entity entity,
         double dtSinceLastFrame,
@@ -139,74 +141,78 @@ namespace sp {
         bool jump,
         bool sprint,
         bool crouch) {
-        if (!entity.Has<ecs::Transform>(lock)) {
-            throw std::invalid_argument("entity must have a Transform component");
-        }
+        Assert(entity.Has<ecs::Transform>(lock), "Entity must have a Transform component");
 
-        auto noclip = CVarNoClip.Get();
         auto &controller = entity.Get<ecs::HumanController>(lock);
-        auto &transform = entity.Get<ecs::Transform>(lock);
+        auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
 
+        auto &transform = entity.Get<ecs::Transform>(lock);
         glm::vec3 movement = transform.GetRotation() * glm::vec3(inDirection.x, 0, inDirection.z);
 
+        auto noclip = CVarNoClip.Get();
         if (!noclip) {
             if (std::abs(movement.y) > 0.999) { movement = transform.GetRotation() * glm::vec3(0, -movement.y, 0); }
             movement.y = 0;
         }
         if (movement != glm::vec3(0)) {
             float speed = CVarMovementSpeed.Get();
-            if (sprint && controller.onGround) speed = CVarSprintSpeed.Get();
-            if (crouch && controller.onGround) speed = CVarCrouchSpeed.Get();
+            if (sprint && userData->onGround) speed = CVarSprintSpeed.Get();
+            if (crouch && userData->onGround) speed = CVarCrouchSpeed.Get();
             movement = glm::normalize(movement) * speed;
         }
         movement.y += inDirection.y * CVarMovementSpeed.Get();
 
         if (noclip) {
-            controller.velocity = movement;
-            return controller.velocity;
+            userData->velocity = movement;
+            return;
         }
-        if (controller.onGround) {
-            controller.velocity.x = movement.x;
-            controller.velocity.y -= 0.01; // Always try moving down so that onGround detection is more consistent.
-            if (jump) controller.velocity.y = ecs::PLAYER_JUMP_VELOCITY;
-            controller.velocity.z = movement.z;
+        if (userData->onGround) {
+            userData->velocity.x = movement.x;
+            userData->velocity.y -= 0.01; // Always try moving down so that onGround detection is more consistent.
+            if (jump) userData->velocity.y = ecs::PLAYER_JUMP_VELOCITY;
+            userData->velocity.z = movement.z;
         } else {
-            controller.velocity += movement * ecs::PLAYER_AIR_STRAFE * (float)dtSinceLastFrame;
-            controller.velocity.y -= ecs::PLAYER_GRAVITY * dtSinceLastFrame;
+            userData->velocity += movement * ecs::PLAYER_AIR_STRAFE * (float)dtSinceLastFrame;
+            userData->velocity.y -= ecs::PLAYER_GRAVITY * dtSinceLastFrame;
         }
-
-        return controller.velocity;
     }
 
     void HumanControlSystem::MoveEntity(ecs::Lock<ecs::Write<ecs::Transform, ecs::HumanController>> lock,
                                         Tecs::Entity entity,
-                                        double dtSinceLastFrame,
-                                        glm::vec3 velocity) {
+                                        double dtSinceLastFrame) {
         auto &transform = entity.Get<ecs::Transform>(lock);
-        if (transform.IsDirty()) return;
         auto &controller = entity.Get<ecs::HumanController>(lock);
 
         if (controller.pxController) {
-            auto disp = velocity * (float)dtSinceLastFrame;
+            auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+            if (transform.HasChanged(userData->transformChangeNumber)) return;
+
+            auto disp = userData->velocity * (float)dtSinceLastFrame;
             auto prevPosition = PxExtendedVec3ToGlmVec3P(controller.pxController->getPosition());
             glm::vec3 newPosition;
             if (CVarNoClip.Get()) {
                 newPosition = prevPosition + disp;
-                controller.onGround = true;
+                userData->onGround = true;
             } else {
-                controller.onGround = physics->MoveController(controller.pxController,
-                                                              dtSinceLastFrame,
-                                                              GlmVec3ToPxVec3(disp));
+                userData->onGround = physics->MoveController(controller.pxController,
+                                                             dtSinceLastFrame,
+                                                             GlmVec3ToPxVec3(disp));
                 newPosition = PxExtendedVec3ToGlmVec3P(controller.pxController->getPosition());
             }
-            // Don't accelerate more than our current velocity
-            auto velocityPosition = glm::min(prevPosition + glm::abs(disp), newPosition);
-            velocityPosition = glm::max(prevPosition - glm::abs(disp), velocityPosition);
 
-            // Update the velocity based on what happened in physx
-            controller.velocity = (velocityPosition - prevPosition) / (float)dtSinceLastFrame;
-            glm::vec3 *controllerVelocity = (glm::vec3 *)controller.pxController->getUserData();
-            *controllerVelocity = CVarNoClip.Get() ? glm::vec3(0) : controller.velocity;
+            if (!CVarNoClip.Get()) {
+                // Update the velocity based on what happened in physx
+                auto physxVelocity = (newPosition - prevPosition) / (float)dtSinceLastFrame;
+                auto inputSpeed = glm::length(userData->velocity);
+                if (glm::length(physxVelocity) > inputSpeed) {
+                    // Don't allow the physics simulation to accelerate the character faster than the input speed
+                    userData->velocity = glm::normalize(physxVelocity) * inputSpeed;
+                } else {
+                    userData->velocity = physxVelocity;
+                }
+            } else {
+                userData->velocity = glm::vec3(0);
+            }
 
             // Offset the capsule position so the camera is at the top
             float capsuleHeight = controller.pxController->getHeight();

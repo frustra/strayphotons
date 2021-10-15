@@ -115,11 +115,14 @@ namespace ecs {
     }
 
     void EventBindings::Bind(std::string source, NamedEntity target, std::string dest) {
+        Binding newBinding(target, dest);
+
         auto list = sourceToDest.find(source);
         if (list != sourceToDest.end()) {
-            list->second.emplace_back(target, dest);
+            auto &vec = list->second;
+            if (std::find(vec.begin(), vec.end(), newBinding) == vec.end()) vec.emplace_back(newBinding);
         } else {
-            sourceToDest.emplace(source, std::initializer_list<Binding>{Binding(target, dest)});
+            sourceToDest.emplace(source, BindingList{newBinding});
         }
     }
 

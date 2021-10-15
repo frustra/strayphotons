@@ -8,11 +8,9 @@
 namespace ecs {
     class Transform {
     public:
-        Transform() : dirty(false) {}
+        Transform() {}
         Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>())
-            : rotation(orientation), dirty(false) {
-            SetPosition(pos, false);
-        }
+            : position(pos), rotation(orientation) {}
 
         void SetParent(Tecs::Entity ent);
         const Tecs::Entity &GetParent() const;
@@ -56,7 +54,7 @@ namespace ecs {
          */
         void Scale(glm::vec3 xyz);
 
-        void SetPosition(glm::vec3 pos, bool setDirty = true);
+        void SetPosition(glm::vec3 pos);
         glm::vec3 GetPosition() const;
 
         glm::vec3 GetUp() const;
@@ -64,14 +62,14 @@ namespace ecs {
         glm::vec3 GetLeft() const;
         glm::vec3 GetRight() const;
 
-        void SetRotation(glm::quat quat, bool setDirty = true);
+        void SetRotation(glm::quat quat);
         glm::quat GetRotation() const;
 
         void SetScale(glm::vec3 xyz);
         glm::vec3 GetScale() const;
 
-        bool IsDirty() const;
-        bool ClearDirty();
+        uint32_t ChangeNumber() const;
+        bool HasChanged(uint32_t changeNumber) const;
 
     private:
         Tecs::Entity parent;
@@ -84,8 +82,6 @@ namespace ecs {
         uint32_t changeCount = 1;
         uint32_t cacheCount = 0;
         uint32_t parentCacheCount = 0;
-
-        bool dirty;
     };
 
     static Component<Transform> ComponentTransform("transform");

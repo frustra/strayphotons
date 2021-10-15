@@ -26,7 +26,8 @@ namespace sp {
     static CVar<float> CVarMaxConstraintTorque("x.MaxConstraintTorque", 10.0f, "The maximum torque force for constraints");
     // clang-format on
 
-    PhysxManager::PhysxManager() : RegisteredThread("PhysX", 120.0), humanControlSystem(this) {
+    PhysxManager::PhysxManager()
+        : RegisteredThread("PhysX", 120.0), humanControlSystem(this), characterControlSystem(*this) {
         Logf("PhysX %d.%d.%d starting up",
              PX_PHYSICS_VERSION_MAJOR,
              PX_PHYSICS_VERSION_MINOR,
@@ -67,6 +68,7 @@ namespace sp {
         }
 
         controllerManager.reset();
+        controllerHitReporter.reset();
         scene.reset();
         if (dispatcher) {
             dispatcher->release();
@@ -123,7 +125,8 @@ namespace sp {
 
         { // Sync ECS state to physx
             auto lock = ecs::World.StartTransaction<
-                ecs::Write<ecs::Physics, ecs::Transform, ecs::HumanController, ecs::InteractController>>();
+                ecs::Read<ecs::Name, ecs::Transform>,
+                ecs::Write<ecs::Physics, ecs::HumanController, ecs::CharacterController, ecs::InteractController>>();
 
             // Delete actors for removed entities
             ecs::Removed<ecs::Physics> removedPhysics;
@@ -133,7 +136,7 @@ namespace sp {
             ecs::Removed<ecs::HumanController> removedHumanController;
             while (humanControllerRemoval.Poll(lock, removedHumanController)) {
                 if (removedHumanController.component.pxController) {
-                    removedHumanController.component.pxController->release();
+                    RemoveController(removedHumanController.component.pxController);
                 }
             }
 
@@ -272,6 +275,7 @@ namespace sp {
         }
 
         humanControlSystem.Frame(std::chrono::nanoseconds(this->interval).count() / 1e9);
+        characterControlSystem.Frame(std::chrono::nanoseconds(this->interval).count() / 1e9);
 
         { // Simulate 1 physics frame (blocking)
             scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
@@ -288,18 +292,23 @@ namespace sp {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
 
                 auto &ph = ent.Get<ecs::Physics>(lock);
-                auto &transform = ent.Get<ecs::Transform>(lock);
+                auto &readTransform = ent.GetPrevious<ecs::Transform>(lock);
 
                 if (!ph.dynamic) continue;
 
-                Assert(!transform.HasParent(lock), "Dynamic physics objects must have no parent");
+                Assert(!readTransform.HasParent(lock), "Dynamic physics objects must have no parent");
 
-                if (ph.actor && !transform.IsDirty()) {
-                    auto pose = ph.actor->getGlobalPose();
-                    transform.SetPosition(PxVec3ToGlmVec3P(pose.p), false);
-                    transform.SetRotation(PxQuatToGlmQuat(pose.q), false);
+                if (ph.actor) {
+                    auto userData = (ActorUserData *)ph.actor->userData;
+                    if (!readTransform.HasChanged(userData->transformChangeNumber)) {
+                        auto &transform = ent.Get<ecs::Transform>(lock);
+                        auto pose = ph.actor->getGlobalPose();
+                        transform.SetPosition(PxVec3ToGlmVec3P(pose.p));
+                        transform.SetRotation(PxQuatToGlmQuat(pose.q));
 
-                    transform.UpdateCachedTransform(lock);
+                        transform.UpdateCachedTransform(lock);
+                        userData->transformChangeNumber = transform.ChangeNumber();
+                    }
                 }
             }
         }
@@ -325,6 +334,8 @@ namespace sp {
         scene = std::shared_ptr<PxScene>(pxScene, [](PxScene *s) {
             s->release();
         });
+
+        controllerHitReporter = make_unique<ControllerHitReport>();
 
         auto pxControllerManager = PxCreateControllerManager(*scene);
         controllerManager = std::shared_ptr<PxControllerManager>(pxControllerManager, [](PxControllerManager *m) {
@@ -427,7 +438,8 @@ namespace sp {
         }
     }
 
-    void PhysxManager::UpdateActor(ecs::Lock<ecs::Write<ecs::Physics, ecs::Transform>> lock, Tecs::Entity &e) {
+    void PhysxManager::UpdateActor(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock,
+                                   Tecs::Entity &e) {
         auto &ph = e.Get<ecs::Physics>(lock);
         auto &transform = e.Get<ecs::Transform>(lock);
 
@@ -452,7 +464,7 @@ namespace sp {
             }
             Assert(ph.actor, "Physx did not return valid PxRigidActor");
 
-            ph.actor->userData = reinterpret_cast<void *>((size_t)e.id);
+            ph.actor->userData = new ActorUserData(e, transform.ChangeNumber());
 
             PxMaterial *mat = pxPhysics->createMaterial(0.6f, 0.5f, 0.0f);
 
@@ -491,7 +503,8 @@ namespace sp {
             scene->addActor(*ph.actor);
         }
 
-        if (transform.IsDirty()) {
+        auto userData = (ActorUserData *)ph.actor->userData;
+        if (transform.HasChanged(userData->transformChangeNumber)) {
             if (ph.scale != scale) {
                 auto n = ph.actor->getNbShapes();
                 std::vector<PxShape *> shapes(n);
@@ -509,7 +522,7 @@ namespace sp {
             }
 
             ph.actor->setGlobalPose(pxTransform);
-            transform.ClearDirty();
+            userData->transformChangeNumber = transform.ChangeNumber();
         }
     }
 
@@ -517,6 +530,10 @@ namespace sp {
         if (actor) {
             auto rigidBody = actor->is<PxRigidDynamic>();
             if (rigidBody) RemoveConstraints(rigidBody);
+            if (actor->userData) {
+                delete (ActorUserData *)actor->userData;
+                actor->userData = nullptr;
+            }
 
             scene->removeActor(*actor);
             actor->release();
@@ -526,8 +543,8 @@ namespace sp {
     void ControllerHitReport::onShapeHit(const PxControllerShapeHit &hit) {
         auto dynamic = hit.actor->is<PxRigidDynamic>();
         if (dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
-            glm::vec3 *velocity = (glm::vec3 *)hit.controller->getUserData();
-            auto magnitude = glm::length(*velocity);
+            auto userData = (CharacterControllerUserData *)hit.controller->getUserData();
+            auto magnitude = glm::length(userData->velocity);
             if (magnitude > 0.0001) {
                 PxRigidBodyExt::addForceAtPos(*dynamic,
                                               hit.dir.multiply(PxVec3(magnitude * ecs::PLAYER_PUSH_FORCE)),
@@ -546,7 +563,7 @@ namespace sp {
         return flags & PxControllerCollisionFlag::eCOLLISION_DOWN;
     }
 
-    void PhysxManager::UpdateController(ecs::Lock<ecs::Write<ecs::HumanController, ecs::Transform>> lock,
+    void PhysxManager::UpdateController(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,
                                         Tecs::Entity &e) {
 
         auto &controller = e.Get<ecs::HumanController>(lock);
@@ -567,8 +584,8 @@ namespace sp {
             desc.density = 0.5f;
             desc.material = pxPhysics->createMaterial(0.3f, 0.3f, 0.3f);
             desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
-            desc.reportCallback = new ControllerHitReport(); // TODO: Does this have to be free'd?
-            desc.userData = new glm::vec3(0); // TODO: Store this on the component
+            desc.reportCallback = controllerHitReporter.get();
+            desc.userData = new CharacterControllerUserData(transform.ChangeNumber());
 
             auto pxController = controllerManager->createController(desc);
             Assert(pxController->getType() == PxControllerShapeType::eCAPSULE,
@@ -586,16 +603,17 @@ namespace sp {
             controller.pxController = static_cast<PxCapsuleController *>(pxController);
         }
 
-        if (transform.IsDirty()) {
+        auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+        if (transform.HasChanged(userData->transformChangeNumber)) {
             controller.pxController->setPosition(pxPosition);
-            transform.ClearDirty();
+            userData->transformChangeNumber = transform.ChangeNumber();
         }
 
         float currentHeight = controller.pxController->getHeight();
         if (currentHeight != controller.height) {
             auto currentPos = controller.pxController->getFootPosition();
             controller.pxController->resize(controller.height);
-            if (!controller.onGround) {
+            if (!userData->onGround) {
                 // If player is in the air, resize from the top to implement crouch-jumping.
                 auto newPos = currentPos;
                 newPos.y += currentHeight - controller.height;
@@ -610,6 +628,18 @@ namespace sp {
                 controller.pxController->resize(currentHeight);
                 controller.pxController->setFootPosition(currentPos);
             }
+        }
+    }
+
+    void PhysxManager::RemoveController(physx::PxCapsuleController *controller) {
+        if (controller) {
+            auto userData = controller->getUserData();
+            if (userData) {
+                delete (CharacterControllerUserData *)userData;
+                controller->setUserData(nullptr);
+            }
+
+            controller->release();
         }
     }
 
@@ -633,15 +663,16 @@ namespace sp {
         return status;
     }
 
-    bool PhysxManager::SweepQuery(PxRigidDynamic *actor, const PxVec3 dir, const float distance) {
+    bool PhysxManager::SweepQuery(PxRigidDynamic *actor, PxVec3 dir, float distance, PxSweepBuffer &hit) {
         PxShape *shape;
-        actor->getShapes(&shape, 1);
+        auto shapeCount = actor->getShapes(&shape, 1);
+        Assert(shapeCount == 1, "PhysxManager::SweepQuery expected actor to have 1 shape");
 
         PxCapsuleGeometry capsuleGeometry;
-        shape->getCapsuleGeometry(capsuleGeometry);
+        bool validCapsule = shape->getCapsuleGeometry(capsuleGeometry);
+        Assert(validCapsule, "PhysxManager::SweepQuery expected actor to have capsule geometry");
 
         scene->removeActor(*actor);
-        PxSweepBuffer hit;
         bool status = scene->sweep(capsuleGeometry, actor->getGlobalPose(), dir, distance, hit);
         scene->addActor(*actor);
         return status;

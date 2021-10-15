@@ -63,11 +63,11 @@ namespace sp {
             graphics.Init();
 #endif
 
+            logic.LoadPlayer();
+
 #ifdef SP_XR_SUPPORT
             if (options["no-vr"].count() == 0) xr.LoadXrSystem();
 #endif
-
-            logic.LoadPlayer();
 
 #ifdef SP_INPUT_SUPPORT
             inputBindingLoader.Load(InputBindingConfigPath);

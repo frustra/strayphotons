@@ -272,8 +272,8 @@ namespace sp::vulkan {
 
                 specOut.pData = specIn.values.data();
                 specOut.dataSize = sizeof(specIn.values);
-                specOut.mapEntryCount = 0;
 
+                specOut.mapEntryCount = 0;
                 for (size_t i = 0; i < MAX_SPEC_CONSTANTS; i++) {
                     if (!specIn.set[i]) continue;
                     specializationValues.emplace_back(i, i * sizeof(uint32), sizeof(uint32));

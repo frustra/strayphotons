@@ -25,7 +25,41 @@
             ],
             "event_bindings": {
                 "/script/joystick_out": { "/action/camera_rotate": "player" }
+            },
+            "human_controller": {}
+        },
+        {
+            "_name": "left-hand-input",
+            "script": {
+                "onTick": "relative_movement",
+                "parameters": {
+                    "target": "vr-hmd"
+                }
+            },
+            "signal_output": {}
+        },
+        {
+            "_name": "right-hand-input",
+            "script": {
+                "onTick": "relative_movement",
+                "parameters": {
+                    "target": "vr-controller-right"
+                }
+            },
+            "signal_output": {}
+        },
+        {
+            "_name": "vr-origin",
+            "character_controller": {
+                "target": "vr-hmd"
             }
+        },
+        {
+            "_name": "player-physics",
+            "transform": {
+                "scale": [0.1, 1, 0.1]
+            },
+            "renderable": "box"
         },
         {
             "_name": "flashlight",
@@ -35,8 +69,8 @@
             },
             "signal_output": {
                 "on": 0,
-                "angle": 20,
-                "intensity": 100
+                "angle": 30,
+                "intensity": 200
             },
             "focus": "GAME",
             "event_input": [

@@ -118,11 +118,14 @@ namespace ecs {
 
     void SignalBindings::Bind(const std::string &name, NamedEntity origin, std::string source) {
         Debugf("Binding %s to %s on %s", name, source, origin.Name());
+        Binding newBinding(origin, source);
+
         auto list = destToSource.find(name);
         if (list != destToSource.end()) {
-            list->second.sources.emplace_back(origin, source);
+            auto &vec = list->second.sources;
+            if (std::find(vec.begin(), vec.end(), newBinding) == vec.end()) vec.emplace_back(newBinding);
         } else {
-            destToSource.emplace(name, BindingList{{Binding(origin, source)}});
+            destToSource.emplace(name, BindingList{{newBinding}});
         }
     }
 

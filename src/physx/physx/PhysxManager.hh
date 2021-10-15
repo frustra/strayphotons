@@ -1,10 +1,11 @@
 #pragma once
 
 #include "ConvexHull.hh"
-#include "core/CFunc.hh"
 #include "core/Common.hh"
+#include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
+#include "physx/CharacterControlSystem.hh"
 #include "physx/HumanControlSystem.hh"
 
 #include <PxPhysicsAPI.h>
@@ -30,6 +31,26 @@ namespace sp {
         physx::PxRigidDynamic *child;
         physx::PxVec3 offset, rotation;
         physx::PxQuat rotationOffset;
+    };
+
+    struct ActorUserData {
+        Tecs::Entity entity;
+        uint32_t transformChangeNumber = 0;
+
+        ActorUserData() {}
+        ActorUserData(Tecs::Entity ent, uint32_t changeNumber) : entity(ent), transformChangeNumber(changeNumber) {}
+    };
+
+    struct CharacterControllerUserData {
+        uint32_t transformChangeNumber = 0;
+        bool onGround = false;
+        glm::vec3 velocity = glm::vec3(0);
+
+        glm::vec3 deltaSinceUpdate = glm::vec3(0);
+        chrono_clock::time_point lastUpdate;
+
+        CharacterControllerUserData() {}
+        CharacterControllerUserData(uint32_t changeNumber) : transformChangeNumber(changeNumber) {}
     };
 
     class ControllerHitReport : public physx::PxUserControllerHitReport {
@@ -75,12 +96,14 @@ namespace sp {
 
         ConvexHullSet *GetCachedConvexHulls(std::string name);
 
-        void UpdateActor(ecs::Lock<ecs::Write<ecs::Physics, ecs::Transform>> lock, Tecs::Entity &e);
+        void UpdateActor(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
 
-        void UpdateController(ecs::Lock<ecs::Write<ecs::HumanController, ecs::Transform>> lock, Tecs::Entity &e);
+        void UpdateController(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,
+                              Tecs::Entity &e);
+        void RemoveController(physx::PxCapsuleController *controller);
 
-        bool SweepQuery(physx::PxRigidDynamic *actor, const physx::PxVec3 dir, const float distance);
+        bool SweepQuery(physx::PxRigidDynamic *actor, physx::PxVec3 dir, float distance, physx::PxSweepBuffer &hit);
 
         /**
          * Checks scene for an overlapping hit in the shape
@@ -108,8 +131,9 @@ namespace sp {
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;
 
-        std::shared_ptr<physx::PxControllerManager> controllerManager; // Must be deconstructed before scene
         std::shared_ptr<physx::PxScene> scene;
+        std::unique_ptr<ControllerHitReport> controllerHitReporter;
+        std::shared_ptr<physx::PxControllerManager> controllerManager; // Must be deconstructed before scene
 
         physx::PxFoundation *pxFoundation = nullptr;
         physx::PxPhysics *pxPhysics = nullptr;
@@ -130,11 +154,12 @@ namespace sp {
         ecs::Observer<ecs::Removed<ecs::HumanController>> humanControllerRemoval;
 
         HumanControlSystem humanControlSystem;
+        CharacterControlSystem characterControlSystem;
 
         ConstraintList constraints;
 
         std::unordered_map<string, ConvexHullSet *> cache;
 
-        CFuncCollection funcs;
+        friend class CharacterControlSystem;
     };
 } // namespace sp

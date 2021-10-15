@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/Components.hh"
+#include "ecs/NamedEntity.hh"
 
 #include <functional>
 #include <glm/glm.hpp>
@@ -31,10 +32,21 @@ namespace ecs {
         physx::PxCapsuleController *pxController;
 
         float height = ecs::PLAYER_CAPSULE_HEIGHT;
+    };
 
-        bool onGround = false;
-        glm::vec3 velocity = glm::vec3(0);
+    struct CharacterController {
+        ecs::NamedEntity target;
+
+        physx::PxCapsuleController *pxController = nullptr;
     };
 
     static Component<HumanController> ComponentHumanController("human_controller");
+    static Component<CharacterController> ComponenCharacterController("character_controller");
+
+    template<>
+    bool Component<HumanController>::Load(Lock<Read<ecs::Name>> lock, HumanController &dst, const picojson::value &src);
+    template<>
+    bool Component<CharacterController>::Load(Lock<Read<ecs::Name>> lock,
+                                              CharacterController &dst,
+                                              const picojson::value &src);
 } // namespace ecs

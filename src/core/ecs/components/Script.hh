@@ -1,7 +1,9 @@
 #pragma once
 
-#include <ecs/Components.hh>
-#include <ecs/Ecs.hh>
+#include "ecs/Components.hh"
+#include "ecs/Ecs.hh"
+#include "ecs/NamedEntity.hh"
+
 #include <functional>
 #include <robin_hood.h>
 #include <variant>
@@ -21,10 +23,10 @@ namespace ecs {
             }
         }
 
-        using ParameterType = typename std::variant<bool, double, std::string>;
+        using ParameterType = typename std::variant<bool, double, std::string, NamedEntity>;
 
         template<typename T>
-        void SetParam(std::string name, T &&value) {
+        void SetParam(std::string name, const T &value) {
             scriptParameters[name] = value;
         }
 

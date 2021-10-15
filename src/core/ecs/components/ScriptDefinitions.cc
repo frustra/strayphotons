@@ -1,10 +1,10 @@
 #include "Script.hh"
+#include "core/CVar.hh"
+#include "core/Common.hh"
+#include "core/Logging.hh"
+#include "ecs/EcsImpl.hh"
 
 #include <cmath>
-#include <core/CVar.hh>
-#include <core/Common.hh>
-#include <core/Logging.hh>
-#include <ecs/EcsImpl.hh>
 #include <glm/glm.hpp>
 #include <robin_hood.h>
 #include <sstream>
@@ -114,6 +114,41 @@ namespace ecs {
                      } else {
                          Abortf("Unsupported event type: %s", event.toString());
                      }
+                 }
+             }
+         }},
+        {"relative_movement",
+         [](ecs::Lock<ecs::WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+             if (ent.Has<Script, SignalOutput>(lock)) {
+                 auto &scriptComp = ent.Get<Script>(lock);
+                 auto targetName = scriptComp.GetParam<std::string>("target");
+                 auto targetEntity = scriptComp.GetParam<NamedEntity>("target_entity");
+                 if (targetEntity.Name() != targetName) targetEntity = NamedEntity(targetName);
+
+                 auto target = targetEntity.Get(lock);
+                 if (target) {
+                     scriptComp.SetParam<NamedEntity>("target_entity", targetEntity);
+
+                     glm::vec3 movement = glm::vec3(0);
+                     movement.z -= SignalBindings::GetSignal(lock, ent, "move_forward");
+                     movement.z += SignalBindings::GetSignal(lock, ent, "move_back");
+                     movement.x -= SignalBindings::GetSignal(lock, ent, "move_left");
+                     movement.x += SignalBindings::GetSignal(lock, ent, "move_right");
+
+                     movement.x = std::clamp(movement.x, -1.0f, 1.0f);
+                     movement.z = std::clamp(movement.z, -1.0f, 1.0f);
+
+                     if (target.Has<ecs::Transform>(lock)) {
+                         auto &parentTransform = target.Get<ecs::Transform>(lock);
+                         auto parentRotation = parentTransform.GetGlobalRotation(lock);
+                         movement = parentRotation * movement;
+                         if (std::abs(movement.y) > 0.999) { movement = parentRotation * glm::vec3(0, -movement.y, 0); }
+                         movement.y = 0;
+                     }
+
+                     auto &outputComp = ent.Get<SignalOutput>(lock);
+                     outputComp.SetSignal("move_world_x", movement.x);
+                     outputComp.SetSignal("move_world_z", movement.z);
                  }
              }
          }},
