@@ -70,12 +70,14 @@ namespace sp::vulkan {
         void ForwardPass(CommandContext &cmd,
                          ecs::Renderable::VisibilityMask viewMask,
                          DrawLock lock,
+                         bool useMaterial = true,
                          const PreDrawFunc &preDraw = {});
 
         void DrawEntity(CommandContext &cmd,
                         ecs::Renderable::VisibilityMask viewMask,
                         DrawLock lock,
                         Tecs::Entity &ent,
+                        bool useMaterial = true,
                         const PreDrawFunc &preDraw = {});
 
         float Exposure = 1.0f;

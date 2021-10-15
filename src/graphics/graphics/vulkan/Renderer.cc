@@ -133,7 +133,7 @@ namespace sp::vulkan {
                     GPUViewState views[] = {{view}, {}};
                     cmd.UploadUniformData(0, 10, views, 2);
 
-                    this->ForwardPass(cmd, view.visibilityMask, lock, {});
+                    this->ForwardPass(cmd, view.visibilityMask, lock);
                 });
         }
 
@@ -179,7 +179,7 @@ namespace sp::vulkan {
                     cmd.SetShaders("test.vert", "test.frag");
                     cmd.UploadUniformData(0, 11, &this->lights.gpuData);
                     cmd.SetTexture(0, 2, resources.GetRenderTarget("ShadowMapLinear")->ImageView());
-                    this->ForwardPass(cmd, visible, lock, {});
+                    this->ForwardPass(cmd, visible, lock);
 
                     for (size_t i = 0; i < xrViews.size(); i++) {
                         if (!xrViews[i].Has<ecs::View, ecs::XRView>(lock)) continue;
@@ -305,7 +305,7 @@ namespace sp::vulkan {
                     cmd.SetViewport(viewport);
                     cmd.SetYDirection(YDirection::Down);
 
-                    this->ForwardPass(cmd, view.visibilityMask, lock, [](auto lock, Tecs::Entity &ent) {});
+                    this->ForwardPass(cmd, view.visibilityMask, lock, false);
                 }
             });
     }
@@ -377,17 +377,18 @@ namespace sp::vulkan {
     void Renderer::ForwardPass(CommandContext &cmd,
                                ecs::Renderable::VisibilityMask viewMask,
                                DrawLock lock,
+                               bool useMaterial,
                                const PreDrawFunc &preDraw) {
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (ent.Has<ecs::Renderable, ecs::Transform>(lock)) {
                 if (ent.Has<ecs::Mirror>(lock)) continue;
-                DrawEntity(cmd, viewMask, lock, ent, preDraw);
+                DrawEntity(cmd, viewMask, lock, ent, useMaterial, preDraw);
             }
         }
 
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (ent.Has<ecs::Renderable, ecs::Transform, ecs::Mirror>(lock)) {
-                DrawEntity(cmd, viewMask, lock, ent, preDraw);
+                DrawEntity(cmd, viewMask, lock, ent, useMaterial, preDraw);
             }
         }
     }
@@ -396,6 +397,7 @@ namespace sp::vulkan {
                               ecs::Renderable::VisibilityMask viewMask,
                               DrawLock lock,
                               Tecs::Entity &ent,
+                              bool useMaterial,
                               const PreDrawFunc &preDraw) {
         auto &comp = ent.Get<ecs::Renderable>(lock);
         if (!comp.model || !comp.model->Valid()) return;
@@ -415,7 +417,7 @@ namespace sp::vulkan {
             activeModels.Register(comp.model->name, model);
         }
 
-        model->Draw(cmd, modelMat); // TODO pass and use comp.model->bones
+        model->Draw(cmd, modelMat, useMaterial); // TODO pass and use comp.model->bones
     }
 
     void Renderer::EndFrame() {

@@ -107,7 +107,7 @@ namespace sp::vulkan {
         Debugf("Destroying vulkan::Model %s", modelName);
     }
 
-    void Model::Draw(CommandContext &cmd, glm::mat4 modelMat) {
+    void Model::Draw(CommandContext &cmd, glm::mat4 modelMat, bool useMaterial) {
         cmd.SetVertexLayout(SceneVertex::Layout());
 
         for (auto &primitivePtr : primitives) {
@@ -117,8 +117,10 @@ namespace sp::vulkan {
 
             cmd.PushConstants(constants);
 
-            if (primitive.baseColor) cmd.SetTexture(0, 0, primitive.baseColor);
-            if (primitive.metallicRoughness) cmd.SetTexture(0, 1, primitive.metallicRoughness);
+            if (useMaterial) {
+                if (primitive.baseColor) cmd.SetTexture(0, 0, primitive.baseColor);
+                if (primitive.metallicRoughness) cmd.SetTexture(0, 1, primitive.metallicRoughness);
+            }
 
             cmd.Raw().bindIndexBuffer(*primitive.indexBuffer, 0, primitive.indexType);
             cmd.Raw().bindVertexBuffers(0, {*primitive.vertexBuffer}, {0});
