@@ -2,10 +2,6 @@
 
 #include <ecs/Components.hh>
 
-namespace sp {
-    class PhysxManager;
-}
-
 namespace physx {
     class PxRigidDynamic;
 }

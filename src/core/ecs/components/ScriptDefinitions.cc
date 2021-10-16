@@ -164,7 +164,7 @@ namespace ecs {
                              auto &scriptComp = ent.Get<Script>(lock);
 
                              auto newEntity = lock.NewEntity();
-                             newEntity.Set<Owner>(lock, Owner::SystemId::GAME_LOGIC);
+                             newEntity.Set<Owner>(lock, Owner::OwnerType::PLAYER, 0);
 
                              glm::vec3 position;
                              position.x = scriptComp.GetParam<double>("position_x");

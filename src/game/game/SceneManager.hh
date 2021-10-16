@@ -2,6 +2,7 @@
 
 #include "core/CFunc.hh"
 #include "ecs/Ecs.hh"
+#include "input/core/ConsoleBindingManager.hh"
 
 #include <memory>
 
@@ -10,14 +11,14 @@ namespace sp {
     class Scene;
     class Script;
 
+    static const char *const InputBindingConfigPath = "input_bindings.json";
+
     class SceneManager {
     public:
         SceneManager();
 
-#ifdef SP_INPUT_SUPPORT
-        void HandleInput();
-#endif
-        bool Frame(double dtSinceLastFrame);
+        std::shared_ptr<Scene> LoadSceneJson(const std::string &name, ecs::Lock<ecs::AddRemove> lock, ecs::Owner owner);
+        std::shared_ptr<Scene> LoadBindingJson(std::string bindingConfigPath);
 
         void LoadPlayer();
         void LoadScene(std::string name);
@@ -31,6 +32,10 @@ namespace sp {
         }
 
     private:
+        ecs::ECS transitionWorld;
+
+        ConsoleBindingManager consoleBinding;
+
         std::shared_ptr<Scene> scene, playerScene;
         Tecs::Entity player;
         CFuncCollection funcs;

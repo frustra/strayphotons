@@ -1,5 +1,8 @@
 add_library(${PROJECT_CORE_LIB} STATIC)
-add_library(${PROJECT_CORE_GAME_LIB} STATIC)
+
+target_include_directories(${PROJECT_CORE_LIB} PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
 target_link_libraries(${PROJECT_CORE_LIB} PUBLIC
     glm
@@ -9,10 +12,6 @@ target_link_libraries(${PROJECT_CORE_LIB} PUBLIC
     robin_hood
     Tecs
     tinygltf
-)
-
-target_link_libraries(${PROJECT_CORE_GAME_LIB} PUBLIC
-    ${PROJECT_CORE_LIB}
 )
 
 if(WIN32)
@@ -37,10 +36,6 @@ else()
     )
 endif()
 
-target_include_directories(${PROJECT_CORE_LIB} PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
 # _DEBUG/NDEBUG Used by PhysX, must be defined everywhere to enable precompiled headers
 if (SP_DEBUG)
     target_compile_definitions(${PROJECT_CORE_LIB} PUBLIC _DEBUG)
@@ -51,4 +46,3 @@ endif()
 add_subdirectory(assets)
 add_subdirectory(core)
 add_subdirectory(ecs)
-add_subdirectory(game)
