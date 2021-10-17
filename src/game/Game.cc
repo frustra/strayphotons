@@ -2,7 +2,7 @@
 
 #include "assets/Script.hh"
 #include "core/Common.hh"
-#include "core/Console.hh"
+#include "core/console/Console.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"

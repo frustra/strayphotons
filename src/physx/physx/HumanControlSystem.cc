@@ -1,8 +1,8 @@
 #include "HumanControlSystem.hh"
 
-#include "core/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "core/console/CVar.hh"
 #include "core/input/BindingNames.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"

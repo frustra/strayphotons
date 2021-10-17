@@ -1,8 +1,8 @@
 // Included directly into Console.cc
 
-#include "core/Console.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
+#include "core/console/Console.hh"
 #include "ecs/Ecs.hh"
 
 #include <fstream>

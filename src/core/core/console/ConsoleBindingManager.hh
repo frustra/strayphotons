@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/CFunc.hh"
+#include "core/console/CFunc.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/NamedEntity.hh"
 

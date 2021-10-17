@@ -1,7 +1,7 @@
 #include "Script.hh"
 
 #include "Asset.hh"
-#include "core/Console.hh"
+#include "core/console/Console.hh"
 
 #include <iostream>
 

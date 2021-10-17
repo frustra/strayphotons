@@ -2,9 +2,9 @@
 
 #include "GraphicsManager.hh"
 #include "assets/AssetManager.hh"
-#include "core/CVar.hh"
-#include "core/Console.hh"
 #include "core/Logging.hh"
+#include "core/console/CVar.hh"
+#include "core/console/Console.hh"
 #include "core/input/BindingNames.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/core/GraphicsContext.hh"

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/CFunc.hh"
-#include "core/input/ConsoleBindingManager.hh"
+#include "core/console/CFunc.hh"
+#include "core/console/ConsoleBindingManager.hh"
 #include "ecs/Ecs.hh"
 
 #include <memory>

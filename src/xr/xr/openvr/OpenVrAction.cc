@@ -1,5 +1,5 @@
-#include <core/CVar.hh>
 #include <core/Logging.hh>
+#include <core/console/CVar.hh>
 #include <graphics/opengl/GLTexture.hh>
 #include <stdexcept>
 #include <xr/openvr/OpenVrAction.hh>

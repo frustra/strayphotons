@@ -1,8 +1,8 @@
 #include "Script.hh"
 #include "assets/AssetManager.hh"
-#include "core/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "core/console/CVar.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <cmath>

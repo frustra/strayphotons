@@ -1,7 +1,6 @@
 #include "GlfwInputHandler.hh"
 
 #include "core/Common.hh"
-#include "core/Console.hh"
 #include "core/Logging.hh"
 #include "core/input/BindingNames.hh"
 #include "core/input/KeyCodes.hh"

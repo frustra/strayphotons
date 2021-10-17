@@ -3,8 +3,8 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Scene.hh"
-#include "core/Console.hh"
 #include "core/Logging.hh"
+#include "core/console/Console.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <filesystem>

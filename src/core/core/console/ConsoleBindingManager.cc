@@ -1,6 +1,6 @@
 #include "ConsoleBindingManager.hh"
 
-#include "core/Console.hh"
+#include "core/console/Console.hh"
 #include "core/input/BindingNames.hh"
 #include "core/input/KeyCodes.hh"
 #include "ecs/EcsImpl.hh"

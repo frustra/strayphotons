@@ -1,6 +1,6 @@
 #include "GraphicsContext.hh"
 
-#include "core/CVar.hh"
+#include "core/console/CVar.hh"
 
 #include <glm/glm.hpp>
 

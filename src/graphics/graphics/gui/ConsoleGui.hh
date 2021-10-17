@@ -1,4 +1,4 @@
-#include "core/Console.hh"
+#include "core/console/Console.hh"
 
 #include <imgui/imgui.h>
 

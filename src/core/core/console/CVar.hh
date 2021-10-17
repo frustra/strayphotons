@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Common.hh"
-#include "StreamOverloads.hh"
+#include "core/Common.hh"
+#include "core/StreamOverloads.hh"
 
 #include <functional>
 #include <sstream>
