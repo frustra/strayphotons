@@ -8,7 +8,6 @@ target_include_directories(${PROJECT_PHYSICS_PHYSX_LIB} PUBLIC
 target_link_libraries(${PROJECT_PHYSICS_PHYSX_LIB}
     PRIVATE
         ${PROJECT_CORE_LIB}
-        ${PROJECT_INPUT_CORE_LIB}
         ${PROJECT_GRAPHICS_CORE_LIB}
         vhacd
     PUBLIC

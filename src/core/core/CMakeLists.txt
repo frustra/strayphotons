@@ -12,3 +12,5 @@ target_precompile_headers(${PROJECT_CORE_LIB} PUBLIC
     CVar.hh
     Logging.hh
 )
+
+add_subdirectory(input)

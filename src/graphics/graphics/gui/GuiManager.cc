@@ -1,9 +1,9 @@
 #include "GuiManager.hh"
 
 #include "ConsoleGui.hh"
+#include "core/input/BindingNames.hh"
+#include "core/input/KeyCodes.hh"
 #include "ecs/EcsImpl.hh"
-#include "input/core/BindingNames.hh"
-#include "input/core/KeyCodes.hh"
 
 #include <imgui/imgui.h>
 

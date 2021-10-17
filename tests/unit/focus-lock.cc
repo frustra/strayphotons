@@ -1,6 +1,6 @@
 #include "core/Logging.hh"
+#include "core/input/BindingNames.hh"
 #include "ecs/EcsImpl.hh"
-#include "input/core/BindingNames.hh"
 
 #include <tests.hh>
 

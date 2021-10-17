@@ -11,6 +11,7 @@
     #include "graphics/gui/MenuGuiManager.hh"
 #endif
 
+#include "core/input/ConsoleBindingManager.hh"
 #ifdef SP_INPUT_SUPPORT_GLFW
     #include "input/glfw/GlfwInputHandler.hh"
 #endif
@@ -55,6 +56,7 @@ namespace sp {
         std::unique_ptr<DebugGuiManager> debugGui = nullptr;
         std::unique_ptr<MenuGuiManager> menuGui = nullptr;
 #endif
+        ConsoleBindingManager consoleBinding;
 #ifdef SP_INPUT_SUPPORT_GLFW
         std::unique_ptr<GlfwInputHandler> glfwInputHandler;
 #endif

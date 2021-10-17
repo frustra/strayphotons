@@ -51,12 +51,10 @@ namespace sp {
             }
         }
 
-#ifdef SP_INPUT_SUPPORT
         {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
             lock.Set<ecs::FocusLock>();
         }
-#endif
 
 #if RUST_CXX
         sp::rust::print_hello();
@@ -86,12 +84,10 @@ namespace sp {
                 startupScript->Exec();
             } else if (!options.count("map")) {
                 scenes.LoadScene("menu");
-#ifdef SP_INPUT_SUPPORT
                 {
                     auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
                     lock.Get<ecs::FocusLock>().AcquireFocus(ecs::FocusLayer::MENU);
                 }
-#endif
             }
 
             lastFrameTime = chrono_clock::now();

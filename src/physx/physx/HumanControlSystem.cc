@@ -3,9 +3,9 @@
 #include "core/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "core/input/BindingNames.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
-#include "input/core/BindingNames.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 

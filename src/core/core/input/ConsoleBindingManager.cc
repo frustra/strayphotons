@@ -1,9 +1,9 @@
 #include "ConsoleBindingManager.hh"
 
 #include "core/Console.hh"
+#include "core/input/BindingNames.hh"
+#include "core/input/KeyCodes.hh"
 #include "ecs/EcsImpl.hh"
-#include "input/core/BindingNames.hh"
-#include "input/core/KeyCodes.hh"
 
 namespace sp {
     ConsoleBindingManager::ConsoleBindingManager() : consoleInputEntity("console-input"), keyboardEntity("keyboard") {
