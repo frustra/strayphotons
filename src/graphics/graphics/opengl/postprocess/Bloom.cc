@@ -1,7 +1,7 @@
 #include "Bloom.hh"
 
-#include "core/Logging.hh"
 #include "console/CVar.hh"
+#include "core/Logging.hh"
 #include "graphics/opengl/GenericShaders.hh"
 #include "graphics/opengl/ShaderManager.hh"
 #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
