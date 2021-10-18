@@ -152,19 +152,18 @@ namespace sp::vulkan {
         // Roughness = G channel, Metallic = B channel.
         // R and A channels are not used / should be ignored.
         // https://github.com/KhronosGroup/glTF/blob/e5519ce050/specification/2.0/schema/material.pbrMetallicRoughness.schema.json
-        case MetallicRoughness:
+        case MetallicRoughness: {
             name += std::to_string(material.pbrMetallicRoughness.metallicRoughnessTexture.index) + "_METALICROUGHNESS";
             textureIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
-            factor = {0.0,
-                      material.pbrMetallicRoughness.roughnessFactor,
-                      material.pbrMetallicRoughness.metallicFactor,
-                      0.0};
+            double rf = material.pbrMetallicRoughness.roughnessFactor,
+                   mf = material.pbrMetallicRoughness.metallicFactor;
+            if (rf != 1 || mf != 1) factor = {0.0, rf, mf, 0.0};
             // The spec says these should be linear, but we have srgb files right now.
             // This makes sense, since there's no reason to have more precision for lower values.
             // TODO: reencode as linear
             srgb = true;
             break;
-
+        }
         case Height:
             name += std::to_string(material.normalTexture.index) + "_HEIGHT";
             textureIndex = material.normalTexture.index;
@@ -184,7 +183,7 @@ namespace sp::vulkan {
             break;
 
         default:
-            return NULL;
+            return nullptr;
         }
 
         if (textures.count(name)) return textures[name];
@@ -218,7 +217,12 @@ namespace sp::vulkan {
         imageInfo.imageType = vk::ImageType::e2D;
         imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
         imageInfo.format = FormatFromTraits(img.component, img.bits, srgb);
-        imageInfo.factor = std::move(factor);
+
+        bool useFactor = false;
+        for (auto f : factor) {
+            if (f != 1) useFactor = true;
+        }
+        if (useFactor) imageInfo.factor = std::move(factor);
 
         if (imageInfo.format == vk::Format::eUndefined) {
             Errorf("Failed to load image at index %d: invalid format with components=%d and bits=%d",
