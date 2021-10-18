@@ -6,11 +6,9 @@
 #include "xr/openvr/OpenVrModel.hh"
 #include "xr/openvr/OpenVrSystem.hh"
 
-#include <stdexcept>
-
-// GLM headers
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <stdexcept>
 
 using namespace sp;
 using namespace xr;
