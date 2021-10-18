@@ -1,7 +1,7 @@
 #pragma once
 
+#include "console/CVar.hh"
 #include "core/Common.hh"
-#include "core/console/CVar.hh"
 #include "graphics/opengl/Graphics.hh"
 
 #include <queue>

@@ -3,10 +3,10 @@
 #include "PhysxUtils.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Model.hh"
+#include "console/CFunc.hh"
+#include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
-#include "core/console/CFunc.hh"
-#include "core/console/CVar.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <PxScene.h>

@@ -1,6 +1,6 @@
 #include "Crosshair.hh"
 
-#include "core/console/CVar.hh"
+#include "console/CVar.hh"
 #include "graphics/opengl/GenericShaders.hh"
 #include "graphics/opengl/ShaderManager.hh"
 #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"

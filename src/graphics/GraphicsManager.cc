@@ -1,8 +1,8 @@
 #ifdef SP_GRAPHICS_SUPPORT
     #include "GraphicsManager.hh"
 
+    #include "console/CVar.hh"
     #include "core/Logging.hh"
-    #include "core/console/CVar.hh"
     #include "ecs/EcsImpl.hh"
     #include "game/Game.hh"
     #include "graphics/core/GraphicsContext.hh"

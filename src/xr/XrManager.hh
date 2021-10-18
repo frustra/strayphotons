@@ -2,7 +2,7 @@
 
 #ifdef SP_XR_SUPPORT
 
-    #include "core/console/CFunc.hh"
+    #include "console/CFunc.hh"
     #include "xr/XrSystem.hh"
 
     #include <memory>

@@ -1,7 +1,7 @@
 #include "SMAA.hh"
 
 #include "assets/AssetManager.hh"
-#include "core/console/CVar.hh"
+#include "console/CVar.hh"
 #include "graphics/opengl/GenericShaders.hh"
 #include "graphics/opengl/GlfwGraphicsContext.hh"
 #include "graphics/opengl/ShaderManager.hh"

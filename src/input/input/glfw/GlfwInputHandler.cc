@@ -2,10 +2,10 @@
 
 #include "core/Common.hh"
 #include "core/Logging.hh"
-#include "core/input/BindingNames.hh"
-#include "core/input/KeyCodes.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/core/GraphicsContext.hh"
+#include "input/BindingNames.hh"
+#include "input/KeyCodes.hh"
 #include "input/glfw/GlfwKeyCodes.hh"
 
 #include <GLFW/glfw3.h>

@@ -1,10 +1,12 @@
-#include <core/Logging.hh>
-#include <core/console/CVar.hh>
-#include <graphics/opengl/GLTexture.hh>
+#include "OpenVrAction.hh"
+
+#include "console/CVar.hh"
+#include "core/Logging.hh"
+#include "graphics/opengl/GLTexture.hh"
+#include "xr/openvr/OpenVrModel.hh"
+#include "xr/openvr/OpenVrSystem.hh"
+
 #include <stdexcept>
-#include <xr/openvr/OpenVrAction.hh>
-#include <xr/openvr/OpenVrModel.hh>
-#include <xr/openvr/OpenVrSystem.hh>
 
 // GLM headers
 #include <glm/glm.hpp>

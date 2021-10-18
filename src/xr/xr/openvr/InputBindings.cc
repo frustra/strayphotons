@@ -4,8 +4,8 @@
 #include "assets/AssetManager.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
-#include "core/input/BindingNames.hh"
 #include "ecs/EcsImpl.hh"
+#include "input/BindingNames.hh"
 #include "xr/openvr/OpenVrSystem.hh"
 
 #include <fstream>

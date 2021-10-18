@@ -1,10 +1,10 @@
 #include "Game.hh"
 
 #include "assets/Script.hh"
+#include "console/Console.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
-#include "core/console/Console.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "console/CFunc.hh"
 #include "core/PreservingMap.hh"
-#include "core/console/CFunc.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
 #include "graphics/gui/MenuGuiManager.hh"
