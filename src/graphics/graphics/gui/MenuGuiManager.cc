@@ -2,13 +2,13 @@
 
 #include "GraphicsManager.hh"
 #include "assets/AssetManager.hh"
-#include "core/CVar.hh"
-#include "core/Console.hh"
+#include "console/CVar.hh"
+#include "console/Console.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/core/Texture.hh"
-#include "input/core/BindingNames.hh"
+#include "input/BindingNames.hh"
 
 #include <glm/glm.hpp>
 #include <imgui/imgui.h>

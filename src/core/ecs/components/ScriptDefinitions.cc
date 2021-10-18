@@ -1,5 +1,6 @@
 #include "Script.hh"
-#include "core/CVar.hh"
+#include "assets/AssetManager.hh"
+#include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
@@ -14,7 +15,7 @@ namespace ecs {
 
     robin_hood::unordered_node_map<std::string, ScriptFunc> ScriptDefinitions = {
         {"flashlight",
-         [](ecs::Lock<ecs::WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+         [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
              if (ent.Has<Light, Transform, SignalOutput, EventInput>(lock)) {
                  auto &light = ent.Get<Light>(lock);
                  auto &signalComp = ent.Get<SignalOutput>(lock);
@@ -23,19 +24,19 @@ namespace ecs {
                  light.intensity = signalComp.GetSignal("intensity");
                  light.spotAngle = glm::radians(signalComp.GetSignal("angle"));
 
-                 ecs::Event event;
-                 if (ecs::EventInput::Poll(lock, ent, "/action/flashlight/toggle", event)) {
+                 Event event;
+                 if (EventInput::Poll(lock, ent, "/action/flashlight/toggle", event)) {
                      signalComp.SetSignal("on", light.on ? 0.0 : 1.0);
                      light.on = !light.on;
                  }
-                 if (ecs::EventInput::Poll(lock, ent, "/action/flashlight/grab", event)) {
+                 if (EventInput::Poll(lock, ent, "/action/flashlight/grab", event)) {
                      auto &transform = ent.Get<Transform>(lock);
                      if (transform.HasParent(lock)) {
                          transform.SetPosition(transform.GetGlobalPosition(lock));
                          transform.SetRotation(transform.GetGlobalRotation(lock));
                          transform.SetParent(Tecs::Entity());
                      } else {
-                         Tecs::Entity parent = ecs::EntityWith<ecs::Name>(lock, CVarFlashlightParent.Get());
+                         Tecs::Entity parent = EntityWith<Name>(lock, CVarFlashlightParent.Get());
                          if (parent) {
                              transform.SetPosition(glm::vec3(0, -0.3, 0));
                              transform.SetRotation(glm::quat());
@@ -49,7 +50,7 @@ namespace ecs {
              }
          }},
         {"sun",
-         [](ecs::Lock<ecs::WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+         [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
              if (ent.Has<Transform, SignalOutput>(lock)) {
                  auto &transform = ent.Get<Transform>(lock);
                  auto &signalComp = ent.Get<SignalOutput>(lock);
@@ -68,7 +69,7 @@ namespace ecs {
              }
          }},
         {"light_sensor",
-         [](ecs::Lock<ecs::WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+         [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
              if (ent.Has<Script, LightSensor, SignalOutput>(lock)) {
                  auto &scriptComp = ent.Get<Script>(lock);
                  auto &sensorComp = ent.Get<LightSensor>(lock);
@@ -95,7 +96,7 @@ namespace ecs {
              }
          }},
         {"joystick_calibration",
-         [](ecs::Lock<ecs::WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+         [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
              if (ent.Has<Name, Script, EventInput, EventBindings>(lock)) {
                  auto &scriptComp = ent.Get<Script>(lock);
                  auto &eventInput = ent.Get<EventInput>(lock);
@@ -118,7 +119,7 @@ namespace ecs {
              }
          }},
         {"relative_movement",
-         [](ecs::Lock<ecs::WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+         [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
              if (ent.Has<Script, SignalOutput>(lock)) {
                  auto &scriptComp = ent.Get<Script>(lock);
                  auto targetName = scriptComp.GetParam<std::string>("target");
@@ -138,8 +139,8 @@ namespace ecs {
                      movement.x = std::clamp(movement.x, -1.0f, 1.0f);
                      movement.z = std::clamp(movement.z, -1.0f, 1.0f);
 
-                     if (target.Has<ecs::Transform>(lock)) {
-                         auto &parentTransform = target.Get<ecs::Transform>(lock);
+                     if (target.Has<Transform>(lock)) {
+                         auto &parentTransform = target.Get<Transform>(lock);
                          auto parentRotation = parentTransform.GetGlobalRotation(lock);
                          movement = parentRotation * movement;
                          if (std::abs(movement.y) > 0.999) { movement = parentRotation * glm::vec3(0, -movement.y, 0); }
@@ -149,6 +150,48 @@ namespace ecs {
                      auto &outputComp = ent.Get<SignalOutput>(lock);
                      outputComp.SetSignal("move_world_x", movement.x);
                      outputComp.SetSignal("move_world_z", movement.z);
+                 }
+             }
+         }},
+        {"model_spawner",
+         [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+             if (ent.Has<Script, EventInput>(lock)) {
+                 Event event;
+                 while (EventInput::Poll(lock, ent, "/action/spawn", event)) {
+                     std::thread([ent]() {
+                         auto lock = World.StartTransaction<AddRemove>();
+                         if (ent.Has<Script>(lock)) {
+                             auto &scriptComp = ent.Get<Script>(lock);
+
+                             auto newEntity = lock.NewEntity();
+                             newEntity.Set<Owner>(lock, Owner::OwnerType::PLAYER, 0);
+
+                             glm::vec3 position;
+                             position.x = scriptComp.GetParam<double>("position_x");
+                             position.y = scriptComp.GetParam<double>("position_y");
+                             position.z = scriptComp.GetParam<double>("position_z");
+                             auto &transform = newEntity.Set<Transform>(lock);
+
+                             auto relativeName = scriptComp.GetParam<std::string>("relative_to");
+                             if (!relativeName.empty()) {
+                                 auto relativeEnt = EntityWith<Name>(lock, relativeName);
+                                 if (relativeEnt.Has<Transform>(lock)) {
+                                     auto &relativeTransform = relativeEnt.Get<Transform>(lock);
+                                     transform.SetRotation(relativeTransform.GetGlobalRotation(lock));
+                                     position = relativeTransform.GetGlobalTransform(lock) * glm::vec4(position, 1.0f);
+                                 }
+                             }
+                             transform.SetPosition(position);
+
+                             auto parentName = scriptComp.GetParam<std::string>("parent");
+                             if (!parentName.empty()) transform.SetParent(EntityWith<Name>(lock, parentName));
+
+                             auto modelName = scriptComp.GetParam<std::string>("model");
+                             auto model = sp::GAssets.LoadModel(modelName);
+                             newEntity.Set<Renderable>(lock, model);
+                             newEntity.Set<Physics>(lock, model, true);
+                         }
+                     }).detach();
                  }
              }
          }},

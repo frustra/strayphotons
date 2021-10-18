@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/CFunc.hh"
+#include "console/CFunc.hh"
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
@@ -70,7 +70,6 @@ namespace sp {
         // clang-format on
         void RenderPass(const ecs::View &view, DrawLock lock, RenderTarget *finalOutput = nullptr);
         void PrepareForView(const ecs::View &view);
-        void RenderLoading(const ecs::View &view);
         void EndFrame();
 
         // Functions specific to VoxelRenderer

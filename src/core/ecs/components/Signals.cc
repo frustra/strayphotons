@@ -85,6 +85,17 @@ namespace ecs {
         }
     }
 
+    std::pair<std::string, std::string> ParseSignalString(const std::string &str) {
+        size_t delimiter = str.find_last_of('.');
+        std::string entityName = str;
+        std::string signalName = "value";
+        if (delimiter != std::string::npos) {
+            entityName = str.substr(0, delimiter);
+            signalName = str.substr(delimiter + 1);
+        }
+        return std::make_pair(entityName, signalName);
+    }
+
     void SignalOutput::SetSignal(const std::string &name, double value) {
         signals[name] = value;
     }

@@ -58,6 +58,8 @@ namespace ecs {
         robin_hood::unordered_map<std::string, BindingList> destToSource;
     };
 
+    std::pair<std::string, std::string> ParseSignalString(const std::string &str);
+
     std::ostream &operator<<(std::ostream &out, const SignalBindings::CombineOperator &v);
 
     static Component<SignalOutput> ComponentSignalReceiver("signal_output");

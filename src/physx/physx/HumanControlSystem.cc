@@ -1,11 +1,11 @@
 #include "HumanControlSystem.hh"
 
-#include "core/CVar.hh"
+#include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
-#include "input/core/BindingNames.hh"
+#include "input/BindingNames.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 

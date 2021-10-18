@@ -1,7 +1,7 @@
 #include "PostProcess.hh"
 
-#include "core/CFunc.hh"
-#include "core/CVar.hh"
+#include "console/CFunc.hh"
+#include "console/CVar.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/opengl/GLRenderTarget.hh"
 #include "graphics/opengl/GenericShaders.hh"

@@ -52,5 +52,4 @@ namespace sp {
 
     // Other
     static const std::string INPUT_EVENT_RUN_COMMAND = "/action/run_command"; // string
-    static const std::string INPUT_EVENT_SPAWN_DEBUG = "/action/spawn_debug"; // bool
 } // namespace sp

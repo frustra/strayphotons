@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/CFunc.hh"
+#include "console/CFunc.hh"
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"

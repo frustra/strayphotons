@@ -43,8 +43,6 @@ namespace sp {
         void Init();
         bool HasActiveContext();
 
-        void RenderLoading();
-
         bool Frame();
 
         GraphicsContext *GetContext();

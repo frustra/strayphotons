@@ -5,7 +5,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "input/core/BindingNames.hh"
+#include "input/BindingNames.hh"
 #include "xr/openvr/OpenVrSystem.hh"
 
 #include <fstream>

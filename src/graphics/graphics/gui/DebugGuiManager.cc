@@ -2,7 +2,7 @@
 
 #include "ecs/EcsImpl.hh"
 #include "graphics/gui/ConsoleGui.hh"
-#include "input/core/BindingNames.hh"
+#include "input/BindingNames.hh"
 
 #include <imgui/imgui.h>
 

@@ -1,6 +1,5 @@
 #include "LightSensor.hh"
 
-#include "core/Console.hh"
 #include "core/Logging.hh"
 
 #include <cmath>

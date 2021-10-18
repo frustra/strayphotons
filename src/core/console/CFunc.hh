@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/CVar.hh"
+#include "console/CVar.hh"
 #include "core/Common.hh"
 
 #include <functional>

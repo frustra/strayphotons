@@ -1,4 +1,4 @@
-#include "xr/openvr/OpenVrModel.hh"
+#include "OpenVrModel.hh"
 
 #include "core/Common.hh"
 #include "core/Logging.hh"

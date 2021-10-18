@@ -1,14 +1,14 @@
-#include <core/CVar.hh>
-#include <core/Logging.hh>
-#include <graphics/opengl/GLTexture.hh>
-#include <stdexcept>
-#include <xr/openvr/OpenVrAction.hh>
-#include <xr/openvr/OpenVrModel.hh>
-#include <xr/openvr/OpenVrSystem.hh>
+#include "OpenVrAction.hh"
 
-// GLM headers
+#include "console/CVar.hh"
+#include "core/Logging.hh"
+#include "graphics/opengl/GLTexture.hh"
+#include "xr/openvr/OpenVrModel.hh"
+#include "xr/openvr/OpenVrSystem.hh"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <stdexcept>
 
 using namespace sp;
 using namespace xr;

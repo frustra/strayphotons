@@ -21,7 +21,7 @@
             },
             "/keyboard/key/enter": { "/action/menu/enter": "menu_gui" },
             "/keyboard/key/e": { "/action/interact": "player" },
-            "/keyboard/key/q": { "/action/spawn_debug": "player" },
+            "/keyboard/key/q": { "/action/spawn": "debug-spawner" },
             "/keyboard/key/f": { "/action/flashlight/toggle": "flashlight" },
             "/keyboard/key/p": { "/action/flashlight/grab": "flashlight" },
             "/keyboard/key/f5": { "/keyboard/key/f5": "console-input" },

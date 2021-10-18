@@ -1,6 +1,6 @@
 #include "SSAO.hh"
 
-#include "core/CVar.hh"
+#include "console/CVar.hh"
 #include "core/Logging.hh"
 #include "graphics/opengl/GenericShaders.hh"
 #include "graphics/opengl/ShaderManager.hh"

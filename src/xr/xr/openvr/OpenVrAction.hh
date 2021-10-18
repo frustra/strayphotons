@@ -1,10 +1,11 @@
 #pragma once
 
+#include "xr/XrAction.hh"
+#include "xr/XrModel.hh"
+
 #include <memory>
 #include <openvr.h>
 #include <string>
-#include <xr/XrAction.hh>
-#include <xr/XrModel.hh>
 
 namespace sp {
     namespace xr {

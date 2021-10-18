@@ -3,7 +3,7 @@
     #include "XrManager.hh"
     #include "assets/AssetManager.hh"
     #include "assets/Model.hh"
-    #include "core/CVar.hh"
+    #include "console/CVar.hh"
     #include "core/Console.hh"
     #include "core/Logging.hh"
     #include "ecs/Ecs.hh"

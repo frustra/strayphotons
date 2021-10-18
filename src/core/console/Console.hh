@@ -1,9 +1,9 @@
 #pragma once
 
-#include "CFunc.hh"
-#include "CVar.hh"
-#include "Common.hh"
-#include "Logging.hh"
+#include "console/CFunc.hh"
+#include "console/CVar.hh"
+#include "core/Common.hh"
+#include "core/Logging.hh"
 
 #include <condition_variable>
 #include <map>

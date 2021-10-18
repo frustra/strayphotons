@@ -1,6 +1,6 @@
 #pragma once
 
-#include "input/core/KeyCodes.hh"
+#include "input/KeyCodes.hh"
 
 #include <GLFW/glfw3.h>
 #include <robin_hood.h>

@@ -3,7 +3,7 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Image.hh"
-#include "core/CFunc.hh"
+#include "console/CFunc.hh"
 #include "core/Logging.hh"
 #include "core/StackVector.hh"
 #include "ecs/EcsImpl.hh"

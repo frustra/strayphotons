@@ -2,8 +2,8 @@
 
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
-#include "game/GameLogic.hh"
-#include "systems/AnimationSystem.hh"
+#include "game/AnimationSystem.hh"
+#include "game/SceneManager.hh"
 
 #ifdef SP_GRAPHICS_SUPPORT
     #include "graphics/GraphicsManager.hh"
@@ -11,12 +11,8 @@
     #include "graphics/gui/MenuGuiManager.hh"
 #endif
 
-#ifdef SP_INPUT_SUPPORT
-    #include "input/core/BindingLoader.hh"
-
-    #ifdef SP_INPUT_SUPPORT_GLFW
-        #include "input/glfw/GlfwInputHandler.hh"
-    #endif
+#ifdef SP_INPUT_SUPPORT_GLFW
+    #include "input/glfw/GlfwInputHandler.hh"
 #endif
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
@@ -48,6 +44,8 @@ namespace sp {
         void PhysicsUpdate();
         bool ShouldStop();
 
+        void PrintDebug();
+
         cxxopts::ParseResult &options;
         Script *startupScript = nullptr;
 
@@ -57,11 +55,8 @@ namespace sp {
         std::unique_ptr<DebugGuiManager> debugGui = nullptr;
         std::unique_ptr<MenuGuiManager> menuGui = nullptr;
 #endif
-#ifdef SP_INPUT_SUPPORT
-        BindingLoader inputBindingLoader;
-    #ifdef SP_INPUT_SUPPORT_GLFW
+#ifdef SP_INPUT_SUPPORT_GLFW
         std::unique_ptr<GlfwInputHandler> glfwInputHandler;
-    #endif
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
         PhysxManager physics;
@@ -70,9 +65,10 @@ namespace sp {
 #ifdef SP_XR_SUPPORT
         xr::XrManager xr;
 #endif
-        GameLogic logic;
+        SceneManager scenes;
 
     private:
         chrono_clock::time_point lastFrameTime;
+        CFuncCollection funcs;
     };
 } // namespace sp

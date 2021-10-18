@@ -1,19 +1,16 @@
 #pragma once
 
-#include "core/CFunc.hh"
+#include "console/CFunc.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/NamedEntity.hh"
 
 #include <string>
 
 namespace sp {
-    static const char *const InputBindingConfigPath = "input_bindings.json";
-
-    class BindingLoader {
+    class ConsoleBindingManager {
     public:
-        BindingLoader();
+        ConsoleBindingManager();
 
-        void Load(std::string bindingConfigPath);
         void SetConsoleInputCommand(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::Script, ecs::EventInput>> lock,
                                     std::string eventName,
                                     std::string command);

@@ -17,7 +17,6 @@ target_include_directories(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
 
 target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
     ${PROJECT_CORE_LIB}
-    ${PROJECT_INPUT_CORE_LIB}
     ImGui
 )
 
@@ -35,7 +34,6 @@ target_link_libraries(${PROJECT_GRAPHICS_OPENGL_LIB} PUBLIC
 )
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PUBLIC
     ${PROJECT_GRAPHICS_CORE_LIB}
-    ${PROJECT_INPUT_CORE_LIB}
     Vulkan::Vulkan
 )
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB} PUBLIC

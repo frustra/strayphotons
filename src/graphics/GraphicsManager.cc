@@ -1,7 +1,7 @@
 #ifdef SP_GRAPHICS_SUPPORT
     #include "GraphicsManager.hh"
 
-    #include "core/CVar.hh"
+    #include "console/CVar.hh"
     #include "core/Logging.hh"
     #include "ecs/EcsImpl.hh"
     #include "game/Game.hh"
@@ -219,26 +219,6 @@ namespace sp {
 
     GraphicsContext *GraphicsManager::GetContext() {
         return context.get();
-    }
-
-    void GraphicsManager::RenderLoading() {
-    #ifdef SP_GRAPHICS_SUPPORT_GL
-        if (!renderer) return;
-
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::View>>();
-
-        auto &windowEntity = context->GetActiveView();
-        if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
-            auto windowView = windowEntity.Get<ecs::View>(lock);
-            windowView.blend = true;
-            windowView.clearMode.reset();
-
-            renderer->RenderLoading(windowView);
-            context->SwapBuffers();
-        }
-
-    // TODO: clear the XR scene to drop back to the compositor while we load
-    #endif
     }
 } // namespace sp
 

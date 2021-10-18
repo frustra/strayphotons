@@ -12,7 +12,7 @@ foreach(test_type unit integration)
 
     add_executable(${test_exe} tests.cc ${test_sources})
     target_compile_definitions(${test_exe} PRIVATE TEST_TYPE=\"${test_type}\")
-    target_link_libraries(${test_exe} ${PROJECT_CORE_LIB} ${PROJECT_INPUT_CORE_LIB})
+    target_link_libraries(${test_exe} ${PROJECT_CORE_LIB})
     target_include_directories(${test_exe} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
     # target to run the tests

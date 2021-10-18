@@ -7,17 +7,12 @@
 #include "ecs/EcsImpl.hh"
 #include "graphics/core/GraphicsContext.hh"
 
-// OpenVR headers
-#include <openvr.h>
-
-// GLM headers
+#include <filesystem>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-// System Headers
-#include <filesystem>
 #include <memory>
+#include <openvr.h>
 #include <stdexcept>
 #include <thread>
 
@@ -53,7 +48,9 @@ namespace sp::xr {
                 vr::VR_Shutdown();
             });
         } else {
-            Abort(VR_GetVRInitErrorAsSymbol(err));
+            Errorf("Failed to load OpenVR system: %s", VR_GetVRInitErrorAsSymbol(err));
+            Errorf("Run 'reloadxrsystem' in the console to try again.");
+            return;
         }
 
         eventHandler = std::make_shared<EventHandler>(vrSystem);

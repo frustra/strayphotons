@@ -1,6 +1,6 @@
 #include "Lighting.hh"
 
-#include "core/CVar.hh"
+#include "console/CVar.hh"
 #include "core/Logging.hh"
 #include "graphics/opengl/GLBuffer.hh"
 #include "graphics/opengl/GPUTypes.hh"
