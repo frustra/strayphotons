@@ -35,7 +35,7 @@ namespace sp {
 
             std::apply(
                 [&](auto &&...args) {
-                    ((in >> args), ...);
+                    (ParseArgument(args, in), ...);
                 },
                 values);
 
@@ -47,6 +47,21 @@ namespace sp {
         }
 
     private:
+        template<typename T>
+        void ParseArgument(T &value, std::istringstream &in) {
+            in >> value;
+        }
+
+        void ParseArgument(string &value, std::istringstream &in) {
+            in >> std::ws;
+            if (in.peek() == '"') {
+                in.seekg(1, std::ios_base::cur);
+                std::getline(in, value, '"');
+            } else {
+                in >> value;
+            }
+        }
+
         Callback callback;
     };
 
