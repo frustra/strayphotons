@@ -20,10 +20,10 @@ namespace sp {
         ~VHACDCallback() {}
 
         void Update(const double overallProgress,
-                    const double stageProgress,
-                    const double operationProgress,
-                    const char *const stage,
-                    const char *const operation) {
+            const double stageProgress,
+            const double operationProgress,
+            const char *const stage,
+            const char *const operation) {
             Logf("VHACD %d (%s) %s", (int)(overallProgress + 0.5), stage, operation);
         };
     };

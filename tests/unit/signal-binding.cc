@@ -46,19 +46,19 @@ namespace SignalBindingTests {
             auto bindingList = playerBindings.Lookup(TEST_SIGNAL_ACTION1);
             Assert(bindingList != nullptr, "Expected action1 signal to have bindings");
             AssertEqual(bindingList->operation,
-                        ecs::SignalBindings::CombineOperator::ADD,
-                        "Expected default combine operator");
+                ecs::SignalBindings::CombineOperator::ADD,
+                "Expected default combine operator");
             AssertEqual(bindingList->sources.size(), 1u, "Unexpected binding count");
             AssertEqual(bindingList->sources.begin()->first, "player", "Expected action1 to be bound on player");
             AssertEqual(bindingList->sources.begin()->second,
-                        TEST_SOURCE_KEY,
-                        "Expected action1 to be bound to key source");
+                TEST_SOURCE_KEY,
+                "Expected action1 to be bound to key source");
 
             bindingList = playerBindings.Lookup(TEST_SIGNAL_ACTION2);
             Assert(bindingList != nullptr, "Expected action1 signal to have bindings");
             AssertEqual(bindingList->operation,
-                        ecs::SignalBindings::CombineOperator::ADD,
-                        "Expected default combine operator");
+                ecs::SignalBindings::CombineOperator::ADD,
+                "Expected default combine operator");
             auto it = bindingList->sources.begin();
             AssertEqual(it->first, "player", "Expected action2 to be bound on player");
             AssertEqual(it->second, TEST_SOURCE_KEY, "Expected action2 to be bound to key source");
@@ -72,13 +72,13 @@ namespace SignalBindingTests {
             bindingList = handBindings.Lookup(TEST_SIGNAL_ACTION3);
             Assert(bindingList != nullptr, "Expected action1 signal to have bindings");
             AssertEqual(bindingList->operation,
-                        ecs::SignalBindings::CombineOperator::ADD,
-                        "Expected default combine operator");
+                ecs::SignalBindings::CombineOperator::ADD,
+                "Expected default combine operator");
             AssertEqual(bindingList->sources.size(), 1u, "Unexpected binding count");
             AssertEqual(bindingList->sources.begin()->first, "unknown", "Expected action3 to be bound on unknown");
             AssertEqual(bindingList->sources.begin()->second,
-                        TEST_SOURCE_BUTTON,
-                        "Expected action3 to be bound to button source");
+                TEST_SOURCE_BUTTON,
+                "Expected action3 to be bound to button source");
         }
         {
             Timer t("Try reading some signals");

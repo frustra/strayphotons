@@ -87,8 +87,8 @@ namespace sp {
     }
 
     shared_ptr<Scene> SceneManager::LoadSceneJson(const std::string &sceneName,
-                                                  ecs::Lock<ecs::AddRemove> lock,
-                                                  ecs::Owner owner) {
+        ecs::Lock<ecs::AddRemove> lock,
+        ecs::Owner owner) {
         Logf("Loading scene: %s", sceneName);
 
         std::shared_ptr<const Asset> asset = GAssets.Load("scenes/" + sceneName + ".json", true);

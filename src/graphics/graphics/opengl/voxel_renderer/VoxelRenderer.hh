@@ -51,7 +51,7 @@ namespace sp {
     class VoxelRenderer {
     public:
         using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::View, ecs::Transform>,
-                                            ecs::Write<ecs::Mirror>>;
+            ecs::Write<ecs::Mirror>>;
         typedef std::function<void(DrawLock, Tecs::Entity &)> PreDrawFunc;
 
         VoxelRenderer(GlfwGraphicsContext &context, PerfTimer &timer);
@@ -85,15 +85,15 @@ namespace sp {
         void UpdateLightSensors(ecs::Lock<ecs::Read<ecs::LightSensor, ecs::Light, ecs::View, ecs::Transform>> lock);
         void ForwardPass(const ecs::View &view, SceneShader *shader, DrawLock lock, const PreDrawFunc &preDraw = {});
         void DrawEntity(const ecs::View &view,
-                        SceneShader *shader,
-                        DrawLock lock,
-                        Tecs::Entity &ent,
-                        const PreDrawFunc &preDraw = {});
+            SceneShader *shader,
+            DrawLock lock,
+            Tecs::Entity &ent,
+            const PreDrawFunc &preDraw = {});
         void DrawPhysxLines(const ecs::View &view,
-                            SceneShader *shader,
-                            const vector<physx::PxDebugLine> &lines,
-                            DrawLock lock,
-                            const PreDrawFunc &preDraw);
+            SceneShader *shader,
+            const vector<physx::PxDebugLine> &lines,
+            DrawLock lock,
+            const PreDrawFunc &preDraw);
         void DrawGridDebug(const ecs::View &view, SceneShader *shader);
         void SetRenderTarget(GLRenderTarget *attachment0, GLRenderTarget *depth);
         void SetRenderTargets(size_t attachmentCount, GLRenderTarget **attachments, GLRenderTarget *depth);

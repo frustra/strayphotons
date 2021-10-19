@@ -44,11 +44,11 @@ namespace sp {
             ent.Set<ecs::EventInput>(lock, INPUT_EVENT_MENU_SCROLL, INPUT_EVENT_MENU_TEXT_INPUT);
             auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
             signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER,
-                                ecs::NamedEntity("player"),
-                                INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);
+                ecs::NamedEntity("player"),
+                INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);
             signalBindings.Bind(INPUT_SIGNAL_MENU_SECONDARY_TRIGGER,
-                                ecs::NamedEntity("player"),
-                                INPUT_SIGNAL_MENU_SECONDARY_TRIGGER);
+                ecs::NamedEntity("player"),
+                INPUT_SIGNAL_MENU_SECONDARY_TRIGGER);
             signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_X, ecs::NamedEntity("player"), INPUT_SIGNAL_MENU_CURSOR_X);
             signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_Y, ecs::NamedEntity("player"), INPUT_SIGNAL_MENU_CURSOR_Y);
 

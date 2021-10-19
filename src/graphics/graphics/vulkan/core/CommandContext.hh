@@ -76,14 +76,13 @@ namespace sp::vulkan {
         void Dispatch(uint32 groupCountX, uint32 groupCountY, uint32 groupCountZ);
         void Draw(uint32 vertexes, uint32 instances = 1, int32 firstVertex = 0, uint32 firstInstance = 0);
         void DrawIndexed(uint32 indexes,
-                         uint32 instances = 1,
-                         uint32 firstIndex = 0,
-                         int32 vertexOffset = 0,
-                         uint32 firstInstance = 0);
+            uint32 instances = 1,
+            uint32 firstIndex = 0,
+            int32 vertexOffset = 0,
+            uint32 firstInstance = 0);
         void DrawScreenCover(const ImageViewPtr &view = nullptr);
 
-        void ImageBarrier(
-            const ImagePtr &image,
+        void ImageBarrier(const ImagePtr &image,
             vk::ImageLayout oldLayout, // Transition the image from oldLayout
             vk::ImageLayout newLayout, // to newLayout,
             vk::PipelineStageFlags srcStages, // ensuring any image accesses in these stages
@@ -214,9 +213,9 @@ namespace sp::vulkan {
         void SetTexture(uint32 set, uint32 binding, const ImageViewPtr &view);
         void SetTexture(uint32 set, uint32 binding, const ImageView *view);
         void SetTexture(uint32 set,
-                        uint32 binding,
-                        const vk::ImageView &view,
-                        vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal);
+            uint32 binding,
+            const vk::ImageView &view,
+            vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal);
         void SetSampler(uint32 set, uint32 binding, const vk::Sampler &sampler);
 
         void SetUniformBuffer(uint32 set, uint32 binding, const BufferPtr &buffer);

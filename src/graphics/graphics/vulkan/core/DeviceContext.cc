@@ -32,9 +32,9 @@ namespace sp::vulkan {
     const uint32_t VULKAN_API_VERSION = VK_API_VERSION_1_2;
 
     static VkBool32 VulkanDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                        VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                        const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-                                        void *pContext) {
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+        void *pContext) {
         auto deviceContext = static_cast<DeviceContext *>(pContext);
         if (messageType & deviceContext->disabledDebugMessages) return VK_FALSE;
 
@@ -128,17 +128,17 @@ namespace sp::vulkan {
         }
 
         vk::ApplicationInfo applicationInfo("Stray Photons",
-                                            VK_MAKE_VERSION(1, 0, 0),
-                                            "Stray Photons",
-                                            VK_MAKE_VERSION(1, 0, 0),
-                                            VULKAN_API_VERSION);
+            VK_MAKE_VERSION(1, 0, 0),
+            "Stray Photons",
+            VK_MAKE_VERSION(1, 0, 0),
+            VULKAN_API_VERSION);
 
         vk::InstanceCreateInfo createInfo(vk::InstanceCreateFlags(),
-                                          &applicationInfo,
-                                          layers.size(),
-                                          layers.data(),
-                                          extensions.size(),
-                                          extensions.data());
+            &applicationInfo,
+            layers.size(),
+            layers.data(),
+            extensions.size(),
+            extensions.data());
 
         vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
         debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
@@ -204,10 +204,10 @@ namespace sp::vulkan {
         };
 
         if (!findQueue(QUEUE_TYPE_GRAPHICS,
-                       vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
-                       {},
-                       1.0f,
-                       enableSwapchain))
+                vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
+                {},
+                1.0f,
+                enableSwapchain))
             Abort("could not find a supported graphics queue family");
 
         if (!findQueue(QUEUE_TYPE_COMPUTE, vk::QueueFlagBits::eCompute, {}, 0.5f)) {
@@ -217,9 +217,9 @@ namespace sp::vulkan {
         }
 
         if (!findQueue(QUEUE_TYPE_TRANSFER,
-                       vk::QueueFlagBits::eTransfer,
-                       vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
-                       0.3f)) {
+                vk::QueueFlagBits::eTransfer,
+                vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
+                0.3f)) {
             // no queues support only transfer, fall back to a compute queue that also supports transfer
             if (!findQueue(QUEUE_TYPE_TRANSFER, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics, 0.3f)) {
                 // fall back to the main compute queue
@@ -243,8 +243,8 @@ namespace sp::vulkan {
         }
 
         vector<const char *> enabledDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-                                                        VK_KHR_MULTIVIEW_EXTENSION_NAME,
-                                                        VK_EXT_MEMORY_BUDGET_EXTENSION_NAME};
+            VK_KHR_MULTIVIEW_EXTENSION_NAME,
+            VK_EXT_MEMORY_BUDGET_EXTENSION_NAME};
 
         auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
 
@@ -623,10 +623,10 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::Submit(CommandContextPtr &cmdArg,
-                               vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
-                               vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
-                               vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
-                               vk::Fence fence) {
+        vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
+        vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
+        vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
+        vk::Fence fence) {
         CommandContextPtr cmd = cmdArg;
         // Invalidate caller's reference, this CommandContext is unusable until a subsequent frame.
         cmdArg.reset();
@@ -711,8 +711,8 @@ namespace sp::vulkan {
     }
 
     ImagePtr DeviceContext::AllocateImage(const vk::ImageCreateInfo &info,
-                                          VmaMemoryUsage residency,
-                                          vk::ImageUsageFlags declaredUsage) {
+        VmaMemoryUsage residency,
+        vk::ImageUsageFlags declaredUsage) {
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
         if (!declaredUsage) declaredUsage = info.usage;
@@ -762,12 +762,12 @@ namespace sp::vulkan {
         auto transferCmd = GetCommandContext(CommandContextType::TransferAsync);
 
         transferCmd->ImageBarrier(image,
-                                  vk::ImageLayout::eUndefined,
-                                  vk::ImageLayout::eTransferDstOptimal,
-                                  vk::PipelineStageFlagBits::eTopOfPipe,
-                                  {},
-                                  vk::PipelineStageFlagBits::eTransfer,
-                                  vk::AccessFlagBits::eTransferWrite);
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eTransferDstOptimal,
+            vk::PipelineStageFlagBits::eTopOfPipe,
+            {},
+            vk::PipelineStageFlagBits::eTransfer,
+            vk::AccessFlagBits::eTransferWrite);
 
         vk::BufferImageCopy region;
         region.bufferOffset = 0;
@@ -803,13 +803,13 @@ namespace sp::vulkan {
         vk::AccessFlags lastAccess = vk::AccessFlagBits::eTransferWrite;
 
         transferCmd->ImageBarrier(image,
-                                  lastLayout,
-                                  nextLayout,
-                                  lastStage,
-                                  lastAccess,
-                                  vk::PipelineStageFlagBits::eBottomOfPipe,
-                                  {},
-                                  genFactor ? transferToCompute : transferToGeneral);
+            lastLayout,
+            nextLayout,
+            lastStage,
+            lastAccess,
+            vk::PipelineStageFlagBits::eBottomOfPipe,
+            {},
+            genFactor ? transferToCompute : transferToGeneral);
 
         auto fence = PushInFlightObject(stagingBuf);
         auto transferComplete = GetEmptySemaphore(fence);
@@ -818,13 +818,13 @@ namespace sp::vulkan {
         if (genFactor) {
             auto factorCmd = GetCommandContext(CommandContextType::ComputeAsync);
             factorCmd->ImageBarrier(image,
-                                    lastLayout,
-                                    vk::ImageLayout::eGeneral,
-                                    lastStage,
-                                    lastAccess,
-                                    vk::PipelineStageFlagBits::eComputeShader,
-                                    vk::AccessFlagBits::eShaderRead,
-                                    transferToCompute);
+                lastLayout,
+                vk::ImageLayout::eGeneral,
+                lastStage,
+                lastAccess,
+                vk::PipelineStageFlagBits::eComputeShader,
+                vk::AccessFlagBits::eShaderRead,
+                transferToCompute);
 
             ImageViewCreateInfo factorViewInfo;
             factorViewInfo.image = image;
@@ -859,13 +859,13 @@ namespace sp::vulkan {
 
             transferToGeneral.srcQueueFamilyIndex = transferToCompute.dstQueueFamilyIndex;
             factorCmd->ImageBarrier(image,
-                                    vk::ImageLayout::eGeneral,
-                                    nextLayout,
-                                    vk::PipelineStageFlagBits::eComputeShader,
-                                    vk::AccessFlagBits::eShaderWrite,
-                                    nextStage,
-                                    nextAccess,
-                                    transferToGeneral);
+                vk::ImageLayout::eGeneral,
+                nextLayout,
+                vk::PipelineStageFlagBits::eComputeShader,
+                vk::AccessFlagBits::eShaderWrite,
+                nextStage,
+                nextAccess,
+                transferToGeneral);
             lastLayout = vk::ImageLayout::eGeneral;
             lastStage = vk::PipelineStageFlagBits::eComputeShader;
             lastAccess = vk::AccessFlagBits::eShaderWrite;
@@ -881,13 +881,13 @@ namespace sp::vulkan {
             if (transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
                 auto graphicsCmd = GetCommandContext();
                 graphicsCmd->ImageBarrier(image,
-                                          lastLayout,
-                                          vk::ImageLayout::eShaderReadOnlyOptimal,
-                                          lastStage,
-                                          lastAccess,
-                                          vk::PipelineStageFlagBits::eFragmentShader,
-                                          vk::AccessFlagBits::eShaderRead,
-                                          transferToGeneral);
+                    lastLayout,
+                    vk::ImageLayout::eShaderReadOnlyOptimal,
+                    lastStage,
+                    lastAccess,
+                    vk::PipelineStageFlagBits::eFragmentShader,
+                    vk::AccessFlagBits::eShaderRead,
+                    transferToGeneral);
                 Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eFragmentShader});
             }
             image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
@@ -898,13 +898,13 @@ namespace sp::vulkan {
 
         if (transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
             graphicsCmd->ImageBarrier(image,
-                                      lastLayout,
-                                      vk::ImageLayout::eTransferSrcOptimal,
-                                      lastStage,
-                                      lastAccess,
-                                      vk::PipelineStageFlagBits::eTransfer,
-                                      vk::AccessFlagBits::eTransferRead,
-                                      transferToGeneral);
+                lastLayout,
+                vk::ImageLayout::eTransferSrcOptimal,
+                lastStage,
+                lastAccess,
+                vk::PipelineStageFlagBits::eTransfer,
+                vk::AccessFlagBits::eTransferRead,
+                transferToGeneral);
         }
 
         ImageBarrierInfo transferMips;
@@ -913,17 +913,17 @@ namespace sp::vulkan {
         transferMips.mipLevelCount = createInfo.mipLevels - 1;
 
         graphicsCmd->ImageBarrier(image,
-                                  vk::ImageLayout::eUndefined,
-                                  vk::ImageLayout::eTransferDstOptimal,
-                                  vk::PipelineStageFlagBits::eTransfer,
-                                  {},
-                                  vk::PipelineStageFlagBits::eTransfer,
-                                  vk::AccessFlagBits::eTransferWrite,
-                                  transferMips);
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eTransferDstOptimal,
+            vk::PipelineStageFlagBits::eTransfer,
+            {},
+            vk::PipelineStageFlagBits::eTransfer,
+            vk::AccessFlagBits::eTransferWrite,
+            transferMips);
 
         vk::Offset3D currentExtent = {(int32)createInfo.extent.width,
-                                      (int32)createInfo.extent.height,
-                                      (int32)createInfo.extent.depth};
+            (int32)createInfo.extent.height,
+            (int32)createInfo.extent.depth};
 
         transferMips.mipLevelCount = 1;
 
@@ -942,33 +942,33 @@ namespace sp::vulkan {
             blit.dstOffsets[1] = currentExtent;
 
             graphicsCmd->Raw().blitImage(*image,
-                                         vk::ImageLayout::eTransferSrcOptimal,
-                                         *image,
-                                         vk::ImageLayout::eTransferDstOptimal,
-                                         {blit},
-                                         vk::Filter::eLinear);
+                vk::ImageLayout::eTransferSrcOptimal,
+                *image,
+                vk::ImageLayout::eTransferDstOptimal,
+                {blit},
+                vk::Filter::eLinear);
 
             transferMips.baseMipLevel = i;
             graphicsCmd->ImageBarrier(image,
-                                      vk::ImageLayout::eTransferDstOptimal,
-                                      vk::ImageLayout::eTransferSrcOptimal,
-                                      vk::PipelineStageFlagBits::eTransfer,
-                                      {},
-                                      vk::PipelineStageFlagBits::eTransfer,
-                                      vk::AccessFlagBits::eTransferWrite,
-                                      transferMips);
+                vk::ImageLayout::eTransferDstOptimal,
+                vk::ImageLayout::eTransferSrcOptimal,
+                vk::PipelineStageFlagBits::eTransfer,
+                {},
+                vk::PipelineStageFlagBits::eTransfer,
+                vk::AccessFlagBits::eTransferWrite,
+                transferMips);
         }
 
         // Each mip has now been transitioned to TransferSrc.
         image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
 
         graphicsCmd->ImageBarrier(image,
-                                  vk::ImageLayout::eTransferSrcOptimal,
-                                  vk::ImageLayout::eShaderReadOnlyOptimal,
-                                  vk::PipelineStageFlagBits::eTransfer,
-                                  vk::AccessFlagBits::eTransferWrite,
-                                  vk::PipelineStageFlagBits::eFragmentShader,
-                                  vk::AccessFlagBits::eShaderRead);
+            vk::ImageLayout::eTransferSrcOptimal,
+            vk::ImageLayout::eShaderReadOnlyOptimal,
+            vk::PipelineStageFlagBits::eTransfer,
+            vk::AccessFlagBits::eTransferWrite,
+            vk::PipelineStageFlagBits::eFragmentShader,
+            vk::AccessFlagBits::eShaderRead);
 
         Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eTransfer});
         return image;
@@ -1011,9 +1011,9 @@ namespace sp::vulkan {
     }
 
     ImageViewPtr DeviceContext::CreateImageAndView(const ImageCreateInfo &imageInfo,
-                                                   ImageViewCreateInfo viewInfo,
-                                                   const uint8 *srcData,
-                                                   size_t srcDataSize) {
+        ImageViewCreateInfo viewInfo,
+        const uint8 *srcData,
+        size_t srcDataSize) {
         viewInfo.image = CreateImage(imageInfo, srcData, srcDataSize);
         return CreateImageView(viewInfo);
     }

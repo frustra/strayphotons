@@ -18,8 +18,8 @@ namespace sp {
     static CVar<int> CVarMenuDisplay("g.MenuDisplay", 0, "Display pause menu");
     static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
     static CVar<glm::vec2> CVarMenuCursorScaling("g.MenuCursorScaling",
-                                                 glm::vec2(1.435f, 0.805f),
-                                                 "Scaling factor for menu cursor position");
+        glm::vec2(1.435f, 0.805f),
+        "Scaling factor for menu cursor position");
 
     MenuGuiManager::MenuGuiManager(GraphicsManager &graphics)
         : GuiManager("menu_gui", MenuOpen() ? ecs::FocusLayer::MENU : ecs::FocusLayer::GAME), graphics(graphics) {
@@ -187,15 +187,15 @@ namespace sp {
 
         if (selectedScreen == MenuScreen::Splash) {
             ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
-                                    ImGuiCond_Always,
-                                    ImVec2(0.5f, 0.5f));
+                ImGuiCond_Always,
+                ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuSplash", nullptr, flags);
             ImGui::Text("Press Enter");
             ImGui::End();
         } else if (selectedScreen == MenuScreen::Main) {
             ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
-                                    ImGuiCond_Always,
-                                    ImVec2(0.5f, 0.5f));
+                ImGuiCond_Always,
+                ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuMain", nullptr, flags);
 
             ImGui::Image((void *)logoTex->GetHandle(), logoSize);
@@ -221,8 +221,8 @@ namespace sp {
             ImGui::End();
         } else if (selectedScreen == MenuScreen::SceneSelect) {
             ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
-                                    ImGuiCond_Always,
-                                    ImVec2(0.5f, 0.5f));
+                ImGuiCond_Always,
+                ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuSceneSelect", nullptr, flags);
 
             ImGui::Image((void *)logoTex->GetHandle(), logoSize);
@@ -258,8 +258,8 @@ namespace sp {
             ImGui::End();
         } else if (selectedScreen == MenuScreen::Options) {
             ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
-                                    ImGuiCond_Always,
-                                    ImVec2(0.5f, 0.5f));
+                ImGuiCond_Always,
+                ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuOptions", nullptr, flags);
 
             ImGui::Image((void *)logoTex->GetHandle(), logoSize);
@@ -340,8 +340,8 @@ namespace sp {
             ImGui::End();
         } else if (selectedScreen == MenuScreen::Credits) {
             ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
-                                    ImGuiCond_Always,
-                                    ImVec2(0.5f, 0.5f));
+                ImGuiCond_Always,
+                ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuCredits", nullptr, flags);
 
             static shared_ptr<GpuTexture> frLogoTex = graphics.GetContext()->LoadTexture(

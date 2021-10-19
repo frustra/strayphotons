@@ -13,7 +13,7 @@ namespace sp {
             firstThreadId = std::this_thread::get_id();
         } else {
             Assert(firstThreadId == std::this_thread::get_id(),
-                   "GetRegisteredThreads() must only be called from a single thread");
+                "GetRegisteredThreads() must only be called from a single thread");
         }
 
         static std::vector<RegisteredThread *> registeredThreads;
@@ -56,8 +56,8 @@ namespace sp {
                 frameIndex = (frameIndex + 1) % previousFrames.size();
                 previousFrameEnd = realFrameEnd;
                 auto totalFrameTime = std::accumulate(previousFrames.begin(),
-                                                      previousFrames.end(),
-                                                      chrono_clock::duration::zero());
+                    previousFrames.end(),
+                    chrono_clock::duration::zero());
                 this->averageFrameTimeNs = std::chrono::nanoseconds(totalFrameTime).count() / previousFrames.size();
 
                 if (this->interval.count() > 0) {

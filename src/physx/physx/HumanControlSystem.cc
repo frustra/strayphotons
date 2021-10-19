@@ -178,8 +178,8 @@ namespace sp {
     }
 
     void HumanControlSystem::MoveEntity(ecs::Lock<ecs::Write<ecs::Transform, ecs::HumanController>> lock,
-                                        Tecs::Entity entity,
-                                        double dtSinceLastFrame) {
+        Tecs::Entity entity,
+        double dtSinceLastFrame) {
         auto &transform = entity.Get<ecs::Transform>(lock);
         auto &controller = entity.Get<ecs::HumanController>(lock);
 
@@ -195,8 +195,8 @@ namespace sp {
                 userData->onGround = true;
             } else {
                 userData->onGround = physics->MoveController(controller.pxController,
-                                                             dtSinceLastFrame,
-                                                             GlmVec3ToPxVec3(disp));
+                    dtSinceLastFrame,
+                    GlmVec3ToPxVec3(disp));
                 newPosition = PxExtendedVec3ToGlmVec3P(controller.pxController->getPosition());
             }
 
@@ -252,18 +252,18 @@ namespace sp {
                     auto invRotate = glm::inverse(transform.GetRotation());
                     auto offset = invRotate * (currentPos - origin + glm::vec3(0, 0.1, 0));
                     physics->CreateConstraint(lock,
-                                              entity,
-                                              dynamic,
-                                              GlmVec3ToPxVec3(offset),
-                                              GlmQuatToPxQuat(invRotate) * pose.q);
+                        entity,
+                        dynamic,
+                        GlmVec3ToPxVec3(offset),
+                        GlmQuatToPxQuat(invRotate) * pose.q);
                 }
             }
         }
     }
 
     bool HumanControlSystem::InteractRotate(ecs::Lock<ecs::Read<ecs::InteractController>> lock,
-                                            Tecs::Entity entity,
-                                            glm::vec2 dCursor) {
+        Tecs::Entity entity,
+        glm::vec2 dCursor) {
         auto &interact = entity.Get<ecs::InteractController>(lock);
         if (interact.target) {
             auto rotation = glm::vec3(dCursor.y, dCursor.x, 0) * CVarCursorSensitivity.Get() * 0.01f;

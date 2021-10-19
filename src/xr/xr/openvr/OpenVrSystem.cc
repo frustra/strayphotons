@@ -97,8 +97,8 @@ namespace sp::xr {
                 view.extents = {vrWidth, vrHeight};
                 view.clip = {0.1, 256};
                 auto projMatrix = vrSystem->GetProjectionMatrix(MapXrEyeToOpenVr((ecs::XrEye)i),
-                                                                view.clip.x,
-                                                                view.clip.y);
+                    view.clip.x,
+                    view.clip.y);
                 view.SetProjMat(glm::transpose(glm::make_mat4((float *)projMatrix.m)));
                 view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_EYE);
             }
@@ -118,13 +118,13 @@ namespace sp::xr {
     bool OpenVrSystem::GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) {
         float frameTimeRemaining = vr::VRCompositor()->GetFrameTimeRemaining();
         float vSyncToPhotons = vrSystem->GetFloatTrackedDeviceProperty(vr::k_unTrackedDeviceIndex_Hmd,
-                                                                       vr::Prop_SecondsFromVsyncToPhotons_Float);
+            vr::Prop_SecondsFromVsyncToPhotons_Float);
 
         vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd + 1];
         vrSystem->GetDeviceToAbsoluteTrackingPose(vr::TrackingUniverseOrigin::TrackingUniverseStanding,
-                                                  frameTimeRemaining + vSyncToPhotons,
-                                                  trackedDevicePoses,
-                                                  vr::k_unTrackedDeviceIndex_Hmd + 1);
+            frameTimeRemaining + vSyncToPhotons,
+            trackedDevicePoses,
+            vr::k_unTrackedDeviceIndex_Hmd + 1);
 
         if (trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid) {
             glm::mat4 hmdPose = glm::mat4(glm::make_mat3x4(
@@ -144,7 +144,7 @@ namespace sp::xr {
     void OpenVrSystem::WaitFrame() {
         vr::EVRCompositorError error = vr::VRCompositor()->WaitGetPoses(nullptr, 0, nullptr, 0);
         Assert(error == vr::EVRCompositorError::VRCompositorError_None,
-               "WaitGetPoses failed: " + std::to_string((int)error));
+            "WaitGetPoses failed: " + std::to_string((int)error));
     }
 
     ecs::NamedEntity OpenVrSystem::GetEntityForDeviceIndex(size_t index) {

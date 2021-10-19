@@ -60,7 +60,7 @@ namespace EventBindingTests {
             Timer t("Send some test events");
             auto lock =
                 World.StartTransaction<ecs::Read<ecs::Name, ecs::EventBindings, ecs::FocusLayer, ecs::FocusLock>,
-                                       ecs::Write<ecs::EventInput>>();
+                    ecs::Write<ecs::EventInput>>();
 
             auto &bindings = player.Get<ecs::EventBindings>(lock);
             bindings.SendEvent(lock, TEST_SOURCE_BUTTON, ecs::NamedEntity("player", player), 42);

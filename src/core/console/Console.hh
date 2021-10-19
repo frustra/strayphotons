@@ -50,8 +50,8 @@ namespace sp {
         void ParseAndExecute(const string line);
         void Execute(const string cmd, const string &args);
         void QueueParseAndExecute(const string line,
-                                  chrono_clock::time_point wait_util = chrono_clock::now(),
-                                  std::condition_variable *handled = nullptr);
+            chrono_clock::time_point wait_util = chrono_clock::now(),
+            std::condition_variable *handled = nullptr);
         void AddHistory(const string &input);
         vector<string> AllHistory(size_t maxEntries);
         vector<string> AllCompletions(const string &input);

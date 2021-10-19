@@ -9,9 +9,9 @@ namespace sp::vulkan {
     Image::Image() : UniqueMemory(VK_NULL_HANDLE) {}
 
     Image::Image(vk::ImageCreateInfo imageInfo,
-                 VmaAllocationCreateInfo allocInfo,
-                 VmaAllocator allocator,
-                 vk::ImageUsageFlags declaredUsage)
+        VmaAllocationCreateInfo allocInfo,
+        VmaAllocator allocator,
+        vk::ImageUsageFlags declaredUsage)
         : UniqueMemory(allocator), format(imageInfo.format), extent(imageInfo.extent), mipLevels(imageInfo.mipLevels),
           arrayLayers(imageInfo.arrayLayers), usage(imageInfo.usage), declaredUsage(declaredUsage) {
 
@@ -32,7 +32,7 @@ namespace sp::vulkan {
 
     void Image::SetLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout) {
         Assert(oldLayout == vk::ImageLayout::eUndefined || oldLayout == lastLayout,
-               "image had layout: " + vk::to_string(lastLayout) + ", expected: " + vk::to_string(oldLayout));
+            "image had layout: " + vk::to_string(lastLayout) + ", expected: " + vk::to_string(oldLayout));
         lastLayout = newLayout;
     }
 

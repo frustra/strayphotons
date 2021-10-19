@@ -108,9 +108,9 @@ namespace sp::vulkan {
         vk::ClearDepthStencilValue clearDepthStencil = {1.0f, 0};
 
         void PushColorAttachment(const ImageViewPtr &view,
-                                 LoadOp loadOp,
-                                 StoreOp storeOp,
-                                 vk::ClearColorValue clear = {}) {
+            LoadOp loadOp,
+            StoreOp storeOp,
+            vk::ClearColorValue clear = {}) {
             Assert(state.colorAttachmentCount < MAX_COLOR_ATTACHMENTS, "too many color attachments");
             uint32 index = state.colorAttachmentCount++;
             SetColorAttachment(index, view, loadOp, storeOp, clear);
@@ -122,10 +122,10 @@ namespace sp::vulkan {
         }
 
         void SetColorAttachment(uint32 index,
-                                const ImageViewPtr &view,
-                                LoadOp loadOp,
-                                StoreOp storeOp,
-                                vk::ClearColorValue clear = {}) {
+            const ImageViewPtr &view,
+            LoadOp loadOp,
+            StoreOp storeOp,
+            vk::ClearColorValue clear = {}) {
             state.SetLoadStore(index, loadOp, storeOp);
             state.colorFormats[index] = view->Format();
             clearColors[index] = clear;
@@ -135,9 +135,9 @@ namespace sp::vulkan {
         }
 
         void SetDepthStencilAttachment(const ImageViewPtr &view,
-                                       LoadOp loadOp,
-                                       StoreOp storeOp,
-                                       vk::ClearDepthStencilValue clear = {1.0f, 0}) {
+            LoadOp loadOp,
+            StoreOp storeOp,
+            vk::ClearDepthStencilValue clear = {1.0f, 0}) {
             state.SetLoadStore(RenderPassState::DEPTH_STENCIL_INDEX, loadOp, storeOp);
             state.depthStencilFormat = view->Format();
             clearDepthStencil = clear;

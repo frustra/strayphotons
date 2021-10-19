@@ -21,8 +21,8 @@ namespace LockFreeMutexTests {
             Timer t("Try holding exclusive lock");
             std::unique_lock lock(mutex);
             AssertEqual(mutex.try_lock_shared(),
-                        false,
-                        "Shouldn't be able to get shared lock while exclusive lock is active");
+                false,
+                "Shouldn't be able to get shared lock while exclusive lock is active");
         }
         {
             Timer t("Try exclusive lock blocking on shared lock");

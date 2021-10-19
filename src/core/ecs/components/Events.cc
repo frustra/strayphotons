@@ -17,8 +17,8 @@ namespace ecs {
 
     template<>
     bool Component<EventBindings>::Load(Lock<Read<ecs::Name>> lock,
-                                        EventBindings &bindings,
-                                        const picojson::value &src) {
+        EventBindings &bindings,
+        const picojson::value &src) {
         for (auto bind : src.get<picojson::object>()) {
             std::string targetEvent;
             for (auto dest : bind.second.get<picojson::object>()) {
@@ -177,7 +177,7 @@ namespace ecs {
     }
 
     void EventBindings::SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock,
-                                  const Event &event) const {
+        const Event &event) const {
         const FocusLock *focusLock = nullptr;
         if (lock.Has<FocusLock>()) focusLock = &lock.Get<FocusLock>();
         auto list = sourceToDest.find(event.name);

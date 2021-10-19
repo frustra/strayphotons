@@ -75,19 +75,19 @@ namespace sp {
         void EnableCollisions(physx::PxRigidActor *actor, bool enabled);
 
         void CreateConstraint(ecs::Lock<> lock,
-                              Tecs::Entity parent,
-                              physx::PxRigidDynamic *child,
-                              physx::PxVec3 offset,
-                              physx::PxQuat rotationOffset);
+            Tecs::Entity parent,
+            physx::PxRigidDynamic *child,
+            physx::PxVec3 offset,
+            physx::PxQuat rotationOffset);
         void RotateConstraint(Tecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 rotation);
         void RemoveConstraint(Tecs::Entity parent, physx::PxRigidDynamic *child);
 
         bool RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
-                          Tecs::Entity entity,
-                          glm::vec3 origin,
-                          glm::vec3 dir,
-                          const float distance,
-                          physx::PxRaycastBuffer &hit);
+            Tecs::Entity entity,
+            glm::vec3 origin,
+            glm::vec3 dir,
+            const float distance,
+            physx::PxRaycastBuffer &hit);
 
     private:
         void Frame() override;
@@ -100,7 +100,7 @@ namespace sp {
         void RemoveActor(physx::PxRigidActor *actor);
 
         void UpdateController(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,
-                              Tecs::Entity &e);
+            Tecs::Entity &e);
         void RemoveController(physx::PxCapsuleController *controller);
 
         bool SweepQuery(physx::PxRigidDynamic *actor, physx::PxVec3 dir, float distance, physx::PxSweepBuffer &hit);

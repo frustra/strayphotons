@@ -67,9 +67,9 @@ namespace sp {
         }
 
         void Prepare(GlfwGraphicsContext &context,
-                     std::shared_ptr<GLRenderTarget> &target,
-                     bool clear = false,
-                     const void *data = nullptr);
+            std::shared_ptr<GLRenderTarget> &target,
+            bool clear = false,
+            const void *data = nullptr);
 
         PixelFormat format;
         glm::ivec3 extent = {0, 0, 0};

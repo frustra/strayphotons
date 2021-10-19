@@ -39,8 +39,8 @@ namespace sp::vulkan {
     class HandlePool {
     public:
         HandlePool(std::function<HandleType()> createObject,
-                   std::function<void(HandleType)> destroyObject,
-                   std::function<void(HandleType)> resetObject = {})
+            std::function<void(HandleType)> destroyObject,
+            std::function<void(HandleType)> resetObject = {})
             : createObject(createObject), destroyObject(destroyObject), resetObject(resetObject) {}
 
         ~HandlePool() {

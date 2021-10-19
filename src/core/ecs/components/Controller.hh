@@ -47,6 +47,6 @@ namespace ecs {
     bool Component<HumanController>::Load(Lock<Read<ecs::Name>> lock, HumanController &dst, const picojson::value &src);
     template<>
     bool Component<CharacterController>::Load(Lock<Read<ecs::Name>> lock,
-                                              CharacterController &dst,
-                                              const picojson::value &src);
+        CharacterController &dst,
+        const picojson::value &src);
 } // namespace ecs

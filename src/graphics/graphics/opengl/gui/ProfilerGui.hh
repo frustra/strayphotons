@@ -72,10 +72,10 @@ namespace sp {
                                      : std::chrono::duration_cast<std::chrono::milliseconds>(result.cpuElapsed).count();
 
                 if (ImGui::TreeNodeEx("node",
-                                      ImGuiTreeNodeFlags_DefaultOpen,
-                                      "%s %.2fms",
-                                      result.name.c_str(),
-                                      elapsed)) {
+                        ImGuiTreeNodeFlags_DefaultOpen,
+                        "%s %.2fms",
+                        result.name.c_str(),
+                        elapsed)) {
                     offset = AddResults(results, gpuTime, offset, result.depth + 1);
                     ImGui::TreePop();
                 }

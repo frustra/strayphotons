@@ -107,7 +107,7 @@ namespace sp::vulkan {
 
                     if (desc->array.dims_count) {
                         Assert(desc->array.dims_count == 1,
-                               "only zero or one dimensional arrays of bindings are supported");
+                            "only zero or one dimensional arrays of bindings are supported");
                         setInfo.descriptorCount[binding] = desc->array.dims[0];
                     } else {
                         setInfo.descriptorCount[binding] = 1;
@@ -237,9 +237,9 @@ namespace sp::vulkan {
     }
 
     Pipeline::Pipeline(DeviceContext &device,
-                       const ShaderSet &shaders,
-                       const PipelineCompileInput &compile,
-                       shared_ptr<PipelineLayout> layout)
+        const ShaderSet &shaders,
+        const PipelineCompileInput &compile,
+        shared_ptr<PipelineLayout> layout)
         : layout(layout) {
 
         auto &state = compile.state;
@@ -413,10 +413,10 @@ namespace sp::vulkan {
             if (count > 0) {
                 Assert(count == 1, "Overlapping descriptor binding index: " + std::to_string(binding));
                 bindings.emplace_back(binding,
-                                      type,
-                                      layoutInfo.descriptorCount[binding],
-                                      layoutInfo.stages[binding],
-                                      nullptr);
+                    type,
+                    layoutInfo.descriptorCount[binding],
+                    layoutInfo.stages[binding],
+                    nullptr);
 
                 sizes.emplace_back(type, layoutInfo.descriptorCount[binding] * MAX_DESCRIPTOR_SETS_PER_POOL);
             }

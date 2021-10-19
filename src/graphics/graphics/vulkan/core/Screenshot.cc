@@ -44,28 +44,28 @@ namespace sp::vulkan {
         }
 
         Assert(FormatByteSize(view->Format()) == FormatByteSize(outputDesc.format),
-               "format must have 1 byte per component");
+            "format must have 1 byte per component");
 
         auto outputImage = device.AllocateImage(outputDesc, VMA_MEMORY_USAGE_GPU_TO_CPU);
 
         auto transferCmd = device.GetCommandContext(CommandContextType::General);
         transferCmd->ImageBarrier(outputImage,
-                                  vk::ImageLayout::eUndefined,
-                                  vk::ImageLayout::eTransferDstOptimal,
-                                  vk::PipelineStageFlagBits::eTransfer,
-                                  {},
-                                  vk::PipelineStageFlagBits::eTransfer,
-                                  vk::AccessFlagBits::eTransferWrite);
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eTransferDstOptimal,
+            vk::PipelineStageFlagBits::eTransfer,
+            {},
+            vk::PipelineStageFlagBits::eTransfer,
+            vk::AccessFlagBits::eTransferWrite);
 
         auto lastLayout = view->Image()->LastLayout();
         if (lastLayout != vk::ImageLayout::eTransferSrcOptimal) {
             transferCmd->ImageBarrier(view->Image(),
-                                      lastLayout,
-                                      vk::ImageLayout::eTransferSrcOptimal,
-                                      vk::PipelineStageFlagBits::eTransfer,
-                                      {},
-                                      vk::PipelineStageFlagBits::eTransfer,
-                                      vk::AccessFlagBits::eTransferWrite);
+                lastLayout,
+                vk::ImageLayout::eTransferSrcOptimal,
+                vk::PipelineStageFlagBits::eTransfer,
+                {},
+                vk::PipelineStageFlagBits::eTransfer,
+                vk::AccessFlagBits::eTransferWrite);
         }
 
         vk::ImageCopy imageCopyRegion;
@@ -77,27 +77,27 @@ namespace sp::vulkan {
         imageCopyRegion.extent = extent;
 
         transferCmd->Raw().copyImage(*view->Image(),
-                                     vk::ImageLayout::eTransferSrcOptimal,
-                                     *outputImage,
-                                     vk::ImageLayout::eTransferDstOptimal,
-                                     {imageCopyRegion});
+            vk::ImageLayout::eTransferSrcOptimal,
+            *outputImage,
+            vk::ImageLayout::eTransferDstOptimal,
+            {imageCopyRegion});
 
         transferCmd->ImageBarrier(outputImage,
-                                  vk::ImageLayout::eTransferDstOptimal,
-                                  vk::ImageLayout::eGeneral,
-                                  vk::PipelineStageFlagBits::eTransfer,
-                                  vk::AccessFlagBits::eTransferWrite,
-                                  vk::PipelineStageFlagBits::eTransfer,
-                                  vk::AccessFlagBits::eMemoryRead);
+            vk::ImageLayout::eTransferDstOptimal,
+            vk::ImageLayout::eGeneral,
+            vk::PipelineStageFlagBits::eTransfer,
+            vk::AccessFlagBits::eTransferWrite,
+            vk::PipelineStageFlagBits::eTransfer,
+            vk::AccessFlagBits::eMemoryRead);
 
         if (lastLayout != vk::ImageLayout::eTransferSrcOptimal) {
             transferCmd->ImageBarrier(view->Image(),
-                                      vk::ImageLayout::eTransferSrcOptimal,
-                                      lastLayout,
-                                      vk::PipelineStageFlagBits::eTransfer,
-                                      vk::AccessFlagBits::eTransferWrite,
-                                      vk::PipelineStageFlagBits::eTransfer,
-                                      vk::AccessFlagBits::eMemoryRead);
+                vk::ImageLayout::eTransferSrcOptimal,
+                lastLayout,
+                vk::PipelineStageFlagBits::eTransfer,
+                vk::AccessFlagBits::eTransferWrite,
+                vk::PipelineStageFlagBits::eTransfer,
+                vk::AccessFlagBits::eMemoryRead);
         }
 
         auto fence = device->createFenceUnique({});
@@ -111,11 +111,11 @@ namespace sp::vulkan {
         uint8 *data;
         outputImage->Map((void **)&data);
         stbi_write_png((const char *)fullPath.string().c_str(),
-                       extent.width,
-                       extent.height,
-                       components,
-                       data + subResourceLayout.offset,
-                       subResourceLayout.rowPitch);
+            extent.width,
+            extent.height,
+            components,
+            data + subResourceLayout.offset,
+            subResourceLayout.rowPitch);
         outputImage->Unmap();
     }
 } // namespace sp::vulkan

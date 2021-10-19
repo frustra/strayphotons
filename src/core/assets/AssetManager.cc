@@ -40,9 +40,9 @@ namespace sp {
     const std::string SHADERS_DIR = "../";
 
     bool AssetManager::ReadWholeFile(std::vector<unsigned char> *out,
-                                     std::string *err,
-                                     const std::string &path,
-                                     void *userdata) {
+        std::string *err,
+        const std::string &path,
+        void *userdata) {
         std::ifstream in;
         size_t size;
 

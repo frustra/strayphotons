@@ -33,24 +33,24 @@ namespace sp {
 
                 if (attr.componentType == GL_UNSIGNED_SHORT) {
                     glVertexArrayAttribIFormat(glPrimitive.vertexBufferHandle,
-                                               i,
-                                               attr.componentFields,
-                                               attr.componentType,
-                                               0);
+                        i,
+                        attr.componentFields,
+                        attr.componentType,
+                        0);
                 } else {
                     glVertexArrayAttribFormat(glPrimitive.vertexBufferHandle,
-                                              i,
-                                              attr.componentFields,
-                                              attr.componentType,
-                                              GL_FALSE,
-                                              0);
+                        i,
+                        attr.componentFields,
+                        attr.componentType,
+                        GL_FALSE,
+                        0);
                 }
 
                 glVertexArrayVertexBuffer(glPrimitive.vertexBufferHandle,
-                                          i,
-                                          LoadBuffer(attr.bufferIndex),
-                                          attr.byteOffset,
-                                          attr.byteStride);
+                    i,
+                    LoadBuffer(attr.bufferIndex),
+                    attr.byteOffset,
+                    attr.byteStride);
             }
 
             AddPrimitive(glPrimitive);
@@ -74,10 +74,10 @@ namespace sp {
     }
 
     void GLModel::Draw(SceneShader *shader,
-                       glm::mat4 modelMat,
-                       const ecs::View &view,
-                       int boneCount,
-                       const glm::mat4 *boneData) const {
+        glm::mat4 modelMat,
+        const ecs::View &view,
+        int boneCount,
+        const glm::mat4 *boneData) const {
         for (auto primitive : primitives) {
             glBindVertexArray(primitive.vertexBufferHandle);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, primitive.indexBufferHandle);
@@ -96,9 +96,9 @@ namespace sp {
             }
 
             glDrawElements(primitive.drawMode,
-                           primitive.indexBuffer.componentCount,
-                           primitive.indexBuffer.componentType,
-                           (char *)primitive.indexBuffer.byteOffset);
+                primitive.indexBuffer.componentCount,
+                primitive.indexBuffer.componentType,
+                (char *)primitive.indexBuffer.byteOffset);
         }
     }
 
@@ -134,9 +134,9 @@ namespace sp {
             name += std::to_string(material.pbrMetallicRoughness.metallicRoughnessTexture.index) + "_METALICROUGHNESS";
             textureIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
             factor = {0.0,
-                      material.pbrMetallicRoughness.roughnessFactor,
-                      material.pbrMetallicRoughness.metallicFactor,
-                      0.0};
+                material.pbrMetallicRoughness.roughnessFactor,
+                material.pbrMetallicRoughness.metallicFactor,
+                0.0};
             break;
 
         case Height:
@@ -195,8 +195,8 @@ namespace sp {
                 format = GL_RED;
             } else {
                 Errorf("Failed to load image at index %d: invalid number of image components (%d)",
-                       texture.source,
-                       img.component);
+                    texture.source,
+                    img.component);
             }
 
             GLenum type = GL_NONE;
@@ -237,7 +237,7 @@ namespace sp {
 
             if (renderer) {
                 renderer->shaders.Get<TextureFactorCS>()->SetFactor(std::min(img.component, (int)factor.size()),
-                                                                    factor.data());
+                    factor.data());
                 tex->BindImageConvert(0, GLPixelFormat::PixelFormatMapping(PF_RGBA8), GL_READ_WRITE);
 
                 renderer->ShaderControl->BindPipeline<TextureFactorCS>();

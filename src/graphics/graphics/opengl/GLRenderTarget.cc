@@ -6,9 +6,9 @@
 
 namespace sp {
     void RenderTargetDesc::Prepare(GlfwGraphicsContext &context,
-                                   std::shared_ptr<GLRenderTarget> &target,
-                                   bool clear,
-                                   const void *data) {
+        std::shared_ptr<GLRenderTarget> &target,
+        bool clear,
+        const void *data) {
         if (!target || target->GetDesc() != *this) {
             target = context.GetRenderTarget(*this);
 

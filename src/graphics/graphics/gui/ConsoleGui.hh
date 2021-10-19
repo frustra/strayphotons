@@ -28,9 +28,9 @@ namespace sp {
                 const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y +
                                                        ImGui::GetFrameHeightWithSpacing();
                 ImGui::BeginChild("ScrollingRegion",
-                                  ImVec2(0, -footer_height_to_reserve),
-                                  false,
-                                  ImGuiWindowFlags_HorizontalScrollbar);
+                    ImVec2(0, -footer_height_to_reserve),
+                    false,
+                    ImGuiWindowFlags_HorizontalScrollbar);
 
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1));
 
@@ -54,11 +54,11 @@ namespace sp {
                 reclaimInputFocus |= ImGui::IsWindowAppearing();
 
                 if (ImGui::InputText("##CommandInput",
-                                     inputBuf,
-                                     sizeof(inputBuf),
-                                     iflags,
-                                     CommandEditStub,
-                                     (void *)this)) {
+                        inputBuf,
+                        sizeof(inputBuf),
+                        iflags,
+                        CommandEditStub,
+                        (void *)this)) {
                     string line(inputBuf);
                     if (!line.empty()) {
                         auto &console = GetConsoleManager();

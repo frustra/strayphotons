@@ -22,9 +22,9 @@ namespace ecs {
 
         View() {}
         View(glm::ivec2 extents,
-             float fov = 0.0f,
-             glm::vec2 clip = {0.1, 256},
-             Renderable::VisibilityMask mask = Renderable::VisibilityMask())
+            float fov = 0.0f,
+            glm::vec2 clip = {0.1, 256},
+            Renderable::VisibilityMask mask = Renderable::VisibilityMask())
             : extents(extents), fov(fov), clip(clip), visibilityMask(mask) {
             UpdateProjectionMatrix();
         }

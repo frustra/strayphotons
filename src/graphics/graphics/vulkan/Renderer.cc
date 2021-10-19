@@ -19,15 +19,15 @@
 namespace sp::vulkan {
     static const char *defaultWindowViewTarget = "GBuffer0";
     static CVar<string> CVarWindowViewTarget("r.WindowViewTarget",
-                                             defaultWindowViewTarget,
-                                             "Primary window's render target");
+        defaultWindowViewTarget,
+        "Primary window's render target");
 
     Renderer::Renderer(DeviceContext &device) : device(device) {
         funcs.Register<string, string>("screenshot",
-                                       "Save screenshot to <path>, optionally specifying an image <resource>",
-                                       [&](string path, string resource) {
-                                           QueueScreenshot(path, resource);
-                                       });
+            "Save screenshot to <path>, optionally specifying an image <resource>",
+            [&](string path, string resource) {
+                QueueScreenshot(path, resource);
+            });
 
         funcs.Register("listrendertargets", "List all render targets", [&]() {
             listRenderTargets = true;
@@ -218,8 +218,8 @@ namespace sp::vulkan {
                     auto res = builder.GetResourceByName(CVarWindowViewTarget.Get());
                     if (!res) {
                         Errorf("view target %s does not exist, defaulting to %s",
-                               CVarWindowViewTarget.Get(),
-                               defaultWindowViewTarget);
+                            CVarWindowViewTarget.Get(),
+                            defaultWindowViewTarget);
                         CVarWindowViewTarget.Set(defaultWindowViewTarget);
                         res = builder.GetResourceByName(defaultWindowViewTarget);
                     }
@@ -259,12 +259,12 @@ namespace sp::vulkan {
             for (const auto &info : list) {
                 auto &extent = info.desc.extent;
                 Logf("%s (%dx%dx%d [%d] %s)",
-                     info.name,
-                     extent.width,
-                     extent.height,
-                     extent.depth,
-                     info.desc.arrayLayers,
-                     vk::to_string(info.desc.format));
+                    info.name,
+                    extent.width,
+                    extent.height,
+                    extent.depth,
+                    info.desc.arrayLayers,
+                    vk::to_string(info.desc.format));
             }
         }
 
@@ -372,10 +372,10 @@ namespace sp::vulkan {
     }
 
     void Renderer::ForwardPass(CommandContext &cmd,
-                               ecs::Renderable::VisibilityMask viewMask,
-                               DrawLock lock,
-                               bool useMaterial,
-                               const PreDrawFunc &preDraw) {
+        ecs::Renderable::VisibilityMask viewMask,
+        DrawLock lock,
+        bool useMaterial,
+        const PreDrawFunc &preDraw) {
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (ent.Has<ecs::Renderable, ecs::Transform>(lock)) {
                 if (ent.Has<ecs::Mirror>(lock)) continue;
@@ -391,11 +391,11 @@ namespace sp::vulkan {
     }
 
     void Renderer::DrawEntity(CommandContext &cmd,
-                              ecs::Renderable::VisibilityMask viewMask,
-                              DrawLock lock,
-                              Tecs::Entity &ent,
-                              bool useMaterial,
-                              const PreDrawFunc &preDraw) {
+        ecs::Renderable::VisibilityMask viewMask,
+        DrawLock lock,
+        Tecs::Entity &ent,
+        bool useMaterial,
+        const PreDrawFunc &preDraw) {
         auto &comp = ent.Get<ecs::Renderable>(lock);
         if (!comp.model || !comp.model->Valid()) return;
 

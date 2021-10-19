@@ -14,13 +14,13 @@ namespace sp {
         void Bind(GLenum target) const;
         void Bind(GLenum target, GLuint index, GLintptr offset = 0, GLsizeiptr size = -1) const;
         GLBuffer &ClearRegion(GLPixelFormat format,
-                              GLintptr offset = 0,
-                              GLsizeiptr size = -1,
-                              const void *data = nullptr);
+            GLintptr offset = 0,
+            GLsizeiptr size = -1,
+            const void *data = nullptr);
         GLBuffer &ClearRegion(PixelFormat format,
-                              GLintptr offset = 0,
-                              GLsizeiptr size = -1,
-                              const void *data = nullptr);
+            GLintptr offset = 0,
+            GLsizeiptr size = -1,
+            const void *data = nullptr);
         GLBuffer &Clear(GLPixelFormat format, const void *data = nullptr);
         GLBuffer &Clear(PixelFormat format, const void *data = nullptr);
 

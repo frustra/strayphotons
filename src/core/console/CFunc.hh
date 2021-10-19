@@ -133,9 +133,9 @@ namespace sp {
 
         template<typename ThisType, typename... ParamTypes>
         void Register(ThisType *parent,
-                      const string &name,
-                      const string &description,
-                      void (ThisType::*callback)(ParamTypes...)) {
+            const string &name,
+            const string &description,
+            void (ThisType::*callback)(ParamTypes...)) {
             auto cb = [parent, callback](ParamTypes... args) {
                 (parent->*callback)(args...);
             };

@@ -41,8 +41,8 @@ namespace sp::xr {
         texture.eColorSpace = vr::ColorSpace_Auto;
         glm::mat3x4 trackingPose = glm::transpose(viewPose);
         memcpy((float *)texture.mDeviceToAbsoluteTracking.m,
-               glm::value_ptr(trackingPose),
-               sizeof(texture.mDeviceToAbsoluteTracking.m));
+            glm::value_ptr(trackingPose),
+            sizeof(texture.mDeviceToAbsoluteTracking.m));
 
         auto vrEye = MapXrEyeToOpenVr(eye);
 
@@ -62,14 +62,13 @@ namespace sp::xr {
         // Ignore OpenVR performance warning: https://github.com/ValveSoftware/openvr/issues/818
         device->disabledDebugMessages = VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 
-        auto err = vr::VRCompositor()->Submit(
-            vrEye,
+        auto err = vr::VRCompositor()->Submit(vrEye,
             &texture,
             0,
             (vr::EVRSubmitFlags)(vr::Submit_TextureWithPose | vr::Submit_VulkanTextureWithArrayData));
         device->disabledDebugMessages = 0;
         Assert(err == vr::VRCompositorError_None || err == vr::VRCompositorError_DoNotHaveFocus,
-               "VR compositor error: " + std::to_string(err));
+            "VR compositor error: " + std::to_string(err));
     }
 } // namespace sp::xr
 

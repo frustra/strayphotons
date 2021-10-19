@@ -49,7 +49,7 @@ namespace sp::xr {
                         vr::VRActionSetHandle_t actionSetHandle;
                         error = vr::VRInput()->GetActionSetHandle(name.c_str(), &actionSetHandle);
                         Assert(error == vr::EVRInputError::VRInputError_None,
-                               "Failed to load OpenVR input action set: " + name);
+                            "Failed to load OpenVR input action set: " + name);
 
                         actionSets.emplace_back(name, actionSetHandle);
                     }
@@ -66,7 +66,7 @@ namespace sp::xr {
                         action.name = param.second.get<string>();
                         error = vr::VRInput()->GetActionHandle(action.name.c_str(), &action.handle);
                         Assert(error == vr::EVRInputError::VRInputError_None,
-                               "Failed to load OpenVR input action set: " + action.name);
+                            "Failed to load OpenVR input action set: " + action.name);
                     } else if (param.first == "type") {
                         auto typeStr = param.second.get<string>();
                         to_lower(typeStr);
@@ -109,30 +109,30 @@ namespace sp::xr {
 
         auto lock =
             ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::FocusLayer, ecs::FocusLock, ecs::EventBindings>,
-                                        ecs::Write<ecs::EventInput, ecs::SignalOutput>>();
+                ecs::Write<ecs::EventInput, ecs::SignalOutput>>();
 
         for (auto &actionSet : actionSets) {
             vr::VRActiveActionSet_t activeActionSet = {};
             activeActionSet.ulActionSet = actionSet.handle;
 
             vr::EVRInputError error = vr::VRInput()->UpdateActionState(&activeActionSet,
-                                                                       sizeof(vr::VRActiveActionSet_t),
-                                                                       1);
+                sizeof(vr::VRActiveActionSet_t),
+                1);
             Assert(error == vr::EVRInputError::VRInputError_None,
-                   "Failed to sync OpenVR actions for: " + actionSet.name);
+                "Failed to sync OpenVR actions for: " + actionSet.name);
 
             for (auto &action : actionSet.actions) {
                 error =
                     vr::VRInput()->GetActionOrigins(actionSet.handle, action.handle, origins.data(), origins.size());
                 Assert(error == vr::EVRInputError::VRInputError_None,
-                       "Failed to read OpenVR action sources for: " + action.name);
+                    "Failed to read OpenVR action sources for: " + action.name);
 
                 for (auto &originHandle : origins) {
                     if (originHandle) {
                         vr::InputOriginInfo_t originInfo;
                         error = vr::VRInput()->GetOriginTrackedDeviceInfo(originHandle,
-                                                                          &originInfo,
-                                                                          sizeof(originInfo));
+                            &originInfo,
+                            sizeof(originInfo));
                         Assert(error == vr::EVRInputError::VRInputError_None, "Failed to read origin info");
 
                         ecs::NamedEntity originEntity = vrSystem.GetEntityForDeviceIndex(originInfo.trackedDeviceIndex);
@@ -143,11 +143,11 @@ namespace sp::xr {
                             switch (action.type) {
                             case Action::DataType::Bool:
                                 error = vr::VRInput()->GetDigitalActionData(action.handle,
-                                                                            &digitalActionData,
-                                                                            sizeof(vr::InputDigitalActionData_t),
-                                                                            originInfo.devicePath);
+                                    &digitalActionData,
+                                    sizeof(vr::InputDigitalActionData_t),
+                                    originInfo.devicePath);
                                 Assert(error == vr::EVRInputError::VRInputError_None,
-                                       "Failed to read OpenVR digital action: " + action.name);
+                                    "Failed to read OpenVR digital action: " + action.name);
 
                                 if (entity.Has<ecs::EventBindings>(lock)) {
                                     auto &bindings = entity.Get<ecs::EventBindings>(lock);
@@ -171,31 +171,30 @@ namespace sp::xr {
                             case Action::DataType::Vec2:
                             case Action::DataType::Vec3:
                                 error = vr::VRInput()->GetAnalogActionData(action.handle,
-                                                                           &analogActionData,
-                                                                           sizeof(vr::InputAnalogActionData_t),
-                                                                           originInfo.devicePath);
+                                    &analogActionData,
+                                    sizeof(vr::InputAnalogActionData_t),
+                                    originInfo.devicePath);
                                 Assert(error == vr::EVRInputError::VRInputError_None,
-                                       "Failed to read OpenVR analog action: " + action.name);
+                                    "Failed to read OpenVR analog action: " + action.name);
 
                                 if (entity.Has<ecs::EventBindings>(lock)) {
                                     auto &bindings = entity.Get<ecs::EventBindings>(lock);
 
                                     if (analogActionData.bActive &&
                                         (analogActionData.x != 0.0f || analogActionData.y != 0.0f ||
-                                         analogActionData.z != 0.0f)) {
+                                            analogActionData.z != 0.0f)) {
                                         switch (action.type) {
                                         case Action::DataType::Vec1:
                                             bindings.SendEvent(lock, action.name, originEntity, analogActionData.x);
                                             break;
                                         case Action::DataType::Vec2:
                                             bindings.SendEvent(lock,
-                                                               action.name,
-                                                               originEntity,
-                                                               glm::vec2(analogActionData.x, analogActionData.y));
+                                                action.name,
+                                                originEntity,
+                                                glm::vec2(analogActionData.x, analogActionData.y));
                                             break;
                                         case Action::DataType::Vec3:
-                                            bindings.SendEvent(
-                                                lock,
+                                            bindings.SendEvent(lock,
                                                 action.name,
                                                 originEntity,
                                                 glm::vec3(analogActionData.x, analogActionData.y, analogActionData.z));

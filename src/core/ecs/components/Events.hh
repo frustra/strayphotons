@@ -72,9 +72,9 @@ namespace ecs {
         void SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock, const Event &event) const;
         template<typename T>
         inline void SendEvent(Lock<Read<Name, FocusLayer, FocusLock>, Write<EventInput>> lock,
-                              const std::string &name,
-                              const NamedEntity &source,
-                              T data) const {
+            const std::string &name,
+            const NamedEntity &source,
+            T data) const {
             SendEvent(lock, Event(name, source, data));
         }
 

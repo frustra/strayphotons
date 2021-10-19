@@ -56,7 +56,7 @@ namespace sp::xr {
                 for (auto controllerAction : controllerPoseActions) {
                     glm::mat4 xrObjectPos;
                     bool active = controllerAction.first->GetPoseActionValueForNextFrame(controllerAction.second,
-                                                                                         xrObjectPos);
+                        xrObjectPos);
                     ecs::Entity xrObject = UpdateXrActionEntity(controllerAction.first, active && CVarController.Get());
 
                     if (xrObject.Valid()) {
@@ -104,17 +104,16 @@ namespace sp::xr {
                             physx::PxReal maxDistance = 10.0f;
 
                             {
-                                auto lock =
-                                    ecs::World.StartTransaction<ecs::Read<ecs::HumanController>,
-                                                                ecs::Write<ecs::PhysicsState, ecs::Transform>>();
+                                auto lock = ecs::World.StartTransaction<ecs::Read<ecs::HumanController>,
+                                    ecs::Write<ecs::PhysicsState, ecs::Transform>>();
 
                                 physx::PxRaycastBuffer hit;
                                 bool status = game->physics.RaycastQuery(lock,
-                                                                         xrObject.GetEntity(),
-                                                                         origin,
-                                                                         dir,
-                                                                         maxDistance,
-                                                                         hit);
+                                    xrObject.GetEntity(),
+                                    origin,
+                                    dir,
+                                    maxDistance,
+                                    hit);
 
                                 if (status && hit.block.distance > 0.5) {
 
@@ -136,8 +135,7 @@ namespace sp::xr {
                         grabAction->GetFallingEdgeActionValue(controllerAction.second, let_go);
 
                         if (grab) {
-                            auto lock = ecs::World.StartTransaction<
-                                ecs::Read<ecs::HumanController>,
+                            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::HumanController>,
                                 ecs::Write<ecs::PhysicsState, ecs::Transform, ecs::InteractController>>();
 
                             Logf("grab on subpath %s", controllerAction.second);
@@ -187,8 +185,7 @@ namespace sp::xr {
                         }
 
                         // Update the state of the "normal" skeleton entity (the RenderModel provided by the XR Runtime)
-                        ecs::Entity handSkeleton = UpdateXrActionEntity(
-                            action,
+                        ecs::Entity handSkeleton = UpdateXrActionEntity(action,
                             CVarSkeletons.Get() == SkeletonMode::SkeletonNormal);
                         if (handSkeleton.Valid()) {
                             auto hand = handSkeleton.Get<ecs::Renderable>();
@@ -205,9 +202,9 @@ namespace sp::xr {
                         // TODO: this checks the state of ~30 entities by name.
                         // Optimize this into separate functions for setup, teardown, and position updates. #39
                         UpdateSkeletonDebugHand(action,
-                                                xrObjectPos,
-                                                boneData,
-                                                CVarSkeletons.Get() == SkeletonMode::SkeletonDebug);
+                            xrObjectPos,
+                            boneData,
+                            CVarSkeletons.Get() == SkeletonMode::SkeletonDebug);
                     }
                 }
             }
@@ -272,9 +269,9 @@ namespace sp::xr {
     // Validate and load the skeleton debug hand entities for a skeleton action. If the action is not "active", this
     // destroys the debug hand entities.
     void XrManager::UpdateSkeletonDebugHand(xr::XrActionPtr action,
-                                            glm::mat4 xrObjectPos,
-                                            vector<xr::XrBoneData> &boneData,
-                                            bool active) {
+        glm::mat4 xrObjectPos,
+        vector<xr::XrBoneData> &boneData,
+        bool active) {
         for (size_t i = 0; i < boneData.size(); i++) {
             xr::XrBoneData &bone = boneData[i];
             string entityName = string("xr-skeleton-debug-bone-") + action->GetName() + std::to_string(i);

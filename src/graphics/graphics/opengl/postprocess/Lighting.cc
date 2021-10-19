@@ -111,11 +111,11 @@ namespace sp {
 
             readBackBuf.Bind(GL_PIXEL_PACK_BUFFER);
             glGetTextureImage(target->GetGLTexture().handle,
-                              0,
-                              GL_RED_INTEGER,
-                              GL_UNSIGNED_INT,
-                              sizeof(uint32) * Bins,
-                              0);
+                0,
+                GL_RED_INTEGER,
+                GL_UNSIGNED_INT,
+                sizeof(uint32) * Bins,
+                0);
         }
 
     private:
