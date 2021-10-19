@@ -786,11 +786,12 @@ namespace sp::vulkan {
         transferToGeneral.trackImageLayout = false;
         transferToGeneral.srcQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync);
         transferToGeneral.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::General);
-        if (genMipmap) transferToGeneral.mipLevelCount = 1;
 
         ImageBarrierInfo transferToCompute = transferToGeneral;
         transferToCompute.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::ComputeAsync);
 
+        // The amount of state tracking in this function is somewhat objectionable.
+        // Should we have an automatic image access tracking mechanism to avoid it?
         vk::ImageLayout lastLayout = vk::ImageLayout::eTransferDstOptimal;
         vk::ImageLayout nextLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
         if (genFactor) {
@@ -798,14 +799,16 @@ namespace sp::vulkan {
         } else if (genMipmap) {
             nextLayout = vk::ImageLayout::eTransferSrcOptimal;
         }
+        vk::PipelineStageFlags lastStage = vk::PipelineStageFlagBits::eTransfer;
+        vk::AccessFlags lastAccess = vk::AccessFlagBits::eTransferWrite;
 
         transferCmd->ImageBarrier(image,
                                   lastLayout,
                                   nextLayout,
-                                  vk::PipelineStageFlagBits::eTransfer,
-                                  {},
+                                  lastStage,
+                                  lastAccess,
                                   vk::PipelineStageFlagBits::eBottomOfPipe,
-                                  vk::AccessFlagBits::eTransferWrite,
+                                  {},
                                   genFactor ? transferToCompute : transferToGeneral);
 
         auto fence = PushInFlightObject(stagingBuf);
@@ -817,8 +820,8 @@ namespace sp::vulkan {
             factorCmd->ImageBarrier(image,
                                     lastLayout,
                                     vk::ImageLayout::eGeneral,
-                                    vk::PipelineStageFlagBits::eComputeShader,
-                                    {},
+                                    lastStage,
+                                    lastAccess,
                                     vk::PipelineStageFlagBits::eComputeShader,
                                     vk::AccessFlagBits::eShaderRead,
                                     transferToCompute);
@@ -849,41 +852,60 @@ namespace sp::vulkan {
 
             factorCmd->Dispatch((createInfo.extent.width + 15) / 16, (createInfo.extent.height + 15) / 16, 1);
 
+            nextLayout = genMipmap ? vk::ImageLayout::eTransferSrcOptimal : vk::ImageLayout::eShaderReadOnlyOptimal;
+            auto nextStage = genMipmap ? vk::PipelineStageFlagBits::eTransfer
+                                       : vk::PipelineStageFlagBits::eFragmentShader;
+            auto nextAccess = genMipmap ? vk::AccessFlagBits::eTransferRead : vk::AccessFlagBits::eShaderRead;
+
+            transferToGeneral.srcQueueFamilyIndex = transferToCompute.dstQueueFamilyIndex;
+            factorCmd->ImageBarrier(image,
+                                    vk::ImageLayout::eGeneral,
+                                    nextLayout,
+                                    vk::PipelineStageFlagBits::eComputeShader,
+                                    vk::AccessFlagBits::eShaderWrite,
+                                    nextStage,
+                                    nextAccess,
+                                    transferToGeneral);
+            lastLayout = vk::ImageLayout::eGeneral;
+            lastStage = vk::PipelineStageFlagBits::eComputeShader;
+            lastAccess = vk::AccessFlagBits::eShaderWrite;
+
             fence = PushInFlightObject(factorView);
             auto factorComplete = GetEmptySemaphore(fence);
 
             Submit(factorCmd, {factorComplete}, {transferComplete}, {vk::PipelineStageFlagBits::eComputeShader}, fence);
-
-            transferToGeneral.srcQueueFamilyIndex = transferToCompute.dstQueueFamilyIndex;
             transferComplete = factorComplete;
-            lastLayout = vk::ImageLayout::eGeneral;
+        }
+
+        if (!genMipmap) {
+            if (transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
+                auto graphicsCmd = GetCommandContext();
+                graphicsCmd->ImageBarrier(image,
+                                          lastLayout,
+                                          vk::ImageLayout::eShaderReadOnlyOptimal,
+                                          lastStage,
+                                          lastAccess,
+                                          vk::PipelineStageFlagBits::eFragmentShader,
+                                          vk::AccessFlagBits::eShaderRead,
+                                          transferToGeneral);
+                Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eFragmentShader});
+            }
+            image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
+            return image;
         }
 
         auto graphicsCmd = GetCommandContext();
 
-        if (!genMipmap) {
-            transferToGeneral.trackImageLayout = true;
+        if (transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
             graphicsCmd->ImageBarrier(image,
                                       lastLayout,
-                                      vk::ImageLayout::eShaderReadOnlyOptimal,
-                                      vk::PipelineStageFlagBits::eFragmentShader,
-                                      {},
-                                      vk::PipelineStageFlagBits::eFragmentShader,
-                                      vk::AccessFlagBits::eShaderRead,
+                                      vk::ImageLayout::eTransferSrcOptimal,
+                                      lastStage,
+                                      lastAccess,
+                                      vk::PipelineStageFlagBits::eTransfer,
+                                      vk::AccessFlagBits::eTransferRead,
                                       transferToGeneral);
-
-            Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eFragmentShader});
-            return image;
         }
-
-        graphicsCmd->ImageBarrier(image,
-                                  lastLayout,
-                                  vk::ImageLayout::eTransferSrcOptimal,
-                                  vk::PipelineStageFlagBits::eTransfer,
-                                  {},
-                                  vk::PipelineStageFlagBits::eTransfer,
-                                  vk::AccessFlagBits::eTransferRead,
-                                  transferToGeneral);
 
         ImageBarrierInfo transferMips;
         transferMips.trackImageLayout = false;

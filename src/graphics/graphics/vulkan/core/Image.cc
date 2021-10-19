@@ -134,9 +134,9 @@ namespace sp::vulkan {
             break;
         case TINYGLTF_TEXTURE_FILTER_NEAREST_MIPMAP_NEAREST:
         case TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_NEAREST:
+            info.mipmapMode = vk::SamplerMipmapMode::eNearest;
             info.minLod = 0;
             info.maxLod = VK_LOD_CLAMP_NONE;
-            info.mipmapMode = vk::SamplerMipmapMode::eNearest;
             break;
         }
 

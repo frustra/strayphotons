@@ -17,13 +17,13 @@ if (${NPM_EXE} STREQUAL NPM_EXE-NOTFOUND)
     message(FATAL_ERROR "NPM is not installed. It is required for model compiling.")
 endif()
 
-# Custom commands to make sure gltf-pipeline and obj2gltf are installed
+# Custom commands to make sure gltf-pipeline and obj2gltf dependencies are installed
 
 add_custom_command(
     COMMAND
         ${NPM_EXE} install
     OUTPUT
-        ${PROJECT_SOURCE_DIR}/ext/obj2gltf/bin/obj2gltf.js
+        ${PROJECT_SOURCE_DIR}/ext/obj2gltf/node_modules
     WORKING_DIRECTORY
         ${PROJECT_SOURCE_DIR}/ext/obj2gltf
 )
@@ -32,7 +32,7 @@ add_custom_command(
     COMMAND
         ${NPM_EXE} install
     OUTPUT
-        ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/bin/gltf-pipeline.js
+        ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline/node_modules
     WORKING_DIRECTORY
         ${PROJECT_SOURCE_DIR}/ext/gltf-pipeline
 )
