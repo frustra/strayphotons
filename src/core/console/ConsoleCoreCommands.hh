@@ -23,13 +23,9 @@ namespace sp {
         }
     });
 
-    CFunc<uint64, RestOfLine> CFuncWait("wait",
-                                        "Queue command for later (wait <ms> <command>)",
-                                        [](uint64 dt, string cmd) {
-                                            GetConsoleManager().QueueParseAndExecute(
-                                                cmd,
-                                                chrono_clock::now() + std::chrono::milliseconds(dt));
-                                        });
+    CFunc<uint64, string> CFuncWait("wait", "Queue command for later (wait <ms> <command>)", [](uint64 dt, string cmd) {
+        GetConsoleManager().QueueParseAndExecute(cmd, chrono_clock::now() + std::chrono::milliseconds(dt));
+    });
 
     CFunc<string> CFuncToggle("toggle",
                               "Toggle a CVar between values (toggle <cvar_name> [<value_a> <value_b>])",

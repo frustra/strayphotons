@@ -6,13 +6,6 @@
 #include <functional>
 
 namespace sp {
-    class RestOfLine : public string {
-    public:
-        friend std::istream &operator>>(std::istream &input, RestOfLine &str) {
-            return getline(input, str);
-        }
-    };
-
     template<typename... ParamTypes>
     class CFunc : public CVarBase {
     public:
@@ -32,10 +25,11 @@ namespace sp {
         void SetFromString(const string &newValue) {
             std::tuple<ParamTypes...> values = {};
             std::istringstream in(newValue);
+            size_t parsedCount = 0;
 
             std::apply(
                 [&](auto &&...args) {
-                    (ParseArgument(args, in), ...);
+                    (ParseArgument(args, in, ++parsedCount == sizeof...(ParamTypes)), ...);
                 },
                 values);
 
@@ -48,13 +42,18 @@ namespace sp {
 
     private:
         template<typename T>
-        void ParseArgument(T &value, std::istringstream &in) {
+        void ParseArgument(T &value, std::istringstream &in, bool last) {
             in >> value;
         }
 
-        void ParseArgument(string &value, std::istringstream &in) {
+        void ParseArgument(string &value, std::istringstream &in, bool last) {
             in >> std::ws;
-            if (in.peek() == '"') {
+            if (last) {
+                std::getline(in, value);
+                if (value.size() >= 2 && value[0] == '"' && value.back() == '"') {
+                    value = value.substr(1, value.size() - 2);
+                }
+            } else if (in.peek() == '"') {
                 in.seekg(1, std::ios_base::cur);
                 std::getline(in, value, '"');
             } else {
@@ -132,13 +131,15 @@ namespace sp {
             collection.push_back(make_shared<CFunc<void>>(name, description, callback));
         }
 
-        template<typename ParamType, typename ThisType>
+        template<typename ThisType, typename... ParamTypes>
         void Register(ThisType *parent,
                       const string &name,
                       const string &description,
-                      void (ThisType::*callback)(ParamType)) {
-            auto cb = std::bind(callback, parent, std::placeholders::_1);
-            collection.push_back(make_shared<CFunc<ParamType>>(name, description, cb));
+                      void (ThisType::*callback)(ParamTypes...)) {
+            auto cb = [parent, callback](ParamTypes... args) {
+                (parent->*callback)(args...);
+            };
+            collection.push_back(make_shared<CFunc<ParamTypes...>>(name, description, cb));
         }
 
         template<typename ThisType>

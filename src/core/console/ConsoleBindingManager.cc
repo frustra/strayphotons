@@ -62,11 +62,7 @@ namespace sp {
         script.SetParam(eventName, command);
     }
 
-    void ConsoleBindingManager::BindKey(string args) {
-        std::stringstream stream(args);
-        std::string keyName;
-        stream >> keyName;
-
+    void ConsoleBindingManager::BindKey(string keyName, string command) {
         to_lower(keyName);
         auto it = UserBindingAliases.find(keyName);
         if (it != UserBindingAliases.end()) keyName = it->second;
@@ -79,8 +75,6 @@ namespace sp {
             }
         }
         if (key != KEY_INVALID) {
-            std::string command;
-            std::getline(stream, command);
             trim(command);
 
             {
