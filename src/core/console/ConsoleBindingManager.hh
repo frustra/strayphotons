@@ -17,7 +17,7 @@ namespace sp {
 
     private:
         // CFunc
-        void BindKey(string args);
+        void BindKey(string keyName, string command);
 
         CFuncCollection funcs;
 

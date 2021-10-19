@@ -6,10 +6,10 @@
 #include <functional>
 
 namespace sp {
-    template<typename ParamType>
+    template<typename... ParamTypes>
     class CFunc : public CVarBase {
     public:
-        typedef std::function<void(ParamType)> Callback;
+        typedef std::function<void(ParamTypes...)> Callback;
 
         CFunc(const string &name, const string &description, Callback callback)
             : CVarBase(name, description), callback(callback) {}
@@ -23,11 +23,17 @@ namespace sp {
         }
 
         void SetFromString(const string &newValue) {
-            ParamType value = {0};
+            std::tuple<ParamTypes...> values = {};
             std::istringstream in(newValue);
-            in >> value;
+            size_t parsedCount = 0;
 
-            callback(value);
+            std::apply(
+                [&](auto &&...args) {
+                    (ParseArgument(args, in, ++parsedCount == sizeof...(ParamTypes)), ...);
+                },
+                values);
+
+            std::apply(callback, values);
         }
 
         bool IsValueType() {
@@ -35,6 +41,26 @@ namespace sp {
         }
 
     private:
+        template<typename T>
+        void ParseArgument(T &value, std::istringstream &in, bool last) {
+            in >> value;
+        }
+
+        void ParseArgument(string &value, std::istringstream &in, bool last) {
+            in >> std::ws;
+            if (last) {
+                std::getline(in, value);
+                if (value.size() >= 2 && value[0] == '"' && value.back() == '"') {
+                    value = value.substr(1, value.size() - 2);
+                }
+            } else if (in.peek() == '"') {
+                in.seekg(1, std::ios_base::cur);
+                std::getline(in, value, '"');
+            } else {
+                in >> value;
+            }
+        }
+
         Callback callback;
     };
 
@@ -96,22 +122,24 @@ namespace sp {
 
     class CFuncCollection {
     public:
-        template<typename ParamType>
-        void Register(const string &name, const string &description, std::function<void(ParamType)> callback) {
-            collection.push_back(make_shared<CFunc<ParamType>>(name, description, callback));
+        template<typename... ParamTypes>
+        void Register(const string &name, const string &description, CFunc<ParamTypes...>::Callback callback) {
+            collection.push_back(make_shared<CFunc<ParamTypes...>>(name, description, callback));
         }
 
         void Register(const string &name, const string &description, std::function<void()> callback) {
             collection.push_back(make_shared<CFunc<void>>(name, description, callback));
         }
 
-        template<typename ParamType, typename ThisType>
+        template<typename ThisType, typename... ParamTypes>
         void Register(ThisType *parent,
                       const string &name,
                       const string &description,
-                      void (ThisType::*callback)(ParamType)) {
-            auto cb = std::bind(callback, parent, std::placeholders::_1);
-            collection.push_back(make_shared<CFunc<ParamType>>(name, description, cb));
+                      void (ThisType::*callback)(ParamTypes...)) {
+            auto cb = [parent, callback](ParamTypes... args) {
+                (parent->*callback)(args...);
+            };
+            collection.push_back(make_shared<CFunc<ParamTypes...>>(name, description, cb));
         }
 
         template<typename ThisType>
