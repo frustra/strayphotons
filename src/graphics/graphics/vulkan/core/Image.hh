@@ -34,18 +34,18 @@ namespace sp::vulkan {
 
         vk::ImageCreateInfo GetVkCreateInfo() {
             vk::ImageCreateInfo ci(flags,
-                                   imageType,
-                                   format,
-                                   extent,
-                                   mipLevels,
-                                   arrayLayers,
-                                   samples,
-                                   tiling,
-                                   usage,
-                                   vk::SharingMode::eExclusive,
-                                   {},
-                                   {},
-                                   initialLayout);
+                imageType,
+                format,
+                extent,
+                mipLevels,
+                arrayLayers,
+                samples,
+                tiling,
+                usage,
+                vk::SharingMode::eExclusive,
+                {},
+                {},
+                initialLayout);
             return ci;
         }
 
@@ -61,9 +61,9 @@ namespace sp::vulkan {
 
         // Allocates storage for the image, destructor destroys image
         Image(vk::ImageCreateInfo imageInfo,
-              VmaAllocationCreateInfo allocInfo,
-              VmaAllocator allocator,
-              vk::ImageUsageFlags declaredUsage);
+            VmaAllocationCreateInfo allocInfo,
+            VmaAllocator allocator,
+            vk::ImageUsageFlags declaredUsage);
 
         // Creates an image reference, destructor does not destroy the image
         Image(vk::Image image, vk::Format format, vk::Extent3D extent, uint32 mipLevels = 1, uint32 arrayLayers = 1)

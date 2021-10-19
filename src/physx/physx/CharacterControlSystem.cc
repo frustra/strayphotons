@@ -20,11 +20,11 @@ namespace sp {
     using namespace physx;
 
     static CVar<float> CVarCharacterMovementSpeed("p.CharacterMovementSpeed",
-                                                  3.0,
-                                                  "Character controller movement speed (m/s)");
+        3.0,
+        "Character controller movement speed (m/s)");
     static CVar<float> CVarCharacterUpdateRate("p.CharacterUpdateRate",
-                                               0.3,
-                                               "Character view update frequency (seconds)");
+        0.3,
+        "Character view update frequency (seconds)");
 
     CharacterControlSystem::CharacterControlSystem(PhysxManager &manager) : manager(manager) {
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
@@ -60,7 +60,7 @@ namespace sp {
 
                     auto pxController = manager.controllerManager->createController(desc);
                     Assert(pxController->getType() == PxControllerShapeType::eCAPSULE,
-                           "Physx did not create a valid PxCapsuleController");
+                        "Physx did not create a valid PxCapsuleController");
 
                     pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
 
@@ -91,8 +91,7 @@ namespace sp {
 
                 auto targetPosition = targetTransform.GetGlobalPosition(lock);
                 auto originPosition = originTransform.GetGlobalPosition(lock);
-                auto targetHeight = std::max(
-                    0.1f,
+                auto targetHeight = std::max(0.1f,
                     targetPosition.y - originPosition.y - controller.pxController->getRadius());
                 targetPosition.y = originPosition.y;
 
@@ -128,8 +127,8 @@ namespace sp {
                 auto targetDelta = targetPosition + userData->deltaSinceUpdate -
                                    PxExtendedVec3ToGlmVec3P(controller.pxController->getFootPosition());
                 userData->onGround = manager.MoveController(controller.pxController,
-                                                            dtSinceLastFrame,
-                                                            GlmVec3ToPxVec3(targetDelta));
+                    dtSinceLastFrame,
+                    GlmVec3ToPxVec3(targetDelta));
 
                 // Calculate new character velocity
                 glm::vec3 movement = glm::vec3(0);
@@ -155,8 +154,8 @@ namespace sp {
                 auto disp = userData->velocity * (float)dtSinceLastFrame;
                 auto prevPosition = controller.pxController->getFootPosition();
                 userData->onGround = manager.MoveController(controller.pxController,
-                                                            dtSinceLastFrame,
-                                                            GlmVec3ToPxVec3(disp));
+                    dtSinceLastFrame,
+                    GlmVec3ToPxVec3(disp));
                 auto deltaPos = PxVec3ToGlmVec3P(controller.pxController->getFootPosition() - prevPosition);
 
                 // Update the velocity based on what happened in physx

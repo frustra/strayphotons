@@ -43,12 +43,12 @@ namespace FocusLockTests {
         {
             Timer t("Try sending events and reading signals with GAME focus");
             auto lock = World.StartTransaction<ecs::Read<ecs::Name,
-                                                         ecs::SignalOutput,
-                                                         ecs::SignalBindings,
-                                                         ecs::EventBindings,
-                                                         ecs::FocusLayer,
-                                                         ecs::FocusLock>,
-                                               ecs::Write<ecs::EventInput>>();
+                                                   ecs::SignalOutput,
+                                                   ecs::SignalBindings,
+                                                   ecs::EventBindings,
+                                                   ecs::FocusLayer,
+                                                   ecs::FocusLock>,
+                ecs::Write<ecs::EventInput>>();
 
             auto &eventBindings = keyboard.Get<ecs::EventBindings>(lock);
             eventBindings.SendEvent(lock, TEST_EVENT_KEY, ecs::NamedEntity("keyboard", keyboard), 42);
@@ -77,12 +77,12 @@ namespace FocusLockTests {
         {
             Timer t("Try sending events and reading signals with MENU focus");
             auto lock = World.StartTransaction<ecs::Read<ecs::Name,
-                                                         ecs::SignalOutput,
-                                                         ecs::SignalBindings,
-                                                         ecs::EventBindings,
-                                                         ecs::FocusLayer,
-                                                         ecs::FocusLock>,
-                                               ecs::Write<ecs::EventInput>>();
+                                                   ecs::SignalOutput,
+                                                   ecs::SignalBindings,
+                                                   ecs::EventBindings,
+                                                   ecs::FocusLayer,
+                                                   ecs::FocusLock>,
+                ecs::Write<ecs::EventInput>>();
 
             auto &eventBindings = keyboard.Get<ecs::EventBindings>(lock);
             eventBindings.SendEvent(lock, TEST_EVENT_KEY, ecs::NamedEntity("keyboard", keyboard), 42);

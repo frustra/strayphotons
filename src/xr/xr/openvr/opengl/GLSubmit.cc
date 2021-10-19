@@ -19,8 +19,8 @@ namespace sp::xr {
         texture.eColorSpace = vr::ColorSpace_Auto;
         glm::mat3x4 trackingPose = glm::transpose(viewPose);
         memcpy((float *)texture.mDeviceToAbsoluteTracking.m,
-               glm::value_ptr(trackingPose),
-               sizeof(texture.mDeviceToAbsoluteTracking.m));
+            glm::value_ptr(trackingPose),
+            sizeof(texture.mDeviceToAbsoluteTracking.m));
 
         vr::VRCompositor()->Submit(MapXrEyeToOpenVr(eye), &texture, 0, vr::EVRSubmitFlags::Submit_TextureWithPose);
     }

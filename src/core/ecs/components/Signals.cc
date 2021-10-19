@@ -23,8 +23,8 @@ namespace ecs {
 
     template<>
     bool Component<SignalBindings>::Load(Lock<Read<ecs::Name>> lock,
-                                         SignalBindings &bindings,
-                                         const picojson::value &src) {
+        SignalBindings &bindings,
+        const picojson::value &src) {
         for (auto bind : src.get<picojson::object>()) {
             Tecs::Entity target;
             std::string targetEvent;
@@ -194,9 +194,9 @@ namespace ecs {
     }
 
     double SignalBindings::GetSignal(Lock<Read<Name, SignalOutput, SignalBindings, FocusLayer, FocusLock>> lock,
-                                     Tecs::Entity ent,
-                                     const std::string &name,
-                                     size_t depth) {
+        Tecs::Entity ent,
+        const std::string &name,
+        size_t depth) {
         if (depth > MAX_SIGNAL_BINDING_DEPTH) {
             Errorf("Max signal binding depth exceeded: %s", name);
             return 0.0f;

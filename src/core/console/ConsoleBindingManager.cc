@@ -79,7 +79,7 @@ namespace sp {
 
             {
                 auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>,
-                                                        ecs::Write<ecs::Script, ecs::EventInput, ecs::EventBindings>>();
+                    ecs::Write<ecs::Script, ecs::EventInput, ecs::EventBindings>>();
 
                 auto keyboard = keyboardEntity.Get(lock);
                 if (!keyboard.Has<ecs::EventBindings>(lock)) {

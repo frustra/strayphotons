@@ -107,10 +107,10 @@ namespace sp::vulkan {
     }
 
     void CommandContext::DrawIndexed(uint32 indexes,
-                                     uint32 instances,
-                                     uint32 firstIndex,
-                                     int32 vertexOffset,
-                                     uint32 firstInstance) {
+        uint32 instances,
+        uint32 firstIndex,
+        int32 vertexOffset,
+        uint32 firstInstance) {
         FlushGraphicsState();
         cmd->drawIndexed(indexes, instances, firstIndex, vertexOffset, firstInstance);
     }
@@ -122,13 +122,13 @@ namespace sp::vulkan {
     }
 
     void CommandContext::ImageBarrier(const ImagePtr &image,
-                                      vk::ImageLayout oldLayout,
-                                      vk::ImageLayout newLayout,
-                                      vk::PipelineStageFlags srcStages,
-                                      vk::AccessFlags srcAccess,
-                                      vk::PipelineStageFlags dstStages,
-                                      vk::AccessFlags dstAccess,
-                                      const ImageBarrierInfo &options) {
+        vk::ImageLayout oldLayout,
+        vk::ImageLayout newLayout,
+        vk::PipelineStageFlags srcStages,
+        vk::AccessFlags srcAccess,
+        vk::PipelineStageFlags dstStages,
+        vk::AccessFlags dstAccess,
+        const ImageBarrierInfo &options) {
         vk::ImageMemoryBarrier barrier;
         barrier.image = *image;
         barrier.oldLayout = oldLayout;
@@ -284,11 +284,11 @@ namespace sp::vulkan {
 
         if (ResetDirty(DirtyBits::Viewport)) {
             vk::Viewport vp = {(float)viewport.offset.x,
-                               (float)viewport.offset.y,
-                               (float)viewport.extent.width,
-                               (float)viewport.extent.height,
-                               minDepth,
-                               maxDepth};
+                (float)viewport.offset.y,
+                (float)viewport.extent.width,
+                (float)viewport.extent.height,
+                minDepth,
+                maxDepth};
 
             if (viewportYDirection == YDirection::Up) {
                 // Negative height sets viewport coordinates to OpenGL style (Y up)

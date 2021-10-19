@@ -40,11 +40,11 @@ namespace sp {
     }
 
     void GLTexture::BindImageConvert(GLuint binding,
-                                     GLPixelFormat bindFormat,
-                                     GLenum access,
-                                     GLint level,
-                                     GLboolean layered,
-                                     GLint layer) const {
+        GLPixelFormat bindFormat,
+        GLenum access,
+        GLint level,
+        GLboolean layered,
+        GLint layer) const {
         Assert(handle, "null texture handle");
         Assert(format.Valid(), "binding texture without format specified");
         glBindImageTexture(binding, handle, level, layered, layer, access, bindFormat.internalFormat);
@@ -141,12 +141,12 @@ namespace sp {
     }
 
     GLTexture &GLTexture::Image2D(const void *pixels,
-                                  GLint level,
-                                  GLsizei subWidth,
-                                  GLsizei subHeight,
-                                  GLsizei xoffset,
-                                  GLsizei yoffset,
-                                  bool genMipmap) {
+        GLint level,
+        GLsizei subWidth,
+        GLsizei subHeight,
+        GLsizei xoffset,
+        GLsizei yoffset,
+        bool genMipmap) {
         Assert(handle, "null texture handle");
         Assert(pixels, "null pixel data");
         Assert(width && height, "texture size must be set before data");
@@ -164,14 +164,14 @@ namespace sp {
     }
 
     GLTexture &GLTexture::Image3D(const void *pixels,
-                                  GLint level,
-                                  GLsizei subWidth,
-                                  GLsizei subHeight,
-                                  GLsizei subDepth,
-                                  GLsizei xoffset,
-                                  GLsizei yoffset,
-                                  GLsizei zoffset,
-                                  bool genMipmap) {
+        GLint level,
+        GLsizei subWidth,
+        GLsizei subHeight,
+        GLsizei subDepth,
+        GLsizei xoffset,
+        GLsizei yoffset,
+        GLsizei zoffset,
+        bool genMipmap) {
         Assert(handle, "null texture handle");
         Assert(pixels, "null pixel data");
         Assert(width && height && depth, "texture size must be set before data");
@@ -182,16 +182,16 @@ namespace sp {
         if (subHeight == 0) subHeight = height;
 
         glTextureSubImage3D(handle,
-                            level,
-                            xoffset,
-                            yoffset,
-                            zoffset,
-                            subWidth,
-                            subHeight,
-                            subDepth,
-                            format.format,
-                            format.type,
-                            pixels);
+            level,
+            xoffset,
+            yoffset,
+            zoffset,
+            subWidth,
+            subHeight,
+            subDepth,
+            format.format,
+            format.type,
+            pixels);
 
         if (genMipmap && level == 0) GenMipmap();
 

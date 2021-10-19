@@ -148,8 +148,8 @@ namespace sp::vulkan {
         bool active = false, required = false;
 
         std::variant<std::monostate,
-                     std::function<void(RenderGraphResources &, CommandContext &)>,
-                     std::function<void(RenderGraphResources &, DeviceContext &)>>
+            std::function<void(RenderGraphResources &, CommandContext &)>,
+            std::function<void(RenderGraphResources &, DeviceContext &)>>
             executeFunc;
     };
 
@@ -200,9 +200,9 @@ namespace sp::vulkan {
         }
 
         RenderGraphResource OutputColorAttachment(uint32 index,
-                                                  string_view name,
-                                                  RenderTargetDesc desc,
-                                                  const AttachmentInfo &info) {
+            string_view name,
+            RenderTargetDesc desc,
+            const AttachmentInfo &info) {
             desc.usage |= vk::ImageUsageFlagBits::eColorAttachment;
             return OutputAttachment(index, name, desc, info);
         }
@@ -218,9 +218,9 @@ namespace sp::vulkan {
 
     private:
         RenderGraphResource OutputAttachment(uint32 index,
-                                             string_view name,
-                                             const RenderTargetDesc &desc,
-                                             const AttachmentInfo &info) {
+            string_view name,
+            const RenderTargetDesc &desc,
+            const AttachmentInfo &info) {
             auto resource = OutputRenderTarget(name, desc);
             auto &attachment = pass.attachments[index];
             attachment = info;

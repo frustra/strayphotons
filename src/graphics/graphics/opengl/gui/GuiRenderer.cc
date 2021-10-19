@@ -133,9 +133,9 @@ namespace sp {
                     glBindTextures(0, 1, &texID);
 
                     glScissor((int)pcmd.ClipRect.x,
-                              (int)(view.extents.y - pcmd.ClipRect.w),
-                              (int)(pcmd.ClipRect.z - pcmd.ClipRect.x),
-                              (int)(pcmd.ClipRect.w - pcmd.ClipRect.y));
+                        (int)(view.extents.y - pcmd.ClipRect.w),
+                        (int)(pcmd.ClipRect.z - pcmd.ClipRect.x),
+                        (int)(pcmd.ClipRect.w - pcmd.ClipRect.y));
 
                     GLenum elemType = sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
                     glDrawElements(GL_TRIANGLES, pcmd.ElemCount, elemType, offset);

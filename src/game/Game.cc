@@ -161,13 +161,13 @@ namespace sp {
 
     void Game::PrintDebug() {
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
-                                                          ecs::Transform,
-                                                          ecs::HumanController,
-                                                          ecs::LightSensor,
-                                                          ecs::SignalOutput,
-                                                          ecs::EventInput,
-                                                          ecs::FocusLayer,
-                                                          ecs::FocusLock>>();
+            ecs::Transform,
+            ecs::HumanController,
+            ecs::LightSensor,
+            ecs::SignalOutput,
+            ecs::EventInput,
+            ecs::FocusLayer,
+            ecs::FocusLock>>();
         auto player = scenes.GetPlayer();
         if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
             auto &transform = player.Get<ecs::Transform>(lock);

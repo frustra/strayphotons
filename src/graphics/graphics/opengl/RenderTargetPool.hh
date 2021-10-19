@@ -101,8 +101,8 @@ namespace sp {
         ~RenderTargetPool();
 
         GLuint GetFramebuffer(uint32 numAttachments,
-                              GLRenderTarget **attachments,
-                              GLRenderTarget *depthStencilAttachment);
+            GLRenderTarget **attachments,
+            GLRenderTarget *depthStencilAttachment);
         void FreeFramebuffersWithAttachment(GLRenderTarget *attachment);
 
     private:

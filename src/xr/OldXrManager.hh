@@ -22,9 +22,9 @@ namespace sp {
             Tecs::Entity UpdateXrActionEntity(xr::XrActionPtr action, bool active);
 
             void UpdateSkeletonDebugHand(xr::XrActionPtr action,
-                                         glm::mat4 xrObjectPos,
-                                         std::vector<xr::XrBoneData> &boneData,
-                                         bool active);
+                glm::mat4 xrObjectPos,
+                std::vector<xr::XrBoneData> &boneData,
+                bool active);
 
             void ComputeBonePositions(std::vector<xr::XrBoneData> &boneData, std::vector<glm::mat4> &output);
 

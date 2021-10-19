@@ -118,8 +118,8 @@ namespace sp {
             voxelFillFS->SetLightAttenuation(CVarLightAttenuation.Get());
 
             ForwardPass(ortho, shaders.Get<VoxelFillVS>(), lock);
-            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT |
-                            GL_COMMAND_BARRIER_BIT);
+            glMemoryBarrier(
+                GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
         }
 
         {
@@ -176,9 +176,9 @@ namespace sp {
                     voxelContext.voxelCounters->GetGLTexture().BindImage(2, GL_WRITE_ONLY, i);
                     if (i < voxelContext.radianceMips->GetDesc().levels) {
                         indirectBufferCurrent.Bind(GL_ATOMIC_COUNTER_BUFFER,
-                                                   1,
-                                                   sizeof(GLuint) * 4 * (i + 1),
-                                                   sizeof(GLuint) * 4);
+                            1,
+                            sizeof(GLuint) * 4 * (i + 1),
+                            sizeof(GLuint) * 4);
                         voxelContext.voxelCounters->GetGLTexture().BindImage(3, GL_READ_WRITE, i + 1);
                         voxelContext.fragmentListCurrent->GetGLTexture().BindImage(1, GL_WRITE_ONLY, i + 1);
                     }
@@ -196,8 +196,8 @@ namespace sp {
                     voxelMipmapCS->SetLevel(i);
 
                     glDispatchComputeIndirect(sizeof(GLuint) * 4 * i + sizeof(GLuint));
-                    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT |
-                                    GL_COMMAND_BARRIER_BIT);
+                    glMemoryBarrier(
+                        GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
                 }
             }
             glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);

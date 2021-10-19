@@ -124,15 +124,15 @@ namespace sp::vulkan {
                 if (i != MAX_COLOR_ATTACHMENTS) {
                     renderPassInfo.state.colorAttachmentCount = i + 1;
                     renderPassInfo.SetColorAttachment(i,
-                                                      imageView,
-                                                      attachment.loadOp,
-                                                      attachment.storeOp,
-                                                      attachment.clearColor);
+                        imageView,
+                        attachment.loadOp,
+                        attachment.storeOp,
+                        attachment.clearColor);
                 } else {
                     renderPassInfo.SetDepthStencilAttachment(imageView,
-                                                             attachment.loadOp,
-                                                             attachment.storeOp,
-                                                             attachment.clearDepthStencil);
+                        attachment.loadOp,
+                        attachment.storeOp,
+                        attachment.clearDepthStencil);
                 }
             }
 
@@ -167,12 +167,12 @@ namespace sp::vulkan {
 
             auto image = resources.GetRenderTarget(dep.id)->ImageView()->Image();
             cmd.ImageBarrier(image,
-                             image->LastLayout(),
-                             dep.access.layout,
-                             vk::PipelineStageFlagBits::eColorAttachmentOutput, // TODO: infer these
-                             vk::AccessFlagBits::eColorAttachmentWrite,
-                             dep.access.stages,
-                             dep.access.access);
+                image->LastLayout(),
+                dep.access.layout,
+                vk::PipelineStageFlagBits::eColorAttachmentOutput, // TODO: infer these
+                vk::AccessFlagBits::eColorAttachmentWrite,
+                dep.access.stages,
+                dep.access.access);
         }
 
         for (auto id : pass.outputs) {
@@ -188,21 +188,21 @@ namespace sp::vulkan {
             if (res.renderTargetDesc.usage & vk::ImageUsageFlagBits::eColorAttachment) {
                 if (image->LastLayout() == vk::ImageLayout::eColorAttachmentOptimal) continue;
                 cmd.ImageBarrier(image,
-                                 vk::ImageLayout::eUndefined,
-                                 vk::ImageLayout::eColorAttachmentOptimal,
-                                 vk::PipelineStageFlagBits::eBottomOfPipe,
-                                 {},
-                                 vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                 vk::AccessFlagBits::eColorAttachmentWrite);
+                    vk::ImageLayout::eUndefined,
+                    vk::ImageLayout::eColorAttachmentOptimal,
+                    vk::PipelineStageFlagBits::eBottomOfPipe,
+                    {},
+                    vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                    vk::AccessFlagBits::eColorAttachmentWrite);
             } else if (res.renderTargetDesc.usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
                 if (image->LastLayout() == vk::ImageLayout::eDepthAttachmentOptimal) continue;
                 cmd.ImageBarrier(image,
-                                 vk::ImageLayout::eUndefined,
-                                 vk::ImageLayout::eDepthAttachmentOptimal,
-                                 vk::PipelineStageFlagBits::eBottomOfPipe,
-                                 {},
-                                 vk::PipelineStageFlagBits::eEarlyFragmentTests,
-                                 vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+                    vk::ImageLayout::eUndefined,
+                    vk::ImageLayout::eDepthAttachmentOptimal,
+                    vk::PipelineStageFlagBits::eBottomOfPipe,
+                    {},
+                    vk::PipelineStageFlagBits::eEarlyFragmentTests,
+                    vk::AccessFlagBits::eDepthStencilAttachmentWrite);
             }
         }
     }

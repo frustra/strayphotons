@@ -29,9 +29,9 @@ namespace sp {
     PhysxManager::PhysxManager()
         : RegisteredThread("PhysX", 120.0), humanControlSystem(this), characterControlSystem(*this) {
         Logf("PhysX %d.%d.%d starting up",
-             PX_PHYSICS_VERSION_MAJOR,
-             PX_PHYSICS_VERSION_MINOR,
-             PX_PHYSICS_VERSION_BUGFIX);
+            PX_PHYSICS_VERSION_MAJOR,
+            PX_PHYSICS_VERSION_MINOR,
+            PX_PHYSICS_VERSION_BUGFIX);
         pxFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, defaultAllocatorCallback, defaultErrorCallback);
 
         PxTolerancesScale scale;
@@ -124,8 +124,7 @@ namespace sp {
         // if (CVarShowShapes.Get()) { CacheDebugLines(); }
 
         { // Sync ECS state to physx
-            auto lock = ecs::World.StartTransaction<
-                ecs::Read<ecs::Name, ecs::Transform>,
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::Transform>,
                 ecs::Write<ecs::Physics, ecs::HumanController, ecs::CharacterController, ecs::InteractController>>();
 
             // Delete actors for removed entities
@@ -226,7 +225,7 @@ namespace sp {
 
                         auto force = deltaVelocity * (1e9 / this->interval.count() * constraint->child->getMass());
                         auto forceClampRatio = std::min(CVarMaxLateralConstraintForce.Get(),
-                                                        force.magnitude() + 0.00001f) /
+                                                   force.magnitude() + 0.00001f) /
                                                (force.magnitude() + 0.00001f);
                         constraint->child->addForce(force * forceClampRatio);
                     }
@@ -248,7 +247,7 @@ namespace sp {
                         float force = deltaVelocity * (1e9 / this->interval.count() * constraint->child->getMass());
                         force -= CVarGravity.Get() * constraint->child->getMass();
                         auto forceClampRatio = std::min(CVarMaxVerticalConstraintForce.Get(),
-                                                        std::abs(force) + 0.00001f) /
+                                                   std::abs(force) + 0.00001f) /
                                                (std::abs(force) + 0.00001f);
                         constraint->child->addForce(PxVec3(0, force * forceClampRatio, 0));
                     }
@@ -279,9 +278,9 @@ namespace sp {
 
         { // Simulate 1 physics frame (blocking)
             scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
-                            nullptr,
-                            scratchBlock.data(),
-                            scratchBlock.size());
+                nullptr,
+                scratchBlock.data(),
+                scratchBlock.size());
             scene->fetchResults(true);
         }
 
@@ -439,7 +438,7 @@ namespace sp {
     }
 
     void PhysxManager::UpdateActor(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock,
-                                   Tecs::Entity &e) {
+        Tecs::Entity &e) {
         auto &ph = e.Get<ecs::Physics>(lock);
         auto &transform = e.Get<ecs::Transform>(lock);
 
@@ -450,7 +449,7 @@ namespace sp {
         auto scale = glm::vec3(glm::inverse(globalRotation) * (globalTransform * glm::vec4(1, 1, 1, 0)));
 
         auto pxTransform = PxTransform(GlmVec3ToPxVec3(globalTransform * glm::vec4(0, 0, 0, 1)),
-                                       GlmQuatToPxQuat(globalRotation));
+            GlmQuatToPxQuat(globalRotation));
 
         if (!ph.actor) {
             if (ph.dynamic) {
@@ -488,8 +487,7 @@ namespace sp {
                 PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
                 PxConvexMesh *pxhull = pxPhysics->createConvexMesh(input);
 
-                auto shape = PxRigidActorExt::createExclusiveShape(
-                    *ph.actor,
+                auto shape = PxRigidActorExt::createExclusiveShape(*ph.actor,
                     PxConvexMeshGeometry(pxhull, PxMeshScale(GlmVec3ToPxVec3(scale))),
                     *mat);
                 PxFilterData data;
@@ -547,9 +545,9 @@ namespace sp {
             auto magnitude = glm::length(userData->velocity);
             if (magnitude > 0.0001) {
                 PxRigidBodyExt::addForceAtPos(*dynamic,
-                                              hit.dir.multiply(PxVec3(magnitude * ecs::PLAYER_PUSH_FORCE)),
-                                              PxVec3(hit.worldPos.x, hit.worldPos.y, hit.worldPos.z),
-                                              PxForceMode::eIMPULSE);
+                    hit.dir.multiply(PxVec3(magnitude * ecs::PLAYER_PUSH_FORCE)),
+                    PxVec3(hit.worldPos.x, hit.worldPos.y, hit.worldPos.z),
+                    PxForceMode::eIMPULSE);
             }
         }
     }
@@ -564,7 +562,7 @@ namespace sp {
     }
 
     void PhysxManager::UpdateController(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,
-                                        Tecs::Entity &e) {
+        Tecs::Entity &e) {
 
         auto &controller = e.Get<ecs::HumanController>(lock);
         auto &transform = e.Get<ecs::Transform>(lock);
@@ -589,7 +587,7 @@ namespace sp {
 
             auto pxController = controllerManager->createController(desc);
             Assert(pxController->getType() == PxControllerShapeType::eCAPSULE,
-                   "Physx did not create a valid PxCapsuleController");
+                "Physx did not create a valid PxCapsuleController");
 
             pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
 
@@ -644,11 +642,11 @@ namespace sp {
     }
 
     bool PhysxManager::RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
-                                    Tecs::Entity entity,
-                                    glm::vec3 origin,
-                                    glm::vec3 dir,
-                                    const float distance,
-                                    PxRaycastBuffer &hit) {
+        Tecs::Entity entity,
+        glm::vec3 origin,
+        glm::vec3 dir,
+        const float distance,
+        PxRaycastBuffer &hit) {
         PxRigidDynamic *controllerActor = nullptr;
         if (entity.Has<ecs::HumanController>(lock)) {
             auto &controller = entity.Get<ecs::HumanController>(lock);
@@ -686,8 +684,8 @@ namespace sp {
         shape->getCapsuleGeometry(capsuleGeometry);
 
         scene->removeActor(*actor);
-        PxQueryFilterData filterData = PxQueryFilterData(PxQueryFlag::eANY_HIT | PxQueryFlag::eSTATIC |
-                                                         PxQueryFlag::eDYNAMIC);
+        PxQueryFilterData filterData = PxQueryFilterData(
+            PxQueryFlag::eANY_HIT | PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC);
         PxTransform pose = actor->getGlobalPose();
         pose.p += translation;
         bool overlapFound = scene->overlap(capsuleGeometry, pose, hit, filterData);
@@ -697,10 +695,10 @@ namespace sp {
     }
 
     void PhysxManager::CreateConstraint(ecs::Lock<> lock,
-                                        Tecs::Entity parent,
-                                        PxRigidDynamic *child,
-                                        PxVec3 offset,
-                                        PxQuat rotationOffset) {
+        Tecs::Entity parent,
+        PxRigidDynamic *child,
+        PxVec3 offset,
+        PxQuat rotationOffset) {
         PxU32 nShapes = child->getNbShapes();
         vector<PxShape *> shapes(nShapes);
         child->getShapes(shapes.data(), nShapes);

@@ -33,8 +33,8 @@ void OpenVrActionSet::Sync() {
     activeActionSet.ulRestrictedToDevice = vr::k_ulInvalidInputValueHandle;
 
     vr::EVRInputError inputError = vr::VRInput()->UpdateActionState(&activeActionSet,
-                                                                    sizeof(vr::VRActiveActionSet_t),
-                                                                    1);
+        sizeof(vr::VRActiveActionSet_t),
+        1);
 
     if (inputError != vr::EVRInputError::VRInputError_None) { Errorf("Failed to sync OpenVR actions"); }
 }
@@ -136,10 +136,10 @@ bool OpenVrAction::GetPoseActionValueForNextFrame(std::string subpath, glm::mat4
 
     vr::InputPoseActionData_t data;
     inputError = vr::VRInput()->GetPoseActionDataForNextFrame(handle,
-                                                              vr::ETrackingUniverseOrigin::TrackingUniverseStanding,
-                                                              &data,
-                                                              sizeof(vr::InputPoseActionData_t),
-                                                              inputHandle);
+        vr::ETrackingUniverseOrigin::TrackingUniverseStanding,
+        &data,
+        sizeof(vr::InputPoseActionData_t),
+        inputHandle);
 
     if (inputError != vr::EVRInputError::VRInputError_None) {
         // TODO: consider not throwing here
@@ -157,8 +157,8 @@ bool OpenVrAction::GetPoseActionValueForNextFrame(std::string subpath, glm::mat4
 bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool withController) {
     vr::InputSkeletalActionData_t data;
     vr::EVRInputError inputError = vr::VRInput()->GetSkeletalActionData(handle,
-                                                                        &data,
-                                                                        sizeof(vr::InputSkeletalActionData_t));
+        &data,
+        sizeof(vr::InputSkeletalActionData_t));
 
     if (inputError != vr::EVRInputError::VRInputError_None) Abort("Failed to get skeletal action data");
 
@@ -174,16 +174,14 @@ bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool w
     boneTransforms.resize(boneCount);
 
     if (!CVarBindPose.Get()) {
-        inputError = vr::VRInput()->GetSkeletalBoneData(
-            handle,
+        inputError = vr::VRInput()->GetSkeletalBoneData(handle,
             vr::EVRSkeletalTransformSpace::VRSkeletalTransformSpace_Model,
             withController ? vr::EVRSkeletalMotionRange::VRSkeletalMotionRange_WithController
                            : vr::EVRSkeletalMotionRange::VRSkeletalMotionRange_WithoutController,
             boneTransforms.data(),
             boneCount);
     } else {
-        inputError = vr::VRInput()->GetSkeletalReferenceTransforms(
-            handle,
+        inputError = vr::VRInput()->GetSkeletalReferenceTransforms(handle,
             vr::EVRSkeletalTransformSpace::VRSkeletalTransformSpace_Model,
             vr::EVRSkeletalReferencePose::VRSkeletalReferencePose_BindPose,
             boneTransforms.data(),
@@ -200,13 +198,13 @@ bool OpenVrAction::GetSkeletonActionValue(std::vector<XrBoneData> &bones, bool w
 
     for (size_t i = 0; i < modelBoneData.size(); i++) {
         bones[i].pos = glm::vec3(boneTransforms[modelBoneData[i].steamVrBoneIndex].position.v[0],
-                                 boneTransforms[modelBoneData[i].steamVrBoneIndex].position.v[1],
-                                 boneTransforms[modelBoneData[i].steamVrBoneIndex].position.v[2]);
+            boneTransforms[modelBoneData[i].steamVrBoneIndex].position.v[1],
+            boneTransforms[modelBoneData[i].steamVrBoneIndex].position.v[2]);
 
         bones[i].rot = glm::quat(boneTransforms[modelBoneData[i].steamVrBoneIndex].orientation.w,
-                                 boneTransforms[modelBoneData[i].steamVrBoneIndex].orientation.x,
-                                 boneTransforms[modelBoneData[i].steamVrBoneIndex].orientation.y,
-                                 boneTransforms[modelBoneData[i].steamVrBoneIndex].orientation.z);
+            boneTransforms[modelBoneData[i].steamVrBoneIndex].orientation.x,
+            boneTransforms[modelBoneData[i].steamVrBoneIndex].orientation.y,
+            boneTransforms[modelBoneData[i].steamVrBoneIndex].orientation.z);
 
         bones[i].inverseBindPose = modelBoneData[i].inverseBindPose;
     }
@@ -305,8 +303,7 @@ bool OpenVrAction::ComputeBoneLookupTable(std::shared_ptr<XrModel> xrModel) {
     // For each joint in the model (pulled from the GLTF "joints" array...)
     for (size_t i = 0; i < jointNodes.size(); i++) {
         // Get the steamVrBone that corresponds to this joint
-        auto steamVrBone = std::find(
-            steamVrBoneNames.begin(),
+        auto steamVrBone = std::find(steamVrBoneNames.begin(),
             steamVrBoneNames.end(),
             model->GetNodeName(jointNodes[i]) // This is translation #2: GLTF Node Index -> GLTF Node Name
         );

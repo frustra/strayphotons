@@ -151,8 +151,8 @@ namespace sp {
             ScreenshotPath = path;
         } else {
             Logf("Can't save multiple screenshots on the same frame: %s, already saving %s",
-                 path.c_str(),
-                 ScreenshotPath.c_str());
+                path.c_str(),
+                ScreenshotPath.c_str());
         }
     });
 
@@ -183,9 +183,9 @@ namespace sp {
     }
 
     void PostProcessing::Process(VoxelRenderer *renderer,
-                                 PostProcessLock lock,
-                                 const ecs::View &view,
-                                 const EngineRenderTargets &targets) {
+        PostProcessLock lock,
+        const ecs::View &view,
+        const EngineRenderTargets &targets) {
         RenderPhase phase("PostProcessing", renderer->timer);
 
         bool renderToTexture = (targets.finalOutput != nullptr);
@@ -250,9 +250,9 @@ namespace sp {
 
         if (CVarViewGBuffer.Get() > 0 && (renderer->GetMenuRenderMode() == MenuRenderMode::None)) {
             auto viewGBuf = context.AddPass<ViewGBuffer>(CVarViewGBuffer.Get(),
-                                                         CVarViewGBufferSource.Get(),
-                                                         CVarVoxelMip.Get(),
-                                                         targets.voxelContext);
+                CVarViewGBufferSource.Get(),
+                CVarVoxelMip.Get(),
+                targets.voxelContext);
             viewGBuf->SetInput(0, context.GBuffer0);
             viewGBuf->SetInput(1, context.GBuffer1);
             viewGBuf->SetInput(2, context.GBuffer2);
@@ -275,9 +275,9 @@ namespace sp {
         renderer->ShaderControl->BindPipeline<BasicPostVS, ScreenCoverFS>();
 
         glViewport(view.offset.x,
-                   view.offset.y,
-                   view.extents.x * CVarWindowScale.Get(),
-                   view.extents.y * CVarWindowScale.Get());
+            view.offset.y,
+            view.extents.x * CVarWindowScale.Get(),
+            view.extents.y * CVarWindowScale.Get());
 
         lastOutput->TargetRef->GetGLTexture().Bind(0);
         VoxelRenderer::DrawScreenCover();

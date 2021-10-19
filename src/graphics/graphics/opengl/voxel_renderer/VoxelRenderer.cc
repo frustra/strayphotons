@@ -565,9 +565,9 @@ namespace sp {
     }
 
     void VoxelRenderer::ForwardPass(const ecs::View &view,
-                                    SceneShader *shader,
-                                    DrawLock lock,
-                                    const PreDrawFunc &preDraw) {
+        SceneShader *shader,
+        DrawLock lock,
+        const PreDrawFunc &preDraw) {
         RenderPhase phase("ForwardPass", timer);
         PrepareForView(view);
 
@@ -597,10 +597,10 @@ namespace sp {
     }
 
     static void addLine(const ecs::View &view,
-                        vector<SceneVertex> &vertices,
-                        glm::vec3 start,
-                        glm::vec3 end,
-                        float lineWidth) {
+        vector<SceneVertex> &vertices,
+        glm::vec3 start,
+        glm::vec3 end,
+        float lineWidth) {
         glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
         glm::vec3 lineDir = glm::normalize(end - start);
 
@@ -629,10 +629,10 @@ namespace sp {
     }
 
     void VoxelRenderer::DrawPhysxLines(const ecs::View &view,
-                                       SceneShader *shader,
-                                       const vector<physx::PxDebugLine> &lines,
-                                       DrawLock lock,
-                                       const PreDrawFunc &preDraw) {
+        SceneShader *shader,
+        const vector<physx::PxDebugLine> &lines,
+        DrawLock lock,
+        const PreDrawFunc &preDraw) {
         // TODO: Fix Physx lines
         /*Tecs::Entity nullEnt;
         if (preDraw) preDraw(lock, nullEnt);
@@ -659,10 +659,10 @@ namespace sp {
     }
 
     void VoxelRenderer::DrawEntity(const ecs::View &view,
-                                   SceneShader *shader,
-                                   DrawLock lock,
-                                   Tecs::Entity &ent,
-                                   const PreDrawFunc &preDraw) {
+        SceneShader *shader,
+        DrawLock lock,
+        Tecs::Entity &ent,
+        const PreDrawFunc &preDraw) {
         auto &comp = ent.Get<ecs::Renderable>(lock);
         if (!comp.model || !comp.model->Valid()) return;
 
@@ -719,10 +719,8 @@ namespace sp {
         glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
     }
 
-    void VoxelRenderer::BeginFrame(
-        ecs::Lock<ecs::Read<ecs::Transform>,
-                  ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>>
-            lock) {
+    void VoxelRenderer::BeginFrame(ecs::Lock<ecs::Read<ecs::Transform>,
+        ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>> lock) {
         RenderPhase phase("BeginFrame", timer);
 
         UpdateShaders();

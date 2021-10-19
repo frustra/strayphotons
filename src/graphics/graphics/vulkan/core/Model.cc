@@ -43,12 +43,12 @@ namespace sp::vulkan {
             auto &indexBuffer = buffers[assetPrimitive.indexBuffer.bufferIndex];
             size_t indexBufferSize = assetPrimitive.indexBuffer.componentCount * assetPrimitive.indexBuffer.byteStride;
             Assert(assetPrimitive.indexBuffer.byteOffset + indexBufferSize <= indexBuffer.data.size(),
-                   "indexes overflow buffer");
+                "indexes overflow buffer");
 
             vkPrimitive.indexBuffer = device.CreateBuffer(&indexBuffer.data[assetPrimitive.indexBuffer.byteOffset],
-                                                          indexBufferSize,
-                                                          vk::BufferUsageFlagBits::eIndexBuffer,
-                                                          VMA_MEMORY_USAGE_CPU_TO_GPU);
+                indexBufferSize,
+                vk::BufferUsageFlagBits::eIndexBuffer,
+                VMA_MEMORY_USAGE_CPU_TO_GPU);
 
             vkPrimitive.indexCount = assetPrimitive.indexBuffer.componentCount;
 
@@ -58,12 +58,12 @@ namespace sp::vulkan {
 
             if (posAttr.componentCount) {
                 Assert(posAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT,
-                       "position attribute must be a float vector");
+                    "position attribute must be a float vector");
                 Assert(posAttr.componentFields == 3, "position attribute must be a vec3");
             }
             if (normalAttr.componentCount) {
                 Assert(normalAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT,
-                       "normal attribute must be a float vector");
+                    "normal attribute must be a float vector");
                 Assert(normalAttr.componentFields == 3, "normal attribute must be a vec3");
             }
             if (uvAttr.componentCount) {
@@ -91,9 +91,9 @@ namespace sp::vulkan {
             }
 
             vkPrimitive.vertexBuffer = device.CreateBuffer(vertices.data(),
-                                                           vertices.size(),
-                                                           vk::BufferUsageFlagBits::eVertexBuffer,
-                                                           VMA_MEMORY_USAGE_CPU_TO_GPU);
+                vertices.size(),
+                vk::BufferUsageFlagBits::eVertexBuffer,
+                VMA_MEMORY_USAGE_CPU_TO_GPU);
 
             vkPrimitive.baseColor = LoadTexture(device, model, assetPrimitive.materialIndex, BaseColor);
             vkPrimitive.metallicRoughness = LoadTexture(device, model, assetPrimitive.materialIndex, MetallicRoughness);
@@ -129,9 +129,9 @@ namespace sp::vulkan {
     }
 
     ImageViewPtr Model::LoadTexture(DeviceContext &device,
-                                    const sp::Model &model,
-                                    int materialIndex,
-                                    TextureType type) {
+        const sp::Model &model,
+        int materialIndex,
+        TextureType type) {
         auto &gltfModel = model.GetGltfModel();
         auto &material = gltfModel->materials[materialIndex];
 
@@ -226,9 +226,9 @@ namespace sp::vulkan {
 
         if (imageInfo.format == vk::Format::eUndefined) {
             Errorf("Failed to load image at index %d: invalid format with components=%d and bits=%d",
-                   texture.source,
-                   img.component,
-                   img.bits);
+                texture.source,
+                img.component,
+                img.bits);
             return nullptr;
         }
 

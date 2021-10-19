@@ -100,8 +100,8 @@ namespace sp {
 
     void trim_right(string &str) {
         auto right = std::find_if(str.rbegin(), str.rend(), [](char ch) {
-                         return !std::isspace(ch);
-                     }).base();
+            return !std::isspace(ch);
+        }).base();
         str.erase(right, str.end());
     }
 } // namespace sp

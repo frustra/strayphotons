@@ -80,18 +80,18 @@ namespace sp::vulkan {
 
         // Releases *cmd back to the DeviceContext and resets cmd
         void Submit(CommandContextPtr &cmd,
-                    vk::ArrayProxy<const vk::Semaphore> signalSemaphores = {},
-                    vk::ArrayProxy<const vk::Semaphore> waitSemaphores = {},
-                    vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {},
-                    vk::Fence fence = {});
+            vk::ArrayProxy<const vk::Semaphore> signalSemaphores = {},
+            vk::ArrayProxy<const vk::Semaphore> waitSemaphores = {},
+            vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {},
+            vk::Fence fence = {});
 
         BufferPtr AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
 
         template<typename T>
         BufferPtr CreateBuffer(const T *srcData,
-                               size_t srcCount,
-                               vk::BufferUsageFlags usage,
-                               VmaMemoryUsage residency) {
+            size_t srcCount,
+            vk::BufferUsageFlags usage,
+            VmaMemoryUsage residency) {
             auto buf = AllocateBuffer(sizeof(T) * srcCount, usage, residency);
             buf->CopyFrom(srcData, srcCount);
             return buf;
@@ -100,14 +100,14 @@ namespace sp::vulkan {
         BufferPtr GetFramePooledBuffer(BufferType type, vk::DeviceSize size);
 
         ImagePtr AllocateImage(const vk::ImageCreateInfo &info,
-                               VmaMemoryUsage residency,
-                               vk::ImageUsageFlags declaredUsage = {});
+            VmaMemoryUsage residency,
+            vk::ImageUsageFlags declaredUsage = {});
         ImagePtr CreateImage(ImageCreateInfo createInfo, const uint8 *srcData = nullptr, size_t srcDataSize = 0);
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
         ImageViewPtr CreateImageAndView(const ImageCreateInfo &imageInfo,
-                                        ImageViewCreateInfo viewInfo, // image field is filled in automatically
-                                        const uint8 *srcData = nullptr,
-                                        size_t srcDataSize = 0);
+            ImageViewCreateInfo viewInfo, // image field is filled in automatically
+            const uint8 *srcData = nullptr,
+            size_t srcDataSize = 0);
         ImageViewPtr SwapchainImageView();
         vk::Sampler GetSampler(SamplerType type);
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);

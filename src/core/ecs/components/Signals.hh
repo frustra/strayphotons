@@ -50,9 +50,9 @@ namespace ecs {
 
         const BindingList *Lookup(const std::string name) const;
         static double GetSignal(Lock<Read<Name, SignalOutput, SignalBindings, FocusLayer, FocusLock>> lock,
-                                Tecs::Entity ent,
-                                const std::string &name,
-                                size_t depth = 0);
+            Tecs::Entity ent,
+            const std::string &name,
+            size_t depth = 0);
 
     private:
         robin_hood::unordered_map<std::string, BindingList> destToSource;

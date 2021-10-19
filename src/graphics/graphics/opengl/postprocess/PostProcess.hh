@@ -170,8 +170,8 @@ namespace sp {
 
     namespace PostProcessing {
         void Process(VoxelRenderer *renderer,
-                     PostProcessLock lock,
-                     const ecs::View &view,
-                     const EngineRenderTargets &targets);
+            PostProcessLock lock,
+            const ecs::View &view,
+            const EngineRenderTargets &targets);
     }
 } // namespace sp

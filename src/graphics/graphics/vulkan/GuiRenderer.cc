@@ -102,15 +102,15 @@ namespace sp::vulkan {
         totalVtxSize = CeilToPowerOfTwo(totalVtxSize);
         if (!vertexBuffer || totalVtxSize > vertexBuffer->Size()) {
             vertexBuffer = device.AllocateBuffer(totalVtxSize,
-                                                 vk::BufferUsageFlagBits::eVertexBuffer,
-                                                 VMA_MEMORY_USAGE_CPU_TO_GPU);
+                vk::BufferUsageFlagBits::eVertexBuffer,
+                VMA_MEMORY_USAGE_CPU_TO_GPU);
         }
 
         totalIdxSize = CeilToPowerOfTwo(totalIdxSize);
         if (!indexBuffer || totalIdxSize > indexBuffer->Size()) {
             indexBuffer = device.AllocateBuffer(totalIdxSize,
-                                                vk::BufferUsageFlagBits::eIndexBuffer,
-                                                VMA_MEMORY_USAGE_CPU_TO_GPU);
+                vk::BufferUsageFlagBits::eIndexBuffer,
+                VMA_MEMORY_USAGE_CPU_TO_GPU);
         }
 
         if (totalVtxSize == 0 || totalIdxSize == 0) return;
@@ -163,7 +163,7 @@ namespace sp::vulkan {
                     clipRect.w -= drawData->DisplayPos.y;
 
                     cmd.SetScissor(vk::Rect2D{{(int32)clipRect.x, (int32)(viewport.extent.height - clipRect.w)},
-                                              {(uint32)(clipRect.z - clipRect.x), (uint32)(clipRect.w - clipRect.y)}});
+                        {(uint32)(clipRect.z - clipRect.x), (uint32)(clipRect.w - clipRect.y)}});
 
                     cmd.DrawIndexed(pcmd.ElemCount, 1, idxOffset, vtxOffset, 0);
                 }

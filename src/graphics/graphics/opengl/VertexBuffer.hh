@@ -96,11 +96,11 @@ namespace sp {
         }
 
         VertexBuffer &EnableAttrib(GLuint index,
-                                   GLint size,
-                                   GLenum type,
-                                   bool normalized = false,
-                                   GLuint offset = 0,
-                                   GLsizei stride = 0) {
+            GLint size,
+            GLenum type,
+            bool normalized = false,
+            GLuint offset = 0,
+            GLsizei stride = 0) {
             Assert(vao != 0, "vertex array not created");
             glEnableVertexArrayAttrib(vao, index);
             glVertexArrayAttribFormat(vao, index, size, type, normalized, offset);

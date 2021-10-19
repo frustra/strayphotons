@@ -34,7 +34,7 @@ namespace sp {
         uint32_t current = lockState;
         Assert(current != LOCK_STATE_FREE, "LockFreeMutex::unlock_shared() called without active shared lock");
         Assert(current != LOCK_STATE_EXCLUSIVE_LOCKED,
-               "LockFreeMutex::unlock_shared() called while exclusive lock held");
+            "LockFreeMutex::unlock_shared() called while exclusive lock held");
         lockState--;
     }
 

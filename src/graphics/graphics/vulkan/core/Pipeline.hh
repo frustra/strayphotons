@@ -109,9 +109,9 @@ namespace sp::vulkan {
     class Pipeline : public WrappedUniqueHandle<vk::Pipeline> {
     public:
         Pipeline(DeviceContext &device,
-                 const ShaderSet &shaders,
-                 const PipelineCompileInput &compile,
-                 shared_ptr<PipelineLayout> layout);
+            const ShaderSet &shaders,
+            const PipelineCompileInput &compile,
+            shared_ptr<PipelineLayout> layout);
 
         shared_ptr<PipelineLayout> GetLayout() const {
             return layout;

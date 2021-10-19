@@ -170,8 +170,8 @@ namespace sp {
     }
 
     void ConsoleManager::QueueParseAndExecute(const string line,
-                                              chrono_clock::time_point wait_util,
-                                              std::condition_variable *handled) {
+        chrono_clock::time_point wait_util,
+        std::condition_variable *handled) {
         std::lock_guard lock(queueLock);
         queuedCommands.emplace(line, wait_util, handled);
     }

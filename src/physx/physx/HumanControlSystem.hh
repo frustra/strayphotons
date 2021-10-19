@@ -28,15 +28,15 @@ namespace sp {
 
     private:
         void UpdatePlayerVelocity(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,
-                                  Tecs::Entity entity,
-                                  double dtSinceLastFrame,
-                                  glm::vec3 inDirection,
-                                  bool jump,
-                                  bool sprint,
-                                  bool crouch);
+            Tecs::Entity entity,
+            double dtSinceLastFrame,
+            glm::vec3 inDirection,
+            bool jump,
+            bool sprint,
+            bool crouch);
         void MoveEntity(ecs::Lock<ecs::Write<ecs::Transform, ecs::HumanController>> lock,
-                        Tecs::Entity entity,
-                        double dtSinceLastFrame);
+            Tecs::Entity entity,
+            double dtSinceLastFrame);
 
         /**
          * Rotate the object the player is currently holding, using mouse input.

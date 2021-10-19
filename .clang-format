@@ -7,6 +7,7 @@ IndentWidth: 4
 UseTab: Never
 NamespaceIndentation: All
 AccessModifierOffset: -4
+AlignAfterOpenBracket: DontAlign
 AlignEscapedNewlines: Left
 AlignTrailingComments: false
 AllowAllArgumentsOnNextLine: false

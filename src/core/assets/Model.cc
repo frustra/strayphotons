@@ -39,8 +39,8 @@ namespace sp {
     }
 
     Model::Attribute GetPrimitiveAttribute(std::shared_ptr<const tinygltf::Model> model,
-                                           const tinygltf::Primitive *p,
-                                           std::string attribute) {
+        const tinygltf::Primitive *p,
+        std::string attribute) {
         if (!p->attributes.count(attribute)) return Model::Attribute();
         auto accessor = model->accessors[p->attributes.at(attribute)];
         auto bufView = model->bufferViews[accessor.bufferView];
@@ -57,13 +57,13 @@ namespace sp {
         }
 
         return Model::Attribute{accessor.byteOffset,
-                                bufView.byteOffset,
-                                accessor.byteOffset + bufView.byteOffset,
-                                accessor.ByteStride(bufView),
-                                accessor.componentType,
-                                componentCount,
-                                accessor.count,
-                                bufView.buffer};
+            bufView.byteOffset,
+            accessor.byteOffset + bufView.byteOffset,
+            accessor.ByteStride(bufView),
+            accessor.componentType,
+            componentCount,
+            accessor.count,
+            bufView.buffer};
     }
 
     Model::~Model() {
@@ -137,19 +137,19 @@ namespace sp {
         Assert(asset->BufferSize() <= UINT_MAX, "Buffer size overflows max uint");
         if (ends_with(asset->path, ".gltf")) {
             ret = gltfLoader.LoadASCIIFromString(gltfModel.get(),
-                                                 &err,
-                                                 &warn,
-                                                 (char *)asset->Buffer(),
-                                                 (uint32_t)asset->BufferSize(),
-                                                 baseDir);
+                &err,
+                &warn,
+                (char *)asset->Buffer(),
+                (uint32_t)asset->BufferSize(),
+                baseDir);
         } else {
             // Assume GLB model
             ret = gltfLoader.LoadBinaryFromMemory(gltfModel.get(),
-                                                  &err,
-                                                  &warn,
-                                                  asset->Buffer(),
-                                                  (uint32_t)asset->BufferSize(),
-                                                  baseDir);
+                &err,
+                &warn,
+                asset->Buffer(),
+                (uint32_t)asset->BufferSize(),
+                baseDir);
         }
 
         Assert(err.empty(), "Failed to parse glTF: " + err);
@@ -197,23 +197,23 @@ namespace sp {
                 Assert(iAcc.type == TINYGLTF_TYPE_SCALAR, "index buffer type must be scalar");
 
                 primitives.emplace_back(Primitive{matrix,
-                                                  mode,
-                                                  Attribute{iAcc.byteOffset,
-                                                            iBufView.byteOffset,
-                                                            iAcc.byteOffset + iBufView.byteOffset,
-                                                            iAcc.ByteStride(iBufView),
-                                                            iAcc.componentType,
-                                                            1,
-                                                            iAcc.count,
-                                                            iBufView.buffer},
-                                                  primitive.material,
-                                                  {
-                                                      GetPrimitiveAttribute(model, &primitive, "POSITION"),
-                                                      GetPrimitiveAttribute(model, &primitive, "NORMAL"),
-                                                      GetPrimitiveAttribute(model, &primitive, "TEXCOORD_0"),
-                                                      GetPrimitiveAttribute(model, &primitive, "WEIGHTS_0"),
-                                                      GetPrimitiveAttribute(model, &primitive, "JOINTS_0"),
-                                                  }});
+                    mode,
+                    Attribute{iAcc.byteOffset,
+                        iBufView.byteOffset,
+                        iAcc.byteOffset + iBufView.byteOffset,
+                        iAcc.ByteStride(iBufView),
+                        iAcc.componentType,
+                        1,
+                        iAcc.count,
+                        iBufView.buffer},
+                    primitive.material,
+                    {
+                        GetPrimitiveAttribute(model, &primitive, "POSITION"),
+                        GetPrimitiveAttribute(model, &primitive, "NORMAL"),
+                        GetPrimitiveAttribute(model, &primitive, "TEXCOORD_0"),
+                        GetPrimitiveAttribute(model, &primitive, "WEIGHTS_0"),
+                        GetPrimitiveAttribute(model, &primitive, "JOINTS_0"),
+                    }});
             }
 
             // Must have a mesh to have a skin
