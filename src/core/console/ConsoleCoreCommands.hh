@@ -23,15 +23,13 @@ namespace sp {
         }
     });
 
-    CFunc<string> CFuncWait("wait", "Queue command for later (wait <ms> <command>)", [](string args) {
-        std::stringstream stream(args);
-        uint64 dt;
-        stream >> dt;
-
-        string cmd;
-        getline(stream, cmd);
-        GetConsoleManager().QueueParseAndExecute(cmd, chrono_clock::now() + std::chrono::milliseconds(dt));
-    });
+    CFunc<uint64, RestOfLine> CFuncWait("wait",
+                                        "Queue command for later (wait <ms> <command>)",
+                                        [](uint64 dt, string cmd) {
+                                            GetConsoleManager().QueueParseAndExecute(
+                                                cmd,
+                                                chrono_clock::now() + std::chrono::milliseconds(dt));
+                                        });
 
     CFunc<string> CFuncToggle("toggle",
                               "Toggle a CVar between values (toggle <cvar_name> [<value_a> <value_b>])",
@@ -72,50 +70,44 @@ namespace sp {
         }
     });
 
-    CFunc<string> CFuncAcquireFocus("acquirefocus", "Acquire focus for the specified layer", [](std::string args) {
-        std::stringstream stream(args);
-        ecs::FocusLayer layer;
-        stream >> layer;
-        if (layer != ecs::FocusLayer::NEVER && layer != ecs::FocusLayer::ALWAYS) {
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+    CFunc<ecs::FocusLayer> CFuncAcquireFocus(
+        "acquirefocus",
+        "Acquire focus for the specified layer",
+        [](ecs::FocusLayer layer) {
+            if (layer == ecs::FocusLayer::NEVER || layer == ecs::FocusLayer::ALWAYS) {
+                auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
 
-            if (lock.Has<ecs::FocusLock>()) {
-                if (!lock.Get<ecs::FocusLock>().AcquireFocus(layer)) {
-                    std::stringstream ss;
-                    ss << layer;
-                    Logf("Failed to acquire focus layer: %s", ss.str());
+                if (lock.Has<ecs::FocusLock>()) {
+                    if (!lock.Get<ecs::FocusLock>().AcquireFocus(layer)) {
+                        std::stringstream ss;
+                        ss << layer;
+                        Logf("Failed to acquire focus layer: %s", ss.str());
+                    }
+                } else {
+                    Errorf("World does not have a FocusLock");
                 }
-            } else {
-                Errorf("World does not have a FocusLock");
             }
-        }
-    });
+        });
 
-    CFunc<string> CFuncReleaseFocus("releasefocus", "Release focus for the specified layer", [](std::string args) {
-        std::stringstream stream(args);
-        ecs::FocusLayer layer;
-        stream >> layer;
-        if (layer != ecs::FocusLayer::NEVER && layer != ecs::FocusLayer::ALWAYS) {
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+    CFunc<ecs::FocusLayer> CFuncReleaseFocus(
+        "releasefocus",
+        "Release focus for the specified layer",
+        [](ecs::FocusLayer layer) {
+            if (layer != ecs::FocusLayer::NEVER && layer != ecs::FocusLayer::ALWAYS) {
+                auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
 
-            if (lock.Has<ecs::FocusLock>()) {
-                lock.Get<ecs::FocusLock>().ReleaseFocus(layer);
-            } else {
-                Errorf("World does not have a FocusLock");
+                if (lock.Has<ecs::FocusLock>()) {
+                    lock.Get<ecs::FocusLock>().ReleaseFocus(layer);
+                } else {
+                    Errorf("World does not have a FocusLock");
+                }
             }
-        }
-    });
+        });
 
-    CFunc<string> CFuncSetSignal(
+    CFunc<string, double> CFuncSetSignal(
         "setsignal",
         "Set a signal value (setsignal <entity>.<signal> <value>)",
-        [](std::string args) {
-            std::stringstream stream(args);
-            std::string signalStr;
-            double value;
-            stream >> signalStr;
-            stream >> value;
-
+        [](string signalStr, double value) {
             auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
 
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
@@ -136,11 +128,7 @@ namespace sp {
     CFunc<string> CFuncClearSignal(
         "clearsignal",
         "Clear a signal value (clearsignal <entity>.<signal>)",
-        [](std::string args) {
-            std::stringstream stream(args);
-            std::string signalStr;
-            stream >> signalStr;
-
+        [](string signalStr) {
             auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
 
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
@@ -151,46 +139,40 @@ namespace sp {
             }
         });
 
-    CFunc<string> CFuncTraceTecs("tracetecs",
-                                 "Save an ECS performance trace (tracetecs <time_ms>)",
-                                 [](std::string args) {
-                                     std::stringstream stream(args);
-                                     size_t timeMs = 0;
-                                     stream >> timeMs;
+    CFunc<size_t> CFuncTraceTecs("tracetecs", "Save an ECS performance trace (tracetecs <time_ms>)", [](size_t timeMs) {
+        if (timeMs == 0) {
+            Logf("Trace time must be specified in milliseconds.");
+            return;
+        }
 
-                                     if (timeMs == 0) {
-                                         Logf("Trace time must be specified in milliseconds.");
-                                         return;
-                                     }
+        static std::atomic_bool tracing(false);
+        bool current = tracing;
+        if (current || !tracing.compare_exchange_strong(current, true)) {
+            Logf("A performance trace is already in progress");
+            return;
+        }
 
-                                     static std::atomic_bool tracing(false);
-                                     bool current = tracing;
-                                     if (current || !tracing.compare_exchange_strong(current, true)) {
-                                         Logf("A performance trace is already in progress");
-                                         return;
-                                     }
+        std::map<std::thread::id, std::string> threadNames;
+        threadNames[std::this_thread::get_id()] = "Main";
+        for (auto registeredThread : GetRegisteredThreads()) {
+            threadNames[registeredThread->GetThreadId()] = registeredThread->threadName;
+        }
 
-                                     std::map<std::thread::id, std::string> threadNames;
-                                     threadNames[std::this_thread::get_id()] = "Main";
-                                     for (auto registeredThread : GetRegisteredThreads()) {
-                                         threadNames[registeredThread->GetThreadId()] = registeredThread->threadName;
-                                     }
+        std::thread([timeMs, threadNames] {
+            ecs::World.StartTrace();
+            std::this_thread::sleep_for(std::chrono::milliseconds(timeMs));
+            auto trace = ecs::World.StopTrace();
 
-                                     std::thread([timeMs, threadNames] {
-                                         ecs::World.StartTrace();
-                                         std::this_thread::sleep_for(std::chrono::milliseconds(timeMs));
-                                         auto trace = ecs::World.StopTrace();
+            for (auto &thread : threadNames) {
+                trace.SetThreadName(thread.second, thread.first);
+            }
 
-                                         for (auto &thread : threadNames) {
-                                             trace.SetThreadName(thread.second, thread.first);
-                                         }
+            std::ofstream traceFile("tecs-trace.csv");
+            trace.SaveToCSV(traceFile);
+            traceFile.close();
 
-                                         std::ofstream traceFile("tecs-trace.csv");
-                                         trace.SaveToCSV(traceFile);
-                                         traceFile.close();
-
-                                         Logf("Tecs performance trace complete");
-                                         tracing = false;
-                                     }).detach();
-                                 });
+            Logf("Tecs performance trace complete");
+            tracing = false;
+        }).detach();
+    });
 } // namespace sp

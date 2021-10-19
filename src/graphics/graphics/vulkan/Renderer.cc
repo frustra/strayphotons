@@ -23,14 +23,11 @@ namespace sp::vulkan {
                                              "Primary window's render target");
 
     Renderer::Renderer(DeviceContext &device) : device(device) {
-        funcs.Register<string>("screenshot",
-                               "Save screenshot to <path>, optionally specifying an image <resource>",
-                               [&](string pathAndResource) {
-                                   std::istringstream ss(pathAndResource);
-                                   string path, resource;
-                                   ss >> path >> resource;
-                                   QueueScreenshot(path, resource);
-                               });
+        funcs.Register<string, string>("screenshot",
+                                       "Save screenshot to <path>, optionally specifying an image <resource>",
+                                       [&](string path, string resource) {
+                                           QueueScreenshot(path, resource);
+                                       });
 
         funcs.Register("listrendertargets", "List all render targets", [&]() {
             listRenderTargets = true;

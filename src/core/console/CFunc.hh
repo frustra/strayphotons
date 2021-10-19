@@ -6,10 +6,17 @@
 #include <functional>
 
 namespace sp {
-    template<typename ParamType>
+    class RestOfLine : public string {
+    public:
+        friend std::istream &operator>>(std::istream &input, RestOfLine &str) {
+            return getline(input, str);
+        }
+    };
+
+    template<typename... ParamTypes>
     class CFunc : public CVarBase {
     public:
-        typedef std::function<void(ParamType)> Callback;
+        typedef std::function<void(ParamTypes...)> Callback;
 
         CFunc(const string &name, const string &description, Callback callback)
             : CVarBase(name, description), callback(callback) {}
@@ -23,11 +30,16 @@ namespace sp {
         }
 
         void SetFromString(const string &newValue) {
-            ParamType value = {0};
+            std::tuple<ParamTypes...> values = {};
             std::istringstream in(newValue);
-            in >> value;
 
-            callback(value);
+            std::apply(
+                [&](auto &&...args) {
+                    ((in >> args), ...);
+                },
+                values);
+
+            std::apply(callback, values);
         }
 
         bool IsValueType() {
@@ -96,9 +108,9 @@ namespace sp {
 
     class CFuncCollection {
     public:
-        template<typename ParamType>
-        void Register(const string &name, const string &description, std::function<void(ParamType)> callback) {
-            collection.push_back(make_shared<CFunc<ParamType>>(name, description, callback));
+        template<typename... ParamTypes>
+        void Register(const string &name, const string &description, CFunc<ParamTypes...>::Callback callback) {
+            collection.push_back(make_shared<CFunc<ParamTypes...>>(name, description, callback));
         }
 
         void Register(const string &name, const string &description, std::function<void()> callback) {
