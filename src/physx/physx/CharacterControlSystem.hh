@@ -18,7 +18,6 @@ namespace sp {
 
     private:
         PhysxManager &manager;
-        ecs::Observer<ecs::Added<ecs::CharacterController>> additionObserver;
-        ecs::Observer<ecs::Removed<ecs::CharacterController>> removalObserver;
+        ecs::Observer<ecs::ComponentEvent<ecs::CharacterController>> characterControllerObserver;
     };
 } // namespace sp

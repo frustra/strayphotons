@@ -150,8 +150,8 @@ namespace sp {
         vector<uint8_t> scratchBlock;
         bool debug = false;
 
-        ecs::Observer<ecs::Removed<ecs::Physics>> physicsRemoval;
-        ecs::Observer<ecs::Removed<ecs::HumanController>> humanControllerRemoval;
+        ecs::Observer<ecs::ComponentEvent<ecs::Physics>> physicsObserver;
+        ecs::Observer<ecs::ComponentEvent<ecs::HumanController>> humanControllerObserver;
 
         HumanControlSystem humanControlSystem;
         CharacterControlSystem characterControlSystem;

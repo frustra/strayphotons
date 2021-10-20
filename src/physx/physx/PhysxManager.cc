@@ -128,14 +128,17 @@ namespace sp {
                 ecs::Write<ecs::Physics, ecs::HumanController, ecs::CharacterController, ecs::InteractController>>();
 
             // Delete actors for removed entities
-            ecs::Removed<ecs::Physics> removedPhysics;
-            while (physicsRemoval.Poll(lock, removedPhysics)) {
-                if (removedPhysics.component.actor) { RemoveActor(removedPhysics.component.actor); }
+            ecs::ComponentEvent<ecs::Physics> physicsEvent;
+            while (physicsObserver.Poll(lock, physicsEvent)) {
+                if (physicsEvent.type == Tecs::EventType::REMOVED && physicsEvent.component.actor) {
+                    RemoveActor(physicsEvent.component.actor);
+                }
             }
-            ecs::Removed<ecs::HumanController> removedHumanController;
-            while (humanControllerRemoval.Poll(lock, removedHumanController)) {
-                if (removedHumanController.component.pxController) {
-                    RemoveController(removedHumanController.component.pxController);
+            ecs::ComponentEvent<ecs::HumanController> humanControllerEvent;
+            while (humanControllerObserver.Poll(lock, humanControllerEvent)) {
+                if (humanControllerEvent.type == Tecs::EventType::REMOVED &&
+                    humanControllerEvent.component.pxController) {
+                    RemoveController(humanControllerEvent.component.pxController);
                 }
             }
 
@@ -356,8 +359,8 @@ namespace sp {
 
         {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-            physicsRemoval = lock.Watch<ecs::Removed<ecs::Physics>>();
-            humanControllerRemoval = lock.Watch<ecs::Removed<ecs::HumanController>>();
+            physicsObserver = lock.Watch<ecs::ComponentEvent<ecs::Physics>>();
+            humanControllerObserver = lock.Watch<ecs::ComponentEvent<ecs::HumanController>>();
         }
     }
 

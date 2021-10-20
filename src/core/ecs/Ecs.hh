@@ -77,12 +77,9 @@ namespace ecs {
     using AddRemove = Tecs::AddRemove;
     template<typename Event>
     using Observer = Tecs::Observer<ECS, Event>;
-    using EntityAdded = Tecs::EntityAdded;
-    using EntityRemoved = Tecs::EntityRemoved;
+    using EntityEvent = Tecs::EntityEvent;
     template<typename T>
-    using Added = Tecs::Added<T>;
-    template<typename T>
-    using Removed = Tecs::Removed<T>;
+    using ComponentEvent = Tecs::ComponentEvent<T>;
 
     std::string ToString(Lock<Read<Name>> lock, Tecs::Entity e);
 
