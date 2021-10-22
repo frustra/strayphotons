@@ -28,7 +28,7 @@ namespace sp::vulkan {
         imageInfo.usage = desc.usage;
 
         ImageViewCreateInfo viewInfo;
-        viewInfo.defaultSampler = device.GetSampler(SamplerType::BilinearTiled);
+        viewInfo.defaultSampler = device.GetSampler(SamplerType::BilinearClamp);
 
         auto imageView = device.CreateImageAndView(imageInfo, viewInfo);
         auto ptr = make_shared<RenderTarget>(desc, imageView, pool.size());

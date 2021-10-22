@@ -4,7 +4,7 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan {
-    RenderPass::RenderPass(DeviceContext &device, const RenderPassInfo &info) {
+    RenderPass::RenderPass(DeviceContext &device, const RenderPassInfo &info) : state(info.state) {
         uint32 attachmentCount = 0;
         vk::AttachmentDescription attachments[MAX_COLOR_ATTACHMENTS + 1] = {};
         vk::AttachmentReference colorAttachmentRefs[MAX_COLOR_ATTACHMENTS];
@@ -41,8 +41,8 @@ namespace sp::vulkan {
             colorAttachmentRef.attachment = i;
             colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
-            initialLayouts[attachmentCount] = colorAttachment.initialLayout;
-            finalLayouts[attachmentCount] = colorAttachment.finalLayout;
+            initialLayouts[i] = colorAttachment.initialLayout;
+            finalLayouts[i] = colorAttachment.finalLayout;
             attachmentCount++;
         }
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "core/StackVector.hh"
+#include "core/Hashing.hh"
+#include "core/InlineVector.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/RenderTarget.hh"
@@ -9,6 +10,9 @@
 #include <variant>
 
 namespace sp::vulkan {
+    const uint32 MAX_RESOURCE_SCOPES = sizeof(uint8);
+    const uint32 MAX_RESOURCE_SCOPE_DEPTH = 4;
+
     struct RenderGraphResource {
         enum class Type {
             Undefined,
@@ -56,20 +60,17 @@ namespace sp::vulkan {
 
     class RenderGraphResources {
     public:
-        RenderGraphResources(DeviceContext &device) : device(device) {}
+        RenderGraphResources(DeviceContext &device) : device(device) {
+            nameScopes.emplace_back();
+            scopeStack.push_back(0);
+        }
 
         RenderTargetPtr GetRenderTarget(RenderGraphResourceID id);
         RenderTargetPtr GetRenderTarget(string_view name);
 
         const RenderGraphResource &GetResourceByName(string_view name) const;
         const RenderGraphResource &GetResourceByID(RenderGraphResourceID id) const;
-
-        RenderGraphResourceID GetID(string_view name) const {
-            Assert(name.data()[name.size()] == '\0', "string_view is not null terminated");
-            auto it = names.find(name.data());
-            if (it == names.end()) return ~0u;
-            return it->second;
-        }
+        RenderGraphResourceID GetID(string_view name) const;
 
     private:
         friend class RenderGraph;
@@ -80,16 +81,7 @@ namespace sp::vulkan {
         void IncrementRef(RenderGraphResourceID id);
         void DecrementRef(RenderGraphResourceID id);
 
-        void Register(string_view name, RenderGraphResource &resource) {
-            resource.id = (RenderGraphResourceID)resources.size();
-            resources.push_back(resource);
-
-            if (name.empty()) return;
-            Assert(name.data()[name.size()] == '\0', "string_view is not null terminated");
-            auto &nameID = names[name.data()];
-            Assert(!nameID, "resource already registered");
-            nameID = resource.id;
-        }
+        void Register(string_view name, RenderGraphResource &resource);
 
         RenderGraphResource &GetResourceRef(RenderGraphResourceID id) {
             Assert(id < resources.size(), "resource ID " + std::to_string(id) + " is invalid");
@@ -97,7 +89,18 @@ namespace sp::vulkan {
         }
 
         DeviceContext &device;
-        robin_hood::unordered_flat_map<string, RenderGraphResourceID> names;
+
+        struct Scope {
+            string name;
+            robin_hood::unordered_flat_map<string, RenderGraphResourceID, StringHash, StringEqual> resourceNames;
+            static const RenderGraphResourceID npos = ~0u;
+
+            RenderGraphResourceID GetID(string_view name) const;
+            void SetID(string_view name, RenderGraphResourceID id);
+        };
+        vector<Scope> nameScopes;
+        InlineVector<uint8, MAX_RESOURCE_SCOPE_DEPTH> scopeStack; // refers to indexes in nameScopes
+
         vector<RenderGraphResource> resources;
 
         // Built during execution
@@ -115,11 +118,11 @@ namespace sp::vulkan {
         RenderGraphPass(string_view name) : name(name) {}
 
         void AddDependency(const RenderGraphResourceAccess &access, const RenderGraphResource &res) {
-            dependencies.push({access, res.id});
+            dependencies.push_back({access, res.id});
         }
 
         void AddOutput(const RenderGraphResource &res) {
-            outputs.push(res.id);
+            outputs.push_back(res.id);
         }
 
         bool HasExecute() const {
@@ -142,8 +145,8 @@ namespace sp::vulkan {
         friend class RenderGraph;
         friend class RenderGraphPassBuilder;
         string_view name;
-        StackVector<RenderGraphResourceDependency, 16> dependencies;
-        StackVector<RenderGraphResourceID, 16> outputs;
+        InlineVector<RenderGraphResourceDependency, 16> dependencies;
+        InlineVector<RenderGraphResourceID, 16> outputs;
         std::array<AttachmentInfo, MAX_COLOR_ATTACHMENTS + 1> attachments;
         bool active = false, required = false;
 
@@ -151,6 +154,8 @@ namespace sp::vulkan {
             std::function<void(RenderGraphResources &, CommandContext &)>,
             std::function<void(RenderGraphResources &, DeviceContext &)>>
             executeFunc;
+
+        InlineVector<uint8, MAX_RESOURCE_SCOPE_DEPTH> scopes;
     };
 
     class RenderGraphPassBuilder {
@@ -244,6 +249,8 @@ namespace sp::vulkan {
             InitialPassState &Build(SetupFunc setupFunc) {
                 Assert(passIndex == ~0u, "multiple Build calls for the same pass");
                 RenderGraphPass pass(name);
+                pass.scopes = graph.resources.scopeStack;
+
                 RenderGraphPassBuilder builder(graph.resources, pass);
                 setupFunc(builder);
                 passIndex = graph.passes.size();
@@ -278,6 +285,9 @@ namespace sp::vulkan {
         InitialPassState Pass(string_view name) {
             return {*this, name};
         }
+
+        void BeginScope(string_view name);
+        void EndScope();
 
         void SetTargetImageView(string_view name, ImageViewPtr view);
 

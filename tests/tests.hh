@@ -38,7 +38,7 @@ namespace testing {
         }
     };
 
-    static inline void Assert(bool condition, const std::string message) {
+    static inline void Assert(bool condition, const std::string &message) {
         if (!condition) {
             std::stringstream ss;
             ss << "Assertion failed: " << message << std::endl;
@@ -48,7 +48,7 @@ namespace testing {
     }
 
     template<typename Ta, typename Tb>
-    inline void AssertEqual(Ta a, Tb b, const std::string message) {
+    inline void AssertEqual(Ta a, Tb b, const std::string &message = "not equal") {
         if (!(a == b)) {
             std::stringstream ss;
             ss << "Assertion failed: " << message << " (" << a << " != " << b << ")" << std::endl;
@@ -58,7 +58,7 @@ namespace testing {
     }
 
     template<>
-    inline void AssertEqual<float, float>(float a, float b, const std::string message) {
+    inline void AssertEqual<float, float>(float a, float b, const std::string &message) {
         float feps = std::numeric_limits<float>::epsilon();
         if (!(a - feps < b && a + feps > b)) {
             std::stringstream ss;

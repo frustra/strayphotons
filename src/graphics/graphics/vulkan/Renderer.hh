@@ -67,6 +67,14 @@ namespace sp::vulkan {
 
         void RenderShadowMaps(RenderGraph &graph, DrawLock lock);
 
+        RenderGraphResourceID AddBloom(RenderGraph &graph, RenderGraphResourceID sourceID);
+        RenderGraphResourceID AddGaussianBlur(RenderGraph &graph,
+            RenderGraphResourceID sourceID,
+            glm::ivec2 direction,
+            uint32 downsample = 1,
+            float scale = 1.0f,
+            float clip = FLT_MAX);
+
         void ForwardPass(CommandContext &cmd,
             ecs::Renderable::VisibilityMask viewMask,
             DrawLock lock,

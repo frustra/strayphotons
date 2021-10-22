@@ -211,7 +211,7 @@ namespace sp::vulkan {
 
         PipelineKey key;
         key.input.state = compile.state;
-        key.input.renderPass = compile.renderPass;
+        key.input.renderPass = compile.renderPass ? **compile.renderPass : nullptr;
         key.input.shaderHashes = GetShaderHashes(shaders);
 
         for (size_t s = 0; s < (size_t)ShaderStage::Count; s++) {
@@ -325,23 +325,27 @@ namespace sp::vulkan {
         rasterizer.cullMode = state.cullMode;
         rasterizer.frontFace = state.frontFaceWinding;
 
-        // TODO: support multiple attachments
-        vk::PipelineColorBlendAttachmentState colorBlendAttachment;
-        colorBlendAttachment.blendEnable = state.blendEnable;
-        if (state.blendEnable) {
-            colorBlendAttachment.colorBlendOp = state.blendOp;
-            colorBlendAttachment.alphaBlendOp = state.blendOp;
-            colorBlendAttachment.srcColorBlendFactor = state.srcBlendFactor;
-            colorBlendAttachment.srcAlphaBlendFactor = state.srcBlendFactor;
-            colorBlendAttachment.dstColorBlendFactor = state.dstBlendFactor;
-            colorBlendAttachment.dstAlphaBlendFactor = state.dstBlendFactor;
-        }
-        colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-                                              vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+        std::array<vk::PipelineColorBlendAttachmentState, MAX_COLOR_ATTACHMENTS> colorBlendAttachments;
 
         vk::PipelineColorBlendStateCreateInfo colorBlending;
-        colorBlending.attachmentCount = 1;
-        colorBlending.pAttachments = &colorBlendAttachment;
+        colorBlending.attachmentCount = compile.renderPass->ColorAttachmentCount();
+        colorBlending.pAttachments = colorBlendAttachments.data();
+
+        // TODO: support configuring each attachment
+        for (uint32 i = 0; i < colorBlending.attachmentCount; i++) {
+            auto &blendState = colorBlendAttachments[i];
+            blendState.blendEnable = state.blendEnable;
+            if (state.blendEnable) {
+                blendState.colorBlendOp = state.blendOp;
+                blendState.alphaBlendOp = state.blendOp;
+                blendState.srcColorBlendFactor = state.srcBlendFactor;
+                blendState.srcAlphaBlendFactor = state.srcBlendFactor;
+                blendState.dstColorBlendFactor = state.dstBlendFactor;
+                blendState.dstAlphaBlendFactor = state.dstBlendFactor;
+            }
+            blendState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+                                        vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+        }
 
         vk::PipelineMultisampleStateCreateInfo multisampling;
         multisampling.sampleShadingEnable = false;
@@ -374,7 +378,7 @@ namespace sp::vulkan {
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.layout = *layout;
-        pipelineInfo.renderPass = compile.renderPass;
+        pipelineInfo.renderPass = **compile.renderPass;
         pipelineInfo.subpass = 0;
 
         auto pipelinesResult = device->createGraphicsPipelineUnique({}, {pipelineInfo});

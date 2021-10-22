@@ -158,7 +158,12 @@ namespace sp::vulkan {
         // Updates the cached layout of the framebuffer attachment images
         void RecordImplicitImageLayoutTransitions(const RenderPassInfo &info);
 
+        uint32 ColorAttachmentCount() const {
+            return state.colorAttachmentCount;
+        }
+
     private:
+        RenderPassState state;
         std::array<vk::ImageLayout, MAX_COLOR_ATTACHMENTS + 1> initialLayouts, finalLayouts;
     };
 
@@ -166,8 +171,8 @@ namespace sp::vulkan {
     public:
         Framebuffer(DeviceContext &device, const RenderPassInfo &info);
 
-        vk::RenderPass GetRenderPass() const {
-            return *renderPass;
+        shared_ptr<RenderPass> GetRenderPass() const {
+            return renderPass;
         }
 
         vk::Extent2D Extent() const {

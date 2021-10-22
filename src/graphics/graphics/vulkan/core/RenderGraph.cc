@@ -25,11 +25,44 @@ namespace sp::vulkan {
 
     vector<RenderGraph::RenderTargetInfo> RenderGraph::AllRenderTargets() {
         vector<RenderTargetInfo> output;
-        for (const auto &[name, id] : resources.names) {
-            const auto &res = resources.resources[id];
-            if (res.type == RenderGraphResource::Type::RenderTarget) output.emplace_back(name, res.renderTargetDesc);
+        for (const auto &[scope, names] : resources.nameScopes) {
+            for (const auto &[name, id] : names) {
+                const auto &res = resources.resources[id];
+                if (res.type == RenderGraphResource::Type::RenderTarget) {
+                    output.emplace_back(scope.empty() ? name : scope + "." + name, res.renderTargetDesc);
+                }
+            }
         }
         return output;
+    }
+
+    const RenderGraphResource &RenderGraphResources::GetResourceByName(string_view name) const {
+        return GetResourceByID(GetID(name));
+    }
+
+    const RenderGraphResource &RenderGraphResources::GetResourceByID(RenderGraphResourceID id) const {
+        if (id < resources.size()) return resources[id];
+        static RenderGraphResource invalidResource = {};
+        return invalidResource;
+    }
+
+    RenderGraphResourceID RenderGraphResources::GetID(string_view name) const {
+        if (name.find('.') != string_view::npos) {
+            // Any resource name with a dot is assumed to be fully qualified.
+            auto lastDot = name.rfind('.');
+            auto scopeName = name.substr(0, lastDot);
+            auto resourceName = name.substr(lastDot + 1);
+
+            for (auto &scope : nameScopes) {
+                if (scope.name == scopeName) return scope.GetID(resourceName);
+            }
+        }
+
+        for (auto scopeIt = scopeStack.rbegin(); scopeIt != scopeStack.rend(); scopeIt++) {
+            auto id = nameScopes[*scopeIt].GetID(name);
+            if (id != Scope::npos) return id;
+        }
+        return Scope::npos;
     }
 
     uint32 RenderGraphResources::RefCount(RenderGraphResourceID id) {
@@ -56,14 +89,44 @@ namespace sp::vulkan {
         }
     }
 
-    const RenderGraphResource &RenderGraphResources::GetResourceByName(string_view name) const {
-        return GetResourceByID(GetID(name));
+    void RenderGraphResources::Register(string_view name, RenderGraphResource &resource) {
+        resource.id = (RenderGraphResourceID)resources.size();
+        resources.push_back(resource);
+
+        if (name.empty()) return;
+        nameScopes[scopeStack.back()].SetID(name, resource.id);
     }
 
-    const RenderGraphResource &RenderGraphResources::GetResourceByID(RenderGraphResourceID id) const {
-        if (id < resources.size()) return resources[id];
-        static RenderGraphResource invalidResource = {};
-        return invalidResource;
+    RenderGraphResourceID RenderGraphResources::Scope::GetID(string_view name) const {
+        auto it = resourceNames.find(name);
+        if (it != resourceNames.end()) return it->second;
+        return npos;
+    }
+
+    void RenderGraphResources::Scope::SetID(string_view name, RenderGraphResourceID id) {
+        Assert(name.data()[name.size()] == '\0', "string_view is not null terminated");
+        auto &nameID = resourceNames[name.data()];
+        Assert(!nameID, "resource already registered");
+        nameID = id;
+    }
+    void RenderGraph::BeginScope(string_view name) {
+        auto &newScope = resources.nameScopes.emplace_back();
+        const auto &topScope = resources.nameScopes[resources.scopeStack.back()];
+
+        if (topScope.name.empty()) {
+            newScope.name = name;
+        } else {
+            newScope.name = topScope.name + ".";
+            newScope.name.append(name);
+        }
+
+        Assert(resources.scopeStack.size() < MAX_RESOURCE_SCOPE_DEPTH, "too many nested scopes");
+        resources.scopeStack.push_back((uint8)(resources.nameScopes.size() - 1));
+    }
+
+    void RenderGraph::EndScope() {
+        Assert(resources.scopeStack.size() > 1, "tried to end a scope that wasn't started");
+        resources.scopeStack.pop_back();
     }
 
     void RenderGraph::SetTargetImageView(string_view name, ImageViewPtr view) {
@@ -136,6 +199,8 @@ namespace sp::vulkan {
                 }
             }
 
+            resources.scopeStack = pass.scopes;
+
             if (isRenderPass) {
                 cmd->BeginRenderPass(renderPassInfo);
                 pass.Execute(resources, *cmd);
@@ -154,6 +219,8 @@ namespace sp::vulkan {
             for (auto &dep : pass.dependencies) {
                 resources.DecrementRef(dep.id);
             }
+
+            pass.executeFunc = {}; // releases any captures
         }
         passes.clear();
     }

@@ -11,6 +11,7 @@
 
 namespace sp::vulkan {
     class Model;
+    class RenderPass;
 
     struct SpecializationData {
         std::array<uint32, MAX_SPEC_CONSTANTS> values = {};
@@ -34,7 +35,7 @@ namespace sp::vulkan {
 
     struct PipelineCompileInput {
         PipelineStaticState state;
-        vk::RenderPass renderPass; // TODO: use wrapper type to introspect attachments
+        shared_ptr<RenderPass> renderPass;
     };
 
     struct DescriptorSetLayoutInfo {
