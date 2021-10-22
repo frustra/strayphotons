@@ -10,7 +10,7 @@
 
 namespace ecs {
     template<>
-    bool Component<SignalOutput>::Load(Lock<Read<ecs::Name>> lock, SignalOutput &output, const picojson::value &src) {
+    bool Component<SignalOutput>::Load(sp::Scene *scene, SignalOutput &output, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.second.is<bool>()) {
                 output.SetSignal(param.first, param.second.get<bool>() ? 1.0 : 0.0);
@@ -22,9 +22,7 @@ namespace ecs {
     }
 
     template<>
-    bool Component<SignalBindings>::Load(Lock<Read<ecs::Name>> lock,
-        SignalBindings &bindings,
-        const picojson::value &src) {
+    bool Component<SignalBindings>::Load(sp::Scene *scene, SignalBindings &bindings, const picojson::value &src) {
         for (auto bind : src.get<picojson::object>()) {
             Tecs::Entity target;
             std::string targetEvent;

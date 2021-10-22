@@ -7,7 +7,7 @@
 
 namespace ecs {
     template<>
-    bool Component<FocusLayer>::Load(Lock<Read<ecs::Name>> lock, FocusLayer &focus, const picojson::value &src) {
+    bool Component<FocusLayer>::Load(sp::Scene *scene, FocusLayer &focus, const picojson::value &src) {
         auto layer = src.get<std::string>();
         sp::to_upper(layer);
         if (layer == "NEVER") {

@@ -31,6 +31,10 @@ namespace sp::xr {
     OpenVrSystem::~OpenVrSystem() {
         StopThread();
 
+        {
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            ecs::DestroyAllWith<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
+        }
         vrSystem.reset();
     }
 
@@ -59,50 +63,6 @@ namespace sp::xr {
         auto cwd = std::filesystem::current_path();
         std::string actionManifestPath = std::filesystem::absolute(cwd / "actions.json").string();
         inputBindings = std::make_shared<InputBindings>(*this, actionManifestPath);
-
-        uint32_t vrWidth, vrHeight;
-        vrSystem->GetRecommendedRenderTargetSize(&vrWidth, &vrHeight);
-        Logf("OpenVR Render Target Size: %u x %u", vrWidth, vrHeight);
-
-        {
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-
-            Tecs::Entity vrOrigin = vrOriginEntity.Get(lock);
-            if (!vrOrigin) {
-                Logf("Creating vr-origin");
-                vrOrigin = lock.NewEntity();
-                vrOrigin.Set<ecs::Name>(lock, "vr-origin");
-                vrOrigin.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
-
-                vrOriginEntity = ecs::NamedEntity("vr-origin", vrOrigin);
-            }
-            vrOrigin.Get<ecs::Transform>(lock);
-
-            for (size_t i = 0; i < views.size(); i++) {
-                auto &entity = views[i];
-
-                Tecs::Entity ent = entity.Get(lock);
-                if (!ent) {
-                    ent = lock.NewEntity();
-                    ent.Set<ecs::Name>(lock, entity.Name());
-                    ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
-                    ent.Set<ecs::XRView>(lock, (ecs::XrEye)i);
-                    auto &transform = ent.Set<ecs::Transform>(lock);
-                    transform.SetParent(vrOrigin);
-
-                    entity = ecs::NamedEntity(entity.Name(), ent);
-                }
-
-                auto &view = ent.Set<ecs::View>(lock);
-                view.extents = {vrWidth, vrHeight};
-                view.clip = {0.1, 256};
-                auto projMatrix = vrSystem->GetProjectionMatrix(MapXrEyeToOpenVr((ecs::XrEye)i),
-                    view.clip.x,
-                    view.clip.y);
-                view.SetProjMat(glm::transpose(glm::make_mat4((float *)projMatrix.m)));
-                view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_EYE);
-            }
-        }
 
         StartThread();
     }
@@ -230,11 +190,12 @@ namespace sp::xr {
                 }
             }
         }
+        bool vrOriginMissing = false;
         {
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
 
             Tecs::Entity vrOrigin = vrOriginEntity.Get(lock);
-            if (vrOrigin) {
+            if (vrOrigin && vrOrigin.Has<ecs::Transform>(lock)) {
                 for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
                     auto &namedEntity = trackedDevices[i];
 
@@ -245,11 +206,57 @@ namespace sp::xr {
                         auto pose = glm::transpose(
                             glm::make_mat3x4((float *)trackedDevicePoses[i].mDeviceToAbsoluteTracking.m));
 
+                        transform.SetParent(vrOrigin);
                         transform.SetRotation(glm::quat_cast(glm::mat3(pose)));
                         transform.SetPosition(pose[3]);
                         transform.UpdateCachedTransform(lock);
                     }
                 }
+            } else {
+                vrOriginMissing = true;
+            }
+        }
+        if (vrOriginMissing) {
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+
+            Tecs::Entity vrOrigin = vrOriginEntity.Get(lock);
+            if (!vrOrigin) {
+                Logf("Creating vr-origin");
+                vrOrigin = lock.NewEntity();
+                vrOrigin.Set<ecs::Name>(lock, "vr-origin");
+                vrOrigin.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
+
+                vrOriginEntity = ecs::NamedEntity("vr-origin", vrOrigin);
+            }
+            vrOrigin.Get<ecs::Transform>(lock);
+
+            uint32_t vrWidth, vrHeight;
+            vrSystem->GetRecommendedRenderTargetSize(&vrWidth, &vrHeight);
+            Logf("OpenVR Render Target Size: %u x %u", vrWidth, vrHeight);
+
+            for (size_t i = 0; i < views.size(); i++) {
+                auto &entity = views[i];
+
+                Tecs::Entity ent = entity.Get(lock);
+                if (!ent) {
+                    ent = lock.NewEntity();
+                    ent.Set<ecs::Name>(lock, entity.Name());
+                    ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
+                    ent.Set<ecs::XRView>(lock, (ecs::XrEye)i);
+
+                    entity = ecs::NamedEntity(entity.Name(), ent);
+                }
+                auto &transform = ent.Get<ecs::Transform>(lock);
+                transform.SetParent(vrOrigin);
+
+                auto &view = ent.Set<ecs::View>(lock);
+                view.extents = {vrWidth, vrHeight};
+                view.clip = {0.1, 256};
+                auto projMatrix = vrSystem->GetProjectionMatrix(MapXrEyeToOpenVr((ecs::XrEye)i),
+                    view.clip.x,
+                    view.clip.y);
+                view.SetProjMat(glm::transpose(glm::make_mat4((float *)projMatrix.m)));
+                view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_EYE);
             }
         }
         if (inputBindings) inputBindings->Frame();

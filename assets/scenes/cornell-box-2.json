@@ -16,10 +16,7 @@
 			}
 		},
 		{
-			"_name": "player",
-			"view": {
-				"clip": [0.1, 256]
-			},
+			"_name": "player-spawn",
 			"transform": {
 				"translate": [-0.01, 2, 9.6],
 				"rotate": [0, 0, 1, 0]

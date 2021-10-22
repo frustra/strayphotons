@@ -51,5 +51,5 @@ namespace ecs {
     extern robin_hood::unordered_node_map<std::string, ScriptFunc> ScriptDefinitions;
 
     template<>
-    bool Component<Script>::Load(Lock<Read<ecs::Name>> lock, Script &dst, const picojson::value &src);
+    bool Component<Script>::Load(sp::Scene *scene, Script &dst, const picojson::value &src);
 } // namespace ecs

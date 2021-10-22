@@ -6,7 +6,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Script>::Load(Lock<Read<ecs::Name>> lock, Script &dst, const picojson::value &src) {
+    bool Component<Script>::Load(sp::Scene *scene, Script &dst, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "onTick") {
                 auto scriptName = param.second.get<std::string>();

@@ -496,13 +496,7 @@
 			}
 		},
 		{
-			"_name": "player",
-			"view": {
-				"clip": [
-					0.1,
-					256
-				]
-			},
+			"_name": "player-spawn",
 			"transform": {
 				"translate": [
 					0,
@@ -618,7 +612,7 @@
 			}
 		},
 		{
-			"triggerarea": {
+			"trigger_area": {
 				"min": [
 					-7,
 					0,

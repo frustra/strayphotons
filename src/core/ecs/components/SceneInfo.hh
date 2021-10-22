@@ -1,0 +1,23 @@
+#pragma once
+
+namespace sp {
+    class Scene;
+}
+
+namespace ecs {
+    struct SceneInfo {
+        SceneInfo() {}
+        SceneInfo(Tecs::Entity stagingId, const std::shared_ptr<sp::Scene> &scene)
+            : stagingId(stagingId), scene(scene) {}
+        SceneInfo(Tecs::Entity liveId, const SceneInfo &sceneInfo)
+            : liveId(liveId), stagingId(sceneInfo.stagingId), scene(sceneInfo.scene) {}
+        SceneInfo(const std::shared_ptr<sp::Scene> &scene) : scene(scene) {}
+
+        inline bool operator==(const SceneInfo &other) const {
+            return scene == other.scene;
+        }
+
+        Tecs::Entity liveId, stagingId;
+        std::shared_ptr<sp::Scene> scene;
+    };
+} // namespace ecs

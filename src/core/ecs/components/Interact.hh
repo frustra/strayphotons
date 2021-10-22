@@ -12,4 +12,7 @@ namespace ecs {
     };
 
     static Component<InteractController> ComponentInteractController("interact_controller");
+
+    template<>
+    bool Component<InteractController>::Load(sp::Scene *scene, InteractController &dst, const picojson::value &src);
 } // namespace ecs

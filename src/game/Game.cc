@@ -31,6 +31,7 @@ namespace sp {
           xr(this)
 #endif
     {
+        funcs.Register(this, "reloadplayer", "Reload player scene", &Game::ReloadPlayer);
         funcs.Register(this, "printdebug", "Print some debug info about the scene", &Game::PrintDebug);
     }
 
@@ -68,15 +69,7 @@ namespace sp {
             graphics.Init();
 #endif
 
-            scenes.LoadPlayer();
-
-#ifdef SP_GRAPHICS_SUPPORT
-            graphics.GetContext()->AttachView(scenes.GetPlayer());
-#endif
-
-#ifdef SP_XR_SUPPORT
-            if (options["no-vr"].count() == 0) xr.LoadXrSystem();
-#endif
+            ReloadPlayer();
 
             if (options.count("map")) { scenes.LoadScene(options["map"].as<string>()); }
 
@@ -157,6 +150,21 @@ namespace sp {
 #else
         return false;
 #endif
+    }
+
+    void Game::ReloadPlayer() {
+        scenes.LoadPlayer();
+
+#ifdef SP_GRAPHICS_SUPPORT
+        graphics.GetContext()->AttachView(scenes.GetPlayer());
+#endif
+
+#ifdef SP_XR_SUPPORT
+        if (options["no-vr"].count() == 0) xr.LoadXrSystem();
+#endif
+
+        scenes.LoadBindingJson(InputBindingConfigPath);
+        scenes.RespawnPlayer();
     }
 
     void Game::PrintDebug() {

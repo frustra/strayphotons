@@ -25,7 +25,9 @@
             "event_bindings": {
                 "/script/joystick_out": { "/action/camera_rotate": "player" }
             },
-            "human_controller": {}
+            "human_controller": {},
+            "interact_controller": {},
+            "triggerable": {}
         },
         {
             "_name": "debug-spawner",

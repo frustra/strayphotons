@@ -8,7 +8,7 @@
 
 namespace ecs {
     template<>
-    bool Component<EventInput>::Load(Lock<Read<ecs::Name>> lock, EventInput &input, const picojson::value &src) {
+    bool Component<EventInput>::Load(sp::Scene *scene, EventInput &input, const picojson::value &src) {
         for (auto event : src.get<picojson::array>()) {
             input.Register(event.get<std::string>());
         }
@@ -16,9 +16,7 @@ namespace ecs {
     }
 
     template<>
-    bool Component<EventBindings>::Load(Lock<Read<ecs::Name>> lock,
-        EventBindings &bindings,
-        const picojson::value &src) {
+    bool Component<EventBindings>::Load(sp::Scene *scene, EventBindings &bindings, const picojson::value &src) {
         for (auto bind : src.get<picojson::object>()) {
             std::string targetEvent;
             for (auto dest : bind.second.get<picojson::object>()) {

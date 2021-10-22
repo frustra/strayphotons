@@ -31,6 +31,7 @@ namespace ecs {
     struct Owner;
     struct Physics;
     struct Renderable;
+    struct SceneInfo;
     class Script;
     class SignalOutput;
     class SignalBindings;
@@ -56,6 +57,7 @@ namespace ecs {
         Owner,
         Physics,
         Renderable,
+        SceneInfo,
         Script,
         SignalOutput,
         SignalBindings,

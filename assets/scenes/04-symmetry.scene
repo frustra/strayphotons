@@ -25,7 +25,7 @@
 			}
 		},
 		{
-			"triggerarea": {
+			"trigger_area": {
 				"min": [4, 0, -2.5],
 				"max": [6, 4, -0.5],
 				"command": "setsignal airlock2-in.door_open 0; wait 1000 loadscene menu"
@@ -91,10 +91,7 @@
 			rotate: [-143, 0, 1, 0]
 		}) %>,
 		{
-			"_name": "player",
-			"view": {
-				"clip": [0.1, 256]
-			},
+			"_name": "player-spawn",
 			"transform": {
 				"rotate": [0, 0, 1, 0],
 				"translate": [4.5, 1.7, 10.5]

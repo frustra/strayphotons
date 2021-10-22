@@ -44,6 +44,7 @@ namespace sp {
         void PhysicsUpdate();
         bool ShouldStop();
 
+        void ReloadPlayer();
         void PrintDebug();
 
         cxxopts::ParseResult &options;

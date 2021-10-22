@@ -1411,19 +1411,7 @@
 			}
 		},
 		{
-			"_name": "player",
-			"view": {
-				"clip": [
-					0.1,
-					256
-				],
-				"clear": [
-					0.66,
-					0.84,
-					1
-				],
-				"sky": 0.4
-			},
+			"_name": "player-spawn",
 			"transform": {
 				"translate": [
 					0,

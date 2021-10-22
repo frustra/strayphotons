@@ -6,7 +6,12 @@
 
 namespace ecs {
     template<>
-    bool Component<TriggerArea>::Load(Lock<Read<ecs::Name>> lock, TriggerArea &area, const picojson::value &src) {
+    bool Component<Triggerable>::Load(sp::Scene *scene, Triggerable &controller, const picojson::value &src) {
+        return true;
+    }
+
+    template<>
+    bool Component<TriggerArea>::Load(sp::Scene *scene, TriggerArea &area, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "min") {
                 area.boundsMin = sp::MakeVec3(param.second);

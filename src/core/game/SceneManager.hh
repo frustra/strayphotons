@@ -4,7 +4,9 @@
 #include "console/ConsoleBindingManager.hh"
 #include "ecs/Ecs.hh"
 
+#include <future>
 #include <memory>
+#include <robin_hood.h>
 
 namespace sp {
     class Game;
@@ -17,24 +19,34 @@ namespace sp {
     public:
         SceneManager();
 
-        std::shared_ptr<Scene> LoadSceneJson(const std::string &name, ecs::Lock<ecs::AddRemove> lock, ecs::Owner owner);
+        std::future<std::shared_ptr<Scene>> LoadSceneJson(const std::string &name);
         std::shared_ptr<Scene> LoadBindingJson(std::string bindingConfigPath);
 
-        void LoadPlayer();
         void LoadScene(std::string name);
-        void ReloadScene();
-        void ReloadPlayer();
+        void ReloadScene(std::string name);
+        void AddScene(std::string name);
+        void RemoveScene(std::string name);
 
-        void PrintScene();
+        void LoadPlayer();
+        void RespawnPlayer();
 
-        Tecs::Entity GetPlayer() {
+        void PrintScenes();
+
+        Tecs::Entity GetPlayer() const {
             return player;
         }
 
+        const std::shared_ptr<Scene> &GetPlayerScene() const {
+            return playerScene;
+        }
+
     private:
+        ecs::ECS stagingWorld;
+
         ConsoleBindingManager consoleBinding;
 
-        std::shared_ptr<Scene> scene, playerScene;
+        robin_hood::unordered_flat_map<std::string, std::shared_ptr<Scene>> scenes;
+        std::shared_ptr<Scene> playerScene, systemScene;
         Tecs::Entity player;
         CFuncCollection funcs;
     };

@@ -78,10 +78,7 @@
 			}
 		},
 		{
-			"_name": "player",
-			"view": {
-				"clip": [0.1, 256]
-			},
+			"_name": "player-spawn",
 			"transform": {
 				"translate": [0, 5, 2]
 			},
@@ -104,7 +101,7 @@
 			}
 		},
 		{
-			"triggerarea": {
+			"trigger_area": {
 				"min": [-5, 0, -5],
 				"max": [5, 2, 5],
 				"command": "loadscene 01-outside"

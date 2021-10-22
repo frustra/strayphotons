@@ -22,7 +22,7 @@
 			in_signal: "sensor2"
 		}) %>,
 		{
-			"triggerarea": {
+			"trigger_area": {
 				"min": [6, 0, 9],
 				"max": [9, 2, 11.5],
 				"command": "setsignal airlock2-in.door_open 0; wait 1000 loadscene 04-symmetry"
@@ -112,10 +112,7 @@
 		}) %>,
 
 		{
-			"_name": "player",
-			"view": {
-				"clip": [0.1, 256]
-			},
+			"_name": "player-spawn",
 			"transform": {
 				"rotate": [270, 0, 1, 0],
 				"translate": [-1.7, 1.7, 1.4]

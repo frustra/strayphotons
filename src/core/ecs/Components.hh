@@ -1,12 +1,18 @@
 #pragma once
 
+#include "ecs/Ecs.hh"
+#include "ecs/components/SceneInfo.hh"
+
 #include <cstring>
-#include <ecs/Ecs.hh>
 #include <iostream>
 #include <stdexcept>
 
 namespace picojson {
     class value;
+}
+
+namespace sp {
+    class Scene;
 }
 
 namespace ecs {
@@ -37,13 +43,23 @@ namespace ecs {
         }
 
         bool LoadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) override {
+            sp::Scene *scene = nullptr;
+            if (dst.Has<SceneInfo>(lock)) {
+                auto &sceneInfo = dst.Get<SceneInfo>(lock);
+                scene = sceneInfo.scene.get();
+            }
             auto &comp = dst.Set<CompType>(lock);
-            return Load(lock, comp, src);
+            return Load(scene, comp, src);
         }
 
         bool ReloadEntity(Lock<AddRemove> lock, Tecs::Entity &dst, const picojson::value &src) override {
+            sp::Scene *scene = nullptr;
+            if (dst.Has<SceneInfo>(lock)) {
+                auto &sceneInfo = dst.Get<SceneInfo>(lock);
+                scene = sceneInfo.scene.get();
+            }
             auto &comp = dst.Get<CompType>(lock);
-            return Load(lock, comp, src);
+            return Load(scene, comp, src);
         }
 
         bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Tecs::Entity &src) override {
@@ -51,7 +67,7 @@ namespace ecs {
             return Save(lock, dst, comp);
         }
 
-        static bool Load(Lock<Read<ecs::Name>> lock, CompType &dst, const picojson::value &src) {
+        static bool Load(sp::Scene *scene, CompType &dst, const picojson::value &src) {
             std::cerr << "Calling undefined Load on Compoent type: " << typeid(CompType).name() << std::endl;
             return false;
         }

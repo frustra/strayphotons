@@ -507,7 +507,7 @@
 			}
 		},
 		{
-			"triggerarea": {
+			"trigger_area": {
 				"min": [
 					10,
 					0,
@@ -2009,13 +2009,7 @@
 			}
 		},
 		{
-			"_name": "player",
-			"view": {
-				"clip": [
-					0.1,
-					256
-				]
-			},
+			"_name": "player-spawn",
 			"transform": {
 				"rotate": [
 					270,
