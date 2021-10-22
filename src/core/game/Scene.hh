@@ -15,6 +15,7 @@ namespace sp {
         ~Scene() {}
 
         const string name;
+        vector<Tecs::Entity> entities;
         robin_hood::unordered_flat_map<std::string, Tecs::Entity> namedEntities;
 
         vector<string> autoExecList, unloadExecList;

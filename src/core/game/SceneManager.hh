@@ -4,7 +4,7 @@
 #include "console/ConsoleBindingManager.hh"
 #include "ecs/Ecs.hh"
 
-#include <future>
+#include <functional>
 #include <memory>
 #include <robin_hood.h>
 
@@ -19,12 +19,12 @@ namespace sp {
     public:
         SceneManager();
 
-        std::future<std::shared_ptr<Scene>> LoadSceneJson(const std::string &name);
+        void LoadSceneJson(const std::string &name, std::function<void(std::shared_ptr<Scene>)> callback);
         std::shared_ptr<Scene> LoadBindingJson(std::string bindingConfigPath);
 
         void LoadScene(std::string name);
         void ReloadScene(std::string name);
-        void AddScene(std::string name);
+        void AddScene(std::string name, std::function<void(std::shared_ptr<Scene>)> callback = nullptr);
         void RemoveScene(std::string name);
 
         void LoadPlayer();

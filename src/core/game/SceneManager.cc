@@ -9,36 +9,38 @@
 
 #include <filesystem>
 #include <fstream>
-#include <future>
 #include <glm/glm.hpp>
 #include <picojson/picojson.h>
 
 namespace sp {
     SceneManager::SceneManager() {
         funcs.Register(this, "loadscene", "Load a scene and replace current scenes", &SceneManager::LoadScene);
-        funcs.Register(this, "addscene", "Load a scene", &SceneManager::AddScene);
+        funcs.Register<std::string>("addscene", "Load a scene", [this](std::string sceneName) {
+            AddScene(sceneName);
+        });
         funcs.Register(this, "removescene", "Remove a scene", &SceneManager::RemoveScene);
         funcs.Register(this, "reloadscene", "Reload current scene", &SceneManager::ReloadScene);
         funcs.Register(this, "respawn", "Respawn the player", &SceneManager::RespawnPlayer);
         funcs.Register(this, "printscenes", "Print info about currently loaded scenes", &SceneManager::PrintScenes);
     }
 
-    std::future<std::shared_ptr<Scene>> SceneManager::LoadSceneJson(const std::string &sceneName) {
+    void SceneManager::LoadSceneJson(const std::string &sceneName,
+        std::function<void(std::shared_ptr<Scene>)> callback) {
         Logf("Loading scene: %s", sceneName);
 
         auto asset = GAssets.Load("scenes/" + sceneName + ".json", true);
         if (!asset) {
             Logf("Scene not found");
-            return std::future<std::shared_ptr<Scene>>();
+            return;
         }
 
-        return std::async(std::launch::async, [this, asset, sceneName]() -> std::shared_ptr<Scene> {
+        std::thread([this, asset, sceneName, callback]() {
             asset->WaitUntilValid();
             picojson::value root;
             string err = picojson::parse(root, asset->String());
             if (!err.empty()) {
-                Errorf("%s", err);
-                return nullptr;
+                Errorf("Failed to parse scene (%s): %s", sceneName, err);
+                return;
             }
 
             auto scene = make_shared<Scene>(sceneName, asset);
@@ -98,10 +100,11 @@ namespace sp {
                             Errorf("Unknown component, ignoring: %s", comp.first);
                         }
                     }
+                    scene->entities.emplace_back(entity);
                 }
             }
-            return scene;
-        });
+            callback(scene);
+        }).detach();
     }
 
     std::shared_ptr<Scene> SceneManager::LoadBindingJson(std::string bindingConfigPath) {
@@ -186,10 +189,15 @@ namespace sp {
             }
             scenes.clear();
         }
-        AddScene(sceneName);
+        std::atomic_flag loaded;
+        AddScene(sceneName, [this, &loaded](std::shared_ptr<Scene> scene) {
+            RespawnPlayer();
+            LoadBindingJson(InputBindingConfigPath);
 
-        RespawnPlayer();
-        LoadBindingJson(InputBindingConfigPath);
+            loaded.test_and_set();
+            loaded.notify_all();
+        });
+        loaded.wait(false);
     }
 
     void SceneManager::ReloadScene(std::string sceneName) {
@@ -218,30 +226,26 @@ namespace sp {
         }
     }
 
-    void SceneManager::AddScene(std::string sceneName) {
-        auto sceneFuture = LoadSceneJson(sceneName);
-        if (sceneFuture.valid()) {
-            auto scene = sceneFuture.get();
-
+    void SceneManager::AddScene(std::string sceneName, std::function<void(std::shared_ptr<Scene>)> callback) {
+        LoadSceneJson(sceneName, [this, sceneName, callback](std::shared_ptr<Scene> scene) {
             if (scene) {
                 {
                     auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
                     auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
 
                     scene->CopyScene(stagingLock, lock);
+                    scenes.emplace(sceneName, scene);
                 }
 
                 for (auto &line : scene->autoExecList) {
                     GetConsoleManager().ParseAndExecute(line);
                 }
 
-                scenes.emplace(sceneName, scene);
+                if (callback) callback(scene);
             } else {
                 Errorf("Failed to load scene: %s", sceneName);
             }
-        } else {
-            Errorf("Failed to load scene: %s", sceneName);
-        }
+        });
     }
 
     void SceneManager::RemoveScene(std::string sceneName) {
@@ -282,10 +286,9 @@ namespace sp {
         playerScene.reset();
         player = Tecs::Entity();
 
-        auto sceneFuture = LoadSceneJson("player");
-        if (sceneFuture.valid()) {
-            playerScene = sceneFuture.get();
-
+        std::atomic_flag loaded;
+        LoadSceneJson("player", [this, &loaded](std::shared_ptr<Scene> scene) {
+            playerScene = scene;
             if (playerScene) {
                 {
                     auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
@@ -310,9 +313,11 @@ namespace sp {
             } else {
                 Errorf("Failed to load player scene!");
             }
-        } else {
-            Errorf("Failed to load player scene!");
-        }
+
+            loaded.test_and_set();
+            loaded.notify_all();
+        });
+        loaded.wait(false);
     }
 
     void SceneManager::RespawnPlayer() {
