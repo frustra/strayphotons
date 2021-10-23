@@ -224,7 +224,9 @@ namespace sp {
             loaded.test_and_set();
             loaded.notify_all();
         });
-        loaded.wait(false);
+        while (!loaded.test()) {
+            loaded.wait(false);
+        }
     }
 
     void SceneManager::ReloadScene(std::string sceneName) {
@@ -344,7 +346,10 @@ namespace sp {
             loaded.test_and_set();
             loaded.notify_all();
         });
-        loaded.wait(false);
+        while (!loaded.test()) {
+            loaded.wait(false);
+        }
+        Assert(!!player, "Player scene doesn't contain an entity named player");
     }
 
     void SceneManager::RespawnPlayer() {

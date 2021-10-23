@@ -33,7 +33,7 @@ namespace sp {
 
         void PrintScene(std::string sceneName);
 
-        Tecs::Entity GetPlayer() const {
+        const Tecs::Entity &GetPlayer() const {
             return player;
         }
 

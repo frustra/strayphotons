@@ -1182,7 +1182,7 @@ namespace sp::vulkan {
 
     SharedHandle<vk::Fence> DeviceContext::PushInFlightObject(TemporaryObject object, SharedHandle<vk::Fence> fence) {
         if (!fence) fence = GetEmptyFence();
-        Frame().inFlightObjects.emplace_back(object, fence);
+        Frame().inFlightObjects.emplace_back(InFlightObject{object, fence});
         return fence;
     }
 

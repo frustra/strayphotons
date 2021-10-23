@@ -123,7 +123,7 @@ namespace sp {
     class CFuncCollection {
     public:
         template<typename... ParamTypes>
-        void Register(const string &name, const string &description, CFunc<ParamTypes...>::Callback callback) {
+        void Register(const string &name, const string &description, typename CFunc<ParamTypes...>::Callback callback) {
             collection.push_back(make_shared<CFunc<ParamTypes...>>(name, description, callback));
         }
 

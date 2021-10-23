@@ -8,7 +8,7 @@
 
 namespace sp {
     ConsoleBindingManager::ConsoleBindingManager() {
-        GetSceneManager().AddToSystemScene([this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+        GetSceneManager().AddToSystemScene([](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
             auto ent = lock.NewEntity();
             ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::INPUT_MANAGER);
             ent.Set<ecs::Name>(lock, consoleInputEntity.Name());

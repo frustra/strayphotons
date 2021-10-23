@@ -27,7 +27,9 @@ namespace sp::vulkan {
         vector<RenderTargetInfo> output;
         for (const auto &[name, id] : resources.names) {
             const auto &res = resources.resources[id];
-            if (res.type == RenderGraphResource::Type::RenderTarget) output.emplace_back(name, res.renderTargetDesc);
+            if (res.type == RenderGraphResource::Type::RenderTarget) {
+                output.emplace_back(RenderTargetInfo{name, res.renderTargetDesc});
+            }
         }
         return output;
     }
