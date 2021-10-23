@@ -71,25 +71,25 @@ namespace sp {
                     if (selectedScreen == MenuScreen::Splash) selectedScreen = MenuScreen::Main;
                 }
 
-                auto &prevInput = gui.GetPrevious<ecs::EventInput>(lock);
+                auto &readInput = gui.Get<const ecs::EventInput>(lock);
                 if (MenuOpen()) {
-                    if (!prevInput.IsRegistered(INPUT_EVENT_MENU_BACK)) {
+                    if (!readInput.IsRegistered(INPUT_EVENT_MENU_BACK)) {
                         gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_BACK);
                     }
-                    if (!prevInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) {
+                    if (!readInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) {
                         gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_ENTER);
                     }
-                    if (prevInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) {
+                    if (readInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) {
                         gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_OPEN);
                     }
                 } else {
-                    if (prevInput.IsRegistered(INPUT_EVENT_MENU_BACK)) {
+                    if (readInput.IsRegistered(INPUT_EVENT_MENU_BACK)) {
                         gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_BACK);
                     }
-                    if (prevInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) {
+                    if (readInput.IsRegistered(INPUT_EVENT_MENU_ENTER)) {
                         gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_ENTER);
                     }
-                    if (!prevInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) {
+                    if (!readInput.IsRegistered(INPUT_EVENT_MENU_OPEN)) {
                         gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_OPEN);
                     }
                 }
@@ -99,7 +99,12 @@ namespace sp {
             focusChanged = focusLayer != newFocusLayer;
             focusLayer = newFocusLayer;
 
-            if (MenuOpen() && RenderMode() == MenuRenderMode::Gel) {
+            bool hasFocus = false;
+            if (MenuOpen() && lock.Has<ecs::FocusLock>()) {
+                auto &focusLock = lock.Get<ecs::FocusLock>();
+                hasFocus = focusLock.HasPrimaryFocus(ecs::FocusLayer::MENU);
+            }
+            if (hasFocus && RenderMode() == MenuRenderMode::Gel) {
                 auto windowSize = CVarWindowSize.Get();
                 auto cursorScaling = CVarMenuCursorScaling.Get();
                 io.MousePos.x = io.MousePos.x / (float)windowSize.x * io.DisplaySize.x;

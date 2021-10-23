@@ -294,7 +294,7 @@ namespace sp {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
 
                 auto &ph = ent.Get<ecs::Physics>(lock);
-                auto &readTransform = ent.GetPrevious<ecs::Transform>(lock);
+                auto &readTransform = ent.Get<const ecs::Transform>(lock);
 
                 if (!ph.dynamic) continue;
 

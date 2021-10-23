@@ -54,13 +54,13 @@ namespace sp {
                     consoleOpen = !consoleOpen;
                 }
 
-                auto &prevInput = gui.GetPrevious<ecs::EventInput>(lock);
+                auto &readInput = gui.Get<const ecs::EventInput>(lock);
                 if (consoleOpen) {
-                    if (!prevInput.IsRegistered(INPUT_EVENT_MENU_TEXT_INPUT)) {
+                    if (!readInput.IsRegistered(INPUT_EVENT_MENU_TEXT_INPUT)) {
                         gui.Get<ecs::EventInput>(lock).Register(INPUT_EVENT_MENU_TEXT_INPUT);
                     }
                 } else {
-                    if (prevInput.IsRegistered(INPUT_EVENT_MENU_TEXT_INPUT)) {
+                    if (readInput.IsRegistered(INPUT_EVENT_MENU_TEXT_INPUT)) {
                         gui.Get<ecs::EventInput>(lock).Unregister(INPUT_EVENT_MENU_TEXT_INPUT);
                     }
                 }

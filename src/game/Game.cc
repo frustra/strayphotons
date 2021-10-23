@@ -7,6 +7,7 @@
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/SceneManager.hh"
 
 #ifdef SP_GRAPHICS_SUPPORT
     #include "graphics/core/GraphicsContext.hh"
@@ -69,8 +70,8 @@ namespace sp {
             graphics.Init();
 #endif
 
+            auto &scenes = GetSceneManager();
             ReloadPlayer();
-
             if (options.count("map")) { scenes.LoadScene(options["map"].as<string>()); }
 
             if (startupScript != nullptr) {
@@ -153,6 +154,7 @@ namespace sp {
     }
 
     void Game::ReloadPlayer() {
+        auto &scenes = GetSceneManager();
         scenes.LoadPlayer();
 
 #ifdef SP_GRAPHICS_SUPPORT
@@ -176,6 +178,7 @@ namespace sp {
             ecs::EventInput,
             ecs::FocusLayer,
             ecs::FocusLock>>();
+        auto &scenes = GetSceneManager();
         auto player = scenes.GetPlayer();
         if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
             auto &transform = player.Get<ecs::Transform>(lock);

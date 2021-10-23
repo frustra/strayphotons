@@ -162,11 +162,13 @@ namespace ecs {
                     while (EventInput::Poll(lock, ent, "/action/spawn", event)) {
                         std::thread([ent]() {
                             auto lock = World.StartTransaction<AddRemove>();
-                            if (ent.Has<Script>(lock)) {
+                            if (ent.Has<Script, SceneInfo>(lock)) {
                                 auto &scriptComp = ent.Get<Script>(lock);
+                                auto &sceneInfo = ent.Get<SceneInfo>(lock);
 
                                 auto newEntity = lock.NewEntity();
                                 newEntity.Set<Owner>(lock, Owner::OwnerType::PLAYER, 0);
+                                newEntity.Set<SceneInfo>(lock, newEntity, sceneInfo);
 
                                 glm::vec3 position;
                                 position.x = scriptComp.GetParam<double>("position_x");

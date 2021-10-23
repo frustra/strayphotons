@@ -3,6 +3,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/SceneManager.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "input/BindingNames.hh"
 #include "input/KeyCodes.hh"
@@ -26,7 +27,21 @@ namespace sp {
         keyboardEntity = ecs::NamedEntity("keyboard");
         mouseEntity = ecs::NamedEntity("mouse");
 
-        UpdateEntities();
+        GetSceneManager().AddToSystemScene([this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+            auto keyboard = lock.NewEntity();
+            keyboard.Set<ecs::Owner>(lock, ecs::Owner::SystemId::INPUT_MANAGER);
+            keyboard.Set<ecs::Name>(lock, keyboardEntity.Name());
+            keyboard.Set<ecs::SceneInfo>(lock, keyboard, scene);
+            keyboard.Set<ecs::EventBindings>(lock);
+            keyboard.Set<ecs::SignalOutput>(lock);
+
+            auto mouse = lock.NewEntity();
+            mouse.Set<ecs::Owner>(lock, ecs::Owner::SystemId::INPUT_MANAGER);
+            mouse.Set<ecs::Name>(lock, mouseEntity.Name());
+            mouse.Set<ecs::SceneInfo>(lock, mouse, scene);
+            mouse.Set<ecs::EventBindings>(lock);
+            mouse.Set<ecs::SignalOutput>(lock);
+        });
     }
 
     GlfwInputHandler::~GlfwInputHandler() {
@@ -39,49 +54,15 @@ namespace sp {
         glfwSetWindowUserPointer(window, nullptr);
     }
 
-    void GlfwInputHandler::UpdateEntities() {
-        Logf("Updating keyboard/mouse entities");
-        auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-
-        auto keyboard = keyboardEntity.Get(lock);
-        if (!keyboard) {
-            Logf("Creating new keyboard entity");
-            keyboard = lock.NewEntity();
-            keyboard.Set<ecs::Owner>(lock, ecs::Owner::SystemId::INPUT_MANAGER);
-            keyboard.Set<ecs::Name>(lock, "keyboard");
-            keyboardEntity = ecs::NamedEntity("keyboard", keyboard);
-        }
-        keyboard.Get<ecs::EventBindings>(lock);
-        keyboard.Get<ecs::SignalOutput>(lock);
-
-        auto mouse = mouseEntity.Get(lock);
-        if (!mouse) {
-            Logf("Creating new mouse entity");
-            mouse = lock.NewEntity();
-            mouse.Set<ecs::Owner>(lock, ecs::Owner::SystemId::INPUT_MANAGER);
-            mouse.Set<ecs::Name>(lock, "mouse");
-            mouseEntity = ecs::NamedEntity("mouse", mouse);
-        }
-        mouse.Get<ecs::EventBindings>(lock);
-        mouse.Get<ecs::SignalOutput>(lock);
-    }
-
     void GlfwInputHandler::Frame() {
-        bool updateRequired = false;
         {
             auto lock = ecs::World.StartTransaction<
                 ecs::Read<ecs::Name, ecs::EventBindings, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
                 ecs::Write<ecs::EventInput, ecs::SignalOutput>>();
-            auto keyboard = keyboardEntity.Get(lock);
-            auto mouse = mouseEntity.Get(lock);
-            updateRequired = !keyboard.Has<ecs::EventBindings, ecs::SignalOutput>(lock) ||
-                             !mouse.Has<ecs::EventBindings, ecs::SignalOutput>(lock);
-
             frameLock = &lock;
             glfwPollEvents();
             frameLock = nullptr;
         }
-        if (updateRequired) UpdateEntities();
     }
 
     glm::vec2 GlfwInputHandler::ImmediateCursor() const {

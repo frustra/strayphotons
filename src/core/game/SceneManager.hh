@@ -1,7 +1,6 @@
 #pragma once
 
 #include "console/CFunc.hh"
-#include "console/ConsoleBindingManager.hh"
 #include "ecs/Ecs.hh"
 
 #include <functional>
@@ -22,6 +21,8 @@ namespace sp {
         void LoadSceneJson(const std::string &name, std::function<void(std::shared_ptr<Scene>)> callback);
         std::shared_ptr<Scene> LoadBindingJson(std::string bindingConfigPath);
 
+        void AddToSystemScene(std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback);
+
         void LoadScene(std::string name);
         void ReloadScene(std::string name);
         void AddScene(std::string name, std::function<void(std::shared_ptr<Scene>)> callback = nullptr);
@@ -30,24 +31,20 @@ namespace sp {
         void LoadPlayer();
         void RespawnPlayer();
 
-        void PrintScenes();
+        void PrintScene(std::string sceneName);
 
         Tecs::Entity GetPlayer() const {
             return player;
         }
 
-        const std::shared_ptr<Scene> &GetPlayerScene() const {
-            return playerScene;
-        }
-
     private:
         ecs::ECS stagingWorld;
-
-        ConsoleBindingManager consoleBinding;
 
         robin_hood::unordered_flat_map<std::string, std::shared_ptr<Scene>> scenes;
         std::shared_ptr<Scene> playerScene, systemScene;
         Tecs::Entity player;
         CFuncCollection funcs;
     };
+
+    SceneManager &GetSceneManager();
 } // namespace sp

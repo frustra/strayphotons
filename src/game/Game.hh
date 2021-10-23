@@ -1,9 +1,9 @@
 #pragma once
 
+#include "console/ConsoleBindingManager.hh"
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
 #include "game/AnimationSystem.hh"
-#include "game/SceneManager.hh"
 
 #ifdef SP_GRAPHICS_SUPPORT
     #include "graphics/GraphicsManager.hh"
@@ -66,7 +66,7 @@ namespace sp {
 #ifdef SP_XR_SUPPORT
         xr::XrManager xr;
 #endif
-        SceneManager scenes;
+        ConsoleBindingManager consoleBinding;
 
     private:
         chrono_clock::time_point lastFrameTime;

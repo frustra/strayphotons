@@ -6,9 +6,15 @@ namespace sp {
             auto &sceneInfo = e.Get<ecs::SceneInfo>(src);
             if (sceneInfo.scene.get() == this) {
                 Assert(sceneInfo.stagingId == e, "Expected source entity to match SceneInfo.stagingId");
-                auto newEnt = dst.NewEntity();
-                sceneInfo.liveId = newEnt;
-                CopyComponent<ecs::SceneInfo>(src, e, dst, newEnt);
+                if (sceneInfo.liveId && sceneInfo.liveId.Has<ecs::SceneInfo>(dst)) {
+                    auto &liveSceneInfo = sceneInfo.liveId.Get<ecs::SceneInfo>(dst);
+                    Assert(liveSceneInfo.stagingId == e, "Expected live scene info to match stagingId");
+                    Assert(liveSceneInfo.liveId == sceneInfo.liveId, "Expected live scene info to match liveId");
+                } else {
+                    auto newEnt = dst.NewEntity();
+                    sceneInfo.liveId = newEnt;
+                    CopyComponent<ecs::SceneInfo>(src, e, dst, newEnt);
+                }
             }
         }
         for (auto e : src.EntitiesWith<ecs::SceneInfo>()) {

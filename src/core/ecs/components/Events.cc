@@ -103,7 +103,7 @@ namespace ecs {
     }
 
     bool EventInput::Poll(Lock<Write<EventInput>> lock, Tecs::Entity ent, const std::string &binding, Event &eventOut) {
-        auto &readInput = ent.GetPrevious<EventInput>(lock);
+        auto &readInput = ent.Get<const EventInput>(lock);
         if (readInput.HasEvents(binding)) {
             auto &writeInput = ent.Get<EventInput>(lock);
             return writeInput.Poll(binding, eventOut);

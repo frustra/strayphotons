@@ -3,6 +3,7 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "console/Console.hh"
+#include "console/ConsoleBindingManager.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
@@ -13,7 +14,14 @@
 #include <picojson/picojson.h>
 
 namespace sp {
+    SceneManager &GetSceneManager() {
+        static SceneManager GSceneManager;
+        return GSceneManager;
+    }
+
     SceneManager::SceneManager() {
+        systemScene = std::make_shared<Scene>("system", nullptr);
+
         funcs.Register(this, "loadscene", "Load a scene and replace current scenes", &SceneManager::LoadScene);
         funcs.Register<std::string>("addscene", "Load a scene", [this](std::string sceneName) {
             AddScene(sceneName);
@@ -21,7 +29,7 @@ namespace sp {
         funcs.Register(this, "removescene", "Remove a scene", &SceneManager::RemoveScene);
         funcs.Register(this, "reloadscene", "Reload current scene", &SceneManager::ReloadScene);
         funcs.Register(this, "respawn", "Respawn the player", &SceneManager::RespawnPlayer);
-        funcs.Register(this, "printscenes", "Print info about currently loaded scenes", &SceneManager::PrintScenes);
+        funcs.Register(this, "printscene", "Print info about currently loaded scenes", &SceneManager::PrintScene);
     }
 
     void SceneManager::LoadSceneJson(const std::string &sceneName,
@@ -100,7 +108,6 @@ namespace sp {
                             Errorf("Unknown component, ignoring: %s", comp.first);
                         }
                     }
-                    scene->entities.emplace_back(entity);
                 }
             }
             callback(scene);
@@ -146,7 +153,7 @@ namespace sp {
                     Debugf("Loading console-input bindings");
                     for (auto eventInput : param.second.get<picojson::object>()) {
                         auto command = eventInput.second.get<std::string>();
-                        consoleBinding.SetConsoleInputCommand(lock, eventInput.first, command);
+                        ConsoleBindingManager::SetConsoleInputCommand(lock, eventInput.first, command);
                     }
                 } else {
                     auto entity = ecs::EntityWith<ecs::Name>(lock, param.first);
@@ -170,6 +177,26 @@ namespace sp {
 
         // TODO
         return nullptr;
+    }
+
+    void SceneManager::AddToSystemScene(
+        std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback) {
+        {
+            auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+            callback(stagingLock, systemScene);
+
+            systemScene->namedEntities.clear();
+            for (auto &e : stagingLock.EntitiesWith<ecs::Name>()) {
+                auto &name = e.Get<const ecs::Name>(stagingLock);
+                systemScene->namedEntities.emplace(name, e);
+            }
+        }
+        {
+            auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+
+            systemScene->CopyScene(stagingLock, lock);
+        }
     }
 
     void SceneManager::LoadScene(std::string sceneName) {
@@ -344,13 +371,44 @@ namespace sp {
         }
     }
 
-    void SceneManager::PrintScenes() {
-        std::stringstream ss;
-        for (auto &scene : scenes) {
-            ss << " " << scene.first;
+    void SceneManager::PrintScene(std::string sceneName) {
+        {
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+
+            if (sceneName.empty() || sceneName == "system") {
+                Logf("System scene entities:");
+                for (auto &e : lock.EntitiesWith<ecs::Name>()) {
+                    if (e.Has<ecs::Name, ecs::SceneInfo>(lock)) {
+                        auto &name = e.Get<ecs::Name>(lock);
+                        auto &sceneInfo = e.Get<ecs::SceneInfo>(lock);
+                        if (sceneInfo.scene && sceneInfo.scene == systemScene) { Logf("  %s", name); }
+                    }
+                }
+            }
+
+            if (sceneName.empty() || sceneName == "player") {
+                Logf("Player scene entities:");
+                for (auto &e : lock.EntitiesWith<ecs::Name>()) {
+                    if (e.Has<ecs::Name, ecs::SceneInfo>(lock)) {
+                        auto &name = e.Get<ecs::Name>(lock);
+                        auto &sceneInfo = e.Get<ecs::SceneInfo>(lock);
+                        if (sceneInfo.scene && sceneInfo.scene == playerScene) { Logf("  %s", name); }
+                    }
+                }
+            }
+
+            for (auto &scene : scenes) {
+                if (sceneName.empty() || sceneName == scene.first) {
+                    Logf("Scene entities (%s):", scene.first);
+                    for (auto &e : lock.EntitiesWith<ecs::Name>()) {
+                        if (e.Has<ecs::Name, ecs::SceneInfo>(lock)) {
+                            auto &name = e.Get<ecs::Name>(lock);
+                            auto &sceneInfo = e.Get<ecs::SceneInfo>(lock);
+                            if (sceneInfo.scene && sceneInfo.scene == scene.second) { Logf("  %s", name); }
+                        }
+                    }
+                }
+            }
         }
-        if (scenes.empty()) ss << " none";
-        Logf("Currently loaded scenes:%s", ss.str());
-        Logf("Player loaded: %s", playerScene ? "yes" : "no");
     }
 } // namespace sp

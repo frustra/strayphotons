@@ -9,8 +9,7 @@ namespace ecs {
         SceneInfo() {}
         SceneInfo(Tecs::Entity stagingId, const std::shared_ptr<sp::Scene> &scene)
             : stagingId(stagingId), scene(scene) {}
-        SceneInfo(Tecs::Entity liveId, const SceneInfo &sceneInfo)
-            : liveId(liveId), stagingId(sceneInfo.stagingId), scene(sceneInfo.scene) {}
+        SceneInfo(Tecs::Entity liveId, const SceneInfo &sceneInfo) : liveId(liveId), scene(sceneInfo.scene) {}
         SceneInfo(const std::shared_ptr<sp::Scene> &scene) : scene(scene) {}
 
         inline bool operator==(const SceneInfo &other) const {
