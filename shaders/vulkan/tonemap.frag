@@ -3,10 +3,13 @@
 // #define DEBUG_OVEREXPOSED
 // #define ENABLE_DITHER
 
+#extension GL_OVR_multiview2 : enable
+layout(num_views = 2) in;
+
 #include "../lib/util.glsl"
 #include "../lib/lighting_util.glsl"
 
-layout(binding = 0) uniform sampler2D luminanceTex;
+layout(binding = 0) uniform sampler2DArray luminanceTex;
 
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outFragColor;
@@ -17,7 +20,7 @@ const float ditherAmount = 0.5 / 255.0;
 const vec2 saturation = vec2(0, 1);
 
 void main() {
-	vec4 luminosity = texture(luminanceTex, inTexCoord); // pre-exposed
+	vec4 luminosity = texture(luminanceTex, vec3(inTexCoord, gl_ViewID_OVR)); // pre-exposed
 
 	vec3 toneMapped = HDRTonemap(luminosity.rgb * curveScale) / HDRTonemap(vec3(whitePoint));
 

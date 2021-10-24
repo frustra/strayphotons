@@ -6,9 +6,9 @@ layout(num_views = 2) in;
 #include "../lib/util.glsl"
 #include "../lib/types_common.glsl"
 
-layout(binding = 0) uniform sampler2D gBuffer0;
-layout(binding = 1) uniform sampler2D gBuffer1;
-layout(binding = 2) uniform sampler2D gBuffer2;
+layout(binding = 0) uniform sampler2DArray gBuffer0;
+layout(binding = 1) uniform sampler2DArray gBuffer1;
+layout(binding = 2) uniform sampler2DArray gBuffer2;
 layout(binding = 3) uniform sampler2D shadowMap;
 
 layout(location = 0) in vec2 inTexCoord;
@@ -31,9 +31,9 @@ void main()
 {
 	ViewState view = views[gl_ViewID_OVR];
 
-	vec4 gb0 = texture(gBuffer0, inTexCoord);
-	vec4 gb1 = texture(gBuffer1, inTexCoord);
-	vec4 gb2 = texture(gBuffer2, inTexCoord);
+	vec4 gb0 = texture(gBuffer0, vec3(inTexCoord, gl_ViewID_OVR));
+	vec4 gb1 = texture(gBuffer1, vec3(inTexCoord, gl_ViewID_OVR));
+	vec4 gb2 = texture(gBuffer2, vec3(inTexCoord, gl_ViewID_OVR));
 
 	vec3 baseColor = gb0.rgb;
 	float roughness = gb0.a;

@@ -3,6 +3,7 @@
 #include "core/Hashing.hh"
 #include "core/InlineVector.hh"
 #include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/RenderTarget.hh"
 
@@ -17,10 +18,12 @@ namespace sp::vulkan {
         enum class Type {
             Undefined,
             RenderTarget,
+            Buffer,
         };
 
         RenderGraphResource() {}
         RenderGraphResource(RenderTargetDesc desc) : type(Type::RenderTarget), renderTargetDesc(desc) {}
+        RenderGraphResource(BufferType bufType, size_t size) : type(Type::Buffer), bufferDesc({size, bufType}) {}
 
         operator bool() const {
             return type != Type::Undefined;
@@ -30,6 +33,7 @@ namespace sp::vulkan {
         Type type = Type::Undefined;
         union {
             RenderTargetDesc renderTargetDesc;
+            BufferDesc bufferDesc;
         };
     };
 
@@ -67,6 +71,9 @@ namespace sp::vulkan {
 
         RenderTargetPtr GetRenderTarget(RenderGraphResourceID id);
         RenderTargetPtr GetRenderTarget(string_view name);
+
+        BufferPtr GetBuffer(RenderGraphResourceID id);
+        BufferPtr GetBuffer(string_view name);
 
         const RenderGraphResource &GetResourceByName(string_view name) const;
         const RenderGraphResource &GetResourceByID(RenderGraphResourceID id) const;
@@ -106,6 +113,7 @@ namespace sp::vulkan {
         // Built during execution
         vector<uint32> refCounts;
         vector<RenderTargetPtr> renderTargets;
+        vector<BufferPtr> buffers;
     };
 
     struct RenderGraphResourceDependency {
@@ -198,7 +206,7 @@ namespace sp::vulkan {
         }
 
         RenderGraphResource OutputRenderTarget(string_view name, const RenderTargetDesc &desc) {
-            auto resource = RenderGraphResource(desc);
+            RenderGraphResource resource(desc);
             resources.Register(name, resource);
             pass.AddOutput(resource);
             return resource;
@@ -215,6 +223,25 @@ namespace sp::vulkan {
         RenderGraphResource OutputDepthAttachment(string_view name, RenderTargetDesc desc, const AttachmentInfo &info) {
             desc.usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
             return OutputAttachment(MAX_COLOR_ATTACHMENTS, name, desc, info);
+        }
+
+        // Defines a uniform buffer that will be shared between passes.
+        RenderGraphResource CreateUniformBuffer(string_view name, size_t size) {
+            RenderGraphResource resource(BUFFER_TYPE_UNIFORM, size);
+            resources.Register(name, resource);
+            pass.AddOutput(resource);
+            return resource;
+        }
+
+        const RenderGraphResource &ReadBuffer(string_view name) {
+            return ReadBuffer(resources.GetID(name));
+        }
+        const RenderGraphResource &ReadBuffer(RenderGraphResourceID id) {
+            auto &resource = resources.GetResourceRef(id);
+            // TODO: need to mark stages and usage for buffers that are written from the GPU,
+            // so we can generate barriers. For now this is only used for CPU->GPU.
+            pass.AddDependency({}, resource);
+            return resource;
         }
 
         void RequirePass() {
@@ -309,7 +336,7 @@ namespace sp::vulkan {
 
     private:
         friend class InitialPassState;
-        void AddPassBarriers(CommandContext &cmd, RenderGraphPass &pass);
+        void AddPassBarriers(CommandContextPtr &cmd, RenderGraphPass &pass);
 
         DeviceContext &device;
         RenderGraphResources resources;

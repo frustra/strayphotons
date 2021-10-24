@@ -1,8 +1,11 @@
 #version 450
 
+#extension GL_OVR_multiview2 : enable
+layout(num_views = 2) in;
+
 // Separable Gaussian filter, primarily used for bloom
 
-layout(binding = 0) uniform sampler2D sourceTex;
+layout(binding = 0) uniform sampler2DArray sourceTex;
 
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outFragColor;
@@ -24,11 +27,11 @@ layout(push_constant) uniform PushConstants {
 
 void main() {
 	vec3 sum = vec3(0.0);
-	vec2 texsize = textureSize(sourceTex, 0);
+	vec2 texsize = textureSize(sourceTex, 0).xy;
 
 	for (int i = 0; i < size; i++) {
 		vec2 offset = (float(i - left) * direction * 2.0 + 0.5) / texsize;
-		vec3 px = min(texture(sourceTex, inTexCoord + offset).rgb, vec3(threshold));
+		vec3 px = min(texture(sourceTex, vec3(inTexCoord + offset, gl_ViewID_OVR)).rgb, vec3(threshold));
 		sum += px * kernel[i];
 	}
 

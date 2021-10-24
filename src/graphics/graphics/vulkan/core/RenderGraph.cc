@@ -8,6 +8,7 @@ namespace sp::vulkan {
     void RenderGraphResources::ResizeBeforeExecute() {
         refCounts.resize(resources.size());
         renderTargets.resize(resources.size());
+        buffers.resize(resources.size());
     }
 
     RenderTargetPtr RenderGraphResources::GetRenderTarget(string_view name) {
@@ -17,10 +18,23 @@ namespace sp::vulkan {
     RenderTargetPtr RenderGraphResources::GetRenderTarget(RenderGraphResourceID id) {
         if (id >= resources.size()) return nullptr;
         auto &res = resources[id];
-        Assert(res.type == RenderGraphResource::Type::RenderTarget, "resources is not a render target");
+        Assert(res.type == RenderGraphResource::Type::RenderTarget, "resource is not a render target");
         auto &target = renderTargets[res.id];
         if (!target) target = device.GetRenderTarget(res.renderTargetDesc);
         return target;
+    }
+
+    BufferPtr RenderGraphResources::GetBuffer(string_view name) {
+        return GetBuffer(GetID(name));
+    }
+
+    BufferPtr RenderGraphResources::GetBuffer(RenderGraphResourceID id) {
+        if (id >= resources.size()) return nullptr;
+        auto &res = resources[id];
+        Assert(res.type == RenderGraphResource::Type::Buffer, "resource is not a buffer");
+        auto &buf = buffers[res.id];
+        if (!buf) buf = device.GetFramePooledBuffer(res.bufferDesc.type, res.bufferDesc.size);
+        return buf;
     }
 
     vector<RenderGraph::RenderTargetInfo> RenderGraph::AllRenderTargets() {
@@ -56,6 +70,7 @@ namespace sp::vulkan {
             for (auto &scope : nameScopes) {
                 if (scope.name == scopeName) return scope.GetID(resourceName);
             }
+            return Scope::npos;
         }
 
         for (auto scopeIt = scopeStack.rbegin(); scopeIt != scopeStack.rend(); scopeIt++) {
@@ -84,6 +99,9 @@ namespace sp::vulkan {
         case RenderGraphResource::Type::RenderTarget:
             renderTargets[id].reset();
             break;
+        case RenderGraphResource::Type::Buffer:
+            buffers[id].reset();
+            break;
         default:
             Abort("resource type is undefined");
         }
@@ -109,6 +127,7 @@ namespace sp::vulkan {
         Assert(!nameID, "resource already registered");
         nameID = id;
     }
+
     void RenderGraph::BeginScope(string_view name) {
         auto &newScope = resources.nameScopes.emplace_back();
         const auto &topScope = resources.nameScopes[resources.scopeStack.back()];
@@ -171,8 +190,8 @@ namespace sp::vulkan {
 
             Assert(pass.HasExecute(), "pass must have an Execute function");
 
-            auto cmd = device.GetCommandContext();
-            AddPassBarriers(*cmd, pass);
+            CommandContextPtr cmd;
+            AddPassBarriers(cmd, pass); // creates cmd if necessary
 
             bool isRenderPass = false;
             RenderPassInfo renderPassInfo;
@@ -202,14 +221,16 @@ namespace sp::vulkan {
             resources.scopeStack = pass.scopes;
 
             if (isRenderPass) {
+                if (!cmd) cmd = device.GetCommandContext();
                 cmd->BeginRenderPass(renderPassInfo);
                 pass.Execute(resources, *cmd);
                 cmd->EndRenderPass();
                 device.Submit(cmd);
             } else if (pass.ExecutesWithDeviceContext()) {
-                device.Submit(cmd);
+                if (cmd) device.Submit(cmd);
                 pass.Execute(resources, device);
             } else if (pass.ExecutesWithCommandContext()) {
+                if (!cmd) cmd = device.GetCommandContext();
                 pass.Execute(resources, *cmd);
                 device.Submit(cmd);
             } else {
@@ -225,7 +246,7 @@ namespace sp::vulkan {
         passes.clear();
     }
 
-    void RenderGraph::AddPassBarriers(CommandContext &cmd, RenderGraphPass &pass) {
+    void RenderGraph::AddPassBarriers(CommandContextPtr &cmd, RenderGraphPass &pass) {
         for (auto &dep : pass.dependencies) {
             if (dep.access.layout == vk::ImageLayout::eUndefined) continue;
 
@@ -233,7 +254,9 @@ namespace sp::vulkan {
             Assert(res.type == RenderGraphResource::Type::RenderTarget, "resource type must be RenderTarget");
 
             auto image = resources.GetRenderTarget(dep.id)->ImageView()->Image();
-            cmd.ImageBarrier(image,
+
+            if (!cmd) cmd = device.GetCommandContext();
+            cmd->ImageBarrier(image,
                 image->LastLayout(),
                 dep.access.layout,
                 vk::PipelineStageFlagBits::eColorAttachmentOutput, // TODO: infer these
@@ -246,30 +269,32 @@ namespace sp::vulkan {
             // assume pass doesn't depend on one of its outputs (e.g. blending), TODO: implement
             auto &res = resources.resources[id];
 
-            Assert(res.type == RenderGraphResource::Type::RenderTarget, "resource type must be RenderTarget");
+            if (res.type == RenderGraphResource::Type::RenderTarget) {
+                auto view = resources.GetRenderTarget(id)->ImageView();
+                auto image = view->Image();
+                if (view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
 
-            auto view = resources.GetRenderTarget(id)->ImageView();
-            auto image = view->Image();
-            if (view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
+                if (!cmd) cmd = device.GetCommandContext();
 
-            if (res.renderTargetDesc.usage & vk::ImageUsageFlagBits::eColorAttachment) {
-                if (image->LastLayout() == vk::ImageLayout::eColorAttachmentOptimal) continue;
-                cmd.ImageBarrier(image,
-                    vk::ImageLayout::eUndefined,
-                    vk::ImageLayout::eColorAttachmentOptimal,
-                    vk::PipelineStageFlagBits::eBottomOfPipe,
-                    {},
-                    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                    vk::AccessFlagBits::eColorAttachmentWrite);
-            } else if (res.renderTargetDesc.usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
-                if (image->LastLayout() == vk::ImageLayout::eDepthAttachmentOptimal) continue;
-                cmd.ImageBarrier(image,
-                    vk::ImageLayout::eUndefined,
-                    vk::ImageLayout::eDepthAttachmentOptimal,
-                    vk::PipelineStageFlagBits::eBottomOfPipe,
-                    {},
-                    vk::PipelineStageFlagBits::eEarlyFragmentTests,
-                    vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+                if (res.renderTargetDesc.usage & vk::ImageUsageFlagBits::eColorAttachment) {
+                    if (image->LastLayout() == vk::ImageLayout::eColorAttachmentOptimal) continue;
+                    cmd->ImageBarrier(image,
+                        vk::ImageLayout::eUndefined,
+                        vk::ImageLayout::eColorAttachmentOptimal,
+                        vk::PipelineStageFlagBits::eBottomOfPipe,
+                        {},
+                        vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                        vk::AccessFlagBits::eColorAttachmentWrite);
+                } else if (res.renderTargetDesc.usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
+                    if (image->LastLayout() == vk::ImageLayout::eDepthAttachmentOptimal) continue;
+                    cmd->ImageBarrier(image,
+                        vk::ImageLayout::eUndefined,
+                        vk::ImageLayout::eDepthAttachmentOptimal,
+                        vk::PipelineStageFlagBits::eBottomOfPipe,
+                        {},
+                        vk::PipelineStageFlagBits::eEarlyFragmentTests,
+                        vk::AccessFlagBits::eDepthStencilAttachmentWrite);
+                }
             }
         }
     }

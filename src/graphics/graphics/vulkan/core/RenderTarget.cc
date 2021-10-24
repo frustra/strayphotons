@@ -28,6 +28,7 @@ namespace sp::vulkan {
         imageInfo.usage = desc.usage;
 
         ImageViewCreateInfo viewInfo;
+        viewInfo.viewType = desc.primaryViewType;
         viewInfo.defaultSampler = device.GetSampler(SamplerType::BilinearClamp);
 
         auto imageView = device.CreateImageAndView(imageInfo, viewInfo);

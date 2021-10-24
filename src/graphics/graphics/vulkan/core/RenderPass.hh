@@ -19,8 +19,13 @@ namespace sp::vulkan {
         uint32 clearAttachments = 0;
         uint32 loadAttachments = 0;
         uint32 storeAttachments = 0;
-        uint32 multiviewAttachments = 0;
-        uint32 multiviewCorrelation = 0;
+
+        // each bit represents a specific array layer to enable rendering to
+        uint32 multiviewMask = 0;
+        // Vulkan allows you to specify an arbitrary number of correlation masks, to indicate that
+        // multiple subsets of attachments are spatially correlated in different ways. We currently support a single
+        // correlation mask, since all our attachments are spatially correlated in the same way.
+        uint32 multiviewCorrelationMask = 0;
 
         static const uint32 DEPTH_STENCIL_INDEX = 31;
 
@@ -64,45 +69,13 @@ namespace sp::vulkan {
             uint32 attachmentBit = 1 << index;
             return clearAttachments & attachmentBit;
         }
-
-        void SetMultiview(uint32 index, bool enabled, bool correlated) {
-            uint32 attachmentBit = 1 << index;
-            if (enabled) {
-                multiviewAttachments |= attachmentBit;
-            } else {
-                multiviewAttachments &= ~attachmentBit;
-            }
-
-            // Vulkan allows you to specify an arbitrary number of correlation masks, to indicate that
-            // multiple subsets of attachments are spatially correlated in different ways. We currently support a single
-            // correlation mask, since all our attachments are spatially correlated in the same way.
-            if (enabled && correlated) {
-                multiviewCorrelation |= attachmentBit;
-            } else {
-                multiviewCorrelation &= ~attachmentBit;
-            }
-        }
-
-        uint32 MoveStateDepthBitToActualDepthBit(uint32 mask) const {
-            uint32 stateDepthBit = 1u << DEPTH_STENCIL_INDEX;
-            uint32 actualDepthBit = 1u << colorAttachmentCount;
-            if (mask & stateDepthBit) mask |= actualDepthBit;
-            return mask & ~stateDepthBit;
-        }
-
-        uint32 MultiviewMask() const {
-            return MoveStateDepthBitToActualDepthBit(multiviewAttachments);
-        }
-
-        uint32 CorrelationMask() const {
-            return MoveStateDepthBitToActualDepthBit(multiviewCorrelation);
-        }
     };
 
     struct RenderPassInfo {
         RenderPassState state;
         ImageViewPtr colorAttachments[MAX_COLOR_ATTACHMENTS] = {};
         ImageViewPtr depthStencilAttachment;
+        uint32 minAttachmentLayers = ~0u;
 
         vk::ClearColorValue clearColors[MAX_COLOR_ATTACHMENTS] = {};
         vk::ClearDepthStencilValue clearDepthStencil = {1.0f, 0};
@@ -131,7 +104,7 @@ namespace sp::vulkan {
             clearColors[index] = clear;
             colorAttachments[index] = view;
 
-            state.SetMultiview(index, view->ArrayLayers() > 1, true);
+            EnableMultiviewForAllLayers(view);
         }
 
         void SetDepthStencilAttachment(const ImageViewPtr &view,
@@ -143,7 +116,24 @@ namespace sp::vulkan {
             clearDepthStencil = clear;
             depthStencilAttachment = view;
 
-            state.SetMultiview(RenderPassState::DEPTH_STENCIL_INDEX, view->ArrayLayers() > 1, true);
+            EnableMultiviewForAllLayers(view);
+        }
+
+        void EnableMultiviewForAllLayers(const ImageViewPtr &view) {
+            uint32 layers = view->ArrayLayers();
+            if (layers < minAttachmentLayers) { minAttachmentLayers = layers; }
+
+            state.multiviewMask = 0;
+
+            if (minAttachmentLayers >= 2) {
+                for (uint32 i = 0; i < minAttachmentLayers; i++) {
+                    state.multiviewMask |= (1 << i);
+                }
+            }
+
+            // Assume all layers are spatially correlated.
+            // This is true for VR views, but not for shadow maps.
+            state.multiviewCorrelationMask = state.multiviewMask;
         }
 
         bool HasDepthStencil() const {
