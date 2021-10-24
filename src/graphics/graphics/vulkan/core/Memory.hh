@@ -36,6 +36,11 @@
 namespace sp::vulkan {
     enum BufferType { BUFFER_TYPE_UNIFORM, BUFFER_TYPES_COUNT };
 
+    struct BufferDesc {
+        size_t size;
+        BufferType type;
+    };
+
     class UniqueMemory : public NonCopyable {
     public:
         UniqueMemory() = delete;

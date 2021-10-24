@@ -65,8 +65,6 @@ namespace sp::vulkan {
 
         void RenderFrame();
 
-        void RenderShadowMaps(RenderGraph &graph, DrawLock lock);
-
         void ForwardPass(CommandContext &cmd,
             ecs::Renderable::VisibilityMask viewMask,
             DrawLock lock,
@@ -95,10 +93,23 @@ namespace sp::vulkan {
         void QueueScreenshot(const string &path, const string &resource);
 
     private:
+        void EndFrame();
+        void BuildFrameGraph(RenderGraph &graph);
+
         void AddScreenshotPasses(RenderGraph &graph);
         RenderGraphResourceID VisualizeBuffer(RenderGraph &graph, RenderGraphResourceID sourceID);
-        void LoadLightState(ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
-        void EndFrame();
+
+        void AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
+        void AddShadowMaps(RenderGraph &graph, DrawLock lock);
+        void AddDeferredPasses(RenderGraph &graph);
+
+        RenderGraphResourceID AddBloom(RenderGraph &graph, RenderGraphResourceID sourceID);
+        RenderGraphResourceID AddGaussianBlur(RenderGraph &graph,
+            RenderGraphResourceID sourceID,
+            glm::ivec2 direction,
+            uint32 downsample = 1,
+            float scale = 1.0f,
+            float clip = FLT_MAX);
 
         CFuncCollection funcs;
         PreservingMap<string, Model> activeModels;
