@@ -17,10 +17,16 @@
 #endif
 
 namespace sp::vulkan {
-    static const char *defaultWindowViewTarget = "GBuffer0";
+    static const char *defaultWindowViewTarget = "FlatView.TonemappedLuminance";
+    static const char *defaultXRViewTarget = "XRView.TonemappedLuminance";
+
     static CVar<string> CVarWindowViewTarget("r.WindowViewTarget",
         defaultWindowViewTarget,
         "Primary window's render target");
+
+    static CVar<string> CVarXRViewTarget("r.XRViewTarget", defaultXRViewTarget, "HMD's render target");
+
+    static CVar<float> CVarBloomScale("r.BloomScale", 0.15f, "Bloom scale");
 
     Renderer::Renderer(DeviceContext &device) : device(device) {
         funcs.Register<string, string>("screenshot",
@@ -38,7 +44,7 @@ namespace sp::vulkan {
         device->waitIdle();
     }
 
-    void Renderer::LoadLightState(ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock) {
+    void Renderer::AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock) {
         int lightCount = 0;
         glm::ivec2 renderTargetSize(0, 0);
         for (auto entity : lock.EntitiesWith<ecs::Light>()) {
@@ -86,16 +92,31 @@ namespace sp::vulkan {
         lights.renderTargetSize = renderTargetSize;
         lights.count = lightCount;
         lights.gpuData.count = lightCount;
+
+        graph.Pass("LightState")
+            .Build([&](RenderGraphPassBuilder &builder) {
+                builder.CreateUniformBuffer("LightState", sizeof(lights.gpuData));
+            })
+            .Execute([this](RenderGraphResources &resources, DeviceContext &) {
+                resources.GetBuffer("LightState")->CopyFrom(&lights.gpuData);
+            });
     }
 
     void Renderer::RenderFrame() {
         RenderGraph graph(device);
+        BuildFrameGraph(graph);
+        graph.Execute();
+        EndFrame();
+    }
 
+    void Renderer::BuildFrameGraph(RenderGraph &graph) {
+        // lock is copied into the Execute closure of some passes,
+        // and will be released when those passes are done executing.
         auto lock = ecs::World.StartTransaction<
             ecs::Read<ecs::Name, ecs::Transform, ecs::Light, ecs::Renderable, ecs::View, ecs::XRView, ecs::Mirror>>();
 
-        LoadLightState(lock);
-        RenderShadowMaps(graph, lock);
+        AddLightState(graph, lock);
+        AddShadowMaps(graph, lock);
 
         Tecs::Entity windowEntity = device.GetActiveView();
 
@@ -103,35 +124,45 @@ namespace sp::vulkan {
             auto view = windowEntity.Get<ecs::View>(lock);
             view.UpdateViewMatrix(lock, windowEntity);
 
+            graph.BeginScope("FlatView");
+
             graph.Pass("ForwardPass")
                 .Build([&](RenderGraphPassBuilder &builder) {
-                    builder.ShaderRead("ShadowMapLinear");
-
                     RenderTargetDesc desc;
                     desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
+                    desc.primaryViewType = vk::ImageViewType::e2DArray;
 
                     AttachmentInfo info;
                     info.loadOp = LoadOp::Clear;
                     info.storeOp = StoreOp::Store;
                     info.SetClearColor({0.0f, 1.0f, 0.0f, 1.0f});
+
                     desc.format = vk::Format::eR8G8B8A8Srgb;
-                    desc.usage = vk::ImageUsageFlagBits::eColorAttachment;
                     builder.OutputColorAttachment(0, "GBuffer0", desc, info);
 
+                    desc.format = vk::Format::eR16G16B16A16Sfloat;
+                    builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
+                    builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
+
                     desc.format = vk::Format::eD24UnormS8Uint;
-                    desc.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
                     builder.OutputDepthAttachment("GBufferDepth", desc, {LoadOp::Clear, StoreOp::DontCare});
+
+                    builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
                 })
                 .Execute([this, view, lock](RenderGraphResources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("test.vert", "test.frag");
-                    cmd.SetTexture(0, 2, resources.GetRenderTarget("ShadowMapLinear")->ImageView());
-                    cmd.UploadUniformData(0, 11, &this->lights.gpuData);
+                    cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
 
-                    GPUViewState views[] = {{view}, {}};
-                    cmd.UploadUniformData(0, 10, views, 2);
+                    GPUViewState viewState[] = {{view}, {}};
+                    auto viewStateBuf = resources.GetBuffer("ViewState");
+                    viewStateBuf->CopyFrom(viewState, 2);
+                    cmd.SetUniformBuffer(0, 10, viewStateBuf);
 
                     this->ForwardPass(cmd, view.visibilityMask, lock);
                 });
+
+            AddDeferredPasses(graph);
+
+            graph.EndScope();
         }
 
 #ifdef SP_XR_SUPPORT
@@ -153,31 +184,42 @@ namespace sp::vulkan {
             xrRenderPoses.resize(xrViews.size());
             auto visible = firstView.visibilityMask;
 
+            graph.BeginScope("XRView");
+
             graph.Pass("XRForwardPass")
                 .Build([&](RenderGraphPassBuilder &builder) {
-                    RenderTargetDesc targetDesc;
-                    targetDesc.extent = vk::Extent3D(firstView.extents.x, firstView.extents.y, 1);
-                    targetDesc.arrayLayers = xrViews.size();
+                    RenderTargetDesc desc;
+                    desc.extent = vk::Extent3D(firstView.extents.x, firstView.extents.y, 1);
+                    desc.arrayLayers = xrViews.size();
+                    desc.primaryViewType = vk::ImageViewType::e2DArray;
 
                     AttachmentInfo info;
                     info.loadOp = LoadOp::Clear;
                     info.storeOp = StoreOp::Store;
                     info.SetClearColor({0.0f, 1.0f, 0.0f, 1.0f});
-                    targetDesc.format = vk::Format::eR8G8B8A8Srgb;
-                    targetDesc.usage = vk::ImageUsageFlagBits::eColorAttachment;
-                    builder.OutputColorAttachment(0, "XRColor", targetDesc, info);
 
-                    targetDesc.format = vk::Format::eD24UnormS8Uint;
-                    targetDesc.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
-                    builder.OutputDepthAttachment("XRDepth", targetDesc, {LoadOp::Clear, StoreOp::DontCare});
+                    desc.format = vk::Format::eR8G8B8A8Srgb;
+                    builder.OutputColorAttachment(0, "GBuffer0", desc, info);
+
+                    desc.format = vk::Format::eR16G16B16A16Sfloat;
+                    builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
+                    builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
+
+                    desc.format = vk::Format::eD24UnormS8Uint;
+                    builder.OutputDepthAttachment("GBufferDepth", desc, {LoadOp::Clear, StoreOp::DontCare});
+
+                    builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
                 })
                 .Execute([this, xrViews, visible, lock](RenderGraphResources &resources, CommandContext &cmd) {
-                    auto viewState = cmd.AllocUniformData<GPUViewState>(0, 10, 2);
-                    cmd.SetShaders("test.vert", "test.frag");
-                    cmd.UploadUniformData(0, 11, &this->lights.gpuData);
-                    cmd.SetTexture(0, 2, resources.GetRenderTarget("ShadowMapLinear")->ImageView());
+                    cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
+
+                    auto viewStateBuf = resources.GetBuffer("ViewState");
+                    cmd.SetUniformBuffer(0, 10, viewStateBuf);
+
                     this->ForwardPass(cmd, visible, lock);
 
+                    GPUViewState *viewState;
+                    viewStateBuf->Map((void **)&viewState);
                     for (size_t i = 0; i < xrViews.size(); i++) {
                         if (!xrViews[i].Has<ecs::View, ecs::XRView>(lock)) continue;
                         auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
@@ -190,29 +232,51 @@ namespace sp::vulkan {
 
                         viewState[i] = GPUViewState(view);
                     }
+                    viewStateBuf->Unmap();
                 });
 
+            AddDeferredPasses(graph);
+
+            RenderGraphResourceID sourceID;
             graph.Pass("XRSubmit")
                 .Build([&](RenderGraphPassBuilder &builder) {
-                    builder.TransferRead("XRColor");
+                    auto res = builder.GetResourceByName(CVarXRViewTarget.Get());
+                    if (!res) {
+                        Errorf("view target %s does not exist, defaulting to %s",
+                            CVarXRViewTarget.Get(),
+                            defaultXRViewTarget);
+                        CVarXRViewTarget.Set(defaultXRViewTarget);
+                        res = builder.GetResourceByName(defaultXRViewTarget);
+                    }
+
+                    auto format = res.renderTargetDesc.format;
+                    if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4) {
+                        sourceID = res.id;
+                    } else {
+                        sourceID = VisualizeBuffer(graph, res.id);
+                    }
+
+                    builder.TransferRead(sourceID);
                     builder.RequirePass();
                 })
-                .Execute([this, xrViews, lock](RenderGraphResources &resources, DeviceContext &device) {
-                    auto xrRenderTarget = resources.GetRenderTarget("XRColor");
+                .Execute([this, xrViews, sourceID, lock](RenderGraphResources &resources, DeviceContext &device) {
+                    auto xrRenderTarget = resources.GetRenderTarget(sourceID);
 
                     for (size_t i = 0; i < xrViews.size(); i++) {
                         auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
                         this->xrSystem->SubmitView(eye, this->xrRenderPoses[i], xrRenderTarget->ImageView().get());
                     }
                 });
+
+            graph.EndScope();
         }
 #endif
 
         auto swapchainImage = device.SwapchainImageView();
         if (windowEntity && windowEntity.Has<ecs::View>(lock) && swapchainImage) {
             auto view = windowEntity.Get<ecs::View>(lock);
-            RenderGraphResourceID sourceID;
 
+            RenderGraphResourceID sourceID;
             graph.Pass("WindowFinalOutput")
                 .Build([&](RenderGraphPassBuilder &builder) {
                     auto res = builder.GetResourceByName(CVarWindowViewTarget.Get());
@@ -267,12 +331,9 @@ namespace sp::vulkan {
                     vk::to_string(info.desc.format));
             }
         }
-
-        graph.Execute();
-        EndFrame();
     }
 
-    void Renderer::RenderShadowMaps(RenderGraph &graph, DrawLock lock) {
+    void Renderer::AddShadowMaps(RenderGraph &graph, DrawLock lock) {
         if (lights.count == 0) return;
 
         graph.Pass("ShadowMaps")
@@ -350,6 +411,7 @@ namespace sp::vulkan {
                 targetID = res.id;
                 auto desc = res.renderTargetDesc;
                 desc.format = vk::Format::eR8G8B8A8Srgb;
+                desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
                 outputID = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store}).id;
             })
             .Execute([targetID](RenderGraphResources &resources, CommandContext &cmd) {
@@ -369,6 +431,120 @@ namespace sp::vulkan {
                 cmd.Draw(3);
             });
         return outputID;
+    }
+
+    void Renderer::AddDeferredPasses(RenderGraph &graph) {
+        RenderGraphResourceID luminance;
+        graph.Pass("Lighting")
+            .Build([&](RenderGraphPassBuilder &builder) {
+                auto gBuffer0 = builder.ShaderRead("GBuffer0");
+                builder.ShaderRead("GBuffer1");
+                builder.ShaderRead("GBuffer2");
+                builder.ShaderRead("ShadowMapLinear");
+
+                auto desc = gBuffer0.renderTargetDesc;
+                desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
+                desc.format = vk::Format::eR16G16B16A16Sfloat;
+                auto dest =
+                    builder.OutputColorAttachment(0, "LinearLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
+                luminance = dest.id;
+
+                builder.ReadBuffer("ViewState");
+                builder.ReadBuffer("LightState");
+            })
+            .Execute([](RenderGraphResources &resources, CommandContext &cmd) {
+                cmd.SetShaders("screen_cover.vert", "lighting.frag");
+                cmd.SetTexture(0, 0, resources.GetRenderTarget("GBuffer0")->ImageView());
+                cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer1")->ImageView());
+                cmd.SetTexture(0, 2, resources.GetRenderTarget("GBuffer2")->ImageView());
+                cmd.SetTexture(0, 3, resources.GetRenderTarget("ShadowMapLinear")->ImageView());
+
+                cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
+                cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
+                cmd.Draw(3);
+            });
+
+        auto bloom = AddBloom(graph, luminance);
+
+        graph.Pass("Tonemap")
+            .Build([&](RenderGraphPassBuilder &builder) {
+                auto luminance = builder.ShaderRead(bloom);
+
+                auto desc = luminance.renderTargetDesc;
+                desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
+                desc.format = vk::Format::eR8G8B8A8Srgb;
+                builder.OutputColorAttachment(0, "TonemappedLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
+            })
+            .Execute([bloom](RenderGraphResources &resources, CommandContext &cmd) {
+                cmd.SetShaders("screen_cover.vert", "tonemap.frag");
+                cmd.SetTexture(0, 0, resources.GetRenderTarget(bloom)->ImageView());
+                cmd.Draw(3);
+            });
+    }
+
+    RenderGraphResourceID Renderer::AddGaussianBlur(RenderGraph &graph,
+        RenderGraphResourceID sourceID,
+        glm::ivec2 direction,
+        uint32 downsample,
+        float scale,
+        float clip) {
+
+        struct {
+            glm::vec2 direction;
+            float threshold;
+            float scale;
+        } constants;
+
+        constants.direction = glm::vec2(direction);
+        constants.threshold = clip;
+        constants.scale = scale;
+
+        RenderGraphResourceID destID;
+        graph.Pass("GaussianBlur")
+            .Build([&](RenderGraphPassBuilder &builder) {
+                auto source = builder.ShaderRead(sourceID);
+                auto desc = source.renderTargetDesc;
+                desc.extent.width /= downsample;
+                desc.extent.height /= downsample;
+                desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
+                auto dest = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store});
+                destID = dest.id;
+            })
+            .Execute([sourceID, constants](RenderGraphResources &resources, CommandContext &cmd) {
+                cmd.SetShaders("screen_cover.vert", "gaussian_blur.frag");
+                cmd.SetTexture(0, 0, resources.GetRenderTarget(sourceID)->ImageView());
+                cmd.PushConstants(constants);
+                cmd.Draw(3);
+            });
+        return destID;
+    }
+
+    RenderGraphResourceID Renderer::AddBloom(RenderGraph &graph, RenderGraphResourceID sourceID) {
+        auto blurY1 = AddGaussianBlur(graph, sourceID, glm::ivec2(0, 1), 1, CVarBloomScale.Get());
+        auto blurX1 = AddGaussianBlur(graph, blurY1, glm::ivec2(1, 0), 2);
+        auto blurY2 = AddGaussianBlur(graph, blurX1, glm::ivec2(0, 1), 1);
+        auto blurX2 = AddGaussianBlur(graph, blurY2, glm::ivec2(1, 0), 1);
+
+        RenderGraphResourceID destID;
+        graph.Pass("BloomCombine")
+            .Build([&](RenderGraphPassBuilder &builder) {
+                auto source = builder.ShaderRead(sourceID);
+                auto desc = source.renderTargetDesc;
+                desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
+                auto dest = builder.OutputColorAttachment(0, "Bloom", desc, {LoadOp::DontCare, StoreOp::Store});
+                destID = dest.id;
+
+                builder.ShaderRead(blurX1);
+                builder.ShaderRead(blurX2);
+            })
+            .Execute([sourceID, blurX1, blurX2](RenderGraphResources &resources, CommandContext &cmd) {
+                cmd.SetShaders("screen_cover.vert", "bloom_combine.frag");
+                cmd.SetTexture(0, 0, resources.GetRenderTarget(sourceID)->ImageView());
+                cmd.SetTexture(0, 1, resources.GetRenderTarget(blurX1)->ImageView());
+                cmd.SetTexture(0, 2, resources.GetRenderTarget(blurX2)->ImageView());
+                cmd.Draw(3);
+            });
+        return destID;
     }
 
     void Renderer::ForwardPass(CommandContext &cmd,

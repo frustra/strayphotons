@@ -4,7 +4,7 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan {
-    RenderPass::RenderPass(DeviceContext &device, const RenderPassInfo &info) {
+    RenderPass::RenderPass(DeviceContext &device, const RenderPassInfo &info) : state(info.state) {
         uint32 attachmentCount = 0;
         vk::AttachmentDescription attachments[MAX_COLOR_ATTACHMENTS + 1] = {};
         vk::AttachmentReference colorAttachmentRefs[MAX_COLOR_ATTACHMENTS];
@@ -41,8 +41,8 @@ namespace sp::vulkan {
             colorAttachmentRef.attachment = i;
             colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
-            initialLayouts[attachmentCount] = colorAttachment.initialLayout;
-            finalLayouts[attachmentCount] = colorAttachment.finalLayout;
+            initialLayouts[i] = colorAttachment.initialLayout;
+            finalLayouts[i] = colorAttachment.finalLayout;
             attachmentCount++;
         }
 
@@ -102,11 +102,9 @@ namespace sp::vulkan {
         renderPassInfo.pDependencies = &dependency;
 
         vk::RenderPassMultiviewCreateInfo multiviewInfo;
-        auto viewMask = state.MultiviewMask();
-        auto correlationMask = state.CorrelationMask();
-        if (viewMask) {
-            multiviewInfo.pViewMasks = &viewMask;
-            multiviewInfo.pCorrelationMasks = &correlationMask;
+        if (state.multiviewMask) {
+            multiviewInfo.pViewMasks = &state.multiviewMask;
+            multiviewInfo.pCorrelationMasks = &state.multiviewCorrelationMask;
             multiviewInfo.subpassCount = renderPassInfo.subpassCount;
             Assert(multiviewInfo.subpassCount == 1, "need to update this code, pViewMasks needs to be an array");
             renderPassInfo.pNext = &multiviewInfo;

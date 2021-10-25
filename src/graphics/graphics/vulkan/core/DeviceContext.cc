@@ -4,8 +4,8 @@
 #include "assets/AssetManager.hh"
 #include "assets/Image.hh"
 #include "console/CFunc.hh"
+#include "core/InlineVector.hh"
 #include "core/Logging.hh"
-#include "core/StackVector.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
@@ -227,6 +227,10 @@ namespace sp::vulkan {
                 queueIndex[QUEUE_TYPE_TRANSFER] = queueIndex[QUEUE_TYPE_COMPUTE];
             }
         }
+
+        // currently we have code that assumes the transfer queue family is different from the other queues
+        Assert(queueFamilyIndex[QUEUE_TYPE_TRANSFER] != queueFamilyIndex[QUEUE_TYPE_GRAPHICS],
+            "transfer queue family overlaps graphics queue");
 
         imageTransferGranularity = queueFamilies[queueFamilyIndex[QUEUE_TYPE_TRANSFER]].minImageTransferGranularity;
         Assert(imageTransferGranularity.depth <= 1, "transfer queue doesn't support 2D images");
@@ -634,19 +638,19 @@ namespace sp::vulkan {
 
         Assert(waitSemaphores.size() == waitStages.size(), "must have exactly one wait stage per wait semaphore");
 
-        StackVector<vk::Semaphore, 8> signalSemArray;
-        signalSemArray.push(signalSemaphores.data(), signalSemaphores.size());
+        InlineVector<vk::Semaphore, 8> signalSemArray;
+        signalSemArray.insert(signalSemArray.end(), signalSemaphores.begin(), signalSemaphores.end());
 
-        StackVector<vk::Semaphore, 8> waitSemArray;
-        waitSemArray.push(waitSemaphores.data(), waitSemaphores.size());
+        InlineVector<vk::Semaphore, 8> waitSemArray;
+        waitSemArray.insert(waitSemArray.end(), waitSemaphores.begin(), waitSemaphores.end());
 
-        StackVector<vk::PipelineStageFlags, 8> waitStageArray;
-        waitStageArray.push(waitStages.data(), waitStages.size());
+        InlineVector<vk::PipelineStageFlags, 8> waitStageArray;
+        waitStageArray.insert(waitStageArray.end(), waitStages.begin(), waitStages.end());
 
         if (cmd->WritesToSwapchain()) {
-            waitStageArray.push(vk::PipelineStageFlagBits::eColorAttachmentOutput);
-            waitSemArray.push(*Frame().imageAvailableSemaphore);
-            signalSemArray.push(*Frame().renderCompleteSemaphore);
+            waitStageArray.push_back(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+            waitSemArray.push_back(*Frame().imageAvailableSemaphore);
+            signalSemArray.push_back(*Frame().renderCompleteSemaphore);
         }
 
         const vk::CommandBuffer commandBuffer = cmd->Raw();
