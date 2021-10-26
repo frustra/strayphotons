@@ -75,9 +75,11 @@ namespace sp::vulkan {
         BufferPtr GetBuffer(RenderGraphResourceID id);
         BufferPtr GetBuffer(string_view name);
 
-        const RenderGraphResource &GetResourceByName(string_view name) const;
-        const RenderGraphResource &GetResourceByID(RenderGraphResourceID id) const;
-        RenderGraphResourceID GetID(string_view name) const;
+        const RenderGraphResource &GetResource(string_view name) const;
+        const RenderGraphResource &GetResource(RenderGraphResourceID id) const;
+        RenderGraphResourceID GetID(string_view name, bool assertExists = true) const;
+
+        static const RenderGraphResourceID npos = ~0u;
 
     private:
         friend class RenderGraph;
@@ -100,7 +102,6 @@ namespace sp::vulkan {
         struct Scope {
             string name;
             robin_hood::unordered_flat_map<string, RenderGraphResourceID, StringHash, StringEqual> resourceNames;
-            static const RenderGraphResourceID npos = ~0u;
 
             RenderGraphResourceID GetID(string_view name) const;
             void SetID(string_view name, RenderGraphResourceID id);
@@ -201,8 +202,8 @@ namespace sp::vulkan {
             return resource;
         }
 
-        RenderGraphResource GetResourceByName(string_view name) {
-            return resources.GetResourceByName(name);
+        RenderGraphResource GetResource(string_view name) {
+            return resources.GetResource(name);
         }
 
         RenderGraphResource OutputRenderTarget(string_view name, const RenderTargetDesc &desc) {
@@ -319,7 +320,7 @@ namespace sp::vulkan {
         void SetTargetImageView(string_view name, ImageViewPtr view);
 
         void RequireResource(string_view name) {
-            RequireResource(resources.GetResourceByName(name).id);
+            RequireResource(resources.GetID(name));
         }
 
         void RequireResource(RenderGraphResourceID id) {
