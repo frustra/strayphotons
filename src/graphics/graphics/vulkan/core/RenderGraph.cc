@@ -50,17 +50,19 @@ namespace sp::vulkan {
         return output;
     }
 
-    const RenderGraphResource &RenderGraphResources::GetResourceByName(string_view name) const {
-        return GetResourceByID(GetID(name));
+    const RenderGraphResource &RenderGraphResources::GetResource(string_view name) const {
+        return GetResource(GetID(name, false));
     }
 
-    const RenderGraphResource &RenderGraphResources::GetResourceByID(RenderGraphResourceID id) const {
+    const RenderGraphResource &RenderGraphResources::GetResource(RenderGraphResourceID id) const {
         if (id < resources.size()) return resources[id];
         static RenderGraphResource invalidResource = {};
         return invalidResource;
     }
 
-    RenderGraphResourceID RenderGraphResources::GetID(string_view name) const {
+    RenderGraphResourceID RenderGraphResources::GetID(string_view name, bool assertExists) const {
+        RenderGraphResourceID result = npos;
+
         if (name.find('.') != string_view::npos) {
             // Any resource name with a dot is assumed to be fully qualified.
             auto lastDot = name.rfind('.');
@@ -68,16 +70,21 @@ namespace sp::vulkan {
             auto resourceName = name.substr(lastDot + 1);
 
             for (auto &scope : nameScopes) {
-                if (scope.name == scopeName) return scope.GetID(resourceName);
+                if (scope.name == scopeName) {
+                    result = scope.GetID(resourceName);
+                    break;
+                }
             }
-            return Scope::npos;
+            Assert(!assertExists || result == npos, string("resource does not exist: ").append(name));
+            return result;
         }
 
         for (auto scopeIt = scopeStack.rbegin(); scopeIt != scopeStack.rend(); scopeIt++) {
             auto id = nameScopes[*scopeIt].GetID(name);
-            if (id != Scope::npos) return id;
+            if (id != npos) return id;
         }
-        return Scope::npos;
+        Assert(!assertExists, string("resource does not exist: ").append(name));
+        return npos;
     }
 
     uint32 RenderGraphResources::RefCount(RenderGraphResourceID id) {
@@ -149,7 +156,7 @@ namespace sp::vulkan {
     }
 
     void RenderGraph::SetTargetImageView(string_view name, ImageViewPtr view) {
-        auto &res = resources.GetResourceByName(name);
+        auto &res = resources.GetResource(name);
         Assert(res.renderTargetDesc.extent == view->Extent(), "image extent mismatch");
 
         auto resFormat = res.renderTargetDesc.format;
