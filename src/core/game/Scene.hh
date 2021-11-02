@@ -10,16 +10,27 @@ namespace sp {
 
     class Scene : public NonCopyable {
     public:
+        enum class Priority : int {
+            System,
+            Scene,
+            Player,
+            Bindings,
+            Override,
+        };
+
+    public:
         Scene() {}
-        Scene(const string &name, shared_ptr<const Asset> asset) : name(name), asset(asset) {}
+        Scene(const string &name, Priority priority) : sceneName(name), priority(priority) {}
+        Scene(const string &name, shared_ptr<const Asset> asset) : sceneName(name), asset(asset) {}
         ~Scene() {}
 
-        const string name;
+        const string sceneName;
         robin_hood::unordered_flat_map<std::string, Tecs::Entity> namedEntities;
 
         vector<string> autoExecList, unloadExecList;
 
-        void CopyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> src, ecs::Lock<ecs::AddRemove> dst);
+        void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
+        void RemoveScene(ecs::Lock<ecs::Read<ecs::Name, ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
 
         template<typename T>
         void CopyComponent(ecs::Lock<ecs::ReadAll> src,
@@ -40,7 +51,10 @@ namespace sp {
         }
 
     private:
+        Priority priority = Priority::Scene;
         shared_ptr<const Asset> asset;
+
+        friend class SceneManager;
     };
 
     template<>

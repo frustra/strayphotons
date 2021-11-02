@@ -16,10 +16,10 @@ namespace sp {
 
     class SceneManager {
     public:
-        SceneManager();
+        SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld);
 
         void LoadSceneJson(const std::string &name, std::function<void(std::shared_ptr<Scene>)> callback);
-        std::shared_ptr<Scene> LoadBindingJson(std::string bindingConfigPath);
+        void LoadBindingsJson(std::function<void(std::shared_ptr<Scene>)> callback);
 
         void AddToSystemScene(std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback);
 
@@ -31,6 +31,8 @@ namespace sp {
         void LoadPlayer();
         void RespawnPlayer();
 
+        void LoadBindings();
+
         void PrintScene(std::string sceneName);
 
         const Tecs::Entity &GetPlayer() const {
@@ -38,10 +40,11 @@ namespace sp {
         }
 
     private:
-        ecs::ECS stagingWorld;
+        ecs::ECS &liveWorld;
+        ecs::ECS &stagingWorld;
 
         robin_hood::unordered_flat_map<std::string, std::shared_ptr<Scene>> scenes;
-        std::shared_ptr<Scene> playerScene, systemScene;
+        std::shared_ptr<Scene> playerScene, bindingsScene, systemScene;
         Tecs::Entity player;
         CFuncCollection funcs;
     };

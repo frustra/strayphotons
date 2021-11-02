@@ -16,7 +16,7 @@ namespace ecs {
             return scene == other.scene;
         }
 
-        Tecs::Entity liveId, stagingId;
+        Tecs::Entity liveId, stagingId, nextStagingId;
         std::shared_ptr<sp::Scene> scene;
     };
 } // namespace ecs

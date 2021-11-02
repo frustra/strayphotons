@@ -165,8 +165,8 @@ namespace sp {
         if (options["no-vr"].count() == 0) xr.LoadXrSystem();
 #endif
 
-        scenes.LoadBindingJson(InputBindingConfigPath);
         scenes.RespawnPlayer();
+        scenes.LoadBindings();
     }
 
     void Game::PrintDebug() {
