@@ -132,13 +132,8 @@ namespace sp::vulkan {
                     desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
                     desc.primaryViewType = vk::ImageViewType::e2DArray;
 
-                    AttachmentInfo info;
-                    info.loadOp = LoadOp::Clear;
-                    info.storeOp = StoreOp::Store;
-                    info.SetClearColor({0.0f, 1.0f, 0.0f, 1.0f});
-
                     desc.format = vk::Format::eR8G8B8A8Srgb;
-                    builder.OutputColorAttachment(0, "GBuffer0", desc, info);
+                    builder.OutputColorAttachment(0, "GBuffer0", desc, {LoadOp::Clear, StoreOp::Store});
 
                     desc.format = vk::Format::eR16G16B16A16Sfloat;
                     builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
@@ -193,13 +188,8 @@ namespace sp::vulkan {
                     desc.arrayLayers = xrViews.size();
                     desc.primaryViewType = vk::ImageViewType::e2DArray;
 
-                    AttachmentInfo info;
-                    info.loadOp = LoadOp::Clear;
-                    info.storeOp = StoreOp::Store;
-                    info.SetClearColor({0.0f, 1.0f, 0.0f, 1.0f});
-
                     desc.format = vk::Format::eR8G8B8A8Srgb;
-                    builder.OutputColorAttachment(0, "GBuffer0", desc, info);
+                    builder.OutputColorAttachment(0, "GBuffer0", desc, {LoadOp::Clear, StoreOp::Store});
 
                     desc.format = vk::Format::eR16G16B16A16Sfloat;
                     builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
@@ -240,13 +230,13 @@ namespace sp::vulkan {
             RenderGraphResourceID sourceID;
             graph.Pass("XRSubmit")
                 .Build([&](RenderGraphPassBuilder &builder) {
-                    auto res = builder.GetResourceByName(CVarXRViewTarget.Get());
+                    auto res = builder.GetResource(CVarXRViewTarget.Get());
                     if (!res) {
                         Errorf("view target %s does not exist, defaulting to %s",
                             CVarXRViewTarget.Get(),
                             defaultXRViewTarget);
                         CVarXRViewTarget.Set(defaultXRViewTarget);
-                        res = builder.GetResourceByName(defaultXRViewTarget);
+                        res = builder.GetResource(defaultXRViewTarget);
                     }
 
                     auto format = res.renderTargetDesc.format;
@@ -279,13 +269,13 @@ namespace sp::vulkan {
             RenderGraphResourceID sourceID;
             graph.Pass("WindowFinalOutput")
                 .Build([&](RenderGraphPassBuilder &builder) {
-                    auto res = builder.GetResourceByName(CVarWindowViewTarget.Get());
+                    auto res = builder.GetResource(CVarWindowViewTarget.Get());
                     if (!res) {
                         Errorf("view target %s does not exist, defaulting to %s",
                             CVarWindowViewTarget.Get(),
                             defaultWindowViewTarget);
                         CVarWindowViewTarget.Set(defaultWindowViewTarget);
-                        res = builder.GetResourceByName(defaultWindowViewTarget);
+                        res = builder.GetResource(defaultWindowViewTarget);
                     }
 
                     auto format = res.renderTargetDesc.format;
@@ -334,8 +324,6 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddShadowMaps(RenderGraph &graph, DrawLock lock) {
-        if (lights.count == 0) return;
-
         graph.Pass("ShadowMaps")
             .Build([&](RenderGraphPassBuilder &builder) {
                 RenderTargetDesc desc;
@@ -378,7 +366,7 @@ namespace sp::vulkan {
 
             graph.Pass("Screenshot")
                 .Build([&](RenderGraphPassBuilder &builder) {
-                    auto resource = builder.GetResourceByName(screenshotResource);
+                    auto resource = builder.GetResource(screenshotResource);
                     if (resource.type != RenderGraphResource::Type::RenderTarget) {
                         Errorf("Can't screenshot \"%s\": invalid resource", screenshotResource);
                     } else {
@@ -393,7 +381,7 @@ namespace sp::vulkan {
                     }
                 })
                 .Execute([screenshotPath, sourceID](RenderGraphResources &resources, DeviceContext &device) {
-                    auto &res = resources.GetResourceByID(sourceID);
+                    auto &res = resources.GetResource(sourceID);
                     if (res.type == RenderGraphResource::Type::RenderTarget) {
                         auto target = resources.GetRenderTarget(res.id);
                         WriteScreenshot(device, screenshotPath, target->ImageView());
