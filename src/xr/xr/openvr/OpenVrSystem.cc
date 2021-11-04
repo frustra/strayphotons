@@ -69,19 +69,19 @@ namespace sp::xr {
         vrSystem->GetRecommendedRenderTargetSize(&vrWidth, &vrHeight);
         Logf("OpenVR Render Target Size: %u x %u", vrWidth, vrHeight);
 
-        GetSceneManager().AddToSystemScene(
+        GetSceneManager().AddSystemEntities(
             [this, vrWidth, vrHeight](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto vrOrigin = lock.NewEntity();
                 vrOrigin.Set<ecs::Name>(lock, vrOriginEntity.Name());
                 vrOrigin.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
-                vrOrigin.Set<ecs::SceneInfo>(lock, vrOrigin, scene);
+                vrOrigin.Set<ecs::SceneInfo>(lock, vrOrigin, ecs::SceneInfo::Priority::System, scene);
                 vrOrigin.Set<ecs::Transform>(lock);
 
                 for (size_t i = 0; i < views.size(); i++) {
                     auto ent = lock.NewEntity();
                     ent.Set<ecs::Name>(lock, views[i].Name());
                     ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
-                    ent.Set<ecs::SceneInfo>(lock, ent, scene);
+                    ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
                     ent.Set<ecs::XRView>(lock, (ecs::XrEye)i);
 
                     auto &transform = ent.Set<ecs::Transform>(lock);

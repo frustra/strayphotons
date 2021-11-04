@@ -8,11 +8,11 @@
 
 namespace sp {
     ConsoleBindingManager::ConsoleBindingManager() {
-        GetSceneManager().AddToSystemScene([](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+        GetSceneManager().AddSystemEntities([](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
             auto ent = lock.NewEntity();
             ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::INPUT_MANAGER);
             ent.Set<ecs::Name>(lock, consoleInputEntity.Name());
-            ent.Set<ecs::SceneInfo>(lock, ent, scene);
+            ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
             ent.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
             ent.Set<ecs::EventInput>(lock);
             auto &script = ent.Set<ecs::Script>(lock);

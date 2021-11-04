@@ -22,7 +22,7 @@ namespace sp {
 
     SceneManager::SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld)
         : liveWorld(liveWorld), stagingWorld(stagingWorld) {
-        systemScene = std::make_shared<Scene>("system", Scene::Priority::System);
+        systemScene = std::make_shared<Scene>("system");
 
         funcs.Register(this, "loadscene", "Load a scene and replace current scenes", &SceneManager::LoadScene);
         funcs.Register<std::string>("addscene", "Load a scene", [this](std::string sceneName) {
@@ -35,6 +35,7 @@ namespace sp {
     }
 
     void SceneManager::LoadSceneJson(const std::string &sceneName,
+        ecs::SceneInfo::Priority priority,
         std::function<void(std::shared_ptr<Scene>)> callback) {
         Logf("Loading scene: %s", sceneName);
 
@@ -44,7 +45,7 @@ namespace sp {
             return;
         }
 
-        std::thread([this, asset, sceneName, callback]() {
+        std::thread([this, asset, sceneName, priority, callback]() {
             asset->WaitUntilValid();
             picojson::value root;
             string err = picojson::parse(root, asset->String());
@@ -98,7 +99,7 @@ namespace sp {
                         entity = lock.NewEntity();
                     }
 
-                    entity.Set<ecs::SceneInfo>(lock, entity, scene);
+                    entity.Set<ecs::SceneInfo>(lock, entity, priority, scene);
                     for (auto comp : ent) {
                         if (comp.first[0] == '_') continue;
 
@@ -146,7 +147,7 @@ namespace sp {
                 file.close();
             }
 
-            auto scene = make_shared<Scene>("bindings", Scene::Priority::Bindings);
+            auto scene = make_shared<Scene>("bindings");
 
             picojson::value root;
             string err = picojson::parse(root, bindingConfig);
@@ -167,7 +168,7 @@ namespace sp {
                         auto entity = lock.NewEntity();
                         entity.Set<ecs::Name>(lock, param.first);
                         entity.Set<ecs::Owner>(lock, ecs::Owner::SystemId::INPUT_MANAGER);
-                        entity.Set<ecs::SceneInfo>(lock, entity, scene);
+                        entity.Set<ecs::SceneInfo>(lock, entity, ecs::SceneInfo::Priority::Bindings, scene);
                         for (auto comp : param.second.get<picojson::object>()) {
                             if (comp.first[0] == '_') continue;
 
@@ -186,7 +187,7 @@ namespace sp {
         }).detach();
     }
 
-    void SceneManager::AddToSystemScene(
+    void SceneManager::AddSystemEntities(
         std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback) {
         {
             auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
@@ -194,8 +195,13 @@ namespace sp {
 
             systemScene->namedEntities.clear();
             for (auto &e : stagingLock.EntitiesWith<ecs::SceneInfo>()) {
-                auto &name = e.Get<const ecs::Name>(stagingLock);
-                systemScene->namedEntities.emplace(name, e);
+                auto &sceneInfo = e.Get<const ecs::SceneInfo>(stagingLock);
+                if (sceneInfo.scene != systemScene) continue;
+
+                if (e.Has<ecs::Name>(stagingLock)) {
+                    auto &name = e.Get<const ecs::Name>(stagingLock);
+                    systemScene->namedEntities.emplace(name, e);
+                }
             }
         }
         {
@@ -215,7 +221,6 @@ namespace sp {
             for (auto &[name, scene] : scenes) {
                 Logf("Unloading scene: %s", name);
                 scene->RemoveScene(stagingLock, lock);
-                ecs::DestroyAllWith<ecs::SceneInfo>(stagingLock, ecs::SceneInfo(scene));
 
                 for (auto &line : scene->unloadExecList) {
                     GetConsoleManager().QueueParseAndExecute(line);
@@ -263,25 +268,27 @@ namespace sp {
     }
 
     void SceneManager::AddScene(std::string sceneName, std::function<void(std::shared_ptr<Scene>)> callback) {
-        LoadSceneJson(sceneName, [this, sceneName, callback](std::shared_ptr<Scene> scene) {
-            if (scene) {
-                {
-                    auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
-                    auto lock = liveWorld.StartTransaction<ecs::AddRemove>();
+        LoadSceneJson(sceneName,
+            ecs::SceneInfo::Priority::Scene,
+            [this, sceneName, callback](std::shared_ptr<Scene> scene) {
+                if (scene) {
+                    {
+                        auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
+                        auto lock = liveWorld.StartTransaction<ecs::AddRemove>();
 
-                    scene->ApplyScene(stagingLock, lock);
-                    scenes.emplace(sceneName, scene);
+                        scene->ApplyScene(stagingLock, lock);
+                        scenes.emplace(sceneName, scene);
+                    }
+
+                    for (auto &line : scene->autoExecList) {
+                        GetConsoleManager().ParseAndExecute(line);
+                    }
+
+                    if (callback) callback(scene);
+                } else {
+                    Errorf("Failed to load scene: %s", sceneName);
                 }
-
-                for (auto &line : scene->autoExecList) {
-                    GetConsoleManager().ParseAndExecute(line);
-                }
-
-                if (callback) callback(scene);
-            } else {
-                Errorf("Failed to load scene: %s", sceneName);
-            }
-        });
+            });
     }
 
     void SceneManager::RemoveScene(std::string sceneName) {
@@ -289,13 +296,9 @@ namespace sp {
         if (it != scenes.end()) {
             Logf("Unloading scene: %s", it->first);
             {
-                auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
                 auto lock = liveWorld.StartTransaction<ecs::AddRemove>();
                 it->second->RemoveScene(stagingLock, lock);
-            }
-            {
-                auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
-                ecs::DestroyAllWith<ecs::SceneInfo>(lock, ecs::SceneInfo(it->second));
             }
 
             for (auto &line : it->second->unloadExecList) {
@@ -307,28 +310,21 @@ namespace sp {
 
     void SceneManager::LoadPlayer() {
         if (playerScene) {
-            auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-            auto lock = liveWorld.StartTransaction<ecs::AddRemove>();
-            playerScene->RemoveScene(stagingLock, lock);
-        }
-        if (playerScene) {
-            auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
-            ecs::DestroyAllWith<ecs::SceneInfo>(lock, ecs::SceneInfo(playerScene));
-        }
-        if (playerScene) {
-            for (auto &line : playerScene->unloadExecList) {
-                GetConsoleManager().ParseAndExecute(line);
+            Logf("Unloading player");
+            {
+                auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+                auto lock = liveWorld.StartTransaction<ecs::AddRemove>();
+                playerScene->RemoveScene(stagingLock, lock);
             }
+            playerScene.reset();
         }
 
-        playerScene.reset();
         player = Tecs::Entity();
 
         std::atomic_flag loaded;
-        LoadSceneJson("player", [this, &loaded](std::shared_ptr<Scene> scene) {
+        LoadSceneJson("player", ecs::SceneInfo::Priority::Player, [this, &loaded](std::shared_ptr<Scene> scene) {
             playerScene = scene;
             if (playerScene) {
-                playerScene->priority = Scene::Priority::Player;
                 {
                     auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
                     auto lock = liveWorld.StartTransaction<ecs::AddRemove>();
@@ -388,17 +384,12 @@ namespace sp {
 
     void SceneManager::LoadBindings() {
         if (bindingsScene) {
-            auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+            auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
             auto lock = liveWorld.StartTransaction<ecs::AddRemove>();
             bindingsScene->RemoveScene(stagingLock, lock);
+            // TODO: Remove console key bindings
+            bindingsScene.reset();
         }
-        if (bindingsScene) {
-            auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
-            ecs::DestroyAllWith<ecs::SceneInfo>(lock, ecs::SceneInfo(bindingsScene));
-        }
-        // TODO: Remove console key bindings
-
-        bindingsScene.reset();
 
         std::atomic_flag loaded;
         LoadBindingsJson([this, &loaded](std::shared_ptr<Scene> scene) {

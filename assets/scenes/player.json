@@ -1,7 +1,4 @@
 {
-    "autoexec": [
-        "bind v toggle p.NoClip"
-    ],
     "entities": [
         {
             "_name": "player",

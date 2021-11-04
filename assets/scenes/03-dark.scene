@@ -1,14 +1,4 @@
 {
-	"autoexec": [
-		"r.MirrorRecursion 2",
-		"r.MirrorMapResolution 1024",
-		"wait 1000 setsignal airlock1-out.door_open 1",
-		"r.LightAttenuation 0.15"
-	],
-	"unloadexec": [
-		"r.MirrorMapResolution 512",
-		"r.LightAttenuation 0.5"
-	],
 	"entities": [
 		<%- include('prefab/airlock', {
 			name: 'airlock1',
@@ -23,9 +13,16 @@
 		}) %>,
 		{
 			"trigger_area": {
+				"min": [-3, 0, 1.5],
+				"max": [0, 2, 3],
+				"command": "r.MirrorRecursion 2; r.MirrorMapResolution 1024; wait 1000 setsignal airlock1-out.door_open 1"
+			}
+		},
+		{
+			"trigger_area": {
 				"min": [6, 0, 9],
 				"max": [9, 2, 11.5],
-				"command": "setsignal airlock2-in.door_open 0; wait 1000 loadscene 04-symmetry"
+				"command": "setsignal airlock2-in.door_open 0; wait 1000 loadscene 04-symmetry; r.MirrorMapResolution 512"
 			}
 		},
 		<%- include("prefab/floor", {

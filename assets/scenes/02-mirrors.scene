@@ -1,12 +1,4 @@
 {
-	"autoexec": [
-		"r.MirrorRecursion 1",
-		"wait 1000 setsignal airlock1-out.door_open 1",
-		"r.LightAttenuation 0.15"
-	],
-	"unloadexec": [
-		"r.LightAttenuation 0.5"
-	],
 	"entities": [
 		<%- include('prefab/airlock', {
 			name: 'airlock1',
@@ -19,6 +11,13 @@
 			rotate: [-90, 0, 1, 0],
 			in_signal: "sensor2"
 		}) %>,
+		{
+			"trigger_area": {
+				"min": [-3, 0, 1.5],
+				"max": [0, 2, 3],
+				"command": "r.MirrorRecursion 1; wait 1000 setsignal airlock1-out.door_open 1"
+			}
+		},
 		{
 			"trigger_area": {
 				"min": [10, 0, -2.5],

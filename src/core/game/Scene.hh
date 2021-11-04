@@ -2,6 +2,9 @@
 
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/components/Light.hh"
+#include "ecs/components/SceneInfo.hh"
+#include "ecs/components/Transform.hh"
 
 #include <robin_hood.h>
 
@@ -10,17 +13,8 @@ namespace sp {
 
     class Scene : public NonCopyable {
     public:
-        enum class Priority : int {
-            System,
-            Scene,
-            Player,
-            Bindings,
-            Override,
-        };
-
-    public:
         Scene() {}
-        Scene(const string &name, Priority priority) : sceneName(name), priority(priority) {}
+        Scene(const string &name) : sceneName(name) {}
         Scene(const string &name, shared_ptr<const Asset> asset) : sceneName(name), asset(asset) {}
         ~Scene() {}
 
@@ -30,7 +24,7 @@ namespace sp {
         vector<string> autoExecList, unloadExecList;
 
         void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
-        void RemoveScene(ecs::Lock<ecs::Read<ecs::Name, ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
+        void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
 
         template<typename T>
         void CopyComponent(ecs::Lock<ecs::ReadAll> src,
@@ -51,7 +45,6 @@ namespace sp {
         }
 
     private:
-        Priority priority = Priority::Scene;
         shared_ptr<const Asset> asset;
 
         friend class SceneManager;

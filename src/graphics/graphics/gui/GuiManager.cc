@@ -38,11 +38,11 @@ namespace sp {
         guiEntity = ecs::NamedEntity(name);
         keyboardEntity = ecs::NamedEntity("keyboard");
 
-        GetSceneManager().AddToSystemScene([this, layer](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+        GetSceneManager().AddSystemEntities([this, layer](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
             auto ent = lock.NewEntity();
             ent.Set<ecs::Name>(lock, guiEntity.Name());
             ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GUI_MANAGER);
-            ent.Set<ecs::SceneInfo>(lock, ent, scene);
+            ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
             ent.Set<ecs::FocusLayer>(lock, layer);
             ent.Set<ecs::EventInput>(lock, INPUT_EVENT_MENU_SCROLL, INPUT_EVENT_MENU_TEXT_INPUT);
 

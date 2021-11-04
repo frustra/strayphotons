@@ -2,7 +2,8 @@
     "_console": {
         "/keyboard/key/f5": "reloadscene",
         "/keyboard/key/f6": "reloadscene; reloadplayer",
-        "/keyboard/key/f7": "reloadshaders"
+        "/keyboard/key/f7": "reloadshaders",
+        "/keyboard/key/v": "toggle p.NoClip"
     },
     "mouse": {
         "event_bindings": {

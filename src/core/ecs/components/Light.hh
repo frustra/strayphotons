@@ -1,7 +1,8 @@
 #pragma once
 
-#include <ecs/Components.hh>
-#include <ecs/Ecs.hh>
+#include "ecs/Components.hh"
+#include "ecs/Ecs.hh"
+
 #include <glm/glm.hpp>
 
 namespace ecs {

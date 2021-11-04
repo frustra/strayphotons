@@ -22,8 +22,18 @@ namespace SceneManagerTests {
         Assertf(!!liveEnt, "Expected entity to exist: %s", entityName);
         Assertf(liveEnt.Has<ecs::SceneInfo>(liveLock), "Expected entity %s to have SceneInfo", entityName);
         auto &liveSceneInfo = liveEnt.Get<ecs::SceneInfo>(liveLock);
+        AssertEqual(liveSceneInfo.liveId, liveEnt, "Staging SceneInfo.liveId does not match");
 
         auto ent = liveSceneInfo.stagingId;
+        Assertf(!!ent, "Expected entity to exist: %u", ent.id);
+        Assertf(ent.Has<ecs::SceneInfo>(stagingLock), "Expected entity %u to have SceneInfo", ent.id);
+        auto &sceneInfo = ent.Get<ecs::SceneInfo>(stagingLock);
+        AssertEqual(liveSceneInfo.nextStagingId,
+            sceneInfo.nextStagingId,
+            "Live SceneInfo.nextStagingId does not match");
+        Assert(sceneInfo.scene != nullptr, "Expected entity to have valid Scene");
+        AssertEqual(sceneInfo.scene->sceneName, *sceneNames.begin(), "Entity scene does not match expected");
+
         for (auto &sceneName : sceneNames) {
             Assertf(!!ent, "Expected entity to exist: %u", ent.id);
             Assertf(ent.Has<ecs::SceneInfo>(stagingLock), "Expected entity %u to have SceneInfo", ent.id);
@@ -37,62 +47,137 @@ namespace SceneManagerTests {
         Assert(!ent, "Expected no more entity scenes");
     }
 
+    void systemSceneCallback(ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<sp::Scene> scene) {
+        auto ent = lock.NewEntity();
+        ent.Set<ecs::Name>(lock, "player");
+        ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
+        ent.Set<ecs::Transform>(lock, glm::vec3(1, 2, 3));
+        ent.Set<ecs::SignalOutput>(lock);
+        ent.Set<ecs::SignalBindings>(lock);
+        ent.Set<ecs::EventInput>(lock);
+        ent.Set<ecs::EventBindings>(lock);
+        ent.Set<ecs::Script>(lock);
+
+        ent = lock.NewEntity();
+        ent.Set<ecs::Name>(lock, "test");
+        ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
+    }
+
     void TestBasicLoadAddRemove() {
         {
-            Timer t("Add test system scene");
-            Scenes.AddToSystemScene([](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<sp::Scene> scene) {
-                auto ent = lock.NewEntity();
-                ent.Set<ecs::Name>(lock, "vr-origin");
-                ent.Set<ecs::SceneInfo>(lock, ent, scene);
-                ent.Set<ecs::Transform>(lock, glm::vec3(1, 2, 3));
-
-                ent = lock.NewEntity();
-                ent.Set<ecs::Name>(lock, "console-input");
-                ent.Set<ecs::SceneInfo>(lock, ent, scene);
-                ent.Set<ecs::EventInput>(lock);
-                ent.Set<ecs::Script>(lock);
-            });
+            Timer t("Add system scene first");
+            Scenes.AddSystemEntities(systemSceneCallback);
 
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                AssertEntityScene(stagingLock, liveLock, "vr-origin", {"system"});
-                AssertEntityScene(stagingLock, liveLock, "console-input", {"system"});
+                AssertEntityScene(stagingLock, liveLock, "player", {"system"});
             }
         }
         {
-            Timer t("Add player scene");
+            Timer t("Add player scene second");
             Scenes.LoadPlayer();
 
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                AssertEntityScene(stagingLock, liveLock, "vr-origin", {"player", "system"});
-                AssertEntityScene(stagingLock, liveLock, "console-input", {"system"});
-
-                AssertEntityScene(stagingLock, liveLock, "player", {"player"});
-                AssertEntityScene(stagingLock, liveLock, "left-hand-input", {"player"});
-                AssertEntityScene(stagingLock, liveLock, "right-hand-input", {"player"});
+                AssertEntityScene(stagingLock, liveLock, "player", {"player", "system"});
             }
         }
         {
-            Timer t("Add bindings scene");
-            Scenes.LoadBindings();
+            Timer t("Unload player scene (primary player entity)");
+            auto player = Scenes.GetPlayer();
+            std::shared_ptr<sp::Scene> playerScene;
+            {
+                auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+                auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+                Assert(player.Has<ecs::Name, ecs::SceneInfo>(liveLock), "Expected player entity to be valid");
+                AssertEqual(player.Get<ecs::Name>(liveLock), "player", "Expected player to be named correctly");
+                auto &playerSceneInfo = player.Get<ecs::SceneInfo>(liveLock);
+                playerScene = playerSceneInfo.scene;
+                Assert(playerScene != nullptr, "Expected player to have a scene");
+                AssertEqual(playerScene->sceneName, "player", "Expected player scene to be named correctly");
+                playerScene->RemoveScene(stagingLock, liveLock);
+            }
 
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                AssertEntityScene(stagingLock, liveLock, "vr-origin", {"player", "system"});
-                AssertEntityScene(stagingLock, liveLock, "console-input", {"system"});
+                AssertEntityScene(stagingLock, liveLock, "player", {"system"});
+            }
+        }
+        {
+            Timer t("Reload player scene");
+            Scenes.LoadPlayer();
 
-                AssertEntityScene(stagingLock, liveLock, "player", {"bindings", "player"});
-                AssertEntityScene(stagingLock, liveLock, "left-hand-input", {"player"});
-                AssertEntityScene(stagingLock, liveLock, "right-hand-input", {"player"});
+            {
+                auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                AssertEntityScene(stagingLock, liveLock, "player", {"player", "system"});
+            }
+        }
+        {
+            Timer t("Reset ECS");
+            auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+            auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
 
-                AssertEntityScene(stagingLock, liveLock, "keyboard", {"bindings"});
-                AssertEntityScene(stagingLock, liveLock, "mouse", {"bindings"});
-                AssertEntityScene(stagingLock, liveLock, "vr-controller-left", {"bindings"});
-                AssertEntityScene(stagingLock, liveLock, "vr-controller-right", {"bindings"});
+            for (auto &e : stagingLock.Entities()) {
+                e.Destroy(stagingLock);
+            }
+            for (auto &e : liveLock.Entities()) {
+                e.Destroy(liveLock);
+            }
+        }
+        {
+            Timer t("Add player scene first");
+            Scenes.LoadPlayer();
+
+            {
+                auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                AssertEntityScene(stagingLock, liveLock, "player", {"player"});
+            }
+        }
+        {
+            Timer t("Add system scene second");
+            Scenes.AddSystemEntities(systemSceneCallback);
+
+            {
+                auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                AssertEntityScene(stagingLock, liveLock, "player", {"player", "system"});
+            }
+        }
+        {
+            Timer t("Unload system scene (secondary player entity)");
+            std::shared_ptr<sp::Scene> systemScene;
+            {
+                auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+                auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+                auto test = ecs::EntityWith<ecs::Name>(stagingLock, "test");
+                Assert(test.Has<ecs::Name, ecs::SceneInfo>(stagingLock), "Expected test entity to be valid");
+                AssertEqual(test.Get<ecs::Name>(stagingLock), "test", "Expected test entity to be named correctly");
+                auto &testSceneInfo = test.Get<ecs::SceneInfo>(stagingLock);
+                systemScene = testSceneInfo.scene;
+                Assert(systemScene != nullptr, "Expected test entity to have a scene");
+                AssertEqual(systemScene->sceneName, "system", "Expected system scene to be named correctly");
+                systemScene->RemoveScene(stagingLock, liveLock);
+            }
+
+            {
+                auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                AssertEntityScene(stagingLock, liveLock, "player", {"player"});
+            }
+        }
+        {
+            Timer t("Reload system scene");
+            Scenes.AddSystemEntities(systemSceneCallback);
+
+            {
+                auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
+                AssertEntityScene(stagingLock, liveLock, "player", {"player", "system"});
             }
         }
     }

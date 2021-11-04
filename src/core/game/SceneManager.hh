@@ -2,6 +2,7 @@
 
 #include "console/CFunc.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/components/SceneInfo.hh"
 
 #include <functional>
 #include <memory>
@@ -18,10 +19,13 @@ namespace sp {
     public:
         SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld);
 
-        void LoadSceneJson(const std::string &name, std::function<void(std::shared_ptr<Scene>)> callback);
+        void LoadSceneJson(const std::string &name,
+            ecs::SceneInfo::Priority priority,
+            std::function<void(std::shared_ptr<Scene>)> callback);
         void LoadBindingsJson(std::function<void(std::shared_ptr<Scene>)> callback);
 
-        void AddToSystemScene(std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback);
+        void AddSystemEntities(std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback);
+        void RemoveSystemEntities(std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback);
 
         void LoadScene(std::string name);
         void ReloadScene(std::string name);

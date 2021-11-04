@@ -27,18 +27,18 @@ namespace sp {
         keyboardEntity = ecs::NamedEntity("keyboard");
         mouseEntity = ecs::NamedEntity("mouse");
 
-        GetSceneManager().AddToSystemScene([this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+        GetSceneManager().AddSystemEntities([this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
             auto keyboard = lock.NewEntity();
             keyboard.Set<ecs::Owner>(lock, ecs::Owner::SystemId::INPUT_MANAGER);
             keyboard.Set<ecs::Name>(lock, keyboardEntity.Name());
-            keyboard.Set<ecs::SceneInfo>(lock, keyboard, scene);
+            keyboard.Set<ecs::SceneInfo>(lock, keyboard, ecs::SceneInfo::Priority::System, scene);
             keyboard.Set<ecs::EventBindings>(lock);
             keyboard.Set<ecs::SignalOutput>(lock);
 
             auto mouse = lock.NewEntity();
             mouse.Set<ecs::Owner>(lock, ecs::Owner::SystemId::INPUT_MANAGER);
             mouse.Set<ecs::Name>(lock, mouseEntity.Name());
-            mouse.Set<ecs::SceneInfo>(lock, mouse, scene);
+            mouse.Set<ecs::SceneInfo>(lock, mouse, ecs::SceneInfo::Priority::System, scene);
             mouse.Set<ecs::EventBindings>(lock);
             mouse.Set<ecs::SignalOutput>(lock);
         });
