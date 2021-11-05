@@ -9,18 +9,10 @@ namespace sp {
             if (sceneInfo.scene.get() != this) continue;
             Assert(sceneInfo.stagingId == e, "Expected staging entity to match SceneInfo.stagingId");
 
-            if (sceneInfo.liveId) {
-                // Entity already exists in live scene
-                Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have SceneInfo");
-                if (e.Has<ecs::Name>(staging)) {
-                    Assert(sceneInfo.liveId.Has<ecs::Name>(live), "Expected liveId to have a name");
-                    auto &name = e.Get<const ecs::Name>(staging);
-                    Logf("Updating existing entity: %s", name);
-                }
-                auto &liveSceneInfo = sceneInfo.liveId.Get<const ecs::SceneInfo>(live);
-                Assert(liveSceneInfo.stagingId == e, "Expected live scene info to match stagingId");
-                Assert(liveSceneInfo.liveId == sceneInfo.liveId, "Expected live scene info to match liveId");
-            } else if (e.Has<ecs::Name>(staging)) {
+            // Skip entities that have already been added
+            if (sceneInfo.liveId) continue;
+
+            if (e.Has<ecs::Name>(staging)) {
                 // Find matching named entity in live scene
                 auto &name = e.Get<const ecs::Name>(staging);
                 sceneInfo.liveId = ecs::EntityWith<ecs::Name>(live, name);
@@ -32,15 +24,13 @@ namespace sp {
                 } else {
                     // No entity exists in the live scene
                     Logf("New entity: %s", name);
-                    auto newEnt = live.NewEntity();
-                    sceneInfo.liveId = newEnt;
+                    sceneInfo.liveId = live.NewEntity();
                     CopyComponent<ecs::SceneInfo>(staging, e, live, sceneInfo.liveId);
                     CopyComponent<ecs::Name>(staging, e, live, sceneInfo.liveId);
                 }
             } else {
                 // No entity exists in the live scene
-                auto newEnt = live.NewEntity();
-                sceneInfo.liveId = newEnt;
+                sceneInfo.liveId = live.NewEntity();
                 CopyComponent<ecs::SceneInfo>(staging, e, live, sceneInfo.liveId);
             }
         }
@@ -49,7 +39,14 @@ namespace sp {
             auto &sceneInfo = e.Get<ecs::SceneInfo>(live);
             if (sceneInfo.scene.get() == this) {
                 Assert(sceneInfo.liveId == e, "Expected live entity to match SceneInfo.liveId");
-                CopyAllComponents(ecs::Lock<ecs::ReadAll>(staging), sceneInfo.stagingId, live, sceneInfo.liveId);
+                // Apply any entity overrides from other scenes
+                auto stagingId = sceneInfo.stagingId;
+                while (stagingId.Has<ecs::SceneInfo>(staging)) {
+                    CopyAllComponents(ecs::Lock<ecs::ReadAll>(staging), stagingId, live, sceneInfo.liveId);
+                    auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
+                    stagingId = stagingInfo.nextStagingId;
+                }
+                CopyComponent<ecs::SceneInfo>(staging, sceneInfo.stagingId, live, sceneInfo.liveId);
             }
         }
     }

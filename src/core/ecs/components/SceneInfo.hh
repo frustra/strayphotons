@@ -10,6 +10,7 @@ namespace sp {
 
 namespace ecs {
     struct SceneInfo {
+        // Lower priority scenes will have their components overwritten with higher priority components.
         enum class Priority : int {
             System,
             Scene,

@@ -13,7 +13,7 @@ namespace ecs {
             "InsertWithPriority called with an invalid new SceneInfo");
         auto &newStagingInfo = newSceneInfo.stagingId.Get<SceneInfo>(staging);
 
-        if (newSceneInfo.priority > this->priority) {
+        if (newSceneInfo.priority < this->priority) {
             // Insert into the root of the linked-list
             this->nextStagingId = newStagingInfo.nextStagingId = this->stagingId;
             this->stagingId = newSceneInfo.stagingId;
@@ -26,7 +26,7 @@ namespace ecs {
             auto nextId = stagingInfo.nextStagingId;
             while (nextId.Has<SceneInfo>(staging)) {
                 auto &nextSceneInfo = nextId.Get<SceneInfo>(staging);
-                if (newSceneInfo.priority > nextSceneInfo.priority) break;
+                if (newSceneInfo.priority < nextSceneInfo.priority) break;
                 nextId = nextSceneInfo.stagingId;
                 prevSceneInfo = &nextSceneInfo;
             }
