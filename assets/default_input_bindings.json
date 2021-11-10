@@ -65,12 +65,6 @@
             "/actions/main/in/grab": { "/action/interact": "player" }
         }
     },
-    "vr-controller-right": {
-        "event_bindings": {
-            "/actions/main/in/movement": { "/script/joystick_in": "player" },
-            "/actions/main/in/grab": { "/action/interact": "player" }
-        }
-    },
     "player": {
         "signal_bindings": {
             "menu_primary_trigger": { "mouse_button_left": "mouse" },

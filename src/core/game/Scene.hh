@@ -62,6 +62,8 @@ namespace sp {
             if (parent && parent.Has<ecs::SceneInfo>(src)) {
                 auto &sceneInfo = parent.Get<ecs::SceneInfo>(src);
                 dstTransform.SetParent(sceneInfo.liveId);
+            } else {
+                dstTransform.SetParent(Tecs::Entity());
             }
             dstTransform.SetPosition(srcTransform.GetPosition());
             dstTransform.SetRotation(srcTransform.GetRotation());

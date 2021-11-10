@@ -104,7 +104,7 @@
 			"trigger_area": {
 				"min": [-5, 0, -5],
 				"max": [5, 2, 5],
-				"command": "loadscene 01-outside"
+				"command": "releasefocus menu; loadscene 01-outside"
 			}
 		}
 	]

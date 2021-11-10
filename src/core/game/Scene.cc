@@ -1,6 +1,29 @@
 #include "Scene.hh"
 
 namespace sp {
+    void RebuildComponentsByPriority(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
+        ecs::Lock<ecs::AddRemove> live,
+        Tecs::Entity e) {
+
+        Assert(e.Has<ecs::SceneInfo>(staging), "Expected entity to have valid SceneInfo");
+        auto &sceneInfo = e.Get<const ecs::SceneInfo>(staging);
+        Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have valid SceneInfo");
+        auto &liveSceneInfo = sceneInfo.liveId.Get<const ecs::SceneInfo>(live);
+
+        std::vector<Tecs::Entity> stagingIds;
+        auto stagingId = liveSceneInfo.stagingId;
+        while (stagingId.Has<ecs::SceneInfo>(staging)) {
+            stagingIds.emplace_back(stagingId);
+
+            auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
+            stagingId = stagingInfo.nextStagingId;
+        }
+        while (!stagingIds.empty()) {
+            Scene::CopyAllComponents(ecs::Lock<ecs::ReadAll>(staging), stagingIds.back(), live, sceneInfo.liveId);
+            stagingIds.pop_back();
+        }
+    }
+
     void ApplyComponentsByPriority(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
         ecs::Lock<ecs::AddRemove> live,
         Tecs::Entity e) {
@@ -16,19 +39,7 @@ namespace sp {
             return;
         }
 
-        // Re-apply entities in priority order
-        std::vector<Tecs::Entity> stagingIds;
-        auto stagingId = liveSceneInfo.stagingId;
-        while (stagingId.Has<ecs::SceneInfo>(staging)) {
-            stagingIds.emplace_back(stagingId);
-
-            auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
-            stagingId = stagingInfo.nextStagingId;
-        }
-        while (!stagingIds.empty()) {
-            Scene::CopyAllComponents(ecs::Lock<ecs::ReadAll>(staging), stagingIds.back(), live, sceneInfo.liveId);
-            stagingIds.pop_back();
-        }
+        RebuildComponentsByPriority(staging, live, e);
     }
 
     void Scene::ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
@@ -47,6 +58,7 @@ namespace sp {
                     sceneInfo.liveId = ecs::EntityWith<ecs::Name>(live, name);
                     if (sceneInfo.liveId) {
                         // Entity overlaps with another scene
+                        Logf("Merging entity: %s", name);
                         Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have SceneInfo");
                         auto &liveSceneInfo = sceneInfo.liveId.Get<ecs::SceneInfo>(live);
                         liveSceneInfo.InsertWithPriority(staging, sceneInfo);
@@ -74,7 +86,12 @@ namespace sp {
             if (sceneInfo.liveId) {
                 Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have SceneInfo");
                 auto &liveSceneInfo = sceneInfo.liveId.Get<ecs::SceneInfo>(live);
-                if (liveSceneInfo.Remove(staging, e)) sceneInfo.liveId.Destroy(live);
+                if (liveSceneInfo.Remove(staging, e)) {
+                    // No more staging entities, remove the live id.
+                    sceneInfo.liveId.Destroy(live);
+                } else {
+                    RebuildComponentsByPriority(staging, live, liveSceneInfo.stagingId);
+                }
             }
             e.Destroy(staging);
         }

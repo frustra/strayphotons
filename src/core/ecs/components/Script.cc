@@ -46,11 +46,7 @@ namespace ecs {
     }
 
     void Script::CopyCallbacks(const Script &src) {
-        if (onTickCallbacks.empty()) {
-            onTickCallbacks = src.onTickCallbacks;
-        } else {
-            Errorf("Script::CopyCallbacks called on non-empty script");
-        }
+        if (onTickCallbacks.empty()) onTickCallbacks = src.onTickCallbacks;
     }
 
     void Script::CopyParams(const Script &src) {
