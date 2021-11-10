@@ -212,10 +212,6 @@ namespace sp::vulkan {
 
         void SetTexture(uint32 set, uint32 binding, const ImageViewPtr &view);
         void SetTexture(uint32 set, uint32 binding, const ImageView *view);
-        void SetTexture(uint32 set,
-            uint32 binding,
-            const vk::ImageView &view,
-            vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal);
         void SetSampler(uint32 set, uint32 binding, const vk::Sampler &sampler);
 
         void SetUniformBuffer(uint32 set, uint32 binding, const BufferPtr &buffer);

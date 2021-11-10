@@ -172,11 +172,11 @@ namespace sp::vulkan {
         key.input.renderPass = info.state;
 
         for (uint32 i = 0; i < info.state.colorAttachmentCount; i++) {
-            auto image = info.colorAttachments[i];
-            Assert(!!image, "render pass is missing a color image");
-            key.input.imageViews[i] = *image;
+            auto imageView = info.colorAttachments[i];
+            Assert(!!imageView, "render pass is missing a color image");
+            key.input.imageViewIDs[i] = imageView->GetUniqueID();
 
-            auto extent = image->Extent();
+            auto extent = imageView->Extent();
             key.input.extents[i].width = extent.width;
             key.input.extents[i].height = extent.height;
         }
@@ -184,7 +184,7 @@ namespace sp::vulkan {
         if (info.HasDepthStencil()) {
             auto image = info.depthStencilAttachment;
             Assert(!!image, "render pass is missing depth image");
-            key.input.imageViews[MAX_COLOR_ATTACHMENTS] = *image;
+            key.input.imageViewIDs[MAX_COLOR_ATTACHMENTS] = image->GetUniqueID();
         }
 
         auto &fb = framebuffers[key];

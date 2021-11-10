@@ -6,7 +6,6 @@
 #include "graphics/vulkan/core/HandlePool.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
-#include "graphics/vulkan/core/UniqueID.hh"
 
 #include <robin_hood.h>
 #include <variant>
@@ -130,10 +129,6 @@ namespace sp::vulkan {
         using TemporaryObject = std::variant<BufferPtr, ImageViewPtr, SharedHandle<vk::Semaphore>>;
         SharedHandle<vk::Fence> PushInFlightObject(TemporaryObject object, SharedHandle<vk::Fence> fence = nullptr);
 
-        UniqueID NextUniqueID() {
-            return ++lastUniqueID;
-        }
-
         const vk::PhysicalDeviceLimits &Limits() const {
             return physicalDeviceProperties.limits;
         }
@@ -251,7 +246,5 @@ namespace sp::vulkan {
         GLFWwindow *window = nullptr;
 
         unique_ptr<CFuncCollection> funcs;
-
-        UniqueID lastUniqueID = 0;
     };
 } // namespace sp::vulkan

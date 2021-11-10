@@ -136,7 +136,7 @@ namespace sp::vulkan {
         vk::ImageUsageFlags usage = {}; // defaults to image's usage
     };
 
-    class ImageView final : public WrappedUniqueHandle<vk::ImageView>, public GpuTexture {
+    class ImageView final : public WrappedUniqueHandle<vk::ImageView>, public GpuTexture, public HasUniqueID {
     public:
         ImageView() {}
 
