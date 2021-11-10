@@ -9,7 +9,7 @@ namespace ecs {
     struct Light {
         float spotAngle, intensity, illuminance;
         glm::vec3 tint;
-        int gelId;
+        string gelName;
         bool on = true;
         Tecs::Entity bulb;
         uint32_t shadowMapSize = 9; // shadow map will have a width and height of 2^shadowMapSize

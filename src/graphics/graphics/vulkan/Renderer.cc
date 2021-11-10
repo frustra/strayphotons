@@ -3,6 +3,7 @@
 #include "assets/Model.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/vulkan/GuiRenderer.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
@@ -17,8 +18,8 @@
 #endif
 
 namespace sp::vulkan {
-    static const char *defaultWindowViewTarget = "FlatView.TonemappedLuminance";
-    static const char *defaultXRViewTarget = "XRView.TonemappedLuminance";
+    static const char *defaultWindowViewTarget = "FlatView.LastOutput";
+    static const char *defaultXRViewTarget = "XRView.LastOutput";
 
     static CVar<string> CVarWindowViewTarget("r.WindowViewTarget",
         defaultWindowViewTarget,
@@ -38,6 +39,9 @@ namespace sp::vulkan {
         funcs.Register("listrendertargets", "List all render targets", [&]() {
             listRenderTargets = true;
         });
+
+        auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+        guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
     }
 
     Renderer::~Renderer() {
@@ -46,7 +50,9 @@ namespace sp::vulkan {
 
     void Renderer::AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock) {
         int lightCount = 0;
+        int gelCount = 0;
         glm::ivec2 renderTargetSize(0, 0);
+
         for (auto entity : lock.EntitiesWith<ecs::Light>()) {
             if (!entity.Has<ecs::Light, ecs::Transform>(lock)) continue;
 
@@ -79,7 +85,14 @@ namespace sp::vulkan {
             data.mapOffset = {renderTargetSize.x, 0, extent, extent};
             data.intensity = light.intensity;
             data.illuminance = light.illuminance;
-            data.gelId = light.gelId;
+
+            if (light.gelName.empty()) {
+                data.gelId = 0;
+            } else {
+                Assert(gelCount < MAX_LIGHT_GELS, "too many light gels");
+                data.gelId = ++gelCount;
+                lights.gelNames[data.gelId - 1] = light.gelName;
+            }
 
             renderTargetSize.x += extent;
             if (extent > renderTargetSize.y) renderTargetSize.y = extent;
@@ -91,6 +104,7 @@ namespace sp::vulkan {
         }
         lights.renderTargetSize = renderTargetSize;
         lights.count = lightCount;
+        lights.gelCount = gelCount;
         lights.gpuData.count = lightCount;
 
         graph.Pass("LightState")
@@ -112,11 +126,19 @@ namespace sp::vulkan {
     void Renderer::BuildFrameGraph(RenderGraph &graph) {
         // lock is copied into the Execute closure of some passes,
         // and will be released when those passes are done executing.
-        auto lock = ecs::World.StartTransaction<
-            ecs::Read<ecs::Name, ecs::Transform, ecs::Light, ecs::Renderable, ecs::View, ecs::XRView, ecs::Mirror>>();
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
+            ecs::Transform,
+            ecs::Light,
+            ecs::Renderable,
+            ecs::View,
+            ecs::XRView,
+            ecs::Mirror,
+            ecs::Gui,
+            ecs::FocusLock>>();
 
         AddLightState(graph, lock);
         AddShadowMaps(graph, lock);
+        AddGuis(graph, lock);
 
         Tecs::Entity windowEntity = device.GetActiveView();
 
@@ -156,6 +178,8 @@ namespace sp::vulkan {
                 });
 
             AddDeferredPasses(graph);
+
+            if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::MENU)) AddMenuOverlay(graph);
 
             graph.EndScope();
         }
@@ -223,6 +247,7 @@ namespace sp::vulkan {
                         viewState[i] = GPUViewState(view);
                     }
                     viewStateBuf->Unmap();
+                    viewStateBuf->Flush();
                 });
 
             AddDeferredPasses(graph);
@@ -323,6 +348,35 @@ namespace sp::vulkan {
         }
     }
 
+    void Renderer::AddMenuOverlay(RenderGraph &graph) {
+        RenderGraphResourceID menuID = RenderGraphResources::npos;
+        for (auto &gui : guis) {
+            if (gui.renderer->Name() == "menu_gui") {
+                menuID = gui.renderGraphID;
+                MenuGuiManager *manager = dynamic_cast<MenuGuiManager *>(gui.renderer->Manager());
+                if (!manager || manager->RenderMode() != MenuRenderMode::Pause) return;
+                break;
+            }
+        }
+        Assert(menuID != RenderGraphResources::npos, "main menu doesn't exist");
+
+        graph.Pass("MenuOverlay")
+            .Build([&](RenderGraphPassBuilder &builder) {
+                auto input = builder.LastOutput();
+                builder.ShaderRead(input.id);
+
+                auto desc = input.renderTargetDesc;
+                desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
+                builder.OutputColorAttachment(0, "Menu", desc, {LoadOp::DontCare, StoreOp::Store});
+
+                builder.ShaderRead(menuID);
+            })
+            .Execute([menuID](RenderGraphResources &resources, CommandContext &cmd) {
+                cmd.DrawScreenCover(resources.GetRenderTarget(resources.LastOutputID())->ImageView());
+                cmd.DrawScreenCover(resources.GetRenderTarget(menuID)->ImageView());
+            });
+    }
+
     void Renderer::AddShadowMaps(RenderGraph &graph, DrawLock lock) {
         graph.Pass("ShadowMaps")
             .Build([&](RenderGraphPassBuilder &builder) {
@@ -421,6 +475,49 @@ namespace sp::vulkan {
         return outputID;
     }
 
+    void Renderer::AddGuis(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Gui>> lock) {
+        ecs::ComponentEvent<ecs::Gui> guiEvent;
+        while (guiObserver.Poll(lock, guiEvent)) {
+            auto &eventEntity = guiEvent.entity;
+
+            if (guiEvent.type == Tecs::EventType::REMOVED) {
+                for (auto it = guis.begin(); it != guis.end(); it++) {
+                    if (it->entity == eventEntity) {
+                        guis.erase(it);
+                        break;
+                    }
+                }
+            } else if (guiEvent.type == Tecs::EventType::ADDED) {
+                const auto &guiComponent = eventEntity.Get<ecs::Gui>(lock);
+                guis.emplace_back(guiEvent.entity, make_shared<GuiRenderer>(device, *guiComponent.manager));
+            }
+        }
+
+        for (auto &gui : guis) {
+            graph.Pass("Gui")
+                .Build([&](RenderGraphPassBuilder &builder) {
+                    RenderTargetDesc desc;
+                    desc.format = vk::Format::eR8G8B8A8Srgb;
+
+                    // TODO: figure out a good size based on the transform of the gui
+                    desc.extent = vk::Extent3D(1024, 1024, 1);
+                    MenuGuiManager *manager = dynamic_cast<MenuGuiManager *>(gui.renderer->Manager());
+                    if (manager && manager->RenderMode() == MenuRenderMode::Pause) {
+                        desc.extent = vk::Extent3D(1920, 1080, 1);
+                    }
+
+                    const auto &name = gui.renderer->Name();
+                    auto target = builder.OutputColorAttachment(0, name, desc, {LoadOp::Clear, StoreOp::Store});
+                    gui.renderGraphID = target.id;
+                })
+                .Execute([gui](RenderGraphResources &resources, CommandContext &cmd) {
+                    auto &extent = resources.GetRenderTarget(gui.renderGraphID)->Desc().extent;
+                    vk::Rect2D viewport = {{}, {extent.width, extent.height}};
+                    gui.renderer->Render(cmd, viewport);
+                });
+        }
+    }
+
     void Renderer::AddDeferredPasses(RenderGraph &graph) {
         RenderGraphResourceID luminance;
         graph.Pass("Lighting")
@@ -439,13 +536,26 @@ namespace sp::vulkan {
 
                 builder.ReadBuffer("ViewState");
                 builder.ReadBuffer("LightState");
+
+                for (int i = 0; i < this->lights.gelCount; i++) {
+                    builder.ShaderRead(this->lights.gelNames[i]);
+                }
             })
-            .Execute([](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([this](RenderGraphResources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "lighting.frag");
                 cmd.SetTexture(0, 0, resources.GetRenderTarget("GBuffer0")->ImageView());
                 cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer1")->ImageView());
                 cmd.SetTexture(0, 2, resources.GetRenderTarget("GBuffer2")->ImageView());
                 cmd.SetTexture(0, 3, resources.GetRenderTarget("ShadowMapLinear")->ImageView());
+
+                for (int i = 0; i < MAX_LIGHT_GELS; i++) {
+                    if (i < this->lights.gelCount) {
+                        const auto &target = resources.GetRenderTarget(this->lights.gelNames[i]);
+                        cmd.SetTexture(1, i, target->ImageView());
+                    } else {
+                        cmd.SetTexture(1, i, this->GetBlankPixelImage());
+                    }
+                }
 
                 cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
                 cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
@@ -591,5 +701,28 @@ namespace sp::vulkan {
 
     void Renderer::QueueScreenshot(const string &path, const string &resource) {
         pendingScreenshots.push_back({path, resource});
+    }
+
+    ImageViewPtr Renderer::GetBlankPixelImage() {
+        if (!blankPixelImage) blankPixelImage = CreateSinglePixelImage(glm::vec4(1));
+        return blankPixelImage;
+    }
+
+    ImageViewPtr Renderer::CreateSinglePixelImage(glm::vec4 value) {
+        uint8 data[4];
+        for (size_t i = 0; i < 4; i++) {
+            data[i] = (uint8_t)(255.0 * value[i]);
+        }
+
+        ImageCreateInfo imageInfo;
+        imageInfo.imageType = vk::ImageType::e2D;
+        imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
+        imageInfo.format = vk::Format::eR8G8B8A8Unorm;
+        imageInfo.extent = vk::Extent3D(1, 1, 1);
+
+        ImageViewCreateInfo viewInfo;
+        viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
+        auto imageView = device.CreateImageAndView(imageInfo, viewInfo, data, sizeof(data));
+        return imageView;
     }
 } // namespace sp::vulkan

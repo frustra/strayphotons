@@ -118,9 +118,14 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 
 		vec3 lightTint = vec3(spotFalloff);
 #ifdef LIGHTING_GEL
-		if (lights[i].gelId > 0) {
+		int gelId = lights[i].gelId;
+		if (gelId > 0) {
 			vec2 coord = ViewPosToScreenPos(shadowMapPos, lights[i].proj).xy;
+#ifdef MULTIPLE_LIGHTING_GELS
+			lightTint = texture(lightingGels[gelId - 1], vec2(coord.x, 1-coord.y)).rgb * float(coord == clamp(coord, 0, 1));
+#else
 			lightTint = texture(lightingGel, coord).rgb * float(coord == clamp(coord, 0, 1));
+#endif
 		}
 #endif
 
@@ -194,7 +199,11 @@ vec3 DirectShading(vec3 worldPosition, vec3 directionToView, vec3 baseColor, vec
 #ifdef LIGHTING_GEL
 		if (lights[lightId].gelId > 0) {
 			vec2 coord = ViewPosToScreenPos((mirrorData.lightViewMat[i] * vec4(worldPosition, 1.0)).xyz, lights[lightId].proj).xy;
-			lightTint = texture(lightingGel, coord).rgb;
+#ifdef MULTIPLE_LIGHTING_GELS
+			lightTint = texture(lightingGels[gelId - 1], vec2(coord.x, 1-coord.y)).rgb * float(coord == clamp(coord, 0, 1));
+#else
+			lightTint = texture(lightingGel, coord).rgb * float(coord == clamp(coord, 0, 1));
+#endif
 		}
 #endif
 

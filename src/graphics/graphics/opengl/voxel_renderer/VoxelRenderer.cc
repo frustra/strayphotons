@@ -111,8 +111,8 @@ namespace sp {
     }
 
     void VoxelRenderer::PrepareGuis(DebugGuiManager *debugGui, MenuGuiManager *menuGui) {
-        if (debugGui) { debugGuiRenderer = make_shared<GuiRenderer>(*this, context, debugGui); }
-        if (menuGui) {
+        if (debugGui && !debugGuiRenderer) { debugGuiRenderer = make_shared<GuiRenderer>(*this, context, debugGui); }
+        if (menuGui && !menuGuiRenderer) {
             this->menuGui = menuGui;
             menuGuiRenderer = make_shared<GuiRenderer>(*this, context, menuGui);
         }

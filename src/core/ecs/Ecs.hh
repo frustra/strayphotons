@@ -25,6 +25,7 @@ namespace ecs {
     class EventBindings;
     enum class FocusLayer : uint8_t;
     class FocusLock;
+    struct Gui;
     struct Light;
     class LightSensor;
     struct Mirror;
@@ -51,6 +52,7 @@ namespace ecs {
         EventBindings,
         FocusLayer,
         FocusLock,
+        Gui,
         Light,
         LightSensor,
         Mirror,

@@ -84,8 +84,6 @@ namespace sp {
         profilerGui = make_shared<ProfilerGui>(timer);
         if (game->debugGui) { game->debugGui->Attach(profilerGui); }
 
-        renderer->PrepareGuis(game->debugGui.get(), game->menuGui.get());
-
         renderer->Prepare();
     #endif
 
@@ -106,6 +104,10 @@ namespace sp {
         Assert(context, "missing graphics context");
         if (!HasActiveContext()) return false;
         Assert(renderer, "missing renderer");
+    #endif
+
+    #if defined(SP_GRAPHICS_SUPPORT_GL)
+        renderer->PrepareGuis(game->debugGui.get(), game->menuGui.get());
     #endif
 
         if (game->debugGui) game->debugGui->BeforeFrame();

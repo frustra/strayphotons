@@ -67,9 +67,10 @@ namespace sp {
         try {
 #ifdef SP_GRAPHICS_SUPPORT
             debugGui = std::make_unique<DebugGuiManager>();
-            menuGui = std::make_unique<MenuGuiManager>(this->graphics);
-
             graphics.Init();
+
+            // must create all gui instances after initializing graphics, except for the special debug gui
+            menuGui = std::make_unique<MenuGuiManager>(this->graphics);
 #endif
 
 #ifdef SP_XR_SUPPORT

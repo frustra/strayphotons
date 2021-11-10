@@ -34,6 +34,11 @@ namespace sp::vulkan {
         return allocation ? allocation->GetSize() : 0;
     }
 
+    void UniqueMemory::Flush() {
+        // this is a no-op if memory type is HOST_COHERENT; such memory is automatically flushed
+        vmaFlushAllocation(allocator, allocation, 0, VK_WHOLE_SIZE);
+    }
+
     Buffer::Buffer() : UniqueMemory(VK_NULL_HANDLE) {}
 
     Buffer::Buffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator)

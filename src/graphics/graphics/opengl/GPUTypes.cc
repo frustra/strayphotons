@@ -40,7 +40,7 @@ namespace sp {
             data.mapOffset = {renderTargetSize.x, 0, extent, extent};
             data.intensity = light.intensity;
             data.illuminance = light.illuminance;
-            data.gelId = light.gelId;
+            data.gelId = light.gelName.empty() ? 0 : 1;
 
             renderTargetSize.x += extent;
             if (extent > renderTargetSize.y) renderTargetSize.y = extent;

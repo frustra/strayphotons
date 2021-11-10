@@ -10,10 +10,7 @@ namespace sp::vulkan {
         vk::ImageUsageFlags usage; // must include eColorAttachment or eDepthStencilAttachment to use as a render target
         vk::ImageViewType primaryViewType = vk::ImageViewType::e2D;
 
-        bool operator==(const RenderTargetDesc &other) const {
-            return extent == other.extent && arrayLayers == other.arrayLayers && format == other.format &&
-                   usage == other.usage;
-        }
+        bool operator==(const RenderTargetDesc &other) const = default;
     };
 
     class RenderTarget {
@@ -24,6 +21,10 @@ namespace sp::vulkan {
 
         const ImageViewPtr &ImageView() const {
             return imageView;
+        }
+
+        const RenderTargetDesc &Desc() const {
+            return desc;
         }
 
     protected:

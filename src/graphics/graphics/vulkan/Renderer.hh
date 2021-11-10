@@ -48,6 +48,9 @@ namespace sp::vulkan {
         glm::ivec2 renderTargetSize = {};
         ecs::View views[MAX_LIGHTS];
 
+        int gelCount = 0;
+        string gelNames[MAX_LIGHT_GELS];
+
         struct GPUData {
             GPULight lights[MAX_LIGHTS];
             int count;
@@ -92,6 +95,9 @@ namespace sp::vulkan {
 
         void QueueScreenshot(const string &path, const string &resource);
 
+        ImageViewPtr GetBlankPixelImage();
+        ImageViewPtr CreateSinglePixelImage(glm::vec4 value);
+
     private:
         void EndFrame();
         void BuildFrameGraph(RenderGraph &graph);
@@ -101,7 +107,9 @@ namespace sp::vulkan {
 
         void AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
         void AddShadowMaps(RenderGraph &graph, DrawLock lock);
+        void AddGuis(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Gui>> lock);
         void AddDeferredPasses(RenderGraph &graph);
+        void AddMenuOverlay(RenderGraph &graph);
 
         RenderGraphResourceID AddBloom(RenderGraph &graph, RenderGraphResourceID sourceID);
         RenderGraphResourceID AddGaussianBlur(RenderGraph &graph,
@@ -113,12 +121,28 @@ namespace sp::vulkan {
 
         CFuncCollection funcs;
         PreservingMap<string, Model> activeModels;
+
+        struct RenderableGui {
+            Tecs::Entity entity;
+            shared_ptr<GuiRenderer> renderer;
+            float luminanceScale;
+            RenderGraphResourceID renderGraphID = ~0u;
+        };
+        vector<RenderableGui> guis;
         unique_ptr<GuiRenderer> debugGuiRenderer;
+
+        ecs::Observer<ecs::ComponentEvent<ecs::Gui>> guiObserver;
 
         vector<std::pair<string, string>> pendingScreenshots;
         bool listRenderTargets = false;
 
         LightingContext lights;
+
+        struct EmptyImageKey {
+            vk::Format format;
+        };
+
+        ImageViewPtr blankPixelImage;
 
 #ifdef SP_XR_SUPPORT
         xr::XrSystem *xrSystem = nullptr;

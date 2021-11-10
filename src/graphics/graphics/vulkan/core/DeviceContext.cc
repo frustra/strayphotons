@@ -263,11 +263,14 @@ namespace sp::vulkan {
             Assert(found, string("device must have extension ") + requiredExtension);
         }
 
-        vk::PhysicalDeviceFeatures2 deviceFeatures2;
-        auto &availableDeviceFeatures = deviceFeatures2.features;
-
         vk::PhysicalDeviceMultiviewFeatures availableMultiviewFeatures;
-        deviceFeatures2.pNext = &availableMultiviewFeatures;
+
+        vk::PhysicalDeviceDescriptorIndexingFeatures availableDescriptorFeatures;
+        availableDescriptorFeatures.pNext = &availableMultiviewFeatures;
+
+        vk::PhysicalDeviceFeatures2 deviceFeatures2;
+        deviceFeatures2.pNext = &availableDescriptorFeatures;
+        auto &availableDeviceFeatures = deviceFeatures2.features;
 
         physicalDevice.getFeatures2KHR(&deviceFeatures2);
 
@@ -275,16 +278,28 @@ namespace sp::vulkan {
         Assert(availableDeviceFeatures.wideLines, "device must support wideLines");
         Assert(availableDeviceFeatures.largePoints, "device must support largePoints");
         Assert(availableDeviceFeatures.samplerAnisotropy, "device must support anisotropic sampling");
+
+        Assert(availableDescriptorFeatures.descriptorBindingPartiallyBound,
+            "device must support partially bound descriptor arrays");
+        // Assert(availableDescriptorFeatures.shaderSampledImageArrayNonUniformIndexing,
+        //     "device must support non-uniform sampled image array indexing");
+
         Assert(availableMultiviewFeatures.multiview, "device must support multiview");
-        Assert(availableMultiviewFeatures.multiviewGeometryShader, "device must support multiviewGeometryShader");
+
+        vk::PhysicalDeviceMultiviewFeatures enabledMultiviewFeatures;
+        enabledMultiviewFeatures.multiview = true;
+
+        vk::PhysicalDeviceDescriptorIndexingFeatures enabledDescriptorFeatures;
+        enabledDescriptorFeatures.descriptorBindingPartiallyBound = true;
+        enabledDescriptorFeatures.pNext = &enabledMultiviewFeatures;
 
         vk::PhysicalDeviceFeatures2 enabledDeviceFeatures2;
+        enabledDeviceFeatures2.pNext = &enabledDescriptorFeatures;
         auto &enabledDeviceFeatures = enabledDeviceFeatures2.features;
         enabledDeviceFeatures.fillModeNonSolid = true;
         enabledDeviceFeatures.wideLines = true;
         enabledDeviceFeatures.largePoints = true;
         enabledDeviceFeatures.samplerAnisotropy = true;
-        enabledDeviceFeatures2.pNext = &availableMultiviewFeatures;
 
         vk::DeviceCreateInfo deviceInfo;
         deviceInfo.queueCreateInfoCount = queueInfos.size();
@@ -1033,6 +1048,7 @@ namespace sp::vulkan {
         Assert(createInfo.format != vk::Format::eUndefined, "invalid image format");
 
         createInfo.genMipmap = genMipmap;
+        createInfo.usage = vk::ImageUsageFlagBits::eSampled;
 
         const uint8_t *data = image->GetImage().get();
         Assert(data, "missing image data");

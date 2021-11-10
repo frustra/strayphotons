@@ -116,9 +116,14 @@ namespace sp::vulkan {
     }
 
     void CommandContext::DrawScreenCover(const ImageViewPtr &view) {
-        if (view) SetTexture(0, 0, view);
         SetShaders("screen_cover.vert", "screen_cover.frag");
-        Draw(3);
+        if (view) {
+            SetTexture(0, 0, view);
+            if (view->ViewType() == vk::ImageViewType::e2DArray) {
+                SetSingleShader(ShaderStage::Fragment, "screen_cover_array.frag");
+            }
+        }
+        Draw(3); // vertices are defined as constants in the vertex shader
     }
 
     void CommandContext::ImageBarrier(const ImagePtr &image,

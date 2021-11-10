@@ -62,6 +62,7 @@ namespace sp::vulkan {
         ImGuiIO &io = ImGui::GetIO();
 
         if (!fontView) {
+            // TODO: don't duplicate font image for every gui, just build it once
             uint8 *fontData;
             int fontWidth, fontHeight;
             io.Fonts->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
@@ -174,4 +175,9 @@ namespace sp::vulkan {
 
         cmd.ClearScissor();
     }
+
+    const std::string &GuiRenderer::Name() const {
+        return manager.Name();
+    }
+
 } // namespace sp::vulkan

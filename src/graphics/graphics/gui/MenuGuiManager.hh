@@ -4,6 +4,7 @@
 
 namespace sp {
     class GraphicsManager;
+    class GpuTexture;
 
     enum class MenuScreen { Splash, Main, Options, SceneSelect, Credits };
 
@@ -25,6 +26,8 @@ namespace sp {
         GraphicsManager &graphics;
 
         MenuScreen selectedScreen = MenuScreen::Splash;
+
+        shared_ptr<GpuTexture> logoTex, frustraLogoTex;
 
         float creditsScroll = 0.0f;
     };
