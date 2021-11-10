@@ -182,9 +182,8 @@ namespace sp::vulkan {
 
         ForEachBit(setLayout.sampledImagesMask | setLayout.storageImagesMask, [&](uint32 binding) {
             for (uint32 i = 0; i < setLayout.descriptorCount[binding]; i++) {
-                // TODO: use UniqueID to avoid collisions upon pointer reuse
+                hash_combine(hash, bindings[binding + i].uniqueID);
                 hash_combine(hash, bindings[binding + i].image.imageView);
-                // TODO: use UniqueID to avoid collisions upon pointer reuse
                 hash_combine(hash, bindings[binding + i].image.sampler);
                 hash_combine(hash, bindings[binding + i].image.imageLayout);
             }
@@ -192,7 +191,7 @@ namespace sp::vulkan {
 
         ForEachBit(setLayout.uniformBuffersMask, [&](uint32 binding) {
             for (uint32 i = 0; i < setLayout.descriptorCount[binding]; i++) {
-                // TODO: use UniqueID to avoid collisions upon pointer reuse
+                hash_combine(hash, bindings[binding + i].uniqueID);
                 hash_combine(hash, bindings[binding + i].buffer.buffer);
                 hash_combine(hash, bindings[binding + i].buffer.offset);
                 hash_combine(hash, bindings[binding + i].buffer.range);
@@ -211,7 +210,7 @@ namespace sp::vulkan {
 
         PipelineKey key;
         key.input.state = compile.state;
-        key.input.renderPass = compile.renderPass ? **compile.renderPass : nullptr;
+        key.input.renderPassID = compile.renderPass ? compile.renderPass->GetUniqueID() : 0;
         key.input.shaderHashes = GetShaderHashes(shaders);
 
         for (size_t s = 0; s < (size_t)ShaderStage::Count; s++) {

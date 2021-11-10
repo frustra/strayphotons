@@ -201,32 +201,31 @@ namespace sp::vulkan {
     }
 
     void CommandContext::SetTexture(uint32 set, uint32 binding, const ImageViewPtr &view) {
-        SetTexture(set, binding, *view.get(), view->Image()->LastLayout());
-
-        auto defaultSampler = view->DefaultSampler();
-        if (defaultSampler) SetSampler(set, binding, defaultSampler);
+        SetTexture(set, binding, view.get());
     }
 
     void CommandContext::SetTexture(uint32 set, uint32 binding, const ImageView *view) {
-        SetTexture(set, binding, *view, view->Image()->LastLayout());
+        Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
+        Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
+        auto &bindingDesc = shaderData.sets[set].bindings[binding];
+        bindingDesc.uniqueID = view->GetUniqueID();
+
+        auto &image = bindingDesc.image;
+        image.imageView = **view;
+        image.imageLayout = (VkImageLayout)view->Image()->LastLayout();
+        SetDescriptorDirty(set);
 
         auto defaultSampler = view->DefaultSampler();
         if (defaultSampler) SetSampler(set, binding, defaultSampler);
-    }
-
-    void CommandContext::SetTexture(uint32 set, uint32 binding, const vk::ImageView &view, vk::ImageLayout layout) {
-        Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
-        Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
-        auto &image = shaderData.sets[set].bindings[binding].image;
-        image.imageView = view;
-        image.imageLayout = (VkImageLayout)layout;
-        SetDescriptorDirty(set);
     }
 
     void CommandContext::SetUniformBuffer(uint32 set, uint32 binding, const BufferPtr &buffer) {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
-        auto &bufferBinding = shaderData.sets[set].bindings[binding].buffer;
+        auto &bindingDesc = shaderData.sets[set].bindings[binding];
+        bindingDesc.uniqueID = buffer->GetUniqueID();
+
+        auto &bufferBinding = bindingDesc.buffer;
         bufferBinding.buffer = **buffer;
         bufferBinding.offset = 0;
         bufferBinding.range = buffer->Size();

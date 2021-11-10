@@ -141,7 +141,7 @@ namespace sp::vulkan {
         }
     };
 
-    class RenderPass : public WrappedUniqueHandle<vk::RenderPass> {
+    class RenderPass : public WrappedUniqueHandle<vk::RenderPass>, public HasUniqueID {
     public:
         RenderPass(DeviceContext &device, const RenderPassInfo &info);
 
@@ -194,10 +194,7 @@ namespace sp::vulkan {
 
         struct FramebufferKeyData {
             RenderPassState renderPass;
-
-            // TODO: use UniqueID to avoid collisions upon pointer reuse
-            vk::ImageView imageViews[MAX_COLOR_ATTACHMENTS + 1];
-
+            UniqueID imageViewIDs[MAX_COLOR_ATTACHMENTS + 1];
             vk::Extent2D extents[MAX_COLOR_ATTACHMENTS + 1];
         };
 
