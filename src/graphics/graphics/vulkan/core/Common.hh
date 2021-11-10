@@ -1,6 +1,7 @@
 #pragma once
 
 #include <core/Common.hh>
+#include <graphics/vulkan/core/UniqueID.hh>
 #include <string>
 #include <vulkan/vulkan.hpp>
 

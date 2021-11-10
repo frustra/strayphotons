@@ -41,7 +41,7 @@ namespace sp::vulkan {
         BufferType type;
     };
 
-    class UniqueMemory : public NonCopyable {
+    class UniqueMemory : public NonCopyable, public HasUniqueID {
     public:
         UniqueMemory() = delete;
         UniqueMemory(VmaAllocator allocator) : allocator(allocator), allocation(nullptr) {}

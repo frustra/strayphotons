@@ -3,5 +3,10 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan {
-    HasUniqueID::HasUniqueID(DeviceContext &device) : uniqueID(device.NextUniqueID()) {}
+    static UniqueID NextUniqueID() {
+        static UniqueID lastUniqueID = 0;
+        return ++lastUniqueID;
+    }
+
+    HasUniqueID::HasUniqueID() : uniqueID(NextUniqueID()) {}
 } // namespace sp::vulkan

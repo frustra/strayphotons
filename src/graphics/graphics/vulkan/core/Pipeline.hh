@@ -132,9 +132,7 @@ namespace sp::vulkan {
 
         struct PipelineKeyData {
             ShaderHashSet shaderHashes;
-            // TODO: use UniqueID to avoid collisions upon pointer reuse
-            // TODO: hash RenderPass important fields instead?
-            VkRenderPass renderPass;
+            UniqueID renderPassID;
             PipelineStaticState state;
         };
 

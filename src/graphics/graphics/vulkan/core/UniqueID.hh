@@ -9,7 +9,7 @@ namespace sp::vulkan {
 
     class HasUniqueID {
     public:
-        HasUniqueID(DeviceContext &device);
+        HasUniqueID();
 
         UniqueID GetUniqueID() const {
             return uniqueID;
