@@ -38,24 +38,25 @@ namespace sp {
         guiEntity = ecs::NamedEntity(name);
         keyboardEntity = ecs::NamedEntity("keyboard");
 
-        GetSceneManager().AddSystemEntities([this, layer](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-            auto ent = lock.NewEntity();
-            ent.Set<ecs::Name>(lock, guiEntity.Name());
-            ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GUI_MANAGER);
-            ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
-            ent.Set<ecs::FocusLayer>(lock, layer);
-            ent.Set<ecs::EventInput>(lock, INPUT_EVENT_MENU_SCROLL, INPUT_EVENT_MENU_TEXT_INPUT);
+        GetSceneManager().AddSystemEntities(
+            [this, layer](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                auto ent = lock.NewEntity();
+                ent.Set<ecs::Name>(lock, guiEntity.Name());
+                ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::GUI_MANAGER);
+                ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
+                ent.Set<ecs::FocusLayer>(lock, layer);
+                ent.Set<ecs::EventInput>(lock, INPUT_EVENT_MENU_SCROLL, INPUT_EVENT_MENU_TEXT_INPUT);
 
-            auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
-            signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER,
-                ecs::NamedEntity("player"),
-                INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);
-            signalBindings.Bind(INPUT_SIGNAL_MENU_SECONDARY_TRIGGER,
-                ecs::NamedEntity("player"),
-                INPUT_SIGNAL_MENU_SECONDARY_TRIGGER);
-            signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_X, ecs::NamedEntity("player"), INPUT_SIGNAL_MENU_CURSOR_X);
-            signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_Y, ecs::NamedEntity("player"), INPUT_SIGNAL_MENU_CURSOR_Y);
-        });
+                auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
+                signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER,
+                    ecs::NamedEntity("player"),
+                    INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);
+                signalBindings.Bind(INPUT_SIGNAL_MENU_SECONDARY_TRIGGER,
+                    ecs::NamedEntity("player"),
+                    INPUT_SIGNAL_MENU_SECONDARY_TRIGGER);
+                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_X, ecs::NamedEntity("player"), INPUT_SIGNAL_MENU_CURSOR_X);
+                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_Y, ecs::NamedEntity("player"), INPUT_SIGNAL_MENU_CURSOR_Y);
+            });
     }
 
     GuiManager::~GuiManager() {

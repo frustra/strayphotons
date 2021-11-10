@@ -27,12 +27,12 @@ namespace SceneManagerTests {
         auto ent = liveSceneInfo.stagingId;
         Assertf(!!ent, "Expected entity to exist: %u", ent.id);
         Assertf(ent.Has<ecs::SceneInfo>(stagingLock), "Expected entity %u to have SceneInfo", ent.id);
-        auto &sceneInfo = ent.Get<ecs::SceneInfo>(stagingLock);
+        auto &rootSceneInfo = ent.Get<ecs::SceneInfo>(stagingLock);
         AssertEqual(liveSceneInfo.nextStagingId,
-            sceneInfo.nextStagingId,
+            rootSceneInfo.nextStagingId,
             "Live SceneInfo.nextStagingId does not match");
-        Assert(sceneInfo.scene != nullptr, "Expected entity to have valid Scene");
-        AssertEqual(sceneInfo.scene->sceneName, *sceneNames.begin(), "Entity scene does not match expected");
+        Assert(rootSceneInfo.scene != nullptr, "Expected entity to have valid Scene");
+        AssertEqual(rootSceneInfo.scene->sceneName, *sceneNames.begin(), "Entity scene does not match expected");
 
         for (auto &sceneName : sceneNames) {
             Assertf(!!ent, "Expected entity to exist: %u", ent.id);
@@ -81,7 +81,7 @@ namespace SceneManagerTests {
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                AssertEntityScene(stagingLock, liveLock, "player", {"system", "player"});
+                AssertEntityScene(stagingLock, liveLock, "player", {"player", "system"});
             }
         }
         {
@@ -113,7 +113,7 @@ namespace SceneManagerTests {
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                AssertEntityScene(stagingLock, liveLock, "player", {"system", "player"});
+                AssertEntityScene(stagingLock, liveLock, "player", {"player", "system"});
             }
         }
         {
@@ -145,7 +145,7 @@ namespace SceneManagerTests {
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                AssertEntityScene(stagingLock, liveLock, "player", {"system", "player"});
+                AssertEntityScene(stagingLock, liveLock, "player", {"player", "system"});
             }
         }
         {
@@ -177,7 +177,7 @@ namespace SceneManagerTests {
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
                 auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
-                AssertEntityScene(stagingLock, liveLock, "player", {"system", "player"});
+                AssertEntityScene(stagingLock, liveLock, "player", {"player", "system"});
             }
         }
     }

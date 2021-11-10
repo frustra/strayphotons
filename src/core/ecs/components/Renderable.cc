@@ -13,9 +13,12 @@ namespace ecs {
             r.model = sp::GAssets.LoadModel(src.get<string>());
         } else {
             for (auto param : src.get<picojson::object>()) {
-                if (param.first == "visibility") {
-                    // TODO
-                    // r.visibility = param.second;
+                if (param.first == "hidden") {
+                    if (param.second.get<bool>()) {
+                        r.visibility.reset();
+                    } else {
+                        r.visibility.set();
+                    }
                 } else if (param.first == "model") {
                     r.model = sp::GAssets.LoadModel(param.second.get<string>());
                 }

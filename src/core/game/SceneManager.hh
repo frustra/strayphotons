@@ -25,7 +25,6 @@ namespace sp {
         void LoadBindingsJson(std::function<void(std::shared_ptr<Scene>)> callback);
 
         void AddSystemEntities(std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback);
-        void RemoveSystemEntities(std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback);
 
         void LoadScene(std::string name);
         void ReloadScene(std::string name);

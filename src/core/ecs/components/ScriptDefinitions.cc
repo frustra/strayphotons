@@ -118,6 +118,33 @@ namespace ecs {
                     }
                 }
             }},
+        {"auto_attach",
+            [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+                if (ent.Has<Script, Transform>(lock)) {
+                    auto &scriptComp = ent.Get<Script>(lock);
+                    auto parentName = scriptComp.GetParam<std::string>("attach_parent");
+                    auto parentEntity = scriptComp.GetParam<NamedEntity>("attach_parent_entity");
+                    if (parentEntity.Name() != parentName) parentEntity = NamedEntity(parentName);
+
+                    auto &transform = ent.Get<Transform>(lock);
+                    auto parent = parentEntity.Get(lock);
+                    if (parent.Has<Transform>(lock)) {
+                        if (ent.Has<Renderable>(lock)) {
+                            auto &renderable = ent.Get<Renderable>(lock);
+                            renderable.visibility.set();
+                        }
+                    } else {
+                        parent = Tecs::Entity();
+                        if (ent.Has<Renderable>(lock)) {
+                            auto &renderable = ent.Get<Renderable>(lock);
+                            renderable.visibility.reset();
+                        }
+                    }
+                    transform.SetParent(parent);
+                    transform.UpdateCachedTransform(lock);
+                    scriptComp.SetParam<NamedEntity>("attach_parent_entity", parentEntity);
+                }
+            }},
         {"relative_movement",
             [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
                 if (ent.Has<Script, SignalOutput>(lock)) {

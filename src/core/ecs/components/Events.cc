@@ -64,7 +64,6 @@ namespace ecs {
     }
 
     void EventInput::Register(const std::string &binding) {
-        Debugf("Registering event queue: %s", binding);
         events.emplace(binding, std::queue<Event>());
     }
 
@@ -73,7 +72,6 @@ namespace ecs {
     }
 
     void EventInput::Unregister(const std::string &binding) {
-        Debugf("Unregistering event queue: %s", binding);
         events.erase(binding);
     }
 
@@ -110,6 +108,20 @@ namespace ecs {
         }
         eventOut = Event();
         return false;
+    }
+
+    void EventBindings::CopyBindings(const EventBindings &src) {
+        for (auto &[source, srcList] : src.sourceToDest) {
+            auto dstList = sourceToDest.find(source);
+            if (dstList != sourceToDest.end()) {
+                auto &vec = dstList->second;
+                for (auto &binding : srcList) {
+                    if (std::find(vec.begin(), vec.end(), binding) == vec.end()) vec.emplace_back(binding);
+                }
+            } else {
+                sourceToDest.emplace(source, srcList);
+            }
+        }
     }
 
     void EventBindings::Bind(std::string source, NamedEntity target, std::string dest) {

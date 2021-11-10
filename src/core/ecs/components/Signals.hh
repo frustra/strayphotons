@@ -41,6 +41,8 @@ namespace ecs {
             std::vector<Binding> sources;
         };
 
+        void CopyBindings(const SignalBindings &src);
+
         void SetCombineOperation(const std::string &name, CombineOperator operation);
         void Bind(const std::string &name, NamedEntity origin, std::string source);
         void Unbind(const std::string &name, NamedEntity origin, std::string source);

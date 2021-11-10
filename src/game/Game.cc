@@ -70,6 +70,10 @@ namespace sp {
             graphics.Init();
 #endif
 
+#ifdef SP_XR_SUPPORT
+            if (options["no-vr"].count() == 0) xr.LoadXrSystem();
+#endif
+
             auto &scenes = GetSceneManager();
             ReloadPlayer();
             if (options.count("map")) { scenes.LoadScene(options["map"].as<string>()); }
@@ -159,10 +163,6 @@ namespace sp {
 
 #ifdef SP_GRAPHICS_SUPPORT
         graphics.GetContext()->AttachView(scenes.GetPlayer());
-#endif
-
-#ifdef SP_XR_SUPPORT
-        if (options["no-vr"].count() == 0) xr.LoadXrSystem();
 #endif
 
         scenes.RespawnPlayer();

@@ -62,6 +62,8 @@ namespace ecs {
         using Binding = typename std::pair<NamedEntity, std::string>;
         using BindingList = typename std::vector<Binding>;
 
+        void CopyBindings(const EventBindings &src);
+
         void Bind(std::string source, NamedEntity target, std::string dest);
         void Unbind(std::string source, NamedEntity target, std::string dest);
         void UnbindSource(std::string source);

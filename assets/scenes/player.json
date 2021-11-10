@@ -42,9 +42,17 @@
         },
         {
             "_name": "left-hand-input",
+            "renderable": {
+                "model": "box",
+                "hidden": true
+            },
+            "transform": {
+                "scale": [0.01, 0.01, 0.01]
+            },
             "script": {
-                "onTick": "relative_movement",
+                "onTick": ["auto_attach", "relative_movement"],
                 "parameters": {
+                    "attach_parent": "vr-controller-left",
                     "target": "vr-hmd"
                 }
             },
@@ -52,9 +60,17 @@
         },
         {
             "_name": "right-hand-input",
+            "renderable": {
+                "model": "box",
+                "hidden": true
+            },
+            "transform": {
+                "scale": [0.01, 0.01, 0.01]
+            },
             "script": {
-                "onTick": "relative_movement",
+                "onTick": ["auto_attach", "relative_movement"],
                 "parameters": {
+                    "attach_parent": "vr-controller-right",
                     "target": "vr-controller-right"
                 }
             },

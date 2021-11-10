@@ -69,34 +69,49 @@ namespace sp::xr {
         vrSystem->GetRecommendedRenderTargetSize(&vrWidth, &vrHeight);
         Logf("OpenVR Render Target Size: %u x %u", vrWidth, vrHeight);
 
-        GetSceneManager().AddSystemEntities(
-            [this, vrWidth, vrHeight](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                auto vrOrigin = lock.NewEntity();
-                vrOrigin.Set<ecs::Name>(lock, vrOriginEntity.Name());
-                vrOrigin.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
-                vrOrigin.Set<ecs::SceneInfo>(lock, vrOrigin, ecs::SceneInfo::Priority::System, scene);
-                vrOrigin.Set<ecs::Transform>(lock);
+        GetSceneManager().AddSystemEntities([this, vrWidth, vrHeight](ecs::Lock<ecs::AddRemove> lock,
+                                                std::shared_ptr<Scene> scene) {
+            auto vrOrigin = lock.NewEntity();
+            vrOrigin.Set<ecs::Name>(lock, vrOriginEntity.Name());
+            vrOrigin.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
+            vrOrigin.Set<ecs::SceneInfo>(lock, vrOrigin, ecs::SceneInfo::Priority::System, scene);
+            vrOrigin.Set<ecs::Transform>(lock);
 
-                for (size_t i = 0; i < views.size(); i++) {
-                    auto ent = lock.NewEntity();
-                    ent.Set<ecs::Name>(lock, views[i].Name());
-                    ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
-                    ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
-                    ent.Set<ecs::XRView>(lock, (ecs::XrEye)i);
+            static const std::array specialEntities = {vrHmdEntity, vrControllerLeftEntity, vrControllerRightEntity};
+            for (auto &namedEntity : specialEntities) {
+                auto ent = lock.NewEntity();
+                ent.Set<ecs::Name>(lock, namedEntity.Name());
+                ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
+                ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
+                ent.Set<ecs::Transform>(lock);
+                ent.Set<ecs::EventBindings>(lock);
+                ent.Set<ecs::SignalOutput>(lock);
+            }
 
-                    auto &transform = ent.Set<ecs::Transform>(lock);
-                    transform.SetParent(vrOrigin);
+            for (size_t i = 0; i < reservedEntities.size(); i++) {
+                reservedEntities[i] = ecs::NamedEntity("vr-device" + std::to_string(i));
+            }
 
-                    auto &view = ent.Set<ecs::View>(lock);
-                    view.extents = {vrWidth, vrHeight};
-                    view.clip = {0.1, 256};
-                    auto projMatrix = vrSystem->GetProjectionMatrix(MapXrEyeToOpenVr((ecs::XrEye)i),
-                        view.clip.x,
-                        view.clip.y);
-                    view.SetProjMat(glm::transpose(glm::make_mat4((float *)projMatrix.m)));
-                    view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_EYE);
-                }
-            });
+            for (size_t i = 0; i < views.size(); i++) {
+                auto ent = lock.NewEntity();
+                ent.Set<ecs::Name>(lock, views[i].Name());
+                ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
+                ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
+                ent.Set<ecs::XRView>(lock, (ecs::XrEye)i);
+
+                auto &transform = ent.Set<ecs::Transform>(lock);
+                transform.SetParent(vrOrigin);
+
+                auto &view = ent.Set<ecs::View>(lock);
+                view.extents = {vrWidth, vrHeight};
+                view.clip = {0.1, 256};
+                auto projMatrix = vrSystem->GetProjectionMatrix(MapXrEyeToOpenVr((ecs::XrEye)i),
+                    view.clip.x,
+                    view.clip.y);
+                view.SetProjMat(glm::transpose(glm::make_mat4((float *)projMatrix.m)));
+                view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_EYE);
+            }
+        });
 
         StartThread();
     }
@@ -142,9 +157,9 @@ namespace sp::xr {
     }
 
     ecs::NamedEntity OpenVrSystem::GetEntityForDeviceIndex(size_t index) {
-        if (index >= trackedDevices.size()) return ecs::NamedEntity();
+        if (index >= trackedDevices.size() || trackedDevices[index] == nullptr) return ecs::NamedEntity();
 
-        return trackedDevices[index];
+        return *trackedDevices[index];
     }
 
     void OpenVrSystem::Frame() {
@@ -155,93 +170,75 @@ namespace sp::xr {
             vr::VRCompositor()->GetLastPoses(trackedDevicePoses, vr::k_unMaxTrackedDeviceCount, NULL, 0);
         if (error != vr::VRCompositorError_None) return;
 
-        bool entitiesChanged = false;
-        std::array<std::string, vr::k_unMaxTrackedDeviceCount> deviceNames;
         for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
             if (vrSystem->IsTrackedDeviceConnected(i)) {
                 auto deviceClass = vrSystem->GetTrackedDeviceClass(i);
-                switch (deviceClass) {
-                case vr::TrackedDeviceClass_HMD:
-                    if (i == vr::k_unTrackedDeviceIndex_Hmd) {
-                        deviceNames[i] = "vr-hmd";
-                    } else {
-                        deviceNames[i] = "vr-hmd" + std::to_string(i);
-                    }
-                    break;
-                case vr::TrackedDeviceClass_Controller: {
+                if (deviceClass == vr::TrackedDeviceClass_HMD && i == vr::k_unTrackedDeviceIndex_Hmd) {
+                    trackedDevices[i] = &vrHmdEntity;
+                } else if (deviceClass == vr::TrackedDeviceClass_Controller) {
                     auto role = vrSystem->GetControllerRoleForTrackedDeviceIndex(i);
                     if (role == vr::TrackedControllerRole_LeftHand) {
-                        deviceNames[i] = "vr-controller-left";
+                        trackedDevices[i] = &vrControllerLeftEntity;
                     } else if (role == vr::TrackedControllerRole_RightHand) {
-                        deviceNames[i] = "vr-controller-right";
+                        trackedDevices[i] = &vrControllerRightEntity;
                     } else {
-                        deviceNames[i] = "vr-controller" + std::to_string(i);
+                        trackedDevices[i] = &reservedEntities[i];
                     }
-                } break;
-                case vr::TrackedDeviceClass_GenericTracker:
-                    deviceNames[i] = "vr-tracker" + std::to_string(i);
-                    break;
-                case vr::TrackedDeviceClass_TrackingReference:
-                case vr::TrackedDeviceClass_DisplayRedirect:
-                case vr::TrackedDeviceClass_Invalid:
-                default:
-                    break;
+                } else if (deviceClass == vr::TrackedDeviceClass_GenericTracker) {
+                    trackedDevices[i] = &reservedEntities[i];
+                } else {
+                    // Ignore tracking references and other devices
+                    trackedDevices[i] = nullptr;
                 }
             } else {
-                deviceNames[i] = "";
-            }
-            if (trackedDevices[i].Name() != deviceNames[i]) entitiesChanged = true;
-        }
-        if (entitiesChanged) {
-            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-
-            for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
-                auto &namedEntity = trackedDevices[i];
-                Tecs::Entity ent = namedEntity.Get(lock);
-
-                auto &targetName = deviceNames[i];
-                if (namedEntity.Name() != targetName) {
-                    if (ent) {
-                        ent.Destroy(lock);
-                        ent = Tecs::Entity();
-                    }
-                    if (!targetName.empty()) {
-                        ent = lock.NewEntity();
-                        ent.Set<ecs::Name>(lock, targetName);
-                        ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
-                        auto model = GAssets.LoadModel("box");
-                        ent.Set<ecs::Renderable>(lock, model);
-                        auto &transform = ent.Set<ecs::Transform>(lock);
-                        transform.SetScale(glm::vec3(0.01f));
-                        ent.Set<ecs::EventBindings>(lock);
-                        ent.Set<ecs::SignalOutput>(lock);
-                    }
-                    namedEntity = ecs::NamedEntity(targetName, ent);
-                }
+                trackedDevices[i] = nullptr;
             }
         }
+        bool missingEntities = false;
         {
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
+
+            for (auto namedEntity : trackedDevices) {
+                if (namedEntity != nullptr && !namedEntity->Get(lock).Exists(lock)) {
+                    missingEntities = true;
+                    break;
+                }
+            }
 
             Tecs::Entity vrOrigin = vrOriginEntity.Get(lock);
             if (vrOrigin && vrOrigin.Has<ecs::Transform>(lock)) {
                 for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
-                    auto &namedEntity = trackedDevices[i];
+                    if (trackedDevices[i] != nullptr) {
+                        Tecs::Entity ent = trackedDevices[i]->Get(lock);
+                        if (ent && ent.Has<ecs::Transform>(lock) && trackedDevicePoses[i].bPoseIsValid) {
+                            auto &transform = ent.Get<ecs::Transform>(lock);
 
-                    Tecs::Entity ent = namedEntity.Get(lock);
-                    if (ent && ent.Has<ecs::Transform>(lock) && trackedDevicePoses[i].bPoseIsValid) {
-                        auto &transform = ent.Get<ecs::Transform>(lock);
+                            auto pose = glm::transpose(
+                                glm::make_mat3x4((float *)trackedDevicePoses[i].mDeviceToAbsoluteTracking.m));
 
-                        auto pose = glm::transpose(
-                            glm::make_mat3x4((float *)trackedDevicePoses[i].mDeviceToAbsoluteTracking.m));
-
-                        transform.SetParent(vrOrigin);
-                        transform.SetRotation(glm::quat_cast(glm::mat3(pose)));
-                        transform.SetPosition(pose[3]);
-                        transform.UpdateCachedTransform(lock);
+                            transform.SetParent(vrOrigin);
+                            transform.SetRotation(glm::quat_cast(glm::mat3(pose)));
+                            transform.SetPosition(pose[3]);
+                            transform.UpdateCachedTransform(lock);
+                        }
                     }
                 }
             }
+        }
+        if (missingEntities) {
+            GetSceneManager().AddSystemEntities([this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                for (auto namedEntity : trackedDevices) {
+                    if (namedEntity != nullptr && !namedEntity->Get(lock).Exists(lock)) {
+                        auto ent = lock.NewEntity();
+                        ent.Set<ecs::Name>(lock, namedEntity->Name());
+                        ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::XR_MANAGER);
+                        ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
+                        ent.Set<ecs::Transform>(lock);
+                        ent.Set<ecs::EventBindings>(lock);
+                        ent.Set<ecs::SignalOutput>(lock);
+                    }
+                }
+            });
         }
         if (inputBindings) inputBindings->Frame();
     }

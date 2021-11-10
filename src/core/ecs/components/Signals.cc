@@ -116,6 +116,21 @@ namespace ecs {
         return signals;
     }
 
+    void SignalBindings::CopyBindings(const SignalBindings &src) {
+        for (auto &[name, srcList] : src.destToSource) {
+            auto dstList = destToSource.find(name);
+            if (dstList != destToSource.end()) {
+                dstList->second.operation = srcList.operation;
+                auto &vec = dstList->second.sources;
+                for (auto &binding : srcList.sources) {
+                    if (std::find(vec.begin(), vec.end(), binding) == vec.end()) vec.emplace_back(binding);
+                }
+            } else {
+                destToSource.emplace(name, srcList);
+            }
+        }
+    }
+
     void SignalBindings::SetCombineOperation(const std::string &name, CombineOperator operation) {
         auto list = destToSource.find(name);
         if (list != destToSource.end()) {

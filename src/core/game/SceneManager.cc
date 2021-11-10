@@ -56,22 +56,6 @@ namespace sp {
 
             auto scene = make_shared<Scene>(sceneName, asset);
 
-            auto autoExecList = root.get<picojson::object>()["autoexec"];
-            if (autoExecList.is<picojson::array>()) {
-                for (auto value : autoExecList.get<picojson::array>()) {
-                    auto line = value.get<string>();
-                    scene->autoExecList.push_back(line);
-                }
-            }
-
-            auto unloadExecList = root.get<picojson::object>()["unloadexec"];
-            if (unloadExecList.is<picojson::array>()) {
-                for (auto value : unloadExecList.get<picojson::array>()) {
-                    auto line = value.get<string>();
-                    scene->unloadExecList.push_back(line);
-                }
-            }
-
             {
                 auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
 
@@ -157,28 +141,20 @@ namespace sp {
                 auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
 
                 for (auto param : root.get<picojson::object>()) {
-                    if (param.first == "_console") {
-                        Debugf("Loading console-input bindings");
-                        for (auto eventInput : param.second.get<picojson::object>()) {
-                            auto command = eventInput.second.get<std::string>();
-                            ConsoleBindingManager::SetConsoleInputCommand(lock, eventInput.first, command);
-                        }
-                    } else {
-                        Debugf("Loading input for: %s", param.first);
-                        auto entity = lock.NewEntity();
-                        entity.Set<ecs::Name>(lock, param.first);
-                        entity.Set<ecs::Owner>(lock, ecs::Owner::SystemId::INPUT_MANAGER);
-                        entity.Set<ecs::SceneInfo>(lock, entity, ecs::SceneInfo::Priority::Bindings, scene);
-                        for (auto comp : param.second.get<picojson::object>()) {
-                            if (comp.first[0] == '_') continue;
+                    Debugf("Loading input for: %s", param.first);
+                    auto entity = lock.NewEntity();
+                    entity.Set<ecs::Name>(lock, param.first);
+                    entity.Set<ecs::Owner>(lock, ecs::Owner::SystemId::INPUT_MANAGER);
+                    entity.Set<ecs::SceneInfo>(lock, entity, ecs::SceneInfo::Priority::Bindings, scene);
+                    for (auto comp : param.second.get<picojson::object>()) {
+                        if (comp.first[0] == '_') continue;
 
-                            auto componentType = ecs::LookupComponent(comp.first);
-                            if (componentType != nullptr) {
-                                bool result = componentType->LoadEntity(lock, entity, comp.second);
-                                Assert(result, "Failed to load component type: " + comp.first);
-                            } else {
-                                Errorf("Unknown component, ignoring: %s", comp.first);
-                            }
+                        auto componentType = ecs::LookupComponent(comp.first);
+                        if (componentType != nullptr) {
+                            bool result = componentType->LoadEntity(lock, entity, comp.second);
+                            Assert(result, "Failed to load component type: " + comp.first);
+                        } else {
+                            Errorf("Unknown component, ignoring: %s", comp.first);
                         }
                     }
                 }
@@ -221,17 +197,12 @@ namespace sp {
             for (auto &[name, scene] : scenes) {
                 Logf("Unloading scene: %s", name);
                 scene->RemoveScene(stagingLock, lock);
-
-                for (auto &line : scene->unloadExecList) {
-                    GetConsoleManager().QueueParseAndExecute(line);
-                }
             }
             scenes.clear();
         }
         std::atomic_flag loaded;
         AddScene(sceneName, [this, &loaded](std::shared_ptr<Scene> scene) {
             RespawnPlayer();
-            LoadBindings();
 
             loaded.test_and_set();
             loaded.notify_all();
@@ -280,10 +251,6 @@ namespace sp {
                         scenes.emplace(sceneName, scene);
                     }
 
-                    for (auto &line : scene->autoExecList) {
-                        GetConsoleManager().ParseAndExecute(line);
-                    }
-
                     if (callback) callback(scene);
                 } else {
                     Errorf("Failed to load scene: %s", sceneName);
@@ -301,9 +268,6 @@ namespace sp {
                 it->second->RemoveScene(stagingLock, lock);
             }
 
-            for (auto &line : it->second->unloadExecList) {
-                GetConsoleManager().ParseAndExecute(line);
-            }
             scenes.erase(it);
         }
     }
@@ -340,10 +304,6 @@ namespace sp {
                         }
                     }
                     Assert(!!player, "Player scene doesn't contain an entity named player");
-                }
-
-                for (auto &line : playerScene->autoExecList) {
-                    GetConsoleManager().ParseAndExecute(line);
                 }
             } else {
                 Errorf("Failed to load player scene!");
@@ -400,7 +360,7 @@ namespace sp {
 
                 bindingsScene->ApplyScene(stagingLock, lock);
             } else {
-                Errorf("Failed to load player scene!");
+                Errorf("Failed to load bindings scene!");
             }
 
             loaded.test_and_set();

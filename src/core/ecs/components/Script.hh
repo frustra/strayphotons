@@ -25,6 +25,9 @@ namespace ecs {
 
         using ParameterType = typename std::variant<bool, double, std::string, NamedEntity>;
 
+        void CopyCallbacks(const Script &src);
+        void CopyParams(const Script &src);
+
         template<typename T>
         void SetParam(std::string name, const T &value) {
             scriptParameters[name] = value;
