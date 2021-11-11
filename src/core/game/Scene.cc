@@ -95,5 +95,13 @@ namespace sp {
             }
             e.Destroy(staging);
         }
+        for (auto &e : live.EntitiesWith<ecs::SceneInfo>()) {
+            if (!e.Has<ecs::SceneInfo>(live)) continue;
+            auto &sceneInfo = e.Get<ecs::SceneInfo>(live);
+            if (sceneInfo.scene.get() != this) continue;
+            Assert(sceneInfo.liveId == e, "Expected live entity to match SceneInfo.liveId");
+
+            if (!sceneInfo.stagingId) e.Destroy(live);
+        }
     }
 } // namespace sp
