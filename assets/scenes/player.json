@@ -24,7 +24,7 @@
             },
             "human_controller": {},
             "interact_controller": {},
-            "triggerable": {}
+            "trigger_group": "player"
         },
         {
             "_name": "debug-spawner",
@@ -81,6 +81,10 @@
             "character_controller": {
                 "target": "vr-hmd"
             }
+        },
+        {
+            "_name": "vr-hmd",
+            "trigger_group": "player"
         },
         {
             "_name": "player-physics",

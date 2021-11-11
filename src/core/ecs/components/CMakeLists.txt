@@ -15,7 +15,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     ScriptDefinitions.cc
     Signals.cc
     Transform.cc
-    TriggerArea.cc
+    Triggers.cc
     View.cc
     VoxelArea.cc
 )

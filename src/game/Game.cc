@@ -122,19 +122,37 @@ namespace sp {
             for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
                 auto &area = entity.Get<ecs::TriggerArea>(lock);
 
-                if (!area.triggered) {
-                    for (auto triggerableEntity : lock.EntitiesWith<ecs::Triggerable>()) {
-                        auto &transform = triggerableEntity.Get<ecs::Transform>(lock);
-                        auto entityPos = transform.GetPosition();
-                        if (entityPos.x > area.boundsMin.x && entityPos.y > area.boundsMin.y &&
-                            entityPos.z > area.boundsMin.z && entityPos.x < area.boundsMax.x &&
-                            entityPos.y < area.boundsMax.y && entityPos.z < area.boundsMax.z) {
+                for (auto triggerEnt : lock.EntitiesWith<ecs::TriggerGroup>()) {
+                    if (!triggerEnt.Has<ecs::TriggerGroup, ecs::Transform>(lock)) continue;
+
+                    auto triggerGroup = triggerEnt.Get<ecs::TriggerGroup>(lock);
+                    Assert(triggerGroup < ecs::TriggerGroup::COUNT, "Entity has invalid trigger group");
+                    auto &trigger = area.triggers[(size_t)triggerGroup];
+
+                    auto &transform = triggerEnt.Get<ecs::Transform>(lock);
+                    auto entityPos = transform.GetGlobalPosition(lock);
+                    bool inArea = entityPos.x > area.boundsMin.x && entityPos.y > area.boundsMin.y &&
+                                  entityPos.z > area.boundsMin.z && entityPos.x < area.boundsMax.x &&
+                                  entityPos.y < area.boundsMax.y && entityPos.z < area.boundsMax.z;
+                    if (trigger.entities.contains(triggerEnt) == inArea) continue;
+
+                    if (inArea) {
+                        trigger.entities.insert(triggerEnt);
+
+                        if (!trigger.command.empty()) {
+                            Logf("TriggerArea running command: %s", trigger.command);
                             Debugf("Entity at: %f %f %f", entityPos.x, entityPos.y, entityPos.z);
-                            Logf("Triggering event: %s", area.command);
-                            area.triggered = true;
-                            GetConsoleManager().QueueParseAndExecute(area.command);
-                            break;
+                            GetConsoleManager().QueueParseAndExecute(trigger.command);
                         }
+                    } else {
+                        trigger.entities.erase(triggerEnt);
+                    }
+                }
+
+                for (auto &trigger : area.triggers) {
+                    if (!trigger.signalOutput.empty() && entity.Has<ecs::SignalOutput>(lock)) {
+                        auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);
+                        signalOutput.SetSignal(trigger.signalOutput, trigger.entities.size() > 0 ? 1.0 : 0.0);
                     }
                 }
             }

@@ -1,11 +1,4 @@
 {
-	"autoexec": [
-		"r.MirrorRecursion 1",
-		"r.SSAO 1"
-	],
-	"unloadexec": [
-		"r.SSAO 0"
-	],
 	"entities": [
 		{
 			"_name": "sensor1",

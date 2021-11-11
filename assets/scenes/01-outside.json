@@ -616,7 +616,11 @@
 					3.5,
 					-6
 				],
-				"command": "setsignal airlock1-in.door_open 0; wait 1000 loadscene 02-mirrors"
+				"triggers": {
+					"player": {
+						"command": "setsignal airlock1-in.door_open 0; wait 1000 loadscene 02-mirrors"
+					}
+				}
 			}
 		}
 	]

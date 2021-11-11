@@ -1,7 +1,4 @@
 {
-	"autoexec": [
-		"r.MirrorRecursion 3"
-	],
 	"entities": [
 		{
 			"renderable": "level1",

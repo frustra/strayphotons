@@ -16,7 +16,7 @@
 #include "ecs/components/Script.hh"
 #include "ecs/components/Signals.hh"
 #include "ecs/components/Transform.hh"
-#include "ecs/components/TriggerArea.hh"
+#include "ecs/components/Triggers.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/VoxelArea.hh"
 #include "ecs/components/XRView.hh"

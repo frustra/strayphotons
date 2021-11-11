@@ -1,8 +1,4 @@
 {
-	"autoexec": [
-		"r.MirrorRecursion 6",
-		"wait 1000 setsignal airlock1-out.door_open 1"
-	],
 	"entities": [
 		<%- include('prefab/airlock', {
 			name: 'airlock1',
@@ -26,9 +22,24 @@
 		},
 		{
 			"trigger_area": {
+				"min": [3, 0, 9],
+				"max": [5.5, 2, 12],
+				"triggers": {
+					"player": {
+						"command": "r.MirrorRecursion 3; wait 100 setsignal airlock1-out.door_open 1"
+					}
+				}
+			}
+		},
+		{
+			"trigger_area": {
 				"min": [4, 0, -2.5],
 				"max": [6, 4, -0.5],
-				"command": "setsignal airlock2-in.door_open 0; wait 1000 loadscene menu"
+				"triggers": {
+					"player": {
+						"command": "setsignal airlock2-in.door_open 0; wait 1000 loadscene menu"
+					}
+				}
 			}
 		},
 		<%- include("prefab/floor", {

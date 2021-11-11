@@ -237,11 +237,14 @@ namespace sp {
 
             ImGui::PushFont(io.Fonts->Fonts[3]);
 
-#define LEVEL_BUTTON(name, file)                                     \
-    if (ImGui::Button(name)) {                                       \
-        SetRenderMode(MenuRenderMode::None);                         \
-        selectedScreen = MenuScreen::Main;                           \
-        GetConsoleManager().QueueParseAndExecute("loadscene " file); \
+#define LEVEL_BUTTON(name, file)                                            \
+    if (ImGui::Button(name)) {                                              \
+        SetRenderMode(MenuRenderMode::None);                                \
+        selectedScreen = MenuScreen::Main;                                  \
+        GetConsoleManager().QueueParseAndExecute("g.MenuDisplay 0");        \
+        GetConsoleManager().QueueParseAndExecute("r.Exposure 0");           \
+        GetConsoleManager().QueueParseAndExecute("p.PausePlayerPhysics 0"); \
+        GetConsoleManager().QueueParseAndExecute("loadscene " file);        \
     }
 
             LEVEL_BUTTON("01 - Outside", "01-outside")

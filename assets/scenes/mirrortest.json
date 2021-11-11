@@ -1,8 +1,4 @@
 {
-	"autoexec": [
-		"r.MirrorRecursion 2",
-		"r.Flashlight 100"
-	],
 	"entities": [
 		{
 			"renderable": "box",

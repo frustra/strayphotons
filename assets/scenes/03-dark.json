@@ -503,14 +503,18 @@
 				"min": [
 					-3,
 					0,
-					1.5
+					0
 				],
 				"max": [
 					0,
 					2,
 					3
 				],
-				"command": "r.MirrorRecursion 2; r.MirrorMapResolution 1024; wait 1000 setsignal airlock1-out.door_open 1"
+				"triggers": {
+					"player": {
+						"command": "r.MirrorRecursion 2; r.MirrorMapResolution 1024; wait 100 setsignal airlock1-out.door_open 1"
+					}
+				}
 			}
 		},
 		{
@@ -525,7 +529,11 @@
 					2,
 					11.5
 				],
-				"command": "setsignal airlock2-in.door_open 0; wait 1000 loadscene 04-symmetry; r.MirrorMapResolution 512"
+				"triggers": {
+					"player": {
+						"command": "setsignal airlock2-in.door_open 0; wait 1000 loadscene 04-symmetry; r.MirrorMapResolution 512"
+					}
+				}
 			}
 		},
 		{
