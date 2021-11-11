@@ -1,7 +1,9 @@
 #include "Transform.hh"
 
-#include <assets/AssetHelpers.hh>
-#include <ecs/EcsImpl.hh>
+#include "assets/AssetHelpers.hh"
+#include "ecs/EcsImpl.hh"
+#include "game/Scene.hh"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -10,15 +12,16 @@
 
 namespace ecs {
     template<>
-    bool Component<Transform>::Load(Lock<Read<ecs::Name>> lock, Transform &transform, const picojson::value &src) {
+    bool Component<Transform>::Load(sp::Scene *scene, Transform &transform, const picojson::value &src) {
         for (auto subTransform : src.get<picojson::object>()) {
             if (subTransform.first == "parent") {
+                Assert(scene != nullptr, "Transform::Load must have valid scene to define parent");
                 auto parentName = subTransform.second.get<string>();
-                for (auto ent : lock.EntitiesWith<Name>()) {
-                    if (ent.Get<Name>(lock) == parentName) {
-                        transform.SetParent(ent);
-                        break;
-                    }
+                auto it = scene->namedEntities.find(parentName);
+                if (it != scene->namedEntities.end()) {
+                    transform.SetParent(it->second);
+                } else {
+                    Errorf("Component<Transform>::Load parent name does not exist: %s", parentName);
                 }
             } else if (subTransform.first == "scale") {
                 transform.Scale(sp::MakeVec3(subTransform.second));
@@ -49,6 +52,7 @@ namespace ecs {
     void Transform::SetParent(Tecs::Entity ent) {
         this->parent = ent;
         this->parentCacheCount = 0;
+        this->changeCount++;
     }
 
     const Tecs::Entity &Transform::GetParent() const {

@@ -1,13 +1,4 @@
 {
-	"autoexec": [
-		"r.MirrorRecursion 0",
-		"r.EnableBumpMap 0",
-		"r.SSAO 1"
-	],
-	"unloadexec": [
-		"r.EnableBumpMap 1",
-		"r.SSAO 0"
-	],
 	"entities": [
 		{
 			"renderable": "sponza",
@@ -246,12 +237,7 @@
 		},
 		<% } %>
 		{
-			"_name": "player",
-			"view": {
-				"clip": [0.1, 256],
-				"clear": [0.66, 0.84, 1],
-				"sky": 0.4
-			},
+			"_name": "player-spawn",
 			"transform": {
 				"translate": [0, 2, 0]
 			},

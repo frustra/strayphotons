@@ -8,7 +8,6 @@ extern "C" {
 #include "assets/AssetHelpers.hh"
 #include "assets/Image.hh"
 #include "assets/Model.hh"
-#include "assets/Scene.hh"
 #include "assets/Script.hh"
 #include "core/Logging.hh"
 #include "ecs/Components.hh"

@@ -41,6 +41,8 @@ namespace ecs {
             std::vector<Binding> sources;
         };
 
+        void CopyBindings(const SignalBindings &src);
+
         void SetCombineOperation(const std::string &name, CombineOperator operation);
         void Bind(const std::string &name, NamedEntity origin, std::string source);
         void Unbind(const std::string &name, NamedEntity origin, std::string source);
@@ -66,7 +68,7 @@ namespace ecs {
     static Component<SignalBindings> ComponentSignalBindings("signal_bindings");
 
     template<>
-    bool Component<SignalOutput>::Load(Lock<Read<ecs::Name>> lock, SignalOutput &dst, const picojson::value &src);
+    bool Component<SignalOutput>::Load(sp::Scene *scene, SignalOutput &dst, const picojson::value &src);
     template<>
-    bool Component<SignalBindings>::Load(Lock<Read<ecs::Name>> lock, SignalBindings &dst, const picojson::value &src);
+    bool Component<SignalBindings>::Load(sp::Scene *scene, SignalBindings &dst, const picojson::value &src);
 } // namespace ecs

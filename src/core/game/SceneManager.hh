@@ -1,10 +1,12 @@
 #pragma once
 
 #include "console/CFunc.hh"
-#include "console/ConsoleBindingManager.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/components/SceneInfo.hh"
 
+#include <functional>
 #include <memory>
+#include <robin_hood.h>
 
 namespace sp {
     class Game;
@@ -15,27 +17,40 @@ namespace sp {
 
     class SceneManager {
     public:
-        SceneManager();
+        SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld);
 
-        std::shared_ptr<Scene> LoadSceneJson(const std::string &name, ecs::Lock<ecs::AddRemove> lock, ecs::Owner owner);
-        std::shared_ptr<Scene> LoadBindingJson(std::string bindingConfigPath);
+        void LoadSceneJson(const std::string &name,
+            ecs::SceneInfo::Priority priority,
+            std::function<void(std::shared_ptr<Scene>)> callback);
+        void LoadBindingsJson(std::function<void(std::shared_ptr<Scene>)> callback);
+
+        void AddSystemEntities(std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback);
+
+        void LoadScene(std::string name);
+        void ReloadScene(std::string name);
+        void AddScene(std::string name, std::function<void(std::shared_ptr<Scene>)> callback = nullptr);
+        void RemoveScene(std::string name);
 
         void LoadPlayer();
-        void LoadScene(std::string name);
-        void ReloadScene();
-        void ReloadPlayer();
+        void RespawnPlayer();
 
-        void PrintScene();
+        void LoadBindings();
 
-        Tecs::Entity GetPlayer() {
+        void PrintScene(std::string sceneName);
+
+        const Tecs::Entity &GetPlayer() const {
             return player;
         }
 
     private:
-        ConsoleBindingManager consoleBinding;
+        ecs::ECS &liveWorld;
+        ecs::ECS &stagingWorld;
 
-        std::shared_ptr<Scene> scene, playerScene;
+        robin_hood::unordered_flat_map<std::string, std::shared_ptr<Scene>> scenes;
+        std::shared_ptr<Scene> playerScene, bindingsScene, systemScene;
         Tecs::Entity player;
         CFuncCollection funcs;
     };
+
+    SceneManager &GetSceneManager();
 } // namespace sp

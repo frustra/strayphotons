@@ -1,7 +1,19 @@
 {
-    "_console": {
-        "/keyboard/key/f5": "reloadscene",
-        "/keyboard/key/f7": "reloadshaders"
+    "console-input": {
+        "event_input": [
+            "/keyboard/key/f5",
+            "/keyboard/key/f6",
+            "/keyboard/key/f7",
+            "/keyboard/key/v"
+        ],
+        "script": {
+            "parameters": {
+                "/keyboard/key/f5": "reloadscene",
+                "/keyboard/key/f6": "reloadscene; reloadplayer",
+                "/keyboard/key/f7": "reloadshaders",
+                "/keyboard/key/v": "toggle p.NoClip"
+            }
+        }
     },
     "mouse": {
         "event_bindings": {
@@ -26,7 +38,8 @@
             "/keyboard/key/p": { "/action/flashlight/grab": "flashlight" },
             "/keyboard/key/f5": { "/keyboard/key/f5": "console-input" },
             "/keyboard/key/f6": { "/keyboard/key/f6": "console-input" },
-            "/keyboard/key/f7": { "/keyboard/key/f7": "console-input" }
+            "/keyboard/key/f7": { "/keyboard/key/f7": "console-input" },
+            "/keyboard/key/v": { "/keyboard/key/v": "console-input" }
         }
     },
     "left-hand-input": {
@@ -49,12 +62,6 @@
     },
     "vr-controller-left": {
         "event_bindings": {
-            "/actions/main/in/grab": { "/action/interact": "player" }
-        }
-    },
-    "vr-controller-right": {
-        "event_bindings": {
-            "/actions/main/in/movement": { "/script/joystick_in": "player" },
             "/actions/main/in/grab": { "/action/interact": "player" }
         }
     },

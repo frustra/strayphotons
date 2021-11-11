@@ -1,11 +1,4 @@
 {
-	"autoexec": [
-		"r.MirrorRecursion 1",
-		"r.SSAO 1"
-	],
-	"unloadexec": [
-		"r.SSAO 0"
-	],
 	"entities": [
 		{
 			"_name": "sensor1",
@@ -192,10 +185,7 @@
 			}
 		},
 		{
-			"_name": "player",
-			"view": {
-				"clip": [0.1, 256]
-			},
+			"_name": "player-spawn",
 			"transform": {
 				"translate": [-3, 1.7, -3],
 				"rotate": [-135, 0, 1, 0]

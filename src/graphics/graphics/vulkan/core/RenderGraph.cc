@@ -43,7 +43,8 @@ namespace sp::vulkan {
             for (const auto &[name, id] : names) {
                 const auto &res = resources.resources[id];
                 if (res.type == RenderGraphResource::Type::RenderTarget) {
-                    output.emplace_back(scope.empty() ? name : scope + "." + name, res.renderTargetDesc);
+                    output.emplace_back(
+                        RenderTargetInfo{scope.empty() ? name : scope + "." + name, res.renderTargetDesc});
                 }
             }
         }

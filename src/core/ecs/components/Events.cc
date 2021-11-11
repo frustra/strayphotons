@@ -8,7 +8,7 @@
 
 namespace ecs {
     template<>
-    bool Component<EventInput>::Load(Lock<Read<ecs::Name>> lock, EventInput &input, const picojson::value &src) {
+    bool Component<EventInput>::Load(sp::Scene *scene, EventInput &input, const picojson::value &src) {
         for (auto event : src.get<picojson::array>()) {
             input.Register(event.get<std::string>());
         }
@@ -16,9 +16,7 @@ namespace ecs {
     }
 
     template<>
-    bool Component<EventBindings>::Load(Lock<Read<ecs::Name>> lock,
-        EventBindings &bindings,
-        const picojson::value &src) {
+    bool Component<EventBindings>::Load(sp::Scene *scene, EventBindings &bindings, const picojson::value &src) {
         for (auto bind : src.get<picojson::object>()) {
             std::string targetEvent;
             for (auto dest : bind.second.get<picojson::object>()) {
@@ -66,7 +64,6 @@ namespace ecs {
     }
 
     void EventInput::Register(const std::string &binding) {
-        Debugf("Registering event queue: %s", binding);
         events.emplace(binding, std::queue<Event>());
     }
 
@@ -75,7 +72,6 @@ namespace ecs {
     }
 
     void EventInput::Unregister(const std::string &binding) {
-        Debugf("Unregistering event queue: %s", binding);
         events.erase(binding);
     }
 
@@ -105,13 +101,27 @@ namespace ecs {
     }
 
     bool EventInput::Poll(Lock<Write<EventInput>> lock, Tecs::Entity ent, const std::string &binding, Event &eventOut) {
-        auto &readInput = ent.GetPrevious<EventInput>(lock);
+        auto &readInput = ent.Get<const EventInput>(lock);
         if (readInput.HasEvents(binding)) {
             auto &writeInput = ent.Get<EventInput>(lock);
             return writeInput.Poll(binding, eventOut);
         }
         eventOut = Event();
         return false;
+    }
+
+    void EventBindings::CopyBindings(const EventBindings &src) {
+        for (auto &[source, srcList] : src.sourceToDest) {
+            auto dstList = sourceToDest.find(source);
+            if (dstList != sourceToDest.end()) {
+                auto &vec = dstList->second;
+                for (auto &binding : srcList) {
+                    if (std::find(vec.begin(), vec.end(), binding) == vec.end()) vec.emplace_back(binding);
+                }
+            } else {
+                sourceToDest.emplace(source, srcList);
+            }
+        }
     }
 
     void EventBindings::Bind(std::string source, NamedEntity target, std::string dest) {

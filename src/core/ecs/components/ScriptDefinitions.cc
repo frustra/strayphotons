@@ -118,6 +118,33 @@ namespace ecs {
                     }
                 }
             }},
+        {"auto_attach",
+            [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+                if (ent.Has<Script, Transform>(lock)) {
+                    auto &scriptComp = ent.Get<Script>(lock);
+                    auto parentName = scriptComp.GetParam<std::string>("attach_parent");
+                    auto parentEntity = scriptComp.GetParam<NamedEntity>("attach_parent_entity");
+                    if (parentEntity.Name() != parentName) parentEntity = NamedEntity(parentName);
+
+                    auto &transform = ent.Get<Transform>(lock);
+                    auto parent = parentEntity.Get(lock);
+                    if (parent.Has<Transform>(lock)) {
+                        if (ent.Has<Renderable>(lock)) {
+                            auto &renderable = ent.Get<Renderable>(lock);
+                            renderable.visibility.set();
+                        }
+                    } else {
+                        parent = Tecs::Entity();
+                        if (ent.Has<Renderable>(lock)) {
+                            auto &renderable = ent.Get<Renderable>(lock);
+                            renderable.visibility.reset();
+                        }
+                    }
+                    transform.SetParent(parent);
+                    transform.UpdateCachedTransform(lock);
+                    scriptComp.SetParam<NamedEntity>("attach_parent_entity", parentEntity);
+                }
+            }},
         {"relative_movement",
             [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
                 if (ent.Has<Script, SignalOutput>(lock)) {
@@ -162,11 +189,13 @@ namespace ecs {
                     while (EventInput::Poll(lock, ent, "/action/spawn", event)) {
                         std::thread([ent]() {
                             auto lock = World.StartTransaction<AddRemove>();
-                            if (ent.Has<Script>(lock)) {
+                            if (ent.Has<Script, SceneInfo>(lock)) {
                                 auto &scriptComp = ent.Get<Script>(lock);
+                                auto &sceneInfo = ent.Get<SceneInfo>(lock);
 
                                 auto newEntity = lock.NewEntity();
                                 newEntity.Set<Owner>(lock, Owner::OwnerType::PLAYER, 0);
+                                newEntity.Set<SceneInfo>(lock, newEntity, sceneInfo);
 
                                 glm::vec3 position;
                                 position.x = scriptComp.GetParam<double>("position_x");

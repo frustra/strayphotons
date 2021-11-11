@@ -1,8 +1,4 @@
 {
-	"autoexec": [
-		"r.MirrorRecursion 2",
-		"r.Flashlight 100"
-	],
 	"entities": [
 		{
 			"renderable": "ground-3x3",
@@ -57,10 +53,7 @@
 			}
 		},
 		{
-			"_name": "player",
-			"view": {
-				"clip": [0.1, 256]
-			},
+			"_name": "player-spawn",
 			"transform": {
 				"translate": [0, 2, 0]
 			}

@@ -1,7 +1,4 @@
 {
-	"autoexec": [
-		"r.MirrorRecursion 3"
-	],
 	"entities": [
 		{
 			"renderable": "level1",
@@ -32,10 +29,7 @@
 			}
 		},
 		{
-			"_name": "player",
-			"view": {
-				"clip": [0.1, 256]
-			},
+			"_name": "player-spawn",
 			"transform": {
 				"translate": [0, 1.75, 0]
 			},

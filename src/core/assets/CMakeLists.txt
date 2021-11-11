@@ -7,6 +7,5 @@ target_sources(
         AssetManager.cc
         Image.cc
         Model.cc
-        Scene.cc
         Script.cc
 )

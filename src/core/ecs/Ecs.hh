@@ -31,12 +31,13 @@ namespace ecs {
     struct Owner;
     struct Physics;
     struct Renderable;
+    struct SceneInfo;
     class Script;
     class SignalOutput;
     class SignalBindings;
     class Transform;
     struct TriggerArea;
-    struct Triggerable;
+    enum class TriggerGroup : uint8_t;
     struct View;
     struct VoxelArea;
     struct XRView;
@@ -56,12 +57,13 @@ namespace ecs {
         Owner,
         Physics,
         Renderable,
+        SceneInfo,
         Script,
         SignalOutput,
         SignalBindings,
         Transform,
         TriggerArea,
-        Triggerable,
+        TriggerGroup,
         View,
         VoxelArea,
         XRView>;
@@ -96,6 +98,7 @@ namespace ecs {
 TECS_NAME_COMPONENT(ecs::Name, "Name");
 TECS_NAME_COMPONENT(ecs::Animation, "Animation");
 TECS_NAME_COMPONENT(ecs::HumanController, "HumanController");
+TECS_NAME_COMPONENT(ecs::CharacterController, "CharacterController");
 TECS_NAME_COMPONENT(ecs::InteractController, "InteractController");
 TECS_NAME_COMPONENT(ecs::EventInput, "EventInput");
 TECS_NAME_COMPONENT(ecs::EventBindings, "EventBindings");
@@ -107,12 +110,13 @@ TECS_NAME_COMPONENT(ecs::Mirror, "Mirror");
 TECS_NAME_COMPONENT(ecs::Owner, "Owner");
 TECS_NAME_COMPONENT(ecs::Physics, "Physics");
 TECS_NAME_COMPONENT(ecs::Renderable, "Renderable");
+TECS_NAME_COMPONENT(ecs::SceneInfo, "SceneInfo");
 TECS_NAME_COMPONENT(ecs::Script, "Script");
 TECS_NAME_COMPONENT(ecs::SignalOutput, "SignalOutput");
 TECS_NAME_COMPONENT(ecs::SignalBindings, "SignalBindings");
 TECS_NAME_COMPONENT(ecs::Transform, "Transform");
 TECS_NAME_COMPONENT(ecs::TriggerArea, "TriggerArea");
-TECS_NAME_COMPONENT(ecs::Triggerable, "Triggerable");
+TECS_NAME_COMPONENT(ecs::TriggerGroup, "TriggerGroup");
 TECS_NAME_COMPONENT(ecs::View, "View");
 TECS_NAME_COMPONENT(ecs::VoxelArea, "VoxelArea");
 TECS_NAME_COMPONENT(ecs::XRView, "XRView");

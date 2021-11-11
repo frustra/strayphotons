@@ -1,7 +1,8 @@
 #pragma once
 
-#include <ecs/Components.hh>
-#include <ecs/Ecs.hh>
+#include "ecs/Components.hh"
+#include "ecs/Ecs.hh"
+
 #include <glm/glm.hpp>
 
 namespace ecs {
@@ -18,5 +19,5 @@ namespace ecs {
     static Component<Light> ComponentLight("light");
 
     template<>
-    bool Component<Light>::Load(Lock<Read<ecs::Name>> lock, Light &dst, const picojson::value &src);
+    bool Component<Light>::Load(sp::Scene *scene, Light &dst, const picojson::value &src);
 } // namespace ecs

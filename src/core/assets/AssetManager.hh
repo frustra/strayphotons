@@ -19,7 +19,6 @@ namespace tinygltf {
 namespace sp {
     class Asset;
     class Model;
-    class Scene;
     class Script;
     class Image;
 

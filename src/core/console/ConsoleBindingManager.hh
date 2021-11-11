@@ -11,7 +11,8 @@ namespace sp {
     public:
         ConsoleBindingManager();
 
-        void SetConsoleInputCommand(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::Script, ecs::EventInput>> lock,
+        static void SetConsoleInputCommand(
+            ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::Script, ecs::EventInput>> lock,
             std::string eventName,
             std::string command);
 
@@ -21,7 +22,7 @@ namespace sp {
 
         CFuncCollection funcs;
 
-        ecs::NamedEntity consoleInputEntity;
-        ecs::NamedEntity keyboardEntity;
+        static inline ecs::NamedEntity consoleInputEntity = ecs::NamedEntity("console-input");
+        static inline ecs::NamedEntity keyboardEntity = ecs::NamedEntity("keyboard");
     };
 } // namespace sp

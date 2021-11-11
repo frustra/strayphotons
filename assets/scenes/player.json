@@ -1,7 +1,4 @@
 {
-    "autoexec": [
-        "bind v toggle p.NoClip"
-    ],
     "entities": [
         {
             "_name": "player",
@@ -25,7 +22,9 @@
             "event_bindings": {
                 "/script/joystick_out": { "/action/camera_rotate": "player" }
             },
-            "human_controller": {}
+            "human_controller": {},
+            "interact_controller": {},
+            "trigger_group": "player"
         },
         {
             "_name": "debug-spawner",
@@ -43,9 +42,17 @@
         },
         {
             "_name": "left-hand-input",
+            "renderable": {
+                "model": "box",
+                "hidden": true
+            },
+            "transform": {
+                "scale": [0.01, 0.01, 0.01]
+            },
             "script": {
-                "onTick": "relative_movement",
+                "onTick": ["auto_attach", "relative_movement"],
                 "parameters": {
+                    "attach_parent": "vr-controller-left",
                     "target": "vr-hmd"
                 }
             },
@@ -53,9 +60,17 @@
         },
         {
             "_name": "right-hand-input",
+            "renderable": {
+                "model": "box",
+                "hidden": true
+            },
+            "transform": {
+                "scale": [0.01, 0.01, 0.01]
+            },
             "script": {
-                "onTick": "relative_movement",
+                "onTick": ["auto_attach", "relative_movement"],
                 "parameters": {
+                    "attach_parent": "vr-controller-right",
                     "target": "vr-controller-right"
                 }
             },
@@ -66,6 +81,10 @@
             "character_controller": {
                 "target": "vr-hmd"
             }
+        },
+        {
+            "_name": "vr-hmd",
+            "trigger_group": "player"
         },
         {
             "_name": "player-physics",

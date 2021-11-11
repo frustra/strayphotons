@@ -1,12 +1,4 @@
 {
-	"autoexec": [
-		"r.MirrorRecursion 1",
-		"wait 1000 setsignal airlock1-out.door_open 1",
-		"r.LightAttenuation 0.15"
-	],
-	"unloadexec": [
-		"r.LightAttenuation 0.5"
-	],
 	"entities": [
 		<%- include('prefab/airlock', {
 			name: 'airlock1',
@@ -20,10 +12,25 @@
 			in_signal: "sensor2"
 		}) %>,
 		{
-			"triggerarea": {
+			"trigger_area": {
+				"min": [-3, 0, 0],
+				"max": [0, 2, 3],
+				"triggers": {
+					"player": {
+						"command": "r.MirrorRecursion 1; wait 100 setsignal airlock1-out.door_open 1"
+					}
+				}
+			}
+		},
+		{
+			"trigger_area": {
 				"min": [10, 0, -2.5],
 				"max": [12, 2, 0],
-				"command": "setsignal airlock2-in.door_open 0; wait 1000 loadscene 03-dark"
+				"triggers": {
+					"player": {
+						"command": "setsignal airlock2-in.door_open 0; wait 1000 loadscene 03-dark"
+					}
+				}
 			}
 		},
 		<%- include("prefab/floor", {
@@ -100,10 +107,7 @@
 		}) %>,
 
 		{
-			"_name": "player",
-			"view": {
-				"clip": [0.1, 256]
-			},
+			"_name": "player-spawn",
 			"transform": {
 				"rotate": [270, 0, 1, 0],
 				"translate": [-1.7, 1.7, 1.4]

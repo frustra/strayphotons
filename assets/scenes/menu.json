@@ -1,15 +1,4 @@
 {
-	"autoexec": [
-		"g.MenuDisplay 2",
-		"r.Exposure 0.5",
-		"r.MirrorRecursion 0",
-		"p.PausePlayerPhysics 1"
-	],
-	"unloadexec": [
-		"g.MenuDisplay 0",
-		"r.Exposure 0",
-		"p.PausePlayerPhysics 0"
-	],
 	"entities": [
 		{
 			"renderable": "box",
@@ -78,10 +67,7 @@
 			}
 		},
 		{
-			"_name": "player",
-			"view": {
-				"clip": [0.1, 256]
-			},
+			"_name": "player-spawn",
 			"transform": {
 				"translate": [0, 5, 2]
 			},
@@ -104,10 +90,25 @@
 			}
 		},
 		{
-			"triggerarea": {
+			"trigger_area": {
+				"min": [-1, 4, 1],
+				"max": [1, 6, 3],
+				"triggers": {
+					"player": {
+						"command": "g.MenuDisplay 2; r.Exposure 0.5; p.PausePlayerPhysics 1"
+					}
+				}
+			}
+		},
+		{
+			"trigger_area": {
 				"min": [-5, 0, -5],
 				"max": [5, 2, 5],
-				"command": "loadscene 01-outside"
+				"triggers": {
+					"player": {
+						"command": "g.MenuDisplay 0; r.Exposure 0; loadscene 01-outside"
+					}
+				}
 			}
 		}
 	]

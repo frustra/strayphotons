@@ -6,16 +6,29 @@
 
 namespace ecs {
     template<>
-    bool Component<Script>::Load(Lock<Read<ecs::Name>> lock, Script &dst, const picojson::value &src) {
+    bool Component<Script>::Load(sp::Scene *scene, Script &dst, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "onTick") {
-                auto scriptName = param.second.get<std::string>();
-                auto it = ScriptDefinitions.find(scriptName);
-                if (it != ScriptDefinitions.end()) {
-                    dst.AddOnTick(it->second);
+                if (param.second.is<picojson::array>()) {
+                    for (auto nameParam : param.second.get<picojson::array>()) {
+                        auto scriptName = nameParam.get<std::string>();
+                        auto it = ScriptDefinitions.find(scriptName);
+                        if (it != ScriptDefinitions.end()) {
+                            dst.AddOnTick(it->second);
+                        } else {
+                            Errorf("Script has unknown onTick event: %s", scriptName);
+                            return false;
+                        }
+                    }
                 } else {
-                    Errorf("Script has unknown onTick event: %s", scriptName);
-                    return false;
+                    auto scriptName = param.second.get<std::string>();
+                    auto it = ScriptDefinitions.find(scriptName);
+                    if (it != ScriptDefinitions.end()) {
+                        dst.AddOnTick(it->second);
+                    } else {
+                        Errorf("Script has unknown onTick event: %s", scriptName);
+                        return false;
+                    }
                 }
             } else if (param.first == "parameters") {
                 for (auto scriptParam : param.second.get<picojson::object>()) {
@@ -30,5 +43,15 @@ namespace ecs {
             }
         }
         return true;
+    }
+
+    void Script::CopyCallbacks(const Script &src) {
+        if (onTickCallbacks.empty()) onTickCallbacks = src.onTickCallbacks;
+    }
+
+    void Script::CopyParams(const Script &src) {
+        for (auto &[name, param] : src.scriptParameters) {
+            scriptParameters.insert_or_assign(name, param);
+        }
     }
 } // namespace ecs

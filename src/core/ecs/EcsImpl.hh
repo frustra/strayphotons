@@ -12,11 +12,11 @@
 #include "ecs/components/Owner.hh"
 #include "ecs/components/Physics.hh"
 #include "ecs/components/Renderable.hh"
+#include "ecs/components/SceneInfo.hh"
 #include "ecs/components/Script.hh"
 #include "ecs/components/Signals.hh"
 #include "ecs/components/Transform.hh"
-#include "ecs/components/TriggerArea.hh"
-#include "ecs/components/Triggerable.hh"
+#include "ecs/components/Triggers.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/VoxelArea.hh"
 #include "ecs/components/XRView.hh"
@@ -27,14 +27,14 @@ namespace ecs {
     template<typename T>
     void DestroyAllWith(Lock<AddRemove> lock, const T &value) {
         for (auto e : lock.template EntitiesWith<T>()) {
-            if (e.template Get<T>(lock) == value) { e.Destroy(lock); }
+            if (e.template Has<T>(lock) && e.template Get<const T>(lock) == value) { e.Destroy(lock); }
         }
     }
 
     template<typename T>
     Tecs::Entity EntityWith(Lock<Read<T>> lock, const T &value) {
         for (auto e : lock.template EntitiesWith<T>()) {
-            if (e.template Get<T>(lock) == value) return e;
+            if (e.template Get<const T>(lock) == value) return e;
         }
         return Tecs::Entity();
     }

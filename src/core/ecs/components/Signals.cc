@@ -10,7 +10,7 @@
 
 namespace ecs {
     template<>
-    bool Component<SignalOutput>::Load(Lock<Read<ecs::Name>> lock, SignalOutput &output, const picojson::value &src) {
+    bool Component<SignalOutput>::Load(sp::Scene *scene, SignalOutput &output, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.second.is<bool>()) {
                 output.SetSignal(param.first, param.second.get<bool>() ? 1.0 : 0.0);
@@ -22,9 +22,7 @@ namespace ecs {
     }
 
     template<>
-    bool Component<SignalBindings>::Load(Lock<Read<ecs::Name>> lock,
-        SignalBindings &bindings,
-        const picojson::value &src) {
+    bool Component<SignalBindings>::Load(sp::Scene *scene, SignalBindings &bindings, const picojson::value &src) {
         for (auto bind : src.get<picojson::object>()) {
             Tecs::Entity target;
             std::string targetEvent;
@@ -116,6 +114,21 @@ namespace ecs {
 
     const std::map<std::string, double> &SignalOutput::GetSignals() const {
         return signals;
+    }
+
+    void SignalBindings::CopyBindings(const SignalBindings &src) {
+        for (auto &[name, srcList] : src.destToSource) {
+            auto dstList = destToSource.find(name);
+            if (dstList != destToSource.end()) {
+                dstList->second.operation = srcList.operation;
+                auto &vec = dstList->second.sources;
+                for (auto &binding : srcList.sources) {
+                    if (std::find(vec.begin(), vec.end(), binding) == vec.end()) vec.emplace_back(binding);
+                }
+            } else {
+                destToSource.emplace(name, srcList);
+            }
+        }
     }
 
     void SignalBindings::SetCombineOperation(const std::string &name, CombineOperator operation) {

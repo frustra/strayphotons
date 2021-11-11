@@ -21,5 +21,5 @@ namespace ecs {
     static Component<LightSensor> ComponentLightSensor("light_sensor");
 
     template<>
-    bool Component<LightSensor>::Load(Lock<Read<ecs::Name>> lock, LightSensor &dst, const picojson::value &src);
+    bool Component<LightSensor>::Load(sp::Scene *scene, LightSensor &dst, const picojson::value &src);
 } // namespace ecs

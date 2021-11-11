@@ -8,17 +8,17 @@ namespace sp {
     template<typename T, size_t MaxSize, typename ArrayT = std::array<T, MaxSize>>
     class InlineVector : private ArrayT {
     public:
-        using value_type = ArrayT::value_type;
-        using size_type = ArrayT::size_type;
-        using difference_type = ArrayT::difference_type;
-        using reference = ArrayT::reference;
-        using const_reference = ArrayT::const_reference;
-        using pointer = ArrayT::pointer;
-        using const_pointer = ArrayT::const_pointer;
-        using iterator = ArrayT::iterator;
-        using const_iterator = ArrayT::const_iterator;
-        using reverse_iterator = ArrayT::reverse_iterator;
-        using const_reverse_iterator = ArrayT::const_reverse_iterator;
+        using value_type = typename ArrayT::value_type;
+        using size_type = typename ArrayT::size_type;
+        using difference_type = typename ArrayT::difference_type;
+        using reference = typename ArrayT::reference;
+        using const_reference = typename ArrayT::const_reference;
+        using pointer = typename ArrayT::pointer;
+        using const_pointer = typename ArrayT::const_pointer;
+        using iterator = typename ArrayT::iterator;
+        using const_iterator = typename ArrayT::const_iterator;
+        using reverse_iterator = typename ArrayT::reverse_iterator;
+        using const_reverse_iterator = typename ArrayT::const_reverse_iterator;
         using ArrayT::at;
         using ArrayT::data;
         using ArrayT::front;

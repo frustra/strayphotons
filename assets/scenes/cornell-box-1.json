@@ -1,13 +1,4 @@
 {
-	"autoexec": [
-		"r.MirrorRecursion 0",
-		"r.FieldOfView 30",
-		"p.NoClip 1"
-	],
-	"unloadexec": [
-		"r.FieldOfView 60",
-		"p.NoClip 0"
-	],
 	"entities": [
 		{
 			"renderable": "cornell-box-1",
@@ -16,10 +7,7 @@
 			}
 		},
 		{
-			"_name": "player",
-			"view": {
-				"clip": [0.1, 256]
-			},
+			"_name": "player-spawn",
 			"transform": {
 				"translate": [-0.01, 2, 9.6],
 				"rotate": [0, 0, 1, 0]
@@ -27,6 +15,17 @@
 			"voxels": {
 				"min": [-2, 0, -2.1],
 				"max": [2, 4, 2]
+			}
+		},
+		{
+			"trigger_area": {
+				"min": [-1, 1, 9],
+				"max": [1, 3, 10],
+				"triggers": {
+					"player": {
+						"command": "r.Exposure 0.5; r.FieldOfView 30; p.PausePlayerPhysics 1"
+					}
+				}
 			}
 		},
 		{

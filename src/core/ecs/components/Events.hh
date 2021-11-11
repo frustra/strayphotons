@@ -62,6 +62,8 @@ namespace ecs {
         using Binding = typename std::pair<NamedEntity, std::string>;
         using BindingList = typename std::vector<Binding>;
 
+        void CopyBindings(const EventBindings &src);
+
         void Bind(std::string source, NamedEntity target, std::string dest);
         void Unbind(std::string source, NamedEntity target, std::string dest);
         void UnbindSource(std::string source);
@@ -86,7 +88,7 @@ namespace ecs {
     static Component<EventBindings> ComponentEventBindings("event_bindings");
 
     template<>
-    bool Component<EventInput>::Load(Lock<Read<ecs::Name>> lock, EventInput &dst, const picojson::value &src);
+    bool Component<EventInput>::Load(sp::Scene *scene, EventInput &dst, const picojson::value &src);
     template<>
-    bool Component<EventBindings>::Load(Lock<Read<ecs::Name>> lock, EventBindings &dst, const picojson::value &src);
+    bool Component<EventBindings>::Load(sp::Scene *scene, EventBindings &dst, const picojson::value &src);
 } // namespace ecs

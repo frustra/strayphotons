@@ -12,6 +12,8 @@
 #define Logf(...) ::sp::logging::Log(__FILE__, __LINE__, __VA_ARGS__)
 #define Errorf(...) ::sp::logging::Error(__FILE__, __LINE__, __VA_ARGS__)
 #define Abortf(...) ::sp::logging::Abort(__FILE__, __LINE__, __VA_ARGS__)
+#define Assertf(condition, ...) \
+    if (!(condition)) ::sp::logging::Abort(__FILE__, __LINE__, __VA_ARGS__)
 
 namespace sp::logging {
     enum class Level { Error, Log, Debug };

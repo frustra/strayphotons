@@ -8,7 +8,7 @@
 
 namespace ecs {
     template<>
-    bool Component<Animation>::Load(Lock<Read<ecs::Name>> lock, Animation &animation, const picojson::value &src) {
+    bool Component<Animation>::Load(sp::Scene *scene, Animation &animation, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "states") {
                 for (auto state : param.second.get<picojson::array>()) {
@@ -18,7 +18,7 @@ namespace ecs {
                     }
 
                     Transform animationState;
-                    if (!Component<Transform>::Load(lock, animationState, state)) {
+                    if (!Component<Transform>::Load(scene, animationState, state)) {
                         sp::Abort("Couldn't parse animation state as Transform");
                     }
                     animation.states.emplace_back(animationState.GetPosition(), animationState.GetScale());
