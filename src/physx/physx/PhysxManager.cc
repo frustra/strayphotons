@@ -314,6 +314,8 @@ namespace sp {
                 }
             }
         }
+
+        triggerSystem.Frame();
     }
 
     void PhysxManager::CreatePhysxScene() {

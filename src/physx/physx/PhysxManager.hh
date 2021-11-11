@@ -7,6 +7,7 @@
 #include "ecs/Ecs.hh"
 #include "physx/CharacterControlSystem.hh"
 #include "physx/HumanControlSystem.hh"
+#include "physx/TriggerSystem.hh"
 
 #include <PxPhysicsAPI.h>
 #include <extensions/PxDefaultAllocator.h>
@@ -155,6 +156,7 @@ namespace sp {
 
         HumanControlSystem humanControlSystem;
         CharacterControlSystem characterControlSystem;
+        TriggerSystem triggerSystem;
 
         ConstraintList constraints;
 
