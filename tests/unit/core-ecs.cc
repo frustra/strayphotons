@@ -15,7 +15,6 @@ namespace CoreEcsTests {
             auto lock = World.StartTransaction<ecs::AddRemove>();
 
             player = lock.NewEntity();
-            player.Set<ecs::Owner>(lock, ecs::Owner::OwnerType::PLAYER, 0);
             player.Set<ecs::Name>(lock, "player");
             auto &transform = player.Set<ecs::Transform>(lock, glm::vec3(1, 2, 3));
             auto pos1 = transform.GetPosition();

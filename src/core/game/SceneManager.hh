@@ -24,7 +24,9 @@ namespace sp {
             std::function<void(std::shared_ptr<Scene>)> callback);
         void LoadBindingsJson(std::function<void(std::shared_ptr<Scene>)> callback);
 
-        void AddSystemEntities(std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback);
+        void AddSystemScene(std::string sceneName,
+            std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback);
+        void RemoveSystemScene(std::string sceneName);
 
         void LoadScene(std::string name);
         void ReloadScene(std::string name);
@@ -47,7 +49,8 @@ namespace sp {
         ecs::ECS &stagingWorld;
 
         robin_hood::unordered_flat_map<std::string, std::shared_ptr<Scene>> scenes;
-        std::shared_ptr<Scene> playerScene, bindingsScene, systemScene;
+        robin_hood::unordered_flat_map<std::string, std::shared_ptr<Scene>> systemScenes;
+        std::shared_ptr<Scene> playerScene, bindingsScene;
         Tecs::Entity player;
         CFuncCollection funcs;
     };

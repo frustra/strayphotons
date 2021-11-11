@@ -9,7 +9,6 @@
 #include "ecs/components/Light.hh"
 #include "ecs/components/LightSensor.hh"
 #include "ecs/components/Mirror.hh"
-#include "ecs/components/Owner.hh"
 #include "ecs/components/Physics.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/SceneInfo.hh"
@@ -24,13 +23,6 @@
 #include <Tecs.hh>
 
 namespace ecs {
-    template<typename T>
-    void DestroyAllWith(Lock<AddRemove> lock, const T &value) {
-        for (auto e : lock.template EntitiesWith<T>()) {
-            if (e.template Has<T>(lock) && e.template Get<const T>(lock) == value) { e.Destroy(lock); }
-        }
-    }
-
     template<typename T>
     Tecs::Entity EntityWith(Lock<Read<T>> lock, const T &value) {
         for (auto e : lock.template EntitiesWith<T>()) {

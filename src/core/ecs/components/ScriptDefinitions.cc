@@ -194,7 +194,6 @@ namespace ecs {
                                 auto &sceneInfo = ent.Get<SceneInfo>(lock);
 
                                 auto newEntity = lock.NewEntity();
-                                newEntity.Set<Owner>(lock, Owner::OwnerType::PLAYER, 0);
                                 newEntity.Set<SceneInfo>(lock, newEntity, sceneInfo);
 
                                 glm::vec3 position;

@@ -28,7 +28,6 @@ namespace ecs {
     struct Light;
     class LightSensor;
     struct Mirror;
-    struct Owner;
     struct Physics;
     struct Renderable;
     struct SceneInfo;
@@ -54,7 +53,6 @@ namespace ecs {
         Light,
         LightSensor,
         Mirror,
-        Owner,
         Physics,
         Renderable,
         SceneInfo,
@@ -90,9 +88,6 @@ namespace ecs {
     template<typename T>
     Tecs::Entity EntityWith(Lock<Read<T>> lock, const T &value);
 
-    template<typename T>
-    void DestroyAllWith(Lock<AddRemove> lock, const T &value);
-
 }; // namespace ecs
 
 TECS_NAME_COMPONENT(ecs::Name, "Name");
@@ -107,7 +102,6 @@ TECS_NAME_COMPONENT(ecs::FocusLock, "FocusLock");
 TECS_NAME_COMPONENT(ecs::Light, "Light");
 TECS_NAME_COMPONENT(ecs::LightSensor, "LightSensor");
 TECS_NAME_COMPONENT(ecs::Mirror, "Mirror");
-TECS_NAME_COMPONENT(ecs::Owner, "Owner");
 TECS_NAME_COMPONENT(ecs::Physics, "Physics");
 TECS_NAME_COMPONENT(ecs::Renderable, "Renderable");
 TECS_NAME_COMPONENT(ecs::SceneInfo, "SceneInfo");
