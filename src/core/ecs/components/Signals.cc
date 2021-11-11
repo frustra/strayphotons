@@ -24,8 +24,6 @@ namespace ecs {
     template<>
     bool Component<SignalBindings>::Load(sp::Scene *scene, SignalBindings &bindings, const picojson::value &src) {
         for (auto bind : src.get<picojson::object>()) {
-            Tecs::Entity target;
-            std::string targetEvent;
             for (auto source : bind.second.get<picojson::object>()) {
                 if (source.first == "_operator") {
                     auto operatorName = source.second.get<std::string>();

@@ -60,11 +60,6 @@
             "move_world_z": { "move_world_z": [ "left-hand-input", "right-hand-input" ] }
         }
     },
-    "vr-controller-left": {
-        "event_bindings": {
-            "/actions/main/in/grab": { "/action/interact": "player" }
-        }
-    },
     "player": {
         "signal_bindings": {
             "menu_primary_trigger": { "mouse_button_left": "mouse" },

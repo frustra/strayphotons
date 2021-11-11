@@ -8,38 +8,38 @@
 
 namespace sp {
     ConsoleBindingManager::ConsoleBindingManager() {
-        GetSceneManager().AddSystemEntities([](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-            auto ent = lock.NewEntity();
-            ent.Set<ecs::Owner>(lock, ecs::Owner::SystemId::INPUT_MANAGER);
-            ent.Set<ecs::Name>(lock, consoleInputEntity.Name());
-            ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
-            ent.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
-            ent.Set<ecs::EventInput>(lock);
-            auto &script = ent.Set<ecs::Script>(lock);
-            script.AddOnTick([](ecs::Lock<ecs::WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
-                if (ent.Has<ecs::Script, ecs::EventInput>(lock)) {
-                    auto &script = ent.Get<const ecs::Script>(lock);
-                    auto &readInput = ent.Get<const ecs::EventInput>(lock);
-                    bool hasEvents = false;
-                    for (auto &queue : readInput.events) {
-                        if (!queue.second.empty()) {
-                            hasEvents = true;
-                            break;
+        GetSceneManager().AddSystemScene("console-binding",
+            [](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                auto ent = lock.NewEntity();
+                ent.Set<ecs::Name>(lock, consoleInputEntity.Name());
+                ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
+                ent.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
+                ent.Set<ecs::EventInput>(lock);
+                auto &script = ent.Set<ecs::Script>(lock);
+                script.AddOnTick([](ecs::Lock<ecs::WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+                    if (ent.Has<ecs::Script, ecs::EventInput>(lock)) {
+                        auto &script = ent.Get<const ecs::Script>(lock);
+                        auto &readInput = ent.Get<const ecs::EventInput>(lock);
+                        bool hasEvents = false;
+                        for (auto &queue : readInput.events) {
+                            if (!queue.second.empty()) {
+                                hasEvents = true;
+                                break;
+                            }
                         }
-                    }
-                    if (hasEvents) {
-                        auto &input = ent.Get<ecs::EventInput>(lock);
-                        for (auto &it : input.events) {
-                            while (!it.second.empty()) {
-                                auto command = script.GetParam<std::string>(it.first);
-                                if (!command.empty()) { GetConsoleManager().QueueParseAndExecute(command); }
-                                it.second.pop();
+                        if (hasEvents) {
+                            auto &input = ent.Get<ecs::EventInput>(lock);
+                            for (auto &it : input.events) {
+                                while (!it.second.empty()) {
+                                    auto command = script.GetParam<std::string>(it.first);
+                                    if (!command.empty()) { GetConsoleManager().QueueParseAndExecute(command); }
+                                    it.second.pop();
+                                }
                             }
                         }
                     }
-                }
+                });
             });
-        });
 
         funcs.Register(this, "bind", "Bind a key to a command", &ConsoleBindingManager::BindKey);
     }

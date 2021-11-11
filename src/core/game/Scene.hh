@@ -152,4 +152,16 @@ namespace sp {
             }
         }
     }
+
+    template<>
+    inline void Scene::CopyComponent<ecs::CharacterController>(ecs::Lock<ecs::ReadAll> src,
+        Tecs::Entity srcEnt,
+        ecs::Lock<ecs::AddRemove> dst,
+        Tecs::Entity dstEnt) {
+        if (srcEnt.Has<ecs::CharacterController>(src)) {
+            auto &srcController = srcEnt.Get<ecs::CharacterController>(src);
+            auto &dstController = dstEnt.Get<ecs::CharacterController>(dst);
+            dstController.target = srcController.target;
+        }
+    }
 } // namespace sp

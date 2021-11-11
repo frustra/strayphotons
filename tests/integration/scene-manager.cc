@@ -66,7 +66,7 @@ namespace SceneManagerTests {
     void TestBasicLoadAddRemove() {
         {
             Timer t("Add system scene first");
-            Scenes.AddSystemEntities(systemSceneCallback);
+            Scenes.AddSystemScene("system", systemSceneCallback);
 
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -140,7 +140,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Add system scene second");
-            Scenes.AddSystemEntities(systemSceneCallback);
+            Scenes.AddSystemScene("system", systemSceneCallback);
 
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -150,19 +150,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Unload system scene (secondary player entity)");
-            std::shared_ptr<sp::Scene> systemScene;
-            {
-                auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
-                auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
-                auto test = ecs::EntityWith<ecs::Name>(stagingLock, "test");
-                Assert(test.Has<ecs::Name, ecs::SceneInfo>(stagingLock), "Expected test entity to be valid");
-                AssertEqual(test.Get<ecs::Name>(stagingLock), "test", "Expected test entity to be named correctly");
-                auto &testSceneInfo = test.Get<ecs::SceneInfo>(stagingLock);
-                systemScene = testSceneInfo.scene;
-                Assert(systemScene != nullptr, "Expected test entity to have a scene");
-                AssertEqual(systemScene->sceneName, "system", "Expected system scene to be named correctly");
-                systemScene->RemoveScene(stagingLock, liveLock);
-            }
+            Scenes.RemoveSystemScene("system");
 
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -172,7 +160,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Reload system scene");
-            Scenes.AddSystemEntities(systemSceneCallback);
+            Scenes.AddSystemScene("system", systemSceneCallback);
 
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
