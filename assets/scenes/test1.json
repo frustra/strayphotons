@@ -50,7 +50,7 @@
 				]
 			},
 			"signal_bindings": {
-				"animation_state": { "value": "sensor1" }
+				"animation_state": { "value": "test1.sensor1" }
 			},
 			"physics": {
 				"model": "box",
@@ -185,7 +185,7 @@
 			}
 		},
 		{
-			"_name": "player-spawn",
+			"_name": "global.spawn",
 			"transform": {
 				"translate": [-3, 1.7, -3],
 				"rotate": [-135, 0, 1, 0]

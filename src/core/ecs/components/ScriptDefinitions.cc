@@ -11,7 +11,9 @@
 #include <sstream>
 
 namespace ecs {
-    static sp::CVar<std::string> CVarFlashlightParent("r.FlashlightParent", "player", "Flashlight parent entity name");
+    static sp::CVar<std::string> CVarFlashlightParent("r.FlashlightParent",
+        "player.player",
+        "Flashlight parent entity name");
 
     robin_hood::unordered_node_map<std::string, ScriptFunc> ScriptDefinitions = {
         {"flashlight",

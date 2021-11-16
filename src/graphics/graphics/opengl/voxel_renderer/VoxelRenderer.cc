@@ -4,6 +4,7 @@
 #include "console/CVar.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/SceneManager.hh"
 #include "graphics/gui/DebugGuiManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/opengl/GLModel.hh"

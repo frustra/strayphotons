@@ -1,38 +1,26 @@
 {
 	"entities": [
 		<%- include('prefab/airlock', {
-			name: 'airlock1',
+			name: 'airlock2-3',
 			translate: [0, 0.0, 1.5],
-			rotate: [180, 0, 1, 0]
+			rotate: [180, 0, 1, 0],
+			triggers: {
+				"player": {
+					"command": "r.MirrorRecursion 2; r.MirrorMapResolution 1024; setsignal global.airlock2-3-out.door_open 1; wait 2000 removescene 02-mirrors"
+				}
+			}
 		}) %>,
 		<%- include('prefab/airlock', {
-			name: 'airlock2',
+			name: 'airlock3-4',
 			translate: [7.5, 0, 12],
 			rotate: [90, 0, 1, 0],
-			in_signal: "sensor2"
+			in_signal: "03-dark.sensor2",
+			triggers: {
+				"player": {
+					"command": "setsignal global.airlock3-4-in.door_open 0; addscene 04-symmetry; r.MirrorMapResolution 512"
+				}
+			}
 		}) %>,
-		{
-			"trigger_area": {
-				"min": [-3, 0, 0],
-				"max": [0, 2, 3],
-				"triggers": {
-					"player": {
-						"command": "r.MirrorRecursion 2; r.MirrorMapResolution 1024; wait 100 setsignal airlock1-out.door_open 1"
-					}
-				}
-			}
-		},
-		{
-			"trigger_area": {
-				"min": [6, 0, 9],
-				"max": [9, 2, 11.5],
-				"triggers": {
-					"player": {
-						"command": "setsignal airlock2-in.door_open 0; wait 1000 loadscene 04-symmetry; r.MirrorMapResolution 512"
-					}
-				}
-			}
-		},
 		<%- include("prefab/floor", {
 			y: 0,
 			corners: [[0, 0], [12, 9]]
@@ -51,10 +39,11 @@
 			points: [[6, 9], [-3, 9], [-3, 6], [0, 6], [0, 3, "wall-4x3-door"], [0, 0], [6, 0, "wall-4x3-door"], [6, 3], [6, 9]]
 		}) %>,
 		<%- include('prefab/slide_door', {
+			scene: '03-dark',
 			name: 'door1',
 			translate: [6, 0.0, 1.5],
 			rotate: [0, 0, 1, 0],
-			input_signal: "sensor1"
+			input_signal: "03-dark.sensor1"
 		}) %>,
 
 		<%- include('prefab/spotlight', {
@@ -117,7 +106,7 @@
 		}) %>,
 
 		{
-			"_name": "player-spawn",
+			"_name": "global.spawn",
 			"transform": {
 				"rotate": [270, 0, 1, 0],
 				"translate": [-1.7, 1.7, 1.4]

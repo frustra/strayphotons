@@ -32,6 +32,8 @@ set(SCENES_OUTPUT ${SCENES_INPUT})
 list(TRANSFORM SCENES_INPUT APPEND ".scene")
 list(TRANSFORM SCENES_OUTPUT APPEND ".json")
 
+file(GLOB_RECURSE PREFAB_FILES *.ejs)
+
 add_custom_command(
     COMMAND
         ${NODE_JS_EXE} ${PROJECT_SOURCE_DIR}/assets/util/render-scenes.js
@@ -39,6 +41,7 @@ add_custom_command(
         ${SCENES_OUTPUT}
     DEPENDS
         ${SCENES_INPUT}
+        ${PREFAB_FILES}
     WORKING_DIRECTORY
         ${PROJECT_SOURCE_DIR}/assets/util
 )

@@ -65,7 +65,11 @@ namespace sp {
                     if (ent.count("_name")) {
                         Tecs::Entity entity = lock.NewEntity();
                         auto name = ent["_name"].get<string>();
-                        entity.Set<ecs::Name>(lock, name);
+                        if (starts_with(name, "global.")) {
+                            entity.Set<ecs::Name>(lock, name);
+                        } else {
+                            entity.Set<ecs::Name>(lock, sceneName + "." + name);
+                        }
                         Assert(scene->namedEntities.count(name) == 0, "Duplicate entity name: " + name);
                         scene->namedEntities.emplace(name, entity);
                     }
@@ -379,7 +383,7 @@ namespace sp {
     void SceneManager::RespawnPlayer() {
         auto lock = liveWorld.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
 
-        auto spawn = ecs::EntityWith<ecs::Name>(lock, "player-spawn");
+        auto spawn = ecs::EntityWith<ecs::Name>(lock, "global.spawn");
         if (spawn.Has<ecs::Transform>(lock)) {
             auto &spawnTransform = spawn.Get<ecs::Transform>(lock);
             auto spawnPosition = spawnTransform.GetGlobalPosition(lock);
@@ -390,7 +394,7 @@ namespace sp {
                 playerTransform.SetRotation(spawnRotation);
                 playerTransform.UpdateCachedTransform(lock);
             }
-            auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, "vr-origin");
+            auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, "player.vr-origin");
             if (vrOrigin.Has<ecs::Transform>(lock)) {
                 auto &vrTransform = vrOrigin.Get<ecs::Transform>(lock);
                 vrTransform.SetPosition(spawnPosition);

@@ -49,10 +49,10 @@ namespace sp {
                 ecs::NamedEntity("vr-eye-right"),
             };
 
-            ecs::NamedEntity vrOriginEntity = ecs::NamedEntity("vr-origin");
-            ecs::NamedEntity vrHmdEntity = ecs::NamedEntity("vr-hmd");
-            ecs::NamedEntity vrControllerLeftEntity = ecs::NamedEntity("vr-controller-left");
-            ecs::NamedEntity vrControllerRightEntity = ecs::NamedEntity("vr-controller-right");
+            ecs::NamedEntity vrOriginEntity = ecs::NamedEntity("player.vr-origin");
+            ecs::NamedEntity vrHmdEntity = ecs::NamedEntity("player.vr-hmd");
+            ecs::NamedEntity vrControllerLeftEntity = ecs::NamedEntity("player.vr-controller-left");
+            ecs::NamedEntity vrControllerRightEntity = ecs::NamedEntity("player.vr-controller-right");
             std::array<ecs::NamedEntity, vr::k_unMaxTrackedDeviceCount> reservedEntities = {};
             std::array<ecs::NamedEntity *, vr::k_unMaxTrackedDeviceCount> trackedDevices = {};
 

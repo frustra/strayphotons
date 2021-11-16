@@ -23,9 +23,14 @@
 			trigger: -0.01
 		}) %>,
 		<%- include('prefab/airlock', {
-			name: 'airlock1',
+			name: 'airlock1-2',
 			translate: [-8.1, 0.6, -7],
-			in_signal: "sensor1"
+			in_signal: "01-outside.sensor1",
+			triggers: {
+				"player": {
+					"command": "setsignal global.airlock1-2-in.door_open 0; addscene 02-mirrors"
+				}
+			}
 		}) %>,
 		{
 			"_comment": "airlock",
@@ -111,7 +116,7 @@
 			}
 		},
 		{
-			"_name": "player-spawn",
+			"_name": "global.spawn",
 			"transform": {
 				"translate": [0, 1.625, 0]
 			}
@@ -159,17 +164,6 @@
 			"transform": {
 				"translate": [0, 25, -3],
 				"rotate": [-90, 1, 0, 0]
-			}
-		},
-		{
-			"trigger_area": {
-				"min": [-7, 0, -8],
-				"max": [-5.5, 3.5, -6],
-				"triggers": {
-					"player": {
-						"command": "setsignal airlock1-in.door_open 0; wait 1000 loadscene 02-mirrors"
-					}
-				}
 			}
 		}
 	]

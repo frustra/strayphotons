@@ -48,13 +48,17 @@ namespace sp {
 
                 auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER,
-                    ecs::NamedEntity("player"),
+                    ecs::NamedEntity("player.player"),
                     INPUT_SIGNAL_MENU_PRIMARY_TRIGGER);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_SECONDARY_TRIGGER,
-                    ecs::NamedEntity("player"),
+                    ecs::NamedEntity("player.player"),
                     INPUT_SIGNAL_MENU_SECONDARY_TRIGGER);
-                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_X, ecs::NamedEntity("player"), INPUT_SIGNAL_MENU_CURSOR_X);
-                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_Y, ecs::NamedEntity("player"), INPUT_SIGNAL_MENU_CURSOR_Y);
+                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_X,
+                    ecs::NamedEntity("player.player"),
+                    INPUT_SIGNAL_MENU_CURSOR_X);
+                signalBindings.Bind(INPUT_SIGNAL_MENU_CURSOR_Y,
+                    ecs::NamedEntity("player.player"),
+                    INPUT_SIGNAL_MENU_CURSOR_Y);
             });
     }
 

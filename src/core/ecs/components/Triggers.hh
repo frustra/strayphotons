@@ -13,8 +13,6 @@ namespace ecs {
     };
 
     struct TriggerArea {
-        glm::vec3 boundsMin, boundsMax;
-
         struct Trigger {
             std::string command, signalOutput;
 
