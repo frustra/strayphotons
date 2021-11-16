@@ -79,7 +79,7 @@
 			}
 		},
 		{
-			"_name": "airlock1",
+			"_name": "global.airlock1-2",
 			"renderable": "airlock",
 			"transform": {
 				"translate": [
@@ -88,15 +88,39 @@
 					-7
 				]
 			},
+			"scene_connection": {},
 			"physics": {
 				"model": "airlock",
 				"dynamic": false
 			}
 		},
 		{
-			"_name": "airlock1-out",
 			"transform": {
-				"parent": "airlock1",
+				"parent": "global.airlock1-2",
+				"translate": [
+					1.5,
+					1.4,
+					0
+				],
+				"scale": [
+					2.5,
+					3,
+					2.5
+				]
+			},
+			"signal_output": {},
+			"trigger_area": {
+				"triggers": {
+					"player": {
+						"command": "setsignal global.airlock1-2-in.door_open 0; addscene 02-mirrors"
+					}
+				}
+			}
+		},
+		{
+			"_name": "global.airlock1-2-out",
+			"transform": {
+				"parent": "global.airlock1-2",
 				"translate": [
 					0,
 					0,
@@ -112,10 +136,10 @@
 			"signal_bindings": {}
 		},
 		{
-			"_name": "airlock1-out-left",
+			"_name": "global.airlock1-2-out-left",
 			"renderable": "door-panel",
 			"transform": {
-				"parent": "airlock1-out"
+				"parent": "global.airlock1-2-out"
 			},
 			"animation": {
 				"states": [
@@ -134,7 +158,7 @@
 			},
 			"signal_bindings": {
 				"animation_state": {
-					"door_open": "airlock1-out"
+					"door_open": "global.airlock1-2-out"
 				}
 			},
 			"physics": {
@@ -143,10 +167,10 @@
 			}
 		},
 		{
-			"_name": "airlock1-out-right",
+			"_name": "global.airlock1-2-out-right",
 			"renderable": "door-panel",
 			"transform": {
-				"parent": "airlock1-out",
+				"parent": "global.airlock1-2-out",
 				"rotate": [
 					180,
 					0,
@@ -183,7 +207,7 @@
 			},
 			"signal_bindings": {
 				"animation_state": {
-					"door_open": "airlock1-out"
+					"door_open": "global.airlock1-2-out"
 				}
 			},
 			"physics": {
@@ -192,9 +216,9 @@
 			}
 		},
 		{
-			"_name": "airlock1-in",
+			"_name": "global.airlock1-2-in",
 			"transform": {
-				"parent": "airlock1",
+				"parent": "global.airlock1-2",
 				"translate": [
 					3,
 					0,
@@ -209,15 +233,15 @@
 			"signal_output": {},
 			"signal_bindings": {
 				"door_open": {
-					"value": "sensor1"
+					"value": "01-outside.sensor1"
 				}
 			}
 		},
 		{
-			"_name": "airlock1-in-left",
+			"_name": "global.airlock1-2-in-left",
 			"renderable": "door-panel",
 			"transform": {
-				"parent": "airlock1-in"
+				"parent": "global.airlock1-2-in"
 			},
 			"animation": {
 				"states": [
@@ -236,7 +260,7 @@
 			},
 			"signal_bindings": {
 				"animation_state": {
-					"door_open": "airlock1-in"
+					"door_open": "global.airlock1-2-in"
 				}
 			},
 			"physics": {
@@ -245,10 +269,10 @@
 			}
 		},
 		{
-			"_name": "airlock1-in-right",
+			"_name": "global.airlock1-2-in-right",
 			"renderable": "door-panel",
 			"transform": {
-				"parent": "airlock1-in",
+				"parent": "global.airlock1-2-in",
 				"rotate": [
 					180,
 					0,
@@ -285,7 +309,7 @@
 			},
 			"signal_bindings": {
 				"animation_state": {
-					"door_open": "airlock1-in"
+					"door_open": "global.airlock1-2-in"
 				}
 			},
 			"physics": {
@@ -294,6 +318,7 @@
 			}
 		},
 		{
+			"_name": "global.airlock1-2-light",
 			"light": {
 				"tint": [
 					0.5,
@@ -309,7 +334,7 @@
 				]
 			},
 			"transform": {
-				"parent": "airlock1",
+				"parent": "global.airlock1-2",
 				"rotate": [
 					-90,
 					1,
@@ -489,7 +514,7 @@
 			}
 		},
 		{
-			"_name": "player-spawn",
+			"_name": "global.spawn",
 			"transform": {
 				"translate": [
 					0,
@@ -602,25 +627,6 @@
 					0,
 					0
 				]
-			}
-		},
-		{
-			"trigger_area": {
-				"min": [
-					-7,
-					0,
-					-8
-				],
-				"max": [
-					-5.5,
-					3.5,
-					-6
-				],
-				"triggers": {
-					"player": {
-						"command": "setsignal airlock1-in.door_open 0; wait 1000 loadscene 02-mirrors"
-					}
-				}
 			}
 		}
 	]

@@ -79,6 +79,7 @@ namespace sp {
     void Scene::RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live) {
         Logf("Removing scene: %s", sceneName);
         for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
+            if (!e.Has<ecs::SceneInfo>(staging)) continue;
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
             if (sceneInfo.scene.get() != this) continue;
             Assert(sceneInfo.stagingId == e, "Expected staging entity to match SceneInfo.stagingId");

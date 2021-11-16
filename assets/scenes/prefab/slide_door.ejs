@@ -33,7 +33,7 @@
 		]
 	},
 	"signal_bindings": {
-		"animation_state": { "door_open": <%= name %> }
+		"animation_state": { "door_open": <%= (name.startsWith(scene + '.') ? "" : (scene + '.')) + name %> }
 	},
 	"physics": {
 		"model": "door-panel",
@@ -61,7 +61,7 @@
 		]
 	},
 	"signal_bindings": {
-		"animation_state": { "door_open": <%= name %> }
+		"animation_state": { "door_open": <%= (name.startsWith(scene + '.') ? "" : (scene + '.')) + name %> }
 	},
 	"physics": {
 		"model": "door-panel",

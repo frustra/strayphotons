@@ -1,3 +1,6 @@
+<% if (!locals.scene && !name.startsWith("global.")) {
+	name = "global." + name;
+} %>
 {
 	"_name": <%= name %>,
 	"renderable": "airlock",
@@ -5,12 +8,27 @@
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
 		"translate": <%= translate %>
 	},
+	"scene_connection": {},
 	"physics": {
 		"model": "airlock",
 		"dynamic": false
 	}
 },
+<% if (locals.triggers) { %>
+{
+	"transform": {
+		"parent": <%= name %>,
+		"translate": [1.5, 1.4, 0],
+		"scale": [2.5, 3, 2.5]
+	},
+	"signal_output": {},
+	"trigger_area": {
+		"triggers": <%= triggers %>
+	}
+},
+<% } %>
 <%- include('slide_door', {
+	scene: (locals.scene ? scene : "global"),
 	name: name + '-out',
 	translate: [0, 0, 0],
 	rotate: 0,
@@ -18,6 +36,7 @@
 	parent: name
 }) %>,
 <%- include('slide_door', {
+	scene: (locals.scene ? scene : "global"),
 	name: name + '-in',
 	translate: [3, 0, 0],
 	rotate: 0,
@@ -25,6 +44,7 @@
 	parent: name
 }) %>,
 {
+	"_name": <%= name + '-light' %>,
 	"light": {
 		"tint": [0.5, 0.5, 1],
 		"intensity": 10,

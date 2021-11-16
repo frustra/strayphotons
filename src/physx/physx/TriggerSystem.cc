@@ -11,7 +11,9 @@ namespace sp {
             ecs::Write<ecs::TriggerArea, ecs::SignalOutput>>();
 
         for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
+            if (!entity.Has<ecs::TriggerArea, ecs::Transform>(lock)) continue;
             auto &area = entity.Get<ecs::TriggerArea>(lock);
+            glm::mat4 areaTransform = glm::inverse(entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock));
 
             for (auto triggerEnt : lock.EntitiesWith<ecs::TriggerGroup>()) {
                 if (!triggerEnt.Has<ecs::TriggerGroup, ecs::Transform>(lock)) continue;
@@ -21,10 +23,9 @@ namespace sp {
                 auto &trigger = area.triggers[(size_t)triggerGroup];
 
                 auto &transform = triggerEnt.Get<ecs::Transform>(lock);
-                auto entityPos = transform.GetGlobalPosition(lock);
-                bool inArea = entityPos.x > area.boundsMin.x && entityPos.y > area.boundsMin.y &&
-                              entityPos.z > area.boundsMin.z && entityPos.x < area.boundsMax.x &&
-                              entityPos.y < area.boundsMax.y && entityPos.z < area.boundsMax.z;
+                auto entityPos = glm::vec3(areaTransform * glm::vec4(transform.GetGlobalPosition(lock), 1.0));
+                bool inArea = glm::all(glm::greaterThan(entityPos, glm::vec3(-0.5))) &&
+                              glm::all(glm::lessThan(entityPos, glm::vec3(0.5)));
                 if (trigger.entities.contains(triggerEnt) == inArea) continue;
 
                 if (inArea) {

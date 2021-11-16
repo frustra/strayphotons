@@ -24,11 +24,7 @@ namespace ecs {
     template<>
     bool Component<TriggerArea>::Load(sp::Scene *scene, TriggerArea &area, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
-            if (param.first == "min") {
-                area.boundsMin = sp::MakeVec3(param.second);
-            } else if (param.first == "max") {
-                area.boundsMax = sp::MakeVec3(param.second);
-            } else if (param.first == "triggers") {
+            if (param.first == "triggers") {
                 for (auto groupObj : param.second.get<picojson::object>()) {
                     auto groupStr = sp::to_upper_copy(groupObj.first);
                     TriggerGroup group;

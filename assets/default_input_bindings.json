@@ -20,7 +20,7 @@
             "/mouse/scroll": {
                 "/action/menu/scroll": ["menu_gui", "debug_gui"]
             },
-            "/mouse/move": { "/action/camera_rotate": "player"}
+            "/mouse/move": { "/action/camera_rotate": "player.player"}
         }
     },
     "keyboard": {
@@ -32,35 +32,35 @@
                 "/action/menu/back": "menu_gui"
             },
             "/keyboard/key/enter": { "/action/menu/enter": "menu_gui" },
-            "/keyboard/key/e": { "/action/interact": "player" },
-            "/keyboard/key/q": { "/action/spawn": "debug-spawner" },
-            "/keyboard/key/f": { "/action/flashlight/toggle": "flashlight" },
-            "/keyboard/key/p": { "/action/flashlight/grab": "flashlight" },
+            "/keyboard/key/e": { "/action/interact": "player.player" },
+            "/keyboard/key/q": { "/action/spawn": "player.debug-spawner" },
+            "/keyboard/key/f": { "/action/flashlight/toggle": "player.flashlight" },
+            "/keyboard/key/p": { "/action/flashlight/grab": "player.flashlight" },
             "/keyboard/key/f5": { "/keyboard/key/f5": "console-input" },
             "/keyboard/key/f6": { "/keyboard/key/f6": "console-input" },
             "/keyboard/key/f7": { "/keyboard/key/f7": "console-input" },
             "/keyboard/key/v": { "/keyboard/key/v": "console-input" }
         }
     },
-    "left-hand-input": {
+    "player.left-hand-input": {
         "signal_bindings": {
-            "move_forward": { "/actions/main/in/movement_y": "vr-controller-left" },
-            "move_right": { "/actions/main/in/movement_x": "vr-controller-left" }
+            "move_forward": { "/actions/main/in/movement_y": "player.vr-controller-left" },
+            "move_right": { "/actions/main/in/movement_x": "player.vr-controller-left" }
         }
     },
-    "right-hand-input": {
+    "player.right-hand-input": {
         "signal_bindings": {
-            "move_forward": { "/actions/main/in/movement_y": "vr-controller-right" },
-            "move_right": { "/actions/main/in/movement_x": "vr-controller-right" }
+            "move_forward": { "/actions/main/in/movement_y": "player.vr-controller-right" },
+            "move_right": { "/actions/main/in/movement_x": "player.vr-controller-right" }
         }
     },
-    "vr-origin": {
+    "player.vr-origin": {
         "signal_bindings": {
-            "move_world_x": { "move_world_x": [ "left-hand-input", "right-hand-input" ] },
-            "move_world_z": { "move_world_z": [ "left-hand-input", "right-hand-input" ] }
+            "move_world_x": { "move_world_x": [ "player.left-hand-input", "player.right-hand-input" ] },
+            "move_world_z": { "move_world_z": [ "player.left-hand-input", "player.right-hand-input" ] }
         }
     },
-    "player": {
+    "player.player": {
         "signal_bindings": {
             "menu_primary_trigger": { "mouse_button_left": "mouse" },
             "menu_secondary_trigger": { "mouse_button_right": "mouse" },

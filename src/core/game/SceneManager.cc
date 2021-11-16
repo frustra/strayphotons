@@ -65,7 +65,11 @@ namespace sp {
                     if (ent.count("_name")) {
                         Tecs::Entity entity = lock.NewEntity();
                         auto name = ent["_name"].get<string>();
-                        entity.Set<ecs::Name>(lock, name);
+                        if (starts_with(name, "global.")) {
+                            entity.Set<ecs::Name>(lock, name);
+                        } else {
+                            entity.Set<ecs::Name>(lock, sceneName + "." + name);
+                        }
                         Assert(scene->namedEntities.count(name) == 0, "Duplicate entity name: " + name);
                         scene->namedEntities.emplace(name, entity);
                     }
@@ -248,13 +252,62 @@ namespace sp {
     }
 
     void SceneManager::AddScene(std::string sceneName, std::function<void(std::shared_ptr<Scene>)> callback) {
+        auto it = scenes.find(sceneName);
+        if (it != scenes.end()) {
+            Logf("Scene %s already loaded", sceneName);
+            return;
+        }
+
         LoadSceneJson(sceneName,
             ecs::SceneInfo::Priority::Scene,
             [this, sceneName, callback](std::shared_ptr<Scene> scene) {
                 if (scene) {
                     {
-                        auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
+                        auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll,
+                            ecs::Write<ecs::SceneInfo, ecs::Transform, ecs::Animation>>();
                         auto lock = liveWorld.StartTransaction<ecs::AddRemove>();
+
+                        Tecs::Entity liveConnection, stagingConnection;
+                        for (auto &e : stagingLock.EntitiesWith<ecs::SceneConnection>()) {
+                            if (!e.Has<ecs::SceneConnection, ecs::SceneInfo, ecs::Name>(stagingLock)) continue;
+                            auto &sceneInfo = e.Get<const ecs::SceneInfo>(stagingLock);
+                            if (sceneInfo.scene != scene) continue;
+
+                            auto &name = e.Get<const ecs::Name>(stagingLock);
+                            liveConnection = ecs::EntityWith<ecs::Name>(lock, name);
+                            if (liveConnection.Has<ecs::SceneConnection, ecs::Transform>(lock)) {
+                                stagingConnection = e;
+                                break;
+                            }
+                        }
+                        if (stagingConnection.Has<ecs::Transform>(stagingLock) &&
+                            liveConnection.Has<ecs::Transform>(lock)) {
+                            auto &liveTransform = liveConnection.Get<const ecs::Transform>(lock);
+                            auto &stagingTransform = stagingConnection.Get<const ecs::Transform>(stagingLock);
+                            glm::quat deltaRotation = liveTransform.GetGlobalRotation(lock) *
+                                                      glm::inverse(stagingTransform.GetGlobalRotation(stagingLock));
+                            glm::vec3 deltaPos = liveTransform.GetGlobalPosition(lock) -
+                                                 deltaRotation * stagingTransform.GetGlobalPosition(stagingLock);
+
+                            for (auto &e : stagingLock.EntitiesWith<ecs::Transform>()) {
+                                if (!e.Has<ecs::Transform, ecs::SceneInfo>(stagingLock)) continue;
+                                auto &sceneInfo = e.Get<const ecs::SceneInfo>(stagingLock);
+                                if (sceneInfo.scene != scene) continue;
+
+                                auto &transform = e.Get<ecs::Transform>(stagingLock);
+                                if (!transform.HasParent(stagingLock)) {
+                                    transform.SetPosition(deltaRotation * transform.GetPosition() + deltaPos);
+                                    transform.SetRotation(deltaRotation * transform.GetRotation());
+
+                                    if (e.Has<ecs::Animation>(stagingLock)) {
+                                        auto &animation = e.Get<ecs::Animation>(stagingLock);
+                                        for (auto &state : animation.states) {
+                                            state.pos += deltaPos;
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
                         scene->ApplyScene(stagingLock, lock);
                         scenes.emplace(sceneName, scene);
@@ -330,7 +383,7 @@ namespace sp {
     void SceneManager::RespawnPlayer() {
         auto lock = liveWorld.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
 
-        auto spawn = ecs::EntityWith<ecs::Name>(lock, "player-spawn");
+        auto spawn = ecs::EntityWith<ecs::Name>(lock, "global.spawn");
         if (spawn.Has<ecs::Transform>(lock)) {
             auto &spawnTransform = spawn.Get<ecs::Transform>(lock);
             auto spawnPosition = spawnTransform.GetGlobalPosition(lock);
@@ -341,7 +394,7 @@ namespace sp {
                 playerTransform.SetRotation(spawnRotation);
                 playerTransform.UpdateCachedTransform(lock);
             }
-            auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, "vr-origin");
+            auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, "player.vr-origin");
             if (vrOrigin.Has<ecs::Transform>(lock)) {
                 auto &vrTransform = vrOrigin.Get<ecs::Transform>(lock);
                 vrTransform.SetPosition(spawnPosition);
@@ -390,10 +443,9 @@ namespace sp {
                     Logf("System scene (%s) entities:", systemName);
                     for (auto &e : lock.EntitiesWith<ecs::Name>()) {
                         if (e.Has<ecs::Name, ecs::SceneInfo>(lock)) {
-                            auto &name = e.Get<ecs::Name>(lock);
                             auto &sceneInfo = e.Get<ecs::SceneInfo>(lock);
                             if (sceneInfo.scene && sceneInfo.scene == systemScene) {
-                                Logf("  %s", name);
+                                Logf("  %s", ecs::ToString(lock, e));
                                 auto stagingId = sceneInfo.nextStagingId;
                                 while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
                                     auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
@@ -411,10 +463,9 @@ namespace sp {
                 Logf("Player scene entities:");
                 for (auto &e : lock.EntitiesWith<ecs::Name>()) {
                     if (e.Has<ecs::Name, ecs::SceneInfo>(lock)) {
-                        auto &name = e.Get<ecs::Name>(lock);
                         auto &sceneInfo = e.Get<ecs::SceneInfo>(lock);
                         if (sceneInfo.scene && sceneInfo.scene == playerScene) {
-                            Logf("  %s", name);
+                            Logf("  %s", ecs::ToString(lock, e));
                             auto stagingId = sceneInfo.nextStagingId;
                             while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
                                 auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
@@ -431,10 +482,9 @@ namespace sp {
                 Logf("Binding scene entities:");
                 for (auto &e : lock.EntitiesWith<ecs::Name>()) {
                     if (e.Has<ecs::Name, ecs::SceneInfo>(lock)) {
-                        auto &name = e.Get<ecs::Name>(lock);
                         auto &sceneInfo = e.Get<ecs::SceneInfo>(lock);
                         if (sceneInfo.scene && sceneInfo.scene == bindingsScene) {
-                            Logf("  %s", name);
+                            Logf("  %s", ecs::ToString(lock, e));
                             auto stagingId = sceneInfo.nextStagingId;
                             while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
                                 auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
@@ -452,10 +502,9 @@ namespace sp {
                     Logf("Scene entities (%s):", scene.first);
                     for (auto &e : lock.EntitiesWith<ecs::Name>()) {
                         if (e.Has<ecs::Name, ecs::SceneInfo>(lock)) {
-                            auto &name = e.Get<ecs::Name>(lock);
                             auto &sceneInfo = e.Get<ecs::SceneInfo>(lock);
                             if (sceneInfo.scene && sceneInfo.scene == scene.second) {
-                                Logf("  %s", name);
+                                Logf("  %s", ecs::ToString(lock, e));
                                 auto stagingId = sceneInfo.nextStagingId;
                                 while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
                                     auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);

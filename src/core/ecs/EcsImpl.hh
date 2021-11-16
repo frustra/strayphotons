@@ -11,6 +11,7 @@
 #include "ecs/components/Mirror.hh"
 #include "ecs/components/Physics.hh"
 #include "ecs/components/Renderable.hh"
+#include "ecs/components/SceneConnection.hh"
 #include "ecs/components/SceneInfo.hh"
 #include "ecs/components/Script.hh"
 #include "ecs/components/Signals.hh"

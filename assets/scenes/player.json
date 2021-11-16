@@ -20,7 +20,7 @@
                 "/script/joystick_in"
             ],
             "event_bindings": {
-                "/script/joystick_out": { "/action/camera_rotate": "player" }
+                "/script/joystick_out": { "/action/camera_rotate": "player.player" }
             },
             "human_controller": {},
             "interact_controller": {},
@@ -35,7 +35,7 @@
                 "onTick": "model_spawner",
                 "parameters": {
                     "model": "cardboard-box",
-                    "relative_to": "player",
+                    "relative_to": "player.player",
                     "position_z": -2
                 }
             }
@@ -52,8 +52,8 @@
             "script": {
                 "onTick": ["auto_attach", "relative_movement"],
                 "parameters": {
-                    "attach_parent": "vr-controller-left",
-                    "target": "vr-hmd"
+                    "attach_parent": "player.vr-controller-left",
+                    "target": "player.vr-hmd"
                 }
             },
             "signal_output": {}
@@ -70,8 +70,8 @@
             "script": {
                 "onTick": ["auto_attach", "relative_movement"],
                 "parameters": {
-                    "attach_parent": "vr-controller-right",
-                    "target": "vr-controller-right"
+                    "attach_parent": "player.vr-controller-right",
+                    "target": "player.vr-controller-right"
                 }
             },
             "signal_output": {}
@@ -79,7 +79,7 @@
         {
             "_name": "vr-origin",
             "character_controller": {
-                "target": "vr-hmd"
+                "target": "player.vr-hmd"
             }
         },
         {

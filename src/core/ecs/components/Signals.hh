@@ -55,6 +55,7 @@ namespace ecs {
             Tecs::Entity ent,
             const std::string &name,
             size_t depth = 0);
+        std::vector<std::string> GetBindingNames() const;
 
     private:
         robin_hood::unordered_map<std::string, BindingList> destToSource;
