@@ -153,6 +153,8 @@ namespace sp::vulkan {
 
     void RenderGraph::EndScope() {
         Assert(resources.scopeStack.size() > 1, "tried to end a scope that wasn't started");
+        auto &scope = resources.nameScopes[resources.scopeStack.back()];
+        scope.SetID("LastOutput", resources.LastOutputID());
         resources.scopeStack.pop_back();
     }
 
@@ -174,6 +176,7 @@ namespace sp::vulkan {
 
     void RenderGraph::Execute() {
         resources.ResizeBeforeExecute();
+        resources.lastOutputID = RenderGraphResources::npos;
 
         // passes are already sorted by dependency order
         for (auto it = passes.rbegin(); it != passes.rend(); it++) {
@@ -250,6 +253,7 @@ namespace sp::vulkan {
             }
 
             pass.executeFunc = {}; // releases any captures
+            UpdateLastOutput(pass);
         }
         passes.clear();
     }

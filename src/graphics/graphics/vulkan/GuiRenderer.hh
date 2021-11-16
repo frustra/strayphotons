@@ -14,6 +14,11 @@ namespace sp::vulkan {
     public:
         GuiRenderer(DeviceContext &device, GuiManager &manager);
         void Render(CommandContext &cmd, vk::Rect2D viewport);
+        const std::string &Name() const;
+
+        GuiManager *Manager() const {
+            return &manager;
+        }
 
     private:
         double lastTime = 0.0;

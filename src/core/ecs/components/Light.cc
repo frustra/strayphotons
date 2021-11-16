@@ -19,7 +19,7 @@ namespace ecs {
             } else if (param.first == "tint") {
                 light.tint = sp::MakeVec3(param.second);
             } else if (param.first == "gel") {
-                light.gelId = param.second.get<bool>() ? 1 : 0;
+                light.gelName = param.second.get<string>();
             } else if (param.first == "on") {
                 light.on = param.second.get<bool>();
             } else if (param.first == "bulb") {

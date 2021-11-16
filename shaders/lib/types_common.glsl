@@ -5,6 +5,10 @@
 #define MAX_LIGHTS 16
 #endif
 
+#ifndef MAX_LIGHT_GELS
+#define MAX_LIGHT_GELS 2
+#endif
+
 const float punctualLightSizeSq = 0.01 * 0.01; // 1cm punctual lights
 
 struct ViewState {

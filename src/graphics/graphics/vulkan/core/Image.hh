@@ -191,6 +191,10 @@ namespace sp::vulkan {
             return info.arrayLayerCount;
         }
 
+        vk::ImageViewType ViewType() const {
+            return info.viewType;
+        }
+
         virtual int GetWidth() const override {
             return extent.width;
         }

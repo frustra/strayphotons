@@ -97,7 +97,6 @@ namespace sp::vulkan {
 
             vkPrimitive.baseColor = LoadTexture(device, model, assetPrimitive.materialIndex, BaseColor);
             vkPrimitive.metallicRoughness = LoadTexture(device, model, assetPrimitive.materialIndex, MetallicRoughness);
-            // TODO: add default textures
 
             primitives.emplace_back(vkPrimitivePtr);
         }
@@ -118,8 +117,8 @@ namespace sp::vulkan {
             cmd.PushConstants(constants);
 
             if (useMaterial) {
-                if (primitive.baseColor) cmd.SetTexture(0, 0, primitive.baseColor);
-                if (primitive.metallicRoughness) cmd.SetTexture(0, 1, primitive.metallicRoughness);
+                cmd.SetTexture(0, 0, primitive.baseColor);
+                cmd.SetTexture(0, 1, primitive.metallicRoughness);
             }
 
             cmd.Raw().bindIndexBuffer(*primitive.indexBuffer, 0, primitive.indexType);
@@ -189,7 +188,7 @@ namespace sp::vulkan {
         if (textures.count(name)) return textures[name];
 
         if (textureIndex == -1) {
-            if (factor.size() == 0) return nullptr;
+            if (factor.size() == 0) factor.push_back(1); // default texture is a single white pixel
 
             uint8_t data[4];
             for (size_t i = 0; i < 4; i++) {

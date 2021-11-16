@@ -5,6 +5,7 @@
 #include "ecs/components/Controller.hh"
 #include "ecs/components/Events.hh"
 #include "ecs/components/Focus.hh"
+#include "ecs/components/Gui.hh"
 #include "ecs/components/Interact.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/LightSensor.hh"

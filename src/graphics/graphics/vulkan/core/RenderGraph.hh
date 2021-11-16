@@ -79,6 +79,13 @@ namespace sp::vulkan {
         const RenderGraphResource &GetResource(RenderGraphResourceID id) const;
         RenderGraphResourceID GetID(string_view name, bool assertExists = true) const;
 
+        RenderGraphResourceID LastOutputID() const {
+            return lastOutputID;
+        }
+        const RenderGraphResource &LastOutput() const {
+            return GetResource(lastOutputID);
+        }
+
         static const RenderGraphResourceID npos = ~0u;
 
     private:
@@ -115,6 +122,8 @@ namespace sp::vulkan {
         vector<uint32> refCounts;
         vector<RenderTargetPtr> renderTargets;
         vector<BufferPtr> buffers;
+
+        RenderGraphResourceID lastOutputID = npos;
     };
 
     struct RenderGraphResourceDependency {
@@ -158,6 +167,7 @@ namespace sp::vulkan {
         InlineVector<RenderGraphResourceID, 16> outputs;
         std::array<AttachmentInfo, MAX_COLOR_ATTACHMENTS + 1> attachments;
         bool active = false, required = false;
+        uint8 primaryAttachmentIndex = 0;
 
         std::variant<std::monostate,
             std::function<void(RenderGraphResources &, CommandContext &)>,
@@ -202,6 +212,9 @@ namespace sp::vulkan {
             return resource;
         }
 
+        RenderGraphResource GetResource(RenderGraphResourceID id) {
+            return resources.GetResource(id);
+        }
         RenderGraphResource GetResource(string_view name) {
             return resources.GetResource(name);
         }
@@ -226,6 +239,11 @@ namespace sp::vulkan {
             return OutputAttachment(MAX_COLOR_ATTACHMENTS, name, desc, info);
         }
 
+        void SetPrimaryAttachment(uint32 index) {
+            Assert(index < pass.attachments.size(), "index must point to a valid attachment");
+            pass.primaryAttachmentIndex = index;
+        }
+
         // Defines a uniform buffer that will be shared between passes.
         RenderGraphResource CreateUniformBuffer(string_view name, size_t size) {
             RenderGraphResource resource(BUFFER_TYPE_UNIFORM, size);
@@ -243,6 +261,13 @@ namespace sp::vulkan {
             // so we can generate barriers. For now this is only used for CPU->GPU.
             pass.AddDependency({}, resource);
             return resource;
+        }
+
+        RenderGraphResourceID LastOutputID() const {
+            return resources.lastOutputID;
+        }
+        RenderGraphResource LastOutput() const {
+            return resources.LastOutput();
         }
 
         void RequirePass() {
@@ -283,6 +308,7 @@ namespace sp::vulkan {
                 setupFunc(builder);
                 passIndex = graph.passes.size();
                 graph.passes.push_back(pass);
+                graph.UpdateLastOutput(pass);
                 return *this;
             }
 
@@ -338,6 +364,12 @@ namespace sp::vulkan {
     private:
         friend class InitialPassState;
         void AddPassBarriers(CommandContextPtr &cmd, RenderGraphPass &pass);
+
+        void UpdateLastOutput(const RenderGraphPass &pass) {
+            if (pass.attachments.size() > pass.primaryAttachmentIndex) {
+                resources.lastOutputID = pass.attachments[pass.primaryAttachmentIndex].resourceID;
+            }
+        }
 
         DeviceContext &device;
         RenderGraphResources resources;

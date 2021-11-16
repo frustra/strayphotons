@@ -11,6 +11,8 @@ layout(binding = 1) uniform sampler2DArray gBuffer1;
 layout(binding = 2) uniform sampler2DArray gBuffer2;
 layout(binding = 3) uniform sampler2D shadowMap;
 
+layout(set = 1, binding = 0) uniform sampler2D lightingGels[MAX_LIGHT_GELS];
+
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outFragColor;
 
@@ -19,6 +21,8 @@ layout(location = 0) out vec4 outFragColor;
 
 #define SHADOWS_ENABLED
 #define USE_PCF
+#define LIGHTING_GEL
+#define MULTIPLE_LIGHTING_GELS
 #include "../lib/shading.glsl"
 
 /*layout(binding = 12) uniform LightingData {
@@ -51,7 +55,6 @@ void main()
 	vec3 worldNormal = mat3(view.invViewMat) * viewNormal;
 	vec3 flatWorldNormal = mat3(view.invViewMat) * flatViewNormal;
 
-	// Trace.
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
 

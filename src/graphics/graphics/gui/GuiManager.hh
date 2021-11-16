@@ -28,10 +28,15 @@ namespace sp {
         virtual void BeforeFrame();
         virtual void DefineWindows();
 
+        const std::string &Name() const {
+            return name;
+        }
+
     protected:
         ecs::NamedEntity guiEntity;
         ecs::NamedEntity keyboardEntity;
 
+        std::string name;
         ecs::FocusLayer focusLayer;
 
     private:

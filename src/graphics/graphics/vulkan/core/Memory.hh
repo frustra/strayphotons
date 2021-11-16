@@ -60,7 +60,10 @@ namespace sp::vulkan {
             Map((void **)&dstData);
             std::copy(srcData, srcData + srcCount, dstData + dstOffset);
             Unmap();
+            Flush();
         }
+
+        void Flush();
 
     protected:
         VmaAllocator allocator;

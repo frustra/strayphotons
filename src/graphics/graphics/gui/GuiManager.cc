@@ -9,7 +9,7 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    GuiManager::GuiManager(const std::string &name, ecs::FocusLayer layer) : focusLayer(layer) {
+    GuiManager::GuiManager(const std::string &name, ecs::FocusLayer layer) : name(name), focusLayer(layer) {
         imCtx = ImGui::CreateContext();
 
         SetGuiContext();
@@ -45,6 +45,7 @@ namespace sp {
                 ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
                 ent.Set<ecs::FocusLayer>(lock, layer);
                 ent.Set<ecs::EventInput>(lock, INPUT_EVENT_MENU_SCROLL, INPUT_EVENT_MENU_TEXT_INPUT);
+                ent.Set<ecs::Gui>(lock).manager = this;
 
                 auto &signalBindings = ent.Set<ecs::SignalBindings>(lock);
                 signalBindings.Bind(INPUT_SIGNAL_MENU_PRIMARY_TRIGGER,
