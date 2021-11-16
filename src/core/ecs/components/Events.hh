@@ -79,6 +79,7 @@ namespace ecs {
             T data) const {
             SendEvent(lock, Event(name, source, data));
         }
+        std::vector<std::string> GetBindingNames() const;
 
     private:
         robin_hood::unordered_map<std::string, BindingList> sourceToDest;

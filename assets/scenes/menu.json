@@ -106,7 +106,7 @@
 				"max": [5, 2, 5],
 				"triggers": {
 					"player": {
-						"command": "g.MenuDisplay 0; r.Exposure 0; loadscene 01-outside"
+						"command": "g.MenuDisplay 0; r.Exposure 0; p.PausePlayerPhysics 0; loadscene 01-outside"
 					}
 				}
 			}

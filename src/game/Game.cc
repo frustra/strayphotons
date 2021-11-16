@@ -185,13 +185,15 @@ namespace sp {
         }
     }
 
-    void Game::PrintEvents() {
+    void Game::PrintEvents(std::string entityName) {
         auto lock = ecs::World.StartTransaction<
             ecs::Read<ecs::Name, ecs::EventInput, ecs::EventBindings, ecs::FocusLayer, ecs::FocusLock>>();
 
         auto &focusLock = lock.Get<ecs::FocusLock>();
         for (auto ent : lock.EntitiesWith<ecs::EventInput>()) {
-            auto &input = ent.Get<ecs::EventInput>(lock);
+            if (!entityName.empty()) {
+                if (!ent.Has<ecs::Name>(lock) || ent.Get<ecs::Name>(lock) != entityName) continue;
+            }
 
             if (ent.Has<ecs::FocusLayer>(lock)) {
                 auto &layer = ent.Get<ecs::FocusLayer>(lock);
@@ -207,6 +209,8 @@ namespace sp {
             } else {
                 Logf("Event input %s: (no focus layer)", ecs::ToString(lock, ent));
             }
+
+            auto &input = ent.Get<ecs::EventInput>(lock);
             for (auto &[eventName, queue] : input.events) {
                 if (queue.empty()) {
                     Logf("  %s: empty", eventName);
@@ -215,13 +219,52 @@ namespace sp {
                 }
             }
         }
+
+        for (auto ent : lock.EntitiesWith<ecs::EventBindings>()) {
+            if (!entityName.empty()) {
+                if (!ent.Has<ecs::Name>(lock) || ent.Get<ecs::Name>(lock) != entityName) continue;
+            }
+
+            if (ent.Has<ecs::FocusLayer>(lock)) {
+                auto &layer = ent.Get<ecs::FocusLayer>(lock);
+                std::stringstream ss;
+                ss << layer;
+                if (focusLock.HasPrimaryFocus(layer)) {
+                    Logf("Event binding %s: (has primary focus: %s)", ecs::ToString(lock, ent), ss.str());
+                } else if (focusLock.HasFocus(layer)) {
+                    Logf("Event binding %s: (has focus: %s)", ecs::ToString(lock, ent), ss.str());
+                } else {
+                    Logf("Event binding %s: (no focus: %s)", ecs::ToString(lock, ent), ss.str());
+                }
+            } else {
+                Logf("Event binding %s: (no focus layer)", ecs::ToString(lock, ent));
+            }
+
+            auto &bindings = ent.Get<ecs::EventBindings>(lock);
+            for (auto &bindingName : bindings.GetBindingNames()) {
+                auto list = bindings.Lookup(bindingName);
+                Logf("    %s:%s", bindingName, list->empty() ? " none" : "");
+                for (auto &target : *list) {
+                    auto e = target.first.Get(lock);
+                    if (e) {
+                        Logf("      %s on %s", target.second, ecs::ToString(lock, e));
+                    } else {
+                        Logf("      %s on %s(missing)", target.second, target.first.Name());
+                    }
+                }
+            }
+        }
     }
 
-    void Game::PrintSignals() {
+    void Game::PrintSignals(std::string entityName) {
         auto lock = ecs::World.StartTransaction<
             ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>>();
         Logf("Signal outputs:");
         for (auto ent : lock.EntitiesWith<ecs::SignalOutput>()) {
+            if (!entityName.empty()) {
+                if (!ent.Has<ecs::Name>(lock) || ent.Get<ecs::Name>(lock) != entityName) continue;
+            }
+
             auto &output = ent.Get<ecs::SignalOutput>(lock);
             auto &signals = output.GetSignals();
 
@@ -234,6 +277,10 @@ namespace sp {
         Logf("");
         Logf("Signal bindings:");
         for (auto ent : lock.EntitiesWith<ecs::SignalBindings>()) {
+            if (!entityName.empty()) {
+                if (!ent.Has<ecs::Name>(lock) || ent.Get<ecs::Name>(lock) != entityName) continue;
+            }
+
             auto &bindings = ent.Get<ecs::SignalBindings>(lock);
             auto bindingNames = bindings.GetBindingNames();
             Logf("  %s:%s", ecs::ToString(lock, ent), bindingNames.empty() ? " none" : "");

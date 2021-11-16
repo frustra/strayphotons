@@ -206,4 +206,13 @@ namespace ecs {
             }
         }
     }
+
+    std::vector<std::string> EventBindings::GetBindingNames() const {
+        std::vector<std::string> list(sourceToDest.size());
+        size_t i = 0;
+        for (auto &entry : sourceToDest) {
+            list[i++] = entry.first;
+        }
+        return list;
+    }
 } // namespace ecs
