@@ -45,7 +45,10 @@ namespace sp {
         bool ShouldStop();
 
         void ReloadPlayer();
+
         void PrintDebug();
+        void PrintEvents();
+        void PrintSignals();
 
         cxxopts::ParseResult &options;
         Script *startupScript = nullptr;

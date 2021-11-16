@@ -16,6 +16,7 @@
 					9
 				]
 			},
+			"scene_connection": {},
 			"physics": {
 				"model": "airlock",
 				"dynamic": false
@@ -218,6 +219,7 @@
 			}
 		},
 		{
+			"_name": "airlock1-light",
 			"light": {
 				"tint": [
 					0.5,
@@ -263,6 +265,7 @@
 					-3
 				]
 			},
+			"scene_connection": {},
 			"physics": {
 				"model": "airlock",
 				"dynamic": false
@@ -469,6 +472,7 @@
 			}
 		},
 		{
+			"_name": "airlock2-light",
 			"light": {
 				"tint": [
 					0.5,

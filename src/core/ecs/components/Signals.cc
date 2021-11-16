@@ -283,4 +283,13 @@ namespace ecs {
             sp::Abort("Bad signal combine operator");
         }
     }
+
+    std::vector<std::string> SignalBindings::GetBindingNames() const {
+        std::vector<std::string> list(destToSource.size());
+        size_t i = 0;
+        for (auto &entry : destToSource) {
+            list[i++] = entry.first;
+        }
+        return list;
+    }
 } // namespace ecs

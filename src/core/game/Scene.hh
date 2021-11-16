@@ -30,7 +30,7 @@ namespace sp {
             ecs::Lock<ecs::AddRemove> dst,
             Tecs::Entity dstEnt) {
             if constexpr (!Tecs::is_global_component<T>()) {
-                if (srcEnt.Has<T>(src)) dstEnt.Set<T>(dst, srcEnt.Get<T>(src));
+                if (srcEnt.Has<T>(src) && !dstEnt.Has<T>(dst)) dstEnt.Set<T>(dst, srcEnt.Get<T>(src));
             }
         }
 
@@ -49,11 +49,25 @@ namespace sp {
     };
 
     template<>
+    inline void Scene::CopyComponent<ecs::SceneConnection>(ecs::Lock<ecs::ReadAll> src,
+        Tecs::Entity srcEnt,
+        ecs::Lock<ecs::AddRemove> dst,
+        Tecs::Entity dstEnt) {
+        if (srcEnt.Has<ecs::SceneConnection>(src)) {
+            auto &srcList = srcEnt.Get<ecs::SceneConnection>(src);
+            auto &dstList = dstEnt.Get<ecs::SceneConnection>(dst);
+            for (auto &name : srcList.sceneNames) {
+                dstList.AddScene(name);
+            }
+        }
+    }
+
+    template<>
     inline void Scene::CopyComponent<ecs::Transform>(ecs::Lock<ecs::ReadAll> src,
         Tecs::Entity srcEnt,
         ecs::Lock<ecs::AddRemove> dst,
         Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::Transform>(src)) {
+        if (srcEnt.Has<ecs::Transform>(src) && !dstEnt.Has<ecs::Transform>(dst)) {
             auto &srcTransform = srcEnt.Get<ecs::Transform>(src);
             auto &dstTransform = dstEnt.Get<ecs::Transform>(dst);
 
@@ -77,7 +91,7 @@ namespace sp {
         Tecs::Entity srcEnt,
         ecs::Lock<ecs::AddRemove> dst,
         Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::Light>(src)) {
+        if (srcEnt.Has<ecs::Light>(src) && !dstEnt.Has<ecs::Light>(dst)) {
             auto &light = dstEnt.Set<ecs::Light>(dst, srcEnt.Get<ecs::Light>(src));
 
             // Map light bulb from staging id to live id
@@ -150,18 +164,6 @@ namespace sp {
             for (auto &input : srcInput.events) {
                 if (!dstInput.IsRegistered(input.first)) dstInput.Register(input.first);
             }
-        }
-    }
-
-    template<>
-    inline void Scene::CopyComponent<ecs::CharacterController>(ecs::Lock<ecs::ReadAll> src,
-        Tecs::Entity srcEnt,
-        ecs::Lock<ecs::AddRemove> dst,
-        Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::CharacterController>(src)) {
-            auto &srcController = srcEnt.Get<ecs::CharacterController>(src);
-            auto &dstController = dstEnt.Get<ecs::CharacterController>(dst);
-            dstController.target = srcController.target;
         }
     }
 } // namespace sp

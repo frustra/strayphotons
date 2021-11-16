@@ -5,6 +5,7 @@
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
 		"translate": <%= translate %>
 	},
+	"scene_connection": {},
 	"physics": {
 		"model": "airlock",
 		"dynamic": false
@@ -25,6 +26,7 @@
 	parent: name
 }) %>,
 {
+	"_name": <%= name + '-light' %>,
 	"light": {
 		"tint": [0.5, 0.5, 1],
 		"intensity": 10,

@@ -19,6 +19,10 @@ set(SCENES_INPUT
     03-dark
     04-symmetry
     sponza
+    connect-test1
+    connect-test2
+    connect-test3
+    connect-test4
 )
 
 list(TRANSFORM SCENES_INPUT PREPEND "${CMAKE_CURRENT_LIST_DIR}/")

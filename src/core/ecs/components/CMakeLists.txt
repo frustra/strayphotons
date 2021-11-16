@@ -10,6 +10,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Mirror.cc
     Physics.cc
     Renderable.cc
+    SceneConnection.cc
     SceneInfo.cc
     Script.cc
     ScriptDefinitions.cc

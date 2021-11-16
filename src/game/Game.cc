@@ -34,6 +34,8 @@ namespace sp {
     {
         funcs.Register(this, "reloadplayer", "Reload player scene", &Game::ReloadPlayer);
         funcs.Register(this, "printdebug", "Print some debug info about the scene", &Game::PrintDebug);
+        funcs.Register(this, "printevents", "Print out the current state of event queues", &Game::PrintEvents);
+        funcs.Register(this, "printsignals", "Print out the values and bindings of signals", &Game::PrintSignals);
     }
 
     Game::~Game() {}
@@ -150,14 +152,8 @@ namespace sp {
     }
 
     void Game::PrintDebug() {
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
-            ecs::Transform,
-            ecs::HumanController,
-            ecs::LightSensor,
-            ecs::SignalOutput,
-            ecs::EventInput,
-            ecs::FocusLayer,
-            ecs::FocusLock>>();
+        auto lock =
+            ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::Transform, ecs::HumanController, ecs::LightSensor>>();
         auto &scenes = GetSceneManager();
         auto player = scenes.GetPlayer();
         if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
@@ -187,15 +183,11 @@ namespace sp {
 
             Logf("Light sensor %s: %f %f %f", ecs::ToString(lock, ent), i.r, i.g, i.b);
         }
+    }
 
-        for (auto ent : lock.EntitiesWith<ecs::SignalOutput>()) {
-            auto &output = ent.Get<ecs::SignalOutput>(lock);
-
-            Logf("Signal output %s:", ecs::ToString(lock, ent));
-            for (auto &[signalName, value] : output.GetSignals()) {
-                Logf("  %s: %.2f", signalName, value);
-            }
-        }
+    void Game::PrintEvents() {
+        auto lock = ecs::World.StartTransaction<
+            ecs::Read<ecs::Name, ecs::EventInput, ecs::EventBindings, ecs::FocusLayer, ecs::FocusLock>>();
 
         auto &focusLock = lock.Get<ecs::FocusLock>();
         for (auto ent : lock.EntitiesWith<ecs::EventInput>()) {
@@ -220,6 +212,49 @@ namespace sp {
                     Logf("  %s: empty", eventName);
                 } else {
                     Logf("  %s: %u events", eventName, queue.size());
+                }
+            }
+        }
+    }
+
+    void Game::PrintSignals() {
+        auto lock = ecs::World.StartTransaction<
+            ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>>();
+        Logf("Signal outputs:");
+        for (auto ent : lock.EntitiesWith<ecs::SignalOutput>()) {
+            auto &output = ent.Get<ecs::SignalOutput>(lock);
+            auto &signals = output.GetSignals();
+
+            Logf("  %s:%s", ecs::ToString(lock, ent), signals.empty() ? " none" : "");
+            for (auto &[signalName, value] : signals) {
+                Logf("    %s: %.2f", signalName, value);
+            }
+        }
+
+        Logf("");
+        Logf("Signal bindings:");
+        for (auto ent : lock.EntitiesWith<ecs::SignalBindings>()) {
+            auto &bindings = ent.Get<ecs::SignalBindings>(lock);
+            auto bindingNames = bindings.GetBindingNames();
+            Logf("  %s:%s", ecs::ToString(lock, ent), bindingNames.empty() ? " none" : "");
+            for (auto &bindingName : bindingNames) {
+                auto list = bindings.Lookup(bindingName);
+                std::stringstream ss;
+                ss << bindingName << ": ";
+                if (list->sources.empty()) {
+                    ss << "none";
+                } else {
+                    ss << list->operation;
+                }
+                Logf("    %s", ss.str());
+                for (auto &source : list->sources) {
+                    auto e = source.first.Get(lock);
+                    double value = ecs::SignalBindings::GetSignal(lock, e, source.second);
+                    if (e) {
+                        Logf("      %s on %s: %.2f", source.second, ecs::ToString(lock, e), value);
+                    } else {
+                        Logf("      %s on %s(missing): %.2f", source.second, source.first.Name(), value);
+                    }
                 }
             }
         }

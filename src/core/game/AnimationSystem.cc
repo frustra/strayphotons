@@ -17,6 +17,7 @@ namespace sp {
 
             double signalState = ecs::SignalBindings::GetSignal(lock, ent, "animation_state");
             size_t newTargetState = (size_t)(signalState + 0.5);
+            if (newTargetState >= animation.states.size()) newTargetState = animation.states.size() - 1;
             if (animation.targetState != newTargetState) {
                 animation.currentState = animation.targetState;
                 animation.targetState = newTargetState;
