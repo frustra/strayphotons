@@ -49,20 +49,6 @@ namespace sp {
     };
 
     template<>
-    inline void Scene::CopyComponent<ecs::SceneConnection>(ecs::Lock<ecs::ReadAll> src,
-        Tecs::Entity srcEnt,
-        ecs::Lock<ecs::AddRemove> dst,
-        Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::SceneConnection>(src)) {
-            auto &srcList = srcEnt.Get<ecs::SceneConnection>(src);
-            auto &dstList = dstEnt.Get<ecs::SceneConnection>(dst);
-            for (auto &name : srcList.sceneNames) {
-                dstList.AddScene(name);
-            }
-        }
-    }
-
-    template<>
     inline void Scene::CopyComponent<ecs::Transform>(ecs::Lock<ecs::ReadAll> src,
         Tecs::Entity srcEnt,
         ecs::Lock<ecs::AddRemove> dst,
