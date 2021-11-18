@@ -76,6 +76,10 @@ namespace sp {
             return insert(pos, ilist.begin(), ilist.end());
         }
 
+        void clear() {
+            offset = 0;
+        }
+
         using ArrayT::begin;
         iterator end() {
             return begin() + offset;
@@ -90,6 +94,10 @@ namespace sp {
         }
         const_reverse_iterator rbegin() const {
             return rend() - offset;
+        }
+
+        bool operator==(const InlineVector<T, MaxSize> &other) const {
+            return offset == other.offset && std::equal(begin(), end(), other.begin());
         }
 
     private:

@@ -12,6 +12,7 @@
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
         #include "graphics/vulkan/core/Common.hh"
+        #include "graphics/vulkan/core/PerfTimer.hh"
     #endif
 
     #include <glm/glm.hpp>
@@ -32,6 +33,7 @@ namespace sp {
         class Renderer;
         class GuiRenderer;
         class ImageView;
+        class ProfilerGui;
     } // namespace vulkan
     #endif
 
@@ -53,6 +55,8 @@ namespace sp {
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
         unique_ptr<vulkan::Renderer> renderer;
+        shared_ptr<vulkan::ProfilerGui> profilerGui;
+        vulkan::PerfTimer timer;
     #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_GL

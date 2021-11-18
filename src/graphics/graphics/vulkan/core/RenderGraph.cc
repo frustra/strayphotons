@@ -3,6 +3,7 @@
 #include "core/Logging.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/PerfTimer.hh"
 
 namespace sp::vulkan {
     void RenderGraphResources::ResizeBeforeExecute() {
@@ -196,6 +197,9 @@ namespace sp::vulkan {
             }
         }
 
+        std::stack<RenderPhase> phaseScopes;
+        resources.scopeStack.clear();
+
         for (auto &pass : passes) {
             if (!pass.active) continue;
 
@@ -229,20 +233,42 @@ namespace sp::vulkan {
                 }
             }
 
+            for (int i = std::max(pass.scopes.size(), resources.scopeStack.size()) - 1; i >= 0; i--) {
+                uint8 passScope = i < (int)pass.scopes.size() ? pass.scopes[i] : ~0u;
+                uint8 resScope = i < (int)resources.scopeStack.size() ? resources.scopeStack[i] : ~0u;
+                if (resScope != passScope) {
+                    if (resScope != 255) phaseScopes.pop();
+                    if (passScope != 255) {
+                        string_view name = resources.nameScopes[passScope].name;
+                        phaseScopes.emplace(name.empty() ? "RenderGraph" : name);
+                        if (timer) phaseScopes.top().StartTimer(*timer);
+                    }
+                }
+            }
             resources.scopeStack = pass.scopes;
 
             if (isRenderPass) {
                 if (!cmd) cmd = device.GetCommandContext();
-                cmd->BeginRenderPass(renderPassInfo);
-                pass.Execute(resources, *cmd);
-                cmd->EndRenderPass();
+                {
+                    RenderPhase phase(pass.name);
+                    if (timer) phase.StartTimer(*cmd, *timer);
+                    cmd->BeginRenderPass(renderPassInfo);
+                    pass.Execute(resources, *cmd);
+                    cmd->EndRenderPass();
+                }
                 device.Submit(cmd);
             } else if (pass.ExecutesWithDeviceContext()) {
+                RenderPhase phase(pass.name);
+                if (timer) phase.StartTimer(*timer);
                 if (cmd) device.Submit(cmd);
                 pass.Execute(resources, device);
             } else if (pass.ExecutesWithCommandContext()) {
                 if (!cmd) cmd = device.GetCommandContext();
-                pass.Execute(resources, *cmd);
+                {
+                    RenderPhase phase(pass.name);
+                    if (timer) phase.StartTimer(*cmd, *timer);
+                    pass.Execute(resources, *cmd);
+                }
                 device.Submit(cmd);
             } else {
                 Abort("invalid pass");
