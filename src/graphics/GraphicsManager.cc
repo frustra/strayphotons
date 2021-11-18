@@ -9,13 +9,13 @@
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
         #include "graphics/opengl/GlfwGraphicsContext.hh"
-        #include "graphics/opengl/PerfTimer.hh"
         #include "graphics/opengl/RenderTargetPool.hh"
         #include "graphics/opengl/gui/ProfilerGui.hh"
         #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
         #include "input/glfw/GlfwInputHandler.hh"
     #endif
     #ifdef SP_GRAPHICS_SUPPORT_VK
+        #include "graphics/vulkan/ProfilerGui.hh"
         #include "graphics/vulkan/Renderer.hh"
         #include "graphics/vulkan/core/DeviceContext.hh"
     #endif
@@ -90,7 +90,11 @@ namespace sp {
     #ifdef SP_GRAPHICS_SUPPORT_VK
         Assert(!renderer, "already have an active renderer");
 
-        renderer = make_unique<vulkan::Renderer>(*vkContext);
+        timer.SetDevice(vkContext);
+        profilerGui = make_shared<vulkan::ProfilerGui>(timer);
+        game->debugGui->Attach(profilerGui);
+
+        renderer = make_unique<vulkan::Renderer>(*vkContext, timer);
         renderer->SetDebugGui(*game->debugGui.get());
     #endif
     }
@@ -135,7 +139,7 @@ namespace sp {
     #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
-        // timer.StartFrame();
+        timer.StartFrame();
         context->BeginFrame();
         renderer->RenderFrame();
         #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
@@ -144,7 +148,7 @@ namespace sp {
         // TODO: Configurable headless frame rate
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         #endif
-        // timer.EndFrame();
+        timer.EndFrame();
         context->EndFrame();
         return true;
     #endif

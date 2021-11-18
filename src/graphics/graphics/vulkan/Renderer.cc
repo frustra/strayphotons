@@ -29,7 +29,7 @@ namespace sp::vulkan {
 
     static CVar<float> CVarBloomScale("r.BloomScale", 0.15f, "Bloom scale");
 
-    Renderer::Renderer(DeviceContext &device) : device(device) {
+    Renderer::Renderer(DeviceContext &device, PerfTimer &timer) : device(device), timer(timer) {
         funcs.Register<string, string>("screenshot",
             "Save screenshot to <path>, optionally specifying an image <resource>",
             [&](string path, string resource) {
@@ -117,7 +117,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::RenderFrame() {
-        RenderGraph graph(device);
+        RenderGraph graph(device, &timer);
         BuildFrameGraph(graph);
         graph.Execute();
         EndFrame();
@@ -251,6 +251,7 @@ namespace sp::vulkan {
                 });
 
             AddDeferredPasses(graph);
+            graph.EndScope();
 
             RenderGraphResourceID sourceID;
             graph.Pass("XRSubmit")
@@ -282,8 +283,6 @@ namespace sp::vulkan {
                         this->xrSystem->SubmitView(eye, this->xrRenderPoses[i], xrRenderTarget->ImageView().get());
                     }
                 });
-
-            graph.EndScope();
         }
 #endif
 

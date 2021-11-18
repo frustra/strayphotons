@@ -7,6 +7,7 @@
 #include "graphics/vulkan/GPUTypes.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
+#include "graphics/vulkan/core/PerfTimer.hh"
 
 #include <functional>
 #include <robin_hood.h>
@@ -63,7 +64,7 @@ namespace sp::vulkan {
         using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::Transform>>;
         typedef std::function<void(DrawLock, Tecs::Entity &)> PreDrawFunc;
 
-        Renderer(DeviceContext &context);
+        Renderer(DeviceContext &context, PerfTimer &timer);
         ~Renderer();
 
         void RenderFrame();
@@ -83,8 +84,6 @@ namespace sp::vulkan {
 
         float Exposure = 1.0f;
 
-        DeviceContext &device;
-
         void SetDebugGui(GuiManager &gui);
 
 #ifdef SP_XR_SUPPORT
@@ -99,6 +98,9 @@ namespace sp::vulkan {
         ImageViewPtr CreateSinglePixelImage(glm::vec4 value);
 
     private:
+        DeviceContext &device;
+        PerfTimer &timer;
+
         void EndFrame();
         void BuildFrameGraph(RenderGraph &graph);
 

@@ -14,6 +14,8 @@ namespace sp::vulkan {
     const uint32 MAX_RESOURCE_SCOPES = sizeof(uint8);
     const uint32 MAX_RESOURCE_SCOPE_DEPTH = 4;
 
+    class PerfTimer;
+
     struct RenderGraphResource {
         enum class Type {
             Undefined,
@@ -292,7 +294,8 @@ namespace sp::vulkan {
 
     class RenderGraph {
     public:
-        RenderGraph(DeviceContext &device) : device(device), resources(device) {}
+        RenderGraph(DeviceContext &device, PerfTimer *timer = nullptr)
+            : device(device), resources(device), timer(timer) {}
 
         class InitialPassState {
         public:
@@ -374,5 +377,6 @@ namespace sp::vulkan {
         DeviceContext &device;
         RenderGraphResources resources;
         vector<RenderGraphPass> passes;
+        PerfTimer *timer;
     };
 } // namespace sp::vulkan
