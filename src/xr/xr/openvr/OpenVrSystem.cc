@@ -239,4 +239,9 @@ namespace sp::xr {
         if (inputBindings) inputBindings->Frame();
     }
 
+    HiddenAreaMesh OpenVrSystem::GetHiddenAreaMesh(ecs::XrEye eye) {
+        static_assert(sizeof(*vr::HiddenAreaMesh_t::pVertexData) == sizeof(*HiddenAreaMesh::vertices));
+        auto mesh = vrSystem->GetHiddenAreaMesh(MapXrEyeToOpenVr(eye));
+        return {(const glm::vec2 *)mesh.pVertexData, mesh.unTriangleCount};
+    }
 } // namespace sp::xr

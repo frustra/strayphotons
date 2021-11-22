@@ -132,6 +132,7 @@ namespace sp::vulkan {
         uint32_t mipLevelCount = VK_REMAINING_MIP_LEVELS; // all mips after the base level are included
         uint32_t baseArrayLayer = 0;
         uint32_t arrayLayerCount = VK_REMAINING_ARRAY_LAYERS; // all layers after the base layer are included
+        vk::ImageAspectFlags aspectMask; // defaults to all aspects of format
         vk::Sampler defaultSampler = VK_NULL_HANDLE;
         vk::ImageUsageFlags usage = {}; // defaults to image's usage
     };
@@ -193,6 +194,10 @@ namespace sp::vulkan {
 
         vk::ImageViewType ViewType() const {
             return info.viewType;
+        }
+
+        ImageViewCreateInfo CreateInfo() const {
+            return info;
         }
 
         virtual int GetWidth() const override {

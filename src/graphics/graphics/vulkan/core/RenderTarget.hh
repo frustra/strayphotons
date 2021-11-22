@@ -15,13 +15,19 @@ namespace sp::vulkan {
 
     class RenderTarget {
     public:
-        RenderTarget(const RenderTargetDesc &desc, const ImageViewPtr &imageView, size_t poolIndex)
-            : desc(desc), imageView(imageView), poolIndex(poolIndex) {}
+        RenderTarget(DeviceContext &device,
+            const RenderTargetDesc &desc,
+            const ImageViewPtr &imageView,
+            size_t poolIndex)
+            : device(&device), desc(desc), imageView(imageView), poolIndex(poolIndex) {}
+
         ~RenderTarget();
 
         const ImageViewPtr &ImageView() const {
             return imageView;
         }
+
+        const ImageViewPtr &LayerImageView(uint32 layer);
 
         const RenderTargetDesc &Desc() const {
             return desc;
@@ -32,9 +38,11 @@ namespace sp::vulkan {
         friend class RenderTargetManager;
 
     private:
+        DeviceContext *device;
         RenderTargetDesc desc;
         ImageViewPtr imageView;
         size_t poolIndex;
+        vector<ImageViewPtr> layerImageViews;
     };
 
     class RenderTargetManager {

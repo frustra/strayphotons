@@ -62,7 +62,12 @@ namespace sp::vulkan {
                 depthStencilAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
             }
 
-            depthStencilAttachment.initialLayout = vk::ImageLayout::eUndefined;
+            if (depthStencilAttachment.loadOp == vk::AttachmentLoadOp::eLoad) {
+                // TODO: support other layouts
+                depthStencilAttachment.initialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+            } else {
+                depthStencilAttachment.initialLayout = vk::ImageLayout::eUndefined;
+            }
             depthStencilAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
             depthAttachmentRef.attachment = attachmentCount;

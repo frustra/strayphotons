@@ -10,6 +10,20 @@ namespace sp::vulkan {
         }
     }
 
+    const ImageViewPtr &RenderTarget::LayerImageView(uint32 layer) {
+        Assert(layer < desc.arrayLayers, "render target image layer too high");
+        if (layerImageViews.empty()) layerImageViews.resize(desc.arrayLayers);
+
+        auto &view = layerImageViews[layer];
+        if (view) return view;
+
+        ImageViewCreateInfo info = imageView->CreateInfo();
+        info.baseArrayLayer = layer;
+        info.arrayLayerCount = 1;
+        view = device->CreateImageView(info);
+        return view;
+    }
+
     RenderTargetPtr RenderTargetManager::Get(const RenderTargetDesc &desc) {
         for (auto &elemRef : pool) {
             if (elemRef.use_count() <= 1 && elemRef->desc == desc) {
@@ -32,7 +46,7 @@ namespace sp::vulkan {
         viewInfo.defaultSampler = device.GetSampler(SamplerType::BilinearClamp);
 
         auto imageView = device.CreateImageAndView(imageInfo, viewInfo);
-        auto ptr = make_shared<RenderTarget>(desc, imageView, pool.size());
+        auto ptr = make_shared<RenderTarget>(device, desc, imageView, pool.size());
 
         pool.push_back(ptr);
         return ptr;

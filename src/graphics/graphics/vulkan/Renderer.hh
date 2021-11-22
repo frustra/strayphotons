@@ -105,7 +105,9 @@ namespace sp::vulkan {
         void BuildFrameGraph(RenderGraph &graph);
 
         void AddScreenshotPasses(RenderGraph &graph);
-        RenderGraphResourceID VisualizeBuffer(RenderGraph &graph, RenderGraphResourceID sourceID);
+        RenderGraphResourceID VisualizeBuffer(RenderGraph &graph,
+            RenderGraphResourceID sourceID,
+            uint32 arrayLayer = ~0u);
 
         void AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
         void AddShadowMaps(RenderGraph &graph, DrawLock lock);
@@ -146,9 +148,13 @@ namespace sp::vulkan {
 
         ImageViewPtr blankPixelImage;
 
+        PreservingMap<ImageView *, ImageView> debugViews;
+
 #ifdef SP_XR_SUPPORT
         xr::XrSystem *xrSystem = nullptr;
         std::vector<glm::mat4> xrRenderPoses;
+        std::array<BufferPtr, 2> hiddenAreaMesh;
+        std::array<uint32, 2> hiddenAreaTriangleCount;
 #endif
     };
 } // namespace sp::vulkan

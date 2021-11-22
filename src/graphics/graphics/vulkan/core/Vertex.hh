@@ -97,4 +97,17 @@ namespace sp::vulkan {
         }
     };
 
+    struct PositionVertex2D {
+        glm::vec2 position;
+
+        static VertexLayout Layout() {
+            static VertexLayout info;
+            if (!info.bindingCount) {
+                info.PushBinding(0, sizeof(PositionVertex2D));
+                info.PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(PositionVertex2D, position));
+            }
+            return info;
+        }
+    };
+
 } // namespace sp::vulkan

@@ -308,6 +308,29 @@ namespace sp::vulkan {
             cmd->setScissor(0, 1, &sc);
         }
 
+        if (pipelineInput.state.stencilTest && ResetDirty(DirtyBits::Stencil)) {
+            const auto &front = stencilState[0];
+            const auto &back = stencilState[1];
+            if (front.writeMask == back.writeMask) {
+                cmd->setStencilWriteMask(vk::StencilFaceFlagBits::eFrontAndBack, front.writeMask);
+            } else {
+                cmd->setStencilWriteMask(vk::StencilFaceFlagBits::eFront, front.writeMask);
+                cmd->setStencilWriteMask(vk::StencilFaceFlagBits::eBack, back.writeMask);
+            }
+            if (front.compareMask == back.compareMask) {
+                cmd->setStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, front.compareMask);
+            } else {
+                cmd->setStencilCompareMask(vk::StencilFaceFlagBits::eFront, front.compareMask);
+                cmd->setStencilCompareMask(vk::StencilFaceFlagBits::eBack, back.compareMask);
+            }
+            if (front.reference == back.reference) {
+                cmd->setStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, front.reference);
+            } else {
+                cmd->setStencilReference(vk::StencilFaceFlagBits::eFront, front.reference);
+                cmd->setStencilReference(vk::StencilFaceFlagBits::eBack, back.reference);
+            }
+        }
+
         FlushPushConstants();
         FlushDescriptorSets(vk::PipelineBindPoint::eGraphics);
     }

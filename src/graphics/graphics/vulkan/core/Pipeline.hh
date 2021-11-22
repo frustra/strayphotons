@@ -30,6 +30,10 @@ namespace sp::vulkan {
         unsigned depthTest : 1;
         unsigned blendEnable : 1;
         unsigned stencilTest : 1;
+        vk::CompareOp stencilCompareOp = vk::CompareOp::eAlways;
+        vk::StencilOp stencilFailOp = vk::StencilOp::eKeep;
+        vk::StencilOp stencilDepthFailOp = vk::StencilOp::eKeep;
+        vk::StencilOp stencilPassOp = vk::StencilOp::eKeep;
         std::array<SpecializationData, (size_t)ShaderStage::Count> specializations = {};
     };
 

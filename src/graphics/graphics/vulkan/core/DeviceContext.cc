@@ -972,9 +972,9 @@ namespace sp::vulkan {
                 vk::ImageLayout::eTransferDstOptimal,
                 vk::ImageLayout::eTransferSrcOptimal,
                 vk::PipelineStageFlagBits::eTransfer,
-                {},
-                vk::PipelineStageFlagBits::eTransfer,
                 vk::AccessFlagBits::eTransferWrite,
+                vk::PipelineStageFlagBits::eTransfer,
+                vk::AccessFlagBits::eTransferRead,
                 transferMips);
         }
 
@@ -1007,7 +1007,7 @@ namespace sp::vulkan {
         createInfo.format = info.format;
         createInfo.viewType = info.viewType;
         createInfo.components = info.mapping;
-        createInfo.subresourceRange.aspectMask = FormatToAspectFlags(info.format);
+        createInfo.subresourceRange.aspectMask = info.aspectMask ? info.aspectMask : FormatToAspectFlags(info.format);
         createInfo.subresourceRange.baseMipLevel = info.baseMipLevel;
         createInfo.subresourceRange.levelCount = info.mipLevelCount;
         createInfo.subresourceRange.baseArrayLayer = info.baseArrayLayer;

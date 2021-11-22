@@ -310,10 +310,14 @@ namespace sp::vulkan {
         vk::DynamicState states[] = {
             vk::DynamicState::eViewport,
             vk::DynamicState::eScissor,
+            vk::DynamicState::eStencilWriteMask,
+            vk::DynamicState::eStencilCompareMask,
+            vk::DynamicState::eStencilReference,
         };
 
         vk::PipelineDynamicStateCreateInfo dynamicState;
         dynamicState.dynamicStateCount = 2;
+        if (state.stencilTest) dynamicState.dynamicStateCount = 5;
         dynamicState.pDynamicStates = states;
 
         vk::PipelineRasterizationStateCreateInfo rasterizer;
@@ -358,6 +362,14 @@ namespace sp::vulkan {
         depthStencil.minDepthBounds = 0.0f;
         depthStencil.maxDepthBounds = 1.0f;
         depthStencil.stencilTestEnable = state.stencilTest;
+        depthStencil.front.compareOp = state.stencilCompareOp;
+        depthStencil.front.failOp = state.stencilFailOp;
+        depthStencil.front.depthFailOp = state.stencilDepthFailOp;
+        depthStencil.front.passOp = state.stencilPassOp;
+        depthStencil.back.compareOp = state.stencilCompareOp;
+        depthStencil.back.failOp = state.stencilFailOp;
+        depthStencil.back.depthFailOp = state.stencilDepthFailOp;
+        depthStencil.back.passOp = state.stencilPassOp;
 
         vk::PipelineVertexInputStateCreateInfo VertexLayout;
         VertexLayout.vertexBindingDescriptionCount = state.vertexLayout.bindingCount;

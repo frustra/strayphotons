@@ -55,7 +55,7 @@ namespace sp::vulkan {
         vk::AttachmentLoadOp LoadOp(uint32 index) const {
             uint32 attachmentBit = 1 << index;
             if (clearAttachments & attachmentBit) return vk::AttachmentLoadOp::eClear;
-            if (loadAttachments & attachmentBit) return vk::AttachmentLoadOp::eClear;
+            if (loadAttachments & attachmentBit) return vk::AttachmentLoadOp::eLoad;
             return vk::AttachmentLoadOp::eDontCare;
         }
 

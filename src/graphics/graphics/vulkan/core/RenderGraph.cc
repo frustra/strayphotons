@@ -172,7 +172,7 @@ namespace sp::vulkan {
         Assert(res.renderTargetDesc.arrayLayers == view->ArrayLayers(), "image array mismatch");
 
         resources.ResizeBeforeExecute();
-        resources.renderTargets[res.id] = make_shared<RenderTarget>(res.renderTargetDesc, view, ~0u);
+        resources.renderTargets[res.id] = make_shared<RenderTarget>(device, res.renderTargetDesc, view, ~0u);
     }
 
     void RenderGraph::Execute() {
@@ -216,7 +216,13 @@ namespace sp::vulkan {
                 if (attachment.resourceID == ~0u) continue;
                 isRenderPass = true;
 
-                auto imageView = resources.GetRenderTarget(attachment.resourceID)->ImageView();
+                ImageViewPtr imageView;
+                auto renderTarget = resources.GetRenderTarget(attachment.resourceID);
+                if (attachment.arrayIndex != ~0u && renderTarget->Desc().arrayLayers > 1) {
+                    imageView = renderTarget->LayerImageView(attachment.arrayIndex);
+                } else {
+                    imageView = renderTarget->ImageView();
+                }
 
                 if (i != MAX_COLOR_ATTACHMENTS) {
                     renderPassInfo.state.colorAttachmentCount = i + 1;
@@ -297,8 +303,9 @@ namespace sp::vulkan {
             cmd->ImageBarrier(image,
                 image->LastLayout(),
                 dep.access.layout,
-                vk::PipelineStageFlagBits::eColorAttachmentOutput, // TODO: infer these
-                vk::AccessFlagBits::eColorAttachmentWrite,
+                // TODO: infer these:
+                vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
+                vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite,
                 dep.access.stages,
                 dep.access.access);
         }
@@ -324,10 +331,10 @@ namespace sp::vulkan {
                         vk::PipelineStageFlagBits::eColorAttachmentOutput,
                         vk::AccessFlagBits::eColorAttachmentWrite);
                 } else if (res.renderTargetDesc.usage & vk::ImageUsageFlagBits::eDepthStencilAttachment) {
-                    if (image->LastLayout() == vk::ImageLayout::eDepthAttachmentOptimal) continue;
+                    if (image->LastLayout() == vk::ImageLayout::eDepthStencilAttachmentOptimal) continue;
                     cmd->ImageBarrier(image,
                         vk::ImageLayout::eUndefined,
-                        vk::ImageLayout::eDepthAttachmentOptimal,
+                        vk::ImageLayout::eDepthStencilAttachmentOptimal,
                         vk::PipelineStageFlagBits::eBottomOfPipe,
                         {},
                         vk::PipelineStageFlagBits::eEarlyFragmentTests,

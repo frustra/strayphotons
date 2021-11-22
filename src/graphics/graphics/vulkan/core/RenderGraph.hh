@@ -52,6 +52,7 @@ namespace sp::vulkan {
         StoreOp storeOp = StoreOp::DontCare;
         vk::ClearColorValue clearColor = {};
         vk::ClearDepthStencilValue clearDepthStencil = {1.0f, 0};
+        uint32 arrayIndex = ~0u; // if the attachment is an array image, this can be set to render to a specific index
 
         void SetClearColor(glm::vec4 clear) {
             std::array<float, 4> clearValues = {clear.r, clear.g, clear.b, clear.a};
@@ -141,8 +142,8 @@ namespace sp::vulkan {
             dependencies.push_back({access, res.id});
         }
 
-        void AddOutput(const RenderGraphResource &res) {
-            outputs.push_back(res.id);
+        void AddOutput(RenderGraphResourceID id) {
+            outputs.push_back(id);
         }
 
         bool HasExecute() const {
@@ -190,11 +191,22 @@ namespace sp::vulkan {
         const RenderGraphResource &ShaderRead(RenderGraphResourceID id) {
             auto &resource = resources.GetResourceRef(id);
             resource.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eSampled;
-            RenderGraphResourceAccess access = {
-                vk::PipelineStageFlagBits::eFragmentShader,
+
+            auto aspect = FormatToAspectFlags(resource.renderTargetDesc.format);
+            bool depth = !!(aspect & vk::ImageAspectFlagBits::eDepth);
+            bool stencil = !!(aspect & vk::ImageAspectFlagBits::eStencil);
+
+            auto layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+            if (depth && stencil)
+                layout = vk::ImageLayout::eDepthStencilReadOnlyOptimal;
+            else if (depth)
+                layout = vk::ImageLayout::eDepthReadOnlyOptimal;
+            else if (stencil)
+                layout = vk::ImageLayout::eStencilReadOnlyOptimal;
+
+            RenderGraphResourceAccess access = {vk::PipelineStageFlagBits::eFragmentShader,
                 vk::AccessFlagBits::eShaderRead,
-                vk::ImageLayout::eShaderReadOnlyOptimal,
-            };
+                layout};
             pass.AddDependency(access, resource);
             return resource;
         }
@@ -224,10 +236,19 @@ namespace sp::vulkan {
         RenderGraphResource OutputRenderTarget(string_view name, const RenderTargetDesc &desc) {
             RenderGraphResource resource(desc);
             resources.Register(name, resource);
-            pass.AddOutput(resource);
+            pass.AddOutput(resource.id);
             return resource;
         }
 
+        void SetColorAttachment(uint32 index, string_view name, const AttachmentInfo &info) {
+            SetColorAttachment(index, resources.GetID(name), info);
+        }
+        void SetColorAttachment(uint32 index, RenderGraphResourceID id, const AttachmentInfo &info) {
+            auto &res = resources.GetResourceRef(id);
+            Assert(res.type == RenderGraphResource::Type::RenderTarget, "resource must be a render target");
+            res.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eColorAttachment;
+            SetAttachment(index, id, info);
+        }
         RenderGraphResource OutputColorAttachment(uint32 index,
             string_view name,
             RenderTargetDesc desc,
@@ -236,6 +257,21 @@ namespace sp::vulkan {
             return OutputAttachment(index, name, desc, info);
         }
 
+        void SetDepthAttachment(string_view name, const AttachmentInfo &info) {
+            SetDepthAttachment(resources.GetID(name), info);
+        }
+        void SetDepthAttachment(RenderGraphResourceID id, const AttachmentInfo &info) {
+            auto &res = resources.GetResourceRef(id);
+            Assert(res.type == RenderGraphResource::Type::RenderTarget, "resource must be a render target");
+            res.renderTargetDesc.usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+            RenderGraphResourceAccess access = {
+                vk::PipelineStageFlagBits::eEarlyFragmentTests,
+                vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+                vk::ImageLayout::eDepthStencilAttachmentOptimal,
+            };
+            pass.AddDependency(access, res);
+            SetAttachment(MAX_COLOR_ATTACHMENTS, id, info);
+        }
         RenderGraphResource OutputDepthAttachment(string_view name, RenderTargetDesc desc, const AttachmentInfo &info) {
             desc.usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
             return OutputAttachment(MAX_COLOR_ATTACHMENTS, name, desc, info);
@@ -250,7 +286,7 @@ namespace sp::vulkan {
         RenderGraphResource CreateUniformBuffer(string_view name, size_t size) {
             RenderGraphResource resource(BUFFER_TYPE_UNIFORM, size);
             resources.Register(name, resource);
-            pass.AddOutput(resource);
+            pass.AddOutput(resource.id);
             return resource;
         }
 
@@ -282,10 +318,19 @@ namespace sp::vulkan {
             const RenderTargetDesc &desc,
             const AttachmentInfo &info) {
             auto resource = OutputRenderTarget(name, desc);
+            SetAttachmentWithoutOutput(index, resource.id, info);
+            return resource;
+        }
+
+        void SetAttachment(uint32 index, RenderGraphResourceID id, const AttachmentInfo &info) {
+            pass.AddOutput(id);
+            SetAttachmentWithoutOutput(index, id, info);
+        }
+
+        void SetAttachmentWithoutOutput(uint32 index, RenderGraphResourceID id, const AttachmentInfo &info) {
             auto &attachment = pass.attachments[index];
             attachment = info;
-            attachment.resourceID = resource.id;
-            return resource;
+            attachment.resourceID = id;
         }
 
         RenderGraphResources &resources;

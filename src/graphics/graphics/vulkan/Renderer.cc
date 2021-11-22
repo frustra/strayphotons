@@ -11,6 +11,7 @@
 #include "graphics/vulkan/core/Model.hh"
 #include "graphics/vulkan/core/RenderGraph.hh"
 #include "graphics/vulkan/core/Screenshot.hh"
+#include "graphics/vulkan/core/Util.hh"
 #include "graphics/vulkan/core/Vertex.hh"
 
 #ifdef SP_XR_SUPPORT
@@ -24,6 +25,8 @@ namespace sp::vulkan {
     static CVar<string> CVarWindowViewTarget("r.WindowViewTarget",
         defaultWindowViewTarget,
         "Primary window's render target");
+
+    static CVar<uint32> CVarWindowViewTargetLayer("r.WindowViewTargetLayer", 0, "Array layer to view");
 
     static CVar<string> CVarXRViewTarget("r.XRViewTarget", defaultXRViewTarget, "HMD's render target");
 
@@ -162,7 +165,7 @@ namespace sp::vulkan {
                     builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
 
                     desc.format = vk::Format::eD24UnormS8Uint;
-                    builder.OutputDepthAttachment("GBufferDepth", desc, {LoadOp::Clear, StoreOp::DontCare});
+                    builder.OutputDepthAttachment("GBufferDepthStencil", desc, {LoadOp::Clear, StoreOp::Store});
 
                     builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
                 })
@@ -205,7 +208,67 @@ namespace sp::vulkan {
 
             graph.BeginScope("XRView");
 
-            graph.Pass("XRForwardPass")
+            if (!hiddenAreaMesh[0]) {
+                auto leftEye = xrSystem->GetHiddenAreaMesh(ecs::XrEye::LEFT);
+                hiddenAreaMesh[0] = device.CreateBuffer(leftEye.vertices,
+                    leftEye.triangleCount * sizeof(glm::vec2) * 3,
+                    vk::BufferUsageFlagBits::eVertexBuffer,
+                    VMA_MEMORY_USAGE_CPU_TO_GPU);
+                hiddenAreaTriangleCount[0] = leftEye.triangleCount;
+
+                auto rightEye = xrSystem->GetHiddenAreaMesh(ecs::XrEye::RIGHT);
+                hiddenAreaMesh[1] = device.CreateBuffer(rightEye.vertices,
+                    rightEye.triangleCount * sizeof(glm::vec2) * 3,
+                    vk::BufferUsageFlagBits::eVertexBuffer,
+                    VMA_MEMORY_USAGE_CPU_TO_GPU);
+                hiddenAreaTriangleCount[1] = rightEye.triangleCount;
+            }
+
+            auto executeHiddenAreaStencil = [this](uint32 eyeIndex) {
+                return [this, eyeIndex](RenderGraphResources &resources, CommandContext &cmd) {
+                    cmd.SetShaders("basic_ortho_stencil.vert", "noop.frag");
+
+                    glm::mat4 proj = MakeOrthographicProjection(0, 1, 1, 0);
+                    cmd.PushConstants(proj);
+
+                    cmd.SetCullMode(vk::CullModeFlagBits::eNone);
+                    cmd.SetDepthTest(false, false);
+                    cmd.SetStencilTest(true);
+                    cmd.SetStencilWriteMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
+                    cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
+                    cmd.SetStencilCompareOp(vk::CompareOp::eAlways);
+                    cmd.SetStencilPassOp(vk::StencilOp::eReplace);
+                    cmd.SetStencilFailOp(vk::StencilOp::eReplace);
+                    cmd.SetStencilDepthFailOp(vk::StencilOp::eReplace);
+
+                    cmd.SetVertexLayout(PositionVertex2D::Layout());
+                    cmd.Raw().bindVertexBuffers(0, {*this->hiddenAreaMesh[eyeIndex]}, {0});
+                    cmd.Draw(this->hiddenAreaTriangleCount[eyeIndex] * 3);
+                };
+            };
+
+            graph.Pass("HiddenAreaStencil")
+                .Build([&](RenderGraphPassBuilder &builder) {
+                    RenderTargetDesc desc;
+                    desc.extent = vk::Extent3D(firstView.extents.x, firstView.extents.y, 1);
+                    desc.arrayLayers = xrViews.size();
+                    desc.primaryViewType = vk::ImageViewType::e2DArray;
+                    desc.format = vk::Format::eD24UnormS8Uint;
+                    AttachmentInfo attachment = {LoadOp::Clear, StoreOp::Store};
+                    attachment.arrayIndex = 0;
+                    builder.OutputDepthAttachment("GBufferDepthStencil", desc, attachment);
+                })
+                .Execute(executeHiddenAreaStencil(0));
+
+            graph.Pass("HiddenAreaStencil2")
+                .Build([&](RenderGraphPassBuilder &builder) {
+                    AttachmentInfo attachment = {LoadOp::Clear, StoreOp::Store};
+                    attachment.arrayIndex = 1;
+                    builder.SetDepthAttachment("GBufferDepthStencil", attachment);
+                })
+                .Execute(executeHiddenAreaStencil(1));
+
+            graph.Pass("ForwardPass")
                 .Build([&](RenderGraphPassBuilder &builder) {
                     RenderTargetDesc desc;
                     desc.extent = vk::Extent3D(firstView.extents.x, firstView.extents.y, 1);
@@ -219,13 +282,17 @@ namespace sp::vulkan {
                     builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
                     builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
 
-                    desc.format = vk::Format::eD24UnormS8Uint;
-                    builder.OutputDepthAttachment("GBufferDepth", desc, {LoadOp::Clear, StoreOp::DontCare});
+                    builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::DontCare});
 
                     builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
                 })
                 .Execute([this, xrViews, visible, lock](RenderGraphResources &resources, CommandContext &cmd) {
                     cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
+
+                    cmd.SetStencilTest(true);
+                    cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
+                    cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
+                    cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
 
                     auto viewStateBuf = resources.GetBuffer("ViewState");
                     cmd.SetUniformBuffer(0, 10, viewStateBuf);
@@ -303,10 +370,11 @@ namespace sp::vulkan {
                     }
 
                     auto format = res.renderTargetDesc.format;
-                    if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4) {
+                    auto layer = CVarWindowViewTargetLayer.Get();
+                    if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4 && layer == 0) {
                         sourceID = res.id;
                     } else {
-                        sourceID = VisualizeBuffer(graph, res.id);
+                        sourceID = VisualizeBuffer(graph, res.id, layer);
                     }
                     builder.ShaderRead(sourceID);
 
@@ -444,7 +512,10 @@ namespace sp::vulkan {
         pendingScreenshots.clear();
     }
 
-    RenderGraphResourceID Renderer::VisualizeBuffer(RenderGraph &graph, RenderGraphResourceID sourceID) {
+    RenderGraphResourceID Renderer::VisualizeBuffer(RenderGraph &graph,
+        RenderGraphResourceID sourceID,
+        uint32 arrayLayer) {
+
         RenderGraphResourceID targetID = ~0u, outputID;
         graph.Pass("VisualizeBuffer")
             .Build([&](RenderGraphPassBuilder &builder) {
@@ -455,10 +526,37 @@ namespace sp::vulkan {
                 desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
                 outputID = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store}).id;
             })
-            .Execute([targetID](RenderGraphResources &resources, CommandContext &cmd) {
-                auto source = resources.GetRenderTarget(targetID)->ImageView();
+            .Execute([this, targetID, arrayLayer](RenderGraphResources &resources, CommandContext &cmd) {
+                auto target = resources.GetRenderTarget(targetID);
+                ImageViewPtr source;
+                if (target->Desc().arrayLayers > 1 && arrayLayer != ~0u && arrayLayer < target->Desc().arrayLayers) {
+                    source = target->LayerImageView(arrayLayer);
+                } else {
+                    source = target->ImageView();
+                }
 
-                cmd.SetShaders("screen_cover.vert", "visualize_buffer.frag");
+                auto debugView = this->debugViews.Load(source.get());
+                if (debugView) {
+                    source = debugView;
+                } else if (source->Format() == vk::Format::eD24UnormS8Uint) {
+                    auto viewInfo = source->CreateInfo();
+                    viewInfo.aspectMask = vk::ImageAspectFlagBits::eStencil;
+                    viewInfo.defaultSampler = cmd.Device().GetSampler(SamplerType::BilinearClamp);
+                    debugView = cmd.Device().CreateImageView(viewInfo);
+                    this->debugViews.Register(source.get(), debugView);
+                    source = debugView;
+                }
+
+                if (source->ViewType() == vk::ImageViewType::e2DArray) {
+                    cmd.SetShaders("screen_cover.vert", "visualize_buffer_2d_array.frag");
+
+                    struct {
+                        float layer = 0;
+                    } push;
+                    cmd.PushConstants(push);
+                } else {
+                    cmd.SetShaders("screen_cover.vert", "visualize_buffer_2d.frag");
+                }
 
                 auto format = source->Format();
                 uint32 comp = FormatComponentCount(format);
@@ -539,9 +637,17 @@ namespace sp::vulkan {
                 for (int i = 0; i < this->lights.gelCount; i++) {
                     builder.ShaderRead(this->lights.gelNames[i]);
                 }
+
+                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::DontCare});
             })
             .Execute([this](RenderGraphResources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "lighting.frag");
+                cmd.SetStencilTest(true);
+                cmd.SetDepthTest(false, false);
+                cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
+                cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
+                cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
+
                 cmd.SetTexture(0, 0, resources.GetRenderTarget("GBuffer0")->ImageView());
                 cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer1")->ImageView());
                 cmd.SetTexture(0, 2, resources.GetRenderTarget("GBuffer2")->ImageView());
