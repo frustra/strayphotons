@@ -15,6 +15,7 @@ namespace sp::vulkan::CommandContextFlags {
         Scissor = 1 << 1,
         PushConstants = 1 << 2,
         Pipeline = 1 << 3,
+        Stencil = 1 << 4,
     };
 
     using DirtyFlags = vk::Flags<DirtyBits>;
@@ -179,6 +180,79 @@ namespace sp::vulkan {
             }
         }
 
+        void SetStencilWriteMask(vk::StencilFaceFlags faces, uint32 mask) {
+            if (faces & vk::StencilFaceFlagBits::eFront) {
+                if (mask != stencilState[0].writeMask) {
+                    stencilState[0].writeMask = mask;
+                    SetDirty(DirtyBits::Stencil);
+                }
+            }
+            if (faces & vk::StencilFaceFlagBits::eBack) {
+                if (mask != stencilState[1].writeMask) {
+                    stencilState[1].writeMask = mask;
+                    SetDirty(DirtyBits::Stencil);
+                }
+            }
+        }
+
+        void SetStencilCompareMask(vk::StencilFaceFlags faces, uint32 mask) {
+            if (faces & vk::StencilFaceFlagBits::eFront) {
+                if (mask != stencilState[0].compareMask) {
+                    stencilState[0].compareMask = mask;
+                    SetDirty(DirtyBits::Stencil);
+                }
+            }
+            if (faces & vk::StencilFaceFlagBits::eBack) {
+                if (mask != stencilState[1].compareMask) {
+                    stencilState[1].compareMask = mask;
+                    SetDirty(DirtyBits::Stencil);
+                }
+            }
+        }
+
+        void SetStencilReference(vk::StencilFaceFlags faces, uint32 value) {
+            if (faces & vk::StencilFaceFlagBits::eFront) {
+                if (value != stencilState[0].reference) {
+                    stencilState[0].reference = value;
+                    SetDirty(DirtyBits::Stencil);
+                }
+            }
+            if (faces & vk::StencilFaceFlagBits::eBack) {
+                if (value != stencilState[1].reference) {
+                    stencilState[1].reference = value;
+                    SetDirty(DirtyBits::Stencil);
+                }
+            }
+        }
+
+        void SetStencilCompareOp(vk::CompareOp op) {
+            if (op != pipelineInput.state.stencilCompareOp) {
+                pipelineInput.state.stencilCompareOp = op;
+                SetDirty(DirtyBits::Pipeline);
+            }
+        }
+
+        void SetStencilFailOp(vk::StencilOp op) {
+            if (op != pipelineInput.state.stencilFailOp) {
+                pipelineInput.state.stencilFailOp = op;
+                SetDirty(DirtyBits::Pipeline);
+            }
+        }
+
+        void SetStencilDepthFailOp(vk::StencilOp op) {
+            if (op != pipelineInput.state.stencilDepthFailOp) {
+                pipelineInput.state.stencilDepthFailOp = op;
+                SetDirty(DirtyBits::Pipeline);
+            }
+        }
+
+        void SetStencilPassOp(vk::StencilOp op) {
+            if (op != pipelineInput.state.stencilPassOp) {
+                pipelineInput.state.stencilPassOp = op;
+                SetDirty(DirtyBits::Pipeline);
+            }
+        }
+
         void SetCullMode(vk::CullModeFlags mode) {
             if (mode != pipelineInput.state.cullMode) {
                 pipelineInput.state.cullMode = mode;
@@ -308,6 +382,10 @@ namespace sp::vulkan {
         vk::Rect2D viewport;
         float minDepth = 0.0f, maxDepth = 1.0f;
         vk::Rect2D scissor;
+
+        struct StencilDynamicState {
+            uint32 writeMask = 0, compareMask = 0, reference = 0;
+        } stencilState[2] = {}; // front and back
 
         PipelineCompileInput pipelineInput;
         shared_ptr<Pipeline> currentPipeline;

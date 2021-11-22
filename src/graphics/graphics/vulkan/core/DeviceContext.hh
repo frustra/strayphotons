@@ -21,7 +21,7 @@ namespace sp {
 }
 
 namespace sp::vulkan {
-    const int MAX_FRAMES_IN_FLIGHT = 2;
+    const int MAX_FRAMES_IN_FLIGHT = 1;
 
     class Pipeline;
     class PipelineManager;

@@ -37,6 +37,11 @@ namespace sp {
             bool connected;
         };
 
+        struct HiddenAreaMesh {
+            const glm::vec2 *vertices;
+            uint32_t triangleCount;
+        };
+
         class XrSystem {
         public:
             virtual void Init(GraphicsContext *context) = 0;
@@ -47,6 +52,8 @@ namespace sp {
 
             virtual void SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) = 0;
             virtual void WaitFrame() = 0;
+
+            virtual HiddenAreaMesh GetHiddenAreaMesh(ecs::XrEye eye) = 0;
         };
 
     } // namespace xr

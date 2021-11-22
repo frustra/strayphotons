@@ -35,6 +35,8 @@ namespace sp {
 
             ecs::NamedEntity GetEntityForDeviceIndex(size_t index);
 
+            HiddenAreaMesh GetHiddenAreaMesh(ecs::XrEye eye);
+
         private:
             void Frame() override;
 

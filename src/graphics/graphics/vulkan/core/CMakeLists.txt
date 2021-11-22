@@ -12,6 +12,7 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
     RenderTarget.cc
     Screenshot.cc
     UniqueID.cc
+    Util.cc
 )
 
 target_link_libraries(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PUBLIC VulkanMemoryAllocator SPIRV-Reflect)
