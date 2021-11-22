@@ -38,10 +38,8 @@
 			},
 			"signal_output": {},
 			"trigger_area": {
-				"triggers": {
-					"player": {
-						"command": "r.MirrorRecursion 2; r.MirrorMapResolution 1024; setsignal global.airlock2-3-out.door_open 1; wait 2000 removescene 02-mirrors"
-					}
+				"player": {
+					"command": "r.MirrorRecursion 2; r.MirrorMapResolution 1024; setsignal global.airlock2-3-out.door_open 1; wait 2000 removescene 02-mirrors"
 				}
 			}
 		},
@@ -310,10 +308,8 @@
 			},
 			"signal_output": {},
 			"trigger_area": {
-				"triggers": {
-					"player": {
-						"command": "setsignal global.airlock3-4-in.door_open 0; addscene 04-symmetry; r.MirrorMapResolution 512"
-					}
+				"player": {
+					"command": "setsignal global.airlock3-4-in.door_open 0; addscene 04-symmetry; r.MirrorMapResolution 512"
 				}
 			}
 		},

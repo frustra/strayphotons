@@ -22,7 +22,7 @@ const vec2 saturation = vec2(0, 1);
 void main() {
 	vec4 luminosity = texture(luminanceTex, vec3(inTexCoord, gl_ViewID_OVR)); // pre-exposed
 
-	vec3 toneMapped = HDRTonemap(luminosity.rgb * curveScale) / HDRTonemap(vec3(whitePoint));
+	vec3 toneMapped = HDRTonemap(max(vec3(0), luminosity.rgb) * curveScale) / HDRTonemap(vec3(whitePoint));
 
 #ifdef DEBUG_OVEREXPOSED
 	if (toneMapped.r > 1 || toneMapped.g > 1 || toneMapped.b > 1) {

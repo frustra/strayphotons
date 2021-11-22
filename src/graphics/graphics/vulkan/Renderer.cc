@@ -320,6 +320,8 @@ namespace sp::vulkan {
             AddDeferredPasses(graph);
             graph.EndScope();
 
+            graph.EndScope();
+
             RenderGraphResourceID sourceID;
             graph.Pass("XRSubmit")
                 .Build([&](RenderGraphPassBuilder &builder) {

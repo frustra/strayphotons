@@ -38,10 +38,8 @@
 			},
 			"signal_output": {},
 			"trigger_area": {
-				"triggers": {
-					"player": {
-						"command": "r.MirrorRecursion 3; setsignal global.airlock3-4-out.door_open 1; wait 2000 removescene 03-dark"
-					}
+				"player": {
+					"command": "r.MirrorRecursion 3; setsignal global.airlock3-4-out.door_open 1; wait 2000 removescene 03-dark"
 				}
 			}
 		},
@@ -310,10 +308,8 @@
 			},
 			"signal_output": {},
 			"trigger_area": {
-				"triggers": {
-					"player": {
-						"command": "setsignal global.airlock4-menu-in.door_open 0; wait 1000 loadscene menu"
-					}
+				"player": {
+					"command": "setsignal global.airlock4-menu-in.door_open 0; wait 1000 loadscene menu"
 				}
 			}
 		},

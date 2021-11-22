@@ -178,7 +178,7 @@ namespace sp {
                     userData->lastUpdate = now;
                 }
 
-                Tecs::Entity physicsBox = ecs::EntityWith<ecs::Name>(lock, "player-physics");
+                Tecs::Entity physicsBox = ecs::EntityWith<ecs::Name>(lock, "player.player-physics");
                 if (physicsBox.Has<ecs::Transform>(lock)) {
                     auto &transform = physicsBox.Get<ecs::Transform>(lock);
                     transform.SetPosition(PxExtendedVec3ToGlmVec3P(controller.pxController->getFootPosition()));

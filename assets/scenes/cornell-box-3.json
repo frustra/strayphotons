@@ -18,10 +18,8 @@
 				]
 			},
 			"trigger_area": {
-				"triggers": {
-					"player": {
-						"command": "r.Exposure 0.5; r.FieldOfView 30; p.PausePlayerPhysics 1"
-					}
+				"player": {
+					"command": "r.Exposure 0.5; r.FieldOfView 30; p.PausePlayerPhysics 1"
 				}
 			}
 		},

@@ -18,6 +18,10 @@ set(SCENES_INPUT
     02-mirrors
     03-dark
     04-symmetry
+    blackhole1
+    blackhole2
+    blackhole3
+    blackhole4
     sponza
     connect-test1
     connect-test2

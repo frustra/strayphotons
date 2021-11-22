@@ -76,10 +76,8 @@
 				"max": [5, 10, 5]
 			},
 			"trigger_area": {
-				"triggers": {
-					"player": {
-						"command": "g.MenuDisplay 2; r.Exposure 0.5; p.PausePlayerPhysics 1"
-					}
+				"player": {
+					"command": "g.MenuDisplay 2; r.Exposure 0.5; p.PausePlayerPhysics 1"
 				}
 			}
 		},
@@ -102,10 +100,8 @@
 				"scale": [10, 2, 10]
 			},
 			"trigger_area": {
-				"triggers": {
-					"player": {
-						"command": "g.MenuDisplay 0; r.Exposure 0; p.PausePlayerPhysics 0; loadscene 01-outside"
-					}
+				"player": {
+					"command": "g.MenuDisplay 0; r.Exposure 0; p.PausePlayerPhysics 0; loadscene 01-outside"
 				}
 			}
 		}

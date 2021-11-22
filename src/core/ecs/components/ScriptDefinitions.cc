@@ -6,7 +6,6 @@
 #include "ecs/EcsImpl.hh"
 
 #include <cmath>
-#include <glm/glm.hpp>
 #include <robin_hood.h>
 #include <sstream>
 
@@ -226,6 +225,23 @@ namespace ecs {
                             }
                         }).detach();
                     }
+                }
+            }},
+        {"rotate",
+            [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+                if (ent.Has<Script, Transform>(lock)) {
+                    auto &scriptComp = ent.Get<Script>(lock);
+                    glm::vec3 rotationAxis;
+                    rotationAxis.x = scriptComp.GetParam<double>("axis_x");
+                    rotationAxis.y = scriptComp.GetParam<double>("axis_y");
+                    rotationAxis.z = scriptComp.GetParam<double>("axis_z");
+                    auto rotationSpeedRpm = scriptComp.GetParam<double>("speed");
+
+                    auto &transform = ent.Get<Transform>(lock);
+                    auto currentRotation = transform.GetRotation();
+                    transform.SetRotation(glm::rotate(currentRotation,
+                        (float)(rotationSpeedRpm * M_PI * 2.0 / 60.0 * dtSinceLastFrame),
+                        rotationAxis));
                 }
             }},
     };

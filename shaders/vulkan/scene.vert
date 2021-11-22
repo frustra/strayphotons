@@ -22,7 +22,13 @@ layout(push_constant) uniform PushConstants {
 
 void main() {
 	ViewState view = views[gl_ViewID_OVR];
-	vec4 viewPos4 = view.viewMat * modelMat * vec4(inPosition, 1.0);
+
+	vec4 playerPos = view.invViewMat * vec4(vec3(0.0), 1.0);
+	vec4 worldPos = modelMat * vec4(inPosition, 1.0);
+	float deltaPos = worldPos.x - playerPos.x;
+	worldPos.y += (deltaPos * deltaPos) * 0.0035;
+
+	vec4 viewPos4 = view.viewMat * worldPos;
 	outViewPos = vec3(viewPos4) / viewPos4.w;
 	gl_Position = view.projMat * viewPos4;
 

@@ -91,6 +91,12 @@
             "transform": {
                 "scale": [0.1, 1, 0.1]
             },
+            "script": {
+                "onTick": ["relative_movement"],
+                "parameters": {
+                    "target": "player.vr-controller-right"
+                }
+            },
             "renderable": "box"
         },
         {
@@ -101,8 +107,8 @@
             },
             "signal_output": {
                 "on": 0,
-                "angle": 30,
-                "intensity": 200
+                "angle": 50,
+                "intensity": 50
             },
             "focus": "GAME",
             "event_input": [
@@ -116,11 +122,9 @@
                 "tint": [1, 1, 1],
                 "intensity": 100,
                 "spotAngle": 20,
-                "on": false
-            },
-            "view": {
-                "extents": [512, 512],
-                "clip": [0.1, 64]
+                "on": false,
+				"shadowMapSize": 11,
+				"shadowMapClip": [0.1, 64]
             }
         }
     ]

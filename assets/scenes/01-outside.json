@@ -110,10 +110,8 @@
 			},
 			"signal_output": {},
 			"trigger_area": {
-				"triggers": {
-					"player": {
-						"command": "setsignal global.airlock1-2-in.door_open 0; addscene 02-mirrors"
-					}
+				"player": {
+					"command": "setsignal global.airlock1-2-in.door_open 0; addscene 02-mirrors"
 				}
 			}
 		},
