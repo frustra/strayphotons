@@ -240,8 +240,8 @@ namespace sp::vulkan {
             }
 
             for (int i = std::max(pass.scopes.size(), resources.scopeStack.size()) - 1; i >= 0; i--) {
-                uint8 passScope = i < (int)pass.scopes.size() ? pass.scopes[i] : ~0u;
-                uint8 resScope = i < (int)resources.scopeStack.size() ? resources.scopeStack[i] : ~0u;
+                uint8 passScope = i < (int)pass.scopes.size() ? pass.scopes[i] : 255;
+                uint8 resScope = i < (int)resources.scopeStack.size() ? resources.scopeStack[i] : 255;
                 if (resScope != passScope) {
                     if (resScope != 255) phaseScopes.pop();
                     if (passScope != 255) {

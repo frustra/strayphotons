@@ -586,7 +586,7 @@ namespace sp::vulkan {
                 }
             } else if (guiEvent.type == Tecs::EventType::ADDED) {
                 const auto &guiComponent = eventEntity.Get<ecs::Gui>(lock);
-                guis.emplace_back(guiEvent.entity, make_shared<GuiRenderer>(device, *guiComponent.manager));
+                guis.emplace_back(RenderableGui{guiEvent.entity, make_shared<GuiRenderer>(device, *guiComponent.manager)});
             }
         }
 
