@@ -103,7 +103,7 @@ namespace sp::vulkan {
         uint32 flushFrameIndex = (frameIndex + frames.size() - 2) % frames.size();
         auto &frame = frames[flushFrameIndex];
 
-        FlushResults(frame);
+        if (!FlushResults(frame)) return;
 
         if (frame.requiredQueryCount > frame.queryCount) {
             vk::QueryPoolCreateInfo createInfo;
@@ -123,8 +123,8 @@ namespace sp::vulkan {
         }
     }
 
-    void PerfTimer::FlushResults(FrameContext &frame) {
-        if (!frame.queryPool || frame.queryCount == 0) return;
+    bool PerfTimer::FlushResults(FrameContext &frame) {
+        if (!frame.queryPool || frame.queryCount == 0) return true;
 
         auto queryCount = frame.queryOffset;
         frame.gpuTimestamps.resize(queryCount);
@@ -137,7 +137,7 @@ namespace sp::vulkan {
             sizeof(uint64),
             vk::QueryResultFlagBits::e64);
 
-        Assert(gpuQueryResult != vk::Result::eNotReady, "perf timer underflow, results not ready");
+        if (gpuQueryResult == vk::Result::eNotReady) return false;
 
         while (!frame.pending.empty()) {
             auto query = frame.pending.front();
@@ -192,6 +192,7 @@ namespace sp::vulkan {
 
         lastCompleteFrame = frame.results;
         frame.results.clear();
+        return true;
     }
 
     bool PerfTimer::Active() {
