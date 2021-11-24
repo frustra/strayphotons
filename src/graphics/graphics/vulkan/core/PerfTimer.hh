@@ -85,6 +85,6 @@ namespace sp::vulkan {
             return frames[frameIndex];
         }
 
-        void FlushResults(FrameContext &frame);
+        bool FlushResults(FrameContext &frame);
     };
 } // namespace sp::vulkan
