@@ -4,6 +4,7 @@
 			name: 'airlock1-2',
 			translate: [0, 0.0, 1.5],
 			rotate: [180, 0, 1, 0],
+			scene_connection: "01-outside",
 			triggers: {
 				"player": {
 					"command": "r.MirrorRecursion 1; setsignal global.airlock1-2-out.door_open 1; wait 2000 removescene 01-outside"
@@ -15,6 +16,7 @@
 			translate: [10.5, 0, -3],
 			rotate: [-90, 0, 1, 0],
 			in_signal: "02-mirrors.sensor2",
+			scene_connection: "03-dark",
 			triggers: {
 				"player": {
 					"command": "setsignal global.airlock2-3-in.door_open 0; addscene 03-dark"

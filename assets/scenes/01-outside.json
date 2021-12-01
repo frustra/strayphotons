@@ -88,7 +88,7 @@
 					-7
 				]
 			},
-			"scene_connection": {},
+			"scene_connection": "02-mirrors",
 			"physics": {
 				"model": "airlock",
 				"dynamic": false

@@ -8,6 +8,7 @@
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <glm/glm.hpp>
@@ -21,7 +22,8 @@ namespace sp {
     }
 
     SceneManager::SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld)
-        : liveWorld(liveWorld), stagingWorld(stagingWorld) {
+        : RegisteredThread("SceneManager", std::chrono::milliseconds(1000)), liveWorld(liveWorld),
+          stagingWorld(stagingWorld) {
         funcs.Register(this, "loadscene", "Load a scene and replace current scenes", &SceneManager::LoadScene);
         funcs.Register<std::string>("addscene", "Load a scene", [this](std::string sceneName) {
             AddScene(sceneName);
@@ -30,6 +32,35 @@ namespace sp {
         funcs.Register(this, "reloadscene", "Reload current scene", &SceneManager::ReloadScene);
         funcs.Register(this, "respawn", "Respawn the player", &SceneManager::RespawnPlayer);
         funcs.Register(this, "printscene", "Print info about currently loaded scenes", &SceneManager::PrintScene);
+
+        StartThread();
+    }
+
+    void SceneManager::Frame() {
+        auto lock = liveWorld.StartTransaction<ecs::Read<ecs::Name,
+            ecs::SceneConnection,
+            ecs::SignalOutput,
+            ecs::SignalBindings,
+            ecs::FocusLayer,
+            ecs::FocusLock>>();
+
+        std::vector<std::string> requiredList;
+        for (auto &ent : lock.EntitiesWith<ecs::SceneConnection>()) {
+            auto loadSignal = ecs::SignalBindings::GetSignal(lock, ent, "load_scene_connection");
+            if (loadSignal >= 0.5) {
+                auto &connection = ent.Get<ecs::SceneConnection>(lock);
+                for (auto &sceneName : connection.scenes) {
+                    if (std::find(requiredList.begin(), requiredList.end(), sceneName) == requiredList.end()) {
+                        requiredList.emplace_back(sceneName);
+                    }
+                }
+            }
+        }
+
+        Logf("Required list:");
+        for (auto &sceneName : requiredList) {
+            Logf("  %s", sceneName);
+        }
     }
 
     void SceneManager::LoadSceneJson(const std::string &sceneName,

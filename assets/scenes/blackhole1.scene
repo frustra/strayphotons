@@ -119,14 +119,14 @@
 			"transform": {
 				"translate": [5, 1.25, 0.25]
 			},
-			"scene_connection": {}
+			"scene_connection": "blackhole2"
 		},
 		{
 			"_name": "global.transition4-1",
 			"transform": {
 				"translate": [-5, 1.25, 0.25]
 			},
-			"scene_connection": {}
+			"scene_connection": "blackhole4"
 		},
 		{
 			"transform": {

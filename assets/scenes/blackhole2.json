@@ -1241,7 +1241,7 @@
 					0.25
 				]
 			},
-			"scene_connection": {}
+			"scene_connection": "blackhole3"
 		},
 		{
 			"_name": "global.transition1-2",
@@ -1252,7 +1252,7 @@
 					0.25
 				]
 			},
-			"scene_connection": {}
+			"scene_connection": "blackhole1"
 		},
 		{
 			"transform": {

@@ -16,7 +16,7 @@
 					9
 				]
 			},
-			"scene_connection": {},
+			"scene_connection": "03-dark",
 			"physics": {
 				"model": "airlock",
 				"dynamic": false
@@ -286,7 +286,7 @@
 					-3
 				]
 			},
-			"scene_connection": {},
+			"scene_connection": [],
 			"physics": {
 				"model": "airlock",
 				"dynamic": false

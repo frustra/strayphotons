@@ -1,6 +1,7 @@
 #pragma once
 
 #include "console/CFunc.hh"
+#include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/components/SceneInfo.hh"
 
@@ -15,9 +16,11 @@ namespace sp {
 
     static const char *const InputBindingConfigPath = "input_bindings.json";
 
-    class SceneManager {
+    class SceneManager : public RegisteredThread {
     public:
         SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld);
+
+        void Frame() override;
 
         void LoadSceneJson(const std::string &name,
             ecs::SceneInfo::Priority priority,

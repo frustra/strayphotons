@@ -16,7 +16,7 @@
 					1.5
 				]
 			},
-			"scene_connection": {},
+			"scene_connection": "02-mirrors",
 			"physics": {
 				"model": "airlock",
 				"dynamic": false
@@ -286,7 +286,7 @@
 					12
 				]
 			},
-			"scene_connection": {},
+			"scene_connection": "04-symmetry",
 			"physics": {
 				"model": "airlock",
 				"dynamic": false

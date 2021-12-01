@@ -120,7 +120,7 @@
 				"translate": [5, 1.25, 0.25],
 				"scale": [1, 2.5, 1.5]
 			},
-			"scene_connection": {}
+			"scene_connection": "blackhole1"
 		},
 		{
 			"_name": "global.transition3-4",
@@ -128,7 +128,7 @@
 				"translate": [-5, 1.25, 0.25],
 				"scale": [1, 2.5, 1.5]
 			},
-			"scene_connection": {}
+			"scene_connection": "blackhole3"
 		},
 		{
 			"transform": {

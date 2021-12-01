@@ -91,12 +91,6 @@
             "transform": {
                 "scale": [0.1, 1, 0.1]
             },
-            "script": {
-                "onTick": ["relative_movement"],
-                "parameters": {
-                    "target": "player.vr-controller-right"
-                }
-            },
             "renderable": "box"
         },
         {
@@ -120,9 +114,6 @@
             },
             "light": {
                 "tint": [1, 1, 1],
-                "intensity": 100,
-                "spotAngle": 20,
-                "on": false,
 				"shadowMapSize": 11,
 				"shadowMapClip": [0.1, 64]
             }

@@ -168,7 +168,7 @@ namespace ecs {
                         movement.z = std::clamp(movement.z, -1.0f, 1.0f);
 
                         if (target.Has<Transform>(lock)) {
-                            auto &parentTransform = target.Get<Transform>(lock);
+                            auto &parentTransform = target.Get<const Transform>(lock);
                             auto parentRotation = parentTransform.GetGlobalRotation(lock);
                             movement = parentRotation * movement;
                             if (std::abs(movement.y) > 0.999) {

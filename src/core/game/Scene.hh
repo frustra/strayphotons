@@ -102,6 +102,20 @@ namespace sp {
     }
 
     template<>
+    inline void Scene::CopyComponent<ecs::SceneConnection>(ecs::Lock<ecs::ReadAll> src,
+        Tecs::Entity srcEnt,
+        ecs::Lock<ecs::AddRemove> dst,
+        Tecs::Entity dstEnt) {
+        if (srcEnt.Has<ecs::SceneConnection>(src)) {
+            auto &srcConnection = srcEnt.Get<ecs::SceneConnection>(src);
+            auto &dstConnection = dstEnt.Get<ecs::SceneConnection>(dst);
+            for (auto &scene : srcConnection.scenes) {
+                if (!dstConnection.HasScene(scene)) dstConnection.scenes.emplace_back(scene);
+            }
+        }
+    }
+
+    template<>
     inline void Scene::CopyComponent<ecs::SignalBindings>(ecs::Lock<ecs::ReadAll> src,
         Tecs::Entity srcEnt,
         ecs::Lock<ecs::AddRemove> dst,
