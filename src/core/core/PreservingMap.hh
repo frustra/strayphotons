@@ -84,5 +84,13 @@ namespace sp {
                 return nullptr;
             }
         }
+
+        void ForEach(std::function<void(const K &, std::shared_ptr<V>)> callback) {
+            std::shared_lock lock(mutex);
+
+            for (auto &[key, value] : storage) {
+                if (value.value) callback(key, value.value);
+            }
+        }
     };
 } // namespace sp

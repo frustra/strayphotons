@@ -47,7 +47,7 @@ namespace sp {
         Logf("Applying scene: %s", sceneName);
         for (auto e : staging.EntitiesWith<ecs::SceneInfo>()) {
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
-            if (sceneInfo.scene.get() != this) continue;
+            if (sceneInfo.scene.lock().get() != this) continue;
             Assert(sceneInfo.stagingId == e, "Expected staging entity to match SceneInfo.stagingId");
 
             // Skip entities that have already been added
@@ -81,7 +81,7 @@ namespace sp {
         for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(staging)) continue;
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
-            if (sceneInfo.scene.get() != this) continue;
+            if (sceneInfo.scene.lock().get() != this) continue;
             Assert(sceneInfo.stagingId == e, "Expected staging entity to match SceneInfo.stagingId");
 
             if (sceneInfo.liveId) {
@@ -99,7 +99,7 @@ namespace sp {
         for (auto &e : live.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(live)) continue;
             auto &sceneInfo = e.Get<ecs::SceneInfo>(live);
-            if (sceneInfo.scene.get() != this) continue;
+            if (sceneInfo.scene.lock().get() != this) continue;
             Assert(sceneInfo.liveId == e, "Expected live entity to match SceneInfo.liveId");
 
             if (!sceneInfo.stagingId) e.Destroy(live);

@@ -46,7 +46,7 @@ namespace ecs {
             sp::Scene *scene = nullptr;
             if (dst.Has<SceneInfo>(lock)) {
                 auto &sceneInfo = dst.Get<SceneInfo>(lock);
-                scene = sceneInfo.scene.get();
+                scene = sceneInfo.scene.lock().get();
             }
             auto &comp = dst.Set<CompType>(lock);
             return Load(scene, comp, src);
@@ -56,7 +56,7 @@ namespace ecs {
             sp::Scene *scene = nullptr;
             if (dst.Has<SceneInfo>(lock)) {
                 auto &sceneInfo = dst.Get<SceneInfo>(lock);
-                scene = sceneInfo.scene.get();
+                scene = sceneInfo.scene.lock().get();
             }
             auto &comp = dst.Get<CompType>(lock);
             return Load(scene, comp, src);

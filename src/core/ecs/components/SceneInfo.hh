@@ -26,10 +26,6 @@ namespace ecs {
             : liveId(liveId), priority(sceneInfo.priority), scene(sceneInfo.scene) {}
         SceneInfo(Priority priority, const std::shared_ptr<sp::Scene> &scene) : priority(priority), scene(scene) {}
 
-        inline bool operator==(const SceneInfo &other) const {
-            return scene == other.scene;
-        }
-
         // Should be called on the live SceneInfo
         void InsertWithPriority(Lock<Write<SceneInfo>> staging, const SceneInfo &stagingInfo);
 
@@ -39,6 +35,6 @@ namespace ecs {
 
         Tecs::Entity liveId, stagingId, nextStagingId;
         Priority priority = Priority::Scene;
-        std::shared_ptr<sp::Scene> scene;
+        std::weak_ptr<sp::Scene> scene;
     };
 } // namespace ecs

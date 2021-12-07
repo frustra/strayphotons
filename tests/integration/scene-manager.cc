@@ -31,8 +31,9 @@ namespace SceneManagerTests {
         AssertEqual(liveSceneInfo.nextStagingId,
             rootSceneInfo.nextStagingId,
             "Live SceneInfo.nextStagingId does not match");
-        Assert(rootSceneInfo.scene != nullptr, "Expected entity to have valid Scene");
-        AssertEqual(rootSceneInfo.scene->sceneName, *sceneNames.begin(), "Entity scene does not match expected");
+        auto rootScene = rootSceneInfo.scene.lock();
+        Assert(rootScene != nullptr, "Expected entity to have valid Scene");
+        AssertEqual(rootScene->sceneName, *sceneNames.begin(), "Entity scene does not match expected");
 
         for (auto &sceneName : sceneNames) {
             Assertf(!!ent, "Expected entity to exist: %u", ent.id);
@@ -40,8 +41,9 @@ namespace SceneManagerTests {
             auto &sceneInfo = ent.Get<ecs::SceneInfo>(stagingLock);
             AssertEqual(sceneInfo.liveId, liveEnt, "Staging SceneInfo.liveId does not match");
             AssertEqual(sceneInfo.stagingId, ent, "Staging SceneInfo.stagingId does not match");
-            Assert(sceneInfo.scene != nullptr, "Expected entity to have valid Scene");
-            AssertEqual(sceneInfo.scene->sceneName, sceneName, "Entity scene does not match expected");
+            auto scene = sceneInfo.scene.lock();
+            Assert(scene != nullptr, "Expected entity to have valid Scene");
+            AssertEqual(scene->sceneName, sceneName, "Entity scene does not match expected");
             ent = sceneInfo.nextStagingId;
         }
         Assert(!ent, "Expected no more entity scenes");
@@ -86,15 +88,16 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Unload player scene (primary player entity)");
-            auto player = Scenes.GetPlayer();
             std::shared_ptr<sp::Scene> playerScene;
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
                 auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+
+                auto player = ecs::EntityWith<ecs::Name>(liveLock, "player.player");
                 Assert(player.Has<ecs::Name, ecs::SceneInfo>(liveLock), "Expected player entity to be valid");
                 AssertEqual(player.Get<ecs::Name>(liveLock), "player.player", "Expected player to be named correctly");
                 auto &playerSceneInfo = player.Get<ecs::SceneInfo>(liveLock);
-                playerScene = playerSceneInfo.scene;
+                playerScene = playerSceneInfo.scene.lock();
                 Assert(playerScene != nullptr, "Expected player to have a scene");
                 AssertEqual(playerScene->sceneName, "player", "Expected player scene to be named correctly");
                 playerScene->RemoveScene(stagingLock, liveLock);
