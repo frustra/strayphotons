@@ -92,8 +92,8 @@ namespace sp {
                 }
             }
         }
-        loadedModels.Tick();
-        loadedAssets.Tick();
+        loadedModels.Tick(this->interval);
+        loadedAssets.Tick(this->interval);
     }
 
     void AssetManager::UpdateTarIndex() {

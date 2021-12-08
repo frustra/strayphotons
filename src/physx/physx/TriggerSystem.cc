@@ -18,9 +18,7 @@ namespace sp {
             for (auto triggerEnt : lock.EntitiesWith<ecs::TriggerGroup>()) {
                 if (!triggerEnt.Has<ecs::TriggerGroup, ecs::Transform>(lock)) continue;
 
-                auto triggerGroup = triggerEnt.Get<ecs::TriggerGroup>(lock);
-                Assert(triggerGroup < ecs::TriggerGroup::COUNT, "Entity has invalid trigger group");
-                auto &trigger = area.triggers[(size_t)triggerGroup];
+                auto &trigger = area.triggers[triggerEnt.Get<ecs::TriggerGroup>(lock)];
 
                 auto &transform = triggerEnt.Get<ecs::Transform>(lock);
                 auto entityPos = glm::vec3(areaTransform * glm::vec4(transform.GetGlobalPosition(lock), 1.0));

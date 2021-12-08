@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/EnumArray.hh"
 #include "ecs/Components.hh"
 
 #include <glm/glm.hpp>
@@ -7,9 +8,9 @@
 
 namespace ecs {
     enum class TriggerGroup : uint8_t {
-        PLAYER = 0,
-        OBJECT,
-        COUNT,
+        Player = 0,
+        Object,
+        Count,
     };
 
     struct TriggerArea {
@@ -18,7 +19,7 @@ namespace ecs {
 
             robin_hood::unordered_flat_set<Tecs::Entity> entities;
         };
-        std::array<Trigger, (size_t)TriggerGroup::COUNT> triggers;
+        sp::EnumArray<Trigger, TriggerGroup> triggers;
     };
 
     static Component<TriggerGroup> ComponentTriggerGroup("trigger_group");

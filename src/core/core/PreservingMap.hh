@@ -23,11 +23,10 @@ namespace sp {
 
         struct TimedValue {
             TimedValue() {}
-            TimedValue(const std::shared_ptr<V> &value)
-                : value(value), last_use(chrono_clock::now().time_since_epoch().count()) {}
+            TimedValue(const std::shared_ptr<V> &value) : value(value), last_use(0) {}
 
             std::shared_ptr<V> value;
-            std::atomic_int64_t last_use;
+            std::atomic_uint64_t last_use;
         };
 
         LockFreeMutex mutex;
@@ -36,19 +35,16 @@ namespace sp {
     public:
         PreservingMap() {}
 
-        void Tick() {
+        void Tick(chrono_clock::duration tickInterval) {
             std::vector<K> cleanupList;
             {
                 std::shared_lock lock(mutex);
                 for (auto &[key, timed] : storage) {
                     if (timed.value.use_count() == 1) {
-                        auto age = chrono_clock::now() -
-                                   chrono_clock::time_point(std::chrono::steady_clock::duration(timed.last_use.load()));
-                        auto ageMs = std::chrono::duration_cast<std::chrono::milliseconds>(age).count();
-
-                        if (ageMs > PreserveAgeMilliseconds) cleanupList.emplace_back(key);
+                        auto intervalMs = std::chrono::duration_cast<std::chrono::milliseconds>(tickInterval).count();
+                        if ((timed.last_use += intervalMs) > PreserveAgeMilliseconds) cleanupList.emplace_back(key);
                     } else {
-                        timed.last_use = chrono_clock::now().time_since_epoch().count();
+                        timed.last_use = 0;
                     }
                 }
             }
@@ -68,7 +64,7 @@ namespace sp {
             auto [it, inserted] = storage.emplace(key, source);
             if (!inserted) {
                 Assert(allowReplace, "Tried to register existing value in PreservingMap");
-                it->second.last_use = chrono_clock::now().time_since_epoch().count();
+                it->second.last_use = 0;
                 it->second.value = source;
             }
         }
@@ -78,18 +74,10 @@ namespace sp {
 
             auto it = storage.find(key);
             if (it != storage.end()) {
-                it->second.last_use = chrono_clock::now().time_since_epoch().count();
+                it->second.last_use = 0;
                 return it->second.value;
             } else {
                 return nullptr;
-            }
-        }
-
-        void ForEach(std::function<void(const K &, std::shared_ptr<V>)> callback) {
-            std::shared_lock lock(mutex);
-
-            for (auto &[key, value] : storage) {
-                if (value.value) callback(key, value.value);
             }
         }
     };

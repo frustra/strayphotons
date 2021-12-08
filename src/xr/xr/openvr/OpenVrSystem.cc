@@ -20,9 +20,9 @@
 namespace sp::xr {
     vr::EVREye MapXrEyeToOpenVr(ecs::XrEye eye) {
         switch (eye) {
-        case ecs::XrEye::LEFT:
+        case ecs::XrEye::Left:
             return vr::Eye_Left;
-        case ecs::XrEye::RIGHT:
+        case ecs::XrEye::Right:
             return vr::Eye_Right;
         default:
             Abort("Unknown XrEye enum: " + std::to_string((size_t)eye));
@@ -32,7 +32,7 @@ namespace sp::xr {
     OpenVrSystem::~OpenVrSystem() {
         StopThread();
 
-        GetSceneManager().RemoveSystemScene("vr-system");
+        GetSceneManager().RemoveScene("vr-system");
         vrSystem.reset();
     }
 
@@ -90,10 +90,12 @@ namespace sp::xr {
                 }
 
                 for (size_t i = 0; i < views.size(); i++) {
+                    auto eye = (ecs::XrEye)i;
+
                     auto ent = lock.NewEntity();
-                    ent.Set<ecs::Name>(lock, views[i].Name());
+                    ent.Set<ecs::Name>(lock, views[eye].Name());
                     ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
-                    ent.Set<ecs::XRView>(lock, (ecs::XrEye)i);
+                    ent.Set<ecs::XRView>(lock, eye);
 
                     auto &transform = ent.Set<ecs::Transform>(lock);
                     transform.SetParent(vrOrigin);
@@ -101,9 +103,7 @@ namespace sp::xr {
                     auto &view = ent.Set<ecs::View>(lock);
                     view.extents = {vrWidth, vrHeight};
                     view.clip = {0.1, 256};
-                    auto projMatrix = vrSystem->GetProjectionMatrix(MapXrEyeToOpenVr((ecs::XrEye)i),
-                        view.clip.x,
-                        view.clip.y);
+                    auto projMatrix = vrSystem->GetProjectionMatrix(MapXrEyeToOpenVr(eye), view.clip.x, view.clip.y);
                     view.SetProjMat(glm::transpose(glm::make_mat4((float *)projMatrix.m)));
                     view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_EYE);
                 }

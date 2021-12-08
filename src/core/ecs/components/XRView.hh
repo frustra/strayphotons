@@ -4,15 +4,15 @@
 
 namespace ecs {
     enum class XrEye : size_t {
-        LEFT = 0,
-        RIGHT,
-        EYE_COUNT,
+        Left = 0,
+        Right,
+        Count,
     };
 
     struct XRView {
         XrEye eye;
 
-        XRView() : eye(XrEye::EYE_COUNT) {}
+        XRView() : eye(XrEye::Count) {}
         XRView(XrEye eye) : eye(eye) {}
     };
 

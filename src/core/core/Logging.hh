@@ -7,6 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 #define Debugf(...) ::sp::logging::Debug(__FILE__, __LINE__, __VA_ARGS__)
 #define Logf(...) ::sp::logging::Log(__FILE__, __LINE__, __VA_ARGS__)
@@ -27,8 +28,16 @@ namespace sp::logging {
         return file;
     }
 
+    template<typename T>
+    struct stringify : std::false_type {
+        static const char *to_string(T &&t) {
+            Abort("stringify::to_string called on invalid type");
+        };
+    };
+
     // Convert all std::strings to const char* using constexpr if (C++17)
     // Source: https://gist.github.com/Zitrax/a2e0040d301bf4b8ef8101c0b1e3f1d5
+    // Modified to add custom stringify overload
     template<typename T>
     auto convert(T &&t) {
         if constexpr (std::is_same<std::remove_cv_t<std::remove_reference_t<T>>, std::string>::value) {
@@ -36,6 +45,8 @@ namespace sp::logging {
         } else if constexpr (std::is_same<std::remove_cv_t<std::remove_reference_t<T>>, std::string_view>::value) {
             Assert(t.data()[t.size()] == '\0', "string_view is not null terminated");
             return std::forward<T>(t).data();
+        } else if constexpr (stringify<T>::value) {
+            return stringify<T>::to_string(std::forward<T>(t));
         } else {
             return std::forward<T>(t);
         }

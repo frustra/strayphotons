@@ -1,10 +1,12 @@
 #pragma once
 
 #include "console/CFunc.hh"
+#include "core/EnumArray.hh"
 #include "core/PreservingMap.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/components/SceneInfo.hh"
+#include "game/SceneType.hh"
 
 #include <functional>
 #include <memory>
@@ -24,11 +26,12 @@ namespace sp {
 
         void AddSystemScene(std::string sceneName,
             std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback);
-        void RemoveSystemScene(std::string sceneName);
 
         void LoadScene(std::string name);
         void ReloadScene(std::string name);
-        void AddScene(std::string name, std::function<void(std::shared_ptr<Scene>)> callback = nullptr);
+        void AddScene(std::string name,
+            SceneType sceneType,
+            std::function<void(std::shared_ptr<Scene>)> callback = nullptr);
         void RemoveScene(std::string name);
 
         Tecs::Entity LoadPlayer();
@@ -42,6 +45,7 @@ namespace sp {
         void Frame() override;
 
         void LoadSceneJson(const std::string &name,
+            SceneType sceneType,
             ecs::SceneInfo::Priority priority,
             std::function<void(std::shared_ptr<Scene>)> callback);
         void LoadBindingsJson(std::function<void(std::shared_ptr<Scene>)> callback);
@@ -53,9 +57,9 @@ namespace sp {
 
         std::shared_mutex liveMutex;
 
-        PreservingMap<std::string, Scene> stagingScenes;
-        robin_hood::unordered_flat_map<std::string, std::shared_ptr<Scene>> scenes;
-        robin_hood::unordered_flat_map<std::string, std::shared_ptr<Scene>> systemScenes;
+        PreservingMap<std::string, Scene> stagedScenes;
+        using SceneList = std::vector<std::shared_ptr<Scene>>;
+        EnumArray<SceneList, SceneType> scenes;
         std::shared_ptr<Scene> playerScene, bindingsScene;
         CFuncCollection funcs;
     };

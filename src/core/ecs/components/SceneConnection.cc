@@ -8,7 +8,7 @@
 namespace ecs {
     template<>
     bool Component<SceneConnection>::Load(sp::Scene *scene, SceneConnection &dst, const picojson::value &src) {
-        if (scene != nullptr) dst.scenes.emplace_back(scene->sceneName);
+        if (scene != nullptr) dst.scenes.emplace_back(scene->name);
 
         if (src.is<std::string>()) {
             dst.scenes.emplace_back(src.get<std::string>());

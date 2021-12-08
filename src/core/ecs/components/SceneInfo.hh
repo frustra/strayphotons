@@ -6,7 +6,7 @@
 
 namespace sp {
     class Scene;
-}
+} // namespace sp
 
 namespace ecs {
     struct SceneInfo {

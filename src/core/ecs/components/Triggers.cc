@@ -11,9 +11,9 @@ namespace ecs {
         auto group = src.get<std::string>();
         sp::to_upper(group);
         if (group == "PLAYER") {
-            trigger = TriggerGroup::PLAYER;
+            trigger = TriggerGroup::Player;
         } else if (group == "OBJECT") {
-            trigger = TriggerGroup::OBJECT;
+            trigger = TriggerGroup::Object;
         } else {
             Errorf("Unknown trigger group: %s", group);
             return false;
@@ -27,15 +27,15 @@ namespace ecs {
             auto groupStr = sp::to_upper_copy(groupObj.first);
             TriggerGroup group;
             if (groupStr == "PLAYER") {
-                group = TriggerGroup::PLAYER;
+                group = TriggerGroup::Player;
             } else if (groupStr == "OBJECT") {
-                group = TriggerGroup::OBJECT;
+                group = TriggerGroup::Object;
             } else {
                 Errorf("Unknown trigger group: %s", groupStr);
                 return false;
             }
 
-            auto &trigger = area.triggers[(size_t)group];
+            auto &trigger = area.triggers[group];
             for (auto triggerParam : groupObj.second.get<picojson::object>()) {
                 if (triggerParam.first == "command") {
                     trigger.command = triggerParam.second.get<string>();

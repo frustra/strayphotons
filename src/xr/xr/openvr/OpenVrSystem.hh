@@ -46,7 +46,7 @@ namespace sp {
             std::shared_ptr<EventHandler> eventHandler;
             std::shared_ptr<InputBindings> inputBindings;
 
-            std::array<ecs::NamedEntity, (size_t)ecs::XrEye::EYE_COUNT> views = {
+            EnumArray<ecs::NamedEntity, ecs::XrEye> views = {
                 ecs::NamedEntity("vr-eye-left"),
                 ecs::NamedEntity("vr-eye-right"),
             };

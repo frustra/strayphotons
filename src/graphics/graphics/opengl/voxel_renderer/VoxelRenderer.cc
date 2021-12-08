@@ -741,7 +741,7 @@ namespace sp {
     }
 
     void VoxelRenderer::EndFrame() {
-        activeModels.Tick();
+        activeModels.Tick(std::chrono::milliseconds(11)); // TODO: look up the target framerate
     }
 
     void VoxelRenderer::SetRenderTargets(size_t attachmentCount, GLRenderTarget **attachments, GLRenderTarget *depth) {

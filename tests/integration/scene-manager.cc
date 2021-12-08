@@ -33,7 +33,7 @@ namespace SceneManagerTests {
             "Live SceneInfo.nextStagingId does not match");
         auto rootScene = rootSceneInfo.scene.lock();
         Assert(rootScene != nullptr, "Expected entity to have valid Scene");
-        AssertEqual(rootScene->sceneName, *sceneNames.begin(), "Entity scene does not match expected");
+        AssertEqual(rootScene->name, *sceneNames.begin(), "Entity scene does not match expected");
 
         for (auto &sceneName : sceneNames) {
             Assertf(!!ent, "Expected entity to exist: %u", ent.id);
@@ -43,7 +43,7 @@ namespace SceneManagerTests {
             AssertEqual(sceneInfo.stagingId, ent, "Staging SceneInfo.stagingId does not match");
             auto scene = sceneInfo.scene.lock();
             Assert(scene != nullptr, "Expected entity to have valid Scene");
-            AssertEqual(scene->sceneName, sceneName, "Entity scene does not match expected");
+            AssertEqual(scene->name, sceneName, "Entity scene does not match expected");
             ent = sceneInfo.nextStagingId;
         }
         Assert(!ent, "Expected no more entity scenes");
@@ -99,7 +99,7 @@ namespace SceneManagerTests {
                 auto &playerSceneInfo = player.Get<ecs::SceneInfo>(liveLock);
                 playerScene = playerSceneInfo.scene.lock();
                 Assert(playerScene != nullptr, "Expected player to have a scene");
-                AssertEqual(playerScene->sceneName, "player", "Expected player scene to be named correctly");
+                AssertEqual(playerScene->name, "player", "Expected player scene to be named correctly");
                 playerScene->RemoveScene(stagingLock, liveLock);
             }
 
@@ -153,7 +153,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Unload system scene (secondary player entity)");
-            Scenes.RemoveSystemScene("system");
+            Scenes.RemoveScene("system");
 
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();

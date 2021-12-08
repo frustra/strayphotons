@@ -17,7 +17,7 @@ namespace PreservingMapTests {
             std::atomic_bool running = true;
             std::thread ticker([&] {
                 while (running) {
-                    map.Tick();
+                    map.Tick(std::chrono::milliseconds(1));
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 }
             });

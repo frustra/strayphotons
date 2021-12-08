@@ -1,10 +1,12 @@
 #pragma once
 
 #include "core/Common.hh"
+#include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/SceneInfo.hh"
 #include "ecs/components/Transform.hh"
+#include "game/SceneType.hh"
 
 #include <robin_hood.h>
 
@@ -13,12 +15,14 @@ namespace sp {
 
     class Scene : public NonCopyable {
     public:
-        Scene() {}
-        Scene(const string &name) : sceneName(name) {}
-        Scene(const string &name, shared_ptr<const Asset> asset) : sceneName(name), asset(asset) {}
+        Scene() : type(SceneType::Count) {}
+        Scene(const string &name, SceneType type) : name(name), type(type) {}
+        Scene(const string &name, SceneType type, shared_ptr<const Asset> asset)
+            : name(name), type(type), asset(asset) {}
         ~Scene() {}
 
-        const string sceneName;
+        const std::string name;
+        const SceneType type;
         robin_hood::unordered_flat_map<std::string, Tecs::Entity> namedEntities;
 
         void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
@@ -43,7 +47,7 @@ namespace sp {
         }
 
     private:
-        shared_ptr<const Asset> asset;
+        std::shared_ptr<const Asset> asset;
 
         friend class SceneManager;
     };
