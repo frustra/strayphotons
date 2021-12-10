@@ -1,5 +1,18 @@
 {
 	"entities": [
+		{
+			"_name": "zone",
+			"signal_output": {},
+			"transform": {
+				"scale": [10, 5, 10],
+				"translate": [0, 2.5, 0]
+			},
+			"trigger_area": {
+				"player": {
+					"signal": "playerPresent"
+				}
+			}
+		},
 		<% for (var x = -4.5; x <= 4.5; x++) { %>
 		{
 			"__comment": "middle-floor",
@@ -119,35 +132,19 @@
 			"transform": {
 				"translate": [5, 1.25, 0.25]
 			},
-			"scene_connection": "blackhole3"
+			"scene_connection": "blackhole3",
+			"signal_bindings": {
+				"load_scene_connection": {"playerPresent": "blackhole2.zone"}
+			}
 		},
 		{
 			"_name": "global.transition1-2",
 			"transform": {
 				"translate": [-5, 1.25, 0.25]
 			},
-			"scene_connection": "blackhole1"
-		},
-		{
-			"transform": {
-				"parent": "global.transition2-3",
-				"scale": [1, 2.5, 1.5]
-			},
-			"trigger_area": {
-				"player": {
-					"command": "removescene blackhole1"
-				}
-			}
-		},
-		{
-			"transform": {
-				"parent": "global.transition1-2",
-				"scale": [1, 2.5, 1.5]
-			},
-			"trigger_area": {
-				"player": {
-					"command": "addscene blackhole3"
-				}
+			"scene_connection": "blackhole1",
+			"signal_bindings": {
+				"load_scene_connection": {"playerPresent": "blackhole2.zone"}
 			}
 		},
 		{

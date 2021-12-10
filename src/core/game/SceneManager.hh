@@ -23,6 +23,7 @@ namespace sp {
     class SceneManager : public RegisteredThread {
     public:
         SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld);
+        ~SceneManager();
 
         void AddSystemScene(std::string sceneName,
             std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback);
@@ -50,6 +51,8 @@ namespace sp {
             std::function<void(std::shared_ptr<Scene>)> callback);
         void LoadBindingsJson(std::function<void(std::shared_ptr<Scene>)> callback);
 
+        void TranslateSceneByConnection(const std::shared_ptr<Scene> &scene);
+
     private:
         ecs::ECS &liveWorld;
         ecs::ECS &stagingWorld;
@@ -57,11 +60,13 @@ namespace sp {
 
         std::shared_mutex liveMutex;
 
-        PreservingMap<std::string, Scene> stagedScenes;
+        PreservingMap<std::string, Scene, 1000> stagedScenes;
         using SceneList = std::vector<std::shared_ptr<Scene>>;
         EnumArray<SceneList, SceneType> scenes;
         std::shared_ptr<Scene> playerScene, bindingsScene;
         CFuncCollection funcs;
+
+        friend class Scene;
     };
 
     SceneManager &GetSceneManager();

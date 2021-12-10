@@ -1,5 +1,8 @@
 #include "Scene.hh"
 
+#include "core/Logging.hh"
+#include "game/SceneManager.hh"
+
 namespace sp {
     void RebuildComponentsByPriority(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
         ecs::Lock<ecs::AddRemove> live,
@@ -42,6 +45,15 @@ namespace sp {
         RebuildComponentsByPriority(staging, live, e);
     }
 
+    Scene::~Scene() {
+        Logf("Unloading %s scene: %s", type, name);
+        {
+            auto stagingLock = GetSceneManager().stagingWorld.StartTransaction<ecs::AddRemove>();
+            auto liveLock = GetSceneManager().liveWorld.StartTransaction<ecs::AddRemove>();
+            RemoveScene(stagingLock, liveLock);
+        }
+    }
+
     void Scene::ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
         ecs::Lock<ecs::AddRemove> live) {
         Logf("Applying scene: %s", name);
@@ -81,7 +93,8 @@ namespace sp {
         for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(staging)) continue;
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
-            if (sceneInfo.scene.lock().get() != this) continue;
+            auto scenePtr = sceneInfo.scene.lock();
+            if (scenePtr != nullptr && scenePtr.get() != this) continue;
             Assert(sceneInfo.stagingId == e, "Expected staging entity to match SceneInfo.stagingId");
 
             if (sceneInfo.liveId) {

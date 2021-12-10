@@ -19,7 +19,7 @@ namespace sp {
         Scene(const string &name, SceneType type) : name(name), type(type) {}
         Scene(const string &name, SceneType type, shared_ptr<const Asset> asset)
             : name(name), type(type), asset(asset) {}
-        ~Scene() {}
+        ~Scene();
 
         const std::string name;
         const SceneType type;

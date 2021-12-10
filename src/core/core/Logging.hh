@@ -40,13 +40,15 @@ namespace sp::logging {
     // Modified to add custom stringify overload
     template<typename T>
     auto convert(T &&t) {
-        if constexpr (std::is_same<std::remove_cv_t<std::remove_reference_t<T>>, std::string>::value) {
+        using BaseType = std::remove_cv_t<std::remove_reference_t<T>>;
+
+        if constexpr (std::is_same<BaseType, std::string>::value) {
             return std::forward<T>(t).c_str();
-        } else if constexpr (std::is_same<std::remove_cv_t<std::remove_reference_t<T>>, std::string_view>::value) {
+        } else if constexpr (std::is_same<BaseType, std::string_view>::value) {
             Assert(t.data()[t.size()] == '\0', "string_view is not null terminated");
             return std::forward<T>(t).data();
-        } else if constexpr (stringify<T>::value) {
-            return stringify<T>::to_string(std::forward<T>(t));
+        } else if constexpr (stringify<BaseType>::value) {
+            return stringify<BaseType>::to_string(std::forward<T>(t));
         } else {
             return std::forward<T>(t);
         }

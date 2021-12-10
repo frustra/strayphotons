@@ -80,5 +80,31 @@ namespace sp {
                 return nullptr;
             }
         }
+
+        // Returns true if the key was dropped, or if it does not exist
+        // A key can only be dropped if there are no references to it.
+        // Values will have their destructors called inline by the current thread.
+        bool Drop(const K &key) {
+            std::unique_lock lock(mutex);
+
+            auto it = storage.find(key);
+            if (it == storage.end()) return true;
+
+            if (it->second.value.use_count() == 1) {
+                storage.erase(it);
+                return true;
+            }
+            return false;
+        }
+
+        // Removes all values that have no references.
+        // Values will have their destructors called inline by the current thread.
+        void DropAll() {
+            std::unique_lock lock(mutex);
+
+            for (auto it = storage.begin(); it != storage.end(); it++) {
+                if (it->second.value.use_count() == 1) storage.erase(it);
+            }
+        }
     };
 } // namespace sp
