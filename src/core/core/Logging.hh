@@ -37,7 +37,7 @@ namespace sp::logging {
 
     // Convert all std::strings to const char* using constexpr if (C++17)
     // Source: https://gist.github.com/Zitrax/a2e0040d301bf4b8ef8101c0b1e3f1d5
-    // Modified to add custom stringify overload
+    // Modified to support string_view and add custom stringify overload
     template<typename T>
     auto convert(T &&t) {
         using BaseType = std::remove_cv_t<std::remove_reference_t<T>>;
