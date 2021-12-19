@@ -273,9 +273,11 @@ namespace sp {
         std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)> callback) {
         std::shared_lock lock(liveMutex);
 
-        Assertf(stagedScenes.Load(sceneName) == nullptr, "System scene added with duplicate name: %s", sceneName);
-        auto scene = scenes[SceneType::System].emplace_back(std::make_shared<Scene>(sceneName, SceneType::System));
-        stagedScenes.Register(sceneName, scene);
+        auto scene = stagedScenes.Load(sceneName);
+        if (!scene) {
+            scene = scenes[SceneType::System].emplace_back(std::make_shared<Scene>(sceneName, SceneType::System));
+            stagedScenes.Register(sceneName, scene);
+        }
 
         {
             auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();

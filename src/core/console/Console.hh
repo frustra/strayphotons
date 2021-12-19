@@ -21,14 +21,14 @@ namespace sp {
 
     struct ConsoleInputLine {
         string text;
-        chrono_clock::time_point wait_util;
+        chrono_clock::time_point wait_until;
         std::condition_variable *handled;
 
-        ConsoleInputLine(string text, chrono_clock::time_point wait_util, std::condition_variable *handled)
-            : text(text), wait_util(wait_util), handled(handled) {}
+        ConsoleInputLine(string text, chrono_clock::time_point wait_until, std::condition_variable *handled)
+            : text(text), wait_until(wait_until), handled(handled) {}
 
-        bool operator<(const ConsoleInputLine &other) const {
-            return this->wait_util < other.wait_util;
+        auto operator<=>(const ConsoleInputLine &other) const {
+            return this->wait_until <=> other.wait_until;
         }
     };
 
@@ -50,7 +50,7 @@ namespace sp {
         void ParseAndExecute(const string line);
         void Execute(const string cmd, const string &args);
         void QueueParseAndExecute(const string line,
-            chrono_clock::time_point wait_util = chrono_clock::now(),
+            chrono_clock::time_point wait_until = chrono_clock::now(),
             std::condition_variable *handled = nullptr);
         void AddHistory(const string &input);
         vector<string> AllHistory(size_t maxEntries);
@@ -65,7 +65,8 @@ namespace sp {
         std::thread cliInputThread;
 
         std::mutex queueLock;
-        std::priority_queue<ConsoleInputLine> queuedCommands;
+        std::priority_queue<ConsoleInputLine, std::vector<ConsoleInputLine>, std::greater<ConsoleInputLine>>
+            queuedCommands;
 
         std::mutex linesLock;
         vector<ConsoleLine> outputLines;
