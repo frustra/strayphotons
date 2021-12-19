@@ -23,6 +23,7 @@
 			}
 		},
 		{
+			"_name": "global.airlock3-4-zone",
 			"transform": {
 				"parent": "global.airlock3-4",
 				"translate": [
@@ -293,6 +294,7 @@
 			}
 		},
 		{
+			"_name": "global.airlock4-menu-zone",
 			"transform": {
 				"parent": "global.airlock4-menu",
 				"translate": [

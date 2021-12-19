@@ -6,6 +6,7 @@
 #include "ecs/EcsImpl.hh"
 
 #include <cmath>
+#include <glm/glm.hpp>
 #include <robin_hood.h>
 #include <sstream>
 

@@ -95,6 +95,7 @@
 			}
 		},
 		{
+			"_name": "global.airlock1-2-zone",
 			"transform": {
 				"parent": "global.airlock1-2",
 				"translate": [

@@ -81,7 +81,6 @@ namespace sp {
         if (key == GLFW_KEY_UNKNOWN) return;
 
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
-        // if (ctx->frameLock == nullptr) return;
         Assert(ctx->frameLock != nullptr, "KeyInputCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 

@@ -114,8 +114,8 @@
             },
             "light": {
                 "tint": [1, 1, 1],
-				"shadowMapSize": 11,
-				"shadowMapClip": [0.1, 64]
+                "shadowMapSize": 11,
+                "shadowMapClip": [0.1, 64]
             }
         }
     ]
