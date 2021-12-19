@@ -33,7 +33,29 @@ namespace ecs {
                 }
             } else if (param.first == "parameters") {
                 for (auto scriptParam : param.second.get<picojson::object>()) {
-                    if (scriptParam.second.is<std::string>()) {
+                    if (scriptParam.second.is<picojson::array>()) {
+                        auto array = scriptParam.second.get<picojson::array>();
+                        if (array.empty()) continue;
+                        if (array.front().is<std::string>()) {
+                            std::vector<std::string> list;
+                            for (auto arrayParam : array) {
+                                list.emplace_back(arrayParam.get<std::string>());
+                            }
+                            dst.SetParam(scriptParam.first, list);
+                        } else if (array.front().is<bool>()) {
+                            std::vector<bool> list;
+                            for (auto arrayParam : array) {
+                                list.emplace_back(arrayParam.get<bool>());
+                            }
+                            dst.SetParam(scriptParam.first, list);
+                        } else if (array.front().is<double>()) {
+                            std::vector<double> list;
+                            for (auto arrayParam : array) {
+                                list.emplace_back(arrayParam.get<double>());
+                            }
+                            dst.SetParam(scriptParam.first, list);
+                        }
+                    } else if (scriptParam.second.is<std::string>()) {
                         dst.SetParam(scriptParam.first, scriptParam.second.get<std::string>());
                     } else if (scriptParam.second.is<bool>()) {
                         dst.SetParam(scriptParam.first, scriptParam.second.get<bool>());

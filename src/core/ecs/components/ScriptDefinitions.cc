@@ -244,5 +244,16 @@ namespace ecs {
                         rotationAxis));
                 }
             }},
+        {"latch_signals",
+            [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+                if (ent.Has<Script, SignalOutput>(lock)) {
+                    auto &scriptComp = ent.Get<Script>(lock);
+                    auto &signalOutput = ent.Get<SignalOutput>(lock);
+                    for (auto &latchName : scriptComp.GetParam<std::vector<std::string>>("latches_names")) {
+                        auto value = ecs::SignalBindings::GetSignal(lock, ent, latchName);
+                        if (value >= 0.5) signalOutput.SetSignal(latchName, value);
+                    }
+                }
+            }},
     };
 } // namespace ecs

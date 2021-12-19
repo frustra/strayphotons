@@ -26,7 +26,7 @@ namespace ecs {
 
     class SignalBindings {
     public:
-        enum class CombineOperator { ADD, MIN, MAX, MULTIPLY, BINARY_AND, BINARY_OR };
+        enum class CombineOperator { ADD, MIN, MAX, MULTIPLY, COUNT, BINARY_AND, BINARY_OR };
 
         SignalBindings() {}
 

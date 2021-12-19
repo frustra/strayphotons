@@ -35,12 +35,12 @@ namespace ecs {
                 return false;
             }
 
-            auto &trigger = area.triggers[group];
+            auto &triggers = area.triggers[group];
             for (auto triggerParam : groupObj.second.get<picojson::object>()) {
                 if (triggerParam.first == "command") {
-                    trigger.command = triggerParam.second.get<string>();
+                    triggers.emplace_back(TriggerArea::TriggerCommand(triggerParam.second.get<string>()));
                 } else if (triggerParam.first == "signal") {
-                    trigger.signalOutput = triggerParam.second.get<string>();
+                    triggers.emplace_back(TriggerArea::TriggerSignal(triggerParam.second.get<string>()));
                 }
             }
         }

@@ -146,6 +146,22 @@ namespace sp {
     }
 
     template<>
+    inline void Scene::CopyComponent<ecs::TriggerArea>(ecs::Lock<ecs::ReadAll> src,
+        Tecs::Entity srcEnt,
+        ecs::Lock<ecs::AddRemove> dst,
+        Tecs::Entity dstEnt) {
+        if (srcEnt.Has<ecs::TriggerArea>(src)) {
+            auto &srcArea = srcEnt.Get<ecs::TriggerArea>(src);
+            auto &dstArea = dstEnt.Get<ecs::TriggerArea>(dst);
+            for (size_t i = 0; i < srcArea.triggers.size(); i++) {
+                auto &srcTriggers = srcArea.triggers.at(i);
+                auto &dstTriggers = dstArea.triggers.at(i);
+                dstTriggers.insert(dstTriggers.end(), srcTriggers.begin(), srcTriggers.end());
+            }
+        }
+    }
+
+    template<>
     inline void Scene::CopyComponent<ecs::EventBindings>(ecs::Lock<ecs::ReadAll> src,
         Tecs::Entity srcEnt,
         ecs::Lock<ecs::AddRemove> dst,

@@ -6,6 +6,16 @@
 #include "ecs/EcsImpl.hh"
 
 namespace sp {
+    TriggerSystem::TriggerSystem() {
+        auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+        triggerGroupObserver = lock.Watch<ecs::ComponentEvent<ecs::TriggerGroup>>();
+    }
+
+    TriggerSystem::~TriggerSystem() {
+        auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+        triggerGroupObserver.Stop(lock);
+    }
+
     void TriggerSystem::Frame() {
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::TriggerGroup, ecs::Transform>,
             ecs::Write<ecs::TriggerArea, ecs::SignalOutput>>();
@@ -15,34 +25,51 @@ namespace sp {
             auto &area = entity.Get<ecs::TriggerArea>(lock);
             glm::mat4 areaTransform = glm::inverse(entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock));
 
+            ecs::ComponentEvent<ecs::TriggerGroup> triggerEvent;
+            while (triggerGroupObserver.Poll(lock, triggerEvent)) {
+                if (triggerEvent.type == Tecs::EventType::REMOVED) {
+                    area.contained_entities.erase(triggerEvent.entity);
+                }
+            }
+
             for (auto triggerEnt : lock.EntitiesWith<ecs::TriggerGroup>()) {
                 if (!triggerEnt.Has<ecs::TriggerGroup, ecs::Transform>(lock)) continue;
-
-                auto &trigger = area.triggers[triggerEnt.Get<ecs::TriggerGroup>(lock)];
-
                 auto &transform = triggerEnt.Get<ecs::Transform>(lock);
                 auto entityPos = glm::vec3(areaTransform * glm::vec4(transform.GetGlobalPosition(lock), 1.0));
                 bool inArea = glm::all(glm::greaterThan(entityPos, glm::vec3(-0.5))) &&
                               glm::all(glm::lessThan(entityPos, glm::vec3(0.5)));
-                if (trigger.entities.contains(triggerEnt) == inArea) continue;
 
+                if (area.contained_entities.contains(triggerEnt) == inArea) continue;
                 if (inArea) {
-                    trigger.entities.insert(triggerEnt);
-
-                    if (!trigger.command.empty()) {
-                        Logf("TriggerArea running command: %s", trigger.command);
-                        Debugf("Entity at: %f %f %f", entityPos.x, entityPos.y, entityPos.z);
-                        GetConsoleManager().QueueParseAndExecute(trigger.command);
-                    }
+                    area.contained_entities.insert(triggerEnt);
+                    Debugf("Entity entered TriggerArea at: %f %f %f", entityPos.x, entityPos.y, entityPos.z);
                 } else {
-                    trigger.entities.erase(triggerEnt);
+                    area.contained_entities.erase(triggerEnt);
                 }
             }
 
-            for (auto &trigger : area.triggers) {
-                if (!trigger.signalOutput.empty() && entity.Has<ecs::SignalOutput>(lock)) {
-                    auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);
-                    signalOutput.SetSignal(trigger.signalOutput, trigger.entities.size() > 0 ? 1.0 : 0.0);
+            for (auto &triggerGroup : area.triggers) {
+                for (auto &trigger : triggerGroup) {
+                    std::visit(
+                        [&lock, &area, &entity](auto &&arg) {
+                            using T = std::decay_t<decltype(arg)>;
+                            if constexpr (std::is_same<T, ecs::TriggerArea::TriggerCommand>()) {
+                                for (auto &triggerEnt : area.contained_entities) {
+                                    if (arg.executed_entities.contains(triggerEnt)) continue;
+
+                                    Logf("TriggerArea running command: %s", arg.command);
+                                    GetConsoleManager().QueueParseAndExecute(arg.command);
+                                }
+                                arg.executed_entities = area.contained_entities;
+                            } else if constexpr (std::is_same<T, ecs::TriggerArea::TriggerSignal>()) {
+                                if (entity.Has<ecs::SignalOutput>(lock)) {
+                                    auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);
+                                    signalOutput.SetSignal(arg.outputSignal,
+                                        area.contained_entities.size() > 0 ? 1.0 : 0.0);
+                                }
+                            }
+                        },
+                        trigger);
                 }
             }
         }
