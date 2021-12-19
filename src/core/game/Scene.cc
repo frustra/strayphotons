@@ -47,15 +47,22 @@ namespace sp {
 
     Scene::~Scene() {
         Logf("Unloading %s scene: %s", type, name);
-        {
-            auto stagingLock = GetSceneManager().stagingWorld.StartTransaction<ecs::AddRemove>();
-            auto liveLock = GetSceneManager().liveWorld.StartTransaction<ecs::AddRemove>();
+        if (stagingWorld && liveWorld) {
+            auto stagingLock = stagingWorld->StartTransaction<ecs::AddRemove>();
+            auto liveLock = liveWorld->StartTransaction<ecs::AddRemove>();
             RemoveScene(stagingLock, liveLock);
         }
     }
 
     void Scene::ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
         ecs::Lock<ecs::AddRemove> live) {
+        auto *stagingInstance = &staging.GetInstance();
+        auto *liveInstance = &live.GetInstance();
+        Assert(!stagingWorld || stagingWorld == stagingInstance, "Cannot apply a scene to multiple ECS instances");
+        Assert(!liveWorld || liveWorld == liveInstance, "Cannot apply a scene to multiple ECS instances");
+        stagingWorld = stagingInstance;
+        liveWorld = liveInstance;
+
         Logf("Applying scene: %s", name);
         for (auto e : staging.EntitiesWith<ecs::SceneInfo>()) {
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
@@ -112,10 +119,14 @@ namespace sp {
         for (auto &e : live.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(live)) continue;
             auto &sceneInfo = e.Get<ecs::SceneInfo>(live);
-            if (sceneInfo.scene.lock().get() != this) continue;
+            auto scenePtr = sceneInfo.scene.lock();
+            if (scenePtr != nullptr && scenePtr.get() != this) continue;
             Assert(sceneInfo.liveId == e, "Expected live entity to match SceneInfo.liveId");
 
             if (!sceneInfo.stagingId) e.Destroy(live);
         }
+
+        stagingWorld = nullptr;
+        liveWorld = nullptr;
     }
 } // namespace sp

@@ -121,6 +121,8 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Reset ECS");
+            Scenes.RemoveScene("system");
+
             auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
             auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
 

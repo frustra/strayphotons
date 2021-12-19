@@ -49,6 +49,9 @@ namespace sp {
     private:
         std::shared_ptr<const Asset> asset;
 
+        ecs::ECS *liveWorld = nullptr;
+        ecs::ECS *stagingWorld = nullptr;
+
         friend class SceneManager;
     };
 

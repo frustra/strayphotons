@@ -275,6 +275,8 @@ namespace sp {
 
         Assertf(stagedScenes.Load(sceneName) == nullptr, "System scene added with duplicate name: %s", sceneName);
         auto scene = scenes[SceneType::System].emplace_back(std::make_shared<Scene>(sceneName, SceneType::System));
+        stagedScenes.Register(sceneName, scene);
+
         {
             auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
             callback(stagingLock, scene);
