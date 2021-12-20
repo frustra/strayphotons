@@ -72,6 +72,8 @@ namespace sp {
         ConsoleBindingManager consoleBinding;
 
     private:
+        Tecs::Entity player;
+
         chrono_clock::time_point lastFrameTime;
         CFuncCollection funcs;
     };

@@ -169,7 +169,7 @@ namespace ecs {
                         movement.z = std::clamp(movement.z, -1.0f, 1.0f);
 
                         if (target.Has<Transform>(lock)) {
-                            auto &parentTransform = target.Get<Transform>(lock);
+                            auto &parentTransform = target.Get<const Transform>(lock);
                             auto parentRotation = parentTransform.GetGlobalRotation(lock);
                             movement = parentRotation * movement;
                             if (std::abs(movement.y) > 0.999) {
@@ -225,6 +225,34 @@ namespace ecs {
                                 newEntity.Set<Physics>(lock, model, true);
                             }
                         }).detach();
+                    }
+                }
+            }},
+        {"rotate",
+            [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+                if (ent.Has<Script, Transform>(lock)) {
+                    auto &scriptComp = ent.Get<Script>(lock);
+                    glm::vec3 rotationAxis;
+                    rotationAxis.x = scriptComp.GetParam<double>("axis_x");
+                    rotationAxis.y = scriptComp.GetParam<double>("axis_y");
+                    rotationAxis.z = scriptComp.GetParam<double>("axis_z");
+                    auto rotationSpeedRpm = scriptComp.GetParam<double>("speed");
+
+                    auto &transform = ent.Get<Transform>(lock);
+                    auto currentRotation = transform.GetRotation();
+                    transform.SetRotation(glm::rotate(currentRotation,
+                        (float)(rotationSpeedRpm * M_PI * 2.0 / 60.0 * dtSinceLastFrame),
+                        rotationAxis));
+                }
+            }},
+        {"latch_signals",
+            [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+                if (ent.Has<Script, SignalOutput>(lock)) {
+                    auto &scriptComp = ent.Get<Script>(lock);
+                    auto &signalOutput = ent.Get<SignalOutput>(lock);
+                    for (auto &latchName : scriptComp.GetParam<std::vector<std::string>>("latches_names")) {
+                        auto value = ecs::SignalBindings::GetSignal(lock, ent, latchName);
+                        if (value >= 0.5) signalOutput.SetSignal(latchName, value);
                     }
                 }
             }},

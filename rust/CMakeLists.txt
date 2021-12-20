@@ -44,6 +44,7 @@ if(WIN32)
     target_link_libraries(sp-rust PRIVATE
         ws2_32
         userenv
+        bcrypt
     )
 elseif(UNIX)
     target_link_libraries(sp-rust PRIVATE

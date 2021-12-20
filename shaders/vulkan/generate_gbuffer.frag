@@ -1,4 +1,5 @@
 #version 450
+layout(early_fragment_tests) in;
 
 #extension GL_OVR_multiview2 : enable
 layout(num_views = 2) in;

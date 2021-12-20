@@ -26,6 +26,7 @@
 			name: 'airlock1-2',
 			translate: [-8.1, 0.6, -7],
 			in_signal: "01-outside.sensor1",
+			scene_connection: "02-mirrors",
 			triggers: {
 				"player": {
 					"command": "setsignal global.airlock1-2-in.door_open 0; addscene 02-mirrors"

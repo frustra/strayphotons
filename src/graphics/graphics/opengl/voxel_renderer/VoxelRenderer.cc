@@ -741,7 +741,7 @@ namespace sp {
     }
 
     void VoxelRenderer::EndFrame() {
-        activeModels.Tick();
+        activeModels.Tick(std::chrono::milliseconds(33)); // Minimum 30 fps tick rate
     }
 
     void VoxelRenderer::SetRenderTargets(size_t attachmentCount, GLRenderTarget **attachments, GLRenderTarget *depth) {

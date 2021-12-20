@@ -36,6 +36,8 @@ namespace ecs {
                         bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::MAX);
                     } else if (operatorName == "MULTIPLY") {
                         bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::MULTIPLY);
+                    } else if (operatorName == "COUNT") {
+                        bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::COUNT);
                     } else if (operatorName == "BINARY_AND") {
                         bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::BINARY_AND);
                     } else if (operatorName == "BINARY_OR") {
@@ -72,6 +74,8 @@ namespace ecs {
             return out << "CombineOperator::MAX";
         case SignalBindings::CombineOperator::MULTIPLY:
             return out << "CombineOperator::MULTIPLY";
+        case SignalBindings::CombineOperator::COUNT:
+            return out << "CombineOperator::COUNT";
         case SignalBindings::CombineOperator::BINARY_AND:
             return out << "CombineOperator::BINARY_AND";
         case SignalBindings::CombineOperator::BINARY_OR:
@@ -259,6 +263,14 @@ namespace ecs {
                 }
             }
             return output.value_or(0.0);
+        } break;
+        case CombineOperator::COUNT: {
+            double output = 0.0;
+            for (auto &signal : bindingList->sources) {
+                auto origin = signal.first.Get(lock);
+                if (SignalBindings::GetSignal(lock, origin, signal.second, depth + 1) >= 0.5) output += 1.0;
+            }
+            return output;
         } break;
         case CombineOperator::BINARY_AND:
         case CombineOperator::BINARY_OR: {

@@ -7,8 +7,11 @@ namespace sp {
 
     class TriggerSystem {
     public:
-        TriggerSystem() {}
+        TriggerSystem();
+        ~TriggerSystem();
 
         void Frame();
+
+        ecs::Observer<ecs::ComponentEvent<ecs::TriggerGroup>> triggerGroupObserver;
     };
 } // namespace sp

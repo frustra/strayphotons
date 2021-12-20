@@ -8,7 +8,12 @@
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
 		"translate": <%= translate %>
 	},
-	"scene_connection": {},
+	"scene_connection": <%= locals.scene_connection || [] %>,
+	<% if (locals.load_signal) { %>
+	"signal_bindings": {
+		"load_scene_connection": <%= load_signal %>
+	},
+	<% } %>
 	"physics": {
 		"model": "airlock",
 		"dynamic": false
@@ -16,15 +21,14 @@
 },
 <% if (locals.triggers) { %>
 {
+	"_name": <%= name + "-zone" %>,
 	"transform": {
 		"parent": <%= name %>,
 		"translate": [1.5, 1.4, 0],
 		"scale": [2.5, 3, 2.5]
 	},
 	"signal_output": {},
-	"trigger_area": {
-		"triggers": <%= triggers %>
-	}
+	"trigger_area": <%= triggers %>
 },
 <% } %>
 <%- include('slide_door', {

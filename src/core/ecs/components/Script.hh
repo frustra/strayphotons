@@ -23,7 +23,13 @@ namespace ecs {
             }
         }
 
-        using ParameterType = typename std::variant<bool, double, std::string, NamedEntity>;
+        using ParameterType = typename std::variant<bool,
+            double,
+            std::string,
+            NamedEntity,
+            std::vector<bool>,
+            std::vector<double>,
+            std::vector<std::string>>;
 
         void CopyCallbacks(const Script &src);
         void CopyParams(const Script &src);

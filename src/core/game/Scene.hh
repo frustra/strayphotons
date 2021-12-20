@@ -1,10 +1,12 @@
 #pragma once
 
 #include "core/Common.hh"
+#include "core/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/SceneInfo.hh"
 #include "ecs/components/Transform.hh"
+#include "game/SceneType.hh"
 
 #include <robin_hood.h>
 
@@ -13,12 +15,14 @@ namespace sp {
 
     class Scene : public NonCopyable {
     public:
-        Scene() {}
-        Scene(const string &name) : sceneName(name) {}
-        Scene(const string &name, shared_ptr<const Asset> asset) : sceneName(name), asset(asset) {}
-        ~Scene() {}
+        Scene() : type(SceneType::Count) {}
+        Scene(const string &name, SceneType type) : name(name), type(type) {}
+        Scene(const string &name, SceneType type, shared_ptr<const Asset> asset)
+            : name(name), type(type), asset(asset) {}
+        ~Scene();
 
-        const string sceneName;
+        const std::string name;
+        const SceneType type;
         robin_hood::unordered_flat_map<std::string, Tecs::Entity> namedEntities;
 
         void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
@@ -43,7 +47,10 @@ namespace sp {
         }
 
     private:
-        shared_ptr<const Asset> asset;
+        std::shared_ptr<const Asset> asset;
+
+        ecs::ECS *liveWorld = nullptr;
+        ecs::ECS *stagingWorld = nullptr;
 
         friend class SceneManager;
     };
@@ -102,6 +109,20 @@ namespace sp {
     }
 
     template<>
+    inline void Scene::CopyComponent<ecs::SceneConnection>(ecs::Lock<ecs::ReadAll> src,
+        Tecs::Entity srcEnt,
+        ecs::Lock<ecs::AddRemove> dst,
+        Tecs::Entity dstEnt) {
+        if (srcEnt.Has<ecs::SceneConnection>(src)) {
+            auto &srcConnection = srcEnt.Get<ecs::SceneConnection>(src);
+            auto &dstConnection = dstEnt.Get<ecs::SceneConnection>(dst);
+            for (auto &scene : srcConnection.scenes) {
+                if (!dstConnection.HasScene(scene)) dstConnection.scenes.emplace_back(scene);
+            }
+        }
+    }
+
+    template<>
     inline void Scene::CopyComponent<ecs::SignalBindings>(ecs::Lock<ecs::ReadAll> src,
         Tecs::Entity srcEnt,
         ecs::Lock<ecs::AddRemove> dst,
@@ -123,6 +144,22 @@ namespace sp {
             auto &dstOutput = dstEnt.Get<ecs::SignalOutput>(dst);
             for (auto &signal : srcOutput.GetSignals()) {
                 if (!dstOutput.HasSignal(signal.first)) dstOutput.SetSignal(signal.first, signal.second);
+            }
+        }
+    }
+
+    template<>
+    inline void Scene::CopyComponent<ecs::TriggerArea>(ecs::Lock<ecs::ReadAll> src,
+        Tecs::Entity srcEnt,
+        ecs::Lock<ecs::AddRemove> dst,
+        Tecs::Entity dstEnt) {
+        if (srcEnt.Has<ecs::TriggerArea>(src)) {
+            auto &srcArea = srcEnt.Get<ecs::TriggerArea>(src);
+            auto &dstArea = dstEnt.Get<ecs::TriggerArea>(dst);
+            for (size_t i = 0; i < srcArea.triggers.size(); i++) {
+                auto &srcTriggers = srcArea.triggers.at(i);
+                auto &dstTriggers = dstArea.triggers.at(i);
+                dstTriggers.insert(dstTriggers.end(), srcTriggers.begin(), srcTriggers.end());
             }
         }
     }

@@ -4,6 +4,23 @@
 			"_name": "loaded",
 			"signal_output": {
 				"value": 1
+			},
+			"transform": {
+				"scale": [
+					13,
+					10,
+					13
+				],
+				"translate": [
+					1.5,
+					5,
+					1.5
+				]
+			},
+			"trigger_area": {
+				"player": {
+					"signal": "playerPresent"
+				}
 			}
 		},
 		{
@@ -92,7 +109,12 @@
 					0
 				]
 			},
-			"scene_connection": {},
+			"scene_connection": "connect-test4",
+			"signal_bindings": {
+				"load_scene_connection": {
+					"playerPresent": "connect-test1.loaded"
+				}
+			},
 			"physics": {
 				"model": "airlock",
 				"dynamic": false
@@ -402,7 +424,12 @@
 					8
 				]
 			},
-			"scene_connection": {},
+			"scene_connection": "connect-test2",
+			"signal_bindings": {
+				"load_scene_connection": {
+					"playerPresent": "connect-test1.loaded"
+				}
+			},
 			"physics": {
 				"model": "airlock",
 				"dynamic": false

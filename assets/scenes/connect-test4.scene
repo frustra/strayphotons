@@ -4,6 +4,15 @@
 			"_name": "loaded",
 			"signal_output": {
 				"value": 1.0
+			},
+			"transform": {
+				"scale": [13, 10, 13],
+				"translate": [1.5, 5, 1.5]
+			},
+			"trigger_area": {
+				"player": {
+					"signal": "playerPresent"
+				}
 			}
 		},
 		{
@@ -53,7 +62,9 @@
 		<%- include('prefab/airlock', {
 			name: 'airlock34',
 			translate: [5, 0, 0],
-			out_signal: "connect-test4.loaded"
+			out_signal: "connect-test4.loaded",
+			load_signal: {"playerPresent": "connect-test4.loaded"},
+			scene_connection: "connect-test3"
 		}) %>,
 		{
 			"renderable": "box",
@@ -92,7 +103,9 @@
 			name: 'airlock41',
 			translate: [0, 0, 8],
 			rotate: [90, 0, 1, 0],
-			in_signal: "connect-test4.loaded"
+			in_signal: "connect-test4.loaded",
+			load_signal: {"playerPresent": "connect-test4.loaded"},
+			scene_connection: "connect-test1"
 		}) %>,
 		{
 			"renderable": "box",

@@ -120,7 +120,7 @@ namespace sp {
 
         while (!queuedCommands.empty()) {
             auto top = queuedCommands.top();
-            if (top.wait_util > now) break;
+            if (top.wait_until > now) break;
 
             queuedCommands.pop();
             ulock.unlock();

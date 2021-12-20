@@ -101,8 +101,8 @@
             },
             "signal_output": {
                 "on": 0,
-                "angle": 30,
-                "intensity": 200
+                "angle": 50,
+                "intensity": 50
             },
             "focus": "GAME",
             "event_input": [
@@ -114,13 +114,8 @@
             },
             "light": {
                 "tint": [1, 1, 1],
-                "intensity": 100,
-                "spotAngle": 20,
-                "on": false
-            },
-            "view": {
-                "extents": [512, 512],
-                "clip": [0.1, 64]
+                "shadowMapSize": 11,
+                "shadowMapClip": [0.1, 64]
             }
         }
     ]

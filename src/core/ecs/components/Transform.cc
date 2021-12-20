@@ -63,6 +63,11 @@ namespace ecs {
         return this->parent && this->parent.Has<Transform>(lock);
     }
 
+    bool Transform::HasParent(Lock<Read<Transform>> lock, Tecs::Entity ent) const {
+        if (!HasParent(lock)) return false;
+        return this->parent == ent || this->parent.Get<Transform>(lock).HasParent(lock, ent);
+    }
+
     void Transform::UpdateCachedTransform(Lock<Write<Transform>> lock) {
         if (IsCacheUpToDate(lock)) return;
 

@@ -1,24 +1,33 @@
 #pragma once
 
+#include "core/EnumArray.hh"
 #include "ecs/Components.hh"
 
 #include <glm/glm.hpp>
 #include <robin_hood.h>
+#include <vector>
 
 namespace ecs {
     enum class TriggerGroup : uint8_t {
-        PLAYER = 0,
-        OBJECT,
-        COUNT,
+        Player = 0,
+        Object,
+        Count,
     };
 
     struct TriggerArea {
-        struct Trigger {
-            std::string command, signalOutput;
+        struct TriggerCommand {
+            std::string command;
+            robin_hood::unordered_flat_set<Tecs::Entity> executed_entities;
 
-            robin_hood::unordered_flat_set<Tecs::Entity> entities;
+            TriggerCommand(const std::string &command) : command(command) {}
         };
-        std::array<Trigger, (size_t)TriggerGroup::COUNT> triggers;
+        struct TriggerSignal {
+            std::string outputSignal;
+            TriggerSignal(const std::string &signal) : outputSignal(signal) {}
+        };
+
+        sp::EnumArray<std::vector<std::variant<TriggerCommand, TriggerSignal>>, TriggerGroup> triggers;
+        robin_hood::unordered_flat_set<Tecs::Entity> contained_entities;
     };
 
     static Component<TriggerGroup> ComponentTriggerGroup("trigger_group");

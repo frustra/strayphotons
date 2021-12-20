@@ -1,5 +1,8 @@
 #include "Scene.hh"
 
+#include "core/Logging.hh"
+#include "game/SceneManager.hh"
+
 namespace sp {
     void RebuildComponentsByPriority(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
         ecs::Lock<ecs::AddRemove> live,
@@ -42,23 +45,39 @@ namespace sp {
         RebuildComponentsByPriority(staging, live, e);
     }
 
+    Scene::~Scene() {
+        Logf("Unloading %s scene: %s", type, name);
+        if (stagingWorld && liveWorld) {
+            auto stagingLock = stagingWorld->StartTransaction<ecs::AddRemove>();
+            auto liveLock = liveWorld->StartTransaction<ecs::AddRemove>();
+            RemoveScene(stagingLock, liveLock);
+        }
+    }
+
     void Scene::ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
         ecs::Lock<ecs::AddRemove> live) {
-        Logf("Applying scene: %s", sceneName);
+        auto *stagingInstance = &staging.GetInstance();
+        auto *liveInstance = &live.GetInstance();
+        Assert(!stagingWorld || stagingWorld == stagingInstance, "Cannot apply a scene to multiple ECS instances");
+        Assert(!liveWorld || liveWorld == liveInstance, "Cannot apply a scene to multiple ECS instances");
+        stagingWorld = stagingInstance;
+        liveWorld = liveInstance;
+
+        Logf("Applying scene: %s", name);
         for (auto e : staging.EntitiesWith<ecs::SceneInfo>()) {
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
-            if (sceneInfo.scene.get() != this) continue;
+            if (sceneInfo.scene.lock().get() != this) continue;
             Assert(sceneInfo.stagingId == e, "Expected staging entity to match SceneInfo.stagingId");
 
             // Skip entities that have already been added
             if (!sceneInfo.liveId) {
                 // Find matching named entity in live scene
                 if (e.Has<ecs::Name>(staging)) {
-                    auto &name = e.Get<const ecs::Name>(staging);
-                    sceneInfo.liveId = ecs::EntityWith<ecs::Name>(live, name);
+                    auto &entityName = e.Get<const ecs::Name>(staging);
+                    sceneInfo.liveId = ecs::EntityWith<ecs::Name>(live, entityName);
                     if (sceneInfo.liveId) {
                         // Entity overlaps with another scene
-                        Logf("Merging entity: %s", name);
+                        Logf("Merging entity: %s", entityName);
                         Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have SceneInfo");
                         auto &liveSceneInfo = sceneInfo.liveId.Get<ecs::SceneInfo>(live);
                         liveSceneInfo.InsertWithPriority(staging, sceneInfo);
@@ -77,11 +96,12 @@ namespace sp {
     }
 
     void Scene::RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live) {
-        Logf("Removing scene: %s", sceneName);
+        Logf("Removing scene: %s", name);
         for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(staging)) continue;
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
-            if (sceneInfo.scene.get() != this) continue;
+            auto scenePtr = sceneInfo.scene.lock();
+            if (scenePtr != nullptr && scenePtr.get() != this) continue;
             Assert(sceneInfo.stagingId == e, "Expected staging entity to match SceneInfo.stagingId");
 
             if (sceneInfo.liveId) {
@@ -99,10 +119,14 @@ namespace sp {
         for (auto &e : live.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(live)) continue;
             auto &sceneInfo = e.Get<ecs::SceneInfo>(live);
-            if (sceneInfo.scene.get() != this) continue;
+            auto scenePtr = sceneInfo.scene.lock();
+            if (scenePtr != nullptr && scenePtr.get() != this) continue;
             Assert(sceneInfo.liveId == e, "Expected live entity to match SceneInfo.liveId");
 
             if (!sceneInfo.stagingId) e.Destroy(live);
         }
+
+        stagingWorld = nullptr;
+        liveWorld = nullptr;
     }
 } // namespace sp

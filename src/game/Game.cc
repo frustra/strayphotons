@@ -142,10 +142,10 @@ namespace sp {
 
     void Game::ReloadPlayer() {
         auto &scenes = GetSceneManager();
-        scenes.LoadPlayer();
+        player = scenes.LoadPlayer();
 
 #ifdef SP_GRAPHICS_SUPPORT
-        graphics.GetContext()->AttachView(scenes.GetPlayer());
+        graphics.GetContext()->AttachView(player);
 #endif
 
         scenes.RespawnPlayer();
@@ -155,8 +155,6 @@ namespace sp {
     void Game::PrintDebug() {
         auto lock =
             ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::Transform, ecs::HumanController, ecs::LightSensor>>();
-        auto &scenes = GetSceneManager();
-        auto player = scenes.GetPlayer();
         if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
             auto &transform = player.Get<ecs::Transform>(lock);
             auto position = transform.GetPosition();

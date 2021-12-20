@@ -17,7 +17,7 @@ vec3 HDRTonemap(vec3 x) {
 	const float E = 0.02;
 	const float F = 0.30;
 
-	return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
+	return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F+0.0000001;
 }
 
 float DigitalLuminance(vec3 linear) {
