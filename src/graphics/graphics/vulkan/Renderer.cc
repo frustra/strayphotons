@@ -798,7 +798,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::EndFrame() {
-        activeModels.Tick(std::chrono::milliseconds(11)); // TODO: look up the target framerate
+        activeModels.Tick(std::chrono::milliseconds(33)); // Minimum 30 fps tick rate
     }
 
     void Renderer::SetDebugGui(GuiManager &gui) {

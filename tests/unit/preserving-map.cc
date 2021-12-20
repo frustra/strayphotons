@@ -23,7 +23,9 @@ namespace PreservingMapTests {
                 entries.emplace_back(ptr);
             }
 
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
             map.Tick(std::chrono::milliseconds(50));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
             map.Tick(std::chrono::milliseconds(50));
 
             for (int i = 0; i < 10; i++) {
@@ -35,8 +37,9 @@ namespace PreservingMapTests {
                 Assert(ptr != nullptr, "Expected entry to still exist after 100ms");
             }
 
-            map.Tick(std::chrono::milliseconds(50));
-            map.Tick(std::chrono::milliseconds(50));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            map.Tick(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
             map.Tick(std::chrono::milliseconds(1));
 
             for (int i = 0; i < 10; i++) {
@@ -48,6 +51,7 @@ namespace PreservingMapTests {
                 Assert(!ptr, "Expected entry to have been cleaned up after 101ms");
             }
 
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
             map.Tick(std::chrono::milliseconds(10));
         }
     }

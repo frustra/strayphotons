@@ -58,11 +58,6 @@ void main()
 	vec3 rayDir = normalize(worldPosition - worldFragPosition);
 	vec3 rayReflectDir = reflect(rayDir, worldNormal);
 
-	// Hack for curved world
-	vec4 playerPos = view.invViewMat * vec4(vec3(0.0), 1.0);
-	float deltaPos = worldPosition.x - playerPos.x;
-	worldPosition.y -= (deltaPos * deltaPos) * 0.0035;
-
 	vec3 indirectSpecular = vec3(0);
 	vec3 indirectDiffuse = vec3(0);
 

@@ -30,12 +30,17 @@ namespace sp {
         };
 
         LockFreeMutex mutex;
+        chrono_clock::time_point last_tick;
         robin_hood::unordered_node_map<K, TimedValue> storage;
 
     public:
-        PreservingMap() {}
+        PreservingMap() : last_tick(chrono_clock::now()) {}
 
-        void Tick(chrono_clock::duration tickInterval) {
+        void Tick(chrono_clock::duration maxTickInterval) {
+            auto now = chrono_clock::now();
+            chrono_clock::duration tickInterval = std::min(now - last_tick, maxTickInterval);
+            last_tick = now;
+
             std::vector<K> cleanupList;
             {
                 std::shared_lock lock(mutex);
