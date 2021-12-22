@@ -2,7 +2,7 @@
 name = "sp-rust"
 version = "0.1.0"
 authors = ["xthexder"]
-edition = "2021"
+edition = "2018"
 
 [profile.dev]
 opt-level = 2
