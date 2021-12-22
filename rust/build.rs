@@ -10,4 +10,5 @@ fn main() {
     build.compile("sp-rust");
 
     println!("cargo:rerun-if-changed=src/lib.rs");
+    println!("cargo:rerun-if-changed=src/wasmer_vm.rs");
 }
