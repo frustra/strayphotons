@@ -19,9 +19,14 @@ string(JOIN ";" RUST_INCLUDE_LIST
     ${PROJECT_ROOT_DIR}/src/core
 )
 
+set(RUST_SOURCE_FILES
+    src/lib.rs
+    src/wasmer_vm.rs
+)
+
 add_custom_command(COMMENT "Run cxxbridge codegen"
     OUTPUT ${CXXBRIDGE_LIB} ${CXXBRIDGE_CC}
-    DEPENDS src/lib.rs build.rs Cargo.lock Cargo.toml
+    DEPENDS ${RUST_SOURCE_FILES} build.rs Cargo.lock Cargo.toml
     COMMAND ${CMAKE_COMMAND} -E env CMAKE_ADDITIONAL_INCLUDES="${RUST_INCLUDE_LIST}" CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}/cargo/ RUSTFLAGS="${RUST_FLAGS}" ${CARGO_CMD}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )

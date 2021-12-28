@@ -19,7 +19,10 @@ mod wasmer_vm;
 pub fn print_hello() {
     println!("hello world!");
 
-    if let Ok(result) = wasmer_vm::run_wasm() {
-        println!("add_one(42) = {}", result);
+    let result = wasmer_vm::run_wasm();
+    if let Ok(sum) = result {
+        println!("add(5, 37) = {}", sum);
+    } else {
+        println!("add() failed! {}", result.err().unwrap());
     }
 }

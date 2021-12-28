@@ -66,11 +66,13 @@ namespace sp {
 
         try {
 #ifdef SP_GRAPHICS_SUPPORT
-            debugGui = std::make_unique<DebugGuiManager>();
-            graphics.Init();
+            if (options["headless"].count() == 0) {
+                debugGui = std::make_unique<DebugGuiManager>();
+                graphics.Init();
 
-            // must create all gui instances after initializing graphics, except for the special debug gui
-            menuGui = std::make_unique<MenuGuiManager>(this->graphics);
+                // must create all gui instances after initializing graphics, except for the special debug gui
+                menuGui = std::make_unique<MenuGuiManager>(this->graphics);
+            }
 #endif
 
 #ifdef SP_XR_SUPPORT
@@ -145,7 +147,8 @@ namespace sp {
         player = scenes.LoadPlayer();
 
 #ifdef SP_GRAPHICS_SUPPORT
-        graphics.GetContext()->AttachView(player);
+        auto context = graphics.GetContext();
+        if (context) context->AttachView(player);
 #endif
 
         scenes.RespawnPlayer();
