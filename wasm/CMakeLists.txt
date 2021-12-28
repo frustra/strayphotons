@@ -13,6 +13,7 @@ foreach(SCRIPT_NAME IN LISTS SCRIPT_LIST)
             -O3
             -flto
             -nostdlib
+            -Wl,--allow-undefined-file=${CMAKE_CURRENT_SOURCE_DIR}/wasm.syms
             -Wl,--no-entry
             -Wl,--export-all
             -Wl,--lto-O3
