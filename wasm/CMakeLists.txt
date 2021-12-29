@@ -2,7 +2,7 @@
 ## When adding a new script, just add it to this list!
 ##
 set(SCRIPT_LIST
-    add
+    test
 )
 
 foreach(SCRIPT_NAME IN LISTS SCRIPT_LIST)
@@ -13,6 +13,7 @@ foreach(SCRIPT_NAME IN LISTS SCRIPT_LIST)
             -O3
             -flto
             -nostdlib
+            -I${CMAKE_CURRENT_SOURCE_DIR}/inc
             -Wl,--allow-undefined-file=${CMAKE_CURRENT_SOURCE_DIR}/wasm.syms
             -Wl,--no-entry
             -Wl,--export-all
@@ -23,6 +24,7 @@ foreach(SCRIPT_NAME IN LISTS SCRIPT_LIST)
             ${SCRIPT_OUTPUT}
         DEPENDS
             ${SCRIPT_INPUT}
+            inc/ecs.h
     )
     list(APPEND WASM_OUTPUTS ${SCRIPT_OUTPUT})
 endforeach()

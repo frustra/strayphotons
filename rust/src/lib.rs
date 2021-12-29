@@ -1,14 +1,19 @@
-
-#[cxx::bridge(namespace = "sp::rust")]
-mod ffi {
+#[cxx::bridge(namespace = "Tecs")]
+mod ffi_Tecs {
     extern "C++" {
         include!(<Tecs.hh>);
-        include!(<ecs/Ecs.hh>);
-
-        // #[cxx_name = "ecs::ECS"]
-        // type ECS;
     }
+}
 
+#[cxx::bridge(namespace = "ecs")]
+mod ffi_ecs {
+    unsafe extern "C++" {
+        include!(<ecs/Ecs.hh>);
+    }
+}
+
+#[cxx::bridge(namespace = "sp::rust")]
+mod ffi_rust {
     extern "Rust" {
         fn print_hello();
     }
