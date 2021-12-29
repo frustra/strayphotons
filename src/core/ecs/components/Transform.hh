@@ -9,8 +9,7 @@ namespace ecs {
     class Transform {
     public:
         Transform() {}
-        Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>())
-            : position(pos), rotation(orientation) {}
+        Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>());
 
         void SetParent(Tecs::Entity ent);
         const Tecs::Entity &GetParent() const;
@@ -74,10 +73,7 @@ namespace ecs {
 
     private:
         Tecs::Entity parent;
-
-        glm::vec3 position = glm::vec3(0);
-        glm::vec3 scale = glm::vec3(1);
-        glm::quat rotation = glm::identity<glm::quat>();
+        glm::mat4x3 transform = glm::identity<glm::mat4x3>();
 
         glm::mat4x3 cachedTransform = glm::identity<glm::mat4x3>();
         uint32_t changeCount = 1;

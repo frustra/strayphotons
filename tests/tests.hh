@@ -19,6 +19,10 @@ static inline std::ostream &operator<<(std::ostream &out, const glm::vec3 &v) {
     return out << glm::to_string(v);
 }
 
+static inline std::ostream &operator<<(std::ostream &out, const glm::quat &v) {
+    return out << glm::to_string(v);
+}
+
 template<typename Ta, typename Tb>
 inline std::ostream &operator<<(std::ostream &out, const std::pair<Ta, Tb> &v) {
     return out << "(" << v.first << ", " << v.second << ")";
@@ -57,10 +61,36 @@ namespace testing {
         }
     }
 
+    inline bool FloatEqual(float a, float b) {
+        float feps = std::numeric_limits<float>::epsilon() * 10.0f;
+        return (a - feps < b) && (a + feps > b);
+    }
+
     template<>
     inline void AssertEqual<float, float>(float a, float b, const std::string &message) {
-        float feps = std::numeric_limits<float>::epsilon();
-        if (!(a - feps < b && a + feps > b)) {
+        if (!FloatEqual(a, b)) {
+            std::stringstream ss;
+            ss << "Assertion failed: " << message << " (" << a << " != " << b << ")" << std::endl;
+            std::cerr << ss.str() << std::flush;
+            throw std::runtime_error(message);
+        }
+    }
+
+    template<>
+    inline void AssertEqual<glm::quat, glm::quat>(glm::quat a, glm::quat b, const std::string &message) {
+        float dot = glm::abs(glm::dot(a, b));
+        float feps = std::numeric_limits<float>::epsilon() * 10.0f;
+        if (dot + feps < 1.0f) {
+            std::stringstream ss;
+            ss << "Assertion failed: " << message << " (" << a << " != " << b << ")" << std::endl;
+            std::cerr << ss.str() << std::flush;
+            throw std::runtime_error(message);
+        }
+    }
+
+    template<>
+    inline void AssertEqual<glm::vec3, glm::vec3>(glm::vec3 a, glm::vec3 b, const std::string &message) {
+        if (!FloatEqual(a.x, b.x) || !FloatEqual(a.y, b.y) || !FloatEqual(a.z, b.z)) {
             std::stringstream ss;
             ss << "Assertion failed: " << message << " (" << a << " != " << b << ")" << std::endl;
             std::cerr << ss.str() << std::flush;

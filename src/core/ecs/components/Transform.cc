@@ -49,6 +49,9 @@ namespace ecs {
         return true;
     }
 
+    Transform::Transform(glm::vec3 pos, glm::quat orientation)
+        : transform(glm::column(glm::mat4x3(glm::mat3_cast(orientation)), 3, pos)) {}
+
     void Transform::SetParent(Tecs::Entity ent) {
         this->parent = ent;
         this->parentCacheCount = 0;
@@ -71,21 +74,19 @@ namespace ecs {
     void Transform::UpdateCachedTransform(Lock<Write<Transform>> lock) {
         if (IsCacheUpToDate(lock)) return;
 
-        glm::mat4 transform = glm::mat3_cast(this->rotation) * glm::mat3(glm::scale(this->scale));
-        transform = glm::column(transform, 3, glm::vec4(this->position, 1.0f));
-
         if (this->parent) {
             Assert(this->parent.Has<Transform>(lock), "Transform parent entity does not have a Transform");
 
             auto &parentTransform = this->parent.Get<Transform>(lock);
             parentTransform.UpdateCachedTransform(lock);
-            transform = parentTransform.GetGlobalTransform(lock) * transform;
+            this->cachedTransform = parentTransform.GetGlobalTransform(lock) * glm::mat4(this->transform);
 
             if (this->parentCacheCount != parentTransform.changeCount) this->changeCount++;
             this->parentCacheCount = parentTransform.changeCount;
+        } else {
+            this->cachedTransform = this->transform;
         }
 
-        this->cachedTransform = transform;
         this->cacheCount = this->changeCount;
     }
 
@@ -104,16 +105,12 @@ namespace ecs {
     glm::mat4 Transform::GetGlobalTransform(Lock<Read<Transform>> lock) const {
         if (IsCacheUpToDate(lock)) return this->cachedTransform;
 
-        glm::mat4 transform = glm::mat3_cast(this->rotation) * glm::mat3(glm::scale(this->scale));
-        transform = glm::column(transform, 3, glm::vec4(this->position, 1.0f));
+        if (!this->parent) return this->transform;
 
-        if (this->parent) {
-            Assert(this->parent.Has<Transform>(lock), "Transform parent entity does not have a Transform");
+        Assert(this->parent.Has<Transform>(lock), "Transform parent entity does not have a Transform");
 
-            auto &parentTransform = this->parent.Get<Transform>(lock);
-            return parentTransform.GetGlobalTransform(lock) * transform;
-        }
-        return transform;
+        auto &parentTransform = this->parent.Get<Transform>(lock);
+        return parentTransform.GetGlobalTransform(lock) * glm::mat4(this->transform);
     }
 
     glm::quat Transform::GetGlobalRotation(Lock<Read<Transform>> lock) const {
@@ -124,7 +121,7 @@ namespace ecs {
             model = this->parent.Get<Transform>(lock).GetGlobalRotation(lock);
         }
 
-        return model * this->rotation;
+        return model * GetRotation();
     }
 
     glm::vec3 Transform::GetGlobalPosition(Lock<Read<Transform>> lock) const {
@@ -136,39 +133,48 @@ namespace ecs {
     }
 
     void Transform::Translate(glm::vec3 xyz) {
-        this->position += xyz;
+        this->transform[3] += xyz;
         this->changeCount++;
     }
 
     void Transform::Rotate(float radians, glm::vec3 axis) {
-        this->rotation = glm::rotate(this->rotation, radians, axis);
+        glm::vec3 scale = GetScale();
+        glm::mat3 rotation = glm::mat3(this->transform[0] / scale.x,
+            this->transform[1] / scale.y,
+            this->transform[2] / scale.z);
+        rotation = glm::rotate(glm::mat4(rotation), radians, axis);
+        this->transform[0] = rotation[0] * scale.x;
+        this->transform[1] = rotation[1] * scale.y;
+        this->transform[2] = rotation[2] * scale.z;
         this->changeCount++;
     }
 
     void Transform::Scale(glm::vec3 xyz) {
-        this->scale *= xyz;
+        this->transform[0] *= xyz.x;
+        this->transform[1] *= xyz.y;
+        this->transform[2] *= xyz.z;
         this->changeCount++;
     }
 
     void Transform::SetPosition(glm::vec3 pos) {
-        this->position = pos;
+        this->transform[3] = pos;
         this->changeCount++;
     }
 
     glm::vec3 Transform::GetPosition() const {
-        return this->position;
+        return this->transform[3];
     }
 
     glm::vec3 Transform::GetUp() const {
-        return this->rotation * glm::vec3(0, 1, 0);
+        return glm::normalize(glm::mat3(this->transform) * glm::vec3(0, 1, 0));
     }
 
     glm::vec3 Transform::GetForward() const {
-        return this->rotation * glm::vec3(0, 0, -1);
+        return glm::normalize(glm::mat3(this->transform) * glm::vec3(0, 0, -1));
     }
 
     glm::vec3 Transform::GetLeft() const {
-        return this->rotation * glm::vec3(1, 0, 0);
+        return glm::normalize(glm::mat3(this->transform) * glm::vec3(1, 0, 0));
     }
 
     glm::vec3 Transform::GetRight() const {
@@ -176,21 +182,32 @@ namespace ecs {
     }
 
     void Transform::SetRotation(glm::quat quat) {
-        this->rotation = quat;
+        glm::vec3 scale = GetScale();
+        glm::mat3 rotation = glm::mat3_cast(quat);
+        this->transform[0] = rotation[0] * scale.x;
+        this->transform[1] = rotation[1] * scale.y;
+        this->transform[2] = rotation[2] * scale.z;
         this->changeCount++;
     }
 
     glm::quat Transform::GetRotation() const {
-        return this->rotation;
+        glm::mat3 rotation = glm::mat3(glm::normalize(this->transform[0]),
+            glm::normalize(this->transform[1]),
+            glm::normalize(this->transform[2]));
+        return glm::quat_cast(rotation);
     }
 
     void Transform::SetScale(glm::vec3 xyz) {
-        this->scale = xyz;
+        this->transform[0] = glm::normalize(this->transform[0]) * xyz.x;
+        this->transform[1] = glm::normalize(this->transform[1]) * xyz.y;
+        this->transform[2] = glm::normalize(this->transform[2]) * xyz.z;
         this->changeCount++;
     }
 
     glm::vec3 Transform::GetScale() const {
-        return this->scale;
+        return glm::vec3(glm::length(this->transform[0]),
+            glm::length(this->transform[1]),
+            glm::length(this->transform[2]));
     }
 
     uint32_t Transform::ChangeNumber() const {
