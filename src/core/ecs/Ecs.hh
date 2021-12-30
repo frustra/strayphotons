@@ -36,7 +36,7 @@ namespace ecs {
     class Script;
     class SignalOutput;
     class SignalBindings;
-    class Transform;
+    struct Transform;
     struct TriggerArea;
     enum class TriggerGroup : uint8_t;
     struct View;
