@@ -11,7 +11,7 @@ namespace EcsTransformTests {
 
     ecs::ECS World;
 
-    void TestTransformParentDepth() {
+    void TestTransform() {
         Tecs::Entity root, a, b, c;
         {
             Timer t("Create a tree of transform parents");
@@ -33,56 +33,7 @@ namespace EcsTransformTests {
             transformC.SetParent(a);
         }
         {
-            Timer t("Try reading transform locations with out of date caches");
-            auto lock = World.StartTransaction<ecs::Read<ecs::Transform>>();
-
-            auto &transformRoot = root.Get<ecs::Transform>(lock);
-            auto &transformA = a.Get<ecs::Transform>(lock);
-            auto &transformB = b.Get<ecs::Transform>(lock);
-            auto &transformC = c.Get<ecs::Transform>(lock);
-
-            Assert(!transformRoot.IsCacheUpToDate(lock), "Expected Root cache to be out of date");
-            Assert(!transformA.IsCacheUpToDate(lock), "Expected A cache to be out of date");
-            Assert(!transformB.IsCacheUpToDate(lock), "Expected B cache to be out of date");
-            Assert(!transformC.IsCacheUpToDate(lock), "Expected C cache to be out of date");
-
-            AssertEqual(transformRoot.GetGlobalPosition(lock),
-                glm::vec3(1, 2, 3),
-                "Root entity returned wrong position");
-            AssertEqual(transformA.GetGlobalPosition(lock), glm::vec3(5, 2, 3), "A entity returned wrong position");
-            AssertEqual(transformB.GetGlobalPosition(lock), glm::vec3(5, 7, 3), "B entity returned wrong position");
-            AssertEqual(transformC.GetGlobalPosition(lock), glm::vec3(5, 2, 9), "C entity returned wrong position");
-        }
-        {
-            Timer t("Try updating transform caches");
-            auto lock = World.StartTransaction<ecs::Write<ecs::Transform>>();
-
-            auto &transformRoot = root.Get<ecs::Transform>(lock);
-            auto &transformA = a.Get<ecs::Transform>(lock);
-            auto &transformB = b.Get<ecs::Transform>(lock);
-            auto &transformC = c.Get<ecs::Transform>(lock);
-
-            Assert(!transformRoot.IsCacheUpToDate(lock), "Expected Root cache to be out of date");
-            Assert(!transformA.IsCacheUpToDate(lock), "Expected A cache to be out of date");
-            Assert(!transformB.IsCacheUpToDate(lock), "Expected B cache to be out of date");
-            Assert(!transformC.IsCacheUpToDate(lock), "Expected C cache to be out of date");
-
-            transformB.UpdateCachedTransform(lock);
-
-            Assert(transformRoot.IsCacheUpToDate(lock), "Expected Root cache to be up to date");
-            Assert(transformA.IsCacheUpToDate(lock), "Expected A cache to be up to date");
-            Assert(transformB.IsCacheUpToDate(lock), "Expected B cache to be up to date");
-            Assert(!transformC.IsCacheUpToDate(lock), "Expected C cache to be out of date");
-
-            transformC.UpdateCachedTransform(lock);
-
-            Assert(transformRoot.IsCacheUpToDate(lock), "Expected Root cache to be up to date");
-            Assert(transformA.IsCacheUpToDate(lock), "Expected A cache to be up to date");
-            Assert(transformB.IsCacheUpToDate(lock), "Expected B cache to be up to date");
-            Assert(transformC.IsCacheUpToDate(lock), "Expected C cache to be up to date");
-        }
-        {
-            Timer t("Try reading transform locations with up to date caches");
+            Timer t("Try reading transform positions");
             auto lock = World.StartTransaction<ecs::Read<ecs::Transform>>();
 
             auto &transformRoot = root.Get<ecs::Transform>(lock);
@@ -96,6 +47,13 @@ namespace EcsTransformTests {
             AssertEqual(transformA.GetGlobalPosition(lock), glm::vec3(5, 2, 3), "A entity returned wrong position");
             AssertEqual(transformB.GetGlobalPosition(lock), glm::vec3(5, 7, 3), "B entity returned wrong position");
             AssertEqual(transformC.GetGlobalPosition(lock), glm::vec3(5, 2, 9), "C entity returned wrong position");
+
+            {
+                Timer t2("Benchmark GetGlobalTransform() with parent transform");
+                for (int i = 0; i < 100000; i++) {
+                    transformC.GetGlobalTransform(lock);
+                }
+            }
         }
         {
             Timer t("Try updating root transform");
@@ -106,45 +64,7 @@ namespace EcsTransformTests {
             auto &transformB = b.Get<ecs::Transform>(lock);
             auto &transformC = c.Get<ecs::Transform>(lock);
 
-            Assert(transformRoot.IsCacheUpToDate(lock), "Expected Root cache to be up to date");
-            Assert(transformA.IsCacheUpToDate(lock), "Expected A cache to be up to date");
-            Assert(transformB.IsCacheUpToDate(lock), "Expected B cache to be up to date");
-            Assert(transformC.IsCacheUpToDate(lock), "Expected C cache to be up to date");
-
             transformRoot.SetPosition(glm::vec3(-1, -2, -3));
-
-            Assert(!transformRoot.IsCacheUpToDate(lock), "Expected Root cache to be out of date");
-            Assert(!transformA.IsCacheUpToDate(lock), "Expected A cache to be out of date");
-            Assert(!transformB.IsCacheUpToDate(lock), "Expected B cache to be out of date");
-            Assert(!transformC.IsCacheUpToDate(lock), "Expected C cache to be out of date");
-
-            AssertEqual(transformRoot.GetGlobalPosition(lock),
-                glm::vec3(-1, -2, -3),
-                "Root entity returned wrong position");
-            AssertEqual(transformA.GetGlobalPosition(lock), glm::vec3(3, -2, -3), "A entity returned wrong position");
-            AssertEqual(transformB.GetGlobalPosition(lock), glm::vec3(3, 3, -3), "B entity returned wrong position");
-            AssertEqual(transformC.GetGlobalPosition(lock), glm::vec3(3, -2, 3), "C entity returned wrong position");
-
-            transformB.UpdateCachedTransform(lock);
-
-            Assert(transformRoot.IsCacheUpToDate(lock), "Expected Root cache to be up to date");
-            Assert(transformA.IsCacheUpToDate(lock), "Expected A cache to be up to date");
-            Assert(transformB.IsCacheUpToDate(lock), "Expected B cache to be up to date");
-            Assert(!transformC.IsCacheUpToDate(lock), "Expected C cache to be out of date");
-
-            AssertEqual(transformRoot.GetGlobalPosition(lock),
-                glm::vec3(-1, -2, -3),
-                "Root entity returned wrong position");
-            AssertEqual(transformA.GetGlobalPosition(lock), glm::vec3(3, -2, -3), "A entity returned wrong position");
-            AssertEqual(transformB.GetGlobalPosition(lock), glm::vec3(3, 3, -3), "B entity returned wrong position");
-            AssertEqual(transformC.GetGlobalPosition(lock), glm::vec3(3, -2, 3), "C entity returned wrong position");
-
-            transformC.UpdateCachedTransform(lock);
-
-            Assert(transformRoot.IsCacheUpToDate(lock), "Expected Root cache to be up to date");
-            Assert(transformA.IsCacheUpToDate(lock), "Expected A cache to be up to date");
-            Assert(transformB.IsCacheUpToDate(lock), "Expected B cache to be up to date");
-            Assert(transformC.IsCacheUpToDate(lock), "Expected C cache to be up to date");
 
             AssertEqual(transformRoot.GetGlobalPosition(lock),
                 glm::vec3(-1, -2, -3),
@@ -153,9 +73,6 @@ namespace EcsTransformTests {
             AssertEqual(transformB.GetGlobalPosition(lock), glm::vec3(3, 3, -3), "B entity returned wrong position");
             AssertEqual(transformC.GetGlobalPosition(lock), glm::vec3(3, -2, 3), "C entity returned wrong position");
         }
-    }
-
-    void TestTransformScaleAndRotation() {
         {
             Timer t("Try setting and reading rotation + scale");
             auto lock = World.StartTransaction<ecs::Write<ecs::Transform>>();
@@ -179,6 +96,5 @@ namespace EcsTransformTests {
         }
     }
 
-    Test test1(&TestTransformParentDepth);
-    Test test2(&TestTransformScaleAndRotation);
+    Test test1(&TestTransform);
 } // namespace EcsTransformTests

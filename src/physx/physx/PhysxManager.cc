@@ -308,7 +308,6 @@ namespace sp {
                         transform.SetPosition(PxVec3ToGlmVec3P(pose.p));
                         transform.SetRotation(PxQuatToGlmQuat(pose.q));
 
-                        transform.UpdateCachedTransform(lock);
                         userData->transformChangeNumber = transform.ChangeNumber();
                     }
                 }

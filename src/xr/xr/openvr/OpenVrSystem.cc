@@ -215,7 +215,6 @@ namespace sp::xr {
                             transform.SetParent(vrOrigin);
                             transform.SetRotation(glm::quat_cast(glm::mat3(pose)));
                             transform.SetPosition(pose[3]);
-                            transform.UpdateCachedTransform(lock);
                         }
                     }
                 }

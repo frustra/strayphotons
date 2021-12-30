@@ -75,7 +75,6 @@ namespace sp {
             dstTransform.SetPosition(srcTransform.GetPosition());
             dstTransform.SetRotation(srcTransform.GetRotation());
             dstTransform.SetScale(srcTransform.GetScale());
-            dstTransform.UpdateCachedTransform(dst);
         }
     }
 

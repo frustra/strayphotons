@@ -15,8 +15,6 @@ namespace ecs {
         const Tecs::Entity &GetParent() const;
         bool HasParent(Lock<Read<Transform>> lock) const;
         bool HasParent(Lock<Read<Transform>> lock, Tecs::Entity ent) const;
-        void UpdateCachedTransform(Lock<Write<Transform>> lock);
-        bool IsCacheUpToDate(Lock<Read<Transform>> lock) const;
 
         /**
          * Return the transformation matrix including all parent transforms.
@@ -74,11 +72,7 @@ namespace ecs {
     private:
         Tecs::Entity parent;
         glm::mat4x3 transform = glm::identity<glm::mat4x3>();
-
-        glm::mat4x3 cachedTransform = glm::identity<glm::mat4x3>();
         uint32_t changeCount = 1;
-        uint32_t cacheCount = 0;
-        uint32_t parentCacheCount = 0;
     };
 
     static Component<Transform> ComponentTransform("transform");

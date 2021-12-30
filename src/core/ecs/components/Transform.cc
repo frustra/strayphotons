@@ -54,7 +54,6 @@ namespace ecs {
 
     void Transform::SetParent(Tecs::Entity ent) {
         this->parent = ent;
-        this->parentCacheCount = 0;
         this->changeCount++;
     }
 
@@ -71,40 +70,7 @@ namespace ecs {
         return this->parent == ent || this->parent.Get<Transform>(lock).HasParent(lock, ent);
     }
 
-    void Transform::UpdateCachedTransform(Lock<Write<Transform>> lock) {
-        if (IsCacheUpToDate(lock)) return;
-
-        if (this->parent) {
-            Assert(this->parent.Has<Transform>(lock), "Transform parent entity does not have a Transform");
-
-            auto &parentTransform = this->parent.Get<Transform>(lock);
-            parentTransform.UpdateCachedTransform(lock);
-            this->cachedTransform = parentTransform.GetGlobalTransform(lock) * glm::mat4(this->transform);
-
-            if (this->parentCacheCount != parentTransform.changeCount) this->changeCount++;
-            this->parentCacheCount = parentTransform.changeCount;
-        } else {
-            this->cachedTransform = this->transform;
-        }
-
-        this->cacheCount = this->changeCount;
-    }
-
-    bool Transform::IsCacheUpToDate(Lock<Read<Transform>> lock) const {
-        if (this->parent) {
-            Assert(this->parent.Has<Transform>(lock), "Transform parent entity does not have a Transform");
-
-            auto &parentTransform = this->parent.Get<Transform>(lock);
-            if (this->parentCacheCount != parentTransform.changeCount || !parentTransform.IsCacheUpToDate(lock)) {
-                return false;
-            }
-        }
-        return this->cacheCount == this->changeCount;
-    }
-
     glm::mat4 Transform::GetGlobalTransform(Lock<Read<Transform>> lock) const {
-        if (IsCacheUpToDate(lock)) return this->cachedTransform;
-
         if (!this->parent) return this->transform;
 
         Assert(this->parent.Has<Transform>(lock), "Transform parent entity does not have a Transform");
