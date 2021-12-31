@@ -121,7 +121,8 @@
         "resumable": "cpp",
         "xmemory0": "cpp",
         "xthread": "cpp",
-        "numbers": "cpp"
+        "numbers": "cpp",
+        "transform.h": "c"
     },
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,

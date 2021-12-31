@@ -9,7 +9,7 @@ opt-level = 2
 
 [dependencies]
 cxx = "1.0"
-wasmer = "2.1.1"
+wasmer = "2.1"
 anyhow = "1.0"
 
 [build-dependencies]

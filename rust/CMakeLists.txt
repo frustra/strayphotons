@@ -29,16 +29,15 @@ add_custom_command(COMMENT "Run cxxbridge codegen"
 
 add_library(sp-rust STATIC ${CXXBRIDGE_CC})
 
-# Adding dependencies here will automatically setup include directories for Rust
 target_include_directories(sp-rust
     PUBLIC
         ${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/sp-rust/src
-    PRIVATE
-        ${PROJECT_ROOT_DIR}/src/core
 )
 
+# Adding dependencies here will automatically setup include directories for Rust
 target_link_libraries(sp-rust PRIVATE
     ${CXXBRIDGE_LIB}
+    ${PROJECT_CORE_LIB}
     Tecs
 )
 

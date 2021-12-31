@@ -2,6 +2,7 @@
 ## When adding a new script, just add it to this list!
 ##
 set(SCRIPT_LIST
+    script
     test
 )
 
