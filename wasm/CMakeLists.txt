@@ -6,11 +6,13 @@ set(SCRIPT_LIST
     test
 )
 
+find_program(CLANG_BIN clang REQUIRED)
+
 foreach(SCRIPT_NAME IN LISTS SCRIPT_LIST)
     file(GLOB SCRIPT_INPUT src/${SCRIPT_NAME}.*)
     set(SCRIPT_OUTPUT ${PROJECT_OUTPUT_DIR}/scripts/${SCRIPT_NAME}.wasm)
     add_custom_command(
-        COMMAND clang --target=wasm32
+        COMMAND ${CLANG_BIN} --target=wasm32
             -O3
             -flto
             -nostdlib

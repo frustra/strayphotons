@@ -109,7 +109,7 @@ typedef struct Transform {
     Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>());
 
     void SetParent(Tecs::Entity ent);
-    const Tecs::Entity &GetParent() const;
+    Tecs::Entity GetParent() const;
     bool HasParent(ecs::Lock<ecs::Read<ecs::Transform>> lock) const;
     bool HasParent(ecs::Lock<ecs::Read<ecs::Transform>> lock, Tecs::Entity ent) const;
 

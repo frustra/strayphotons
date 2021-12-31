@@ -64,8 +64,8 @@ void Transform::SetParent(Tecs::Entity ent) {
     this->changeCount++;
 }
 
-const Tecs::Entity &Transform::GetParent() const {
-    return *(Tecs::Entity *)&this->parent;
+Tecs::Entity Transform::GetParent() const {
+    return this->parent;
 }
 
 bool Transform::HasParent(ecs::Lock<ecs::Read<Transform>> lock) const {
