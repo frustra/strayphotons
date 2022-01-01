@@ -13,19 +13,19 @@ namespace ecs {
         uint32_t changeCount;
 
 #ifdef __cplusplus
-        Transform();
+        Transform() : changeCount(1) {}
         Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>());
 
         void SetParent(Tecs::Entity ent);
-        Tecs::Entity GetParent() const;
-        bool HasParent(ecs::Lock<ecs::Read<ecs::Transform>> lock) const;
-        bool HasParent(ecs::Lock<ecs::Read<ecs::Transform>> lock, Tecs::Entity ent) const;
+        const Tecs::Entity &GetParent() const;
+        bool HasParent(Lock<Read<Transform>> lock) const;
+        bool HasParent(Lock<Read<Transform>> lock, Tecs::Entity ent) const;
 
         // Returns transform data that including all parent transforms.
-        glm::mat4 GetGlobalTransform(ecs::Lock<ecs::Read<ecs::Transform>> lock) const;
-        glm::quat GetGlobalRotation(ecs::Lock<ecs::Read<ecs::Transform>> lock) const;
-        glm::vec3 GetGlobalPosition(ecs::Lock<ecs::Read<ecs::Transform>> lock) const;
-        glm::vec3 GetGlobalForward(ecs::Lock<ecs::Read<ecs::Transform>> lock) const;
+        glm::mat4 GetGlobalTransform(Lock<Read<Transform>> lock) const;
+        glm::quat GetGlobalRotation(Lock<Read<Transform>> lock) const;
+        glm::vec3 GetGlobalPosition(Lock<Read<Transform>> lock) const;
+        glm::vec3 GetGlobalForward(Lock<Read<Transform>> lock) const;
 
         // Perform relative transform operations on the local transform data.
         void Translate(glm::vec3 xyz);

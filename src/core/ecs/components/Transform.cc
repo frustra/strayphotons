@@ -49,20 +49,15 @@ namespace ecs {
         return true;
     }
 
-    Transform::Transform() : parent(Tecs::Entity()), changeCount(1) {
-        transform = glm::identity<glm::mat4x3>();
-    }
-
-    Transform::Transform(glm::vec3 pos, glm::quat orientation) : parent(Tecs::Entity()), changeCount(1) {
-        transform = glm::column(glm::mat4x3(glm::mat3_cast(orientation)), 3, pos);
-    }
+    Transform::Transform(glm::vec3 pos, glm::quat orientation)
+        : transform(glm::column(glm::mat4x3(glm::mat3_cast(orientation)), 3, pos)), changeCount(1) {}
 
     void Transform::SetParent(Tecs::Entity ent) {
         this->parent = ent;
         this->changeCount++;
     }
 
-    Tecs::Entity Transform::GetParent() const {
+    const Tecs::Entity &Transform::GetParent() const {
         return this->parent;
     }
 
