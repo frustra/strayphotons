@@ -14,8 +14,6 @@ namespace picojson {
     class value;
 }
 
-struct Transform;
-
 namespace ecs {
     typedef std::string Name;
 
@@ -38,7 +36,7 @@ namespace ecs {
     class Script;
     class SignalOutput;
     class SignalBindings;
-    using Transform = ::Transform;
+    struct Transform;
     struct TriggerArea;
     enum class TriggerGroup : uint8_t;
     struct View;

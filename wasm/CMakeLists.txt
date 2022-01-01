@@ -17,6 +17,7 @@ foreach(SCRIPT_NAME IN LISTS SCRIPT_LIST)
             -flto
             -nostdlib
             -I${CMAKE_CURRENT_SOURCE_DIR}/inc
+            -I${PROJECT_SOURCE_DIR}/src/core
             -Wl,--allow-undefined-file=${CMAKE_CURRENT_SOURCE_DIR}/wasm.syms
             -Wl,--no-entry
             -Wl,--export-all

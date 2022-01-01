@@ -1,4 +1,4 @@
-#include "../../src/core/ecs/components/Transform.h"
+#include <ecs/components/Transform.h>
 
 extern void hello(Transform vec);
 
