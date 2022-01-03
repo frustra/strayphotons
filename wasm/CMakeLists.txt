@@ -28,6 +28,7 @@ foreach(SCRIPT_NAME IN LISTS SCRIPT_LIST)
             ${SCRIPT_OUTPUT}
         DEPENDS
             ${SCRIPT_INPUT}
+            ${PROJECT_CORE_LIB}
             inc/ecs.h
     )
     list(APPEND WASM_OUTPUTS ${SCRIPT_OUTPUT})

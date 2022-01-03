@@ -8,8 +8,8 @@ namespace ecs {
 #endif
 
     typedef struct Transform {
-        TecsEntity parent;
         GlmMat4x3 transform;
+        TecsEntity parent;
         uint32_t changeCount;
 
 #ifdef __cplusplus
@@ -49,16 +49,16 @@ namespace ecs {
 
     // C accessors
     void transform_identity(Transform *out);
-    void transform_from_pos(const GlmVec3 *pos, Transform *out);
+    void transform_from_pos(Transform *out, const GlmVec3 *pos);
 
     void transform_set_parent(Transform *t, TecsEntity ent);
     uint64_t transform_get_parent(const Transform *t);
     bool transform_has_parent(const Transform *t, ScriptLockHandle lock);
 
-    void transform_get_global_mat4(const Transform *t, ScriptLockHandle lock, GlmMat4 *out);
-    void transform_get_global_orientation(const Transform *t, ScriptLockHandle lock, GlmQuat *out);
-    void transform_get_global_position(const Transform *t, ScriptLockHandle lock, GlmVec3 *out);
-    void transform_get_global_forward(const Transform *t, ScriptLockHandle lock, GlmVec3 *out);
+    void transform_get_global_mat4(GlmMat4 *out, const Transform *t, ScriptLockHandle lock);
+    void transform_get_global_orientation(GlmQuat *out, const Transform *t, ScriptLockHandle lock);
+    void transform_get_global_position(GlmVec3 *out, const Transform *t, ScriptLockHandle lock);
+    void transform_get_global_forward(GlmVec3 *out, const Transform *t, ScriptLockHandle lock);
 
     void transform_translate(Transform *t, const GlmVec3 *xyz);
     void transform_rotate(Transform *t, float radians, const GlmVec3 *axis);
@@ -68,9 +68,9 @@ namespace ecs {
     void transform_set_rotation(Transform *t, const GlmQuat *quat);
     void transform_set_scale(Transform *t, const GlmVec3 *xyz);
 
-    void transform_get_position(const Transform *t, GlmVec3 *out);
-    void transform_get_rotation(const Transform *t, GlmQuat *out);
-    void transform_get_scale(const Transform *t, GlmVec3 *out);
+    void transform_get_position(GlmVec3 *out, const Transform *t);
+    void transform_get_rotation(GlmQuat *out, const Transform *t);
+    void transform_get_scale(GlmVec3 *out, const Transform *t);
 
     uint32_t transform_change_number(const Transform *t);
     bool transform_has_changed(const Transform *t, uint32_t changeNumber);

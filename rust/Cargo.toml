@@ -11,6 +11,7 @@ opt-level = 2
 cxx = "1.0"
 wasmer = "2.1"
 anyhow = "1.0"
+static_assertions = "1.1"
 
 [build-dependencies]
 cxx-build = "1.0"

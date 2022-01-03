@@ -1,3 +1,9 @@
+use wasmer::{Store, Module, Instance, Function, Extern, WasmPtr, NativeFunc, WasmerEnv, imports};
+use std::path::Path;
+use std::sync::{Arc, Mutex};
+use std::mem::MaybeUninit;
+use static_assertions::assert_eq_size;
+
 #[cxx::bridge(namespace = "ecs")]
 mod ffi_ecs {
     extern "C++" {
@@ -7,23 +13,24 @@ mod ffi_ecs {
 
 #[repr(C, packed(4))]
 #[derive(Copy, Clone)]
-struct GlmVec3 {
+pub struct GlmVec3 {
     data: [f32; 3],
 }
 
 #[repr(C, packed(4))]
 #[derive(Copy, Clone)]
-struct GlmMat4x3 {
+pub struct GlmMat4x3 {
     data: [GlmVec3; 4],
 }
 
-#[repr(C, packed(4))]
+#[repr(C, packed(8))]
 #[derive(Copy, Clone, Debug)]
-struct Transform {
-    parent: usize,
+pub struct Transform {
     transform: GlmMat4x3,
+    parent: u64,
     change_count: u32,
 }
+assert_eq_size!(Transform, [u8; 64]);
 
 unsafe impl wasmer::ValueType for GlmVec3 {}
 unsafe impl wasmer::ValueType for GlmMat4x3 {}
@@ -41,14 +48,6 @@ impl std::fmt::Debug for GlmMat4x3 {
     }
 }
 
-#[allow(unused)]
-extern "C" {
-    fn transform_identity(out: *mut Transform);
-    fn transform_from_pos(pos: *const GlmVec3, out: *mut Transform);
-    fn transform_get_position(t: *const Transform, out: *mut GlmVec3);
-    fn transform_set_position(t: *const Transform, pos: *const GlmVec3);
-}
-
 #[cxx::bridge(namespace = "sp::rust")]
 mod ffi_rust {
     extern "Rust" {
@@ -56,10 +55,40 @@ mod ffi_rust {
     }
 }
 
-use wasmer::{Store, Module, Instance, Function, Extern, WasmPtr, NativeFunc, WasmerEnv, imports};
-use std::path::Path;
-use std::sync::{Arc, Mutex};
-use std::mem::MaybeUninit;
+#[derive(WasmerEnv, Clone)]
+pub struct Env {
+    instance: Arc<Mutex<Option<Instance>>>,
+}
+
+macro_rules! wasm_to_c_helper {
+    ($return_type:ty, $func_name:ident ($($arg:ident : $arg_type:ty),*)) => {
+        extern "C" {
+            fn $func_name(out: *mut $return_type $(, $arg: *const $arg_type)*);
+        }
+
+        mod $func_name {
+            use wasmer::WasmPtr;
+
+            #[allow(unused)]
+            pub fn call(env: &crate::Env, out: WasmPtr<$return_type> $(, $arg: WasmPtr<$arg_type>)*) {
+                let instance_lock = env.instance.lock().unwrap();
+                let instance = instance_lock.as_ref().unwrap();
+                let memory = instance.exports.get_memory("memory").unwrap();
+
+                let return_value = out.deref(memory).unwrap();
+                $(
+                    let $arg = $arg.deref(memory).unwrap();
+                )*
+            
+                unsafe {
+                    #[allow(deprecated)]
+                    crate::$func_name(return_value.get_mut() $(, $arg.get_mut())*);
+                    println!("{} {:?}", stringify!($func_name), return_value);
+                }
+            }
+        }
+    };
+}
 
 fn hello_transform(env: &Env, transform: WasmPtr<Transform>) {
     let instance_lock = env.instance.lock().unwrap();
@@ -68,53 +97,11 @@ fn hello_transform(env: &Env, transform: WasmPtr<Transform>) {
     println!("Hello from WASM! {:?}", transform.deref(memory).unwrap());
 }
 
-fn transform_identity_wasm(env: &Env, out: WasmPtr<Transform>) {
-    let instance_lock = env.instance.lock().unwrap();
-    let instance = instance_lock.as_ref().unwrap();
-    let memory = instance.exports.get_memory("memory").unwrap();
+wasm_to_c_helper!(crate::Transform, transform_identity());
+wasm_to_c_helper!(crate::Transform, transform_from_pos(pos: crate::GlmVec3));
+wasm_to_c_helper!(crate::GlmVec3, transform_get_position(t: crate::Transform));
+wasm_to_c_helper!(crate::Transform, transform_set_position(pos: crate::GlmVec3));
 
-    unsafe {
-        let mut identity = MaybeUninit::<Transform>::uninit();
-        transform_identity(identity.as_mut_ptr());
-        println!("transform_identity_wasm {:?}", identity.assume_init());
-        out.deref(memory).unwrap().set(identity.assume_init());
-    }
-}
-
-fn transform_from_pos_wasm(env: &Env, pos: WasmPtr<GlmVec3>, out: WasmPtr<Transform>) {
-    let instance_lock = env.instance.lock().unwrap();
-    let instance = instance_lock.as_ref().unwrap();
-    let memory = instance.exports.get_memory("memory").unwrap();
-
-    let position = pos.deref(memory).unwrap();
-
-    unsafe {
-        let mut transform = MaybeUninit::<Transform>::uninit();
-        transform_from_pos(&position.get(), transform.as_mut_ptr());
-        println!("transform_from_pos_wasm {:?}", transform.assume_init());
-        out.deref(memory).unwrap().set(transform.assume_init());
-    }
-}
-
-fn transform_get_position_wasm(env: &Env, t: WasmPtr<Transform>, out: WasmPtr<GlmVec3>) {
-    let instance_lock = env.instance.lock().unwrap();
-    let instance = instance_lock.as_ref().unwrap();
-    let memory = instance.exports.get_memory("memory").unwrap();
-
-    let transform = t.deref(memory).unwrap();
-
-    unsafe {
-        let mut position = MaybeUninit::<GlmVec3>::uninit();
-        transform_get_position(&transform.get(), position.as_mut_ptr());
-        println!("transform_get_position_wasm {:?}", position.assume_init());
-        out.deref(memory).unwrap().set(position.assume_init());
-    }
-}
-
-#[derive(WasmerEnv, Clone)]
-struct Env {
-    instance: Arc<Mutex<Option<Instance>>>,
-}
 
 fn run_wasm() -> anyhow::Result<()> {
     let store = Store::default();
@@ -125,9 +112,10 @@ fn run_wasm() -> anyhow::Result<()> {
     let import_object = imports!{
         "env" => {
             "hello" => Function::new_native_with_env(&store, Env { instance: instance_arc.clone() }, hello_transform),
-            "transform_identity" => Function::new_native_with_env(&store, Env { instance: instance_arc.clone() }, transform_identity_wasm),
-            "transform_from_pos" => Function::new_native_with_env(&store, Env { instance: instance_arc.clone() }, transform_from_pos_wasm),
-            "transform_get_position" => Function::new_native_with_env(&store, Env { instance: instance_arc.clone() }, transform_get_position_wasm),
+            "transform_identity" => Function::new_native_with_env(&store, Env { instance: instance_arc.clone() }, transform_identity::call),
+            "transform_from_pos" => Function::new_native_with_env(&store, Env { instance: instance_arc.clone() }, transform_from_pos::call),
+            "transform_get_position" => Function::new_native_with_env(&store, Env { instance: instance_arc.clone() }, transform_get_position::call),
+            "transform_set_position" => Function::new_native_with_env(&store, Env { instance: instance_arc.clone() }, transform_set_position::call),
         }
     };
     let instance = Instance::new(&module, &import_object)?;
@@ -149,11 +137,11 @@ fn run_wasm() -> anyhow::Result<()> {
     let mut b = a.clone();
     unsafe {
         transform_identity(&mut a);
-        transform_from_pos(&GlmVec3{data: [1.0, 2.0, 3.0]}, &mut b);
+        transform_from_pos(&mut b, &GlmVec3{data: [1.0, 2.0, 3.0]});
         let mut pos_a = MaybeUninit::<GlmVec3>::uninit();
         let mut pos_b = MaybeUninit::<GlmVec3>::uninit();
-        transform_get_position(&a, pos_a.as_mut_ptr());
-        transform_get_position(&b, pos_b.as_mut_ptr());
+        transform_get_position(pos_a.as_mut_ptr(), &a);
+        transform_get_position(pos_b.as_mut_ptr(), &b);
         println!("A: {:?}, B: {:?}", pos_a.assume_init(), pos_b.assume_init());
     }
 

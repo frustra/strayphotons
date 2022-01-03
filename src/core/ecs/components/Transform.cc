@@ -171,7 +171,7 @@ namespace ecs {
     void transform_identity(Transform *out) {
         *out = Transform();
     }
-    void transform_from_pos(const GlmVec3 *pos, Transform *out) {
+    void transform_from_pos(Transform *out, const GlmVec3 *pos) {
         *out = Transform(*pos);
     }
 
@@ -185,16 +185,16 @@ namespace ecs {
         return t->HasParent(*lock);
     }
 
-    void transform_get_global_mat4(const Transform *t, ScriptLockHandle lock, GlmMat4 *out) {
+    void transform_get_global_mat4(GlmMat4 *out, const Transform *t, ScriptLockHandle lock) {
         *out = t->GetGlobalTransform(*lock);
     }
-    void transform_get_global_orientation(const Transform *t, ScriptLockHandle lock, GlmQuat *out) {
+    void transform_get_global_orientation(GlmQuat *out, const Transform *t, ScriptLockHandle lock) {
         *out = t->GetGlobalRotation(*lock);
     }
-    void transform_get_global_position(const Transform *t, ScriptLockHandle lock, GlmVec3 *out) {
+    void transform_get_global_position(GlmVec3 *out, const Transform *t, ScriptLockHandle lock) {
         *out = t->GetGlobalPosition(*lock);
     }
-    void transform_get_global_forward(const Transform *t, ScriptLockHandle lock, GlmVec3 *out) {
+    void transform_get_global_forward(GlmVec3 *out, const Transform *t, ScriptLockHandle lock) {
         *out = t->GetGlobalForward(*lock);
     }
 
@@ -218,13 +218,13 @@ namespace ecs {
         t->SetScale(*xyz);
     }
 
-    void transform_get_position(const Transform *t, GlmVec3 *out) {
+    void transform_get_position(GlmVec3 *out, const Transform *t) {
         *out = t->GetPosition();
     }
-    void transform_get_rotation(const Transform *t, GlmQuat *out) {
+    void transform_get_rotation(GlmQuat *out, const Transform *t) {
         *out = t->GetRotation();
     }
-    void transform_get_scale(const Transform *t, GlmVec3 *out) {
+    void transform_get_scale(GlmVec3 *out, const Transform *t) {
         *out = t->GetScale();
     }
 
