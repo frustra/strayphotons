@@ -5,7 +5,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/SceneInfo.hh"
-#include "ecs/components/Transform.hh"
+#include "ecs/components/Transform.h"
 #include "game/SceneType.hh"
 
 #include <robin_hood.h>
@@ -75,7 +75,6 @@ namespace sp {
             dstTransform.SetPosition(srcTransform.GetPosition());
             dstTransform.SetRotation(srcTransform.GetRotation());
             dstTransform.SetScale(srcTransform.GetScale());
-            dstTransform.UpdateCachedTransform(dst);
         }
     }
 

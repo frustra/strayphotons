@@ -48,7 +48,6 @@ namespace sp {
                 transform.SetPosition(currentState.pos + target * dPos);
                 transform.SetScale(currentState.scale + target * dScale);
             }
-            transform.UpdateCachedTransform(lock);
         }
 
         return true;

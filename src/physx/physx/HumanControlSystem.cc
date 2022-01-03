@@ -233,7 +233,7 @@ namespace sp {
         }
 
         glm::vec3 origin = transform.GetPosition();
-        glm::vec3 dir = glm::normalize(transform.GetForward());
+        glm::vec3 dir = glm::normalize(transform.GetGlobalForward(lock));
 
         physx::PxReal maxDistance = 2.0f;
 

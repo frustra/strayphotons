@@ -463,14 +463,12 @@ namespace sp {
                 auto &playerTransform = player.Get<ecs::Transform>(liveLock);
                 playerTransform.SetPosition(spawnPosition);
                 playerTransform.SetRotation(spawnRotation);
-                playerTransform.UpdateCachedTransform(liveLock);
             }
             auto vrOrigin = ecs::EntityWith<ecs::Name>(liveLock, "player.vr-origin");
             if (vrOrigin.Has<ecs::Transform>(liveLock)) {
                 auto &vrTransform = vrOrigin.Get<ecs::Transform>(liveLock);
                 vrTransform.SetPosition(spawnPosition);
                 vrTransform.SetRotation(spawnRotation);
-                vrTransform.UpdateCachedTransform(liveLock);
             }
         }
     }

@@ -47,7 +47,6 @@ namespace ecs {
                                 Errorf("Flashlight parent entity does not exist: %s", CVarFlashlightParent.Get());
                             }
                         }
-                        transform.UpdateCachedTransform(lock);
                     }
                 }
             }},
@@ -143,7 +142,6 @@ namespace ecs {
                         }
                     }
                     transform.SetParent(parent);
-                    transform.UpdateCachedTransform(lock);
                     scriptComp.SetParam<NamedEntity>("attach_parent_entity", parentEntity);
                 }
             }},
