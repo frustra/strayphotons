@@ -178,8 +178,8 @@ namespace ecs {
     void transform_set_parent(Transform *t, TecsEntity ent) {
         t->SetParent(ent);
     }
-    TecsEntity transform_get_parent(const Transform *t) {
-        return t->GetParent();
+    uint64_t transform_get_parent(const Transform *t) {
+        return t->GetParent().id;
     }
     bool transform_has_parent(const Transform *t, ScriptLockHandle lock) {
         return t->HasParent(*lock);

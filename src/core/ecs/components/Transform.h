@@ -52,7 +52,7 @@ namespace ecs {
     void transform_from_pos(const GlmVec3 *pos, Transform *out);
 
     void transform_set_parent(Transform *t, TecsEntity ent);
-    TecsEntity transform_get_parent(const Transform *t);
+    uint64_t transform_get_parent(const Transform *t);
     bool transform_has_parent(const Transform *t, ScriptLockHandle lock);
 
     void transform_get_global_mat4(const Transform *t, ScriptLockHandle lock, GlmMat4 *out);
