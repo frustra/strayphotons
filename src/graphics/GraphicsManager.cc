@@ -104,8 +104,8 @@ namespace sp {
     }
 
     bool GraphicsManager::Frame() {
+        if (!context) return true;
     #if defined(SP_GRAPHICS_SUPPORT_GL) || defined(SP_GRAPHICS_SUPPORT_VK)
-        Assert(context, "missing graphics context");
         if (!HasActiveContext()) return false;
         Assert(renderer, "missing renderer");
     #endif

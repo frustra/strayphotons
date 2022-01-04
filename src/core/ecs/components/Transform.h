@@ -1,45 +1,19 @@
 #pragma once
 
-#include <stdint.h>
+#include <ecs/CHelpers.h>
 
 #ifdef __cplusplus
-    #include <ecs/Components.hh>
-    #include <ecs/Ecs.hh>
-    #include <glm/glm.hpp>
-    #include <glm/gtc/quaternion.hpp>
-
-using LockHandle = ecs::Lock<ecs::WriteAll> *;
-using TecsEntity = Tecs::Entity;
-using GlmVec3 = glm::vec3;
-using GlmQuat = glm::quat;
-using GlmMat4x3 = glm::mat4x3;
-using GlmMat4 = glm::mat4;
-
 namespace ecs {
     extern "C" {
-#else
-typedef const void *LockHandle;
-typedef size_t TecsEntity;
-typedef float GlmVec3[3];
-typedef float GlmQuat[4];
-typedef float GlmMat4x3[12];
-typedef float GlmMat4[16];
 #endif
 
     typedef struct Transform {
+        GlmMat4x3 transform;
         TecsEntity parent;
-        GlmMat4x3 transform = {
-            // clang-format off
-            // 1 line = 1 matrix columns
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            // clang-format on
-        };
-        uint32_t changeCount = 1;
+        uint32_t changeCount;
 
 #ifdef __cplusplus
-        Transform() {}
+        Transform() : changeCount(1) {}
         Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>());
 
         void SetParent(Tecs::Entity ent);
@@ -73,42 +47,41 @@ typedef float GlmMat4[16];
 #endif
     } Transform;
 
-#ifdef __cplusplus
-    }
-
-    static Component<Transform> ComponentTransform("transform");
-
-    template<>
-    bool Component<Transform>::Load(sp::Scene *scene, Transform &dst, const picojson::value &src);
-}
-namespace {
-    using Transform = ecs::Transform;
-#endif
+    // C accessors
+    void transform_identity(Transform *out);
+    void transform_from_pos(Transform *out, const GlmVec3 *pos);
 
     void transform_set_parent(Transform *t, TecsEntity ent);
-    TecsEntity transform_get_parent(const Transform *t);
-    bool transform_has_parent(const Transform *t, LockHandle lock, TecsEntity ent = ~(size_t)0);
+    uint64_t transform_get_parent(const Transform *t);
+    bool transform_has_parent(const Transform *t, ScriptLockHandle lock);
 
-    void transform_get_global_mat4(const Transform *t, LockHandle lock, GlmMat4 *out);
-    void transform_get_global_orientation(const Transform *t, LockHandle lock, GlmQuat *out);
-    void transform_get_global_position(const Transform *t, LockHandle lock, GlmVec3 *out);
-    void transform_get_global_forward(const Transform *t, LockHandle lock, GlmVec3 *out);
+    void transform_get_global_mat4(GlmMat4 *out, const Transform *t, ScriptLockHandle lock);
+    void transform_get_global_orientation(GlmQuat *out, const Transform *t, ScriptLockHandle lock);
+    void transform_get_global_position(GlmVec3 *out, const Transform *t, ScriptLockHandle lock);
+    void transform_get_global_forward(GlmVec3 *out, const Transform *t, ScriptLockHandle lock);
 
-    void transform_translate(Transform *t, GlmVec3 xyz);
-    void transform_rotate(Transform *t, float radians, GlmVec3 axis);
-    void transform_scale(Transform *t, GlmVec3 xyz);
+    void transform_translate(Transform *t, const GlmVec3 *xyz);
+    void transform_rotate(Transform *t, float radians, const GlmVec3 *axis);
+    void transform_scale(Transform *t, const GlmVec3 *xyz);
 
-    void transform_set_position(Transform *t, GlmVec3 pos);
-    void transform_set_rotation(Transform *t, GlmQuat quat);
-    void transform_set_scale(Transform *t, GlmVec3 xyz);
+    void transform_set_position(Transform *t, const GlmVec3 *pos);
+    void transform_set_rotation(Transform *t, const GlmQuat *quat);
+    void transform_set_scale(Transform *t, const GlmVec3 *xyz);
 
-    void transform_get_position(const Transform *t, GlmVec3 *out);
-    void transform_get_rotation(const Transform *t, GlmQuat *out);
-    void transform_get_scale(const Transform *t, GlmVec3 *out);
+    void transform_get_position(GlmVec3 *out, const Transform *t);
+    void transform_get_rotation(GlmQuat *out, const Transform *t);
+    void transform_get_scale(GlmVec3 *out, const Transform *t);
 
     uint32_t transform_change_number(const Transform *t);
     bool transform_has_changed(const Transform *t, uint32_t changeNumber);
 
 #ifdef __cplusplus
-}
+    static_assert(sizeof(Transform) == 64, "Wrong Transform size");
+    } // extern "C"
+
+    static Component<Transform> ComponentTransform("transform");
+
+    template<>
+    bool Component<Transform>::Load(sp::Scene *scene, Transform &dst, const picojson::value &src);
+} // namespace ecs
 #endif

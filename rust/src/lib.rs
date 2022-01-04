@@ -1,14 +1,5 @@
-
 #[cxx::bridge(namespace = "sp::rust")]
-mod ffi {
-    extern "C++" {
-        include!(<Tecs.hh>);
-        include!(<ecs/Ecs.hh>);
-
-        // #[cxx_name = "ecs::ECS"]
-        // type ECS;
-    }
-
+mod ffi_rust {
     extern "Rust" {
         fn print_hello();
     }
@@ -16,10 +7,11 @@ mod ffi {
 
 mod wasmer_vm;
 
-pub fn print_hello() {
+fn print_hello() {
     println!("hello world!");
 
-    if let Ok(result) = wasmer_vm::run_wasm() {
-        println!("add_one(42) = {}", result);
+    let result = wasmer_vm::run_wasm();
+    if result.is_err() {
+        println!("run_wasm() failed! {}", result.err().unwrap());
     }
 }

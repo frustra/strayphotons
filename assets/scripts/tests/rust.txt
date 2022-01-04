@@ -1,0 +1,1 @@
+# Exit immediately after startup.

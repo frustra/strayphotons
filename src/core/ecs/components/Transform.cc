@@ -50,7 +50,7 @@ namespace ecs {
     }
 
     Transform::Transform(glm::vec3 pos, glm::quat orientation)
-        : transform(glm::column(glm::mat4x3(glm::mat3_cast(orientation)), 3, pos)) {}
+        : transform(glm::column(glm::mat4x3(glm::mat3_cast(orientation)), 3, pos)), changeCount(1) {}
 
     void Transform::SetParent(Tecs::Entity ent) {
         this->parent = ent;
@@ -167,68 +167,72 @@ namespace ecs {
     bool Transform::HasChanged(uint32_t changeNumber) const {
         return this->changeCount != changeNumber;
     }
-} // namespace ecs
 
-void transform_set_parent(Transform *t, TecsEntity ent) {
-    t->SetParent(ent);
-}
-TecsEntity transform_get_parent(const Transform *t) {
-    return t->GetParent();
-}
-bool transform_has_parent(const Transform *t, LockHandle lock, TecsEntity ent) {
-    if (ent) {
-        return t->HasParent(*lock, ent);
-    } else {
+    void transform_identity(Transform *out) {
+        *out = Transform();
+    }
+    void transform_from_pos(Transform *out, const GlmVec3 *pos) {
+        *out = Transform(*pos);
+    }
+
+    void transform_set_parent(Transform *t, TecsEntity ent) {
+        t->SetParent(ent);
+    }
+    uint64_t transform_get_parent(const Transform *t) {
+        return t->GetParent().id;
+    }
+    bool transform_has_parent(const Transform *t, ScriptLockHandle lock) {
         return t->HasParent(*lock);
     }
-}
 
-void transform_get_global_mat4(const Transform *t, LockHandle lock, GlmMat4 *out) {
-    *out = t->GetGlobalTransform(*lock);
-}
-void transform_get_global_orientation(const Transform *t, LockHandle lock, GlmQuat *out) {
-    *out = t->GetGlobalRotation(*lock);
-}
-void transform_get_global_position(const Transform *t, LockHandle lock, GlmVec3 *out) {
-    *out = t->GetGlobalPosition(*lock);
-}
-void transform_get_global_forward(const Transform *t, LockHandle lock, GlmVec3 *out) {
-    *out = t->GetGlobalForward(*lock);
-}
+    void transform_get_global_mat4(GlmMat4 *out, const Transform *t, ScriptLockHandle lock) {
+        *out = t->GetGlobalTransform(*lock);
+    }
+    void transform_get_global_orientation(GlmQuat *out, const Transform *t, ScriptLockHandle lock) {
+        *out = t->GetGlobalRotation(*lock);
+    }
+    void transform_get_global_position(GlmVec3 *out, const Transform *t, ScriptLockHandle lock) {
+        *out = t->GetGlobalPosition(*lock);
+    }
+    void transform_get_global_forward(GlmVec3 *out, const Transform *t, ScriptLockHandle lock) {
+        *out = t->GetGlobalForward(*lock);
+    }
 
-void transform_translate(Transform *t, GlmVec3 xyz) {
-    t->Translate(xyz);
-}
-void transform_rotate(Transform *t, float radians, GlmVec3 axis) {
-    t->Rotate(radians, axis);
-}
-void transform_scale(Transform *t, GlmVec3 xyz) {
-    t->Scale(xyz);
-}
+    void transform_translate(Transform *t, const GlmVec3 *xyz) {
+        t->Translate(*xyz);
+    }
+    void transform_rotate(Transform *t, float radians, const GlmVec3 *axis) {
+        t->Rotate(radians, *axis);
+    }
+    void transform_scale(Transform *t, const GlmVec3 *xyz) {
+        t->Scale(*xyz);
+    }
 
-void transform_set_position(Transform *t, GlmVec3 pos) {
-    t->SetPosition(pos);
-}
-void transform_set_rotation(Transform *t, GlmQuat quat) {
-    t->SetRotation(quat);
-}
-void transform_set_scale(Transform *t, GlmVec3 xyz) {
-    t->SetScale(xyz);
-}
+    void transform_set_position(Transform *t, const GlmVec3 *pos) {
+        t->SetPosition(*pos);
+    }
+    void transform_set_rotation(Transform *t, const GlmQuat *quat) {
+        t->SetRotation(*quat);
+    }
+    void transform_set_scale(Transform *t, const GlmVec3 *xyz) {
+        t->SetScale(*xyz);
+    }
 
-void transform_get_position(const Transform *t, GlmVec3 *out) {
-    *out = t->GetPosition();
-}
-void transform_get_rotation(const Transform *t, GlmQuat *out) {
-    *out = t->GetRotation();
-}
-void transform_get_scale(const Transform *t, GlmVec3 *out) {
-    *out = t->GetScale();
-}
+    void transform_get_position(GlmVec3 *out, const Transform *t) {
+        *out = t->GetPosition();
+    }
+    void transform_get_rotation(GlmQuat *out, const Transform *t) {
+        *out = t->GetRotation();
+    }
+    void transform_get_scale(GlmVec3 *out, const Transform *t) {
+        *out = t->GetScale();
+    }
 
-uint32_t transform_change_number(const Transform *t) {
-    return t->ChangeNumber();
-}
-bool transform_has_changed(const Transform *t, uint32_t changeNumber) {
-    return t->HasChanged(changeNumber);
-}
+    uint32_t transform_change_number(const Transform *t) {
+        return t->ChangeNumber();
+    }
+    bool transform_has_changed(const Transform *t, uint32_t changeNumber) {
+        return t->HasChanged(changeNumber);
+    }
+
+} // namespace ecs
