@@ -158,7 +158,7 @@ namespace sp {
         context->BeginFrame();
 
         GlfwGraphicsContext *glContext = dynamic_cast<GlfwGraphicsContext *>(context.get());
-        Assert(glContext != nullptr, "GraphicsManager::Frame(): GraphicsContext is not a GlfwGraphicsContext");
+        Assert(glContext, "GraphicsManager::Frame(): GraphicsContext is not a GlfwGraphicsContext");
 
         {
             RenderPhase phase("Frame", timer);

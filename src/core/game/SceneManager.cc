@@ -94,7 +94,7 @@ namespace sp {
         std::function<void(std::shared_ptr<Scene>)> callback) {
         Logf("Loading scene: %s", sceneName);
 
-        auto asset = GAssets.Load("scenes/" + sceneName + ".json", true);
+        auto asset = GAssets.Load("scenes/" + sceneName + ".json", AssetType::Bundled, true);
         if (!asset) {
             Logf("Scene not found");
             return;
@@ -127,7 +127,7 @@ namespace sp {
                         } else {
                             entity.Set<ecs::Name>(lock, sceneName + "." + name);
                         }
-                        Assert(scene->namedEntities.count(name) == 0, "Duplicate entity name: " + name);
+                        Assertf(scene->namedEntities.count(name) == 0, "Duplicate entity name: %s", name);
                         scene->namedEntities.emplace(name, entity);
                     }
                 }
@@ -149,7 +149,7 @@ namespace sp {
                         auto componentType = ecs::LookupComponent(comp.first);
                         if (componentType != nullptr) {
                             bool result = componentType->LoadEntity(lock, entity, comp.second);
-                            Assert(result, "Failed to load component type: " + comp.first);
+                            Assertf(result, "Failed to load component type: %s", comp.first);
                         } else {
                             Errorf("Unknown component, ignoring: %s", comp.first);
                         }
@@ -164,37 +164,28 @@ namespace sp {
         Logf("Loading bindings json: %s", InputBindingConfigPath);
 
         std::thread([this, callback]() {
-            std::string bindingConfig;
+            std::shared_ptr<const Asset> bindingConfig;
 
             if (!std::filesystem::exists(InputBindingConfigPath)) {
-                auto defaultConfigAsset = GAssets.Load("default_input_bindings.json");
-                Assert(defaultConfigAsset, "Default input binding config missing");
-                defaultConfigAsset->WaitUntilValid();
+                bindingConfig = GAssets.Load("default_input_bindings.json");
+                Assert(bindingConfig, "Default input binding config missing");
 
-                bindingConfig = defaultConfigAsset->String();
-
-                std::ofstream file(InputBindingConfigPath, std::ios::binary);
-                Assertf(file.is_open(), "Failed to create binding config file: %s", InputBindingConfigPath);
-                file << bindingConfig;
-                file.close();
+                // TODO: Create CFunc to save current input bindings to file
+                // std::ofstream file(InputBindingConfigPath, std::ios::binary);
+                // Assertf(file.is_open(), "Failed to create binding config file: %s", InputBindingConfigPath);
+                // file << bindingConfig->String();
+                // file.close();
             } else {
-                std::ifstream file(InputBindingConfigPath);
-                Assertf(file.is_open(), "Failed to open binding config file: %s", InputBindingConfigPath);
-
-                file.seekg(0, std::ios::end);
-                size_t size = file.tellg();
-                file.seekg(0, std::ios::beg);
-
-                bindingConfig.resize(size);
-                file.read(bindingConfig.data(), size);
-                file.close();
+                bindingConfig = GAssets.Load(InputBindingConfigPath, AssetType::External, true);
+                Assertf(bindingConfig, "Failed to load input binding config: %s", InputBindingConfigPath);
             }
+            bindingConfig->WaitUntilValid();
 
             auto scene = make_shared<Scene>("bindings", SceneType::System);
 
             picojson::value root;
-            string err = picojson::parse(root, bindingConfig);
-            if (!err.empty()) Abort("Failed to parse user input_binding.json file: " + err);
+            string err = picojson::parse(root, bindingConfig->String());
+            if (!err.empty()) Abortf("Failed to parse input binding json file: %s", err);
 
             {
                 auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
@@ -210,7 +201,7 @@ namespace sp {
                         auto componentType = ecs::LookupComponent(comp.first);
                         if (componentType != nullptr) {
                             bool result = componentType->LoadEntity(lock, entity, comp.second);
-                            Assert(result, "Failed to load component type: " + comp.first);
+                            Assertf(result, "Failed to load component type: %s", comp.first);
                         } else {
                             Errorf("Unknown component, ignoring: %s", comp.first);
                         }
@@ -519,7 +510,7 @@ namespace sp {
                             while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
                                 auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
                                 auto stagingScene = stagingInfo.scene.lock();
-                                Assert(stagingScene != nullptr, "Missing SceneInfo scene on player entity");
+                                Assert(stagingScene, "Missing SceneInfo scene on player entity");
                                 Logf("  -> %s scene", stagingScene->name);
                                 stagingId = stagingInfo.nextStagingId;
                             }
@@ -540,7 +531,7 @@ namespace sp {
                             while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
                                 auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
                                 auto stagingScene = stagingInfo.scene.lock();
-                                Assert(stagingScene != nullptr, "Missing SceneInfo scene on binding entity");
+                                Assert(stagingScene, "Missing SceneInfo scene on binding entity");
                                 Logf("  -> %s scene", stagingScene->name);
                                 stagingId = stagingInfo.nextStagingId;
                             }
@@ -567,7 +558,7 @@ namespace sp {
                                     while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
                                         auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
                                         auto stagingScene = stagingInfo.scene.lock();
-                                        Assert(stagingScene != nullptr, "Missing SceneInfo scene on entity");
+                                        Assert(stagingScene, "Missing SceneInfo scene on entity");
                                         Logf("  -> %s scene (%s type)", stagingScene->name, stagingScene->type);
                                         stagingId = stagingInfo.nextStagingId;
                                     }

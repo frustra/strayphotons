@@ -19,22 +19,12 @@ namespace sp::xr {
         vr::EVRInputError error = vr::VRInput()->SetActionManifestPath(actionManifestPath.c_str());
         Assert(error == vr::EVRInputError::VRInputError_None, "Failed to initialize OpenVR input");
 
-        std::string actionManifestStr;
-        {
-            std::ifstream file(actionManifestPath);
-            Assert(file.is_open(), "Failed to open SteamVR action manifest file: " + actionManifestPath);
-
-            file.seekg(0, std::ios::end);
-            size_t size = file.tellg();
-            file.seekg(0, std::ios::beg);
-
-            actionManifestStr.resize(size);
-            file.read(actionManifestStr.data(), size);
-            file.close();
-        }
+        auto actionManifest = GAssets.Load(actionManifestPath, AssetType::External, true);
+        Assertf(actionManifest, "Failed to load vr action manifest: ", actionManifestPath);
+        actionManifest->WaitUntilValid();
 
         picojson::value root;
-        string err = picojson::parse(root, actionManifestStr);
+        string err = picojson::parse(root, actionManifest->String());
         if (!err.empty()) {
             Errorf("Failed to parse OpenVR action manifest file: %s", err);
             return;

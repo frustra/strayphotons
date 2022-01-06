@@ -95,8 +95,8 @@ namespace sp {
 
     string ShaderManager::LoadShader(ShaderCompileInput &input, string name) {
         string filePath = "shaders/" + name;
-        auto asset = GAssets.Load(filePath, true);
-        Assert(asset != nullptr, "Shader asset not found");
+        auto asset = GAssets.Load(filePath, AssetType::Bundled, true);
+        Assert(asset, "Shader asset not found");
         asset->WaitUntilValid();
         input.units.push_back(name);
 
@@ -159,7 +159,7 @@ namespace sp {
                 output << "//end " << line << std::endl;
                 output << "#line " << (linesProcessed + 1) << " " << currUnit << std::endl;
             } else {
-                Abort("invalid shader command " + command + " #" + input.units.back());
+                Abortf("invalid shader command %s #%s", command, input.units.back());
             }
         }
 

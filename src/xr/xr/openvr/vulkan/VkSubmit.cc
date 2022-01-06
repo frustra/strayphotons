@@ -8,14 +8,14 @@
 
 namespace sp::xr {
     void OpenVrSystem::SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) {
-        Assert(context != nullptr, "TranslateTexture: null GraphicsContext");
-        Assert(tex != nullptr, "TranslateTexture: null GpuTexture");
+        Assert(context, "TranslateTexture: null GraphicsContext");
+        Assert(tex, "TranslateTexture: null GpuTexture");
 
         vulkan::DeviceContext *device = dynamic_cast<vulkan::DeviceContext *>(context);
-        Assert(device != nullptr, "TranslateTexture: GraphicsContext is not a vulkan::DeviceContext");
+        Assert(device, "TranslateTexture: GraphicsContext is not a vulkan::DeviceContext");
 
         vulkan::ImageView *imageView = dynamic_cast<vulkan::ImageView *>(tex);
-        Assert(imageView != nullptr, "TranslateTexture: GpuTexture is not a vulkan::ImageView");
+        Assert(imageView, "TranslateTexture: GpuTexture is not a vulkan::ImageView");
 
         vr::VRVulkanTextureArrayData_t vulkanData;
         vulkanData.m_pDevice = device->Device();

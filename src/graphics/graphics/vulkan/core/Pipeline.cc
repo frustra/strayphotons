@@ -121,7 +121,7 @@ namespace sp::vulkan {
                     } else if (type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                         setInfo.uniformBuffersMask |= (1 << binding);
                     } else {
-                        Abort("unsupported SpvReflectDescriptorType " + std::to_string(type));
+                        Abortf("unsupported SpvReflectDescriptorType %d", type);
                     }
                 }
             }
@@ -426,7 +426,7 @@ namespace sp::vulkan {
             }
 
             if (count > 0) {
-                Assert(count == 1, "Overlapping descriptor binding index: " + std::to_string(binding));
+                Assertf(count == 1, "Overlapping descriptor binding index: %u", binding);
                 bindings.emplace_back(binding,
                     type,
                     layoutInfo.descriptorCount[binding],

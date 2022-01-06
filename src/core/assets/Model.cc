@@ -114,7 +114,7 @@ namespace sp {
     }
 
     void Model::PopulateFromAsset(std::shared_ptr<const Asset> asset, const tinygltf::FsCallbacks *fsCallbacks) {
-        Assert(asset != nullptr, "Loading Model from null asset");
+        Assert(asset, "Loading Model from null asset");
         this->asset = asset;
         asset->WaitUntilValid();
 
@@ -152,7 +152,7 @@ namespace sp {
                 baseDir);
         }
 
-        Assert(err.empty(), "Failed to parse glTF: " + err);
+        Assertf(err.empty(), "Failed to parse glTF: %s", err);
         Assert(ret, "Failed to parse glTF");
         this->model = gltfModel;
 

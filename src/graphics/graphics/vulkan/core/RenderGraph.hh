@@ -103,7 +103,7 @@ namespace sp::vulkan {
         void Register(string_view name, RenderGraphResource &resource);
 
         RenderGraphResource &GetResourceRef(RenderGraphResourceID id) {
-            Assert(id < resources.size(), "resource ID " + std::to_string(id) + " is invalid");
+            Assertf(id < resources.size(), "resource ID %u is invalid", id);
             return resources[id];
         }
 

@@ -7,7 +7,7 @@
 
 namespace sp {
     void Image::PopulateFromAsset(std::shared_ptr<const Asset> asset) {
-        Assert(asset != nullptr, "Loading Image from null asset");
+        Assert(asset, "Loading Image from null asset");
         asset->WaitUntilValid();
 
         Assert(asset->BufferSize() <= INT_MAX, "Buffer size overflows int");

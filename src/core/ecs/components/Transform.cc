@@ -15,7 +15,7 @@ namespace ecs {
     bool Component<Transform>::Load(sp::Scene *scene, Transform &transform, const picojson::value &src) {
         for (auto subTransform : src.get<picojson::object>()) {
             if (subTransform.first == "parent") {
-                Assert(scene != nullptr, "Transform::Load must have valid scene to define parent");
+                Assert(scene, "Transform::Load must have valid scene to define parent");
                 auto parentName = subTransform.second.get<string>();
                 auto it = scene->namedEntities.find(parentName);
                 if (it != scene->namedEntities.end()) {

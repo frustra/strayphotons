@@ -25,7 +25,7 @@ namespace sp::xr {
         case ecs::XrEye::Right:
             return vr::Eye_Right;
         default:
-            Abort("Unknown XrEye enum: " + std::to_string((size_t)eye));
+            Abortf("Unknown XrEye enum: %d", eye);
         }
     }
 
@@ -58,8 +58,7 @@ namespace sp::xr {
         eventHandler = std::make_shared<EventHandler>(vrSystem);
 
         // Initialize SteamVR Input subsystem
-        auto cwd = std::filesystem::current_path();
-        std::string actionManifestPath = std::filesystem::absolute(cwd / "actions.json").string();
+        std::string actionManifestPath = std::filesystem::absolute("actions.json").string();
         inputBindings = std::make_shared<InputBindings>(*this, actionManifestPath);
 
         uint32_t vrWidth, vrHeight;

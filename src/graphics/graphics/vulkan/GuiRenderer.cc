@@ -40,7 +40,7 @@ namespace sp::vulkan {
         for (auto &pair : fontAssets) {
             auto &asset = pair.first;
             asset->WaitUntilValid();
-            Assert(asset != nullptr, "Failed to load gui font");
+            Assert(asset, "Failed to load gui font");
             ImFontConfig cfg;
             cfg.FontData = (void *)asset->Buffer();
             cfg.FontDataSize = asset->BufferSize();

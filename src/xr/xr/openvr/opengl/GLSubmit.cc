@@ -8,10 +8,10 @@
 
 namespace sp::xr {
     void OpenVrSystem::SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) {
-        Assert(tex != nullptr, "TranslateTexture: null GpuTexture");
+        Assert(tex, "TranslateTexture: null GpuTexture");
 
         GLTexture *glTex = dynamic_cast<GLTexture *>(tex);
-        Assert(glTex != nullptr, "TranslateTexture: GpuTexture is not a GLTexture");
+        Assert(glTex, "TranslateTexture: GpuTexture is not a GLTexture");
 
         vr::VRTextureWithPose_t texture;
         texture.handle = (void *)(size_t)glTex->handle;

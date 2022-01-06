@@ -40,7 +40,7 @@ namespace sp::vulkan {
         } else if (components == 4) {
             outputDesc.format = vk::Format::eR8G8B8A8Srgb;
         } else {
-            Abort("format has unsupported component count: " + std::to_string(components));
+            Abortf("format has unsupported component count: %u", components);
         }
 
         Assert(FormatByteSize(view->Format()) == FormatByteSize(outputDesc.format),

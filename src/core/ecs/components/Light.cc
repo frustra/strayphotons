@@ -23,7 +23,7 @@ namespace ecs {
             } else if (param.first == "on") {
                 light.on = param.second.get<bool>();
             } else if (param.first == "bulb") {
-                Assert(scene != nullptr, "Light::Load must have valid scene to define bulb");
+                Assert(scene, "Light::Load must have valid scene to define bulb");
                 auto bulbName = param.second.get<string>();
                 auto it = scene->namedEntities.find(bulbName);
                 if (it != scene->namedEntities.end()) {

@@ -784,7 +784,7 @@ namespace sp {
         std::string path = "cache/collision/" + model.name;
         if (decomposeHull) path += "-decompose";
 
-        if (GAssets.InputStream(path, in)) {
+        if (GAssets.InputStream(path, AssetType::Bundled, in)) {
             uint32 magic;
             in.read((char *)&magic, 4);
             if (magic != hullCacheMagic) {

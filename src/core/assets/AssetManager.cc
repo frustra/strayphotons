@@ -46,7 +46,7 @@ namespace sp {
         size_t size;
 
         AssetManager *manager = static_cast<AssetManager *>(userdata);
-        if (manager->InputStream(path, in, &size)) {
+        if (manager->InputStream(path, AssetType::Bundled, in, &size)) {
             out->resize(size);
             in.read((char *)out->data(), size);
             in.close();
@@ -67,7 +67,6 @@ namespace sp {
                 return filepath;
             },
 
-            // ReadWholeFilehtop
             &AssetManager::ReadWholeFile,
 
             nullptr, // WriteFile callback, not supported
@@ -93,7 +92,9 @@ namespace sp {
             }
         }
         loadedModels.Tick(this->interval);
-        loadedAssets.Tick(this->interval);
+        for (auto &assets : loadedAssets) {
+            assets.Tick(this->interval);
+        }
     }
 
     void AssetManager::UpdateTarIndex() {
@@ -113,30 +114,48 @@ namespace sp {
         mtar_close(&tar);
     }
 
-    bool AssetManager::InputStream(const std::string &path, std::ifstream &stream, size_t *size) {
+    bool AssetManager::InputStream(const std::string &path, AssetType type, std::ifstream &stream, size_t *size) {
+        switch (type) {
+        case AssetType::Bundled: {
 #ifdef SP_PACKAGE_RELEASE
-        stream.open(ASSETS_TAR, std::ios::in | std::ios::binary);
+            stream.open(ASSETS_TAR, std::ios::in | std::ios::binary);
 
-        if (stream && tarIndex.count(path)) {
-            auto indexData = tarIndex[path];
-            if (size) *size = indexData.second;
-            stream.seekg(indexData.first, std::ios::beg);
-            return true;
-        }
+            if (stream && tarIndex.count(path)) {
+                auto indexData = tarIndex[path];
+                if (size) *size = indexData.second;
+                stream.seekg(indexData.first, std::ios::beg);
+                return true;
+            }
 
-        return false;
+            return false;
 #else
-        std::string filename = (starts_with(path, "shaders/") ? SHADERS_DIR : ASSETS_DIR) + path;
-        stream.open(filename, std::ios::in | std::ios::binary);
+            std::string filename = (starts_with(path, "shaders/") ? SHADERS_DIR : ASSETS_DIR) + path;
+            stream.open(filename, std::ios::in | std::ios::binary);
 
-        if (size && stream) {
-            stream.seekg(0, std::ios::end);
-            *size = stream.tellg();
-            stream.seekg(0, std::ios::beg);
-        }
+            if (size && stream) {
+                stream.seekg(0, std::ios::end);
+                *size = stream.tellg();
+                stream.seekg(0, std::ios::beg);
+            }
 
-        return !!stream;
+            return !!stream;
 #endif
+        }
+        case AssetType::External: {
+            stream.open(path, std::ios::in | std::ios::binary);
+
+            if (size && stream) {
+                stream.seekg(0, std::ios::end);
+                *size = stream.tellg();
+                stream.seekg(0, std::ios::beg);
+            }
+
+            return !!stream;
+        }
+        case AssetType::Count:
+            break;
+        }
+        Abortf("AssetManager::InputStream called with invalid asset type: %s", path);
     }
 
     bool AssetManager::OutputStream(const std::string &path, std::ofstream &stream) {
@@ -147,30 +166,30 @@ namespace sp {
         return !!stream;
     }
 
-    std::shared_ptr<const Asset> AssetManager::Load(const std::string &path, bool reload) {
+    std::shared_ptr<const Asset> AssetManager::Load(const std::string &path, AssetType type, bool reload) {
         Assert(!path.empty(), "AssetManager::Load called with empty path");
 
-        auto asset = loadedAssets.Load(path);
+        auto asset = loadedAssets[type].Load(path);
         if (!asset || reload) {
             {
                 std::lock_guard lock(assetMutex);
                 if (!reload) {
                     // Check again in case an inflight asset just completed on another thread
-                    asset = loadedAssets.Load(path);
+                    asset = loadedAssets[type].Load(path);
                     if (asset) return asset;
                 }
 
                 asset = std::make_shared<Asset>(path);
-                loadedAssets.Register(path, asset, true /* allowReplace */);
+                loadedAssets[type].Register(path, asset, true /* allowReplace */);
             }
             {
                 std::lock_guard lock(taskMutex);
-                runningTasks.emplace_back(std::async(std::launch::async, [this, path, asset] {
+                runningTasks.emplace_back(std::async(std::launch::async, [this, path, type, asset] {
                     Debugf("Loading asset: %s", path);
                     std::ifstream in;
                     size_t size;
 
-                    if (InputStream(path, in, &size)) {
+                    if (InputStream(path, type, in, &size)) {
                         asset->buffer.resize(size);
                         in.read((char *)asset->buffer.data(), size);
                         in.close();
@@ -178,7 +197,7 @@ namespace sp {
                         asset->valid.test_and_set();
                         asset->valid.notify_all();
                     } else {
-                        Abort("Asset does not exist: " + path);
+                        Abortf("Asset does not exist: %s", path);
                     }
                 }));
             }
@@ -212,6 +231,12 @@ namespace sp {
         return "";
     }
 
+    void AssetManager::RegisterModelName(const std::string &name, const std::string &path) {
+        std::lock_guard lock(modelNameMutex);
+        auto result = externalModelNames.emplace(name, path);
+        Assertf(result.second, "Duplicate model registration for: %s", name);
+    }
+
     std::shared_ptr<const Model> AssetManager::LoadModel(const std::string &name) {
         Assert(!name.empty(), "AssetManager::LoadModel called with empty name");
 
@@ -229,10 +254,24 @@ namespace sp {
             {
                 std::lock_guard lock(taskMutex);
                 runningTasks.emplace_back(std::async(std::launch::async, [this, name, model] {
-                    std::string path = findModel(name);
-                    Assert(!path.empty(), "Model not found: " + name);
+                    std::string path;
+                    {
+                        std::lock_guard lock(modelNameMutex);
+                        auto it = externalModelNames.find(name);
+                        if (it != externalModelNames.end()) path = it->second;
+                    }
 
-                    auto asset = Load(path);
+                    std::shared_ptr<const sp::Asset> asset;
+                    if (!path.empty()) {
+                        asset = Load(path, AssetType::External);
+                    } else {
+                        path = findModel(name);
+                        Assertf(!path.empty(), "Model not found: %s", name);
+
+                        asset = Load(path, AssetType::Bundled);
+                    }
+
+                    Assertf(asset, "Failed to load model asset: %s", name);
                     model->PopulateFromAsset(asset, gltfLoaderCallbacks.get());
                 }));
             }

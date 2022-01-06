@@ -160,7 +160,7 @@ namespace sp {
 
         shared_ptr<Shader> Get(ShaderMeta *meta) const {
             auto ptr = shaders.find(meta);
-            Assert(ptr != shaders.end(), "shader not loaded: " + meta->name);
+            Assertf(ptr != shaders.end(), "shader not loaded: %s", meta->name);
 
             return ptr->second;
         }
