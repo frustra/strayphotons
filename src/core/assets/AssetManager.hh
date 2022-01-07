@@ -36,11 +36,12 @@ namespace sp {
         std::shared_ptr<const Asset> Load(const std::string &path,
             AssetType type = AssetType::Bundled,
             bool reload = false);
-        void RegisterModelName(const std::string &name, const std::string &path);
         std::shared_ptr<const Model> LoadModel(const std::string &name);
         std::shared_ptr<const Image> LoadImage(const std::string &path);
 
         std::shared_ptr<Script> LoadScript(const std::string &path);
+
+        void RegisterModelName(const std::string &name, const std::string &path, AssetType type, bool replace = false);
 
     private:
         void Frame() override;
@@ -69,8 +70,8 @@ namespace sp {
         PreservingMap<std::string, Model> loadedModels;
         PreservingMap<std::string, Image> loadedImages;
 
-        std::mutex modelNameMutex;
-        robin_hood::unordered_flat_map<std::string, std::string> externalModelNames;
+        std::mutex registeredModelMutex;
+        robin_hood::unordered_flat_map<std::string, std::pair<std::string, AssetType>> registeredModelNames;
 
         std::unique_ptr<tinygltf::FsCallbacks> gltfLoaderCallbacks;
         robin_hood::unordered_flat_map<std::string, std::pair<size_t, size_t>> tarIndex;

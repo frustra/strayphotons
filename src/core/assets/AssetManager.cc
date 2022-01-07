@@ -231,12 +231,6 @@ namespace sp {
         return "";
     }
 
-    void AssetManager::RegisterModelName(const std::string &name, const std::string &path) {
-        std::lock_guard lock(modelNameMutex);
-        auto result = externalModelNames.emplace(name, path);
-        Assertf(result.second, "Duplicate model registration for: %s", name);
-    }
-
     std::shared_ptr<const Model> AssetManager::LoadModel(const std::string &name) {
         Assert(!name.empty(), "AssetManager::LoadModel called with empty name");
 
@@ -255,20 +249,24 @@ namespace sp {
                 std::lock_guard lock(taskMutex);
                 runningTasks.emplace_back(std::async(std::launch::async, [this, name, model] {
                     std::string path;
+                    AssetType type = AssetType::Count;
                     {
-                        std::lock_guard lock(modelNameMutex);
-                        auto it = externalModelNames.find(name);
-                        if (it != externalModelNames.end()) path = it->second;
+                        std::lock_guard lock(registeredModelMutex);
+                        auto it = registeredModelNames.find(name);
+                        if (it != registeredModelNames.end()) {
+                            path = it->second.first;
+                            type = it->second.second;
+                        }
                     }
 
                     std::shared_ptr<const sp::Asset> asset;
-                    if (!path.empty()) {
-                        asset = Load(path, AssetType::External);
-                    } else {
+                    if (type == AssetType::Count) {
                         path = findModel(name);
                         Assertf(!path.empty(), "Model not found: %s", name);
 
                         asset = Load(path, AssetType::Bundled);
+                    } else {
+                        asset = Load(path, type);
                     }
 
                     Assertf(asset, "Failed to load model asset: %s", name);
@@ -325,5 +323,17 @@ namespace sp {
         }
 
         return make_shared<Script>(path, asset, std::move(lines));
+    }
+
+    void AssetManager::RegisterModelName(const std::string &name,
+        const std::string &path,
+        AssetType type,
+        bool replace) {
+        std::lock_guard lock(registeredModelMutex);
+        auto result = registeredModelNames.insert_or_assign(name, std::make_pair(path, type));
+        if (!result.second) {
+            Assertf(replace, "Duplicate model registration for: %s", name);
+            // TODO: Update any models in loadedModels
+        }
     }
 } // namespace sp

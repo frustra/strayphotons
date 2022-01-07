@@ -36,8 +36,8 @@ namespace sp::xr {
         vrSystem.reset();
     }
 
-    void OpenVrSystem::Init(GraphicsContext *context) {
-        if (vrSystem) return;
+    bool OpenVrSystem::Init(GraphicsContext *context) {
+        if (vrSystem) return true;
         this->context = context;
 
         vr::EVRInitError err = vr::VRInitError_None;
@@ -52,7 +52,7 @@ namespace sp::xr {
         } else {
             Errorf("Failed to load OpenVR system: %s", VR_GetVRInitErrorAsSymbol(err));
             Errorf("Run 'reloadxrsystem' in the console to try again.");
-            return;
+            return false;
         }
 
         eventHandler = std::make_shared<EventHandler>(vrSystem);
@@ -64,6 +64,8 @@ namespace sp::xr {
         uint32_t vrWidth, vrHeight;
         vrSystem->GetRecommendedRenderTargetSize(&vrWidth, &vrHeight);
         Logf("OpenVR Render Target Size: %u x %u", vrWidth, vrHeight);
+
+        RegisterModels();
 
         GetSceneManager().AddSystemScene("vr-system",
             [this, vrWidth, vrHeight](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
@@ -109,6 +111,7 @@ namespace sp::xr {
             });
 
         StartThread();
+        return true;
     }
 
     bool OpenVrSystem::IsInitialized() {
@@ -241,5 +244,25 @@ namespace sp::xr {
         static_assert(sizeof(*vr::HiddenAreaMesh_t::pVertexData) == sizeof(*HiddenAreaMesh::vertices));
         auto mesh = vrSystem->GetHiddenAreaMesh(MapXrEyeToOpenVr(eye));
         return {(const glm::vec2 *)mesh.pVertexData, mesh.unTriangleCount};
+    }
+
+    void OpenVrSystem::RegisterModels() {
+        auto modelPathLen =
+            vr::VRResources()->GetResourceFullPath("vr_glove_left_model.glb", "rendermodels/vr_glove/", NULL, 0);
+        std::vector<char> modelPathStr(modelPathLen);
+        vr::VRResources()->GetResourceFullPath("vr_glove_left_model.glb",
+            "rendermodels/vr_glove/",
+            modelPathStr.data(),
+            modelPathStr.size());
+        GAssets.RegisterModelName("vr_glove_left", modelPathStr.data(), AssetType::External, true);
+
+        modelPathLen =
+            vr::VRResources()->GetResourceFullPath("vr_glove_right_model.glb", "rendermodels/vr_glove/", NULL, 0);
+        modelPathStr.resize(modelPathLen);
+        vr::VRResources()->GetResourceFullPath("vr_glove_right_model.glb",
+            "rendermodels/vr_glove/",
+            modelPathStr.data(),
+            modelPathStr.size());
+        GAssets.RegisterModelName("vr_glove_right", modelPathStr.data(), AssetType::External, true);
     }
 } // namespace sp::xr

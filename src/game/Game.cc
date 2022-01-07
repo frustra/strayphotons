@@ -5,6 +5,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
+#include "core/assets/AssetManager.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
@@ -87,6 +88,8 @@ namespace sp {
 #endif
 
 #ifdef SP_XR_SUPPORT
+            GAssets.RegisterModelName("vr_glove_left", "models/box.glb", AssetType::Bundled);
+            GAssets.RegisterModelName("vr_glove_right", "models/box.glb", AssetType::Bundled);
             if (options["no-vr"].count() == 0) xr.LoadXrSystem();
 #endif
 

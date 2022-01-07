@@ -77,6 +77,16 @@
             "signal_output": {}
         },
         {
+            "_name": "left-hand",
+            "renderable": "vr_glove_left",
+            "transform": {}
+        },
+        {
+            "_name": "right-hand",
+            "renderable": "vr_glove_right",
+            "transform": {}
+        },
+        {
             "_name": "vr-origin",
             "character_controller": {
                 "target": "player.vr-hmd"
