@@ -254,7 +254,7 @@ namespace sp::xr {
             "rendermodels/vr_glove/",
             modelPathStr.data(),
             modelPathStr.size());
-        GAssets.RegisterModelName("vr_glove_left", modelPathStr.data(), AssetType::External, true);
+        GAssets.RegisterExternalModel("vr_glove_left", modelPathStr.data());
 
         modelPathLen =
             vr::VRResources()->GetResourceFullPath("vr_glove_right_model.glb", "rendermodels/vr_glove/", NULL, 0);
@@ -263,6 +263,6 @@ namespace sp::xr {
             "rendermodels/vr_glove/",
             modelPathStr.data(),
             modelPathStr.size());
-        GAssets.RegisterModelName("vr_glove_right", modelPathStr.data(), AssetType::External, true);
+        GAssets.RegisterExternalModel("vr_glove_right", modelPathStr.data());
     }
 } // namespace sp::xr

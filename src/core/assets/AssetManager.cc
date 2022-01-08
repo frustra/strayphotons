@@ -249,24 +249,20 @@ namespace sp {
                 std::lock_guard lock(taskMutex);
                 runningTasks.emplace_back(std::async(std::launch::async, [this, name, model] {
                     std::string path;
-                    AssetType type = AssetType::Count;
                     {
-                        std::lock_guard lock(registeredModelMutex);
-                        auto it = registeredModelNames.find(name);
-                        if (it != registeredModelNames.end()) {
-                            path = it->second.first;
-                            type = it->second.second;
-                        }
+                        std::lock_guard lock(externalModelMutex);
+                        auto it = externalModelPaths.find(name);
+                        if (it != externalModelPaths.end()) path = it->second;
                     }
 
                     std::shared_ptr<const sp::Asset> asset;
-                    if (type == AssetType::Count) {
+                    if (path.empty()) {
                         path = findModel(name);
                         Assertf(!path.empty(), "Model not found: %s", name);
 
                         asset = Load(path, AssetType::Bundled);
                     } else {
-                        asset = Load(path, type);
+                        asset = Load(path, AssetType::External);
                     }
 
                     Assertf(asset, "Failed to load model asset: %s", name);
@@ -325,15 +321,14 @@ namespace sp {
         return make_shared<Script>(path, asset, std::move(lines));
     }
 
-    void AssetManager::RegisterModelName(const std::string &name,
-        const std::string &path,
-        AssetType type,
-        bool replace) {
-        std::lock_guard lock(registeredModelMutex);
-        auto result = registeredModelNames.insert_or_assign(name, std::make_pair(path, type));
-        if (!result.second) {
-            Assertf(replace, "Duplicate model registration for: %s", name);
-            // TODO: Update any models in loadedModels
-        }
+    void AssetManager::RegisterExternalModel(const std::string &name, const std::string &path) {
+        std::lock_guard lock(externalModelMutex);
+        auto result = externalModelPaths.emplace(name, path);
+        Assertf(result.second, "Duplicate model registration for: %s", name);
+    }
+
+    bool AssetManager::IsModelRegistered(const std::string &name) {
+        std::lock_guard lock(externalModelMutex);
+        return externalModelPaths.count(name) > 0;
     }
 } // namespace sp

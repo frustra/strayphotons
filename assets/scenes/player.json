@@ -78,13 +78,51 @@
         },
         {
             "_name": "left-hand",
-            "renderable": "vr_glove_left",
-            "transform": {}
+			"physics": {
+				"model": "box"
+			},
+            "transform": {
+                "translate": [1, 1, 0],
+                "scale": [0.05, 0.125, 0.2]
+            }
+        },
+        {
+            "transform": {
+                "parent": "left-hand",
+                "scale": [20, 8, 5],
+                "translate": [0.2, -0.1, -0.3]
+            },
+            "renderable": {
+                "hidden": true
+            },
+            "script": {
+                "onTick": ["lazy_load_model"],
+                "parameters": { "model_name": "vr_glove_left" }
+            }
         },
         {
             "_name": "right-hand",
-            "renderable": "vr_glove_right",
-            "transform": {}
+			"physics": {
+				"model": "box"
+			},
+            "transform": {
+                "translate": [-1, 1, 0],
+                "scale": [0.05, 0.125, 0.2]
+            }
+        },
+        {
+            "transform": {
+                "parent": "right-hand",
+                "scale": [20, 8, 5],
+                "translate": [-0.2, -0.1, -0.3]
+            },
+            "renderable": {
+                "hidden": true
+            },
+            "script": {
+                "onTick": ["lazy_load_model"],
+                "parameters": { "model_name": "vr_glove_right" }
+            }
         },
         {
             "_name": "vr-origin",

@@ -41,7 +41,8 @@ namespace sp {
 
         std::shared_ptr<Script> LoadScript(const std::string &path);
 
-        void RegisterModelName(const std::string &name, const std::string &path, AssetType type, bool replace = false);
+        void RegisterExternalModel(const std::string &name, const std::string &path);
+        bool IsModelRegistered(const std::string &name);
 
     private:
         void Frame() override;
@@ -70,8 +71,8 @@ namespace sp {
         PreservingMap<std::string, Model> loadedModels;
         PreservingMap<std::string, Image> loadedImages;
 
-        std::mutex registeredModelMutex;
-        robin_hood::unordered_flat_map<std::string, std::pair<std::string, AssetType>> registeredModelNames;
+        std::mutex externalModelMutex;
+        robin_hood::unordered_flat_map<std::string, std::string> externalModelPaths;
 
         std::unique_ptr<tinygltf::FsCallbacks> gltfLoaderCallbacks;
         robin_hood::unordered_flat_map<std::string, std::pair<size_t, size_t>> tarIndex;

@@ -1,5 +1,6 @@
 #include "Script.hh"
 #include "assets/AssetManager.hh"
+#include "assets/Model.hh"
 #include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
@@ -143,6 +144,21 @@ namespace ecs {
                     }
                     transform.SetParent(parent);
                     scriptComp.SetParam<NamedEntity>("attach_parent_entity", parentEntity);
+                }
+            }},
+        {"lazy_load_model",
+            [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+                if (ent.Has<Script, Renderable>(lock)) {
+                    auto &scriptComp = ent.Get<Script>(lock);
+                    auto modelName = scriptComp.GetParam<std::string>("model_name");
+
+                    auto &renderable = ent.Get<Renderable>(lock);
+                    if (!renderable.model || renderable.model->name != modelName) {
+                        if (sp::GAssets.IsModelRegistered(modelName)) {
+                            renderable.model = sp::GAssets.LoadModel(modelName);
+                            renderable.visibility.set();
+                        }
+                    }
                 }
             }},
         {"relative_movement",

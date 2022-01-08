@@ -88,8 +88,6 @@ namespace sp {
 #endif
 
 #ifdef SP_XR_SUPPORT
-            GAssets.RegisterModelName("vr_glove_left", "models/box.glb", AssetType::Bundled);
-            GAssets.RegisterModelName("vr_glove_right", "models/box.glb", AssetType::Bundled);
             if (options["no-vr"].count() == 0) xr.LoadXrSystem();
 #endif
 
