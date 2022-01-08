@@ -10,7 +10,7 @@
 #include <tiny_gltf.h>
 
 namespace sp::vulkan {
-    Model::Model(const sp::Model &model, DeviceContext &device) : modelName(model.name) {
+    Model::Model(const sp::Model &model, SceneMeshContext &scene, DeviceContext &device) : modelName(model.name) {
         vector<SceneVertex> vertices;
 
         // TODO: cache the output somewhere. Keeping the conversion code in
@@ -32,6 +32,7 @@ namespace sp::vulkan {
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
                 vkPrimitive.indexType = vk::IndexType::eUint32;
                 Assert(assetPrimitive.indexBuffer.byteStride == 4, "index buffer must be tightly packed");
+                Abortf("TODO %s uses uint indexes", model.name);
                 break;
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
                 vkPrimitive.indexType = vk::IndexType::eUint16;
@@ -41,16 +42,15 @@ namespace sp::vulkan {
             Assert(vkPrimitive.indexType != vk::IndexType::eNoneKHR, "unimplemented vertex index type");
 
             auto &indexBuffer = buffers[assetPrimitive.indexBuffer.bufferIndex];
-            size_t indexBufferSize = assetPrimitive.indexBuffer.componentCount * assetPrimitive.indexBuffer.byteStride;
+            vkPrimitive.indexCount = assetPrimitive.indexBuffer.componentCount;
+            size_t indexBufferSize = vkPrimitive.indexCount * assetPrimitive.indexBuffer.byteStride;
             Assert(assetPrimitive.indexBuffer.byteOffset + indexBufferSize <= indexBuffer.data.size(),
                 "indexes overflow buffer");
 
-            vkPrimitive.indexBuffer = device.CreateBuffer(&indexBuffer.data[assetPrimitive.indexBuffer.byteOffset],
+            vkPrimitive.indexBuffer = scene.indexBuffer->ArrayAllocate(vkPrimitive.indexCount, sizeof(uint16));
+            scene.indexBuffer->CopyFrom(&indexBuffer.data[assetPrimitive.indexBuffer.byteOffset],
                 indexBufferSize,
-                vk::BufferUsageFlagBits::eIndexBuffer,
-                VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-            vkPrimitive.indexCount = assetPrimitive.indexBuffer.componentCount;
+                vkPrimitive.indexBuffer->ByteOffset());
 
             auto &posAttr = assetPrimitive.attributes[0];
             auto &normalAttr = assetPrimitive.attributes[1];
@@ -90,23 +90,40 @@ namespace sp::vulkan {
                 }
             }
 
-            vkPrimitive.vertexBuffer = device.CreateBuffer(vertices.data(),
-                vertices.size(),
-                vk::BufferUsageFlagBits::eVertexBuffer,
-                VMA_MEMORY_USAGE_CPU_TO_GPU);
+            vkPrimitive.vertexBuffer = scene.vertexBuffer->ArrayAllocate(vertices.size(), sizeof(vertices[0]));
+            scene.vertexBuffer->CopyFrom(vertices.data(), vertices.size(), vkPrimitive.vertexBuffer->ArrayOffset());
 
             vkPrimitive.baseColor = LoadTexture(device, model, assetPrimitive.materialIndex, BaseColor);
             vkPrimitive.metallicRoughness = LoadTexture(device, model, assetPrimitive.materialIndex, MetallicRoughness);
 
             primitives.emplace_back(vkPrimitivePtr);
         }
+
+        primitiveList = scene.primitiveLists->ArrayAllocate(primitives.size(), sizeof(GPUMeshPrimitive));
+        auto gpuPrimitives = (GPUMeshPrimitive *)primitiveList->Mapped();
+        for (auto &p : primitives) {
+            gpuPrimitives->indexCount = p->indexCount;
+            gpuPrimitives->indexOffset = p->indexBuffer->ArrayOffset();
+            gpuPrimitives->vertexOffset = p->vertexBuffer->ArrayOffset();
+            gpuPrimitives->primitiveToModel = p->transform;
+            gpuPrimitives++;
+        }
+
+        modelEntry = scene.models->ArrayAllocate(1, sizeof(GPUMeshModel));
+        auto meshModel = (GPUMeshModel *)modelEntry->Mapped();
+        meshModel->primitiveCount = primitives.size();
+        meshModel->primitiveOffset = primitiveList->ArrayOffset();
     }
 
     Model::~Model() {
         Debugf("Destroying vulkan::Model %s", modelName);
     }
 
-    void Model::Draw(CommandContext &cmd, glm::mat4 modelMat, bool useMaterial) {
+    uint32 Model::SceneIndex() const {
+        return modelEntry->ArrayOffset();
+    }
+
+    void Model::Draw(CommandContext &cmd, SceneMeshContext &scene, glm::mat4 modelMat, bool useMaterial) {
         cmd.SetVertexLayout(SceneVertex::Layout());
 
         for (auto &primitivePtr : primitives) {
@@ -121,8 +138,8 @@ namespace sp::vulkan {
                 cmd.SetTexture(0, 1, primitive.metallicRoughness);
             }
 
-            cmd.Raw().bindIndexBuffer(*primitive.indexBuffer, 0, primitive.indexType);
-            cmd.Raw().bindVertexBuffers(0, {*primitive.vertexBuffer}, {0});
+            cmd.Raw().bindIndexBuffer(*scene.indexBuffer, primitive.indexBuffer->ByteOffset(), primitive.indexType);
+            cmd.Raw().bindVertexBuffers(0, {*scene.vertexBuffer}, {primitive.vertexBuffer->ByteOffset()});
             cmd.DrawIndexed(primitive.indexCount, 1, 0, 0, 0);
         }
     }

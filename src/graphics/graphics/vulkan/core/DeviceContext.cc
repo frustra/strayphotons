@@ -278,6 +278,7 @@ namespace sp::vulkan {
         Assert(availableDeviceFeatures.wideLines, "device must support wideLines");
         Assert(availableDeviceFeatures.largePoints, "device must support largePoints");
         Assert(availableDeviceFeatures.samplerAnisotropy, "device must support anisotropic sampling");
+        Assert(availableDeviceFeatures.multiDrawIndirect, "device must support multiDrawIndirect");
 
         Assert(availableDescriptorFeatures.descriptorBindingPartiallyBound,
             "device must support partially bound descriptor arrays");
@@ -300,6 +301,7 @@ namespace sp::vulkan {
         enabledDeviceFeatures.wideLines = true;
         enabledDeviceFeatures.largePoints = true;
         enabledDeviceFeatures.samplerAnisotropy = true;
+        enabledDeviceFeatures.multiDrawIndirect = true;
 
         vk::DeviceCreateInfo deviceInfo;
         deviceInfo.queueCreateInfoCount = queueInfos.size();
@@ -718,6 +720,18 @@ namespace sp::vulkan {
         case BUFFER_TYPE_UNIFORM:
             usage = vk::BufferUsageFlagBits::eUniformBuffer;
             residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            break;
+        case BUFFER_TYPE_INDIRECT:
+            usage = vk::BufferUsageFlagBits::eIndirectBuffer;
+            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            break;
+        case BUFFER_TYPE_STORAGE_TRANSFER:
+            usage = vk::BufferUsageFlagBits::eStorageBuffer;
+            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            break;
+        case BUFFER_TYPE_STORAGE_LOCAL:
+            usage = vk::BufferUsageFlagBits::eStorageBuffer;
+            residency = VMA_MEMORY_USAGE_GPU_ONLY;
             break;
         default:
             Abortf("unknown buffer type %d", type);

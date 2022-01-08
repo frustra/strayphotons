@@ -120,6 +120,8 @@ namespace sp::vulkan {
                         setInfo.storageImagesMask |= (1 << binding);
                     } else if (type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
                         setInfo.uniformBuffersMask |= (1 << binding);
+                    } else if (type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+                        setInfo.storageBuffersMask |= (1 << binding);
                     } else {
                         Abortf("unsupported SpvReflectDescriptorType %d", type);
                     }
@@ -157,6 +159,9 @@ namespace sp::vulkan {
             ForEachBit(setInfo.uniformBuffersMask, [&](uint32 binding) {
                 setEntry(binding, vk::DescriptorType::eUniformBuffer, offsetof(DescriptorBinding, buffer));
             });
+            ForEachBit(setInfo.storageBuffersMask, [&](uint32 binding) {
+                setEntry(binding, vk::DescriptorType::eStorageBuffer, offsetof(DescriptorBinding, buffer));
+            });
 
             vk::DescriptorUpdateTemplateCreateInfo createInfo;
             createInfo.set = set;
@@ -189,7 +194,7 @@ namespace sp::vulkan {
             }
         });
 
-        ForEachBit(setLayout.uniformBuffersMask, [&](uint32 binding) {
+        ForEachBit(setLayout.uniformBuffersMask | setLayout.storageBuffersMask, [&](uint32 binding) {
             for (uint32 i = 0; i < setLayout.descriptorCount[binding]; i++) {
                 hash_combine(hash, bindings[binding + i].uniqueID);
                 hash_combine(hash, bindings[binding + i].buffer.buffer);
@@ -424,14 +429,33 @@ namespace sp::vulkan {
                 type = vk::DescriptorType::eUniformBuffer;
                 count++;
             }
+            if (layoutInfo.storageBuffersMask & bindingBit) {
+                type = vk::DescriptorType::eStorageBuffer;
+                count++;
+            }
 
             if (count > 0) {
                 Assertf(count == 1, "Overlapping descriptor binding index: %u", binding);
-                bindings.emplace_back(binding,
-                    type,
-                    layoutInfo.descriptorCount[binding],
-                    layoutInfo.stages[binding],
-                    nullptr);
+                Assert(!bindless, "Variable length binding arrays must be the last binding in the set");
+
+                auto stages = layoutInfo.stages[binding];
+                uint32 descriptorCount = layoutInfo.descriptorCount[binding];
+                if (descriptorCount == 0) {
+                    auto deviceLimit = device.IndexingLimits().maxDescriptorSetUpdateAfterBindSamplers;
+                    Assertf(descriptorCount <= deviceLimit,
+                        "device supports %d sampler descriptors, wanted %d",
+                        deviceLimit,
+                        descriptorCount);
+
+                    bindless = true;
+                    descriptorCount = MAX_BINDINGS_PER_BINDLESS_DESCRIPTOR_SET;
+                    stages = vk::ShaderStageFlagBits::eAll;
+                    bindingFlags.resize(binding + 1);
+                    bindingFlags[binding] = vk::DescriptorBindingFlagBits::eVariableDescriptorCount |
+                                            vk::DescriptorBindingFlagBits::ePartiallyBound |
+                                            vk::DescriptorBindingFlagBits::eUpdateAfterBind |
+                                            vk::DescriptorBindingFlagBits::eUpdateUnusedWhilePending;
+                }
 
                 sizes.emplace_back(type, layoutInfo.descriptorCount[binding] * MAX_DESCRIPTOR_SETS_PER_POOL);
             }

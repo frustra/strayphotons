@@ -39,6 +39,14 @@ namespace sp::vulkan {
         vmaFlushAllocation(allocator, allocation, 0, VK_WHOLE_SIZE);
     }
 
+    SubBuffer::~SubBuffer() {
+        vmaVirtualFree(subAllocationBlock, offsetBytes);
+    }
+
+    void *SubBuffer::Mapped() {
+        return static_cast<uint8_t *>(parentBuffer->Mapped()) + offsetBytes;
+    }
+
     Buffer::Buffer() : UniqueMemory(VK_NULL_HANDLE) {}
 
     Buffer::Buffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator)
@@ -55,9 +63,29 @@ namespace sp::vulkan {
     }
 
     Buffer::~Buffer() {
+        if (subAllocationBlock != VK_NULL_HANDLE) vmaDestroyVirtualBlock(subAllocationBlock);
+
         if (allocator != VK_NULL_HANDLE && allocation != VK_NULL_HANDLE) {
             UnmapPersistent();
             vmaDestroyBuffer(allocator, buffer, allocation);
         }
+    }
+
+    vk::DeviceSize Buffer::SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment) {
+        if (subAllocationBlock == VK_NULL_HANDLE) {
+            VmaVirtualBlockCreateInfo blockCreateInfo = {};
+            blockCreateInfo.size = bufferInfo.size;
+            auto result = vmaCreateVirtualBlock(&blockCreateInfo, &subAllocationBlock);
+            AssertVKSuccess(result, "creating virtual block");
+        }
+
+        VmaVirtualAllocationCreateInfo allocCreateInfo = {};
+        allocCreateInfo.size = size;
+        allocCreateInfo.alignment = alignment;
+
+        VkDeviceSize allocOffset;
+        auto result = vmaVirtualAllocate(subAllocationBlock, &allocCreateInfo, &allocOffset);
+        AssertVKSuccess(result, "creating virtual allocation");
+        return allocOffset;
     }
 } // namespace sp::vulkan

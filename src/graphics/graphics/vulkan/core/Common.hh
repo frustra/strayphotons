@@ -17,11 +17,13 @@ namespace sp::vulkan {
     class DeviceContext;
     class CommandContext;
     class Buffer;
+    class SubBuffer;
     class Image;
     class ImageView;
     class RenderTarget;
     typedef shared_ptr<CommandContext> CommandContextPtr;
     typedef shared_ptr<Buffer> BufferPtr;
+    typedef shared_ptr<SubBuffer> SubBufferPtr;
     typedef shared_ptr<Image> ImagePtr;
     typedef shared_ptr<ImageView> ImageViewPtr;
     typedef shared_ptr<RenderTarget> RenderTargetPtr;

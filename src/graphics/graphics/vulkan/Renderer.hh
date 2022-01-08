@@ -5,6 +5,7 @@
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
 #include "graphics/vulkan/GPUTypes.hh"
+#include "graphics/vulkan/SceneMeshContext.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
@@ -69,6 +70,8 @@ namespace sp::vulkan {
 
         void RenderFrame();
 
+        void ForwardPass2(CommandContext &cmd, ecs::Renderable::VisibilityMask viewMask);
+
         void ForwardPass(CommandContext &cmd,
             ecs::Renderable::VisibilityMask viewMask,
             DrawLock lock,
@@ -109,6 +112,7 @@ namespace sp::vulkan {
             RenderGraphResourceID sourceID,
             uint32 arrayLayer = ~0u);
 
+        void AddSceneState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock);
         void AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
         void AddShadowMaps(RenderGraph &graph, DrawLock lock);
         void AddGuis(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Gui>> lock);
@@ -124,6 +128,9 @@ namespace sp::vulkan {
             float clip = FLT_MAX);
 
         CFuncCollection funcs;
+
+        LightingContext lights;
+        SceneMeshContext scene;
         PreservingMap<string, Model> activeModels;
 
         struct RenderableGui {
@@ -139,8 +146,6 @@ namespace sp::vulkan {
 
         vector<std::pair<string, string>> pendingScreenshots;
         bool listRenderTargets = false;
-
-        LightingContext lights;
 
         struct EmptyImageKey {
             vk::Format format;
