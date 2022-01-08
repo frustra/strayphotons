@@ -639,7 +639,7 @@ namespace sp {
 
         vector<SceneVertex> vertices(6 * lines.size());
         for (auto &line : lines) {
-            addLine(view, vertices, PxVec3ToGlmVec3P(line.pos0), PxVec3ToGlmVec3P(line.pos1), 0.004f);
+            addLine(view, vertices, PxVec3ToGlmVec3(line.pos0), PxVec3ToGlmVec3(line.pos1), 0.004f);
         }
 
         shader->SetParams(view, glm::mat4(), glm::mat4());

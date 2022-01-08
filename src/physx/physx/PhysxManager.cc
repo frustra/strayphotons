@@ -171,7 +171,7 @@ namespace sp {
                 auto rotate = transform.GetRotation();
                 auto invRotate = glm::inverse(rotate);
 
-                auto targetPos = transform.GetPosition() + rotate * PxVec3ToGlmVec3P(constraint->offset);
+                auto targetPos = transform.GetPosition() + rotate * PxVec3ToGlmVec3(constraint->offset);
                 auto currentPos = pose.transform(constraint->child->getCMassLocalPose().transform(PxVec3(0.0)));
                 auto deltaPos = GlmVec3ToPxVec3(targetPos) - currentPos;
 
@@ -194,13 +194,19 @@ namespace sp {
                     float tickFrequency = 1e9 / this->interval.count();
 
                     { // Apply Torque on each axis individually
-                        auto calculateRequiredTorque = [&intervalSeconds, &tickFrequency](PxVec3 axis,
-                                                           float deltaRotation,
-                                                           const PxMat33 &worldInertia,
-                                                           const PxMat33 &recipWorldInertia,
-                                                           float angularVelocity) -> float {
-                            auto maxAcceleration =
-                                (recipWorldInertia * (axis * CVarMaxConstraintTorque.Get())).magnitude();
+                        auto deltaRotation = GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate));
+
+                        auto massInertia = PxVec3ToGlmVec3(constraint->child->getMassSpaceInertiaTensor());
+                        auto invMassInertia = PxVec3ToGlmVec3(constraint->child->getMassSpaceInvInertiaTensor());
+                        glm::mat3 worldInertia = InertiaTensorMassToWorld(massInertia, currentRotate);
+                        glm::mat3 invWorldInertia = InertiaTensorMassToWorld(invMassInertia, currentRotate);
+
+                        auto calculateRequiredTorque =
+                            [&intervalSeconds, &tickFrequency, &worldInertia, &invWorldInertia](glm::vec3 axis,
+                                float deltaRotation,
+                                float angularVelocity) -> PxVec3 {
+                            auto maxAcceleration = glm::length(
+                                invWorldInertia * (axis * CVarMaxConstraintTorque.Get()));
                             auto deltaTick = maxAcceleration * intervalSeconds;
                             auto maxVelocity = std::sqrt(2 * maxAcceleration * std::abs(deltaRotation));
 
@@ -212,71 +218,20 @@ namespace sp {
                             }
                             auto deltaVelocity = targetVelocity - angularVelocity;
 
-                            float force = (worldInertia * (axis * (deltaVelocity * tickFrequency))).magnitude();
-                            auto forceClampRatio = std::min(CVarMaxConstraintTorque.Get(), std::abs(force) + 0.00001f) /
-                                                   (std::abs(force) + 0.00001f);
+                            PxVec3 force = GlmVec3ToPxVec3(worldInertia * (axis * (deltaVelocity * tickFrequency)));
+                            float forceAbs = force.magnitude() + 0.00001f;
+                            auto forceClampRatio = std::min(CVarMaxConstraintTorque.Get(), forceAbs) / forceAbs;
+
                             return force * forceClampRatio;
                         };
 
-                        auto deltaRotation = GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate));
-
-                        PxMat33 worldInertia;
-                        {
-                            auto massInertia = constraint->child->getMassSpaceInertiaTensor();
-                            PxMat33 M(pose.q * constraint->child->getCMassLocalPose().q);
-                            const float axx = massInertia.x * M(0, 0), axy = massInertia.x * M(1, 0),
-                                        axz = massInertia.x * M(2, 0);
-                            const float byx = massInertia.y * M(0, 1), byy = massInertia.y * M(1, 1),
-                                        byz = massInertia.y * M(2, 1);
-                            const float czx = massInertia.z * M(0, 2), czy = massInertia.z * M(1, 2),
-                                        czz = massInertia.z * M(2, 2);
-
-                            worldInertia(0, 0) = axx * M(0, 0) + byx * M(0, 1) + czx * M(0, 2);
-                            worldInertia(1, 1) = axy * M(1, 0) + byy * M(1, 1) + czy * M(1, 2);
-                            worldInertia(2, 2) = axz * M(2, 0) + byz * M(2, 1) + czz * M(2, 2);
-                            worldInertia(0, 1) = worldInertia(1, 0) = axx * M(1, 0) + byx * M(1, 1) + czx * M(1, 2);
-                            worldInertia(0, 2) = worldInertia(2, 0) = axx * M(2, 0) + byx * M(2, 1) + czx * M(2, 2);
-                            worldInertia(1, 2) = worldInertia(2, 1) = axy * M(2, 0) + byy * M(2, 1) + czy * M(2, 2);
-                        }
-
-                        PxMat33 recipWorldInertia;
-                        {
-                            auto massInertia = constraint->child->getMassSpaceInvInertiaTensor();
-                            PxMat33 M(pose.q * constraint->child->getCMassLocalPose().q);
-                            const float axx = massInertia.x * M(0, 0), axy = massInertia.x * M(1, 0),
-                                        axz = massInertia.x * M(2, 0);
-                            const float byx = massInertia.y * M(0, 1), byy = massInertia.y * M(1, 1),
-                                        byz = massInertia.y * M(2, 1);
-                            const float czx = massInertia.z * M(0, 2), czy = massInertia.z * M(1, 2),
-                                        czz = massInertia.z * M(2, 2);
-
-                            recipWorldInertia(0, 0) = axx * M(0, 0) + byx * M(0, 1) + czx * M(0, 2);
-                            recipWorldInertia(1, 1) = axy * M(1, 0) + byy * M(1, 1) + czy * M(1, 2);
-                            recipWorldInertia(2, 2) = axz * M(2, 0) + byz * M(2, 1) + czz * M(2, 2);
-                            recipWorldInertia(0, 1) = recipWorldInertia(1, 0) = axx * M(1, 0) + byx * M(1, 1) +
-                                                                                czx * M(1, 2);
-                            recipWorldInertia(0, 2) = recipWorldInertia(2, 0) = axx * M(2, 0) + byx * M(2, 1) +
-                                                                                czx * M(2, 2);
-                            recipWorldInertia(1, 2) = recipWorldInertia(2, 1) = axy * M(2, 0) + byy * M(2, 1) +
-                                                                                czy * M(2, 2);
-                        }
-
                         auto angularVelocity = constraint->child->getAngularVelocity();
-                        constraint->child->addTorque(PxVec3(calculateRequiredTorque(PxVec3(1.0f, 0.0f, 0.0f),
-                                                                deltaRotation.x,
-                                                                worldInertia,
-                                                                recipWorldInertia,
-                                                                angularVelocity.x),
-                            calculateRequiredTorque(PxVec3(0.0f, 1.0f, 0.0f),
-                                deltaRotation.y,
-                                worldInertia,
-                                recipWorldInertia,
-                                angularVelocity.y),
-                            calculateRequiredTorque(PxVec3(0.0f, 0.0f, 1.0f),
-                                deltaRotation.z,
-                                worldInertia,
-                                recipWorldInertia,
-                                angularVelocity.z)));
+                        constraint->child->addTorque(
+                            calculateRequiredTorque(glm::vec3(1.0f, 0.0f, 0.0f), deltaRotation.x, angularVelocity.x));
+                        constraint->child->addTorque(
+                            calculateRequiredTorque(glm::vec3(0.0f, 1.0f, 0.0f), deltaRotation.y, angularVelocity.y));
+                        constraint->child->addTorque(
+                            calculateRequiredTorque(glm::vec3(0.0f, 0.0f, 1.0f), deltaRotation.z, angularVelocity.z));
                     }
 
                     // constraint->child->setAngularVelocity(deltaRotation * tickFrequency);
@@ -297,9 +252,8 @@ namespace sp {
                         deltaVelocity.y = 0;
 
                         auto force = deltaVelocity * tickFrequency * constraint->child->getMass();
-                        auto forceClampRatio = std::min(CVarMaxLateralConstraintForce.Get(),
-                                                   force.magnitude() + 0.00001f) /
-                                               (force.magnitude() + 0.00001f);
+                        float forceAbs = force.magnitude() + 0.00001f;
+                        auto forceClampRatio = std::min(CVarMaxLateralConstraintForce.Get(), forceAbs) / forceAbs;
                         constraint->child->addForce(force * forceClampRatio);
                     }
 
@@ -323,9 +277,8 @@ namespace sp {
 
                         float force = deltaVelocity * tickFrequency * constraint->child->getMass();
                         force -= CVarGravity.Get() * constraint->child->getMass();
-                        auto forceClampRatio = std::min(CVarMaxVerticalConstraintForce.Get(),
-                                                   std::abs(force) + 0.00001f) /
-                                               (std::abs(force) + 0.00001f);
+                        float forceAbs = std::abs(force) + 0.00001f;
+                        auto forceClampRatio = std::min(CVarMaxVerticalConstraintForce.Get(), forceAbs) / forceAbs;
                         constraint->child->addForce(PxVec3(0, force * forceClampRatio, 0));
                     }
                     constraint++;
@@ -379,7 +332,7 @@ namespace sp {
                     if (!readTransform.HasChanged(userData->transformChangeNumber)) {
                         auto &transform = ent.Get<ecs::Transform>(lock);
                         auto pose = ph.actor->getGlobalPose();
-                        transform.SetPosition(PxVec3ToGlmVec3P(pose.p));
+                        transform.SetPosition(PxVec3ToGlmVec3(pose.p));
                         transform.SetRotation(PxQuatToGlmQuat(pose.q));
 
                         userData->transformChangeNumber = transform.ChangeNumber();

@@ -1,25 +1,39 @@
 project(sp-test)
 
 ################################
-# Test targets
+# Unit test targets
 ################################
 
-foreach(test_type unit integration)
-    set(test_exe sp-${test_type}-tests)
+file(GLOB_RECURSE unit_test_sources ${CMAKE_CURRENT_SOURCE_DIR}/unit/*.cc)
+list(REMOVE_DUPLICATES unit_test_sources)
 
-    file(GLOB_RECURSE test_sources ${CMAKE_CURRENT_SOURCE_DIR}/${test_type}/*.cc)
-    list(REMOVE_DUPLICATES test_sources)
+add_executable(sp-unit-tests tests.cc ${unit_test_sources})
+target_compile_definitions(sp-unit-tests PRIVATE TEST_TYPE=\"unit\")
+target_link_libraries(sp-unit-tests ${PROJECT_CORE_LIB})
+target_include_directories(sp-unit-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-    add_executable(${test_exe} tests.cc ${test_sources})
-    target_compile_definitions(${test_exe} PRIVATE TEST_TYPE=\"${test_type}\")
-    target_link_libraries(${test_exe} ${PROJECT_CORE_LIB})
-    target_include_directories(${test_exe} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+# target to run the tests
+add_custom_target(
+    unit-tests
+    COMMAND sp-unit-tests
+    DEPENDS sp-unit-tests
+COMMENT "Run unit tests")
 
-    # target to run the tests
-    add_custom_target(
-        ${test_type}-tests
-        COMMAND ${test_exe}
-        DEPENDS ${test_exe}
-    COMMENT "Run ${test_type} tests")
+################################
+# Integration test targets
+################################
 
-endforeach(test_type)
+file(GLOB_RECURSE integration_test_sources ${CMAKE_CURRENT_SOURCE_DIR}/integration/*.cc)
+list(REMOVE_DUPLICATES integration_test_sources)
+
+add_executable(sp-integration-tests tests.cc ${integration_test_sources})
+target_compile_definitions(sp-integration-tests PRIVATE TEST_TYPE=\"integration\")
+target_link_libraries(sp-integration-tests ${PROJECT_CORE_LIB} ${PROJECT_PHYSICS_PHYSX_LIB})
+target_include_directories(sp-integration-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+# target to run the tests
+add_custom_target(
+    integration-tests
+    COMMAND sp-integration-tests
+    DEPENDS sp-integration-tests
+COMMENT "Run integration tests")

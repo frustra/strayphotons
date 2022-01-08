@@ -123,7 +123,7 @@ namespace sp {
 
                 // Update the capsule position to match target
                 auto targetDelta = targetPosition + userData->deltaSinceUpdate -
-                                   PxExtendedVec3ToGlmVec3P(controller.pxController->getFootPosition());
+                                   PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
                 userData->onGround = manager.MoveController(controller.pxController,
                     dtSinceLastFrame,
                     GlmVec3ToPxVec3(targetDelta));
@@ -154,7 +154,7 @@ namespace sp {
                 userData->onGround = manager.MoveController(controller.pxController,
                     dtSinceLastFrame,
                     GlmVec3ToPxVec3(disp));
-                auto deltaPos = PxVec3ToGlmVec3P(controller.pxController->getFootPosition() - prevPosition);
+                auto deltaPos = PxVec3ToGlmVec3(controller.pxController->getFootPosition() - prevPosition);
 
                 // Update the velocity based on what happened in physx
                 auto physxVelocity = deltaPos / (float)dtSinceLastFrame;
@@ -181,7 +181,7 @@ namespace sp {
                 Tecs::Entity physicsBox = ecs::EntityWith<ecs::Name>(lock, "player.player-physics");
                 if (physicsBox.Has<ecs::Transform>(lock)) {
                     auto &transform = physicsBox.Get<ecs::Transform>(lock);
-                    transform.SetPosition(PxExtendedVec3ToGlmVec3P(controller.pxController->getFootPosition()));
+                    transform.SetPosition(PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()));
                 }
             }
         }
