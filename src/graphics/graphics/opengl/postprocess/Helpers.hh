@@ -8,7 +8,7 @@ namespace sp {
     class ProxyProcessPass : public PostProcessPass<0, 1> {
     public:
         ProxyProcessPass(std::shared_ptr<GLRenderTarget> input) : input(input) {
-            Assert(input != nullptr, "null proxy pass input");
+            Assert(input, "null proxy pass input");
         }
 
         void Process(PostProcessLock lock, const PostProcessingContext *context) {

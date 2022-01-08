@@ -5,6 +5,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
+#include "core/assets/AssetManager.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
@@ -53,6 +54,17 @@ namespace sp {
             for (auto cvarline : options["cvar"].as<vector<string>>()) {
                 GetConsoleManager().ParseAndExecute(cvarline);
             }
+        }
+
+        Debugf("Bytes of memory used per entity: %u", ecs::World.TotalComponentSize);
+        std::vector<std::pair<size_t, std::string>> componentSizes;
+        for (size_t i = 0; i < ecs::World.ComponentSizes.size(); i++) {
+            componentSizes.emplace_back(ecs::World.ComponentSizes[i], ecs::World.ComponentNames[i]);
+        }
+        std::sort(componentSizes.begin(), componentSizes.end());
+        std::reverse(componentSizes.begin(), componentSizes.end());
+        for (auto &[size, name] : componentSizes) {
+            Debugf("  %s: %u", name, size);
         }
 
         {

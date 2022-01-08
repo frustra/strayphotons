@@ -24,8 +24,8 @@ namespace ecs {
                 }
             }
         }
-        if (!r.model) {
-            Errorf("Renderable must have a model");
+        if (!r.model && r.visibility.any()) {
+            Errorf("Visible renderables must have a model");
             return false;
         }
 

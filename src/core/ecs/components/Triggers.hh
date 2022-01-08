@@ -23,7 +23,12 @@ namespace ecs {
         };
         struct TriggerSignal {
             std::string outputSignal;
-            TriggerSignal(const std::string &signal) : outputSignal(signal) {}
+            TriggerSignal(const std::string &signal) : outputSignal(signal) {
+                sizeof(TriggerArea);
+                sizeof(triggers);
+                sizeof(contained_entities);
+                sizeof(std::vector<std::variant<TriggerCommand, TriggerSignal>>);
+            }
         };
 
         sp::EnumArray<std::vector<std::variant<TriggerCommand, TriggerSignal>>, TriggerGroup> triggers;

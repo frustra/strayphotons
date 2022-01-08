@@ -105,8 +105,8 @@ namespace sp {
             false);
         static GLTexture *glAreaTex = dynamic_cast<GLTexture *>(areaTex.get());
         static GLTexture *glSearchTex = dynamic_cast<GLTexture *>(searchTex.get());
-        Assert(glAreaTex != nullptr, "Failed to load SMAA glAreaTex");
-        Assert(glSearchTex != nullptr, "Failed to load SMAA glSearchTex");
+        Assert(glAreaTex, "Failed to load SMAA glAreaTex");
+        Assert(glSearchTex, "Failed to load SMAA glSearchTex");
 
         auto r = context->renderer;
         auto dest = outputs[0].AllocateTarget(context);

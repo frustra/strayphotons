@@ -44,7 +44,7 @@ namespace sp {
 
         class XrSystem {
         public:
-            virtual void Init(GraphicsContext *context) = 0;
+            virtual bool Init(GraphicsContext *context) = 0;
             virtual bool IsInitialized() = 0;
             virtual bool IsHmdPresent() = 0;
 

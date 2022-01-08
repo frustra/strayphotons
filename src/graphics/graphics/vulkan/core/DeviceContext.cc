@@ -260,7 +260,7 @@ namespace sp::vulkan {
                     break;
                 }
             }
-            Assert(found, string("device must have extension ") + requiredExtension);
+            Assertf(found, "device must have extension %s", requiredExtension);
         }
 
         vk::PhysicalDeviceMultiviewFeatures availableMultiviewFeatures;
@@ -720,7 +720,7 @@ namespace sp::vulkan {
             residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
             break;
         default:
-            Abort("unknown buffer type " + std::to_string(type));
+            Abortf("unknown buffer type %d", type);
         }
 
         Debugf("Allocating buffer type %d with size %d", type, size);
@@ -1138,8 +1138,8 @@ namespace sp::vulkan {
     }
 
     shared_ptr<Shader> DeviceContext::CreateShader(const string &name, Hash64 compareHash) {
-        auto asset = GAssets.Load("shaders/vulkan/bin/" + name + ".spv", compareHash != Hash64());
-        Assert(asset, "could not load shader: " + name);
+        auto asset = GAssets.Load("shaders/vulkan/bin/" + name + ".spv", AssetType::Bundled, compareHash != Hash64());
+        Assertf(asset, "could not load shader: %s", name);
         asset->WaitUntilValid();
 
         auto newHash = Hash128To64(asset->Hash());
@@ -1153,7 +1153,7 @@ namespace sp::vulkan {
 
         auto reflection = spv_reflect::ShaderModule(asset->BufferSize(), asset->Buffer());
         if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS) {
-            Abort("could not parse shader: " + name + " error: " + std::to_string(reflection.GetResult()));
+            Abortf("could not parse shader: %s error: %d", name, reflection.GetResult());
         }
 
         Debugf("loaded shader module: %s", name);

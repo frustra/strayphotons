@@ -211,14 +211,14 @@ namespace sp::vulkan {
             if (!hiddenAreaMesh[0]) {
                 auto leftEye = xrSystem->GetHiddenAreaMesh(ecs::XrEye::Left);
                 hiddenAreaMesh[0] = device.CreateBuffer(leftEye.vertices,
-                    leftEye.triangleCount * sizeof(glm::vec2) * 3,
+                    leftEye.triangleCount * 3,
                     vk::BufferUsageFlagBits::eVertexBuffer,
                     VMA_MEMORY_USAGE_CPU_TO_GPU);
                 hiddenAreaTriangleCount[0] = leftEye.triangleCount;
 
                 auto rightEye = xrSystem->GetHiddenAreaMesh(ecs::XrEye::Right);
                 hiddenAreaMesh[1] = device.CreateBuffer(rightEye.vertices,
-                    rightEye.triangleCount * sizeof(glm::vec2) * 3,
+                    rightEye.triangleCount * 3,
                     vk::BufferUsageFlagBits::eVertexBuffer,
                     VMA_MEMORY_USAGE_CPU_TO_GPU);
                 hiddenAreaTriangleCount[1] = rightEye.triangleCount;

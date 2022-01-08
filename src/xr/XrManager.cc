@@ -27,7 +27,10 @@ namespace sp::xr {
         }
 
         try {
-            xrSystem->Init(game->graphics.GetContext());
+            if (!xrSystem->Init(game->graphics.GetContext())) {
+                Errorf("XR Runtime initialization failed!");
+                xrSystem.reset();
+            }
         } catch (std::exception &e) {
             Errorf("XR Runtime threw error on initialization! Error: %s", e.what());
             xrSystem.reset();

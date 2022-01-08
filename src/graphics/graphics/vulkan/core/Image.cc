@@ -431,7 +431,7 @@ namespace sp::vulkan {
         case vk::Format::eR8G8B8A8Srgb:
             return vk::Format::eR8G8B8A8Unorm;
         default:
-            Abort("unimplemented sRGB format " + vk::to_string(format));
+            Abortf("unimplemented sRGB format %s", vk::to_string(format));
         }
     }
 } // namespace sp::vulkan

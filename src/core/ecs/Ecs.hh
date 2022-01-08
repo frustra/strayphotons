@@ -103,6 +103,7 @@ TECS_NAME_COMPONENT(ecs::EventInput, "EventInput");
 TECS_NAME_COMPONENT(ecs::EventBindings, "EventBindings");
 TECS_NAME_COMPONENT(ecs::FocusLayer, "FocusLayer");
 TECS_NAME_COMPONENT(ecs::FocusLock, "FocusLock");
+TECS_NAME_COMPONENT(ecs::Gui, "Gui");
 TECS_NAME_COMPONENT(ecs::Light, "Light");
 TECS_NAME_COMPONENT(ecs::LightSensor, "LightSensor");
 TECS_NAME_COMPONENT(ecs::Mirror, "Mirror");

@@ -43,7 +43,7 @@ namespace ecs {
                     } else if (operatorName == "BINARY_OR") {
                         bindings.SetCombineOperation(bind.first, SignalBindings::CombineOperator::BINARY_OR);
                     } else {
-                        sp::Abort("Unknown signal binding combine operator: " + operatorName);
+                        Abortf("Unknown signal binding combine operator: %s", operatorName);
                     }
                 } else {
                     picojson::array originList;
@@ -52,7 +52,7 @@ namespace ecs {
                     } else if (source.second.is<picojson::array>()) {
                         originList = source.second.get<picojson::array>();
                     } else {
-                        sp::Abort("Invalid signal binding source: " + bind.first);
+                        Abortf("Invalid signal binding source: %s", bind.first);
                     }
                     for (auto origin : originList) {
                         auto originName = origin.get<std::string>();

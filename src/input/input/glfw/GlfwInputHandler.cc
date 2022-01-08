@@ -81,11 +81,11 @@ namespace sp {
         if (key == GLFW_KEY_UNKNOWN) return;
 
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
-        Assert(ctx->frameLock != nullptr, "KeyInputCallback occured without an ECS lock");
+        Assert(ctx->frameLock, "KeyInputCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
         auto keyCode = GlfwKeyMapping.find(key);
-        Assert(keyCode != GlfwKeyMapping.end(), "Unknown glfw keycode mapping " + std::to_string(key));
+        Assertf(keyCode != GlfwKeyMapping.end(), "Unknown glfw keycode mapping %d", key);
 
         auto keyboard = ctx->keyboardEntity.Get(lock);
         if (action == GLFW_PRESS) {
@@ -113,7 +113,7 @@ namespace sp {
 
     void GlfwInputHandler::CharInputCallback(GLFWwindow *window, unsigned int ch) {
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
-        Assert(ctx->frameLock != nullptr, "CharInputCallback occured without an ECS lock");
+        Assert(ctx->frameLock, "CharInputCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
         auto keyboard = ctx->keyboardEntity.Get(lock);
@@ -126,7 +126,7 @@ namespace sp {
 
     void GlfwInputHandler::MouseMoveCallback(GLFWwindow *window, double xPos, double yPos) {
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
-        Assert(ctx->frameLock != nullptr, "MouseMoveCallback occured without an ECS lock");
+        Assert(ctx->frameLock, "MouseMoveCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
         auto mouse = ctx->mouseEntity.Get(lock);
@@ -146,7 +146,7 @@ namespace sp {
 
     void GlfwInputHandler::MouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
-        Assert(ctx->frameLock != nullptr, "MouseButtonCallback occured without an ECS lock");
+        Assert(ctx->frameLock, "MouseButtonCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
         auto mouse = ctx->mouseEntity.Get(lock);
@@ -176,7 +176,7 @@ namespace sp {
 
     void GlfwInputHandler::MouseScrollCallback(GLFWwindow *window, double xOffset, double yOffset) {
         auto ctx = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
-        Assert(ctx->frameLock != nullptr, "MouseScrollCallback occured without an ECS lock");
+        Assert(ctx->frameLock, "MouseScrollCallback occured without an ECS lock");
         auto &lock = *ctx->frameLock;
 
         auto mouse = ctx->mouseEntity.Get(lock);

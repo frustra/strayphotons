@@ -24,7 +24,7 @@ namespace sp {
             OpenVrSystem() : RegisteredThread("OpenVR", 120.0) {}
             ~OpenVrSystem();
 
-            void Init(GraphicsContext *context) override;
+            bool Init(GraphicsContext *context) override;
             bool IsInitialized() override;
             bool IsHmdPresent() override;
 
@@ -39,6 +39,8 @@ namespace sp {
 
         private:
             void Frame() override;
+
+            void RegisterModels();
 
             GraphicsContext *context = nullptr;
 

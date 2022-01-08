@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/EnumArray.hh"
 #include "core/PreservingMap.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
@@ -22,22 +23,33 @@ namespace sp {
     class Script;
     class Image;
 
+    enum class AssetType {
+        Bundled = 0,
+        External,
+        Count,
+    };
+
     class AssetManager : public RegisteredThread {
     public:
         AssetManager();
 
-        std::shared_ptr<const Asset> Load(const std::string &path, bool reload = false);
+        std::shared_ptr<const Asset> Load(const std::string &path,
+            AssetType type = AssetType::Bundled,
+            bool reload = false);
         std::shared_ptr<const Model> LoadModel(const std::string &name);
         std::shared_ptr<const Image> LoadImage(const std::string &path);
 
         std::shared_ptr<Script> LoadScript(const std::string &path);
+
+        void RegisterExternalModel(const std::string &name, const std::string &path);
+        bool IsModelRegistered(const std::string &name);
 
     private:
         void Frame() override;
 
         void UpdateTarIndex();
 
-        bool InputStream(const std::string &path, std::ifstream &stream, size_t *size = nullptr);
+        bool InputStream(const std::string &path, AssetType type, std::ifstream &stream, size_t *size = nullptr);
         bool OutputStream(const std::string &path, std::ofstream &stream);
 
         static bool ReadWholeFile(std::vector<unsigned char> *out,
@@ -55,9 +67,12 @@ namespace sp {
         std::mutex modelMutex;
         std::mutex imageMutex;
 
-        PreservingMap<std::string, Asset> loadedAssets;
+        EnumArray<PreservingMap<std::string, Asset>, AssetType> loadedAssets;
         PreservingMap<std::string, Model> loadedModels;
         PreservingMap<std::string, Image> loadedImages;
+
+        std::mutex externalModelMutex;
+        robin_hood::unordered_flat_map<std::string, std::string> externalModelPaths;
 
         std::unique_ptr<tinygltf::FsCallbacks> gltfLoaderCallbacks;
         robin_hood::unordered_flat_map<std::string, std::pair<size_t, size_t>> tarIndex;
