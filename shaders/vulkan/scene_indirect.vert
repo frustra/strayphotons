@@ -14,7 +14,7 @@ layout(location = 0) out vec3 outViewPos;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec2 outTexCoord;
 
-layout(std140, set = 1, binding = 0) readonly buffer Scene {
+layout(std430, set = 1, binding = 0) readonly buffer Scene {
 	mat4 modelMatrixes[];
 } scene;
 

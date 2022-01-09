@@ -34,6 +34,9 @@ namespace sp::vulkan {
 
         void Draw(CommandContext &cmd, SceneMeshContext &scene, glm::mat4 modelMat, bool useMaterial = true);
         uint32 SceneIndex() const;
+        uint32 PrimitiveCount() const {
+            return primitives.size();
+        }
 
     private:
         ImageViewPtr LoadTexture(DeviceContext &device, const sp::Model &model, int materialIndex, TextureType type);

@@ -70,6 +70,14 @@ namespace sp::vulkan {
 
         void RenderFrame();
 
+        struct DrawBufferIDs {
+            RenderGraphResourceID drawCommandsBuffer; // first 4 bytes are the number of draws
+            RenderGraphResourceID drawParamsBuffer;
+        };
+
+        DrawBufferIDs GenerateDrawsForView(RenderGraph &graph, ecs::Renderable::VisibilityMask viewMask);
+        void ForwardPass3(CommandContext &cmd, BufferPtr drawCommandsBuffer, BufferPtr drawParamsBuffer);
+
         void ForwardPass2(CommandContext &cmd, ecs::Renderable::VisibilityMask viewMask);
 
         void ForwardPass(CommandContext &cmd,

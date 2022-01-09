@@ -123,6 +123,16 @@ namespace sp::vulkan {
         cmd->drawIndexedIndirect(*drawCommands, offset, drawCount, stride);
     }
 
+    void CommandContext::DrawIndexedIndirectCount(BufferPtr drawCommands,
+        vk::DeviceSize offset,
+        BufferPtr countBuffer,
+        vk::DeviceSize countOffset,
+        uint32 maxDrawCount,
+        uint32 stride) {
+        FlushGraphicsState();
+        cmd->drawIndexedIndirectCount(*drawCommands, offset, *countBuffer, countOffset, maxDrawCount, stride);
+    }
+
     void CommandContext::DrawScreenCover(const ImageViewPtr &view) {
         SetShaders("screen_cover.vert", "screen_cover.frag");
         if (view) {

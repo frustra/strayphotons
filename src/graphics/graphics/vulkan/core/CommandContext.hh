@@ -82,6 +82,12 @@ namespace sp::vulkan {
             int32 vertexOffset = 0,
             uint32 firstInstance = 0);
         void DrawIndexedIndirect(BufferPtr drawCommands, vk::DeviceSize offset, uint32 drawCount, uint32 stride);
+        void DrawIndexedIndirectCount(BufferPtr drawCommands,
+            vk::DeviceSize offset,
+            BufferPtr countBuffer,
+            vk::DeviceSize countOffset,
+            uint32 maxDrawCount,
+            uint32 stride);
         void DrawScreenCover(const ImageViewPtr &view = nullptr);
 
         void ImageBarrier(const ImagePtr &image,

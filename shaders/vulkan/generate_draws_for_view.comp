@@ -1,0 +1,78 @@
+#version 460
+
+layout(binding = 0, rgba8) uniform image2D texture;
+
+layout(local_size_x = 128, local_size_y = 1) in;
+
+layout(push_constant) uniform PushConstants {
+	uint visibilityMask;
+};
+
+struct MeshPrimitive {
+	mat4 primitiveToModel;
+	uint indexOffset, indexCount, vertexOffset; // todo match names of VkDrawIndexedIndirectCommand
+};
+
+struct MeshModel {
+	uint primitiveOffset;
+	uint primitiveCount;
+};
+
+struct RenderableEntity {
+	mat4 modelToWorld;
+	uint modelIndex;
+	uint visibilityMask;
+};
+
+layout(std430, set = 0, binding = 0) readonly buffer Renderables {
+	RenderableEntity renderables[];
+};
+layout(std430, set = 0, binding = 1) readonly buffer MeshModels {
+	MeshModel models[];
+};
+layout(std430, set = 0, binding = 2) readonly buffer MeshPrimitives {
+	MeshPrimitive primitives[];
+};
+
+struct VkDrawIndexedIndirectCommand {
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    int vertexOffset;
+    uint firstInstance;
+};
+
+layout(std430, set = 0, binding = 3) buffer DrawCommands {
+	uint drawCount;
+	VkDrawIndexedIndirectCommand drawCommands[];
+};
+
+layout(std430, set = 0, binding = 4) buffer DrawParams {
+    mat4 drawTransforms[];
+};
+
+void main() {
+	if (gl_GlobalInvocationID.x >= renderables.length()) return;
+
+	RenderableEntity renderable = renderables[gl_GlobalInvocationID.x];
+	uint entityVisibility = renderable.visibilityMask;
+	entityVisibility &= visibilityMask;
+	if (entityVisibility != visibilityMask) return;
+
+	MeshModel model = models[renderable.modelIndex];
+	uint primitiveEnd = model.primitiveOffset + model.primitiveCount;
+	for (uint pi = model.primitiveOffset; pi < primitiveEnd; pi++) {
+		MeshPrimitive prim = primitives[pi];
+		VkDrawIndexedIndirectCommand draw;
+		draw.indexCount = prim.indexCount;
+		draw.instanceCount = 1;
+		draw.firstIndex = prim.indexOffset;
+		draw.vertexOffset = int(prim.vertexOffset);
+
+		uint drawIndex = atomicAdd(drawCount, 1);
+		draw.firstInstance = drawIndex;
+
+		drawCommands[drawIndex] = draw;
+		drawTransforms[drawIndex] = renderable.modelToWorld * prim.primitiveToModel;
+	}
+}

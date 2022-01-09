@@ -10,13 +10,13 @@ namespace sp::vulkan {
         float _padding[1];
         // other material properties of the primitive can be stored here (or material ID)
     };
-    static_assert(sizeof(GPUMeshPrimitive) % 16 == 0, "std140 alignment");
+    static_assert(sizeof(GPUMeshPrimitive) % sizeof(glm::vec4) == 0, "std430 alignment");
 
     struct GPUMeshModel {
         uint32 primitiveOffset;
         uint32 primitiveCount;
     };
-    static_assert(sizeof(GPUMeshModel) == 8, "std140 alignment");
+    static_assert(sizeof(GPUMeshModel) % sizeof(uint32) == 0, "std430 alignment");
 
     struct GPURenderableEntity {
         glm::mat4 modelToWorld;
@@ -24,7 +24,7 @@ namespace sp::vulkan {
         uint32 visibilityMask;
         float _padding[2];
     };
-    static_assert(sizeof(GPURenderableEntity) % 16 == 0, "std140 alignment");
+    static_assert(sizeof(GPURenderableEntity) % sizeof(glm::vec4) == 0, "std430 alignment");
 
     struct SceneMeshContext {
         BufferPtr indexBuffer;
@@ -34,5 +34,8 @@ namespace sp::vulkan {
 
         uint32 renderableCount = 0;
         BufferPtr renderableEntityList;
+
+        uint32 primitiveCount = 0;
+        uint32 primitiveCountPowerOfTwo;
     };
 } // namespace sp::vulkan

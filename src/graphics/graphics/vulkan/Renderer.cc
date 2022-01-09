@@ -172,6 +172,8 @@ namespace sp::vulkan {
 
             graph.BeginScope("FlatView");
 
+            auto drawBufferIDs = GenerateDrawsForView(graph, view.visibilityMask);
+
             graph.Pass("ForwardPass")
                 .Build([&](RenderGraphPassBuilder &builder) {
                     RenderTargetDesc desc;
@@ -189,8 +191,11 @@ namespace sp::vulkan {
                     builder.OutputDepthAttachment("GBufferDepthStencil", desc, {LoadOp::Clear, StoreOp::Store});
 
                     builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
+
+                    builder.ReadBuffer(drawBufferIDs.drawCommandsBuffer);
+                    builder.ReadBuffer(drawBufferIDs.drawParamsBuffer);
                 })
-                .Execute([this, view, lock](RenderGraphResources &resources, CommandContext &cmd) {
+                .Execute([this, view, drawBufferIDs](RenderGraphResources &resources, CommandContext &cmd) {
                     cmd.SetShaders("scene_indirect.vert", "generate_gbuffer.frag");
 
                     GPUViewState viewState[] = {{view}, {}};
@@ -199,7 +204,10 @@ namespace sp::vulkan {
                     cmd.SetUniformBuffer(0, 10, viewStateBuf);
 
                     // this->ForwardPass(cmd, view.visibilityMask, lock);
-                    this->ForwardPass2(cmd, view.visibilityMask);
+
+                    auto drawCommandsBuffer = resources.GetBuffer(drawBufferIDs.drawCommandsBuffer);
+                    auto drawParamsBuffer = resources.GetBuffer(drawBufferIDs.drawParamsBuffer);
+                    this->ForwardPass3(cmd, drawCommandsBuffer, drawParamsBuffer);
                 });
 
             AddDeferredPasses(graph);
@@ -467,6 +475,12 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddShadowMaps(RenderGraph &graph, DrawLock lock) {
+        vector<DrawBufferIDs> drawBufferIDs;
+        drawBufferIDs.reserve(lights.count);
+        for (int i = 0; i < lights.count; i++) {
+            drawBufferIDs.push_back(GenerateDrawsForView(graph, lights.views[i].visibilityMask));
+        }
+
         graph.Pass("ShadowMaps")
             .Build([&](RenderGraphPassBuilder &builder) {
                 RenderTargetDesc desc;
@@ -477,8 +491,13 @@ namespace sp::vulkan {
 
                 desc.format = vk::Format::eD16Unorm;
                 builder.OutputDepthAttachment("ShadowMapDepth", desc, {LoadOp::Clear, StoreOp::Store});
+
+                for (auto &ids : drawBufferIDs) {
+                    builder.ReadBuffer(ids.drawCommandsBuffer);
+                    builder.ReadBuffer(ids.drawParamsBuffer);
+                }
             })
-            .Execute([this, lock](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([this, drawBufferIDs](RenderGraphResources &resources, CommandContext &cmd) {
                 cmd.SetShaders("shadow_map_indirect.vert", "shadow_map.frag");
 
                 auto &lights = this->lights;
@@ -495,7 +514,11 @@ namespace sp::vulkan {
                     cmd.SetYDirection(YDirection::Down);
 
                     // this->ForwardPass(cmd, view.visibilityMask, lock, false);
-                    this->ForwardPass2(cmd, view.visibilityMask);
+
+                    auto &ids = drawBufferIDs[i];
+                    this->ForwardPass3(cmd,
+                        resources.GetBuffer(ids.drawCommandsBuffer),
+                        resources.GetBuffer(ids.drawParamsBuffer));
                 }
             });
     }
@@ -798,7 +821,58 @@ namespace sp::vulkan {
             gpuRenderable->modelIndex = model->SceneIndex();
             gpuRenderable++;
             scene.renderableCount++;
+            scene.primitiveCount += model->PrimitiveCount();
         }
+
+        scene.primitiveCountPowerOfTwo = CeilToPowerOfTwo(scene.primitiveCount);
+    }
+
+    Renderer::DrawBufferIDs Renderer::GenerateDrawsForView(RenderGraph &graph,
+        ecs::Renderable::VisibilityMask viewMask) {
+        DrawBufferIDs bufferIDs;
+
+        graph.Pass("GenerateDrawsForView")
+            .Build([&](RenderGraphPassBuilder &builder) {
+                auto drawCmds = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_INDIRECT,
+                    sizeof(uint32) + scene.primitiveCountPowerOfTwo * sizeof(VkDrawIndexedIndirectCommand));
+                bufferIDs.drawCommandsBuffer = drawCmds.id;
+
+                auto drawParams = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL,
+                    scene.primitiveCountPowerOfTwo * sizeof(glm::mat4));
+                bufferIDs.drawParamsBuffer = drawParams.id;
+            })
+            .Execute([this, viewMask, bufferIDs](RenderGraphResources &resources, CommandContext &cmd) {
+                auto drawBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
+                cmd.Raw().fillBuffer(*drawBuffer, 0, sizeof(uint32), 0);
+
+                cmd.SetComputeShader("generate_draws_for_view.comp");
+                cmd.SetStorageBuffer(0, 0, scene.renderableEntityList);
+                cmd.SetStorageBuffer(0, 1, scene.models);
+                cmd.SetStorageBuffer(0, 2, scene.primitiveLists);
+                cmd.SetStorageBuffer(0, 3, drawBuffer);
+                cmd.SetStorageBuffer(0, 4, resources.GetBuffer(bufferIDs.drawParamsBuffer));
+
+                uint32 visibilityMask = viewMask.to_ulong();
+                cmd.PushConstants(visibilityMask);
+
+                cmd.Dispatch((scene.renderableCount + 127) / 128, 1, 1);
+            });
+        return bufferIDs;
+    }
+
+    void Renderer::ForwardPass3(CommandContext &cmd, BufferPtr drawCommandsBuffer, BufferPtr drawParamsBuffer) {
+        cmd.SetVertexLayout(SceneVertex::Layout());
+        cmd.SetStorageBuffer(1, 0, drawParamsBuffer);
+        cmd.Raw().bindIndexBuffer(*scene.indexBuffer, 0, vk::IndexType::eUint16);
+        cmd.Raw().bindVertexBuffers(0, {*scene.vertexBuffer}, {0});
+        cmd.SetTexture(0, 0, GetBlankPixelImage());
+        cmd.SetTexture(0, 1, GetBlankPixelImage());
+        cmd.DrawIndexedIndirectCount(drawCommandsBuffer,
+            sizeof(uint32),
+            drawCommandsBuffer,
+            0,
+            scene.primitiveCountPowerOfTwo,
+            sizeof(VkDrawIndexedIndirectCommand));
     }
 
     void Renderer::ForwardPass2(CommandContext &cmd, ecs::Renderable::VisibilityMask viewMask) {

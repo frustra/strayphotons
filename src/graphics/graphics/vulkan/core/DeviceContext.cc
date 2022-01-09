@@ -263,7 +263,10 @@ namespace sp::vulkan {
             Assertf(found, "device must have extension %s", requiredExtension);
         }
 
+        vk::PhysicalDeviceVulkan12Features availableVulkan12Features;
+
         vk::PhysicalDeviceMultiviewFeatures availableMultiviewFeatures;
+        availableMultiviewFeatures.pNext = &availableVulkan12Features;
 
         vk::PhysicalDeviceDescriptorIndexingFeatures availableDescriptorFeatures;
         availableDescriptorFeatures.pNext = &availableMultiviewFeatures;
@@ -286,9 +289,14 @@ namespace sp::vulkan {
         //     "device must support non-uniform sampled image array indexing");
 
         Assert(availableMultiviewFeatures.multiview, "device must support multiview");
+        Assert(availableVulkan12Features.drawIndirectCount, "device must support drawIndirectCount");
+
+        vk::PhysicalDeviceVulkan12Features enabledVulkan12Features;
+        enabledVulkan12Features.drawIndirectCount = true;
 
         vk::PhysicalDeviceMultiviewFeatures enabledMultiviewFeatures;
         enabledMultiviewFeatures.multiview = true;
+        enabledMultiviewFeatures.pNext = &enabledVulkan12Features;
 
         vk::PhysicalDeviceDescriptorIndexingFeatures enabledDescriptorFeatures;
         enabledDescriptorFeatures.descriptorBindingPartiallyBound = true;
@@ -731,6 +739,11 @@ namespace sp::vulkan {
             break;
         case BUFFER_TYPE_STORAGE_LOCAL:
             usage = vk::BufferUsageFlagBits::eStorageBuffer;
+            residency = VMA_MEMORY_USAGE_GPU_ONLY;
+            break;
+        case BUFFER_TYPE_STORAGE_LOCAL_INDIRECT:
+            usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer |
+                    vk::BufferUsageFlagBits::eTransferDst;
             residency = VMA_MEMORY_USAGE_GPU_ONLY;
             break;
         default:
