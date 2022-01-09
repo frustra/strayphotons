@@ -6,12 +6,14 @@
 #ifdef __clang__
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wunused-variable"
+    #pragma clang diagnostic ignored "-Wreorder"
     #pragma clang diagnostic ignored "-Wnullability-completeness"
 #endif
 
 #ifdef __GNUC__
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wunused-variable"
+    #pragma GCC diagnostic ignored "-Wreorder"
 #endif
 
 #ifdef _MSC_VER
