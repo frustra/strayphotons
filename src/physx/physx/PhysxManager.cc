@@ -185,10 +185,6 @@ namespace sp {
                 auto currentRotate = PxQuatToGlmQuat(pose.q);
                 auto deltaRotate = targetRotate * glm::inverse(currentRotate);
 
-                if (glm::angle(deltaRotate) > M_PI_2) {
-                    constraint->rotationOffset = GlmQuatToPxQuat(invRotate * currentRotate);
-                }
-
                 if (deltaPos.magnitude() < 2.0) {
                     float intervalSeconds = this->interval.count() / 1e9;
                     float tickFrequency = 1e9 / this->interval.count();
