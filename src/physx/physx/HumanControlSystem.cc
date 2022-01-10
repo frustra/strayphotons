@@ -188,7 +188,7 @@ namespace sp {
             if (transform.HasChanged(userData->transformChangeNumber)) return;
 
             auto disp = userData->velocity * (float)dtSinceLastFrame;
-            auto prevPosition = PxExtendedVec3ToGlmVec3P(controller.pxController->getPosition());
+            auto prevPosition = PxExtendedVec3ToGlmVec3(controller.pxController->getPosition());
             glm::vec3 newPosition;
             if (CVarNoClip.Get()) {
                 newPosition = prevPosition + disp;
@@ -197,7 +197,7 @@ namespace sp {
                 userData->onGround = physics->MoveController(controller.pxController,
                     dtSinceLastFrame,
                     GlmVec3ToPxVec3(disp));
-                newPosition = PxExtendedVec3ToGlmVec3P(controller.pxController->getPosition());
+                newPosition = PxExtendedVec3ToGlmVec3(controller.pxController->getPosition());
             }
 
             if (!CVarNoClip.Get()) {
@@ -247,7 +247,7 @@ namespace sp {
                 if (dynamic && !dynamic->getRigidBodyFlags().isSet(physx::PxRigidBodyFlag::eKINEMATIC)) {
                     interact.target = dynamic;
                     auto pose = dynamic->getGlobalPose();
-                    auto currentPos = PxVec3ToGlmVec3P(
+                    auto currentPos = PxVec3ToGlmVec3(
                         pose.transform(dynamic->getCMassLocalPose().transform(physx::PxVec3(0.0))));
                     auto invRotate = glm::inverse(transform.GetRotation());
                     auto offset = invRotate * (currentPos - origin + glm::vec3(0, 0.1, 0));
