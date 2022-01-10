@@ -69,6 +69,7 @@ namespace sp::vulkan {
         ~Renderer();
 
         void RenderFrame();
+        void EndFrame();
 
         struct DrawBufferIDs {
             RenderGraphResourceID drawCommandsBuffer; // first 4 bytes are the number of draws
@@ -112,7 +113,6 @@ namespace sp::vulkan {
         DeviceContext &device;
         PerfTimer &timer;
 
-        void EndFrame();
         void BuildFrameGraph(RenderGraph &graph);
 
         void AddScreenshotPasses(RenderGraph &graph);
@@ -122,7 +122,7 @@ namespace sp::vulkan {
 
         void AddSceneState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock);
         void AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
-        void AddShadowMaps(RenderGraph &graph, DrawLock lock);
+        void AddShadowMaps(RenderGraph &graph);
         void AddGuis(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Gui>> lock);
         void AddDeferredPasses(RenderGraph &graph);
         void AddMenuOverlay(RenderGraph &graph);
@@ -140,6 +140,7 @@ namespace sp::vulkan {
         LightingContext lights;
         SceneMeshContext scene;
         PreservingMap<string, Model> activeModels;
+        vector<shared_ptr<const sp::Model>> modelsToLoad;
 
         struct RenderableGui {
             Tecs::Entity entity;

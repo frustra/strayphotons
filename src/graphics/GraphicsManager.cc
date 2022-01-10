@@ -148,6 +148,7 @@ namespace sp {
         // TODO: Configurable headless frame rate
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         #endif
+        renderer->EndFrame();
         timer.EndFrame();
         context->EndFrame();
         return true;
@@ -210,12 +211,11 @@ namespace sp {
                 }
             }
         #endif
-
-            renderer->EndFrame();
         }
 
         context->SwapBuffers();
 
+        renderer->EndFrame();
         timer.EndFrame();
         context->EndFrame();
         return true;

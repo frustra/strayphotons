@@ -143,7 +143,6 @@ namespace sp::vulkan {
         RenderGraph graph(device, &timer);
         BuildFrameGraph(graph);
         graph.Execute();
-        EndFrame();
     }
 
     void Renderer::BuildFrameGraph(RenderGraph &graph) {
@@ -161,7 +160,7 @@ namespace sp::vulkan {
 
         AddSceneState(graph, lock);
         AddLightState(graph, lock);
-        AddShadowMaps(graph, lock);
+        AddShadowMaps(graph);
         AddGuis(graph, lock);
 
         Tecs::Entity windowEntity = device.GetActiveView();
@@ -474,7 +473,7 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddShadowMaps(RenderGraph &graph, DrawLock lock) {
+    void Renderer::AddShadowMaps(RenderGraph &graph) {
         vector<DrawBufferIDs> drawBufferIDs;
         drawBufferIDs.reserve(lights.count);
         for (int i = 0; i < lights.count; i++) {
@@ -512,8 +511,6 @@ namespace sp::vulkan {
                     viewport.offset = vk::Offset2D(view.offset.x, view.offset.y);
                     cmd.SetViewport(viewport);
                     cmd.SetYDirection(YDirection::Down);
-
-                    // this->ForwardPass(cmd, view.visibilityMask, lock, false);
 
                     auto &ids = drawBufferIDs[i];
                     this->ForwardPass3(cmd,
@@ -809,8 +806,8 @@ namespace sp::vulkan {
 
             auto model = activeModels.Load(renderable.model->name);
             if (!model) {
-                model = make_shared<Model>(*renderable.model, scene, device);
-                activeModels.Register(renderable.model->name, model);
+                modelsToLoad.push_back(renderable.model);
+                continue;
             }
 
             Assert(scene.renderableCount * sizeof(GPURenderableEntity) < scene.renderableEntityList->Size(),
@@ -964,19 +961,40 @@ namespace sp::vulkan {
 
         glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetTransform();
 
-        if (preDraw) preDraw(lock, ent);
-
         auto model = activeModels.Load(comp.model->name);
         if (!model) {
-            model = make_shared<Model>(*comp.model, scene, device);
-            activeModels.Register(comp.model->name, model);
+            modelsToLoad.push_back(comp.model);
+            return;
         }
 
+        if (preDraw) preDraw(lock, ent);
         model->Draw(cmd, scene, modelMat, useMaterial); // TODO pass and use comp.model->bones
     }
 
     void Renderer::EndFrame() {
         activeModels.Tick(std::chrono::milliseconds(33)); // Minimum 30 fps tick rate
+
+        chrono_clock::duration totalLoadTime = {};
+
+        for (int i = (int)modelsToLoad.size() - 1; i >= 0; i--) {
+            const auto &model = modelsToLoad[i];
+            if (activeModels.Contains(model->name)) {
+                modelsToLoad.pop_back();
+                continue;
+            }
+
+            auto start = chrono_clock::now();
+            auto vulkanModel = make_shared<Model>(*model, scene, device);
+            activeModels.Register(model->name, vulkanModel);
+
+            auto loadTime = chrono_clock::now() - start;
+            auto usLoadTime = std::chrono::duration_cast<std::chrono::microseconds>(loadTime).count();
+            Debugf("Loaded vulkan model %s in %llu.%llu ms", model->name, usLoadTime / 1000, usLoadTime % 1000);
+
+            modelsToLoad.pop_back();
+            totalLoadTime += loadTime;
+            if (totalLoadTime > std::chrono::milliseconds(10)) break;
+        }
     }
 
     void Renderer::SetDebugGui(GuiManager &gui) {

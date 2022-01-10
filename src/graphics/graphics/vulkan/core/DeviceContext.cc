@@ -264,29 +264,25 @@ namespace sp::vulkan {
         }
 
         vk::PhysicalDeviceVulkan12Features availableVulkan12Features;
-
         vk::PhysicalDeviceMultiviewFeatures availableMultiviewFeatures;
         availableMultiviewFeatures.pNext = &availableVulkan12Features;
-
         vk::PhysicalDeviceDescriptorIndexingFeatures availableDescriptorFeatures;
         availableDescriptorFeatures.pNext = &availableMultiviewFeatures;
-
         vk::PhysicalDeviceFeatures2 deviceFeatures2;
         deviceFeatures2.pNext = &availableDescriptorFeatures;
-        auto &availableDeviceFeatures = deviceFeatures2.features;
 
         physicalDevice.getFeatures2KHR(&deviceFeatures2);
 
+        const auto &availableDeviceFeatures = deviceFeatures2.features;
         Assert(availableDeviceFeatures.fillModeNonSolid, "device must support fillModeNonSolid");
         Assert(availableDeviceFeatures.wideLines, "device must support wideLines");
         Assert(availableDeviceFeatures.largePoints, "device must support largePoints");
-        Assert(availableDeviceFeatures.samplerAnisotropy, "device must support anisotropic sampling");
+        Assert(availableDeviceFeatures.samplerAnisotropy, "device must support samplerAnisotropy");
         Assert(availableDeviceFeatures.multiDrawIndirect, "device must support multiDrawIndirect");
 
         Assert(availableDescriptorFeatures.descriptorBindingPartiallyBound,
-            "device must support partially bound descriptor arrays");
-        // Assert(availableDescriptorFeatures.shaderSampledImageArrayNonUniformIndexing,
-        //     "device must support non-uniform sampled image array indexing");
+            "device must support descriptorBindingPartiallyBound");
+        Assert(availableDescriptorFeatures.runtimeDescriptorArray, "device must support runtimeDescriptorArray");
 
         Assert(availableMultiviewFeatures.multiview, "device must support multiview");
         Assert(availableVulkan12Features.drawIndirectCount, "device must support drawIndirectCount");
@@ -300,6 +296,7 @@ namespace sp::vulkan {
 
         vk::PhysicalDeviceDescriptorIndexingFeatures enabledDescriptorFeatures;
         enabledDescriptorFeatures.descriptorBindingPartiallyBound = true;
+        enabledDescriptorFeatures.runtimeDescriptorArray = true;
         enabledDescriptorFeatures.pNext = &enabledMultiviewFeatures;
 
         vk::PhysicalDeviceFeatures2 enabledDeviceFeatures2;
@@ -750,7 +747,7 @@ namespace sp::vulkan {
             Abortf("unknown buffer type %d", type);
         }
 
-        Debugf("Allocating buffer type %d with size %d", type, size);
+        // Debugf("Allocating buffer type %d with size %d", type, size);
         auto buffer = AllocateBuffer(size, usage, residency);
         pool.emplace_back(PooledBuffer{buffer, size, true});
         return buffer;

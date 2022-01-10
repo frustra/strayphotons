@@ -305,9 +305,7 @@ namespace sp::vulkan {
         template<typename T>
         T *AllocUniformData(uint32 set, uint32 binding, uint32 count = 1) {
             auto buffer = AllocUniformBuffer(set, binding, sizeof(T) * count);
-            T *data;
-            buffer->MapPersistent((void **)&data);
-            return data;
+            return static_cast<T *>(buffer->Mapped());
         }
 
         template<typename T>
