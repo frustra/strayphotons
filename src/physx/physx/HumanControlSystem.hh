@@ -22,8 +22,8 @@ namespace sp {
         /**
          * Pick up the object that the player is looking at and make it move at to a fixed location relative to camera
          */
-        void Interact(
-            ecs::Lock<ecs::Read<ecs::HumanController>, ecs::Write<ecs::Transform, ecs::InteractController>> lock,
+        void Interact(ecs::Lock<ecs::Read<ecs::HumanController>,
+                          ecs::Write<ecs::Transform, ecs::InteractController, ecs::Physics>> lock,
             Tecs::Entity entity);
 
     private:
@@ -42,7 +42,10 @@ namespace sp {
          * Rotate the object the player is currently holding, using mouse input.
          * Returns true if there is currently a target.
          */
-        bool InteractRotate(ecs::Lock<ecs::Read<ecs::InteractController>> lock, Tecs::Entity entity, glm::vec2 dCursor);
+        bool InteractRotate(
+            ecs::Lock<ecs::Read<ecs::InteractController, ecs::Transform>, ecs::Write<ecs::Physics>> lock,
+            Tecs::Entity entity,
+            glm::vec2 dCursor);
 
         PhysxManager *physics = nullptr;
     };

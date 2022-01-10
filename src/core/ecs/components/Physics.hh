@@ -29,6 +29,9 @@ namespace ecs {
         bool kinematic = false; // only dynamic actors can be kinematic
         bool decomposeHull = false;
         float density = 1.0f;
+        Tecs::Entity constraint;
+        glm::vec3 constraintOffset;
+        glm::quat constraintRotation;
 
         // For use by PhysxManager only
         physx::PxRigidActor *actor = nullptr;

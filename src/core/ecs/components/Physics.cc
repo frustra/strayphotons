@@ -1,5 +1,7 @@
 #include "Physics.hh"
 
+#include "game/Scene.hh"
+
 #include <assets/AssetHelpers.hh>
 #include <assets/AssetManager.hh>
 #include <ecs/EcsImpl.hh>
@@ -19,6 +21,15 @@ namespace ecs {
                 physics.decomposeHull = param.second.get<bool>();
             } else if (param.first == "density") {
                 physics.density = param.second.get<double>();
+            } else if (param.first == "constraint") {
+                Assert(scene, "Physics::Load must have valid scene to define constraint");
+                auto constraintName = param.second.get<string>();
+                auto it = scene->namedEntities.find(constraintName);
+                if (it != scene->namedEntities.end()) {
+                    physics.constraint = it->second;
+                } else {
+                    Errorf("Component<Physics>::Load constraint name does not exist: %s", constraintName);
+                }
             }
         }
         return true;

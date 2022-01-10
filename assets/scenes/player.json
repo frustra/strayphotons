@@ -47,7 +47,8 @@
                 "hidden": true
             },
             "transform": {
-                "scale": [0.01, 0.01, 0.01]
+                "scale": [0.01, 0.01, 0.01],
+                "rotate": [180, 0, 1, 0]
             },
             "script": {
                 "onTick": ["auto_attach", "relative_movement"],
@@ -65,7 +66,8 @@
                 "hidden": true
             },
             "transform": {
-                "scale": [0.01, 0.01, 0.01]
+                "scale": [0.01, 0.01, 0.01],
+                "rotate": [180, 0, 1, 0]
             },
             "script": {
                 "onTick": ["auto_attach", "relative_movement"],
@@ -79,7 +81,8 @@
         {
             "_name": "left-hand",
 			"physics": {
-				"model": "box"
+				"model": "box",
+                "constraint": "left-hand-input"
 			},
             "transform": {
                 "translate": [1, 1, 0],
@@ -103,7 +106,8 @@
         {
             "_name": "right-hand",
 			"physics": {
-				"model": "box"
+				"model": "box",
+                "constraint": "right-hand-input"
 			},
             "transform": {
                 "translate": [-1, 1, 0],
