@@ -106,12 +106,12 @@ namespace sp {
         auto dynamic = physics.actor->is<PxRigidDynamic>();
         if (dynamic == nullptr) return;
 
-        auto &transform = physics.constraint.Get<ecs::Transform>(lock);
+        auto parentTransform = physics.constraint.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
         auto pose = physics.actor->getGlobalPose();
-        auto rotate = transform.GetGlobalRotation(lock);
+        auto rotate = parentTransform.GetRotation();
         auto invRotate = glm::inverse(rotate);
 
-        auto targetPos = transform.GetGlobalPosition(lock) + rotate * physics.constraintOffset;
+        auto targetPos = parentTransform.GetPosition() + rotate * physics.constraintOffset;
         auto currentPos = pose.transform(dynamic->getCMassLocalPose().transform(PxVec3(0.0)));
         auto deltaPos = GlmVec3ToPxVec3(targetPos) - currentPos;
 
@@ -444,11 +444,11 @@ namespace sp {
         if (!ph.model || !ph.model->Valid()) return;
 
         auto globalTransform = transform.GetGlobalTransform(lock);
-        auto globalRotation = transform.GetGlobalRotation(lock);
-        auto scale = glm::vec3(glm::inverse(globalRotation) * (globalTransform * glm::vec4(1, 1, 1, 0)));
+        // auto scale = glm::vec3(glm::inverse(globalRotation) * (globalTransform * glm::vec4(1, 1, 1, 0)));
+        auto scale = globalTransform.GetScale();
 
-        auto pxTransform = PxTransform(GlmVec3ToPxVec3(globalTransform * glm::vec4(0, 0, 0, 1)),
-            GlmQuatToPxQuat(globalRotation));
+        auto pxTransform = PxTransform(GlmVec3ToPxVec3(globalTransform.GetPosition()),
+            GlmQuatToPxQuat(globalTransform.GetRotation()));
 
         if (!ph.actor) {
             if (ph.dynamic) {
@@ -564,7 +564,7 @@ namespace sp {
         auto &controller = e.Get<ecs::HumanController>(lock);
         auto &transform = e.Get<ecs::Transform>(lock);
 
-        auto position = transform.GetGlobalPosition(lock);
+        auto position = transform.GetGlobalTransform(lock).GetPosition();
         // Offset the capsule position so the camera (transform origin) is at the top
         auto capsuleHeight = controller.pxController ? controller.pxController->getHeight() : controller.height;
         auto pxPosition = GlmVec3ToPxExtendedVec3(position - glm::vec3(0, capsuleHeight / 2, 0));

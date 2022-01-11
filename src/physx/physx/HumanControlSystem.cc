@@ -225,11 +225,11 @@ namespace sp {
     }
 
     void HumanControlSystem::Interact(
-        ecs::Lock<ecs::Read<ecs::HumanController>, ecs::Write<ecs::Transform, ecs::InteractController, ecs::Physics>>
+        ecs::Lock<ecs::Read<ecs::HumanController, ecs::Transform>, ecs::Write<ecs::InteractController, ecs::Physics>>
             lock,
         Tecs::Entity entity) {
         auto &interact = entity.Get<ecs::InteractController>(lock);
-        auto &transform = entity.Get<ecs::Transform>(lock);
+        auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
 
         if (interact.target.Has<ecs::Physics>(lock)) {
             auto &ph = interact.target.Get<ecs::Physics>(lock);
@@ -242,7 +242,7 @@ namespace sp {
         }
 
         glm::vec3 origin = transform.GetPosition();
-        glm::vec3 dir = glm::normalize(transform.GetGlobalForward(lock));
+        glm::vec3 dir = transform.GetForward();
 
         physx::PxReal maxDistance = 2.0f;
 
@@ -258,19 +258,17 @@ namespace sp {
                     auto userData = (ActorUserData *)hitActor->userData;
                     if (userData != nullptr && userData->entity.Has<ecs::Physics, ecs::Transform>(lock)) {
                         auto &hitPhysics = userData->entity.Get<ecs::Physics>(lock);
-                        // auto &hitTransform = userData->entity.Get<ecs::Transform>(lock);
+                        auto hitTransform = userData->entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
 
                         interact.target = userData->entity;
-                        auto pose = dynamic->getGlobalPose();
-                        auto currentPos = PxVec3ToGlmVec3(
-                            pose.transform(dynamic->getCMassLocalPose().transform(physx::PxVec3(0.0))));
-                        auto invRotate = glm::inverse(transform.GetRotation());
-                        auto offset = invRotate * (currentPos - origin + glm::vec3(0, 0.1, 0));
+                        auto currentPos = hitTransform.GetTransform() *
+                                          glm::vec4(PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p), 1.0f);
+                        auto invParentRotate = glm::inverse(transform.GetRotation());
 
                         physics->SetCollisionGroup(hitActor, PhysxCollisionGroup::HELD_OBJECT);
                         hitPhysics.constraint = entity;
-                        hitPhysics.constraintOffset = offset;
-                        hitPhysics.constraintRotation = invRotate * PxQuatToGlmQuat(pose.q);
+                        hitPhysics.constraintOffset = invParentRotate * (currentPos - origin + glm::vec3(0, 0.1, 0));
+                        hitPhysics.constraintRotation = invParentRotate * hitTransform.GetRotation();
                     }
                 }
             }
@@ -289,8 +287,8 @@ namespace sp {
 
         auto input = dCursor * CVarCursorSensitivity.Get() * 0.01f;
         auto upAxis = glm::inverse(parentTransform.GetGlobalRotation(lock)) * glm::vec3(0, 1, 0);
-        ph.constraintRotation = glm::quat(input.x, upAxis) * ph.constraintRotation;
-        ph.constraintRotation = glm::quat(input.y, glm::vec3(1, 0, 0)) * ph.constraintRotation;
+        ph.constraintRotation = ph.constraintRotation * glm::quat(input.x, upAxis);
+        // ph.constraintRotation = glm::quat(input.y, glm::vec3(1, 0, 0)) * ph.constraintRotation;
         return true;
     }
 } // namespace sp

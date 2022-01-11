@@ -35,8 +35,7 @@ namespace ecs {
                     if (EventInput::Poll(lock, ent, "/action/flashlight/grab", event)) {
                         auto &transform = ent.Get<Transform>(lock);
                         if (transform.HasParent(lock)) {
-                            transform.SetPosition(transform.GetGlobalPosition(lock));
-                            transform.SetRotation(transform.GetGlobalRotation(lock));
+                            transform.SetTransform(transform.GetGlobalTransform(lock));
                             transform.SetParent(Tecs::Entity());
                         } else {
                             Tecs::Entity parent = EntityWith<Name>(lock, CVarFlashlightParent.Get());
@@ -222,10 +221,10 @@ namespace ecs {
                                 if (!relativeName.empty()) {
                                     auto relativeEnt = EntityWith<Name>(lock, relativeName);
                                     if (relativeEnt.Has<Transform>(lock)) {
-                                        auto &relativeTransform = relativeEnt.Get<Transform>(lock);
-                                        transform.SetRotation(relativeTransform.GetGlobalRotation(lock));
-                                        position = relativeTransform.GetGlobalTransform(lock) *
-                                                   glm::vec4(position, 1.0f);
+                                        auto relativeTransform = relativeEnt.Get<Transform>(lock).GetGlobalTransform(
+                                            lock);
+                                        transform.SetRotation(relativeTransform.GetRotation());
+                                        position = relativeTransform.GetTransform() * glm::vec4(position, 1.0f);
                                     }
                                 }
                                 transform.SetPosition(position);

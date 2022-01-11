@@ -87,8 +87,8 @@ namespace sp {
                 auto &targetTransform = target.Get<ecs::Transform>(lock);
                 auto &originTransform = entity.Get<ecs::Transform>(lock);
 
-                auto targetPosition = targetTransform.GetGlobalPosition(lock);
-                auto originPosition = originTransform.GetGlobalPosition(lock);
+                auto targetPosition = targetTransform.GetGlobalTransform(lock).GetPosition();
+                auto originPosition = originTransform.GetGlobalTransform(lock).GetPosition();
                 auto targetHeight = std::max(0.1f,
                     targetPosition.y - originPosition.y - controller.pxController->getRadius());
                 targetPosition.y = originPosition.y;

@@ -22,8 +22,8 @@ namespace sp {
         /**
          * Pick up the object that the player is looking at and make it move at to a fixed location relative to camera
          */
-        void Interact(ecs::Lock<ecs::Read<ecs::HumanController>,
-                          ecs::Write<ecs::Transform, ecs::InteractController, ecs::Physics>> lock,
+        void Interact(ecs::Lock<ecs::Read<ecs::HumanController, ecs::Transform>,
+                          ecs::Write<ecs::InteractController, ecs::Physics>> lock,
             Tecs::Entity entity);
 
     private:

@@ -14,6 +14,7 @@ namespace ecs {
 
 #ifdef __cplusplus
         Transform() : changeCount(1) {}
+        Transform(glm::mat4x3 transform) : transform(transform), changeCount(1) {}
         Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>());
 
         void SetParent(Tecs::Entity ent);
@@ -21,11 +22,9 @@ namespace ecs {
         bool HasParent(Lock<Read<Transform>> lock) const;
         bool HasParent(Lock<Read<Transform>> lock, Tecs::Entity ent) const;
 
-        // Returns transform data that including all parent transforms.
-        glm::mat4 GetGlobalTransform(Lock<Read<Transform>> lock) const;
+        // Returns a flattened Transform that includes all parent transforms.
+        Transform GetGlobalTransform(Lock<Read<Transform>> lock) const;
         glm::quat GetGlobalRotation(Lock<Read<Transform>> lock) const;
-        glm::vec3 GetGlobalPosition(Lock<Read<Transform>> lock) const;
-        glm::vec3 GetGlobalForward(Lock<Read<Transform>> lock) const;
 
         // Perform relative transform operations on the local transform data.
         void Translate(glm::vec3 xyz);
@@ -36,11 +35,15 @@ namespace ecs {
         void SetPosition(glm::vec3 pos);
         void SetRotation(glm::quat quat);
         void SetScale(glm::vec3 xyz);
+        void SetTransform(glm::mat4x3 transform);
+        void SetTransform(const Transform &transform);
 
         // Returns local transform data, not including any parent transforms.
         glm::vec3 GetPosition() const;
         glm::quat GetRotation() const;
+        glm::vec3 GetForward() const;
         glm::vec3 GetScale() const;
+        glm::mat4x3 GetTransform() const;
 
         uint32_t ChangeNumber() const;
         bool HasChanged(uint32_t changeNumber) const;
@@ -54,11 +57,6 @@ namespace ecs {
     void transform_set_parent(Transform *t, TecsEntity ent);
     uint64_t transform_get_parent(const Transform *t);
     bool transform_has_parent(const Transform *t, ScriptLockHandle lock);
-
-    void transform_get_global_mat4(GlmMat4 *out, const Transform *t, ScriptLockHandle lock);
-    void transform_get_global_orientation(GlmQuat *out, const Transform *t, ScriptLockHandle lock);
-    void transform_get_global_position(GlmVec3 *out, const Transform *t, ScriptLockHandle lock);
-    void transform_get_global_forward(GlmVec3 *out, const Transform *t, ScriptLockHandle lock);
 
     void transform_translate(Transform *t, const GlmVec3 *xyz);
     void transform_rotate(Transform *t, float radians, const GlmVec3 *axis);

@@ -41,12 +41,18 @@ namespace EcsTransformTests {
             auto &transformB = b.Get<ecs::Transform>(lock);
             auto &transformC = c.Get<ecs::Transform>(lock);
 
-            AssertEqual(transformRoot.GetGlobalPosition(lock),
+            AssertEqual(transformRoot.GetGlobalTransform(lock).GetPosition(),
                 glm::vec3(1, 2, 3),
                 "Root entity returned wrong position");
-            AssertEqual(transformA.GetGlobalPosition(lock), glm::vec3(5, 2, 3), "A entity returned wrong position");
-            AssertEqual(transformB.GetGlobalPosition(lock), glm::vec3(5, 7, 3), "B entity returned wrong position");
-            AssertEqual(transformC.GetGlobalPosition(lock), glm::vec3(5, 2, 9), "C entity returned wrong position");
+            AssertEqual(transformA.GetGlobalTransform(lock).GetPosition(),
+                glm::vec3(5, 2, 3),
+                "A entity returned wrong position");
+            AssertEqual(transformB.GetGlobalTransform(lock).GetPosition(),
+                glm::vec3(5, 7, 3),
+                "B entity returned wrong position");
+            AssertEqual(transformC.GetGlobalTransform(lock).GetPosition(),
+                glm::vec3(5, 2, 9),
+                "C entity returned wrong position");
 
             {
                 Timer t2("Benchmark GetGlobalTransform() with parent transform");
@@ -66,12 +72,18 @@ namespace EcsTransformTests {
 
             transformRoot.SetPosition(glm::vec3(-1, -2, -3));
 
-            AssertEqual(transformRoot.GetGlobalPosition(lock),
+            AssertEqual(transformRoot.GetGlobalTransform(lock).GetPosition(),
                 glm::vec3(-1, -2, -3),
                 "Root entity returned wrong position");
-            AssertEqual(transformA.GetGlobalPosition(lock), glm::vec3(3, -2, -3), "A entity returned wrong position");
-            AssertEqual(transformB.GetGlobalPosition(lock), glm::vec3(3, 3, -3), "B entity returned wrong position");
-            AssertEqual(transformC.GetGlobalPosition(lock), glm::vec3(3, -2, 3), "C entity returned wrong position");
+            AssertEqual(transformA.GetGlobalTransform(lock).GetPosition(),
+                glm::vec3(3, -2, -3),
+                "A entity returned wrong position");
+            AssertEqual(transformB.GetGlobalTransform(lock).GetPosition(),
+                glm::vec3(3, 3, -3),
+                "B entity returned wrong position");
+            AssertEqual(transformC.GetGlobalTransform(lock).GetPosition(),
+                glm::vec3(3, -2, 3),
+                "C entity returned wrong position");
         }
         {
             Timer t("Try setting and reading rotation + scale");
