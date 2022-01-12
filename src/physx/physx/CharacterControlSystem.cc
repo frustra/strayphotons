@@ -31,7 +31,7 @@ namespace sp {
         characterControllerObserver = lock.Watch<ecs::ComponentEvent<ecs::CharacterController>>();
     }
 
-    void CharacterControlSystem::Frame(double dtSinceLastFrame) {
+    void CharacterControlSystem::Frame() {
         auto lock = ecs::World.StartTransaction<
             ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
             ecs::Write<ecs::Transform, ecs::CharacterController>>();
@@ -125,7 +125,7 @@ namespace sp {
                 auto targetDelta = targetPosition + userData->deltaSinceUpdate -
                                    PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
                 userData->onGround = manager.MoveController(controller.pxController,
-                    dtSinceLastFrame,
+                    manager.interval.count() / 1e9,
                     GlmVec3ToPxVec3(targetDelta));
 
                 // Calculate new character velocity
@@ -144,20 +144,20 @@ namespace sp {
                         0.01; // Always try moving down so that onGround detection is more consistent.
                     userData->velocity.z = movement.z;
                 } else {
-                    userData->velocity += movement * ecs::PLAYER_AIR_STRAFE * (float)dtSinceLastFrame;
-                    userData->velocity.y -= ecs::PLAYER_GRAVITY * dtSinceLastFrame;
+                    userData->velocity += movement * ecs::PLAYER_AIR_STRAFE * (float)(manager.interval.count() / 1e9);
+                    userData->velocity.y -= ecs::PLAYER_GRAVITY * (float)(manager.interval.count() / 1e9);
                 }
 
                 // Move controller based on velocity and update ECS transform
-                auto disp = userData->velocity * (float)dtSinceLastFrame;
+                auto disp = userData->velocity * (float)(manager.interval.count() / 1e9);
                 auto prevPosition = controller.pxController->getFootPosition();
                 userData->onGround = manager.MoveController(controller.pxController,
-                    dtSinceLastFrame,
+                    manager.interval.count() / 1e9,
                     GlmVec3ToPxVec3(disp));
                 auto deltaPos = PxVec3ToGlmVec3(controller.pxController->getFootPosition() - prevPosition);
 
                 // Update the velocity based on what happened in physx
-                auto physxVelocity = deltaPos / (float)dtSinceLastFrame;
+                auto physxVelocity = deltaPos / (float)(manager.interval.count() / 1e9);
                 auto inputSpeed = glm::length(userData->velocity);
                 if (glm::length(physxVelocity) > inputSpeed) {
                     // Don't allow the physics simulation to accelerate the character faster than the input speed

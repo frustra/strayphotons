@@ -81,7 +81,11 @@ namespace ecs {
     using AddRemove = Tecs::AddRemove;
     template<typename Event>
     using Observer = Tecs::Observer<ECS, Event>;
+    template<typename T>
+    using EntityObserver = Tecs::Observer<ECS, Tecs::EntityEvent>;
     using EntityEvent = Tecs::EntityEvent;
+    template<typename T>
+    using ComponentObserver = Tecs::Observer<ECS, Tecs::ComponentEvent<T>>;
     template<typename T>
     using ComponentEvent = Tecs::ComponentEvent<T>;
 

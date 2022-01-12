@@ -14,10 +14,10 @@ namespace sp {
         CharacterControlSystem(PhysxManager &manager);
         ~CharacterControlSystem() {}
 
-        void Frame(double dtSinceLastFrame);
+        void Frame();
 
     private:
         PhysxManager &manager;
-        ecs::Observer<ecs::ComponentEvent<ecs::CharacterController>> characterControllerObserver;
+        ecs::ComponentObserver<ecs::CharacterController> characterControllerObserver;
     };
 } // namespace sp

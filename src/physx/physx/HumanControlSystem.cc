@@ -24,7 +24,7 @@ namespace sp {
     static CVar<float> CVarCrouchSpeed("p.CrouchSpeed", 1.5, "Player crouching movement speed (m/s)");
     static CVar<float> CVarCursorSensitivity("p.CursorSensitivity", 1.0, "Mouse cursor sensitivity");
 
-    void HumanControlSystem::Frame(double dtSinceLastFrame) {
+    void HumanControlSystem::Frame() {
         if (CVarPausePlayerPhysics.Get()) return;
 
         bool noclipChanged = CVarNoClip.Changed();
@@ -111,7 +111,7 @@ namespace sp {
 
                 // Move the player
                 if (noclipChanged) {
-                    physics->EnableCollisions(controller.pxController->getActor(), !noclip);
+                    manager.EnableCollisions(controller.pxController->getActor(), !noclip);
 
                     physx::PxShape *shape;
                     controller.pxController->getActor()->getShapes(&shape, 1);
@@ -131,8 +131,8 @@ namespace sp {
                                         (targetHeight - currentHeight) * (userData->onGround ? 0.1 : 1.0);
                 }
 
-                UpdatePlayerVelocity(lock, entity, dtSinceLastFrame, inputMovement, jumping, sprinting, crouching);
-                MoveEntity(lock, entity, dtSinceLastFrame);
+                UpdatePlayerVelocity(lock, entity, inputMovement, jumping, sprinting, crouching);
+                MoveEntity(lock, entity);
             }
         }
     }
@@ -140,7 +140,6 @@ namespace sp {
     void HumanControlSystem::UpdatePlayerVelocity(
         ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,
         Tecs::Entity entity,
-        double dtSinceLastFrame,
         glm::vec3 inDirection,
         bool jump,
         bool sprint,
@@ -176,14 +175,13 @@ namespace sp {
             if (jump) userData->velocity.y = ecs::PLAYER_JUMP_VELOCITY;
             userData->velocity.z = movement.z;
         } else {
-            userData->velocity += movement * ecs::PLAYER_AIR_STRAFE * (float)dtSinceLastFrame;
-            userData->velocity.y -= ecs::PLAYER_GRAVITY * dtSinceLastFrame;
+            userData->velocity += movement * ecs::PLAYER_AIR_STRAFE * (float)(manager.interval.count() / 1e9);
+            userData->velocity.y -= ecs::PLAYER_GRAVITY * (float)(manager.interval.count() / 1e9);
         }
     }
 
     void HumanControlSystem::MoveEntity(ecs::Lock<ecs::Write<ecs::Transform, ecs::HumanController>> lock,
-        Tecs::Entity entity,
-        double dtSinceLastFrame) {
+        Tecs::Entity entity) {
         auto &transform = entity.Get<ecs::Transform>(lock);
         auto &controller = entity.Get<ecs::HumanController>(lock);
 
@@ -191,22 +189,22 @@ namespace sp {
             auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
             if (transform.HasChanged(userData->transformChangeNumber)) return;
 
-            auto disp = userData->velocity * (float)dtSinceLastFrame;
+            auto disp = userData->velocity * (float)(manager.interval.count() / 1e9);
             auto prevPosition = PxExtendedVec3ToGlmVec3(controller.pxController->getPosition());
             glm::vec3 newPosition;
             if (CVarNoClip.Get()) {
                 newPosition = prevPosition + disp;
                 userData->onGround = true;
             } else {
-                userData->onGround = physics->MoveController(controller.pxController,
-                    dtSinceLastFrame,
+                userData->onGround = manager.MoveController(controller.pxController,
+                    manager.interval.count() / 1e9,
                     GlmVec3ToPxVec3(disp));
                 newPosition = PxExtendedVec3ToGlmVec3(controller.pxController->getPosition());
             }
 
             if (!CVarNoClip.Get()) {
                 // Update the velocity based on what happened in physx
-                auto physxVelocity = (newPosition - prevPosition) / (float)dtSinceLastFrame;
+                auto physxVelocity = (newPosition - prevPosition) / (float)(manager.interval.count() / 1e9);
                 auto inputSpeed = glm::length(userData->velocity);
                 if (glm::length(physxVelocity) > inputSpeed) {
                     // Don't allow the physics simulation to accelerate the character faster than the input speed
@@ -236,7 +234,7 @@ namespace sp {
             ph.constraint = Tecs::Entity();
             ph.constraintOffset = glm::vec3();
             ph.constraintRotation = glm::quat();
-            physics->SetCollisionGroup(ph.actor, PhysxCollisionGroup::WORLD);
+            manager.SetCollisionGroup(ph.actor, PhysxCollisionGroup::WORLD);
             interact.target = Tecs::Entity();
             return;
         }
@@ -247,7 +245,7 @@ namespace sp {
         physx::PxReal maxDistance = 2.0f;
 
         physx::PxRaycastBuffer hit;
-        bool status = physics->RaycastQuery(lock, entity, origin, dir, maxDistance, hit);
+        bool status = manager.RaycastQuery(lock, entity, origin, dir, maxDistance, hit);
 
         if (status) {
             physx::PxRigidActor *hitActor = hit.block.actor;
@@ -265,7 +263,7 @@ namespace sp {
                                           glm::vec4(PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p), 1.0f);
                         auto invParentRotate = glm::inverse(transform.GetRotation());
 
-                        physics->SetCollisionGroup(hitActor, PhysxCollisionGroup::HELD_OBJECT);
+                        manager.SetCollisionGroup(hitActor, PhysxCollisionGroup::HELD_OBJECT);
                         hitPhysics.constraint = entity;
                         hitPhysics.constraintOffset = invParentRotate * (currentPos - origin + glm::vec3(0, 0.1, 0));
                         hitPhysics.constraintRotation = invParentRotate * hitTransform.GetRotation();

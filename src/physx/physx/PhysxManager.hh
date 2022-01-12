@@ -1,11 +1,12 @@
 #pragma once
 
-#include "ConvexHull.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "physx/CharacterControlSystem.hh"
+#include "physx/ConstraintSystem.hh"
+#include "physx/ConvexHull.hh"
 #include "physx/HumanControlSystem.hh"
 #include "physx/TriggerSystem.hh"
 
@@ -26,6 +27,8 @@ namespace ecs {
 namespace sp {
     class Model;
     class PhysxManager;
+
+    extern CVar<float> CVarGravity;
 
     struct ActorUserData {
         Tecs::Entity entity;
@@ -76,10 +79,6 @@ namespace sp {
 
     private:
         void Frame() override;
-
-        void UpdateConstraintForces(
-            ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics, ecs::InteractController>> lock,
-            ecs::Physics &physics);
 
         ConvexHullSet *GetCachedConvexHulls(std::string name);
 
@@ -137,15 +136,17 @@ namespace sp {
         vector<uint8_t> scratchBlock;
         bool debug = false;
 
-        ecs::Observer<ecs::ComponentEvent<ecs::Physics>> physicsObserver;
-        ecs::Observer<ecs::ComponentEvent<ecs::HumanController>> humanControllerObserver;
+        ecs::ComponentObserver<ecs::Physics> physicsObserver;
+        ecs::ComponentObserver<ecs::HumanController> humanControllerObserver;
 
         HumanControlSystem humanControlSystem;
         CharacterControlSystem characterControlSystem;
+        ConstraintSystem constraintSystem;
         TriggerSystem triggerSystem;
 
         std::unordered_map<string, ConvexHullSet *> cache;
 
         friend class CharacterControlSystem;
+        friend class ConstraintSystem;
     };
 } // namespace sp

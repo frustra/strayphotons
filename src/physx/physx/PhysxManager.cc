@@ -18,16 +18,14 @@ namespace sp {
     using namespace physx;
 
     // clang-format off
-    static CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
+    CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
     static CVar<bool> CVarShowShapes("x.ShowShapes", false, "Show (1) or hide (0) the outline of physx collision shapes");
     static CVar<bool> CVarPropJumping("x.PropJumping", false, "Disable player collision with held object");
-    static CVar<float> CVarMaxVerticalConstraintForce("x.MaxVerticalConstraintForce", 20.0f, "The maximum linear lifting force for constraints");
-    static CVar<float> CVarMaxLateralConstraintForce("x.MaxLateralConstraintForce", 20.0f, "The maximum lateral force for constraints");
-    static CVar<float> CVarMaxConstraintTorque("x.MaxConstraintTorque", 10.0f, "The maximum torque force for constraints");
     // clang-format on
 
     PhysxManager::PhysxManager()
-        : RegisteredThread("PhysX", 120.0), humanControlSystem(this), characterControlSystem(*this) {
+        : RegisteredThread("PhysX", 120.0), humanControlSystem(*this), characterControlSystem(*this),
+          constraintSystem(*this) {
         Logf("PhysX %d.%d.%d starting up",
             PX_PHYSICS_VERSION_MAJOR,
             PX_PHYSICS_VERSION_MINOR,
@@ -99,121 +97,6 @@ namespace sp {
         }
     }
 
-    void PhysxManager::UpdateConstraintForces(
-        ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics, ecs::InteractController>> lock,
-        ecs::Physics &physics) {
-        if (!physics.actor || !physics.constraint.Has<ecs::Transform>(lock)) return;
-        auto dynamic = physics.actor->is<PxRigidDynamic>();
-        if (dynamic == nullptr) return;
-
-        auto parentTransform = physics.constraint.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-        auto pose = physics.actor->getGlobalPose();
-        auto rotate = parentTransform.GetRotation();
-        auto invRotate = glm::inverse(rotate);
-
-        auto targetPos = parentTransform.GetPosition() + rotate * physics.constraintOffset;
-        auto currentPos = pose.transform(dynamic->getCMassLocalPose().transform(PxVec3(0.0)));
-        auto deltaPos = GlmVec3ToPxVec3(targetPos) - currentPos;
-
-        auto targetRotate = rotate * physics.constraintRotation;
-        auto currentRotate = PxQuatToGlmQuat(pose.q);
-        auto deltaRotate = targetRotate * glm::inverse(currentRotate);
-
-        if (deltaPos.magnitude() > 2.0) {
-            // Remove the constraint if the distance is too far
-            if (physics.constraint.Has<ecs::InteractController>(lock)) {
-                physics.constraint.Get<ecs::InteractController>(lock).target = Tecs::Entity();
-
-                SetCollisionGroup(physics.actor, PhysxCollisionGroup::WORLD);
-                physics.constraint = Tecs::Entity();
-                physics.constraintOffset = glm::vec3();
-                physics.constraintRotation = glm::quat();
-                return;
-            }
-        }
-        // TODO: Temprorary hack
-        SetCollisionGroup(physics.actor, PhysxCollisionGroup::HELD_OBJECT);
-
-        float intervalSeconds = this->interval.count() / 1e9;
-        float tickFrequency = 1e9 / this->interval.count();
-
-        { // Apply Torque
-            auto deltaRotation = GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate));
-            auto angularVelocity = PxVec3ToGlmVec3(dynamic->getAngularVelocity());
-
-            auto massInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInertiaTensor());
-            auto invMassInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInvInertiaTensor());
-            glm::mat3 worldInertia = InertiaTensorMassToWorld(massInertia, currentRotate);
-            glm::mat3 invWorldInertia = InertiaTensorMassToWorld(invMassInertia, currentRotate);
-
-            auto maxAcceleration = invWorldInertia * glm::vec3(CVarMaxConstraintTorque.Get());
-            auto deltaTick = maxAcceleration * intervalSeconds;
-            auto maxVelocity = glm::vec3(std::sqrt(2 * maxAcceleration.x * std::abs(deltaRotation.x)),
-                std::sqrt(2 * maxAcceleration.y * std::abs(deltaRotation.y)),
-                std::sqrt(2 * maxAcceleration.z * std::abs(deltaRotation.z)));
-
-            auto targetVelocity = PxVec3ToGlmVec3(deltaRotation);
-            if (glm::length(maxVelocity) > glm::length(deltaTick)) {
-                targetVelocity = glm::normalize(targetVelocity) * (maxVelocity - deltaTick);
-            } else {
-                targetVelocity *= tickFrequency;
-            }
-            auto deltaVelocity = targetVelocity - angularVelocity;
-
-            PxVec3 force = GlmVec3ToPxVec3(worldInertia * (deltaVelocity * tickFrequency));
-            float forceAbs = force.magnitude() + 0.00001f;
-            auto forceClampRatio = std::min(CVarMaxConstraintTorque.Get(), forceAbs) / forceAbs;
-
-            dynamic->addTorque(force * forceClampRatio);
-        }
-
-        { // Apply Lateral Force
-            auto maxAcceleration = CVarMaxLateralConstraintForce.Get() / dynamic->getMass();
-            auto deltaTick = maxAcceleration * intervalSeconds;
-            auto maxVelocity = std::sqrt(2 * maxAcceleration * PxVec2(deltaPos.x, deltaPos.z).magnitude());
-
-            auto targetVelocity = PxVec3(deltaPos.x, 0, deltaPos.z);
-            if (maxVelocity > deltaTick) {
-                targetVelocity.normalize();
-                targetVelocity *= maxVelocity - deltaTick;
-            } else {
-                targetVelocity *= tickFrequency;
-            }
-            auto deltaVelocity = targetVelocity - dynamic->getLinearVelocity();
-            deltaVelocity.y = 0;
-
-            auto force = deltaVelocity * tickFrequency * dynamic->getMass();
-            float forceAbs = force.magnitude() + 0.00001f;
-            auto forceClampRatio = std::min(CVarMaxLateralConstraintForce.Get(), forceAbs) / forceAbs;
-            dynamic->addForce(force * forceClampRatio);
-        }
-
-        { // Apply Vertical Force
-            auto maxAcceleration = CVarMaxVerticalConstraintForce.Get() / dynamic->getMass();
-            if (deltaPos.y > 0) {
-                maxAcceleration -= CVarGravity.Get();
-            } else {
-                maxAcceleration += CVarGravity.Get();
-            }
-            auto deltaTick = maxAcceleration * intervalSeconds;
-            auto maxVelocity = std::sqrt(2 * std::max(0.0f, maxAcceleration) * std::abs(deltaPos.y));
-
-            float targetVelocity = 0.0f;
-            if (maxVelocity > deltaTick) {
-                targetVelocity = (maxVelocity - deltaTick) * (deltaPos.y > 0 ? 1 : -1);
-            } else {
-                targetVelocity = deltaPos.y * tickFrequency;
-            }
-            auto deltaVelocity = targetVelocity - dynamic->getLinearVelocity().y;
-
-            float force = deltaVelocity * tickFrequency * dynamic->getMass();
-            force -= CVarGravity.Get() * dynamic->getMass();
-            float forceAbs = std::abs(force) + 0.00001f;
-            auto forceClampRatio = std::min(CVarMaxVerticalConstraintForce.Get(), forceAbs) / forceAbs;
-            dynamic->addForce(PxVec3(0, force * forceClampRatio, 0));
-        }
-    }
-
     void PhysxManager::Frame() {
         // Wake up all actors and update the scene if gravity is changed.
         if (CVarGravity.Changed()) {
@@ -277,13 +160,13 @@ namespace sp {
                 }
 
                 UpdateActor(lock, ent);
-
-                UpdateConstraintForces(lock, ph);
             }
+
+            constraintSystem.Frame(lock);
         }
 
-        humanControlSystem.Frame(std::chrono::nanoseconds(this->interval).count() / 1e9);
-        characterControlSystem.Frame(std::chrono::nanoseconds(this->interval).count() / 1e9);
+        humanControlSystem.Frame();
+        characterControlSystem.Frame();
 
         { // Simulate 1 physics frame (blocking)
             scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),

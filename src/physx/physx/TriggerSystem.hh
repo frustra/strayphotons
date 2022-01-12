@@ -12,6 +12,6 @@ namespace sp {
 
         void Frame();
 
-        ecs::Observer<ecs::ComponentEvent<ecs::TriggerGroup>> triggerGroupObserver;
+        ecs::ComponentObserver<ecs::TriggerGroup> triggerGroupObserver;
     };
 } // namespace sp
