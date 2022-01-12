@@ -67,15 +67,16 @@ namespace sp::vulkan {
 
                 ImGui::PushID(offset);
 
-                double elapsed = gpuTime
-                                     ? (double)result.gpuElapsed / 1000000.0
-                                     : std::chrono::duration_cast<std::chrono::milliseconds>(result.cpuElapsed).count();
+                double nsElapsed =
+                    gpuTime ? result.gpuElapsed
+                            : std::chrono::duration_cast<std::chrono::nanoseconds>(result.cpuElapsed).count();
+                double msElapsed = nsElapsed / 1000000.0;
 
                 if (ImGui::TreeNodeEx("node",
                         ImGuiTreeNodeFlags_DefaultOpen,
                         "%s %.2fms",
                         result.name.data(),
-                        elapsed)) {
+                        msElapsed)) {
                     offset = AddResults(results, gpuTime, offset, result.depth + 1);
                     ImGui::TreePop();
                 }
