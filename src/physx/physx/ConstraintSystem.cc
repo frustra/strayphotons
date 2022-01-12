@@ -43,7 +43,6 @@ namespace sp {
             auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
             auto parentTransform = physics.constraint.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
             auto parentRotation = parentTransform.GetRotation();
-            auto invRotate = glm::inverse(parentRotation);
 
             auto targetPos = parentTransform.GetPosition() + parentRotation * physics.constraintOffset;
             auto currentPos = transform.GetTransform() *
