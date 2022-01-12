@@ -287,8 +287,8 @@ namespace sp {
 
         auto input = dCursor * CVarCursorSensitivity.Get() * 0.01f;
         auto upAxis = glm::inverse(parentTransform.GetGlobalRotation(lock)) * glm::vec3(0, 1, 0);
-        ph.constraintRotation = ph.constraintRotation * glm::quat(input.x, upAxis);
-        // ph.constraintRotation = glm::quat(input.y, glm::vec3(1, 0, 0)) * ph.constraintRotation;
+        ph.constraintRotation = glm::angleAxis(input.x, upAxis) * ph.constraintRotation;
+        ph.constraintRotation = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) * ph.constraintRotation;
         return true;
     }
 } // namespace sp
