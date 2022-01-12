@@ -231,11 +231,11 @@ namespace sp {
             }
         }
         if (stagingConnection.Has<ecs::Transform>(stagingLock) && liveConnection.Has<ecs::Transform>(liveLock)) {
-            auto &liveTransform = liveConnection.Get<const ecs::Transform>(liveLock);
-            auto &stagingTransform = stagingConnection.Get<const ecs::Transform>(stagingLock);
-            auto liveMatrix = liveTransform.GetGlobalTransform(liveLock).GetTransform();
-            auto stagingMatrix = stagingTransform.GetGlobalTransform(stagingLock).GetTransform();
-            glm::mat4x3 deltaTransform = liveMatrix * glm::inverse(glm::mat4(stagingMatrix));
+            auto liveTransform = liveConnection.Get<const ecs::Transform>(liveLock).GetGlobalTransform(liveLock);
+            auto stagingTransform =
+                stagingConnection.Get<const ecs::Transform>(stagingLock).GetGlobalTransform(stagingLock);
+            glm::quat deltaRotation = liveTransform.GetRotation() * glm::inverse(stagingTransform.GetRotation());
+            glm::vec3 deltaPos = liveTransform.GetPosition() - deltaRotation * stagingTransform.GetPosition();
 
             for (auto &e : stagingLock.EntitiesWith<ecs::Transform>()) {
                 if (!e.Has<ecs::Transform, ecs::SceneInfo>(stagingLock)) continue;
@@ -244,12 +244,13 @@ namespace sp {
 
                 auto &transform = e.Get<ecs::Transform>(stagingLock);
                 if (!transform.HasParent(stagingLock)) {
-                    transform.SetTransform(deltaTransform);
+                    transform.SetPosition(deltaRotation * transform.GetPosition() + deltaPos);
+                    transform.SetRotation(deltaRotation * transform.GetRotation());
 
                     if (e.Has<ecs::Animation>(stagingLock)) {
                         auto &animation = e.Get<ecs::Animation>(stagingLock);
                         for (auto &state : animation.states) {
-                            state.pos += deltaTransform[3]; // delta position
+                            state.pos += deltaPos;
                         }
                     }
                 }
