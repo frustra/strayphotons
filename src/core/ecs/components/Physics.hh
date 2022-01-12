@@ -39,7 +39,10 @@ namespace ecs {
         physx::PxRigidActor *actor = nullptr;
         glm::vec3 scale = glm::vec3(1.0); // Current scale of physics model according to PhysX
 
-        void SetConstraint(Tecs::Entity target, float maxDistance = 0.0f, glm::vec3 offset = glm::vec3(), glm::quat rotation = glm::quat()) {
+        void SetConstraint(Tecs::Entity target,
+            float maxDistance = 0.0f,
+            glm::vec3 offset = glm::vec3(),
+            glm::quat rotation = glm::quat()) {
             constraint = target;
             constraintMaxDistance = maxDistance;
             constraintOffset = offset;
