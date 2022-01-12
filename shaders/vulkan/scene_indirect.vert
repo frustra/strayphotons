@@ -1,5 +1,5 @@
 #version 460
-
+#extension GL_EXT_shader_16bit_storage : require
 #extension GL_OVR_multiview2 : enable
 layout(num_views = 2) in;
 
@@ -13,15 +13,17 @@ layout(location = 2) in vec2 inTexCoord;
 layout(location = 0) out vec3 outViewPos;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec2 outTexCoord;
+layout(location = 3) out int outDrawID;
 
-layout(std430, set = 1, binding = 0) readonly buffer Scene {
-	mat4 modelMatrixes[];
-} scene;
+#include "lib/draw_params.glsl"
+layout(std430, set = 1, binding = 0) readonly buffer DrawParamsList {
+	DrawParams drawParams[];
+};
 
 #include "lib/view_states_uniform.glsl"
 
 void main() {
-	mat4 modelMat = scene.modelMatrixes[gl_BaseInstance];
+	mat4 modelMat = drawParams[gl_BaseInstance].modelMat;
 	ViewState view = views[gl_ViewID_OVR];
 	vec4 viewPos4 = view.viewMat * modelMat * vec4(inPosition, 1.0);
 	outViewPos = vec3(viewPos4) / viewPos4.w;
@@ -30,4 +32,5 @@ void main() {
 	mat3 rotation = mat3(view.viewMat * modelMat);
 	outNormal = rotation * inNormal;
 	outTexCoord = inTexCoord;
+	outDrawID = gl_BaseInstance;
 }

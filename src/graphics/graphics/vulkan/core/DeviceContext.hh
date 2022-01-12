@@ -23,6 +23,7 @@ namespace sp {
 namespace sp::vulkan {
     const int MAX_FRAMES_IN_FLIGHT = 2;
 
+    class DescriptorPool;
     class Pipeline;
     class PipelineManager;
     struct PipelineCompileInput;
@@ -123,6 +124,10 @@ namespace sp::vulkan {
         shared_ptr<RenderPass> GetRenderPass(const RenderPassInfo &info);
         shared_ptr<Framebuffer> GetFramebuffer(const RenderPassInfo &info);
 
+        // TODO these sets are not deallocated until the DeviceContext shuts down
+        // Returns a descriptor set with a single combined float image/sampler array binding with bindless features
+        vk::DescriptorSet CreateBindlessDescriptorSet();
+
         SharedHandle<vk::Fence> GetEmptyFence();
         SharedHandle<vk::Semaphore> GetEmptySemaphore(SharedHandle<vk::Fence> inUseUntilFence);
 
@@ -130,7 +135,11 @@ namespace sp::vulkan {
         SharedHandle<vk::Fence> PushInFlightObject(TemporaryObject object, SharedHandle<vk::Fence> fence = nullptr);
 
         const vk::PhysicalDeviceLimits &Limits() const {
-            return physicalDeviceProperties.limits;
+            return physicalDeviceProperties.properties.limits;
+        }
+
+        const vk::PhysicalDeviceDescriptorIndexingProperties &IndexingLimits() const {
+            return physicalDeviceDescriptorIndexingProperties;
         }
 
         uint32 QueueFamilyIndex(CommandContextType type) {
@@ -162,7 +171,8 @@ namespace sp::vulkan {
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;
         vk::UniqueSurfaceKHR surface;
         vk::PhysicalDevice physicalDevice;
-        vk::PhysicalDeviceProperties physicalDeviceProperties;
+        vk::PhysicalDeviceProperties2 physicalDeviceProperties;
+        vk::PhysicalDeviceDescriptorIndexingProperties physicalDeviceDescriptorIndexingProperties;
         vk::UniqueDevice device;
 
         unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
@@ -173,6 +183,8 @@ namespace sp::vulkan {
         unique_ptr<RenderTargetManager> renderTargetPool;
         unique_ptr<RenderPassManager> renderPassPool;
         unique_ptr<FramebufferManager> framebufferPool;
+
+        shared_ptr<DescriptorPool> bindlessImageSamplerDescriptorPool;
 
         std::array<vk::Queue, QUEUE_TYPES_COUNT> queues;
         std::array<uint32, QUEUE_TYPES_COUNT> queueFamilyIndex;

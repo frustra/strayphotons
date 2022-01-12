@@ -10,7 +10,8 @@
 #include <tiny_gltf.h>
 
 namespace sp::vulkan {
-    Model::Model(const sp::Model &model, SceneMeshContext &scene, DeviceContext &device) : modelName(model.name) {
+    Model::Model(const sp::Model &model, SceneMeshContext &scene, DeviceContext &device)
+        : modelName(model.name), scene(scene) {
         vector<SceneVertex> vertices;
 
         // TODO: cache the output somewhere. Keeping the conversion code in
@@ -106,6 +107,8 @@ namespace sp::vulkan {
             gpuPrimitives->indexOffset = p->indexBuffer->ArrayOffset();
             gpuPrimitives->vertexOffset = p->vertexBuffer->ArrayOffset();
             gpuPrimitives->primitiveToModel = p->transform;
+            gpuPrimitives->baseColorTexID = p->baseColor;
+            gpuPrimitives->metallicRoughnessTexID = p->metallicRoughness;
             gpuPrimitives++;
         }
 
@@ -117,13 +120,17 @@ namespace sp::vulkan {
 
     Model::~Model() {
         Debugf("Destroying vulkan::Model %s", modelName);
+
+        for (auto it : textures) {
+            scene.ReleaseTexture(it.second);
+        }
     }
 
     uint32 Model::SceneIndex() const {
         return modelEntry->ArrayOffset();
     }
 
-    void Model::Draw(CommandContext &cmd, SceneMeshContext &scene, glm::mat4 modelMat, bool useMaterial) {
+    void Model::Draw(CommandContext &cmd, glm::mat4 modelMat, bool useMaterial) {
         cmd.SetVertexLayout(SceneVertex::Layout());
 
         for (auto &primitivePtr : primitives) {
@@ -134,8 +141,8 @@ namespace sp::vulkan {
             cmd.PushConstants(constants);
 
             if (useMaterial) {
-                cmd.SetTexture(0, 0, primitive.baseColor);
-                cmd.SetTexture(0, 1, primitive.metallicRoughness);
+                cmd.SetTexture(0, 0, scene.textures[primitive.baseColor]);
+                cmd.SetTexture(0, 1, scene.textures[primitive.metallicRoughness]);
             }
 
             cmd.Raw().bindIndexBuffer(*scene.indexBuffer, primitive.indexBuffer->ByteOffset(), primitive.indexType);
@@ -144,7 +151,7 @@ namespace sp::vulkan {
         }
     }
 
-    ImageViewPtr Model::LoadTexture(DeviceContext &device,
+    TextureIndex Model::LoadTexture(DeviceContext &device,
         const sp::Model &model,
         int materialIndex,
         TextureType type) {
@@ -199,7 +206,7 @@ namespace sp::vulkan {
             break;
 
         default:
-            return nullptr;
+            return 0;
         }
 
         if (textures.count(name)) return textures[name];
@@ -222,8 +229,9 @@ namespace sp::vulkan {
             ImageViewCreateInfo viewInfo;
             viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
             auto imageView = device.CreateImageAndView(imageInfo, viewInfo, data, sizeof(data));
-            textures[name] = imageView;
-            return imageView;
+            TextureIndex i = scene.AddTexture(imageView);
+            textures[name] = i;
+            return i;
         }
 
         tinygltf::Texture texture = gltfModel->textures[textureIndex];
@@ -245,7 +253,7 @@ namespace sp::vulkan {
                 texture.source,
                 img.component,
                 img.bits);
-            return nullptr;
+            return 0;
         }
 
         imageInfo.extent = vk::Extent3D(img.width, img.height, 1);
@@ -270,7 +278,8 @@ namespace sp::vulkan {
 
         auto imageView = device.CreateImageAndView(imageInfo, viewInfo, img.image.data(), img.image.size());
 
-        textures[name] = imageView;
-        return imageView;
+        TextureIndex i = scene.AddTexture(imageView);
+        textures[name] = i;
+        return i;
     }
 } // namespace sp::vulkan

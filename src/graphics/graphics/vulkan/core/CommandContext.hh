@@ -314,6 +314,8 @@ namespace sp::vulkan {
             buffer->CopyFrom(data, count);
         }
 
+        void SetBindlessDescriptors(uint32 set, vk::DescriptorSet descriptorSet);
+
         bool WritesToSwapchain() {
             return writesToSwapchain;
         }
@@ -404,6 +406,7 @@ namespace sp::vulkan {
         uint32 dirtyDescriptorSets = 0;
 
         ShaderDataBindings shaderData;
+        std::array<vk::DescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> bindlessSets;
 
         vector<std::function<void()>> afterSubmitFuncs;
     };

@@ -65,6 +65,8 @@ namespace sp::vulkan {
         scene.renderableEntityList = device.AllocateBuffer(1024 * 1024,
             vk::BufferUsageFlagBits::eStorageBuffer,
             VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+        scene.textureDescriptorSet = device.CreateBindlessDescriptorSet();
     }
 
     Renderer::~Renderer() {
@@ -195,7 +197,7 @@ namespace sp::vulkan {
                     builder.ReadBuffer(drawBufferIDs.drawParamsBuffer);
                 })
                 .Execute([this, view, drawBufferIDs](RenderGraphResources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("scene_indirect.vert", "generate_gbuffer.frag");
+                    cmd.SetShaders("scene_indirect.vert", "generate_gbuffer_indirect.frag");
 
                     GPUViewState viewState[] = {{view}, {}};
                     auto viewStateBuf = resources.GetBuffer("ViewState");
@@ -821,7 +823,7 @@ namespace sp::vulkan {
             scene.primitiveCount += model->PrimitiveCount();
         }
 
-        scene.primitiveCountPowerOfTwo = CeilToPowerOfTwo(scene.primitiveCount);
+        scene.primitiveCountPowerOfTwo = CeilToPowerOfTwo(scene.primitiveCount + 1);
     }
 
     Renderer::DrawBufferIDs Renderer::GenerateDrawsForView(RenderGraph &graph,
@@ -835,7 +837,7 @@ namespace sp::vulkan {
                 bufferIDs.drawCommandsBuffer = drawCmds.id;
 
                 auto drawParams = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL,
-                    scene.primitiveCountPowerOfTwo * sizeof(glm::mat4));
+                    scene.primitiveCountPowerOfTwo * sizeof(glm::vec4) * 5);
                 bufferIDs.drawParamsBuffer = drawParams.id;
             })
             .Execute([this, viewMask, bufferIDs](RenderGraphResources &resources, CommandContext &cmd) {
@@ -862,8 +864,7 @@ namespace sp::vulkan {
         cmd.SetStorageBuffer(1, 0, drawParamsBuffer);
         cmd.Raw().bindIndexBuffer(*scene.indexBuffer, 0, vk::IndexType::eUint16);
         cmd.Raw().bindVertexBuffers(0, {*scene.vertexBuffer}, {0});
-        cmd.SetTexture(0, 0, GetBlankPixelImage());
-        cmd.SetTexture(0, 1, GetBlankPixelImage());
+        cmd.SetBindlessDescriptors(2, scene.textureDescriptorSet);
         cmd.DrawIndexedIndirectCount(drawCommandsBuffer,
             sizeof(uint32),
             drawCommandsBuffer,
@@ -968,7 +969,7 @@ namespace sp::vulkan {
         }
 
         if (preDraw) preDraw(lock, ent);
-        model->Draw(cmd, scene, modelMat, useMaterial); // TODO pass and use comp.model->bones
+        model->Draw(cmd, modelMat, useMaterial); // TODO pass and use comp.model->bones
     }
 
     void Renderer::EndFrame() {
@@ -995,6 +996,32 @@ namespace sp::vulkan {
             totalLoadTime += loadTime;
             if (totalLoadTime > std::chrono::milliseconds(10)) break;
         }
+
+        vector<vk::WriteDescriptorSet> descriptorWrites;
+        vector<vk::DescriptorImageInfo> descriptorImageInfos;
+        vk::WriteDescriptorSet descriptorWrite;
+        descriptorWrite.dstSet = scene.textureDescriptorSet;
+        descriptorWrite.dstBinding = 0;
+
+        for (size_t offset = 0; offset < scene.texturesToFlush.size();) {
+            uint32 descriptorCount = 0;
+            auto firstElement = scene.texturesToFlush[offset];
+            do {
+                const auto &tex = scene.textures[firstElement + descriptorCount];
+                descriptorImageInfos.emplace_back(tex->DefaultSampler(), *tex, tex->Image()->LastLayout());
+                descriptorCount++;
+            } while (++offset < scene.texturesToFlush.size() &&
+                     scene.texturesToFlush[offset] == firstElement + descriptorCount);
+
+            descriptorWrite.dstArrayElement = firstElement;
+            descriptorWrite.descriptorCount = descriptorCount;
+            descriptorWrite.pImageInfo = &descriptorImageInfos.back() + 1 - descriptorCount;
+            descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+            descriptorWrites.push_back(descriptorWrite);
+        }
+
+        device->updateDescriptorSets(descriptorWrites, {});
+        scene.texturesToFlush.clear();
     }
 
     void Renderer::SetDebugGui(GuiManager &gui) {

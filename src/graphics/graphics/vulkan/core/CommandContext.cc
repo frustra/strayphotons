@@ -274,6 +274,12 @@ namespace sp::vulkan {
         return buffer;
     }
 
+    void CommandContext::SetBindlessDescriptors(uint32 set, vk::DescriptorSet descriptorSet) {
+        Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
+        bindlessSets[set] = descriptorSet;
+        SetDescriptorDirty(set);
+    }
+
     void CommandContext::FlushDescriptorSets(vk::PipelineBindPoint bindPoint) {
         auto layout = currentPipeline->GetLayout();
 
@@ -281,7 +287,13 @@ namespace sp::vulkan {
             if (!ResetDescriptorDirty(set)) continue;
             if (!layout->HasDescriptorSet(set)) continue;
 
-            auto descriptorSet = layout->GetFilledDescriptorSet(set, shaderData.sets[set]);
+            vk::DescriptorSet descriptorSet;
+            if (layout->IsBindlessSet(set)) {
+                descriptorSet = bindlessSets[set];
+            } else {
+                descriptorSet = layout->GetFilledDescriptorSet(set, shaderData.sets[set]);
+            }
+
             cmd->bindDescriptorSets(bindPoint, *layout, set, {descriptorSet}, nullptr);
         }
     }

@@ -26,23 +26,25 @@ namespace sp::vulkan {
             SubBufferPtr vertexBuffer;
             glm::mat4 transform;
 
-            ImageViewPtr baseColor, metallicRoughness;
+            // ImageViewPtr baseColor, metallicRoughness;
+            TextureIndex baseColor, metallicRoughness;
         };
 
         Model(const sp::Model &model, SceneMeshContext &scene, DeviceContext &device);
         ~Model();
 
-        void Draw(CommandContext &cmd, SceneMeshContext &scene, glm::mat4 modelMat, bool useMaterial = true);
+        void Draw(CommandContext &cmd, glm::mat4 modelMat, bool useMaterial = true);
         uint32 SceneIndex() const;
         uint32 PrimitiveCount() const {
             return primitives.size();
         }
 
     private:
-        ImageViewPtr LoadTexture(DeviceContext &device, const sp::Model &model, int materialIndex, TextureType type);
+        TextureIndex LoadTexture(DeviceContext &device, const sp::Model &model, int materialIndex, TextureType type);
         string modelName;
+        SceneMeshContext &scene;
 
-        robin_hood::unordered_map<string, ImageViewPtr> textures;
+        robin_hood::unordered_map<string, TextureIndex> textures;
         vector<shared_ptr<Primitive>> primitives;
 
         SubBufferPtr primitiveList, modelEntry;
