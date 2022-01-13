@@ -32,7 +32,7 @@ namespace sp::vulkan {
 
     static CVar<float> CVarBloomScale("r.BloomScale", 0.15f, "Bloom scale");
 
-    Renderer::Renderer(DeviceContext &device, PerfTimer &timer) : device(device), timer(timer) {
+    Renderer::Renderer(DeviceContext &device, PerfTimer &timer) : device(device), timer(timer), scene(device) {
         funcs.Register<string, string>("screenshot",
             "Save screenshot to <path>, optionally specifying an image <resource>",
             [&](string path, string resource) {
@@ -45,28 +45,6 @@ namespace sp::vulkan {
 
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
         guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
-
-        scene.indexBuffer = device.AllocateBuffer(1024 * 1024 * 10,
-            vk::BufferUsageFlagBits::eIndexBuffer,
-            VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-        scene.vertexBuffer = device.AllocateBuffer(1024 * 1024 * 100,
-            vk::BufferUsageFlagBits::eVertexBuffer,
-            VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-        scene.primitiveLists = device.AllocateBuffer(1024 * 1024,
-            vk::BufferUsageFlagBits::eStorageBuffer,
-            VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-        scene.models = device.AllocateBuffer(1024 * 10,
-            vk::BufferUsageFlagBits::eStorageBuffer,
-            VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-        scene.renderableEntityList = device.AllocateBuffer(1024 * 1024,
-            vk::BufferUsageFlagBits::eStorageBuffer,
-            VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-        scene.textureDescriptorSet = device.CreateBindlessDescriptorSet();
     }
 
     Renderer::~Renderer() {
@@ -160,7 +138,7 @@ namespace sp::vulkan {
             ecs::Gui,
             ecs::FocusLock>>();
 
-        AddSceneState(graph, lock);
+        AddSceneState(lock);
         AddLightState(graph, lock);
         AddShadowMaps(graph);
         AddGuis(graph, lock);
@@ -208,7 +186,7 @@ namespace sp::vulkan {
 
                     auto drawCommandsBuffer = resources.GetBuffer(drawBufferIDs.drawCommandsBuffer);
                     auto drawParamsBuffer = resources.GetBuffer(drawBufferIDs.drawParamsBuffer);
-                    this->ForwardPass3(cmd, drawCommandsBuffer, drawParamsBuffer);
+                    this->ForwardPassIndirect(cmd, drawCommandsBuffer, drawParamsBuffer);
                 });
 
             AddDeferredPasses(graph);
@@ -515,7 +493,7 @@ namespace sp::vulkan {
                     cmd.SetYDirection(YDirection::Down);
 
                     auto &ids = drawBufferIDs[i];
-                    this->ForwardPass3(cmd,
+                    this->ForwardPassIndirect(cmd,
                         resources.GetBuffer(ids.drawCommandsBuffer),
                         resources.GetBuffer(ids.drawParamsBuffer));
                 }
@@ -796,7 +774,7 @@ namespace sp::vulkan {
         return destID;
     }
 
-    void Renderer::AddSceneState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock) {
+    void Renderer::AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock) {
         scene.renderableCount = 0;
         auto gpuRenderable = (GPURenderableEntity *)scene.renderableEntityList->Mapped();
 
@@ -823,7 +801,7 @@ namespace sp::vulkan {
             scene.primitiveCount += model->PrimitiveCount();
         }
 
-        scene.primitiveCountPowerOfTwo = CeilToPowerOfTwo(scene.primitiveCount + 1);
+        scene.primitiveCountPowerOfTwo = std::max(1, CeilToPowerOfTwo(scene.primitiveCount));
     }
 
     Renderer::DrawBufferIDs Renderer::GenerateDrawsForView(RenderGraph &graph,
@@ -832,12 +810,13 @@ namespace sp::vulkan {
 
         graph.Pass("GenerateDrawsForView")
             .Build([&](RenderGraphPassBuilder &builder) {
+                const auto maxDraws = scene.primitiveCountPowerOfTwo;
+
                 auto drawCmds = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_INDIRECT,
-                    sizeof(uint32) + scene.primitiveCountPowerOfTwo * sizeof(VkDrawIndexedIndirectCommand));
+                    sizeof(uint32) + maxDraws * sizeof(VkDrawIndexedIndirectCommand));
                 bufferIDs.drawCommandsBuffer = drawCmds.id;
 
-                auto drawParams = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL,
-                    scene.primitiveCountPowerOfTwo * sizeof(glm::vec4) * 5);
+                auto drawParams = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL, maxDraws * sizeof(glm::vec4) * 5);
                 bufferIDs.drawParamsBuffer = drawParams.id;
             })
             .Execute([this, viewMask, bufferIDs](RenderGraphResources &resources, CommandContext &cmd) {
@@ -859,72 +838,20 @@ namespace sp::vulkan {
         return bufferIDs;
     }
 
-    void Renderer::ForwardPass3(CommandContext &cmd, BufferPtr drawCommandsBuffer, BufferPtr drawParamsBuffer) {
+    void Renderer::ForwardPassIndirect(CommandContext &cmd, BufferPtr drawCommandsBuffer, BufferPtr drawParamsBuffer) {
+        cmd.SetBindlessDescriptors(2, scene.GetTextureDescriptorSet());
+
         cmd.SetVertexLayout(SceneVertex::Layout());
-        cmd.SetStorageBuffer(1, 0, drawParamsBuffer);
         cmd.Raw().bindIndexBuffer(*scene.indexBuffer, 0, vk::IndexType::eUint16);
         cmd.Raw().bindVertexBuffers(0, {*scene.vertexBuffer}, {0});
-        cmd.SetBindlessDescriptors(2, scene.textureDescriptorSet);
+
+        cmd.SetStorageBuffer(1, 0, drawParamsBuffer);
         cmd.DrawIndexedIndirectCount(drawCommandsBuffer,
             sizeof(uint32),
             drawCommandsBuffer,
             0,
-            scene.primitiveCountPowerOfTwo,
+            drawCommandsBuffer->Size() / sizeof(VkDrawIndexedIndirectCommand),
             sizeof(VkDrawIndexedIndirectCommand));
-    }
-
-    void Renderer::ForwardPass2(CommandContext &cmd, ecs::Renderable::VisibilityMask viewMask) {
-        // all of this buffer setup can move to a compute shader, all inputs are accessible on the GPU
-
-        auto gpuRenderables = (GPURenderableEntity *)scene.renderableEntityList->Mapped();
-        auto gpuModels = (GPUMeshModel *)scene.models->Mapped();
-        auto gpuPrimitives = (GPUMeshPrimitive *)scene.primitiveLists->Mapped();
-
-        auto viewMaskUL = viewMask.to_ulong();
-
-        auto drawCommandsBuffer = device.GetFramePooledBuffer(BUFFER_TYPE_INDIRECT, 1024 * 1024);
-        auto drawCommands = (VkDrawIndexedIndirectCommand *)drawCommandsBuffer->Mapped();
-
-        auto drawParamsBuffer = device.GetFramePooledBuffer(BUFFER_TYPE_STORAGE_TRANSFER, 1024 * 1024);
-        auto drawParams = (glm::mat4 *)drawParamsBuffer->Mapped();
-
-        uint32 drawCount = 0;
-
-        for (uint32 i = 0; i < scene.renderableCount; i++) {
-            auto &r = gpuRenderables[i];
-
-            auto mask = r.visibilityMask;
-            mask &= viewMaskUL;
-            if (mask != viewMaskUL) continue;
-
-            auto &m = gpuModels[r.modelIndex];
-
-            for (uint32 pi = 0; pi < m.primitiveCount; pi++) {
-                auto &p = gpuPrimitives[m.primitiveOffset + pi];
-                Assert(drawCount * sizeof(VkDrawIndexedIndirectCommand) < drawCommandsBuffer->Size(),
-                    "overflowed draw command list");
-                Assert(drawCount * sizeof(glm::mat4) < drawParamsBuffer->Size(), "overflowed draw param list");
-
-                vk::DrawIndexedIndirectCommand draw;
-                draw.instanceCount = 1;
-                draw.indexCount = p.indexCount;
-                draw.firstIndex = p.indexOffset;
-                draw.vertexOffset = p.vertexOffset;
-                draw.firstInstance = drawCount;
-
-                drawCommands[drawCount] = draw;
-                drawParams[drawCount] = r.modelToWorld * p.primitiveToModel;
-                drawCount++;
-            }
-        }
-
-        cmd.SetVertexLayout(SceneVertex::Layout());
-        cmd.SetStorageBuffer(1, 0, drawParamsBuffer);
-        cmd.Raw().bindIndexBuffer(*scene.indexBuffer, 0, vk::IndexType::eUint16);
-        cmd.Raw().bindVertexBuffers(0, {*scene.vertexBuffer}, {0});
-        cmd.SetTexture(0, 0, GetBlankPixelImage());
-        cmd.SetTexture(0, 1, GetBlankPixelImage());
-        cmd.DrawIndexedIndirect(drawCommandsBuffer, 0, drawCount, sizeof(VkDrawIndexedIndirectCommand));
     }
 
     void Renderer::ForwardPass(CommandContext &cmd,
@@ -997,31 +924,7 @@ namespace sp::vulkan {
             if (totalLoadTime > std::chrono::milliseconds(10)) break;
         }
 
-        vector<vk::WriteDescriptorSet> descriptorWrites;
-        vector<vk::DescriptorImageInfo> descriptorImageInfos;
-        vk::WriteDescriptorSet descriptorWrite;
-        descriptorWrite.dstSet = scene.textureDescriptorSet;
-        descriptorWrite.dstBinding = 0;
-
-        for (size_t offset = 0; offset < scene.texturesToFlush.size();) {
-            uint32 descriptorCount = 0;
-            auto firstElement = scene.texturesToFlush[offset];
-            do {
-                const auto &tex = scene.textures[firstElement + descriptorCount];
-                descriptorImageInfos.emplace_back(tex->DefaultSampler(), *tex, tex->Image()->LastLayout());
-                descriptorCount++;
-            } while (++offset < scene.texturesToFlush.size() &&
-                     scene.texturesToFlush[offset] == firstElement + descriptorCount);
-
-            descriptorWrite.dstArrayElement = firstElement;
-            descriptorWrite.descriptorCount = descriptorCount;
-            descriptorWrite.pImageInfo = &descriptorImageInfos.back() + 1 - descriptorCount;
-            descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-            descriptorWrites.push_back(descriptorWrite);
-        }
-
-        device->updateDescriptorSets(descriptorWrites, {});
-        scene.texturesToFlush.clear();
+        scene.FlushTextureDescriptors();
     }
 
     void Renderer::SetDebugGui(GuiManager &gui) {

@@ -2,7 +2,7 @@
 
 #include "assets/Model.hh"
 #include "ecs/Ecs.hh"
-#include "graphics/vulkan/SceneMeshContext.hh"
+#include "graphics/vulkan/GPUSceneContext.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 
@@ -26,11 +26,10 @@ namespace sp::vulkan {
             SubBufferPtr vertexBuffer;
             glm::mat4 transform;
 
-            // ImageViewPtr baseColor, metallicRoughness;
             TextureIndex baseColor, metallicRoughness;
         };
 
-        Model(const sp::Model &model, SceneMeshContext &scene, DeviceContext &device);
+        Model(const sp::Model &model, GPUSceneContext &scene, DeviceContext &device);
         ~Model();
 
         void Draw(CommandContext &cmd, glm::mat4 modelMat, bool useMaterial = true);
@@ -42,7 +41,7 @@ namespace sp::vulkan {
     private:
         TextureIndex LoadTexture(DeviceContext &device, const sp::Model &model, int materialIndex, TextureType type);
         string modelName;
-        SceneMeshContext &scene;
+        GPUSceneContext &scene;
 
         robin_hood::unordered_map<string, TextureIndex> textures;
         vector<shared_ptr<Primitive>> primitives;

@@ -120,12 +120,17 @@ namespace sp::vulkan {
         shared_ptr<Shader> GetShader(ShaderHandle handle) const;
         void ReloadShaders();
 
+        // Returns a Pipeline from cache, keyed by `input`. Builds the pipeline if not found in cache.
         shared_ptr<Pipeline> GetPipeline(const PipelineCompileInput &input);
+
+        // Returns a RenderPass from cache, keyed by `info.state`. Builds the render pass if not found in cache.
         shared_ptr<RenderPass> GetRenderPass(const RenderPassInfo &info);
+
+        // Returns a Framebuffer from cache, keyed by `info.state`. Builds the render pass if not found in cache.
         shared_ptr<Framebuffer> GetFramebuffer(const RenderPassInfo &info);
 
-        // TODO these sets are not deallocated until the DeviceContext shuts down
-        // Returns a descriptor set with a single combined float image/sampler array binding with bindless features
+        // Returns a descriptor set, in which binding 0 is a variable sized array of sampler/image descriptors.
+        // Bindless descriptor sets stay allocated until the DeviceContext shuts down.
         vk::DescriptorSet CreateBindlessDescriptorSet();
 
         SharedHandle<vk::Fence> GetEmptyFence();

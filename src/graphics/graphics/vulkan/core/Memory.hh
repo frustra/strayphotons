@@ -132,28 +132,14 @@ namespace sp::vulkan {
             return bufferInfo.size;
         }
 
-        SubBufferPtr ArrayAllocate(size_t elementCount, vk::DeviceSize bytesPerElement) {
-            Assertf(subBufferBytesPerElement == 0 || subBufferBytesPerElement == bytesPerElement,
-                "buffer is sub-allocated with %d bytes per element, not %d",
-                subBufferBytesPerElement,
-                bytesPerElement);
+        // Treats the buffer as an array with all elements having `bytesPerElement` size.
+        // Allocates `elementCount` elements from this array.
+        // SubAllocate cannot be called after calling ArrayAllocate.
+        SubBufferPtr ArrayAllocate(size_t elementCount, vk::DeviceSize bytesPerElement);
 
-            subBufferBytesPerElement = bytesPerElement;
-            auto size = elementCount * bytesPerElement;
-            auto offsetBytes = SubAllocateRaw(size, 1);
-            Assert(offsetBytes % bytesPerElement == 0, "suballocation was not aligned to the array");
-            return make_shared<SubBuffer>(this, subAllocationBlock, offsetBytes, size, bytesPerElement);
-        }
-
-        SubBufferPtr SubAllocate(vk::DeviceSize size, vk::DeviceSize alignment = 4) {
-            Assertf(subBufferBytesPerElement == 0 || subBufferBytesPerElement == 1,
-                "buffer is sub-allocated with %d bytes per element, not 1",
-                subBufferBytesPerElement);
-
-            subBufferBytesPerElement = 1;
-            auto offsetBytes = SubAllocateRaw(size, alignment);
-            return make_shared<SubBuffer>(this, subAllocationBlock, offsetBytes, size);
-        }
+        // Treats the buffer as a heap containing arbitrarily sized allocations.
+        // ArrayAllocate cannot be called after calling SubAllocate.
+        SubBufferPtr SubAllocate(vk::DeviceSize size, vk::DeviceSize alignment = 4);
 
     private:
         vk::DeviceSize SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment);

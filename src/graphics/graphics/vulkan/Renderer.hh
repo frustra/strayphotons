@@ -4,8 +4,8 @@
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
+#include "graphics/vulkan/GPUSceneContext.hh"
 #include "graphics/vulkan/GPUTypes.hh"
-#include "graphics/vulkan/SceneMeshContext.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
@@ -77,9 +77,7 @@ namespace sp::vulkan {
         };
 
         DrawBufferIDs GenerateDrawsForView(RenderGraph &graph, ecs::Renderable::VisibilityMask viewMask);
-        void ForwardPass3(CommandContext &cmd, BufferPtr drawCommandsBuffer, BufferPtr drawParamsBuffer);
-
-        void ForwardPass2(CommandContext &cmd, ecs::Renderable::VisibilityMask viewMask);
+        void ForwardPassIndirect(CommandContext &cmd, BufferPtr drawCommandsBuffer, BufferPtr drawParamsBuffer);
 
         void ForwardPass(CommandContext &cmd,
             ecs::Renderable::VisibilityMask viewMask,
@@ -120,7 +118,7 @@ namespace sp::vulkan {
             RenderGraphResourceID sourceID,
             uint32 arrayLayer = ~0u);
 
-        void AddSceneState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock);
+        void AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock);
         void AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
         void AddShadowMaps(RenderGraph &graph);
         void AddGuis(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Gui>> lock);
@@ -138,7 +136,7 @@ namespace sp::vulkan {
         CFuncCollection funcs;
 
         LightingContext lights;
-        SceneMeshContext scene;
+        GPUSceneContext scene;
         PreservingMap<string, Model> activeModels;
         vector<shared_ptr<const sp::Model>> modelsToLoad;
 

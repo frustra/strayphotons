@@ -88,4 +88,27 @@ namespace sp::vulkan {
         AssertVKSuccess(result, "creating virtual allocation");
         return allocOffset;
     }
+
+    SubBufferPtr Buffer::ArrayAllocate(size_t elementCount, vk::DeviceSize bytesPerElement) {
+        Assertf(subBufferBytesPerElement == 0 || subBufferBytesPerElement == bytesPerElement,
+            "buffer is sub-allocated with %d bytes per element, not %d",
+            subBufferBytesPerElement,
+            bytesPerElement);
+
+        subBufferBytesPerElement = bytesPerElement;
+        auto size = elementCount * bytesPerElement;
+        auto offsetBytes = SubAllocateRaw(size, 1);
+        Assert(offsetBytes % bytesPerElement == 0, "suballocation was not aligned to the array");
+        return make_shared<SubBuffer>(this, subAllocationBlock, offsetBytes, size, bytesPerElement);
+    }
+
+    SubBufferPtr Buffer::SubAllocate(vk::DeviceSize size, vk::DeviceSize alignment) {
+        Assertf(subBufferBytesPerElement == 0 || subBufferBytesPerElement == 1,
+            "buffer is sub-allocated with %d bytes per element, not 1",
+            subBufferBytesPerElement);
+
+        subBufferBytesPerElement = 1;
+        auto offsetBytes = SubAllocateRaw(size, alignment);
+        return make_shared<SubBuffer>(this, subAllocationBlock, offsetBytes, size);
+    }
 } // namespace sp::vulkan

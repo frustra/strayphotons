@@ -10,7 +10,7 @@
 #include <tiny_gltf.h>
 
 namespace sp::vulkan {
-    Model::Model(const sp::Model &model, SceneMeshContext &scene, DeviceContext &device)
+    Model::Model(const sp::Model &model, GPUSceneContext &scene, DeviceContext &device)
         : modelName(model.name), scene(scene) {
         vector<SceneVertex> vertices;
 
@@ -33,7 +33,7 @@ namespace sp::vulkan {
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
                 vkPrimitive.indexType = vk::IndexType::eUint32;
                 Assert(assetPrimitive.indexBuffer.byteStride == 4, "index buffer must be tightly packed");
-                Abortf("TODO %s uses uint indexes", model.name);
+                Abortf("TODO %s uses uint indexes, but the GPU driven renderer doesn't support them yet", model.name);
                 break;
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
                 vkPrimitive.indexType = vk::IndexType::eUint16;
@@ -141,8 +141,8 @@ namespace sp::vulkan {
             cmd.PushConstants(constants);
 
             if (useMaterial) {
-                cmd.SetTexture(0, 0, scene.textures[primitive.baseColor]);
-                cmd.SetTexture(0, 1, scene.textures[primitive.metallicRoughness]);
+                cmd.SetTexture(0, 0, scene.GetTexture(primitive.baseColor));
+                cmd.SetTexture(0, 1, scene.GetTexture(primitive.metallicRoughness));
             }
 
             cmd.Raw().bindIndexBuffer(*scene.indexBuffer, primitive.indexBuffer->ByteOffset(), primitive.indexType);

@@ -28,7 +28,10 @@ namespace sp::vulkan {
     };
     static_assert(sizeof(GPURenderableEntity) % sizeof(glm::vec4) == 0, "std430 alignment");
 
-    struct SceneMeshContext {
+    class GPUSceneContext {
+    public:
+        GPUSceneContext(DeviceContext &device);
+
         BufferPtr indexBuffer;
         BufferPtr vertexBuffer;
         BufferPtr primitiveLists;
@@ -38,30 +41,26 @@ namespace sp::vulkan {
         BufferPtr renderableEntityList;
 
         uint32 primitiveCount = 0;
-        uint32 primitiveCountPowerOfTwo;
+        uint32 primitiveCountPowerOfTwo = 1; // Always at least 1. Used to size draw command buffers.
+
+        TextureIndex AddTexture(const ImageViewPtr &ptr);
+        void ReleaseTexture(TextureIndex i);
+        void FlushTextureDescriptors();
+
+        ImageViewPtr GetTexture(TextureIndex i) const {
+            return textures[i];
+        }
+
+        vk::DescriptorSet GetTextureDescriptorSet() const {
+            return textureDescriptorSet;
+        }
+
+    private:
+        DeviceContext &device;
 
         vector<ImageViewPtr> textures;
         vector<TextureIndex> freeTextureIndexes;
         vector<TextureIndex> texturesToFlush;
         vk::DescriptorSet textureDescriptorSet;
-
-        TextureIndex AddTexture(const ImageViewPtr &ptr) {
-            TextureIndex i;
-            if (!freeTextureIndexes.empty()) {
-                i = freeTextureIndexes.back();
-                freeTextureIndexes.pop_back();
-                textures[i] = ptr;
-            } else {
-                i = textures.size();
-                textures.push_back(ptr);
-            }
-            texturesToFlush.push_back(i);
-            return i;
-        }
-
-        void ReleaseTexture(TextureIndex i) {
-            textures[i].reset();
-            freeTextureIndexes.push_back(i);
-        }
     };
 } // namespace sp::vulkan
