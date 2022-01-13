@@ -45,16 +45,21 @@ namespace sp::vulkan {
     struct DescriptorSetLayoutInfo {
         uint32 sampledImagesMask = 0;
         uint32 uniformBuffersMask = 0;
+        uint32 storageBuffersMask = 0;
         uint32 storageImagesMask = 0;
-        uint8 descriptorCount[MAX_BINDINGS_PER_DESCRIPTOR_SET]; // usually 1, can be higher for array bindings
-        vk::ShaderStageFlags stages[MAX_BINDINGS_PER_DESCRIPTOR_SET];
         uint32 lastBinding = 0;
+
+        vk::ShaderStageFlags stages[MAX_BINDINGS_PER_DESCRIPTOR_SET];
+
+        // count is usually 1, can be higher for array bindings, or 0 for an unbounded array
+        uint8 descriptorCount[MAX_BINDINGS_PER_DESCRIPTOR_SET];
     };
 
     struct PipelineLayoutInfo {
         vk::PushConstantRange pushConstantRange;
 
         uint32 descriptorSetsMask = 0;
+        uint32 bindlessMask = 0;
         DescriptorSetLayoutInfo descriptorSets[MAX_BOUND_DESCRIPTOR_SETS];
     };
 
@@ -65,6 +70,8 @@ namespace sp::vulkan {
 
         std::pair<vk::DescriptorSet, bool> GetDescriptorSet(Hash64 hash);
 
+        vk::DescriptorSet CreateBindlessDescriptorSet();
+
         vk::DescriptorSetLayout GetDescriptorSetLayout() const {
             return *descriptorSetLayout;
         }
@@ -72,12 +79,15 @@ namespace sp::vulkan {
     private:
         DeviceContext &device;
 
+        vector<vk::DescriptorSetLayoutBinding> bindings;
         vector<vk::DescriptorPoolSize> sizes;
         vk::UniqueDescriptorSetLayout descriptorSetLayout;
 
         robin_hood::unordered_map<Hash64, vk::DescriptorSet> filledSets;
         vector<vk::DescriptorSet> freeSets;
         vector<vk::UniqueDescriptorPool> usedPools;
+
+        bool bindless = false;
     };
 
     class PipelineManager;
@@ -97,6 +107,10 @@ namespace sp::vulkan {
 
         bool HasDescriptorSet(uint32 set) const {
             return info.descriptorSetsMask & (1 << set);
+        }
+
+        bool IsBindlessSet(uint32 set) const {
+            return info.bindlessMask & (1 << set);
         }
 
         vk::DescriptorSet GetFilledDescriptorSet(uint32 set, const DescriptorSetBindings &setBindings);

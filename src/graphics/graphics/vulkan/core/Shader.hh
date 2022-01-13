@@ -10,6 +10,7 @@ namespace sp::vulkan {
     const uint32 MAX_BOUND_DESCRIPTOR_SETS = 4;
     const uint32 MAX_BINDINGS_PER_DESCRIPTOR_SET = 32;
     const uint32 MAX_DESCRIPTOR_SETS_PER_POOL = 16;
+    const uint32 MAX_BINDINGS_PER_BINDLESS_DESCRIPTOR_SET = 65535;
 
     class Model;
 

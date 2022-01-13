@@ -167,7 +167,7 @@ namespace ecs {
         this->changeCount++;
     }
 
-    glm::mat4x3 Transform::GetTransform() const {
+    glm::mat4x3 Transform::GetMatrix() const {
         return this->transform;
     }
 

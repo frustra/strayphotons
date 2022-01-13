@@ -43,7 +43,7 @@ namespace ecs {
         glm::quat GetRotation() const;
         glm::vec3 GetForward() const;
         glm::vec3 GetScale() const;
-        glm::mat4x3 GetTransform() const;
+        glm::mat4x3 GetMatrix() const;
 
         uint32_t ChangeNumber() const;
         bool HasChanged(uint32_t changeNumber) const;

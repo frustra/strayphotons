@@ -111,5 +111,10 @@ namespace sp {
                 if (it->second.value.use_count() == 1) storage.erase(it);
             }
         }
+
+        bool Contains(const K &key) {
+            std::shared_lock lock(mutex);
+            return storage.contains(key);
+        }
     };
 } // namespace sp

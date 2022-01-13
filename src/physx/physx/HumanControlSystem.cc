@@ -269,7 +269,7 @@ namespace sp {
                         auto hitTransform = userData->entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
 
                         interact.target = userData->entity;
-                        auto currentPos = hitTransform.GetTransform() *
+                        auto currentPos = hitTransform.GetMatrix() *
                                           glm::vec4(PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p), 1.0f);
                         auto invParentRotate = glm::inverse(transform.GetRotation());
 

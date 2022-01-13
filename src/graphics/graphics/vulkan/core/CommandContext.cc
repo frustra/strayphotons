@@ -115,6 +115,24 @@ namespace sp::vulkan {
         cmd->drawIndexed(indexes, instances, firstIndex, vertexOffset, firstInstance);
     }
 
+    void CommandContext::DrawIndexedIndirect(BufferPtr drawCommands,
+        vk::DeviceSize offset,
+        uint32 drawCount,
+        uint32 stride) {
+        FlushGraphicsState();
+        cmd->drawIndexedIndirect(*drawCommands, offset, drawCount, stride);
+    }
+
+    void CommandContext::DrawIndexedIndirectCount(BufferPtr drawCommands,
+        vk::DeviceSize offset,
+        BufferPtr countBuffer,
+        vk::DeviceSize countOffset,
+        uint32 maxDrawCount,
+        uint32 stride) {
+        FlushGraphicsState();
+        cmd->drawIndexedIndirectCount(*drawCommands, offset, *countBuffer, countOffset, maxDrawCount, stride);
+    }
+
     void CommandContext::DrawScreenCover(const ImageViewPtr &view) {
         SetShaders("screen_cover.vert", "screen_cover.frag");
         if (view) {
@@ -237,10 +255,29 @@ namespace sp::vulkan {
         SetDescriptorDirty(set);
     }
 
+    void CommandContext::SetStorageBuffer(uint32 set, uint32 binding, const BufferPtr &buffer) {
+        Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
+        Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
+        auto &bindingDesc = shaderData.sets[set].bindings[binding];
+        bindingDesc.uniqueID = buffer->GetUniqueID();
+
+        auto &bufferBinding = bindingDesc.buffer;
+        bufferBinding.buffer = **buffer;
+        bufferBinding.offset = 0;
+        bufferBinding.range = buffer->Size();
+        SetDescriptorDirty(set);
+    }
+
     BufferPtr CommandContext::AllocUniformBuffer(uint32 set, uint32 binding, vk::DeviceSize size) {
         auto buffer = device.GetFramePooledBuffer(BUFFER_TYPE_UNIFORM, size);
         SetUniformBuffer(set, binding, buffer);
         return buffer;
+    }
+
+    void CommandContext::SetBindlessDescriptors(uint32 set, vk::DescriptorSet descriptorSet) {
+        Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
+        bindlessSets[set] = descriptorSet;
+        SetDescriptorDirty(set);
     }
 
     void CommandContext::FlushDescriptorSets(vk::PipelineBindPoint bindPoint) {
@@ -250,7 +287,13 @@ namespace sp::vulkan {
             if (!ResetDescriptorDirty(set)) continue;
             if (!layout->HasDescriptorSet(set)) continue;
 
-            auto descriptorSet = layout->GetFilledDescriptorSet(set, shaderData.sets[set]);
+            vk::DescriptorSet descriptorSet;
+            if (layout->IsBindlessSet(set)) {
+                descriptorSet = bindlessSets[set];
+            } else {
+                descriptorSet = layout->GetFilledDescriptorSet(set, shaderData.sets[set]);
+            }
+
             cmd->bindDescriptorSets(bindPoint, *layout, set, {descriptorSet}, nullptr);
         }
     }

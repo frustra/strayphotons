@@ -2,6 +2,7 @@
 
 #include "assets/Model.hh"
 #include "ecs/Ecs.hh"
+#include "graphics/vulkan/GPUSceneContext.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 
@@ -18,26 +19,33 @@ namespace sp::vulkan {
     class Model final : public NonCopyable {
     public:
         struct Primitive : public NonCopyable {
-            BufferPtr indexBuffer;
+            SubBufferPtr indexBuffer;
             vk::IndexType indexType = vk::IndexType::eNoneKHR;
             size_t indexCount;
 
-            BufferPtr vertexBuffer;
+            SubBufferPtr vertexBuffer;
             glm::mat4 transform;
 
-            ImageViewPtr baseColor, metallicRoughness;
+            TextureIndex baseColor, metallicRoughness;
         };
 
-        Model(const sp::Model &model, DeviceContext &device);
+        Model(const sp::Model &model, GPUSceneContext &scene, DeviceContext &device);
         ~Model();
 
         void Draw(CommandContext &cmd, glm::mat4 modelMat, bool useMaterial = true);
+        uint32 SceneIndex() const;
+        uint32 PrimitiveCount() const {
+            return primitives.size();
+        }
 
     private:
-        ImageViewPtr LoadTexture(DeviceContext &device, const sp::Model &model, int materialIndex, TextureType type);
-
-        robin_hood::unordered_map<string, ImageViewPtr> textures;
-        vector<shared_ptr<Primitive>> primitives;
+        TextureIndex LoadTexture(DeviceContext &device, const sp::Model &model, int materialIndex, TextureType type);
         string modelName;
+        GPUSceneContext &scene;
+
+        robin_hood::unordered_map<string, TextureIndex> textures;
+        vector<shared_ptr<Primitive>> primitives;
+
+        SubBufferPtr primitiveList, modelEntry;
     };
 } // namespace sp::vulkan

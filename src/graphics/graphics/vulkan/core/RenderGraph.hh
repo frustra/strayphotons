@@ -282,12 +282,19 @@ namespace sp::vulkan {
             pass.primaryAttachmentIndex = index;
         }
 
-        // Defines a uniform buffer that will be shared between passes.
-        RenderGraphResource CreateUniformBuffer(string_view name, size_t size) {
-            RenderGraphResource resource(BUFFER_TYPE_UNIFORM, size);
+        RenderGraphResource CreateBuffer(BufferType bufferType, size_t size) {
+            return CreateBuffer(bufferType, "", size);
+        }
+        RenderGraphResource CreateBuffer(BufferType bufferType, string_view name, size_t size) {
+            RenderGraphResource resource(bufferType, size);
             resources.Register(name, resource);
             pass.AddOutput(resource.id);
             return resource;
+        }
+
+        // Defines a uniform buffer that will be shared between passes.
+        RenderGraphResource CreateUniformBuffer(string_view name, size_t size) {
+            return CreateBuffer(BUFFER_TYPE_UNIFORM, name, size);
         }
 
         const RenderGraphResource &ReadBuffer(string_view name) {

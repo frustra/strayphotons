@@ -171,9 +171,10 @@ namespace sp::vulkan {
         // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
         if (physicalDevices.size() > 0) {
             // TODO: Check device extension support
-            auto properties = physicalDevices.front().getProperties();
+            physicalDeviceProperties.pNext = &physicalDeviceDescriptorIndexingProperties;
+            physicalDevices.front().getProperties2(&physicalDeviceProperties);
             // auto features = device.getFeatures();
-            Logf("Using graphics device: %s", properties.deviceName.data());
+            Logf("Using graphics device: %s", physicalDeviceProperties.properties.deviceName.data());
             physicalDevice = physicalDevices.front();
         }
         Assert(physicalDevice, "No suitable graphics device found!");
@@ -263,43 +264,55 @@ namespace sp::vulkan {
             Assertf(found, "device must have extension %s", requiredExtension);
         }
 
-        vk::PhysicalDeviceMultiviewFeatures availableMultiviewFeatures;
-
-        vk::PhysicalDeviceDescriptorIndexingFeatures availableDescriptorFeatures;
-        availableDescriptorFeatures.pNext = &availableMultiviewFeatures;
-
+        vk::PhysicalDeviceVulkan12Features availableVulkan12Features;
+        vk::PhysicalDeviceVulkan11Features availableVulkan11Features;
+        availableVulkan11Features.pNext = &availableVulkan12Features;
         vk::PhysicalDeviceFeatures2 deviceFeatures2;
-        deviceFeatures2.pNext = &availableDescriptorFeatures;
-        auto &availableDeviceFeatures = deviceFeatures2.features;
+        deviceFeatures2.pNext = &availableVulkan11Features;
 
         physicalDevice.getFeatures2KHR(&deviceFeatures2);
 
+        const auto &availableDeviceFeatures = deviceFeatures2.features;
         Assert(availableDeviceFeatures.fillModeNonSolid, "device must support fillModeNonSolid");
-        Assert(availableDeviceFeatures.wideLines, "device must support wideLines");
-        Assert(availableDeviceFeatures.largePoints, "device must support largePoints");
-        Assert(availableDeviceFeatures.samplerAnisotropy, "device must support anisotropic sampling");
+        Assert(availableDeviceFeatures.samplerAnisotropy, "device must support samplerAnisotropy");
+        Assert(availableDeviceFeatures.multiDrawIndirect, "device must support multiDrawIndirect");
+        Assert(availableDeviceFeatures.shaderInt16, "device must support shaderInt16");
+        Assert(availableVulkan11Features.multiview, "device must support multiview");
+        Assert(availableVulkan11Features.storageBuffer16BitAccess, "device must support storageBuffer16BitAccess");
+        Assert(availableVulkan12Features.drawIndirectCount, "device must support drawIndirectCount");
+        Assert(availableVulkan12Features.runtimeDescriptorArray, "device must support runtimeDescriptorArray");
+        Assert(availableVulkan12Features.descriptorBindingPartiallyBound,
+            "device must support descriptorBindingPartiallyBound");
+        Assert(availableVulkan12Features.descriptorBindingVariableDescriptorCount,
+            "device must support descriptorBindingVariableDescriptorCount");
+        Assert(availableVulkan12Features.shaderSampledImageArrayNonUniformIndexing,
+            "device must support shaderSampledImageArrayNonUniformIndexing");
+        Assert(availableVulkan12Features.descriptorBindingSampledImageUpdateAfterBind,
+            "device must support descriptorBindingSampledImageUpdateAfterBind");
+        Assert(availableVulkan12Features.descriptorBindingUpdateUnusedWhilePending,
+            "device must support descriptorBindingUpdateUnusedWhilePending");
 
-        Assert(availableDescriptorFeatures.descriptorBindingPartiallyBound,
-            "device must support partially bound descriptor arrays");
-        // Assert(availableDescriptorFeatures.shaderSampledImageArrayNonUniformIndexing,
-        //     "device must support non-uniform sampled image array indexing");
+        vk::PhysicalDeviceVulkan12Features enabledVulkan12Features;
+        enabledVulkan12Features.drawIndirectCount = true;
+        enabledVulkan12Features.runtimeDescriptorArray = true;
+        enabledVulkan12Features.descriptorBindingPartiallyBound = true;
+        enabledVulkan12Features.descriptorBindingVariableDescriptorCount = true;
+        enabledVulkan12Features.shaderSampledImageArrayNonUniformIndexing = true;
+        enabledVulkan12Features.descriptorBindingSampledImageUpdateAfterBind = true;
+        enabledVulkan12Features.descriptorBindingUpdateUnusedWhilePending = true;
 
-        Assert(availableMultiviewFeatures.multiview, "device must support multiview");
-
-        vk::PhysicalDeviceMultiviewFeatures enabledMultiviewFeatures;
-        enabledMultiviewFeatures.multiview = true;
-
-        vk::PhysicalDeviceDescriptorIndexingFeatures enabledDescriptorFeatures;
-        enabledDescriptorFeatures.descriptorBindingPartiallyBound = true;
-        enabledDescriptorFeatures.pNext = &enabledMultiviewFeatures;
+        vk::PhysicalDeviceVulkan11Features enabledVulkan11Features;
+        enabledVulkan11Features.storageBuffer16BitAccess = true;
+        enabledVulkan11Features.multiview = true;
+        enabledVulkan11Features.pNext = &enabledVulkan12Features;
 
         vk::PhysicalDeviceFeatures2 enabledDeviceFeatures2;
-        enabledDeviceFeatures2.pNext = &enabledDescriptorFeatures;
+        enabledDeviceFeatures2.pNext = &enabledVulkan11Features;
         auto &enabledDeviceFeatures = enabledDeviceFeatures2.features;
         enabledDeviceFeatures.fillModeNonSolid = true;
-        enabledDeviceFeatures.wideLines = true;
-        enabledDeviceFeatures.largePoints = true;
         enabledDeviceFeatures.samplerAnisotropy = true;
+        enabledDeviceFeatures.multiDrawIndirect = true;
+        enabledDeviceFeatures.shaderInt16 = true;
 
         vk::DeviceCreateInfo deviceInfo;
         deviceInfo.queueCreateInfoCount = queueInfos.size();
@@ -719,11 +732,28 @@ namespace sp::vulkan {
             usage = vk::BufferUsageFlagBits::eUniformBuffer;
             residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
             break;
+        case BUFFER_TYPE_INDIRECT:
+            usage = vk::BufferUsageFlagBits::eIndirectBuffer;
+            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            break;
+        case BUFFER_TYPE_STORAGE_TRANSFER:
+            usage = vk::BufferUsageFlagBits::eStorageBuffer;
+            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            break;
+        case BUFFER_TYPE_STORAGE_LOCAL:
+            usage = vk::BufferUsageFlagBits::eStorageBuffer;
+            residency = VMA_MEMORY_USAGE_GPU_ONLY;
+            break;
+        case BUFFER_TYPE_STORAGE_LOCAL_INDIRECT:
+            usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer |
+                    vk::BufferUsageFlagBits::eTransferDst;
+            residency = VMA_MEMORY_USAGE_GPU_ONLY;
+            break;
         default:
             Abortf("unknown buffer type %d", type);
         }
 
-        Debugf("Allocating buffer type %d with size %d", type, size);
+        // Debugf("Allocating buffer type %d with size %d", type, size);
         auto buffer = AllocateBuffer(size, usage, residency);
         pool.emplace_back(PooledBuffer{buffer, size, true});
         return buffer;
@@ -1188,6 +1218,18 @@ namespace sp::vulkan {
 
     shared_ptr<Framebuffer> DeviceContext::GetFramebuffer(const RenderPassInfo &info) {
         return framebufferPool->GetFramebuffer(info);
+    }
+
+    vk::DescriptorSet DeviceContext::CreateBindlessDescriptorSet() {
+        if (!bindlessImageSamplerDescriptorPool) {
+            DescriptorSetLayoutInfo layout;
+            layout.sampledImagesMask = 1; // first binding is a sampled image array
+            layout.descriptorCount[0] = 0; // of unbounded array size
+            layout.stages[0] = vk::ShaderStageFlagBits::eAll;
+            bindlessImageSamplerDescriptorPool = pipelinePool->GetDescriptorPool(layout);
+        }
+
+        return bindlessImageSamplerDescriptorPool->CreateBindlessDescriptorSet();
     }
 
     SharedHandle<vk::Fence> DeviceContext::GetEmptyFence() {

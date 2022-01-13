@@ -81,6 +81,13 @@ namespace sp::vulkan {
             uint32 firstIndex = 0,
             int32 vertexOffset = 0,
             uint32 firstInstance = 0);
+        void DrawIndexedIndirect(BufferPtr drawCommands, vk::DeviceSize offset, uint32 drawCount, uint32 stride);
+        void DrawIndexedIndirectCount(BufferPtr drawCommands,
+            vk::DeviceSize offset,
+            BufferPtr countBuffer,
+            vk::DeviceSize countOffset,
+            uint32 maxDrawCount,
+            uint32 stride);
         void DrawScreenCover(const ImageViewPtr &view = nullptr);
 
         void ImageBarrier(const ImagePtr &image,
@@ -289,6 +296,7 @@ namespace sp::vulkan {
         void SetSampler(uint32 set, uint32 binding, const vk::Sampler &sampler);
 
         void SetUniformBuffer(uint32 set, uint32 binding, const BufferPtr &buffer);
+        void SetStorageBuffer(uint32 set, uint32 binding, const BufferPtr &buffer);
 
         // Buffer is stored in a pool for this frame, and reused in later frames.
         BufferPtr AllocUniformBuffer(uint32 set, uint32 binding, vk::DeviceSize size);
@@ -297,9 +305,7 @@ namespace sp::vulkan {
         template<typename T>
         T *AllocUniformData(uint32 set, uint32 binding, uint32 count = 1) {
             auto buffer = AllocUniformBuffer(set, binding, sizeof(T) * count);
-            T *data;
-            buffer->MapPersistent((void **)&data);
-            return data;
+            return static_cast<T *>(buffer->Mapped());
         }
 
         template<typename T>
@@ -307,6 +313,8 @@ namespace sp::vulkan {
             auto buffer = AllocUniformBuffer(set, binding, sizeof(T) * count);
             buffer->CopyFrom(data, count);
         }
+
+        void SetBindlessDescriptors(uint32 set, vk::DescriptorSet descriptorSet);
 
         bool WritesToSwapchain() {
             return writesToSwapchain;
@@ -398,6 +406,7 @@ namespace sp::vulkan {
         uint32 dirtyDescriptorSets = 0;
 
         ShaderDataBindings shaderData;
+        std::array<vk::DescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> bindlessSets;
 
         vector<std::function<void()>> afterSubmitFuncs;
     };

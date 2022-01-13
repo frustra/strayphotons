@@ -4,6 +4,7 @@
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
+#include "graphics/vulkan/GPUSceneContext.hh"
 #include "graphics/vulkan/GPUTypes.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
@@ -26,23 +27,6 @@ namespace sp::vulkan {
     class Model;
     class GuiRenderer;
     class RenderGraph;
-
-    struct GPUViewState {
-        GPUViewState() {}
-        GPUViewState(const ecs::View &view) {
-            projMat = view.projMat;
-            invProjMat = view.invProjMat;
-            viewMat = view.viewMat;
-            invViewMat = view.invViewMat;
-            clip = view.clip;
-            extents = view.extents;
-        }
-
-        glm::mat4 projMat, invProjMat;
-        glm::mat4 viewMat, invViewMat;
-        glm::vec2 clip, extents;
-    };
-    static_assert(sizeof(GPUViewState) % 16 == 0, "std140 alignment");
 
     struct LightingContext {
         int count = 0;
@@ -68,6 +52,15 @@ namespace sp::vulkan {
         ~Renderer();
 
         void RenderFrame();
+        void EndFrame();
+
+        struct DrawBufferIDs {
+            RenderGraphResourceID drawCommandsBuffer; // first 4 bytes are the number of draws
+            RenderGraphResourceID drawParamsBuffer;
+        };
+
+        DrawBufferIDs GenerateDrawsForView(RenderGraph &graph, ecs::Renderable::VisibilityMask viewMask);
+        void ForwardPassIndirect(CommandContext &cmd, BufferPtr drawCommandsBuffer, BufferPtr drawParamsBuffer);
 
         void ForwardPass(CommandContext &cmd,
             ecs::Renderable::VisibilityMask viewMask,
@@ -101,7 +94,6 @@ namespace sp::vulkan {
         DeviceContext &device;
         PerfTimer &timer;
 
-        void EndFrame();
         void BuildFrameGraph(RenderGraph &graph);
 
         void AddScreenshotPasses(RenderGraph &graph);
@@ -109,8 +101,9 @@ namespace sp::vulkan {
             RenderGraphResourceID sourceID,
             uint32 arrayLayer = ~0u);
 
+        void AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock);
         void AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
-        void AddShadowMaps(RenderGraph &graph, DrawLock lock);
+        void AddShadowMaps(RenderGraph &graph);
         void AddGuis(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Gui>> lock);
         void AddDeferredPasses(RenderGraph &graph);
         void AddMenuOverlay(RenderGraph &graph);
@@ -124,7 +117,11 @@ namespace sp::vulkan {
             float clip = FLT_MAX);
 
         CFuncCollection funcs;
+
+        LightingContext lights;
+        GPUSceneContext scene;
         PreservingMap<string, Model> activeModels;
+        vector<shared_ptr<const sp::Model>> modelsToLoad;
 
         struct RenderableGui {
             Tecs::Entity entity;
@@ -139,8 +136,6 @@ namespace sp::vulkan {
 
         vector<std::pair<string, string>> pendingScreenshots;
         bool listRenderTargets = false;
-
-        LightingContext lights;
 
         struct EmptyImageKey {
             vk::Format format;

@@ -32,7 +32,7 @@ namespace sp::vulkan {
 
     static CVar<float> CVarBloomScale("r.BloomScale", 0.15f, "Bloom scale");
 
-    Renderer::Renderer(DeviceContext &device, PerfTimer &timer) : device(device), timer(timer) {
+    Renderer::Renderer(DeviceContext &device, PerfTimer &timer) : device(device), timer(timer), scene(device) {
         funcs.Register<string, string>("screenshot",
             "Save screenshot to <path>, optionally specifying an image <resource>",
             [&](string path, string resource) {
@@ -123,7 +123,6 @@ namespace sp::vulkan {
         RenderGraph graph(device, &timer);
         BuildFrameGraph(graph);
         graph.Execute();
-        EndFrame();
     }
 
     void Renderer::BuildFrameGraph(RenderGraph &graph) {
@@ -139,8 +138,9 @@ namespace sp::vulkan {
             ecs::Gui,
             ecs::FocusLock>>();
 
+        AddSceneState(lock);
         AddLightState(graph, lock);
-        AddShadowMaps(graph, lock);
+        AddShadowMaps(graph);
         AddGuis(graph, lock);
 
         Tecs::Entity windowEntity = device.GetActiveView();
@@ -150,6 +150,8 @@ namespace sp::vulkan {
             view.UpdateViewMatrix(lock, windowEntity);
 
             graph.BeginScope("FlatView");
+
+            auto drawBufferIDs = GenerateDrawsForView(graph, view.visibilityMask);
 
             graph.Pass("ForwardPass")
                 .Build([&](RenderGraphPassBuilder &builder) {
@@ -168,16 +170,21 @@ namespace sp::vulkan {
                     builder.OutputDepthAttachment("GBufferDepthStencil", desc, {LoadOp::Clear, StoreOp::Store});
 
                     builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
+
+                    builder.ReadBuffer(drawBufferIDs.drawCommandsBuffer);
+                    builder.ReadBuffer(drawBufferIDs.drawParamsBuffer);
                 })
-                .Execute([this, view, lock](RenderGraphResources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
+                .Execute([this, view, drawBufferIDs](RenderGraphResources &resources, CommandContext &cmd) {
+                    cmd.SetShaders("scene_indirect.vert", "generate_gbuffer_indirect.frag");
 
                     GPUViewState viewState[] = {{view}, {}};
                     auto viewStateBuf = resources.GetBuffer("ViewState");
                     viewStateBuf->CopyFrom(viewState, 2);
                     cmd.SetUniformBuffer(0, 10, viewStateBuf);
 
-                    this->ForwardPass(cmd, view.visibilityMask, lock);
+                    auto drawCommandsBuffer = resources.GetBuffer(drawBufferIDs.drawCommandsBuffer);
+                    auto drawParamsBuffer = resources.GetBuffer(drawBufferIDs.drawParamsBuffer);
+                    this->ForwardPassIndirect(cmd, drawCommandsBuffer, drawParamsBuffer);
                 });
 
             AddDeferredPasses(graph);
@@ -190,21 +197,22 @@ namespace sp::vulkan {
 #ifdef SP_XR_SUPPORT
         auto xrViews = lock.EntitiesWith<ecs::XRView>();
         if (xrSystem && xrViews.size() > 0) {
-            ecs::View firstView;
-            for (auto &ent : xrViews) {
-                if (ent.Has<ecs::View>(lock)) {
-                    auto &view = ent.Get<ecs::View>(lock);
+            glm::ivec2 viewExtents;
+            std::array<ecs::View, (size_t)ecs::XrEye::Count> viewsByEye;
 
-                    if (firstView.extents == glm::ivec2(0)) {
-                        firstView = view;
-                    } else if (firstView.extents != view.extents) {
-                        Abort("All XR views must have the same extents");
-                    }
-                }
+            for (auto &ent : xrViews) {
+                if (!ent.Has<ecs::View>(lock)) continue;
+                auto &view = ent.Get<ecs::View>(lock);
+
+                if (viewExtents == glm::ivec2(0)) viewExtents = view.extents;
+                Assert(viewExtents == view.extents, "All XR views must have the same extents");
+
+                auto &xrView = ent.Get<ecs::XRView>(lock);
+                viewsByEye[(size_t)xrView.eye] = view;
+                viewsByEye[(size_t)xrView.eye].UpdateViewMatrix(lock, ent);
             }
 
             xrRenderPoses.resize(xrViews.size());
-            auto visible = firstView.visibilityMask;
 
             graph.BeginScope("XRView");
 
@@ -250,7 +258,7 @@ namespace sp::vulkan {
             graph.Pass("HiddenAreaStencil")
                 .Build([&](RenderGraphPassBuilder &builder) {
                     RenderTargetDesc desc;
-                    desc.extent = vk::Extent3D(firstView.extents.x, firstView.extents.y, 1);
+                    desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
                     desc.arrayLayers = xrViews.size();
                     desc.primaryViewType = vk::ImageViewType::e2DArray;
                     desc.format = vk::Format::eD24UnormS8Uint;
@@ -268,10 +276,12 @@ namespace sp::vulkan {
                 })
                 .Execute(executeHiddenAreaStencil(1));
 
+            auto drawBufferIDs = GenerateDrawsForView(graph, viewsByEye[0].visibilityMask);
+
             graph.Pass("ForwardPass")
                 .Build([&](RenderGraphPassBuilder &builder) {
                     RenderTargetDesc desc;
-                    desc.extent = vk::Extent3D(firstView.extents.x, firstView.extents.y, 1);
+                    desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
                     desc.arrayLayers = xrViews.size();
                     desc.primaryViewType = vk::ImageViewType::e2DArray;
 
@@ -285,9 +295,12 @@ namespace sp::vulkan {
                     builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::DontCare});
 
                     builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
+
+                    builder.ReadBuffer(drawBufferIDs.drawCommandsBuffer);
+                    builder.ReadBuffer(drawBufferIDs.drawParamsBuffer);
                 })
-                .Execute([this, xrViews, visible, lock](RenderGraphResources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
+                .Execute([this, viewsByEye, drawBufferIDs](RenderGraphResources &resources, CommandContext &cmd) {
+                    cmd.SetShaders("scene_indirect.vert", "generate_gbuffer_indirect.frag");
 
                     cmd.SetStencilTest(true);
                     cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
@@ -297,17 +310,16 @@ namespace sp::vulkan {
                     auto viewStateBuf = resources.GetBuffer("ViewState");
                     cmd.SetUniformBuffer(0, 10, viewStateBuf);
 
-                    this->ForwardPass(cmd, visible, lock);
+                    auto drawCommandsBuffer = resources.GetBuffer(drawBufferIDs.drawCommandsBuffer);
+                    auto drawParamsBuffer = resources.GetBuffer(drawBufferIDs.drawParamsBuffer);
+                    this->ForwardPassIndirect(cmd, drawCommandsBuffer, drawParamsBuffer);
 
                     GPUViewState *viewState;
                     viewStateBuf->Map((void **)&viewState);
-                    for (size_t i = 0; i < xrViews.size(); i++) {
-                        if (!xrViews[i].Has<ecs::View, ecs::XRView>(lock)) continue;
-                        auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
-                        auto view = xrViews[i].Get<ecs::View>(lock);
-                        view.UpdateViewMatrix(lock, xrViews[i]);
+                    for (size_t i = 0; i < viewsByEye.size(); i++) {
+                        auto view = viewsByEye[i];
 
-                        if (this->xrSystem->GetPredictedViewPose(eye, this->xrRenderPoses[i])) {
+                        if (this->xrSystem->GetPredictedViewPose(ecs::XrEye(i), this->xrRenderPoses[i])) {
                             view.SetViewMat(glm::inverse(this->xrRenderPoses[i]) * view.viewMat);
                         }
 
@@ -444,7 +456,13 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddShadowMaps(RenderGraph &graph, DrawLock lock) {
+    void Renderer::AddShadowMaps(RenderGraph &graph) {
+        vector<DrawBufferIDs> drawBufferIDs;
+        drawBufferIDs.reserve(lights.count);
+        for (int i = 0; i < lights.count; i++) {
+            drawBufferIDs.push_back(GenerateDrawsForView(graph, lights.views[i].visibilityMask));
+        }
+
         graph.Pass("ShadowMaps")
             .Build([&](RenderGraphPassBuilder &builder) {
                 RenderTargetDesc desc;
@@ -455,9 +473,14 @@ namespace sp::vulkan {
 
                 desc.format = vk::Format::eD16Unorm;
                 builder.OutputDepthAttachment("ShadowMapDepth", desc, {LoadOp::Clear, StoreOp::Store});
+
+                for (auto &ids : drawBufferIDs) {
+                    builder.ReadBuffer(ids.drawCommandsBuffer);
+                    builder.ReadBuffer(ids.drawParamsBuffer);
+                }
             })
-            .Execute([this, lock](RenderGraphResources &resources, CommandContext &cmd) {
-                cmd.SetShaders("shadow_map.vert", "shadow_map.frag");
+            .Execute([this, drawBufferIDs](RenderGraphResources &resources, CommandContext &cmd) {
+                cmd.SetShaders("shadow_map_indirect.vert", "shadow_map.frag");
 
                 auto &lights = this->lights;
                 for (int i = 0; i < lights.count; i++) {
@@ -472,7 +495,10 @@ namespace sp::vulkan {
                     cmd.SetViewport(viewport);
                     cmd.SetYDirection(YDirection::Down);
 
-                    this->ForwardPass(cmd, view.visibilityMask, lock, false);
+                    auto &ids = drawBufferIDs[i];
+                    this->ForwardPassIndirect(cmd,
+                        resources.GetBuffer(ids.drawCommandsBuffer),
+                        resources.GetBuffer(ids.drawParamsBuffer));
                 }
             });
     }
@@ -751,6 +777,86 @@ namespace sp::vulkan {
         return destID;
     }
 
+    void Renderer::AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock) {
+        scene.renderableCount = 0;
+        auto gpuRenderable = (GPURenderableEntity *)scene.renderableEntityList->Mapped();
+
+        for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
+            if (!ent.Has<ecs::Renderable, ecs::Transform>(lock)) continue;
+
+            auto &renderable = ent.Get<ecs::Renderable>(lock);
+            if (!renderable.model || !renderable.model->Valid()) continue;
+
+            auto model = activeModels.Load(renderable.model->name);
+            if (!model) {
+                modelsToLoad.push_back(renderable.model);
+                continue;
+            }
+
+            Assert(scene.renderableCount * sizeof(GPURenderableEntity) < scene.renderableEntityList->Size(),
+                "renderable entity overflow");
+
+            gpuRenderable->modelToWorld = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
+            gpuRenderable->visibilityMask = renderable.visibility.to_ulong();
+            gpuRenderable->modelIndex = model->SceneIndex();
+            gpuRenderable++;
+            scene.renderableCount++;
+            scene.primitiveCount += model->PrimitiveCount();
+        }
+
+        scene.primitiveCountPowerOfTwo = std::max(1u, CeilToPowerOfTwo(scene.primitiveCount));
+    }
+
+    Renderer::DrawBufferIDs Renderer::GenerateDrawsForView(RenderGraph &graph,
+        ecs::Renderable::VisibilityMask viewMask) {
+        DrawBufferIDs bufferIDs;
+
+        graph.Pass("GenerateDrawsForView")
+            .Build([&](RenderGraphPassBuilder &builder) {
+                const auto maxDraws = scene.primitiveCountPowerOfTwo;
+
+                auto drawCmds = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_INDIRECT,
+                    sizeof(uint32) + maxDraws * sizeof(VkDrawIndexedIndirectCommand));
+                bufferIDs.drawCommandsBuffer = drawCmds.id;
+
+                auto drawParams = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL, maxDraws * sizeof(glm::vec4) * 5);
+                bufferIDs.drawParamsBuffer = drawParams.id;
+            })
+            .Execute([this, viewMask, bufferIDs](RenderGraphResources &resources, CommandContext &cmd) {
+                auto drawBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
+                cmd.Raw().fillBuffer(*drawBuffer, 0, sizeof(uint32), 0);
+
+                cmd.SetComputeShader("generate_draws_for_view.comp");
+                cmd.SetStorageBuffer(0, 0, scene.renderableEntityList);
+                cmd.SetStorageBuffer(0, 1, scene.models);
+                cmd.SetStorageBuffer(0, 2, scene.primitiveLists);
+                cmd.SetStorageBuffer(0, 3, drawBuffer);
+                cmd.SetStorageBuffer(0, 4, resources.GetBuffer(bufferIDs.drawParamsBuffer));
+
+                uint32 visibilityMask = viewMask.to_ulong();
+                cmd.PushConstants(visibilityMask);
+
+                cmd.Dispatch((scene.renderableCount + 127) / 128, 1, 1);
+            });
+        return bufferIDs;
+    }
+
+    void Renderer::ForwardPassIndirect(CommandContext &cmd, BufferPtr drawCommandsBuffer, BufferPtr drawParamsBuffer) {
+        cmd.SetBindlessDescriptors(2, scene.GetTextureDescriptorSet());
+
+        cmd.SetVertexLayout(SceneVertex::Layout());
+        cmd.Raw().bindIndexBuffer(*scene.indexBuffer, 0, vk::IndexType::eUint16);
+        cmd.Raw().bindVertexBuffers(0, {*scene.vertexBuffer}, {0});
+
+        cmd.SetStorageBuffer(1, 0, drawParamsBuffer);
+        cmd.DrawIndexedIndirectCount(drawCommandsBuffer,
+            sizeof(uint32),
+            drawCommandsBuffer,
+            0,
+            drawCommandsBuffer->Size() / sizeof(VkDrawIndexedIndirectCommand),
+            sizeof(VkDrawIndexedIndirectCommand));
+    }
+
     void Renderer::ForwardPass(CommandContext &cmd,
         ecs::Renderable::VisibilityMask viewMask,
         DrawLock lock,
@@ -784,21 +890,44 @@ namespace sp::vulkan {
         mask &= viewMask;
         if (mask != viewMask) return;
 
-        glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetTransform();
-
-        if (preDraw) preDraw(lock, ent);
+        glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
 
         auto model = activeModels.Load(comp.model->name);
         if (!model) {
-            model = make_shared<Model>(*comp.model, device);
-            activeModels.Register(comp.model->name, model);
+            modelsToLoad.push_back(comp.model);
+            return;
         }
 
+        if (preDraw) preDraw(lock, ent);
         model->Draw(cmd, modelMat, useMaterial); // TODO pass and use comp.model->bones
     }
 
     void Renderer::EndFrame() {
         activeModels.Tick(std::chrono::milliseconds(33)); // Minimum 30 fps tick rate
+
+        chrono_clock::duration totalLoadTime = {};
+
+        for (int i = (int)modelsToLoad.size() - 1; i >= 0; i--) {
+            const auto &model = modelsToLoad[i];
+            if (activeModels.Contains(model->name)) {
+                modelsToLoad.pop_back();
+                continue;
+            }
+
+            auto start = chrono_clock::now();
+            auto vulkanModel = make_shared<Model>(*model, scene, device);
+            activeModels.Register(model->name, vulkanModel);
+
+            auto loadTime = chrono_clock::now() - start;
+            auto usLoadTime = std::chrono::duration_cast<std::chrono::microseconds>(loadTime).count();
+            Debugf("Loaded vulkan model %s in %llu.%llu ms", model->name, usLoadTime / 1000, usLoadTime % 1000);
+
+            modelsToLoad.pop_back();
+            totalLoadTime += loadTime;
+            if (totalLoadTime > std::chrono::milliseconds(10)) break;
+        }
+
+        scene.FlushTextureDescriptors();
     }
 
     void Renderer::SetDebugGui(GuiManager &gui) {
