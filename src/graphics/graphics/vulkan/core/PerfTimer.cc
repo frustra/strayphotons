@@ -124,7 +124,7 @@ namespace sp::vulkan {
     }
 
     bool PerfTimer::FlushResults(FrameContext &frame) {
-        if (!frame.queryPool || frame.queryCount == 0) return true;
+        if (!frame.queryPool || frame.queryCount == 0 || frame.queryOffset == 0) return true;
 
         auto queryCount = frame.queryOffset;
         frame.gpuTimestamps.resize(queryCount);

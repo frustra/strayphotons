@@ -60,7 +60,7 @@ namespace sp::vulkan {
         };
 
         DrawBufferIDs GenerateDrawsForView(RenderGraph &graph, ecs::Renderable::VisibilityMask viewMask);
-        void ForwardPassIndirect(CommandContext &cmd, BufferPtr drawCommandsBuffer, BufferPtr drawParamsBuffer);
+        void DrawSceneIndirect(CommandContext &cmd, BufferPtr drawCommandsBuffer, BufferPtr drawParamsBuffer);
 
         void ForwardPass(CommandContext &cmd,
             ecs::Renderable::VisibilityMask viewMask,
@@ -103,7 +103,7 @@ namespace sp::vulkan {
 
         void AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock);
         void AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
-        void AddShadowMaps(RenderGraph &graph);
+        void AddShadowMaps(RenderGraph &graph, DrawLock lock);
         void AddGuis(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Gui>> lock);
         void AddDeferredPasses(RenderGraph &graph);
         void AddMenuOverlay(RenderGraph &graph);

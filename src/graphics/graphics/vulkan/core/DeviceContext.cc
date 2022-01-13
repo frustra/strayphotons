@@ -700,11 +700,6 @@ namespace sp::vulkan {
 
         auto &queue = queues[QueueType(cmd->GetType())];
         queue.submit({submitInfo}, fence);
-
-        for (auto &func : cmd->afterSubmitFuncs) {
-            func();
-        }
-        cmd->afterSubmitFuncs.clear();
     }
 
     BufferPtr DeviceContext::AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency) {
