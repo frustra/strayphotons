@@ -23,7 +23,8 @@ namespace sp {
         for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
             if (!entity.Has<ecs::TriggerArea, ecs::Transform>(lock)) continue;
             auto &area = entity.Get<ecs::TriggerArea>(lock);
-            glm::mat4 areaTransform = glm::inverse(entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock));
+            auto areaTransform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetTransform();
+            glm::mat4 invAreaTransform = glm::inverse(glm::mat4(areaTransform));
 
             ecs::ComponentEvent<ecs::TriggerGroup> triggerEvent;
             while (triggerGroupObserver.Poll(lock, triggerEvent)) {
@@ -34,8 +35,8 @@ namespace sp {
 
             for (auto triggerEnt : lock.EntitiesWith<ecs::TriggerGroup>()) {
                 if (!triggerEnt.Has<ecs::TriggerGroup, ecs::Transform>(lock)) continue;
-                auto &transform = triggerEnt.Get<ecs::Transform>(lock);
-                auto entityPos = glm::vec3(areaTransform * glm::vec4(transform.GetGlobalPosition(lock), 1.0));
+                auto transform = triggerEnt.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+                auto entityPos = glm::vec3(invAreaTransform * glm::vec4(transform.GetPosition(), 1.0));
                 bool inArea = glm::all(glm::greaterThan(entityPos, glm::vec3(-0.5))) &&
                               glm::all(glm::lessThan(entityPos, glm::vec3(0.5)));
 

@@ -8,7 +8,7 @@ namespace physx {
 
 namespace ecs {
     struct InteractController {
-        physx::PxRigidDynamic *target = nullptr;
+        Tecs::Entity target;
     };
 
     static Component<InteractController> ComponentInteractController("interact_controller");

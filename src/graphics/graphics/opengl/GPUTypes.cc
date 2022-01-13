@@ -16,7 +16,7 @@ namespace sp {
 
             int extent = (int)std::pow(2, light.shadowMapSize);
 
-            auto &transform = entity.Get<ecs::Transform>(lock);
+            auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
             auto &view = lightData.views[lightCount];
 
             view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
@@ -29,9 +29,9 @@ namespace sp {
             view.UpdateViewMatrix(lock, entity);
 
             auto &data = lightData.glData[lightCount];
-            data.position = transform.GetGlobalPosition(lock);
+            data.position = transform.GetPosition();
             data.tint = light.tint;
-            data.direction = transform.GetGlobalForward(lock);
+            data.direction = transform.GetForward();
             data.spotAngleCos = cos(light.spotAngle);
             data.proj = view.projMat;
             data.invProj = view.invProjMat;
@@ -62,12 +62,12 @@ namespace sp {
             if (!entity.Has<ecs::Mirror, ecs::Transform>(lock)) continue;
 
             auto &mirror = entity.Get<ecs::Mirror>(lock);
-            auto &transform = entity.Get<ecs::Transform>(lock);
-            data->modelMat = transform.GetGlobalTransform(lock);
+            auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+            data->modelMat = transform.GetTransform();
             data->size = mirror.size;
 
-            glm::vec3 mirrorNormal = glm::mat3(data->modelMat) * glm::vec3(0, 0, -1);
-            glm::vec3 mirrorPos = glm::vec3(data->modelMat * glm::vec4(0, 0, 0, 1));
+            glm::vec3 mirrorNormal = transform.GetForward();
+            glm::vec3 mirrorPos = transform.GetPosition();
 
             float d = -glm::dot(mirrorNormal, mirrorPos);
             data->reflectMat = glm::mat4(glm::mat3(1) - 2.0f * glm::outerProduct(mirrorNormal, mirrorNormal));

@@ -64,7 +64,7 @@ namespace sp::vulkan {
 
             int extent = (int)std::pow(2, light.shadowMapSize);
 
-            auto &transform = entity.Get<ecs::Transform>(lock);
+            auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
             auto &view = lights.views[lightCount];
 
             view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
@@ -77,9 +77,9 @@ namespace sp::vulkan {
             view.UpdateViewMatrix(lock, entity);
 
             auto &data = lights.gpuData.lights[lightCount];
-            data.position = transform.GetGlobalPosition(lock);
+            data.position = transform.GetPosition();
             data.tint = light.tint;
-            data.direction = transform.GetGlobalForward(lock);
+            data.direction = transform.GetForward();
             data.spotAngleCos = cos(light.spotAngle);
             data.proj = view.projMat;
             data.invProj = view.invProjMat;
@@ -784,7 +784,7 @@ namespace sp::vulkan {
         mask &= viewMask;
         if (mask != viewMask) return;
 
-        glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+        glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetTransform();
 
         if (preDraw) preDraw(lock, ent);
 

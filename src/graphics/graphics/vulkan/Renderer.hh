@@ -135,7 +135,7 @@ namespace sp::vulkan {
         vector<RenderableGui> guis;
         unique_ptr<GuiRenderer> debugGuiRenderer;
 
-        ecs::Observer<ecs::ComponentEvent<ecs::Gui>> guiObserver;
+        ecs::ComponentObserver<ecs::Gui> guiObserver;
 
         vector<std::pair<string, string>> pendingScreenshots;
         bool listRenderTargets = false;

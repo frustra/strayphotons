@@ -18,16 +18,14 @@ namespace sp {
     using namespace physx;
 
     // clang-format off
-    static CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
+    CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
     static CVar<bool> CVarShowShapes("x.ShowShapes", false, "Show (1) or hide (0) the outline of physx collision shapes");
     static CVar<bool> CVarPropJumping("x.PropJumping", false, "Disable player collision with held object");
-    static CVar<float> CVarMaxVerticalConstraintForce("x.MaxVerticalConstraintForce", 20.0f, "The maximum linear lifting force for constraints");
-    static CVar<float> CVarMaxLateralConstraintForce("x.MaxLateralConstraintForce", 20.0f, "The maximum lateral force for constraints");
-    static CVar<float> CVarMaxConstraintTorque("x.MaxConstraintTorque", 10.0f, "The maximum torque force for constraints");
     // clang-format on
 
     PhysxManager::PhysxManager()
-        : RegisteredThread("PhysX", 120.0), humanControlSystem(this), characterControlSystem(*this) {
+        : RegisteredThread("PhysX", 120.0), humanControlSystem(*this), characterControlSystem(*this),
+          constraintSystem(*this) {
         Logf("PhysX %d.%d.%d starting up",
             PX_PHYSICS_VERSION_MAJOR,
             PX_PHYSICS_VERSION_MINOR,
@@ -164,130 +162,11 @@ namespace sp {
                 UpdateActor(lock, ent);
             }
 
-            // Update constraint forces
-            for (auto constraint = constraints.begin(); constraint != constraints.end();) {
-                auto &transform = constraint->parent.Get<ecs::Transform>(lock);
-                auto pose = constraint->child->getGlobalPose();
-                auto rotate = transform.GetRotation();
-                auto invRotate = glm::inverse(rotate);
-
-                auto targetPos = transform.GetPosition() + rotate * PxVec3ToGlmVec3(constraint->offset);
-                auto currentPos = pose.transform(constraint->child->getCMassLocalPose().transform(PxVec3(0.0)));
-                auto deltaPos = GlmVec3ToPxVec3(targetPos) - currentPos;
-
-                auto upAxis = GlmVec3ToPxVec3(invRotate * glm::vec3(0, 1, 0));
-                constraint->rotationOffset = PxQuat(constraint->rotation.y, upAxis) * constraint->rotationOffset;
-                constraint->rotationOffset = PxQuat(constraint->rotation.x, PxVec3(1, 0, 0)) *
-                                             constraint->rotationOffset;
-                constraint->rotation = PxVec3(0); // Rotation input has been consumed, reset for next frame.
-
-                auto targetRotate = rotate * PxQuatToGlmQuat(constraint->rotationOffset);
-                auto currentRotate = PxQuatToGlmQuat(pose.q);
-                auto deltaRotate = targetRotate * glm::inverse(currentRotate);
-
-                if (deltaPos.magnitude() < 2.0) {
-                    float intervalSeconds = this->interval.count() / 1e9;
-                    float tickFrequency = 1e9 / this->interval.count();
-
-                    { // Apply Torque
-                        auto deltaRotation = GlmVec3ToPxVec3(glm::eulerAngles(deltaRotate));
-                        auto angularVelocity = PxVec3ToGlmVec3(constraint->child->getAngularVelocity());
-
-                        auto massInertia = PxVec3ToGlmVec3(constraint->child->getMassSpaceInertiaTensor());
-                        auto invMassInertia = PxVec3ToGlmVec3(constraint->child->getMassSpaceInvInertiaTensor());
-                        glm::mat3 worldInertia = InertiaTensorMassToWorld(massInertia, currentRotate);
-                        glm::mat3 invWorldInertia = InertiaTensorMassToWorld(invMassInertia, currentRotate);
-
-                        auto maxAcceleration = invWorldInertia * glm::vec3(CVarMaxConstraintTorque.Get());
-                        auto deltaTick = maxAcceleration * intervalSeconds;
-                        auto maxVelocity = glm::vec3(std::sqrt(2 * maxAcceleration.x * std::abs(deltaRotation.x)),
-                            std::sqrt(2 * maxAcceleration.y * std::abs(deltaRotation.y)),
-                            std::sqrt(2 * maxAcceleration.z * std::abs(deltaRotation.z)));
-
-                        auto targetVelocity = PxVec3ToGlmVec3(deltaRotation);
-                        if (glm::length(maxVelocity) > glm::length(deltaTick)) {
-                            targetVelocity = glm::normalize(targetVelocity) * (maxVelocity - deltaTick);
-                        } else {
-                            targetVelocity *= tickFrequency;
-                        }
-                        auto deltaVelocity = targetVelocity - angularVelocity;
-
-                        PxVec3 force = GlmVec3ToPxVec3(worldInertia * (deltaVelocity * tickFrequency));
-                        float forceAbs = force.magnitude() + 0.00001f;
-                        auto forceClampRatio = std::min(CVarMaxConstraintTorque.Get(), forceAbs) / forceAbs;
-
-                        constraint->child->addTorque(force * forceClampRatio);
-                    }
-
-                    { // Apply Lateral Force
-                        auto maxAcceleration = CVarMaxLateralConstraintForce.Get() / constraint->child->getMass();
-                        auto deltaTick = maxAcceleration * intervalSeconds;
-                        auto maxVelocity = std::sqrt(2 * maxAcceleration * PxVec2(deltaPos.x, deltaPos.z).magnitude());
-
-                        auto targetVelocity = PxVec3(deltaPos.x, 0, deltaPos.z);
-                        if (maxVelocity > deltaTick) {
-                            targetVelocity.normalize();
-                            targetVelocity *= maxVelocity - deltaTick;
-                        } else {
-                            targetVelocity *= tickFrequency;
-                        }
-                        auto deltaVelocity = targetVelocity - constraint->child->getLinearVelocity();
-                        deltaVelocity.y = 0;
-
-                        auto force = deltaVelocity * tickFrequency * constraint->child->getMass();
-                        float forceAbs = force.magnitude() + 0.00001f;
-                        auto forceClampRatio = std::min(CVarMaxLateralConstraintForce.Get(), forceAbs) / forceAbs;
-                        constraint->child->addForce(force * forceClampRatio);
-                    }
-
-                    { // Apply Vertical Force
-                        auto maxAcceleration = CVarMaxVerticalConstraintForce.Get() / constraint->child->getMass();
-                        if (deltaPos.y > 0) {
-                            maxAcceleration -= CVarGravity.Get();
-                        } else {
-                            maxAcceleration += CVarGravity.Get();
-                        }
-                        auto deltaTick = maxAcceleration * intervalSeconds;
-                        auto maxVelocity = std::sqrt(2 * std::max(0.0f, maxAcceleration) * std::abs(deltaPos.y));
-
-                        float targetVelocity = 0.0f;
-                        if (maxVelocity > deltaTick) {
-                            targetVelocity = (maxVelocity - deltaTick) * (deltaPos.y > 0 ? 1 : -1);
-                        } else {
-                            targetVelocity = deltaPos.y * tickFrequency;
-                        }
-                        auto deltaVelocity = targetVelocity - constraint->child->getLinearVelocity().y;
-
-                        float force = deltaVelocity * tickFrequency * constraint->child->getMass();
-                        force -= CVarGravity.Get() * constraint->child->getMass();
-                        float forceAbs = std::abs(force) + 0.00001f;
-                        auto forceClampRatio = std::min(CVarMaxVerticalConstraintForce.Get(), forceAbs) / forceAbs;
-                        constraint->child->addForce(PxVec3(0, force * forceClampRatio, 0));
-                    }
-                    constraint++;
-                } else {
-                    // Remove the constraint if the distance is too far
-                    if (constraint->parent.Has<ecs::InteractController>(lock)) {
-                        constraint->parent.Get<ecs::InteractController>(lock).target = nullptr;
-                    }
-
-                    PxU32 nShapes = constraint->child->getNbShapes();
-                    vector<PxShape *> shapes(nShapes);
-                    constraint->child->getShapes(shapes.data(), nShapes);
-
-                    PxFilterData data;
-                    data.word0 = PhysxCollisionGroup::WORLD;
-                    for (uint32 i = 0; i < nShapes; ++i) {
-                        shapes[i]->setQueryFilterData(data);
-                        shapes[i]->setSimulationFilterData(data);
-                    }
-                    constraint = constraints.erase(constraint);
-                }
-            }
+            constraintSystem.Frame(lock);
         }
 
-        humanControlSystem.Frame(std::chrono::nanoseconds(this->interval).count() / 1e9);
-        characterControlSystem.Frame(std::chrono::nanoseconds(this->interval).count() / 1e9);
+        humanControlSystem.Frame();
+        characterControlSystem.Frame();
 
         { // Simulate 1 physics frame (blocking)
             scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
@@ -440,17 +319,6 @@ namespace sp {
         actor->setKinematicTarget(pose);
     }
 
-    void PhysxManager::EnableCollisions(PxRigidActor *actor, bool enabled) {
-        PxU32 nShapes = actor->getNbShapes();
-        vector<PxShape *> shapes(nShapes);
-        actor->getShapes(shapes.data(), nShapes);
-
-        for (uint32 i = 0; i < nShapes; ++i) {
-            shapes[i]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, enabled);
-            shapes[i]->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, enabled);
-        }
-    }
-
     void PhysxManager::UpdateActor(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock,
         Tecs::Entity &e) {
         auto &ph = e.Get<ecs::Physics>(lock);
@@ -459,11 +327,11 @@ namespace sp {
         if (!ph.model || !ph.model->Valid()) return;
 
         auto globalTransform = transform.GetGlobalTransform(lock);
-        auto globalRotation = transform.GetGlobalRotation(lock);
-        auto scale = glm::vec3(glm::inverse(globalRotation) * (globalTransform * glm::vec4(1, 1, 1, 0)));
+        // auto scale = glm::vec3(glm::inverse(globalRotation) * (globalTransform * glm::vec4(1, 1, 1, 0)));
+        auto scale = globalTransform.GetScale();
 
-        auto pxTransform = PxTransform(GlmVec3ToPxVec3(globalTransform * glm::vec4(0, 0, 0, 1)),
-            GlmQuatToPxQuat(globalRotation));
+        auto pxTransform = PxTransform(GlmVec3ToPxVec3(globalTransform.GetPosition()),
+            GlmQuatToPxQuat(globalTransform.GetRotation()));
 
         if (!ph.actor) {
             if (ph.dynamic) {
@@ -540,8 +408,6 @@ namespace sp {
 
     void PhysxManager::RemoveActor(PxRigidActor *actor) {
         if (actor) {
-            auto rigidBody = actor->is<PxRigidDynamic>();
-            if (rigidBody) RemoveConstraints(rigidBody);
             if (actor->userData) {
                 delete (ActorUserData *)actor->userData;
                 actor->userData = nullptr;
@@ -581,7 +447,7 @@ namespace sp {
         auto &controller = e.Get<ecs::HumanController>(lock);
         auto &transform = e.Get<ecs::Transform>(lock);
 
-        auto position = transform.GetGlobalPosition(lock);
+        auto position = transform.GetGlobalTransform(lock).GetPosition();
         // Offset the capsule position so the camera (transform origin) is at the top
         auto capsuleHeight = controller.pxController ? controller.pxController->getHeight() : controller.height;
         auto pxPosition = GlmVec3ToPxExtendedVec3(position - glm::vec3(0, capsuleHeight / 2, 0));
@@ -708,81 +574,28 @@ namespace sp {
         return overlapFound;
     }
 
-    void PhysxManager::CreateConstraint(ecs::Lock<> lock,
-        Tecs::Entity parent,
-        PxRigidDynamic *child,
-        PxVec3 offset,
-        PxQuat rotationOffset) {
-        PxU32 nShapes = child->getNbShapes();
+    void PhysxManager::EnableCollisions(PxRigidActor *actor, bool enabled) {
+        PxU32 nShapes = actor->getNbShapes();
         vector<PxShape *> shapes(nShapes);
-        child->getShapes(shapes.data(), nShapes);
+        actor->getShapes(shapes.data(), nShapes);
+
+        for (uint32 i = 0; i < nShapes; ++i) {
+            shapes[i]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, enabled);
+            shapes[i]->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, enabled);
+        }
+    }
+
+    void PhysxManager::SetCollisionGroup(PxRigidActor *actor, PhysxCollisionGroup group) {
+        PxU32 nShapes = actor->getNbShapes();
+        vector<PxShape *> shapes(nShapes);
+        actor->getShapes(shapes.data(), nShapes);
 
         PxFilterData data;
-        data.word0 = PhysxCollisionGroup::HELD_OBJECT;
+        data.word0 = group;
         for (uint32 i = 0; i < nShapes; ++i) {
             shapes[i]->setQueryFilterData(data);
             shapes[i]->setSimulationFilterData(data);
         }
-
-        PhysxConstraint constraint;
-        constraint.parent = parent;
-        constraint.child = child;
-        constraint.offset = offset;
-        constraint.rotationOffset = rotationOffset;
-        constraint.rotation = PxVec3(0);
-
-        if (parent.Has<ecs::Transform>(lock)) { constraints.emplace_back(constraint); }
-    }
-
-    void PhysxManager::RotateConstraint(Tecs::Entity parent, PxRigidDynamic *child, PxVec3 rotation) {
-        for (auto it = constraints.begin(); it != constraints.end();) {
-            if (it->parent == parent && it->child == child) {
-                it->rotation = rotation;
-                break;
-            }
-        }
-    }
-
-    void PhysxManager::RemoveConstraint(Tecs::Entity parent, PxRigidDynamic *child) {
-        PxU32 nShapes = child->getNbShapes();
-        vector<PxShape *> shapes(nShapes);
-        child->getShapes(shapes.data(), nShapes);
-
-        PxFilterData data;
-        data.word0 = PhysxCollisionGroup::WORLD;
-        for (uint32 i = 0; i < nShapes; ++i) {
-            shapes[i]->setQueryFilterData(data);
-            shapes[i]->setSimulationFilterData(data);
-        }
-
-        for (auto it = constraints.begin(); it != constraints.end();) {
-            if (it->parent == parent && it->child == child) {
-                it = constraints.erase(it);
-            } else
-                it++;
-        }
-    }
-
-    void PhysxManager::RemoveConstraints(PxRigidDynamic *child) {
-        PxU32 nShapes = child->getNbShapes();
-        vector<PxShape *> shapes(nShapes);
-        child->getShapes(shapes.data(), nShapes);
-
-        PxFilterData data;
-        data.word0 = PhysxCollisionGroup::WORLD;
-        for (uint32 i = 0; i < nShapes; ++i) {
-            shapes[i]->setQueryFilterData(data);
-            shapes[i]->setSimulationFilterData(data);
-        }
-
-        for (auto it = constraints.begin(); it != constraints.end();) {
-            if (it->child == child) {
-                it = constraints.erase(it);
-            } else
-                it++;
-        }
-
-        // TODO: Also remove contraints with this parent
     }
 
     // Increment if the Collision Cache format ever changes

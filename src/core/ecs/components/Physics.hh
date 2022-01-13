@@ -30,9 +30,31 @@ namespace ecs {
         bool decomposeHull = false;
         float density = 1.0f;
 
+        Tecs::Entity constraint;
+        float constraintMaxDistance = 0.0f;
+        glm::vec3 constraintOffset;
+        glm::quat constraintRotation;
+
         // For use by PhysxManager only
         physx::PxRigidActor *actor = nullptr;
         glm::vec3 scale = glm::vec3(1.0); // Current scale of physics model according to PhysX
+
+        void SetConstraint(Tecs::Entity target,
+            float maxDistance = 0.0f,
+            glm::vec3 offset = glm::vec3(),
+            glm::quat rotation = glm::quat()) {
+            constraint = target;
+            constraintMaxDistance = maxDistance;
+            constraintOffset = offset;
+            constraintRotation = rotation;
+        }
+
+        void RemoveConstraint() {
+            constraint = Tecs::Entity();
+            constraintMaxDistance = 0.0f;
+            constraintOffset = glm::vec3();
+            constraintRotation = glm::quat();
+        }
     };
 
     static Component<Physics> ComponentPhysics("physics");

@@ -1,11 +1,12 @@
 #pragma once
 
-#include "ConvexHull.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "physx/CharacterControlSystem.hh"
+#include "physx/ConstraintSystem.hh"
+#include "physx/ConvexHull.hh"
 #include "physx/HumanControlSystem.hh"
 #include "physx/TriggerSystem.hh"
 
@@ -27,12 +28,7 @@ namespace sp {
     class Model;
     class PhysxManager;
 
-    struct PhysxConstraint {
-        Tecs::Entity parent;
-        physx::PxRigidDynamic *child;
-        physx::PxVec3 offset, rotation;
-        physx::PxQuat rotationOffset;
-    };
+    extern CVar<float> CVarGravity;
 
     struct ActorUserData {
         Tecs::Entity entity;
@@ -65,8 +61,6 @@ namespace sp {
     enum PhysxCollisionGroup { HELD_OBJECT = 1, PLAYER = 2, WORLD = 3, NOCLIP = 4 };
 
     class PhysxManager : public RegisteredThread {
-        typedef std::list<PhysxConstraint> ConstraintList;
-
     public:
         PhysxManager();
         virtual ~PhysxManager() override;
@@ -74,14 +68,7 @@ namespace sp {
         bool MoveController(physx::PxController *controller, double dt, physx::PxVec3 displacement);
 
         void EnableCollisions(physx::PxRigidActor *actor, bool enabled);
-
-        void CreateConstraint(ecs::Lock<> lock,
-            Tecs::Entity parent,
-            physx::PxRigidDynamic *child,
-            physx::PxVec3 offset,
-            physx::PxQuat rotationOffset);
-        void RotateConstraint(Tecs::Entity parent, physx::PxRigidDynamic *child, physx::PxVec3 rotation);
-        void RemoveConstraint(Tecs::Entity parent, physx::PxRigidDynamic *child);
+        void SetCollisionGroup(physx::PxRigidActor *actor, PhysxCollisionGroup group);
 
         bool RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
             Tecs::Entity entity,
@@ -92,8 +79,6 @@ namespace sp {
 
     private:
         void Frame() override;
-
-        void RemoveConstraints(physx::PxRigidDynamic *child);
 
         ConvexHullSet *GetCachedConvexHulls(std::string name);
 
@@ -151,17 +136,17 @@ namespace sp {
         vector<uint8_t> scratchBlock;
         bool debug = false;
 
-        ecs::Observer<ecs::ComponentEvent<ecs::Physics>> physicsObserver;
-        ecs::Observer<ecs::ComponentEvent<ecs::HumanController>> humanControllerObserver;
+        ecs::ComponentObserver<ecs::Physics> physicsObserver;
+        ecs::ComponentObserver<ecs::HumanController> humanControllerObserver;
 
         HumanControlSystem humanControlSystem;
         CharacterControlSystem characterControlSystem;
+        ConstraintSystem constraintSystem;
         TriggerSystem triggerSystem;
-
-        ConstraintList constraints;
 
         std::unordered_map<string, ConvexHullSet *> cache;
 
         friend class CharacterControlSystem;
+        friend class ConstraintSystem;
     };
 } // namespace sp

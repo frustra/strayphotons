@@ -95,6 +95,22 @@ namespace sp {
     }
 
     template<>
+    inline void Scene::CopyComponent<ecs::Physics>(ecs::Lock<ecs::ReadAll> src,
+        Tecs::Entity srcEnt,
+        ecs::Lock<ecs::AddRemove> dst,
+        Tecs::Entity dstEnt) {
+        if (srcEnt.Has<ecs::Physics>(src) && !dstEnt.Has<ecs::Physics>(dst)) {
+            auto &physics = dstEnt.Set<ecs::Physics>(dst, srcEnt.Get<ecs::Physics>(src));
+
+            // Map physics constraint from staging id to live id
+            if (physics.constraint && physics.constraint.Has<ecs::SceneInfo>(src)) {
+                auto &sceneInfo = physics.constraint.Get<ecs::SceneInfo>(src);
+                physics.constraint = sceneInfo.liveId;
+            }
+        }
+    }
+
+    template<>
     inline void Scene::CopyComponent<ecs::Script>(ecs::Lock<ecs::ReadAll> src,
         Tecs::Entity srcEnt,
         ecs::Lock<ecs::AddRemove> dst,
