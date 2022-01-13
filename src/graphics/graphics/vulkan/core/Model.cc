@@ -104,7 +104,7 @@ namespace sp::vulkan {
         auto gpuPrimitives = (GPUMeshPrimitive *)primitiveList->Mapped();
         for (auto &p : primitives) {
             gpuPrimitives->indexCount = p->indexCount;
-            gpuPrimitives->indexOffset = p->indexBuffer->ArrayOffset();
+            gpuPrimitives->firstIndex = p->indexBuffer->ArrayOffset();
             gpuPrimitives->vertexOffset = p->vertexBuffer->ArrayOffset();
             gpuPrimitives->primitiveToModel = p->transform;
             gpuPrimitives->baseColorTexID = p->baseColor;

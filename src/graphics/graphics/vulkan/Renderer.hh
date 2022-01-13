@@ -28,23 +28,6 @@ namespace sp::vulkan {
     class GuiRenderer;
     class RenderGraph;
 
-    struct GPUViewState {
-        GPUViewState() {}
-        GPUViewState(const ecs::View &view) {
-            projMat = view.projMat;
-            invProjMat = view.invProjMat;
-            viewMat = view.viewMat;
-            invViewMat = view.invViewMat;
-            clip = view.clip;
-            extents = view.extents;
-        }
-
-        glm::mat4 projMat, invProjMat;
-        glm::mat4 viewMat, invViewMat;
-        glm::vec2 clip, extents;
-    };
-    static_assert(sizeof(GPUViewState) % 16 == 0, "std140 alignment");
-
     struct LightingContext {
         int count = 0;
         glm::ivec2 renderTargetSize = {};

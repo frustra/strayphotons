@@ -197,21 +197,22 @@ namespace sp::vulkan {
 #ifdef SP_XR_SUPPORT
         auto xrViews = lock.EntitiesWith<ecs::XRView>();
         if (xrSystem && xrViews.size() > 0) {
-            ecs::View firstView;
-            for (auto &ent : xrViews) {
-                if (ent.Has<ecs::View>(lock)) {
-                    auto &view = ent.Get<ecs::View>(lock);
+            glm::ivec2 viewExtents;
+            std::array<ecs::View, (size_t)ecs::XrEye::Count> viewsByEye;
 
-                    if (firstView.extents == glm::ivec2(0)) {
-                        firstView = view;
-                    } else if (firstView.extents != view.extents) {
-                        Abort("All XR views must have the same extents");
-                    }
-                }
+            for (auto &ent : xrViews) {
+                if (!ent.Has<ecs::View>(lock)) continue;
+                auto &view = ent.Get<ecs::View>(lock);
+
+                if (viewExtents == glm::ivec2(0)) viewExtents = view.extents;
+                Assert(viewExtents == view.extents, "All XR views must have the same extents");
+
+                auto &xrView = ent.Get<ecs::XRView>(lock);
+                viewsByEye[(size_t)xrView.eye] = view;
+                viewsByEye[(size_t)xrView.eye].UpdateViewMatrix(lock, ent);
             }
 
             xrRenderPoses.resize(xrViews.size());
-            auto visible = firstView.visibilityMask;
 
             graph.BeginScope("XRView");
 
@@ -257,7 +258,7 @@ namespace sp::vulkan {
             graph.Pass("HiddenAreaStencil")
                 .Build([&](RenderGraphPassBuilder &builder) {
                     RenderTargetDesc desc;
-                    desc.extent = vk::Extent3D(firstView.extents.x, firstView.extents.y, 1);
+                    desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
                     desc.arrayLayers = xrViews.size();
                     desc.primaryViewType = vk::ImageViewType::e2DArray;
                     desc.format = vk::Format::eD24UnormS8Uint;
@@ -275,10 +276,12 @@ namespace sp::vulkan {
                 })
                 .Execute(executeHiddenAreaStencil(1));
 
+            auto drawBufferIDs = GenerateDrawsForView(graph, viewsByEye[0].visibilityMask);
+
             graph.Pass("ForwardPass")
                 .Build([&](RenderGraphPassBuilder &builder) {
                     RenderTargetDesc desc;
-                    desc.extent = vk::Extent3D(firstView.extents.x, firstView.extents.y, 1);
+                    desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
                     desc.arrayLayers = xrViews.size();
                     desc.primaryViewType = vk::ImageViewType::e2DArray;
 
@@ -292,9 +295,12 @@ namespace sp::vulkan {
                     builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::DontCare});
 
                     builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
+
+                    builder.ReadBuffer(drawBufferIDs.drawCommandsBuffer);
+                    builder.ReadBuffer(drawBufferIDs.drawParamsBuffer);
                 })
-                .Execute([this, xrViews, visible, lock](RenderGraphResources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
+                .Execute([this, viewsByEye, drawBufferIDs](RenderGraphResources &resources, CommandContext &cmd) {
+                    cmd.SetShaders("scene_indirect.vert", "generate_gbuffer_indirect.frag");
 
                     cmd.SetStencilTest(true);
                     cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
@@ -304,17 +310,16 @@ namespace sp::vulkan {
                     auto viewStateBuf = resources.GetBuffer("ViewState");
                     cmd.SetUniformBuffer(0, 10, viewStateBuf);
 
-                    this->ForwardPass(cmd, visible, lock);
+                    auto drawCommandsBuffer = resources.GetBuffer(drawBufferIDs.drawCommandsBuffer);
+                    auto drawParamsBuffer = resources.GetBuffer(drawBufferIDs.drawParamsBuffer);
+                    this->ForwardPassIndirect(cmd, drawCommandsBuffer, drawParamsBuffer);
 
                     GPUViewState *viewState;
                     viewStateBuf->Map((void **)&viewState);
-                    for (size_t i = 0; i < xrViews.size(); i++) {
-                        if (!xrViews[i].Has<ecs::View, ecs::XRView>(lock)) continue;
-                        auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
-                        auto view = xrViews[i].Get<ecs::View>(lock);
-                        view.UpdateViewMatrix(lock, xrViews[i]);
+                    for (size_t i = 0; i < viewsByEye.size(); i++) {
+                        auto view = viewsByEye[i];
 
-                        if (this->xrSystem->GetPredictedViewPose(eye, this->xrRenderPoses[i])) {
+                        if (this->xrSystem->GetPredictedViewPose(ecs::XrEye(i), this->xrRenderPoses[i])) {
                             view.SetViewMat(glm::inverse(this->xrRenderPoses[i]) * view.viewMat);
                         }
 

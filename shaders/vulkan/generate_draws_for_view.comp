@@ -12,7 +12,7 @@ layout(push_constant) uniform PushConstants {
 
 struct MeshPrimitive {
 	mat4 primitiveToModel;
-	uint indexOffset, indexCount, vertexOffset; // todo match names of VkDrawIndexedIndirectCommand
+	uint indexCount, firstIndex, vertexOffset;
 	uint16_t baseColorTexID, metallicRoughnessTexID;
 };
 
@@ -70,7 +70,7 @@ void main() {
 		VkDrawIndexedIndirectCommand draw;
 		draw.indexCount = prim.indexCount;
 		draw.instanceCount = 1;
-		draw.firstIndex = prim.indexOffset;
+		draw.firstIndex = prim.firstIndex;
 		draw.vertexOffset = int(prim.vertexOffset);
 
 		uint drawIndex = atomicAdd(drawCount, 1);

@@ -6,9 +6,26 @@
 namespace sp::vulkan {
     typedef uint32 TextureIndex;
 
+    struct GPUViewState {
+        GPUViewState() {}
+        GPUViewState(const ecs::View &view) {
+            projMat = view.projMat;
+            invProjMat = view.invProjMat;
+            viewMat = view.viewMat;
+            invViewMat = view.invViewMat;
+            clip = view.clip;
+            extents = view.extents;
+        }
+
+        glm::mat4 projMat, invProjMat;
+        glm::mat4 viewMat, invViewMat;
+        glm::vec2 clip, extents;
+    };
+    static_assert(sizeof(GPUViewState) % 16 == 0, "std140 alignment");
+
     struct GPUMeshPrimitive {
         glm::mat4 primitiveToModel;
-        uint32 indexOffset, indexCount, vertexOffset;
+        uint32 indexCount, firstIndex, vertexOffset;
         uint16_t baseColorTexID, metallicRoughnessTexID;
         // other material properties of the primitive can be stored here (or material ID)
     };
