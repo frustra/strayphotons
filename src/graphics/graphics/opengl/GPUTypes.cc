@@ -63,7 +63,7 @@ namespace sp {
 
             auto &mirror = entity.Get<ecs::Mirror>(lock);
             auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-            data->modelMat = transform.GetTransform();
+            data->modelMat = transform.GetMatrix();
             data->size = mirror.size;
 
             glm::vec3 mirrorNormal = transform.GetForward();

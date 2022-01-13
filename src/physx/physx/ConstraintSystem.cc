@@ -45,8 +45,7 @@ namespace sp {
             auto parentRotation = parentTransform.GetRotation();
 
             auto targetPos = parentTransform.GetPosition() + parentRotation * physics.constraintOffset;
-            auto currentPos = transform.GetTransform() *
-                              glm::vec4(PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p), 1.0f);
+            auto currentPos = transform.GetMatrix() * glm::vec4(PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p), 1.0f);
             auto deltaPos = targetPos - currentPos;
 
             auto targetRotate = parentRotation * physics.constraintRotation;

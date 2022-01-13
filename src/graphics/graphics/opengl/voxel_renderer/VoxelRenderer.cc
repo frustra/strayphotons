@@ -671,7 +671,7 @@ namespace sp {
         mask &= view.visibilityMask;
         if (mask != view.visibilityMask) return;
 
-        glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetTransform();
+        glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
 
         if (preDraw) preDraw(lock, ent);
 

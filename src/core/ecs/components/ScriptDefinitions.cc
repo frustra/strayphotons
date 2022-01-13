@@ -223,7 +223,7 @@ namespace ecs {
                                     if (relative.Has<Transform>(lock)) {
                                         auto relativeTransform = relative.Get<Transform>(lock).GetGlobalTransform(lock);
                                         transform.SetRotation(relativeTransform.GetRotation());
-                                        position = relativeTransform.GetTransform() * glm::vec4(position, 1.0f);
+                                        position = relativeTransform.GetMatrix() * glm::vec4(position, 1.0f);
                                     }
                                 }
                                 transform.SetPosition(position);

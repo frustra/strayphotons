@@ -48,7 +48,7 @@ namespace ecs {
     void View::UpdateViewMatrix(Lock<Read<Transform>> lock, Tecs::Entity e) {
         if (e.Has<Transform>(lock)) {
             auto transform = e.Get<Transform>(lock).GetGlobalTransform(lock);
-            this->invViewMat = transform.GetTransform();
+            this->invViewMat = transform.GetMatrix();
             this->viewMat = glm::inverse(this->invViewMat);
         }
     }

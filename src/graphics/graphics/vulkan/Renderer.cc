@@ -182,8 +182,6 @@ namespace sp::vulkan {
                     viewStateBuf->CopyFrom(viewState, 2);
                     cmd.SetUniformBuffer(0, 10, viewStateBuf);
 
-                    // this->ForwardPass(cmd, view.visibilityMask, lock);
-
                     auto drawCommandsBuffer = resources.GetBuffer(drawBufferIDs.drawCommandsBuffer);
                     auto drawParamsBuffer = resources.GetBuffer(drawBufferIDs.drawParamsBuffer);
                     this->ForwardPassIndirect(cmd, drawCommandsBuffer, drawParamsBuffer);
@@ -793,7 +791,7 @@ namespace sp::vulkan {
             Assert(scene.renderableCount * sizeof(GPURenderableEntity) < scene.renderableEntityList->Size(),
                 "renderable entity overflow");
 
-            gpuRenderable->modelToWorld = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+            gpuRenderable->modelToWorld = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
             gpuRenderable->visibilityMask = renderable.visibility.to_ulong();
             gpuRenderable->modelIndex = model->SceneIndex();
             gpuRenderable++;
@@ -801,7 +799,7 @@ namespace sp::vulkan {
             scene.primitiveCount += model->PrimitiveCount();
         }
 
-        scene.primitiveCountPowerOfTwo = std::max(1, CeilToPowerOfTwo(scene.primitiveCount));
+        scene.primitiveCountPowerOfTwo = std::max(1u, CeilToPowerOfTwo(scene.primitiveCount));
     }
 
     Renderer::DrawBufferIDs Renderer::GenerateDrawsForView(RenderGraph &graph,
@@ -887,7 +885,7 @@ namespace sp::vulkan {
         mask &= viewMask;
         if (mask != viewMask) return;
 
-        glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetTransform();
+        glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
 
         auto model = activeModels.Load(comp.model->name);
         if (!model) {

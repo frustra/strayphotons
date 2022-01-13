@@ -23,7 +23,7 @@ namespace sp {
         for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
             if (!entity.Has<ecs::TriggerArea, ecs::Transform>(lock)) continue;
             auto &area = entity.Get<ecs::TriggerArea>(lock);
-            auto areaTransform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetTransform();
+            auto areaTransform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
             glm::mat4 invAreaTransform = glm::inverse(glm::mat4(areaTransform));
 
             ecs::ComponentEvent<ecs::TriggerGroup> triggerEvent;
