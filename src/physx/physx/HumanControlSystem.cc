@@ -39,6 +39,18 @@ namespace sp {
                     ecs::InteractController,
                     ecs::Physics>>();
 
+            for (Tecs::Entity entity : lock.EntitiesWith<ecs::InteractController>()) {
+                auto &interact = entity.Get<ecs::InteractController>(lock);
+
+                if (interact.target.Has<ecs::Physics>(lock)) {
+                    auto &ph = interact.target.Get<ecs::Physics>(lock);
+                    if (ph.constraint != entity) {
+                        manager.SetCollisionGroup(ph.actor, PhysxCollisionGroup::WORLD);
+                        interact.target = Tecs::Entity();
+                    }
+                }
+            }
+
             for (Tecs::Entity entity : lock.EntitiesWith<ecs::HumanController>()) {
                 if (!entity.Has<ecs::Transform>(lock)) continue;
 
@@ -235,7 +247,6 @@ namespace sp {
             ph.constraintOffset = glm::vec3();
             ph.constraintRotation = glm::quat();
             manager.SetCollisionGroup(ph.actor, PhysxCollisionGroup::WORLD);
-            interact.target = Tecs::Entity();
             return;
         }
 
@@ -252,7 +263,6 @@ namespace sp {
             if (hitActor && hitActor->is<physx::PxRigidDynamic>()) {
                 physx::PxRigidDynamic *dynamic = static_cast<physx::PxRigidDynamic *>(hitActor);
                 if (!dynamic->getRigidBodyFlags().isSet(physx::PxRigidBodyFlag::eKINEMATIC)) {
-
                     auto userData = (ActorUserData *)hitActor->userData;
                     if (userData != nullptr && userData->entity.Has<ecs::Physics, ecs::Transform>(lock)) {
                         auto &hitPhysics = userData->entity.Get<ecs::Physics>(lock);
@@ -265,6 +275,7 @@ namespace sp {
 
                         manager.SetCollisionGroup(hitActor, PhysxCollisionGroup::HELD_OBJECT);
                         hitPhysics.constraint = entity;
+                        hitPhysics.constraintMaxDistance = maxDistance;
                         hitPhysics.constraintOffset = invParentRotate * (currentPos - origin + glm::vec3(0, 0.1, 0));
                         hitPhysics.constraintRotation = invParentRotate * hitTransform.GetRotation();
                     }

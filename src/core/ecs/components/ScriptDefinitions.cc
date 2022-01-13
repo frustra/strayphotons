@@ -219,10 +219,9 @@ namespace ecs {
 
                                 auto relativeName = scriptComp.GetParam<std::string>("relative_to");
                                 if (!relativeName.empty()) {
-                                    auto relativeEnt = EntityWith<Name>(lock, relativeName);
-                                    if (relativeEnt.Has<Transform>(lock)) {
-                                        auto relativeTransform = relativeEnt.Get<Transform>(lock).GetGlobalTransform(
-                                            lock);
+                                    auto relative = EntityWith<Name>(lock, relativeName);
+                                    if (relative.Has<Transform>(lock)) {
+                                        auto relativeTransform = relative.Get<Transform>(lock).GetGlobalTransform(lock);
                                         transform.SetRotation(relativeTransform.GetRotation());
                                         position = relativeTransform.GetTransform() * glm::vec4(position, 1.0f);
                                     }
