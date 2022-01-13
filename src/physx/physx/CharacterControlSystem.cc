@@ -36,6 +36,7 @@ namespace sp {
             ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
             ecs::Write<ecs::Transform, ecs::CharacterController>>();
 
+        // Update PhysX with any added or removed CharacterControllers
         ecs::ComponentEvent<ecs::CharacterController> event;
         while (characterControllerObserver.Poll(lock, event)) {
             if (event.type == Tecs::EventType::ADDED) {
@@ -178,10 +179,12 @@ namespace sp {
                     userData->lastUpdate = now;
                 }
 
+                // TODO: Temporary physics visualization
                 Tecs::Entity physicsBox = ecs::EntityWith<ecs::Name>(lock, "player.player-physics");
                 if (physicsBox.Has<ecs::Transform>(lock)) {
                     auto &transform = physicsBox.Get<ecs::Transform>(lock);
-                    transform.SetPosition(PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()));
+                    transform.SetScale(glm::vec3(0.1f, controller.pxController->getHeight(), 0.1f));
+                    transform.SetPosition(PxExtendedVec3ToGlmVec3(controller.pxController->getPosition()));
                 }
             }
         }

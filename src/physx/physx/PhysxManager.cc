@@ -19,7 +19,6 @@ namespace sp {
 
     // clang-format off
     CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
-    static CVar<bool> CVarShowShapes("x.ShowShapes", false, "Show (1) or hide (0) the outline of physx collision shapes");
     static CVar<bool> CVarPropJumping("x.PropJumping", false, "Disable player collision with held object");
     // clang-format on
 
@@ -118,12 +117,9 @@ namespace sp {
             }
         }
 
-        if (CVarShowShapes.Changed()) { ToggleDebug(CVarShowShapes.Get(true)); }
-        // if (CVarShowShapes.Get()) { CacheDebugLines(); }
-
         { // Sync ECS state to physx
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::Transform>,
-                ecs::Write<ecs::Physics, ecs::HumanController, ecs::CharacterController, ecs::InteractController>>();
+                ecs::Write<ecs::Physics, ecs::HumanController, ecs::InteractController>>();
 
             // Delete actors for removed entities
             ecs::ComponentEvent<ecs::Physics> physicsEvent;
@@ -254,32 +250,6 @@ namespace sp {
         }
     }
 
-    void PhysxManager::ToggleDebug(bool enabled) {
-        debug = enabled;
-        float scale = (enabled ? 1.0f : 0.0f);
-
-        scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, scale);
-        scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, scale);
-    }
-
-    bool PhysxManager::IsDebugEnabled() const {
-        return debug;
-    }
-
-    // void PhysxManager::CacheDebugLines() {
-    //     const PxRenderBuffer &rb = scene->getRenderBuffer();
-    //     const PxDebugLine *lines = rb.getLines();
-
-    //     {
-    //         std::lock_guard<std::mutex> lock(debugLinesMutex);
-    //         debugLines = vector<PxDebugLine>(lines, lines + rb.getNbLines());
-    //     }
-    // }
-
-    // MutexedVector<PxDebugLine> PhysxManager::GetDebugLines() {
-    //     return MutexedVector<PxDebugLine>(debugLines, debugLinesMutex);
-    // }
-
     ConvexHullSet *PhysxManager::GetCachedConvexHulls(std::string name) {
         if (cache.count(name)) { return cache[name]; }
 
@@ -327,7 +297,6 @@ namespace sp {
         if (!ph.model || !ph.model->Valid()) return;
 
         auto globalTransform = transform.GetGlobalTransform(lock);
-        // auto scale = glm::vec3(glm::inverse(globalRotation) * (globalTransform * glm::vec4(1, 1, 1, 0)));
         auto scale = globalTransform.GetScale();
 
         auto pxTransform = PxTransform(GlmVec3ToPxVec3(globalTransform.GetPosition()),

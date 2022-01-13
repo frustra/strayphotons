@@ -102,9 +102,6 @@ namespace sp {
          */
         void Translate(physx::PxRigidDynamic *actor, const physx::PxVec3 &transform);
 
-        void ToggleDebug(bool enabled);
-        bool IsDebugEnabled() const;
-
     private:
         void CreatePhysxScene();
         void DestroyPhysxScene();
@@ -116,6 +113,7 @@ namespace sp {
 
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;
+        vector<uint8_t> scratchBlock;
 
         std::shared_ptr<physx::PxScene> scene;
         std::unique_ptr<ControllerHitReport> controllerHitReporter;
@@ -132,9 +130,6 @@ namespace sp {
 #ifndef SP_PACKAGE_RELEASE
         physx::PxPvdTransport *pxPvdTransport = nullptr;
 #endif
-
-        vector<uint8_t> scratchBlock;
-        bool debug = false;
 
         ecs::ComponentObserver<ecs::Physics> physicsObserver;
         ecs::ComponentObserver<ecs::HumanController> humanControllerObserver;
