@@ -13,6 +13,7 @@ namespace ecs {
         uint32_t changeCount;
 
 #ifdef __cplusplus
+    #ifndef SP_WASM_BUILD
         Transform() : changeCount(1) {}
         Transform(glm::mat4x3 transform) : transform(transform), changeCount(1) {}
         Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>());
@@ -47,6 +48,7 @@ namespace ecs {
 
         uint32_t ChangeNumber() const;
         bool HasChanged(uint32_t changeNumber) const;
+    #endif
 #endif
     } Transform;
 
@@ -74,12 +76,15 @@ namespace ecs {
     bool transform_has_changed(const Transform *t, uint32_t changeNumber);
 
 #ifdef __cplusplus
-    static_assert(sizeof(Transform) == 64, "Wrong Transform size");
+    // If this changes, make sure it is the same in Rust and WASM
+    static_assert(sizeof(Transform) == 60, "Wrong Transform size");
     } // extern "C"
 
+    #ifndef SP_WASM_BUILD
     static Component<Transform> ComponentTransform("transform");
 
     template<>
     bool Component<Transform>::Load(sp::Scene *scene, Transform &dst, const picojson::value &src);
+    #endif
 } // namespace ecs
 #endif

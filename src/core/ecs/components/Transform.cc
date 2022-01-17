@@ -190,7 +190,7 @@ namespace ecs {
         t->SetParent(ent);
     }
     uint64_t transform_get_parent(const Transform *t) {
-        return t->GetParent().id;
+        return *reinterpret_cast<const uint64_t *>(&t->GetParent());
     }
     bool transform_has_parent(const Transform *t, ScriptLockHandle lock) {
         return t->HasParent(*lock);

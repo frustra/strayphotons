@@ -25,8 +25,8 @@ namespace SceneManagerTests {
         AssertEqual(liveSceneInfo.liveId, liveEnt, "Staging SceneInfo.liveId does not match");
 
         auto ent = liveSceneInfo.stagingId;
-        Assertf(!!ent, "Expected entity to exist: %u", ent.id);
-        Assertf(ent.Has<ecs::SceneInfo>(stagingLock), "Expected entity %u to have SceneInfo", ent.id);
+        Assertf(!!ent, "Expected entity to exist: %s", std::to_string(ent));
+        Assertf(ent.Has<ecs::SceneInfo>(stagingLock), "Expected %s to have SceneInfo", std::to_string(ent));
         auto &rootSceneInfo = ent.Get<ecs::SceneInfo>(stagingLock);
         AssertEqual(liveSceneInfo.nextStagingId,
             rootSceneInfo.nextStagingId,
@@ -36,8 +36,8 @@ namespace SceneManagerTests {
         AssertEqual(rootScene->name, *sceneNames.begin(), "Entity scene does not match expected");
 
         for (auto &sceneName : sceneNames) {
-            Assertf(!!ent, "Expected entity to exist: %u", ent.id);
-            Assertf(ent.Has<ecs::SceneInfo>(stagingLock), "Expected entity %u to have SceneInfo", ent.id);
+            Assertf(!!ent, "Expected entity to exist: %s", std::to_string(ent));
+            Assertf(ent.Has<ecs::SceneInfo>(stagingLock), "Expected %s to have SceneInfo", std::to_string(ent));
             auto &sceneInfo = ent.Get<ecs::SceneInfo>(stagingLock);
             AssertEqual(sceneInfo.liveId, liveEnt, "Staging SceneInfo.liveId does not match");
             AssertEqual(sceneInfo.stagingId, ent, "Staging SceneInfo.stagingId does not match");
