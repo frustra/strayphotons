@@ -32,8 +32,8 @@ namespace sp {
             s.position = mat * glm::vec4(sensor.position, 1);
             s.direction = glm::normalize(glm::mat3(mat) * sensor.direction);
             // TODO: Fix this so it doesn't lose precision
-            s.id0 = (float)entity.id; //.Index();
-            // s.id1 = (float)id.Generation();
+            s.id0 = (float)entity.index;
+            s.id1 = (float)entity.generation;
         }
 
         Set("sensorCount", count);
@@ -63,8 +63,7 @@ namespace sp {
 
         while (buf[0] == 1.0f) {
             // TODO: Fix this to read full precision
-            // ecs::Entity::Id eid((ecs::eid_t)buf[1], (ecs::gen_t)buf[2]);
-            Tecs::Entity entity((size_t)buf[1]);
+            Tecs::Entity entity((uint32_t)buf[1], (uint32_t)buf[2]);
 
             buf += 4;
             glm::vec3 lum(buf[0], buf[1], buf[2]);

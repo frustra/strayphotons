@@ -126,9 +126,5 @@ TECS_NAME_COMPONENT(ecs::VoxelArea, "VoxelArea");
 TECS_NAME_COMPONENT(ecs::XRView, "XRView");
 
 static inline std::ostream &operator<<(std::ostream &out, const Tecs::Entity &v) {
-    if (v) {
-        return out << "Entity(" << v.id << ")";
-    } else {
-        return out << "Entity(void)";
-    }
+    return out << std::to_string(v);
 }
