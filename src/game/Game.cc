@@ -56,16 +56,7 @@ namespace sp {
             }
         }
 
-        Debugf("Bytes of memory used per entity: %u", ecs::World.TotalComponentSize);
-        std::vector<std::pair<size_t, std::string>> componentSizes;
-        for (size_t i = 0; i < ecs::World.ComponentSizes.size(); i++) {
-            componentSizes.emplace_back(ecs::World.ComponentSizes[i], ecs::World.ComponentNames[i]);
-        }
-        std::sort(componentSizes.begin(), componentSizes.end());
-        std::reverse(componentSizes.begin(), componentSizes.end());
-        for (auto &[size, name] : componentSizes) {
-            Debugf("  %s: %u", name, size);
-        }
+        Debugf("Bytes of memory used per entity: %u", ecs::World.GetBytesPerEntity());
 
         {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
