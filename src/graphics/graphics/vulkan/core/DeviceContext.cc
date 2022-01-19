@@ -748,7 +748,7 @@ namespace sp::vulkan {
             Abortf("unknown buffer type %d", type);
         }
 
-        // Debugf("Allocating buffer type %d with size %d", type, size);
+        Debugf("Allocating buffer type %d with size %d", type, size);
         auto buffer = AllocateBuffer(size, usage, residency);
         pool.emplace_back(PooledBuffer{buffer, size, true});
         return buffer;

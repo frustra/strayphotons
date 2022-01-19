@@ -853,6 +853,7 @@ namespace sp::vulkan {
 
     void Renderer::AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock) {
         scene.renderableCount = 0;
+        scene.primitiveCount = 0;
         auto gpuRenderable = (GPURenderableEntity *)scene.renderableEntityList->Mapped();
 
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
