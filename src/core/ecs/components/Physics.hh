@@ -18,13 +18,30 @@ namespace physx {
 } // namespace physx
 
 namespace ecs {
+    enum class PhysicsGroup : uint16_t {
+        NoClip = 0,
+        World,
+        Player,
+        Count,
+    };
+
+    enum class PhysicsGroupMask : uint32_t {
+        NoClip = 1 << (size_t)PhysicsGroup::NoClip,
+        World = 1 << (size_t)PhysicsGroup::World,
+        Player = 1 << (size_t)PhysicsGroup::Player,
+    };
+
     struct Physics {
         Physics() {}
-        Physics(std::shared_ptr<const sp::Model> model, bool dynamic = true, float density = 1.0f)
-            : model(model), dynamic(dynamic), density(density) {}
+        Physics(std::shared_ptr<const sp::Model> model,
+            PhysicsGroup group = PhysicsGroup::World,
+            bool dynamic = true,
+            float density = 1.0f)
+            : model(model), group(group), dynamic(dynamic), density(density) {}
 
         std::shared_ptr<const sp::Model> model;
 
+        PhysicsGroup group = PhysicsGroup::World;
         bool dynamic = true;
         bool kinematic = false; // only dynamic actors can be kinematic
         bool decomposeHull = false;
@@ -55,7 +72,9 @@ namespace ecs {
     };
 
     struct PhysicsQuery {
-        float maxRaycastDistance = 0.0f;
+        float raycastQueryDistance = 0.0f;
+        PhysicsGroupMask raycastQueryFilterGroup = PhysicsGroupMask::World;
+
         Tecs::Entity raycastHitTarget;
         glm::vec3 raycastHitPosition;
         float raycastHitDistance = 0.0f;

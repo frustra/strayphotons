@@ -31,8 +31,12 @@ namespace sp {
         auto noclip = CVarNoClip.Get(true);
 
         {
-            auto lock = ecs::World.StartTransaction<
-                ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
+                                                        ecs::SignalOutput,
+                                                        ecs::SignalBindings,
+                                                        ecs::FocusLayer,
+                                                        ecs::FocusLock,
+                                                        ecs::PhysicsQuery>,
                 ecs::Write<ecs::EventInput,
                     ecs::Transform,
                     ecs::HumanController,
@@ -45,7 +49,7 @@ namespace sp {
                 if (interact.target.Has<ecs::Physics>(lock)) {
                     auto &ph = interact.target.Get<ecs::Physics>(lock);
                     if (ph.constraint != entity) {
-                        manager.SetCollisionGroup(ph.actor, PhysxCollisionGroup::WORLD);
+                        ph.group = ecs::PhysicsGroup::World;
                         interact.target = Tecs::Entity();
                     }
                 }
@@ -123,14 +127,9 @@ namespace sp {
 
                 // Move the player
                 if (noclipChanged) {
-                    manager.EnableCollisions(controller.pxController->getActor(), !noclip);
-
-                    physx::PxShape *shape;
-                    controller.pxController->getActor()->getShapes(&shape, 1);
-                    physx::PxFilterData data;
-                    data.word0 = noclip ? PhysxCollisionGroup::NOCLIP : PhysxCollisionGroup::PLAYER;
-                    shape->setQueryFilterData(data);
-                    shape->setSimulationFilterData(data);
+                    auto actor = controller.pxController->getActor();
+                    manager.EnableCollisions(actor, !noclip);
+                    manager.SetCollisionGroup(actor, noclip ? ecs::PhysicsGroup::NoClip : ecs::PhysicsGroup::Player);
                 }
 
                 auto currentHeight = controller.pxController->getHeight();
@@ -235,10 +234,11 @@ namespace sp {
     }
 
     void HumanControlSystem::Interact(
-        ecs::Lock<ecs::Read<ecs::HumanController, ecs::Transform>, ecs::Write<ecs::InteractController, ecs::Physics>>
-            lock,
+        ecs::Lock<ecs::Read<ecs::PhysicsQuery, ecs::Transform>, ecs::Write<ecs::InteractController, ecs::Physics>> lock,
         Tecs::Entity entity) {
+        if (!entity.Has<ecs::InteractController, ecs::Transform, ecs::PhysicsQuery>(lock)) return;
         auto &interact = entity.Get<ecs::InteractController>(lock);
+        auto &query = entity.Get<ecs::PhysicsQuery>(lock);
         auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
 
         if (interact.target.Has<ecs::Physics>(lock)) {
@@ -246,40 +246,27 @@ namespace sp {
             ph.constraint = Tecs::Entity();
             ph.constraintOffset = glm::vec3();
             ph.constraintRotation = glm::quat();
-            manager.SetCollisionGroup(ph.actor, PhysxCollisionGroup::WORLD);
+            ph.group = ecs::PhysicsGroup::World;
             return;
         }
 
-        glm::vec3 origin = transform.GetPosition();
-        glm::vec3 dir = transform.GetForward();
+        if (query.raycastHitTarget.Has<ecs::Physics, ecs::Transform>(lock)) {
+            auto &hitPhysics = query.raycastHitTarget.Get<ecs::Physics>(lock);
+            if (hitPhysics.dynamic && !hitPhysics.kinematic) {
+                auto dynamic = hitPhysics.actor->is<physx::PxRigidDynamic>();
+                if (!dynamic) return;
 
-        physx::PxReal maxDistance = 2.0f;
+                auto hitTransform = query.raycastHitTarget.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+                auto currentPos = hitTransform.GetMatrix() *
+                                  glm::vec4(PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p), 1.0f);
+                auto invParentRotate = glm::inverse(transform.GetRotation());
 
-        physx::PxRaycastBuffer hit;
-        bool status = manager.RaycastQuery(lock, entity, origin, dir, maxDistance, hit);
-
-        if (status) {
-            physx::PxRigidActor *hitActor = hit.block.actor;
-            if (hitActor && hitActor->is<physx::PxRigidDynamic>()) {
-                physx::PxRigidDynamic *dynamic = static_cast<physx::PxRigidDynamic *>(hitActor);
-                if (!dynamic->getRigidBodyFlags().isSet(physx::PxRigidBodyFlag::eKINEMATIC)) {
-                    auto userData = (ActorUserData *)hitActor->userData;
-                    if (userData != nullptr && userData->entity.Has<ecs::Physics, ecs::Transform>(lock)) {
-                        auto &hitPhysics = userData->entity.Get<ecs::Physics>(lock);
-                        auto hitTransform = userData->entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-
-                        interact.target = userData->entity;
-                        auto currentPos = hitTransform.GetMatrix() *
-                                          glm::vec4(PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p), 1.0f);
-                        auto invParentRotate = glm::inverse(transform.GetRotation());
-
-                        manager.SetCollisionGroup(hitActor, PhysxCollisionGroup::HELD_OBJECT);
-                        hitPhysics.SetConstraint(entity,
-                            maxDistance,
-                            invParentRotate * (currentPos - origin + glm::vec3(0, 0.1, 0)),
-                            invParentRotate * hitTransform.GetRotation());
-                    }
-                }
+                hitPhysics.group = ecs::PhysicsGroup::Player;
+                hitPhysics.SetConstraint(entity,
+                    query.raycastQueryDistance,
+                    invParentRotate * (currentPos - transform.GetPosition() + glm::vec3(0, 0.1, 0)),
+                    invParentRotate * hitTransform.GetRotation());
+                interact.target = query.raycastHitTarget;
             }
         }
     }

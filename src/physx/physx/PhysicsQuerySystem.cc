@@ -19,20 +19,21 @@ namespace sp {
             if (!entity.Has<ecs::PhysicsQuery, ecs::Transform>(lock)) continue;
 
             auto &query = entity.Get<ecs::PhysicsQuery>(lock);
-            if (query.maxRaycastDistance > 0.0f) {
+            if (query.raycastQueryDistance > 0.0f) {
                 auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
 
                 PxFilterData filterData;
-                filterData.word0 = PhysxCollisionGroup::WORLD;
+                filterData.word0 = (uint32_t)query.raycastQueryFilterGroup;
 
+                glm::vec3 rayStart = transform.GetPosition();
+                glm::vec3 rayDir = transform.GetForward();
                 PxRaycastBuffer hit;
-                bool status = manager.scene->raycast(GlmVec3ToPxVec3(transform.GetPosition()),
-                    GlmVec3ToPxVec3(transform.GetForward()),
-                    query.maxRaycastDistance,
+                bool status = manager.scene->raycast(GlmVec3ToPxVec3(rayStart),
+                    GlmVec3ToPxVec3(rayDir),
+                    query.raycastQueryDistance,
                     hit,
-                    PxHitFlags(PxEmpty), // TODO: See if anything is required from PxHitFlags::eDEFAULT
-                    PxQueryFilterData(filterData,
-                        PxQueryFlag::eANY_HIT | PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
+                    PxHitFlags(), // TODO: See if anything is required from PxHitFlags::eDEFAULT
+                    PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
 
                 if (status) {
                     physx::PxRigidActor *hitActor = hit.block.actor;
@@ -40,7 +41,7 @@ namespace sp {
                         auto userData = (ActorUserData *)hitActor->userData;
                         if (userData) {
                             query.raycastHitTarget = userData->entity;
-                            query.raycastHitPosition = PxVec3ToGlmVec3(hit.block.position);
+                            query.raycastHitPosition = rayDir * hit.block.distance + rayStart;
                             query.raycastHitDistance = hit.block.distance;
                             continue;
                         }

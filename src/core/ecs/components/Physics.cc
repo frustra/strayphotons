@@ -38,7 +38,7 @@ namespace ecs {
     template<>
     bool Component<PhysicsQuery>::Load(sp::Scene *scene, PhysicsQuery &query, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
-            if (param.first == "raycast") query.maxRaycastDistance = param.second.get<double>();
+            if (param.first == "raycast") query.raycastQueryDistance = param.second.get<double>();
         }
         return true;
     }

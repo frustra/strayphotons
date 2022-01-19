@@ -235,12 +235,7 @@ namespace sp {
         PxMaterial *groundMat = pxPhysics->createMaterial(0.6f, 0.5f, 0.0f);
         PxRigidStatic *groundPlane = PxCreatePlane(*pxPhysics, PxPlane(0.f, 1.f, 0.f, 1.03f), *groundMat);
 
-        PxShape *shape;
-        groundPlane->getShapes(&shape, 1);
-        PxFilterData data;
-        data.word0 = PhysxCollisionGroup::WORLD;
-        shape->setQueryFilterData(data);
-        shape->setSimulationFilterData(data);
+        SetCollisionGroup(groundPlane, ecs::PhysicsGroup::World);
 
         scene->addActor(*groundPlane);
 
@@ -315,7 +310,7 @@ namespace sp {
             }
             Assert(ph.actor, "Physx did not return valid PxRigidActor");
 
-            ph.actor->userData = new ActorUserData(e, transform.ChangeNumber());
+            ph.actor->userData = new ActorUserData(e, transform.ChangeNumber(), ph.group);
 
             PxMaterial *mat = pxPhysics->createMaterial(0.6f, 0.5f, 0.0f);
 
@@ -339,16 +334,14 @@ namespace sp {
                 PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
                 PxConvexMesh *pxhull = pxPhysics->createConvexMesh(input);
 
-                auto shape = PxRigidActorExt::createExclusiveShape(*ph.actor,
+                PxRigidActorExt::createExclusiveShape(*ph.actor,
                     PxConvexMeshGeometry(pxhull, PxMeshScale(GlmVec3ToPxVec3(scale))),
                     *mat);
-                PxFilterData data;
-                data.word0 = PhysxCollisionGroup::WORLD;
-                shape->setQueryFilterData(data);
-                shape->setSimulationFilterData(data);
             }
 
             if (ph.dynamic) { PxRigidBodyExt::updateMassAndInertia(*ph.actor->is<PxRigidDynamic>(), ph.density); }
+
+            SetCollisionGroup(ph.actor, ph.group);
 
             scene->addActor(*ph.actor);
         }
@@ -374,6 +367,7 @@ namespace sp {
             ph.actor->setGlobalPose(pxTransform);
             userData->transformChangeNumber = transform.ChangeNumber();
         }
+        if (userData->currentPhysicsGroup != ph.group) SetCollisionGroup(ph.actor, ph.group);
     }
 
     void PhysxManager::RemoveActor(PxRigidActor *actor) {
@@ -444,12 +438,7 @@ namespace sp {
             auto actor = pxController->getActor();
             actor->userData = &characterUserData->actorData;
 
-            PxShape *shape;
-            actor->getShapes(&shape, 1);
-            PxFilterData data;
-            data.word0 = PhysxCollisionGroup::PLAYER;
-            shape->setQueryFilterData(data);
-            shape->setSimulationFilterData(data);
+            SetCollisionGroup(actor, ecs::PhysicsGroup::Player);
 
             controller.pxController = static_cast<PxCapsuleController *>(pxController);
         }
@@ -492,26 +481,6 @@ namespace sp {
 
             controller->release();
         }
-    }
-
-    bool PhysxManager::RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
-        Tecs::Entity entity,
-        glm::vec3 origin,
-        glm::vec3 dir,
-        const float distance,
-        PxRaycastBuffer &hit) {
-        PxRigidDynamic *controllerActor = nullptr;
-        if (entity.Has<ecs::HumanController>(lock)) {
-            auto &controller = entity.Get<ecs::HumanController>(lock);
-            controllerActor = controller.pxController->getActor();
-            scene->removeActor(*controllerActor);
-        }
-
-        bool status = scene->raycast(GlmVec3ToPxVec3(origin), GlmVec3ToPxVec3(dir), distance, hit);
-
-        if (controllerActor) { scene->addActor(*controllerActor); }
-
-        return status;
     }
 
     bool PhysxManager::SweepQuery(PxRigidDynamic *actor, PxVec3 dir, float distance, PxSweepBuffer &hit) {
@@ -558,17 +527,21 @@ namespace sp {
         }
     }
 
-    void PhysxManager::SetCollisionGroup(PxRigidActor *actor, PhysxCollisionGroup group) {
+    void PhysxManager::SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group) {
         PxU32 nShapes = actor->getNbShapes();
         vector<PxShape *> shapes(nShapes);
         actor->getShapes(shapes.data(), nShapes);
 
-        PxFilterData data;
-        data.word0 = group;
+        PxFilterData queryFilter, simulationFilter;
+        queryFilter.word0 = 1 << (size_t)group;
+        simulationFilter.word0 = (uint32_t)group;
         for (uint32 i = 0; i < nShapes; ++i) {
-            shapes[i]->setQueryFilterData(data);
-            shapes[i]->setSimulationFilterData(data);
+            shapes[i]->setQueryFilterData(queryFilter);
+            shapes[i]->setSimulationFilterData(simulationFilter);
         }
+
+        auto userData = (ActorUserData *)actor->userData;
+        if (userData) userData->currentPhysicsGroup = group;
     }
 
     // Increment if the Collision Cache format ever changes

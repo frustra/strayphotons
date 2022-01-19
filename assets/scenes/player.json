@@ -24,7 +24,10 @@
             },
             "human_controller": {},
             "interact_controller": {},
-            "trigger_group": "player"
+            "trigger_group": "player",
+            "physics_query": {
+                "raycast": 2.0
+            }
         },
         {
             "_name": "debug-spawner",
@@ -142,9 +145,6 @@
             "_name": "player-physics",
             "transform": {
                 "scale": [0.1, 1, 0.1]
-            },
-            "physics_query": {
-                "raycast": 2.0
             },
             "renderable": "box"
         },

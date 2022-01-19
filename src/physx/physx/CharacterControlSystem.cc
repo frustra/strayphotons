@@ -64,12 +64,7 @@ namespace sp {
                         auto actor = pxController->getActor();
                         actor->userData = &characterUserData->actorData;
 
-                        PxShape *shape;
-                        actor->getShapes(&shape, 1);
-                        PxFilterData data;
-                        data.word0 = PhysxCollisionGroup::PLAYER;
-                        shape->setQueryFilterData(data);
-                        shape->setSimulationFilterData(data);
+                        manager.SetCollisionGroup(actor, ecs::PhysicsGroup::Player);
 
                         controller.pxController = static_cast<PxCapsuleController *>(pxController);
                     }

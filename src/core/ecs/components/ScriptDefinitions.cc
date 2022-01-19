@@ -234,7 +234,7 @@ namespace ecs {
                                 auto modelName = scriptComp.GetParam<std::string>("model");
                                 auto model = sp::GAssets.LoadModel(modelName);
                                 newEntity.Set<Renderable>(lock, model);
-                                newEntity.Set<Physics>(lock, model, true);
+                                newEntity.Set<Physics>(lock, model, ecs::PhysicsGroup::World, true);
                             }
                         }).detach();
                     }

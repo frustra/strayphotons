@@ -4,6 +4,7 @@
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/components/Physics.hh"
 #include "physx/CharacterControlSystem.hh"
 #include "physx/ConstraintSystem.hh"
 #include "physx/ConvexHull.hh"
@@ -34,9 +35,11 @@ namespace sp {
     struct ActorUserData {
         Tecs::Entity entity;
         uint32_t transformChangeNumber = 0;
+        ecs::PhysicsGroup currentPhysicsGroup;
 
         ActorUserData() {}
-        ActorUserData(Tecs::Entity ent, uint32_t changeNumber) : entity(ent), transformChangeNumber(changeNumber) {}
+        ActorUserData(Tecs::Entity ent, uint32_t changeNumber, ecs::PhysicsGroup group)
+            : entity(ent), transformChangeNumber(changeNumber), currentPhysicsGroup(group) {}
     };
 
     struct CharacterControllerUserData {
@@ -49,7 +52,8 @@ namespace sp {
         chrono_clock::time_point lastUpdate;
 
         CharacterControllerUserData() {}
-        CharacterControllerUserData(Tecs::Entity ent, uint32_t changeNumber) : actorData(ent, changeNumber) {}
+        CharacterControllerUserData(Tecs::Entity ent, uint32_t changeNumber)
+            : actorData(ent, changeNumber, ecs::PhysicsGroup::Player) {}
     };
 
     class ControllerHitReport : public physx::PxUserControllerHitReport {
@@ -70,14 +74,7 @@ namespace sp {
         bool MoveController(physx::PxController *controller, double dt, physx::PxVec3 displacement);
 
         void EnableCollisions(physx::PxRigidActor *actor, bool enabled);
-        void SetCollisionGroup(physx::PxRigidActor *actor, PhysxCollisionGroup group);
-
-        bool RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
-            Tecs::Entity entity,
-            glm::vec3 origin,
-            glm::vec3 dir,
-            const float distance,
-            physx::PxRaycastBuffer &hit);
+        void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
 
     private:
         void Frame() override;
