@@ -17,9 +17,9 @@ namespace sp::vulkan {
     GuiRenderer::GuiRenderer(DeviceContext &device, GuiManager &manager) : device(device), manager(manager) {
         manager.SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
-
-        io.ImeWindowHandle = device.Win32WindowHandle();
         io.IniFilename = nullptr;
+
+        ImGui::GetMainViewport()->PlatformHandleRaw = device.Win32WindowHandle();
 
         std::pair<shared_ptr<const Asset>, float> fontAssets[] = {
             std::make_pair(GAssets.Load("fonts/DroidSans.ttf"), 16.0f),

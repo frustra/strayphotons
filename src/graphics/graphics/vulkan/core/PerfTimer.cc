@@ -6,8 +6,7 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan {
-    CVar<bool> CVarProfileCPU("r.ProfileCPU", false, "Display CPU frame timing");
-    CVar<bool> CVarProfileGPU("r.ProfileGPU", false, "Display GPU render timing");
+    CVar<bool> CVarProfileRender("r.Profile", false, "Display frame timing");
 
     RenderPhase::~RenderPhase() {
         if (timer) { timer->Complete(*this); }
@@ -29,7 +28,7 @@ namespace sp::vulkan {
     }
 
     void PerfTimer::StartFrame() {
-        active = CVarProfileCPU.Get() == 1 || CVarProfileGPU.Get() == 1;
+        active = CVarProfileRender.Get();
     }
 
     void PerfTimer::EndFrame() {
@@ -124,7 +123,7 @@ namespace sp::vulkan {
     }
 
     bool PerfTimer::FlushResults(FrameContext &frame) {
-        if (!frame.queryPool || frame.queryCount == 0) return true;
+        if (!frame.queryPool || frame.queryCount == 0 || frame.queryOffset == 0) return true;
 
         auto queryCount = frame.queryOffset;
         frame.gpuTimestamps.resize(queryCount);
@@ -173,19 +172,6 @@ namespace sp::vulkan {
             result.gpuEnd = gpuEnd;
             result.gpuElapsed = gpuEnd - gpuStart;
             if (result.gpuElapsed < 0) result.gpuElapsed = 0;
-
-            if (query.resultIndex < lastCompleteFrame.size()) {
-                // Smooth out the graph by applying a high-watermark filter.
-                auto lastCpuElapsed = lastCompleteFrame[query.resultIndex].cpuElapsed;
-                uint64 lastGpuElapsed = lastCompleteFrame[query.resultIndex].gpuElapsed;
-                if (result.cpuElapsed < lastCpuElapsed) {
-                    result.cpuElapsed = chrono_clock::duration(
-                        std::max(result.cpuElapsed.count(), lastCpuElapsed.count() * 99 / 100));
-                }
-                if (result.gpuElapsed < lastGpuElapsed) {
-                    result.gpuElapsed = std::max(result.gpuElapsed, lastGpuElapsed * 99 / 100);
-                }
-            }
 
             frame.pending.pop_front();
         }

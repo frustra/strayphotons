@@ -329,11 +329,6 @@ namespace sp::vulkan {
         void FlushComputeState();
         void FlushGraphicsState();
 
-        template<typename Func>
-        void AfterSubmit(Func func) {
-            afterSubmitFuncs.push_back(func);
-        }
-
         vk::CommandBuffer &Raw() {
             return *cmd;
         }
@@ -407,7 +402,5 @@ namespace sp::vulkan {
 
         ShaderDataBindings shaderData;
         std::array<vk::DescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> bindlessSets;
-
-        vector<std::function<void()>> afterSubmitFuncs;
     };
 } // namespace sp::vulkan

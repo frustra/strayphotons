@@ -40,7 +40,9 @@ namespace sp {
                     ImGui::PopStyleColor();
                 }
 
-                if (ImGui::GetScrollY() >= lastScrollMaxY - 0.001f && io.MouseWheel == 0.0f) { ImGui::SetScrollHere(); }
+                if (ImGui::GetScrollY() >= lastScrollMaxY - 0.001f && io.MouseWheel == 0.0f) {
+                    ImGui::SetScrollHereY();
+                }
 
                 lastScrollMaxY = ImGui::GetScrollMaxY();
 
@@ -109,16 +111,17 @@ namespace sp {
                 ImGui::Begin("completion_popup", nullptr, popupFlags);
                 ImGui::PushAllowKeyboardFocus(false);
 
+                if (completionSelectionChanged) reclaimInputFocus = true;
+
                 for (int index = completionEntries.size() - 1; index >= 0; index--) {
                     bool active = completionSelectedIndex == index;
 
                     if (ImGui::Selectable(completionEntries[index].c_str(), active)) {
                         completionSelectedIndex = index;
                         syncInputFromCompletion = true;
-                        reclaimInputFocus = true;
                     }
                     if (active && completionSelectionChanged) {
-                        ImGui::SetScrollHere();
+                        ImGui::SetScrollHereY();
                         completionSelectionChanged = false;
                     }
                 }
@@ -128,19 +131,19 @@ namespace sp {
             }
         }
 
-        static int CommandEditStub(ImGuiTextEditCallbackData *data) {
+        static int CommandEditStub(ImGuiInputTextCallbackData *data) {
             auto c = (ConsoleGui *)data->UserData;
             return c->CommandEditCallback(data);
         }
 
-        void SetInput(ImGuiTextEditCallbackData *data, const char *str, bool skipEditCheck) {
+        void SetInput(ImGuiInputTextCallbackData *data, const char *str, bool skipEditCheck) {
             int newLength = snprintf(data->Buf, (size_t)data->BufSize, "%s", str);
             data->CursorPos = data->SelectionStart = data->SelectionEnd = data->BufTextLen = newLength;
             data->BufDirty = true;
             this->skipEditCheck = skipEditCheck;
         }
 
-        int CommandEditCallback(ImGuiTextEditCallbackData *data) {
+        int CommandEditCallback(ImGuiInputTextCallbackData *data) {
             if ((data->EventFlag == ImGuiInputTextFlags_CallbackAlways && syncInputFromCompletion) ||
                 data->EventFlag == ImGuiInputTextFlags_CallbackCompletion) {
                 if (completionSelectedIndex >= 0 && completionSelectedIndex < (int)completionEntries.size()) {

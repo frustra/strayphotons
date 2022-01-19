@@ -20,9 +20,9 @@ namespace sp {
         : parent(renderer), manager(manager) {
         manager->SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
-
-        io.ImeWindowHandle = context.Win32WindowHandle();
         io.IniFilename = nullptr;
+
+        ImGui::GetMainViewport()->PlatformHandleRaw = context.Win32WindowHandle();
 
         std::pair<std::string, float> fontAssets[] = {
             {"fonts/DroidSans.ttf", 16.0f},
