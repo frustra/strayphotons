@@ -1,11 +1,11 @@
 #pragma once
 
+#include "core/EnumArray.hh"
 #include "ecs/Components.hh"
 
 #include <Tecs.hh>
 #include <glm/glm.hpp>
 #include <memory>
-#include <type_traits>
 
 namespace sp {
     class Model;
@@ -50,15 +50,22 @@ namespace ecs {
         }
 
         void RemoveConstraint() {
-            constraint = Tecs::Entity();
-            constraintMaxDistance = 0.0f;
-            constraintOffset = glm::vec3();
-            constraintRotation = glm::quat();
+            SetConstraint(Tecs::Entity());
         }
     };
 
+    struct PhysicsQuery {
+        float maxRaycastDistance = 0.0f;
+        Tecs::Entity raycastHitTarget;
+        glm::vec3 raycastHitPosition;
+        float raycastHitDistance = 0.0f;
+    };
+
     static Component<Physics> ComponentPhysics("physics");
+    static Component<PhysicsQuery> ComponentPhysicsQuery("physics_query");
 
     template<>
     bool Component<Physics>::Load(sp::Scene *scene, Physics &dst, const picojson::value &src);
+    template<>
+    bool Component<PhysicsQuery>::Load(sp::Scene *scene, PhysicsQuery &dst, const picojson::value &src);
 } // namespace ecs

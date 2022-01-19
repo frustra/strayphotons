@@ -324,7 +324,13 @@ namespace sp {
     void AssetManager::RegisterExternalModel(const std::string &name, const std::string &path) {
         std::lock_guard lock(externalModelMutex);
         auto result = externalModelPaths.emplace(name, path);
-        Assertf(result.second, "Duplicate model registration for: %s", name);
+        if (result.second) {
+            Assertf(result.first->second == path,
+                "Duplicate model registration for: %s, %s != %s",
+                name,
+                result.second,
+                path);
+        }
     }
 
     bool AssetManager::IsModelRegistered(const std::string &name) {

@@ -143,6 +143,9 @@
             "transform": {
                 "scale": [0.1, 1, 0.1]
             },
+            "physics_query": {
+                "raycast": 2.0
+            },
             "renderable": "box"
         },
         {

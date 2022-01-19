@@ -111,9 +111,9 @@ namespace sp {
                                     glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
                             }
                             auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
-                            if (!transform.HasChanged(userData->transformChangeNumber)) {
+                            if (!transform.HasChanged(userData->actorData.transformChangeNumber)) {
                                 transform.SetRotation(rotation);
-                                userData->transformChangeNumber = transform.ChangeNumber();
+                                userData->actorData.transformChangeNumber = transform.ChangeNumber();
                             } else {
                                 transform.SetRotation(rotation);
                             }
@@ -199,7 +199,7 @@ namespace sp {
 
         if (controller.pxController) {
             auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
-            if (transform.HasChanged(userData->transformChangeNumber)) return;
+            if (transform.HasChanged(userData->actorData.transformChangeNumber)) return;
 
             auto disp = userData->velocity * (float)(manager.interval.count() / 1e9);
             auto prevPosition = PxExtendedVec3ToGlmVec3(controller.pxController->getPosition());
@@ -274,10 +274,10 @@ namespace sp {
                         auto invParentRotate = glm::inverse(transform.GetRotation());
 
                         manager.SetCollisionGroup(hitActor, PhysxCollisionGroup::HELD_OBJECT);
-                        hitPhysics.constraint = entity;
-                        hitPhysics.constraintMaxDistance = maxDistance;
-                        hitPhysics.constraintOffset = invParentRotate * (currentPos - origin + glm::vec3(0, 0.1, 0));
-                        hitPhysics.constraintRotation = invParentRotate * hitTransform.GetRotation();
+                        hitPhysics.SetConstraint(entity,
+                            maxDistance,
+                            invParentRotate * (currentPos - origin + glm::vec3(0, 0.1, 0)),
+                            invParentRotate * hitTransform.GetRotation());
                     }
                 }
             }

@@ -43,6 +43,8 @@ namespace sp {
                 if (event.entity.Has<ecs::CharacterController>(lock)) {
                     auto &controller = event.entity.Get<ecs::CharacterController>(lock);
                     if (!controller.pxController) {
+                        auto characterUserData = new CharacterControllerUserData(event.entity, 0);
+
                         PxCapsuleControllerDesc desc;
                         desc.position = PxExtendedVec3(0, 0, 0);
                         desc.upDirection = PxVec3(0, 1, 0);
@@ -52,16 +54,18 @@ namespace sp {
                         desc.material = manager.pxPhysics->createMaterial(0.3f, 0.3f, 0.3f);
                         desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
                         desc.reportCallback = manager.controllerHitReporter.get();
-                        desc.userData = new CharacterControllerUserData();
+                        desc.userData = characterUserData;
 
                         auto pxController = manager.controllerManager->createController(desc);
                         Assert(pxController->getType() == PxControllerShapeType::eCAPSULE,
                             "Physx did not create a valid PxCapsuleController");
 
                         pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
+                        auto actor = pxController->getActor();
+                        actor->userData = &characterUserData->actorData;
 
                         PxShape *shape;
-                        pxController->getActor()->getShapes(&shape, 1);
+                        actor->getShapes(&shape, 1);
                         PxFilterData data;
                         data.word0 = PhysxCollisionGroup::PLAYER;
                         shape->setQueryFilterData(data);
@@ -95,14 +99,14 @@ namespace sp {
                 targetPosition.y = originPosition.y;
 
                 // If the origin moved, teleport the controller
-                if (originTransform.HasChanged(userData->transformChangeNumber)) {
+                if (originTransform.HasChanged(userData->actorData.transformChangeNumber)) {
                     controller.pxController->setHeight(targetHeight);
                     controller.pxController->setFootPosition(GlmVec3ToPxExtendedVec3(targetPosition));
 
                     userData->onGround = false;
                     userData->velocity = glm::vec3(0);
                     userData->deltaSinceUpdate = glm::vec3(0);
-                    userData->transformChangeNumber = originTransform.ChangeNumber();
+                    userData->actorData.transformChangeNumber = originTransform.ChangeNumber();
                 }
 
                 // Update the capsule height
@@ -174,7 +178,7 @@ namespace sp {
                                   std::chrono::milliseconds((size_t)(CVarCharacterUpdateRate.Get() * 1000.0f));
                 if (movement == glm::vec3(0) || nextUpdate <= now) {
                     originTransform.Translate(userData->deltaSinceUpdate);
-                    userData->transformChangeNumber = originTransform.ChangeNumber();
+                    userData->actorData.transformChangeNumber = originTransform.ChangeNumber();
                     userData->deltaSinceUpdate = glm::vec3(0);
                     userData->lastUpdate = now;
                 }

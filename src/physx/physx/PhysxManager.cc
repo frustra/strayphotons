@@ -23,8 +23,8 @@ namespace sp {
     // clang-format on
 
     PhysxManager::PhysxManager()
-        : RegisteredThread("PhysX", 120.0), humanControlSystem(*this), characterControlSystem(*this),
-          constraintSystem(*this) {
+        : RegisteredThread("PhysX", 120.0), characterControlSystem(*this), constraintSystem(*this),
+          humanControlSystem(*this), physicsQuerySystem(*this) {
         Logf("PhysX %d.%d.%d starting up",
             PX_PHYSICS_VERSION_MAJOR,
             PX_PHYSICS_VERSION_MINOR,
@@ -163,6 +163,7 @@ namespace sp {
 
         humanControlSystem.Frame();
         characterControlSystem.Frame();
+        physicsQuerySystem.Frame();
 
         { // Simulate 1 physics frame (blocking)
             scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
@@ -422,7 +423,8 @@ namespace sp {
         auto pxPosition = GlmVec3ToPxExtendedVec3(position - glm::vec3(0, capsuleHeight / 2, 0));
 
         if (!controller.pxController) {
-            // Capsule controller description will want to be data driven
+            auto characterUserData = new CharacterControllerUserData(e, transform.ChangeNumber());
+
             PxCapsuleControllerDesc desc;
             desc.position = pxPosition;
             desc.upDirection = PxVec3(0, 1, 0);
@@ -432,16 +434,18 @@ namespace sp {
             desc.material = pxPhysics->createMaterial(0.3f, 0.3f, 0.3f);
             desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
             desc.reportCallback = controllerHitReporter.get();
-            desc.userData = new CharacterControllerUserData(transform.ChangeNumber());
+            desc.userData = characterUserData;
 
             auto pxController = controllerManager->createController(desc);
             Assert(pxController->getType() == PxControllerShapeType::eCAPSULE,
                 "Physx did not create a valid PxCapsuleController");
 
             pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
+            auto actor = pxController->getActor();
+            actor->userData = &characterUserData->actorData;
 
             PxShape *shape;
-            pxController->getActor()->getShapes(&shape, 1);
+            actor->getShapes(&shape, 1);
             PxFilterData data;
             data.word0 = PhysxCollisionGroup::PLAYER;
             shape->setQueryFilterData(data);
@@ -451,9 +455,9 @@ namespace sp {
         }
 
         auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
-        if (transform.HasChanged(userData->transformChangeNumber)) {
+        if (transform.HasChanged(userData->actorData.transformChangeNumber)) {
             controller.pxController->setPosition(pxPosition);
-            userData->transformChangeNumber = transform.ChangeNumber();
+            userData->actorData.transformChangeNumber = transform.ChangeNumber();
         }
 
         float currentHeight = controller.pxController->getHeight();

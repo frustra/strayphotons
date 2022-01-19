@@ -30,6 +30,7 @@ namespace ecs {
     class LightSensor;
     struct Mirror;
     struct Physics;
+    struct PhysicsQuery;
     struct Renderable;
     struct SceneConnection;
     struct SceneInfo;
@@ -57,6 +58,7 @@ namespace ecs {
         LightSensor,
         Mirror,
         Physics,
+        PhysicsQuery,
         Renderable,
         SceneConnection,
         SceneInfo,
@@ -112,6 +114,7 @@ TECS_NAME_COMPONENT(ecs::Light, "Light");
 TECS_NAME_COMPONENT(ecs::LightSensor, "LightSensor");
 TECS_NAME_COMPONENT(ecs::Mirror, "Mirror");
 TECS_NAME_COMPONENT(ecs::Physics, "Physics");
+TECS_NAME_COMPONENT(ecs::PhysicsQuery, "PhysicsQuery");
 TECS_NAME_COMPONENT(ecs::Renderable, "Renderable");
 TECS_NAME_COMPONENT(ecs::SceneConnection, "SceneConnection");
 TECS_NAME_COMPONENT(ecs::SceneInfo, "SceneInfo");

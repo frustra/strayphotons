@@ -73,21 +73,24 @@ namespace ecs {
     Transform Transform::GetGlobalTransform(Lock<Read<Transform>> lock) const {
         if (!this->parent) return *this;
 
-        Assert(this->parent.Has<Transform>(lock), "Transform parent entity does not have a Transform");
+        if (!this->parent.Has<Transform>(lock)) {
+            Errorf("Transform parent %s does not have a Transform", std::to_string(this->parent));
+            return *this;
+        }
 
         auto parentTransform = this->parent.Get<Transform>(lock).GetGlobalTransform(lock);
         return Transform(parentTransform.transform * glm::mat4(this->transform));
     }
 
     glm::quat Transform::GetGlobalRotation(Lock<Read<Transform>> lock) const {
-        glm::quat model = glm::identity<glm::quat>();
+        if (!this->parent) return GetRotation();
 
-        if (this->parent) {
-            Assert(this->parent.Has<Transform>(lock), "Transform parent entity does not have a Transform");
-            model = this->parent.Get<Transform>(lock).GetGlobalRotation(lock);
+        if (!this->parent.Has<Transform>(lock)) {
+            Errorf("Transform parent %s does not have a Transform", std::to_string(this->parent));
+            return GetRotation();
         }
 
-        return model * GetRotation();
+        return this->parent.Get<Transform>(lock).GetGlobalRotation(lock) * GetRotation();
     }
 
     void Transform::Translate(glm::vec3 xyz) {

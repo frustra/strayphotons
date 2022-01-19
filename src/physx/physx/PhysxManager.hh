@@ -8,6 +8,7 @@
 #include "physx/ConstraintSystem.hh"
 #include "physx/ConvexHull.hh"
 #include "physx/HumanControlSystem.hh"
+#include "physx/PhysicsQuerySystem.hh"
 #include "physx/TriggerSystem.hh"
 
 #include <PxPhysicsAPI.h>
@@ -39,7 +40,8 @@ namespace sp {
     };
 
     struct CharacterControllerUserData {
-        uint32_t transformChangeNumber = 0;
+        ActorUserData actorData;
+
         bool onGround = false;
         glm::vec3 velocity = glm::vec3(0);
 
@@ -47,7 +49,7 @@ namespace sp {
         chrono_clock::time_point lastUpdate;
 
         CharacterControllerUserData() {}
-        CharacterControllerUserData(uint32_t changeNumber) : transformChangeNumber(changeNumber) {}
+        CharacterControllerUserData(Tecs::Entity ent, uint32_t changeNumber) : actorData(ent, changeNumber) {}
     };
 
     class ControllerHitReport : public physx::PxUserControllerHitReport {
@@ -134,14 +136,16 @@ namespace sp {
         ecs::ComponentObserver<ecs::Physics> physicsObserver;
         ecs::ComponentObserver<ecs::HumanController> humanControllerObserver;
 
-        HumanControlSystem humanControlSystem;
         CharacterControlSystem characterControlSystem;
         ConstraintSystem constraintSystem;
+        HumanControlSystem humanControlSystem;
+        PhysicsQuerySystem physicsQuerySystem;
         TriggerSystem triggerSystem;
 
         std::unordered_map<string, ConvexHullSet *> cache;
 
         friend class CharacterControlSystem;
         friend class ConstraintSystem;
+        friend class PhysicsQuerySystem;
     };
 } // namespace sp
