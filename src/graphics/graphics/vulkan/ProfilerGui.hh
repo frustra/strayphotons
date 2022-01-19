@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/Histogram.hh"
 #include "graphics/gui/GuiManager.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
 
@@ -9,86 +10,269 @@
 namespace sp::vulkan {
     class ProfilerGui : public GuiRenderable {
     public:
-        static const uint64 numFrameTimes = 32, sampleFrameTimeEvery = 10;
+        enum class Mode {
+            CPU,
+            GPU,
+        };
 
-        ProfilerGui(PerfTimer &timer) : timer(timer), cpuFrameTimes(), gpuFrameTimes() {}
+        ProfilerGui(PerfTimer &timer) : timer(timer), msWindowSize(1000) {}
         virtual ~ProfilerGui() {}
+
+        static float GetHistogramValue(void *data, int index) {
+            auto self = static_cast<ProfilerGui *>(data);
+            return (float)self->drawHistogram.buckets[index];
+        }
 
         void Add() {
             if (timer.lastCompleteFrame.empty()) return;
-            if (CVarProfileCPU.Get() != 1 && CVarProfileGPU.Get() != 1) return;
+            if (!CVarProfileRender.Get()) return;
+
+            CollectSample();
 
             ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize;
-            frameCount++;
 
-            if (CVarProfileCPU.Get() == 1) {
-                ImGui::Begin("CpuProfiler", nullptr, flags);
+            ImGui::Begin("Profiler", nullptr, flags);
 
-                if (frameCount % sampleFrameTimeEvery == 1) {
-                    auto root = timer.lastCompleteFrame[0];
+            if (ImGui::BeginTable("ResultTable", 7)) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::Text("Time per frame (ms)");
+                ImGui::TableNextColumn();
+                ImGui::Text("     ");
+                ImGui::TableNextColumn();
+                ImGui::Text("CPU  ");
+                ImGui::TableNextColumn();
+                ImGui::Text("       ");
+                ImGui::TableNextColumn();
+                ImGui::Text("     ");
+                ImGui::TableNextColumn();
+                ImGui::Text("GPU  ");
+                ImGui::TableNextColumn();
+                ImGui::Text("     ");
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::SetNextItemWidth(85);
+                ImGui::InputInt("ms window", &msWindowSize, 100, 1000);
 
-                    memmove(cpuFrameTimes, cpuFrameTimes + 1, (numFrameTimes - 1) * sizeof(*cpuFrameTimes));
-                    cpuFrameTimes[numFrameTimes - 1] =
-                        (float)std::chrono::duration_cast<std::chrono::milliseconds>(root.cpuElapsed).count();
+                for (int i = 0; i < 2; i++) {
+                    ImGui::TableNextColumn();
+                    ImGui::Text("avg");
+                    ImGui::TableNextColumn();
+                    ImGui::Text("p95");
+                    ImGui::TableNextColumn();
+                    ImGui::Text("max");
                 }
 
-                ImGui::PlotLines("##frameTimes", cpuFrameTimes, numFrameTimes);
-                AddResults(timer.lastCompleteFrame, false);
-
-                ImGui::End();
+                AddResults();
+                ImGui::EndTable();
             }
 
-            if (CVarProfileGPU.Get() == 1) {
-                ImGui::Begin("GpuProfiler", nullptr, flags);
+            ImGui::SetNextItemWidth(-1);
+            ImGui::PlotHistogram("##histogram",
+                &GetHistogramValue,
+                this,
+                drawHistogram.buckets.size(),
+                0,
+                nullptr,
+                FLT_MAX,
+                FLT_MAX,
+                ImVec2(0, 100));
 
-                if (frameCount % sampleFrameTimeEvery == 1) {
-                    auto root = timer.lastCompleteFrame[0];
-                    double elapsed = (double)root.gpuElapsed / 1000000.0;
+            ImGui::Text("%.3f", drawHistogram.min / 1000000.0);
+            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x / 2 - ImGui::GetItemRectSize().x / 2);
+            ImGui::Text("%.3f", ((drawHistogram.max - drawHistogram.min) / 2 + drawHistogram.min) / 1000000.0);
+            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - ImGui::GetItemRectSize().x);
+            ImGui::Text("%.3f", drawHistogram.max / 1000000.0);
 
-                    memmove(gpuFrameTimes, gpuFrameTimes + 1, (numFrameTimes - 1) * sizeof(*gpuFrameTimes));
-                    gpuFrameTimes[numFrameTimes - 1] = (float)elapsed;
-                }
-
-                ImGui::PlotLines("##frameTimes", gpuFrameTimes, numFrameTimes);
-                AddResults(timer.lastCompleteFrame, true);
-
-                ImGui::End();
-            }
+            ImGui::End();
         }
 
     private:
-        size_t AddResults(const vector<TimeResult> &results, bool gpuTime, size_t offset = 0, size_t depth = 1) {
-            while (offset < results.size()) {
-                auto result = results[offset++];
+        struct Sample {
+            uint64 cpuElapsed = 0, gpuElapsed = 0;
+        };
 
-                if (result.depth < depth) return offset - 1;
+        struct Scope {
+            std::string name;
+            size_t depth = 0;
+            size_t sampleOffset = 0, sampleCount = 0;
+            bool truncated = false;
 
-                if (result.depth > depth) continue;
+            std::array<Sample, 1000> samples;
+        };
 
-                ImGui::PushID(offset);
+        struct Stats {
+            struct {
+                uint64 avg = 0, p95 = 0, max = 0, min = std::numeric_limits<uint64>::max();
+            } cpu, gpu;
+        };
 
-                double nsElapsed =
-                    gpuTime ? result.gpuElapsed
-                            : std::chrono::duration_cast<std::chrono::nanoseconds>(result.cpuElapsed).count();
-                double msElapsed = nsElapsed / 1000000.0;
+        const char SpacePadding[16] = "               ";
 
-                if (ImGui::TreeNodeEx("node",
-                        ImGuiTreeNodeFlags_DefaultOpen,
-                        "%s %.2fms",
-                        result.name.data(),
-                        msElapsed)) {
-                    offset = AddResults(results, gpuTime, offset, result.depth + 1);
-                    ImGui::TreePop();
+        size_t AddResults(size_t offset = 0, size_t depth = 1) {
+            while (offset < resultCount) {
+                const auto &scope = resultScopes[offset];
+
+                if (scope.depth < depth) return offset;
+                if (scope.depth > depth) continue;
+
+                auto stats = GetStats(scope);
+
+                ImGui::TableNextRow();
+
+                float c = 0.1 * ((offset % 2) + 1);
+
+                if (offset == drawHistogramIndex) {
+                    UpdateDrawHistogram(scope, stats);
+                    ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32({0.1, 0.3, 0.1, 0.6}));
+                } else {
+                    ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32({c, c, c, 0.6}));
                 }
 
-                ImGui::PopID();
+                ImGui::TableNextColumn();
+
+                auto paddingOffset = sizeof(SpacePadding) - depth * 2 + 1;
+                Assert(paddingOffset >= 0, "result tree is too deep");
+                ImGui::Text("%s%s", &SpacePadding[paddingOffset], scope.name.data());
+
+                auto windowX = ImGui::GetWindowPos().x;
+                auto rowMin = ImGui::GetItemRectMin();
+                rowMin.x = ImGui::GetWindowContentRegionMin().x + windowX;
+                auto rowMax = ImGui::GetItemRectMax();
+                rowMax.x = ImGui::GetWindowContentRegionMax().x + windowX;
+                if (ImGui::IsMouseHoveringRect(rowMin, rowMax, false)) drawHistogramIndex = offset;
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%.2f", stats.cpu.avg / 1000000.0);
+                if (ImGui::IsItemHovered()) drawHistogramMode = Mode::CPU;
+                ImGui::TableNextColumn();
+                ImGui::Text("%.2f", stats.cpu.p95 / 1000000.0);
+                if (ImGui::IsItemHovered()) drawHistogramMode = Mode::CPU;
+                ImGui::TableNextColumn();
+                ImGui::Text("%.2f", stats.cpu.max / 1000000.0);
+                if (ImGui::IsItemHovered()) drawHistogramMode = Mode::CPU;
+
+                ImGui::TableNextColumn();
+                ImGui::Text("%.2f", stats.gpu.avg / 1000000.0);
+                if (ImGui::IsItemHovered()) drawHistogramMode = Mode::GPU;
+                ImGui::TableNextColumn();
+                ImGui::Text("%.2f", stats.gpu.p95 / 1000000.0);
+                if (ImGui::IsItemHovered()) drawHistogramMode = Mode::GPU;
+                ImGui::TableNextColumn();
+                ImGui::Text("%.2f", stats.gpu.max / 1000000.0);
+                if (ImGui::IsItemHovered()) drawHistogramMode = Mode::GPU;
+
+                offset = AddResults(offset + 1, scope.depth + 1);
             }
             return offset;
         }
 
+        void CollectSample() {
+            auto now = chrono_clock::now();
+            bool newWindow = false;
+            if ((now - lastWindowStart) > std::chrono::milliseconds(msWindowSize)) {
+                newWindow = true;
+                lastWindowStart = now;
+
+                uint64 dhWindow = drawHistogram.max - drawHistogram.min;
+                drawHistogram.min += dhWindow * 0.05;
+                drawHistogram.max -= dhWindow * 0.05;
+            }
+
+            resultCount = timer.lastCompleteFrame.size();
+            if (resultScopes.size() < resultCount) resultScopes.resize(resultCount);
+
+            for (size_t i = 0; i < resultCount; i++) {
+                auto &result = timer.lastCompleteFrame[i];
+                auto &scope = resultScopes[i];
+                scope.depth = result.depth;
+
+                if (result.name != scope.name) {
+                    scope.name = result.name;
+                    scope.sampleCount = 0;
+                    scope.sampleOffset = 0;
+                    scope.truncated = false;
+                }
+
+                if (newWindow) {
+                    if (!scope.truncated) scope.sampleCount = scope.sampleOffset;
+                    scope.sampleOffset = 0;
+                    scope.truncated = false;
+                } else {
+                    scope.sampleOffset++;
+                    if (scope.sampleOffset >= scope.samples.size()) {
+                        scope.sampleOffset = 0;
+                        scope.truncated = true;
+                    }
+                    if (!scope.truncated) scope.sampleCount = std::max(scope.sampleCount, scope.sampleOffset);
+                }
+
+                auto &sample = scope.samples[scope.sampleOffset];
+                sample.cpuElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(result.cpuElapsed).count();
+                sample.gpuElapsed = result.gpuElapsed;
+            }
+        }
+
+        Stats GetStats(const Scope &scope) {
+            Stats stats;
+            if (scope.sampleCount == 0) return stats;
+
+            for (size_t i = 0; i < scope.sampleCount; i++) {
+                auto &sample = scope.samples[i];
+                stats.cpu.avg += sample.cpuElapsed;
+                stats.gpu.avg += sample.gpuElapsed;
+                stats.cpu.max = std::max(stats.cpu.max, sample.cpuElapsed);
+                stats.gpu.max = std::max(stats.gpu.max, sample.gpuElapsed);
+                stats.cpu.min = std::min(stats.cpu.min, sample.cpuElapsed);
+                stats.gpu.min = std::min(stats.gpu.min, sample.gpuElapsed);
+            }
+            stats.cpu.avg /= scope.sampleCount;
+            stats.gpu.avg /= scope.sampleCount;
+
+            histogram.Reset(stats.cpu.min, stats.cpu.max);
+            for (size_t i = 0; i < scope.sampleCount; i++) {
+                histogram.AddSample(scope.samples[i].cpuElapsed);
+            }
+            stats.cpu.p95 = histogram.GetPercentile(95);
+
+            histogram.Reset(stats.gpu.min, stats.gpu.max);
+            for (size_t i = 0; i < scope.sampleCount; i++) {
+                histogram.AddSample(scope.samples[i].gpuElapsed);
+            }
+            stats.gpu.p95 = histogram.GetPercentile(95);
+
+            return stats;
+        }
+
+        void UpdateDrawHistogram(const Scope &scope, const Stats &stats) {
+            if (drawHistogramIndex != lastDrawHistogramIndex || drawHistogramMode != lastDrawHistogramMode) {
+                drawHistogram.max = 0;
+                drawHistogram.min = std::numeric_limits<uint64>::max();
+                lastDrawHistogramIndex = drawHistogramIndex;
+                lastDrawHistogramMode = drawHistogramMode;
+            }
+
+            auto newMax = drawHistogramMode == Mode::CPU ? stats.cpu.max : stats.gpu.max;
+            auto newMin = drawHistogramMode == Mode::CPU ? stats.cpu.min : stats.gpu.min;
+            drawHistogram.Reset(std::min(drawHistogram.min, newMin), std::max(drawHistogram.max, newMax));
+            for (size_t i = 0; i < scope.sampleCount; i++) {
+                const auto &sample = scope.samples[i];
+                drawHistogram.AddSample(drawHistogramMode == Mode::CPU ? sample.cpuElapsed : sample.gpuElapsed);
+            }
+        }
+
         PerfTimer &timer;
-        float cpuFrameTimes[numFrameTimes];
-        float gpuFrameTimes[numFrameTimes];
-        uint64 frameCount = 0;
+
+        Histogram<200> histogram;
+        int msWindowSize;
+
+        size_t drawHistogramIndex = 0, lastDrawHistogramIndex = 0;
+        Mode drawHistogramMode = Mode::CPU, lastDrawHistogramMode = Mode::CPU;
+        Histogram<100> drawHistogram;
+
+        chrono_clock::time_point lastWindowStart;
+
+        size_t resultCount;
+        vector<Scope> resultScopes;
     };
 } // namespace sp::vulkan

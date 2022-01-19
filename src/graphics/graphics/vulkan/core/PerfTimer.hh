@@ -9,8 +9,7 @@
 
 namespace sp::vulkan {
     class PerfTimer;
-    extern CVar<bool> CVarProfileCPU;
-    extern CVar<bool> CVarProfileGPU;
+    extern CVar<bool> CVarProfileRender;
 
     struct TimeResult {
         string name;
