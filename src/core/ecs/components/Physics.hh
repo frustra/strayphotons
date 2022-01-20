@@ -25,10 +25,10 @@ namespace ecs {
         Count,
     };
 
-    enum class PhysicsGroupMask : uint32_t {
-        NoClip = 1 << (size_t)PhysicsGroup::NoClip,
-        World = 1 << (size_t)PhysicsGroup::World,
-        Player = 1 << (size_t)PhysicsGroup::Player,
+    enum PhysicsGroupMask {
+        PHYSICS_GROUP_NOCLIP = 1 << (size_t)PhysicsGroup::NoClip,
+        PHYSICS_GROUP_WORLD = 1 << (size_t)PhysicsGroup::World,
+        PHYSICS_GROUP_PLAYER = 1 << (size_t)PhysicsGroup::Player,
     };
 
     struct Physics {
@@ -52,9 +52,10 @@ namespace ecs {
         glm::vec3 constraintOffset;
         glm::quat constraintRotation;
 
-        // For use by PhysxManager only
+        // Output fields of PhysxManager
         physx::PxRigidActor *actor = nullptr;
         glm::vec3 scale = glm::vec3(1.0); // Current scale of physics model according to PhysX
+        glm::vec3 centerOfMass = glm::vec3(0.0); // The calculated center of mass of the object (relative to Transform)
 
         void SetConstraint(Tecs::Entity target,
             float maxDistance = 0.0f,
@@ -73,7 +74,7 @@ namespace ecs {
 
     struct PhysicsQuery {
         float raycastQueryDistance = 0.0f;
-        PhysicsGroupMask raycastQueryFilterGroup = PhysicsGroupMask::World;
+        PhysicsGroupMask raycastQueryFilterGroup = PHYSICS_GROUP_WORLD;
 
         Tecs::Entity raycastHitTarget;
         glm::vec3 raycastHitPosition;

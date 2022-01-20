@@ -122,7 +122,7 @@ namespace ecs {
         this->changeCount++;
     }
 
-    glm::vec3 Transform::GetPosition() const {
+    const glm::vec3 &Transform::GetPosition() const {
         return this->transform[3];
     }
 

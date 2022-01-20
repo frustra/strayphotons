@@ -40,7 +40,7 @@ namespace ecs {
         void SetTransform(const Transform &transform);
 
         // Returns local transform data, not including any parent transforms.
-        glm::vec3 GetPosition() const;
+        const glm::vec3 &GetPosition() const;
         glm::quat GetRotation() const;
         glm::vec3 GetForward() const;
         glm::vec3 GetScale() const;

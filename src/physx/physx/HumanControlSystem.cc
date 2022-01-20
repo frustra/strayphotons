@@ -128,7 +128,6 @@ namespace sp {
                 // Move the player
                 if (noclipChanged) {
                     auto actor = controller.pxController->getActor();
-                    manager.EnableCollisions(actor, !noclip);
                     manager.SetCollisionGroup(actor, noclip ? ecs::PhysicsGroup::NoClip : ecs::PhysicsGroup::Player);
                 }
 
@@ -257,14 +256,12 @@ namespace sp {
                 if (!dynamic) return;
 
                 auto hitTransform = query.raycastHitTarget.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-                auto currentPos = hitTransform.GetMatrix() *
-                                  glm::vec4(PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p), 1.0f);
                 auto invParentRotate = glm::inverse(transform.GetRotation());
 
                 hitPhysics.group = ecs::PhysicsGroup::Player;
                 hitPhysics.SetConstraint(entity,
                     query.raycastQueryDistance,
-                    invParentRotate * (currentPos - transform.GetPosition() + glm::vec3(0, 0.1, 0)),
+                    invParentRotate * (hitTransform.GetPosition() - transform.GetPosition() + glm::vec3(0, 0.1, 0)),
                     invParentRotate * hitTransform.GetRotation());
                 interact.target = query.raycastHitTarget;
             }
@@ -277,14 +274,20 @@ namespace sp {
         glm::vec2 dCursor) {
         if (!entity.Has<ecs::InteractController, ecs::Transform>(lock)) return false;
         auto &interact = entity.Get<ecs::InteractController>(lock);
-        auto &parentTransform = entity.Get<ecs::Transform>(lock);
         if (!interact.target.Has<ecs::Physics>(lock)) return false;
+
         auto &ph = interact.target.Get<ecs::Physics>(lock);
+        auto parentTransform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
 
         auto input = dCursor * CVarCursorSensitivity.Get() * 0.01f;
-        auto upAxis = glm::inverse(parentTransform.GetGlobalRotation(lock)) * glm::vec3(0, 1, 0);
-        ph.constraintRotation = glm::angleAxis(input.x, upAxis) * ph.constraintRotation;
-        ph.constraintRotation = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) * ph.constraintRotation;
+        auto upAxis = glm::inverse(parentTransform.GetRotation()) * glm::vec3(0, 1, 0);
+        auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) * glm::angleAxis(input.x, upAxis);
+
+        // Move the objects origin so it rotates around its center of mass
+        auto center = ph.constraintRotation * ph.centerOfMass;
+        ph.constraintOffset += center - (deltaRotate * center);
+        ph.constraintRotation = deltaRotate * ph.constraintRotation;
+
         return true;
     }
 } // namespace sp

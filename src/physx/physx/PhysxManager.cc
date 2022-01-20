@@ -209,11 +209,11 @@ namespace sp {
         sceneDesc.gravity = PxVec3(0.f, CVarGravity.Get(true), 0.f);
         sceneDesc.filterShader = PxDefaultSimulationFilterShader;
 
-        // Don't collide held model with player
-        PxSetGroupCollisionFlag(PhysxCollisionGroup::HELD_OBJECT, PhysxCollisionGroup::PLAYER, false);
+        // Don't collide the player with themselves
+        PxSetGroupCollisionFlag((uint16_t)ecs::PhysicsGroup::Player, (uint16_t)ecs::PhysicsGroup::Player, false);
         // Don't collide anything with the noclip group.
-        PxSetGroupCollisionFlag(PhysxCollisionGroup::WORLD, PhysxCollisionGroup::NOCLIP, false);
-        PxSetGroupCollisionFlag(PhysxCollisionGroup::HELD_OBJECT, PhysxCollisionGroup::NOCLIP, false);
+        PxSetGroupCollisionFlag((uint16_t)ecs::PhysicsGroup::NoClip, (uint16_t)ecs::PhysicsGroup::World, false);
+        PxSetGroupCollisionFlag((uint16_t)ecs::PhysicsGroup::NoClip, (uint16_t)ecs::PhysicsGroup::Player, false);
 
         dispatcher = PxDefaultCpuDispatcherCreate(1);
         sceneDesc.cpuDispatcher = dispatcher;
@@ -339,7 +339,11 @@ namespace sp {
                     *mat);
             }
 
-            if (ph.dynamic) { PxRigidBodyExt::updateMassAndInertia(*ph.actor->is<PxRigidDynamic>(), ph.density); }
+            auto dynamic = ph.actor->is<PxRigidDynamic>();
+            if (dynamic) {
+                PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
+                ph.centerOfMass = PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p);
+            }
 
             SetCollisionGroup(ph.actor, ph.group);
 
@@ -398,7 +402,11 @@ namespace sp {
 
     bool PhysxManager::MoveController(PxController *controller, double dt, PxVec3 displacement) {
         PxFilterData data;
-        data.word0 = CVarPropJumping.Get() ? PhysxCollisionGroup::WORLD : PhysxCollisionGroup::PLAYER;
+        if (CVarPropJumping.Get()) {
+            data.word0 = ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_PLAYER;
+        } else {
+            data.word0 = ecs::PHYSICS_GROUP_WORLD;
+        }
         PxControllerFilters filters(&data);
         auto flags = controller->move(displacement, 0, dt, filters);
 
@@ -514,17 +522,6 @@ namespace sp {
         scene->addActor(*actor);
 
         return overlapFound;
-    }
-
-    void PhysxManager::EnableCollisions(PxRigidActor *actor, bool enabled) {
-        PxU32 nShapes = actor->getNbShapes();
-        vector<PxShape *> shapes(nShapes);
-        actor->getShapes(shapes.data(), nShapes);
-
-        for (uint32 i = 0; i < nShapes; ++i) {
-            shapes[i]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, enabled);
-            shapes[i]->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, enabled);
-        }
     }
 
     void PhysxManager::SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group) {

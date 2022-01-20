@@ -64,8 +64,6 @@ namespace sp {
         void onObstacleHit(const physx::PxControllerObstacleHit &hit) {}
     };
 
-    enum PhysxCollisionGroup { HELD_OBJECT = 1, PLAYER = 2, WORLD = 3, NOCLIP = 4 };
-
     class PhysxManager : public RegisteredThread {
     public:
         PhysxManager();
@@ -73,7 +71,6 @@ namespace sp {
 
         bool MoveController(physx::PxController *controller, double dt, physx::PxVec3 displacement);
 
-        void EnableCollisions(physx::PxRigidActor *actor, bool enabled);
         void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
 
     private:
