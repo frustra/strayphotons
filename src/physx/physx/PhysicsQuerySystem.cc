@@ -32,7 +32,7 @@ namespace sp {
                     GlmVec3ToPxVec3(rayDir),
                     query.raycastQueryDistance,
                     hit,
-                    PxHitFlags(), // TODO: See if anything is required from PxHitFlags::eDEFAULT
+                    PxHitFlags(),
                     PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
 
                 if (status) {

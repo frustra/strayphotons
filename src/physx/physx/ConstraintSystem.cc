@@ -17,7 +17,6 @@ namespace sp {
     static CVar<float> CVarMaxVerticalConstraintForce("x.MaxVerticalConstraintForce", 20.0f, "The maximum linear lifting force for constraints");
     static CVar<float> CVarMaxLateralConstraintForce("x.MaxLateralConstraintForce", 20.0f, "The maximum lateral force for constraints");
     static CVar<float> CVarMaxConstraintTorque("x.MaxConstraintTorque", 10.0f, "The maximum torque force for constraints");
-    static CVar<glm::vec3> CVarTestOffset("x.TestOffset", glm::vec3(0), "Test Offset");
     // clang-format on
 
     ConstraintSystem::ConstraintSystem(PhysxManager &manager) : manager(manager) {}

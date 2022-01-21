@@ -1,6 +1,5 @@
 #pragma once
 
-#include "core/EnumArray.hh"
 #include "ecs/Components.hh"
 
 #include <Tecs.hh>
