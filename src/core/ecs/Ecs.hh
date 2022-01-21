@@ -20,7 +20,6 @@ namespace ecs {
     class Animation;
     class HumanController;
     struct CharacterController;
-    struct InteractController;
     struct EventInput;
     class EventBindings;
     enum class FocusLayer : uint8_t;
@@ -48,7 +47,6 @@ namespace ecs {
         Animation,
         HumanController,
         CharacterController,
-        InteractController,
         EventInput,
         EventBindings,
         FocusLayer,
@@ -104,7 +102,6 @@ TECS_NAME_COMPONENT(ecs::Name, "Name");
 TECS_NAME_COMPONENT(ecs::Animation, "Animation");
 TECS_NAME_COMPONENT(ecs::HumanController, "HumanController");
 TECS_NAME_COMPONENT(ecs::CharacterController, "CharacterController");
-TECS_NAME_COMPONENT(ecs::InteractController, "InteractController");
 TECS_NAME_COMPONENT(ecs::EventInput, "EventInput");
 TECS_NAME_COMPONENT(ecs::EventBindings, "EventBindings");
 TECS_NAME_COMPONENT(ecs::FocusLayer, "FocusLayer");

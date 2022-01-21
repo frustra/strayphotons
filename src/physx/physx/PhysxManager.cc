@@ -119,7 +119,7 @@ namespace sp {
 
         { // Sync ECS state to physx
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::Transform>,
-                ecs::Write<ecs::Physics, ecs::HumanController, ecs::InteractController>>();
+                ecs::Write<ecs::Physics, ecs::HumanController>>();
 
             // Delete actors for removed entities
             ecs::ComponentEvent<ecs::Physics> physicsEvent;

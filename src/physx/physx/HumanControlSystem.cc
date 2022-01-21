@@ -37,23 +37,7 @@ namespace sp {
                                                         ecs::FocusLayer,
                                                         ecs::FocusLock,
                                                         ecs::PhysicsQuery>,
-                ecs::Write<ecs::EventInput,
-                    ecs::Transform,
-                    ecs::HumanController,
-                    ecs::InteractController,
-                    ecs::Physics>>();
-
-            for (Tecs::Entity entity : lock.EntitiesWith<ecs::InteractController>()) {
-                auto &interact = entity.Get<ecs::InteractController>(lock);
-
-                if (interact.target.Has<ecs::Physics>(lock)) {
-                    auto &ph = interact.target.Get<ecs::Physics>(lock);
-                    if (ph.constraint != entity) {
-                        ph.group = ecs::PhysicsGroup::World;
-                        interact.target = Tecs::Entity();
-                    }
-                }
-            }
+                ecs::Write<ecs::EventInput, ecs::Transform, ecs::HumanController, ecs::Physics>>();
 
             for (Tecs::Entity entity : lock.EntitiesWith<ecs::HumanController>()) {
                 if (!entity.Has<ecs::Transform>(lock)) continue;
