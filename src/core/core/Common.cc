@@ -43,6 +43,13 @@ namespace sp {
         return r;
     }
 
+    uint64 Uint64Log2(uint64 v) {
+        uint64 r = 0;
+        while (v >>= 1)
+            r++;
+        return r;
+    }
+
     // Boost replacement functions
     bool starts_with(const string &str, const string &prefix) {
         return str.rfind(prefix, 0) == 0;
