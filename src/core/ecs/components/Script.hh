@@ -26,6 +26,7 @@ namespace ecs {
         using ParameterType = typename std::variant<bool,
             double,
             std::string,
+            Tecs::Entity,
             NamedEntity,
             std::vector<bool>,
             std::vector<double>,

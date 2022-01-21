@@ -89,13 +89,9 @@ namespace sp {
 
                 if (entity.Has<ecs::EventInput>(lock)) {
                     ecs::Event event;
-                    while (ecs::EventInput::Poll(lock, entity, INPUT_EVENT_INTERACT, event)) {
-                        Interact(lock, entity);
-                    }
-
                     while (ecs::EventInput::Poll(lock, entity, INPUT_EVENT_CAMERA_ROTATE, event)) {
                         auto cursorDiff = std::get<glm::vec2>(event.data);
-                        if (!rotating || !InteractRotate(lock, entity, cursorDiff)) {
+                        if (!rotating) {
                             float sensitivity = CVarCursorSensitivity.Get() * 0.001;
 
                             // Apply pitch/yaw rotations
@@ -230,64 +226,5 @@ namespace sp {
             float capsuleHeight = controller.pxController->getHeight();
             transform.SetPosition(newPosition + glm::vec3(0, capsuleHeight / 2, 0));
         }
-    }
-
-    void HumanControlSystem::Interact(
-        ecs::Lock<ecs::Read<ecs::PhysicsQuery, ecs::Transform>, ecs::Write<ecs::InteractController, ecs::Physics>> lock,
-        Tecs::Entity entity) {
-        if (!entity.Has<ecs::InteractController, ecs::Transform, ecs::PhysicsQuery>(lock)) return;
-        auto &interact = entity.Get<ecs::InteractController>(lock);
-        auto &query = entity.Get<ecs::PhysicsQuery>(lock);
-        auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-
-        if (interact.target.Has<ecs::Physics>(lock)) {
-            auto &ph = interact.target.Get<ecs::Physics>(lock);
-            ph.constraint = Tecs::Entity();
-            ph.constraintOffset = glm::vec3();
-            ph.constraintRotation = glm::quat();
-            ph.group = ecs::PhysicsGroup::World;
-            return;
-        }
-
-        if (query.raycastHitTarget.Has<ecs::Physics, ecs::Transform>(lock)) {
-            auto &hitPhysics = query.raycastHitTarget.Get<ecs::Physics>(lock);
-            if (hitPhysics.dynamic && !hitPhysics.kinematic) {
-                auto dynamic = hitPhysics.actor->is<physx::PxRigidDynamic>();
-                if (!dynamic) return;
-
-                auto hitTransform = query.raycastHitTarget.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-                auto invParentRotate = glm::inverse(transform.GetRotation());
-
-                hitPhysics.group = ecs::PhysicsGroup::Player;
-                hitPhysics.SetConstraint(entity,
-                    query.raycastQueryDistance,
-                    invParentRotate * (hitTransform.GetPosition() - transform.GetPosition() + glm::vec3(0, 0.1, 0)),
-                    invParentRotate * hitTransform.GetRotation());
-                interact.target = query.raycastHitTarget;
-            }
-        }
-    }
-
-    bool HumanControlSystem::InteractRotate(
-        ecs::Lock<ecs::Read<ecs::InteractController, ecs::Transform>, ecs::Write<ecs::Physics>> lock,
-        Tecs::Entity entity,
-        glm::vec2 dCursor) {
-        if (!entity.Has<ecs::InteractController, ecs::Transform>(lock)) return false;
-        auto &interact = entity.Get<ecs::InteractController>(lock);
-        if (!interact.target.Has<ecs::Physics>(lock)) return false;
-
-        auto &ph = interact.target.Get<ecs::Physics>(lock);
-        auto parentTransform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-
-        auto input = dCursor * CVarCursorSensitivity.Get() * 0.01f;
-        auto upAxis = glm::inverse(parentTransform.GetRotation()) * glm::vec3(0, 1, 0);
-        auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) * glm::angleAxis(input.x, upAxis);
-
-        // Move the objects origin so it rotates around its center of mass
-        auto center = ph.constraintRotation * ph.centerOfMass;
-        ph.constraintOffset += center - (deltaRotate * center);
-        ph.constraintRotation = deltaRotate * ph.constraintRotation;
-
-        return true;
     }
 } // namespace sp

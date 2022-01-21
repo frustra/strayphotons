@@ -20,7 +20,10 @@
             "/mouse/scroll": {
                 "/action/menu/scroll": ["menu_gui", "debug_gui"]
             },
-            "/mouse/move": { "/action/camera_rotate": "player.player"}
+            "/mouse/move": {
+                "/action/camera_rotate": "player.player",
+                "/action/interact_rotate": "player.player"
+            }
         }
     },
     "keyboard": {
@@ -32,7 +35,7 @@
                 "/action/menu/back": "menu_gui"
             },
             "/keyboard/key/enter": { "/action/menu/enter": "menu_gui" },
-            "/keyboard/key/e": { "/action/interact": "player.player" },
+            "/keyboard/key/e": { "/action/interact_grab": "player.player" },
             "/keyboard/key/q": { "/action/spawn": "player.debug-spawner" },
             "/keyboard/key/f": { "/action/flashlight/toggle": "player.flashlight" },
             "/keyboard/key/p": { "/action/flashlight/grab": "player.flashlight" },
