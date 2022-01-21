@@ -234,7 +234,7 @@ namespace ecs {
                                 auto modelName = scriptComp.GetParam<std::string>("model");
                                 auto model = sp::GAssets.LoadModel(modelName);
                                 newEntity.Set<Renderable>(lock, model);
-                                newEntity.Set<Physics>(lock, model, true);
+                                newEntity.Set<Physics>(lock, model, ecs::PhysicsGroup::World, true);
                             }
                         }).detach();
                     }
@@ -265,6 +265,71 @@ namespace ecs {
                     for (auto &latchName : scriptComp.GetParam<std::vector<std::string>>("latches_names")) {
                         auto value = ecs::SignalBindings::GetSignal(lock, ent, latchName);
                         if (value >= 0.5) signalOutput.SetSignal(latchName, value);
+                    }
+                }
+            }},
+        {"grab_object",
+            [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
+                if (ent.Has<Script, EventInput, ecs::Transform, ecs::PhysicsQuery>(lock)) {
+                    auto &scriptComp = ent.Get<Script>(lock);
+                    auto &query = ent.Get<ecs::PhysicsQuery>(lock);
+                    auto transform = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+
+                    auto target = scriptComp.GetParam<Tecs::Entity>("grab_target");
+                    if (target.Has<ecs::Physics>(lock)) {
+                        // Remove target if the constraint broke
+                        auto &ph = target.Get<ecs::Physics>(lock);
+                        if (ph.constraint != ent) {
+                            ph.RemoveConstraint();
+                            ph.group = ecs::PhysicsGroup::World;
+                            target = Tecs::Entity();
+                        }
+                    }
+
+                    ecs::Event event;
+                    while (ecs::EventInput::Poll(lock, ent, "/action/interact_grab", event)) {
+                        if (target.Has<ecs::Physics>(lock)) {
+                            // Drop existing target entity
+                            auto &ph = target.Get<ecs::Physics>(lock);
+                            ph.RemoveConstraint();
+                            ph.group = ecs::PhysicsGroup::World;
+                            target = Tecs::Entity();
+                        } else if (query.raycastHitTarget.Has<ecs::Physics, ecs::Transform>(lock)) {
+                            // Grab the entity being looked at
+                            auto &ph = query.raycastHitTarget.Get<ecs::Physics>(lock);
+                            if (ph.dynamic && !ph.kinematic) {
+                                target = query.raycastHitTarget;
+
+                                auto hitTransform = target.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+                                auto invParentRotate = glm::inverse(transform.GetRotation());
+
+                                ph.group = ecs::PhysicsGroup::Player;
+                                ph.SetConstraint(ent,
+                                    query.raycastQueryDistance,
+                                    invParentRotate *
+                                        (hitTransform.GetPosition() - transform.GetPosition() + glm::vec3(0, 0.1, 0)),
+                                    invParentRotate * hitTransform.GetRotation());
+                            }
+                        }
+                    }
+                    scriptComp.SetParam("grab_target", target);
+
+                    auto inputSensitivity = (float)scriptComp.GetParam<double>("rotate_sensitivity");
+                    if (inputSensitivity == 0.0f) inputSensitivity = 0.001f;
+                    bool rotating = ecs::SignalBindings::GetSignal(lock, ent, "interact_rotate") >= 0.5;
+                    while (ecs::EventInput::Poll(lock, ent, "/action/interact_rotate", event)) {
+                        if (rotating && target.Has<ecs::Physics>(lock)) {
+                            auto input = std::get<glm::vec2>(event.data) * inputSensitivity;
+                            auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
+                            auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
+                                               glm::angleAxis(input.x, upAxis);
+
+                            // Move the objects origin so it rotates around its center of mass
+                            auto &ph = target.Get<ecs::Physics>(lock);
+                            auto center = ph.constraintRotation * ph.centerOfMass;
+                            ph.constraintOffset += center - (deltaRotate * center);
+                            ph.constraintRotation = deltaRotate * ph.constraintRotation;
+                        }
                     }
                 }
             }},

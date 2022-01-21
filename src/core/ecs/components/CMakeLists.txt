@@ -4,7 +4,6 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Controller.cc
     Events.cc
     Focus.cc
-    Interact.cc
     Light.cc
     LightSensor.cc
     Mirror.cc

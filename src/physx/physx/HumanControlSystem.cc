@@ -31,25 +31,13 @@ namespace sp {
         auto noclip = CVarNoClip.Get(true);
 
         {
-            auto lock = ecs::World.StartTransaction<
-                ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
-                ecs::Write<ecs::EventInput,
-                    ecs::Transform,
-                    ecs::HumanController,
-                    ecs::InteractController,
-                    ecs::Physics>>();
-
-            for (Tecs::Entity entity : lock.EntitiesWith<ecs::InteractController>()) {
-                auto &interact = entity.Get<ecs::InteractController>(lock);
-
-                if (interact.target.Has<ecs::Physics>(lock)) {
-                    auto &ph = interact.target.Get<ecs::Physics>(lock);
-                    if (ph.constraint != entity) {
-                        manager.SetCollisionGroup(ph.actor, PhysxCollisionGroup::WORLD);
-                        interact.target = Tecs::Entity();
-                    }
-                }
-            }
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
+                                                        ecs::SignalOutput,
+                                                        ecs::SignalBindings,
+                                                        ecs::FocusLayer,
+                                                        ecs::FocusLock,
+                                                        ecs::PhysicsQuery>,
+                ecs::Write<ecs::EventInput, ecs::Transform, ecs::HumanController, ecs::Physics>>();
 
             for (Tecs::Entity entity : lock.EntitiesWith<ecs::HumanController>()) {
                 if (!entity.Has<ecs::Transform>(lock)) continue;
@@ -85,13 +73,9 @@ namespace sp {
 
                 if (entity.Has<ecs::EventInput>(lock)) {
                     ecs::Event event;
-                    while (ecs::EventInput::Poll(lock, entity, INPUT_EVENT_INTERACT, event)) {
-                        Interact(lock, entity);
-                    }
-
                     while (ecs::EventInput::Poll(lock, entity, INPUT_EVENT_CAMERA_ROTATE, event)) {
                         auto cursorDiff = std::get<glm::vec2>(event.data);
-                        if (!rotating || !InteractRotate(lock, entity, cursorDiff)) {
+                        if (!rotating) {
                             float sensitivity = CVarCursorSensitivity.Get() * 0.001;
 
                             // Apply pitch/yaw rotations
@@ -111,9 +95,9 @@ namespace sp {
                                     glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
                             }
                             auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
-                            if (!transform.HasChanged(userData->transformChangeNumber)) {
+                            if (!transform.HasChanged(userData->actorData.transformChangeNumber)) {
                                 transform.SetRotation(rotation);
-                                userData->transformChangeNumber = transform.ChangeNumber();
+                                userData->actorData.transformChangeNumber = transform.ChangeNumber();
                             } else {
                                 transform.SetRotation(rotation);
                             }
@@ -123,14 +107,8 @@ namespace sp {
 
                 // Move the player
                 if (noclipChanged) {
-                    manager.EnableCollisions(controller.pxController->getActor(), !noclip);
-
-                    physx::PxShape *shape;
-                    controller.pxController->getActor()->getShapes(&shape, 1);
-                    physx::PxFilterData data;
-                    data.word0 = noclip ? PhysxCollisionGroup::NOCLIP : PhysxCollisionGroup::PLAYER;
-                    shape->setQueryFilterData(data);
-                    shape->setSimulationFilterData(data);
+                    auto actor = controller.pxController->getActor();
+                    manager.SetCollisionGroup(actor, noclip ? ecs::PhysicsGroup::NoClip : ecs::PhysicsGroup::Player);
                 }
 
                 auto currentHeight = controller.pxController->getHeight();
@@ -199,7 +177,7 @@ namespace sp {
 
         if (controller.pxController) {
             auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
-            if (transform.HasChanged(userData->transformChangeNumber)) return;
+            if (transform.HasChanged(userData->actorData.transformChangeNumber)) return;
 
             auto disp = userData->velocity * (float)(manager.interval.count() / 1e9);
             auto prevPosition = PxExtendedVec3ToGlmVec3(controller.pxController->getPosition());
@@ -232,72 +210,5 @@ namespace sp {
             float capsuleHeight = controller.pxController->getHeight();
             transform.SetPosition(newPosition + glm::vec3(0, capsuleHeight / 2, 0));
         }
-    }
-
-    void HumanControlSystem::Interact(
-        ecs::Lock<ecs::Read<ecs::HumanController, ecs::Transform>, ecs::Write<ecs::InteractController, ecs::Physics>>
-            lock,
-        Tecs::Entity entity) {
-        auto &interact = entity.Get<ecs::InteractController>(lock);
-        auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-
-        if (interact.target.Has<ecs::Physics>(lock)) {
-            auto &ph = interact.target.Get<ecs::Physics>(lock);
-            ph.constraint = Tecs::Entity();
-            ph.constraintOffset = glm::vec3();
-            ph.constraintRotation = glm::quat();
-            manager.SetCollisionGroup(ph.actor, PhysxCollisionGroup::WORLD);
-            return;
-        }
-
-        glm::vec3 origin = transform.GetPosition();
-        glm::vec3 dir = transform.GetForward();
-
-        physx::PxReal maxDistance = 2.0f;
-
-        physx::PxRaycastBuffer hit;
-        bool status = manager.RaycastQuery(lock, entity, origin, dir, maxDistance, hit);
-
-        if (status) {
-            physx::PxRigidActor *hitActor = hit.block.actor;
-            if (hitActor && hitActor->is<physx::PxRigidDynamic>()) {
-                physx::PxRigidDynamic *dynamic = static_cast<physx::PxRigidDynamic *>(hitActor);
-                if (!dynamic->getRigidBodyFlags().isSet(physx::PxRigidBodyFlag::eKINEMATIC)) {
-                    auto userData = (ActorUserData *)hitActor->userData;
-                    if (userData != nullptr && userData->entity.Has<ecs::Physics, ecs::Transform>(lock)) {
-                        auto &hitPhysics = userData->entity.Get<ecs::Physics>(lock);
-                        auto hitTransform = userData->entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-
-                        interact.target = userData->entity;
-                        auto currentPos = hitTransform.GetMatrix() *
-                                          glm::vec4(PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p), 1.0f);
-                        auto invParentRotate = glm::inverse(transform.GetRotation());
-
-                        manager.SetCollisionGroup(hitActor, PhysxCollisionGroup::HELD_OBJECT);
-                        hitPhysics.constraint = entity;
-                        hitPhysics.constraintMaxDistance = maxDistance;
-                        hitPhysics.constraintOffset = invParentRotate * (currentPos - origin + glm::vec3(0, 0.1, 0));
-                        hitPhysics.constraintRotation = invParentRotate * hitTransform.GetRotation();
-                    }
-                }
-            }
-        }
-    }
-
-    bool HumanControlSystem::InteractRotate(
-        ecs::Lock<ecs::Read<ecs::InteractController, ecs::Transform>, ecs::Write<ecs::Physics>> lock,
-        Tecs::Entity entity,
-        glm::vec2 dCursor) {
-        if (!entity.Has<ecs::InteractController, ecs::Transform>(lock)) return false;
-        auto &interact = entity.Get<ecs::InteractController>(lock);
-        auto &parentTransform = entity.Get<ecs::Transform>(lock);
-        if (!interact.target.Has<ecs::Physics>(lock)) return false;
-        auto &ph = interact.target.Get<ecs::Physics>(lock);
-
-        auto input = dCursor * CVarCursorSensitivity.Get() * 0.01f;
-        auto upAxis = glm::inverse(parentTransform.GetGlobalRotation(lock)) * glm::vec3(0, 1, 0);
-        ph.constraintRotation = glm::angleAxis(input.x, upAxis) * ph.constraintRotation;
-        ph.constraintRotation = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) * ph.constraintRotation;
-        return true;
     }
 } // namespace sp

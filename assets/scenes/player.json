@@ -7,24 +7,28 @@
             },
             "transform": {},
             "script": {
-                "onTick": "joystick_calibration",
+                "onTick": ["joystick_calibration", "grab_object"],
                 "parameters": {
                     "scale_x": 20.0,
-                    "scale_y": -20.0
+                    "scale_y": -20.0,
+                    "rotate_sensitivity": 0.01
                 }
             },
             "focus": "GAME",
             "event_input": [
                 "/action/camera_rotate",
-                "/action/interact",
+                "/action/interact_grab",
+                "/action/interact_rotate",
                 "/script/joystick_in"
             ],
             "event_bindings": {
                 "/script/joystick_out": { "/action/camera_rotate": "player.player" }
             },
             "human_controller": {},
-            "interact_controller": {},
-            "trigger_group": "player"
+            "trigger_group": "player",
+            "physics_query": {
+                "raycast": 2.0
+            }
         },
         {
             "_name": "debug-spawner",

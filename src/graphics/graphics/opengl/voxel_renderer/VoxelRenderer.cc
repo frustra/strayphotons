@@ -586,13 +586,6 @@ namespace sp {
             }
         }
 
-        // TODO: Move debug lines to ECS
-        /*if (game->physics.IsDebugEnabled()) {
-            RenderPhase phase("PhysxBounds", timer);
-            MutexedVector<physx::PxDebugLine> lines = game->physics.GetDebugLines();
-            DrawPhysxLines(view, shader, lines.Vector(), lock, preDraw);
-        }*/
-
         if (CVarRenderWireframe.Get()) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
@@ -626,36 +619,6 @@ namespace sp {
         addVertex(pos1 - widthVec);
         addVertex(pos1 + widthVec);
         addVertex(pos0 - widthVec);
-    }
-
-    void VoxelRenderer::DrawPhysxLines(const ecs::View &view,
-        SceneShader *shader,
-        const vector<physx::PxDebugLine> &lines,
-        DrawLock lock,
-        const PreDrawFunc &preDraw) {
-        // TODO: Fix Physx lines
-        /*Tecs::Entity nullEnt;
-        if (preDraw) preDraw(lock, nullEnt);
-
-        vector<SceneVertex> vertices(6 * lines.size());
-        for (auto &line : lines) {
-            addLine(view, vertices, PxVec3ToGlmVec3(line.pos0), PxVec3ToGlmVec3(line.pos1), 0.004f);
-        }
-
-        shader->SetParams(view, glm::mat4(), glm::mat4());
-
-        static unsigned char baseColor[4] = {0, 0, 255, 255};
-        static BasicMaterial mat(baseColor);
-
-        static VertexBuffer vbo;
-        vbo.SetElementsVAO(vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
-        vbo.BindVAO();
-
-        mat.baseColorTex.Bind(0);
-        mat.metallicRoughnessTex.Bind(1);
-        mat.heightTex.Bind(3);
-
-        glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());*/
     }
 
     void VoxelRenderer::DrawEntity(const ecs::View &view,

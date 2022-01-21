@@ -41,21 +41,16 @@ namespace sp {
             if (dynamic == nullptr) return;
 
             auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-            auto parentTransform = physics.constraint.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-            auto parentRotation = parentTransform.GetRotation();
-
-            auto targetPos = parentTransform.GetPosition() + parentRotation * physics.constraintOffset;
-            auto currentPos = transform.GetMatrix() * glm::vec4(PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p), 1.0f);
-            auto deltaPos = targetPos - currentPos;
-
-            auto targetRotate = parentRotation * physics.constraintRotation;
             auto currentRotate = transform.GetRotation();
-            auto deltaRotate = targetRotate * glm::inverse(currentRotate);
+            transform.Translate(currentRotate * physics.centerOfMass);
 
-            if (physics.constraintMaxDistance > 0.0f && glm::length(deltaPos) > physics.constraintMaxDistance) {
-                physics.RemoveConstraint();
-                continue;
-            }
+            auto targetTransform = physics.constraint.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+            auto targetRotate = targetTransform.GetRotation();
+            targetTransform.Translate(targetRotate * physics.constraintRotation * physics.centerOfMass);
+
+            auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() +
+                            targetRotate * physics.constraintOffset;
+            auto deltaRotate = targetRotate * physics.constraintRotation * glm::inverse(currentRotate);
 
             float intervalSeconds = manager.interval.count() / 1e9;
             float tickFrequency = 1e9 / manager.interval.count();
@@ -133,6 +128,10 @@ namespace sp {
                 float forceAbs = std::abs(force) + 0.00001f;
                 auto forceClampRatio = std::min(CVarMaxVerticalConstraintForce.Get(), forceAbs) / forceAbs;
                 dynamic->addForce(PxVec3(0, force * forceClampRatio, 0));
+            }
+
+            if (physics.constraintMaxDistance > 0.0f && glm::length(deltaPos) > physics.constraintMaxDistance) {
+                physics.RemoveConstraint();
             }
         }
     }

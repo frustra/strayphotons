@@ -4,10 +4,12 @@
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/components/Physics.hh"
 #include "physx/CharacterControlSystem.hh"
 #include "physx/ConstraintSystem.hh"
 #include "physx/ConvexHull.hh"
 #include "physx/HumanControlSystem.hh"
+#include "physx/PhysicsQuerySystem.hh"
 #include "physx/TriggerSystem.hh"
 
 #include <PxPhysicsAPI.h>
@@ -33,13 +35,16 @@ namespace sp {
     struct ActorUserData {
         Tecs::Entity entity;
         uint32_t transformChangeNumber = 0;
+        ecs::PhysicsGroup currentPhysicsGroup;
 
         ActorUserData() {}
-        ActorUserData(Tecs::Entity ent, uint32_t changeNumber) : entity(ent), transformChangeNumber(changeNumber) {}
+        ActorUserData(Tecs::Entity ent, uint32_t changeNumber, ecs::PhysicsGroup group)
+            : entity(ent), transformChangeNumber(changeNumber), currentPhysicsGroup(group) {}
     };
 
     struct CharacterControllerUserData {
-        uint32_t transformChangeNumber = 0;
+        ActorUserData actorData;
+
         bool onGround = false;
         glm::vec3 velocity = glm::vec3(0);
 
@@ -47,7 +52,8 @@ namespace sp {
         chrono_clock::time_point lastUpdate;
 
         CharacterControllerUserData() {}
-        CharacterControllerUserData(uint32_t changeNumber) : transformChangeNumber(changeNumber) {}
+        CharacterControllerUserData(Tecs::Entity ent, uint32_t changeNumber)
+            : actorData(ent, changeNumber, ecs::PhysicsGroup::Player) {}
     };
 
     class ControllerHitReport : public physx::PxUserControllerHitReport {
@@ -58,8 +64,6 @@ namespace sp {
         void onObstacleHit(const physx::PxControllerObstacleHit &hit) {}
     };
 
-    enum PhysxCollisionGroup { HELD_OBJECT = 1, PLAYER = 2, WORLD = 3, NOCLIP = 4 };
-
     class PhysxManager : public RegisteredThread {
     public:
         PhysxManager();
@@ -67,15 +71,7 @@ namespace sp {
 
         bool MoveController(physx::PxController *controller, double dt, physx::PxVec3 displacement);
 
-        void EnableCollisions(physx::PxRigidActor *actor, bool enabled);
-        void SetCollisionGroup(physx::PxRigidActor *actor, PhysxCollisionGroup group);
-
-        bool RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
-            Tecs::Entity entity,
-            glm::vec3 origin,
-            glm::vec3 dir,
-            const float distance,
-            physx::PxRaycastBuffer &hit);
+        void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
 
     private:
         void Frame() override;
@@ -102,9 +98,6 @@ namespace sp {
          */
         void Translate(physx::PxRigidDynamic *actor, const physx::PxVec3 &transform);
 
-        void ToggleDebug(bool enabled);
-        bool IsDebugEnabled() const;
-
     private:
         void CreatePhysxScene();
         void DestroyPhysxScene();
@@ -116,6 +109,7 @@ namespace sp {
 
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;
+        vector<uint8_t> scratchBlock;
 
         std::shared_ptr<physx::PxScene> scene;
         std::unique_ptr<ControllerHitReport> controllerHitReporter;
@@ -133,20 +127,19 @@ namespace sp {
         physx::PxPvdTransport *pxPvdTransport = nullptr;
 #endif
 
-        vector<uint8_t> scratchBlock;
-        bool debug = false;
-
         ecs::ComponentObserver<ecs::Physics> physicsObserver;
         ecs::ComponentObserver<ecs::HumanController> humanControllerObserver;
 
-        HumanControlSystem humanControlSystem;
         CharacterControlSystem characterControlSystem;
         ConstraintSystem constraintSystem;
+        HumanControlSystem humanControlSystem;
+        PhysicsQuerySystem physicsQuerySystem;
         TriggerSystem triggerSystem;
 
         std::unordered_map<string, ConvexHullSet *> cache;
 
         friend class CharacterControlSystem;
         friend class ConstraintSystem;
+        friend class PhysicsQuerySystem;
     };
 } // namespace sp

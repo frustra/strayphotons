@@ -19,13 +19,12 @@ namespace sp {
 
     // clang-format off
     CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
-    static CVar<bool> CVarShowShapes("x.ShowShapes", false, "Show (1) or hide (0) the outline of physx collision shapes");
     static CVar<bool> CVarPropJumping("x.PropJumping", false, "Disable player collision with held object");
     // clang-format on
 
     PhysxManager::PhysxManager()
-        : RegisteredThread("PhysX", 120.0), humanControlSystem(*this), characterControlSystem(*this),
-          constraintSystem(*this) {
+        : RegisteredThread("PhysX", 120.0), characterControlSystem(*this), constraintSystem(*this),
+          humanControlSystem(*this), physicsQuerySystem(*this) {
         Logf("PhysX %d.%d.%d starting up",
             PX_PHYSICS_VERSION_MAJOR,
             PX_PHYSICS_VERSION_MINOR,
@@ -118,12 +117,9 @@ namespace sp {
             }
         }
 
-        if (CVarShowShapes.Changed()) { ToggleDebug(CVarShowShapes.Get(true)); }
-        // if (CVarShowShapes.Get()) { CacheDebugLines(); }
-
         { // Sync ECS state to physx
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::Transform>,
-                ecs::Write<ecs::Physics, ecs::HumanController, ecs::CharacterController, ecs::InteractController>>();
+                ecs::Write<ecs::Physics, ecs::HumanController>>();
 
             // Delete actors for removed entities
             ecs::ComponentEvent<ecs::Physics> physicsEvent;
@@ -167,6 +163,7 @@ namespace sp {
 
         humanControlSystem.Frame();
         characterControlSystem.Frame();
+        physicsQuerySystem.Frame();
 
         { // Simulate 1 physics frame (blocking)
             scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
@@ -212,11 +209,11 @@ namespace sp {
         sceneDesc.gravity = PxVec3(0.f, CVarGravity.Get(true), 0.f);
         sceneDesc.filterShader = PxDefaultSimulationFilterShader;
 
-        // Don't collide held model with player
-        PxSetGroupCollisionFlag(PhysxCollisionGroup::HELD_OBJECT, PhysxCollisionGroup::PLAYER, false);
+        // Don't collide the player with themselves
+        PxSetGroupCollisionFlag((uint16_t)ecs::PhysicsGroup::Player, (uint16_t)ecs::PhysicsGroup::Player, false);
         // Don't collide anything with the noclip group.
-        PxSetGroupCollisionFlag(PhysxCollisionGroup::WORLD, PhysxCollisionGroup::NOCLIP, false);
-        PxSetGroupCollisionFlag(PhysxCollisionGroup::HELD_OBJECT, PhysxCollisionGroup::NOCLIP, false);
+        PxSetGroupCollisionFlag((uint16_t)ecs::PhysicsGroup::NoClip, (uint16_t)ecs::PhysicsGroup::World, false);
+        PxSetGroupCollisionFlag((uint16_t)ecs::PhysicsGroup::NoClip, (uint16_t)ecs::PhysicsGroup::Player, false);
 
         dispatcher = PxDefaultCpuDispatcherCreate(1);
         sceneDesc.cpuDispatcher = dispatcher;
@@ -238,12 +235,7 @@ namespace sp {
         PxMaterial *groundMat = pxPhysics->createMaterial(0.6f, 0.5f, 0.0f);
         PxRigidStatic *groundPlane = PxCreatePlane(*pxPhysics, PxPlane(0.f, 1.f, 0.f, 1.03f), *groundMat);
 
-        PxShape *shape;
-        groundPlane->getShapes(&shape, 1);
-        PxFilterData data;
-        data.word0 = PhysxCollisionGroup::WORLD;
-        shape->setQueryFilterData(data);
-        shape->setSimulationFilterData(data);
+        SetCollisionGroup(groundPlane, ecs::PhysicsGroup::World);
 
         scene->addActor(*groundPlane);
 
@@ -253,32 +245,6 @@ namespace sp {
             humanControllerObserver = lock.Watch<ecs::ComponentEvent<ecs::HumanController>>();
         }
     }
-
-    void PhysxManager::ToggleDebug(bool enabled) {
-        debug = enabled;
-        float scale = (enabled ? 1.0f : 0.0f);
-
-        scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, scale);
-        scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, scale);
-    }
-
-    bool PhysxManager::IsDebugEnabled() const {
-        return debug;
-    }
-
-    // void PhysxManager::CacheDebugLines() {
-    //     const PxRenderBuffer &rb = scene->getRenderBuffer();
-    //     const PxDebugLine *lines = rb.getLines();
-
-    //     {
-    //         std::lock_guard<std::mutex> lock(debugLinesMutex);
-    //         debugLines = vector<PxDebugLine>(lines, lines + rb.getNbLines());
-    //     }
-    // }
-
-    // MutexedVector<PxDebugLine> PhysxManager::GetDebugLines() {
-    //     return MutexedVector<PxDebugLine>(debugLines, debugLinesMutex);
-    // }
 
     ConvexHullSet *PhysxManager::GetCachedConvexHulls(std::string name) {
         if (cache.count(name)) { return cache[name]; }
@@ -327,7 +293,6 @@ namespace sp {
         if (!ph.model || !ph.model->Valid()) return;
 
         auto globalTransform = transform.GetGlobalTransform(lock);
-        // auto scale = glm::vec3(glm::inverse(globalRotation) * (globalTransform * glm::vec4(1, 1, 1, 0)));
         auto scale = globalTransform.GetScale();
 
         auto pxTransform = PxTransform(GlmVec3ToPxVec3(globalTransform.GetPosition()),
@@ -345,7 +310,7 @@ namespace sp {
             }
             Assert(ph.actor, "Physx did not return valid PxRigidActor");
 
-            ph.actor->userData = new ActorUserData(e, transform.ChangeNumber());
+            ph.actor->userData = new ActorUserData(e, transform.ChangeNumber(), ph.group);
 
             PxMaterial *mat = pxPhysics->createMaterial(0.6f, 0.5f, 0.0f);
 
@@ -369,16 +334,18 @@ namespace sp {
                 PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
                 PxConvexMesh *pxhull = pxPhysics->createConvexMesh(input);
 
-                auto shape = PxRigidActorExt::createExclusiveShape(*ph.actor,
+                PxRigidActorExt::createExclusiveShape(*ph.actor,
                     PxConvexMeshGeometry(pxhull, PxMeshScale(GlmVec3ToPxVec3(scale))),
                     *mat);
-                PxFilterData data;
-                data.word0 = PhysxCollisionGroup::WORLD;
-                shape->setQueryFilterData(data);
-                shape->setSimulationFilterData(data);
             }
 
-            if (ph.dynamic) { PxRigidBodyExt::updateMassAndInertia(*ph.actor->is<PxRigidDynamic>(), ph.density); }
+            auto dynamic = ph.actor->is<PxRigidDynamic>();
+            if (dynamic) {
+                PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
+                ph.centerOfMass = PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p);
+            }
+
+            SetCollisionGroup(ph.actor, ph.group);
 
             scene->addActor(*ph.actor);
         }
@@ -404,6 +371,7 @@ namespace sp {
             ph.actor->setGlobalPose(pxTransform);
             userData->transformChangeNumber = transform.ChangeNumber();
         }
+        if (userData->currentPhysicsGroup != ph.group) SetCollisionGroup(ph.actor, ph.group);
     }
 
     void PhysxManager::RemoveActor(PxRigidActor *actor) {
@@ -434,7 +402,11 @@ namespace sp {
 
     bool PhysxManager::MoveController(PxController *controller, double dt, PxVec3 displacement) {
         PxFilterData data;
-        data.word0 = CVarPropJumping.Get() ? PhysxCollisionGroup::WORLD : PhysxCollisionGroup::PLAYER;
+        if (CVarPropJumping.Get()) {
+            data.word0 = ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_PLAYER;
+        } else {
+            data.word0 = ecs::PHYSICS_GROUP_WORLD;
+        }
         PxControllerFilters filters(&data);
         auto flags = controller->move(displacement, 0, dt, filters);
 
@@ -453,7 +425,8 @@ namespace sp {
         auto pxPosition = GlmVec3ToPxExtendedVec3(position - glm::vec3(0, capsuleHeight / 2, 0));
 
         if (!controller.pxController) {
-            // Capsule controller description will want to be data driven
+            auto characterUserData = new CharacterControllerUserData(e, transform.ChangeNumber());
+
             PxCapsuleControllerDesc desc;
             desc.position = pxPosition;
             desc.upDirection = PxVec3(0, 1, 0);
@@ -463,28 +436,25 @@ namespace sp {
             desc.material = pxPhysics->createMaterial(0.3f, 0.3f, 0.3f);
             desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
             desc.reportCallback = controllerHitReporter.get();
-            desc.userData = new CharacterControllerUserData(transform.ChangeNumber());
+            desc.userData = characterUserData;
 
             auto pxController = controllerManager->createController(desc);
             Assert(pxController->getType() == PxControllerShapeType::eCAPSULE,
                 "Physx did not create a valid PxCapsuleController");
 
             pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
+            auto actor = pxController->getActor();
+            actor->userData = &characterUserData->actorData;
 
-            PxShape *shape;
-            pxController->getActor()->getShapes(&shape, 1);
-            PxFilterData data;
-            data.word0 = PhysxCollisionGroup::PLAYER;
-            shape->setQueryFilterData(data);
-            shape->setSimulationFilterData(data);
+            SetCollisionGroup(actor, ecs::PhysicsGroup::Player);
 
             controller.pxController = static_cast<PxCapsuleController *>(pxController);
         }
 
         auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
-        if (transform.HasChanged(userData->transformChangeNumber)) {
+        if (transform.HasChanged(userData->actorData.transformChangeNumber)) {
             controller.pxController->setPosition(pxPosition);
-            userData->transformChangeNumber = transform.ChangeNumber();
+            userData->actorData.transformChangeNumber = transform.ChangeNumber();
         }
 
         float currentHeight = controller.pxController->getHeight();
@@ -521,26 +491,6 @@ namespace sp {
         }
     }
 
-    bool PhysxManager::RaycastQuery(ecs::Lock<ecs::Read<ecs::HumanController>> lock,
-        Tecs::Entity entity,
-        glm::vec3 origin,
-        glm::vec3 dir,
-        const float distance,
-        PxRaycastBuffer &hit) {
-        PxRigidDynamic *controllerActor = nullptr;
-        if (entity.Has<ecs::HumanController>(lock)) {
-            auto &controller = entity.Get<ecs::HumanController>(lock);
-            controllerActor = controller.pxController->getActor();
-            scene->removeActor(*controllerActor);
-        }
-
-        bool status = scene->raycast(GlmVec3ToPxVec3(origin), GlmVec3ToPxVec3(dir), distance, hit);
-
-        if (controllerActor) { scene->addActor(*controllerActor); }
-
-        return status;
-    }
-
     bool PhysxManager::SweepQuery(PxRigidDynamic *actor, PxVec3 dir, float distance, PxSweepBuffer &hit) {
         PxShape *shape;
         auto shapeCount = actor->getShapes(&shape, 1);
@@ -574,28 +524,21 @@ namespace sp {
         return overlapFound;
     }
 
-    void PhysxManager::EnableCollisions(PxRigidActor *actor, bool enabled) {
+    void PhysxManager::SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group) {
         PxU32 nShapes = actor->getNbShapes();
         vector<PxShape *> shapes(nShapes);
         actor->getShapes(shapes.data(), nShapes);
 
+        PxFilterData queryFilter, simulationFilter;
+        queryFilter.word0 = 1 << (size_t)group;
+        simulationFilter.word0 = (uint32_t)group;
         for (uint32 i = 0; i < nShapes; ++i) {
-            shapes[i]->setFlag(PxShapeFlag::eSIMULATION_SHAPE, enabled);
-            shapes[i]->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, enabled);
+            shapes[i]->setQueryFilterData(queryFilter);
+            shapes[i]->setSimulationFilterData(simulationFilter);
         }
-    }
 
-    void PhysxManager::SetCollisionGroup(PxRigidActor *actor, PhysxCollisionGroup group) {
-        PxU32 nShapes = actor->getNbShapes();
-        vector<PxShape *> shapes(nShapes);
-        actor->getShapes(shapes.data(), nShapes);
-
-        PxFilterData data;
-        data.word0 = group;
-        for (uint32 i = 0; i < nShapes; ++i) {
-            shapes[i]->setQueryFilterData(data);
-            shapes[i]->setSimulationFilterData(data);
-        }
+        auto userData = (ActorUserData *)actor->userData;
+        if (userData) userData->currentPhysicsGroup = group;
     }
 
     // Increment if the Collision Cache format ever changes
