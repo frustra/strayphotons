@@ -30,108 +30,170 @@ namespace sp {
      *
      * If a constraint's target distance exceeds its maximum, the constraint will break and be removed.
      */
-    void ConstraintSystem::Frame(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock) {
+    void ConstraintSystem::HandleForceLimitConstraint(ecs::Physics &physics,
+        ecs::Transform transform,
+        ecs::Transform targetTransform) {
+        auto dynamic = physics.actor->is<PxRigidDynamic>();
+        if (dynamic == nullptr) return;
+
+        auto currentRotate = transform.GetRotation();
+        transform.Translate(currentRotate * physics.centerOfMass);
+
+        auto targetRotate = targetTransform.GetRotation();
+        targetTransform.Translate(targetRotate * physics.constraintRotation * physics.centerOfMass);
+
+        auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() +
+                        targetRotate * physics.constraintOffset;
+        auto deltaRotate = targetRotate * physics.constraintRotation * glm::inverse(currentRotate);
+
+        float intervalSeconds = manager.interval.count() / 1e9;
+        float tickFrequency = 1e9 / manager.interval.count();
+
+        { // Apply Torque
+            auto deltaRotation = glm::eulerAngles(deltaRotate);
+
+            auto massInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInertiaTensor());
+            auto invMassInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInvInertiaTensor());
+            glm::mat3 worldInertia = InertiaTensorMassToWorld(massInertia, currentRotate);
+            glm::mat3 invWorldInertia = InertiaTensorMassToWorld(invMassInertia, currentRotate);
+
+            auto maxAcceleration = invWorldInertia * glm::vec3(CVarMaxConstraintTorque.Get());
+            auto deltaTick = maxAcceleration * intervalSeconds;
+            auto maxVelocity = glm::vec3(std::sqrt(2 * maxAcceleration.x * std::abs(deltaRotation.x)),
+                std::sqrt(2 * maxAcceleration.y * std::abs(deltaRotation.y)),
+                std::sqrt(2 * maxAcceleration.z * std::abs(deltaRotation.z)));
+
+            auto targetVelocity = deltaRotation;
+            if (glm::length(maxVelocity) > glm::length(deltaTick)) {
+                targetVelocity = glm::normalize(targetVelocity) * (maxVelocity - deltaTick);
+            } else {
+                targetVelocity *= tickFrequency;
+            }
+            auto deltaVelocity = targetVelocity - PxVec3ToGlmVec3(dynamic->getAngularVelocity());
+
+            glm::vec3 force = worldInertia * (deltaVelocity * tickFrequency);
+            float forceAbs = glm::length(force) + 0.00001f;
+            auto forceClampRatio = std::min(CVarMaxConstraintTorque.Get(), forceAbs) / forceAbs;
+
+            dynamic->addTorque(GlmVec3ToPxVec3(force) * forceClampRatio);
+        }
+
+        { // Apply Lateral Force
+            auto maxAcceleration = CVarMaxLateralConstraintForce.Get() / dynamic->getMass();
+            auto deltaTick = maxAcceleration * intervalSeconds;
+            auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(glm::vec2(deltaPos.x, deltaPos.z)));
+
+            auto targetVelocity = glm::vec3(deltaPos.x, 0, deltaPos.z);
+            if (maxVelocity > deltaTick) {
+                targetVelocity = glm::normalize(targetVelocity);
+                targetVelocity *= maxVelocity - deltaTick;
+            } else {
+                targetVelocity *= tickFrequency;
+            }
+            auto deltaVelocity = targetVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
+            deltaVelocity.y = 0;
+
+            glm::vec3 force = deltaVelocity * tickFrequency * dynamic->getMass();
+            float forceAbs = glm::length(force) + 0.00001f;
+            auto forceClampRatio = std::min(CVarMaxLateralConstraintForce.Get(), forceAbs) / forceAbs;
+            dynamic->addForce(GlmVec3ToPxVec3(force) * forceClampRatio);
+        }
+
+        { // Apply Vertical Force
+            auto maxAcceleration = CVarMaxVerticalConstraintForce.Get() / dynamic->getMass();
+            if (deltaPos.y > 0) {
+                maxAcceleration -= CVarGravity.Get();
+            } else {
+                maxAcceleration += CVarGravity.Get();
+            }
+            auto deltaTick = maxAcceleration * intervalSeconds;
+            auto maxVelocity = std::sqrt(2 * std::max(0.0f, maxAcceleration) * std::abs(deltaPos.y));
+
+            float targetVelocity = 0.0f;
+            if (maxVelocity > deltaTick) {
+                targetVelocity = (maxVelocity - deltaTick) * (deltaPos.y > 0 ? 1 : -1);
+            } else {
+                targetVelocity = deltaPos.y * tickFrequency;
+            }
+            auto deltaVelocity = targetVelocity - dynamic->getLinearVelocity().y;
+
+            float force = deltaVelocity * tickFrequency * dynamic->getMass();
+            force -= CVarGravity.Get() * dynamic->getMass();
+            float forceAbs = std::abs(force) + 0.00001f;
+            auto forceClampRatio = std::min(CVarMaxVerticalConstraintForce.Get(), forceAbs) / forceAbs;
+            dynamic->addForce(PxVec3(0, force * forceClampRatio, 0));
+        }
+        if (physics.constraintMaxDistance > 0.0f && glm::length(deltaPos) > physics.constraintMaxDistance) {
+            physics.RemoveConstraint();
+        }
+    }
+
+    void ConstraintSystem::Frame(
+        ecs::Lock<ecs::Read<ecs::Transform, ecs::HumanController>, ecs::Write<ecs::Physics>> lock) {
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
             if (!entity.Has<ecs::Physics, ecs::Transform>(lock)) continue;
             auto &physics = entity.Get<ecs::Physics>(lock);
-            if (!physics.constraint) continue;
-            Assertf(physics.constraint.Has<ecs::Transform>(lock), "Physics entity has invalid constraint target");
             if (!physics.actor) continue;
-            auto dynamic = physics.actor->is<PxRigidDynamic>();
-            if (dynamic == nullptr) return;
 
-            auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-            auto currentRotate = transform.GetRotation();
-            transform.Translate(currentRotate * physics.centerOfMass);
+            if (physics.constraint.Has<ecs::Transform>(lock) &&
+                physics.constraintType == ecs::PhysicsConstraintType::Fixed) {
+                auto transform = physics.constraint.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+                auto rotate = transform.GetRotation();
+                PxTransform constraintTransform(
+                    GlmVec3ToPxVec3(transform.GetPosition() + rotate * physics.constraintOffset),
+                    GlmQuatToPxQuat(rotate * physics.constraintRotation));
 
-            auto targetTransform = physics.constraint.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-            auto targetRotate = targetTransform.GetRotation();
-            targetTransform.Translate(targetRotate * physics.constraintRotation * physics.centerOfMass);
-
-            auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() +
-                            targetRotate * physics.constraintOffset;
-            auto deltaRotate = targetRotate * physics.constraintRotation * glm::inverse(currentRotate);
-
-            float intervalSeconds = manager.interval.count() / 1e9;
-            float tickFrequency = 1e9 / manager.interval.count();
-
-            { // Apply Torque
-                auto deltaRotation = glm::eulerAngles(deltaRotate);
-
-                auto massInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInertiaTensor());
-                auto invMassInertia = PxVec3ToGlmVec3(dynamic->getMassSpaceInvInertiaTensor());
-                glm::mat3 worldInertia = InertiaTensorMassToWorld(massInertia, currentRotate);
-                glm::mat3 invWorldInertia = InertiaTensorMassToWorld(invMassInertia, currentRotate);
-
-                auto maxAcceleration = invWorldInertia * glm::vec3(CVarMaxConstraintTorque.Get());
-                auto deltaTick = maxAcceleration * intervalSeconds;
-                auto maxVelocity = glm::vec3(std::sqrt(2 * maxAcceleration.x * std::abs(deltaRotation.x)),
-                    std::sqrt(2 * maxAcceleration.y * std::abs(deltaRotation.y)),
-                    std::sqrt(2 * maxAcceleration.z * std::abs(deltaRotation.z)));
-
-                auto targetVelocity = deltaRotation;
-                if (glm::length(maxVelocity) > glm::length(deltaTick)) {
-                    targetVelocity = glm::normalize(targetVelocity) * (maxVelocity - deltaTick);
+                if (!physics.fixedJoint) {
+                    physics.fixedJoint = PxFixedJointCreate(*manager.pxPhysics,
+                        physics.actor,
+                        PxTransform(PxIdentity),
+                        nullptr,
+                        constraintTransform);
                 } else {
-                    targetVelocity *= tickFrequency;
+                    physics.fixedJoint->setLocalPose(PxJointActorIndex::eACTOR1, constraintTransform);
                 }
-                auto deltaVelocity = targetVelocity - PxVec3ToGlmVec3(dynamic->getAngularVelocity());
+                auto dynamic = physics.actor->is<PxRigidDynamic>();
+                if (dynamic) dynamic->wakeUp();
+            } else if (physics.fixedJoint) {
+                physics.fixedJoint->release();
+                physics.fixedJoint = nullptr;
 
-                glm::vec3 force = worldInertia * (deltaVelocity * tickFrequency);
-                float forceAbs = glm::length(force) + 0.00001f;
-                auto forceClampRatio = std::min(CVarMaxConstraintTorque.Get(), forceAbs) / forceAbs;
-
-                dynamic->addTorque(GlmVec3ToPxVec3(force) * forceClampRatio);
+                auto dynamic = physics.actor->is<PxRigidDynamic>();
+                if (dynamic) dynamic->wakeUp();
             }
 
-            { // Apply Lateral Force
-                auto maxAcceleration = CVarMaxLateralConstraintForce.Get() / dynamic->getMass();
-                auto deltaTick = maxAcceleration * intervalSeconds;
-                auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(glm::vec2(deltaPos.x, deltaPos.z)));
+            if (physics.constraint.Has<ecs::Transform>(lock) &&
+                physics.constraintType == ecs::PhysicsConstraintType::Hinge) {
+                auto transform = physics.constraint.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+                auto rotate = transform.GetRotation();
+                PxTransform constraintTransform(
+                    GlmVec3ToPxVec3(transform.GetPosition() + rotate * physics.constraintOffset),
+                    GlmQuatToPxQuat(rotate * physics.constraintRotation));
 
-                auto targetVelocity = glm::vec3(deltaPos.x, 0, deltaPos.z);
-                if (maxVelocity > deltaTick) {
-                    targetVelocity = glm::normalize(targetVelocity);
-                    targetVelocity *= maxVelocity - deltaTick;
+                if (!physics.hingeJoint) {
+                    physics.hingeJoint = PxRevoluteJointCreate(*manager.pxPhysics,
+                        physics.actor,
+                        PxTransform(PxIdentity),
+                        nullptr,
+                        constraintTransform);
                 } else {
-                    targetVelocity *= tickFrequency;
+                    physics.hingeJoint->setLocalPose(PxJointActorIndex::eACTOR1, constraintTransform);
                 }
-                auto deltaVelocity = targetVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
-                deltaVelocity.y = 0;
+                auto dynamic = physics.actor->is<PxRigidDynamic>();
+                if (dynamic) dynamic->wakeUp();
+            } else if (physics.hingeJoint) {
+                physics.hingeJoint->release();
+                physics.hingeJoint = nullptr;
 
-                glm::vec3 force = deltaVelocity * tickFrequency * dynamic->getMass();
-                float forceAbs = glm::length(force) + 0.00001f;
-                auto forceClampRatio = std::min(CVarMaxLateralConstraintForce.Get(), forceAbs) / forceAbs;
-                dynamic->addForce(GlmVec3ToPxVec3(force) * forceClampRatio);
+                auto dynamic = physics.actor->is<PxRigidDynamic>();
+                if (dynamic) dynamic->wakeUp();
             }
 
-            { // Apply Vertical Force
-                auto maxAcceleration = CVarMaxVerticalConstraintForce.Get() / dynamic->getMass();
-                if (deltaPos.y > 0) {
-                    maxAcceleration -= CVarGravity.Get();
-                } else {
-                    maxAcceleration += CVarGravity.Get();
-                }
-                auto deltaTick = maxAcceleration * intervalSeconds;
-                auto maxVelocity = std::sqrt(2 * std::max(0.0f, maxAcceleration) * std::abs(deltaPos.y));
-
-                float targetVelocity = 0.0f;
-                if (maxVelocity > deltaTick) {
-                    targetVelocity = (maxVelocity - deltaTick) * (deltaPos.y > 0 ? 1 : -1);
-                } else {
-                    targetVelocity = deltaPos.y * tickFrequency;
-                }
-                auto deltaVelocity = targetVelocity - dynamic->getLinearVelocity().y;
-
-                float force = deltaVelocity * tickFrequency * dynamic->getMass();
-                force -= CVarGravity.Get() * dynamic->getMass();
-                float forceAbs = std::abs(force) + 0.00001f;
-                auto forceClampRatio = std::min(CVarMaxVerticalConstraintForce.Get(), forceAbs) / forceAbs;
-                dynamic->addForce(PxVec3(0, force * forceClampRatio, 0));
-            }
-
-            if (physics.constraintMaxDistance > 0.0f && glm::length(deltaPos) > physics.constraintMaxDistance) {
-                physics.RemoveConstraint();
+            if (physics.constraint.Has<ecs::Transform>(lock) &&
+                physics.constraintType == ecs::PhysicsConstraintType::ForceLimit) {
+                auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+                auto targetTransform = physics.constraint.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+                HandleForceLimitConstraint(physics, transform, targetTransform);
             }
         }
     }

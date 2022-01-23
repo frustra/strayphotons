@@ -12,6 +12,8 @@ namespace sp {
 
 namespace physx {
     class PxRigidActor;
+    class PxFixedJoint;
+    class PxRevoluteJoint;
     class PxScene;
     class PxControllerManager;
 } // namespace physx
@@ -28,6 +30,16 @@ namespace ecs {
         PHYSICS_GROUP_NOCLIP = 1 << (size_t)PhysicsGroup::NoClip,
         PHYSICS_GROUP_WORLD = 1 << (size_t)PhysicsGroup::World,
         PHYSICS_GROUP_PLAYER = 1 << (size_t)PhysicsGroup::Player,
+    };
+
+    enum class PhysicsConstraintType {
+        Fixed = 0,
+        Distance,
+        Spherical,
+        Hinge,
+        Slider,
+        ForceLimit,
+        Count,
     };
 
     struct Physics {
@@ -47,27 +59,32 @@ namespace ecs {
         float density = 1.0f;
 
         Tecs::Entity constraint;
+        PhysicsConstraintType constraintType;
         float constraintMaxDistance = 0.0f;
         glm::vec3 constraintOffset;
         glm::quat constraintRotation;
 
         // Output fields of PhysxManager
         physx::PxRigidActor *actor = nullptr;
+        physx::PxFixedJoint *fixedJoint = nullptr;
+        physx::PxRevoluteJoint *hingeJoint = nullptr;
         glm::vec3 scale = glm::vec3(1.0); // Current scale of physics model according to PhysX
         glm::vec3 centerOfMass = glm::vec3(0.0); // The calculated center of mass of the object (relative to Transform)
 
         void SetConstraint(Tecs::Entity target,
+            PhysicsConstraintType type,
             float maxDistance = 0.0f,
             glm::vec3 offset = glm::vec3(),
             glm::quat rotation = glm::quat()) {
             constraint = target;
+            constraintType = type;
             constraintMaxDistance = maxDistance;
             constraintOffset = offset;
             constraintRotation = rotation;
         }
 
         void RemoveConstraint() {
-            SetConstraint(Tecs::Entity());
+            SetConstraint(Tecs::Entity(), PhysicsConstraintType::Count);
         }
     };
 
