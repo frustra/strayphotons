@@ -37,6 +37,7 @@ namespace sp {
 
     uint32 CeilToPowerOfTwo(uint32 v);
     uint32 Uint32Log2(uint32 v);
+    uint64 Uint64Log2(uint64 v);
 
     template<typename T>
     void ForEachBit(uint32 value, const T &func) {

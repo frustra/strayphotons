@@ -52,7 +52,26 @@ namespace sp::vulkan {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
                 ImGui::SetNextItemWidth(85);
-                ImGui::InputInt("ms window", &msWindowSize, 100, 1000);
+
+                ImGui::Text("%d ms window%s",
+                    msWindowSize,
+                    SpacePadding(msWindowSize < 1000    ? 2
+                                 : msWindowSize < 10000 ? 1
+                                                        : 0));
+                ImGui::SameLine();
+                if (ImGui::SmallButton("-")) {
+                    if (msWindowSize <= 1000)
+                        msWindowSize -= 100;
+                    else
+                        msWindowSize -= 1000;
+                }
+                ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
+                if (ImGui::SmallButton("+")) {
+                    if (msWindowSize < 1000)
+                        msWindowSize += 100;
+                    else
+                        msWindowSize += 1000;
+                }
 
                 for (int i = 0; i < 2; i++) {
                     ImGui::TableNextColumn();
@@ -84,6 +103,14 @@ namespace sp::vulkan {
             ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - ImGui::GetItemRectSize().x);
             ImGui::Text("%.3f", drawHistogram.max / 1000000.0);
 
+            if (drawHistogramMode == Mode::CPU) {
+                if (ImGui::Button("CPU histogram")) drawHistogramMode = Mode::GPU;
+            } else {
+                if (ImGui::Button("GPU histogram")) drawHistogramMode = Mode::CPU;
+            }
+            ImGui::SameLine();
+            if (histogramLocked && ImGui::Button("Unlock histogram")) histogramLocked = false;
+
             ImGui::End();
         }
 
@@ -107,7 +134,12 @@ namespace sp::vulkan {
             } cpu, gpu;
         };
 
-        const char SpacePadding[16] = "               ";
+        static constexpr string_view spacePadding = "               ";
+
+        const char *SpacePadding(size_t spaceCount) {
+            size_t paddingOffset = std::max((int)spacePadding.size() - (int)spaceCount, 0);
+            return spacePadding.data() + paddingOffset;
+        }
 
         size_t AddResults(size_t offset = 0, size_t depth = 1) {
             while (offset < resultCount) {
@@ -124,47 +156,59 @@ namespace sp::vulkan {
 
                 if (offset == drawHistogramIndex) {
                     UpdateDrawHistogram(scope, stats);
-                    ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32({0.1, 0.3, 0.1, 0.6}));
+                    if (histogramLocked) {
+                        ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32({0.1, 0.3, 0.1, 0.6}));
+                    } else {
+                        ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32({0.1, 0.1, 0.3, 0.6}));
+                    }
                 } else {
                     ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32({c, c, c, 0.6}));
                 }
 
                 ImGui::TableNextColumn();
 
-                auto paddingOffset = sizeof(SpacePadding) - depth * 2 + 1;
-                Assert(paddingOffset >= 0, "result tree is too deep");
-                ImGui::Text("%s%s", &SpacePadding[paddingOffset], scope.name.data());
+                ImGui::Text("%s%s", SpacePadding(depth * 2 - 1), scope.name.data());
 
                 auto windowX = ImGui::GetWindowPos().x;
                 auto rowMin = ImGui::GetItemRectMin();
                 rowMin.x = ImGui::GetWindowContentRegionMin().x + windowX;
                 auto rowMax = ImGui::GetItemRectMax();
                 rowMax.x = ImGui::GetWindowContentRegionMax().x + windowX;
-                if (ImGui::IsMouseHoveringRect(rowMin, rowMax, false)) drawHistogramIndex = offset;
+                if (drawHistogramIndex != offset && ImGui::IsMouseHoveringRect(rowMin, rowMax, false)) {
+                    if (!histogramLocked || ImGui::IsMouseClicked(0)) drawHistogramIndex = offset;
+                }
 
                 ImGui::TableNextColumn();
                 ImGui::Text("%.2f", stats.cpu.avg / 1000000.0);
-                if (ImGui::IsItemHovered()) drawHistogramMode = Mode::CPU;
+                HandleMouse(Mode::CPU);
                 ImGui::TableNextColumn();
                 ImGui::Text("%.2f", stats.cpu.p95 / 1000000.0);
-                if (ImGui::IsItemHovered()) drawHistogramMode = Mode::CPU;
+                HandleMouse(Mode::CPU);
                 ImGui::TableNextColumn();
                 ImGui::Text("%.2f", stats.cpu.max / 1000000.0);
-                if (ImGui::IsItemHovered()) drawHistogramMode = Mode::CPU;
+                HandleMouse(Mode::CPU);
 
                 ImGui::TableNextColumn();
                 ImGui::Text("%.2f", stats.gpu.avg / 1000000.0);
-                if (ImGui::IsItemHovered()) drawHistogramMode = Mode::GPU;
+                HandleMouse(Mode::GPU);
                 ImGui::TableNextColumn();
                 ImGui::Text("%.2f", stats.gpu.p95 / 1000000.0);
-                if (ImGui::IsItemHovered()) drawHistogramMode = Mode::GPU;
+                HandleMouse(Mode::GPU);
                 ImGui::TableNextColumn();
                 ImGui::Text("%.2f", stats.gpu.max / 1000000.0);
-                if (ImGui::IsItemHovered()) drawHistogramMode = Mode::GPU;
+                HandleMouse(Mode::GPU);
 
                 offset = AddResults(offset + 1, scope.depth + 1);
             }
             return offset;
+        }
+
+        void HandleMouse(Mode newMode) {
+            if (histogramLocked) return;
+            if (ImGui::IsItemHovered()) {
+                drawHistogramMode = newMode;
+                if (ImGui::IsMouseClicked(0)) histogramLocked = true;
+            }
         }
 
         void CollectSample() {
@@ -252,8 +296,10 @@ namespace sp::vulkan {
                 lastDrawHistogramMode = drawHistogramMode;
             }
 
-            auto newMax = drawHistogramMode == Mode::CPU ? stats.cpu.max : stats.gpu.max;
+            auto newMax = drawHistogramMode == Mode::CPU ? stats.cpu.p95 : stats.gpu.p95;
+            newMax = CeilToPowerOfTwo(newMax);
             auto newMin = drawHistogramMode == Mode::CPU ? stats.cpu.min : stats.gpu.min;
+            newMin = CeilToPowerOfTwo(newMin / 2);
             drawHistogram.Reset(std::min(drawHistogram.min, newMin), std::max(drawHistogram.max, newMax));
             for (size_t i = 0; i < scope.sampleCount; i++) {
                 const auto &sample = scope.samples[i];
@@ -268,6 +314,7 @@ namespace sp::vulkan {
 
         size_t drawHistogramIndex = 0, lastDrawHistogramIndex = 0;
         Mode drawHistogramMode = Mode::CPU, lastDrawHistogramMode = Mode::CPU;
+        bool histogramLocked = false;
         Histogram<100> drawHistogram;
 
         chrono_clock::time_point lastWindowStart;

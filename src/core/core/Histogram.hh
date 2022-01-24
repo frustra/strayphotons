@@ -19,7 +19,7 @@ namespace sp {
         void AddSample(uint64 sample) {
             // linear distribution of buckets between min and max
             size_t index = (sample - min) * (buckets.size() - 1) / (max - min);
-            buckets[index]++;
+            buckets[std::min(std::max(index, size_t(0)), buckets.size() - 1)]++;
             count++;
         }
 
