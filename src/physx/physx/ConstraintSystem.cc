@@ -207,6 +207,7 @@ namespace sp {
                             sphericalJoint->setLimitCone(PxJointLimitCone(glm::radians(physics.jointRange.x),
                                 glm::radians(physics.jointRange.y)));
                             sphericalJoint->setSphericalJointFlag(PxSphericalJointFlag::eLIMIT_ENABLED, true);
+                            sphericalJoint->setConstraintFlag(PxConstraintFlag::eENABLE_EXTENDED_LIMITS, true);
                         }
                         physics.joint = sphericalJoint;
                     } else if (physics.jointType == ecs::PhysicsJointType::Hinge) {
@@ -219,6 +220,7 @@ namespace sp {
                             revoluteJoint->setLimit(PxJointAngularLimitPair(glm::radians(physics.jointRange.x),
                                 glm::radians(physics.jointRange.y)));
                             revoluteJoint->setRevoluteJointFlag(PxRevoluteJointFlag::eLIMIT_ENABLED, true);
+                            revoluteJoint->setConstraintFlag(PxConstraintFlag::eENABLE_EXTENDED_LIMITS, true);
                         }
                         physics.joint = revoluteJoint;
                     } else if (physics.jointType == ecs::PhysicsJointType::Slider) {
