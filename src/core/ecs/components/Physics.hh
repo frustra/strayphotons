@@ -12,6 +12,7 @@ namespace sp {
 
 namespace physx {
     class PxRigidActor;
+    class PxJoint;
     class PxScene;
     class PxControllerManager;
 } // namespace physx
@@ -30,6 +31,15 @@ namespace ecs {
         PHYSICS_GROUP_PLAYER = 1 << (size_t)PhysicsGroup::Player,
     };
 
+    enum class PhysicsJointType {
+        Fixed = 0,
+        Distance,
+        Spherical,
+        Hinge,
+        Slider,
+        Count,
+    };
+
     struct Physics {
         Physics() {}
         Physics(std::shared_ptr<const sp::Model> model,
@@ -46,6 +56,12 @@ namespace ecs {
         bool decomposeHull = false;
         float density = 1.0f;
 
+        Tecs::Entity jointTarget;
+        PhysicsJointType jointType = PhysicsJointType::Count;
+        glm::vec2 jointRange;
+        glm::vec3 jointLocalOffset, jointRemoteOffset;
+        glm::quat jointLocalOrient, jointRemoteOrient;
+
         Tecs::Entity constraint;
         float constraintMaxDistance = 0.0f;
         glm::vec3 constraintOffset;
@@ -53,8 +69,29 @@ namespace ecs {
 
         // Output fields of PhysxManager
         physx::PxRigidActor *actor = nullptr;
+        physx::PxJoint *joint = nullptr;
         glm::vec3 scale = glm::vec3(1.0); // Current scale of physics model according to PhysX
         glm::vec3 centerOfMass = glm::vec3(0.0); // The calculated center of mass of the object (relative to Transform)
+
+        void SetJoint(Tecs::Entity target,
+            PhysicsJointType type,
+            glm::vec2 range = glm::vec2(),
+            glm::vec3 localOffset = glm::vec3(),
+            glm::quat localOrient = glm::quat(),
+            glm::vec3 remoteOffset = glm::vec3(),
+            glm::quat remoteOrient = glm::quat()) {
+            jointTarget = target;
+            jointType = type;
+            jointRange = range;
+            jointLocalOffset = localOffset;
+            jointRemoteOffset = remoteOffset;
+            jointLocalOrient = localOrient;
+            jointRemoteOrient = remoteOrient;
+        }
+
+        void RemoveJoint() {
+            SetJoint(Tecs::Entity(), PhysicsJointType::Count);
+        }
 
         void SetConstraint(Tecs::Entity target,
             float maxDistance = 0.0f,

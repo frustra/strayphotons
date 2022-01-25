@@ -24,106 +24,98 @@ namespace sp {
     static CVar<float> CVarCrouchSpeed("p.CrouchSpeed", 1.5, "Player crouching movement speed (m/s)");
     static CVar<float> CVarCursorSensitivity("p.CursorSensitivity", 1.0, "Mouse cursor sensitivity");
 
-    void HumanControlSystem::Frame() {
+    void HumanControlSystem::Frame(ecs::Lock<
+        ecs::
+            Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock, ecs::PhysicsQuery>,
+        ecs::Write<ecs::EventInput, ecs::Transform, ecs::HumanController, ecs::Physics>> lock) {
         if (CVarPausePlayerPhysics.Get()) return;
 
         bool noclipChanged = CVarNoClip.Changed();
         auto noclip = CVarNoClip.Get(true);
 
-        {
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
-                                                        ecs::SignalOutput,
-                                                        ecs::SignalBindings,
-                                                        ecs::FocusLayer,
-                                                        ecs::FocusLock,
-                                                        ecs::PhysicsQuery>,
-                ecs::Write<ecs::EventInput, ecs::Transform, ecs::HumanController, ecs::Physics>>();
+        for (Tecs::Entity entity : lock.EntitiesWith<ecs::HumanController>()) {
+            if (!entity.Has<ecs::Transform>(lock)) continue;
 
-            for (Tecs::Entity entity : lock.EntitiesWith<ecs::HumanController>()) {
-                if (!entity.Has<ecs::Transform>(lock)) continue;
+            auto &controller = entity.Get<ecs::HumanController>(lock);
+            if (!controller.pxController) continue;
 
-                auto &controller = entity.Get<ecs::HumanController>(lock);
-                if (!controller.pxController) continue;
+            // Handle keyboard controls
+            glm::vec3 inputMovement = glm::vec3(0);
+            bool jumping = false;
+            bool sprinting = false;
+            bool crouching = false;
+            bool rotating = false;
 
-                // Handle keyboard controls
-                glm::vec3 inputMovement = glm::vec3(0);
-                bool jumping = false;
-                bool sprinting = false;
-                bool crouching = false;
-                bool rotating = false;
+            inputMovement.z -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_FORWARD);
+            inputMovement.z += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_BACK);
+            inputMovement.x -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_LEFT);
+            inputMovement.x += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RIGHT);
 
-                inputMovement.z -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_FORWARD);
-                inputMovement.z += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_BACK);
-                inputMovement.x -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_LEFT);
-                inputMovement.x += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_RIGHT);
+            if (noclip) {
+                inputMovement.y += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_JUMP);
+                inputMovement.y -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_CROUCH);
+            } else {
+                jumping = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_JUMP) >= 0.5;
+                crouching = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_CROUCH) >= 0.5;
+            }
+            sprinting = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_SPRINT) >= 0.5;
+            rotating = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_INTERACT_ROTATE) >= 0.5;
 
-                if (noclip) {
-                    inputMovement.y += ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_JUMP);
-                    inputMovement.y -= ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_CROUCH);
-                } else {
-                    jumping = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_JUMP) >= 0.5;
-                    crouching = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_CROUCH) >= 0.5;
-                }
-                sprinting = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_SPRINT) >= 0.5;
-                rotating = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_INTERACT_ROTATE) >= 0.5;
+            inputMovement.x = std::clamp(inputMovement.x, -1.0f, 1.0f);
+            inputMovement.y = std::clamp(inputMovement.y, -1.0f, 1.0f);
+            inputMovement.z = std::clamp(inputMovement.z, -1.0f, 1.0f);
 
-                inputMovement.x = std::clamp(inputMovement.x, -1.0f, 1.0f);
-                inputMovement.y = std::clamp(inputMovement.y, -1.0f, 1.0f);
-                inputMovement.z = std::clamp(inputMovement.z, -1.0f, 1.0f);
+            if (entity.Has<ecs::EventInput>(lock)) {
+                ecs::Event event;
+                while (ecs::EventInput::Poll(lock, entity, INPUT_EVENT_CAMERA_ROTATE, event)) {
+                    auto cursorDiff = std::get<glm::vec2>(event.data);
+                    if (!rotating) {
+                        float sensitivity = CVarCursorSensitivity.Get() * 0.001;
 
-                if (entity.Has<ecs::EventInput>(lock)) {
-                    ecs::Event event;
-                    while (ecs::EventInput::Poll(lock, entity, INPUT_EVENT_CAMERA_ROTATE, event)) {
-                        auto cursorDiff = std::get<glm::vec2>(event.data);
-                        if (!rotating) {
-                            float sensitivity = CVarCursorSensitivity.Get() * 0.001;
+                        // Apply pitch/yaw rotations
+                        auto &transform = entity.Get<ecs::Transform>(lock);
+                        auto rotation = glm::quat(glm::vec3(0, -cursorDiff.x * sensitivity, 0)) *
+                                        transform.GetRotation() *
+                                        glm::quat(glm::vec3(-cursorDiff.y * sensitivity, 0, 0));
 
-                            // Apply pitch/yaw rotations
-                            auto &transform = entity.Get<ecs::Transform>(lock);
-                            auto rotation = glm::quat(glm::vec3(0, -cursorDiff.x * sensitivity, 0)) *
-                                            transform.GetRotation() *
-                                            glm::quat(glm::vec3(-cursorDiff.y * sensitivity, 0, 0));
-
-                            auto up = rotation * glm::vec3(0, 1, 0);
-                            if (up.y < 0) {
-                                // Camera is turning upside-down, reset it
-                                auto right = rotation * glm::vec3(1, 0, 0);
-                                right.y = 0;
-                                up.y = 0;
-                                glm::vec3 forward = glm::cross(right, up);
-                                rotation = glm::quat_cast(
-                                    glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
-                            }
-                            auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
-                            if (!transform.HasChanged(userData->actorData.transformChangeNumber)) {
-                                transform.SetRotation(rotation);
-                                userData->actorData.transformChangeNumber = transform.ChangeNumber();
-                            } else {
-                                transform.SetRotation(rotation);
-                            }
+                        auto up = rotation * glm::vec3(0, 1, 0);
+                        if (up.y < 0) {
+                            // Camera is turning upside-down, reset it
+                            auto right = rotation * glm::vec3(1, 0, 0);
+                            right.y = 0;
+                            up.y = 0;
+                            glm::vec3 forward = glm::cross(right, up);
+                            rotation = glm::quat_cast(
+                                glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
+                        }
+                        auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+                        if (!transform.HasChanged(userData->actorData.transformChangeNumber)) {
+                            transform.SetRotation(rotation);
+                            userData->actorData.transformChangeNumber = transform.ChangeNumber();
+                        } else {
+                            transform.SetRotation(rotation);
                         }
                     }
                 }
-
-                // Move the player
-                if (noclipChanged) {
-                    auto actor = controller.pxController->getActor();
-                    manager.SetCollisionGroup(actor, noclip ? ecs::PhysicsGroup::NoClip : ecs::PhysicsGroup::Player);
-                }
-
-                auto currentHeight = controller.pxController->getHeight();
-                auto targetHeight = crouching ? ecs::PLAYER_CAPSULE_CROUCH_HEIGHT : ecs::PLAYER_CAPSULE_HEIGHT;
-                if (fabs(targetHeight - currentHeight) > 0.1) {
-                    auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
-
-                    // If player is in the air, resize from the top to implement crouch-jumping.
-                    controller.height = currentHeight +
-                                        (targetHeight - currentHeight) * (userData->onGround ? 0.1 : 1.0);
-                }
-
-                UpdatePlayerVelocity(lock, entity, inputMovement, jumping, sprinting, crouching);
-                MoveEntity(lock, entity);
             }
+
+            // Move the player
+            if (noclipChanged) {
+                auto actor = controller.pxController->getActor();
+                manager.SetCollisionGroup(actor, noclip ? ecs::PhysicsGroup::NoClip : ecs::PhysicsGroup::Player);
+            }
+
+            auto currentHeight = controller.pxController->getHeight();
+            auto targetHeight = crouching ? ecs::PLAYER_CAPSULE_CROUCH_HEIGHT : ecs::PLAYER_CAPSULE_HEIGHT;
+            if (fabs(targetHeight - currentHeight) > 0.1) {
+                auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+
+                // If player is in the air, resize from the top to implement crouch-jumping.
+                controller.height = currentHeight + (targetHeight - currentHeight) * (userData->onGround ? 0.1 : 1.0);
+            }
+
+            UpdatePlayerVelocity(lock, entity, inputMovement, jumping, sprinting, crouching);
+            MoveEntity(lock, entity);
         }
     }
 

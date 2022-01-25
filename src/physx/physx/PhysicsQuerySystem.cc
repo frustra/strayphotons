@@ -12,9 +12,7 @@ namespace sp {
 
     PhysicsQuerySystem::PhysicsQuerySystem(PhysxManager &manager) : manager(manager) {}
 
-    void PhysicsQuerySystem::Frame() {
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Transform>, ecs::Write<ecs::PhysicsQuery>>();
-
+    void PhysicsQuerySystem::Frame(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::PhysicsQuery>> lock) {
         for (auto &entity : lock.EntitiesWith<ecs::PhysicsQuery>()) {
             if (!entity.Has<ecs::PhysicsQuery, ecs::Transform>(lock)) continue;
 

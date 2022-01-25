@@ -90,6 +90,10 @@ namespace sp {
                     CopyComponent<ecs::Name>(staging, e, live, sceneInfo.liveId);
                 }
             }
+        }
+        for (auto e : staging.EntitiesWith<ecs::SceneInfo>()) {
+            auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
+            if (sceneInfo.scene.lock().get() != this) continue;
 
             ApplyComponentsByPriority(staging, live, e);
         }

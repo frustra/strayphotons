@@ -22,6 +22,7 @@ namespace ecs {
                     transform.SetParent(it->second);
                 } else {
                     Errorf("Component<Transform>::Load parent name does not exist: %s", parentName);
+                    return false;
                 }
             } else if (subTransform.first == "scale") {
                 transform.Scale(sp::MakeVec3(subTransform.second));
