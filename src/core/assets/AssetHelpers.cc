@@ -8,7 +8,7 @@
 namespace sp {
     void MakeVec(size_t N, picojson::value val, float *ret) {
         auto values = val.get<picojson::array>();
-        Assert(values.size() == N, "incorrect array size");
+        Assertf(values.size() == N, "Incorrect array size: %u, expected %u", values.size(), N);
 
         for (size_t i = 0; i < values.size(); i++) {
             ret[i] = (float)values[i].get<double>();

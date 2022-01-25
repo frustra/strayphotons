@@ -370,32 +370,43 @@
 					-3,
 					0.025,
 					-3
-				],
-				"rotate": [
-					-30,
-					0,
-					1,
-					0
 				]
 			},
 			"physics": {
 				"model": "cardboard-box",
-				"constraint": {
+				"joint": {
 					"target": "box2",
-					"type": "Fixed",
-					"offset": {
+					"type": "Hinge",
+					"local_offset": {
 						"translate": [
-							-1.24552,
+							0.5,
 							0,
-							-0.4227
+							0.5
 						],
 						"rotate": [
-							50,
+							90,
 							0,
-							1,
-							0
+							0,
+							1
 						]
-					}
+					},
+					"remote_offset": {
+						"translate": [
+							0.5,
+							0,
+							-0.5
+						],
+						"rotate": [
+							90,
+							0,
+							0,
+							1
+						]
+					},
+					"range": [
+						0,
+						180
+					]
 				}
 			}
 		},
@@ -404,15 +415,9 @@
 			"renderable": "cardboard-box",
 			"transform": {
 				"translate": [
-					-3.2,
+					-3,
 					0.025,
-					-1.7
-				],
-				"rotate": [
-					-80,
-					0,
-					1,
-					0
+					-2
 				]
 			},
 			"physics": {

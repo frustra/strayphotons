@@ -305,7 +305,6 @@ namespace ecs {
 
                                 ph.group = ecs::PhysicsGroup::Player;
                                 ph.SetConstraint(ent,
-                                    ecs::PhysicsConstraintType::ForceLimit,
                                     query.raycastQueryDistance,
                                     invParentRotate *
                                         (hitTransform.GetPosition() - transform.GetPosition() + glm::vec3(0, 0.1, 0)),

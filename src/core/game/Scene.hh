@@ -102,6 +102,12 @@ namespace sp {
         if (srcEnt.Has<ecs::Physics>(src) && !dstEnt.Has<ecs::Physics>(dst)) {
             auto &physics = dstEnt.Set<ecs::Physics>(dst, srcEnt.Get<ecs::Physics>(src));
 
+            // Map physics joints from staging id to live id
+            if (physics.jointTarget && physics.jointTarget.Has<ecs::SceneInfo>(src)) {
+                auto &sceneInfo = physics.jointTarget.Get<ecs::SceneInfo>(src);
+                physics.jointTarget = sceneInfo.liveId;
+            }
+
             // Map physics constraint from staging id to live id
             if (physics.constraint && physics.constraint.Has<ecs::SceneInfo>(src)) {
                 auto &sceneInfo = physics.constraint.Get<ecs::SceneInfo>(src);

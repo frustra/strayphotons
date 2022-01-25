@@ -31,13 +31,12 @@ namespace ecs {
         PHYSICS_GROUP_PLAYER = 1 << (size_t)PhysicsGroup::Player,
     };
 
-    enum class PhysicsConstraintType {
+    enum class PhysicsJointType {
         Fixed = 0,
         Distance,
         Spherical,
         Hinge,
         Slider,
-        ForceLimit,
         Count,
     };
 
@@ -57,8 +56,13 @@ namespace ecs {
         bool decomposeHull = false;
         float density = 1.0f;
 
+        Tecs::Entity jointTarget;
+        PhysicsJointType jointType = PhysicsJointType::Count;
+        glm::vec2 jointRange;
+        glm::vec3 jointLocalOffset, jointRemoteOffset;
+        glm::quat jointLocalOrient, jointRemoteOrient;
+
         Tecs::Entity constraint;
-        PhysicsConstraintType constraintType = PhysicsConstraintType::Count;
         float constraintMaxDistance = 0.0f;
         glm::vec3 constraintOffset;
         glm::quat constraintRotation;
@@ -69,20 +73,38 @@ namespace ecs {
         glm::vec3 scale = glm::vec3(1.0); // Current scale of physics model according to PhysX
         glm::vec3 centerOfMass = glm::vec3(0.0); // The calculated center of mass of the object (relative to Transform)
 
+        void SetJoint(Tecs::Entity target,
+            PhysicsJointType type,
+            glm::vec2 range = glm::vec2(),
+            glm::vec3 localOffset = glm::vec3(),
+            glm::quat localOrient = glm::quat(),
+            glm::vec3 remoteOffset = glm::vec3(),
+            glm::quat remoteOrient = glm::quat()) {
+            jointTarget = target;
+            jointType = type;
+            jointRange = range;
+            jointLocalOffset = localOffset;
+            jointRemoteOffset = remoteOffset;
+            jointLocalOrient = localOrient;
+            jointRemoteOrient = remoteOrient;
+        }
+
+        void RemoveJoint() {
+            SetJoint(Tecs::Entity(), PhysicsJointType::Count);
+        }
+
         void SetConstraint(Tecs::Entity target,
-            PhysicsConstraintType type,
             float maxDistance = 0.0f,
             glm::vec3 offset = glm::vec3(),
             glm::quat rotation = glm::quat()) {
             constraint = target;
-            constraintType = type;
             constraintMaxDistance = maxDistance;
             constraintOffset = offset;
             constraintRotation = rotation;
         }
 
         void RemoveConstraint() {
-            SetConstraint(Tecs::Entity(), PhysicsConstraintType::Count);
+            SetConstraint(Tecs::Entity());
         }
     };
 

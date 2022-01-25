@@ -21,10 +21,62 @@ namespace ecs {
                 physics.decomposeHull = param.second.get<bool>();
             } else if (param.first == "density") {
                 physics.density = param.second.get<double>();
+            } else if (param.first == "joint") {
+                Assert(scene, "Physics::Load must have valid scene to define joint");
+                std::string jointTarget = "";
+                ecs::PhysicsJointType jointType = ecs::PhysicsJointType::Fixed;
+                glm::vec2 jointRange;
+                ecs::Transform localTransform, remoteTransform;
+                for (auto jointParam : param.second.get<picojson::object>()) {
+                    if (jointParam.first == "target") {
+                        jointTarget = jointParam.second.get<string>();
+                    } else if (jointParam.first == "type") {
+                        auto typeString = jointParam.second.get<string>();
+                        sp::to_upper(typeString);
+                        if (typeString == "FIXED") {
+                            jointType = ecs::PhysicsJointType::Fixed;
+                        } else if (typeString == "DISTANCE") {
+                            jointType = ecs::PhysicsJointType::Distance;
+                        } else if (typeString == "SPHERICAL") {
+                            jointType = ecs::PhysicsJointType::Spherical;
+                        } else if (typeString == "HINGE") {
+                            jointType = ecs::PhysicsJointType::Hinge;
+                        } else if (typeString == "SLIDER") {
+                            jointType = ecs::PhysicsJointType::Slider;
+                        } else {
+                            Errorf("Unknown joint type: %s", typeString);
+                            return false;
+                        }
+                    } else if (jointParam.first == "range") {
+                        jointRange = sp::MakeVec2(jointParam.second);
+                    } else if (jointParam.first == "local_offset") {
+                        if (!Component<Transform>::Load(scene, localTransform, jointParam.second)) {
+                            Errorf("Couldn't parse physics joint local_offset as Transform");
+                            return false;
+                        }
+                    } else if (jointParam.first == "remote_offset") {
+                        if (!Component<Transform>::Load(scene, remoteTransform, jointParam.second)) {
+                            Errorf("Couldn't parse physics joint remote_offset as Transform");
+                            return false;
+                        }
+                    }
+                }
+                auto it = scene->namedEntities.find(jointTarget);
+                if (it != scene->namedEntities.end()) {
+                    physics.SetJoint(it->second,
+                        jointType,
+                        jointRange,
+                        localTransform.GetPosition(),
+                        localTransform.GetRotation(),
+                        remoteTransform.GetPosition(),
+                        remoteTransform.GetRotation());
+                } else {
+                    Errorf("Component<Physics>::Load joint name does not exist: %s", jointTarget);
+                    return false;
+                }
             } else if (param.first == "constraint") {
                 Assert(scene, "Physics::Load must have valid scene to define constraint");
                 std::string constraintTarget = "";
-                ecs::PhysicsConstraintType constraintType = ecs::PhysicsConstraintType::Fixed;
                 float constraintMaxDistance = 0.0f;
                 Transform constraintTransform;
                 if (param.second.is<string>()) {
@@ -33,25 +85,6 @@ namespace ecs {
                     for (auto constraintParam : param.second.get<picojson::object>()) {
                         if (constraintParam.first == "target") {
                             constraintTarget = constraintParam.second.get<string>();
-                        } else if (constraintParam.first == "type") {
-                            auto typeString = constraintParam.second.get<string>();
-                            sp::to_upper(typeString);
-                            if (typeString == "FIXED") {
-                                constraintType = ecs::PhysicsConstraintType::Fixed;
-                            } else if (typeString == "DISTANCE") {
-                                constraintType = ecs::PhysicsConstraintType::Distance;
-                            } else if (typeString == "SPHERICAL") {
-                                constraintType = ecs::PhysicsConstraintType::Spherical;
-                            } else if (typeString == "HINGE") {
-                                constraintType = ecs::PhysicsConstraintType::Hinge;
-                            } else if (typeString == "SLIDER") {
-                                constraintType = ecs::PhysicsConstraintType::Slider;
-                            } else if (typeString == "FORCELIMIT") {
-                                constraintType = ecs::PhysicsConstraintType::ForceLimit;
-                            } else {
-                                Errorf("Unknown constraint type: %s", typeString);
-                                return false;
-                            }
                         } else if (constraintParam.first == "break_distance") {
                             constraintMaxDistance = constraintParam.second.get<double>();
                         } else if (constraintParam.first == "offset") {
@@ -65,7 +98,6 @@ namespace ecs {
                 auto it = scene->namedEntities.find(constraintTarget);
                 if (it != scene->namedEntities.end()) {
                     physics.SetConstraint(it->second,
-                        constraintType,
                         constraintMaxDistance,
                         constraintTransform.GetPosition(),
                         constraintTransform.GetRotation());
