@@ -363,61 +363,18 @@
 			}
 		},
 		{
-			"_name": "box1",
 			"renderable": "cardboard-box",
 			"transform": {
 				"translate": [
 					-3,
 					0.025,
 					-3
-				]
-			},
-			"physics": {
-				"model": "cardboard-box",
-				"joint": {
-					"target": "box2",
-					"type": "Hinge",
-					"local_offset": {
-						"translate": [
-							0.5,
-							0,
-							0.5
-						],
-						"rotate": [
-							90,
-							0,
-							0,
-							1
-						]
-					},
-					"remote_offset": {
-						"translate": [
-							0.5,
-							0,
-							-0.5
-						],
-						"rotate": [
-							90,
-							0,
-							0,
-							1
-						]
-					},
-					"range": [
-						0,
-						180
-					]
-				}
-			}
-		},
-		{
-			"_name": "box2",
-			"renderable": "cardboard-box",
-			"transform": {
-				"translate": [
-					-3,
-					0.025,
-					-2
+				],
+				"rotate": [
+					-30,
+					0,
+					1,
+					0
 				]
 			},
 			"physics": {
@@ -425,7 +382,25 @@
 			}
 		},
 		{
-			"_name": "box3",
+			"renderable": "cardboard-box",
+			"transform": {
+				"translate": [
+					-3.2,
+					0.025,
+					-1.7
+				],
+				"rotate": [
+					-80,
+					0,
+					1,
+					0
+				]
+			},
+			"physics": {
+				"model": "cardboard-box"
+			}
+		},
+		{
 			"renderable": "cardboard-box",
 			"transform": {
 				"translate": [
