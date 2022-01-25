@@ -17,7 +17,13 @@ namespace sp {
         /**
          * Call this once per frame
          */
-        void Frame();
+        void Frame(ecs::Lock<ecs::Read<ecs::Name,
+                                 ecs::SignalOutput,
+                                 ecs::SignalBindings,
+                                 ecs::FocusLayer,
+                                 ecs::FocusLock,
+                                 ecs::PhysicsQuery>,
+            ecs::Write<ecs::EventInput, ecs::Transform, ecs::HumanController, ecs::Physics>> lock);
 
     private:
         void UpdatePlayerVelocity(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,

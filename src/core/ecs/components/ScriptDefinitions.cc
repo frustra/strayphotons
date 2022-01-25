@@ -297,7 +297,7 @@ namespace ecs {
                         } else if (query.raycastHitTarget.Has<ecs::Physics, ecs::Transform>(lock)) {
                             // Grab the entity being looked at
                             auto &ph = query.raycastHitTarget.Get<ecs::Physics>(lock);
-                            if (ph.dynamic && !ph.kinematic) {
+                            if (ph.dynamic && !ph.kinematic && !ph.constraint) {
                                 target = query.raycastHitTarget;
 
                                 auto hitTransform = target.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
@@ -305,7 +305,7 @@ namespace ecs {
 
                                 ph.group = ecs::PhysicsGroup::Player;
                                 ph.SetConstraint(ent,
-                                    ecs::PhysicsConstraintType::Hinge,
+                                    ecs::PhysicsConstraintType::ForceLimit,
                                     query.raycastQueryDistance,
                                     invParentRotate *
                                         (hitTransform.GetPosition() - transform.GetPosition() + glm::vec3(0, 0.1, 0)),

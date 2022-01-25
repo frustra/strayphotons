@@ -12,8 +12,7 @@ namespace sp {
 
 namespace physx {
     class PxRigidActor;
-    class PxFixedJoint;
-    class PxRevoluteJoint;
+    class PxJoint;
     class PxScene;
     class PxControllerManager;
 } // namespace physx
@@ -59,15 +58,14 @@ namespace ecs {
         float density = 1.0f;
 
         Tecs::Entity constraint;
-        PhysicsConstraintType constraintType;
+        PhysicsConstraintType constraintType = PhysicsConstraintType::Count;
         float constraintMaxDistance = 0.0f;
         glm::vec3 constraintOffset;
         glm::quat constraintRotation;
 
         // Output fields of PhysxManager
         physx::PxRigidActor *actor = nullptr;
-        physx::PxFixedJoint *fixedJoint = nullptr;
-        physx::PxRevoluteJoint *hingeJoint = nullptr;
+        physx::PxJoint *joint = nullptr;
         glm::vec3 scale = glm::vec3(1.0); // Current scale of physics model according to PhysX
         glm::vec3 centerOfMass = glm::vec3(0.0); // The calculated center of mass of the object (relative to Transform)
 

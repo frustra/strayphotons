@@ -363,6 +363,7 @@
 			}
 		},
 		{
+			"_name": "box1",
 			"renderable": "cardboard-box",
 			"transform": {
 				"translate": [
@@ -378,10 +379,28 @@
 				]
 			},
 			"physics": {
-				"model": "cardboard-box"
+				"model": "cardboard-box",
+				"constraint": {
+					"target": "box2",
+					"type": "Fixed",
+					"offset": {
+						"translate": [
+							-1.24552,
+							0,
+							-0.4227
+						],
+						"rotate": [
+							50,
+							0,
+							1,
+							0
+						]
+					}
+				}
 			}
 		},
 		{
+			"_name": "box2",
 			"renderable": "cardboard-box",
 			"transform": {
 				"translate": [
@@ -401,6 +420,7 @@
 			}
 		},
 		{
+			"_name": "box3",
 			"renderable": "cardboard-box",
 			"transform": {
 				"translate": [

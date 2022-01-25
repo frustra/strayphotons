@@ -118,8 +118,17 @@ namespace sp {
         }
 
         { // Sync ECS state to physx
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::Transform>,
-                ecs::Write<ecs::Physics, ecs::HumanController>>();
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
+                                                        ecs::SignalOutput,
+                                                        ecs::SignalBindings,
+                                                        ecs::FocusLayer,
+                                                        ecs::FocusLock,
+                                                        ecs::PhysicsQuery>,
+                ecs::Write<ecs::EventInput,
+                    ecs::Transform,
+                    ecs::HumanController,
+                    ecs::CharacterController,
+                    ecs::Physics>>();
 
             // Delete actors for removed entities
             ecs::ComponentEvent<ecs::Physics> physicsEvent;
@@ -158,12 +167,10 @@ namespace sp {
                 UpdateActor(lock, ent);
             }
 
+            humanControlSystem.Frame(lock);
+            characterControlSystem.Frame(lock);
             constraintSystem.Frame(lock);
         }
-
-        humanControlSystem.Frame();
-        characterControlSystem.Frame();
-        physicsQuerySystem.Frame();
 
         { // Simulate 1 physics frame (blocking)
             scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
@@ -174,7 +181,8 @@ namespace sp {
         }
 
         { // Sync ECS state from physx
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Physics>, ecs::Write<ecs::Transform>>();
+            auto lock =
+                ecs::World.StartTransaction<ecs::Read<ecs::Physics>, ecs::Write<ecs::Transform, ecs::PhysicsQuery>>();
 
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
@@ -198,6 +206,8 @@ namespace sp {
                     }
                 }
             }
+
+            physicsQuerySystem.Frame(lock);
         }
 
         triggerSystem.Frame();

@@ -14,7 +14,9 @@ namespace sp {
         CharacterControlSystem(PhysxManager &manager);
         ~CharacterControlSystem() {}
 
-        void Frame();
+        void Frame(
+            ecs::Lock<ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
+                ecs::Write<ecs::Transform, ecs::CharacterController>> lock);
 
     private:
         PhysxManager &manager;
