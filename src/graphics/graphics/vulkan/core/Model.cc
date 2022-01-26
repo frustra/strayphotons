@@ -12,11 +12,23 @@
 namespace sp::vulkan {
     Model::Model(const sp::Model &model, GPUSceneContext &scene, DeviceContext &device)
         : modelName(model.name), scene(scene) {
-        vector<SceneVertex> vertices;
-
         // TODO: cache the output somewhere. Keeping the conversion code in
         // the engine will be useful for any dynamic loading in the future,
         // but we don't want to do it every time a model is loaded.
+
+        for (auto &assetPrimitive : model.Primitives()) {
+            indexCount += assetPrimitive.indexBuffer.componentCount;
+            vertexCount += assetPrimitive.attributes[0].componentCount;
+        }
+
+        indexBuffer = scene.indexBuffer->ArrayAllocate(indexCount, sizeof(uint16));
+        auto indexData = (uint16 *)indexBuffer->Mapped();
+        auto indexDataStart = indexData;
+
+        vertexBuffer = scene.vertexBuffer->ArrayAllocate(vertexCount, sizeof(SceneVertex));
+        auto vertexData = (SceneVertex *)vertexBuffer->Mapped();
+        auto vertexDataStart = vertexData;
+
         for (auto &assetPrimitive : model.Primitives()) {
             // TODO: this implementation assumes a lot about the model format,
             // and asserts the assumptions. It would be better to support more
@@ -44,14 +56,14 @@ namespace sp::vulkan {
 
             auto &indexBuffer = buffers[assetPrimitive.indexBuffer.bufferIndex];
             vkPrimitive.indexCount = assetPrimitive.indexBuffer.componentCount;
+            vkPrimitive.indexOffset = indexData - indexDataStart;
             size_t indexBufferSize = vkPrimitive.indexCount * assetPrimitive.indexBuffer.byteStride;
             Assert(assetPrimitive.indexBuffer.byteOffset + indexBufferSize <= indexBuffer.data.size(),
                 "indexes overflow buffer");
 
-            vkPrimitive.indexBuffer = scene.indexBuffer->ArrayAllocate(vkPrimitive.indexCount, sizeof(uint16));
-            scene.indexBuffer->CopyFrom(&indexBuffer.data[assetPrimitive.indexBuffer.byteOffset],
-                indexBufferSize,
-                vkPrimitive.indexBuffer->ByteOffset());
+            auto indexPtr = &indexBuffer.data[assetPrimitive.indexBuffer.byteOffset];
+            std::copy(indexPtr, indexPtr + indexBufferSize, (uint8 *)indexData);
+            indexData += vkPrimitive.indexCount;
 
             auto &posAttr = assetPrimitive.attributes[0];
             auto &normalAttr = assetPrimitive.attributes[1];
@@ -66,16 +78,19 @@ namespace sp::vulkan {
                 Assert(normalAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT,
                     "normal attribute must be a float vector");
                 Assert(normalAttr.componentFields == 3, "normal attribute must be a vec3");
+                Assert(normalAttr.componentCount == posAttr.componentCount, "must have a normal for every vertex");
             }
             if (uvAttr.componentCount) {
                 Assert(uvAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT, "uv attribute must be a float vector");
                 Assert(uvAttr.componentFields == 2, "uv attribute must be a vec2");
+                Assert(uvAttr.componentCount == uvAttr.componentCount, "must have texcoords for every vertex");
             }
 
-            vertices.resize(posAttr.componentCount);
+            vkPrimitive.vertexCount = posAttr.componentCount;
+            vkPrimitive.vertexOffset = vertexData - vertexDataStart;
 
             for (size_t i = 0; i < posAttr.componentCount; i++) {
-                SceneVertex &vertex = vertices[i];
+                SceneVertex &vertex = *(vertexData++);
 
                 vertex.position = reinterpret_cast<const glm::vec3 &>(
                     buffers[posAttr.bufferIndex].data[posAttr.byteOffset + i * posAttr.byteStride]);
@@ -91,9 +106,6 @@ namespace sp::vulkan {
                 }
             }
 
-            vkPrimitive.vertexBuffer = scene.vertexBuffer->ArrayAllocate(vertices.size(), sizeof(vertices[0]));
-            scene.vertexBuffer->CopyFrom(vertices.data(), vertices.size(), vkPrimitive.vertexBuffer->ArrayOffset());
-
             vkPrimitive.baseColor = LoadTexture(device, model, assetPrimitive.materialIndex, BaseColor);
             vkPrimitive.metallicRoughness = LoadTexture(device, model, assetPrimitive.materialIndex, MetallicRoughness);
 
@@ -104,8 +116,9 @@ namespace sp::vulkan {
         auto gpuPrimitives = (GPUMeshPrimitive *)primitiveList->Mapped();
         for (auto &p : primitives) {
             gpuPrimitives->indexCount = p->indexCount;
-            gpuPrimitives->firstIndex = p->indexBuffer->ArrayOffset();
-            gpuPrimitives->vertexOffset = p->vertexBuffer->ArrayOffset();
+            gpuPrimitives->vertexCount = p->vertexCount;
+            gpuPrimitives->firstIndex = p->indexOffset;
+            gpuPrimitives->vertexOffset = p->vertexOffset;
             gpuPrimitives->primitiveToModel = p->transform;
             gpuPrimitives->baseColorTexID = p->baseColor;
             gpuPrimitives->metallicRoughnessTexID = p->metallicRoughness;
@@ -116,6 +129,8 @@ namespace sp::vulkan {
         auto meshModel = (GPUMeshModel *)modelEntry->Mapped();
         meshModel->primitiveCount = primitives.size();
         meshModel->primitiveOffset = primitiveList->ArrayOffset();
+        meshModel->indexOffset = indexBuffer->ArrayOffset();
+        meshModel->vertexOffset = vertexBuffer->ArrayOffset();
     }
 
     Model::~Model() {
@@ -145,8 +160,12 @@ namespace sp::vulkan {
                 cmd.SetTexture(0, 1, scene.GetTexture(primitive.metallicRoughness));
             }
 
-            cmd.Raw().bindIndexBuffer(*scene.indexBuffer, primitive.indexBuffer->ByteOffset(), primitive.indexType);
-            cmd.Raw().bindVertexBuffers(0, {*scene.vertexBuffer}, {primitive.vertexBuffer->ByteOffset()});
+            cmd.Raw().bindIndexBuffer(*scene.indexBuffer,
+                indexBuffer->ByteOffset() + primitive.indexOffset * sizeof(uint16),
+                primitive.indexType);
+            cmd.Raw().bindVertexBuffers(0,
+                {*scene.vertexBuffer},
+                {vertexBuffer->ByteOffset() + primitive.vertexOffset * sizeof(SceneVertex)});
             cmd.DrawIndexed(primitive.indexCount, 1, 0, 0, 0);
         }
     }

@@ -25,16 +25,16 @@ layout(std430, set = 1, binding = 0) readonly buffer DrawParamsList {
 #include "lib/view_states_uniform.glsl"
 
 void main() {
-	DrawParams params = drawParams[gl_BaseInstance];
-	mat4 modelMat = params.modelMat;
 	ViewState view = views[gl_ViewID_OVR];
-	vec4 viewPos4 = view.viewMat * modelMat * vec4(inPosition, 1.0);
+	vec4 viewPos4 = view.viewMat * vec4(inPosition, 1.0);
 	outViewPos = vec3(viewPos4) / viewPos4.w;
 	gl_Position = view.projMat * viewPos4;
 
-	mat3 rotation = mat3(view.viewMat * modelMat);
+	mat3 rotation = mat3(view.viewMat);
 	outNormal = rotation * inNormal;
 	outTexCoord = inTexCoord;
+
+	DrawParams params = drawParams[gl_BaseInstance];
 	baseColorTexID = int(params.baseColorTexID);
 	metallicRoughnessTexID = int(params.metallicRoughnessTexID);
 }

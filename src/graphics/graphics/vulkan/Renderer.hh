@@ -27,6 +27,7 @@ namespace sp::vulkan {
     class Model;
     class GuiRenderer;
     class RenderGraph;
+    class RenderGraphResources;
 
     struct LightingContext {
         int count = 0;
@@ -60,7 +61,10 @@ namespace sp::vulkan {
         };
 
         DrawBufferIDs GenerateDrawsForView(RenderGraph &graph, ecs::Renderable::VisibilityMask viewMask);
-        void DrawSceneIndirect(CommandContext &cmd, BufferPtr drawCommandsBuffer, BufferPtr drawParamsBuffer);
+        void DrawSceneIndirect(CommandContext &cmd,
+            RenderGraphResources &resources,
+            BufferPtr drawCommandsBuffer,
+            BufferPtr drawParamsBuffer);
 
         void ForwardPass(CommandContext &cmd,
             ecs::Renderable::VisibilityMask viewMask,
@@ -102,6 +106,7 @@ namespace sp::vulkan {
             uint32 arrayLayer = ~0u);
 
         void AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock);
+        void AddGeometryWarp(RenderGraph &graph);
         void AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
         void AddShadowMaps(RenderGraph &graph, DrawLock lock);
         void AddGuis(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Gui>> lock);

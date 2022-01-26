@@ -24,6 +24,13 @@ namespace sp {
         using ArrayT::front;
         using ArrayT::max_size;
         using ArrayT::operator[];
+        using ArrayT::ArrayT;
+
+        InlineVector(std::initializer_list<T> init) {
+            for (auto it = init.begin(); it != init.end(); it++) {
+                push_back(*it);
+            }
+        }
 
         size_type size() const {
             return offset;

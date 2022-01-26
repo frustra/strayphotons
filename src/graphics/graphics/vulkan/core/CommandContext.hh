@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/Common.hh"
+#include "core/InlineVector.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 
@@ -81,13 +82,27 @@ namespace sp::vulkan {
             uint32 firstIndex = 0,
             int32 vertexOffset = 0,
             uint32 firstInstance = 0);
-        void DrawIndexedIndirect(BufferPtr drawCommands, vk::DeviceSize offset, uint32 drawCount, uint32 stride);
+        void DrawIndirect(BufferPtr drawCommands,
+            vk::DeviceSize offset,
+            uint32 drawCount,
+            uint32 stride = sizeof(VkDrawIndirectCommand));
+        void DrawIndirectCount(BufferPtr drawCommands,
+            vk::DeviceSize offset,
+            BufferPtr countBuffer,
+            vk::DeviceSize countOffset,
+            uint32 maxDrawCount,
+            uint32 stride = sizeof(VkDrawIndirectCommand));
+        void DrawIndexedIndirect(BufferPtr drawCommands,
+            vk::DeviceSize offset,
+            uint32 drawCount,
+            uint32 stride = sizeof(VkDrawIndexedIndirectCommand));
         void DrawIndexedIndirectCount(BufferPtr drawCommands,
             vk::DeviceSize offset,
             BufferPtr countBuffer,
             vk::DeviceSize countOffset,
             uint32 maxDrawCount,
-            uint32 stride);
+            uint32 stride = sizeof(VkDrawIndexedIndirectCommand));
+
         void DrawScreenCover(const ImageViewPtr &view = nullptr);
 
         void ImageBarrier(const ImagePtr &image,
@@ -99,10 +114,12 @@ namespace sp::vulkan {
             vk::AccessFlags dstAccess, // but only block these access types (can be reads or writes).
             const ImageBarrierInfo &options = {});
 
+        // Sets the shaders for arbitrary stages. Any stages not defined in `shaders` will be unset.
+        void SetShaders(std::initializer_list<std::pair<ShaderStage, string_view>> shaders);
+        // Sets the shaders to a standard vertex+fragment pipeline.
         void SetShaders(string_view vertexName, string_view fragName);
+        // Sets the shaders to a standard compute pipeline.
         void SetComputeShader(string_view name);
-        void SetSingleShader(ShaderStage stage, ShaderHandle handle);
-        void SetSingleShader(ShaderStage stage, string_view name);
 
         void SetShaderConstant(ShaderStage stage, uint32 index, uint32 data);
 
@@ -121,6 +138,13 @@ namespace sp::vulkan {
         void SetVertexLayout(const VertexLayout &layout) {
             if (layout != pipelineInput.state.vertexLayout) {
                 pipelineInput.state.vertexLayout = layout;
+                SetDirty(DirtyBits::Pipeline);
+            }
+        }
+
+        void SetPrimitiveTopology(vk::PrimitiveTopology topology) {
+            if (topology != pipelineInput.state.primitiveTopology) {
+                pipelineInput.state.primitiveTopology = topology;
                 SetDirty(DirtyBits::Pipeline);
             }
         }
@@ -347,6 +371,9 @@ namespace sp::vulkan {
         }
 
     private:
+        void SetSingleShader(ShaderStage stage, ShaderHandle handle);
+        void SetSingleShader(ShaderStage stage, string_view name);
+
         bool TestDirty(DirtyFlags flags) {
             return static_cast<bool>(dirty & flags);
         }

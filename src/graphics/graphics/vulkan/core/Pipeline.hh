@@ -21,6 +21,7 @@ namespace sp::vulkan {
     struct PipelineStaticState {
         ShaderHandleSet shaders = {};
         VertexLayout vertexLayout;
+        vk::PrimitiveTopology primitiveTopology = vk::PrimitiveTopology::eTriangleList;
         vk::CullModeFlags cullMode;
         vk::FrontFace frontFaceWinding;
         vk::BlendOp blendOp;

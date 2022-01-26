@@ -317,11 +317,7 @@ namespace sp::vulkan {
         }
 
         vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
-        inputAssembly.topology = vk::PrimitiveTopology::eTriangleList;
-
-        vk::PipelineViewportStateCreateInfo viewportState;
-        viewportState.viewportCount = 1;
-        viewportState.scissorCount = 1;
+        inputAssembly.topology = state.primitiveTopology;
 
         vk::DynamicState states[] = {
             vk::DynamicState::eViewport,
@@ -339,53 +335,60 @@ namespace sp::vulkan {
         vk::PipelineRasterizationStateCreateInfo rasterizer;
         rasterizer.polygonMode = vk::PolygonMode::eFill;
         rasterizer.depthClampEnable = VK_FALSE;
-        rasterizer.rasterizerDiscardEnable = VK_FALSE;
+        rasterizer.rasterizerDiscardEnable = !shaders[(size_t)ShaderStage::Fragment];
         rasterizer.lineWidth = 1.0f;
         rasterizer.cullMode = state.cullMode;
         rasterizer.frontFace = state.frontFaceWinding;
 
         std::array<vk::PipelineColorBlendAttachmentState, MAX_COLOR_ATTACHMENTS> colorBlendAttachments;
 
+        vk::PipelineViewportStateCreateInfo viewportState;
         vk::PipelineColorBlendStateCreateInfo colorBlending;
-        colorBlending.attachmentCount = compile.renderPass->ColorAttachmentCount();
-        colorBlending.pAttachments = colorBlendAttachments.data();
-
-        // TODO: support configuring each attachment
-        for (uint32 i = 0; i < colorBlending.attachmentCount; i++) {
-            auto &blendState = colorBlendAttachments[i];
-            blendState.blendEnable = state.blendEnable;
-            if (state.blendEnable) {
-                blendState.colorBlendOp = state.blendOp;
-                blendState.alphaBlendOp = state.blendOp;
-                blendState.srcColorBlendFactor = state.srcBlendFactor;
-                blendState.srcAlphaBlendFactor = state.srcBlendFactor;
-                blendState.dstColorBlendFactor = state.dstBlendFactor;
-                blendState.dstAlphaBlendFactor = state.dstBlendFactor;
-            }
-            blendState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-                                        vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-        }
-
         vk::PipelineMultisampleStateCreateInfo multisampling;
-        multisampling.sampleShadingEnable = false;
-        multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
-
         vk::PipelineDepthStencilStateCreateInfo depthStencil;
-        depthStencil.depthTestEnable = state.depthTest;
-        depthStencil.depthWriteEnable = state.depthWrite;
-        depthStencil.depthCompareOp = vk::CompareOp::eLess;
-        depthStencil.depthBoundsTestEnable = false;
-        depthStencil.minDepthBounds = 0.0f;
-        depthStencil.maxDepthBounds = 1.0f;
-        depthStencil.stencilTestEnable = state.stencilTest;
-        depthStencil.front.compareOp = state.stencilCompareOp;
-        depthStencil.front.failOp = state.stencilFailOp;
-        depthStencil.front.depthFailOp = state.stencilDepthFailOp;
-        depthStencil.front.passOp = state.stencilPassOp;
-        depthStencil.back.compareOp = state.stencilCompareOp;
-        depthStencil.back.failOp = state.stencilFailOp;
-        depthStencil.back.depthFailOp = state.stencilDepthFailOp;
-        depthStencil.back.passOp = state.stencilPassOp;
+
+        if (!rasterizer.rasterizerDiscardEnable) {
+            viewportState.viewportCount = 1;
+            viewportState.scissorCount = 1;
+
+            colorBlending.attachmentCount = compile.renderPass->ColorAttachmentCount();
+            colorBlending.pAttachments = colorBlendAttachments.data();
+
+            // TODO: support configuring each attachment
+            for (uint32 i = 0; i < colorBlending.attachmentCount; i++) {
+                auto &blendState = colorBlendAttachments[i];
+                blendState.blendEnable = state.blendEnable;
+                if (state.blendEnable) {
+                    blendState.colorBlendOp = state.blendOp;
+                    blendState.alphaBlendOp = state.blendOp;
+                    blendState.srcColorBlendFactor = state.srcBlendFactor;
+                    blendState.srcAlphaBlendFactor = state.srcBlendFactor;
+                    blendState.dstColorBlendFactor = state.dstBlendFactor;
+                    blendState.dstAlphaBlendFactor = state.dstBlendFactor;
+                }
+                blendState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+                                            vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+            }
+
+            multisampling.sampleShadingEnable = false;
+            multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
+
+            depthStencil.depthTestEnable = state.depthTest;
+            depthStencil.depthWriteEnable = state.depthWrite;
+            depthStencil.depthCompareOp = vk::CompareOp::eLess;
+            depthStencil.depthBoundsTestEnable = false;
+            depthStencil.minDepthBounds = 0.0f;
+            depthStencil.maxDepthBounds = 1.0f;
+            depthStencil.stencilTestEnable = state.stencilTest;
+            depthStencil.front.compareOp = state.stencilCompareOp;
+            depthStencil.front.failOp = state.stencilFailOp;
+            depthStencil.front.depthFailOp = state.stencilDepthFailOp;
+            depthStencil.front.passOp = state.stencilPassOp;
+            depthStencil.back.compareOp = state.stencilCompareOp;
+            depthStencil.back.failOp = state.stencilFailOp;
+            depthStencil.back.depthFailOp = state.stencilDepthFailOp;
+            depthStencil.back.passOp = state.stencilPassOp;
+        }
 
         vk::PipelineVertexInputStateCreateInfo VertexLayout;
         VertexLayout.vertexBindingDescriptionCount = state.vertexLayout.bindingCount;
@@ -398,11 +401,13 @@ namespace sp::vulkan {
         pipelineInfo.pStages = shaderStages.data();
         pipelineInfo.pVertexInputState = &VertexLayout;
         pipelineInfo.pInputAssemblyState = &inputAssembly;
-        pipelineInfo.pViewportState = &viewportState;
         pipelineInfo.pRasterizationState = &rasterizer;
-        pipelineInfo.pMultisampleState = &multisampling;
-        pipelineInfo.pDepthStencilState = &depthStencil;
-        pipelineInfo.pColorBlendState = &colorBlending;
+        if (!rasterizer.rasterizerDiscardEnable) {
+            pipelineInfo.pViewportState = &viewportState;
+            pipelineInfo.pMultisampleState = &multisampling;
+            pipelineInfo.pDepthStencilState = &depthStencil;
+            pipelineInfo.pColorBlendState = &colorBlending;
+        }
         pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.layout = *layout;
         pipelineInfo.renderPass = **compile.renderPass;

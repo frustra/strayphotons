@@ -249,7 +249,8 @@ namespace sp::vulkan {
 
         vector<const char *> enabledDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             VK_KHR_MULTIVIEW_EXTENSION_NAME,
-            VK_EXT_MEMORY_BUDGET_EXTENSION_NAME};
+            VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
+            VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME};
 
         auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
 
@@ -742,6 +743,11 @@ namespace sp::vulkan {
         case BUFFER_TYPE_STORAGE_LOCAL_INDIRECT:
             usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer |
                     vk::BufferUsageFlagBits::eTransferDst;
+            residency = VMA_MEMORY_USAGE_GPU_ONLY;
+            break;
+        case BUFFER_TYPE_STORAGE_LOCAL_VERTEX:
+            usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer |
+                    vk::BufferUsageFlagBits::eTransferSrc;
             residency = VMA_MEMORY_USAGE_GPU_ONLY;
             break;
         default:

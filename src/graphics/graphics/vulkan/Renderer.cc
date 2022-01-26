@@ -141,6 +141,7 @@ namespace sp::vulkan {
             ecs::FocusLock>>();
 
         AddSceneState(lock);
+        AddGeometryWarp(graph);
         AddLightState(graph, lock);
         AddShadowMaps(graph, lock);
         AddGuis(graph, lock);
@@ -176,6 +177,7 @@ namespace sp::vulkan {
                 builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
 
                 if (indirectDraw) {
+                    builder.ReadBuffer("WarpedVertexBuffer");
                     builder.ReadBuffer(drawIDs.drawCommandsBuffer);
                     builder.ReadBuffer(drawIDs.drawParamsBuffer);
                 }
@@ -192,7 +194,7 @@ namespace sp::vulkan {
 
                     auto drawCommandsBuffer = resources.GetBuffer(drawIDs.drawCommandsBuffer);
                     auto drawParamsBuffer = resources.GetBuffer(drawIDs.drawParamsBuffer);
-                    DrawSceneIndirect(cmd, drawCommandsBuffer, drawParamsBuffer);
+                    DrawSceneIndirect(cmd, resources, drawCommandsBuffer, drawParamsBuffer);
                 });
             } else {
                 forwardPass.Execute([this, view, lock](RenderGraphResources &resources, CommandContext &cmd) {
@@ -312,6 +314,7 @@ namespace sp::vulkan {
                 builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
 
                 if (indirectDraw) {
+                    builder.ReadBuffer("WarpedVertexBuffer");
                     builder.ReadBuffer(drawIDs.drawCommandsBuffer);
                     builder.ReadBuffer(drawIDs.drawParamsBuffer);
                 }
@@ -331,7 +334,7 @@ namespace sp::vulkan {
 
                     auto drawCommandsBuffer = resources.GetBuffer(drawIDs.drawCommandsBuffer);
                     auto drawParamsBuffer = resources.GetBuffer(drawIDs.drawParamsBuffer);
-                    DrawSceneIndirect(cmd, drawCommandsBuffer, drawParamsBuffer);
+                    DrawSceneIndirect(cmd, resources, drawCommandsBuffer, drawParamsBuffer);
 
                     GPUViewState *viewState;
                     viewStateBuf->Map((void **)&viewState);
@@ -525,9 +528,10 @@ namespace sp::vulkan {
             desc.format = vk::Format::eD16Unorm;
             builder.OutputDepthAttachment("ShadowMapDepth", desc, {LoadOp::Clear, StoreOp::Store});
 
+            if (indirectDraw) builder.ReadBuffer("WarpedVertexBuffer");
+
             for (auto &ids : drawIDs) {
                 builder.ReadBuffer(ids.drawCommandsBuffer);
-                builder.ReadBuffer(ids.drawParamsBuffer);
             }
         });
 
@@ -549,9 +553,7 @@ namespace sp::vulkan {
                     cmd.SetYDirection(YDirection::Down);
 
                     auto &ids = drawIDs[i];
-                    DrawSceneIndirect(cmd,
-                        resources.GetBuffer(ids.drawCommandsBuffer),
-                        resources.GetBuffer(ids.drawParamsBuffer));
+                    DrawSceneIndirect(cmd, resources, resources.GetBuffer(ids.drawCommandsBuffer), {});
                 }
             });
         } else {
@@ -854,6 +856,7 @@ namespace sp::vulkan {
     void Renderer::AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock) {
         scene.renderableCount = 0;
         scene.primitiveCount = 0;
+        scene.vertexCount = 0;
         auto gpuRenderable = (GPURenderableEntity *)scene.renderableEntityList->Mapped();
 
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
@@ -874,12 +877,100 @@ namespace sp::vulkan {
             gpuRenderable->modelToWorld = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
             gpuRenderable->visibilityMask = renderable.visibility.to_ulong();
             gpuRenderable->modelIndex = model->SceneIndex();
+            gpuRenderable->vertexOffset = scene.vertexCount;
             gpuRenderable++;
             scene.renderableCount++;
             scene.primitiveCount += model->PrimitiveCount();
+            scene.vertexCount += model->VertexCount();
         }
 
         scene.primitiveCountPowerOfTwo = std::max(1u, CeilToPowerOfTwo(scene.primitiveCount));
+    }
+
+    void Renderer::AddGeometryWarp(RenderGraph &graph) {
+        graph.Pass("GeometryWarp")
+            .Build([&](RenderGraphPassBuilder &builder) {
+                const auto maxDraws = scene.primitiveCountPowerOfTwo;
+
+                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_INDIRECT,
+                    "WarpedVertexDrawCmds",
+                    sizeof(uint32) + maxDraws * sizeof(VkDrawIndirectCommand));
+
+                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL,
+                    "WarpedVertexDrawParams",
+                    maxDraws * sizeof(glm::vec4) * 5);
+
+                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_VERTEX,
+                    "WarpedVertexBuffer",
+                    sizeof(SceneVertex) * scene.vertexCount);
+            })
+            .Execute([this](RenderGraphResources &resources, CommandContext &cmd) {
+                if (scene.vertexCount == 0) return;
+
+                vk::BufferMemoryBarrier barrier;
+                barrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;
+                barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+                barrier.buffer = *scene.renderableEntityList;
+                barrier.size = VK_WHOLE_SIZE;
+                cmd.Raw().pipelineBarrier(vk::PipelineStageFlagBits::eHost,
+                    vk::PipelineStageFlagBits::eComputeShader,
+                    {},
+                    {},
+                    {barrier},
+                    {});
+
+                auto cmdBuffer = resources.GetBuffer("WarpedVertexDrawCmds");
+                auto paramBuffer = resources.GetBuffer("WarpedVertexDrawParams");
+                auto vertexBuffer = resources.GetBuffer("WarpedVertexBuffer");
+
+                cmd.Raw().fillBuffer(*cmdBuffer, 0, sizeof(uint32), 0);
+
+                cmd.SetComputeShader("generate_warp_geometry_calls.comp");
+                cmd.SetStorageBuffer(0, 0, scene.renderableEntityList);
+                cmd.SetStorageBuffer(0, 1, scene.models);
+                cmd.SetStorageBuffer(0, 2, scene.primitiveLists);
+                cmd.SetStorageBuffer(0, 3, cmdBuffer);
+                cmd.SetStorageBuffer(0, 4, paramBuffer);
+
+                struct {
+                    uint32 renderableCount;
+                } constants;
+                constants.renderableCount = scene.renderableCount;
+                cmd.PushConstants(constants);
+                cmd.Dispatch((scene.renderableCount + 127) / 128, 1, 1);
+
+                barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+                barrier.dstAccessMask = vk::AccessFlagBits::eIndirectCommandRead;
+                barrier.buffer = *cmdBuffer;
+                barrier.size = VK_WHOLE_SIZE;
+                cmd.Raw().pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,
+                    vk::PipelineStageFlagBits::eDrawIndirect,
+                    {},
+                    {},
+                    {barrier},
+                    {});
+
+                barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+                barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+                barrier.buffer = *paramBuffer;
+                barrier.size = VK_WHOLE_SIZE;
+                cmd.Raw().pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader,
+                    vk::PipelineStageFlagBits::eVertexShader,
+                    {},
+                    {},
+                    {barrier},
+                    {});
+
+                cmd.BeginRenderPass({});
+                cmd.SetShaders({{ShaderStage::Vertex, "warp_geometry.vert"}});
+                cmd.SetStorageBuffer(0, 0, paramBuffer);
+                cmd.SetStorageBuffer(0, 1, vertexBuffer);
+                cmd.SetVertexLayout(SceneVertex::Layout());
+                cmd.SetPrimitiveTopology(vk::PrimitiveTopology::ePointList);
+                cmd.Raw().bindVertexBuffers(0, {*scene.vertexBuffer}, {0});
+                cmd.DrawIndirect(cmdBuffer, sizeof(uint32), scene.primitiveCount);
+                cmd.EndRenderPass();
+            });
     }
 
     Renderer::DrawBufferIDs Renderer::GenerateDrawsForView(RenderGraph &graph,
@@ -894,8 +985,10 @@ namespace sp::vulkan {
                     sizeof(uint32) + maxDraws * sizeof(VkDrawIndexedIndirectCommand));
                 bufferIDs.drawCommandsBuffer = drawCmds.id;
 
-                auto drawParams = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL, maxDraws * sizeof(glm::vec4) * 5);
+                auto drawParams = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL, maxDraws * sizeof(uint16) * 2);
                 bufferIDs.drawParamsBuffer = drawParams.id;
+
+                builder.ReadBuffer("WarpedVertexBuffer");
             })
             .Execute([this, viewMask, bufferIDs](RenderGraphResources &resources, CommandContext &cmd) {
                 auto drawBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
@@ -908,28 +1001,40 @@ namespace sp::vulkan {
                 cmd.SetStorageBuffer(0, 3, drawBuffer);
                 cmd.SetStorageBuffer(0, 4, resources.GetBuffer(bufferIDs.drawParamsBuffer));
 
-                uint32 visibilityMask = viewMask.to_ulong();
-                cmd.PushConstants(visibilityMask);
+                cmd.SetStorageBuffer(0, 5, scene.vertexBuffer);
+                cmd.SetStorageBuffer(0, 6, resources.GetBuffer("WarpedVertexBuffer"));
+
+                struct {
+                    uint32 renderableCount;
+                    uint32 visibilityMask;
+                } constants;
+                constants.renderableCount = scene.renderableCount;
+                constants.visibilityMask = viewMask.to_ulong();
+                cmd.PushConstants(constants);
 
                 cmd.Dispatch((scene.renderableCount + 127) / 128, 1, 1);
             });
         return bufferIDs;
     }
 
-    void Renderer::DrawSceneIndirect(CommandContext &cmd, BufferPtr drawCommandsBuffer, BufferPtr drawParamsBuffer) {
+    void Renderer::DrawSceneIndirect(CommandContext &cmd,
+        RenderGraphResources &resources,
+        BufferPtr drawCommandsBuffer,
+        BufferPtr drawParamsBuffer) {
+        if (scene.vertexCount == 0) return;
+
         cmd.SetBindlessDescriptors(2, scene.GetTextureDescriptorSet());
 
         cmd.SetVertexLayout(SceneVertex::Layout());
         cmd.Raw().bindIndexBuffer(*scene.indexBuffer, 0, vk::IndexType::eUint16);
-        cmd.Raw().bindVertexBuffers(0, {*scene.vertexBuffer}, {0});
+        cmd.Raw().bindVertexBuffers(0, {*resources.GetBuffer("WarpedVertexBuffer")}, {0});
 
-        cmd.SetStorageBuffer(1, 0, drawParamsBuffer);
+        if (drawParamsBuffer) cmd.SetStorageBuffer(1, 0, drawParamsBuffer);
         cmd.DrawIndexedIndirectCount(drawCommandsBuffer,
             sizeof(uint32),
             drawCommandsBuffer,
             0,
-            drawCommandsBuffer->Size() / sizeof(VkDrawIndexedIndirectCommand),
-            sizeof(VkDrawIndexedIndirectCommand));
+            drawCommandsBuffer->Size() / sizeof(VkDrawIndexedIndirectCommand));
     }
 
     void Renderer::ForwardPass(CommandContext &cmd,

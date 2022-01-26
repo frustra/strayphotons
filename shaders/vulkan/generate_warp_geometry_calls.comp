@@ -6,13 +6,13 @@ layout(binding = 0, rgba8) uniform image2D texture;
 
 layout(local_size_x = 128, local_size_y = 1) in;
 
-layout(push_constant) uniform PushConstants {
-	uint renderableCount;
-	uint visibilityMask;
-};
-
 #include "lib/scene.glsl"
 #include "lib/indirect_commands.glsl"
+#include "lib/warp_geometry_params.glsl"
+
+layout(push_constant) uniform PushConstants {
+	uint renderableCount;
+};
 
 layout(std430, set = 0, binding = 0) readonly buffer Renderables {
 	RenderableEntity renderables[];
@@ -25,40 +25,33 @@ layout(std430, set = 0, binding = 2) readonly buffer MeshPrimitives {
 };
 layout(std430, set = 0, binding = 3) buffer DrawCommands {
 	uint drawCount;
-	VkDrawIndexedIndirectCommand drawCommands[];
+	VkDrawIndirectCommand drawCommands[];
 };
-#include "lib/draw_params.glsl"
 layout(std430, set = 0, binding = 4) buffer DrawParamsList {
-	DrawParams drawParams[];
+	WarpGeometryParams drawParams[];
 };
 
 void main() {
 	if (gl_GlobalInvocationID.x >= renderableCount) return;
 
 	RenderableEntity renderable = renderables[gl_GlobalInvocationID.x];
-
-	uint entityVisibility = renderable.visibilityMask;
-	entityVisibility &= visibilityMask;
-	if (entityVisibility != visibilityMask) return;
-
 	MeshModel model = models[renderable.modelIndex];
 	uint primitiveEnd = model.primitiveOffset + model.primitiveCount;
+
 	for (uint pi = model.primitiveOffset; pi < primitiveEnd; pi++) {
 		MeshPrimitive prim = primitives[pi];
-		VkDrawIndexedIndirectCommand draw;
-		draw.indexCount = prim.indexCount;
+		VkDrawIndirectCommand draw;
+		draw.vertexCount = prim.vertexCount;
 		draw.instanceCount = 1;
-		draw.firstIndex = model.indexOffset + prim.firstIndex;
-		draw.vertexOffset = int(renderable.vertexOffset + prim.vertexOffset);
+		draw.firstVertex = int(model.vertexOffset + prim.vertexOffset);
 
 		uint drawIndex = atomicAdd(drawCount, 1);
 		draw.firstInstance = drawIndex;
-
-		DrawParams drawParam;
-		drawParam.baseColorTexID = uint16_t(prim.baseColorTexID);
-		drawParam.metallicRoughnessTexID = uint16_t(prim.metallicRoughnessTexID);
-
 		drawCommands[drawIndex] = draw;
-		drawParams[drawIndex] = drawParam;
+
+		WarpGeometryParams params;
+		params.modelMat = renderable.modelToWorld * prim.primitiveToModel;
+		params.outputVertexOffset = renderable.vertexOffset + prim.vertexOffset;
+		drawParams[drawIndex] = params;
 	}
 }
