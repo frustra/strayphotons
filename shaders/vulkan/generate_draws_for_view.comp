@@ -55,7 +55,6 @@ void main() {
 		draw.firstInstance = drawIndex;
 
 		DrawParams drawParam;
-		drawParam.modelMat = renderable.modelToWorld * prim.primitiveToModel;
 		drawParam.baseColorTexID = uint16_t(prim.baseColorTexID);
 		drawParam.metallicRoughnessTexID = uint16_t(prim.metallicRoughnessTexID);
 

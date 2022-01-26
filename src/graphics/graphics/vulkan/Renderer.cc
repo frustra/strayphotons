@@ -532,7 +532,6 @@ namespace sp::vulkan {
 
             for (auto &ids : drawIDs) {
                 builder.ReadBuffer(ids.drawCommandsBuffer);
-                builder.ReadBuffer(ids.drawParamsBuffer);
             }
         });
 
@@ -554,10 +553,7 @@ namespace sp::vulkan {
                     cmd.SetYDirection(YDirection::Down);
 
                     auto &ids = drawIDs[i];
-                    DrawSceneIndirect(cmd,
-                        resources,
-                        resources.GetBuffer(ids.drawCommandsBuffer),
-                        resources.GetBuffer(ids.drawParamsBuffer));
+                    DrawSceneIndirect(cmd, resources, resources.GetBuffer(ids.drawCommandsBuffer), {});
                 }
             });
         } else {
@@ -896,15 +892,15 @@ namespace sp::vulkan {
             .Build([&](RenderGraphPassBuilder &builder) {
                 const auto maxDraws = scene.primitiveCountPowerOfTwo;
 
-                auto drawCmds = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_INDIRECT,
+                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_INDIRECT,
                     "WarpedVertexDrawCmds",
                     sizeof(uint32) + maxDraws * sizeof(VkDrawIndirectCommand));
 
-                auto drawParams = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL,
+                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL,
                     "WarpedVertexDrawParams",
                     maxDraws * sizeof(glm::vec4) * 5);
 
-                auto vertexBuffer = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_VERTEX,
+                builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_VERTEX,
                     "WarpedVertexBuffer",
                     sizeof(SceneVertex) * scene.vertexCount);
             })
@@ -989,7 +985,7 @@ namespace sp::vulkan {
                     sizeof(uint32) + maxDraws * sizeof(VkDrawIndexedIndirectCommand));
                 bufferIDs.drawCommandsBuffer = drawCmds.id;
 
-                auto drawParams = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL, maxDraws * sizeof(glm::vec4) * 5);
+                auto drawParams = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL, maxDraws * sizeof(uint16) * 2);
                 bufferIDs.drawParamsBuffer = drawParams.id;
 
                 builder.ReadBuffer("WarpedVertexBuffer");
@@ -1033,7 +1029,7 @@ namespace sp::vulkan {
         cmd.Raw().bindIndexBuffer(*scene.indexBuffer, 0, vk::IndexType::eUint16);
         cmd.Raw().bindVertexBuffers(0, {*resources.GetBuffer("WarpedVertexBuffer")}, {0});
 
-        cmd.SetStorageBuffer(1, 0, drawParamsBuffer);
+        if (drawParamsBuffer) cmd.SetStorageBuffer(1, 0, drawParamsBuffer);
         cmd.DrawIndexedIndirectCount(drawCommandsBuffer,
             sizeof(uint32),
             drawCommandsBuffer,

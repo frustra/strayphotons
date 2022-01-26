@@ -18,12 +18,15 @@ layout(std430, set = 0, binding = 1) buffer VertexBufferOutput {
 
 void main() {
 	WarpGeometryParams params = paramList[gl_BaseInstance];
-	mat3 modelRotation = mat3(params.modelMat);
+
+	vec4 position = params.modelMat * vec4(inPosition, 1);
+	vec3 normal = mat3(params.modelMat) * inNormal;
+
+	// warping goes here
 
 	SceneVertex vertex;
-	vertex.positionAndNormalX.xyz = inPosition;
-	vertex.positionAndNormalX.w = inNormal.x;
-	vertex.normalYZ = inNormal.yz;
+	vertex.positionAndNormalX = vec4(position.xyz, normal.x);
+	vertex.normalYZ = normal.yz;
 	vertex.uv = inTexCoord;
 	vertices[gl_VertexIndex - gl_BaseVertex + params.outputVertexOffset] = vertex;
 }
