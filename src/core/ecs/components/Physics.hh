@@ -62,6 +62,8 @@ namespace ecs {
         glm::vec3 jointLocalOffset, jointRemoteOffset;
         glm::quat jointLocalOrient, jointRemoteOrient;
 
+        glm::vec3 constantForce;
+
         Tecs::Entity constraint;
         float constraintMaxDistance = 0.0f;
         glm::vec3 constraintOffset;

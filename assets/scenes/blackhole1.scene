@@ -129,8 +129,7 @@
 		<% } %>
 		<%- include('prefab/button', {
 			name: 'flashlight_button',
-			translate: [5, 1.25, 0.25],
-			rotate: [-90, 0, 1, 0],
+			translate: [4.95, 1.25, -1],
 			trigger: {
 				"command": "setsignal player.flashlight.on 1"
 			}

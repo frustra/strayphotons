@@ -74,6 +74,8 @@ namespace ecs {
                     Errorf("Component<Physics>::Load joint name does not exist: %s", jointTarget);
                     return false;
                 }
+            } else if (param.first == "force") {
+                physics.constantForce = sp::MakeVec3(param.second);
             } else if (param.first == "constraint") {
                 Assert(scene, "Physics::Load must have valid scene to define constraint");
                 std::string constraintTarget = "";

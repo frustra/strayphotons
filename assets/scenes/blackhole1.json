@@ -1254,29 +1254,30 @@
 			}
 		},
 		{
-			"_name": "flashlight_button_housing",
+			"_name": "flashlight_button_root",
+			"transform": {
+				"translate": [
+					4.95,
+					1.25,
+					-1
+				]
+			}
+		},
+		{
+			"_name": "flashlight_button",
 			"renderable": "box",
 			"transform": {
-				"rotate": [
-					-90,
-					0,
-					1,
-					0
-				],
+				"parent": "flashlight_button_root",
 				"translate": [
-					5,
-					1.25,
-					0.25
+					-0.05,
+					0,
+					0
 				],
 				"scale": [
 					0.1,
 					0.1,
 					0.1
 				]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
 			},
 			"trigger_area": {
 				"object": {
@@ -1285,36 +1286,30 @@
 			}
 		},
 		{
-			"_name": "flashlight_button",
+			"_name": "flashlight_button_actuator",
 			"renderable": "box",
 			"transform": {
-				"parent": "flashlight_button_housing",
+				"parent": "flashlight_button_root",
 				"translate": [
+					-0.125,
 					0,
-					0,
-					0.075
+					0
 				],
 				"scale": [
-					0.5,
-					0.5,
-					0.5
+					0.05,
+					0.05,
+					0.05
 				]
 			},
 			"physics": {
 				"model": "box",
 				"joint": {
-					"target": "flashlight_button_housing",
+					"target": "flashlight_button_root",
 					"type": "Slider",
 					"remote_offset": {
 						"translate": [
+							-0.125,
 							0,
-							0,
-							0.075
-						],
-						"rotate": [
-							90,
-							0,
-							1,
 							0
 						]
 					},
@@ -1322,7 +1317,12 @@
 						-0.04,
 						0
 					]
-				}
+				},
+				"force": [
+					-0.05,
+					0,
+					0
+				]
 			},
 			"signal_output": {},
 			"trigger_group": "object"
