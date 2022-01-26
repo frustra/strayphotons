@@ -50,20 +50,26 @@ namespace sp::vulkan {
         vk::WriteDescriptorSet descriptorWrite;
         descriptorWrite.dstSet = textureDescriptorSet;
         descriptorWrite.dstBinding = 0;
+        descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
 
-        for (size_t offset = 0; offset < texturesToFlush.size();) {
+        for (auto descriptorIndex : texturesToFlush) {
+            const auto &tex = textures[descriptorIndex];
+            descriptorImageInfos.emplace_back(tex->DefaultSampler(), *tex, tex->Image()->LastLayout());
+        }
+
+        for (size_t queueIndex = 0; queueIndex < texturesToFlush.size();) {
+            descriptorWrite.pImageInfo = &descriptorImageInfos[queueIndex];
+            descriptorWrite.dstArrayElement = texturesToFlush[queueIndex];
+
+            // compact consecutive descriptors into one write
             uint32 descriptorCount = 0;
-            auto firstElement = texturesToFlush[offset];
             do {
-                const auto &tex = textures[firstElement + descriptorCount];
-                descriptorImageInfos.emplace_back(tex->DefaultSampler(), *tex, tex->Image()->LastLayout());
                 descriptorCount++;
-            } while (++offset < texturesToFlush.size() && texturesToFlush[offset] == firstElement + descriptorCount);
+                queueIndex++;
+            } while (queueIndex < texturesToFlush.size() &&
+                     texturesToFlush[queueIndex] == descriptorWrite.dstArrayElement + descriptorCount);
 
-            descriptorWrite.dstArrayElement = firstElement;
             descriptorWrite.descriptorCount = descriptorCount;
-            descriptorWrite.pImageInfo = &descriptorImageInfos.back() + 1 - descriptorCount;
-            descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
             descriptorWrites.push_back(descriptorWrite);
         }
 
