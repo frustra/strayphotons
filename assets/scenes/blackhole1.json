@@ -1254,6 +1254,80 @@
 			}
 		},
 		{
+			"_name": "flashlight_button_housing",
+			"renderable": "box",
+			"transform": {
+				"rotate": [
+					-90,
+					0,
+					1,
+					0
+				],
+				"translate": [
+					5,
+					1.25,
+					0.25
+				],
+				"scale": [
+					0.1,
+					0.1,
+					0.1
+				]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			},
+			"trigger_area": {
+				"object": {
+					"command": "setsignal player.flashlight.on 1"
+				}
+			}
+		},
+		{
+			"_name": "flashlight_button",
+			"renderable": "box",
+			"transform": {
+				"parent": "flashlight_button_housing",
+				"translate": [
+					0,
+					0,
+					0.075
+				],
+				"scale": [
+					0.5,
+					0.5,
+					0.5
+				]
+			},
+			"physics": {
+				"model": "box",
+				"joint": {
+					"target": "flashlight_button_housing",
+					"type": "Slider",
+					"remote_offset": {
+						"translate": [
+							0,
+							0,
+							0.075
+						],
+						"rotate": [
+							90,
+							0,
+							1,
+							0
+						]
+					},
+					"range": [
+						-0.04,
+						0
+					]
+				}
+			},
+			"signal_output": {},
+			"trigger_group": "object"
+		},
+		{
 			"_name": "global.transition1-2",
 			"transform": {
 				"translate": [

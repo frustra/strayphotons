@@ -161,13 +161,14 @@ namespace ecs {
             glm::length(this->transform[2]));
     }
 
-    void Transform::SetTransform(glm::mat4x3 transform) {
-        this->transform = transform;
+    void Transform::SetTransform(const Transform &transform) {
+        this->parent = transform.parent;
+        this->transform = transform.transform;
         this->changeCount++;
     }
 
-    void Transform::SetTransform(const Transform &transform) {
-        this->transform = transform.transform;
+    void Transform::SetMatrix(glm::mat4x3 mat) {
+        this->transform = mat;
         this->changeCount++;
     }
 

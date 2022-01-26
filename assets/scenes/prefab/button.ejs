@@ -1,0 +1,41 @@
+{
+	"_name": <%= name + "_housing" %>,
+	"renderable": "box",
+	"transform": {
+		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
+		"translate": <%= translate %>,
+        "scale": [0.1, 0.1, 0.1]
+	},
+	"physics": {
+		"model": "box",
+		"dynamic": false
+	},
+    "trigger_area": {
+    <% if (locals.trigger) { %>
+        "object": <%= trigger %>
+    <% } %>
+    }
+},
+{
+	"_name": <%= name %>,
+	"renderable": "box",
+	"transform": {
+		"parent": <%= name + "_housing" %>,
+		"translate": [0, 0, 0.075],
+        "scale": [0.5, 0.5, 0.5]
+	},
+    "physics": {
+        "model": "box",
+        "joint": {
+            "target": <%= name + "_housing" %>,
+            "type": "Slider",
+            "remote_offset": {
+                "translate": [0, 0, 0.075],
+                "rotate": [90, 0, 1, 0]
+            },
+            "range": [-0.04, 0]
+        }
+    },
+	"signal_output": {},
+    "trigger_group": "object"
+}

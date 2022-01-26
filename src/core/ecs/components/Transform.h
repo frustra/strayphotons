@@ -36,7 +36,7 @@ namespace ecs {
         void SetPosition(glm::vec3 pos);
         void SetRotation(glm::quat quat);
         void SetScale(glm::vec3 xyz);
-        void SetTransform(glm::mat4x3 transform);
+        void SetMatrix(glm::mat4x3 mat);
         void SetTransform(const Transform &transform);
 
         // Returns local transform data, not including any parent transforms.

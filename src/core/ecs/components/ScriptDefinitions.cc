@@ -36,7 +36,6 @@ namespace ecs {
                         auto &transform = ent.Get<Transform>(lock);
                         if (transform.HasParent(lock)) {
                             transform.SetTransform(transform.GetGlobalTransform(lock));
-                            transform.SetParent(Tecs::Entity());
                         } else {
                             Tecs::Entity parent = EntityWith<Name>(lock, CVarFlashlightParent.Get());
                             if (parent) {
