@@ -19,13 +19,10 @@ namespace sp::vulkan {
     class Model final : public NonCopyable {
     public:
         struct Primitive : public NonCopyable {
-            SubBufferPtr indexBuffer;
-            vk::IndexType indexType = vk::IndexType::eNoneKHR;
-            size_t indexCount;
-
-            SubBufferPtr vertexBuffer;
             glm::mat4 transform;
-
+            vk::IndexType indexType = vk::IndexType::eNoneKHR;
+            size_t indexOffset, indexCount;
+            size_t vertexOffset, vertexCount;
             TextureIndex baseColor, metallicRoughness;
         };
 
@@ -37,6 +34,9 @@ namespace sp::vulkan {
         uint32 PrimitiveCount() const {
             return primitives.size();
         }
+        uint32 VertexCount() const {
+            return vertexCount;
+        }
 
     private:
         TextureIndex LoadTexture(DeviceContext &device, const sp::Model &model, int materialIndex, TextureType type);
@@ -46,6 +46,7 @@ namespace sp::vulkan {
         robin_hood::unordered_map<string, TextureIndex> textures;
         vector<shared_ptr<Primitive>> primitives;
 
-        SubBufferPtr primitiveList, modelEntry;
+        uint32 vertexCount = 0, indexCount = 0;
+        SubBufferPtr indexBuffer, vertexBuffer, primitiveList, modelEntry;
     };
 } // namespace sp::vulkan

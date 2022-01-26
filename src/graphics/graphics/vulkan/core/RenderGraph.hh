@@ -166,7 +166,7 @@ namespace sp::vulkan {
         friend class RenderGraph;
         friend class RenderGraphPassBuilder;
         string_view name;
-        InlineVector<RenderGraphResourceDependency, 16> dependencies;
+        InlineVector<RenderGraphResourceDependency, 32> dependencies;
         InlineVector<RenderGraphResourceID, 16> outputs;
         std::array<AttachmentInfo, MAX_COLOR_ATTACHMENTS + 1> attachments;
         bool active = false, required = false;

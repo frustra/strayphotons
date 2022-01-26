@@ -20,6 +20,7 @@ namespace sp::vulkan {
         SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha);
         SetCullMode(vk::CullModeFlagBits::eBack);
         SetFrontFaceWinding(vk::FrontFace::eCounterClockwise);
+        SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleList);
     }
 
     void CommandContext::Reset() {
@@ -115,6 +116,21 @@ namespace sp::vulkan {
         cmd->drawIndexed(indexes, instances, firstIndex, vertexOffset, firstInstance);
     }
 
+    void CommandContext::DrawIndirect(BufferPtr drawCommands, vk::DeviceSize offset, uint32 drawCount, uint32 stride) {
+        FlushGraphicsState();
+        cmd->drawIndirect(*drawCommands, offset, drawCount, stride);
+    }
+
+    void CommandContext::DrawIndirectCount(BufferPtr drawCommands,
+        vk::DeviceSize offset,
+        BufferPtr countBuffer,
+        vk::DeviceSize countOffset,
+        uint32 maxDrawCount,
+        uint32 stride) {
+        FlushGraphicsState();
+        cmd->drawIndirectCount(*drawCommands, offset, *countBuffer, countOffset, maxDrawCount, stride);
+    }
+
     void CommandContext::DrawIndexedIndirect(BufferPtr drawCommands,
         vk::DeviceSize offset,
         uint32 drawCount,
@@ -172,6 +188,13 @@ namespace sp::vulkan {
                 !options.baseMipLevel && !options.mipLevelCount && !options.baseArrayLayer && !options.arrayLayerCount,
                 "can't track image layout when specifying a subresource range");
             image->SetLayout(oldLayout, newLayout);
+        }
+    }
+
+    void CommandContext::SetShaders(std::initializer_list<std::pair<ShaderStage, string_view>> shaders) {
+        pipelineInput.state.shaders = {};
+        for (auto &s : shaders) {
+            SetSingleShader(s.first, s.second);
         }
     }
 

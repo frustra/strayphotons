@@ -150,6 +150,9 @@ namespace sp::vulkan {
             extent.height = std::min(extent.height, image.Extent().height);
         }
 
+        if (extent.width == UINT32_MAX) extent.width = 1;
+        if (extent.height == UINT32_MAX) extent.height = 1;
+
         vk::FramebufferCreateInfo framebufferInfo;
         framebufferInfo.renderPass = *renderPass;
         framebufferInfo.attachmentCount = attachmentCount;
