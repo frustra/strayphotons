@@ -1,0 +1,44 @@
+{
+	"_name": <%= name + "_root" %>,
+	"transform": {
+		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
+		"translate": <%= translate %>
+	}
+},
+{
+	"_name": <%= name %>,
+	"renderable": "box",
+	"transform": {
+		"parent": <%= name + "_root" %>,
+		"translate": [-0.05, 0, 0],
+        "scale": [0.1, 0.1, 0.1]
+	},
+    "trigger_area": {
+    <% if (locals.trigger) { %>
+        "object": <%= trigger %>
+    <% } %>
+    }
+},
+{
+	"_name": <%= name + "_actuator" %>,
+	"renderable": "box",
+	"transform": {
+		"parent": <%= name + "_root" %>,
+		"translate": [-0.125, 0, 0],
+        "scale": [0.05, 0.05, 0.05]
+	},
+    "physics": {
+        "model": "box",
+        "joint": {
+            "target": <%= name + "_root" %>,
+            "type": "Slider",
+            "remote_offset": {
+                "translate": [-0.125, 0, 0]
+            },
+            "range": [-0.04, 0]
+        },
+        "force": [-0.05, 0, 0]
+    },
+	"signal_output": {},
+    "trigger_group": "object"
+}

@@ -104,12 +104,20 @@ namespace sp {
 
         // Removes all values that have no references.
         // Values will have their destructors called inline by the current thread.
-        void DropAll() {
+        // Returns the number of values that were removed.
+        size_t DropAll() {
             std::unique_lock lock(mutex);
 
-            for (auto it = storage.begin(); it != storage.end(); it++) {
-                if (it->second.value.use_count() == 1) storage.erase(it);
+            size_t count = 0;
+            for (auto it = storage.begin(); it != storage.end();) {
+                if (it->second.value.use_count() == 1) {
+                    it = storage.erase(it);
+                    count++;
+                } else {
+                    it++;
+                }
             }
+            return count;
         }
 
         bool Contains(const K &key) {

@@ -34,7 +34,7 @@ namespace sp {
         ecs::Transform transform,
         ecs::Transform targetTransform) {
         auto dynamic = physics.actor->is<PxRigidDynamic>();
-        if (dynamic == nullptr) return;
+        if (!dynamic) return;
 
         auto currentRotate = transform.GetRotation();
         transform.Translate(currentRotate * physics.centerOfMass);
@@ -252,6 +252,11 @@ namespace sp {
                 auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
                 auto targetTransform = physics.constraint.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
                 HandleForceLimitConstraint(physics, transform, targetTransform);
+            }
+
+            if (physics.constantForce != glm::vec3()) {
+                auto dynamic = physics.actor->is<PxRigidDynamic>();
+                if (dynamic) dynamic->addForce(GlmVec3ToPxVec3(physics.constantForce));
             }
         }
     }

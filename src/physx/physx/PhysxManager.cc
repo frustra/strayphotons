@@ -164,6 +164,12 @@ namespace sp {
                     return;
                 }
 
+                auto &transform = ent.Get<ecs::Transform>(lock);
+                if (ph.dynamic && transform.parent) {
+                    // Flatten the transform of dynamic physics objects before creating an actor.
+                    transform.SetTransform(transform.GetGlobalTransform(lock));
+                }
+
                 UpdateActor(lock, ent);
             }
 
@@ -188,13 +194,13 @@ namespace sp {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
 
                 auto &ph = ent.Get<ecs::Physics>(lock);
-                auto &readTransform = ent.Get<const ecs::Transform>(lock);
 
                 if (!ph.dynamic) continue;
 
-                Assert(!readTransform.HasParent(lock), "Dynamic physics objects must have no parent");
-
                 if (ph.actor) {
+                    auto &readTransform = ent.Get<const ecs::Transform>(lock);
+                    Assert(!readTransform.HasParent(lock), "Dynamic physics objects must have no parent");
+
                     auto userData = (ActorUserData *)ph.actor->userData;
                     if (!readTransform.HasChanged(userData->transformChangeNumber)) {
                         auto &transform = ent.Get<ecs::Transform>(lock);

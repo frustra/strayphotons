@@ -1254,6 +1254,80 @@
 			}
 		},
 		{
+			"_name": "flashlight_button_root",
+			"transform": {
+				"translate": [
+					4.95,
+					1.25,
+					-1
+				]
+			}
+		},
+		{
+			"_name": "flashlight_button",
+			"renderable": "box",
+			"transform": {
+				"parent": "flashlight_button_root",
+				"translate": [
+					-0.05,
+					0,
+					0
+				],
+				"scale": [
+					0.1,
+					0.1,
+					0.1
+				]
+			},
+			"trigger_area": {
+				"object": {
+					"command": "setsignal player.flashlight.on 1"
+				}
+			}
+		},
+		{
+			"_name": "flashlight_button_actuator",
+			"renderable": "box",
+			"transform": {
+				"parent": "flashlight_button_root",
+				"translate": [
+					-0.125,
+					0,
+					0
+				],
+				"scale": [
+					0.05,
+					0.05,
+					0.05
+				]
+			},
+			"physics": {
+				"model": "box",
+				"joint": {
+					"target": "flashlight_button_root",
+					"type": "Slider",
+					"remote_offset": {
+						"translate": [
+							-0.125,
+							0,
+							0
+						]
+					},
+					"range": [
+						-0.04,
+						0
+					]
+				},
+				"force": [
+					-0.05,
+					0,
+					0
+				]
+			},
+			"signal_output": {},
+			"trigger_group": "object"
+		},
+		{
 			"_name": "global.transition1-2",
 			"transform": {
 				"translate": [
