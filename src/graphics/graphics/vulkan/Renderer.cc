@@ -349,7 +349,7 @@ namespace sp::vulkan {
                 });
             } else {
                 forwardPass.Execute([this, viewsByEye, lock](RenderGraphResources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("scene_indirect.vert", "generate_gbuffer_indirect.frag");
+                    cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
 
                     cmd.SetStencilTest(true);
                     cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
