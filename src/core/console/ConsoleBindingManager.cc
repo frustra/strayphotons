@@ -8,7 +8,8 @@
 
 namespace sp {
     ConsoleBindingManager::ConsoleBindingManager() {
-        GetSceneManager().AddSystemScene("console-binding",
+        GetSceneManager().QueueActionAndBlock(SceneAction::AddSystemScene,
+            "console-binding",
             [](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = lock.NewEntity();
                 ent.Set<ecs::Name>(lock, consoleInputEntity.Name());
