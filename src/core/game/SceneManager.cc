@@ -122,7 +122,7 @@ namespace sp {
                         scenes[SceneType::Async].clear();
                         scenes[SceneType::User].clear();
                         size_t removedCount = stagedScenes.DropAll();
-                        Assertf(removedCount >= expectedCount,
+                        Assertf(removedCount == expectedCount,
                             "Expected to remove %u scenes, got %u",
                             expectedCount,
                             removedCount);
@@ -155,7 +155,7 @@ namespace sp {
                             scenes[SceneType::Async].clear();
 
                             size_t removedCount = stagedScenes.DropAll();
-                            Assertf(removedCount >= reloadScenes.size(),
+                            Assertf(removedCount == reloadScenes.size(),
                                 "Expected to remove %u scenes, got %u",
                                 reloadScenes.size(),
                                 removedCount);
