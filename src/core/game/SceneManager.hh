@@ -75,6 +75,7 @@ namespace sp {
         void PrintScene(std::string sceneName);
 
     private:
+        void RunSceneActions();
         void Frame() override;
 
         struct QueuedAction {
