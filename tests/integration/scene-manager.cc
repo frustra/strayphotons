@@ -78,7 +78,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Add player scene second");
-            Scenes.LoadPlayer();
+            Scenes.QueueActionAndBlock(sp::SceneAction::LoadPlayer);
 
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -111,7 +111,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Reload player scene");
-            Scenes.LoadPlayer();
+            Scenes.QueueActionAndBlock(sp::SceneAction::LoadPlayer);
 
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -135,7 +135,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Add player scene first");
-            Scenes.LoadPlayer();
+            Scenes.QueueActionAndBlock(sp::SceneAction::LoadPlayer);
 
             {
                 auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();

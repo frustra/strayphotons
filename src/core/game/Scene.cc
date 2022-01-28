@@ -46,23 +46,11 @@ namespace sp {
     }
 
     Scene::~Scene() {
-        Logf("Unloading %s scene: %s", type, name);
-        if (stagingWorld && liveWorld) {
-            auto stagingLock = stagingWorld->StartTransaction<ecs::AddRemove>();
-            auto liveLock = liveWorld->StartTransaction<ecs::AddRemove>();
-            RemoveScene(stagingLock, liveLock);
-        }
+        Assertf(!active, "%s scene destroyed while active: %s", type, name);
     }
 
     void Scene::ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
         ecs::Lock<ecs::AddRemove> live) {
-        auto *stagingInstance = &staging.GetInstance();
-        auto *liveInstance = &live.GetInstance();
-        Assert(!stagingWorld || stagingWorld == stagingInstance, "Cannot apply a scene to multiple ECS instances");
-        Assert(!liveWorld || liveWorld == liveInstance, "Cannot apply a scene to multiple ECS instances");
-        stagingWorld = stagingInstance;
-        liveWorld = liveInstance;
-
         Logf("Applying scene: %s", name);
         for (auto e : staging.EntitiesWith<ecs::SceneInfo>()) {
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
@@ -97,6 +85,7 @@ namespace sp {
 
             ApplyComponentsByPriority(staging, live, e);
         }
+        active = true;
     }
 
     void Scene::RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live) {
@@ -129,8 +118,6 @@ namespace sp {
 
             if (!sceneInfo.stagingId) e.Destroy(live);
         }
-
-        stagingWorld = nullptr;
-        liveWorld = nullptr;
+        active = false;
     }
 } // namespace sp

@@ -70,8 +70,7 @@ namespace sp {
         void QueueAction(SceneAction action, std::string sceneName = "", ApplySceneCallback callback = nullptr);
         void QueueActionAndBlock(SceneAction action, std::string sceneName = "", ApplySceneCallback callback = nullptr);
 
-        Tecs::Entity LoadPlayer();
-        void RespawnPlayer();
+        void RespawnPlayer(Tecs::Entity player);
 
         void PrintScene(std::string sceneName);
 
@@ -92,9 +91,7 @@ namespace sp {
 
         void LoadBindingsJson(std::function<void(std::shared_ptr<Scene>)> callback);
 
-        void AddScene(std::string name,
-            SceneType sceneType,
-            std::function<void(std::shared_ptr<Scene>)> callback = nullptr);
+        std::shared_ptr<Scene> AddScene(std::string name, SceneType sceneType);
 
         void TranslateSceneByConnection(const std::shared_ptr<Scene> &scene);
 

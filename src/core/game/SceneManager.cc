@@ -37,7 +37,9 @@ namespace sp {
         funcs.Register<std::string>("reloadscene", "Reload current scene", [this](std::string sceneName) {
             QueueActionAndBlock(SceneAction::ReloadScene, sceneName);
         });
-        funcs.Register(this, "respawn", "Respawn the player", &SceneManager::RespawnPlayer);
+        funcs.Register("respawn", "Respawn the player", [this]() {
+            RespawnPlayer(player);
+        });
         funcs.Register(this, "printscene", "Print info about currently loaded scenes", &SceneManager::PrintScene);
 
         StartThread();
@@ -46,11 +48,23 @@ namespace sp {
     SceneManager::~SceneManager() {
         StopThread();
 
+        auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+        auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+
         for (auto &list : scenes) {
+            for (auto &scene : list) {
+                scene->RemoveScene(stagingLock, liveLock);
+            }
             list.clear();
         }
-        playerScene.reset();
-        bindingsScene.reset();
+        if (playerScene) {
+            playerScene->RemoveScene(stagingLock, liveLock);
+            playerScene.reset();
+        }
+        if (bindingsScene) {
+            bindingsScene->RemoveScene(stagingLock, liveLock);
+            bindingsScene.reset();
+        }
         stagedScenes.DropAll();
     }
 
@@ -94,55 +108,61 @@ namespace sp {
                 } else if (action.action == SceneAction::LoadScene) {
                     // Unload all current scenes first
                     size_t expectedCount = scenes[SceneType::Async].size() + scenes[SceneType::User].size();
-                    scenes[SceneType::Async].clear();
-                    scenes[SceneType::User].clear();
-                    size_t removedCount = stagedScenes.DropAll();
-                    Assertf(removedCount >= expectedCount,
-                        "Expected to remove %u scenes, got %u",
-                        expectedCount,
-                        removedCount);
+                    if (expectedCount > 0) {
+                        auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+                        auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
 
-                    std::atomic_flag loaded;
-                    AddScene(action.sceneName, SceneType::User, [this, &loaded](std::shared_ptr<Scene> scene) {
-                        RespawnPlayer();
+                        for (auto &scene : scenes[SceneType::Async]) {
+                            scene->RemoveScene(stagingLock, liveLock);
+                        }
+                        for (auto &scene : scenes[SceneType::User]) {
+                            scene->RemoveScene(stagingLock, liveLock);
+                        }
 
-                        loaded.test_and_set();
-                        loaded.notify_all();
-                    });
-                    while (!loaded.test()) {
-                        loaded.wait(false);
+                        scenes[SceneType::Async].clear();
+                        scenes[SceneType::User].clear();
+                        size_t removedCount = stagedScenes.DropAll();
+                        Assertf(removedCount >= expectedCount,
+                            "Expected to remove %u scenes, got %u",
+                            expectedCount,
+                            removedCount);
                     }
+
+                    AddScene(action.sceneName, SceneType::User);
+                    RespawnPlayer(player);
                     entry.second.set_value();
 
                 } else if (action.action == SceneAction::ReloadScene) {
                     if (action.sceneName.empty()) {
                         // Reload all async and user scenes
                         std::vector<std::pair<std::string, SceneType>> reloadScenes;
-                        reloadScenes.reserve(scenes[SceneType::Async].size() + scenes[SceneType::User].size());
+                        size_t reloadCount = scenes[SceneType::Async].size() + scenes[SceneType::User].size();
+                        reloadScenes.reserve(reloadCount);
 
-                        for (auto &scene : scenes[SceneType::User]) {
-                            reloadScenes.emplace_back(scene->name, SceneType::User);
-                        }
-                        for (auto &scene : scenes[SceneType::Async]) {
-                            reloadScenes.emplace_back(scene->name, SceneType::Async);
-                        }
-                        scenes[SceneType::User].clear();
-                        scenes[SceneType::Async].clear();
+                        if (reloadCount > 0) {
+                            auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+                            auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
 
-                        size_t removedCount = stagedScenes.DropAll();
-                        Assertf(removedCount >= reloadScenes.size(),
-                            "Expected to remove %u scenes, got %u",
-                            reloadScenes.size(),
-                            removedCount);
+                            for (auto &scene : scenes[SceneType::User]) {
+                                reloadScenes.emplace_back(scene->name, SceneType::User);
+                                scene->RemoveScene(stagingLock, liveLock);
+                            }
+                            for (auto &scene : scenes[SceneType::Async]) {
+                                reloadScenes.emplace_back(scene->name, SceneType::Async);
+                                scene->RemoveScene(stagingLock, liveLock);
+                            }
+                            scenes[SceneType::User].clear();
+                            scenes[SceneType::Async].clear();
+
+                            size_t removedCount = stagedScenes.DropAll();
+                            Assertf(removedCount >= reloadScenes.size(),
+                                "Expected to remove %u scenes, got %u",
+                                reloadScenes.size(),
+                                removedCount);
+                        }
+
                         for (auto &[name, type] : reloadScenes) {
-                            std::atomic_flag loaded;
-                            AddScene(name, type, [&loaded](std::shared_ptr<Scene> scene) {
-                                loaded.test_and_set();
-                                loaded.notify_all();
-                            });
-                            while (!loaded.test()) {
-                                loaded.wait(false);
-                            };
+                            AddScene(name, type);
                         }
                     } else {
                         auto loadedScene = stagedScenes.Load(action.sceneName);
@@ -150,6 +170,13 @@ namespace sp {
                             auto sceneType = loadedScene->type;
                             auto &sceneList = scenes[sceneType];
                             sceneList.erase(std::remove(sceneList.begin(), sceneList.end(), loadedScene));
+
+                            {
+                                auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+                                auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+                                loadedScene->RemoveScene(stagingLock, liveLock);
+                            }
+
                             loadedScene.reset();
                             Assert(stagedScenes.Drop(action.sceneName), "Staged scene still in use after removal");
 
@@ -161,14 +188,7 @@ namespace sp {
                     entry.second.set_value();
 
                 } else if (action.action == SceneAction::AddScene) {
-                    std::atomic_flag loaded;
-                    AddScene(action.sceneName, SceneType::User, [&loaded](std::shared_ptr<Scene>) {
-                        loaded.test_and_set();
-                        loaded.notify_all();
-                    });
-                    while (!loaded.test()) {
-                        loaded.wait(false);
-                    }
+                    AddScene(action.sceneName, SceneType::User);
                     entry.second.set_value();
 
                 } else if (action.action == SceneAction::RemoveScene) {
@@ -176,17 +196,72 @@ namespace sp {
                     if (loadedScene != nullptr) {
                         auto &sceneList = scenes[loadedScene->type];
                         sceneList.erase(std::remove(sceneList.begin(), sceneList.end(), loadedScene));
+
+                        {
+                            auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+                            auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+                            loadedScene->RemoveScene(stagingLock, liveLock);
+                        }
+
                         loadedScene.reset();
                         Assert(stagedScenes.Drop(action.sceneName), "Staged scene still in use after removal");
                     }
                     entry.second.set_value();
 
-                    // } else if (action.action == SceneAction::LoadPlayer) {
-                    // TODO: Figure out how to track player entity
+                } else if (action.action == SceneAction::LoadPlayer) {
+                    if (playerScene) {
+                        auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+                        auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+
+                        playerScene->RemoveScene(stagingLock, liveLock);
+                        playerScene.reset();
+                        player = Tecs::Entity();
+                    }
+
+                    std::atomic_flag loaded;
+                    LoadSceneJson("player",
+                        SceneType::System,
+                        ecs::SceneInfo::Priority::Player,
+                        [this, &loaded](std::shared_ptr<Scene> scene) {
+                            playerScene = scene;
+                            if (playerScene) {
+                                {
+                                    auto stagingLock =
+                                        stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
+                                    auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+
+                                    playerScene->ApplyScene(stagingLock, liveLock);
+
+                                    auto it = playerScene->namedEntities.find("player");
+                                    if (it != playerScene->namedEntities.end()) {
+                                        auto stagingPlayer = it->second;
+                                        if (stagingPlayer && stagingPlayer.Has<ecs::SceneInfo>(stagingLock)) {
+                                            auto &sceneInfo = stagingPlayer.Get<ecs::SceneInfo>(stagingLock);
+                                            player = sceneInfo.liveId;
+                                        }
+                                    }
+                                    Assert(!!player, "Player scene doesn't contain an entity named player");
+                                }
+                            } else {
+                                Errorf("Failed to load player scene!");
+                            }
+
+                            loaded.test_and_set();
+                            loaded.notify_all();
+                        });
+                    while (!loaded.test()) {
+                        loaded.wait(false);
+                    }
+                    entry.second.set_value();
 
                 } else if (action.action == SceneAction::LoadBindings) {
                     // TODO: Remove console key bindings
-                    bindingsScene.reset();
+                    if (bindingsScene) {
+                        auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+                        auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+                        bindingsScene->RemoveScene(stagingLock, liveLock);
+                        bindingsScene.reset();
+                    }
 
                     std::atomic_flag loaded;
                     LoadBindingsJson([this, &loaded](std::shared_ptr<Scene> scene) {
@@ -243,18 +318,16 @@ namespace sp {
             if (loadedScene) {
                 if (loadedScene->type == SceneType::Async) scenes[SceneType::Async].push_back(loadedScene);
             } else {
-                std::atomic_flag loaded;
-                AddScene(sceneName, SceneType::Async, [&loaded](std::shared_ptr<Scene> scene) {
-                    loaded.test_and_set();
-                    loaded.notify_all();
-                });
-                while (!loaded.test()) {
-                    loaded.wait(false);
-                }
+                AddScene(sceneName, SceneType::Async);
             }
         }
 
-        stagedScenes.Tick(this->interval);
+        stagedScenes.Tick(this->interval, [this](std::shared_ptr<Scene> &scene) {
+            auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
+            auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+            scene->RemoveScene(stagingLock, liveLock);
+            scene.reset();
+        });
     }
 
     void SceneManager::QueueAction(SceneAction action, std::string sceneName, ApplySceneCallback callback) {
@@ -446,20 +519,18 @@ namespace sp {
         }
     }
 
-    void SceneManager::AddScene(std::string sceneName,
-        SceneType sceneType,
-        std::function<void(std::shared_ptr<Scene>)> callback) {
+    std::shared_ptr<Scene> SceneManager::AddScene(std::string sceneName, SceneType sceneType) {
         auto loadedScene = stagedScenes.Load(sceneName);
         if (loadedScene != nullptr) {
             Logf("Scene %s already loaded", sceneName);
-            if (callback) callback(loadedScene);
-            return;
+            return loadedScene;
         }
 
+        std::atomic_flag loaded;
         LoadSceneJson(sceneName,
             sceneType,
             ecs::SceneInfo::Priority::Scene,
-            [this, sceneName, sceneType, callback](std::shared_ptr<Scene> scene) {
+            [this, sceneName, sceneType, &loadedScene, &loaded](std::shared_ptr<Scene> scene) {
                 if (scene) {
                     TranslateSceneByConnection(scene);
                     {
@@ -472,55 +543,20 @@ namespace sp {
                     stagedScenes.Register(sceneName, scene);
                     scenes[sceneType].emplace_back(scene);
 
-                    if (callback) callback(scene);
+                    loadedScene = scene;
                 } else {
                     Errorf("Failed to load scene: %s", sceneName);
                 }
-            });
-    }
-
-    Tecs::Entity SceneManager::LoadPlayer() {
-        playerScene.reset();
-        player = Tecs::Entity();
-
-        std::atomic_flag loaded;
-        LoadSceneJson("player",
-            SceneType::System,
-            ecs::SceneInfo::Priority::Player,
-            [this, &loaded](std::shared_ptr<Scene> scene) {
-                playerScene = scene;
-                if (playerScene) {
-                    {
-                        auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
-                        auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
-
-                        playerScene->ApplyScene(stagingLock, liveLock);
-
-                        auto it = playerScene->namedEntities.find("player");
-                        if (it != playerScene->namedEntities.end()) {
-                            auto stagingPlayer = it->second;
-                            if (stagingPlayer && stagingPlayer.Has<ecs::SceneInfo>(stagingLock)) {
-                                auto &sceneInfo = stagingPlayer.Get<ecs::SceneInfo>(stagingLock);
-                                player = sceneInfo.liveId;
-                            }
-                        }
-                        Assert(!!player, "Player scene doesn't contain an entity named player");
-                    }
-                } else {
-                    Errorf("Failed to load player scene!");
-                }
-
                 loaded.test_and_set();
                 loaded.notify_all();
             });
         while (!loaded.test()) {
             loaded.wait(false);
         }
-        Assert(!!player, "Player scene doesn't contain an entity named player");
-        return player;
+        return loadedScene;
     }
 
-    void SceneManager::RespawnPlayer() {
+    void SceneManager::RespawnPlayer(Tecs::Entity player) {
         auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
 
         auto spawn = ecs::EntityWith<ecs::Name>(liveLock, "global.spawn");

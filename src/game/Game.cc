@@ -149,14 +149,19 @@ namespace sp {
 
     void Game::ReloadPlayer() {
         auto &scenes = GetSceneManager();
-        player = scenes.LoadPlayer();
+        scenes.QueueActionAndBlock(SceneAction::LoadPlayer);
+
+        {
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>>();
+            player = ecs::EntityWith<ecs::Name>(lock, "player.player");
+        }
 
 #ifdef SP_GRAPHICS_SUPPORT
         auto context = graphics.GetContext();
         if (context) context->AttachView(player);
 #endif
 
-        scenes.RespawnPlayer();
+        scenes.RespawnPlayer(player);
         scenes.QueueActionAndBlock(SceneAction::LoadBindings);
     }
 
