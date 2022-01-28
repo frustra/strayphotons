@@ -84,12 +84,14 @@ namespace sp {
 
             auto &scenes = GetSceneManager();
             ReloadPlayer();
-            if (options.count("map")) { scenes.LoadScene(options["map"].as<string>()); }
+            if (options.count("map")) {
+                scenes.QueueActionAndBlock(SceneAction::LoadScene, options["map"].as<string>());
+            }
 
             if (startupScript != nullptr) {
                 startupScript->Exec();
             } else if (!options.count("map")) {
-                scenes.LoadScene("menu");
+                scenes.QueueActionAndBlock(SceneAction::LoadScene, "menu");
                 {
                     auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
                     lock.Get<ecs::FocusLock>().AcquireFocus(ecs::FocusLayer::MENU);
@@ -147,15 +149,20 @@ namespace sp {
 
     void Game::ReloadPlayer() {
         auto &scenes = GetSceneManager();
-        player = scenes.LoadPlayer();
+        scenes.QueueActionAndBlock(SceneAction::LoadPlayer);
+
+        {
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>>();
+            player = ecs::EntityWith<ecs::Name>(lock, "player.player");
+        }
 
 #ifdef SP_GRAPHICS_SUPPORT
         auto context = graphics.GetContext();
         if (context) context->AttachView(player);
 #endif
 
-        scenes.RespawnPlayer();
-        scenes.LoadBindings();
+        scenes.RespawnPlayer(player);
+        scenes.QueueActionAndBlock(SceneAction::LoadBindings);
     }
 
     void Game::PrintDebug() {

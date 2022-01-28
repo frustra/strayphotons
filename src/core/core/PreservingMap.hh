@@ -36,7 +36,8 @@ namespace sp {
     public:
         PreservingMap() : last_tick(chrono_clock::now()) {}
 
-        void Tick(chrono_clock::duration maxTickInterval) {
+        void Tick(chrono_clock::duration maxTickInterval,
+            std::function<void(std::shared_ptr<V> &)> destroyCallback = nullptr) {
             auto now = chrono_clock::now();
             chrono_clock::duration tickInterval = std::min(now - last_tick, maxTickInterval);
             last_tick = now;
@@ -58,7 +59,10 @@ namespace sp {
 
                 for (auto &key : cleanupList) {
                     auto it = storage.find(key);
-                    if (it != storage.end() && it->second.value.use_count() == 1) storage.erase(it);
+                    if (it != storage.end() && it->second.value.use_count() == 1) {
+                        if (destroyCallback) destroyCallback(it->second.value);
+                        storage.erase(it);
+                    }
                 }
             }
         }

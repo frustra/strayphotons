@@ -38,7 +38,8 @@ namespace sp {
         guiEntity = ecs::NamedEntity(name);
         keyboardEntity = ecs::NamedEntity("keyboard");
 
-        GetSceneManager().AddSystemScene("gui-manager",
+        GetSceneManager().QueueActionAndBlock(SceneAction::AddSystemScene,
+            "gui-manager",
             [this, layer](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto ent = lock.NewEntity();
                 ent.Set<ecs::Name>(lock, guiEntity.Name());
