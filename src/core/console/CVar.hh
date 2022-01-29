@@ -7,6 +7,9 @@
 #include <sstream>
 
 namespace sp {
+    template<typename VarType>
+    static inline void ToggleBetweenValues(VarType &var, const string *str_values, size_t count);
+
     class CVarBase {
     public:
         CVarBase(const string &name, const string &description);
@@ -71,38 +74,8 @@ namespace sp {
             dirty = true;
         }
 
-        /*
-         * Toggle values between those given in the set.
-         * If no values are given, a true/false toggle is used.
-         */
         void ToggleValue(const string *str_values, size_t count) {
-            if (count == 0) {
-                if (value == VarType()) {
-                    value = VarType(1);
-                } else {
-                    value = VarType();
-                }
-            } else if (count == 1) {
-                std::stringstream in(str_values[0]);
-                VarType v;
-                in >> v;
-                if (value == v) {
-                    value = VarType();
-                } else {
-                    value = v;
-                }
-            } else {
-                std::vector<VarType> values(count);
-                size_t target = count - 1;
-                for (size_t i = 0; i < count && i <= target; i++) {
-                    std::stringstream in(str_values[i]);
-                    VarType v;
-                    in >> v;
-                    values[i] = v;
-                    if (value == values[i]) { target = (i + 1) % count; }
-                }
-                value = values[target];
-            }
+            ToggleBetweenValues(value, str_values, count);
             dirty = true;
         }
 
@@ -117,5 +90,40 @@ namespace sp {
     template<>
     inline void CVar<string>::ToggleValue(const string *str_values, size_t count) {
         // Do nothing
+    }
+
+    /*
+     * Toggle values between those given in the set.
+     * If no values are given, a true/false toggle is used.
+     */
+    template<typename VarType>
+    static inline void ToggleBetweenValues(VarType &var, const string *str_values, size_t count) {
+        if (count == 0) {
+            if (var == VarType()) {
+                var = VarType(1);
+            } else {
+                var = VarType();
+            }
+        } else if (count == 1) {
+            std::stringstream in(str_values[0]);
+            VarType v;
+            in >> v;
+            if (var == v) {
+                var = VarType();
+            } else {
+                var = v;
+            }
+        } else {
+            std::vector<VarType> values(count);
+            size_t target = count - 1;
+            for (size_t i = 0; i < count && i <= target; i++) {
+                std::stringstream in(str_values[i]);
+                VarType v;
+                in >> v;
+                values[i] = v;
+                if (var == values[i]) { target = (i + 1) % count; }
+            }
+            var = values[target];
+        }
     }
 } // namespace sp

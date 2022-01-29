@@ -6,11 +6,6 @@
 
 namespace ecs {
     template<>
-    bool Component<HumanController>::Load(sp::Scene *scene, HumanController &controller, const picojson::value &src) {
-        return true;
-    }
-
-    template<>
     bool Component<CharacterController>::Load(sp::Scene *scene,
         CharacterController &controller,
         const picojson::value &src) {

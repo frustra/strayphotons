@@ -128,8 +128,7 @@ namespace sp {
         }
     }
 
-    void ConstraintSystem::Frame(
-        ecs::Lock<ecs::Read<ecs::Transform, ecs::HumanController>, ecs::Write<ecs::Physics>> lock) {
+    void ConstraintSystem::Frame(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock) {
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
             if (!entity.Has<ecs::Physics, ecs::Transform>(lock)) continue;
             auto &physics = entity.Get<ecs::Physics>(lock);

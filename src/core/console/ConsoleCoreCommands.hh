@@ -27,18 +27,15 @@ namespace sp {
         GetConsoleManager().QueueParseAndExecute(cmd, chrono_clock::now() + std::chrono::milliseconds(dt));
     });
 
-    CFunc<string> CFuncToggle("toggle",
+    CFunc<string, string> CFuncToggle("toggle",
         "Toggle a CVar between values (toggle <cvar_name> [<value_a> <value_b>])",
-        [](string args) {
-            std::stringstream stream(args);
-            string cvarName;
-            stream >> cvarName;
-
+        [](string cvarName, string args) {
             auto cvars = GetConsoleManager().CVars();
             auto cvarit = cvars.find(to_lower_copy(cvarName));
             if (cvarit != cvars.end()) {
                 auto cvar = cvarit->second;
                 if (cvar->IsValueType()) {
+                    std::stringstream stream(args);
                     vector<string> values;
                     string value;
                     while (stream >> value) {
@@ -116,6 +113,35 @@ namespace sp {
 
             auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
             signalComp.SetSignal(signalName, value);
+        });
+
+    CFunc<string, string> CFuncToggleSignal("togglesignal",
+        "Toggle a signal between values (togglesignal <entity>.<signal> [<value_a> <value_b>])",
+        [](string signalStr, string args) {
+            auto [entityName, signalName] = ecs::ParseSignalString(signalStr);
+
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::SignalOutput>>();
+            auto entity = ecs::EntityWith<ecs::Name>(lock, entityName);
+            if (!entity) {
+                Logf("Signal entity %s not found", entityName);
+                return;
+            }
+            if (!entity.Has<ecs::SignalOutput>(lock)) {
+                Logf("%s is not a signal output", entityName);
+                return;
+            }
+
+            std::stringstream stream(args);
+            vector<string> values;
+            string value;
+            while (stream >> value) {
+                values.push_back(value);
+            }
+
+            auto &signalComp = entity.Get<ecs::SignalOutput>(lock);
+            auto signal = signalComp.GetSignal(signalName);
+            ToggleBetweenValues(signal, values.data(), values.size());
+            signalComp.SetSignal(signalName, signal);
         });
 
     CFunc<string> CFuncClearSignal("clearsignal",

@@ -8,7 +8,6 @@
 #include "physx/CharacterControlSystem.hh"
 #include "physx/ConstraintSystem.hh"
 #include "physx/ConvexHull.hh"
-#include "physx/HumanControlSystem.hh"
 #include "physx/PhysicsQuerySystem.hh"
 #include "physx/TriggerSystem.hh"
 
@@ -46,10 +45,11 @@ namespace sp {
         ActorUserData actorData;
 
         bool onGround = false;
+        bool noclipping = false;
         glm::vec3 velocity = glm::vec3(0);
 
-        glm::vec3 deltaSinceUpdate = glm::vec3(0);
-        chrono_clock::time_point lastUpdate;
+        // glm::vec3 deltaSinceUpdate = glm::vec3(0);
+        // chrono_clock::time_point lastUpdate;
 
         CharacterControllerUserData() {}
         CharacterControllerUserData(Tecs::Entity ent, uint32_t changeNumber)
@@ -69,8 +69,6 @@ namespace sp {
         PhysxManager();
         virtual ~PhysxManager() override;
 
-        bool MoveController(physx::PxController *controller, double dt, physx::PxVec3 displacement);
-
         void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
 
     private:
@@ -80,10 +78,6 @@ namespace sp {
 
         void UpdateActor(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
-
-        void UpdateController(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,
-            Tecs::Entity &e);
-        void RemoveController(physx::PxCapsuleController *controller);
 
         bool SweepQuery(physx::PxRigidDynamic *actor, physx::PxVec3 dir, float distance, physx::PxSweepBuffer &hit);
 
@@ -128,11 +122,9 @@ namespace sp {
 #endif
 
         ecs::ComponentObserver<ecs::Physics> physicsObserver;
-        ecs::ComponentObserver<ecs::HumanController> humanControllerObserver;
 
         CharacterControlSystem characterControlSystem;
         ConstraintSystem constraintSystem;
-        HumanControlSystem humanControlSystem;
         PhysicsQuerySystem physicsQuerySystem;
         TriggerSystem triggerSystem;
 

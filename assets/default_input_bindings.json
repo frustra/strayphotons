@@ -11,7 +11,7 @@
                 "/keyboard/key/f5": "reloadscene",
                 "/keyboard/key/f6": "reloadscene; reloadplayer",
                 "/keyboard/key/f7": "reloadshaders",
-                "/keyboard/key/v": "toggle p.NoClip"
+                "/keyboard/key/v": "togglesignal player.player.move_noclip"
             }
         }
     },
@@ -21,8 +21,8 @@
                 "/action/menu/scroll": ["menu_gui", "debug_gui"]
             },
             "/mouse/move": {
-                "/action/camera_rotate": "player.player",
-                "/action/interact_rotate": "player.player"
+                "/action/camera_rotate": "player.flatview",
+                "/action/interact_rotate": "player.flatview"
             }
         }
     },
@@ -35,7 +35,7 @@
                 "/action/menu/back": "menu_gui"
             },
             "/keyboard/key/enter": { "/action/menu/enter": "menu_gui" },
-            "/keyboard/key/e": { "/action/interact_grab": "player.player" },
+            "/keyboard/key/e": { "/action/interact_grab": "player.flatview" },
             "/keyboard/key/q": { "/action/spawn": "player.debug-spawner" },
             "/keyboard/key/f": { "/action/flashlight/toggle": "player.flashlight" },
             "/keyboard/key/p": { "/action/flashlight/grab": "player.flashlight" },
@@ -65,6 +65,14 @@
     },
     "player.player": {
         "signal_bindings": {
+            "move_world_x": { "move_world_x": "player.flatview" },
+            "move_world_y": { "move_world_y": "player.flatview" },
+            "move_world_z": { "move_world_z": "player.flatview" },
+            "move_sprint": { "key_left_shift": "keyboard" }
+        }
+    },
+    "player.flatview": {
+        "signal_bindings": {
             "menu_primary_trigger": { "mouse_button_left": "mouse" },
             "menu_secondary_trigger": { "mouse_button_right": "mouse" },
             "menu_cursor_x": { "mouse_cursor_x": "mouse" },
@@ -75,7 +83,6 @@
             "move_back": { "key_s": "keyboard" },
             "move_crouch": { "key_left_control": "keyboard" },
             "move_jump": { "key_space": "keyboard" },
-            "move_sprint": { "key_left_shift": "keyboard" },
             "interact_rotate": { "key_r": "keyboard" }
         }
     }

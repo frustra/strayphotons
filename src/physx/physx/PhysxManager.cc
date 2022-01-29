@@ -20,12 +20,11 @@ namespace sp {
 
     // clang-format off
     CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
-    static CVar<bool> CVarPropJumping("x.PropJumping", false, "Disable player collision with held object");
     // clang-format on
 
     PhysxManager::PhysxManager()
         : RegisteredThread("PhysX", 120.0, true), characterControlSystem(*this), constraintSystem(*this),
-          humanControlSystem(*this), physicsQuerySystem(*this) {
+          physicsQuerySystem(*this) {
         Logf("PhysX %d.%d.%d starting up",
             PX_PHYSICS_VERSION_MAJOR,
             PX_PHYSICS_VERSION_MINOR,
@@ -126,11 +125,7 @@ namespace sp {
                                                         ecs::FocusLayer,
                                                         ecs::FocusLock,
                                                         ecs::PhysicsQuery>,
-                ecs::Write<ecs::EventInput,
-                    ecs::Transform,
-                    ecs::HumanController,
-                    ecs::CharacterController,
-                    ecs::Physics>>();
+                ecs::Write<ecs::EventInput, ecs::Transform, ecs::CharacterController, ecs::Physics>>();
 
             // Delete actors for removed entities
             ecs::ComponentEvent<ecs::Physics> physicsEvent;
@@ -139,26 +134,10 @@ namespace sp {
                     RemoveActor(physicsEvent.component.actor);
                 }
             }
-            ecs::ComponentEvent<ecs::HumanController> humanControllerEvent;
-            while (humanControllerObserver.Poll(lock, humanControllerEvent)) {
-                if (humanControllerEvent.type == Tecs::EventType::REMOVED &&
-                    humanControllerEvent.component.pxController) {
-                    RemoveController(humanControllerEvent.component.pxController);
-                }
-            }
-
-            // Update controllers with latest entity data
-            for (auto ent : lock.EntitiesWith<ecs::HumanController>()) {
-                if (!ent.Has<ecs::HumanController, ecs::Transform>(lock)) continue;
-
-                UpdateController(lock, ent);
-            }
 
             // Update actors with latest entity data
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
-                // Controllers take priority over actors
-                if (ent.Has<ecs::HumanController>(lock)) continue;
 
                 auto &ph = ent.Get<ecs::Physics>(lock);
                 if (ph.model && !ph.model->Valid()) {
@@ -175,7 +154,6 @@ namespace sp {
                 UpdateActor(lock, ent);
             }
 
-            humanControlSystem.Frame(lock);
             characterControlSystem.Frame(lock);
             constraintSystem.Frame(lock);
         }
@@ -263,7 +241,6 @@ namespace sp {
         {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
             physicsObserver = lock.Watch<ecs::ComponentEvent<ecs::Physics>>();
-            humanControllerObserver = lock.Watch<ecs::ComponentEvent<ecs::HumanController>>();
         }
     }
 
@@ -419,97 +396,6 @@ namespace sp {
                     PxVec3(hit.worldPos.x, hit.worldPos.y, hit.worldPos.z),
                     PxForceMode::eIMPULSE);
             }
-        }
-    }
-
-    bool PhysxManager::MoveController(PxController *controller, double dt, PxVec3 displacement) {
-        PxFilterData data;
-        if (CVarPropJumping.Get()) {
-            data.word0 = ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_PLAYER;
-        } else {
-            data.word0 = ecs::PHYSICS_GROUP_WORLD;
-        }
-        PxControllerFilters filters(&data);
-        auto flags = controller->move(displacement, 0, dt, filters);
-
-        return flags & PxControllerCollisionFlag::eCOLLISION_DOWN;
-    }
-
-    void PhysxManager::UpdateController(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::HumanController>> lock,
-        Tecs::Entity &e) {
-
-        auto &controller = e.Get<ecs::HumanController>(lock);
-        auto &transform = e.Get<ecs::Transform>(lock);
-
-        auto position = transform.GetGlobalTransform(lock).GetPosition();
-        // Offset the capsule position so the camera (transform origin) is at the top
-        auto capsuleHeight = controller.pxController ? controller.pxController->getHeight() : controller.height;
-        auto pxPosition = GlmVec3ToPxExtendedVec3(position - glm::vec3(0, capsuleHeight / 2, 0));
-
-        if (!controller.pxController) {
-            auto characterUserData = new CharacterControllerUserData(e, transform.ChangeNumber());
-
-            PxCapsuleControllerDesc desc;
-            desc.position = pxPosition;
-            desc.upDirection = PxVec3(0, 1, 0);
-            desc.radius = ecs::PLAYER_RADIUS;
-            desc.height = controller.height;
-            desc.density = 0.5f;
-            desc.material = pxPhysics->createMaterial(0.3f, 0.3f, 0.3f);
-            desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
-            desc.reportCallback = controllerHitReporter.get();
-            desc.userData = characterUserData;
-
-            auto pxController = controllerManager->createController(desc);
-            Assert(pxController->getType() == PxControllerShapeType::eCAPSULE,
-                "Physx did not create a valid PxCapsuleController");
-
-            pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
-            auto actor = pxController->getActor();
-            actor->userData = &characterUserData->actorData;
-
-            SetCollisionGroup(actor, ecs::PhysicsGroup::Player);
-
-            controller.pxController = static_cast<PxCapsuleController *>(pxController);
-        }
-
-        auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
-        if (transform.HasChanged(userData->actorData.transformChangeNumber)) {
-            controller.pxController->setPosition(pxPosition);
-            userData->actorData.transformChangeNumber = transform.ChangeNumber();
-        }
-
-        float currentHeight = controller.pxController->getHeight();
-        if (currentHeight != controller.height) {
-            auto currentPos = controller.pxController->getFootPosition();
-            controller.pxController->resize(controller.height);
-            if (!userData->onGround) {
-                // If player is in the air, resize from the top to implement crouch-jumping.
-                auto newPos = currentPos;
-                newPos.y += currentHeight - controller.height;
-                controller.pxController->setFootPosition(newPos);
-            }
-
-            physx::PxOverlapBuffer hit;
-            physx::PxRigidDynamic *actor = controller.pxController->getActor();
-
-            if (OverlapQuery(actor, physx::PxVec3(0), hit)) {
-                // Revert to current height, since we collided with something
-                controller.pxController->resize(currentHeight);
-                controller.pxController->setFootPosition(currentPos);
-            }
-        }
-    }
-
-    void PhysxManager::RemoveController(physx::PxCapsuleController *controller) {
-        if (controller) {
-            auto userData = controller->getUserData();
-            if (userData) {
-                delete (CharacterControllerUserData *)userData;
-                controller->setUserData(nullptr);
-            }
-
-            controller->release();
         }
     }
 
