@@ -3,6 +3,7 @@
 #include "console/Console.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 
 namespace sp {
@@ -17,6 +18,7 @@ namespace sp {
     }
 
     void TriggerSystem::Frame() {
+        ZoneScoped;
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::TriggerGroup, ecs::Transform>,
             ecs::Write<ecs::TriggerArea, ecs::SignalOutput>>();
 

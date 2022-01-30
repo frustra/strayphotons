@@ -2,6 +2,7 @@
 #include "Memory.hh"
 
 #include "core/Common.hh"
+#include "core/Tracing.hh"
 
 namespace sp::vulkan {
     vk::Result UniqueMemory::MapPersistent(void **data) {
@@ -51,6 +52,7 @@ namespace sp::vulkan {
 
     Buffer::Buffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator)
         : UniqueMemory(allocator), bufferInfo(bufferInfo) {
+        ZoneScoped;
 
         if (bufferInfo.size == 0) return; // allow creating empty buffers for convenience
 

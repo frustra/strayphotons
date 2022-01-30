@@ -3,6 +3,7 @@
 
     #include "console/CVar.hh"
     #include "core/Logging.hh"
+    #include "core/Tracing.hh"
     #include "ecs/EcsImpl.hh"
     #include "game/Game.hh"
     #include "graphics/core/GraphicsContext.hh"
@@ -43,6 +44,7 @@ namespace sp {
     }
 
     void GraphicsManager::Init() {
+        ZoneScoped;
         Assert(!context, "already have a graphics context");
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
@@ -104,6 +106,7 @@ namespace sp {
     }
 
     bool GraphicsManager::Frame() {
+        ZoneScoped;
         if (!context) return true;
     #if defined(SP_GRAPHICS_SUPPORT_GL) || defined(SP_GRAPHICS_SUPPORT_VK)
         if (!HasActiveContext()) return false;
@@ -119,6 +122,7 @@ namespace sp {
 
         Tecs::Entity windowEntity = context->GetActiveView();
         if (windowEntity) {
+            ZoneScopedN("SyncWindowView");
             auto lock = ecs::World.StartTransaction<ecs::Write<ecs::View>>();
 
             if (windowEntity.Has<ecs::View>(lock)) {

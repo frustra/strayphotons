@@ -1,6 +1,7 @@
 #include "GuiManager.hh"
 
 #include "ConsoleGui.hh"
+#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
@@ -75,6 +76,7 @@ namespace sp {
     }
 
     void GuiManager::BeforeFrame() {
+        ZoneScoped;
         SetGuiContext();
         ImGuiIO &io = ImGui::GetIO();
 

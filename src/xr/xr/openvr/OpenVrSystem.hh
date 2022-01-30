@@ -21,7 +21,7 @@ namespace sp {
 
         class OpenVrSystem final : public XrSystem, RegisteredThread {
         public:
-            OpenVrSystem() : RegisteredThread("OpenVR", 120.0) {}
+            OpenVrSystem() : RegisteredThread("OpenVR", 120.0, true) {}
             ~OpenVrSystem();
 
             bool Init(GraphicsContext *context) override;

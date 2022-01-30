@@ -2,6 +2,7 @@
 
 #include "assets/Model.hh"
 #include "core/Logging.hh"
+#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/vulkan/GuiRenderer.hh"
@@ -128,6 +129,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::BuildFrameGraph(RenderGraph &graph) {
+        ZoneScoped;
         // lock is copied into the Execute closure of some passes,
         // and will be released when those passes are done executing.
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
@@ -1083,6 +1085,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::EndFrame() {
+        ZoneScoped;
         activeModels.Tick(std::chrono::milliseconds(33)); // Minimum 30 fps tick rate
 
         chrono_clock::duration totalLoadTime = {};

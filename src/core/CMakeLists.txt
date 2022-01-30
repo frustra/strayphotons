@@ -12,6 +12,7 @@ target_link_libraries(${PROJECT_CORE_LIB} PUBLIC
     robin_hood
     Tecs
     tinygltf
+    TracyClient
 )
 
 if(WIN32)
