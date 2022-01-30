@@ -4,7 +4,7 @@
             "_name": "player",
             "transform": {},
             "character_controller": {
-                "target": "player.vr-hmd",
+                "target": "player.flatview",
                 "movement_proxy": "player.vr-origin"
             },
             "trigger_group": "player",

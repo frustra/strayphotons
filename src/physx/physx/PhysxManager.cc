@@ -31,17 +31,20 @@ namespace sp {
             PX_PHYSICS_VERSION_BUGFIX);
         pxFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, defaultAllocatorCallback, defaultErrorCallback);
 
-        PxTolerancesScale scale;
-
 #ifndef SP_PACKAGE_RELEASE
         pxPvd = PxCreatePvd(*pxFoundation);
         pxPvdTransport = PxDefaultPvdSocketTransportCreate("localhost", 5425, 10);
-        pxPvd->connect(*pxPvdTransport, PxPvdInstrumentationFlag::eALL);
-        Logf("PhysX visual debugger listening on :5425");
+        if (pxPvd->connect(*pxPvdTransport, PxPvdInstrumentationFlag::eALL)) {
+            Logf("PhysX visual debugger connected on :5425");
+        } else {
+            Logf("Could not connect to PhysX visual debugger on :5425");
+        }
 #endif
 
+        PxTolerancesScale scale;
         pxPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *pxFoundation, scale, false, pxPvd);
         Assert(pxPhysics, "PxCreatePhysics");
+        Assert(PxInitExtensions(*pxPhysics, pxPvd), "PxInitExtensions");
 
         pxCooking = PxCreateCooking(PX_PHYSICS_VERSION, *pxFoundation, PxCookingParams(scale));
         Assert(pxCooking, "PxCreateCooking");
