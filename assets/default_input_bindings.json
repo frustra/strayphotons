@@ -65,6 +65,10 @@
     },
     "player.player": {
         "signal_bindings": {
+            "menu_primary_trigger": { "mouse_button_left": "mouse" },
+            "menu_secondary_trigger": { "mouse_button_right": "mouse" },
+            "menu_cursor_x": { "mouse_cursor_x": "mouse" },
+            "menu_cursor_y": { "mouse_cursor_y": "mouse" },
             "move_world_x": { "move_world_x": "player.flatview" },
             "move_world_y": { "move_world_y": "player.flatview" },
             "move_world_z": { "move_world_z": "player.flatview" },
@@ -73,10 +77,6 @@
     },
     "player.flatview": {
         "signal_bindings": {
-            "menu_primary_trigger": { "mouse_button_left": "mouse" },
-            "menu_secondary_trigger": { "mouse_button_right": "mouse" },
-            "menu_cursor_x": { "mouse_cursor_x": "mouse" },
-            "menu_cursor_y": { "mouse_cursor_y": "mouse" },
             "move_forward": { "key_w": "keyboard" },
             "move_right": { "key_d": "keyboard" },
             "move_left": { "key_a": "keyboard" },

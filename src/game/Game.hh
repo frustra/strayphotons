@@ -73,6 +73,7 @@ namespace sp {
 
     private:
         Tecs::Entity player;
+        Tecs::Entity flatview;
 
         chrono_clock::time_point lastFrameTime;
         CFuncCollection funcs;

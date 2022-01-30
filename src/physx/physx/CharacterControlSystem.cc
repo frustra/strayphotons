@@ -199,7 +199,8 @@ namespace sp {
                 manager.interval.count() / 1e9,
                 moveQueryFilter);
             userData->onGround = moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN;
-            auto deltaPos = PxVec3ToGlmVec3(controller.pxController->getFootPosition() - prevPosition);
+            auto newPosition = controller.pxController->getFootPosition();
+            auto deltaPos = PxVec3ToGlmVec3(newPosition - prevPosition);
 
             // Update the velocity based on what happened in physx
             auto physxVelocity = deltaPos / (float)(manager.interval.count() / 1e9);
@@ -211,6 +212,15 @@ namespace sp {
                 userData->velocity = physxVelocity;
             }
 
+            transform.SetPosition(PxExtendedVec3ToGlmVec3(newPosition));
+            userData->actorData.transformChangeNumber = transform.ChangeNumber();
+
+            auto movementProxy = controller.movementProxy.Get(lock);
+            if (movementProxy.Has<ecs::Transform>(lock)) {
+                auto &proxyTransform = movementProxy.Get<ecs::Transform>(lock);
+                proxyTransform.Translate(deltaPos);
+            }
+
             // userData->deltaSinceUpdate += deltaPos;
 
             // auto now = chrono_clock::now();
@@ -218,8 +228,7 @@ namespace sp {
             //                   std::chrono::milliseconds((size_t)(CVarCharacterUpdateRate.Get() * 1000.0f));
             // if (lateralMovement == glm::vec3(0) || nextUpdate <= now) {
             // transform.Translate(userData->deltaSinceUpdate);
-            transform.Translate(deltaPos);
-            userData->actorData.transformChangeNumber = transform.ChangeNumber();
+            // userData->actorData.transformChangeNumber = transform.ChangeNumber();
             // userData->deltaSinceUpdate = glm::vec3(0);
             // userData->lastUpdate = now;
             // }

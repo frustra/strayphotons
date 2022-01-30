@@ -94,7 +94,7 @@
 			"_name": "global.spawn",
 			"transform": {
 				"rotate": [0, 0, 1, 0],
-				"translate": [4.5, 1.7, 10.5]
+				"translate": [4.5, 0.05, 10.5]
 			}
 		},
 		{

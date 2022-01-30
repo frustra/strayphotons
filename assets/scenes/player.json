@@ -4,7 +4,8 @@
             "_name": "player",
             "transform": {},
             "character_controller": {
-                "target": "player.flatview"
+                "target": "player.vr-hmd",
+                "movement_proxy": "player.vr-origin"
             },
             "trigger_group": "player",
             "signal_output": {}
@@ -147,20 +148,13 @@
         },
         {
             "_name": "vr-origin",
-            "character_controller": {
-                "target": "player.vr-hmd"
-            }
+            "transform": {}
         },
         {
             "_name": "vr-hmd",
-            "trigger_group": "player"
-        },
-        {
-            "_name": "player-physics",
             "transform": {
-                "scale": [0.1, 1, 0.1]
-            },
-            "renderable": "box"
+                "parent": "vr-origin"
+            }
         },
         {
             "_name": "flashlight",

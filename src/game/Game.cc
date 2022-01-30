@@ -161,12 +161,13 @@ namespace sp {
 
         {
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>>();
-            player = ecs::EntityWith<ecs::Name>(lock, CVarFlatviewEntity.Get());
+            player = ecs::EntityWith<ecs::Name>(lock, "player.player");
+            flatview = ecs::EntityWith<ecs::Name>(lock, CVarFlatviewEntity.Get());
         }
 
 #ifdef SP_GRAPHICS_SUPPORT
         auto context = graphics.GetContext();
-        if (context) context->AttachView(player);
+        if (context) context->AttachView(flatview);
 #endif
 
         scenes.RespawnPlayer(player);
@@ -177,13 +178,17 @@ namespace sp {
         auto lock =
             ecs::World
                 .StartTransaction<ecs::Read<ecs::Name, ecs::Transform, ecs::CharacterController, ecs::LightSensor>>();
+        if (flatview && flatview.Has<ecs::Transform>(lock)) {
+            auto &transform = flatview.Get<ecs::Transform>(lock);
+            auto position = transform.GetGlobalTransform(lock).GetPosition();
+            Logf("Flatview position: [%f, %f, %f]", position.x, position.y, position.z);
+        }
         if (player && player.Has<ecs::Transform>(lock)) {
             auto &transform = player.Get<ecs::Transform>(lock);
             auto position = transform.GetGlobalTransform(lock).GetPosition();
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-            Logf("Player head position: [%f, %f, %f]", position.x, position.y, position.z);
-            if (transform.parent.Has<ecs::CharacterController>(lock)) {
-                auto &controller = transform.parent.Get<ecs::CharacterController>(lock);
+            if (player.Has<ecs::CharacterController>(lock)) {
+                auto &controller = player.Get<ecs::CharacterController>(lock);
                 if (controller.pxController) {
                     auto pxFeet = controller.pxController->getFootPosition();
                     Logf("Player physics position: [%f, %f, %f]", pxFeet.x, pxFeet.y, pxFeet.z);
@@ -193,7 +198,11 @@ namespace sp {
                         userData->velocity.y,
                         userData->velocity.z);
                     Logf("Player on ground: %s", userData->onGround ? "true" : "false");
+                } else {
+                    Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
                 }
+            } else {
+                Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
             }
 #else
             Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
