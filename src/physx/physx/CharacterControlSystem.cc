@@ -89,6 +89,9 @@ namespace sp {
             auto &controller = entity.Get<ecs::CharacterController>(lock);
             if (!controller.pxController) continue;
             auto &transform = entity.Get<ecs::Transform>(lock);
+            Assertf(!transform.HasParent(lock),
+                "CharacterController should not have a transform parent: %s",
+                ecs::ToString(lock, entity));
 
             auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
 
@@ -96,13 +99,12 @@ namespace sp {
             glm::vec3 targetPosition = transform.GetPosition();
 
             auto target = controller.target.Get(lock);
-            if (target && target.Has<ecs::Transform>(lock)) {
+            if (!target.Has<ecs::Transform>(lock)) target = controller.fallbackTarget.Get(lock);
+            if (target.Has<ecs::Transform>(lock)) {
                 auto &targetTransform = target.Get<ecs::Transform>(lock);
                 targetPosition = targetTransform.GetGlobalTransform(lock).GetPosition();
-                auto originPosition = transform.GetGlobalTransform(lock).GetPosition();
-                targetHeight = std::max(0.1f,
-                    targetPosition.y - originPosition.y - controller.pxController->getRadius());
-                targetPosition.y = originPosition.y;
+                targetPosition.y = transform.GetPosition().y;
+                targetHeight = std::max(0.1f, targetTransform.GetPosition().y);
             }
 
             // If the origin moved, teleport the controller

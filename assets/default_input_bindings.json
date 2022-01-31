@@ -57,21 +57,15 @@
             "move_right": { "/actions/main/in/movement_x": "player.vr-controller-right" }
         }
     },
-    "player.vr-origin": {
-        "signal_bindings": {
-            "move_world_x": { "move_world_x": [ "player.left-hand-input", "player.right-hand-input" ] },
-            "move_world_z": { "move_world_z": [ "player.left-hand-input", "player.right-hand-input" ] }
-        }
-    },
     "player.player": {
         "signal_bindings": {
             "menu_primary_trigger": { "mouse_button_left": "mouse" },
             "menu_secondary_trigger": { "mouse_button_right": "mouse" },
             "menu_cursor_x": { "mouse_cursor_x": "mouse" },
             "menu_cursor_y": { "mouse_cursor_y": "mouse" },
-            "move_world_x": { "move_world_x": "player.flatview" },
+            "move_world_x": { "move_world_x": [ "player.flatview", "player.left-hand-input", "player.right-hand-input" ] },
             "move_world_y": { "move_world_y": "player.flatview" },
-            "move_world_z": { "move_world_z": "player.flatview" },
+            "move_world_z": { "move_world_z": [ "player.flatview", "player.left-hand-input", "player.right-hand-input" ] },
             "move_sprint": { "key_left_shift": "keyboard" }
         }
     },

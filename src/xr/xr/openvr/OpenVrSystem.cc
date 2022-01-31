@@ -219,8 +219,7 @@ namespace sp::xr {
                                 glm::make_mat3x4((float *)trackedDevicePoses[i].mDeviceToAbsoluteTracking.m));
 
                             transform.SetParent(vrOrigin);
-                            transform.SetRotation(glm::quat_cast(glm::mat3(pose)));
-                            transform.SetPosition(pose[3]);
+                            transform.SetMatrix(pose);
                         }
                     }
                 }

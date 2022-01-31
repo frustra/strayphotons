@@ -122,13 +122,7 @@ namespace sp {
 
         { // Sync ECS state to physx
             ZoneScopedN("Sync from ECS");
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
-                                                        ecs::SignalOutput,
-                                                        ecs::SignalBindings,
-                                                        ecs::FocusLayer,
-                                                        ecs::FocusLock,
-                                                        ecs::PhysicsQuery>,
-                ecs::Write<ecs::EventInput, ecs::Transform, ecs::CharacterController, ecs::Physics>>();
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>>();
 
             // Delete actors for removed entities
             ecs::ComponentEvent<ecs::Physics> physicsEvent;
@@ -148,16 +142,9 @@ namespace sp {
                     return;
                 }
 
-                auto &transform = ent.Get<ecs::Transform>(lock);
-                if (ph.dynamic && transform.parent) {
-                    // Flatten the transform of dynamic physics objects before creating an actor.
-                    transform.SetTransform(transform.GetGlobalTransform(lock));
-                }
-
                 UpdateActor(lock, ent);
             }
 
-            characterControlSystem.Frame(lock);
             constraintSystem.Frame(lock);
         }
 
@@ -172,8 +159,13 @@ namespace sp {
 
         { // Sync ECS state from physx
             ZoneScopedN("Sync to ECS");
-            auto lock =
-                ecs::World.StartTransaction<ecs::Read<ecs::Physics>, ecs::Write<ecs::Transform, ecs::PhysicsQuery>>();
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
+                                                        ecs::SignalOutput,
+                                                        ecs::SignalBindings,
+                                                        ecs::FocusLayer,
+                                                        ecs::FocusLock,
+                                                        ecs::Physics>,
+                ecs::Write<ecs::CharacterController, ecs::Transform, ecs::PhysicsQuery>>();
 
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
@@ -189,6 +181,7 @@ namespace sp {
                     auto userData = (ActorUserData *)ph.actor->userData;
                     if (!readTransform.HasChanged(userData->transformChangeNumber)) {
                         auto &transform = ent.Get<ecs::Transform>(lock);
+
                         auto pose = ph.actor->getGlobalPose();
                         transform.SetPosition(PxVec3ToGlmVec3(pose.p));
                         transform.SetRotation(PxQuatToGlmQuat(pose.q));
@@ -198,6 +191,7 @@ namespace sp {
                 }
             }
 
+            characterControlSystem.Frame(lock);
             physicsQuerySystem.Frame(lock);
         }
 

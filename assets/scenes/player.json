@@ -4,7 +4,8 @@
             "_name": "player",
             "transform": {},
             "character_controller": {
-                "target": "player.flatview",
+                "target": "player.vr-hmd",
+                "fallback_target": "player.flatview",
                 "movement_proxy": "player.vr-origin"
             },
             "trigger_group": "player",
@@ -144,16 +145,6 @@
             "script": {
                 "onTick": ["lazy_load_model"],
                 "parameters": { "model_name": "vr_glove_right" }
-            }
-        },
-        {
-            "_name": "vr-origin",
-            "transform": {}
-        },
-        {
-            "_name": "vr-hmd",
-            "transform": {
-                "parent": "vr-origin"
             }
         },
         {
