@@ -2,6 +2,7 @@
 
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
 #include "graphics/core/GraphicsContext.hh"
@@ -55,6 +56,7 @@ namespace sp {
     }
 
     void GlfwInputHandler::Frame() {
+        ZoneScoped;
         {
             auto lock = ecs::World.StartTransaction<
                 ecs::Read<ecs::Name, ecs::EventBindings, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,

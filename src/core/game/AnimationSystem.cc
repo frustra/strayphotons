@@ -1,11 +1,13 @@
 #include "AnimationSystem.hh"
 
 #include "core/Logging.hh"
+#include "core/Tracing.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 
 namespace sp {
     bool AnimationSystem::Frame(double dtSinceLastFrame) {
+        ZoneScoped;
         auto lock = ecs::World.StartTransaction<
             ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
             ecs::Write<ecs::Animation, ecs::Transform>>();

@@ -12,6 +12,10 @@
 
 struct GLFWwindow;
 
+namespace tracy {
+    class VkCtx;
+}
+
 namespace ecs {
     struct View;
 }
@@ -179,6 +183,12 @@ namespace sp::vulkan {
         vk::PhysicalDeviceProperties2 physicalDeviceProperties;
         vk::PhysicalDeviceDescriptorIndexingProperties physicalDeviceDescriptorIndexingProperties;
         vk::UniqueDevice device;
+
+        struct {
+            vector<vk::UniqueCommandPool> cmdPools;
+            vector<vk::UniqueCommandBuffer> cmdBuffers;
+            vector<tracy::VkCtx *> tracyContexts;
+        } tracing;
 
         unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
 

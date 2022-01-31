@@ -4,6 +4,7 @@
 #include "assets/AssetManager.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
 #include "graphics/core/GraphicsContext.hh"
@@ -150,6 +151,7 @@ namespace sp::xr {
     }
 
     void OpenVrSystem::WaitFrame() {
+        ZoneScoped;
         vr::EVRCompositorError error = vr::VRCompositor()->WaitGetPoses(nullptr, 0, nullptr, 0);
         Assert(error == vr::EVRCompositorError::VRCompositorError_None,
             "WaitGetPoses failed: " + std::to_string((int)error));
@@ -195,6 +197,7 @@ namespace sp::xr {
         }
         bool missingEntities = false;
         {
+            ZoneScopedN("Sync to ECS");
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
 
             for (auto namedEntity : trackedDevices) {

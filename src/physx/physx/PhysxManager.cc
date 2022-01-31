@@ -7,6 +7,7 @@
 #include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <PxScene.h>
@@ -23,7 +24,7 @@ namespace sp {
     // clang-format on
 
     PhysxManager::PhysxManager()
-        : RegisteredThread("PhysX", 120.0), characterControlSystem(*this), constraintSystem(*this),
+        : RegisteredThread("PhysX", 120.0, true), characterControlSystem(*this), constraintSystem(*this),
           humanControlSystem(*this), physicsQuerySystem(*this) {
         Logf("PhysX %d.%d.%d starting up",
             PX_PHYSICS_VERSION_MAJOR,
@@ -118,6 +119,7 @@ namespace sp {
         }
 
         { // Sync ECS state to physx
+            ZoneScopedN("Sync from ECS");
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
                                                         ecs::SignalOutput,
                                                         ecs::SignalBindings,
@@ -179,6 +181,7 @@ namespace sp {
         }
 
         { // Simulate 1 physics frame (blocking)
+            ZoneScopedN("Simulate");
             scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
                 nullptr,
                 scratchBlock.data(),
@@ -187,6 +190,7 @@ namespace sp {
         }
 
         { // Sync ECS state from physx
+            ZoneScopedN("Sync to ECS");
             auto lock =
                 ecs::World.StartTransaction<ecs::Read<ecs::Physics>, ecs::Write<ecs::Transform, ecs::PhysicsQuery>>();
 
@@ -220,6 +224,7 @@ namespace sp {
     }
 
     void PhysxManager::CreatePhysxScene() {
+        ZoneScoped;
         PxSceneDesc sceneDesc(pxPhysics->getTolerancesScale());
 
         sceneDesc.gravity = PxVec3(0.f, CVarGravity.Get(true), 0.f);
@@ -269,6 +274,7 @@ namespace sp {
     }
 
     ConvexHullSet *PhysxManager::BuildConvexHulls(const Model &model, bool decomposeHull) {
+        ZoneScoped;
         ConvexHullSet *set;
 
         std::string name = model.name;

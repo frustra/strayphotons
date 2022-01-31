@@ -6,6 +6,7 @@
 #include "console/CFunc.hh"
 #include "core/InlineVector.hh"
 #include "core/Logging.hh"
+#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
@@ -17,6 +18,7 @@
 #include <new>
 #include <optional>
 #include <string>
+#include <tracy/TracyVulkan.hpp>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -250,7 +252,8 @@ namespace sp::vulkan {
         vector<const char *> enabledDeviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             VK_KHR_MULTIVIEW_EXTENSION_NAME,
             VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
-            VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME};
+            VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
+            VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME};
 
         auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
 
@@ -327,8 +330,35 @@ namespace sp::vulkan {
         device = physicalDevice.createDeviceUnique(deviceInfo, nullptr);
         VULKAN_HPP_DEFAULT_DISPATCHER.init(*device);
 
+        tracing.tracyContexts.resize(QUEUE_TYPES_COUNT);
+
         for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
-            queues[queueType] = device->getQueue(queueFamilyIndex[queueType], queueIndex[queueType]);
+            auto familyIndex = queueFamilyIndex[queueType];
+            auto queue = device->getQueue(familyIndex, queueIndex[queueType]);
+            queues[queueType] = queue;
+
+            if (queueType != QUEUE_TYPE_COMPUTE && queueType != QUEUE_TYPE_GRAPHICS) continue;
+
+            vk::CommandPoolCreateInfo cmdPoolInfo;
+            cmdPoolInfo.queueFamilyIndex = familyIndex;
+            cmdPoolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+            tracing.cmdPools.push_back(device->createCommandPoolUnique(cmdPoolInfo));
+
+            vk::CommandBufferAllocateInfo cmdAllocInfo;
+            cmdAllocInfo.commandPool = *tracing.cmdPools.back();
+            cmdAllocInfo.level = vk::CommandBufferLevel::ePrimary;
+            cmdAllocInfo.commandBufferCount = 1;
+            auto cmdBufs = device->allocateCommandBuffersUnique(cmdAllocInfo);
+            tracing.cmdBuffers.insert(tracing.cmdBuffers.end(),
+                std::make_move_iterator(cmdBufs.begin()),
+                std::make_move_iterator(cmdBufs.end()));
+
+            tracing.tracyContexts[queueType] = tracy::CreateVkContext(physicalDevice,
+                *device,
+                queue,
+                *tracing.cmdBuffers.back(),
+                VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
+                VULKAN_HPP_DEFAULT_DISPATCHER.vkGetCalibratedTimestampsEXT);
         }
 
         vk::SemaphoreCreateInfo semaphoreInfo;
@@ -399,6 +429,9 @@ namespace sp::vulkan {
     DeviceContext::~DeviceContext() {
         if (device) { device->waitIdle(); }
         if (window) { glfwDestroyWindow(window); }
+
+        for (auto ctx : tracing.tracyContexts)
+            if (ctx) TracyVkDestroy(ctx);
 
         glfwTerminate();
     }
@@ -546,6 +579,7 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::BeginFrame() {
+        ZoneScoped;
         UpdateInputModeFromFocus();
 
         if (swapchain) {
@@ -569,6 +603,14 @@ namespace sp::vulkan {
         }
         PrepareResourcesForFrame();
         vmaSetCurrentFrameIndex(allocator.get(), frameCounter);
+
+        for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
+            auto trctx = tracing.tracyContexts[i];
+            if (!trctx) continue;
+            // auto ctx = GetCommandContext(CommandContextType(i));
+            // TracyVkCollect(trctx, ctx->Raw());
+            // Submit(ctx);
+        }
     }
 
     void DeviceContext::PrepareResourcesForFrame() {
@@ -594,6 +636,7 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::SwapBuffers() {
+        ZoneScoped;
         vk::Semaphore renderCompleteSem = *Frame().renderCompleteSemaphore;
         vk::PresentInfoKHR presentInfo;
         presentInfo.waitSemaphoreCount = 1;
@@ -660,6 +703,7 @@ namespace sp::vulkan {
         vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
         vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
         vk::Fence fence) {
+        ZoneScoped;
         CommandContextPtr cmd = cmdArg;
         // Invalidate caller's reference, this CommandContext is unusable until a subsequent frame.
         cmdArg.reset();
@@ -754,7 +798,6 @@ namespace sp::vulkan {
             Abortf("unknown buffer type %d", type);
         }
 
-        Debugf("Allocating buffer type %d with size %d", type, size);
         auto buffer = AllocateBuffer(size, usage, residency);
         pool.emplace_back(PooledBuffer{buffer, size, true});
         return buffer;
@@ -763,6 +806,7 @@ namespace sp::vulkan {
     ImagePtr DeviceContext::AllocateImage(const vk::ImageCreateInfo &info,
         VmaMemoryUsage residency,
         vk::ImageUsageFlags declaredUsage) {
+        ZoneScoped;
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
         if (!declaredUsage) declaredUsage = info.usage;
@@ -770,6 +814,8 @@ namespace sp::vulkan {
     }
 
     ImagePtr DeviceContext::CreateImage(ImageCreateInfo createInfo, const uint8 *srcData, size_t srcDataSize) {
+        ZoneScoped;
+
         bool genMipmap = createInfo.genMipmap;
         bool genFactor = !createInfo.factor.empty();
         bool hasSrcData = srcData && srcDataSize;
@@ -863,9 +909,13 @@ namespace sp::vulkan {
 
         auto fence = PushInFlightObject(stagingBuf);
         auto transferComplete = GetEmptySemaphore(fence);
-        Submit(transferCmd, {transferComplete}, {}, {}, fence);
+        {
+            ZoneScopedN("CopyBufferToImage");
+            Submit(transferCmd, {transferComplete}, {}, {}, fence);
+        }
 
         if (genFactor) {
+            ZoneScopedN("ApplyFactor");
             auto factorCmd = GetCommandContext(CommandContextType::ComputeAsync);
             factorCmd->ImageBarrier(image,
                 lastLayout,
@@ -919,10 +969,8 @@ namespace sp::vulkan {
             lastLayout = vk::ImageLayout::eGeneral;
             lastStage = vk::PipelineStageFlagBits::eComputeShader;
             lastAccess = vk::AccessFlagBits::eShaderWrite;
-
             fence = PushInFlightObject(factorView);
             auto factorComplete = GetEmptySemaphore(fence);
-
             Submit(factorCmd, {factorComplete}, {transferComplete}, {vk::PipelineStageFlagBits::eComputeShader}, fence);
             transferComplete = factorComplete;
         }
@@ -944,83 +992,85 @@ namespace sp::vulkan {
             return image;
         }
 
-        auto graphicsCmd = GetCommandContext();
+        {
+            auto graphicsCmd = GetCommandContext();
+            ZoneScopedN("Mipmap");
 
-        if (transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
+            if (transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
+                graphicsCmd->ImageBarrier(image,
+                    lastLayout,
+                    vk::ImageLayout::eTransferSrcOptimal,
+                    lastStage,
+                    lastAccess,
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::AccessFlagBits::eTransferRead,
+                    transferToGeneral);
+            }
+
+            ImageBarrierInfo transferMips;
+            transferMips.trackImageLayout = false;
+            transferMips.baseMipLevel = 1;
+            transferMips.mipLevelCount = createInfo.mipLevels - 1;
+
             graphicsCmd->ImageBarrier(image,
-                lastLayout,
-                vk::ImageLayout::eTransferSrcOptimal,
-                lastStage,
-                lastAccess,
+                vk::ImageLayout::eUndefined,
+                vk::ImageLayout::eTransferDstOptimal,
                 vk::PipelineStageFlagBits::eTransfer,
-                vk::AccessFlagBits::eTransferRead,
-                transferToGeneral);
-        }
-
-        ImageBarrierInfo transferMips;
-        transferMips.trackImageLayout = false;
-        transferMips.baseMipLevel = 1;
-        transferMips.mipLevelCount = createInfo.mipLevels - 1;
-
-        graphicsCmd->ImageBarrier(image,
-            vk::ImageLayout::eUndefined,
-            vk::ImageLayout::eTransferDstOptimal,
-            vk::PipelineStageFlagBits::eTransfer,
-            {},
-            vk::PipelineStageFlagBits::eTransfer,
-            vk::AccessFlagBits::eTransferWrite,
-            transferMips);
-
-        vk::Offset3D currentExtent = {(int32)createInfo.extent.width,
-            (int32)createInfo.extent.height,
-            (int32)createInfo.extent.depth};
-
-        transferMips.mipLevelCount = 1;
-
-        for (uint32 i = 1; i < createInfo.mipLevels; i++) {
-            auto prevMipExtent = currentExtent;
-            currentExtent.x = std::max(currentExtent.x >> 1, 1);
-            currentExtent.y = std::max(currentExtent.y >> 1, 1);
-            currentExtent.z = std::max(currentExtent.z >> 1, 1);
-
-            vk::ImageBlit blit;
-            blit.srcSubresource = {vk::ImageAspectFlagBits::eColor, i - 1, 0, 1};
-            blit.srcOffsets[0] = vk::Offset3D();
-            blit.srcOffsets[1] = prevMipExtent;
-            blit.dstSubresource = {vk::ImageAspectFlagBits::eColor, i, 0, 1};
-            blit.dstOffsets[0] = vk::Offset3D();
-            blit.dstOffsets[1] = currentExtent;
-
-            graphicsCmd->Raw().blitImage(*image,
-                vk::ImageLayout::eTransferSrcOptimal,
-                *image,
-                vk::ImageLayout::eTransferDstOptimal,
-                {blit},
-                vk::Filter::eLinear);
-
-            transferMips.baseMipLevel = i;
-            graphicsCmd->ImageBarrier(image,
-                vk::ImageLayout::eTransferDstOptimal,
-                vk::ImageLayout::eTransferSrcOptimal,
+                {},
                 vk::PipelineStageFlagBits::eTransfer,
                 vk::AccessFlagBits::eTransferWrite,
-                vk::PipelineStageFlagBits::eTransfer,
-                vk::AccessFlagBits::eTransferRead,
                 transferMips);
+
+            vk::Offset3D currentExtent = {(int32)createInfo.extent.width,
+                (int32)createInfo.extent.height,
+                (int32)createInfo.extent.depth};
+
+            transferMips.mipLevelCount = 1;
+
+            for (uint32 i = 1; i < createInfo.mipLevels; i++) {
+                auto prevMipExtent = currentExtent;
+                currentExtent.x = std::max(currentExtent.x >> 1, 1);
+                currentExtent.y = std::max(currentExtent.y >> 1, 1);
+                currentExtent.z = std::max(currentExtent.z >> 1, 1);
+
+                vk::ImageBlit blit;
+                blit.srcSubresource = {vk::ImageAspectFlagBits::eColor, i - 1, 0, 1};
+                blit.srcOffsets[0] = vk::Offset3D();
+                blit.srcOffsets[1] = prevMipExtent;
+                blit.dstSubresource = {vk::ImageAspectFlagBits::eColor, i, 0, 1};
+                blit.dstOffsets[0] = vk::Offset3D();
+                blit.dstOffsets[1] = currentExtent;
+
+                graphicsCmd->Raw().blitImage(*image,
+                    vk::ImageLayout::eTransferSrcOptimal,
+                    *image,
+                    vk::ImageLayout::eTransferDstOptimal,
+                    {blit},
+                    vk::Filter::eLinear);
+
+                transferMips.baseMipLevel = i;
+                graphicsCmd->ImageBarrier(image,
+                    vk::ImageLayout::eTransferDstOptimal,
+                    vk::ImageLayout::eTransferSrcOptimal,
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::AccessFlagBits::eTransferWrite,
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::AccessFlagBits::eTransferRead,
+                    transferMips);
+            }
+
+            // Each mip has now been transitioned to TransferSrc.
+            image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+
+            graphicsCmd->ImageBarrier(image,
+                vk::ImageLayout::eTransferSrcOptimal,
+                vk::ImageLayout::eShaderReadOnlyOptimal,
+                vk::PipelineStageFlagBits::eTransfer,
+                vk::AccessFlagBits::eTransferWrite,
+                vk::PipelineStageFlagBits::eFragmentShader,
+                vk::AccessFlagBits::eShaderRead);
+            Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eTransfer});
         }
-
-        // Each mip has now been transitioned to TransferSrc.
-        image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
-
-        graphicsCmd->ImageBarrier(image,
-            vk::ImageLayout::eTransferSrcOptimal,
-            vk::ImageLayout::eShaderReadOnlyOptimal,
-            vk::PipelineStageFlagBits::eTransfer,
-            vk::AccessFlagBits::eTransferWrite,
-            vk::PipelineStageFlagBits::eFragmentShader,
-            vk::AccessFlagBits::eShaderRead);
-
-        Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eTransfer});
         return image;
     }
 

@@ -1,6 +1,7 @@
 #include "RegisteredThread.hh"
 
 #include "core/Common.hh"
+#include "core/Tracing.hh"
 
 #include <array>
 #include <numeric>
@@ -20,13 +21,14 @@ namespace sp {
         return registeredThreads;
     }
 
-    RegisteredThread::RegisteredThread(std::string threadName, chrono_clock::duration interval)
-        : threadName(threadName), interval(interval), exiting(false) {
+    RegisteredThread::RegisteredThread(std::string threadName, chrono_clock::duration interval, bool traceFrames)
+        : threadName(threadName), interval(interval), traceFrames(traceFrames), exiting(false) {
         GetRegisteredThreads().emplace_back(this);
     }
 
-    RegisteredThread::RegisteredThread(std::string threadName, double framesPerSecond)
-        : threadName(threadName), interval(std::chrono::nanoseconds((int64_t)(1e9 / framesPerSecond))), exiting(false) {
+    RegisteredThread::RegisteredThread(std::string threadName, double framesPerSecond, bool traceFrames)
+        : threadName(threadName), interval(std::chrono::nanoseconds((int64_t)(1e9 / framesPerSecond))),
+          traceFrames(traceFrames), exiting(false) {
         GetRegisteredThreads().emplace_back(this);
     }
 
@@ -39,6 +41,7 @@ namespace sp {
     void RegisteredThread::StartThread() {
         Assert(!thread.joinable(), "RegisteredThread::StartThread() called while thread already running");
         thread = std::thread([this] {
+            tracy::SetThreadName(threadName.c_str());
             std::array<chrono_clock::duration, 10> previousFrames;
             previousFrames.fill(this->interval);
             size_t frameIndex = 0;
@@ -46,7 +49,9 @@ namespace sp {
             auto frameEnd = chrono_clock::now();
             auto previousFrameEnd = frameEnd;
             while (!this->exiting) {
+                if (traceFrames) FrameMarkStart(threadName.c_str());
                 this->Frame();
+                if (traceFrames) FrameMarkEnd(threadName.c_str());
 
                 auto realFrameEnd = chrono_clock::now();
 

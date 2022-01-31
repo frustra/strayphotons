@@ -46,3 +46,6 @@
 [submodule "ext/SPIRV-Reflect"]
 	path = ext/SPIRV-Reflect
 	url = https://github.com/KhronosGroup/SPIRV-Reflect
+[submodule "ext/tracy"]
+	path = ext/tracy
+	url = https://github.com/wolfpld/tracy

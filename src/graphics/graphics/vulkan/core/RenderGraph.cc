@@ -1,6 +1,7 @@
 #include "RenderGraph.hh"
 
 #include "core/Logging.hh"
+#include "core/Tracing.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
@@ -176,6 +177,7 @@ namespace sp::vulkan {
     }
 
     void RenderGraph::Execute() {
+        ZoneScoped;
         resources.ResizeBeforeExecute();
         resources.lastOutputID = RenderGraphResources::npos;
 
@@ -197,6 +199,7 @@ namespace sp::vulkan {
             }
         }
 
+        std::stack<tracy::ScopedZone> traceScopes;
         std::stack<RenderPhase> phaseScopes;
         resources.scopeStack.clear();
 
@@ -207,6 +210,43 @@ namespace sp::vulkan {
 
             CommandContextPtr cmd;
             AddPassBarriers(cmd, pass); // creates cmd if necessary
+
+            for (int i = std::max(pass.scopes.size(), resources.scopeStack.size()) - 1; i >= 0; i--) {
+                uint8 passScope = i < (int)pass.scopes.size() ? pass.scopes[i] : 255;
+                uint8 resScope = i < (int)resources.scopeStack.size() ? resources.scopeStack[i] : 255;
+                if (resScope != passScope) {
+                    if (resScope != 255) {
+                        if (!traceScopes.empty()) traceScopes.pop();
+                        phaseScopes.pop();
+                    }
+                    if (passScope != 255) {
+                        string_view name = resources.nameScopes[passScope].name;
+                        phaseScopes.emplace(name.empty() ? "RenderGraph" : name);
+                        if (timer) phaseScopes.top().StartTimer(*timer);
+
+                        if (!name.empty()) {
+                            traceScopes.emplace(__LINE__,
+                                __FILE__,
+                                strlen(__FILE__),
+                                __FUNCTION__,
+                                strlen(__FUNCTION__),
+                                name.data(),
+                                name.size(),
+                                true);
+                        }
+                    }
+                }
+            }
+            resources.scopeStack = pass.scopes;
+
+            tracy::ScopedZone traceZone(__LINE__,
+                __FILE__,
+                strlen(__FILE__),
+                __FUNCTION__,
+                strlen(__FUNCTION__),
+                pass.name.data(),
+                pass.name.size(),
+                true);
 
             bool isRenderPass = false;
             RenderPassInfo renderPassInfo;
@@ -238,20 +278,6 @@ namespace sp::vulkan {
                         attachment.clearDepthStencil);
                 }
             }
-
-            for (int i = std::max(pass.scopes.size(), resources.scopeStack.size()) - 1; i >= 0; i--) {
-                uint8 passScope = i < (int)pass.scopes.size() ? pass.scopes[i] : 255;
-                uint8 resScope = i < (int)resources.scopeStack.size() ? resources.scopeStack[i] : 255;
-                if (resScope != passScope) {
-                    if (resScope != 255) phaseScopes.pop();
-                    if (passScope != 255) {
-                        string_view name = resources.nameScopes[passScope].name;
-                        phaseScopes.emplace(name.empty() ? "RenderGraph" : name);
-                        if (timer) phaseScopes.top().StartTimer(*timer);
-                    }
-                }
-            }
-            resources.scopeStack = pass.scopes;
 
             if (isRenderPass) {
                 if (!cmd) cmd = device.GetCommandContext();

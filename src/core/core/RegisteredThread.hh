@@ -9,8 +9,8 @@
 namespace sp {
     class RegisteredThread : public NonCopyable {
     public:
-        RegisteredThread(std::string threadName, chrono_clock::duration interval);
-        RegisteredThread(std::string threadName, double framesPerSecond);
+        RegisteredThread(std::string threadName, chrono_clock::duration interval, bool traceFrames = false);
+        RegisteredThread(std::string threadName, double framesPerSecond, bool traceFrames = false);
         virtual ~RegisteredThread();
 
         double GetFrameRate() const;
@@ -18,6 +18,7 @@ namespace sp {
 
         const std::string threadName;
         const chrono_clock::duration interval;
+        const bool traceFrames = false;
 
     protected:
         void StartThread();

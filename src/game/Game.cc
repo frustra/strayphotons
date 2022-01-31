@@ -5,6 +5,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
+#include "core/Tracing.hh"
 #include "core/assets/AssetManager.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
@@ -123,6 +124,7 @@ namespace sp {
 #endif
 
         {
+            ZoneScopedN("ScriptTick");
             auto lock = ecs::World.StartTransaction<ecs::WriteAll>();
             for (auto &entity : lock.EntitiesWith<ecs::Script>()) {
                 auto &script = entity.Get<ecs::Script>(lock);
@@ -134,6 +136,8 @@ namespace sp {
         if (!graphics.Frame()) return false;
 #endif
         if (!animation.Frame(dt)) return false;
+
+        FrameMark;
 
         lastFrameTime = frameTime;
         return true;

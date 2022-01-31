@@ -10,6 +10,7 @@
 
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
+#include "core/Tracing.hh"
 
 #include <algorithm>
 #include <chrono>
@@ -107,6 +108,7 @@ namespace sp {
     }
 
     void ConsoleManager::Update(Script *startupScript) {
+        ZoneScoped;
         std::unique_lock<std::mutex> ulock(queueLock, std::defer_lock);
 
         auto now = chrono_clock::now();
