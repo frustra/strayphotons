@@ -1281,9 +1281,10 @@
 			},
 			"trigger_area": {
 				"object": {
-					"command": "setsignal player.flashlight.on 1"
+					"signal": "button_pressed"
 				}
-			}
+			},
+			"signal_output": {}
 		},
 		{
 			"_name": "flashlight_button_actuator",

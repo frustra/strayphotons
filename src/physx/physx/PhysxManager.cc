@@ -176,7 +176,6 @@ namespace sp {
 
                 if (ph.actor) {
                     auto &readTransform = ent.Get<const ecs::Transform>(lock);
-                    Assert(!readTransform.HasParent(lock), "Dynamic physics objects must have no parent");
 
                     auto userData = (ActorUserData *)ph.actor->userData;
                     if (!readTransform.HasChanged(userData->transformChangeNumber)) {
@@ -185,6 +184,7 @@ namespace sp {
                         auto pose = ph.actor->getGlobalPose();
                         transform.SetPosition(PxVec3ToGlmVec3(pose.p));
                         transform.SetRotation(PxQuatToGlmQuat(pose.q));
+                        transform.SetParent(Tecs::Entity());
 
                         userData->transformChangeNumber = transform.ChangeNumber();
                     }
@@ -296,8 +296,6 @@ namespace sp {
 
         if (!ph.actor) {
             if (ph.dynamic) {
-                Assert(!transform.HasParent(lock), "Dynamic physics objects must have no parent");
-
                 ph.actor = pxPhysics->createRigidDynamic(pxTransform);
 
                 if (ph.kinematic) { ph.actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true); }

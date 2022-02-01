@@ -14,10 +14,14 @@
         "scale": [0.1, 0.1, 0.1]
 	},
     "trigger_area": {
-    <% if (locals.trigger) { %>
-        "object": <%= trigger %>
-    <% } %>
-    }
+        "object": {
+            <% if (locals.command) { %>
+                "command": <%= command %>,
+            <% } %>
+            "signal": <%= locals.output_signal ? output_signal : "button_pressed" %>
+        }
+    },
+    "signal_output": {}
 },
 {
 	"_name": <%= name + "_actuator" %>,
