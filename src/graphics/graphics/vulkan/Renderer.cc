@@ -60,7 +60,7 @@ namespace sp::vulkan {
         glm::ivec2 renderTargetSize(0, 0);
 
         for (auto entity : lock.EntitiesWith<ecs::Light>()) {
-            if (!entity.Has<ecs::Light, ecs::Transform>(lock)) continue;
+            if (!entity.Has<ecs::Transform>(lock)) continue;
 
             auto &light = entity.Get<ecs::Light>(lock);
             if (!light.on) continue;
@@ -122,6 +122,43 @@ namespace sp::vulkan {
             });
     }
 
+    void Renderer::AddLaserState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::LaserLine, ecs::Transform>> lock) {
+        lasers.gpuData.resize(0);
+        for (auto entity : lock.EntitiesWith<ecs::LaserLine>()) {
+            glm::mat4 transform;
+            if (entity.Has<ecs::Transform>(lock)) {
+                transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
+            }
+
+            auto &laser = entity.Get<ecs::LaserLine>(lock);
+            if (!laser.on) continue;
+            if (laser.points.size() < 2) continue;
+
+            LaserContext::GPULine line;
+            line.color = laser.color * laser.intensity;
+            line.start = transform * glm::vec4(laser.points[0], 1);
+
+            for (size_t i = 1; i < laser.points.size(); i++) {
+                line.end = transform * glm::vec4(laser.points[i], 1);
+                lasers.gpuData.push_back(line);
+                line.start = line.end;
+            }
+        }
+
+        if (lasers.gpuData.empty()) return;
+
+        graph.Pass("LaserState")
+            .Build([&](RenderGraphPassBuilder &builder) {
+                builder.CreateBuffer(BUFFER_TYPE_STORAGE_TRANSFER,
+                    "LaserState",
+                    lasers.gpuData.capacity() * sizeof(lasers.gpuData.front()));
+            })
+            .Execute([this](RenderGraphResources &resources, DeviceContext &) {
+                auto buffer = resources.GetBuffer("LaserState");
+                buffer->CopyFrom(lasers.gpuData.data(), lasers.gpuData.size());
+            });
+    }
+
     void Renderer::RenderFrame() {
         RenderGraph graph(device, &timer);
         BuildFrameGraph(graph);
@@ -134,6 +171,7 @@ namespace sp::vulkan {
         // and will be released when those passes are done executing.
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
             ecs::Transform,
+            ecs::LaserLine,
             ecs::Light,
             ecs::Renderable,
             ecs::View,
@@ -145,6 +183,7 @@ namespace sp::vulkan {
         AddSceneState(lock);
         AddGeometryWarp(graph);
         AddLightState(graph, lock);
+        AddLaserState(graph, lock);
         AddShadowMaps(graph, lock);
         AddGuis(graph, lock);
 
@@ -771,6 +810,52 @@ namespace sp::vulkan {
                 cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
                 cmd.Draw(3);
             });
+
+        if (!lasers.gpuData.empty()) {
+            graph.Pass("LaserLines")
+                .Build([&](RenderGraphPassBuilder &builder) {
+                    auto input = builder.LastOutput();
+                    builder.ShaderRead(input.id);
+                    builder.ShaderRead("GBuffer2");
+
+                    auto desc = input.renderTargetDesc;
+                    desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
+                    auto dest =
+                        builder.OutputColorAttachment(0, "LaserLines", desc, {LoadOp::DontCare, StoreOp::Store});
+                    luminance = dest.id;
+
+                    builder.ReadBuffer("ViewState");
+                    builder.ReadBuffer("LaserState");
+
+                    builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::DontCare});
+                })
+                .Execute([this](RenderGraphResources &resources, CommandContext &cmd) {
+                    cmd.SetShaders("screen_cover.vert", "laser_lines.frag");
+                    cmd.SetStencilTest(true);
+                    cmd.SetDepthTest(false, false);
+                    cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
+                    cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
+                    cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
+
+                    cmd.SetTexture(0, 0, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
+                    cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer2")->ImageView());
+
+                    for (int i = 0; i < MAX_LIGHT_GELS; i++) {
+                        if (i < this->lights.gelCount) {
+                            const auto &target = resources.GetRenderTarget(this->lights.gelNames[i]);
+                            cmd.SetTexture(1, i, target->ImageView());
+                        } else {
+                            cmd.SetTexture(1, i, this->GetBlankPixelImage());
+                        }
+                    }
+
+                    cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
+                    cmd.SetStorageBuffer(0, 9, resources.GetBuffer("LaserState"));
+
+                    cmd.PushConstants((uint32)lasers.gpuData.size());
+                    cmd.Draw(3);
+                });
+        }
 
         auto bloom = AddBloom(graph, luminance);
 

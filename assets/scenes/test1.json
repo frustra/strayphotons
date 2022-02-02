@@ -1,6 +1,21 @@
 {
 	"entities": [
 		{
+			"transform": {
+				"scale": [0.99, 1, 0.99]
+			},
+			"laser_line": {
+				"color": [1, 0, 1, 1],
+				"points": [
+					[-5, 1.5, -5],
+					[-5, 1.5, 5],
+					[5, 1.5, 5],
+					[5, 1.5, -5],
+					[-5, 1.5, -5]
+				]
+			}
+		},
+		{
 			"_name": "sensor1",
 			"renderable": "box",
 			"transform": {

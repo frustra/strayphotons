@@ -6,6 +6,7 @@
 #include "ecs/components/Events.hh"
 #include "ecs/components/Focus.hh"
 #include "ecs/components/Gui.hh"
+#include "ecs/components/LaserLine.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/LightSensor.hh"
 #include "ecs/components/Mirror.hh"
