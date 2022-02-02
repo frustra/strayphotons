@@ -4,7 +4,9 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Controller.cc
     Events.cc
     Focus.cc
+    LaserEmitter.cc
     LaserLine.cc
+    LaserSensor.cc
     Light.cc
     LightSensor.cc
     Mirror.cc

@@ -24,7 +24,9 @@ namespace ecs {
     enum class FocusLayer : uint8_t;
     class FocusLock;
     struct Gui;
+    struct LaserEmitter;
     struct LaserLine;
+    struct LaserSensor;
     struct Light;
     class LightSensor;
     struct Mirror;
@@ -51,7 +53,9 @@ namespace ecs {
         FocusLayer,
         FocusLock,
         Gui,
+        LaserEmitter,
         LaserLine,
+        LaserSensor,
         Light,
         LightSensor,
         Mirror,
@@ -106,7 +110,9 @@ TECS_NAME_COMPONENT(ecs::EventBindings, "EventBindings");
 TECS_NAME_COMPONENT(ecs::FocusLayer, "FocusLayer");
 TECS_NAME_COMPONENT(ecs::FocusLock, "FocusLock");
 TECS_NAME_COMPONENT(ecs::Gui, "Gui");
+TECS_NAME_COMPONENT(ecs::LaserEmitter, "LaserEmitter");
 TECS_NAME_COMPONENT(ecs::LaserLine, "LaserLine");
+TECS_NAME_COMPONENT(ecs::LaserSensor, "LaserSensor");
 TECS_NAME_COMPONENT(ecs::Light, "Light");
 TECS_NAME_COMPONENT(ecs::LightSensor, "LightSensor");
 TECS_NAME_COMPONENT(ecs::Mirror, "Mirror");

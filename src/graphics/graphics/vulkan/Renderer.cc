@@ -125,12 +125,13 @@ namespace sp::vulkan {
     void Renderer::AddLaserState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::LaserLine, ecs::Transform>> lock) {
         lasers.gpuData.resize(0);
         for (auto entity : lock.EntitiesWith<ecs::LaserLine>()) {
+            auto &laser = entity.Get<ecs::LaserLine>(lock);
+
             glm::mat4 transform;
-            if (entity.Has<ecs::Transform>(lock)) {
+            if (laser.relative && entity.Has<ecs::Transform>(lock)) {
                 transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
             }
 
-            auto &laser = entity.Get<ecs::LaserLine>(lock);
             if (!laser.on) continue;
             if (laser.points.size() < 2) continue;
 
