@@ -73,10 +73,10 @@ namespace sp {
 
             std::bitset<ECSType<AllComponentTypes...>::GetComponentCount()> hasComponents;
             auto stagingId = liveSceneInfo.stagingId;
-            while (stagingId.Has<ecs::SceneInfo>(staging)) {
+            while (stagingId.template Has<ecs::SceneInfo>(staging)) {
                 (MarkHasComponent<AllComponentTypes>(staging, stagingId, hasComponents), ...);
 
-                auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
+                auto &stagingInfo = stagingId.template Get<ecs::SceneInfo>(staging);
                 stagingId = stagingInfo.nextStagingId;
             }
             (RemoveDanglingComponent<AllComponentTypes>(live, liveId, hasComponents), ...);
