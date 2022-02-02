@@ -25,8 +25,6 @@ namespace sp {
     static CVar<float> CVarCharacterSprintSpeed("p.CharacterSprintSpeed",
         5.0,
         "Character controller sprint speed (m/s)");
-    // static CVar<float> CVarCharacterUpdateRate("p.CharacterUpdateRate", 0.3,
-    //     "Character view update frequency (seconds)");
     static CVar<bool> CVarPropJumping("x.PropJumping", false, "Disable player collision with held object");
 
     CharacterControlSystem::CharacterControlSystem(PhysxManager &manager) : manager(manager) {
