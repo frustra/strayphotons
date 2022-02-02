@@ -69,7 +69,7 @@
 		{
 			"_name": "global.spawn",
 			"transform": {
-				"translate": [0, 5, 2]
+				"translate": [0, 3.2, 2]
 			},
 			"voxels": {
 				"min": [-5, 0, -5],
@@ -77,7 +77,7 @@
 			},
 			"trigger_area": {
 				"player": {
-					"command": "g.MenuDisplay 2; r.Exposure 0.5; p.PausePlayerPhysics 1"
+					"command": "g.MenuDisplay 2; r.Exposure 0.5"
 				}
 			}
 		},
@@ -101,7 +101,7 @@
 			},
 			"trigger_area": {
 				"player": {
-					"command": "g.MenuDisplay 0; r.Exposure 0; p.PausePlayerPhysics 0; loadscene 01-outside"
+					"command": "g.MenuDisplay 0; r.Exposure 0; loadscene 01-outside"
 				}
 			}
 		}
