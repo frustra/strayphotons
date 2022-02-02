@@ -1,9 +1,6 @@
 {
 	"_name": <%= name + "_root" %>,
-	"transform": {
-		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
-		"translate": <%= translate %>
-	}
+	"transform": <%= transform %>
 },
 {
 	"_name": <%= name %>,
@@ -13,6 +10,10 @@
 		"translate": [-0.05, 0, 0],
         "scale": [0.1, 0.1, 0.1]
 	},
+    "physics": {
+        "model": "box",
+        "dynamic": false
+    },
     "trigger_area": {
         "object": {
             <% if (locals.command) { %>
@@ -33,6 +34,7 @@
 	},
     "physics": {
         "model": "box",
+        "group": "interactive",
         "joint": {
             "target": <%= name + "_root" %>,
             "type": "Slider",

@@ -46,6 +46,41 @@ namespace sp {
             (CopyComponent<AllComponentTypes>(src, srcEnt, dst, dstEnt), ...);
         }
 
+        template<typename T, typename BitsetType>
+        static void MarkHasComponent(ecs::Lock<> lock, Tecs::Entity ent, BitsetType &hasComponents) {
+            if constexpr (!Tecs::is_global_component<T>()) {
+                if (ent.Has<T>(lock)) hasComponents[ecs::ECS::template GetComponentIndex<T>()] = true;
+            }
+        }
+
+        template<typename T, typename BitsetType>
+        static void RemoveDanglingComponent(ecs::Lock<ecs::AddRemove> lock,
+            Tecs::Entity ent,
+            const BitsetType &hasComponents) {
+            if constexpr (!Tecs::is_global_component<T>()) {
+                if (!hasComponents[ecs::ECS::template GetComponentIndex<T>()]) ent.Unset<T>(lock);
+            }
+        }
+
+        // Remove components from a live entity that no longer exist in any staging entity
+        template<typename... AllComponentTypes, template<typename...> typename ECSType>
+        static void RemoveDanglingComponents(Tecs::Lock<ECSType<AllComponentTypes...>, ecs::ReadAll> staging,
+            Tecs::Lock<ECSType<AllComponentTypes...>, ecs::AddRemove> live,
+            Tecs::Entity liveId) {
+            Assert(liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have valid SceneInfo");
+            auto &liveSceneInfo = liveId.Get<const ecs::SceneInfo>(live);
+
+            std::bitset<ECSType<AllComponentTypes...>::GetComponentCount()> hasComponents;
+            auto stagingId = liveSceneInfo.stagingId;
+            while (stagingId.Has<ecs::SceneInfo>(staging)) {
+                (MarkHasComponent<AllComponentTypes>(staging, stagingId, hasComponents), ...);
+
+                auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
+                stagingId = stagingInfo.nextStagingId;
+            }
+            (RemoveDanglingComponent<AllComponentTypes>(live, liveId, hasComponents), ...);
+        }
+
     private:
         std::shared_ptr<const Asset> asset;
         bool active = false;

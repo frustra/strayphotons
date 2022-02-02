@@ -3,7 +3,6 @@
 #include "console/ConsoleBindingManager.hh"
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
-#include "game/AnimationSystem.hh"
 
 #ifdef SP_GRAPHICS_SUPPORT
     #include "graphics/GraphicsManager.hh"
@@ -65,7 +64,6 @@ namespace sp {
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
         PhysxManager physics;
 #endif
-        AnimationSystem animation;
 #ifdef SP_XR_SUPPORT
         xr::XrManager xr;
 #endif

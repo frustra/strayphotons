@@ -251,6 +251,7 @@ namespace sp {
             LEVEL_BUTTON("03 - Dark", "03-dark")
             LEVEL_BUTTON("04 - Symmetry", "04-symmetry")
             LEVEL_BUTTON("Sponza", "sponza")
+            LEVEL_BUTTON("Station Center", "station-center")
             LEVEL_BUTTON("Cornell Box", "cornell-box-1")
             LEVEL_BUTTON("Cornell Box Mirror", "cornell-box-3")
             LEVEL_BUTTON("Test 1", "test1")

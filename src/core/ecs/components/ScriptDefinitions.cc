@@ -337,7 +337,7 @@ namespace ecs {
                                 auto hitTransform = target.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
                                 auto invParentRotate = glm::inverse(transform.GetRotation());
 
-                                ph.group = ecs::PhysicsGroup::Player;
+                                ph.group = ecs::PhysicsGroup::PlayerHands;
                                 ph.SetConstraint(ent,
                                     query.raycastQueryDistance,
                                     invParentRotate *

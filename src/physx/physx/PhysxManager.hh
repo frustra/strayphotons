@@ -5,6 +5,7 @@
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/components/Physics.hh"
+#include "physx/AnimationSystem.hh"
 #include "physx/CharacterControlSystem.hh"
 #include "physx/ConstraintSystem.hh"
 #include "physx/ConvexHull.hh"
@@ -48,9 +49,6 @@ namespace sp {
         bool noclipping = false;
         glm::vec3 velocity = glm::vec3(0);
 
-        // glm::vec3 deltaSinceUpdate = glm::vec3(0);
-        // chrono_clock::time_point lastUpdate;
-
         CharacterControllerUserData() {}
         CharacterControllerUserData(Tecs::Entity ent, uint32_t changeNumber)
             : actorData(ent, changeNumber, ecs::PhysicsGroup::Player) {}
@@ -76,6 +74,7 @@ namespace sp {
 
         ConvexHullSet *GetCachedConvexHulls(std::string name);
 
+        void CreateActor(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
         void UpdateActor(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
 
@@ -86,11 +85,6 @@ namespace sp {
          * Will return true if a hit is found and false otherwise
          */
         bool OverlapQuery(physx::PxRigidDynamic *actor, physx::PxVec3 translation, physx::PxOverlapBuffer &hit);
-
-        /**
-         * Translates a kinematic @actor by @transform.
-         */
-        void Translate(physx::PxRigidDynamic *actor, const physx::PxVec3 &transform);
 
     private:
         void CreatePhysxScene();
@@ -127,6 +121,7 @@ namespace sp {
         ConstraintSystem constraintSystem;
         PhysicsQuerySystem physicsQuerySystem;
         TriggerSystem triggerSystem;
+        AnimationSystem animationSystem;
 
         std::unordered_map<string, ConvexHullSet *> cache;
 

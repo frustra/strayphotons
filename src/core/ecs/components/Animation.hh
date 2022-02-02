@@ -24,6 +24,8 @@ namespace ecs {
          * the time it takes to animate to the given state
          */
         std::vector<double> animationTimes;
+
+        glm::mat4x3 targetMatrix;
     };
 
     static Component<Animation> ComponentAnimation("animation");

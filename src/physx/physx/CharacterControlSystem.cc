@@ -104,7 +104,7 @@ namespace sp {
                 auto &targetTransform = target.Get<ecs::Transform>(lock);
                 targetPosition = targetTransform.GetGlobalTransform(lock).GetPosition();
                 targetPosition.y = transform.GetPosition().y;
-                targetHeight = std::max(0.1f, targetTransform.GetPosition().y);
+                targetHeight = std::max(0.1f, targetTransform.GetPosition().y - ecs::PLAYER_RADIUS);
             }
 
             // If the origin moved, teleport the controller
@@ -114,7 +114,6 @@ namespace sp {
 
                 userData->onGround = false;
                 userData->velocity = glm::vec3(0);
-                // userData->deltaSinceUpdate = glm::vec3(0);
                 userData->actorData.transformChangeNumber = transform.ChangeNumber();
             }
 
@@ -184,8 +183,7 @@ namespace sp {
             PxControllerFilters moveQueryFilter(&data);
 
             // Update the capsule position to match target
-            auto targetDelta = targetPosition /* + userData->deltaSinceUpdate*/ -
-                               PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
+            auto targetDelta = targetPosition - PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
 
             auto moveResult = controller.pxController->move(GlmVec3ToPxVec3(targetDelta),
                 0,
@@ -222,26 +220,6 @@ namespace sp {
                 auto &proxyTransform = movementProxy.Get<ecs::Transform>(lock);
                 proxyTransform.Translate(deltaPos);
             }
-
-            // userData->deltaSinceUpdate += deltaPos;
-
-            // auto now = chrono_clock::now();
-            // auto nextUpdate = userData->lastUpdate +
-            //                   std::chrono::milliseconds((size_t)(CVarCharacterUpdateRate.Get() * 1000.0f));
-            // if (lateralMovement == glm::vec3(0) || nextUpdate <= now) {
-            // transform.Translate(userData->deltaSinceUpdate);
-            // userData->actorData.transformChangeNumber = transform.ChangeNumber();
-            // userData->deltaSinceUpdate = glm::vec3(0);
-            // userData->lastUpdate = now;
-            // }
-
-            // TODO: Temporary physics visualization
-            // Tecs::Entity physicsBox = ecs::EntityWith<ecs::Name>(lock, "player.player-physics");
-            // if (physicsBox.Has<ecs::Transform>(lock)) {
-            //     auto &transform = physicsBox.Get<ecs::Transform>(lock);
-            //     transform.SetScale(glm::vec3(0.1f, controller.pxController->getHeight(), 0.1f));
-            //     transform.SetPosition(PxExtendedVec3ToGlmVec3(controller.pxController->getPosition()));
-            // }
         }
     }
 } // namespace sp

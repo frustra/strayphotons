@@ -14,7 +14,7 @@
         {
             "_name": "flatview",
             "view": {
-                "clip": [0.1, 256]
+                "clip": [0.1, 350]
             },
             "transform": {
                 "parent": "player",
@@ -101,6 +101,7 @@
             "_name": "left-hand",
             "physics": {
                 "model": "box",
+                "group": "player_hands",
                 "constraint": "left-hand-input"
             },
             "transform": {
@@ -126,6 +127,7 @@
             "_name": "right-hand",
             "physics": {
                 "model": "box",
+                "group": "player_hands",
                 "constraint": "right-hand-input"
             },
             "transform": {

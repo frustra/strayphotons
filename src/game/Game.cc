@@ -139,7 +139,6 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
         if (!graphics.Frame()) return false;
 #endif
-        if (!animation.Frame(dt)) return false;
 
         FrameMark;
 
