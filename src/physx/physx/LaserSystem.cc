@@ -1,5 +1,6 @@
 #include "LaserSystem.hh"
 
+#include "core/Tracing.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/components/Physics.hh"
@@ -11,10 +12,13 @@
 namespace sp {
     using namespace physx;
 
+    CVar<int> CVarLaserRecursion("x.LaserRecursion", 10, "maximum number of laser bounces");
+
     LaserSystem::LaserSystem(PhysxManager &manager) : manager(manager) {}
 
     void LaserSystem::Frame(ecs::Lock<ecs::Read<ecs::Transform, ecs::LaserEmitter, ecs::Mirror>,
         ecs::Write<ecs::LaserLine, ecs::LaserSensor, ecs::SignalOutput>> lock) {
+        ZoneScoped;
         for (auto &entity : lock.EntitiesWith<ecs::LaserSensor>()) {
             auto &sensor = entity.Get<ecs::LaserSensor>(lock);
             sensor.illuminance = glm::vec3(0);
@@ -34,16 +38,16 @@ namespace sp {
             lines.relative = false;
             lines.points.clear();
 
+            glm::vec3 rayStart = transform.GetPosition();
+            glm::vec3 rayDir = transform.GetForward();
+            lines.points.push_back(rayStart);
+
+            PxRaycastBuffer hit;
             PxFilterData filterData;
             filterData.word0 = (uint32_t)(ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_PLAYER_HANDS);
 
             const float maxDistance = 1000.0f;
-            const int maxReflections = 10;
-
-            glm::vec3 rayStart = transform.GetPosition();
-            glm::vec3 rayDir = transform.GetForward();
-            PxRaycastBuffer hit;
-
+            int maxReflections = CVarLaserRecursion.Get();
             bool status = true;
 
             for (int reflectCount = 0; status && reflectCount <= maxReflections; reflectCount++) {
@@ -75,7 +79,6 @@ namespace sp {
                     }
                 }
 
-                lines.points.push_back(rayStart);
                 lines.points.push_back(hitPos);
 
                 if (reflect) {
