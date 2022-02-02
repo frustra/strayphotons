@@ -1279,6 +1279,10 @@
 					0.1
 				]
 			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			},
 			"trigger_area": {
 				"object": {
 					"signal": "button_pressed"
@@ -1304,6 +1308,7 @@
 			},
 			"physics": {
 				"model": "box",
+				"group": "interactive",
 				"joint": {
 					"target": "flashlight_button_root",
 					"type": "Slider",

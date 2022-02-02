@@ -8,6 +8,7 @@
 #include "ecs/components/Transform.h"
 #include "game/SceneType.hh"
 
+#include <bitset>
 #include <robin_hood.h>
 
 namespace sp {
