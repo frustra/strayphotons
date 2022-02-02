@@ -1,10 +1,10 @@
 #include "RenderGraph.hh"
 
 #include "core/Logging.hh"
-#include "core/Tracing.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
+#include "graphics/vulkan/core/Tracing.hh"
 
 namespace sp::vulkan {
     void RenderGraphResources::ResizeBeforeExecute() {
@@ -211,6 +211,41 @@ namespace sp::vulkan {
             CommandContextPtr cmd;
             AddPassBarriers(cmd, pass); // creates cmd if necessary
 
+            bool isRenderPass = false;
+            RenderPassInfo renderPassInfo;
+
+            for (uint32 i = 0; i < pass.attachments.size(); i++) {
+                auto &attachment = pass.attachments[i];
+                if (attachment.resourceID == ~0u) continue;
+                isRenderPass = true;
+
+                ImageViewPtr imageView;
+                auto renderTarget = resources.GetRenderTarget(attachment.resourceID);
+                if (attachment.arrayIndex != ~0u && renderTarget->Desc().arrayLayers > 1) {
+                    imageView = renderTarget->LayerImageView(attachment.arrayIndex);
+                } else {
+                    imageView = renderTarget->ImageView();
+                }
+
+                if (i != MAX_COLOR_ATTACHMENTS) {
+                    renderPassInfo.state.colorAttachmentCount = i + 1;
+                    renderPassInfo.SetColorAttachment(i,
+                        imageView,
+                        attachment.loadOp,
+                        attachment.storeOp,
+                        attachment.clearColor);
+                } else {
+                    renderPassInfo.SetDepthStencilAttachment(imageView,
+                        attachment.loadOp,
+                        attachment.storeOp,
+                        attachment.clearDepthStencil);
+                }
+            }
+
+            if (!cmd) {
+                if (isRenderPass || pass.ExecutesWithCommandContext()) cmd = device.GetCommandContext();
+            }
+
             for (int i = std::max(pass.scopes.size(), resources.scopeStack.size()) - 1; i >= 0; i--) {
                 uint8 passScope = i < (int)pass.scopes.size() ? pass.scopes[i] : 255;
                 uint8 resScope = i < (int)resources.scopeStack.size() ? resources.scopeStack[i] : 255;
@@ -248,40 +283,9 @@ namespace sp::vulkan {
                 pass.name.size(),
                 true);
 
-            bool isRenderPass = false;
-            RenderPassInfo renderPassInfo;
-
-            for (uint32 i = 0; i < pass.attachments.size(); i++) {
-                auto &attachment = pass.attachments[i];
-                if (attachment.resourceID == ~0u) continue;
-                isRenderPass = true;
-
-                ImageViewPtr imageView;
-                auto renderTarget = resources.GetRenderTarget(attachment.resourceID);
-                if (attachment.arrayIndex != ~0u && renderTarget->Desc().arrayLayers > 1) {
-                    imageView = renderTarget->LayerImageView(attachment.arrayIndex);
-                } else {
-                    imageView = renderTarget->ImageView();
-                }
-
-                if (i != MAX_COLOR_ATTACHMENTS) {
-                    renderPassInfo.state.colorAttachmentCount = i + 1;
-                    renderPassInfo.SetColorAttachment(i,
-                        imageView,
-                        attachment.loadOp,
-                        attachment.storeOp,
-                        attachment.clearColor);
-                } else {
-                    renderPassInfo.SetDepthStencilAttachment(imageView,
-                        attachment.loadOp,
-                        attachment.storeOp,
-                        attachment.clearDepthStencil);
-                }
-            }
-
             if (isRenderPass) {
-                if (!cmd) cmd = device.GetCommandContext();
                 {
+                    GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
                     RenderPhase phase(pass.name);
                     if (timer) phase.StartTimer(*cmd, *timer);
                     cmd->BeginRenderPass(renderPassInfo);
@@ -295,8 +299,8 @@ namespace sp::vulkan {
                 if (cmd) device.Submit(cmd);
                 pass.Execute(resources, device);
             } else if (pass.ExecutesWithCommandContext()) {
-                if (!cmd) cmd = device.GetCommandContext();
                 {
+                    GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
                     RenderPhase phase(pass.name);
                     if (timer) phase.StartTimer(*cmd, *timer);
                     pass.Execute(resources, *cmd);

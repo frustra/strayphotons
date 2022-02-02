@@ -140,7 +140,7 @@ namespace sp::vulkan {
         SharedHandle<vk::Fence> GetEmptyFence();
         SharedHandle<vk::Semaphore> GetEmptySemaphore(SharedHandle<vk::Fence> inUseUntilFence);
 
-        using TemporaryObject = std::variant<BufferPtr, ImageViewPtr, SharedHandle<vk::Semaphore>>;
+        using TemporaryObject = std::variant<CommandContextPtr, BufferPtr, ImageViewPtr, SharedHandle<vk::Semaphore>>;
         SharedHandle<vk::Fence> PushInFlightObject(TemporaryObject object, SharedHandle<vk::Fence> fence = nullptr);
 
         const vk::PhysicalDeviceLimits &Limits() const {
@@ -150,6 +150,8 @@ namespace sp::vulkan {
         const vk::PhysicalDeviceDescriptorIndexingProperties &IndexingLimits() const {
             return physicalDeviceDescriptorIndexingProperties;
         }
+
+        tracy::VkCtx *GetTracyContext(CommandContextType type);
 
         uint32 QueueFamilyIndex(CommandContextType type) {
             return queueFamilyIndex[QueueType(type)];
@@ -244,9 +246,9 @@ namespace sp::vulkan {
             // Stores all command contexts created for this frame, so they can be reused in later frames
             // TODO: multiple threads need their own pools
             std::array<CommandContextPool, QUEUE_TYPES_COUNT> commandContexts;
+            std::array<vector<PooledBuffer>, BUFFER_TYPES_COUNT> bufferPools;
 
             vector<InFlightObject> inFlightObjects;
-            std::array<vector<PooledBuffer>, BUFFER_TYPES_COUNT> bufferPools;
         };
 
         std::array<FrameContext, MAX_FRAMES_IN_FLIGHT> frameContexts;

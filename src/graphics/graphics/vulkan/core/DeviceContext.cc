@@ -6,19 +6,18 @@
 #include "console/CFunc.hh"
 #include "core/InlineVector.hh"
 #include "core/Logging.hh"
-#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/RenderTarget.hh"
+#include "graphics/vulkan/core/Tracing.hh"
 
 #include <algorithm>
 #include <iostream>
 #include <new>
 #include <optional>
 #include <string>
-#include <tracy/TracyVulkan.hpp>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -607,10 +606,14 @@ namespace sp::vulkan {
         for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
             auto trctx = tracing.tracyContexts[i];
             if (!trctx) continue;
-            // auto ctx = GetCommandContext(CommandContextType(i));
-            // TracyVkCollect(trctx, ctx->Raw());
-            // Submit(ctx);
+            auto ctx = GetCommandContext(CommandContextType(i));
+            {
+                GPUZone(this, ctx, "TracyCollect");
+                TracyVkCollect(trctx, ctx->Raw());
+            }
+            Submit(ctx);
         }
+        device->waitIdle();
     }
 
     void DeviceContext::PrepareResourcesForFrame() {
@@ -917,59 +920,62 @@ namespace sp::vulkan {
         if (genFactor) {
             ZoneScopedN("ApplyFactor");
             auto factorCmd = GetCommandContext(CommandContextType::ComputeAsync);
-            factorCmd->ImageBarrier(image,
-                lastLayout,
-                vk::ImageLayout::eGeneral,
-                lastStage,
-                lastAccess,
-                vk::PipelineStageFlagBits::eComputeShader,
-                vk::AccessFlagBits::eShaderRead,
-                transferToCompute);
+            {
+                GPUZone(this, factorCmd, "ApplyFactor");
+                factorCmd->ImageBarrier(image,
+                    lastLayout,
+                    vk::ImageLayout::eGeneral,
+                    lastStage,
+                    lastAccess,
+                    vk::PipelineStageFlagBits::eComputeShader,
+                    vk::AccessFlagBits::eShaderRead,
+                    transferToCompute);
 
-            ImageViewCreateInfo factorViewInfo;
-            factorViewInfo.image = image;
-            factorViewInfo.format = factorFormat;
-            factorViewInfo.mipLevelCount = 1;
-            factorViewInfo.usage = vk::ImageUsageFlagBits::eStorage;
-            auto factorView = CreateImageView(factorViewInfo);
+                ImageViewCreateInfo factorViewInfo;
+                factorViewInfo.image = image;
+                factorViewInfo.format = factorFormat;
+                factorViewInfo.mipLevelCount = 1;
+                factorViewInfo.usage = vk::ImageUsageFlagBits::eStorage;
+                auto factorView = CreateImageView(factorViewInfo);
 
-            image->SetLayout(lastLayout, vk::ImageLayout::eGeneral);
-            factorCmd->SetComputeShader("texture_factor.comp");
-            factorCmd->SetTexture(0, 0, factorView);
+                image->SetLayout(lastLayout, vk::ImageLayout::eGeneral);
+                factorCmd->SetComputeShader("texture_factor.comp");
+                factorCmd->SetTexture(0, 0, factorView);
 
-            struct {
-                glm::vec4 factor;
-                int components;
-                bool srgb;
-            } factorPushConstants;
+                struct {
+                    glm::vec4 factor;
+                    int components;
+                    bool srgb;
+                } factorPushConstants;
 
-            for (size_t i = 0; i < createInfo.factor.size(); i++) {
-                factorPushConstants.factor[i] = (float)createInfo.factor[i];
+                for (size_t i = 0; i < createInfo.factor.size(); i++) {
+                    factorPushConstants.factor[i] = (float)createInfo.factor[i];
+                }
+                factorPushConstants.components = createInfo.factor.size();
+                factorPushConstants.srgb = FormatIsSRGB(createInfo.format);
+                factorCmd->PushConstants(factorPushConstants);
+
+                factorCmd->Dispatch((createInfo.extent.width + 15) / 16, (createInfo.extent.height + 15) / 16, 1);
+
+                nextLayout = genMipmap ? vk::ImageLayout::eTransferSrcOptimal : vk::ImageLayout::eShaderReadOnlyOptimal;
+                auto nextStage = genMipmap ? vk::PipelineStageFlagBits::eTransfer
+                                           : vk::PipelineStageFlagBits::eFragmentShader;
+                auto nextAccess = genMipmap ? vk::AccessFlagBits::eTransferRead : vk::AccessFlagBits::eShaderRead;
+
+                transferToGeneral.srcQueueFamilyIndex = transferToCompute.dstQueueFamilyIndex;
+                factorCmd->ImageBarrier(image,
+                    vk::ImageLayout::eGeneral,
+                    nextLayout,
+                    vk::PipelineStageFlagBits::eComputeShader,
+                    vk::AccessFlagBits::eShaderWrite,
+                    nextStage,
+                    nextAccess,
+                    transferToGeneral);
+                lastLayout = vk::ImageLayout::eGeneral;
+                lastStage = vk::PipelineStageFlagBits::eComputeShader;
+                lastAccess = vk::AccessFlagBits::eShaderWrite;
+                fence = PushInFlightObject(factorView);
             }
-            factorPushConstants.components = createInfo.factor.size();
-            factorPushConstants.srgb = FormatIsSRGB(createInfo.format);
-            factorCmd->PushConstants(factorPushConstants);
-
-            factorCmd->Dispatch((createInfo.extent.width + 15) / 16, (createInfo.extent.height + 15) / 16, 1);
-
-            nextLayout = genMipmap ? vk::ImageLayout::eTransferSrcOptimal : vk::ImageLayout::eShaderReadOnlyOptimal;
-            auto nextStage = genMipmap ? vk::PipelineStageFlagBits::eTransfer
-                                       : vk::PipelineStageFlagBits::eFragmentShader;
-            auto nextAccess = genMipmap ? vk::AccessFlagBits::eTransferRead : vk::AccessFlagBits::eShaderRead;
-
-            transferToGeneral.srcQueueFamilyIndex = transferToCompute.dstQueueFamilyIndex;
-            factorCmd->ImageBarrier(image,
-                vk::ImageLayout::eGeneral,
-                nextLayout,
-                vk::PipelineStageFlagBits::eComputeShader,
-                vk::AccessFlagBits::eShaderWrite,
-                nextStage,
-                nextAccess,
-                transferToGeneral);
-            lastLayout = vk::ImageLayout::eGeneral;
-            lastStage = vk::PipelineStageFlagBits::eComputeShader;
-            lastAccess = vk::AccessFlagBits::eShaderWrite;
-            fence = PushInFlightObject(factorView);
             auto factorComplete = GetEmptySemaphore(fence);
             Submit(factorCmd, {factorComplete}, {transferComplete}, {vk::PipelineStageFlagBits::eComputeShader}, fence);
             transferComplete = factorComplete;
@@ -992,9 +998,10 @@ namespace sp::vulkan {
             return image;
         }
 
+        ZoneNamedN(mipmapZone, "Mipmap", true);
+        auto graphicsCmd = GetCommandContext();
         {
-            auto graphicsCmd = GetCommandContext();
-            ZoneScopedN("Mipmap");
+            GPUZone(this, graphicsCmd, "Mipmap");
 
             if (transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
                 graphicsCmd->ImageBarrier(image,
@@ -1069,8 +1076,8 @@ namespace sp::vulkan {
                 vk::AccessFlagBits::eTransferWrite,
                 vk::PipelineStageFlagBits::eFragmentShader,
                 vk::AccessFlagBits::eShaderRead);
-            Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eTransfer});
         }
+        Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eTransfer});
         return image;
     }
 
@@ -1297,6 +1304,10 @@ namespace sp::vulkan {
         if (!fence) fence = GetEmptyFence();
         Frame().inFlightObjects.emplace_back(InFlightObject{object, fence});
         return fence;
+    }
+
+    tracy::VkCtx *DeviceContext::GetTracyContext(CommandContextType type) {
+        return tracing.tracyContexts[(size_t)type];
     }
 
     void *DeviceContext::Win32WindowHandle() {

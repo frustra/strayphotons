@@ -9,7 +9,7 @@ namespace sp::vulkan {
     }
 
     CommandContext::~CommandContext() {
-        Assert(!recording, "dangling command context");
+        Assert(!recording, "command context was never ended/submitted");
     }
 
     void CommandContext::SetDefaultOpaqueState() {

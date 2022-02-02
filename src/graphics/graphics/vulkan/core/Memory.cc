@@ -1,8 +1,9 @@
+#include "core/Tracing.hh"
+#define VMA_DEBUG_LOG(format, ...) ZoneNamed(__tracy__LINE__, true) ZoneTextV(__tracy__LINE__, format, strlen(format))
+
 #define VMA_IMPLEMENTATION
 #include "Memory.hh"
-
 #include "core/Common.hh"
-#include "core/Tracing.hh"
 
 namespace sp::vulkan {
     vk::Result UniqueMemory::MapPersistent(void **data) {

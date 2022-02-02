@@ -44,6 +44,19 @@ namespace sp::vulkan {
         } gpuData;
     };
 
+    struct LaserContext {
+        struct GPULine {
+            glm::vec4 color;
+            glm::vec3 start;
+            float _padding0[1];
+            glm::vec3 end;
+            float _padding1[1];
+        };
+        static_assert(sizeof(GPULine) % sizeof(glm::vec4) == 0, "std430 alignment");
+
+        vector<GPULine> gpuData;
+    };
+
     class Renderer {
     public:
         using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::Transform>>;
@@ -107,6 +120,7 @@ namespace sp::vulkan {
 
         void AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock);
         void AddGeometryWarp(RenderGraph &graph);
+        void AddLaserState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::LaserLine, ecs::Transform>> lock);
         void AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
         void AddShadowMaps(RenderGraph &graph, DrawLock lock);
         void AddGuis(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Gui>> lock);
@@ -124,6 +138,7 @@ namespace sp::vulkan {
         CFuncCollection funcs;
 
         LightingContext lights;
+        LaserContext lasers;
         GPUSceneContext scene;
         PreservingMap<string, Model> activeModels;
         vector<shared_ptr<const sp::Model>> modelsToLoad;

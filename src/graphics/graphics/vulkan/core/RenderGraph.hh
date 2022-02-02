@@ -27,7 +27,7 @@ namespace sp::vulkan {
         RenderGraphResource(RenderTargetDesc desc) : type(Type::RenderTarget), renderTargetDesc(desc) {}
         RenderGraphResource(BufferType bufType, size_t size) : type(Type::Buffer), bufferDesc({size, bufType}) {}
 
-        operator bool() const {
+        explicit operator bool() const {
             return type != Type::Undefined;
         }
 
