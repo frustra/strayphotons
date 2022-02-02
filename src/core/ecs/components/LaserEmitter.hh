@@ -6,16 +6,14 @@
 #include <glm/glm.hpp>
 
 namespace ecs {
-    struct LaserLine {
+    struct LaserEmitter {
         float intensity = 1.0f; // multiplier applied to color
         glm::vec3 color; // HDR value
-        vector<glm::vec3> points;
         bool on = true;
-        bool relative = true; // multiply transform
     };
 
-    static Component<LaserLine> ComponentLaserLine("laser_line");
+    static Component<LaserEmitter> ComponentLaserEmitter("laser_emitter");
 
     template<>
-    bool Component<LaserLine>::Load(sp::Scene *scene, LaserLine &dst, const picojson::value &src);
+    bool Component<LaserEmitter>::Load(sp::Scene *scene, LaserEmitter &dst, const picojson::value &src);
 } // namespace ecs

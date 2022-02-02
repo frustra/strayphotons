@@ -9,6 +9,7 @@
 #include "physx/CharacterControlSystem.hh"
 #include "physx/ConstraintSystem.hh"
 #include "physx/ConvexHull.hh"
+#include "physx/LaserSystem.hh"
 #include "physx/PhysicsQuerySystem.hh"
 #include "physx/TriggerSystem.hh"
 
@@ -120,6 +121,7 @@ namespace sp {
         CharacterControlSystem characterControlSystem;
         ConstraintSystem constraintSystem;
         PhysicsQuerySystem physicsQuerySystem;
+        LaserSystem laserSystem;
         TriggerSystem triggerSystem;
         AnimationSystem animationSystem;
 
@@ -128,5 +130,6 @@ namespace sp {
         friend class CharacterControlSystem;
         friend class ConstraintSystem;
         friend class PhysicsQuerySystem;
+        friend class LaserSystem;
     };
 } // namespace sp

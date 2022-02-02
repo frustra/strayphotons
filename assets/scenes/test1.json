@@ -5,7 +5,7 @@
 				"scale": [0.99, 1, 0.99]
 			},
 			"laser_line": {
-				"color": [1, 0, 1, 1],
+				"color": [1, 0, 1],
 				"points": [
 					[-5, 1.5, -5],
 					[-5, 1.5, 5],
@@ -13,6 +13,36 @@
 					[5, 1.5, -5],
 					[-5, 1.5, -5]
 				]
+			}
+		},
+		{
+			"transform": {
+				"translate": [0, 0.9, -5]
+			},
+			"laser_sensor": {
+				"threshold": [1, 0, 0]
+			},
+			"signal_output": {},
+			"renderable": "sensor-plate-dark",
+			"physics": {
+				"model": "sensor-plate-dark",
+				"dynamic": false
+			}
+		},
+		{
+			"transform": {
+				"translate": [0, 0.9, 1]
+			},
+			"laser_line": {},
+			"laser_emitter": {
+				"color": [1, 0, 0]
+			},
+			"script": {
+				"onTick": "rotate",
+				"parameters": {
+					"speed": 8,
+					"axis_y": 1
+				}
 			}
 		},
 		{
@@ -131,7 +161,8 @@
 			"_name": "duck",
 			"renderable": "duck",
 			"transform": {
-				"translate": [0, 0, -2]
+				"translate": [-2.5, 0, -2.5],
+				"rotate": [0, 0, 1, 0]
 			},
 			"physics": {
 				"model": "duck"
@@ -140,6 +171,17 @@
 		{
 			"mirror": [1, 1],
 			"renderable": "mirror",
+			"physics": {
+				"model": "occluder",
+				"joint": {
+					"target": "duck",
+					"type": "Fixed",
+					"remote_offset": {
+						"translate": [1.5, 1, 0],
+						"rotate": [90, 0, 1, 0]
+					}
+				}
+			},
 			"transform": {
 				"parent": "duck",
 				"translate": [1.5, 1, 0],
