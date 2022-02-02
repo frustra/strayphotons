@@ -105,6 +105,10 @@ namespace sp::vulkan {
             return offsetBytes / bytesPerElement;
         }
 
+        vk::DeviceSize Size() const {
+            return size;
+        }
+
         vk::DeviceSize ByteOffset() const {
             return offsetBytes;
         }

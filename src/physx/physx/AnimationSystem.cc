@@ -4,13 +4,15 @@
 #include "core/Tracing.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "physx/PhysxManager.hh"
 
 namespace sp {
-    bool AnimationSystem::Frame(double dtSinceLastFrame) {
+    AnimationSystem::AnimationSystem(PhysxManager &manager) : manager(manager) {}
+
+    void AnimationSystem::Frame(
+        ecs::Lock<ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
+            ecs::Write<ecs::Animation, ecs::Transform>> lock) {
         ZoneScoped;
-        auto lock = ecs::World.StartTransaction<
-            ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
-            ecs::Write<ecs::Animation, ecs::Transform>>();
         for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
             if (!ent.Has<ecs::Animation, ecs::Transform>(lock)) continue;
 
@@ -40,7 +42,7 @@ namespace sp {
             float completion = 1.0f - distToTarget / glm::length(dPos);
 
             float duration = animation.animationTimes[animation.targetState];
-            float target = completion + dtSinceLastFrame / duration;
+            float target = completion + (float)(manager.interval.count() / 1e9) / duration;
 
             if (distToTarget < 1e-4f || target >= 1.0f || std::isnan(target) || std::isinf(target)) {
                 animation.currentState = animation.targetState;
@@ -51,7 +53,5 @@ namespace sp {
                 transform.SetScale(currentState.scale + target * dScale);
             }
         }
-
-        return true;
     }
 } // namespace sp

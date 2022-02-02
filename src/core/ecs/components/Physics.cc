@@ -21,6 +21,23 @@ namespace ecs {
                 physics.decomposeHull = param.second.get<bool>();
             } else if (param.first == "density") {
                 physics.density = param.second.get<double>();
+            } else if (param.first == "group") {
+                auto groupString = param.second.get<string>();
+                sp::to_upper(groupString);
+                if (groupString == "NOCLIP") {
+                    physics.group = ecs::PhysicsGroup::NoClip;
+                } else if (groupString == "WORLD") {
+                    physics.group = ecs::PhysicsGroup::World;
+                } else if (groupString == "INTERACTIVE") {
+                    physics.group = ecs::PhysicsGroup::Interactive;
+                } else if (groupString == "PLAYER") {
+                    physics.group = ecs::PhysicsGroup::Player;
+                } else if (groupString == "PLAYER_HANDS") {
+                    physics.group = ecs::PhysicsGroup::PlayerHands;
+                } else {
+                    Errorf("Unknown physics group: %s", groupString);
+                    return false;
+                }
             } else if (param.first == "joint") {
                 Assert(scene, "Physics::Load must have valid scene to define joint");
                 std::string jointTarget = "";

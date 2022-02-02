@@ -21,14 +21,18 @@ namespace ecs {
     enum class PhysicsGroup : uint16_t {
         NoClip = 0,
         World,
+        Interactive,
         Player,
+        PlayerHands,
         Count,
     };
 
     enum PhysicsGroupMask {
         PHYSICS_GROUP_NOCLIP = 1 << (size_t)PhysicsGroup::NoClip,
         PHYSICS_GROUP_WORLD = 1 << (size_t)PhysicsGroup::World,
+        PHYSICS_GROUP_INTERACTIVE = 1 << (size_t)PhysicsGroup::Interactive,
         PHYSICS_GROUP_PLAYER = 1 << (size_t)PhysicsGroup::Player,
+        PHYSICS_GROUP_PLAYER_HANDS = 1 << (size_t)PhysicsGroup::PlayerHands,
     };
 
     enum class PhysicsJointType {

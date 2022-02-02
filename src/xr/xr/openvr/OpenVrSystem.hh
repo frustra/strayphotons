@@ -49,8 +49,7 @@ namespace sp {
             std::shared_ptr<InputBindings> inputBindings;
 
             EnumArray<ecs::NamedEntity, ecs::XrEye> views = {
-                ecs::NamedEntity("vr-eye-left"),
-                ecs::NamedEntity("vr-eye-right"),
+                {ecs::NamedEntity("vr-eye-left"), ecs::NamedEntity("vr-eye-right")},
             };
 
             ecs::NamedEntity vrOriginEntity = ecs::NamedEntity("player.vr-origin");

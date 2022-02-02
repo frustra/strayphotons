@@ -23,6 +23,10 @@
 #endif
 
 namespace sp {
+    static sp::CVar<std::string> CVarFlatviewEntity("r.FlatviewEntity",
+        "player.flatview",
+        "The entity with a View component to display");
+
     Game::Game(cxxopts::ParseResult &options, Script *startupScript)
         : options(options), startupScript(startupScript)
 #ifdef SP_GRAPHICS_SUPPORT
@@ -135,7 +139,6 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
         if (!graphics.Frame()) return false;
 #endif
-        if (!animation.Frame(dt)) return false;
 
         FrameMark;
 
@@ -158,11 +161,12 @@ namespace sp {
         {
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>>();
             player = ecs::EntityWith<ecs::Name>(lock, "player.player");
+            flatview = ecs::EntityWith<ecs::Name>(lock, CVarFlatviewEntity.Get());
         }
 
 #ifdef SP_GRAPHICS_SUPPORT
         auto context = graphics.GetContext();
-        if (context) context->AttachView(player);
+        if (context) context->AttachView(flatview);
 #endif
 
         scenes.RespawnPlayer(player);
@@ -171,21 +175,34 @@ namespace sp {
 
     void Game::PrintDebug() {
         auto lock =
-            ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::Transform, ecs::HumanController, ecs::LightSensor>>();
-        if (player && player.Has<ecs::Transform, ecs::HumanController>(lock)) {
+            ecs::World
+                .StartTransaction<ecs::Read<ecs::Name, ecs::Transform, ecs::CharacterController, ecs::LightSensor>>();
+        if (flatview && flatview.Has<ecs::Transform>(lock)) {
+            auto &transform = flatview.Get<ecs::Transform>(lock);
+            auto position = transform.GetGlobalTransform(lock).GetPosition();
+            Logf("Flatview position: [%f, %f, %f]", position.x, position.y, position.z);
+        }
+        if (player && player.Has<ecs::Transform>(lock)) {
             auto &transform = player.Get<ecs::Transform>(lock);
-            auto position = transform.GetPosition();
+            auto position = transform.GetGlobalTransform(lock).GetPosition();
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-            auto &controller = player.Get<ecs::HumanController>(lock);
-            if (controller.pxController) {
-                auto pxFeet = controller.pxController->getFootPosition();
-                Logf("Player position: [%f, %f, %f], feet: %f", position.x, position.y, position.z, pxFeet.y);
+            if (player.Has<ecs::CharacterController>(lock)) {
+                auto &controller = player.Get<ecs::CharacterController>(lock);
+                if (controller.pxController) {
+                    auto pxFeet = controller.pxController->getFootPosition();
+                    Logf("Player physics position: [%f, %f, %f]", pxFeet.x, pxFeet.y, pxFeet.z);
+                    auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+                    Logf("Player velocity: [%f, %f, %f]",
+                        userData->velocity.x,
+                        userData->velocity.y,
+                        userData->velocity.z);
+                    Logf("Player on ground: %s", userData->onGround ? "true" : "false");
+                } else {
+                    Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
+                }
             } else {
                 Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
             }
-            auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
-            Logf("Player velocity: [%f, %f, %f]", userData->velocity.x, userData->velocity.y, userData->velocity.z);
-            Logf("Player on ground: %s", userData->onGround ? "true" : "false");
 #else
             Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
 #endif

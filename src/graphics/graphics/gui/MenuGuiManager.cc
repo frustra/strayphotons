@@ -205,9 +205,6 @@ namespace sp {
             ImGui::Image((void *)logoTex->GetHandle(), logoSize);
 
             if (ImGui::Button(RenderMode() == MenuRenderMode::Pause ? "Resume" : "Start Game")) {
-                if (RenderMode() == MenuRenderMode::Gel) {
-                    GetConsoleManager().QueueParseAndExecute("p.PausePlayerPhysics 0");
-                }
                 SetRenderMode(MenuRenderMode::None);
             }
 
@@ -236,14 +233,13 @@ namespace sp {
 
             ImGui::PushFont(io.Fonts->Fonts[3]);
 
-#define LEVEL_BUTTON(name, file)                                            \
-    if (ImGui::Button(name)) {                                              \
-        SetRenderMode(MenuRenderMode::None);                                \
-        selectedScreen = MenuScreen::Main;                                  \
-        GetConsoleManager().QueueParseAndExecute("g.MenuDisplay 0");        \
-        GetConsoleManager().QueueParseAndExecute("r.Exposure 0");           \
-        GetConsoleManager().QueueParseAndExecute("p.PausePlayerPhysics 0"); \
-        GetConsoleManager().QueueParseAndExecute("loadscene " file);        \
+#define LEVEL_BUTTON(name, file)                                     \
+    if (ImGui::Button(name)) {                                       \
+        SetRenderMode(MenuRenderMode::None);                         \
+        selectedScreen = MenuScreen::Main;                           \
+        GetConsoleManager().QueueParseAndExecute("g.MenuDisplay 0"); \
+        GetConsoleManager().QueueParseAndExecute("r.Exposure 0");    \
+        GetConsoleManager().QueueParseAndExecute("loadscene " file); \
     }
 
             LEVEL_BUTTON("01 - Outside", "01-outside")
@@ -251,6 +247,7 @@ namespace sp {
             LEVEL_BUTTON("03 - Dark", "03-dark")
             LEVEL_BUTTON("04 - Symmetry", "04-symmetry")
             LEVEL_BUTTON("Sponza", "sponza")
+            LEVEL_BUTTON("Station Center", "station-center")
             LEVEL_BUTTON("Cornell Box", "cornell-box-1")
             LEVEL_BUTTON("Cornell Box Mirror", "cornell-box-3")
             LEVEL_BUTTON("Test 1", "test1")

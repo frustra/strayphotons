@@ -119,7 +119,7 @@
 		{
 			"_name": "global.spawn",
 			"transform": {
-				"translate": [0, 1.625, 0]
+				"translate": [0, 0.05, 0]
 			}
 		},
 		{

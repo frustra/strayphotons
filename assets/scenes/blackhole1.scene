@@ -129,7 +129,9 @@
 		<% } %>
 		<%- include('prefab/button', {
 			name: 'flashlight_button',
-			translate: [4.95, 1.25, -1],
+			transform: {
+				"translate": [4.95, 1.25, -1]
+			},
 			trigger: {
 				"command": "setsignal player.flashlight.on 1"
 			}
@@ -157,7 +159,7 @@
 		{
 			"_name": "global.spawn",
 			"transform": {
-				"translate": [0, 1.7, 2]
+				"translate": [0, 0.05, 2]
 			},
 			"voxels": {
 				"min": [-5, -0, -5],

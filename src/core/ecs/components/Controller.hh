@@ -13,7 +13,7 @@ namespace physx {
 
 namespace ecs {
     // Units in meters
-    const float PLAYER_HEIGHT = 1.7f;
+    const float PLAYER_HEIGHT = 1.8f;
     const float PLAYER_CROUCH_HEIGHT = 0.8f;
     const float PLAYER_RADIUS = 0.2f;
     const float PLAYER_CAPSULE_CROUCH_HEIGHT = PLAYER_CROUCH_HEIGHT - 2 * PLAYER_RADIUS;
@@ -26,25 +26,14 @@ namespace ecs {
     const float PLAYER_AIR_STRAFE = 0.8f; // Movement scaler for acceleration in air
     const float PLAYER_PUSH_FORCE = 0.3f;
 
-    class HumanController {
-    public:
-        // pxCapsuleController handles movement and physx simulation
-        physx::PxCapsuleController *pxController;
-
-        float height = ecs::PLAYER_CAPSULE_HEIGHT;
-    };
-
     struct CharacterController {
-        ecs::NamedEntity target;
+        ecs::NamedEntity target, fallbackTarget, movementProxy;
 
         physx::PxCapsuleController *pxController = nullptr;
     };
 
-    static Component<HumanController> ComponentHumanController("human_controller");
     static Component<CharacterController> ComponenCharacterController("character_controller");
 
-    template<>
-    bool Component<HumanController>::Load(sp::Scene *scene, HumanController &dst, const picojson::value &src);
     template<>
     bool Component<CharacterController>::Load(sp::Scene *scene, CharacterController &dst, const picojson::value &src);
 } // namespace ecs

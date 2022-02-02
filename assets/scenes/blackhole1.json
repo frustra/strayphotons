@@ -1279,11 +1279,16 @@
 					0.1
 				]
 			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			},
 			"trigger_area": {
 				"object": {
-					"command": "setsignal player.flashlight.on 1"
+					"signal": "button_pressed"
 				}
-			}
+			},
+			"signal_output": {}
 		},
 		{
 			"_name": "flashlight_button_actuator",
@@ -1303,6 +1308,7 @@
 			},
 			"physics": {
 				"model": "box",
+				"group": "interactive",
 				"joint": {
 					"target": "flashlight_button_root",
 					"type": "Slider",
@@ -1364,7 +1370,7 @@
 			"transform": {
 				"translate": [
 					0,
-					1.7,
+					0.05,
 					2
 				]
 			},

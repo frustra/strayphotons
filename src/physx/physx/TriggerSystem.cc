@@ -19,7 +19,7 @@ namespace sp {
 
     void TriggerSystem::Frame() {
         ZoneScoped;
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::TriggerGroup, ecs::Transform>,
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name, ecs::TriggerGroup, ecs::Transform>,
             ecs::Write<ecs::TriggerArea, ecs::SignalOutput>>();
 
         for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
@@ -31,7 +31,15 @@ namespace sp {
             ecs::ComponentEvent<ecs::TriggerGroup> triggerEvent;
             while (triggerGroupObserver.Poll(lock, triggerEvent)) {
                 if (triggerEvent.type == Tecs::EventType::REMOVED) {
-                    area.contained_entities.erase(triggerEvent.entity);
+                    for (auto &triggerGroup : area.triggers) {
+                        for (auto &trigger : triggerGroup) {
+                            std::visit(
+                                [&triggerEvent](auto &&arg) {
+                                    arg.contained_entities.erase(triggerEvent.entity);
+                                },
+                                trigger);
+                        }
+                    }
                 }
             }
 
@@ -42,37 +50,47 @@ namespace sp {
                 bool inArea = glm::all(glm::greaterThan(entityPos, glm::vec3(-0.5))) &&
                               glm::all(glm::lessThan(entityPos, glm::vec3(0.5)));
 
-                if (area.contained_entities.contains(triggerEnt) == inArea) continue;
-                if (inArea) {
-                    area.contained_entities.insert(triggerEnt);
-                    Debugf("Entity entered TriggerArea at: %f %f %f", entityPos.x, entityPos.y, entityPos.z);
-                } else {
-                    area.contained_entities.erase(triggerEnt);
-                }
-            }
-
-            for (auto &triggerGroup : area.triggers) {
-                for (auto &trigger : triggerGroup) {
+                auto &triggerGroup = triggerEnt.Get<ecs::TriggerGroup>(lock);
+                for (auto &trigger : area.triggers[triggerGroup]) {
                     std::visit(
-                        [&lock, &area, &entity](auto &&arg) {
-                            using T = std::decay_t<decltype(arg)>;
-                            if constexpr (std::is_same<T, ecs::TriggerArea::TriggerCommand>()) {
-                                for (auto &triggerEnt : area.contained_entities) {
-                                    if (arg.executed_entities.contains(triggerEnt)) continue;
+                        [&lock, &entity, &triggerEnt, &entityPos, &inArea](auto &&arg) {
+                            if (arg.contained_entities.contains(triggerEnt) == inArea) return;
+                            if (inArea) {
+                                arg.contained_entities.insert(triggerEnt);
+                                Debugf("%s entered TriggerArea %s at: %f %f %f",
+                                    ecs::ToString(lock, triggerEnt),
+                                    ecs::ToString(lock, entity),
+                                    entityPos.x,
+                                    entityPos.y,
+                                    entityPos.z);
 
+                                using T = std::decay_t<decltype(arg)>;
+                                if constexpr (std::is_same<T, ecs::TriggerArea::TriggerCommand>()) {
                                     Logf("TriggerArea running command: %s", arg.command);
                                     GetConsoleManager().QueueParseAndExecute(arg.command);
                                 }
-                                arg.executed_entities = area.contained_entities;
-                            } else if constexpr (std::is_same<T, ecs::TriggerArea::TriggerSignal>()) {
-                                if (entity.Has<ecs::SignalOutput>(lock)) {
-                                    auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);
-                                    signalOutput.SetSignal(arg.outputSignal,
-                                        area.contained_entities.size() > 0 ? 1.0 : 0.0);
-                                }
+                            } else {
+                                arg.contained_entities.erase(triggerEnt);
                             }
                         },
                         trigger);
+                }
+            }
+
+            if (entity.Has<ecs::SignalOutput>(lock)) {
+                for (auto &triggerGroup : area.triggers) {
+                    for (auto &trigger : triggerGroup) {
+                        std::visit(
+                            [&lock, &entity](auto &&arg) {
+                                using T = std::decay_t<decltype(arg)>;
+                                if constexpr (std::is_same<T, ecs::TriggerArea::TriggerSignal>()) {
+                                    auto &signalOutput = entity.Get<ecs::SignalOutput>(lock);
+                                    signalOutput.SetSignal(arg.outputSignal,
+                                        arg.contained_entities.size() > 0 ? 1.0 : 0.0);
+                                }
+                            },
+                            trigger);
+                    }
                 }
             }
         }

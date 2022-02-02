@@ -17,22 +17,18 @@ namespace ecs {
     struct TriggerArea {
         struct TriggerCommand {
             std::string command;
-            robin_hood::unordered_flat_set<Tecs::Entity> executed_entities;
+            robin_hood::unordered_flat_set<Tecs::Entity> contained_entities;
 
             TriggerCommand(const std::string &command) : command(command) {}
         };
         struct TriggerSignal {
             std::string outputSignal;
-            TriggerSignal(const std::string &signal) : outputSignal(signal) {
-                sizeof(TriggerArea);
-                sizeof(triggers);
-                sizeof(contained_entities);
-                sizeof(std::vector<std::variant<TriggerCommand, TriggerSignal>>);
-            }
+            robin_hood::unordered_flat_set<Tecs::Entity> contained_entities;
+
+            TriggerSignal(const std::string &signal) : outputSignal(signal) {}
         };
 
         sp::EnumArray<std::vector<std::variant<TriggerCommand, TriggerSignal>>, TriggerGroup> triggers;
-        robin_hood::unordered_flat_set<Tecs::Entity> contained_entities;
     };
 
     static Component<TriggerGroup> ComponentTriggerGroup("trigger_group");

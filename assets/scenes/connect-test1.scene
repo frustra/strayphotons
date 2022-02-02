@@ -177,7 +177,7 @@
 		{
 			"_name": "global.spawn",
 			"transform": {
-				"translate": [-3, 1.7, -3],
+				"translate": [-3, 0.05, -3],
 				"rotate": [-135, 0, 1, 0]
 			},
 			"voxels": {
