@@ -17,6 +17,7 @@
 	},
 	<% } %>
 	"transform": {
+		<% if (locals.parent) { %>"parent": <%= parent %>,<% } %>
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
 		"translate": <%= translate %>
 	}

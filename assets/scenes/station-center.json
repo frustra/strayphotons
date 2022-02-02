@@ -130,7 +130,7 @@
 			"animation": {
 				"states": [
 					{
-						"delay": 10,
+						"delay": 30,
 						"translate": [
 							0,
 							160,
@@ -138,7 +138,7 @@
 						]
 					},
 					{
-						"delay": 10,
+						"delay": 30,
 						"translate": [
 							0,
 							0.1,
@@ -160,8 +160,30 @@
 					-1
 				],
 				"scale": [
-					3,
+					4,
 					0.1,
+					4
+				]
+			},
+			"physics": {
+				"model": "box",
+				"kinematic": true
+			},
+			"trigger_group": "object"
+		},
+		{
+			"_comment": "elevator_wall",
+			"renderable": "box",
+			"transform": {
+				"parent": "elevator",
+				"translate": [
+					1.95,
+					1.75,
+					-1
+				],
+				"scale": [
+					0.1,
+					3.5,
 					4
 				]
 			},
@@ -171,18 +193,18 @@
 			}
 		},
 		{
-			"_comment": "elevator_wall",
+			"_comment": "elevator_wall2",
 			"renderable": "box",
 			"transform": {
 				"parent": "elevator",
 				"translate": [
-					1.55,
-					0.75,
+					-1.95,
+					1.75,
 					-1
 				],
 				"scale": [
 					0.1,
-					1.5,
+					3.5,
 					4
 				]
 			},
@@ -196,7 +218,7 @@
 			"transform": {
 				"parent": "elevator",
 				"translate": [
-					1.5,
+					1.95,
 					1.25,
 					0
 				]
@@ -274,6 +296,161 @@
 			"trigger_group": "object"
 		},
 		{
+			"_name": "elevator_door",
+			"transform": {
+				"parent": "elevator",
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"scale": [
+					1,
+					1.5,
+					2.3
+				],
+				"translate": [
+					0,
+					0,
+					-2.9
+				]
+			},
+			"renderable": "door-frame",
+			"physics": {
+				"model": "door-frame",
+				"dynamic": false
+			},
+			"signal_output": {},
+			"signal_bindings": {}
+		},
+		{
+			"_name": "elevator_door-left",
+			"renderable": "door-panel",
+			"transform": {
+				"parent": "elevator_door"
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							0.8
+						]
+					}
+				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "station-center.elevator_door"
+				}
+			},
+			"physics": {
+				"model": "door-panel",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "elevator_door-right",
+			"renderable": "door-panel",
+			"transform": {
+				"parent": "elevator_door",
+				"rotate": [
+					180,
+					0,
+					1,
+					0
+				]
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							-0.8
+						],
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					}
+				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "station-center.elevator_door"
+				}
+			},
+			"physics": {
+				"model": "door-panel",
+				"dynamic": false
+			}
+		},
+		{
+			"transform": {
+				"parent": "elevator"
+			},
+			"laser_line": {
+				"color": [
+					0,
+					0,
+					1,
+					1
+				],
+				"points": [
+					[
+						-1.95,
+						1.5,
+						-2.9
+					],
+					[
+						1.95,
+						1.5,
+						-2.9
+					]
+				]
+			}
+		},
+		{
+			"_name": "elevator_open_zone",
+			"transform": {
+				"translate": [
+					0,
+					0,
+					0
+				],
+				"scale": [
+					3,
+					3,
+					3
+				]
+			},
+			"signal_output": {},
+			"trigger_area": {
+				"object": {
+					"command": "togglesignal station-center.elevator_door.door_open"
+				}
+			}
+		},
+		{
 			"_name": "global.spawn",
 			"transform": {
 				"translate": [
@@ -296,6 +473,8 @@
 			}
 		},
 		{
+			"_name": "elevator_light",
+			"renderable": "spotlight-01",
 			"light": {
 				"tint": [
 					1,
@@ -304,24 +483,44 @@
 				],
 				"intensity": 300,
 				"spotAngle": 50,
+				"bulb": "elevator_light-bulb",
 				"shadowMapSize": 11,
 				"shadowMapClip": [
-					0.01,
-					50
+					0.1,
+					70
 				]
 			},
 			"transform": {
 				"parent": "elevator",
-				"translate": [
-					-4.8,
-					4.5,
-					-2.7
-				],
 				"rotate": [
-					-130,
-					1,
-					1,
-					0
+					[
+						270,
+						1,
+						0,
+						0
+					]
+				],
+				"translate": [
+					0,
+					4,
+					-1
+				]
+			}
+		},
+		{
+			"_name": "elevator_light-bulb",
+			"renderable": "box",
+			"transform": {
+				"parent": "elevator_light",
+				"translate": [
+					0,
+					0,
+					-0.06
+				],
+				"scale": [
+					0.1,
+					0.1,
+					0.03
 				]
 			}
 		},
