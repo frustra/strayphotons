@@ -176,8 +176,8 @@ namespace ecs {
                         movement.z += SignalBindings::GetSignal(lock, ent, "move_back");
                         movement.x -= SignalBindings::GetSignal(lock, ent, "move_left");
                         movement.x += SignalBindings::GetSignal(lock, ent, "move_right");
-                        float vertical = SignalBindings::GetSignal(lock, ent, "move_jump");
-                        vertical -= SignalBindings::GetSignal(lock, ent, "move_crouch");
+                        float vertical = SignalBindings::GetSignal(lock, ent, "move_up");
+                        vertical -= SignalBindings::GetSignal(lock, ent, "move_down");
 
                         movement.x = std::clamp(movement.x, -1.0f, 1.0f);
                         movement.z = std::clamp(movement.z, -1.0f, 1.0f);

@@ -197,9 +197,13 @@ namespace ecs {
                     auto &layer = ent.Get<FocusLayer>(lock);
                     if (!focusLock->HasPrimaryFocus(layer)) continue;
                 }
-                if (ent.Has<EventInput>(lock)) {
-                    auto &eventInput = ent.Get<EventInput>(lock);
-                    eventInput.Add(binding.second, event);
+                if (ent.Exists(lock)) {
+                    if (ent.Has<EventInput>(lock)) {
+                        auto &eventInput = ent.Get<EventInput>(lock);
+                        eventInput.Add(binding.second, event);
+                    } else {
+                        Errorf("Tried to send event to entity without EventInput: %s", binding.first.Name());
+                    }
                 } else {
                     Errorf("Tried to send event to missing entity: %s", binding.first.Name());
                 }

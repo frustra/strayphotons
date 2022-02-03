@@ -122,7 +122,8 @@
         "xmemory0": "cpp",
         "xthread": "cpp",
         "numbers": "cpp",
-        "transform.h": "c"
+        "transform.h": "c",
+        "execution": "cpp"
     },
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,

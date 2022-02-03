@@ -175,7 +175,11 @@ namespace sp {
                                                         ecs::FocusLayer,
                                                         ecs::FocusLock,
                                                         ecs::Physics>,
-                ecs::Write<ecs::Animation, ecs::CharacterController, ecs::Transform, ecs::PhysicsQuery>>();
+                ecs::Write<ecs::Animation,
+                    ecs::CharacterController,
+                    ecs::Transform,
+                    ecs::EventInput,
+                    ecs::PhysicsQuery>>();
 
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
@@ -443,39 +447,6 @@ namespace sp {
                     PxForceMode::eIMPULSE);
             }
         }
-    }
-
-    bool PhysxManager::SweepQuery(PxRigidDynamic *actor, PxVec3 dir, float distance, PxSweepBuffer &hit) {
-        PxShape *shape;
-        auto shapeCount = actor->getShapes(&shape, 1);
-        Assert(shapeCount == 1, "PhysxManager::SweepQuery expected actor to have 1 shape");
-
-        PxCapsuleGeometry capsuleGeometry;
-        bool validCapsule = shape->getCapsuleGeometry(capsuleGeometry);
-        Assert(validCapsule, "PhysxManager::SweepQuery expected actor to have capsule geometry");
-
-        scene->removeActor(*actor);
-        bool status = scene->sweep(capsuleGeometry, actor->getGlobalPose(), dir, distance, hit);
-        scene->addActor(*actor);
-        return status;
-    }
-
-    bool PhysxManager::OverlapQuery(PxRigidDynamic *actor, PxVec3 translation, PxOverlapBuffer &hit) {
-        PxShape *shape;
-        actor->getShapes(&shape, 1);
-
-        PxCapsuleGeometry capsuleGeometry;
-        shape->getCapsuleGeometry(capsuleGeometry);
-
-        scene->removeActor(*actor);
-        PxQueryFilterData filterData = PxQueryFilterData(
-            PxQueryFlag::eANY_HIT | PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC);
-        PxTransform pose = actor->getGlobalPose();
-        pose.p += translation;
-        bool overlapFound = scene->overlap(capsuleGeometry, pose, hit, filterData);
-        scene->addActor(*actor);
-
-        return overlapFound;
     }
 
     void PhysxManager::SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group) {

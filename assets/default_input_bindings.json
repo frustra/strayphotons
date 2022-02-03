@@ -35,6 +35,7 @@
                 "/action/menu/back": "menu_gui"
             },
             "/keyboard/key/enter": { "/action/menu/enter": "menu_gui" },
+            "/keyboard/key/space": { "/action/jump": "player.player" },
             "/keyboard/key/e": { "/action/interact_grab": "player.flatview" },
             "/keyboard/key/q": { "/action/spawn": "player.debug-spawner" },
             "/keyboard/key/f": { "/action/flashlight/toggle": "player.flashlight" },
@@ -75,8 +76,8 @@
             "move_right": { "key_d": "keyboard" },
             "move_left": { "key_a": "keyboard" },
             "move_back": { "key_s": "keyboard" },
-            "move_crouch": { "key_left_control": "keyboard" },
-            "move_jump": { "key_space": "keyboard" },
+            "move_up": { "key_space": "keyboard" },
+            "move_down": { "key_left_control": "keyboard" },
             "interact_rotate": { "key_r": "keyboard" }
         }
     }

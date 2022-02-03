@@ -47,6 +47,7 @@ namespace sp {
 
         bool onGround = false;
         bool noclipping = false;
+        glm::vec3 prevPosition = glm::vec3(0);
         glm::vec3 velocity = glm::vec3(0);
 
         CharacterControllerUserData() {}
@@ -77,14 +78,6 @@ namespace sp {
         void CreateActor(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
         void UpdateActor(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
-
-        bool SweepQuery(physx::PxRigidDynamic *actor, physx::PxVec3 dir, float distance, physx::PxSweepBuffer &hit);
-
-        /**
-         * Checks scene for an overlapping hit in the shape
-         * Will return true if a hit is found and false otherwise
-         */
-        bool OverlapQuery(physx::PxRigidDynamic *actor, physx::PxVec3 translation, physx::PxOverlapBuffer &hit);
 
     private:
         void CreatePhysxScene();
