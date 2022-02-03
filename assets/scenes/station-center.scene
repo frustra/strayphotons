@@ -150,30 +150,27 @@
 				"translate": [0, 160, 0]
 			},
 			"animation": {
+				"interpolation": "cubic",
 				"states": [
 					{
 						"delay": 10,
-						"translate": [0, 160, 0]
+						"translate": [0, 160, 0],
+						"translate_tangent": [0, 0, 0]
 					},
 					{
 						"delay": 10,
-						"translate": [0, 150, 0]
+						"translate": [0, 120, 0],
+						"translate_tangent": [0, -7, 0]
 					},
 					{
 						"delay": 10,
-						"translate": [0, 130, 0]
+						"translate": [0, 40, 0],
+						"translate_tangent": [0, -7, 0]
 					},
 					{
 						"delay": 10,
-						"translate": [0, 30, 0]
-					},
-					{
-						"delay": 10,
-						"translate": [0, 10, 0]
-					},
-					{
-						"delay": 10,
-						"translate": [0, 0.1, 0]
+						"translate": [0, 0.1, 0],
+						"translate_tangent": [0, 0, 0]
 					}
 				]
 			},
@@ -251,12 +248,12 @@
 			"_name": "elevator_open_zone",
 			"transform": {
 				"translate": [0, 0, 0],
-				"scale": [3, 3, 3]
+				"scale": [3, 0.5, 3]
 			},
 			"signal_output": {},
 			"trigger_area": {
 				"object": {
-					"command": "togglesignal station-center.elevator_door.door_open"
+					"command": "wait 1000 togglesignal station-center.elevator_door.door_open"
 				}
 			}
 		},

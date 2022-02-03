@@ -16,6 +16,53 @@
 			}
 		},
 		{
+			"_name": "animbox",
+			"transform": {
+				"translate": [0, 2, -4.875]
+			},
+			"animation": {
+				"interpolation": "cubic",
+				"tension": 0.1,
+				"states": [
+					{
+						"delay": 1,
+						"translate": [0, 2, -4.875],
+						"translate_tangent": [0, 0, 0]
+					},
+					{
+						"delay": 1,
+						"translate": [0, 3.5, -4.875],
+						"translate_tangent": [0, 3, 0]
+					},
+					{
+						"delay": 1,
+						"translate": [0, 7, -4.875],
+						"translate_tangent": [0, 3, 0]
+					},
+					{
+						"delay": 1,
+						"translate": [0, 8.5, -4.875],
+						"translate_tangent": [0, 0, 0]
+					}
+				]
+			},
+			"signal_output": {
+				"constant": 4
+			},
+			"signal_bindings": {
+				"animation_state": { "value": "test1.lasersensor", "_operator": "multiply", "constant": "test1.animbox" }
+			}
+		},
+		{
+			"transform": {
+				"parent": "animbox",
+				"scale": [0.25, 0.25, 0.25],
+				"translate": [0, 0.125, 0]
+			},
+			"renderable": "box"
+		},
+		{
+			"_name": "lasersensor",
 			"transform": {
 				"translate": [0, 0.9, -5]
 			},
@@ -31,7 +78,8 @@
 		},
 		{
 			"transform": {
-				"translate": [0, 0.9, 1]
+				"translate": [0, 0.9, 1],
+				"rotate": [-10, 0, 1, 0]
 			},
 			"laser_line": {},
 			"laser_emitter": {
@@ -40,7 +88,7 @@
 			"script": {
 				"onTick": "rotate",
 				"parameters": {
-					"speed": 8,
+					"speed": 1,
 					"axis_y": 1
 				}
 			}
@@ -244,7 +292,7 @@
 		{
 			"_name": "global.spawn",
 			"transform": {
-				"translate": [-3, 0.05, -3],
+				"translate": [-4, 0.05, -4],
 				"rotate": [-135, 0, 1, 0]
 			},
 			"voxels": {

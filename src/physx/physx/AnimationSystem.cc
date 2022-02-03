@@ -26,8 +26,13 @@ namespace sp {
             if (newTargetState >= animation.states.size()) newTargetState = animation.states.size() - 1;
 
             if (animation.targetState != newTargetState) {
-                animation.currentState = animation.currentState + animation.PlayDirection();
+                auto oldNextState = animation.currentState + animation.PlayDirection();
+                animation.currentState = oldNextState;
                 animation.targetState = newTargetState;
+
+                auto newNextState = animation.currentState + animation.PlayDirection();
+                auto oldCompletion = 1.0 - animation.timeUntilNextState / animation.animationTimes[oldNextState];
+                animation.timeUntilNextState = oldCompletion * animation.animationTimes[newNextState];
             }
 
             if (animation.targetState == animation.currentState) continue;
@@ -35,27 +40,47 @@ namespace sp {
             Assert(animation.targetState < animation.states.size(), "invalid target state");
             Assert(animation.currentState < animation.states.size(), "invalid current state");
 
-            auto nextStateIndex = animation.currentState + animation.PlayDirection();
+            auto playDirection = animation.PlayDirection();
+            auto nextStateIndex = animation.currentState + playDirection;
             auto &currentState = animation.states[animation.currentState];
             auto &nextState = animation.states[nextStateIndex];
 
-            glm::vec3 dPos = nextState.pos - currentState.pos;
-            glm::vec3 dScale = nextState.scale - currentState.scale;
+            double duration = animation.animationTimes[nextStateIndex];
+            if (animation.timeUntilNextState <= 0) animation.timeUntilNextState = duration;
+            animation.timeUntilNextState -= manager.interval.count() / 1e9;
 
-            float distance = glm::length(transform.GetPosition() - nextState.pos);
-            float completion = 1.0f - distance / glm::length(dPos);
+            float completion = 1.0 - animation.timeUntilNextState / duration;
 
-            float duration = animation.animationTimes[nextStateIndex];
-            float nextCompletion = completion + (float)(manager.interval.count() / 1e9) / duration;
-
-            if (distance < 1e-4f || nextCompletion >= 1.0f || std::isnan(nextCompletion) ||
-                std::isinf(nextCompletion)) {
+            if (animation.timeUntilNextState <= 0) {
                 animation.currentState = nextStateIndex;
                 transform.SetPosition(nextState.pos);
                 transform.SetScale(nextState.scale);
-            } else {
-                transform.SetPosition(currentState.pos + nextCompletion * dPos);
-                transform.SetScale(currentState.scale + nextCompletion * dScale);
+            } else if (animation.interpolation == ecs::InterpolationMode::Linear) {
+                glm::vec3 dPos = nextState.pos - currentState.pos;
+                glm::vec3 dScale = nextState.scale - currentState.scale;
+                transform.SetPosition(currentState.pos + completion * dPos);
+                transform.SetScale(currentState.scale + completion * dScale);
+            } else if (animation.interpolation == ecs::InterpolationMode::Cubic) {
+                Assert(animation.tangents.size() == animation.states.size(), "invalid tangents");
+                auto &prevTangent = animation.tangents[animation.currentState];
+                auto &nextTangent = animation.tangents[nextStateIndex];
+                float tangentScale = playDirection * duration;
+
+                auto t = completion;
+                auto t2 = t * t;
+                auto t3 = t2 * t;
+
+                auto av1 = 2 * t3 - 3 * t2 + 1;
+                auto at1 = tangentScale * (t3 - 2 * t2 + t);
+                auto av2 = -2 * t3 + 3 * t2;
+                auto at2 = tangentScale * (t3 - t2);
+
+                auto pos = av1 * currentState.pos + at1 * prevTangent.pos + av2 * nextState.pos + at2 * nextTangent.pos;
+                transform.SetPosition(pos);
+
+                auto scale = av1 * currentState.scale + at1 * prevTangent.scale + av2 * nextState.scale +
+                             at2 * nextTangent.scale;
+                transform.SetScale(scale);
             }
         }
     }
