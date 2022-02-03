@@ -474,7 +474,7 @@
 			"animation": {
 				"states": [
 					{
-						"delay": 30,
+						"delay": 10,
 						"translate": [
 							0,
 							160,
@@ -482,7 +482,39 @@
 						]
 					},
 					{
-						"delay": 30,
+						"delay": 10,
+						"translate": [
+							0,
+							150,
+							0
+						]
+					},
+					{
+						"delay": 10,
+						"translate": [
+							0,
+							130,
+							0
+						]
+					},
+					{
+						"delay": 10,
+						"translate": [
+							0,
+							30,
+							0
+						]
+					},
+					{
+						"delay": 10,
+						"translate": [
+							0,
+							10,
+							0
+						]
+					},
+					{
+						"delay": 10,
 						"translate": [
 							0,
 							0.1,
@@ -590,7 +622,7 @@
 			},
 			"trigger_area": {
 				"object": {
-					"command": "togglesignal station-center.elevator_door.door_open; togglesignal station-center.ship_door.door_open; wait 500 togglesignal station-center.elevator.animation_state",
+					"command": "setsignal station-center.elevator_door.door_open 0; setsignal station-center.ship_door.door_open 0; wait 500 togglesignal station-center.elevator.animation_state 0 100",
 					"signal": "button_pressed"
 				}
 			},

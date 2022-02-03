@@ -24,6 +24,10 @@ namespace ecs {
          * the time it takes to animate to the given state
          */
         std::vector<double> animationTimes;
+
+        size_t PlayDirection() const {
+            return targetState < currentState ? -1 : targetState > currentState ? 1 : 0;
+        }
     };
 
     static Component<Animation> ComponentAnimation("animation");

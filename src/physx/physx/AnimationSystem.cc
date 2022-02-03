@@ -17,13 +17,16 @@ namespace sp {
             if (!ent.Has<ecs::Animation, ecs::Transform>(lock)) continue;
 
             auto &animation = ent.Get<ecs::Animation>(lock);
+            if (animation.states.empty()) continue;
+
             auto &transform = ent.Get<ecs::Transform>(lock);
 
             double signalState = ecs::SignalBindings::GetSignal(lock, ent, "animation_state");
             size_t newTargetState = (size_t)(signalState + 0.5);
             if (newTargetState >= animation.states.size()) newTargetState = animation.states.size() - 1;
+
             if (animation.targetState != newTargetState) {
-                animation.currentState = animation.targetState;
+                animation.currentState = animation.currentState + animation.PlayDirection();
                 animation.targetState = newTargetState;
             }
 
@@ -32,25 +35,27 @@ namespace sp {
             Assert(animation.targetState < animation.states.size(), "invalid target state");
             Assert(animation.currentState < animation.states.size(), "invalid current state");
 
+            auto nextStateIndex = animation.currentState + animation.PlayDirection();
             auto &currentState = animation.states[animation.currentState];
-            auto &targetState = animation.states[animation.targetState];
+            auto &nextState = animation.states[nextStateIndex];
 
-            glm::vec3 dPos = targetState.pos - currentState.pos;
-            glm::vec3 dScale = targetState.scale - currentState.scale;
+            glm::vec3 dPos = nextState.pos - currentState.pos;
+            glm::vec3 dScale = nextState.scale - currentState.scale;
 
-            float distToTarget = glm::length(transform.GetPosition() - targetState.pos);
-            float completion = 1.0f - distToTarget / glm::length(dPos);
+            float distance = glm::length(transform.GetPosition() - nextState.pos);
+            float completion = 1.0f - distance / glm::length(dPos);
 
-            float duration = animation.animationTimes[animation.targetState];
-            float target = completion + (float)(manager.interval.count() / 1e9) / duration;
+            float duration = animation.animationTimes[nextStateIndex];
+            float nextCompletion = completion + (float)(manager.interval.count() / 1e9) / duration;
 
-            if (distToTarget < 1e-4f || target >= 1.0f || std::isnan(target) || std::isinf(target)) {
-                animation.currentState = animation.targetState;
-                transform.SetPosition(targetState.pos);
-                transform.SetScale(targetState.scale);
+            if (distance < 1e-4f || nextCompletion >= 1.0f || std::isnan(nextCompletion) ||
+                std::isinf(nextCompletion)) {
+                animation.currentState = nextStateIndex;
+                transform.SetPosition(nextState.pos);
+                transform.SetScale(nextState.scale);
             } else {
-                transform.SetPosition(currentState.pos + target * dPos);
-                transform.SetScale(currentState.scale + target * dScale);
+                transform.SetPosition(currentState.pos + nextCompletion * dPos);
+                transform.SetScale(currentState.scale + nextCompletion * dScale);
             }
         }
     }
