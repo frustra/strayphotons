@@ -9,6 +9,9 @@
                 "movement_proxy": "player.vr-origin"
             },
             "trigger_group": "player",
+            "event_input": [
+                "/action/jump"
+            ],
             "signal_output": {}
         },
         {

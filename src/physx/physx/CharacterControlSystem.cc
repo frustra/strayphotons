@@ -34,22 +34,24 @@ namespace sp {
 
     void CharacterControlSystem::Frame(
         ecs::Lock<ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
-            ecs::Write<ecs::Transform, ecs::CharacterController>> lock) {
+            ecs::Write<ecs::Transform, ecs::EventInput, ecs::CharacterController>> lock) {
         // Update PhysX with any added or removed CharacterControllers
-        ecs::ComponentEvent<ecs::CharacterController> event;
-        while (characterControllerObserver.Poll(lock, event)) {
-            if (event.type == Tecs::EventType::ADDED) {
-                if (event.entity.Has<ecs::CharacterController>(lock)) {
-                    auto &controller = event.entity.Get<ecs::CharacterController>(lock);
+        ecs::ComponentEvent<ecs::CharacterController> controllerEvent;
+        while (characterControllerObserver.Poll(lock, controllerEvent)) {
+            if (controllerEvent.type == Tecs::EventType::ADDED) {
+                if (controllerEvent.entity.Has<ecs::CharacterController>(lock)) {
+                    auto &controller = controllerEvent.entity.Get<ecs::CharacterController>(lock);
                     if (!controller.pxController) {
-                        auto characterUserData = new CharacterControllerUserData(event.entity, 0);
+                        auto characterUserData = new CharacterControllerUserData(controllerEvent.entity, 0);
 
                         PxCapsuleControllerDesc desc;
                         desc.position = PxExtendedVec3(0, 0, 0);
                         desc.upDirection = PxVec3(0, 1, 0);
                         desc.radius = ecs::PLAYER_RADIUS;
                         desc.height = ecs::PLAYER_CAPSULE_HEIGHT;
-                        desc.density = 0.5f;
+                        desc.stepOffset = ecs::PLAYER_STEP_HEIGHT;
+                        desc.scaleCoeff = 1.0f; // Why is the default 0.8? No idea...
+                        desc.contactOffset = 0.01f;
                         desc.material = manager.pxPhysics->createMaterial(0.3f, 0.3f, 0.3f);
                         desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
                         desc.reportCallback = manager.controllerHitReporter.get();
@@ -59,7 +61,6 @@ namespace sp {
                         Assert(pxController->getType() == PxControllerShapeType::eCAPSULE,
                             "Physx did not create a valid PxCapsuleController");
 
-                        pxController->setStepOffset(ecs::PLAYER_STEP_HEIGHT);
                         auto actor = pxController->getActor();
                         actor->userData = &characterUserData->actorData;
 
@@ -68,18 +69,28 @@ namespace sp {
                         controller.pxController = static_cast<PxCapsuleController *>(pxController);
                     }
                 }
-            } else if (event.type == Tecs::EventType::REMOVED) {
-                if (event.component.pxController) {
-                    auto userData = event.component.pxController->getUserData();
+            } else if (controllerEvent.type == Tecs::EventType::REMOVED) {
+                if (controllerEvent.component.pxController) {
+                    auto userData = controllerEvent.component.pxController->getUserData();
                     if (userData) {
                         delete (CharacterControllerUserData *)userData;
-                        event.component.pxController->setUserData(nullptr);
+                        controllerEvent.component.pxController->setUserData(nullptr);
                     }
 
-                    event.component.pxController->release();
+                    controllerEvent.component.pxController->release();
                 }
             }
         }
+
+        PxFilterData filterData;
+        if (CVarPropJumping.Get()) {
+            filterData.word0 = ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_PLAYER;
+        } else {
+            filterData.word0 = ecs::PHYSICS_GROUP_WORLD;
+        }
+        PxControllerFilters moveQueryFilter(&filterData);
+
+        float dt = (float)(manager.interval.count() / 1e9);
 
         for (Tecs::Entity entity : lock.EntitiesWith<ecs::CharacterController>()) {
             if (!entity.Has<ecs::CharacterController, ecs::Transform>(lock)) continue;
@@ -91,7 +102,9 @@ namespace sp {
                 "CharacterController should not have a transform parent: %s",
                 ecs::ToString(lock, entity));
 
+            auto actor = controller.pxController->getActor();
             auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+            float contactOffset = controller.pxController->getContactOffset();
 
             float targetHeight = ecs::PLAYER_CAPSULE_HEIGHT;
             glm::vec3 targetPosition = transform.GetPosition();
@@ -110,29 +123,52 @@ namespace sp {
                 controller.pxController->setHeight(targetHeight);
                 controller.pxController->setFootPosition(GlmVec3ToPxExtendedVec3(targetPosition));
 
+                // Updating the controller position does not update the underlying actor, we need to do it ourselves.
+                auto capsulePosition = controller.pxController->getPosition();
+                auto actorPose = actor->getGlobalPose();
+                actorPose.p = PxVec3(capsulePosition.x, capsulePosition.y, capsulePosition.z);
+                actor->setGlobalPose(actorPose);
+
                 userData->onGround = false;
+                userData->prevPosition = targetPosition;
                 userData->velocity = glm::vec3(0);
                 userData->actorData.transformChangeNumber = transform.ChangeNumber();
             }
 
             // Update the capsule height
             auto currentHeight = controller.pxController->getHeight();
-            if (currentHeight > targetHeight) {
-                controller.pxController->resize(targetHeight);
-            } else if (currentHeight < targetHeight) {
-                auto sweepDist = targetHeight - currentHeight;
-
-                PxSweepBuffer result;
-                manager.SweepQuery(controller.pxController->getActor(), PxVec3(0, 1, 0), sweepDist, result);
-                if (result.getNbAnyHits() > 0) {
-                    auto hit = result.getAnyHit(0);
-                    controller.pxController->resize(currentHeight + hit.distance);
+            if (currentHeight != targetHeight) {
+                if (targetHeight > currentHeight) {
+                    // Check to see if there is room to expand the capsule
+                    PxSweepBuffer hit;
+                    PxCapsuleGeometry capsuleGeometry(ecs::PLAYER_RADIUS, currentHeight * 0.5f);
+                    auto sweepDist = targetHeight - currentHeight + contactOffset;
+                    bool status = manager.scene->sweep(capsuleGeometry,
+                        actor->getGlobalPose(),
+                        PxVec3(0, 1, 0),
+                        sweepDist,
+                        hit,
+                        PxHitFlags(),
+                        PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
+                    if (status) {
+                        auto headroom = std::max(hit.block.distance - contactOffset, 0.0f);
+                        controller.pxController->resize(currentHeight + headroom);
+                    } else {
+                        controller.pxController->resize(targetHeight);
+                    }
                 } else {
                     controller.pxController->resize(targetHeight);
                 }
+
+                // Updating the controller position does not update the underlying actor, we need to do it ourselves.
+                auto capsulePosition = controller.pxController->getPosition();
+                auto actorPose = actor->getGlobalPose();
+                actorPose.p = PxVec3(capsulePosition.x, capsulePosition.y, capsulePosition.z);
+                actor->setGlobalPose(actorPose);
+                currentHeight = controller.pxController->getHeight();
             }
 
-            // Calculate new character velocity
+            // Read character movement inputs
             glm::vec3 lateralMovement = glm::vec3(0);
             lateralMovement.x = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_WORLD_X);
             lateralMovement.z = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_WORLD_Z);
@@ -140,84 +176,99 @@ namespace sp {
             bool sprint = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_SPRINT) >= 0.5;
             bool noclip = ecs::SignalBindings::GetSignal(lock, entity, INPUT_SIGNAL_MOVE_NOCLIP) >= 0.5;
 
-            float speed = sprint ? CVarCharacterSprintSpeed.Get() : CVarCharacterMovementSpeed.Get();
+            bool jump = false;
+            if (entity.Has<ecs::EventInput>(lock)) {
+                auto &eventInput = entity.Get<ecs::EventInput>(lock);
+                ecs::Event event;
+                while (eventInput.Poll("/action/jump", event)) {
+                    jump = true;
+                }
+            }
 
+            float speed = sprint ? CVarCharacterSprintSpeed.Get() : CVarCharacterMovementSpeed.Get();
             if (lateralMovement != glm::vec3(0)) lateralMovement = glm::normalize(lateralMovement) * speed;
             verticalMovement = std::clamp(verticalMovement, -1.0f, 1.0f) * speed;
 
-            if (noclip) {
-                userData->velocity.x = lateralMovement.x;
-                userData->velocity.y = verticalMovement;
-                userData->velocity.z = lateralMovement.z;
-            } else if (userData->onGround) {
-                userData->velocity.x = lateralMovement.x;
-                if (verticalMovement > 0.5) {
-                    userData->velocity.y = ecs::PLAYER_JUMP_VELOCITY;
-                } else {
-                    // Always try moving down so that onGround detection is more consistent.
-                    userData->velocity.y = -ecs::PLAYER_GRAVITY * (float)(manager.interval.count() / 1e9);
-                }
-                userData->velocity.z = lateralMovement.z;
-            } else {
-                userData->velocity += lateralMovement * ecs::PLAYER_AIR_STRAFE *
-                                      (float)(manager.interval.count() / 1e9);
-                userData->velocity.y -= ecs::PLAYER_GRAVITY * (float)(manager.interval.count() / 1e9);
-            }
+            auto targetDelta = targetPosition - userData->prevPosition;
 
             if (userData->noclipping != noclip) {
-                auto actor = controller.pxController->getActor();
                 manager.SetCollisionGroup(actor, noclip ? ecs::PhysicsGroup::NoClip : ecs::PhysicsGroup::Player);
                 userData->noclipping = noclip;
             }
 
-            PxFilterData data;
+            // Update the capsule position, velocity, and onGround flag
             if (noclip) {
-                data.word0 = ecs::PHYSICS_GROUP_NOCLIP;
-            } else if (CVarPropJumping.Get()) {
-                data.word0 = ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_PLAYER;
+                targetPosition += lateralMovement * dt;
+                targetPosition.y += verticalMovement * dt;
+                controller.pxController->setFootPosition(GlmVec3ToPxExtendedVec3(targetPosition + targetDelta));
+
+                userData->onGround = true;
+                userData->velocity = glm::vec3(0);
             } else {
-                data.word0 = ecs::PHYSICS_GROUP_WORLD;
+                PxControllerState state;
+                controller.pxController->getState(state);
+
+                // If player is moving up, onGround detection does not work, so we need to do it ourselves.
+                // This edge-case is possible when jumping in an elevator; the floor can catch up to the player
+                // while their velocity is still in the up direction.
+                PxOverlapHit touch;
+                PxOverlapBuffer hit;
+                hit.touches = &touch;
+                hit.maxNbTouches = 1;
+                PxCapsuleGeometry capsuleGeometry(ecs::PLAYER_RADIUS, currentHeight * 0.5f);
+                bool inGround = manager.scene->overlap(capsuleGeometry,
+                    actor->getGlobalPose(),
+                    hit,
+                    PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
+
+                glm::vec3 displacement;
+                if (userData->onGround || inGround) {
+                    displacement = (userData->velocity + lateralMovement) * dt;
+                    if (jump) {
+                        // Move up slightly first to detach the player from the floor
+                        displacement.y = std::max(state.deltaXP.y * dt, 0.0f) + contactOffset;
+                    } else {
+                        // Always move down slightly for consistent onGround detection
+                        displacement.y = -contactOffset;
+                    }
+                } else {
+                    userData->velocity += lateralMovement * ecs::PLAYER_AIR_STRAFE * dt;
+                    displacement = userData->velocity * dt;
+                }
+                displacement += targetDelta;
+
+                auto moveResult = controller.pxController->move(GlmVec3ToPxVec3(displacement), 0, dt, moveQueryFilter);
+
+                if (moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN) {
+                    userData->velocity = PxVec3ToGlmVec3(state.deltaXP);
+                    userData->onGround = true;
+                } else {
+                    if (userData->onGround || inGround) {
+                        userData->velocity = PxVec3ToGlmVec3(state.deltaXP);
+                        userData->velocity.x += displacement.x / dt;
+                        userData->velocity.z += displacement.z / dt;
+                        if (jump) userData->velocity.y += ecs::PLAYER_JUMP_VELOCITY;
+                    } else {
+                        auto deltaPos = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()) -
+                                        userData->prevPosition - targetDelta;
+                        userData->velocity = deltaPos / dt;
+                        userData->velocity.y -= ecs::PLAYER_GRAVITY * dt;
+                    }
+
+                    userData->onGround = false;
+                }
             }
-            PxControllerFilters moveQueryFilter(&data);
 
-            // Update the capsule position to match target
-            auto targetDelta = targetPosition - PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
-
-            auto moveResult = controller.pxController->move(GlmVec3ToPxVec3(targetDelta),
-                0,
-                manager.interval.count() / 1e9,
-                moveQueryFilter);
-            userData->onGround = moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN;
-
-            // Move controller based on velocity and update ECS transform
-            auto disp = userData->velocity * (float)(manager.interval.count() / 1e9);
-            auto prevPosition = controller.pxController->getFootPosition();
-            moveResult = controller.pxController->move(GlmVec3ToPxVec3(disp),
-                0,
-                manager.interval.count() / 1e9,
-                moveQueryFilter);
-            userData->onGround = moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN;
-            auto newPosition = controller.pxController->getFootPosition();
-            auto deltaPos = PxVec3ToGlmVec3(newPosition - prevPosition);
-
-            // Update the velocity based on what happened in physx
-            auto physxVelocity = deltaPos / (float)(manager.interval.count() / 1e9);
-            auto inputSpeed = glm::length(userData->velocity);
-            if (glm::length(physxVelocity) > inputSpeed) {
-                // Don't allow the physics simulation to accelerate the character faster than the input speed
-                userData->velocity = glm::normalize(physxVelocity) * inputSpeed;
-            } else {
-                userData->velocity = physxVelocity;
-            }
-
-            transform.SetPosition(PxExtendedVec3ToGlmVec3(newPosition));
-            userData->actorData.transformChangeNumber = transform.ChangeNumber();
-
+            auto newPosition = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
             auto movementProxy = controller.movementProxy.Get(lock);
             if (movementProxy.Has<ecs::Transform>(lock)) {
                 auto &proxyTransform = movementProxy.Get<ecs::Transform>(lock);
-                proxyTransform.Translate(deltaPos);
+                proxyTransform.Translate(newPosition - userData->prevPosition - targetDelta);
             }
+
+            transform.SetPosition(newPosition);
+            userData->actorData.transformChangeNumber = transform.ChangeNumber();
+            userData->prevPosition = newPosition;
         }
     }
 } // namespace sp
