@@ -42,26 +42,6 @@
 			}
 		},
 		{
-			"__comment": "upper-floor",
-			"renderable": "box",
-			"transform": {
-				"scale": [
-					1,
-					0.1,
-					4
-				],
-				"translate": [
-					-4.5,
-					2.5,
-					3
-				]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
 			"__comment": "ceiling",
 			"renderable": "box",
 			"transform": {
@@ -148,26 +128,6 @@
 			}
 		},
 		{
-			"__comment": "upper-floor",
-			"renderable": "box",
-			"transform": {
-				"scale": [
-					1,
-					0.1,
-					4
-				],
-				"translate": [
-					-3.5,
-					2.5,
-					3
-				]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
 			"__comment": "ceiling",
 			"renderable": "box",
 			"transform": {
@@ -254,38 +214,18 @@
 			}
 		},
 		{
-			"__comment": "upper-floor",
-			"renderable": "box",
-			"transform": {
-				"scale": [
-					1,
-					0.1,
-					4
-				],
-				"translate": [
-					-2.5,
-					2.5,
-					3
-				]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
 			"__comment": "ceiling",
 			"renderable": "box",
 			"transform": {
 				"scale": [
 					1,
 					0.1,
-					5
+					3.5
 				],
 				"translate": [
 					-2.5,
 					5,
-					0
+					0.75
 				]
 			},
 			"physics": {
@@ -360,38 +300,18 @@
 			}
 		},
 		{
-			"__comment": "upper-floor",
-			"renderable": "box",
-			"transform": {
-				"scale": [
-					1,
-					0.1,
-					4
-				],
-				"translate": [
-					-1.5,
-					2.5,
-					3
-				]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
 			"__comment": "ceiling",
 			"renderable": "box",
 			"transform": {
 				"scale": [
 					1,
 					0.1,
-					5
+					2.5
 				],
 				"translate": [
 					-1.5,
 					5,
-					0
+					1.25
 				]
 			},
 			"physics": {
@@ -466,38 +386,18 @@
 			}
 		},
 		{
-			"__comment": "upper-floor",
-			"renderable": "box",
-			"transform": {
-				"scale": [
-					1,
-					0.1,
-					4
-				],
-				"translate": [
-					-0.5,
-					2.5,
-					3
-				]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
 			"__comment": "ceiling",
 			"renderable": "box",
 			"transform": {
 				"scale": [
 					1,
 					0.1,
-					5
+					2.5
 				],
 				"translate": [
 					-0.5,
 					5,
-					0
+					1.25
 				]
 			},
 			"physics": {
@@ -572,38 +472,18 @@
 			}
 		},
 		{
-			"__comment": "upper-floor",
-			"renderable": "box",
-			"transform": {
-				"scale": [
-					1,
-					0.1,
-					4
-				],
-				"translate": [
-					0.5,
-					2.5,
-					3
-				]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
 			"__comment": "ceiling",
 			"renderable": "box",
 			"transform": {
 				"scale": [
 					1,
 					0.1,
-					5
+					2.5
 				],
 				"translate": [
 					0.5,
 					5,
-					0
+					1.25
 				]
 			},
 			"physics": {
@@ -678,38 +558,18 @@
 			}
 		},
 		{
-			"__comment": "upper-floor",
-			"renderable": "box",
-			"transform": {
-				"scale": [
-					1,
-					0.1,
-					4
-				],
-				"translate": [
-					1.5,
-					2.5,
-					3
-				]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
 			"__comment": "ceiling",
 			"renderable": "box",
 			"transform": {
 				"scale": [
 					1,
 					0.1,
-					5
+					2.5
 				],
 				"translate": [
 					1.5,
 					5,
-					0
+					1.25
 				]
 			},
 			"physics": {
@@ -784,38 +644,18 @@
 			}
 		},
 		{
-			"__comment": "upper-floor",
-			"renderable": "box",
-			"transform": {
-				"scale": [
-					1,
-					0.1,
-					4
-				],
-				"translate": [
-					2.5,
-					2.5,
-					3
-				]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
 			"__comment": "ceiling",
 			"renderable": "box",
 			"transform": {
 				"scale": [
 					1,
 					0.1,
-					5
+					3.5
 				],
 				"translate": [
 					2.5,
 					5,
-					0
+					0.75
 				]
 			},
 			"physics": {
@@ -882,26 +722,6 @@
 					3.5,
 					0,
 					0
-				]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"__comment": "upper-floor",
-			"renderable": "box",
-			"transform": {
-				"scale": [
-					1,
-					0.1,
-					4
-				],
-				"translate": [
-					3.5,
-					2.5,
-					3
 				]
 			},
 			"physics": {
@@ -988,26 +808,6 @@
 					4.5,
 					0,
 					0
-				]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"__comment": "upper-floor",
-			"renderable": "box",
-			"transform": {
-				"scale": [
-					1,
-					0.1,
-					4
-				],
-				"translate": [
-					4.5,
-					2.5,
-					3
 				]
 			},
 			"physics": {
@@ -1359,6 +1159,28 @@
 				]
 			},
 			"scene_connection": "blackhole5",
+			"signal_bindings": {
+				"load_scene_connection": {
+					"playerPresent": "blackhole1.zone"
+				}
+			}
+		},
+		{
+			"_name": "global.transition1-center",
+			"transform": {
+				"translate": [
+					0,
+					0,
+					-3.5
+				],
+				"rotate": [
+					180,
+					0,
+					1,
+					0
+				]
+			},
+			"scene_connection": "station-center",
 			"signal_bindings": {
 				"load_scene_connection": {
 					"playerPresent": "blackhole1.zone"

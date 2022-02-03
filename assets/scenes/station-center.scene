@@ -1,6 +1,20 @@
 {
 	"entities": [
 		{
+			"_name": "transition_zone",
+			"signal_output": {},
+			<%- include('prefab/laser_cube', {color: [0, 1, 0]}) %>,
+			"transform": {
+				"scale": [10, 20, 10],
+				"translate": [0, 10, 0]
+			},
+			"trigger_area": {
+				"player": {
+					"signal": "playerPresent"
+				}
+			}
+		},
+		{
 			"_name": "global.spawn",
 			"transform": {
 				"translate": [0, 160.05, -5],
@@ -42,6 +56,45 @@
 			"transform": {
 				"scale": [320, 1, 1],
 				"translate": [0, 160, 2],
+				"rotate": [90, 0, 0, 1]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "spoke3-1",
+			"renderable": "box",
+			"transform": {
+				"scale": [155, 1, 1],
+				"translate": [0, 82.5, -4],
+				"rotate": [90, 0, 0, 1]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "spoke3-2",
+			"renderable": "box",
+			"transform": {
+				"scale": [160, 1, 1],
+				"translate": [3, 80, -1],
+				"rotate": [90, 0, 0, 1]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "spoke3-3",
+			"renderable": "box",
+			"transform": {
+				"scale": [160, 1, 1],
+				"translate": [-3, 80, -1],
 				"rotate": [90, 0, 0, 1]
 			},
 			"physics": {
@@ -277,6 +330,16 @@
 			"transform": {
 				"translate": [-4.8, 165.5, -2.7],
 				"rotate": [-130, 1, 1, 0]
+			}
+		},
+		{
+			"_name": "global.transition1-center",
+			"transform": {
+				"translate": [0, 0, 0]
+			},
+			"scene_connection": "blackhole1",
+			"signal_bindings": {
+				"load_scene_connection": {"playerPresent": "station-center.transition_zone"}
 			}
 		}
 	]
