@@ -7,7 +7,12 @@
 #include "physx/PhysxManager.hh"
 
 namespace sp {
-    AnimationSystem::AnimationSystem(PhysxManager &manager) : manager(manager) {}
+    AnimationSystem::AnimationSystem(PhysxManager &manager)
+        : manager(manager), frameInterval(manager.interval.count() / 1e9) {}
+
+    double AnimationSystem::RoundToFrameInterval(double value) const {
+        return frameInterval * std::round(value / frameInterval);
+    }
 
     void AnimationSystem::Frame(
         ecs::Lock<ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
@@ -31,8 +36,10 @@ namespace sp {
                 animation.targetState = newTargetState;
 
                 auto newNextState = animation.currentState + animation.PlayDirection();
-                auto oldCompletion = 1.0 - animation.timeUntilNextState / animation.animationTimes[oldNextState];
-                animation.timeUntilNextState = oldCompletion * animation.animationTimes[newNextState];
+                auto oldCompletion = 1.0 - animation.timeUntilNextState /
+                                               RoundToFrameInterval(animation.animationTimes[oldNextState]);
+                animation.timeUntilNextState = oldCompletion *
+                                               RoundToFrameInterval(animation.animationTimes[newNextState]);
             }
 
             if (animation.targetState == animation.currentState) continue;
@@ -45,21 +52,13 @@ namespace sp {
             auto &currentState = animation.states[animation.currentState];
             auto &nextState = animation.states[nextStateIndex];
 
-            double duration = animation.animationTimes[nextStateIndex];
+            double duration = RoundToFrameInterval(animation.animationTimes[nextStateIndex]);
             if (animation.timeUntilNextState <= 0) animation.timeUntilNextState = duration;
-            animation.timeUntilNextState -= manager.interval.count() / 1e9;
+            animation.timeUntilNextState -= frameInterval;
             animation.timeUntilNextState = std::max(animation.timeUntilNextState, 0.0);
 
             float completion = 1.0 - animation.timeUntilNextState / duration;
-
-            if (animation.timeUntilNextState == 0) {
-                animation.currentState = nextStateIndex;
-                if (animation.interpolation == ecs::InterpolationMode::Step ||
-                    animation.targetState == nextStateIndex) {
-                    transform.SetPosition(nextState.pos);
-                    transform.SetScale(nextState.scale);
-                }
-            } else if (animation.interpolation == ecs::InterpolationMode::Linear) {
+            if (animation.interpolation == ecs::InterpolationMode::Linear) {
                 glm::vec3 dPos = nextState.pos - currentState.pos;
                 glm::vec3 dScale = nextState.scale - currentState.scale;
                 transform.SetPosition(currentState.pos + completion * dPos);
@@ -84,6 +83,15 @@ namespace sp {
                 auto scale = av1 * currentState.scale + at1 * prevTangent.scale + av2 * nextState.scale +
                              at2 * nextTangent.scale;
                 transform.SetScale(scale);
+            }
+
+            if (animation.timeUntilNextState == 0) {
+                animation.currentState = nextStateIndex;
+                if (animation.interpolation == ecs::InterpolationMode::Step ||
+                    animation.targetState == nextStateIndex) {
+                    transform.SetPosition(nextState.pos);
+                    transform.SetScale(nextState.scale);
+                }
             }
         }
     }
