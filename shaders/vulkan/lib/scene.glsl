@@ -1,7 +1,7 @@
 struct MeshPrimitive {
 	mat4 primitiveToModel;
 	uint firstIndex, vertexOffset;
-	uint16_t indexCount, vertexCount;
+	uint indexCount, vertexCount;
 	uint16_t baseColorTexID, metallicRoughnessTexID;
 };
 

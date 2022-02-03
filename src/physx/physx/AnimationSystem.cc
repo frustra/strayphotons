@@ -48,13 +48,17 @@ namespace sp {
             double duration = animation.animationTimes[nextStateIndex];
             if (animation.timeUntilNextState <= 0) animation.timeUntilNextState = duration;
             animation.timeUntilNextState -= manager.interval.count() / 1e9;
+            animation.timeUntilNextState = std::max(animation.timeUntilNextState, 0.0);
 
             float completion = 1.0 - animation.timeUntilNextState / duration;
 
-            if (animation.timeUntilNextState <= 0) {
+            if (animation.timeUntilNextState == 0) {
                 animation.currentState = nextStateIndex;
-                transform.SetPosition(nextState.pos);
-                transform.SetScale(nextState.scale);
+                if (animation.interpolation == ecs::InterpolationMode::Step ||
+                    animation.targetState == nextStateIndex) {
+                    transform.SetPosition(nextState.pos);
+                    transform.SetScale(nextState.scale);
+                }
             } else if (animation.interpolation == ecs::InterpolationMode::Linear) {
                 glm::vec3 dPos = nextState.pos - currentState.pos;
                 glm::vec3 dScale = nextState.scale - currentState.scale;
@@ -69,7 +73,6 @@ namespace sp {
                 auto t = completion;
                 auto t2 = t * t;
                 auto t3 = t2 * t;
-
                 auto av1 = 2 * t3 - 3 * t2 + 1;
                 auto at1 = tangentScale * (t3 - 2 * t2 + t);
                 auto av2 = -2 * t3 + 3 * t2;
