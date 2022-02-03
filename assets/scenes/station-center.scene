@@ -3,10 +3,10 @@
 		{
 			"_name": "transition_zone",
 			"signal_output": {},
-			<%- include('prefab/laser_cube', {color: [0, 1, 0]}) %>,
+			<%- include('prefab/laser_cube') %>,
 			"transform": {
-				"scale": [10, 20, 10],
-				"translate": [0, 10, 0]
+				"scale": [20, 40, 20],
+				"translate": [0, 20, 0]
 			},
 			"trigger_area": {
 				"player": {
@@ -54,7 +54,7 @@
 			"__comment": "spoke3",
 			"renderable": "box",
 			"transform": {
-				"scale": [320, 1, 1],
+				"scale": [320, 6, 1],
 				"translate": [0, 160, 2],
 				"rotate": [90, 0, 0, 1]
 			},
@@ -67,7 +67,7 @@
 			"__comment": "spoke3-1",
 			"renderable": "box",
 			"transform": {
-				"scale": [155, 1, 1],
+				"scale": [155, 6, 1],
 				"translate": [0, 82.5, -4],
 				"rotate": [90, 0, 0, 1]
 			},
@@ -80,8 +80,8 @@
 			"__comment": "spoke3-2",
 			"renderable": "box",
 			"transform": {
-				"scale": [160, 1, 1],
-				"translate": [3, 80, -1],
+				"scale": [160, 1, 5],
+				"translate": [3, 86, -1],
 				"rotate": [90, 0, 0, 1]
 			},
 			"physics": {
@@ -93,8 +93,8 @@
 			"__comment": "spoke3-3",
 			"renderable": "box",
 			"transform": {
-				"scale": [160, 1, 1],
-				"translate": [-3, 80, -1],
+				"scale": [160, 1, 5],
+				"translate": [-3, 86, -1],
 				"rotate": [90, 0, 0, 1]
 			},
 			"physics": {
@@ -109,18 +109,6 @@
 				"scale": [320, 1, 1],
 				"translate": [0, 160, 2],
 				"rotate": [-45, 0, 0, 1]
-			},
-			"physics": {
-				"model": "box",
-				"dynamic": false
-			}
-		},
-		{
-			"__comment": "floor",
-			"renderable": "box",
-			"transform": {
-				"scale": [10, 0.1, 10],
-				"translate": [0, 0, 0]
 			},
 			"physics": {
 				"model": "box",
@@ -306,7 +294,7 @@
 			"signal_output": {},
 			"trigger_area": {
 				"object": {
-					"command": "wait 1000 togglesignal station-center.elevator_door.door_open"
+					"command": "wait 1000 togglesignal station-center.elevator_door.door_open; wait 1100 togglesignal blackhole1.elevator_door.door_open"
 				}
 			}
 		},

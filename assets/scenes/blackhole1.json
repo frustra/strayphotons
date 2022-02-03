@@ -306,12 +306,12 @@
 				"scale": [
 					1,
 					0.1,
-					2.5
+					3
 				],
 				"translate": [
 					-1.5,
 					5,
-					1.25
+					1
 				]
 			},
 			"physics": {
@@ -392,12 +392,12 @@
 				"scale": [
 					1,
 					0.1,
-					2.5
+					3
 				],
 				"translate": [
 					-0.5,
 					5,
-					1.25
+					1
 				]
 			},
 			"physics": {
@@ -478,12 +478,12 @@
 				"scale": [
 					1,
 					0.1,
-					2.5
+					3
 				],
 				"translate": [
 					0.5,
 					5,
-					1.25
+					1
 				]
 			},
 			"physics": {
@@ -564,12 +564,12 @@
 				"scale": [
 					1,
 					0.1,
-					2.5
+					3
 				],
 				"translate": [
 					1.5,
 					5,
-					1.25
+					1
 				]
 			},
 			"physics": {
@@ -1054,6 +1054,312 @@
 			}
 		},
 		{
+			"__comment": "elevator-frame",
+			"renderable": "box",
+			"transform": {
+				"scale": [
+					1,
+					5,
+					0.4
+				],
+				"translate": [
+					-2.35,
+					2.5,
+					-0.3
+				]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "elevator-frame",
+			"renderable": "box",
+			"transform": {
+				"scale": [
+					1,
+					5,
+					0.4
+				],
+				"translate": [
+					2.35,
+					2.5,
+					-0.3
+				]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "elevator-frame",
+			"renderable": "box",
+			"transform": {
+				"scale": [
+					4,
+					1.1,
+					0.2
+				],
+				"translate": [
+					0,
+					4.5,
+					-0.4
+				]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "elevator-frame",
+			"renderable": "box",
+			"transform": {
+				"scale": [
+					4,
+					0.1,
+					0.4
+				],
+				"translate": [
+					0,
+					0.1,
+					-0.3
+				]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "elevator-frame",
+			"renderable": "box",
+			"transform": {
+				"scale": [
+					4,
+					0.1,
+					0.6
+				],
+				"translate": [
+					0,
+					0.04,
+					0.15
+				],
+				"rotate": [
+					10,
+					1,
+					0,
+					0
+				]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "elevator-side",
+			"renderable": "box",
+			"transform": {
+				"scale": [
+					2,
+					6,
+					0.1
+				],
+				"translate": [
+					-4,
+					3,
+					-2
+				]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "elevator-side",
+			"renderable": "box",
+			"transform": {
+				"scale": [
+					2,
+					6,
+					0.1
+				],
+				"translate": [
+					4,
+					3,
+					-2
+				]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "elevator-spoke-extension",
+			"renderable": "box",
+			"transform": {
+				"scale": [
+					6,
+					1,
+					5
+				],
+				"translate": [
+					3,
+					3,
+					-2.5
+				],
+				"rotate": [
+					90,
+					0,
+					0,
+					1
+				]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "elevator-spoke-extension",
+			"renderable": "box",
+			"transform": {
+				"scale": [
+					6,
+					1,
+					5
+				],
+				"translate": [
+					-3,
+					3,
+					-2.5
+				],
+				"rotate": [
+					90,
+					0,
+					0,
+					1
+				]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "elevator_door",
+			"transform": {
+				"rotate": [
+					90,
+					0,
+					1,
+					0
+				],
+				"scale": [
+					1,
+					1.5,
+					2.3
+				],
+				"translate": [
+					0,
+					0.1,
+					-0.33
+				]
+			},
+			"renderable": "door-frame",
+			"physics": {
+				"model": "door-frame",
+				"dynamic": false
+			},
+			"signal_output": {},
+			"signal_bindings": {}
+		},
+		{
+			"_name": "elevator_door-left",
+			"renderable": "door-panel",
+			"transform": {
+				"parent": "elevator_door"
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							0.7
+						]
+					}
+				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "blackhole1.elevator_door"
+				}
+			},
+			"physics": {
+				"model": "door-panel",
+				"dynamic": false
+			}
+		},
+		{
+			"_name": "elevator_door-right",
+			"renderable": "door-panel",
+			"transform": {
+				"parent": "elevator_door",
+				"rotate": [
+					180,
+					0,
+					1,
+					0
+				]
+			},
+			"animation": {
+				"states": [
+					{
+						"delay": 0.5,
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					},
+					{
+						"delay": 0.5,
+						"translate": [
+							0,
+							0,
+							-0.7
+						],
+						"rotate": [
+							180,
+							0,
+							1,
+							0
+						]
+					}
+				]
+			},
+			"signal_bindings": {
+				"animation_state": {
+					"door_open": "blackhole1.elevator_door"
+				}
+			},
+			"physics": {
+				"model": "door-panel",
+				"dynamic": false
+			}
+		},
+		{
 			"_name": "flashlight_button_root",
 			"transform": {
 				"translate": [
@@ -1210,6 +1516,8 @@
 			}
 		},
 		{
+			"_name": "elevator_side_light1",
+			"renderable": "spotlight-01",
 			"light": {
 				"tint": [
 					1,
@@ -1218,23 +1526,94 @@
 				],
 				"intensity": 300,
 				"spotAngle": 50,
+				"bulb": "elevator_side_light1-bulb",
 				"shadowMapSize": 11,
 				"shadowMapClip": [
-					0.01,
-					50
+					0.1,
+					70
 				]
 			},
 			"transform": {
-				"translate": [
-					-4.8,
-					4.5,
-					-2.7
-				],
 				"rotate": [
-					-130,
+					[
+						-120,
+						1,
+						1,
+						0
+					]
+				],
+				"translate": [
+					-4.9,
+					4.5,
+					-0.5
+				]
+			}
+		},
+		{
+			"_name": "elevator_side_light1-bulb",
+			"renderable": "box",
+			"transform": {
+				"parent": "elevator_side_light1",
+				"translate": [
+					0,
+					0,
+					-0.06
+				],
+				"scale": [
+					0.1,
+					0.1,
+					0.03
+				]
+			}
+		},
+		{
+			"_name": "elevator_side_light2",
+			"renderable": "spotlight-01",
+			"light": {
+				"tint": [
 					1,
-					1,
-					0
+					0.5,
+					0.5
+				],
+				"intensity": 300,
+				"spotAngle": 50,
+				"bulb": "elevator_side_light2-bulb",
+				"shadowMapSize": 11,
+				"shadowMapClip": [
+					0.1,
+					70
+				]
+			},
+			"transform": {
+				"rotate": [
+					[
+						-50,
+						1,
+						-1,
+						0
+					]
+				],
+				"translate": [
+					4.9,
+					4.5,
+					3
+				]
+			}
+		},
+		{
+			"_name": "elevator_side_light2-bulb",
+			"renderable": "box",
+			"transform": {
+				"parent": "elevator_side_light2",
+				"translate": [
+					0,
+					0,
+					-0.06
+				],
+				"scale": [
+					0.1,
+					0.1,
+					0.03
 				]
 			}
 		},
