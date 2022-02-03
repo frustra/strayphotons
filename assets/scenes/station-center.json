@@ -472,20 +472,57 @@
 				]
 			},
 			"animation": {
+				"interpolation": "cubic",
 				"states": [
 					{
-						"delay": 30,
+						"delay": 10,
 						"translate": [
 							0,
 							160,
 							0
+						],
+						"translate_tangent": [
+							0,
+							0,
+							0
 						]
 					},
 					{
-						"delay": 30,
+						"delay": 10,
+						"translate": [
+							0,
+							120,
+							0
+						],
+						"translate_tangent": [
+							0,
+							-7,
+							0
+						]
+					},
+					{
+						"delay": 10,
+						"translate": [
+							0,
+							40,
+							0
+						],
+						"translate_tangent": [
+							0,
+							-7,
+							0
+						]
+					},
+					{
+						"delay": 10,
 						"translate": [
 							0,
 							0.1,
+							0
+						],
+						"translate_tangent": [
+							0,
+							0,
 							0
 						]
 					}
@@ -590,7 +627,7 @@
 			},
 			"trigger_area": {
 				"object": {
-					"command": "togglesignal station-center.elevator_door.door_open; togglesignal station-center.ship_door.door_open; wait 500 togglesignal station-center.elevator.animation_state",
+					"command": "setsignal station-center.elevator_door.door_open 0; setsignal station-center.ship_door.door_open 0; wait 500 togglesignal station-center.elevator.animation_state 0 100",
 					"signal": "button_pressed"
 				}
 			},
@@ -782,14 +819,14 @@
 				],
 				"scale": [
 					3,
-					3,
+					0.5,
 					3
 				]
 			},
 			"signal_output": {},
 			"trigger_area": {
 				"object": {
-					"command": "togglesignal station-center.elevator_door.door_open"
+					"command": "wait 1000 togglesignal station-center.elevator_door.door_open"
 				}
 			}
 		},
