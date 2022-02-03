@@ -54,7 +54,6 @@ namespace sp {
                         desc.contactOffset = 0.01f;
                         desc.material = manager.pxPhysics->createMaterial(0.3f, 0.3f, 0.3f);
                         desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
-                        desc.reportCallback = manager.controllerHitReporter.get();
                         desc.userData = characterUserData;
 
                         auto pxController = manager.controllerManager->createController(desc);
@@ -84,7 +83,7 @@ namespace sp {
 
         PxFilterData filterData;
         if (CVarPropJumping.Get()) {
-            filterData.word0 = ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_PLAYER;
+            filterData.word0 = ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_PLAYER_HANDS;
         } else {
             filterData.word0 = ecs::PHYSICS_GROUP_WORLD;
         }

@@ -56,14 +56,6 @@ namespace sp {
             : actorData(ent, changeNumber, ecs::PhysicsGroup::Player) {}
     };
 
-    class ControllerHitReport : public physx::PxUserControllerHitReport {
-    public:
-        ControllerHitReport() {}
-        void onShapeHit(const physx::PxControllerShapeHit &hit);
-        void onControllerHit(const physx::PxControllersHit &hit) {}
-        void onObstacleHit(const physx::PxControllerObstacleHit &hit) {}
-    };
-
     class PhysxManager : public RegisteredThread {
     public:
         PhysxManager();
@@ -94,7 +86,6 @@ namespace sp {
         vector<uint8_t> scratchBlock;
 
         std::shared_ptr<physx::PxScene> scene;
-        std::unique_ptr<ControllerHitReport> controllerHitReporter;
         std::shared_ptr<physx::PxControllerManager> controllerManager; // Must be deconstructed before scene
 
         physx::PxFoundation *pxFoundation = nullptr;

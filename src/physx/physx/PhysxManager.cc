@@ -68,7 +68,6 @@ namespace sp {
         }
 
         controllerManager.reset();
-        controllerHitReporter.reset();
         scene.reset();
         if (dispatcher) {
             dispatcher->release();
@@ -246,8 +245,6 @@ namespace sp {
         scene = std::shared_ptr<PxScene>(pxScene, [](PxScene *s) {
             s->release();
         });
-
-        controllerHitReporter = make_unique<ControllerHitReport>();
 
         auto pxControllerManager = PxCreateControllerManager(*scene);
         controllerManager = std::shared_ptr<PxControllerManager>(pxControllerManager, [](PxControllerManager *m) {
@@ -438,20 +435,6 @@ namespace sp {
 
             scene->removeActor(*actor);
             actor->release();
-        }
-    }
-
-    void ControllerHitReport::onShapeHit(const PxControllerShapeHit &hit) {
-        auto dynamic = hit.actor->is<PxRigidDynamic>();
-        if (dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
-            auto userData = (CharacterControllerUserData *)hit.controller->getUserData();
-            auto magnitude = glm::length(userData->velocity);
-            if (magnitude > 0.0001) {
-                PxRigidBodyExt::addForceAtPos(*dynamic,
-                    hit.dir.multiply(PxVec3(magnitude * ecs::PLAYER_PUSH_FORCE)),
-                    PxVec3(hit.worldPos.x, hit.worldPos.y, hit.worldPos.z),
-                    PxForceMode::eIMPULSE);
-            }
         }
     }
 
