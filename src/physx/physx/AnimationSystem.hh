@@ -15,6 +15,9 @@ namespace sp {
                 ecs::Write<ecs::Animation, ecs::Transform>> lock);
 
     private:
+        double RoundToFrameInterval(double value) const;
+
         PhysxManager &manager;
+        const double frameInterval;
     };
 } // namespace sp
