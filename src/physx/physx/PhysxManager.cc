@@ -24,7 +24,7 @@ namespace sp {
 
     PhysxManager::PhysxManager()
         : RegisteredThread("PhysX", 120.0, true), characterControlSystem(*this), constraintSystem(*this),
-          physicsQuerySystem(*this), animationSystem(*this) {
+          physicsQuerySystem(*this), laserSystem(*this), animationSystem(*this) {
         Logf("PhysX %d.%d.%d starting up",
             PX_PHYSICS_VERSION_MAJOR,
             PX_PHYSICS_VERSION_MINOR,
@@ -174,12 +174,17 @@ namespace sp {
                                                         ecs::SignalBindings,
                                                         ecs::FocusLayer,
                                                         ecs::FocusLock,
-                                                        ecs::Physics>,
+                                                        ecs::LaserEmitter,
+                                                        ecs::Physics,
+                                                        ecs::Mirror>,
                 ecs::Write<ecs::Animation,
                     ecs::CharacterController,
                     ecs::Transform,
                     ecs::EventInput,
-                    ecs::PhysicsQuery>>();
+                    ecs::PhysicsQuery,
+                    ecs::LaserLine,
+                    ecs::LaserSensor,
+                    ecs::SignalOutput>>();
 
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
@@ -207,6 +212,7 @@ namespace sp {
 
             characterControlSystem.Frame(lock);
             physicsQuerySystem.Frame(lock);
+            laserSystem.Frame(lock);
             animationSystem.Frame(lock);
         }
 

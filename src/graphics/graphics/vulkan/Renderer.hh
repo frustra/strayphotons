@@ -46,11 +46,12 @@ namespace sp::vulkan {
 
     struct LaserContext {
         struct GPULine {
-            glm::vec4 color;
+            glm::vec3 color;
+            float padding0[1];
             glm::vec3 start;
-            float _padding0[1];
+            float padding1[1];
             glm::vec3 end;
-            float _padding1[1];
+            float padding2[1];
         };
         static_assert(sizeof(GPULine) % sizeof(glm::vec4) == 0, "std430 alignment");
 

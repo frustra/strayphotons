@@ -15,7 +15,7 @@ layout(location = 0) out vec4 outFragColor;
 #include "lib/view_states_uniform.glsl"
 
 struct LaserLine {
-	vec4 color;
+	vec3 color;
 	vec3 start, end;
 };
 
@@ -71,6 +71,6 @@ void main() {
 		float dist = distance(clipPos, pos.xy);
 
 		float weight = 0.0001/(pow(dist, 2) + 0.00001) * max(1 - pos.z, 0);
-		outFragColor += laserLines[i].color * weight;
+		outFragColor.rgb += laserLines[i].color * weight;
 	}
 }
