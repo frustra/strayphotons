@@ -252,12 +252,12 @@ namespace sp {
             m->release();
         });
 
-        PxMaterial *groundMat = pxPhysics->createMaterial(0.6f, 0.5f, 0.0f);
-        PxRigidStatic *groundPlane = PxCreatePlane(*pxPhysics, PxPlane(0.f, 1.f, 0.f, 1.03f), *groundMat);
+        // PxMaterial *groundMat = pxPhysics->createMaterial(0.6f, 0.5f, 0.0f);
+        // PxRigidStatic *groundPlane = PxCreatePlane(*pxPhysics, PxPlane(0.f, 1.f, 0.f, 1.03f), *groundMat);
 
-        SetCollisionGroup(groundPlane, ecs::PhysicsGroup::World);
+        // SetCollisionGroup(groundPlane, ecs::PhysicsGroup::World);
 
-        scene->addActor(*groundPlane);
+        // scene->addActor(*groundPlane);
 
         {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();

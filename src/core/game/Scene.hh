@@ -214,7 +214,11 @@ namespace sp {
             for (size_t i = 0; i < srcArea.triggers.size(); i++) {
                 auto &srcTriggers = srcArea.triggers.at(i);
                 auto &dstTriggers = dstArea.triggers.at(i);
-                dstTriggers.insert(dstTriggers.end(), srcTriggers.begin(), srcTriggers.end());
+                for (auto &trigger : srcTriggers) {
+                    if (std::find(dstTriggers.begin(), dstTriggers.end(), trigger) == dstTriggers.end()) {
+                        dstTriggers.emplace_back(trigger);
+                    }
+                }
             }
         }
     }

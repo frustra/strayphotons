@@ -28,6 +28,7 @@ set(SCENES_INPUT
     connect-test2
     connect-test3
     connect-test4
+    menu
     station-center
 )
 

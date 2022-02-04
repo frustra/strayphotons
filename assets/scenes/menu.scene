@@ -1,0 +1,203 @@
+{
+	"entities": [
+		{
+			"__comment": "floor",
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 0.1, 8],
+				"translate": [0, -0.05, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "ceiling",
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 0.1, 8],
+				"translate": [0, 5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "projection_wall",
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 5, 0.1],
+				"translate": [0, 2.5, -4]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "left_wall",
+			"renderable": "box",
+			"transform": {
+				"scale": [0.1, 5, 8],
+				"translate": [-5, 2.5, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "back_wall",
+			"renderable": "box",
+			"transform": {
+				"scale": [10, 5, 0.1],
+				"translate": [0, 2.5, 4]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "right_wall_front",
+			"renderable": "box",
+			"transform": {
+				"scale": [0.1, 5, 2.1],
+				"translate": [5, 2.5, -2.95]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "right_wall_back",
+			"renderable": "box",
+			"transform": {
+				"scale": [0.1, 5, 2.1],
+				"translate": [5, 2.5, 2.95]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
+			"__comment": "right_wall_top",
+			"renderable": "box",
+			"transform": {
+				"scale": [0.1, 1.2, 4],
+				"translate": [5, 4.4, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		<%- include('prefab/ship_airlock', {
+			name: 'ship_airlock',
+			transform: {
+				"translate": [7.05, -0.05, 0],
+				"rotate": [90, 0, 1, 0]
+			},
+			scene_connection: 'station-center',
+			triggers: {
+				"player": {
+					"signal": "playerPresent"
+				}
+			},
+			load_signal: { "playerPresent": "global.ship_airlock-zone" }
+		}) %>,
+		<%- include('prefab/button', {
+			scene: 'menu',
+			name: 'airlock_in_button',
+			transform: {
+				"translate": [4.95, 1.5, 2.5]
+			},
+			command: "togglesignal global.ship_airlock-in.door_open"
+		}) %>,
+		{
+			"__comment": "button_highlighter",
+			"light": {
+				"tint": [0.5, 1, 0.5],
+				"intensity": 10,
+				"spotAngle": 10,
+				"shadowMapSize": 10,
+				"shadowMapClip": [0.01, 50]
+			},
+			"transform": {
+				"translate": [4, 3, 2.5],
+				"rotate": [
+					[-90, 1, 0, 0],
+					[-30, 0, 1, 0]
+				]
+			}
+		},
+		{
+			"_name": "auto_trigger",
+			"transform": {
+				"translate": [0, 1000, 0]
+			},
+			"__trigger_area": {
+				"object": {
+					"command": "g.MenuDisplay 2"
+				}
+			},
+			"trigger_area": {
+				"object": {
+					"command": "releasefocus menu"
+				}
+			},
+			"trigger_group": "object"
+		},
+		{
+			"_name": "global.spawn",
+			"transform": {
+				"translate": [0, 0.05, 0]
+			},
+			"voxels": {
+				"min": [-5, 0, -5],
+				"max": [5, 10, 5]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 1, 1],
+				"intensity": 300,
+				"spotAngle": 45,
+				"gel": "menu_gui",
+				"shadowMapSize": 10,
+				"shadowMapClip": [0.1, 10]
+			},
+			"transform": {
+				"translate": [0, 1.8, 0]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 1, 1],
+				"intensity": 50,
+				"spotAngle": 60,
+				"shadowMapSize": 10,
+				"shadowMapClip": [0.1, 10]
+			},
+			"transform": {
+				"translate": [0, 5, 0],
+				"rotate": [-90, 1, 0, 0]
+			}
+		},
+		{
+			"transform": {
+				"translate": [0, 1, 0],
+				"scale": [10, 2, 10]
+			},
+			"__trigger_area": {
+				"player": {
+					"command": "g.MenuDisplay 0; loadscene 01-outside"
+				}
+			}
+		}
+	]
+}

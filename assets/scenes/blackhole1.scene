@@ -244,11 +244,9 @@
 		<%- include('prefab/button', {
 			name: 'flashlight_button',
 			transform: {
-				"translate": [4.95, 1.25, -1]
+				"translate": [4.95, 1.25, 1.5]
 			},
-			trigger: {
-				"command": "setsignal player.flashlight.on 1"
-			}
+			command: "setsignal player.flashlight.on 1"
 		}) %>,
 		{
 			"_name": "global.transition1-2",

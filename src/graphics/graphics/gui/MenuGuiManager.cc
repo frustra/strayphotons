@@ -18,7 +18,7 @@ namespace sp {
     static CVar<int> CVarMenuDisplay("g.MenuDisplay", 0, "Display pause menu");
     static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
     static CVar<glm::vec2> CVarMenuCursorScaling("g.MenuCursorScaling",
-        glm::vec2(1.435f, 0.805f),
+        glm::vec2(1.026f, 0.578f),
         "Scaling factor for menu cursor position");
 
     MenuGuiManager::MenuGuiManager(GraphicsManager &graphics)
@@ -238,7 +238,6 @@ namespace sp {
         SetRenderMode(MenuRenderMode::None);                         \
         selectedScreen = MenuScreen::Main;                           \
         GetConsoleManager().QueueParseAndExecute("g.MenuDisplay 0"); \
-        GetConsoleManager().QueueParseAndExecute("r.Exposure 0");    \
         GetConsoleManager().QueueParseAndExecute("loadscene " file); \
     }
 

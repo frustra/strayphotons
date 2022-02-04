@@ -254,8 +254,9 @@ namespace sp {
             }
 
             if (physics.constantForce != glm::vec3()) {
+                auto rotation = entity.Get<ecs::Transform>(lock).GetGlobalRotation(lock);
                 auto dynamic = physics.actor->is<PxRigidDynamic>();
-                if (dynamic) dynamic->addForce(GlmVec3ToPxVec3(physics.constantForce));
+                if (dynamic) dynamic->addForce(GlmVec3ToPxVec3(rotation * physics.constantForce));
             }
         }
     }

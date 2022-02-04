@@ -1365,7 +1365,7 @@
 				"translate": [
 					4.95,
 					1.25,
-					-1
+					1.5
 				]
 			}
 		},
@@ -1391,6 +1391,7 @@
 			},
 			"trigger_area": {
 				"object": {
+					"command": "setsignal player.flashlight.on 1",
 					"signal": "button_pressed"
 				}
 			},
