@@ -16,7 +16,7 @@ namespace sp {
 
             int extent = (int)std::pow(2, light.shadowMapSize);
 
-            auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+            auto &transform = entity.Get<ecs::Transform>(lock);
             auto &view = lightData.views[lightCount];
 
             view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
@@ -62,8 +62,8 @@ namespace sp {
             if (!entity.Has<ecs::Mirror, ecs::Transform>(lock)) continue;
 
             auto &mirror = entity.Get<ecs::Mirror>(lock);
-            auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-            data->modelMat = transform.GetMatrix();
+            auto &transform = entity.Get<ecs::Transform>(lock);
+            data->modelMat = transform.matrix;
             data->size = mirror.size;
 
             glm::vec3 mirrorNormal = transform.GetForward();

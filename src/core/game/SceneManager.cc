@@ -481,7 +481,7 @@ namespace sp {
 
     void SceneManager::TranslateSceneByConnection(const std::shared_ptr<Scene> &scene) {
         auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo, ecs::Animation>,
-            ecs::Write<ecs::Transform, ecs::Animation>>();
+            ecs::Write<ecs::TransformTarget, ecs::Animation>>();
         auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::Transform>>();
 
         Tecs::Entity liveConnection, stagingConnection;
@@ -497,27 +497,27 @@ namespace sp {
                 break;
             }
         }
-        if (stagingConnection.Has<ecs::Transform>(stagingLock) && liveConnection.Has<ecs::Transform>(liveLock)) {
-            auto liveTransform = liveConnection.Get<const ecs::Transform>(liveLock).GetGlobalTransform(liveLock);
+        if (stagingConnection.Has<ecs::TransformTarget>(stagingLock) && liveConnection.Has<ecs::Transform>(liveLock)) {
+            auto &liveTransform = liveConnection.Get<const ecs::Transform>(liveLock);
             auto stagingTransform =
-                stagingConnection.Get<const ecs::Transform>(stagingLock).GetGlobalTransform(stagingLock);
+                stagingConnection.Get<const ecs::TransformTarget>(stagingLock).GetGlobalTransform(stagingLock);
             glm::quat deltaRotation = liveTransform.GetRotation() * glm::inverse(stagingTransform.GetRotation());
             glm::vec3 deltaPos = liveTransform.GetPosition() - deltaRotation * stagingTransform.GetPosition();
 
-            for (auto &e : stagingLock.EntitiesWith<ecs::Transform>()) {
-                if (!e.Has<ecs::Transform, ecs::SceneInfo>(stagingLock)) continue;
+            for (auto &e : stagingLock.EntitiesWith<ecs::TransformTarget>()) {
+                if (!e.Has<ecs::TransformTarget, ecs::SceneInfo>(stagingLock)) continue;
                 auto &sceneInfo = e.Get<ecs::SceneInfo>(stagingLock);
                 if (sceneInfo.scene.lock() != scene) continue;
 
-                auto &transform = e.Get<ecs::Transform>(stagingLock);
-                if (!transform.HasParent(stagingLock)) {
-                    transform.SetPosition(deltaRotation * transform.GetPosition() + deltaPos);
-                    transform.SetRotation(deltaRotation * transform.GetRotation());
+                auto &transform = e.Get<ecs::TransformTarget>(stagingLock);
+                if (!transform.parent.Has<ecs::TransformTarget>(stagingLock)) {
+                    transform.pose.SetPosition(deltaRotation * transform.pose.GetPosition() + deltaPos);
+                    transform.pose.SetRotation(deltaRotation * transform.pose.GetRotation());
 
                     if (e.Has<ecs::Animation>(stagingLock)) {
                         auto &animation = e.Get<ecs::Animation>(stagingLock);
                         for (auto &state : animation.states) {
-                            state.pos += deltaPos;
+                            state.pos = deltaRotation * state.pos + deltaPos;
                         }
                     }
                 }
@@ -563,19 +563,26 @@ namespace sp {
     }
 
     void SceneManager::RespawnPlayer(Tecs::Entity player) {
-        auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
+        auto liveLock =
+            liveWorld.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform, ecs::TransformTarget>>();
 
         auto spawn = ecs::EntityWith<ecs::Name>(liveLock, "global.spawn");
         if (spawn.Has<ecs::Transform>(liveLock)) {
-            auto spawnTransform = spawn.Get<ecs::Transform>(liveLock).GetGlobalTransform(liveLock);
-            if (player.Has<ecs::Transform>(liveLock)) {
+            auto &spawnTransform = spawn.Get<const ecs::Transform>(liveLock);
+            if (player.Has<ecs::Transform, ecs::TransformTarget>(liveLock)) {
                 auto &playerTransform = player.Get<ecs::Transform>(liveLock);
-                playerTransform.SetTransform(spawnTransform);
+                auto &playerTarget = player.Get<ecs::TransformTarget>(liveLock);
+                Assert(!playerTarget.parent, "Player entity should not have a TransformTarget parent");
+                playerTransform = spawnTransform;
+                playerTarget.pose = spawnTransform;
             }
             auto vrOrigin = ecs::EntityWith<ecs::Name>(liveLock, "player.vr-origin");
-            if (vrOrigin.Has<ecs::Transform>(liveLock)) {
+            if (vrOrigin.Has<ecs::Transform, ecs::TransformTarget>(liveLock)) {
                 auto &vrTransform = vrOrigin.Get<ecs::Transform>(liveLock);
-                vrTransform.SetTransform(spawnTransform);
+                auto &vrTarget = vrOrigin.Get<ecs::TransformTarget>(liveLock);
+                Assert(!vrTarget.parent, "VR Origin entity should not have a TransformTarget parent");
+                vrTransform = spawnTransform;
+                vrTarget.pose = spawnTransform;
             }
         }
     }

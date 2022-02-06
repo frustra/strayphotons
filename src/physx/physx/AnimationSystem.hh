@@ -12,7 +12,7 @@ namespace sp {
 
         void Frame(
             ecs::Lock<ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
-                ecs::Write<ecs::Animation, ecs::Transform>> lock);
+                ecs::Write<ecs::Animation, ecs::TransformTarget>> lock);
 
     private:
         double RoundToFrameInterval(double value) const;

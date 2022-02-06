@@ -28,9 +28,8 @@ namespace sp {
             auto &transform = entity.Get<ecs::Transform>(lock);
 
             GLLightSensorData &s = data[count++];
-            glm::mat4 mat = transform.GetGlobalTransform(lock).GetMatrix();
-            s.position = mat * glm::vec4(sensor.position, 1);
-            s.direction = glm::normalize(glm::mat3(mat) * sensor.direction);
+            s.position = transform.matrix * glm::vec4(sensor.position, 1);
+            s.direction = glm::normalize(glm::mat3(transform.matrix) * sensor.direction);
             // TODO: Fix this so it doesn't lose precision
             s.id0 = (float)entity.index;
             s.id1 = (float)entity.generation;

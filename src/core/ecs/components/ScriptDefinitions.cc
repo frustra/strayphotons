@@ -33,15 +33,16 @@ namespace ecs {
                         light.on = !light.on;
                     }
                     if (EventInput::Poll(lock, ent, "/action/flashlight/grab", event)) {
-                        auto &transform = ent.Get<Transform>(lock);
-                        if (transform.HasParent(lock)) {
-                            transform.SetTransform(transform.GetGlobalTransform(lock));
+                        auto &transform = ent.Get<TransformTarget>(lock);
+                        if (transform.parent.Has<TransformTarget>(lock)) {
+                            transform.pose = transform.GetGlobalTransform(lock);
+                            transform.parent = Tecs::Entity();
                         } else {
                             Tecs::Entity parent = EntityWith<Name>(lock, CVarFlashlightParent.Get());
                             if (parent) {
-                                transform.SetPosition(glm::vec3(0, -0.3, 0));
-                                transform.SetRotation(glm::quat());
-                                transform.SetParent(parent);
+                                transform.pose.SetPosition(glm::vec3(0, -0.3, 0));
+                                transform.pose.SetRotation(glm::quat());
+                                transform.parent = parent;
                             } else {
                                 Errorf("Flashlight parent entity does not exist: %s", CVarFlashlightParent.Get());
                             }
@@ -120,15 +121,15 @@ namespace ecs {
             }},
         {"auto_attach",
             [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
-                if (ent.Has<Script, Transform>(lock)) {
+                if (ent.Has<Script, TransformTarget>(lock)) {
                     auto &scriptComp = ent.Get<Script>(lock);
                     auto parentName = scriptComp.GetParam<std::string>("attach_parent");
                     auto parentEntity = scriptComp.GetParam<NamedEntity>("attach_parent_entity");
                     if (parentEntity.Name() != parentName) parentEntity = NamedEntity(parentName);
 
-                    auto &transform = ent.Get<Transform>(lock);
+                    auto &transform = ent.Get<TransformTarget>(lock);
                     auto parent = parentEntity.Get(lock);
-                    if (parent.Has<Transform>(lock)) {
+                    if (parent.Has<TransformTarget>(lock)) {
                         if (ent.Has<Renderable>(lock)) {
                             auto &renderable = ent.Get<Renderable>(lock);
                             renderable.visibility.set();
@@ -140,7 +141,7 @@ namespace ecs {
                             renderable.visibility.reset();
                         }
                     }
-                    transform.SetParent(parent);
+                    transform.parent = parent;
                     scriptComp.SetParam<NamedEntity>("attach_parent_entity", parentEntity);
                 }
             }},
@@ -184,8 +185,7 @@ namespace ecs {
                         vertical = std::clamp(vertical, -1.0f, 1.0f);
 
                         if (target.Has<Transform>(lock)) {
-                            auto &parentTransform = target.Get<const Transform>(lock);
-                            auto parentRotation = parentTransform.GetGlobalRotation(lock);
+                            auto parentRotation = target.Get<const Transform>(lock).GetRotation();
                             movement = parentRotation * movement;
                             if (std::abs(movement.y) > 0.999) {
                                 movement = parentRotation * glm::vec3(0, -movement.y, 0);
@@ -249,21 +249,17 @@ namespace ecs {
                                 position.x = scriptComp.GetParam<double>("position_x");
                                 position.y = scriptComp.GetParam<double>("position_y");
                                 position.z = scriptComp.GetParam<double>("position_z");
-                                auto &transform = newEntity.Set<Transform>(lock);
+                                auto &transform = newEntity.Set<Transform>(lock, position);
 
                                 auto relativeName = scriptComp.GetParam<std::string>("relative_to");
                                 if (!relativeName.empty()) {
                                     auto relative = EntityWith<Name>(lock, relativeName);
                                     if (relative.Has<Transform>(lock)) {
-                                        auto relativeTransform = relative.Get<Transform>(lock).GetGlobalTransform(lock);
-                                        transform.SetRotation(relativeTransform.GetRotation());
-                                        position = relativeTransform.GetMatrix() * glm::vec4(position, 1.0f);
+                                        transform.matrix = relative.Get<Transform>(lock).matrix *
+                                                           glm::mat4(transform.matrix);
                                     }
                                 }
-                                transform.SetPosition(position);
-
-                                auto parentName = scriptComp.GetParam<std::string>("parent");
-                                if (!parentName.empty()) transform.SetParent(EntityWith<Name>(lock, parentName));
+                                newEntity.Set<TransformTarget>(lock, transform);
 
                                 auto modelName = scriptComp.GetParam<std::string>("model");
                                 auto model = sp::GAssets.LoadModel(modelName);
@@ -307,7 +303,7 @@ namespace ecs {
                 if (ent.Has<Script, EventInput, ecs::Transform, ecs::PhysicsQuery>(lock)) {
                     auto &scriptComp = ent.Get<Script>(lock);
                     auto &query = ent.Get<ecs::PhysicsQuery>(lock);
-                    auto transform = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+                    auto &transform = ent.Get<ecs::Transform>(lock);
 
                     auto target = scriptComp.GetParam<Tecs::Entity>("grab_target");
                     if (target.Has<ecs::Physics>(lock)) {
@@ -334,7 +330,7 @@ namespace ecs {
                             if (ph.dynamic && !ph.kinematic && !ph.constraint) {
                                 target = query.raycastHitTarget;
 
-                                auto hitTransform = target.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+                                auto &hitTransform = target.Get<ecs::Transform>(lock);
                                 auto invParentRotate = glm::inverse(transform.GetRotation());
 
                                 ph.group = ecs::PhysicsGroup::PlayerHands;

@@ -128,9 +128,9 @@ namespace sp {
         }
     }
 
-    void ConstraintSystem::Frame(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock) {
+    void ConstraintSystem::Frame(ecs::Lock<ecs::Read<ecs::TransformTarget>, ecs::Write<ecs::Physics>> lock) {
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
-            if (!entity.Has<ecs::Physics, ecs::Transform>(lock)) continue;
+            if (!entity.Has<ecs::Physics, ecs::TransformTarget>(lock)) continue;
             auto &physics = entity.Get<ecs::Physics>(lock);
             if (!physics.actor) continue;
 
@@ -170,8 +170,8 @@ namespace sp {
                     remoteTransform.p = GlmVec3ToPxVec3(physics.jointRemoteOffset);
                     remoteTransform.q = GlmQuatToPxQuat(physics.jointRemoteOrient);
                 }
-                if (!jointActor && physics.jointTarget.Has<ecs::Transform>(lock)) {
-                    auto transform = physics.jointTarget.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+                if (!jointActor && physics.jointTarget.Has<ecs::TransformTarget>(lock)) {
+                    auto transform = physics.jointTarget.Get<ecs::TransformTarget>(lock).GetGlobalTransform(lock);
                     auto rotate = transform.GetRotation();
                     remoteTransform.p = GlmVec3ToPxVec3(transform.GetPosition() + rotate * physics.jointRemoteOffset);
                     remoteTransform.q = GlmQuatToPxQuat(rotate * physics.jointRemoteOrient);
@@ -247,9 +247,9 @@ namespace sp {
                 if (dynamic) dynamic->wakeUp();
             }
 
-            if (physics.constraint.Has<ecs::Transform>(lock)) {
-                auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-                auto targetTransform = physics.constraint.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+            if (physics.constraint.Has<ecs::TransformTarget>(lock)) {
+                auto transform = entity.Get<ecs::TransformTarget>(lock).GetGlobalTransform(lock);
+                auto targetTransform = physics.constraint.Get<ecs::TransformTarget>(lock).GetGlobalTransform(lock);
                 HandleForceLimitConstraint(physics, transform, targetTransform);
             }
 

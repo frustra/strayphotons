@@ -18,7 +18,7 @@ namespace sp {
 
             auto &query = entity.Get<ecs::PhysicsQuery>(lock);
             if (query.raycastQueryDistance > 0.0f) {
-                auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+                auto &transform = entity.Get<ecs::Transform>(lock);
 
                 PxFilterData filterData;
                 filterData.word0 = (uint32_t)query.raycastQueryFilterGroup;

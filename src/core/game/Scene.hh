@@ -90,25 +90,23 @@ namespace sp {
     };
 
     template<>
-    inline void Scene::CopyComponent<ecs::Transform>(ecs::Lock<ecs::ReadAll> src,
+    inline void Scene::CopyComponent<ecs::TransformTarget>(ecs::Lock<ecs::ReadAll> src,
         Tecs::Entity srcEnt,
         ecs::Lock<ecs::AddRemove> dst,
         Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::Transform>(src) && !dstEnt.Has<ecs::Transform>(dst)) {
-            auto &srcTransform = srcEnt.Get<ecs::Transform>(src);
-            auto &dstTransform = dstEnt.Get<ecs::Transform>(dst);
+        if (srcEnt.Has<ecs::TransformTarget>(src) && !dstEnt.Has<ecs::Transform, ecs::TransformTarget>(dst)) {
+            auto &srcTarget = srcEnt.Get<ecs::TransformTarget>(src);
+            auto &dstTarget = dstEnt.Get<ecs::TransformTarget>(dst);
 
             // Map transform parent from staging id to live id
-            auto parent = srcTransform.GetParent();
-            if (parent && parent.Has<ecs::SceneInfo>(src)) {
-                auto &sceneInfo = parent.Get<ecs::SceneInfo>(src);
-                dstTransform.SetParent(sceneInfo.liveId);
+            if (srcTarget.parent.Has<ecs::SceneInfo>(src)) {
+                auto &sceneInfo = srcTarget.parent.Get<ecs::SceneInfo>(src);
+                dstTarget.parent = sceneInfo.liveId;
             } else {
-                dstTransform.SetParent(Tecs::Entity());
+                dstTarget.parent = Tecs::Entity();
             }
-            dstTransform.SetPosition(srcTransform.GetPosition());
-            dstTransform.SetRotation(srcTransform.GetRotation());
-            dstTransform.SetScale(srcTransform.GetScale());
+            dstTarget.pose = srcTarget.pose;
+            dstEnt.Set<ecs::Transform>(dst, srcTarget.GetGlobalTransform(src));
         }
     }
 

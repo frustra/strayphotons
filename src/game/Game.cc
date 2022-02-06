@@ -179,12 +179,12 @@ namespace sp {
                 .StartTransaction<ecs::Read<ecs::Name, ecs::Transform, ecs::CharacterController, ecs::LightSensor>>();
         if (flatview && flatview.Has<ecs::Transform>(lock)) {
             auto &transform = flatview.Get<ecs::Transform>(lock);
-            auto position = transform.GetGlobalTransform(lock).GetPosition();
+            auto position = transform.GetPosition();
             Logf("Flatview position: [%f, %f, %f]", position.x, position.y, position.z);
         }
         if (player && player.Has<ecs::Transform>(lock)) {
             auto &transform = player.Get<ecs::Transform>(lock);
-            auto position = transform.GetGlobalTransform(lock).GetPosition();
+            auto position = transform.GetPosition();
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
             if (player.Has<ecs::CharacterController>(lock)) {
                 auto &controller = player.Get<ecs::CharacterController>(lock);

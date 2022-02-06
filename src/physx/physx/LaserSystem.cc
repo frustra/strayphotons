@@ -29,7 +29,7 @@ namespace sp {
             auto &emitter = entity.Get<ecs::LaserEmitter>(lock);
             if (!emitter.on) continue;
 
-            auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+            auto &transform = entity.Get<ecs::Transform>(lock);
 
             auto &lines = entity.Get<ecs::LaserLine>(lock);
             lines.on = true;

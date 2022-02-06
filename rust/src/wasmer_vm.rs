@@ -19,11 +19,9 @@ pub struct GlmMat4x3 {
 #[repr(C, packed(8))]
 #[derive(Copy, Clone, Debug)]
 pub struct Transform {
-    transform: GlmMat4x3,
-    parent: [u32; 2],
-    change_count: u32,
+    matrix: GlmMat4x3,
 }
-assert_eq_size!(Transform, [u8; 60]);
+assert_eq_size!(Transform, [u8; 48]);
 
 unsafe impl wasmer::ValueType for GlmVec3 {}
 unsafe impl wasmer::ValueType for GlmMat4x3 {}
@@ -119,7 +117,7 @@ pub fn run_wasm() -> anyhow::Result<()> {
         }
     }
 
-    let mut a = Transform{parent: [0, 0], transform: GlmMat4x3{data: [GlmVec3{data: [0f32; 3]}; 4]}, change_count: 1};
+    let mut a = Transform{matrix: GlmMat4x3{data: [GlmVec3{data: [0f32; 3]}; 4]}};
     let mut b = a.clone();
     unsafe {
         transform_identity(&mut a);

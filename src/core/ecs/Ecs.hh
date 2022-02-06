@@ -39,6 +39,7 @@ namespace ecs {
     class SignalOutput;
     class SignalBindings;
     struct Transform;
+    struct TransformTarget;
     struct TriggerArea;
     enum class TriggerGroup : uint8_t;
     struct View;
@@ -68,6 +69,7 @@ namespace ecs {
         SignalOutput,
         SignalBindings,
         Transform,
+        TransformTarget,
         TriggerArea,
         TriggerGroup,
         View,
@@ -125,6 +127,7 @@ TECS_NAME_COMPONENT(ecs::Script, "Script");
 TECS_NAME_COMPONENT(ecs::SignalOutput, "SignalOutput");
 TECS_NAME_COMPONENT(ecs::SignalBindings, "SignalBindings");
 TECS_NAME_COMPONENT(ecs::Transform, "Transform");
+TECS_NAME_COMPONENT(ecs::TransformTarget, "TransformTarget");
 TECS_NAME_COMPONENT(ecs::TriggerArea, "TriggerArea");
 TECS_NAME_COMPONENT(ecs::TriggerGroup, "TriggerGroup");
 TECS_NAME_COMPONENT(ecs::View, "View");

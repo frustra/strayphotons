@@ -16,7 +16,7 @@ namespace sp {
 
         void Frame(
             ecs::Lock<ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
-                ecs::Write<ecs::Transform, ecs::EventInput, ecs::CharacterController>> lock);
+                ecs::Write<ecs::TransformTarget, ecs::EventInput, ecs::CharacterController>> lock);
 
     private:
         PhysxManager &manager;

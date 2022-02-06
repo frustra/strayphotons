@@ -5,6 +5,7 @@
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/components/Physics.hh"
+#include "ecs/components/Transform.h"
 #include "physx/AnimationSystem.hh"
 #include "physx/CharacterControlSystem.hh"
 #include "physx/ConstraintSystem.hh"
@@ -35,12 +36,13 @@ namespace sp {
 
     struct ActorUserData {
         Tecs::Entity entity;
-        uint32_t transformChangeNumber = 0;
-        ecs::PhysicsGroup currentPhysicsGroup;
+        ecs::Transform pose;
+        glm::vec3 scale;
+        ecs::PhysicsGroup physicsGroup;
 
         ActorUserData() {}
-        ActorUserData(Tecs::Entity ent, uint32_t changeNumber, ecs::PhysicsGroup group)
-            : entity(ent), transformChangeNumber(changeNumber), currentPhysicsGroup(group) {}
+        ActorUserData(Tecs::Entity ent, const ecs::Transform &pose, ecs::PhysicsGroup group)
+            : entity(ent), pose(pose), scale(pose.GetScale()), physicsGroup(group) {}
     };
 
     struct CharacterControllerUserData {
@@ -48,12 +50,11 @@ namespace sp {
 
         bool onGround = false;
         bool noclipping = false;
-        glm::vec3 prevPosition = glm::vec3(0);
         glm::vec3 velocity = glm::vec3(0);
 
         CharacterControllerUserData() {}
-        CharacterControllerUserData(Tecs::Entity ent, uint32_t changeNumber)
-            : actorData(ent, changeNumber, ecs::PhysicsGroup::Player) {}
+        CharacterControllerUserData(Tecs::Entity ent, const ecs::Transform &pose)
+            : actorData(ent, pose, ecs::PhysicsGroup::Player) {}
     };
 
     class PhysxManager : public RegisteredThread {
@@ -68,8 +69,8 @@ namespace sp {
 
         ConvexHullSet *GetCachedConvexHulls(std::string name);
 
-        void CreateActor(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
-        void UpdateActor(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
+        void CreateActor(ecs::Lock<ecs::Read<ecs::TransformTarget>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
+        void UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTarget>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
 
     private:

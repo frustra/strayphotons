@@ -67,7 +67,7 @@ namespace sp::vulkan {
 
             int extent = (int)std::pow(2, light.shadowMapSize);
 
-            auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+            auto &transform = entity.Get<ecs::Transform>(lock);
             auto &view = lights.views[lightCount];
 
             view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
@@ -127,9 +127,9 @@ namespace sp::vulkan {
         for (auto entity : lock.EntitiesWith<ecs::LaserLine>()) {
             auto &laser = entity.Get<ecs::LaserLine>(lock);
 
-            glm::mat4 transform;
+            glm::mat4x3 transform;
             if (laser.relative && entity.Has<ecs::Transform>(lock)) {
-                transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
+                transform = entity.Get<ecs::Transform>(lock).matrix;
             }
 
             if (!laser.on) continue;
@@ -962,7 +962,7 @@ namespace sp::vulkan {
             Assert(scene.renderableCount * sizeof(GPURenderableEntity) < scene.renderableEntityList->Size(),
                 "renderable entity overflow");
 
-            gpuRenderable->modelToWorld = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
+            gpuRenderable->modelToWorld = ent.Get<ecs::Transform>(lock).matrix;
             gpuRenderable->visibilityMask = renderable.visibility.to_ulong();
             gpuRenderable->modelIndex = model->SceneIndex();
             gpuRenderable->vertexOffset = scene.vertexCount;
@@ -1158,7 +1158,7 @@ namespace sp::vulkan {
         mask &= viewMask;
         if (mask != viewMask) return;
 
-        glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
+        auto &modelMat = ent.Get<ecs::Transform>(lock).matrix;
 
         auto model = activeModels.Load(comp.model->name);
         if (!model) {

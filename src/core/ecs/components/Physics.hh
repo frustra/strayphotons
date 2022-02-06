@@ -76,7 +76,6 @@ namespace ecs {
         // Output fields of PhysxManager
         physx::PxRigidActor *actor = nullptr;
         physx::PxJoint *joint = nullptr;
-        glm::vec3 scale = glm::vec3(1.0); // Current scale of physics model according to PhysX
         glm::vec3 centerOfMass = glm::vec3(0.0); // The calculated center of mass of the object (relative to Transform)
 
         void SetJoint(Tecs::Entity target,

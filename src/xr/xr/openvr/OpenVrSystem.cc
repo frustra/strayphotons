@@ -75,6 +75,7 @@ namespace sp::xr {
                 vrOrigin.Set<ecs::Name>(lock, vrOriginEntity.Name());
                 vrOrigin.Set<ecs::SceneInfo>(lock, vrOrigin, ecs::SceneInfo::Priority::System, scene);
                 vrOrigin.Set<ecs::Transform>(lock);
+                vrOrigin.Set<ecs::TransformTarget>(lock);
 
                 static const std::array specialEntities = {vrHmdEntity,
                     vrControllerLeftEntity,
@@ -84,6 +85,7 @@ namespace sp::xr {
                     ent.Set<ecs::Name>(lock, namedEntity.Name());
                     ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
                     ent.Set<ecs::Transform>(lock);
+                    ent.Set<ecs::TransformTarget>(lock);
                     ent.Set<ecs::EventBindings>(lock);
                     ent.Set<ecs::SignalOutput>(lock);
                 }
@@ -100,8 +102,8 @@ namespace sp::xr {
                     ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
                     ent.Set<ecs::XRView>(lock, eye);
 
-                    auto &transform = ent.Set<ecs::Transform>(lock);
-                    transform.SetParent(vrOrigin);
+                    auto &transform = ent.Set<ecs::TransformTarget>(lock);
+                    transform.parent = vrOrigin;
 
                     auto &view = ent.Set<ecs::View>(lock);
                     view.extents = {vrWidth, vrHeight};
@@ -198,7 +200,7 @@ namespace sp::xr {
         bool missingEntities = false;
         {
             ZoneScopedN("Sync to ECS");
-            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::Transform>>();
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformTarget>>();
 
             for (auto namedEntity : trackedDevices) {
                 if (namedEntity != nullptr && !namedEntity->Get(lock).Exists(lock)) {
@@ -208,18 +210,16 @@ namespace sp::xr {
             }
 
             Tecs::Entity vrOrigin = vrOriginEntity.Get(lock);
-            if (vrOrigin && vrOrigin.Has<ecs::Transform>(lock)) {
+            if (vrOrigin && vrOrigin.Has<ecs::TransformTarget>(lock)) {
                 for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
                     if (trackedDevices[i] != nullptr) {
                         Tecs::Entity ent = trackedDevices[i]->Get(lock);
-                        if (ent && ent.Has<ecs::Transform>(lock) && trackedDevicePoses[i].bPoseIsValid) {
-                            auto &transform = ent.Get<ecs::Transform>(lock);
+                        if (ent && ent.Has<ecs::TransformTarget>(lock) && trackedDevicePoses[i].bPoseIsValid) {
+                            auto &transform = ent.Get<ecs::TransformTarget>(lock);
+                            auto &pose = trackedDevicePoses[i].mDeviceToAbsoluteTracking.m;
 
-                            auto pose = glm::transpose(
-                                glm::make_mat3x4((float *)trackedDevicePoses[i].mDeviceToAbsoluteTracking.m));
-
-                            transform.SetParent(vrOrigin);
-                            transform.SetMatrix(pose);
+                            transform.parent = vrOrigin;
+                            transform.pose = glm::transpose(glm::make_mat3x4((float *)pose));
                         }
                     }
                 }
