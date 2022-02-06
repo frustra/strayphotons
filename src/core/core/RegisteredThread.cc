@@ -89,9 +89,9 @@ namespace sp {
         });
     }
 
-    void RegisteredThread::StopThread() {
+    void RegisteredThread::StopThread(bool waitForExit) {
         exiting = true;
-        if (thread.joinable()) thread.join();
+        if (waitForExit && thread.joinable()) thread.join();
     }
 
     double RegisteredThread::GetFrameRate() const {

@@ -11,6 +11,8 @@ set(PROJECT_INPUT_GLFW_LIB ${PROJECT_BASE_NAME}-input-glfw CACHE INTERNAL "Libra
 
 set(PROJECT_PHYSICS_PHYSX_LIB ${PROJECT_BASE_NAME}-physics-physx CACHE INTERNAL "Library implementing physics using PhysX")
 
+set(PROJECT_AUDIO_LIB ${PROJECT_BASE_NAME}-audio CACHE INTERNAL "Library implementing audio using libsoundio and Resonance Audio")
+
 set(PROJECT_XR_CORE_LIB ${PROJECT_BASE_NAME}-xr-core CACHE INTERNAL "Library containing generic XR/VR support")
 set(PROJECT_XR_OPENVR_LIB ${PROJECT_BASE_NAME}-xr-openvr CACHE INTERNAL "Library implementing XR support using OpenVR")
 
@@ -26,6 +28,7 @@ add_module_configuration(
         ${PROJECT_GRAPHICS_OPENGL_LIB}
         ${PROJECT_INPUT_GLFW_LIB}
         ${PROJECT_PHYSICS_PHYSX_LIB}
+        ${PROJECT_AUDIO_LIB}
         ${PROJECT_XR_OPENVR_LIB}
 )
 
@@ -38,6 +41,7 @@ add_module_configuration(
         ${PROJECT_GRAPHICS_VULKAN_XR_LIB}
         ${PROJECT_INPUT_GLFW_LIB}
         ${PROJECT_PHYSICS_PHYSX_LIB}
+        ${PROJECT_AUDIO_LIB}
         ${PROJECT_XR_OPENVR_LIB}
 )
 
@@ -53,6 +57,7 @@ add_module_configuration(
 )
 
 add_subdirectory(core)
+add_subdirectory(audio)
 add_subdirectory(graphics)
 add_subdirectory(input)
 add_subdirectory(main)

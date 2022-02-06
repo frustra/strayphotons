@@ -19,6 +19,10 @@
     #include "xr/XrManager.hh"
 #endif
 
+#ifdef SP_AUDIO_SUPPORT
+    #include "audio/AudioManager.hh"
+#endif
+
 #include <chrono>
 #include <memory>
 #include <vector>
@@ -48,6 +52,9 @@ namespace sp {
 #endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
         PhysxManager physics;
+#endif
+#ifdef SP_AUDIO_SUPPORT
+        AudioManager audio;
 #endif
 #ifdef SP_XR_SUPPORT
         xr::XrManager xr;

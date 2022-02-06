@@ -49,3 +49,6 @@
 [submodule "ext/tracy"]
 	path = ext/tracy
 	url = https://github.com/wolfpld/tracy
+[submodule "ext/libsoundio"]
+	path = ext/libsoundio
+	url = https://github.com/andrewrk/libsoundio

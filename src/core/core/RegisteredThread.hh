@@ -22,7 +22,7 @@ namespace sp {
 
     protected:
         void StartThread();
-        void StopThread();
+        void StopThread(bool waitForExit = true);
         virtual void Frame() = 0;
 
     private:
