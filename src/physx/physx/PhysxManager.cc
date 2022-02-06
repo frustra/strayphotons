@@ -158,9 +158,9 @@ namespace sp {
                 }
             }
 
+            constraintSystem.Frame(lock);
             animationSystem.Frame(lock);
             characterControlSystem.Frame(lock);
-            constraintSystem.Frame(lock);
         }
 
         { // Simulate 1 physics frame (blocking)
@@ -181,40 +181,42 @@ namespace sp {
                                                         ecs::FocusLock,
                                                         ecs::LaserEmitter,
                                                         ecs::Physics,
-                                                        ecs::Mirror,
-                                                        ecs::TransformTarget>,
+                                                        ecs::Mirror>,
                 ecs::Write<ecs::Animation,
                     ecs::Transform,
+                    ecs::TransformTarget,
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
                     ecs::SignalOutput>>();
 
-            for (auto ent : lock.EntitiesWith<ecs::TransformTarget>()) {
-                if (!ent.Has<ecs::TransformTarget, ecs::Transform>(lock)) continue;
-                ent.Set<ecs::Transform>(lock, ent.Get<ecs::TransformTarget>(lock).GetGlobalTransform(lock));
-            }
-
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
 
                 auto &ph = ent.Get<ecs::Physics>(lock);
-
-                if (!ph.dynamic || ph.kinematic) continue;
-
                 if (ph.actor) {
-                    auto &readTransform = ent.Get<const ecs::Transform>(lock);
+                    auto &transform = ent.Get<ecs::Transform>(lock);
+
+                    auto pose = ph.actor->getGlobalPose();
+                    transform.SetPosition(PxVec3ToGlmVec3(pose.p));
+                    transform.SetRotation(PxQuatToGlmQuat(pose.q));
+
+                    if (ph.dynamic && !ph.kinematic && ent.Has<ecs::TransformTarget>(lock)) {
+                        auto &target = ent.Get<ecs::TransformTarget>(lock);
+                        target.pose = transform;
+                        target.parent = Tecs::Entity();
+                    }
 
                     auto userData = (ActorUserData *)ph.actor->userData;
-                    if (readTransform.matrix == userData->pose.matrix) {
-                        auto &transform = ent.Get<ecs::Transform>(lock);
-
-                        auto pose = ph.actor->getGlobalPose();
-                        transform.SetPosition(PxVec3ToGlmVec3(pose.p));
-                        transform.SetRotation(PxQuatToGlmQuat(pose.q));
-                        userData->pose = transform;
-                    }
+                    userData->pose = transform;
+                } else if (ent.Has<ecs::TransformTarget>(lock)) {
+                    ent.Set<ecs::Transform>(lock, ent.Get<ecs::TransformTarget>(lock).GetGlobalTransform(lock));
                 }
+            }
+
+            for (auto ent : lock.EntitiesWith<ecs::TransformTarget>()) {
+                if (!ent.Has<ecs::TransformTarget, ecs::Transform>(lock) || ent.Has<ecs::Physics>(lock)) continue;
+                ent.Set<ecs::Transform>(lock, ent.Get<ecs::TransformTarget>(lock).GetGlobalTransform(lock));
             }
 
             physicsQuerySystem.Frame(lock);

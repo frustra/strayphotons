@@ -202,7 +202,7 @@ namespace ecs {
             }},
         {"camera_view",
             [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
-                if (ent.Has<Script, EventInput, Transform>(lock)) {
+                if (ent.Has<Script, EventInput, TransformTarget>(lock)) {
                     Event event;
                     while (EventInput::Poll(lock, ent, "/action/camera_rotate", event)) {
                         auto angleDiff = std::get<glm::vec2>(event.data);
@@ -211,9 +211,9 @@ namespace ecs {
                             auto sensitivity = scriptComp.GetParam<double>("view_sensitivity");
 
                             // Apply pitch/yaw rotations
-                            auto &transform = ent.Get<Transform>(lock);
+                            auto &transform = ent.Get<TransformTarget>(lock);
                             auto rotation = glm::quat(glm::vec3(0, -angleDiff.x * sensitivity, 0)) *
-                                            transform.GetRotation() *
+                                            transform.pose.GetRotation() *
                                             glm::quat(glm::vec3(-angleDiff.y * sensitivity, 0, 0));
 
                             auto up = rotation * glm::vec3(0, 1, 0);
@@ -226,7 +226,7 @@ namespace ecs {
                                 rotation = glm::quat_cast(
                                     glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
                             }
-                            transform.SetRotation(rotation);
+                            transform.pose.SetRotation(rotation);
                         }
                     }
                 }
@@ -272,7 +272,7 @@ namespace ecs {
             }},
         {"rotate",
             [](Lock<WriteAll> lock, Tecs::Entity ent, double dtSinceLastFrame) {
-                if (ent.Has<Script, Transform>(lock)) {
+                if (ent.Has<Script, TransformTarget>(lock)) {
                     auto &scriptComp = ent.Get<Script>(lock);
                     glm::vec3 rotationAxis;
                     rotationAxis.x = scriptComp.GetParam<double>("axis_x");
@@ -280,9 +280,9 @@ namespace ecs {
                     rotationAxis.z = scriptComp.GetParam<double>("axis_z");
                     auto rotationSpeedRpm = scriptComp.GetParam<double>("speed");
 
-                    auto &transform = ent.Get<Transform>(lock);
-                    auto currentRotation = transform.GetRotation();
-                    transform.SetRotation(glm::rotate(currentRotation,
+                    auto &transform = ent.Get<TransformTarget>(lock);
+                    auto currentRotation = transform.pose.GetRotation();
+                    transform.pose.SetRotation(glm::rotate(currentRotation,
                         (float)(rotationSpeedRpm * M_PI * 2.0 / 60.0 * dtSinceLastFrame),
                         rotationAxis));
                 }
