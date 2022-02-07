@@ -32,7 +32,8 @@ namespace sp {
      */
     void ConstraintSystem::HandleForceLimitConstraint(ecs::Physics &physics,
         ecs::Transform transform,
-        ecs::Transform targetTransform) {
+        ecs::Transform targetTransform,
+        glm::vec3 targetVelocity) {
         auto dynamic = physics.actor->is<PxRigidDynamic>();
         if (!dynamic) return;
 
@@ -63,13 +64,13 @@ namespace sp {
                 std::sqrt(2 * maxAcceleration.y * std::abs(deltaRotation.y)),
                 std::sqrt(2 * maxAcceleration.z * std::abs(deltaRotation.z)));
 
-            auto targetVelocity = deltaRotation;
+            auto targetRotationVelocity = deltaRotation;
             if (glm::length(maxVelocity) > glm::length(deltaTick)) {
-                targetVelocity = glm::normalize(targetVelocity) * (maxVelocity - deltaTick);
+                targetRotationVelocity = glm::normalize(targetRotationVelocity) * (maxVelocity - deltaTick);
             } else {
-                targetVelocity *= tickFrequency;
+                targetRotationVelocity *= tickFrequency;
             }
-            auto deltaVelocity = targetVelocity - PxVec3ToGlmVec3(dynamic->getAngularVelocity());
+            auto deltaVelocity = targetRotationVelocity - PxVec3ToGlmVec3(dynamic->getAngularVelocity());
 
             glm::vec3 force = worldInertia * (deltaVelocity * tickFrequency);
             float forceAbs = glm::length(force) + 0.00001f;
@@ -83,14 +84,16 @@ namespace sp {
             auto deltaTick = maxAcceleration * intervalSeconds;
             auto maxVelocity = std::sqrt(2 * maxAcceleration * glm::length(glm::vec2(deltaPos.x, deltaPos.z)));
 
-            auto targetVelocity = glm::vec3(deltaPos.x, 0, deltaPos.z);
+            auto targetLateralVelocity = glm::vec3(deltaPos.x, 0, deltaPos.z);
             if (maxVelocity > deltaTick) {
-                targetVelocity = glm::normalize(targetVelocity);
-                targetVelocity *= maxVelocity - deltaTick;
+                targetLateralVelocity = glm::normalize(targetLateralVelocity);
+                targetLateralVelocity *= maxVelocity - deltaTick;
             } else {
-                targetVelocity *= tickFrequency;
+                targetLateralVelocity *= tickFrequency;
             }
-            auto deltaVelocity = targetVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
+            targetLateralVelocity.x += targetVelocity.x;
+            targetLateralVelocity.z += targetVelocity.z;
+            auto deltaVelocity = targetLateralVelocity - PxVec3ToGlmVec3(dynamic->getLinearVelocity());
             deltaVelocity.y = 0;
 
             glm::vec3 force = deltaVelocity * tickFrequency * dynamic->getMass();
@@ -109,13 +112,14 @@ namespace sp {
             auto deltaTick = maxAcceleration * intervalSeconds;
             auto maxVelocity = std::sqrt(2 * std::max(0.0f, maxAcceleration) * std::abs(deltaPos.y));
 
-            float targetVelocity = 0.0f;
+            float targetVerticalVelocity = 0.0f;
             if (maxVelocity > deltaTick) {
-                targetVelocity = (maxVelocity - deltaTick) * (deltaPos.y > 0 ? 1 : -1);
+                targetVerticalVelocity = (maxVelocity - deltaTick) * (deltaPos.y > 0 ? 1 : -1);
             } else {
-                targetVelocity = deltaPos.y * tickFrequency;
+                targetVerticalVelocity = deltaPos.y * tickFrequency;
             }
-            auto deltaVelocity = targetVelocity - dynamic->getLinearVelocity().y;
+            targetVerticalVelocity += targetVelocity.y;
+            auto deltaVelocity = targetVerticalVelocity - dynamic->getLinearVelocity().y;
 
             float force = deltaVelocity * tickFrequency * dynamic->getMass();
             force -= CVarGravity.Get() * dynamic->getMass();
@@ -128,9 +132,10 @@ namespace sp {
         }
     }
 
-    void ConstraintSystem::Frame(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock) {
+    void ConstraintSystem::Frame(
+        ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController>, ecs::Write<ecs::Physics>> lock) {
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
-            if (!entity.Has<ecs::Physics, ecs::Transform>(lock)) continue;
+            if (!entity.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
             auto &physics = entity.Get<ecs::Physics>(lock);
             if (!physics.actor) continue;
 
@@ -170,8 +175,8 @@ namespace sp {
                     remoteTransform.p = GlmVec3ToPxVec3(physics.jointRemoteOffset);
                     remoteTransform.q = GlmQuatToPxQuat(physics.jointRemoteOrient);
                 }
-                if (!jointActor && physics.jointTarget.Has<ecs::Transform>(lock)) {
-                    auto transform = physics.jointTarget.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+                if (!jointActor && physics.jointTarget.Has<ecs::TransformTree>(lock)) {
+                    auto transform = physics.jointTarget.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
                     auto rotate = transform.GetRotation();
                     remoteTransform.p = GlmVec3ToPxVec3(transform.GetPosition() + rotate * physics.jointRemoteOffset);
                     remoteTransform.q = GlmQuatToPxQuat(rotate * physics.jointRemoteOrient);
@@ -247,14 +252,40 @@ namespace sp {
                 if (dynamic) dynamic->wakeUp();
             }
 
-            if (physics.constraint.Has<ecs::Transform>(lock)) {
-                auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-                auto targetTransform = physics.constraint.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
-                HandleForceLimitConstraint(physics, transform, targetTransform);
+            if (physics.constraint.Has<ecs::TransformTree>(lock)) {
+                auto transform = entity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
+                auto &targetTransform = physics.constraint.Get<ecs::TransformTree>(lock);
+                glm::vec3 targetVelocity(0);
+
+                // Try and determine the velocity of the constraint target entity
+                auto e = physics.constraint;
+                while (e.Has<ecs::TransformTree>(lock)) {
+                    if (e.Has<ecs::Physics>(lock)) {
+                        auto &targetPhysics = e.Get<ecs::Physics>(lock);
+                        if (targetPhysics.actor) {
+                            auto userData = (ActorUserData *)targetPhysics.actor->userData;
+                            if (userData) targetVelocity = userData->velocity;
+                            break;
+                        }
+                    } else if (e.Has<ecs::CharacterController>(lock)) {
+                        auto &targetController = e.Get<ecs::CharacterController>(lock);
+                        if (targetController.pxController) {
+                            auto userData = (CharacterControllerUserData *)targetController.pxController->getUserData();
+                            if (userData) targetVelocity = userData->actorData.velocity;
+                            break;
+                        }
+                    }
+                    e = e.Get<ecs::TransformTree>(lock).parent;
+                }
+
+                HandleForceLimitConstraint(physics,
+                    transform,
+                    targetTransform.GetGlobalTransform(lock),
+                    targetVelocity);
             }
 
             if (physics.constantForce != glm::vec3()) {
-                auto rotation = entity.Get<ecs::Transform>(lock).GetGlobalRotation(lock);
+                auto rotation = entity.Get<ecs::TransformTree>(lock).GetGlobalRotation(lock);
                 auto dynamic = physics.actor->is<PxRigidDynamic>();
                 if (dynamic) dynamic->addForce(GlmVec3ToPxVec3(rotation * physics.constantForce));
             }

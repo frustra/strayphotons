@@ -14,7 +14,7 @@ namespace sp {
     class PostProcessingContext;
     class Game;
 
-    using PostProcessLock = typename ecs::Lock<ecs::Read<ecs::Light, ecs::View, ecs::Mirror, ecs::Transform>>;
+    using PostProcessLock = typename ecs::Lock<ecs::Read<ecs::Light, ecs::View, ecs::Mirror, ecs::TransformSnapshot>>;
 
     class ProcessPassOutput {
     public:

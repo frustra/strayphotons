@@ -10,12 +10,13 @@ namespace sp {
         ConstraintSystem(PhysxManager &manager);
         ~ConstraintSystem() {}
 
-        void Frame(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::Physics>> lock);
+        void Frame(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController>, ecs::Write<ecs::Physics>> lock);
 
     private:
         void HandleForceLimitConstraint(ecs::Physics &physics,
             ecs::Transform transform,
-            ecs::Transform targetTransform);
+            ecs::Transform targetTransform,
+            glm::vec3 targetVelocity);
 
         PhysxManager &manager;
     };

@@ -137,7 +137,8 @@ namespace sp {
     }
 
     void VoxelRenderer::RenderShadowMaps(
-        ecs::Lock<ecs::Read<ecs::Transform, ecs::View, ecs::Light>, ecs::Write<ecs::Renderable, ecs::Mirror>> lock) {
+        ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::Light>, ecs::Write<ecs::Renderable, ecs::Mirror>>
+            lock) {
         RenderPhase phase("ShadowMaps", timer);
 
         for (auto &entity : lock.EntitiesWith<ecs::Light>()) {
@@ -296,7 +297,7 @@ namespace sp {
     }
 
     void VoxelRenderer::UpdateLightSensors(
-        ecs::Lock<ecs::Read<ecs::LightSensor, ecs::Light, ecs::View, ecs::Transform>> lock) {
+        ecs::Lock<ecs::Read<ecs::LightSensor, ecs::Light, ecs::View, ecs::TransformSnapshot>> lock) {
         RenderPhase phase("UpdateLightSensors", timer);
         auto shader = shaders.Get<LightSensorUpdateCS>();
 
@@ -574,14 +575,14 @@ namespace sp {
         if (CVarRenderWireframe.Get()) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
-            if (ent.Has<ecs::Renderable, ecs::Transform>(lock)) {
+            if (ent.Has<ecs::Renderable, ecs::TransformSnapshot>(lock)) {
                 if (ent.Has<ecs::Mirror>(lock)) continue;
                 DrawEntity(view, shader, lock, ent, preDraw);
             }
         }
 
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
-            if (ent.Has<ecs::Renderable, ecs::Transform, ecs::Mirror>(lock)) {
+            if (ent.Has<ecs::Renderable, ecs::TransformSnapshot, ecs::Mirror>(lock)) {
                 DrawEntity(view, shader, lock, ent, preDraw);
             }
         }
@@ -634,7 +635,7 @@ namespace sp {
         mask &= view.visibilityMask;
         if (mask != view.visibilityMask) return;
 
-        glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
+        auto &modelMat = ent.Get<ecs::TransformSnapshot>(lock).matrix;
 
         if (preDraw) preDraw(lock, ent);
 
@@ -682,7 +683,7 @@ namespace sp {
         glDrawArrays(GL_TRIANGLES, 0, vbo.Elements());
     }
 
-    void VoxelRenderer::BeginFrame(ecs::Lock<ecs::Read<ecs::Transform>,
+    void VoxelRenderer::BeginFrame(ecs::Lock<ecs::Read<ecs::TransformSnapshot>,
         ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>> lock) {
         RenderPhase phase("BeginFrame", timer);
 

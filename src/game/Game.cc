@@ -174,17 +174,16 @@ namespace sp {
     }
 
     void Game::PrintDebug() {
-        auto lock =
-            ecs::World
-                .StartTransaction<ecs::Read<ecs::Name, ecs::Transform, ecs::CharacterController, ecs::LightSensor>>();
-        if (flatview && flatview.Has<ecs::Transform>(lock)) {
-            auto &transform = flatview.Get<ecs::Transform>(lock);
-            auto position = transform.GetGlobalTransform(lock).GetPosition();
+        auto lock = ecs::World.StartTransaction<
+            ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::CharacterController, ecs::LightSensor>>();
+        if (flatview && flatview.Has<ecs::TransformSnapshot>(lock)) {
+            auto &transform = flatview.Get<ecs::TransformSnapshot>(lock);
+            auto position = transform.GetPosition();
             Logf("Flatview position: [%f, %f, %f]", position.x, position.y, position.z);
         }
-        if (player && player.Has<ecs::Transform>(lock)) {
-            auto &transform = player.Get<ecs::Transform>(lock);
-            auto position = transform.GetGlobalTransform(lock).GetPosition();
+        if (player && player.Has<ecs::TransformSnapshot>(lock)) {
+            auto &transform = player.Get<ecs::TransformSnapshot>(lock);
+            auto position = transform.GetPosition();
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
             if (player.Has<ecs::CharacterController>(lock)) {
                 auto &controller = player.Get<ecs::CharacterController>(lock);
@@ -193,9 +192,9 @@ namespace sp {
                     Logf("Player physics position: [%f, %f, %f]", pxFeet.x, pxFeet.y, pxFeet.z);
                     auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
                     Logf("Player velocity: [%f, %f, %f]",
-                        userData->velocity.x,
-                        userData->velocity.y,
-                        userData->velocity.z);
+                        userData->actorData.velocity.x,
+                        userData->actorData.velocity.y,
+                        userData->actorData.velocity.z);
                     Logf("Player on ground: %s", userData->onGround ? "true" : "false");
                 } else {
                     Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);

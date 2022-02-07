@@ -47,7 +47,7 @@ namespace ecs {
         Renderable::VisibilityMask visibilityMask;
 
         void UpdateProjectionMatrix();
-        void UpdateViewMatrix(Lock<Read<Transform>> lock, Tecs::Entity e);
+        void UpdateViewMatrix(Lock<Read<TransformSnapshot>> lock, Tecs::Entity e);
 
         void SetProjMat(const glm::mat4 &newProjMat) {
             projMat = newProjMat;

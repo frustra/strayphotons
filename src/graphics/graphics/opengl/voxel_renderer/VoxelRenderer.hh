@@ -50,7 +50,7 @@ namespace sp {
 
     class VoxelRenderer {
     public:
-        using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::View, ecs::Transform>,
+        using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::View, ecs::TransformSnapshot>,
             ecs::Write<ecs::Mirror>>;
         typedef std::function<void(DrawLock, Tecs::Entity &)> PreDrawFunc;
 
@@ -60,7 +60,7 @@ namespace sp {
         // Functions inherited from Renderer
         void Prepare();
         // clang-format off
-        void BeginFrame(ecs::Lock<ecs::Read<ecs::Transform>,
+        void BeginFrame(ecs::Lock<ecs::Read<ecs::TransformSnapshot>,
                                   ecs::Write<ecs::Renderable,
                                              ecs::View,
                                              ecs::Light,
@@ -76,13 +76,14 @@ namespace sp {
         void PrepareGuis(DebugGuiManager *debugGui, MenuGuiManager *menuGui);
         void UpdateShaders(bool force = false);
         void RenderMainMenu(ecs::View &view, bool renderToGel = false);
-        void RenderShadowMaps(
-            ecs::Lock<ecs::Read<ecs::Transform, ecs::View, ecs::Light>, ecs::Write<ecs::Renderable, ecs::Mirror>> lock);
+        void RenderShadowMaps(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::Light>,
+            ecs::Write<ecs::Renderable, ecs::Mirror>> lock);
         void PrepareVoxelTextures();
-        void RenderVoxelGrid(
-            ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform, ecs::View, ecs::Light>, ecs::Write<ecs::Mirror>> lock);
+        void RenderVoxelGrid(ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot, ecs::View, ecs::Light>,
+            ecs::Write<ecs::Mirror>> lock);
         void ReadBackLightSensors(ecs::Lock<ecs::Write<ecs::LightSensor>> lock);
-        void UpdateLightSensors(ecs::Lock<ecs::Read<ecs::LightSensor, ecs::Light, ecs::View, ecs::Transform>> lock);
+        void UpdateLightSensors(
+            ecs::Lock<ecs::Read<ecs::LightSensor, ecs::Light, ecs::View, ecs::TransformSnapshot>> lock);
         void ForwardPass(const ecs::View &view, SceneShader *shader, DrawLock lock, const PreDrawFunc &preDraw = {});
         void DrawEntity(const ecs::View &view,
             SceneShader *shader,

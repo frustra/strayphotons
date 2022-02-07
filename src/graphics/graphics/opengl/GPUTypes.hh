@@ -72,7 +72,7 @@ namespace sp {
 
     static_assert(sizeof(GLVoxelInfo) == (1 + 2 * MAX_VOXEL_AREAS) * 4 * sizeof(float), "GLVoxelInfo size incorrect");
 
-    void FillLightData(LightingContext &data, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
-    int FillMirrorData(GLMirrorData *data, ecs::Lock<ecs::Read<ecs::Mirror, ecs::Transform>> lock);
+    void FillLightData(LightingContext &data, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock);
+    int FillMirrorData(GLMirrorData *data, ecs::Lock<ecs::Read<ecs::Mirror, ecs::TransformSnapshot>> lock);
     void FillVoxelInfo(GLVoxelInfo *data, VoxelContext &source);
 } // namespace sp

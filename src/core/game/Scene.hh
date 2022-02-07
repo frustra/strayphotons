@@ -59,7 +59,9 @@ namespace sp {
             Tecs::Entity ent,
             const BitsetType &hasComponents) {
             if constexpr (!Tecs::is_global_component<T>()) {
-                if (!hasComponents[ecs::ECS::template GetComponentIndex<T>()]) ent.Unset<T>(lock);
+                if (ent.Has<T>(lock) && !hasComponents[ecs::ECS::template GetComponentIndex<T>()]) {
+                    ent.Unset<T>(lock);
+                }
             }
         }
 
@@ -90,25 +92,23 @@ namespace sp {
     };
 
     template<>
-    inline void Scene::CopyComponent<ecs::Transform>(ecs::Lock<ecs::ReadAll> src,
+    inline void Scene::CopyComponent<ecs::TransformTree>(ecs::Lock<ecs::ReadAll> src,
         Tecs::Entity srcEnt,
         ecs::Lock<ecs::AddRemove> dst,
         Tecs::Entity dstEnt) {
-        if (srcEnt.Has<ecs::Transform>(src) && !dstEnt.Has<ecs::Transform>(dst)) {
-            auto &srcTransform = srcEnt.Get<ecs::Transform>(src);
-            auto &dstTransform = dstEnt.Get<ecs::Transform>(dst);
+        if (srcEnt.Has<ecs::TransformTree>(src) && !dstEnt.Has<ecs::TransformSnapshot, ecs::TransformTree>(dst)) {
+            auto &srcTree = srcEnt.Get<ecs::TransformTree>(src);
+            auto &dstTree = dstEnt.Get<ecs::TransformTree>(dst);
 
             // Map transform parent from staging id to live id
-            auto parent = srcTransform.GetParent();
-            if (parent && parent.Has<ecs::SceneInfo>(src)) {
-                auto &sceneInfo = parent.Get<ecs::SceneInfo>(src);
-                dstTransform.SetParent(sceneInfo.liveId);
+            if (srcTree.parent.Has<ecs::SceneInfo>(src)) {
+                auto &sceneInfo = srcTree.parent.Get<ecs::SceneInfo>(src);
+                dstTree.parent = sceneInfo.liveId;
             } else {
-                dstTransform.SetParent(Tecs::Entity());
+                dstTree.parent = Tecs::Entity();
             }
-            dstTransform.SetPosition(srcTransform.GetPosition());
-            dstTransform.SetRotation(srcTransform.GetRotation());
-            dstTransform.SetScale(srcTransform.GetScale());
+            dstTree.pose = srcTree.pose;
+            dstEnt.Set<ecs::TransformSnapshot>(dst, srcTree.GetGlobalTransform(src));
         }
     }
 

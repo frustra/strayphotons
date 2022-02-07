@@ -88,7 +88,7 @@
 			"script": {
 				"onTick": "rotate",
 				"parameters": {
-					"speed": 1,
+					"speed": 0.2,
 					"axis_y": 1
 				}
 			}

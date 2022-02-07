@@ -54,20 +54,20 @@ namespace sp::vulkan {
         device->waitIdle();
     }
 
-    void Renderer::AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock) {
+    void Renderer::AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock) {
         int lightCount = 0;
         int gelCount = 0;
         glm::ivec2 renderTargetSize(0, 0);
 
         for (auto entity : lock.EntitiesWith<ecs::Light>()) {
-            if (!entity.Has<ecs::Transform>(lock)) continue;
+            if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
 
             auto &light = entity.Get<ecs::Light>(lock);
             if (!light.on) continue;
 
             int extent = (int)std::pow(2, light.shadowMapSize);
 
-            auto transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock);
+            auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
             auto &view = lights.views[lightCount];
 
             view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
@@ -122,14 +122,15 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddLaserState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::LaserLine, ecs::Transform>> lock) {
+    void Renderer::AddLaserState(RenderGraph &graph,
+        ecs::Lock<ecs::Read<ecs::LaserLine, ecs::TransformSnapshot>> lock) {
         lasers.gpuData.resize(0);
         for (auto entity : lock.EntitiesWith<ecs::LaserLine>()) {
             auto &laser = entity.Get<ecs::LaserLine>(lock);
 
-            glm::mat4 transform;
-            if (laser.relative && entity.Has<ecs::Transform>(lock)) {
-                transform = entity.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
+            glm::mat4x3 transform;
+            if (laser.relative && entity.Has<ecs::TransformSnapshot>(lock)) {
+                transform = entity.Get<ecs::TransformSnapshot>(lock).matrix;
             }
 
             if (!laser.on) continue;
@@ -171,7 +172,7 @@ namespace sp::vulkan {
         // lock is copied into the Execute closure of some passes,
         // and will be released when those passes are done executing.
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
-            ecs::Transform,
+            ecs::TransformSnapshot,
             ecs::LaserLine,
             ecs::Light,
             ecs::Renderable,
@@ -941,14 +942,14 @@ namespace sp::vulkan {
         return destID;
     }
 
-    void Renderer::AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock) {
+    void Renderer::AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock) {
         scene.renderableCount = 0;
         scene.primitiveCount = 0;
         scene.vertexCount = 0;
         auto gpuRenderable = (GPURenderableEntity *)scene.renderableEntityList->Mapped();
 
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
-            if (!ent.Has<ecs::Renderable, ecs::Transform>(lock)) continue;
+            if (!ent.Has<ecs::Renderable, ecs::TransformSnapshot>(lock)) continue;
 
             auto &renderable = ent.Get<ecs::Renderable>(lock);
             if (!renderable.model || !renderable.model->Valid()) continue;
@@ -962,7 +963,7 @@ namespace sp::vulkan {
             Assert(scene.renderableCount * sizeof(GPURenderableEntity) < scene.renderableEntityList->Size(),
                 "renderable entity overflow");
 
-            gpuRenderable->modelToWorld = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
+            gpuRenderable->modelToWorld = ent.Get<ecs::TransformSnapshot>(lock).matrix;
             gpuRenderable->visibilityMask = renderable.visibility.to_ulong();
             gpuRenderable->modelIndex = model->SceneIndex();
             gpuRenderable->vertexOffset = scene.vertexCount;
@@ -1131,14 +1132,14 @@ namespace sp::vulkan {
         bool useMaterial,
         const PreDrawFunc &preDraw) {
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
-            if (ent.Has<ecs::Renderable, ecs::Transform>(lock)) {
+            if (ent.Has<ecs::Renderable, ecs::TransformSnapshot>(lock)) {
                 if (ent.Has<ecs::Mirror>(lock)) continue;
                 DrawEntity(cmd, viewMask, lock, ent, useMaterial, preDraw);
             }
         }
 
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
-            if (ent.Has<ecs::Renderable, ecs::Transform, ecs::Mirror>(lock)) {
+            if (ent.Has<ecs::Renderable, ecs::TransformSnapshot, ecs::Mirror>(lock)) {
                 DrawEntity(cmd, viewMask, lock, ent, useMaterial, preDraw);
             }
         }
@@ -1158,7 +1159,7 @@ namespace sp::vulkan {
         mask &= viewMask;
         if (mask != viewMask) return;
 
-        glm::mat4 modelMat = ent.Get<ecs::Transform>(lock).GetGlobalTransform(lock).GetMatrix();
+        auto &modelMat = ent.Get<ecs::TransformSnapshot>(lock).matrix;
 
         auto model = activeModels.Load(comp.model->name);
         if (!model) {

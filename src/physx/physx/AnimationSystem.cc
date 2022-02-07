@@ -14,17 +14,18 @@ namespace sp {
         return frameInterval * std::round(value / frameInterval);
     }
 
-    void AnimationSystem::Frame(
-        ecs::Lock<ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
-            ecs::Write<ecs::Animation, ecs::Transform>> lock) {
+    void AnimationSystem::Frame() {
         ZoneScoped;
+        auto lock = ecs::World.StartTransaction<
+            ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
+            ecs::Write<ecs::Animation, ecs::TransformTree>>();
         for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
-            if (!ent.Has<ecs::Animation, ecs::Transform>(lock)) continue;
+            if (!ent.Has<ecs::Animation, ecs::TransformTree>(lock)) continue;
 
             auto &animation = ent.Get<ecs::Animation>(lock);
             if (animation.states.empty()) continue;
 
-            auto &transform = ent.Get<ecs::Transform>(lock);
+            auto &transform = ent.Get<ecs::TransformTree>(lock);
 
             double signalState = ecs::SignalBindings::GetSignal(lock, ent, "animation_state");
             size_t newTargetState = (size_t)(signalState + 0.5);
@@ -61,8 +62,8 @@ namespace sp {
             if (animation.interpolation == ecs::InterpolationMode::Linear) {
                 glm::vec3 dPos = nextState.pos - currentState.pos;
                 glm::vec3 dScale = nextState.scale - currentState.scale;
-                transform.SetPosition(currentState.pos + completion * dPos);
-                transform.SetScale(currentState.scale + completion * dScale);
+                transform.pose.SetPosition(currentState.pos + completion * dPos);
+                transform.pose.SetScale(currentState.scale + completion * dScale);
             } else if (animation.interpolation == ecs::InterpolationMode::Cubic) {
                 Assert(animation.tangents.size() == animation.states.size(), "invalid tangents");
                 auto &prevTangent = animation.tangents[animation.currentState];
@@ -78,19 +79,19 @@ namespace sp {
                 auto at2 = tangentScale * (t3 - t2);
 
                 auto pos = av1 * currentState.pos + at1 * prevTangent.pos + av2 * nextState.pos + at2 * nextTangent.pos;
-                transform.SetPosition(pos);
+                transform.pose.SetPosition(pos);
 
                 auto scale = av1 * currentState.scale + at1 * prevTangent.scale + av2 * nextState.scale +
                              at2 * nextTangent.scale;
-                transform.SetScale(scale);
+                transform.pose.SetScale(scale);
             }
 
             if (animation.timeUntilNextState == 0) {
                 animation.currentState = nextStateIndex;
                 if (animation.interpolation == ecs::InterpolationMode::Step ||
                     animation.targetState == nextStateIndex) {
-                    transform.SetPosition(nextState.pos);
-                    transform.SetScale(nextState.scale);
+                    transform.pose.SetPosition(nextState.pos);
+                    transform.pose.SetScale(nextState.scale);
                 }
             }
         }

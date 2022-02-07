@@ -8,46 +8,26 @@ namespace ecs {
 #endif
 
     typedef struct Transform {
-        GlmMat4x3 transform;
-        TecsEntity parent;
-        uint32_t changeCount;
+        GlmMat4x3 matrix;
 
 #ifdef __cplusplus
     #ifndef SP_WASM_BUILD
-        Transform() : changeCount(1) {}
-        Transform(glm::mat4x3 transform) : transform(transform), changeCount(1) {}
+        Transform() {}
+        Transform(const glm::mat4x3 &matrix) : matrix(matrix) {}
         Transform(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>());
 
-        void SetParent(Tecs::Entity ent);
-        const Tecs::Entity &GetParent() const;
-        bool HasParent(Lock<Read<Transform>> lock) const;
-        bool HasParent(Lock<Read<Transform>> lock, Tecs::Entity ent) const;
+        void Translate(const glm::vec3 &xyz);
+        void Rotate(float radians, const glm::vec3 &axis);
+        void Scale(const glm::vec3 &xyz);
 
-        // Returns a flattened Transform that includes all parent transforms.
-        Transform GetGlobalTransform(Lock<Read<Transform>> lock) const;
-        glm::quat GetGlobalRotation(Lock<Read<Transform>> lock) const;
+        void SetPosition(const glm::vec3 &pos);
+        void SetRotation(const glm::quat &quat);
+        void SetScale(const glm::vec3 &xyz);
 
-        // Perform relative transform operations on the local transform data.
-        void Translate(glm::vec3 xyz);
-        void Rotate(float radians, glm::vec3 axis);
-        void Scale(glm::vec3 xyz);
-
-        // Sets local transform data, parent transforms are unaffected.
-        void SetPosition(glm::vec3 pos);
-        void SetRotation(glm::quat quat);
-        void SetScale(glm::vec3 xyz);
-        void SetMatrix(glm::mat4x3 mat);
-        void SetTransform(const Transform &transform);
-
-        // Returns local transform data, not including any parent transforms.
         const glm::vec3 &GetPosition() const;
         glm::quat GetRotation() const;
-        glm::vec3 GetForward() const;
         glm::vec3 GetScale() const;
-        glm::mat4x3 GetMatrix() const;
-
-        uint32_t ChangeNumber() const;
-        bool HasChanged(uint32_t changeNumber) const;
+        glm::vec3 GetForward() const;
     #endif
 #endif
     } Transform;
@@ -55,10 +35,6 @@ namespace ecs {
     // C accessors
     void transform_identity(Transform *out);
     void transform_from_pos(Transform *out, const GlmVec3 *pos);
-
-    void transform_set_parent(Transform *t, TecsEntity ent);
-    uint64_t transform_get_parent(const Transform *t);
-    bool transform_has_parent(const Transform *t, ScriptLockHandle lock);
 
     void transform_translate(Transform *t, const GlmVec3 *xyz);
     void transform_rotate(Transform *t, float radians, const GlmVec3 *axis);
@@ -71,20 +47,39 @@ namespace ecs {
     void transform_get_position(GlmVec3 *out, const Transform *t);
     void transform_get_rotation(GlmQuat *out, const Transform *t);
     void transform_get_scale(GlmVec3 *out, const Transform *t);
+    
+    typedef Transform TransformSnapshot;
 
-    uint32_t transform_change_number(const Transform *t);
-    bool transform_has_changed(const Transform *t, uint32_t changeNumber);
+    typedef struct TransformTree {
+        Transform pose;
+        TecsEntity parent;
+
+#ifdef __cplusplus
+    #ifndef SP_WASM_BUILD
+        TransformTree() {}
+        TransformTree(const glm::mat4x3 &pose) : pose(pose) {}
+        TransformTree(const Transform &pose) : pose(pose) {}
+        TransformTree(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>()) : pose(pos, orientation) {}
+
+        // Returns a flattened Transform that includes all parent transforms.
+        Transform GetGlobalTransform(Lock<Read<TransformTree>> lock) const;
+        glm::quat GetGlobalRotation(Lock<Read<TransformTree>> lock) const;
+    #endif
+#endif
+    } TransformTree;
 
 #ifdef __cplusplus
     // If this changes, make sure it is the same in Rust and WASM
-    static_assert(sizeof(Transform) == 60, "Wrong Transform size");
+    static_assert(sizeof(Transform) == 48, "Wrong Transform size");
     } // extern "C"
 
     #ifndef SP_WASM_BUILD
-    static Component<Transform> ComponentTransform("transform");
+    static Component<TransformTree> ComponentTransformTree("transform");
 
     template<>
     bool Component<Transform>::Load(sp::Scene *scene, Transform &dst, const picojson::value &src);
+    template<>
+    bool Component<TransformTree>::Load(sp::Scene *scene, TransformTree &dst, const picojson::value &src);
     #endif
 } // namespace ecs
 #endif
