@@ -42,6 +42,7 @@ namespace sp {
         ecs::PhysicsGroup physicsGroup;
 
         ActorUserData() {}
+        ActorUserData(Tecs::Entity ent, ecs::PhysicsGroup group) : entity(ent), physicsGroup(group) {}
         ActorUserData(Tecs::Entity ent, const ecs::Transform &pose, ecs::PhysicsGroup group)
             : entity(ent), pose(pose), scale(pose.GetScale()), physicsGroup(group) {}
     };
@@ -53,8 +54,7 @@ namespace sp {
         bool noclipping = false;
 
         CharacterControllerUserData() {}
-        CharacterControllerUserData(Tecs::Entity ent, const ecs::Transform &pose)
-            : actorData(ent, pose, ecs::PhysicsGroup::Player) {}
+        CharacterControllerUserData(Tecs::Entity ent) : actorData(ent, ecs::PhysicsGroup::Player) {}
     };
 
     class PhysxManager : public RegisteredThread {

@@ -184,8 +184,8 @@ namespace ecs {
                         movement.z = std::clamp(movement.z, -1.0f, 1.0f);
                         vertical = std::clamp(vertical, -1.0f, 1.0f);
 
-                        if (target.Has<Transform>(lock)) {
-                            auto parentRotation = target.Get<const Transform>(lock).GetRotation();
+                        if (target.Has<TransformTree>(lock)) {
+                            auto parentRotation = target.Get<const TransformTree>(lock).GetGlobalRotation(lock);
                             movement = parentRotation * movement;
                             if (std::abs(movement.y) > 0.999) {
                                 movement = parentRotation * glm::vec3(0, -movement.y, 0);
@@ -256,7 +256,7 @@ namespace ecs {
                                     auto relative = EntityWith<Name>(lock, relativeName);
                                     if (relative.Has<TransformSnapshot>(lock)) {
                                         transform.pose.matrix = relative.Get<TransformSnapshot>(lock).matrix *
-                                                           glm::mat4(transform.pose.matrix);
+                                                                glm::mat4(transform.pose.matrix);
                                     }
                                 }
                                 newEntity.Set<TransformSnapshot>(lock, transform.pose);
@@ -324,13 +324,13 @@ namespace ecs {
                             ph.RemoveConstraint();
                             ph.group = PhysicsGroup::World;
                             target = Tecs::Entity();
-                        } else if (query.raycastHitTarget.Has<Physics, Transform>(lock)) {
+                        } else if (query.raycastHitTarget.Has<Physics, TransformSnapshot>(lock)) {
                             // Grab the entity being looked at
                             auto &ph = query.raycastHitTarget.Get<Physics>(lock);
                             if (ph.dynamic && !ph.kinematic && !ph.constraint) {
                                 target = query.raycastHitTarget;
 
-                                auto &hitTransform = target.Get<Transform>(lock);
+                                auto &hitTransform = target.Get<TransformSnapshot>(lock);
                                 auto invParentRotate = glm::inverse(transform.GetRotation());
 
                                 ph.group = PhysicsGroup::PlayerHands;

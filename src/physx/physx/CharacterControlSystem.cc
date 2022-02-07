@@ -42,8 +42,7 @@ namespace sp {
                 if (controllerEvent.entity.Has<ecs::CharacterController>(lock)) {
                     auto &controller = controllerEvent.entity.Get<ecs::CharacterController>(lock);
                     if (!controller.pxController) {
-                        auto characterUserData = new CharacterControllerUserData(controllerEvent.entity,
-                            ecs::Transform());
+                        auto characterUserData = new CharacterControllerUserData(controllerEvent.entity);
 
                         PxCapsuleControllerDesc desc;
                         desc.position = PxExtendedVec3(0, 0, 0);
@@ -239,11 +238,9 @@ namespace sp {
                 displacement += targetDelta;
 
                 auto moveResult = controller.pxController->move(GlmVec3ToPxVec3(displacement), 0, dt, moveQueryFilter);
-                auto deltaPos = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()) -
-                                userData->actorData.pose.GetPosition() - targetDelta;
 
                 if (moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN) {
-                    userData->actorData.velocity = deltaPos / dt;
+                    userData->actorData.velocity = PxVec3ToGlmVec3(state.deltaXP);
                     userData->onGround = true;
                 } else {
                     if (userData->onGround || inGround) {
@@ -252,6 +249,8 @@ namespace sp {
                         userData->actorData.velocity.z += displacement.z / dt;
                         if (jump) userData->actorData.velocity.y += ecs::PLAYER_JUMP_VELOCITY;
                     } else {
+                        auto deltaPos = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()) -
+                                        userData->actorData.pose.GetPosition() - targetDelta;
                         userData->actorData.velocity = deltaPos / dt;
                         userData->actorData.velocity.y -= ecs::PLAYER_GRAVITY * dt;
                     }

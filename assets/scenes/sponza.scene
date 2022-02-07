@@ -237,6 +237,18 @@
 		},
 		<% } %>
 		{
+			"__comment": "floor",
+			"transform": {
+				"parent":"sponza-physics",
+				"scale": [15, 0.1, 30],
+				"translate": [0, -1.06, 0]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
+			}
+		},
+		{
 			"_name": "global.spawn",
 			"transform": {
 				"translate": [0, -0.95, 0]
