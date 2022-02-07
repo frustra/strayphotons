@@ -17,15 +17,15 @@ namespace sp {
         readBackBuf.Create().Data(readBackSize, nullptr, GL_STREAM_READ);
     }
 
-    void LightSensorUpdateCS::SetSensors(ecs::Lock<ecs::Read<ecs::LightSensor, ecs::Transform>> lock) {
+    void LightSensorUpdateCS::SetSensors(ecs::Lock<ecs::Read<ecs::LightSensor, ecs::TransformSnapshot>> lock) {
         int count = 0;
         GLLightSensorData data[MAX_SENSORS];
 
         for (auto &entity : lock.EntitiesWith<ecs::LightSensor>()) {
-            if (!entity.Has<ecs::LightSensor, ecs::Transform>(lock)) continue;
+            if (!entity.Has<ecs::LightSensor, ecs::TransformSnapshot>(lock)) continue;
 
             auto &sensor = entity.Get<ecs::LightSensor>(lock);
-            auto &transform = entity.Get<ecs::Transform>(lock);
+            auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
 
             GLLightSensorData &s = data[count++];
             s.position = transform.matrix * glm::vec4(sensor.position, 1);

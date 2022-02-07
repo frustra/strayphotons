@@ -16,7 +16,7 @@ namespace sp {
 
     LaserSystem::LaserSystem(PhysxManager &manager) : manager(manager) {}
 
-    void LaserSystem::Frame(ecs::Lock<ecs::Read<ecs::Transform, ecs::LaserEmitter, ecs::Mirror>,
+    void LaserSystem::Frame(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::LaserEmitter, ecs::Mirror>,
         ecs::Write<ecs::LaserLine, ecs::LaserSensor, ecs::SignalOutput>> lock) {
         ZoneScoped;
         for (auto &entity : lock.EntitiesWith<ecs::LaserSensor>()) {
@@ -24,12 +24,12 @@ namespace sp {
             sensor.illuminance = glm::vec3(0);
         }
         for (auto &entity : lock.EntitiesWith<ecs::LaserEmitter>()) {
-            if (!entity.Has<ecs::Transform>(lock)) continue;
+            if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
 
             auto &emitter = entity.Get<ecs::LaserEmitter>(lock);
             if (!emitter.on) continue;
 
-            auto &transform = entity.Get<ecs::Transform>(lock);
+            auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
 
             auto &lines = entity.Get<ecs::LaserLine>(lock);
             lines.on = true;

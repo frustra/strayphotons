@@ -14,17 +14,18 @@ namespace sp {
         return frameInterval * std::round(value / frameInterval);
     }
 
-    void AnimationSystem::Frame(
-        ecs::Lock<ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
-            ecs::Write<ecs::Animation, ecs::TransformTarget>> lock) {
+    void AnimationSystem::Frame() {
         ZoneScoped;
+        auto lock = ecs::World.StartTransaction<
+            ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
+            ecs::Write<ecs::Animation, ecs::TransformTree>>();
         for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
-            if (!ent.Has<ecs::Animation, ecs::TransformTarget>(lock)) continue;
+            if (!ent.Has<ecs::Animation, ecs::TransformTree>(lock)) continue;
 
             auto &animation = ent.Get<ecs::Animation>(lock);
             if (animation.states.empty()) continue;
 
-            auto &transform = ent.Get<ecs::TransformTarget>(lock);
+            auto &transform = ent.Get<ecs::TransformTree>(lock);
 
             double signalState = ecs::SignalBindings::GetSignal(lock, ent, "animation_state");
             size_t newTargetState = (size_t)(signalState + 0.5);

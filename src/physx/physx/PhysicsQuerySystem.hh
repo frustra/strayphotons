@@ -8,7 +8,7 @@ namespace sp {
         PhysicsQuerySystem(PhysxManager &manager);
         ~PhysicsQuerySystem() {}
 
-        void Frame(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::PhysicsQuery>> lock);
+        void Frame(ecs::Lock<ecs::Read<ecs::TransformSnapshot>, ecs::Write<ecs::PhysicsQuery>> lock);
 
     private:
         PhysxManager &manager;

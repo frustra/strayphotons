@@ -69,8 +69,8 @@ namespace sp {
 
         ConvexHullSet *GetCachedConvexHulls(std::string name);
 
-        void CreateActor(ecs::Lock<ecs::Read<ecs::TransformTarget>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
-        void UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTarget>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
+        void CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
+        void UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTree>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
 
     private:

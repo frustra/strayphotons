@@ -67,7 +67,7 @@ namespace sp {
     }
 
     void VoxelRenderer::RenderVoxelGrid(
-        ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform, ecs::View, ecs::Light>, ecs::Write<ecs::Mirror>> lock) {
+        ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot, ecs::View, ecs::Light>, ecs::Write<ecs::Mirror>> lock) {
         RenderPhase phase("VoxelGrid", timer);
 
         PrepareVoxelTextures();

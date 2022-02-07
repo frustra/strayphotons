@@ -133,9 +133,9 @@ namespace sp {
     }
 
     void ConstraintSystem::Frame(
-        ecs::Lock<ecs::Read<ecs::TransformTarget, ecs::CharacterController>, ecs::Write<ecs::Physics>> lock) {
+        ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController>, ecs::Write<ecs::Physics>> lock) {
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
-            if (!entity.Has<ecs::Physics, ecs::TransformTarget>(lock)) continue;
+            if (!entity.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
             auto &physics = entity.Get<ecs::Physics>(lock);
             if (!physics.actor) continue;
 
@@ -175,8 +175,8 @@ namespace sp {
                     remoteTransform.p = GlmVec3ToPxVec3(physics.jointRemoteOffset);
                     remoteTransform.q = GlmQuatToPxQuat(physics.jointRemoteOrient);
                 }
-                if (!jointActor && physics.jointTarget.Has<ecs::TransformTarget>(lock)) {
-                    auto transform = physics.jointTarget.Get<ecs::TransformTarget>(lock).GetGlobalTransform(lock);
+                if (!jointActor && physics.jointTarget.Has<ecs::TransformTree>(lock)) {
+                    auto transform = physics.jointTarget.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
                     auto rotate = transform.GetRotation();
                     remoteTransform.p = GlmVec3ToPxVec3(transform.GetPosition() + rotate * physics.jointRemoteOffset);
                     remoteTransform.q = GlmQuatToPxQuat(rotate * physics.jointRemoteOrient);
@@ -252,12 +252,14 @@ namespace sp {
                 if (dynamic) dynamic->wakeUp();
             }
 
-            if (physics.constraint.Has<ecs::TransformTarget>(lock)) {
-                auto transform = entity.Get<ecs::TransformTarget>(lock).GetGlobalTransform(lock);
-                auto &targetTransform = physics.constraint.Get<ecs::TransformTarget>(lock);
+            if (physics.constraint.Has<ecs::TransformTree>(lock)) {
+                auto transform = entity.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
+                auto &targetTransform = physics.constraint.Get<ecs::TransformTree>(lock);
                 glm::vec3 targetVelocity(0);
+
+                // Try and determine the velocity of the constraint target entity
                 auto e = physics.constraint;
-                while (e.Has<ecs::TransformTarget>(lock)) {
+                while (e.Has<ecs::TransformTree>(lock)) {
                     if (e.Has<ecs::Physics>(lock)) {
                         auto &targetPhysics = e.Get<ecs::Physics>(lock);
                         if (targetPhysics.actor) {
@@ -273,8 +275,9 @@ namespace sp {
                             break;
                         }
                     }
-                    e = e.Get<ecs::TransformTarget>(lock).parent;
+                    e = e.Get<ecs::TransformTree>(lock).parent;
                 }
+
                 HandleForceLimitConstraint(physics,
                     transform,
                     targetTransform.GetGlobalTransform(lock),

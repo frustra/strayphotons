@@ -60,7 +60,7 @@ namespace sp::vulkan {
 
     class Renderer {
     public:
-        using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::Transform>>;
+        using DrawLock = typename ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::TransformSnapshot>>;
         typedef std::function<void(DrawLock, Tecs::Entity &)> PreDrawFunc;
 
         Renderer(DeviceContext &context, PerfTimer &timer);
@@ -119,10 +119,10 @@ namespace sp::vulkan {
             RenderGraphResourceID sourceID,
             uint32 arrayLayer = ~0u);
 
-        void AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::Transform>> lock);
+        void AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock);
         void AddGeometryWarp(RenderGraph &graph);
-        void AddLaserState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::LaserLine, ecs::Transform>> lock);
-        void AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock);
+        void AddLaserState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::LaserLine, ecs::TransformSnapshot>> lock);
+        void AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock);
         void AddShadowMaps(RenderGraph &graph, DrawLock lock);
         void AddGuis(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Gui>> lock);
         void AddDeferredPasses(RenderGraph &graph);

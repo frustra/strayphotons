@@ -32,24 +32,6 @@ namespace ecs {
 #endif
     } Transform;
 
-    typedef struct TransformTarget {
-        Transform pose;
-        TecsEntity parent;
-
-#ifdef __cplusplus
-    #ifndef SP_WASM_BUILD
-        TransformTarget() {}
-        TransformTarget(const glm::mat4x3 &pose) : pose(pose) {}
-        TransformTarget(const Transform &pose) : pose(pose) {}
-        TransformTarget(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>()) : pose(pos, orientation) {}
-
-        // Returns a flattened Transform that includes all parent transforms.
-        Transform GetGlobalTransform(Lock<Read<TransformTarget>> lock) const;
-        glm::quat GetGlobalRotation(Lock<Read<TransformTarget>> lock) const;
-    #endif
-#endif
-    } TransformTarget;
-
     // C accessors
     void transform_identity(Transform *out);
     void transform_from_pos(Transform *out, const GlmVec3 *pos);
@@ -65,6 +47,26 @@ namespace ecs {
     void transform_get_position(GlmVec3 *out, const Transform *t);
     void transform_get_rotation(GlmQuat *out, const Transform *t);
     void transform_get_scale(GlmVec3 *out, const Transform *t);
+    
+    typedef Transform TransformSnapshot;
+
+    typedef struct TransformTree {
+        Transform pose;
+        TecsEntity parent;
+
+#ifdef __cplusplus
+    #ifndef SP_WASM_BUILD
+        TransformTree() {}
+        TransformTree(const glm::mat4x3 &pose) : pose(pose) {}
+        TransformTree(const Transform &pose) : pose(pose) {}
+        TransformTree(glm::vec3 pos, glm::quat orientation = glm::identity<glm::quat>()) : pose(pos, orientation) {}
+
+        // Returns a flattened Transform that includes all parent transforms.
+        Transform GetGlobalTransform(Lock<Read<TransformTree>> lock) const;
+        glm::quat GetGlobalRotation(Lock<Read<TransformTree>> lock) const;
+    #endif
+#endif
+    } TransformTree;
 
 #ifdef __cplusplus
     // If this changes, make sure it is the same in Rust and WASM
@@ -72,12 +74,12 @@ namespace ecs {
     } // extern "C"
 
     #ifndef SP_WASM_BUILD
-    static Component<TransformTarget> ComponentTransformTarget("transform");
+    static Component<TransformTree> ComponentTransformTree("transform");
 
     template<>
     bool Component<Transform>::Load(sp::Scene *scene, Transform &dst, const picojson::value &src);
     template<>
-    bool Component<TransformTarget>::Load(sp::Scene *scene, TransformTarget &dst, const picojson::value &src);
+    bool Component<TransformTree>::Load(sp::Scene *scene, TransformTree &dst, const picojson::value &src);
     #endif
 } // namespace ecs
 #endif

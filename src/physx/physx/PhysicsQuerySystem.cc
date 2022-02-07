@@ -12,13 +12,13 @@ namespace sp {
 
     PhysicsQuerySystem::PhysicsQuerySystem(PhysxManager &manager) : manager(manager) {}
 
-    void PhysicsQuerySystem::Frame(ecs::Lock<ecs::Read<ecs::Transform>, ecs::Write<ecs::PhysicsQuery>> lock) {
+    void PhysicsQuerySystem::Frame(ecs::Lock<ecs::Read<ecs::TransformSnapshot>, ecs::Write<ecs::PhysicsQuery>> lock) {
         for (auto &entity : lock.EntitiesWith<ecs::PhysicsQuery>()) {
-            if (!entity.Has<ecs::PhysicsQuery, ecs::Transform>(lock)) continue;
+            if (!entity.Has<ecs::PhysicsQuery, ecs::TransformSnapshot>(lock)) continue;
 
             auto &query = entity.Get<ecs::PhysicsQuery>(lock);
             if (query.raycastQueryDistance > 0.0f) {
-                auto &transform = entity.Get<ecs::Transform>(lock);
+                auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
 
                 PxFilterData filterData;
                 filterData.word0 = (uint32_t)query.raycastQueryFilterGroup;

@@ -34,7 +34,7 @@ namespace sp {
 
     void CharacterControlSystem::Frame(
         ecs::Lock<ecs::Read<ecs::Name, ecs::SignalOutput, ecs::SignalBindings, ecs::FocusLayer, ecs::FocusLock>,
-            ecs::Write<ecs::TransformTarget, ecs::EventInput, ecs::CharacterController>> lock) {
+            ecs::Write<ecs::TransformTree, ecs::EventInput, ecs::CharacterController>> lock) {
         // Update PhysX with any added or removed CharacterControllers
         ecs::ComponentEvent<ecs::CharacterController> controllerEvent;
         while (characterControllerObserver.Poll(lock, controllerEvent)) {
@@ -93,15 +93,15 @@ namespace sp {
         float dt = (float)(manager.interval.count() / 1e9);
 
         for (Tecs::Entity entity : lock.EntitiesWith<ecs::CharacterController>()) {
-            if (!entity.Has<ecs::CharacterController, ecs::TransformTarget>(lock)) continue;
+            if (!entity.Has<ecs::CharacterController, ecs::TransformTree>(lock)) continue;
 
             auto &controller = entity.Get<ecs::CharacterController>(lock);
             if (!controller.pxController) continue;
-            auto &transformTarget = entity.Get<ecs::TransformTarget>(lock);
-            Assertf(!transformTarget.parent,
-                "CharacterController should not have a transform parent: %s",
+            auto &transformTree = entity.Get<ecs::TransformTree>(lock);
+            Assertf(!transformTree.parent,
+                "CharacterController should not have a TransformTree parent: %s",
                 ecs::ToString(lock, entity));
-            auto &transform = transformTarget.pose;
+            auto &transform = transformTree.pose;
 
             auto actor = controller.pxController->getActor();
             auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
@@ -111,12 +111,12 @@ namespace sp {
             glm::vec3 targetPosition = transform.GetPosition();
 
             auto target = controller.target.Get(lock);
-            if (!target.Has<ecs::TransformTarget>(lock)) target = controller.fallbackTarget.Get(lock);
-            if (target.Has<ecs::TransformTarget>(lock)) {
-                auto &targetTransform = target.Get<const ecs::TransformTarget>(lock);
-                targetPosition = targetTransform.GetGlobalTransform(lock).GetPosition();
+            if (!target.Has<ecs::TransformTree>(lock)) target = controller.fallbackTarget.Get(lock);
+            if (target.Has<ecs::TransformTree>(lock)) {
+                auto &targetTree = target.Get<const ecs::TransformTree>(lock);
+                targetPosition = targetTree.GetGlobalTransform(lock).GetPosition();
                 targetPosition.y = transform.GetPosition().y;
-                targetHeight = std::max(0.1f, targetTransform.pose.GetPosition().y - ecs::PLAYER_RADIUS);
+                targetHeight = std::max(0.1f, targetTree.pose.GetPosition().y - ecs::PLAYER_RADIUS);
             }
 
             // If the origin moved, teleport the controller
@@ -262,8 +262,8 @@ namespace sp {
 
             auto newPosition = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition());
             auto movementProxy = controller.movementProxy.Get(lock);
-            if (movementProxy.Has<ecs::TransformTarget>(lock)) {
-                auto &proxyTransform = movementProxy.Get<ecs::TransformTarget>(lock);
+            if (movementProxy.Has<ecs::TransformTree>(lock)) {
+                auto &proxyTransform = movementProxy.Get<ecs::TransformTree>(lock);
                 proxyTransform.pose.Translate(newPosition - userData->actorData.pose.GetPosition() - targetDelta);
             }
 

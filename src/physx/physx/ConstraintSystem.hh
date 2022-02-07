@@ -10,7 +10,7 @@ namespace sp {
         ConstraintSystem(PhysxManager &manager);
         ~ConstraintSystem() {}
 
-        void Frame(ecs::Lock<ecs::Read<ecs::TransformTarget, ecs::CharacterController>, ecs::Write<ecs::Physics>> lock);
+        void Frame(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController>, ecs::Write<ecs::Physics>> lock);
 
     private:
         void HandleForceLimitConstraint(ecs::Physics &physics,

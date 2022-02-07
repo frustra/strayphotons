@@ -41,7 +41,7 @@ namespace ecs {
     }
 
     template<>
-    bool Component<TransformTarget>::Load(sp::Scene *scene, TransformTarget &transform, const picojson::value &src) {
+    bool Component<TransformTree>::Load(sp::Scene *scene, TransformTree &transform, const picojson::value &src) {
         for (auto subTransform : src.get<picojson::object>()) {
             if (subTransform.first == "parent") {
                 Assert(scene, "Transform::Load must have valid scene to define parent");
@@ -116,27 +116,27 @@ namespace ecs {
         return glm::vec3(glm::length(matrix[0]), glm::length(matrix[1]), glm::length(matrix[2]));
     }
 
-    Transform TransformTarget::GetGlobalTransform(Lock<Read<TransformTarget>> lock) const {
+    Transform TransformTree::GetGlobalTransform(Lock<Read<TransformTree>> lock) const {
         if (!parent) return pose;
 
-        if (!parent.Has<TransformTarget>(lock)) {
-            Errorf("TransformTarget parent %s does not have a TransformTarget", std::to_string(parent));
+        if (!parent.Has<TransformTree>(lock)) {
+            Errorf("TransformTree parent %s does not have a TransformTree", std::to_string(parent));
             return pose;
         }
 
-        auto parentTransform = parent.Get<TransformTarget>(lock).GetGlobalTransform(lock);
+        auto parentTransform = parent.Get<TransformTree>(lock).GetGlobalTransform(lock);
         return Transform(parentTransform.matrix * glm::mat4(pose.matrix));
     }
 
-    glm::quat TransformTarget::GetGlobalRotation(Lock<Read<TransformTarget>> lock) const {
+    glm::quat TransformTree::GetGlobalRotation(Lock<Read<TransformTree>> lock) const {
         if (!parent) return pose.GetRotation();
 
-        if (!parent.Has<TransformTarget>(lock)) {
-            Errorf("TransformTarget parent %s does not have a TransformTarget", std::to_string(parent));
+        if (!parent.Has<TransformTree>(lock)) {
+            Errorf("TransformTree parent %s does not have a TransformTree", std::to_string(parent));
             return pose.GetRotation();
         }
 
-        return parent.Get<TransformTarget>(lock).GetGlobalRotation(lock) * pose.GetRotation();
+        return parent.Get<TransformTree>(lock).GetGlobalRotation(lock) * pose.GetRotation();
     }
 
     void transform_identity(Transform *out) {

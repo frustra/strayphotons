@@ -119,6 +119,9 @@ namespace sp {
             }
         }
 
+        animationSystem.Frame();
+
+        bool skipFrame = false;
         { // Sync ECS state to physx
             ZoneScopedN("Sync from ECS");
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
@@ -129,9 +132,9 @@ namespace sp {
                                                         ecs::Physics>,
                 ecs::Write<ecs::Animation,
                     ecs::Physics,
+                    ecs::TransformTree,
                     ecs::CharacterController,
-                    ecs::EventInput,
-                    ecs::TransformTarget>>();
+                    ecs::EventInput>>();
 
             // Delete actors for removed entities
             ecs::ComponentEvent<ecs::Physics> physicsEvent;
@@ -141,16 +144,14 @@ namespace sp {
                 }
             }
 
-            animationSystem.Frame(lock);
-
             // Update actors with latest entity data
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
-                if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
+                if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
 
                 auto &ph = ent.Get<ecs::Physics>(lock);
                 if (ph.model && !ph.model->Valid()) {
-                    // Not all actors are ready, skip this frame.
-                    return;
+                    // Not all actors are ready
+                    skipFrame = true;
                 }
 
                 if (!ph.actor) {
@@ -160,11 +161,13 @@ namespace sp {
                 }
             }
 
-            constraintSystem.Frame(lock);
-            characterControlSystem.Frame(lock);
+            if (!skipFrame) {
+                characterControlSystem.Frame(lock);
+                constraintSystem.Frame(lock);
+            }
         }
 
-        { // Simulate 1 physics frame (blocking)
+        if (!skipFrame) { // Simulate 1 physics frame (blocking)
             ZoneScopedN("Simulate");
             scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
                 nullptr,
@@ -184,42 +187,41 @@ namespace sp {
                                                         ecs::Physics,
                                                         ecs::Mirror>,
                 ecs::Write<ecs::Animation,
-                    ecs::Transform,
-                    ecs::TransformTarget,
+                    ecs::TransformSnapshot,
+                    ecs::TransformTree,
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
                     ecs::SignalOutput>>();
 
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
-                if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
+                if (!ent.Has<ecs::Physics, ecs::TransformSnapshot, ecs::TransformTree>(lock)) continue;
 
                 auto &ph = ent.Get<ecs::Physics>(lock);
                 if (ph.actor) {
-                    auto &transform = ent.Get<ecs::Transform>(lock);
-
-                    auto pose = ph.actor->getGlobalPose();
-                    transform.SetPosition(PxVec3ToGlmVec3(pose.p));
-                    transform.SetRotation(PxQuatToGlmQuat(pose.q));
+                    auto &transform = ent.Get<ecs::TransformSnapshot>(lock);
 
                     auto userData = (ActorUserData *)ph.actor->userData;
-                    if (ph.dynamic && !ph.kinematic && ent.Has<ecs::TransformTarget>(lock)) {
-                        auto &target = ent.Get<ecs::TransformTarget>(lock);
-                        target.pose = transform;
-                        target.parent = Tecs::Entity();
-
+                    Assert(userData, "Physics actor is missing UserData");
+                    if (ph.dynamic && !ph.kinematic && transform.matrix == userData->pose.matrix) {
+                        auto pose = ph.actor->getGlobalPose();
+                        transform.SetPosition(PxVec3ToGlmVec3(pose.p));
+                        transform.SetRotation(PxQuatToGlmQuat(pose.q));
+                        ent.Set<ecs::TransformTree>(lock, transform);
                         userData->velocity = transform.GetPosition() - userData->pose.GetPosition();
+                    } else {
+                        transform = ent.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
                     }
 
                     userData->pose = transform;
-                } else if (ent.Has<ecs::TransformTarget>(lock)) {
-                    ent.Set<ecs::Transform>(lock, ent.Get<ecs::TransformTarget>(lock).GetGlobalTransform(lock));
+                } else if (ent.Has<ecs::TransformTree>(lock)) {
+                    ent.Set<ecs::TransformSnapshot>(lock, ent.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock));
                 }
             }
 
-            for (auto ent : lock.EntitiesWith<ecs::TransformTarget>()) {
-                if (!ent.Has<ecs::TransformTarget, ecs::Transform>(lock) || ent.Has<ecs::Physics>(lock)) continue;
-                ent.Set<ecs::Transform>(lock, ent.Get<ecs::TransformTarget>(lock).GetGlobalTransform(lock));
+            for (auto ent : lock.EntitiesWith<ecs::TransformTree>()) {
+                if (!ent.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock) || ent.Has<ecs::Physics>(lock)) continue;
+                ent.Set<ecs::TransformSnapshot>(lock, ent.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock));
             }
 
             physicsQuerySystem.Frame(lock);
@@ -307,10 +309,10 @@ namespace sp {
         return set;
     }
 
-    void PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::TransformTarget>, ecs::Write<ecs::Physics>> lock,
+    void PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree>, ecs::Write<ecs::Physics>> lock,
         Tecs::Entity &e) {
         auto &ph = e.Get<ecs::Physics>(lock);
-        auto &transform = e.Get<ecs::TransformTarget>(lock);
+        auto &transform = e.Get<ecs::TransformTree>(lock);
 
         if (ph.actor || !ph.model || !ph.model->Valid()) return;
 
@@ -369,13 +371,13 @@ namespace sp {
         scene->addActor(*ph.actor);
     }
 
-    void PhysxManager::UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTarget>, ecs::Write<ecs::Physics>> lock,
+    void PhysxManager::UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTree>, ecs::Write<ecs::Physics>> lock,
         Tecs::Entity &e) {
         auto &ph = e.Get<ecs::Physics>(lock);
 
         if (!ph.actor || !ph.model || !ph.model->Valid()) return;
 
-        auto transform = e.Get<ecs::TransformTarget>(lock).GetGlobalTransform(lock);
+        auto transform = e.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
         auto userData = (ActorUserData *)ph.actor->userData;
         if (transform.matrix != userData->pose.matrix) {
             glm::vec3 scale = transform.GetScale();

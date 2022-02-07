@@ -5,18 +5,18 @@
 #include <graphics/opengl/voxel_renderer/VoxelRenderer.hh>
 
 namespace sp {
-    void FillLightData(LightingContext &lightData, ecs::Lock<ecs::Read<ecs::Light, ecs::Transform>> lock) {
+    void FillLightData(LightingContext &lightData, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock) {
         int lightCount = 0;
         glm::ivec2 renderTargetSize(0, 0);
         for (auto entity : lock.EntitiesWith<ecs::Light>()) {
-            if (!entity.Has<ecs::Light, ecs::Transform>(lock)) continue;
+            if (!entity.Has<ecs::Light, ecs::TransformSnapshot>(lock)) continue;
 
             auto &light = entity.Get<ecs::Light>(lock);
             if (!light.on) continue;
 
             int extent = (int)std::pow(2, light.shadowMapSize);
 
-            auto &transform = entity.Get<ecs::Transform>(lock);
+            auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
             auto &view = lightData.views[lightCount];
 
             view.visibilityMask.set(ecs::Renderable::VISIBLE_LIGHTING_SHADOW);
@@ -56,13 +56,13 @@ namespace sp {
         lightData.lightCount = lightCount;
     }
 
-    int FillMirrorData(GLMirrorData *data, ecs::Lock<ecs::Read<ecs::Mirror, ecs::Transform>> lock) {
+    int FillMirrorData(GLMirrorData *data, ecs::Lock<ecs::Read<ecs::Mirror, ecs::TransformSnapshot>> lock) {
         int mirrorNum = 0;
         for (auto entity : lock.EntitiesWith<ecs::Mirror>()) {
-            if (!entity.Has<ecs::Mirror, ecs::Transform>(lock)) continue;
+            if (!entity.Has<ecs::Mirror, ecs::TransformSnapshot>(lock)) continue;
 
             auto &mirror = entity.Get<ecs::Mirror>(lock);
-            auto &transform = entity.Get<ecs::Transform>(lock);
+            auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
             data->modelMat = transform.matrix;
             data->size = mirror.size;
 

@@ -14,7 +14,7 @@ namespace sp {
         SHADER_TYPE(LightSensorUpdateCS);
         LightSensorUpdateCS(shared_ptr<ShaderCompileOutput> compileOutput);
 
-        void SetSensors(ecs::Lock<ecs::Read<ecs::LightSensor, ecs::Transform>> lock);
+        void SetSensors(ecs::Lock<ecs::Read<ecs::LightSensor, ecs::TransformSnapshot>> lock);
         void SetLightData(int count, GLLightData *data);
         void SetVoxelInfo(GLVoxelInfo *data);
         void StartReadback();
