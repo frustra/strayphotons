@@ -1,6 +1,20 @@
 {
 	"entities": [
 		{
+			"_name": "elevator_zone",
+			"signal_output": {},
+			<%- include('prefab/laser_cube') %>,
+			"transform": {
+				"scale": [5, 164, 6],
+				"translate": [0, 82, -0.5]
+			},
+			"trigger_area": {
+				"player": {
+					"signal": "playerPresent"
+				}
+			}
+		},
+		{
 			"_name": "transition_zone",
 			"signal_output": {},
 			<%- include('prefab/laser_cube') %>,
@@ -115,75 +129,12 @@
 				"dynamic": false
 			}
 		},
-		{
-			"_name": "ship",
-			"transform": {
-				"translate": [0, 160, -4]
-			}
-		},
-		{
-			"_name": "ship_platform",
-			"renderable": "box",
-			"transform": {
-				"parent": "ship",
-				"translate": [0, 0, -1],
-				"scale": [4, 0.1, 4]
-			},
-			"physics": {
-				"model": "box",
-				"kinematic": true
-			}
-		},
-		{
-			"_comment": "ship_wall",
-			"renderable": "box",
-			"transform": {
-				"parent": "ship",
-				"translate": [1.95, 2, -1],
-				"scale": [0.1, 4, 4]
-			},
-			"physics": {
-				"model": "box",
-				"kinematic": true
-			}
-		},
-		{
-			"_comment": "ship_wall2",
-			"renderable": "box",
-			"transform": {
-				"parent": "ship",
-				"translate": [-1.95, 2, -1],
-				"scale": [0.1, 4, 4]
-			},
-			"physics": {
-				"model": "box",
-				"kinematic": true
-			}
-		},
-		<%- include('prefab/spotlight', {
-			name: 'ship_light',
-			parent: 'ship',
-			tint: [1, 0.5, 0.5],
-			intensity: 300,
-			spotAngle: 50,
-			translate: [0, 4, -1],
-			rotate: [[270, 1, 0, 0]]
-		}) %>,
-		<%- include('prefab/slide_door', {
-			scene: 'station-center',
-			name: 'ship_door',
-			parent: 'ship',
-			translate: [0, 0.0, 0.9],
-			rotate: [90, 0, 1, 0],
-			scale: [1, 1.5, 2.3]
-		}) %>,
-		<%- include('prefab/button', {
-			name: 'ship_button',
+		<%- include('prefab/ship_airlock', {
+			name: 'ship_airlock',
 			transform: {
-				"parent": "ship",
-				"translate": [1.95, 1.25, 0]
+				"translate": [0, 160, -5.1]
 			},
-			command: "togglesignal station-center.ship_door.door_open; wait 300 togglesignal station-center.elevator_door.door_open"
+			load_signal: {"playerPresent": "station-center.elevator_zone"}
 		}) %>,
 		{
 			"_name": "elevator",

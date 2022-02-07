@@ -20,12 +20,20 @@ namespace ecs {
             robin_hood::unordered_flat_set<Tecs::Entity> contained_entities;
 
             TriggerCommand(const std::string &command) : command(command) {}
+
+            bool operator==(const TriggerCommand &other) const {
+                return command == other.command;
+            }
         };
         struct TriggerSignal {
             std::string outputSignal;
             robin_hood::unordered_flat_set<Tecs::Entity> contained_entities;
 
             TriggerSignal(const std::string &signal) : outputSignal(signal) {}
+
+            bool operator==(const TriggerSignal &other) const {
+                return outputSignal == other.outputSignal;
+            }
         };
 
         sp::EnumArray<std::vector<std::variant<TriggerCommand, TriggerSignal>>, TriggerGroup> triggers;

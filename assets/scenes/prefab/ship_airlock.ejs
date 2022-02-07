@@ -1,0 +1,111 @@
+<% if (!locals.scene && !name.startsWith("global.")) {
+	name = "global." + name;
+} %>
+{
+	"_name": <%= name %>,
+	"transform":  <%= transform %>,
+	<% if (locals.load_signal) { %>
+	"signal_bindings": {
+		"load_scene_connection": <%= load_signal %>
+	},
+	<% } %>
+	"scene_connection": <%= locals.scene_connection || [] %>
+},
+<% if (locals.triggers) { %>
+{
+	"_name": <%= name + "-zone" %>,
+	"transform": {
+		"parent": <%= name %>,
+		"translate": [0, 2, 0],
+		"scale": [4, 4, 4]
+	},
+	<%- include('laser_cube') %>,
+	"signal_output": {},
+	"trigger_area": <%= triggers %>
+},
+<% } %>
+<%- include('slide_door', {
+	scene: (locals.scene ? scene : "global"),
+	name: name + '-in',
+	parent: name,
+	translate: [0, 0.0, -2],
+	rotate: [90, 0, 1, 0],
+	scale: [1, 1.5, 2.3],
+}) %>,
+<%- include('slide_door', {
+	scene: (locals.scene ? scene : "global"),
+	name: name + '-out',
+	parent: name,
+	translate: [0, 0.0, 2],
+	rotate: [90, 0, 1, 0],
+	scale: [1, 1.5, 2.3],
+}) %>,
+<%- include('button', {
+	name: name + '-button-out',
+	transform: {
+		"parent": name,
+		"translate": [1.95, 1.25, 1]
+	},
+	command: "togglesignal " + name + "-out.door_open; wait 300 togglesignal station-center.elevator_door.door_open"
+}) %>,
+{
+	"_name": <%= name + "-floor" %>,
+	"renderable": "box",
+	"transform": {
+		"parent": <%= name %>,
+		"translate": [0, 0, 0],
+		"scale": [4, 0.1, 4.15]
+	},
+	"physics": {
+		"model": "box",
+		"dynamic": false
+	}
+},
+{
+	"_name": <%= name + "-left-wall" %>,
+	"renderable": "box",
+	"transform": {
+		"parent": <%= name %>,
+		"translate": [1.95, 2, 0],
+		"scale": [0.1, 4.1, 4]
+	},
+	"physics": {
+		"model": "box",
+		"dynamic": false
+	}
+},
+{
+	"_name": <%= name + "-right-wall" %>,
+	"renderable": "box",
+	"transform": {
+		"parent": <%= name %>,
+		"translate": [-1.95, 2, 0],
+		"scale": [0.1, 4.1, 4]
+	},
+	"physics": {
+		"model": "box",
+		"dynamic": false
+	}
+},
+{
+	"_name": <%= name + "-ceiling" %>,
+	"renderable": "box",
+	"transform": {
+		"parent": <%= name %>,
+		"translate": [0, 4, 0],
+		"scale": [4, 0.1, 4]
+	},
+	"physics": {
+		"model": "box",
+		"dynamic": false
+	}
+},
+<%- include('spotlight', {
+	name: name + '-light',
+	parent: name,
+	tint: [0.5, 0.5, 1],
+	intensity: 300,
+	spotAngle: 60,
+	translate: [0, 3.9, 0],
+	rotate: [[270, 1, 0, 0]]
+}) %>
