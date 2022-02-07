@@ -52,11 +52,12 @@ namespace sp {
         auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
 
         for (auto &list : scenes) {
-            for (auto &scene : list) {
-                scene->RemoveScene(stagingLock, liveLock);
-            }
             list.clear();
         }
+        stagedScenes.DropAll([this, &stagingLock, &liveLock](std::shared_ptr<Scene> &scene) {
+            scene->RemoveScene(stagingLock, liveLock);
+            scene.reset();
+        });
         if (playerScene) {
             playerScene->RemoveScene(stagingLock, liveLock);
             playerScene.reset();
@@ -65,7 +66,6 @@ namespace sp {
             bindingsScene->RemoveScene(stagingLock, liveLock);
             bindingsScene.reset();
         }
-        stagedScenes.DropAll();
     }
 
     void SceneManager::RunSceneActions() {
@@ -114,17 +114,14 @@ namespace sp {
                     auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
                     auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
 
-                    for (auto &scene : scenes[SceneType::Async]) {
-                        scene->RemoveScene(stagingLock, liveLock);
-                    }
-                    for (auto &scene : scenes[SceneType::User]) {
-                        scene->RemoveScene(stagingLock, liveLock);
-                    }
-
                     scenes[SceneType::Async].clear();
                     scenes[SceneType::User].clear();
-                    size_t removedCount = stagedScenes.DropAll();
-                    Assertf(removedCount == expectedCount,
+                    size_t removedCount = stagedScenes.DropAll(
+                        [this, &stagingLock, &liveLock](std::shared_ptr<Scene> &scene) {
+                            scene->RemoveScene(stagingLock, liveLock);
+                            scene.reset();
+                        });
+                    Assertf(removedCount >= expectedCount,
                         "Expected to remove %u scenes, got %u",
                         expectedCount,
                         removedCount);
@@ -147,18 +144,22 @@ namespace sp {
 
                         for (auto &scene : scenes[SceneType::User]) {
                             reloadScenes.emplace_back(scene->name, SceneType::User);
-                            scene->RemoveScene(stagingLock, liveLock);
                         }
                         for (auto &scene : scenes[SceneType::Async]) {
                             reloadScenes.emplace_back(scene->name, SceneType::Async);
-                            scene->RemoveScene(stagingLock, liveLock);
                         }
                         scenes[SceneType::User].clear();
                         scenes[SceneType::Async].clear();
 
-                        for (auto &scene : reloadScenes) {
-                            Assert(stagedScenes.Drop(scene.first), "expected to remove scene");
-                        }
+                        size_t removedCount = stagedScenes.DropAll(
+                            [this, &stagingLock, &liveLock](std::shared_ptr<Scene> &scene) {
+                                scene->RemoveScene(stagingLock, liveLock);
+                                scene.reset();
+                            });
+                        Assertf(removedCount >= reloadScenes.size(),
+                            "Expected to remove %u scenes, got %u",
+                            reloadScenes.size(),
+                            removedCount);
                     }
 
                     for (auto &[name, type] : reloadScenes) {
