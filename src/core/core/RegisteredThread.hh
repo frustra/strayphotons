@@ -23,7 +23,12 @@ namespace sp {
     protected:
         void StartThread();
         void StopThread(bool waitForExit = true);
+
+        // Will be called once per interval
         virtual void Frame() = 0;
+
+        // Will be called once in the thread, before the first call to Frame()
+        virtual void Init() {}
 
     private:
         std::thread thread;

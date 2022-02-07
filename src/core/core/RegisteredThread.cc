@@ -42,6 +42,8 @@ namespace sp {
         Assert(!thread.joinable(), "RegisteredThread::StartThread() called while thread already running");
         thread = std::thread([this] {
             tracy::SetThreadName(threadName.c_str());
+            Init();
+
             std::array<chrono_clock::duration, 10> previousFrames;
             previousFrames.fill(this->interval);
             size_t frameIndex = 0;

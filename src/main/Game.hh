@@ -19,10 +19,6 @@
     #include "xr/XrManager.hh"
 #endif
 
-#ifdef SP_AUDIO_SUPPORT
-    #include "audio/AudioManager.hh"
-#endif
-
 #include <chrono>
 #include <memory>
 #include <vector>
@@ -33,6 +29,10 @@ namespace cxxopts {
 
 namespace sp {
     class Script;
+
+#ifdef SP_AUDIO_SUPPORT
+    class AudioManager;
+#endif
 
     class Game {
     public:
@@ -54,7 +54,7 @@ namespace sp {
         PhysxManager physics;
 #endif
 #ifdef SP_AUDIO_SUPPORT
-        AudioManager audio;
+        std::unique_ptr<AudioManager> audio;
 #endif
 #ifdef SP_XR_SUPPORT
         xr::XrManager xr;

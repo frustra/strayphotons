@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/Common.hh"
+#include "core/Tracing.hh"
 #include "graphics/vulkan/core/Common.hh"
 
 #ifdef __clang__
@@ -71,10 +72,14 @@ namespace sp::vulkan {
 
         template<typename T>
         void CopyFrom(const T *srcData, size_t srcCount = 1, size_t dstOffset = 0) {
+            ZoneScoped;
             Assert(sizeof(T) * (dstOffset + srcCount) <= ByteSize(), "UniqueMemory overflow");
             T *dstData;
             Map((void **)&dstData);
-            std::copy(srcData, srcData + srcCount, dstData + dstOffset);
+            {
+                ZoneScopedN("memcpy");
+                std::copy(srcData, srcData + srcCount, dstData + dstOffset);
+            }
             Unmap();
             Flush();
         }

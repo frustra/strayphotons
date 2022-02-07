@@ -8,6 +8,8 @@ target_link_libraries(${PROJECT_AUDIO_LIB} PUBLIC
     ${PROJECT_CORE_LIB}
     libsoundio_static
     ${LIBSOUNDIO_LIBS}
+    ResonanceAudioStatic
+    libnyquist
 )
 
 target_compile_definitions(${PROJECT_AUDIO_LIB} PUBLIC

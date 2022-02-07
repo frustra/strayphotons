@@ -15,6 +15,10 @@
     #include "graphics/core/GraphicsContext.hh"
 #endif
 
+#ifdef SP_AUDIO_SUPPORT
+    #include "audio/AudioManager.hh"
+#endif
+
 #include <atomic>
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
@@ -31,6 +35,9 @@ namespace sp {
 #endif
 #ifdef SP_XR_SUPPORT
           xr(this),
+#endif
+#ifdef SP_AUDIO_SUPPORT
+          audio(new AudioManager),
 #endif
           logic(startupScript != nullptr) {
     }

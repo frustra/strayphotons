@@ -12,6 +12,7 @@
 namespace sp::vulkan {
     Model::Model(const sp::Model &model, GPUSceneContext &scene, DeviceContext &device)
         : modelName(model.name), scene(scene) {
+        ZoneScoped;
         // TODO: cache the output somewhere. Keeping the conversion code in
         // the engine will be useful for any dynamic loading in the future,
         // but we don't want to do it every time a model is loaded.
@@ -54,22 +55,27 @@ namespace sp::vulkan {
             }
             Assert(vkPrimitive.indexType != vk::IndexType::eNoneKHR, "unimplemented vertex index type");
 
-            auto &indexBuffer = buffers[assetPrimitive.indexBuffer.bufferIndex];
+            auto &indexBufferSrc = buffers[assetPrimitive.indexBuffer.bufferIndex];
             vkPrimitive.indexCount = assetPrimitive.indexBuffer.componentCount;
             vkPrimitive.indexOffset = indexData - indexDataStart;
             size_t indexBufferSize = vkPrimitive.indexCount * assetPrimitive.indexBuffer.byteStride;
-            Assert(assetPrimitive.indexBuffer.byteOffset + indexBufferSize <= indexBuffer.data.size(),
+            Assert(assetPrimitive.indexBuffer.byteOffset + indexBufferSize <= indexBufferSrc.data.size(),
                 "indexes overflow buffer");
 
-            auto indexPtr = &indexBuffer.data[assetPrimitive.indexBuffer.byteOffset];
-            std::copy(indexPtr, indexPtr + indexBufferSize, (uint8 *)indexData);
+            auto indexPtr = &indexBufferSrc.data[assetPrimitive.indexBuffer.byteOffset];
+            ready.push_back(std::async(std::launch::async, [indexPtr, indexBufferSize, indexData]() {
+                ZoneScoped;
+                std::copy(indexPtr, indexPtr + indexBufferSize, (uint8 *)indexData);
+            }));
             indexData += vkPrimitive.indexCount;
 
-            auto &posAttr = assetPrimitive.attributes[0];
-            auto &normalAttr = assetPrimitive.attributes[1];
-            auto &uvAttr = assetPrimitive.attributes[2];
+            auto posAttr = assetPrimitive.attributes[0];
+            auto normalAttr = assetPrimitive.attributes[1];
+            auto uvAttr = assetPrimitive.attributes[2];
 
-            if (posAttr.componentCount) {
+            size_t vertexCount = posAttr.componentCount;
+
+            if (vertexCount) {
                 Assert(posAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT,
                     "position attribute must be a float vector");
                 Assert(posAttr.componentFields == 3, "position attribute must be a vec3");
@@ -78,33 +84,41 @@ namespace sp::vulkan {
                 Assert(normalAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT,
                     "normal attribute must be a float vector");
                 Assert(normalAttr.componentFields == 3, "normal attribute must be a vec3");
-                Assert(normalAttr.componentCount == posAttr.componentCount, "must have a normal for every vertex");
+                Assert(normalAttr.componentCount == vertexCount, "must have a normal for every vertex");
             }
             if (uvAttr.componentCount) {
                 Assert(uvAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT, "uv attribute must be a float vector");
                 Assert(uvAttr.componentFields == 2, "uv attribute must be a vec2");
-                Assert(uvAttr.componentCount == uvAttr.componentCount, "must have texcoords for every vertex");
+                Assert(uvAttr.componentCount == vertexCount, "must have texcoords for every vertex");
             }
 
             vkPrimitive.vertexCount = posAttr.componentCount;
             vkPrimitive.vertexOffset = vertexData - vertexDataStart;
 
-            for (size_t i = 0; i < posAttr.componentCount; i++) {
-                SceneVertex &vertex = *(vertexData++);
+            const uint8 *posBuffer = buffers[posAttr.bufferIndex].data.data() + posAttr.byteOffset;
+            const uint8 *normalBuffer = buffers[normalAttr.bufferIndex].data.data() + normalAttr.byteOffset;
+            const uint8 *uvBuffer = buffers[uvAttr.bufferIndex].data.data() + uvAttr.byteOffset;
 
-                vertex.position = reinterpret_cast<const glm::vec3 &>(
-                    buffers[posAttr.bufferIndex].data[posAttr.byteOffset + i * posAttr.byteStride]);
+            ready.push_back(std::async(std::launch::async,
+                [posBuffer, normalBuffer, uvBuffer, posAttr, normalAttr, uvAttr, vertexCount, vertexData]() {
+                    ZoneScoped;
+                    for (size_t i = 0; i < vertexCount; i++) {
+                        SceneVertex &vertex = vertexData[i];
 
-                if (normalAttr.componentCount) {
-                    vertex.normal = reinterpret_cast<const glm::vec3 &>(
-                        buffers[normalAttr.bufferIndex].data[normalAttr.byteOffset + i * normalAttr.byteStride]);
-                }
+                        vertex.position = reinterpret_cast<const glm::vec3 &>(posBuffer[i * posAttr.byteStride]);
 
-                if (uvAttr.componentCount) {
-                    vertex.uv = reinterpret_cast<const glm::vec2 &>(
-                        buffers[uvAttr.bufferIndex].data[uvAttr.byteOffset + i * uvAttr.byteStride]);
-                }
-            }
+                        if (i < normalAttr.componentCount) {
+                            vertex.normal = reinterpret_cast<const glm::vec3 &>(
+                                normalBuffer[i * normalAttr.byteStride]);
+                        }
+
+                        if (i < uvAttr.componentCount) {
+                            vertex.uv = reinterpret_cast<const glm::vec2 &>(uvBuffer[i * uvAttr.byteStride]);
+                        }
+                    }
+                }));
+
+            vertexData += vertexCount;
 
             vkPrimitive.baseColor = LoadTexture(device, model, assetPrimitive.materialIndex, BaseColor);
             vkPrimitive.metallicRoughness = LoadTexture(device, model, assetPrimitive.materialIndex, MetallicRoughness);
@@ -113,24 +127,28 @@ namespace sp::vulkan {
         }
 
         primitiveList = scene.primitiveLists->ArrayAllocate(primitives.size(), sizeof(GPUMeshPrimitive));
-        auto gpuPrimitives = (GPUMeshPrimitive *)primitiveList->Mapped();
-        for (auto &p : primitives) {
-            gpuPrimitives->indexCount = p->indexCount;
-            gpuPrimitives->vertexCount = p->vertexCount;
-            gpuPrimitives->firstIndex = p->indexOffset;
-            gpuPrimitives->vertexOffset = p->vertexOffset;
-            gpuPrimitives->primitiveToModel = p->transform;
-            gpuPrimitives->baseColorTexID = p->baseColor;
-            gpuPrimitives->metallicRoughnessTexID = p->metallicRoughness;
-            gpuPrimitives++;
-        }
-
         modelEntry = scene.models->ArrayAllocate(1, sizeof(GPUMeshModel));
+
         auto meshModel = (GPUMeshModel *)modelEntry->Mapped();
-        meshModel->primitiveCount = primitives.size();
-        meshModel->primitiveOffset = primitiveList->ArrayOffset();
-        meshModel->indexOffset = indexBuffer->ArrayOffset();
-        meshModel->vertexOffset = vertexBuffer->ArrayOffset();
+        auto gpuPrimitives = (GPUMeshPrimitive *)primitiveList->Mapped();
+        ready.push_back(std::async(std::launch::async, [this, gpuPrimitives, meshModel]() {
+            ZoneScoped;
+            auto gpuPrim = gpuPrimitives;
+            for (auto &p : primitives) {
+                gpuPrim->indexCount = p->indexCount;
+                gpuPrim->vertexCount = p->vertexCount;
+                gpuPrim->firstIndex = p->indexOffset;
+                gpuPrim->vertexOffset = p->vertexOffset;
+                gpuPrim->primitiveToModel = p->transform;
+                gpuPrim->baseColorTexID = p->baseColor;
+                gpuPrim->metallicRoughnessTexID = p->metallicRoughness;
+                gpuPrim++;
+            }
+            meshModel->primitiveCount = primitives.size();
+            meshModel->primitiveOffset = primitiveList->ArrayOffset();
+            meshModel->indexOffset = indexBuffer->ArrayOffset();
+            meshModel->vertexOffset = vertexBuffer->ArrayOffset();
+        }));
     }
 
     Model::~Model() {
@@ -174,6 +192,7 @@ namespace sp::vulkan {
         const sp::Model &model,
         int materialIndex,
         TextureType type) {
+        ZoneScoped;
         auto &gltfModel = model.GetGltfModel();
         auto &material = gltfModel->materials[materialIndex];
 
@@ -247,9 +266,11 @@ namespace sp::vulkan {
 
             ImageViewCreateInfo viewInfo;
             viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
-            auto imageView = device.CreateImageAndView(imageInfo, viewInfo, data, sizeof(data));
-            TextureIndex i = scene.AddTexture(imageView);
+            TextureIndex i = scene.AddTexture(imageInfo, viewInfo, data, sizeof(data));
             textures[name] = i;
+            ready.push_back(std::async(std::launch::async, [this, i]() {
+                scene.WaitForTexture(i);
+            }));
             return i;
         }
 
@@ -295,10 +316,11 @@ namespace sp::vulkan {
             imageInfo.genMipmap = (samplerInfo.maxLod > 0);
         }
 
-        auto imageView = device.CreateImageAndView(imageInfo, viewInfo, img.image.data(), img.image.size());
-
-        TextureIndex i = scene.AddTexture(imageView);
+        TextureIndex i = scene.AddTexture(imageInfo, viewInfo, img.image.data(), img.image.size());
         textures[name] = i;
+        ready.push_back(std::async(std::launch::async, [this, i]() {
+            scene.WaitForTexture(i);
+        }));
         return i;
     }
 } // namespace sp::vulkan

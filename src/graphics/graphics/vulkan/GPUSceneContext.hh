@@ -1,6 +1,7 @@
 #pragma once
 
 #include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Memory.hh"
 
 namespace sp::vulkan {
@@ -67,10 +68,17 @@ namespace sp::vulkan {
         uint32 primitiveCountPowerOfTwo = 1; // Always at least 1. Used to size draw command buffers.
 
         TextureIndex AddTexture(const ImageViewPtr &ptr);
+        TextureIndex AddTexture(const ImageCreateInfo &imageInfo,
+            const ImageViewCreateInfo &viewInfo,
+            const uint8 *data,
+            uint32 dataSize);
         void ReleaseTexture(TextureIndex i);
         void FlushTextureDescriptors();
 
+        void WaitForTexture(TextureIndex i);
+
         ImageViewPtr GetTexture(TextureIndex i) const {
+            Assert(textures[i]->Valid(), "texture is not ready");
             return textures[i];
         }
 
@@ -82,6 +90,7 @@ namespace sp::vulkan {
         DeviceContext &device;
 
         vector<ImageViewPtr> textures;
+
         vector<TextureIndex> freeTextureIndexes;
         vector<TextureIndex> texturesToFlush;
         vk::DescriptorSet textureDescriptorSet;

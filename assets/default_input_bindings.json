@@ -1,6 +1,7 @@
 {
     "console-input": {
         "event_input": [
+            "/keyboard/key/f1",
             "/keyboard/key/f5",
             "/keyboard/key/f6",
             "/keyboard/key/f7",
@@ -8,6 +9,7 @@
         ],
         "script": {
             "parameters": {
+                "/keyboard/key/f1": "tracy",
                 "/keyboard/key/f5": "reloadscene",
                 "/keyboard/key/f6": "reloadscene; reloadplayer",
                 "/keyboard/key/f7": "reloadshaders",
@@ -40,6 +42,7 @@
             "/keyboard/key/q": { "/action/spawn": "player.debug-spawner" },
             "/keyboard/key/f": { "/action/flashlight/toggle": "player.flashlight" },
             "/keyboard/key/p": { "/action/flashlight/grab": "player.flashlight" },
+            "/keyboard/key/f1": { "/keyboard/key/f1": "console-input" },
             "/keyboard/key/f5": { "/keyboard/key/f5": "console-input" },
             "/keyboard/key/f6": { "/keyboard/key/f6": "console-input" },
             "/keyboard/key/f7": { "/keyboard/key/f7": "console-input" },

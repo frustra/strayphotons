@@ -7,6 +7,7 @@
 #include "graphics/vulkan/core/Memory.hh"
 
 #include <functional>
+#include <future>
 #include <glm/glm.hpp>
 #include <robin_hood.h>
 #include <vulkan/vulkan.hpp>
@@ -38,6 +39,14 @@ namespace sp::vulkan {
             return vertexCount;
         }
 
+        bool Ready() {
+            if (ready.empty()) return true;
+            erase_if(ready, [](std::future<void> &fut) {
+                return fut.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+            });
+            return ready.empty();
+        }
+
     private:
         TextureIndex LoadTexture(DeviceContext &device, const sp::Model &model, int materialIndex, TextureType type);
         string modelName;
@@ -48,5 +57,7 @@ namespace sp::vulkan {
 
         uint32 vertexCount = 0, indexCount = 0;
         SubBufferPtr indexBuffer, vertexBuffer, primitiveList, modelEntry;
+
+        std::vector<std::future<void>> ready;
     };
 } // namespace sp::vulkan

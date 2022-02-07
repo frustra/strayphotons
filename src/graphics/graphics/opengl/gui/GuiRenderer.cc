@@ -47,7 +47,7 @@ namespace sp {
 
             Assert(asset->BufferSize() <= INT_MAX, "Buffer size overflows int");
             ImFontConfig cfg;
-            cfg.FontData = (void *)asset->Buffer();
+            cfg.FontData = (void *)asset->BufferPtr();
             cfg.FontDataSize = (int)asset->BufferSize();
             cfg.FontDataOwnedByAtlas = false;
             cfg.SizePixels = pixelSize;

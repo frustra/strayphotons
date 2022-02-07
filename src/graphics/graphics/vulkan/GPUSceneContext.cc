@@ -25,6 +25,14 @@ namespace sp::vulkan {
             VMA_MEMORY_USAGE_CPU_TO_GPU);
     }
 
+    TextureIndex GPUSceneContext::AddTexture(const ImageCreateInfo &imageInfo,
+        const ImageViewCreateInfo &viewInfo,
+        const uint8 *data,
+        uint32 dataSize) {
+        auto imageView = device.CreateImageAndView(imageInfo, viewInfo, data, dataSize);
+        return AddTexture(imageView);
+    }
+
     TextureIndex GPUSceneContext::AddTexture(const ImageViewPtr &ptr) {
         TextureIndex i;
         if (!freeTextureIndexes.empty()) {
@@ -44,6 +52,10 @@ namespace sp::vulkan {
         freeTextureIndexes.push_back(i);
     }
 
+    void GPUSceneContext::WaitForTexture(TextureIndex i) {
+        // textures[i]->WaitUntilValid();
+    }
+
     void GPUSceneContext::FlushTextureDescriptors() {
         vector<vk::WriteDescriptorSet> descriptorWrites;
         vector<vk::DescriptorImageInfo> descriptorImageInfos;
@@ -54,6 +66,7 @@ namespace sp::vulkan {
 
         for (auto descriptorIndex : texturesToFlush) {
             const auto &tex = textures[descriptorIndex];
+            Assert(tex->Valid(), "texture not ready");
             descriptorImageInfos.emplace_back(tex->DefaultSampler(), *tex, tex->Image()->LastLayout());
         }
 

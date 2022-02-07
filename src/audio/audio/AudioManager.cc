@@ -1,9 +1,19 @@
 #include "AudioManager.hh"
 
+#include "assets/AssetManager.hh"
+#include "core/Tracing.hh"
+
+#include <resonance_audio_api.h>
 #include <soundio/soundio.h>
 
 namespace sp {
-    AudioManager::AudioManager() : RegisteredThread("Audio", 120.0, false) {
+    AudioManager::AudioManager() : RegisteredThread("Audio", std::chrono::milliseconds(20), false) {
+        StartThread();
+    }
+
+    void AudioManager::Init() {
+        ZoneScoped;
+
         soundio = soundio_create();
 
         int err = soundio_connect(soundio);
@@ -20,6 +30,7 @@ namespace sp {
         outstream = soundio_outstream_create(device);
         outstream->format = SoundIoFormatFloat32NE;
         outstream->write_callback = AudioWriteCallback;
+        outstream->userdata = this;
 
         err = soundio_outstream_open(outstream);
         Assertf(!err, "soundio_outstream_open: %s", soundio_strerror(err));
@@ -29,54 +40,91 @@ namespace sp {
 
         err = soundio_outstream_start(outstream);
         Assertf(!err, "unable to start audio device: %s", soundio_strerror(err));
+
+        bufferSize = outstream->sample_rate * interval.count() / 1e9;
+        resonance = vraudio::CreateResonanceAudioApi(outstream->layout.channel_count,
+            bufferSize,
+            outstream->sample_rate);
+
+        testAsset = GAssets.Load("audio/test.ogg");
+        testAsset->WaitUntilValid();
+        loader.Load(&testAudio, "ogg", testAsset->Buffer());
+
+        testObj = resonance->CreateStereoSource(2);
+        resonance->SetSourceVolume(testObj, 0.5f);
     }
 
     AudioManager::~AudioManager() {
-        StopThread(false);
-        if (soundio) soundio_wakeup(soundio);
         StopThread();
         if (outstream) soundio_outstream_destroy(outstream);
         if (device) soundio_device_unref(device);
         if (soundio) soundio_destroy(soundio);
+        if (resonance) delete resonance;
     }
 
     void AudioManager::Frame() {
-        soundio_wait_events(soundio);
+        ZoneScoped;
+        {
+            ZoneScopedN("soundio_flush_events");
+            soundio_flush_events(soundio);
+        }
+        SyncFromECS();
     }
 
-    static float seconds_offset = 0.0f;
+    void AudioManager::SyncFromECS() {
+        ZoneScoped;
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Transform, ecs::Name>>();
+    }
 
     void AudioManager::AudioWriteCallback(SoundIoOutStream *outstream, int frameCountMin, int frameCountMax) {
-        // temporary sine wave libsoundio example code
-        const struct SoundIoChannelLayout *layout = &outstream->layout;
-        float float_sample_rate = outstream->sample_rate;
-        float seconds_per_frame = 1.0f / float_sample_rate;
+        ZoneScoped;
+        auto self = static_cast<AudioManager *>(outstream->userdata);
+        if (!self->resonance) return;
+
         struct SoundIoChannelArea *areas;
-        int frames_left = frameCountMax;
-        int err;
+        int framesPerBuffer = self->bufferSize;
+        int framesToWrite = framesPerBuffer * std::max(std::min(1, frameCountMax / framesPerBuffer),
+                                                  (frameCountMin + framesPerBuffer - 1) / framesPerBuffer);
+        Assertf(framesToWrite > 0, "wanted %d frames, min %d max %d", framesPerBuffer, frameCountMin, frameCountMax);
+        int err = soundio_outstream_begin_write(outstream, &areas, &framesToWrite);
 
-        while (frames_left > 0) {
-            int frame_count = frames_left;
-            err = soundio_outstream_begin_write(outstream, &areas, &frame_count);
-            Assertf(!err, "soundio begin_write error %s", soundio_strerror(err));
+        int channelCount = outstream->layout.channel_count;
+        auto basePtr = reinterpret_cast<float *>(areas[0].ptr);
 
-            if (!frame_count) break;
-
-            float pitch = 440.0f;
-            float radians_per_second = pitch * 2.0f * M_PI;
-            for (int frame = 0; frame < frame_count; frame += 1) {
-                float sample = sin((seconds_offset + frame * seconds_per_frame) * radians_per_second);
-                for (int channel = 0; channel < layout->channel_count; channel += 1) {
-                    float *ptr = (float *)(areas[channel].ptr + areas[channel].step * frame);
-                    *ptr = sample * 0.5;
-                }
-            }
-            seconds_offset = fmod(seconds_offset + seconds_per_frame * frame_count, 1.0);
-
-            err = soundio_outstream_end_write(outstream);
-            Assertf(!err, "soundio end_write error %s", soundio_strerror(err));
-
-            frames_left -= frame_count;
+        for (int channel = 0; channel < channelCount; channel++) {
+            Assert(areas[channel].step == sizeof(float) * channelCount, "expected interleaved output buffer");
+            Assert((float *)areas[channel].ptr == basePtr + channel, "expected interleaved output buffer");
         }
+
+        auto outputBuffer = (float *)areas[0].ptr;
+        float *lastSample = nullptr;
+
+        while (framesToWrite >= framesPerBuffer) {
+            ZoneScopedN("Render");
+
+            if (self->testObj >= 0) {
+                auto floatsPerBuffer = framesPerBuffer * self->testAudio.channelCount;
+                auto offset = self->bufferOffset % (self->testAudio.samples.size() - floatsPerBuffer + 1);
+                self->resonance->SetInterleavedBuffer(self->testObj,
+                    &self->testAudio.samples[offset],
+                    self->testAudio.channelCount,
+                    framesPerBuffer);
+                self->bufferOffset += floatsPerBuffer;
+            }
+
+            self->resonance->FillInterleavedOutputBuffer(channelCount, framesPerBuffer, outputBuffer);
+            outputBuffer += framesPerBuffer * channelCount;
+            framesToWrite -= framesPerBuffer;
+            lastSample = outputBuffer - channelCount;
+        }
+
+        while (framesToWrite > 0) {
+            std::copy(lastSample, lastSample + channelCount, outputBuffer);
+            outputBuffer += channelCount;
+            framesToWrite--;
+        }
+
+        err = soundio_outstream_end_write(outstream);
+        Assertf(!err, "soundio end_write error %s", soundio_strerror(err));
     }
 } // namespace sp

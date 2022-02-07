@@ -42,16 +42,16 @@ namespace sp::vulkan {
         auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
         switch (messageSeverity) {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            Errorf("Vulkan Error %s: %s", typeStr, pCallbackData->pMessage);
+            Errorf("VK %s %s", typeStr, pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            Logf("Vulkan Warning %s: %s", typeStr, pCallbackData->pMessage);
+            Warnf("VK %s %s", typeStr, pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-            Logf("Vulkan Info %s: %s", typeStr, pCallbackData->pMessage);
+            Logf("VK %s %s", typeStr, pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-            Debugf("Vulkan Verbose %s: %s", typeStr, pCallbackData->pMessage);
+            Debugf("VK %s %s", typeStr, pCallbackData->pMessage);
             break;
         default:
             break;
@@ -1242,12 +1242,12 @@ namespace sp::vulkan {
         if (compareHash == newHash) return nullptr;
 
         vk::ShaderModuleCreateInfo shaderCreateInfo;
-        shaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(asset->Buffer());
+        shaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(asset->BufferPtr());
         shaderCreateInfo.codeSize = asset->BufferSize();
 
         auto shaderModule = device->createShaderModuleUnique(shaderCreateInfo);
 
-        auto reflection = spv_reflect::ShaderModule(asset->BufferSize(), asset->Buffer());
+        auto reflection = spv_reflect::ShaderModule(asset->BufferSize(), asset->BufferPtr());
         if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS) {
             Abortf("could not parse shader: %s error: %d", name, reflection.GetResult());
         }

@@ -1,6 +1,10 @@
 # Downgrade external packages to C++17
 set(CMAKE_CXX_STANDARD 17)
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    string(APPEND CMAKE_CXX_FLAGS " /w")
+endif()
+
 add_subdirectory(robin-hood-hashing)
 add_subdirectory(physx)
 
@@ -11,12 +15,14 @@ include(glfw.cmake)
 include(glfw-egl.cmake)
 include(glm.cmake)
 include(imgui.cmake)
+include(libnyquist.cmake)
 include(libsoundio.cmake)
 include(linenoise.cmake)
 include(microtar.cmake)
 include(murmurhash.cmake)
 include(openvr.cmake)
 include(picojson.cmake)
+include(resonance-audio.cmake)
 include(SPIRV-Reflect.cmake)
 include(Tecs.cmake)
 include(tracy.cmake)

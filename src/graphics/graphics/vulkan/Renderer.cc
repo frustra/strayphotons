@@ -961,6 +961,7 @@ namespace sp::vulkan {
                 modelsToLoad.push_back(renderable.model);
                 continue;
             }
+            if (!model->Ready()) continue;
 
             Assert(scene.renderableCount * sizeof(GPURenderableEntity) < scene.renderableEntityList->Size(),
                 "renderable entity overflow");

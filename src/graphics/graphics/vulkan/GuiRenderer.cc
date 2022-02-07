@@ -42,7 +42,7 @@ namespace sp::vulkan {
             asset->WaitUntilValid();
             Assert(asset, "Failed to load gui font");
             ImFontConfig cfg;
-            cfg.FontData = (void *)asset->Buffer();
+            cfg.FontData = (void *)asset->BufferPtr();
             cfg.FontDataSize = asset->BufferSize();
             cfg.FontDataOwnedByAtlas = false;
             cfg.SizePixels = pair.second;
