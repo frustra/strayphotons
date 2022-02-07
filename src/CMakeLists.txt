@@ -49,6 +49,7 @@ add_module_configuration(
         ${PROJECT_CORE_LIB}
         ${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB}
         ${PROJECT_INPUT_GLFW_LIB}
+        ${PROJECT_PHYSICS_PHYSX_LIB}
 )
 
 add_subdirectory(core)
