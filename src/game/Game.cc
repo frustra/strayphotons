@@ -193,9 +193,9 @@ namespace sp {
                     Logf("Player physics position: [%f, %f, %f]", pxFeet.x, pxFeet.y, pxFeet.z);
                     auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
                     Logf("Player velocity: [%f, %f, %f]",
-                        userData->velocity.x,
-                        userData->velocity.y,
-                        userData->velocity.z);
+                        userData->actorData.velocity.x,
+                        userData->actorData.velocity.y,
+                        userData->actorData.velocity.z);
                     Logf("Player on ground: %s", userData->onGround ? "true" : "false");
                 } else {
                     Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);

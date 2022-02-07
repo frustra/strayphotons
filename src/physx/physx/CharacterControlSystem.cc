@@ -132,7 +132,7 @@ namespace sp {
 
                 userData->onGround = false;
                 userData->actorData.pose = ecs::Transform(targetPosition);
-                userData->velocity = glm::vec3(0);
+                userData->actorData.velocity = glm::vec3(0);
             }
 
             // Update the capsule height
@@ -202,8 +202,9 @@ namespace sp {
                 targetPosition.y += verticalMovement * dt;
                 controller.pxController->setFootPosition(GlmVec3ToPxExtendedVec3(targetPosition + targetDelta));
 
-                userData->onGround = true;
-                userData->velocity = glm::vec3(0);
+                userData->onGround = false;
+                userData->actorData.velocity = lateralMovement;
+                userData->actorData.velocity.y = verticalMovement;
             } else {
                 PxControllerState state;
                 controller.pxController->getState(state);
@@ -223,7 +224,7 @@ namespace sp {
 
                 glm::vec3 displacement;
                 if (userData->onGround || inGround) {
-                    displacement = (userData->velocity + lateralMovement) * dt;
+                    displacement = (PxVec3ToGlmVec3(state.deltaXP) + lateralMovement) * dt;
                     if (jump) {
                         // Move up slightly first to detach the player from the floor
                         displacement.y = std::max(state.deltaXP.y * dt, 0.0f) + contactOffset;
@@ -232,27 +233,27 @@ namespace sp {
                         displacement.y = -contactOffset;
                     }
                 } else {
-                    userData->velocity += lateralMovement * ecs::PLAYER_AIR_STRAFE * dt;
-                    displacement = userData->velocity * dt;
+                    userData->actorData.velocity += lateralMovement * ecs::PLAYER_AIR_STRAFE * dt;
+                    displacement = userData->actorData.velocity * dt;
                 }
                 displacement += targetDelta;
 
                 auto moveResult = controller.pxController->move(GlmVec3ToPxVec3(displacement), 0, dt, moveQueryFilter);
+                auto deltaPos = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()) -
+                                userData->actorData.pose.GetPosition() - targetDelta;
 
                 if (moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN) {
-                    userData->velocity = PxVec3ToGlmVec3(state.deltaXP);
+                    userData->actorData.velocity = deltaPos / dt;
                     userData->onGround = true;
                 } else {
                     if (userData->onGround || inGround) {
-                        userData->velocity = PxVec3ToGlmVec3(state.deltaXP);
-                        userData->velocity.x += displacement.x / dt;
-                        userData->velocity.z += displacement.z / dt;
-                        if (jump) userData->velocity.y += ecs::PLAYER_JUMP_VELOCITY;
+                        userData->actorData.velocity = PxVec3ToGlmVec3(state.deltaXP);
+                        userData->actorData.velocity.x += displacement.x / dt;
+                        userData->actorData.velocity.z += displacement.z / dt;
+                        if (jump) userData->actorData.velocity.y += ecs::PLAYER_JUMP_VELOCITY;
                     } else {
-                        auto deltaPos = PxExtendedVec3ToGlmVec3(controller.pxController->getFootPosition()) -
-                                        userData->actorData.pose.GetPosition() - targetDelta;
-                        userData->velocity = deltaPos / dt;
-                        userData->velocity.y -= ecs::PLAYER_GRAVITY * dt;
+                        userData->actorData.velocity = deltaPos / dt;
+                        userData->actorData.velocity.y -= ecs::PLAYER_GRAVITY * dt;
                     }
 
                     userData->onGround = false;

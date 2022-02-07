@@ -37,7 +37,8 @@ namespace sp {
     struct ActorUserData {
         Tecs::Entity entity;
         ecs::Transform pose;
-        glm::vec3 scale;
+        glm::vec3 scale = glm::vec3(1);
+        glm::vec3 velocity = glm::vec3(0);
         ecs::PhysicsGroup physicsGroup;
 
         ActorUserData() {}
@@ -50,7 +51,6 @@ namespace sp {
 
         bool onGround = false;
         bool noclipping = false;
-        glm::vec3 velocity = glm::vec3(0);
 
         CharacterControllerUserData() {}
         CharacterControllerUserData(Tecs::Entity ent, const ecs::Transform &pose)

@@ -141,6 +141,8 @@ namespace sp {
                 }
             }
 
+            animationSystem.Frame(lock);
+
             // Update actors with latest entity data
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::Transform>(lock)) continue;
@@ -159,7 +161,6 @@ namespace sp {
             }
 
             constraintSystem.Frame(lock);
-            animationSystem.Frame(lock);
             characterControlSystem.Frame(lock);
         }
 
@@ -201,13 +202,15 @@ namespace sp {
                     transform.SetPosition(PxVec3ToGlmVec3(pose.p));
                     transform.SetRotation(PxQuatToGlmQuat(pose.q));
 
+                    auto userData = (ActorUserData *)ph.actor->userData;
                     if (ph.dynamic && !ph.kinematic && ent.Has<ecs::TransformTarget>(lock)) {
                         auto &target = ent.Get<ecs::TransformTarget>(lock);
                         target.pose = transform;
                         target.parent = Tecs::Entity();
+
+                        userData->velocity = transform.GetPosition() - userData->pose.GetPosition();
                     }
 
-                    auto userData = (ActorUserData *)ph.actor->userData;
                     userData->pose = transform;
                 } else if (ent.Has<ecs::TransformTarget>(lock)) {
                     ent.Set<ecs::Transform>(lock, ent.Get<ecs::TransformTarget>(lock).GetGlobalTransform(lock));
@@ -409,6 +412,7 @@ namespace sp {
                 ph.actor->setGlobalPose(pxTransform);
             }
 
+            userData->velocity = transform.GetPosition() - userData->pose.GetPosition();
             userData->pose = transform;
         }
         if (userData->physicsGroup != ph.group) SetCollisionGroup(ph.actor, ph.group);
