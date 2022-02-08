@@ -31,13 +31,14 @@ namespace sp {
         SoundIoDevice *device = nullptr;
         SoundIoOutStream *outstream = nullptr;
         vraudio::ResonanceAudioApi *resonance = nullptr;
+        size_t framesPerBuffer = 1024; // updated later depending on sample rate and desired latency
 
         nqr::NyquistIO loader;
         nqr::AudioData testAudio;
 
         shared_ptr<const Asset> testAsset;
         int testObj = -1;
-        size_t bufferOffset = 0, bufferSize = 0;
+        size_t bufferOffset = 0;
 
         static void AudioWriteCallback(SoundIoOutStream *outstream, int frameCountMin, int frameCountMax);
     };

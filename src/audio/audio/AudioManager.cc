@@ -41,9 +41,9 @@ namespace sp {
         err = soundio_outstream_start(outstream);
         Assertf(!err, "unable to start audio device: %s", soundio_strerror(err));
 
-        bufferSize = outstream->sample_rate * interval.count() / 1e9;
+        framesPerBuffer = outstream->sample_rate * interval.count() / 1e9;
         resonance = vraudio::CreateResonanceAudioApi(outstream->layout.channel_count,
-            bufferSize,
+            framesPerBuffer,
             outstream->sample_rate);
 
         testAsset = GAssets.Load("audio/test.ogg");
@@ -76,13 +76,20 @@ namespace sp {
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Transform, ecs::Name>>();
     }
 
+    const float Zeros[16] = {0};
+
     void AudioManager::AudioWriteCallback(SoundIoOutStream *outstream, int frameCountMin, int frameCountMax) {
+        thread_local bool setThreadName = false;
+        if (!setThreadName) {
+            tracy::SetThreadName("AudioRender");
+            setThreadName = true;
+        }
+
         ZoneScoped;
         auto self = static_cast<AudioManager *>(outstream->userdata);
-        if (!self->resonance) return;
 
         struct SoundIoChannelArea *areas;
-        int framesPerBuffer = self->bufferSize;
+        int framesPerBuffer = self->framesPerBuffer;
         int framesToWrite = framesPerBuffer * std::max(std::min(1, frameCountMax / framesPerBuffer),
                                                   (frameCountMin + framesPerBuffer - 1) / framesPerBuffer);
         Assertf(framesToWrite > 0, "wanted %d frames, min %d max %d", framesPerBuffer, frameCountMin, frameCountMax);
@@ -96,24 +103,29 @@ namespace sp {
             Assert((float *)areas[channel].ptr == basePtr + channel, "expected interleaved output buffer");
         }
 
+        auto floatsPerBuffer = framesPerBuffer * channelCount;
         auto outputBuffer = (float *)areas[0].ptr;
-        float *lastSample = nullptr;
+        const float *lastSample = Zeros;
 
         while (framesToWrite >= framesPerBuffer) {
             ZoneScopedN("Render");
 
-            if (self->testObj >= 0) {
-                auto floatsPerBuffer = framesPerBuffer * self->testAudio.channelCount;
-                auto offset = self->bufferOffset % (self->testAudio.samples.size() - floatsPerBuffer + 1);
-                self->resonance->SetInterleavedBuffer(self->testObj,
-                    &self->testAudio.samples[offset],
-                    self->testAudio.channelCount,
-                    framesPerBuffer);
-                self->bufferOffset += floatsPerBuffer;
-            }
+            if (self->resonance) {
+                if (self->testObj >= 0) {
+                    auto floatsPerBuffer2 = framesPerBuffer * self->testAudio.channelCount;
+                    auto offset = self->bufferOffset % (self->testAudio.samples.size() - floatsPerBuffer2 + 1);
+                    self->resonance->SetInterleavedBuffer(self->testObj,
+                        &self->testAudio.samples[offset],
+                        self->testAudio.channelCount,
+                        framesPerBuffer);
+                    self->bufferOffset += floatsPerBuffer2;
+                }
 
-            self->resonance->FillInterleavedOutputBuffer(channelCount, framesPerBuffer, outputBuffer);
-            outputBuffer += framesPerBuffer * channelCount;
+                self->resonance->FillInterleavedOutputBuffer(channelCount, framesPerBuffer, outputBuffer);
+            } else {
+                std::fill(outputBuffer, outputBuffer + floatsPerBuffer, 0);
+            }
+            outputBuffer += floatsPerBuffer;
             framesToWrite -= framesPerBuffer;
             lastSample = outputBuffer - channelCount;
         }
