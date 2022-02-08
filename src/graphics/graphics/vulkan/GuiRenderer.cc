@@ -75,7 +75,10 @@ namespace sp::vulkan {
 
             ImageViewCreateInfo fontViewInfo;
             fontViewInfo.defaultSampler = device.GetSampler(SamplerType::BilinearClamp);
-            fontView = device.CreateImageAndView(fontImageInfo, fontViewInfo, fontData, fontWidth * fontHeight * 4);
+
+            auto fut = device.CreateImageAndView(fontImageInfo, fontViewInfo, fontData, fontWidth * fontHeight * 4);
+            device.FlushMainQueue();
+            fontView = fut.get();
 
             io.Fonts->TexID = (ImTextureID)(fontView->GetHandle());
         }

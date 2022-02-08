@@ -284,10 +284,12 @@ namespace sp::vulkan {
             if (!hiddenAreaMesh[0]) {
                 for (size_t i = 0; i < hiddenAreaMesh.size(); i++) {
                     auto mesh = xrSystem->GetHiddenAreaMesh(ecs::XrEye(i));
-                    hiddenAreaMesh[i] = device.CreateBuffer(mesh.vertices,
-                        mesh.triangleCount * 3,
-                        vk::BufferUsageFlagBits::eVertexBuffer,
-                        VMA_MEMORY_USAGE_CPU_TO_GPU);
+                    hiddenAreaMesh[i] = device
+                                            .CreateBuffer(mesh.vertices,
+                                                mesh.triangleCount * 3,
+                                                vk::BufferUsageFlagBits::eVertexBuffer,
+                                                VMA_MEMORY_USAGE_CPU_TO_GPU)
+                                            .get();
                     hiddenAreaTriangleCount[i] = mesh.triangleCount;
                 }
             }
@@ -1181,14 +1183,14 @@ namespace sp::vulkan {
         chrono_clock::duration totalLoadTime = {};
 
         for (int i = (int)modelsToLoad.size() - 1; i >= 0; i--) {
-            const auto &model = modelsToLoad[i];
+            auto &model = modelsToLoad[i];
             if (activeModels.Contains(model->name)) {
                 modelsToLoad.pop_back();
                 continue;
             }
 
             auto start = chrono_clock::now();
-            auto vulkanModel = make_shared<Model>(*model, scene, device);
+            auto vulkanModel = make_shared<Model>(model, scene, device);
             activeModels.Register(model->name, vulkanModel);
 
             auto loadTime = chrono_clock::now() - start;
@@ -1231,7 +1233,9 @@ namespace sp::vulkan {
 
         ImageViewCreateInfo viewInfo;
         viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
-        auto imageView = device.CreateImageAndView(imageInfo, viewInfo, data, sizeof(data));
+        auto fut = device.CreateImageAndView(imageInfo, viewInfo, data, sizeof(data));
+        device.FlushMainQueue();
+        auto imageView = fut.get();
         return imageView;
     }
 } // namespace sp::vulkan

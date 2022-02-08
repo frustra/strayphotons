@@ -123,7 +123,8 @@
         "xthread": "cpp",
         "numbers": "cpp",
         "transform.h": "c",
-        "execution": "cpp"
+        "execution": "cpp",
+        "complex": "cpp"
     },
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,

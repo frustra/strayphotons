@@ -32,7 +32,7 @@ namespace sp::vulkan {
         std::vector<double> factor;
         std::vector<vk::Format> formats; // fill only if using eMutableFormat flag
 
-        vk::ImageCreateInfo GetVkCreateInfo() {
+        vk::ImageCreateInfo GetVkCreateInfo() const {
             vk::ImageCreateInfo ci(flags,
                 imageType,
                 format,
@@ -49,7 +49,7 @@ namespace sp::vulkan {
             return ci;
         }
 
-        vk::ImageFormatListCreateInfo GetVkFormatList() {
+        vk::ImageFormatListCreateInfo GetVkFormatList() const {
             return {(uint32)formats.size(), formats.data()};
         }
     };
@@ -113,16 +113,6 @@ namespace sp::vulkan {
 
         void SetLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
 
-        bool Valid() const {
-            return valid.test();
-        }
-
-        void WaitUntilValid() const {
-            while (!valid.test()) {
-                valid.wait(false);
-            }
-        }
-
     private:
         vk::Image image;
         vk::Format format;
@@ -130,7 +120,6 @@ namespace sp::vulkan {
         uint32 mipLevels = 0, arrayLayers = 0;
         vk::ImageLayout lastLayout = vk::ImageLayout::eUndefined;
         vk::ImageUsageFlags usage = {}, declaredUsage = {};
-        std::atomic_flag valid;
     };
 
     struct ImageViewCreateInfo {
@@ -225,14 +214,6 @@ namespace sp::vulkan {
 
         static ImageView *FromHandle(uintptr_t handle) {
             return reinterpret_cast<ImageView *>(handle);
-        }
-
-        bool Valid() const {
-            return info.image->Valid();
-        }
-
-        void WaitUntilValid() const {
-            return info.image->WaitUntilValid();
         }
 
     private:

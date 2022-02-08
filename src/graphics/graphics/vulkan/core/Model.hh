@@ -27,7 +27,7 @@ namespace sp::vulkan {
             TextureIndex baseColor, metallicRoughness;
         };
 
-        Model(const sp::Model &model, GPUSceneContext &scene, DeviceContext &device);
+        Model(shared_ptr<const sp::Model> model, GPUSceneContext &scene, DeviceContext &device);
         ~Model();
 
         void Draw(CommandContext &cmd, glm::mat4 modelMat, bool useMaterial = true);
@@ -51,6 +51,7 @@ namespace sp::vulkan {
         TextureIndex LoadTexture(DeviceContext &device, const sp::Model &model, int materialIndex, TextureType type);
         string modelName;
         GPUSceneContext &scene;
+        shared_ptr<const sp::Model> asset;
 
         robin_hood::unordered_map<string, TextureIndex> textures;
         vector<shared_ptr<Primitive>> primitives;

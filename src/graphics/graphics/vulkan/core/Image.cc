@@ -21,8 +21,6 @@ namespace sp::vulkan {
         auto result = vmaCreateImage(allocator, &vkImageInfo, &allocInfo, &vkImage, &allocation, nullptr);
         AssertVKSuccess(result, "creating image");
         image = vkImage;
-
-        valid.test_and_set();
     }
 
     Image::~Image() {

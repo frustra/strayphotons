@@ -26,6 +26,10 @@ namespace sp::vulkan {
             return !!ptr;
         }
 
+        HandleType &Get() {
+            return handle;
+        }
+
     private:
         HandleType handle = {};
         vector<SharedHandle<HandleType>> *freeList = nullptr;
@@ -42,6 +46,8 @@ namespace sp::vulkan {
             std::function<void(HandleType)> destroyObject,
             std::function<void(HandleType)> resetObject = {})
             : createObject(createObject), destroyObject(destroyObject), resetObject(resetObject) {}
+
+        HandlePool() = default;
 
         ~HandlePool() {
             Assert(freeObjects.size() == totalObjects, "some objects weren't freed before the pool");

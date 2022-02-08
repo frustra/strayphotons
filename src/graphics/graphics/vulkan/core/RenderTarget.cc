@@ -45,7 +45,7 @@ namespace sp::vulkan {
         viewInfo.viewType = desc.primaryViewType;
         viewInfo.defaultSampler = device.GetSampler(SamplerType::BilinearClamp);
 
-        auto imageView = device.CreateImageAndView(imageInfo, viewInfo);
+        auto imageView = device.CreateImageAndView(imageInfo, viewInfo).get();
         auto ptr = make_shared<RenderTarget>(device, desc, imageView, pool.size());
 
         pool.push_back(ptr);

@@ -10,14 +10,14 @@
 #include <tiny_gltf.h>
 
 namespace sp::vulkan {
-    Model::Model(const sp::Model &model, GPUSceneContext &scene, DeviceContext &device)
-        : modelName(model.name), scene(scene) {
+    Model::Model(shared_ptr<const sp::Model> model, GPUSceneContext &scene, DeviceContext &device)
+        : modelName(model->name), scene(scene), asset(model) {
         ZoneScoped;
         // TODO: cache the output somewhere. Keeping the conversion code in
         // the engine will be useful for any dynamic loading in the future,
         // but we don't want to do it every time a model is loaded.
 
-        for (auto &assetPrimitive : model.Primitives()) {
+        for (auto &assetPrimitive : model->Primitives()) {
             indexCount += assetPrimitive.indexBuffer.componentCount;
             vertexCount += assetPrimitive.attributes[0].componentCount;
         }
@@ -30,7 +30,7 @@ namespace sp::vulkan {
         auto vertexData = (SceneVertex *)vertexBuffer->Mapped();
         auto vertexDataStart = vertexData;
 
-        for (auto &assetPrimitive : model.Primitives()) {
+        for (auto &assetPrimitive : model->Primitives()) {
             // TODO: this implementation assumes a lot about the model format,
             // and asserts the assumptions. It would be better to support more
             // kinds of inputs, and convert the data rather than just failing.
@@ -40,13 +40,13 @@ namespace sp::vulkan {
             auto &vkPrimitive = *vkPrimitivePtr;
 
             vkPrimitive.transform = assetPrimitive.matrix;
-            auto &buffers = model.GetGltfModel()->buffers;
+            auto &buffers = model->GetGltfModel()->buffers;
 
             switch (assetPrimitive.indexBuffer.componentType) {
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
                 vkPrimitive.indexType = vk::IndexType::eUint32;
                 Assert(assetPrimitive.indexBuffer.byteStride == 4, "index buffer must be tightly packed");
-                Abortf("TODO %s uses uint indexes, but the GPU driven renderer doesn't support them yet", model.name);
+                Abortf("TODO %s uses uint indexes, but the GPU driven renderer doesn't support them yet", modelName);
                 break;
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
                 vkPrimitive.indexType = vk::IndexType::eUint16;
@@ -120,8 +120,9 @@ namespace sp::vulkan {
 
             vertexData += vertexCount;
 
-            vkPrimitive.baseColor = LoadTexture(device, model, assetPrimitive.materialIndex, BaseColor);
-            vkPrimitive.metallicRoughness = LoadTexture(device, model, assetPrimitive.materialIndex, MetallicRoughness);
+            vkPrimitive.baseColor = LoadTexture(device, *model, assetPrimitive.materialIndex, BaseColor);
+            vkPrimitive.metallicRoughness =
+                LoadTexture(device, *model, assetPrimitive.materialIndex, MetallicRoughness);
 
             primitives.emplace_back(vkPrimitivePtr);
         }
@@ -266,16 +267,14 @@ namespace sp::vulkan {
 
             ImageViewCreateInfo viewInfo;
             viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
-            TextureIndex i = scene.AddTexture(imageInfo, viewInfo, data, sizeof(data));
-            textures[name] = i;
-            ready.push_back(std::async(std::launch::async, [this, i]() {
-                scene.WaitForTexture(i);
-            }));
-            return i;
+            auto added = scene.AddTexture(imageInfo, viewInfo, data, sizeof(data));
+            textures[name] = added.first;
+            ready.push_back(std::move(added.second));
+            return added.first;
         }
 
-        tinygltf::Texture texture = gltfModel->textures[textureIndex];
-        tinygltf::Image img = gltfModel->images[texture.source];
+        auto &texture = gltfModel->textures[textureIndex];
+        auto &img = gltfModel->images[texture.source];
 
         ImageCreateInfo imageInfo;
         imageInfo.imageType = vk::ImageType::e2D;
@@ -316,11 +315,9 @@ namespace sp::vulkan {
             imageInfo.genMipmap = (samplerInfo.maxLod > 0);
         }
 
-        TextureIndex i = scene.AddTexture(imageInfo, viewInfo, img.image.data(), img.image.size());
-        textures[name] = i;
-        ready.push_back(std::async(std::launch::async, [this, i]() {
-            scene.WaitForTexture(i);
-        }));
-        return i;
+        auto added = scene.AddTexture(imageInfo, viewInfo, img.image.data(), img.image.size());
+        textures[name] = added.first;
+        ready.push_back(std::move(added.second));
+        return added.first;
     }
 } // namespace sp::vulkan
