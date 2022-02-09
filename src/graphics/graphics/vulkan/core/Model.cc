@@ -253,9 +253,9 @@ namespace sp::vulkan {
         if (textureIndex == -1) {
             if (factor.size() == 0) factor.push_back(1); // default texture is a single white pixel
 
-            uint8_t data[4];
+            auto data = make_shared<std::array<uint8, 4>>();
             for (size_t i = 0; i < 4; i++) {
-                data[i] = (uint8_t)(255.0 * factor.at(std::min(factor.size() - 1, i)));
+                (*data)[i] = uint8(255.0 * factor.at(std::min(factor.size() - 1, i)));
             }
 
             // Create a single pixel texture based on the factor data provided
@@ -267,7 +267,7 @@ namespace sp::vulkan {
 
             ImageViewCreateInfo viewInfo;
             viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
-            auto added = scene.AddTexture(imageInfo, viewInfo, data, sizeof(data));
+            auto added = scene.AddTexture(imageInfo, viewInfo, {data->data(), data->size(), data});
             textures[name] = added.first;
             ready.push_back(std::move(added.second));
             return added.first;
@@ -315,7 +315,7 @@ namespace sp::vulkan {
             imageInfo.genMipmap = (samplerInfo.maxLod > 0);
         }
 
-        auto added = scene.AddTexture(imageInfo, viewInfo, img.image.data(), img.image.size());
+        auto added = scene.AddTexture(imageInfo, viewInfo, {img.image.data(), img.image.size(), gltfModel});
         textures[name] = added.first;
         ready.push_back(std::move(added.second));
         return added.first;

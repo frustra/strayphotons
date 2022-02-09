@@ -95,13 +95,21 @@ namespace sp::vulkan {
         BufferPtr AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
 
         template<typename T>
-        std::future<BufferPtr> CreateBuffer(const T *srcData,
+        BufferPtr CreateBuffer(const T *srcData,
             size_t srcCount,
             vk::BufferUsageFlags usage,
             VmaMemoryUsage residency) {
+            auto buf = AllocateBuffer(sizeof(T) * srcCount, usage, residency);
+            buf->CopyFrom(srcData, srcCount);
+            return buf;
+        }
+
+        std::future<BufferPtr> CreateBuffer(const InitialData &data,
+            vk::BufferUsageFlags usage,
+            VmaMemoryUsage residency) {
             return allocatorQueue.Dispatch<BufferPtr>([=]() {
-                auto buf = AllocateBuffer(sizeof(T) * srcCount, usage, residency);
-                buf->CopyFrom(srcData, srcCount);
+                auto buf = AllocateBuffer(data.dataSize, usage, residency);
+                buf->CopyFrom(data.data, data.dataSize);
                 return buf;
             });
         }
@@ -111,14 +119,11 @@ namespace sp::vulkan {
         ImagePtr AllocateImage(vk::ImageCreateInfo info,
             VmaMemoryUsage residency,
             vk::ImageUsageFlags declaredUsage = {});
-        std::future<ImagePtr> CreateImage(ImageCreateInfo createInfo,
-            const uint8 *srcData = nullptr,
-            size_t srcDataSize = 0);
+        std::future<ImagePtr> CreateImage(ImageCreateInfo createInfo, const InitialData &data = {});
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
         std::future<ImageViewPtr> CreateImageAndView(const ImageCreateInfo &imageInfo,
             const ImageViewCreateInfo &viewInfo, // image field is filled in automatically
-            const uint8 *srcData = nullptr,
-            size_t srcDataSize = 0);
+            const InitialData &data = {});
         ImageViewPtr SwapchainImageView();
         vk::Sampler GetSampler(SamplerType type);
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);

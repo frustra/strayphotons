@@ -2,7 +2,9 @@
 set(CMAKE_CXX_STANDARD 17)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    string(APPEND CMAKE_CXX_FLAGS " /w")
+    add_compile_options(/w)
+else()
+    add_compile_options(-w)
 endif()
 
 add_subdirectory(robin-hood-hashing)

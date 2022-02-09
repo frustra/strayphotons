@@ -463,9 +463,6 @@ namespace sp::vulkan {
     }
 
     DeviceContext::~DeviceContext() {
-        allocatorQueue.Shutdown();
-        mainQueue.Flush(true);
-
         if (device) { device->waitIdle(); }
         if (window) { glfwDestroyWindow(window); }
 
@@ -896,14 +893,12 @@ namespace sp::vulkan {
         return make_shared<Image>(info, allocInfo, allocator.get(), declaredUsage);
     }
 
-    std::future<ImagePtr> DeviceContext::CreateImage(ImageCreateInfo createInfo,
-        const uint8 *srcData,
-        size_t srcDataSize) {
+    std::future<ImagePtr> DeviceContext::CreateImage(ImageCreateInfo createInfo, const InitialData &data) {
         ZoneScoped;
 
         bool genMipmap = createInfo.genMipmap;
         bool genFactor = !createInfo.factor.empty();
-        bool hasSrcData = srcData && srcDataSize;
+        bool hasSrcData = data.data && data.dataSize;
         vk::ImageUsageFlags declaredUsage = createInfo.usage;
         vk::Format factorFormat = createInfo.format;
 
@@ -940,7 +935,7 @@ namespace sp::vulkan {
         if (!hasSrcData) return futImage;
 
         auto futStagingBuf =
-            CreateBuffer(srcData, srcDataSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
+            CreateBuffer(data, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
         return mainQueue.Dispatch<ImagePtr>(
             [=](ImagePtr image, BufferPtr stagingBuf) {
@@ -1220,10 +1215,9 @@ namespace sp::vulkan {
 
     std::future<ImageViewPtr> DeviceContext::CreateImageAndView(const ImageCreateInfo &imageInfo,
         const ImageViewCreateInfo &viewInfo,
-        const uint8 *srcData,
-        size_t srcDataSize) {
+        const InitialData &data) {
         ZoneScoped;
-        auto futImage = CreateImage(imageInfo, srcData, srcDataSize);
+        auto futImage = CreateImage(imageInfo, data);
 
         return allocatorQueue.Dispatch<ImageViewPtr>(
             [=](ImagePtr image) {
@@ -1252,7 +1246,7 @@ namespace sp::vulkan {
 
         ImageViewCreateInfo viewInfo;
         viewInfo.defaultSampler = GetSampler(SamplerType::TrilinearTiled);
-        auto fut = CreateImageAndView(createInfo, viewInfo, data, image->ByteSize());
+        auto fut = CreateImageAndView(createInfo, viewInfo, {data, image->ByteSize(), image});
         FlushMainQueue();
         return fut.get();
     }

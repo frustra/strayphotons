@@ -52,6 +52,16 @@ namespace sp::vulkan {
         BufferType type;
     };
 
+    struct InitialData {
+        const uint8 *data = nullptr;
+        size_t dataSize = 0;
+        shared_ptr<const void> dataOwner;
+
+        InitialData() = default;
+        InitialData(const uint8 *data, size_t dataSize, const shared_ptr<const void> &dataOwner = nullptr)
+            : data(data), dataSize(dataSize), dataOwner(dataOwner) {}
+    };
+
     class UniqueMemory : public NonCopyable, public HasUniqueID {
     public:
         UniqueMemory() = delete;

@@ -1,9 +1,8 @@
-#pragma once
-
 #include "DispatchQueue.hh"
 
 namespace sp {
     DispatchQueue::~DispatchQueue() {
+        dropPendingWork = true;
         Shutdown();
     }
 
@@ -32,10 +31,8 @@ namespace sp {
         while (true) {
             ZoneScopedN("ThreadFlush");
             if (workQueue.empty()) workReady.wait(lock);
-            if (workQueue.empty()) {
-                if (exit) break;
-                continue;
-            }
+            if (exit && (dropPendingWork || workQueue.empty())) break;
+            if (workQueue.empty()) continue;
 
             size_t flushCount = workQueue.size();
             if (FlushInternal(lock, flushCount, false) == 0) {

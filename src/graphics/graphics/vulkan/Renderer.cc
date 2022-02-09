@@ -284,12 +284,10 @@ namespace sp::vulkan {
             if (!hiddenAreaMesh[0]) {
                 for (size_t i = 0; i < hiddenAreaMesh.size(); i++) {
                     auto mesh = xrSystem->GetHiddenAreaMesh(ecs::XrEye(i));
-                    hiddenAreaMesh[i] = device
-                                            .CreateBuffer(mesh.vertices,
-                                                mesh.triangleCount * 3,
-                                                vk::BufferUsageFlagBits::eVertexBuffer,
-                                                VMA_MEMORY_USAGE_CPU_TO_GPU)
-                                            .get();
+                    hiddenAreaMesh[i] = device.CreateBuffer(mesh.vertices,
+                        mesh.triangleCount * 3,
+                        vk::BufferUsageFlagBits::eVertexBuffer,
+                        VMA_MEMORY_USAGE_CPU_TO_GPU);
                     hiddenAreaTriangleCount[i] = mesh.triangleCount;
                 }
             }
@@ -1233,7 +1231,7 @@ namespace sp::vulkan {
 
         ImageViewCreateInfo viewInfo;
         viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
-        auto fut = device.CreateImageAndView(imageInfo, viewInfo, data, sizeof(data));
+        auto fut = device.CreateImageAndView(imageInfo, viewInfo, {data, sizeof(data)});
         device.FlushMainQueue();
         auto imageView = fut.get();
         return imageView;

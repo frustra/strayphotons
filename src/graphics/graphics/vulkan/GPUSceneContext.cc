@@ -27,10 +27,9 @@ namespace sp::vulkan {
 
     std::pair<TextureIndex, std::future<void>> GPUSceneContext::AddTexture(const ImageCreateInfo &imageInfo,
         const ImageViewCreateInfo &viewInfo,
-        const uint8 *data,
-        uint32 dataSize) {
+        const InitialData &data) {
         auto i = AllocateTextureIndex();
-        auto imageViewFut = device.CreateImageAndView(imageInfo, viewInfo, data, dataSize);
+        auto imageViewFut = device.CreateImageAndView(imageInfo, viewInfo, data);
         return make_pair(i,
             workQueue.Dispatch<void>(
                 [this, i](ImageViewPtr view) {
@@ -62,10 +61,6 @@ namespace sp::vulkan {
     void GPUSceneContext::ReleaseTexture(TextureIndex i) {
         textures[i].reset();
         freeTextureIndexes.push_back(i);
-    }
-
-    void GPUSceneContext::WaitForTexture(TextureIndex i) {
-        // textures[i]->WaitUntilValid();
     }
 
     void GPUSceneContext::FlushTextureDescriptors() {

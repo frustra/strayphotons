@@ -99,6 +99,6 @@ namespace sp {
 
         std::queue<shared_ptr<DispatchQueueWorkItemBase>> workQueue;
         std::condition_variable workReady;
-        bool exit = false;
+        bool exit = false, dropPendingWork = false;
     };
 } // namespace sp

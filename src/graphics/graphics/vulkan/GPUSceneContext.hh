@@ -70,13 +70,10 @@ namespace sp::vulkan {
 
         std::pair<TextureIndex, std::future<void>> AddTexture(const ImageCreateInfo &imageInfo,
             const ImageViewCreateInfo &viewInfo,
-            const uint8 *data,
-            uint32 dataSize);
+            const InitialData &data);
         TextureIndex AddTexture(const ImageViewPtr &ptr);
         void ReleaseTexture(TextureIndex i);
         void FlushTextureDescriptors();
-
-        void WaitForTexture(TextureIndex i);
 
         ImageViewPtr GetTexture(TextureIndex i) const {
             return textures[i];

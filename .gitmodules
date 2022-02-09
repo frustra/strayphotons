@@ -54,7 +54,7 @@
 	url = https://github.com/andrewrk/libsoundio
 [submodule "ext/resonance-audio"]
 	path = ext/resonance-audio
-	url = https://github.com/resonance-audio/resonance-audio
+	url = https://github.com/pushrax/resonance-audio
 [submodule "ext/libnyquist"]
 	path = ext/libnyquist
 	url = https://github.com/ddiakopoulos/libnyquist
