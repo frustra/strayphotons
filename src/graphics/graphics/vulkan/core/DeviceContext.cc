@@ -42,16 +42,16 @@ namespace sp::vulkan {
         auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
         switch (messageSeverity) {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            Errorf("Vulkan Error %s: %s", typeStr, pCallbackData->pMessage);
+            Errorf("VK %s %s", typeStr, pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            Logf("Vulkan Warning %s: %s", typeStr, pCallbackData->pMessage);
+            Warnf("VK %s %s", typeStr, pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-            Logf("Vulkan Info %s: %s", typeStr, pCallbackData->pMessage);
+            Logf("VK %s %s", typeStr, pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-            Debugf("Vulkan Verbose %s: %s", typeStr, pCallbackData->pMessage);
+            Debugf("VK %s %s", typeStr, pCallbackData->pMessage);
             break;
         default:
             break;
@@ -68,7 +68,9 @@ namespace sp::vulkan {
     }
 
     DeviceContext::DeviceContext(bool enableValidationLayers, bool enableSwapchain)
-        : allocator(nullptr, DeleteAllocator) {
+        : allocator(nullptr, DeleteAllocator), threadContexts(32), frameEndQueue("EndFrame", 0),
+          allocatorQueue("Allocator") {
+        ZoneScoped;
         glfwSetErrorCallback(glfwErrorCallback);
 
         if (!glfwInit()) { throw "glfw failed"; }
@@ -417,6 +419,41 @@ namespace sp::vulkan {
         renderPassPool = make_unique<RenderPassManager>(*this);
         framebufferPool = make_unique<FramebufferManager>(*this);
 
+        for (auto &threadContextUnique : threadContexts) {
+            threadContextUnique = make_unique<ThreadContext>();
+            ThreadContext *threadContext = threadContextUnique.get();
+
+            for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
+                vk::CommandPoolCreateInfo poolInfo;
+                poolInfo.queueFamilyIndex = queueFamilyIndex[queueType];
+                poolInfo.flags = vk::CommandPoolCreateFlagBits::eTransient |
+                                 vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+                threadContext->commandPools[queueType] = device->createCommandPoolUnique(poolInfo);
+
+                threadContext->commandContexts[queueType] = make_unique<HandlePool<CommandContextPtr>>(
+                    [this, threadContext, queueType]() {
+                        vk::CommandBufferAllocateInfo allocInfo;
+                        allocInfo.commandPool = *threadContext->commandPools[queueType];
+                        allocInfo.level = vk::CommandBufferLevel::ePrimary;
+                        allocInfo.commandBufferCount = 1;
+                        auto buffers = device->allocateCommandBuffersUnique(allocInfo);
+
+                        return make_shared<CommandContext>(*this,
+                            std::move(buffers[0]),
+                            CommandContextType(queueType),
+                            CommandContextScope::Fence);
+                    },
+                    [](CommandContextPtr) {
+                        // destroy happens via ~CommandContext
+                    },
+                    [this](CommandContextPtr cmd) {
+                        cmd->Raw().reset();
+                        auto fence = cmd->Fence();
+                        if (fence) device->resetFences({fence});
+                    });
+            }
+        }
+
         funcs = make_unique<CFuncCollection>();
         funcs->Register("reloadshaders", "Recompile any changed shaders", [&]() {
             reloadShaders = true;
@@ -437,6 +474,7 @@ namespace sp::vulkan {
 
     // Releases old swapchain after creating a new one
     void DeviceContext::CreateSwapchain() {
+        ZoneScoped;
         auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
         auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
         auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
@@ -494,6 +532,7 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::RecreateSwapchain() {
+        ZoneScoped;
         device->waitIdle();
         CreateSwapchain();
     }
@@ -564,6 +603,7 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::UpdateInputModeFromFocus() {
+        ZoneScoped;
         if (!window) return;
 
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::FocusLock>>();
@@ -590,10 +630,14 @@ namespace sp::vulkan {
         }
 
         if (swapchain) {
-            auto result = device->waitForFences({*Frame().inFlightFence}, true, FENCE_WAIT_TIME);
-            AssertVKSuccess(result, "timed out waiting for fence");
+            {
+                ZoneScopedN("WaitForFrameFence");
+                auto result = device->waitForFences({*Frame().inFlightFence}, true, FENCE_WAIT_TIME);
+                AssertVKSuccess(result, "timed out waiting for fence");
+            }
 
             try {
+                ZoneScopedN("AcquireNextImage");
                 auto acquireResult =
                     device->acquireNextImageKHR(*swapchain, UINT64_MAX, *Frame().imageAvailableSemaphore, nullptr);
                 swapchainImageIndex = acquireResult.value;
@@ -603,28 +647,18 @@ namespace sp::vulkan {
             }
 
             if (SwapchainImage().inFlightFence) {
-                result = device->waitForFences({SwapchainImage().inFlightFence}, true, FENCE_WAIT_TIME);
+                ZoneScopedN("WaitForImageFence");
+                auto result = device->waitForFences({SwapchainImage().inFlightFence}, true, FENCE_WAIT_TIME);
                 AssertVKSuccess(result, "timed out waiting for fence");
             }
             SwapchainImage().inFlightFence = *Frame().inFlightFence;
         }
         PrepareResourcesForFrame();
         vmaSetCurrentFrameIndex(allocator.get(), frameCounter);
-
-        for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
-            auto trctx = tracing.tracyContexts[i];
-            if (!trctx) continue;
-            auto ctx = GetCommandContext(CommandContextType(i));
-            {
-                GPUZone(this, ctx, "TracyCollect");
-                TracyVkCollect(trctx, ctx->Raw());
-            }
-            Submit(ctx);
-        }
-        device->waitIdle();
     }
 
     void DeviceContext::PrepareResourcesForFrame() {
+        ZoneScoped;
         for (auto &pool : Frame().commandContexts) {
             // Resets all command buffers in the pool, so they can be recorded and used again.
             if (pool.nextIndex > 0) device->resetCommandPool(*pool.commandPool);
@@ -642,6 +676,8 @@ namespace sp::vulkan {
                 return false;
             });
         }
+
+        Thread().ReleaseAvailableResources();
 
         renderTargetPool->TickFrame();
     }
@@ -665,6 +701,18 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::EndFrame() {
+        for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
+            auto trctx = tracing.tracyContexts[i];
+            if (!trctx) continue;
+            auto ctx = GetCommandContext(CommandContextType(i), CommandContextScope::Fence);
+            {
+                GPUZone(this, ctx, "TracyCollect");
+                TracyVkCollect(trctx, ctx->Raw());
+            }
+            Submit(ctx);
+        }
+        frameEndQueue.Flush();
+
         frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 
         frameCounter++;
@@ -683,27 +731,33 @@ namespace sp::vulkan {
         lastFrameEnd = frameEnd;
     }
 
-    CommandContextPtr DeviceContext::GetCommandContext(CommandContextType type) {
-        // TODO(multithread): should segregate command contexts by thread
+    CommandContextPtr DeviceContext::GetCommandContext(CommandContextType type, CommandContextScope scope) {
         CommandContextPtr cmd;
-        auto &pool = Frame().commandContexts[QueueType(type)];
-        if (pool.nextIndex < pool.list.size()) {
-            cmd = pool.list[pool.nextIndex++];
+        if (scope == CommandContextScope::Frame) {
+            auto &pool = Frame().commandContexts[QueueType(type)];
+            if (pool.nextIndex < pool.list.size()) {
+                cmd = pool.list[pool.nextIndex++];
 
-            // Reset cmd to default state
-            auto buffer = std::move(cmd->RawRef());
-            cmd->~CommandContext();
-            new (cmd.get()) CommandContext(*this, std::move(buffer), type);
+                // Reset cmd to default state
+                auto buffer = std::move(cmd->RawRef());
+                cmd->~CommandContext();
+                new (cmd.get()) CommandContext(*this, std::move(buffer), type, scope);
+            } else {
+                vk::CommandBufferAllocateInfo allocInfo;
+                allocInfo.commandPool = *pool.commandPool;
+                allocInfo.level = vk::CommandBufferLevel::ePrimary;
+                allocInfo.commandBufferCount = 1;
+                auto buffers = device->allocateCommandBuffersUnique(allocInfo);
+
+                cmd = make_shared<CommandContext>(*this, std::move(buffers[0]), type, scope);
+                pool.list.push_back(cmd);
+                pool.nextIndex++;
+            }
         } else {
-            vk::CommandBufferAllocateInfo allocInfo;
-            allocInfo.commandPool = *pool.commandPool;
-            allocInfo.level = vk::CommandBufferLevel::ePrimary;
-            allocInfo.commandBufferCount = 1;
-            auto buffers = device->allocateCommandBuffersUnique(allocInfo);
-
-            cmd = make_shared<CommandContext>(*this, std::move(buffers[0]), type);
-            pool.list.push_back(cmd);
-            pool.nextIndex++;
+            auto &thr = Thread();
+            auto cmdHandle = thr.commandContexts[QueueType(type)]->Get();
+            thr.pendingCommandContexts[QueueType(type)].push_back(cmdHandle);
+            cmd = cmdHandle;
         }
         cmd->Begin();
         return cmd;
@@ -718,7 +772,7 @@ namespace sp::vulkan {
         CommandContextPtr cmd = cmdArg;
         // Invalidate caller's reference, this CommandContext is unusable until a subsequent frame.
         cmdArg.reset();
-        cmd->End();
+        if (cmd->recording) cmd->End();
 
         Assert(waitSemaphores.size() == waitStages.size(), "must have exactly one wait stage per wait semaphore");
 
@@ -748,10 +802,16 @@ namespace sp::vulkan {
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
 
+        auto cmdFence = cmd->Fence();
+
         if (cmd->WritesToSwapchain()) {
             Assert(!fence, "can't use custom fence on submission to swapchain");
+            Assert(!cmdFence, "can't use command context fence on submission to swapchain");
             fence = *Frame().inFlightFence;
             device->resetFences({fence});
+        } else if (cmdFence) {
+            Assert(!fence, "can't use custom fence with command context that has a fence");
+            fence = cmdFence;
         }
 
         auto &queue = queues[QueueType(cmd->GetType())];
@@ -814,7 +874,7 @@ namespace sp::vulkan {
         return buffer;
     }
 
-    ImagePtr DeviceContext::AllocateImage(const vk::ImageCreateInfo &info,
+    ImagePtr DeviceContext::AllocateImage(vk::ImageCreateInfo info,
         VmaMemoryUsage residency,
         vk::ImageUsageFlags declaredUsage) {
         ZoneScoped;
@@ -824,12 +884,12 @@ namespace sp::vulkan {
         return make_shared<Image>(info, allocInfo, allocator.get(), declaredUsage);
     }
 
-    ImagePtr DeviceContext::CreateImage(ImageCreateInfo createInfo, const uint8 *srcData, size_t srcDataSize) {
+    std::future<ImagePtr> DeviceContext::CreateImage(ImageCreateInfo createInfo, const InitialData &data) {
         ZoneScoped;
 
         bool genMipmap = createInfo.genMipmap;
         bool genFactor = !createInfo.factor.empty();
-        bool hasSrcData = srcData && srcDataSize;
+        bool hasSrcData = data.data && data.dataSize;
         vk::ImageUsageFlags declaredUsage = createInfo.usage;
         vk::Format factorFormat = createInfo.format;
 
@@ -856,237 +916,254 @@ namespace sp::vulkan {
             }
         }
 
-        auto actualCreateInfo = createInfo.GetVkCreateInfo();
-        auto formatInfo = createInfo.GetVkFormatList();
-        if (formatInfo.viewFormatCount > 0) actualCreateInfo.pNext = &formatInfo;
+        auto futImage = allocatorQueue.Dispatch<ImagePtr>([this, createInfo, declaredUsage]() {
+            auto actualCreateInfo = createInfo.GetVkCreateInfo();
+            auto formatInfo = createInfo.GetVkFormatList();
+            if (formatInfo.viewFormatCount > 0) actualCreateInfo.pNext = &formatInfo;
 
-        auto image = AllocateImage(actualCreateInfo, VMA_MEMORY_USAGE_GPU_ONLY, declaredUsage);
-        if (!hasSrcData) return image;
+            return AllocateImage(actualCreateInfo, VMA_MEMORY_USAGE_GPU_ONLY, declaredUsage);
+        });
+        if (!hasSrcData) return futImage;
 
-        auto stagingBuf =
-            CreateBuffer(srcData, srcDataSize, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        auto futStagingBuf = CreateBuffer(data, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-        auto transferCmd = GetCommandContext(CommandContextType::TransferAsync);
+        return frameEndQueue.Dispatch<ImagePtr>(std::move(futImage),
+            std::move(futStagingBuf),
+            [=, this](ImagePtr image, BufferPtr stagingBuf) {
+                ZoneScopedN("PrepareImage");
+                auto transferCmd = GetCommandContext(CommandContextType::TransferAsync);
 
-        transferCmd->ImageBarrier(image,
-            vk::ImageLayout::eUndefined,
-            vk::ImageLayout::eTransferDstOptimal,
-            vk::PipelineStageFlagBits::eTopOfPipe,
-            {},
-            vk::PipelineStageFlagBits::eTransfer,
-            vk::AccessFlagBits::eTransferWrite);
-
-        vk::BufferImageCopy region;
-        region.bufferOffset = 0;
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 0;
-        region.imageSubresource.aspectMask = FormatToAspectFlags(createInfo.format);
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = 1;
-        region.imageOffset = vk::Offset3D{0, 0, 0};
-        region.imageExtent = createInfo.extent;
-
-        transferCmd->Raw().copyBufferToImage(*stagingBuf, *image, vk::ImageLayout::eTransferDstOptimal, {region});
-
-        ImageBarrierInfo transferToGeneral;
-        transferToGeneral.trackImageLayout = false;
-        transferToGeneral.srcQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync);
-        transferToGeneral.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::General);
-
-        ImageBarrierInfo transferToCompute = transferToGeneral;
-        transferToCompute.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::ComputeAsync);
-
-        // The amount of state tracking in this function is somewhat objectionable.
-        // Should we have an automatic image access tracking mechanism to avoid it?
-        vk::ImageLayout lastLayout = vk::ImageLayout::eTransferDstOptimal;
-        vk::ImageLayout nextLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        if (genFactor) {
-            nextLayout = vk::ImageLayout::eGeneral;
-        } else if (genMipmap) {
-            nextLayout = vk::ImageLayout::eTransferSrcOptimal;
-        }
-        vk::PipelineStageFlags lastStage = vk::PipelineStageFlagBits::eTransfer;
-        vk::AccessFlags lastAccess = vk::AccessFlagBits::eTransferWrite;
-
-        transferCmd->ImageBarrier(image,
-            lastLayout,
-            nextLayout,
-            lastStage,
-            lastAccess,
-            vk::PipelineStageFlagBits::eBottomOfPipe,
-            {},
-            genFactor ? transferToCompute : transferToGeneral);
-
-        auto fence = PushInFlightObject(stagingBuf);
-        auto transferComplete = GetEmptySemaphore(fence);
-        {
-            ZoneScopedN("CopyBufferToImage");
-            Submit(transferCmd, {transferComplete}, {}, {}, fence);
-        }
-
-        if (genFactor) {
-            ZoneScopedN("ApplyFactor");
-            auto factorCmd = GetCommandContext(CommandContextType::ComputeAsync);
-            {
-                GPUZone(this, factorCmd, "ApplyFactor");
-                factorCmd->ImageBarrier(image,
-                    lastLayout,
-                    vk::ImageLayout::eGeneral,
-                    lastStage,
-                    lastAccess,
-                    vk::PipelineStageFlagBits::eComputeShader,
-                    vk::AccessFlagBits::eShaderRead,
-                    transferToCompute);
-
-                ImageViewCreateInfo factorViewInfo;
-                factorViewInfo.image = image;
-                factorViewInfo.format = factorFormat;
-                factorViewInfo.mipLevelCount = 1;
-                factorViewInfo.usage = vk::ImageUsageFlagBits::eStorage;
-                auto factorView = CreateImageView(factorViewInfo);
-
-                image->SetLayout(lastLayout, vk::ImageLayout::eGeneral);
-                factorCmd->SetComputeShader("texture_factor.comp");
-                factorCmd->SetTexture(0, 0, factorView);
-
-                struct {
-                    glm::vec4 factor;
-                    int components;
-                    bool srgb;
-                } factorPushConstants;
-
-                for (size_t i = 0; i < createInfo.factor.size(); i++) {
-                    factorPushConstants.factor[i] = (float)createInfo.factor[i];
-                }
-                factorPushConstants.components = createInfo.factor.size();
-                factorPushConstants.srgb = FormatIsSRGB(createInfo.format);
-                factorCmd->PushConstants(factorPushConstants);
-
-                factorCmd->Dispatch((createInfo.extent.width + 15) / 16, (createInfo.extent.height + 15) / 16, 1);
-
-                nextLayout = genMipmap ? vk::ImageLayout::eTransferSrcOptimal : vk::ImageLayout::eShaderReadOnlyOptimal;
-                auto nextStage = genMipmap ? vk::PipelineStageFlagBits::eTransfer
-                                           : vk::PipelineStageFlagBits::eFragmentShader;
-                auto nextAccess = genMipmap ? vk::AccessFlagBits::eTransferRead : vk::AccessFlagBits::eShaderRead;
-
-                transferToGeneral.srcQueueFamilyIndex = transferToCompute.dstQueueFamilyIndex;
-                factorCmd->ImageBarrier(image,
-                    vk::ImageLayout::eGeneral,
-                    nextLayout,
-                    vk::PipelineStageFlagBits::eComputeShader,
-                    vk::AccessFlagBits::eShaderWrite,
-                    nextStage,
-                    nextAccess,
-                    transferToGeneral);
-                lastLayout = vk::ImageLayout::eGeneral;
-                lastStage = vk::PipelineStageFlagBits::eComputeShader;
-                lastAccess = vk::AccessFlagBits::eShaderWrite;
-                fence = PushInFlightObject(factorView);
-            }
-            auto factorComplete = GetEmptySemaphore(fence);
-            Submit(factorCmd, {factorComplete}, {transferComplete}, {vk::PipelineStageFlagBits::eComputeShader}, fence);
-            transferComplete = factorComplete;
-        }
-
-        if (!genMipmap) {
-            if (transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
-                auto graphicsCmd = GetCommandContext();
-                graphicsCmd->ImageBarrier(image,
-                    lastLayout,
-                    vk::ImageLayout::eShaderReadOnlyOptimal,
-                    lastStage,
-                    lastAccess,
-                    vk::PipelineStageFlagBits::eFragmentShader,
-                    vk::AccessFlagBits::eShaderRead,
-                    transferToGeneral);
-                Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eFragmentShader});
-            }
-            image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
-            return image;
-        }
-
-        ZoneNamedN(mipmapZone, "Mipmap", true);
-        auto graphicsCmd = GetCommandContext();
-        {
-            GPUZone(this, graphicsCmd, "Mipmap");
-
-            if (transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
-                graphicsCmd->ImageBarrier(image,
-                    lastLayout,
-                    vk::ImageLayout::eTransferSrcOptimal,
-                    lastStage,
-                    lastAccess,
+                transferCmd->ImageBarrier(image,
+                    vk::ImageLayout::eUndefined,
+                    vk::ImageLayout::eTransferDstOptimal,
+                    vk::PipelineStageFlagBits::eTopOfPipe,
+                    {},
                     vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferRead,
-                    transferToGeneral);
-            }
+                    vk::AccessFlagBits::eTransferWrite);
 
-            ImageBarrierInfo transferMips;
-            transferMips.trackImageLayout = false;
-            transferMips.baseMipLevel = 1;
-            transferMips.mipLevelCount = createInfo.mipLevels - 1;
+                vk::BufferImageCopy region;
+                region.bufferOffset = 0;
+                region.bufferRowLength = 0;
+                region.bufferImageHeight = 0;
+                region.imageSubresource.aspectMask = FormatToAspectFlags(createInfo.format);
+                region.imageSubresource.mipLevel = 0;
+                region.imageSubresource.baseArrayLayer = 0;
+                region.imageSubresource.layerCount = 1;
+                region.imageOffset = vk::Offset3D{0, 0, 0};
+                region.imageExtent = createInfo.extent;
 
-            graphicsCmd->ImageBarrier(image,
-                vk::ImageLayout::eUndefined,
-                vk::ImageLayout::eTransferDstOptimal,
-                vk::PipelineStageFlagBits::eTransfer,
-                {},
-                vk::PipelineStageFlagBits::eTransfer,
-                vk::AccessFlagBits::eTransferWrite,
-                transferMips);
-
-            vk::Offset3D currentExtent = {(int32)createInfo.extent.width,
-                (int32)createInfo.extent.height,
-                (int32)createInfo.extent.depth};
-
-            transferMips.mipLevelCount = 1;
-
-            for (uint32 i = 1; i < createInfo.mipLevels; i++) {
-                auto prevMipExtent = currentExtent;
-                currentExtent.x = std::max(currentExtent.x >> 1, 1);
-                currentExtent.y = std::max(currentExtent.y >> 1, 1);
-                currentExtent.z = std::max(currentExtent.z >> 1, 1);
-
-                vk::ImageBlit blit;
-                blit.srcSubresource = {vk::ImageAspectFlagBits::eColor, i - 1, 0, 1};
-                blit.srcOffsets[0] = vk::Offset3D();
-                blit.srcOffsets[1] = prevMipExtent;
-                blit.dstSubresource = {vk::ImageAspectFlagBits::eColor, i, 0, 1};
-                blit.dstOffsets[0] = vk::Offset3D();
-                blit.dstOffsets[1] = currentExtent;
-
-                graphicsCmd->Raw().blitImage(*image,
-                    vk::ImageLayout::eTransferSrcOptimal,
+                transferCmd->Raw().copyBufferToImage(*stagingBuf,
                     *image,
                     vk::ImageLayout::eTransferDstOptimal,
-                    {blit},
-                    vk::Filter::eLinear);
+                    {region});
 
-                transferMips.baseMipLevel = i;
-                graphicsCmd->ImageBarrier(image,
-                    vk::ImageLayout::eTransferDstOptimal,
-                    vk::ImageLayout::eTransferSrcOptimal,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferWrite,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferRead,
-                    transferMips);
-            }
+                ImageBarrierInfo transferToGeneral;
+                transferToGeneral.trackImageLayout = false;
+                transferToGeneral.srcQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync);
+                transferToGeneral.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::General);
 
-            // Each mip has now been transitioned to TransferSrc.
-            image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+                ImageBarrierInfo transferToCompute = transferToGeneral;
+                transferToCompute.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::ComputeAsync);
 
-            graphicsCmd->ImageBarrier(image,
-                vk::ImageLayout::eTransferSrcOptimal,
-                vk::ImageLayout::eShaderReadOnlyOptimal,
-                vk::PipelineStageFlagBits::eTransfer,
-                vk::AccessFlagBits::eTransferWrite,
-                vk::PipelineStageFlagBits::eFragmentShader,
-                vk::AccessFlagBits::eShaderRead);
-        }
-        Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eTransfer});
-        return image;
+                // The amount of state tracking in this function is somewhat objectionable.
+                // Should we have an automatic image access tracking mechanism to avoid it?
+                vk::ImageLayout lastLayout = vk::ImageLayout::eTransferDstOptimal;
+                vk::ImageLayout nextLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+                if (genFactor) {
+                    nextLayout = vk::ImageLayout::eGeneral;
+                } else if (genMipmap) {
+                    nextLayout = vk::ImageLayout::eTransferSrcOptimal;
+                }
+                vk::PipelineStageFlags lastStage = vk::PipelineStageFlagBits::eTransfer;
+                vk::AccessFlags lastAccess = vk::AccessFlagBits::eTransferWrite;
+
+                transferCmd->ImageBarrier(image,
+                    lastLayout,
+                    nextLayout,
+                    lastStage,
+                    lastAccess,
+                    vk::PipelineStageFlagBits::eBottomOfPipe,
+                    {},
+                    genFactor ? transferToCompute : transferToGeneral);
+
+                auto fence = PushInFlightObject(stagingBuf);
+                auto transferComplete = GetEmptySemaphore(fence);
+                {
+                    ZoneScopedN("CopyBufferToImage");
+                    Submit(transferCmd, {transferComplete}, {}, {}, fence);
+                }
+
+                if (genFactor) {
+                    ZoneScopedN("ApplyFactor");
+                    auto factorCmd = GetCommandContext(CommandContextType::ComputeAsync);
+                    {
+                        GPUZone(this, factorCmd, "ApplyFactor");
+                        factorCmd->ImageBarrier(image,
+                            lastLayout,
+                            vk::ImageLayout::eGeneral,
+                            lastStage,
+                            lastAccess,
+                            vk::PipelineStageFlagBits::eComputeShader,
+                            vk::AccessFlagBits::eShaderRead,
+                            transferToCompute);
+
+                        ImageViewCreateInfo factorViewInfo;
+                        factorViewInfo.image = image;
+                        factorViewInfo.format = factorFormat;
+                        factorViewInfo.mipLevelCount = 1;
+                        factorViewInfo.usage = vk::ImageUsageFlagBits::eStorage;
+                        auto factorView = CreateImageView(factorViewInfo);
+
+                        image->SetLayout(lastLayout, vk::ImageLayout::eGeneral);
+                        factorCmd->SetComputeShader("texture_factor.comp");
+                        factorCmd->SetTexture(0, 0, factorView);
+
+                        struct {
+                            glm::vec4 factor;
+                            int components;
+                            bool srgb;
+                        } factorPushConstants;
+
+                        for (size_t i = 0; i < createInfo.factor.size(); i++) {
+                            factorPushConstants.factor[i] = (float)createInfo.factor[i];
+                        }
+                        factorPushConstants.components = createInfo.factor.size();
+                        factorPushConstants.srgb = FormatIsSRGB(createInfo.format);
+                        factorCmd->PushConstants(factorPushConstants);
+
+                        factorCmd->Dispatch((createInfo.extent.width + 15) / 16,
+                            (createInfo.extent.height + 15) / 16,
+                            1);
+
+                        nextLayout = genMipmap ? vk::ImageLayout::eTransferSrcOptimal
+                                               : vk::ImageLayout::eShaderReadOnlyOptimal;
+                        auto nextStage = genMipmap ? vk::PipelineStageFlagBits::eTransfer
+                                                   : vk::PipelineStageFlagBits::eFragmentShader;
+                        auto nextAccess = genMipmap ? vk::AccessFlagBits::eTransferRead
+                                                    : vk::AccessFlagBits::eShaderRead;
+
+                        transferToGeneral.srcQueueFamilyIndex = transferToCompute.dstQueueFamilyIndex;
+                        factorCmd->ImageBarrier(image,
+                            vk::ImageLayout::eGeneral,
+                            nextLayout,
+                            vk::PipelineStageFlagBits::eComputeShader,
+                            vk::AccessFlagBits::eShaderWrite,
+                            nextStage,
+                            nextAccess,
+                            transferToGeneral);
+                        lastLayout = vk::ImageLayout::eGeneral;
+                        lastStage = vk::PipelineStageFlagBits::eComputeShader;
+                        lastAccess = vk::AccessFlagBits::eShaderWrite;
+                        fence = PushInFlightObject(factorView);
+                    }
+                    auto factorComplete = GetEmptySemaphore(fence);
+                    Submit(factorCmd,
+                        {factorComplete},
+                        {transferComplete},
+                        {vk::PipelineStageFlagBits::eComputeShader},
+                        fence);
+                    transferComplete = factorComplete;
+                }
+
+                if (!genMipmap) {
+                    if (transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
+                        auto graphicsCmd = GetCommandContext();
+                        graphicsCmd->ImageBarrier(image,
+                            lastLayout,
+                            vk::ImageLayout::eShaderReadOnlyOptimal,
+                            lastStage,
+                            lastAccess,
+                            vk::PipelineStageFlagBits::eFragmentShader,
+                            vk::AccessFlagBits::eShaderRead,
+                            transferToGeneral);
+                        Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eFragmentShader});
+                    }
+                    image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
+                    return image;
+                }
+
+                ZoneNamedN(mipmapZone, "Mipmap", true);
+                auto graphicsCmd = GetCommandContext();
+                {
+                    GPUZone(this, graphicsCmd, "Mipmap");
+
+                    if (transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
+                        graphicsCmd->ImageBarrier(image,
+                            lastLayout,
+                            vk::ImageLayout::eTransferSrcOptimal,
+                            lastStage,
+                            lastAccess,
+                            vk::PipelineStageFlagBits::eTransfer,
+                            vk::AccessFlagBits::eTransferRead,
+                            transferToGeneral);
+                    }
+
+                    ImageBarrierInfo transferMips;
+                    transferMips.trackImageLayout = false;
+                    transferMips.baseMipLevel = 1;
+                    transferMips.mipLevelCount = createInfo.mipLevels - 1;
+
+                    graphicsCmd->ImageBarrier(image,
+                        vk::ImageLayout::eUndefined,
+                        vk::ImageLayout::eTransferDstOptimal,
+                        vk::PipelineStageFlagBits::eTransfer,
+                        {},
+                        vk::PipelineStageFlagBits::eTransfer,
+                        vk::AccessFlagBits::eTransferWrite,
+                        transferMips);
+
+                    vk::Offset3D currentExtent = {(int32)createInfo.extent.width,
+                        (int32)createInfo.extent.height,
+                        (int32)createInfo.extent.depth};
+
+                    transferMips.mipLevelCount = 1;
+
+                    for (uint32 i = 1; i < createInfo.mipLevels; i++) {
+                        auto prevMipExtent = currentExtent;
+                        currentExtent.x = std::max(currentExtent.x >> 1, 1);
+                        currentExtent.y = std::max(currentExtent.y >> 1, 1);
+                        currentExtent.z = std::max(currentExtent.z >> 1, 1);
+
+                        vk::ImageBlit blit;
+                        blit.srcSubresource = {vk::ImageAspectFlagBits::eColor, i - 1, 0, 1};
+                        blit.srcOffsets[0] = vk::Offset3D();
+                        blit.srcOffsets[1] = prevMipExtent;
+                        blit.dstSubresource = {vk::ImageAspectFlagBits::eColor, i, 0, 1};
+                        blit.dstOffsets[0] = vk::Offset3D();
+                        blit.dstOffsets[1] = currentExtent;
+
+                        graphicsCmd->Raw().blitImage(*image,
+                            vk::ImageLayout::eTransferSrcOptimal,
+                            *image,
+                            vk::ImageLayout::eTransferDstOptimal,
+                            {blit},
+                            vk::Filter::eLinear);
+
+                        transferMips.baseMipLevel = i;
+                        graphicsCmd->ImageBarrier(image,
+                            vk::ImageLayout::eTransferDstOptimal,
+                            vk::ImageLayout::eTransferSrcOptimal,
+                            vk::PipelineStageFlagBits::eTransfer,
+                            vk::AccessFlagBits::eTransferWrite,
+                            vk::PipelineStageFlagBits::eTransfer,
+                            vk::AccessFlagBits::eTransferRead,
+                            transferMips);
+                    }
+
+                    // Each mip has now been transitioned to TransferSrc.
+                    image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+
+                    graphicsCmd->ImageBarrier(image,
+                        vk::ImageLayout::eTransferSrcOptimal,
+                        vk::ImageLayout::eShaderReadOnlyOptimal,
+                        vk::PipelineStageFlagBits::eTransfer,
+                        vk::AccessFlagBits::eTransferWrite,
+                        vk::PipelineStageFlagBits::eFragmentShader,
+                        vk::AccessFlagBits::eShaderRead);
+                }
+                Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eTransfer});
+                return image;
+            });
     }
 
     ImageViewPtr DeviceContext::CreateImageView(ImageViewCreateInfo info) {
@@ -1125,12 +1202,17 @@ namespace sp::vulkan {
         return make_shared<ImageView>(device->createImageViewUnique(createInfo), info);
     }
 
-    ImageViewPtr DeviceContext::CreateImageAndView(const ImageCreateInfo &imageInfo,
-        ImageViewCreateInfo viewInfo,
-        const uint8 *srcData,
-        size_t srcDataSize) {
-        viewInfo.image = CreateImage(imageInfo, srcData, srcDataSize);
-        return CreateImageView(viewInfo);
+    std::future<ImageViewPtr> DeviceContext::CreateImageAndView(const ImageCreateInfo &imageInfo,
+        const ImageViewCreateInfo &viewInfo,
+        const InitialData &data) {
+        ZoneScoped;
+        auto futImage = CreateImage(imageInfo, data);
+
+        return allocatorQueue.Dispatch<ImageViewPtr>(std::move(futImage), [=, this](ImagePtr image) {
+            auto viewI = viewInfo;
+            viewI.image = image;
+            return CreateImageView(viewI);
+        });
     }
 
     shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {
@@ -1151,7 +1233,9 @@ namespace sp::vulkan {
 
         ImageViewCreateInfo viewInfo;
         viewInfo.defaultSampler = GetSampler(SamplerType::TrilinearTiled);
-        return CreateImageAndView(createInfo, viewInfo, data, image->ByteSize());
+        auto fut = CreateImageAndView(createInfo, viewInfo, {data, image->ByteSize(), image});
+        FlushMainQueue();
+        return fut.get();
     }
 
     vk::Sampler DeviceContext::GetSampler(SamplerType type) {
@@ -1242,12 +1326,12 @@ namespace sp::vulkan {
         if (compareHash == newHash) return nullptr;
 
         vk::ShaderModuleCreateInfo shaderCreateInfo;
-        shaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(asset->Buffer());
+        shaderCreateInfo.pCode = reinterpret_cast<const uint32_t *>(asset->BufferPtr());
         shaderCreateInfo.codeSize = asset->BufferSize();
 
         auto shaderModule = device->createShaderModuleUnique(shaderCreateInfo);
 
-        auto reflection = spv_reflect::ShaderModule(asset->BufferSize(), asset->Buffer());
+        auto reflection = spv_reflect::ShaderModule(asset->BufferSize(), asset->BufferPtr());
         if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS) {
             Abortf("could not parse shader: %s error: %d", name, reflection.GetResult());
         }
@@ -1304,6 +1388,15 @@ namespace sp::vulkan {
         if (!fence) fence = GetEmptyFence();
         Frame().inFlightObjects.emplace_back(InFlightObject{object, fence});
         return fence;
+    }
+
+    void DeviceContext::ThreadContext::ReleaseAvailableResources() {
+        for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
+            erase_if(pendingCommandContexts[queueType], [](auto &cmdHandle) {
+                auto &cmd = cmdHandle.Get();
+                return cmd->Device()->getFenceStatus(cmd->Fence()) == vk::Result::eSuccess;
+            });
+        }
     }
 
     tracy::VkCtx *DeviceContext::GetTracyContext(CommandContextType type) {

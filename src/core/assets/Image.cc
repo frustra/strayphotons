@@ -11,7 +11,7 @@ namespace sp {
         asset->WaitUntilValid();
 
         Assert(asset->BufferSize() <= INT_MAX, "Buffer size overflows int");
-        uint8_t *data = stbi_load_from_memory(asset->Buffer(),
+        uint8_t *data = stbi_load_from_memory(asset->BufferPtr(),
             (int)asset->BufferSize(),
             &this->width,
             &this->height,

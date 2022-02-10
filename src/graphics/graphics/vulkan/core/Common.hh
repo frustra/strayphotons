@@ -37,6 +37,11 @@ namespace sp::vulkan {
         TransferAsync = QUEUE_TYPE_TRANSFER,
     };
 
+    enum class CommandContextScope {
+        Frame,
+        Fence,
+    };
+
     enum class SamplerType {
         BilinearClamp,
         BilinearTiled,

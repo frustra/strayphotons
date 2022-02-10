@@ -54,7 +54,10 @@ namespace sp::vulkan {
         using DirtyFlags = CommandContextFlags::DirtyFlags;
         using DirtyBits = CommandContextFlags::DirtyBits;
 
-        CommandContext(DeviceContext &device, vk::UniqueCommandBuffer cmd, CommandContextType type) noexcept;
+        CommandContext(DeviceContext &device,
+            vk::UniqueCommandBuffer cmd,
+            CommandContextType type,
+            CommandContextScope scope) noexcept;
         ~CommandContext();
 
         CommandContextType GetType() {
@@ -361,6 +364,8 @@ namespace sp::vulkan {
             return device;
         }
 
+        vk::Fence Fence();
+
     protected:
         friend class DeviceContext;
         void Begin();
@@ -405,6 +410,9 @@ namespace sp::vulkan {
         DeviceContext &device;
         vk::UniqueCommandBuffer cmd;
         CommandContextType type;
+        CommandContextScope scope;
+
+        vk::UniqueFence fence;
 
         bool recording = false, abandoned = false;
 

@@ -223,3 +223,4 @@ namespace sp {
 } // namespace sp
 
 #include "ConsoleCoreCommands.hh"
+#include "ConsoleTracy.cc"

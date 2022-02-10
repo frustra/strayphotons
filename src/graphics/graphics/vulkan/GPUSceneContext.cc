@@ -3,7 +3,7 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan {
-    GPUSceneContext::GPUSceneContext(DeviceContext &device) : device(device) {
+    GPUSceneContext::GPUSceneContext(DeviceContext &device) : device(device), workQueue("", 0) {
         textureDescriptorSet = device.CreateBindlessDescriptorSet();
 
         indexBuffer = device.AllocateBuffer(1024 * 1024 * 10,
@@ -25,17 +25,33 @@ namespace sp::vulkan {
             VMA_MEMORY_USAGE_CPU_TO_GPU);
     }
 
+    std::pair<TextureIndex, std::future<void>> GPUSceneContext::AddTexture(const ImageCreateInfo &imageInfo,
+        const ImageViewCreateInfo &viewInfo,
+        const InitialData &data) {
+        auto i = AllocateTextureIndex();
+        auto imageViewFut = device.CreateImageAndView(imageInfo, viewInfo, data);
+        return make_pair(i, workQueue.Dispatch<void>(std::move(imageViewFut), [this, i](ImageViewPtr view) {
+            textures[i] = view;
+            texturesToFlush.push_back(i);
+        }));
+    }
+
     TextureIndex GPUSceneContext::AddTexture(const ImageViewPtr &ptr) {
+        auto i = AllocateTextureIndex();
+        textures[i] = ptr;
+        texturesToFlush.push_back(i);
+        return i;
+    }
+
+    TextureIndex GPUSceneContext::AllocateTextureIndex() {
         TextureIndex i;
         if (!freeTextureIndexes.empty()) {
             i = freeTextureIndexes.back();
             freeTextureIndexes.pop_back();
-            textures[i] = ptr;
         } else {
             i = textures.size();
-            textures.push_back(ptr);
+            textures.emplace_back();
         }
-        texturesToFlush.push_back(i);
         return i;
     }
 
@@ -45,6 +61,8 @@ namespace sp::vulkan {
     }
 
     void GPUSceneContext::FlushTextureDescriptors() {
+        workQueue.Flush();
+
         vector<vk::WriteDescriptorSet> descriptorWrites;
         vector<vk::DescriptorImageInfo> descriptorImageInfos;
         vk::WriteDescriptorSet descriptorWrite;

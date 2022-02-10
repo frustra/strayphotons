@@ -96,7 +96,7 @@ endforeach()
 
 # This variable contains the component name used in calls to install() for the core stray photons
 # installation
-# Some external projects (like OpenVR and fmod) require it to be used in their install() calls
+# Some external projects (like OpenVR) require it to be used in their install() calls
 set(PROJECT_INSTALL sp)
 
 # Root name for all libraries that will be part of this project

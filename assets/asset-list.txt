@@ -1,3 +1,4 @@
+184dd045ca32e7a45f28b864e42c246f    audio/test.ogg
 e7a79c4f28caaba8978fc4b7fdec313c    logos/credits-frustra.png
 c3ba21cbcb3bdb05096b0b2a220b63c6    logos/loading.png
 86ffd365ff0d067a7900b697f4815795    logos/sp-laser-black.svg

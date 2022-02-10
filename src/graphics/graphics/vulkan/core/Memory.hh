@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/Common.hh"
+#include "core/Tracing.hh"
 #include "graphics/vulkan/core/Common.hh"
 
 #ifdef __clang__
@@ -51,6 +52,16 @@ namespace sp::vulkan {
         BufferType type;
     };
 
+    struct InitialData {
+        const uint8 *data = nullptr;
+        size_t dataSize = 0;
+        shared_ptr<const void> dataOwner;
+
+        InitialData() = default;
+        InitialData(const uint8 *data, size_t dataSize, const shared_ptr<const void> &dataOwner = nullptr)
+            : data(data), dataSize(dataSize), dataOwner(dataOwner) {}
+    };
+
     class UniqueMemory : public NonCopyable, public HasUniqueID {
     public:
         UniqueMemory() = delete;
@@ -69,12 +80,28 @@ namespace sp::vulkan {
         void UnmapPersistent();
         vk::DeviceSize ByteSize() const;
 
+        const size_t CopyBlockSize = 1024 * 1024;
+
         template<typename T>
         void CopyFrom(const T *srcData, size_t srcCount = 1, size_t dstOffset = 0) {
+            ZoneScoped;
             Assert(sizeof(T) * (dstOffset + srcCount) <= ByteSize(), "UniqueMemory overflow");
             T *dstData;
             Map((void **)&dstData);
-            std::copy(srcData, srcData + srcCount, dstData + dstOffset);
+            {
+                ZoneScopedN("memcpy");
+                ZoneValue(srcCount * sizeof(T));
+                auto srcEnd = srcData + srcCount;
+                for (size_t offset = 0; offset < srcCount; offset += CopyBlockSize) {
+                    auto srcBlock = srcData + offset;
+                    std::copy(srcBlock, std::min(srcEnd, srcBlock + CopyBlockSize), dstData + dstOffset + offset);
+
+                    if (offset + CopyBlockSize < srcCount) {
+                        ZoneScopedN("sleep");
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    }
+                }
+            }
             Unmap();
             Flush();
         }

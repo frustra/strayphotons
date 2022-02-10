@@ -32,7 +32,7 @@ namespace sp::vulkan {
         std::vector<double> factor;
         std::vector<vk::Format> formats; // fill only if using eMutableFormat flag
 
-        vk::ImageCreateInfo GetVkCreateInfo() {
+        vk::ImageCreateInfo GetVkCreateInfo() const {
             vk::ImageCreateInfo ci(flags,
                 imageType,
                 format,
@@ -49,7 +49,7 @@ namespace sp::vulkan {
             return ci;
         }
 
-        vk::ImageFormatListCreateInfo GetVkFormatList() {
+        vk::ImageFormatListCreateInfo GetVkFormatList() const {
             return {(uint32)formats.size(), formats.data()};
         }
     };

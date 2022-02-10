@@ -139,7 +139,7 @@ namespace sp {
             ret = gltfLoader.LoadASCIIFromString(gltfModel.get(),
                 &err,
                 &warn,
-                (char *)asset->Buffer(),
+                (char *)asset->BufferPtr(),
                 (uint32_t)asset->BufferSize(),
                 baseDir);
         } else {
@@ -147,7 +147,7 @@ namespace sp {
             ret = gltfLoader.LoadBinaryFromMemory(gltfModel.get(),
                 &err,
                 &warn,
-                asset->Buffer(),
+                asset->BufferPtr(),
                 (uint32_t)asset->BufferSize(),
                 baseDir);
         }

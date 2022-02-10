@@ -3,8 +3,11 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan {
-    CommandContext::CommandContext(DeviceContext &device, vk::UniqueCommandBuffer cmd, CommandContextType type) noexcept
-        : device(device), cmd(std::move(cmd)), type(type) {
+    CommandContext::CommandContext(DeviceContext &device,
+        vk::UniqueCommandBuffer cmd,
+        CommandContextType type,
+        CommandContextScope scope) noexcept
+        : device(device), cmd(std::move(cmd)), type(type), scope(scope) {
         SetDefaultOpaqueState();
     }
 
@@ -400,4 +403,13 @@ namespace sp::vulkan {
         FlushPushConstants();
         FlushDescriptorSets(vk::PipelineBindPoint::eGraphics);
     }
+
+    vk::Fence CommandContext::Fence() {
+        if (!fence && scope == CommandContextScope::Fence) {
+            vk::FenceCreateInfo fenceInfo;
+            fence = device->createFenceUnique(fenceInfo);
+        }
+        return *fence;
+    }
+
 } // namespace sp::vulkan

@@ -1,6 +1,7 @@
 
 target_sources(${PROJECT_CORE_LIB} PRIVATE
     Common.cc
+    DispatchQueue.cc
     LockFreeMutex.cc
     RegisteredThread.cc
 )

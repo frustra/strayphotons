@@ -25,14 +25,17 @@ namespace sp {
             return std::string((char *)buffer.data(), buffer.size());
         }
 
-        const uint8_t *Buffer() const {
+        const std::vector<uint8_t> &Buffer() const {
             Assert(valid.test(), "Accessing buffer data on invalid asset");
-            return buffer.data();
+            return buffer;
+        }
+
+        const uint8_t *BufferPtr() const {
+            return Buffer().data();
         }
 
         const size_t BufferSize() const {
-            Assert(valid.test(), "Accessing buffer size on invalid asset");
-            return buffer.size();
+            return Buffer().size();
         }
 
         Hash128 Hash() const;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/DispatchQueue.hh"
 #include "core/Hashing.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/core/Common.hh"
@@ -7,6 +8,7 @@
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 
+#include <future>
 #include <robin_hood.h>
 #include <variant>
 
@@ -80,7 +82,8 @@ namespace sp::vulkan {
 
         void PrepareWindowView(ecs::View &view) override;
 
-        CommandContextPtr GetCommandContext(CommandContextType type = CommandContextType::General);
+        CommandContextPtr GetCommandContext(CommandContextType type = CommandContextType::General,
+            CommandContextScope scope = CommandContextScope::Frame);
 
         // Releases *cmd back to the DeviceContext and resets cmd
         void Submit(CommandContextPtr &cmd,
@@ -101,17 +104,26 @@ namespace sp::vulkan {
             return buf;
         }
 
+        std::future<BufferPtr> CreateBuffer(const InitialData &data,
+            vk::BufferUsageFlags usage,
+            VmaMemoryUsage residency) {
+            return allocatorQueue.Dispatch<BufferPtr>([=, this]() {
+                auto buf = AllocateBuffer(data.dataSize, usage, residency);
+                buf->CopyFrom(data.data, data.dataSize);
+                return buf;
+            });
+        }
+
         BufferPtr GetFramePooledBuffer(BufferType type, vk::DeviceSize size);
 
-        ImagePtr AllocateImage(const vk::ImageCreateInfo &info,
+        ImagePtr AllocateImage(vk::ImageCreateInfo info,
             VmaMemoryUsage residency,
             vk::ImageUsageFlags declaredUsage = {});
-        ImagePtr CreateImage(ImageCreateInfo createInfo, const uint8 *srcData = nullptr, size_t srcDataSize = 0);
+        std::future<ImagePtr> CreateImage(ImageCreateInfo createInfo, const InitialData &data = {});
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
-        ImageViewPtr CreateImageAndView(const ImageCreateInfo &imageInfo,
-            ImageViewCreateInfo viewInfo, // image field is filled in automatically
-            const uint8 *srcData = nullptr,
-            size_t srcDataSize = 0);
+        std::future<ImageViewPtr> CreateImageAndView(const ImageCreateInfo &imageInfo,
+            const ImageViewCreateInfo &viewInfo, // image field is filled in automatically
+            const InitialData &data = {});
         ImageViewPtr SwapchainImageView();
         vk::Sampler GetSampler(SamplerType type);
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
@@ -165,6 +177,10 @@ namespace sp::vulkan {
         VkDebugUtilsMessageTypeFlagsEXT disabledDebugMessages = 0;
 
         static void DeleteAllocator(VmaAllocator allocator);
+
+        void FlushMainQueue() {
+            frameEndQueue.Flush(true);
+        }
 
     private:
         void SetTitle(string title);
@@ -257,6 +273,24 @@ namespace sp::vulkan {
             return frameContexts[frameIndex];
         }
 
+        struct ThreadContext {
+            std::array<vk::UniqueCommandPool, QUEUE_TYPES_COUNT> commandPools;
+            std::array<unique_ptr<HandlePool<CommandContextPtr>>, QUEUE_TYPES_COUNT> commandContexts;
+            std::array<vector<SharedHandle<CommandContextPtr>>, QUEUE_TYPES_COUNT> pendingCommandContexts;
+
+            void ReleaseAvailableResources();
+        };
+
+        vector<unique_ptr<ThreadContext>> threadContexts;
+
+        std::atomic_uint32_t nextThreadIndex = 0;
+
+        ThreadContext &Thread() {
+            thread_local size_t threadIndex = nextThreadIndex.fetch_add(1);
+            Assert(threadIndex < threadContexts.size(), "ran out of thread contexts");
+            return *threadContexts[threadIndex];
+        }
+
         robin_hood::unordered_map<string, ShaderHandle, StringHash, StringEqual> shaderHandles;
         vector<shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1
         std::atomic_bool reloadShaders;
@@ -273,6 +307,8 @@ namespace sp::vulkan {
         double lastFrameEnd = 0, fpsTimer = 0;
         uint32 frameCounter = 0, frameCounterThisSecond = 0;
         GLFWwindow *window = nullptr;
+
+        DispatchQueue frameEndQueue, allocatorQueue;
 
         unique_ptr<CFuncCollection> funcs;
     };

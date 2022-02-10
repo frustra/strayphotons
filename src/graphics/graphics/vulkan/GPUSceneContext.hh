@@ -1,6 +1,8 @@
 #pragma once
 
+#include "core/DispatchQueue.hh"
 #include "graphics/vulkan/core/Common.hh"
+#include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Memory.hh"
 
 namespace sp::vulkan {
@@ -66,6 +68,9 @@ namespace sp::vulkan {
         uint32 primitiveCount = 0;
         uint32 primitiveCountPowerOfTwo = 1; // Always at least 1. Used to size draw command buffers.
 
+        std::pair<TextureIndex, std::future<void>> AddTexture(const ImageCreateInfo &imageInfo,
+            const ImageViewCreateInfo &viewInfo,
+            const InitialData &data);
         TextureIndex AddTexture(const ImageViewPtr &ptr);
         void ReleaseTexture(TextureIndex i);
         void FlushTextureDescriptors();
@@ -79,11 +84,16 @@ namespace sp::vulkan {
         }
 
     private:
+        TextureIndex AllocateTextureIndex();
+
         DeviceContext &device;
 
         vector<ImageViewPtr> textures;
+
         vector<TextureIndex> freeTextureIndexes;
         vector<TextureIndex> texturesToFlush;
         vk::DescriptorSet textureDescriptorSet;
+
+        DispatchQueue workQueue;
     };
 } // namespace sp::vulkan

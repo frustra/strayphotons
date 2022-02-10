@@ -97,8 +97,7 @@ namespace sp {
         Assert(!renderer, "already have an active renderer");
 
         timer.SetDevice(vkContext);
-        profilerGui = make_shared<vulkan::ProfilerGui>(timer);
-        game->debugGui->Attach(profilerGui);
+        game->debugGui->Attach(make_shared<vulkan::ProfilerGui>(timer));
 
         renderer = make_unique<vulkan::Renderer>(*vkContext, timer);
         renderer->SetDebugGui(*game->debugGui.get());

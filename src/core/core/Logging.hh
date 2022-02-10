@@ -11,13 +11,14 @@
 
 #define Debugf(...) ::sp::logging::Debug(__FILE__, __LINE__, __VA_ARGS__)
 #define Logf(...) ::sp::logging::Log(__FILE__, __LINE__, __VA_ARGS__)
+#define Warnf(...) ::sp::logging::Warn(__FILE__, __LINE__, __VA_ARGS__)
 #define Errorf(...) ::sp::logging::Error(__FILE__, __LINE__, __VA_ARGS__)
 #define Abortf(...) ::sp::logging::Abort(__FILE__, __LINE__, __VA_ARGS__)
 #define Assertf(condition, ...) \
     if (!(condition)) ::sp::logging::Abort(__FILE__, __LINE__, __VA_ARGS__)
 
 namespace sp::logging {
-    enum class Level { Error, Log, Debug };
+    enum class Level { Error, Warn, Log, Debug };
 
     void GlobalLogOutput(Level lvl, const std::string &line);
 
@@ -92,6 +93,11 @@ namespace sp::logging {
     template<typename... T>
     static void Log(const char *file, int line, const std::string &fmt, T... t) {
         writeLog(Level::Log, file, line, "[log] " + fmt, t...);
+    }
+
+    template<typename... T>
+    static void Warn(const char *file, int line, const std::string &fmt, T... t) {
+        writeLog(Level::Warn, file, line, "[warn] " + fmt, t...);
     }
 
     template<typename... T>

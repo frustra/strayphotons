@@ -961,6 +961,7 @@ namespace sp::vulkan {
                 modelsToLoad.push_back(renderable.model);
                 continue;
             }
+            if (!model->Ready()) continue;
 
             Assert(scene.renderableCount * sizeof(GPURenderableEntity) < scene.renderableEntityList->Size(),
                 "renderable entity overflow");
@@ -1180,14 +1181,14 @@ namespace sp::vulkan {
         chrono_clock::duration totalLoadTime = {};
 
         for (int i = (int)modelsToLoad.size() - 1; i >= 0; i--) {
-            const auto &model = modelsToLoad[i];
+            auto &model = modelsToLoad[i];
             if (activeModels.Contains(model->name)) {
                 modelsToLoad.pop_back();
                 continue;
             }
 
             auto start = chrono_clock::now();
-            auto vulkanModel = make_shared<Model>(*model, scene, device);
+            auto vulkanModel = make_shared<Model>(model, scene, device);
             activeModels.Register(model->name, vulkanModel);
 
             auto loadTime = chrono_clock::now() - start;
@@ -1230,7 +1231,9 @@ namespace sp::vulkan {
 
         ImageViewCreateInfo viewInfo;
         viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
-        auto imageView = device.CreateImageAndView(imageInfo, viewInfo, data, sizeof(data));
+        auto fut = device.CreateImageAndView(imageInfo, viewInfo, {data, sizeof(data)});
+        device.FlushMainQueue();
+        auto imageView = fut.get();
         return imageView;
     }
 } // namespace sp::vulkan

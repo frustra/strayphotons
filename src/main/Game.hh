@@ -30,6 +30,10 @@ namespace cxxopts {
 namespace sp {
     class Script;
 
+#ifdef SP_AUDIO_SUPPORT
+    class AudioManager;
+#endif
+
     class Game {
     public:
         Game(cxxopts::ParseResult &options, Script *startupScript = nullptr);
@@ -51,6 +55,9 @@ namespace sp {
 #endif
 #ifdef SP_XR_SUPPORT
         xr::XrManager xr;
+#endif
+#ifdef SP_AUDIO_SUPPORT
+        std::unique_ptr<AudioManager> audio;
 #endif
         ConsoleBindingManager consoleBinding;
         GameLogic logic;

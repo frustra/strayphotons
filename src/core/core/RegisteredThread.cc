@@ -42,6 +42,8 @@ namespace sp {
         Assert(!thread.joinable(), "RegisteredThread::StartThread() called while thread already running");
         thread = std::thread([this] {
             tracy::SetThreadName(threadName.c_str());
+            Init();
+
             std::array<chrono_clock::duration, 10> previousFrames;
             previousFrames.fill(this->interval);
             size_t frameIndex = 0;
@@ -89,9 +91,9 @@ namespace sp {
         });
     }
 
-    void RegisteredThread::StopThread() {
+    void RegisteredThread::StopThread(bool waitForExit) {
         exiting = true;
-        if (thread.joinable()) thread.join();
+        if (waitForExit && thread.joinable()) thread.join();
     }
 
     double RegisteredThread::GetFrameRate() const {

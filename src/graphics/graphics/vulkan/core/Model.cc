@@ -10,13 +10,14 @@
 #include <tiny_gltf.h>
 
 namespace sp::vulkan {
-    Model::Model(const sp::Model &model, GPUSceneContext &scene, DeviceContext &device)
-        : modelName(model.name), scene(scene) {
+    Model::Model(shared_ptr<const sp::Model> model, GPUSceneContext &scene, DeviceContext &device)
+        : modelName(model->name), scene(scene), asset(model) {
+        ZoneScoped;
         // TODO: cache the output somewhere. Keeping the conversion code in
         // the engine will be useful for any dynamic loading in the future,
         // but we don't want to do it every time a model is loaded.
 
-        for (auto &assetPrimitive : model.Primitives()) {
+        for (auto &assetPrimitive : model->Primitives()) {
             indexCount += assetPrimitive.indexBuffer.componentCount;
             vertexCount += assetPrimitive.attributes[0].componentCount;
         }
@@ -29,7 +30,7 @@ namespace sp::vulkan {
         auto vertexData = (SceneVertex *)vertexBuffer->Mapped();
         auto vertexDataStart = vertexData;
 
-        for (auto &assetPrimitive : model.Primitives()) {
+        for (auto &assetPrimitive : model->Primitives()) {
             // TODO: this implementation assumes a lot about the model format,
             // and asserts the assumptions. It would be better to support more
             // kinds of inputs, and convert the data rather than just failing.
@@ -39,13 +40,13 @@ namespace sp::vulkan {
             auto &vkPrimitive = *vkPrimitivePtr;
 
             vkPrimitive.transform = assetPrimitive.matrix;
-            auto &buffers = model.GetGltfModel()->buffers;
+            auto &buffers = model->GetGltfModel()->buffers;
 
             switch (assetPrimitive.indexBuffer.componentType) {
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
                 vkPrimitive.indexType = vk::IndexType::eUint32;
                 Assert(assetPrimitive.indexBuffer.byteStride == 4, "index buffer must be tightly packed");
-                Abortf("TODO %s uses uint indexes, but the GPU driven renderer doesn't support them yet", model.name);
+                Abortf("TODO %s uses uint indexes, but the GPU driven renderer doesn't support them yet", modelName);
                 break;
             case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
                 vkPrimitive.indexType = vk::IndexType::eUint16;
@@ -54,22 +55,27 @@ namespace sp::vulkan {
             }
             Assert(vkPrimitive.indexType != vk::IndexType::eNoneKHR, "unimplemented vertex index type");
 
-            auto &indexBuffer = buffers[assetPrimitive.indexBuffer.bufferIndex];
+            auto &indexBufferSrc = buffers[assetPrimitive.indexBuffer.bufferIndex];
             vkPrimitive.indexCount = assetPrimitive.indexBuffer.componentCount;
             vkPrimitive.indexOffset = indexData - indexDataStart;
             size_t indexBufferSize = vkPrimitive.indexCount * assetPrimitive.indexBuffer.byteStride;
-            Assert(assetPrimitive.indexBuffer.byteOffset + indexBufferSize <= indexBuffer.data.size(),
+            Assert(assetPrimitive.indexBuffer.byteOffset + indexBufferSize <= indexBufferSrc.data.size(),
                 "indexes overflow buffer");
 
-            auto indexPtr = &indexBuffer.data[assetPrimitive.indexBuffer.byteOffset];
-            std::copy(indexPtr, indexPtr + indexBufferSize, (uint8 *)indexData);
+            auto indexPtr = &indexBufferSrc.data[assetPrimitive.indexBuffer.byteOffset];
+            ready.push_back(std::async(std::launch::async, [indexPtr, indexBufferSize, indexData]() {
+                ZoneScoped;
+                std::copy(indexPtr, indexPtr + indexBufferSize, (uint8 *)indexData);
+            }));
             indexData += vkPrimitive.indexCount;
 
-            auto &posAttr = assetPrimitive.attributes[0];
-            auto &normalAttr = assetPrimitive.attributes[1];
-            auto &uvAttr = assetPrimitive.attributes[2];
+            auto posAttr = assetPrimitive.attributes[0];
+            auto normalAttr = assetPrimitive.attributes[1];
+            auto uvAttr = assetPrimitive.attributes[2];
 
-            if (posAttr.componentCount) {
+            size_t vertexCount = posAttr.componentCount;
+
+            if (vertexCount) {
                 Assert(posAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT,
                     "position attribute must be a float vector");
                 Assert(posAttr.componentFields == 3, "position attribute must be a vec3");
@@ -78,59 +84,72 @@ namespace sp::vulkan {
                 Assert(normalAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT,
                     "normal attribute must be a float vector");
                 Assert(normalAttr.componentFields == 3, "normal attribute must be a vec3");
-                Assert(normalAttr.componentCount == posAttr.componentCount, "must have a normal for every vertex");
+                Assert(normalAttr.componentCount == vertexCount, "must have a normal for every vertex");
             }
             if (uvAttr.componentCount) {
                 Assert(uvAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT, "uv attribute must be a float vector");
                 Assert(uvAttr.componentFields == 2, "uv attribute must be a vec2");
-                Assert(uvAttr.componentCount == uvAttr.componentCount, "must have texcoords for every vertex");
+                Assert(uvAttr.componentCount == vertexCount, "must have texcoords for every vertex");
             }
 
             vkPrimitive.vertexCount = posAttr.componentCount;
             vkPrimitive.vertexOffset = vertexData - vertexDataStart;
 
-            for (size_t i = 0; i < posAttr.componentCount; i++) {
-                SceneVertex &vertex = *(vertexData++);
+            const uint8 *posBuffer = buffers[posAttr.bufferIndex].data.data() + posAttr.byteOffset;
+            const uint8 *normalBuffer = buffers[normalAttr.bufferIndex].data.data() + normalAttr.byteOffset;
+            const uint8 *uvBuffer = buffers[uvAttr.bufferIndex].data.data() + uvAttr.byteOffset;
 
-                vertex.position = reinterpret_cast<const glm::vec3 &>(
-                    buffers[posAttr.bufferIndex].data[posAttr.byteOffset + i * posAttr.byteStride]);
+            ready.push_back(std::async(std::launch::async,
+                [posBuffer, normalBuffer, uvBuffer, posAttr, normalAttr, uvAttr, vertexCount, vertexData]() {
+                    ZoneScoped;
+                    for (size_t i = 0; i < vertexCount; i++) {
+                        SceneVertex &vertex = vertexData[i];
 
-                if (normalAttr.componentCount) {
-                    vertex.normal = reinterpret_cast<const glm::vec3 &>(
-                        buffers[normalAttr.bufferIndex].data[normalAttr.byteOffset + i * normalAttr.byteStride]);
-                }
+                        vertex.position = reinterpret_cast<const glm::vec3 &>(posBuffer[i * posAttr.byteStride]);
 
-                if (uvAttr.componentCount) {
-                    vertex.uv = reinterpret_cast<const glm::vec2 &>(
-                        buffers[uvAttr.bufferIndex].data[uvAttr.byteOffset + i * uvAttr.byteStride]);
-                }
-            }
+                        if (i < normalAttr.componentCount) {
+                            vertex.normal = reinterpret_cast<const glm::vec3 &>(
+                                normalBuffer[i * normalAttr.byteStride]);
+                        }
 
-            vkPrimitive.baseColor = LoadTexture(device, model, assetPrimitive.materialIndex, BaseColor);
-            vkPrimitive.metallicRoughness = LoadTexture(device, model, assetPrimitive.materialIndex, MetallicRoughness);
+                        if (i < uvAttr.componentCount) {
+                            vertex.uv = reinterpret_cast<const glm::vec2 &>(uvBuffer[i * uvAttr.byteStride]);
+                        }
+                    }
+                }));
+
+            vertexData += vertexCount;
+
+            vkPrimitive.baseColor = LoadTexture(device, *model, assetPrimitive.materialIndex, BaseColor);
+            vkPrimitive.metallicRoughness =
+                LoadTexture(device, *model, assetPrimitive.materialIndex, MetallicRoughness);
 
             primitives.emplace_back(vkPrimitivePtr);
         }
 
         primitiveList = scene.primitiveLists->ArrayAllocate(primitives.size(), sizeof(GPUMeshPrimitive));
-        auto gpuPrimitives = (GPUMeshPrimitive *)primitiveList->Mapped();
-        for (auto &p : primitives) {
-            gpuPrimitives->indexCount = p->indexCount;
-            gpuPrimitives->vertexCount = p->vertexCount;
-            gpuPrimitives->firstIndex = p->indexOffset;
-            gpuPrimitives->vertexOffset = p->vertexOffset;
-            gpuPrimitives->primitiveToModel = p->transform;
-            gpuPrimitives->baseColorTexID = p->baseColor;
-            gpuPrimitives->metallicRoughnessTexID = p->metallicRoughness;
-            gpuPrimitives++;
-        }
-
         modelEntry = scene.models->ArrayAllocate(1, sizeof(GPUMeshModel));
+
         auto meshModel = (GPUMeshModel *)modelEntry->Mapped();
-        meshModel->primitiveCount = primitives.size();
-        meshModel->primitiveOffset = primitiveList->ArrayOffset();
-        meshModel->indexOffset = indexBuffer->ArrayOffset();
-        meshModel->vertexOffset = vertexBuffer->ArrayOffset();
+        auto gpuPrimitives = (GPUMeshPrimitive *)primitiveList->Mapped();
+        ready.push_back(std::async(std::launch::async, [this, gpuPrimitives, meshModel]() {
+            ZoneScoped;
+            auto gpuPrim = gpuPrimitives;
+            for (auto &p : primitives) {
+                gpuPrim->indexCount = p->indexCount;
+                gpuPrim->vertexCount = p->vertexCount;
+                gpuPrim->firstIndex = p->indexOffset;
+                gpuPrim->vertexOffset = p->vertexOffset;
+                gpuPrim->primitiveToModel = p->transform;
+                gpuPrim->baseColorTexID = p->baseColor;
+                gpuPrim->metallicRoughnessTexID = p->metallicRoughness;
+                gpuPrim++;
+            }
+            meshModel->primitiveCount = primitives.size();
+            meshModel->primitiveOffset = primitiveList->ArrayOffset();
+            meshModel->indexOffset = indexBuffer->ArrayOffset();
+            meshModel->vertexOffset = vertexBuffer->ArrayOffset();
+        }));
     }
 
     Model::~Model() {
@@ -174,6 +193,7 @@ namespace sp::vulkan {
         const sp::Model &model,
         int materialIndex,
         TextureType type) {
+        ZoneScoped;
         auto &gltfModel = model.GetGltfModel();
         auto &material = gltfModel->materials[materialIndex];
 
@@ -233,9 +253,9 @@ namespace sp::vulkan {
         if (textureIndex == -1) {
             if (factor.size() == 0) factor.push_back(1); // default texture is a single white pixel
 
-            uint8_t data[4];
+            auto data = make_shared<std::array<uint8, 4>>();
             for (size_t i = 0; i < 4; i++) {
-                data[i] = (uint8_t)(255.0 * factor.at(std::min(factor.size() - 1, i)));
+                (*data)[i] = uint8(255.0 * factor.at(std::min(factor.size() - 1, i)));
             }
 
             // Create a single pixel texture based on the factor data provided
@@ -247,14 +267,14 @@ namespace sp::vulkan {
 
             ImageViewCreateInfo viewInfo;
             viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
-            auto imageView = device.CreateImageAndView(imageInfo, viewInfo, data, sizeof(data));
-            TextureIndex i = scene.AddTexture(imageView);
-            textures[name] = i;
-            return i;
+            auto added = scene.AddTexture(imageInfo, viewInfo, {data->data(), data->size(), data});
+            textures[name] = added.first;
+            ready.push_back(std::move(added.second));
+            return added.first;
         }
 
-        tinygltf::Texture texture = gltfModel->textures[textureIndex];
-        tinygltf::Image img = gltfModel->images[texture.source];
+        auto &texture = gltfModel->textures[textureIndex];
+        auto &img = gltfModel->images[texture.source];
 
         ImageCreateInfo imageInfo;
         imageInfo.imageType = vk::ImageType::e2D;
@@ -295,10 +315,9 @@ namespace sp::vulkan {
             imageInfo.genMipmap = (samplerInfo.maxLod > 0);
         }
 
-        auto imageView = device.CreateImageAndView(imageInfo, viewInfo, img.image.data(), img.image.size());
-
-        TextureIndex i = scene.AddTexture(imageView);
-        textures[name] = i;
-        return i;
+        auto added = scene.AddTexture(imageInfo, viewInfo, {img.image.data(), img.image.size(), gltfModel});
+        textures[name] = added.first;
+        ready.push_back(std::move(added.second));
+        return added.first;
     }
 } // namespace sp::vulkan

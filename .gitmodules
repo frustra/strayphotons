@@ -49,3 +49,18 @@
 [submodule "ext/tracy"]
 	path = ext/tracy
 	url = https://github.com/wolfpld/tracy
+[submodule "ext/libsoundio"]
+	path = ext/libsoundio
+	url = https://github.com/andrewrk/libsoundio
+[submodule "ext/resonance-audio"]
+	path = ext/resonance-audio
+	url = https://github.com/pushrax/resonance-audio
+[submodule "ext/libnyquist"]
+	path = ext/libnyquist
+	url = https://github.com/ddiakopoulos/libnyquist
+[submodule "ext/eigen"]
+	path = ext/eigen
+	url = https://gitlab.com/libeigen/eigen.git
+[submodule "ext/pffft"]
+	path = ext/pffft
+	url = https://bitbucket.org/jpommier/pffft.git
