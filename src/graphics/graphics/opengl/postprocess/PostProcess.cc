@@ -2,6 +2,7 @@
 
 #include "console/CFunc.hh"
 #include "console/CVar.hh"
+#include "core/LockFreeMutex.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/opengl/GLRenderTarget.hh"
 #include "graphics/opengl/GenericShaders.hh"
@@ -145,14 +146,16 @@ namespace sp {
         context.LastOutput = menu;
     }
 
-    static std::atomic<shared_ptr<string>> ScreenshotPath;
+    static LockFreeMutex ScreenshotMutex;
+    static string ScreenshotPath;
 
     CFunc<string> CFuncQueueScreenshot("screenshot", "Save screenshot to <path>", [](string path) {
-        auto old = ScreenshotPath.exchange(make_shared<string>(path));
-        Assertf(old,
+        std::lock_guard lock(ScreenshotMutex);
+        Assertf(ScreenshotPath.empty(),
             "Can't save multiple screenshots on the same frame: %s, already saving %s",
-            path.c_str(),
-            old->c_str());
+            path,
+            ScreenshotPath);
+        ScreenshotPath = path;
     });
 
     void SaveScreenshot(string path, GLTexture &tex) {
@@ -281,8 +284,10 @@ namespace sp {
         lastOutput->TargetRef->GetGLTexture().Bind(0);
         VoxelRenderer::DrawScreenCover();
 
-        auto path = ScreenshotPath.exchange(nullptr);
-        if (path) SaveScreenshot(*path, lastOutput->TargetRef->GetGLTexture());
+        {
+            std::lock_guard l(ScreenshotMutex);
+            if (!ScreenshotPath.empty()) SaveScreenshot(ScreenshotPath, lastOutput->TargetRef->GetGLTexture());
+        }
 
         lastOutput->ReleaseDependency();
     }

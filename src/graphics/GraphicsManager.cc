@@ -5,8 +5,8 @@
     #include "core/Logging.hh"
     #include "core/Tracing.hh"
     #include "ecs/EcsImpl.hh"
-    #include "main/Game.hh"
     #include "graphics/core/GraphicsContext.hh"
+    #include "main/Game.hh"
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
         #include "graphics/opengl/GlfwGraphicsContext.hh"

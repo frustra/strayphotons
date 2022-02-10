@@ -159,7 +159,6 @@
 		{
 			"_name": "transition_zone",
 			"signal_output": {},
-			"renderable": "box",
 			"laser_line": {
 				"intensity": 1,
 				"color": [

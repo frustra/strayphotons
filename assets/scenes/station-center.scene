@@ -17,7 +17,6 @@
 		{
 			"_name": "transition_zone",
 			"signal_output": {},
-			"renderable": "box",
 			<%- include('prefab/laser_cube') %>,
 			"transform": {
 				"scale": [20, 40, 20],

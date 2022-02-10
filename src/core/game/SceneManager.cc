@@ -44,7 +44,9 @@ namespace sp {
             QueueActionAndBlock(SceneAction::ReloadBindings);
         });
         funcs.Register("respawn", "Respawn the player", [this]() {
-            RespawnPlayer(player);
+            auto liveLock = this->liveWorld.StartTransaction<ecs::Read<ecs::Name>,
+                ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>>();
+            RespawnPlayer(liveLock, player);
         });
         funcs.Register(this, "printscene", "Print info about currently loaded scenes", &SceneManager::PrintScene);
 
@@ -136,8 +138,9 @@ namespace sp {
                         removedCount);
                 }
 
-                AddScene(action.sceneName, SceneType::User);
-                RespawnPlayer(player);
+                AddScene(action.sceneName, SceneType::User, [&](auto lock, auto scene) {
+                    RespawnPlayer(lock, player);
+                });
                 promise.set_value();
 
             } else if (action.action == SceneAction::ReloadScene) {
@@ -251,7 +254,7 @@ namespace sp {
                                     }
                                 }
                                 Assert(!!player, "Player scene doesn't contain an entity named player");
-                                RespawnPlayer(player);
+                                RespawnPlayer(liveLock, player);
                             }
                         } else {
                             Errorf("Failed to load player scene!");
@@ -541,7 +544,9 @@ namespace sp {
         }
     }
 
-    std::shared_ptr<Scene> SceneManager::AddScene(std::string sceneName, SceneType sceneType) {
+    std::shared_ptr<Scene> SceneManager::AddScene(std::string sceneName,
+        SceneType sceneType,
+        ApplySceneCallback callback) {
         auto loadedScene = stagedScenes.Load(sceneName);
         if (loadedScene != nullptr) {
             Logf("Scene %s already loaded", sceneName);
@@ -552,7 +557,7 @@ namespace sp {
         LoadSceneJson(sceneName,
             sceneType,
             ecs::SceneInfo::Priority::Scene,
-            [this, sceneName, sceneType, &loadedScene, &loaded](std::shared_ptr<Scene> scene) {
+            [this, sceneName, sceneType, callback, &loadedScene, &loaded](std::shared_ptr<Scene> scene) {
                 if (scene) {
                     TranslateSceneByConnection(scene);
                     {
@@ -560,6 +565,8 @@ namespace sp {
                         auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
 
                         scene->ApplyScene(stagingLock, liveLock);
+
+                        if (callback) callback(liveLock, scene);
                     }
 
                     stagedScenes.Register(sceneName, scene);
@@ -578,24 +585,23 @@ namespace sp {
         return loadedScene;
     }
 
-    void SceneManager::RespawnPlayer(Tecs::Entity player) {
-        auto liveLock =
-            liveWorld.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>>();
-
-        auto spawn = ecs::EntityWith<ecs::Name>(liveLock, "global.spawn");
-        if (spawn.Has<ecs::TransformSnapshot>(liveLock)) {
-            auto &spawnTransform = spawn.Get<const ecs::TransformSnapshot>(liveLock);
-            if (player.Has<ecs::TransformSnapshot, ecs::TransformTree>(liveLock)) {
-                auto &playerTransform = player.Get<ecs::TransformSnapshot>(liveLock);
-                auto &playerTree = player.Get<ecs::TransformTree>(liveLock);
+    void SceneManager::RespawnPlayer(
+        ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
+        Tecs::Entity player) {
+        auto spawn = ecs::EntityWith<ecs::Name>(lock, "global.spawn");
+        if (spawn.Has<ecs::TransformSnapshot>(lock)) {
+            auto &spawnTransform = spawn.Get<const ecs::TransformSnapshot>(lock);
+            if (player.Has<ecs::TransformSnapshot, ecs::TransformTree>(lock)) {
+                auto &playerTransform = player.Get<ecs::TransformSnapshot>(lock);
+                auto &playerTree = player.Get<ecs::TransformTree>(lock);
                 Assert(!playerTree.parent, "Player entity should not have a TransformTree parent");
                 playerTransform = spawnTransform;
                 playerTree.pose = spawnTransform;
             }
-            auto vrOrigin = ecs::EntityWith<ecs::Name>(liveLock, "player.vr-origin");
-            if (vrOrigin.Has<ecs::TransformSnapshot, ecs::TransformTree>(liveLock)) {
-                auto &vrTransform = vrOrigin.Get<ecs::TransformSnapshot>(liveLock);
-                auto &vrTree = vrOrigin.Get<ecs::TransformTree>(liveLock);
+            auto vrOrigin = ecs::EntityWith<ecs::Name>(lock, "player.vr-origin");
+            if (vrOrigin.Has<ecs::TransformSnapshot, ecs::TransformTree>(lock)) {
+                auto &vrTransform = vrOrigin.Get<ecs::TransformSnapshot>(lock);
+                auto &vrTree = vrOrigin.Get<ecs::TransformTree>(lock);
                 Assert(!vrTree.parent, "VR Origin entity should not have a TransformTree parent");
                 vrTransform = spawnTransform;
                 vrTree.pose = spawnTransform;

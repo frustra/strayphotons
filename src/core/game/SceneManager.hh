@@ -75,7 +75,8 @@ namespace sp {
         void Frame() override;
 
         void PrintScene(std::string sceneName);
-        void RespawnPlayer(Tecs::Entity player);
+        void RespawnPlayer(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
+            Tecs::Entity player);
 
         struct QueuedAction {
             SceneAction action;
@@ -91,7 +92,7 @@ namespace sp {
 
         void LoadBindingsJson(std::function<void(std::shared_ptr<Scene>)> callback);
 
-        std::shared_ptr<Scene> AddScene(std::string name, SceneType sceneType);
+        std::shared_ptr<Scene> AddScene(std::string name, SceneType sceneType, ApplySceneCallback callback = nullptr);
 
         void TranslateSceneByConnection(const std::shared_ptr<Scene> &scene);
 
