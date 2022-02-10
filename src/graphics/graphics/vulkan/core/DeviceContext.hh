@@ -275,7 +275,7 @@ namespace sp::vulkan {
 
         struct ThreadContext {
             std::array<vk::UniqueCommandPool, QUEUE_TYPES_COUNT> commandPools;
-            std::array<HandlePool<CommandContextPtr>, QUEUE_TYPES_COUNT> commandContexts;
+            std::array<unique_ptr<HandlePool<CommandContextPtr>>, QUEUE_TYPES_COUNT> commandContexts;
             std::array<vector<SharedHandle<CommandContextPtr>>, QUEUE_TYPES_COUNT> pendingCommandContexts;
 
             void ReleaseAvailableResources();

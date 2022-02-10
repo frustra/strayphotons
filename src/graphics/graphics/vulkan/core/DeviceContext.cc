@@ -68,7 +68,8 @@ namespace sp::vulkan {
     }
 
     DeviceContext::DeviceContext(bool enableValidationLayers, bool enableSwapchain)
-        : allocator(nullptr, DeleteAllocator), frameEndQueue("EndFrame", 0), allocatorQueue("Allocator") {
+        : allocator(nullptr, DeleteAllocator), threadContexts(32), frameEndQueue("EndFrame", 0),
+          allocatorQueue("Allocator") {
         ZoneScoped;
         glfwSetErrorCallback(glfwErrorCallback);
 
@@ -418,22 +419,21 @@ namespace sp::vulkan {
         renderPassPool = make_unique<RenderPassManager>(*this);
         framebufferPool = make_unique<FramebufferManager>(*this);
 
-        threadContexts.resize(32);
-        for (auto &tcPtr : threadContexts) {
-            tcPtr.reset(new ThreadContext());
-            auto tc = tcPtr.get();
+        for (auto &threadContextUnique : threadContexts) {
+            threadContextUnique = make_unique<ThreadContext>();
+            ThreadContext *threadContext = threadContextUnique.get();
 
             for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
                 vk::CommandPoolCreateInfo poolInfo;
                 poolInfo.queueFamilyIndex = queueFamilyIndex[queueType];
                 poolInfo.flags = vk::CommandPoolCreateFlagBits::eTransient |
                                  vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-                tc->commandPools[queueType] = device->createCommandPoolUnique(poolInfo);
+                threadContext->commandPools[queueType] = device->createCommandPoolUnique(poolInfo);
 
-                tc->commandContexts[queueType] = HandlePool<CommandContextPtr>(
-                    [this, tc, queueType]() {
+                threadContext->commandContexts[queueType] = make_unique<HandlePool<CommandContextPtr>>(
+                    [this, threadContext, queueType]() {
                         vk::CommandBufferAllocateInfo allocInfo;
-                        allocInfo.commandPool = *tc->commandPools[queueType];
+                        allocInfo.commandPool = *threadContext->commandPools[queueType];
                         allocInfo.level = vk::CommandBufferLevel::ePrimary;
                         allocInfo.commandBufferCount = 1;
                         auto buffers = device->allocateCommandBuffersUnique(allocInfo);
@@ -655,23 +655,6 @@ namespace sp::vulkan {
         }
         PrepareResourcesForFrame();
         vmaSetCurrentFrameIndex(allocator.get(), frameCounter);
-
-        for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
-            auto trctx = tracing.tracyContexts[i];
-            if (!trctx) continue;
-            auto ctx = allocatorQueue.Dispatch<CommandContextPtr>([this, i, trctx]() {
-                auto ctx = GetCommandContext(CommandContextType(i), CommandContextScope::Fence);
-                {
-                    GPUZone(this, ctx, "TracyCollect");
-                    TracyVkCollect(trctx, ctx->Raw());
-                }
-                ctx->End();
-                return ctx;
-            });
-            frameEndQueue.Dispatch<void>(std::move(ctx), [this](CommandContextPtr ctx) {
-                Submit(ctx);
-            });
-        }
     }
 
     void DeviceContext::PrepareResourcesForFrame() {
@@ -718,6 +701,16 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::EndFrame() {
+        for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
+            auto trctx = tracing.tracyContexts[i];
+            if (!trctx) continue;
+            auto ctx = GetCommandContext(CommandContextType(i), CommandContextScope::Fence);
+            {
+                GPUZone(this, ctx, "TracyCollect");
+                TracyVkCollect(trctx, ctx->Raw());
+            }
+            Submit(ctx);
+        }
         frameEndQueue.Flush();
 
         frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -762,7 +755,7 @@ namespace sp::vulkan {
             }
         } else {
             auto &thr = Thread();
-            auto cmdHandle = thr.commandContexts[QueueType(type)].Get();
+            auto cmdHandle = thr.commandContexts[QueueType(type)]->Get();
             thr.pendingCommandContexts[QueueType(type)].push_back(cmdHandle);
             cmd = cmdHandle;
         }

@@ -53,11 +53,11 @@ namespace sp {
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
         PhysxManager physics;
 #endif
-#ifdef SP_AUDIO_SUPPORT
-        std::unique_ptr<AudioManager> audio;
-#endif
 #ifdef SP_XR_SUPPORT
         xr::XrManager xr;
+#endif
+#ifdef SP_AUDIO_SUPPORT
+        std::unique_ptr<AudioManager> audio;
 #endif
         ConsoleBindingManager consoleBinding;
         GameLogic logic;
