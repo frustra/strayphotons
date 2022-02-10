@@ -31,6 +31,7 @@ endif()
 if(SP_PACKAGE_RELEASE)
     message(STATUS "Enabling build for packaged release")
     add_compile_definitions(SP_PACKAGE_RELEASE=1)
+    add_compile_definitions(CATCH_GLOBAL_EXCEPTIONS=1)
 endif()
 
 # Tell cmake we need C++20

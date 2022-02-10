@@ -33,8 +33,8 @@ namespace sp::xr {
                 Errorf("XR Runtime initialization failed!");
                 xrSystem.reset();
             }
-        } catch (std::exception &e) {
-            Errorf("XR Runtime threw error on initialization! Error: %s", e.what());
+        } catch (const std::exception &ex) {
+            Errorf("XR Runtime threw error on initialization! Error: %s", ex.what());
             xrSystem.reset();
         }
     }

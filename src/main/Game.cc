@@ -38,10 +38,13 @@ namespace sp {
     Game::~Game() {}
 
     int Game::Start() {
-        std::atomic<std::pair<bool, int>> exitCodeTrigger = std::make_pair(false, 0);
+        int exitCode;
+        std::atomic_flag exitTriggered;
 
-        CFunc<int> cfExit("exit", "Quits the game", [&exitCodeTrigger](int arg) {
-            exitCodeTrigger = std::make_pair(true, arg);
+        CFunc<int> cfExit("exit", "Quits the game", [&exitCode, &exitTriggered](int arg) {
+            exitCode = arg;
+            exitTriggered.test_and_set();
+            exitTriggered.notify_all();
         });
 
         if (options.count("cvar")) {
@@ -61,53 +64,47 @@ namespace sp {
         sp::rust::print_hello();
 #endif
 
-        try {
 #ifdef SP_GRAPHICS_SUPPORT
-            if (options["headless"].count() == 0) {
-                debugGui = std::make_unique<DebugGuiManager>();
-                graphics.Init();
+        if (options["headless"].count() == 0) {
+            debugGui = std::make_unique<DebugGuiManager>();
+            graphics.Init();
 
-                // must create all gui instances after initializing graphics, except for the special debug gui
-                menuGui = std::make_unique<MenuGuiManager>(this->graphics);
-            }
+            // must create all gui instances after initializing graphics, except for the special debug gui
+            menuGui = std::make_unique<MenuGuiManager>(this->graphics);
+        }
 #endif
 
 #ifdef SP_XR_SUPPORT
-            if (options["no-vr"].count() == 0) xr.LoadXrSystem();
+        if (options["no-vr"].count() == 0) xr.LoadXrSystem();
 #endif
 
-            auto &scenes = GetSceneManager();
-            scenes.QueueActionAndBlock(SceneAction::ReloadPlayer);
-            scenes.QueueActionAndBlock(SceneAction::ReloadBindings);
-            if (options.count("map")) {
-                scenes.QueueActionAndBlock(SceneAction::LoadScene, options["map"].as<string>());
-            }
+        auto &scenes = GetSceneManager();
+        scenes.QueueActionAndBlock(SceneAction::ReloadPlayer);
+        scenes.QueueActionAndBlock(SceneAction::ReloadBindings);
+        if (options.count("map")) { scenes.QueueActionAndBlock(SceneAction::LoadScene, options["map"].as<string>()); }
 
-            if (startupScript != nullptr) {
-                startupScript->Exec();
-            } else if (!options.count("map")) {
-                scenes.QueueActionAndBlock(SceneAction::LoadScene, "menu");
-                {
-                    auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
-                    lock.Get<ecs::FocusLock>().AcquireFocus(ecs::FocusLayer::MENU);
-                }
+        if (startupScript != nullptr) {
+            startupScript->Exec();
+        } else if (!options.count("map")) {
+            scenes.QueueActionAndBlock(SceneAction::LoadScene, "menu");
+            {
+                auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
+                lock.Get<ecs::FocusLock>().AcquireFocus(ecs::FocusLayer::MENU);
             }
-
-            logic.StartThread();
-
-            auto exitCode = exitCodeTrigger.load();
-            for (; !exitCode.first; exitCode = exitCodeTrigger.load()) {
-#ifdef SP_GRAPHICS_SUPPORT
-                if (!graphics.Frame()) break;
-                FrameMark;
-#else
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-#endif
-            }
-            return exitCode.second;
-        } catch (char const *err) {
-            Errorf("%s", err);
-            return 1;
         }
+
+        logic.StartThread();
+
+#ifdef SP_GRAPHICS_SUPPORT
+        while (!exitTriggered.test()) {
+            if (!graphics.Frame()) break;
+            FrameMark;
+        }
+#else
+        while (!exitTriggered.test()) {
+            exitTriggered.wait(false);
+        }
+#endif
+        return exitCode;
     }
 } // namespace sp
