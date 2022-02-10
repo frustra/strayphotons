@@ -97,6 +97,9 @@ namespace sp {
                             auto &name = e.Get<const ecs::Name>(stagingLock);
                             scene->namedEntities.emplace(name, e);
                         }
+
+                        // Special case so TransformSnapshot doesn't get removed as a dangling component
+                        if (e.Has<ecs::TransformTree>(stagingLock)) e.Set<ecs::TransformSnapshot>(stagingLock);
                     }
                 }
                 {

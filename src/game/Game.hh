@@ -3,6 +3,7 @@
 #include "console/ConsoleBindingManager.hh"
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
+#include "game/GameLogic.hh"
 
 #ifdef SP_GRAPHICS_SUPPORT
     #include "graphics/GraphicsManager.hh"
@@ -39,15 +40,10 @@ namespace sp {
         ~Game();
 
         int Start();
-        bool Frame();
-        void PhysicsUpdate();
-        bool ShouldStop();
 
         void ReloadPlayer();
 
         void PrintDebug();
-        void PrintEvents(std::string entityName);
-        void PrintSignals(std::string entityName);
 
         cxxopts::ParseResult &options;
         Script *startupScript = nullptr;
@@ -68,12 +64,12 @@ namespace sp {
         xr::XrManager xr;
 #endif
         ConsoleBindingManager consoleBinding;
+        GameLogic logic;
 
     private:
         Tecs::Entity player;
         Tecs::Entity flatview;
 
-        chrono_clock::time_point lastFrameTime;
         CFuncCollection funcs;
     };
 } // namespace sp

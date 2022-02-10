@@ -10,16 +10,16 @@
 #include <vector>
 
 namespace ecs {
-    using ScriptFunc = std::function<void(ecs::Lock<ecs::WriteAll>, Tecs::Entity, double)>;
+    using ScriptFunc = std::function<void(ecs::Lock<ecs::WriteAll>, Tecs::Entity, chrono_clock::duration)>;
     class Script {
     public:
         void AddOnTick(ScriptFunc callback) {
             onTickCallbacks.push_back(callback);
         }
 
-        void OnTick(ecs::Lock<ecs::WriteAll> lock, Tecs::Entity &ent, double dtSinceLastFrame) {
+        void OnTick(ecs::Lock<ecs::WriteAll> lock, Tecs::Entity &ent, chrono_clock::duration interval) {
             for (auto &callback : onTickCallbacks) {
-                callback(lock, ent, dtSinceLastFrame);
+                callback(lock, ent, interval);
             }
         }
 
