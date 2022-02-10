@@ -53,8 +53,8 @@ add_module_configuration(
 )
 
 add_subdirectory(core)
-add_subdirectory(game)
 add_subdirectory(graphics)
 add_subdirectory(input)
+add_subdirectory(main)
 add_subdirectory(physx)
 add_subdirectory(xr)

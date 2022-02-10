@@ -3,7 +3,7 @@
     #include "XrManager.hh"
 
     #include "core/Logging.hh"
-    #include "game/Game.hh"
+    #include "main/Game.hh"
 
     #ifdef SP_XR_SUPPORT_OPENVR
         #include "xr/openvr/OpenVrSystem.hh"
@@ -15,6 +15,8 @@ namespace sp::xr {
     }
 
     void XrManager::LoadXrSystem() {
+        std::lock_guard lock(xrLoadMutex);
+
     #ifdef SP_XR_SUPPORT_OPENVR
         xrSystem = std::make_shared<OpenVrSystem>();
     #else
@@ -31,13 +33,14 @@ namespace sp::xr {
                 Errorf("XR Runtime initialization failed!");
                 xrSystem.reset();
             }
-        } catch (std::exception &e) {
-            Errorf("XR Runtime threw error on initialization! Error: %s", e.what());
+        } catch (const std::exception &ex) {
+            Errorf("XR Runtime threw error on initialization! Error: %s", ex.what());
             xrSystem.reset();
         }
     }
 
     std::shared_ptr<XrSystem> XrManager::GetXrSystem() {
+        std::lock_guard lock(xrLoadMutex);
         if (xrSystem && xrSystem->IsInitialized()) return xrSystem;
         return nullptr;
     }

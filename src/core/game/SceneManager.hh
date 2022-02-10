@@ -30,8 +30,8 @@ namespace sp {
         ReloadScene, // Arguments: (sceneName)
         AddScene, // Arguments: (sceneName)
         RemoveScene, // Arguments: (sceneName)
-        LoadPlayer, // Arguments: ()
-        LoadBindings, // Arguments: ()
+        ReloadPlayer, // Arguments: ()
+        ReloadBindings, // Arguments: ()
         Count,
     };
 
@@ -50,10 +50,10 @@ namespace sp {
                     return "AddScene";
                 case SceneAction::RemoveScene:
                     return "RemoveScene";
-                case SceneAction::LoadPlayer:
-                    return "LoadPlayer";
-                case SceneAction::LoadBindings:
-                    return "LoadBindings";
+                case SceneAction::ReloadPlayer:
+                    return "ReloadPlayer";
+                case SceneAction::ReloadBindings:
+                    return "ReloadBindings";
                 default:
                     return "SceneAction::INVALID";
                 }
@@ -70,13 +70,13 @@ namespace sp {
         void QueueAction(SceneAction action, std::string sceneName = "", ApplySceneCallback callback = nullptr);
         void QueueActionAndBlock(SceneAction action, std::string sceneName = "", ApplySceneCallback callback = nullptr);
 
-        void RespawnPlayer(Tecs::Entity player);
-
-        void PrintScene(std::string sceneName);
-
     private:
         void RunSceneActions();
         void Frame() override;
+
+        void PrintScene(std::string sceneName);
+        void RespawnPlayer(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
+            Tecs::Entity player);
 
         struct QueuedAction {
             SceneAction action;
@@ -92,7 +92,7 @@ namespace sp {
 
         void LoadBindingsJson(std::function<void(std::shared_ptr<Scene>)> callback);
 
-        std::shared_ptr<Scene> AddScene(std::string name, SceneType sceneType);
+        std::shared_ptr<Scene> AddScene(std::string name, SceneType sceneType, ApplySceneCallback callback = nullptr);
 
         void TranslateSceneByConnection(const std::shared_ptr<Scene> &scene);
 

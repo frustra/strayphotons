@@ -122,7 +122,6 @@ namespace sp::vulkan {
 
         ShaderHandle LoadShader(string_view name);
         shared_ptr<Shader> GetShader(ShaderHandle handle) const;
-        void ReloadShaders();
 
         // Returns a Pipeline from cache, keyed by `input`. Builds the pipeline if not found in cache.
         shared_ptr<Pipeline> GetPipeline(const PipelineCompileInput &input);
@@ -260,6 +259,7 @@ namespace sp::vulkan {
 
         robin_hood::unordered_map<string, ShaderHandle, StringHash, StringEqual> shaderHandles;
         vector<shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1
+        std::atomic_bool reloadShaders;
 
         robin_hood::unordered_map<SamplerType, vk::UniqueSampler> namedSamplers;
 

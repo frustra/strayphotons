@@ -1,6 +1,7 @@
 #pragma once
 
 #include "console/CFunc.hh"
+#include "core/LockFreeMutex.hh"
 #include "core/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
@@ -155,6 +156,7 @@ namespace sp::vulkan {
 
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 
+        LockFreeMutex screenshotMutex;
         vector<std::pair<string, string>> pendingScreenshots;
         bool listRenderTargets = false;
 

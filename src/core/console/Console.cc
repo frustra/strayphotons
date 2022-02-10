@@ -107,14 +107,14 @@ namespace sp {
         outputLines.push_back({lvl, line});
     }
 
-    void ConsoleManager::Update(Script *startupScript) {
+    void ConsoleManager::Update(bool exitOnEmptyQueue) {
         ZoneScoped;
         std::unique_lock<std::mutex> ulock(queueLock, std::defer_lock);
 
         auto now = chrono_clock::now();
 
         ulock.lock();
-        if (startupScript != nullptr && queuedCommands.empty()) {
+        if (exitOnEmptyQueue && queuedCommands.empty()) {
             ulock.unlock();
             ParseAndExecute("exit");
             return;

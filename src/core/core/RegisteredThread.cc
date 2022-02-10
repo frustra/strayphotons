@@ -48,36 +48,44 @@ namespace sp {
 
             auto frameEnd = chrono_clock::now();
             auto previousFrameEnd = frameEnd;
-            while (!this->exiting) {
-                if (traceFrames) FrameMarkStart(threadName.c_str());
-                this->Frame();
-                if (traceFrames) FrameMarkEnd(threadName.c_str());
+#ifdef CATCH_GLOBAL_EXCEPTIONS
+            try {
+#endif
+                while (!this->exiting) {
+                    if (traceFrames) FrameMarkStart(threadName.c_str());
+                    this->Frame();
+                    if (traceFrames) FrameMarkEnd(threadName.c_str());
 
-                auto realFrameEnd = chrono_clock::now();
+                    auto realFrameEnd = chrono_clock::now();
 
-                // Calculate frame rate using a 10-frame rolling window
-                auto frameDelta = realFrameEnd - previousFrameEnd;
-                previousFrames[frameIndex] = frameDelta;
-                frameIndex = (frameIndex + 1) % previousFrames.size();
-                previousFrameEnd = realFrameEnd;
-                auto totalFrameTime = std::accumulate(previousFrames.begin(),
-                    previousFrames.end(),
-                    chrono_clock::duration::zero());
-                this->averageFrameTimeNs = std::chrono::nanoseconds(totalFrameTime).count() / previousFrames.size();
+                    // Calculate frame rate using a 10-frame rolling window
+                    auto frameDelta = realFrameEnd - previousFrameEnd;
+                    previousFrames[frameIndex] = frameDelta;
+                    frameIndex = (frameIndex + 1) % previousFrames.size();
+                    previousFrameEnd = realFrameEnd;
+                    auto totalFrameTime = std::accumulate(previousFrames.begin(),
+                        previousFrames.end(),
+                        chrono_clock::duration::zero());
+                    this->averageFrameTimeNs = std::chrono::nanoseconds(totalFrameTime).count() / previousFrames.size();
 
-                if (this->interval.count() > 0) {
-                    frameEnd += this->interval;
+                    if (this->interval.count() > 0) {
+                        frameEnd += this->interval;
 
-                    if (realFrameEnd >= frameEnd) {
-                        // Falling behind, reset target frame end time.
-                        frameEnd = realFrameEnd;
+                        if (realFrameEnd >= frameEnd) {
+                            // Falling behind, reset target frame end time.
+                            frameEnd = realFrameEnd;
+                        }
+
+                        std::this_thread::sleep_until(frameEnd);
+                    } else {
+                        std::this_thread::yield();
                     }
-
-                    std::this_thread::sleep_until(frameEnd);
-                } else {
-                    std::this_thread::yield();
                 }
-            }
+#ifdef CATCH_GLOBAL_EXCEPTIONS
+            } catch (const char *err) {
+                Abortf("Exception thrown in %s thread: %s", threadName, err);
+            } catch (const std::exception &ex) { Abortf("Exception thrown in %s thread: %s", threadName, ex.what()); }
+#endif
         });
     }
 

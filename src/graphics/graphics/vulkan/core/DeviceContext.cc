@@ -419,7 +419,7 @@ namespace sp::vulkan {
 
         funcs = make_unique<CFuncCollection>();
         funcs->Register("reloadshaders", "Recompile any changed shaders", [&]() {
-            ReloadShaders();
+            reloadShaders = true;
         });
 
         if (enableSwapchain) CreateSwapchain();
@@ -580,6 +580,14 @@ namespace sp::vulkan {
     void DeviceContext::BeginFrame() {
         ZoneScoped;
         UpdateInputModeFromFocus();
+
+        if (reloadShaders.exchange(false)) {
+            for (size_t i = 0; i < shaders.size(); i++) {
+                auto &currentShader = shaders[i];
+                auto newShader = CreateShader(currentShader->name, currentShader->hash);
+                if (newShader) { shaders[i] = newShader; }
+            }
+        }
 
         if (swapchain) {
             auto result = device->waitForFences({*Frame().inFlightFence}, true, FENCE_WAIT_TIME);
@@ -1252,14 +1260,6 @@ namespace sp::vulkan {
         if (handle == 0 || shaders.size() < (size_t)handle) return nullptr;
 
         return shaders[handle - 1];
-    }
-
-    void DeviceContext::ReloadShaders() {
-        for (size_t i = 0; i < shaders.size(); i++) {
-            auto &currentShader = shaders[i];
-            auto newShader = CreateShader(currentShader->name, currentShader->hash);
-            if (newShader) { shaders[i] = newShader; }
-        }
     }
 
     shared_ptr<Pipeline> DeviceContext::GetPipeline(const PipelineCompileInput &input) {

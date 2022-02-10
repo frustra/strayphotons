@@ -3,15 +3,12 @@
 #include "console/ConsoleBindingManager.hh"
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
+#include "game/GameLogic.hh"
 
 #ifdef SP_GRAPHICS_SUPPORT
     #include "graphics/GraphicsManager.hh"
     #include "graphics/gui/DebugGuiManager.hh"
     #include "graphics/gui/MenuGuiManager.hh"
-#endif
-
-#ifdef SP_INPUT_SUPPORT_GLFW
-    #include "input/glfw/GlfwInputHandler.hh"
 #endif
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
@@ -39,15 +36,6 @@ namespace sp {
         ~Game();
 
         int Start();
-        bool Frame();
-        void PhysicsUpdate();
-        bool ShouldStop();
-
-        void ReloadPlayer();
-
-        void PrintDebug();
-        void PrintEvents(std::string entityName);
-        void PrintSignals(std::string entityName);
 
         cxxopts::ParseResult &options;
         Script *startupScript = nullptr;
@@ -58,9 +46,6 @@ namespace sp {
         std::unique_ptr<DebugGuiManager> debugGui = nullptr;
         std::unique_ptr<MenuGuiManager> menuGui = nullptr;
 #endif
-#ifdef SP_INPUT_SUPPORT_GLFW
-        std::unique_ptr<GlfwInputHandler> glfwInputHandler;
-#endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
         PhysxManager physics;
 #endif
@@ -68,12 +53,6 @@ namespace sp {
         xr::XrManager xr;
 #endif
         ConsoleBindingManager consoleBinding;
-
-    private:
-        Tecs::Entity player;
-        Tecs::Entity flatview;
-
-        chrono_clock::time_point lastFrameTime;
-        CFuncCollection funcs;
+        GameLogic logic;
     };
 } // namespace sp

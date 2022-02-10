@@ -18,8 +18,6 @@ using namespace std;
 #include <filesystem>
 #include <memory>
 
-//#define CATCH_GLOBAL_EXCEPTIONS
-
 using cxxopts::value;
 
 #if defined(_WIN32) && defined(SP_PACKAGE_RELEASE)

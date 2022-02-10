@@ -5,8 +5,8 @@
     #include "core/Logging.hh"
     #include "core/Tracing.hh"
     #include "ecs/EcsImpl.hh"
-    #include "game/Game.hh"
     #include "graphics/core/GraphicsContext.hh"
+    #include "main/Game.hh"
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
         #include "graphics/opengl/GlfwGraphicsContext.hh"
@@ -30,6 +30,10 @@
     #include <thread>
 
 namespace sp {
+    static sp::CVar<std::string> CVarFlatviewEntity("r.FlatviewEntity",
+        "player.flatview",
+        "The entity with a View component to display");
+
     GraphicsManager::GraphicsManager(Game *game) : game(game) {
     #ifdef SP_GRAPHICS_SUPPORT_GL
         Logf("Graphics starting up (OpenGL)");
@@ -68,7 +72,7 @@ namespace sp {
         GLFWwindow *window = vkContext->GetWindow();
     #endif
 
-        if (window != nullptr) game->glfwInputHandler = make_unique<GlfwInputHandler>(*window);
+        if (window != nullptr) glfwInputHandler = make_unique<GlfwInputHandler>(*window);
 
         if (game->options.count("size")) {
             std::istringstream ss(game->options["size"].as<string>());
@@ -113,6 +117,10 @@ namespace sp {
         Assert(renderer, "missing renderer");
     #endif
 
+    #ifdef SP_INPUT_SUPPORT_GLFW
+        if (glfwInputHandler) glfwInputHandler->Frame();
+    #endif
+
     #if defined(SP_GRAPHICS_SUPPORT_GL)
         renderer->PrepareGuis(game->debugGui.get(), game->menuGui.get());
     #endif
@@ -120,16 +128,21 @@ namespace sp {
         if (game->debugGui) game->debugGui->BeforeFrame();
         if (game->menuGui) game->menuGui->BeforeFrame();
 
-        Tecs::Entity windowEntity = context->GetActiveView();
-        if (windowEntity) {
-            ZoneScopedN("SyncWindowView");
-            auto lock = ecs::World.StartTransaction<ecs::Write<ecs::View>>();
+        if (flatviewEntity == ecs::NamedEntity() || CVarFlatviewEntity.Changed()) {
+            flatviewEntity = ecs::NamedEntity(CVarFlatviewEntity.Get(true));
+        }
 
-            if (windowEntity.Has<ecs::View>(lock)) {
-                auto &view = windowEntity.Get<ecs::View>(lock);
+        {
+            ZoneScopedN("SyncWindowView");
+            auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View>>();
+
+            auto flatview = flatviewEntity.Get(lock);
+            if (flatview.Has<ecs::View>(lock)) {
+                auto &view = flatview.Get<ecs::View>(lock);
                 view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_CAMERA);
                 context->PrepareWindowView(view);
             }
+            context->AttachView(flatview);
         }
 
     #ifdef SP_XR_SUPPORT
@@ -172,9 +185,10 @@ namespace sp {
                 ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>>();
             renderer->BeginFrame(lock);
 
-            if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
-                auto &view = windowEntity.Get<ecs::View>(lock);
-                view.UpdateViewMatrix(lock, windowEntity);
+            auto flatview = flatviewEntity.Get(lock);
+            if (flatview.Has<ecs::View>(lock)) {
+                auto &view = flatview.Get<ecs::View>(lock);
+                view.UpdateViewMatrix(lock, flatview);
                 renderer->RenderPass(view, lock);
             }
 

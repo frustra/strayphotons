@@ -623,6 +623,8 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddScreenshotPasses(RenderGraph &graph) {
+        std::lock_guard lock(screenshotMutex);
+
         for (auto &pending : pendingScreenshots) {
             auto screenshotPath = pending.first;
             auto screenshotResource = pending.second;
@@ -1205,6 +1207,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::QueueScreenshot(const string &path, const string &resource) {
+        std::lock_guard lock(screenshotMutex);
         pendingScreenshots.push_back({path, resource});
     }
 

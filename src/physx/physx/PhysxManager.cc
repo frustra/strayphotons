@@ -3,7 +3,6 @@
 #include "PhysxUtils.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Model.hh"
-#include "console/CFunc.hh"
 #include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
