@@ -10,6 +10,7 @@ namespace sp {
 
         void StartThread();
 
+        void PrintDebug();
         void PrintEvents(std::string entityName);
         void PrintSignals(std::string entityName);
 

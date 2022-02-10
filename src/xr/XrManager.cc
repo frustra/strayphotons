@@ -3,7 +3,7 @@
     #include "XrManager.hh"
 
     #include "core/Logging.hh"
-    #include "game/Game.hh"
+    #include "main/Game.hh"
 
     #ifdef SP_XR_SUPPORT_OPENVR
         #include "xr/openvr/OpenVrSystem.hh"
@@ -15,6 +15,8 @@ namespace sp::xr {
     }
 
     void XrManager::LoadXrSystem() {
+        std::lock_guard lock(xrLoadMutex);
+
     #ifdef SP_XR_SUPPORT_OPENVR
         xrSystem = std::make_shared<OpenVrSystem>();
     #else
@@ -38,6 +40,7 @@ namespace sp::xr {
     }
 
     std::shared_ptr<XrSystem> XrManager::GetXrSystem() {
+        std::lock_guard lock(xrLoadMutex);
         if (xrSystem && xrSystem->IsInitialized()) return xrSystem;
         return nullptr;
     }

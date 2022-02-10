@@ -13,6 +13,7 @@
 #include "graphics/opengl/Shader.hh"
 #include "graphics/opengl/gui/GuiRenderer.hh"
 
+#include <atomic>
 #include <functional>
 #include <glm/glm.hpp>
 
@@ -130,6 +131,7 @@ namespace sp {
 
         LightingContext lightContext;
 
+        std::atomic_bool reloadShaders;
         CFuncCollection funcs;
     };
 

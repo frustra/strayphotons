@@ -15,6 +15,10 @@
         #include "graphics/vulkan/core/PerfTimer.hh"
     #endif
 
+    #ifdef SP_INPUT_SUPPORT_GLFW
+        #include "input/glfw/GlfwInputHandler.hh"
+    #endif
+
     #include <glm/glm.hpp>
     #include <memory>
     #include <vector>
@@ -52,6 +56,7 @@ namespace sp {
     private:
         Game *game;
         unique_ptr<GraphicsContext> context;
+        ecs::NamedEntity flatviewEntity;
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
         unique_ptr<vulkan::Renderer> renderer;
@@ -68,6 +73,10 @@ namespace sp {
         std::vector<shared_ptr<GLRenderTarget>> xrRenderTargets;
         std::vector<glm::mat4> xrRenderPoses;
         #endif
+    #endif
+
+    #ifdef SP_INPUT_SUPPORT_GLFW
+        unique_ptr<GlfwInputHandler> glfwInputHandler;
     #endif
     };
 } // namespace sp

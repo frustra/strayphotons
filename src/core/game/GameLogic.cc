@@ -7,6 +7,7 @@
 namespace sp {
     GameLogic::GameLogic(bool exitOnEmptyQueue)
         : RegisteredThread("GameLogic", 120.0), exitOnEmptyQueue(exitOnEmptyQueue) {
+        funcs.Register(this, "printdebug", "Print some debug info about the player", &GameLogic::PrintDebug);
         funcs.Register(this, "printevents", "Print out the current state of event queues", &GameLogic::PrintEvents);
         funcs.Register(this, "printsignals", "Print out the values and bindings of signals", &GameLogic::PrintSignals);
     }
@@ -25,6 +26,45 @@ namespace sp {
                 auto &script = entity.Get<ecs::Script>(lock);
                 script.OnTick(lock, entity, interval);
             }
+        }
+    }
+
+    void GameLogic::PrintDebug() {
+        auto lock = ecs::World.StartTransaction<
+            ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::CharacterController, ecs::LightSensor>>();
+        auto player = ecs::EntityWith<ecs::Name>(lock, "player.player");
+        auto flatview = ecs::EntityWith<ecs::Name>(lock, "player.flatview");
+        if (flatview.Has<ecs::TransformSnapshot>(lock)) {
+            auto &transform = flatview.Get<ecs::TransformSnapshot>(lock);
+            auto position = transform.GetPosition();
+            Logf("Flatview position: [%f, %f, %f]", position.x, position.y, position.z);
+        }
+        if (player.Has<ecs::TransformSnapshot>(lock)) {
+            auto &transform = player.Get<ecs::TransformSnapshot>(lock);
+            auto position = transform.GetPosition();
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+            if (player.Has<ecs::CharacterController>(lock)) {
+                auto &controller = player.Get<ecs::CharacterController>(lock);
+                if (controller.pxController) {
+                    auto pxFeet = controller.pxController->getFootPosition();
+                    Logf("Player physics position: [%f, %f, %f]", pxFeet.x, pxFeet.y, pxFeet.z);
+                    auto userData = (CharacterControllerUserData *)controller.pxController->getUserData();
+                    Logf("Player velocity: [%f, %f, %f]",
+                        userData->actorData.velocity.x,
+                        userData->actorData.velocity.y,
+                        userData->actorData.velocity.z);
+                    Logf("Player on ground: %s", userData->onGround ? "true" : "false");
+                } else {
+                    Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
+                }
+            } else {
+                Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
+            }
+#else
+            Logf("Player position: [%f, %f, %f]", position.x, position.y, position.z);
+#endif
+        } else {
+            Logf("Scene has no valid player");
         }
     }
 

@@ -11,10 +11,6 @@
     #include "graphics/gui/MenuGuiManager.hh"
 #endif
 
-#ifdef SP_INPUT_SUPPORT_GLFW
-    #include "input/glfw/GlfwInputHandler.hh"
-#endif
-
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
     #include "physx/PhysxManager.hh"
 #endif
@@ -41,10 +37,6 @@ namespace sp {
 
         int Start();
 
-        void ReloadPlayer();
-
-        void PrintDebug();
-
         cxxopts::ParseResult &options;
         Script *startupScript = nullptr;
 
@@ -54,9 +46,6 @@ namespace sp {
         std::unique_ptr<DebugGuiManager> debugGui = nullptr;
         std::unique_ptr<MenuGuiManager> menuGui = nullptr;
 #endif
-#ifdef SP_INPUT_SUPPORT_GLFW
-        std::unique_ptr<GlfwInputHandler> glfwInputHandler;
-#endif
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
         PhysxManager physics;
 #endif
@@ -65,11 +54,5 @@ namespace sp {
 #endif
         ConsoleBindingManager consoleBinding;
         GameLogic logic;
-
-    private:
-        Tecs::Entity player;
-        Tecs::Entity flatview;
-
-        CFuncCollection funcs;
     };
 } // namespace sp

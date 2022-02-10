@@ -104,7 +104,7 @@ namespace sp {
         UpdateShaders(true);
 
         funcs.Register("reloadshaders", "Recompile all shaders", [&]() {
-            UpdateShaders(true);
+            reloadShaders = true;
         });
 
         AssertGLOK("Renderer::Prepare");
@@ -687,7 +687,7 @@ namespace sp {
         ecs::Write<ecs::Renderable, ecs::View, ecs::Light, ecs::LightSensor, ecs::Mirror, ecs::VoxelArea>> lock) {
         RenderPhase phase("BeginFrame", timer);
 
-        UpdateShaders();
+        UpdateShaders(reloadShaders.exchange(false));
         ReadBackLightSensors(lock);
 
         if (menuGui && menuGui->RenderMode() == MenuRenderMode::Gel) {

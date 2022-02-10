@@ -20,6 +20,7 @@
 #include "graphics/opengl/postprocess/ViewGBuffer.hh"
 #include "graphics/opengl/voxel_renderer/VoxelRenderer.hh"
 
+#include <atomic>
 #include <filesystem>
 #include <stb_image_write.h>
 
@@ -144,16 +145,14 @@ namespace sp {
         context.LastOutput = menu;
     }
 
-    static string ScreenshotPath;
+    static std::atomic<shared_ptr<string>> ScreenshotPath;
 
     CFunc<string> CFuncQueueScreenshot("screenshot", "Save screenshot to <path>", [](string path) {
-        if (ScreenshotPath.empty()) {
-            ScreenshotPath = path;
-        } else {
-            Logf("Can't save multiple screenshots on the same frame: %s, already saving %s",
-                path.c_str(),
-                ScreenshotPath.c_str());
-        }
+        auto old = ScreenshotPath.exchange(make_shared<string>(path));
+        Assertf(old,
+            "Can't save multiple screenshots on the same frame: %s, already saving %s",
+            path.c_str(),
+            old->c_str());
     });
 
     void SaveScreenshot(string path, GLTexture &tex) {
@@ -282,10 +281,8 @@ namespace sp {
         lastOutput->TargetRef->GetGLTexture().Bind(0);
         VoxelRenderer::DrawScreenCover();
 
-        if (!ScreenshotPath.empty()) {
-            SaveScreenshot(ScreenshotPath, lastOutput->TargetRef->GetGLTexture());
-            ScreenshotPath = "";
-        }
+        auto path = ScreenshotPath.exchange(nullptr);
+        if (path) SaveScreenshot(*path, lastOutput->TargetRef->GetGLTexture());
 
         lastOutput->ReleaseDependency();
     }

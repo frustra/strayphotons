@@ -37,6 +37,12 @@ namespace sp {
         funcs.Register<std::string>("reloadscene", "Reload current scene", [this](std::string sceneName) {
             QueueActionAndBlock(SceneAction::ReloadScene, sceneName);
         });
+        funcs.Register("reloadplayer", "Reload player scene", [this]() {
+            QueueActionAndBlock(SceneAction::ReloadPlayer);
+        });
+        funcs.Register("reloadbindings", "Reload input bindings", [this]() {
+            QueueActionAndBlock(SceneAction::ReloadBindings);
+        });
         funcs.Register("respawn", "Respawn the player", [this]() {
             RespawnPlayer(player);
         });
@@ -212,7 +218,7 @@ namespace sp {
                 }
                 promise.set_value();
 
-            } else if (action.action == SceneAction::LoadPlayer) {
+            } else if (action.action == SceneAction::ReloadPlayer) {
                 if (playerScene) {
                     auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
                     auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
@@ -245,6 +251,7 @@ namespace sp {
                                     }
                                 }
                                 Assert(!!player, "Player scene doesn't contain an entity named player");
+                                RespawnPlayer(player);
                             }
                         } else {
                             Errorf("Failed to load player scene!");
@@ -258,7 +265,7 @@ namespace sp {
                 }
                 promise.set_value();
 
-            } else if (action.action == SceneAction::LoadBindings) {
+            } else if (action.action == SceneAction::ReloadBindings) {
                 // TODO: Remove console key bindings
                 if (bindingsScene) {
                     auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
