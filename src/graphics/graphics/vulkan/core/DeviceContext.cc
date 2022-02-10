@@ -68,7 +68,7 @@ namespace sp::vulkan {
     }
 
     DeviceContext::DeviceContext(bool enableValidationLayers, bool enableSwapchain)
-        : allocator(nullptr, DeleteAllocator), mainQueue("Main", 0), allocatorQueue("Allocator") {
+        : allocator(nullptr, DeleteAllocator), frameEndQueue("EndFrame", 0), allocatorQueue("Allocator") {
         ZoneScoped;
         glfwSetErrorCallback(glfwErrorCallback);
 
@@ -668,11 +668,9 @@ namespace sp::vulkan {
                 ctx->End();
                 return ctx;
             });
-            mainQueue.Dispatch<void>(
-                [this](CommandContextPtr ctx) {
-                    Submit(ctx);
-                },
-                std::move(ctx));
+            frameEndQueue.Dispatch<void>(std::move(ctx), [this](CommandContextPtr ctx) {
+                Submit(ctx);
+            });
         }
     }
 
@@ -699,8 +697,6 @@ namespace sp::vulkan {
         Thread().ReleaseAvailableResources();
 
         renderTargetPool->TickFrame();
-
-        mainQueue.Flush();
     }
 
     void DeviceContext::SwapBuffers() {
@@ -722,6 +718,8 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::EndFrame() {
+        frameEndQueue.Flush();
+
         frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 
         frameCounter++;
@@ -934,12 +932,12 @@ namespace sp::vulkan {
         });
         if (!hasSrcData) return futImage;
 
-        auto futStagingBuf =
-            CreateBuffer(data, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        auto futStagingBuf = CreateBuffer(data, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-        return mainQueue.Dispatch<ImagePtr>(
-            [=](ImagePtr image, BufferPtr stagingBuf) {
-                ZoneScopedN("Part2");
+        return frameEndQueue.Dispatch<ImagePtr>(std::move(futImage),
+            std::move(futStagingBuf),
+            [=, this](ImagePtr image, BufferPtr stagingBuf) {
+                ZoneScopedN("PrepareImage");
                 auto transferCmd = GetCommandContext(CommandContextType::TransferAsync);
 
                 transferCmd->ImageBarrier(image,
@@ -1172,9 +1170,7 @@ namespace sp::vulkan {
                 }
                 Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eTransfer});
                 return image;
-            },
-            std::move(futImage),
-            std::move(futStagingBuf));
+            });
     }
 
     ImageViewPtr DeviceContext::CreateImageView(ImageViewCreateInfo info) {
@@ -1219,13 +1215,11 @@ namespace sp::vulkan {
         ZoneScoped;
         auto futImage = CreateImage(imageInfo, data);
 
-        return allocatorQueue.Dispatch<ImageViewPtr>(
-            [=](ImagePtr image) {
-                auto viewI = viewInfo;
-                viewI.image = image;
-                return CreateImageView(viewI);
-            },
-            std::move(futImage));
+        return allocatorQueue.Dispatch<ImageViewPtr>(std::move(futImage), [=, this](ImagePtr image) {
+            auto viewI = viewInfo;
+            viewI.image = image;
+            return CreateImageView(viewI);
+        });
     }
 
     shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {

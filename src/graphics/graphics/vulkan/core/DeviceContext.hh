@@ -107,7 +107,7 @@ namespace sp::vulkan {
         std::future<BufferPtr> CreateBuffer(const InitialData &data,
             vk::BufferUsageFlags usage,
             VmaMemoryUsage residency) {
-            return allocatorQueue.Dispatch<BufferPtr>([=]() {
+            return allocatorQueue.Dispatch<BufferPtr>([=, this]() {
                 auto buf = AllocateBuffer(data.dataSize, usage, residency);
                 buf->CopyFrom(data.data, data.dataSize);
                 return buf;
@@ -179,7 +179,7 @@ namespace sp::vulkan {
         static void DeleteAllocator(VmaAllocator allocator);
 
         void FlushMainQueue() {
-            mainQueue.Flush(true);
+            frameEndQueue.Flush(true);
         }
 
     private:
@@ -308,7 +308,7 @@ namespace sp::vulkan {
         uint32 frameCounter = 0, frameCounterThisSecond = 0;
         GLFWwindow *window = nullptr;
 
-        DispatchQueue mainQueue, allocatorQueue;
+        DispatchQueue frameEndQueue, allocatorQueue;
 
         unique_ptr<CFuncCollection> funcs;
     };

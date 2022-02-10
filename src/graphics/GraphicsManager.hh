@@ -60,7 +60,6 @@ namespace sp {
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
         unique_ptr<vulkan::Renderer> renderer;
-        shared_ptr<vulkan::ProfilerGui> profilerGui;
         vulkan::PerfTimer timer;
     #endif
 

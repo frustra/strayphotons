@@ -99,7 +99,7 @@ namespace sp {
         auto basePtr = reinterpret_cast<float *>(areas[0].ptr);
 
         for (int channel = 0; channel < channelCount; channel++) {
-            Assert(areas[channel].step == sizeof(float) * channelCount, "expected interleaved output buffer");
+            Assert(areas[channel].step == (int)sizeof(float) * channelCount, "expected interleaved output buffer");
             Assert((float *)areas[channel].ptr == basePtr + channel, "expected interleaved output buffer");
         }
 
