@@ -48,7 +48,7 @@ namespace sp::vulkan {
 
         auto outputImage = device.AllocateImage(outputDesc, VMA_MEMORY_USAGE_GPU_TO_CPU);
 
-        auto transferCmd = device.GetCommandContext(CommandContextType::General);
+        auto transferCmd = device.GetFencedCommandContext(CommandContextType::General);
         transferCmd->ImageBarrier(outputImage,
             vk::ImageLayout::eUndefined,
             vk::ImageLayout::eTransferDstOptimal,
@@ -100,10 +100,10 @@ namespace sp::vulkan {
                 vk::AccessFlagBits::eMemoryRead);
         }
 
-        auto fence = device->createFenceUnique({});
-        device.Submit(transferCmd, {}, {}, {}, *fence);
+        auto fence = transferCmd->Fence();
+        device.Submit(transferCmd, {}, {}, {});
 
-        AssertVKSuccess(device->waitForFences({*fence}, true, 1e10), "waiting for fence");
+        AssertVKSuccess(device->waitForFences({fence}, true, 1e10), "waiting for fence");
 
         vk::ImageSubresource subResource = {vk::ImageAspectFlagBits::eColor, 0, 0};
         auto subResourceLayout = device->getImageSubresourceLayout(*outputImage, subResource);

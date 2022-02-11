@@ -82,8 +82,12 @@ namespace sp::vulkan {
 
         void PrepareWindowView(ecs::View &view) override;
 
-        CommandContextPtr GetCommandContext(CommandContextType type = CommandContextType::General,
-            CommandContextScope scope = CommandContextScope::Frame);
+        // Returns a CommandContext that can be recorded and submitted within the current frame.
+        // The each frame's CommandPool will be reset at the beginning of the frame.
+        CommandContextPtr GetFrameCommandContext(CommandContextType type = CommandContextType::General);
+
+        // Returns a CommandContext that can be recorded on any thread, and isn't reset until its fence is signalled.
+        CommandContextPtr GetFencedCommandContext(CommandContextType type = CommandContextType::General);
 
         // Releases *cmd back to the DeviceContext and resets cmd
         void Submit(CommandContextPtr &cmd,
@@ -149,10 +153,10 @@ namespace sp::vulkan {
         vk::DescriptorSet CreateBindlessDescriptorSet();
 
         SharedHandle<vk::Fence> GetEmptyFence();
-        SharedHandle<vk::Semaphore> GetEmptySemaphore(SharedHandle<vk::Fence> inUseUntilFence);
+        SharedHandle<vk::Semaphore> GetEmptySemaphore(vk::Fence inUseUntilFence);
 
-        using TemporaryObject = std::variant<CommandContextPtr, BufferPtr, ImageViewPtr, SharedHandle<vk::Semaphore>>;
-        SharedHandle<vk::Fence> PushInFlightObject(TemporaryObject object, SharedHandle<vk::Fence> fence = nullptr);
+        using TemporaryObject = std::variant<BufferPtr, ImageViewPtr, SharedHandle<vk::Semaphore>>;
+        void PushInFlightObject(TemporaryObject object, vk::Fence fence);
 
         const vk::PhysicalDeviceLimits &Limits() const {
             return physicalDeviceProperties.properties.limits;
@@ -245,7 +249,7 @@ namespace sp::vulkan {
 
         struct InFlightObject {
             TemporaryObject object;
-            SharedHandle<vk::Fence> fence;
+            vk::Fence fence;
         };
 
         struct PooledBuffer {

@@ -385,6 +385,7 @@ namespace sp::vulkan {
         allocatorInfo.device = *device;
         allocatorInfo.instance = *instance;
         allocatorInfo.frameInUseCount = MAX_FRAMES_IN_FLIGHT;
+        allocatorInfo.preferredLargeHeapBlockSize = 1024ull * 1024 * 1024;
         allocatorInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
 
         if (hasMemoryRequirements2Ext && hasDedicatedAllocationExt) {
@@ -447,9 +448,16 @@ namespace sp::vulkan {
                         // destroy happens via ~CommandContext
                     },
                     [this](CommandContextPtr cmd) {
+                        auto type = cmd->GetType();
+                        auto buffer = std::move(cmd->RawRef());
+                        auto fence = std::move(cmd->fence);
+
+                        cmd->~CommandContext();
+                        new (cmd.get()) CommandContext(*this, std::move(buffer), type, CommandContextScope::Fence);
+                        cmd->fence = std::move(fence);
+
                         cmd->Raw().reset();
-                        auto fence = cmd->Fence();
-                        if (fence) device->resetFences({fence});
+                        if (cmd->fence) device->resetFences({cmd->Fence()});
                     });
             }
         }
@@ -653,8 +661,16 @@ namespace sp::vulkan {
             }
             SwapchainImage().inFlightFence = *Frame().inFlightFence;
         }
-        PrepareResourcesForFrame();
         vmaSetCurrentFrameIndex(allocator.get(), frameCounter);
+        PrepareResourcesForFrame();
+
+        for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
+            auto trctx = tracing.tracyContexts[i];
+            if (!trctx) continue;
+            auto ctx = GetFencedCommandContext(CommandContextType(i));
+            TracyVkCollect(trctx, ctx->Raw());
+            Submit(ctx);
+        }
     }
 
     void DeviceContext::PrepareResourcesForFrame() {
@@ -701,16 +717,6 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::EndFrame() {
-        for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
-            auto trctx = tracing.tracyContexts[i];
-            if (!trctx) continue;
-            auto ctx = GetCommandContext(CommandContextType(i), CommandContextScope::Fence);
-            {
-                GPUZone(this, ctx, "TracyCollect");
-                TracyVkCollect(trctx, ctx->Raw());
-            }
-            Submit(ctx);
-        }
         frameEndQueue.Flush();
 
         frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -731,36 +737,37 @@ namespace sp::vulkan {
         lastFrameEnd = frameEnd;
     }
 
-    CommandContextPtr DeviceContext::GetCommandContext(CommandContextType type, CommandContextScope scope) {
+    CommandContextPtr DeviceContext::GetFrameCommandContext(CommandContextType type) {
         CommandContextPtr cmd;
-        if (scope == CommandContextScope::Frame) {
-            auto &pool = Frame().commandContexts[QueueType(type)];
-            if (pool.nextIndex < pool.list.size()) {
-                cmd = pool.list[pool.nextIndex++];
+        auto &pool = Frame().commandContexts[QueueType(type)];
+        if (pool.nextIndex < pool.list.size()) {
+            cmd = pool.list[pool.nextIndex++];
 
-                // Reset cmd to default state
-                auto buffer = std::move(cmd->RawRef());
-                cmd->~CommandContext();
-                new (cmd.get()) CommandContext(*this, std::move(buffer), type, scope);
-            } else {
-                vk::CommandBufferAllocateInfo allocInfo;
-                allocInfo.commandPool = *pool.commandPool;
-                allocInfo.level = vk::CommandBufferLevel::ePrimary;
-                allocInfo.commandBufferCount = 1;
-                auto buffers = device->allocateCommandBuffersUnique(allocInfo);
-
-                cmd = make_shared<CommandContext>(*this, std::move(buffers[0]), type, scope);
-                pool.list.push_back(cmd);
-                pool.nextIndex++;
-            }
+            // Reset cmd to default state
+            auto buffer = std::move(cmd->RawRef());
+            cmd->~CommandContext();
+            new (cmd.get()) CommandContext(*this, std::move(buffer), type, CommandContextScope::Frame);
         } else {
-            auto &thr = Thread();
-            auto cmdHandle = thr.commandContexts[QueueType(type)]->Get();
-            thr.pendingCommandContexts[QueueType(type)].push_back(cmdHandle);
-            cmd = cmdHandle;
+            vk::CommandBufferAllocateInfo allocInfo;
+            allocInfo.commandPool = *pool.commandPool;
+            allocInfo.level = vk::CommandBufferLevel::ePrimary;
+            allocInfo.commandBufferCount = 1;
+            auto buffers = device->allocateCommandBuffersUnique(allocInfo);
+
+            cmd = make_shared<CommandContext>(*this, std::move(buffers[0]), type, CommandContextScope::Frame);
+            pool.list.push_back(cmd);
+            pool.nextIndex++;
         }
         cmd->Begin();
         return cmd;
+    }
+
+    CommandContextPtr DeviceContext::GetFencedCommandContext(CommandContextType type) {
+        auto &thr = Thread();
+        auto cmdHandle = thr.commandContexts[QueueType(type)]->Get();
+        thr.pendingCommandContexts[QueueType(type)].push_back(cmdHandle);
+        cmdHandle.Get()->Begin();
+        return cmdHandle;
     }
 
     void DeviceContext::Submit(CommandContextPtr &cmdArg,
@@ -931,7 +938,7 @@ namespace sp::vulkan {
             std::move(futStagingBuf),
             [=, this](ImagePtr image, BufferPtr stagingBuf) {
                 ZoneScopedN("PrepareImage");
-                auto transferCmd = GetCommandContext(CommandContextType::TransferAsync);
+                auto transferCmd = GetFencedCommandContext(CommandContextType::TransferAsync);
 
                 transferCmd->ImageBarrier(image,
                     vk::ImageLayout::eUndefined,
@@ -952,6 +959,7 @@ namespace sp::vulkan {
                 region.imageOffset = vk::Offset3D{0, 0, 0};
                 region.imageExtent = createInfo.extent;
 
+                PushInFlightObject(stagingBuf, transferCmd->Fence());
                 transferCmd->Raw().copyBufferToImage(*stagingBuf,
                     *image,
                     vk::ImageLayout::eTransferDstOptimal,
@@ -964,6 +972,12 @@ namespace sp::vulkan {
 
                 ImageBarrierInfo transferToCompute = transferToGeneral;
                 transferToCompute.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::ComputeAsync);
+
+                SharedHandle<vk::Semaphore> transferComplete;
+                if (genMipmap || genFactor ||
+                    transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
+                    transferComplete = GetEmptySemaphore(transferCmd->Fence());
+                }
 
                 // The amount of state tracking in this function is somewhat objectionable.
                 // Should we have an automatic image access tracking mechanism to avoid it?
@@ -986,16 +1000,17 @@ namespace sp::vulkan {
                     {},
                     genFactor ? transferToCompute : transferToGeneral);
 
-                auto fence = PushInFlightObject(stagingBuf);
-                auto transferComplete = GetEmptySemaphore(fence);
                 {
                     ZoneScopedN("CopyBufferToImage");
-                    Submit(transferCmd, {transferComplete}, {}, {}, fence);
+                    if (transferComplete)
+                        Submit(transferCmd, {transferComplete}, {}, {});
+                    else
+                        Submit(transferCmd, {}, {}, {});
                 }
 
                 if (genFactor) {
                     ZoneScopedN("ApplyFactor");
-                    auto factorCmd = GetCommandContext(CommandContextType::ComputeAsync);
+                    auto factorCmd = GetFencedCommandContext(CommandContextType::ComputeAsync);
                     {
                         GPUZone(this, factorCmd, "ApplyFactor");
                         factorCmd->ImageBarrier(image,
@@ -1054,20 +1069,24 @@ namespace sp::vulkan {
                         lastLayout = vk::ImageLayout::eGeneral;
                         lastStage = vk::PipelineStageFlagBits::eComputeShader;
                         lastAccess = vk::AccessFlagBits::eShaderWrite;
-                        fence = PushInFlightObject(factorView);
+                        PushInFlightObject(factorView, factorCmd->Fence());
                     }
-                    auto factorComplete = GetEmptySemaphore(fence);
-                    Submit(factorCmd,
-                        {factorComplete},
-                        {transferComplete},
-                        {vk::PipelineStageFlagBits::eComputeShader},
-                        fence);
+                    SharedHandle<vk::Semaphore> factorComplete;
+                    if (genMipmap || transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
+                        factorComplete = GetEmptySemaphore(factorCmd->Fence());
+                        Submit(factorCmd,
+                            {factorComplete},
+                            {transferComplete},
+                            {vk::PipelineStageFlagBits::eComputeShader});
+                    } else {
+                        Submit(factorCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eComputeShader});
+                    }
                     transferComplete = factorComplete;
                 }
 
                 if (!genMipmap) {
                     if (transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
-                        auto graphicsCmd = GetCommandContext();
+                        auto graphicsCmd = GetFencedCommandContext();
                         graphicsCmd->ImageBarrier(image,
                             lastLayout,
                             vk::ImageLayout::eShaderReadOnlyOptimal,
@@ -1083,7 +1102,7 @@ namespace sp::vulkan {
                 }
 
                 ZoneNamedN(mipmapZone, "Mipmap", true);
-                auto graphicsCmd = GetCommandContext();
+                auto graphicsCmd = GetFencedCommandContext();
                 {
                     GPUZone(this, graphicsCmd, "Mipmap");
 
@@ -1378,16 +1397,14 @@ namespace sp::vulkan {
         return fencePool->Get();
     }
 
-    SharedHandle<vk::Semaphore> DeviceContext::GetEmptySemaphore(SharedHandle<vk::Fence> inUseUntilFence) {
+    SharedHandle<vk::Semaphore> DeviceContext::GetEmptySemaphore(vk::Fence inUseUntilFence) {
         auto sem = semaphorePool->Get();
-        if (inUseUntilFence) PushInFlightObject(sem, inUseUntilFence);
+        PushInFlightObject(sem, inUseUntilFence);
         return sem;
     }
 
-    SharedHandle<vk::Fence> DeviceContext::PushInFlightObject(TemporaryObject object, SharedHandle<vk::Fence> fence) {
-        if (!fence) fence = GetEmptyFence();
+    void DeviceContext::PushInFlightObject(TemporaryObject object, vk::Fence fence) {
         Frame().inFlightObjects.emplace_back(InFlightObject{object, fence});
-        return fence;
     }
 
     void DeviceContext::ThreadContext::ReleaseAvailableResources() {
