@@ -115,7 +115,7 @@ namespace sp::vulkan {
         }
 
         if (frame.queryPool && frame.queryCount > 0) {
-            auto cmd = device->GetCommandContext();
+            auto cmd = device->GetFrameCommandContext();
             cmd->Raw().resetQueryPool(*frame.queryPool, 0, frame.queryCount);
             device->Submit(cmd);
             frame.queryOffset = 0;

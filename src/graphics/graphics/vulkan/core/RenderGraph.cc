@@ -243,7 +243,7 @@ namespace sp::vulkan {
             }
 
             if (!cmd) {
-                if (isRenderPass || pass.ExecutesWithCommandContext()) cmd = device.GetCommandContext();
+                if (isRenderPass || pass.ExecutesWithCommandContext()) cmd = device.GetFrameCommandContext();
             }
 
             for (int i = std::max(pass.scopes.size(), resources.scopeStack.size()) - 1; i >= 0; i--) {
@@ -329,7 +329,7 @@ namespace sp::vulkan {
 
             auto image = resources.GetRenderTarget(dep.id)->ImageView()->Image();
 
-            if (!cmd) cmd = device.GetCommandContext();
+            if (!cmd) cmd = device.GetFrameCommandContext();
             cmd->ImageBarrier(image,
                 image->LastLayout(),
                 dep.access.layout,
@@ -349,7 +349,7 @@ namespace sp::vulkan {
                 auto image = view->Image();
                 if (view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
 
-                if (!cmd) cmd = device.GetCommandContext();
+                if (!cmd) cmd = device.GetFrameCommandContext();
 
                 if (res.renderTargetDesc.usage & vk::ImageUsageFlagBits::eColorAttachment) {
                     if (image->LastLayout() == vk::ImageLayout::eColorAttachmentOptimal) continue;
