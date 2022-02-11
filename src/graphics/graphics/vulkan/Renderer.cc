@@ -47,10 +47,11 @@ namespace sp::vulkan {
         });
 
         funcs.Register("waitforrenderer", "Block until models are loaded and the scene is ready to render", [&]() {
-            sceneReady.clear();
-            while (!sceneReady.test()) {
+            while (pendingTransaction.test())
+                pendingTransaction.wait(true);
+
+            while (!sceneReady.test())
                 sceneReady.wait(false);
-            }
         });
 
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
@@ -170,14 +171,15 @@ namespace sp::vulkan {
 
     void Renderer::RenderFrame() {
         RenderGraph graph(device, &timer);
+        pendingTransaction.test_and_set();
         BuildFrameGraph(graph);
+        pendingTransaction.clear();
+        pendingTransaction.notify_all();
         graph.Execute();
     }
 
     void Renderer::BuildFrameGraph(RenderGraph &graph) {
         ZoneScoped;
-        // lock is copied into the Execute closure of some passes,
-        // and will be released when those passes are done executing.
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
             ecs::TransformSnapshot,
             ecs::LaserLine,
@@ -993,6 +995,8 @@ namespace sp::vulkan {
         if (!hasPendingModel) {
             sceneReady.test_and_set();
             sceneReady.notify_all();
+        } else {
+            sceneReady.clear();
         }
     }
 

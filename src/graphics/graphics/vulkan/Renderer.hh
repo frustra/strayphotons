@@ -169,7 +169,7 @@ namespace sp::vulkan {
 
         PreservingMap<ImageView *, ImageView> debugViews;
 
-        std::atomic_flag sceneReady;
+        std::atomic_flag sceneReady, pendingTransaction;
 
 #ifdef SP_XR_SUPPORT
         xr::XrSystem *xrSystem = nullptr;
