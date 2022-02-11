@@ -1,6 +1,6 @@
 #include "Scene.hh"
 
-#include "core/Logging.hh"
+#include "core/Tracing.hh"
 #include "game/SceneManager.hh"
 
 namespace sp {
@@ -52,7 +52,8 @@ namespace sp {
 
     void Scene::ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
         ecs::Lock<ecs::AddRemove> live) {
-        Logf("Applying scene: %s", name);
+        ZoneScoped;
+        ZoneStr(name);
         for (auto e : staging.EntitiesWith<ecs::SceneInfo>()) {
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
             if (sceneInfo.scene.lock().get() != this) continue;
@@ -66,7 +67,8 @@ namespace sp {
                     sceneInfo.liveId = ecs::EntityWith<ecs::Name>(live, entityName);
                     if (sceneInfo.liveId) {
                         // Entity overlaps with another scene
-                        Logf("Merging entity: %s", entityName);
+                        ZoneScopedN("MergeEntity");
+                        ZoneStr(entityName);
                         Assert(sceneInfo.liveId.Has<ecs::SceneInfo>(live), "Expected liveId to have SceneInfo");
                         auto &liveSceneInfo = sceneInfo.liveId.Get<ecs::SceneInfo>(live);
                         liveSceneInfo.InsertWithPriority(staging, sceneInfo);
@@ -90,7 +92,8 @@ namespace sp {
     }
 
     void Scene::RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live) {
-        Logf("Removing scene: %s", name);
+        ZoneScoped;
+        ZoneStr(name);
         for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
             if (!e.Has<ecs::SceneInfo>(staging)) continue;
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);

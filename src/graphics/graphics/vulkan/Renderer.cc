@@ -1178,8 +1178,6 @@ namespace sp::vulkan {
         ZoneScoped;
         activeModels.Tick(std::chrono::milliseconds(33)); // Minimum 30 fps tick rate
 
-        chrono_clock::duration totalLoadTime = {};
-
         for (int i = (int)modelsToLoad.size() - 1; i >= 0; i--) {
             auto &model = modelsToLoad[i];
             if (activeModels.Contains(model->name)) {
@@ -1187,17 +1185,9 @@ namespace sp::vulkan {
                 continue;
             }
 
-            auto start = chrono_clock::now();
             auto vulkanModel = make_shared<Model>(model, scene, device);
             activeModels.Register(model->name, vulkanModel);
-
-            auto loadTime = chrono_clock::now() - start;
-            auto usLoadTime = std::chrono::duration_cast<std::chrono::microseconds>(loadTime).count();
-            Debugf("Loaded vulkan model %s in %llu.%llu ms", model->name, usLoadTime / 1000, usLoadTime % 1000);
-
             modelsToLoad.pop_back();
-            totalLoadTime += loadTime;
-            if (totalLoadTime > std::chrono::milliseconds(10)) break;
         }
 
         scene.FlushTextureDescriptors();

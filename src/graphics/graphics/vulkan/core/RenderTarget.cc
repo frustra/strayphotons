@@ -1,12 +1,14 @@
 #include "RenderTarget.hh"
 
-#include "core/Logging.hh"
+#include "core/Tracing.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan {
     RenderTarget::~RenderTarget() {
         if (poolIndex != ~0u) {
-            Debugf("Destroying render target %d, size=%dx%d", poolIndex, desc.extent.width, desc.extent.height);
+            ZoneScoped;
+            ZoneValue(poolIndex);
+            ZonePrintf("size=%dx%d", desc.extent.width, desc.extent.height);
         }
     }
 
@@ -32,7 +34,9 @@ namespace sp::vulkan {
             }
         }
 
-        Debugf("Creating render target %d, size=%dx%d", pool.size(), desc.extent.width, desc.extent.height);
+        ZoneScopedN("CreateRenderTarget");
+        ZoneValue(pool.size());
+        ZonePrintf("size=%dx%d", desc.extent.width, desc.extent.height);
 
         ImageCreateInfo imageInfo;
         imageInfo.imageType = vk::ImageType::e2D;

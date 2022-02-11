@@ -9,7 +9,7 @@ extern "C" {
 #include "assets/Image.hh"
 #include "assets/Model.hh"
 #include "assets/Script.hh"
-#include "core/Logging.hh"
+#include "core/Tracing.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
@@ -185,7 +185,8 @@ namespace sp {
             {
                 std::lock_guard lock(taskMutex);
                 runningTasks.emplace_back(std::async(std::launch::async, [this, path, type, asset] {
-                    Debugf("Loading asset: %s", path);
+                    ZoneScopedN("LoadAsset");
+                    ZoneStr(path);
                     std::ifstream in;
                     size_t size;
 

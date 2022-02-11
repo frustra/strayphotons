@@ -56,6 +56,7 @@ namespace sp::vulkan {
         default:
             break;
         }
+        TracePrintf("VK %s %s", typeStr, pCallbackData->pMessage);
         return VK_FALSE;
     }
 
@@ -1337,6 +1338,8 @@ namespace sp::vulkan {
     }
 
     shared_ptr<Shader> DeviceContext::CreateShader(const string &name, Hash64 compareHash) {
+        ZoneScoped;
+        ZoneStr(name);
         auto asset = GAssets.Load("shaders/vulkan/bin/" + name + ".spv", AssetType::Bundled, compareHash != Hash64());
         Assertf(asset, "could not load shader: %s", name);
         asset->WaitUntilValid();
@@ -1355,7 +1358,6 @@ namespace sp::vulkan {
             Abortf("could not parse shader: %s error: %d", name, reflection.GetResult());
         }
 
-        Debugf("loaded shader module: %s", name);
         return make_shared<Shader>(name, std::move(shaderModule), std::move(reflection), newHash);
     }
 

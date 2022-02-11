@@ -54,6 +54,7 @@ namespace sp::vulkan {
     Buffer::Buffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo, VmaAllocator allocator)
         : UniqueMemory(allocator), bufferInfo(bufferInfo) {
         ZoneScoped;
+        ZoneValue(bufferInfo.size);
 
         if (bufferInfo.size == 0) return; // allow creating empty buffers for convenience
 
