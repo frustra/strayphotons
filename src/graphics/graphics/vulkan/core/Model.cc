@@ -65,7 +65,7 @@ namespace sp::vulkan {
                 "indexes overflow buffer");
 
             auto indexPtr = &indexBufferSrc.data[assetPrimitive.indexBuffer.byteOffset];
-            ready.push_back(std::async(std::launch::async, [indexPtr, indexBufferSize, indexData]() {
+            pendingWork.push_back(std::async(std::launch::async, [indexPtr, indexBufferSize, indexData]() {
                 ZoneScoped;
                 std::copy(indexPtr, indexPtr + indexBufferSize, (uint8 *)indexData);
             }));
@@ -101,7 +101,7 @@ namespace sp::vulkan {
             const uint8 *normalBuffer = buffers[normalAttr.bufferIndex].data.data() + normalAttr.byteOffset;
             const uint8 *uvBuffer = buffers[uvAttr.bufferIndex].data.data() + uvAttr.byteOffset;
 
-            ready.push_back(std::async(std::launch::async,
+            pendingWork.push_back(std::async(std::launch::async,
                 [posBuffer, normalBuffer, uvBuffer, posAttr, normalAttr, uvAttr, vertexCount, vertexData]() {
                     ZoneScoped;
                     for (size_t i = 0; i < vertexCount; i++) {
@@ -134,7 +134,7 @@ namespace sp::vulkan {
 
         auto meshModel = (GPUMeshModel *)modelEntry->Mapped();
         auto gpuPrimitives = (GPUMeshPrimitive *)primitiveList->Mapped();
-        ready.push_back(std::async(std::launch::async, [this, gpuPrimitives, meshModel]() {
+        pendingWork.push_back(std::async(std::launch::async, [this, gpuPrimitives, meshModel]() {
             ZoneScoped;
             auto gpuPrim = gpuPrimitives;
             for (auto &p : primitives) {
@@ -272,7 +272,7 @@ namespace sp::vulkan {
             viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
             auto added = scene.AddTexture(imageInfo, viewInfo, {data->data(), data->size(), data});
             textures[name] = added.first;
-            ready.push_back(std::move(added.second));
+            pendingWork.push_back(std::move(added.second));
             return added.first;
         }
 
@@ -320,7 +320,7 @@ namespace sp::vulkan {
 
         auto added = scene.AddTexture(imageInfo, viewInfo, {img.image.data(), img.image.size(), gltfModel});
         textures[name] = added.first;
-        ready.push_back(std::move(added.second));
+        pendingWork.push_back(std::move(added.second));
         return added.first;
     }
 } // namespace sp::vulkan

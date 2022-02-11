@@ -56,7 +56,7 @@ namespace sp::vulkan {
         default:
             break;
         }
-        TracePrintf("VK %s %s", typeStr, pCallbackData->pMessage);
+        Tracef("VK %s %s", typeStr, pCallbackData->pMessage);
         return VK_FALSE;
     }
 

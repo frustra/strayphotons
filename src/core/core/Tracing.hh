@@ -9,7 +9,7 @@
 #define ZonePrintf(fmt, ...) ZonePrintfV(___tracy_scoped_zone, fmt, __VA_ARGS__)
 #define ZonePrintfV(varname, fmt, ...) sp::tracing::TracingZonePrintf(varname, fmt, __VA_ARGS__)
 
-#define TracePrintf(fmt, ...) sp::tracing::TracingPrintf(fmt, __VA_ARGS__)
+#define Tracef(fmt, ...) sp::tracing::TracingPrintf(fmt, __VA_ARGS__)
 
 namespace sp::tracing {
     inline static void TracingZoneStr(tracy::ScopedZone &zone, const string_view &str) {

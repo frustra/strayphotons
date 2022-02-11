@@ -6,6 +6,7 @@
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 
+#include <atomic>
 #include <functional>
 #include <future>
 #include <glm/glm.hpp>
@@ -39,12 +40,12 @@ namespace sp::vulkan {
             return vertexCount;
         }
 
-        bool Ready() {
-            if (ready.empty()) return true;
-            erase_if(ready, [](std::future<void> &fut) {
+        bool CheckReady() {
+            if (pendingWork.empty()) return true;
+            erase_if(pendingWork, [](std::future<void> &fut) {
                 return fut.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
             });
-            return ready.empty();
+            return pendingWork.empty();
         }
 
     private:
@@ -59,6 +60,6 @@ namespace sp::vulkan {
         uint32 vertexCount = 0, indexCount = 0;
         SubBufferPtr indexBuffer, vertexBuffer, primitiveList, modelEntry;
 
-        std::vector<std::future<void>> ready;
+        std::vector<std::future<void>> pendingWork;
     };
 } // namespace sp::vulkan

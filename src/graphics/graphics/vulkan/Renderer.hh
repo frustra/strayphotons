@@ -11,6 +11,7 @@
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
 
+#include <atomic>
 #include <functional>
 #include <robin_hood.h>
 
@@ -167,6 +168,8 @@ namespace sp::vulkan {
         ImageViewPtr blankPixelImage;
 
         PreservingMap<ImageView *, ImageView> debugViews;
+
+        std::atomic_flag sceneReady;
 
 #ifdef SP_XR_SUPPORT
         xr::XrSystem *xrSystem = nullptr;

@@ -46,6 +46,13 @@ namespace sp::vulkan {
             listRenderTargets = true;
         });
 
+        funcs.Register("waitforrenderer", "Block until models are loaded and the scene is ready to render", [&]() {
+            sceneReady.clear();
+            while (!sceneReady.test()) {
+                sceneReady.wait(false);
+            }
+        });
+
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
         guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
     }
@@ -949,6 +956,7 @@ namespace sp::vulkan {
         scene.primitiveCount = 0;
         scene.vertexCount = 0;
         auto gpuRenderable = (GPURenderableEntity *)scene.renderableEntityList->Mapped();
+        bool hasPendingModel = false;
 
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (!ent.Has<ecs::Renderable, ecs::TransformSnapshot>(lock)) continue;
@@ -958,10 +966,14 @@ namespace sp::vulkan {
 
             auto model = activeModels.Load(renderable.model->name);
             if (!model) {
+                hasPendingModel = true;
                 modelsToLoad.push_back(renderable.model);
                 continue;
             }
-            if (!model->Ready()) continue;
+            if (!model->CheckReady()) {
+                hasPendingModel = true;
+                continue;
+            }
 
             Assert(scene.renderableCount * sizeof(GPURenderableEntity) < scene.renderableEntityList->Size(),
                 "renderable entity overflow");
@@ -977,6 +989,11 @@ namespace sp::vulkan {
         }
 
         scene.primitiveCountPowerOfTwo = std::max(1u, CeilToPowerOfTwo(scene.primitiveCount));
+
+        if (!hasPendingModel) {
+            sceneReady.test_and_set();
+            sceneReady.notify_all();
+        }
     }
 
     void Renderer::AddGeometryWarp(RenderGraph &graph) {
