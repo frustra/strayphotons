@@ -13,6 +13,7 @@
 #include <deque>
 #include <functional>
 #include <future>
+#include <list>
 #include <memory>
 #include <robin_hood.h>
 #include <shared_mutex>
@@ -65,12 +66,21 @@ namespace sp {
         SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld);
         ~SceneManager();
 
-        using ApplySceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)>;
-        void QueueAction(SceneAction action, std::string sceneName = "", ApplySceneCallback callback = nullptr);
-        void QueueActionAndBlock(SceneAction action, std::string sceneName = "", ApplySceneCallback callback = nullptr);
+        using PreApplySceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)>;
+        void QueueAction(SceneAction action, std::string sceneName = "", PreApplySceneCallback callback = nullptr);
+        void QueueActionAndBlock(SceneAction action,
+            std::string sceneName = "",
+            PreApplySceneCallback callback = nullptr);
 
     private:
         void RunSceneActions();
+        void ApplyPreloadedScenes();
+
+        using OnApplySceneCallback = std::function<void(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>,
+            ecs::Lock<ecs::AddRemove>,
+            std::shared_ptr<Scene>)>;
+        void QueueScenePreloadAndBlock(const std::shared_ptr<Scene> &scene, OnApplySceneCallback callback = nullptr);
+
         void Frame() override;
 
         void PrintScene(std::string sceneName);
@@ -81,7 +91,18 @@ namespace sp {
             SceneAction action;
 
             std::string sceneName;
-            ApplySceneCallback applyCallback;
+            PreApplySceneCallback callback;
+            std::promise<void> promise;
+        };
+
+        struct PreloadState {
+            std::shared_ptr<Scene> scene;
+            OnApplySceneCallback callback;
+            std::atomic_flag physicsPreload, graphicsPreload;
+
+            PreloadState() {}
+            PreloadState(const std::shared_ptr<Scene> &scene, OnApplySceneCallback callback)
+                : scene(scene), callback(callback) {}
         };
 
         void LoadSceneJson(const std::string &name,
@@ -91,7 +112,7 @@ namespace sp {
 
         void LoadBindingsJson(std::function<void(std::shared_ptr<Scene>)> callback);
 
-        std::shared_ptr<Scene> AddScene(std::string name, SceneType sceneType, ApplySceneCallback callback = nullptr);
+        std::shared_ptr<Scene> AddScene(std::string name, SceneType sceneType, OnApplySceneCallback callback = nullptr);
 
         void TranslateSceneByConnection(const std::shared_ptr<Scene> &scene);
 
@@ -100,13 +121,14 @@ namespace sp {
         ecs::ECS &stagingWorld;
         Tecs::Entity player;
 
-        LockFreeMutex queueMutex;
-        std::deque<std::pair<QueuedAction, std::promise<void>>> actionQueue;
+        LockFreeMutex actionMutex, preloadMutex;
+        std::deque<QueuedAction> actionQueue;
+        std::list<PreloadState> preloadQueue;
 
         PreservingMap<std::string, Scene, 1000> stagedScenes;
         using SceneList = std::vector<std::shared_ptr<Scene>>;
         EnumArray<SceneList, SceneType> scenes;
-        std::shared_ptr<Scene> playerScene, bindingsScene;
+        std::shared_ptr<Scene> bindingsScene;
         CFuncCollection funcs;
 
         friend class Scene;
