@@ -1,4 +1,10 @@
 loadscene sponza
 r.Exposure 1.0
 screenshot sponza-init.png
-wait 2000 screenshot hello-world.png
+stepgraphics
+stepphysics
+screenshot sponza-frame2.png
+wait 1000 stepgraphics 2
+wait 1000 stepphysics 2
+wait 1100 screenshot hello-world.png
+wait 1100 stepgraphics

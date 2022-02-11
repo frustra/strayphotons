@@ -1,5 +1,6 @@
 #pragma once
 
+#include "console/CFunc.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "core/RegisteredThread.hh"
@@ -59,7 +60,7 @@ namespace sp {
 
     class PhysxManager : public RegisteredThread {
     public:
-        PhysxManager();
+        PhysxManager(bool stepMode);
         virtual ~PhysxManager() override;
 
         void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
@@ -85,6 +86,8 @@ namespace sp {
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;
         vector<uint8_t> scratchBlock;
+
+        CFuncCollection funcs;
 
         std::shared_ptr<physx::PxScene> scene;
         std::shared_ptr<physx::PxControllerManager> controllerManager; // Must be deconstructed before scene

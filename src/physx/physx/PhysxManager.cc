@@ -21,7 +21,7 @@ namespace sp {
     CVar<float> CVarGravity("x.Gravity", -9.81f, "Acceleration due to gravity (m/sec^2)");
     // clang-format on
 
-    PhysxManager::PhysxManager()
+    PhysxManager::PhysxManager(bool stepMode)
         : RegisteredThread("PhysX", 120.0, true), characterControlSystem(*this), constraintSystem(*this),
           physicsQuerySystem(*this), laserSystem(*this), animationSystem(*this) {
         Logf("PhysX %d.%d.%d starting up",
@@ -51,7 +51,17 @@ namespace sp {
         scratchBlock.resize(0x1000000); // 16MiB
 
         CreatePhysxScene();
-        StartThread();
+        if (stepMode) {
+            funcs.Register<int>("stepphysics",
+                "Advance the physics simulation by N frames, default is 1",
+                [this](int arg) {
+                    do {
+                        Frame();
+                    } while (--arg > 0);
+                });
+        } else {
+            StartThread();
+        }
     }
 
     PhysxManager::~PhysxManager() {

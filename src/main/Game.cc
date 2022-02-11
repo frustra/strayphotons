@@ -33,6 +33,9 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
           graphics(this),
 #endif
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+          physics(startupScript != nullptr),
+#endif
 #ifdef SP_XR_SUPPORT
           xr(this),
 #endif
@@ -91,7 +94,27 @@ namespace sp {
         if (options.count("map")) { scenes.QueueActionAndBlock(SceneAction::LoadScene, options["map"].as<string>()); }
 
         if (startupScript != nullptr) {
-            startupScript->Exec();
+#ifdef SP_GRAPHICS_SUPPORT
+            CFunc<int> cfStepGraphics("stepgraphics",
+                "Renders N frames in a row, saving any queued screenshots, default is 1",
+                [this](int arg) {
+                    do {
+                        graphics.Frame();
+                    } while (--arg > 0);
+                });
+#endif
+
+            Debugf("Running script: %s", startupScript->path);
+            for (string line : startupScript->Lines()) {
+                Debugf("$ %s", line);
+                GetConsoleManager().ParseAndExecute(line);
+                if (exitTriggered.test()) break;
+            }
+            logic.StartThread();
+            while (!exitTriggered.test()) {
+                exitTriggered.wait(false);
+            }
+            return exitCode;
         } else if (!options.count("map")) {
             scenes.QueueActionAndBlock(SceneAction::LoadScene, "menu");
             {

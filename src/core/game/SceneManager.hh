@@ -20,7 +20,6 @@
 namespace sp {
     class Game;
     class Scene;
-    class Script;
 
     static const char *const InputBindingConfigPath = "input_bindings.json";
 

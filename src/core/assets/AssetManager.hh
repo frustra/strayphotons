@@ -32,6 +32,7 @@ namespace sp {
     class AssetManager : public RegisteredThread {
     public:
         AssetManager();
+        ~AssetManager();
 
         std::shared_ptr<const Asset> Load(const std::string &path,
             AssetType type = AssetType::Bundled,
