@@ -2,6 +2,7 @@
 
 #include "assets/Model.hh"
 #include "core/Logging.hh"
+#include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
@@ -13,6 +14,7 @@ namespace sp::vulkan {
     Model::Model(shared_ptr<const sp::Model> model, GPUSceneContext &scene, DeviceContext &device)
         : modelName(model->name), scene(scene), asset(model) {
         ZoneScoped;
+        ZoneStr(modelName);
         // TODO: cache the output somewhere. Keeping the conversion code in
         // the engine will be useful for any dynamic loading in the future,
         // but we don't want to do it every time a model is loaded.
@@ -153,7 +155,8 @@ namespace sp::vulkan {
     }
 
     Model::~Model() {
-        Debugf("Destroying vulkan::Model %s", modelName);
+        ZoneScoped;
+        ZoneStr(modelName);
 
         for (auto it : textures) {
             scene.ReleaseTexture(it.second);

@@ -3,6 +3,7 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "core/Logging.hh"
+#include "core/Tracing.hh"
 
 #include <filesystem>
 #include <fstream>
@@ -67,7 +68,8 @@ namespace sp {
     }
 
     Model::~Model() {
-        Debugf("Destroying model %s", name);
+        ZoneScoped;
+        ZoneStr(name);
     }
 
     bool Model::HasBuffer(size_t index) const {
@@ -114,14 +116,15 @@ namespace sp {
     }
 
     void Model::PopulateFromAsset(std::shared_ptr<const Asset> asset, const tinygltf::FsCallbacks *fsCallbacks) {
+        ZoneScoped;
+        ZonePrintf("%s from %s", name, asset->path);
+
         Assert(asset, "Loading Model from null asset");
         this->asset = asset;
         asset->WaitUntilValid();
 
         std::filesystem::path fsPath(asset->path);
         std::string baseDir = fsPath.remove_filename().string();
-
-        Debugf("Loading model %s from %s", name, asset->path);
 
         auto gltfModel = std::make_shared<tinygltf::Model>();
         std::string err;
