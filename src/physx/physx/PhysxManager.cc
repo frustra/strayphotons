@@ -452,6 +452,7 @@ namespace sp {
     const uint32 hullCacheMagic = 0xc042;
 
     ConvexHullSet *PhysxManager::LoadCollisionCache(const Model &model, bool decomposeHull) {
+        ZoneScoped;
         std::ifstream in;
 
         std::string path = "cache/collision/" + model.name;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/Tracing.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/NamedEntity.hh"
@@ -18,6 +19,8 @@ namespace ecs {
         }
 
         void OnTick(ecs::Lock<ecs::WriteAll> lock, Tecs::Entity &ent, chrono_clock::duration interval) {
+            ZoneScopedN("OnTick");
+            ZoneValue(ent.index);
             for (auto &callback : onTickCallbacks) {
                 callback(lock, ent, interval);
             }

@@ -24,8 +24,6 @@
 #include "ecs/components/VoxelArea.hh"
 #include "ecs/components/XRView.hh"
 
-#include <Tecs.hh>
-
 namespace ecs {
     template<typename T>
     Tecs::Entity EntityWith(Lock<Read<T>> lock, const T &value) {
