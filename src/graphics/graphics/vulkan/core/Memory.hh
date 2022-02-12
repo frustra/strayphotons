@@ -22,6 +22,8 @@
     #pragma warning(disable : 4127 4189 4324)
 #endif
 
+#define VMA_DEBUG_LOG(...) Tracef(__VA_ARGS__)
+
 #include <vk_mem_alloc.h>
 
 #ifdef __GNUC__
