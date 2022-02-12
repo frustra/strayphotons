@@ -80,7 +80,7 @@ namespace sp::vulkan {
         void UnmapPersistent();
         vk::DeviceSize ByteSize() const;
 
-        const size_t CopyBlockSize = 1024 * 1024;
+        const size_t CopyBlockSize = 512 * 1024;
 
         template<typename T>
         void CopyFrom(const T *srcData, size_t srcCount = 1, size_t dstOffset = 0) {
@@ -92,13 +92,20 @@ namespace sp::vulkan {
                 ZoneScopedN("memcpy");
                 ZoneValue(srcCount * sizeof(T));
                 auto srcEnd = srcData + srcCount;
+                auto window = std::chrono::milliseconds(1);
                 for (size_t offset = 0; offset < srcCount; offset += CopyBlockSize) {
                     auto srcBlock = srcData + offset;
+
+                    ClockTimer timer;
                     std::copy(srcBlock, std::min(srcEnd, srcBlock + CopyBlockSize), dstData + dstOffset + offset);
 
                     if (offset + CopyBlockSize < srcCount) {
-                        ZoneScopedN("sleep");
-                        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                        auto elapsed = timer.Duration();
+                        if (elapsed > window) {
+                            ZoneScopedN("sleep");
+                            ZoneValue(elapsed.count());
+                            std::this_thread::sleep_for(elapsed);
+                        }
                     }
                 }
             }

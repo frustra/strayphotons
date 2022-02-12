@@ -6,8 +6,8 @@
 
 #define ZoneStr(str) ZoneStrV(___tracy_scoped_zone, str)
 #define ZoneStrV(varname, str) sp::tracing::TracingZoneStr(varname, str)
-#define ZonePrintf(fmt, ...) ZonePrintfV(___tracy_scoped_zone, fmt, __VA_ARGS__)
-#define ZonePrintfV(varname, fmt, ...) sp::tracing::TracingZonePrintf(varname, fmt, __VA_ARGS__)
+#define ZonePrintf(...) ZonePrintfV(___tracy_scoped_zone, __VA_ARGS__)
+#define ZonePrintfV(varname, ...) sp::tracing::TracingZonePrintf(varname, __VA_ARGS__)
 
 #define Tracef(fmt, ...) sp::tracing::TracingPrintf(fmt, __VA_ARGS__)
 
