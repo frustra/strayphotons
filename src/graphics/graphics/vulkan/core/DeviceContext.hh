@@ -97,6 +97,7 @@ namespace sp::vulkan {
             vk::Fence fence = {});
 
         BufferPtr AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
+        BufferPtr AllocateBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo);
 
         template<typename T>
         BufferPtr CreateBuffer(const T *srcData,
@@ -109,14 +110,12 @@ namespace sp::vulkan {
         }
 
         std::future<BufferPtr> CreateBuffer(const InitialData &data,
+            vk::BufferCreateInfo bufferInfo,
+            VmaAllocationCreateInfo allocInfo);
+
+        std::future<BufferPtr> CreateBuffer(const InitialData &data,
             vk::BufferUsageFlags usage,
-            VmaMemoryUsage residency) {
-            return allocatorQueue.Dispatch<BufferPtr>([=, this]() {
-                auto buf = AllocateBuffer(data.dataSize, usage, residency);
-                buf->CopyFrom(data.data, data.dataSize);
-                return buf;
-            });
-        }
+            VmaMemoryUsage residency);
 
         BufferPtr GetFramePooledBuffer(BufferType type, vk::DeviceSize size);
 

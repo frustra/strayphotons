@@ -1,10 +1,6 @@
-#include "core/Tracing.hh"
-#define VMA_DEBUG_LOG(...)            \
-    ZoneNamed(__tracy__LINE__, true); \
-    ZonePrintfV(__tracy__LINE__, __VA_ARGS__)
-
 #define VMA_IMPLEMENTATION
 #include "Memory.hh"
+
 #include "core/Common.hh"
 
 namespace sp::vulkan {
