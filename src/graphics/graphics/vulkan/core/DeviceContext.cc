@@ -47,12 +47,6 @@ namespace sp::vulkan {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
             Warnf("VK %s %s", typeStr, pCallbackData->pMessage);
             break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-            Logf("VK %s %s", typeStr, pCallbackData->pMessage);
-            break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-            Debugf("VK %s %s", typeStr, pCallbackData->pMessage);
-            break;
         default:
             break;
         }
@@ -90,10 +84,10 @@ namespace sp::vulkan {
         bool hasMemoryRequirements2Ext = false, hasDedicatedAllocationExt = false;
 
         auto availableExtensions = vk::enumerateInstanceExtensionProperties();
-        Debugf("Available Vulkan extensions: %u", availableExtensions.size());
+        // Debugf("Available Vulkan extensions: %u", availableExtensions.size());
         for (auto &ext : availableExtensions) {
             string_view name(ext.extensionName.data());
-            Debugf("\t%s", name);
+            // Debugf("\t%s", name);
 
             if (name == VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) {
                 hasMemoryRequirements2Ext = true;
@@ -103,12 +97,6 @@ namespace sp::vulkan {
                 continue;
             }
             extensions.push_back(name.data());
-        }
-
-        auto availableLayers = vk::enumerateInstanceLayerProperties();
-        Debugf("Available Vulkan layers: %u", availableLayers.size());
-        for (auto &layer : availableLayers) {
-            Debugf("\t%s %s", layer.layerName.data(), layer.description.data());
         }
 
         uint32_t requiredExtensionCount = 0;
