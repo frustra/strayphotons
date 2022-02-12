@@ -110,11 +110,6 @@ namespace sp {
                 GetConsoleManager().ParseAndExecute(line);
                 if (exitTriggered.test()) break;
             }
-            logic.StartThread();
-            while (!exitTriggered.test()) {
-                exitTriggered.wait(false);
-            }
-            return exitCode;
         } else if (!options.count("map")) {
             scenes.QueueActionAndBlock(SceneAction::LoadScene, "menu");
             {
@@ -126,13 +121,17 @@ namespace sp {
         logic.StartThread();
 
 #ifdef SP_GRAPHICS_SUPPORT
-        while (!exitTriggered.test()) {
-            if (!graphics.Frame()) break;
-            FrameMark;
-        }
-#else
-        while (!exitTriggered.test()) {
-            exitTriggered.wait(false);
+        if (startupScript == nullptr) {
+            while (!exitTriggered.test()) {
+                if (!graphics.Frame()) break;
+                FrameMark;
+            }
+        } else {
+#endif
+            while (!exitTriggered.test()) {
+                exitTriggered.wait(false);
+            }
+#ifdef SP_GRAPHICS_SUPPORT
         }
 #endif
         return exitCode;
