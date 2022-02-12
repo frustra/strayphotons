@@ -29,16 +29,19 @@ namespace sp {
         std::unique_lock<std::mutex> lock(mutex);
 
         while (true) {
-            ZoneScopedN("ThreadFlush");
             if (workQueue.empty()) workReady.wait(lock);
             if (exit && (dropPendingWork || workQueue.empty())) break;
             if (workQueue.empty()) continue;
 
-            size_t flushCount = workQueue.size();
-            if (FlushInternal(lock, flushCount, false) == 0) {
-                lock.unlock();
-                std::this_thread::sleep_for(flushSleepInterval);
-                lock.lock();
+            {
+                ZoneScopedN("ThreadFlush");
+                size_t flushCount = workQueue.size();
+                ZoneValue(flushCount);
+                if (FlushInternal(lock, flushCount, false) == 0) {
+                    lock.unlock();
+                    std::this_thread::sleep_for(flushSleepInterval);
+                    lock.lock();
+                }
             }
         }
     }

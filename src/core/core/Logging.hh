@@ -20,6 +20,9 @@
 namespace sp::logging {
     enum class Level { Error, Warn, Log, Debug };
 
+    // time in seconds
+    float LogTime();
+
     void GlobalLogOutput(Level lvl, const std::string &line);
 
     inline static const char *basename(const char *file) {
@@ -73,7 +76,7 @@ namespace sp::logging {
 #ifdef SP_VERBOSE_LOGGING
         writeFormatter(lvl, fmt + "  (%s:%d)\n", convert(t1), convert(std::forward<Tn>(tn))..., basename(file), line);
 #else
-        writeFormatter(lvl, fmt + "\n", convert(t1), convert(std::forward<Tn>(tn))...);
+        writeFormatter(lvl, "%.3f " + fmt + "\n", LogTime(), convert(t1), convert(std::forward<Tn>(tn))...);
 #endif
     }
 
@@ -81,7 +84,8 @@ namespace sp::logging {
 #ifdef SP_VERBOSE_LOGGING
         writeFormatter(lvl, "%s  (%s:%d)\n", convert(str), basename(file), line);
 #else
-        writeFormatter(lvl, "%s\n", convert(str));
+
+        writeFormatter(lvl, "%.3f %s\n", LogTime(), convert(str));
 #endif
     }
 
@@ -107,7 +111,7 @@ namespace sp::logging {
 
     template<typename... T>
     static void Error(const char *file, int line, const std::string &fmt, T... t) {
-        writeLog(Level::Error, file, line, "[err] " + fmt, t...);
+        writeLog(Level::Error, file, line, "[error] " + fmt, t...);
     }
 
     template<typename... T>
@@ -116,3 +120,13 @@ namespace sp::logging {
         sp::Abort();
     }
 } // namespace sp::logging
+
+namespace sp {
+    struct LogOnExit {
+        const char *message;
+        LogOnExit(const char *message) : message(message) {}
+        ~LogOnExit() {
+            Logf(message);
+        }
+    };
+} // namespace sp
