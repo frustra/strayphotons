@@ -50,6 +50,7 @@ namespace sp::vulkan {
             while (pendingTransaction.test())
                 pendingTransaction.wait(true);
 
+            sceneReady.clear();
             while (!sceneReady.test())
                 sceneReady.wait(false);
         });
