@@ -474,7 +474,7 @@ namespace sp {
                 auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
 
                 for (auto param : root.get<picojson::object>()) {
-                    Debugf("Loading input for: %s", param.first);
+                    Tracef("Loading input for: %s", param.first);
                     auto entity = lock.NewEntity();
                     entity.Set<ecs::Name>(lock, param.first);
                     entity.Set<ecs::SceneInfo>(lock, entity, ecs::SceneInfo::Priority::Bindings, scene);
