@@ -64,7 +64,7 @@ namespace sp {
 
     class SceneManager : public RegisteredThread {
     public:
-        SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld);
+        SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld, bool skipPreload = false);
         ~SceneManager();
 
         using PreApplySceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)>;
@@ -123,6 +123,7 @@ namespace sp {
         LockFreeMutex actionMutex, preloadMutex;
         std::deque<QueuedAction> actionQueue;
         PreloadState preloadState;
+        bool skipPreload;
 
         PreservingMap<std::string, Scene, 1000> stagedScenes;
         using SceneList = std::vector<std::shared_ptr<Scene>>;

@@ -23,8 +23,9 @@ namespace sp {
         return GSceneManager;
     }
 
-    SceneManager::SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld)
-        : RegisteredThread("SceneManager", 30.0), liveWorld(liveWorld), stagingWorld(stagingWorld) {
+    SceneManager::SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld, bool)
+        : RegisteredThread("SceneManager", 30.0), liveWorld(liveWorld), stagingWorld(stagingWorld),
+          skipPreload(skipPreload) {
         funcs.Register<std::string>("loadscene",
             "Load a scene and replace current scenes",
             [this](std::string sceneName) {
@@ -401,11 +402,14 @@ namespace sp {
 
             preloadState.graphicsPreload.test_and_set(); // TODO temp
         }
-        while (!preloadState.graphicsPreload.test()) {
-            preloadState.graphicsPreload.wait(false);
-        }
-        while (!preloadState.physicsPreload.test()) {
-            preloadState.physicsPreload.wait(false);
+
+        if (!skipPreload) {
+            while (!preloadState.graphicsPreload.test()) {
+                preloadState.graphicsPreload.wait(false);
+            }
+            while (!preloadState.physicsPreload.test()) {
+                preloadState.physicsPreload.wait(false);
+            }
         }
 
         Tracef("Applying scene: %s", scene->name);

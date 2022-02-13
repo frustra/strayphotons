@@ -10,7 +10,7 @@ namespace SceneManagerTests {
 
     ecs::ECS liveWorld;
     ecs::ECS stagingWorld;
-    sp::SceneManager Scenes(liveWorld, stagingWorld);
+    sp::SceneManager Scenes(liveWorld, stagingWorld, true);
 
     void AssertEntityScene(ecs::Lock<ecs::Read<ecs::Name, ecs::SceneInfo>> stagingLock,
         ecs::Lock<ecs::Read<ecs::Name, ecs::SceneInfo>> liveLock,
