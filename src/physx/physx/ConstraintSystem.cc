@@ -30,18 +30,20 @@ namespace sp {
      *
      * If a constraint's target distance exceeds its maximum, the constraint will break and be removed.
      */
-    void ConstraintSystem::HandleForceLimitConstraint(ecs::Physics &physics,
+    void ConstraintSystem::HandleForceLimitConstraint(PxRigidActor *actor,
+        const ecs::Physics &physics,
         ecs::Transform transform,
         ecs::Transform targetTransform,
         glm::vec3 targetVelocity) {
-        auto dynamic = physics.actor->is<PxRigidDynamic>();
+        auto dynamic = actor->is<PxRigidDynamic>();
         if (!dynamic) return;
+        auto centerOfMass = PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p);
 
         auto currentRotate = transform.GetRotation();
-        transform.Translate(currentRotate * physics.centerOfMass);
+        transform.Translate(currentRotate * centerOfMass);
 
         auto targetRotate = targetTransform.GetRotation();
-        targetTransform.Translate(targetRotate * physics.constraintRotation * physics.centerOfMass);
+        targetTransform.Translate(targetRotate * physics.constraintRotation * centerOfMass);
 
         auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() +
                         targetRotate * physics.constraintOffset;
@@ -127,38 +129,54 @@ namespace sp {
             auto forceClampRatio = std::min(CVarMaxVerticalConstraintForce.Get(), forceAbs) / forceAbs;
             dynamic->addForce(PxVec3(0, force * forceClampRatio, 0));
         }
-        if (physics.constraintMaxDistance > 0.0f && glm::length(deltaPos) > physics.constraintMaxDistance) {
-            physics.RemoveConstraint();
+    }
+
+    void ConstraintSystem::BreakConstraints(
+        ecs::Lock<ecs::Read<ecs::TransformSnapshot>, ecs::Write<ecs::Physics>> lock) {
+        for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
+            if (!entity.Has<ecs::Physics, ecs::TransformSnapshot>(lock)) continue;
+            auto &physics = entity.Get<ecs::Physics>(lock);
+            if (physics.constraintMaxDistance > 0.0f && physics.constraint.Has<ecs::TransformSnapshot>(lock)) {
+                auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
+                auto &targetTransform = physics.constraint.Get<ecs::TransformSnapshot>(lock);
+
+                auto deltaPos = targetTransform.GetPosition() - transform.GetPosition() +
+                                targetTransform.GetRotation() * physics.constraintOffset;
+                if (glm::length(deltaPos) > physics.constraintMaxDistance) physics.RemoveConstraint();
+            }
         }
     }
 
     void ConstraintSystem::Frame(
-        ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController>, ecs::Write<ecs::Physics>> lock) {
+        ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics>> lock) {
         for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
             if (!entity.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
+            if (manager.actors.count(entity) == 0) continue;
+
             auto &physics = entity.Get<ecs::Physics>(lock);
-            if (!physics.actor) continue;
+            auto const &actor = manager.actors[entity];
 
             ecs::PhysicsJointType currentJointType = ecs::PhysicsJointType::Count;
-            if (physics.joint) {
-                if (physics.joint->is<physx::PxFixedJoint>()) {
+            if (manager.joints.count(entity) > 0) {
+                auto &joint = manager.joints[entity];
+                if (joint->is<physx::PxFixedJoint>()) {
                     currentJointType = ecs::PhysicsJointType::Fixed;
-                } else if (physics.joint->is<physx::PxDistanceJoint>()) {
+                } else if (joint->is<physx::PxDistanceJoint>()) {
                     currentJointType = ecs::PhysicsJointType::Distance;
-                } else if (physics.joint->is<physx::PxSphericalJoint>()) {
+                } else if (joint->is<physx::PxSphericalJoint>()) {
                     currentJointType = ecs::PhysicsJointType::Spherical;
-                } else if (physics.joint->is<physx::PxRevoluteJoint>()) {
+                } else if (joint->is<physx::PxRevoluteJoint>()) {
                     currentJointType = ecs::PhysicsJointType::Hinge;
-                } else if (physics.joint->is<physx::PxPrismaticJoint>()) {
+                } else if (joint->is<physx::PxPrismaticJoint>()) {
                     currentJointType = ecs::PhysicsJointType::Slider;
                 } else {
-                    Abortf("Unknown PxJoint type: %u", physics.joint->getConcreteType());
+                    Abortf("Unknown PxJoint type: %u", joint->getConcreteType());
                 }
                 if (!physics.jointTarget || physics.jointType != currentJointType) {
-                    physics.joint->release();
-                    physics.joint = nullptr;
+                    joint->release();
+                    manager.joints.erase(entity);
 
-                    auto dynamic = physics.actor->is<PxRigidDynamic>();
+                    auto dynamic = actor->is<PxRigidDynamic>();
                     if (dynamic) dynamic->wakeUp();
                 }
             }
@@ -169,9 +187,8 @@ namespace sp {
                     GlmQuatToPxQuat(physics.jointLocalOrient));
                 PxTransform remoteTransform(PxIdentity);
 
-                if (physics.jointTarget.Has<ecs::Physics>(lock)) {
-                    auto &targetPhysics = physics.jointTarget.Get<ecs::Physics>(lock);
-                    jointActor = targetPhysics.actor;
+                if (manager.actors.count(physics.jointTarget) > 0) {
+                    jointActor = manager.actors[physics.jointTarget];
                     remoteTransform.p = GlmVec3ToPxVec3(physics.jointRemoteOffset);
                     remoteTransform.q = GlmQuatToPxQuat(physics.jointRemoteOrient);
                 }
@@ -182,16 +199,14 @@ namespace sp {
                     remoteTransform.q = GlmQuatToPxQuat(rotate * physics.jointRemoteOrient);
                 }
 
-                if (!physics.joint) {
+                auto &joint = manager.joints[entity];
+                if (joint == nullptr) {
                     if (physics.jointType == ecs::PhysicsJointType::Fixed) {
-                        physics.joint = PxFixedJointCreate(*manager.pxPhysics,
-                            physics.actor,
-                            localTransform,
-                            jointActor,
-                            remoteTransform);
+                        joint =
+                            PxFixedJointCreate(*manager.pxPhysics, actor, localTransform, jointActor, remoteTransform);
                     } else if (physics.jointType == ecs::PhysicsJointType::Distance) {
                         auto distanceJoint = PxDistanceJointCreate(*manager.pxPhysics,
-                            physics.actor,
+                            actor,
                             localTransform,
                             jointActor,
                             remoteTransform);
@@ -200,10 +215,10 @@ namespace sp {
                             distanceJoint->setMaxDistance(physics.jointRange.y);
                             distanceJoint->setDistanceJointFlag(PxDistanceJointFlag::eMAX_DISTANCE_ENABLED, true);
                         }
-                        physics.joint = distanceJoint;
+                        joint = distanceJoint;
                     } else if (physics.jointType == ecs::PhysicsJointType::Spherical) {
                         auto sphericalJoint = PxSphericalJointCreate(*manager.pxPhysics,
-                            physics.actor,
+                            actor,
                             localTransform,
                             jointActor,
                             remoteTransform);
@@ -213,10 +228,10 @@ namespace sp {
                             sphericalJoint->setSphericalJointFlag(PxSphericalJointFlag::eLIMIT_ENABLED, true);
                             sphericalJoint->setConstraintFlag(PxConstraintFlag::eENABLE_EXTENDED_LIMITS, true);
                         }
-                        physics.joint = sphericalJoint;
+                        joint = sphericalJoint;
                     } else if (physics.jointType == ecs::PhysicsJointType::Hinge) {
                         auto revoluteJoint = PxRevoluteJointCreate(*manager.pxPhysics,
-                            physics.actor,
+                            actor,
                             localTransform,
                             jointActor,
                             remoteTransform);
@@ -226,10 +241,10 @@ namespace sp {
                             revoluteJoint->setRevoluteJointFlag(PxRevoluteJointFlag::eLIMIT_ENABLED, true);
                             revoluteJoint->setConstraintFlag(PxConstraintFlag::eENABLE_EXTENDED_LIMITS, true);
                         }
-                        physics.joint = revoluteJoint;
+                        joint = revoluteJoint;
                     } else if (physics.jointType == ecs::PhysicsJointType::Slider) {
                         auto prismaticJoint = PxPrismaticJointCreate(*manager.pxPhysics,
-                            physics.actor,
+                            actor,
                             localTransform,
                             jointActor,
                             remoteTransform);
@@ -239,16 +254,16 @@ namespace sp {
                                 physics.jointRange.y));
                             prismaticJoint->setPrismaticJointFlag(PxPrismaticJointFlag::eLIMIT_ENABLED, true);
                         }
-                        physics.joint = prismaticJoint;
+                        joint = prismaticJoint;
                     } else {
                         Abortf("Unsupported PhysX joint type: %u", physics.jointType);
                     }
                 } else {
-                    physics.joint->setActors(physics.actor, jointActor);
-                    physics.joint->setLocalPose(PxJointActorIndex::eACTOR0, localTransform);
-                    physics.joint->setLocalPose(PxJointActorIndex::eACTOR1, remoteTransform);
+                    joint->setActors(actor, jointActor);
+                    joint->setLocalPose(PxJointActorIndex::eACTOR0, localTransform);
+                    joint->setLocalPose(PxJointActorIndex::eACTOR1, remoteTransform);
                 }
-                auto dynamic = physics.actor->is<PxRigidDynamic>();
+                auto dynamic = actor->is<PxRigidDynamic>();
                 if (dynamic) dynamic->wakeUp();
             }
 
@@ -260,13 +275,10 @@ namespace sp {
                 // Try and determine the velocity of the constraint target entity
                 auto e = physics.constraint;
                 while (e.Has<ecs::TransformTree>(lock)) {
-                    if (e.Has<ecs::Physics>(lock)) {
-                        auto &targetPhysics = e.Get<ecs::Physics>(lock);
-                        if (targetPhysics.actor) {
-                            auto userData = (ActorUserData *)targetPhysics.actor->userData;
-                            if (userData) targetVelocity = userData->velocity;
-                            break;
-                        }
+                    if (manager.actors.count(e) > 0) {
+                        auto userData = (ActorUserData *)manager.actors[e]->userData;
+                        if (userData) targetVelocity = userData->velocity;
+                        break;
                     } else if (e.Has<ecs::CharacterController>(lock)) {
                         auto &targetController = e.Get<ecs::CharacterController>(lock);
                         if (targetController.pxController) {
@@ -278,7 +290,8 @@ namespace sp {
                     e = e.Get<ecs::TransformTree>(lock).parent;
                 }
 
-                HandleForceLimitConstraint(physics,
+                HandleForceLimitConstraint(actor,
+                    physics,
                     transform,
                     targetTransform.GetGlobalTransform(lock),
                     targetVelocity);
@@ -286,7 +299,7 @@ namespace sp {
 
             if (physics.constantForce != glm::vec3()) {
                 auto rotation = entity.Get<ecs::TransformTree>(lock).GetGlobalRotation(lock);
-                auto dynamic = physics.actor->is<PxRigidDynamic>();
+                auto dynamic = actor->is<PxRigidDynamic>();
                 if (dynamic) dynamic->addForce(GlmVec3ToPxVec3(rotation * physics.constantForce));
             }
         }

@@ -6,7 +6,7 @@ namespace sp {
 
     class GameLogic : public RegisteredThread {
     public:
-        GameLogic(bool exitOnEmptyQueue = false);
+        GameLogic();
 
         void StartThread();
 
@@ -17,7 +17,6 @@ namespace sp {
     private:
         void Frame() override;
 
-        bool exitOnEmptyQueue;
         CFuncCollection funcs;
     };
 

@@ -5,7 +5,7 @@
 namespace sp {
     enum class SceneType {
         Async = 0,
-        User,
+        World,
         System,
         Count,
     };
@@ -17,8 +17,8 @@ namespace sp {
                 switch (t) {
                 case SceneType::Async:
                     return "Async";
-                case SceneType::User:
-                    return "User";
+                case SceneType::World:
+                    return "World";
                 case SceneType::System:
                     return "System";
                 default:

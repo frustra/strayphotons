@@ -24,7 +24,7 @@ namespace sp {
             OpenVrSystem() : RegisteredThread("OpenVR", 120.0, true) {}
             ~OpenVrSystem();
 
-            bool Init(GraphicsContext *context) override;
+            bool Initialize(GraphicsContext *context) override;
             bool IsInitialized() override;
             bool IsHmdPresent() override;
 

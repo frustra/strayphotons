@@ -4,6 +4,7 @@
 #include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
+#include "core/RegisteredThread.hh"
 
 #include <condition_variable>
 #include <map>
@@ -30,13 +31,12 @@ namespace sp {
         }
     };
 
-    class ConsoleManager {
+    class ConsoleManager : public RegisteredThread {
     public:
         ConsoleManager();
         void AddCVar(CVarBase *cvar);
         void RemoveCVar(CVarBase *cvar);
-        void Update(bool exitOnEmptyQueue);
-        void InputLoop();
+        void StartThread(bool exitOnEmptyQueue);
 
         void AddLog(logging::Level lvl, const string &line);
 
@@ -46,7 +46,6 @@ namespace sp {
         }
 
         void ParseAndExecute(const string line);
-        void Execute(const string cmd, const string &args);
         void QueueParseAndExecute(const string line,
             chrono_clock::time_point wait_until = chrono_clock::now(),
             std::condition_variable *handled = nullptr);
@@ -59,12 +58,18 @@ namespace sp {
         }
 
     private:
+        void Execute(const string cmd, const string &args);
+
+        void Frame() override;
+        void InputLoop();
+
         std::map<string, CVarBase *> cvars;
         std::thread cliInputThread;
 
         std::mutex queueLock;
         std::priority_queue<ConsoleInputLine, std::vector<ConsoleInputLine>, std::greater<ConsoleInputLine>>
             queuedCommands;
+        bool exitOnEmptyQueue = false;
 
         std::mutex linesLock;
         vector<ConsoleLine> outputLines;

@@ -1,7 +1,11 @@
 #pragma once
 
+#include "console/CFunc.hh"
 #include "core/Common.hh"
+#include "core/DispatchQueue.hh"
+#include "core/EntityMap.hh"
 #include "core/Logging.hh"
+#include "core/PreservingMap.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/components/Physics.hh"
@@ -30,7 +34,7 @@ namespace ecs {
 
 namespace sp {
     class Model;
-    class PhysxManager;
+    class SceneManager;
 
     extern CVar<float> CVarGravity;
 
@@ -40,6 +44,7 @@ namespace sp {
         glm::vec3 scale = glm::vec3(1);
         glm::vec3 velocity = glm::vec3(0);
         ecs::PhysicsGroup physicsGroup;
+        std::shared_ptr<const ConvexHullSet> shapeCache;
 
         ActorUserData() {}
         ActorUserData(Tecs::Entity ent, ecs::PhysicsGroup group) : entity(ent), physicsGroup(group) {}
@@ -59,7 +64,7 @@ namespace sp {
 
     class PhysxManager : public RegisteredThread {
     public:
-        PhysxManager();
+        PhysxManager(bool stepMode);
         virtual ~PhysxManager() override;
 
         void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
@@ -67,10 +72,8 @@ namespace sp {
     private:
         void Frame() override;
 
-        ConvexHullSet *GetCachedConvexHulls(std::string name);
-
-        void CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
-        void UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTree>, ecs::Write<ecs::Physics>> lock, Tecs::Entity &e);
+        physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, Tecs::Entity &e);
+        void UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, Tecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
 
     private:
@@ -78,13 +81,19 @@ namespace sp {
         void DestroyPhysxScene();
         void CacheDebugLines();
 
-        ConvexHullSet *BuildConvexHulls(const Model &model, bool decomposeHull);
-        ConvexHullSet *LoadCollisionCache(const Model &model, bool decomposeHull);
-        void SaveCollisionCache(const Model &model, ConvexHullSet *set, bool decomposeHull);
+        std::shared_ptr<physx::PxConvexMesh> CreateConvexMeshFromHull(const Model &model, const ConvexHull &hull);
+        std::shared_ptr<const ConvexHullSet> LoadConvexHullSet(const Model &model, bool decomposeHull);
+        bool LoadCollisionCache(ConvexHullSet &set, const Model &model, bool decomposeHull);
+        void SaveCollisionCache(const Model &model, const ConvexHullSet &set, bool decomposeHull);
 
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;
         vector<uint8_t> scratchBlock;
+
+        SceneManager &scenes;
+        CFuncCollection funcs;
+        bool stepMode = false;
+        std::atomic_uint64_t stepCount, maxStepCount;
 
         std::shared_ptr<physx::PxScene> scene;
         std::shared_ptr<physx::PxControllerManager> controllerManager; // Must be deconstructed before scene
@@ -110,7 +119,12 @@ namespace sp {
         TriggerSystem triggerSystem;
         AnimationSystem animationSystem;
 
-        std::unordered_map<string, ConvexHullSet *> cache;
+        EntityMap<physx::PxRigidActor *> actors;
+        EntityMap<physx::PxJoint *> joints;
+
+        std::mutex cacheMutex;
+        PreservingMap<string, ConvexHullSet> cache;
+        DispatchQueue workQueue;
 
         friend class CharacterControlSystem;
         friend class ConstraintSystem;

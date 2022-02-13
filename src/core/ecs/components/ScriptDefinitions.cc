@@ -306,7 +306,7 @@ namespace ecs {
                     auto &query = ent.Get<PhysicsQuery>(lock);
                     auto &transform = ent.Get<TransformSnapshot>(lock);
 
-                    auto target = scriptComp.GetParam<Tecs::Entity>("grab_target");
+                    auto &target = query.centerOfMassQuery;
                     if (target.Has<Physics>(lock)) {
                         // Remove target if the constraint broke
                         auto &ph = target.Get<Physics>(lock);
@@ -343,7 +343,6 @@ namespace ecs {
                             }
                         }
                     }
-                    scriptComp.SetParam("grab_target", target);
 
                     auto inputSensitivity = (float)scriptComp.GetParam<double>("rotate_sensitivity");
                     if (inputSensitivity == 0.0f) inputSensitivity = 0.001f;
@@ -357,7 +356,7 @@ namespace ecs {
 
                             // Move the objects origin so it rotates around its center of mass
                             auto &ph = target.Get<Physics>(lock);
-                            auto center = ph.constraintRotation * ph.centerOfMass;
+                            auto center = ph.constraintRotation * query.centerOfMass;
                             ph.constraintOffset += center - (deltaRotate * center);
                             ph.constraintRotation = deltaRotate * ph.constraintRotation;
                         }

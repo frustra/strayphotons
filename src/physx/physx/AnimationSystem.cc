@@ -7,8 +7,7 @@
 #include "physx/PhysxManager.hh"
 
 namespace sp {
-    AnimationSystem::AnimationSystem(PhysxManager &manager)
-        : manager(manager), frameInterval(manager.interval.count() / 1e9) {}
+    AnimationSystem::AnimationSystem(PhysxManager &manager) : frameInterval(manager.interval.count() / 1e9) {}
 
     double AnimationSystem::RoundToFrameInterval(double value) const {
         return frameInterval * std::round(value / frameInterval);

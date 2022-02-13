@@ -38,7 +38,7 @@ namespace sp {
         virtual bool Ready() = 0;
     };
     template<typename ReturnType, typename Fn, typename... ParameterTypes>
-    struct DispatchQueueWorkItem : public DispatchQueueWorkItemBase {
+    struct DispatchQueueWorkItem final : public DispatchQueueWorkItemBase {
         using FutureTuple = std::tuple<std::future<ParameterTypes>...>;
 
         DispatchQueueWorkItem(Fn &&func, FutureTuple &&futures)
@@ -54,7 +54,7 @@ namespace sp {
             {
                 ZoneScopedN("WaitForFutures");
                 args = std::apply(
-                    [&](auto &&...x) {
+                    [](auto &&...x) {
                         return std::make_tuple(x.get()...);
                     },
                     waitForFutures);

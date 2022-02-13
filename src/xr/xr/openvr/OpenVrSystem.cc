@@ -37,7 +37,7 @@ namespace sp::xr {
         vrSystem.reset();
     }
 
-    bool OpenVrSystem::Init(GraphicsContext *context) {
+    bool OpenVrSystem::Initialize(GraphicsContext *context) {
         if (vrSystem) return true;
         this->context = context;
 

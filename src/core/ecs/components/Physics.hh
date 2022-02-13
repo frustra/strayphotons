@@ -73,11 +73,6 @@ namespace ecs {
         glm::vec3 constraintOffset;
         glm::quat constraintRotation;
 
-        // Output fields of PhysxManager
-        physx::PxRigidActor *actor = nullptr;
-        physx::PxJoint *joint = nullptr;
-        glm::vec3 centerOfMass = glm::vec3(0.0); // The calculated center of mass of the object (relative to Transform)
-
         void SetJoint(Tecs::Entity target,
             PhysicsJointType type,
             glm::vec2 range = glm::vec2(),
@@ -114,12 +109,18 @@ namespace ecs {
     };
 
     struct PhysicsQuery {
+        // Raycast query inputs
         float raycastQueryDistance = 0.0f;
         PhysicsGroupMask raycastQueryFilterGroup = PHYSICS_GROUP_WORLD;
-
+        // Raycast outputs
         Tecs::Entity raycastHitTarget;
         glm::vec3 raycastHitPosition;
         float raycastHitDistance = 0.0f;
+
+        // Center of mass query
+        Tecs::Entity centerOfMassQuery;
+        // The calculated center of mass of the object (relative to its Transform)
+        glm::vec3 centerOfMass;
     };
 
     static Component<Physics> ComponentPhysics("physics");

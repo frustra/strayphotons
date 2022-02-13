@@ -5,8 +5,7 @@
 #include "ecs/EcsImpl.hh"
 
 namespace sp {
-    GameLogic::GameLogic(bool exitOnEmptyQueue)
-        : RegisteredThread("GameLogic", 120.0), exitOnEmptyQueue(exitOnEmptyQueue) {
+    GameLogic::GameLogic() : RegisteredThread("GameLogic", 120.0) {
         funcs.Register(this, "printdebug", "Print some debug info about the player", &GameLogic::PrintDebug);
         funcs.Register(this, "printevents", "Print out the current state of event queues", &GameLogic::PrintEvents);
         funcs.Register(this, "printsignals", "Print out the values and bindings of signals", &GameLogic::PrintSignals);
@@ -17,15 +16,11 @@ namespace sp {
     }
 
     void GameLogic::Frame() {
-        GetConsoleManager().Update(exitOnEmptyQueue);
-
-        {
-            ZoneScopedN("ScriptTick");
-            auto lock = ecs::World.StartTransaction<ecs::WriteAll>();
-            for (auto &entity : lock.EntitiesWith<ecs::Script>()) {
-                auto &script = entity.Get<ecs::Script>(lock);
-                script.OnTick(lock, entity, interval);
-            }
+        ZoneScoped;
+        auto lock = ecs::World.StartTransaction<ecs::WriteAll>();
+        for (auto &entity : lock.EntitiesWith<ecs::Script>()) {
+            auto &script = entity.Get<ecs::Script>(lock);
+            script.OnTick(lock, entity, interval);
         }
     }
 

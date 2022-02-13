@@ -33,13 +33,16 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
           graphics(this),
 #endif
+#ifdef SP_PHYSICS_SUPPORT_PHYSX
+          physics(startupScript != nullptr),
+#endif
 #ifdef SP_XR_SUPPORT
           xr(this),
 #endif
 #ifdef SP_AUDIO_SUPPORT
           audio(new AudioManager),
 #endif
-          logic(startupScript != nullptr) {
+          logic() {
     }
 
     Game::~Game() {}
@@ -91,7 +94,23 @@ namespace sp {
         if (options.count("map")) { scenes.QueueActionAndBlock(SceneAction::LoadScene, options["map"].as<string>()); }
 
         if (startupScript != nullptr) {
-            startupScript->Exec();
+#ifdef SP_GRAPHICS_SUPPORT
+            funcs.Register<int>("stepgraphics",
+                "Renders N frames in a row, saving any queued screenshots, default is 1",
+                [this](int arg) {
+                    do {
+                        graphics.Frame();
+                    } while (--arg > 0);
+                });
+#endif
+            funcs.Register<int>("sleep", "Pause script execution for N milliseconds", [](int ms) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+            });
+
+            Debugf("Running script: %s", startupScript->path);
+            for (string line : startupScript->Lines()) {
+                GetConsoleManager().QueueParseAndExecute(line);
+            }
         } else if (!options.count("map")) {
             scenes.QueueActionAndBlock(SceneAction::LoadScene, "menu");
             {
@@ -100,16 +119,21 @@ namespace sp {
             }
         }
 
+        GetConsoleManager().StartThread(startupScript != nullptr);
         logic.StartThread();
 
 #ifdef SP_GRAPHICS_SUPPORT
-        while (!exitTriggered.test()) {
-            if (!graphics.Frame()) break;
-            FrameMark;
-        }
-#else
-        while (!exitTriggered.test()) {
-            exitTriggered.wait(false);
+        if (startupScript == nullptr) {
+            while (!exitTriggered.test()) {
+                if (!graphics.Frame()) break;
+                FrameMark;
+            }
+        } else {
+#endif
+            while (!exitTriggered.test()) {
+                exitTriggered.wait(false);
+            }
+#ifdef SP_GRAPHICS_SUPPORT
         }
 #endif
         return exitCode;

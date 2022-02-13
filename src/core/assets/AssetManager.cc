@@ -80,6 +80,14 @@ namespace sp {
         StartThread();
     }
 
+    AssetManager::~AssetManager() {
+        StopThread();
+
+        for (auto &task : runningTasks) {
+            task.wait();
+        }
+    }
+
     void AssetManager::Frame() {
         {
             std::lock_guard lock(taskMutex);
@@ -311,15 +319,7 @@ namespace sp {
         }
         asset->WaitUntilValid();
 
-        std::stringstream ss(asset->String());
-        vector<string> lines;
-
-        string line;
-        while (std::getline(ss, line, '\n')) {
-            lines.emplace_back(std::move(line));
-        }
-
-        return make_shared<Script>(path, asset, std::move(lines));
+        return make_shared<Script>(path, asset);
     }
 
     void AssetManager::RegisterExternalModel(const std::string &name, const std::string &path) {

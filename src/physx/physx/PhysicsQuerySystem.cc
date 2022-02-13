@@ -14,10 +14,8 @@ namespace sp {
 
     void PhysicsQuerySystem::Frame(ecs::Lock<ecs::Read<ecs::TransformSnapshot>, ecs::Write<ecs::PhysicsQuery>> lock) {
         for (auto &entity : lock.EntitiesWith<ecs::PhysicsQuery>()) {
-            if (!entity.Has<ecs::PhysicsQuery, ecs::TransformSnapshot>(lock)) continue;
-
             auto &query = entity.Get<ecs::PhysicsQuery>(lock);
-            if (query.raycastQueryDistance > 0.0f) {
+            if (query.raycastQueryDistance > 0.0f && entity.Has<ecs::TransformSnapshot>(lock)) {
                 auto &transform = entity.Get<ecs::TransformSnapshot>(lock);
 
                 PxFilterData filterData;
@@ -33,6 +31,9 @@ namespace sp {
                     PxHitFlags(),
                     PxQueryFilterData(filterData, PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC));
 
+                query.raycastHitTarget = Tecs::Entity();
+                query.raycastHitPosition = glm::vec3();
+                query.raycastHitDistance = 0.0f;
                 if (status) {
                     physx::PxRigidActor *hitActor = hit.block.actor;
                     if (hitActor) {
@@ -41,14 +42,23 @@ namespace sp {
                             query.raycastHitTarget = userData->entity;
                             query.raycastHitPosition = rayDir * hit.block.distance + rayStart;
                             query.raycastHitDistance = hit.block.distance;
-                            continue;
                         }
                     }
                 }
+            }
 
-                query.raycastHitTarget = Tecs::Entity();
-                query.raycastHitPosition = glm::vec3();
-                query.raycastHitDistance = 0.0f;
+            if (query.centerOfMassQuery) {
+                if (manager.actors.count(query.centerOfMassQuery) > 0) {
+                    const auto &actor = manager.actors[query.centerOfMassQuery];
+                    auto dynamic = actor->is<PxRigidDynamic>();
+                    if (dynamic) {
+                        query.centerOfMass = PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p);
+                    } else {
+                        query.centerOfMass = glm::vec3();
+                    }
+                } else {
+                    query.centerOfMass = glm::vec3();
+                }
             }
         }
     }

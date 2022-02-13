@@ -1,6 +1,7 @@
 #pragma once
 
 #include "console/CFunc.hh"
+#include "core/DispatchQueue.hh"
 #include "core/EnumArray.hh"
 #include "core/LockFreeMutex.hh"
 #include "core/Logging.hh"
@@ -20,7 +21,6 @@
 namespace sp {
     class Game;
     class Scene;
-    class Script;
 
     static const char *const InputBindingConfigPath = "input_bindings.json";
 
@@ -63,27 +63,32 @@ namespace sp {
 
     class SceneManager : public RegisteredThread {
     public:
-        SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld);
+        SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld, bool skipPreload = false);
         ~SceneManager();
 
-        using ApplySceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)>;
-        void QueueAction(SceneAction action, std::string sceneName = "", ApplySceneCallback callback = nullptr);
-        void QueueActionAndBlock(SceneAction action, std::string sceneName = "", ApplySceneCallback callback = nullptr);
+        using PreApplySceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)>;
+        void QueueAction(SceneAction action, std::string sceneName = "", PreApplySceneCallback callback = nullptr);
+        void QueueActionAndBlock(SceneAction action,
+            std::string sceneName = "",
+            PreApplySceneCallback callback = nullptr);
+
+        using ScenePreloadCallback = std::function<bool(ecs::Lock<ecs::ReadAll>, std::shared_ptr<Scene>)>;
+        void PreloadSceneGraphics(ScenePreloadCallback callback);
+        void PreloadScenePhysics(ScenePreloadCallback callback);
 
     private:
         void RunSceneActions();
+
+        using OnApplySceneCallback = std::function<void(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>,
+            ecs::Lock<ecs::AddRemove>,
+            std::shared_ptr<Scene>)>;
+        void PreloadAndApplyScene(const std::shared_ptr<Scene> &scene, OnApplySceneCallback callback = nullptr);
+
         void Frame() override;
 
         void PrintScene(std::string sceneName);
         void RespawnPlayer(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
             Tecs::Entity player);
-
-        struct QueuedAction {
-            SceneAction action;
-
-            std::string sceneName;
-            ApplySceneCallback applyCallback;
-        };
 
         void LoadSceneJson(const std::string &name,
             SceneType sceneType,
@@ -92,17 +97,28 @@ namespace sp {
 
         void LoadBindingsJson(std::function<void(std::shared_ptr<Scene>)> callback);
 
-        std::shared_ptr<Scene> AddScene(std::string name, SceneType sceneType, ApplySceneCallback callback = nullptr);
+        std::shared_ptr<Scene> AddScene(std::string name, SceneType sceneType, OnApplySceneCallback callback = nullptr);
 
         void TranslateSceneByConnection(const std::shared_ptr<Scene> &scene);
 
     private:
+        struct QueuedAction {
+            SceneAction action;
+
+            std::string sceneName;
+            PreApplySceneCallback callback;
+            std::promise<void> promise;
+        };
+
         ecs::ECS &liveWorld;
         ecs::ECS &stagingWorld;
         Tecs::Entity player;
 
-        LockFreeMutex queueMutex;
-        std::deque<std::pair<QueuedAction, std::promise<void>>> actionQueue;
+        LockFreeMutex actionMutex, preloadMutex;
+        std::deque<QueuedAction> actionQueue;
+        std::shared_ptr<Scene> preloadScene;
+        std::atomic_flag physicsPreload, graphicsPreload;
+        bool skipPreload;
 
         PreservingMap<std::string, Scene, 1000> stagedScenes;
         using SceneList = std::vector<std::shared_ptr<Scene>>;

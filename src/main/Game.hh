@@ -1,5 +1,6 @@
 #pragma once
 
+#include "console/CFunc.hh"
 #include "console/ConsoleBindingManager.hh"
 #include "core/Common.hh"
 #include "ecs/Ecs.hh"
@@ -45,6 +46,8 @@ namespace sp {
 
         cxxopts::ParseResult &options;
         Script *startupScript = nullptr;
+
+        CFuncCollection funcs;
 
 #ifdef SP_GRAPHICS_SUPPORT
         GraphicsManager graphics;
