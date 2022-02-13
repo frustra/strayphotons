@@ -42,7 +42,7 @@ namespace sp {
 #ifdef SP_AUDIO_SUPPORT
           audio(new AudioManager),
 #endif
-          logic(startupScript != nullptr) {
+          logic() {
     }
 
     Game::~Game() {}
@@ -95,7 +95,7 @@ namespace sp {
 
         if (startupScript != nullptr) {
 #ifdef SP_GRAPHICS_SUPPORT
-            CFunc<int> cfStepGraphics("stepgraphics",
+            funcs.Register<int>("stepgraphics",
                 "Renders N frames in a row, saving any queued screenshots, default is 1",
                 [this](int arg) {
                     do {
@@ -106,9 +106,7 @@ namespace sp {
 
             Debugf("Running script: %s", startupScript->path);
             for (string line : startupScript->Lines()) {
-                Debugf("$ %s", line);
-                GetConsoleManager().ParseAndExecute(line);
-                if (exitTriggered.test()) break;
+                GetConsoleManager().QueueParseAndExecute(line);
             }
         } else if (!options.count("map")) {
             scenes.QueueActionAndBlock(SceneAction::LoadScene, "menu");
@@ -118,6 +116,7 @@ namespace sp {
             }
         }
 
+        GetConsoleManager().StartThread(startupScript != nullptr);
         logic.StartThread();
 
 #ifdef SP_GRAPHICS_SUPPORT

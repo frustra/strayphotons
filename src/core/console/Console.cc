@@ -43,9 +43,9 @@ namespace sp {
         GetConsoleManager().RemoveCVar(this);
     }
 
-    ConsoleManager::ConsoleManager() {
-        cliInputThread = std::thread([&] {
-            this->InputLoop();
+    ConsoleManager::ConsoleManager() : RegisteredThread("ConsoleManager", 60.0) {
+        cliInputThread = std::thread([this] {
+            InputLoop();
         });
         cliInputThread.detach();
     }
@@ -107,7 +107,12 @@ namespace sp {
         outputLines.push_back({lvl, line});
     }
 
-    void ConsoleManager::Update(bool exitOnEmptyQueue) {
+    void ConsoleManager::StartThread(bool exitOnEmptyQueue) {
+        this->exitOnEmptyQueue = exitOnEmptyQueue;
+        RegisteredThread::StartThread();
+    }
+
+    void ConsoleManager::Frame() {
         ZoneScoped;
         std::unique_lock<std::mutex> ulock(queueLock, std::defer_lock);
 
@@ -154,6 +159,7 @@ namespace sp {
     }
 
     void ConsoleManager::Execute(const string cmd, const string &args) {
+        Tracef("Executing console command: %s %s", cmd, args);
         auto cvarit = cvars.find(to_lower_copy(cmd));
         if (cvarit != cvars.end()) {
             auto cvar = cvarit->second;

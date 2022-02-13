@@ -2,6 +2,10 @@
 
 #include "ecs/Ecs.hh"
 
+namespace physx {
+    class PxRigidActor;
+}
+
 namespace sp {
     class PhysxManager;
 
@@ -10,10 +14,12 @@ namespace sp {
         ConstraintSystem(PhysxManager &manager);
         ~ConstraintSystem() {}
 
-        void Frame(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController>, ecs::Write<ecs::Physics>> lock);
+        void Frame(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics>> lock);
+        void BreakConstraints(ecs::Lock<ecs::Read<ecs::TransformSnapshot>, ecs::Write<ecs::Physics>> lock);
 
     private:
-        void HandleForceLimitConstraint(ecs::Physics &physics,
+        void HandleForceLimitConstraint(physx::PxRigidActor *actor,
+            const ecs::Physics &physics,
             ecs::Transform transform,
             ecs::Transform targetTransform,
             glm::vec3 targetVelocity);

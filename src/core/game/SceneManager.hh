@@ -1,6 +1,7 @@
 #pragma once
 
 #include "console/CFunc.hh"
+#include "core/DispatchQueue.hh"
 #include "core/EnumArray.hh"
 #include "core/LockFreeMutex.hh"
 #include "core/Logging.hh"
@@ -72,38 +73,23 @@ namespace sp {
             std::string sceneName = "",
             PreApplySceneCallback callback = nullptr);
 
+        using ScenePreloadCallback = std::function<bool(ecs::Lock<ecs::ReadAll>, std::shared_ptr<Scene>)>;
+        void PreloadSceneGraphics(ScenePreloadCallback callback);
+        void PreloadScenePhysics(ScenePreloadCallback callback);
+
     private:
         void RunSceneActions();
-        void ApplyPreloadedScenes();
 
         using OnApplySceneCallback = std::function<void(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>,
             ecs::Lock<ecs::AddRemove>,
             std::shared_ptr<Scene>)>;
-        void QueueScenePreloadAndBlock(const std::shared_ptr<Scene> &scene, OnApplySceneCallback callback = nullptr);
+        void PreloadAndApplyScene(const std::shared_ptr<Scene> &scene, OnApplySceneCallback callback = nullptr);
 
         void Frame() override;
 
         void PrintScene(std::string sceneName);
         void RespawnPlayer(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
             Tecs::Entity player);
-
-        struct QueuedAction {
-            SceneAction action;
-
-            std::string sceneName;
-            PreApplySceneCallback callback;
-            std::promise<void> promise;
-        };
-
-        struct PreloadState {
-            std::shared_ptr<Scene> scene;
-            OnApplySceneCallback callback;
-            std::atomic_flag physicsPreload, graphicsPreload;
-
-            PreloadState() {}
-            PreloadState(const std::shared_ptr<Scene> &scene, OnApplySceneCallback callback)
-                : scene(scene), callback(callback) {}
-        };
 
         void LoadSceneJson(const std::string &name,
             SceneType sceneType,
@@ -117,18 +103,31 @@ namespace sp {
         void TranslateSceneByConnection(const std::shared_ptr<Scene> &scene);
 
     private:
+        struct QueuedAction {
+            SceneAction action;
+
+            std::string sceneName;
+            PreApplySceneCallback callback;
+            std::promise<void> promise;
+        };
+
+        struct PreloadState {
+            std::shared_ptr<Scene> scene;
+            std::atomic_flag physicsPreload, graphicsPreload;
+        };
+
         ecs::ECS &liveWorld;
         ecs::ECS &stagingWorld;
         Tecs::Entity player;
 
         LockFreeMutex actionMutex, preloadMutex;
         std::deque<QueuedAction> actionQueue;
-        std::list<PreloadState> preloadQueue;
+        PreloadState preloadState;
 
         PreservingMap<std::string, Scene, 1000> stagedScenes;
         using SceneList = std::vector<std::shared_ptr<Scene>>;
         EnumArray<SceneList, SceneType> scenes;
-        std::shared_ptr<Scene> bindingsScene;
+        std::shared_ptr<Scene> playerScene, bindingsScene;
         CFuncCollection funcs;
 
         friend class Scene;

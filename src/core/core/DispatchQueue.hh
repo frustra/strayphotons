@@ -54,7 +54,7 @@ namespace sp {
             {
                 ZoneScopedN("WaitForFutures");
                 args = std::apply(
-                    [&](auto &&...x) {
+                    [](auto &&...x) {
                         return std::make_tuple(x.get()...);
                     },
                     waitForFutures);

@@ -8,6 +8,7 @@
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/SceneManager.hh"
 
 #include <PxScene.h>
 #include <chrono>
@@ -22,8 +23,9 @@ namespace sp {
     // clang-format on
 
     PhysxManager::PhysxManager(bool stepMode)
-        : RegisteredThread("PhysX", 120.0, true), characterControlSystem(*this), constraintSystem(*this),
-          physicsQuerySystem(*this), laserSystem(*this), animationSystem(*this) {
+        : RegisteredThread("PhysX", 120.0, true), scenes(GetSceneManager()), characterControlSystem(*this),
+          constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this), animationSystem(*this),
+          workQueue("PhysXHullLoading") {
         Logf("PhysX %d.%d.%d starting up",
             PX_PHYSICS_VERSION_MAJOR,
             PX_PHYSICS_VERSION_MINOR,
@@ -67,17 +69,18 @@ namespace sp {
     PhysxManager::~PhysxManager() {
         StopThread();
 
-        for (auto val : cache) {
-            auto hulSet = val.second;
-            for (auto hul : hulSet->hulls) {
-                delete[] hul.points;
-                delete[] hul.triangles;
-            }
-            delete val.second;
-        }
-
         controllerManager.reset();
+        for (auto &joint : joints) {
+            joint.second->release();
+        }
+        joints.clear();
+        for (auto &actor : actors) {
+            RemoveActor(actor.second);
+        }
+        actors.clear();
         scene.reset();
+        cache.DropAll();
+
         if (dispatcher) {
             dispatcher->release();
             dispatcher = nullptr;
@@ -101,6 +104,7 @@ namespace sp {
             pxPvdTransport = nullptr;
         }
 #endif
+        PxCloseExtensions();
         if (pxFoundation) {
             pxFoundation->release();
             pxFoundation = nullptr;
@@ -128,9 +132,24 @@ namespace sp {
             }
         }
 
+        scenes.PreloadScenePhysics([this](auto lock, auto scene) {
+            bool complete = true;
+            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
+                if (!ent.Has<ecs::SceneInfo, ecs::Physics>(lock)) continue;
+                if (ent.Get<ecs::SceneInfo>(lock).scene.lock() != scene) continue;
+
+                auto &ph = ent.Get<ecs::Physics>(lock);
+                if (ph.model && ph.model->Valid()) {
+                    LoadConvexHullSet(*ph.model, ph.decomposeHull);
+                } else {
+                    complete = false;
+                }
+            }
+            return complete;
+        });
+
         animationSystem.Frame();
 
-        bool skipFrame = false;
         { // Sync ECS state to physx
             ZoneScopedN("Sync from ECS");
             auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
@@ -139,44 +158,30 @@ namespace sp {
                                                         ecs::FocusLayer,
                                                         ecs::FocusLock,
                                                         ecs::Physics>,
-                ecs::Write<ecs::Animation,
-                    ecs::Physics,
-                    ecs::TransformTree,
-                    ecs::CharacterController,
-                    ecs::EventInput>>();
+                ecs::Write<ecs::Animation, ecs::TransformTree, ecs::CharacterController, ecs::EventInput>>();
 
             // Delete actors for removed entities
             ecs::ComponentEvent<ecs::Physics> physicsEvent;
             while (physicsObserver.Poll(lock, physicsEvent)) {
-                if (physicsEvent.type == Tecs::EventType::REMOVED && physicsEvent.component.actor) {
-                    RemoveActor(physicsEvent.component.actor);
+                if (physicsEvent.type == Tecs::EventType::REMOVED) {
+                    if (actors.count(physicsEvent.entity) > 0) {
+                        RemoveActor(actors[physicsEvent.entity]);
+                        actors.erase(physicsEvent.entity);
+                    }
                 }
             }
 
             // Update actors with latest entity data
             for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
                 if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
-
-                auto &ph = ent.Get<ecs::Physics>(lock);
-                if (ph.model && !ph.model->Valid()) {
-                    // Not all actors are ready
-                    skipFrame = true;
-                }
-
-                if (!ph.actor) {
-                    CreateActor(lock, ent);
-                } else {
-                    UpdateActor(lock, ent);
-                }
+                UpdateActor(lock, ent);
             }
 
-            if (!skipFrame) {
-                characterControlSystem.Frame(lock);
-                constraintSystem.Frame(lock);
-            }
+            characterControlSystem.Frame(lock);
+            constraintSystem.Frame(lock);
         }
 
-        if (!skipFrame) { // Simulate 1 physics frame (blocking)
+        { // Simulate 1 physics frame (blocking)
             ZoneScopedN("Simulate");
             scene->simulate(PxReal(std::chrono::nanoseconds(this->interval).count() / 1e9),
                 nullptr,
@@ -193,11 +198,11 @@ namespace sp {
                                                         ecs::FocusLayer,
                                                         ecs::FocusLock,
                                                         ecs::LaserEmitter,
-                                                        ecs::Physics,
                                                         ecs::Mirror>,
                 ecs::Write<ecs::Animation,
                     ecs::TransformSnapshot,
                     ecs::TransformTree,
+                    ecs::Physics,
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
@@ -207,13 +212,14 @@ namespace sp {
                 if (!ent.Has<ecs::Physics, ecs::TransformSnapshot, ecs::TransformTree>(lock)) continue;
 
                 auto &ph = ent.Get<ecs::Physics>(lock);
-                if (ph.actor) {
+                if (actors.count(ent) > 0) {
+                    auto const &actor = actors[ent];
                     auto &transform = ent.Get<ecs::TransformSnapshot>(lock);
 
-                    auto userData = (ActorUserData *)ph.actor->userData;
+                    auto userData = (ActorUserData *)actor->userData;
                     Assert(userData, "Physics actor is missing UserData");
                     if (ph.dynamic && !ph.kinematic && transform.matrix == userData->pose.matrix) {
-                        auto pose = ph.actor->getGlobalPose();
+                        auto pose = actor->getGlobalPose();
                         transform.SetPosition(PxVec3ToGlmVec3(pose.p));
                         transform.SetRotation(PxQuatToGlmQuat(pose.q));
                         ent.Set<ecs::TransformTree>(lock, transform);
@@ -233,11 +239,13 @@ namespace sp {
                 ent.Set<ecs::TransformSnapshot>(lock, ent.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock));
             }
 
+            constraintSystem.BreakConstraints(lock);
             physicsQuerySystem.Frame(lock);
             laserSystem.Frame(lock);
         }
 
         triggerSystem.Frame();
+        cache.Tick(interval);
     }
 
     void PhysxManager::CreatePhysxScene() {
@@ -287,114 +295,131 @@ namespace sp {
         }
     }
 
-    ConvexHullSet *PhysxManager::GetCachedConvexHulls(std::string name) {
-        if (cache.count(name)) { return cache[name]; }
+    std::shared_ptr<PxConvexMesh> PhysxManager::CreateConvexMeshFromHull(const Model &model, const ConvexHull &hull) {
+        PxConvexMeshDesc convexDesc;
+        convexDesc.points.count = hull.pointCount;
+        convexDesc.points.stride = hull.pointByteStride;
+        convexDesc.points.data = hull.points;
+        convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
 
-        return nullptr;
+        PxDefaultMemoryOutputStream buf;
+        PxConvexMeshCookingResult::Enum result;
+
+        if (!pxCooking->cookConvexMesh(convexDesc, buf, &result)) {
+            Abortf("Failed to cook PhysX hull for %s", model.name);
+        }
+
+        PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+        PxConvexMesh *pxhull = pxPhysics->createConvexMesh(input);
+        pxhull->acquireReference();
+        return std::shared_ptr<PxConvexMesh>(pxhull, [](PxConvexMesh *ptr) {
+            ptr->release();
+        });
     }
 
-    ConvexHullSet *PhysxManager::BuildConvexHulls(const Model &model, bool decomposeHull) {
-        ZoneScoped;
-        ConvexHullSet *set;
-
+    std::shared_ptr<const ConvexHullSet> PhysxManager::LoadConvexHullSet(const Model &model, bool decomposeHull) {
+        Assert(!model.name.empty(), "PhysxManager::LoadConvexHullSet called with invalid model");
         std::string name = model.name;
         if (decomposeHull) name += "-decompose";
 
-        set = GetCachedConvexHulls(name);
-        if (set) return set;
+        auto set = cache.Load(name);
+        if (!set) {
+            {
+                std::lock_guard lock(cacheMutex);
+                // Check again in case an inflight set just completed on another thread
+                set = cache.Load(name);
+                if (set) return set;
 
-        set = LoadCollisionCache(model, decomposeHull);
-        if (set) {
-            cache[name] = set;
-            return set;
+                set = std::make_shared<ConvexHullSet>();
+                cache.Register(name, set);
+            }
+            workQueue.Dispatch<void>([this, set, name, &model, decomposeHull]() {
+                ZoneScopedN("LoadConvexHullSet::Dispatch");
+                ZoneStr(name);
+                if (LoadCollisionCache(*set, model, decomposeHull)) {
+                    for (auto &hull : set->hulls) {
+                        hull.pxMesh = CreateConvexMeshFromHull(model, hull);
+                    }
+                    set->valid.test_and_set();
+                    set->valid.notify_all();
+                    return;
+                }
+
+                ConvexHullBuilding::BuildConvexHulls(set.get(), model, decomposeHull);
+                for (auto &hull : set->hulls) {
+                    hull.pxMesh = CreateConvexMeshFromHull(model, hull);
+                }
+                set->valid.test_and_set();
+                set->valid.notify_all();
+                SaveCollisionCache(model, *set, decomposeHull);
+            });
         }
 
-        Logf("Rebuilding convex hulls for %s", name);
-
-        set = new ConvexHullSet;
-        ConvexHullBuilding::BuildConvexHulls(set, model, decomposeHull);
-        cache[name] = set;
-        SaveCollisionCache(model, set, decomposeHull);
         return set;
     }
 
-    void PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree>, ecs::Write<ecs::Physics>> lock,
+    PxRigidActor *PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock,
         Tecs::Entity &e) {
         auto &ph = e.Get<ecs::Physics>(lock);
+        if (!ph.model || !ph.model->Valid()) return nullptr;
+
         auto &transform = e.Get<ecs::TransformTree>(lock);
-
-        if (ph.actor || !ph.model || !ph.model->Valid()) return;
-
         auto globalTransform = transform.GetGlobalTransform(lock);
         auto scale = globalTransform.GetScale();
 
         auto pxTransform = PxTransform(GlmVec3ToPxVec3(globalTransform.GetPosition()),
             GlmQuatToPxQuat(globalTransform.GetRotation()));
 
+        PxRigidActor *actor = nullptr;
         if (ph.dynamic) {
-            ph.actor = pxPhysics->createRigidDynamic(pxTransform);
+            actor = pxPhysics->createRigidDynamic(pxTransform);
 
-            if (ph.kinematic) { ph.actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true); }
+            if (ph.kinematic) { actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true); }
         } else {
-            ph.actor = pxPhysics->createRigidStatic(pxTransform);
+            actor = pxPhysics->createRigidStatic(pxTransform);
         }
-        Assert(ph.actor, "Physx did not return valid PxRigidActor");
+        Assert(actor, "Physx did not return valid PxRigidActor");
 
-        ph.actor->userData = new ActorUserData(e, globalTransform, ph.group);
+        auto userData = new ActorUserData(e, globalTransform, ph.group);
+        actor->userData = userData;
 
         PxMaterial *mat = pxPhysics->createMaterial(0.6f, 0.5f, 0.0f);
 
-        auto decomposition = BuildConvexHulls(*ph.model.get(), ph.decomposeHull);
+        userData->shapeCache = LoadConvexHullSet(*ph.model.get(), ph.decomposeHull);
+        userData->shapeCache->WaitUntilValid();
 
-        for (auto hull : decomposition->hulls) {
-            PxConvexMeshDesc convexDesc;
-            convexDesc.points.count = hull.pointCount;
-            convexDesc.points.stride = hull.pointByteStride;
-            convexDesc.points.data = hull.points;
-            convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
-
-            PxDefaultMemoryOutputStream buf;
-            PxConvexMeshCookingResult::Enum result;
-
-            if (!pxCooking->cookConvexMesh(convexDesc, buf, &result)) {
-                Errorf("Failed to cook PhysX hull for %s", ph.model->name);
-                return;
-            }
-
-            PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
-            PxConvexMesh *pxhull = pxPhysics->createConvexMesh(input);
-
-            PxRigidActorExt::createExclusiveShape(*ph.actor,
-                PxConvexMeshGeometry(pxhull, PxMeshScale(GlmVec3ToPxVec3(scale))),
+        for (auto &hull : userData->shapeCache->hulls) {
+            PxRigidActorExt::createExclusiveShape(*actor,
+                PxConvexMeshGeometry(hull.pxMesh.get(), PxMeshScale(GlmVec3ToPxVec3(scale))),
                 *mat);
         }
 
-        auto dynamic = ph.actor->is<PxRigidDynamic>();
-        if (dynamic) {
-            PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
-            ph.centerOfMass = PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p);
-        }
+        auto dynamic = actor->is<PxRigidDynamic>();
+        if (dynamic) PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
 
-        SetCollisionGroup(ph.actor, ph.group);
-
-        scene->addActor(*ph.actor);
+        SetCollisionGroup(actor, ph.group);
+        return actor;
     }
 
-    void PhysxManager::UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTree>, ecs::Write<ecs::Physics>> lock,
-        Tecs::Entity &e) {
+    void PhysxManager::UpdateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, Tecs::Entity &e) {
+        if (actors.count(e) == 0) {
+            auto actor = CreateActor(lock, e);
+            if (!actor) return;
+            actors[e] = actor;
+        }
+        auto &actor = actors[e];
+        if (!actor->getScene()) scene->addActor(*actor);
+
         auto &ph = e.Get<ecs::Physics>(lock);
-
-        if (!ph.actor || !ph.model || !ph.model->Valid()) return;
-
         auto transform = e.Get<ecs::TransformTree>(lock).GetGlobalTransform(lock);
-        auto userData = (ActorUserData *)ph.actor->userData;
+        auto userData = (ActorUserData *)actor->userData;
         if (transform.matrix != userData->pose.matrix) {
             glm::vec3 scale = transform.GetScale();
             bool scaleChanged = scale != userData->scale;
             if (scaleChanged) {
-                auto n = ph.actor->getNbShapes();
+                auto n = actor->getNbShapes();
                 std::vector<PxShape *> shapes(n);
-                ph.actor->getShapes(&shapes[0], n);
+                actor->getShapes(&shapes[0], n);
                 for (uint32 i = 0; i < n; i++) {
                     PxConvexMeshGeometry geom;
                     if (shapes[i]->getConvexMeshGeometry(geom)) {
@@ -408,25 +433,22 @@ namespace sp {
             }
 
             PxTransform pxTransform(GlmVec3ToPxVec3(transform.GetPosition()), GlmQuatToPxQuat(transform.GetRotation()));
-            auto dynamic = ph.actor->is<PxRigidDynamic>();
+            auto dynamic = actor->is<PxRigidDynamic>();
             if (dynamic) {
-                if (scaleChanged) {
-                    PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
-                    ph.centerOfMass = PxVec3ToGlmVec3(dynamic->getCMassLocalPose().p);
-                }
+                if (scaleChanged) PxRigidBodyExt::updateMassAndInertia(*dynamic, ph.density);
                 if (ph.kinematic) {
                     dynamic->setKinematicTarget(pxTransform);
                 } else {
-                    ph.actor->setGlobalPose(pxTransform);
+                    actor->setGlobalPose(pxTransform);
                 }
             } else {
-                ph.actor->setGlobalPose(pxTransform);
+                actor->setGlobalPose(pxTransform);
             }
 
             userData->velocity = transform.GetPosition() - userData->pose.GetPosition();
             userData->pose = transform;
         }
-        if (userData->physicsGroup != ph.group) SetCollisionGroup(ph.actor, ph.group);
+        if (userData->physicsGroup != ph.group) SetCollisionGroup(actor, ph.group);
     }
 
     void PhysxManager::RemoveActor(PxRigidActor *actor) {
@@ -436,7 +458,7 @@ namespace sp {
                 actor->userData = nullptr;
             }
 
-            scene->removeActor(*actor);
+            if (actor->getScene()) actor->getScene()->removeActor(*actor);
             actor->release();
         }
     }
@@ -461,7 +483,8 @@ namespace sp {
     // Increment if the Collision Cache format ever changes
     const uint32 hullCacheMagic = 0xc042;
 
-    ConvexHullSet *PhysxManager::LoadCollisionCache(const Model &model, bool decomposeHull) {
+    bool PhysxManager::LoadCollisionCache(ConvexHullSet &set, const Model &model, bool decomposeHull) {
+        ZoneScoped;
         std::ifstream in;
 
         std::string path = "cache/collision/" + model.name;
@@ -473,7 +496,7 @@ namespace sp {
             if (magic != hullCacheMagic) {
                 Logf("Ignoring outdated collision cache format for %s", path);
                 in.close();
-                return nullptr;
+                return false;
             }
 
             int32 bufferCount;
@@ -498,7 +521,7 @@ namespace sp {
                 if (!model.HasBuffer(bufferIndex) || model.HashBuffer(bufferIndex) != hash) {
                     Logf("Ignoring outdated collision cache for %s", name);
                     in.close();
-                    return nullptr;
+                    return false;
                 }
             }
 
@@ -506,11 +529,10 @@ namespace sp {
             in.read((char *)&hullCount, 4);
             Assert(hullCount > 0, "hull cache count");
 
-            ConvexHullSet *set = new ConvexHullSet;
-            set->hulls.reserve(hullCount);
+            set.hulls.reserve(hullCount);
 
             for (int i = 0; i < hullCount; i++) {
-                ConvexHull hull;
+                auto &hull = set.hulls.emplace_back();
                 in.read((char *)&hull, 4 * sizeof(uint32));
 
                 Assert(hull.pointByteStride % sizeof(float) == 0, "convex hull byte stride is odd");
@@ -521,18 +543,16 @@ namespace sp {
 
                 in.read((char *)hull.points, hull.pointCount * hull.pointByteStride);
                 in.read((char *)hull.triangles, hull.triangleCount * hull.triangleByteStride);
-
-                set->hulls.push_back(hull);
             }
 
             in.close();
-            return set;
+            return true;
         }
 
-        return nullptr;
+        return false;
     }
 
-    void PhysxManager::SaveCollisionCache(const Model &model, ConvexHullSet *set, bool decomposeHull) {
+    void PhysxManager::SaveCollisionCache(const Model &model, const ConvexHullSet &set, bool decomposeHull) {
         std::ofstream out;
         std::string name = "cache/collision/" + model.name;
         if (decomposeHull) name += "-decompose";
@@ -540,10 +560,10 @@ namespace sp {
         if (GAssets.OutputStream(name, out)) {
             out.write((char *)&hullCacheMagic, 4);
 
-            int32 bufferCount = set->bufferIndexes.size();
+            int32 bufferCount = set.bufferIndexes.size();
             out.write((char *)&bufferCount, 4);
 
-            for (int bufferIndex : set->bufferIndexes) {
+            for (int bufferIndex : set.bufferIndexes) {
                 Hash128 hash = model.HashBuffer(bufferIndex);
                 string bufferName = std::to_string(bufferIndex);
                 uint32 nameLen = bufferName.length();
@@ -554,10 +574,10 @@ namespace sp {
                 out.write((char *)hash.data(), sizeof(hash));
             }
 
-            int32 hullCount = set->hulls.size();
+            int32 hullCount = set.hulls.size();
             out.write((char *)&hullCount, 4);
 
-            for (auto hull : set->hulls) {
+            for (auto hull : set.hulls) {
                 out.write((char *)&hull, 4 * sizeof(uint32));
                 out.write((char *)hull.points, hull.pointCount * hull.pointByteStride);
                 out.write((char *)hull.triangles, hull.triangleCount * hull.triangleByteStride);
