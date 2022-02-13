@@ -103,6 +103,9 @@ namespace sp {
                     } while (--arg > 0);
                 });
 #endif
+            funcs.Register<int>("sleep", "Pause script execution for N milliseconds", [](int ms) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+            });
 
             Debugf("Running script: %s", startupScript->path);
             for (string line : startupScript->Lines()) {

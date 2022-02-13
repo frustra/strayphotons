@@ -23,9 +23,9 @@ namespace sp {
     // clang-format on
 
     PhysxManager::PhysxManager(bool stepMode)
-        : RegisteredThread("PhysX", 120.0, true), scenes(GetSceneManager()), characterControlSystem(*this),
-          constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this), animationSystem(*this),
-          workQueue("PhysXHullLoading") {
+        : RegisteredThread("PhysX", 120.0, true), scenes(GetSceneManager()), stepMode(stepMode),
+          characterControlSystem(*this), constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this),
+          animationSystem(*this), workQueue("PhysXHullLoading") {
         Logf("PhysX %d.%d.%d starting up",
             PX_PHYSICS_VERSION_MAJOR,
             PX_PHYSICS_VERSION_MINOR,
@@ -57,13 +57,15 @@ namespace sp {
             funcs.Register<int>("stepphysics",
                 "Advance the physics simulation by N frames, default is 1",
                 [this](int arg) {
-                    do {
-                        Frame();
-                    } while (--arg > 0);
+                    maxStepCount += std::max(1, arg);
+                    auto step = stepCount.load();
+                    while (step < maxStepCount) {
+                        stepCount.wait(step);
+                        step = stepCount.load();
+                    }
                 });
-        } else {
-            StartThread();
         }
+        StartThread();
     }
 
     PhysxManager::~PhysxManager() {
@@ -112,6 +114,24 @@ namespace sp {
     }
 
     void PhysxManager::Frame() {
+        scenes.PreloadScenePhysics([this](auto lock, auto scene) {
+            bool complete = true;
+            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
+                if (!ent.Has<ecs::SceneInfo, ecs::Physics>(lock)) continue;
+                if (ent.Get<ecs::SceneInfo>(lock).scene.lock() != scene) continue;
+
+                auto &ph = ent.Get<ecs::Physics>(lock);
+                if (ph.model && ph.model->Valid()) {
+                    LoadConvexHullSet(*ph.model, ph.decomposeHull);
+                } else {
+                    complete = false;
+                }
+            }
+            return complete;
+        });
+
+        if (stepMode && stepCount >= maxStepCount) return;
+
         // Wake up all actors and update the scene if gravity is changed.
         if (CVarGravity.Changed()) {
             scene->setGravity(PxVec3(0.f, CVarGravity.Get(true), 0.f));
@@ -131,22 +151,6 @@ namespace sp {
                 startIndex += n;
             }
         }
-
-        scenes.PreloadScenePhysics([this](auto lock, auto scene) {
-            bool complete = true;
-            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
-                if (!ent.Has<ecs::SceneInfo, ecs::Physics>(lock)) continue;
-                if (ent.Get<ecs::SceneInfo>(lock).scene.lock() != scene) continue;
-
-                auto &ph = ent.Get<ecs::Physics>(lock);
-                if (ph.model && ph.model->Valid()) {
-                    LoadConvexHullSet(*ph.model, ph.decomposeHull);
-                } else {
-                    complete = false;
-                }
-            }
-            return complete;
-        });
 
         animationSystem.Frame();
 
@@ -246,6 +250,11 @@ namespace sp {
 
         triggerSystem.Frame();
         cache.Tick(interval);
+
+        if (stepMode) {
+            stepCount++;
+            stepCount.notify_all();
+        }
     }
 
     void PhysxManager::CreatePhysxScene() {
@@ -336,6 +345,7 @@ namespace sp {
             workQueue.Dispatch<void>([this, set, name, &model, decomposeHull]() {
                 ZoneScopedN("LoadConvexHullSet::Dispatch");
                 ZoneStr(name);
+                model.WaitUntilValid();
                 if (LoadCollisionCache(*set, model, decomposeHull)) {
                     for (auto &hull : set->hulls) {
                         hull.pxMesh = CreateConvexMeshFromHull(model, hull);
@@ -361,7 +371,7 @@ namespace sp {
     PxRigidActor *PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock,
         Tecs::Entity &e) {
         auto &ph = e.Get<ecs::Physics>(lock);
-        if (!ph.model || !ph.model->Valid()) return nullptr;
+        if (!ph.model) return nullptr;
 
         auto &transform = e.Get<ecs::TransformTree>(lock);
         auto globalTransform = transform.GetGlobalTransform(lock);

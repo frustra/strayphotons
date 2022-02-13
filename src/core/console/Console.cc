@@ -122,6 +122,7 @@ namespace sp {
         if (exitOnEmptyQueue && queuedCommands.empty()) {
             ulock.unlock();
             ParseAndExecute("exit");
+            StopThread(false);
             return;
         }
 
