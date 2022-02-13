@@ -368,22 +368,22 @@ namespace sp {
 
     void SceneManager::PreloadSceneGraphics(ScenePreloadCallback callback) {
         std::shared_lock lock(preloadMutex);
-        if (preloadState.scene) {
+        if (preloadScene) {
             auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll>();
-            if (callback(stagingLock, preloadState.scene)) {
-                preloadState.graphicsPreload.test_and_set();
-                preloadState.graphicsPreload.notify_all();
+            if (callback(stagingLock, preloadScene)) {
+                graphicsPreload.test_and_set();
+                graphicsPreload.notify_all();
             }
         }
     }
 
     void SceneManager::PreloadScenePhysics(ScenePreloadCallback callback) {
         std::shared_lock lock(preloadMutex);
-        if (preloadState.scene) {
+        if (preloadScene) {
             auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll>();
-            if (callback(stagingLock, preloadState.scene)) {
-                preloadState.physicsPreload.test_and_set();
-                preloadState.physicsPreload.notify_all();
+            if (callback(stagingLock, preloadScene)) {
+                physicsPreload.test_and_set();
+                physicsPreload.notify_all();
             }
         }
     }
@@ -392,23 +392,20 @@ namespace sp {
         Tracef("Preloading scene: %s", scene->name);
         {
             std::lock_guard lock(preloadMutex);
-            Assertf(!preloadState.scene,
-                "Already preloading %s when trying to preload %s",
-                preloadState.scene->name,
-                scene->name);
-            preloadState.scene = scene;
-            preloadState.graphicsPreload.clear();
-            preloadState.physicsPreload.clear();
+            Assertf(!preloadScene, "Already preloading %s when trying to preload %s", preloadScene->name, scene->name);
+            preloadScene = scene;
+            graphicsPreload.clear();
+            physicsPreload.clear();
 
-            preloadState.graphicsPreload.test_and_set(); // TODO temp
+            graphicsPreload.test_and_set(); // TODO temp
         }
 
         if (!skipPreload) {
-            while (!preloadState.graphicsPreload.test()) {
-                preloadState.graphicsPreload.wait(false);
+            while (!graphicsPreload.test()) {
+                graphicsPreload.wait(false);
             }
-            while (!preloadState.physicsPreload.test()) {
-                preloadState.physicsPreload.wait(false);
+            while (!physicsPreload.test()) {
+                physicsPreload.wait(false);
             }
         }
 
@@ -423,7 +420,7 @@ namespace sp {
 
             {
                 std::lock_guard lock(preloadMutex);
-                preloadState.scene.reset();
+                preloadScene.reset();
             }
         }
     }

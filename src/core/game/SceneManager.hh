@@ -111,18 +111,14 @@ namespace sp {
             std::promise<void> promise;
         };
 
-        struct PreloadState {
-            std::shared_ptr<Scene> scene;
-            std::atomic_flag physicsPreload, graphicsPreload;
-        };
-
         ecs::ECS &liveWorld;
         ecs::ECS &stagingWorld;
         Tecs::Entity player;
 
         LockFreeMutex actionMutex, preloadMutex;
         std::deque<QueuedAction> actionQueue;
-        PreloadState preloadState;
+        std::shared_ptr<Scene> preloadScene;
+        std::atomic_flag physicsPreload, graphicsPreload;
         bool skipPreload;
 
         PreservingMap<std::string, Scene, 1000> stagedScenes;
