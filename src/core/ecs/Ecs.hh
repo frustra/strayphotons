@@ -1,5 +1,17 @@
 #pragma once
 
+#include "core/Tracing.hh"
+
+#define ZoneScopedNOverrideFunction(varname, name, func)                            \
+    static constexpr tracy::SourceLocationData TracyConcat(__tracy_source_location, \
+        __LINE__){name, func, __FILE__, (uint32_t)__LINE__, 0};                     \
+    tracy::ScopedZone varname(&TracyConcat(__tracy_source_location, __LINE__), true);
+
+#define TECS_EXTERNAL_TRACE_TRANSACTION_STARTING(permissions) \
+    ZoneScopedNOverrideFunction(___tracy_scoped_zone, "TransactionStart", permissions)
+#define TECS_EXTERNAL_TRACE_TRANSACTION_ENDING(permissions) \
+    ZoneScopedNOverrideFunction(___tracy_scoped_zone, "TransactionEnd", permissions)
+
 #include <Tecs.hh>
 #include <cstring>
 #include <functional>

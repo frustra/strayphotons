@@ -29,6 +29,7 @@ namespace sp {
     };
 
     void decomposeConvexHullsForPrimitive(ConvexHullSet *set, const Model &model, const Model::Primitive &prim) {
+        ZoneScoped;
         set->decomposed = true;
 
         auto posAttrib = prim.attributes[0];
@@ -140,6 +141,7 @@ namespace sp {
     }
 
     void buildConvexHullForPrimitive(ConvexHullSet *set, const Model &model, const Model::Primitive &prim) {
+        ZoneScoped;
         set->decomposed = false;
 
         auto posAttrib = prim.attributes[0];
@@ -213,6 +215,7 @@ namespace sp {
     }
 
     void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set, const Model &model, bool decompHull) {
+        ZoneScoped;
         for (auto &prim : model.Primitives()) {
             if (!decompHull) {
                 // Use points for a single hull without decomposing.

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "console/CVar.hh"
+#include "ecs/Ecs.hh"
 #include "graphics/core/RenderTarget.hh"
 
-#include <Tecs.hh>
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>

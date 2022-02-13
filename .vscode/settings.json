@@ -124,7 +124,8 @@
         "numbers": "cpp",
         "transform.h": "c",
         "execution": "cpp",
-        "complex": "cpp"
+        "complex": "cpp",
+        "alignedvector3": "cpp"
     },
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,

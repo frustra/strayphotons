@@ -65,14 +65,25 @@ namespace sp {
         vec.erase(std::remove_if(vec.begin(), vec.end(), f), vec.end());
     }
 
-    // Boost replacement functions
-    bool starts_with(const string &str, const string &prefix);
-    bool ends_with(const string &str, const string &suffix);
-    string to_lower(string &str);
-    string to_upper(string &str);
-    string to_lower_copy(const string &str);
-    string to_upper_copy(const string &str);
-    void trim(string &str);
-    void trim_left(string &str);
-    void trim_right(string &str);
+    namespace boost_replacements {
+        bool starts_with(const string &str, const string &prefix);
+        bool ends_with(const string &str, const string &suffix);
+        string to_lower(string &str);
+        string to_upper(string &str);
+        string to_lower_copy(const string &str);
+        string to_upper_copy(const string &str);
+        void trim(string &str);
+        void trim_left(string &str);
+        void trim_right(string &str);
+    } // namespace boost_replacements
+    using namespace boost_replacements;
+
+    struct ClockTimer {
+        chrono_clock::time_point start = chrono_clock::now();
+
+        chrono_clock::duration Duration() const {
+            return chrono_clock::now() - start;
+        }
+    };
+
 } // namespace sp

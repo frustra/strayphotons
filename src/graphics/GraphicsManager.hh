@@ -42,6 +42,8 @@ namespace sp {
     #endif
 
     class GraphicsManager {
+        LogOnExit logOnExit = "Graphics shut down";
+
     public:
         GraphicsManager(Game *game);
         ~GraphicsManager();

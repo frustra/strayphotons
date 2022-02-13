@@ -19,10 +19,6 @@ namespace sp::vulkan {
             VMA_MEMORY_USAGE_CPU_TO_GPU);
 
         models = device.AllocateBuffer(1024 * 10, vk::BufferUsageFlagBits::eStorageBuffer, VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-        renderableEntityList = device.AllocateBuffer(1024 * 1024,
-            vk::BufferUsageFlagBits::eStorageBuffer,
-            VMA_MEMORY_USAGE_CPU_TO_GPU);
     }
 
     std::pair<TextureIndex, std::future<void>> GPUSceneContext::AddTexture(const ImageCreateInfo &imageInfo,

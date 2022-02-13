@@ -47,12 +47,6 @@ namespace sp::vulkan {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
             Warnf("VK %s %s", typeStr, pCallbackData->pMessage);
             break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-            Logf("VK %s %s", typeStr, pCallbackData->pMessage);
-            break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-            Debugf("VK %s %s", typeStr, pCallbackData->pMessage);
-            break;
         default:
             break;
         }
@@ -90,10 +84,10 @@ namespace sp::vulkan {
         bool hasMemoryRequirements2Ext = false, hasDedicatedAllocationExt = false;
 
         auto availableExtensions = vk::enumerateInstanceExtensionProperties();
-        Debugf("Available Vulkan extensions: %u", availableExtensions.size());
+        // Debugf("Available Vulkan extensions: %u", availableExtensions.size());
         for (auto &ext : availableExtensions) {
             string_view name(ext.extensionName.data());
-            Debugf("\t%s", name);
+            // Debugf("\t%s", name);
 
             if (name == VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) {
                 hasMemoryRequirements2Ext = true;
@@ -103,12 +97,6 @@ namespace sp::vulkan {
                 continue;
             }
             extensions.push_back(name.data());
-        }
-
-        auto availableLayers = vk::enumerateInstanceLayerProperties();
-        Debugf("Available Vulkan layers: %u", availableLayers.size());
-        for (auto &layer : availableLayers) {
-            Debugf("\t%s %s", layer.layerName.data(), layer.description.data());
         }
 
         uint32_t requiredExtensionCount = 0;
@@ -835,6 +823,10 @@ namespace sp::vulkan {
         return make_shared<Buffer>(bufferInfo, allocInfo, allocator.get());
     }
 
+    BufferPtr DeviceContext::AllocateBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo) {
+        return make_shared<Buffer>(bufferInfo, allocInfo, allocator.get());
+    }
+
     BufferPtr DeviceContext::GetFramePooledBuffer(BufferType type, vk::DeviceSize size) {
         auto &pool = Frame().bufferPools[type];
         for (auto &buf : pool) {
@@ -880,6 +872,26 @@ namespace sp::vulkan {
         auto buffer = AllocateBuffer(size, usage, residency);
         pool.emplace_back(PooledBuffer{buffer, size, true});
         return buffer;
+    }
+
+    std::future<BufferPtr> DeviceContext::CreateBuffer(const InitialData &data,
+        vk::BufferCreateInfo bufferInfo,
+        VmaAllocationCreateInfo allocInfo) {
+        return allocatorQueue.Dispatch<BufferPtr>([=, this]() {
+            auto buf = AllocateBuffer(bufferInfo, allocInfo);
+            buf->CopyFrom(data.data, data.dataSize);
+            return buf;
+        });
+    }
+
+    std::future<BufferPtr> DeviceContext::CreateBuffer(const InitialData &data,
+        vk::BufferUsageFlags usage,
+        VmaMemoryUsage residency) {
+        return allocatorQueue.Dispatch<BufferPtr>([=, this]() {
+            auto buf = AllocateBuffer(data.dataSize, usage, residency);
+            buf->CopyFrom(data.data, data.dataSize);
+            return buf;
+        });
     }
 
     ImagePtr DeviceContext::AllocateImage(vk::ImageCreateInfo info,
@@ -933,7 +945,13 @@ namespace sp::vulkan {
         });
         if (!hasSrcData) return futImage;
 
-        auto futStagingBuf = CreateBuffer(data, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        vk::BufferCreateInfo bufferInfo;
+        bufferInfo.size = data.dataSize;
+        bufferInfo.usage = vk::BufferUsageFlagBits::eTransferSrc;
+        VmaAllocationCreateInfo allocInfo = {};
+        allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        allocInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+        auto futStagingBuf = CreateBuffer(data, bufferInfo, allocInfo);
 
         return frameEndQueue.Dispatch<ImagePtr>(std::move(futImage),
             std::move(futStagingBuf),

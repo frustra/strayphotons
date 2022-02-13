@@ -36,6 +36,8 @@ namespace sp {
 #endif
 
     class Game {
+        LogOnExit logOnExit = "Game shut down";
+
     public:
         Game(cxxopts::ParseResult &options, Script *startupScript = nullptr);
         ~Game();
