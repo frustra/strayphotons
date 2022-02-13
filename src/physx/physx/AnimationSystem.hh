@@ -15,7 +15,6 @@ namespace sp {
     private:
         double RoundToFrameInterval(double value) const;
 
-        PhysxManager &manager;
         const double frameInterval;
     };
 } // namespace sp

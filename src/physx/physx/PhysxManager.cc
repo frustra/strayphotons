@@ -116,11 +116,11 @@ namespace sp {
     void PhysxManager::Frame() {
         scenes.PreloadScenePhysics([this](auto lock, auto scene) {
             bool complete = true;
-            for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
-                if (!ent.Has<ecs::SceneInfo, ecs::Physics>(lock)) continue;
-                if (ent.Get<ecs::SceneInfo>(lock).scene.lock() != scene) continue;
+            for (auto ent : lock.template EntitiesWith<ecs::Physics>()) {
+                if (!ent.template Has<ecs::SceneInfo, ecs::Physics>(lock)) continue;
+                if (ent.template Get<ecs::SceneInfo>(lock).scene.lock() != scene) continue;
 
-                auto &ph = ent.Get<ecs::Physics>(lock);
+                auto &ph = ent.template Get<ecs::Physics>(lock);
                 if (ph.model && ph.model->Valid()) {
                     LoadConvexHullSet(*ph.model, ph.decomposeHull);
                 } else {

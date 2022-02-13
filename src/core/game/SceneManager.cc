@@ -65,7 +65,7 @@ namespace sp {
         for (auto &list : scenes) {
             list.clear();
         }
-        stagedScenes.DropAll([this, &stagingLock, &liveLock](std::shared_ptr<Scene> &scene) {
+        stagedScenes.DropAll([&stagingLock, &liveLock](std::shared_ptr<Scene> &scene) {
             scene->RemoveScene(stagingLock, liveLock);
             scene.reset();
         });
@@ -126,7 +126,7 @@ namespace sp {
                     scenes[SceneType::Async].clear();
                     scenes[SceneType::World].clear();
                     size_t removedCount = stagedScenes.DropAll(
-                        [this, &stagingLock, &liveLock](std::shared_ptr<Scene> &scene) {
+                        [&stagingLock, &liveLock](std::shared_ptr<Scene> &scene) {
                             scene->RemoveScene(stagingLock, liveLock);
                             scene.reset();
                         });
@@ -163,7 +163,7 @@ namespace sp {
                         scenes[SceneType::Async].clear();
 
                         size_t removedCount = stagedScenes.DropAll(
-                            [this, &stagingLock, &liveLock](std::shared_ptr<Scene> &scene) {
+                            [&stagingLock, &liveLock](std::shared_ptr<Scene> &scene) {
                                 scene->RemoveScene(stagingLock, liveLock);
                                 scene.reset();
                             });
@@ -243,8 +243,8 @@ namespace sp {
                                 auto it = scene->namedEntities.find("player");
                                 if (it != scene->namedEntities.end()) {
                                     auto stagingPlayer = it->second;
-                                    if (stagingPlayer.Has<ecs::SceneInfo>(stagingLock)) {
-                                        auto &sceneInfo = stagingPlayer.Get<ecs::SceneInfo>(stagingLock);
+                                    if (stagingPlayer.template Has<ecs::SceneInfo>(stagingLock)) {
+                                        auto &sceneInfo = stagingPlayer.template Get<ecs::SceneInfo>(stagingLock);
                                         player = sceneInfo.liveId;
                                     }
                                 }

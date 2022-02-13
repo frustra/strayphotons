@@ -1,1 +1,2 @@
 screenshot empty-state.png
+stepgraphics

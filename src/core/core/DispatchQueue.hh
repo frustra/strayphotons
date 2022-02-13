@@ -38,7 +38,7 @@ namespace sp {
         virtual bool Ready() = 0;
     };
     template<typename ReturnType, typename Fn, typename... ParameterTypes>
-    struct DispatchQueueWorkItem : public DispatchQueueWorkItemBase {
+    struct DispatchQueueWorkItem final : public DispatchQueueWorkItemBase {
         using FutureTuple = std::tuple<std::future<ParameterTypes>...>;
 
         DispatchQueueWorkItem(Fn &&func, FutureTuple &&futures)

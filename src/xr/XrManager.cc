@@ -29,7 +29,7 @@ namespace sp::xr {
         }
 
         try {
-            if (!xrSystem->Init(game->graphics.GetContext())) {
+            if (!xrSystem->Initialize(game->graphics.GetContext())) {
                 Errorf("XR Runtime initialization failed!");
                 xrSystem.reset();
             }
