@@ -664,6 +664,27 @@ namespace sp {
             auto stagingLock = stagingWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
             auto liveLock = liveWorld.StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
 
+            if (filterName.empty() || filterName == "player") {
+                Logf("Player scene entities:");
+                for (auto &e : liveLock.EntitiesWith<ecs::Name>()) {
+                    if (e.Has<ecs::Name, ecs::SceneInfo>(liveLock)) {
+                        auto &sceneInfo = e.Get<ecs::SceneInfo>(liveLock);
+                        auto scene = sceneInfo.scene.lock();
+                        if (scene && scene == playerScene) {
+                            Logf("  %s", ecs::ToString(liveLock, e));
+                            auto stagingId = sceneInfo.nextStagingId;
+                            while (stagingId.Has<ecs::SceneInfo>(stagingLock)) {
+                                auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(stagingLock);
+                                auto stagingScene = stagingInfo.scene.lock();
+                                Assert(stagingScene, "Missing SceneInfo scene on player entity");
+                                Logf("  -> %s scene", stagingScene->name);
+                                stagingId = stagingInfo.nextStagingId;
+                            }
+                        }
+                    }
+                }
+            }
+
             if (filterName.empty() || filterName == "bindings") {
                 Logf("Binding scene entities:");
                 for (auto &e : liveLock.EntitiesWith<ecs::Name>()) {

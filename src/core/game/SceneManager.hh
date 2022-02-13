@@ -14,7 +14,6 @@
 #include <deque>
 #include <functional>
 #include <future>
-#include <list>
 #include <memory>
 #include <robin_hood.h>
 #include <shared_mutex>
