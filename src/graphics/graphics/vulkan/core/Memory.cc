@@ -35,8 +35,10 @@ namespace sp::vulkan {
     }
 
     void UniqueMemory::Flush() {
-        // this is a no-op if memory type is HOST_COHERENT; such memory is automatically flushed
-        vmaFlushAllocation(allocator, allocation, 0, VK_WHOLE_SIZE);
+        // Flush is a no-op if memory type is HOST_COHERENT; such memory is automatically flushed
+        if (allocator->IsMemoryTypeNonCoherent(allocation->GetMemoryTypeIndex())) {
+            vmaFlushAllocation(allocator, allocation, 0, VK_WHOLE_SIZE);
+        }
     }
 
     SubBuffer::~SubBuffer() {

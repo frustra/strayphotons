@@ -52,7 +52,7 @@ namespace sp {
             ZoneScoped;
             std::tuple<ParameterTypes...> args;
             {
-                ZoneScopedN("WaitForFutures");
+                ZoneScopedN("ResolveFutures");
                 args = std::apply(
                     [](auto &&...x) {
                         return std::make_tuple(x.get()...);
