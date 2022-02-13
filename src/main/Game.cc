@@ -89,9 +89,9 @@ namespace sp {
 #endif
 
         auto &scenes = GetSceneManager();
-        scenes.QueueActionAndBlock(SceneAction::ReloadPlayer);
-        scenes.QueueActionAndBlock(SceneAction::ReloadBindings);
-        if (options.count("map")) { scenes.QueueActionAndBlock(SceneAction::LoadScene, options["map"].as<string>()); }
+        scenes.QueueAction(SceneAction::ReloadPlayer);
+        scenes.QueueAction(SceneAction::ReloadBindings);
+        if (options.count("map")) { scenes.QueueAction(SceneAction::LoadScene, options["map"].as<string>()); }
 
         if (startupScript != nullptr) {
 #ifdef SP_GRAPHICS_SUPPORT
@@ -112,7 +112,7 @@ namespace sp {
                 GetConsoleManager().QueueParseAndExecute(line);
             }
         } else if (!options.count("map")) {
-            scenes.QueueActionAndBlock(SceneAction::LoadScene, "menu");
+            scenes.QueueAction(SceneAction::LoadScene, "menu");
             {
                 auto lock = ecs::World.StartTransaction<ecs::Write<ecs::FocusLock>>();
                 lock.Get<ecs::FocusLock>().AcquireFocus(ecs::FocusLayer::MENU);

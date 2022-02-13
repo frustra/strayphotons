@@ -112,9 +112,13 @@ namespace sp {
                         if (e.Has<ecs::TransformTree>(stagingLock)) e.Set<ecs::TransformSnapshot>(stagingLock);
                     }
                 }
-                PreloadAndApplyScene(scene);
+                {
+                    Tracef("Applying system scene: %s", scene->name);
+                    auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
+                    auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+                    scene->ApplyScene(stagingLock, liveLock);
+                }
                 it->promise.set_value();
-
             } else if (it->action == SceneAction::LoadScene) {
                 ZonePrintf("LoadScene(%s)", it->sceneName);
                 // Unload all current scenes first
@@ -140,7 +144,6 @@ namespace sp {
                     RespawnPlayer(liveLock, player);
                 });
                 it->promise.set_value();
-
             } else if (it->action == SceneAction::ReloadScene) {
                 ZonePrintf("ReloadScene(%s)", it->sceneName);
                 if (it->sceneName.empty()) {
@@ -198,12 +201,10 @@ namespace sp {
                     }
                 }
                 it->promise.set_value();
-
             } else if (it->action == SceneAction::AddScene) {
                 ZonePrintf("AddScene(%s)", it->sceneName);
                 AddScene(it->sceneName, SceneType::World);
                 it->promise.set_value();
-
             } else if (it->action == SceneAction::RemoveScene) {
                 ZonePrintf("RemoveScene(%s)", it->sceneName);
                 auto loadedScene = stagedScenes.Load(it->sceneName);
@@ -221,7 +222,6 @@ namespace sp {
                     Assert(stagedScenes.Drop(it->sceneName), "Staged scene still in use after removal");
                 }
                 it->promise.set_value();
-
             } else if (it->action == SceneAction::ReloadPlayer) {
                 ZoneStr("ReloadPlayer");
                 if (playerScene) {
@@ -263,7 +263,6 @@ namespace sp {
                     loaded.wait(false);
                 }
                 it->promise.set_value();
-
             } else if (it->action == SceneAction::ReloadBindings) {
                 ZoneStr("ReloadBindings");
                 // TODO: Remove console key bindings
@@ -396,8 +395,6 @@ namespace sp {
             preloadScene = scene;
             graphicsPreload.clear();
             physicsPreload.clear();
-
-            graphicsPreload.test_and_set(); // TODO temp
         }
 
         if (!skipPreload) {
