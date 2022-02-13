@@ -34,14 +34,7 @@ namespace sp {
         "player.flatview",
         "The entity with a View component to display");
 
-    GraphicsManager::GraphicsManager(Game *game) : game(game) {
-    #ifdef SP_GRAPHICS_SUPPORT_GL
-        Logf("Graphics starting up (OpenGL)");
-    #endif
-    #ifdef SP_GRAPHICS_SUPPORT_VK
-        Logf("Graphics starting up (Vulkan)");
-    #endif
-    }
+    GraphicsManager::GraphicsManager(Game *game) : game(game) {}
 
     GraphicsManager::~GraphicsManager() {
         if (context) context->WaitIdle();
@@ -50,6 +43,13 @@ namespace sp {
     void GraphicsManager::Init() {
         ZoneScoped;
         Assert(!context, "already have a graphics context");
+
+    #ifdef SP_GRAPHICS_SUPPORT_GL
+        Logf("Graphics starting up (OpenGL)");
+    #endif
+    #ifdef SP_GRAPHICS_SUPPORT_VK
+        Logf("Graphics starting up (Vulkan)");
+    #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_GL
         auto glfwContext = new GlfwGraphicsContext();
