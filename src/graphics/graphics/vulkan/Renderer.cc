@@ -958,6 +958,9 @@ namespace sp::vulkan {
         scene.renderableCount = 0;
         scene.primitiveCount = 0;
         scene.vertexCount = 0;
+
+        scene.renderableEntityList = device.GetFramePooledBuffer(BUFFER_TYPE_STORAGE_TRANSFER, 1024 * 1024);
+
         auto gpuRenderable = (GPURenderableEntity *)scene.renderableEntityList->Mapped();
         bool hasPendingModel = false;
 
