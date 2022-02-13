@@ -31,7 +31,7 @@ namespace sp {
         bool decomposed;
 
         std::atomic_flag valid;
-        
+
         bool Valid() const {
             return valid.test();
         }
