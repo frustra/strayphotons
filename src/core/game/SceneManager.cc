@@ -23,7 +23,7 @@ namespace sp {
         return GSceneManager;
     }
 
-    SceneManager::SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld, bool)
+    SceneManager::SceneManager(ecs::ECS &liveWorld, ecs::ECS &stagingWorld, bool skipPreload)
         : RegisteredThread("SceneManager", 30.0), liveWorld(liveWorld), stagingWorld(stagingWorld),
           skipPreload(skipPreload) {
         funcs.Register<std::string>("loadscene",
