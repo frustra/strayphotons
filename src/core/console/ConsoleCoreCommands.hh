@@ -170,19 +170,19 @@ namespace sp {
             return;
         }
 
-        std::map<std::thread::id, std::string> threadNames;
-        threadNames[std::this_thread::get_id()] = "Main";
-        for (auto registeredThread : GetRegisteredThreads()) {
-            threadNames[registeredThread->GetThreadId()] = registeredThread->threadName;
-        }
-
-        std::thread([timeMs, threadNames] {
+        std::thread([timeMs] {
+            tracy::SetThreadName("TecsTrace");
+            ZoneScopedN("Tecs Trace");
             ecs::World.StartTrace();
             std::this_thread::sleep_for(std::chrono::milliseconds(timeMs));
             auto trace = ecs::World.StopTrace();
 
-            for (auto &thread : threadNames) {
-                trace.SetThreadName(thread.second, thread.first);
+            for (auto &event : trace.transactionEvents) {
+                std::stringstream ss;
+                ss << event.thread;
+                uint32_t thread_id;
+                ss >> thread_id;
+                trace.SetThreadName(tracy::GetThreadName(thread_id), event.thread);
             }
 
             std::ofstream traceFile("tecs-trace.csv");

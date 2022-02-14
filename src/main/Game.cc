@@ -48,6 +48,7 @@ namespace sp {
     Game::~Game() {}
 
     int Game::Start() {
+        tracy::SetThreadName("Main");
         int exitCode;
         std::atomic_flag exitTriggered;
 
