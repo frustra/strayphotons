@@ -4,6 +4,7 @@
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/SceneManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/vulkan/GuiRenderer.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
@@ -44,15 +45,6 @@ namespace sp::vulkan {
 
         funcs.Register("listrendertargets", "List all render targets", [&]() {
             listRenderTargets = true;
-        });
-
-        funcs.Register("waitforrenderer", "Block until models are loaded and the scene is ready to render", [&]() {
-            while (pendingTransaction.test())
-                pendingTransaction.wait(true);
-
-            sceneReady.clear();
-            while (!sceneReady.test())
-                sceneReady.wait(false);
         });
 
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
@@ -965,7 +957,7 @@ namespace sp::vulkan {
         bool hasPendingModel = false;
 
         for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
-            if (!ent.Has<ecs::Renderable, ecs::TransformSnapshot>(lock)) continue;
+            if (!ent.Has<ecs::TransformSnapshot>(lock)) continue;
 
             auto &renderable = ent.Get<ecs::Renderable>(lock);
             if (!renderable.model || !renderable.model->Valid()) continue;
@@ -1202,6 +1194,30 @@ namespace sp::vulkan {
     void Renderer::EndFrame() {
         ZoneScoped;
         activeModels.Tick(std::chrono::milliseconds(33)); // Minimum 30 fps tick rate
+
+        GetSceneManager().PreloadSceneGraphics([this](auto lock, auto scene) {
+            bool complete = true;
+            for (auto ent : lock.template EntitiesWith<ecs::Renderable>()) {
+                if (!ent.template Has<ecs::SceneInfo>(lock)) continue;
+                if (ent.template Get<ecs::SceneInfo>(lock).scene.lock() != scene) continue;
+
+                auto &renderable = ent.template Get<ecs::Renderable>(lock);
+                if (!renderable.model) continue;
+                if (!renderable.model->Valid()) {
+                    complete = false;
+                    continue;
+                }
+
+                auto model = activeModels.Load(renderable.model->name);
+                if (!model) {
+                    complete = false;
+                    modelsToLoad.push_back(renderable.model);
+                    continue;
+                }
+                if (!model->CheckReady()) complete = false;
+            }
+            return complete;
+        });
 
         for (int i = (int)modelsToLoad.size() - 1; i >= 0; i--) {
             auto &model = modelsToLoad[i];
