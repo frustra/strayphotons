@@ -94,15 +94,6 @@ namespace sp {
         if (options.count("map")) { scenes.QueueAction(SceneAction::LoadScene, options["map"].as<string>()); }
 
         if (startupScript != nullptr) {
-#ifdef SP_GRAPHICS_SUPPORT
-            funcs.Register<int>("stepgraphics",
-                "Renders N frames in a row, saving any queued screenshots, default is 1",
-                [this](int arg) {
-                    do {
-                        graphics.Frame();
-                    } while (--arg > 0);
-                });
-#endif
             funcs.Register<int>("sleep", "Pause script execution for N milliseconds", [](int ms) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(ms));
             });
@@ -123,17 +114,13 @@ namespace sp {
         logic.StartThread();
 
 #ifdef SP_GRAPHICS_SUPPORT
-        if (startupScript == nullptr) {
-            while (!exitTriggered.test()) {
-                if (!graphics.Frame()) break;
-                FrameMark;
-            }
-        } else {
-#endif
-            while (!exitTriggered.test()) {
-                exitTriggered.wait(false);
-            }
-#ifdef SP_GRAPHICS_SUPPORT
+        while (!exitTriggered.test()) {
+            if (!graphics.Frame()) break;
+            FrameMark;
+        }
+#else
+        while (!exitTriggered.test()) {
+            exitTriggered.wait(false);
         }
 #endif
         return exitCode;

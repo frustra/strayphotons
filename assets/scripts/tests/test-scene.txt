@@ -2,7 +2,7 @@ loadscene test1
 r.Exposure 1.0
 stepphysics
 screenshot test-scene1.png
-stepgraphics 100
+stepgraphics
 setsignal flashlight.on 1
 screenshot test-scene2.png
 stepgraphics

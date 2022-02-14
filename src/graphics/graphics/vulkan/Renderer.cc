@@ -47,15 +47,6 @@ namespace sp::vulkan {
             listRenderTargets = true;
         });
 
-        funcs.Register("waitforrenderer", "Block until models are loaded and the scene is ready to render", [&]() {
-            while (pendingTransaction.test())
-                pendingTransaction.wait(true);
-
-            sceneReady.clear();
-            while (!sceneReady.test())
-                sceneReady.wait(false);
-        });
-
         auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
         guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
     }

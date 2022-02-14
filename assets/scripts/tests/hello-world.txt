@@ -1,5 +1,5 @@
 loadscene sponza
-stepgraphics 500
+stepgraphics
 screenshot sponza-init.png
 stepgraphics
 stepphysics 30

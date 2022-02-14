@@ -30,9 +30,24 @@
     #include <thread>
 
 namespace sp {
-    static sp::CVar<std::string> CVarFlatviewEntity("r.FlatviewEntity",
+    static CVar<std::string> CVarFlatviewEntity("r.FlatviewEntity",
         "player.flatview",
         "The entity with a View component to display");
+
+    #ifdef SP_TEST_MODE
+    static std::atomic_uint64_t stepCount, maxStepCount;
+
+    static CFunc<int> CFuncStepGraphics("stepgraphics",
+        "Renders N frames in a row, saving any queued screenshots, default is 1",
+        [](int arg) {
+            maxStepCount += std::max(1, arg);
+            auto step = stepCount.load();
+            while (step < maxStepCount) {
+                stepCount.wait(step);
+                step = stepCount.load();
+            }
+        });
+    #endif
 
     GraphicsManager::GraphicsManager(Game *game) : game(game) {}
 
@@ -157,7 +172,16 @@ namespace sp {
     #ifdef SP_GRAPHICS_SUPPORT_VK
         timer.StartFrame();
         context->BeginFrame();
+
+        #ifdef SP_TEST_MODE
+        if (stepCount < maxStepCount) {
+            renderer->RenderFrame();
+            stepCount++;
+            stepCount.notify_all();
+        }
+        #else
         renderer->RenderFrame();
+        #endif
         #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
         context->SwapBuffers();
         #else
