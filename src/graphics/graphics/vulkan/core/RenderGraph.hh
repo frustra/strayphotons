@@ -16,6 +16,8 @@ namespace sp::vulkan {
 
     class PerfTimer;
 
+    const RenderGraphResourceID RenderGraphInvalidResource = ~0u;
+
     struct RenderGraphResource {
         enum class Type {
             Undefined,
@@ -31,7 +33,7 @@ namespace sp::vulkan {
             return type != Type::Undefined;
         }
 
-        RenderGraphResourceID id = ~0u;
+        RenderGraphResourceID id = RenderGraphInvalidResource;
         Type type = Type::Undefined;
         union {
             RenderTargetDesc renderTargetDesc;
@@ -62,7 +64,7 @@ namespace sp::vulkan {
     private:
         friend class RenderGraph;
         friend class RenderGraphPassBuilder;
-        RenderGraphResourceID resourceID = ~0u;
+        RenderGraphResourceID resourceID = RenderGraphInvalidResource;
     };
 
     class RenderGraphResources {
@@ -89,7 +91,7 @@ namespace sp::vulkan {
             return GetResource(lastOutputID);
         }
 
-        static const RenderGraphResourceID npos = ~0u;
+        static const RenderGraphResourceID npos = RenderGraphInvalidResource;
 
     private:
         friend class RenderGraph;
