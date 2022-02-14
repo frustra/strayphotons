@@ -21,8 +21,8 @@
 #endif
 
 namespace sp::vulkan {
-    static const char *defaultWindowViewTarget = "FlatView.LastOutput";
-    static const char *defaultXRViewTarget = "XRView.LastOutput";
+    static const std::string defaultWindowViewTarget = "FlatView.LastOutput";
+    static const std::string defaultXRViewTarget = "XRView.LastOutput";
 
     static CVar<string> CVarWindowViewTarget("r.WindowViewTarget",
         defaultWindowViewTarget,
@@ -462,39 +462,44 @@ namespace sp::vulkan {
 #endif
 
         auto swapchainImage = device.SwapchainImageView();
-        if (windowEntity && windowEntity.Has<ecs::View>(lock) && swapchainImage) {
-            auto view = windowEntity.Get<ecs::View>(lock);
-
-            RenderGraphResourceID sourceID;
+        if (swapchainImage) {
+            RenderGraphResourceID sourceID = RenderGraphInvalidResource;
             graph.Pass("WindowFinalOutput")
                 .Build([&](RenderGraphPassBuilder &builder) {
-                    auto res = builder.GetResource(CVarWindowViewTarget.Get());
-                    if (!res) {
-                        Errorf("view target %s does not exist, defaulting to %s",
-                            CVarWindowViewTarget.Get(),
-                            defaultWindowViewTarget);
+                    auto sourceName = CVarWindowViewTarget.Get();
+                    auto res = builder.GetResource(sourceName);
+                    if (!res && sourceName != defaultWindowViewTarget) {
+                        Errorf("view target %s does not exist, defaulting to %s", sourceName, defaultWindowViewTarget);
                         CVarWindowViewTarget.Set(defaultWindowViewTarget);
                         res = builder.GetResource(defaultWindowViewTarget);
                     }
 
-                    auto format = res.renderTargetDesc.format;
-                    auto layer = CVarWindowViewTargetLayer.Get();
-                    if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4 && layer == 0) {
-                        sourceID = res.id;
+                    auto loadOp = LoadOp::DontCare;
+
+                    if (res) {
+                        auto format = res.renderTargetDesc.format;
+                        auto layer = CVarWindowViewTargetLayer.Get();
+                        if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4 && layer == 0) {
+                            sourceID = res.id;
+                        } else {
+                            sourceID = VisualizeBuffer(graph, res.id, layer);
+                        }
+                        builder.ShaderRead(sourceID);
                     } else {
-                        sourceID = VisualizeBuffer(graph, res.id, layer);
+                        loadOp = LoadOp::Clear;
                     }
-                    builder.ShaderRead(sourceID);
 
                     RenderTargetDesc desc;
-                    desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
+                    desc.extent = swapchainImage->Extent();
                     desc.format = swapchainImage->Format();
-                    builder.OutputColorAttachment(0, "WindowFinalOutput", desc, {LoadOp::DontCare, StoreOp::Store});
+                    builder.OutputColorAttachment(0, "WindowFinalOutput", desc, {loadOp, StoreOp::Store});
                 })
                 .Execute([this, sourceID](RenderGraphResources &resources, CommandContext &cmd) {
-                    auto source = resources.GetRenderTarget(sourceID)->ImageView();
-                    cmd.SetTexture(0, 0, source);
-                    cmd.DrawScreenCover(source);
+                    if (sourceID != RenderGraphInvalidResource) {
+                        auto source = resources.GetRenderTarget(sourceID)->ImageView();
+                        cmd.SetTexture(0, 0, source);
+                        cmd.DrawScreenCover(source);
+                    }
 
                     if (this->debugGuiRenderer) {
                         this->debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()});
