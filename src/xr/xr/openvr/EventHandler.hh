@@ -11,11 +11,11 @@ namespace sp::xr {
 
     class EventHandler {
     public:
-        EventHandler(std::shared_ptr<vr::IVRSystem> &vrSystem);
+        EventHandler(const OpenVrSystem &vrSystem);
 
         void Frame();
 
     private:
-        std::shared_ptr<vr::IVRSystem> vrSystem;
+        const OpenVrSystem &vrSystem;
     };
 } // namespace sp::xr

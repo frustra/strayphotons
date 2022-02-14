@@ -5,7 +5,7 @@
 #include <openvr.h>
 
 namespace sp::xr {
-    EventHandler::EventHandler(std::shared_ptr<vr::IVRSystem> &vrSystem) : vrSystem(vrSystem) {}
+    EventHandler::EventHandler(const OpenVrSystem &vrSystem) : vrSystem(vrSystem) {}
 
     void EventHandler::Frame() {
         /* TODO: Determine which events we should follow:
@@ -13,8 +13,10 @@ namespace sp::xr {
          - Controller add/remove handling
          - Overlay integrations
          - SteamVR shutdown events
+        auto vr = vrSystem.vrSystem.lock();
+
         vr::VREvent_t event;
-        while (vrSystem && vrSystem->PollNextEvent(&event, sizeof(event))) {
+        while (vr && vr->PollNextEvent(&event, sizeof(event))) {
             std::string str;
 
             switch (event.eventType) {
@@ -31,16 +33,16 @@ namespace sp::xr {
             case vr::VREvent_InputFocusChanged:
             case vr::VREvent_InputFocusReleased:
                 Debugf("[OVREvent] Input focus changed at %f: (%d) %d -> %d",
-                       event.eventAgeSeconds,
-                       event.eventType,
-                       event.data.process.oldPid,
-                       event.data.process.pid);
+                    event.eventAgeSeconds,
+                    event.eventType,
+                    event.data.process.oldPid,
+                    event.data.process.pid);
                 break;
             case vr::VREvent_SceneApplicationChanged:
                 Debugf("[OVREvent] Scene application changed at %f: %d -> %d",
-                       event.eventAgeSeconds,
-                       event.data.process.oldPid,
-                       event.data.process.pid);
+                    event.eventAgeSeconds,
+                    event.data.process.oldPid,
+                    event.data.process.pid);
                 break;
             case vr::VREvent_SceneApplicationStateChanged:
                 switch (vr::VRApplications()->GetSceneApplicationState()) {
@@ -117,12 +119,12 @@ namespace sp::xr {
                 break;
             case vr::VREvent_TrackedDeviceRoleChanged: {
                 Debugf("[OVREvent] Device role changed at %f: (%d) %s",
-                       event.eventAgeSeconds,
-                       event.trackedDeviceIndex,
-                       str);
+                    event.eventAgeSeconds,
+                    event.trackedDeviceIndex,
+                    str);
                 vr::ETrackedControllerRole role = vr::TrackedControllerRole_Max;
                 for (vr::TrackedDeviceIndex_t i = 0; i < vr::k_unMaxTrackedDeviceCount; i++) {
-                    role = vrSystem->GetControllerRoleForTrackedDeviceIndex(i);
+                    role = vr->GetControllerRoleForTrackedDeviceIndex(i);
                     switch (role) {
                     case vr::TrackedControllerRole_Invalid:
                         str = "";
@@ -212,7 +214,6 @@ namespace sp::xr {
             default:
                 Debugf("[OVREvent] Unknown OpenVR event: %d", event.eventType);
             }
-        }
-        */
+        }*/
     }
 } // namespace sp::xr

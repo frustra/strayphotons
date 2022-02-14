@@ -42,7 +42,7 @@ namespace sp {
 #ifdef SP_AUDIO_SUPPORT
           audio(new AudioManager),
 #endif
-          logic() {
+          logic(startupScript != nullptr) {
     }
 
     Game::~Game() {}

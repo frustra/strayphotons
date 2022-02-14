@@ -7,6 +7,8 @@
 #include "xr/openvr/EventHandler.hh"
 #include "xr/openvr/InputBindings.hh"
 
+#include <atomic>
+#include <memory>
 #include <openvr.h>
 
 namespace vr {
@@ -21,12 +23,8 @@ namespace sp {
 
         class OpenVrSystem final : public XrSystem, RegisteredThread {
         public:
-            OpenVrSystem() : RegisteredThread("OpenVR", 120.0, true) {}
+            OpenVrSystem(GraphicsContext *context);
             ~OpenVrSystem();
-
-            bool Initialize(GraphicsContext *context) override;
-            bool IsInitialized() override;
-            bool IsHmdPresent() override;
 
             bool GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) override;
 
@@ -38,14 +36,15 @@ namespace sp {
             HiddenAreaMesh GetHiddenAreaMesh(ecs::XrEye eye) override;
 
         private:
+            void Init() override;
             void Frame() override;
 
             void RegisterModels();
 
-            GraphicsContext *context = nullptr;
+            GraphicsContext *context;
 
-            std::shared_ptr<vr::IVRSystem> vrSystem;
-            std::shared_ptr<EventHandler> eventHandler;
+            std::atomic<std::shared_ptr<vr::IVRSystem>> vrSystem;
+            EventHandler eventHandler;
             std::shared_ptr<InputBindings> inputBindings;
 
             EnumArray<ecs::NamedEntity, ecs::XrEye> views = {
@@ -61,6 +60,8 @@ namespace sp {
 
             uint32 frameCountWorkaround = 0;
             int width = 0, height = 0;
+
+            friend class EventHandler;
         };
 
     } // namespace xr

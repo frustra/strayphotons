@@ -90,12 +90,11 @@ namespace sp {
         void RespawnPlayer(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformSnapshot, ecs::TransformTree>> lock,
             Tecs::Entity player);
 
-        void LoadSceneJson(const std::string &name,
+        std::shared_ptr<Scene> LoadSceneJson(const std::string &name,
             SceneType sceneType,
-            ecs::SceneInfo::Priority priority,
-            std::function<void(std::shared_ptr<Scene>)> callback);
+            ecs::SceneInfo::Priority priority);
 
-        void LoadBindingsJson(std::function<void(std::shared_ptr<Scene>)> callback);
+        std::shared_ptr<Scene> LoadBindingsJson();
 
         std::shared_ptr<Scene> AddScene(std::string name, SceneType sceneType, OnApplySceneCallback callback = nullptr);
 

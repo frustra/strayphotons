@@ -70,6 +70,7 @@ namespace sp {
         void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
 
     private:
+        void FramePreload() override;
         void Frame() override;
 
         physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::TransformTree, ecs::Physics>> lock, Tecs::Entity &e);
@@ -92,8 +93,6 @@ namespace sp {
 
         SceneManager &scenes;
         CFuncCollection funcs;
-        bool stepMode = false;
-        std::atomic_uint64_t stepCount, maxStepCount;
 
         std::shared_ptr<physx::PxScene> scene;
         std::shared_ptr<physx::PxControllerManager> controllerManager; // Must be deconstructed before scene

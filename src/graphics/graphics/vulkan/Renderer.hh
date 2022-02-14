@@ -143,7 +143,7 @@ namespace sp::vulkan {
         LightingContext lights;
         LaserContext lasers;
         GPUSceneContext scene;
-        PreservingMap<string, Model> activeModels;
+        PreservingMap<string, Model, 10000> activeModels;
         vector<shared_ptr<const sp::Model>> modelsToLoad;
 
         struct RenderableGui {

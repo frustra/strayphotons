@@ -23,9 +23,9 @@ namespace sp {
     // clang-format on
 
     PhysxManager::PhysxManager(bool stepMode)
-        : RegisteredThread("PhysX", 120.0, true), scenes(GetSceneManager()), stepMode(stepMode),
-          characterControlSystem(*this), constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this),
-          animationSystem(*this), workQueue("PhysXHullLoading") {
+        : RegisteredThread("PhysX", 120.0, true), scenes(GetSceneManager()), characterControlSystem(*this),
+          constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this), animationSystem(*this),
+          workQueue("PhysXHullLoading") {
         Logf("PhysX %d.%d.%d starting up",
             PX_PHYSICS_VERSION_MAJOR,
             PX_PHYSICS_VERSION_MINOR,
@@ -54,18 +54,13 @@ namespace sp {
 
         CreatePhysxScene();
         if (stepMode) {
-            funcs.Register<int>("stepphysics",
+            funcs.Register<unsigned int>("stepphysics",
                 "Advance the physics simulation by N frames, default is 1",
-                [this](int arg) {
-                    maxStepCount += std::max(1, arg);
-                    auto step = stepCount.load();
-                    while (step < maxStepCount) {
-                        stepCount.wait(step);
-                        step = stepCount.load();
-                    }
+                [this](unsigned int arg) {
+                    this->Step(std::max(1u, arg));
                 });
         }
-        StartThread();
+        StartThread(stepMode);
     }
 
     PhysxManager::~PhysxManager() {
@@ -113,7 +108,7 @@ namespace sp {
         }
     }
 
-    void PhysxManager::Frame() {
+    void PhysxManager::FramePreload() {
         scenes.PreloadScenePhysics([this](auto lock, auto scene) {
             bool complete = true;
             for (auto ent : lock.template EntitiesWith<ecs::Physics>()) {
@@ -129,11 +124,12 @@ namespace sp {
             }
             return complete;
         });
+    }
 
-        if (stepMode && stepCount >= maxStepCount) return;
-
+    void PhysxManager::Frame() {
         // Wake up all actors and update the scene if gravity is changed.
         if (CVarGravity.Changed()) {
+            ZoneScopedN("ChangeGravity");
             scene->setGravity(PxVec3(0.f, CVarGravity.Get(true), 0.f));
 
             vector<PxActor *> buffer(256, nullptr);
@@ -250,11 +246,6 @@ namespace sp {
 
         triggerSystem.Frame();
         cache.Tick(interval);
-
-        if (stepMode) {
-            stepCount++;
-            stepCount.notify_all();
-        }
     }
 
     void PhysxManager::CreatePhysxScene() {

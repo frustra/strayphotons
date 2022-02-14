@@ -38,37 +38,33 @@ namespace sp {
         threads.erase(std::find(threads.begin(), threads.end(), this));
     }
 
-    void RegisteredThread::StartThread() {
+    void RegisteredThread::StartThread(bool stepMode) {
         Assert(!thread.joinable(), "RegisteredThread::StartThread() called while thread already running");
-        thread = std::thread([this] {
+        thread = std::thread([this, stepMode] {
             tracy::SetThreadName(threadName.c_str());
             Init();
 
-            std::array<chrono_clock::duration, 10> previousFrames;
-            previousFrames.fill(this->interval);
-            size_t frameIndex = 0;
-
             auto frameEnd = chrono_clock::now();
-            auto previousFrameEnd = frameEnd;
 #ifdef CATCH_GLOBAL_EXCEPTIONS
             try {
 #endif
                 while (!this->exiting) {
-                    if (traceFrames) FrameMarkStart(threadName.c_str());
-                    this->Frame();
-                    if (traceFrames) FrameMarkEnd(threadName.c_str());
+                    this->FramePreload();
+                    if (stepMode) {
+                        while (stepCount < maxStepCount) {
+                            if (traceFrames) FrameMarkStart(threadName.c_str());
+                            this->Frame();
+                            if (traceFrames) FrameMarkEnd(threadName.c_str());
+                            stepCount++;
+                        }
+                        stepCount.notify_all();
+                    } else {
+                        if (traceFrames) FrameMarkStart(threadName.c_str());
+                        this->Frame();
+                        if (traceFrames) FrameMarkEnd(threadName.c_str());
+                    }
 
                     auto realFrameEnd = chrono_clock::now();
-
-                    // Calculate frame rate using a 10-frame rolling window
-                    auto frameDelta = realFrameEnd - previousFrameEnd;
-                    previousFrames[frameIndex] = frameDelta;
-                    frameIndex = (frameIndex + 1) % previousFrames.size();
-                    previousFrameEnd = realFrameEnd;
-                    auto totalFrameTime = std::accumulate(previousFrames.begin(),
-                        previousFrames.end(),
-                        chrono_clock::duration::zero());
-                    this->averageFrameTimeNs = std::chrono::nanoseconds(totalFrameTime).count() / previousFrames.size();
 
                     if (this->interval.count() > 0) {
                         frameEnd += this->interval;
@@ -91,13 +87,18 @@ namespace sp {
         });
     }
 
+    void RegisteredThread::Step(unsigned int count) {
+        maxStepCount += count;
+        auto step = stepCount.load();
+        while (step < maxStepCount) {
+            stepCount.wait(step);
+            step = stepCount.load();
+        }
+    }
+
     void RegisteredThread::StopThread(bool waitForExit) {
         exiting = true;
         if (waitForExit && thread.joinable()) thread.join();
-    }
-
-    double RegisteredThread::GetFrameRate() const {
-        return 1e9 / (double)averageFrameTimeNs.load();
     }
 
     std::thread::id RegisteredThread::GetThreadId() const {

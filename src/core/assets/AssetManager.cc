@@ -55,7 +55,8 @@ namespace sp {
         return false;
     }
 
-    AssetManager::AssetManager() : RegisteredThread("AssetCleanup", std::chrono::milliseconds(100)) {
+    AssetManager::AssetManager()
+        : RegisteredThread("AssetCleanup", std::chrono::milliseconds(100)), workQueue("AssetWorker", 4) {
         gltfLoaderCallbacks = std::make_unique<tinygltf::FsCallbacks>(tinygltf::FsCallbacks{
             // FileExists
             [](const std::string &abs_filename, void *userdata) -> bool {
@@ -82,23 +83,9 @@ namespace sp {
 
     AssetManager::~AssetManager() {
         StopThread();
-
-        for (auto &task : runningTasks) {
-            task.wait();
-        }
     }
 
     void AssetManager::Frame() {
-        {
-            std::lock_guard lock(taskMutex);
-            for (auto it = runningTasks.begin(); it != runningTasks.end();) {
-                if (it->wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    it = runningTasks.erase(it);
-                } else {
-                    it++;
-                }
-            }
-        }
         loadedModels.Tick(this->interval);
         for (auto &assets : loadedAssets) {
             assets.Tick(this->interval);
@@ -190,26 +177,23 @@ namespace sp {
                 asset = std::make_shared<Asset>(path);
                 loadedAssets[type].Register(path, asset, true /* allowReplace */);
             }
-            {
-                std::lock_guard lock(taskMutex);
-                runningTasks.emplace_back(std::async(std::launch::async, [this, path, type, asset] {
-                    ZoneScopedN("LoadAsset");
-                    ZoneStr(path);
-                    std::ifstream in;
-                    size_t size;
+            workQueue.Dispatch<void>([this, path, type, asset] {
+                ZoneScopedN("LoadAsset");
+                ZoneStr(path);
+                std::ifstream in;
+                size_t size;
 
-                    if (InputStream(path, type, in, &size)) {
-                        asset->buffer.resize(size);
-                        in.read((char *)asset->buffer.data(), size);
-                        in.close();
+                if (InputStream(path, type, in, &size)) {
+                    asset->buffer.resize(size);
+                    in.read((char *)asset->buffer.data(), size);
+                    in.close();
 
-                        asset->valid.test_and_set();
-                        asset->valid.notify_all();
-                    } else {
-                        Abortf("Asset does not exist: %s", path);
-                    }
-                }));
-            }
+                    asset->valid.test_and_set();
+                    asset->valid.notify_all();
+                } else {
+                    Abortf("Asset does not exist: %s", path);
+                }
+            });
         }
 
         return asset;
@@ -254,30 +238,29 @@ namespace sp {
                 model = std::make_shared<Model>(name);
                 loadedModels.Register(name, model);
             }
-            {
-                std::lock_guard lock(taskMutex);
-                runningTasks.emplace_back(std::async(std::launch::async, [this, name, model] {
-                    std::string path;
-                    {
-                        std::lock_guard lock(externalModelMutex);
-                        auto it = externalModelPaths.find(name);
-                        if (it != externalModelPaths.end()) path = it->second;
-                    }
+            workQueue.Dispatch<void>([this, name, model] {
+                ZoneScopedN("LoadModel");
+                ZoneStr(name);
+                std::string path;
+                {
+                    std::lock_guard lock(externalModelMutex);
+                    auto it = externalModelPaths.find(name);
+                    if (it != externalModelPaths.end()) path = it->second;
+                }
 
-                    std::shared_ptr<const sp::Asset> asset;
-                    if (path.empty()) {
-                        path = findModel(name);
-                        Assertf(!path.empty(), "Model not found: %s", name);
+                std::shared_ptr<const sp::Asset> asset;
+                if (path.empty()) {
+                    path = findModel(name);
+                    Assertf(!path.empty(), "Model not found: %s", name);
 
-                        asset = Load(path, AssetType::Bundled);
-                    } else {
-                        asset = Load(path, AssetType::External);
-                    }
+                    asset = Load(path, AssetType::Bundled);
+                } else {
+                    asset = Load(path, AssetType::External);
+                }
 
-                    Assertf(asset, "Failed to load model asset: %s", name);
-                    model->PopulateFromAsset(asset, gltfLoaderCallbacks.get());
-                }));
-            }
+                Assertf(asset, "Failed to load model asset: %s", name);
+                model->PopulateFromAsset(asset, gltfLoaderCallbacks.get());
+            });
         }
 
         return model;
@@ -297,13 +280,12 @@ namespace sp {
                 image = std::make_shared<Image>();
                 loadedImages.Register(path, image);
             }
-            {
-                std::lock_guard lock(taskMutex);
-                runningTasks.emplace_back(std::async(std::launch::async, [this, path, image] {
-                    auto asset = Load(path);
-                    image->PopulateFromAsset(asset);
-                }));
-            }
+            workQueue.Dispatch<void>([this, path, image] {
+                ZoneScopedN("LoadImage");
+                ZoneStr(path);
+                auto asset = Load(path);
+                image->PopulateFromAsset(asset);
+            });
         }
 
         return image;

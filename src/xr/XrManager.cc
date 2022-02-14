@@ -3,6 +3,7 @@
     #include "XrManager.hh"
 
     #include "core/Logging.hh"
+    #include "core/Tracing.hh"
     #include "main/Game.hh"
 
     #ifdef SP_XR_SUPPORT_OPENVR
@@ -15,34 +16,19 @@ namespace sp::xr {
     }
 
     void XrManager::LoadXrSystem() {
+        ZoneScoped;
         std::lock_guard lock(xrLoadMutex);
 
     #ifdef SP_XR_SUPPORT_OPENVR
-        xrSystem = std::make_shared<OpenVrSystem>();
+        xrSystem = std::make_shared<OpenVrSystem>(game->graphics.GetContext());
     #else
         Abort("No XR system defined");
     #endif
-
-        if (!xrSystem->IsHmdPresent()) {
-            Logf("No VR HMD is present.");
-            return;
-        }
-
-        try {
-            if (!xrSystem->Initialize(game->graphics.GetContext())) {
-                Errorf("XR Runtime initialization failed!");
-                xrSystem.reset();
-            }
-        } catch (const std::exception &ex) {
-            Errorf("XR Runtime threw error on initialization! Error: %s", ex.what());
-            xrSystem.reset();
-        }
     }
 
     std::shared_ptr<XrSystem> XrManager::GetXrSystem() {
         std::lock_guard lock(xrLoadMutex);
-        if (xrSystem && xrSystem->IsInitialized()) return xrSystem;
-        return nullptr;
+        return xrSystem;
     }
 } // namespace sp::xr
 

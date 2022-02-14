@@ -1,16 +1,9 @@
 loadscene sponza
-stepgraphics
 screenshot sponza-init.png
 stepgraphics
-stepphysics 30
-screenshot sponza-frame2.png
+stepphysics
+screenshot sponza-init2.png
 stepgraphics
-stepphysics 30
-screenshot sponza-frame3.png
-stepgraphics
-stepphysics 30
-screenshot sponza-frame4.png
-stepgraphics
-stepphysics 30
-screenshot sponza-frame5.png
+stepphysics 70
+screenshot sponza-frame.png
 stepgraphics

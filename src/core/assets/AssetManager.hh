@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/DispatchQueue.hh"
 #include "core/EnumArray.hh"
 #include "core/PreservingMap.hh"
 #include "core/RegisteredThread.hh"
@@ -61,8 +62,7 @@ namespace sp {
         // TODO: Update PhysxManager to use Asset object for collision model cache
         friend class PhysxManager;
 
-        std::mutex taskMutex;
-        std::vector<std::future<void>> runningTasks;
+        DispatchQueue workQueue;
 
         std::mutex assetMutex;
         std::mutex modelMutex;
