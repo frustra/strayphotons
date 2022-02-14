@@ -42,7 +42,7 @@ namespace sp {
     #endif
 
     class GraphicsManager {
-        LogOnExit logOnExit = "Graphics shut down";
+        LogOnExit logOnExit = "Graphics shut down ====================================================";
 
     public:
         GraphicsManager(Game *game);
@@ -59,6 +59,8 @@ namespace sp {
         Game *game;
         unique_ptr<GraphicsContext> context;
         ecs::NamedEntity flatviewEntity;
+
+        chrono_clock::time_point previousFrameEnd;
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
         unique_ptr<vulkan::Renderer> renderer;
