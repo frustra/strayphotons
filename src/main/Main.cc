@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 
 #ifdef SP_TEST_MODE
         string scriptPath = optionsResult["script-file"].as<string>();
-        auto script = sp::GAssets.LoadScript(scriptPath);
+        auto script = sp::GAssets.LoadScript(scriptPath)->Get();
         if (!script) {
             Errorf("Script file not found: %s", scriptPath);
             return 0;

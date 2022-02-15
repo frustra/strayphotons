@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assets/Async.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 
@@ -46,13 +47,13 @@ namespace ecs {
 
     struct Physics {
         Physics() {}
-        Physics(std::shared_ptr<const sp::Model> model,
+        Physics(sp::AsyncPtr<sp::Model> model,
             PhysicsGroup group = PhysicsGroup::World,
             bool dynamic = true,
             float density = 1.0f)
             : model(model), group(group), dynamic(dynamic), density(density) {}
 
-        std::shared_ptr<const sp::Model> model;
+        sp::AsyncPtr<sp::Model> model;
 
         PhysicsGroup group = PhysicsGroup::World;
         bool dynamic = true;

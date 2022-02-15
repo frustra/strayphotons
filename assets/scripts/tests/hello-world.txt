@@ -1,9 +1,11 @@
 loadscene sponza
-screenshot sponza-init.png
+setsignal player.flashlight.on 1
+steplogic
+screenshot sponza-render-init.png
 stepgraphics
 stepphysics
-screenshot sponza-init2.png
+screenshot sponza-physics-init.png
 stepgraphics
-stepphysics 70
-screenshot sponza-frame.png
+stepphysics 120
+screenshot sponza-test-frame.png
 stepgraphics

@@ -67,23 +67,15 @@ namespace sp {
             bufView.buffer};
     }
 
-    Model::~Model() {
-        ZoneScoped;
-        ZoneStr(name);
-    }
-
     bool Model::HasBuffer(size_t index) const {
-        Assert(valid.test(), "Checking buffer on invalid model");
         return model->buffers.size() > index;
     }
 
     const std::vector<unsigned char> &Model::GetBuffer(size_t index) const {
-        Assert(valid.test(), "Accessing buffer on invalid model");
         return model->buffers[index].data;
     }
 
     Hash128 Model::HashBuffer(size_t index) const {
-        Assert(valid.test(), "Hashing buffer on invalid model");
         Hash128 output;
         auto buffer = GetBuffer(index);
         Assert(buffer.size() <= INT_MAX, "Buffer size overflows max int");
@@ -94,7 +86,6 @@ namespace sp {
     // Returns a vector of the GLTF node indexes that are present in the "joints"
     // array of the GLTF skin.
     std::vector<int> Model::GetJointNodes() const {
-        Assert(valid.test(), "Getting joint nodes on invalid model");
         std::vector<int> nodes;
 
         // TODO: deal with GLTFs that have more than one skin
@@ -106,22 +97,19 @@ namespace sp {
     }
 
     glm::mat4 Model::GetInvBindPoseForNode(int nodeIndex) const {
-        Assert(valid.test(), "Getting bind pose on invalid model");
         return inverseBindMatrixForJoint.at(nodeIndex);
     }
 
     std::string Model::GetNodeName(int node) const {
-        Assert(valid.test(), "Getting node name on invalid model");
         return model->nodes[node].name;
     }
 
-    void Model::PopulateFromAsset(std::shared_ptr<const Asset> asset, const tinygltf::FsCallbacks *fsCallbacks) {
-        ZoneScoped;
+    Model::Model(const string &name, std::shared_ptr<const Asset> asset, const tinygltf::FsCallbacks *fsCallbacks)
+        : name(name), asset(asset) {
+        ZoneScopedN("LoadModel");
         ZonePrintf("%s from %s", name, asset->path);
 
         Assert(asset, "Loading Model from null asset");
-        this->asset = asset;
-        asset->WaitUntilValid();
 
         std::filesystem::path fsPath(asset->path);
         std::string baseDir = fsPath.remove_filename().string();
@@ -165,9 +153,6 @@ namespace sp {
         for (int node : model->scenes[defaultScene].nodes) {
             AddNode(node, glm::mat4());
         }
-
-        this->valid.test_and_set();
-        this->valid.notify_all();
     }
 
     void Model::AddNode(int nodeIndex, glm::mat4 parentMatrix) {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ecs/components/XRView.hh"
-#include "xr/XrModel.hh"
 
 #include <glm/glm.hpp>
 #include <memory>

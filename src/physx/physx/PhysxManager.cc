@@ -116,8 +116,8 @@ namespace sp {
                 if (ent.template Get<ecs::SceneInfo>(lock).scene.lock() != scene) continue;
 
                 auto &ph = ent.template Get<ecs::Physics>(lock);
-                if (ph.model && ph.model->Valid()) {
-                    LoadConvexHullSet(*ph.model, ph.decomposeHull);
+                if (ph.model && ph.model->Ready()) {
+                    LoadConvexHullSet(ph.model, ph.decomposeHull);
                 } else {
                     complete = false;
                 }
@@ -317,8 +317,13 @@ namespace sp {
         });
     }
 
-    std::shared_ptr<const ConvexHullSet> PhysxManager::LoadConvexHullSet(const Model &model, bool decomposeHull) {
-        Assert(!model.name.empty(), "PhysxManager::LoadConvexHullSet called with invalid model");
+    AsyncPtr<ConvexHullSet> PhysxManager::LoadConvexHullSet(const AsyncPtr<Model> &asyncModel, bool decomposeHull) {
+        if (!asyncModel || !asyncModel->Ready()) return nullptr;
+
+        auto modelPtr = asyncModel->Get();
+        Assertf(modelPtr, "PhysxManager::LoadConvexHullSet called with null model");
+        auto &model = *modelPtr;
+        Assertf(!model.name.empty(), "PhysxManager::LoadConvexHullSet called with invalid model");
         std::string name = model.name;
         if (decomposeHull) name += "-decompose";
 
@@ -330,30 +335,29 @@ namespace sp {
                 set = cache.Load(name);
                 if (set) return set;
 
-                set = std::make_shared<ConvexHullSet>();
+                set = std::make_shared<Async<ConvexHullSet>>(workQueue.Dispatch<std::unique_ptr<ConvexHullSet>>(
+                    [this, name, decomposeHull](std::shared_ptr<const Model> model) {
+                        ZoneScopedN("LoadConvexHullSet::Dispatch");
+                        ZoneStr(name);
+
+                        auto set = std::make_unique<ConvexHullSet>();
+                        if (LoadCollisionCache(*set, *model, decomposeHull)) {
+                            for (auto &hull : set->hulls) {
+                                hull.pxMesh = CreateConvexMeshFromHull(*model, hull);
+                            }
+                            return set;
+                        }
+
+                        ConvexHullBuilding::BuildConvexHulls(set.get(), *model, decomposeHull);
+                        for (auto &hull : set->hulls) {
+                            hull.pxMesh = CreateConvexMeshFromHull(*model, hull);
+                        }
+                        SaveCollisionCache(*model, *set, decomposeHull);
+                        return set;
+                    },
+                    asyncModel));
                 cache.Register(name, set);
             }
-            workQueue.Dispatch<void>([this, set, name, &model, decomposeHull]() {
-                ZoneScopedN("LoadConvexHullSet::Dispatch");
-                ZoneStr(name);
-                model.WaitUntilValid();
-                if (LoadCollisionCache(*set, model, decomposeHull)) {
-                    for (auto &hull : set->hulls) {
-                        hull.pxMesh = CreateConvexMeshFromHull(model, hull);
-                    }
-                    set->valid.test_and_set();
-                    set->valid.notify_all();
-                    return;
-                }
-
-                ConvexHullBuilding::BuildConvexHulls(set.get(), model, decomposeHull);
-                for (auto &hull : set->hulls) {
-                    hull.pxMesh = CreateConvexMeshFromHull(model, hull);
-                }
-                set->valid.test_and_set();
-                set->valid.notify_all();
-                SaveCollisionCache(model, *set, decomposeHull);
-            });
         }
 
         return set;
@@ -386,8 +390,7 @@ namespace sp {
 
         PxMaterial *mat = pxPhysics->createMaterial(0.6f, 0.5f, 0.0f);
 
-        userData->shapeCache = LoadConvexHullSet(*ph.model.get(), ph.decomposeHull);
-        userData->shapeCache->WaitUntilValid();
+        userData->shapeCache = LoadConvexHullSet(ph.model, ph.decomposeHull)->Get();
 
         for (auto &hull : userData->shapeCache->hulls) {
             PxRigidActorExt::createExclusiveShape(*actor,

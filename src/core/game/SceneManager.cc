@@ -418,12 +418,11 @@ namespace sp {
         ecs::SceneInfo::Priority priority) {
         Logf("Loading scene: %s", sceneName);
 
-        auto asset = GAssets.Load("scenes/" + sceneName + ".json", AssetType::Bundled, true);
+        auto asset = GAssets.Load("scenes/" + sceneName + ".json", AssetType::Bundled, true)->Get();
         if (!asset) {
-            Logf("Scene not found");
+            Errorf("Scene not found");
             return nullptr;
         }
-        asset->WaitUntilValid();
 
         picojson::value root;
         string err = picojson::parse(root, asset->String());
@@ -489,7 +488,7 @@ namespace sp {
 
         std::shared_ptr<const Asset> bindingConfig;
         if (!std::filesystem::exists(InputBindingConfigPath)) {
-            bindingConfig = GAssets.Load("default_input_bindings.json");
+            bindingConfig = GAssets.Load("default_input_bindings.json", AssetType::Bundled, true)->Get();
             Assert(bindingConfig, "Default input binding config missing");
 
             // TODO: Create CFunc to save current input bindings to file
@@ -498,10 +497,9 @@ namespace sp {
             // file << bindingConfig->String();
             // file.close();
         } else {
-            bindingConfig = GAssets.Load(InputBindingConfigPath, AssetType::External, true);
+            bindingConfig = GAssets.Load(InputBindingConfigPath, AssetType::External, true)->Get();
             Assertf(bindingConfig, "Failed to load input binding config: %s", InputBindingConfigPath);
         }
-        bindingConfig->WaitUntilValid();
 
         auto scene = make_shared<Scene>("bindings", SceneType::System);
 

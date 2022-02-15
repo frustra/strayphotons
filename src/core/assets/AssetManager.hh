@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assets/Async.hh"
 #include "core/DispatchQueue.hh"
 #include "core/EnumArray.hh"
 #include "core/PreservingMap.hh"
@@ -30,40 +31,16 @@ namespace sp {
         Count,
     };
 
-    template<typename T>
-    class Async {
-    public:
-        Async() {}
-        Async(const std::shared_ptr<const T> &ptr) {
-            // TODO
-        }
-
-        bool operator() const {
-            return future.valid();
-        }
-
-        bool IsReady() const {
-            return future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
-        }
-
-        std::shared_ptr<const T> Get() const {
-            return future.get();
-        }
-
-    private:
-        std::shared_future<std::shared_ptr<const T>> future;
-    };
-
     class AssetManager : public RegisteredThread {
     public:
         AssetManager();
         ~AssetManager();
 
-        Async<Asset> Load(const std::string &path, AssetType type = AssetType::Bundled, bool reload = false);
-        Async<Model> LoadModel(const std::string &name);
-        Async<Image> LoadImage(const std::string &path);
+        AsyncPtr<Asset> Load(const std::string &path, AssetType type = AssetType::Bundled, bool reload = false);
+        AsyncPtr<Model> LoadModel(const std::string &name);
+        AsyncPtr<Image> LoadImage(const std::string &path);
 
-        Async<Script> LoadScript(const std::string &path);
+        AsyncPtr<Script> LoadScript(const std::string &path);
 
         void RegisterExternalModel(const std::string &name, const std::string &path);
         bool IsModelRegistered(const std::string &name);
@@ -90,9 +67,9 @@ namespace sp {
         std::mutex modelMutex;
         std::mutex imageMutex;
 
-        EnumArray<PreservingMap<std::string, Asset>, AssetType> loadedAssets;
-        PreservingMap<std::string, Model> loadedModels;
-        PreservingMap<std::string, Image> loadedImages;
+        EnumArray<PreservingMap<std::string, Async<Asset>>, AssetType> loadedAssets;
+        PreservingMap<std::string, Async<Model>> loadedModels;
+        PreservingMap<std::string, Async<Image>> loadedImages;
 
         std::mutex externalModelMutex;
         robin_hood::unordered_flat_map<std::string, std::string> externalModelPaths;

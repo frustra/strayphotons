@@ -19,9 +19,8 @@ namespace sp::xr {
         vr::EVRInputError error = vr::VRInput()->SetActionManifestPath(actionManifestPath.c_str());
         Assert(error == vr::EVRInputError::VRInputError_None, "Failed to initialize OpenVR input");
 
-        auto actionManifest = GAssets.Load(actionManifestPath, AssetType::External, true);
+        auto actionManifest = GAssets.Load(actionManifestPath, AssetType::External, true)->Get();
         Assertf(actionManifest, "Failed to load vr action manifest: ", actionManifestPath);
-        actionManifest->WaitUntilValid();
 
         picojson::value root;
         string err = picojson::parse(root, actionManifest->String());

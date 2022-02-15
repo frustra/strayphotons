@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Common.hh"
-#include "Tracing.hh"
+#include "assets/Async.hh"
+#include "core/Common.hh"
+#include "core/Tracing.hh"
 
 #include <condition_variable>
 #include <cstdint>
@@ -16,10 +17,66 @@
 
 namespace sp {
     namespace detail {
-        template<typename... T, std::size_t... I>
-        auto subtuple(std::tuple<T...> &&t, std::index_sequence<I...>) {
-            return std::make_tuple(std::move(std::get<I>(t))...);
-        }
+        template<typename T>
+        class Future {};
+
+        template<typename T>
+        class Future<std::future<T>> {
+        public:
+            using ReturnType = T;
+
+            Future(std::future<T> &future) : future(std::move(future)) {}
+
+            bool Ready() const {
+                return future.wait_for(std::chrono::seconds(0)) != std::future_status::timeout;
+            }
+
+            ReturnType Get() {
+                return future.get();
+            }
+
+        private:
+            std::future<T> future;
+        };
+
+        template<typename T>
+        struct Future<std::shared_future<T>> {
+        public:
+            using ReturnType = T;
+
+            Future(const std::shared_future<T> &future) : future(future) {}
+
+            bool Ready() const {
+                return future.wait_for(std::chrono::seconds(0)) != std::future_status::timeout;
+            }
+
+            ReturnType Get() {
+                return future.get();
+            }
+
+        private:
+            std::shared_future<T> future;
+        };
+
+        template<typename T>
+        struct Future<AsyncPtr<T>> {
+        public:
+            using ReturnType = std::shared_ptr<const T>;
+
+            Future(const AsyncPtr<T> &future) : future(future) {}
+
+            bool Ready() const {
+                return !future || future->Ready();
+            }
+
+            ReturnType Get() {
+                if (!future) return nullptr;
+                return future->Get();
+            }
+
+        private:
+            AsyncPtr<T> future;
+        };
 
         template<auto Start, auto End, auto Increment = 1, class Fn>
         constexpr bool constexpr_for(Fn &&f) {
@@ -37,15 +94,15 @@ namespace sp {
         virtual void Process() = 0;
         virtual bool Ready() = 0;
     };
-    template<typename ReturnType, typename Fn, typename... ParameterTypes>
+    template<typename ReturnType, typename FutureTuple, typename... ParameterTypes>
     struct DispatchQueueWorkItem final : public DispatchQueueWorkItemBase {
-        using FutureTuple = std::tuple<std::future<ParameterTypes>...>;
+        using Fn = std::function<ReturnType(ParameterTypes...)>;
 
         DispatchQueueWorkItem(Fn &&func, FutureTuple &&futures)
             : func(std::move(func)), waitForFutures(std::move(futures)) {}
 
         std::promise<ReturnType> promise;
-        std::function<ReturnType(ParameterTypes...)> func;
+        Fn func;
         FutureTuple waitForFutures;
 
         void Process() {
@@ -55,7 +112,7 @@ namespace sp {
                 ZoneScopedN("ResolveFutures");
                 args = std::apply(
                     [](auto &&...x) {
-                        return std::make_tuple(x.get()...);
+                        return std::make_tuple(x.Get()...);
                     },
                     waitForFutures);
             }
@@ -69,7 +126,7 @@ namespace sp {
 
         bool Ready() {
             return detail::constexpr_for<0, sizeof...(ParameterTypes)>([this]<int I>() {
-                return std::get<I>(waitForFutures).wait_for(std::chrono::seconds(0)) != std::future_status::timeout;
+                return std::get<I>(waitForFutures).Ready();
             });
         }
     };
@@ -99,22 +156,13 @@ namespace sp {
          *  auto image = queue.Dispatch<ImagePtr>([]() { return MakeImagePtr(); });
          *  queue.Dispatch<void>(std::move(image), [](ImagePtr image) { });
          */
-        template<typename ReturnType, typename... FuturesAndFn>
-        std::future<ReturnType> Dispatch(FuturesAndFn &&...args) {
-            // if C++ adds support for parameters after a parameter pack, delete this function
-            const size_t lastArg = sizeof...(FuturesAndFn) - 1;
-            auto tupl = std::make_tuple(std::move(args)...);
-            auto fn = std::move(std::get<lastArg>(tupl));
-            auto futures = detail::subtuple(std::move(tupl), std::make_index_sequence<lastArg>());
-            return DispatchInternal<ReturnType>(std::move(futures), std::move(fn));
-        }
-
-    private:
-        template<typename ReturnType, typename Fn, typename... ParameterTypes>
-        std::future<ReturnType> DispatchInternal(std::tuple<std::future<ParameterTypes>...> &&futures, Fn func) {
+        template<typename ReturnType, typename Fn, typename... Futures>
+        std::future<ReturnType> Dispatch(Fn &&func, Futures &&...futures) {
             Assert(!exit, "tried to dispatch to a shut down queue");
-            auto item = make_shared<DispatchQueueWorkItem<ReturnType, Fn, ParameterTypes...>>(std::move(func),
-                std::move(futures));
+            auto item = make_shared<DispatchQueueWorkItem<ReturnType,
+                std::tuple<detail::Future<std::remove_cvref_t<Futures>>...>,
+                detail::Future<std::remove_cvref_t<Futures>>::ReturnType...>>(func,
+                std::make_tuple(detail::Future<std::remove_cvref_t<Futures>>(futures)...));
 
             std::unique_lock<std::mutex> lock(mutex);
             auto fut = item->promise.get_future();
@@ -123,6 +171,7 @@ namespace sp {
             return fut;
         }
 
+    private:
         size_t FlushInternal(std::unique_lock<std::mutex> &lock, size_t maxWorkItems, bool blockUntilReady);
         void ThreadMain();
 

@@ -1,6 +1,8 @@
 #pragma once
 
-#include <ecs/Components.hh>
+#include "assets/Async.hh"
+#include "ecs/Components.hh"
+
 #include <glm/glm.hpp>
 
 namespace sp {
@@ -21,9 +23,9 @@ namespace ecs {
         using VisibilityMask = std::bitset<VISIBILITY_COUNT>;
 
         Renderable() {}
-        Renderable(std::shared_ptr<const sp::Model> model) : model(model) {}
+        Renderable(sp::AsyncPtr<sp::Model> model) : model(model) {}
 
-        std::shared_ptr<const sp::Model> model;
+        sp::AsyncPtr<sp::Model> model;
         VisibilityMask visibility = VisibilityMask().set();
         glm::vec3 emissive = {0.0f, 0.0f, 0.0f};
     };

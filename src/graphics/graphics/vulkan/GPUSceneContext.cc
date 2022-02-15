@@ -26,10 +26,13 @@ namespace sp::vulkan {
         const InitialData &data) {
         auto i = AllocateTextureIndex();
         auto imageViewFut = device.CreateImageAndView(imageInfo, viewInfo, data);
-        return make_pair(i, workQueue.Dispatch<void>(std::move(imageViewFut), [this, i](ImageViewPtr view) {
-            textures[i] = view;
-            texturesToFlush.push_back(i);
-        }));
+        return make_pair(i,
+            workQueue.Dispatch<void>(
+                [this, i](ImageViewPtr view) {
+                    textures[i] = view;
+                    texturesToFlush.push_back(i);
+                },
+                std::move(imageViewFut)));
     }
 
     TextureIndex GPUSceneContext::AddTexture(const ImageViewPtr &ptr) {

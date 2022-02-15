@@ -41,9 +41,8 @@ namespace sp {
         };
 
         for (auto &[path, pixelSize] : fontAssets) {
-            auto asset = GAssets.Load(path);
+            auto asset = GAssets.Load(path)->Get();
             Assertf(asset, "Failed to load gui font: %s", path);
-            asset->WaitUntilValid();
 
             Assert(asset->BufferSize() <= INT_MAX, "Buffer size overflows int");
             ImFontConfig cfg;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assets/Async.hh"
 #include "console/CFunc.hh"
 #include "core/Common.hh"
 #include "core/DispatchQueue.hh"
@@ -83,7 +84,7 @@ namespace sp {
         void CacheDebugLines();
 
         std::shared_ptr<physx::PxConvexMesh> CreateConvexMeshFromHull(const Model &model, const ConvexHull &hull);
-        std::shared_ptr<const ConvexHullSet> LoadConvexHullSet(const Model &model, bool decomposeHull);
+        AsyncPtr<ConvexHullSet> LoadConvexHullSet(const AsyncPtr<Model> &model, bool decomposeHull);
         bool LoadCollisionCache(ConvexHullSet &set, const Model &model, bool decomposeHull);
         void SaveCollisionCache(const Model &model, const ConvexHullSet &set, bool decomposeHull);
 
@@ -122,7 +123,7 @@ namespace sp {
         EntityMap<physx::PxJoint *> joints;
 
         std::mutex cacheMutex;
-        PreservingMap<string, ConvexHullSet> cache;
+        PreservingMap<string, Async<ConvexHullSet>> cache;
         DispatchQueue workQueue;
 
         friend class CharacterControlSystem;

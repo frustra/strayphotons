@@ -28,7 +28,7 @@
 #endif
 
 namespace sp {
-    Game::Game(cxxopts::ParseResult &options, Script *startupScript)
+    Game::Game(cxxopts::ParseResult &options, const Script *startupScript)
         : options(options), startupScript(startupScript),
 #ifdef SP_GRAPHICS_SUPPORT
           graphics(this),

@@ -953,8 +953,7 @@ namespace sp::vulkan {
         allocInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
         auto futStagingBuf = CreateBuffer(data, bufferInfo, allocInfo);
 
-        return frameEndQueue.Dispatch<ImagePtr>(std::move(futImage),
-            std::move(futStagingBuf),
+        return frameEndQueue.Dispatch<ImagePtr>(
             [=, this](ImagePtr image, BufferPtr stagingBuf) {
                 ZoneScopedN("PrepareImage");
                 auto transferCmd = GetFencedCommandContext(CommandContextType::TransferAsync);
@@ -1201,7 +1200,9 @@ namespace sp::vulkan {
                 }
                 Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eTransfer});
                 return image;
-            });
+            },
+            std::move(futImage),
+            std::move(futStagingBuf));
     }
 
     ImageViewPtr DeviceContext::CreateImageView(ImageViewCreateInfo info) {
@@ -1246,16 +1247,16 @@ namespace sp::vulkan {
         ZoneScoped;
         auto futImage = CreateImage(imageInfo, data);
 
-        return allocatorQueue.Dispatch<ImageViewPtr>(std::move(futImage), [=, this](ImagePtr image) {
-            auto viewI = viewInfo;
-            viewI.image = image;
-            return CreateImageView(viewI);
-        });
+        return allocatorQueue.Dispatch<ImageViewPtr>(
+            [=, this](ImagePtr image) {
+                auto viewI = viewInfo;
+                viewI.image = image;
+                return CreateImageView(viewI);
+            },
+            std::move(futImage));
     }
 
     shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {
-        image->WaitUntilValid();
-
         ImageCreateInfo createInfo;
         createInfo.extent = vk::Extent3D(image->GetWidth(), image->GetHeight(), 1);
         Assert(createInfo.extent.width > 0 && createInfo.extent.height > 0, "image has zero size");
@@ -1358,9 +1359,9 @@ namespace sp::vulkan {
     shared_ptr<Shader> DeviceContext::CreateShader(const string &name, Hash64 compareHash) {
         ZoneScoped;
         ZoneStr(name);
-        auto asset = GAssets.Load("shaders/vulkan/bin/" + name + ".spv", AssetType::Bundled, compareHash != Hash64());
+        auto asset =
+            GAssets.Load("shaders/vulkan/bin/" + name + ".spv", AssetType::Bundled, compareHash != Hash64())->Get();
         Assertf(asset, "could not load shader: %s", name);
-        asset->WaitUntilValid();
 
         auto newHash = Hash128To64(asset->Hash());
         if (compareHash == newHash) return nullptr;

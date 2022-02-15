@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assets/Async.hh"
 #include "console/CFunc.hh"
 #include "core/LockFreeMutex.hh"
 #include "core/PreservingMap.hh"
@@ -143,8 +144,8 @@ namespace sp::vulkan {
         LightingContext lights;
         LaserContext lasers;
         GPUSceneContext scene;
-        PreservingMap<string, Model, 10000> activeModels;
-        vector<shared_ptr<const sp::Model>> modelsToLoad;
+        PreservingMap<string, Model> activeModels;
+        vector<std::shared_ptr<const sp::Model>> modelsToLoad;
 
         struct RenderableGui {
             Tecs::Entity entity;

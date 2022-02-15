@@ -8,7 +8,6 @@ namespace sp {
     class Script : public NonCopyable {
     public:
         Script(const string &path, shared_ptr<const Asset> asset);
-        ~Script() {}
 
         const std::vector<string> &Lines() const;
 

@@ -628,7 +628,7 @@ namespace sp {
         Tecs::Entity &ent,
         const PreDrawFunc &preDraw) {
         auto &comp = ent.Get<ecs::Renderable>(lock);
-        if (!comp.model || !comp.model->Valid()) return;
+        if (!comp.model || !comp.model->Ready()) return;
 
         // Filter entities that aren't members of all layers in the view's visibility mask.
         ecs::Renderable::VisibilityMask mask = comp.visibility;
@@ -639,13 +639,14 @@ namespace sp {
 
         if (preDraw) preDraw(lock, ent);
 
-        auto model = activeModels.Load(comp.model->name);
-        if (!model) {
-            model = std::make_shared<GLModel>(comp.model, this);
-            activeModels.Register(comp.model->name, model);
+        auto model = comp.model->Get();
+        auto glModel = activeModels.Load(model->name);
+        if (!glModel) {
+            glModel = std::make_shared<GLModel>(model, this);
+            activeModels.Register(model->name, glModel);
         }
 
-        model->Draw(shader, modelMat, view, comp.model->Bones().size(), comp.model->Bones().data());
+        glModel->Draw(shader, modelMat, view, model->Bones().size(), model->Bones().data());
     }
 
     void VoxelRenderer::DrawGridDebug(const ecs::View &view, SceneShader *shader) {

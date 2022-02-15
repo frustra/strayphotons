@@ -46,8 +46,7 @@ namespace sp {
             framesPerBuffer,
             outstream->sample_rate);
 
-        testAsset = GAssets.Load("audio/test.ogg");
-        testAsset->WaitUntilValid();
+        testAsset = GAssets.Load("audio/test.ogg")->Get();
         loader.Load(&testAudio, "ogg", testAsset->Buffer());
 
         testObj = resonance->CreateStereoSource(2);

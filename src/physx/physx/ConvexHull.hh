@@ -29,18 +29,6 @@ namespace sp {
         vector<ConvexHull> hulls;
         robin_hood::unordered_flat_set<int> bufferIndexes;
         bool decomposed;
-
-        std::atomic_flag valid;
-
-        bool Valid() const {
-            return valid.test();
-        }
-
-        void WaitUntilValid() const {
-            while (!valid.test()) {
-                valid.wait(false);
-            }
-        }
     };
 
     namespace ConvexHullBuilding {
