@@ -65,10 +65,10 @@ namespace sp::vulkan {
                 "indexes overflow buffer");
 
             auto indexPtr = &indexBufferSrc.data[assetPrimitive.indexBuffer.byteOffset];
-            pendingWork.push_back(std::async(std::launch::async, [indexPtr, indexBufferSize, indexData]() {
-                ZoneScoped;
+            {
+                ZoneScopedN("CopyIndexData");
                 std::copy(indexPtr, indexPtr + indexBufferSize, (uint8 *)indexData);
-            }));
+            }
             indexData += vkPrimitive.indexCount;
 
             auto posAttr = assetPrimitive.attributes[0];
@@ -101,24 +101,22 @@ namespace sp::vulkan {
             const uint8 *normalBuffer = buffers[normalAttr.bufferIndex].data.data() + normalAttr.byteOffset;
             const uint8 *uvBuffer = buffers[uvAttr.bufferIndex].data.data() + uvAttr.byteOffset;
 
-            pendingWork.push_back(std::async(std::launch::async,
-                [posBuffer, normalBuffer, uvBuffer, posAttr, normalAttr, uvAttr, vertexCount, vertexData]() {
-                    ZoneScoped;
-                    for (size_t i = 0; i < vertexCount; i++) {
-                        SceneVertex &vertex = vertexData[i];
+            {
+                ZoneScopedN("CopyVertexData");
+                for (size_t i = 0; i < vertexCount; i++) {
+                    SceneVertex &vertex = vertexData[i];
 
-                        vertex.position = reinterpret_cast<const glm::vec3 &>(posBuffer[i * posAttr.byteStride]);
+                    vertex.position = reinterpret_cast<const glm::vec3 &>(posBuffer[i * posAttr.byteStride]);
 
-                        if (i < normalAttr.componentCount) {
-                            vertex.normal = reinterpret_cast<const glm::vec3 &>(
-                                normalBuffer[i * normalAttr.byteStride]);
-                        }
-
-                        if (i < uvAttr.componentCount) {
-                            vertex.uv = reinterpret_cast<const glm::vec2 &>(uvBuffer[i * uvAttr.byteStride]);
-                        }
+                    if (i < normalAttr.componentCount) {
+                        vertex.normal = reinterpret_cast<const glm::vec3 &>(normalBuffer[i * normalAttr.byteStride]);
                     }
-                }));
+
+                    if (i < uvAttr.componentCount) {
+                        vertex.uv = reinterpret_cast<const glm::vec2 &>(uvBuffer[i * uvAttr.byteStride]);
+                    }
+                }
+            }
 
             vertexData += vertexCount;
 
@@ -134,8 +132,8 @@ namespace sp::vulkan {
 
         auto meshModel = (GPUMeshModel *)modelEntry->Mapped();
         auto gpuPrimitives = (GPUMeshPrimitive *)primitiveList->Mapped();
-        pendingWork.push_back(std::async(std::launch::async, [this, gpuPrimitives, meshModel]() {
-            ZoneScoped;
+        {
+            ZoneScopedN("CopyPrimitives");
             auto gpuPrim = gpuPrimitives;
             for (auto &p : primitives) {
                 gpuPrim->indexCount = p->indexCount;
@@ -151,7 +149,7 @@ namespace sp::vulkan {
             meshModel->primitiveOffset = primitiveList->ArrayOffset();
             meshModel->indexOffset = indexBuffer->ArrayOffset();
             meshModel->vertexOffset = vertexBuffer->ArrayOffset();
-        }));
+        }
     }
 
     Model::~Model() {
