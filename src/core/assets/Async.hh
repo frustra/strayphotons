@@ -20,7 +20,7 @@ namespace sp {
 
         std::shared_ptr<const T> Get() {
             Assertf(this != nullptr, "AsyncPtr->Get() called on nullptr");
-            if (!value) value = std::shared_ptr<const T>(future.get());
+            if (!value && future.valid()) value = std::shared_ptr<const T>(future.get());
             return value;
         }
 

@@ -318,8 +318,6 @@ namespace sp {
     }
 
     AsyncPtr<ConvexHullSet> PhysxManager::LoadConvexHullSet(const AsyncPtr<Model> &asyncModel, bool decomposeHull) {
-        if (!asyncModel || !asyncModel->Ready()) return nullptr;
-
         auto modelPtr = asyncModel->Get();
         Assertf(modelPtr, "PhysxManager::LoadConvexHullSet called with null model");
         auto &model = *modelPtr;

@@ -23,7 +23,7 @@ namespace sp {
         template<typename T>
         class Future<std::future<T>> {
         public:
-            using ReturnType = typename T;
+            typedef T ReturnType;
 
             Future(std::future<T> &future) : future(std::move(future)) {}
 
@@ -42,7 +42,7 @@ namespace sp {
         template<typename T>
         struct Future<std::shared_future<T>> {
         public:
-            using ReturnType = typename T;
+            typedef T ReturnType;
 
             Future(const std::shared_future<T> &future) : future(future) {}
 
@@ -61,7 +61,7 @@ namespace sp {
         template<typename T>
         struct Future<AsyncPtr<T>> {
         public:
-            using ReturnType = typename std::shared_ptr<const T>;
+            typedef std::shared_ptr<const T> ReturnType;
 
             Future(const AsyncPtr<T> &future) : future(future) {}
 
@@ -94,12 +94,15 @@ namespace sp {
         virtual void Process() = 0;
         virtual bool Ready() = 0;
     };
-    template<typename ReturnType, typename FutureTuple, typename... ParameterTypes>
+    template<typename ReturnType, typename Fn, typename... Futures>
     struct DispatchQueueWorkItem final : public DispatchQueueWorkItemBase {
-        using Fn = std::function<ReturnType(ParameterTypes...)>;
+        using FutureTuple = std::tuple<detail::Future<Futures>...>;
+        using ResultTuple = std::tuple<typename detail::Future<Futures>::ReturnType...>;
 
-        DispatchQueueWorkItem(Fn &&func, FutureTuple &&futures)
-            : func(std::move(func)), waitForFutures(std::move(futures)) {}
+        template<typename... Args>
+        DispatchQueueWorkItem(Fn &&func, Args &&...args)
+            : func(std::move(func)),
+              waitForFutures(std::make_tuple(detail::Future<std::remove_cvref_t<Args>>(args)...)) {}
 
         std::promise<ReturnType> promise;
         Fn func;
@@ -107,7 +110,7 @@ namespace sp {
 
         void Process() {
             ZoneScoped;
-            std::tuple<ParameterTypes...> args;
+            ResultTuple args;
             {
                 ZoneScopedN("ResolveFutures");
                 args = std::apply(
@@ -125,7 +128,7 @@ namespace sp {
         }
 
         bool Ready() {
-            return detail::constexpr_for<0, sizeof...(ParameterTypes)>([this]<int I>() {
+            return detail::constexpr_for<0, sizeof...(Futures)>([this]<int I>() {
                 return std::get<I>(waitForFutures).Ready();
             });
         }
@@ -159,10 +162,9 @@ namespace sp {
         template<typename ReturnType, typename Fn, typename... Futures>
         std::future<ReturnType> Dispatch(Fn &&func, Futures &&...futures) {
             Assert(!exit, "tried to dispatch to a shut down queue");
-            auto item = make_shared<DispatchQueueWorkItem<ReturnType,
-                std::tuple<detail::Future<std::remove_cvref_t<Futures>>...>,
-                detail::Future<std::remove_cvref_t<Futures>>::ReturnType...>>(func,
-                std::make_tuple(detail::Future<std::remove_cvref_t<Futures>>(futures)...));
+            auto item = make_shared<DispatchQueueWorkItem<ReturnType, Fn, std::remove_cvref_t<Futures>...>>(
+                std::move(func),
+                std::move(futures)...);
 
             std::unique_lock<std::mutex> lock(mutex);
             auto fut = item->promise.get_future();

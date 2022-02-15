@@ -1,6 +1,7 @@
 #include "EventHandler.hh"
 
 #include "core/Logging.hh"
+#include "xr/openvr/OpenVrSystem.hh"
 
 #include <openvr.h>
 
@@ -8,16 +9,18 @@ namespace sp::xr {
     EventHandler::EventHandler(const OpenVrSystem &vrSystem) : vrSystem(vrSystem) {}
 
     void EventHandler::Frame() {
-        /* TODO: Determine which events we should follow:
-         - Pause rendering when headset isn't active
-         - Controller add/remove handling
-         - Overlay integrations
-         - SteamVR shutdown events
-        auto vr = vrSystem.vrSystem.lock();
+        /* TODO:
+         * Determine which events we should follow:
+         * Pause rendering when headset isn't active
+         * Controller add/remove handling
+         * Overlay integrations
+         * SteamVR shutdown events
+         */
+        auto vr = vrSystem.vrSystem;
 
         vr::VREvent_t event;
         while (vr && vr->PollNextEvent(&event, sizeof(event))) {
-            std::string str;
+            /*std::string str;
 
             switch (event.eventType) {
             case vr::VREvent_TrackedDeviceActivated:
@@ -213,7 +216,7 @@ namespace sp::xr {
                 break;
             default:
                 Debugf("[OVREvent] Unknown OpenVR event: %d", event.eventType);
-            }
-        }*/
+            } */
+        }
     }
 } // namespace sp::xr

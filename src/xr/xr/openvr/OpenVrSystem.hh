@@ -43,7 +43,8 @@ namespace sp {
 
             GraphicsContext *context;
 
-            std::atomic<std::shared_ptr<vr::IVRSystem>> vrSystem;
+            std::atomic_flag loaded;
+            std::shared_ptr<vr::IVRSystem> vrSystem;
             EventHandler eventHandler;
             std::shared_ptr<InputBindings> inputBindings;
 

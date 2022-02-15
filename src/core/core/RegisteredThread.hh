@@ -36,7 +36,6 @@ namespace sp {
         std::thread thread;
         std::atomic_bool exiting;
 
-        bool stepMode = false;
         std::atomic_uint64_t stepCount, maxStepCount;
     };
 
