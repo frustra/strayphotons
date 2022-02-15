@@ -2,6 +2,7 @@
 
 #include "Ecs.hh"
 #include "ecs/components/Animation.hh"
+#include "ecs/components/AudioSource.hh"
 #include "ecs/components/Controller.hh"
 #include "ecs/components/Events.hh"
 #include "ecs/components/Focus.hh"
