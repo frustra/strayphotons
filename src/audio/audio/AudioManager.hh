@@ -1,7 +1,9 @@
 #pragma once
 
 #include "assets/Asset.hh"
+#include "core/EntityMap.hh"
 #include "core/RegisteredThread.hh"
+#include "ecs/NamedEntity.hh"
 
 #include <libnyquist/Decoders.h>
 
@@ -34,11 +36,19 @@ namespace sp {
         size_t framesPerBuffer = 1024; // updated later depending on sample rate and desired latency
 
         nqr::NyquistIO loader;
-        nqr::AudioData testAudio;
 
-        shared_ptr<const Asset> testAsset;
-        int testObj = -1;
-        size_t bufferOffset = 0;
+        struct SourceState {
+            int resonanceID = -1;
+            size_t bufferOffset;
+            shared_ptr<const Asset> audioFile;
+            shared_ptr<nqr::AudioData> audioBuffer;
+        };
+
+        std::mutex sourceMutex;
+        EntityMap<SourceState> audioSources;
+        ecs::NamedEntity headEntity;
+
+        ecs::ComponentObserver<ecs::AudioSource> audioSourceObserver;
 
         static void AudioWriteCallback(SoundIoOutStream *outstream, int frameCountMin, int frameCountMax);
     };

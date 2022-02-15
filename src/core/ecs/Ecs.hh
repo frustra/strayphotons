@@ -30,6 +30,7 @@ namespace ecs {
     typedef std::string Name;
 
     class Animation;
+    class AudioSource;
     struct CharacterController;
     struct EventInput;
     class EventBindings;
@@ -61,6 +62,7 @@ namespace ecs {
 
     using ECS = Tecs::ECS<Name,
         Animation,
+        AudioSource,
         CharacterController,
         EventInput,
         EventBindings,
@@ -119,6 +121,7 @@ namespace ecs {
 
 TECS_NAME_COMPONENT(ecs::Name, "Name");
 TECS_NAME_COMPONENT(ecs::Animation, "Animation");
+TECS_NAME_COMPONENT(ecs::AudioSource, "AudioSource");
 TECS_NAME_COMPONENT(ecs::CharacterController, "CharacterController");
 TECS_NAME_COMPONENT(ecs::EventInput, "EventInput");
 TECS_NAME_COMPONENT(ecs::EventBindings, "EventBindings");
