@@ -1,3 +1,2 @@
-reloadbindings
 screenshot empty-state.png
 stepgraphics

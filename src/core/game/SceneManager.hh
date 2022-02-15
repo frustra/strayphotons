@@ -32,6 +32,7 @@ namespace sp {
         RemoveScene, // Arguments: (sceneName)
         ReloadPlayer, // Arguments: ()
         ReloadBindings, // Arguments: ()
+        SyncScene, // Arguments: ()
         Count,
     };
 
@@ -54,6 +55,8 @@ namespace sp {
                     return "ReloadPlayer";
                 case SceneAction::ReloadBindings:
                     return "ReloadBindings";
+                case SceneAction::SyncScene:
+                    return "SyncScene";
                 default:
                     return "SceneAction::INVALID";
                 }
@@ -78,6 +81,7 @@ namespace sp {
 
     private:
         void RunSceneActions();
+        void UpdateSceneConnections();
 
         using OnApplySceneCallback = std::function<void(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>,
             ecs::Lock<ecs::AddRemove>,

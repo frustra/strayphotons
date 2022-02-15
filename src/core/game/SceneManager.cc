@@ -285,6 +285,10 @@ namespace sp {
                     Errorf("Failed to load bindings scene!");
                 }
                 item.promise.set_value();
+            } else if (item.action == SceneAction::SyncScene) {
+                ZoneScopedN("SyncScene");
+                UpdateSceneConnections();
+                item.promise.set_value();
             } else {
                 Abortf("Unsupported SceneAction: %s", item.action);
             }
@@ -293,9 +297,8 @@ namespace sp {
         }
     }
 
-    void SceneManager::Frame() {
-        RunSceneActions();
-
+    void SceneManager::UpdateSceneConnections() {
+        ZoneScoped;
         std::vector<std::string> requiredList;
         {
             auto lock = liveWorld.StartTransaction<ecs::Read<ecs::Name,
@@ -327,8 +330,15 @@ namespace sp {
                 AddScene(sceneName, SceneType::Async);
             }
         }
+    }
+
+    void SceneManager::Frame() {
+        RunSceneActions();
+        UpdateSceneConnections();
 
         stagedScenes.Tick(this->interval, [this](std::shared_ptr<Scene> &scene) {
+            ZoneScopedN("RemoveExpiredScene");
+            ZoneStr(scene->name);
             auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
             auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
             scene->RemoveScene(stagingLock, liveLock);
@@ -584,6 +594,7 @@ namespace sp {
         SceneType sceneType,
         OnApplySceneCallback callback) {
         ZoneScoped;
+        ZonePrintf("%s scene: %s", sceneType, sceneName);
         auto loadedScene = stagedScenes.Load(sceneName);
         if (loadedScene != nullptr) {
             Logf("Scene %s already loaded", sceneName);

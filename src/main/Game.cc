@@ -98,6 +98,11 @@ namespace sp {
             funcs.Register<int>("sleep", "Pause script execution for N milliseconds", [](int ms) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(ms));
             });
+            funcs.Register("syncscene", "Pause script until all scenes are loaded", []() {
+                GetSceneManager().QueueActionAndBlock(SceneAction::SyncScene);
+            });
+
+            GetConsoleManager().QueueParseAndExecute("syncscene");
 
             Debugf("Running script: %s", startupScript->path);
             for (string line : startupScript->Lines()) {
