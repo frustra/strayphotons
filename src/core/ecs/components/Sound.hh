@@ -7,13 +7,13 @@ namespace sp {
 }
 
 namespace ecs {
-    class AudioSource {
+    class Sound {
     public:
         shared_ptr<const sp::Asset> file; // TODO: should make the asset system unpack the audio file
     };
 
-    static Component<AudioSource> ComponentAudioSource("audio_source");
+    static Component<Sound> ComponentSound("sound");
 
     template<>
-    bool Component<AudioSource>::Load(sp::Scene *scene, AudioSource &dst, const picojson::value &src);
+    bool Component<Sound>::Load(sp::Scene *scene, Sound &dst, const picojson::value &src);
 } // namespace ecs

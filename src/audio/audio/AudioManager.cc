@@ -14,7 +14,8 @@ namespace sp {
     void AudioManager::Init() {
         ZoneScoped;
 
-        headEntity = ecs::NamedEntity("player.flatview");
+        headEntity = ecs::NamedEntity("player.vr-hmd");
+        headEntityFallback = ecs::NamedEntity("player.flatview");
 
         soundio = soundio_create();
 
@@ -50,7 +51,7 @@ namespace sp {
 
         {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
-            audioSourceObserver = lock.Watch<ecs::ComponentEvent<ecs::AudioSource>>();
+            soundObserver = lock.Watch<ecs::ComponentEvent<ecs::Sound>>();
         }
     }
 
@@ -70,14 +71,14 @@ namespace sp {
         }
         SyncFromECS();
 
-        for (auto &it : audioSources) {
+        for (auto &it : sounds) {
             auto &state = it.second;
             if (!state.audioFile || !state.audioFile->Valid()) continue;
             if (!state.audioBuffer) {
                 auto audioBuffer = make_shared<nqr::AudioData>();
                 loader.Load(audioBuffer.get(), "ogg", state.audioFile->Buffer());
 
-                std::unique_lock lock(sourceMutex);
+                std::unique_lock lock(soundsMutex);
                 state.audioBuffer = std::move(audioBuffer);
                 state.bufferOffset = 0;
             }
@@ -86,24 +87,25 @@ namespace sp {
 
     void AudioManager::SyncFromECS() {
         ZoneScoped;
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::AudioSource, ecs::Transform, ecs::Name>>();
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Sound, ecs::Transform, ecs::Name>>();
 
-        ecs::ComponentEvent<ecs::AudioSource> event;
-        while (audioSourceObserver.Poll(lock, event)) {
+        ecs::ComponentEvent<ecs::Sound> event;
+        while (soundObserver.Poll(lock, event)) {
             if (event.type != Tecs::EventType::REMOVED) continue;
 
-            auto it = audioSources.find(event.entity);
-            if (it == audioSources.end()) continue;
+            auto it = sounds.find(event.entity);
+            if (it == sounds.end()) continue;
 
             auto &state = it->second;
             if (state.resonanceID >= 0) resonance->DestroySource(state.resonanceID);
 
-            std::lock_guard sourceLock(sourceMutex);
-            audioSources.erase(event.entity);
+            std::lock_guard soundsLock(soundsMutex);
+            sounds.erase(event.entity);
         }
 
         auto head = headEntity.Get(lock);
-        if (head.Has<ecs::Transform>(lock)) {
+        if (!head) head = headEntityFallback.Get(lock);
+        if (head && head.Has<ecs::Transform>(lock)) {
             auto transform = head.Get<ecs::Transform>(lock);
             auto pos = transform.GetPosition();
             auto rot = transform.GetRotation();
@@ -111,11 +113,11 @@ namespace sp {
             resonance->SetHeadRotation(rot.x, rot.y, rot.z, rot.w);
         }
 
-        for (auto ent : lock.EntitiesWith<ecs::AudioSource>()) {
-            auto &source = ent.Get<ecs::AudioSource>(lock);
+        for (auto ent : lock.EntitiesWith<ecs::Sound>()) {
+            auto &source = ent.Get<ecs::Sound>(lock);
 
-            std::lock_guard sourceLock(sourceMutex);
-            auto &state = audioSources[ent];
+            std::lock_guard soundsLock(soundsMutex);
+            auto &state = sounds[ent];
 
             if (!state.audioFile) state.audioFile = source.file;
 
@@ -170,8 +172,8 @@ namespace sp {
             if (self->resonance) {
                 {
                     ZoneScopedN("UpdateSources");
-                    std::lock_guard lock(self->sourceMutex);
-                    for (auto &it : self->audioSources) {
+                    std::lock_guard lock(self->soundsMutex);
+                    for (auto &it : self->sounds) {
                         auto &source = it.second;
                         if (!source.audioBuffer) continue;
 

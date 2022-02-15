@@ -37,18 +37,19 @@ namespace sp {
 
         nqr::NyquistIO loader;
 
-        struct SourceState {
+        struct SoundSource {
             int resonanceID = -1;
             size_t bufferOffset;
             shared_ptr<const Asset> audioFile;
             shared_ptr<nqr::AudioData> audioBuffer;
         };
 
-        std::mutex sourceMutex;
-        EntityMap<SourceState> audioSources;
-        ecs::NamedEntity headEntity;
+        std::mutex soundsMutex;
+        EntityMap<SoundSource> sounds;
 
-        ecs::ComponentObserver<ecs::AudioSource> audioSourceObserver;
+        ecs::NamedEntity headEntity, headEntityFallback;
+
+        ecs::ComponentObserver<ecs::Sound> soundObserver;
 
         static void AudioWriteCallback(SoundIoOutStream *outstream, int frameCountMin, int frameCountMax);
     };

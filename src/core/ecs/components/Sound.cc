@@ -1,4 +1,4 @@
-#include "AudioSource.hh"
+#include "Sound.hh"
 
 #include "assets/AssetHelpers.hh"
 #include "assets/AssetManager.hh"
@@ -9,7 +9,7 @@
 
 namespace ecs {
     template<>
-    bool Component<AudioSource>::Load(sp::Scene *scene, AudioSource &dst, const picojson::value &src) {
+    bool Component<Sound>::Load(sp::Scene *scene, Sound &dst, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "file") dst.file = sp::GAssets.Load("audio/" + param.second.get<string>() + ".ogg");
         }
