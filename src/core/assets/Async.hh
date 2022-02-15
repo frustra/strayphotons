@@ -12,26 +12,26 @@ namespace sp {
     template<typename T>
     class Async {
     public:
-        Async(std::unique_ptr<T> &&ptr) : value(std::move(ptr)) {}
-        Async(std::future<std::unique_ptr<T>> &&future) : future(std::move(future)) {}
-
-        bool Ready() {
-            std::lock_guard lock(mutex);
-            return value ||
-                   (future.valid() && future.wait_for(std::chrono::seconds(0)) != std::future_status::deferred);
+        Async(std::future<std::shared_ptr<T>> &&future) : future(future.share()) {
+            Assertf(this->future.valid(), "sp::Async created with invalid future");
+        }
+        Async(const std::shared_ptr<T> &ptr) {
+            future = std::async(std::launch::deferred, [ptr] {
+                return ptr;
+            }).share();
         }
 
-        std::shared_ptr<const T> Get() {
+        bool Ready() const {
+            return future.wait_for(std::chrono::seconds(0)) != std::future_status::timeout;
+        }
+
+        std::shared_ptr<T> Get() {
             Assertf(this != nullptr, "AsyncPtr->Get() called on nullptr");
-            std::lock_guard lock(mutex);
-            if (!value && future.valid()) value = std::shared_ptr<const T>(future.get());
-            return value;
+            return future.get();
         }
 
     private:
-        LockFreeMutex mutex;
-        std::shared_ptr<const T> value;
-        std::future<std::unique_ptr<T>> future;
+        std::shared_future<std::shared_ptr<T>> future;
     };
 
     template<typename T>

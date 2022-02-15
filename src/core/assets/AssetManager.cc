@@ -173,14 +173,14 @@ namespace sp {
                 if (asset) return asset;
             }
 
-            asset = std::make_shared<Async<Asset>>(workQueue.Dispatch<std::unique_ptr<Asset>>([this, path, type] {
+            asset = std::make_shared<Async<Asset>>(workQueue.Dispatch<std::shared_ptr<Asset>>([this, path, type] {
                 ZoneScopedN("LoadAsset");
                 ZoneStr(path);
                 std::ifstream in;
                 size_t size;
 
                 if (InputStream(path, type, in, &size)) {
-                    auto asset = std::make_unique<Asset>(path);
+                    auto asset = std::make_shared<Asset>(path);
                     asset->buffer.resize(size);
                     in.read((char *)asset->buffer.data(), size);
                     in.close();
@@ -188,7 +188,7 @@ namespace sp {
                     return asset;
                 } else {
                     Errorf("Asset does not exist: %s", path);
-                    return std::unique_ptr<Asset>();
+                    return std::shared_ptr<Asset>();
                 }
             }));
             loadedAssets[type].Register(path, asset, true /* allowReplace */);
@@ -250,13 +250,13 @@ namespace sp {
                     asset = Load(path, AssetType::External);
                 }
 
-                model = std::make_shared<Async<Model>>(workQueue.Dispatch<std::unique_ptr<Model>>(
+                model = std::make_shared<Async<Model>>(workQueue.Dispatch<std::shared_ptr<Model>>(
                     [this, name](std::shared_ptr<const Asset> asset) {
                         if (!asset) {
                             Logf("Model not found: %s", name);
-                            return std::unique_ptr<Model>();
+                            return std::shared_ptr<Model>();
                         }
-                        return std::make_unique<Model>(name, asset, gltfLoaderCallbacks.get());
+                        return std::make_shared<Model>(name, asset, gltfLoaderCallbacks.get());
                     },
                     asset));
                 loadedModels.Register(name, model);
@@ -278,13 +278,13 @@ namespace sp {
                 if (image) return image;
 
                 auto asset = Load(path);
-                image = std::make_shared<Async<Image>>(workQueue.Dispatch<std::unique_ptr<Image>>(
+                image = std::make_shared<Async<Image>>(workQueue.Dispatch<std::shared_ptr<Image>>(
                     [path](std::shared_ptr<const Asset> asset) {
                         if (!asset) {
                             Logf("Image not found: %s", path);
-                            return std::unique_ptr<Image>();
+                            return std::shared_ptr<Image>();
                         }
-                        return std::make_unique<Image>(asset);
+                        return std::make_shared<Image>(asset);
                     },
                     asset));
 
@@ -299,14 +299,14 @@ namespace sp {
         Logf("Loading script: %s", path);
 
         auto asset = Load("scripts/" + path);
-        return std::make_shared<Async<Script>>(workQueue.Dispatch<std::unique_ptr<Script>>(
+        return std::make_shared<Async<Script>>(workQueue.Dispatch<std::shared_ptr<Script>>(
             [path](std::shared_ptr<const Asset> asset) {
                 if (!asset) {
                     Logf("Script not found: %s", path);
-                    return std::unique_ptr<Script>();
+                    return std::shared_ptr<Script>();
                 }
 
-                return std::make_unique<Script>(path, asset);
+                return std::make_shared<Script>(path, asset);
             },
             asset));
     }
