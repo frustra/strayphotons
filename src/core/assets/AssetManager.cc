@@ -161,10 +161,11 @@ namespace sp {
         return !!stream;
     }
 
-    std::shared_ptr<const Asset> AssetManager::Load(const std::string &path, AssetType type, bool reload) {
+    Async<Asset> AssetManager::Load(const std::string &path, AssetType type, bool reload) {
         Assert(!path.empty(), "AssetManager::Load called with empty path");
 
         auto asset = loadedAssets[type].Load(path);
+        if (asset && !reload) return Async(asset);
         if (!asset || reload) {
             {
                 std::lock_guard lock(assetMutex);
