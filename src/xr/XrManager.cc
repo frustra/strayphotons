@@ -17,6 +17,14 @@ namespace sp::xr {
     void XrManager::LoadXrSystem() {
         std::lock_guard lock(xrLoadMutex);
 
+        {
+            // ensure old system shuts down before initializing a new one
+            auto oldSystem = xrSystem;
+            xrSystem.reset();
+            while (oldSystem.use_count() > 1)
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
+
     #ifdef SP_XR_SUPPORT_OPENVR
         xrSystem = std::make_shared<OpenVrSystem>();
     #else
@@ -28,15 +36,7 @@ namespace sp::xr {
             return;
         }
 
-        try {
-            if (!xrSystem->Initialize(game->graphics.GetContext())) {
-                Errorf("XR Runtime initialization failed!");
-                xrSystem.reset();
-            }
-        } catch (const std::exception &ex) {
-            Errorf("XR Runtime threw error on initialization! Error: %s", ex.what());
-            xrSystem.reset();
-        }
+        xrSystem->Initialize(game->graphics.GetContext());
     }
 
     std::shared_ptr<XrSystem> XrManager::GetXrSystem() {

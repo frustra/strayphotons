@@ -11,7 +11,7 @@ namespace sp {
         StartThread();
     }
 
-    void AudioManager::Init() {
+    bool AudioManager::ThreadInit() {
         ZoneScoped;
 
         headEntity = ecs::NamedEntity("player.vr-hmd");
@@ -53,6 +53,7 @@ namespace sp {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
             soundObserver = lock.Watch<ecs::ComponentEvent<ecs::Sound>>();
         }
+        return true;
     }
 
     AudioManager::~AudioManager() {

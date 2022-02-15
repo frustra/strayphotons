@@ -22,10 +22,6 @@ namespace sp::xr {
 
         std::shared_ptr<XrSystem> GetXrSystem();
 
-    #ifdef SP_GRAPHICS_SUPPORT_VK
-
-    #endif
-
     private:
         sp::Game *game = nullptr;
         CFuncCollection funcs;
