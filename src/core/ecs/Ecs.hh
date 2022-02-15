@@ -30,7 +30,6 @@ namespace ecs {
     typedef std::string Name;
 
     class Animation;
-    class AudioSource;
     struct CharacterController;
     struct EventInput;
     class EventBindings;
@@ -51,6 +50,7 @@ namespace ecs {
     class Script;
     class SignalOutput;
     class SignalBindings;
+    class Sound;
     struct Transform;
     typedef Transform TransformSnapshot;
     struct TransformTree;
@@ -62,7 +62,6 @@ namespace ecs {
 
     using ECS = Tecs::ECS<Name,
         Animation,
-        AudioSource,
         CharacterController,
         EventInput,
         EventBindings,
@@ -83,6 +82,7 @@ namespace ecs {
         Script,
         SignalOutput,
         SignalBindings,
+        Sound,
         TransformSnapshot,
         TransformTree,
         TriggerArea,
@@ -121,7 +121,6 @@ namespace ecs {
 
 TECS_NAME_COMPONENT(ecs::Name, "Name");
 TECS_NAME_COMPONENT(ecs::Animation, "Animation");
-TECS_NAME_COMPONENT(ecs::AudioSource, "AudioSource");
 TECS_NAME_COMPONENT(ecs::CharacterController, "CharacterController");
 TECS_NAME_COMPONENT(ecs::EventInput, "EventInput");
 TECS_NAME_COMPONENT(ecs::EventBindings, "EventBindings");
@@ -142,6 +141,7 @@ TECS_NAME_COMPONENT(ecs::SceneInfo, "SceneInfo");
 TECS_NAME_COMPONENT(ecs::Script, "Script");
 TECS_NAME_COMPONENT(ecs::SignalOutput, "SignalOutput");
 TECS_NAME_COMPONENT(ecs::SignalBindings, "SignalBindings");
+TECS_NAME_COMPONENT(ecs::Sound, "Sound");
 TECS_NAME_COMPONENT(ecs::TransformSnapshot, "TransformSnapshot");
 TECS_NAME_COMPONENT(ecs::TransformTree, "TransformTree");
 TECS_NAME_COMPONENT(ecs::TriggerArea, "TriggerArea");

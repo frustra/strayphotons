@@ -1,7 +1,7 @@
 {
 	"entities": [
 		{
-			"audio_source": {
+			"sound": {
 				"file": "test"
 			},
 			"transform": {
