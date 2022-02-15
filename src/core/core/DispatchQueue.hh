@@ -23,7 +23,7 @@ namespace sp {
         template<typename T>
         class Future<std::future<T>> {
         public:
-            using ReturnType = T;
+            using ReturnType = typename T;
 
             Future(std::future<T> &future) : future(std::move(future)) {}
 
@@ -42,7 +42,7 @@ namespace sp {
         template<typename T>
         struct Future<std::shared_future<T>> {
         public:
-            using ReturnType = T;
+            using ReturnType = typename T;
 
             Future(const std::shared_future<T> &future) : future(future) {}
 
@@ -61,7 +61,7 @@ namespace sp {
         template<typename T>
         struct Future<AsyncPtr<T>> {
         public:
-            using ReturnType = std::shared_ptr<const T>;
+            using ReturnType = typename std::shared_ptr<const T>;
 
             Future(const AsyncPtr<T> &future) : future(future) {}
 

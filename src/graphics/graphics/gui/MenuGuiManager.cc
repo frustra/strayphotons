@@ -348,7 +348,8 @@ namespace sp {
             ImGui::Begin("MenuCredits", nullptr, flags);
 
             if (!frustraLogoTex) {
-                frustraLogoTex = graphics.GetContext()->LoadTexture(GAssets.LoadImage("logos/credits-frustra.png")->Get());
+                frustraLogoTex = graphics.GetContext()->LoadTexture(
+                    GAssets.LoadImage("logos/credits-frustra.png")->Get());
             }
             ImVec2 frLogoSize(frustraLogoTex->GetWidth() * 0.5f, frustraLogoTex->GetHeight() * 0.5f);
 
