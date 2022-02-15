@@ -77,23 +77,13 @@ namespace sp {
         private:
             AsyncPtr<T> future;
         };
-
-        template<auto Start, auto End, auto Increment = 1, class Fn>
-        constexpr bool constexpr_for(Fn &&f) {
-            if constexpr (Start < End) {
-                auto continued = f.template operator()<Start>();
-                if (continued) return constexpr_for<Start + Increment, End>(f);
-                return false;
-            } else {
-                return true;
-            }
-        }
     } // namespace detail
 
     struct DispatchQueueWorkItemBase {
         virtual void Process() = 0;
         virtual bool Ready() = 0;
     };
+
     template<typename ReturnType, typename Fn, typename... Futures>
     struct DispatchQueueWorkItem final : public DispatchQueueWorkItemBase {
         using FutureTuple = std::tuple<detail::Future<Futures>...>;
@@ -128,9 +118,11 @@ namespace sp {
         }
 
         bool Ready() {
-            return detail::constexpr_for<0, sizeof...(Futures)>([this]<int I>() {
-                return std::get<I>(waitForFutures).Ready();
-            });
+            return std::apply(
+                [](auto &&...future) {
+                    return (future.Ready() && ...);
+                },
+                waitForFutures);
         }
     };
 
@@ -153,8 +145,9 @@ namespace sp {
          * Queues a function.
          * Returns a future that will be resolved with the return value of the function.
          * After input futures are ready, the function will be called with their values.
+         * Supported input types are std::future, std::shared_future, and sp::AsyncPtr
          *
-         * Usage: Dispatch<R>(std::future<T>..., [](T...) { return R(); });
+         * Usage: Dispatch<R>(FutureType<T>..., [](T...) { return R(); });
          * Example:
          *  auto image = queue.Dispatch<ImagePtr>([]() { return MakeImagePtr(); });
          *  queue.Dispatch<void>(std::move(image), [](ImagePtr image) { });
