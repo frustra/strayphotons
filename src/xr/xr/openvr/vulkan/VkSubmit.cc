@@ -48,9 +48,9 @@ namespace sp::xr {
 
         // Work around OpenVR barrier bug: https://github.com/ValveSoftware/openvr/issues/1591
         if (vrEye == vr::Eye_Right) {
-            if (width != tex->GetWidth() || height != tex->GetHeight()) {
-                width = tex->GetWidth();
-                height = tex->GetHeight();
+            if (texWidth != tex->GetWidth() || texHeight != tex->GetHeight()) {
+                texWidth = tex->GetWidth();
+                texHeight = tex->GetHeight();
                 frameCountWorkaround = 0;
             }
             if (frameCountWorkaround < 4) {

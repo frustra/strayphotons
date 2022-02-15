@@ -39,6 +39,7 @@ namespace sp {
 
         private:
             void Frame() override;
+            bool ThreadInit() override;
 
             void RegisterModels();
 
@@ -60,7 +61,8 @@ namespace sp {
             std::array<ecs::NamedEntity *, vr::k_unMaxTrackedDeviceCount> trackedDevices = {};
 
             uint32 frameCountWorkaround = 0;
-            int width = 0, height = 0;
+            int texWidth = 0, texHeight = 0;
+            uint32_t vrWidth = 0, vrHeight = 0;
         };
 
     } // namespace xr

@@ -41,10 +41,18 @@ namespace sp::xr {
         if (vrSystem) return true;
         this->context = context;
 
+        StartThread();
+        return true;
+    }
+
+    bool OpenVrSystem::ThreadInit() {
+        ZoneScoped;
         vr::EVRInitError err = vr::VRInitError_None;
+
         auto vrSystemPtr = vr::VR_Init(&err, vr::VRApplication_Scene);
 
         if (err == vr::VRInitError_None) {
+            auto context = this->context;
             vrSystem = std::shared_ptr<vr::IVRSystem>(vrSystemPtr, [context](auto *ptr) {
                 Logf("Shutting down OpenVR");
                 context->WaitIdle();
@@ -62,7 +70,6 @@ namespace sp::xr {
         std::string actionManifestPath = std::filesystem::absolute("actions.json").string();
         inputBindings = std::make_shared<InputBindings>(*this, actionManifestPath);
 
-        uint32_t vrWidth, vrHeight;
         vrSystem->GetRecommendedRenderTargetSize(&vrWidth, &vrHeight);
         Logf("OpenVR Render Target Size: %u x %u", vrWidth, vrHeight);
 
@@ -70,7 +77,7 @@ namespace sp::xr {
 
         GetSceneManager().QueueActionAndBlock(SceneAction::AddSystemScene,
             "vr-system",
-            [this, vrWidth, vrHeight](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+            [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto vrOrigin = lock.NewEntity();
                 vrOrigin.Set<ecs::Name>(lock, vrOriginEntity.Name());
                 vrOrigin.Set<ecs::SceneInfo>(lock, vrOrigin, ecs::SceneInfo::Priority::System, scene);
@@ -114,12 +121,11 @@ namespace sp::xr {
                 }
             });
 
-        StartThread();
         return true;
     }
 
     bool OpenVrSystem::IsInitialized() {
-        return vrSystem != nullptr;
+        return vrSystem != nullptr && vrWidth > 0 && vrHeight > 0;
     }
 
     bool OpenVrSystem::IsHmdPresent() {
@@ -166,6 +172,7 @@ namespace sp::xr {
     }
 
     void OpenVrSystem::Frame() {
+        ZoneScoped;
         if (eventHandler) eventHandler->Frame();
 
         vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];

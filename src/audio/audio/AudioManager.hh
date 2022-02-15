@@ -22,7 +22,7 @@ namespace sp {
         ~AudioManager();
 
     protected:
-        virtual void Init() override;
+        virtual bool ThreadInit() override;
         virtual void Frame() override;
 
     private:
