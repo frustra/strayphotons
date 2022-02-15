@@ -30,7 +30,7 @@ namespace sp::xr {
         }
     }
 
-    OpenVrSystem::OpenVrSystem(sp::GraphicsContext *context)
+    OpenVrSystem::OpenVrSystem(GraphicsContext *context)
         : RegisteredThread("OpenVR", 120.0, true), context(context), eventHandler(*this) {
         StartThread();
     }
@@ -43,79 +43,29 @@ namespace sp::xr {
         vrSystem.reset();
     }
 
-    bool OpenVrSystem::GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) {
-        if (!loaded.test() || !vrSystem) return false;
-
-        float frameTimeRemaining = vr::VRCompositor()->GetFrameTimeRemaining();
-        float vSyncToPhotons = vrSystem->GetFloatTrackedDeviceProperty(vr::k_unTrackedDeviceIndex_Hmd,
-            vr::Prop_SecondsFromVsyncToPhotons_Float);
-
-        vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd + 1];
-        vrSystem->GetDeviceToAbsoluteTrackingPose(vr::TrackingUniverseOrigin::TrackingUniverseStanding,
-            frameTimeRemaining + vSyncToPhotons,
-            trackedDevicePoses,
-            vr::k_unTrackedDeviceIndex_Hmd + 1);
-
-        if (trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid) {
-            glm::mat4 hmdPose = glm::mat4(glm::make_mat3x4(
-                (float *)trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking.m));
-
-            vr::HmdMatrix34_t eyePosOvr = vrSystem->GetEyeToHeadTransform(MapXrEyeToOpenVr(eye));
-            glm::mat4 eyeToHmdPose = glm::mat4(glm::make_mat3x4((float *)eyePosOvr.m));
-
-            invViewMat = glm::transpose(eyeToHmdPose * hmdPose);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    void OpenVrSystem::WaitFrame() {
+    bool OpenVrSystem::ThreadInit() {
         ZoneScoped;
-        if (loaded.test()) {
-            vr::EVRCompositorError error = vr::VRCompositor()->WaitGetPoses(nullptr, 0, nullptr, 0);
-            Assert(error == vr::EVRCompositorError::VRCompositorError_None,
-                "WaitGetPoses failed: " + std::to_string((int)error));
-        }
-    }
-
-    ecs::NamedEntity OpenVrSystem::GetEntityForDeviceIndex(size_t index) {
-        if (index >= trackedDevices.size() || trackedDevices[index] == nullptr) return ecs::NamedEntity();
-
-        return *trackedDevices[index];
-    }
-
-    void OpenVrSystem::Init() {
         if (!vr::VR_IsRuntimeInstalled() || !vr::VR_IsHmdPresent()) {
             Logf("No VR HMD is present.");
-            StopThread(false);
-            return;
+            return false;
         }
 
-        try {
-            vr::EVRInitError err = vr::VRInitError_None;
-            auto vrSystemPtr = vr::VR_Init(&err, vr::VRApplication_Scene);
+        vr::EVRInitError err = vr::VRInitError_None;
+        auto vrSystemPtr = vr::VR_Init(&err, vr::VRApplication_Scene);
 
-            if (err == vr::VRInitError_None) {
-                Tracef("OpenVrSystem initialized");
-                vrSystem = std::shared_ptr<vr::IVRSystem>(vrSystemPtr, [this](auto *ptr) {
-                    Logf("Shutting down OpenVR");
-                    context->WaitIdle();
-                    vr::VR_Shutdown();
-                });
-                loaded.test_and_set();
-                loaded.notify_all();
-            } else {
-                Errorf("Failed to load OpenVR system: %s", VR_GetVRInitErrorAsSymbol(err));
-                Errorf("Run 'reloadxrsystem' in the console to try again.");
-                StopThread(false);
-                return;
-            }
-        } catch (const std::exception &ex) {
-            Errorf("XR Runtime threw error on initialization! Error: %s", ex.what());
-            StopThread(false);
-            return;
+        if (err == vr::VRInitError_None) {
+            Tracef("OpenVrSystem initialized");
+            vrSystem = std::shared_ptr<vr::IVRSystem>(vrSystemPtr, [this](auto *ptr) {
+                Logf("Shutting down OpenVR");
+                context->WaitIdle();
+                vr::VR_Shutdown();
+            });
+            loaded.test_and_set();
+            loaded.notify_all();
+        } else {
+            Errorf("Failed to load OpenVR system: %s", VR_GetVRInitErrorAsSymbol(err));
+            Errorf("Run 'reloadxrsystem' in the console to try again.");
+            return false;
         }
 
         // Initialize SteamVR Input subsystem
@@ -127,8 +77,6 @@ namespace sp::xr {
         GetSceneManager().QueueActionAndBlock(SceneAction::AddSystemScene,
             "vr-system",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                if (!vrSystem) return;
-
                 auto vrOrigin = lock.NewEntity();
                 vrOrigin.Set<ecs::Name>(lock, vrOriginEntity.Name());
                 vrOrigin.Set<ecs::SceneInfo>(lock, vrOrigin, ecs::SceneInfo::Priority::System, scene);
@@ -175,6 +123,51 @@ namespace sp::xr {
                     view.visibilityMask.set(ecs::Renderable::VISIBLE_DIRECT_EYE);
                 }
             });
+
+        return true;
+    }
+
+    bool OpenVrSystem::GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) {
+        if (!loaded.test() || !vrSystem) return false;
+
+        float frameTimeRemaining = vr::VRCompositor()->GetFrameTimeRemaining();
+        float vSyncToPhotons = vrSystem->GetFloatTrackedDeviceProperty(vr::k_unTrackedDeviceIndex_Hmd,
+            vr::Prop_SecondsFromVsyncToPhotons_Float);
+
+        vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd + 1];
+        vrSystem->GetDeviceToAbsoluteTrackingPose(vr::TrackingUniverseOrigin::TrackingUniverseStanding,
+            frameTimeRemaining + vSyncToPhotons,
+            trackedDevicePoses,
+            vr::k_unTrackedDeviceIndex_Hmd + 1);
+
+        if (trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid) {
+            glm::mat4 hmdPose = glm::mat4(glm::make_mat3x4(
+                (float *)trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking.m));
+
+            vr::HmdMatrix34_t eyePosOvr = vrSystem->GetEyeToHeadTransform(MapXrEyeToOpenVr(eye));
+            glm::mat4 eyeToHmdPose = glm::mat4(glm::make_mat3x4((float *)eyePosOvr.m));
+
+            invViewMat = glm::transpose(eyeToHmdPose * hmdPose);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    void OpenVrSystem::WaitFrame() {
+        ZoneScoped;
+        if (loaded.test()) {
+            vr::EVRCompositorError error = vr::VRCompositor()->WaitGetPoses(nullptr, 0, nullptr, 0);
+            Assert(error == vr::EVRCompositorError::VRCompositorError_None,
+                "WaitGetPoses failed: " + std::to_string((int)error));
+        }
+    }
+
+    ecs::NamedEntity OpenVrSystem::GetEntityForDeviceIndex(size_t index) {
+        if (index >= trackedDevices.size() || trackedDevices[index] == nullptr) return ecs::NamedEntity();
+
+        return *trackedDevices[index];
     }
 
     void OpenVrSystem::Frame() {

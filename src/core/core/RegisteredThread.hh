@@ -30,7 +30,10 @@ namespace sp {
         virtual void FramePreload(){};
 
         // Will be called once in the thread, before the first call to Frame()
-        virtual void Init() {}
+        // If this returns false, the thread will be stopped
+        virtual bool ThreadInit() {
+            return true;
+        }
 
     private:
         std::thread thread;
@@ -38,6 +41,4 @@ namespace sp {
 
         std::atomic_uint64_t stepCount, maxStepCount;
     };
-
-    std::vector<RegisteredThread *> &GetRegisteredThreads();
 } // namespace sp

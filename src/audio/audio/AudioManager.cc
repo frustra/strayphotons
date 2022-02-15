@@ -11,8 +11,11 @@ namespace sp {
         StartThread();
     }
 
-    void AudioManager::Init() {
+    bool AudioManager::ThreadInit() {
         ZoneScoped;
+
+        headEntity = ecs::NamedEntity("player.vr-hmd");
+        headEntityFallback = ecs::NamedEntity("player.flatview");
 
         soundio = soundio_create();
 
@@ -46,11 +49,11 @@ namespace sp {
             framesPerBuffer,
             outstream->sample_rate);
 
-        testAsset = GAssets.Load("audio/test.ogg")->Get();
-        loader.Load(&testAudio, "ogg", testAsset->Buffer());
-
-        testObj = resonance->CreateStereoSource(2);
-        resonance->SetSourceVolume(testObj, 0.5f);
+        {
+            auto lock = ecs::World.StartTransaction<ecs::AddRemove>();
+            soundObserver = lock.Watch<ecs::ComponentEvent<ecs::Sound>>();
+        }
+        return true;
     }
 
     AudioManager::~AudioManager() {
@@ -68,11 +71,73 @@ namespace sp {
             soundio_flush_events(soundio);
         }
         SyncFromECS();
+
+        for (auto &it : sounds) {
+            auto &state = it.second;
+            if (!state.audioFile || !state.audioFile->Ready()) continue;
+            if (!state.audioBuffer) {
+                auto file = state.audioFile->Get();
+                Assertf(file, "Audio file missing");
+                auto audioBuffer = make_shared<nqr::AudioData>();
+                loader.Load(audioBuffer.get(), "ogg", file->Buffer());
+
+                std::unique_lock lock(soundsMutex);
+                state.audioBuffer = std::move(audioBuffer);
+                state.bufferOffset = 0;
+            }
+        }
     }
 
     void AudioManager::SyncFromECS() {
         ZoneScoped;
-        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Transform, ecs::Name>>();
+        auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Sound, ecs::Transform, ecs::Name>>();
+
+        ecs::ComponentEvent<ecs::Sound> event;
+        while (soundObserver.Poll(lock, event)) {
+            if (event.type != Tecs::EventType::REMOVED) continue;
+
+            auto it = sounds.find(event.entity);
+            if (it == sounds.end()) continue;
+
+            auto &state = it->second;
+            if (state.resonanceID >= 0) resonance->DestroySource(state.resonanceID);
+
+            std::lock_guard soundsLock(soundsMutex);
+            sounds.erase(event.entity);
+        }
+
+        auto head = headEntity.Get(lock);
+        if (!head) head = headEntityFallback.Get(lock);
+        if (head && head.Has<ecs::Transform>(lock)) {
+            auto transform = head.Get<ecs::Transform>(lock);
+            auto pos = transform.GetPosition();
+            auto rot = transform.GetRotation();
+            resonance->SetHeadPosition(pos.x, pos.y, pos.z);
+            resonance->SetHeadRotation(rot.x, rot.y, rot.z, rot.w);
+        }
+
+        for (auto ent : lock.EntitiesWith<ecs::Sound>()) {
+            auto &source = ent.Get<ecs::Sound>(lock);
+
+            std::lock_guard soundsLock(soundsMutex);
+            auto &state = sounds[ent];
+
+            if (!state.audioFile) state.audioFile = source.file;
+
+            if (state.resonanceID == -1) {
+                state.resonanceID = resonance->CreateSoundObjectSource(vraudio::kBinauralHighQuality);
+            }
+
+            resonance->SetSourceVolume(state.resonanceID, 0.5f);
+
+            if (ent.Has<ecs::Transform>(lock)) {
+                auto &transform = ent.Get<ecs::Transform>(lock);
+                auto pos = transform.GetPosition();
+                auto rot = transform.GetRotation();
+                resonance->SetSourcePosition(state.resonanceID, pos.x, pos.y, pos.z);
+                resonance->SetSourceRotation(state.resonanceID, rot.x, rot.y, rot.z, rot.w);
+            }
+        }
     }
 
     const float Zeros[16] = {0};
@@ -107,19 +172,27 @@ namespace sp {
         const float *lastSample = Zeros;
 
         while (framesToWrite >= framesPerBuffer) {
-            ZoneScopedN("Render");
-
             if (self->resonance) {
-                if (self->testObj >= 0) {
-                    auto floatsPerBuffer2 = framesPerBuffer * self->testAudio.channelCount;
-                    auto offset = self->bufferOffset % (self->testAudio.samples.size() - floatsPerBuffer2 + 1);
-                    self->resonance->SetInterleavedBuffer(self->testObj,
-                        &self->testAudio.samples[offset],
-                        self->testAudio.channelCount,
-                        framesPerBuffer);
-                    self->bufferOffset += floatsPerBuffer2;
+                {
+                    ZoneScopedN("UpdateSources");
+                    std::lock_guard lock(self->soundsMutex);
+                    for (auto &it : self->sounds) {
+                        auto &source = it.second;
+                        if (!source.audioBuffer) continue;
+
+                        auto &audioBuffer = *source.audioBuffer;
+                        self->resonance->SetInterleavedBuffer(source.resonanceID,
+                            &audioBuffer.samples[source.bufferOffset],
+                            audioBuffer.channelCount,
+                            framesPerBuffer);
+
+                        auto floatsPerSourceBuffer = framesPerBuffer * audioBuffer.channelCount;
+                        source.bufferOffset = (source.bufferOffset + floatsPerSourceBuffer) %
+                                              (audioBuffer.samples.size() - floatsPerSourceBuffer + 1);
+                    }
                 }
 
+                ZoneScopedN("Render");
                 self->resonance->FillInterleavedOutputBuffer(channelCount, framesPerBuffer, outputBuffer);
             } else {
                 std::fill(outputBuffer, outputBuffer + floatsPerBuffer, 0);

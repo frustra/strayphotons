@@ -50,6 +50,7 @@ namespace ecs {
     class Script;
     class SignalOutput;
     class SignalBindings;
+    class Sound;
     struct Transform;
     typedef Transform TransformSnapshot;
     struct TransformTree;
@@ -81,6 +82,7 @@ namespace ecs {
         Script,
         SignalOutput,
         SignalBindings,
+        Sound,
         TransformSnapshot,
         TransformTree,
         TriggerArea,
@@ -139,6 +141,7 @@ TECS_NAME_COMPONENT(ecs::SceneInfo, "SceneInfo");
 TECS_NAME_COMPONENT(ecs::Script, "Script");
 TECS_NAME_COMPONENT(ecs::SignalOutput, "SignalOutput");
 TECS_NAME_COMPONENT(ecs::SignalBindings, "SignalBindings");
+TECS_NAME_COMPONENT(ecs::Sound, "Sound");
 TECS_NAME_COMPONENT(ecs::TransformSnapshot, "TransformSnapshot");
 TECS_NAME_COMPONENT(ecs::TransformTree, "TransformTree");
 TECS_NAME_COMPONENT(ecs::TriggerArea, "TriggerArea");

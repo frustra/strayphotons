@@ -36,7 +36,7 @@ namespace sp {
             HiddenAreaMesh GetHiddenAreaMesh(ecs::XrEye eye) override;
 
         private:
-            void Init() override;
+            bool ThreadInit() override;
             void Frame() override;
 
             void RegisterModels();
@@ -60,7 +60,7 @@ namespace sp {
             std::array<ecs::NamedEntity *, vr::k_unMaxTrackedDeviceCount> trackedDevices = {};
 
             uint32 frameCountWorkaround = 0;
-            int width = 0, height = 0;
+            int texWidth = 0, texHeight = 0;
 
             friend class EventHandler;
         };

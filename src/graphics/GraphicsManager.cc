@@ -49,6 +49,16 @@ namespace sp {
         });
     #endif
 
+    #if defined(SP_GRAPHICS_SUPPORT_HEADLESS) || defined(SP_TEST_MODE)
+    const uint32 DefaultMaxFPS = 90;
+    #else
+    const uint32 DefaultMaxFPS = 0;
+    #endif
+
+    static CVar<uint32> CVarMaxFPS("r.MaxFPS",
+        DefaultMaxFPS,
+        "wait between frames to target this framerate (0 to disable)");
+
     GraphicsManager::GraphicsManager(Game *game) : game(game) {}
 
     GraphicsManager::~GraphicsManager() {
@@ -117,6 +127,8 @@ namespace sp {
         renderer = make_unique<vulkan::Renderer>(*vkContext, timer);
         renderer->SetDebugGui(*game->debugGui.get());
     #endif
+
+        previousFrameEnd = chrono_clock::now();
     }
 
     bool GraphicsManager::HasActiveContext() {
@@ -173,24 +185,37 @@ namespace sp {
         timer.StartFrame();
         context->BeginFrame();
 
+        chrono_clock::duration frameInterval = std::chrono::microseconds(0);
+        auto maxFPS = CVarMaxFPS.Get();
+        if (maxFPS > 0) frameInterval = std::chrono::microseconds(1000000 / CVarMaxFPS.Get());
+
         #ifdef SP_TEST_MODE
         if (stepCount < maxStepCount) {
             renderer->RenderFrame();
             stepCount++;
             stepCount.notify_all();
+            if (stepCount < maxStepCount) frameInterval = std::chrono::microseconds(0);
         }
         #else
         renderer->RenderFrame();
         #endif
+
         #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
         context->SwapBuffers();
-        #else
-        // TODO: Configurable headless frame rate
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         #endif
         renderer->EndFrame();
         timer.EndFrame();
         context->EndFrame();
+
+        auto frameEnd = previousFrameEnd + frameInterval;
+        auto realFrameEnd = chrono_clock::now();
+
+        if (frameEnd > realFrameEnd) {
+            std::this_thread::sleep_until(frameEnd);
+            previousFrameEnd = frameEnd;
+        } else {
+            previousFrameEnd = realFrameEnd;
+        }
         return true;
     #endif
 

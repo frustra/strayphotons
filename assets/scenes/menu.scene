@@ -1,6 +1,14 @@
 {
 	"entities": [
 		{
+			"sound": {
+				"file": "test"
+			},
+			"transform": {
+				"translate": [0, 1, -4]
+			}
+		},
+		{
 			"__comment": "floor",
 			"renderable": "box",
 			"transform": {

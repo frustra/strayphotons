@@ -1,6 +1,7 @@
 
 target_sources(${PROJECT_CORE_LIB} PRIVATE
     Animation.cc
+    Sound.cc
     Controller.cc
     Events.cc
     Focus.cc

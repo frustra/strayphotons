@@ -19,6 +19,14 @@ namespace sp::xr {
         ZoneScoped;
         std::lock_guard lock(xrLoadMutex);
 
+        {
+            // ensure old system shuts down before initializing a new one
+            auto oldSystem = xrSystem;
+            xrSystem.reset();
+            while (oldSystem.use_count() > 1)
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
+
     #ifdef SP_XR_SUPPORT_OPENVR
         xrSystem = std::make_shared<OpenVrSystem>(game->graphics.GetContext());
     #else

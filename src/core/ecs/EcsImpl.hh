@@ -18,6 +18,7 @@
 #include "ecs/components/SceneInfo.hh"
 #include "ecs/components/Script.hh"
 #include "ecs/components/Signals.hh"
+#include "ecs/components/Sound.hh"
 #include "ecs/components/Transform.h"
 #include "ecs/components/Triggers.hh"
 #include "ecs/components/View.hh"
