@@ -2,6 +2,7 @@
 
 #include "assets/Asset.hh"
 #include "assets/Async.hh"
+#include "core/DispatchQueue.hh"
 #include "core/EntityMap.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/NamedEntity.hh"
@@ -42,7 +43,7 @@ namespace sp {
             int resonanceID = -1;
             size_t bufferOffset;
             AsyncPtr<Asset> audioFile;
-            shared_ptr<nqr::AudioData> audioBuffer;
+            AsyncPtr<nqr::AudioData> audioBuffer;
         };
 
         std::mutex soundsMutex;
@@ -53,5 +54,7 @@ namespace sp {
         ecs::ComponentObserver<ecs::Sound> soundObserver;
 
         static void AudioWriteCallback(SoundIoOutStream *outstream, int frameCountMin, int frameCountMax);
+
+        DispatchQueue decoderQueue;
     };
 } // namespace sp
