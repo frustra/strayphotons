@@ -12,26 +12,32 @@ namespace sp {
     template<typename T>
     class Async {
     public:
-        Async(std::future<std::shared_ptr<T>> &&future) : future(future.share()) {
-            Assertf(this->future.valid(), "sp::Async created with invalid future");
-        }
-        Async(const std::shared_ptr<T> &ptr) {
-            future = std::async(std::launch::deferred, [ptr] {
-                return ptr;
-            }).share();
+        Async() {}
+        Async(const std::shared_ptr<T> &ptr) : value(ptr) {
+            valid.test_and_set();
         }
 
         bool Ready() const {
-            return future.wait_for(std::chrono::seconds(0)) != std::future_status::timeout;
+            return valid.test();
         }
 
-        std::shared_ptr<T> Get() {
+        std::shared_ptr<T> Get() const {
             Assertf(this != nullptr, "AsyncPtr->Get() called on nullptr");
-            return future.get();
+            while (!valid.test()) {
+                valid.wait(false);
+            }
+            return value;
+        }
+
+        void Set(const std::shared_ptr<T> &ptr) {
+            value = ptr;
+            Assert(!valid.test_and_set(), "Async::Set called multiple times");
+            valid.notify_all();
         }
 
     private:
-        std::shared_future<std::shared_ptr<T>> future;
+        std::atomic_flag valid;
+        std::shared_ptr<T> value;
     };
 
     template<typename T>

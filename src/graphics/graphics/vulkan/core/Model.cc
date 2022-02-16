@@ -270,7 +270,7 @@ namespace sp::vulkan {
             viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
             auto added = scene.AddTexture(imageInfo, viewInfo, {data->data(), data->size(), data});
             textures[name] = added.first;
-            pendingWork.push_back(std::move(added.second));
+            pendingWork.push_back(added.second);
             return added.first;
         }
 
@@ -318,7 +318,7 @@ namespace sp::vulkan {
 
         auto added = scene.AddTexture(imageInfo, viewInfo, {img.image.data(), img.image.size(), gltfModel});
         textures[name] = added.first;
-        pendingWork.push_back(std::move(added.second));
+        pendingWork.push_back(added.second);
         return added.first;
     }
 } // namespace sp::vulkan

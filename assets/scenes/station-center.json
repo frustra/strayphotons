@@ -1133,7 +1133,7 @@
 			},
 			"trigger_area": {
 				"object": {
-					"command": "setsignal station-center.elevator_door.door_open 0; setsignal station-center.ship_door.door_open 0; wait 500 togglesignal station-center.elevator.animation_state 0 100",
+					"command": "setsignal station-center.elevator_door.door_open 0; setsignal global.ship_airlock-out.door_open 0; wait 500 togglesignal station-center.elevator.animation_state 0 100",
 					"signal": "button_pressed"
 				}
 			},

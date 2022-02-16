@@ -1275,7 +1275,6 @@ namespace sp::vulkan {
         viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
         auto fut = device.CreateImageAndView(imageInfo, viewInfo, {data, sizeof(data)});
         device.FlushMainQueue();
-        auto imageView = fut.get();
-        return imageView;
+        return fut->Get();
     }
 } // namespace sp::vulkan
