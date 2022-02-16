@@ -116,6 +116,9 @@ namespace sp::vulkan {
         PerfTimer &timer;
 
         void BuildFrameGraph(RenderGraph &graph);
+        void AddFlatView(RenderGraph &graph,
+            ecs::Lock<ecs::Read<ecs::View, ecs::FocusLock, ecs::TransformSnapshot>> lock);
+        void AddXRView(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::View, ecs::XRView, ecs::TransformSnapshot>> lock);
 
         void AddScreenshotPasses(RenderGraph &graph);
         RenderGraphResourceID VisualizeBuffer(RenderGraph &graph,
