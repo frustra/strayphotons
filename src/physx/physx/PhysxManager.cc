@@ -333,27 +333,27 @@ namespace sp {
                 set = cache.Load(name);
                 if (set) return set;
 
-                set = std::make_shared<Async<ConvexHullSet>>(workQueue.Dispatch<std::shared_ptr<ConvexHullSet>>(
-                    [this, name, decomposeHull](std::shared_ptr<const Model> model) {
-                        ZoneScopedN("LoadConvexHullSet::Dispatch");
-                        ZoneStr(name);
+                set = std::make_shared<Async<ConvexHullSet>>(
+                    workQueue.Dispatch<std::shared_ptr<ConvexHullSet>>(asyncModel,
+                        [this, name, decomposeHull](std::shared_ptr<const Model> model) {
+                            ZoneScopedN("LoadConvexHullSet::Dispatch");
+                            ZoneStr(name);
 
-                        auto set = std::make_shared<ConvexHullSet>();
-                        if (LoadCollisionCache(*set, *model, decomposeHull)) {
+                            auto set = std::make_shared<ConvexHullSet>();
+                            if (LoadCollisionCache(*set, *model, decomposeHull)) {
+                                for (auto &hull : set->hulls) {
+                                    hull.pxMesh = CreateConvexMeshFromHull(*model, hull);
+                                }
+                                return set;
+                            }
+
+                            ConvexHullBuilding::BuildConvexHulls(set.get(), *model, decomposeHull);
                             for (auto &hull : set->hulls) {
                                 hull.pxMesh = CreateConvexMeshFromHull(*model, hull);
                             }
+                            SaveCollisionCache(*model, *set, decomposeHull);
                             return set;
-                        }
-
-                        ConvexHullBuilding::BuildConvexHulls(set.get(), *model, decomposeHull);
-                        for (auto &hull : set->hulls) {
-                            hull.pxMesh = CreateConvexMeshFromHull(*model, hull);
-                        }
-                        SaveCollisionCache(*model, *set, decomposeHull);
-                        return set;
-                    },
-                    asyncModel));
+                        }));
                 cache.Register(name, set);
             }
         }

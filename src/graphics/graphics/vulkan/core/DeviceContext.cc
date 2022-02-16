@@ -953,7 +953,8 @@ namespace sp::vulkan {
         allocInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
         auto futStagingBuf = CreateBuffer(data, bufferInfo, allocInfo);
 
-        return frameEndQueue.Dispatch<ImagePtr>(
+        return frameEndQueue.Dispatch<ImagePtr>(std::move(futImage),
+            std::move(futStagingBuf),
             [=, this](ImagePtr image, BufferPtr stagingBuf) {
                 ZoneScopedN("PrepareImage");
                 auto transferCmd = GetFencedCommandContext(CommandContextType::TransferAsync);
@@ -1200,9 +1201,7 @@ namespace sp::vulkan {
                 }
                 Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eTransfer});
                 return image;
-            },
-            std::move(futImage),
-            std::move(futStagingBuf));
+            });
     }
 
     ImageViewPtr DeviceContext::CreateImageView(ImageViewCreateInfo info) {
@@ -1247,13 +1246,11 @@ namespace sp::vulkan {
         ZoneScoped;
         auto futImage = CreateImage(imageInfo, data);
 
-        return allocatorQueue.Dispatch<ImageViewPtr>(
-            [=, this](ImagePtr image) {
-                auto viewI = viewInfo;
-                viewI.image = image;
-                return CreateImageView(viewI);
-            },
-            std::move(futImage));
+        return allocatorQueue.Dispatch<ImageViewPtr>(std::move(futImage), [=, this](ImagePtr image) {
+            auto viewI = viewInfo;
+            viewI.image = image;
+            return CreateImageView(viewI);
+        });
     }
 
     shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {

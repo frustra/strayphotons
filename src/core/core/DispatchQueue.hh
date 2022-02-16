@@ -17,6 +17,11 @@
 
 namespace sp {
     namespace detail {
+        template<typename... T, std::size_t... I>
+        constexpr auto subtuple(std::tuple<T...> &&t, std::index_sequence<I...>) {
+            return std::forward_as_tuple(std::get<I>(t)...);
+        }
+
         template<typename T>
         class Future {};
 
@@ -152,8 +157,23 @@ namespace sp {
          *  auto image = queue.Dispatch<ImagePtr>([]() { return MakeImagePtr(); });
          *  queue.Dispatch<void>(std::move(image), [](ImagePtr image) { });
          */
+        template<typename ReturnType, typename... FuturesAndFn>
+        std::future<ReturnType> Dispatch(FuturesAndFn &&...args) {
+            // if C++ adds support for parameters after a parameter pack, delete this function
+            const size_t lastArg = sizeof...(FuturesAndFn) - 1;
+            auto tupl = std::make_tuple(std::move(args)...);
+            auto fn = std::move(std::get<lastArg>(tupl));
+            auto futures = detail::subtuple(std::move(tupl), std::make_index_sequence<lastArg>());
+            return std::apply(
+                [this, &fn](auto &&...futures) {
+                    return DispatchInternal<ReturnType>(std::move(fn), std::move(futures)...);
+                },
+                futures);
+        }
+
+    private:
         template<typename ReturnType, typename Fn, typename... Futures>
-        std::future<ReturnType> Dispatch(Fn &&func, Futures &&...futures) {
+        std::future<ReturnType> DispatchInternal(Fn &&func, Futures &&...futures) {
             Assert(!exit, "tried to dispatch to a shut down queue");
             auto item = make_shared<DispatchQueueWorkItem<ReturnType, Fn, std::remove_cvref_t<Futures>...>>(
                 std::move(func),
@@ -166,7 +186,6 @@ namespace sp {
             return fut;
         }
 
-    private:
         size_t FlushInternal(std::unique_lock<std::mutex> &lock, size_t maxWorkItems, bool blockUntilReady);
         void ThreadMain();
 
