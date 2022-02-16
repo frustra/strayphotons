@@ -6,6 +6,7 @@
 #include <chrono>
 #include <future>
 #include <memory>
+#include <mutex>
 
 namespace sp {
     template<typename T>
@@ -19,22 +20,19 @@ namespace sp {
         }
 
         bool Ready() {
-            if (valueSet.test()) return true;
-
             std::unique_lock lock(futureMutex, std::try_to_lock);
+            if (valueSet.test()) return true;
             return lock && future.wait_for(std::chrono::seconds(0)) != std::future_status::timeout;
         }
 
         std::shared_ptr<const T> Get() {
             Assertf(this != nullptr, "AsyncPtr->Get() called on nullptr");
-            if (!valueSet.test()) {
-                std::unique_lock lock(futureMutex, std::try_to_lock);
-                if (lock) {
-                    value = future.get();
-                    valueSet.test_and_set();
-                    valueSet.notify_all();
-                    return value;
-                }
+            if (!valueSet.test() && !futureWaiting.test_and_set()) {
+                std::lock_guard lock(futureMutex);
+                value = future.get();
+                valueSet.test_and_set();
+                valueSet.notify_all();
+                return value;
             }
 
             while (!valueSet.test()) {
@@ -44,7 +42,7 @@ namespace sp {
         }
 
     private:
-        std::atomic_flag valueSet;
+        std::atomic_flag valueSet, futureWaiting;
         std::shared_ptr<const T> value;
 
         LockFreeMutex futureMutex;
