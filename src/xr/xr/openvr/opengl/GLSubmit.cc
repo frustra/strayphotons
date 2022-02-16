@@ -8,6 +8,8 @@
 
 namespace sp::xr {
     void OpenVrSystem::SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) {
+        if (!loaded.test()) return;
+
         Assert(tex, "TranslateTexture: null GpuTexture");
 
         GLTexture *glTex = dynamic_cast<GLTexture *>(tex);

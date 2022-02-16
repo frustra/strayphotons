@@ -31,8 +31,6 @@ namespace sp {
             void SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) override;
             void WaitFrame() override;
 
-            ecs::NamedEntity GetEntityForDeviceIndex(size_t index);
-
             HiddenAreaMesh GetHiddenAreaMesh(ecs::XrEye eye) override;
 
         private:
@@ -40,6 +38,7 @@ namespace sp {
             void Frame() override;
 
             void RegisterModels();
+            ecs::NamedEntity GetEntityForDeviceIndex(size_t index);
 
             GraphicsContext *context;
 
@@ -63,6 +62,7 @@ namespace sp {
             int texWidth = 0, texHeight = 0;
 
             friend class EventHandler;
+            friend class InputBindings;
         };
 
     } // namespace xr
