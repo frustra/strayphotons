@@ -66,7 +66,7 @@ namespace sp {
         template<typename T>
         struct Future<AsyncPtr<T>> {
         public:
-            typedef std::shared_ptr<const T> ReturnType;
+            typedef std::shared_ptr<T> ReturnType;
 
             Future(const AsyncPtr<T> &future) : future(future) {}
 
@@ -96,10 +96,10 @@ namespace sp {
 
         template<typename... Args>
         DispatchQueueWorkItem(Fn &&func, Args &&...args)
-            : func(std::move(func)),
+            : returnValue(std::make_shared<Async<ReturnType>>()), func(std::move(func)),
               waitForFutures(std::make_tuple(detail::Future<std::remove_cvref_t<Args>>(args)...)) {}
 
-        std::promise<ReturnType> promise;
+        AsyncPtr<ReturnType> returnValue;
         Fn func;
         FutureTuple waitForFutures;
 
@@ -116,9 +116,9 @@ namespace sp {
             }
             if constexpr (std::is_same<ReturnType, void>()) {
                 std::apply(func, args);
-                promise.set_value();
+                returnValue->Set(nullptr);
             } else {
-                promise.set_value(std::apply(func, args));
+                returnValue->Set(std::apply(func, args));
             }
         }
 
@@ -152,13 +152,13 @@ namespace sp {
          * After input futures are ready, the function will be called with their values.
          * Supported input types are std::future, std::shared_future, and sp::AsyncPtr
          *
-         * Usage: Dispatch<R>(FutureType<T>..., [](T...) { return R(); });
+         * Usage: Dispatch<R>(FutureType<T>..., [](T...) { return std::make_shared<R>(); });
          * Example:
-         *  auto image = queue.Dispatch<ImagePtr>([]() { return MakeImagePtr(); });
-         *  queue.Dispatch<void>(std::move(image), [](ImagePtr image) { });
+         *  auto image = queue.Dispatch<Image>([]() { return std::make_shared<Image>(); });
+         *  queue.Dispatch<void>(image, [](std::shared_ptr<Image> image) { });
          */
         template<typename ReturnType, typename... FuturesAndFn>
-        std::future<ReturnType> Dispatch(FuturesAndFn &&...args) {
+        AsyncPtr<ReturnType> Dispatch(FuturesAndFn &&...args) {
             // if C++ adds support for parameters after a parameter pack, delete this function
             const size_t lastArg = sizeof...(FuturesAndFn) - 1;
             auto tupl = std::make_tuple(std::move(args)...);
@@ -173,17 +173,16 @@ namespace sp {
 
     private:
         template<typename ReturnType, typename Fn, typename... Futures>
-        std::future<ReturnType> DispatchInternal(Fn &&func, Futures &&...futures) {
+        AsyncPtr<ReturnType> DispatchInternal(Fn &&func, Futures &&...futures) {
             Assert(!exit, "tried to dispatch to a shut down queue");
             auto item = make_shared<DispatchQueueWorkItem<ReturnType, Fn, std::remove_cvref_t<Futures>...>>(
                 std::move(func),
                 std::move(futures)...);
 
             std::unique_lock<std::mutex> lock(mutex);
-            auto fut = item->promise.get_future();
             workQueue.push(item);
             workReady.notify_one();
-            return fut;
+            return item->returnValue;
         }
 
         size_t FlushInternal(std::unique_lock<std::mutex> &lock, size_t maxWorkItems, bool blockUntilReady);

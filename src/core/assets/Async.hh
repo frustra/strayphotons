@@ -12,41 +12,32 @@ namespace sp {
     template<typename T>
     class Async {
     public:
-        Async(std::future<std::shared_ptr<T>> &&future) : future(std::move(future)) {
-            Assertf(this->future.valid(), "sp::Async created with invalid future");
-        }
+        Async() {}
         Async(const std::shared_ptr<T> &ptr) : value(ptr) {
-            valueSet.test_and_set();
+            valid.test_and_set();
         }
 
-        bool Ready() {
-            std::unique_lock lock(futureMutex, std::try_to_lock);
-            if (valueSet.test()) return true;
-            return lock && future.wait_for(std::chrono::seconds(0)) != std::future_status::timeout;
+        bool Ready() const {
+            return valid.test();
         }
 
-        std::shared_ptr<const T> Get() {
+        std::shared_ptr<T> Get() const {
             Assertf(this != nullptr, "AsyncPtr->Get() called on nullptr");
-            if (!valueSet.test() && !futureWaiting.test_and_set()) {
-                std::lock_guard lock(futureMutex);
-                value = future.get();
-                valueSet.test_and_set();
-                valueSet.notify_all();
-                return value;
-            }
-
-            while (!valueSet.test()) {
-                valueSet.wait(false);
+            while (!valid.test()) {
+                valid.wait(false);
             }
             return value;
         }
 
-    private:
-        std::atomic_flag valueSet, futureWaiting;
-        std::shared_ptr<const T> value;
+        void Set(const std::shared_ptr<T> &ptr) {
+            value = ptr;
+            Assert(!valid.test_and_set(), "Async::Set called multiple times");
+            valid.notify_all();
+        }
 
-        LockFreeMutex futureMutex;
-        std::future<std::shared_ptr<T>> future;
+    private:
+        std::atomic_flag valid;
+        std::shared_ptr<T> value;
     };
 
     template<typename T>

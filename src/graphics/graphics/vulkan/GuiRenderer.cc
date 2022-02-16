@@ -79,7 +79,7 @@ namespace sp::vulkan {
                 fontViewInfo,
                 {fontData, size_t(fontWidth * fontHeight * 4)});
             device.FlushMainQueue();
-            fontView = fut.get();
+            fontView = fut->Get();
 
             io.Fonts->TexID = (ImTextureID)(fontView->GetHandle());
         }
