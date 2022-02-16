@@ -7,7 +7,8 @@
 #include <soundio/soundio.h>
 
 namespace sp {
-    AudioManager::AudioManager() : RegisteredThread("Audio", std::chrono::milliseconds(20), false) {
+    AudioManager::AudioManager()
+        : RegisteredThread("AudioManager", std::chrono::milliseconds(20), false), decoderQueue("AudioDecode") {
         StartThread();
     }
 
@@ -71,21 +72,6 @@ namespace sp {
             soundio_flush_events(soundio);
         }
         SyncFromECS();
-
-        for (auto &it : sounds) {
-            auto &state = it.second;
-            if (!state.audioFile || !state.audioFile->Ready()) continue;
-            if (!state.audioBuffer) {
-                auto file = state.audioFile->Get();
-                Assertf(file, "Audio file missing");
-                auto audioBuffer = make_shared<nqr::AudioData>();
-                loader.Load(audioBuffer.get(), "ogg", file->Buffer());
-
-                std::unique_lock lock(soundsMutex);
-                state.audioBuffer = std::move(audioBuffer);
-                state.bufferOffset = 0;
-            }
-        }
     }
 
     void AudioManager::SyncFromECS() {
@@ -123,6 +109,16 @@ namespace sp {
             auto &state = sounds[ent];
 
             if (!state.audioFile) state.audioFile = source.file;
+            if (!state.audioBuffer) {
+                state.bufferOffset = 0;
+                state.audioBuffer = decoderQueue.Dispatch<nqr::AudioData>(state.audioFile,
+                    [this](shared_ptr<Asset> asset) {
+                        Assertf(asset, "Audio file missing");
+                        auto audioBuffer = make_shared<nqr::AudioData>();
+                        loader.Load(audioBuffer.get(), "ogg", asset->Buffer());
+                        return audioBuffer;
+                    });
+            }
 
             if (state.resonanceID == -1) {
                 state.resonanceID = resonance->CreateSoundObjectSource(vraudio::kBinauralHighQuality);
@@ -178,9 +174,9 @@ namespace sp {
                     std::lock_guard lock(self->soundsMutex);
                     for (auto &it : self->sounds) {
                         auto &source = it.second;
-                        if (!source.audioBuffer) continue;
+                        if (!source.audioBuffer || !source.audioBuffer->Ready()) continue;
 
-                        auto &audioBuffer = *source.audioBuffer;
+                        auto &audioBuffer = *source.audioBuffer->Get();
                         self->resonance->SetInterleavedBuffer(source.resonanceID,
                             &audioBuffer.samples[source.bufferOffset],
                             audioBuffer.channelCount,

@@ -418,6 +418,13 @@ namespace sp::vulkan {
         };
         vector<RenderTargetInfo> AllRenderTargets();
 
+        RenderGraphResourceID LastOutputID() const {
+            return resources.lastOutputID;
+        }
+        RenderGraphResource LastOutput() const {
+            return resources.LastOutput();
+        }
+
     private:
         friend class InitialPassState;
         void AddPassBarriers(CommandContextPtr &cmd, RenderGraphPass &pass);
