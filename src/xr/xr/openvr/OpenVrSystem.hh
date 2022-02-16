@@ -7,6 +7,8 @@
 #include "xr/openvr/EventHandler.hh"
 #include "xr/openvr/InputBindings.hh"
 
+#include <atomic>
+#include <memory>
 #include <openvr.h>
 
 namespace vr {
@@ -21,32 +23,28 @@ namespace sp {
 
         class OpenVrSystem final : public XrSystem, RegisteredThread {
         public:
-            OpenVrSystem() : RegisteredThread("OpenVR", 120.0, true) {}
+            OpenVrSystem(GraphicsContext *context);
             ~OpenVrSystem();
-
-            bool Initialize(GraphicsContext *context) override;
-            bool IsInitialized() override;
-            bool IsHmdPresent() override;
 
             bool GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) override;
 
             void SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) override;
             void WaitFrame() override;
 
-            ecs::NamedEntity GetEntityForDeviceIndex(size_t index);
-
             HiddenAreaMesh GetHiddenAreaMesh(ecs::XrEye eye) override;
 
         private:
-            void Frame() override;
             bool ThreadInit() override;
+            void Frame() override;
 
             void RegisterModels();
+            ecs::NamedEntity GetEntityForDeviceIndex(size_t index);
 
-            GraphicsContext *context = nullptr;
+            GraphicsContext *context;
 
+            std::atomic_flag loaded;
             std::shared_ptr<vr::IVRSystem> vrSystem;
-            std::shared_ptr<EventHandler> eventHandler;
+            EventHandler eventHandler;
             std::shared_ptr<InputBindings> inputBindings;
 
             EnumArray<ecs::NamedEntity, ecs::XrEye> views = {
@@ -62,7 +60,9 @@ namespace sp {
 
             uint32 frameCountWorkaround = 0;
             int texWidth = 0, texHeight = 0;
-            uint32_t vrWidth = 0, vrHeight = 0;
+
+            friend class EventHandler;
+            friend class InputBindings;
         };
 
     } // namespace xr

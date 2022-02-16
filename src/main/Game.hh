@@ -39,13 +39,13 @@ namespace sp {
         LogOnExit logOnExit = "Game shut down ========================================================";
 
     public:
-        Game(cxxopts::ParseResult &options, Script *startupScript = nullptr);
+        Game(cxxopts::ParseResult &options, const Script *startupScript = nullptr);
         ~Game();
 
         int Start();
 
         cxxopts::ParseResult &options;
-        Script *startupScript = nullptr;
+        const Script *startupScript = nullptr;
 
         CFuncCollection funcs;
 

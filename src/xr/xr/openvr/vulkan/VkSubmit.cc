@@ -8,6 +8,8 @@
 
 namespace sp::xr {
     void OpenVrSystem::SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) {
+        if (!loaded.test()) return;
+
         Assert(context, "TranslateTexture: null GraphicsContext");
         Assert(tex, "TranslateTexture: null GpuTexture");
 

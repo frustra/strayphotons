@@ -5,14 +5,22 @@
 #include "ecs/EcsImpl.hh"
 
 namespace sp {
-    GameLogic::GameLogic() : RegisteredThread("GameLogic", 120.0) {
+    GameLogic::GameLogic(bool stepMode) : RegisteredThread("GameLogic", 120.0), stepMode(stepMode) {
         funcs.Register(this, "printdebug", "Print some debug info about the player", &GameLogic::PrintDebug);
         funcs.Register(this, "printevents", "Print out the current state of event queues", &GameLogic::PrintEvents);
         funcs.Register(this, "printsignals", "Print out the values and bindings of signals", &GameLogic::PrintSignals);
+
+        if (stepMode) {
+            funcs.Register<unsigned int>("steplogic",
+                "Advance the game logic by N frames, default is 1",
+                [this](unsigned int arg) {
+                    this->Step(std::max(1u, arg));
+                });
+        }
     }
 
     void GameLogic::StartThread() {
-        RegisteredThread::StartThread();
+        RegisteredThread::StartThread(stepMode);
     }
 
     void GameLogic::Frame() {

@@ -25,20 +25,9 @@ namespace sp {
 
     class Model : public NonCopyable {
     public:
-        Model(const string &name) : name(name){};
-        Model(const string &name, std::shared_ptr<const Asset> asset) : name(name), asset(asset){};
-
-        virtual ~Model();
-
-        bool Valid() const {
-            return valid.test();
-        }
-
-        void WaitUntilValid() const {
-            while (!valid.test()) {
-                valid.wait(false);
-            }
-        }
+        Model(const string &name,
+            std::shared_ptr<const Asset> asset,
+            const tinygltf::FsCallbacks *fsCallbacks = nullptr);
 
         struct Attribute {
             size_t vertexByteOffset;
@@ -80,25 +69,20 @@ namespace sp {
         std::vector<int> GetJointNodes() const;
 
         const std::shared_ptr<const tinygltf::Model> &GetGltfModel() const {
-            Assert(valid.test(), "Accessing gltf on invalid model");
             return model;
         }
 
         const std::vector<Primitive> &Primitives() const {
-            Assert(valid.test(), "Accessing primitives on invalid model");
             return primitives;
         }
 
         const std::vector<glm::mat4> &Bones() const {
-            Assert(valid.test(), "Accessing bones on invalid model");
             return bones;
         }
 
     private:
-        void PopulateFromAsset(std::shared_ptr<const Asset> asset, const tinygltf::FsCallbacks *fsCallbacks = nullptr);
         void AddNode(int nodeIndex, glm::mat4 parentMatrix);
 
-        std::atomic_flag valid;
         std::shared_ptr<const Asset> asset;
 
         std::shared_ptr<const tinygltf::Model> model;
@@ -108,7 +92,5 @@ namespace sp {
         // TODO: support more than one "skin" in a GLTF
         std::map<int, glm::mat4> inverseBindMatrixForJoint;
         int rootBone;
-
-        friend class AssetManager;
     };
 } // namespace sp

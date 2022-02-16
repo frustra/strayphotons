@@ -965,15 +965,17 @@ namespace sp::vulkan {
             if (!ent.Has<ecs::TransformSnapshot>(lock)) continue;
 
             auto &renderable = ent.Get<ecs::Renderable>(lock);
-            if (!renderable.model || !renderable.model->Valid()) continue;
+            if (!renderable.model || !renderable.model->Ready()) continue;
 
-            auto model = activeModels.Load(renderable.model->name);
-            if (!model) {
+            auto model = renderable.model->Get();
+            Assertf(model, "Renderable model is null");
+            auto vkModel = activeModels.Load(model->name);
+            if (!vkModel) {
                 hasPendingModel = true;
-                modelsToLoad.push_back(renderable.model);
+                modelsToLoad.push_back(model);
                 continue;
             }
-            if (!model->CheckReady()) {
+            if (!vkModel->CheckReady()) {
                 hasPendingModel = true;
                 continue;
             }
@@ -983,12 +985,12 @@ namespace sp::vulkan {
 
             gpuRenderable->modelToWorld = ent.Get<ecs::TransformSnapshot>(lock).matrix;
             gpuRenderable->visibilityMask = renderable.visibility.to_ulong();
-            gpuRenderable->modelIndex = model->SceneIndex();
+            gpuRenderable->modelIndex = vkModel->SceneIndex();
             gpuRenderable->vertexOffset = scene.vertexCount;
             gpuRenderable++;
             scene.renderableCount++;
-            scene.primitiveCount += model->PrimitiveCount();
-            scene.vertexCount += model->VertexCount();
+            scene.primitiveCount += vkModel->PrimitiveCount();
+            scene.vertexCount += vkModel->VertexCount();
         }
 
         scene.primitiveCountPowerOfTwo = std::max(1u, CeilToPowerOfTwo(scene.primitiveCount));
@@ -1177,7 +1179,7 @@ namespace sp::vulkan {
         bool useMaterial,
         const PreDrawFunc &preDraw) {
         auto &comp = ent.Get<ecs::Renderable>(lock);
-        if (!comp.model || !comp.model->Valid()) return;
+        if (!comp.model || !comp.model->Ready()) return;
 
         // Filter entities that aren't members of all layers in the view's visibility mask.
         ecs::Renderable::VisibilityMask mask = comp.visibility;
@@ -1186,14 +1188,16 @@ namespace sp::vulkan {
 
         auto &modelMat = ent.Get<ecs::TransformSnapshot>(lock).matrix;
 
-        auto model = activeModels.Load(comp.model->name);
-        if (!model) {
-            modelsToLoad.push_back(comp.model);
+        auto model = comp.model->Get();
+        Assertf(model, "Renderable model is null");
+        auto vkModel = activeModels.Load(model->name);
+        if (!vkModel) {
+            modelsToLoad.push_back(model);
             return;
         }
 
         if (preDraw) preDraw(lock, ent);
-        model->Draw(cmd, modelMat, useMaterial); // TODO pass and use comp.model->bones
+        vkModel->Draw(cmd, modelMat, useMaterial); // TODO pass and use comp.model->bones
     }
 
     void Renderer::EndFrame() {
@@ -1208,18 +1212,20 @@ namespace sp::vulkan {
 
                 auto &renderable = ent.template Get<ecs::Renderable>(lock);
                 if (!renderable.model) continue;
-                if (!renderable.model->Valid()) {
+                if (!renderable.model->Ready()) {
                     complete = false;
                     continue;
                 }
 
-                auto model = activeModels.Load(renderable.model->name);
-                if (!model) {
+                auto model = renderable.model->Get();
+                Assertf(model, "Renderable model is null");
+                auto vkModel = activeModels.Load(model->name);
+                if (!vkModel) {
                     complete = false;
-                    modelsToLoad.push_back(renderable.model);
+                    modelsToLoad.push_back(model);
                     continue;
                 }
-                if (!model->CheckReady()) complete = false;
+                if (!vkModel->CheckReady()) complete = false;
             }
             return complete;
         });
@@ -1269,7 +1275,6 @@ namespace sp::vulkan {
         viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
         auto fut = device.CreateImageAndView(imageInfo, viewInfo, {data, sizeof(data)});
         device.FlushMainQueue();
-        auto imageView = fut.get();
-        return imageView;
+        return fut->Get();
     }
 } // namespace sp::vulkan

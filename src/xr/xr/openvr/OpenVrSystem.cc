@@ -30,48 +30,47 @@ namespace sp::xr {
         }
     }
 
+    OpenVrSystem::OpenVrSystem(GraphicsContext *context)
+        : RegisteredThread("OpenVR", 120.0, true), context(context), eventHandler(*this) {
+        StartThread();
+    }
+
     OpenVrSystem::~OpenVrSystem() {
         StopThread();
 
         GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "vr-system");
+        loaded.clear();
         vrSystem.reset();
-    }
-
-    bool OpenVrSystem::Initialize(GraphicsContext *context) {
-        if (vrSystem) return true;
-        this->context = context;
-
-        StartThread();
-        return true;
     }
 
     bool OpenVrSystem::ThreadInit() {
         ZoneScoped;
-        vr::EVRInitError err = vr::VRInitError_None;
+        if (!vr::VR_IsRuntimeInstalled() || !vr::VR_IsHmdPresent()) {
+            Logf("No VR HMD is present.");
+            return false;
+        }
 
+        vr::EVRInitError err = vr::VRInitError_None;
         auto vrSystemPtr = vr::VR_Init(&err, vr::VRApplication_Scene);
 
         if (err == vr::VRInitError_None) {
-            auto context = this->context;
-            vrSystem = std::shared_ptr<vr::IVRSystem>(vrSystemPtr, [context](auto *ptr) {
+            Tracef("OpenVrSystem initialized");
+            vrSystem = std::shared_ptr<vr::IVRSystem>(vrSystemPtr, [this](auto *ptr) {
                 Logf("Shutting down OpenVR");
                 context->WaitIdle();
                 vr::VR_Shutdown();
             });
+            loaded.test_and_set();
+            loaded.notify_all();
         } else {
             Errorf("Failed to load OpenVR system: %s", VR_GetVRInitErrorAsSymbol(err));
             Errorf("Run 'reloadxrsystem' in the console to try again.");
             return false;
         }
 
-        eventHandler = std::make_shared<EventHandler>(vrSystem);
-
         // Initialize SteamVR Input subsystem
         std::string actionManifestPath = std::filesystem::absolute("actions.json").string();
         inputBindings = std::make_shared<InputBindings>(*this, actionManifestPath);
-
-        vrSystem->GetRecommendedRenderTargetSize(&vrWidth, &vrHeight);
-        Logf("OpenVR Render Target Size: %u x %u", vrWidth, vrHeight);
 
         RegisterModels();
 
@@ -101,6 +100,10 @@ namespace sp::xr {
                     reservedEntities[i] = ecs::NamedEntity("vr-device" + std::to_string(i));
                 }
 
+                uint32_t vrWidth, vrHeight;
+                vrSystem->GetRecommendedRenderTargetSize(&vrWidth, &vrHeight);
+                Logf("OpenVR Render Target Size: %u x %u", vrWidth, vrHeight);
+
                 for (size_t i = 0; i < views.size(); i++) {
                     auto eye = (ecs::XrEye)i;
 
@@ -124,15 +127,9 @@ namespace sp::xr {
         return true;
     }
 
-    bool OpenVrSystem::IsInitialized() {
-        return vrSystem != nullptr && vrWidth > 0 && vrHeight > 0;
-    }
-
-    bool OpenVrSystem::IsHmdPresent() {
-        return vr::VR_IsRuntimeInstalled() && vr::VR_IsHmdPresent();
-    }
-
     bool OpenVrSystem::GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) {
+        if (!loaded.test() || !vrSystem) return false;
+
         float frameTimeRemaining = vr::VRCompositor()->GetFrameTimeRemaining();
         float vSyncToPhotons = vrSystem->GetFloatTrackedDeviceProperty(vr::k_unTrackedDeviceIndex_Hmd,
             vr::Prop_SecondsFromVsyncToPhotons_Float);
@@ -160,9 +157,11 @@ namespace sp::xr {
 
     void OpenVrSystem::WaitFrame() {
         ZoneScoped;
-        vr::EVRCompositorError error = vr::VRCompositor()->WaitGetPoses(nullptr, 0, nullptr, 0);
-        Assert(error == vr::EVRCompositorError::VRCompositorError_None,
-            "WaitGetPoses failed: " + std::to_string((int)error));
+        if (loaded.test()) {
+            vr::EVRCompositorError error = vr::VRCompositor()->WaitGetPoses(nullptr, 0, nullptr, 0);
+            Assert(error == vr::EVRCompositorError::VRCompositorError_None,
+                "WaitGetPoses failed: " + std::to_string((int)error));
+        }
     }
 
     ecs::NamedEntity OpenVrSystem::GetEntityForDeviceIndex(size_t index) {
@@ -172,8 +171,10 @@ namespace sp::xr {
     }
 
     void OpenVrSystem::Frame() {
+        if (!vrSystem) return;
+
         ZoneScoped;
-        if (eventHandler) eventHandler->Frame();
+        eventHandler.Frame();
 
         vr::TrackedDevicePose_t trackedDevicePoses[vr::k_unMaxTrackedDeviceCount];
         vr::EVRCompositorError error =
@@ -232,6 +233,7 @@ namespace sp::xr {
             }
         }
         if (missingEntities) {
+            ZoneScopedN("OpenVrSystem::AddMissingEntities");
             GetSceneManager().QueueActionAndBlock(SceneAction::AddSystemScene,
                 "vr-system",
                 [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
@@ -252,6 +254,8 @@ namespace sp::xr {
     }
 
     HiddenAreaMesh OpenVrSystem::GetHiddenAreaMesh(ecs::XrEye eye) {
+        if (loaded.test() || !vrSystem) return {};
+
         static_assert(sizeof(*vr::HiddenAreaMesh_t::pVertexData) == sizeof(*HiddenAreaMesh::vertices));
         auto mesh = vrSystem->GetHiddenAreaMesh(MapXrEyeToOpenVr(eye));
         return {(const glm::vec2 *)mesh.pVertexData, mesh.unTriangleCount};

@@ -1,12 +1,11 @@
 #pragma once
 
+#include "assets/Image.hh"
 #include "core/Common.hh"
 
 #include <memory>
 
 namespace sp {
-    class Image;
-
     class GpuTexture {
     public:
         virtual uintptr_t GetHandle() const = 0;

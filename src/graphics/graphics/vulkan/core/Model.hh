@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assets/Async.hh"
 #include "assets/Model.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/vulkan/GPUSceneContext.hh"
@@ -42,8 +43,8 @@ namespace sp::vulkan {
 
         bool CheckReady() {
             if (pendingWork.empty()) return true;
-            erase_if(pendingWork, [](std::future<void> &fut) {
-                return fut.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+            erase_if(pendingWork, [](auto &fut) {
+                return fut->Ready();
             });
             return pendingWork.empty();
         }
@@ -60,6 +61,6 @@ namespace sp::vulkan {
         uint32 vertexCount = 0, indexCount = 0;
         SubBufferPtr indexBuffer, vertexBuffer, primitiveList, modelEntry;
 
-        std::vector<std::future<void>> pendingWork;
+        std::vector<AsyncPtr<void>> pendingWork;
     };
 } // namespace sp::vulkan

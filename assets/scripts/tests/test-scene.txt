@@ -1,8 +1,13 @@
 loadscene test1
-r.Exposure 1.0
+setsignal player.flashlight.on 1
+steplogic
 stepphysics
 screenshot test-scene1.png
 stepgraphics
-setsignal flashlight.on 1
+steplogic 2700
+stepphysics
 screenshot test-scene2.png
+stepgraphics
+stepphysics 200
+screenshot test-scene3.png
 stepgraphics

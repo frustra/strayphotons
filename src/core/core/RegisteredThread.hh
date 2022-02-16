@@ -13,7 +13,6 @@ namespace sp {
         RegisteredThread(std::string threadName, double framesPerSecond, bool traceFrames = false);
         virtual ~RegisteredThread();
 
-        double GetFrameRate() const;
         std::thread::id GetThreadId() const;
 
         const std::string threadName;
@@ -21,11 +20,14 @@ namespace sp {
         const bool traceFrames = false;
 
     protected:
-        void StartThread();
+        void StartThread(bool stepMode = false);
+        void Step(unsigned int count = 1);
         void StopThread(bool waitForExit = true);
 
-        // Will be called once per interval
+        // Will be called once per interval except for in step mode
         virtual void Frame() = 0;
+        // Will always be called once per interval
+        virtual void FramePreload(){};
 
         // Will be called once in the thread, before the first call to Frame()
         // If this returns false, the thread will be stopped
@@ -37,6 +39,6 @@ namespace sp {
         std::thread thread;
         std::atomic_bool exiting;
 
-        std::atomic_int64_t averageFrameTimeNs;
+        std::atomic_uint64_t stepCount, maxStepCount;
     };
 } // namespace sp

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "assets/Async.hh"
+#include "core/DispatchQueue.hh"
 #include "core/EnumArray.hh"
 #include "core/PreservingMap.hh"
 #include "core/RegisteredThread.hh"
@@ -34,13 +36,11 @@ namespace sp {
         AssetManager();
         ~AssetManager();
 
-        std::shared_ptr<const Asset> Load(const std::string &path,
-            AssetType type = AssetType::Bundled,
-            bool reload = false);
-        std::shared_ptr<const Model> LoadModel(const std::string &name);
-        std::shared_ptr<const Image> LoadImage(const std::string &path);
+        AsyncPtr<Asset> Load(const std::string &path, AssetType type = AssetType::Bundled, bool reload = false);
+        AsyncPtr<Model> LoadModel(const std::string &name);
+        AsyncPtr<Image> LoadImage(const std::string &path);
 
-        std::shared_ptr<Script> LoadScript(const std::string &path);
+        AsyncPtr<Script> LoadScript(const std::string &path);
 
         void RegisterExternalModel(const std::string &name, const std::string &path);
         bool IsModelRegistered(const std::string &name);
@@ -61,16 +61,15 @@ namespace sp {
         // TODO: Update PhysxManager to use Asset object for collision model cache
         friend class PhysxManager;
 
-        std::mutex taskMutex;
-        std::vector<std::future<void>> runningTasks;
+        DispatchQueue workQueue;
 
         std::mutex assetMutex;
         std::mutex modelMutex;
         std::mutex imageMutex;
 
-        EnumArray<PreservingMap<std::string, Asset>, AssetType> loadedAssets;
-        PreservingMap<std::string, Model> loadedModels;
-        PreservingMap<std::string, Image> loadedImages;
+        EnumArray<PreservingMap<std::string, Async<Asset>>, AssetType> loadedAssets;
+        PreservingMap<std::string, Async<Model>> loadedModels;
+        PreservingMap<std::string, Async<Image>> loadedImages;
 
         std::mutex externalModelMutex;
         robin_hood::unordered_flat_map<std::string, std::string> externalModelPaths;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "assets/Asset.hh"
+#include "assets/Async.hh"
 #include "core/EntityMap.hh"
 #include "core/RegisteredThread.hh"
 #include "ecs/NamedEntity.hh"
@@ -22,8 +23,8 @@ namespace sp {
         ~AudioManager();
 
     protected:
-        virtual bool ThreadInit() override;
-        virtual void Frame() override;
+        bool ThreadInit() override;
+        void Frame() override;
 
     private:
         void SyncFromECS();
@@ -40,7 +41,7 @@ namespace sp {
         struct SoundSource {
             int resonanceID = -1;
             size_t bufferOffset;
-            shared_ptr<const Asset> audioFile;
+            AsyncPtr<Asset> audioFile;
             shared_ptr<nqr::AudioData> audioBuffer;
         };
 

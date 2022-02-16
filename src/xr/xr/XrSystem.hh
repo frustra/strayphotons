@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ecs/components/XRView.hh"
-#include "xr/XrModel.hh"
 
 #include <glm/glm.hpp>
 #include <memory>
@@ -38,16 +37,12 @@ namespace sp {
         };
 
         struct HiddenAreaMesh {
-            const glm::vec2 *vertices;
-            uint32_t triangleCount;
+            const glm::vec2 *vertices = nullptr;
+            uint32_t triangleCount = 0;
         };
 
         class XrSystem {
         public:
-            virtual bool Initialize(GraphicsContext *context) = 0;
-            virtual bool IsInitialized() = 0;
-            virtual bool IsHmdPresent() = 0;
-
             virtual bool GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) = 0;
 
             virtual void SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) = 0;

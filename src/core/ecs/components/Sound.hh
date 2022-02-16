@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assets/Async.hh"
 #include "ecs/Components.hh"
 
 namespace sp {
@@ -9,7 +10,7 @@ namespace sp {
 namespace ecs {
     class Sound {
     public:
-        shared_ptr<const sp::Asset> file; // TODO: should make the asset system unpack the audio file
+        sp::AsyncPtr<sp::Asset> file; // TODO: should make the asset system unpack the audio file
     };
 
     static Component<Sound> ComponentSound("sound");

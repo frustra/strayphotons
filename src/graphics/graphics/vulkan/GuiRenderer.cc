@@ -22,9 +22,9 @@ namespace sp::vulkan {
         ImGui::GetMainViewport()->PlatformHandleRaw = device.Win32WindowHandle();
 
         std::pair<shared_ptr<const Asset>, float> fontAssets[] = {
-            std::make_pair(GAssets.Load("fonts/DroidSans.ttf"), 16.0f),
-            std::make_pair(GAssets.Load("fonts/3270Medium.ttf"), 32.0f),
-            std::make_pair(GAssets.Load("fonts/3270Medium.ttf"), 25.0f),
+            std::make_pair(GAssets.Load("fonts/DroidSans.ttf")->Get(), 16.0f),
+            std::make_pair(GAssets.Load("fonts/3270Medium.ttf")->Get(), 32.0f),
+            std::make_pair(GAssets.Load("fonts/3270Medium.ttf")->Get(), 25.0f),
         };
 
         io.Fonts->AddFontDefault(nullptr);
@@ -39,7 +39,6 @@ namespace sp::vulkan {
 
         for (auto &pair : fontAssets) {
             auto &asset = pair.first;
-            asset->WaitUntilValid();
             Assert(asset, "Failed to load gui font");
             ImFontConfig cfg;
             cfg.FontData = (void *)asset->BufferPtr();
@@ -80,7 +79,7 @@ namespace sp::vulkan {
                 fontViewInfo,
                 {fontData, size_t(fontWidth * fontHeight * 4)});
             device.FlushMainQueue();
-            fontView = fut.get();
+            fontView = fut->Get();
 
             io.Fonts->TexID = (ImTextureID)(fontView->GetHandle());
         }

@@ -94,9 +94,9 @@ namespace sp {
             actionQueue.pop_front();
             lock.unlock();
 
-            ZoneScoped;
             if (item.action == SceneAction::AddSystemScene) {
-                ZonePrintf("AddSystemScene(%s)", item.sceneName);
+                ZoneScopedN("AddSystemScene");
+                ZoneStr(item.sceneName);
                 auto scene = stagedScenes.Load(item.sceneName);
                 if (!scene) {
                     scene = std::make_shared<Scene>(item.sceneName, SceneType::System);
@@ -130,7 +130,8 @@ namespace sp {
                 }
                 item.promise.set_value();
             } else if (item.action == SceneAction::LoadScene) {
-                ZonePrintf("LoadScene(%s)", item.sceneName);
+                ZoneScopedN("LoadScene");
+                ZoneStr(item.sceneName);
                 // Unload all current scenes first
                 size_t expectedCount = scenes[SceneType::Async].size() + scenes[SceneType::World].size();
                 if (expectedCount > 0) {
@@ -155,7 +156,8 @@ namespace sp {
                 });
                 item.promise.set_value();
             } else if (item.action == SceneAction::ReloadScene) {
-                ZonePrintf("ReloadScene(%s)", item.sceneName);
+                ZoneScopedN("ReloadScene");
+                ZoneStr(item.sceneName);
                 if (item.sceneName.empty()) {
                     // Reload all async and user scenes
                     std::vector<std::pair<std::string, SceneType>> reloadScenes;
@@ -212,11 +214,13 @@ namespace sp {
                 }
                 item.promise.set_value();
             } else if (item.action == SceneAction::AddScene) {
-                ZonePrintf("AddScene(%s)", item.sceneName);
+                ZoneScopedN("AddScene");
+                ZoneStr(item.sceneName);
                 AddScene(item.sceneName, SceneType::World);
                 item.promise.set_value();
             } else if (item.action == SceneAction::RemoveScene) {
-                ZonePrintf("RemoveScene(%s)", item.sceneName);
+                ZoneScopedN("RemoveScene");
+                ZoneStr(item.sceneName);
                 auto loadedScene = stagedScenes.Load(item.sceneName);
                 if (loadedScene != nullptr) {
                     auto &sceneList = scenes[loadedScene->type];
@@ -233,7 +237,7 @@ namespace sp {
                 }
                 item.promise.set_value();
             } else if (item.action == SceneAction::ReloadPlayer) {
-                ZoneStr("ReloadPlayer");
+                ZoneScopedN("ReloadPlayer");
                 if (playerScene) {
                     auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
                     auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
@@ -243,38 +247,26 @@ namespace sp {
                     player = Tecs::Entity();
                 }
 
-                std::atomic_flag loaded;
-                LoadSceneJson("player",
-                    SceneType::World,
-                    ecs::SceneInfo::Priority::Player,
-                    [this, &loaded](std::shared_ptr<Scene> scene) {
-                        if (scene) {
-                            PreloadAndApplyScene(scene, [this](auto stagingLock, auto liveLock, auto scene) {
-                                auto it = scene->namedEntities.find("player");
-                                if (it != scene->namedEntities.end()) {
-                                    auto stagingPlayer = it->second;
-                                    if (stagingPlayer.template Has<ecs::SceneInfo>(stagingLock)) {
-                                        auto &sceneInfo = stagingPlayer.template Get<ecs::SceneInfo>(stagingLock);
-                                        player = sceneInfo.liveId;
-                                    }
-                                }
-                                Assert(!!player, "Player scene doesn't contain an entity named player");
-                                RespawnPlayer(liveLock, player);
-                            });
-                            playerScene = scene;
-                        } else {
-                            Errorf("Failed to load player scene!");
+                playerScene = LoadSceneJson("player", SceneType::World, ecs::SceneInfo::Priority::Player);
+                if (playerScene) {
+                    PreloadAndApplyScene(playerScene, [this](auto stagingLock, auto liveLock, auto scene) {
+                        auto it = scene->namedEntities.find("player");
+                        if (it != scene->namedEntities.end()) {
+                            auto stagingPlayer = it->second;
+                            if (stagingPlayer.template Has<ecs::SceneInfo>(stagingLock)) {
+                                auto &sceneInfo = stagingPlayer.template Get<ecs::SceneInfo>(stagingLock);
+                                player = sceneInfo.liveId;
+                            }
                         }
-
-                        loaded.test_and_set();
-                        loaded.notify_all();
+                        Assert(!!player, "Player scene doesn't contain an entity named player");
+                        RespawnPlayer(liveLock, player);
                     });
-                while (!loaded.test()) {
-                    loaded.wait(false);
+                } else {
+                    Errorf("Failed to load player scene!");
                 }
                 item.promise.set_value();
             } else if (item.action == SceneAction::ReloadBindings) {
-                ZoneStr("ReloadBindings");
+                ZoneScopedN("ReloadBindings");
                 // TODO: Remove console key bindings
                 if (bindingsScene) {
                     auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
@@ -283,24 +275,19 @@ namespace sp {
                     bindingsScene.reset();
                 }
 
-                std::atomic_flag loaded;
-                LoadBindingsJson([this, &loaded](std::shared_ptr<Scene> scene) {
-                    bindingsScene = scene;
-                    if (bindingsScene) {
-                        auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
-                        auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
+                bindingsScene = LoadBindingsJson();
+                if (bindingsScene) {
+                    auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
+                    auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
 
-                        bindingsScene->ApplyScene(stagingLock, liveLock);
-                    } else {
-                        Errorf("Failed to load bindings scene!");
-                    }
-
-                    loaded.test_and_set();
-                    loaded.notify_all();
-                });
-                while (!loaded.test()) {
-                    loaded.wait(false);
+                    bindingsScene->ApplyScene(stagingLock, liveLock);
+                } else {
+                    Errorf("Failed to load bindings scene!");
                 }
+                item.promise.set_value();
+            } else if (item.action == SceneAction::SyncScene) {
+                ZoneScopedN("SyncScene");
+                UpdateSceneConnections();
                 item.promise.set_value();
             } else {
                 Abortf("Unsupported SceneAction: %s", item.action);
@@ -310,9 +297,8 @@ namespace sp {
         }
     }
 
-    void SceneManager::Frame() {
-        RunSceneActions();
-
+    void SceneManager::UpdateSceneConnections() {
+        ZoneScoped;
         std::vector<std::string> requiredList;
         {
             auto lock = liveWorld.StartTransaction<ecs::Read<ecs::Name,
@@ -344,8 +330,15 @@ namespace sp {
                 AddScene(sceneName, SceneType::Async);
             }
         }
+    }
+
+    void SceneManager::Frame() {
+        RunSceneActions();
+        UpdateSceneConnections();
 
         stagedScenes.Tick(this->interval, [this](std::shared_ptr<Scene> &scene) {
+            ZoneScopedN("RemoveExpiredScene");
+            ZoneStr(scene->name);
             auto stagingLock = stagingWorld.StartTransaction<ecs::AddRemove>();
             auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
             scene->RemoveScene(stagingLock, liveLock);
@@ -395,7 +388,8 @@ namespace sp {
     }
 
     void SceneManager::PreloadAndApplyScene(const std::shared_ptr<Scene> &scene, OnApplySceneCallback callback) {
-        Tracef("Preloading scene: %s", scene->name);
+        ZoneScopedN("ScenePreload");
+        ZoneStr(scene->name);
         {
             std::lock_guard lock(preloadMutex);
             Assertf(!preloadScene, "Already preloading %s when trying to preload %s", preloadScene->name, scene->name);
@@ -413,8 +407,8 @@ namespace sp {
             }
         }
 
-        Tracef("Applying scene: %s", scene->name);
         {
+            Tracef("Applying scene: %s", scene->name);
             auto stagingLock = stagingWorld.StartTransaction<ecs::ReadAll, ecs::Write<ecs::SceneInfo>>();
             auto liveLock = liveWorld.StartTransaction<ecs::AddRemove>();
 
@@ -429,132 +423,124 @@ namespace sp {
         }
     }
 
-    void SceneManager::LoadSceneJson(const std::string &sceneName,
+    std::shared_ptr<Scene> SceneManager::LoadSceneJson(const std::string &sceneName,
         SceneType sceneType,
-        ecs::SceneInfo::Priority priority,
-        std::function<void(std::shared_ptr<Scene>)> callback) {
+        ecs::SceneInfo::Priority priority) {
         Logf("Loading scene: %s", sceneName);
 
-        auto asset = GAssets.Load("scenes/" + sceneName + ".json", AssetType::Bundled, true);
+        auto asset = GAssets.Load("scenes/" + sceneName + ".json", AssetType::Bundled, true)->Get();
         if (!asset) {
-            Logf("Scene not found");
-            return;
+            Errorf("Scene not found");
+            return nullptr;
         }
 
-        std::thread([this, asset, sceneName, sceneType, priority, callback]() {
-            asset->WaitUntilValid();
-            picojson::value root;
-            string err = picojson::parse(root, asset->String());
-            if (!err.empty()) {
-                Errorf("Failed to parse scene (%s): %s", sceneName, err);
-                return;
-            }
+        picojson::value root;
+        string err = picojson::parse(root, asset->String());
+        if (!err.empty()) {
+            Errorf("Failed to parse scene (%s): %s", sceneName, err);
+            return nullptr;
+        }
 
-            auto scene = make_shared<Scene>(sceneName, sceneType, asset);
+        auto scene = make_shared<Scene>(sceneName, sceneType, asset);
 
-            {
-                auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
+        {
+            auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
 
-                auto entityList = root.get<picojson::object>()["entities"];
-                // Find all named entities first so they can be referenced.
-                for (auto value : entityList.get<picojson::array>()) {
-                    auto ent = value.get<picojson::object>();
+            auto entityList = root.get<picojson::object>()["entities"];
+            // Find all named entities first so they can be referenced.
+            for (auto value : entityList.get<picojson::array>()) {
+                auto ent = value.get<picojson::object>();
 
-                    if (ent.count("_name")) {
-                        Tecs::Entity entity = lock.NewEntity();
-                        auto name = ent["_name"].get<string>();
-                        if (starts_with(name, "global.")) {
-                            entity.Set<ecs::Name>(lock, name);
-                        } else {
-                            entity.Set<ecs::Name>(lock, sceneName + "." + name);
-                        }
-                        Assertf(scene->namedEntities.count(name) == 0, "Duplicate entity name: %s", name);
-                        scene->namedEntities.emplace(name, entity);
-                    }
-                }
-
-                for (auto value : entityList.get<picojson::array>()) {
-                    auto ent = value.get<picojson::object>();
-
-                    Tecs::Entity entity;
-                    if (ent.count("_name")) {
-                        entity = scene->namedEntities[ent["_name"].get<string>()];
+                if (ent.count("_name")) {
+                    Tecs::Entity entity = lock.NewEntity();
+                    auto name = ent["_name"].get<string>();
+                    if (starts_with(name, "global.")) {
+                        entity.Set<ecs::Name>(lock, name);
                     } else {
-                        entity = lock.NewEntity();
+                        entity.Set<ecs::Name>(lock, sceneName + "." + name);
                     }
-
-                    entity.Set<ecs::SceneInfo>(lock, entity, priority, scene);
-                    for (auto comp : ent) {
-                        if (comp.first[0] == '_') continue;
-
-                        auto componentType = ecs::LookupComponent(comp.first);
-                        if (componentType != nullptr) {
-                            bool result = componentType->LoadEntity(lock, entity, comp.second);
-                            Assertf(result, "Failed to load component type: %s", comp.first);
-                        } else {
-                            Errorf("Unknown component, ignoring: %s", comp.first);
-                        }
-                    }
-                    // Special case so TransformSnapshot doesn't get removed as a dangling component
-                    if (entity.Has<ecs::TransformTree>(lock)) entity.Set<ecs::TransformSnapshot>(lock);
+                    Assertf(scene->namedEntities.count(name) == 0, "Duplicate entity name: %s", name);
+                    scene->namedEntities.emplace(name, entity);
                 }
             }
-            callback(scene);
-        }).detach();
+
+            for (auto value : entityList.get<picojson::array>()) {
+                auto ent = value.get<picojson::object>();
+
+                Tecs::Entity entity;
+                if (ent.count("_name")) {
+                    entity = scene->namedEntities[ent["_name"].get<string>()];
+                } else {
+                    entity = lock.NewEntity();
+                }
+
+                entity.Set<ecs::SceneInfo>(lock, entity, priority, scene);
+                for (auto comp : ent) {
+                    if (comp.first[0] == '_') continue;
+
+                    auto componentType = ecs::LookupComponent(comp.first);
+                    if (componentType != nullptr) {
+                        bool result = componentType->LoadEntity(lock, entity, comp.second);
+                        Assertf(result, "Failed to load component type: %s", comp.first);
+                    } else {
+                        Errorf("Unknown component, ignoring: %s", comp.first);
+                    }
+                }
+                // Special case so TransformSnapshot doesn't get removed as a dangling component
+                if (entity.Has<ecs::TransformTree>(lock)) entity.Set<ecs::TransformSnapshot>(lock);
+            }
+        }
+        return scene;
     }
 
-    void SceneManager::LoadBindingsJson(std::function<void(std::shared_ptr<Scene>)> callback) {
+    std::shared_ptr<Scene> SceneManager::LoadBindingsJson() {
         Logf("Loading bindings json: %s", InputBindingConfigPath);
 
-        std::thread([this, callback]() {
-            std::shared_ptr<const Asset> bindingConfig;
+        std::shared_ptr<const Asset> bindingConfig;
+        if (!std::filesystem::exists(InputBindingConfigPath)) {
+            bindingConfig = GAssets.Load("default_input_bindings.json", AssetType::Bundled, true)->Get();
+            Assert(bindingConfig, "Default input binding config missing");
 
-            if (!std::filesystem::exists(InputBindingConfigPath)) {
-                bindingConfig = GAssets.Load("default_input_bindings.json");
-                Assert(bindingConfig, "Default input binding config missing");
+            // TODO: Create CFunc to save current input bindings to file
+            // std::ofstream file(InputBindingConfigPath, std::ios::binary);
+            // Assertf(file.is_open(), "Failed to create binding config file: %s", InputBindingConfigPath);
+            // file << bindingConfig->String();
+            // file.close();
+        } else {
+            bindingConfig = GAssets.Load(InputBindingConfigPath, AssetType::External, true)->Get();
+            Assertf(bindingConfig, "Failed to load input binding config: %s", InputBindingConfigPath);
+        }
 
-                // TODO: Create CFunc to save current input bindings to file
-                // std::ofstream file(InputBindingConfigPath, std::ios::binary);
-                // Assertf(file.is_open(), "Failed to create binding config file: %s", InputBindingConfigPath);
-                // file << bindingConfig->String();
-                // file.close();
-            } else {
-                bindingConfig = GAssets.Load(InputBindingConfigPath, AssetType::External, true);
-                Assertf(bindingConfig, "Failed to load input binding config: %s", InputBindingConfigPath);
-            }
-            bindingConfig->WaitUntilValid();
+        auto scene = make_shared<Scene>("bindings", SceneType::System);
 
-            auto scene = make_shared<Scene>("bindings", SceneType::System);
+        picojson::value root;
+        string err = picojson::parse(root, bindingConfig->String());
+        if (!err.empty()) Abortf("Failed to parse input binding json file: %s", err);
 
-            picojson::value root;
-            string err = picojson::parse(root, bindingConfig->String());
-            if (!err.empty()) Abortf("Failed to parse input binding json file: %s", err);
+        {
+            auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
 
-            {
-                auto lock = stagingWorld.StartTransaction<ecs::AddRemove>();
+            for (auto param : root.get<picojson::object>()) {
+                Tracef("Loading input for: %s", param.first);
+                auto entity = lock.NewEntity();
+                entity.Set<ecs::Name>(lock, param.first);
+                entity.Set<ecs::SceneInfo>(lock, entity, ecs::SceneInfo::Priority::Bindings, scene);
+                for (auto comp : param.second.get<picojson::object>()) {
+                    if (comp.first[0] == '_') continue;
 
-                for (auto param : root.get<picojson::object>()) {
-                    Tracef("Loading input for: %s", param.first);
-                    auto entity = lock.NewEntity();
-                    entity.Set<ecs::Name>(lock, param.first);
-                    entity.Set<ecs::SceneInfo>(lock, entity, ecs::SceneInfo::Priority::Bindings, scene);
-                    for (auto comp : param.second.get<picojson::object>()) {
-                        if (comp.first[0] == '_') continue;
-
-                        auto componentType = ecs::LookupComponent(comp.first);
-                        if (componentType != nullptr) {
-                            bool result = componentType->LoadEntity(lock, entity, comp.second);
-                            Assertf(result, "Failed to load component type: %s", comp.first);
-                        } else {
-                            Errorf("Unknown component, ignoring: %s", comp.first);
-                        }
+                    auto componentType = ecs::LookupComponent(comp.first);
+                    if (componentType != nullptr) {
+                        bool result = componentType->LoadEntity(lock, entity, comp.second);
+                        Assertf(result, "Failed to load component type: %s", comp.first);
+                    } else {
+                        Errorf("Unknown component, ignoring: %s", comp.first);
                     }
-                    // Special case so TransformSnapshot doesn't get removed as a dangling component
-                    if (entity.Has<ecs::TransformTree>(lock)) entity.Set<ecs::TransformSnapshot>(lock);
                 }
+                // Special case so TransformSnapshot doesn't get removed as a dangling component
+                if (entity.Has<ecs::TransformTree>(lock)) entity.Set<ecs::TransformSnapshot>(lock);
             }
-            callback(scene);
-        }).detach();
+        }
+        return scene;
     }
 
     void SceneManager::TranslateSceneByConnection(const std::shared_ptr<Scene> &scene) {
@@ -607,32 +593,23 @@ namespace sp {
     std::shared_ptr<Scene> SceneManager::AddScene(std::string sceneName,
         SceneType sceneType,
         OnApplySceneCallback callback) {
+        ZoneScoped;
+        ZonePrintf("%s scene: %s", sceneType, sceneName);
         auto loadedScene = stagedScenes.Load(sceneName);
         if (loadedScene != nullptr) {
             Logf("Scene %s already loaded", sceneName);
             return loadedScene;
         }
 
-        std::atomic_flag loaded;
-        LoadSceneJson(sceneName,
-            sceneType,
-            ecs::SceneInfo::Priority::Scene,
-            [this, sceneName, sceneType, callback, &loadedScene, &loaded](std::shared_ptr<Scene> scene) {
-                if (scene) {
-                    TranslateSceneByConnection(scene);
-                    PreloadAndApplyScene(scene, callback);
+        loadedScene = LoadSceneJson(sceneName, sceneType, ecs::SceneInfo::Priority::Scene);
+        if (loadedScene) {
+            TranslateSceneByConnection(loadedScene);
+            PreloadAndApplyScene(loadedScene, callback);
 
-                    stagedScenes.Register(sceneName, scene);
-                    scenes[sceneType].emplace_back(scene);
-                    loadedScene = scene;
-                } else {
-                    Errorf("Failed to load scene: %s", sceneName);
-                }
-                loaded.test_and_set();
-                loaded.notify_all();
-            });
-        while (!loaded.test()) {
-            loaded.wait(false);
+            stagedScenes.Register(sceneName, loadedScene);
+            scenes[sceneType].emplace_back(loadedScene);
+        } else {
+            Errorf("Failed to load scene: %s", sceneName);
         }
         return loadedScene;
     }

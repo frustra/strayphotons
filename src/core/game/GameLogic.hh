@@ -6,7 +6,7 @@ namespace sp {
 
     class GameLogic : public RegisteredThread {
     public:
-        GameLogic();
+        GameLogic(bool stepMode);
 
         void StartThread();
 
@@ -17,6 +17,7 @@ namespace sp {
     private:
         void Frame() override;
 
+        bool stepMode;
         CFuncCollection funcs;
     };
 

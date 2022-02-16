@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assets/Async.hh"
 #include "core/DispatchQueue.hh"
 #include "core/Hashing.hh"
 #include "graphics/core/GraphicsContext.hh"
@@ -109,22 +110,20 @@ namespace sp::vulkan {
             return buf;
         }
 
-        std::future<BufferPtr> CreateBuffer(const InitialData &data,
+        AsyncPtr<Buffer> CreateBuffer(const InitialData &data,
             vk::BufferCreateInfo bufferInfo,
             VmaAllocationCreateInfo allocInfo);
 
-        std::future<BufferPtr> CreateBuffer(const InitialData &data,
-            vk::BufferUsageFlags usage,
-            VmaMemoryUsage residency);
+        AsyncPtr<Buffer> CreateBuffer(const InitialData &data, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
 
         BufferPtr GetFramePooledBuffer(BufferType type, vk::DeviceSize size);
 
         ImagePtr AllocateImage(vk::ImageCreateInfo info,
             VmaMemoryUsage residency,
             vk::ImageUsageFlags declaredUsage = {});
-        std::future<ImagePtr> CreateImage(ImageCreateInfo createInfo, const InitialData &data = {});
+        AsyncPtr<Image> CreateImage(ImageCreateInfo createInfo, const InitialData &data = {});
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
-        std::future<ImageViewPtr> CreateImageAndView(const ImageCreateInfo &imageInfo,
+        AsyncPtr<ImageView> CreateImageAndView(const ImageCreateInfo &imageInfo,
             const ImageViewCreateInfo &viewInfo, // image field is filled in automatically
             const InitialData &data = {});
         ImageViewPtr SwapchainImageView();

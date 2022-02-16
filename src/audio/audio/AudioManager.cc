@@ -74,10 +74,12 @@ namespace sp {
 
         for (auto &it : sounds) {
             auto &state = it.second;
-            if (!state.audioFile || !state.audioFile->Valid()) continue;
+            if (!state.audioFile || !state.audioFile->Ready()) continue;
             if (!state.audioBuffer) {
+                auto file = state.audioFile->Get();
+                Assertf(file, "Audio file missing");
                 auto audioBuffer = make_shared<nqr::AudioData>();
-                loader.Load(audioBuffer.get(), "ogg", state.audioFile->Buffer());
+                loader.Load(audioBuffer.get(), "ogg", file->Buffer());
 
                 std::unique_lock lock(soundsMutex);
                 state.audioBuffer = std::move(audioBuffer);

@@ -28,7 +28,7 @@
 #endif
 
 namespace sp {
-    Game::Game(cxxopts::ParseResult &options, Script *startupScript)
+    Game::Game(cxxopts::ParseResult &options, const Script *startupScript)
         : options(options), startupScript(startupScript),
 #ifdef SP_GRAPHICS_SUPPORT
           graphics(this),
@@ -42,7 +42,7 @@ namespace sp {
 #ifdef SP_AUDIO_SUPPORT
           audio(new AudioManager),
 #endif
-          logic() {
+          logic(startupScript != nullptr) {
     }
 
     Game::~Game() {}
@@ -98,6 +98,11 @@ namespace sp {
             funcs.Register<int>("sleep", "Pause script execution for N milliseconds", [](int ms) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(ms));
             });
+            funcs.Register("syncscene", "Pause script until all scenes are loaded", []() {
+                GetSceneManager().QueueActionAndBlock(SceneAction::SyncScene);
+            });
+
+            GetConsoleManager().QueueParseAndExecute("syncscene");
 
             Debugf("Running script: %s", startupScript->path);
             for (string line : startupScript->Lines()) {

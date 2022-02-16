@@ -6,9 +6,11 @@
 #include <stb_image.h>
 
 namespace sp {
-    void Image::PopulateFromAsset(std::shared_ptr<const Asset> asset) {
+    Image::Image(std::shared_ptr<const Asset> asset) {
         Assert(asset, "Loading Image from null asset");
-        asset->WaitUntilValid();
+
+        ZoneScopedN("LoadImage");
+        ZoneStr(asset->path);
 
         Assert(asset->BufferSize() <= INT_MAX, "Buffer size overflows int");
         uint8_t *data = stbi_load_from_memory(asset->BufferPtr(),
@@ -25,8 +27,5 @@ namespace sp {
         this->image = std::shared_ptr<uint8_t>(data, [](uint8_t *ptr) {
             stbi_image_free((void *)ptr);
         });
-
-        this->valid.test_and_set();
-        this->valid.notify_all();
     }
 } // namespace sp

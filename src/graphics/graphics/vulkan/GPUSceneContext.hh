@@ -1,5 +1,6 @@
 #pragma once
 
+#include "assets/Async.hh"
 #include "core/DispatchQueue.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Image.hh"
@@ -68,7 +69,7 @@ namespace sp::vulkan {
         uint32 primitiveCount = 0;
         uint32 primitiveCountPowerOfTwo = 1; // Always at least 1. Used to size draw command buffers.
 
-        std::pair<TextureIndex, std::future<void>> AddTexture(const ImageCreateInfo &imageInfo,
+        std::pair<TextureIndex, AsyncPtr<void>> AddTexture(const ImageCreateInfo &imageInfo,
             const ImageViewCreateInfo &viewInfo,
             const InitialData &data);
         TextureIndex AddTexture(const ImageViewPtr &ptr);

@@ -95,9 +95,8 @@ namespace sp {
 
     string ShaderManager::LoadShader(ShaderCompileInput &input, string name) {
         string filePath = "shaders/" + name;
-        auto asset = GAssets.Load(filePath, AssetType::Bundled, true);
+        auto asset = GAssets.Load(filePath, AssetType::Bundled, true)->Get();
         Assert(asset, "Shader asset not found");
-        asset->WaitUntilValid();
         input.units.push_back(name);
 
         string relativePath;

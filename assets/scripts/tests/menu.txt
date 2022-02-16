@@ -2,6 +2,5 @@ loadscene menu
 # TODO: BUG: First menu frame is missing the GUI
 screenshot menu.png
 stepgraphics
-# Wait until a future frame to take the screenshot
 screenshot delayed.png
 stepgraphics
