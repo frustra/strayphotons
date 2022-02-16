@@ -222,7 +222,7 @@ namespace sp::vulkan {
                     builder.ReadBuffer(drawIDs.drawParamsBuffer);
                 })
                 .Execute([this, view, drawIDs](RenderGraphResources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("scene_indirect.vert", "generate_gbuffer_indirect.frag");
+                    cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
 
                     GPUViewState viewState[] = {{view}, {}};
                     auto viewStateBuf = resources.GetBuffer("ViewState");
@@ -343,7 +343,7 @@ namespace sp::vulkan {
                     builder.ReadBuffer(drawIDs.drawParamsBuffer);
                 })
                 .Execute([this, viewsByEye, drawIDs](RenderGraphResources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("scene_indirect.vert", "generate_gbuffer_indirect.frag");
+                    cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
 
                     cmd.SetStencilTest(true);
                     cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
@@ -530,7 +530,7 @@ namespace sp::vulkan {
             })
 
             .Execute([this, drawIDs](RenderGraphResources &resources, CommandContext &cmd) {
-                cmd.SetShaders("shadow_map_indirect.vert", "shadow_map.frag");
+                cmd.SetShaders("shadow_map.vert", "shadow_map.frag");
 
                 auto &lights = this->lights;
                 for (int i = 0; i < lights.count; i++) {
