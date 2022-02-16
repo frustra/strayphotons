@@ -32,7 +32,6 @@ namespace sp::vulkan {
         Model(shared_ptr<const sp::Model> model, GPUSceneContext &scene, DeviceContext &device);
         ~Model();
 
-        void Draw(CommandContext &cmd, glm::mat4 modelMat, bool useMaterial = true);
         uint32 SceneIndex() const;
         uint32 PrimitiveCount() const {
             return primitives.size();

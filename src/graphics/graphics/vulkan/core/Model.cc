@@ -165,31 +165,6 @@ namespace sp::vulkan {
         return modelEntry->ArrayOffset();
     }
 
-    void Model::Draw(CommandContext &cmd, glm::mat4 modelMat, bool useMaterial) {
-        cmd.SetVertexLayout(SceneVertex::Layout());
-
-        for (auto &primitivePtr : primitives) {
-            auto &primitive = *primitivePtr;
-            MeshPushConstants constants;
-            constants.model = modelMat * primitive.transform;
-
-            cmd.PushConstants(constants);
-
-            if (useMaterial) {
-                cmd.SetTexture(0, 0, scene.GetTexture(primitive.baseColor));
-                cmd.SetTexture(0, 1, scene.GetTexture(primitive.metallicRoughness));
-            }
-
-            cmd.Raw().bindIndexBuffer(*scene.indexBuffer,
-                indexBuffer->ByteOffset() + primitive.indexOffset * sizeof(uint16),
-                primitive.indexType);
-            cmd.Raw().bindVertexBuffers(0,
-                {*scene.vertexBuffer},
-                {vertexBuffer->ByteOffset() + primitive.vertexOffset * sizeof(SceneVertex)});
-            cmd.DrawIndexed(primitive.indexCount, 1, 0, 0, 0);
-        }
-    }
-
     TextureIndex Model::LoadTexture(DeviceContext &device,
         const sp::Model &model,
         int materialIndex,

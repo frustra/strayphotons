@@ -34,8 +34,6 @@ namespace sp::vulkan {
 
     static CVar<float> CVarBloomScale("r.BloomScale", 0.15f, "Bloom scale");
 
-    static CVar<bool> CVarIndirectDraw("r.IndirectDraw", true, "Use bindless GPU driven rendering pipeline");
-
     Renderer::Renderer(DeviceContext &device, PerfTimer &timer) : device(device), timer(timer), scene(device) {
         funcs.Register<string, string>("screenshot",
             "Save screenshot to <path>, optionally specifying an image <resource>",
@@ -193,44 +191,38 @@ namespace sp::vulkan {
 
         Tecs::Entity windowEntity = device.GetActiveView();
 
-        bool indirectDraw = CVarIndirectDraw.Get();
-
         if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
             auto view = windowEntity.Get<ecs::View>(lock);
             view.UpdateViewMatrix(lock, windowEntity);
 
             graph.BeginScope("FlatView");
 
-            DrawBufferIDs drawIDs;
-            if (indirectDraw) drawIDs = GenerateDrawsForView(graph, view.visibilityMask);
+            auto drawIDs = GenerateDrawsForView(graph, view.visibilityMask);
 
-            auto &forwardPass = graph.Pass("ForwardPass").Build([&](RenderGraphPassBuilder &builder) {
-                RenderTargetDesc desc;
-                desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
-                desc.primaryViewType = vk::ImageViewType::e2DArray;
+            graph.Pass("ForwardPass")
+                .Build([&](RenderGraphPassBuilder &builder) {
+                    RenderTargetDesc desc;
+                    desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
+                    desc.primaryViewType = vk::ImageViewType::e2DArray;
 
-                desc.format = vk::Format::eR8G8B8A8Srgb;
-                builder.OutputColorAttachment(0, "GBuffer0", desc, {LoadOp::Clear, StoreOp::Store});
+                    desc.format = vk::Format::eR8G8B8A8Srgb;
+                    builder.OutputColorAttachment(0, "GBuffer0", desc, {LoadOp::Clear, StoreOp::Store});
 
-                desc.format = vk::Format::eR16G16B16A16Sfloat;
-                builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
-                builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
+                    desc.format = vk::Format::eR16G16B16A16Sfloat;
+                    builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
+                    builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
 
-                desc.format = vk::Format::eD24UnormS8Uint;
-                builder.OutputDepthAttachment("GBufferDepthStencil", desc, {LoadOp::Clear, StoreOp::Store});
+                    desc.format = vk::Format::eD24UnormS8Uint;
+                    builder.OutputDepthAttachment("GBufferDepthStencil", desc, {LoadOp::Clear, StoreOp::Store});
 
-                builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
+                    builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
 
-                if (indirectDraw) {
                     builder.ReadBuffer("WarpedVertexBuffer");
                     builder.ReadBuffer(drawIDs.drawCommandsBuffer);
                     builder.ReadBuffer(drawIDs.drawParamsBuffer);
-                }
-            });
-
-            if (indirectDraw) {
-                forwardPass.Execute([this, view, drawIDs](RenderGraphResources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("scene_indirect.vert", "generate_gbuffer_indirect.frag");
+                })
+                .Execute([this, view, drawIDs](RenderGraphResources &resources, CommandContext &cmd) {
+                    cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
 
                     GPUViewState viewState[] = {{view}, {}};
                     auto viewStateBuf = resources.GetBuffer("ViewState");
@@ -241,18 +233,6 @@ namespace sp::vulkan {
                     auto drawParamsBuffer = resources.GetBuffer(drawIDs.drawParamsBuffer);
                     DrawSceneIndirect(cmd, resources, drawCommandsBuffer, drawParamsBuffer);
                 });
-            } else {
-                forwardPass.Execute([this, view, lock](RenderGraphResources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
-
-                    GPUViewState viewState[] = {{view}, {}};
-                    auto viewStateBuf = resources.GetBuffer("ViewState");
-                    viewStateBuf->CopyFrom(viewState, 2);
-                    cmd.SetUniformBuffer(0, 10, viewStateBuf);
-
-                    ForwardPass(cmd, view.visibilityMask, lock);
-                });
-            }
 
             AddDeferredPasses(graph);
 
@@ -338,36 +318,32 @@ namespace sp::vulkan {
                 })
                 .Execute(executeHiddenAreaStencil(1));
 
-            DrawBufferIDs drawIDs;
-            if (indirectDraw) drawIDs = GenerateDrawsForView(graph, viewsByEye[0].visibilityMask);
+            auto drawIDs = GenerateDrawsForView(graph, viewsByEye[0].visibilityMask);
 
-            auto &forwardPass = graph.Pass("ForwardPass").Build([&](RenderGraphPassBuilder &builder) {
-                RenderTargetDesc desc;
-                desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
-                desc.arrayLayers = xrViews.size();
-                desc.primaryViewType = vk::ImageViewType::e2DArray;
+            graph.Pass("ForwardPass")
+                .Build([&](RenderGraphPassBuilder &builder) {
+                    RenderTargetDesc desc;
+                    desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
+                    desc.arrayLayers = xrViews.size();
+                    desc.primaryViewType = vk::ImageViewType::e2DArray;
 
-                desc.format = vk::Format::eR8G8B8A8Srgb;
-                builder.OutputColorAttachment(0, "GBuffer0", desc, {LoadOp::Clear, StoreOp::Store});
+                    desc.format = vk::Format::eR8G8B8A8Srgb;
+                    builder.OutputColorAttachment(0, "GBuffer0", desc, {LoadOp::Clear, StoreOp::Store});
 
-                desc.format = vk::Format::eR16G16B16A16Sfloat;
-                builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
-                builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
+                    desc.format = vk::Format::eR16G16B16A16Sfloat;
+                    builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
+                    builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
 
-                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::DontCare});
+                    builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::DontCare});
 
-                builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
+                    builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
 
-                if (indirectDraw) {
                     builder.ReadBuffer("WarpedVertexBuffer");
                     builder.ReadBuffer(drawIDs.drawCommandsBuffer);
                     builder.ReadBuffer(drawIDs.drawParamsBuffer);
-                }
-            });
-
-            if (indirectDraw) {
-                forwardPass.Execute([this, viewsByEye, drawIDs](RenderGraphResources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("scene_indirect.vert", "generate_gbuffer_indirect.frag");
+                })
+                .Execute([this, viewsByEye, drawIDs](RenderGraphResources &resources, CommandContext &cmd) {
+                    cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
 
                     cmd.SetStencilTest(true);
                     cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
@@ -395,35 +371,6 @@ namespace sp::vulkan {
                     viewStateBuf->Unmap();
                     viewStateBuf->Flush();
                 });
-            } else {
-                forwardPass.Execute([this, viewsByEye, lock](RenderGraphResources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
-
-                    cmd.SetStencilTest(true);
-                    cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
-                    cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
-                    cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
-
-                    auto viewStateBuf = resources.GetBuffer("ViewState");
-                    cmd.SetUniformBuffer(0, 10, viewStateBuf);
-
-                    ForwardPass(cmd, viewsByEye[0].visibilityMask, lock);
-
-                    GPUViewState *viewState;
-                    viewStateBuf->Map((void **)&viewState);
-                    for (size_t i = 0; i < viewsByEye.size(); i++) {
-                        auto view = viewsByEye[i];
-
-                        if (this->xrSystem->GetPredictedViewPose(ecs::XrEye(i), this->xrRenderPoses[i])) {
-                            view.SetViewMat(glm::inverse(this->xrRenderPoses[i]) * view.viewMat);
-                        }
-
-                        viewState[i] = GPUViewState(view);
-                    }
-                    viewStateBuf->Unmap();
-                    viewStateBuf->Flush();
-                });
-            }
 
             AddDeferredPasses(graph);
             graph.EndScope();
@@ -558,36 +505,32 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddShadowMaps(RenderGraph &graph, DrawLock lock) {
-        bool indirectDraw = CVarIndirectDraw.Get();
-
         vector<DrawBufferIDs> drawIDs;
-        if (indirectDraw) {
-            drawIDs.reserve(lights.count);
-            for (int i = 0; i < lights.count; i++) {
-                drawIDs.push_back(GenerateDrawsForView(graph, lights.views[i].visibilityMask));
-            }
+        drawIDs.reserve(lights.count);
+        for (int i = 0; i < lights.count; i++) {
+            drawIDs.push_back(GenerateDrawsForView(graph, lights.views[i].visibilityMask));
         }
 
-        auto &pass = graph.Pass("ShadowMaps").Build([&](RenderGraphPassBuilder &builder) {
-            RenderTargetDesc desc;
-            auto extent = glm::max(glm::ivec2(1), lights.renderTargetSize);
-            desc.extent = vk::Extent3D(extent.x, extent.y, 1);
-            desc.format = vk::Format::eR32Sfloat;
-            builder.OutputColorAttachment(0, "ShadowMapLinear", desc, {LoadOp::Clear, StoreOp::Store});
+        graph.Pass("ShadowMaps")
+            .Build([&](RenderGraphPassBuilder &builder) {
+                RenderTargetDesc desc;
+                auto extent = glm::max(glm::ivec2(1), lights.renderTargetSize);
+                desc.extent = vk::Extent3D(extent.x, extent.y, 1);
+                desc.format = vk::Format::eR32Sfloat;
+                builder.OutputColorAttachment(0, "ShadowMapLinear", desc, {LoadOp::Clear, StoreOp::Store});
 
-            desc.format = vk::Format::eD16Unorm;
-            builder.OutputDepthAttachment("ShadowMapDepth", desc, {LoadOp::Clear, StoreOp::Store});
+                desc.format = vk::Format::eD16Unorm;
+                builder.OutputDepthAttachment("ShadowMapDepth", desc, {LoadOp::Clear, StoreOp::Store});
 
-            if (indirectDraw) builder.ReadBuffer("WarpedVertexBuffer");
+                builder.ReadBuffer("WarpedVertexBuffer");
 
-            for (auto &ids : drawIDs) {
-                builder.ReadBuffer(ids.drawCommandsBuffer);
-            }
-        });
+                for (auto &ids : drawIDs) {
+                    builder.ReadBuffer(ids.drawCommandsBuffer);
+                }
+            })
 
-        if (indirectDraw) {
-            pass.Execute([this, drawIDs](RenderGraphResources &resources, CommandContext &cmd) {
-                cmd.SetShaders("shadow_map_indirect.vert", "shadow_map.frag");
+            .Execute([this, drawIDs](RenderGraphResources &resources, CommandContext &cmd) {
+                cmd.SetShaders("shadow_map.vert", "shadow_map.frag");
 
                 auto &lights = this->lights;
                 for (int i = 0; i < lights.count; i++) {
@@ -606,27 +549,6 @@ namespace sp::vulkan {
                     DrawSceneIndirect(cmd, resources, resources.GetBuffer(ids.drawCommandsBuffer), {});
                 }
             });
-        } else {
-            pass.Execute([this, lock](RenderGraphResources &resources, CommandContext &cmd) {
-                cmd.SetShaders("shadow_map.vert", "shadow_map.frag");
-
-                auto &lights = this->lights;
-                for (int i = 0; i < lights.count; i++) {
-                    auto &view = lights.views[i];
-
-                    GPUViewState views[] = {{view}, {}};
-                    cmd.UploadUniformData(0, 10, views, 2);
-
-                    vk::Rect2D viewport;
-                    viewport.extent = vk::Extent2D(view.extents.x, view.extents.y);
-                    viewport.offset = vk::Offset2D(view.offset.x, view.offset.y);
-                    cmd.SetViewport(viewport);
-                    cmd.SetYDirection(YDirection::Down);
-
-                    ForwardPass(cmd, view.visibilityMask, lock, false);
-                }
-            });
-        }
     }
 
     void Renderer::AddScreenshotPasses(RenderGraph &graph) {
@@ -1151,53 +1073,6 @@ namespace sp::vulkan {
             drawCommandsBuffer,
             0,
             drawCommandsBuffer->Size() / sizeof(VkDrawIndexedIndirectCommand));
-    }
-
-    void Renderer::ForwardPass(CommandContext &cmd,
-        ecs::Renderable::VisibilityMask viewMask,
-        DrawLock lock,
-        bool useMaterial,
-        const PreDrawFunc &preDraw) {
-        for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
-            if (ent.Has<ecs::Renderable, ecs::TransformSnapshot>(lock)) {
-                if (ent.Has<ecs::Mirror>(lock)) continue;
-                DrawEntity(cmd, viewMask, lock, ent, useMaterial, preDraw);
-            }
-        }
-
-        for (Tecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
-            if (ent.Has<ecs::Renderable, ecs::TransformSnapshot, ecs::Mirror>(lock)) {
-                DrawEntity(cmd, viewMask, lock, ent, useMaterial, preDraw);
-            }
-        }
-    }
-
-    void Renderer::DrawEntity(CommandContext &cmd,
-        ecs::Renderable::VisibilityMask viewMask,
-        DrawLock lock,
-        Tecs::Entity &ent,
-        bool useMaterial,
-        const PreDrawFunc &preDraw) {
-        auto &comp = ent.Get<ecs::Renderable>(lock);
-        if (!comp.model || !comp.model->Ready()) return;
-
-        // Filter entities that aren't members of all layers in the view's visibility mask.
-        ecs::Renderable::VisibilityMask mask = comp.visibility;
-        mask &= viewMask;
-        if (mask != viewMask) return;
-
-        auto &modelMat = ent.Get<ecs::TransformSnapshot>(lock).matrix;
-
-        auto model = comp.model->Get();
-        Assertf(model, "Renderable model is null");
-        auto vkModel = activeModels.Load(model->name);
-        if (!vkModel) {
-            modelsToLoad.push_back(model);
-            return;
-        }
-
-        if (preDraw) preDraw(lock, ent);
-        vkModel->Draw(cmd, modelMat, useMaterial); // TODO pass and use comp.model->bones
     }
 
     void Renderer::EndFrame() {

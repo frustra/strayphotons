@@ -1,28 +1,30 @@
-#version 450
-layout(early_fragment_tests) in;
-
+#version 460
+#extension GL_EXT_shader_16bit_storage : require
+#extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_OVR_multiview2 : enable
 layout(num_views = 2) in;
+layout(early_fragment_tests) in;
 
 #include "../lib/util.glsl"
 #include "../lib/types_common.glsl"
 
-layout(binding = 0) uniform sampler2D baseColorTex;
-layout(binding = 1) uniform sampler2D metallicRoughnessTex;
+layout(set = 2, binding = 0) uniform sampler2D textures[];
 
 layout(location = 0) in vec3 inViewPos;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
+layout(location = 3) flat in int baseColorTexID;
+layout(location = 4) flat in int metallicRoughnessTexID;
 
 layout(location = 0) out vec4 gBuffer0; // rgba8
 layout(location = 1) out vec4 gBuffer1; // rgba16f
 layout(location = 2) out vec4 gBuffer2; // rgba16f
 
 void main() {
-	vec4 baseColor = texture(baseColorTex, inTexCoord);
+	vec4 baseColor = texture(textures[baseColorTexID], inTexCoord);
 	if (baseColor.a < 0.5) discard;
 
-	vec4 metallicRoughnessSample = texture(metallicRoughnessTex, inTexCoord);
+	vec4 metallicRoughnessSample = texture(textures[metallicRoughnessTexID], inTexCoord);
 	float roughness = metallicRoughnessSample.g;
 	float metallic = metallicRoughnessSample.b;
 
