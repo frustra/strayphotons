@@ -129,9 +129,12 @@ namespace sp::vulkan {
         void AddShadowMaps(RenderGraph &graph, DrawLock lock);
         void AddGuis(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Gui>> lock);
         void AddDeferredPasses(RenderGraph &graph);
+        void AddLighting(RenderGraph &graph);
+        void AddLaserLines(RenderGraph &graph);
+        void AddTonemap(RenderGraph &graph);
         void AddMenuOverlay(RenderGraph &graph);
 
-        RenderGraphResourceID AddBloom(RenderGraph &graph, RenderGraphResourceID sourceID);
+        RenderGraphResourceID AddBloom(RenderGraph &graph);
         RenderGraphResourceID AddGaussianBlur(RenderGraph &graph,
             RenderGraphResourceID sourceID,
             glm::ivec2 direction,

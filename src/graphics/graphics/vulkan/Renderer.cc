@@ -693,7 +693,13 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddDeferredPasses(RenderGraph &graph) {
-        RenderGraphResourceID luminance;
+        AddLighting(graph);
+        AddLaserLines(graph);
+        AddBloom(graph);
+        AddTonemap(graph);
+    }
+
+    void Renderer::AddLighting(RenderGraph &graph) {
         graph.Pass("Lighting")
             .Build([&](RenderGraphPassBuilder &builder) {
                 auto gBuffer0 = builder.ShaderRead("GBuffer0");
@@ -706,7 +712,6 @@ namespace sp::vulkan {
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 auto dest =
                     builder.OutputColorAttachment(0, "LinearLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
-                luminance = dest.id;
 
                 builder.ReadBuffer("ViewState");
                 builder.ReadBuffer("LightState");
@@ -743,67 +748,58 @@ namespace sp::vulkan {
                 cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
                 cmd.Draw(3);
             });
+    }
 
-        if (!lasers.gpuData.empty()) {
-            graph.Pass("LaserLines")
-                .Build([&](RenderGraphPassBuilder &builder) {
-                    auto input = builder.LastOutput();
-                    builder.ShaderRead(input.id);
-                    builder.ShaderRead("GBuffer2");
+    void Renderer::AddLaserLines(RenderGraph &graph) {
+        if (lasers.gpuData.empty()) return;
 
-                    auto desc = input.renderTargetDesc;
-                    desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
-                    auto dest =
-                        builder.OutputColorAttachment(0, "LaserLines", desc, {LoadOp::DontCare, StoreOp::Store});
-                    luminance = dest.id;
+        graph.Pass("LaserLines")
+            .Build([&](RenderGraphPassBuilder &builder) {
+                auto input = builder.LastOutput();
+                builder.ShaderRead(input.id);
+                builder.ShaderRead("GBuffer2");
 
-                    builder.ReadBuffer("ViewState");
-                    builder.ReadBuffer("LaserState");
+                auto desc = input.renderTargetDesc;
+                desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
+                auto dest = builder.OutputColorAttachment(0, "LaserLines", desc, {LoadOp::DontCare, StoreOp::Store});
 
-                    builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::DontCare});
-                })
-                .Execute([this](RenderGraphResources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("screen_cover.vert", "laser_lines.frag");
-                    cmd.SetStencilTest(true);
-                    cmd.SetDepthTest(false, false);
-                    cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
-                    cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
-                    cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
+                builder.ReadBuffer("ViewState");
+                builder.ReadBuffer("LaserState");
 
-                    cmd.SetTexture(0, 0, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
-                    cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer2")->ImageView());
+                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::DontCare});
+            })
+            .Execute([this](RenderGraphResources &resources, CommandContext &cmd) {
+                cmd.SetShaders("screen_cover.vert", "laser_lines.frag");
+                cmd.SetStencilTest(true);
+                cmd.SetDepthTest(false, false);
+                cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
+                cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
+                cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
 
-                    for (int i = 0; i < MAX_LIGHT_GELS; i++) {
-                        if (i < this->lights.gelCount) {
-                            const auto &target = resources.GetRenderTarget(this->lights.gelNames[i]);
-                            cmd.SetTexture(1, i, target->ImageView());
-                        } else {
-                            cmd.SetTexture(1, i, this->GetBlankPixelImage());
-                        }
-                    }
+                cmd.SetTexture(0, 0, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
+                cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer2")->ImageView());
 
-                    cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
-                    cmd.SetStorageBuffer(0, 9, resources.GetBuffer("LaserState"));
+                cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
+                cmd.SetStorageBuffer(0, 9, resources.GetBuffer("LaserState"));
 
-                    cmd.PushConstants((uint32)lasers.gpuData.size());
-                    cmd.Draw(3);
-                });
-        }
+                cmd.PushConstants((uint32)lasers.gpuData.size());
+                cmd.Draw(3);
+            });
+    }
 
-        auto bloom = AddBloom(graph, luminance);
-
+    void Renderer::AddTonemap(RenderGraph &graph) {
         graph.Pass("Tonemap")
             .Build([&](RenderGraphPassBuilder &builder) {
-                auto luminance = builder.ShaderRead(bloom);
+                auto luminance = builder.ShaderRead(builder.LastOutputID());
 
                 auto desc = luminance.renderTargetDesc;
                 desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
                 desc.format = vk::Format::eR8G8B8A8Srgb;
                 builder.OutputColorAttachment(0, "TonemappedLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
             })
-            .Execute([bloom](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([](RenderGraphResources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "tonemap.frag");
-                cmd.SetTexture(0, 0, resources.GetRenderTarget(bloom)->ImageView());
+                cmd.SetTexture(0, 0, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
                 cmd.Draw(3);
             });
     }
@@ -845,7 +841,8 @@ namespace sp::vulkan {
         return destID;
     }
 
-    RenderGraphResourceID Renderer::AddBloom(RenderGraph &graph, RenderGraphResourceID sourceID) {
+    RenderGraphResourceID Renderer::AddBloom(RenderGraph &graph) {
+        auto sourceID = graph.LastOutputID();
         auto blurY1 = AddGaussianBlur(graph, sourceID, glm::ivec2(0, 1), 1, CVarBloomScale.Get());
         auto blurX1 = AddGaussianBlur(graph, blurY1, glm::ivec2(1, 0), 2);
         auto blurY2 = AddGaussianBlur(graph, blurX1, glm::ivec2(0, 1), 1);
