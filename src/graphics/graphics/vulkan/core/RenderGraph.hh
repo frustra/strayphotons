@@ -33,12 +33,29 @@ namespace sp::vulkan {
             return type != Type::Undefined;
         }
 
+        RenderTargetDesc DeriveRenderTarget() const {
+            Assert(type == Type::RenderTarget, "resource is not a render target");
+            auto desc = renderTargetDesc;
+            desc.usage = {};
+            return desc;
+        }
+
+        vk::Format RenderTargetFormat() const {
+            return renderTargetDesc.format;
+        }
+
         RenderGraphResourceID id = RenderGraphInvalidResource;
         Type type = Type::Undefined;
+
+    private:
         union {
             RenderTargetDesc renderTargetDesc;
             BufferDesc bufferDesc;
         };
+
+        friend class RenderGraphPassBuilder;
+        friend class RenderGraphResources;
+        friend class RenderGraph;
     };
 
     struct RenderGraphResourceAccess {

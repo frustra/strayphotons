@@ -104,7 +104,7 @@ namespace sp::vulkan {
                     auto loadOp = LoadOp::DontCare;
 
                     if (res) {
-                        auto format = res.renderTargetDesc.format;
+                        auto format = res.RenderTargetFormat();
                         auto layer = CVarWindowViewTargetLayer.Get();
                         if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4 && layer == 0) {
                             sourceID = res.id;
@@ -361,7 +361,7 @@ namespace sp::vulkan {
                     res = builder.GetResource(defaultXRViewTarget);
                 }
 
-                auto format = res.renderTargetDesc.format;
+                auto format = res.RenderTargetFormat();
                 if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4) {
                     sourceID = res.id;
                 } else {
@@ -797,8 +797,7 @@ namespace sp::vulkan {
                 builder.ShaderRead("GBuffer2");
                 builder.ShaderRead("ShadowMapLinear");
 
-                auto desc = gBuffer0.renderTargetDesc;
-                desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
+                auto desc = gBuffer0.DeriveRenderTarget();
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.OutputColorAttachment(0, "LinearLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
 
@@ -848,8 +847,7 @@ namespace sp::vulkan {
                 builder.ShaderRead(input.id);
                 builder.ShaderRead("GBuffer2");
 
-                auto desc = input.renderTargetDesc;
-                desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
+                auto desc = input.DeriveRenderTarget();
                 builder.OutputColorAttachment(0, "LaserLines", desc, {LoadOp::DontCare, StoreOp::Store});
 
                 builder.ReadBuffer("ViewState");
@@ -881,8 +879,7 @@ namespace sp::vulkan {
             .Build([&](RenderGraphPassBuilder &builder) {
                 auto luminance = builder.ShaderRead(builder.LastOutputID());
 
-                auto desc = luminance.renderTargetDesc;
-                desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
+                auto desc = luminance.DeriveRenderTarget();
                 desc.format = vk::Format::eR8G8B8A8Srgb;
                 builder.OutputColorAttachment(0, "TonemappedLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
             })
@@ -914,10 +911,9 @@ namespace sp::vulkan {
         graph.Pass("GaussianBlur")
             .Build([&](RenderGraphPassBuilder &builder) {
                 auto source = builder.ShaderRead(sourceID);
-                auto desc = source.renderTargetDesc;
+                auto desc = source.DeriveRenderTarget();
                 desc.extent.width /= downsample;
                 desc.extent.height /= downsample;
-                desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
                 auto dest = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store});
                 destID = dest.id;
             })
@@ -941,8 +937,7 @@ namespace sp::vulkan {
         graph.Pass("BloomCombine")
             .Build([&](RenderGraphPassBuilder &builder) {
                 auto source = builder.ShaderRead(sourceID);
-                auto desc = source.renderTargetDesc;
-                desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
+                auto desc = source.DeriveRenderTarget();
                 auto dest = builder.OutputColorAttachment(0, "Bloom", desc, {LoadOp::DontCare, StoreOp::Store});
                 destID = dest.id;
 
@@ -976,8 +971,7 @@ namespace sp::vulkan {
                 auto input = builder.LastOutput();
                 builder.ShaderRead(input.id);
 
-                auto desc = input.renderTargetDesc;
-                desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
+                auto desc = input.DeriveRenderTarget();
                 builder.OutputColorAttachment(0, "Menu", desc, {LoadOp::DontCare, StoreOp::Store});
 
                 builder.ShaderRead(menuID);
@@ -1004,7 +998,7 @@ namespace sp::vulkan {
                     if (resource.type != RenderGraphResource::Type::RenderTarget) {
                         Errorf("Can't screenshot \"%s\": invalid resource", screenshotResource);
                     } else {
-                        auto format = resource.renderTargetDesc.format;
+                        auto format = resource.RenderTargetFormat();
                         if (FormatByteSize(format) == FormatComponentCount(format)) {
                             sourceID = resource.id;
                         } else {
@@ -1034,9 +1028,8 @@ namespace sp::vulkan {
             .Build([&](RenderGraphPassBuilder &builder) {
                 auto &res = builder.ShaderRead(sourceID);
                 targetID = res.id;
-                auto desc = res.renderTargetDesc;
+                auto desc = res.DeriveRenderTarget();
                 desc.format = vk::Format::eR8G8B8A8Srgb;
-                desc.usage = {}; // TODO: usage will be leaked between targets unless it's reset like this
                 outputID = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store}).id;
             })
             .Execute([this, targetID, arrayLayer](RenderGraphResources &resources, CommandContext &cmd) {
