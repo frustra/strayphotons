@@ -97,11 +97,11 @@ namespace sp::vulkan {
                 FLT_MAX,
                 ImVec2(0, 100));
 
-            ImGui::Text("%.3f", drawHistogram.min / 1000000.0);
+            ImGui::Text("%6.3f", drawHistogram.min / 1000000.0);
             ImGui::SameLine(ImGui::GetWindowContentRegionMax().x / 2 - ImGui::GetItemRectSize().x / 2);
-            ImGui::Text("%.3f", ((drawHistogram.max - drawHistogram.min) / 2 + drawHistogram.min) / 1000000.0);
+            ImGui::Text("%6.3f", ((drawHistogram.max - drawHistogram.min) / 2 + drawHistogram.min) / 1000000.0);
             ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - ImGui::GetItemRectSize().x);
-            ImGui::Text("%.3f", drawHistogram.max / 1000000.0);
+            ImGui::Text("%6.3f", drawHistogram.max / 1000000.0);
 
             if (drawHistogramMode == Mode::CPU) {
                 if (ImGui::Button("CPU histogram")) drawHistogramMode = Mode::GPU;

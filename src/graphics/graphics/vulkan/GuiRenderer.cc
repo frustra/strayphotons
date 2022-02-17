@@ -141,7 +141,7 @@ namespace sp::vulkan {
         cmd.SetBlending(true, vk::BlendOp::eAdd);
         cmd.SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha);
 
-        cmd.SetShaders("basic_ortho.vert", "basic_ortho.frag");
+        cmd.SetShaders("basic_ortho.vert", "single_texture.frag");
 
         glm::mat4 proj = MakeOrthographicProjection(viewport);
         cmd.PushConstants(proj);

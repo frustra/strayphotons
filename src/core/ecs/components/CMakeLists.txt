@@ -1,7 +1,6 @@
 
 target_sources(${PROJECT_CORE_LIB} PRIVATE
     Animation.cc
-    Sound.cc
     Controller.cc
     Events.cc
     Focus.cc
@@ -15,8 +14,10 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Renderable.cc
     SceneConnection.cc
     SceneInfo.cc
+    Screen.cc
     Script.cc
     ScriptDefinitions.cc
+    Sound.cc
     Signals.cc
     Transform.cc
     Triggers.cc
