@@ -10,12 +10,12 @@ layout(location = 0) out vec4 outFragColor;
 layout(constant_id = 0) const uint SWIZZLE = 0xE4;
 
 layout(push_constant) uniform PushConstants {
-	float layer;
+    float layer;
 };
 
 void main() {
-	vec4 value = texture(tex, vec3(inTexCoord, layer));
-	for (uint i = 0; i < 4; i++) {
-		outFragColor[i] = value[(SWIZZLE & (3 << (2 * i))) >> (2 * i)];
-	}
+    vec4 value = texture(tex, vec3(inTexCoord, layer));
+    for (uint i = 0; i < 4; i++) {
+        outFragColor[i] = value[(SWIZZLE & (3 << (2 * i))) >> (2 * i)];
+    }
 }

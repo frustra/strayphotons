@@ -94,7 +94,12 @@ namespace sp {
     }
 
     string ShaderManager::LoadShader(ShaderCompileInput &input, string name) {
-        string filePath = "shaders/" + name;
+        string filePath;
+        if (name.starts_with("lib/") || name.starts_with("smaa/"))
+            filePath = "shaders/" + name;
+        else
+            filePath = "shaders/opengl/" + name;
+
         auto asset = GAssets.Load(filePath, AssetType::Bundled, true)->Get();
         Assert(asset, "Shader asset not found");
         input.units.push_back(name);

@@ -10,23 +10,23 @@ layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
 
 layout(std430, set = 0, binding = 0) readonly buffer DrawParamsList {
-	WarpGeometryParams paramList[];
+    WarpGeometryParams paramList[];
 };
 layout(std430, set = 0, binding = 1) buffer VertexBufferOutput {
-	SceneVertex vertices[];
+    SceneVertex vertices[];
 };
 
 void main() {
-	WarpGeometryParams params = paramList[gl_BaseInstance];
+    WarpGeometryParams params = paramList[gl_BaseInstance];
 
-	vec4 position = params.modelMat * vec4(inPosition, 1);
-	vec3 normal = mat3(params.modelMat) * inNormal;
+    vec4 position = params.modelMat * vec4(inPosition, 1);
+    vec3 normal = mat3(params.modelMat) * inNormal;
 
-	// warping goes here
+    // warping goes here
 
-	SceneVertex vertex;
-	vertex.positionAndNormalX = vec4(position.xyz, normal.x);
-	vertex.normalYZ = normal.yz;
-	vertex.uv = inTexCoord;
-	vertices[gl_VertexIndex - gl_BaseVertex + params.outputVertexOffset] = vertex;
+    SceneVertex vertex;
+    vertex.positionAndNormalX = vec4(position.xyz, normal.x);
+    vertex.normalYZ = normal.yz;
+    vertex.uv = inTexCoord;
+    vertices[gl_VertexIndex - gl_BaseVertex + params.outputVertexOffset] = vertex;
 }

@@ -2,28 +2,15 @@
 
 layout(location = 0) out vec2 outTexCoord;
 
-out gl_PerVertex
-{
-	vec4 gl_Position;
+out gl_PerVertex {
+    vec4 gl_Position;
 };
 
-vec2 positions[3] = vec2[](
-    vec2(-2, -1),
-    vec2(2, -1),
-    vec2(0, 3)
-);
+vec2 positions[3] = vec2[](vec2(-2, -1), vec2(2, -1), vec2(0, 3));
 
-vec2 uvs[3] = vec2[](
-    vec2(-0.5, 1),
-    vec2(1.5, 1),
-    vec2(0.5, -1)
-);
+vec2 uvs[3] = vec2[](vec2(-0.5, 1), vec2(1.5, 1), vec2(0.5, -1));
 
-vec2 uvsFlipped[3] = vec2[](
-    vec2(-0.5, 0),
-    vec2(1.5, 0),
-    vec2(0.5, 2)
-);
+vec2 uvsFlipped[3] = vec2[](vec2(-0.5, 0), vec2(1.5, 0), vec2(0.5, 2));
 
 const bool flipped = false;
 

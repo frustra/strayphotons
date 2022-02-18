@@ -27,7 +27,7 @@ layout(binding = 2, std140) uniform GLVoxelInfo {
 
 #define DIFFUSE_ONLY_SHADING
 #define INCLUDE_MIRRORS
-##import lib/mirror_shadow_common
+##import mirror_shadow_common
 ##import lib/shading
 
 ##import voxel_shared

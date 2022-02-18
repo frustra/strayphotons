@@ -13,5 +13,5 @@ layout(location = 0) out vec4 outLinearDepth;
 #include "lib/view_states_uniform.glsl"
 
 void main() {
-	outLinearDepth.r = LinearDepth(inViewPos, views[gl_ViewID_OVR].clip);
+    outLinearDepth.r = LinearDepth(inViewPos, views[gl_ViewID_OVR].clip);
 }

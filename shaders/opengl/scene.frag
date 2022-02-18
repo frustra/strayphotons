@@ -2,7 +2,7 @@
 
 ##import lib/util
 ##import lib/types_common
-##import lib/mirror_scene_common
+##import mirror_scene_common
 
 layout (binding = 0) uniform sampler2D baseColorTex;
 layout (binding = 1) uniform sampler2D metallicRoughnessTex;

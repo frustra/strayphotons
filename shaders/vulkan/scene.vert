@@ -19,22 +19,22 @@ layout(location = 4) flat out int metallicRoughnessTexID;
 
 #include "lib/draw_params.glsl"
 layout(std430, set = 1, binding = 0) readonly buffer DrawParamsList {
-	DrawParams drawParams[];
+    DrawParams drawParams[];
 };
 
 #include "lib/view_states_uniform.glsl"
 
 void main() {
-	ViewState view = views[gl_ViewID_OVR];
-	vec4 viewPos4 = view.viewMat * vec4(inPosition, 1.0);
-	outViewPos = vec3(viewPos4) / viewPos4.w;
-	gl_Position = view.projMat * viewPos4;
+    ViewState view = views[gl_ViewID_OVR];
+    vec4 viewPos4 = view.viewMat * vec4(inPosition, 1.0);
+    outViewPos = vec3(viewPos4) / viewPos4.w;
+    gl_Position = view.projMat * viewPos4;
 
-	mat3 rotation = mat3(view.viewMat);
-	outNormal = rotation * inNormal;
-	outTexCoord = inTexCoord;
+    mat3 rotation = mat3(view.viewMat);
+    outNormal = rotation * inNormal;
+    outTexCoord = inTexCoord;
 
-	DrawParams params = drawParams[gl_BaseInstance];
-	baseColorTexID = int(params.baseColorTexID);
-	metallicRoughnessTexID = int(params.metallicRoughnessTexID);
+    DrawParams params = drawParams[gl_BaseInstance];
+    baseColorTexID = int(params.baseColorTexID);
+    metallicRoughnessTexID = int(params.metallicRoughnessTexID);
 }

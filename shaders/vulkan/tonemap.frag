@@ -6,8 +6,8 @@
 #extension GL_OVR_multiview2 : enable
 layout(num_views = 2) in;
 
-#include "../lib/util.glsl"
 #include "../lib/lighting_util.glsl"
+#include "../lib/util.glsl"
 
 layout(binding = 0) uniform sampler2DArray luminanceTex;
 
@@ -20,23 +20,23 @@ const float ditherAmount = 0.5 / 255.0;
 const vec2 saturation = vec2(0, 1);
 
 void main() {
-	vec4 luminosity = texture(luminanceTex, vec3(inTexCoord, gl_ViewID_OVR)); // pre-exposed
+    vec4 luminosity = texture(luminanceTex, vec3(inTexCoord, gl_ViewID_OVR)); // pre-exposed
 
-	vec3 toneMapped = HDRTonemap(max(vec3(0), luminosity.rgb) * curveScale) / HDRTonemap(vec3(whitePoint));
+    vec3 toneMapped = HDRTonemap(max(vec3(0), luminosity.rgb) * curveScale) / HDRTonemap(vec3(whitePoint));
 
 #ifdef DEBUG_OVEREXPOSED
-	if (toneMapped.r > 1 || toneMapped.g > 1 || toneMapped.b > 1) {
-		// Highlight overexposed/blown out areas.
-		toneMapped = vec3(1, 0, 0);
-	}
+    if (toneMapped.r > 1 || toneMapped.g > 1 || toneMapped.b > 1) {
+        // Highlight overexposed/blown out areas.
+        toneMapped = vec3(1, 0, 0);
+    }
 #endif
 
 #ifdef ENABLE_DITHER
-	vec4 rng = randState(inTexCoord.xyx);
-	toneMapped += (rand2(rng) - 0.5) * ditherAmount;
+    vec4 rng = randState(inTexCoord.xyx);
+    toneMapped += (rand2(rng) - 0.5) * ditherAmount;
 #endif
 
-	vec3 hsv = RGBtoHSV(toneMapped);
-	hsv.y = mix(saturation.x, saturation.y, hsv.y);
-	outFragColor = vec4(HSVtoRGB(hsv), luminosity.a);
+    vec3 hsv = RGBtoHSV(toneMapped);
+    hsv.y = mix(saturation.x, saturation.y, hsv.y);
+    outFragColor = vec4(HSVtoRGB(hsv), luminosity.a);
 }

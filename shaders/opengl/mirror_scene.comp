@@ -4,7 +4,7 @@
 
 layout (local_size_x = MAX_MIRRORS, local_size_y = MAX_MIRRORS) in;
 
-##import lib/mirror_scene_common
+##import mirror_scene_common
 
 uniform int mirrorCount = 0;
 

@@ -6,52 +6,52 @@ layout(binding = 0, rgba8) uniform image2D texture;
 
 layout(local_size_x = 128, local_size_y = 1) in;
 
-#include "lib/scene.glsl"
 #include "lib/indirect_commands.glsl"
+#include "lib/scene.glsl"
 #include "lib/warp_geometry_params.glsl"
 
 layout(push_constant) uniform PushConstants {
-	uint renderableCount;
+    uint renderableCount;
 };
 
 layout(std430, set = 0, binding = 0) readonly buffer Renderables {
-	RenderableEntity renderables[];
+    RenderableEntity renderables[];
 };
 layout(std430, set = 0, binding = 1) readonly buffer MeshModels {
-	MeshModel models[];
+    MeshModel models[];
 };
 layout(std430, set = 0, binding = 2) readonly buffer MeshPrimitives {
-	MeshPrimitive primitives[];
+    MeshPrimitive primitives[];
 };
 layout(std430, set = 0, binding = 3) buffer DrawCommands {
-	uint drawCount;
-	VkDrawIndirectCommand drawCommands[];
+    uint drawCount;
+    VkDrawIndirectCommand drawCommands[];
 };
 layout(std430, set = 0, binding = 4) buffer DrawParamsList {
-	WarpGeometryParams drawParams[];
+    WarpGeometryParams drawParams[];
 };
 
 void main() {
-	if (gl_GlobalInvocationID.x >= renderableCount) return;
+    if (gl_GlobalInvocationID.x >= renderableCount) return;
 
-	RenderableEntity renderable = renderables[gl_GlobalInvocationID.x];
-	MeshModel model = models[renderable.modelIndex];
-	uint primitiveEnd = model.primitiveOffset + model.primitiveCount;
+    RenderableEntity renderable = renderables[gl_GlobalInvocationID.x];
+    MeshModel model = models[renderable.modelIndex];
+    uint primitiveEnd = model.primitiveOffset + model.primitiveCount;
 
-	for (uint pi = model.primitiveOffset; pi < primitiveEnd; pi++) {
-		MeshPrimitive prim = primitives[pi];
-		VkDrawIndirectCommand draw;
-		draw.vertexCount = prim.vertexCount;
-		draw.instanceCount = 1;
-		draw.firstVertex = int(model.vertexOffset + prim.vertexOffset);
+    for (uint pi = model.primitiveOffset; pi < primitiveEnd; pi++) {
+        MeshPrimitive prim = primitives[pi];
+        VkDrawIndirectCommand draw;
+        draw.vertexCount = prim.vertexCount;
+        draw.instanceCount = 1;
+        draw.firstVertex = int(model.vertexOffset + prim.vertexOffset);
 
-		uint drawIndex = atomicAdd(drawCount, 1);
-		draw.firstInstance = drawIndex;
-		drawCommands[drawIndex] = draw;
+        uint drawIndex = atomicAdd(drawCount, 1);
+        draw.firstInstance = drawIndex;
+        drawCommands[drawIndex] = draw;
 
-		WarpGeometryParams params;
-		params.modelMat = renderable.modelToWorld * prim.primitiveToModel;
-		params.outputVertexOffset = renderable.vertexOffset + prim.vertexOffset;
-		drawParams[drawIndex] = params;
-	}
+        WarpGeometryParams params;
+        params.modelMat = renderable.modelToWorld * prim.primitiveToModel;
+        params.outputVertexOffset = renderable.vertexOffset + prim.vertexOffset;
+        drawParams[drawIndex] = params;
+    }
 }

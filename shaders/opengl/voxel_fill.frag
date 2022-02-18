@@ -50,7 +50,7 @@ layout(binding = 1, std140) uniform GLVoxelInfo {
 	VoxelInfo voxelInfo;
 };
 
-##import lib/mirror_shadow_common
+##import mirror_shadow_common
 
 uniform float lightAttenuation = 0.5;
 
