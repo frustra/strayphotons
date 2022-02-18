@@ -9,15 +9,15 @@ layout(location = 1) out vec4 outColor;
 
 layout(push_constant) uniform PushConstants {
     mat4 projMat;
-} constants;
+}
+constants;
 
-out gl_PerVertex
-{
-	vec4 gl_Position;
+out gl_PerVertex {
+    vec4 gl_Position;
 };
 
 void main() {
-	outTexCoord = inTexCoord;
-	outColor = inColor;
-	gl_Position = constants.projMat * vec4(inPos, 0.0, 1.0);
+    outTexCoord = inTexCoord;
+    outColor = inColor;
+    gl_Position = constants.projMat * vec4(inPos, 0.0, 1.0);
 }

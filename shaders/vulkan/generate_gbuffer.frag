@@ -5,8 +5,8 @@
 layout(num_views = 2) in;
 layout(early_fragment_tests) in;
 
-#include "../lib/util.glsl"
 #include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
 
 layout(set = 2, binding = 0) uniform sampler2D textures[];
 
@@ -21,17 +21,17 @@ layout(location = 1) out vec4 gBuffer1; // rgba16f
 layout(location = 2) out vec4 gBuffer2; // rgba16f
 
 void main() {
-	vec4 baseColor = texture(textures[baseColorTexID], inTexCoord);
-	if (baseColor.a < 0.5) discard;
+    vec4 baseColor = texture(textures[baseColorTexID], inTexCoord);
+    if (baseColor.a < 0.5) discard;
 
-	vec4 metallicRoughnessSample = texture(textures[metallicRoughnessTexID], inTexCoord);
-	float roughness = metallicRoughnessSample.g;
-	float metallic = metallicRoughnessSample.b;
+    vec4 metallicRoughnessSample = texture(textures[metallicRoughnessTexID], inTexCoord);
+    float roughness = metallicRoughnessSample.g;
+    float metallic = metallicRoughnessSample.b;
 
-	gBuffer0.rgb = baseColor.rgb;
-	gBuffer0.a = roughness;
-	gBuffer1.rg = EncodeNormal(inNormal);
-	gBuffer1.ba = vec2(0);
-	gBuffer2.rgb = inViewPos;
-	gBuffer2.a = metallic;
+    gBuffer0.rgb = baseColor.rgb;
+    gBuffer0.a = roughness;
+    gBuffer1.rg = EncodeNormal(inNormal);
+    gBuffer1.ba = vec2(0);
+    gBuffer2.rgb = inViewPos;
+    gBuffer2.a = metallic;
 }

@@ -9,9 +9,9 @@ const float histSampleScale = 10.0;
 const float histDownsample = 2.0;
 
 float histogramBinFromPixel(vec3 c) {
-	float lum = DigitalLuminance(c);
-	float ratio = saturate((log2(lum) - lumMin) / (lumMax - lumMin));
-	return float(HistogramBins - 1) * ratio;
+    float lum = DigitalLuminance(c);
+    float ratio = saturate((log2(lum) - lumMin) / (lumMax - lumMin));
+    return float(HistogramBins - 1) * ratio;
 }
 
 #endif

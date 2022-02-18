@@ -10,28 +10,19 @@ layout(location = 1) out vec4 outColor;
 
 #include "lib/view_states_uniform.glsl"
 
-vec2 positions[4] = vec2[](
-	vec2(-0.5, 0.5),
-	vec2(-0.5, -0.5),
-	vec2(0.5, 0.5),
-	vec2(0.5, -0.5)
-);
+vec2 positions[4] = vec2[](vec2(-0.5, 0.5), vec2(-0.5, -0.5), vec2(0.5, 0.5), vec2(0.5, -0.5));
 
-vec2 uvs[4] = vec2[](
-	vec2(0, 0),
-	vec2(0, 1),
-	vec2(1, 0),
-	vec2(1, 1)
-);
+vec2 uvs[4] = vec2[](vec2(0, 0), vec2(0, 1), vec2(1, 0), vec2(1, 1));
 
 layout(push_constant) uniform PushConstants {
-	mat4 transform;
-	vec3 colorScale;
-} constants;
+    mat4 transform;
+    vec3 colorScale;
+}
+constants;
 
 void main() {
-	ViewState view = views[gl_ViewID_OVR];
-	gl_Position = view.projMat * view.viewMat * constants.transform * vec4(positions[gl_VertexIndex], 0, 1);
-	outTexCoord = uvs[gl_VertexIndex];
-	outColor = vec4(constants.colorScale, 1);
+    ViewState view = views[gl_ViewID_OVR];
+    gl_Position = view.projMat * view.viewMat * constants.transform * vec4(positions[gl_VertexIndex], 0, 1);
+    outTexCoord = uvs[gl_VertexIndex];
+    outColor = vec4(constants.colorScale, 1);
 }
