@@ -43,6 +43,10 @@ namespace sp::xr {
         vrSystem.reset();
     }
 
+    bool OpenVrSystem::Initialized() {
+        return loaded.test();
+    }
+
     bool OpenVrSystem::ThreadInit() {
         ZoneScoped;
         if (!vr::VR_IsRuntimeInstalled() || !vr::VR_IsHmdPresent()) {
@@ -157,11 +161,11 @@ namespace sp::xr {
 
     void OpenVrSystem::WaitFrame() {
         ZoneScoped;
-        if (loaded.test()) {
-            vr::EVRCompositorError error = vr::VRCompositor()->WaitGetPoses(nullptr, 0, nullptr, 0);
-            Assert(error == vr::EVRCompositorError::VRCompositorError_None,
-                "WaitGetPoses failed: " + std::to_string((int)error));
-        }
+        if (!loaded.test()) return;
+
+        vr::EVRCompositorError error = vr::VRCompositor()->WaitGetPoses(nullptr, 0, nullptr, 0);
+        Assert(error == vr::EVRCompositorError::VRCompositorError_None,
+            "WaitGetPoses failed: " + std::to_string((int)error));
     }
 
     ecs::NamedEntity OpenVrSystem::GetEntityForDeviceIndex(size_t index) {
@@ -254,7 +258,7 @@ namespace sp::xr {
     }
 
     HiddenAreaMesh OpenVrSystem::GetHiddenAreaMesh(ecs::XrEye eye) {
-        if (loaded.test() || !vrSystem) return {};
+        if (!vrSystem || !loaded.test()) return {};
 
         static_assert(sizeof(*vr::HiddenAreaMesh_t::pVertexData) == sizeof(*HiddenAreaMesh::vertices));
         auto mesh = vrSystem->GetHiddenAreaMesh(MapXrEyeToOpenVr(eye));

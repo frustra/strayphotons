@@ -26,6 +26,7 @@ namespace sp {
             OpenVrSystem(GraphicsContext *context);
             ~OpenVrSystem();
 
+            bool Initialized() override;
             bool GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) override;
 
             void SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) override;
