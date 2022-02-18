@@ -173,15 +173,14 @@ namespace sp {
 
     #ifdef SP_XR_SUPPORT
         auto xrSystem = game->xr.GetXrSystem();
-
-        #ifdef SP_GRAPHICS_SUPPORT_VK
-        renderer->SetXRSystem(xrSystem.get());
-        #endif
-
         if (xrSystem) xrSystem->WaitFrame();
     #endif
 
     #ifdef SP_GRAPHICS_SUPPORT_VK
+        #ifdef SP_XR_SUPPORT
+        renderer->SetXRSystem(xrSystem);
+        #endif
+
         timer.StartFrame();
         context->BeginFrame();
 
@@ -216,6 +215,10 @@ namespace sp {
         } else {
             previousFrameEnd = realFrameEnd;
         }
+
+        #ifdef SP_XR_SUPPORT
+        renderer->SetXRSystem(nullptr);
+        #endif
         return true;
     #endif
 

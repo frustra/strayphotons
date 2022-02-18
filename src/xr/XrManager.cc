@@ -36,6 +36,7 @@ namespace sp::xr {
 
     std::shared_ptr<XrSystem> XrManager::GetXrSystem() {
         std::lock_guard lock(xrLoadMutex);
+        if (!xrSystem || !xrSystem->Initialized()) return nullptr;
         return xrSystem;
     }
 } // namespace sp::xr

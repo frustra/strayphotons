@@ -102,7 +102,7 @@ namespace sp::vulkan {
         void SetDebugGui(GuiManager &gui);
 
 #ifdef SP_XR_SUPPORT
-        void SetXRSystem(xr::XrSystem *xr) {
+        void SetXRSystem(shared_ptr<xr::XrSystem> xr) {
             xrSystem = xr;
         }
 #endif
@@ -181,7 +181,7 @@ namespace sp::vulkan {
         std::atomic_flag sceneReady, pendingTransaction;
 
 #ifdef SP_XR_SUPPORT
-        xr::XrSystem *xrSystem = nullptr;
+        shared_ptr<xr::XrSystem> xrSystem;
         std::vector<glm::mat4> xrRenderPoses;
         std::array<BufferPtr, 2> hiddenAreaMesh;
         std::array<uint32, 2> hiddenAreaTriangleCount;

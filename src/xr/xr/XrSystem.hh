@@ -43,6 +43,7 @@ namespace sp {
 
         class XrSystem {
         public:
+            virtual bool Initialized() = 0;
             virtual bool GetPredictedViewPose(ecs::XrEye eye, glm::mat4 &invViewMat) = 0;
 
             virtual void SubmitView(ecs::XrEye eye, glm::mat4 &viewPose, GpuTexture *tex) = 0;

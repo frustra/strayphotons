@@ -245,6 +245,7 @@ namespace sp::vulkan {
         if (!hiddenAreaMesh[0]) {
             for (size_t i = 0; i < hiddenAreaMesh.size(); i++) {
                 auto mesh = xrSystem->GetHiddenAreaMesh(ecs::XrEye(i));
+                if (mesh.triangleCount == 0) continue;
                 hiddenAreaMesh[i] = device.CreateBuffer(mesh.vertices,
                     mesh.triangleCount * 3,
                     vk::BufferUsageFlagBits::eVertexBuffer,
@@ -255,7 +256,7 @@ namespace sp::vulkan {
 
         auto executeHiddenAreaStencil = [this](uint32 eyeIndex) {
             return [this, eyeIndex](RenderGraphResources &resources, CommandContext &cmd) {
-                cmd.SetShaders({{ShaderStage::Vertex, "basic_ortho_stencil.vert"}});
+                cmd.SetShaders("basic_ortho_stencil.vert", "noop.frag");
 
                 glm::mat4 proj = MakeOrthographicProjection(0, 1, 1, 0);
                 cmd.PushConstants(proj);
@@ -312,8 +313,7 @@ namespace sp::vulkan {
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
                 builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
-
-                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::DontCare});
+                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
 
                 builder.CreateUniformBuffer("ViewState", sizeof(GPUViewState) * 2);
 
