@@ -1,55 +1,8 @@
 #pragma once
 
-#include "core/Common.hh"
-#include "graphics/vulkan/core/Common.hh"
-
-#include <vector>
+#include "graphics/vulkan/core/VertexLayout.hh"
 
 namespace sp::vulkan {
-    const int MAX_VERTEX_ATTRIBUTES = 5, MAX_VERTEX_INPUT_BINDINGS = 5;
-
-    struct VertexLayout {
-        VertexLayout() {}
-
-        VertexLayout(uint32 binding, uint32 stride, vk::VertexInputRate inputRate = vk::VertexInputRate::eVertex) {
-            PushBinding(binding, stride, inputRate);
-        }
-
-        VertexLayout(uint32 binding, size_t stride, vk::VertexInputRate inputRate = vk::VertexInputRate::eVertex) {
-            PushBinding(binding, (uint32)stride, inputRate);
-        }
-
-        void PushAttribute(uint32 location, uint32 binding, vk::Format format, uint32 offset) {
-            PushAttribute(vk::VertexInputAttributeDescription(location, binding, format, offset));
-        }
-
-        void PushAttribute(vk::VertexInputAttributeDescription attribute) {
-            Assert(attributeCount < MAX_VERTEX_ATTRIBUTES, "too many vertex attributes");
-            attributes[attributeCount++] = attribute;
-        }
-
-        void PushBinding(uint32 binding, uint32 stride, vk::VertexInputRate inputRate = vk::VertexInputRate::eVertex) {
-            PushBinding(vk::VertexInputBindingDescription(binding, stride, inputRate));
-        }
-
-        void PushBinding(vk::VertexInputBindingDescription binding) {
-            Assert(bindingCount < MAX_VERTEX_INPUT_BINDINGS, "too many vertex input bindings");
-            bindings[bindingCount++] = binding;
-        }
-
-        bool operator==(const VertexLayout &other) const {
-            return std::memcmp(this, &other, sizeof(VertexLayout)) == 0;
-        }
-
-        bool operator!=(const VertexLayout &other) const {
-            return !(*this == other);
-        }
-
-        std::array<vk::VertexInputBindingDescription, MAX_VERTEX_INPUT_BINDINGS> bindings;
-        std::array<vk::VertexInputAttributeDescription, MAX_VERTEX_ATTRIBUTES> attributes;
-        size_t bindingCount = 0, attributeCount = 0;
-    };
-
     struct TextureVertex {
         glm::vec3 position;
         glm::vec2 uv;

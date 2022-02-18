@@ -2,7 +2,6 @@
 
 #include "core/Logging.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
-#include "graphics/vulkan/core/Vertex.hh"
 
 namespace sp::vulkan {
 
@@ -390,16 +389,16 @@ namespace sp::vulkan {
             depthStencil.back.passOp = state.stencilPassOp;
         }
 
-        vk::PipelineVertexInputStateCreateInfo VertexLayout;
-        VertexLayout.vertexBindingDescriptionCount = state.vertexLayout.bindingCount;
-        VertexLayout.pVertexBindingDescriptions = state.vertexLayout.bindings.data();
-        VertexLayout.vertexAttributeDescriptionCount = state.vertexLayout.attributeCount;
-        VertexLayout.pVertexAttributeDescriptions = state.vertexLayout.attributes.data();
+        vk::PipelineVertexInputStateCreateInfo vertexLayout;
+        vertexLayout.vertexBindingDescriptionCount = state.vertexLayout.bindingCount;
+        vertexLayout.pVertexBindingDescriptions = state.vertexLayout.bindings.data();
+        vertexLayout.vertexAttributeDescriptionCount = state.vertexLayout.attributeCount;
+        vertexLayout.pVertexAttributeDescriptions = state.vertexLayout.attributes.data();
 
         vk::GraphicsPipelineCreateInfo pipelineInfo;
         pipelineInfo.stageCount = stageCount;
         pipelineInfo.pStages = shaderStages.data();
-        pipelineInfo.pVertexInputState = &VertexLayout;
+        pipelineInfo.pVertexInputState = &vertexLayout;
         pipelineInfo.pInputAssemblyState = &inputAssembly;
         pipelineInfo.pRasterizationState = &rasterizer;
         if (!rasterizer.rasterizerDiscardEnable) {

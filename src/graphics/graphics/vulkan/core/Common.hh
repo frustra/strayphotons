@@ -10,7 +10,6 @@
 
 namespace sp::vulkan {
     typedef uint32 ShaderHandle;
-    typedef uint32 RenderGraphResourceID;
 
     class DeviceContext;
     class CommandContext;

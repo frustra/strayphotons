@@ -3,7 +3,7 @@
 #include "core/Hashing.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Shader.hh"
-#include "graphics/vulkan/core/Vertex.hh"
+#include "graphics/vulkan/core/VertexLayout.hh"
 
 #include <SPIRV-Reflect/spirv_reflect.h>
 #include <bitset>

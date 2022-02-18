@@ -7,7 +7,6 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
     Model.cc
     PerfTimer.cc
     Pipeline.cc
-    RenderGraph.cc
     RenderPass.cc
     RenderTarget.cc
     Screenshot.cc

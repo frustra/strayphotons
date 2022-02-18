@@ -7,13 +7,13 @@
 #include "game/SceneManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/vulkan/GuiRenderer.hh"
+#include "graphics/vulkan/VertexLayouts.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Model.hh"
 #include "graphics/vulkan/core/Screenshot.hh"
 #include "graphics/vulkan/core/Util.hh"
-#include "graphics/vulkan/core/Vertex.hh"
 
 #ifdef SP_XR_SUPPORT
     #include "xr/XrSystem.hh"
@@ -125,9 +125,9 @@ namespace sp::vulkan {
         auto swapchainImage = device.SwapchainImageView();
         if (!swapchainImage) return;
 
-        RenderGraphResourceID sourceID = RenderGraphInvalidResource;
-        graph.Pass("WindowFinalOutput")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        rg::ResourceID sourceID = rg::InvalidResource;
+        graph.AddPass("WindowFinalOutput")
+            .Build([&](rg::PassBuilder &builder) {
                 auto sourceName = CVarWindowViewTarget.Get();
                 auto res = builder.GetResource(sourceName);
                 if (!res && sourceName != defaultWindowViewTarget) {
@@ -156,8 +156,8 @@ namespace sp::vulkan {
                 desc.format = swapchainImage->Format();
                 builder.OutputColorAttachment(0, "WindowFinalOutput", desc, {loadOp, StoreOp::Store});
             })
-            .Execute([this, sourceID](RenderGraphResources &resources, CommandContext &cmd) {
-                if (sourceID != RenderGraphInvalidResource) {
+            .Execute([this, sourceID](rg::Resources &resources, CommandContext &cmd) {
+                if (sourceID != rg::InvalidResource) {
                     auto source = resources.GetRenderTarget(sourceID)->ImageView();
                     cmd.SetTexture(0, 0, source);
                     cmd.DrawScreenCover(source);
@@ -182,8 +182,8 @@ namespace sp::vulkan {
 
         auto drawIDs = GenerateDrawsForView(view.visibilityMask);
 
-        graph.Pass("ForwardPass")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        graph.AddPass("ForwardPass")
+            .Build([&](rg::PassBuilder &builder) {
                 RenderTargetDesc desc;
                 desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
                 desc.primaryViewType = vk::ImageViewType::e2DArray;
@@ -204,7 +204,7 @@ namespace sp::vulkan {
                 builder.ReadBuffer(drawIDs.drawCommandsBuffer);
                 builder.ReadBuffer(drawIDs.drawParamsBuffer);
             })
-            .Execute([this, view, drawIDs](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([this, view, drawIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
 
                 GPUViewState viewState[] = {{view}, {}};
@@ -255,7 +255,7 @@ namespace sp::vulkan {
         }
 
         auto executeHiddenAreaStencil = [this](uint32 eyeIndex) {
-            return [this, eyeIndex](RenderGraphResources &resources, CommandContext &cmd) {
+            return [this, eyeIndex](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("basic_ortho_stencil.vert", "noop.frag");
 
                 glm::mat4 proj = MakeOrthographicProjection(0, 1, 1, 0);
@@ -277,22 +277,22 @@ namespace sp::vulkan {
             };
         };
 
-        graph.Pass("HiddenAreaStencil0")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        graph.AddPass("HiddenAreaStencil0")
+            .Build([&](rg::PassBuilder &builder) {
                 RenderTargetDesc desc;
                 desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
                 desc.arrayLayers = xrViews.size();
                 desc.primaryViewType = vk::ImageViewType::e2DArray;
                 desc.format = vk::Format::eD24UnormS8Uint;
-                AttachmentInfo attachment = {LoadOp::Clear, StoreOp::Store};
+                rg::AttachmentInfo attachment = {LoadOp::Clear, StoreOp::Store};
                 attachment.arrayIndex = 0;
                 builder.OutputDepthAttachment("GBufferDepthStencil", desc, attachment);
             })
             .Execute(executeHiddenAreaStencil(0));
 
-        graph.Pass("HiddenAreaStencil1")
-            .Build([&](RenderGraphPassBuilder &builder) {
-                AttachmentInfo attachment = {LoadOp::Clear, StoreOp::Store};
+        graph.AddPass("HiddenAreaStencil1")
+            .Build([&](rg::PassBuilder &builder) {
+                rg::AttachmentInfo attachment = {LoadOp::Clear, StoreOp::Store};
                 attachment.arrayIndex = 1;
                 builder.SetDepthAttachment("GBufferDepthStencil", attachment);
             })
@@ -300,8 +300,8 @@ namespace sp::vulkan {
 
         auto drawIDs = GenerateDrawsForView(viewsByEye[0].visibilityMask);
 
-        graph.Pass("ForwardPass")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        graph.AddPass("ForwardPass")
+            .Build([&](rg::PassBuilder &builder) {
                 RenderTargetDesc desc;
                 desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
                 desc.arrayLayers = xrViews.size();
@@ -321,7 +321,7 @@ namespace sp::vulkan {
                 builder.ReadBuffer(drawIDs.drawCommandsBuffer);
                 builder.ReadBuffer(drawIDs.drawParamsBuffer);
             })
-            .Execute([this, viewsByEye, drawIDs](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([this, viewsByEye, drawIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
 
                 cmd.SetStencilTest(true);
@@ -358,9 +358,9 @@ namespace sp::vulkan {
         auto xrViews = lock.EntitiesWith<ecs::XRView>();
         if (xrViews.size() != 2) return;
 
-        RenderGraphResourceID sourceID;
-        graph.Pass("XRSubmit")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        rg::ResourceID sourceID;
+        graph.AddPass("XRSubmit")
+            .Build([&](rg::PassBuilder &builder) {
                 auto res = builder.GetResource(CVarXRViewTarget.Get());
                 if (!res) {
                     Errorf("view target %s does not exist, defaulting to %s",
@@ -380,7 +380,7 @@ namespace sp::vulkan {
                 builder.TransferRead(sourceID);
                 builder.RequirePass();
             })
-            .Execute([this, sourceID](RenderGraphResources &resources, DeviceContext &device) {
+            .Execute([this, sourceID](rg::Resources &resources, DeviceContext &device) {
                 auto xrRenderTarget = resources.GetRenderTarget(sourceID);
 
                 for (size_t i = 0; i < 2; i++) {
@@ -503,11 +503,11 @@ namespace sp::vulkan {
         lights.gelCount = gelCount;
         lights.gpuData.count = lightCount;
 
-        graph.Pass("LightState")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        graph.AddPass("LightState")
+            .Build([&](rg::PassBuilder &builder) {
                 builder.CreateUniformBuffer("LightState", sizeof(lights.gpuData));
             })
-            .Execute([this](RenderGraphResources &resources, DeviceContext &) {
+            .Execute([this](rg::Resources &resources, DeviceContext &) {
                 resources.GetBuffer("LightState")->CopyFrom(&lights.gpuData);
             });
     }
@@ -537,21 +537,21 @@ namespace sp::vulkan {
             }
         }
 
-        graph.Pass("LaserState")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        graph.AddPass("LaserState")
+            .Build([&](rg::PassBuilder &builder) {
                 builder.CreateBuffer(BUFFER_TYPE_STORAGE_TRANSFER,
                     "LaserState",
                     lasers.gpuData.capacity() * sizeof(lasers.gpuData.front()));
             })
-            .Execute([this](RenderGraphResources &resources, DeviceContext &) {
+            .Execute([this](rg::Resources &resources, DeviceContext &) {
                 auto buffer = resources.GetBuffer("LaserState");
                 buffer->CopyFrom(lasers.gpuData.data(), lasers.gpuData.size());
             });
     }
 
     void Renderer::AddGeometryWarp() {
-        graph.Pass("GeometryWarp")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        graph.AddPass("GeometryWarp")
+            .Build([&](rg::PassBuilder &builder) {
                 const auto maxDraws = scene.primitiveCountPowerOfTwo;
 
                 builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_INDIRECT,
@@ -566,7 +566,7 @@ namespace sp::vulkan {
                     "WarpedVertexBuffer",
                     sizeof(SceneVertex) * scene.vertexCount);
             })
-            .Execute([this](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([this](rg::Resources &resources, CommandContext &cmd) {
                 if (scene.vertexCount == 0) return;
 
                 vk::BufferMemoryBarrier barrier;
@@ -638,8 +638,8 @@ namespace sp::vulkan {
     Renderer::DrawBufferIDs Renderer::GenerateDrawsForView(ecs::Renderable::VisibilityMask viewMask) {
         DrawBufferIDs bufferIDs;
 
-        graph.Pass("GenerateDrawsForView")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        graph.AddPass("GenerateDrawsForView")
+            .Build([&](rg::PassBuilder &builder) {
                 const auto maxDraws = scene.primitiveCountPowerOfTwo;
 
                 auto drawCmds = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL_INDIRECT,
@@ -651,7 +651,7 @@ namespace sp::vulkan {
 
                 builder.ReadBuffer("WarpedVertexBuffer");
             })
-            .Execute([this, viewMask, bufferIDs](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([this, viewMask, bufferIDs](rg::Resources &resources, CommandContext &cmd) {
                 auto drawBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
                 cmd.Raw().fillBuffer(*drawBuffer, 0, sizeof(uint32), 0);
 
@@ -679,7 +679,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::DrawSceneIndirect(CommandContext &cmd,
-        RenderGraphResources &resources,
+        rg::Resources &resources,
         BufferPtr drawCommandsBuffer,
         BufferPtr drawParamsBuffer) {
         if (scene.vertexCount == 0) return;
@@ -705,8 +705,8 @@ namespace sp::vulkan {
             drawIDs.push_back(GenerateDrawsForView(lights.views[i].visibilityMask));
         }
 
-        graph.Pass("ShadowMaps")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        graph.AddPass("ShadowMaps")
+            .Build([&](rg::PassBuilder &builder) {
                 RenderTargetDesc desc;
                 auto extent = glm::max(glm::ivec2(1), lights.renderTargetSize);
                 desc.extent = vk::Extent3D(extent.x, extent.y, 1);
@@ -723,7 +723,7 @@ namespace sp::vulkan {
                 }
             })
 
-            .Execute([this, drawIDs](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([this, drawIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("shadow_map.vert", "shadow_map.frag");
 
                 auto &lights = this->lights;
@@ -765,8 +765,8 @@ namespace sp::vulkan {
         }
 
         for (auto &gui : guis) {
-            graph.Pass("Gui")
-                .Build([&](RenderGraphPassBuilder &builder) {
+            graph.AddPass("Gui")
+                .Build([&](rg::PassBuilder &builder) {
                     RenderTargetDesc desc;
                     desc.format = vk::Format::eR8G8B8A8Srgb;
 
@@ -781,7 +781,7 @@ namespace sp::vulkan {
                     auto target = builder.OutputColorAttachment(0, name, desc, {LoadOp::Clear, StoreOp::Store});
                     gui.renderGraphID = target.id;
                 })
-                .Execute([gui](RenderGraphResources &resources, CommandContext &cmd) {
+                .Execute([gui](rg::Resources &resources, CommandContext &cmd) {
                     auto &extent = resources.GetRenderTarget(gui.renderGraphID)->Desc().extent;
                     vk::Rect2D viewport = {{}, {extent.width, extent.height}};
                     gui.renderer->Render(cmd, viewport);
@@ -797,8 +797,8 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddLighting() {
-        graph.Pass("Lighting")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        graph.AddPass("Lighting")
+            .Build([&](rg::PassBuilder &builder) {
                 auto gBuffer0 = builder.ShaderRead("GBuffer0");
                 builder.ShaderRead("GBuffer1");
                 builder.ShaderRead("GBuffer2");
@@ -817,7 +817,7 @@ namespace sp::vulkan {
 
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
             })
-            .Execute([this](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([this](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "lighting.frag");
                 cmd.SetStencilTest(true);
                 cmd.SetDepthTest(false, false);
@@ -847,7 +847,7 @@ namespace sp::vulkan {
 
     void Renderer::AddEmissive(ecs::Lock<ecs::Read<ecs::Screen, ecs::TransformSnapshot>> lock) {
         struct Screen {
-            RenderGraphResourceID id;
+            rg::ResourceID id;
 
             struct {
                 glm::mat4 quad;
@@ -856,8 +856,8 @@ namespace sp::vulkan {
         };
         vector<Screen> screens;
 
-        graph.Pass("Emissive")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        graph.AddPass("Emissive")
+            .Build([&](rg::PassBuilder &builder) {
                 auto input = builder.LastOutput();
                 builder.ShaderRead(input.id);
                 builder.ShaderRead("GBuffer2");
@@ -883,7 +883,7 @@ namespace sp::vulkan {
                     screens.push_back(std::move(screen));
                 }
             })
-            .Execute([this, screens](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([this, screens](rg::Resources &resources, CommandContext &cmd) {
                 {
                     RenderPhase phase("Lasers");
                     phase.StartTimer(cmd, timer);
@@ -923,22 +923,22 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddTonemap() {
-        graph.Pass("Tonemap")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        graph.AddPass("Tonemap")
+            .Build([&](rg::PassBuilder &builder) {
                 auto luminance = builder.ShaderRead(builder.LastOutputID());
 
                 auto desc = luminance.DeriveRenderTarget();
                 desc.format = vk::Format::eR8G8B8A8Srgb;
                 builder.OutputColorAttachment(0, "TonemappedLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
             })
-            .Execute([](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "tonemap.frag");
                 cmd.SetTexture(0, 0, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
                 cmd.Draw(3);
             });
     }
 
-    RenderGraphResourceID Renderer::AddGaussianBlur(RenderGraphResourceID sourceID,
+    rg::ResourceID Renderer::AddGaussianBlur(rg::ResourceID sourceID,
         glm::ivec2 direction,
         uint32 downsample,
         float scale,
@@ -954,9 +954,9 @@ namespace sp::vulkan {
         constants.threshold = clip;
         constants.scale = scale;
 
-        RenderGraphResourceID destID;
-        graph.Pass("GaussianBlur")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        rg::ResourceID destID;
+        graph.AddPass("GaussianBlur")
+            .Build([&](rg::PassBuilder &builder) {
                 auto source = builder.ShaderRead(sourceID);
                 auto desc = source.DeriveRenderTarget();
                 desc.extent.width /= downsample;
@@ -964,7 +964,7 @@ namespace sp::vulkan {
                 auto dest = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store});
                 destID = dest.id;
             })
-            .Execute([sourceID, constants](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([sourceID, constants](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "gaussian_blur.frag");
                 cmd.SetTexture(0, 0, resources.GetRenderTarget(sourceID)->ImageView());
                 cmd.PushConstants(constants);
@@ -973,7 +973,7 @@ namespace sp::vulkan {
         return destID;
     }
 
-    RenderGraphResourceID Renderer::AddBloom() {
+    rg::ResourceID Renderer::AddBloom() {
         graph.BeginScope("BloomBlur");
         auto sourceID = graph.LastOutputID();
         auto blurY1 = AddGaussianBlur(sourceID, glm::ivec2(0, 1), 1, CVarBloomScale.Get());
@@ -982,9 +982,9 @@ namespace sp::vulkan {
         auto blurX2 = AddGaussianBlur(blurY2, glm::ivec2(1, 0), 1);
         graph.EndScope();
 
-        RenderGraphResourceID destID;
-        graph.Pass("BloomCombine")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        rg::ResourceID destID;
+        graph.AddPass("BloomCombine")
+            .Build([&](rg::PassBuilder &builder) {
                 auto source = builder.ShaderRead(sourceID);
                 auto desc = source.DeriveRenderTarget();
                 auto dest = builder.OutputColorAttachment(0, "Bloom", desc, {LoadOp::DontCare, StoreOp::Store});
@@ -993,7 +993,7 @@ namespace sp::vulkan {
                 builder.ShaderRead(blurX1);
                 builder.ShaderRead(blurX2);
             })
-            .Execute([sourceID, blurX1, blurX2](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([sourceID, blurX1, blurX2](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "bloom_combine.frag");
                 cmd.SetTexture(0, 0, resources.GetRenderTarget(sourceID)->ImageView());
                 cmd.SetTexture(0, 1, resources.GetRenderTarget(blurX1)->ImageView());
@@ -1004,7 +1004,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddMenuOverlay() {
-        RenderGraphResourceID menuID = RenderGraphResources::npos;
+        rg::ResourceID menuID = rg::Resources::npos;
         for (auto &gui : guis) {
             if (gui.renderer->Name() == "menu_gui") {
                 menuID = gui.renderGraphID;
@@ -1013,10 +1013,10 @@ namespace sp::vulkan {
                 break;
             }
         }
-        Assert(menuID != RenderGraphResources::npos, "main menu doesn't exist");
+        Assert(menuID != rg::Resources::npos, "main menu doesn't exist");
 
-        graph.Pass("MenuOverlay")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        graph.AddPass("MenuOverlay")
+            .Build([&](rg::PassBuilder &builder) {
                 auto input = builder.LastOutput();
                 builder.ShaderRead(input.id);
 
@@ -1025,7 +1025,7 @@ namespace sp::vulkan {
 
                 builder.ShaderRead(menuID);
             })
-            .Execute([menuID](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([menuID](rg::Resources &resources, CommandContext &cmd) {
                 cmd.DrawScreenCover(resources.GetRenderTarget(resources.LastOutputID())->ImageView());
                 cmd.DrawScreenCover(resources.GetRenderTarget(menuID)->ImageView());
             });
@@ -1039,12 +1039,12 @@ namespace sp::vulkan {
             auto screenshotResource = pending.second;
             if (screenshotResource.empty()) screenshotResource = CVarWindowViewTarget.Get();
 
-            RenderGraphResourceID sourceID = ~0u;
+            rg::ResourceID sourceID = ~0u;
 
-            graph.Pass("Screenshot")
-                .Build([&](RenderGraphPassBuilder &builder) {
+            graph.AddPass("Screenshot")
+                .Build([&](rg::PassBuilder &builder) {
                     auto resource = builder.GetResource(screenshotResource);
-                    if (resource.type != RenderGraphResource::Type::RenderTarget) {
+                    if (resource.type != rg::Resource::Type::RenderTarget) {
                         Errorf("Can't screenshot \"%s\": invalid resource", screenshotResource);
                     } else {
                         auto format = resource.RenderTargetFormat();
@@ -1057,9 +1057,9 @@ namespace sp::vulkan {
                         builder.RequirePass();
                     }
                 })
-                .Execute([screenshotPath, sourceID](RenderGraphResources &resources, DeviceContext &device) {
+                .Execute([screenshotPath, sourceID](rg::Resources &resources, DeviceContext &device) {
                     auto &res = resources.GetResource(sourceID);
-                    if (res.type == RenderGraphResource::Type::RenderTarget) {
+                    if (res.type == rg::Resource::Type::RenderTarget) {
                         auto target = resources.GetRenderTarget(res.id);
                         WriteScreenshot(device, screenshotPath, target->ImageView());
                     }
@@ -1068,18 +1068,18 @@ namespace sp::vulkan {
         pendingScreenshots.clear();
     }
 
-    RenderGraphResourceID Renderer::VisualizeBuffer(RenderGraphResourceID sourceID, uint32 arrayLayer) {
+    rg::ResourceID Renderer::VisualizeBuffer(rg::ResourceID sourceID, uint32 arrayLayer) {
 
-        RenderGraphResourceID targetID = ~0u, outputID;
-        graph.Pass("VisualizeBuffer")
-            .Build([&](RenderGraphPassBuilder &builder) {
+        rg::ResourceID targetID = ~0u, outputID;
+        graph.AddPass("VisualizeBuffer")
+            .Build([&](rg::PassBuilder &builder) {
                 auto &res = builder.ShaderRead(sourceID);
                 targetID = res.id;
                 auto desc = res.DeriveRenderTarget();
                 desc.format = vk::Format::eR8G8B8A8Srgb;
                 outputID = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store}).id;
             })
-            .Execute([this, targetID, arrayLayer](RenderGraphResources &resources, CommandContext &cmd) {
+            .Execute([this, targetID, arrayLayer](rg::Resources &resources, CommandContext &cmd) {
                 auto target = resources.GetRenderTarget(targetID);
                 ImageViewPtr source;
                 if (target->Desc().arrayLayers > 1 && arrayLayer != ~0u && arrayLayer < target->Desc().arrayLayers) {
