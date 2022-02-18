@@ -13,6 +13,7 @@
 namespace sp::vulkan {
     const uint32 MAX_RESOURCE_SCOPES = sizeof(uint8);
     const uint32 MAX_RESOURCE_SCOPE_DEPTH = 4;
+    const uint32 RESOURCE_HISTORY_FRAMES = 1;
 
     class PerfTimer;
 
@@ -87,8 +88,19 @@ namespace sp::vulkan {
     class RenderGraphResources {
     public:
         RenderGraphResources(DeviceContext &device) : device(device) {
+            Reset();
+        }
+
+        void Reset() {
+            nameScopes.clear();
             nameScopes.emplace_back();
+            scopeStack.clear();
             scopeStack.push_back(0);
+            resources.clear();
+            refCounts.clear();
+            renderTargets.clear();
+            buffers.clear();
+            lastOutputID = npos;
         }
 
         RenderTargetPtr GetRenderTarget(RenderGraphResourceID id);
@@ -141,7 +153,7 @@ namespace sp::vulkan {
         vector<RenderGraphResource> resources;
 
         // Built during execution
-        vector<uint32> refCounts;
+        vector<int32> refCounts;
         vector<RenderTargetPtr> renderTargets;
         vector<BufferPtr> buffers;
 
@@ -366,7 +378,10 @@ namespace sp::vulkan {
     class RenderGraph {
     public:
         RenderGraph(DeviceContext &device, PerfTimer *timer = nullptr)
-            : device(device), resources(device), timer(timer) {}
+            : device(device), resourceFrames({device, device}), timer(timer) {
+            frameIndex = 0;
+            resources = &resourceFrames[frameIndex];
+        }
 
         class InitialPassState {
         public:
@@ -376,9 +391,9 @@ namespace sp::vulkan {
             InitialPassState &Build(SetupFunc setupFunc) {
                 Assert(passIndex == ~0u, "multiple Build calls for the same pass");
                 RenderGraphPass pass(name);
-                pass.scopes = graph.resources.scopeStack;
+                pass.scopes = graph.resources->scopeStack;
 
-                RenderGraphPassBuilder builder(graph.resources, pass);
+                RenderGraphPassBuilder builder(*graph.resources, pass);
                 setupFunc(builder);
                 passIndex = graph.passes.size();
                 graph.passes.push_back(pass);
@@ -414,17 +429,33 @@ namespace sp::vulkan {
             return {*this, name};
         }
 
+        class GraphScope {
+            RenderGraph &graph;
+
+        public:
+            GraphScope(RenderGraph &graph, string_view name) : graph(graph) {
+                graph.BeginScope(name);
+            }
+            ~GraphScope() {
+                graph.EndScope();
+            }
+        };
+
+        GraphScope Scope(string_view name) {
+            return {*this, name};
+        }
+
         void BeginScope(string_view name);
         void EndScope();
 
         void SetTargetImageView(string_view name, ImageViewPtr view);
 
         void RequireResource(string_view name) {
-            RequireResource(resources.GetID(name));
+            RequireResource(resources->GetID(name));
         }
 
         void RequireResource(RenderGraphResourceID id) {
-            resources.IncrementRef(id);
+            resources->IncrementRef(id);
         }
 
         void Execute();
@@ -436,10 +467,14 @@ namespace sp::vulkan {
         vector<RenderTargetInfo> AllRenderTargets();
 
         RenderGraphResourceID LastOutputID() const {
-            return resources.lastOutputID;
+            return resources->lastOutputID;
         }
         RenderGraphResource LastOutput() const {
-            return resources.LastOutput();
+            return resources->LastOutput();
+        }
+
+        bool HasResource(string_view name) const {
+            return resources->GetID(name, false) != RenderGraphResources::npos;
         }
 
     private:
@@ -448,12 +483,14 @@ namespace sp::vulkan {
 
         void UpdateLastOutput(const RenderGraphPass &pass) {
             if (pass.attachments.size() > pass.primaryAttachmentIndex) {
-                resources.lastOutputID = pass.attachments[pass.primaryAttachmentIndex].resourceID;
+                resources->lastOutputID = pass.attachments[pass.primaryAttachmentIndex].resourceID;
             }
         }
 
         DeviceContext &device;
-        RenderGraphResources resources;
+        RenderGraphResources *resources;
+        std::array<RenderGraphResources, RESOURCE_HISTORY_FRAMES + 1> resourceFrames;
+        size_t frameIndex;
         vector<RenderGraphPass> passes;
         PerfTimer *timer;
     };

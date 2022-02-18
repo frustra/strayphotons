@@ -11,6 +11,7 @@
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
+#include "graphics/vulkan/core/RenderGraph.hh"
 
 #include <atomic>
 #include <functional>
@@ -77,7 +78,7 @@ namespace sp::vulkan {
             RenderGraphResourceID drawParamsBuffer;
         };
 
-        DrawBufferIDs GenerateDrawsForView(RenderGraph &graph, ecs::Renderable::VisibilityMask viewMask);
+        DrawBufferIDs GenerateDrawsForView(ecs::Renderable::VisibilityMask viewMask);
         void DrawSceneIndirect(CommandContext &cmd,
             RenderGraphResources &resources,
             BufferPtr drawCommandsBuffer,
@@ -114,33 +115,34 @@ namespace sp::vulkan {
     private:
         DeviceContext &device;
         PerfTimer &timer;
+        RenderGraph graph;
 
-        void BuildFrameGraph(RenderGraph &graph);
-        void AddFlatView(RenderGraph &graph,
-            ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::FocusLock, ecs::Screen>> lock);
-        void AddXRView(RenderGraph &graph,
-            ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView, ecs::Screen>> lock);
+        void BuildFrameGraph();
+        void AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock);
+        void AddWindowOutput();
 
-        void AddScreenshotPasses(RenderGraph &graph);
-        RenderGraphResourceID VisualizeBuffer(RenderGraph &graph,
-            RenderGraphResourceID sourceID,
-            uint32 arrayLayer = ~0u);
+#ifdef SP_XR_SUPPORT
+        void AddXRView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView>> lock);
+        void AddXRSubmit(ecs::Lock<ecs::Read<ecs::XRView>> lock);
+#endif
+
+        void AddScreenshots();
+        RenderGraphResourceID VisualizeBuffer(RenderGraphResourceID sourceID, uint32 arrayLayer = ~0u);
 
         void AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock);
-        void AddGeometryWarp(RenderGraph &graph);
-        void AddLaserState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::LaserLine, ecs::TransformSnapshot>> lock);
-        void AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock);
-        void AddShadowMaps(RenderGraph &graph, DrawLock lock);
-        void AddGuis(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Gui>> lock);
-        void AddDeferredPasses(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen>> lock);
-        void AddLighting(RenderGraph &graph);
-        void AddEmissive(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Screen, ecs::TransformSnapshot>> lock);
-        void AddTonemap(RenderGraph &graph);
-        void AddMenuOverlay(RenderGraph &graph);
+        void AddGeometryWarp();
+        void AddLaserState(ecs::Lock<ecs::Read<ecs::LaserLine, ecs::TransformSnapshot>> lock);
+        void AddLightState(ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock);
+        void AddShadowMaps(DrawLock lock);
+        void AddGuis(ecs::Lock<ecs::Read<ecs::Gui>> lock);
+        void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen>> lock);
+        void AddLighting();
+        void AddEmissive(ecs::Lock<ecs::Read<ecs::Screen, ecs::TransformSnapshot>> lock);
+        void AddTonemap();
+        void AddMenuOverlay();
 
-        RenderGraphResourceID AddBloom(RenderGraph &graph);
-        RenderGraphResourceID AddGaussianBlur(RenderGraph &graph,
-            RenderGraphResourceID sourceID,
+        RenderGraphResourceID AddBloom();
+        RenderGraphResourceID AddGaussianBlur(RenderGraphResourceID sourceID,
             glm::ivec2 direction,
             uint32 downsample = 1,
             float scale = 1.0f,

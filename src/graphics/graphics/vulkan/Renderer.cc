@@ -11,7 +11,6 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Model.hh"
-#include "graphics/vulkan/core/RenderGraph.hh"
 #include "graphics/vulkan/core/Screenshot.hh"
 #include "graphics/vulkan/core/Util.hh"
 #include "graphics/vulkan/core/Vertex.hh"
@@ -34,7 +33,8 @@ namespace sp::vulkan {
 
     static CVar<float> CVarBloomScale("r.BloomScale", 0.15f, "Bloom scale");
 
-    Renderer::Renderer(DeviceContext &device, PerfTimer &timer) : device(device), timer(timer), scene(device) {
+    Renderer::Renderer(DeviceContext &device, PerfTimer &timer)
+        : device(device), timer(timer), graph(device, &timer), scene(device) {
         funcs.Register<string, string>("screenshot",
             "Save screenshot to <path>, optionally specifying an image <resource>",
             [&](string path, string resource) {
@@ -54,17 +54,15 @@ namespace sp::vulkan {
     }
 
     void Renderer::RenderFrame() {
-        RenderGraph graph(device, &timer);
-
         pendingTransaction.test_and_set();
-        BuildFrameGraph(graph);
+        BuildFrameGraph();
         pendingTransaction.clear();
         pendingTransaction.notify_all();
 
         graph.Execute();
     }
 
-    void Renderer::BuildFrameGraph(RenderGraph &graph) {
+    void Renderer::BuildFrameGraph() {
         ZoneScoped;
         auto lock = ecs::World.StartTransaction<ecs::Read<ecs::Name,
             ecs::TransformSnapshot,
@@ -79,66 +77,31 @@ namespace sp::vulkan {
             ecs::FocusLock>>();
 
         AddSceneState(lock);
-        AddLightState(graph, lock);
-        AddLaserState(graph, lock);
+        AddLightState(lock);
+        AddLaserState(lock);
 
-        AddGeometryWarp(graph);
-        AddShadowMaps(graph, lock);
-        AddGuis(graph, lock);
+        AddGeometryWarp();
+        AddShadowMaps(lock);
+        AddGuis(lock);
 
-        AddFlatView(graph, lock);
-        AddXRView(graph, lock);
-
-        auto swapchainImage = device.SwapchainImageView();
-        if (swapchainImage) {
-            RenderGraphResourceID sourceID = RenderGraphInvalidResource;
-            graph.Pass("WindowFinalOutput")
-                .Build([&](RenderGraphPassBuilder &builder) {
-                    auto sourceName = CVarWindowViewTarget.Get();
-                    auto res = builder.GetResource(sourceName);
-                    if (!res && sourceName != defaultWindowViewTarget) {
-                        Errorf("view target %s does not exist, defaulting to %s", sourceName, defaultWindowViewTarget);
-                        CVarWindowViewTarget.Set(defaultWindowViewTarget);
-                        res = builder.GetResource(defaultWindowViewTarget);
-                    }
-
-                    auto loadOp = LoadOp::DontCare;
-
-                    if (res) {
-                        auto format = res.RenderTargetFormat();
-                        auto layer = CVarWindowViewTargetLayer.Get();
-                        if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4 && layer == 0) {
-                            sourceID = res.id;
-                        } else {
-                            sourceID = VisualizeBuffer(graph, res.id, layer);
-                        }
-                        builder.ShaderRead(sourceID);
-                    } else {
-                        loadOp = LoadOp::Clear;
-                    }
-
-                    RenderTargetDesc desc;
-                    desc.extent = swapchainImage->Extent();
-                    desc.format = swapchainImage->Format();
-                    builder.OutputColorAttachment(0, "WindowFinalOutput", desc, {loadOp, StoreOp::Store});
-                })
-                .Execute([this, sourceID](RenderGraphResources &resources, CommandContext &cmd) {
-                    if (sourceID != RenderGraphInvalidResource) {
-                        auto source = resources.GetRenderTarget(sourceID)->ImageView();
-                        cmd.SetTexture(0, 0, source);
-                        cmd.DrawScreenCover(source);
-                    }
-
-                    if (this->debugGuiRenderer) {
-                        this->debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()});
-                    }
-                });
-
-            graph.SetTargetImageView("WindowFinalOutput", swapchainImage);
-            graph.RequireResource("WindowFinalOutput");
+        {
+            auto scope = graph.Scope("FlatView");
+            AddFlatView(lock);
+            if (graph.HasResource("GBuffer0")) {
+                AddDeferredPasses(lock);
+                if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::MENU)) AddMenuOverlay();
+            }
         }
-
-        AddScreenshotPasses(graph);
+#ifdef SP_XR_SUPPORT
+        {
+            auto scope = graph.Scope("XRView");
+            AddXRView(lock);
+            if (graph.HasResource("GBuffer0")) AddDeferredPasses(lock);
+        }
+        AddXRSubmit(lock);
+#endif
+        AddWindowOutput();
+        AddScreenshots();
 
         if (listRenderTargets) {
             listRenderTargets = false;
@@ -154,20 +117,70 @@ namespace sp::vulkan {
                     vk::to_string(info.desc.format));
             }
         }
+
+        Assert(lock.UseCount() == 1, "something held onto the renderer lock");
     }
 
-    void Renderer::AddFlatView(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::FocusLock, ecs::Screen>> lock) {
+    void Renderer::AddWindowOutput() {
+        auto swapchainImage = device.SwapchainImageView();
+        if (!swapchainImage) return;
+
+        RenderGraphResourceID sourceID = RenderGraphInvalidResource;
+        graph.Pass("WindowFinalOutput")
+            .Build([&](RenderGraphPassBuilder &builder) {
+                auto sourceName = CVarWindowViewTarget.Get();
+                auto res = builder.GetResource(sourceName);
+                if (!res && sourceName != defaultWindowViewTarget) {
+                    Errorf("view target %s does not exist, defaulting to %s", sourceName, defaultWindowViewTarget);
+                    CVarWindowViewTarget.Set(defaultWindowViewTarget);
+                    res = builder.GetResource(defaultWindowViewTarget);
+                }
+
+                auto loadOp = LoadOp::DontCare;
+
+                if (res) {
+                    auto format = res.RenderTargetFormat();
+                    auto layer = CVarWindowViewTargetLayer.Get();
+                    if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4 && layer == 0) {
+                        sourceID = res.id;
+                    } else {
+                        sourceID = VisualizeBuffer(res.id, layer);
+                    }
+                    builder.ShaderRead(sourceID);
+                } else {
+                    loadOp = LoadOp::Clear;
+                }
+
+                RenderTargetDesc desc;
+                desc.extent = swapchainImage->Extent();
+                desc.format = swapchainImage->Format();
+                builder.OutputColorAttachment(0, "WindowFinalOutput", desc, {loadOp, StoreOp::Store});
+            })
+            .Execute([this, sourceID](RenderGraphResources &resources, CommandContext &cmd) {
+                if (sourceID != RenderGraphInvalidResource) {
+                    auto source = resources.GetRenderTarget(sourceID)->ImageView();
+                    cmd.SetTexture(0, 0, source);
+                    cmd.DrawScreenCover(source);
+                }
+
+                if (this->debugGuiRenderer) {
+                    this->debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()});
+                }
+            });
+
+        graph.SetTargetImageView("WindowFinalOutput", swapchainImage);
+        graph.RequireResource("WindowFinalOutput");
+    }
+
+    void Renderer::AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock) {
         Tecs::Entity windowEntity = device.GetActiveView();
 
         if (!windowEntity || !windowEntity.Has<ecs::View>(lock)) return;
 
-        graph.BeginScope("FlatView");
-
         auto view = windowEntity.Get<ecs::View>(lock);
         view.UpdateViewMatrix(lock, windowEntity);
 
-        auto drawIDs = GenerateDrawsForView(graph, view.visibilityMask);
+        auto drawIDs = GenerateDrawsForView(view.visibilityMask);
 
         graph.Pass("ForwardPass")
             .Build([&](RenderGraphPassBuilder &builder) {
@@ -203,17 +216,10 @@ namespace sp::vulkan {
                 auto drawParamsBuffer = resources.GetBuffer(drawIDs.drawParamsBuffer);
                 DrawSceneIndirect(cmd, resources, drawCommandsBuffer, drawParamsBuffer);
             });
-
-        AddDeferredPasses(graph, lock);
-
-        if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::MENU)) AddMenuOverlay(graph);
-
-        graph.EndScope();
     }
 
-    void Renderer::AddXRView(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView, ecs::Screen>> lock) {
 #ifdef SP_XR_SUPPORT
+    void Renderer::AddXRView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView>> lock) {
         if (!xrSystem) return;
 
         auto xrViews = lock.EntitiesWith<ecs::XRView>();
@@ -236,8 +242,6 @@ namespace sp::vulkan {
 
         xrRenderPoses.resize(xrViews.size());
 
-        graph.BeginScope("XRView");
-
         if (!hiddenAreaMesh[0]) {
             for (size_t i = 0; i < hiddenAreaMesh.size(); i++) {
                 auto mesh = xrSystem->GetHiddenAreaMesh(ecs::XrEye(i));
@@ -251,7 +255,7 @@ namespace sp::vulkan {
 
         auto executeHiddenAreaStencil = [this](uint32 eyeIndex) {
             return [this, eyeIndex](RenderGraphResources &resources, CommandContext &cmd) {
-                cmd.SetShaders("basic_ortho_stencil.vert", "noop.frag");
+                cmd.SetShaders({{ShaderStage::Vertex, "basic_ortho_stencil.vert"}});
 
                 glm::mat4 proj = MakeOrthographicProjection(0, 1, 1, 0);
                 cmd.PushConstants(proj);
@@ -293,7 +297,7 @@ namespace sp::vulkan {
             })
             .Execute(executeHiddenAreaStencil(1));
 
-        auto drawIDs = GenerateDrawsForView(graph, viewsByEye[0].visibilityMask);
+        auto drawIDs = GenerateDrawsForView(viewsByEye[0].visibilityMask);
 
         graph.Pass("ForwardPass")
             .Build([&](RenderGraphPassBuilder &builder) {
@@ -346,9 +350,13 @@ namespace sp::vulkan {
                 viewStateBuf->Unmap();
                 viewStateBuf->Flush();
             });
+    }
 
-        AddDeferredPasses(graph, lock);
-        graph.EndScope();
+    void Renderer::AddXRSubmit(ecs::Lock<ecs::Read<ecs::XRView>> lock) {
+        if (!xrSystem) return;
+
+        auto xrViews = lock.EntitiesWith<ecs::XRView>();
+        if (xrViews.size() != 2) return;
 
         RenderGraphResourceID sourceID;
         graph.Pass("XRSubmit")
@@ -366,22 +374,23 @@ namespace sp::vulkan {
                 if (FormatComponentCount(format) == 4 && FormatByteSize(format) == 4) {
                     sourceID = res.id;
                 } else {
-                    sourceID = VisualizeBuffer(graph, res.id);
+                    sourceID = VisualizeBuffer(res.id);
                 }
 
                 builder.TransferRead(sourceID);
                 builder.RequirePass();
             })
-            .Execute([this, xrViews, sourceID, lock](RenderGraphResources &resources, DeviceContext &device) {
+            .Execute([this, sourceID](RenderGraphResources &resources, DeviceContext &device) {
                 auto xrRenderTarget = resources.GetRenderTarget(sourceID);
 
-                for (size_t i = 0; i < xrViews.size(); i++) {
-                    auto &eye = xrViews[i].Get<ecs::XRView>(lock).eye;
-                    this->xrSystem->SubmitView(eye, this->xrRenderPoses[i], xrRenderTarget->ImageView().get());
+                for (size_t i = 0; i < 2; i++) {
+                    this->xrSystem->SubmitView(ecs::XrEye(i),
+                        this->xrRenderPoses[i],
+                        xrRenderTarget->ImageView().get());
                 }
             });
-#endif
     }
+#endif
 
     void Renderer::AddSceneState(ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock) {
         scene.renderableCount = 0;
@@ -435,7 +444,7 @@ namespace sp::vulkan {
         }
     }
 
-    void Renderer::AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock) {
+    void Renderer::AddLightState(ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock) {
         int lightCount = 0;
         int gelCount = 0;
         glm::ivec2 renderTargetSize(0, 0);
@@ -503,8 +512,7 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddLaserState(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::LaserLine, ecs::TransformSnapshot>> lock) {
+    void Renderer::AddLaserState(ecs::Lock<ecs::Read<ecs::LaserLine, ecs::TransformSnapshot>> lock) {
         lasers.gpuData.resize(0);
         lasers.gpuData.reserve(1);
         for (auto entity : lock.EntitiesWith<ecs::LaserLine>()) {
@@ -541,7 +549,7 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddGeometryWarp(RenderGraph &graph) {
+    void Renderer::AddGeometryWarp() {
         graph.Pass("GeometryWarp")
             .Build([&](RenderGraphPassBuilder &builder) {
                 const auto maxDraws = scene.primitiveCountPowerOfTwo;
@@ -627,8 +635,7 @@ namespace sp::vulkan {
             });
     }
 
-    Renderer::DrawBufferIDs Renderer::GenerateDrawsForView(RenderGraph &graph,
-        ecs::Renderable::VisibilityMask viewMask) {
+    Renderer::DrawBufferIDs Renderer::GenerateDrawsForView(ecs::Renderable::VisibilityMask viewMask) {
         DrawBufferIDs bufferIDs;
 
         graph.Pass("GenerateDrawsForView")
@@ -691,11 +698,11 @@ namespace sp::vulkan {
             drawCommandsBuffer->Size() / sizeof(VkDrawIndexedIndirectCommand));
     }
 
-    void Renderer::AddShadowMaps(RenderGraph &graph, DrawLock lock) {
+    void Renderer::AddShadowMaps(DrawLock lock) {
         vector<DrawBufferIDs> drawIDs;
         drawIDs.reserve(lights.count);
         for (int i = 0; i < lights.count; i++) {
-            drawIDs.push_back(GenerateDrawsForView(graph, lights.views[i].visibilityMask));
+            drawIDs.push_back(GenerateDrawsForView(lights.views[i].visibilityMask));
         }
 
         graph.Pass("ShadowMaps")
@@ -738,7 +745,7 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddGuis(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Gui>> lock) {
+    void Renderer::AddGuis(ecs::Lock<ecs::Read<ecs::Gui>> lock) {
         ecs::ComponentEvent<ecs::Gui> guiEvent;
         while (guiObserver.Poll(lock, guiEvent)) {
             auto &eventEntity = guiEvent.entity;
@@ -782,15 +789,14 @@ namespace sp::vulkan {
         }
     }
 
-    void Renderer::AddDeferredPasses(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen>> lock) {
-        AddLighting(graph);
-        AddEmissive(graph, lock);
-        AddBloom(graph);
-        AddTonemap(graph);
+    void Renderer::AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen>> lock) {
+        AddLighting();
+        AddEmissive(lock);
+        AddBloom();
+        AddTonemap();
     }
 
-    void Renderer::AddLighting(RenderGraph &graph) {
+    void Renderer::AddLighting() {
         graph.Pass("Lighting")
             .Build([&](RenderGraphPassBuilder &builder) {
                 auto gBuffer0 = builder.ShaderRead("GBuffer0");
@@ -839,7 +845,7 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddEmissive(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Screen, ecs::TransformSnapshot>> lock) {
+    void Renderer::AddEmissive(ecs::Lock<ecs::Read<ecs::Screen, ecs::TransformSnapshot>> lock) {
         struct Screen {
             RenderGraphResourceID id;
 
@@ -916,7 +922,7 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddTonemap(RenderGraph &graph) {
+    void Renderer::AddTonemap() {
         graph.Pass("Tonemap")
             .Build([&](RenderGraphPassBuilder &builder) {
                 auto luminance = builder.ShaderRead(builder.LastOutputID());
@@ -932,8 +938,7 @@ namespace sp::vulkan {
             });
     }
 
-    RenderGraphResourceID Renderer::AddGaussianBlur(RenderGraph &graph,
-        RenderGraphResourceID sourceID,
+    RenderGraphResourceID Renderer::AddGaussianBlur(RenderGraphResourceID sourceID,
         glm::ivec2 direction,
         uint32 downsample,
         float scale,
@@ -968,12 +973,14 @@ namespace sp::vulkan {
         return destID;
     }
 
-    RenderGraphResourceID Renderer::AddBloom(RenderGraph &graph) {
+    RenderGraphResourceID Renderer::AddBloom() {
+        graph.BeginScope("BloomBlur");
         auto sourceID = graph.LastOutputID();
-        auto blurY1 = AddGaussianBlur(graph, sourceID, glm::ivec2(0, 1), 1, CVarBloomScale.Get());
-        auto blurX1 = AddGaussianBlur(graph, blurY1, glm::ivec2(1, 0), 2);
-        auto blurY2 = AddGaussianBlur(graph, blurX1, glm::ivec2(0, 1), 1);
-        auto blurX2 = AddGaussianBlur(graph, blurY2, glm::ivec2(1, 0), 1);
+        auto blurY1 = AddGaussianBlur(sourceID, glm::ivec2(0, 1), 1, CVarBloomScale.Get());
+        auto blurX1 = AddGaussianBlur(blurY1, glm::ivec2(1, 0), 2);
+        auto blurY2 = AddGaussianBlur(blurX1, glm::ivec2(0, 1), 1);
+        auto blurX2 = AddGaussianBlur(blurY2, glm::ivec2(1, 0), 1);
+        graph.EndScope();
 
         RenderGraphResourceID destID;
         graph.Pass("BloomCombine")
@@ -996,7 +1003,7 @@ namespace sp::vulkan {
         return destID;
     }
 
-    void Renderer::AddMenuOverlay(RenderGraph &graph) {
+    void Renderer::AddMenuOverlay() {
         RenderGraphResourceID menuID = RenderGraphResources::npos;
         for (auto &gui : guis) {
             if (gui.renderer->Name() == "menu_gui") {
@@ -1024,7 +1031,7 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddScreenshotPasses(RenderGraph &graph) {
+    void Renderer::AddScreenshots() {
         std::lock_guard lock(screenshotMutex);
 
         for (auto &pending : pendingScreenshots) {
@@ -1044,7 +1051,7 @@ namespace sp::vulkan {
                         if (FormatByteSize(format) == FormatComponentCount(format)) {
                             sourceID = resource.id;
                         } else {
-                            sourceID = VisualizeBuffer(graph, resource.id);
+                            sourceID = VisualizeBuffer(resource.id);
                         }
                         builder.TransferRead(sourceID);
                         builder.RequirePass();
@@ -1061,9 +1068,7 @@ namespace sp::vulkan {
         pendingScreenshots.clear();
     }
 
-    RenderGraphResourceID Renderer::VisualizeBuffer(RenderGraph &graph,
-        RenderGraphResourceID sourceID,
-        uint32 arrayLayer) {
+    RenderGraphResourceID Renderer::VisualizeBuffer(RenderGraphResourceID sourceID, uint32 arrayLayer) {
 
         RenderGraphResourceID targetID = ~0u, outputID;
         graph.Pass("VisualizeBuffer")

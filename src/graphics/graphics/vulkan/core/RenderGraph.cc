@@ -41,6 +41,7 @@ namespace sp::vulkan {
 
     vector<RenderGraph::RenderTargetInfo> RenderGraph::AllRenderTargets() {
         vector<RenderTargetInfo> output;
+        auto &resources = *this->resources;
         for (const auto &[scope, names] : resources.nameScopes) {
             for (const auto &[name, id] : names) {
                 const auto &res = resources.resources[id];
@@ -139,6 +140,7 @@ namespace sp::vulkan {
     }
 
     void RenderGraph::BeginScope(string_view name) {
+        auto &resources = *this->resources;
         auto &newScope = resources.nameScopes.emplace_back();
         const auto &topScope = resources.nameScopes[resources.scopeStack.back()];
 
@@ -154,13 +156,15 @@ namespace sp::vulkan {
     }
 
     void RenderGraph::EndScope() {
+        auto &resources = *this->resources;
         Assert(resources.scopeStack.size() > 1, "tried to end a scope that wasn't started");
         auto &scope = resources.nameScopes[resources.scopeStack.back()];
-        scope.SetID("LastOutput", resources.LastOutputID());
+        if (scope.resourceNames.size() > 0) scope.SetID("LastOutput", resources.LastOutputID());
         resources.scopeStack.pop_back();
     }
 
     void RenderGraph::SetTargetImageView(string_view name, ImageViewPtr view) {
+        auto &resources = *this->resources;
         auto &res = resources.GetResource(name);
         Assert(res.renderTargetDesc.extent == view->Extent(), "image extent mismatch");
 
@@ -178,6 +182,7 @@ namespace sp::vulkan {
 
     void RenderGraph::Execute() {
         ZoneScoped;
+        auto &resources = *this->resources;
         resources.ResizeBeforeExecute();
         resources.lastOutputID = RenderGraphResources::npos;
 
@@ -256,6 +261,10 @@ namespace sp::vulkan {
                     }
                     if (passScope != 255) {
                         string_view name = resources.nameScopes[passScope].name;
+                        if (!name.empty()) {
+                            auto dot = name.find(".");
+                            if (dot != name.npos) name = name.substr(dot + 1);
+                        }
                         phaseScopes.emplace(name.empty() ? "RenderGraph" : name);
                         if (timer) phaseScopes.top().StartTimer(*timer);
 
@@ -318,9 +327,13 @@ namespace sp::vulkan {
             UpdateLastOutput(pass);
         }
         passes.clear();
+        frameIndex = (frameIndex + 1) % resourceFrames.size();
+        this->resources = &resourceFrames[frameIndex];
+        this->resources->Reset();
     }
 
     void RenderGraph::AddPassBarriers(CommandContextPtr &cmd, RenderGraphPass &pass) {
+        auto &resources = *this->resources;
         for (auto &dep : pass.dependencies) {
             if (dep.access.layout == vk::ImageLayout::eUndefined) continue;
 
