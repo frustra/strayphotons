@@ -75,6 +75,7 @@ namespace sp::vulkan {
             ecs::XRView,
             ecs::Mirror,
             ecs::Gui,
+            ecs::Screen,
             ecs::FocusLock>>();
 
         AddSceneState(lock);
@@ -156,7 +157,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddFlatView(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::View, ecs::FocusLock, ecs::TransformSnapshot>> lock) {
+        ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::FocusLock, ecs::Screen>> lock) {
         Tecs::Entity windowEntity = device.GetActiveView();
 
         if (!windowEntity || !windowEntity.Has<ecs::View>(lock)) return;
@@ -203,7 +204,7 @@ namespace sp::vulkan {
                 DrawSceneIndirect(cmd, resources, drawCommandsBuffer, drawParamsBuffer);
             });
 
-        AddDeferredPasses(graph);
+        AddDeferredPasses(graph, lock);
 
         if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::MENU)) AddMenuOverlay(graph);
 
@@ -211,7 +212,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddXRView(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::View, ecs::XRView, ecs::TransformSnapshot>> lock) {
+        ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView, ecs::Screen>> lock) {
 #ifdef SP_XR_SUPPORT
         if (!xrSystem) return;
 
@@ -346,7 +347,7 @@ namespace sp::vulkan {
                 viewStateBuf->Flush();
             });
 
-        AddDeferredPasses(graph);
+        AddDeferredPasses(graph, lock);
         graph.EndScope();
 
         RenderGraphResourceID sourceID;
@@ -505,6 +506,7 @@ namespace sp::vulkan {
     void Renderer::AddLaserState(RenderGraph &graph,
         ecs::Lock<ecs::Read<ecs::LaserLine, ecs::TransformSnapshot>> lock) {
         lasers.gpuData.resize(0);
+        lasers.gpuData.reserve(1);
         for (auto entity : lock.EntitiesWith<ecs::LaserLine>()) {
             auto &laser = entity.Get<ecs::LaserLine>(lock);
 
@@ -526,8 +528,6 @@ namespace sp::vulkan {
                 line.start = line.end;
             }
         }
-
-        if (lasers.gpuData.empty()) return;
 
         graph.Pass("LaserState")
             .Build([&](RenderGraphPassBuilder &builder) {
@@ -782,9 +782,10 @@ namespace sp::vulkan {
         }
     }
 
-    void Renderer::AddDeferredPasses(RenderGraph &graph) {
+    void Renderer::AddDeferredPasses(RenderGraph &graph,
+        ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen>> lock) {
         AddLighting(graph);
-        AddLaserLines(graph);
+        AddEmissive(graph, lock);
         AddBloom(graph);
         AddTonemap(graph);
     }
@@ -808,7 +809,7 @@ namespace sp::vulkan {
                     builder.ShaderRead(this->lights.gelNames[i]);
                 }
 
-                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::DontCare});
+                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
             })
             .Execute([this](RenderGraphResources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "lighting.frag");
@@ -838,10 +839,18 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddLaserLines(RenderGraph &graph) {
-        if (lasers.gpuData.empty()) return;
+    void Renderer::AddEmissive(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Screen, ecs::TransformSnapshot>> lock) {
+        struct Screen {
+            RenderGraphResourceID id;
 
-        graph.Pass("LaserLines")
+            struct {
+                glm::mat4 quad;
+                glm::vec3 luminanceScale;
+            } gpuData;
+        };
+        vector<Screen> screens;
+
+        graph.Pass("Emissive")
             .Build([&](RenderGraphPassBuilder &builder) {
                 auto input = builder.LastOutput();
                 builder.ShaderRead(input.id);
@@ -853,24 +862,57 @@ namespace sp::vulkan {
                 builder.ReadBuffer("ViewState");
                 builder.ReadBuffer("LaserState");
 
-                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::DontCare});
+                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
+
+                for (auto ent : lock.EntitiesWith<ecs::Screen>()) {
+                    if (!ent.Has<ecs::Transform>(lock)) continue;
+
+                    auto &screenComp = ent.Get<ecs::Screen>(lock);
+                    auto &resource = builder.ShaderRead(screenComp.textureName);
+
+                    Screen screen;
+                    screen.id = resource.id;
+                    screen.gpuData.luminanceScale = screenComp.luminanceScale;
+                    screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).matrix;
+                    screens.push_back(std::move(screen));
+                }
             })
-            .Execute([this](RenderGraphResources &resources, CommandContext &cmd) {
-                cmd.SetShaders("screen_cover.vert", "laser_lines.frag");
-                cmd.SetStencilTest(true);
-                cmd.SetDepthTest(false, false);
-                cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
-                cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
-                cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
+            .Execute([this, screens](RenderGraphResources &resources, CommandContext &cmd) {
+                {
+                    RenderPhase phase("Lasers");
+                    phase.StartTimer(cmd, timer);
+                    cmd.SetShaders("screen_cover.vert", "laser_lines.frag");
+                    cmd.SetStencilTest(true);
+                    cmd.SetDepthTest(false, false);
+                    cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
+                    cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
+                    cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
 
-                cmd.SetTexture(0, 0, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
-                cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer2")->ImageView());
+                    cmd.SetTexture(0, 0, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
+                    cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer2")->ImageView());
 
-                cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
-                cmd.SetStorageBuffer(0, 9, resources.GetBuffer("LaserState"));
+                    cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
+                    cmd.SetStorageBuffer(0, 9, resources.GetBuffer("LaserState"));
 
-                cmd.PushConstants((uint32)lasers.gpuData.size());
-                cmd.Draw(3);
+                    cmd.PushConstants((uint32)lasers.gpuData.size());
+                    cmd.Draw(3);
+                }
+
+                {
+                    RenderPhase phase("Screens");
+                    phase.StartTimer(cmd, timer);
+                    cmd.SetShaders("textured_quad.vert", "single_texture.frag");
+                    cmd.SetDepthTest(true, false);
+                    cmd.SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleStrip);
+                    cmd.SetCullMode(vk::CullModeFlagBits::eNone);
+                    cmd.SetBlending(true);
+
+                    for (auto &screen : screens) {
+                        cmd.SetTexture(0, 0, resources.GetRenderTarget(screen.id)->ImageView());
+                        cmd.PushConstants(screen.gpuData);
+                        cmd.Draw(4);
+                    }
+                }
             });
     }
 
@@ -1124,7 +1166,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::SetDebugGui(GuiManager &gui) {
-        debugGuiRenderer = make_unique<GuiRenderer>(device, gui);
+        debugGuiRenderer = make_shared<GuiRenderer>(device, gui);
     }
 
     void Renderer::QueueScreenshot(const string &path, const string &resource) {

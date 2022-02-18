@@ -1,5 +1,7 @@
 #version 450
 
+layout(early_fragment_tests) in;
+
 layout(binding = 0) uniform sampler2D tex;
 
 layout(location = 0) in vec2 inTexCoord;

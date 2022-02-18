@@ -63,8 +63,8 @@ namespace sp::vulkan {
     }
 
     DeviceContext::DeviceContext(bool enableValidationLayers, bool enableSwapchain)
-        : allocator(nullptr, DeleteAllocator), threadContexts(32), frameEndQueue("EndFrame", 0),
-          allocatorQueue("Allocator") {
+        : mainThread(std::this_thread::get_id()), allocator(nullptr, DeleteAllocator), threadContexts(32),
+          frameEndQueue("EndFrame", 0), allocatorQueue("GPUAllocator") {
         ZoneScoped;
         glfwSetErrorCallback(glfwErrorCallback);
 
@@ -727,6 +727,9 @@ namespace sp::vulkan {
     }
 
     CommandContextPtr DeviceContext::GetFrameCommandContext(CommandContextType type) {
+        Assert(std::this_thread::get_id() == mainThread,
+            "must use a fenced command context outside the main renderer thread");
+
         CommandContextPtr cmd;
         auto &pool = Frame().commandContexts[QueueType(type)];
         if (pool.nextIndex < pool.list.size()) {
@@ -765,6 +768,8 @@ namespace sp::vulkan {
         vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
         vk::Fence fence) {
         ZoneScoped;
+        Assert(std::this_thread::get_id() == mainThread, "must call from the main renderer thread (for now)");
+
         CommandContextPtr cmd = cmdArg;
         // Invalidate caller's reference, this CommandContext is unusable until a subsequent frame.
         cmdArg.reset();
@@ -828,6 +833,8 @@ namespace sp::vulkan {
     }
 
     BufferPtr DeviceContext::GetFramePooledBuffer(BufferType type, vk::DeviceSize size) {
+        Assert(std::this_thread::get_id() == mainThread, "must call from the main renderer thread");
+
         auto &pool = Frame().bufferPools[type];
         for (auto &buf : pool) {
             if (!buf.used && buf.size == size) {

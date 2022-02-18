@@ -8,7 +8,6 @@ namespace sp {
 
 namespace ecs {
     struct Gui {
-        float luminanceScale = 1.0f;
         sp::GuiManager *manager;
     };
 

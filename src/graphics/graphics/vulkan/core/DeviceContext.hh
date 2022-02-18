@@ -195,6 +195,7 @@ namespace sp::vulkan {
 
         shared_ptr<Shader> CreateShader(const string &name, Hash64 compareHash);
 
+        std::thread::id mainThread;
         vk::UniqueInstance instance;
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;
         vk::UniqueSurfaceKHR surface;
@@ -261,7 +262,6 @@ namespace sp::vulkan {
             vk::UniqueFence inFlightFence;
 
             // Stores all command contexts created for this frame, so they can be reused in later frames
-            // TODO: multiple threads need their own pools
             std::array<CommandContextPool, QUEUE_TYPES_COUNT> commandContexts;
             std::array<vector<PooledBuffer>, BUFFER_TYPES_COUNT> bufferPools;
 

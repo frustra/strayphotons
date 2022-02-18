@@ -117,8 +117,9 @@ namespace sp::vulkan {
 
         void BuildFrameGraph(RenderGraph &graph);
         void AddFlatView(RenderGraph &graph,
-            ecs::Lock<ecs::Read<ecs::View, ecs::FocusLock, ecs::TransformSnapshot>> lock);
-        void AddXRView(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::View, ecs::XRView, ecs::TransformSnapshot>> lock);
+            ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::FocusLock, ecs::Screen>> lock);
+        void AddXRView(RenderGraph &graph,
+            ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView, ecs::Screen>> lock);
 
         void AddScreenshotPasses(RenderGraph &graph);
         RenderGraphResourceID VisualizeBuffer(RenderGraph &graph,
@@ -131,9 +132,9 @@ namespace sp::vulkan {
         void AddLightState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Light, ecs::TransformSnapshot>> lock);
         void AddShadowMaps(RenderGraph &graph, DrawLock lock);
         void AddGuis(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Gui>> lock);
-        void AddDeferredPasses(RenderGraph &graph);
+        void AddDeferredPasses(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen>> lock);
         void AddLighting(RenderGraph &graph);
-        void AddLaserLines(RenderGraph &graph);
+        void AddEmissive(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Screen, ecs::TransformSnapshot>> lock);
         void AddTonemap(RenderGraph &graph);
         void AddMenuOverlay(RenderGraph &graph);
 
@@ -156,11 +157,10 @@ namespace sp::vulkan {
         struct RenderableGui {
             Tecs::Entity entity;
             shared_ptr<GuiRenderer> renderer;
-            float luminanceScale;
             RenderGraphResourceID renderGraphID = ~0u;
         };
         vector<RenderableGui> guis;
-        unique_ptr<GuiRenderer> debugGuiRenderer;
+        shared_ptr<GuiRenderer> debugGuiRenderer;
 
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 
