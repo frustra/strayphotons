@@ -1,7 +1,7 @@
 #version 430
 
 ##import lib/types_common
-##import lib/mirror_shadow_common
+##import mirror_shadow_common
 
 layout (local_size_x = MAX_LIGHTS, local_size_y = MAX_MIRRORS) in;
 

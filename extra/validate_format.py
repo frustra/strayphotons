@@ -7,10 +7,10 @@ import glob
 import sys
 import subprocess
 
-include_paths = ["src/", "tests/"]
-include_extenions = [".cc", ".hh", ".cpp", ".hpp"]
+include_paths = ["src/", "tests/", "shaders/vulkan", "shaders/lib"]
+include_extenions = [".cc", ".hh", ".cpp", ".hpp", ".glsl", ".vert", ".frag", ".geom", ".comp"]
 version_pattern = re.compile("version ([0-9]+\.[0-9]+)\.[0-9]+")
-allowed_clangformat_versions = ["12.0"]
+allowed_clangformat_versions = ["12.0", "13.0"]
 
 def run_clang_format(filepath, fix):
     if fix:

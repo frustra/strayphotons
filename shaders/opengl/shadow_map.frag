@@ -7,7 +7,7 @@ layout (early_fragment_tests) in; // Force stencil testing before shader invocat
 layout (location = 0) in vec3 inViewPos;
 
 ##import lib/types_common
-##import lib/mirror_shadow_common
+##import mirror_shadow_common
 
 uniform vec2 clip;
 uniform int drawLightId;

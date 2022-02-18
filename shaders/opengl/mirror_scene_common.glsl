@@ -1,4 +1,4 @@
-##import lib/mirror_common
+##import mirror_common
 
 #define SCENE_MIRROR_LIST_SIZE MAX_MIRRORS * MAX_MIRROR_RECURSION
 

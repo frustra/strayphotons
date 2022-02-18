@@ -10,7 +10,7 @@ layout (location = 0) in vec3 inViewPos;
 
 ##import lib/util
 ##import lib/types_common
-##import lib/mirror_shadow_common
+##import mirror_shadow_common
 
 #define MIRROR_SAMPLE
 ##import lib/shadow_sample

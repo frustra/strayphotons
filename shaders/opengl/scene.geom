@@ -23,7 +23,7 @@ layout (location = 4) out vec3 outViewPos;
 layout (location = 5) flat out int outMirrorIndex;
 
 ##import lib/types_common
-##import lib/mirror_scene_common
+##import mirror_scene_common
 
 uniform bool renderMirrors = false;
 uniform mat4 view;

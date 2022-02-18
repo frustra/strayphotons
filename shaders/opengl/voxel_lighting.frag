@@ -40,8 +40,8 @@ layout(binding = 2, std140) uniform GLVoxelInfo {
 	VoxelInfo voxelInfo;
 };
 
-##import lib/mirror_shadow_common
-##import lib/mirror_scene_common
+##import mirror_shadow_common
+##import mirror_scene_common
 
 uniform float exposure = 1.0;
 uniform int diffuseDownsample = 1;

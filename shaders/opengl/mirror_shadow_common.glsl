@@ -1,4 +1,4 @@
-##import lib/mirror_common
+##import mirror_common
 
 layout(binding = 0, std430) buffer MirrorVisData {
 	int count[4]; // array instead of multiple elements due to an nvidia driver bug with SSBOs in geometry shaders (C5133)
