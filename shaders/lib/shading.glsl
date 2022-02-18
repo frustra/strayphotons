@@ -201,9 +201,8 @@ vec3 DirectShading(vec3 worldPosition,
         vec3 lightTint = vec3(spotFalloff);
     #ifdef LIGHTING_GEL
         if (lights[lightId].gelId > 0) {
-            vec2 coord = ViewPosToScreenPos((mirrorData.lightViewMat[i] * vec4(worldPosition, 1.0)).xyz,
-                lights[lightId].proj)
-                             .xy;
+            vec4 lightSpacePosition = mirrorData.lightViewMat[i] * vec4(worldPosition, 1.0);
+            vec2 coord = ViewPosToScreenPos(lightSpacePosition.xyz, lights[lightId].proj).xy;
         #ifdef MULTIPLE_LIGHTING_GELS
             lightTint = texture(lightingGels[gelId - 1], vec2(coord.x, 1 - coord.y)).rgb *
                         float(coord == clamp(coord, 0, 1));
