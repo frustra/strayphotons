@@ -73,7 +73,7 @@ mkdir -p traces/tests/
 for file in ../assets/scripts/tests/*.txt; do
     testscript=`realpath --relative-to=../assets/scripts $file`
     trace_path=traces/${testscript%.txt}.tracy
-    ../extra/Tracy-capture -a 127.0.0.1 -o "$trace_path" &
+    ../extra/Tracy-capture -a 127.0.0.1 -o "$trace_path" 1>/dev/null &
 
     echo "Running test: $testscript"
     ./sp-test "$@" "$testscript"
