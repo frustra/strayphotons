@@ -74,33 +74,30 @@ namespace sp {
             }
             rootJoint = skin.skeleton;
         }
-    } // namespace gltf
 
-    glm::mat4 GetNodeMatrix(const tinygltf::Node *node) {
-        glm::mat4 out(1.0);
+        Node::Node(const tinygltf::Model &model, const tinygltf::Node &node, std::optional<size_t> treeRoot)
+            : name(node.name), treeRoot(treeRoot) {
+            if (node.matrix.size() >= 12) {
+                auto out = glm::value_ptr(transform.matrix);
+                for (size_t i = 0; i < 12; i++) {
+                    out[i] = (float)node.matrix[i];
+                }
+            } else {
+                if (node.translation.size() == 3) {
+                    transform.SetPosition(glm::vec3(node.translation[0], node.translation[1], node.translation[2]));
+                }
 
-        if (node->matrix.size() == 16) {
-            auto outPtr = glm::value_ptr(out);
-            for (auto value : node->matrix) {
-                *(outPtr++) = (float)value;
-            }
-        } else {
-            if (node->translation.size() == 3) {
-                out = glm::translate(out, glm::vec3(node->translation[0], node->translation[1], node->translation[2]));
-            }
+                if (node.rotation.size() == 4) {
+                    transform.SetRotation(
+                        glm::quat(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]));
+                }
 
-            if (node->rotation.size() == 4) {
-                out = out * glm::mat4_cast(
-                                glm::quat(node->rotation[3], node->rotation[0], node->rotation[1], node->rotation[2]));
-            }
-
-            if (node->scale.size() == 3) {
-                out = glm::scale(out, glm::vec3(node->scale[0], node->scale[1], node->scale[2]));
+                if (node.scale.size() == 3) {
+                    transform.SetScale(glm::vec3(node.scale[0], node.scale[1], node.scale[2]));
+                }
             }
         }
-
-        return out;
-    }
+    } // namespace gltf
 
     Gltf::Gltf(const string &name, std::shared_ptr<const Asset> asset) : name(name), asset(asset) {
         Assertf(asset, "Gltf not found: %s", name);
@@ -111,14 +108,14 @@ namespace sp {
         std::filesystem::path fsPath(asset->path);
         std::string baseDir = fsPath.remove_filename().string();
 
-        auto gltfModel = std::make_shared<tinygltf::Model>();
+        auto model = std::make_shared<tinygltf::Model>();
         std::string err;
         std::string warn;
         bool ret = false;
         tinygltf::TinyGLTF gltfLoader;
         Assert(asset->BufferSize() <= UINT_MAX, "Buffer size overflows max uint");
         if (ends_with(asset->path, ".gltf")) {
-            ret = gltfLoader.LoadASCIIFromString(gltfModel.get(),
+            ret = gltfLoader.LoadASCIIFromString(model.get(),
                 &err,
                 &warn,
                 (char *)asset->BufferPtr(),
@@ -126,7 +123,7 @@ namespace sp {
                 baseDir);
         } else {
             // Assume GLB model
-            ret = gltfLoader.LoadBinaryFromMemory(gltfModel.get(),
+            ret = gltfLoader.LoadBinaryFromMemory(model.get(),
                 &err,
                 &warn,
                 asset->BufferPtr(),
@@ -135,31 +132,44 @@ namespace sp {
         }
 
         Assertf(ret && err.empty(), "Failed to parse glTF (%s): %s", name, err);
-        this->model = gltfModel;
+        gltfModel = model;
+        nodes.resize(model->nodes.size());
+        skins.resize(model->skins.size());
+        meshes.resize(model->meshes.size());
 
-        int sceneIndex = gltfModel->defaultScene >= 0 ? gltfModel->defaultScene : 0;
-        Assertf(sceneIndex < gltfModel->scenes.size(), "Gltf scene index is out of range: %d", sceneIndex);
-        auto &scene = gltfModel->scenes[sceneIndex];
+        int sceneIndex = model->defaultScene >= 0 ? model->defaultScene : 0;
+        Assertf(sceneIndex < model->scenes.size(), "Gltf scene index is out of range: %d", sceneIndex);
+        auto &scene = model->scenes[sceneIndex];
 
-        nodes.reserve(scene.nodes.size());
-        for (auto &node : scene.nodes) {
-            nodes.emplace_back(*gltfModel, node);
+        for (int node : scene.nodes) {
+            if (AddNode(*model, node)) rootNodes.push_back((size_t)node);
         }
     }
 
-    void Gltf::AddNode(int nodeIndex, glm::mat4 parentMatrix) {
-        glm::mat4 matrix = parentMatrix * GetNodeMatrix(&model.nodes[nodeIndex]);
-        auto &node = model.nodes[nodeIndex];
+    bool Gltf::AddNode(const tinygltf::Model &model, int nodeIndex, std::optional<size_t> treeRoot) {
+        if (nodeIndex < 0 || nodeIndex >= nodes.size() || nodeIndex >= model.nodes.size()) return false;
+        auto &node = nodes[nodeIndex];
+        if (node) {
+            Errorf("Gltf nodes contain loop: %s %d", name, nodeIndex);
+            return false;
+        }
+        node = gltf::Node(model, model.nodes[nodeIndex], treeRoot);
 
-        // Meshes are optional on nodes
-        if (node.mesh != -1) {
-
-            // Must have a mesh to have a skin
-            if (node.skin != -1) {}
+        auto meshIndex = model.nodes[nodeIndex].mesh;
+        if (meshIndex >= 0 && meshIndex < meshes.size() && meshIndex < model.meshes.size()) {
+            node->meshIndex = (size_t)meshIndex;
+            if (!meshes[meshIndex]) { meshes[meshIndex] = gltf::Mesh(model, model.meshes[meshIndex]); }
         }
 
-        for (int childNodeIndex : node.children) {
-            AddNode(childNodeIndex, matrix);
+        auto skinIndex = model.nodes[nodeIndex].mesh;
+        if (skinIndex >= 0 && skinIndex < skins.size() && skinIndex < model.skins.size()) {
+            node->skinIndex = (size_t)skinIndex;
+            if (!skins[skinIndex]) { skins[skinIndex] = gltf::Skin(model, model.skins[skinIndex]); }
         }
+
+        for (int child : model.nodes[nodeIndex].children) {
+            if (AddNode(model, child, treeRoot.value_or((size_t)nodeIndex))) node->children.push_back((size_t)child);
+        }
+        return true;
     }
 } // namespace sp

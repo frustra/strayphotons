@@ -12,7 +12,7 @@ namespace ecs {
     bool Component<Physics>::Load(sp::Scene *scene, Physics &physics, const picojson::value &src) {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "model") {
-                physics.model = sp::GAssets.LoadModel(param.second.get<string>());
+                physics.model = sp::GAssets.LoadGltf(param.second.get<string>());
             } else if (param.first == "dynamic") {
                 physics.dynamic = param.second.get<bool>();
             } else if (param.first == "kinematic") {

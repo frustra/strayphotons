@@ -15,8 +15,8 @@ namespace tinygltf {
     struct Mesh;
     struct Primitive;
     struct Skin;
-    struct Node;
-    class Buffer;
+    class Node;
+    struct Buffer;
 } // namespace tinygltf
 
 namespace sp {
@@ -48,7 +48,7 @@ namespace sp {
             ReadT Read(size_t i) const;
 
         private:
-            tinygltf::Buffer *buffer = nullptr;
+            const tinygltf::Buffer *buffer = nullptr;
             int typeIndex = -1;
             size_t count = 0;
             size_t byteOffset = 0;
@@ -97,13 +97,19 @@ namespace sp {
         };
 
         struct Node {
-            Node(const tinygltf::Model &model, const tinygltf::Node &node);
+            Node(const tinygltf::Model &model,
+                const tinygltf::Node &node,
+                std::optional<size_t> treeRoot = std::optional<size_t>());
 
             std::string name;
             ecs::Transform transform;
-            Tecs::Entity entity;
+
+            std::optional<size_t> treeRoot;
+            std::vector<size_t> children;
             std::optional<size_t> meshIndex;
             std::optional<size_t> skinIndex;
+
+            Tecs::Entity entity;
         };
     } // namespace gltf
 
@@ -114,11 +120,17 @@ namespace sp {
         const std::string name;
 
     private:
-        std::shared_ptr<const Asset> asset;
-        std::shared_ptr<const tinygltf::Model> model;
+        bool AddNode(const tinygltf::Model &model,
+            int nodeIndex,
+            std::optional<size_t> treeRoot = std::optional<size_t>());
 
-        std::vector<gltf::Node> nodes;
-        std::vector<gltf::Skin> skins;
-        std::vector<gltf::Mesh> meshes;
+        std::shared_ptr<const Asset> asset;
+        std::shared_ptr<const tinygltf::Model> gltfModel;
+
+        std::vector<std::optional<gltf::Node>> nodes;
+        std::vector<std::optional<gltf::Skin>> skins;
+        std::vector<std::optional<gltf::Mesh>> meshes;
+
+        std::vector<size_t> rootNodes;
     };
 } // namespace sp
