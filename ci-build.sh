@@ -14,7 +14,6 @@ if [ -n "$CI_CACHE_DIRECTORY" ]; then
 fi
 
 echo -e "--- Running \033[33mcmake configure\033[0m :video_game:"
-export SP_BUILD_RUST=false
 if ! cmake -DCMAKE_BUILD_TYPE=Release -S . -B ./build -GNinja; then
     echo -e "\n^^^ +++"
     echo -e "\033[31mCMake Configure failed\033[0m"
