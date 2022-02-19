@@ -2,7 +2,7 @@
 
 #include "PhysxUtils.hh"
 #include "assets/AssetManager.hh"
-#include "assets/Model.hh"
+#include "assets/Gltf.hh"
 #include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
@@ -14,6 +14,7 @@
 #include <chrono>
 #include <cmath>
 #include <fstream>
+#include <murmurhash/MurmurHash3.h>
 
 namespace sp {
     using namespace physx;
@@ -481,6 +482,14 @@ namespace sp {
         if (userData) userData->physicsGroup = group;
     }
 
+    Hash128 hashBuffer(const Gltf &gltf, size_t index) {
+        Hash128 output;
+        auto buffer = gltf.GetBuffer(index);
+        Assert(buffer.size() <= INT_MAX, "Buffer size overflows max int");
+        MurmurHash3_x86_128(buffer.data(), (int)buffer.size(), 0, output.data());
+        return output;
+    }
+
     // Increment if the Collision Cache format ever changes
     const uint32 hullCacheMagic = 0xc042;
 
@@ -519,7 +528,7 @@ namespace sp {
 
                 int bufferIndex = std::stoi(name);
 
-                if (!model.HasBuffer(bufferIndex) || model.HashBuffer(bufferIndex) != hash) {
+                if (!model.HasBuffer(bufferIndex) || hashBuffer(model, bufferIndex) != hash) {
                     Logf("Ignoring outdated collision cache for %s", name);
                     in.close();
                     return false;
@@ -565,7 +574,7 @@ namespace sp {
             out.write((char *)&bufferCount, 4);
 
             for (int bufferIndex : set.bufferIndexes) {
-                Hash128 hash = model.HashBuffer(bufferIndex);
+                Hash128 hash = hashBuffer(model, bufferIndex);
                 string bufferName = std::to_string(bufferIndex);
                 uint32 nameLen = bufferName.length();
                 Assert(nameLen <= 256, "hull cache buffer name too long on write");

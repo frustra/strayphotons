@@ -15,13 +15,9 @@
 #include <thread>
 #include <vector>
 
-namespace tinygltf {
-    struct FsCallbacks;
-}
-
 namespace sp {
     class Asset;
-    class Model;
+    class Gltf;
     class Script;
     class Image;
 
@@ -34,16 +30,15 @@ namespace sp {
     class AssetManager : public RegisteredThread {
     public:
         AssetManager();
-        ~AssetManager();
 
         AsyncPtr<Asset> Load(const std::string &path, AssetType type = AssetType::Bundled, bool reload = false);
-        AsyncPtr<Model> LoadModel(const std::string &name);
+        AsyncPtr<Gltf> LoadGltf(const std::string &name);
         AsyncPtr<Image> LoadImage(const std::string &path);
 
         AsyncPtr<Script> LoadScript(const std::string &path);
 
-        void RegisterExternalModel(const std::string &name, const std::string &path);
-        bool IsModelRegistered(const std::string &name);
+        void RegisterExternalGltf(const std::string &name, const std::string &path);
+        bool IsGltfRegistered(const std::string &name);
 
     private:
         void Frame() override;
@@ -53,28 +48,22 @@ namespace sp {
         bool InputStream(const std::string &path, AssetType type, std::ifstream &stream, size_t *size = nullptr);
         bool OutputStream(const std::string &path, std::ofstream &stream);
 
-        static bool ReadWholeFile(std::vector<unsigned char> *out,
-            std::string *err,
-            const std::string &path,
-            void *userdata);
-
         // TODO: Update PhysxManager to use Asset object for collision model cache
         friend class PhysxManager;
 
         DispatchQueue workQueue;
 
         std::mutex assetMutex;
-        std::mutex modelMutex;
+        std::mutex gltfMutex;
         std::mutex imageMutex;
 
         EnumArray<PreservingMap<std::string, Async<Asset>>, AssetType> loadedAssets;
-        PreservingMap<std::string, Async<Model>> loadedModels;
+        PreservingMap<std::string, Async<Gltf>> loadedGltfs;
         PreservingMap<std::string, Async<Image>> loadedImages;
 
-        std::mutex externalModelMutex;
-        robin_hood::unordered_flat_map<std::string, std::string> externalModelPaths;
+        std::mutex externalGltfMutex;
+        robin_hood::unordered_flat_map<std::string, std::string> externalGltfPaths;
 
-        std::unique_ptr<tinygltf::FsCallbacks> gltfLoaderCallbacks;
         robin_hood::unordered_flat_map<std::string, std::pair<size_t, size_t>> tarIndex;
     };
 

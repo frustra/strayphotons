@@ -153,7 +153,7 @@ namespace ecs {
                     auto modelName = scriptComp.GetParam<std::string>("model_name");
 
                     auto &renderable = ent.Get<Renderable>(lock);
-                    if (!renderable.model && sp::GAssets.IsModelRegistered(modelName)) {
+                    if (!renderable.model && sp::GAssets.IsGltfRegistered(modelName)) {
                         renderable.model = sp::GAssets.LoadModel(modelName);
                         renderable.visibility.set();
                     }

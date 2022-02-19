@@ -9,7 +9,6 @@
 #include <map>
 
 namespace sp {
-    enum TextureType;
     class VoxelRenderer;
 
     class GLModel final : public NonCopyable {
