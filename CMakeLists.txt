@@ -159,6 +159,7 @@ if(NOT SP_DEBUG)
 endif()
 
 if(SP_BUILD_RUST)
+    message(STATUS "Building with Rust")
     add_subdirectory(rust)
     add_subdirectory(wasm)
 
