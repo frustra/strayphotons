@@ -98,6 +98,7 @@ namespace sp::vulkan::render_graph {
     Resource PassBuilder::CreateBuffer(BufferType bufferType, size_t size) {
         return CreateBuffer(bufferType, "", size);
     }
+
     Resource PassBuilder::CreateBuffer(BufferType bufferType, string_view name, size_t size) {
         Resource resource(bufferType, size);
         resources.Register(name, resource);

@@ -11,7 +11,7 @@ namespace sp::vulkan::render_graph {
         ZoneScoped;
         auto &resources = *this->resources;
         resources.ResizeBeforeExecute();
-        resources.lastOutputID = Resources::npos;
+        resources.lastOutputID = InvalidResource;
 
         // passes are already sorted by dependency order
         for (auto it = passes.rbegin(); it != passes.rend(); it++) {
@@ -153,10 +153,8 @@ namespace sp::vulkan::render_graph {
             pass.executeFunc = {}; // releases any captures
             UpdateLastOutput(pass);
         }
-        passes.clear();
-        frameIndex = (frameIndex + 1) % resourceFrames.size();
-        this->resources = &resourceFrames[frameIndex];
-        this->resources->Reset();
+
+        AdvanceFrame();
     }
 
     void RenderGraph::AddPassBarriers(CommandContextPtr &cmd, Pass &pass) {
@@ -212,6 +210,13 @@ namespace sp::vulkan::render_graph {
                 }
             }
         }
+    }
+
+    void RenderGraph::AdvanceFrame() {
+        passes.clear();
+        frameIndex = (frameIndex + 1) % resourceFrames.size();
+        resources = &resourceFrames[frameIndex];
+        resources->Reset();
     }
 
     void RenderGraph::BeginScope(string_view name) {

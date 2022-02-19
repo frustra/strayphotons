@@ -73,32 +73,6 @@ namespace sp::vulkan {
         void RenderFrame();
         void EndFrame();
 
-        struct DrawBufferIDs {
-            rg::ResourceID drawCommandsBuffer; // first 4 bytes are the number of draws
-            rg::ResourceID drawParamsBuffer;
-        };
-
-        DrawBufferIDs GenerateDrawsForView(ecs::Renderable::VisibilityMask viewMask);
-        void DrawSceneIndirect(CommandContext &cmd,
-            rg::Resources &resources,
-            BufferPtr drawCommandsBuffer,
-            BufferPtr drawParamsBuffer);
-
-        void ForwardPass(CommandContext &cmd,
-            ecs::Renderable::VisibilityMask viewMask,
-            DrawLock lock,
-            bool useMaterial = true,
-            const PreDrawFunc &preDraw = {});
-
-        void DrawEntity(CommandContext &cmd,
-            ecs::Renderable::VisibilityMask viewMask,
-            DrawLock lock,
-            Tecs::Entity &ent,
-            bool useMaterial = true,
-            const PreDrawFunc &preDraw = {});
-
-        float Exposure = 1.0f;
-
         void SetDebugGui(GuiManager &gui);
 
 #ifdef SP_XR_SUPPORT
@@ -147,6 +121,17 @@ namespace sp::vulkan {
             uint32 downsample = 1,
             float scale = 1.0f,
             float clip = FLT_MAX);
+
+        struct DrawBufferIDs {
+            rg::ResourceID drawCommandsBuffer; // first 4 bytes are the number of draws
+            rg::ResourceID drawParamsBuffer;
+        };
+
+        DrawBufferIDs GenerateDrawsForView(ecs::Renderable::VisibilityMask viewMask);
+        void DrawSceneIndirect(CommandContext &cmd,
+            rg::Resources &resources,
+            BufferPtr drawCommandsBuffer,
+            BufferPtr drawParamsBuffer);
 
         CFuncCollection funcs;
 

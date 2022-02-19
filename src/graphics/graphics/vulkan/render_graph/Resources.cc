@@ -12,7 +12,7 @@ namespace sp::vulkan::render_graph {
         refCounts.clear();
         renderTargets.clear();
         buffers.clear();
-        lastOutputID = npos;
+        lastOutputID = InvalidResource;
     }
 
     void Resources::ResizeBeforeExecute() {
@@ -58,7 +58,7 @@ namespace sp::vulkan::render_graph {
     }
 
     ResourceID Resources::GetID(string_view name, bool assertExists) const {
-        ResourceID result = npos;
+        ResourceID result = InvalidResource;
 
         if (name.find('.') != string_view::npos) {
             // Any resource name with a dot is assumed to be fully qualified.
@@ -72,16 +72,16 @@ namespace sp::vulkan::render_graph {
                     break;
                 }
             }
-            Assert(!assertExists || result == npos, string("resource does not exist: ").append(name));
+            Assert(!assertExists || result == InvalidResource, string("resource does not exist: ").append(name));
             return result;
         }
 
         for (auto scopeIt = scopeStack.rbegin(); scopeIt != scopeStack.rend(); scopeIt++) {
             auto id = nameScopes[*scopeIt].GetID(name);
-            if (id != npos) return id;
+            if (id != InvalidResource) return id;
         }
         Assert(!assertExists, string("resource does not exist: ").append(name));
-        return npos;
+        return InvalidResource;
     }
 
     uint32 Resources::RefCount(ResourceID id) {
@@ -144,7 +144,7 @@ namespace sp::vulkan::render_graph {
     ResourceID Resources::Scope::GetID(string_view name) const {
         auto it = resourceNames.find(name);
         if (it != resourceNames.end()) return it->second;
-        return npos;
+        return InvalidResource;
     }
 
     void Resources::Scope::SetID(string_view name, ResourceID id) {

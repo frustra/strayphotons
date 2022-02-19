@@ -59,6 +59,21 @@ namespace sp::vulkan {
         pendingTransaction.clear();
         pendingTransaction.notify_all();
 
+        if (listRenderTargets) {
+            listRenderTargets = false;
+            auto list = graph.AllRenderTargets();
+            for (const auto &info : list) {
+                auto &extent = info.desc.extent;
+                Logf("%s (%dx%dx%d [%d] %s)",
+                    info.name,
+                    extent.width,
+                    extent.height,
+                    extent.depth,
+                    info.desc.arrayLayers,
+                    vk::to_string(info.desc.format));
+            }
+        }
+
         graph.Execute();
     }
 
@@ -102,21 +117,6 @@ namespace sp::vulkan {
 #endif
         AddWindowOutput();
         AddScreenshots();
-
-        if (listRenderTargets) {
-            listRenderTargets = false;
-            auto list = graph.AllRenderTargets();
-            for (const auto &info : list) {
-                auto &extent = info.desc.extent;
-                Logf("%s (%dx%dx%d [%d] %s)",
-                    info.name,
-                    extent.width,
-                    extent.height,
-                    extent.depth,
-                    info.desc.arrayLayers,
-                    vk::to_string(info.desc.format));
-            }
-        }
 
         Assert(lock.UseCount() == 1, "something held onto the renderer lock");
     }
@@ -648,8 +648,6 @@ namespace sp::vulkan {
 
                 auto drawParams = builder.CreateBuffer(BUFFER_TYPE_STORAGE_LOCAL, maxDraws * sizeof(uint16) * 2);
                 bufferIDs.drawParamsBuffer = drawParams.id;
-
-                builder.ReadBuffer("WarpedVertexBuffer");
             })
             .Execute([this, viewMask, bufferIDs](rg::Resources &resources, CommandContext &cmd) {
                 auto drawBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
@@ -661,9 +659,6 @@ namespace sp::vulkan {
                 cmd.SetStorageBuffer(0, 2, scene.primitiveLists);
                 cmd.SetStorageBuffer(0, 3, drawBuffer);
                 cmd.SetStorageBuffer(0, 4, resources.GetBuffer(bufferIDs.drawParamsBuffer));
-
-                cmd.SetStorageBuffer(0, 5, scene.vertexBuffer);
-                cmd.SetStorageBuffer(0, 6, resources.GetBuffer("WarpedVertexBuffer"));
 
                 struct {
                     uint32 renderableCount;
@@ -1004,7 +999,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddMenuOverlay() {
-        rg::ResourceID menuID = rg::Resources::npos;
+        rg::ResourceID menuID = rg::InvalidResource;
         for (auto &gui : guis) {
             if (gui.renderer->Name() == "menu_gui") {
                 menuID = gui.renderGraphID;
@@ -1013,7 +1008,7 @@ namespace sp::vulkan {
                 break;
             }
         }
-        Assert(menuID != rg::Resources::npos, "main menu doesn't exist");
+        Assert(menuID != rg::InvalidResource, "main menu doesn't exist");
 
         graph.AddPass("MenuOverlay")
             .Build([&](rg::PassBuilder &builder) {

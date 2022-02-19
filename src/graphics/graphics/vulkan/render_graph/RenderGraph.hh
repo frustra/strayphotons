@@ -110,12 +110,13 @@ namespace sp::vulkan::render_graph {
         }
 
         bool HasResource(string_view name) const {
-            return resources->GetID(name, false) != Resources::npos;
+            return resources->GetID(name, false) != InvalidResource;
         }
 
     private:
         friend class InitialPassState;
         void AddPassBarriers(CommandContextPtr &cmd, Pass &pass);
+        void AdvanceFrame();
 
         void UpdateLastOutput(const Pass &pass) {
             if (pass.attachments.size() > pass.primaryAttachmentIndex) {

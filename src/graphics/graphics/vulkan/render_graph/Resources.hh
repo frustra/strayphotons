@@ -81,8 +81,6 @@ namespace sp::vulkan::render_graph {
             return GetResource(lastOutputID);
         }
 
-        static const ResourceID npos = InvalidResource;
-
     private:
         friend class RenderGraph;
         friend class PassBuilder;
@@ -121,6 +119,6 @@ namespace sp::vulkan::render_graph {
         vector<RenderTargetPtr> renderTargets;
         vector<BufferPtr> buffers;
 
-        ResourceID lastOutputID = npos;
+        ResourceID lastOutputID = InvalidResource;
     };
 } // namespace sp::vulkan::render_graph
