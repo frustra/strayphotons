@@ -1,6 +1,6 @@
 #include "ConvexHull.hh"
 
-#include "assets/Model.hh"
+#include "assets/Gltf.hh"
 #include "core/Logging.hh"
 
 #include <v-hacd/VHACD_Lib/inc/btConvexHullComputer.h>
@@ -28,49 +28,27 @@ namespace sp {
         };
     };
 
-    void decomposeConvexHullsForPrimitive(ConvexHullSet *set, const Model &model, const Model::Primitive &prim) {
+    void decomposeConvexHullsForPrimitive(ConvexHullSet *set,
+        const Gltf &model,
+        const gltf::Mesh &mesh,
+        const gltf::Mesh::Primitive &prim) {
         ZoneScoped;
         set->decomposed = true;
 
-        auto posAttrib = prim.attributes[0];
-        Assert(posAttrib.componentFields == 3, "position must be vec3");
-        Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "position must be float type");
+        Assert(prim.drawMode == gltf::Mesh::DrawMode::Triangles, "primitive draw mode must be triangles");
+        std::vector<glm::vec3> points(prim.positionBuffer.Count());
+        std::vector<uint32_t> indices(prim.indexBuffer.Count());
 
-        auto indexAttrib = prim.indexBuffer;
-        Assert(prim.drawMode == Model::DrawMode::Triangles, "primitive draw mode must be triangles");
-        Assert(indexAttrib.componentFields == 1, "index buffer must be a single component");
-
-        set->bufferIndexes.insert(posAttrib.bufferIndex);
-        set->bufferIndexes.insert(indexAttrib.bufferIndex);
-
-        auto pbuffer = model.GetBuffer(posAttrib.bufferIndex);
-        auto points = (const float *)(pbuffer.data() + posAttrib.byteOffset);
-
-        auto ibuffer = model.GetBuffer(indexAttrib.bufferIndex);
-        auto indices = (const uint32_t *)(ibuffer.data() + indexAttrib.byteOffset);
-        uint32_t *indicesCopy = nullptr;
-
-        switch (indexAttrib.componentType) {
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-            // indices is already compatible
-            break;
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-            indicesCopy = new uint32_t[indexAttrib.componentCount];
-
-            for (uint32 i = 0; i < indexAttrib.componentCount; i++) {
-                indicesCopy[i] = (uint32_t)((const uint16 *)indices)[i];
-            }
-
-            indices = indicesCopy;
-            break;
-        default:
-            Abort("invalid index component type");
+        for (size_t i = 0; i < prim.positionBuffer.Count(); i++) {
+            points[i] = prim.positionBuffer.Read(i);
+        }
+        for (size_t i = 0; i < prim.indexBuffer.Count(); i++) {
+            indices[i] = prim.indexBuffer.Read(i);
         }
 
         static VHACDCallback vhacdCallback;
 
         auto interfaceVHACD = VHACD::CreateVHACD();
-        Assert(posAttrib.byteStride == sizeof(float) * 3, "Unsupported point stride for VHACD");
 
         VHACD::IVHACD::Parameters params;
         params.m_callback = &vhacdCallback;
@@ -78,8 +56,11 @@ namespace sp {
         // params.m_resolution = 1000000;
         // params.m_convexhullDownsampling = 8;
 
-        bool res =
-            interfaceVHACD->Compute(points, posAttrib.componentCount, indices, indexAttrib.componentCount / 3, params);
+        bool res = interfaceVHACD->Compute(reinterpret_cast<const float *>(points.data()),
+            points.size(),
+            indices.data(),
+            indices.size() / 3,
+            params);
         Assert(res, "building convex decomposition");
 
         for (uint32 i = 0; i < interfaceVHACD->GetNConvexHulls(); i++) {
@@ -106,8 +87,6 @@ namespace sp {
 
         interfaceVHACD->Clean();
         interfaceVHACD->Release();
-
-        if (indicesCopy) delete indicesCopy;
     }
 
     void copyVhacdManifoldMeshToConvexHull(ConvexHull &hull, VHACD::TMMesh &mesh) {
@@ -140,63 +119,27 @@ namespace sp {
         }
     }
 
-    void buildConvexHullForPrimitive(ConvexHullSet *set, const Model &model, const Model::Primitive &prim) {
+    void buildConvexHullForPrimitive(ConvexHullSet *set,
+        const Gltf &model,
+        const gltf::Mesh &mesh,
+        const gltf::Mesh::Primitive &prim) {
         ZoneScoped;
         set->decomposed = false;
 
-        auto posAttrib = prim.attributes[0];
-        Assert(posAttrib.componentFields == 3, "position must be vec3");
-        Assert(posAttrib.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT, "position must be float type");
+        std::unordered_set<uint32_t> visitedIndexes;
+        std::vector<glm::vec3> points;
+        points.reserve(prim.positionBuffer.Count());
 
-        auto indexAttrib = prim.indexBuffer;
-        Assert(prim.drawMode == Model::DrawMode::Triangles, "primitive draw mode must be triangles");
-        Assert(indexAttrib.componentFields == 1, "index buffer must be a single component");
+        for (size_t i = 0; i < prim.indexBuffer.Count(); i++) {
+            uint32_t index = prim.indexBuffer.Read(i);
+            if (visitedIndexes.count(index) || index >= prim.positionBuffer.Count()) continue;
 
-        set->bufferIndexes.insert(posAttrib.bufferIndex);
-        set->bufferIndexes.insert(indexAttrib.bufferIndex);
-
-        auto pbuffer = model.GetBuffer(posAttrib.bufferIndex);
-        auto points = pbuffer.data() + posAttrib.byteOffset;
-
-        auto ibuffer = model.GetBuffer(indexAttrib.bufferIndex);
-        auto indices = ibuffer.data() + indexAttrib.byteOffset;
-
-        std::unordered_set<glm::ivec3> visitedPoints;
-        std::unordered_set<uint32> visitedIndexes;
-        vector<glm::vec3> finalPoints;
-
-        for (uint32 i = 0; i < indexAttrib.componentCount; i++) {
-            uint32 index = 0;
-
-            switch (indexAttrib.componentType) {
-            case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-                index = *(const uint32 *)(indices + i * indexAttrib.byteStride);
-                break;
-            case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                index = *(const uint16 *)(indices + i * indexAttrib.byteStride);
-                break;
-            default:
-                Abort("invalid index component type");
-            }
-
-            auto tri = (float *)(points + index * posAttrib.byteStride);
-
-            glm::vec4 temp({tri[0], tri[1], tri[2], 1.0});
-            temp = prim.matrix * temp;
-            glm::ivec3 lowResPoint({temp.x * 1e6, temp.y * 1e6, temp.z * 1e6});
-
-            if (visitedIndexes.count(index)) continue;
-
+            points.emplace_back(prim.positionBuffer.Read(index));
             visitedIndexes.insert(index);
-
-            if (visitedPoints.count(lowResPoint)) continue;
-
-            visitedPoints.insert(lowResPoint);
-            finalPoints.push_back({temp.x, temp.y, temp.z});
         }
 
         btConvexHullComputer chc;
-        chc.compute((float *)&finalPoints[0], sizeof(glm::vec3), finalPoints.size(), -1, -1);
+        chc.compute(reinterpret_cast<const float *>(points.data()), sizeof(glm::vec3), points.size(), -1, -1);
 
         VHACD::ICHull icc;
 
@@ -214,15 +157,18 @@ namespace sp {
         Logf("Adding simple hull, %d points, %d triangles", hull.pointCount, hull.triangleCount);
     }
 
-    void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set, const Model &model, bool decompHull) {
+    void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set,
+        const Gltf &model,
+        const gltf::Mesh &mesh,
+        bool decompHull) {
         ZoneScoped;
-        for (auto &prim : model.Primitives()) {
+        for (auto &prim : mesh.primitives) {
             if (!decompHull) {
                 // Use points for a single hull without decomposing.
-                buildConvexHullForPrimitive(set, model, prim);
+                buildConvexHullForPrimitive(set, model, mesh, prim);
             } else {
                 // Break primitive into one or more convex hulls.
-                decomposeConvexHullsForPrimitive(set, model, prim);
+                decomposeConvexHullsForPrimitive(set, model, mesh, prim);
             }
         }
     }

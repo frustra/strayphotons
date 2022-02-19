@@ -27,7 +27,6 @@ namespace sp::vulkan {
     static_assert(sizeof(GPUViewState) % 16 == 0, "std140 alignment");
 
     struct GPUMeshPrimitive {
-        glm::mat4 primitiveToModel;
         uint32 firstIndex, vertexOffset;
         uint32 indexCount, vertexCount; // count of elements in the index/vertex buffers
         uint16 baseColorTexID, metallicRoughnessTexID;

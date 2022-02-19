@@ -7,9 +7,8 @@ namespace sp {
         BindBuffer(boneData, 2);
     }
 
-    void SceneShader::SetParams(const ecs::View &view, glm::mat4 modelMat, glm::mat4 primitiveMat) {
+    void SceneShader::SetParams(const ecs::View &view, glm::mat4 modelMat) {
         Set("model", modelMat);
-        Set("primitive", primitiveMat);
         Set("view", view.viewMat);
         Set("projection", view.projMat);
         Set("boneCount", 0);

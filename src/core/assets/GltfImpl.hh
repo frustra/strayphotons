@@ -64,6 +64,10 @@ namespace sp::gltf {
     }; // namespace detail
 
     template<typename ReadT, typename... Tn>
+    Accessor<ReadT, Tn...>::Accessor(const Gltf &model, int accessorIndex)
+        : Accessor(*model.gltfModel, accessorIndex) {}
+
+    template<typename ReadT, typename... Tn>
     Accessor<ReadT, Tn...>::Accessor(const tinygltf::Model &model, int accessorIndex) {
         if (accessorIndex < 0 || accessorIndex >= model.accessors.size()) {
             Errorf("Gltf::Accessor created with invalid index: %d", accessorIndex);

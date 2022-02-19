@@ -10,7 +10,7 @@ namespace ecs {
     template<>
     bool Component<Renderable>::Load(sp::Scene *scene, Renderable &r, const picojson::value &src) {
         if (src.is<string>()) {
-            r.model = sp::GAssets.LoadModel(src.get<string>());
+            r.model = sp::GAssets.LoadGltf(src.get<string>());
         } else {
             for (auto param : src.get<picojson::object>()) {
                 if (param.first == "hidden") {
@@ -20,7 +20,7 @@ namespace ecs {
                         r.visibility.set();
                     }
                 } else if (param.first == "model") {
-                    r.model = sp::GAssets.LoadModel(param.second.get<string>());
+                    r.model = sp::GAssets.LoadGltf(param.second.get<string>());
                 }
             }
         }

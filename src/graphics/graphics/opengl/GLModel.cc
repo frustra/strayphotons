@@ -8,7 +8,7 @@
 
 namespace sp {
 
-    GLModel::GLModel(const std::shared_ptr<const Model> &model, VoxelRenderer *renderer)
+    GLModel::GLModel(const std::shared_ptr<const Gltf> &model, VoxelRenderer *renderer)
         : renderer(renderer), model(model) {
         static BasicMaterial defaultMat;
 
@@ -88,7 +88,7 @@ namespace sp {
 
             if (primitive.heightTex) primitive.heightTex->Bind(3);
 
-            shader->SetParams(view, modelMat, primitive.matrix);
+            shader->SetParams(view, modelMat);
 
             if (boneCount > 0) {
                 // TODO: upload vec3 and quat instead of a mat4 to save memory bw
@@ -270,31 +270,31 @@ namespace sp {
         return NULL;
     }
 
-    GLenum GLModel::GetDrawMode(Model::DrawMode mode) {
+    GLenum GLModel::GetDrawMode(gltf::Mesh::DrawMode mode) {
         switch (mode) {
-        case Model::DrawMode::Points:
+        case gltf::Mesh::DrawMode::Points:
             return GL_POINTS;
 
-        case Model::DrawMode::Line:
+        case gltf::Mesh::DrawMode::Line:
             return GL_LINES;
 
-        case Model::DrawMode::LineLoop:
+        case gltf::Mesh::DrawMode::LineLoop:
             return GL_LINE_LOOP;
 
-        case Model::DrawMode::LineStrip:
+        case gltf::Mesh::DrawMode::LineStrip:
             return GL_LINE_STRIP;
 
-        case Model::DrawMode::Triangles:
+        case gltf::Mesh::DrawMode::Triangles:
             return GL_TRIANGLES;
 
-        case Model::DrawMode::TriangleStrip:
+        case gltf::Mesh::DrawMode::TriangleStrip:
             return GL_TRIANGLE_STRIP;
 
-        case Model::DrawMode::TriangleFan:
+        case gltf::Mesh::DrawMode::TriangleFan:
             return GL_TRIANGLE_FAN;
 
         default:
-            Abort("Unknown Model::DrawMode");
+            Abort("Unknown gltf::Mesh::DrawMode");
         }
     }
 

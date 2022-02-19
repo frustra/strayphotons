@@ -296,7 +296,7 @@ namespace sp {
         }
     }
 
-    std::shared_ptr<PxConvexMesh> PhysxManager::CreateConvexMeshFromHull(const Model &model, const ConvexHull &hull) {
+    std::shared_ptr<PxConvexMesh> PhysxManager::CreateConvexMeshFromHull(const Gltf &model, const ConvexHull &hull) {
         PxConvexMeshDesc convexDesc;
         convexDesc.points.count = hull.pointCount;
         convexDesc.points.stride = hull.pointByteStride;
@@ -318,7 +318,7 @@ namespace sp {
         });
     }
 
-    AsyncPtr<ConvexHullSet> PhysxManager::LoadConvexHullSet(const AsyncPtr<Model> &asyncModel, bool decomposeHull) {
+    AsyncPtr<ConvexHullSet> PhysxManager::LoadConvexHullSet(const AsyncPtr<Gltf> &asyncModel, bool decomposeHull) {
         auto modelPtr = asyncModel->Get();
         Assertf(modelPtr, "PhysxManager::LoadConvexHullSet called with null model");
         auto &model = *modelPtr;
@@ -335,23 +335,26 @@ namespace sp {
                 if (set) return set;
 
                 set = workQueue.Dispatch<ConvexHullSet>(asyncModel,
-                    [this, name, decomposeHull](std::shared_ptr<const Model> model) {
+                    [this, name, decomposeHull](std::shared_ptr<const Gltf> model) {
                         ZoneScopedN("LoadConvexHullSet::Dispatch");
                         ZoneStr(name);
 
                         auto set = std::make_shared<ConvexHullSet>();
-                        if (LoadCollisionCache(*set, *model, decomposeHull)) {
-                            for (auto &hull : set->hulls) {
-                                hull.pxMesh = CreateConvexMeshFromHull(*model, hull);
-                            }
-                            return set;
-                        }
+                        // if (LoadCollisionCache(*set, *model, decomposeHull)) {
+                        //     for (auto &hull : set->hulls) {
+                        //         hull.pxMesh = CreateConvexMeshFromHull(*model, hull);
+                        //     }
+                        //     return set;
+                        // }
 
-                        ConvexHullBuilding::BuildConvexHulls(set.get(), *model, decomposeHull);
+                        for (auto &mesh : model->meshes) {
+                            if (!mesh) continue;
+                            ConvexHullBuilding::BuildConvexHulls(set.get(), *model, *mesh, decomposeHull);
+                        }
                         for (auto &hull : set->hulls) {
                             hull.pxMesh = CreateConvexMeshFromHull(*model, hull);
                         }
-                        SaveCollisionCache(*model, *set, decomposeHull);
+                        // SaveCollisionCache(*model, *set, decomposeHull);
                         return set;
                     });
                 cache.Register(name, set);
@@ -482,7 +485,7 @@ namespace sp {
         if (userData) userData->physicsGroup = group;
     }
 
-    Hash128 hashBuffer(const Gltf &gltf, size_t index) {
+    /*Hash128 hashBuffer(const Gltf &gltf, size_t index) {
         Hash128 output;
         auto buffer = gltf.GetBuffer(index);
         Assert(buffer.size() <= INT_MAX, "Buffer size overflows max int");
@@ -493,7 +496,7 @@ namespace sp {
     // Increment if the Collision Cache format ever changes
     const uint32 hullCacheMagic = 0xc042;
 
-    bool PhysxManager::LoadCollisionCache(ConvexHullSet &set, const Model &model, bool decomposeHull) {
+    bool PhysxManager::LoadCollisionCache(ConvexHullSet &set, const Gltf &model, bool decomposeHull) {
         ZoneScoped;
         std::ifstream in;
 
@@ -562,7 +565,7 @@ namespace sp {
         return false;
     }
 
-    void PhysxManager::SaveCollisionCache(const Model &model, const ConvexHullSet &set, bool decomposeHull) {
+    void PhysxManager::SaveCollisionCache(const Gltf &model, const ConvexHullSet &set, bool decomposeHull) {
         std::ofstream out;
         std::string name = "cache/collision/" + model.name;
         if (decomposeHull) name += "-decompose";
@@ -595,5 +598,5 @@ namespace sp {
 
             out.close();
         }
-    }
+    }*/
 } // namespace sp

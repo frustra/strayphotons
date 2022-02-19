@@ -34,7 +34,7 @@ namespace ecs {
 }
 
 namespace sp {
-    class Model;
+    class Gltf;
     class SceneManager;
 
     extern CVar<float> CVarGravity;
@@ -83,10 +83,10 @@ namespace sp {
         void DestroyPhysxScene();
         void CacheDebugLines();
 
-        std::shared_ptr<physx::PxConvexMesh> CreateConvexMeshFromHull(const Model &model, const ConvexHull &hull);
-        AsyncPtr<ConvexHullSet> LoadConvexHullSet(const AsyncPtr<Model> &model, bool decomposeHull);
-        bool LoadCollisionCache(ConvexHullSet &set, const Model &model, bool decomposeHull);
-        void SaveCollisionCache(const Model &model, const ConvexHullSet &set, bool decomposeHull);
+        std::shared_ptr<physx::PxConvexMesh> CreateConvexMeshFromHull(const Gltf &model, const ConvexHull &hull);
+        AsyncPtr<ConvexHullSet> LoadConvexHullSet(const AsyncPtr<Gltf> &model, bool decomposeHull);
+        // bool LoadCollisionCache(ConvexHullSet &set, const Gltf &model, bool decomposeHull);
+        // void SaveCollisionCache(const Gltf &model, const ConvexHullSet &set, bool decomposeHull);
 
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;

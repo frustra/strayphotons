@@ -139,7 +139,7 @@ namespace sp::vulkan {
         LaserContext lasers;
         GPUSceneContext scene;
         PreservingMap<string, Model> activeModels;
-        vector<std::shared_ptr<const sp::Model>> modelsToLoad;
+        vector<std::shared_ptr<const sp::Gltf>> modelsToLoad;
 
         struct RenderableGui {
             Tecs::Entity entity;

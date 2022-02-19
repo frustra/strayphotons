@@ -411,7 +411,7 @@ namespace sp {
             auto sceneGS = shaders.Get<SceneGS>();
             auto sceneFS = shaders.Get<SceneFS>();
 
-            sceneGS->SetParams(forwardPassView, {}, {});
+            sceneGS->SetParams(forwardPassView, {});
 
             int recursion = mirrorCount ? std::min(MAX_MIRROR_RECURSION, CVarMirrorRecursion.Get()) : 0;
 
@@ -668,7 +668,7 @@ namespace sp {
             }
         }
 
-        shader->SetParams(view, glm::mat4(), glm::mat4());
+        shader->SetParams(view, glm::mat4());
 
         static unsigned char baseColor[4] = {0, 255, 0, 255};
         static BasicMaterial mat(baseColor);

@@ -21,6 +21,7 @@ namespace tinygltf {
 
 namespace sp {
     class Asset;
+    class Gltf;
 
     enum class TextureType {
         BaseColor,
@@ -36,6 +37,7 @@ namespace sp {
         public:
             Accessor() {}
             Accessor(const tinygltf::Model &model, int accessorIndex);
+            Accessor(const Gltf &model, int accessorIndex);
 
             operator bool() const {
                 return buffer && typeIndex >= 0;
@@ -119,18 +121,18 @@ namespace sp {
 
         const std::string name;
 
+        std::shared_ptr<const tinygltf::Model> gltfModel;
+        std::vector<std::optional<gltf::Node>> nodes;
+        std::vector<std::optional<gltf::Skin>> skins;
+        std::vector<std::optional<gltf::Mesh>> meshes;
+
+        std::vector<size_t> rootNodes;
+
     private:
         bool AddNode(const tinygltf::Model &model,
             int nodeIndex,
             std::optional<size_t> treeRoot = std::optional<size_t>());
 
         std::shared_ptr<const Asset> asset;
-        std::shared_ptr<const tinygltf::Model> gltfModel;
-
-        std::vector<std::optional<gltf::Node>> nodes;
-        std::vector<std::optional<gltf::Skin>> skins;
-        std::vector<std::optional<gltf::Mesh>> meshes;
-
-        std::vector<size_t> rootNodes;
     };
 } // namespace sp

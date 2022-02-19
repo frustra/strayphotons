@@ -1,6 +1,6 @@
 #pragma once
 
-#include "assets/Model.hh"
+#include "assets/Gltf.hh"
 #include "core/Common.hh"
 #include "graphics/opengl/GLTexture.hh"
 #include "graphics/opengl/Graphics.hh"
@@ -13,11 +13,11 @@ namespace sp {
 
     class GLModel final : public NonCopyable {
     public:
-        GLModel(const std::shared_ptr<const Model> &model, VoxelRenderer *renderer);
+        GLModel(const std::shared_ptr<const Gltf> &model, VoxelRenderer *renderer);
         ~GLModel();
 
-        struct Primitive : public Model::Primitive {
-            Primitive(const Model::Primitive &parent) : Model::Primitive(parent) {}
+        struct Primitive : public gltf::Mesh::Primitive {
+            Primitive(const gltf::Mesh::Primitive &parent) : gltf::Mesh::Primitive(parent) {}
 
             GLuint vertexBufferHandle;
             GLuint indexBufferHandle;
@@ -35,7 +35,7 @@ namespace sp {
 
         void AddPrimitive(GLModel::Primitive &prim);
 
-        static GLenum GetDrawMode(Model::DrawMode mode);
+        static GLenum GetDrawMode(gltf::Mesh::DrawMode mode);
 
     private:
         GLuint LoadBuffer(int index);
@@ -47,6 +47,6 @@ namespace sp {
         std::map<std::string, GLTexture> textures;
         vector<GLModel::Primitive> primitives;
 
-        std::shared_ptr<const Model> model;
+        std::shared_ptr<const Gltf> model;
     };
 }; // namespace sp

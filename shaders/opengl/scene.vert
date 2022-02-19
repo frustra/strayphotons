@@ -10,7 +10,6 @@ layout (location = 3) in vec4 inWeights;
 layout (location = 4) in ivec4 inJoints;
 
 uniform mat4 model;
-uniform mat4 primitive;
 uniform mat4 view;
 uniform mat4 projection;
 
@@ -25,7 +24,7 @@ void main()
 	//outNormal = mat3(normalMat) * inNormal;
 	//outTexCoord = inTexCoord;
 	
-	mat4 poseMat = model * primitive * getSkinMatrix(inWeights, inJoints);
+	mat4 poseMat = model * getSkinMatrix(inWeights, inJoints);
 
 	gl_Position = poseMat * vec4(inPos, 1.0);
 	outNormal = mat3(poseMat) * inNormal;

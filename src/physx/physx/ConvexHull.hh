@@ -10,9 +10,11 @@ namespace physx {
     class PxConvexMesh;
 }
 
-namespace sp {
-    class Model;
+namespace sp::gltf {
+    struct Mesh;
+}
 
+namespace sp {
     struct ConvexHull {
         uint32 pointCount;
         uint32 pointByteStride;
@@ -33,6 +35,6 @@ namespace sp {
 
     namespace ConvexHullBuilding {
         // Builds convex hull set for a model without caching
-        void BuildConvexHulls(ConvexHullSet *set, const Model &model, bool decompHull);
+        void BuildConvexHulls(ConvexHullSet *set, const Gltf &model, const gltf::Mesh &mesh, bool decompHull);
     } // namespace ConvexHullBuilding
 } // namespace sp

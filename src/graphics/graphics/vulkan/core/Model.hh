@@ -1,7 +1,7 @@
 #pragma once
 
 #include "assets/Async.hh"
-#include "assets/Model.hh"
+#include "assets/Gltf.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/vulkan/GPUSceneContext.hh"
 #include "graphics/vulkan/core/Common.hh"
@@ -22,14 +22,15 @@ namespace sp::vulkan {
     class Model final : public NonCopyable {
     public:
         struct Primitive : public NonCopyable {
-            glm::mat4 transform;
-            vk::IndexType indexType = vk::IndexType::eNoneKHR;
             size_t indexOffset, indexCount;
             size_t vertexOffset, vertexCount;
             TextureIndex baseColor, metallicRoughness;
         };
 
-        Model(shared_ptr<const sp::Model> model, GPUSceneContext &scene, DeviceContext &device);
+        Model(shared_ptr<const sp::Gltf> source,
+            const sp::gltf::Mesh &mesh,
+            GPUSceneContext &scene,
+            DeviceContext &device);
         ~Model();
 
         uint32 SceneIndex() const;
@@ -49,10 +50,13 @@ namespace sp::vulkan {
         }
 
     private:
-        TextureIndex LoadTexture(DeviceContext &device, const sp::Model &model, int materialIndex, TextureType type);
+        TextureIndex LoadTexture(DeviceContext &device,
+            const shared_ptr<const sp::Gltf> &source,
+            int materialIndex,
+            TextureType type);
         string modelName;
         GPUSceneContext &scene;
-        shared_ptr<const sp::Model> asset;
+        shared_ptr<const sp::Gltf> asset;
 
         robin_hood::unordered_map<string, TextureIndex> textures;
         vector<shared_ptr<Primitive>> primitives;

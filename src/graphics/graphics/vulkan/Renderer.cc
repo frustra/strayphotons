@@ -1,6 +1,6 @@
 #include "Renderer.hh"
 
-#include "assets/Model.hh"
+#include "assets/Gltf.hh"
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
@@ -682,7 +682,7 @@ namespace sp::vulkan {
         cmd.SetBindlessDescriptors(2, scene.GetTextureDescriptorSet());
 
         cmd.SetVertexLayout(SceneVertex::Layout());
-        cmd.Raw().bindIndexBuffer(*scene.indexBuffer, 0, vk::IndexType::eUint16);
+        cmd.Raw().bindIndexBuffer(*scene.indexBuffer, 0, vk::IndexType::eUint32);
         cmd.Raw().bindVertexBuffers(0, {*resources.GetBuffer("WarpedVertexBuffer")}, {0});
 
         if (drawParamsBuffer) cmd.SetStorageBuffer(1, 0, drawParamsBuffer);

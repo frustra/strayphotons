@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 
 namespace sp {
-    class Model;
+    class Gltf;
 }
 
 namespace ecs {
@@ -23,9 +23,9 @@ namespace ecs {
         using VisibilityMask = std::bitset<VISIBILITY_COUNT>;
 
         Renderable() {}
-        Renderable(sp::AsyncPtr<sp::Model> model) : model(model) {}
+        Renderable(sp::AsyncPtr<sp::Gltf> model) : model(model) {}
 
-        sp::AsyncPtr<sp::Model> model;
+        sp::AsyncPtr<sp::Gltf> model;
         VisibilityMask visibility = VisibilityMask().set();
         glm::vec3 emissive = {0.0f, 0.0f, 0.0f};
     };

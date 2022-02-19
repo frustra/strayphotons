@@ -1,6 +1,6 @@
 #include "Model.hh"
 
-#include "assets/Model.hh"
+#include "assets/Gltf.hh"
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
@@ -11,118 +11,61 @@
 #include <tiny_gltf.h>
 
 namespace sp::vulkan {
-    Model::Model(shared_ptr<const sp::Model> model, GPUSceneContext &scene, DeviceContext &device)
-        : modelName(model->name), scene(scene), asset(model) {
+    Model::Model(std::shared_ptr<const sp::Gltf> source,
+        const sp::gltf::Mesh &mesh,
+        GPUSceneContext &scene,
+        DeviceContext &device)
+        : modelName(source->name), scene(scene), asset(source) {
         ZoneScoped;
         ZoneStr(modelName);
         // TODO: cache the output somewhere. Keeping the conversion code in
         // the engine will be useful for any dynamic loading in the future,
         // but we don't want to do it every time a model is loaded.
 
-        for (auto &assetPrimitive : model->Primitives()) {
-            indexCount += assetPrimitive.indexBuffer.componentCount;
-            vertexCount += assetPrimitive.attributes[0].componentCount;
+        for (auto &assetPrimitive : mesh.primitives) {
+            indexCount += assetPrimitive.indexBuffer.Count();
+            vertexCount += assetPrimitive.positionBuffer.Count();
         }
 
-        indexBuffer = scene.indexBuffer->ArrayAllocate(indexCount, sizeof(uint16));
-        auto indexData = (uint16 *)indexBuffer->Mapped();
+        indexBuffer = scene.indexBuffer->ArrayAllocate(indexCount, sizeof(uint32));
+        auto indexData = (uint32 *)indexBuffer->Mapped();
         auto indexDataStart = indexData;
 
         vertexBuffer = scene.vertexBuffer->ArrayAllocate(vertexCount, sizeof(SceneVertex));
         auto vertexData = (SceneVertex *)vertexBuffer->Mapped();
         auto vertexDataStart = vertexData;
 
-        for (auto &assetPrimitive : model->Primitives()) {
+        for (auto &assetPrimitive : mesh.primitives) {
+            ZoneScopedN("CreatePrimitive");
             // TODO: this implementation assumes a lot about the model format,
             // and asserts the assumptions. It would be better to support more
             // kinds of inputs, and convert the data rather than just failing.
-            Assert(assetPrimitive.drawMode == sp::Model::DrawMode::Triangles, "draw mode must be Triangles");
+            Assert(assetPrimitive.drawMode == sp::gltf::Mesh::DrawMode::Triangles, "draw mode must be Triangles");
 
             auto vkPrimitivePtr = make_shared<Primitive>();
             auto &vkPrimitive = *vkPrimitivePtr;
 
-            vkPrimitive.transform = assetPrimitive.matrix;
-            auto &buffers = model->GetGltfModel()->buffers;
-
-            switch (assetPrimitive.indexBuffer.componentType) {
-            case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-                vkPrimitive.indexType = vk::IndexType::eUint32;
-                Assert(assetPrimitive.indexBuffer.byteStride == 4, "index buffer must be tightly packed");
-                Abortf("TODO %s uses uint indexes, but the GPU driven renderer doesn't support them yet", modelName);
-                break;
-            case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-                vkPrimitive.indexType = vk::IndexType::eUint16;
-                Assert(assetPrimitive.indexBuffer.byteStride == 2, "index buffer must be tightly packed");
-                break;
-            }
-            Assert(vkPrimitive.indexType != vk::IndexType::eNoneKHR, "unimplemented vertex index type");
-
-            auto &indexBufferSrc = buffers[assetPrimitive.indexBuffer.bufferIndex];
-            vkPrimitive.indexCount = assetPrimitive.indexBuffer.componentCount;
+            vkPrimitive.indexCount = assetPrimitive.indexBuffer.Count();
             vkPrimitive.indexOffset = indexData - indexDataStart;
-            size_t indexBufferSize = vkPrimitive.indexCount * assetPrimitive.indexBuffer.byteStride;
-            Assert(assetPrimitive.indexBuffer.byteOffset + indexBufferSize <= indexBufferSrc.data.size(),
-                "indexes overflow buffer");
 
-            auto indexPtr = &indexBufferSrc.data[assetPrimitive.indexBuffer.byteOffset];
-            {
-                ZoneScopedN("CopyIndexData");
-                std::copy(indexPtr, indexPtr + indexBufferSize, (uint8 *)indexData);
-            }
-            indexData += vkPrimitive.indexCount;
-
-            auto posAttr = assetPrimitive.attributes[0];
-            auto normalAttr = assetPrimitive.attributes[1];
-            auto uvAttr = assetPrimitive.attributes[2];
-
-            size_t vertexCount = posAttr.componentCount;
-
-            if (vertexCount) {
-                Assert(posAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT,
-                    "position attribute must be a float vector");
-                Assert(posAttr.componentFields == 3, "position attribute must be a vec3");
-            }
-            if (normalAttr.componentCount) {
-                Assert(normalAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT,
-                    "normal attribute must be a float vector");
-                Assert(normalAttr.componentFields == 3, "normal attribute must be a vec3");
-                Assert(normalAttr.componentCount == vertexCount, "must have a normal for every vertex");
-            }
-            if (uvAttr.componentCount) {
-                Assert(uvAttr.componentType == TINYGLTF_PARAMETER_TYPE_FLOAT, "uv attribute must be a float vector");
-                Assert(uvAttr.componentFields == 2, "uv attribute must be a vec2");
-                Assert(uvAttr.componentCount == vertexCount, "must have texcoords for every vertex");
+            for (size_t i = 0; i < vkPrimitive.indexCount; i++) {
+                *indexData++ = assetPrimitive.indexBuffer.Read(i);
             }
 
-            vkPrimitive.vertexCount = posAttr.componentCount;
+            vkPrimitive.vertexCount = assetPrimitive.positionBuffer.Count();
             vkPrimitive.vertexOffset = vertexData - vertexDataStart;
 
-            const uint8 *posBuffer = buffers[posAttr.bufferIndex].data.data() + posAttr.byteOffset;
-            const uint8 *normalBuffer = buffers[normalAttr.bufferIndex].data.data() + normalAttr.byteOffset;
-            const uint8 *uvBuffer = buffers[uvAttr.bufferIndex].data.data() + uvAttr.byteOffset;
+            for (size_t i = 0; i < vkPrimitive.vertexCount; i++) {
+                SceneVertex &vertex = *vertexData++;
 
-            {
-                ZoneScopedN("CopyVertexData");
-                for (size_t i = 0; i < vertexCount; i++) {
-                    SceneVertex &vertex = vertexData[i];
-
-                    vertex.position = reinterpret_cast<const glm::vec3 &>(posBuffer[i * posAttr.byteStride]);
-
-                    if (i < normalAttr.componentCount) {
-                        vertex.normal = reinterpret_cast<const glm::vec3 &>(normalBuffer[i * normalAttr.byteStride]);
-                    }
-
-                    if (i < uvAttr.componentCount) {
-                        vertex.uv = reinterpret_cast<const glm::vec2 &>(uvBuffer[i * uvAttr.byteStride]);
-                    }
-                }
+                vertex.position = assetPrimitive.positionBuffer.Read(i);
+                if (i < assetPrimitive.normalBuffer.Count()) vertex.normal = assetPrimitive.normalBuffer.Read(i);
+                if (i < assetPrimitive.texcoordBuffer.Count()) vertex.uv = assetPrimitive.texcoordBuffer.Read(i);
             }
 
-            vertexData += vertexCount;
-
-            vkPrimitive.baseColor = LoadTexture(device, *model, assetPrimitive.materialIndex, BaseColor);
+            vkPrimitive.baseColor = LoadTexture(device, source, assetPrimitive.materialIndex, TextureType::BaseColor);
             vkPrimitive.metallicRoughness =
-                LoadTexture(device, *model, assetPrimitive.materialIndex, MetallicRoughness);
+                LoadTexture(device, source, assetPrimitive.materialIndex, TextureType::MetallicRoughness);
 
             primitives.emplace_back(vkPrimitivePtr);
         }
@@ -140,7 +83,6 @@ namespace sp::vulkan {
                 gpuPrim->vertexCount = p->vertexCount;
                 gpuPrim->firstIndex = p->indexOffset;
                 gpuPrim->vertexOffset = p->vertexOffset;
-                gpuPrim->primitiveToModel = p->transform;
                 gpuPrim->baseColorTexID = p->baseColor;
                 gpuPrim->metallicRoughnessTexID = p->metallicRoughness;
                 gpuPrim++;
@@ -166,12 +108,20 @@ namespace sp::vulkan {
     }
 
     TextureIndex Model::LoadTexture(DeviceContext &device,
-        const sp::Model &model,
+        const shared_ptr<const sp::Gltf> &source,
         int materialIndex,
         TextureType type) {
         ZoneScoped;
-        auto &gltfModel = model.GetGltfModel();
-        auto &material = gltfModel->materials[materialIndex];
+        if (!source) {
+            Errorf("Model::LoadTexture called with null source");
+            return 0;
+        }
+        auto &gltfModel = *source->gltfModel;
+        if (materialIndex < 0 || materialIndex >= gltfModel.materials.size()) {
+            Errorf("Model::LoadTexture called with invalid materialIndex: %d", materialIndex);
+            return 0;
+        }
+        auto &material = gltfModel.materials[materialIndex];
 
         string name = std::to_string(materialIndex) + "_";
         int textureIndex = -1;
@@ -179,7 +129,7 @@ namespace sp::vulkan {
         bool srgb = false;
 
         switch (type) {
-        case BaseColor:
+        case TextureType::BaseColor:
             name += std::to_string(material.pbrMetallicRoughness.baseColorTexture.index) + "_BASE";
             textureIndex = material.pbrMetallicRoughness.baseColorTexture.index;
             factor = material.pbrMetallicRoughness.baseColorFactor;
@@ -190,7 +140,7 @@ namespace sp::vulkan {
         // Roughness = G channel, Metallic = B channel.
         // R and A channels are not used / should be ignored.
         // https://github.com/KhronosGroup/glTF/blob/e5519ce050/specification/2.0/schema/material.pbrMetallicRoughness.schema.json
-        case MetallicRoughness: {
+        case TextureType::MetallicRoughness: {
             name += std::to_string(material.pbrMetallicRoughness.metallicRoughnessTexture.index) + "_METALICROUGHNESS";
             textureIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
             double rf = material.pbrMetallicRoughness.roughnessFactor,
@@ -202,19 +152,19 @@ namespace sp::vulkan {
             srgb = true;
             break;
         }
-        case Height:
+        case TextureType::Height:
             name += std::to_string(material.normalTexture.index) + "_HEIGHT";
             textureIndex = material.normalTexture.index;
             // factor not supported for height textures
             break;
 
-        case Occlusion:
+        case TextureType::Occlusion:
             name += std::to_string(material.occlusionTexture.index) + "_OCCLUSION";
             textureIndex = material.occlusionTexture.index;
             // factor not supported for occlusion textures
             break;
 
-        case Emissive:
+        case TextureType::Emissive:
             name += std::to_string(material.occlusionTexture.index) + "_EMISSIVE";
             textureIndex = material.emissiveTexture.index;
             factor = material.emissiveFactor;
@@ -226,7 +176,7 @@ namespace sp::vulkan {
 
         if (textures.count(name)) return textures[name];
 
-        if (textureIndex == -1) {
+        if (textureIndex < 0 || textureIndex >= gltfModel.textures.size()) {
             if (factor.size() == 0) factor.push_back(1); // default texture is a single white pixel
 
             auto data = make_shared<std::array<uint8, 4>>();
@@ -249,8 +199,12 @@ namespace sp::vulkan {
             return added.first;
         }
 
-        auto &texture = gltfModel->textures[textureIndex];
-        auto &img = gltfModel->images[texture.source];
+        auto &texture = gltfModel.textures[textureIndex];
+        if (texture.source < 0 || texture.source >= gltfModel.images.size()) {
+            Errorf("Gltf texture %d has invalid texture source: %d", textureIndex, texture.source);
+            return 0;
+        }
+        auto &img = gltfModel.images[texture.source];
 
         ImageCreateInfo imageInfo;
         imageInfo.imageType = vk::ImageType::e2D;
@@ -274,11 +228,11 @@ namespace sp::vulkan {
         imageInfo.extent = vk::Extent3D(img.width, img.height, 1);
 
         ImageViewCreateInfo viewInfo;
-        if (texture.sampler == -1) {
+        if (texture.sampler < 0 || texture.sampler >= gltfModel.samplers.size()) {
             viewInfo.defaultSampler = device.GetSampler(SamplerType::TrilinearTiled);
             imageInfo.genMipmap = true;
         } else {
-            auto &sampler = gltfModel->samplers[texture.sampler];
+            auto &sampler = gltfModel.samplers[texture.sampler];
             int minFilter = sampler.minFilter > 0 ? sampler.minFilter : TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR;
             int magFilter = sampler.magFilter > 0 ? sampler.magFilter : TINYGLTF_TEXTURE_FILTER_LINEAR;
 
@@ -291,7 +245,7 @@ namespace sp::vulkan {
             imageInfo.genMipmap = (samplerInfo.maxLod > 0);
         }
 
-        auto added = scene.AddTexture(imageInfo, viewInfo, {img.image.data(), img.image.size(), gltfModel});
+        auto added = scene.AddTexture(imageInfo, viewInfo, {img.image.data(), img.image.size(), source});
         textures[name] = added.first;
         pendingWork.push_back(added.second);
         return added.first;
