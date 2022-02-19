@@ -165,7 +165,7 @@ namespace sp {
             auto fn = std::move(std::get<lastArg>(tupl));
             auto futures = detail::subtuple(std::move(tupl), std::make_index_sequence<lastArg>());
             return std::apply(
-                [this, &fn](auto &&...futures) {
+                [&](auto &&...futures) {
                     return DispatchInternal<ReturnType>(std::move(fn), std::move(futures)...);
                 },
                 futures);
