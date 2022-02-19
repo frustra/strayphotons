@@ -9,7 +9,11 @@ set(SP_VERSION "${SP_VERSION_MAJOR}.${SP_VERSION_MINOR}")
 
 option(SP_PACKAGE_RELEASE "Build packaged release" off)
 option(SP_NO_MODEL_COMPILE "Disable the model compiler, which needs Node.js" off)
-option(SP_BUILD_RUST "Build and link against rust modules" on)
+set(SP_BUILD_RUST_DEFAULT on)
+if(DEFINED ENV{SP_BUILD_RUST})
+    set(SP_BUILD_RUST_DEFAULT $ENV{SP_BUILD_RUST})
+endif()
+option(SP_BUILD_RUST "Build and link against rust modules" ${SP_BUILD_RUST_DEFAULT})
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
     message(STATUS "sp target is Release")
@@ -159,6 +163,7 @@ if(NOT SP_DEBUG)
 endif()
 
 if(SP_BUILD_RUST)
+    message(STATUS "Building with Rust")
     add_subdirectory(rust)
     add_subdirectory(wasm)
 
