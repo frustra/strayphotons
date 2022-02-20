@@ -42,19 +42,19 @@ add_module_configuration(
         ${PROJECT_INPUT_GLFW_LIB}
         ${PROJECT_PHYSICS_PHYSX_LIB}
         ${PROJECT_AUDIO_LIB}
-        # ${PROJECT_XR_OPENVR_LIB}
+        ${PROJECT_XR_OPENVR_LIB}
 )
 
 # EGL-based executable used for CI testing purposes
-# add_module_configuration(
-#     NAME sp-test
-#     LINK_LIBRARIES
-#         ${PROJECT_GAME_TEST_LIB}
-#         ${PROJECT_CORE_LIB}
-#         ${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB}
-#         ${PROJECT_INPUT_GLFW_LIB}
-#         ${PROJECT_PHYSICS_PHYSX_LIB}
-# )
+add_module_configuration(
+    NAME sp-test
+    LINK_LIBRARIES
+        ${PROJECT_GAME_TEST_LIB}
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GRAPHICS_VULKAN_HEADLESS_LIB}
+        ${PROJECT_INPUT_GLFW_LIB}
+        ${PROJECT_PHYSICS_PHYSX_LIB}
+)
 
 add_subdirectory(core)
 add_subdirectory(audio)
@@ -62,4 +62,4 @@ add_subdirectory(graphics)
 add_subdirectory(input)
 add_subdirectory(main)
 add_subdirectory(physx)
-# add_subdirectory(xr)
+add_subdirectory(xr)

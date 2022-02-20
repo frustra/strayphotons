@@ -298,16 +298,17 @@ namespace sp {
 
     std::shared_ptr<PxConvexMesh> PhysxManager::CreateConvexMeshFromHull(const Gltf &model, const ConvexHull &hull) {
         PxConvexMeshDesc convexDesc;
-        convexDesc.points.count = hull.pointCount;
-        convexDesc.points.stride = hull.pointByteStride;
-        convexDesc.points.data = hull.points;
+        convexDesc.points.count = hull.points.size();
+        convexDesc.points.stride = sizeof(*hull.points.data());
+        convexDesc.points.data = reinterpret_cast<const float *>(hull.points.data());
         convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
 
         PxDefaultMemoryOutputStream buf;
         PxConvexMeshCookingResult::Enum result;
 
         if (!pxCooking->cookConvexMesh(convexDesc, buf, &result)) {
-            Abortf("Failed to cook PhysX hull for %s", model.name);
+            Errorf("Failed to cook PhysX hull for %s", model.name);
+            return nullptr;
         }
 
         PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
@@ -352,7 +353,8 @@ namespace sp {
                             ConvexHullBuilding::BuildConvexHulls(set.get(), *model, *mesh, decomposeHull);
                         }
                         for (auto &hull : set->hulls) {
-                            hull.pxMesh = CreateConvexMeshFromHull(*model, hull);
+                            auto pxMesh = CreateConvexMeshFromHull(*model, hull);
+                            if (pxMesh) hull.pxMesh = pxMesh;
                         }
                         // SaveCollisionCache(*model, *set, decomposeHull);
                         return set;

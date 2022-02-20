@@ -52,7 +52,7 @@ namespace sp {
 
         VHACD::IVHACD::Parameters params;
         params.m_callback = &vhacdCallback;
-        params.m_oclAcceleration = false;
+        // params.m_oclAcceleration = false;
         // params.m_resolution = 1000000;
         // params.m_convexhullDownsampling = 8;
 
@@ -66,23 +66,20 @@ namespace sp {
         for (uint32 i = 0; i < interfaceVHACD->GetNConvexHulls(); i++) {
             VHACD::IVHACD::ConvexHull ihull;
             interfaceVHACD->GetConvexHull(i, ihull);
+            if (ihull.m_nPoints < 3 || ihull.m_nTriangles == 0) continue;
 
             ConvexHull hull;
-            hull.points = new float[ihull.m_nPoints * 3];
-            hull.pointCount = ihull.m_nPoints;
-            hull.pointByteStride = sizeof(float) * 3;
+            hull.points.resize(ihull.m_nPoints);
 
-            for (uint32 j = 0; j < ihull.m_nPoints * 3; j++) {
-                hull.points[j] = (float)ihull.m_points[j];
+            for (uint32 j = 0; j < ihull.m_nPoints; j++) {
+                hull.points[j] = glm::vec3(ihull.m_points[j * 3], ihull.m_points[j * 3 + 1], ihull.m_points[j * 3 + 2]);
             }
 
-            hull.triangles = new int[ihull.m_nTriangles * 3];
-            hull.triangleCount = ihull.m_nTriangles;
-            hull.triangleByteStride = sizeof(int) * 3;
-            memcpy(hull.triangles, ihull.m_triangles, sizeof(int) * 3 * ihull.m_nTriangles);
+            auto src = reinterpret_cast<glm::ivec3 *>(ihull.m_triangles);
+            hull.triangles.assign(src, src + ihull.m_nTriangles);
 
             set->hulls.push_back(hull);
-            Logf("Adding VHACD hull, %d points, %d triangles", hull.pointCount, hull.triangleCount);
+            Logf("Adding VHACD hull, %d points, %d triangles", hull.points.size(), hull.triangles.size());
         }
 
         interfaceVHACD->Clean();
@@ -93,28 +90,20 @@ namespace sp {
         const size_t nT = mesh.GetNTriangles();
         const size_t nV = mesh.GetNVertices();
 
-        hull.points = new float[nV * 3];
-        hull.pointCount = nV;
-        hull.pointByteStride = sizeof(float) * 3;
-
+        hull.points.resize(nV);
         for (size_t v = 0; v < nV; v++) {
             auto &pos = mesh.GetVertices().GetData().m_pos;
-            hull.points[v * 3 + 0] = pos[0];
-            hull.points[v * 3 + 1] = pos[1];
-            hull.points[v * 3 + 2] = pos[2];
+            hull.points[v] = glm::vec3(pos[0], pos[1], pos[2]);
             mesh.GetVertices().GetData().m_id = v;
             mesh.GetVertices().Next();
         }
 
-        hull.triangles = new int[nT * 3];
-        hull.triangleCount = nT;
-        hull.triangleByteStride = sizeof(int) * 3;
-
+        hull.triangles.resize(nT);
         for (size_t f = 0; f < nT; f++) {
             auto &currentTriangle = mesh.GetTriangles().GetData();
-            hull.triangles[f * 3 + 0] = static_cast<int>(currentTriangle.m_vertices[0]->GetData().m_id);
-            hull.triangles[f * 3 + 1] = static_cast<int>(currentTriangle.m_vertices[1]->GetData().m_id);
-            hull.triangles[f * 3 + 2] = static_cast<int>(currentTriangle.m_vertices[2]->GetData().m_id);
+            hull.triangles[f].x = static_cast<int>(currentTriangle.m_vertices[0]->GetData().m_id);
+            hull.triangles[f].y = static_cast<int>(currentTriangle.m_vertices[1]->GetData().m_id);
+            hull.triangles[f].z = static_cast<int>(currentTriangle.m_vertices[2]->GetData().m_id);
             mesh.GetTriangles().Next();
         }
     }
@@ -153,8 +142,9 @@ namespace sp {
 
         ConvexHull hull;
         copyVhacdManifoldMeshToConvexHull(hull, icc.GetMesh());
+        if (hull.points.size() < 3 || hull.triangles.size() == 0) return;
         set->hulls.push_back(hull);
-        Logf("Adding simple hull, %d points, %d triangles", hull.pointCount, hull.triangleCount);
+        Logf("Adding simple hull, %d points, %d triangles", hull.points.size(), hull.triangles.size());
     }
 
     void ConvexHullBuilding::BuildConvexHulls(ConvexHullSet *set,

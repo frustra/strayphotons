@@ -1,6 +1,7 @@
 #include "Model.hh"
 
 #include "assets/Gltf.hh"
+#include "assets/GltfImpl.hh"
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
@@ -11,10 +12,7 @@
 #include <tiny_gltf.h>
 
 namespace sp::vulkan {
-    Model::Model(std::shared_ptr<const sp::Gltf> source,
-        const sp::gltf::Mesh &mesh,
-        GPUSceneContext &scene,
-        DeviceContext &device)
+    Model::Model(std::shared_ptr<const sp::Gltf> source, GPUSceneContext &scene, DeviceContext &device)
         : modelName(source->name), scene(scene), asset(source) {
         ZoneScoped;
         ZoneStr(modelName);
@@ -22,9 +20,14 @@ namespace sp::vulkan {
         // the engine will be useful for any dynamic loading in the future,
         // but we don't want to do it every time a model is loaded.
 
-        for (auto &assetPrimitive : mesh.primitives) {
-            indexCount += assetPrimitive.indexBuffer.Count();
-            vertexCount += assetPrimitive.positionBuffer.Count();
+        for (auto &mesh : source->meshes) {
+            if (mesh) {
+                for (auto &assetPrimitive : mesh->primitives) {
+                    indexCount += assetPrimitive.indexBuffer.Count();
+                    vertexCount += assetPrimitive.positionBuffer.Count();
+                }
+                break;
+            }
         }
 
         indexBuffer = scene.indexBuffer->ArrayAllocate(indexCount, sizeof(uint32));
@@ -35,39 +38,45 @@ namespace sp::vulkan {
         auto vertexData = (SceneVertex *)vertexBuffer->Mapped();
         auto vertexDataStart = vertexData;
 
-        for (auto &assetPrimitive : mesh.primitives) {
-            ZoneScopedN("CreatePrimitive");
-            // TODO: this implementation assumes a lot about the model format,
-            // and asserts the assumptions. It would be better to support more
-            // kinds of inputs, and convert the data rather than just failing.
-            Assert(assetPrimitive.drawMode == sp::gltf::Mesh::DrawMode::Triangles, "draw mode must be Triangles");
+        for (auto &mesh : source->meshes) {
+            if (mesh) {
+                for (auto &assetPrimitive : mesh->primitives) {
+                    ZoneScopedN("CreatePrimitive");
+                    // TODO: this implementation assumes a lot about the model format,
+                    // and asserts the assumptions. It would be better to support more
+                    // kinds of inputs, and convert the data rather than just failing.
+                    Assert(assetPrimitive.drawMode == sp::gltf::Mesh::DrawMode::Triangles,
+                        "draw mode must be Triangles");
 
-            auto vkPrimitivePtr = make_shared<Primitive>();
-            auto &vkPrimitive = *vkPrimitivePtr;
+                    auto &vkPrimitive = primitives.emplace_back();
 
-            vkPrimitive.indexCount = assetPrimitive.indexBuffer.Count();
-            vkPrimitive.indexOffset = indexData - indexDataStart;
+                    vkPrimitive.indexCount = assetPrimitive.indexBuffer.Count();
+                    vkPrimitive.indexOffset = indexData - indexDataStart;
 
-            for (size_t i = 0; i < vkPrimitive.indexCount; i++) {
-                *indexData++ = assetPrimitive.indexBuffer.Read(i);
+                    for (size_t i = 0; i < vkPrimitive.indexCount; i++) {
+                        *indexData++ = assetPrimitive.indexBuffer.Read(i);
+                    }
+
+                    vkPrimitive.vertexCount = assetPrimitive.positionBuffer.Count();
+                    vkPrimitive.vertexOffset = vertexData - vertexDataStart;
+
+                    for (size_t i = 0; i < vkPrimitive.vertexCount; i++) {
+                        SceneVertex &vertex = *vertexData++;
+
+                        vertex.position = assetPrimitive.positionBuffer.Read(i);
+                        if (i < assetPrimitive.normalBuffer.Count())
+                            vertex.normal = assetPrimitive.normalBuffer.Read(i);
+                        if (i < assetPrimitive.texcoordBuffer.Count())
+                            vertex.uv = assetPrimitive.texcoordBuffer.Read(i);
+                    }
+
+                    vkPrimitive.baseColor =
+                        LoadTexture(device, source, assetPrimitive.materialIndex, TextureType::BaseColor);
+                    vkPrimitive.metallicRoughness =
+                        LoadTexture(device, source, assetPrimitive.materialIndex, TextureType::MetallicRoughness);
+                }
+                break;
             }
-
-            vkPrimitive.vertexCount = assetPrimitive.positionBuffer.Count();
-            vkPrimitive.vertexOffset = vertexData - vertexDataStart;
-
-            for (size_t i = 0; i < vkPrimitive.vertexCount; i++) {
-                SceneVertex &vertex = *vertexData++;
-
-                vertex.position = assetPrimitive.positionBuffer.Read(i);
-                if (i < assetPrimitive.normalBuffer.Count()) vertex.normal = assetPrimitive.normalBuffer.Read(i);
-                if (i < assetPrimitive.texcoordBuffer.Count()) vertex.uv = assetPrimitive.texcoordBuffer.Read(i);
-            }
-
-            vkPrimitive.baseColor = LoadTexture(device, source, assetPrimitive.materialIndex, TextureType::BaseColor);
-            vkPrimitive.metallicRoughness =
-                LoadTexture(device, source, assetPrimitive.materialIndex, TextureType::MetallicRoughness);
-
-            primitives.emplace_back(vkPrimitivePtr);
         }
 
         primitiveList = scene.primitiveLists->ArrayAllocate(primitives.size(), sizeof(GPUMeshPrimitive));
@@ -79,12 +88,12 @@ namespace sp::vulkan {
             ZoneScopedN("CopyPrimitives");
             auto gpuPrim = gpuPrimitives;
             for (auto &p : primitives) {
-                gpuPrim->indexCount = p->indexCount;
-                gpuPrim->vertexCount = p->vertexCount;
-                gpuPrim->firstIndex = p->indexOffset;
-                gpuPrim->vertexOffset = p->vertexOffset;
-                gpuPrim->baseColorTexID = p->baseColor;
-                gpuPrim->metallicRoughnessTexID = p->metallicRoughness;
+                gpuPrim->indexCount = p.indexCount;
+                gpuPrim->vertexCount = p.vertexCount;
+                gpuPrim->firstIndex = p.indexOffset;
+                gpuPrim->vertexOffset = p.vertexOffset;
+                gpuPrim->baseColorTexID = p.baseColor;
+                gpuPrim->metallicRoughnessTexID = p.metallicRoughness;
                 gpuPrim++;
             }
             meshModel->primitiveCount = primitives.size();

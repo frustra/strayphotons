@@ -207,7 +207,7 @@
 		},
 		{
 			"_name": "duck",
-			"renderable": "duck",
+			"renderable": "box",
 			"transform": {
 				"translate": [-2.5, 0, -2.5],
 				"rotate": [0, 0, 1, 0],

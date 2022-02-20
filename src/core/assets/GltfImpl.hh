@@ -10,7 +10,7 @@
 namespace sp::gltf {
     namespace detail {
         template<typename T>
-        struct gltfComponentType : std::integral_constant<int, -1> {};
+        struct gltfComponentType {};
         template<>
         struct gltfComponentType<int8_t> : std::integral_constant<int, TINYGLTF_COMPONENT_TYPE_BYTE> {};
         template<>
@@ -101,14 +101,22 @@ namespace sp::gltf {
         count = accessor.count;
 
         if (count > 0) {
-            auto maxOffset = byteOffset + ((count - 1) * byteStride);
-            if (maxOffset + typeSize > model.buffers[bufferView.buffer].data.size()) {
+            auto maxOffset = (count - 1) * byteStride + typeSize;
+            if (maxOffset > bufferView.byteLength) {
+                Errorf("gltf::Accessor overflows bufferView");
+                return;
+            } else if (byteOffset + maxOffset > model.buffers[bufferView.buffer].data.size()) {
                 Errorf("gltf::Accessor overflows buffer");
                 return;
             }
         }
 
         buffer = &model.buffers[bufferView.buffer];
+    }
+
+    template<typename ReadT, typename... Tn>
+    size_t Accessor<ReadT, Tn...>::Count() const {
+        return *this ? count : 0;
     }
 
     template<typename ReadT, typename... Tn>

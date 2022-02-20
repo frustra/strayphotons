@@ -3,8 +3,10 @@
 #include "core/Common.hh"
 
 #include <atomic>
+#include <glm/glm.hpp>
 #include <memory>
 #include <robin_hood.h>
+#include <vector>
 
 namespace physx {
     class PxConvexMesh;
@@ -16,13 +18,8 @@ namespace sp::gltf {
 
 namespace sp {
     struct ConvexHull {
-        uint32 pointCount;
-        uint32 pointByteStride;
-        uint32 triangleCount;
-        uint32 triangleByteStride;
-
-        float *points;
-        int *triangles;
+        std::vector<glm::vec3> points;
+        std::vector<glm::ivec3> triangles;
 
         std::shared_ptr<physx::PxConvexMesh> pxMesh;
     };

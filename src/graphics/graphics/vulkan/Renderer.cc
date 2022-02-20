@@ -1157,8 +1157,7 @@ namespace sp::vulkan {
                 continue;
             }
 
-            auto vulkanModel = make_shared<Model>(model, scene, device);
-            activeModels.Register(model->name, vulkanModel);
+            activeModels.Register(model->name, make_shared<Model>(model, scene, device));
             modelsToLoad.pop_back();
         }
 

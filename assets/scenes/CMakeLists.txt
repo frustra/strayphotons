@@ -24,6 +24,7 @@ set(SCENES_INPUT
     blackhole4
     blackhole5
     sponza
+    sponza2
     connect-test1
     connect-test2
     connect-test3

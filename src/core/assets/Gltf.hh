@@ -43,9 +43,7 @@ namespace sp {
                 return buffer && typeIndex >= 0;
             }
 
-            size_t Count() const {
-                return *this ? count : 0;
-            }
+            size_t Count() const;
 
             ReadT Read(size_t i) const;
 
@@ -53,6 +51,7 @@ namespace sp {
             const tinygltf::Buffer *buffer = nullptr;
             int typeIndex = -1;
             size_t count = 0;
+            size_t componentCount = 0;
             size_t byteOffset = 0;
             size_t byteStride = 0;
         };

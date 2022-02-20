@@ -21,16 +21,13 @@ namespace sp::vulkan {
 
     class Model final : public NonCopyable {
     public:
-        struct Primitive : public NonCopyable {
+        struct Primitive {
             size_t indexOffset, indexCount;
             size_t vertexOffset, vertexCount;
             TextureIndex baseColor, metallicRoughness;
         };
 
-        Model(shared_ptr<const sp::Gltf> source,
-            const sp::gltf::Mesh &mesh,
-            GPUSceneContext &scene,
-            DeviceContext &device);
+        Model(shared_ptr<const sp::Gltf> source, GPUSceneContext &scene, DeviceContext &device);
         ~Model();
 
         uint32 SceneIndex() const;
@@ -59,7 +56,7 @@ namespace sp::vulkan {
         shared_ptr<const sp::Gltf> asset;
 
         robin_hood::unordered_map<string, TextureIndex> textures;
-        vector<shared_ptr<Primitive>> primitives;
+        vector<Primitive> primitives;
 
         uint32 vertexCount = 0, indexCount = 0;
         SubBufferPtr indexBuffer, vertexBuffer, primitiveList, modelEntry;
