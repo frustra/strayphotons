@@ -48,7 +48,7 @@ namespace sp::vulkan::render_graph {
 
             for (uint32 i = 0; i < pass.attachments.size(); i++) {
                 auto &attachment = pass.attachments[i];
-                if (attachment.resourceID == ~0u) continue;
+                if (attachment.resourceID == InvalidResource) continue;
                 isRenderPass = true;
 
                 ImageViewPtr imageView;

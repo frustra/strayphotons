@@ -14,12 +14,11 @@
 #include <imgui/imgui.h>
 
 namespace sp::vulkan {
-    GuiRenderer::GuiRenderer(DeviceContext &device, GuiManager &manager) : device(device), manager(manager) {
-        manager.SetGuiContext();
-        ImGuiIO &io = ImGui::GetIO();
-        io.IniFilename = nullptr;
-
-        ImGui::GetMainViewport()->PlatformHandleRaw = device.Win32WindowHandle();
+    GuiRenderer::GuiRenderer(DeviceContext &device) : device(device) {
+        vertexLayout = make_unique<VertexLayout>(0, sizeof(ImDrawVert));
+        vertexLayout->PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(ImDrawVert, pos));
+        vertexLayout->PushAttribute(1, 0, vk::Format::eR32G32Sfloat, offsetof(ImDrawVert, uv));
+        vertexLayout->PushAttribute(2, 0, vk::Format::eR8G8B8A8Unorm, offsetof(ImDrawVert, col));
 
         std::pair<shared_ptr<const Asset>, float> fontAssets[] = {
             std::make_pair(GAssets.Load("fonts/DroidSans.ttf")->Get(), 16.0f),
@@ -27,7 +26,9 @@ namespace sp::vulkan {
             std::make_pair(GAssets.Load("fonts/3270Medium.ttf")->Get(), 25.0f),
         };
 
-        io.Fonts->AddFontDefault(nullptr);
+        fontAtlas = make_shared<ImFontAtlas>();
+
+        fontAtlas->AddFontDefault(nullptr);
 
         static const ImWchar glyphRanges[] = {
             0x0020,
@@ -47,48 +48,61 @@ namespace sp::vulkan {
             cfg.SizePixels = pair.second;
             cfg.GlyphRanges = &glyphRanges[0];
             memcpy(cfg.Name, asset->path.c_str(), std::min(sizeof(cfg.Name), asset->path.length()));
-            io.Fonts->AddFont(&cfg);
+            fontAtlas->AddFont(&cfg);
         }
 
-        vertexLayout = make_unique<VertexLayout>(0, sizeof(ImDrawVert));
-        vertexLayout->PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(ImDrawVert, pos));
-        vertexLayout->PushAttribute(1, 0, vk::Format::eR32G32Sfloat, offsetof(ImDrawVert, uv));
-        vertexLayout->PushAttribute(2, 0, vk::Format::eR8G8B8A8Unorm, offsetof(ImDrawVert, col));
+        uint8 *fontData;
+        int fontWidth, fontHeight;
+        fontAtlas->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
+
+        ImageCreateInfo fontImageInfo;
+        fontImageInfo.imageType = vk::ImageType::e2D;
+        fontImageInfo.extent = vk::Extent3D{(uint32)fontWidth, (uint32)fontHeight, 1};
+        fontImageInfo.format = vk::Format::eR8G8B8A8Unorm;
+        fontImageInfo.usage = vk::ImageUsageFlagBits::eSampled;
+
+        ImageViewCreateInfo fontViewInfo;
+        fontViewInfo.defaultSampler = device.GetSampler(SamplerType::BilinearClamp);
+
+        fontView = device.CreateImageAndView(fontImageInfo,
+            fontViewInfo,
+            {fontData, size_t(fontWidth * fontHeight * 4)});
+
+        Tick();
     }
 
-    void GuiRenderer::Render(CommandContext &cmd, vk::Rect2D viewport) {
-        manager.SetGuiContext();
-        ImGuiIO &io = ImGui::GetIO();
-
-        if (!fontView) {
-            // TODO: don't duplicate font image for every gui, just build it once
-            uint8 *fontData;
-            int fontWidth, fontHeight;
-            io.Fonts->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
-
-            ImageCreateInfo fontImageInfo;
-            fontImageInfo.imageType = vk::ImageType::e2D;
-            fontImageInfo.extent = vk::Extent3D{(uint32)fontWidth, (uint32)fontHeight, 1};
-            fontImageInfo.format = vk::Format::eR8G8B8A8Unorm;
-            fontImageInfo.usage = vk::ImageUsageFlagBits::eSampled;
-
-            ImageViewCreateInfo fontViewInfo;
-            fontViewInfo.defaultSampler = device.GetSampler(SamplerType::BilinearClamp);
-
-            auto fut = device.CreateImageAndView(fontImageInfo,
-                fontViewInfo,
-                {fontData, size_t(fontWidth * fontHeight * 4)});
-            device.FlushMainQueue();
-            fontView = fut->Get();
-
-            io.Fonts->TexID = (ImTextureID)(fontView->GetHandle());
-        }
-
-        io.DisplaySize = ImVec2(viewport.extent.width, viewport.extent.height);
-
+    void GuiRenderer::Tick() {
         double currTime = glfwGetTime();
-        io.DeltaTime = lastTime > 0.0 ? (float)(currTime - lastTime) : 1.0f / 60.0f;
+        deltaTime = lastTime > 0.0 ? (float)(currTime - lastTime) : 1.0f / 60.0f;
         lastTime = currTime;
+    }
+
+    template<typename Fn>
+    struct Defer {
+        Defer(Fn &&fn) : fn(std::move(fn)) {}
+        ~Defer() {
+            fn();
+        }
+        Fn fn;
+    };
+
+    void GuiRenderer::Render(GuiManager &manager, CommandContext &cmd, vk::Rect2D viewport) {
+        if (!fontView->Ready()) return;
+
+        manager.SetGuiContext();
+        ImGui::GetMainViewport()->PlatformHandleRaw = cmd.Device().Win32WindowHandle();
+
+        ImGuiIO &io = ImGui::GetIO();
+        io.IniFilename = nullptr;
+        io.DisplaySize = ImVec2(viewport.extent.width, viewport.extent.height);
+        io.DeltaTime = deltaTime;
+
+        auto lastFonts = io.Fonts;
+        io.Fonts = fontAtlas.get();
+        io.Fonts->TexID = (ImTextureID)(fontView->Get()->GetHandle());
+        Defer defer([&] {
+            io.Fonts = lastFonts;
+        });
 
         ImGui::NewFrame();
         manager.DefineWindows();
@@ -105,20 +119,11 @@ namespace sp::vulkan {
         }
 
         totalVtxSize = CeilToPowerOfTwo(totalVtxSize);
-        if (!vertexBuffer || totalVtxSize > vertexBuffer->Size()) {
-            vertexBuffer = device.AllocateBuffer(totalVtxSize,
-                vk::BufferUsageFlagBits::eVertexBuffer,
-                VMA_MEMORY_USAGE_CPU_TO_GPU);
-        }
-
         totalIdxSize = CeilToPowerOfTwo(totalIdxSize);
-        if (!indexBuffer || totalIdxSize > indexBuffer->Size()) {
-            indexBuffer = device.AllocateBuffer(totalIdxSize,
-                vk::BufferUsageFlagBits::eIndexBuffer,
-                VMA_MEMORY_USAGE_CPU_TO_GPU);
-        }
-
         if (totalVtxSize == 0 || totalIdxSize == 0) return;
+
+        auto vertexBuffer = cmd.Device().GetFramePooledBuffer(BUFFER_TYPE_VERTEX_TRANSFER, totalVtxSize);
+        auto indexBuffer = cmd.Device().GetFramePooledBuffer(BUFFER_TYPE_INDEX_TRANSFER, totalIdxSize);
 
         ImDrawVert *vtxData;
         ImDrawIdx *idxData;
@@ -178,10 +183,6 @@ namespace sp::vulkan {
         }
 
         cmd.ClearScissor();
-    }
-
-    const std::string &GuiRenderer::Name() const {
-        return manager.Name();
     }
 
 } // namespace sp::vulkan

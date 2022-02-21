@@ -854,6 +854,10 @@ namespace sp::vulkan {
             usage = vk::BufferUsageFlagBits::eIndirectBuffer;
             residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
             break;
+        case BUFFER_TYPE_INDEX_TRANSFER:
+            usage = vk::BufferUsageFlagBits::eIndexBuffer;
+            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            break;
         case BUFFER_TYPE_STORAGE_TRANSFER:
             usage = vk::BufferUsageFlagBits::eStorageBuffer;
             residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
@@ -871,6 +875,10 @@ namespace sp::vulkan {
             usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eVertexBuffer |
                     vk::BufferUsageFlagBits::eTransferSrc;
             residency = VMA_MEMORY_USAGE_GPU_ONLY;
+            break;
+        case BUFFER_TYPE_VERTEX_TRANSFER:
+            usage = vk::BufferUsageFlagBits::eVertexBuffer;
+            residency = VMA_MEMORY_USAGE_CPU_TO_GPU;
             break;
         default:
             Abortf("unknown buffer type %d", type);
