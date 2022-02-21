@@ -30,10 +30,9 @@ namespace sp::vulkan {
         uint32 firstIndex, vertexOffset;
         uint32 indexCount, vertexCount; // count of elements in the index/vertex buffers
         uint16 baseColorTexID, metallicRoughnessTexID;
-        float _padding[3];
         // other material properties of the primitive can be stored here (or material ID)
     };
-    static_assert(sizeof(GPUMeshPrimitive) % sizeof(glm::vec4) == 0, "std430 alignment");
+    static_assert(sizeof(GPUMeshPrimitive) % sizeof(uint32) == 0, "std430 alignment");
 
     struct GPUMeshModel {
         uint32 primitiveOffset;
