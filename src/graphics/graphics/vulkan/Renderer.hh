@@ -31,8 +31,6 @@ namespace sp::vulkan {
     class Model;
     class GuiRenderer;
 
-    namespace rg = render_graph;
-
     struct LightingContext {
         int count = 0;
         glm::ivec2 renderTargetSize = {};
@@ -141,13 +139,14 @@ namespace sp::vulkan {
         PreservingMap<string, Model> activeModels;
         vector<std::shared_ptr<const sp::Model>> modelsToLoad;
 
+        unique_ptr<GuiRenderer> guiRenderer;
         struct RenderableGui {
             Tecs::Entity entity;
-            shared_ptr<GuiRenderer> renderer;
+            GuiManager *manager;
             rg::ResourceID renderGraphID = rg::InvalidResource;
         };
         vector<RenderableGui> guis;
-        shared_ptr<GuiRenderer> debugGuiRenderer;
+        GuiManager *debugGui = nullptr;
 
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 
