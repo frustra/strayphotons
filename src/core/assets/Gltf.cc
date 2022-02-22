@@ -138,7 +138,7 @@ namespace sp {
         meshes.resize(model->meshes.size());
 
         int sceneIndex = model->defaultScene >= 0 ? model->defaultScene : 0;
-        Assertf(sceneIndex < model->scenes.size(), "Gltf scene index is out of range: %d", sceneIndex);
+        Assertf((size_t)sceneIndex < model->scenes.size(), "Gltf scene index is out of range: %d", sceneIndex);
         auto &scene = model->scenes[sceneIndex];
 
         for (int node : scene.nodes) {
@@ -147,7 +147,7 @@ namespace sp {
     }
 
     bool Gltf::AddNode(const tinygltf::Model &model, int nodeIndex, std::optional<size_t> treeRoot) {
-        if (nodeIndex < 0 || nodeIndex >= nodes.size() || nodeIndex >= model.nodes.size()) return false;
+        if (nodeIndex < 0 || (size_t)nodeIndex >= nodes.size() || (size_t)nodeIndex >= model.nodes.size()) return false;
         auto &node = nodes[nodeIndex];
         if (node) {
             Errorf("Gltf nodes contain loop: %s %d", name, nodeIndex);
@@ -156,13 +156,13 @@ namespace sp {
         node = gltf::Node(model, model.nodes[nodeIndex], treeRoot);
 
         auto meshIndex = model.nodes[nodeIndex].mesh;
-        if (meshIndex >= 0 && meshIndex < meshes.size() && meshIndex < model.meshes.size()) {
+        if (meshIndex >= 0 && (size_t)meshIndex < meshes.size() && (size_t)meshIndex < model.meshes.size()) {
             node->meshIndex = (size_t)meshIndex;
             if (!meshes[meshIndex]) { meshes[meshIndex] = gltf::Mesh(model, model.meshes[meshIndex]); }
         }
 
         auto skinIndex = model.nodes[nodeIndex].mesh;
-        if (skinIndex >= 0 && skinIndex < skins.size() && skinIndex < model.skins.size()) {
+        if (skinIndex >= 0 && (size_t)skinIndex < skins.size() && (size_t)skinIndex < model.skins.size()) {
             node->skinIndex = (size_t)skinIndex;
             if (!skins[skinIndex]) { skins[skinIndex] = gltf::Skin(model, model.skins[skinIndex]); }
         }

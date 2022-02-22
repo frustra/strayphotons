@@ -69,17 +69,17 @@ namespace sp::gltf {
 
     template<typename ReadT, typename... Tn>
     Accessor<ReadT, Tn...>::Accessor(const tinygltf::Model &model, int accessorIndex) {
-        if (accessorIndex < 0 || accessorIndex >= model.accessors.size()) {
+        if (accessorIndex < 0 || (size_t)accessorIndex >= model.accessors.size()) {
             Errorf("Gltf::Accessor created with invalid index: %d", accessorIndex);
             return;
         }
         auto &accessor = model.accessors[accessorIndex];
-        if (accessor.bufferView < 0 || accessor.bufferView >= model.bufferViews.size()) {
+        if (accessor.bufferView < 0 || (size_t)accessor.bufferView >= model.bufferViews.size()) {
             Errorf("Gltf::Accessor has invalid bufferView index: %d", accessor.bufferView);
             return;
         }
         auto &bufferView = model.bufferViews[accessor.bufferView];
-        if (bufferView.buffer < 0 || bufferView.buffer >= model.buffers.size()) {
+        if (bufferView.buffer < 0 || (size_t)bufferView.buffer >= model.buffers.size()) {
             Errorf("Gltf::Accessor has invalid buffer index: %d", bufferView.buffer);
             return;
         }
