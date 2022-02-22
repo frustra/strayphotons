@@ -2,12 +2,9 @@
 
 #include "core/Common.hh"
 
-#include <array>
-#include <atomic>
 #include <glm/glm.hpp>
-#include <map>
-#include <span>
-#include <utility>
+#include <optional>
+#include <vector>
 
 namespace tinygltf {
     class Model;

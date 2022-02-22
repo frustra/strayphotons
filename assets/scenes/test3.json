@@ -207,7 +207,7 @@
 		},
 		{
 			"_name": "duck",
-			"renderable": "box",
+			"renderable": "duck",
 			"transform": {
 				"translate": [-2.5, 0, -2.5],
 				"rotate": [0, 0, 1, 0],
@@ -235,7 +235,8 @@
 			"transform": {
 				"parent": "duck",
 				"translate": [1.5, 1, 0],
-				"rotate": [90, 0, 1, 0]
+				"rotate": [90, 0, 1, 0],
+				"scale": [100, 100, 100]
 			}
 		},
 		{
@@ -243,7 +244,8 @@
 			"transform": {
 				"parent": "duck",
 				"translate": [1.5, 1, 0],
-				"rotate": [-90, 0, 1, 0]
+				"rotate": [-90, 0, 1, 0],
+				"scale": [100, 100, 100]
 			}
 		},
 		{

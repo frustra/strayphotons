@@ -10,7 +10,6 @@
 			},
 			"physics": {
 				"model": "sponza",
-				"decomposeHull": true,
 				"dynamic": false
 			}
 		},
