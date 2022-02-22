@@ -121,7 +121,8 @@ namespace sp::gltf {
 
     template<typename ReadT, typename... Tn>
     ReadT Accessor<ReadT, Tn...>::Read(size_t i) const {
-        Assertf(buffer && typeIndex >= 0 && typeIndex <= sizeof...(Tn), "Trying to read invalid gltf::Accessor");
+        Assertf(buffer && typeIndex >= 0 && (size_t)typeIndex <= sizeof...(Tn),
+            "Trying to read invalid gltf::Accessor");
         Assertf(i < count, "Trying to read invalid gltf::Accessor index: %u >= %u", i, count);
 
         std::array<std::function<ReadT()>, 1 + sizeof...(Tn)> convertFuncs = {
