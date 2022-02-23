@@ -1,6 +1,7 @@
 #include "ConvexHull.hh"
 
 #include "assets/Gltf.hh"
+#include "assets/GltfImpl.hh"
 #include "core/Logging.hh"
 
 #include <v-hacd/VHACD_Lib/inc/btConvexHullComputer.h>
