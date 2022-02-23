@@ -25,6 +25,7 @@ layout(std430, set = 0, binding = 9) readonly buffer LaserData {
 
 layout(push_constant) uniform PushConstants {
     uint laserLineCount;
+    float time;
 };
 
 const vec3 nearPlane = vec3(0, 0, -1);
@@ -71,8 +72,15 @@ void main() {
         if (pos.z > depth) continue;
 
         float dist = distance(clipPos, pos.xy);
+        if (dist > 0.0025) continue;
 
-        float weight = 0.0001 / (pow(dist, 1.5) + 0.00001) * max(1 - pos.z, 0);
-        outFragColor.rgb += laserLines[i].color * weight;
+        vec4 closestViewPos = view.invProjMat * vec4(pos, 1);
+        closestViewPos /= closestViewPos.w;
+        vec3 worldPos = (view.invViewMat * closestViewPos).xyz;
+
+        float weight = 10 * (1 - smoothstep(0, 0.002, dist)) * max(1 - pos.z, 0);
+        weight *= (PerlinNoise(worldPos.xz * 3 + time * 0.4) * 2 + 1);
+        weight *= (PerlinNoise(worldPos.zx * 10 - time * 0.9) * 1 + 0.5);
+        outFragColor.rgb += laserLines[i].color * max(weight, 0);
     }
 }

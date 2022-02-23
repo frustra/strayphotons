@@ -1401,7 +1401,6 @@
 		},
 		{
 			"_name": "light1",
-			"renderable": "spotlight-01",
 			"light": {
 				"tint": [
 					1,
@@ -1430,6 +1429,17 @@
 					3,
 					0.5,
 					0.2
+				]
+			}
+		},
+		{
+			"renderable": "spotlight-01",
+			"transform": {
+				"parent": "light1",
+				"translate": [
+					0,
+					0,
+					0.01
 				]
 			}
 		},
@@ -1868,7 +1878,6 @@
 		},
 		{
 			"_name": "light2",
-			"renderable": "spotlight-01",
 			"light": {
 				"tint": [
 					0.8,
@@ -1897,6 +1906,17 @@
 					11.8,
 					0.5,
 					1.5
+				]
+			}
+		},
+		{
+			"renderable": "spotlight-01",
+			"transform": {
+				"parent": "light2",
+				"translate": [
+					0,
+					0,
+					0.01
 				]
 			}
 		},

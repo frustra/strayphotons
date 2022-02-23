@@ -1,6 +1,5 @@
 {
 	"_name": <%= name %>,
-	"renderable": "spotlight-01",
 	"light": {
 		<% if (locals.on != null) { %>"on": <%= on %>,<% } %>
 		"tint": <%= tint %>,
@@ -20,6 +19,13 @@
 		<% if (locals.parent) { %>"parent": <%= parent %>,<% } %>
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
 		"translate": <%= translate %>
+	}
+},
+{
+	"renderable": "spotlight-01",
+	"transform": {
+		"parent": <%= name %>,
+		"translate": [0, 0, 0.01]
 	}
 },
 {

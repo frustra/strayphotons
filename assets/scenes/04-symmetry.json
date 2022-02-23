@@ -2204,7 +2204,6 @@
 		},
 		{
 			"_name": "light1",
-			"renderable": "spotlight-01",
 			"light": {
 				"tint": [
 					1,
@@ -2239,6 +2238,17 @@
 					0.1,
 					0.8,
 					4.5
+				]
+			}
+		},
+		{
+			"renderable": "spotlight-01",
+			"transform": {
+				"parent": "light1",
+				"translate": [
+					0,
+					0,
+					0.01
 				]
 			}
 		},

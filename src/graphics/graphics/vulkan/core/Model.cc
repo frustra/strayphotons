@@ -170,6 +170,7 @@ namespace sp::vulkan {
         int materialIndex,
         TextureType type) {
         ZoneScoped;
+        if (materialIndex < 0) return 0;
         auto &gltfModel = model.GetGltfModel();
         auto &material = gltfModel->materials[materialIndex];
 

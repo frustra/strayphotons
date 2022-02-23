@@ -1,9 +1,7 @@
 #version 430
 
-uniform vec4 smaaRTMetrics;
-
 #define SMAA_INCLUDE_VS 0
-##import smaa/common
+#include "common.glsl"
 
 layout (binding = 0) uniform sampler2D edgesTex;
 layout (binding = 1) uniform sampler2D areaTex;
