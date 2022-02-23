@@ -12,17 +12,31 @@
 
 namespace ecs {
     using ScriptFunc = std::function<void(ecs::Lock<ecs::WriteAll>, Tecs::Entity, chrono_clock::duration)>;
+    using PrefabFunc = std::function<void(ecs::Lock<ecs::AddRemove>, Tecs::Entity)>;
+
     class Script {
     public:
         void AddOnTick(ScriptFunc callback) {
             onTickCallbacks.push_back(callback);
         }
 
-        void OnTick(ecs::Lock<ecs::WriteAll> lock, Tecs::Entity &ent, chrono_clock::duration interval) {
+        void AddPrefab(PrefabFunc callback) {
+            prefabCallbacks.push_back(callback);
+        }
+
+        void OnTick(ecs::Lock<ecs::WriteAll> lock, const Tecs::Entity &ent, chrono_clock::duration interval) {
             ZoneScopedN("OnTick");
             ZoneValue(ent.index);
             for (auto &callback : onTickCallbacks) {
                 callback(lock, ent, interval);
+            }
+        }
+
+        void Prefab(ecs::Lock<ecs::AddRemove> lock, const Tecs::Entity &ent) {
+            ZoneScopedN("Prefab");
+            ZoneValue(ent.index);
+            for (auto &callback : prefabCallbacks) {
+                callback(lock, ent);
             }
         }
 
@@ -55,6 +69,7 @@ namespace ecs {
 
     private:
         std::vector<ScriptFunc> onTickCallbacks;
+        std::vector<PrefabFunc> prefabCallbacks;
 
         robin_hood::unordered_flat_map<std::string, ParameterType> scriptParameters;
     };
@@ -62,6 +77,7 @@ namespace ecs {
     static Component<Script> ComponentScript("script");
 
     extern robin_hood::unordered_node_map<std::string, ScriptFunc> ScriptDefinitions;
+    extern robin_hood::unordered_node_map<std::string, PrefabFunc> PrefabDefinitions;
 
     template<>
     bool Component<Script>::Load(sp::Scene *scene, Script &dst, const picojson::value &src);

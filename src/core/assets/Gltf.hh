@@ -106,8 +106,6 @@ namespace sp {
             std::vector<size_t> children;
             std::optional<size_t> meshIndex;
             std::optional<size_t> skinIndex;
-
-            Tecs::Entity entity;
         };
     } // namespace gltf
 

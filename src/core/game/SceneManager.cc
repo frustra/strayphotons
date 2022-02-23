@@ -488,6 +488,8 @@ namespace sp {
                 }
                 // Special case so TransformSnapshot doesn't get removed as a dangling component
                 if (entity.Has<ecs::TransformTree>(lock)) entity.Set<ecs::TransformSnapshot>(lock);
+
+                if (entity.Has<ecs::Script>(lock)) { entity.Get<ecs::Script>(lock).Prefab(lock, entity); }
             }
         }
         return scene;

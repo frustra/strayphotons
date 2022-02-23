@@ -1509,7 +1509,6 @@
 		},
 		{
 			"_name": "mirrorcube1",
-			"renderable": "mcube",
 			"transform": {
 				"rotate": [
 					130,
@@ -1523,9 +1522,13 @@
 					4
 				]
 			},
-			"physics": {
-				"model": "mcube-physx",
-				"density": 1
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "mcube",
+					"gltf_render": true,
+					"gltf_physics": "dynamic"
+				}
 			}
 		},
 		{
@@ -1962,7 +1965,6 @@
 		},
 		{
 			"_name": "mirrorcube2",
-			"renderable": "mcube",
 			"transform": {
 				"rotate": [
 					[
@@ -1984,9 +1986,13 @@
 					1.5
 				]
 			},
-			"physics": {
-				"model": "mcube-physx",
-				"density": 1
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "mcube",
+					"gltf_render": true,
+					"gltf_physics": "dynamic"
+				}
 			}
 		},
 		{
@@ -2029,7 +2035,6 @@
 		},
 		{
 			"_name": "mirrorcube3",
-			"renderable": "mcube",
 			"transform": {
 				"rotate": [
 					[
@@ -2045,9 +2050,13 @@
 					7.5
 				]
 			},
-			"physics": {
-				"model": "mcube-physx",
-				"density": 1
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "mcube",
+					"gltf_render": true,
+					"gltf_physics": "dynamic"
+				}
 			}
 		},
 		{

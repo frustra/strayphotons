@@ -44,7 +44,7 @@ namespace sp::vulkan {
 
     struct GPURenderableEntity {
         glm::mat4 modelToWorld;
-        uint32 modelIndex;
+        uint32 meshIndex;
         uint32 visibilityMask;
         uint32 vertexOffset;
         float _padding[1];

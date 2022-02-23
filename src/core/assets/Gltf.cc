@@ -78,10 +78,8 @@ namespace sp {
         Node::Node(const tinygltf::Model &model, const tinygltf::Node &node, std::optional<size_t> treeRoot)
             : name(node.name), treeRoot(treeRoot) {
             if (node.matrix.size() >= 12) {
-                auto out = glm::value_ptr(transform.matrix);
-                for (size_t i = 0; i < 12; i++) {
-                    out[i] = (float)node.matrix[i];
-                }
+                std::vector<float> matData(node.matrix.begin(), node.matrix.end());
+                transform.matrix = glm::transpose(*reinterpret_cast<const glm::mat3x4 *>(matData.data()));
             } else {
                 if (node.translation.size() == 3) {
                     transform.SetPosition(glm::vec3(node.translation[0], node.translation[1], node.translation[2]));
@@ -96,6 +94,7 @@ namespace sp {
                     transform.SetScale(glm::vec3(node.scale[0], node.scale[1], node.scale[2]));
                 }
             }
+            // TODO: Check this transform is valid so that it won't crash PhysX (e.g. 0 scale / null matrix)
         }
     } // namespace gltf
 

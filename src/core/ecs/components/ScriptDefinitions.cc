@@ -262,7 +262,7 @@ namespace ecs {
                                 auto modelName = scriptComp.GetParam<std::string>("model");
                                 auto model = sp::GAssets.LoadGltf(modelName);
                                 newEntity.Set<Renderable>(lock, model);
-                                newEntity.Set<Physics>(lock, model, PhysicsGroup::World, true);
+                                newEntity.Set<Physics>(lock, model, 0, PhysicsGroup::World, true);
                             }
                         }).detach();
                     }

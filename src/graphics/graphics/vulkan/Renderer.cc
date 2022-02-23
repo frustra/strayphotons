@@ -11,7 +11,7 @@
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
-#include "graphics/vulkan/core/Model.hh"
+#include "graphics/vulkan/core/Mesh.hh"
 #include "graphics/vulkan/core/Screenshot.hh"
 #include "graphics/vulkan/core/Util.hh"
 
@@ -410,13 +410,14 @@ namespace sp::vulkan {
 
             auto model = renderable.model->Get();
             Assertf(model, "Renderable model is null");
-            auto vkModel = activeModels.Load(model->name);
-            if (!vkModel) {
+            auto meshName = model->name + "." + std::to_string(renderable.meshIndex);
+            auto vkMesh = activeMeshes.Load(meshName);
+            if (!vkMesh) {
                 hasPendingModel = true;
-                modelsToLoad.push_back(model);
+                meshesToLoad.emplace_back(model, renderable.meshIndex);
                 continue;
             }
-            if (!vkModel->CheckReady()) {
+            if (!vkMesh->CheckReady()) {
                 hasPendingModel = true;
                 continue;
             }
@@ -426,12 +427,12 @@ namespace sp::vulkan {
 
             gpuRenderable->modelToWorld = ent.Get<ecs::TransformSnapshot>(lock).matrix;
             gpuRenderable->visibilityMask = renderable.visibility.to_ulong();
-            gpuRenderable->modelIndex = vkModel->SceneIndex();
+            gpuRenderable->meshIndex = vkMesh->SceneIndex();
             gpuRenderable->vertexOffset = scene.vertexCount;
             gpuRenderable++;
             scene.renderableCount++;
-            scene.primitiveCount += vkModel->PrimitiveCount();
-            scene.vertexCount += vkModel->VertexCount();
+            scene.primitiveCount += vkMesh->PrimitiveCount();
+            scene.vertexCount += vkMesh->VertexCount();
         }
 
         scene.primitiveCountPowerOfTwo = std::max(1u, CeilToPowerOfTwo(scene.primitiveCount));
@@ -1122,7 +1123,7 @@ namespace sp::vulkan {
 
     void Renderer::EndFrame() {
         ZoneScoped;
-        activeModels.Tick(std::chrono::milliseconds(33)); // Minimum 30 fps tick rate
+        activeMeshes.Tick(std::chrono::milliseconds(33)); // Minimum 30 fps tick rate
 
         GetSceneManager().PreloadSceneGraphics([this](auto lock, auto scene) {
             bool complete = true;
@@ -1139,26 +1140,28 @@ namespace sp::vulkan {
 
                 auto model = renderable.model->Get();
                 Assertf(model, "Renderable model is null");
-                auto vkModel = activeModels.Load(model->name);
-                if (!vkModel) {
+                auto meshName = model->name + "." + std::to_string(renderable.meshIndex);
+                auto vkMesh = activeMeshes.Load(meshName);
+                if (!vkMesh) {
                     complete = false;
-                    modelsToLoad.push_back(model);
+                    meshesToLoad.emplace_back(model, renderable.meshIndex);
                     continue;
                 }
-                if (!vkModel->CheckReady()) complete = false;
+                if (!vkMesh->CheckReady()) complete = false;
             }
             return complete;
         });
 
-        for (int i = (int)modelsToLoad.size() - 1; i >= 0; i--) {
-            auto &model = modelsToLoad[i];
-            if (activeModels.Contains(model->name)) {
-                modelsToLoad.pop_back();
+        for (int i = (int)meshesToLoad.size() - 1; i >= 0; i--) {
+            auto &[model, meshIndex] = meshesToLoad[i];
+            auto meshName = model->name + "." + std::to_string(meshIndex);
+            if (activeMeshes.Contains(meshName)) {
+                meshesToLoad.pop_back();
                 continue;
             }
 
-            activeModels.Register(model->name, make_shared<Model>(model, scene, device));
-            modelsToLoad.pop_back();
+            activeMeshes.Register(meshName, make_shared<Mesh>(model, meshIndex, scene, device));
+            meshesToLoad.pop_back();
         }
 
         scene.FlushTextureDescriptors();

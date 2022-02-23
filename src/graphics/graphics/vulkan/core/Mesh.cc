@@ -1,4 +1,4 @@
-#include "Model.hh"
+#include "Mesh.hh"
 
 #include "assets/Gltf.hh"
 #include "assets/GltfImpl.hh"
@@ -12,22 +12,20 @@
 #include <tiny_gltf.h>
 
 namespace sp::vulkan {
-    Model::Model(std::shared_ptr<const sp::Gltf> source, GPUSceneContext &scene, DeviceContext &device)
-        : modelName(source->name), scene(scene), asset(source) {
+    Mesh::Mesh(std::shared_ptr<const sp::Gltf> source, size_t meshIndex, GPUSceneContext &scene, DeviceContext &device)
+        : modelName(source->name), scene(scene), asset(source), meshIndex(meshIndex) {
         ZoneScoped;
-        ZoneStr(modelName);
+        ZonePrintf("%s.%u", modelName, meshIndex);
         // TODO: cache the output somewhere. Keeping the conversion code in
         // the engine will be useful for any dynamic loading in the future,
         // but we don't want to do it every time a model is loaded.
 
-        for (auto &mesh : source->meshes) {
-            if (mesh) {
-                for (auto &assetPrimitive : mesh->primitives) {
-                    indexCount += assetPrimitive.indexBuffer.Count();
-                    vertexCount += assetPrimitive.positionBuffer.Count();
-                }
-                break;
-            }
+        Assertf(meshIndex < source->meshes.size(), "Mesh index is out of range: %s.%u", modelName, meshIndex);
+        auto &mesh = source->meshes[meshIndex];
+        Assertf(mesh, "Mesh is undefined: %s.%u", modelName, meshIndex);
+        for (auto &assetPrimitive : mesh->primitives) {
+            indexCount += assetPrimitive.indexBuffer.Count();
+            vertexCount += assetPrimitive.positionBuffer.Count();
         }
 
         indexBuffer = scene.indexBuffer->ArrayAllocate(indexCount, sizeof(uint32));
@@ -38,45 +36,36 @@ namespace sp::vulkan {
         auto vertexData = (SceneVertex *)vertexBuffer->Mapped();
         auto vertexDataStart = vertexData;
 
-        for (auto &mesh : source->meshes) {
-            if (mesh) {
-                for (auto &assetPrimitive : mesh->primitives) {
-                    ZoneScopedN("CreatePrimitive");
-                    // TODO: this implementation assumes a lot about the model format,
-                    // and asserts the assumptions. It would be better to support more
-                    // kinds of inputs, and convert the data rather than just failing.
-                    Assert(assetPrimitive.drawMode == sp::gltf::Mesh::DrawMode::Triangles,
-                        "draw mode must be Triangles");
+        for (auto &assetPrimitive : mesh->primitives) {
+            ZoneScopedN("CreatePrimitive");
+            // TODO: this implementation assumes a lot about the model format,
+            // and asserts the assumptions. It would be better to support more
+            // kinds of inputs, and convert the data rather than just failing.
+            Assert(assetPrimitive.drawMode == sp::gltf::Mesh::DrawMode::Triangles, "draw mode must be Triangles");
 
-                    auto &vkPrimitive = primitives.emplace_back();
+            auto &vkPrimitive = primitives.emplace_back();
 
-                    vkPrimitive.indexCount = assetPrimitive.indexBuffer.Count();
-                    vkPrimitive.indexOffset = indexData - indexDataStart;
+            vkPrimitive.indexCount = assetPrimitive.indexBuffer.Count();
+            vkPrimitive.indexOffset = indexData - indexDataStart;
 
-                    for (size_t i = 0; i < vkPrimitive.indexCount; i++) {
-                        *indexData++ = assetPrimitive.indexBuffer.Read(i);
-                    }
-
-                    vkPrimitive.vertexCount = assetPrimitive.positionBuffer.Count();
-                    vkPrimitive.vertexOffset = vertexData - vertexDataStart;
-
-                    for (size_t i = 0; i < vkPrimitive.vertexCount; i++) {
-                        SceneVertex &vertex = *vertexData++;
-
-                        vertex.position = assetPrimitive.positionBuffer.Read(i);
-                        if (i < assetPrimitive.normalBuffer.Count())
-                            vertex.normal = assetPrimitive.normalBuffer.Read(i);
-                        if (i < assetPrimitive.texcoordBuffer.Count())
-                            vertex.uv = assetPrimitive.texcoordBuffer.Read(i);
-                    }
-
-                    vkPrimitive.baseColor =
-                        LoadTexture(device, source, assetPrimitive.materialIndex, TextureType::BaseColor);
-                    vkPrimitive.metallicRoughness =
-                        LoadTexture(device, source, assetPrimitive.materialIndex, TextureType::MetallicRoughness);
-                }
-                break;
+            for (size_t i = 0; i < vkPrimitive.indexCount; i++) {
+                *indexData++ = assetPrimitive.indexBuffer.Read(i);
             }
+
+            vkPrimitive.vertexCount = assetPrimitive.positionBuffer.Count();
+            vkPrimitive.vertexOffset = vertexData - vertexDataStart;
+
+            for (size_t i = 0; i < vkPrimitive.vertexCount; i++) {
+                SceneVertex &vertex = *vertexData++;
+
+                vertex.position = assetPrimitive.positionBuffer.Read(i);
+                if (i < assetPrimitive.normalBuffer.Count()) vertex.normal = assetPrimitive.normalBuffer.Read(i);
+                if (i < assetPrimitive.texcoordBuffer.Count()) vertex.uv = assetPrimitive.texcoordBuffer.Read(i);
+            }
+
+            vkPrimitive.baseColor = LoadTexture(device, source, assetPrimitive.materialIndex, TextureType::BaseColor);
+            vkPrimitive.metallicRoughness =
+                LoadTexture(device, source, assetPrimitive.materialIndex, TextureType::MetallicRoughness);
         }
 
         primitiveList = scene.primitiveLists->ArrayAllocate(primitives.size(), sizeof(GPUMeshPrimitive));
@@ -103,7 +92,7 @@ namespace sp::vulkan {
         }
     }
 
-    Model::~Model() {
+    Mesh::~Mesh() {
         ZoneScoped;
         ZoneStr(modelName);
 
@@ -112,22 +101,22 @@ namespace sp::vulkan {
         }
     }
 
-    uint32 Model::SceneIndex() const {
+    uint32 Mesh::SceneIndex() const {
         return modelEntry->ArrayOffset();
     }
 
-    TextureIndex Model::LoadTexture(DeviceContext &device,
+    TextureIndex Mesh::LoadTexture(DeviceContext &device,
         const shared_ptr<const sp::Gltf> &source,
         int materialIndex,
         TextureType type) {
         ZoneScoped;
         if (!source) {
-            Errorf("Model::LoadTexture called with null source");
+            Errorf("Mesh::LoadTexture called with null source");
             return 0;
         }
         auto &gltfModel = *source->gltfModel;
-        if (materialIndex < 0 || materialIndex >= gltfModel.materials.size()) {
-            Errorf("Model::LoadTexture called with invalid materialIndex: %d", materialIndex);
+        if (materialIndex < 0 || (size_t)materialIndex >= gltfModel.materials.size()) {
+            Errorf("Mesh::LoadTexture called with invalid materialIndex: %d", materialIndex);
             return 0;
         }
         auto &material = gltfModel.materials[materialIndex];
@@ -185,7 +174,7 @@ namespace sp::vulkan {
 
         if (textures.count(name)) return textures[name];
 
-        if (textureIndex < 0 || textureIndex >= gltfModel.textures.size()) {
+        if (textureIndex < 0 || (size_t)textureIndex >= gltfModel.textures.size()) {
             if (factor.size() == 0) factor.push_back(1); // default texture is a single white pixel
 
             auto data = make_shared<std::array<uint8, 4>>();
@@ -209,7 +198,7 @@ namespace sp::vulkan {
         }
 
         auto &texture = gltfModel.textures[textureIndex];
-        if (texture.source < 0 || texture.source >= gltfModel.images.size()) {
+        if (texture.source < 0 || (size_t)texture.source >= gltfModel.images.size()) {
             Errorf("Gltf texture %d has invalid texture source: %d", textureIndex, texture.source);
             return 0;
         }
@@ -237,7 +226,7 @@ namespace sp::vulkan {
         imageInfo.extent = vk::Extent3D(img.width, img.height, 1);
 
         ImageViewCreateInfo viewInfo;
-        if (texture.sampler < 0 || texture.sampler >= gltfModel.samplers.size()) {
+        if (texture.sampler < 0 || (size_t)texture.sampler >= gltfModel.samplers.size()) {
             viewInfo.defaultSampler = device.GetSampler(SamplerType::TrilinearTiled);
             imageInfo.genMipmap = true;
         } else {

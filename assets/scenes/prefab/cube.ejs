@@ -1,13 +1,16 @@
 {
 	"_name": <%= name %>,
-	"renderable": "mcube",
 	"transform": {
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
 		"translate": <%= translate %>
 	},
-	"physics": {
-		"model": "mcube-physx",
-		"density": 1
+	"script": {
+		"prefab": "gltf",
+		"parameters": {
+			"gltf_model": "mcube",
+			"gltf_render": true,
+			"gltf_physics": "dynamic"
+		}
 	}
 }
 <%

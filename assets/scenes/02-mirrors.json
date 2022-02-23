@@ -1509,7 +1509,6 @@
 		},
 		{
 			"_name": "mirrorcube1",
-			"renderable": "mcube",
 			"transform": {
 				"rotate": [
 					-43,
@@ -1523,9 +1522,13 @@
 					5
 				]
 			},
-			"physics": {
-				"model": "mcube-physx",
-				"density": 1
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "mcube",
+					"gltf_render": true,
+					"gltf_physics": "dynamic"
+				}
 			}
 		},
 		{
@@ -1976,7 +1979,6 @@
 		},
 		{
 			"_name": "mirrorcube2",
-			"renderable": "mcube",
 			"transform": {
 				"rotate": [
 					43,
@@ -1990,9 +1992,13 @@
 					5
 				]
 			},
-			"physics": {
-				"model": "mcube-physx",
-				"density": 1
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "mcube",
+					"gltf_render": true,
+					"gltf_physics": "dynamic"
+				}
 			}
 		},
 		{

@@ -11,6 +11,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     LightSensor.cc
     Mirror.cc
     Physics.cc
+    PrefabDefinitions.cc
     Renderable.cc
     SceneConnection.cc
     SceneInfo.cc

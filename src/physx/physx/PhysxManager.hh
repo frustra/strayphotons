@@ -83,8 +83,8 @@ namespace sp {
         void DestroyPhysxScene();
         void CacheDebugLines();
 
-        std::shared_ptr<physx::PxConvexMesh> CreateConvexMeshFromHull(const Gltf &model, const ConvexHull &hull);
-        AsyncPtr<ConvexHullSet> LoadConvexHullSet(const AsyncPtr<Gltf> &model, bool decomposeHull);
+        std::shared_ptr<physx::PxConvexMesh> CreateConvexMeshFromHull(std::string name, const ConvexHull &hull);
+        AsyncPtr<ConvexHullSet> LoadConvexHullSet(const AsyncPtr<Gltf> &model, size_t meshIndex, bool decomposeHull);
         // bool LoadCollisionCache(ConvexHullSet &set, const Gltf &model, bool decomposeHull);
         // void SaveCollisionCache(const Gltf &model, const ConvexHullSet &set, bool decomposeHull);
 

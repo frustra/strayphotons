@@ -28,7 +28,7 @@ namespace sp {
 } // namespace sp
 
 namespace sp::vulkan {
-    class Model;
+    class Mesh;
     class GuiRenderer;
 
     namespace rg = render_graph;
@@ -138,8 +138,8 @@ namespace sp::vulkan {
         LightingContext lights;
         LaserContext lasers;
         GPUSceneContext scene;
-        PreservingMap<string, Model> activeModels;
-        vector<std::shared_ptr<const sp::Gltf>> modelsToLoad;
+        PreservingMap<string, Mesh> activeMeshes;
+        vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
 
         struct RenderableGui {
             Tecs::Entity entity;

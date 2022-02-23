@@ -11,6 +11,7 @@ namespace ecs {
     bool Component<Renderable>::Load(sp::Scene *scene, Renderable &r, const picojson::value &src) {
         if (src.is<string>()) {
             r.model = sp::GAssets.LoadGltf(src.get<string>());
+            r.meshIndex = 0;
         } else {
             for (auto param : src.get<picojson::object>()) {
                 if (param.first == "hidden") {
@@ -21,6 +22,8 @@ namespace ecs {
                     }
                 } else if (param.first == "model") {
                     r.model = sp::GAssets.LoadGltf(param.second.get<string>());
+                } else if (param.first == "mesh") {
+                    r.meshIndex = (size_t)param.second.get<double>();
                 }
             }
         }

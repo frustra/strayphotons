@@ -19,7 +19,7 @@ namespace sp::vulkan {
         glm::mat4 model;
     };
 
-    class Model final : public NonCopyable {
+    class Mesh final : public NonCopyable {
     public:
         struct Primitive {
             size_t indexOffset, indexCount;
@@ -27,8 +27,8 @@ namespace sp::vulkan {
             TextureIndex baseColor, metallicRoughness;
         };
 
-        Model(shared_ptr<const sp::Gltf> source, GPUSceneContext &scene, DeviceContext &device);
-        ~Model();
+        Mesh(shared_ptr<const sp::Gltf> source, size_t meshIndex, GPUSceneContext &scene, DeviceContext &device);
+        ~Mesh();
 
         uint32 SceneIndex() const;
         uint32 PrimitiveCount() const {
@@ -54,6 +54,7 @@ namespace sp::vulkan {
         string modelName;
         GPUSceneContext &scene;
         shared_ptr<const sp::Gltf> asset;
+        size_t meshIndex;
 
         robin_hood::unordered_map<string, TextureIndex> textures;
         vector<Primitive> primitives;
