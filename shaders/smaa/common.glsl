@@ -1,9 +1,9 @@
 #define SMAA_GLSL_4 1
 #define SMAA_PRESET_HIGH 1
 
-layout(push_constant) uniform PushConstants {
-	vec4 smaaRTMetrics;
-};
-#define SMAA_RT_METRICS smaaRTMetrics
+#include "../lib/types_common.glsl"
+#include "../vulkan/lib/view_states_uniform.glsl"
+
+#define SMAA_RT_METRICS vec4(views[gl_ViewID_OVR].invExtents, views[gl_ViewID_OVR].extents)
 
 #include "smaa.glsl"

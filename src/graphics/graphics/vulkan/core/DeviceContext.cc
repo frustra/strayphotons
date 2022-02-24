@@ -1260,12 +1260,12 @@ namespace sp::vulkan {
         });
     }
 
-    shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {
+    AsyncPtr<ImageView> DeviceContext::LoadAssetImage(shared_ptr<const sp::Image> image, bool genMipmap, bool srgb) {
         ImageCreateInfo createInfo;
         createInfo.extent = vk::Extent3D(image->GetWidth(), image->GetHeight(), 1);
         Assert(createInfo.extent.width > 0 && createInfo.extent.height > 0, "image has zero size");
 
-        createInfo.format = FormatFromTraits(image->GetComponents(), 8, true);
+        createInfo.format = FormatFromTraits(image->GetComponents(), 8, srgb);
         Assert(createInfo.format != vk::Format::eUndefined, "invalid image format");
 
         createInfo.genMipmap = genMipmap;
@@ -1275,10 +1275,18 @@ namespace sp::vulkan {
         Assert(data, "missing image data");
 
         ImageViewCreateInfo viewInfo;
-        viewInfo.defaultSampler = GetSampler(SamplerType::TrilinearTiled);
-        auto fut = CreateImageAndView(createInfo, viewInfo, {data, image->ByteSize(), image});
+        if (genMipmap) {
+            viewInfo.defaultSampler = GetSampler(SamplerType::TrilinearTiled);
+        } else {
+            viewInfo.defaultSampler = GetSampler(SamplerType::BilinearClamp);
+        }
+        return CreateImageAndView(createInfo, viewInfo, {data, image->ByteSize(), image});
+    }
+
+    shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {
+        auto view = LoadAssetImage(image, genMipmap, true);
         FlushMainQueue();
-        return fut->Get();
+        return view->Get();
     }
 
     vk::Sampler DeviceContext::GetSampler(SamplerType type) {
