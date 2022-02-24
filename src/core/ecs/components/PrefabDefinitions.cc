@@ -4,6 +4,7 @@
 #include "core/Common.hh"
 #include "core/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Scene.hh"
 
 #include <robin_hood.h>
 
@@ -20,6 +21,9 @@ namespace ecs {
                     auto model = asyncGltf->Get();
                     Assertf(model, "Gltf model not found: %s", modelName);
 
+                    auto scene = sceneInfo.scene.lock();
+                    Assertf(scene, "Gltf prefab does not have a valid scene: %s", ToString(lock, ent));
+
                     std::deque<std::pair<size_t, Tecs::Entity>> nodes;
                     for (auto &nodeId : model->rootNodes) {
                         nodes.emplace_back(nodeId, ent);
@@ -30,20 +34,19 @@ namespace ecs {
                         Assertf(model->nodes[nodeId], "Gltf node %u is not defined", nodeId);
                         auto &node = *model->nodes[nodeId];
 
-                        auto newEntity = lock.NewEntity();
-                        auto &newSceneInfo = newEntity.Set<SceneInfo>(lock);
-                        newSceneInfo.stagingId = newEntity;
-                        newSceneInfo.priority = sceneInfo.priority;
-                        newSceneInfo.scene = sceneInfo.scene;
-
+                        Tecs::Entity newEntity;
                         if (ent.Has<Name>(lock)) {
-                            auto prefix = ent.Get<Name>(lock) + ".";
+                            auto entityName = ent.Get<Name>(lock) + ".";
                             if (node.name.empty()) {
-                                newEntity.Set<Name>(lock, prefix + "gltf" + std::to_string(nodeId));
+                                entityName += "gltf" + std::to_string(nodeId);
                             } else {
-                                newEntity.Set<Name>(lock, prefix + node.name);
+                                entityName += node.name;
                             }
+                            newEntity = scene->NewPrefabEntity(lock, ent, entityName);
+                        } else {
+                            newEntity = scene->NewPrefabEntity(lock, ent);
                         }
+
                         auto &transform = newEntity.Set<TransformTree>(lock, node.transform);
                         if (parentEnt.Has<TransformTree>(lock)) transform.parent = parentEnt;
                         newEntity.Set<TransformSnapshot>(lock);

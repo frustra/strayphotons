@@ -50,6 +50,42 @@ namespace sp {
         Assertf(!active, "%s scene destroyed while active: %s", type, name);
     }
 
+    Tecs::Entity Scene::NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
+        const std::shared_ptr<Scene> &scene,
+        std::string entityName) {
+        if (!entityName.empty() && namedEntities.count(entityName) > 0) return namedEntities[entityName];
+
+        auto entity = stagingLock.NewEntity();
+        entity.Set<ecs::SceneInfo>(stagingLock, entity, ecs::SceneInfo::Priority::System, scene);
+        if (!entityName.empty()) {
+            entity.Set<ecs::Name>(stagingLock, entityName);
+            namedEntities.emplace(entityName, entity);
+        }
+        return entity;
+    }
+
+    Tecs::Entity Scene::NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
+        Tecs::Entity prefabRoot,
+        std::string entityName) {
+        if (!entityName.empty() && namedEntities.count(entityName) > 0) return namedEntities[entityName];
+
+        Assertf(prefabRoot.Has<ecs::SceneInfo>(stagingLock),
+            "Prefab root %s does not have SceneInfo",
+            ecs::ToString(stagingLock, prefabRoot));
+        auto &rootSceneInfo = prefabRoot.Get<const ecs::SceneInfo>(stagingLock);
+
+        auto entity = stagingLock.NewEntity();
+        entity.Set<ecs::SceneInfo>(stagingLock, entity, prefabRoot, rootSceneInfo);
+        if (!entityName.empty()) {
+            if (!starts_with(entityName, "global.") && !starts_with(entityName, this->name + ".")) {
+                entityName = this->name + "." + entityName;
+            }
+            entity.Set<ecs::Name>(stagingLock, entityName);
+            namedEntities.emplace(entityName, entity);
+        }
+        return entity;
+    }
+
     void Scene::ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging,
         ecs::Lock<ecs::AddRemove> live) {
         ZoneScoped;

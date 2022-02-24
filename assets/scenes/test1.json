@@ -207,24 +207,30 @@
 		},
 		{
 			"_name": "duck",
-			"renderable": "duck",
 			"transform": {
 				"translate": [-2.5, 0, -2.5],
-				"rotate": [0, 0, 1, 0],
-				"scale": [0.01, 0.01, 0.01]
+				"rotate": [0, 0, 1, 0]
 			},
-			"physics": {
-				"model": "duck",
-				"decomposeHull": true
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "duck",
+					"gltf_render": true,
+					"gltf_physics": "dynamic"
+				}
 			}
 		},
 		{
+			"_name": "duck.gltf2"
+		},
+		{
+			"_name": "duck_mirror",
 			"mirror": [1, 1],
 			"renderable": "mirror",
 			"physics": {
 				"model": "occluder",
 				"joint": {
-					"target": "duck",
+					"target": "duck.gltf2",
 					"type": "Fixed",
 					"remote_offset": {
 						"translate": [1.5, 1, 0],
@@ -241,15 +247,20 @@
 		{
 			"renderable": "occluder",
 			"transform": {
-				"parent": "duck",
-				"translate": [1.5, 1, 0],
-				"rotate": [-90, 0, 1, 0]
+				"parent": "duck_mirror",
+				"rotate": [180, 0, 1, 0]
 			}
 		},
 		{
-			"renderable": "mcube",
 			"transform": {
 				"translate": [-0.2, 2, 3]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "mcube",
+					"gltf_render": true
+				}
 			},
 			"physics": {
 				"model": "mcube"

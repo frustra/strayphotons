@@ -2,6 +2,7 @@
 
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
 #include "input/KeyCodes.hh"
@@ -11,9 +12,7 @@ namespace sp {
         GetSceneManager().QueueActionAndBlock(SceneAction::AddSystemScene,
             "console-binding",
             [](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                auto ent = lock.NewEntity();
-                ent.Set<ecs::Name>(lock, consoleInputEntity.Name());
-                ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
+                auto ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
                 ent.Set<ecs::FocusLayer>(lock, ecs::FocusLayer::GAME);
                 ent.Set<ecs::EventInput>(lock);
                 auto &script = ent.Set<ecs::Script>(lock);
