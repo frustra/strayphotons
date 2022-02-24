@@ -5,13 +5,13 @@
 				"scale": [0.99, 1, 0.99]
 			},
 			"laser_line": {
-				"color": [1, 0, 1],
+				"color": [10, 0, 10],
 				"points": [
-					[-5, 1.5, -5],
-					[-5, 1.5, 5],
-					[5, 1.5, 5],
-					[5, 1.5, -5],
-					[-5, 1.5, -5]
+					[-5, 4.5, -5],
+					[-5, 4.5, 5],
+					[5, 4.5, 5],
+					[5, 4.5, -5],
+					[-5, 4.5, -5]
 				]
 			}
 		},
@@ -78,7 +78,7 @@
 		},
 		{
 			"transform": {
-				"translate": [0, 0.9, 1],
+				"translate": [0, 0.92, 1],
 				"rotate": [-10, 0, 1, 0]
 			},
 			"laser_line": {},
@@ -91,6 +91,13 @@
 					"speed": 0.2,
 					"axis_y": 1
 				}
+			}
+		},
+		{
+			"renderable": "articulating-arm",
+			"transform": {
+				"translate": [0, 0.5, 1],
+				"scale": [4, 4, 4]
 			}
 		},
 		{
@@ -206,14 +213,24 @@
 			}
 		},
 		{
-			"_name": "duck",
 			"renderable": "duck",
 			"transform": {
-				"translate": [-2.5, 0, -2.5],
-				"rotate": [0, 0, 1, 0]
+				"translate": [2.5, 0, -2.5],
+				"rotate": [180, 0, 1, 0]
 			},
 			"physics": {
 				"model": "duck"
+			}
+		},
+		{
+			"_name": "mova-mirror",
+			"renderable": "mcube",
+			"transform": {
+				"translate": [-1.5, 0, -2.5],
+				"rotate": [0, 0, 1, 0]
+			},
+			"physics": {
+				"model": "mcube"
 			}
 		},
 		{
@@ -222,32 +239,32 @@
 			"physics": {
 				"model": "occluder",
 				"joint": {
-					"target": "duck",
+					"target": "mova-mirror",
 					"type": "Fixed",
 					"remote_offset": {
-						"translate": [1.5, 1, 0],
+						"translate": [0.5, 0.5, 0],
 						"rotate": [90, 0, 1, 0]
 					}
 				}
 			},
 			"transform": {
-				"parent": "duck",
-				"translate": [1.5, 1, 0],
+				"parent": "mova-mirror",
+				"translate": [0.5, 0.5, 0],
 				"rotate": [90, 0, 1, 0]
 			}
 		},
 		{
 			"renderable": "occluder",
 			"transform": {
-				"parent": "duck",
-				"translate": [1.5, 1, 0],
+				"parent": "mova-mirror",
+				"translate": [0.5, 0.5, 0],
 				"rotate": [-90, 0, 1, 0]
 			}
 		},
 		{
 			"renderable": "mcube",
 			"transform": {
-				"translate": [-0.2, 2, 3]
+				"translate": [-2.2, 2, 3]
 			},
 			"physics": {
 				"model": "mcube"
@@ -256,7 +273,8 @@
 		{
 			"renderable": "pbr-cube",
 			"transform": {
-				"translate": [0, 1, 2.5]
+				"translate": [-2, 1, 2.5],
+				"rotate": [40, 0, 1, 0]
 			},
 			"physics": {
 				"model": "pbr-cube"
@@ -265,7 +283,7 @@
 		{
 			"renderable": "box",
 			"transform": {
-				"translate": [0.5, 3.5, 2.5]
+				"translate": [-1.5, 3.5, 2.5]
 			},
 			"physics": {
 				"model": "box"
@@ -274,7 +292,7 @@
 		{
 			"renderable": "box",
 			"transform": {
-				"translate": [1, 2.5, 2]
+				"translate": [-1, 2.5, 2]
 			},
 			"physics": {
 				"model": "box"
@@ -311,6 +329,19 @@
 			"transform": {
 				"translate": [7, 20, 7],
 				"rotate": [-50, 1, -1, 0]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"intensity": 130,
+				"spotAngle": 20,
+				"shadowMapSize": 11,
+				"shadowMapClip": [0.01, 50]
+			},
+			"transform": {
+				"translate": [2, 6, -3],
+				"rotate": [-120, 1, 0, 0.2]
 			}
 		},
 		{

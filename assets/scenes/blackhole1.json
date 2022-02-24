@@ -1518,7 +1518,6 @@
 		},
 		{
 			"_name": "elevator_side_light1",
-			"renderable": "spotlight-01",
 			"light": {
 				"tint": [
 					1,
@@ -1551,6 +1550,17 @@
 			}
 		},
 		{
+			"renderable": "spotlight-01",
+			"transform": {
+				"parent": "elevator_side_light1",
+				"translate": [
+					0,
+					0,
+					0.01
+				]
+			}
+		},
+		{
 			"_name": "elevator_side_light1-bulb",
 			"renderable": "box",
 			"transform": {
@@ -1569,7 +1579,6 @@
 		},
 		{
 			"_name": "elevator_side_light2",
-			"renderable": "spotlight-01",
 			"light": {
 				"tint": [
 					1,
@@ -1598,6 +1607,17 @@
 					4.9,
 					4.5,
 					3
+				]
+			}
+		},
+		{
+			"renderable": "spotlight-01",
+			"transform": {
+				"parent": "elevator_side_light2",
+				"translate": [
+					0,
+					0,
+					0.01
 				]
 			}
 		},

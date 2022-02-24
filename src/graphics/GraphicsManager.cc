@@ -51,6 +51,8 @@ namespace sp {
 
     #if defined(SP_GRAPHICS_SUPPORT_HEADLESS) || defined(SP_TEST_MODE)
     const uint32 DefaultMaxFPS = 90;
+    #elif defined(SP_DEBUG)
+    const uint32 DefaultMaxFPS = 144;
     #else
     const uint32 DefaultMaxFPS = 0;
     #endif

@@ -892,7 +892,16 @@ namespace sp::vulkan {
                     cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
                     cmd.SetStorageBuffer(0, 9, resources.GetBuffer("LaserState"));
 
-                    cmd.PushConstants((uint32)lasers.gpuData.size());
+                    struct {
+                        uint32 laserCount;
+                        float time;
+                    } constants;
+                    constants.laserCount = lasers.gpuData.size();
+                    static chrono_clock::time_point epoch = chrono_clock::now();
+                    constants.time =
+                        std::chrono::duration_cast<std::chrono::milliseconds>(chrono_clock::now() - epoch).count() /
+                        1000.0f;
+                    cmd.PushConstants(constants);
                     cmd.Draw(3);
                 }
 

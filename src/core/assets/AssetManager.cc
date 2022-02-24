@@ -36,7 +36,6 @@ namespace sp {
 
     const std::string ASSETS_DIR = "../assets/";
     const std::string ASSETS_TAR = "./assets.spdata";
-    const std::string SHADERS_DIR = "../";
 
     bool AssetManager::ReadWholeFile(std::vector<unsigned char> *out,
         std::string *err,
@@ -124,7 +123,7 @@ namespace sp {
 
             return false;
 #else
-            std::string filename = (starts_with(path, "shaders/") ? SHADERS_DIR : ASSETS_DIR) + path;
+            std::string filename = ASSETS_DIR + path;
             stream.open(filename, std::ios::in | std::ios::binary);
 
             if (size && stream) {

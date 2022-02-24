@@ -1,9 +1,8 @@
-## TODO: move shader install() into this folder
-
-set(SHADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vulkan) # TODO: delete special vulkan subfolder
+set(SHADER_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(OUTPUT_DIR ${PROJECT_ROOT_DIR}/assets/shaders)
 set(SHADER_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
-file(GLOB SHADERS
+file(GLOB_RECURSE SHADERS
     ${SHADER_DIR}/*.vert
     ${SHADER_DIR}/*.frag
     ${SHADER_DIR}/*.comp
@@ -16,20 +15,22 @@ file(GLOB SHADERS
     ${SHADER_DIR}/*.rchit
     ${SHADER_DIR}/*.rmiss
 )
+list(FILTER SHADERS EXCLUDE REGEX "shaders/opengl")
 
 file(GLOB SHADERS_LIB ${SHADER_LIB_DIR}/*.glsl ${SHADER_DIR}/lib/*.glsl)
 
 find_package(Vulkan REQUIRED)
 
 foreach(SHADER IN LISTS SHADERS)
-    get_filename_component(FILENAME ${SHADER} NAME)
+    string(REPLACE ${SHADER_DIR} "" SHADER_FILE ${SHADER})
+    string(REPLACE "vulkan/" "" OUTPUT_NAME ${SHADER_FILE})
     add_custom_command(
-        OUTPUT ${SHADER_DIR}/bin/${FILENAME}.spv
-        COMMAND ${Vulkan_GLSLC_EXECUTABLE} -Werror ${SHADER} -o ${SHADER_DIR}/bin/${FILENAME}.spv
+        OUTPUT ${OUTPUT_DIR}/${OUTPUT_NAME}.spv
+        COMMAND ${Vulkan_GLSLC_EXECUTABLE} -Werror ${SHADER} -o ${OUTPUT_DIR}/${OUTPUT_NAME}.spv
         DEPENDS ${SHADER} ${SHADERS_LIB}
-        COMMENT "Compiling ${FILENAME}"
+        COMMENT "Compiling shaders${SHADER_FILE}"
     )
-    list(APPEND SPV_SHADERS ${SHADER_DIR}/bin/${FILENAME}.spv)
+    list(APPEND SPV_SHADERS ${OUTPUT_DIR}/${OUTPUT_NAME}.spv)
 endForeach()
 
 add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS})

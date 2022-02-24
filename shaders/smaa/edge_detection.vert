@@ -1,11 +1,9 @@
 #version 430
 
-##import lib/vertex_base
-
-uniform vec4 smaaRTMetrics;
+#include "../lib/vertex_base.glsl"
 
 #define SMAA_INCLUDE_PS 0
-##import smaa/common
+#include "common.glsl"
 
 layout (location = 0) in vec3 position;
 layout (location = 2) in vec2 texCoord;

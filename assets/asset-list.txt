@@ -34,6 +34,7 @@ d10b4dfbe694e3ea8ab67940b758ef95    models/airlock/AirlockInterior_Base_Color.pn
 3dd42aabfa4094af38126b2ff0bee384    models/airlock/AirlockInterior_Height.png
 9b417d7c8a8ab13ae9996f6990e17044    models/airlock/AirlockInterior_Metallic.png
 abeb983346476d60bf60938c00d2dea2    models/airlock/AirlockInterior_Roughness.png
+e55a55f0b4539884bb61fe095ffa2cd8    models/articulating-arm.glb
 a8542bca71645613252a6b4acc96b889    models/box.gltf
 27c237412eb3064b17afd3313076cd7f    models/cardboard-box/cardboard-box.gltf
 6c2e1cbfb8754ed7a0347f6f47e9cd78    models/cardboard-box/cardboard-box.mtl

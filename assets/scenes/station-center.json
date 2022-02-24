@@ -918,7 +918,6 @@
 		},
 		{
 			"_name": "global.ship_airlock-light",
-			"renderable": "spotlight-01",
 			"light": {
 				"tint": [
 					0.5,
@@ -948,6 +947,17 @@
 					0,
 					3.9,
 					0
+				]
+			}
+		},
+		{
+			"renderable": "spotlight-01",
+			"transform": {
+				"parent": "global.ship_airlock-light",
+				"translate": [
+					0,
+					0,
+					0.01
 				]
 			}
 		},
@@ -1338,7 +1348,6 @@
 		},
 		{
 			"_name": "elevator_light",
-			"renderable": "spotlight-01",
 			"light": {
 				"tint": [
 					1,
@@ -1368,6 +1377,17 @@
 					0,
 					4,
 					-1
+				]
+			}
+		},
+		{
+			"renderable": "spotlight-01",
+			"transform": {
+				"parent": "elevator_light",
+				"translate": [
+					0,
+					0,
+					0.01
 				]
 			}
 		},
