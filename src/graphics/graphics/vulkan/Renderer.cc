@@ -407,7 +407,7 @@ namespace sp::vulkan {
             if (!renderable.model || !renderable.model->Ready()) continue;
 
             auto model = renderable.model->Get();
-            Assertf(model, "Renderable model is null");
+            if (!model) continue;
             auto meshName = model->name + "." + std::to_string(renderable.meshIndex);
             auto vkMesh = activeMeshes.Load(meshName);
             if (!vkMesh) {
@@ -1137,7 +1137,10 @@ namespace sp::vulkan {
                 }
 
                 auto model = renderable.model->Get();
-                Assertf(model, "Renderable model is null");
+                if (!model) {
+                    Errorf("Preloading renderable with null model: %s", ecs::ToString(lock, ent));
+                    continue;
+                }
                 auto meshName = model->name + "." + std::to_string(renderable.meshIndex);
                 auto vkMesh = activeMeshes.Load(meshName);
                 if (!vkMesh) {

@@ -76,13 +76,6 @@
 					1
 				]
 			},
-			"laser_sensor": {
-				"threshold": [
-					1,
-					0,
-					0
-				]
-			},
 			"signal_output": {
 				"light_value_r": 0,
 				"light_value_g": 0,

@@ -203,9 +203,7 @@ namespace sp {
                 AsyncPtr<Asset> asset;
                 if (path.empty()) {
                     path = findGltfByName(name);
-                    Assertf(!path.empty(), "Gltf not found: %s", name);
-
-                    asset = Load(path, AssetType::Bundled);
+                    if (!path.empty()) asset = Load(path, AssetType::Bundled);
                 } else {
                     asset = Load(path, AssetType::External);
                 }

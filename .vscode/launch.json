@@ -42,7 +42,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk.exe",
-            "args": ["--with-validation-layers"],
+            "args": ["--with-validation-layers", "--no-vr"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],

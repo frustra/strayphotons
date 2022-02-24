@@ -19,7 +19,10 @@ namespace ecs {
                     auto modelName = scriptComp.GetParam<std::string>("gltf_model");
                     auto asyncGltf = sp::GAssets.LoadGltf(modelName);
                     auto model = asyncGltf->Get();
-                    Assertf(model, "Gltf model not found: %s", modelName);
+                    if (!model) {
+                        Errorf("Gltf model not found: %s", modelName);
+                        return;
+                    }
 
                     auto scene = sceneInfo.scene.lock();
                     Assertf(scene, "Gltf prefab does not have a valid scene: %s", ToString(lock, ent));
