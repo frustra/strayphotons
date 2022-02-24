@@ -78,7 +78,7 @@
 		},
 		{
 			"transform": {
-				"translate": [0, 0.92, 1],
+				"translate": [0, 0.95, 1],
 				"rotate": [-10, 0, 1, 0]
 			},
 			"laser_line": {},
@@ -102,7 +102,8 @@
 				"prefab": "gltf",
 				"parameters": {
 					"gltf_model": "articulating-arm",
-					"gltf_render": true
+					"gltf_render": true,
+					"gltf_physics": "static"
 				}
 			}
 		},
@@ -219,6 +220,7 @@
 			}
 		},
 		{
+			"_name": "duck",
 			"transform": {
 				"translate": [2.5, 0, -2.5],
 				"rotate": [180, 0, 1, 0]
@@ -227,9 +229,15 @@
 				"prefab": "gltf",
 				"parameters": {
 					"gltf_model": "duck",
-					"gltf_render": true,
-					"gltf_physics": "dynamic"
+					"gltf_render": true
 				}
+			}
+		},
+		{
+			"_name": "duck.gltf0",
+			"physics": {
+				"model": "duck",
+				"decomposeHull": true
 			}
 		},
 		{

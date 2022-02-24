@@ -53,9 +53,10 @@ namespace sp {
 
         VHACD::IVHACD::Parameters params;
         params.m_callback = &vhacdCallback;
+        params.m_projectHullVertices = false;
         // params.m_oclAcceleration = false;
-        // params.m_resolution = 1000000;
-        // params.m_convexhullDownsampling = 8;
+        params.m_resolution = 1000000;
+        params.m_convexhullDownsampling = 8;
 
         bool res = interfaceVHACD->Compute(reinterpret_cast<const float *>(points.data()),
             points.size(),
