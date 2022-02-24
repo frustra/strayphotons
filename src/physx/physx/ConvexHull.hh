@@ -17,6 +17,8 @@ namespace sp::gltf {
 }
 
 namespace sp {
+    class Asset;
+
     struct ConvexHull {
         std::vector<glm::vec3> points;
         std::vector<glm::ivec3> triangles;
@@ -26,7 +28,7 @@ namespace sp {
 
     struct ConvexHullSet {
         vector<ConvexHull> hulls;
-        robin_hood::unordered_flat_set<int> bufferIndexes;
+        std::shared_ptr<const Asset> source;
         bool decomposed;
     };
 

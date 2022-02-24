@@ -115,6 +115,7 @@ namespace sp {
 
         const std::string name;
 
+        std::shared_ptr<const Asset> asset;
         std::shared_ptr<const tinygltf::Model> gltfModel;
         std::vector<std::optional<gltf::Node>> nodes;
         std::vector<std::optional<gltf::Skin>> skins;
@@ -126,7 +127,5 @@ namespace sp {
         bool AddNode(const tinygltf::Model &model,
             int nodeIndex,
             std::optional<size_t> treeRoot = std::optional<size_t>());
-
-        std::shared_ptr<const Asset> asset;
     };
 } // namespace sp

@@ -787,7 +787,6 @@
 		},
 		{
 			"_name": "global.ship_airlock-light",
-			"renderable": "spotlight-01",
 			"light": {
 				"tint": [
 					0.5,
@@ -802,6 +801,13 @@
 					0.1,
 					70
 				]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "spotlight-01",
+					"gltf_render": true
+				}
 			},
 			"transform": {
 				"parent": "global.ship_airlock",

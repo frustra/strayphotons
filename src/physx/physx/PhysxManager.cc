@@ -1,6 +1,7 @@
 #include "PhysxManager.hh"
 
 #include "PhysxUtils.hh"
+#include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Gltf.hh"
 #include "console/CVar.hh"
@@ -343,12 +344,12 @@ namespace sp {
                         ZoneStr(name);
 
                         auto set = std::make_shared<ConvexHullSet>();
-                        // if (LoadCollisionCache(*set, *model, decomposeHull)) {
-                        //     for (auto &hull : set->hulls) {
-                        //         hull.pxMesh = CreateConvexMeshFromHull(name, hull);
-                        //     }
-                        //     return set;
-                        // }
+                        if (LoadCollisionCache(*set, *model, meshIndex, decomposeHull)) {
+                            for (auto &hull : set->hulls) {
+                                hull.pxMesh = CreateConvexMeshFromHull(name, hull);
+                            }
+                            return set;
+                        }
 
                         Assertf(meshIndex < model->meshes.size(), "Physics mesh index is out of range: %s", name);
                         auto &mesh = model->meshes[meshIndex];
@@ -358,7 +359,7 @@ namespace sp {
                             auto pxMesh = CreateConvexMeshFromHull(name, hull);
                             if (pxMesh) hull.pxMesh = pxMesh;
                         }
-                        // SaveCollisionCache(*model, *set, decomposeHull);
+                        SaveCollisionCache(*model, meshIndex, *set, decomposeHull);
                         return set;
                     });
                 cache.Register(name, set);
@@ -489,22 +490,16 @@ namespace sp {
         if (userData) userData->physicsGroup = group;
     }
 
-    /*Hash128 hashBuffer(const Gltf &gltf, size_t index) {
-        Hash128 output;
-        auto buffer = gltf.GetBuffer(index);
-        Assert(buffer.size() <= INT_MAX, "Buffer size overflows max int");
-        MurmurHash3_x86_128(buffer.data(), (int)buffer.size(), 0, output.data());
-        return output;
-    }
-
     // Increment if the Collision Cache format ever changes
-    const uint32 hullCacheMagic = 0xc042;
+    const uint32 hullCacheMagic = 0xc043;
 
-    bool PhysxManager::LoadCollisionCache(ConvexHullSet &set, const Gltf &model, bool decomposeHull) {
+    bool PhysxManager::LoadCollisionCache(ConvexHullSet &set, const Gltf &model, size_t meshIndex, bool decomposeHull) {
         ZoneScoped;
+        ZonePrintf("%s.%u", model.name, meshIndex);
+        Assertf(meshIndex < model.meshes.size(), "LoadCollisionCache %s mesh %u out of range", model.name, meshIndex);
         std::ifstream in;
 
-        std::string path = "cache/collision/" + model.name;
+        std::string path = "cache/collision/" + model.name + "." + std::to_string(meshIndex);
         if (decomposeHull) path += "-decompose";
 
         if (GAssets.InputStream(path, AssetType::Bundled, in)) {
@@ -516,30 +511,13 @@ namespace sp {
                 return false;
             }
 
-            int32 bufferCount;
-            in.read((char *)&bufferCount, 4);
-            Assert(bufferCount > 0, "hull cache buffer count");
+            Hash128 hash;
+            in.read((char *)hash.data(), sizeof(hash));
 
-            char bufferName[256] = {'\0'};
-
-            for (int i = 0; i < bufferCount; i++) {
-                uint32 nameLen;
-                in.read((char *)&nameLen, 4);
-                Assert(nameLen <= 256, "hull cache buffer name too long on read");
-
-                in.read(bufferName, nameLen);
-                string name(bufferName, nameLen);
-
-                Hash128 hash;
-                in.read((char *)hash.data(), sizeof(hash));
-
-                int bufferIndex = std::stoi(name);
-
-                if (!model.HasBuffer(bufferIndex) || hashBuffer(model, bufferIndex) != hash) {
-                    Logf("Ignoring outdated collision cache for %s", name);
-                    in.close();
-                    return false;
-                }
+            if (!model.asset || model.asset->Hash() != hash) {
+                Logf("Ignoring outdated collision cache for %s", path);
+                in.close();
+                return false;
             }
 
             int32 hullCount;
@@ -550,16 +528,16 @@ namespace sp {
 
             for (int i = 0; i < hullCount; i++) {
                 auto &hull = set.hulls.emplace_back();
-                in.read((char *)&hull, 4 * sizeof(uint32));
 
-                Assert(hull.pointByteStride % sizeof(float) == 0, "convex hull byte stride is odd");
-                Assert(hull.triangleByteStride % sizeof(int) == 0, "convex hull byte stride is odd");
+                uint32_t pointCount, triangleCount;
+                in.read((char *)&pointCount, sizeof(uint32_t));
+                in.read((char *)&triangleCount, sizeof(uint32_t));
 
-                hull.points = new float[hull.pointCount * hull.pointByteStride / sizeof(float)];
-                hull.triangles = new int[hull.triangleCount * hull.triangleByteStride / sizeof(int)];
+                hull.points.resize(pointCount);
+                hull.triangles.resize(triangleCount);
 
-                in.read((char *)hull.points, hull.pointCount * hull.pointByteStride);
-                in.read((char *)hull.triangles, hull.triangleCount * hull.triangleByteStride);
+                in.read((char *)hull.points.data(), hull.points.size() * sizeof(glm::vec3));
+                in.read((char *)hull.triangles.data(), hull.triangles.size() * sizeof(glm::ivec3));
             }
 
             in.close();
@@ -569,38 +547,39 @@ namespace sp {
         return false;
     }
 
-    void PhysxManager::SaveCollisionCache(const Gltf &model, const ConvexHullSet &set, bool decomposeHull) {
+    void PhysxManager::SaveCollisionCache(const Gltf &model,
+        size_t meshIndex,
+        const ConvexHullSet &set,
+        bool decomposeHull) {
+        ZoneScoped;
+        ZonePrintf("%s.%u", model.name, meshIndex);
+        Assertf(meshIndex < model.meshes.size(), "LoadCollisionCache %s mesh %u out of range", model.name, meshIndex);
         std::ofstream out;
-        std::string name = "cache/collision/" + model.name;
-        if (decomposeHull) name += "-decompose";
 
-        if (GAssets.OutputStream(name, out)) {
+        std::string path = "cache/collision/" + model.name + "." + std::to_string(meshIndex);
+        if (decomposeHull) path += "-decompose";
+
+        if (GAssets.OutputStream(path, out)) {
             out.write((char *)&hullCacheMagic, 4);
 
-            int32 bufferCount = set.bufferIndexes.size();
-            out.write((char *)&bufferCount, 4);
-
-            for (int bufferIndex : set.bufferIndexes) {
-                Hash128 hash = hashBuffer(model, bufferIndex);
-                string bufferName = std::to_string(bufferIndex);
-                uint32 nameLen = bufferName.length();
-                Assert(nameLen <= 256, "hull cache buffer name too long on write");
-
-                out.write((char *)&nameLen, 4);
-                out.write(bufferName.c_str(), nameLen);
-                out.write((char *)hash.data(), sizeof(hash));
-            }
+            Hash128 hash = model.asset->Hash();
+            out.write((char *)hash.data(), sizeof(hash));
 
             int32 hullCount = set.hulls.size();
             out.write((char *)&hullCount, 4);
 
             for (auto hull : set.hulls) {
-                out.write((char *)&hull, 4 * sizeof(uint32));
-                out.write((char *)hull.points, hull.pointCount * hull.pointByteStride);
-                out.write((char *)hull.triangles, hull.triangleCount * hull.triangleByteStride);
+                Assert(hull.points.size() < UINT32_MAX, "hull point count overflows uint32");
+                Assert(hull.triangles.size() < UINT32_MAX, "hull triangle count overflows uint32");
+                uint32_t pointCount = hull.points.size();
+                uint32_t triangleCount = hull.triangles.size();
+                out.write((char *)&pointCount, sizeof(uint32_t));
+                out.write((char *)&triangleCount, sizeof(uint32_t));
+                out.write((char *)hull.points.data(), hull.points.size() * sizeof(glm::vec3));
+                out.write((char *)hull.triangles.data(), hull.triangles.size() * sizeof(glm::ivec3));
             }
 
             out.close();
         }
-    }*/
+    }
 } // namespace sp

@@ -85,8 +85,8 @@ namespace sp {
 
         std::shared_ptr<physx::PxConvexMesh> CreateConvexMeshFromHull(std::string name, const ConvexHull &hull);
         AsyncPtr<ConvexHullSet> LoadConvexHullSet(const AsyncPtr<Gltf> &model, size_t meshIndex, bool decomposeHull);
-        // bool LoadCollisionCache(ConvexHullSet &set, const Gltf &model, bool decomposeHull);
-        // void SaveCollisionCache(const Gltf &model, const ConvexHullSet &set, bool decomposeHull);
+        bool LoadCollisionCache(ConvexHullSet &set, const Gltf &model, size_t meshIndex, bool decomposeHull);
+        void SaveCollisionCache(const Gltf &model, size_t meshIndex, const ConvexHullSet &set, bool decomposeHull);
 
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;

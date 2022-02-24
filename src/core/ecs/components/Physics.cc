@@ -13,6 +13,8 @@ namespace ecs {
         for (auto param : src.get<picojson::object>()) {
             if (param.first == "model") {
                 physics.model = sp::GAssets.LoadGltf(param.second.get<string>());
+            } else if (param.first == "mesh") {
+                physics.meshIndex = (size_t)param.second.get<double>();
             } else if (param.first == "dynamic") {
                 physics.dynamic = param.second.get<bool>();
             } else if (param.first == "kinematic") {

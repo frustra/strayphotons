@@ -45,6 +45,7 @@ namespace sp {
 
     ConsoleManager::ConsoleManager() : RegisteredThread("ConsoleManager", 60.0) {
         cliInputThread = std::thread([this] {
+            tracy::SetThreadName("ConsoleManager::InputLoop");
             InputLoop();
         });
         cliInputThread.detach();

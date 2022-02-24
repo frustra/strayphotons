@@ -36,6 +36,10 @@ namespace sp {
             return offset;
         }
 
+        size_type capacity() const {
+            return ArrayT::size();
+        }
+
         bool empty() const {
             return !offset;
         }

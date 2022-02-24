@@ -49,14 +49,17 @@ for (i = 1; i < locals.points.length; i++) {
 		model = locals.points[i-1].length > 2 ? locals.points[i-1][2] : "wall-4x3";
 		%>
 		{
-			"renderable": <%= model %>,
 			"transform": {
 				"rotate": [<%= rotation %>, 0, 1, 0],
 				"translate": <%= point %>
 			},
-			"physics": {
-				"model": <%= model %>,
-				"dynamic": false
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": <%= model %>,
+					"gltf_render": true,
+					"gltf_physics": "static"
+				}
 			}
 		}
 	<%

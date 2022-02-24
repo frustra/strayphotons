@@ -101,7 +101,6 @@
 		},
 		{
 			"_name": "global.airlock12",
-			"renderable": "airlock",
 			"transform": {
 				"translate": [
 					5,
@@ -115,9 +114,13 @@
 					"playerPresent": "connect-test2.loaded"
 				}
 			},
-			"physics": {
-				"model": "airlock",
-				"dynamic": false
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "airlock",
+					"gltf_render": true,
+					"gltf_physics": "static"
+				}
 			}
 		},
 		{
@@ -416,7 +419,6 @@
 		},
 		{
 			"_name": "global.airlock23",
-			"renderable": "airlock",
 			"transform": {
 				"rotate": [
 					90,
@@ -436,9 +438,13 @@
 					"playerPresent": "connect-test2.loaded"
 				}
 			},
-			"physics": {
-				"model": "airlock",
-				"dynamic": false
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "airlock",
+					"gltf_render": true,
+					"gltf_physics": "static"
+				}
 			}
 		},
 		{

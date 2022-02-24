@@ -3,6 +3,7 @@
 #include "core/Common.hh"
 
 #include <atomic>
+#include <optional>
 #include <vector>
 
 namespace sp {
@@ -32,6 +33,7 @@ namespace sp {
 
     private:
         std::vector<uint8_t> buffer;
+        std::optional<Hash128> hash;
 
         friend class AssetManager;
     };
