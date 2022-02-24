@@ -34,7 +34,7 @@ namespace sp::vulkan {
     static CVar<float> CVarBloomScale("r.BloomScale", 0.15f, "Bloom scale");
 
     Renderer::Renderer(DeviceContext &device, PerfTimer &timer)
-        : device(device), timer(timer), graph(device, &timer), scene(device) {
+        : device(device), timer(timer), graph(device, &timer), scene(device), guiRenderer(new GuiRenderer(device)) {
         funcs.Register<string, string>("screenshot",
             "Save screenshot to <path>, optionally specifying an image <resource>",
             [&](string path, string resource) {
@@ -163,9 +163,7 @@ namespace sp::vulkan {
                     cmd.DrawScreenCover(source);
                 }
 
-                if (this->debugGuiRenderer) {
-                    this->debugGuiRenderer->Render(cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()});
-                }
+                if (debugGui) guiRenderer->Render(*debugGui, cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()});
             });
 
         graph.SetTargetImageView("WindowFinalOutput", swapchainImage);
@@ -755,8 +753,7 @@ namespace sp::vulkan {
                 }
             } else if (guiEvent.type == Tecs::EventType::ADDED) {
                 const auto &guiComponent = eventEntity.Get<ecs::Gui>(lock);
-                guis.emplace_back(
-                    RenderableGui{guiEvent.entity, make_shared<GuiRenderer>(device, *guiComponent.manager)});
+                guis.emplace_back(RenderableGui{guiEvent.entity, guiComponent.manager});
             }
         }
 
@@ -768,19 +765,19 @@ namespace sp::vulkan {
 
                     // TODO: figure out a good size based on the transform of the gui
                     desc.extent = vk::Extent3D(1024, 1024, 1);
-                    MenuGuiManager *manager = dynamic_cast<MenuGuiManager *>(gui.renderer->Manager());
+                    MenuGuiManager *manager = dynamic_cast<MenuGuiManager *>(gui.manager);
                     if (manager && manager->RenderMode() == MenuRenderMode::Pause) {
                         desc.extent = vk::Extent3D(1920, 1080, 1);
                     }
 
-                    const auto &name = gui.renderer->Name();
+                    const auto &name = gui.manager->Name();
                     auto target = builder.OutputColorAttachment(0, name, desc, {LoadOp::Clear, StoreOp::Store});
                     gui.renderGraphID = target.id;
                 })
-                .Execute([gui](rg::Resources &resources, CommandContext &cmd) {
+                .Execute([this, gui](rg::Resources &resources, CommandContext &cmd) {
                     auto &extent = resources.GetRenderTarget(gui.renderGraphID)->Desc().extent;
                     vk::Rect2D viewport = {{}, {extent.width, extent.height}};
-                    gui.renderer->Render(cmd, viewport);
+                    guiRenderer->Render(*gui.manager, cmd, viewport);
                 });
         }
     }
@@ -1002,9 +999,9 @@ namespace sp::vulkan {
     void Renderer::AddMenuOverlay() {
         rg::ResourceID menuID = rg::InvalidResource;
         for (auto &gui : guis) {
-            if (gui.renderer->Name() == "menu_gui") {
+            if (gui.manager->Name() == "menu_gui") {
                 menuID = gui.renderGraphID;
-                MenuGuiManager *manager = dynamic_cast<MenuGuiManager *>(gui.renderer->Manager());
+                MenuGuiManager *manager = dynamic_cast<MenuGuiManager *>(gui.manager);
                 if (!manager || manager->RenderMode() != MenuRenderMode::Pause) return;
                 break;
             }
@@ -1035,7 +1032,7 @@ namespace sp::vulkan {
             auto screenshotResource = pending.second;
             if (screenshotResource.empty()) screenshotResource = CVarWindowViewTarget.Get();
 
-            rg::ResourceID sourceID = ~0u;
+            rg::ResourceID sourceID = rg::InvalidResource;
 
             graph.AddPass("Screenshot")
                 .Build([&](rg::PassBuilder &builder) {
@@ -1066,7 +1063,7 @@ namespace sp::vulkan {
 
     rg::ResourceID Renderer::VisualizeBuffer(rg::ResourceID sourceID, uint32 arrayLayer) {
 
-        rg::ResourceID targetID = ~0u, outputID;
+        rg::ResourceID targetID = rg::InvalidResource, outputID;
         graph.AddPass("VisualizeBuffer")
             .Build([&](rg::PassBuilder &builder) {
                 auto &res = builder.ShaderRead(sourceID);
@@ -1123,6 +1120,7 @@ namespace sp::vulkan {
 
     void Renderer::EndFrame() {
         ZoneScoped;
+        guiRenderer->Tick();
         activeMeshes.Tick(std::chrono::milliseconds(33)); // Minimum 30 fps tick rate
 
         GetSceneManager().PreloadSceneGraphics([this](auto lock, auto scene) {
@@ -1168,7 +1166,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::SetDebugGui(GuiManager &gui) {
-        debugGuiRenderer = make_shared<GuiRenderer>(device, gui);
+        debugGui = &gui;
     }
 
     void Renderer::QueueScreenshot(const string &path, const string &resource) {

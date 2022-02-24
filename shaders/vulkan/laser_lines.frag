@@ -72,7 +72,7 @@ void main() {
 
         float dist = distance(clipPos, pos.xy);
 
-        float weight = 0.0001 / (pow(dist, 2) + 0.00001) * max(1 - pos.z, 0);
+        float weight = 0.0001 / (pow(dist, 1.5) + 0.00001) * max(1 - pos.z, 0);
         outFragColor.rgb += laserLines[i].color * weight;
     }
 }

@@ -26,9 +26,11 @@ if [ -n "$CI_CACHE_DIRECTORY" ]; then
 fi
 
 echo -e "--- Running \033[33mcmake build\033[0m :rocket:"
-if ! cmake --build ./build --config Release --target all; then
+cmake --build ./build --config Release --target all 2>&1 | tee >(grep -E "error( \w+)?:" > ./build/build_errors.log)
+if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
     echo -e "\n^^^ +++"
     echo -e "\033[31mCMake Build failed\033[0m"
+    cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --style error --append
     exit 1
 fi
 

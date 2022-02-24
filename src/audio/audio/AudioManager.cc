@@ -3,6 +3,7 @@
 #include "assets/AssetManager.hh"
 #include "core/Tracing.hh"
 
+#include <resonance-audio/resonance_audio/base/constants_and_types.h>
 #include <resonance_audio_api.h>
 #include <soundio/soundio.h>
 
@@ -42,13 +43,17 @@ namespace sp {
             "unable to set channel layout: %s",
             soundio_strerror(outstream->layout_error));
 
-        err = soundio_outstream_start(outstream);
-        Assertf(!err, "unable to start audio device: %s", soundio_strerror(err));
+        auto channelCount = outstream->layout.channel_count;
+        Assertf(channelCount == 2, "only stereo output is supported, have %d channels", channelCount);
 
         framesPerBuffer = outstream->sample_rate * interval.count() / 1e9;
-        resonance = vraudio::CreateResonanceAudioApi(outstream->layout.channel_count,
-            framesPerBuffer,
-            outstream->sample_rate);
+        Assertf(framesPerBuffer < vraudio::kMaxSupportedNumFrames, "buffer too big: %d", framesPerBuffer);
+        Assertf(framesPerBuffer >= 32, "buffer too small: %d", framesPerBuffer); // FftManager::kMinFftSize
+
+        resonance = vraudio::CreateResonanceAudioApi(2, framesPerBuffer, outstream->sample_rate);
+
+        err = soundio_outstream_start(outstream);
+        Assertf(!err, "unable to start audio device: %s", soundio_strerror(err));
 
         {
             auto lock = ecs::World.StartTransaction<ecs::AddRemove>();

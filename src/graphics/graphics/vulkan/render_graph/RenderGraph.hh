@@ -6,7 +6,9 @@
 
 namespace sp::vulkan {
     class PerfTimer;
-}
+
+    namespace rg = render_graph;
+} // namespace sp::vulkan
 
 namespace sp::vulkan::render_graph {
     const uint32 RESOURCE_HISTORY_FRAMES = 1;
