@@ -132,6 +132,7 @@ namespace sp::vulkan {
 
         RenderTargetPtr GetRenderTarget(const RenderTargetDesc &desc);
 
+        AsyncPtr<ImageView> LoadAssetImage(shared_ptr<const sp::Image> image, bool genMipmap = false, bool srgb = true);
         shared_ptr<GpuTexture> LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
 
         ShaderHandle LoadShader(string_view name);

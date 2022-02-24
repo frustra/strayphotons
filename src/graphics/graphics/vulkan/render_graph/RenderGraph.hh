@@ -115,6 +115,10 @@ namespace sp::vulkan::render_graph {
             return resources->GetID(name, false) != InvalidResource;
         }
 
+        DeviceContext &Device() {
+            return device;
+        }
+
     private:
         friend class InitialPassState;
         void AddPassBarriers(CommandContextPtr &cmd, Pass &pass);
