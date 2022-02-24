@@ -827,6 +827,17 @@
 			}
 		},
 		{
+			"renderable": "spotlight-01",
+			"transform": {
+				"parent": "global.ship_airlock-light",
+				"translate": [
+					0,
+					0,
+					0.01
+				]
+			}
+		},
+		{
 			"_name": "global.ship_airlock-light-bulb",
 			"renderable": "box",
 			"transform": {

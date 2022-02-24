@@ -16,13 +16,15 @@ namespace sp::vulkan {
             invProjMat = view.invProjMat;
             viewMat = view.viewMat;
             invViewMat = view.invViewMat;
-            clip = view.clip;
             extents = view.extents;
+            invExtents = 1.0f / extents;
+            clip = view.clip;
         }
 
         glm::mat4 projMat, invProjMat;
         glm::mat4 viewMat, invViewMat;
-        glm::vec2 clip, extents;
+        glm::vec2 extents, invExtents;
+        glm::vec2 clip, _padding;
     };
     static_assert(sizeof(GPUViewState) % 16 == 0, "std140 alignment");
 

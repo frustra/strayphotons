@@ -1497,6 +1497,17 @@
 			}
 		},
 		{
+			"renderable": "spotlight-01",
+			"transform": {
+				"parent": "light1",
+				"translate": [
+					0,
+					0,
+					0.01
+				]
+			}
+		},
+		{
 			"_name": "light1-bulb",
 			"renderable": "box",
 			"transform": {
@@ -1584,16 +1595,28 @@
 				],
 				"translate": [
 					2,
-					0,
+					0.5,
 					5
+				]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"transform": {
+				"parent": "mirrorcube1",
+				"translate": [
+					0,
+					-0.5,
+					0
 				]
 			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
 					"gltf_model": "mcube",
-					"gltf_render": true,
-					"gltf_physics": "dynamic"
+					"gltf_render": true
 				}
 			}
 		},
@@ -1613,7 +1636,7 @@
 				],
 				"translate": [
 					0,
-					0.5,
+					0,
 					-0.5
 				]
 			}
@@ -1630,7 +1653,7 @@
 				],
 				"translate": [
 					0,
-					0.5,
+					0,
 					-0.475
 				]
 			}
@@ -2003,6 +2026,17 @@
 			}
 		},
 		{
+			"renderable": "spotlight-01",
+			"transform": {
+				"parent": "light2",
+				"translate": [
+					0,
+					0,
+					0.01
+				]
+			}
+		},
+		{
 			"_name": "light2-bulb",
 			"renderable": "box",
 			"transform": {
@@ -2090,16 +2124,28 @@
 				],
 				"translate": [
 					7.8,
-					0,
+					0.5,
 					5
+				]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"transform": {
+				"parent": "mirrorcube2",
+				"translate": [
+					0,
+					-0.5,
+					0
 				]
 			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
 					"gltf_model": "mcube",
-					"gltf_render": true,
-					"gltf_physics": "dynamic"
+					"gltf_render": true
 				}
 			}
 		},
@@ -2119,7 +2165,7 @@
 				],
 				"translate": [
 					0,
-					0.5,
+					0,
 					-0.5
 				]
 			}
@@ -2136,7 +2182,7 @@
 				],
 				"translate": [
 					0,
-					0.5,
+					0,
 					-0.475
 				]
 			}

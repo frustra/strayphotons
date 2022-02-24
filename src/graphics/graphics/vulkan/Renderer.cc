@@ -23,6 +23,8 @@ namespace sp::vulkan {
     static const std::string defaultWindowViewTarget = "FlatView.LastOutput";
     static const std::string defaultXRViewTarget = "XRView.LastOutput";
 
+    static CVar<float> CVarExposure("r.Exposure", 1.0f, "Scale factor for linear luminosity buffer");
+
     static CVar<string> CVarWindowViewTarget("r.WindowViewTarget",
         defaultWindowViewTarget,
         "Primary window's render target");
@@ -32,6 +34,8 @@ namespace sp::vulkan {
     static CVar<string> CVarXRViewTarget("r.XRViewTarget", defaultXRViewTarget, "HMD's render target");
 
     static CVar<float> CVarBloomScale("r.BloomScale", 0.15f, "Bloom scale");
+
+    static CVar<bool> CVarSMAA("r.SMAA", true, "Enable SMAA");
 
     Renderer::Renderer(DeviceContext &device, PerfTimer &timer)
         : device(device), timer(timer), graph(device, &timer), scene(device), guiRenderer(new GuiRenderer(device)) {
@@ -787,6 +791,8 @@ namespace sp::vulkan {
         AddEmissive(lock);
         AddBloom();
         AddTonemap();
+
+        if (CVarSMAA.Get()) smaa.AddPass(graph);
     }
 
     void Renderer::AddLighting() {
@@ -822,6 +828,8 @@ namespace sp::vulkan {
                 cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer1")->ImageView());
                 cmd.SetTexture(0, 2, resources.GetRenderTarget("GBuffer2")->ImageView());
                 cmd.SetTexture(0, 3, resources.GetRenderTarget("ShadowMapLinear")->ImageView());
+
+                cmd.PushConstants(CVarExposure.Get());
 
                 for (int i = 0; i < MAX_LIGHT_GELS; i++) {
                     if (i < this->lights.gelCount) {
@@ -893,7 +901,16 @@ namespace sp::vulkan {
                     cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
                     cmd.SetStorageBuffer(0, 9, resources.GetBuffer("LaserState"));
 
-                    cmd.PushConstants((uint32)lasers.gpuData.size());
+                    struct {
+                        uint32 laserCount;
+                        float time;
+                    } constants;
+                    constants.laserCount = lasers.gpuData.size();
+                    static chrono_clock::time_point epoch = chrono_clock::now();
+                    constants.time =
+                        std::chrono::duration_cast<std::chrono::milliseconds>(chrono_clock::now() - epoch).count() /
+                        1000.0f;
+                    cmd.PushConstants(constants);
                     cmd.Draw(3);
                 }
 

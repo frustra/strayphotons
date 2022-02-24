@@ -1560,6 +1560,17 @@
 			}
 		},
 		{
+			"renderable": "spotlight-01",
+			"transform": {
+				"parent": "elevator_side_light1",
+				"translate": [
+					0,
+					0,
+					0.01
+				]
+			}
+		},
+		{
 			"_name": "elevator_side_light1-bulb",
 			"renderable": "box",
 			"transform": {
@@ -1613,6 +1624,17 @@
 					4.9,
 					4.5,
 					3
+				]
+			}
+		},
+		{
+			"renderable": "spotlight-01",
+			"transform": {
+				"parent": "elevator_side_light2",
+				"translate": [
+					0,
+					0,
+					0.01
 				]
 			}
 		},

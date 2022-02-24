@@ -36,7 +36,6 @@ namespace sp {
 
     const std::string ASSETS_DIR = "../assets/";
     const std::string ASSETS_TAR = "./assets.spdata";
-    const std::string SHADERS_DIR = "../";
 
     AssetManager::AssetManager() : RegisteredThread("AssetCleanup", 10.0), workQueue("AssetWorker", 4) {
 #ifdef SP_PACKAGE_RELEASE
@@ -84,7 +83,7 @@ namespace sp {
 
             return false;
 #else
-            std::string filename = (starts_with(path, "shaders/") ? SHADERS_DIR : ASSETS_DIR) + path;
+            std::string filename = ASSETS_DIR + path;
             stream.open(filename, std::ios::in | std::ios::binary);
 
             if (size && stream) {

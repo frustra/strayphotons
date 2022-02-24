@@ -44,16 +44,16 @@ namespace sp::vulkan {
 
         if (components == 4) {
             if (bits == 16) return vk::Format::eR16G16B16A16Snorm;
-            return preferSrgb ? vk::Format::eR8G8B8A8Srgb : vk::Format::eR8G8B8A8Snorm;
+            return preferSrgb ? vk::Format::eR8G8B8A8Srgb : vk::Format::eR8G8B8A8Unorm;
         } else if (components == 3) {
             if (bits == 16) return vk::Format::eR16G16B16Snorm;
-            return preferSrgb ? vk::Format::eR8G8B8Srgb : vk::Format::eR8G8B8Snorm;
+            return preferSrgb ? vk::Format::eR8G8B8Srgb : vk::Format::eR8G8B8Unorm;
         } else if (components == 2) {
             if (bits == 16) return vk::Format::eR16G16Snorm;
-            return preferSrgb ? vk::Format::eR8G8Srgb : vk::Format::eR8G8Snorm;
+            return preferSrgb ? vk::Format::eR8G8Srgb : vk::Format::eR8G8Unorm;
         } else if (components == 1) {
             if (bits == 16) return vk::Format::eR16Snorm;
-            return preferSrgb ? vk::Format::eR8Srgb : vk::Format::eR8Snorm;
+            return preferSrgb ? vk::Format::eR8Srgb : vk::Format::eR8Unorm;
         } else {
             if (logErrors) Errorf("can't infer format with components=%d", components);
         }

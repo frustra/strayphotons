@@ -2045,16 +2045,28 @@
 				],
 				"translate": [
 					2,
-					0,
+					0.5,
 					5
+				]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"transform": {
+				"parent": "mirrorcube1",
+				"translate": [
+					0,
+					-0.5,
+					0
 				]
 			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
 					"gltf_model": "mcube",
-					"gltf_render": true,
-					"gltf_physics": "dynamic"
+					"gltf_render": true
 				}
 			}
 		},
@@ -2074,7 +2086,7 @@
 				],
 				"translate": [
 					0,
-					0.5,
+					0,
 					-0.5
 				]
 			}
@@ -2091,7 +2103,7 @@
 				],
 				"translate": [
 					0,
-					0.5,
+					0,
 					-0.475
 				]
 			}
@@ -2112,7 +2124,7 @@
 				],
 				"translate": [
 					-0.5,
-					0.5,
+					0,
 					0
 				]
 			}
@@ -2129,7 +2141,7 @@
 				],
 				"translate": [
 					-0.475,
-					0.5,
+					0,
 					0
 				]
 			}
@@ -2145,16 +2157,28 @@
 				],
 				"translate": [
 					1.5,
-					0,
+					0.5,
 					1.5
+				]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"transform": {
+				"parent": "mirrorcube2",
+				"translate": [
+					0,
+					-0.5,
+					0
 				]
 			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
 					"gltf_model": "mcube",
-					"gltf_render": true,
-					"gltf_physics": "dynamic"
+					"gltf_render": true
 				}
 			}
 		},
@@ -2174,7 +2198,7 @@
 				],
 				"translate": [
 					0,
-					0.5,
+					0,
 					-0.5
 				]
 			}
@@ -2191,7 +2215,7 @@
 				],
 				"translate": [
 					0,
-					0.5,
+					0,
 					-0.475
 				]
 			}
@@ -2207,16 +2231,28 @@
 				],
 				"translate": [
 					1.5,
-					1,
+					1.5,
 					1.5
+				]
+			},
+			"physics": {
+				"model": "box"
+			}
+		},
+		{
+			"transform": {
+				"parent": "mirrorcube3",
+				"translate": [
+					0,
+					-0.5,
+					0
 				]
 			},
 			"script": {
 				"prefab": "gltf",
 				"parameters": {
 					"gltf_model": "mcube",
-					"gltf_render": true,
-					"gltf_physics": "dynamic"
+					"gltf_render": true
 				}
 			}
 		},
@@ -2236,7 +2272,7 @@
 				],
 				"translate": [
 					0,
-					0.5,
+					0,
 					-0.5
 				]
 			}
@@ -2253,7 +2289,7 @@
 				],
 				"translate": [
 					0,
-					0.5,
+					0,
 					-0.475
 				]
 			}
@@ -2332,6 +2368,17 @@
 					0.1,
 					0.8,
 					4.5
+				]
+			}
+		},
+		{
+			"renderable": "spotlight-01",
+			"transform": {
+				"parent": "light1",
+				"translate": [
+					0,
+					0,
+					0.01
 				]
 			}
 		},

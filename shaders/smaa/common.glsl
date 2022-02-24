@@ -1,5 +1,9 @@
 #define SMAA_GLSL_4 1
-#define SMAA_RT_METRICS smaaRTMetrics
 #define SMAA_PRESET_HIGH 1
 
-##import smaa/smaa
+#include "../lib/types_common.glsl"
+#include "../vulkan/lib/view_states_uniform.glsl"
+
+#define SMAA_RT_METRICS vec4(views[gl_ViewID_OVR].invExtents, views[gl_ViewID_OVR].extents)
+
+#include "smaa.glsl"

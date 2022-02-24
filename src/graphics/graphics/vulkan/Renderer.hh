@@ -8,6 +8,7 @@
 #include "graphics/core/RenderTarget.hh"
 #include "graphics/vulkan/GPUSceneContext.hh"
 #include "graphics/vulkan/GPUTypes.hh"
+#include "graphics/vulkan/SMAA.hh"
 #include "graphics/vulkan/core/Common.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
@@ -153,6 +154,8 @@ namespace sp::vulkan {
         LockFreeMutex screenshotMutex;
         vector<std::pair<string, string>> pendingScreenshots;
         bool listRenderTargets = false;
+
+        rg::SMAA smaa;
 
         struct EmptyImageKey {
             vk::Format format;

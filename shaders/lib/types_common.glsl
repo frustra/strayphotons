@@ -14,8 +14,8 @@ const float punctualLightSizeSq = 0.01 * 0.01; // 1cm punctual lights
 struct ViewState {
     mat4 projMat, invProjMat;
     mat4 viewMat, invViewMat;
+    vec2 extents, invExtents;
     vec2 clip;
-    vec2 extents;
 };
 
 struct Mirror {

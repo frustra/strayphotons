@@ -25,9 +25,9 @@ layout(location = 0) out vec4 outFragColor;
 #define MULTIPLE_LIGHTING_GELS
 #include "../lib/shading.glsl"
 
-/*layout(binding = 12) uniform LightingData {
+layout(push_constant) uniform LightingData {
     float exposure;
-};*/
+};
 
 layout(constant_id = 0) const uint MODE = 1;
 
@@ -79,5 +79,5 @@ void main() {
         outFragColor = vec4(totalLight, 1.0);
     }
 
-    // outFragColor.rgb *= exposure;
+    outFragColor.rgb *= exposure;
 }

@@ -75,19 +75,19 @@
 		<%- include("prefab/cube", {
 			name: "mirrorcube1",
 			sides: 2,
-			translate: [2, 0, 5],
+			translate: [2, 0.5, 5],
 			rotate: [134, 0, 1, 0]
 		}) %>,
 		<%- include("prefab/cube", {
 			name: "mirrorcube2",
 			sides: 1,
-			translate: [1.5, 0, 1.5],
+			translate: [1.5, 0.5, 1.5],
 			rotate: [-160, 0, 1, 0]
 		}) %>,
 		<%- include("prefab/cube", {
 			name: "mirrorcube3",
 			sides: 1,
-			translate: [1.5, 1, 1.5],
+			translate: [1.5, 1.5, 1.5],
 			rotate: [-143, 0, 1, 0]
 		}) %>,
 		{
