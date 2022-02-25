@@ -21,7 +21,6 @@ namespace ecs {
         ComponentBase(const char *name) : name(name) {}
 
         virtual bool LoadEntity(Lock<AddRemove> lock, Entity &dst, const picojson::value &src) = 0;
-        virtual bool ReloadEntity(Lock<AddRemove> lock, Entity &dst, const picojson::value &src) = 0;
         virtual bool SaveEntity(Lock<ReadAll> lock, picojson::value &dst, const Entity &src) = 0;
         virtual void ApplyComponent(Lock<ReadAll> src, Entity srcEnt, Lock<AddRemove> dst, Entity dstEnt) = 0;
 
@@ -51,16 +50,6 @@ namespace ecs {
                 scene = sceneInfo.scene.lock().get();
             }
             auto &comp = dst.Set<CompType>(lock);
-            return Load(scene, comp, src);
-        }
-
-        bool ReloadEntity(Lock<AddRemove> lock, Entity &dst, const picojson::value &src) override {
-            sp::Scene *scene = nullptr;
-            if (dst.Has<SceneInfo>(lock)) {
-                auto &sceneInfo = dst.Get<SceneInfo>(lock);
-                scene = sceneInfo.scene.lock().get();
-            }
-            auto &comp = dst.Get<CompType>(lock);
             return Load(scene, comp, src);
         }
 
