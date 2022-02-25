@@ -37,8 +37,8 @@ namespace sp::vulkan {
 
     static CVar<bool> CVarSMAA("r.SMAA", true, "Enable SMAA");
 
-    Renderer::Renderer(DeviceContext &device, PerfTimer &timer)
-        : device(device), timer(timer), graph(device, &timer), scene(device), guiRenderer(new GuiRenderer(device)) {
+    Renderer::Renderer(DeviceContext &device)
+        : device(device), graph(device), scene(device), guiRenderer(new GuiRenderer(device)) {
         funcs.Register<string, string>("screenshot",
             "Save screenshot to <path>, optionally specifying an image <resource>",
             [&](string path, string resource) {
@@ -97,7 +97,6 @@ namespace sp::vulkan {
 
         AddSceneState(lock);
         AddLightState(lock);
-        AddLaserState(lock);
 
         AddGeometryWarp();
         AddShadowMaps(lock);
@@ -515,43 +514,6 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddLaserState(ecs::Lock<ecs::Read<ecs::LaserLine, ecs::TransformSnapshot>> lock) {
-        lasers.gpuData.resize(0);
-        lasers.gpuData.reserve(1);
-        for (auto entity : lock.EntitiesWith<ecs::LaserLine>()) {
-            auto &laser = entity.Get<ecs::LaserLine>(lock);
-
-            glm::mat4x3 transform;
-            if (laser.relative && entity.Has<ecs::TransformSnapshot>(lock)) {
-                transform = entity.Get<ecs::TransformSnapshot>(lock).matrix;
-            }
-
-            if (!laser.on) continue;
-            if (laser.points.size() < 2) continue;
-
-            LaserContext::GPULine line;
-            line.color = laser.color * laser.intensity;
-            line.start = transform * glm::vec4(laser.points[0], 1);
-
-            for (size_t i = 1; i < laser.points.size(); i++) {
-                line.end = transform * glm::vec4(laser.points[i], 1);
-                lasers.gpuData.push_back(line);
-                line.start = line.end;
-            }
-        }
-
-        graph.AddPass("LaserState")
-            .Build([&](rg::PassBuilder &builder) {
-                builder.CreateBuffer(BUFFER_TYPE_STORAGE_TRANSFER,
-                    "LaserState",
-                    lasers.gpuData.capacity() * sizeof(lasers.gpuData.front()));
-            })
-            .Execute([this](rg::Resources &resources, DeviceContext &) {
-                auto buffer = resources.GetBuffer("LaserState");
-                buffer->CopyFrom(lasers.gpuData.data(), lasers.gpuData.size());
-            });
-    }
-
     void Renderer::AddGeometryWarp() {
         graph.AddPass("GeometryWarp")
             .Build([&](rg::PassBuilder &builder) {
@@ -590,7 +552,7 @@ namespace sp::vulkan {
 
                 cmd.Raw().fillBuffer(*cmdBuffer, 0, sizeof(uint32), 0);
 
-                cmd.SetComputeShader("generate_warp_geometry_calls.comp");
+                cmd.SetComputeShader("generate_warp_geometry_draws.comp");
                 cmd.SetStorageBuffer(0, 0, scene.renderableEntityList);
                 cmd.SetStorageBuffer(0, 1, scene.models);
                 cmd.SetStorageBuffer(0, 2, scene.primitiveLists);
@@ -786,9 +748,9 @@ namespace sp::vulkan {
         }
     }
 
-    void Renderer::AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen>> lock) {
+    void Renderer::AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::LaserLine>> lock) {
         AddLighting();
-        AddEmissive(lock);
+        emissive.AddPass(graph, lock);
         AddBloom();
         AddTonemap();
 
@@ -843,92 +805,6 @@ namespace sp::vulkan {
                 cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
                 cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
                 cmd.Draw(3);
-            });
-    }
-
-    void Renderer::AddEmissive(ecs::Lock<ecs::Read<ecs::Screen, ecs::TransformSnapshot>> lock) {
-        struct Screen {
-            rg::ResourceID id;
-
-            struct {
-                glm::mat4 quad;
-                glm::vec3 luminanceScale;
-            } gpuData;
-        };
-        vector<Screen> screens;
-
-        graph.AddPass("Emissive")
-            .Build([&](rg::PassBuilder &builder) {
-                auto input = builder.LastOutput();
-                builder.ShaderRead(input.id);
-                builder.ShaderRead("GBuffer2");
-
-                auto desc = input.DeriveRenderTarget();
-                builder.OutputColorAttachment(0, "LaserLines", desc, {LoadOp::DontCare, StoreOp::Store});
-
-                builder.ReadBuffer("ViewState");
-                builder.ReadBuffer("LaserState");
-
-                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
-
-                for (auto ent : lock.EntitiesWith<ecs::Screen>()) {
-                    if (!ent.Has<ecs::Transform>(lock)) continue;
-
-                    auto &screenComp = ent.Get<ecs::Screen>(lock);
-                    auto &resource = builder.ShaderRead(screenComp.textureName);
-
-                    Screen screen;
-                    screen.id = resource.id;
-                    screen.gpuData.luminanceScale = screenComp.luminanceScale;
-                    screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).matrix;
-                    screens.push_back(std::move(screen));
-                }
-            })
-            .Execute([this, screens](rg::Resources &resources, CommandContext &cmd) {
-                {
-                    RenderPhase phase("Lasers");
-                    phase.StartTimer(cmd, timer);
-                    cmd.SetShaders("screen_cover.vert", "laser_lines.frag");
-                    cmd.SetStencilTest(true);
-                    cmd.SetDepthTest(false, false);
-                    cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
-                    cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
-                    cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
-
-                    cmd.SetTexture(0, 0, resources.GetRenderTarget(resources.LastOutputID())->ImageView());
-                    cmd.SetTexture(0, 1, resources.GetRenderTarget("GBuffer2")->ImageView());
-
-                    cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
-                    cmd.SetStorageBuffer(0, 9, resources.GetBuffer("LaserState"));
-
-                    struct {
-                        uint32 laserCount;
-                        float time;
-                    } constants;
-                    constants.laserCount = lasers.gpuData.size();
-                    static chrono_clock::time_point epoch = chrono_clock::now();
-                    constants.time =
-                        std::chrono::duration_cast<std::chrono::milliseconds>(chrono_clock::now() - epoch).count() /
-                        1000.0f;
-                    cmd.PushConstants(constants);
-                    cmd.Draw(3);
-                }
-
-                {
-                    RenderPhase phase("Screens");
-                    phase.StartTimer(cmd, timer);
-                    cmd.SetShaders("textured_quad.vert", "single_texture.frag");
-                    cmd.SetDepthTest(true, false);
-                    cmd.SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleStrip);
-                    cmd.SetCullMode(vk::CullModeFlagBits::eNone);
-                    cmd.SetBlending(true);
-
-                    for (auto &screen : screens) {
-                        cmd.SetTexture(0, 0, resources.GetRenderTarget(screen.id)->ImageView());
-                        cmd.PushConstants(screen.gpuData);
-                        cmd.Draw(4);
-                    }
-                }
             });
     }
 

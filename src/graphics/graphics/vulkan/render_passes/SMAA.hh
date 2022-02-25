@@ -1,8 +1,8 @@
 #pragma once
 
-#include "graphics/vulkan/render_graph/RenderGraph.hh"
+#include "Common.hh"
 
-namespace sp::vulkan::render_graph {
+namespace sp::vulkan::renderer {
     class SMAA {
     public:
         void AddPass(RenderGraph &graph);
@@ -10,4 +10,4 @@ namespace sp::vulkan::render_graph {
     private:
         AsyncPtr<ImageView> areaTex, searchTex;
     };
-} // namespace sp::vulkan::render_graph
+} // namespace sp::vulkan::renderer

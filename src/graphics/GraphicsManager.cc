@@ -123,10 +123,9 @@ namespace sp {
     #ifdef SP_GRAPHICS_SUPPORT_VK
         Assert(!renderer, "already have an active renderer");
 
-        timer.SetDevice(vkContext);
-        game->debugGui->Attach(make_shared<vulkan::ProfilerGui>(timer));
+        game->debugGui->Attach(make_shared<vulkan::ProfilerGui>(*vkContext->GetPerfTimer()));
 
-        renderer = make_unique<vulkan::Renderer>(*vkContext, timer);
+        renderer = make_unique<vulkan::Renderer>(*vkContext);
         renderer->SetDebugGui(*game->debugGui.get());
     #endif
 
@@ -183,7 +182,6 @@ namespace sp {
         renderer->SetXRSystem(xrSystem);
         #endif
 
-        timer.StartFrame();
         context->BeginFrame();
 
         chrono_clock::duration frameInterval = std::chrono::microseconds(0);
@@ -205,7 +203,6 @@ namespace sp {
         context->SwapBuffers();
         #endif
         renderer->EndFrame();
-        timer.EndFrame();
         context->EndFrame();
 
         auto frameEnd = previousFrameEnd + frameInterval;
