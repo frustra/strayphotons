@@ -13,7 +13,7 @@
 				],
 				"translate": [
 					1.5,
-					5,
+					4,
 					1.5
 				]
 			},
@@ -101,7 +101,6 @@
 		},
 		{
 			"_name": "global.airlock34",
-			"renderable": "airlock",
 			"transform": {
 				"translate": [
 					5,
@@ -115,9 +114,13 @@
 					"playerPresent": "connect-test4.loaded"
 				}
 			},
-			"physics": {
-				"model": "airlock",
-				"dynamic": false
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "airlock",
+					"gltf_render": true,
+					"gltf_physics": "static"
+				}
 			}
 		},
 		{
@@ -130,10 +133,13 @@
 					0
 				]
 			},
-			"renderable": "door-frame",
-			"physics": {
-				"model": "door-frame",
-				"dynamic": false
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "door-frame",
+					"gltf_render": true,
+					"gltf_physics": "static"
+				}
 			},
 			"signal_output": {},
 			"signal_bindings": {
@@ -232,10 +238,13 @@
 					0
 				]
 			},
-			"renderable": "door-frame",
-			"physics": {
-				"model": "door-frame",
-				"dynamic": false
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "door-frame",
+					"gltf_render": true,
+					"gltf_physics": "static"
+				}
 			},
 			"signal_output": {},
 			"signal_bindings": {}
@@ -410,7 +419,6 @@
 		},
 		{
 			"_name": "global.airlock41",
-			"renderable": "airlock",
 			"transform": {
 				"rotate": [
 					90,
@@ -430,9 +438,13 @@
 					"playerPresent": "connect-test4.loaded"
 				}
 			},
-			"physics": {
-				"model": "airlock",
-				"dynamic": false
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "airlock",
+					"gltf_render": true,
+					"gltf_physics": "static"
+				}
 			}
 		},
 		{
@@ -445,10 +457,13 @@
 					0
 				]
 			},
-			"renderable": "door-frame",
-			"physics": {
-				"model": "door-frame",
-				"dynamic": false
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "door-frame",
+					"gltf_render": true,
+					"gltf_physics": "static"
+				}
 			},
 			"signal_output": {},
 			"signal_bindings": {}
@@ -543,10 +558,13 @@
 					0
 				]
 			},
-			"renderable": "door-frame",
-			"physics": {
-				"model": "door-frame",
-				"dynamic": false
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "door-frame",
+					"gltf_render": true,
+					"gltf_physics": "static"
+				}
 			},
 			"signal_output": {},
 			"signal_bindings": {

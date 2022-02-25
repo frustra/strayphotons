@@ -1,6 +1,6 @@
 #include "Renderer.hh"
 
-#include "assets/Model.hh"
+#include "assets/Gltf.hh"
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
@@ -11,7 +11,7 @@
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
-#include "graphics/vulkan/core/Model.hh"
+#include "graphics/vulkan/core/Mesh.hh"
 #include "graphics/vulkan/core/Screenshot.hh"
 #include "graphics/vulkan/core/Util.hh"
 
@@ -411,14 +411,15 @@ namespace sp::vulkan {
             if (!renderable.model || !renderable.model->Ready()) continue;
 
             auto model = renderable.model->Get();
-            Assertf(model, "Renderable model is null");
-            auto vkModel = activeModels.Load(model->name);
-            if (!vkModel) {
+            if (!model) continue;
+            auto meshName = model->name + "." + std::to_string(renderable.meshIndex);
+            auto vkMesh = activeMeshes.Load(meshName);
+            if (!vkMesh) {
                 hasPendingModel = true;
-                modelsToLoad.push_back(model);
+                meshesToLoad.emplace_back(model, renderable.meshIndex);
                 continue;
             }
-            if (!vkModel->CheckReady()) {
+            if (!vkMesh->CheckReady()) {
                 hasPendingModel = true;
                 continue;
             }
@@ -428,12 +429,12 @@ namespace sp::vulkan {
 
             gpuRenderable->modelToWorld = ent.Get<ecs::TransformSnapshot>(lock).matrix;
             gpuRenderable->visibilityMask = renderable.visibility.to_ulong();
-            gpuRenderable->modelIndex = vkModel->SceneIndex();
+            gpuRenderable->meshIndex = vkMesh->SceneIndex();
             gpuRenderable->vertexOffset = scene.vertexCount;
             gpuRenderable++;
             scene.renderableCount++;
-            scene.primitiveCount += vkModel->PrimitiveCount();
-            scene.vertexCount += vkModel->VertexCount();
+            scene.primitiveCount += vkMesh->PrimitiveCount();
+            scene.vertexCount += vkMesh->VertexCount();
         }
 
         scene.primitiveCountPowerOfTwo = std::max(1u, CeilToPowerOfTwo(scene.primitiveCount));
@@ -684,7 +685,7 @@ namespace sp::vulkan {
         cmd.SetBindlessDescriptors(2, scene.GetTextureDescriptorSet());
 
         cmd.SetVertexLayout(SceneVertex::Layout());
-        cmd.Raw().bindIndexBuffer(*scene.indexBuffer, 0, vk::IndexType::eUint16);
+        cmd.Raw().bindIndexBuffer(*scene.indexBuffer, 0, vk::IndexType::eUint32);
         cmd.Raw().bindVertexBuffers(0, {*resources.GetBuffer("WarpedVertexBuffer")}, {0});
 
         if (drawParamsBuffer) cmd.SetStorageBuffer(1, 0, drawParamsBuffer);
@@ -1137,7 +1138,7 @@ namespace sp::vulkan {
     void Renderer::EndFrame() {
         ZoneScoped;
         guiRenderer->Tick();
-        activeModels.Tick(std::chrono::milliseconds(33)); // Minimum 30 fps tick rate
+        activeMeshes.Tick(std::chrono::milliseconds(33)); // Minimum 30 fps tick rate
 
         GetSceneManager().PreloadSceneGraphics([this](auto lock, auto scene) {
             bool complete = true;
@@ -1153,28 +1154,32 @@ namespace sp::vulkan {
                 }
 
                 auto model = renderable.model->Get();
-                Assertf(model, "Renderable model is null");
-                auto vkModel = activeModels.Load(model->name);
-                if (!vkModel) {
-                    complete = false;
-                    modelsToLoad.push_back(model);
+                if (!model) {
+                    Errorf("Preloading renderable with null model: %s", ecs::ToString(lock, ent));
                     continue;
                 }
-                if (!vkModel->CheckReady()) complete = false;
+                auto meshName = model->name + "." + std::to_string(renderable.meshIndex);
+                auto vkMesh = activeMeshes.Load(meshName);
+                if (!vkMesh) {
+                    complete = false;
+                    meshesToLoad.emplace_back(model, renderable.meshIndex);
+                    continue;
+                }
+                if (!vkMesh->CheckReady()) complete = false;
             }
             return complete;
         });
 
-        for (int i = (int)modelsToLoad.size() - 1; i >= 0; i--) {
-            auto &model = modelsToLoad[i];
-            if (activeModels.Contains(model->name)) {
-                modelsToLoad.pop_back();
+        for (int i = (int)meshesToLoad.size() - 1; i >= 0; i--) {
+            auto &[model, meshIndex] = meshesToLoad[i];
+            auto meshName = model->name + "." + std::to_string(meshIndex);
+            if (activeMeshes.Contains(meshName)) {
+                meshesToLoad.pop_back();
                 continue;
             }
 
-            auto vulkanModel = make_shared<Model>(model, scene, device);
-            activeModels.Register(model->name, vulkanModel);
-            modelsToLoad.pop_back();
+            activeMeshes.Register(meshName, make_shared<Mesh>(model, meshIndex, scene, device));
+            meshesToLoad.pop_back();
         }
 
         scene.FlushTextureDescriptors();

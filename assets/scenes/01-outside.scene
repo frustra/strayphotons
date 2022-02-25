@@ -1,18 +1,30 @@
 {
 	"entities": [
 		{
-			"renderable": "01-outside",
+			"_name": "lot",
 			"transform": {
 				"translate": [0, 0, 0]
-			},
-			"physics": {
-				"model": "01-outside",
-				"dynamic": false,
-				"decomposeHull": true
 			},
 			"voxels": {
 				"min": [-5.2, 0, -8.5],
 				"max": [4, 7, 4]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "01-outside",
+					"gltf_render": true,
+					"gltf_physics": "static"
+				}
+			}
+		},
+		{
+			"_name": "lot.Walls1_Cube.004",
+			"physics": {
+				"model": "01-outside",
+				"mesh": 6,
+				"dynamic": false,
+				"decomposeHull": true
 			}
 		},
 		<%- include('prefab/light_sensor',

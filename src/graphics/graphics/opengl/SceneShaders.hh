@@ -9,7 +9,7 @@ namespace sp {
     class SceneShader : public Shader {
     public:
         SceneShader(shared_ptr<ShaderCompileOutput> compileOutput);
-        void SetParams(const ecs::View &view, glm::mat4 modelMat, glm::mat4 primitiveMat);
+        void SetParams(const ecs::View &view, glm::mat4 modelMat);
         void SetBoneData(int count, const glm::mat4 *bones);
 
     private:

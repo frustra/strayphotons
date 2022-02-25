@@ -1,11 +1,18 @@
 {
 	"entities": [
 		{
-			"renderable": "sponza",
+			"_name": "sponza",
 			"transform": {
 				"rotate": [-90, 0, 1, 0],
 				"translate": [0, -1, 0],
 				"scale": [1.25, 1.25, 1.25]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "sponza",
+					"gltf_render": true
+				}
 			}
 		},
 		{
@@ -41,23 +48,27 @@
 		},
 		{
 			"_name": "duck",
-			"renderable": "duck",
 			"transform": {
 				"translate": [0, 0, -7]
 			},
-			"physics": {
-				"model": "duck"
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "duck",
+					"gltf_render": true,
+					"gltf_physics": "dynamic"
+				}
 			}
 		},
 		<%- include("prefab/cube", {
 			name: "mirrorcube1",
 			sides: 1,
-			translate: [-0.2, 3, -4.5]
+			translate: [-0.2, 3.5, -4.5]
 		}) %>,
 		<%- include("prefab/cube", {
 			name: "mirrorcube2",
 			sides: 4,
-			translate: [0.5, 5, -4.5]
+			translate: [0.5, 5.5, -4.5]
 		}) %>,
 		{
 			"renderable": "cardboard-box",

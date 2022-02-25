@@ -78,7 +78,7 @@
 		},
 		{
 			"transform": {
-				"translate": [0, 0.92, 1],
+				"translate": [0, 0.95, 1],
 				"rotate": [-10, 0, 1, 0]
 			},
 			"laser_line": {},
@@ -94,10 +94,17 @@
 			}
 		},
 		{
-			"renderable": "articulating-arm",
 			"transform": {
 				"translate": [0, 0.5, 1],
 				"scale": [4, 4, 4]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "articulating-arm",
+					"gltf_render": true,
+					"gltf_physics": "static"
+				}
 			}
 		},
 		{
@@ -213,24 +220,46 @@
 			}
 		},
 		{
-			"renderable": "duck",
+			"_name": "duck",
 			"transform": {
 				"translate": [2.5, 0, -2.5],
 				"rotate": [180, 0, 1, 0]
 			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "duck",
+					"gltf_render": true
+				}
+			}
+		},
+		{
+			"_name": "duck.gltf0",
 			"physics": {
-				"model": "duck"
+				"model": "duck",
+				"decomposeHull": true
 			}
 		},
 		{
 			"_name": "mova-mirror",
-			"renderable": "mcube",
 			"transform": {
-				"translate": [-1.5, 0, -2.5],
-				"rotate": [0, 0, 1, 0]
+				"translate": [-1.5, 0.5, -2.5]
 			},
 			"physics": {
-				"model": "mcube"
+				"model": "box"
+			}
+		},
+		{
+			"transform": {
+				"parent": "mova-mirror",
+				"translate": [0, -0.5, 0]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "mcube",
+					"gltf_render": true
+				}
 			}
 		},
 		{
@@ -242,14 +271,14 @@
 					"target": "mova-mirror",
 					"type": "Fixed",
 					"remote_offset": {
-						"translate": [0.5, 0.5, 0],
+						"translate": [0.5, 0, 0],
 						"rotate": [90, 0, 1, 0]
 					}
 				}
 			},
 			"transform": {
 				"parent": "mova-mirror",
-				"translate": [0.5, 0.5, 0],
+				"translate": [0.5, 0, 0],
 				"rotate": [90, 0, 1, 0]
 			}
 		},
@@ -257,17 +286,30 @@
 			"renderable": "occluder",
 			"transform": {
 				"parent": "mova-mirror",
-				"translate": [0.5, 0.5, 0],
+				"translate": [0.5, 0, 0],
 				"rotate": [-90, 0, 1, 0]
 			}
 		},
 		{
-			"renderable": "mcube",
+			"_name": "mcube",
 			"transform": {
-				"translate": [-2.2, 2, 3]
+				"translate": [-2.2, 2.5, 3]
 			},
 			"physics": {
-				"model": "mcube"
+				"model": "box"
+			}
+		},
+		{
+			"transform": {
+				"parent": "mcube",
+				"translate": [0, -0.5, 0]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "mcube",
+					"gltf_render": true
+				}
 			}
 		},
 		{

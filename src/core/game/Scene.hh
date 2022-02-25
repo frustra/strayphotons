@@ -26,6 +26,13 @@ namespace sp {
         const SceneType type;
         robin_hood::unordered_flat_map<std::string, Tecs::Entity> namedEntities;
 
+        Tecs::Entity NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,
+            const std::shared_ptr<Scene> &scene,
+            std::string entityName = "");
+        Tecs::Entity NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,
+            Tecs::Entity prefabRoot,
+            std::string entityName = "");
+
         void ApplyScene(ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> staging, ecs::Lock<ecs::AddRemove> live);
         void RemoveScene(ecs::Lock<ecs::AddRemove> staging, ecs::Lock<ecs::AddRemove> live);
 

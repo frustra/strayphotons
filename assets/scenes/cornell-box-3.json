@@ -1,9 +1,15 @@
 {
 	"entities": [
 		{
-			"renderable": "cornell-box-3",
 			"transform": {
 				"scale": [2, 2, 2]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "cornell-box-3",
+					"gltf_render": true
+				}
 			}
 		},
 		{
@@ -16,11 +22,6 @@
 					[17.5, 0, 1, 0],
 					[90, 1, 0, 0]
 				]
-			},
-			"trigger_area": {
-				"player": {
-					"command": "r.Exposure 0.5; r.FieldOfView 30"
-				}
 			}
 		},
 		{
@@ -70,12 +71,28 @@
 		{
 			"_name": "global.spawn",
 			"transform": {
-				"translate": [-0.01, 2, 9.6],
+				"translate": [-0.01, 0.2, 9.6],
 				"rotate": [0, 0, 1, 0]
 			},
 			"voxels": {
 				"min": [-2, 0, -2.1],
 				"max": [2, 4, 2]
+			},
+			"trigger_area": {
+				"player": {
+					"command": "r.Exposure 0.5; r.FieldOfView 30"
+				}
+			}
+		},
+		{
+			"_name": "spawn_platform",
+			"renderable": "box",
+			"transform": {
+				"translate": [-0.01, -0.3, 9.6]
+			},
+			"physics": {
+				"model": "box",
+				"dynamic": false
 			}
 		},
 		{

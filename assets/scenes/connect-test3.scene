@@ -7,7 +7,7 @@
 			},
 			"transform": {
 				"scale": [13, 10, 13],
-				"translate": [1.5, 5, 1.5]
+				"translate": [1.5, 4, 1.5]
 			},
 			"trigger_area": {
 				"player": {

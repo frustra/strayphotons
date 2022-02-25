@@ -24,7 +24,9 @@ namespace ecs {
             : stagingId(stagingId), priority(priority), scene(scene) {}
         SceneInfo(Tecs::Entity liveId, const SceneInfo &sceneInfo)
             : liveId(liveId), priority(sceneInfo.priority), scene(sceneInfo.scene) {}
-        SceneInfo(Priority priority, const std::shared_ptr<sp::Scene> &scene) : priority(priority), scene(scene) {}
+        SceneInfo(Tecs::Entity stagingId, Tecs::Entity prefabStagingId, const SceneInfo &rootSceneInfo)
+            : stagingId(stagingId), prefabStagingId(prefabStagingId), priority(rootSceneInfo.priority),
+              scene(rootSceneInfo.scene) {}
 
         // Should be called on the live SceneInfo
         void InsertWithPriority(Lock<Write<SceneInfo>> staging, const SceneInfo &stagingInfo);
@@ -33,7 +35,9 @@ namespace ecs {
         // Returns true if live SceneInfo should be removed
         bool Remove(Lock<Write<SceneInfo>> staging, const Tecs::Entity &stagingId);
 
-        Tecs::Entity liveId, stagingId, nextStagingId;
+        Tecs::Entity liveId;
+        Tecs::Entity stagingId, nextStagingId;
+        Tecs::Entity prefabStagingId;
         Priority priority = Priority::Scene;
         std::weak_ptr<sp::Scene> scene;
     };

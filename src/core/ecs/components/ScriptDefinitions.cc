@@ -1,6 +1,5 @@
 #include "Script.hh"
 #include "assets/AssetManager.hh"
-#include "assets/Model.hh"
 #include "console/CVar.hh"
 #include "core/Common.hh"
 #include "core/Logging.hh"
@@ -153,8 +152,8 @@ namespace ecs {
                     auto modelName = scriptComp.GetParam<std::string>("model_name");
 
                     auto &renderable = ent.Get<Renderable>(lock);
-                    if (!renderable.model && sp::GAssets.IsModelRegistered(modelName)) {
-                        renderable.model = sp::GAssets.LoadModel(modelName);
+                    if (!renderable.model && sp::GAssets.IsGltfRegistered(modelName)) {
+                        renderable.model = sp::GAssets.LoadGltf(modelName);
                         renderable.visibility.set();
                     }
                 }
@@ -261,9 +260,9 @@ namespace ecs {
                                 newEntity.Set<TransformSnapshot>(lock, transform.pose);
 
                                 auto modelName = scriptComp.GetParam<std::string>("model");
-                                auto model = sp::GAssets.LoadModel(modelName);
+                                auto model = sp::GAssets.LoadGltf(modelName);
                                 newEntity.Set<Renderable>(lock, model);
-                                newEntity.Set<Physics>(lock, model, PhysicsGroup::World, true);
+                                newEntity.Set<Physics>(lock, model, 0, PhysicsGroup::World, true);
                             }
                         }).detach();
                     }

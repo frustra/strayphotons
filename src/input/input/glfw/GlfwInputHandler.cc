@@ -4,6 +4,7 @@
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "input/BindingNames.hh"
@@ -31,15 +32,11 @@ namespace sp {
         GetSceneManager().QueueActionAndBlock(SceneAction::AddSystemScene,
             "glfw-input",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                auto keyboard = lock.NewEntity();
-                keyboard.Set<ecs::Name>(lock, keyboardEntity.Name());
-                keyboard.Set<ecs::SceneInfo>(lock, keyboard, ecs::SceneInfo::Priority::System, scene);
+                auto keyboard = scene->NewSystemEntity(lock, scene, keyboardEntity.Name());
                 keyboard.Set<ecs::EventBindings>(lock);
                 keyboard.Set<ecs::SignalOutput>(lock);
 
-                auto mouse = lock.NewEntity();
-                mouse.Set<ecs::Name>(lock, mouseEntity.Name());
-                mouse.Set<ecs::SceneInfo>(lock, mouse, ecs::SceneInfo::Priority::System, scene);
+                auto mouse = scene->NewSystemEntity(lock, scene, mouseEntity.Name());
                 mouse.Set<ecs::EventBindings>(lock);
                 mouse.Set<ecs::SignalOutput>(lock);
             });

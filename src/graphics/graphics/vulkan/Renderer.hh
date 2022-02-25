@@ -29,7 +29,7 @@ namespace sp {
 } // namespace sp
 
 namespace sp::vulkan {
-    class Model;
+    class Mesh;
     class GuiRenderer;
 
     struct LightingContext {
@@ -137,8 +137,8 @@ namespace sp::vulkan {
         LightingContext lights;
         LaserContext lasers;
         GPUSceneContext scene;
-        PreservingMap<string, Model> activeModels;
-        vector<std::shared_ptr<const sp::Model>> modelsToLoad;
+        PreservingMap<string, Mesh> activeMeshes;
+        vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
 
         unique_ptr<GuiRenderer> guiRenderer;
         struct RenderableGui {

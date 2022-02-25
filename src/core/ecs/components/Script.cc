@@ -31,6 +31,28 @@ namespace ecs {
                         return false;
                     }
                 }
+            } else if (param.first == "prefab") {
+                if (param.second.is<picojson::array>()) {
+                    for (auto nameParam : param.second.get<picojson::array>()) {
+                        auto scriptName = nameParam.get<std::string>();
+                        auto it = PrefabDefinitions.find(scriptName);
+                        if (it != PrefabDefinitions.end()) {
+                            dst.AddPrefab(it->second);
+                        } else {
+                            Errorf("Script has unknown prefab definition: %s", scriptName);
+                            return false;
+                        }
+                    }
+                } else {
+                    auto scriptName = param.second.get<std::string>();
+                    auto it = PrefabDefinitions.find(scriptName);
+                    if (it != PrefabDefinitions.end()) {
+                        dst.AddPrefab(it->second);
+                    } else {
+                        Errorf("Script has unknown prefab definition: %s", scriptName);
+                        return false;
+                    }
+                }
             } else if (param.first == "parameters") {
                 for (auto scriptParam : param.second.get<picojson::object>()) {
                     if (scriptParam.second.is<picojson::array>()) {
@@ -70,6 +92,8 @@ namespace ecs {
 
     void Script::CopyCallbacks(const Script &src) {
         if (onTickCallbacks.empty()) onTickCallbacks = src.onTickCallbacks;
+        // Ignore prefab callbacks, they aren't used in the live ECS
+        // if (prefabCallbacks.empty()) prefabCallbacks = src.prefabCallbacks;
     }
 
     void Script::CopyParams(const Script &src) {

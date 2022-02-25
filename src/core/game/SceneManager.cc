@@ -464,6 +464,7 @@ namespace sp {
                 }
             }
 
+            std::vector<Tecs::Entity> entities;
             for (auto value : entityList.get<picojson::array>()) {
                 auto ent = value.get<picojson::object>();
 
@@ -488,6 +489,12 @@ namespace sp {
                 }
                 // Special case so TransformSnapshot doesn't get removed as a dangling component
                 if (entity.Has<ecs::TransformTree>(lock)) entity.Set<ecs::TransformSnapshot>(lock);
+
+                entities.emplace_back(entity);
+            }
+
+            for (auto &e : entities) {
+                if (e.Has<ecs::Script>(lock)) { e.Get<ecs::Script>(lock).Prefab(lock, e); }
             }
         }
         return scene;

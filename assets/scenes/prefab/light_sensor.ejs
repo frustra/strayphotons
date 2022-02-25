@@ -13,7 +13,6 @@
 },
 {
 	"_name": <%= name %>,
-	"renderable": "sensor",
 	"transform": {
 		"parent": <%= name + "_plate" %>,
 		"translate": [0, 0, 0.015]
@@ -30,8 +29,12 @@
 	},
 	"script": {
 		"onTick": "light_sensor",
+		"prefab": "gltf",
 		"parameters": {
-			"trigger_level": <%= trigger %>
+			"trigger_level": <%= trigger %>,
+			"gltf_model": "sensor",
+			"gltf_render": true,
+			"gltf_physics": "static"
 		}
 	}
 }

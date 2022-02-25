@@ -6,8 +6,8 @@ extern "C" {
 
 #include "assets/Asset.hh"
 #include "assets/AssetHelpers.hh"
+#include "assets/Gltf.hh"
 #include "assets/Image.hh"
-#include "assets/Model.hh"
 #include "assets/Script.hh"
 #include "core/Tracing.hh"
 #include "ecs/Components.hh"
@@ -37,55 +37,15 @@ namespace sp {
     const std::string ASSETS_DIR = "../assets/";
     const std::string ASSETS_TAR = "./assets.spdata";
 
-    bool AssetManager::ReadWholeFile(std::vector<unsigned char> *out,
-        std::string *err,
-        const std::string &path,
-        void *userdata) {
-        std::ifstream in;
-        size_t size;
-
-        AssetManager *manager = static_cast<AssetManager *>(userdata);
-        if (manager->InputStream(path, AssetType::Bundled, in, &size)) {
-            out->resize(size);
-            in.read((char *)out->data(), size);
-            in.close();
-            return true;
-        }
-        return false;
-    }
-
-    AssetManager::AssetManager()
-        : RegisteredThread("AssetCleanup", std::chrono::milliseconds(100)), workQueue("AssetWorker", 4) {
-        gltfLoaderCallbacks = std::make_unique<tinygltf::FsCallbacks>(tinygltf::FsCallbacks{
-            // FileExists
-            [](const std::string &abs_filename, void *userdata) -> bool {
-                return true;
-            },
-
-            // ExpandFilePath
-            [](const std::string &filepath, void *userdata) -> std::string {
-                return filepath;
-            },
-
-            &AssetManager::ReadWholeFile,
-
-            nullptr, // WriteFile callback, not supported
-            this // Fs callback user data
-        });
-
+    AssetManager::AssetManager() : RegisteredThread("AssetCleanup", 10.0), workQueue("AssetWorker", 4) {
 #ifdef SP_PACKAGE_RELEASE
         UpdateTarIndex();
 #endif
-
         StartThread();
     }
 
-    AssetManager::~AssetManager() {
-        StopThread();
-    }
-
     void AssetManager::Frame() {
-        loadedModels.Tick(this->interval);
+        loadedGltfs.Tick(this->interval);
         for (auto &assets : loadedAssets) {
             assets.Tick(this->interval);
         }
@@ -196,7 +156,7 @@ namespace sp {
         return asset;
     }
 
-    std::string findModel(const std::string &name) {
+    std::string findGltfByName(const std::string &name) {
         std::string path;
 #ifdef SP_PACKAGE_RELEASE
         path = "models/" + name + "/" + name + ".glb";
@@ -221,46 +181,44 @@ namespace sp {
         return "";
     }
 
-    AsyncPtr<Model> AssetManager::LoadModel(const std::string &name) {
-        Assert(!name.empty(), "AssetManager::LoadModel called with empty name");
+    AsyncPtr<Gltf> AssetManager::LoadGltf(const std::string &name) {
+        Assert(!name.empty(), "AssetManager::LoadGltf called with empty name");
 
-        auto model = loadedModels.Load(name);
-        if (!model) {
+        auto gltf = loadedGltfs.Load(name);
+        if (!gltf) {
             {
-                std::lock_guard lock(modelMutex);
+                std::lock_guard lock(gltfMutex);
                 // Check again in case an inflight model just completed on another thread
-                model = loadedModels.Load(name);
-                if (model) return model;
+                gltf = loadedGltfs.Load(name);
+                if (gltf) return gltf;
 
                 std::string path;
                 {
-                    std::lock_guard lock2(externalModelMutex);
-                    auto it = externalModelPaths.find(name);
-                    if (it != externalModelPaths.end()) path = it->second;
+                    std::lock_guard lock2(externalGltfMutex);
+                    auto it = externalGltfPaths.find(name);
+                    if (it != externalGltfPaths.end()) path = it->second;
                 }
 
                 AsyncPtr<Asset> asset;
                 if (path.empty()) {
-                    path = findModel(name);
-                    Assertf(!path.empty(), "Model not found: %s", name);
-
-                    asset = Load(path, AssetType::Bundled);
+                    path = findGltfByName(name);
+                    if (!path.empty()) asset = Load(path, AssetType::Bundled);
                 } else {
                     asset = Load(path, AssetType::External);
                 }
 
-                model = workQueue.Dispatch<Model>(asset, [this, name](std::shared_ptr<const Asset> asset) {
+                gltf = workQueue.Dispatch<Gltf>(asset, [this, name](std::shared_ptr<const Asset> asset) {
                     if (!asset) {
-                        Logf("Model not found: %s", name);
-                        return std::shared_ptr<Model>();
+                        Logf("Gltf not found: %s", name);
+                        return std::shared_ptr<Gltf>();
                     }
-                    return std::make_shared<Model>(name, asset, gltfLoaderCallbacks.get());
+                    return std::make_shared<Gltf>(name, asset);
                 });
-                loadedModels.Register(name, model);
+                loadedGltfs.Register(name, gltf);
             }
         }
 
-        return model;
+        return gltf;
     }
 
     AsyncPtr<Image> AssetManager::LoadImage(const std::string &path) {
@@ -304,20 +262,20 @@ namespace sp {
         });
     }
 
-    void AssetManager::RegisterExternalModel(const std::string &name, const std::string &path) {
-        std::lock_guard lock(externalModelMutex);
-        auto result = externalModelPaths.emplace(name, path);
+    void AssetManager::RegisterExternalGltf(const std::string &name, const std::string &path) {
+        std::lock_guard lock(externalGltfMutex);
+        auto result = externalGltfPaths.emplace(name, path);
         if (result.second) {
             Assertf(result.first->second == path,
-                "Duplicate model registration for: %s, %s != %s",
+                "Duplicate gltf registration for: %s, %s != %s",
                 name,
                 result.second,
                 path);
         }
     }
 
-    bool AssetManager::IsModelRegistered(const std::string &name) {
-        std::lock_guard lock(externalModelMutex);
-        return externalModelPaths.count(name) > 0;
+    bool AssetManager::IsGltfRegistered(const std::string &name) {
+        std::lock_guard lock(externalGltfMutex);
+        return externalGltfPaths.count(name) > 0;
     }
 } // namespace sp

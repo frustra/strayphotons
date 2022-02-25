@@ -50,7 +50,7 @@ void main() {
         drawCommands[drawIndex] = draw;
 
         WarpGeometryParams params;
-        params.modelMat = renderable.modelToWorld * prim.primitiveToModel;
+        params.modelMat = renderable.modelToWorld;
         params.outputVertexOffset = renderable.vertexOffset + prim.vertexOffset;
         drawParams[drawIndex] = params;
     }

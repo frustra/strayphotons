@@ -34,7 +34,7 @@ namespace sp {
 
     void GameLogic::PrintDebug() {
         auto lock = ecs::World.StartTransaction<
-            ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::CharacterController, ecs::LightSensor>>();
+            ecs::Read<ecs::Name, ecs::TransformSnapshot, ecs::CharacterController, ecs::PhysicsQuery>>();
         auto player = ecs::EntityWith<ecs::Name>(lock, "player.player");
         auto flatview = ecs::EntityWith<ecs::Name>(lock, "player.flatview");
         if (flatview.Has<ecs::TransformSnapshot>(lock)) {
@@ -68,6 +68,11 @@ namespace sp {
 #endif
         } else {
             Logf("Scene has no valid player");
+        }
+
+        if (flatview.Has<ecs::PhysicsQuery>(lock)) {
+            auto &query = flatview.Get<ecs::PhysicsQuery>(lock);
+            if (query.raycastHitTarget) Logf("Looking at: %s", ecs::ToString(lock, query.raycastHitTarget));
         }
     }
 

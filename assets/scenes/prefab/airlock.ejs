@@ -3,7 +3,6 @@
 } %>
 {
 	"_name": <%= name %>,
-	"renderable": "airlock",
 	"transform": {
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>
 		"translate": <%= translate %>
@@ -14,9 +13,13 @@
 		"load_scene_connection": <%= load_signal %>
 	},
 	<% } %>
-	"physics": {
-		"model": "airlock",
-		"dynamic": false
+	"script": {
+		"prefab": "gltf",
+		"parameters": {
+			"gltf_model": "airlock",
+			"gltf_render": true,
+			"gltf_physics": "static"
+		}
 	}
 },
 <% if (locals.triggers) { %>

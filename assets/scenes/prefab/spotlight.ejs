@@ -9,12 +9,16 @@
 		"shadowMapSize": 11,
 		"shadowMapClip": [0.1, 70]
 	},
-	<% if (locals.physics) { %>
-	"physics": {
-		"model": "spotlight-01",
-		"dynamic": false
+	"script": {
+		"prefab": "gltf",
+		"parameters": {
+			"gltf_model": "spotlight-01",
+			<% if (locals.physics) { %>
+			"gltf_physics": "static",
+			<% } %>
+			"gltf_render": true
+		}
 	},
-	<% } %>
 	"transform": {
 		<% if (locals.parent) { %>"parent": <%= parent %>,<% } %>
 		<% if (locals.rotate) { %>"rotate": <%= rotate %>,<% } %>

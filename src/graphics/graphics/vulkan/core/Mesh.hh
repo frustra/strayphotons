@@ -1,7 +1,7 @@
 #pragma once
 
 #include "assets/Async.hh"
-#include "assets/Model.hh"
+#include "assets/Gltf.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/vulkan/GPUSceneContext.hh"
 #include "graphics/vulkan/core/Common.hh"
@@ -19,18 +19,16 @@ namespace sp::vulkan {
         glm::mat4 model;
     };
 
-    class Model final : public NonCopyable {
+    class Mesh final : public NonCopyable {
     public:
-        struct Primitive : public NonCopyable {
-            glm::mat4 transform;
-            vk::IndexType indexType = vk::IndexType::eNoneKHR;
+        struct Primitive {
             size_t indexOffset, indexCount;
             size_t vertexOffset, vertexCount;
             TextureIndex baseColor, metallicRoughness;
         };
 
-        Model(shared_ptr<const sp::Model> model, GPUSceneContext &scene, DeviceContext &device);
-        ~Model();
+        Mesh(shared_ptr<const sp::Gltf> source, size_t meshIndex, GPUSceneContext &scene, DeviceContext &device);
+        ~Mesh();
 
         uint32 SceneIndex() const;
         uint32 PrimitiveCount() const {
@@ -49,13 +47,17 @@ namespace sp::vulkan {
         }
 
     private:
-        TextureIndex LoadTexture(DeviceContext &device, const sp::Model &model, int materialIndex, TextureType type);
+        TextureIndex LoadTexture(DeviceContext &device,
+            const shared_ptr<const sp::Gltf> &source,
+            int materialIndex,
+            TextureType type);
         string modelName;
         GPUSceneContext &scene;
-        shared_ptr<const sp::Model> asset;
+        shared_ptr<const sp::Gltf> asset;
+        size_t meshIndex;
 
         robin_hood::unordered_map<string, TextureIndex> textures;
-        vector<shared_ptr<Primitive>> primitives;
+        vector<Primitive> primitives;
 
         uint32 vertexCount = 0, indexCount = 0;
         SubBufferPtr indexBuffer, vertexBuffer, primitiveList, modelEntry;

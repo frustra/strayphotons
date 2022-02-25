@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/Common.hh"
+#include "core/InlineVector.hh"
 #include "core/LockFreeMutex.hh"
 #include "core/Logging.hh"
 
@@ -42,13 +43,15 @@ namespace sp {
             chrono_clock::duration tickInterval = std::min(now - last_tick, maxTickInterval);
             last_tick = now;
 
-            std::vector<K> cleanupList;
+            InlineVector<K, 100> cleanupList;
             {
                 std::shared_lock lock(mutex);
                 for (auto &[key, timed] : storage) {
                     if (timed.value.use_count() == 1) {
                         auto intervalMs = std::chrono::duration_cast<std::chrono::milliseconds>(tickInterval).count();
-                        if ((timed.last_use += intervalMs) > PreserveAgeMilliseconds) cleanupList.emplace_back(key);
+                        if ((timed.last_use += intervalMs) > PreserveAgeMilliseconds) {
+                            if (cleanupList.size() < cleanupList.capacity()) cleanupList.emplace_back(key);
+                        }
                     } else {
                         timed.last_use = 0;
                     }

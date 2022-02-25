@@ -21,16 +21,16 @@ set(PROJECT_GAME_TEST_LIB ${PROJECT_BASE_NAME}-game-test CACHE INTERNAL "Interfa
 include(${PROJECT_SOURCE_DIR}/cmake/ModuleConfig.cmake)
 
 # Default desktop build
-add_module_configuration(
-    NAME sp
-    LINK_LIBRARIES
-        ${PROJECT_CORE_LIB}
-        ${PROJECT_GRAPHICS_OPENGL_LIB}
-        ${PROJECT_INPUT_GLFW_LIB}
-        ${PROJECT_PHYSICS_PHYSX_LIB}
-        ${PROJECT_AUDIO_LIB}
-        ${PROJECT_XR_OPENVR_LIB}
-)
+# add_module_configuration(
+#     NAME sp
+#     LINK_LIBRARIES
+#         ${PROJECT_CORE_LIB}
+#         ${PROJECT_GRAPHICS_OPENGL_LIB}
+#         ${PROJECT_INPUT_GLFW_LIB}
+#         ${PROJECT_PHYSICS_PHYSX_LIB}
+#         ${PROJECT_AUDIO_LIB}
+#         ${PROJECT_XR_OPENVR_LIB}
+# )
 
 # Vulkan desktop build
 add_module_configuration(

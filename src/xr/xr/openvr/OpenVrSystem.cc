@@ -6,6 +6,7 @@
 #include "core/Logging.hh"
 #include "core/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "graphics/core/GraphicsContext.hh"
 
@@ -81,9 +82,7 @@ namespace sp::xr {
         GetSceneManager().QueueActionAndBlock(SceneAction::AddSystemScene,
             "vr-system",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                auto vrOrigin = lock.NewEntity();
-                vrOrigin.Set<ecs::Name>(lock, vrOriginEntity.Name());
-                vrOrigin.Set<ecs::SceneInfo>(lock, vrOrigin, ecs::SceneInfo::Priority::System, scene);
+                auto vrOrigin = scene->NewSystemEntity(lock, scene, vrOriginEntity.Name());
                 vrOrigin.Set<ecs::TransformSnapshot>(lock);
                 vrOrigin.Set<ecs::TransformTree>(lock);
 
@@ -91,9 +90,7 @@ namespace sp::xr {
                     vrControllerLeftEntity,
                     vrControllerRightEntity};
                 for (auto &namedEntity : specialEntities) {
-                    auto ent = lock.NewEntity();
-                    ent.Set<ecs::Name>(lock, namedEntity.Name());
-                    ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
+                    auto ent = scene->NewSystemEntity(lock, scene, namedEntity.Name());
                     ent.Set<ecs::TransformSnapshot>(lock);
                     ent.Set<ecs::TransformTree>(lock);
                     ent.Set<ecs::EventBindings>(lock);
@@ -111,9 +108,7 @@ namespace sp::xr {
                 for (size_t i = 0; i < views.size(); i++) {
                     auto eye = (ecs::XrEye)i;
 
-                    auto ent = lock.NewEntity();
-                    ent.Set<ecs::Name>(lock, views[eye].Name());
-                    ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
+                    auto ent = scene->NewSystemEntity(lock, scene, views[eye].Name());
                     ent.Set<ecs::XRView>(lock, eye);
 
                     auto &transform = ent.Set<ecs::TransformTree>(lock);
@@ -243,9 +238,7 @@ namespace sp::xr {
                 [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                     for (auto namedEntity : trackedDevices) {
                         if (namedEntity != nullptr && !namedEntity->Get(lock).Exists(lock)) {
-                            auto ent = lock.NewEntity();
-                            ent.Set<ecs::Name>(lock, namedEntity->Name());
-                            ent.Set<ecs::SceneInfo>(lock, ent, ecs::SceneInfo::Priority::System, scene);
+                            auto ent = scene->NewSystemEntity(lock, scene, namedEntity->Name());
                             ent.Set<ecs::TransformSnapshot>(lock);
                             ent.Set<ecs::TransformTree>(lock);
                             ent.Set<ecs::EventBindings>(lock);
@@ -273,7 +266,7 @@ namespace sp::xr {
             "rendermodels/vr_glove/",
             modelPathStr.data(),
             modelPathStr.size());
-        GAssets.RegisterExternalModel("vr_glove_left", modelPathStr.data());
+        GAssets.RegisterExternalGltf("vr_glove_left", modelPathStr.data());
 
         modelPathLen =
             vr::VRResources()->GetResourceFullPath("vr_glove_right_model.glb", "rendermodels/vr_glove/", NULL, 0);
@@ -282,6 +275,6 @@ namespace sp::xr {
             "rendermodels/vr_glove/",
             modelPathStr.data(),
             modelPathStr.size());
-        GAssets.RegisterExternalModel("vr_glove_right", modelPathStr.data());
+        GAssets.RegisterExternalGltf("vr_glove_right", modelPathStr.data());
     }
 } // namespace sp::xr

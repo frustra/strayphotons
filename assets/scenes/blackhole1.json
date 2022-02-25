@@ -1271,10 +1271,13 @@
 					-0.33
 				]
 			},
-			"renderable": "door-frame",
-			"physics": {
-				"model": "door-frame",
-				"dynamic": false
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "door-frame",
+					"gltf_render": true,
+					"gltf_physics": "static"
+				}
 			},
 			"signal_output": {},
 			"signal_bindings": {}
@@ -1533,6 +1536,13 @@
 					70
 				]
 			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "spotlight-01",
+					"gltf_render": true
+				}
+			},
 			"transform": {
 				"rotate": [
 					[
@@ -1593,6 +1603,13 @@
 					0.1,
 					70
 				]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"gltf_model": "spotlight-01",
+					"gltf_render": true
+				}
 			},
 			"transform": {
 				"rotate": [
